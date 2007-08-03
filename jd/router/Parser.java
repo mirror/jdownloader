@@ -15,11 +15,14 @@ import java.util.Vector;
  */
 public class Parser {
     Vector splittedData = new Vector();
-
+    
+    int positionInFile=0;
+    
     public void parseFile(File file){
         int count=0;
         try {
             FileInputStream fis = new FileInputStream(file);
+            addToVector(readInt(fis));
             while(true){
                 parseSingleRouter(fis);
                 count++;
@@ -30,7 +33,6 @@ public class Parser {
     }
     public void parseSingleRouter(FileInputStream fis) throws IOException{
         System.out.println("------------------------");
-        addToVector(readInt(fis));
         addToVector(readInt(fis));
         addToVector(readByte(fis));
 
@@ -64,12 +66,20 @@ public class Parser {
             addToVector(readNextString(fis));
         }
         addToVector(readNextString(fis));
+        int check = readInt(fis);
+        System.out.println("->"+check);
+        if(check != 0){
+            for(int i=0;i<check;i++){
+                addToVector(readNextString(fis));
+                addToVector(readNextString(fis));
+            }
+        }
     }
 
     private String readNextString(FileInputStream fis)throws IOException{
         int length = readShort(fis);
         byte b[] = new byte[length];
-        fis.read(b);
+        fis.read(b); positionInFile +=length;
         return new String(b);
     }
 
@@ -81,29 +91,29 @@ public class Parser {
         splittedData.add(o);
     }
     public byte readByte(InputStream in) throws IOException {
-        int ch = in.read();
+        int ch = in.read(); positionInFile++;
         if (ch < 0)
             throw new EOFException();
         return (byte)(ch);
     }
     public short readShort(InputStream in) throws IOException {
-        int ch1 = in.read();
-        int ch2 = in.read();
+        int ch1 = in.read(); positionInFile++;
+        int ch2 = in.read(); positionInFile++;
         if ((ch1 | ch2) < 0)
             throw new EOFException();
         return (short)((ch2 << 8) + (ch1 << 0));
     }
     private int readInt(InputStream in) throws IOException{
-        int ch1 = in.read();
-        int ch2 = in.read();
-        int ch3 = in.read();
-        int ch4 = in.read();
+        int ch1 = in.read(); positionInFile++;
+        int ch2 = in.read(); positionInFile++;
+        int ch3 = in.read(); positionInFile++;
+        int ch4 = in.read(); positionInFile++;
         if ((ch1 | ch2 | ch3 | ch4) < 0)
             throw new EOFException();
         return ((ch4 << 24) + (ch3 << 16) + (ch2 << 8) + (ch1 << 0));
     }
     public final long readLong(InputStream in) throws IOException {
-        in.read(readBuffer, 0, 8);
+        in.read(readBuffer, 0, 8); positionInFile+=8;
         return (((long)readBuffer[0] << 56) +
                 ((long)(readBuffer[1] & 255) << 48) +
                 ((long)(readBuffer[2] & 255) << 40) +
