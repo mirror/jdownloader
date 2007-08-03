@@ -2,6 +2,7 @@ package jd.gui;
 
 import java.util.Vector;
 
+import javax.swing.JPanel;
 import javax.swing.JTable;
 import javax.swing.event.TableModelEvent;
 import javax.swing.table.AbstractTableModel;
@@ -12,7 +13,7 @@ import jd.plugins.DownloadLink;
  * 
  * @author astaldo
  */
-public class DownloadLinkTable extends JTable{
+public class TabDownloadLinks extends JPanel{
     /**
      * serialVersionUID
      */
@@ -20,13 +21,15 @@ public class DownloadLinkTable extends JTable{
     /**
      * Dieser Vector enthält alle Downloadlinks
      */
+    private JTable table;
     private Vector<DownloadLink> allLinks = new Vector<DownloadLink>();
     /**
      * Erstellt eine neue Tabelle
      */
-    public DownloadLinkTable(){
+    public TabDownloadLinks(){
         super();
-        setModel(new InternalTableModel());
+        table = new JTable();
+        table.setModel(new InternalTableModel());
     }
     /**
      * Hier werden Links zu dieser Tabelle hinzugefügt.
@@ -35,7 +38,10 @@ public class DownloadLinkTable extends JTable{
      */
     public void addLinks(Vector<DownloadLink> links){
         allLinks.addAll(links);
-        tableChanged(new TableModelEvent(getModel()));
+        table.tableChanged(new TableModelEvent(table.getModel()));
+    }
+    public void fireTableChanged(){
+        table.tableChanged(new TableModelEvent(table.getModel()));
     }
     /**
      * Dieses TableModel sorgt dafür, daß die Daten der Downloadlinks korrekt dargestellt werden
@@ -47,11 +53,13 @@ public class DownloadLinkTable extends JTable{
          * serialVersionUID
          */
         private static final long serialVersionUID = -357970066822953957L;
+        private String labelLink = Utilities.getResourceString("label.tab.download.column_link");
+        private String labelHost = Utilities.getResourceString("label.tab.download.column_host");
         @Override
         public String getColumnName(int column) {
             switch(column){
-                case 0: return "DL Link";
-                case 1: return "Host";
+                case 0: return labelLink;
+                case 1: return labelHost;
             }
             return null;
         }

@@ -19,12 +19,11 @@ import java.util.logging.Logger;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JFrame;
+import javax.swing.JMenuBar;
 import javax.swing.JPanel;
-import javax.swing.JProgressBar;
 import javax.swing.JScrollPane;
 import javax.swing.JTabbedPane;
 import javax.swing.JToolBar;
-import javax.swing.event.TableModelEvent;
 
 import jd.plugins.DownloadLink;
 import jd.plugins.Plugin;
@@ -43,21 +42,21 @@ public class MainWindow extends JFrame implements PluginListener, ClipboardOwner
     
     private static final StringSelection JDOWNLOADER_ID = new StringSelection("JDownloader active");
     /**
+     * Die Menüleiste
+     */
+    private JMenuBar menuBar                    = new JMenuBar();
+    /**
      * Toolleiste für Knöpfe
      */
     private JToolBar          toolBar           = new JToolBar();
     /**
      * Tabelle mit den Downloadlinks
      */
-    private DownloadLinkTable downloadLinkTable = new DownloadLinkTable();
+    private TabDownloadLinks downloadLinks      = new TabDownloadLinks();
     /**
      * Scrollkomponente für die Tabelle
      */
-    private JScrollPane       scrollPane        = new JScrollPane(downloadLinkTable);
-    /**
-     * Fortschrittsanzeige
-     */
-    private JProgressBar      progressBar       = new JProgressBar();
+    private JScrollPane       scrollPane        = new JScrollPane(downloadLinks);
     /**
      * Hier werden alle vorhandenen Plugins zum Dekodieren von Links gespeichert
      */
@@ -73,12 +72,16 @@ public class MainWindow extends JFrame implements PluginListener, ClipboardOwner
     /**
      * Logger für Meldungen des Programmes
      */
-    private Logger logger = Logger.getLogger(Plugin.LOGGER_NAME);
-    
-    private JTabbedPane tabbedPane              = new JTabbedPane();
-    private JPanel      panelForDownloadTable   = new JPanel();
-    private JPanel      panelForPluginsHost     = new JPanel();
-    private JPanel      panelForPluginsDecrypt  = new JPanel();
+    private Logger            logger = Plugin.getLogger();
+    /**
+     * Komponente, die den Fortschritt aller Plugins anzeigt
+     */
+    private TabPluginActivity tabPluginActivity        = new TabPluginActivity();
+    /**
+     * TabbedPane
+     */
+    private JTabbedPane       tabbedPane               = new JTabbedPane();
+    private JPanel            panelForDownloadTable    = new JPanel();
     private JButton start;
     /**
      * Das Hauptfenster wird erstellt
@@ -100,11 +103,8 @@ public class MainWindow extends JFrame implements PluginListener, ClipboardOwner
         panelForDownloadTable = new JPanel(new BorderLayout());
         panelForDownloadTable.add(scrollPane);
         
-        tabbedPane.addTab("Downloads",            panelForDownloadTable);
-        tabbedPane.addTab("Anbieter-Plugins",     panelForPluginsHost);
-        tabbedPane.addTab("Entschlüssel-Plugins", panelForPluginsDecrypt);
-        
-        progressBar.setStringPainted(true);
+        tabbedPane.addTab(Utilities.getResourceString("label.tab.download"),        panelForDownloadTable);
+        tabbedPane.addTab(Utilities.getResourceString("label.tab.plugin_activity"), tabPluginActivity);
         
         start = new JButton(images.get("start")); 
         start.setFocusPainted(false);start.setBorderPainted(false);
@@ -115,7 +115,7 @@ public class MainWindow extends JFrame implements PluginListener, ClipboardOwner
         setLayout(new GridBagLayout());
         Utilities.addToGridBag(this, toolBar,     0, 0, 1, 1, 0, 0, null, GridBagConstraints.HORIZONTAL, GridBagConstraints.NORTH); 
         Utilities.addToGridBag(this, tabbedPane,  0, 1, 1, 1, 1, 1, null, GridBagConstraints.BOTH,       GridBagConstraints.CENTER); 
-        Utilities.addToGridBag(this, progressBar, 0, 2, 1, 1, 1, 1, null, GridBagConstraints.HORIZONTAL, GridBagConstraints.SOUTH); 
+        setJMenuBar(menuBar);
     }
     /**
      * Die Bilder werden aus der JAR Datei nachgeladen
@@ -138,6 +138,8 @@ public class MainWindow extends JFrame implements PluginListener, ClipboardOwner
             PluginForDecrypt p = (PluginForDecrypt) iterator.next();
             pluginsForDecrypt.add(p);
             p.addPluginListener(this);
+            p.addPluginListener(tabPluginActivity);
+            logger.info("Decrypt-Plugin:"+p.getPluginName());
         }
 
         //Danach die Plugins der verschiedenen Anbieter
@@ -147,22 +149,14 @@ public class MainWindow extends JFrame implements PluginListener, ClipboardOwner
             PluginForHost p = (PluginForHost) iterator.next();
             pluginsForHost.add(p);
             p.addPluginListener(this);
+            p.addPluginListener(tabPluginActivity);
+            logger.info("Host-Plugin:"+p.getPluginName());
         }
     }
     /**
      * Reagiert auf Pluginevents
      */
     public void pluginEvent(PluginEvent event) {
-        switch(event.getEventID()){
-            case PluginEvent.PLUGIN_PROGRESS_MAX:
-                progressBar.setMaximum((Integer)event.getParameter());
-                repaint();
-                break;
-            case PluginEvent.PLUGIN_PROGRESS_INCREASE:
-                progressBar.setValue(progressBar.getValue()+1);
-                repaint();
-                break;
-        }
     }
     public void lostOwnership(Clipboard clipboard, Transferable contents) {
         new ClipboardHandler().start();
@@ -245,8 +239,8 @@ public class MainWindow extends JFrame implements PluginListener, ClipboardOwner
             }
 
             if(links!=null && links.size()>0){
-                downloadLinkTable.addLinks(links);
-                downloadLinkTable.tableChanged(new TableModelEvent(downloadLinkTable.getModel()));
+                downloadLinks.addLinks(links);
+                downloadLinks.fireTableChanged();
             }
         }
     }

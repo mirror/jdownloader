@@ -12,12 +12,17 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.Iterator;
 import java.util.Vector;
+import java.util.logging.ConsoleHandler;
+import java.util.logging.Formatter;
+import java.util.logging.Handler;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import jd.plugins.event.PluginEvent;
 import jd.plugins.event.PluginListener;
+
 /**
  * Diese abstrakte Klasse steuert den Zugriff auf weitere Plugins.
  * Alle Plugins müssen von dieser Klasse abgeleitet werden.
@@ -78,11 +83,32 @@ public abstract class Plugin{
     /**
      * Ein Logger, um Meldungen darzustellen
      */
-    private Logger logger = Logger.getLogger(Plugin.LOGGER_NAME);
+    private static Logger logger = null;
     
     protected Plugin(){
         pluginListener = new Vector<PluginListener>();
     }
+    /**
+     * Liefert die Klasse zurück, mit der Nachrichten ausgegeben werden können
+     * Falls dieser Logger nicht existiert, wird ein neuer erstellt
+     * 
+     * @return LogKlasse
+     */
+    public static Logger getLogger(){
+        if (logger == null){
+            logger = Logger.getLogger(Plugin.LOGGER_NAME,"LanguagePack");
+            Formatter formatter = new LogFormatter();
+            logger.setUseParentHandlers(false);
+
+            Handler console = new ConsoleHandler();
+            console.setLevel(Level.ALL);
+            console.setFormatter(formatter);
+
+            logger.addHandler(console);
+            logger.setLevel(Level.ALL);
+        }
+        return logger;
+    } 
     /**
      * Hier wird geprüft, ob das Plugin diesen Text oder einen Teil davon handhaben kann.
      * Dazu wird einfach geprüft, ob ein Treffer des Patterns vorhanden ist.

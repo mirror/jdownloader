@@ -6,8 +6,13 @@ import java.awt.GridBagConstraints;
 import java.awt.Insets;
 import java.io.File;
 import java.io.FileFilter;
+import java.util.Locale;
+import java.util.ResourceBundle;
 
 public class Utilities {
+    private static ResourceBundle resourceBundle = null;
+    private static Locale locale = null;
+    
     public static FilterJAR filterJar = new FilterJAR();
     
     /**
@@ -67,6 +72,21 @@ public class Utilities {
         cons.ipadx = iPadX;
         cons.ipady = iPadY;
         cont.add(comp, cons);
+    }
+    /**
+     * Liefert eine Zeichenkette aus dem aktuellen ResourceBundle zurück
+     *
+     * @param key Identifier der gewünschten Zeichenkette
+     * @return Die gewünschte Zeichnenkette
+     */
+    public static String getResourceString(String key){
+        if(resourceBundle== null){
+            if(locale == null){
+                locale = Locale.getDefault();
+            }
+            resourceBundle = ResourceBundle.getBundle("LanguagePack", locale);
+        }
+        return resourceBundle.getString(key);
     }
     
     private static class FilterJAR implements FileFilter{

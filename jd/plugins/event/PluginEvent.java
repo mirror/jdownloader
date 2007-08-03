@@ -12,7 +12,8 @@ public class PluginEvent extends AWTEvent{
 
     public static final int PLUGIN_PROGRESS_MAX          = 1;
     public static final int PLUGIN_PROGRESS_INCREASE     = 2;
-    public static final int PLUGIN_CRYPT_LINKS_DECRYPTED = 3;
+    public static final int PLUGIN_PROGRESS_FINISH       = 3;
+    public static final int PLUGIN_CRYPT_LINKS_DECRYPTED = 4;
     
     private Plugin source;
     private int    eventID;

@@ -1,0 +1,29 @@
+<project default="jar" basedir=".">
+ 
+    <property name="cls"     value="bin" />
+        
+    <target name="jar">
+        <manifest file="Manifest.MF">
+            <attribute name="Created-By" value="astaldo"/>
+            <attribute name="Main-Class" value="jd.Main"/>
+        </manifest>
+        <jar jarfile="JDownloader.jar" manifest="Manifest.MF">
+            <fileset dir="${cls}">
+                <include name = "**/*.class" />
+                <exclude name = "jd/plugins/decrypt/**"/>
+                <exclude name = "jd/plugins/host/**"/>
+            </fileset>
+            <fileset dir="." includes="GIF/**"/>
+            <fileset dir="." includes="*.properties"/>
+        </jar>
+        <delete file="Manifest.MF" failonerror="false" />
+        <jar jarfile="JDownloaderPlugins.jar">
+            <fileset dir="${cls}">
+                <include name = "jd/plugins/decrypt/**"/>
+                <include name = "jd/plugins/host/**"/>
+            </fileset>
+            <fileset dir="." includes="META-INF/services/*"/>
+        </jar>
+    </target>
+                
+</project>

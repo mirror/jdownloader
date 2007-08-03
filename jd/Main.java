@@ -1,6 +1,11 @@
 package jd;
 
+import javax.swing.UIManager;
+import javax.swing.UnsupportedLookAndFeelException;
+
 import jd.gui.MainWindow;
+
+import com.sun.java.swing.plaf.windows.WindowsLookAndFeel;
 /**
  * Start der Applikation
  * 
@@ -12,6 +17,11 @@ public class Main {
         main.go();
     }
     private void go(){
+        try {
+            UIManager.setLookAndFeel(new WindowsLookAndFeel());
+        }
+        catch (UnsupportedLookAndFeelException e) {}
+
         MainWindow mainWindow = new MainWindow();
         mainWindow.setVisible(true);
     }
