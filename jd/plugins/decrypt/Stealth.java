@@ -74,6 +74,7 @@ public class Stealth extends PluginForDecrypt{
             catch (MalformedURLException e) { e.printStackTrace(); }
             catch (IOException e)           { e.printStackTrace(); }
         }
+        firePluginEvent(new PluginEvent(this,PluginEvent.PLUGIN_PROGRESS_FINISH,null));
         return decryptedLinks;
     }    
 }

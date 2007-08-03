@@ -30,7 +30,7 @@ import jd.plugins.event.PluginListener;
  * Alle Plugins verfügen über einen Event Mechanismus
  *  
  * Hinweise zum Pluginsystem findet ihr hier
- * http://java.sun.com/j2se/1.4.2/docs/guide/jar/jar.html#Service%20Provider
+ * http://java.sun.com/j2se/1.5.0/docs/guide/jar/jar.html
  * 
  * @author astaldo
  */

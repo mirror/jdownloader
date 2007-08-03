@@ -10,7 +10,11 @@ import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.StringSelection;
 import java.awt.datatransfer.Transferable;
 import java.awt.datatransfer.UnsupportedFlavorException;
+import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.Method;
+import java.net.URL;
+import java.net.URLClassLoader;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Vector;
@@ -129,6 +133,24 @@ public class MainWindow extends JFrame implements PluginListener, ClipboardOwner
      * Hier werden alle Plugins im aktuellen Verzeichnis geparsed (und im Classpath)
      */
     private void getPlugins(){
+        try {
+            // Alle JAR Dateien, die in diesem Verzeichnis liegen, werden dem 
+            // Classloader hinzugefügt. 
+            ClassLoader classLoader = Thread.currentThread().getContextClassLoader();        
+            if(classLoader != null && (classLoader instanceof URLClassLoader)){            
+                URLClassLoader urlClassLoader = (URLClassLoader)classLoader;           
+                Method         addURL         = URLClassLoader.class.getDeclaredMethod("addURL", new Class[]{URL.class});    
+                File           files[]        = new File(".").listFiles(Utilities.filterJar);
+                
+                addURL.setAccessible(true);        
+                for(int i=0;i<files.length;i++){
+                    URL jarURL = files[i].toURL();                
+                    addURL.invoke(urlClassLoader, new Object[]{jarURL});        
+                }                      
+            }
+        }
+        catch (Exception e) { }        
+        
         Iterator iterator;
         
         //Zuerst Plugins zum Dekodieren verschlüsselter Links
