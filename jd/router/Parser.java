@@ -7,7 +7,12 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Vector;
-
+/**
+ * Versuch, die Routers.dat auszulesen
+ * 
+ * @author astaldo
+ *
+ */
 public class Parser {
     Vector splittedData = new Vector();
 
