@@ -1,4 +1,4 @@
-package jd.router;
+﻿package jd.router;
 
 import java.io.EOFException;
 import java.io.File;
@@ -14,7 +14,7 @@ import java.util.Vector;
  *
  */
 public class Parser {
-    Vector splittedData = new Vector();
+    Vector<Object> splittedData = new Vector<Object>();
     
     int positionInFile=0;
     

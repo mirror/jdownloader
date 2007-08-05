@@ -1,4 +1,4 @@
-package jd.gui;
+ï»¿package jd.gui;
 
 import java.awt.BorderLayout;
 import java.awt.GridBagConstraints;
@@ -46,11 +46,11 @@ public class MainWindow extends JFrame implements PluginListener, ClipboardOwner
     
     private static final StringSelection JDOWNLOADER_ID = new StringSelection("JDownloader active");
     /**
-     * Die Menüleiste
+     * Die MenÃ¼leiste
      */
     private JMenuBar menuBar                    = new JMenuBar();
     /**
-     * Toolleiste für Knöpfe
+     * Toolleiste fÃ¼r KnÃ¶pfe
      */
     private JToolBar          toolBar           = new JToolBar();
     /**
@@ -58,7 +58,7 @@ public class MainWindow extends JFrame implements PluginListener, ClipboardOwner
      */
     private TabDownloadLinks downloadLinks      = new TabDownloadLinks();
     /**
-     * Scrollkomponente für die Tabelle
+     * Scrollkomponente fÃ¼r die Tabelle
      */
     private JScrollPane       scrollPane        = new JScrollPane(downloadLinks);
     /**
@@ -66,15 +66,15 @@ public class MainWindow extends JFrame implements PluginListener, ClipboardOwner
      */
     private Vector<PluginForDecrypt> pluginsForDecrypt = new Vector<PluginForDecrypt>();
     /**
-     * Hier werden alle Plugins für die Anbieter gespeichert
+     * Hier werden alle Plugins fÃ¼r die Anbieter gespeichert
      */
     private Vector<PluginForHost>    pluginsForHost    = new Vector<PluginForHost>();
     /**
-     * Alle verfügbaren Bilder werden hier gespeichert
+     * Alle verfÃ¼gbaren Bilder werden hier gespeichert
      */
     private HashMap<String, ImageIcon> images = new HashMap<String, ImageIcon>();
     /**
-     * Logger für Meldungen des Programmes
+     * Logger fÃ¼r Meldungen des Programmes
      */
     private Logger            logger = Plugin.getLogger();
     /**
@@ -100,7 +100,7 @@ public class MainWindow extends JFrame implements PluginListener, ClipboardOwner
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
     }
     /**
-     * Hier wird die komplette Oberfläche der Applikation zusammengestrickt 
+     * Hier wird die komplette OberflÃ¤che der Applikation zusammengestrickt 
      */
     private void buildUI(){
         tabbedPane = new JTabbedPane();
@@ -135,7 +135,7 @@ public class MainWindow extends JFrame implements PluginListener, ClipboardOwner
     private void getPlugins(){
         try {
             // Alle JAR Dateien, die in diesem Verzeichnis liegen, werden dem 
-            // Classloader hinzugefügt. 
+            // Classloader hinzugefÃ¼gt. 
             ClassLoader classLoader = Thread.currentThread().getContextClassLoader();        
             if(classLoader != null && (classLoader instanceof URLClassLoader)){            
                 URLClassLoader urlClassLoader = (URLClassLoader)classLoader;           
@@ -153,7 +153,7 @@ public class MainWindow extends JFrame implements PluginListener, ClipboardOwner
         
         Iterator iterator;
         
-        //Zuerst Plugins zum Dekodieren verschlüsselter Links
+        //Zuerst Plugins zum Dekodieren verschlÃ¼sselter Links
         iterator = Service.providers(PluginForDecrypt.class);
         while(iterator.hasNext())
         {
@@ -205,7 +205,7 @@ public class MainWindow extends JFrame implements PluginListener, ClipboardOwner
     }
 
     /**
-     * Diese Klasse läuft in einem Thread und verteilt den Inhalt der Zwischenablage an (unter Umständen auch mehrere) Plugins
+     * Diese Klasse lÃ¤uft in einem Thread und verteilt den Inhalt der Zwischenablage an (unter UmstÃ¤nden auch mehrere) Plugins
      * Die gefundenen Treffer werden ausgeschnitten.
      * 
      * @author astaldo
@@ -227,9 +227,9 @@ public class MainWindow extends JFrame implements PluginListener, ClipboardOwner
             PluginForDecrypt pDecrypt;
             PluginForHost    pHost;
 
-            // Zuerst wird überprüft, ob ein Decrypt-Plugin einen Teil aus der
-            // Zwischenablage entschlüsseln kann. Ist das der Fall, wird die entsprechende Stelle
-            // verarbeitet und gelöscht, damit sie keinesfalls nochmal verarbeitet wird.
+            // Zuerst wird Ã¼berprÃ¼ft, ob ein Decrypt-Plugin einen Teil aus der
+            // Zwischenablage entschlÃ¼sseln kann. Ist das der Fall, wird die entsprechende Stelle
+            // verarbeitet und gelÃ¶scht, damit sie keinesfalls nochmal verarbeitet wird.
             for(int i=0; i<pluginsForDecrypt.size();i++){
                 pDecrypt = pluginsForDecrypt.elementAt(i);
                 if(pDecrypt.isClipboardEnabled() && pDecrypt.canHandle(data)){
@@ -246,8 +246,8 @@ public class MainWindow extends JFrame implements PluginListener, ClipboardOwner
                     data = pHost.cutMatches(data);
                 }
             }
-            // Als letztes werden die entschlüsselten Links (soweit überhaupt vorhanden)
-            // an die HostPlugins geschickt, damit diese einen Downloadlink erstellen können
+            // Als letztes werden die entschlÃ¼sselten Links (soweit Ã¼berhaupt vorhanden)
+            // an die HostPlugins geschickt, damit diese einen Downloadlink erstellen kÃ¶nnen
             Iterator<String> iterator = decryptedLinks.iterator();
             while(iterator.hasNext()){
                 String decrypted = iterator.next();

@@ -1,4 +1,4 @@
-package jd.gui;
+ï»¿package jd.gui;
 
 import java.awt.Component;
 import java.awt.Container;
@@ -26,7 +26,7 @@ public class Utilities {
      * @param height Anzahl der Reihen, ueber die sich diese Komponente erstreckt
      * @param weightX Verteilung von zur Verfuegung stehendem Platz in X-Richtung
      * @param weightY Verteilung von zur Verfuegung stehendem Platz in Y-Richtung
-     * @param insets Abstände der Komponente
+     * @param insets AbstÃ¤nde der Komponente
      * @param fill Verteilung der Komponente innerhalb der zugewiesen Zelle/n
      * @param anchor Positionierung der Komponente innerhalb der zugewiesen Zelle/n
      */
@@ -45,7 +45,7 @@ public class Utilities {
      * @param height Anzahl der Reihen, ueber die sich diese Komponente erstreckt
      * @param weightX Verteilung von zur Verfuegung stehendem Platz in X-Richtung
      * @param weightY Verteilung von zur Verfuegung stehendem Platz in Y-Richtung
-     * @param insets Abständer der Komponente
+     * @param insets AbstÃ¤nder der Komponente
      * @param iPadX Leerraum zwischen einer GridBagZelle und deren Inhalt (X-Richtung)
      * @param iPadY Leerraum zwischen einer GridBagZelle und deren Inhalt (Y-Richtung)
      * @param fill Verteilung der Komponente innerhalb der zugewiesen Zelle/n
@@ -74,10 +74,10 @@ public class Utilities {
         cont.add(comp, cons);
     }
     /**
-     * Liefert eine Zeichenkette aus dem aktuellen ResourceBundle zurück
+     * Liefert eine Zeichenkette aus dem aktuellen ResourceBundle zurÃ¼ck
      *
-     * @param key Identifier der gewünschten Zeichenkette
-     * @return Die gewünschte Zeichnenkette
+     * @param key Identifier der gewÃ¼nschten Zeichenkette
+     * @return Die gewÃ¼nschte Zeichnenkette
      */
     public static String getResourceString(String key){
         if(resourceBundle== null){

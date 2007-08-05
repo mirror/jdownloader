@@ -1,4 +1,4 @@
-package jd.plugins;
+ï»¿package jd.plugins;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -25,9 +25,9 @@ import jd.plugins.event.PluginListener;
 
 /**
  * Diese abstrakte Klasse steuert den Zugriff auf weitere Plugins.
- * Alle Plugins müssen von dieser Klasse abgeleitet werden.
+ * Alle Plugins mÃ¼ssen von dieser Klasse abgeleitet werden.
  * 
- * Alle Plugins verfügen über einen Event Mechanismus
+ * Alle Plugins verfÃ¼gen Ã¼ber einen Event Mechanismus
  *  
  * Hinweise zum Pluginsystem findet ihr hier
  * http://java.sun.com/j2se/1.5.0/docs/guide/jar/jar.html
@@ -36,12 +36,12 @@ import jd.plugins.event.PluginListener;
  */
 public abstract class Plugin{
     /**
-     * Puffer für Lesevorgänge
+     * Puffer fÃ¼r LesevorgÃ¤nge
      */
     public final int READ_BUFFER = 4000;
     public static String LOGGER_NAME ="astaldo.java_downloader";
     /**
-     * Liefert den Namen des Plugins zurück
+     * Liefert den Namen des Plugins zurÃ¼ck
      * @return Der Name des Plugins
      */
     public abstract String               getPluginName();
@@ -52,25 +52,25 @@ public abstract class Plugin{
      */
     public abstract String               getCoder();
     /**
-     * Liefert die Versionsbezeichnung dieses Plugins zurück
+     * Liefert die Versionsbezeichnung dieses Plugins zurÃ¼ck
      * @return Versionsbezeichnung
      */
     public abstract String               getVersion();
     /**
-     * Ein regulärer Ausdruck, der anzeigt, welche Links von diesem Plugin unterstützt werden
+     * Ein regulÃ¤rer Ausdruck, der anzeigt, welche Links von diesem Plugin unterstÃ¼tzt werden
      * 
-     * @return Ein regulärer Ausdruck
+     * @return Ein regulÃ¤rer Ausdruck
      * @see Pattern
      */
     public abstract Pattern              getSupportedLinks();
     /**
-     * Liefert den Anbieter zurück, für den dieses Plugin geschrieben wurde
+     * Liefert den Anbieter zurÃ¼ck, fÃ¼r den dieses Plugin geschrieben wurde
      * 
-     * @return Der unterstützte Anbieter
+     * @return Der unterstÃ¼tzte Anbieter
      */
     public abstract String               getHost();
     /**
-     * Diese Methode zeigt an, ob das Plugin auf Änderungen in der Zwischenablage reagiert oder nicht
+     * Diese Methode zeigt an, ob das Plugin auf Ã„nderungen in der Zwischenablage reagiert oder nicht
      * @return Wahr, wenn die Zwischenablage von diesem Plugin interpretiert werden soll
      */
     public abstract boolean              isClipboardEnabled();
@@ -89,7 +89,7 @@ public abstract class Plugin{
         pluginListener = new Vector<PluginListener>();
     }
     /**
-     * Liefert die Klasse zurück, mit der Nachrichten ausgegeben werden können
+     * Liefert die Klasse zurÃ¼ck, mit der Nachrichten ausgegeben werden kÃ¶nnen
      * Falls dieser Logger nicht existiert, wird ein neuer erstellt
      * 
      * @return LogKlasse
@@ -110,10 +110,10 @@ public abstract class Plugin{
         return logger;
     } 
     /**
-     * Hier wird geprüft, ob das Plugin diesen Text oder einen Teil davon handhaben kann.
-     * Dazu wird einfach geprüft, ob ein Treffer des Patterns vorhanden ist.
+     * Hier wird geprÃ¼ft, ob das Plugin diesen Text oder einen Teil davon handhaben kann.
+     * Dazu wird einfach geprÃ¼ft, ob ein Treffer des Patterns vorhanden ist.
      * 
-     * @param data der zu prüfende Text
+     * @param data der zu prÃ¼fende Text
      * @return wahr, falls ein Treffer gefunden wurde.
      */
     public synchronized boolean canHandle(String data){
@@ -127,7 +127,7 @@ public abstract class Plugin{
         return false;
     }
     /**
-     * Diese Methode findet alle Vorkommnisse des Pluginpatterns in dem Text, und gibt die Treffer als Vector zurück
+     * Diese Methode findet alle Vorkommnisse des Pluginpatterns in dem Text, und gibt die Treffer als Vector zurÃ¼ck
      * 
      * @param data Der zu durchsuchende Text
      * @return Alle Treffer in dem Text
@@ -149,10 +149,10 @@ public abstract class Plugin{
         return hits;
     }
     /**
-     * Zählt, wie oft das Pattern des Plugins in dem übergebenen Text vorkommt
+     * ZÃ¤hlt, wie oft das Pattern des Plugins in dem Ã¼bergebenen Text vorkommt
      * 
      * @param data Der zu durchsuchende Text
-     * @param pattern Das Pattern, daß im Text gefunden werden soll
+     * @param pattern Das Pattern, daÃŸ im Text gefunden werden soll
      * 
      * @return Anzahl der Treffer
      */
@@ -170,7 +170,7 @@ public abstract class Plugin{
         return occurences;
     }
     /**
-     * Diese Funktion schneidet alle Vorkommnisse des vom Plugin unterstützten
+     * Diese Funktion schneidet alle Vorkommnisse des vom Plugin unterstÃ¼tzten
      * Pattern aus
      * 
      * @param data Text, aus dem das Pattern ausgeschnitter werden soll
@@ -183,7 +183,7 @@ public abstract class Plugin{
      * Schickt ein GetRequest an eine Adresse
      * 
      * @param link Die URL, die ausgelesen werden soll
-     * @return Ein Objekt, daß alle Informationen der Zieladresse beinhält
+     * @return Ein Objekt, daÃŸ alle Informationen der Zieladresse beinhÃ¤lt
      * @throws IOException
      */
     public RequestInfo getRequest(URL link)throws IOException{
@@ -196,7 +196,7 @@ public abstract class Plugin{
      * @param cookie Cookie
      * @param referrer Referrer
      * @param redirect Soll einer Weiterleitung gefolgt werden?
-     * @return Ein Objekt, daß alle Informationen der Zieladresse beinhält
+     * @return Ein Objekt, daÃŸ alle Informationen der Zieladresse beinhÃ¤lt
      * @throws IOException
      */
     public RequestInfo getRequest(URL link, String cookie, String referrer, boolean redirect)throws IOException{
@@ -207,8 +207,8 @@ public abstract class Plugin{
      * Schickt ein PostRequest an eine Adresse
      * 
      * @param link Der Link, an den die POST Anfrage geschickt werden soll
-     * @param parameter Die Parameter, die übergeben werden sollen
-     * @return Ein Objekt, daß alle Informationen der Zieladresse beinhält
+     * @param parameter Die Parameter, die Ã¼bergeben werden sollen
+     * @return Ein Objekt, daÃŸ alle Informationen der Zieladresse beinhÃ¤lt
      * @throws IOException
      */
     public RequestInfo postRequest(URL link, String parameter)throws IOException{
@@ -220,9 +220,9 @@ public abstract class Plugin{
      * @param link Der Link, an den die POST Anfrage geschickt werden soll
      * @param cookie Cookie
      * @param referrer Referrer
-     * @param parameter Die Parameter, die übergeben werden sollen
+     * @param parameter Die Parameter, die Ã¼bergeben werden sollen
      * @param redirect Soll einer Weiterleitung gefolgt werden?
-     * @return Ein Objekt, daß alle Informationen der Zieladresse beinhält
+     * @return Ein Objekt, daÃŸ alle Informationen der Zieladresse beinhÃ¤lt
      * @throws IOException
      */
     public RequestInfo postRequest(URL link, String cookie, String referrer, String parameter, boolean redirect) throws IOException{
@@ -243,7 +243,7 @@ public abstract class Plugin{
      * Liest Daten von einer URL
      * 
      * @param urlInput Die URL Verbindung, von der geselen werden soll
-     * @return Ein Objekt, daß alle Informationen der Zieladresse beinhält
+     * @return Ein Objekt, daÃŸ alle Informationen der Zieladresse beinhÃ¤lt
      * @throws IOException
      */
     private RequestInfo readFromURL(HttpURLConnection urlInput)throws IOException{
@@ -259,7 +259,7 @@ public abstract class Plugin{
         return requestInfo;
     }
     /**
-     * Speichert einen InputStream binär auf der Festplatte ab
+     * Speichert einen InputStream binÃ¤r auf der Festplatte ab
      * 
      * @param is InputStream dessen Daten gespeichert werden sollen
      * @param fileOutput Ausgabedatei
@@ -278,12 +278,12 @@ public abstract class Plugin{
                 }   
             }
             while (count != -1); // Muss -1 sein und nicht buffer.length da durch 
-                                //  eine langsame Internetverbindung der Puffer nicht immer komplett gefüllt ist            
+                                //  eine langsame Internetverbindung der Puffer nicht immer komplett gefÃ¼llt ist            
             fos.close();
             return true;
         }
         catch (FileNotFoundException e){
-            logger.severe("Der Pfad dieser Datei ist ungültig."+e.getLocalizedMessage());
+            logger.severe("Der Pfad dieser Datei ist ungÃ¼ltig."+e.getLocalizedMessage());
         }
         catch (SecurityException e){
             logger.severe("Keine Schreibrechte."+e.getLocalizedMessage());

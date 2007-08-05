@@ -1,4 +1,4 @@
-package jd.plugins.host;
+﻿package jd.plugins.host;
 
 import java.net.URLConnection;
 import java.util.regex.Pattern;

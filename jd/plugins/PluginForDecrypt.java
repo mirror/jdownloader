@@ -1,14 +1,14 @@
-package jd.plugins;
+ï»¿package jd.plugins;
 
 import java.util.Vector;
 
 
 public abstract class PluginForDecrypt extends Plugin{
     /**
-     * Diese Methode entschlüsselt Links.
+     * Diese Methode entschlÃ¼sselt Links.
      * 
-     * @param cryptedLinks Ein Vector, mit jeweils einem verschlüsseltem Link. 
-     *                     Die einzelnen verschlüsselten Links werden aufgrund des Patterns  
+     * @param cryptedLinks Ein Vector, mit jeweils einem verschlÃ¼sseltem Link. 
+     *                     Die einzelnen verschlÃ¼sselten Links werden aufgrund des Patterns  
      *                     {@link jd.plugins.Plugin#getSupportedLinks() getSupportedLinks()} herausgefiltert
      * @return Ein Vector mit Klartext-links
      */

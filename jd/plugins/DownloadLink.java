@@ -1,4 +1,4 @@
-package jd.plugins;
+ï»¿package jd.plugins;
 
 
 /**
@@ -17,13 +17,13 @@ public class DownloadLink {
      */
     private String host;
     /**
-     * Das Plugin, das für diesen Download zuständig ist
+     * Das Plugin, das fÃ¼r diesen Download zustÃ¤ndig ist
      */
     private Plugin plugin;
     /**
      * Erzeugt einen neuen DownloadLink
      * 
-     * @param plugin Das Plugins, das für diesen Download zuständig ist
+     * @param plugin Das Plugins, das fÃ¼r diesen Download zustÃ¤ndig ist
      * @param name Bezeichnung des Downloads
      * @param host Anbieter, von dem dieser Download gestartet wird
      */
@@ -33,12 +33,12 @@ public class DownloadLink {
         this.host   = host;
     }
     /**
-     * Liefert den Namen dieses Downloads zurück
+     * Liefert den Namen dieses Downloads zurÃ¼ck
      * @return Name des Downloads
      */
     public String getName(){ return name; }
     /**
-     * Gibt den Hoster dieses Links azurück.
+     * Gibt den Hoster dieses Links azurÃ¼ck.
      * 
      * @return Der Hoster, auf dem dieser Link verweist
      */

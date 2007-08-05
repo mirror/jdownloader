@@ -1,4 +1,4 @@
-<project default="jar" basedir=".">
+﻿<project default="jar" basedir=".">
  
     <property name="cls"     value="bin" />
         

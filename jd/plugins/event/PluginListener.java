@@ -1,4 +1,4 @@
-package jd.plugins.event;
+﻿package jd.plugins.event;
 
 
 public interface PluginListener {

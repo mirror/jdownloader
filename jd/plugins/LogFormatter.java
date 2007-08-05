@@ -1,4 +1,4 @@
-package jd.plugins;
+ï»¿package jd.plugins;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -8,8 +8,8 @@ import java.util.logging.LogRecord;
 import java.util.logging.SimpleFormatter;
 
 /**
- * Mit dieser Klasse können die Logmeldungen anders dargestellt werden.
- * Der Code wurde hauptsächlich aus SimpleFormatter übernommen.
+ * Mit dieser Klasse kÃ¶nnen die Logmeldungen anders dargestellt werden.
+ * Der Code wurde hauptsÃ¤chlich aus SimpleFormatter Ã¼bernommen.
  * Lediglich die Format Methode wurde ein wenig umgestellt.
  * 
  * @author astaldo
@@ -23,8 +23,7 @@ public class LogFormatter extends SimpleFormatter{
     private Object args[] = new Object[1];
     // Line separator string.  This is the value of the line.separator
     // property at the moment that the SimpleFormatter was created.
-    private String lineSeparator = (String) java.security.AccessController.doPrivileged(
-               new sun.security.action.GetPropertyAction("line.separator"));
+    private String lineSeparator = System.getProperty("line.separator");
 
     @Override
     public synchronized String format(LogRecord record) {

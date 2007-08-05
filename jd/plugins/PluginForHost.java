@@ -1,4 +1,4 @@
-package jd.plugins;
+ï»¿package jd.plugins;
 
 import java.net.URLConnection;
 import java.util.Vector;
@@ -7,8 +7,8 @@ import java.util.Vector;
 public abstract class PluginForHost extends Plugin{
     public abstract URLConnection        getURLConnection();
     /**
-     * Hier werden Treffer für Downloadlinks dieses Anbieters in diesem Text gesucht.
-     * Gefundene Links werden dann in einem Vector zurückgeliefert
+     * Hier werden Treffer fÃ¼r Downloadlinks dieses Anbieters in diesem Text gesucht.
+     * Gefundene Links werden dann in einem Vector zurÃ¼ckgeliefert
      * 
      * @param data Ein Text mit beliebig vielen Downloadlinks dieses Anbieters 
      * @return Ein Vector mit den gefundenen Downloadlinks

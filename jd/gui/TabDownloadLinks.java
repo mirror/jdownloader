@@ -1,4 +1,4 @@
-package jd.gui;
+ï»¿package jd.gui;
 
 import java.util.Vector;
 
@@ -9,7 +9,7 @@ import javax.swing.table.AbstractTableModel;
 
 import jd.plugins.DownloadLink;
 /**
- * Diese Tabelle zeigt alle zur Verfügung stehenden Downloads an.
+ * Diese Tabelle zeigt alle zur VerfÃ¼gung stehenden Downloads an.
  * 
  * @author astaldo
  */
@@ -19,7 +19,7 @@ public class TabDownloadLinks extends JPanel{
      */
     private static final long serialVersionUID = 3033753799006526304L;
     /**
-     * Dieser Vector enthält alle Downloadlinks
+     * Dieser Vector enthÃ¤lt alle Downloadlinks
      */
     private JTable table;
     private Vector<DownloadLink> allLinks = new Vector<DownloadLink>();
@@ -32,9 +32,9 @@ public class TabDownloadLinks extends JPanel{
         table.setModel(new InternalTableModel());
     }
     /**
-     * Hier werden Links zu dieser Tabelle hinzugefügt.
+     * Hier werden Links zu dieser Tabelle hinzugefÃ¼gt.
      * 
-     * @param links Ein Vector mit Downloadlinks, die alle hinzugefügt werden sollen
+     * @param links Ein Vector mit Downloadlinks, die alle hinzugefÃ¼gt werden sollen
      */
     public void addLinks(Vector<DownloadLink> links){
         allLinks.addAll(links);
@@ -44,7 +44,7 @@ public class TabDownloadLinks extends JPanel{
         table.tableChanged(new TableModelEvent(table.getModel()));
     }
     /**
-     * Dieses TableModel sorgt dafür, daß die Daten der Downloadlinks korrekt dargestellt werden
+     * Dieses TableModel sorgt dafÃ¼r, daÃŸ die Daten der Downloadlinks korrekt dargestellt werden
      * 
      * @author astaldo
      */

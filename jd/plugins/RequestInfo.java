@@ -1,4 +1,4 @@
-package jd.plugins;
+﻿package jd.plugins;
 
 public class RequestInfo {
     /**
@@ -10,7 +10,7 @@ public class RequestInfo {
      */
     private String location = null;
     /**
-     * Die zur�ckgelieferten Header
+     * Die zurückgelieferten Header
      */
     private String headers  = null;
     

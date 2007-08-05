@@ -1,4 +1,4 @@
-package jd.gui;
+ï»¿package jd.gui;
 
 import java.awt.BorderLayout;
 import java.awt.Component;
@@ -26,7 +26,7 @@ public class TabPluginActivity extends JPanel implements PluginListener{
      */
     private static final long serialVersionUID = -8537543161116653345L;
     /**
-     * Die Tabelle für die Pluginaktivitäten
+     * Die Tabelle fÃ¼r die PluginaktivitÃ¤ten
      */
     private JTable table;
     /**
@@ -54,7 +54,7 @@ public class TabPluginActivity extends JPanel implements PluginListener{
                 break;
             }
         }
-        // Falls nicht, muß ein beschreibendes Objekt neu angelegt werden
+        // Falls nicht, muÃŸ ein beschreibendes Objekt neu angelegt werden
         if(pluginProgress == null){
             pluginProgress = new PluginProgress(event.getSource());
             pluginProgresses.add(pluginProgress);
@@ -83,11 +83,11 @@ public class TabPluginActivity extends JPanel implements PluginListener{
          */
         private static final long serialVersionUID = 8135707376690458846L;
         /**
-         * Bezeichnung der Spalte für den Pluginnamen
+         * Bezeichnung der Spalte fÃ¼r den Pluginnamen
          */
         private String labelColumnName     = Utilities.getResourceString("label.tab.plugin_activity.column_plugin");
         /**
-         * Bezeichnung der Spalte für die Fortschrittsanzeige
+         * Bezeichnung der Spalte fÃ¼r die Fortschrittsanzeige
          */
         private String labelColumnProgress = Utilities.getResourceString("label.tab.plugin_activity.column_progress");
         
@@ -122,13 +122,13 @@ public class TabPluginActivity extends JPanel implements PluginListener{
         }        
     }
     /**
-     * Diese Klasse sorgt lediglich dafür, die Informationen zum Fortschritt eines Plugin festzuhalten 
+     * Diese Klasse sorgt lediglich dafÃ¼r, die Informationen zum Fortschritt eines Plugin festzuhalten 
      * 
      * @author astaldo
      */
     private class PluginProgress{
         /**
-         * Das Plugin, für das die Informationen gelten
+         * Das Plugin, fÃ¼r das die Informationen gelten
          */
         private Plugin       plugin;
         /**
@@ -158,7 +158,7 @@ public class TabPluginActivity extends JPanel implements PluginListener{
             this.progressBar.setMaximum(maximum);
         }
         /**
-         * Erhöht die Fortschrittsanzeige um eins
+         * ErhÃ¶ht die Fortschrittsanzeige um eins
          */
         public void increaseValue(){
             this.value++;

@@ -1,4 +1,4 @@
-package jd.plugins.decrypt;
+ï»¿package jd.plugins.decrypt;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
@@ -22,7 +22,7 @@ public class Stealth extends PluginForDecrypt{
     private String addressForPopupPost="http://stealth.to/get1.php?id=%s&h=%s";
     private Pattern patternSupported = Pattern.compile("http://stealth.to/\\?id[^\\s\"]*");
     /**
-     * Dieses Pattern erkennt einen Parameter für eine Downloadadress
+     * Dieses Pattern erkennt einen Parameter fÃ¼r eine Downloadadress
      * 
      * popup *\( *\"([0-9]*)\" *, *\"([0-9]*)\" *\)
      */
@@ -41,7 +41,7 @@ public class Stealth extends PluginForDecrypt{
         Vector<String> decryptedLinks = new Vector<String>();
 
         int countHits=0;
-        //Zählen aller verfügbaren Treffer
+        //ZÃ¤hlen aller verfÃ¼gbaren Treffer
         for(int i=0;i<cryptedLinks.size();i++){
             try {
                 URL url = new URL(cryptedLinks.elementAt(i));
@@ -53,7 +53,7 @@ public class Stealth extends PluginForDecrypt{
 
         }
         firePluginEvent(new PluginEvent(this,PluginEvent.PLUGIN_PROGRESS_MAX,countHits));
-        //Hier werden alle verschlüsselten Links behandelt
+        //Hier werden alle verschlÃ¼sselten Links behandelt
         for(int i=0;i<cryptedLinks.size();i++){
             try {
                 URL url = new URL(cryptedLinks.elementAt(i));
