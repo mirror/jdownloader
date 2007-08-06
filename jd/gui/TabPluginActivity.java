@@ -62,7 +62,7 @@ public class TabPluginActivity extends JPanel implements PluginListener{
         //Hier werden die Ereignisse interpretiert
         switch(event.getEventID()){
             case PluginEvent.PLUGIN_PROGRESS_MAX:
-                pluginProgress.setMaximum((Integer)event.getParameter());
+                pluginProgress.setMaximum((Integer)event.getParameter1());
                 break;
             case PluginEvent.PLUGIN_PROGRESS_INCREASE:
                 pluginProgress.increaseValue();

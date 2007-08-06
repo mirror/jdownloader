@@ -6,16 +6,20 @@
  */
 public class PluginStep {
     
-    public final static long WAIT_TIME = 1l << 1;
-    public final static long CAPTCHA   = 1l << 2;
-    public final static long DOWNLOAD  = 1l << 3;
-    public final static long DECRYPT   = 1l << 4;
+    public final static int WAIT_TIME = 1 << 1;
+    public final static int CAPTCHA   = 1 << 2;
+    public final static int DOWNLOAD  = 1 << 3;
+    public final static int DECRYPT   = 1 << 4;
     
-    private long   step;
+    private int   step;
     private Object parameter;
     
-    public PluginStep (long step, Object parameter){
+    public PluginStep (int step, Object parameter){
         this.step      = step;
         this.parameter = parameter;
     }
+
+    public int getStep()                       { return step;                }
+    public Object getParameter()               { return parameter;           }
+    public void setParameter(Object parameter) { this.parameter = parameter; }
 }

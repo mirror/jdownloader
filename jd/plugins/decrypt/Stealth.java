@@ -84,7 +84,7 @@ public class Stealth extends PluginForDecrypt{
         return decryptedLinks;
     }
     @Override
-    public PluginStep getNextStep() {
+    public PluginStep getNextStep(Object parameter) {
         return currentStep;
     }    
     

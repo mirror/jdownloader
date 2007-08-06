@@ -76,10 +76,11 @@ public abstract class Plugin{
     public abstract boolean              isClipboardEnabled();
     /**
      * Diese Methode liefert den nächsten Schritt zurück, den das Plugin vornehmen wird
+     * @param parameter TODO
      * 
      * @return der nächste Schritt
      */
-    public abstract PluginStep           getNextStep();
+    public abstract PluginStep           getNextStep(Object parameter);
     /**
      * Hiermit wird der Eventmechanismus realisiert. Alle hier eingetragenen Listener
      * werden benachrichtigt, wenn mittels {@link #firePluginEvent(PluginEvent)} ein
@@ -280,21 +281,28 @@ public abstract class Plugin{
      * @param fileOutput Ausgabedatei
      * @return wahr, wenn alle Daten ausgelesen und gespeichert wurden
      */
-    public boolean saveByteFile(InputStream is, File fileOutput)
+    protected boolean download(DownloadLink downloadLink)
     {
+        File fileOutput = downloadLink.getFileOutput();
+        int downloadedBytes=0;
         try{
             byte buffer[] = new byte[READ_BUFFER];
             int count;
+            InputStream is = downloadLink.getUrlConnection().getInputStream();
             FileOutputStream fos = new FileOutputStream(fileOutput);
             do{
                 count = is.read(buffer);
                 if (count != -1){
                     fos.write(buffer, 0, count);
+                    downloadedBytes +=READ_BUFFER;
+                    downloadLink.getProgressBar().setValue(downloadedBytes);
+                    firePluginEvent(new PluginEvent(this,PluginEvent.PLUGIN_DATA_CHANGED,null));
                 }   
             }
             while (count != -1); // Muss -1 sein und nicht buffer.length da durch 
                                 //  eine langsame Internetverbindung der Puffer nicht immer komplett gefüllt ist            
             fos.close();
+            firePluginEvent(new PluginEvent(this,PluginEvent.PLUGIN_PROGRESS_FINISH,null));
             return true;
         }
         catch (FileNotFoundException e){

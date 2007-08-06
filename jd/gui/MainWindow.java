@@ -32,11 +32,10 @@ import jd.plugins.DownloadLink;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
-import jd.plugins.event.PluginEvent;
-import jd.plugins.event.PluginListener;
+import jd.plugins.PluginStep;
 import sun.misc.Service;
 
-public class MainWindow extends JFrame implements PluginListener, ClipboardOwner{
+public class MainWindow extends JFrame implements ClipboardOwner{
    
     /**
      * serialVersionUID
@@ -76,8 +75,7 @@ public class MainWindow extends JFrame implements PluginListener, ClipboardOwner
      * TabbedPane
      */
     private JTabbedPane       tabbedPane               = new JTabbedPane();
-    private JButton start;
-    
+    private JDAction actionStartDownload = new JDAction("start","start",JDAction.APP_START_NEXT_DOWNLOAD);
     private JDAction actionMoveUp = new JDAction("up","move_up",JDAction.ITEMS_MOVE_UP);
     /**
      * Das Hauptfenster wird erstellt
@@ -100,8 +98,8 @@ public class MainWindow extends JFrame implements PluginListener, ClipboardOwner
         tabPluginActivity = new TabPluginActivity();
         tabbedPane.addTab(Utilities.getResourceString("label.tab.download"),        tabDownloadTable);
         tabbedPane.addTab(Utilities.getResourceString("label.tab.plugin_activity"), tabPluginActivity);
-        
-        start = new JButton(Utilities.getImage("start")); 
+
+        JButton start = new JButton(actionStartDownload);
         start.setFocusPainted(false);start.setBorderPainted(false);
         
         toolBar.setFloatable(false);
@@ -151,7 +149,6 @@ public class MainWindow extends JFrame implements PluginListener, ClipboardOwner
         {
             PluginForDecrypt p = (PluginForDecrypt) iterator.next();
             pluginsForDecrypt.add(p);
-            p.addPluginListener(this);
             p.addPluginListener(tabPluginActivity);
             logger.info("Decrypt-Plugin:"+p.getPluginName());
         }
@@ -162,25 +159,26 @@ public class MainWindow extends JFrame implements PluginListener, ClipboardOwner
         {
             PluginForHost p = (PluginForHost) iterator.next();
             pluginsForHost.add(p);
-            p.addPluginListener(this);
-            p.addPluginListener(tabPluginActivity);
+            p.addPluginListener(tabDownloadTable);
             logger.info("Host-Plugin:"+p.getPluginName());
         }
     }
-    /**
-     * Reagiert auf Pluginevents
-     */
-    public void pluginEvent(PluginEvent event) {
-    }
-    public void doAction(JDAction action){
-        switch(action.getActionID()){
+    public void doAction(int actionID){
+        switch(actionID){
             case JDAction.ITEMS_MOVE_UP:
             case JDAction.ITEMS_MOVE_DOWN:
             case JDAction.ITEMS_MOVE_TOP:
             case JDAction.ITEMS_MOVE_BOTTOM:
                 if(tabbedPane.getSelectedComponent() == tabDownloadTable){
-                    tabDownloadTable.moveItems(action.getActionID());
+                    tabDownloadTable.moveItems(actionID);
                 }
+                break;
+            case JDAction.APP_START_NEXT_DOWNLOAD:
+                DownloadLink downloadLink = tabDownloadTable.getNextDownloadLink();
+                if (downloadLink != null)
+                    new StartDownload(downloadLink).start();
+                else
+                    logger.severe("error.no_download");
                 break;
         }
         
@@ -234,7 +232,7 @@ public class MainWindow extends JFrame implements PluginListener, ClipboardOwner
             this.actionID = actionID;
         }
         public void actionPerformed(ActionEvent e) {
-            doAction((JDAction)e.getSource());
+            doAction(actionID);
         }
         public int getActionID(){
             return actionID;
@@ -301,5 +299,36 @@ public class MainWindow extends JFrame implements PluginListener, ClipboardOwner
             }
         }
     }
-    
+    /**
+     * In dieser Klasse wird der Download parallel zum Hauptthread gestartet
+     * 
+     * @author astaldo
+     */
+    private class StartDownload extends Thread{
+        /**
+         * Der DownloadLink
+         */
+        DownloadLink downloadLink;
+        
+        public StartDownload(DownloadLink downloadLink){
+            this.downloadLink = downloadLink;
+        }
+        public void run(){
+            Plugin plugin   = downloadLink.getPlugin();
+            PluginStep step = plugin.getNextStep(downloadLink);
+            while(step != null){
+                switch(step.getStep()){
+                    case PluginStep.WAIT_TIME:
+                        try {
+                            Thread.sleep((Long)step.getParameter());
+                        }
+                        catch (InterruptedException e) { e.printStackTrace(); }
+                        break;
+                        
+                }
+                step = plugin.getNextStep(downloadLink);
+            }
+             
+        }
+    }
 }

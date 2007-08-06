@@ -1,8 +1,13 @@
 ﻿package jd.plugins.host;
 
+import java.io.File;
+import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.net.URLConnection;
 import java.util.regex.Pattern;
 
+import jd.plugins.DownloadLink;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginStep;
 
@@ -29,8 +34,28 @@ public class Rapidshare extends PluginForHost{
         return null;
     }
     @Override
-    public PluginStep getNextStep() {
-        return currentStep;
+    public PluginStep getNextStep(Object parameter) {
+        //
+        // Nur ein Test
+        //
+        DownloadLink downloadLink = (DownloadLink)parameter;
+        try {
+            downloadLink.setFileOutput(new File("D:/test.pdf"));
+            downloadLink.setUrlConnection(new URL("http://www.mediamarkt.de/multimedia-prospekt/mm_flyer_kw3207.pdf").openConnection());
+        }
+        catch (MalformedURLException e) { }
+        catch (IOException e)           { }
+        
+        doDownload(downloadLink);
+        
+        currentStep.setParameter(new Long(40));
+        return null;
     }
-
+    private void doDownload(DownloadLink downloadLink){
+        URLConnection urlConnection = downloadLink.getUrlConnection();
+        int length = urlConnection.getContentLength();
+        File fileOutput = downloadLink.getFileOutput();
+        downloadLink.getProgressBar().setMaximum(length);
+        download(downloadLink);
+    } 
 }

@@ -12,8 +12,10 @@ public class PluginEvent extends AWTEvent{
 
     public static final int PLUGIN_PROGRESS_MAX          = 1;
     public static final int PLUGIN_PROGRESS_INCREASE     = 2;
-    public static final int PLUGIN_PROGRESS_FINISH       = 3;
-    public static final int PLUGIN_CRYPT_LINKS_DECRYPTED = 4;
+    public static final int PLUGIN_PROGRESS_VALUE        = 3;
+    public static final int PLUGIN_PROGRESS_FINISH       = 4;
+    public static final int PLUGIN_CRYPT_LINKS_DECRYPTED = 5;
+    public static final int PLUGIN_DATA_CHANGED          = 6;
     
     private Plugin source;
     private int    eventID;
@@ -25,7 +27,7 @@ public class PluginEvent extends AWTEvent{
         this.eventID = eventID;
         this.parameter = parameter;
     }
-    public int getEventID()      { return eventID;   }
-    public Plugin getSource()    { return source;    }
-    public Object getParameter() { return parameter; }
+    public int getEventID()       { return eventID;   }
+    public Plugin getSource()     { return source;    }
+    public Object getParameter1() { return parameter; }
 }

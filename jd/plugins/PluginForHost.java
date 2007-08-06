@@ -19,7 +19,7 @@ public abstract class PluginForHost extends Plugin{
         if(hits != null && hits.size()>0){
             links = new Vector<DownloadLink>();
             for(int i=0;i<hits.size();i++){
-                links.add(new DownloadLink(this,hits.elementAt(i),getHost()));
+                links.add(new DownloadLink(this,hits.elementAt(i),getHost(), true));
             }
         }
         return links;
