@@ -8,6 +8,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
 import jd.plugins.event.PluginEvent;
 /**
@@ -28,7 +29,11 @@ public class Stealth extends PluginForDecrypt{
      */
     private Pattern patternLinkParameter = Pattern.compile("popup *\\( *\\\"([0-9]*)\\\" *, *\\\"([0-9]*)\\\" *\\)");
     
-    public Stealth()                                  { super();                 }
+    public Stealth(){ 
+        super();    
+        steps.add(new PluginStep(PluginStep.DECRYPT, null));
+        currentStep = steps.firstElement();
+    }
     @Override public String getCoder()                { return "Astaldo";        }
     @Override public String getPluginName()           { return host;             }
     @Override public Pattern getSupportedLinks()      { return patternSupported; }
@@ -70,11 +75,17 @@ public class Stealth extends PluginForDecrypt{
                         System.out.println(requestInfo.getLocation());
                     }
                 }
+                firePluginEvent(new PluginEvent(this,PluginEvent.PLUGIN_PROGRESS_FINISH,null));
+                currentStep = null;
             }
             catch (MalformedURLException e) { e.printStackTrace(); }
             catch (IOException e)           { e.printStackTrace(); }
         }
-        firePluginEvent(new PluginEvent(this,PluginEvent.PLUGIN_PROGRESS_FINISH,null));
         return decryptedLinks;
+    }
+    @Override
+    public PluginStep getNextStep() {
+        return currentStep;
     }    
+    
 }

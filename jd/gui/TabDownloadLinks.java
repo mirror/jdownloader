@@ -1,12 +1,15 @@
 ﻿package jd.gui;
 
+import java.awt.BorderLayout;
 import java.util.Vector;
 
 import javax.swing.JPanel;
+import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.event.TableModelEvent;
 import javax.swing.table.AbstractTableModel;
 
+import jd.gui.MainWindow.JDAction;
 import jd.plugins.DownloadLink;
 /**
  * Diese Tabelle zeigt alle zur Verfügung stehenden Downloads an.
@@ -19,17 +22,26 @@ public class TabDownloadLinks extends JPanel{
      */
     private static final long serialVersionUID = 3033753799006526304L;
     /**
+     * Diese Tabelle enthält die eigentlichen DownloadLinks
+     */
+    private JTable             table;
+    /**
+     * Das interen TableModel, um die Daten anzuzeigen
+     */
+    private InternalTableModel internalTableModel = new InternalTableModel();
+    /**
      * Dieser Vector enthält alle Downloadlinks
      */
-    private JTable table;
     private Vector<DownloadLink> allLinks = new Vector<DownloadLink>();
     /**
      * Erstellt eine neue Tabelle
      */
     public TabDownloadLinks(){
-        super();
+        super(new BorderLayout());
         table = new JTable();
-        table.setModel(new InternalTableModel());
+        table.setModel(internalTableModel);
+        JScrollPane scrollPane = new JScrollPane(table);
+        add(scrollPane);
     }
     /**
      * Hier werden Links zu dieser Tabelle hinzugefügt.
@@ -38,7 +50,19 @@ public class TabDownloadLinks extends JPanel{
      */
     public void addLinks(Vector<DownloadLink> links){
         allLinks.addAll(links);
-        table.tableChanged(new TableModelEvent(table.getModel()));
+        fireTableChanged();
+    }
+    /**
+     * Hiermit werden die selektierten Zeilen innerhalb der Tabelle verschoben
+     * 
+     * @param direction Zeigt wie/wohin die Einträge verschoben werden sollen
+     */
+    public void moveItems(int direction){
+        int rows[] = table.getSelectedRows();
+        switch(direction){
+            case JDAction.ITEMS_MOVE_TOP:
+                break;
+        }
     }
     public void fireTableChanged(){
         table.tableChanged(new TableModelEvent(table.getModel()));
@@ -72,10 +96,8 @@ public class TabDownloadLinks extends JPanel{
         public Object getValueAt(int rowIndex, int columnIndex) {
             if(rowIndex< allLinks.size()){
                 switch(columnIndex){
-                    case 0:
-                        return allLinks.elementAt(rowIndex).getName();
-                    case 1:
-                        return allLinks.elementAt(rowIndex).getHost();
+                    case 0: return allLinks.elementAt(rowIndex).getName();
+                    case 1: return allLinks.elementAt(rowIndex).getHost();
                 }
             }
             return null;

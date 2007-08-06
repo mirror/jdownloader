@@ -1,6 +1,5 @@
 ﻿package jd.gui;
 
-import java.awt.BorderLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Toolkit;
@@ -10,22 +9,22 @@ import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.StringSelection;
 import java.awt.datatransfer.Transferable;
 import java.awt.datatransfer.UnsupportedFlavorException;
+import java.awt.event.ActionEvent;
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Method;
 import java.net.URL;
 import java.net.URLClassLoader;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Vector;
 import java.util.logging.Logger;
 
+import javax.swing.AbstractAction;
+import javax.swing.Action;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JMenuBar;
-import javax.swing.JPanel;
-import javax.swing.JScrollPane;
 import javax.swing.JTabbedPane;
 import javax.swing.JToolBar;
 
@@ -54,14 +53,6 @@ public class MainWindow extends JFrame implements PluginListener, ClipboardOwner
      */
     private JToolBar          toolBar           = new JToolBar();
     /**
-     * Tabelle mit den Downloadlinks
-     */
-    private TabDownloadLinks downloadLinks      = new TabDownloadLinks();
-    /**
-     * Scrollkomponente für die Tabelle
-     */
-    private JScrollPane       scrollPane        = new JScrollPane(downloadLinks);
-    /**
      * Hier werden alle vorhandenen Plugins zum Dekodieren von Links gespeichert
      */
     private Vector<PluginForDecrypt> pluginsForDecrypt = new Vector<PluginForDecrypt>();
@@ -70,23 +61,24 @@ public class MainWindow extends JFrame implements PluginListener, ClipboardOwner
      */
     private Vector<PluginForHost>    pluginsForHost    = new Vector<PluginForHost>();
     /**
-     * Alle verfügbaren Bilder werden hier gespeichert
-     */
-    private HashMap<String, ImageIcon> images = new HashMap<String, ImageIcon>();
-    /**
      * Logger für Meldungen des Programmes
      */
     private Logger            logger = Plugin.getLogger();
     /**
+     * Komponente, die alle Downloads anzeigt
+     */
+    private TabDownloadLinks  tabDownloadTable;;
+    /**
      * Komponente, die den Fortschritt aller Plugins anzeigt
      */
-    private TabPluginActivity tabPluginActivity        = new TabPluginActivity();
+    private TabPluginActivity tabPluginActivity;
     /**
      * TabbedPane
      */
     private JTabbedPane       tabbedPane               = new JTabbedPane();
-    private JPanel            panelForDownloadTable    = new JPanel();
     private JButton start;
+    
+    private JDAction actionMoveUp = new JDAction("up","move_up",JDAction.ITEMS_MOVE_UP);
     /**
      * Das Hauptfenster wird erstellt
      */
@@ -103,14 +95,13 @@ public class MainWindow extends JFrame implements PluginListener, ClipboardOwner
      * Hier wird die komplette Oberfläche der Applikation zusammengestrickt 
      */
     private void buildUI(){
-        tabbedPane = new JTabbedPane();
-        panelForDownloadTable = new JPanel(new BorderLayout());
-        panelForDownloadTable.add(scrollPane);
-        
-        tabbedPane.addTab(Utilities.getResourceString("label.tab.download"),        panelForDownloadTable);
+        tabbedPane        = new JTabbedPane();
+        tabDownloadTable  = new TabDownloadLinks();
+        tabPluginActivity = new TabPluginActivity();
+        tabbedPane.addTab(Utilities.getResourceString("label.tab.download"),        tabDownloadTable);
         tabbedPane.addTab(Utilities.getResourceString("label.tab.plugin_activity"), tabPluginActivity);
         
-        start = new JButton(images.get("start")); 
+        start = new JButton(Utilities.getImage("start")); 
         start.setFocusPainted(false);start.setBorderPainted(false);
         
         toolBar.setFloatable(false);
@@ -127,7 +118,8 @@ public class MainWindow extends JFrame implements PluginListener, ClipboardOwner
     private void loadImages(){
         ClassLoader cl = getClass().getClassLoader();
         Toolkit toolkit = Toolkit.getDefaultToolkit();
-        images.put("start", new ImageIcon(toolkit.getImage(cl.getResource("GIF/start.gif"))));
+        Utilities.addImage("start",   new ImageIcon(toolkit.getImage(cl.getResource("GIF/start.gif"))));
+        Utilities.addImage("move_up", new ImageIcon(toolkit.getImage(cl.getResource("GIF/start.gif"))));
     }
     /**
      * Hier werden alle Plugins im aktuellen Verzeichnis geparsed (und im Classpath)
@@ -180,6 +172,19 @@ public class MainWindow extends JFrame implements PluginListener, ClipboardOwner
      */
     public void pluginEvent(PluginEvent event) {
     }
+    public void doAction(JDAction action){
+        switch(action.getActionID()){
+            case JDAction.ITEMS_MOVE_UP:
+            case JDAction.ITEMS_MOVE_DOWN:
+            case JDAction.ITEMS_MOVE_TOP:
+            case JDAction.ITEMS_MOVE_BOTTOM:
+                if(tabbedPane.getSelectedComponent() == tabDownloadTable){
+                    tabDownloadTable.moveItems(action.getActionID());
+                }
+                break;
+        }
+        
+    }
     public void lostOwnership(Clipboard clipboard, Transferable contents) {
         new ClipboardHandler().start();
     }
@@ -203,7 +208,38 @@ public class MainWindow extends JFrame implements PluginListener, ClipboardOwner
             }
         }
     }
+    public class JDAction extends AbstractAction{
+        /**
+         * serialVersionUID
+         */
+        private static final long serialVersionUID = 7393495345332708426L;
 
+        public static final int ITEMS_MOVE_UP           = 1;
+        public static final int ITEMS_MOVE_DOWN         = 2;
+        public static final int ITEMS_MOVE_TOP          = 3;
+        public static final int ITEMS_MOVE_BOTTOM       = 4;
+        public static final int ITEMS_DISABLE           = 5;
+        public static final int ITEMS_ENABLE            = 6;
+        public static final int APP_START_NEXT_DOWNLOAD = 7;
+        public static final int APP_SHOW_LOG            = 8;
+        public static final int APP_STOP_DOWNLOADS      = 9;
+        
+        private int actionID;
+        
+        public JDAction(String actionName, String iconName, int actionID){
+            super();
+            ImageIcon icon = Utilities.getImage(iconName);
+            putValue(Action.NAME, actionName);
+            putValue(Action.SMALL_ICON, icon);
+            this.actionID = actionID;
+        }
+        public void actionPerformed(ActionEvent e) {
+            doAction((JDAction)e.getSource());
+        }
+        public int getActionID(){
+            return actionID;
+        }
+    }
     /**
      * Diese Klasse läuft in einem Thread und verteilt den Inhalt der Zwischenablage an (unter Umständen auch mehrere) Plugins
      * Die gefundenen Treffer werden ausgeschnitten.
@@ -261,9 +297,9 @@ public class MainWindow extends JFrame implements PluginListener, ClipboardOwner
             }
 
             if(links!=null && links.size()>0){
-                downloadLinks.addLinks(links);
-                downloadLinks.fireTableChanged();
+                tabDownloadTable.addLinks(links);
             }
         }
     }
+    
 }

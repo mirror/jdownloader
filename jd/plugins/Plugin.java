@@ -75,11 +75,25 @@ public abstract class Plugin{
      */
     public abstract boolean              isClipboardEnabled();
     /**
+     * Diese Methode liefert den nächsten Schritt zurück, den das Plugin vornehmen wird
+     * 
+     * @return der nächste Schritt
+     */
+    public abstract PluginStep           getNextStep();
+    /**
      * Hiermit wird der Eventmechanismus realisiert. Alle hier eingetragenen Listener
      * werden benachrichtigt, wenn mittels {@link #firePluginEvent(PluginEvent)} ein
      * Event losgeschickt wird.
      */
     public Vector<PluginListener> pluginListener=null;
+    /**
+     * Hier werden alle notwendigen Schritte des Plugins hinterlegt
+     */
+    protected Vector<PluginStep> steps;
+    /**
+     * Enthält den aktuellen Schritt des Plugins
+     */
+    protected PluginStep currentStep;
     /**
      * Ein Logger, um Meldungen darzustellen
      */
@@ -87,6 +101,7 @@ public abstract class Plugin{
     
     protected Plugin(){
         pluginListener = new Vector<PluginListener>();
+        steps = new Vector<PluginStep>();
     }
     /**
      * Liefert die Klasse zurück, mit der Nachrichten ausgegeben werden können
