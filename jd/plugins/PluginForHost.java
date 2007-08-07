@@ -15,11 +15,17 @@ public abstract class PluginForHost extends Plugin{
      */
     public Vector<DownloadLink> getDownloadLinks(String data){
         Vector<DownloadLink> links=null;
-        Vector<String> hits = getMatches(data);
+        Vector<String> hits = getMatches(data, getSupportedLinks());
         if(hits != null && hits.size()>0){
             links = new Vector<DownloadLink>();
             for(int i=0;i<hits.size();i++){
-                links.add(new DownloadLink(this,hits.elementAt(i),getHost(), true));
+                String file = hits.elementAt(i);
+                links.add(new DownloadLink(
+                        this,
+                        file.substring(file.lastIndexOf("/")+1,file.length()),
+                        getHost(),
+                        file, 
+                        true));
             }
         }
         return links;

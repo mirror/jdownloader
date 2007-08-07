@@ -94,11 +94,11 @@ public abstract class Plugin{
     /**
      * Enthält den aktuellen Schritt des Plugins
      */
-    protected PluginStep currentStep;
+    protected PluginStep currentStep = null;
     /**
      * Ein Logger, um Meldungen darzustellen
      */
-    private static Logger logger = null;
+    protected static Logger logger = null;
     
     protected Plugin(){
         pluginListener = new Vector<PluginListener>();
@@ -112,7 +112,7 @@ public abstract class Plugin{
      */
     public static Logger getLogger(){
         if (logger == null){
-            logger = Logger.getLogger(Plugin.LOGGER_NAME,"LanguagePack");
+            logger = Logger.getLogger(Plugin.LOGGER_NAME);
             Formatter formatter = new LogFormatter();
             logger.setUseParentHandlers(false);
 
@@ -143,14 +143,32 @@ public abstract class Plugin{
         return false;
     }
     /**
+     * Findet ein einzelnes Vorkommen und liefert den vollständigen Treffer oder eine Untergruppe zurück
+     * 
+     * @param data Der zu durchsuchende Text
+     * @param pattern Das Muster, nach dem gesucht werden soll
+     * @param group Die Gruppe, die zurückgegeben werden soll. 0 ist der vollständige Treffer.
+     * @return Der Treffer
+     */
+    public String getFirstMatch(String data, Pattern pattern, int group){
+        String hit = null;
+        if(pattern!=null){
+            Matcher matcher = pattern.matcher(data);
+            if(matcher.find()){
+                hit = matcher.group(group);
+            }
+        }
+        return hit;
+    }
+    /**
      * Diese Methode findet alle Vorkommnisse des Pluginpatterns in dem Text, und gibt die Treffer als Vector zurück
      * 
      * @param data Der zu durchsuchende Text
+     * @param pattern Das Muster, nach dem gesucht werden soll
      * @return Alle Treffer in dem Text
      */
-    public Vector<String> getMatches(String data){
+    public Vector<String> getMatches(String data, Pattern pattern){
         Vector<String> hits = null;
-        Pattern pattern = getSupportedLinks();
         if(pattern!=null){
             Matcher matcher = pattern.matcher(data);
             if(matcher.find()){
@@ -270,8 +288,9 @@ public abstract class Plugin{
             htmlCode.append(line);
         }
         String location = urlInput.getHeaderField("location");
+        String cookie   = urlInput.getHeaderField("Cookie");
         rd.close();
-        RequestInfo requestInfo = new RequestInfo(htmlCode.toString(),location,null);
+        RequestInfo requestInfo = new RequestInfo(htmlCode.toString(),location,cookie,null);
         return requestInfo;
     }
     /**
@@ -288,7 +307,7 @@ public abstract class Plugin{
         try{
             byte buffer[] = new byte[READ_BUFFER];
             int count;
-            InputStream is = downloadLink.getUrlConnection().getInputStream();
+            InputStream is = downloadLink.getUrlDownload().openConnection().getInputStream();
             FileOutputStream fos = new FileOutputStream(fileOutput);
             do{
                 count = is.read(buffer);
@@ -306,13 +325,13 @@ public abstract class Plugin{
             return true;
         }
         catch (FileNotFoundException e){
-            logger.severe("Der Pfad dieser Datei ist ungültig."+e.getLocalizedMessage());
+            logger.severe("fileDescription is wrong. "+e.getLocalizedMessage());
         }
         catch (SecurityException e){
-            logger.severe("Keine Schreibrechte."+e.getLocalizedMessage());
+            logger.severe("not enough rights to write the file. "+e.getLocalizedMessage());
         }
         catch (IOException e){
-            logger.severe("Fehler beim Schreiben in die Datei."+e.getLocalizedMessage());
+            logger.severe("error occurred while writing to file. "+e.getLocalizedMessage());
         }
         return false;
     }

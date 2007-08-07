@@ -13,6 +13,7 @@ import java.awt.event.ActionEvent;
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Method;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.Iterator;
@@ -193,6 +194,15 @@ public class MainWindow extends JFrame implements ClipboardOwner{
             logger.info("Host-Plugin:"+p.getPluginName());
         }
     }
+    private String getCaptcha(String captchaAdress){
+        String captchaText=null;
+        try {
+            URL imageURL = new URL(captchaAdress);
+            
+        }
+        catch (MalformedURLException e) { e.printStackTrace(); }
+        return captchaText;
+    }
     public void doAction(int actionID){
         switch(actionID){
             case JDAction.ITEMS_MOVE_UP:
@@ -208,7 +218,7 @@ public class MainWindow extends JFrame implements ClipboardOwner{
                 if (downloadLink != null)
                     new StartDownload(downloadLink).start();
                 else
-                    logger.severe("error.no_download");
+                    logger.severe("no download in Queue (getNextDownloadLink() == null).");
                 break;
         }
         
@@ -303,7 +313,7 @@ public class MainWindow extends JFrame implements ClipboardOwner{
             for(int i=0; i<pluginsForDecrypt.size();i++){
                 pDecrypt = pluginsForDecrypt.elementAt(i);
                 if(pDecrypt.isClipboardEnabled() && pDecrypt.canHandle(data)){
-                    cryptedLinks.addAll(pDecrypt.getMatches(data));
+                    cryptedLinks.addAll(pDecrypt.getMatches(data,pDecrypt.getSupportedLinks()));
                     data = pDecrypt.cutMatches(data);
                     decryptedLinks.addAll(pDecrypt.decryptLinks(cryptedLinks));
                 }
@@ -356,15 +366,17 @@ public class MainWindow extends JFrame implements ClipboardOwner{
                 switch(step.getStep()){
                     case PluginStep.WAIT_TIME:
                         try {
+                            System.out.println("sleep startet");
                             Thread.sleep((Long)step.getParameter());
+                            System.out.println("sleep fertig");
                         }
                         catch (InterruptedException e) { e.printStackTrace(); }
                         break;
-                        
+                    case PluginStep.CAPTCHA:
+                        String captchaText = getCaptcha((String)step.getParameter());
                 }
                 step = plugin.getNextStep(downloadLink);
             }
-             
         }
     }
 }

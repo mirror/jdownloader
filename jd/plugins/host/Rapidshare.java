@@ -10,11 +10,24 @@ import java.util.regex.Pattern;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginStep;
+import jd.plugins.RequestInfo;
 
 public class Rapidshare extends PluginForHost{
     private String  host    = "rapidshare.com";
     private String  version = "1.0.0.0";
     private Pattern patternSupported = Pattern.compile("http://rapidshare\\.com/files[^\\s\"]*");
+    /**
+     * Das findet die ZielURL für den Post
+     */
+    private Pattern patternForNewHost = Pattern.compile("<form *name *= *\"dl\" *action *= *\"([^\\n\"]*)\"");
+    /**
+     * Das findet die Captcha URL
+     * <form *name *= *"dl" (?s).*<img *src *= *"([^\n"]*)">
+     */
+    private Pattern patternForCaptcha = Pattern.compile("<form *name *= *\"dl\" (?s).*<img *src *= *\"([^\\n\"]*)\">");
+    
+    private int waitTime = 5000;
+    private String captchaAddress=null;
     
     @Override public String getCoder()            { return "astaldo";        }
     @Override public String getHost()             { return host;             }
@@ -27,7 +40,6 @@ public class Rapidshare extends PluginForHost{
         steps.add(new PluginStep(PluginStep.WAIT_TIME, null));
         steps.add(new PluginStep(PluginStep.CAPTCHA,  null));
         steps.add(new PluginStep(PluginStep.DOWNLOAD, null));
-        currentStep = steps.firstElement();
     }
     @Override
     public URLConnection getURLConnection() {
@@ -35,27 +47,46 @@ public class Rapidshare extends PluginForHost{
     }
     @Override
     public PluginStep getNextStep(Object parameter) {
-        //
-        // Nur ein Test
-        //
         DownloadLink downloadLink = (DownloadLink)parameter;
-        try {
-            downloadLink.setFileOutput(new File("D:/test.pdf"));
-            downloadLink.setUrlConnection(new URL("http://www.mediamarkt.de/multimedia-prospekt/mm_flyer_kw3207.pdf").openConnection());
+        RequestInfo requestInfo;
+        PluginStep toDo=null;
+        if(currentStep == null){
+            try {
+                //Der Download wird bestätigt
+                requestInfo = getRequest(downloadLink.getUrlDownload());
+                String newURL = getFirstMatch(requestInfo.getHtmlCode(), patternForNewHost, 1);
+                
+                //Auswahl ob free oder prem
+                requestInfo = postRequest(new URL(newURL),"dl.start=free");
+                
+                // captcha Adresse finden
+                String captchaAdress = getFirstMatch(requestInfo.getHtmlCode(),patternForCaptcha,1);
+                System.out.println(captchaAdress);
+                currentStep = steps.firstElement();
+            }
+            catch (MalformedURLException e) { e.printStackTrace(); }
+            catch (IOException e)           { e.printStackTrace(); }
         }
-        catch (MalformedURLException e) { }
-        catch (IOException e)           { }
-        
-        doDownload(downloadLink);
-        
-        currentStep.setParameter(new Long(40));
-        return null;
+        int index = steps.indexOf(currentStep);
+        toDo = currentStep;
+        currentStep = steps.elementAt(index+1);
+        switch(currentStep.getStep()){
+            case PluginStep.WAIT_TIME:
+                toDo.setParameter(new Long(waitTime));
+            case PluginStep.CAPTCHA:
+                toDo.setParameter(captchaAddress);
+                
+        }
+        return toDo;
     }
     private void doDownload(DownloadLink downloadLink){
-        URLConnection urlConnection = downloadLink.getUrlConnection();
-        int length = urlConnection.getContentLength();
-        File fileOutput = downloadLink.getFileOutput();
-        downloadLink.getProgressBar().setMaximum(length);
-        download(downloadLink);
+        try {
+            URLConnection urlConnection = downloadLink.getUrlDownload().openConnection();
+            int length = urlConnection.getContentLength();
+            File fileOutput = downloadLink.getFileOutput();
+            downloadLink.getProgressBar().setMaximum(length);
+            download(downloadLink);
+        }
+        catch (IOException e) { logger.severe("URL could not be opened. "+e.toString());}
     } 
 }

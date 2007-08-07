@@ -12,6 +12,7 @@ import com.sun.java.swing.plaf.windows.WindowsLookAndFeel;
  * TODO Grundgerüst erweitern
  * TODO GUI
  * TODO Reconnect Paket
+ * TODO Konfiguration speichern
  * 
  * @author astaldo
  */

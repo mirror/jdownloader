@@ -1,7 +1,9 @@
 ﻿package jd.plugins;
 
 import java.io.File;
-import java.net.URLConnection;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.util.logging.Logger;
 
 import javax.swing.JProgressBar;
 
@@ -17,6 +19,10 @@ public class DownloadLink {
      * Beschreibung des Downloads
      */
     private String name;
+    /**
+     * Von hier soll de Download stattfinden
+     */
+    private URL urlDownload;
     /**
      * Hoster des Downloads
      */
@@ -37,20 +43,28 @@ public class DownloadLink {
      * Hierhin soll die Datei gespeichert werden.
      */
     private File fileOutput;
-    private URLConnection urlConnection;
+    /**
+     * Logger für Meldungen
+     */
+    private Logger logger = Plugin.getLogger();
     /**
      * Erzeugt einen neuen DownloadLink
      * 
      * @param plugin Das Plugins, das für diesen Download zuständig ist
      * @param name Bezeichnung des Downloads
      * @param host Anbieter, von dem dieser Download gestartet wird
+     * @param urlDownload Die Download URL
      * @param isActive Markiert diesen DownloadLink als aktiviert oder deaktiviert
      */
-    public DownloadLink(PluginForHost plugin, String name, String host, boolean isActive){
-        this.plugin = plugin;
-        this.name   = name;
-        this.host   = host;
-        this.isActive = isActive;
+    public DownloadLink(PluginForHost plugin, String name, String host, String urlDownload, boolean isActive){
+        this.plugin      = plugin;
+        this.name        = name;
+        this.host        = host;
+        this.isActive    = isActive;
+        try {
+            this.urlDownload = new URL(urlDownload);
+        }
+        catch (MalformedURLException e) {logger.severe("url malformed. "+e.toString());}
     }
     /**
      * Liefert den Namen dieses Downloads zurück
@@ -68,17 +82,17 @@ public class DownloadLink {
      * 
      * @return wahr, falls dieser DownloadLink aktiviert ist
      */
-    public boolean isActive()                  { return isActive;               }
+    public boolean isActive()                  { return isActive;                }
     /**
      * Verändert den Aktiviert-Status
      * 
      * @param isActive Soll dieser DownloadLink aktiviert sein oder nicht
      */
-    public void setActive(boolean isActive)    { this.isActive = isActive;      }
-    public Plugin getPlugin()                  { return plugin;                 }
-    public JProgressBar getProgressBar()       { return progressBar;            }
-    public File getFileOutput()                { return fileOutput;             }
-    public URLConnection getUrlConnection()    { return urlConnection;          }
-    public void setFileOutput(File fileOutput)               { this.fileOutput = fileOutput;  }
-    public void setUrlConnection(URLConnection urlConnection) { this.urlConnection = urlConnection;   }
+    public void setActive(boolean isActive)    { this.isActive = isActive;       }
+    public Plugin getPlugin()                  { return plugin;                  }
+    public JProgressBar getProgressBar()       { return progressBar;             }
+    public File getFileOutput()                { return fileOutput;              }
+    public void setFileOutput(File fileOutput) { this.fileOutput = fileOutput;   }
+    public URL getUrlDownload()                { return urlDownload;             }
+    public void setUrlDownload(URL urlDownload){ this.urlDownload = urlDownload; }
 }
