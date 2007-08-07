@@ -75,19 +75,37 @@ public class MainWindow extends JFrame implements ClipboardOwner{
      * TabbedPane
      */
     private JTabbedPane       tabbedPane               = new JTabbedPane();
-    private JDAction actionStartDownload = new JDAction("start","start",JDAction.APP_START_NEXT_DOWNLOAD);
-    private JDAction actionMoveUp = new JDAction("up","move_up",JDAction.ITEMS_MOVE_UP);
+    private JDAction actionStartDownload;
+    private JDAction actionMoveUp;
+    private JDAction actionMoveDown;
+    private JDAction actionAdd;
+    private JDAction actionDelete;
+    
     /**
      * Das Hauptfenster wird erstellt
      */
     public MainWindow(){
         loadImages();
+        initActions();
         buildUI();
         getPlugins();
         Toolkit.getDefaultToolkit().getSystemClipboard().setContents(JDOWNLOADER_ID, this);
 
         setSize(500,300);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setIconImage(Utilities.getImage("mind"));
+        setTitle("jDownloader 0.0.1");
+    }
+    /**
+     * Die Aktionen werden initialisiert
+     *
+     */
+    public void initActions(){
+        actionStartDownload = new JDAction("start",  "action.start",     JDAction.APP_START_NEXT_DOWNLOAD);
+        actionMoveUp        = new JDAction("up",     "action.move_up",   JDAction.ITEMS_MOVE_UP);
+        actionMoveDown      = new JDAction("down",   "action.move_down", JDAction.ITEMS_MOVE_DOWN);
+        actionAdd           = new JDAction("add",    "action.add",       JDAction.ITEMS_MOVE_DOWN);
+        actionDelete        = new JDAction("delete", "action.delete",    JDAction.ITEMS_MOVE_DOWN);
     }
     /**
      * Hier wird die komplette Oberfläche der Applikation zusammengestrickt 
@@ -99,16 +117,23 @@ public class MainWindow extends JFrame implements ClipboardOwner{
         tabbedPane.addTab(Utilities.getResourceString("label.tab.download"),        tabDownloadTable);
         tabbedPane.addTab(Utilities.getResourceString("label.tab.plugin_activity"), tabPluginActivity);
 
-        JButton start = new JButton(actionStartDownload);
-        start.setFocusPainted(false);start.setBorderPainted(false);
+        JButton btnStart  = new JButton(actionStartDownload); btnStart.setFocusPainted(false); btnStart.setBorderPainted(false);
+        JButton btnUp     = new JButton(actionMoveUp);        btnUp.setFocusPainted(false);    btnUp.setBorderPainted(false);
+        JButton btnDown   = new JButton(actionMoveDown);      btnDown.setFocusPainted(false);  btnDown.setBorderPainted(false);
+        JButton btnAdd    = new JButton(actionAdd);           btnAdd.setFocusPainted(false);   btnAdd.setBorderPainted(false);
+        JButton btnDelete = new JButton(actionDelete);        btnDelete.setFocusPainted(false);btnDelete.setBorderPainted(false);
         
         toolBar.setFloatable(false);
-        toolBar.add(start);
+        toolBar.add(btnStart);
+        toolBar.add(btnUp);
+        toolBar.add(btnDown);
+        toolBar.add(btnAdd);
+        toolBar.add(btnDelete);
 
         setLayout(new GridBagLayout());
         Utilities.addToGridBag(this, toolBar,     0, 0, 1, 1, 0, 0, null, GridBagConstraints.HORIZONTAL, GridBagConstraints.NORTH); 
         Utilities.addToGridBag(this, tabbedPane,  0, 1, 1, 1, 1, 1, null, GridBagConstraints.BOTH,       GridBagConstraints.CENTER); 
-        setJMenuBar(menuBar);
+//        setJMenuBar(menuBar);
     }
     /**
      * Die Bilder werden aus der JAR Datei nachgeladen
@@ -116,8 +141,13 @@ public class MainWindow extends JFrame implements ClipboardOwner{
     private void loadImages(){
         ClassLoader cl = getClass().getClassLoader();
         Toolkit toolkit = Toolkit.getDefaultToolkit();
-        Utilities.addImage("start",   new ImageIcon(toolkit.getImage(cl.getResource("GIF/start.gif"))));
-        Utilities.addImage("move_up", new ImageIcon(toolkit.getImage(cl.getResource("GIF/start.gif"))));
+        Utilities.addImage("start",   toolkit.getImage(cl.getResource("img/start.png")));
+        Utilities.addImage("stop",    toolkit.getImage(cl.getResource("img/stop.png")));
+        Utilities.addImage("add",     toolkit.getImage(cl.getResource("img/add.png")));
+        Utilities.addImage("delete",  toolkit.getImage(cl.getResource("img/delete.png")));
+        Utilities.addImage("up",      toolkit.getImage(cl.getResource("img/up.png")));
+        Utilities.addImage("down",    toolkit.getImage(cl.getResource("img/down.png")));
+        Utilities.addImage("mind",    toolkit.getImage(cl.getResource("img/mind.png")));
     }
     /**
      * Hier werden alle Plugins im aktuellen Verzeichnis geparsed (und im Classpath)
@@ -223,12 +253,18 @@ public class MainWindow extends JFrame implements ClipboardOwner{
         public static final int APP_STOP_DOWNLOADS      = 9;
         
         private int actionID;
-        
-        public JDAction(String actionName, String iconName, int actionID){
+        /**
+         * Erstellt ein neues JDAction-Objekt
+         * 
+         * @param iconName 
+         * @param descriptionResource Text für den Tooltip aus der Resourcedatei
+         * @param actionID ID dieser Aktion
+         */
+        public JDAction(String iconName, String descriptionResource, int actionID){
             super();
-            ImageIcon icon = Utilities.getImage(iconName);
-            putValue(Action.NAME, actionName);
+            ImageIcon icon = new ImageIcon(Utilities.getImage(iconName));
             putValue(Action.SMALL_ICON, icon);
+            putValue(Action.SHORT_DESCRIPTION, Utilities.getResourceString(descriptionResource));
             this.actionID = actionID;
         }
         public void actionPerformed(ActionEvent e) {

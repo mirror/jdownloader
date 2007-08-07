@@ -3,6 +3,7 @@
 import java.awt.Component;
 import java.awt.Container;
 import java.awt.GridBagConstraints;
+import java.awt.Image;
 import java.awt.Insets;
 import java.io.File;
 import java.io.FileFilter;
@@ -10,15 +11,13 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.ResourceBundle;
 
-import javax.swing.ImageIcon;
-
 public class Utilities {
     private static ResourceBundle resourceBundle = null;
     private static Locale locale = null;
     /**
      * Alle verfügbaren Bilder werden hier gespeichert
      */
-    private static HashMap<String, ImageIcon> images = new HashMap<String, ImageIcon>();
+    private static HashMap<String, Image> images = new HashMap<String, Image>();
     
     public static FilterJAR filterJar = new FilterJAR();
     
@@ -95,11 +94,11 @@ public class Utilities {
         }
         return resourceBundle.getString(key);
     }
-    public static ImageIcon getImage(String imageName){
+    public static Image getImage(String imageName){
         return images.get(imageName);
     }
-    public static void addImage(String iconName, ImageIcon icon){
-        images.put(iconName, icon);
+    public static void addImage(String imageName, Image image){
+        images.put(imageName, image);
     }
     
     private static class FilterJAR implements FileFilter{
