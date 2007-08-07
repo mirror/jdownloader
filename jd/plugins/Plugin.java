@@ -10,6 +10,7 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.net.URLConnection;
 import java.util.Iterator;
 import java.util.Vector;
 import java.util.logging.ConsoleHandler;
@@ -298,16 +299,23 @@ public abstract class Plugin{
      * 
      * @param is InputStream dessen Daten gespeichert werden sollen
      * @param fileOutput Ausgabedatei
+     * @param urlConnection Wenn bereits vom Plugin eine vorkonfigurierte URLConnection vorhanden ist, wird diese
+     *                      hier übergeben und benutzt. Ansonsten erfolgt ein normaler GET Download von 
+     *                      der URL, die im DownloadLink hinterlegt ist
      * @return wahr, wenn alle Daten ausgelesen und gespeichert wurden
      */
-    protected boolean download(DownloadLink downloadLink)
+    protected boolean download(DownloadLink downloadLink, URLConnection urlConnection)
     {
         File fileOutput = downloadLink.getFileOutput();
+        InputStream is;
         int downloadedBytes=0;
         try{
             byte buffer[] = new byte[READ_BUFFER];
             int count;
-            InputStream is = downloadLink.getUrlDownload().openConnection().getInputStream();
+            if(urlConnection == null)
+                is = downloadLink.getUrlDownload().openConnection().getInputStream();
+            else
+                is = urlConnection.getInputStream();
             FileOutputStream fos = new FileOutputStream(fileOutput);
             do{
                 count = is.read(buffer);
@@ -321,6 +329,7 @@ public abstract class Plugin{
             while (count != -1); // Muss -1 sein und nicht buffer.length da durch 
                                 //  eine langsame Internetverbindung der Puffer nicht immer komplett gefüllt ist            
             fos.close();
+            is.close();
             firePluginEvent(new PluginEvent(this,PluginEvent.PLUGIN_PROGRESS_FINISH,null));
             return true;
         }

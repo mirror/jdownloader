@@ -14,7 +14,7 @@ import javax.swing.JProgressBar;
  * 
  * @author astaldo
  */
-public class DownloadLink {
+public class DownloadLink{
     /**
      * Beschreibung des Downloads
      */
@@ -30,7 +30,11 @@ public class DownloadLink {
     /**
      * Zeigt an, ob dieser Downloadlink aktiviert ist
      */
-    private boolean isActive;
+    private boolean isEnabled;
+    /**
+     * Zeigt, ob dieser DownloadLink grad heruntergeladen wird
+     */
+    private boolean inProgress;
     /**
      * Das Plugin, das für diesen Download zuständig ist
      */
@@ -54,13 +58,13 @@ public class DownloadLink {
      * @param name Bezeichnung des Downloads
      * @param host Anbieter, von dem dieser Download gestartet wird
      * @param urlDownload Die Download URL
-     * @param isActive Markiert diesen DownloadLink als aktiviert oder deaktiviert
+     * @param isEnabled Markiert diesen DownloadLink als aktiviert oder deaktiviert
      */
-    public DownloadLink(PluginForHost plugin, String name, String host, String urlDownload, boolean isActive){
+    public DownloadLink(PluginForHost plugin, String name, String host, String urlDownload, boolean isEnabled){
         this.plugin      = plugin;
         this.name        = name;
         this.host        = host;
-        this.isActive    = isActive;
+        this.isEnabled   = isEnabled;
         try {
             this.urlDownload = new URL(urlDownload);
         }
@@ -82,17 +86,26 @@ public class DownloadLink {
      * 
      * @return wahr, falls dieser DownloadLink aktiviert ist
      */
-    public boolean isActive()                  { return isActive;                }
+    public boolean isEnabled()                 { return isEnabled;               }
     /**
      * Verändert den Aktiviert-Status
      * 
-     * @param isActive Soll dieser DownloadLink aktiviert sein oder nicht
+     * @param isEnabled Soll dieser DownloadLink aktiviert sein oder nicht
      */
-    public void setActive(boolean isActive)    { this.isActive = isActive;       }
+    public void setEnabled(boolean isEnabled)  { this.isEnabled = isEnabled;     }
     public Plugin getPlugin()                  { return plugin;                  }
     public JProgressBar getProgressBar()       { return progressBar;             }
     public File getFileOutput()                { return fileOutput;              }
     public void setFileOutput(File fileOutput) { this.fileOutput = fileOutput;   }
     public URL getUrlDownload()                { return urlDownload;             }
     public void setUrlDownload(URL urlDownload){ this.urlDownload = urlDownload; }
+    public boolean isInProgress()                 {        return inProgress;    }
+    public void setInProgress(boolean inProgress) {        this.inProgress = inProgress;    }
+    @Override
+    public boolean equals(Object obj) {
+        if(obj instanceof DownloadLink)
+            return this.urlDownload.equals(((DownloadLink)obj).urlDownload);
+        else
+            return super.equals(obj);
+    }
 }

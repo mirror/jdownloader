@@ -10,6 +10,7 @@ import com.sun.java.swing.plaf.windows.WindowsLookAndFeel;
  * Start der Applikation
  * 
  * TODO Grundgerüst erweitern
+ * TODO Serialisierung
  * TODO GUI
  * TODO Reconnect Paket
  * TODO Konfiguration speichern

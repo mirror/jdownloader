@@ -2,9 +2,12 @@
 
 import java.awt.Component;
 import java.awt.Container;
+import java.awt.Dimension;
 import java.awt.GridBagConstraints;
 import java.awt.Image;
 import java.awt.Insets;
+import java.awt.Point;
+import java.awt.Toolkit;
 import java.io.File;
 import java.io.FileFilter;
 import java.util.HashMap;
@@ -78,6 +81,32 @@ public class Utilities {
         cons.ipadx = iPadX;
         cons.ipady = iPadY;
         cont.add(comp, cons);
+    }
+    /**
+     * Liefert einen Punkt zurück, mit dem eine Komponente auf eine andere zentriert werden kann
+     *
+     * @param parent Die Komponente, an der ausgerichtet wird
+     * @param child Die Komponente die ausgerichtet werden soll
+     * @return Ein Punkt, mit dem diese Komponente mit der setLocation Methode zentriert dargestellt werden kann
+     */
+    public static Point getCenterOfComponent(Component parent, Component child){
+        Point center;
+        if (parent == null || !parent.isShowing()) {
+            Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
+            int width  = screenSize.width;
+            int height = screenSize.height;
+            center = new Point(width/2, height/2);
+        }
+        else{
+            center = parent.getLocationOnScreen();
+            center.x += parent.getWidth()/2;
+            center.y += parent.getHeight()/2;
+        }
+
+        //Dann Auszurichtende Komponente in die Berechnung einfließen lassen
+        center.x -= child.getWidth()/2;
+        center.y -= child.getHeight()/2;
+        return center;
     }
     /**
      * Liefert eine Zeichenkette aus dem aktuellen ResourceBundle zurück

@@ -13,7 +13,6 @@ import java.awt.event.ActionEvent;
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Method;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.Iterator;
@@ -43,7 +42,7 @@ public class MainWindow extends JFrame implements ClipboardOwner{
      */
     private static final long serialVersionUID = 3966433144683787356L;
     
-    private static final StringSelection JDOWNLOADER_ID = new StringSelection("JDownloader active");
+    private static final String JDOWNLOADER_ID = "JDownloader active";
     /**
      * Die Menüleiste
      */
@@ -90,7 +89,7 @@ public class MainWindow extends JFrame implements ClipboardOwner{
         initActions();
         buildUI();
         getPlugins();
-        Toolkit.getDefaultToolkit().getSystemClipboard().setContents(JDOWNLOADER_ID, this);
+        Toolkit.getDefaultToolkit().getSystemClipboard().setContents(new StringSelection(JDOWNLOADER_ID), this);
 
         setSize(500,300);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -181,7 +180,7 @@ public class MainWindow extends JFrame implements ClipboardOwner{
             PluginForDecrypt p = (PluginForDecrypt) iterator.next();
             pluginsForDecrypt.add(p);
             p.addPluginListener(tabPluginActivity);
-            logger.info("Decrypt-Plugin:"+p.getPluginName());
+            logger.info("Decrypt-Plugin : "+p.getPluginName());
         }
 
         //Danach die Plugins der verschiedenen Anbieter
@@ -191,17 +190,14 @@ public class MainWindow extends JFrame implements ClipboardOwner{
             PluginForHost p = (PluginForHost) iterator.next();
             pluginsForHost.add(p);
             p.addPluginListener(tabDownloadTable);
-            logger.info("Host-Plugin:"+p.getPluginName());
+            logger.info("Host-Plugin : "+p.getPluginName());
         }
     }
     private String getCaptcha(String captchaAdress){
         String captchaText=null;
-        try {
-            URL imageURL = new URL(captchaAdress);
-            
-        }
-        catch (MalformedURLException e) { e.printStackTrace(); }
-        return captchaText;
+        CaptchaDialog captchaDialog = new CaptchaDialog(this,captchaAdress);
+        captchaDialog.setVisible(true);
+        return captchaDialog.getCaptchaText();
     }
     public void doAction(int actionID){
         switch(actionID){
@@ -234,15 +230,16 @@ public class MainWindow extends JFrame implements ClipboardOwner{
                     clipboard.wait(500);
                 }
                 catch (InterruptedException e) { }
+                String data = JDOWNLOADER_ID;
                 try {
-                    String data = (String)clipboard.getData(DataFlavor.stringFlavor);
+                    data = (String)clipboard.getData(DataFlavor.stringFlavor);
                     new DistributeData(data).start();
 //                    System.out.println(data);
                 }
                 catch (UnsupportedFlavorException e1) {}
                 catch (IOException e1)                {}
 
-                clipboard.setContents(JDOWNLOADER_ID, MainWindow.this);
+                clipboard.setContents(new StringSelection(data), MainWindow.this);
             }
         }
     }
@@ -374,6 +371,7 @@ public class MainWindow extends JFrame implements ClipboardOwner{
                         break;
                     case PluginStep.CAPTCHA:
                         String captchaText = getCaptcha((String)step.getParameter());
+                        step.setParameter(captchaText);
                 }
                 step = plugin.getNextStep(downloadLink);
             }

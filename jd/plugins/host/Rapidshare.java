@@ -15,18 +15,18 @@ import jd.plugins.RequestInfo;
 public class Rapidshare extends PluginForHost{
     private String  host    = "rapidshare.com";
     private String  version = "1.0.0.0";
-    private Pattern patternSupported = Pattern.compile("http://rapidshare\\.com/files[^\\s\"]*");
+    private Pattern patternSupported = Pattern.compile("http://rapidshare\\.com/files/[0-9]*/[^\\s\"]+");
     /**
-     * Das findet die ZielURL für den Post
+     * Das findet die Ziel URL für den Post
      */
-    private Pattern patternForNewHost = Pattern.compile("<form *name *= *\"dl\" *action *= *\"([^\\n\"]*)\"");
+    private Pattern patternForNewHost = Pattern.compile("<form *action *= *\"([^\\n\"]*)\"");
     /**
      * Das findet die Captcha URL
      * <form *name *= *"dl" (?s).*<img *src *= *"([^\n"]*)">
      */
     private Pattern patternForCaptcha = Pattern.compile("<form *name *= *\"dl\" (?s).*<img *src *= *\"([^\\n\"]*)\">");
     
-    private int waitTime = 5000;
+    private int waitTime = 2000;
     private String captchaAddress=null;
     
     @Override public String getCoder()            { return "astaldo";        }
@@ -35,6 +35,7 @@ public class Rapidshare extends PluginForHost{
     @Override public Pattern getSupportedLinks()  { return patternSupported; }
     @Override public String getVersion()          { return version;          }
     @Override public boolean isClipboardEnabled() { return true;             }
+    
     public Rapidshare(){
         super();
         steps.add(new PluginStep(PluginStep.WAIT_TIME, null));
@@ -60,8 +61,7 @@ public class Rapidshare extends PluginForHost{
                 requestInfo = postRequest(new URL(newURL),"dl.start=free");
                 
                 // captcha Adresse finden
-                String captchaAdress = getFirstMatch(requestInfo.getHtmlCode(),patternForCaptcha,1);
-                System.out.println(captchaAdress);
+                captchaAddress = getFirstMatch(requestInfo.getHtmlCode(),patternForCaptcha,1);
                 currentStep = steps.firstElement();
             }
             catch (MalformedURLException e) { e.printStackTrace(); }
@@ -69,12 +69,19 @@ public class Rapidshare extends PluginForHost{
         }
         int index = steps.indexOf(currentStep);
         toDo = currentStep;
-        currentStep = steps.elementAt(index+1);
-        switch(currentStep.getStep()){
+        if(index+1 < steps.size())
+            currentStep = steps.elementAt(index+1);
+        switch(toDo.getStep()){
             case PluginStep.WAIT_TIME:
                 toDo.setParameter(new Long(waitTime));
+                break;
             case PluginStep.CAPTCHA:
                 toDo.setParameter(captchaAddress);
+                break;
+            case PluginStep.DOWNLOAD:
+                System.out.println(steps.elementAt(1).getParameter());
+                doDownload(downloadLink);
+                break;
                 
         }
         return toDo;
@@ -85,7 +92,9 @@ public class Rapidshare extends PluginForHost{
             int length = urlConnection.getContentLength();
             File fileOutput = downloadLink.getFileOutput();
             downloadLink.getProgressBar().setMaximum(length);
-            download(downloadLink);
+            
+            //Post Daten vorbereiten
+//            download(downloadLink);
         }
         catch (IOException e) { logger.severe("URL could not be opened. "+e.toString());}
     } 
