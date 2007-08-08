@@ -28,6 +28,7 @@ import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JMenuBar;
 import javax.swing.JTabbedPane;
+import javax.swing.JToggleButton;
 import javax.swing.JToolBar;
 
 import jd.plugins.DownloadLink;
@@ -77,7 +78,16 @@ public class MainWindow extends JFrame implements ClipboardOwner{
      * TabbedPane
      */
     private JTabbedPane tabbedPane = new JTabbedPane();
-    private JDAction actionStartDownload;
+    /**
+     * Der Thread, der das Downloaden realisiert
+     */
+    private StartDownload download = null;
+    private Speedometer speedoMeter = new Speedometer();
+    /**
+     * Ein Togglebutton zum Starten / Stoppen der Downloads
+     */
+    private JToggleButton btnStartStop;
+    private JDAction actionStartStopDownload;
     private JDAction actionMoveUp;
     private JDAction actionMoveDown;
     private JDAction actionAdd;
@@ -93,21 +103,21 @@ public class MainWindow extends JFrame implements ClipboardOwner{
         getPlugins();
         Toolkit.getDefaultToolkit().getSystemClipboard().setContents(new StringSelection(JDOWNLOADER_ID), this);
 
-        setSize(500,300);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setIconImage(Utilities.getImage("mind"));
         setTitle("jDownloader 0.0.1");
+        pack();
     }
     /**
      * Die Aktionen werden initialisiert
      *
      */
     public void initActions(){
-        actionStartDownload = new JDAction("start",  "action.start",     JDAction.APP_START_NEXT_DOWNLOAD);
-        actionMoveUp        = new JDAction("up",     "action.move_up",   JDAction.ITEMS_MOVE_UP);
-        actionMoveDown      = new JDAction("down",   "action.move_down", JDAction.ITEMS_MOVE_DOWN);
-        actionAdd           = new JDAction("add",    "action.add",       JDAction.ITEMS_MOVE_DOWN);
-        actionDelete        = new JDAction("delete", "action.delete",    JDAction.ITEMS_MOVE_DOWN);
+        actionStartStopDownload = new JDAction("start",  "action.start",     JDAction.APP_START_STOP_DOWNLOADS);
+        actionMoveUp            = new JDAction("up",     "action.move_up",   JDAction.ITEMS_MOVE_UP);
+        actionMoveDown          = new JDAction("down",   "action.move_down", JDAction.ITEMS_MOVE_DOWN);
+        actionAdd               = new JDAction("add",    "action.add",       JDAction.ITEMS_MOVE_DOWN);
+        actionDelete            = new JDAction("delete", "action.delete",    JDAction.ITEMS_MOVE_DOWN);
     }
     /**
      * Hier wird die komplette Oberfläche der Applikation zusammengestrickt 
@@ -119,14 +129,18 @@ public class MainWindow extends JFrame implements ClipboardOwner{
         tabbedPane.addTab(Utilities.getResourceString("label.tab.download"),        tabDownloadTable);
         tabbedPane.addTab(Utilities.getResourceString("label.tab.plugin_activity"), tabPluginActivity);
 
-        JButton btnStart  = new JButton(actionStartDownload); btnStart.setFocusPainted(false); btnStart.setBorderPainted(false);
+        btnStartStop  = new JToggleButton(actionStartStopDownload);
+        btnStartStop.setSelectedIcon(new ImageIcon(Utilities.getImage("stop")));
+        btnStartStop.setFocusPainted(false); 
+        btnStartStop.setBorderPainted(false);
+        
         JButton btnUp     = new JButton(actionMoveUp);        btnUp.setFocusPainted(false);    btnUp.setBorderPainted(false);
         JButton btnDown   = new JButton(actionMoveDown);      btnDown.setFocusPainted(false);  btnDown.setBorderPainted(false);
         JButton btnAdd    = new JButton(actionAdd);           btnAdd.setFocusPainted(false);   btnAdd.setBorderPainted(false);
         JButton btnDelete = new JButton(actionDelete);        btnDelete.setFocusPainted(false);btnDelete.setBorderPainted(false);
         
         toolBar.setFloatable(false);
-        toolBar.add(btnStart);
+        toolBar.add(btnStartStop);
         toolBar.add(btnUp);
         toolBar.add(btnDown);
         toolBar.add(btnAdd);
@@ -135,6 +149,7 @@ public class MainWindow extends JFrame implements ClipboardOwner{
         setLayout(new GridBagLayout());
         Utilities.addToGridBag(this, toolBar,     0, 0, 1, 1, 0, 0, null, GridBagConstraints.HORIZONTAL, GridBagConstraints.NORTH); 
         Utilities.addToGridBag(this, tabbedPane,  0, 1, 1, 1, 1, 1, null, GridBagConstraints.BOTH,       GridBagConstraints.CENTER); 
+        Utilities.addToGridBag(this, speedoMeter, 1, 1, 1, 1, 0, 0, null, GridBagConstraints.VERTICAL,   GridBagConstraints.WEST); 
 //        setJMenuBar(menuBar);
     }
     /**
@@ -222,12 +237,22 @@ public class MainWindow extends JFrame implements ClipboardOwner{
                     tabDownloadTable.moveItems(actionID);
                 }
                 break;
-            case JDAction.APP_START_NEXT_DOWNLOAD:
+            case JDAction.APP_START_STOP_DOWNLOADS:
                 DownloadLink downloadLink = tabDownloadTable.getNextDownloadLink();
-                if (downloadLink != null)
-                    new StartDownload(downloadLink).start();
-                else
-                    logger.severe("no download in Queue (getNextDownloadLink() == null).");
+                if(download == null){
+                    if (downloadLink != null){
+                        download = new StartDownload(downloadLink);
+                        download.start();
+                    }
+                    else{
+                        logger.severe("no download in Queue (getNextDownloadLink() == null).");
+                        btnStartStop.setSelected(false);
+                    }
+                }
+                else{
+                    download.interrupt();
+                    download=null;
+                }
                 break;
         }
         
@@ -244,6 +269,9 @@ public class MainWindow extends JFrame implements ClipboardOwner{
      * @author astaldo
      */
     private class ClipboardHandler extends Thread{
+        public ClipboardHandler(){
+            super("JD-ClipboardHandler");
+        }
         public void run(){
             Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
             synchronized (clipboard) {
@@ -280,7 +308,7 @@ public class MainWindow extends JFrame implements ClipboardOwner{
         public static final int ITEMS_MOVE_BOTTOM       = 4;
         public static final int ITEMS_DISABLE           = 5;
         public static final int ITEMS_ENABLE            = 6;
-        public static final int APP_START_NEXT_DOWNLOAD = 7;
+        public static final int APP_START_STOP_DOWNLOADS = 7;
         public static final int APP_SHOW_LOG            = 8;
         public static final int APP_STOP_DOWNLOADS      = 9;
         
@@ -321,6 +349,7 @@ public class MainWindow extends JFrame implements ClipboardOwner{
          * @param data Daten, die verteilt werden sollen
          */
         public DistributeData (String data){
+            super("JD-DistributeData");
             this.data = data;
             try {
                 this.data = URLDecoder.decode(this.data,"US-ASCII");
@@ -381,24 +410,32 @@ public class MainWindow extends JFrame implements ClipboardOwner{
         /**
          * Der DownloadLink
          */
-        DownloadLink downloadLink;
+        private DownloadLink downloadLink;
+        private Plugin plugin;
+        private boolean aborted=false;
         
         public StartDownload(DownloadLink downloadLink){
+            super("JD-StartDownload");
             this.downloadLink = downloadLink;
         }
+        public void abortDownload(){
+            aborted=true;
+            if(plugin != null)
+                plugin.abort();
+        }
         public void run(){
-            Plugin plugin   = downloadLink.getPlugin();
+            plugin   = downloadLink.getPlugin();
             PluginStep step = plugin.getNextStep(downloadLink);
             
             // Hier werden alle einzelnen Schritte des Plugins durchgegangen,
             // bis entwerder null zurückgegeben wird oder ein Fehler auftritt
-            while(step != null && step.getStatus()!=PluginStep.STATUS_ERROR){
+            while(!aborted && step != null && step.getStatus()!=PluginStep.STATUS_ERROR){
                 switch(step.getStep()){
                     case PluginStep.STEP_WAIT_TIME:
                         try {
-                            System.out.println("sleep startet");
+                            logger.info("sleep start");
                             Thread.sleep((Long)step.getParameter());
-                            System.out.println("sleep fertig");
+                            logger.info("sleep finish");
                             step.setStatus(PluginStep.STATUS_DONE);
                         }
                         catch (InterruptedException e) { e.printStackTrace(); }
@@ -410,7 +447,10 @@ public class MainWindow extends JFrame implements ClipboardOwner{
                 }
                 step = plugin.getNextStep(downloadLink);
             }
-            if(step.getStatus() == PluginStep.STATUS_ERROR){
+            if(aborted){
+                logger.warning("Thread aborted");
+            }
+            if(step != null && step.getStatus() == PluginStep.STATUS_ERROR){
                 logger.severe("Error occurred while downloading file");
             }
         }

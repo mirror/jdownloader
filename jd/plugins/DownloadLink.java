@@ -169,7 +169,8 @@ public class DownloadLink{
      */
     public void setDownloadedBytes(int downloadedBytes) {
         this.downloadedBytes = downloadedBytes;
-        this.progressBar.setValue(downloadedBytes);
+        if(this.progressBar!=null)
+            this.progressBar.setValue(downloadedBytes);
     }
     /**
      * Setzt die Größe der herunterzuladenden Datei, und aktualisiert

@@ -21,7 +21,7 @@ public class Stealth extends PluginForDecrypt{
     private String  host    = "Stealth.to";
     private String  version = "1.0.0.0";
     private String addressForPopupPost="http://stealth.to/get1.php?id=%s&h=%s";
-    private Pattern patternSupported = Pattern.compile("http://stealth.to/\\?=id[^\\s\"]*");
+    private Pattern patternSupported = Pattern.compile("http://stealth\\.to/\\?id=[^\\s\"]*");
     /**
      * Dieses Pattern erkennt einen Parameter für eine Downloadadress
      * 
@@ -55,9 +55,9 @@ public class Stealth extends PluginForDecrypt{
             }
             catch (MalformedURLException e) { e.printStackTrace(); }
             catch (IOException e)           { e.printStackTrace(); }
-
         }
         firePluginEvent(new PluginEvent(this,PluginEvent.PLUGIN_PROGRESS_MAX,countHits));
+        
         //Hier werden alle verschlüsselten Links behandelt
         for(int i=0;i<cryptedLinks.size();i++){
             try {
@@ -72,7 +72,6 @@ public class Stealth extends PluginForDecrypt{
                     if(requestInfo != null){
                         firePluginEvent(new PluginEvent(this,PluginEvent.PLUGIN_PROGRESS_INCREASE,null));
                         decryptedLinks.add(requestInfo.getLocation());
-                        System.out.println(requestInfo.getLocation());
                     }
                 }
                 firePluginEvent(new PluginEvent(this,PluginEvent.PLUGIN_PROGRESS_FINISH,null));

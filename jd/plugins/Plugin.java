@@ -1,11 +1,11 @@
 ﻿package jd.plugins;
 
+import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.net.HttpURLConnection;
@@ -40,11 +40,15 @@ public abstract class Plugin{
     /**
      * Puffer für Lesevorgänge
      */
-    public final int READ_BUFFER = 4000;
+    public final int READ_BUFFER = 1<<12; //4096
     /**
      * Name des Loggers
      */
     public static String LOGGER_NAME ="astaldo.java_downloader";
+    /**
+     * Zeigt an, ob das Plugin abgebrochen werden soll
+     */
+    protected boolean aborted = false;
     /**
      * Liefert den Namen des Plugins zurück
      * @return Der Name des Plugins
@@ -87,6 +91,13 @@ public abstract class Plugin{
      * @return der nächste Schritt oder null, falls alle abgearbeitet wurden
      */
     public abstract PluginStep           getNextStep(Object parameter);
+    /**
+     * Zeigt, daß diese Plugin gestoppt werden soll
+     *
+     */
+    public void abort(){
+        aborted = true;
+    }
     /**
      * Hiermit wird der Eventmechanismus realisiert. Alle hier eingetragenen Listener
      * werden benachrichtigt, wenn mittels {@link #firePluginEvent(PluginEvent)} ein
@@ -305,17 +316,16 @@ public abstract class Plugin{
     /**
      * Speichert einen InputStream binär auf der Festplatte ab
      * 
-     * @param is InputStream dessen Daten gespeichert werden sollen
-     * @param fileOutput Ausgabedatei
+     * @param downloadLink der DownloadLink
      * @param urlConnection Wenn bereits vom Plugin eine vorkonfigurierte URLConnection vorhanden ist, wird diese
      *                      hier übergeben und benutzt. Ansonsten erfolgt ein normaler GET Download von 
      *                      der URL, die im DownloadLink hinterlegt ist
      * @return wahr, wenn alle Daten ausgelesen und gespeichert wurden
      */
-    protected boolean download(DownloadLink downloadLink, URLConnection urlConnection)
+    public boolean download(DownloadLink downloadLink, URLConnection urlConnection)
     {
         File fileOutput = downloadLink.getFileOutput();
-        InputStream is;
+        BufferedInputStream bis;
         int downloadedBytes=0;
         try{
             byte buffer[] = new byte[READ_BUFFER];
@@ -323,13 +333,13 @@ public abstract class Plugin{
             
             //Falls keine urlConnection übergeben wurde
             if(urlConnection == null)
-                is = downloadLink.getUrlDownload().openConnection().getInputStream();
+                bis = new BufferedInputStream(downloadLink.getUrlDownload().openConnection().getInputStream());
             else
-                is = urlConnection.getInputStream();
+                bis = new BufferedInputStream(urlConnection.getInputStream());
             FileOutputStream fos = new FileOutputStream(fileOutput);
             downloadLink.setInProgress(true);
             do{
-                count = is.read(buffer);
+                count = bis.read(buffer);
                 if (count != -1){
                     fos.write(buffer, 0, count);
                     downloadedBytes +=READ_BUFFER;
@@ -337,10 +347,10 @@ public abstract class Plugin{
                     firePluginEvent(new PluginEvent(this,PluginEvent.PLUGIN_DATA_CHANGED,null));
                 }   
             }
-            while (count != -1); // Muss -1 sein und nicht buffer.length da durch 
-                                //  eine langsame Internetverbindung der Puffer nicht immer komplett gefüllt ist            
+            while (count != -1 && !aborted); // Muss -1 sein und nicht buffer.length da durch 
+                                             //  eine langsame Internetverbindung der Puffer nicht immer komplett gefüllt ist            
             fos.close();
-            is.close();
+            bis.close();
             firePluginEvent(new PluginEvent(this,PluginEvent.PLUGIN_PROGRESS_FINISH,null));
             return true;
         }

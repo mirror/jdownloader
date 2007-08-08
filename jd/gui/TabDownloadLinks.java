@@ -65,7 +65,7 @@ public class TabDownloadLinks extends JPanel implements PluginListener{
         for (int c = 0; c < internalTableModel.getColumnCount(); c++) {
             column = table.getColumnModel().getColumn(c);
             switch(c){
-                case COL_INDEX:    column.setPreferredWidth(20);  break;
+                case COL_INDEX:    column.setPreferredWidth(30);  break;
                 case COL_NAME:     column.setPreferredWidth(200); break;
                 case COL_HOST:     column.setPreferredWidth(100); break;
                 case COL_PROGRESS: column.setPreferredWidth(150); break;
