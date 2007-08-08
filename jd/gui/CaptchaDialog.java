@@ -36,7 +36,12 @@ public class CaptchaDialog extends JDialog implements ActionListener{
      * Das ist der eingegebene captcha Text
      */
     private String captchaText=null;
-
+    /**
+     * Erstellt einen neuen Dialog.
+     * 
+     * @param owner Das übergeordnete Fenster
+     * @param imageAddress Die Adresse des Bildes, das angezeigt werden soll
+     */
     public CaptchaDialog(Frame owner, String imageAddress){ 
         super(owner);
         setModal(true);
@@ -66,6 +71,11 @@ public class CaptchaDialog extends JDialog implements ActionListener{
             dispose();
         }
     }
+    /**
+     * Liefert den eingetippten Text zurück
+     * 
+     * @return Der Text, den der Benutzer eingetippt hat
+     */
     public String getCaptchaText() {
         return captchaText;
     }

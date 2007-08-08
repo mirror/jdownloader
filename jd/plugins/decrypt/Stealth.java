@@ -21,7 +21,7 @@ public class Stealth extends PluginForDecrypt{
     private String  host    = "Stealth.to";
     private String  version = "1.0.0.0";
     private String addressForPopupPost="http://stealth.to/get1.php?id=%s&h=%s";
-    private Pattern patternSupported = Pattern.compile("http://stealth.to/\\?id[^\\s\"]*");
+    private Pattern patternSupported = Pattern.compile("http://stealth.to/\\?=id[^\\s\"]*");
     /**
      * Dieses Pattern erkennt einen Parameter für eine Downloadadress
      * 
@@ -31,7 +31,7 @@ public class Stealth extends PluginForDecrypt{
     
     public Stealth(){ 
         super();    
-        steps.add(new PluginStep(PluginStep.DECRYPT, null));
+        steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
         currentStep = steps.firstElement();
     }
     @Override public String getCoder()                { return "Astaldo";        }

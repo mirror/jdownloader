@@ -11,6 +11,7 @@ import java.io.OutputStreamWriter;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLConnection;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Vector;
 import java.util.logging.ConsoleHandler;
@@ -40,6 +41,9 @@ public abstract class Plugin{
      * Puffer für Lesevorgänge
      */
     public final int READ_BUFFER = 4000;
+    /**
+     * Name des Loggers
+     */
     public static String LOGGER_NAME ="astaldo.java_downloader";
     /**
      * Liefert den Namen des Plugins zurück
@@ -76,10 +80,11 @@ public abstract class Plugin{
      */
     public abstract boolean              isClipboardEnabled();
     /**
-     * Diese Methode liefert den nächsten Schritt zurück, den das Plugin vornehmen wird
-     * @param parameter TODO
+     * Diese Methode liefert den nächsten Schritt zurück, den das Plugin vornehmen wird.
+     * Falls der letzte Schritt erreicht ist, wird null zurückgegeben
      * 
-     * @return der nächste Schritt
+     * @param parameter Ein Übergabeparameter
+     * @return der nächste Schritt oder null, falls alle abgearbeitet wurden
      */
     public abstract PluginStep           getNextStep(Object parameter);
     /**
@@ -225,6 +230,7 @@ public abstract class Plugin{
         return getRequest(link, null, null, false);
     }
     /**
+     * TODO postRequest : referrer
      * Schickt ein GetRequest an eine Adresse
      * 
      * @param link Der Link, an den die GET Anfrage geschickt werden soll
@@ -250,6 +256,8 @@ public abstract class Plugin{
         return postRequest(link, null, null, parameter, false);
     }
     /**
+     * TODO postRequest : referrer
+     * 
      * Schickt ein PostRequest an eine Adresse
      * 
      * @param link Der Link, an den die POST Anfrage geschickt werden soll
@@ -312,17 +320,20 @@ public abstract class Plugin{
         try{
             byte buffer[] = new byte[READ_BUFFER];
             int count;
+            
+            //Falls keine urlConnection übergeben wurde
             if(urlConnection == null)
                 is = downloadLink.getUrlDownload().openConnection().getInputStream();
             else
                 is = urlConnection.getInputStream();
             FileOutputStream fos = new FileOutputStream(fileOutput);
+            downloadLink.setInProgress(true);
             do{
                 count = is.read(buffer);
                 if (count != -1){
                     fos.write(buffer, 0, count);
                     downloadedBytes +=READ_BUFFER;
-                    downloadLink.getProgressBar().setValue(downloadedBytes);
+                    downloadLink.setDownloadedBytes(downloadedBytes);
                     firePluginEvent(new PluginEvent(this,PluginEvent.PLUGIN_DATA_CHANGED,null));
                 }   
             }
@@ -344,8 +355,28 @@ public abstract class Plugin{
         }
         return false;
     }
-
-    
+    /**
+     * Diese Methode erstellt einen einzelnen String aus einer HashMap mit 
+     * Parametern für ein Post-Request.
+     * 
+     * @param parameters HashMap mit den Parametern
+     * @return Codierter String
+     */
+    protected String createPostParameterFromHashMap(HashMap<String, String> parameters){
+        StringBuffer parameterLine = new StringBuffer();
+        Iterator<String> iterator = parameters.keySet().iterator();
+        String key;
+        while(iterator.hasNext()){
+            key = iterator.next();
+            parameterLine.append(key);
+            parameterLine.append("=");
+            parameterLine.append(parameters.get(key));
+            if(iterator.hasNext())
+                parameterLine.append("&");
+        }
+        return parameterLine.toString();
+    }
+   
     ///////////////////////////////////////////////////////
     // Multicaster
     public void addPluginListener(PluginListener listener) {

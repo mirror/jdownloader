@@ -123,15 +123,30 @@ public class Utilities {
         }
         return resourceBundle.getString(key);
     }
+    /**
+     * Liefert aus der Map der geladenen Bilder ein Element zurück
+     * 
+     * @param imageName Name des Bildes das zurückgeliefert werden soll
+     * @return Das gewünschte Bild oder null, falls es nicht gefunden werden kann
+     */
     public static Image getImage(String imageName){
         return images.get(imageName);
     }
+    /**
+     * Fügt ein Bild zur Map hinzu
+     * 
+     * @param imageName Name des Bildes, daß hinzugefügt werden soll
+     * @param image Das hinzuzufügende Bild
+     */
     public static void addImage(String imageName, Image image){
         images.put(imageName, image);
     }
-    
+    /**
+     * Als FileFilter akzeptiert diese Klasse alle .jar Dateien
+     * 
+     * @author astaldo
+     */
     private static class FilterJAR implements FileFilter{
-        
         public boolean accept(File f) {
             if(f.getName().endsWith(".jar"))
                 return true;

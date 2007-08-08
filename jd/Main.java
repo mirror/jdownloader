@@ -8,16 +8,16 @@ import jd.gui.MainWindow;
 import com.sun.java.swing.plaf.windows.WindowsLookAndFeel;
 /**
  * Start der Applikation
- * 
- * TODO Grundgerüst erweitern
- * TODO Serialisierung
- * TODO GUI
- * TODO Reconnect Paket
- * TODO Konfiguration speichern
+ *
+ * TODO Astaldo :  URLEncode
+ * TODO Astaldo :  Serialisierung
+ * TODO Astaldo :  GUI
+ * TODO Astaldo :  Konfiguration speichern
+ * TODO Wulfskin : Reconnect Paket
+ * TODO Coalado :  AntiCaptcha
  * 
  * @author astaldo
  */
-
 public class Main {
     public static void main(String args[]){
         Main main = new Main();

@@ -2,9 +2,11 @@
 
 import java.io.File;
 import java.io.IOException;
+import java.io.OutputStreamWriter;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
+import java.util.HashMap;
 import java.util.regex.Pattern;
 
 import jd.plugins.DownloadLink;
@@ -25,10 +27,18 @@ public class Rapidshare extends PluginForHost{
      * <form *name *= *"dl" (?s).*<img *src *= *"([^\n"]*)">
      */
     private Pattern patternForCaptcha = Pattern.compile("<form *name *= *\"dl\" (?s).*<img *src *= *\"([^\\n\"]*)\">");
+    /**
+     * 
+     * <form name="dl".* action="([^\n"]*)"(?s).*?<input type="submit" name="actionstring" value="[^\n"]*"
+     */
+    private Pattern patternForFormData = Pattern.compile("<form name=\"dl\".* action=\"([^\\n\"]*)\"(?s).*?<input type=\"submit\" name=\"actionstring\" value=\"([^\\n\"]*)\"");
     
-    private int waitTime = 2000;
-    private String captchaAddress=null;
-    
+    private int waitTime          = 500;
+    private String captchaAddress;
+    private String postTarget;
+    private String actionString;
+    private HashMap<String, String> postParameter = new HashMap<String, String>(); 
+
     @Override public String getCoder()            { return "astaldo";        }
     @Override public String getHost()             { return host;             }
     @Override public String getPluginName()       { return host;             }
@@ -38,9 +48,9 @@ public class Rapidshare extends PluginForHost{
     
     public Rapidshare(){
         super();
-        steps.add(new PluginStep(PluginStep.WAIT_TIME, null));
-        steps.add(new PluginStep(PluginStep.CAPTCHA,  null));
-        steps.add(new PluginStep(PluginStep.DOWNLOAD, null));
+        steps.add(new PluginStep(PluginStep.STEP_WAIT_TIME, null));
+        steps.add(new PluginStep(PluginStep.STEP_CAPTCHA,  null));
+        steps.add(new PluginStep(PluginStep.STEP_DOWNLOAD, null));
     }
     @Override
     public URLConnection getURLConnection() {
@@ -62,7 +72,15 @@ public class Rapidshare extends PluginForHost{
                 
                 // captcha Adresse finden
                 captchaAddress = getFirstMatch(requestInfo.getHtmlCode(),patternForCaptcha,1);
-                currentStep = steps.firstElement();
+                
+                //post daten lesen
+                postTarget   = getFirstMatch(requestInfo.getHtmlCode(), patternForFormData, 1);
+                actionString = getFirstMatch(requestInfo.getHtmlCode(), patternForFormData, 2);
+                currentStep  = steps.firstElement();
+                if(captchaAddress == null || postTarget == null || actionString == null){
+                    currentStep.setStatus(PluginStep.STATUS_ERROR);
+                    return currentStep;
+                }
             }
             catch (MalformedURLException e) { e.printStackTrace(); }
             catch (IOException e)           { e.printStackTrace(); }
@@ -72,29 +90,39 @@ public class Rapidshare extends PluginForHost{
         if(index+1 < steps.size())
             currentStep = steps.elementAt(index+1);
         switch(toDo.getStep()){
-            case PluginStep.WAIT_TIME:
+            case PluginStep.STEP_WAIT_TIME:
                 toDo.setParameter(new Long(waitTime));
                 break;
-            case PluginStep.CAPTCHA:
+            case PluginStep.STEP_CAPTCHA:
                 toDo.setParameter(captchaAddress);
+                toDo.setStatus(PluginStep.STATUS_INPUT_FROM_USER);
                 break;
-            case PluginStep.DOWNLOAD:
-                System.out.println(steps.elementAt(1).getParameter());
-                doDownload(downloadLink);
-                break;
+            case PluginStep.STEP_DOWNLOAD:
+                postParameter.put("mirror",      "on");
+                postParameter.put("accesscode",  (String)steps.elementAt(1).getParameter());
+                postParameter.put("actionString",actionString);
                 
+                prepareDownload(downloadLink);
+                break;
         }
         return toDo;
     }
-    private void doDownload(DownloadLink downloadLink){
+    private void prepareDownload(DownloadLink downloadLink){
         try {
-            URLConnection urlConnection = downloadLink.getUrlDownload().openConnection();
+            URLConnection urlConnection = new URL(postTarget).openConnection();
+            urlConnection.setDoOutput(true);
+            
+            //Post Parameter vorbereiten
+            String postParams = createPostParameterFromHashMap(postParameter);
+            OutputStreamWriter wr = new OutputStreamWriter(urlConnection.getOutputStream());
+            wr.write(postParams);
+            wr.flush();
+            
             int length = urlConnection.getContentLength();
             File fileOutput = downloadLink.getFileOutput();
-            downloadLink.getProgressBar().setMaximum(length);
+            downloadLink.setDownloadLength(length);
             
-            //Post Daten vorbereiten
-//            download(downloadLink);
+            download(downloadLink, urlConnection);
         }
         catch (IOException e) { logger.severe("URL could not be opened. "+e.toString());}
     } 

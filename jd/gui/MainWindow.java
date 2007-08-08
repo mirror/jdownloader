@@ -12,9 +12,11 @@ import java.awt.datatransfer.UnsupportedFlavorException;
 import java.awt.event.ActionEvent;
 import java.io.File;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Method;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.net.URLDecoder;
 import java.util.Iterator;
 import java.util.Vector;
 import java.util.logging.Logger;
@@ -46,11 +48,11 @@ public class MainWindow extends JFrame implements ClipboardOwner{
     /**
      * Die Menüleiste
      */
-    private JMenuBar menuBar                    = new JMenuBar();
+    private JMenuBar menuBar = new JMenuBar();
     /**
      * Toolleiste für Knöpfe
      */
-    private JToolBar          toolBar           = new JToolBar();
+    private JToolBar toolBar = new JToolBar();
     /**
      * Hier werden alle vorhandenen Plugins zum Dekodieren von Links gespeichert
      */
@@ -58,11 +60,11 @@ public class MainWindow extends JFrame implements ClipboardOwner{
     /**
      * Hier werden alle Plugins für die Anbieter gespeichert
      */
-    private Vector<PluginForHost>    pluginsForHost    = new Vector<PluginForHost>();
+    private Vector<PluginForHost> pluginsForHost = new Vector<PluginForHost>();
     /**
      * Logger für Meldungen des Programmes
      */
-    private Logger            logger = Plugin.getLogger();
+    private Logger logger = Plugin.getLogger();
     /**
      * Komponente, die alle Downloads anzeigt
      */
@@ -74,7 +76,7 @@ public class MainWindow extends JFrame implements ClipboardOwner{
     /**
      * TabbedPane
      */
-    private JTabbedPane       tabbedPane               = new JTabbedPane();
+    private JTabbedPane tabbedPane = new JTabbedPane();
     private JDAction actionStartDownload;
     private JDAction actionMoveUp;
     private JDAction actionMoveDown;
@@ -193,12 +195,23 @@ public class MainWindow extends JFrame implements ClipboardOwner{
             logger.info("Host-Plugin : "+p.getPluginName());
         }
     }
+    /**
+     * Diese Methode erstellt einen neuen Captchadialog und liefert den eingegebenen Text zurück.
+     * 
+     * @param captchaAdress Adresse des anzuzeigenden Bildes
+     * @return Der vom Benutzer eingegebene Text
+     */
     private String getCaptcha(String captchaAdress){
         String captchaText=null;
         CaptchaDialog captchaDialog = new CaptchaDialog(this,captchaAdress);
         captchaDialog.setVisible(true);
         return captchaDialog.getCaptchaText();
     }
+    /**
+     * Hier werden die Aktionen ausgewertet und weitergeleitet
+     * 
+     * @param actionID Die erwünschte Aktion
+     */
     public void doAction(int actionID){
         switch(actionID){
             case JDAction.ITEMS_MOVE_UP:
@@ -219,9 +232,17 @@ public class MainWindow extends JFrame implements ClipboardOwner{
         }
         
     }
+    /**
+     * Methode, um eine Veränderung der Zwischenablage zu bemerken und zu verarbeiten
+     */
     public void lostOwnership(Clipboard clipboard, Transferable contents) {
         new ClipboardHandler().start();
     }
+    /**
+     * Diese Klasse ist dafür da, zeitverzögert die Zwischenablage zu untersuchen 
+     * 
+     * @author astaldo
+     */
     private class ClipboardHandler extends Thread{
         public void run(){
             Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
@@ -234,7 +255,6 @@ public class MainWindow extends JFrame implements ClipboardOwner{
                 try {
                     data = (String)clipboard.getData(DataFlavor.stringFlavor);
                     new DistributeData(data).start();
-//                    System.out.println(data);
                 }
                 catch (UnsupportedFlavorException e1) {}
                 catch (IOException e1)                {}
@@ -243,6 +263,11 @@ public class MainWindow extends JFrame implements ClipboardOwner{
             }
         }
     }
+    /**
+     * Alle Interaktionen (Knöpfe, Shortcuts) sollten über diese JDAction stattfinden
+     * 
+     * @author astaldo
+     */
     public class JDAction extends AbstractAction{
         /**
          * serialVersionUID
@@ -290,12 +315,17 @@ public class MainWindow extends JFrame implements ClipboardOwner{
     private class DistributeData extends Thread{
         private String data;
         /**
-         * Erstellt einen neuen Thread mit dem Text, der verteilt werden soll
+         * Erstellt einen neuen Thread mit dem Text, der verteilt werden soll.
+         * Die übergebenen Daten werden durch einen URLDecoder geschickt.
          * 
          * @param data Daten, die verteilt werden sollen
          */
         public DistributeData (String data){
             this.data = data;
+            try {
+                this.data = URLDecoder.decode(this.data,"US-ASCII");
+            }
+            catch (UnsupportedEncodingException e) { }
         }
         public void run(){
             Vector<DownloadLink> links    = new Vector<DownloadLink>();
@@ -359,21 +389,29 @@ public class MainWindow extends JFrame implements ClipboardOwner{
         public void run(){
             Plugin plugin   = downloadLink.getPlugin();
             PluginStep step = plugin.getNextStep(downloadLink);
-            while(step != null){
+            
+            // Hier werden alle einzelnen Schritte des Plugins durchgegangen,
+            // bis entwerder null zurückgegeben wird oder ein Fehler auftritt
+            while(step != null && step.getStatus()!=PluginStep.STATUS_ERROR){
                 switch(step.getStep()){
-                    case PluginStep.WAIT_TIME:
+                    case PluginStep.STEP_WAIT_TIME:
                         try {
                             System.out.println("sleep startet");
                             Thread.sleep((Long)step.getParameter());
                             System.out.println("sleep fertig");
+                            step.setStatus(PluginStep.STATUS_DONE);
                         }
                         catch (InterruptedException e) { e.printStackTrace(); }
                         break;
-                    case PluginStep.CAPTCHA:
+                    case PluginStep.STEP_CAPTCHA:
                         String captchaText = getCaptcha((String)step.getParameter());
                         step.setParameter(captchaText);
+                        step.setStatus(PluginStep.STATUS_DONE);
                 }
                 step = plugin.getNextStep(downloadLink);
+            }
+            if(step.getStatus() == PluginStep.STATUS_ERROR){
+                logger.severe("Error occurred while downloading file");
             }
         }
     }

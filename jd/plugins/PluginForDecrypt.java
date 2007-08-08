@@ -2,7 +2,11 @@
 
 import java.util.Vector;
 
-
+/**
+ * Dies ist die Oberklasse für alle Plugins, die Links entschlüsseln können
+ * 
+ * @author astaldo
+ */
 public abstract class PluginForDecrypt extends Plugin{
     /**
      * Diese Methode entschlüsselt Links.

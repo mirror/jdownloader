@@ -1,5 +1,9 @@
 ﻿package jd.plugins;
-
+/**
+ * Diese Klasse bildet alle Informationen ab, die bei einem Request herausgefunden werden können
+ * 
+ * @author astaldo
+ */
 public class RequestInfo {
     /**
      * Der Quelltext der Seite

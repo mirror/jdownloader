@@ -3,7 +3,12 @@
 import java.net.URLConnection;
 import java.util.Vector;
 
-
+/**
+ * Dies ist die Oberklasse für alle Plugins, die von einem Anbieter 
+ * Dateien herunterladen können
+ * 
+ * @author astaldo
+ */
 public abstract class PluginForHost extends Plugin{
     public abstract URLConnection        getURLConnection();
     /**

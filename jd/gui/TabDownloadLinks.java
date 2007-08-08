@@ -65,7 +65,7 @@ public class TabDownloadLinks extends JPanel implements PluginListener{
         for (int c = 0; c < internalTableModel.getColumnCount(); c++) {
             column = table.getColumnModel().getColumn(c);
             switch(c){
-                case COL_INDEX:    column.setPreferredWidth(20); break;
+                case COL_INDEX:    column.setPreferredWidth(20);  break;
                 case COL_NAME:     column.setPreferredWidth(200); break;
                 case COL_HOST:     column.setPreferredWidth(100); break;
                 case COL_PROGRESS: column.setPreferredWidth(150); break;
@@ -90,6 +90,8 @@ public class TabDownloadLinks extends JPanel implements PluginListener{
         fireTableChanged();
     }
     /**
+     * TODO Verschieben von zellen
+     * 
      * Hiermit werden die selektierten Zeilen innerhalb der Tabelle verschoben
      * 
      * @param direction Zeigt wie/wohin die Einträge verschoben werden sollen
@@ -116,6 +118,9 @@ public class TabDownloadLinks extends JPanel implements PluginListener{
         }
         return null;
     }
+    /**
+     * Hiermit wird die Tabelle aktualisiert
+     */
     public void fireTableChanged(){
         table.tableChanged(new TableModelEvent(table.getModel()));
     }
@@ -187,6 +192,11 @@ public class TabDownloadLinks extends JPanel implements PluginListener{
             return null;
         }
     }
+    /**
+     * Diese Klasse zeichnet eine ProgressBar in eine JTable
+     * 
+     * @author astaldo
+     */
     private class ProgressBarRenderer implements TableCellRenderer{
         public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column){
             return (JProgressBar)value;
