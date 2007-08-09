@@ -12,7 +12,7 @@ import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
 import jd.plugins.event.PluginEvent;
 /**
- * http://stealth.to/?id=7oj9t3vb0u316a8sjd66b43w1q16ku
+ * http://stealth.to/?id=13wz0z8lds3nun4dihetpsqgzte4t2
  * 
  * @author a
  *

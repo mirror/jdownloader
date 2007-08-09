@@ -425,7 +425,7 @@ public class MainWindow extends JFrame implements ClipboardOwner{
         public void run(){
 
 //            while((downloadLink = tabDownloadTable.getNextDownloadLink()) != null){
-
+                downloadLink = tabDownloadTable.getNextDownloadLink();
                 plugin   = downloadLink.getPlugin();
                 PluginStep step = plugin.getNextStep(downloadLink);
 

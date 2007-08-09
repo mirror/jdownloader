@@ -72,17 +72,22 @@ public class Rapidshare extends PluginForHost{
                 //Der Download wird bestätigt
                 requestInfo = getRequest(downloadLink.getUrlDownload());
                 String newURL = getFirstMatch(requestInfo.getHtmlCode(), patternForNewHost, 1);
-                
-                //Auswahl ob free oder prem
-                requestInfo = postRequest(new URL(newURL),"dl.start=free");
-                
-                // captcha Adresse finden
-                captchaAddress = getFirstMatch(requestInfo.getHtmlCode(),patternForCaptcha,1);
-                
-                //post daten lesen
-                postTarget   = getFirstMatch(requestInfo.getHtmlCode(), patternForFormData, 1);
-                actionString = getFirstMatch(requestInfo.getHtmlCode(), patternForFormData, 2);
-                currentStep  = steps.firstElement();
+                if(newURL != null){
+
+                    //Auswahl ob free oder prem
+                    requestInfo = postRequest(new URL(newURL),"dl.start=free");
+
+                    // captcha Adresse finden
+                    captchaAddress = getFirstMatch(requestInfo.getHtmlCode(),patternForCaptcha,1);
+
+                    //post daten lesen
+                    postTarget   = getFirstMatch(requestInfo.getHtmlCode(), patternForFormData, 1);
+                    actionString = getFirstMatch(requestInfo.getHtmlCode(), patternForFormData, 2);
+                    currentStep  = steps.firstElement();
+                }
+                else{
+                    logger.warning("file deleted?");
+                }
                 if(captchaAddress == null || postTarget == null || actionString == null){
                     currentStep.setStatus(PluginStep.STATUS_ERROR);
                     logger.warning("could not get downloadInfo");
@@ -91,6 +96,7 @@ public class Rapidshare extends PluginForHost{
             }
             catch (MalformedURLException e) { e.printStackTrace(); }
             catch (IOException e)           { e.printStackTrace(); }
+            
         }
         int index = steps.indexOf(currentStep);
         todo = currentStep;
@@ -132,7 +138,7 @@ public class Rapidshare extends PluginForHost{
             int length = urlConnection.getContentLength();
             File fileOutput = downloadLink.getFileOutput();
             downloadLink.setDownloadLength(length);
-            
+            logger.info("starting download");
             return download(downloadLink, urlConnection);
         }
         catch (IOException e) { logger.severe("URL could not be opened. "+e.toString());}
