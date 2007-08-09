@@ -5,16 +5,42 @@
  * @author astaldo
  */
 public class PluginStep {
-    
+    /**
+     * ID für eine gewisse Wartezeit. Der dazugehörige Wert ist die Zeit in Millisekunden
+     */
     public final static int STEP_WAIT_TIME = 1 << 1;
+    /**
+     * Das Captcha Bild soll erkannt werden. Als Rückgabe wird der erkannte Text als Parameter übergeben
+     */
     public final static int STEP_CAPTCHA   = 1 << 2;
+    /**
+     * Der Download soll durchgeführt werden. Als Parameter wird der DownloadLink übergeben
+     */
     public final static int STEP_DOWNLOAD  = 1 << 3;
+    /**
+     * Ein Link soll entschlüsselt werden
+     */
     public final static int STEP_DECRYPT   = 1 << 4;
-    
-    public final static int STATUS_TODO             = 0;
-    public final static int STATUS_ERROR            = 1;
-    public final static int STATUS_DONE             = 2;
-    public final static int STATUS_INPUT_FROM_USER  = 3;
+    /**
+     * Dieser Schritt muß erst noch stattfinden
+     */
+    public final static int STATUS_TODO        = 0;
+    /**
+     * Dieser Schritt wurde fehlerhaft abgearbeitet
+     */
+    public final static int STATUS_ERROR       = 1;
+    /**
+     * Dieser Schritt wurde erfolgreich durchgeführt
+     */
+    public final static int STATUS_DONE        = 2;
+    /**
+     * Dieser Schritt erfordert eine Interaktion
+     */
+    public final static int STATUS_USER_INPUT  = 3;
+    /**
+     * Dieser Schritt sollte nochmal wiederholt werden
+     */
+    public final static int STATUS_RETRY       = 4;
     /**
      * Status dieses Schrittes
      */
@@ -37,4 +63,22 @@ public class PluginStep {
     public void setParameter(Object parameter) { this.parameter = parameter; }
     public int getStatus()                     { return status;              }
     public void setStatus(int status)          { this.status = status;       }
+    public String toString(){
+        StringBuffer buffer = new StringBuffer();
+        buffer.append("step: ");
+        switch(step){
+            case STEP_WAIT_TIME: buffer.append("WAIT_TIME "); break;
+            case STEP_CAPTCHA:   buffer.append("CAPTCHA ");   break;
+            case STEP_DOWNLOAD:  buffer.append("DOWNLOAD ");  break;
+            case STEP_DECRYPT:   buffer.append("DECRYPT ");   break;
+        }
+        buffer.append("status: ");
+        switch(status){
+            case STATUS_DONE:       buffer.append("DONE");      break;
+            case STATUS_ERROR:      buffer.append("ERROR");     break;
+            case STATUS_TODO:       buffer.append("TODO");      break;
+            case STATUS_USER_INPUT: buffer.append("USERINPUT"); break;
+        }
+        return buffer.toString();
+    }
 }

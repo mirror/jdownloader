@@ -57,6 +57,7 @@ public class Stealth extends PluginForDecrypt{
             catch (IOException e)           { e.printStackTrace(); }
         }
         firePluginEvent(new PluginEvent(this,PluginEvent.PLUGIN_PROGRESS_MAX,countHits));
+        logger.info(cryptedLinks.size()+" crypted link(s) found");
         
         //Hier werden alle verschlüsselten Links behandelt
         for(int i=0;i<cryptedLinks.size();i++){
@@ -74,6 +75,7 @@ public class Stealth extends PluginForDecrypt{
                         decryptedLinks.add(requestInfo.getLocation());
                     }
                 }
+                logger.info(decryptedLinks.size()+" downloads decrypted");
                 firePluginEvent(new PluginEvent(this,PluginEvent.PLUGIN_PROGRESS_FINISH,null));
                 currentStep = null;
             }

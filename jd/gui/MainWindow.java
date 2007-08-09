@@ -2,6 +2,7 @@
 
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
+import java.awt.Insets;
 import java.awt.Toolkit;
 import java.awt.datatransfer.Clipboard;
 import java.awt.datatransfer.ClipboardOwner;
@@ -26,7 +27,9 @@ import javax.swing.Action;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JFrame;
+import javax.swing.JLabel;
 import javax.swing.JMenuBar;
+import javax.swing.JPanel;
 import javax.swing.JTabbedPane;
 import javax.swing.JToggleButton;
 import javax.swing.JToolBar;
@@ -83,6 +86,7 @@ public class MainWindow extends JFrame implements ClipboardOwner{
      */
     private StartDownload download = null;
     private Speedometer speedoMeter = new Speedometer();
+    private StatusBar statusBar;
     /**
      * Ein Togglebutton zum Starten / Stoppen der Downloads
      */
@@ -126,6 +130,7 @@ public class MainWindow extends JFrame implements ClipboardOwner{
         tabbedPane        = new JTabbedPane();
         tabDownloadTable  = new TabDownloadLinks();
         tabPluginActivity = new TabPluginActivity();
+        statusBar         = new StatusBar();
         tabbedPane.addTab(Utilities.getResourceString("label.tab.download"),        tabDownloadTable);
         tabbedPane.addTab(Utilities.getResourceString("label.tab.plugin_activity"), tabPluginActivity);
 
@@ -134,22 +139,19 @@ public class MainWindow extends JFrame implements ClipboardOwner{
         btnStartStop.setFocusPainted(false); 
         btnStartStop.setBorderPainted(false);
         
-        JButton btnUp     = new JButton(actionMoveUp);        btnUp.setFocusPainted(false);    btnUp.setBorderPainted(false);
-        JButton btnDown   = new JButton(actionMoveDown);      btnDown.setFocusPainted(false);  btnDown.setBorderPainted(false);
         JButton btnAdd    = new JButton(actionAdd);           btnAdd.setFocusPainted(false);   btnAdd.setBorderPainted(false);
         JButton btnDelete = new JButton(actionDelete);        btnDelete.setFocusPainted(false);btnDelete.setBorderPainted(false);
         
         toolBar.setFloatable(false);
         toolBar.add(btnStartStop);
-        toolBar.add(btnUp);
-        toolBar.add(btnDown);
         toolBar.add(btnAdd);
         toolBar.add(btnDelete);
 
         setLayout(new GridBagLayout());
         Utilities.addToGridBag(this, toolBar,     0, 0, 1, 1, 0, 0, null, GridBagConstraints.HORIZONTAL, GridBagConstraints.NORTH); 
         Utilities.addToGridBag(this, tabbedPane,  0, 1, 1, 1, 1, 1, null, GridBagConstraints.BOTH,       GridBagConstraints.CENTER); 
-        Utilities.addToGridBag(this, speedoMeter, 1, 1, 1, 1, 0, 0, null, GridBagConstraints.VERTICAL,   GridBagConstraints.WEST); 
+//        Utilities.addToGridBag(this, speedoMeter, 1, 1, 1, 1, 0, 0, null, GridBagConstraints.VERTICAL,   GridBagConstraints.WEST); 
+        Utilities.addToGridBag(this, statusBar,   0, 2, 1, 1, 0, 0, null, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST); 
 //        setJMenuBar(menuBar);
     }
     /**
@@ -158,13 +160,15 @@ public class MainWindow extends JFrame implements ClipboardOwner{
     private void loadImages(){
         ClassLoader cl = getClass().getClassLoader();
         Toolkit toolkit = Toolkit.getDefaultToolkit();
-        Utilities.addImage("start",   toolkit.getImage(cl.getResource("img/start.png")));
-        Utilities.addImage("stop",    toolkit.getImage(cl.getResource("img/stop.png")));
-        Utilities.addImage("add",     toolkit.getImage(cl.getResource("img/add.png")));
-        Utilities.addImage("delete",  toolkit.getImage(cl.getResource("img/delete.png")));
-        Utilities.addImage("up",      toolkit.getImage(cl.getResource("img/up.png")));
-        Utilities.addImage("down",    toolkit.getImage(cl.getResource("img/down.png")));
-        Utilities.addImage("mind",    toolkit.getImage(cl.getResource("img/mind.png")));
+        Utilities.addImage("start",    toolkit.getImage(cl.getResource("img/start.png")));
+        Utilities.addImage("stop",     toolkit.getImage(cl.getResource("img/stop.png")));
+        Utilities.addImage("add",      toolkit.getImage(cl.getResource("img/add.png")));
+        Utilities.addImage("delete",   toolkit.getImage(cl.getResource("img/delete.png")));
+        Utilities.addImage("up",       toolkit.getImage(cl.getResource("img/up.png")));
+        Utilities.addImage("down",     toolkit.getImage(cl.getResource("img/down.png")));
+        Utilities.addImage("mind",     toolkit.getImage(cl.getResource("img/mind.png")));
+        Utilities.addImage("led_empty",toolkit.getImage(cl.getResource("img/led_empty.gif")));
+        Utilities.addImage("led_green",toolkit.getImage(cl.getResource("img/led_green.gif")));
     }
     /**
      * Hier werden alle Plugins im aktuellen Verzeichnis geparsed (und im Classpath)
@@ -219,6 +223,7 @@ public class MainWindow extends JFrame implements ClipboardOwner{
     private String getCaptcha(String captchaAdress){
         String captchaText=null;
         CaptchaDialog captchaDialog = new CaptchaDialog(this,captchaAdress);
+        MainWindow.this.toFront();
         captchaDialog.setVisible(true);
         return captchaDialog.getCaptchaText();
     }
@@ -238,16 +243,9 @@ public class MainWindow extends JFrame implements ClipboardOwner{
                 }
                 break;
             case JDAction.APP_START_STOP_DOWNLOADS:
-                DownloadLink downloadLink = tabDownloadTable.getNextDownloadLink();
                 if(download == null){
-                    if (downloadLink != null){
-                        download = new StartDownload(downloadLink);
-                        download.start();
-                    }
-                    else{
-                        logger.severe("no download in Queue (getNextDownloadLink() == null).");
-                        btnStartStop.setSelected(false);
-                    }
+                    download = new StartDownload();
+                    download.start();
                 }
                 else{
                     download.interrupt();
@@ -369,9 +367,11 @@ public class MainWindow extends JFrame implements ClipboardOwner{
             for(int i=0; i<pluginsForDecrypt.size();i++){
                 pDecrypt = pluginsForDecrypt.elementAt(i);
                 if(pDecrypt.isClipboardEnabled() && pDecrypt.canHandle(data)){
+                    statusBar.setPluginForDecryptActive(true);
                     cryptedLinks.addAll(pDecrypt.getMatches(data,pDecrypt.getSupportedLinks()));
                     data = pDecrypt.cutMatches(data);
                     decryptedLinks.addAll(pDecrypt.decryptLinks(cryptedLinks));
+                    statusBar.setPluginForDecryptActive(false);
                 }
             }
             // Danach wird der (noch verbleibende) Inhalt der Zwischenablage an die Plugins der Hoster geschickt.
@@ -414,9 +414,8 @@ public class MainWindow extends JFrame implements ClipboardOwner{
         private Plugin plugin;
         private boolean aborted=false;
         
-        public StartDownload(DownloadLink downloadLink){
+        public StartDownload(){
             super("JD-StartDownload");
-            this.downloadLink = downloadLink;
         }
         public void abortDownload(){
             aborted=true;
@@ -424,35 +423,104 @@ public class MainWindow extends JFrame implements ClipboardOwner{
                 plugin.abort();
         }
         public void run(){
-            plugin   = downloadLink.getPlugin();
-            PluginStep step = plugin.getNextStep(downloadLink);
-            
-            // Hier werden alle einzelnen Schritte des Plugins durchgegangen,
-            // bis entwerder null zurückgegeben wird oder ein Fehler auftritt
-            while(!aborted && step != null && step.getStatus()!=PluginStep.STATUS_ERROR){
-                switch(step.getStep()){
-                    case PluginStep.STEP_WAIT_TIME:
-                        try {
-                            logger.info("sleep start");
-                            Thread.sleep((Long)step.getParameter());
-                            logger.info("sleep finish");
+
+//            while((downloadLink = tabDownloadTable.getNextDownloadLink()) != null){
+
+                plugin   = downloadLink.getPlugin();
+                PluginStep step = plugin.getNextStep(downloadLink);
+
+                // Hier werden alle einzelnen Schritte des Plugins durchgegangen,
+                // bis entwerder null zurückgegeben wird oder ein Fehler auftritt
+                statusBar.setPluginForHostActive(true);
+                while(!aborted && step != null && step.getStatus()!=PluginStep.STATUS_ERROR){
+                    switch(step.getStep()){
+                        case PluginStep.STEP_WAIT_TIME:
+                            try {
+                                long milliSeconds = (Long)step.getParameter();
+                                logger.info("wait "+ milliSeconds+" ms");
+                                Thread.sleep(milliSeconds);
+                                step.setStatus(PluginStep.STATUS_DONE);
+                            }
+                            catch (InterruptedException e) { e.printStackTrace(); }
+                            break;
+                        case PluginStep.STEP_CAPTCHA:
+                            String captchaText = getCaptcha((String)step.getParameter());
+                            step.setParameter(captchaText);
                             step.setStatus(PluginStep.STATUS_DONE);
-                        }
-                        catch (InterruptedException e) { e.printStackTrace(); }
-                        break;
-                    case PluginStep.STEP_CAPTCHA:
-                        String captchaText = getCaptcha((String)step.getParameter());
-                        step.setParameter(captchaText);
-                        step.setStatus(PluginStep.STATUS_DONE);
+                    }
+                    step = plugin.getNextStep(downloadLink);
                 }
-                step = plugin.getNextStep(downloadLink);
-            }
-            if(aborted){
-                logger.warning("Thread aborted");
-            }
-            if(step != null && step.getStatus() == PluginStep.STATUS_ERROR){
-                logger.severe("Error occurred while downloading file");
-            }
+                statusBar.setPluginForHostActive(false);
+                if(aborted){
+                    logger.warning("Thread aborted");
+                }
+                if(step != null && step.getStatus() == PluginStep.STATUS_ERROR){
+                    logger.severe("Error occurred while downloading file");
+                }
+//            }
+            btnStartStop.setSelected(false);
+        }
+    }
+    /**
+     * Diese Klasse realisiert eine StatusBar
+     * 
+     * @author astaldo
+     */
+    private class StatusBar extends JPanel{
+        /**
+         * serialVersionUID
+         */
+        private static final long serialVersionUID = 3676496738341246846L;
+        private JLabel lblMessage;
+        private JLabel lblSpeed;
+        private JLabel lblPluginHostActive;
+        private JLabel lblPluginDecryptActive;
+        private ImageIcon imgActive;
+        private ImageIcon imgInactive;
+        
+        public StatusBar(){
+            imgActive   = new ImageIcon(Utilities.getImage("led_green"));
+            imgInactive = new ImageIcon(Utilities.getImage("led_empty"));
+            
+            setLayout(new GridBagLayout());
+            lblMessage             = new JLabel(Utilities.getResourceString("label.status.welcome"));
+            lblSpeed               = new JLabel("450 kb/s");
+            lblPluginHostActive    = new JLabel(imgInactive);
+            lblPluginDecryptActive = new JLabel(imgInactive);
+            lblPluginDecryptActive.setToolTipText(Utilities.getResourceString("tooltip.status.plugin_decrypt"));
+            lblPluginHostActive.setToolTipText(Utilities.getResourceString("tooltip.status.plugin_host"));
+            
+            Utilities.addToGridBag(this, lblMessage,             0, 0, 1, 1, 1, 1, new Insets(0,5,0,0), GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+            Utilities.addToGridBag(this, lblSpeed,               1, 0, 1, 1, 0, 0, new Insets(0,5,0,5), GridBagConstraints.NONE,       GridBagConstraints.WEST);
+            Utilities.addToGridBag(this, lblPluginHostActive,    2, 0, 1, 1, 0, 0, new Insets(0,5,0,0), GridBagConstraints.NONE,       GridBagConstraints.EAST);
+            Utilities.addToGridBag(this, lblPluginDecryptActive, 3, 0, 1, 1, 0, 0, new Insets(0,5,0,5), GridBagConstraints.NONE,       GridBagConstraints.EAST);
+        }
+        public void setText(String text){
+            lblMessage.setText(text);
+        }
+        /**
+         * Zeigt, ob die Plugins zum Downloaden von einem Anbieter arbeiten
+         * 
+         * @param active wahr, wenn Downloads aktiv sind
+         */
+        public void setPluginForHostActive(boolean active)    { setPluginActive(lblPluginHostActive,    active); }
+        /**
+         * Zeigt an, ob die Plugins zum Entschlüsseln von Links arbeiten
+         * 
+         * @param active wahr, wenn soeben Links entschlüsselt werden
+         */
+        public void setPluginForDecryptActive(boolean active) { setPluginActive(lblPluginDecryptActive, active); }
+        /**
+         * Ändert das genutzte Bild eines Labels, um In/Aktivität anzuzeigen
+         * 
+         * @param lbl Das zu ändernde Label
+         * @param active soll es als aktiv oder inaktiv gekennzeichnet werden
+         */
+        private void setPluginActive(JLabel lbl,boolean active){
+            if(active)
+                lbl.setIcon(imgActive);
+            else
+                lbl.setIcon(imgInactive);
         }
     }
 }

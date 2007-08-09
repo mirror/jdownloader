@@ -17,7 +17,8 @@ import jd.plugins.RequestInfo;
 public class Rapidshare extends PluginForHost{
     private String  host    = "rapidshare.com";
     private String  version = "1.0.0.0";
-    private Pattern patternSupported = Pattern.compile("http://rapidshare\\.com/files/[0-9]*/[^\\s\"]+");
+    // http://(?:[^.]*\.)*rapidshare\.com/files/[0-9]*/[^\s"]+
+    private Pattern patternSupported = Pattern.compile("http://(?:[^.]*\\.)*rapidshare\\.com/files/[0-9]*/[^\\s\"]+");
     /**
      * Das findet die Ziel URL für den Post
      */
@@ -32,6 +33,11 @@ public class Rapidshare extends PluginForHost{
      * <form name="dl".* action="([^\n"]*)"(?s).*?<input type="submit" name="actionstring" value="[^\n"]*"
      */
     private Pattern patternForFormData = Pattern.compile("<form name=\"dl\".* action=\"([^\\n\"]*)\"(?s).*?<input type=\"submit\" name=\"actionstring\" value=\"([^\\n\"]*)\"");
+    /**
+     * Das DownloadLimit wurde erreicht
+     * (?s)Downloadlimit.*Oder warte ([0-9]*)  
+     */
+    private Pattern patternDownloadLimitReached = Pattern.compile("(?s)Downloadlimit.*Oder warte ([0-9]*) ");
     
     private int waitTime          = 500;
     private String captchaAddress;
@@ -60,7 +66,7 @@ public class Rapidshare extends PluginForHost{
     public PluginStep getNextStep(Object parameter) {
         DownloadLink downloadLink = (DownloadLink)parameter;
         RequestInfo requestInfo;
-        PluginStep toDo=null;
+        PluginStep todo=null;
         if(currentStep == null){
             try {
                 //Der Download wird bestätigt
@@ -79,6 +85,7 @@ public class Rapidshare extends PluginForHost{
                 currentStep  = steps.firstElement();
                 if(captchaAddress == null || postTarget == null || actionString == null){
                     currentStep.setStatus(PluginStep.STATUS_ERROR);
+                    logger.warning("could not get downloadInfo");
                     return currentStep;
                 }
             }
@@ -86,28 +93,32 @@ public class Rapidshare extends PluginForHost{
             catch (IOException e)           { e.printStackTrace(); }
         }
         int index = steps.indexOf(currentStep);
-        toDo = currentStep;
+        todo = currentStep;
         if(index+1 < steps.size())
             currentStep = steps.elementAt(index+1);
-        switch(toDo.getStep()){
+        logger.info(todo.toString());
+        switch(todo.getStep()){
             case PluginStep.STEP_WAIT_TIME:
-                toDo.setParameter(new Long(waitTime));
+                todo.setParameter(new Long(waitTime));
                 break;
             case PluginStep.STEP_CAPTCHA:
-                toDo.setParameter(captchaAddress);
-                toDo.setStatus(PluginStep.STATUS_INPUT_FROM_USER);
+                todo.setParameter(captchaAddress);
+                todo.setStatus(PluginStep.STATUS_USER_INPUT);
                 break;
             case PluginStep.STEP_DOWNLOAD:
                 postParameter.put("mirror",      "on");
                 postParameter.put("accesscode",  (String)steps.elementAt(1).getParameter());
                 postParameter.put("actionString",actionString);
-                
-                prepareDownload(downloadLink);
+                boolean success = prepareDownload(downloadLink);
+                if(success)
+                    todo.setStatus(PluginStep.STATUS_DONE);
+                else
+                    todo.setStatus(PluginStep.STATUS_ERROR);
                 break;
         }
-        return toDo;
+        return todo;
     }
-    private void prepareDownload(DownloadLink downloadLink){
+    private boolean prepareDownload(DownloadLink downloadLink){
         try {
             URLConnection urlConnection = new URL(postTarget).openConnection();
             urlConnection.setDoOutput(true);
@@ -122,8 +133,9 @@ public class Rapidshare extends PluginForHost{
             File fileOutput = downloadLink.getFileOutput();
             downloadLink.setDownloadLength(length);
             
-            download(downloadLink, urlConnection);
+            return download(downloadLink, urlConnection);
         }
         catch (IOException e) { logger.severe("URL could not be opened. "+e.toString());}
+        return false;
     } 
 }

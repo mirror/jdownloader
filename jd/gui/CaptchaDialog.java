@@ -35,7 +35,7 @@ public class CaptchaDialog extends JDialog implements ActionListener{
     /**
      * Das ist der eingegebene captcha Text
      */
-    private String captchaText=null;
+    private String captchaText = null;
     /**
      * Erstellt einen neuen Dialog.
      * 
@@ -64,6 +64,7 @@ public class CaptchaDialog extends JDialog implements ActionListener{
 
         pack();
         setLocation(Utilities.getCenterOfComponent(null, this));
+        textField.requestFocusInWindow();
     }
     public void actionPerformed(ActionEvent e) {
         if(e.getSource() == btnOK){

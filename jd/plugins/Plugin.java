@@ -355,7 +355,7 @@ public abstract class Plugin{
             return true;
         }
         catch (FileNotFoundException e){
-            logger.severe("fileDescription is wrong. "+e.getLocalizedMessage());
+            logger.severe("file not found. "+e.getLocalizedMessage());
         }
         catch (SecurityException e){
             logger.severe("not enough rights to write the file. "+e.getLocalizedMessage());
