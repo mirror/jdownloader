@@ -1,3 +1,5 @@
+package jd.captcha;
+
 import java.awt.Component;
 import java.awt.GridBagLayout;
 import java.awt.Image;
@@ -23,7 +25,8 @@ import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
-public class CAntiCaptcha {
+public class JAntiCaptcha {
+
 	/*
 	 * private static double letterSearchLimitValue Faktor, über den sich
 	 * einstellen lässt ab welcher Grenze ein Buchstabe als sicher richtig
@@ -31,14 +34,6 @@ public class CAntiCaptcha {
 	 * gesucht) bis 0.3 (der algo ist sehr tollerant bei der Suche)
 	 */
 	private double letterSearchLimitValue = 0.15;
-
-	public static void main(String[] args) {
-
-		CAntiCaptcha owner = new CAntiCaptcha("rapidshare.com");
-
-		// owner.checkCaptcha(new
-		// File("methods/rapidshare.com/captchas/rapidsharecom121040807171709.jpg"));
-	}
 
 	private String methodAuthor;
 
@@ -112,7 +107,7 @@ public class CAntiCaptcha {
 
 	private int scanVariance = 0;
 
-	public CAntiCaptcha(String method) {
+	public JAntiCaptcha(String method) {
 		this.method = method;
 		String[] path = { "methods", method };
 		if (!new File(UTILITIES.getFullPath(path)).exists()) {
@@ -763,7 +758,7 @@ public class CAntiCaptcha {
 	/*
 	 * Versucht einen captcha auszulesen und gibt den Inhalt als String zurück
 	 */
-	private String checkCaptcha(File captchafile) {
+	public String checkCaptcha(File captchafile) {
 		UTILITIES.trace("check " + captchafile);
 		Image captchaImage = loadImage(captchafile);
 		Captcha captcha = createCaptcha(captchaImage);
@@ -771,7 +766,7 @@ public class CAntiCaptcha {
 		return checkCaptcha(captcha);
 	}
 
-	private String checkCaptcha(Captcha captcha) {
+	public String checkCaptcha(Captcha captcha) {
 
 		// captcha.printCaptcha();
 

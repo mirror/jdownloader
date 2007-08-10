@@ -1,3 +1,5 @@
+package jd.captcha;
+
 import java.awt.Component;
 import java.awt.GridBagLayout;
 import java.awt.Image;
@@ -160,7 +162,7 @@ public class Letter extends PixelGrid {
 	/**
 	 * @param owner the owner to set
 	 */
-	public void setOwner(CAntiCaptcha owner) {
+	public void setOwner(JAntiCaptcha owner) {
 		this.owner = owner;
 	}
 

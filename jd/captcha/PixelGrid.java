@@ -1,3 +1,5 @@
+package jd.captcha;
+
 import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.Image;
@@ -19,7 +21,7 @@ import com.sun.image.codec.jpeg.JPEGImageEncoder;
 public class PixelGrid {
 
 	
-	public CAntiCaptcha owner;
+	public JAntiCaptcha owner;
 
 
 
@@ -85,7 +87,7 @@ public class PixelGrid {
 		
 		}
 	}
-	public static void setPixelValue(int x,int y,int[][] localGrid, int value,CAntiCaptcha owner){
+	public static void setPixelValue(int x,int y,int[][] localGrid, int value,JAntiCaptcha owner){
 		try{
 			localGrid[x][y]=Color.HSBtoRGB((float)0.0, (float)0.0, (float)((double)value/owner.getColorValueFaktor()));
 		}catch(ArrayIndexOutOfBoundsException e){
@@ -594,7 +596,7 @@ public class PixelGrid {
 	/**
 	 * @param owner the owner to set
 	 */
-	public void setOwner(CAntiCaptcha owner) {
+	public void setOwner(JAntiCaptcha owner) {
 		this.owner = owner;
 	}
 	
