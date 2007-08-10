@@ -5,7 +5,7 @@ import java.awt.GridBagConstraints;
 import java.awt.Image;
 import java.awt.Insets;
 import java.awt.MediaTracker;
-import java.awt.Toolkit;
+import java.awt.image.BufferedImage;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
@@ -17,42 +17,36 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.StringReader;
 import java.net.URL;
 import java.security.MessageDigest;
 import java.util.Calendar;
 import java.util.Properties;
-import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import javax.imageio.ImageIO;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
-import jd.plugins.Plugin;
-
 import org.w3c.dom.Document;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
+import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
-
-
-
-
-
-
 
 /**
  * Diese Klasse beinhaltet mehrere Hilfsfunktionen
+ * 
  * @author coalado
  */
 
 public class UTILITIES {
 	/** *********************DEBUG*************************** */
-	
-	
+
 	/**
 	 * public static String getPreString() Diese Funktion gibt einen Zeitstring
 	 * zur anzeige aufd er Konsole aus
@@ -65,13 +59,13 @@ public class UTILITIES {
 				+ ":" + c.get(Calendar.MINUTE) + ":" + c.get(Calendar.SECOND)
 				+ " (" + c.get(Calendar.MILLISECOND) + ") : ";
 	}
- 
+
 	/**
 	 * public static void trace(String args) Diese Funktion gibt einen String
 	 * auf der Konsole aus
 	 */
 	public static void trace(String args) {
-	
+
 		System.out.println(args);
 	}
 
@@ -80,7 +74,7 @@ public class UTILITIES {
 	 * der Konsole aus
 	 */
 	public static void trace(int args) {
-	
+
 		System.out.println(args);
 	}
 
@@ -89,7 +83,7 @@ public class UTILITIES {
 	 * Wert aus
 	 */
 	public static void trace(Boolean args) {
-		
+
 		System.out.println(args);
 	}
 
@@ -99,7 +93,7 @@ public class UTILITIES {
 	 */
 
 	public static void trace(float args) {
-	
+
 		System.out.println(args);
 	}
 
@@ -108,7 +102,7 @@ public class UTILITIES {
 	 * Wert aus
 	 */
 	public static void trace(double args) {
-	
+
 		System.out.println(args);
 	}
 
@@ -120,7 +114,7 @@ public class UTILITIES {
 		if (args == null) {
 			args = "[" + "] NULL";
 		}
-		
+
 		System.out.println(args.toString());
 	}
 
@@ -131,7 +125,7 @@ public class UTILITIES {
 	public static void trace(String[] args) {
 		int i;
 		for (i = 0; i < args.length; i++) {
-		
+
 			System.out.println(i + ". " + args[i]);
 		}
 	}
@@ -143,11 +137,21 @@ public class UTILITIES {
 	public static void trace(int[] args) {
 		int i;
 		for (i = 0; i < args.length; i++) {
-		
+
 			System.out.println(i + ". " + args[i]);
 		}
 	}
+	/**
+	 * public static void trace(byte[] args) Diese Funktion gibt ein byte
+	 * Array aus
+	 */
+	public static void trace(byte[] args) {
+		int i;
+		for (i = 0; i < args.length; i++) {
 
+			System.out.println(i + ". " + args[i]);
+		}
+	}
 	/**
 	 * public static void trace(Object[] args) Diese Funktion gibt ein Object
 	 * Array aus
@@ -155,7 +159,7 @@ public class UTILITIES {
 	public static void trace(Object[] args) {
 		int i;
 		for (i = 0; i < args.length; i++) {
-			
+
 			System.out.println(i + ". " + args[i].toString());
 		}
 	}
@@ -169,7 +173,7 @@ public class UTILITIES {
 		try {
 			Thread.sleep(ms);
 		} catch (InterruptedException e) {
-		e.printStackTrace();
+			e.printStackTrace();
 		}
 	}
 
@@ -193,7 +197,7 @@ public class UTILITIES {
 			}
 		} catch (IOException e) {
 
-		e.printStackTrace();
+			e.printStackTrace();
 		}
 	}
 
@@ -218,7 +222,7 @@ public class UTILITIES {
 			}
 		} catch (IOException e) {
 
-		e.printStackTrace();
+			e.printStackTrace();
 		}
 		return ret;
 	}
@@ -237,7 +241,7 @@ public class UTILITIES {
 
 		} catch (IOException e) {
 
-		e.printStackTrace();
+			e.printStackTrace();
 		}
 	}
 
@@ -260,9 +264,10 @@ public class UTILITIES {
 		mediaTracker.removeImage(img);
 		return img;
 	}
+
 	/**
-	 * 	public static GridBagConstraints getGBC(int x, int y, int width, int height)
-	 * Gibt die default GridBAgConstants zurück
+	 * public static GridBagConstraints getGBC(int x, int y, int width, int
+	 * height) Gibt die default GridBAgConstants zurück
 	 */
 	public static GridBagConstraints getGBC(int x, int y, int width, int height) {
 		GridBagConstraints gbc = new GridBagConstraints();
@@ -270,8 +275,8 @@ public class UTILITIES {
 		gbc.gridy = y;
 		gbc.gridwidth = width;
 		gbc.gridheight = height;
-		gbc.weightx=0.1;
-		gbc.weighty=0;
+		gbc.weightx = 0.1;
+		gbc.weighty = 0;
 		gbc.fill = GridBagConstraints.NONE;
 		gbc.insets = new Insets(1, 1, 1, 1);
 		return gbc;
@@ -320,7 +325,7 @@ public class UTILITIES {
 			fc.setCurrentDirectory(new File(path));
 
 		fc.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
-		int r = fc.showOpenDialog(new JFrame());
+		fc.showOpenDialog(new JFrame());
 		File ret = fc.getSelectedFile();
 
 		return ret;
@@ -339,7 +344,7 @@ public class UTILITIES {
 			fc.setCurrentDirectory(new File(path));
 
 		fc.setFileSelectionMode(JFileChooser.FILES_ONLY);
-		int r = fc.showOpenDialog(new JFrame());
+		fc.showOpenDialog(new JFrame());
 		File ret = fc.getSelectedFile();
 
 		return ret;
@@ -351,23 +356,25 @@ public class UTILITIES {
 	 * File Seperator
 	 */
 	public static String FS = System.getProperty("file.separator");
+
 	/**
 	 * Application dir
 	 */
-	public static String ROOTDIR=System.getProperty("user.dir") + FS;
-	
+	public static String ROOTDIR = System.getProperty("user.dir") + FS;
+
 	/**
-	 * 	public static String getFullPath(String[] entries)
-	 * Gibt den Pfad zurück der im array entries übergeben wurde. der passende FS wird eingesetzt
+	 * public static String getFullPath(String[] entries) Gibt den Pfad zurück
+	 * der im array entries übergeben wurde. der passende FS wird eingesetzt
 	 */
-	public static String getFullPath(String[] entries){
-		String ret="";
-		for(int i=0;i<entries.length-1;i++){
-			ret+=entries[i]+FS;
+	public static String getFullPath(String[] entries) {
+		String ret = "";
+		for (int i = 0; i < entries.length - 1; i++) {
+			ret += entries[i] + FS;
 		}
-		ret+=entries[entries.length-1];
+		ret += entries[entries.length - 1];
 		return ret;
 	}
+
 	/**
 	 * public static String getLocalHash(String file) Gibt einen MD% Hash der
 	 * file zurück
@@ -431,8 +438,8 @@ public class UTILITIES {
 			f.close();
 			return ret;
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
-		e.printStackTrace();
+		
+			e.printStackTrace();
 		}
 		return "";
 	}
@@ -543,16 +550,41 @@ public class UTILITIES {
 		}
 		return null;
 	}
-/**
- * Gibt das Attribut zu key in childNode zurück
- * @param childNode
- * @param key
- * @return String Atribut
- */
-	public static String getAttribute(Node childNode,String key){
+	public static Document parseXmlString(String xml, boolean validating) {
+		try {
+			// Create a builder factory
+			DocumentBuilderFactory factory = DocumentBuilderFactory
+					.newInstance();
+			factory.setValidating(validating);
+		
+			
+			InputSource inSource = new InputSource(new StringReader(xml));
+			
+			// Create the builder and parse the file
+			Document doc = factory.newDocumentBuilder().parse(inSource);
+		
+			return doc;
+		} catch (SAXException e) {
+			e.printStackTrace();
+		} catch (ParserConfigurationException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+
+			// DEBUG.error(e);
+		}
+		return null;
+	}
+	/**
+	 * Gibt das Attribut zu key in childNode zurück
+	 * 
+	 * @param childNode
+	 * @param key
+	 * @return String Atribut
+	 */
+	public static String getAttribute(Node childNode, String key) {
 		NamedNodeMap att = childNode.getAttributes();
-		if(att==null ||att.getNamedItem(key)==null){
-			trace("ERROR: XML Attribute missing: "+key);
+		if (att == null || att.getNamedItem(key) == null) {
+			trace("ERROR: XML Attribute missing: " + key);
 			return null;
 		}
 		return att.getNamedItem(key).getNodeValue();
@@ -584,7 +616,7 @@ public class UTILITIES {
 				return PROPS.getProperty(key);
 
 			} catch (Exception e) {
-				// TODO Auto-generated catch block
+	
 				e.printStackTrace();
 				return null;
 			}
@@ -623,7 +655,7 @@ public class UTILITIES {
 				PROPS.setProperty(key, value);
 
 			} catch (Exception e) {
-				// TODO Auto-generated catch block
+			
 				e.printStackTrace();
 				return false;
 			}
@@ -643,67 +675,111 @@ public class UTILITIES {
 			return false;
 		}
 	}
-	/*****************************************COLOR**************************************/
-//	RGB to HSB
+
+	/** ***************************************COLOR************************************* */
+	// RGB to HSB
+	/**
+	 * public static float[] rgb2hsb(int r, int g, int b) Wandelt einen farbwert
+	 * vom RGB Farbraum in HSB um (Hue, Saturation, Brightness)
+	 */
+	public static float[] rgb2hsb(int r, int g, int b) {
+
+		float[] hsbvals = new float[3];
+		Color.RGBtoHSB(r, g, b, hsbvals);
+		return hsbvals;
+	}
 
 	/**
-	 * public static float[] rgb2hsb(int r, int g, int b)
-	 * Wandelt einen farbwert vom RGB Farbraum in HSB um (Hue, Saturation, Brightness)
+	 * ***************************STRING &
+	 * PARSE***************************************
 	 */
-		public static float[] rgb2hsb(int r, int g, int b) {
-				
-				float [] hsbvals = new float[3]; 
-				Color.RGBtoHSB(r, g, b, hsbvals);
-				return hsbvals;
+	/**
+	 * public static String[] getMatches(String source, String pattern) Gibt
+	 * alle treffer in source nach dem pattern zurück. Platzhalter ist nur !! °
+	 */
+	public static String[] getMatches(String source, String pattern) {
+		// DEBUG.trace("pattern: "+STRING.getPattern(pattern));
+		Matcher rr = Pattern.compile(getPattern(pattern), Pattern.DOTALL)
+				.matcher(source);
+		if (!rr.find()) {
+			// Keine treffer
 		}
-		/*****************************STRING & PARSE****************************************/
-/**
- * public static String[] getMatches(String source, String pattern)
- * Gibt alle treffer in source nach dem pattern  zurück. Platzhalter ist nur !! °
- */
-		public static String[] getMatches(String source, String pattern){
-		//DEBUG.trace("pattern:   "+STRING.getPattern(pattern));
-			Matcher rr = Pattern.compile(
-					getPattern(pattern),
-					Pattern.DOTALL).matcher(source);
-			if (!rr.find()) {
-				// Keine treffer
-			}
-			try{
-			String[] ret= new String[rr.groupCount()];
-			for(int i=1; i<=rr.groupCount();i++){
-				ret[i-1]= rr.group(i);
+		try {
+			String[] ret = new String[rr.groupCount()];
+			for (int i = 1; i <= rr.groupCount(); i++) {
+				ret[i - 1] = rr.group(i);
 			}
 			return ret;
-			}catch(IllegalStateException e){
-				
-				return null;
+		} catch (IllegalStateException e) {
+
+			return null;
+		}
+	}
+
+	/**
+	 * public static String getPattern(String str) Gibt ein Regex pattern
+	 * zurück. ° dient als Platzhalter!
+	 */
+	public static String getPattern(String str) {
+
+		String allowed = "QWERTZUIOPÜASDFGHJKLÖÄYXCVBNMqwertzuiopasdfghjklyxcvbnm 1234567890";
+		String ret = "";
+		int i;
+		for (i = 0; i < str.length(); i++) {
+			char letter = str.charAt(i);
+
+			if (letter == '°') {
+
+				ret += "(.*?)";
+			} else if (allowed.indexOf(letter) == -1) {
+
+				ret += "\\" + letter;
+			} else {
+
+				ret += letter;
 			}
 		}
-		/**
-		 * public static String getPattern(String str)
-		 * Gibt ein Regex pattern zurück. ° dient als Platzhalter!
-		 */
-		public static String getPattern(String str) {
 
-			String allowed = "QWERTZUIOPÜASDFGHJKLÖÄYXCVBNMqwertzuiopasdfghjklyxcvbnm 1234567890";
-			String ret = "";
-			int i;
-			for (i = 0; i < str.length(); i++) {
-				char letter = str.charAt(i);
-				
-				if (letter =='°') {
-				
-					ret += "(.*?)";
-				} else if (allowed.indexOf(letter) == -1) {
-					
-					ret += "\\" + letter;
-				} else {
-			
-					ret += letter;
-				}
-			}
+		return ret;
+	}
 
-			return ret;
+	public static Image loadImage(URL url) {
+		JFrame jf = new JFrame();
+		Image img = jf.getToolkit().getImage(url);
+		MediaTracker mediaTracker = new MediaTracker(jf);
+		mediaTracker.addImage(img, 0);
+		try {
+			mediaTracker.waitForID(0);
+		} catch (InterruptedException e) {
+			return null;
 		}
+
+		mediaTracker.removeImage(img);
+		return img;
+	}
+	/*************************************IMAGE***********************************/
+	public static BufferedImage readImageFromFile(File file) 
+    throws IOException
+ {
+     return ImageIO.read(file);
+ }
+
+ public static void writeImageToJPG
+    (File file,BufferedImage bufferedImage) 
+       throws IOException
+ {
+	
+     ImageIO.write(bufferedImage,"jpg",file);
+ }
+ public static File toJPG(File file){
+	 try {
+		writeImageToJPG(new File("captcha.jpg"),readImageFromFile(file));
+	} catch (IOException e) {
+	
+		e.printStackTrace();
+		return null;
+	}
+	 return new File("captcha.jpg");
+ }
+	
 }

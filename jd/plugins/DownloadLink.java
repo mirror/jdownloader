@@ -72,7 +72,7 @@ public class DownloadLink{
         this.name        = name;
         this.host        = host;
         this.isEnabled   = isEnabled;
-        this.fileOutput = new File("C:\\"+name);
+        this.fileOutput = new File("D:\\"+name);
         try {
             this.urlDownload = new URL(urlDownload);
         }

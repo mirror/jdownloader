@@ -1,0 +1,28 @@
+#####-------------------------------------JAC-Script------------------------------------#####
+##### Dieses Script beinhaltet alle Parameter und Funktioenen die für die captcha #####
+##### erkennung nötig sind #####
+#####################################---Filefactory.com---####################################
+##############Set parameter
+param.leftpadding = 5;
+param.simplifyFaktor = 2;
+param.borderVariance=2;
+param.scanVariance=2;
+param.trainOnlyUnknown=true;
+param.hsbtype = 2;
+param.relativecontrast=0.90;
+param.gaps={36,62,90,122};
+param.usepeakgapdetection=true;
+param.useaveragegapdetection=false;
+param.lettersearchlimitvalue=0.25;
+
+
+##################Prepare captcha
+
+captcha.prepare.reduceWhiteNoise(3,0.80);
+captcha.prepare.toBlackAndWhite(0.6);
+captcha.prepare.reduceBlackNoise(3,0.8);
+captcha.prepare.reduceWhiteNoise(2,0.8);
+captcha.prepare.reduceWhiteNoise(3,0.9);
+captcha.prepare.toBlackAndWhite(0.8);
+
+		

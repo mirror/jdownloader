@@ -1,12 +1,22 @@
-#Linkes Padding
-jac.leftpadding = 0;
-#Faktor zur Fingerprintvereinfachung
-jac.simplifyFaktor = 3;
-#Maximale Varianz der Lettererkennung
-jac.borderVariance=1;
-#Maximale Varianz beim LetterScan (Pixelwert um den die Buchstaben gegeneinander verschoben werden
-jac.scanVariance=1;
-#Gibt an ob beim training bekante buchstabben erneut trainiert werden sollen
-jac.trainOnlyUnknown=true;
-#Gibt einen Faktor an ab welchem ein Buchstabe als Perfekt erkannt gilt
-jac.letterSearchLimitValue=-1;
+#####-------------------------------------JAC-Script------------------------------------#####
+##### Dieses Script beinhaltet alle Parameter und Funktioenen die für die captcha #####
+##### erkennung nötig sind #####
+#####################################---Rapidshare.com---####################################
+##############Set parameter
+param.leftpadding = 0;
+param.simplifyFaktor = 3;
+param.borderVariance=1;
+param.scanVariance=1;
+param.trainOnlyUnknown=true;
+param.letterSearchLimitValue=-1;
+
+##################Prepare captcha
+captcha.prepare.reduceWhiteNoise(5);
+captcha.prepare.toBlackAndWhite();
+captcha.prepare.toBla();
+#captcha.prepare.invert();
+#captcha.prepare.clean();
+#captcha.prepare.blurIt(5);
+#captcha.prepare.saveImageasJpg("preparedImage.jpg");
+			
+		
