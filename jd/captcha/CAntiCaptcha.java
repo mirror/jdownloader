@@ -1,8 +1,10 @@
 import java.awt.Component;
+import java.awt.GridBagLayout;
 import java.awt.Image;
 import java.io.File;
 import java.io.FileFilter;
 import java.io.StringWriter;
+import java.util.Date;
 import java.util.Properties;
 import java.util.Vector;
 
@@ -21,377 +23,305 @@ import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
-import de.lagcity.TLH.DEBUG;
-import de.lagcity.TLH.GLOBALS;
-import de.lagcity.TLH.Locale;
-import de.lagcity.TLH.PROPERTY;
-import de.lagcity.TLH.STRING;
-import de.lagcity.TLH.SWING;
-import de.lagcity.TLH.SYSTEM;
-import de.lagcity.TLH.XML;
-
 public class CAntiCaptcha {
-
-	private static  double USELETTERSEARCHFAKTOR = 0.15;
-
-	private static boolean DOPREPARE = true;
+	/*
+	 * private static double letterSearchLimitValue Faktor, über den sich
+	 * einstellen lässt ab welcher Grenze ein Buchstabe als sicher richtig
+	 * erkannt wird. Übliche werte sind von 0(es wird immer der beste Wert
+	 * gesucht) bis 0.3 (der algo ist sehr tollerant bei der Suche)
+	 */
+	private double letterSearchLimitValue = 0.15;
 
 	public static void main(String[] args) {
 
-		CAntiCaptcha owner = new CAntiCaptcha(new JFrame());
+		CAntiCaptcha owner = new CAntiCaptcha("rapidshare.com");
 
+		// owner.checkCaptcha(new
+		// File("methods/rapidshare.com/captchas/rapidsharecom121040807171709.jpg"));
 	}
 
-	private long correct;
+	private String methodAuthor;
 
-	private JFrame owner;
+	private String methodName;
 
-	public String METHODAUTHOR;
+	private String imageType;
 
-	public String METHODNAME;
+	private int letterNum;
 
-	public String IMAGETYPE;
+	private String sourceImage;
 
-	public int LETTERNUM;
+	private Vector<String[]> captchaPrepareCommands;
 
-	public String SOURCEIMAGE;
+	private Vector<String[]> jacCommands;
 
-	public static double COMPAREPERFECTMATCHPERCENT = 0.1;
+	private Vector<String[]> letterCommands;
 
-	public String RESULTTXT;
+	private String resultFile;
 
-	private String METHODSETTINGS;
+	private String methodSettingsFile;
+
+	private String methodScriptFile;
 
 	private Document mth;
 
 	private Vector<Letter> letterDB;
 
-	private String METHODLETTERS;
+	private String methodLettersFile;
 
-	public CAntiCaptcha(JFrame owner) {
-		this.owner = owner;
+	private int leftPadding = 0;
+
+	private int gapWidthPeak = 1;
+
+	private int gapWidthAverage = 1;
+
+	private boolean gapAndAverageLogic = true;
+
+	private double gapDetectionAverageContrast = 1.3;
+
+	private double gapDetectionPeakContrast = 0.25;
+
+	private boolean useAverageGapDetection = false;
+
+	private boolean usePeakGapdetection = true;
+
+	private int minimumLetterWidth = 10;
+
+	private int simplifyFaktor = 1;
+
+	private int colorValueFaktor = 0xffffff;
+
+	private double relativeContrast = 0.85;
+
+	private double backgroundSampleCleanContrast = 0.1;
+
+	private double blackPercent = 0.1;
+
+	private int[] gaps;
+
+	private String method;
+
+	private boolean trainOnlyUnknown = true;
+
+	private BasicWindow frame1;
+
+	private BasicWindow frame2;
+
+	private BasicWindow frame3;
+
+	private int borderVariance = 0;
+
+	private int scanVariance = 0;
+
+	public CAntiCaptcha(String method) {
+		this.method = method;
+		String[] path = { "methods", method };
+		if (!new File(UTILITIES.getFullPath(path)).exists()) {
+			UTILITIES.trace("ERROR: Die Methode " + method
+					+ " kann nicht gefunden werden");
+		}
 		getJACInfo();
-		setParameter();
-		loadMSTFile(METHODSETTINGS);
-		loadMTHFile(METHODLETTERS);
+		parseScriptFile();
+		executeJacCommands();
+		loadMTHFile();
+
+		if (this.getResultFile() != null && this.getSourceImage() != null
+				&& new File(this.getSourceImage()).exists()) {
+			String hash = UTILITIES
+					.getLocalHash(new File(this.getSourceImage()));
+			UTILITIES.trace(hash);
+			if (hash.equals("dab07d2b7f1299f762454cda4c6143e7")) {
+				UTILITIES.trace("BOT ERKANNT");
+				UTILITIES.writeLocalFile(new File(this.getResultFile()), "");
+
+			} else {
+				Image captchaImage = loadImage(new File(this.getSourceImage()));
+				Captcha captcha = createCaptcha(captchaImage);
+				String code = this.checkCaptcha(captcha);
+				if (code.indexOf("null") >= 0) {
+					UTILITIES.trace("BOT ERKANNT");
+					code = "";
+					UTILITIES.writeLocalFile(new File(this.getResultFile()),
+							code);
+
+				} else {
+					UTILITIES.writeLocalFile(new File(this.getResultFile()),
+							code);
+					String fileName = new File(this.getSourceImage()).getName();
+
+					String[] newPath = { "methods", method, "checked",
+							captcha.valityValue + "_" + fileName };
+					new File(UTILITIES
+							.getFullPath(newPath)).getParentFile().mkdirs();
+					new File(this.getSourceImage()).renameTo(new File(UTILITIES
+							.getFullPath(newPath)));
+				}
+			}
+
+		}
 		// saveMSTFile();
-		trainAllCaptchas();
-		
-		 BasicWindow w;
-				
-		 Captcha c;
-			 while(true){
-		 c=Captcha.getCaptcha(SYSTEM.fileChooser(GLOBALS.ROOTDIR+"captchas"));
-		 w = BasicWindow.showImage(c.getImage(), "captcha");
-		 prepare(c);
-		DEBUG.trace(checkCaptcha(c));
-			 }
-//		 prepare(c);
-//		 w = BasicWindow.showImage(c.getImage(), "Img vor");
-//		 prepare(c);
-//		 Letter[] letters = c.getLetters(5);
-//		
-//		 w = BasicWindow.showImage(letters[0].getImage(), "Letter 0 "
-//		 + getLetter2(letters[0])+"-"+getLetter(letters[0]));
-//		 w.setSize(300, 80);
-//		 w.setLocation(50, 100);
-//		 w = BasicWindow.showImage(letters[1].getImage(), "Letter 1 "
-//		 + getLetter2(letters[1])+"-"+getLetter(letters[1]));
-//		 w.setSize(300, 80);
-//		 w.setLocation(50, 200);
-//		 w = BasicWindow.showImage(letters[2].getImage(), "Letter 2 "
-//		 + getLetter2(letters[2])+"-"+getLetter(letters[2]));
-//		 w.setSize(300, 80);
-//		 w.setLocation(50, 300);
-//		 w = BasicWindow.showImage(letters[3].getImage(), "Letter 3 "
-//		 + getLetter2(letters[3])+"-"+getLetter(letters[3]));
-//		 w.setSize(300, 80);
-//		 w.setLocation(50, 400);
-//		 w = BasicWindow.showImage(letters[4].getImage(), "Letter 4 "
-//		 + getLetter2(letters[4])+"-"+getLetter(letters[4]));
-//		 w.setSize(300, 80);
-//		 w.setLocation(50, 500);
-			 }
-		// getCaptcha()
-		// DEBUG.trace(checkCaptcha(new File(SOURCEIMAGE)));
-		// String code= checkCaptcha(new File(SOURCEIMAGE));
-		// SYSTEM.writeLocalFile(new File(RESULTTXT), code);
+		// trainAllCaptchas();
+		// while(true){
+		// String path="captchas/share_gulli_"+(new Date().getTime())+".jpg";
+		// NET.downloadBinary(path, "http://share.gulli.com/captcha");
+		// File f= new File(path);
+		//		
+		// trainCaptcha(f,3);
+		// }
+		//		
+		// BasicWindow w;
+		//
+		// Captcha c;
+		//
+		// c = Captcha
+		// .getCaptcha(f);
+		//	
+		// w = //BasicWindow.showImage(c.getImage(), "captcha");
+		// prepare(c);
+		// Letter[] letters=c.getLetters(3);
+		// //BasicWindow.showImage(letters[0].getImage());
+		// //BasicWindow.showImage(letters[1].getImage());
+		// //BasicWindow.showImage(letters[2].getImage());
+		//
+		// UTILITIES.trace(checkCaptcha(c));
+		// UTILITIES.wait(999999999);
+		// prepare(c);
+		// w = //BasicWindow.showImage(c.getImage(), "Img vor");
+		// prepare(c);
+		// Letter[] letters = c.getLetters(5);
+		//		
+		// w = //BasicWindow.showImage(letters[0].getImage(), "Letter 0 "
+		// + getLetter2(letters[0])+"-"+getLetter(letters[0]));
+		// w.setSize(300, 80);
+		// w.setLocation(50, 100);
+		// w = //BasicWindow.showImage(letters[1].getImage(), "Letter 1 "
+		// + getLetter2(letters[1])+"-"+getLetter(letters[1]));
+		// w.setSize(300, 80);
+		// w.setLocation(50, 200);
+		// w = //BasicWindow.showImage(letters[2].getImage(), "Letter 2 "
+		// + getLetter2(letters[2])+"-"+getLetter(letters[2]));
+		// w.setSize(300, 80);
+		// w.setLocation(50, 300);
+		// w = //BasicWindow.showImage(letters[3].getImage(), "Letter 3 "
+		// + getLetter2(letters[3])+"-"+getLetter(letters[3]));
+		// w.setSize(300, 80);
+		// w.setLocation(50, 400);
+		// w = //BasicWindow.showImage(letters[4].getImage(), "Letter 4 "
+		// + getLetter2(letters[4])+"-"+getLetter(letters[4]));
+		// w.setSize(300, 80);
+		// w.setLocation(50, 500);
+	}
 
-	//}
+	private void executeJacCommands() {
+		if (jacCommands == null || jacCommands.size() == 0) {
+			UTILITIES.trace("KEINE JAC COMMANDS");
+			return;
+		}
+		for (int i = 0; i < jacCommands.size(); i++) {
+			String[] cmd = jacCommands.elementAt(i);
+			if (cmd[0].equals("parameter")) {
+				if (cmd[1].toLowerCase().equals("lettersearchlimitvalue"))
+					this.setLetterSearchLimitValue(Double.parseDouble(cmd[2]));
+				if (cmd[1].toLowerCase().equals("trainonlyunknown"))
+					this.setTrainOnlyUnknown(cmd[2].equals("true"));
+				if (cmd[1].toLowerCase().equals("scanvariance"))
+					this.setScanVariance(Integer.parseInt(cmd[2]));
+				if (cmd[1].toLowerCase().equals("bordervariance"))
+					this.setBorderVariance(Integer.parseInt(cmd[2]));
+				if (cmd[1].toLowerCase().equals("leftpadding"))
+					this.setLeftPadding(Integer.parseInt(cmd[2]));
+				if (cmd[1].toLowerCase().equals("simplifyfaktor"))
+					this.setSimplifyFaktor(Integer.parseInt(cmd[2]));
+			} else if (cmd[0].equals("function") && cmd[2] == null) {
 
-	/*
-	 * Diese Funktion scannt letter a mit letter b ab. Als anhaltspunkt dient
-	 * dabei der Mittelpunkt von letterb.
-	 */
-	public static int getDifference(Letter a, Letter b) {
+			} else if (cmd[0].equals("function") && cmd[2] != null) {
 
-		int bhw = b.getWidth() / 2;
-		int bhh = b.getHeight() / 2;
-		int minValue = Integer.MAX_VALUE;
-		int pointAX;
-		int pointAY;
-		int pointBX;
-		int pointBY;
-		int awidth;
-		int aheight;
-		int peaks=0;
-		for (int x = 0; x < a.getWidth(); x++) {
-			for (int y = 0; y < a.getHeight(); y++) {
-				if(a.getPixelValue(x,y)<a.getMaxPixelValue()*COMPAREPERFECTMATCHPERCENT){
-					peaks++;
-				}
-			}
-			}
-		// DEBUG.trace(b.sourcehash+" - "+b.decodedValue+" Comp a:"+a.getWidth()+"/"+a.getHeight()+" b: "+b.getWidth()+"/"+b.getHeight());
-		int maxSize=Math.min(a.getWidth(),b.getWidth())*Math.min(a.getHeight(),b.getHeight());
-		for (int x = 0; x < a.getWidth(); x++) {
-			for (int y = 0; y < a.getHeight(); y++) {
-				awidth = Math.min(x, bhw)
-						+ Math.min(a.getWidth() - x, b.getWidth() - bhw);
-				aheight = Math.min(y, bhh)
-						+ Math.min(a.getHeight() - y, b.getHeight() - bhh);
-				// Die Nullpunkte der Schnittmenge jeweils ins Koordinatensystem
-				// von a und b transformiert.
-				pointAX = x - Math.min(x, bhw);
-				pointAY = y - Math.min(y, bhh);
-				pointBX = Math.max(bhw - x, 0);
-				pointBY = Math.max(bhh - y, 0);
-				// if(b.decodedValue.equals("2")&&
-			// b.sourcehash.equals("ba74905c189f6c23f3c7ffcab555cf6d")){
-				// if(bhh!=13 ||bhw!=8){
-				// DEBUG.trace(b.sourcehash);
-				// System.exit(0);
-				// }
-				// }
-				/*
-			if(b.getWidth()==5&&b.decodedValue.equals("b")&&
-				 b.sourcehash.equals("fbc069be57987318d8db5519d186d917"))DEBUG.trace(x+":"+bhw+" - "+a.getWidth()+":"+b.getWidth());
-				 if(b.getWidth()==5&&b.decodedValue.equals("b")&&
-				 b.sourcehash.equals("fbc069be57987318d8db5519d186d917"))DEBUG.trace(x+"/"+y+" AUSSCHniTT: "+pointAX+":"+pointAY+" - "+pointBX+":"+pointBY+"	 - "+awidth+":"+aheight);
-				
-				*/// Die Aktuelle Schnittmenge wird verglichen
-				// Der counter mag sinnvoll sein wenn amn spezielle Pixel
-				// filternw ill. ansonsten tut es später auch width*height
-				long value = 0;
-				int count = 0;
-				int hit=0;
-				for (int ax = 0; ax < awidth; ax++) {
-					for (int ay = 0; ay < aheight; ay++) {
-						// Dies sind die ZU vergleichenden Pixelwerte
-						int va = a.getPixelValue(pointAX + ax, pointAY + ay);
-						int vb = b.getPixelValue(pointBX + ax, pointBY + ay);
-//						value += Math.abs(va - vb);
-						
-						if(Math.abs(va - vb)<COMPAREPERFECTMATCHPERCENT*a.getMaxPixelValue() && (va+vb)/2<a.getMaxPixelValue()*COMPAREPERFECTMATCHPERCENT){
-							hit++;
-						}
-					//if(b.getWidth()==5&&b.decodedValue.equals("b")&&  b.sourcehash.equals("fbc069be57987318d8db5519d186d917"))DEBUG.trace("A: "+(pointAX+ax)+"/"+(pointAY+ay)+ " B:"+(pointBX+ax)+"/"+(pointBY+ay) +" __ "+va+" - "+vb);
-						// }
-
-						count++;
-
-					}
-				}
-			//DEBUG.trace(hit+" - "+(awidth*aheight));
-				value=peaks-hit;
-				if(pointAX==pointBX &&pointAY==pointBY)value*=0.5;
-				//value*=(peaks+1)/(hit+1);
-				//value /= count;
-				//value*=(double)((double)maxSize/(double)(awidth*aheight));
-				/*if(b.getWidth()==5&&b.decodedValue.equals("b")&&
-				 b.sourcehash.equals("fbc069be57987318d8db5519d186d917"))DEBUG.trace("value	"+value+" -	"+(a.getMaxPixelValue()*COMPAREPERFECTMATCHPERCENT));
-				*/
-				minValue = (int) Math.min(minValue, value);
-				/*if(b.getWidth()==5&&b.decodedValue.equals("b")&&
-				 b.sourcehash.equals("fbc069be57987318d8db5519d186d917"))DEBUG.trace(b.decodedValue+": "+minValue);*/
-				if (minValue ==0 || minValue<5) {
-					// Dieser Wert ist sooo gut. das kann nur ein Treffer sein!
-					// ALso wird null zurück gegeben. D.H. Perfecter Treffer fbc069be57987318d8db5519d186d917
-				 return minValue;
-				}
 			}
 		}
-		// DEBUG.trace("FERTISCH "+minValue);
-		return minValue;
 
 	}
 
-	private String searchLetter(Letter letter) {
+	private void parseScriptFile() {
+		String script = UTILITIES.getLocalFile(new File("methods/"
+				+ this.method + "/script.jas"));
+		String[] lines = script.split("\r\n");
+		if (lines.length == 1)
+			lines = script.split("\n\r");
+		if (lines.length == 1)
+			lines = script.split("\n");
+		if (lines.length == 1)
+			lines = script.split("\r");
+		Vector<String[]> localCaptchaPrepareCommands = new Vector<String[]>();
+		Vector<String[]> localJacCommands = new Vector<String[]>();
+		Vector<String[]> localLetterCommands = new Vector<String[]>();
+		int startAt;
+		String[] pcmd;
+		for (int i = 0; i < lines.length; i++) {
 
-		long bestValue = Long.MAX_VALUE;
-		String bestResult = "_";
-		Letter tmp = new Letter();
-		try {
+			lines[i] = lines[i].trim();
 
-			DEBUG.trace(letterDB.size());
-			if (letterDB == null)
-				return "_";
-
-			for (int i = 0; i < letterDB.size(); i++) {
-				// Get child node
-				tmp = letterDB.elementAt(i);
-				if(Math.abs(tmp.getWidth()-letter.getWidth())>6 ||Math.abs(tmp.getHeight()-letter.getHeight())>6)continue;
-				long value = getDifference(letter, tmp);
-
-			
-				if (value < bestValue) {
-					bestValue = value;
-					bestResult = tmp.decodedValue;
-					 DEBUG.trace("new Best "+bestResult + " : " + bestValue+" : "+tmp.sourcehash+" dim:"+tmp.getDim()+" - "+letter.getDim());
-						if (value <5) {
-
-							 return tmp.decodedValue;
-						}
-				}
-
+			if (lines[i].indexOf("#") == 0 || lines[i].length() < 3) {
+				// leere Zeile, oder Comment
+				continue;
 			}
-			this.correct += bestValue;
-			// DEBUG.trace("New Method got "+bestResult+" Width a value of
-			// "+bestValue);
-		} catch (Exception e) {
-			DEBUG.error(e);
+			if (!lines[i].substring(lines[i].length() - 1).equals(";")) {
+				UTILITIES.trace("ERROR : " + method
+						+ "/script.jas: Syntax error (; missing?) near line "
+						+ i + ": " + lines[i]);
+				return;
+			}
+			lines[i] = lines[i].substring(0, lines[i].length() - 1);
+			if ((startAt = lines[i].indexOf("captcha.prepare.")) == 0) {
+				pcmd = parseCommand(lines[i].substring(startAt + 16));
+
+				localCaptchaPrepareCommands.add(pcmd);
+			} else if ((startAt = lines[i].indexOf("jac.")) == 0) {
+				pcmd = parseCommand(lines[i].substring(startAt + 4));
+
+				localJacCommands.add(pcmd);
+			} else if ((startAt = lines[i].indexOf("letter.")) == 0) {
+				pcmd = parseCommand(lines[i].substring(startAt + 7));
+
+				localLetterCommands.add(pcmd);
+			} else {
+				UTILITIES.trace("ERROR : " + method
+						+ "/script.jas: Syntax error near line " + i + ": "
+						+ lines[i]);
+			}
 		}
-
-		return bestResult;
-
+		this.setCaptchaPrepareCommands(localCaptchaPrepareCommands);
+		this.setJacCommands(localJacCommands);
+		this.setLetterCommands(localLetterCommands);
 	}
+
+	private String[] parseCommand(String cmd) {
+		String[] ret = new String[3];
+		String[] matches;
+		cmd = "#" + cmd + "#";
+		if ((matches = UTILITIES.getMatches(cmd, "#°=°#")) != null) {
+
+			ret[0] = "parameter";
+			ret[1] = matches[0].trim();
+			ret[2] = matches[1].replaceAll("\\\"", "").trim();
+		} else if ((matches = UTILITIES.getMatches(cmd, "#°(°)#")) != null) {
+			ret[0] = "function";
+			ret[1] = matches[0].trim();
+			ret[2] = matches[1].replaceAll("\\\"", "").trim();
+		} else if ((matches = UTILITIES.getMatches(cmd, "#°()#")) != null) {
+			ret[0] = "function";
+			ret[1] = matches[0].trim();
+			ret[2] = null;
+		}
+		return ret;
+	}
+
+	// getCaptcha()
+	// UTILITIES.trace(checkCaptcha(new File(SOURCEIMAGE)));
+	// String code= checkCaptcha(new File(SOURCEIMAGE));
+	// UTILITIES.writeLocalFile(new File(RESULTTXT), code);
+
+	// }
 
 	private void setParameter() {
-		/** ************************************Buchstabenerkennung************************************** */
-		/*
-		 * Captcha.GAPANDAVERAGELOGIC Gibt an wie die Beiden Lückenerkennung
-		 * zusammenarbeiten true: AND Verknüpfung. Es werden nur Lücken gezählt
-		 * bei denen Peak und Average erkennung übereinstimmen false:OR
-		 * Verknüpfung. Es werden sowohl Peak als auch Average Lücken verwendet.
-		 */
-
-		Captcha.GAPANDAVERAGELOGIC = true;
-		/*
-		 * Captcha.USEAVERAGEGAPDETECTION Es werden Reihen die im Vergleich zum
-		 * Durchschnisswert hell sind gesucht. Parameter:
-		 * Captcha.GAPWIDTHAVERAGE Captcha.GAPDETECTIONAVERAGECONTRAST
-		 */
-		Captcha.USEAVERAGEGAPDETECTION = false;
-		/*
-		 * Captcha.GAPWIDTHAVERAGE Gibt an wieviele Reihen zur berechnung
-		 * verwendet werden sollen. Dieser Wert sollte auf keinen fall größer
-		 * als die Minimal Lückenbreite sein
-		 */
-		Captcha.GAPWIDTHAVERAGE = 1;
-		// je kleiner desto leichter wird eine lücke als wirkliche lücke erkannt
-		// Für reine schwarze schrift aufw eißem hintergrund ist 1.2 ein guter
-		// wert
-		// 0.7 war für svz ganz gut
-		/*
-		 * Captcha.GAPDETECTIONAVERAGECONTRAST Kontrastparameter wirkt auf die
-		 * Durchschnittshelligkeit des ganzen Bildes. und dieser wird dann mit
-		 * der reihenhelligkeit verglichen. 1: Lücke falls die Reihenhelligkeit
-		 * heller als der Bildgesammtdurchschnitt ist. <1:Lücke dürfen dunkler
-		 * sein um erkannt zu werden. (für bilder bei denen der lücken/Bild
-		 * Kontrast gering ist) >1: Lücken sind deutlich heller als der rest des
-		 * Bildes.
-		 * 
-		 */
-		Captcha.GAPDETECTIONAVERAGECONTRAST = 1.2;
-		/*
-		 * Captcha.USEPEAKGAPDETECTION Es wird die Fallende Flanke von Dunkel
-		 * nach hellgesucht. Dabei wird der Dunkelste Wert einer reihe
-		 * verwendet. Eignet sich gut für reine SW Bilder. Parameter:
-		 * Captcha.GAPWIDTHPEAK Captcha.GAPDETECTIONPEAKECONTRAST
-		 */
-		Captcha.USEPEAKGAPDETECTION = true;
-		/*
-		 * Captcha.GAPWIDTHPEAK Gibt an über wieviele Zeilen nach einem
-		 * Dunkelheitspeak gesucht wird. Ist dieser Wert >1 so verschiebt das
-		 * die Lückenerkennung nach Links. Allerdings werden dafür Ein-pixel
-		 * Lücken nicht als Lücken erkannt
-		 */
-		Captcha.GAPWIDTHPEAK = 1;
-
-		/*
-		 * Captcha.GAPDETECTIONPEAKECONTRAST Kontrasparameter. wirkt aufd en
-		 * Bilddurchschnitt. Zeilen-Dunkel-Peak muss dunkler sein als Parameter*
-		 * Average Je kleiner der Wert, desto größer muss der Kontrast
-		 * zeichen/Hintergrund sein
-		 */
-		Captcha.GAPDETECTIONPEAKECONTRAST = 0.25;
-		/*
-		 * Captcha.MINIMUMLETTERWIDTH Gibt die Minimale Zeichenbreite an. Sie
-		 * sollte möglichst genau angegeben werden, weil das Fehlerkennungen
-		 * verhindert
-		 */
-		Captcha.MINIMUMLETTERWIDTH = 8;
-		/*
-		 * Gibt einen Abstand nach links an. Zeichen werden erst ab
-		 * Captcha.LEFTPADDING Pixel gesucht
-		 * 
-		 */
-		Captcha.LEFTPADDING = 0;
-
-		/** *****************************************Bildvereinfachungen/Fingerprintparameter****************************************** */
-		/*
-		 * PixelGrid.SIMPLIFYFAKTOR Zur Fingerprinterstellung wird das Bild um
-		 * diesen faktor verkleinert. Nur ganzzahlige werte.
-		 */
-		PixelGrid.SIMPLIFYFAKTOR = 1;
-		/*
-		 * PixelGrid.COLORVALUEFAKTOR Farbraumparameter. Je nachdem welcher
-		 * farbraum verwendet wird, und je nach anzahl der Farben kann dieser
-		 * faktor angepasst werden um weniger Ram zu verbrauchen. MTH File wird
-		 * kleiner. Je größer der Wert, desto mehr Farbinformationen können
-		 * verloren gehen Reines sw bild: Wert= getMaxPixelValue. => 2 Farben
-		 * weiß/schwarz
-		 * ACHTUNG!
-		 * Problem 1: Setzt man diesen Parameter >1, so wird für die nachfolgenden Pixelwerte der durschnitt aus wert*wert quatraten genommen. Diese sind besonders bei sw bildern deutlich heller als das ausgangsbild
-		 *            Der Kontrast sinkt also und man muss andere Werte, z.B. RELATIVECONTRAST anpassen. RELATIVCONTRAST ist aber für sehr vieles zuständig und bereits kleine Änderungen können eine große auswirkung haben (plötzlich weißes oder schwarzes bild.
-		 *            Ich empfehle daher eher mit Sampledown zu arbeiten
-		 * 
-		 */
-		PixelGrid.COLORVALUEFAKTOR = 0xffffff;
-		// je kleiner, desto mehr wird ausgefiltert. wenn dieser wert kleiner
-		// wird
-		// sollte GAPDETECTIONAVERAGECONTRAST größer werden
-		/*
-		 * PixelGrid.RELATIVCONTRAST Filterparameter. Wirk auch auf
-		 * GAPDETECTIONAVERAGECONTRAST!! Verkleinert man diesen Wert muss
-		 * GAPDETECTIONAVERAGECONTRAST vergrößert werden um die Lückenerkennung
-		 * zu erhalten Dieser Wert wirkt auf den kompletten
-		 * Bildhelligkeitsdurchschnitt und wird dann zur Kontrasttrennung mit
-		 * den Pixelwerten verglichen Je kleiner, desto mehr pixel werden
-		 * ausgefiltert. Je größer, desto emhr PIxel gehen in das Bild mit ein.
-		 * 
-		 */
-		PixelGrid.RELATIVCONTRAST = 0.85;
-		/*
-		 * PixelGrid.BACKGROUNDSAMPLECLEANPERCENT MIt der backgroundSampleClean
-		 * Funktion kann eine Position am Bild angegeben werden die den zu
-		 * filternden farbwert enthält. Der Wert Gibt die Tolleranz an die beim
-		 * Filtern verwendet werden soll. Je größer, desto mehr wird gefiltert
-		 * 0.1 ist ein guter wert für einfarbige Hintergründe um möglichst viele
-		 * Fragmente zu ignorieren
-		 * 
-		 */
-		PixelGrid.BACKGROUNDSAMPLECLEANPERCENT = 0.1;
-		/*
-		 * PixelGrid.BLACKPERCENT Die Maskenclean Funktion verwendet eine feste
-		 * Maske, (z.B. ein muster) alle Pixel dieser Maske werden durch einen
-		 * durchschnisdwert der Umgebung aufgefüllt. Hintergrundmuster lassen
-		 * sich dadurch entfernen. Die Maske wird als JPG abgelegt.der Wert
-		 * dient dazu innerhalb der Maske zwischen Schwarz und weiß zu
-		 * unterscheiden. 0.1 ist für ein Hochqualitatives jpg und ein darauf
-		 * festgelegtes Schwarzes Muster gut.
-		 */
-		PixelGrid.BLACKPERCENT = 0.1;
-
-		/*
-		 * In der prepare Funktion sind alle anzuwendenen Filter angegeben. der
-		 * Parameter DOPREPARE gibt an ob die Funktion verwendet wird DOPREPARE
-		 * =true. Vorverarbeitung aktivieren =false Keine Vorverarbeitung
-		 * 
-		 * 
-		 */
-		CAntiCaptcha.DOPREPARE = true;
-		// MST File mit den oben angegebenen parametern speichern
 
 	}
 
@@ -403,23 +333,27 @@ public class CAntiCaptcha {
 		int newLetters;
 		for (int i = 0; i < images.length; i++) {
 
-			newLetters = trainCaptcha(images[i], LETTERNUM);
-			DEBUG.trace("Erkannt: " + newLetters + "/" + LETTERNUM);
+			newLetters = trainCaptcha(images[i], getLetterNum());
+			UTILITIES.trace("Erkannt: " + newLetters + "/" + getLetterNum());
 			if (newLetters > 0) {
 				successFull += newLetters;
-				total += LETTERNUM;
-				DEBUG.trace("Erkennungsrate: " + ((100 * successFull / total)));
+				total += getLetterNum();
+				UTILITIES.trace("Erkennungsrate: "
+						+ ((100 * successFull / total)));
 			}
-			System.gc();
+
 		}
+		UTILITIES.wait(10000);
 	}
 
-	private void loadMTHFile(String path) {
-		if (new File(path).exists() == false) {
-			SYSTEM.writeLocalFile(new File(path), "<jDownloader/>");
-			DEBUG.trace("ERROR: MTH FILE NOT AVAILABLE. Created: " + path);
+	private void loadMTHFile() {
+		String[] path = { "methods", method, "letters.mth" };
+		if (new File(UTILITIES.getFullPath(path)).exists() == false) {
+			UTILITIES.writeLocalFile(new File(UTILITIES.getFullPath(path)),
+					"<jDownloader/>");
+			UTILITIES.trace("ERROR: MTH FILE NOT AVAILABLE. Created: " + path);
 		}
-		mth = XML.parseXmlFile(path, false);
+		mth = UTILITIES.parseXmlFile(UTILITIES.getFullPath(path), false);
 		createLetterDBFormMTH();
 
 	}
@@ -437,11 +371,12 @@ public class CAntiCaptcha {
 				Node childNode = nl.item(i);
 				if (childNode.getNodeName().equals("letter")) {
 					NamedNodeMap att = childNode.getAttributes();
-					// DEBUG.trace(childNode.getNodeName());
-					// DEBUG.trace(childNode.getTextContent());
-					// DEBUG.trace(att.getNamedItem("captchaHash").getNodeValue());
-					// DEBUG.trace(att.getNamedItem("value").getNodeValue());
+					// UTILITIES.trace(childNode.getNodeName());
+					// UTILITIES.trace(childNode.getTextContent());
+					// UTILITIES.trace(att.getNamedItem("captchaHash").getNodeValue());
+					// UTILITIES.trace(att.getNamedItem("value").getNodeValue());
 					tmp = new Letter();
+					tmp.setOwner(this);
 					if (!tmp.setTextGrid(childNode.getTextContent()))
 						continue;
 					;
@@ -453,41 +388,20 @@ public class CAntiCaptcha {
 				}
 			}
 		} catch (Exception e) {
-			DEBUG
+			UTILITIES
 					.trace("ERROR: Fehler mein lesen der MTHO Datei!!. Methode kann nicht funktionieren!");
-			DEBUG.error(e);
+
 		}
 	}
 
 	private void loadMSTFile(String file) {
-		Properties mst = PROPERTY.loadPropertyFile(file);
-		Captcha.setProperties(mst);
-		Letter.setProperties(mst);
-		setProperties(mst);
+
 	}
 
 	/*
 	 * Die Methode erstellet eine Propertydatei mitd en aktuellen Parametern.
 	 */
 	private void saveMSTFile() {
-		File path = SYSTEM.fileChooser(GLOBALS.ROOTDIR);
-		Properties file = PROPERTY.loadPropertyFile(path.getAbsolutePath());
-		Captcha.setCurrentProperties(file);
-		Letter.setCurrentProperties(file);
-		setCurrentProperties(file);
-		PROPERTY.savePropertyFile(path.getAbsolutePath(), file);
-		SYSTEM.showMessage(Locale.lc.get("MSTFILESAVED") + ": "
-				+ path.getAbsolutePath());
-	}
-
-	public static void setCurrentProperties(Properties file) {
-		file.setProperty("DOPREPARE", DOPREPARE + "");
-
-	}
-
-	public static void setProperties(Properties file) {
-		DOPREPARE = file.getProperty("DOPREPARE", DOPREPARE + "")
-				.equals("true");
 
 	}
 
@@ -495,86 +409,45 @@ public class CAntiCaptcha {
 	 * Die Methode parst die jacinfo.xml
 	 */
 	private void getJACInfo() {
-
-		Document doc = XML.parseXmlFile("jacinfo.xml", false);
+		String[] path = { "methods", method, "jacinfo.xml" };
+		if (!new File(UTILITIES.getFullPath(path)).exists()) {
+			UTILITIES.trace("ERROR: " + UTILITIES.getFullPath(path)
+					+ " is missing");
+		}
+		Document doc = UTILITIES.parseXmlFile(UTILITIES.getFullPath(path),
+				false);
 
 		NodeList nl = doc.getFirstChild().getChildNodes();
 		for (int i = 0; i < nl.getLength(); i++) {
 			// Get child node
 			Node childNode = nl.item(i);
 
-			NamedNodeMap att = childNode.getAttributes();
-
 			if (childNode.getNodeName().equals("method")) {
-				if (att.getNamedItem("author") == null) {
-					DEBUG
-							.trace("ERROR: jacinfo.xml: Attribute Missing: Method/author");
-					return;
-				}
-				if (att.getNamedItem("name") == null) {
-					DEBUG
-							.trace("ERROR: jacinfo.xml: Attribute Missing: Method/name");
-					return;
-				}
-				if (att.getNamedItem("methodsettingspath") == null) {
-					DEBUG
-							.trace("ERROR: jacinfo.xml: Attribute Missing: Method/methodsettingspath");
-					return;
-				}
-				if (att.getNamedItem("methodpath") == null) {
-					DEBUG
-							.trace("ERROR: jacinfo.xml: Attribute Missing: Method/methodpath");
-					return;
-				}
-				METHODAUTHOR = att.getNamedItem("author").getNodeValue();
-				METHODNAME = att.getNamedItem("name").getNodeValue();
-				METHODSETTINGS = att.getNamedItem("methodsettingspath")
-						.getNodeValue();
-				METHODLETTERS = att.getNamedItem("methodpath").getNodeValue();
+
+				this.setMethodAuthor(UTILITIES
+						.getAttribute(childNode, "author"));
+				this.setMethodName(UTILITIES.getAttribute(childNode, "name"));
 
 			}
 			if (childNode.getNodeName().equals("format")) {
-				if (att.getNamedItem("type") == null) {
-					DEBUG
-							.trace("ERROR: jacinfo.xml: Attribute Missing: format/type");
-					return;
-				}
-				if (att.getNamedItem("letterNum") == null) {
-					DEBUG
-							.trace("ERROR: jacinfo.xml: Attribute Missing: format/letterNum");
-					return;
-				}
-				LETTERNUM = Integer.parseInt(att.getNamedItem("letterNum")
-						.getNodeValue());
+
+				this.setLetterNum(Integer.parseInt(UTILITIES.getAttribute(
+						childNode, "letterNum")));
+				this.setImageType(UTILITIES.getAttribute(childNode, "type"));
 
 			}
 			if (childNode.getNodeName().equals("source")) {
-				if (att.getNamedItem("file") == null) {
-					DEBUG
-							.trace("ERROR: jacinfo.xml: Attribute Missing: source/file");
-					return;
-				}
-				SOURCEIMAGE = att.getNamedItem("file").getNodeValue();
+
+				this.setSourceImage(UTILITIES.getAttribute(childNode, "file"));
 
 			}
 			if (childNode.getNodeName().equals("result")) {
-				if (att.getNamedItem("file") == null) {
-					DEBUG
-							.trace("ERROR: jacinfo.xml: Attribute Missing: result/file");
-					return;
-				}
-				RESULTTXT = att.getNamedItem("file").getNodeValue();
+
+				this.setResultFile(UTILITIES.getAttribute(childNode, "file"));
 
 			}
 
 		}
-		DEBUG.trace("METHODAUTHOR" + " = " + METHODAUTHOR);
-		DEBUG.trace("METHODNAME" + " = " + METHODNAME);
-		DEBUG.trace("IMAGETYPE" + " = " + IMAGETYPE);
-		DEBUG.trace("SOURCEIMAGE" + " = " + SOURCEIMAGE);
-		DEBUG.trace("RESULTTXT" + " = " + RESULTTXT);
-		DEBUG.trace("METHODSETTINGS" + " = " + METHODSETTINGS);
-		DEBUG.trace("METHODLETTERS" + " = " + METHODLETTERS);
 
 	}
 
@@ -583,116 +456,209 @@ public class CAntiCaptcha {
 	 */
 	private Image loadImage(File img) {
 
-		return SWING.loadImage(img);
+		return UTILITIES.loadImage(img);
 	}
 
+	// private void prepare(Captcha captcha) {
+	// captcha.prepared++;
+	// if (captcha.prepared > 1) {
+	// UTILITIES.trace("ERROR: Prepare wird doppelt ausgeführt!!!");
+	// return;
+	// }
+	// UTILITIES.trace("prepare");
+	// // //BasicWindow.showImage(captcha.getImage(2),"Original als
+	// // Helligkeitsabbildung");
+	// captcha.cleanBackgroundBySample(3, 3, 3, 3);
+	// //BasicWindow.showImage(captcha.getImage(2));
+	// // entfernen");
+	//	
+	// captcha.toBlackAndWhite(0.2);
+	//
+	//
+	//
+	// }
+
+	// SVZ Prepare
 	private void prepare(Captcha captcha) {
-
+		captcha.prepared++;
+		if (captcha.prepared > 1) {
+			UTILITIES.trace("ERROR: Prepare wird doppelt ausgeführt!!!");
+			return;
+		}
+		UTILITIES.trace("prepare");
+		// //BasicWindow.showImage(captcha.getImage(2),"Original als
+		// Helligkeitsabbildung");
 		captcha.cleanBackgroundBySample(3, 25, 3, 3);
-
+		// //BasicWindow.showImage(captcha.getImage(2),"Hintergrundfarbe
+		// entfernen");
 		captcha.cleanWithMask(Captcha.getCaptcha(loadImage(new File(
 				"svzgridmask.jpg"))), 3, 3);
-		captcha.sampleDown(1);
+		// //BasicWindow.showImage(captcha.getImage(2),"Maskenfilter: Muster
+		// entfernen");
+		captcha.toBlackAndWhite(1.1);
+		// //BasicWindow.showImage(captcha.getImage(2),"BW-Convert: mit Faktor
+		// 1.1
+		// in SW-Bild umwandlen");
+		captcha.reduceWhiteNoise(6);
+		// //BasicWindow.showImage(captcha.getImage(2),"ReduceNoise: Weiße
+		// Störungen über einen 6 Pixel Durchmesser entfernen");
+
+		// //BasicWindow.showImage(captcha.getImage(2),"ReduceNoise: Weiße
+		// Störungen über einen 6 Pixel Durchmesser entfernen");
+		captcha.toBlackAndWhite(0.2);
+		// //BasicWindow.showImage(captcha.getImage(2),"BW-Convert: mit Faktor
+		// 0.2. Elemente die nicht wirklich Schwarz sind werden entfernt");
+		captcha.reduceWhiteNoise(3);
+		// //BasicWindow.showImage(captcha.getImage(2),"ReduceNoise: Weiße
+		// Störungen über einen 3 Pixel Durchmesser entfernen. Buchstaben werden
+		// dicker");
+		captcha.toBlackAndWhite(0.2);
+
+		// //BasicWindow.showImage(captcha.getImage(2),"BW-Convert: mit Faktor
+		// 0.2. Elemente die nicht wirklich Schwarz sind werden entfernt");
+		captcha.reduceBlackNoise(3, 0.9);
+		// //BasicWindow.showImage(captcha.getImage(2),"ReduceNoise: Schwarze
+		// Störungen, Flecken außerhalb der Buchstaben entfernen");
+		captcha.toBlackAndWhite(1.2);
+		// //BasicWindow.showImage(captcha.getImage(2),"BW-Convert: mit Faktor
+		// 1.2. Elemente die leicht grau sind werden zu schwarz");
+		//
+		// UTILITIES.wait(5000);
+
 	}
 
 	private int trainCaptcha(File captchafile, int letterNum) {
-		DEBUG.trace(captchafile.getAbsolutePath());
+
 		Image captchaImage = loadImage(captchafile);
-		DEBUG.trace(captchafile);
-		String captchaHash = SYSTEM.getLocalHash(captchafile);
+
+		String captchaHash = UTILITIES.getLocalHash(captchafile);
 		if (isCaptchaInMTH(captchaHash)) {
-			DEBUG.trace("ERROR captcha schon aufgenommen" + captchafile);
+			UTILITIES.trace("ERROR captcha schon aufgenommen" + captchafile);
 			return -1;
 		}
 
-		Captcha captcha = Captcha.getCaptcha(captchaImage);
-		// captcha.printCaptcha();
-		if (DOPREPARE) {
-			prepare(captcha);
-		}
-		// captcha.blurIt(10);
-		// captcha.printCaptcha();
-		String savedCode = GLOBALS.getProperty(captchaHash);
-		String code;
+		Captcha captcha = createCaptcha(captchaImage);
+
+		String savedCode = UTILITIES.getProperty(captchaHash);
+		String code = null;
 		String guess = "unknown";
-		
+
 		Letter[] letters = captcha.getLetters(letterNum);
-		
+		if (frame1 != null) {
+			frame1.destroy();
+		}
+
+		frame1 = BasicWindow.showImage(captcha.getImageWithGaps(1));
+		frame1.setLocationByScreenPercent(50, 20);
+		if (frame2 != null) {
+			frame2.destroy();
+		}
+		frame2 = new BasicWindow();
+		frame2.setTitle("Letters");
+		frame2.setLayout(new GridBagLayout());
+		frame2.setSize(300, 300);
+		frame2.setAlwaysOnTop(true);
+
+		frame2.setLocationByScreenPercent(50, 5);
 		if (letters == null) {
-			captchafile.renameTo(new File("detectionErrors/"
-					+ captchafile.getName()));
-			DEBUG
-					.trace("ERROR: SELTSAM: 2. Lettererkennung ist efhlgeschlagen!");
+			String[] path = { "methods", method, "detectionErrors1",
+					captchafile.getName() };
+			captchafile.renameTo(new File(UTILITIES.getFullPath(path)));
+			UTILITIES
+					.trace("ERROR: SELTSAM: 2. Lettererkennung ist fehlgeschlagen!");
 			return -1;
 
 		}
-		
-		if (savedCode == null) {
-			guess = checkCaptcha(captchafile);
-			if (guess == null) {
-				captchafile.renameTo(new File("detectionErrors/"
-						+ captchafile.getName()));
-				DEBUG.trace("ERROR: Letter erkennung fehlgeschlagen");
-				return -1;
+		for (int i = 0; i < letters.length; i++) {
 
-			}
+			frame2.add(new ImageComponent(letters[i].getImage(this
+					.getSimplifyFaktor())), UTILITIES.getGBC(i * 2, 0, 2, 2));
 
-			// String code = (String) JOptionPane.showInputDialog(
-			// (Component) GLOBALS.owner, guess, Locale.lc.get("ENTERCAPTCHA",
-			// "Captcha"), JOptionPane.QUESTION_MESSAGE, (Icon) SYSTEM
-			// .getImageIcon(captchafile.getAbsolutePath(), "captcha",
-			// SYSTEM.ABSOLUTEPATH), null, null);
+			frame2.add(new ImageComponent(letters[i].getSimplified(
+					this.getSimplifyFaktor()).getImage()), UTILITIES.getGBC(
+					i * 2, 2, 2, 2));
 
-			code = (String) JOptionPane.showInputDialog(
-					(Component) GLOBALS.owner, guess,
-					savedCode == null ? "Bitte eingeben" : "ESC drücken um "
-							+ savedCode + " zu übernehmen",
-					JOptionPane.QUESTION_MESSAGE, captcha.getAsIconWithGaps(),
-					null, null);
+		}
+		frame2.setVisible(true);
+		frame2.pack();
+		frame2.setSize(300, frame2.getSize().height);
+		guess = checkCaptcha(captcha);
+		UTILITIES.trace("Decoded Captcha: " + guess + " Vality: "
+				+ captcha.valityValue);
+		if (guess == null) {
+			String[] path = { "methods", method, "detectionErrors2",
+					captchafile.getName() };
+			captchafile.renameTo(new File(UTILITIES.getFullPath(path)));
+			UTILITIES.trace("ERROR: Letter erkennung fehlgeschlagen");
+			return -1;
 
-			if (code == null && savedCode != null) {
-				code = savedCode;
+		}
 
-			}
-			if (code == null) {
-				captchafile.renameTo(new File("detectionErrors/"
-						+ captchafile.getName()));
-				DEBUG.trace("ERROR: Captcha Input error");
-				return -1;
-			}
-			if (code.length() == 0) {
-				code = guess;
-			}
-		} else {
+		// String code = (String) JOptionPane.showInputDialog(
+		// (Component) GLOBALS.owner, guess, Locale.lc.get("ENTERCAPTCHA",
+		// "Captcha"), JOptionPane.QUESTION_MESSAGE, (Icon) UTILITIES
+		// / .getImageIcon(captchafile.getAbsolutePath(), "captcha",
+		// UTILITIES.ABSOLUTEPATH), null, null);
+		// code=null;
+		// if(guess.indexOf("_")>=0)return -1;
+		// code=guess;
+		if (captcha.valityValue > 0) {
+			code = UTILITIES
+					.prompt("Bitte Captcha Code eingeben (Press enter to confirm "
+							+ guess + " / Press ESC to confirm " + savedCode);
+
+		}
+		if (code == null && savedCode != null) {
 			code = savedCode;
-			if (code == null || code.equals("null")) {
-				captchafile.renameTo(new File("detectionErrors/"
-						+ captchafile.getName()));
-				DEBUG.trace("ERROR: Captcha Input error");
-				return -1;
-			}
-			if (code.length() == 0) {
-				captchafile.renameTo(new File("detectionErrors/"
-						+ captchafile.getName()));
-				DEBUG.trace("ERROR: Captcha Input error2");
-				return -1;
-			}
+
 		}
-		if(code.length()!=letters.length){
-			captchafile.renameTo(new File("detectionErrors/"
-					+ captchafile.getName()));
-			DEBUG.trace("ERROR: Captcha Input error3");
+		if (code == null) {
+			String[] path = { "methods", method, "detectionErrors3",
+					captchafile.getName() };
+			captchafile.renameTo(new File(UTILITIES.getFullPath(path)));
+			UTILITIES.trace("ERROR: Captcha Input error");
 			return -1;
 		}
-		GLOBALS.setProperty(captchaHash, code);
+		if (code.length() == 0) {
+			code = guess;
+		}
+		// } else {
+		// code = savedCode;
+		// if (code == null || code.equals("null")) {
+		// captchafile.renameTo(new File("detectionErrors/"
+		// + captchafile.getName()));
+		// UTILITIES.trace("ERROR: Captcha Input error");
+		// return -1;
+		// }
+		// if (code.length() == 0) {
+		// captchafile.renameTo(new File("detectionErrors/"
+		// + captchafile.getName()));
+		// UTILITIES.trace("ERROR: Captcha Input error2");
+		// return -1;
+		// }
+		// }
+		if (code.length() != letters.length) {
+			String[] path = { "methods", method, "detectionErrors4",
+					captchafile.getName() };
+			captchafile.renameTo(new File(UTILITIES.getFullPath(path)));
+			UTILITIES.trace("ERROR: Captcha Input error3");
+			return -1;
+		}
+		UTILITIES.setProperty(captchaHash, code);
 		int ret = 0;
 		for (int i = 0; i < letters.length; i++) {
-			if (letters[i] == null
-					|| letters[i].getWidth() < 2
-					|| letters[i].getHeight() < 2)
-				break;
+			if (letters[i] == null || letters[i].getWidth() < 2
+					|| letters[i].getHeight() < 2) {
+				String[] path = { "methods", method, "detectionErrors5",
+						captchafile.getName() };
+				captchafile.renameTo(new File(UTILITIES.getFullPath(path)));
+				UTILITIES.trace("ERROR: Letter detection error");
+				return -1;
+			}
+			frame2.add(new ImageComponent(letters[i].getImage()));
+			frame2.repack();
 			// letters[i].printGrid();
-		
+
 			// Create a new DOM document; this method is implemented in
 			// e511 Creating an Empty DOM Document
 
@@ -700,20 +666,53 @@ public class CAntiCaptcha {
 			Element element = mth.createElement("letter");
 			mth.getFirstChild().appendChild(element);
 
-			if (code.length()>i && guess.length()>i &&code.substring(i, i + 1).equals(guess.substring(i, i + 1))) {
+			if (code.length() > i
+					&& guess.length() > i
+					&& code.substring(i, i + 1).equals(
+							guess.substring(i, i + 1))) {
 				ret++;
+				if (!isTrainOnlyUnknown()) {
+					element.appendChild(mth.createTextNode(letters[i]
+							.getPixelString()));
+					letters[i].printGrid();
+					element.setAttribute("value", code.substring(i, i + 1));
+					element.setAttribute("captchaHash", captchaHash);
+					element.setAttribute("bad", "0");
+					element.setAttribute("good", "0");
+
+					letters[i].setOwner(this);
+					letters[i].setTextGrid(letters[i].getPixelString());
+					letters[i].setSourceHash(captchaHash);
+					letters[i].setDecoded(code.substring(i, i + 1));
+					letterDB.add(letters[i]);
+
+				}
+			} else {
+				// Add a text node to the element
+				element.appendChild(mth.createTextNode(letters[i]
+						.getPixelString()));
+				letters[i].printGrid();
+				element.setAttribute("value", code.substring(i, i + 1));
+				element.setAttribute("captchaHash", captchaHash);
+				element.setAttribute("bad", "0");
+				element.setAttribute("good", "0");
+				letters[i].setOwner(this);
+				letters[i].setTextGrid(letters[i].getPixelString());
+				letters[i].setSourceHash(captchaHash);
+				letters[i].setDecoded(code.substring(i, i + 1));
+				letterDB.add(letters[i]);
+
 			}
-			// Add a text node to the element
-			element
-					.appendChild(mth
-							.createTextNode(letters[i].getPixelString()));
-			element.setAttribute("value", code.substring(i, i + 1));
-			element.setAttribute("captchaHash", captchaHash);
-			DEBUG.trace(letters[i].getPixelString());
 			// mth.appendChild(element);
 		}
 
 		saveMTHFile();
+		return ret;
+	}
+
+	private Captcha createCaptcha(Image captchaImage) {
+		Captcha ret = Captcha.getCaptcha(captchaImage);
+		ret.setOwner(this);
 		return ret;
 	}
 
@@ -730,18 +729,17 @@ public class CAntiCaptcha {
 			transformer.transform(source, result);
 
 			String xmlString = result.getWriter().toString();
-			new File(METHODLETTERS).renameTo(new File("tmp_" + METHODLETTERS));
-			if (SYSTEM.writeLocalFile(new File(METHODLETTERS), xmlString)) {
-				new File("tmp_" + METHODLETTERS).delete();
-			} else {
-				new File("tmp_" + METHODLETTERS).renameTo(new File(
-						METHODLETTERS));
-				DEBUG
-						.trace("ERROR !!!!  XML FILE KONNTE NICHT GESPEICHERT WERDEN");
+
+			String[] path = { "methods", method, "letters.mth" };
+
+			if (!UTILITIES.writeLocalFile(
+					new File(UTILITIES.getFullPath(path)), xmlString)) {
+				UTILITIES
+						.trace("ERROR: MTHO file Konnte nicht gespeichert werden");
 			}
 		} catch (TransformerException e) {
 			// TODO Auto-generated catch block
-			DEBUG.error(e);
+			e.printStackTrace();
 		}
 
 	}
@@ -750,17 +748,14 @@ public class CAntiCaptcha {
 	 * Methode prüft ob das captcha schon aufgenommen wurde.
 	 */
 	private boolean isCaptchaInMTH(String captchaHash) {
-		if (mth == null || mth.getFirstChild() == null)
+		if (letterDB == null)
 			return false;
-		NodeList nl = mth.getFirstChild().getChildNodes();
-		for (int i = 0; i < nl.getLength(); i++) {
-			Node childNode = nl.item(i);
-			NamedNodeMap att = childNode.getAttributes();
-			if (att != null
-					&& att.getNamedItem("captchaHash").getNodeValue().equals(
-							captchaHash))
+
+		for (int i = 0; i < letterDB.size(); i++) {
+			if (letterDB.elementAt(i).sourcehash.equals(captchaHash))
 				return true;
 		}
+
 		return false;
 
 	}
@@ -769,84 +764,174 @@ public class CAntiCaptcha {
 	 * Versucht einen captcha auszulesen und gibt den Inhalt als String zurück
 	 */
 	private String checkCaptcha(File captchafile) {
-		DEBUG.trace("check " + captchafile);
+		UTILITIES.trace("check " + captchafile);
 		Image captchaImage = loadImage(captchafile);
-		Captcha captcha = Captcha.getCaptcha(captchaImage);
+		Captcha captcha = createCaptcha(captchaImage);
 		// captcha.printCaptcha();
 		return checkCaptcha(captcha);
 	}
+
 	private String checkCaptcha(Captcha captcha) {
-	
-		// captcha.printCaptcha();
-		if (DOPREPARE) {
-			prepare(captcha);
-		}
 
 		// captcha.printCaptcha();
+
+		// captcha.printCaptcha();
+		Letter[] newLetters = new Letter[this.getLetterNum()];
 		String ret = "";
-		correct = 0;
-		Letter[] letters = captcha.getLetters(LETTERNUM);
+		long correct = 0;
+		Letter akt;
+		Letter[] letters = captcha.getLetters(getLetterNum());
 		if (letters == null)
 			return null;
 		for (int i = 0; i < letters.length; i++) {
-			ret += getLetter(letters[i]);
-			// letters[i].printGrid();
+			akt = getLetter(letters[i]);
+			newLetters[i] = letters[i];
+			if (akt == null) {
+				letters[i].setDecoded("_");
+				letters[i].setValityValue(Integer.MAX_VALUE);
+				correct += Integer.MAX_VALUE;
+
+			} else {
+
+				letters[i].setDecoded(akt.decodedValue);
+				letters[i].setValityValue(akt.valityValue);
+				correct += akt.valityValue;
+			}
+			if (newLetters[i] != null) {
+				ret += akt.decodedValue;
+			}
+			if (letters[i].getWidth() > 0 && letters[i].getHeight() > 0) {
+				// BasicWindow.showImage(letters[i].getImage(1), "cap " + i);
+				// letters[i].printGrid();+
+			}
 		}
-		DEBUG.trace(ret + " - " + correct);
+
+		captcha.setDecodedLetters(newLetters);
+
+		captcha.setValityValue((int) (correct / letters.length));
+
 		return ret;
 	}
+
 	/*
 	 * Vergleicht ein letterobjekt mit der datenbank und gibt den besten treffer
 	 * asl String zurück
 	 */
-	private String getLetter(Letter letter) {
 
+	private int scanCompare(Letter a, Letter b) {
+		// int difX = Math.abs(a.getWidth() - b.getWidth());
+		// int difY = Math.abs(a.getHeight() - b.getHeight());
+		int bx, by, va, vb;
+		long value = 0;
+		int bestValue = Integer.MAX_VALUE;
+		int pixel;
+
+		int scanXFrom = Math.min(b.getWidth() - a.getWidth() - scanVariance,
+				-scanVariance);
+		int scanXTo = Math.max(-scanVariance, a.getWidth() - b.getWidth()
+				+ scanVariance);
+
+		int scanYFrom = Math.min(b.getHeight() - a.getHeight() - scanVariance,
+				-scanVariance);
+		int scanYTo = Math.max(-scanVariance, a.getHeight() - b.getHeight()
+				+ scanVariance);
+		// UTILITIES.trace(a.getDim()+" - "+b.getDim());
+		// a.printGrid();
+		// b.printGrid();
+		// UTILITIES.trace(scanXFrom+" - "+scanXTo);
+		// UTILITIES.trace(scanYFrom+" - "+scanYTo);
+		for (int xx = scanXFrom; xx <= scanXTo; xx++) {
+			for (int yy = scanYFrom; yy <= scanYTo; yy++) {
+				bx = Math.max(0 - xx, 0);
+				by = Math.max(0 - yy, 0);
+				pixel = 0;
+				// UTILITIES.trace("0 x->
+				// "+Math.min(a.getWidth(),b.getWidth()-bx));
+				// UTILITIES.trace("0 y-> "+Math.min(a.getHeight(),
+				// b.getHeight()-by));
+				for (int x = 0; x < Math.min(a.getWidth(), b.getWidth() - bx); x++) {
+					for (int y = 0; y < Math.min(a.getHeight(), b.getHeight()
+							- by); y++) {
+						va = a.getPixelValue(x, y);
+						vb = b.getPixelValue(x + bx, y + by);
+						pixel++;
+						value += Math.abs(va - vb);
+					}
+				}
+				if (pixel > 0) {
+					value /= pixel;
+
+					bestValue = Math.min((int) value, bestValue);
+				}
+
+			}
+		}
+		return bestValue;
+	}
+
+	private Letter getLetter(Letter letter) {
+		// UTILITIES.trace(testhash);
 		long bestValue = Long.MAX_VALUE;
 		String bestResult = "_";
+		String lastResult = "";
+		Letter res = new Letter();
+		int value;
+		res.setOwner(this);
+		res.setValityValue(Integer.MAX_VALUE);
+		// UTILITIES.trace("Detect letter "+letter);
+
+		// UTILITIES.trace(letter.getDim());
 		try {
-			DEBUG.trace(letterDB.size());
+
 			if (letterDB == null)
-				return "_";
+				return null;
 
 			for (int i = 0; i < letterDB.size(); i++) {
 				// Get child node
 				Letter tmp = letterDB.elementAt(i);
 
-				long value = 0;
-				if (tmp.getHeight() != letter.getHeight()
-						|| tmp.getWidth() != letter.getWidth()) {
-
+				// UTILITIES.trace(tmp.decodedValue+" : "+tmp.getDim());
+				if (Math.abs(tmp.getHeight() - letter.getHeight()) > borderVariance
+						|| Math.abs(tmp.getWidth() - letter.getWidth()) > borderVariance) {
 					continue;
 				}
-				for (int y = 0; y < tmp.getHeight(); y++) {
 
-					for (int x = 0; x < tmp.getWidth(); x++) {
+				value = scanCompare(letter, tmp);
 
-						value += Math.abs(tmp.getPixelValue(x, y)
-								- letter.getPixelValue(x, y));
-					}
-				}
-				value /= (tmp.getHeight() * tmp.getWidth());
-				if (value == 0) {
-
-					return tmp.decodedValue;
-				}
+				// UTILITIES.trace(" value " + tmp.decodedValue + " : "
+				// + (value / 100000));
 				if (value < bestValue) {
 					bestValue = value;
 					bestResult = tmp.decodedValue;
-					 DEBUG.trace(" old "+bestResult + " : " + bestValue);
-				}
+					res = tmp;
+					tmp.setValityValue(value);
+					// UTILITIES.trace(" old " + bestResult + " : "
+					// + (bestValue / 100000));
+					// tmp.printGrid();
 
+					if (value == 0
+							|| (value <= letterSearchLimitValue
+									* tmp.getMaxPixelValue() && bestResult
+									.equals(lastResult))) {
+						res = tmp;
+						// UTILITIES.trace(res.decodedValue
+						// + " Grenzwert "
+						// + (letterSearchLimitValue * tmp
+						// .getMaxPixelValue()) + " " + value);
+						// BasicWindow.showImage(res.getImage(1), "Found SUPI
+						// WERT with "+value+":" + bestResult);
+						tmp.setValityValue(value);
+						return tmp;
+					}
+				}
+				lastResult = bestResult;
 			}
-			this.correct += bestValue;
 
 		} catch (Exception e) {
-			DEBUG.error(e);
+			e.printStackTrace();
 		}
-		if(bestValue>letter.getMaxPixelValue()*USELETTERSEARCHFAKTOR){
-			return searchLetter(letter);
-		}
-		return bestResult;
+
+		return res;
 
 	}
 
@@ -855,15 +940,17 @@ public class CAntiCaptcha {
 	 * liest den captchaOrdner aus und gibt ein File Array zurück
 	 */
 	private File[] getImages() {
-		File dir = new File(GLOBALS.ROOTDIR + GLOBALS.FS + "captchas");
+		String[] path = { "methods", method, "captchas" };
+
+		File dir = new File(UTILITIES.getFullPath(path));
 
 		if (dir == null || !dir.exists()) {
-			DEBUG.trace("Image dir nicht gefunden");
+			UTILITIES.trace("Image dir nicht gefunden");
 		}
 
 		File[] entries = dir.listFiles(new FileFilter() {
 			public boolean accept(File pathname) {
-				// DEBUG.trace(pathname.getName());
+				// UTILITIES.trace(pathname.getName());
 				if (pathname.getName().endsWith(".jpg")) {
 
 					return true;
@@ -875,6 +962,532 @@ public class CAntiCaptcha {
 		});
 		return entries;
 
+	}
+
+	/**
+	 * @return the imageType
+	 */
+	public String getImageType() {
+		return imageType;
+	}
+
+	/**
+	 * @param imageType
+	 *            the imageType to set
+	 */
+	public void setImageType(String imageType) {
+		UTILITIES.trace("SET PARAMETER: [imageType] = " + imageType);
+		this.imageType = imageType;
+	}
+
+	/**
+	 * @return the letterNum
+	 */
+	public int getLetterNum() {
+		return letterNum;
+	}
+
+	/**
+	 * @param letterNum
+	 *            the letterNum to set
+	 */
+	public void setLetterNum(int letterNum) {
+		UTILITIES.trace("SET PARAMETER: [letterNum] = " + letterNum);
+		this.letterNum = letterNum;
+	}
+
+	/**
+	 * @return the method
+	 */
+	public String getMethod() {
+		return method;
+	}
+
+	/**
+	 * @param method
+	 *            the method to set
+	 */
+	public void setMethod(String method) {
+		UTILITIES.trace("SET PARAMETER: [method] = " + method);
+		this.method = method;
+	}
+
+	/**
+	 * @return the methodAuthor
+	 */
+	public String getMethodAuthor() {
+		return methodAuthor;
+	}
+
+	/**
+	 * @param methodAuthor
+	 *            the methodAuthor to set
+	 */
+	public void setMethodAuthor(String methodAuthor) {
+		UTILITIES.trace("SET PARAMETER: [methodAuthor] = " + methodAuthor);
+		this.methodAuthor = methodAuthor;
+	}
+
+	/**
+	 * @return the getMethodLettersFileFile
+	 */
+	public String getMethodLettersFile() {
+		return methodLettersFile;
+	}
+
+	/**
+	 * @param getMethodLettersFileFile
+	 *            the getMethodLettersFileFile to set
+	 */
+	public void setMethodLettersFile(String getMethodLettersFile) {
+		UTILITIES.trace("SET PARAMETER: [getMethodLettersFile] = "
+				+ getMethodLettersFile);
+		this.methodLettersFile = methodLettersFile;
+	}
+
+	/**
+	 * @return the methodName
+	 */
+	public String getMethodName() {
+		return methodName;
+	}
+
+	/**
+	 * @param methodName
+	 *            the methodName to set
+	 */
+	public void setMethodName(String methodName) {
+		UTILITIES.trace("SET PARAMETER: [methodName] = " + methodName);
+		this.methodName = methodName;
+	}
+
+	/**
+	 * @return the methodSettingsFile
+	 */
+	public String getMethodSettingsFile() {
+		return methodSettingsFile;
+	}
+
+	/**
+	 * @param methodSettingsFile
+	 *            the methodSettingsFile to set
+	 */
+	public void setMethodSettingsFile(String methodSettingsFile) {
+		UTILITIES.trace("SET PARAMETER: [methodSettingsFile] = "
+				+ methodSettingsFile);
+		this.methodSettingsFile = methodSettingsFile;
+	}
+
+	/**
+	 * @return the resultFile
+	 */
+	public String getResultFile() {
+		return resultFile;
+	}
+
+	/**
+	 * @param resultFile
+	 *            the resultFile to set
+	 */
+	public void setResultFile(String resultFile) {
+		UTILITIES.trace("SET PARAMETER: [resultFile] = " + resultFile);
+		this.resultFile = resultFile;
+	}
+
+	/**
+	 * @return the sourceImage
+	 */
+	public String getSourceImage() {
+		return sourceImage;
+	}
+
+	/**
+	 * @param sourceImage
+	 *            the sourceImage to set
+	 */
+	public void setSourceImage(String sourceImage) {
+		UTILITIES.trace("SET PARAMETER: [sourceImage] = " + sourceImage);
+		this.sourceImage = sourceImage;
+	}
+
+	/**
+	 * @return the methodScriptFile
+	 */
+	public String getMethodScriptFile() {
+		return methodScriptFile;
+	}
+
+	/**
+	 * @param methodScriptFile
+	 *            the methodScriptFile to set
+	 */
+	public void setMethodScriptFile(String methodScriptFile) {
+		UTILITIES.trace("SET PARAMETER: [methodScriptFile] = "
+				+ methodScriptFile);
+		this.methodScriptFile = methodScriptFile;
+	}
+
+	/**
+	 * @return the captchaPrepareCommands
+	 */
+	public Vector<String[]> getCaptchaPrepareCommands() {
+		return captchaPrepareCommands;
+	}
+
+	/**
+	 * @param captchaPrepareCommands
+	 *            the captchaPrepareCommands to set
+	 */
+	public void setCaptchaPrepareCommands(
+			Vector<String[]> captchaPrepareCommands) {
+		this.captchaPrepareCommands = captchaPrepareCommands;
+	}
+
+	/**
+	 * @return the jacCommands
+	 */
+	public Vector<String[]> getJacCommands() {
+		return jacCommands;
+	}
+
+	/**
+	 * @param jacCommands
+	 *            the jacCommands to set
+	 */
+	public void setJacCommands(Vector<String[]> jacCommands) {
+		this.jacCommands = jacCommands;
+	}
+
+	/**
+	 * @return the letterCommands
+	 */
+	public Vector<String[]> getLetterCommands() {
+		return letterCommands;
+	}
+
+	/**
+	 * @param letterCommands
+	 *            the letterCommands to set
+	 */
+	public void setLetterCommands(Vector<String[]> letterCommands) {
+		this.letterCommands = letterCommands;
+	}
+
+	/**
+	 * @return the gapAndAverageLogic
+	 */
+	public boolean getGapAndAverageLogic() {
+		return gapAndAverageLogic;
+	}
+
+	/**
+	 * @param gapAndAverageLogic
+	 *            the gapAndAverageLogic to set
+	 */
+	public void setGapAndAverageLogic(boolean gapAndAverageLogic) {
+		UTILITIES.trace("SET PARAMETER: [gapAndAverageLogic] = "
+				+ gapAndAverageLogic);
+		this.gapAndAverageLogic = gapAndAverageLogic;
+	}
+
+	/**
+	 * @return the gapDetectionAverageContrast
+	 */
+	public double getGapDetectionAverageContrast() {
+		return gapDetectionAverageContrast;
+	}
+
+	/**
+	 * @param gapDetectionAverageContrast
+	 *            the gapDetectionAverageContrast to set
+	 */
+	public void setGapDetectionAverageContrast(
+			double gapDetectionAverageContrast) {
+		UTILITIES.trace("SET PARAMETER: [gapDetectionAverageContrast] = "
+				+ gapDetectionAverageContrast);
+		this.gapDetectionAverageContrast = gapDetectionAverageContrast;
+	}
+
+	/**
+	 * @return the gapDetectionPeakContrast
+	 */
+	public double getGapDetectionPeakContrast() {
+		return gapDetectionPeakContrast;
+	}
+
+	/**
+	 * @param gapDetectionPeakContrast
+	 *            the gapDetectionPeakContrast to set
+	 */
+	public void setGapDetectionPeakContrast(double gapDetectionPeakContrast) {
+		UTILITIES.trace("SET PARAMETER: [gapDetectionPeakContrast] = "
+				+ gapDetectionPeakContrast);
+		this.gapDetectionPeakContrast = gapDetectionPeakContrast;
+	}
+
+	/**
+	 * @return the gaps
+	 */
+	public int[] getGaps() {
+		return gaps;
+	}
+
+	/**
+	 * @param gaps
+	 *            the gaps to set
+	 */
+	public void setGaps(int[] gaps) {
+		UTILITIES.trace("SET PARAMETER: [gaps] = " + gaps.toString());
+		this.gaps = gaps;
+	}
+
+	/**
+	 * @return the gapWidthAverage
+	 */
+	public int getGapWidthAverage() {
+		return gapWidthAverage;
+	}
+
+	/**
+	 * @param gapWidthAverage
+	 *            the gapWidthAverage to set
+	 */
+	public void setGapWidthAverage(int gapWidthAverage) {
+		UTILITIES
+				.trace("SET PARAMETER: [gapWidthAverage] = " + gapWidthAverage);
+		this.gapWidthAverage = gapWidthAverage;
+	}
+
+	/**
+	 * @return the gapWidthPeak
+	 */
+	public int getGapWidthPeak() {
+		return gapWidthPeak;
+	}
+
+	/**
+	 * @param gapWidthPeak
+	 *            the gapWidthPeak to set
+	 */
+	public void setGapWidthPeak(int gapWidthPeak) {
+		UTILITIES.trace("SET PARAMETER: [gapWidthPeak] = " + gapWidthPeak);
+		this.gapWidthPeak = gapWidthPeak;
+	}
+
+	/**
+	 * @return the leftPadding
+	 */
+	public int getLeftPadding() {
+		return leftPadding;
+	}
+
+	/**
+	 * @param leftPadding
+	 *            the leftPadding to set
+	 */
+	public void setLeftPadding(int leftPadding) {
+		UTILITIES.trace("SET PARAMETER: [leftPadding] = " + leftPadding);
+		this.leftPadding = leftPadding;
+	}
+
+	/**
+	 * @return the letterSearchLimitValue
+	 */
+	public double getLetterSearchLimitValue() {
+		return letterSearchLimitValue;
+	}
+
+	/**
+	 * @param letterSearchLimitValue
+	 *            the letterSearchLimitValue to set
+	 */
+	public void setLetterSearchLimitValue(double letterSearchLimitValue) {
+		UTILITIES.trace("SET PARAMETER: [letterSearchLimitValue] = "
+				+ letterSearchLimitValue);
+		this.letterSearchLimitValue = letterSearchLimitValue;
+	}
+
+	/**
+	 * @return the minimumLetterWidth
+	 */
+	public int getMinimumLetterWidth() {
+		return minimumLetterWidth;
+	}
+
+	/**
+	 * @param minimumLetterWidth
+	 *            the minimumLetterWidth to set
+	 */
+	public void setMinimumLetterWidth(int minimumLetterWidth) {
+		UTILITIES.trace("SET PARAMETER: [minimumLetterWidth] = "
+				+ minimumLetterWidth);
+		this.minimumLetterWidth = minimumLetterWidth;
+	}
+
+	/**
+	 * @return the useAverageGapDetection
+	 */
+	public boolean isUseAverageGapDetection() {
+		return useAverageGapDetection;
+	}
+
+	/**
+	 * @param useAverageGapDetection
+	 *            the useAverageGapDetection to set
+	 */
+	public void setUseAverageGapDetection(boolean useAverageGapDetection) {
+		UTILITIES.trace("SET PARAMETER: [useAverageGapDetection] = "
+				+ useAverageGapDetection);
+		this.useAverageGapDetection = useAverageGapDetection;
+	}
+
+	/**
+	 * @return the usePeakGapdetection
+	 */
+	public boolean isUsePeakGapdetection() {
+
+		return usePeakGapdetection;
+	}
+
+	/**
+	 * @param usePeakGapdetection
+	 *            the usePeakGapdetection to set
+	 */
+	public void setUsePeakGapdetection(boolean usePeakGapdetection) {
+		UTILITIES.trace("SET PARAMETER: [usePeakGapdetection] = "
+				+ usePeakGapdetection);
+		this.usePeakGapdetection = usePeakGapdetection;
+	}
+
+	/**
+	 * @return the backgroundSampleCleanContrast
+	 */
+	public double getBackgroundSampleCleanContrast() {
+		return backgroundSampleCleanContrast;
+	}
+
+	/**
+	 * @param backgroundSampleCleanContrast
+	 *            the backgroundSampleCleanContrast to set
+	 */
+	public void setBackgroundSampleCleanContrast(
+			double backgroundSampleCleanContrast) {
+		UTILITIES.trace("SET PARAMETER: [backgroundSampleCleanContrast] = "
+				+ backgroundSampleCleanContrast);
+		this.backgroundSampleCleanContrast = backgroundSampleCleanContrast;
+	}
+
+	/**
+	 * @return the blackPercent
+	 */
+	public double getBlackPercent() {
+		return blackPercent;
+	}
+
+	/**
+	 * @param blackPercent
+	 *            the blackPercent to set
+	 */
+	public void setBlackPercent(double blackPercent) {
+		UTILITIES.trace("SET PARAMETER: [blackPercent] = " + blackPercent);
+		this.blackPercent = blackPercent;
+	}
+
+	/**
+	 * @return the colorValueFaktor
+	 */
+	public int getColorValueFaktor() {
+		return colorValueFaktor;
+	}
+
+	/**
+	 * @param colorValueFaktor
+	 *            the colorValueFaktor to set
+	 */
+	public void setColorValueFaktor(int colorValueFaktor) {
+		UTILITIES.trace("SET PARAMETER: [colorValueFaktor] = "
+				+ colorValueFaktor);
+		this.colorValueFaktor = colorValueFaktor;
+	}
+
+	/**
+	 * @return the relativeContrast
+	 */
+	public double getRelativeContrast() {
+		return relativeContrast;
+	}
+
+	/**
+	 * @param relativeContrast
+	 *            the relativeContrast to set
+	 */
+	public void setRelativeContrast(double relativeContrast) {
+		UTILITIES.trace("SET PARAMETER: [relativeContrast] = "
+				+ relativeContrast);
+		this.relativeContrast = relativeContrast;
+	}
+
+	/**
+	 * @return the simplifyFaktor
+	 */
+	public int getSimplifyFaktor() {
+		return simplifyFaktor;
+	}
+
+	/**
+	 * @param simplifyFaktor
+	 *            the simplifyFaktor to set
+	 */
+	public void setSimplifyFaktor(int simplifyFaktor) {
+		UTILITIES.trace("SET PARAMETER: [simplifyFaktor] = " + simplifyFaktor);
+		this.simplifyFaktor = simplifyFaktor;
+	}
+
+	/**
+	 * @return the borderVariance
+	 */
+	public int getBorderVariance() {
+		return borderVariance;
+	}
+
+	/**
+	 * @param borderVariance
+	 *            the borderVariance to set
+	 */
+	public void setBorderVariance(int borderVariance) {
+		UTILITIES.trace("SET PARAMETER: [borderVariance] = " + borderVariance);
+		this.borderVariance = borderVariance;
+	}
+
+	/**
+	 * @return the scanVariance
+	 */
+	public int getScanVariance() {
+		return scanVariance;
+	}
+
+	/**
+	 * @param scanVariance
+	 *            the scanVariance to set
+	 */
+	public void setScanVariance(int scanVariance) {
+		UTILITIES.trace("SET PARAMETER: [scanVariance] = " + scanVariance);
+		this.scanVariance = scanVariance;
+	}
+
+	/**
+	 * @return the trainOnlyUnknown
+	 */
+	public boolean isTrainOnlyUnknown() {
+		return trainOnlyUnknown;
+	}
+
+	/**
+	 * @param trainOnlyUnknown
+	 *            the trainOnlyUnknown to set
+	 */
+	public void setTrainOnlyUnknown(boolean trainOnlyUnknown) {
+		this.trainOnlyUnknown = trainOnlyUnknown;
 	}
 
 }

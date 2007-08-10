@@ -12,6 +12,7 @@ this.image = image;
 setPreferredSize (new Dimension (image.getWidth(null),
 image.getHeight(null)));
 }
+
 public int getImageHeight(){
 	return image.getHeight(this);
 	

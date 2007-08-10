@@ -9,13 +9,11 @@ import java.awt.event.WindowEvent;
 import java.io.File;
 import java.io.IOException;
 
+import javax.swing.ImageIcon;
 import javax.swing.JFrame;
 import javax.swing.SwingUtilities;
 
 
-import de.lagcity.TLH.DEBUG;
-import de.lagcity.TLH.Locale;
-import de.lagcity.TLH.SWING;
 
 
 
@@ -32,7 +30,7 @@ public class BasicWindow extends JFrame {
 
 	protected GridBagConstraints getGBC(int x, int y, int width, int height) {
 
-		GridBagConstraints gbc = SWING.getGBC(x, y, width, height);
+		GridBagConstraints gbc = UTILITIES.getGBC(x, y, width, height);
 		gbc.anchor = GridBagConstraints.NORTHWEST;
 		gbc.fill = GridBagConstraints.BOTH;
 		gbc.weighty=1;
@@ -61,7 +59,10 @@ public class BasicWindow extends JFrame {
 		setLocationByScreenPercent(50, 50);
 		setBackground(Color.LIGHT_GRAY);
 	}
-
+	public void destroy(){
+		setVisible(false);
+		dispose();	
+	}
 	public void resizeWindow(int percent) {
 		Dimension screenSize = getToolkit().getScreenSize();
 		setSize((screenSize.width * percent) / 100,
@@ -78,7 +79,7 @@ public class BasicWindow extends JFrame {
 	}
 	public static BasicWindow showImage(File file,String title){
 		
-		Image img=SWING.loadImage(file);
+		Image img=UTILITIES.loadImage(file);
 		BasicWindow w= new BasicWindow();
 		ImageComponent ic=new ImageComponent(img);
 		
@@ -86,7 +87,7 @@ public class BasicWindow extends JFrame {
 		w.setLocationByScreenPercent(50, 50);
 		w.setTitle(title);
 		w.setLayout(new GridBagLayout());
-		w.add(ic, SWING.getGBC(0,0,1, 1));
+		w.add(ic, UTILITIES.getGBC(0,0,1, 1));
 		w.setVisible(true);
 		w.pack();
 		w.repack();
@@ -94,19 +95,29 @@ public class BasicWindow extends JFrame {
 		return w;
 		
 	}
-	
+	private static int screenPosX=0;
+	private static int screenPosY=0;
+	public static BasicWindow showImage(Image img){
+		
+		return showImage(img,img.toString());
+	}
 	
 	public static BasicWindow showImage(Image img,String title){
-		
+		Dimension screenSize = new JFrame().getToolkit().getScreenSize();
 	
 		BasicWindow w= new BasicWindow();
 		ImageComponent ic=new ImageComponent(img);
 		
 		w.setSize(ic.getImageWidth()+10, ic.getImageHeight()+20);
-		w.setLocationByScreenPercent(50, 50);
+		w.setLocation(screenPosX, screenPosY);
+		screenPosY+=ic.getImageHeight()+40;
+		if(screenPosY>=screenSize.height){
+			screenPosX+=ic.getImageWidth()+30;
+			screenPosY=0;
+		}
 		w.setTitle(title);
 		w.setLayout(new GridBagLayout());
-		w.add(ic, SWING.getGBC(0,0,1, 1));
+		w.add(ic, UTILITIES.getGBC(0,0,1, 1));
 		w.setVisible(true);
 		w.pack();
 		w.repack();
@@ -114,4 +125,7 @@ public class BasicWindow extends JFrame {
 		return w;
 		
 	}
+	
+	
+
 }

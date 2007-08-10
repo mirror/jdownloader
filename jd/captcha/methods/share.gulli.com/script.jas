@@ -1,0 +1,139 @@
+
+		Captcha.GAPS= new int[5];
+	//gulli
+		Captcha.GAPS[0]=47;
+		Captcha.GAPS[1]=72;
+		Captcha.GAPS[2]=98;
+		setLetterNum(3);
+		/** ************************************Buchstabenerkennung************************************** */
+		/*
+		 * Captcha.GAPANDAVERAGELOGIC Gibt an wie die Beiden Lückenerkennung
+		 * zusammenarbeiten true: AND Verknüpfung. Es werden nur Lücken gezählt
+		 * bei denen Peak und Average erkennung übereinstimmen false:OR
+		 * Verknüpfung. Es werden sowohl Peak als auch Average Lücken verwendet.
+		 */
+
+		Captcha.GAPANDAVERAGELOGIC = true;
+		/*
+		 * Captcha.USEAVERAGEGAPDETECTION Es werden Reihen die im Vergleich zum
+		 * Durchschnisswert hell sind gesucht. Parameter:
+		 * Captcha.GAPWIDTHAVERAGE Captcha.GAPDETECTIONAVERAGECONTRAST
+		 */
+		Captcha.USEAVERAGEGAPDETECTION = false;
+		/*
+		 * Captcha.GAPWIDTHAVERAGE Gibt an wieviele Reihen zur berechnung
+		 * verwendet werden sollen. Dieser Wert sollte auf keinen fall größer
+		 * als die Minimal Lückenbreite sein
+		 */
+		Captcha.GAPWIDTHAVERAGE = 1;
+		// je kleiner desto leichter wird eine lücke als wirkliche lücke erkannt
+		// Für reine schwarze schrift aufw eißem hintergrund ist 1.2 ein guter
+		// wert
+		// 0.7 war für svz ganz gut
+		/*
+		 * Captcha.GAPDETECTIONAVERAGECONTRAST Kontrastparameter wirkt auf die
+		 * Durchschnittshelligkeit des ganzen Bildes. und dieser wird dann mit
+		 * der reihenhelligkeit verglichen. 1: Lücke falls die Reihenhelligkeit
+		 * heller als der Bildgesammtdurchschnitt ist. <1:Lücke dürfen dunkler
+		 * sein um erkannt zu werden. (für bilder bei denen der lücken/Bild
+		 * Kontrast gering ist) >1: Lücken sind deutlich heller als der rest des
+		 * Bildes.
+		 * 
+		 */
+		Captcha.GAPDETECTIONAVERAGECONTRAST = 1.2;
+		/*
+		 * Captcha.USEPEAKGAPDETECTION Es wird die Fallende Flanke von Dunkel
+		 * nach hellgesucht. Dabei wird der Dunkelste Wert einer reihe
+		 * verwendet. Eignet sich gut für reine SW Bilder. Parameter:
+		 * Captcha.GAPWIDTHPEAK Captcha.GAPDETECTIONPEAKECONTRAST
+		 */
+		Captcha.USEPEAKGAPDETECTION = true;
+		/*
+		 * Captcha.GAPWIDTHPEAK Gibt an über wieviele Zeilen nach einem
+		 * Dunkelheitspeak gesucht wird. Ist dieser Wert >1 so verschiebt das
+		 * die Lückenerkennung nach Links. Allerdings werden dafür Ein-pixel
+		 * Lücken nicht als Lücken erkannt
+		 */
+		Captcha.GAPWIDTHPEAK = 1;
+
+		/*
+		 * Captcha.GAPDETECTIONPEAKECONTRAST Kontrasparameter. wirkt aufd en
+		 * Bilddurchschnitt. Zeilen-Dunkel-Peak muss dunkler sein als Parameter*
+		 * Average Je kleiner der Wert, desto größer muss der Kontrast
+		 * zeichen/Hintergrund sein
+		 */
+		Captcha.GAPDETECTIONPEAKECONTRAST = 0.25;
+		/*
+		 * Captcha.MINIMUMLETTERWIDTH Gibt die Minimale Zeichenbreite an. Sie
+		 * sollte möglichst genau angegeben werden, weil das Fehlerkennungen
+		 * verhindert
+		 */
+		Captcha.MINIMUMLETTERWIDTH = 10;
+		/*
+		 * Gibt einen Abstand nach links an. Zeichen werden erst ab
+		 * Captcha.LEFTPADDING Pixel gesucht
+		 * 
+		 */
+		//gulli
+		Captcha.LEFTPADDING = 25;
+
+		/** *****************************************Bildvereinfachungen/Fingerprintparameter****************************************** */
+		/*
+		 * PixelGrid.SIMPLIFYFAKTOR Zur Fingerprinterstellung wird das Bild um
+		 * diesen faktor verkleinert. Nur ganzzahlige werte.
+		 */
+		PixelGrid.SIMPLIFYFAKTOR = 1;
+		/*
+		 * PixelGrid.COLORVALUEFAKTOR Farbraumparameter. Je nachdem welcher
+		 * farbraum verwendet wird, und je nach anzahl der Farben kann dieser
+		 * faktor angepasst werden um weniger Ram zu verbrauchen. MTH File wird
+		 * kleiner. Je größer der Wert, desto mehr Farbinformationen können
+		 * verloren gehen Reines sw bild: Wert= getMaxPixelValue. => 2 Farben
+		 * weiß/schwarz ACHTUNG! Problem 1: Setzt man diesen Parameter >1, so
+		 * wird für die nachfolgenden Pixelwerte der durschnitt aus wert*wert
+		 * quatraten genommen. Diese sind besonders bei sw bildern deutlich
+		 * heller als das ausgangsbild Der Kontrast sinkt also und man muss
+		 * andere Werte, z.B. RELATIVECONTRAST anpassen. RELATIVCONTRAST ist
+		 * aber für sehr vieles zuständig und bereits kleine Änderungen können
+		 * eine große auswirkung haben (plötzlich weißes oder schwarzes bild.
+		 * Ich empfehle daher eher mit Sampledown zu arbeiten
+		 * 
+		 */
+		PixelGrid.COLORVALUEFAKTOR = 0xffffff;
+		// je kleiner, desto mehr wird ausgefiltert. wenn dieser wert kleiner
+		// wird
+		// sollte GAPDETECTIONAVERAGECONTRAST größer werden
+		/*
+		 * PixelGrid.RELATIVCONTRAST Filterparameter. Wirk auch auf
+		 * GAPDETECTIONAVERAGECONTRAST!! Verkleinert man diesen Wert muss
+		 * GAPDETECTIONAVERAGECONTRAST vergrößert werden um die Lückenerkennung
+		 * zu erhalten Dieser Wert wirkt auf den kompletten
+		 * Bildhelligkeitsdurchschnitt und wird dann zur Kontrasttrennung mit
+		 * den Pixelwerten verglichen Je kleiner, desto mehr pixel werden
+		 * ausgefiltert. Je größer, desto emhr PIxel gehen in das Bild mit ein.
+		 * 
+		 */
+		PixelGrid.RELATIVCONTRAST = 0.85;
+		/*
+		 * PixelGrid.BACKGROUNDSAMPLECLEANPERCENT MIt der backgroundSampleClean
+		 * Funktion kann eine Position am Bild angegeben werden die den zu
+		 * filternden farbwert enthält. Der Wert Gibt die Tolleranz an die beim
+		 * Filtern verwendet werden soll. Je größer, desto mehr wird gefiltert
+		 * 0.1 ist ein guter wert für einfarbige Hintergründe um möglichst viele
+		 * Fragmente zu ignorieren
+		 * 
+		 */
+		PixelGrid.BACKGROUNDSAMPLECLEANPERCENT = 0.1;
+		/*
+		 * PixelGrid.BLACKPERCENT Die Maskenclean Funktion verwendet eine feste
+		 * Maske, (z.B. ein muster) alle Pixel dieser Maske werden durch einen
+		 * durchschnisdwert der Umgebung aufgefüllt. Hintergrundmuster lassen
+		 * sich dadurch entfernen. Die Maske wird als JPG abgelegt.der Wert
+		 * dient dazu innerhalb der Maske zwischen Schwarz und weiß zu
+		 * unterscheiden. 0.1 ist für ein Hochqualitatives jpg und ein darauf
+		 * festgelegtes Schwarzes Muster gut.
+		 */
+		PixelGrid.BLACKPERCENT = 0.1;
+
+	
+		// MST File mit den oben angegebenen parametern speichern

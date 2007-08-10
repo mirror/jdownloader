@@ -10,12 +10,7 @@ import java.util.Properties;
 import javax.swing.Icon;
 import javax.swing.JOptionPane;
 
-import de.lagcity.TLH.DEBUG;
-import de.lagcity.TLH.GLOBALS;
-import de.lagcity.TLH.Locale;
-import de.lagcity.TLH.PROPERTY;
-import de.lagcity.TLH.STRING;
-import de.lagcity.TLH.SYSTEM;
+
 
 public class Letter extends PixelGrid {
 
@@ -25,6 +20,7 @@ public class Letter extends PixelGrid {
 
 	public String decodedValue;
 	public String sourcehash;
+	public int valityValue;
 
 	public Letter() {
 		super(0,0);
@@ -37,6 +33,7 @@ public class Letter extends PixelGrid {
 		int newWidth=(int)Math.ceil(getWidth()/faktor);
 		int newHeight=(int)Math.ceil(getHeight()/faktor);
 		Letter ret= new Letter();
+;		ret.setOwner(this.owner);
 		int avg=getAverage();
 		int [][] newGrid=new int[newWidth][newHeight];
 	//DEBUG.trace(getWidth()+"/"+getHeight()+" --> "+newWidth+"/"+newHeight);
@@ -57,8 +54,9 @@ public class Letter extends PixelGrid {
 				}
 				v /= values;
 				//DEBUG.trace(v);
-				newGrid[x][y]=	isElement((int) v, avg) ? 0
-						: (int) getMaxPixelValue();
+				setPixelValue(x,y,newGrid,isElement((int) v, avg) ? 0
+						: (int) getMaxPixelValue(),this.owner);
+			
 			}
 		}			
 	
@@ -75,7 +73,7 @@ public class Letter extends PixelGrid {
 
 		for (int y = 0; y < getHeight(); y++) {
 			for (int x = 0; x < getWidth(); x++) {
-				ret += (int)(getPixelValue(x, y)/PixelGrid.COLORVALUEFAKTOR)+"*";
+				ret += (int)(getPixelValue(x, y)/owner.getColorValueFaktor())+"*";
 
 			}
 			ret=ret.substring(0,ret.length()-1);
@@ -95,7 +93,7 @@ public class Letter extends PixelGrid {
 		//DEBUG.trace(getWidth()+" - "+getHeight());
 		int[][] tmp = new int[width][getHeight()];
 		if(getWidth()<right){
-			DEBUG.trace("ERROR: Letter dim: "+getWidth()+" - "+getHeight()+". Cannot trim to "+left+"-"+right);
+			UTILITIES.trace("ERROR: Letter dim: "+getWidth()+" - "+getHeight()+". Cannot trim to "+left+"-"+right);
 			return false;
 		}
 		for (int x = 0; x < width; x++) {
@@ -139,7 +137,7 @@ public class Letter extends PixelGrid {
 				//DEBUG.trace(x+" / "+y);
 				
 				//try{
-				grid[x][y]=Integer.parseInt(line[x])*PixelGrid.COLORVALUEFAKTOR;
+				grid[x][y]=Integer.parseInt(line[x])*owner.getColorValueFaktor();
 				//}catch(Exception e){
 				//	grid[x][y]=(int)getMaxPixelValue();
 				//}
@@ -153,9 +151,23 @@ public class Letter extends PixelGrid {
 		this.sourcehash=nodeValue;
 		
 	}
-
+	
 	public void setDecoded(String nodeValue) {
 		this.decodedValue=nodeValue;
 		
 	}
+
+	/**
+	 * @param owner the owner to set
+	 */
+	public void setOwner(CAntiCaptcha owner) {
+		this.owner = owner;
+	}
+
+	public void setValityValue(int value) {
+		this.valityValue=value;
+		
+	}
+
+
 }

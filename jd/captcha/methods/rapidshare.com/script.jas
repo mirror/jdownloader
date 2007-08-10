@@ -1,0 +1,12 @@
+#Linkes Padding
+jac.leftpadding = 0;
+#Faktor zur Fingerprintvereinfachung
+jac.simplifyFaktor = 3;
+#Maximale Varianz der Lettererkennung
+jac.borderVariance=1;
+#Maximale Varianz beim LetterScan (Pixelwert um den die Buchstaben gegeneinander verschoben werden
+jac.scanVariance=1;
+#Gibt an ob beim training bekante buchstabben erneut trainiert werden sollen
+jac.trainOnlyUnknown=true;
+#Gibt einen Faktor an ab welchem ein Buchstabe als Perfekt erkannt gilt
+jac.letterSearchLimitValue=-1;
