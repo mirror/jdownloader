@@ -1,6 +1,5 @@
 <jDownloader>
   <method name="JAntiCaptcha" author="Coalado" />
   <format type="jpg" letterNum="4"/>
-  <source file="rscaptcha.jpg" />
-  <result file="rapid.txt" />
+
 </jDownloader>

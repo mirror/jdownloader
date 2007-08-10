@@ -5,6 +5,7 @@ import java.awt.GridBagConstraints;
 import java.awt.Image;
 import java.awt.Insets;
 import java.awt.MediaTracker;
+import java.awt.Toolkit;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
@@ -16,22 +17,21 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
+import java.net.URL;
 import java.security.MessageDigest;
 import java.util.Calendar;
-import java.util.Date;
 import java.util.Properties;
+import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import javax.swing.ImageIcon;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
-import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
+
+import jd.plugins.Plugin;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.NamedNodeMap;
@@ -54,6 +54,10 @@ public class UTILITIES {
 	 * public static String getPreString() Diese Funktion gibt einen Zeitstring
 	 * zur anzeige aufd er Konsole aus
 	 */
+	private static Logger logger = Plugin.getLogger();
+	
+	
+	
 	public static String getPreString() {
 		Calendar c = Calendar.getInstance();
 
@@ -62,14 +66,18 @@ public class UTILITIES {
 				+ ":" + c.get(Calendar.MINUTE) + ":" + c.get(Calendar.SECOND)
 				+ " (" + c.get(Calendar.MILLISECOND) + ") : ";
 	}
-
+ 
 	/*
 	 * public static void trace(String args) Diese Funktion gibt einen String
 	 * auf der Konsole aus
 	 */
 	public static void trace(String args) {
-
-		System.out.println(getPreString() + args);
+		if(args.indexOf("ERROR")>=0){
+			logger.severe(args);
+		}else{
+			logger.info(args);
+		}
+		//System.out.println(args);
 	}
 
 	/*
@@ -77,8 +85,8 @@ public class UTILITIES {
 	 * der Konsole aus
 	 */
 	public static void trace(int args) {
-
-		System.out.println(getPreString() + args);
+		logger.severe(args+"");
+		//System.out.println(args);
 	}
 
 	/*
@@ -86,8 +94,8 @@ public class UTILITIES {
 	 * Wert aus
 	 */
 	public static void trace(Boolean args) {
-
-		System.out.println(getPreString() + args);
+		logger.severe(args+"");
+		//System.out.println(args);
 	}
 
 	/*
@@ -96,8 +104,8 @@ public class UTILITIES {
 	 */
 
 	public static void trace(float args) {
-
-		System.out.println(getPreString() + args);
+		logger.severe(args+"");
+		//System.out.println(args);
 	}
 
 	/*
@@ -105,8 +113,8 @@ public class UTILITIES {
 	 * Wert aus
 	 */
 	public static void trace(double args) {
-
-		System.out.println(getPreString() + args);
+		logger.severe(args+"");
+		//System.out.println(args);
 	}
 
 	/*
@@ -117,8 +125,8 @@ public class UTILITIES {
 		if (args == null) {
 			args = "[" + "] NULL";
 		}
-
-		System.out.println(getPreString() + args.toString());
+		logger.severe(args.toString());
+		//System.out.println(args.toString());
 	}
 
 	/*
@@ -128,8 +136,8 @@ public class UTILITIES {
 	public static void trace(String[] args) {
 		int i;
 		for (i = 0; i < args.length; i++) {
-
-			System.out.println(getPreString() + i + ". " + args[i]);
+			logger.severe(i + ". " + args[i]);
+			//System.out.println(i + ". " + args[i]);
 		}
 	}
 
@@ -140,8 +148,8 @@ public class UTILITIES {
 	public static void trace(int[] args) {
 		int i;
 		for (i = 0; i < args.length; i++) {
-
-			System.out.println(getPreString() + i + ". " + args[i]);
+			logger.severe(i + ". " + args[i]);
+			//System.out.println(i + ". " + args[i]);
 		}
 	}
 
@@ -152,8 +160,8 @@ public class UTILITIES {
 	public static void trace(Object[] args) {
 		int i;
 		for (i = 0; i < args.length; i++) {
-
-			System.out.println(getPreString() + i + ". " + args[i].toString());
+			logger.severe(i + ". " + args[i].toString());
+			//System.out.println(i + ". " + args[i].toString());
 		}
 	}
 
