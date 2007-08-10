@@ -8,6 +8,7 @@ import java.io.FileFilter;
 import java.io.StringWriter;
 import java.net.URL;
 import java.util.Vector;
+import java.util.logging.Logger;
 
 import javax.xml.transform.OutputKeys;
 import javax.xml.transform.Transformer;
@@ -15,6 +16,8 @@ import javax.xml.transform.TransformerException;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
+
+import jd.plugins.Plugin;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -31,7 +34,10 @@ import org.w3c.dom.NodeList;
  * 
  */
 public class JAntiCaptcha {
-
+/**
+ * Logger
+ */
+	private  Logger logger = Plugin.getLogger();
 	/**
 	 * Prozentwert. Ab dieser Schwelle an Korektheit wird ein Letter als 100%
 	 * richtig gewertet
@@ -114,7 +120,14 @@ public class JAntiCaptcha {
 	 * verwendet werden sollen
 	 */
 	private int gapWidthPeak = 1;
-
+	/**
+	 * Gibt an ob
+	 * 0: Helligkeit
+	 * 1: Stättigung
+	 * 2: Farbton
+	 * Zur Bildverarbeitung als Kriterum verwendet werden sollen
+	 */
+	private int HSBType=2;
 	/**
 	 * Parameter: Gibt die Anzahl der reihen an die zur Average Detection
 	 * verwendet werden sollen
@@ -249,7 +262,7 @@ public class JAntiCaptcha {
 	private boolean isMethodPathValid(String method) {
 		String[] path = {jacPath, "methods", method };
 		if (!new File(UTILITIES.getFullPath(path)).exists()) {
-			UTILITIES.trace("ERROR: Die Methode " + method
+			logger.severe("Die Methode " + method
 					+ " kann nicht gefunden werden");
 			return false;
 		}
@@ -266,9 +279,9 @@ public class JAntiCaptcha {
 				&& new File(this.getSourceImage()).exists()) {
 			String hash = UTILITIES
 					.getLocalHash(new File(this.getSourceImage()));
-			UTILITIES.trace(hash);
+			logger.info(hash);
 			if (hash.equals("dab07d2b7f1299f762454cda4c6143e7")) {
-				UTILITIES.trace("BOT ERKANNT");
+				logger.info("BOT ERKANNT");
 				UTILITIES.writeLocalFile(new File(this.getResultFile()), "");
 
 			} else {
@@ -277,7 +290,7 @@ public class JAntiCaptcha {
 				Captcha captcha = createCaptcha(captchaImage);
 				String code = this.checkCaptcha(captcha);
 				if (code.indexOf("null") >= 0) {
-					UTILITIES.trace("BOT ERKANNT");
+					logger.info("BOT ERKANNT");
 					code = "";
 					UTILITIES.writeLocalFile(new File(this.getResultFile()),
 							code);
@@ -305,7 +318,7 @@ public class JAntiCaptcha {
 	 */
 	private void executeJacCommands() {
 		if (jacCommands == null || jacCommands.size() == 0) {
-			UTILITIES.trace("KEINE JAC COMMANDS");
+			logger.info("KEINE JAC COMMANDS");
 			return;
 		}
 		for (int i = 0; i < jacCommands.size(); i++) {
@@ -360,7 +373,7 @@ public class JAntiCaptcha {
 				continue;
 			}
 			if (!lines[i].substring(lines[i].length() - 1).equals(";")) {
-				UTILITIES.trace("ERROR : " + method
+				logger.info("ERROR : " + method
 						+ "/script.jas: Syntax error (; missing?) near line "
 						+ i + ": " + lines[i]);
 				return;
@@ -379,7 +392,7 @@ public class JAntiCaptcha {
 
 				localLetterCommands.add(pcmd);
 			} else {
-				UTILITIES.trace("ERROR : " + method
+				logger.info("ERROR : " + method
 						+ "/script.jas: Syntax error near line " + i + ": "
 						+ lines[i]);
 			}
@@ -431,11 +444,11 @@ public class JAntiCaptcha {
 		for (int i = 0; i < images.length; i++) {
 
 			newLetters = trainCaptcha(images[i], getLetterNum());
-			UTILITIES.trace("Erkannt: " + newLetters + "/" + getLetterNum());
+			logger.info("Erkannt: " + newLetters + "/" + getLetterNum());
 			if (newLetters > 0) {
 				successFull += newLetters;
 				total += getLetterNum();
-				UTILITIES.trace("Erkennungsrate: "
+				logger.info("Erkennungsrate: "
 						+ ((100 * successFull / total)));
 			}
 
@@ -452,7 +465,7 @@ public class JAntiCaptcha {
 		if (new File(UTILITIES.getFullPath(path)).exists() == false) {
 			UTILITIES.writeLocalFile(new File(UTILITIES.getFullPath(path)),
 					"<jDownloader/>");
-			UTILITIES.trace("ERROR: MTH FILE NOT AVAILABLE. Created: " + path);
+			logger.severe("MTH FILE NOT AVAILABLE. Created: " + path);
 		}
 		mth = UTILITIES.parseXmlFile(UTILITIES.getFullPath(path), false);
 		createLetterDBFormMTH();
@@ -477,10 +490,10 @@ public class JAntiCaptcha {
 				Node childNode = nl.item(i);
 				if (childNode.getNodeName().equals("letter")) {
 					NamedNodeMap att = childNode.getAttributes();
-					// UTILITIES.trace(childNode.getNodeName());
-					// UTILITIES.trace(childNode.getTextContent());
-					// UTILITIES.trace(att.getNamedItem("captchaHash").getNodeValue());
-					// UTILITIES.trace(att.getNamedItem("value").getNodeValue());
+					// logger.info(childNode.getNodeName());
+					// logger.info(childNode.getTextContent());
+					// logger.info(att.getNamedItem("captchaHash").getNodeValue());
+					// logger.info(att.getNamedItem("value").getNodeValue());
 					tmp = new Letter();
 					tmp.setOwner(this);
 					if (!tmp.setTextGrid(childNode.getTextContent()))
@@ -494,8 +507,7 @@ public class JAntiCaptcha {
 				}
 			}
 		} catch (Exception e) {
-			UTILITIES
-					.trace("ERROR: Fehler mein lesen der MTHO Datei!!. Methode kann nicht funktionieren!");
+			logger.severe("Fehler mein lesen der MTHO Datei!!. Methode kann nicht funktionieren!");
 
 		}
 	}
@@ -506,7 +518,7 @@ public class JAntiCaptcha {
 	private void getJACInfo() {
 		String[] path = {jacPath, "methods", method, "jacinfo.xml" };
 		if (!new File(UTILITIES.getFullPath(path)).exists()) {
-			UTILITIES.trace("ERROR: " + UTILITIES.getFullPath(path)
+			logger.severe("" + UTILITIES.getFullPath(path)
 					+ " is missing");
 		}
 		Document doc = UTILITIES.parseXmlFile(UTILITIES.getFullPath(path),
@@ -554,10 +566,10 @@ public class JAntiCaptcha {
 	// private void prepare(Captcha captcha) {
 	// captcha.prepared++;
 	// if (captcha.prepared > 1) {
-	// UTILITIES.trace("ERROR: Prepare wird doppelt ausgeführt!!!");
+	// logger.severe("Prepare wird doppelt ausgeführt!!!");
 	// return;
 	// }
-	// UTILITIES.trace("prepare");
+	// logger.info("prepare");
 	// // //BasicWindow.showImage(captcha.getImage(2),"Original als
 	// // Helligkeitsabbildung");
 	// captcha.cleanBackgroundBySample(3, 3, 3, 3);
@@ -573,10 +585,10 @@ public class JAntiCaptcha {
 	// private void prepare(Captcha captcha) {
 	// captcha.prepared++;
 	// if (captcha.prepared > 1) {
-	// UTILITIES.trace("ERROR: Prepare wird doppelt ausgeführt!!!");
+	// logger.severe("Prepare wird doppelt ausgeführt!!!");
 	// return;
 	// }
-	// UTILITIES.trace("prepare");
+	// logger.info("prepare");
 	// // //BasicWindow.showImage(captcha.getImage(2),"Original als
 	// // Helligkeitsabbildung");
 	// captcha.cleanBackgroundBySample(3, 25, 3, 3);
@@ -632,7 +644,7 @@ public class JAntiCaptcha {
 
 		String captchaHash = UTILITIES.getLocalHash(captchafile);
 		if (isCaptchaInMTH(captchaHash)) {
-			UTILITIES.trace("ERROR captcha schon aufgenommen" + captchafile);
+			logger.info("ERROR captcha schon aufgenommen" + captchafile);
 			return -1;
 		}
 
@@ -664,8 +676,7 @@ public class JAntiCaptcha {
 					captchafile.getName() };
 			new File(UTILITIES.getFullPath(path)).getParentFile().mkdirs();
 			captchafile.renameTo(new File(UTILITIES.getFullPath(path)));
-			UTILITIES
-					.trace("ERROR: SELTSAM: 2. Lettererkennung ist fehlgeschlagen!");
+			logger.severe("SELTSAM: 2. Lettererkennung ist fehlgeschlagen!");
 			return -1;
 
 		}
@@ -683,14 +694,14 @@ public class JAntiCaptcha {
 		frame2.pack();
 		frame2.setSize(300, frame2.getSize().height);
 		guess = checkCaptcha(captcha);
-		UTILITIES.trace("Decoded Captcha: " + guess + " Vality: "
+		logger.info("Decoded Captcha: " + guess + " Vality: "
 				+ captcha.valityValue);
 		if (guess == null) {
 			String[] path = {jacPath, "methods", method, "detectionErrors2",
 					captchafile.getName() };
 			new File(UTILITIES.getFullPath(path)).getParentFile().mkdirs();
 			captchafile.renameTo(new File(UTILITIES.getFullPath(path)));
-			UTILITIES.trace("ERROR: Letter erkennung fehlgeschlagen");
+			logger.severe("Letter erkennung fehlgeschlagen");
 			return -1;
 
 		}
@@ -710,7 +721,7 @@ public class JAntiCaptcha {
 					captchafile.getName() };
 			new File(UTILITIES.getFullPath(path)).getParentFile().mkdirs();
 			captchafile.renameTo(new File(UTILITIES.getFullPath(path)));
-			UTILITIES.trace("ERROR: Captcha Input error");
+			logger.severe("Captcha Input error");
 			return -1;
 		}
 		if (code.length() == 0) {
@@ -721,7 +732,7 @@ public class JAntiCaptcha {
 					captchafile.getName() };
 			new File(UTILITIES.getFullPath(path)).getParentFile().mkdirs();
 			captchafile.renameTo(new File(UTILITIES.getFullPath(path)));
-			UTILITIES.trace("ERROR: Captcha Input error3");
+			logger.severe("Captcha Input error3");
 			return -1;
 		}
 		UTILITIES.setProperty(captchaHash, code);
@@ -733,7 +744,7 @@ public class JAntiCaptcha {
 						captchafile.getName() };
 				new File(UTILITIES.getFullPath(path)).getParentFile().mkdirs();
 				captchafile.renameTo(new File(UTILITIES.getFullPath(path)));
-				UTILITIES.trace("ERROR: Letter detection error");
+				logger.severe("Letter detection error");
 				return -1;
 			}
 			frame2.add(new ImageComponent(letters[i].getImage()));
@@ -821,8 +832,7 @@ public class JAntiCaptcha {
 
 			if (!UTILITIES.writeLocalFile(
 					new File(UTILITIES.getFullPath(path)), xmlString)) {
-				UTILITIES
-						.trace("ERROR: MTHO file Konnte nicht gespeichert werden");
+				logger.severe("MTHO file Konnte nicht gespeichert werden");
 			}
 		} catch (TransformerException e) {
 			e.printStackTrace();
@@ -857,7 +867,7 @@ public class JAntiCaptcha {
 	 * @return CaptchaCode
 	 */
 	public String checkCaptcha(File captchafile) {
-		UTILITIES.trace("check " + captchafile);
+		logger.info("check " + captchafile);
 		Image captchaImage = UTILITIES.loadImage(captchafile);
 		Captcha captcha = createCaptcha(captchaImage);
 		// captcha.printCaptcha();
@@ -1031,12 +1041,12 @@ public class JAntiCaptcha {
 		File dir = new File(UTILITIES.getFullPath(path));
 
 		if (dir == null || !dir.exists()) {
-			UTILITIES.trace("Image dir nicht gefunden");
+			logger.info("Image dir nicht gefunden");
 		}
 
 		File[] entries = dir.listFiles(new FileFilter() {
 			public boolean accept(File pathname) {
-				// UTILITIES.trace(pathname.getName());
+				// logger.info(pathname.getName());
 				if (pathname.getName().endsWith(".jpg")) {
 
 					return true;
@@ -1062,7 +1072,7 @@ public class JAntiCaptcha {
 	 *            the imageType to set
 	 */
 	public void setImageType(String imageType) {
-		UTILITIES.trace("SET PARAMETER: [imageType] = " + imageType);
+		logger.info("SET PARAMETER: [imageType] = " + imageType);
 		this.imageType = imageType;
 	}
 
@@ -1078,7 +1088,7 @@ public class JAntiCaptcha {
 	 *            the letterNum to set
 	 */
 	public void setLetterNum(int letterNum) {
-		UTILITIES.trace("SET PARAMETER: [letterNum] = " + letterNum);
+		logger.info("SET PARAMETER: [letterNum] = " + letterNum);
 		this.letterNum = letterNum;
 	}
 
@@ -1094,7 +1104,7 @@ public class JAntiCaptcha {
 	 *            the method to set
 	 */
 	public void setMethod(String method) {
-		UTILITIES.trace("SET PARAMETER: [method] = " + method);
+		logger.info("SET PARAMETER: [method] = " + method);
 		this.method = method;
 	}
 
@@ -1110,7 +1120,7 @@ public class JAntiCaptcha {
 	 *            the methodAuthor to set
 	 */
 	public void setMethodAuthor(String methodAuthor) {
-		UTILITIES.trace("SET PARAMETER: [methodAuthor] = " + methodAuthor);
+		logger.info("SET PARAMETER: [methodAuthor] = " + methodAuthor);
 		this.methodAuthor = methodAuthor;
 	}
 
@@ -1126,7 +1136,7 @@ public class JAntiCaptcha {
 	 *            the getMethodLettersFileFile to set
 	 */
 	public void setMethodLettersFile(String getMethodLettersFile) {
-		UTILITIES.trace("SET PARAMETER: [getMethodLettersFile] = "
+		logger.info("SET PARAMETER: [getMethodLettersFile] = "
 				+ getMethodLettersFile);
 		this.methodLettersFile = methodLettersFile;
 	}
@@ -1143,7 +1153,7 @@ public class JAntiCaptcha {
 	 *            the methodName to set
 	 */
 	public void setMethodName(String methodName) {
-		UTILITIES.trace("SET PARAMETER: [methodName] = " + methodName);
+		logger.info("SET PARAMETER: [methodName] = " + methodName);
 		this.methodName = methodName;
 	}
 
@@ -1159,7 +1169,7 @@ public class JAntiCaptcha {
 	 *            the resultFile to set
 	 */
 	public void setResultFile(String resultFile) {
-		UTILITIES.trace("SET PARAMETER: [resultFile] = " + resultFile);
+		logger.info("SET PARAMETER: [resultFile] = " + resultFile);
 		this.resultFile = resultFile;
 	}
 
@@ -1175,7 +1185,7 @@ public class JAntiCaptcha {
 	 *            the sourceImage to set
 	 */
 	public void setSourceImage(String sourceImage) {
-		UTILITIES.trace("SET PARAMETER: [sourceImage] = " + sourceImage);
+		logger.info("SET PARAMETER: [sourceImage] = " + sourceImage);
 		this.sourceImage = sourceImage;
 	}
 
@@ -1237,7 +1247,7 @@ public class JAntiCaptcha {
 	 *            the gapAndAverageLogic to set
 	 */
 	public void setGapAndAverageLogic(boolean gapAndAverageLogic) {
-		UTILITIES.trace("SET PARAMETER: [gapAndAverageLogic] = "
+		logger.info("SET PARAMETER: [gapAndAverageLogic] = "
 				+ gapAndAverageLogic);
 		this.gapAndAverageLogic = gapAndAverageLogic;
 	}
@@ -1255,7 +1265,7 @@ public class JAntiCaptcha {
 	 */
 	public void setGapDetectionAverageContrast(
 			double gapDetectionAverageContrast) {
-		UTILITIES.trace("SET PARAMETER: [gapDetectionAverageContrast] = "
+		logger.info("SET PARAMETER: [gapDetectionAverageContrast] = "
 				+ gapDetectionAverageContrast);
 		this.gapDetectionAverageContrast = gapDetectionAverageContrast;
 	}
@@ -1272,7 +1282,7 @@ public class JAntiCaptcha {
 	 *            the gapDetectionPeakContrast to set
 	 */
 	public void setGapDetectionPeakContrast(double gapDetectionPeakContrast) {
-		UTILITIES.trace("SET PARAMETER: [gapDetectionPeakContrast] = "
+		logger.info("SET PARAMETER: [gapDetectionPeakContrast] = "
 				+ gapDetectionPeakContrast);
 		this.gapDetectionPeakContrast = gapDetectionPeakContrast;
 	}
@@ -1289,7 +1299,7 @@ public class JAntiCaptcha {
 	 *            the gaps to set
 	 */
 	public void setGaps(int[] gaps) {
-		UTILITIES.trace("SET PARAMETER: [gaps] = " + gaps.toString());
+		logger.info("SET PARAMETER: [gaps] = " + gaps.toString());
 		this.gaps = gaps;
 	}
 
@@ -1305,8 +1315,7 @@ public class JAntiCaptcha {
 	 *            the gapWidthAverage to set
 	 */
 	public void setGapWidthAverage(int gapWidthAverage) {
-		UTILITIES
-				.trace("SET PARAMETER: [gapWidthAverage] = " + gapWidthAverage);
+		logger.info("SET PARAMETER: [gapWidthAverage] = " + gapWidthAverage);
 		this.gapWidthAverage = gapWidthAverage;
 	}
 
@@ -1322,7 +1331,7 @@ public class JAntiCaptcha {
 	 *            the gapWidthPeak to set
 	 */
 	public void setGapWidthPeak(int gapWidthPeak) {
-		UTILITIES.trace("SET PARAMETER: [gapWidthPeak] = " + gapWidthPeak);
+		logger.info("SET PARAMETER: [gapWidthPeak] = " + gapWidthPeak);
 		this.gapWidthPeak = gapWidthPeak;
 	}
 
@@ -1338,7 +1347,7 @@ public class JAntiCaptcha {
 	 *            the leftPadding to set
 	 */
 	public void setLeftPadding(int leftPadding) {
-		UTILITIES.trace("SET PARAMETER: [leftPadding] = " + leftPadding);
+		logger.info("SET PARAMETER: [leftPadding] = " + leftPadding);
 		this.leftPadding = leftPadding;
 	}
 
@@ -1354,7 +1363,7 @@ public class JAntiCaptcha {
 	 *            the letterSearchLimitValue to set
 	 */
 	public void setLetterSearchLimitValue(double letterSearchLimitValue) {
-		UTILITIES.trace("SET PARAMETER: [letterSearchLimitValue] = "
+		logger.info("SET PARAMETER: [letterSearchLimitValue] = "
 				+ letterSearchLimitValue);
 		this.letterSearchLimitValue = letterSearchLimitValue;
 	}
@@ -1371,7 +1380,7 @@ public class JAntiCaptcha {
 	 *            the minimumLetterWidth to set
 	 */
 	public void setMinimumLetterWidth(int minimumLetterWidth) {
-		UTILITIES.trace("SET PARAMETER: [minimumLetterWidth] = "
+		logger.info("SET PARAMETER: [minimumLetterWidth] = "
 				+ minimumLetterWidth);
 		this.minimumLetterWidth = minimumLetterWidth;
 	}
@@ -1388,7 +1397,7 @@ public class JAntiCaptcha {
 	 *            the useAverageGapDetection to set
 	 */
 	public void setUseAverageGapDetection(boolean useAverageGapDetection) {
-		UTILITIES.trace("SET PARAMETER: [useAverageGapDetection] = "
+		logger.info("SET PARAMETER: [useAverageGapDetection] = "
 				+ useAverageGapDetection);
 		this.useAverageGapDetection = useAverageGapDetection;
 	}
@@ -1406,7 +1415,7 @@ public class JAntiCaptcha {
 	 *            the usePeakGapdetection to set
 	 */
 	public void setUsePeakGapdetection(boolean usePeakGapdetection) {
-		UTILITIES.trace("SET PARAMETER: [usePeakGapdetection] = "
+		logger.info("SET PARAMETER: [usePeakGapdetection] = "
 				+ usePeakGapdetection);
 		this.usePeakGapdetection = usePeakGapdetection;
 	}
@@ -1424,7 +1433,7 @@ public class JAntiCaptcha {
 	 */
 	public void setBackgroundSampleCleanContrast(
 			double backgroundSampleCleanContrast) {
-		UTILITIES.trace("SET PARAMETER: [backgroundSampleCleanContrast] = "
+		logger.info("SET PARAMETER: [backgroundSampleCleanContrast] = "
 				+ backgroundSampleCleanContrast);
 		this.backgroundSampleCleanContrast = backgroundSampleCleanContrast;
 	}
@@ -1441,7 +1450,7 @@ public class JAntiCaptcha {
 	 *            the blackPercent to set
 	 */
 	public void setBlackPercent(double blackPercent) {
-		UTILITIES.trace("SET PARAMETER: [blackPercent] = " + blackPercent);
+		logger.info("SET PARAMETER: [blackPercent] = " + blackPercent);
 		this.blackPercent = blackPercent;
 	}
 
@@ -1457,7 +1466,7 @@ public class JAntiCaptcha {
 	 *            the colorValueFaktor to set
 	 */
 	public void setColorValueFaktor(int colorValueFaktor) {
-		UTILITIES.trace("SET PARAMETER: [colorValueFaktor] = "
+		logger.info("SET PARAMETER: [colorValueFaktor] = "
 				+ colorValueFaktor);
 		this.colorValueFaktor = colorValueFaktor;
 	}
@@ -1474,7 +1483,7 @@ public class JAntiCaptcha {
 	 *            the relativeContrast to set
 	 */
 	public void setRelativeContrast(double relativeContrast) {
-		UTILITIES.trace("SET PARAMETER: [relativeContrast] = "
+		logger.info("SET PARAMETER: [relativeContrast] = "
 				+ relativeContrast);
 		this.relativeContrast = relativeContrast;
 	}
@@ -1491,7 +1500,7 @@ public class JAntiCaptcha {
 	 *            the simplifyFaktor to set
 	 */
 	public void setSimplifyFaktor(int simplifyFaktor) {
-		UTILITIES.trace("SET PARAMETER: [simplifyFaktor] = " + simplifyFaktor);
+		logger.info("SET PARAMETER: [simplifyFaktor] = " + simplifyFaktor);
 		this.simplifyFaktor = simplifyFaktor;
 	}
 
@@ -1507,7 +1516,7 @@ public class JAntiCaptcha {
 	 *            the borderVariance to set
 	 */
 	public void setBorderVariance(int borderVariance) {
-		UTILITIES.trace("SET PARAMETER: [borderVariance] = " + borderVariance);
+		logger.info("SET PARAMETER: [borderVariance] = " + borderVariance);
 		this.borderVariance = borderVariance;
 	}
 
@@ -1523,7 +1532,7 @@ public class JAntiCaptcha {
 	 *            the scanVariance to set
 	 */
 	public void setScanVariance(int scanVariance) {
-		UTILITIES.trace("SET PARAMETER: [scanVariance] = " + scanVariance);
+		logger.info("SET PARAMETER: [scanVariance] = " + scanVariance);
 		this.scanVariance = scanVariance;
 	}
 
@@ -1541,5 +1550,18 @@ public class JAntiCaptcha {
 	public void setTrainOnlyUnknown(boolean trainOnlyUnknown) {
 		this.trainOnlyUnknown = trainOnlyUnknown;
 	}
+	/**
+	 * @return the hSBType
+	 */
+	public int getHSBType() {
+		return HSBType;
+	}
+	/**
+	 * @param type the hSBType to set
+	 */
+	public void setHSBType(int type) {
+		HSBType = type;
+	}
+
 
 }

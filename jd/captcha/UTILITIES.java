@@ -44,20 +44,19 @@ import org.xml.sax.SAXException;
 
 
 
-/*
+/**
  * Diese Klasse beinhaltet mehrere Hilfsfunktionen
+ * @author coalado
  */
 
 public class UTILITIES {
 	/** *********************DEBUG*************************** */
-	/*
+	
+	
+	/**
 	 * public static String getPreString() Diese Funktion gibt einen Zeitstring
 	 * zur anzeige aufd er Konsole aus
 	 */
-	private static Logger logger = Plugin.getLogger();
-	
-	
-	
 	public static String getPreString() {
 		Calendar c = Calendar.getInstance();
 
@@ -67,57 +66,53 @@ public class UTILITIES {
 				+ " (" + c.get(Calendar.MILLISECOND) + ") : ";
 	}
  
-	/*
+	/**
 	 * public static void trace(String args) Diese Funktion gibt einen String
 	 * auf der Konsole aus
 	 */
 	public static void trace(String args) {
-		if(args.indexOf("ERROR")>=0){
-			logger.severe(args);
-		}else{
-			logger.info(args);
-		}
-		//System.out.println(args);
+	
+		System.out.println(args);
 	}
 
-	/*
+	/**
 	 * public static void trace(int args) Diese Funktion gibt einen Integer auf
 	 * der Konsole aus
 	 */
 	public static void trace(int args) {
-		logger.severe(args+"");
-		//System.out.println(args);
+	
+		System.out.println(args);
 	}
 
-	/*
+	/**
 	 * public static void trace(Boolean args) Diese Funktion gibt einen boolean
 	 * Wert aus
 	 */
 	public static void trace(Boolean args) {
-		logger.severe(args+"");
-		//System.out.println(args);
+		
+		System.out.println(args);
 	}
 
-	/*
+	/**
 	 * public static void trace(float args) Diese Funktion gibt einen float Wert
 	 * aus
 	 */
 
 	public static void trace(float args) {
-		logger.severe(args+"");
-		//System.out.println(args);
+	
+		System.out.println(args);
 	}
 
-	/*
+	/**
 	 * public static void trace(double args) Diese Funktion gibt einen Double
 	 * Wert aus
 	 */
 	public static void trace(double args) {
-		logger.severe(args+"");
-		//System.out.println(args);
+	
+		System.out.println(args);
 	}
 
-	/*
+	/**
 	 * public static void trace(Object args) Diese Funktion gibt über die
 	 * toString Methode ein Object auf der Konsole aus
 	 */
@@ -125,48 +120,48 @@ public class UTILITIES {
 		if (args == null) {
 			args = "[" + "] NULL";
 		}
-		logger.severe(args.toString());
-		//System.out.println(args.toString());
+		
+		System.out.println(args.toString());
 	}
 
-	/*
+	/**
 	 * public static void trace(String[] args) Diese Funktion gibt ein String
 	 * Array aus
 	 */
 	public static void trace(String[] args) {
 		int i;
 		for (i = 0; i < args.length; i++) {
-			logger.severe(i + ". " + args[i]);
-			//System.out.println(i + ". " + args[i]);
+		
+			System.out.println(i + ". " + args[i]);
 		}
 	}
 
-	/*
+	/**
 	 * public static void trace(int[] args) Diese Funktion gibt ein Integer
 	 * Array aus
 	 */
 	public static void trace(int[] args) {
 		int i;
 		for (i = 0; i < args.length; i++) {
-			logger.severe(i + ". " + args[i]);
-			//System.out.println(i + ". " + args[i]);
+		
+			System.out.println(i + ". " + args[i]);
 		}
 	}
 
-	/*
+	/**
 	 * public static void trace(Object[] args) Diese Funktion gibt ein Object
 	 * Array aus
 	 */
 	public static void trace(Object[] args) {
 		int i;
 		for (i = 0; i < args.length; i++) {
-			logger.severe(i + ". " + args[i].toString());
-			//System.out.println(i + ". " + args[i].toString());
+			
+			System.out.println(i + ". " + args[i].toString());
 		}
 	}
 
 	/** ******************************SYSTEM******************************* */
-	/*
+	/**
 	 * public static void wait(int ms) Hält den aktuellen Thread um ms
 	 * Millisekunden auf pause
 	 */
@@ -178,7 +173,7 @@ public class UTILITIES {
 		}
 	}
 
-	/*
+	/**
 	 * public static void runCommandAndWait(String command) Führt einen
 	 * Shellbefehl aus und wartet bis der Befehl abgearbeitet wurde. Die
 	 * rückgaben werden auf der Konsole ausgegeben
@@ -202,7 +197,7 @@ public class UTILITIES {
 		}
 	}
 
-	/*
+	/**
 	 * public static String runCommandWaitAndReturn(String command) Ruft eine
 	 * Shell-Befehl, wartet bis der Befehl beendet wurde und gibt die Rückgaben
 	 * als String zurück
@@ -228,7 +223,7 @@ public class UTILITIES {
 		return ret;
 	}
 
-	/*
+	/**
 	 * public static void runCommand(String command) Führt einen Shell Befehl
 	 * auf. Wartet nicht!
 	 */
@@ -247,7 +242,7 @@ public class UTILITIES {
 	}
 
 	/** **********************************GUI************************************** */
-	/*
+	/**
 	 * public static Image loadImage(File file) Lädt file als Bildatei und
 	 * wartet bis file geladen wurde. gibt file als Image zurück
 	 */
@@ -265,7 +260,8 @@ public class UTILITIES {
 		mediaTracker.removeImage(img);
 		return img;
 	}
-	/*	public static GridBagConstraints getGBC(int x, int y, int width, int height)
+	/**
+	 * 	public static GridBagConstraints getGBC(int x, int y, int width, int height)
 	 * Gibt die default GridBAgConstants zurück
 	 */
 	public static GridBagConstraints getGBC(int x, int y, int width, int height) {
@@ -281,14 +277,14 @@ public class UTILITIES {
 		return gbc;
 	};
 
-	/*
+	/**
 	 * public static void showMessage(String msg) Zeigt msg als MessageBox an
 	 */
 	public static void showMessage(String msg) {
 		JOptionPane.showMessageDialog(new JFrame(), msg);
 	}
 
-	/*
+	/**
 	 * public static boolean confirm(String msg) Zeigt einen Bestätigungsdialog
 	 * an.
 	 */
@@ -297,14 +293,14 @@ public class UTILITIES {
 				JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE) == 0;
 	}
 
-	/*
+	/**
 	 * public static String prompt(String msg) Zeigt eine Text-Input Box an
 	 */
 	public static String prompt(String msg) {
 		return JOptionPane.showInputDialog(msg);
 	}
 
-	/*
+	/**
 	 * public static String prompt(String msg, String defaultStr) Zeigt eine
 	 * Text-Input Box an. inkl Default Eingabe
 	 */
@@ -312,7 +308,7 @@ public class UTILITIES {
 		return JOptionPane.showInputDialog(msg, defaultStr);
 	}
 
-	/*
+	/**
 	 * public static File directoryChooser Zeigt einen Directory Chooser an
 	 */
 
@@ -331,7 +327,7 @@ public class UTILITIES {
 
 	}
 
-	/*
+	/**
 	 * public static File fileChooser(String path) zeigt einen filechooser an
 	 */
 
@@ -351,12 +347,17 @@ public class UTILITIES {
 	}
 
 	/** ******************************FILE-SYSTEM************************************ */
-	//File Seperator (WIndows /) Linux \ ..
+	/**
+	 * File Seperator
+	 */
 	public static String FS = System.getProperty("file.separator");
-	// Application dir
+	/**
+	 * Application dir
+	 */
 	public static String ROOTDIR=System.getProperty("user.dir") + FS;
 	
-	/*	public static String getFullPath(String[] entries)
+	/**
+	 * 	public static String getFullPath(String[] entries)
 	 * Gibt den Pfad zurück der im array entries übergeben wurde. der passende FS wird eingesetzt
 	 */
 	public static String getFullPath(String[] entries){
@@ -367,7 +368,7 @@ public class UTILITIES {
 		ret+=entries[entries.length-1];
 		return ret;
 	}
-	/*
+	/**
 	 * public static String getLocalHash(String file) Gibt einen MD% Hash der
 	 * file zurück
 	 */
@@ -375,7 +376,7 @@ public class UTILITIES {
 		return getLocalHash(new File(file));
 	}
 
-	/*
+	/**
 	 * public static String getLocalHash(File f) Gibt einen MD% Hash der file
 	 * zurück
 	 */
@@ -412,7 +413,7 @@ public class UTILITIES {
 		return "";
 	}
 
-	/*
+	/**
 	 * public static String getLocalFile(File file) Liest file über einen
 	 * bufferdReader ein und gibt den Inhalt asl String zurück
 	 */
@@ -436,7 +437,7 @@ public class UTILITIES {
 		return "";
 	}
 
-	/*
+	/**
 	 * public static boolean writeLocalFileBytes(File file, String content)
 	 * schreibt content in file. file wird gelöscht fals sie schon existiert
 	 * /byteweise
@@ -477,7 +478,7 @@ public class UTILITIES {
 
 	}
 
-	/*
+	/**
 	 * public static boolean writeLocalFile(File file, String content) Schreibt
 	 * über einen BufferedWriter content in file. file wird gelöscht falls sie
 	 * schon existiert
@@ -516,7 +517,7 @@ public class UTILITIES {
 	}
 
 	/** ************************************XML**************************************** */
-	/*
+	/**
 	 * public static Document parseXmlFile(String filename, boolean validating)
 	 * liest filename als XML ein und gibt ein XML Document zurück. Parameter
 	 * validating: Macht einen validt check
@@ -542,7 +543,12 @@ public class UTILITIES {
 		}
 		return null;
 	}
-
+/**
+ * Gibt das Attribut zu key in childNode zurück
+ * @param childNode
+ * @param key
+ * @return String Atribut
+ */
 	public static String getAttribute(Node childNode,String key){
 		NamedNodeMap att = childNode.getAttributes();
 		if(att==null ||att.getNamedItem(key)==null){
@@ -553,17 +559,17 @@ public class UTILITIES {
 	}
 
 	/** ************************************Properties************************************ */
-	/*
+	/**
 	 * private static Properties PROPS Globale Property File
 	 */
 	private static Properties PROPS = new Properties();
 
-	/*
+	/**
 	 * private static String PROPERTYFILE Pfad zur Gloabeln property file
 	 */
 	private static String PROPERTYFILE = "globals.dat";
 
-	/*
+	/**
 	 * public static String getProperty(String key) Gibt eine Property aus der
 	 * globalen propertyfile zurück.
 	 */
@@ -588,7 +594,7 @@ public class UTILITIES {
 
 	}
 
-	/*
+	/**
 	 * public static String getProperty(String key,String defaultValue) Gibt
 	 * eine Eigenschaft aus der globalen Propertyfile zurück. Falls zu dem key
 	 * kein Wert existiert wird der defaultwert angelegt und zurückgegeben
@@ -600,7 +606,7 @@ public class UTILITIES {
 		return PROPS.getProperty(key);
 	}
 
-	/*
+	/**
 	 * public static boolean setProperty(String key, String value) Setzt den
 	 * Wert von key in der Globalen propertyfile
 	 */
@@ -640,7 +646,8 @@ public class UTILITIES {
 	/*****************************************COLOR**************************************/
 //	RGB to HSB
 
-	/*public static float[] rgb2hsb(int r, int g, int b)
+	/**
+	 * public static float[] rgb2hsb(int r, int g, int b)
 	 * Wandelt einen farbwert vom RGB Farbraum in HSB um (Hue, Saturation, Brightness)
 	 */
 		public static float[] rgb2hsb(int r, int g, int b) {
@@ -650,7 +657,8 @@ public class UTILITIES {
 				return hsbvals;
 		}
 		/*****************************STRING & PARSE****************************************/
-/*public static String[] getMatches(String source, String pattern)
+/**
+ * public static String[] getMatches(String source, String pattern)
  * Gibt alle treffer in source nach dem pattern  zurück. Platzhalter ist nur !! °
  */
 		public static String[] getMatches(String source, String pattern){
@@ -672,7 +680,8 @@ public class UTILITIES {
 				return null;
 			}
 		}
-		/*public static String getPattern(String str)
+		/**
+		 * public static String getPattern(String str)
 		 * Gibt ein Regex pattern zurück. ° dient als Platzhalter!
 		 */
 		public static String getPattern(String str) {

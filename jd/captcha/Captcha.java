@@ -69,7 +69,66 @@ public class Captcha extends PixelGrid {
 		}
 
 	}
+	/**
+	 * Errechnet einen Durchschnissfarbwert im angegebenen Bereich. Elemente der übergebenene Maske werden dabei vernachlässigt
+	 * @param px
+	 * @param py
+	 * @param width
+	 * @param height
+	 * @param mask
+	 * @return durchschnittswert
+	 */
+	public int getAverage(int px,int py,int width,int height,Captcha mask) {
+		long avg = 0;
+		int i = 0;
+		int halfW=width/2;
+		int halfH=height/2;
+		if(width==1&&px==0)width=2;
+		if(height==1&&py==0)height=2;
+		for (int x = Math.max(0,px-halfW); x < Math.min(px+width-halfW,getWidth()); x++) {
+			for (int y = Math.max(0,py-halfH); y < Math.min(py+height-halfH,getHeight()); y++) {
+				if(mask.getPixelValue(x, y)>(getMaxPixelValue()*owner.getBlackPercent())){				
+				avg = avg * i + getPixelValue(x, y);
+				i++;
+				avg /= i;
+				}
 
+			}
+		}
+		return (int) avg;
+	}
+	
+	/**
+	 * Entfernt Störungen über eine Maske und ersetzt diese mit den umliegenden pixeln
+	 * @param mask Maske
+	 * @param width breite des Ersatzfeldes
+	 * @param height Höhe des Ersatzfeldes
+	 */
+		public void cleanWithMask(Captcha mask,int width, int height){		
+			int[][] newgrid=new int[getWidth()][getHeight()];
+			
+
+			if(mask.getWidth()!=getWidth()||mask.getHeight()!=getHeight()){
+				UTILITIES.trace("ERROR Maske und Bild passen nicht zusammmen");
+				return;
+			}
+			
+			for (int x = 0; x < getWidth(); x++) {
+				for (int y = 0; y < getHeight(); y++) {
+					if(mask.getPixelValue(x, y)<(getMaxPixelValue()*owner.getBlackPercent())){
+						newgrid[x][y]=getAverage(x,y,width,height,mask);
+						
+						
+						
+					}else{
+						newgrid[x][y]=getPixelValue(x,y);
+					}
+				}
+			}
+			grid=newgrid;
+			
+		}
+		
 	public Captcha getSimplified(int faktor) {
 		int newWidth = (int) Math.ceil(getWidth() / faktor);
 		int newHeight = (int) Math.ceil(getHeight() / faktor);

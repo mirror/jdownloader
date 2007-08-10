@@ -16,41 +16,42 @@ import com.sun.image.codec.jpeg.ImageFormatException;
 import com.sun.image.codec.jpeg.JPEGCodec;
 import com.sun.image.codec.jpeg.JPEGImageEncoder;
 
-
+/**
+ * Diese Klasse behinhaltet alle wichtigen Methoden um das Image-Pixelgrid zu bearbeiten
+ * @author coalado
+ *
+ */
 
 public class PixelGrid {
 
-	
+	/**
+	 * ParameterDump
+	 */
 	public JAntiCaptcha owner;
-
-
-
+	/**
+	 * Internes grid
+	 */
 	public int[][] grid;
-
+	/**
+	 * Pixel Array
+	 */
 	public int[] pixel;
-	public static int tmpFiles=0;
+/**
+ * Konstruktor
+ * @param width Breite des Bildes in pixel
+ * @param height Höhe des Bildes in Pixel
+ */
 	public PixelGrid(int width, int height) {
 		grid = new int[width][height];
-	//create Folder für die Temfiles
-		if(!new File("tmp/").exists() ||!new File("tmp/").isDirectory()){
-			new File("tmp/").mkdirs();
-			
-		}
-		//Löscht alte Tempfiles;
-		File file;
-		int num=0;
-		while((file=(new File("tmp/tf_"+num))).exists()){
-			num++;
-			file.delete();
-		}
+
 	}
-/*
+/**
  * Gibt die Breite des internen captchagrids zurück
  */
 	public int getWidth() {
 		return grid.length;
 	}
-/*
+/**
  * Gibt die Höhe des internen captchagrids zurück
  */
 	public int getHeight() {
@@ -58,8 +59,9 @@ public class PixelGrid {
 			return 0;
 		return grid[0].length;
 	}
-/*
+/**
  * Nimmt ein int-array auf und wandelt es in das interne Grid um
+ * @param pixel  Pixel Array
  */
 	public void setPixel(int[] pixel) {
 		this.pixel = pixel;
@@ -71,13 +73,19 @@ public class PixelGrid {
 		}
 
 	}
-/*
+/**
  * Sollte je nach farbmodell den Höchsten pixelwert zurückgeben. RGB: 0xffffff
+ * @return Pixelwert je nach Farbbereich
  */
 	public long getMaxPixelValue() {
 		return 1*owner.getColorValueFaktor();
 	}
-
+/**
+ * Setzt den pixel value bei x,y. Umrechnungen werden dabei gemacht. deshalb kann nicht auf grid direkt zugegriffen werden. Grid beinhaltet roh daten
+ * @param x
+ * @param y
+ * @param value
+ */
 	public void setPixelValue(int x,int y,int value){
 		try{
 		grid[x][y]=Color.HSBtoRGB((float)0.0, (float)0.0, (float)((double)value/owner.getColorValueFaktor()));
@@ -87,6 +95,14 @@ public class PixelGrid {
 		
 		}
 	}
+	/**
+	 * Static setPixelValue Funktion
+	 * @param x
+	 * @param y
+	 * @param localGrid Grid inn der richtigen größe für x,y
+	 * @param value Pixelwert
+	 * @param owner JAntiCaptcha Instanz als Parameterdump
+	 */
 	public static void setPixelValue(int x,int y,int[][] localGrid, int value,JAntiCaptcha owner){
 		try{
 			localGrid[x][y]=Color.HSBtoRGB((float)0.0, (float)0.0, (float)((double)value/owner.getColorValueFaktor()));
@@ -96,9 +112,11 @@ public class PixelGrid {
 		
 		}
 	}
-/*
+/**
  * Gibt den Pixelwert an der stelle x,y zurück. Im grid sind die werte im RGB Format abgelegt. Hier könnte man farbraum umrechnungen einstellen
  * Dass die Parameter gleich bleiben sollte amn immerschauen das sman sich in einem wertebereich von 0-0xffffff bewegt. Je nach captchatyp kanne s erforderlich sein den farbraum anzupassen
+ * @param x
+ * @param y
  */
 	public int getPixelValue(int x, int y) {
 	
@@ -106,7 +124,7 @@ public class PixelGrid {
 		Color c=new Color(grid[x][y]);
 		float[] hsb=UTILITIES.rgb2hsb(c.getRed(),c.getGreen(),c.getBlue());	
 		
-		return (int)(hsb[2]*owner.getColorValueFaktor());
+		return (int)(hsb[owner.getHSBType()]*owner.getColorValueFaktor());
 	}catch(ArrayIndexOutOfBoundsException e){
 		UTILITIES.trace("ERROR: Nicht im grid; ["+x+"]["+y+"] grid: "+getWidth()+"/"+getHeight());
 		e.printStackTrace();
@@ -114,8 +132,9 @@ public class PixelGrid {
 	}
 
 	}
-/*
+/**
  * Gibt den Durchschnittlichen pixelwert des Bildes zurück
+ * @return int
  */
 	public int getAverage() {
 		long avg = 0;
@@ -131,7 +150,15 @@ public class PixelGrid {
 		return (int) avg;
 
 	}
-	
+	/**
+	 * Gibt den Durschnittlichen Pixelwert  im angegebenen raum zurück
+	 *
+	 * @param px Position x
+	 * @param py Position y
+	 * @param width Breite des Ausschnitts
+	 * @param height Höhe des Ausschnitts
+	 * @return int Durchschnittswert
+	 */
 	public int getAverage(int px,int py,int width,int height) {
 		long avg = 0;
 		int i = 0;
@@ -150,6 +177,15 @@ public class PixelGrid {
 		}
 		return (int) avg;
 	}
+	/**
+	 * Gibt den Durschnittlichen Pixelwert  im angegebenen raum zurück. Allerdings wird hier im Vergleich zu getAverage(int px,int py,int width,int height)  der Punkt slebet nicht mitberechnet
+	 *
+	 * @param px Position x
+	 * @param py Position y
+	 * @param width Breite des Ausschnitts
+	 * @param height Höhe des Ausschnitts
+	 * @return int Durchschnittswert
+	 */
 	public int getAverageWithoutPoint(int px,int py,int width,int height) {
 		long avg = 0;
 		int i = 0;
@@ -172,43 +208,37 @@ public class PixelGrid {
 		}
 		return (int) avg;
 	}
-	public int getAverage(int px,int py,int width,int height,Captcha mask) {
-		long avg = 0;
-		int i = 0;
-		int halfW=width/2;
-		int halfH=height/2;
-		if(width==1&&px==0)width=2;
-		if(height==1&&py==0)height=2;
-		for (int x = Math.max(0,px-halfW); x < Math.min(px+width-halfW,getWidth()); x++) {
-			for (int y = Math.max(0,py-halfH); y < Math.min(py+height-halfH,getHeight()); y++) {
-				if(mask.getPixelValue(x, y)>(getMaxPixelValue()*owner.getBlackPercent())){				
-				avg = avg * i + getPixelValue(x, y);
-				i++;
-				avg /= i;
-				}
-
-			}
-		}
-		return (int) avg;
-	}
-
+/**
+ * Verwendet die SampleDown Methode um ein reines Schwarzweißbild zu erzeugen
+ *
+ */
 	public void toBlackAndWhite() {
 		sampleDown(1);
 	}
+	/**
+	 * Erzeugt ein schwarzweiß bild
+	 * @param faktor Schwellwert für die Kontrasterkennung
+	 */
 	public void toBlackAndWhite(double faktor) {
 		sampleDown(1,faktor);
 	}
 	
 	
 	
-/*
- * machtd as Bild gröber und trifft eine Pixel vorauswahl. püarameter ist RELATIVCONTRAST
+/**
+ * Macht das Bild gröber und sw. 
+ * @param faktor Grobheit.
  */
 	public void sampleDown(int faktor) {
 		sampleDown(faktor,1.0);
 		
 	}
-	
+/**
+ * Macht das Bild gröber und trifft über contrast eine sw-auswahl
+ * @param faktor Grobheit
+ * @param contrast Kontrastschwelle
+ */
+
 	public void sampleDown(int faktor,double contrast) {
 		int newWidth = (int) Math.ceil(getWidth() / faktor);
 		int newHeight = (int) Math.ceil(getHeight() / faktor);
@@ -247,6 +277,10 @@ public class PixelGrid {
 		this.grid = newGrid;
 
 	}
+	/**
+	 * Lässt das Bild verschwimmen
+	 * @param faktor Stärke des Effekts
+	 */
 	public void blurIt(int faktor) {
 		
 
@@ -261,6 +295,13 @@ public class PixelGrid {
 		this.grid = newGrid;
 
 	}
+	/**
+	 * Nimmt an der angegebenen Positiond en farbwert auf und entfernt desen aus dem ganzen Bild
+	 * @param px
+	 * @param py
+	 * @param width
+	 * @param height
+	 */
 	public void cleanBackgroundBySample(int px,int py,int width,int height){
 		int avg=getAverage(px+width/2,py+height/2,width,height);
 		
@@ -281,30 +322,10 @@ public class PixelGrid {
 		
 	}
 
-	public void cleanWithMask(Captcha mask,int width, int height){		
-		int[][] newgrid=new int[getWidth()][getHeight()];
-		
-
-		if(mask.getWidth()!=getWidth()||mask.getHeight()!=getHeight()){
-			UTILITIES.trace("ERROR Maske und Bild passen nicht zusammmen");
-			return;
-		}
-		
-		for (int x = 0; x < getWidth(); x++) {
-			for (int y = 0; y < getHeight(); y++) {
-				if(mask.getPixelValue(x, y)<(getMaxPixelValue()*owner.getBlackPercent())){
-					newgrid[x][y]=getAverage(x,y,width,height,mask);
-					
-					
-					
-				}else{
-					newgrid[x][y]=getPixelValue(x,y);
-				}
-			}
-		}
-		grid=newgrid;
-		
-	}
+	/**
+	 * Gibt das Pixelgrid als Image zurück
+	 * @return Image
+	 */
 	public Image getImage(){
 	
 		BufferedImage image = new BufferedImage (getWidth(),getHeight(),
@@ -320,7 +341,11 @@ public class PixelGrid {
 		return image;
 				
 	}
-	
+/**
+ * Gibt das Pixelgrid als vergrößertes Image zurück
+ * @param faktor Vergrößerung
+ * @return
+ */
 	public Image getImage(int faktor){
 	
 		BufferedImage image = new BufferedImage (getWidth()*faktor,getHeight()*faktor,
@@ -336,13 +361,18 @@ public class PixelGrid {
 		return image;
 				
 	}
+	/**
+	 * Entfernt weißes Rauschen
+	 * @param faktor Stärke des Effekts
+	 */
 	public void reduceWhiteNoise(int faktor){
 		reduceWhiteNoise(faktor, 1.0);
 	}
-	/*reduziert weiße störungen. 
-	 * Faktor: prüfradius
-	 * contrast:  je kleiner, desto mehr Pixel werden als störung erkannt, hat bei sw bildern kaum auswirkungen
-	 * 
+
+	/**
+	 * Entfernt weißes Rauschen
+	 * @param faktor Prüfradius
+	 * @param contrast Kontrasteinstellungen.je kleiner, desto mehr Pixel werden als störung erkannt, hat bei sw bildern kaum auswirkungen
 	 */
 	public void reduceWhiteNoise(int faktor, double contrast){
 		int avg=getAverage();
@@ -363,25 +393,10 @@ public class PixelGrid {
 		}
 		grid=newGrid;
 	}
-	public void tester(int faktor, double contrast){
-		int avg=getAverage();
-		int[][] newGrid=new int[getWidth()][getHeight()];
-		for (int y = 0; y < getHeight(); y++) {
-			for (int x = 0; x < getWidth(); x++) {
-				//Korrektur weil sonst das linke obere PUxel schwarz wird.
-				if(x==0 && y==0 && faktor<3){
-					newGrid[0][0]=(int)getMaxPixelValue();
-				}else{
-					
-				
-				if(isElement(getPixelValue(x,y),(int)(avg*contrast))){
-					setPixelValue(x,y,newGrid,getAverageWithoutPoint(x,y,faktor,faktor),this.owner);			
-				}
-				}
-			}
-		}
-		grid=newGrid;
-	}
+/**
+ * Erstellt das negativ
+ *
+ */
 	public void invert(){
 		for (int y = 0; y < getHeight(); y++) {
 			for (int x = 0; x < getWidth(); x++) {			
@@ -389,22 +404,30 @@ public class PixelGrid {
 			}
 		}
 	}
+	/**
+	 * Entfernt Schwarze Störungen
+	 * @param faktor Stärke
+	 */
 	public void reduceBlackNoise(int faktor){
 		reduceBlackNoise(faktor, 1.0);
 	}
+	/**
+	 * Entfernt schwarze Störungen
+	 * @param faktor prüfradius
+	 * @param contrast Kontrasteinstellungen
+	 */
 	public void reduceBlackNoise(int faktor, double contrast){
 		int avg=getAverage();
 		int[][] newGrid=new int[getWidth()][getHeight()];
 		for (int y = 0; y < getHeight(); y++) {
 			for (int x = 0; x < getWidth(); x++) {
-				//Korrektur weil sonst das linke obere PUxel schwarz wird.
+
 				if(x==0 && y==0 && faktor<3){
 					newGrid[0][0]=grid[0][0];
-				}else{
-					
+				}else{					
 				int localAVG=getAverageWithoutPoint(x,y,faktor,faktor);
 				if(isElement(getPixelValue(x,y),(int)(avg*contrast))&&localAVG>=(contrast*0xffffff)){
-					//setPixelValue(x,y,newGrid,getAverageWithoutPoint(x,y,faktor,faktor));	
+
 					setPixelValue(x,y,newGrid,(int)(localAVG),this.owner);			
 				}else{
 					setPixelValue(x,y,newGrid,getPixelValue(x,y),this.owner);			
@@ -414,6 +437,10 @@ public class PixelGrid {
 		}
 		grid=newGrid;
 	}
+	/**
+	 * Speichert das Bild asl JPG ab
+	 * @param file Zielpfad
+	 */
 	public void saveImageasJpg(File file){
 		BufferedImage bimg = null;
 
@@ -439,11 +466,13 @@ public class PixelGrid {
 			e.printStackTrace();
 		}
 	}
+	/**
+	 * Gibt ein Pixelarray des internen Grids zurück
+	 * @return Pixelarray
+	 */
 	public int[] getPixel(){
 		int[] pix = new int[getWidth() * getHeight()];
-		int pixel=0;
-
-		int avg=getAverage();
+		int pixel=0;		
 		for (int y = 0; y < getHeight(); y++) {
 			for (int x = 0; x < getWidth(); x++) {
 				pix[pixel]=getPixelValue(x,y);
@@ -452,7 +481,7 @@ public class PixelGrid {
 		}
 		return pix;
 	}
-/*
+/**
  * Gibt ein ACSI bild des Captchas aus
  */
 	public void printGrid() {
@@ -461,21 +490,28 @@ public class PixelGrid {
 	public String getDim(){
 		return "("+getWidth()+"/"+getHeight()+")";
 	}
-/*
- * prüft ob ein pixel über der eingestellten schwelle ist
+/**
+ * Kontrasterkennung. Prüft ob der wert über einer Schwelle ist
+ * @param value 
+ * @param avg vergleichswet (meistens durchschnitsswert)
+ * @return
  */
 	public boolean isElement(int value, int avg) {
 		return value < (avg * this.owner.getRelativeContrast());
 	}
-
+/**
+ * Setzt das interne Pixelgrid
+ * @param letterGrid int[][]
+ */
 	public void setGrid(int[][] letterGrid) {
 		grid = letterGrid;
 	}
 
 	
-	/*
-	 * Trennt auf allen 4 Seiten reihen ab die unter der Schwelle sind (isElement(...))
-	 */
+/**
+ * Entfernt von allen 4 Seiten die Zeilen und Reihen bis nur noch der content übrig ist
+ * @return true/False
+ */
 		public boolean clean() {
 			byte topLines = 0;
 			byte bottomLines = 0;
@@ -573,7 +609,7 @@ public class PixelGrid {
 
 		}
 	
-/*
+/**
  * Gibt einen ASCII String des Bildes zurück
  */
 	public String getString() {
@@ -599,12 +635,16 @@ public class PixelGrid {
 	public void setOwner(JAntiCaptcha owner) {
 		this.owner = owner;
 	}
-	
+	/**
+	 * factory Funktion um einen Letter zu erstellen
+	 * @return
+	 */
 	public Letter createLetter(){
 		Letter ret= new Letter();
 	
 		ret.setOwner(owner);
 		return ret;
 	}
+
 
 }
