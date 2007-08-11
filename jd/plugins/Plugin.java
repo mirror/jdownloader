@@ -8,9 +8,11 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
+import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLConnection;
+import java.net.URLEncoder;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Vector;
@@ -374,16 +376,22 @@ public abstract class Plugin{
      */
     protected String createPostParameterFromHashMap(HashMap<String, String> parameters){
         StringBuffer parameterLine = new StringBuffer();
+        String parameter;
         Iterator<String> iterator = parameters.keySet().iterator();
         String key;
         while(iterator.hasNext()){
             key = iterator.next();
+            parameter = parameters.get(key);
+            try {
+                if (parameter != null)parameter = URLEncoder.encode(parameter, "US-ASCII");
+            } catch (UnsupportedEncodingException e) { }
             parameterLine.append(key);
             parameterLine.append("=");
-            parameterLine.append(parameters.get(key));
+            parameterLine.append(parameter);
             if(iterator.hasNext())
                 parameterLine.append("&");
         }
+        
         return parameterLine.toString();
     }
    

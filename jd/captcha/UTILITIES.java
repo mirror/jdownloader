@@ -38,6 +38,8 @@ import org.w3c.dom.Node;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
+//TODO Bitte alle trace Methoden entfernen und durch Aufrufe von logger.xx ersetzen.
+
 /**
  * Diese Klasse beinhaltet mehrere Hilfsfunktionen
  * 

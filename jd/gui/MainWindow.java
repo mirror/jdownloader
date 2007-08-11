@@ -11,10 +11,12 @@ import java.awt.datatransfer.StringSelection;
 import java.awt.datatransfer.Transferable;
 import java.awt.datatransfer.UnsupportedFlavorException;
 import java.awt.event.ActionEvent;
+import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Method;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.net.URLDecoder;
@@ -22,6 +24,7 @@ import java.util.Iterator;
 import java.util.Vector;
 import java.util.logging.Logger;
 
+import javax.imageio.ImageIO;
 import javax.swing.AbstractAction;
 import javax.swing.Action;
 import javax.swing.ImageIcon;
@@ -34,6 +37,8 @@ import javax.swing.JTabbedPane;
 import javax.swing.JToggleButton;
 import javax.swing.JToolBar;
 
+import jd.captcha.Captcha;
+import jd.captcha.JAntiCaptcha;
 import jd.plugins.DownloadLink;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
@@ -220,12 +225,30 @@ public class MainWindow extends JFrame implements ClipboardOwner{
      * @param captchaAdress Adresse des anzuzeigenden Bildes
      * @return Der vom Benutzer eingegebene Text
      */
-    private String getCaptcha(String captchaAdress){
-        String captchaText=null;
-        CaptchaDialog captchaDialog = new CaptchaDialog(this,captchaAdress);
-        MainWindow.this.toFront();
-        captchaDialog.setVisible(true);
-        return captchaDialog.getCaptchaText();
+    private String getCaptcha(Plugin plugin, String captchaAddress){
+        boolean useJAC = true;
+        if(useJAC){
+            try {
+                String host = plugin.getHost();
+                JAntiCaptcha jac = new JAntiCaptcha(host);
+                BufferedImage captchaImage = ImageIO.read(new URL(captchaAddress));
+                Captcha captcha= jac.createCaptcha(captchaImage);
+                String captchaCode=jac.checkCaptcha(captcha);
+                logger.info(captchaCode);
+                return captchaCode;
+            } catch (MalformedURLException e) {
+                e.printStackTrace();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+        else{
+            CaptchaDialog captchaDialog = new CaptchaDialog(this,captchaAddress);
+            MainWindow.this.toFront();
+            captchaDialog.setVisible(true);
+            return captchaDialog.getCaptchaText();
+        }
+        return null;
     }
     /**
      * Hier werden die Aktionen ausgewertet und weitergeleitet
@@ -444,7 +467,7 @@ public class MainWindow extends JFrame implements ClipboardOwner{
                             catch (InterruptedException e) { e.printStackTrace(); }
                             break;
                         case PluginStep.STEP_CAPTCHA:
-                            String captchaText = getCaptcha((String)step.getParameter());
+                            String captchaText = getCaptcha(plugin, (String)step.getParameter());
                             step.setParameter(captchaText);
                             step.setStatus(PluginStep.STATUS_DONE);
                     }
