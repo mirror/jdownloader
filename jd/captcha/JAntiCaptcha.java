@@ -15,8 +15,6 @@ import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 
-import jd.plugins.Plugin;
-
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NamedNodeMap;
@@ -35,7 +33,7 @@ public class JAntiCaptcha {
 	/**
 	 * Logger
 	 */
-	private Logger logger = Plugin.getLogger();
+	private static Logger logger = UTILITIES.getLogger();
 
 	/**
 	 * Prozentwert. Ab dieser Schwelle an Korektheit wird ein Letter als 100%
@@ -1100,7 +1098,7 @@ public class JAntiCaptcha {
 		Captcha cap = jac.createCaptcha(img);
 		// BasicWindow.showImage(cap.getImageWithGaps(2));
 		String ret = jac.checkCaptcha(cap);
-		 UTILITIES.trace(ret);
+		logger.info(ret);
 		return ret;
 	}
 

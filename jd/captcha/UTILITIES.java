@@ -22,6 +22,7 @@ import java.net.URL;
 import java.security.MessageDigest;
 import java.util.Calendar;
 import java.util.Properties;
+import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -32,13 +33,13 @@ import javax.swing.JOptionPane;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
+import jd.plugins.Plugin;
+
 import org.w3c.dom.Document;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
-
-//TODO Bitte alle trace Methoden entfernen und durch Aufrufe von logger.xx ersetzen.
 
 /**
  * Diese Klasse beinhaltet mehrere Hilfsfunktionen
@@ -47,6 +48,18 @@ import org.xml.sax.SAXException;
  */
 
 public class UTILITIES {
+    /**
+     * Logger für Meldungen
+     */
+    private static Logger logger =Plugin.getLogger();
+    /**
+     * Liefert den Logger zurück
+     * 
+     * @return Logger
+     */
+    public static Logger getLogger(){
+        return logger;
+        }
 	/** *********************DEBUG*************************** */
 
 	/**
@@ -60,110 +73,6 @@ public class UTILITIES {
 				+ c.get(Calendar.YEAR) + " - " + c.get(Calendar.HOUR_OF_DAY)
 				+ ":" + c.get(Calendar.MINUTE) + ":" + c.get(Calendar.SECOND)
 				+ " (" + c.get(Calendar.MILLISECOND) + ") : ";
-	}
-
-	/**
-	 * public static void trace(String args) Diese Funktion gibt einen String
-	 * auf der Konsole aus
-	 */
-	public static void trace(String args) {
-
-		System.out.println(args);
-	}
-
-	/**
-	 * public static void trace(int args) Diese Funktion gibt einen Integer auf
-	 * der Konsole aus
-	 */
-	public static void trace(int args) {
-
-		System.out.println(args);
-	}
-
-	/**
-	 * public static void trace(Boolean args) Diese Funktion gibt einen boolean
-	 * Wert aus
-	 */
-	public static void trace(Boolean args) {
-
-		System.out.println(args);
-	}
-
-	/**
-	 * public static void trace(float args) Diese Funktion gibt einen float Wert
-	 * aus
-	 */
-
-	public static void trace(float args) {
-
-		System.out.println(args);
-	}
-
-	/**
-	 * public static void trace(double args) Diese Funktion gibt einen Double
-	 * Wert aus
-	 */
-	public static void trace(double args) {
-
-		System.out.println(args);
-	}
-
-	/**
-	 * public static void trace(Object args) Diese Funktion gibt über die
-	 * toString Methode ein Object auf der Konsole aus
-	 */
-	public static void trace(Object args) {
-		if (args == null) {
-			args = "[" + "] NULL";
-		}
-
-		System.out.println(args.toString());
-	}
-
-	/**
-	 * public static void trace(String[] args) Diese Funktion gibt ein String
-	 * Array aus
-	 */
-	public static void trace(String[] args) {
-		int i;
-		for (i = 0; i < args.length; i++) {
-
-			System.out.println(i + ". " + args[i]);
-		}
-	}
-
-	/**
-	 * public static void trace(int[] args) Diese Funktion gibt ein Integer
-	 * Array aus
-	 */
-	public static void trace(int[] args) {
-		int i;
-		for (i = 0; i < args.length; i++) {
-
-			System.out.println(i + ". " + args[i]);
-		}
-	}
-	/**
-	 * public static void trace(byte[] args) Diese Funktion gibt ein byte
-	 * Array aus
-	 */
-	public static void trace(byte[] args) {
-		int i;
-		for (i = 0; i < args.length; i++) {
-
-			System.out.println(i + ". " + args[i]);
-		}
-	}
-	/**
-	 * public static void trace(Object[] args) Diese Funktion gibt ein Object
-	 * Array aus
-	 */
-	public static void trace(Object[] args) {
-		int i;
-		for (i = 0; i < args.length; i++) {
-
-			System.out.println(i + ". " + args[i].toString());
-		}
 	}
 
 	/** ******************************SYSTEM******************************* */
@@ -194,7 +103,7 @@ public class UTILITIES {
 					.getInputStream()));
 			String line;
 			while ((line = br.readLine()) != null) {
-				trace(line);
+				logger.info(line);
 
 			}
 		} catch (IOException e) {
@@ -458,12 +367,12 @@ public class UTILITIES {
 
 			if (file.isFile()) {
 				if (!file.delete()) {
-					trace("Konnte Datei nicht löschen " + file);
+					logger.warning("Konnte Datei nicht löschen " + file);
 					return false;
 				}
 
 			}
-			trace("DIR :" + file.getParent());
+			logger.info("DIR :" + file.getParent());
 			if (file.getParent() != null && !file.getParentFile().exists()) {
 				file.getParentFile().mkdirs();
 			}
@@ -498,12 +407,12 @@ public class UTILITIES {
 
 			if (file.isFile()) {
 				if (!file.delete()) {
-					trace("Konnte Datei nicht löschen " + file);
+					logger.warning("Konnte Datei nicht löschen " + file);
 					return false;
 				}
 
 			}
-			trace("DIR :" + file.getParent());
+			logger.info("DIR :" + file.getParent());
 			if (file.getParent() != null && !file.getParentFile().exists()) {
 				file.getParentFile().mkdirs();
 			}
@@ -586,7 +495,7 @@ public class UTILITIES {
 	public static String getAttribute(Node childNode, String key) {
 		NamedNodeMap att = childNode.getAttributes();
 		if (att == null || att.getNamedItem(key) == null) {
-			trace("ERROR: XML Attribute missing: " + key);
+			logger.severe("ERROR: XML Attribute missing: " + key);
 			return null;
 		}
 		return att.getNamedItem(key).getNodeValue();

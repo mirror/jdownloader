@@ -10,8 +10,6 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.logging.Logger;
 
-import jd.plugins.Plugin;
-
 import com.sun.image.codec.jpeg.ImageFormatException;
 import com.sun.image.codec.jpeg.JPEGCodec;
 import com.sun.image.codec.jpeg.JPEGImageEncoder;
@@ -28,7 +26,7 @@ public class PixelGrid {
 	/**
 	 * Logger
 	 */
-	public Logger logger = Plugin.getLogger();
+	public static Logger logger = UTILITIES.getLogger();
 
 	/**
 	 * ParameterDump
@@ -139,7 +137,7 @@ public class PixelGrid {
 			localGrid[x][y] = Color.HSBtoRGB((float) 0.0, (float) 0.0,
 					(float) ((double) value / owner.getColorValueFaktor()));
 		} catch (ArrayIndexOutOfBoundsException e) {
-			UTILITIES.trace("ERROR: Nicht im grid; [" + x + "][" + y
+			logger.severe("ERROR: Nicht im grid; [" + x + "][" + y
 					+ "] grid " + localGrid.length);
 			e.printStackTrace();
 

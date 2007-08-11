@@ -7,13 +7,14 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.util.logging.Logger;
 
 import com.sun.image.codec.jpeg.ImageFormatException;
 import com.sun.image.codec.jpeg.JPEGCodec;
 import com.sun.image.codec.jpeg.JPEGImageEncoder;
 
 public class Captcha extends PixelGrid {
-
+    private static Logger logger = UTILITIES.getLogger();
 	/**
 	 * Speichert die Positiond es letzten erkannten Letters
 	 */
@@ -560,8 +561,7 @@ public class Captcha extends PixelGrid {
 		int width = image.getWidth(null);
 		int height = image.getHeight(null);
 		if (width <= 0 || height <= 0) {
-			UTILITIES
-					.trace("ERROR: Image nicht korrekt. Kein Inhalt. Pfad URl angaben Korrigieren");
+			logger.severe("ERROR: Image nicht korrekt. Kein Inhalt. Pfad URl angaben Korrigieren");
 		}
 		PixelGrabber pg = new PixelGrabber(image, 0, 0, width, height, false);
 		try {
@@ -593,7 +593,7 @@ public class Captcha extends PixelGrid {
 
 				this.pixel[i] = grid[x][y] = (int) ((double) (((double) bs[i]) / 127.0) * this
 						.getMaxPixelValue());
-				UTILITIES.trace(bs[i] + " - "
+				logger.info(bs[i] + " - "
 						+ (double) (((double) bs[i]) / 127.0) + " - "
 						+ this.pixel[i] + " - " + this.getMaxPixelValue());
 				i++;
@@ -617,8 +617,7 @@ public class Captcha extends PixelGrid {
 		if (ret.owner == null)
 			ret.setOwner(b.owner);
 		if (ret.owner == null)
-			ret.logger
-					.warning("Owner konnte nicht bestimmt werden!Dieser captcha ist nur eingeschränkt verwendbar.");
+			logger.warning("Owner konnte nicht bestimmt werden!Dieser captcha ist nur eingeschränkt verwendbar.");
 		ret.grid = new int[newWidth][newHeight];
 		for (int x = 0; x < a.getWidth(); x++) {
 			for (int y = 0; y < newHeight; y++) {
