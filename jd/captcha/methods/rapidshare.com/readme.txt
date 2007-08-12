@@ -7,6 +7,26 @@
 # Beispiel: || param.lettersearchlimitvalue = 0.15;
 #-------------------------------------------------------------------------------------------#
 #-------------------------------------------------------------------------------------------#
+################ => objectColorContrast [double] (0.2-0.7)
+#Kontrastwert um zu erkennen ob ein neuer Pixel zu eiem Objekt passt
+# Beispiel: || param.objectColorContrast = 0.3;
+#-------------------------------------------------------------------------------------------#
+#-------------------------------------------------------------------------------------------#
+################ => objectDetectionContrast [double] (0.2-0.7)
+#Kontrastwert zur erkennung eines ObjektPixels (Kontrast  Objekt/hintergrund)
+# Beispiel: || param.objectDetectionContrast = 0.5;
+#-------------------------------------------------------------------------------------------#
+#-------------------------------------------------------------------------------------------#
+################ => useObjectDetection [boolean] (true/false)
+#Object Erkennung aktivieren
+# Beispiel: || param.useObjectDetection = true;
+#-------------------------------------------------------------------------------------------#
+#-------------------------------------------------------------------------------------------#
+################ => minimumObjectArea [int] (50-500)
+#Minimale Objektfläche für die Objekterkennung
+# Beispiel: || param.minimumObjectArea = 200;
+#-------------------------------------------------------------------------------------------#
+#-------------------------------------------------------------------------------------------#
 ################ => trainonlyunknown [boolean] (true/false)
 #Gibt an ob beim training bekante buchstabben erneut trainiert werden sollen
 # Beispiel: || param.trainonlyunknown = true;
@@ -69,11 +89,10 @@
 #-------------------------------------------------------------------------------------------#							
 #-------------------------------------------------------------------------------------------#
 ################ => hsbtype [Integer] (0/1/2)
-#Verwendetes farbkriterium
+#Verwendetes farbkriterium. Dabei können auch mehrere verwendet werden.Sie werden der wichtigkeit nach aneinandergereiht
 # Beispiel: || 
-#param.hsbtype = 0; : helligkeit
-#param.hsbtype = 1; : Sättigung (Buntheit)
-#param.hsbtype = 2; : Farbton
+#param.hsbtype = b; : helligkeit
+#param.hsbtype = bhs; : kriterien (in wichtigkeit absteigend: helligkeit, farbton, sättigung
 #-------------------------------------------------------------------------------------------#				
 #-------------------------------------------------------------------------------------------#
 ################ => gapandaveragelogic [boolean] (true/false)
@@ -167,7 +186,7 @@
 #-------------------------------------------------------------------------------------------#
 #-------------------------------------------------------------------------------------------#
 ################ => captcha.prepare.toBlackAndWhite();
-# Verwendet die SampleDown Methode um ein reines Schwarzweißbild zu
+# Erzeugt ein REINEs Sw Bild mit dme bilddurchschnitt als grenze
 # erzeugen
 # Beispiel: || captcha.prepare.toBlackAndWhite();
 #-------------------------------------------------------------------------------------------#
@@ -239,22 +258,20 @@
 # Beispiel: || captcha.prepare.sampleDown(3);
 #-------------------------------------------------------------------------------------------#
 #-------------------------------------------------------------------------------------------#
-################ => captcha.prepare.sampleDown(int Effektradius, double Kontrastfaktor);
-# Macht das Bild gröber und trifft über contrast eine sw-auswahl
-# 
-# @param faktor
-# Grobheit
-# @param contrast
-# Kontrastschwelle
-# Beispiel: || captcha.prepare.sampleDown(3, 0.9);
-#-------------------------------------------------------------------------------------------#
-#-------------------------------------------------------------------------------------------#
 ################ => captcha.prepare.saveImageasJpg(String zielPfad);
 # Speichert das Bild asl JPG ab
 # 
 # @param file
 # Zielpfad
 # Beispiel: || captcha.prepare.saveImageasJpg("preparedImage.jpg");
+#-------------------------------------------------------------------------------------------#
+#-------------------------------------------------------------------------------------------#
+################ => captcha.prepare.convertPixel(String frabstring);
+# Legt den verwendeten farbbereich fest. Es Steht RGB un hsb zur verfügung
+# R:Rot|G:Grün|B:Blau   oder h:Frabton/s:Sättigung/b:helligkeit
+# Es kann nur jeweils ein farbraum verwendet werden. Im farbraum können aber alle 3 kriterien beliebig aneinandergereiht werden (1-3 kriterien) die wichtigsten zuerst
+# 
+# Beispiel: || captcha.prepare.convertPixel("hs");
 #-------------------------------------------------------------------------------------------#
 #
 ##################################---ENDE Dokumentation---###################################
