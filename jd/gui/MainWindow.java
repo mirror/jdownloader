@@ -89,7 +89,7 @@ public class MainWindow extends JFrame implements ClipboardOwner{
     /**
      * Der Thread, der das Downloaden realisiert
      */
-    private StartDownload download = null;
+    private StartDownloads download = null;
     private Speedometer speedoMeter = new Speedometer();
     private StatusBar statusBar;
     /**
@@ -243,7 +243,7 @@ public class MainWindow extends JFrame implements ClipboardOwner{
             }
         }
         else{
-            CaptchaDialog captchaDialog = new CaptchaDialog(this,captchaAddress);
+            CaptchaDialog captchaDialog = new CaptchaDialog(this,plugin,captchaAddress);
             MainWindow.this.toFront();
             captchaDialog.setVisible(true);
             return captchaDialog.getCaptchaText();
@@ -267,7 +267,7 @@ public class MainWindow extends JFrame implements ClipboardOwner{
                 break;
             case JDAction.APP_START_STOP_DOWNLOADS:
                 if(download == null){
-                    download = new StartDownload();
+                    download = new StartDownloads();
                     download.start();
                 }
                 else{
@@ -429,16 +429,16 @@ public class MainWindow extends JFrame implements ClipboardOwner{
      * 
      * @author astaldo
      */
-    private class StartDownload extends Thread{
+    private class StartDownloads extends Thread{
         /**
          * Der DownloadLink
          */
         private DownloadLink downloadLink;
-        private Plugin plugin;
+        private PluginForHost plugin;
         private boolean aborted=false;
         
-        public StartDownload(){
-            super("JD-StartDownload");
+        public StartDownloads(){
+            super("JD-StartDownloads");
         }
         public void abortDownload(){
             aborted=true;
@@ -480,6 +480,7 @@ public class MainWindow extends JFrame implements ClipboardOwner{
                 if(step != null && step.getStatus() == PluginStep.STATUS_ERROR){
                     logger.severe("Error occurred while downloading file");
                 }
+                
 //            }
             btnStartStop.setSelected(false);
         }

@@ -37,7 +37,7 @@ public class DownloadLink{
     /**
      * Das Plugin, das für diesen Download zuständig ist
      */
-    private Plugin plugin;
+    private PluginForHost plugin;
     /**
      * Die Fortschrittsanzeige
      */
@@ -94,7 +94,7 @@ public class DownloadLink{
      * 
      * @return Das Plugin
      */
-    public Plugin getPlugin() { return plugin; }
+    public PluginForHost getPlugin() { return plugin; }
     /**
      * Liefert die Datei zurück, in die dieser Download gespeichert werden soll
      * 

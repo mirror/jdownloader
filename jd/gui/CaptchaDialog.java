@@ -3,12 +3,14 @@ package jd.gui;
 import java.awt.Frame;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
-import java.awt.Image;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.image.BufferedImage;
+import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 
+import javax.imageio.ImageIO;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JDialog;
@@ -16,7 +18,7 @@ import javax.swing.JLabel;
 import javax.swing.JTextField;
 
 import jd.captcha.JAntiCaptcha;
-import jd.captcha.UTILITIES;
+import jd.plugins.Plugin;
 
 /**
  * Mit dieser Klasse wird ein Captcha Bild angezeigt
@@ -53,33 +55,31 @@ public class CaptchaDialog extends JDialog implements ActionListener {
 	 * @param imageAddress
 	 *            Die Adresse des Bildes, das angezeigt werden soll
 	 */
-	public CaptchaDialog(Frame owner, String imageAddress) {
+	public CaptchaDialog(Frame owner, Plugin plugin, String imageAddress) {
 		super(owner);
 		setModal(true);
 		setLayout(new GridBagLayout());
 		ImageIcon imageIcon = null;
-		Image img;
+		BufferedImage image;
 		String code = "";
 		try {
-			img = UTILITIES.loadImage(new URL(imageAddress));
-			imageIcon = new ImageIcon(img);
-			code = JAntiCaptcha.getCaptchaCode(img, "rapidshare.com");
-		} catch (MalformedURLException e) {
-			e.printStackTrace();
-		}
+            image = ImageIO.read(new URL(imageAddress));
+			imageIcon = new ImageIcon(image);
+			code = JAntiCaptcha.getCaptchaCode(image, "rapidshare.com");
+		} 
+        catch (MalformedURLException e) { e.printStackTrace(); } 
+        catch (IOException e)           { e.printStackTrace(); }
 		JLabel label = new JLabel(imageIcon);
 		textField = new JTextField(10);
-		btnOK = new JButton("OK");
+		btnOK     = new JButton("OK");
 		textField.setText(code);
+        textField.selectAll();
 		btnOK.addActionListener(this);
 		getRootPane().setDefaultButton(btnOK);
 		setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
-		Utilities.addToGridBag(this, label, 0, 0, 2, 1, 0, 0, null,
-				GridBagConstraints.NONE, GridBagConstraints.CENTER);
-		Utilities.addToGridBag(this, textField, 0, 1, 1, 1, 1, 1, null,
-				GridBagConstraints.NONE, GridBagConstraints.EAST);
-		Utilities.addToGridBag(this, btnOK, 1, 1, 1, 1, 1, 1, null,
-				GridBagConstraints.NONE, GridBagConstraints.WEST);
+		Utilities.addToGridBag(this, label,     0, 0, 2, 1, 0, 0, null, GridBagConstraints.NONE, GridBagConstraints.CENTER);
+		Utilities.addToGridBag(this, textField, 0, 1, 1, 1, 1, 1, null,	GridBagConstraints.NONE, GridBagConstraints.EAST);
+		Utilities.addToGridBag(this, btnOK,     1, 1, 1, 1, 1, 1, null,	GridBagConstraints.NONE, GridBagConstraints.WEST);
 
 		pack();
 		setLocation(Utilities.getCenterOfComponent(null, this));
