@@ -1,6 +1,7 @@
 ﻿package jd.plugins;
 
 import java.io.File;
+import java.io.Serializable;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.logging.Logger;
@@ -13,7 +14,16 @@ import javax.swing.JProgressBar;
  * 
  * @author astaldo
  */
-public class DownloadLink{
+public class DownloadLink implements Serializable{
+    public final static int STATUS_OK                   = 0;
+    public final static int STATUS_ERROR_CAPTCHA_WRONG  = 1;
+    public final static int STATUS_ERROR_DOWNLOAD_LIMIT = 2;
+    public final static int STATUS_ERROR_FILE_ABUSED    = 3;
+    public final static int STATUS_ERROR_FILE_NOT_FOUND = 4;
+    /**
+     * serialVersionUID
+     */
+    private static final long serialVersionUID = 1981079856214268373L;
     /**
      * Beschreibung des Downloads
      */
@@ -33,15 +43,19 @@ public class DownloadLink{
     /**
      * Zeigt, ob dieser DownloadLink grad heruntergeladen wird
      */
-    private boolean inProgress;
+    private transient boolean inProgress = false;;
+    /**
+     * ID des Plugins
+     */
+    private String pluginID;
     /**
      * Das Plugin, das für diesen Download zuständig ist
      */
-    private PluginForHost plugin;
+    private transient PluginForHost plugin;
     /**
      * Die Fortschrittsanzeige
      */
-    private JProgressBar progressBar = null;
+    private transient JProgressBar progressBar = null;
     /**
      * Hierhin soll die Datei gespeichert werden.
      */
@@ -49,15 +63,21 @@ public class DownloadLink{
     /**
      * Logger für Meldungen
      */
-    private Logger logger = Plugin.getLogger();
+    private transient Logger logger = Plugin.getLogger();
     /**
      * Die Größe in Bytes dieser Datei
      */
-    private int downloadLength;
+    private transient int downloadLength;
     /**
      * Die bereits heruntergeladenen Bytes
      */
-    private int downloadedBytes;
+    private transient int downloadedBytes;
+    /**
+     * Status des DownloadLinks
+     */
+    private int status = STATUS_OK;
+   
+    private DownloadLink(){}
     /**
      * Erzeugt einen neuen DownloadLink
      * 
@@ -69,6 +89,7 @@ public class DownloadLink{
      */
     public DownloadLink(PluginForHost plugin, String name, String host, String urlDownload, boolean isEnabled){
         this.plugin      = plugin;
+        this.pluginID    = plugin.getPluginID();
         this.name        = name;
         this.host        = host;
         this.isEnabled   = isEnabled;
@@ -138,6 +159,13 @@ public class DownloadLink{
      */
     public boolean isEnabled() { return isEnabled; }
     /**
+     * Setzt nachträglich das Plugin.
+     * Wird nur zum Laden der Liste benötigt
+     * 
+     * @param plugin Das für diesen Download zuständige Plugin
+     */
+    public void setPlugin(PluginForHost plugin){ this.plugin = plugin; }
+    /**
      * Verändert den Aktiviert-Status
      * 
      * @param isEnabled Soll dieser DownloadLink aktiviert sein oder nicht
@@ -190,5 +218,11 @@ public class DownloadLink{
             return this.urlDownload.equals(((DownloadLink)obj).urlDownload);
         else
             return super.equals(obj);
+    }
+    public int getStatus() {
+        return status;
+    }
+    public void setStatus(int status) {
+        this.status = status;
     }
 }

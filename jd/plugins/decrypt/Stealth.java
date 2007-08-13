@@ -40,7 +40,7 @@ public class Stealth extends PluginForDecrypt{
     @Override public String getHost()                 { return host;             }
     @Override public boolean isClipboardEnabled()     { return true;             }
     @Override public String getVersion()              { return version;          }
-
+    @Override public String getPluginID()             { return "STEALTH-1.0.0."; }
     @Override 
     public Vector<String> decryptLinks(Vector<String> cryptedLinks )     {
         Vector<String> decryptedLinks = new Vector<String>();
@@ -49,7 +49,7 @@ public class Stealth extends PluginForDecrypt{
         //Zählen aller verfügbaren Treffer
         for(int i=0;i<cryptedLinks.size();i++){
             try {
-                URL url = new URL(cryptedLinks.elementAt(i));
+                URL url = new URL(cryptedLinks.get(i));
                 RequestInfo requestInfo = getRequest(url);
                 countHits += countOccurences(requestInfo.getHtmlCode(), patternLinkParameter);
             }
@@ -62,7 +62,7 @@ public class Stealth extends PluginForDecrypt{
         //Hier werden alle verschlüsselten Links behandelt
         for(int i=0;i<cryptedLinks.size();i++){
             try {
-                URL url = new URL(cryptedLinks.elementAt(i));
+                URL url = new URL(cryptedLinks.get(i));
                 RequestInfo requestInfo = getRequest(url, null, null, false);
                 Matcher matcher = patternLinkParameter.matcher(requestInfo.getHtmlCode());
                 int position =0;

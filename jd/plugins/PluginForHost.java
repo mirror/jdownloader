@@ -24,7 +24,7 @@ public abstract class PluginForHost extends Plugin{
         if(hits != null && hits.size()>0){
             links = new Vector<DownloadLink>();
             for(int i=0;i<hits.size();i++){
-                String file = hits.elementAt(i);
+                String file = hits.get(i);
                 links.add(new DownloadLink(
                         this,
                         file.substring(file.lastIndexOf("/")+1,file.length()),

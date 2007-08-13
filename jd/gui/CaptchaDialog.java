@@ -50,10 +50,9 @@ public class CaptchaDialog extends JDialog implements ActionListener {
 	/**
 	 * Erstellt einen neuen Dialog.
 	 * 
-	 * @param owner
-	 *            Das übergeordnete Fenster
-	 * @param imageAddress
-	 *            Die Adresse des Bildes, das angezeigt werden soll
+	 * @param owner Das übergeordnete Fenster
+     * @param plugin Das Plugin, das dieses Captcha auslesen möchte (name des Hosts wird von JAC benötigt)
+	 * @param imageAddress Die Adresse des Bildes, das angezeigt werden soll
 	 */
 	public CaptchaDialog(Frame owner, Plugin plugin, String imageAddress) {
 		super(owner);

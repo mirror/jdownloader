@@ -1,6 +1,7 @@
 ﻿package jd.gui;
 
 import java.awt.BorderLayout;
+import java.awt.Color;
 import java.awt.Component;
 import java.util.Iterator;
 import java.util.Vector;
@@ -13,6 +14,7 @@ import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.event.TableModelEvent;
 import javax.swing.table.AbstractTableModel;
+import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableColumn;
 
@@ -32,6 +34,8 @@ public class TabDownloadLinks extends JPanel implements PluginListener{
     private final int COL_HOST     = 2;
     private final int COL_PROGRESS = 3;
     
+    private final Color COLOR_ERROR    = new Color(255,0,0,20);
+    private final Color COLOR_DISABLED = new Color(100,100,100,20);
     /**
      * serialVersionUID
      */
@@ -39,7 +43,7 @@ public class TabDownloadLinks extends JPanel implements PluginListener{
     /**
      * Diese Tabelle enthält die eigentlichen DownloadLinks
      */
-    private JTable             table;
+    private InternalTable             table;
     /**
      * Das interen TableModel, um die Daten anzuzeigen
      */
@@ -52,14 +56,19 @@ public class TabDownloadLinks extends JPanel implements PluginListener{
      * Der Logger für Meldungen
      */
     private Logger logger = Plugin.getLogger();
+    private MainWindow parent;
+    private TabDownloadLinks(){}
     /**
      * Erstellt eine neue Tabelle
+     * 
+     * @param parent Das aufrufende Hauptfenster
      */
-    public TabDownloadLinks(){
+    public TabDownloadLinks(MainWindow parent){
         super(new BorderLayout());
-        table = new JTable();
+        this.parent = parent;
+        table = new InternalTable();
         table.setModel(internalTableModel);
-        table.getColumn(table.getColumnName(COL_PROGRESS)).setCellRenderer(new ProgressBarRenderer());
+//        table.getColumn(table.getColumnName(COL_PROGRESS)).setCellRenderer(int);
 
         TableColumn column = null;
         for (int c = 0; c < internalTableModel.getColumnCount(); c++) {
@@ -75,6 +84,10 @@ public class TabDownloadLinks extends JPanel implements PluginListener{
         JScrollPane scrollPane = new JScrollPane(table);
         add(scrollPane);
     }
+    public void setLinks(Vector<DownloadLink> links){
+        allLinks.clear();
+        addLinks(links);
+    }
     /**
      * Hier werden Links zu dieser Tabelle hinzugefügt.
      * 
@@ -82,8 +95,8 @@ public class TabDownloadLinks extends JPanel implements PluginListener{
      */
     public void addLinks(Vector<DownloadLink> links){
         for(int i=0;i<links.size();i++){
-            if(allLinks.indexOf(links.elementAt(i))==-1)
-                allLinks.add(links.elementAt(i));
+            if(allLinks.indexOf(links.get(i))==-1)
+                allLinks.add(links.get(i));
             else
                 logger.info("download-URL already in Queue");
         }
@@ -118,6 +131,9 @@ public class TabDownloadLinks extends JPanel implements PluginListener{
         }
         return null;
     }
+    public Vector<DownloadLink> getLinks(){
+        return allLinks;
+    }
     /**
      * Hiermit wird die Tabelle aktualisiert
      */
@@ -132,7 +148,19 @@ public class TabDownloadLinks extends JPanel implements PluginListener{
                 break;
         }
     }
+    private class InternalTable extends JTable{
+        /**
+         * serialVersionUID
+         */
+        private static final long serialVersionUID = 4424930948374806098L;
+        private InternalTableCellRenderer internalTableCellRenderer = new InternalTableCellRenderer();
 
+
+        @Override
+        public TableCellRenderer getCellRenderer(int arg0, int arg1) {
+            return internalTableCellRenderer;
+        }
+    }
     /**
      * Dieses TableModel sorgt dafür, daß die Daten der Downloadlinks korrekt dargestellt werden
      * 
@@ -157,6 +185,7 @@ public class TabDownloadLinks extends JPanel implements PluginListener{
             }
             return null;
         }
+        
         public Class<?> getColumnClass(int columnIndex) {
             switch(columnIndex){
                 case COL_INDEX:
@@ -177,7 +206,7 @@ public class TabDownloadLinks extends JPanel implements PluginListener{
         }
         public Object getValueAt(int rowIndex, int columnIndex) {
             if(rowIndex< allLinks.size()){
-                DownloadLink downloadLink = allLinks.elementAt(rowIndex); 
+                DownloadLink downloadLink = allLinks.get(rowIndex); 
                 switch(columnIndex){
                     case COL_INDEX:    return rowIndex;
                     case COL_NAME:     return downloadLink.getName();
@@ -191,15 +220,31 @@ public class TabDownloadLinks extends JPanel implements PluginListener{
             }
             return null;
         }
+        public DownloadLink getDownloadLinkAtRow(int row) {
+            return allLinks.get(row);
+        }
+        
     }
-    /**
-     * Diese Klasse zeichnet eine ProgressBar in eine JTable
-     * 
-     * @author astaldo
-     */
-    private class ProgressBarRenderer implements TableCellRenderer{
+    private class InternalTableCellRenderer extends DefaultTableCellRenderer{
+        /**
+         * serialVersionUID
+         */
+        private static final long serialVersionUID = -3912572910439565199L;
         public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column){
-            return (JProgressBar)value;
+            if(value instanceof JProgressBar)
+                return (JProgressBar)value;
+
+            Component c = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+            if(!isSelected){
+                DownloadLink dLink = allLinks.get(row);
+                if (!dLink.isEnabled()){
+                    c.setBackground(COLOR_DISABLED);
+                }
+                if(dLink.getStatus()!=DownloadLink.STATUS_OK){
+                    c.setBackground(COLOR_ERROR);
+                }
+            }
+            return c;
         }
     }
 }

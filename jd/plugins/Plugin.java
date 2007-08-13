@@ -39,11 +39,6 @@ import jd.plugins.event.PluginListener;
  * @author astaldo
  */
 public abstract class Plugin{
-    public final int STATUS_OK             = 0;
-    public final int STATUS_ERROR          = 1;
-    public final int STATUS_CAPTCHA_WRONG  = 2;
-    public final int STATUS_FILE_NOT_FOUND = 4;
-    public final int STATUS_DOWNLOAD_LIMIT = 5;
     /**
      * Puffer für Lesevorgänge
      */
@@ -56,12 +51,16 @@ public abstract class Plugin{
      * Zeigt an, ob das Plugin abgebrochen werden soll
      */
     protected boolean aborted = false;
-    private   int status;
     /**
      * Liefert den Namen des Plugins zurück
      * @return Der Name des Plugins
      */
     public abstract String               getPluginName();
+    /**
+     * Liefert eine einmalige ID des Plugins zurück
+     * @return
+     */
+    public abstract String               getPluginID();
     /**
      * Hier wird der Author des Plugins ausgelesen
      * 
@@ -105,12 +104,6 @@ public abstract class Plugin{
      */
     public void abort(){
         aborted = true;
-    }
-    public int getStatus(){
-        return status;
-    }
-    protected void setStatus(int status){
-        this.status = status;
     }
     /**
      * Hiermit wird der Eventmechanismus realisiert. Alle hier eingetragenen Listener
@@ -357,7 +350,7 @@ public abstract class Plugin{
                 count = bis.read(buffer);
                 if (count != -1){
                     fos.write(buffer, 0, count);
-                    downloadedBytes +=READ_BUFFER;
+                    downloadedBytes +=count;
                     downloadLink.setDownloadedBytes(downloadedBytes);
                     firePluginEvent(new PluginEvent(this,PluginEvent.PLUGIN_DATA_CHANGED,null));
                 }   

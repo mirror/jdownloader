@@ -49,8 +49,8 @@ public class TabPluginActivity extends JPanel implements PluginListener{
         PluginProgress pluginProgress = null;
         // Gibts das Plugin bereits?
         for(int i=0;i<pluginProgresses.size();i++){
-            if(pluginProgresses.elementAt(i).plugin == event.getSource()){
-                pluginProgress = pluginProgresses.elementAt(i);
+            if(pluginProgresses.get(i).plugin == event.getSource()){
+                pluginProgress = pluginProgresses.get(i);
                 break;
             }
         }
@@ -105,7 +105,7 @@ public class TabPluginActivity extends JPanel implements PluginListener{
             return pluginProgresses.size();
         }
         public Object getValueAt(int rowIndex, int columnIndex) {
-            PluginProgress p = pluginProgresses.elementAt(rowIndex);
+            PluginProgress p = pluginProgresses.get(rowIndex);
             
             switch(columnIndex){
                 case 0: return p.plugin.getPluginName();

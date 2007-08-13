@@ -13,7 +13,12 @@ import java.awt.datatransfer.UnsupportedFlavorException;
 import java.awt.event.ActionEvent;
 import java.awt.image.BufferedImage;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Method;
 import java.net.MalformedURLException;
@@ -29,9 +34,12 @@ import javax.swing.AbstractAction;
 import javax.swing.Action;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
+import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.JMenu;
 import javax.swing.JMenuBar;
+import javax.swing.JMenuItem;
 import javax.swing.JPanel;
 import javax.swing.JTabbedPane;
 import javax.swing.JToggleButton;
@@ -101,6 +109,8 @@ public class MainWindow extends JFrame implements ClipboardOwner{
     private JDAction actionMoveDown;
     private JDAction actionAdd;
     private JDAction actionDelete;
+    private JDAction actionLoad;
+    private JDAction actionSave;
     
     /**
      * Das Hauptfenster wird erstellt
@@ -108,6 +118,7 @@ public class MainWindow extends JFrame implements ClipboardOwner{
     public MainWindow(){
         loadImages();
         initActions();
+        initMenuBar();
         buildUI();
         getPlugins();
         Toolkit.getDefaultToolkit().getSystemClipboard().setContents(new StringSelection(JDOWNLOADER_ID), this);
@@ -125,15 +136,33 @@ public class MainWindow extends JFrame implements ClipboardOwner{
         actionStartStopDownload = new JDAction("start",  "action.start",     JDAction.APP_START_STOP_DOWNLOADS);
         actionMoveUp            = new JDAction("up",     "action.move_up",   JDAction.ITEMS_MOVE_UP);
         actionMoveDown          = new JDAction("down",   "action.move_down", JDAction.ITEMS_MOVE_DOWN);
-        actionAdd               = new JDAction("add",    "action.add",       JDAction.ITEMS_MOVE_DOWN);
-        actionDelete            = new JDAction("delete", "action.delete",    JDAction.ITEMS_MOVE_DOWN);
+        actionAdd               = new JDAction("add",    "action.add",       JDAction.ITEMS_ADD);
+        actionDelete            = new JDAction("delete", "action.delete",    JDAction.ITEMS_REMOVE);
+        actionLoad              = new JDAction("load",   "action.load",      JDAction.APP_LOAD);
+        actionSave              = new JDAction("save",   "action.save",      JDAction.APP_SAVE);
+    }
+    public void initMenuBar(){
+        JMenu menFile         = new JMenu(Utilities.getResourceString("menu.file"));
+
+        JMenuItem menFileLoad = new JMenuItem(actionLoad); 
+        menFileLoad.setIcon(null);
+
+        JMenuItem menFileSave = new JMenuItem(actionSave);
+        menFileSave.setIcon(null);
+        
+        menFileSave.setIcon(null);
+
+        menFile.add(menFileLoad);
+        menFile.add(menFileSave);
+        menuBar.add(menFile);
+        setJMenuBar(menuBar);
     }
     /**
      * Hier wird die komplette Oberfläche der Applikation zusammengestrickt 
      */
     private void buildUI(){
         tabbedPane        = new JTabbedPane();
-        tabDownloadTable  = new TabDownloadLinks();
+        tabDownloadTable  = new TabDownloadLinks(this);
         tabPluginActivity = new TabPluginActivity();
         statusBar         = new StatusBar();
         tabbedPane.addTab(Utilities.getResourceString("label.tab.download"),        tabDownloadTable);
@@ -143,9 +172,18 @@ public class MainWindow extends JFrame implements ClipboardOwner{
         btnStartStop.setSelectedIcon(new ImageIcon(Utilities.getImage("stop")));
         btnStartStop.setFocusPainted(false); 
         btnStartStop.setBorderPainted(false);
+        btnStartStop.setText(null);
         
-        JButton btnAdd    = new JButton(actionAdd);           btnAdd.setFocusPainted(false);   btnAdd.setBorderPainted(false);
-        JButton btnDelete = new JButton(actionDelete);        btnDelete.setFocusPainted(false);btnDelete.setBorderPainted(false);
+        
+        JButton btnAdd    = new JButton(actionAdd);           
+        btnAdd.setFocusPainted(false);   
+        btnAdd.setBorderPainted(false);
+        btnAdd.setText(null);
+        
+        JButton btnDelete = new JButton(actionDelete);        
+        btnDelete.setFocusPainted(false);
+        btnDelete.setBorderPainted(false);
+        btnDelete.setText(null);
         
         toolBar.setFloatable(false);
         toolBar.add(btnStartStop);
@@ -157,7 +195,6 @@ public class MainWindow extends JFrame implements ClipboardOwner{
         Utilities.addToGridBag(this, tabbedPane,  0, 1, 1, 1, 1, 1, null, GridBagConstraints.BOTH,       GridBagConstraints.CENTER); 
 //        Utilities.addToGridBag(this, speedoMeter, 1, 1, 1, 1, 0, 0, null, GridBagConstraints.VERTICAL,   GridBagConstraints.WEST); 
         Utilities.addToGridBag(this, statusBar,   0, 2, 1, 1, 0, 0, null, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST); 
-//        setJMenuBar(menuBar);
     }
     /**
      * Die Bilder werden aus der JAR Datei nachgeladen
@@ -165,15 +202,17 @@ public class MainWindow extends JFrame implements ClipboardOwner{
     private void loadImages(){
         ClassLoader cl = getClass().getClassLoader();
         Toolkit toolkit = Toolkit.getDefaultToolkit();
-        Utilities.addImage("start",    toolkit.getImage(cl.getResource("img/start.png")));
-        Utilities.addImage("stop",     toolkit.getImage(cl.getResource("img/stop.png")));
         Utilities.addImage("add",      toolkit.getImage(cl.getResource("img/add.png")));
         Utilities.addImage("delete",   toolkit.getImage(cl.getResource("img/delete.png")));
-        Utilities.addImage("up",       toolkit.getImage(cl.getResource("img/up.png")));
         Utilities.addImage("down",     toolkit.getImage(cl.getResource("img/down.png")));
-        Utilities.addImage("mind",     toolkit.getImage(cl.getResource("img/mind.png")));
         Utilities.addImage("led_empty",toolkit.getImage(cl.getResource("img/led_empty.gif")));
         Utilities.addImage("led_green",toolkit.getImage(cl.getResource("img/led_green.gif")));
+        Utilities.addImage("load",     toolkit.getImage(cl.getResource("img/load.png")));
+        Utilities.addImage("mind",     toolkit.getImage(cl.getResource("img/mind.png")));
+        Utilities.addImage("save",     toolkit.getImage(cl.getResource("img/save.png")));
+        Utilities.addImage("start",    toolkit.getImage(cl.getResource("img/start.png")));
+        Utilities.addImage("stop",     toolkit.getImage(cl.getResource("img/stop.png")));
+        Utilities.addImage("up",       toolkit.getImage(cl.getResource("img/up.png")));
     }
     /**
      * Hier werden alle Plugins im aktuellen Verzeichnis geparsed (und im Classpath)
@@ -229,6 +268,7 @@ public class MainWindow extends JFrame implements ClipboardOwner{
         boolean useJAC = true;
         if(useJAC){
             try {
+                logger.info("captchaAddress:"+captchaAddress);
                 String host = plugin.getHost();
                 JAntiCaptcha jac = new JAntiCaptcha(host);
                 BufferedImage captchaImage = ImageIO.read(new URL(captchaAddress));
@@ -275,8 +315,58 @@ public class MainWindow extends JFrame implements ClipboardOwner{
                     download=null;
                 }
                 break;
+            case JDAction.APP_SAVE:
+                JFileChooser fileChooserSave = new JFileChooser();
+                if(fileChooserSave.showSaveDialog(this) == JFileChooser.APPROVE_OPTION){
+                    File fileOutput = fileChooserSave.getSelectedFile();
+                    try {
+                        FileOutputStream fos = new FileOutputStream(fileOutput);
+                        ObjectOutputStream oos = new ObjectOutputStream(fos);
+                        Vector<DownloadLink> links = tabDownloadTable.getLinks();
+                        oos.writeObject(links);
+                        oos.close();
+                    }
+                    catch (FileNotFoundException e) { e.printStackTrace(); }
+                    catch (IOException e)           { e.printStackTrace(); }
+                }
+                break;
+            case JDAction.APP_LOAD:
+//                JFileChooser fileChooserLoad = new JFileChooser();
+//                if(fileChooserLoad.showOpenDialog(this) == JFileChooser.APPROVE_OPTION){
+
+//                    File fileInput = fileChooserLoad.getSelectedFile();
+                File fileInput = new File("d:\\jDownloader.sav");
+                    try {
+                        FileInputStream fis = new FileInputStream(fileInput);
+                        ObjectInputStream ois = new ObjectInputStream(fis);
+                        Vector<DownloadLink> links;
+                        try {
+                            links = (Vector<DownloadLink>)ois.readObject();
+                            PluginForHost neededPlugin;
+                            for(int i=0;i<links.size();i++){
+
+                                neededPlugin = getPluginForHost(links.get(i).getHost());
+                                links.get(i).setPlugin(neededPlugin);
+                            }
+                            tabDownloadTable.setLinks(links);
+                        }
+                        catch (ClassNotFoundException e) {
+                            e.printStackTrace();
+                        }
+                        ois.close();
+                    }
+                    catch (FileNotFoundException e) { e.printStackTrace(); }
+                    catch (IOException e)           { e.printStackTrace(); }
+//                }
+                break;
         }
-        
+    }
+    public PluginForHost getPluginForHost(String host){
+        for(int i=0;i<pluginsForHost.size();i++){
+            if(pluginsForHost.get(i).getHost().equals(host))
+                return pluginsForHost.get(i);
+        }
+        return null;
     }
     /**
      * Methode, um eine Veränderung der Zwischenablage zu bemerken und zu verarbeiten
@@ -323,29 +413,34 @@ public class MainWindow extends JFrame implements ClipboardOwner{
          */
         private static final long serialVersionUID = 7393495345332708426L;
 
-        public static final int ITEMS_MOVE_UP           = 1;
-        public static final int ITEMS_MOVE_DOWN         = 2;
-        public static final int ITEMS_MOVE_TOP          = 3;
-        public static final int ITEMS_MOVE_BOTTOM       = 4;
-        public static final int ITEMS_DISABLE           = 5;
-        public static final int ITEMS_ENABLE            = 6;
-        public static final int APP_START_STOP_DOWNLOADS = 7;
-        public static final int APP_SHOW_LOG            = 8;
-        public static final int APP_STOP_DOWNLOADS      = 9;
+        public static final int ITEMS_MOVE_UP            =  1;
+        public static final int ITEMS_MOVE_DOWN          =  2;
+        public static final int ITEMS_MOVE_TOP           =  3;
+        public static final int ITEMS_MOVE_BOTTOM        =  4;
+        public static final int ITEMS_DISABLE            =  5;
+        public static final int ITEMS_ENABLE             =  6;
+        public static final int ITEMS_ADD                =  7;
+        public static final int ITEMS_REMOVE             =  8;
+        public static final int APP_START_STOP_DOWNLOADS =  9;
+        public static final int APP_SHOW_LOG             = 10;
+        public static final int APP_STOP_DOWNLOADS       = 11;
+        public static final int APP_SAVE                 = 12;
+        public static final int APP_LOAD                 = 13;
         
         private int actionID;
         /**
          * Erstellt ein neues JDAction-Objekt
          * 
          * @param iconName 
-         * @param descriptionResource Text für den Tooltip aus der Resourcedatei
+         * @param resourceName Name der Resource, aus der die Texte geladen werden sollen
          * @param actionID ID dieser Aktion
          */
-        public JDAction(String iconName, String descriptionResource, int actionID){
+        public JDAction(String iconName, String resourceName, int actionID){
             super();
             ImageIcon icon = new ImageIcon(Utilities.getImage(iconName));
             putValue(Action.SMALL_ICON, icon);
-            putValue(Action.SHORT_DESCRIPTION, Utilities.getResourceString(descriptionResource));
+            putValue(Action.SHORT_DESCRIPTION, Utilities.getResourceString(resourceName+".desc"));
+            putValue(Action.NAME,              Utilities.getResourceString(resourceName+".name"));
             this.actionID = actionID;
         }
         public void actionPerformed(ActionEvent e) {
@@ -388,7 +483,7 @@ public class MainWindow extends JFrame implements ClipboardOwner{
             // Zwischenablage entschlüsseln kann. Ist das der Fall, wird die entsprechende Stelle
             // verarbeitet und gelöscht, damit sie keinesfalls nochmal verarbeitet wird.
             for(int i=0; i<pluginsForDecrypt.size();i++){
-                pDecrypt = pluginsForDecrypt.elementAt(i);
+                pDecrypt = pluginsForDecrypt.get(i);
                 if(pDecrypt.isClipboardEnabled() && pDecrypt.canHandle(data)){
                     statusBar.setPluginForDecryptActive(true);
                     cryptedLinks.addAll(pDecrypt.getMatches(data,pDecrypt.getSupportedLinks()));
@@ -399,7 +494,7 @@ public class MainWindow extends JFrame implements ClipboardOwner{
             }
             // Danach wird der (noch verbleibende) Inhalt der Zwischenablage an die Plugins der Hoster geschickt.
             for(int i=0; i<pluginsForHost.size();i++){
-                pHost = pluginsForHost.elementAt(i);
+                pHost = pluginsForHost.get(i);
                 if(pHost.isClipboardEnabled() && pHost.canHandle(data)){
                     links.addAll(pHost.getDownloadLinks(data));
                     data = pHost.cutMatches(data);
@@ -411,7 +506,7 @@ public class MainWindow extends JFrame implements ClipboardOwner{
             while(iterator.hasNext()){
                 String decrypted = iterator.next();
                 for(int i=0; i<pluginsForHost.size();i++){
-                    pHost = pluginsForHost.elementAt(i);
+                    pHost = pluginsForHost.get(i);
                     if(pHost.isClipboardEnabled() && pHost.canHandle(decrypted)){
                         links.addAll(pHost.getDownloadLinks(decrypted));
                         iterator.remove();
