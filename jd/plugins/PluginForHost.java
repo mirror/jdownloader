@@ -1,12 +1,12 @@
-﻿package jd.plugins;
+package jd.plugins;
 
 import java.net.URLConnection;
 import java.util.Vector;
 
 /**
- * Dies ist die Oberklasse für alle Plugins, die von einem Anbieter 
+ * Dies ist die Oberklasse für alle Plugins, die von einem Anbieter
  * Dateien herunterladen können
- * 
+ *
  * @author astaldo
  */
 public abstract class PluginForHost extends Plugin{
@@ -14,8 +14,8 @@ public abstract class PluginForHost extends Plugin{
     /**
      * Hier werden Treffer für Downloadlinks dieses Anbieters in diesem Text gesucht.
      * Gefundene Links werden dann in einem Vector zurückgeliefert
-     * 
-     * @param data Ein Text mit beliebig vielen Downloadlinks dieses Anbieters 
+     *
+     * @param data Ein Text mit beliebig vielen Downloadlinks dieses Anbieters
      * @return Ein Vector mit den gefundenen Downloadlinks
      */
     public Vector<DownloadLink> getDownloadLinks(String data){
@@ -29,7 +29,7 @@ public abstract class PluginForHost extends Plugin{
                         this,
                         file.substring(file.lastIndexOf("/")+1,file.length()),
                         getHost(),
-                        file, 
+                        file,
                         true));
             }
         }

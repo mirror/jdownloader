@@ -1,4 +1,4 @@
-﻿package jd.plugins;
+package jd.plugins;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -11,7 +11,7 @@ import java.util.logging.SimpleFormatter;
  * Mit dieser Klasse können die Logmeldungen anders dargestellt werden.
  * Der Code wurde hauptsächlich aus SimpleFormatter übernommen.
  * Lediglich die Format Methode wurde ein wenig umgestellt.
- * 
+ *
  * @author astaldo
  *
  */

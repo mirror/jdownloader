@@ -1,4 +1,4 @@
-﻿package jd.router;
+package jd.router;
 
 import java.io.EOFException;
 import java.io.File;
@@ -9,15 +9,15 @@ import java.io.InputStream;
 import java.util.Vector;
 /**
  * Versuch, die Routers.dat auszulesen
- * 
+ *
  * @author astaldo
  *
  */
 public class Parser {
     Vector<Object> splittedData = new Vector<Object>();
-    
+
     int positionInFile=0;
-    
+
     public void parseFile(File file){
         int count=0;
         try {
@@ -36,7 +36,7 @@ public class Parser {
         addToVector(readInt(fis));
         addToVector(readByte(fis));
 
-        addToVector(readNextString(fis));       
+        addToVector(readNextString(fis));
         addToVector(readLong(fis));
 
         for(int i=0;i<10;i++){
@@ -49,16 +49,16 @@ public class Parser {
             addToVector(readNextString(fis));
         }
         for(int i=0;i<5;i++){
-             addToVector(readNextString(fis));   
+             addToVector(readNextString(fis));
         }
-        
+
         byte loop2 = readByte(fis);
         System.out.println(loop2);
         for(int i=0;i<loop2;i++){
             addToVector(readNextString(fis));
             addToVector(readNextString(fis));
         }
-       
+
         int loop3 = readInt(fis);
         System.out.println(loop3);
         for(int i=0;i<loop3;i++){

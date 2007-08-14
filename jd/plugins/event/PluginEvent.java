@@ -1,11 +1,11 @@
-﻿package jd.plugins.event;
+package jd.plugins.event;
 
 import java.awt.AWTEvent;
 
 import jd.plugins.Plugin;
 /**
  * Mit diesen Events kommunizieren die Plugins mit dem Hauptprogramm
- * 
+ *
  * @author astaldo
  */
 public class PluginEvent extends AWTEvent{
@@ -32,7 +32,7 @@ public class PluginEvent extends AWTEvent{
      * Optionaler Parameter
      */
     private Object parameter;
-    
+
     public PluginEvent(Plugin source, int eventID, Object parameter){
         super(source,eventID);
         this.source =source;

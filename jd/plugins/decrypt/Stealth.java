@@ -1,4 +1,4 @@
-﻿package jd.plugins.decrypt;
+package jd.plugins.decrypt;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
@@ -13,7 +13,7 @@ import jd.plugins.RequestInfo;
 import jd.plugins.event.PluginEvent;
 /**
  * http://stealth.to/?id=13wz0z8lds3nun4dihetpsqgzte4t2
- * 
+ *
  * http://stealth.to/?id=ol0fhnjxpogioavfnmj3aub03s10nt
  *
  * @author astaldo
@@ -26,13 +26,13 @@ public class Stealth extends PluginForDecrypt{
     private Pattern patternSupported = Pattern.compile("http://stealth\\.to/\\?id=[^\\s\"]*");
     /**
      * Dieses Pattern erkennt einen Parameter für eine Downloadadress
-     * 
+     *
      * popup *\( *\"([0-9]*)\" *, *\"([0-9]*)\" *\)
      */
     private Pattern patternLinkParameter = Pattern.compile("popup *\\( *\\\"([0-9]*)\\\" *, *\\\"([0-9]*)\\\" *\\)");
-    
-    public Stealth(){ 
-        super();    
+
+    public Stealth(){
+        super();
         steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
         currentStep = steps.firstElement();
     }
@@ -43,7 +43,7 @@ public class Stealth extends PluginForDecrypt{
     @Override public boolean isClipboardEnabled()     { return true;             }
     @Override public String getVersion()              { return version;          }
     @Override public String getPluginID()             { return "STEALTH-1.0.0."; }
-    @Override 
+    @Override
     public Vector<String> decryptLink(String cryptedLink)     {
         Vector<String> decryptedLinks = new Vector<String>();
 
@@ -57,7 +57,7 @@ public class Stealth extends PluginForDecrypt{
         catch (MalformedURLException e) { e.printStackTrace(); }
         catch (IOException e)           { e.printStackTrace(); }
         firePluginEvent(new PluginEvent(this,PluginEvent.PLUGIN_PROGRESS_MAX,countHits));
-        
+
         //Hier werden alle verschlüsselten Links behandelt
         try {
             URL url = new URL(cryptedLink);
@@ -84,6 +84,6 @@ public class Stealth extends PluginForDecrypt{
     @Override
     public PluginStep getNextStep(Object parameter) {
         return currentStep;
-    }    
-    
+    }
+
 }

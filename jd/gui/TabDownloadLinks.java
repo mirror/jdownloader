@@ -1,4 +1,4 @@
-﻿package jd.gui;
+package jd.gui;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
@@ -25,7 +25,7 @@ import jd.plugins.event.PluginEvent;
 import jd.plugins.event.PluginListener;
 /**
  * Diese Tabelle zeigt alle zur Verfügung stehenden Downloads an.
- * 
+ *
  * @author astaldo
  */
 public class TabDownloadLinks extends JPanel implements PluginListener{
@@ -33,7 +33,7 @@ public class TabDownloadLinks extends JPanel implements PluginListener{
     private final int COL_NAME     = 1;
     private final int COL_HOST     = 2;
     private final int COL_PROGRESS = 3;
-    
+
     private final Color COLOR_ERROR    = new Color(255,0,0,20);
     private final Color COLOR_DISABLED = new Color(100,100,100,20);
     /**
@@ -60,7 +60,7 @@ public class TabDownloadLinks extends JPanel implements PluginListener{
     private TabDownloadLinks(){}
     /**
      * Erstellt eine neue Tabelle
-     * 
+     *
      * @param parent Das aufrufende Hauptfenster
      */
     public TabDownloadLinks(MainWindow parent){
@@ -80,7 +80,7 @@ public class TabDownloadLinks extends JPanel implements PluginListener{
                 case COL_PROGRESS: column.setPreferredWidth(150); break;
             }
         }
-        
+
         JScrollPane scrollPane = new JScrollPane(table);
         add(scrollPane);
     }
@@ -90,7 +90,7 @@ public class TabDownloadLinks extends JPanel implements PluginListener{
     }
     /**
      * Hier werden Links zu dieser Tabelle hinzugefügt.
-     * 
+     *
      * @param links Ein Vector mit Downloadlinks, die alle hinzugefügt werden sollen
      */
     public void addLinks(Vector<DownloadLink> links){
@@ -104,9 +104,9 @@ public class TabDownloadLinks extends JPanel implements PluginListener{
     }
     /**
      * TODO Verschieben von zellen
-     * 
+     *
      * Hiermit werden die selektierten Zeilen innerhalb der Tabelle verschoben
-     * 
+     *
      * @param direction Zeigt wie/wohin die Einträge verschoben werden sollen
      */
     public void moveItems(int direction){
@@ -118,7 +118,7 @@ public class TabDownloadLinks extends JPanel implements PluginListener{
     }
     /**
      * Diese Methode liefert den nächsten Download zurück.
-     * 
+     *
      * @return Der nächste aktive Download
      */
     public DownloadLink getNextDownloadLink(){
@@ -163,7 +163,7 @@ public class TabDownloadLinks extends JPanel implements PluginListener{
     }
     /**
      * Dieses TableModel sorgt dafür, daß die Daten der Downloadlinks korrekt dargestellt werden
-     * 
+     *
      * @author astaldo
      */
     private class InternalTableModel extends AbstractTableModel{
@@ -185,18 +185,18 @@ public class TabDownloadLinks extends JPanel implements PluginListener{
             }
             return null;
         }
-        
+
         public Class<?> getColumnClass(int columnIndex) {
             switch(columnIndex){
                 case COL_INDEX:
 //                    return Integer.class;
-                case COL_NAME: 
-                case COL_HOST: 
+                case COL_NAME:
+                case COL_HOST:
                     return String.class;
-                case COL_PROGRESS: 
+                case COL_PROGRESS:
                     return JComponent.class;
             }
-            return String.class;    
+            return String.class;
         }
         public int getColumnCount() {
             return 4;
@@ -206,7 +206,7 @@ public class TabDownloadLinks extends JPanel implements PluginListener{
         }
         public Object getValueAt(int rowIndex, int columnIndex) {
             if(rowIndex< allLinks.size()){
-                DownloadLink downloadLink = allLinks.get(rowIndex); 
+                DownloadLink downloadLink = allLinks.get(rowIndex);
                 switch(columnIndex){
                     case COL_INDEX:    return rowIndex;
                     case COL_NAME:     return downloadLink.getName();
@@ -223,7 +223,7 @@ public class TabDownloadLinks extends JPanel implements PluginListener{
         public DownloadLink getDownloadLinkAtRow(int row) {
             return allLinks.get(row);
         }
-        
+
     }
     private class InternalTableCellRenderer extends DefaultTableCellRenderer{
         /**

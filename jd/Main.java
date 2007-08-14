@@ -1,4 +1,4 @@
-﻿package jd;
+package jd;
 
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
@@ -6,16 +6,21 @@ import javax.swing.UnsupportedLookAndFeelException;
 import jd.gui.MainWindow;
 
 import com.sun.java.swing.plaf.windows.WindowsLookAndFeel;
+
+// TODO Astaldo : GUI
+// TODO Astaldo : Programmsteuerung
+// TODO Astaldo : Speedometer
+// TODO Wulfskin: Reconnect Paket
+//
+// TODO Shortcuts
+// TODO Konfiguration speichern
+// TODO
+//
+
+
 /**
  * Start der Applikation
  *
- * TODO Astaldo : Speedometer
- * TODO Astaldo : Serialisierung
- * TODO Astaldo : GUI
- * TODO Astaldo : Konfiguration speichern
- * TODO Wulfskin: Reconnect Paket
- * TODO Coalado : AntiCaptcha
- * 
  * @author astaldo
  */
 public class Main {

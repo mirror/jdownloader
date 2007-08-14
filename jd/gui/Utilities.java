@@ -1,4 +1,4 @@
-﻿package jd.gui;
+package jd.gui;
 
 import java.awt.Component;
 import java.awt.Container;
@@ -21,9 +21,9 @@ public class Utilities {
      * Alle verfügbaren Bilder werden hier gespeichert
      */
     private static HashMap<String, Image> images = new HashMap<String, Image>();
-    
+
     public static FilterJAR filterJar = new FilterJAR();
-    
+
     /**
      * Genau wie add, aber mit den Standardwerten iPadX,iPadY=0
      *
@@ -125,7 +125,7 @@ public class Utilities {
     }
     /**
      * Liefert aus der Map der geladenen Bilder ein Element zurück
-     * 
+     *
      * @param imageName Name des Bildes das zurückgeliefert werden soll
      * @return Das gewünschte Bild oder null, falls es nicht gefunden werden kann
      */
@@ -134,7 +134,7 @@ public class Utilities {
     }
     /**
      * Fügt ein Bild zur Map hinzu
-     * 
+     *
      * @param imageName Name des Bildes, daß hinzugefügt werden soll
      * @param image Das hinzuzufügende Bild
      */
@@ -143,7 +143,7 @@ public class Utilities {
     }
     /**
      * Als FileFilter akzeptiert diese Klasse alle .jar Dateien
-     * 
+     *
      * @author astaldo
      */
     private static class FilterJAR implements FileFilter{

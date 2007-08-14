@@ -1,4 +1,4 @@
-﻿package jd.plugins;
+package jd.plugins;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
@@ -30,12 +30,12 @@ import jd.plugins.event.PluginListener;
 /**
  * Diese abstrakte Klasse steuert den Zugriff auf weitere Plugins.
  * Alle Plugins müssen von dieser Klasse abgeleitet werden.
- * 
+ *
  * Alle Plugins verfügen über einen Event Mechanismus
- *  
+ *
  * Hinweise zum Pluginsystem findet ihr hier
  * http://java.sun.com/j2se/1.5.0/docs/guide/jar/jar.html
- * 
+ *
  * @author astaldo
  */
 public abstract class Plugin{
@@ -58,12 +58,12 @@ public abstract class Plugin{
     public abstract String               getPluginName();
     /**
      * Liefert eine einmalige ID des Plugins zurück
-     * @return
+     * @return Plugin ID
      */
     public abstract String               getPluginID();
     /**
      * Hier wird der Author des Plugins ausgelesen
-     * 
+     *
      * @return Der Author des Plugins
      */
     public abstract String               getCoder();
@@ -74,14 +74,14 @@ public abstract class Plugin{
     public abstract String               getVersion();
     /**
      * Ein regulärer Ausdruck, der anzeigt, welche Links von diesem Plugin unterstützt werden
-     * 
+     *
      * @return Ein regulärer Ausdruck
      * @see Pattern
      */
     public abstract Pattern              getSupportedLinks();
     /**
      * Liefert den Anbieter zurück, für den dieses Plugin geschrieben wurde
-     * 
+     *
      * @return Der unterstützte Anbieter
      */
     public abstract String               getHost();
@@ -93,7 +93,7 @@ public abstract class Plugin{
     /**
      * Diese Methode liefert den nächsten Schritt zurück, den das Plugin vornehmen wird.
      * Falls der letzte Schritt erreicht ist, wird null zurückgegeben
-     * 
+     *
      * @param parameter Ein Übergabeparameter
      * @return der nächste Schritt oder null, falls alle abgearbeitet wurden
      */
@@ -123,7 +123,7 @@ public abstract class Plugin{
      * Ein Logger, um Meldungen darzustellen
      */
     protected static Logger logger = null;
-    
+
     protected Plugin(){
         pluginListener = new Vector<PluginListener>();
         steps = new Vector<PluginStep>();
@@ -131,7 +131,7 @@ public abstract class Plugin{
     /**
      * Liefert die Klasse zurück, mit der Nachrichten ausgegeben werden können
      * Falls dieser Logger nicht existiert, wird ein neuer erstellt
-     * 
+     *
      * @return LogKlasse
      */
     public static Logger getLogger(){
@@ -148,11 +148,11 @@ public abstract class Plugin{
             logger.setLevel(Level.ALL);
         }
         return logger;
-    } 
+    }
     /**
      * Hier wird geprüft, ob das Plugin diesen Text oder einen Teil davon handhaben kann.
      * Dazu wird einfach geprüft, ob ein Treffer des Patterns vorhanden ist.
-     * 
+     *
      * @param data der zu prüfende Text
      * @return wahr, falls ein Treffer gefunden wurde.
      */
@@ -168,7 +168,7 @@ public abstract class Plugin{
     }
     /**
      * Findet ein einzelnes Vorkommen und liefert den vollständigen Treffer oder eine Untergruppe zurück
-     * 
+     *
      * @param data Der zu durchsuchende Text
      * @param pattern Das Muster, nach dem gesucht werden soll
      * @param group Die Gruppe, die zurückgegeben werden soll. 0 ist der vollständige Treffer.
@@ -186,7 +186,7 @@ public abstract class Plugin{
     }
     /**
      * Diese Methode findet alle Vorkommnisse des Pluginpatterns in dem Text, und gibt die Treffer als Vector zurück
-     * 
+     *
      * @param data Der zu durchsuchende Text
      * @param pattern Das Muster, nach dem gesucht werden soll
      * @return Alle Treffer in dem Text
@@ -208,10 +208,10 @@ public abstract class Plugin{
     }
     /**
      * Zählt, wie oft das Pattern des Plugins in dem übergebenen Text vorkommt
-     * 
+     *
      * @param data Der zu durchsuchende Text
      * @param pattern Das Pattern, daß im Text gefunden werden soll
-     * 
+     *
      * @return Anzahl der Treffer
      */
     protected int countOccurences(String data, Pattern pattern){
@@ -230,7 +230,7 @@ public abstract class Plugin{
     /**
      * Diese Funktion schneidet alle Vorkommnisse des vom Plugin unterstützten
      * Pattern aus
-     * 
+     *
      * @param data Text, aus dem das Pattern ausgeschnitter werden soll
      * @return Der resultierende String
      */
@@ -239,7 +239,7 @@ public abstract class Plugin{
     }
     /**
      * Schickt ein GetRequest an eine Adresse
-     * 
+     *
      * @param link Die URL, die ausgelesen werden soll
      * @return Ein Objekt, daß alle Informationen der Zieladresse beinhält
      * @throws IOException
@@ -250,7 +250,7 @@ public abstract class Plugin{
     /**
      * TODO postRequest : referrer
      * Schickt ein GetRequest an eine Adresse
-     * 
+     *
      * @param link Der Link, an den die GET Anfrage geschickt werden soll
      * @param cookie Cookie
      * @param referrer Referrer
@@ -264,7 +264,7 @@ public abstract class Plugin{
     }
     /**
      * Schickt ein PostRequest an eine Adresse
-     * 
+     *
      * @param link Der Link, an den die POST Anfrage geschickt werden soll
      * @param parameter Die Parameter, die übergeben werden sollen
      * @return Ein Objekt, daß alle Informationen der Zieladresse beinhält
@@ -275,9 +275,9 @@ public abstract class Plugin{
     }
     /**
      * TODO postRequest : referrer
-     * 
+     *
      * Schickt ein PostRequest an eine Adresse
-     * 
+     *
      * @param link Der Link, an den die POST Anfrage geschickt werden soll
      * @param cookie Cookie
      * @param referrer Referrer
@@ -294,15 +294,15 @@ public abstract class Plugin{
         if(parameter != null)
             wr.write(parameter);
         wr.flush();
-        
-    
+
+
         RequestInfo requestInfo = readFromURL(httpConnection);
         wr.close();
         return requestInfo;
     }
     /**
      * Liest Daten von einer URL
-     * 
+     *
      * @param urlInput Die URL Verbindung, von der geselen werden soll
      * @return Ein Objekt, daß alle Informationen der Zieladresse beinhält
      * @throws IOException
@@ -322,10 +322,10 @@ public abstract class Plugin{
     }
     /**
      * Speichert einen InputStream binär auf der Festplatte ab
-     * 
+     *
      * @param downloadLink der DownloadLink
      * @param urlConnection Wenn bereits vom Plugin eine vorkonfigurierte URLConnection vorhanden ist, wird diese
-     *                      hier übergeben und benutzt. Ansonsten erfolgt ein normaler GET Download von 
+     *                      hier übergeben und benutzt. Ansonsten erfolgt ein normaler GET Download von
      *                      der URL, die im DownloadLink hinterlegt ist
      * @return wahr, wenn alle Daten ausgelesen und gespeichert wurden
      */
@@ -337,7 +337,7 @@ public abstract class Plugin{
         try{
             byte buffer[] = new byte[READ_BUFFER];
             int count;
-            
+
             //Falls keine urlConnection übergeben wurde
             if(urlConnection == null)
                 bis = new BufferedInputStream(downloadLink.getUrlDownload().openConnection().getInputStream());
@@ -353,10 +353,10 @@ public abstract class Plugin{
                     downloadedBytes +=count;
                     downloadLink.setDownloadedBytes(downloadedBytes);
                     firePluginEvent(new PluginEvent(this,PluginEvent.PLUGIN_DATA_CHANGED,null));
-                }   
+                }
             }
-            while (count != -1 && !aborted); // Muss -1 sein und nicht buffer.length da durch 
-                                             //  eine langsame Internetverbindung der Puffer nicht immer komplett gefüllt ist            
+            while (count != -1 && !aborted); // Muss -1 sein und nicht buffer.length da durch
+                                             //  eine langsame Internetverbindung der Puffer nicht immer komplett gefüllt ist
             fos.close();
             bis.close();
             firePluginEvent(new PluginEvent(this,PluginEvent.PLUGIN_PROGRESS_FINISH,null));
@@ -375,9 +375,9 @@ public abstract class Plugin{
         return false;
     }
     /**
-     * Diese Methode erstellt einen einzelnen String aus einer HashMap mit 
+     * Diese Methode erstellt einen einzelnen String aus einer HashMap mit
      * Parametern für ein Post-Request.
-     * 
+     *
      * @param parameters HashMap mit den Parametern
      * @return Codierter String
      */
@@ -398,29 +398,29 @@ public abstract class Plugin{
             if(iterator.hasNext())
                 parameterLine.append("&");
         }
-        
+
         return parameterLine.toString();
     }
-   
+
     ///////////////////////////////////////////////////////
     // Multicaster
     public void addPluginListener(PluginListener listener) {
         synchronized (pluginListener) {
-            pluginListener.add(listener);    
+            pluginListener.add(listener);
         }
-    } 
-    public void removePluginListener(PluginListener listener) { 
+    }
+    public void removePluginListener(PluginListener listener) {
         synchronized (pluginListener) {
             pluginListener.remove(listener);
         }
-    } 
-    public void firePluginEvent(PluginEvent pluginEvent) { 
+    }
+    public void firePluginEvent(PluginEvent pluginEvent) {
         synchronized (pluginListener) {
-            Iterator<PluginListener> recIt = pluginListener.iterator(); 
+            Iterator<PluginListener> recIt = pluginListener.iterator();
 
-            while(recIt.hasNext()) { 
-                ((PluginListener)recIt.next()).pluginEvent(pluginEvent); 
+            while(recIt.hasNext()) {
+                ((PluginListener)recIt.next()).pluginEvent(pluginEvent);
             }
         }
-    } 
+    }
 }

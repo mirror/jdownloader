@@ -1,7 +1,7 @@
-﻿package jd.plugins;
+package jd.plugins;
 /**
  * Diese Klasse bildet alle Informationen ab, die bei einem Request herausgefunden werden können
- * 
+ *
  * @author astaldo
  */
 public class RequestInfo {
@@ -21,7 +21,7 @@ public class RequestInfo {
      * Cookie
      */
     private String cookie   = null;
-    
+
     public RequestInfo(String htmlCode, String location, String cookie, String headers){
         this.htmlCode = htmlCode;
         this.location = location;

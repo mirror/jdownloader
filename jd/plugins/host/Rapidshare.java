@@ -1,4 +1,4 @@
-﻿package jd.plugins.host;
+package jd.plugins.host;
 
 import java.io.IOException;
 import java.io.OutputStreamWriter;
@@ -28,24 +28,24 @@ public class Rapidshare extends PluginForHost{
      */
     private Pattern patternForCaptcha = Pattern.compile("<form *name *= *\"dl\" (?s).*<img *src *= *\"([^\\n\"]*)\">");
     /**
-     * 
+     *
      * <form name="dl".* action="([^\n"]*)"(?s).*?<input type="submit" name="actionstring" value="[^\n"]*"
      */
     private Pattern patternForFormData = Pattern.compile("<form name=\"dl\".* action=\"([^\\n\"]*)\"(?s).*?<input type=\"submit\" name=\"actionstring\" value=\"([^\\n\"]*)\"");
     /**
      * Das DownloadLimit wurde erreicht
-     * (?s)Downloadlimit.*Oder warte ([0-9]+)  
+     * (?s)Downloadlimit.*Oder warte ([0-9]+)
      */
     private Pattern patternErrorDownloadLimitReached = Pattern.compile("(?s)\\((?:oder warte|or wait) [0-9]* (?:minuten|minutes)\\)",Pattern.CASE_INSENSITIVE);
     private Pattern patternErrorCaptchaWrong         = Pattern.compile("(zugriffscode falsch|code wrong)",Pattern.CASE_INSENSITIVE);
     private Pattern patternErrorFileAbused           = Pattern.compile("(darf nicht verteilt werden|forbidden to be shared)",Pattern.CASE_INSENSITIVE);
     private Pattern patternErrorFileNotFound         = Pattern.compile("(datei nicht gefunden|file not found)",Pattern.CASE_INSENSITIVE);
-    
+
     private int waitTime          = 500;
     private String captchaAddress;
     private String postTarget;
     private String actionString;
-    private HashMap<String, String> postParameter = new HashMap<String, String>(); 
+    private HashMap<String, String> postParameter = new HashMap<String, String>();
 
     @Override public String getCoder()            { return "astaldo";               }
     @Override public String getHost()             { return host;                    }
@@ -54,7 +54,7 @@ public class Rapidshare extends PluginForHost{
     @Override public String getVersion()          { return version;                 }
     @Override public boolean isClipboardEnabled() { return true;                    }
     @Override public String getPluginID()         { return "RAPIDSHARE.COM-1.0.0."; }
-    
+
     public Rapidshare(){
         super();
         steps.add(new PluginStep(PluginStep.STEP_WAIT_TIME, null));
@@ -118,7 +118,7 @@ public class Rapidshare extends PluginForHost{
             }
             catch (MalformedURLException e) { e.printStackTrace(); }
             catch (IOException e)           { e.printStackTrace(); }
-            
+
         }
         int index = steps.indexOf(currentStep);
         todo = currentStep;
@@ -155,18 +155,18 @@ public class Rapidshare extends PluginForHost{
         try {
             URLConnection urlConnection = new URL(postTarget).openConnection();
             urlConnection.setDoOutput(true);
-            
+
             //Post Parameter vorbereiten
             String postParams = createPostParameterFromHashMap(postParameter);
             OutputStreamWriter wr = new OutputStreamWriter(urlConnection.getOutputStream());
             wr.write(postParams);
             wr.flush();
-            
+
             int length = urlConnection.getContentLength();
             downloadLink.setDownloadLength(length);
             return download(downloadLink, urlConnection);
         }
         catch (IOException e) { logger.severe("URL could not be opened. "+e.toString());}
         return false;
-    } 
+    }
 }

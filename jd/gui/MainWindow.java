@@ -1,4 +1,4 @@
-﻿package jd.gui;
+package jd.gui;
 
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
@@ -55,12 +55,12 @@ import jd.plugins.PluginStep;
 import sun.misc.Service;
 
 public class MainWindow extends JFrame implements ClipboardOwner{
-   
+
     /**
      * serialVersionUID
      */
     private static final long serialVersionUID = 3966433144683787356L;
-    
+
     private static final String JDOWNLOADER_ID = "JDownloader active";
     /**
      * Die Menüleiste
@@ -118,7 +118,7 @@ public class MainWindow extends JFrame implements ClipboardOwner{
     private JDAction actionDelete;
     private JDAction actionLoad;
     private JDAction actionSave;
-    
+
     /**
      * Das Hauptfenster wird erstellt
      */
@@ -148,17 +148,17 @@ public class MainWindow extends JFrame implements ClipboardOwner{
         actionSave              = new JDAction("save",   "action.save",      JDAction.APP_SAVE);
     }
     /**
-     * Das Menü wird hier initialisiert 
+     * Das Menü wird hier initialisiert
      */
     public void initMenuBar(){
         JMenu menFile         = new JMenu(Utilities.getResourceString("menu.file"));
 
-        JMenuItem menFileLoad = new JMenuItem(actionLoad); 
+        JMenuItem menFileLoad = new JMenuItem(actionLoad);
         menFileLoad.setIcon(null);
 
         JMenuItem menFileSave = new JMenuItem(actionSave);
         menFileSave.setIcon(null);
-        
+
         menFileSave.setIcon(null);
 
         menFile.add(menFileLoad);
@@ -167,7 +167,7 @@ public class MainWindow extends JFrame implements ClipboardOwner{
         setJMenuBar(menuBar);
     }
     /**
-     * Hier wird die komplette Oberfläche der Applikation zusammengestrickt 
+     * Hier wird die komplette Oberfläche der Applikation zusammengestrickt
      */
     private void buildUI(){
         tabbedPane        = new JTabbedPane();
@@ -179,31 +179,31 @@ public class MainWindow extends JFrame implements ClipboardOwner{
 
         btnStartStop  = new JToggleButton(actionStartStopDownload);
         btnStartStop.setSelectedIcon(new ImageIcon(Utilities.getImage("stop")));
-        btnStartStop.setFocusPainted(false); 
+        btnStartStop.setFocusPainted(false);
         btnStartStop.setBorderPainted(false);
         btnStartStop.setText(null);
-        
-        
-        JButton btnAdd    = new JButton(actionAdd);           
-        btnAdd.setFocusPainted(false);   
+
+
+        JButton btnAdd    = new JButton(actionAdd);
+        btnAdd.setFocusPainted(false);
         btnAdd.setBorderPainted(false);
         btnAdd.setText(null);
-        
-        JButton btnDelete = new JButton(actionDelete);        
+
+        JButton btnDelete = new JButton(actionDelete);
         btnDelete.setFocusPainted(false);
         btnDelete.setBorderPainted(false);
         btnDelete.setText(null);
-        
+
         toolBar.setFloatable(false);
         toolBar.add(btnStartStop);
         toolBar.add(btnAdd);
         toolBar.add(btnDelete);
 
         setLayout(new GridBagLayout());
-        Utilities.addToGridBag(this, toolBar,     0, 0, 1, 1, 0, 0, null, GridBagConstraints.HORIZONTAL, GridBagConstraints.NORTH); 
-        Utilities.addToGridBag(this, tabbedPane,  0, 1, 1, 1, 1, 1, null, GridBagConstraints.BOTH,       GridBagConstraints.CENTER); 
-//        Utilities.addToGridBag(this, speedoMeter, 1, 1, 1, 1, 0, 0, null, GridBagConstraints.VERTICAL,   GridBagConstraints.WEST); 
-        Utilities.addToGridBag(this, statusBar,   0, 2, 1, 1, 0, 0, null, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST); 
+        Utilities.addToGridBag(this, toolBar,     0, 0, 1, 1, 0, 0, null, GridBagConstraints.HORIZONTAL, GridBagConstraints.NORTH);
+        Utilities.addToGridBag(this, tabbedPane,  0, 1, 1, 1, 1, 1, null, GridBagConstraints.BOTH,       GridBagConstraints.CENTER);
+//        Utilities.addToGridBag(this, speedoMeter, 1, 1, 1, 1, 0, 0, null, GridBagConstraints.VERTICAL,   GridBagConstraints.WEST);
+        Utilities.addToGridBag(this, statusBar,   0, 2, 1, 1, 0, 0, null, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     }
     /**
      * Die Bilder werden aus der JAR Datei nachgeladen
@@ -228,25 +228,25 @@ public class MainWindow extends JFrame implements ClipboardOwner{
      */
     private void getPlugins(){
         try {
-            // Alle JAR Dateien, die in diesem Verzeichnis liegen, werden dem 
-            // Classloader hinzugefügt. 
-            ClassLoader classLoader = Thread.currentThread().getContextClassLoader();        
-            if(classLoader != null && (classLoader instanceof URLClassLoader)){            
-                URLClassLoader urlClassLoader = (URLClassLoader)classLoader;           
-                Method         addURL         = URLClassLoader.class.getDeclaredMethod("addURL", new Class[]{URL.class});    
+            // Alle JAR Dateien, die in diesem Verzeichnis liegen, werden dem
+            // Classloader hinzugefügt.
+            ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+            if(classLoader != null && (classLoader instanceof URLClassLoader)){
+                URLClassLoader urlClassLoader = (URLClassLoader)classLoader;
+                Method         addURL         = URLClassLoader.class.getDeclaredMethod("addURL", new Class[]{URL.class});
                 File           files[]        = new File(".").listFiles(Utilities.filterJar);
-                
-                addURL.setAccessible(true);        
+
+                addURL.setAccessible(true);
                 for(int i=0;i<files.length;i++){
-                    URL jarURL = files[i].toURL();                
-                    addURL.invoke(urlClassLoader, new Object[]{jarURL});        
-                }                      
+                    URL jarURL = files[i].toURL();
+                    addURL.invoke(urlClassLoader, new Object[]{jarURL});
+                }
             }
         }
-        catch (Exception e) { }        
-        
+        catch (Exception e) { }
+
         Iterator iterator;
-        
+
         //Zuerst Plugins zum Dekodieren verschlüsselter Links
         iterator = Service.providers(PluginForDecrypt.class);
         while(iterator.hasNext())
@@ -302,7 +302,7 @@ public class MainWindow extends JFrame implements ClipboardOwner{
     }
     /**
      * Hier werden die Aktionen ausgewertet und weitergeleitet
-     * 
+     *
      * @param actionID Die erwünschte Aktion
      */
     public synchronized void doAction(int actionID){
@@ -377,7 +377,7 @@ public class MainWindow extends JFrame implements ClipboardOwner{
     }
     /**
      * Sucht ein passendes Plugin für einen Anbieter
-     * 
+     *
      * @param host Der Host, von dem das Plugin runterladen kann
      * @return Ein passendes Plugin oder null
      */
@@ -402,8 +402,8 @@ public class MainWindow extends JFrame implements ClipboardOwner{
         new ClipboardHandler().start();
     }
     /**
-     * Diese Klasse ist dafür da, zeitverzögert die Zwischenablage zu untersuchen 
-     * 
+     * Diese Klasse ist dafür da, zeitverzögert die Zwischenablage zu untersuchen
+     *
      * @author astaldo
      */
     private class ClipboardHandler extends Thread{
@@ -431,7 +431,7 @@ public class MainWindow extends JFrame implements ClipboardOwner{
     }
     /**
      * Alle Interaktionen (Knöpfe, Shortcuts) sollten über diese JDAction stattfinden
-     * 
+     *
      * @author astaldo
      */
     public class JDAction extends AbstractAction{
@@ -453,12 +453,12 @@ public class MainWindow extends JFrame implements ClipboardOwner{
         public static final int APP_STOP_DOWNLOADS       = 11;
         public static final int APP_SAVE                 = 12;
         public static final int APP_LOAD                 = 13;
-        
+
         private int actionID;
         /**
          * Erstellt ein neues JDAction-Objekt
-         * 
-         * @param iconName 
+         *
+         * @param iconName
          * @param resourceName Name der Resource, aus der die Texte geladen werden sollen
          * @param actionID ID dieser Aktion
          */
@@ -480,7 +480,7 @@ public class MainWindow extends JFrame implements ClipboardOwner{
     /**
      * Diese Klasse läuft in einem Thread und verteilt den Inhalt der Zwischenablage an (unter Umständen auch mehrere) Plugins
      * Die gefundenen Treffer werden ausgeschnitten.
-     * 
+     *
      * @author astaldo
      */
     private class DistributeData extends Thread{
@@ -488,7 +488,7 @@ public class MainWindow extends JFrame implements ClipboardOwner{
         /**
          * Erstellt einen neuen Thread mit dem Text, der verteilt werden soll.
          * Die übergebenen Daten werden durch einen URLDecoder geschickt.
-         * 
+         *
          * @param data Daten, die verteilt werden sollen
          */
         public DistributeData (String data){
@@ -519,7 +519,7 @@ public class MainWindow extends JFrame implements ClipboardOwner{
                     statusBar.setPluginForDecryptActive(false);
                 }
             }
-            // Die entschlüsselten Links werden nochmal durch alle DecryptPlugins geschickt. 
+            // Die entschlüsselten Links werden nochmal durch alle DecryptPlugins geschickt.
             // Könnte sein, daß einige zweifach oder mehr verschlüsselt sind
             boolean moreToDo;
             do{
@@ -540,8 +540,9 @@ public class MainWindow extends JFrame implements ClipboardOwner{
                         }
                     }
                 }
-                
-            }while(moreToDo);
+            }
+            while(moreToDo);
+
             // Danach wird der (noch verbleibende) Inhalt der Zwischenablage an die Plugins der Hoster geschickt.
             for(int i=0; i<pluginsForHost.size();i++){
                 pHost = pluginsForHost.get(i);
@@ -550,7 +551,7 @@ public class MainWindow extends JFrame implements ClipboardOwner{
                     data = pHost.cutMatches(data);
                 }
             }
-            
+
             // Als letztes werden die entschlüsselten Links (soweit überhaupt vorhanden)
             // an die HostPlugins geschickt, damit diese einen Downloadlink erstellen können
             Iterator<String> iterator = decryptedLinks.iterator();
@@ -572,7 +573,7 @@ public class MainWindow extends JFrame implements ClipboardOwner{
     }
     /**
      * In dieser Klasse wird der Download parallel zum Hauptthread gestartet
-     * 
+     *
      * @author astaldo
      */
     private class StartDownloads extends Thread{
@@ -582,7 +583,7 @@ public class MainWindow extends JFrame implements ClipboardOwner{
         private DownloadLink downloadLink;
         private PluginForHost plugin;
         private boolean aborted=false;
-        
+
         public StartDownloads(){
             super("JD-StartDownloads");
         }
@@ -598,7 +599,7 @@ public class MainWindow extends JFrame implements ClipboardOwner{
                 if(downloadLink != null){
                     plugin   = downloadLink.getPlugin();
                     PluginStep step = plugin.getNextStep(downloadLink);
-    
+
                     // Hier werden alle einzelnen Schritte des Plugins durchgegangen,
                     // bis entwerder null zurückgegeben wird oder ein Fehler auftritt
                     statusBar.setPluginForHostActive(true);
@@ -637,7 +638,7 @@ public class MainWindow extends JFrame implements ClipboardOwner{
     }
     /**
      * Diese Klasse realisiert eine StatusBar
-     * 
+     *
      * @author astaldo
      */
     private class StatusBar extends JPanel{
@@ -651,11 +652,11 @@ public class MainWindow extends JFrame implements ClipboardOwner{
         private JLabel lblPluginDecryptActive;
         private ImageIcon imgActive;
         private ImageIcon imgInactive;
-        
+
         public StatusBar(){
             imgActive   = new ImageIcon(Utilities.getImage("led_green"));
             imgInactive = new ImageIcon(Utilities.getImage("led_empty"));
-            
+
             setLayout(new GridBagLayout());
             lblMessage             = new JLabel(Utilities.getResourceString("label.status.welcome"));
             lblSpeed               = new JLabel("450 kb/s");
@@ -663,7 +664,7 @@ public class MainWindow extends JFrame implements ClipboardOwner{
             lblPluginDecryptActive = new JLabel(imgInactive);
             lblPluginDecryptActive.setToolTipText(Utilities.getResourceString("tooltip.status.plugin_decrypt"));
             lblPluginHostActive.setToolTipText(Utilities.getResourceString("tooltip.status.plugin_host"));
-            
+
             Utilities.addToGridBag(this, lblMessage,             0, 0, 1, 1, 1, 1, new Insets(0,5,0,0), GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
             Utilities.addToGridBag(this, lblSpeed,               1, 0, 1, 1, 0, 0, new Insets(0,5,0,5), GridBagConstraints.NONE,       GridBagConstraints.WEST);
             Utilities.addToGridBag(this, lblPluginHostActive,    2, 0, 1, 1, 0, 0, new Insets(0,5,0,0), GridBagConstraints.NONE,       GridBagConstraints.EAST);
@@ -674,19 +675,19 @@ public class MainWindow extends JFrame implements ClipboardOwner{
         }
         /**
          * Zeigt, ob die Plugins zum Downloaden von einem Anbieter arbeiten
-         * 
+         *
          * @param active wahr, wenn Downloads aktiv sind
          */
         public void setPluginForHostActive(boolean active)    { setPluginActive(lblPluginHostActive,    active); }
         /**
          * Zeigt an, ob die Plugins zum Entschlüsseln von Links arbeiten
-         * 
+         *
          * @param active wahr, wenn soeben Links entschlüsselt werden
          */
         public void setPluginForDecryptActive(boolean active) { setPluginActive(lblPluginDecryptActive, active); }
         /**
          * Ändert das genutzte Bild eines Labels, um In/Aktivität anzuzeigen
-         * 
+         *
          * @param lbl Das zu ändernde Label
          * @param active soll es als aktiv oder inaktiv gekennzeichnet werden
          */

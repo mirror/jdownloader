@@ -1,4 +1,4 @@
-﻿package jd.gui;
+package jd.gui;
 
 import java.awt.BorderLayout;
 import java.awt.Component;
@@ -17,7 +17,7 @@ import jd.plugins.event.PluginEvent;
 import jd.plugins.event.PluginListener;
 /**
  * Diese Klasse zeigt alle Fortschritte von momenten aktiven Plugins an.
- * 
+ *
  * @author astaldo
  */
 public class TabPluginActivity extends JPanel implements PluginListener{
@@ -73,8 +73,8 @@ public class TabPluginActivity extends JPanel implements PluginListener{
         table.tableChanged(new TableModelEvent(table.getModel()));
     }
     /**
-     * Das TableModel ist notwendig, um die Daten darzustellen 
-     * 
+     * Das TableModel ist notwendig, um die Daten darzustellen
+     *
      * @author astaldo
      */
     private class InternalTableModel extends AbstractTableModel{
@@ -90,13 +90,13 @@ public class TabPluginActivity extends JPanel implements PluginListener{
          * Bezeichnung der Spalte für die Fortschrittsanzeige
          */
         private String labelColumnProgress = Utilities.getResourceString("label.tab.plugin_activity.column_progress");
-        
+
         public Class<?> getColumnClass(int columnIndex) {
             switch(columnIndex){
                 case 0: return String.class;
                 case 1: return JProgressBar.class;
             }
-            return String.class;    
+            return String.class;
         }
         public int getColumnCount() {
             return 2;
@@ -106,7 +106,7 @@ public class TabPluginActivity extends JPanel implements PluginListener{
         }
         public Object getValueAt(int rowIndex, int columnIndex) {
             PluginProgress p = pluginProgresses.get(rowIndex);
-            
+
             switch(columnIndex){
                 case 0: return p.plugin.getPluginName();
                 case 1: return p.progressBar;
@@ -119,11 +119,11 @@ public class TabPluginActivity extends JPanel implements PluginListener{
                 case 1: return labelColumnProgress;
             }
             return super.getColumnName(column);
-        }        
+        }
     }
     /**
-     * Diese Klasse sorgt lediglich dafür, die Informationen zum Fortschritt eines Plugin festzuhalten 
-     * 
+     * Diese Klasse sorgt lediglich dafür, die Informationen zum Fortschritt eines Plugin festzuhalten
+     *
      * @author astaldo
      */
     private class PluginProgress{
@@ -136,7 +136,7 @@ public class TabPluginActivity extends JPanel implements PluginListener{
          */
         private JProgressBar progressBar;
         /**
-         * Der aktuelle Wert 
+         * Der aktuelle Wert
          */
         private int          value;
         public PluginProgress(Plugin plugin){
@@ -151,7 +151,7 @@ public class TabPluginActivity extends JPanel implements PluginListener{
         }
         /**
          * Legt das Maximum der Fortschrittsanzeige fest
-         * 
+         *
          * @param maximum Maximum-Wert
          */
         public void setMaximum(int maximum){
@@ -166,14 +166,14 @@ public class TabPluginActivity extends JPanel implements PluginListener{
         }
     }
     /**
-     * Diese Klasse zeichnet eine JProgressBar in der Tabelle 
-     * 
+     * Diese Klasse zeichnet eine JProgressBar in der Tabelle
+     *
      * @author astaldo
      */
     private class ProgressBarRenderer implements TableCellRenderer{
         public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column){
             return (JProgressBar)value;
         }
-        
+
     }
 }

@@ -1,7 +1,7 @@
-﻿package jd.plugins;
+package jd.plugins;
 /**
  * Diese Klasse bildet jeden einzelnen Schritt ab, die ein Plugin nacheinander abarbeiten muß
- * 
+ *
  * @author astaldo
  */
 public class PluginStep {
@@ -53,7 +53,7 @@ public class PluginStep {
      * Ein optionaler Parameter
      */
     private Object parameter;
-    
+
     public PluginStep (int step, Object parameter){
         this.step      = step;
         this.parameter = parameter;
