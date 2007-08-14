@@ -14,7 +14,9 @@ import jd.plugins.event.PluginEvent;
 /**
  * http://stealth.to/?id=13wz0z8lds3nun4dihetpsqgzte4t2
  * 
- * @author a
+ * http://stealth.to/?id=ol0fhnjxpogioavfnmj3aub03s10nt
+ *
+ * @author astaldo
  *
  */
 public class Stealth extends PluginForDecrypt{
@@ -42,46 +44,41 @@ public class Stealth extends PluginForDecrypt{
     @Override public String getVersion()              { return version;          }
     @Override public String getPluginID()             { return "STEALTH-1.0.0."; }
     @Override 
-    public Vector<String> decryptLinks(Vector<String> cryptedLinks )     {
+    public Vector<String> decryptLink(String cryptedLink)     {
         Vector<String> decryptedLinks = new Vector<String>();
 
         int countHits=0;
         //Zählen aller verfügbaren Treffer
-        for(int i=0;i<cryptedLinks.size();i++){
-            try {
-                URL url = new URL(cryptedLinks.get(i));
-                RequestInfo requestInfo = getRequest(url);
-                countHits += countOccurences(requestInfo.getHtmlCode(), patternLinkParameter);
-            }
-            catch (MalformedURLException e) { e.printStackTrace(); }
-            catch (IOException e)           { e.printStackTrace(); }
+        try {
+            URL url = new URL(cryptedLink);
+            RequestInfo requestInfo = getRequest(url);
+            countHits += countOccurences(requestInfo.getHtmlCode(), patternLinkParameter);
         }
+        catch (MalformedURLException e) { e.printStackTrace(); }
+        catch (IOException e)           { e.printStackTrace(); }
         firePluginEvent(new PluginEvent(this,PluginEvent.PLUGIN_PROGRESS_MAX,countHits));
-        logger.info(cryptedLinks.size()+" crypted link(s) found");
         
         //Hier werden alle verschlüsselten Links behandelt
-        for(int i=0;i<cryptedLinks.size();i++){
-            try {
-                URL url = new URL(cryptedLinks.get(i));
-                RequestInfo requestInfo = getRequest(url, null, null, false);
-                Matcher matcher = patternLinkParameter.matcher(requestInfo.getHtmlCode());
-                int position =0;
-                while(matcher.find(position)){
-                    position = matcher.start()+matcher.group().length();
-                    String address = String.format(addressForPopupPost, new Object[]{matcher.group(1),matcher.group(2)});
-                    requestInfo = postRequest(new URL(address), null);
-                    if(requestInfo != null){
-                        firePluginEvent(new PluginEvent(this,PluginEvent.PLUGIN_PROGRESS_INCREASE,null));
-                        decryptedLinks.add(requestInfo.getLocation());
-                    }
+        try {
+            URL url = new URL(cryptedLink);
+            RequestInfo requestInfo = getRequest(url, null, null, false);
+            Matcher matcher = patternLinkParameter.matcher(requestInfo.getHtmlCode());
+            int position =0;
+            while(matcher.find(position)){
+                position = matcher.start()+matcher.group().length();
+                String address = String.format(addressForPopupPost, new Object[]{matcher.group(1),matcher.group(2)});
+                requestInfo = postRequest(new URL(address), null);
+                if(requestInfo != null){
+                    firePluginEvent(new PluginEvent(this,PluginEvent.PLUGIN_PROGRESS_INCREASE,null));
+                    decryptedLinks.add(requestInfo.getLocation());
                 }
-                logger.info(decryptedLinks.size()+" downloads decrypted");
-                firePluginEvent(new PluginEvent(this,PluginEvent.PLUGIN_PROGRESS_FINISH,null));
-                currentStep = null;
             }
-            catch (MalformedURLException e) { e.printStackTrace(); }
-            catch (IOException e)           { e.printStackTrace(); }
+            logger.info(decryptedLinks.size()+" downloads decrypted");
+            firePluginEvent(new PluginEvent(this,PluginEvent.PLUGIN_PROGRESS_FINISH,null));
+            currentStep = null;
         }
+        catch (MalformedURLException e) { e.printStackTrace(); }
+        catch (IOException e)           { e.printStackTrace(); }
         return decryptedLinks;
     }
     @Override

@@ -99,7 +99,14 @@ public class MainWindow extends JFrame implements ClipboardOwner{
      */
     private StartDownloads download = null;
     private Speedometer speedoMeter = new Speedometer();
+    /**
+     * Die Statusleiste für Meldungen
+     */
     private StatusBar statusBar;
+    /**
+     * Das aktuelle Verzeichnis (Laden/Speichern)
+     */
+    private File currentDirectory = null;
     /**
      * Ein Togglebutton zum Starten / Stoppen der Downloads
      */
@@ -130,7 +137,6 @@ public class MainWindow extends JFrame implements ClipboardOwner{
     }
     /**
      * Die Aktionen werden initialisiert
-     *
      */
     public void initActions(){
         actionStartStopDownload = new JDAction("start",  "action.start",     JDAction.APP_START_STOP_DOWNLOADS);
@@ -141,6 +147,9 @@ public class MainWindow extends JFrame implements ClipboardOwner{
         actionLoad              = new JDAction("load",   "action.load",      JDAction.APP_LOAD);
         actionSave              = new JDAction("save",   "action.save",      JDAction.APP_SAVE);
     }
+    /**
+     * Das Menü wird hier initialisiert 
+     */
     public void initMenuBar(){
         JMenu menFile         = new JMenu(Utilities.getResourceString("menu.file"));
 
@@ -260,7 +269,8 @@ public class MainWindow extends JFrame implements ClipboardOwner{
     }
     /**
      * Diese Methode erstellt einen neuen Captchadialog und liefert den eingegebenen Text zurück.
-     * 
+     *
+     * @param plugin Das Plugin, das dieses Captcha fordert (Der Host wird benötigt)
      * @param captchaAdress Adresse des anzuzeigenden Bildes
      * @return Der vom Benutzer eingegebene Text
      */
@@ -295,7 +305,7 @@ public class MainWindow extends JFrame implements ClipboardOwner{
      * 
      * @param actionID Die erwünschte Aktion
      */
-    public void doAction(int actionID){
+    public synchronized void doAction(int actionID){
         switch(actionID){
             case JDAction.ITEMS_MOVE_UP:
             case JDAction.ITEMS_MOVE_DOWN:
@@ -317,8 +327,11 @@ public class MainWindow extends JFrame implements ClipboardOwner{
                 break;
             case JDAction.APP_SAVE:
                 JFileChooser fileChooserSave = new JFileChooser();
+                if(currentDirectory != null)
+                    fileChooserSave.setCurrentDirectory(currentDirectory);
                 if(fileChooserSave.showSaveDialog(this) == JFileChooser.APPROVE_OPTION){
                     File fileOutput = fileChooserSave.getSelectedFile();
+                    currentDirectory = fileChooserSave.getCurrentDirectory();
                     try {
                         FileOutputStream fos = new FileOutputStream(fileOutput);
                         ObjectOutputStream oos = new ObjectOutputStream(fos);
@@ -331,11 +344,12 @@ public class MainWindow extends JFrame implements ClipboardOwner{
                 }
                 break;
             case JDAction.APP_LOAD:
-//                JFileChooser fileChooserLoad = new JFileChooser();
-//                if(fileChooserLoad.showOpenDialog(this) == JFileChooser.APPROVE_OPTION){
-
-//                    File fileInput = fileChooserLoad.getSelectedFile();
-                File fileInput = new File("d:\\jDownloader.sav");
+                JFileChooser fileChooserLoad = new JFileChooser();
+                if(currentDirectory != null)
+                    fileChooserLoad.setCurrentDirectory(currentDirectory);
+                if(fileChooserLoad.showOpenDialog(this) == JFileChooser.APPROVE_OPTION){
+                    File fileInput = fileChooserLoad.getSelectedFile();
+                    currentDirectory = fileChooserLoad.getCurrentDirectory();
                     try {
                         FileInputStream fis = new FileInputStream(fileInput);
                         ObjectInputStream ois = new ObjectInputStream(fis);
@@ -357,16 +371,29 @@ public class MainWindow extends JFrame implements ClipboardOwner{
                     }
                     catch (FileNotFoundException e) { e.printStackTrace(); }
                     catch (IOException e)           { e.printStackTrace(); }
-//                }
+                }
                 break;
         }
     }
+    /**
+     * Sucht ein passendes Plugin für einen Anbieter
+     * 
+     * @param host Der Host, von dem das Plugin runterladen kann
+     * @return Ein passendes Plugin oder null
+     */
     public PluginForHost getPluginForHost(String host){
         for(int i=0;i<pluginsForHost.size();i++){
             if(pluginsForHost.get(i).getHost().equals(host))
                 return pluginsForHost.get(i);
         }
         return null;
+    }
+    /**
+     * Diese Methode wird angesprungen, wenn der Download Thread fertig ist.
+     */
+    private synchronized void setDownloadsFinished(){
+        download = null;
+        btnStartStop.setSelected(false);
     }
     /**
      * Methode, um eine Veränderung der Zwischenablage zu bemerken und zu verarbeiten
@@ -492,6 +519,29 @@ public class MainWindow extends JFrame implements ClipboardOwner{
                     statusBar.setPluginForDecryptActive(false);
                 }
             }
+            // Die entschlüsselten Links werden nochmal durch alle DecryptPlugins geschickt. 
+            // Könnte sein, daß einige zweifach oder mehr verschlüsselt sind
+            boolean moreToDo;
+            do{
+                moreToDo = false;
+                for(int i=0; i<pluginsForDecrypt.size();i++){
+                    pDecrypt = pluginsForDecrypt.get(i);
+                    Iterator<String> iterator = decryptedLinks.iterator();
+                    while (iterator.hasNext()){
+                        String data = iterator.next();
+                        if(pDecrypt.isClipboardEnabled() && pDecrypt.canHandle(data)){
+                            moreToDo = true;
+                            statusBar.setPluginForDecryptActive(true);
+                            logger.info("decryptedLink removed");
+                            iterator.remove();
+                            decryptedLinks.addAll(pDecrypt.decryptLink(data));
+                            iterator = decryptedLinks.iterator();
+                            statusBar.setPluginForDecryptActive(false);
+                        }
+                    }
+                }
+                
+            }while(moreToDo);
             // Danach wird der (noch verbleibende) Inhalt der Zwischenablage an die Plugins der Hoster geschickt.
             for(int i=0; i<pluginsForHost.size();i++){
                 pHost = pluginsForHost.get(i);
@@ -500,6 +550,7 @@ public class MainWindow extends JFrame implements ClipboardOwner{
                     data = pHost.cutMatches(data);
                 }
             }
+            
             // Als letztes werden die entschlüsselten Links (soweit überhaupt vorhanden)
             // an die HostPlugins geschickt, damit diese einen Downloadlink erstellen können
             Iterator<String> iterator = decryptedLinks.iterator();
@@ -544,40 +595,44 @@ public class MainWindow extends JFrame implements ClipboardOwner{
 
 //            while((downloadLink = tabDownloadTable.getNextDownloadLink()) != null){
                 downloadLink = tabDownloadTable.getNextDownloadLink();
-                plugin   = downloadLink.getPlugin();
-                PluginStep step = plugin.getNextStep(downloadLink);
-
-                // Hier werden alle einzelnen Schritte des Plugins durchgegangen,
-                // bis entwerder null zurückgegeben wird oder ein Fehler auftritt
-                statusBar.setPluginForHostActive(true);
-                while(!aborted && step != null && step.getStatus()!=PluginStep.STATUS_ERROR){
-                    switch(step.getStep()){
-                        case PluginStep.STEP_WAIT_TIME:
-                            try {
-                                long milliSeconds = (Long)step.getParameter();
-                                logger.info("wait "+ milliSeconds+" ms");
-                                Thread.sleep(milliSeconds);
+                if(downloadLink != null){
+                    plugin   = downloadLink.getPlugin();
+                    PluginStep step = plugin.getNextStep(downloadLink);
+    
+                    // Hier werden alle einzelnen Schritte des Plugins durchgegangen,
+                    // bis entwerder null zurückgegeben wird oder ein Fehler auftritt
+                    statusBar.setPluginForHostActive(true);
+                    while(!aborted && step != null && step.getStatus()!=PluginStep.STATUS_ERROR){
+                        switch(step.getStep()){
+                            case PluginStep.STEP_WAIT_TIME:
+                                try {
+                                    long milliSeconds = (Long)step.getParameter();
+                                    logger.info("wait "+ milliSeconds+" ms");
+                                    Thread.sleep(milliSeconds);
+                                    step.setStatus(PluginStep.STATUS_DONE);
+                                }
+                                catch (InterruptedException e) { e.printStackTrace(); }
+                                break;
+                            case PluginStep.STEP_CAPTCHA:
+                                String captchaText = getCaptcha(plugin, (String)step.getParameter());
+                                step.setParameter(captchaText);
                                 step.setStatus(PluginStep.STATUS_DONE);
-                            }
-                            catch (InterruptedException e) { e.printStackTrace(); }
-                            break;
-                        case PluginStep.STEP_CAPTCHA:
-                            String captchaText = getCaptcha(plugin, (String)step.getParameter());
-                            step.setParameter(captchaText);
-                            step.setStatus(PluginStep.STATUS_DONE);
+                        }
+                        step = plugin.getNextStep(downloadLink);
                     }
-                    step = plugin.getNextStep(downloadLink);
+                    statusBar.setPluginForHostActive(false);
+                    if(aborted){
+                        logger.warning("Thread aborted");
+                    }
+                    if(step != null && step.getStatus() == PluginStep.STATUS_ERROR){
+                        logger.severe("Error occurred while downloading file");
+                    }
                 }
-                statusBar.setPluginForHostActive(false);
-                if(aborted){
-                    logger.warning("Thread aborted");
+                else{
+                    logger.severe("no downloads in queue");
                 }
-                if(step != null && step.getStatus() == PluginStep.STATUS_ERROR){
-                    logger.severe("Error occurred while downloading file");
-                }
-                
 //            }
-            btnStartStop.setSelected(false);
+            setDownloadsFinished();
         }
     }
     /**

@@ -1,4 +1,4 @@
-﻿<project default="jar" basedir=".">
+﻿<project default="sign" basedir=".">
  
     <property name="cls"     value="bin" />
         
@@ -10,6 +10,7 @@
         <jar jarfile="JDownloader.jar" manifest="Manifest.MF">
             <fileset dir="${cls}">
                 <include name = "**/*.class" />
+                <exclude name = "jd/captcha/**"/>
                 <exclude name = "jd/plugins/decrypt/**"/>
                 <exclude name = "jd/plugins/host/**"/>
             </fileset>
@@ -24,6 +25,18 @@
             </fileset>
             <fileset dir="." includes="META-INF/services/*"/>
         </jar>
+        <jar jarfile="JAntiCaptcha.jar">
+            <fileset dir="${cls}">
+                <include name = "jd/captcha/**"/>
+            </fileset>
+        </jar>
     </target>
-                
+<!-- 
+keytool -genkey -alias jDownloader -keystore jDownloader.keystore -storepass jDownloader -validity 720 -dname "CN=astaldo, O=gulli Community"
+-->
+    <target name="sign" depends="jar">
+        <signjar jar="JDownloader.jar"         keystore="jDownloader.keystore" alias="jDownloader" storepass="jDownloader" />
+        <signjar jar="JDownloaderPlugins.jar"  keystore="jDownloader.keystore" alias="jDownloader" storepass="jDownloader" />
+        <signjar jar="JAntiCaptcha.jar"        keystore="jDownloader.keystore" alias="jDownloader" storepass="jDownloader" />
+        </target>                
 </project>
