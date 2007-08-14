@@ -54,7 +54,11 @@ public class Rapidshare extends PluginForHost{
     @Override public String getVersion()          { return version;                 }
     @Override public boolean isClipboardEnabled() { return true;                    }
     @Override public String getPluginID()         { return "RAPIDSHARE.COM-1.0.0."; }
-
+    @Override
+    public void init() {
+        currentStep = null;
+    }
+    
     public Rapidshare(){
         super();
         steps.add(new PluginStep(PluginStep.STEP_WAIT_TIME, null));

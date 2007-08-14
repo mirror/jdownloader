@@ -11,7 +11,6 @@ import java.awt.datatransfer.StringSelection;
 import java.awt.datatransfer.Transferable;
 import java.awt.datatransfer.UnsupportedFlavorException;
 import java.awt.event.ActionEvent;
-import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -19,17 +18,13 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Method;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
-import java.net.URLDecoder;
 import java.util.Iterator;
 import java.util.Vector;
 import java.util.logging.Logger;
 
-import javax.imageio.ImageIO;
 import javax.swing.AbstractAction;
 import javax.swing.Action;
 import javax.swing.ImageIcon;
@@ -45,16 +40,17 @@ import javax.swing.JTabbedPane;
 import javax.swing.JToggleButton;
 import javax.swing.JToolBar;
 
-import jd.captcha.Captcha;
-import jd.captcha.JAntiCaptcha;
+import jd.controlling.DistributeData;
+import jd.controlling.StartDownloads;
+import jd.controlling.event.ControlEvent;
+import jd.controlling.event.ControlListener;
 import jd.plugins.DownloadLink;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
-import jd.plugins.PluginStep;
 import sun.misc.Service;
 
-public class MainWindow extends JFrame implements ClipboardOwner{
+public class MainWindow extends JFrame implements ClipboardOwner, ControlListener{
 
     /**
      * serialVersionUID
@@ -81,7 +77,7 @@ public class MainWindow extends JFrame implements ClipboardOwner{
     /**
      * Logger für Meldungen des Programmes
      */
-    private Logger logger = Plugin.getLogger();
+    private static Logger logger = Plugin.getLogger();
     /**
      * Komponente, die alle Downloads anzeigt
      */
@@ -98,6 +94,10 @@ public class MainWindow extends JFrame implements ClipboardOwner{
      * Der Thread, der das Downloaden realisiert
      */
     private StartDownloads download = null;
+    /**
+     * Der Thread, der den Inhalt der Zwischenablage verteilt
+     */
+    private DistributeData distributeData = null;
     private Speedometer speedoMeter = new Speedometer();
     /**
      * Die Statusleiste für Meldungen
@@ -127,7 +127,7 @@ public class MainWindow extends JFrame implements ClipboardOwner{
         initActions();
         initMenuBar();
         buildUI();
-        getPlugins();
+        loadPlugins();
         Toolkit.getDefaultToolkit().getSystemClipboard().setContents(new StringSelection(JDOWNLOADER_ID), this);
 
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -226,7 +226,7 @@ public class MainWindow extends JFrame implements ClipboardOwner{
     /**
      * Hier werden alle Plugins im aktuellen Verzeichnis geparsed (und im Classpath)
      */
-    private void getPlugins(){
+    private void loadPlugins(){
         try {
             // Alle JAR Dateien, die in diesem Verzeichnis liegen, werden dem
             // Classloader hinzugefügt.
@@ -264,41 +264,8 @@ public class MainWindow extends JFrame implements ClipboardOwner{
             PluginForHost p = (PluginForHost) iterator.next();
             pluginsForHost.add(p);
             p.addPluginListener(tabDownloadTable);
-            logger.info("Host-Plugin : "+p.getPluginName());
+            logger.info("Host-Plugin    : "+p.getPluginName());
         }
-    }
-    /**
-     * Diese Methode erstellt einen neuen Captchadialog und liefert den eingegebenen Text zurück.
-     *
-     * @param plugin Das Plugin, das dieses Captcha fordert (Der Host wird benötigt)
-     * @param captchaAdress Adresse des anzuzeigenden Bildes
-     * @return Der vom Benutzer eingegebene Text
-     */
-    private String getCaptcha(Plugin plugin, String captchaAddress){
-        boolean useJAC = true;
-        if(useJAC){
-            try {
-                logger.info("captchaAddress:"+captchaAddress);
-                String host = plugin.getHost();
-                JAntiCaptcha jac = new JAntiCaptcha(host);
-                BufferedImage captchaImage = ImageIO.read(new URL(captchaAddress));
-                Captcha captcha= jac.createCaptcha(captchaImage);
-                String captchaCode=jac.checkCaptcha(captcha);
-                logger.info(captchaCode);
-                return captchaCode;
-            } catch (MalformedURLException e) {
-                e.printStackTrace();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
-        else{
-            CaptchaDialog captchaDialog = new CaptchaDialog(this,plugin,captchaAddress);
-            MainWindow.this.toFront();
-            captchaDialog.setVisible(true);
-            return captchaDialog.getCaptchaText();
-        }
-        return null;
     }
     /**
      * Hier werden die Aktionen ausgewertet und weitergeleitet
@@ -317,7 +284,8 @@ public class MainWindow extends JFrame implements ClipboardOwner{
                 break;
             case JDAction.APP_START_STOP_DOWNLOADS:
                 if(download == null){
-                    download = new StartDownloads();
+                    download = new StartDownloads(this,tabDownloadTable);
+                    download.addControlListener(this);
                     download.start();
                 }
                 else{
@@ -389,18 +357,45 @@ public class MainWindow extends JFrame implements ClipboardOwner{
         return null;
     }
     /**
-     * Diese Methode wird angesprungen, wenn der Download Thread fertig ist.
-     */
-    private synchronized void setDownloadsFinished(){
-        download = null;
-        btnStartStop.setSelected(false);
-    }
-    /**
      * Methode, um eine Veränderung der Zwischenablage zu bemerken und zu verarbeiten
      */
     public void lostOwnership(Clipboard clipboard, Transferable contents) {
         new ClipboardHandler().start();
     }
+    /**
+     * Hier werden ControlEvent ausgewertet
+     */
+    public void controlEvent(ControlEvent event) {
+        switch(event.getID()){
+            case ControlEvent.CONTROL_SINGLE_DOWNLOAD_CHANGED:
+                tabDownloadTable.fireTableChanged();
+                break;
+            case ControlEvent.CONTROL_ALL_DOWNLOADS_FINISHED:
+                download = null;
+                btnStartStop.setSelected(false);
+                break;
+            case ControlEvent.CONTROL_DISTRIBUTE_FINISHED:
+                distributeData = null;
+                Object links = event.getParameter();
+                if(links != null && links instanceof Vector && ((Vector)links).size()>0){
+                    tabDownloadTable.addLinks((Vector)links);
+                }
+                break;
+            case ControlEvent.CONTROL_PLUGIN_DECRYPT_ACTIVE:
+                statusBar.setPluginForDecryptActive(true);
+                break;
+            case ControlEvent.CONTROL_PLUGIN_DECRYPT_INACTIVE:
+                statusBar.setPluginForDecryptActive(false);
+                break;
+            case ControlEvent.CONTROL_PLUGIN_HOST_ACTIVE:
+                statusBar.setPluginForHostActive(true);
+                break;
+            case ControlEvent.CONTROL_PLUGIN_HOST_INACTIVE:
+                statusBar.setPluginForHostActive(false);
+                break;
+        }
+    }
+
     /**
      * Diese Klasse ist dafür da, zeitverzögert die Zwischenablage zu untersuchen
      *
@@ -420,7 +415,9 @@ public class MainWindow extends JFrame implements ClipboardOwner{
                 String data = JDOWNLOADER_ID;
                 try {
                     data = (String)clipboard.getData(DataFlavor.stringFlavor);
-                    new DistributeData(data).start();
+                    distributeData = new DistributeData(pluginsForHost, pluginsForDecrypt, data);
+                    distributeData.addControlListener(MainWindow.this);
+                    distributeData.start();
                 }
                 catch (UnsupportedFlavorException e1) {}
                 catch (IOException e1)                {}
@@ -477,165 +474,8 @@ public class MainWindow extends JFrame implements ClipboardOwner{
             return actionID;
         }
     }
-    /**
-     * Diese Klasse läuft in einem Thread und verteilt den Inhalt der Zwischenablage an (unter Umständen auch mehrere) Plugins
-     * Die gefundenen Treffer werden ausgeschnitten.
-     *
-     * @author astaldo
-     */
-    private class DistributeData extends Thread{
-        private String data;
-        /**
-         * Erstellt einen neuen Thread mit dem Text, der verteilt werden soll.
-         * Die übergebenen Daten werden durch einen URLDecoder geschickt.
-         *
-         * @param data Daten, die verteilt werden sollen
-         */
-        public DistributeData (String data){
-            super("JD-DistributeData");
-            this.data = data;
-            try {
-                this.data = URLDecoder.decode(this.data,"US-ASCII");
-            }
-            catch (UnsupportedEncodingException e) { }
-        }
-        public void run(){
-            Vector<DownloadLink> links    = new Vector<DownloadLink>();
-            Vector<String> cryptedLinks   = new Vector<String>();
-            Vector<String> decryptedLinks = new Vector<String>();
-            PluginForDecrypt pDecrypt;
-            PluginForHost    pHost;
-
-            // Zuerst wird überprüft, ob ein Decrypt-Plugin einen Teil aus der
-            // Zwischenablage entschlüsseln kann. Ist das der Fall, wird die entsprechende Stelle
-            // verarbeitet und gelöscht, damit sie keinesfalls nochmal verarbeitet wird.
-            for(int i=0; i<pluginsForDecrypt.size();i++){
-                pDecrypt = pluginsForDecrypt.get(i);
-                if(pDecrypt.isClipboardEnabled() && pDecrypt.canHandle(data)){
-                    statusBar.setPluginForDecryptActive(true);
-                    cryptedLinks.addAll(pDecrypt.getMatches(data,pDecrypt.getSupportedLinks()));
-                    data = pDecrypt.cutMatches(data);
-                    decryptedLinks.addAll(pDecrypt.decryptLinks(cryptedLinks));
-                    statusBar.setPluginForDecryptActive(false);
-                }
-            }
-            // Die entschlüsselten Links werden nochmal durch alle DecryptPlugins geschickt.
-            // Könnte sein, daß einige zweifach oder mehr verschlüsselt sind
-            boolean moreToDo;
-            do{
-                moreToDo = false;
-                for(int i=0; i<pluginsForDecrypt.size();i++){
-                    pDecrypt = pluginsForDecrypt.get(i);
-                    Iterator<String> iterator = decryptedLinks.iterator();
-                    while (iterator.hasNext()){
-                        String data = iterator.next();
-                        if(pDecrypt.isClipboardEnabled() && pDecrypt.canHandle(data)){
-                            moreToDo = true;
-                            statusBar.setPluginForDecryptActive(true);
-                            logger.info("decryptedLink removed");
-                            iterator.remove();
-                            decryptedLinks.addAll(pDecrypt.decryptLink(data));
-                            iterator = decryptedLinks.iterator();
-                            statusBar.setPluginForDecryptActive(false);
-                        }
-                    }
-                }
-            }
-            while(moreToDo);
-
-            // Danach wird der (noch verbleibende) Inhalt der Zwischenablage an die Plugins der Hoster geschickt.
-            for(int i=0; i<pluginsForHost.size();i++){
-                pHost = pluginsForHost.get(i);
-                if(pHost.isClipboardEnabled() && pHost.canHandle(data)){
-                    links.addAll(pHost.getDownloadLinks(data));
-                    data = pHost.cutMatches(data);
-                }
-            }
-
-            // Als letztes werden die entschlüsselten Links (soweit überhaupt vorhanden)
-            // an die HostPlugins geschickt, damit diese einen Downloadlink erstellen können
-            Iterator<String> iterator = decryptedLinks.iterator();
-            while(iterator.hasNext()){
-                String decrypted = iterator.next();
-                for(int i=0; i<pluginsForHost.size();i++){
-                    pHost = pluginsForHost.get(i);
-                    if(pHost.isClipboardEnabled() && pHost.canHandle(decrypted)){
-                        links.addAll(pHost.getDownloadLinks(decrypted));
-                        iterator.remove();
-                    }
-                }
-            }
-
-            if(links!=null && links.size()>0){
-                tabDownloadTable.addLinks(links);
-            }
-        }
-    }
-    /**
-     * In dieser Klasse wird der Download parallel zum Hauptthread gestartet
-     *
-     * @author astaldo
-     */
-    private class StartDownloads extends Thread{
-        /**
-         * Der DownloadLink
-         */
-        private DownloadLink downloadLink;
-        private PluginForHost plugin;
-        private boolean aborted=false;
-
-        public StartDownloads(){
-            super("JD-StartDownloads");
-        }
-        public void abortDownload(){
-            aborted=true;
-            if(plugin != null)
-                plugin.abort();
-        }
-        public void run(){
-
-//            while((downloadLink = tabDownloadTable.getNextDownloadLink()) != null){
-                downloadLink = tabDownloadTable.getNextDownloadLink();
-                if(downloadLink != null){
-                    plugin   = downloadLink.getPlugin();
-                    PluginStep step = plugin.getNextStep(downloadLink);
-
-                    // Hier werden alle einzelnen Schritte des Plugins durchgegangen,
-                    // bis entwerder null zurückgegeben wird oder ein Fehler auftritt
-                    statusBar.setPluginForHostActive(true);
-                    while(!aborted && step != null && step.getStatus()!=PluginStep.STATUS_ERROR){
-                        switch(step.getStep()){
-                            case PluginStep.STEP_WAIT_TIME:
-                                try {
-                                    long milliSeconds = (Long)step.getParameter();
-                                    logger.info("wait "+ milliSeconds+" ms");
-                                    Thread.sleep(milliSeconds);
-                                    step.setStatus(PluginStep.STATUS_DONE);
-                                }
-                                catch (InterruptedException e) { e.printStackTrace(); }
-                                break;
-                            case PluginStep.STEP_CAPTCHA:
-                                String captchaText = getCaptcha(plugin, (String)step.getParameter());
-                                step.setParameter(captchaText);
-                                step.setStatus(PluginStep.STATUS_DONE);
-                        }
-                        step = plugin.getNextStep(downloadLink);
-                    }
-                    statusBar.setPluginForHostActive(false);
-                    if(aborted){
-                        logger.warning("Thread aborted");
-                    }
-                    if(step != null && step.getStatus() == PluginStep.STATUS_ERROR){
-                        logger.severe("Error occurred while downloading file");
-                    }
-                }
-                else{
-                    logger.severe("no downloads in queue");
-                }
-//            }
-            setDownloadsFinished();
-        }
-    }
+    
+    
     /**
      * Diese Klasse realisiert eine StatusBar
      *

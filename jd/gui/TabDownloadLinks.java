@@ -126,7 +126,7 @@ public class TabDownloadLinks extends JPanel implements PluginListener{
         DownloadLink nextDownloadLink = null;
         while(iterator.hasNext()){
             nextDownloadLink = iterator.next();
-            if(nextDownloadLink.isEnabled())
+            if(nextDownloadLink.isEnabled() && nextDownloadLink.getStatus() == DownloadLink.STATUS_OK)
                 return nextDownloadLink;
         }
         return null;

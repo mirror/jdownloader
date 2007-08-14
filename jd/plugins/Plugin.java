@@ -55,41 +55,41 @@ public abstract class Plugin{
      * Liefert den Namen des Plugins zurück
      * @return Der Name des Plugins
      */
-    public abstract String               getPluginName();
+    public abstract String getPluginName();
     /**
      * Liefert eine einmalige ID des Plugins zurück
      * @return Plugin ID
      */
-    public abstract String               getPluginID();
+    public abstract String getPluginID();
     /**
      * Hier wird der Author des Plugins ausgelesen
      *
      * @return Der Author des Plugins
      */
-    public abstract String               getCoder();
+    public abstract String getCoder();
     /**
      * Liefert die Versionsbezeichnung dieses Plugins zurück
      * @return Versionsbezeichnung
      */
-    public abstract String               getVersion();
+    public abstract String getVersion();
     /**
      * Ein regulärer Ausdruck, der anzeigt, welche Links von diesem Plugin unterstützt werden
      *
      * @return Ein regulärer Ausdruck
      * @see Pattern
      */
-    public abstract Pattern              getSupportedLinks();
+    public abstract Pattern getSupportedLinks();
     /**
      * Liefert den Anbieter zurück, für den dieses Plugin geschrieben wurde
      *
      * @return Der unterstützte Anbieter
      */
-    public abstract String               getHost();
+    public abstract String getHost();
     /**
      * Diese Methode zeigt an, ob das Plugin auf Änderungen in der Zwischenablage reagiert oder nicht
      * @return Wahr, wenn die Zwischenablage von diesem Plugin interpretiert werden soll
      */
-    public abstract boolean              isClipboardEnabled();
+    public abstract boolean isClipboardEnabled();
     /**
      * Diese Methode liefert den nächsten Schritt zurück, den das Plugin vornehmen wird.
      * Falls der letzte Schritt erreicht ist, wird null zurückgegeben
@@ -97,14 +97,7 @@ public abstract class Plugin{
      * @param parameter Ein Übergabeparameter
      * @return der nächste Schritt oder null, falls alle abgearbeitet wurden
      */
-    public abstract PluginStep           getNextStep(Object parameter);
-    /**
-     * Zeigt, daß diese Plugin gestoppt werden soll
-     *
-     */
-    public void abort(){
-        aborted = true;
-    }
+    public abstract PluginStep getNextStep(Object parameter);
     /**
      * Hiermit wird der Eventmechanismus realisiert. Alle hier eingetragenen Listener
      * werden benachrichtigt, wenn mittels {@link #firePluginEvent(PluginEvent)} ein
@@ -127,6 +120,20 @@ public abstract class Plugin{
     protected Plugin(){
         pluginListener = new Vector<PluginListener>();
         steps = new Vector<PluginStep>();
+    }
+    /**
+     * Zeigt, daß diese Plugin gestoppt werden soll
+     *
+     */
+    public void abort(){
+        aborted = true;
+    }
+    /**
+     * Initialisiert das Plugin vor dem ersten Gebrauch
+     *
+     */
+    public void init(){
+        currentStep = null;
     }
     /**
      * Liefert die Klasse zurück, mit der Nachrichten ausgegeben werden können

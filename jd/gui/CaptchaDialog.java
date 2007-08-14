@@ -9,6 +9,7 @@ import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.logging.Logger;
 
 import javax.imageio.ImageIO;
 import javax.swing.ImageIcon;
@@ -46,6 +47,7 @@ public class CaptchaDialog extends JDialog implements ActionListener {
 	 * Das ist der eingegebene captcha Text
 	 */
 	private String captchaText = null;
+    private static Logger logger = Plugin.getLogger();
 
 	/**
 	 * Erstellt einen neuen Dialog.
@@ -62,6 +64,7 @@ public class CaptchaDialog extends JDialog implements ActionListener {
 		BufferedImage image;
 		String code = "";
 		try {
+            logger.info(imageAddress);
             image = ImageIO.read(new URL(imageAddress));
 			imageIcon = new ImageIcon(image);
 			code = JAntiCaptcha.getCaptchaCode(image, "rapidshare.com");

@@ -3,16 +3,28 @@ package jd.gui;
 import java.awt.Component;
 import java.awt.Container;
 import java.awt.Dimension;
+import java.awt.Frame;
 import java.awt.GridBagConstraints;
 import java.awt.Image;
 import java.awt.Insets;
 import java.awt.Point;
 import java.awt.Toolkit;
+import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.FileFilter;
+import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.ResourceBundle;
+import java.util.logging.Logger;
+
+import javax.imageio.ImageIO;
+
+import jd.captcha.Captcha;
+import jd.captcha.JAntiCaptcha;
+import jd.plugins.Plugin;
 
 public class Utilities {
     private static ResourceBundle resourceBundle = null;
@@ -21,7 +33,7 @@ public class Utilities {
      * Alle verfügbaren Bilder werden hier gespeichert
      */
     private static HashMap<String, Image> images = new HashMap<String, Image>();
-
+    private static Logger logger = Plugin.getLogger();
     public static FilterJAR filterJar = new FilterJAR();
 
     /**
@@ -153,5 +165,39 @@ public class Utilities {
             else
                 return false;
         }
+    }
+    /**
+     * Diese Methode erstellt einen neuen Captchadialog und liefert den eingegebenen Text zurück.
+     *
+     * @param owner Das übergeordnete Fenster
+     * @param plugin Das Plugin, das dieses Captcha fordert (Der Host wird benötigt)
+     * @param captchaAddress Adresse des anzuzeigenden Bildes
+     * @return Der vom Benutzer eingegebene Text
+     */
+    public static String getCaptcha(Frame owner, Plugin plugin, String captchaAddress){
+        boolean useJAC = false;
+        if(useJAC){
+            try {
+                logger.info("captchaAddress:"+captchaAddress);
+                String host = plugin.getHost();
+                JAntiCaptcha jac = new JAntiCaptcha(host);
+                BufferedImage captchaImage = ImageIO.read(new URL(captchaAddress));
+                Captcha captcha= jac.createCaptcha(captchaImage);
+                String captchaCode=jac.checkCaptcha(captcha);
+                logger.info(captchaCode);
+                return captchaCode;
+            } catch (MalformedURLException e) {
+                e.printStackTrace();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+        else{
+            CaptchaDialog captchaDialog = new CaptchaDialog(owner,plugin,captchaAddress);
+            owner.toFront();
+            captchaDialog.setVisible(true);
+            return captchaDialog.getCaptchaText();
+        }
+        return null;
     }
 }
