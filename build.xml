@@ -1,7 +1,14 @@
-﻿<project default="sign" basedir=".">
- 
+<project default="standardBuild" basedir=".">
+
+    <property name="src"     value="." />
     <property name="cls"     value="bin" />
-        
+    
+    <target name="compile">
+        <delete dir="${cls}" />
+        <mkdir dir="${cls}"/>   
+        <javac srcdir="${src}" destdir="${cls}" encoding="UTF-8"/>
+    </target>
+    
     <target name="jar">
         <manifest file="Manifest.MF">
             <attribute name="Created-By" value="astaldo"/>
@@ -31,12 +38,16 @@
             </fileset>
         </jar>
     </target>
-<!-- 
+<!--
 keytool -genkey -alias jDownloader -keystore jDownloader.keystore -storepass jDownloader -validity 720 -dname "CN=astaldo, O=gulli Community"
 -->
-    <target name="sign" depends="jar">
+    <target name="sign">
         <signjar jar="JDownloader.jar"         keystore="jDownloader.keystore" alias="jDownloader" storepass="jDownloader" />
         <signjar jar="JDownloaderPlugins.jar"  keystore="jDownloader.keystore" alias="jDownloader" storepass="jDownloader" />
         <signjar jar="JAntiCaptcha.jar"        keystore="jDownloader.keystore" alias="jDownloader" storepass="jDownloader" />
-        </target>                
+    </target>
+    
+    <target name="eclipseBuild" depends="jar,sign">            </target>
+    <target name="standardBuild" depends="compile,jar,sign">   </target>
+   
 </project>
