@@ -7,14 +7,14 @@ import jd.gui.MainWindow;
 
 import com.sun.java.swing.plaf.windows.WindowsLookAndFeel;
 
-// TODO Astaldo : GUI
 // TODO Astaldo : Programmsteuerung
+// TODO Astaldo : GUI
 // TODO Astaldo : Speedometer
 // TODO Wulfskin: Reconnect Paket
+// TODO Tom     : LogDialog
 //
 // TODO Shortcuts
 // TODO Konfiguration speichern
-// TODO
 //
 
 

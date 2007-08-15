@@ -1,10 +1,9 @@
-package jd;
+package jd.captcha;
 
 
 
 import java.io.File;
 
-import jd.captcha.JAntiCaptcha;
 /**
  * JAC Tester
 

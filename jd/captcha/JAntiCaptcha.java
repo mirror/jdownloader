@@ -4,7 +4,6 @@ import java.awt.GridBagLayout;
 import java.awt.Image;
 import java.awt.image.BufferedImage;
 import java.awt.image.ColorModel;
-
 import java.awt.image.IndexColorModel;
 import java.awt.image.PixelGrabber;
 import java.io.File;
@@ -21,8 +20,6 @@ import javax.xml.transform.TransformerException;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
-
-import jd.plugins.Plugin;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -41,7 +38,7 @@ public class JAntiCaptcha {
     /**
      * Logger
      */
-    private Logger         logger   = Plugin.getLogger();
+    private static Logger  logger   = UTILITIES.getLogger();
 
     /**
      * Name des Authors der entsprechenden methode. Wird aus der jacinfo.xml
@@ -209,7 +206,7 @@ public class JAntiCaptcha {
         File[] images = getImages();
         int newLetters;
         for (int i = 0; i < images.length; i++) {
-            UTILITIES.trace(images[i]);
+            logger.info(images[i].toString());
            
                 newLetters = trainCaptcha(images[i], getLetterNum());
             
@@ -828,7 +825,7 @@ public class JAntiCaptcha {
         Captcha cap = jac.createCaptcha(img);
         // BasicWindow.showImage(cap.getImageWithGaps(2));
         String ret = jac.checkCaptcha(cap);
-        UTILITIES.trace(ret);
+        logger.info(ret);
         return ret;
     }
 

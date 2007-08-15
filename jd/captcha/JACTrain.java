@@ -1,9 +1,9 @@
-package jd;
+package jd.captcha;
 
 
 
-import jd.captcha.JAntiCaptcha;
-import jd.captcha.UTILITIES;
+import java.util.logging.Logger;
+
 /**
  * Jac Training
  *
@@ -12,6 +12,7 @@ import jd.captcha.UTILITIES;
  * @author coalado
  */
 public class JACTrain {
+    private Logger logger = UTILITIES.getLogger();
     /**
      * @param args
      */
@@ -28,6 +29,6 @@ public class JACTrain {
        // jac.showPreparedCaptcha(new File("captcha\\methods\\rapidshare.com\\captchas\\rapidsharecom138040807171852.jpg"));
         jac.trainAllCaptchas();
   
-        UTILITIES.trace("TRaining Ende");
+        logger.info("Training Ende");
     }
 }

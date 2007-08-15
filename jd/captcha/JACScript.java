@@ -510,7 +510,7 @@ public class JACScript {
                 localJacCommands.add(pcmd);
             } else if ((startAt = lines[i].indexOf("letter.prepare.")) == 0) {
                 pcmd = parseCommand(lines[i].substring(startAt + 15));
-                UTILITIES.trace(pcmd);
+                logger.info(pcmd.toString());
               
                 localLetterCommands.add(pcmd);
                 

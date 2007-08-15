@@ -12,6 +12,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.Vector;
+import java.util.logging.Logger;
 
 import com.sun.image.codec.jpeg.ImageFormatException;
 import com.sun.image.codec.jpeg.JPEGCodec;
@@ -57,7 +58,7 @@ public class Captcha extends PixelGrid {
      * Speichert das original RGB Pixelgrid
      */
     public int[][]    rgbGrid;
-
+    private static Logger     logger = UTILITIES.getLogger();
     private ColorModel colorModel;
 
     /**
@@ -734,7 +735,7 @@ public class Captcha extends PixelGrid {
         int width = image.getWidth(null);
         int height = image.getHeight(null);
         if (width <= 0 || height <= 0) {
-            UTILITIES.trace("ERROR: Image nicht korrekt. Kein Inhalt. Pfad URl angaben Korrigieren");
+            logger.severe("ERROR: Image nicht korrekt. Kein Inhalt. Pfad URl angaben Korrigieren");
         }
         PixelGrabber pg = new PixelGrabber(image, 0, 0, width, height, false);
         
@@ -746,7 +747,7 @@ public class Captcha extends PixelGrid {
 
         Captcha ret = new Captcha(width, height);
         ret.setOwner(owner);
-        UTILITIES.trace(width+"/"+height);
+        logger.info(width+"/"+height);
         
         ret.setColorModel(pg.getColorModel());
         ColorModel cm=pg.getColorModel();
@@ -825,7 +826,7 @@ ret.setPixel((byte[])pg.getPixels());
         if (ret.owner == null)
             ret.setOwner(b.owner);
         if (ret.owner == null)
-            ret.logger.warning("Owner konnte nicht bestimmt werden!Dieser captcha ist nur eingeschränkt verwendbar.");
+            logger.warning("Owner konnte nicht bestimmt werden!Dieser captcha ist nur eingeschränkt verwendbar.");
         ret.grid = new int[newWidth][newHeight];
         for (int x = 0; x < a.getWidth(); x++) {
             for (int y = 0; y < newHeight; y++) {
@@ -977,7 +978,7 @@ ret.setPixel((byte[])pg.getPixels());
                     if (splitObjects.elementAt(t).getArea() > objects.elementAt(s).getArea()) {
                         objects.add(s, splitObjects.elementAt(t));
                         found++;
-                        UTILITIES.trace("add split " + found);
+                        logger.info("add split " + found);
 
                         break;
                     }
