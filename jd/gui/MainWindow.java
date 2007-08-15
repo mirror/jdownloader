@@ -23,7 +23,11 @@ import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.Iterator;
 import java.util.Vector;
+import java.util.logging.ConsoleHandler;
+import java.util.logging.Handler;
+import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.logging.StreamHandler;
 
 import javax.swing.AbstractAction;
 import javax.swing.Action;
@@ -45,6 +49,7 @@ import jd.controlling.StartDownloads;
 import jd.controlling.event.ControlEvent;
 import jd.controlling.event.ControlListener;
 import jd.plugins.DownloadLink;
+import jd.plugins.LogFormatter;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
@@ -118,6 +123,8 @@ public class MainWindow extends JFrame implements ClipboardOwner, ControlListene
     private JDAction actionDelete;
     private JDAction actionLoad;
     private JDAction actionSave;
+    
+    private LogDialog logDialog;
 
     /**
      * Das Hauptfenster wird erstellt
@@ -204,6 +211,11 @@ public class MainWindow extends JFrame implements ClipboardOwner, ControlListene
         Utilities.addToGridBag(this, tabbedPane,  0, 1, 1, 1, 1, 1, null, GridBagConstraints.BOTH,       GridBagConstraints.CENTER);
 //        Utilities.addToGridBag(this, speedoMeter, 1, 1, 1, 1, 0, 0, null, GridBagConstraints.VERTICAL,   GridBagConstraints.WEST);
         Utilities.addToGridBag(this, statusBar,   0, 2, 1, 1, 0, 0, null, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+        
+        
+        // Einbindung des Log Dialogs
+        logDialog = new LogDialog(this, logger);
+        logDialog.setVisible(true);
     }
     /**
      * Die Bilder werden aus der JAR Datei nachgeladen
