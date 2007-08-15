@@ -17,7 +17,7 @@ public class Rapidshare extends PluginForHost{
     private String  host    = "rapidshare.com";
     private String  version = "1.0.0.0";
     // http://(?:[^.]*\.)*rapidshare\.com/files/[0-9]*/[^\s"]+
-    private Pattern patternSupported = Pattern.compile("http://(?:[^.]*\\.)*rapidshare\\.com/files/[0-9]+/[^\\s\"]+");
+    private Pattern patternSupported = Pattern.compile("http://(?:rs[0-9]*\\.)*rapidshare\\.com/files/[0-9]+/[^\\s\"]+");
     /**
      * Das findet die Ziel URL für den Post
      */

@@ -1,6 +1,5 @@
 package jd.controlling;
 
-import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.util.Iterator;
 import java.util.Vector;
@@ -59,7 +58,9 @@ public class DistributeData extends ControlMulticaster{
         try {
             this.data = URLDecoder.decode(this.data,"US-ASCII");
         }
-        catch (UnsupportedEncodingException e) { }
+        catch (Exception e) {
+            logger.warning("text not url decoded");
+        }
     }
     public void run(){
         Vector<DownloadLink> links    = new Vector<DownloadLink>();
