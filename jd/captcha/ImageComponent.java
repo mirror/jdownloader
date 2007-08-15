@@ -19,6 +19,9 @@ public class ImageComponent extends JComponent {
 	private static final long serialVersionUID = -1497469256400862388L;
 	private Image image;
 
+	/**
+	 * @param image
+	 */
 	public ImageComponent(Image image) {
 		this.image = image;
 		if(image!=null){
@@ -47,6 +50,7 @@ public class ImageComponent extends JComponent {
 
 	/**
 	 * zeichnet Bild
+	 * @param g 
 	 */
 	public void paintComponent(Graphics g) {
 		g.drawImage(image, 0, 0, null);

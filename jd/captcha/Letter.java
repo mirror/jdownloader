@@ -1,6 +1,7 @@
 package jd.captcha;
 
 
+
 /**
  * Diese Klasse beinhaltet alle Methoden für einzellne Letter.
  * 
@@ -9,7 +10,7 @@ package jd.captcha;
  */
 public class Letter extends PixelGrid {
 
-	/**
+	/*
 	 * der decoded Value wird heir abgelegt
 	 */
 	private String decodedValue;
@@ -33,6 +34,10 @@ public class Letter extends PixelGrid {
 	private int badDetections=0;
 
 	private Letter parent;
+    
+	/**
+	 * 
+	 */
 	public Letter() {
 		super(0, 0);
 	}
@@ -40,8 +45,11 @@ public class Letter extends PixelGrid {
 	/**
 	 * gibt den Letter um den faktor faktor verkleinert zurück. Es wird ein
 	 * Kontrastvergleich vorgenommen
+	 * @param faktor 
+	 * @return Vereinfachter Buchstabe
 	 */
 	public Letter getSimplified(int faktor) {
+     
 		int newWidth = (int) Math.ceil(getWidth() / faktor);
 		int newHeight = (int) Math.ceil(getHeight() / faktor);
 		Letter ret = new Letter();
@@ -80,6 +88,9 @@ public class Letter extends PixelGrid {
 
 	/**
 	 * Entfernt die Reihen 0-left und right-ende aus dem interne Grid
+	 * @param left 
+	 * @param right 
+	 * @return true bei Erfolg, sonst false
 	 */
 	public boolean trim(int left, int right) {
 		int width = right - left;
@@ -107,20 +118,22 @@ public class Letter extends PixelGrid {
 	public boolean setTextGrid(String content) {
 		String[] code = content.split("\\|");
 		grid = null;
-
+		int width=0;
 		for (int y = 0; y < code.length; y++) {
-			String[] line = code[y].split("\\*");
+			String line = code[y];
+            width=line.length();
 			if (grid == null) {
-				grid = new int[line.length][code.length];
-				if (line.length < 2 || code.length < 2)
+				grid = new int[width][code.length];
+				if (width < 2 || code.length < 2)
 					return false;
 
 			}
-			for (int x = 0; x < line.length; x++) {
-				grid[x][y] = Integer.parseInt(line[x])
-						* owner.getColorValueFaktor();
+			for (int x = 0; x < width; x++) {
+				grid[x][y] = Integer.parseInt(String.valueOf(line.charAt(x)))* getMaxPixelValue();
+               
+                    
 			}
-		}
+      }
 		return true;
 
 	}
@@ -136,11 +149,11 @@ public class Letter extends PixelGrid {
 
 		for (int y = 0; y < getHeight(); y++) {
 			for (int x = 0; x < getWidth(); x++) {
-				ret += (int) (getPixelValue(x, y) / owner.getColorValueFaktor())
-						+ "*";
+				ret += (int) (getPixelValue(x, y) / getMaxPixelValue())
+						+ "";
 
 			}
-			ret = ret.substring(0, ret.length() - 1);
+			
 			ret += "|";
 		}
 		ret = ret.substring(0, ret.length() - 1);
@@ -201,6 +214,9 @@ public class Letter extends PixelGrid {
 		return valityValue;
 	}
 
+	/**
+	 * @return Anzahl der Erfolgreichen Erkennungen durch diesen letter
+	 */
 	public int getGoodDetections() {
 		return goodDetections;
 		
@@ -241,11 +257,17 @@ public class Letter extends PixelGrid {
 		this.parent = parent;
 	}
 
+	/**
+	 * Addiert eine gute Erkennung zu dem letter
+	 */
 	public void markGood() {
 		this.goodDetections++;
 		logger.warning("GOOD detection : ("+this.toString()+") ");
 	}
-
+/**
+ * Addiert eine Schlechte Erkennung
+ *
+ */
 	public void markBad() {
 		this.badDetections++;
 		logger.warning(getValityPercent()+"__");
@@ -255,9 +277,57 @@ public class Letter extends PixelGrid {
 	public String toString(){
 		return this.getDecodedValue()+" ["+this.getSourcehash()+"]["+this.getGoodDetections()+"/"+this.getBadDetections()+"]";
 	}
+	/**
+	 * @return Ein Wert von 0(Perfekte Erkennung) bis 100 (Schlechte Erkennung)
+	 */
 	public int getValityPercent(){
-		if(this.valityValue<0)return 100;
+		if(this.valityValue<0){
+            return 100;
+        }
 		return (int)((100.0*(double)this.valityValue)/(double)this.getMaxPixelValue());
 	}
+/**
+ * Versucht den Buchstaben automatisch auszurichten. Als kriterium dient das minimale Breite/Höhe Verhältniss
+ * Es wird zuerst die optimale DRehrichtung ermittelt und dann gedreht. Die Methode funktioniert nicht immer zuverlässig. 
+ * align(double contrast,double objectContrast,int angleA, int angleB) braucht länger, liefert aber bessere Ergebnisse
+ * @param objectContrast
+ * @return Ausgerichteter Buchstabe
+ */
+    public Letter align(double objectContrast) {
+        PixelObject obj= this.toPixelObject(objectContrast);
+     
+        PixelObject aligned= obj.align();
+        return aligned.toLetter();
+        
+    }
+    /**
+     * Gibt einen Ausgerichteten Buchstaben zurück. Es wird vom Winkel angleA bis angleB nach der Besten Ausrichtung (Breite/Höhe) gesucht.
+     * Ist zuverlässiger als align(double contrast,double objectContrast)
+     * @param objectContrast
+     * @param angleA
+     * @param angleB
+     * @return Ausgerichteter Buchstabe
+     */
+    public Letter align(double objectContrast,int angleA, int angleB) {
+       PixelObject obj= this.toPixelObject(objectContrast);
+    
+         PixelObject aligned= obj.align(angleA,angleB);
+         return aligned.toLetter();
+         
+     }
+
+    private PixelObject toPixelObject(double objectContrast) {
+        PixelObject  object = new PixelObject(this);        
+        object.setWhiteContrast(objectContrast);
+        for (int x = 0; x < getWidth(); x++) {
+            for (int y = 0; y < getHeight(); y++) {
+             if(getPixelValue(x,y)<(getMaxPixelValue()*objectContrast)){
+                 object.add(x, y, getPixelValue(x,y));
+             }
+            }
+            }
+        
+        return object;
+    }
 
 }

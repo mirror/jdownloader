@@ -17,39 +17,45 @@ import javax.swing.SwingUtilities;
  * Die Klasse dient als Window Basis Klasse.
  * 
  * @author coalado
- * 
  */
 public class BasicWindow extends JFrame {
 	/**
 	 * 
 	 */
-	private static final long serialVersionUID = 8474181150357563979L;
+	private static final long	serialVersionUID	= 8474181150357563979L;
 
 	/**
 	 * Gibt an ob beim Schließen des fensters das programm beendet werden sol
 	 */
-	public boolean exitSystem = true;
+	public boolean				exitSystem			= true;
 
 	/**
 	 * Aktuelle X Position der Autopositionierung
 	 */
-	private static int screenPosX = 0;
+	private static int			screenPosX			= 0;
 
 	/**
 	 * Aktuelle Y Position der Autopositionierung
 	 */
-	private static int screenPosY = 0;
+	private static int			screenPosY			= 0;
 
 	/**
 	 * Owner. Owner der GUI
 	 */
-	public Object owner;
+	public Object				owner;
 
+	/**
+     * Erstellt ein neues GUI Fenster mit dem Oner owner
+	 * @param owner
+	 */
 	public BasicWindow(Object owner) {
 		this.owner = owner;
 		initWindow();
 	}
-
+/**
+ * Erstellt ein einfaches neues GUI Fenster
+ *
+ */
 	public BasicWindow() {
 		initWindow();
 	}
@@ -61,7 +67,7 @@ public class BasicWindow extends JFrame {
 	 * @param y
 	 * @param width
 	 * @param height
-	 * @return
+	 * @return Default GridBagConstraints
 	 */
 	public GridBagConstraints getGBC(int x, int y, int width, int height) {
 
@@ -76,7 +82,6 @@ public class BasicWindow extends JFrame {
 
 	/**
 	 * Initialisiert das Fenster und setzt den WindowClosing Adapter
-	 * 
 	 */
 	private void initWindow() {
 		final BasicWindow _this = this;
@@ -100,7 +105,6 @@ public class BasicWindow extends JFrame {
 
 	/**
 	 * Gibt das Fenster wieder frei
-	 * 
 	 */
 	public void destroy() {
 		setVisible(false);
@@ -115,13 +119,11 @@ public class BasicWindow extends JFrame {
 	 */
 	public void resizeWindow(int percent) {
 		Dimension screenSize = getToolkit().getScreenSize();
-		setSize((screenSize.width * percent) / 100,
-				(screenSize.height * percent) / 100);
+		setSize((screenSize.width * percent) / 100, (screenSize.height * percent) / 100);
 	}
 
 	/**
 	 * packt das fenster neu
-	 * 
 	 */
 	public void repack() {
 		SwingUtilities.updateComponentTreeUI(this);
@@ -138,8 +140,7 @@ public class BasicWindow extends JFrame {
 	public void setLocationByScreenPercent(int width, int height) {
 		Dimension screenSize = getToolkit().getScreenSize();
 
-		setLocation(((screenSize.width - getSize().width) * width) / 100,
-				((screenSize.height - getSize().height) * height) / 100);
+		setLocation(((screenSize.width - getSize().width) * width) / 100, ((screenSize.height - getSize().height) * height) / 100);
 	}
 
 	/**
@@ -148,7 +149,7 @@ public class BasicWindow extends JFrame {
 	 * 
 	 * @param file
 	 * @param title
-	 * @return
+	 * @return Neues Fenster
 	 */
 	public static BasicWindow showImage(File file, String title) {
 		Dimension screenSize = new JFrame().getToolkit().getScreenSize();
@@ -201,21 +202,56 @@ public class BasicWindow extends JFrame {
 		ImageComponent ic = new ImageComponent(img);
 
 		w.setSize(ic.getImageWidth() + 10, ic.getImageHeight() + 20);
+		w.repack();
+		w.pack();
 		w.setLocation(screenPosX, screenPosY);
-		screenPosY += ic.getImageHeight() + 40;
+		screenPosY += w.getSize().width + 30;
 		if (screenPosY >= screenSize.height) {
-			screenPosX += ic.getImageWidth() + 30;
+			screenPosX += w.getSize().height + 40;
 			screenPosY = 0;
 		}
 		w.setTitle(title);
 		w.setLayout(new GridBagLayout());
 		w.add(ic, UTILITIES.getGBC(0, 0, 1, 1));
 		w.setVisible(true);
-		w.pack();
+
 		w.repack();
+		w.pack();
 		w.setAlwaysOnTop(true);
 		return w;
 
 	}
 
+	/**
+     * Zeigt ein Bild an und setzt es um width/Height zum letzten Bild auf den Screen
+	 * @param img
+	 * @param width
+	 * @param height
+	 * @return Neues Fenster
+	 */
+	public static BasicWindow showImage(Image img, int width, int height) {
+		Dimension screenSize = new JFrame().getToolkit().getScreenSize();
+
+		BasicWindow w = new BasicWindow();
+		ImageComponent ic = new ImageComponent(img);
+
+		w.setSize(width, height);
+
+		w.setLocation(screenPosX, screenPosY);
+		screenPosY += height + 30;
+		if (screenPosY >= screenSize.height) {
+			screenPosX += width + 40;
+			screenPosY = 0;
+		}
+
+		w.setLayout(new GridBagLayout());
+		w.add(ic, UTILITIES.getGBC(0, 0, 1, 1));
+		w.setVisible(true);
+
+		w.repack();
+		w.pack();
+		w.setAlwaysOnTop(true);
+		return w;
+
+	}
 }
