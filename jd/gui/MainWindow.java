@@ -11,6 +11,8 @@ import java.awt.datatransfer.StringSelection;
 import java.awt.datatransfer.Transferable;
 import java.awt.datatransfer.UnsupportedFlavorException;
 import java.awt.event.ActionEvent;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -23,16 +25,13 @@ import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.Iterator;
 import java.util.Vector;
-import java.util.logging.ConsoleHandler;
-import java.util.logging.Handler;
-import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.logging.StreamHandler;
 
 import javax.swing.AbstractAction;
 import javax.swing.Action;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
+import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -49,7 +48,6 @@ import jd.controlling.StartDownloads;
 import jd.controlling.event.ControlEvent;
 import jd.controlling.event.ControlListener;
 import jd.plugins.DownloadLink;
-import jd.plugins.LogFormatter;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
@@ -123,8 +121,12 @@ public class MainWindow extends JFrame implements ClipboardOwner, ControlListene
     private JDAction actionDelete;
     private JDAction actionLoad;
     private JDAction actionSave;
+    private JDAction actionExit;
+    private JDAction actionLog;
     
     private LogDialog logDialog;
+
+   private JCheckBoxMenuItem menViewLog;
 
     /**
      * Das Hauptfenster wird erstellt
@@ -153,11 +155,14 @@ public class MainWindow extends JFrame implements ClipboardOwner, ControlListene
         actionDelete            = new JDAction("delete", "action.delete",    JDAction.ITEMS_REMOVE);
         actionLoad              = new JDAction("load",   "action.load",      JDAction.APP_LOAD);
         actionSave              = new JDAction("save",   "action.save",      JDAction.APP_SAVE);
+        actionExit              = new JDAction("exit",   "action.exit",      JDAction.APP_EXIT);
+        actionLog               = new JDAction("log",    "action.viewlog",   JDAction.VIEW_LOG);
     }
     /**
      * Das Menü wird hier initialisiert
      */
     public void initMenuBar(){
+        // file menu
         JMenu menFile         = new JMenu(Utilities.getResourceString("menu.file"));
 
         JMenuItem menFileLoad = new JMenuItem(actionLoad);
@@ -166,11 +171,25 @@ public class MainWindow extends JFrame implements ClipboardOwner, ControlListene
         JMenuItem menFileSave = new JMenuItem(actionSave);
         menFileSave.setIcon(null);
 
-        menFileSave.setIcon(null);
+        JMenuItem menFileExit = new JMenuItem(actionExit);
+        menFileExit.setIcon(null);
+        
+        // view menu
+        JMenu menView         = new JMenu(Utilities.getResourceString("menu.view"));
+        
+        menViewLog = new JCheckBoxMenuItem(actionLog);
+        menViewLog.setIcon(null);
 
+        // add menus to parents
         menFile.add(menFileLoad);
         menFile.add(menFileSave);
+        menFile.addSeparator();
+        menFile.add(menFileExit);
+        
+        menView.add(menViewLog);
+        
         menuBar.add(menFile);
+        menuBar.add(menView);
         setJMenuBar(menuBar);
     }
     /**
@@ -216,6 +235,16 @@ public class MainWindow extends JFrame implements ClipboardOwner, ControlListene
         // Einbindung des Log Dialogs
         logDialog = new LogDialog(this, logger);
         logDialog.setVisible(true);
+        logDialog.addWindowListener(new WindowAdapter() {
+            @Override
+            public void windowOpened(WindowEvent e) {
+               menViewLog.setSelected(true);
+            }
+            @Override
+            public void windowClosed(WindowEvent e) {
+               menViewLog.setSelected(false);
+            }
+        });
     }
     /**
      * Die Bilder werden aus der JAR Datei nachgeladen
@@ -234,6 +263,8 @@ public class MainWindow extends JFrame implements ClipboardOwner, ControlListene
         Utilities.addImage("start",    toolkit.getImage(cl.getResource("img/start.png")));
         Utilities.addImage("stop",     toolkit.getImage(cl.getResource("img/stop.png")));
         Utilities.addImage("up",       toolkit.getImage(cl.getResource("img/up.png")));
+        Utilities.addImage("exit",     toolkit.getImage(cl.getResource("img/shutdown.png")));
+        Utilities.addImage("log",     toolkit.getImage(cl.getResource("img/log.png")));
     }
     /**
      * Hier werden alle Plugins im aktuellen Verzeichnis geparsed (und im Classpath)
@@ -353,6 +384,13 @@ public class MainWindow extends JFrame implements ClipboardOwner, ControlListene
                     catch (IOException e)           { e.printStackTrace(); }
                 }
                 break;
+            case JDAction.APP_EXIT:
+                this.setVisible(false);
+                break;
+            case JDAction.VIEW_LOG:
+                logDialog.setVisible(!logDialog.isVisible());
+                break;
+             
         }
     }
     /**
@@ -462,6 +500,8 @@ public class MainWindow extends JFrame implements ClipboardOwner, ControlListene
         public static final int APP_STOP_DOWNLOADS       = 11;
         public static final int APP_SAVE                 = 12;
         public static final int APP_LOAD                 = 13;
+        public static final int APP_EXIT                 = 14;
+        public static final int VIEW_LOG                 = 1001;
 
         private int actionID;
         /**
