@@ -27,7 +27,7 @@ import jd.plugins.LogFormatter;
  */
 public class LogDialog extends JDialog implements ActionListener {
 
-   private static final long serialVersionUID = -6623157398109653982L;
+   private static final long serialVersionUID = -5753733398829409112L;
 
    /**
     * JTextField wo der Logger Output eingetragen wird
@@ -37,7 +37,6 @@ public class LogDialog extends JDialog implements ActionListener {
    /**
     * JScrollPane fuer das logField
     */
-   @SuppressWarnings("unused")
    private JScrollPane logScrollPane;
 
    /**
