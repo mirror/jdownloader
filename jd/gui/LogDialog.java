@@ -50,6 +50,8 @@ public class LogDialog extends JDialog implements ActionListener {
     * 
     * @param owner
     *           The owning Frame
+    * @param logger 
+    *           The connected Logger
     */
    public LogDialog(Frame owner, Logger logger) {
       super(owner);
