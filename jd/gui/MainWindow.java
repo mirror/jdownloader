@@ -235,16 +235,7 @@ public class MainWindow extends JFrame implements ClipboardOwner, ControlListene
         // Einbindung des Log Dialogs
         logDialog = new LogDialog(this, logger);
         logDialog.setVisible(true);
-        logDialog.addWindowListener(new WindowAdapter() {
-            @Override
-            public void windowOpened(WindowEvent e) {
-               menViewLog.setSelected(true);
-            }
-            @Override
-            public void windowClosed(WindowEvent e) {
-               menViewLog.setSelected(false);
-            }
-        });
+        logDialog.addWindowListener(new LogDialogWindowAdapter());
     }
     /**
      * Die Bilder werden aus der JAR Datei nachgeladen
@@ -446,6 +437,22 @@ public class MainWindow extends JFrame implements ClipboardOwner, ControlListene
         }
     }
 
+    /**
+     * Toggled das MenuItem fuer die Ansicht des Log Fensters
+     * @author Tom
+     */
+    private final class LogDialogWindowAdapter extends WindowAdapter {
+       @Override
+       public void windowOpened(WindowEvent e) {
+          menViewLog.setSelected(true);
+       }
+
+       @Override
+       public void windowClosed(WindowEvent e) {
+          menViewLog.setSelected(false);
+       }
+    }
+    
     /**
      * Diese Klasse ist dafür da, zeitverzögert die Zwischenablage zu untersuchen
      *
