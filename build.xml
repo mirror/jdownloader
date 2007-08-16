@@ -1,12 +1,12 @@
 <project default="standardBuild" basedir=".">
 
-    <property name="src"     value="." />
-    <property name="cls"     value="bin" />
+    <property name="src"    value="src" />
+    <property name="cls"    value="bin" />
+    <property name="dist"   value="dist" />
+    <property name="res"    value="ressourcen" />
     
     <target name="compile">
-        <delete dir="${cls}" />
-        <mkdir dir="${cls}"/>   
-        <javac srcdir="${src}" destdir="${cls}" encoding="UTF-8"/>
+        <javac srcdir="${src}" destdir="${cls}" encoding="UTF-8" source="1.5"/>
     </target>
     
     <target name="jar">
@@ -14,29 +14,31 @@
             <attribute name="Created-By" value="astaldo"/>
             <attribute name="Main-Class" value="jd.Main"/>
         </manifest>
-        <jar jarfile="JDownloader.jar" manifest="Manifest.MF">
+        <jar jarfile="${dist}/JDownloader.jar" manifest="Manifest.MF">
             <fileset dir="${cls}">
                 <include name = "**/*.class" />
                 <exclude name = "jd/captcha/**"/>
                 <exclude name = "jd/plugins/decrypt/**"/>
                 <exclude name = "jd/plugins/host/**"/>
             </fileset>
-            <fileset dir="." includes="img/**"/>
-            <fileset dir="." includes="*.properties"/>
+            <fileset dir="${res}" includes="img/**"/>
+            <fileset dir="${res}" includes="*.properties"/>
         </jar>
         <delete file="Manifest.MF" failonerror="false" />
-        <jar jarfile="JDownloaderPlugins.jar">
+        
+        <jar jarfile="${dist}/JDownloaderPlugins.jar">
             <fileset dir="${cls}">
                 <include name = "jd/plugins/decrypt/**"/>
                 <include name = "jd/plugins/host/**"/>
             </fileset>
-            <fileset dir="." includes="META-INF/services/*"/>
+            <fileset dir="${res}" includes="META-INF/services/*"/>
         </jar>
+        
         <manifest file="Manifest.MF">
             <attribute name="Created-By" value="coalado"/>
             <attribute name="Main-Class" value="jd.captcha.JACTrain"/>
         </manifest>
-        <jar jarfile="JAntiCaptcha.jar" manifest="Manifest.MF">
+        <jar jarfile="${dist}/JAntiCaptcha.jar" manifest="Manifest.MF">
             <fileset dir="${cls}">
                 <include name = "jd/plugins/**"/>
                 <include name = "jd/captcha/**"/>
@@ -44,24 +46,22 @@
             </fileset>
         </jar>
         <delete file="Manifest.MF" failonerror="false" />
-        <jar jarfile="JAntiCaptchaMethods.jar">
+        
+        <jar jarfile="${dist}/JAntiCaptchaMethods.jar">
             <fileset dir="${cls}">
                 <include name = "jd/captcha/**"/>
                 <exclude name = "jd/captcha/**/*.class"/>   
             </fileset>
         </jar>
     </target>
-<!--
-keytool -genkey -alias jDownloader -keystore jDownloader.keystore -storepass jDownloader -validity 720 -dname "CN=astaldo, O=gulli Community"
--->
     <target name="sign">
-        <signjar jar="JDownloader.jar"         keystore="jDownloader.keystore" alias="jDownloader" storepass="jDownloader" />
-        <signjar jar="JDownloaderPlugins.jar"  keystore="jDownloader.keystore" alias="jDownloader" storepass="jDownloader" />
-        <signjar jar="JAntiCaptcha.jar"        keystore="jDownloader.keystore" alias="jDownloader" storepass="jDownloader" />
-        <signjar jar="JAntiCaptchaMethods.jar" keystore="jDownloader.keystore" alias="jDownloader" storepass="jDownloader" />
+        <signjar jar="${dist}/JDownloader.jar"         keystore="jDownloader.keystore" alias="jDownloader" storepass="jDownloader" />
+        <signjar jar="${dist}/JDownloaderPlugins.jar"  keystore="jDownloader.keystore" alias="jDownloader" storepass="jDownloader" />
+        <signjar jar="${dist}/JAntiCaptcha.jar"        keystore="jDownloader.keystore" alias="jDownloader" storepass="jDownloader" />
+        <signjar jar="${dist}/JAntiCaptchaMethods.jar" keystore="jDownloader.keystore" alias="jDownloader" storepass="jDownloader" />
     </target>
     
-    <target name="eclipseBuild" depends="jar,sign">            </target>
-    <target name="standardBuild" depends="compile,jar,sign">   </target>
+    <target name="eclipseBuild" depends="jar,sign">       </target>
+    <target name="standardBuild" depends="compile,jar">   </target>
    
 </project>
