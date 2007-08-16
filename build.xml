@@ -32,9 +32,22 @@
             </fileset>
             <fileset dir="." includes="META-INF/services/*"/>
         </jar>
-        <jar jarfile="JAntiCaptcha.jar">
+        <manifest file="Manifest.MF">
+            <attribute name="Created-By" value="coalado"/>
+            <attribute name="Main-Class" value="jd.captcha.JACTrain"/>
+        </manifest>
+        <jar jarfile="JAntiCaptcha.jar" manifest="Manifest.MF">
+            <fileset dir="${cls}">
+                <include name = "jd/plugins/**"/>
+                <include name = "jd/captcha/**"/>
+                <exclude name = "jd/captcha/methods/**"/>   
+            </fileset>
+        </jar>
+        <delete file="Manifest.MF" failonerror="false" />
+        <jar jarfile="JAntiCaptchaMethods.jar">
             <fileset dir="${cls}">
                 <include name = "jd/captcha/**"/>
+                <exclude name = "jd/captcha/**/*.class"/>   
             </fileset>
         </jar>
     </target>
@@ -45,6 +58,7 @@ keytool -genkey -alias jDownloader -keystore jDownloader.keystore -storepass jDo
         <signjar jar="JDownloader.jar"         keystore="jDownloader.keystore" alias="jDownloader" storepass="jDownloader" />
         <signjar jar="JDownloaderPlugins.jar"  keystore="jDownloader.keystore" alias="jDownloader" storepass="jDownloader" />
         <signjar jar="JAntiCaptcha.jar"        keystore="jDownloader.keystore" alias="jDownloader" storepass="jDownloader" />
+        <signjar jar="JAntiCaptchaMethods.jar" keystore="jDownloader.keystore" alias="jDownloader" storepass="jDownloader" />
     </target>
     
     <target name="eclipseBuild" depends="jar,sign">            </target>

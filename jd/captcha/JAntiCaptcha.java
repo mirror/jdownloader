@@ -8,7 +8,9 @@ import java.awt.image.IndexColorModel;
 import java.awt.image.PixelGrabber;
 import java.io.File;
 import java.io.FileFilter;
+import java.io.IOException;
 import java.io.StringWriter;
+import java.net.URL;
 import java.util.Date;
 import java.util.Vector;
 import java.util.logging.Logger;
@@ -101,6 +103,7 @@ public class JAntiCaptcha {
      * ordnername der methode
      */
     private String         method;
+    private String         pathMethod;
 
     /**
      * fenster die eigentlich nur zur entwicklung sind um Basic GUI Elemente zu
@@ -118,29 +121,28 @@ public class JAntiCaptcha {
     private BasicWindow    frame4;
 
     /**
-     * Pfad zum captcha Root
-     */
-    public static String   jacPath  = "captcha";
-
-    /**
      * jas Script Instanz. Sie verarbneitet das JACScript und speichert die
      * Parameter
      */
     public JACScript       jas;
+    private ClassLoader cl = getClass().getClassLoader();
 
     /**
      * @param method
      */
     public JAntiCaptcha(String method) {
         this.method = method;
+        this.pathMethod = "jd/captcha/methods/"+method;
         UTILITIES.PROPERTYFILE = method + "_props.dat";
-        if (isMethodPathValid(method)) {
-            getJACInfo();
-            String[] path = { jacPath, "methods", method, "script.jas" };
-            jas = new JACScript(this, new File(UTILITIES.getFullPath(path)));
-            loadMTHFile();
-            logger.info("letter DB loaded: Buchstaben: " + letterDB.size());
+        try {
+            if (isMethodPathValid(method)) {
+                getJACInfo();
+                jas = new JACScript(this, cl.getResource(pathMethod+"/script.jas"),method);
+                loadMTHFile();
+                logger.info("letter DB loaded: Buchstaben: " + letterDB.size());
+            }
         }
+        catch (IOException e) { e.printStackTrace(); }
 
     }
 
@@ -151,9 +153,9 @@ public class JAntiCaptcha {
      * @return true/false
      */
     private boolean isMethodPathValid(String method) {
-        String[] path = { jacPath, "methods", method };
-        logger.info("Methods at " + new File(UTILITIES.getFullPath(path)).getAbsolutePath());
-        if (!new File(UTILITIES.getFullPath(path)).exists()) {
+        logger.info("Methods at " + pathMethod);
+        URL url = cl.getResource(pathMethod);
+        if (url == null) {
             logger.severe("Die Methode " + method + " kann nicht gefunden werden. JAC Pfad falsch?");
             return false;
         }
@@ -186,9 +188,9 @@ public class JAntiCaptcha {
                     UTILITIES.writeLocalFile(new File(this.getResultFile()), code);
                     String fileName = new File(this.getSourceImage()).getName();
 
-                    String[] newPath = { jacPath, "methods", method, "checked", captcha.getValityValue() + "_" + fileName };
-                    new File(UTILITIES.getFullPath(newPath)).getParentFile().mkdirs();
-                    new File(this.getSourceImage()).renameTo(new File(UTILITIES.getFullPath(newPath)));
+                    File file = new File(pathMethod+"/checked/"+captcha.getValityValue() + "_" + fileName);
+                    file.getParentFile().mkdirs();
+                    new File(this.getSourceImage()).renameTo(file);
                 }
             }
 
@@ -224,13 +226,12 @@ public class JAntiCaptcha {
     /**
      * MTH File wird geladen und verarbeitet
      */
-    private void loadMTHFile() {
-        String[] path = { jacPath, "methods", method, "letters.mth" };
-        if (new File(UTILITIES.getFullPath(path)).exists() == false) {
-            UTILITIES.writeLocalFile(new File(UTILITIES.getFullPath(path)), "<jDownloader/>");
-            logger.severe("MTH FILE NOT AVAILABLE. Created: " + path);
+    private void loadMTHFile() throws IOException{
+        URL url = cl.getResource(pathMethod+"/letters.mth");
+        if (url == null) {
+            logger.severe("MTH FILE NOT AVAILABLE.");
         }
-        mth = UTILITIES.parseXmlFile(UTILITIES.getFullPath(path), false);
+        mth = UTILITIES.parseXmlFile(url.openStream(), false);
         createLetterDBFormMTH();
         sortLetterDB();
 
@@ -279,12 +280,13 @@ public class JAntiCaptcha {
     /*
      * Die Methode parst die jacinfo.xml
      */
-    private void getJACInfo() {
-        String[] path = { jacPath, "methods", method, "jacinfo.xml" };
-        if (!new File(UTILITIES.getFullPath(path)).exists()) {
-            logger.severe("" + UTILITIES.getFullPath(path) + " is missing");
+    private void getJACInfo() throws IOException{
+        ClassLoader cl = getClass().getClassLoader();
+        URL url = cl.getResource(pathMethod+"/jacinfo.xml");
+        if (url==null) {
+            logger.severe("" + pathMethod + "/jacinfo.xml is missing");
         }
-        Document doc = UTILITIES.parseXmlFile(UTILITIES.getFullPath(path), false);
+        Document doc = UTILITIES.parseXmlFile(url.openStream(), false);
 
         NodeList nl = doc.getFirstChild().getChildNodes();
         for (int i = 0; i < nl.getLength(); i++) {
@@ -600,9 +602,9 @@ public class JAntiCaptcha {
         // UTILITIES.wait(40000);
         // prüfe auf Erfolgreiche Lettererkennung
         if (letters == null) {
-            String[] path = { jacPath, "methods", method, "detectionErrors1", (new Date().getTime()) + "_" + captchafile.getName() };
-            new File(UTILITIES.getFullPath(path)).getParentFile().mkdirs();
-            captchafile.renameTo(new File(UTILITIES.getFullPath(path)));
+            File file = new File(pathMethod+"/detectionErrors1/"+(new Date().getTime()) + "_" + captchafile.getName());
+            file.getParentFile().mkdirs();
+            captchafile.renameTo(file);
             logger.severe("2. Lettererkennung ist fehlgeschlagen!");
             UTILITIES.wait(5000);
             return -1;
@@ -648,9 +650,9 @@ public class JAntiCaptcha {
         if (captcha.getValityPercent() > 0) {
 
             if (guess == null) {
-                String[] path = { jacPath, "methods", method, "detectionErrors2", (new Date().getTime()) + "_" + captchafile.getName() };
-                new File(UTILITIES.getFullPath(path)).getParentFile().mkdirs();
-                captchafile.renameTo(new File(UTILITIES.getFullPath(path)));
+                File file = new File(pathMethod+"/detectionErrors2/"+(new Date().getTime()) + "_" + captchafile.getName());
+                file.getParentFile().mkdirs();
+                captchafile.renameTo(file);
                 logger.severe("Letter erkennung fehlgeschlagen");
                 return -1;
 
@@ -674,9 +676,9 @@ public class JAntiCaptcha {
             code = guess;
         }
         if (code == null) {
-            String[] path = { jacPath, "methods", method, "detectionErrors3", (new Date().getTime()) + "_" + captchafile.getName() };
-            new File(UTILITIES.getFullPath(path)).getParentFile().mkdirs();
-            captchafile.renameTo(new File(UTILITIES.getFullPath(path)));
+            File file = new File(pathMethod+"/detectionErrors3/"+(new Date().getTime()) + "_" + captchafile.getName());
+            file.getParentFile().mkdirs();
+            captchafile.renameTo(file);
             logger.severe("Captcha Input error");
             return -1;
         }
@@ -684,9 +686,9 @@ public class JAntiCaptcha {
             code = guess;
         }
         if (code.length() != letters.length) {
-            String[] path = { jacPath, "methods", method, "detectionErrors4", (new Date().getTime()) + "_" + captchafile.getName() };
-            new File(UTILITIES.getFullPath(path)).getParentFile().mkdirs();
-            captchafile.renameTo(new File(UTILITIES.getFullPath(path)));
+            File file = new File(pathMethod+"/detectionErrors4/"+(new Date().getTime()) + "_" + captchafile.getName());
+            file.getParentFile().mkdirs();
+            captchafile.renameTo(file);
             logger.severe("Captcha Input error3");
             return -1;
         }
@@ -694,9 +696,9 @@ public class JAntiCaptcha {
         int ret = 0;
         for (int i = 0; i < letters.length; i++) {
             if (letters[i] == null || letters[i].getWidth() < 2 || letters[i].getHeight() < 2) {
-                String[] path = { jacPath, "methods", method, "detectionErrors5", (new Date().getTime()) + "_" + captchafile.getName() };
-                new File(UTILITIES.getFullPath(path)).getParentFile().mkdirs();
-                captchafile.renameTo(new File(UTILITIES.getFullPath(path)));
+                File file = new File(pathMethod+"/detectionErrors5/"+(new Date().getTime()) + "_" + captchafile.getName());
+                file.getParentFile().mkdirs();
+                captchafile.renameTo(file);
                 logger.severe("Letter detection error");
                 return -1;
             }
@@ -800,9 +802,7 @@ public class JAntiCaptcha {
 
             String xmlString = result.getWriter().toString();
 
-            String[] path = { jacPath, "methods", method, "letters.mth" };
-
-            if (!UTILITIES.writeLocalFile(new File(UTILITIES.getFullPath(path)), xmlString)) {
+            if (!UTILITIES.writeLocalFile(new File(pathMethod+"letters.mth"), xmlString)) {
                 logger.severe("MTHO file Konnte nicht gespeichert werden");
             }
 
@@ -1135,9 +1135,7 @@ public class JAntiCaptcha {
      * @return File Array
      */
     private File[] getImages() {
-        String[] path = { jacPath, "methods", method, "captchas" };
-
-        File dir = new File(UTILITIES.getFullPath(path));
+        File dir = new File(pathMethod+"/captchas");
 
         if (dir == null || !dir.exists()) {
             logger.severe("Image dir nicht gefunden");
@@ -1204,6 +1202,7 @@ public class JAntiCaptcha {
      */
     public void setMethod(String method) {
         logger.info("SET PARAMETER: [method] = " + method);
+        this.pathMethod = "jd/captcha/methods/"+method;
         this.method = method;
     }
 

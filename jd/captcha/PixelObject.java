@@ -2,8 +2,6 @@ package jd.captcha;
 
 import java.util.Vector;
 import java.util.logging.Logger;
-
-import jd.plugins.Plugin;
 /**
  * Diese Klasse  ist wie die Letterklasse ein PixelContainer. Allerdings werden nur Pixel mit INhalt aufgenommen und intern in einem vector abgelegt.
  * Es müssen nicht so viele Pixel verarbeitet werden. Dies Klasse eignet sich also um Pbjekte abzulegen um diese dann zu drehen doer zu transformieren.
@@ -15,7 +13,7 @@ public class PixelObject implements Comparable {
     /**
      * Logger
      */
-    public Logger       logger = Plugin.getLogger();
+    public Logger       logger = UTILITIES.getLogger();
 
     /**
      * Interner Vector

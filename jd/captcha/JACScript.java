@@ -1,10 +1,10 @@
 package jd.captcha;
 
 import java.io.File;
+import java.io.IOException;
+import java.net.URL;
 import java.util.Vector;
 import java.util.logging.Logger;
-
-import jd.plugins.Plugin;
 
 
 /**
@@ -18,7 +18,7 @@ public class JACScript {
     /**
      * Logger
      */
-    private Logger           logger                        = Plugin.getLogger();
+    private Logger           logger                        = UTILITIES.getLogger();
 
     /**
      * Prozentwert. Ab dieser Schwelle an Korektheit wird ein Letter als 100%
@@ -198,21 +198,27 @@ public class JACScript {
     private int              color;
 
     private JAntiCaptcha owner;
-    private File scriptFile;
+    
+    private URL scriptFile;
     private String method;
  
-
     /**
+     * 
      * @param owner
-     * @param script
+     * @param jarFile Die Jar Datei mit den Methods
+     * @param script Der Skriptfile in der JAR, das ausgelesen werden soll
+     * @param method Name der Methode, die genutzt wird
      */
-    public JACScript(JAntiCaptcha owner, File script) {
+    public JACScript(JAntiCaptcha owner, URL script, String method) {
   
-       this.owner=owner;
-       this.method=script.getParentFile().getName();
-       this.scriptFile=script;
-       this.parseScriptFile();
-       this.executeParameterCommands();
+       try {
+        this.owner=owner;
+           this.method=method;
+           this.scriptFile=script;
+           this.parseScriptFile();
+           this.executeParameterCommands();
+    }
+    catch (IOException e) { e.printStackTrace(); }
 
     }
 
@@ -484,10 +490,10 @@ public class JACScript {
     /**
      * Diese Methode liest das script.jas ein. und parsed es
      */
-    private void parseScriptFile() {
+    private void parseScriptFile() throws IOException{
         logger.info("parsing Script.jas");
        
-        String script = UTILITIES.getLocalFile(scriptFile);
+        String script = UTILITIES.getFromInputStream(scriptFile.openStream());
         String[] lines = script.split("\r\n");
         if (lines.length == 1)
             lines = script.split("\n\r");

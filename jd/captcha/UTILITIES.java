@@ -386,6 +386,25 @@ public class UTILITIES {
         }
         return "";
     }
+    public static String getFromInputStream(InputStream is) {
+        BufferedReader f;
+        try {
+            f = new BufferedReader(new InputStreamReader(is));
+
+            String line;
+            String ret = "";
+
+            while ((line = f.readLine()) != null) {
+                ret += line + "\r\n";
+            }
+            f.close();
+            return ret;
+        } catch (IOException e) {
+
+            e.printStackTrace();
+        }
+        return "";
+    }
 
     /**
      * public static boolean writeLocalFileBytes(File file, String content)
@@ -477,18 +496,18 @@ public class UTILITIES {
      * public static Document parseXmlFile(String filename, boolean validating)
      * liest filename als XML ein und gibt ein XML Document zurück. Parameter
      * validating: Macht einen validt check
-     * @param filename 
+     * @param is InputStream
      * @param validating 
      * @return XML Document
      */
-    public static Document parseXmlFile(String filename, boolean validating) {
+    public static Document parseXmlFile(InputStream is, boolean validating) {
         try {
             // Create a builder factory
             DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
             factory.setValidating(validating);
 
             // Create the builder and parse the file
-            Document doc = factory.newDocumentBuilder().parse(new File(filename));
+            Document doc = factory.newDocumentBuilder().parse(is);
             return doc;
         } catch (SAXException e) {
             e.printStackTrace();

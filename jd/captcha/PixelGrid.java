@@ -11,8 +11,6 @@ import java.io.IOException;
 import java.util.Vector;
 import java.util.logging.Logger;
 
-import jd.plugins.Plugin;
-
 import com.sun.image.codec.jpeg.ImageFormatException;
 import com.sun.image.codec.jpeg.JPEGCodec;
 import com.sun.image.codec.jpeg.JPEGImageEncoder;
@@ -28,7 +26,7 @@ public class PixelGrid {
     /**
      * Logger
      */
-    public Logger       logger = Plugin.getLogger();
+    public Logger       logger = UTILITIES.getLogger();
 
     /**
      * ParameterDump
