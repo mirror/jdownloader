@@ -271,7 +271,7 @@ public class PixelObject implements Comparable {
             angleB=angleA;
             angleA=tmp;
         }
-        int accuracy=5;
+        int accuracy=owner.owner.getJas().getAlignAngleSteps();
         double bestValue=Double.MAX_VALUE;
         PixelObject res=null;
         PixelObject tmp;

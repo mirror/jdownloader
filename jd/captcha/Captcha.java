@@ -560,8 +560,14 @@ public class Captcha extends PixelGrid {
         if (gaps != null && gaps.length > letterId) {
             nextGap = gaps[letterId];
         }
+        if (gaps==null || gaps.length==0) {
+            logger.severe("Das Gaps Array wurde nicht erstellt");
+        }
+        if (letterId> (gaps.length-1)) {
+            logger.severe("LetterNum und Gaps Array passen nicht zusammen. Siemüssen die selbe Länge haben!");
+        }
         if (letterId > 0 && nextGap <= gaps[letterId - 1]) {
-            logger.severe("Das Userdefinierte gaps array ist falsch!. Die Gaps müssen aufsteigend sortiert sein!");
+            logger.severe(letterId+" Das Userdefinierte gaps array ist falsch!. Die Gaps müssen aufsteigend sortiert sein!");
         }
         int[][] letterGrid = new int[getWidth()][getHeight()];
         int x;
@@ -941,12 +947,12 @@ ret.setPixel((byte[])pg.getPixels());
         int i = 0;
         int minWidth = Integer.MAX_VALUE;
         while (i < objects.size() && objects.elementAt(i++).getArea() > minArea) {
-            minWidth = Math.min(minWidth, objects.elementAt(i - 1).getWidth());
+            
            
             found++;
         }
         int maxWidth;
-
+       
         Vector<PixelObject> splitObjects;
         logger.info("found " + found);
         // Teil die größten Objekte bis man die richtige anzahl an lettern hat
@@ -954,10 +960,11 @@ ret.setPixel((byte[])pg.getPixels());
             PixelObject po = objects.remove(0);
             found--;
             maxWidth = po.getWidth();
+            minWidth = minArea/po.getHeight();
             int splitter = 1;
             int splitNum;
-
-            while ((splitNum = Math.min((int) Math.ceil((double) maxWidth / ((double) minWidth / (double) splitter)), letterNum - found + 1)) < 2) {
+logger.info(maxWidth+"/"+minWidth);
+            while ((splitNum = Math.min((int) Math.ceil((double) maxWidth / ((double) minWidth / (double) splitter)), letterNum - found)) < 2) {
                 splitter++;
             }
             while ((found + splitNum) > letterNum)
@@ -977,11 +984,19 @@ ret.setPixel((byte[])pg.getPixels());
                 for (int s = 0; s < objects.size(); s++) {
                     if (splitObjects.elementAt(t).getArea() > objects.elementAt(s).getArea()) {
                         objects.add(s, splitObjects.elementAt(t));
+                        splitObjects.setElementAt(null, t);
                         found++;
                         logger.info("add split " + found);
 
                         break;
                     }
+                   
+                }
+                if(splitObjects.elementAt(t)!=null){
+                    objects.add(splitObjects.elementAt(t));
+                    splitObjects.setElementAt(null, t);
+                    found++;
+                    logger.info("add split " + found);
                 }
 
             }

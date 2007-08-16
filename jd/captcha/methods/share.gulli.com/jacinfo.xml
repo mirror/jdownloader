@@ -1,6 +1,4 @@
 <jDownloader>
   <method name="JAntiCaptcha" author="Coalado" />
-  <format type="jpg" letterNum="5"/>
-  <source file="gulliCaptcha.jpg" />
-  <result file="" />
+  <format type="jpg" letterNum="3"/>
 </jDownloader>

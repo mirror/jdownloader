@@ -207,9 +207,9 @@ public class JAntiCaptcha {
         int newLetters;
         for (int i = 0; i < images.length; i++) {
             logger.info(images[i].toString());
-           
-                newLetters = trainCaptcha(images[i], getLetterNum());
-            
+
+            newLetters = trainCaptcha(images[i], getLetterNum());
+
             logger.info("Erkannt: " + newLetters + "/" + getLetterNum());
             if (newLetters > 0) {
                 successFull += newLetters;
@@ -420,7 +420,8 @@ public class JAntiCaptcha {
     }
 
     /**
-     * TestFunktion  - Annimierte Gifs verarbeiten
+     * TestFunktion - Annimierte Gifs verarbeiten
+     * 
      * @param path
      */
     public void mergeGif(File path) {
@@ -457,22 +458,22 @@ public class JAntiCaptcha {
                 tmp.setPixel((byte[]) pg.getPixels());
             }
             merged.concat(tmp);
-          
+
         }
-        
+
         merged.crop(6, 12, 6, 12);
-        //merged.removeSmallObjects(0.3, 0.3);
-        //merged.invert();
-       merged.toBlackAndWhite(0.4);
-       merged.removeSmallObjects(0.3, 0.3,20);
+        // merged.removeSmallObjects(0.3, 0.3);
+        // merged.invert();
+        merged.toBlackAndWhite(0.4);
+        merged.removeSmallObjects(0.3, 0.3, 20);
         merged.reduceBlackNoise(4, 0.45);
         merged.toBlackAndWhite(1);
-       // merged.reduceBlackNoise(6, 1.6);
-       // merged.reduceBlackNoise(6, 1.6);
-        //getJas().setBackgroundSampleCleanContrast(0.1);
-       // merged.cleanBackgroundBySample(4, 4, 7, 7);
-        
-        BasicWindow.showImage(merged.getImage(4),160,60);
+        // merged.reduceBlackNoise(6, 1.6);
+        // merged.reduceBlackNoise(6, 1.6);
+        // getJas().setBackgroundSampleCleanContrast(0.1);
+        // merged.cleanBackgroundBySample(4, 4, 7, 7);
+
+        BasicWindow.showImage(merged.getImage(4), 160, 60);
 
     }
 
@@ -664,11 +665,10 @@ public class JAntiCaptcha {
                 }
             } else {
                 code = UTILITIES.getProperty(captchaHash);
-                logger.warning("captcha code für "+captchaHash+" verwendet: "+code);
-               
+                logger.warning("captcha code für " + captchaHash + " verwendet: " + code);
+
             }
-            
-            
+
         } else {
             logger.info("100% ERkennung.. automatisch übernommen");
             code = guess;
@@ -897,18 +897,18 @@ public class JAntiCaptcha {
         }
 
         if (frame4 != null) {
-            //frame4.destroy();
+            // frame4.destroy();
         }
         frame4 = new BasicWindow();
-        //frame4.setTitle("Letters");
-        //frame4.setLayout(new GridBagLayout());
-        //frame4.setSize(300, 300);
-        //frame4.setAlwaysOnTop(true);
-        //frame4.setLocationByScreenPercent(10, 5);
+        // frame4.setTitle("Letters");
+        // frame4.setLayout(new GridBagLayout());
+        // frame4.setSize(300, 300);
+        // frame4.setAlwaysOnTop(true);
+        // frame4.setLocationByScreenPercent(10, 5);
         counter = 0;
 
         counterB = 0;
-        //frame4.setVisible(true);
+        // frame4.setVisible(true);
 
         for (int i = 0; i < letters.length; i++) {
             akt = getLetter(letters[i]);
@@ -924,9 +924,10 @@ public class JAntiCaptcha {
                 letters[i].setValityValue(akt.getValityValue());
                 correct += akt.getValityValue();
 
-                //frame4.add(new ImageComponent(letters[i].getImage()), UTILITIES.getGBC(counterB * 12 + 0, counter * 2 - 2, 2, 2));
-                //frame4.repack();
-                //frame4.pack();
+                // frame4.add(new ImageComponent(letters[i].getImage()),
+                // UTILITIES.getGBC(counterB * 12 + 0, counter * 2 - 2, 2, 2));
+                // frame4.repack();
+                // frame4.pack();
             }
             logger.info("Validty: " + correct);
             if (newLetters[i] != null) {
@@ -973,13 +974,42 @@ public class JAntiCaptcha {
         double areaPercent = 0.0;
         // logger.info(scanXFrom+" xto "+scanXTo+" - "+scanYFrom+" yto
         // "+scanYTo);
+        int quickFiltered = 0;
         for (int xx = scanXFrom; xx <= scanXTo; xx++) {
             for (int yy = scanYFrom; yy <= scanYTo; yy++) {
                 bx = Math.max(0 - xx, 0);
                 by = Math.max(0 - yy, 0);
                 pixel = 0;
+                value = 0;
 
-                // logger.info("Percent "+(localArea/maxArea));
+                // quickscan
+                if (getJas().getQuickScan() > 1) {
+                    for (int x = 0; x < Math.min(a.getWidth(), b.getWidth() - bx); x += 1 + Math.round(Math.random() * getJas().getQuickScan())) {
+                        for (int y = 0; y < Math.min(a.getHeight(), b.getHeight() - by); y += 1 ) {
+                            va = a.getPixelValue(x, y);
+                            vb = b.getPixelValue(x + bx, y + by);
+                            pixel++;
+                            value += Math.abs(va - vb);
+                            // logger.info(va+" -"+vb+" : "+Math.abs(va - vb));
+                        }
+                    }
+                    if (pixel > 0) {
+                         value /= pixel;
+                        if (value >= (int) (getJas().getQuickScanFilter() * PixelGrid.getMaxPixelValue(this))) {
+                            quickFiltered++;
+                           //  logger.info("Quickscan filter: "+value+" - "+(getJas().getQuickScanFilter()+PixelGrid.getMaxPixelValue(this)));
+                            continue;
+                        }
+
+                    } else {
+                        continue;
+                    }
+                }
+               // logger.info(pixel + " Check it " + value + " - " + (int) (getJas().getQuickScanFilter() * PixelGrid.getMaxPixelValue(this)));
+
+                pixel = 0;
+                value = 0;
+
                 for (int x = 0; x < Math.min(a.getWidth(), b.getWidth() - bx); x++) {
                     for (int y = 0; y < Math.min(a.getHeight(), b.getHeight() - by); y++) {
                         va = a.getPixelValue(x, y);
@@ -988,7 +1018,6 @@ public class JAntiCaptcha {
                         value += Math.abs(va - vb);
                     }
                 }
-
                 if (pixel > 0) {
                     value /= pixel;
                     localArea = Math.min(a.getWidth(), b.getWidth() - bx) * Math.min(a.getHeight(), b.getHeight() - by);
@@ -1069,10 +1098,12 @@ public class JAntiCaptcha {
                     bestResult = tmp.getDecodedValue();
                     res = tmp;
                     tmp.setValityValue(value);
-                    //frame4.add(new ImageComponent(tmp.getImage()), UTILITIES.getGBC(counterB * 12 + 2, counter * 2, 2, 2));
-                    //frame4.add(new JLabel("VP:" + tmp.getValityPercent()), UTILITIES.getGBC(counterB * 12 + 10, counter * 2, 2, 2));
-                    //frame4.repack();
-                    //frame4.pack();
+                    // frame4.add(new ImageComponent(tmp.getImage()),
+                    // UTILITIES.getGBC(counterB * 12 + 2, counter * 2, 2, 2));
+                    // frame4.add(new JLabel("VP:" + tmp.getValityPercent()),
+                    // UTILITIES.getGBC(counterB * 12 + 10, counter * 2, 2, 2));
+                    // frame4.repack();
+                    // frame4.pack();
                     counter++;
                     if (counter > 40) {
                         counter = 0;

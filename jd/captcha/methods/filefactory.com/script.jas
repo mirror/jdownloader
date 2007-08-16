@@ -20,6 +20,8 @@ param.objectDetectionContrast = 0.8;
 param.useObjectDetection = true;
 param.minimumObjectArea = 600;
 param.backgroundsamplecleancontrast=0.15;
+param.quickScan=3;
+param.quickScanFilter=0.2;
 ##################Prepare captcha
 
 captcha.prepare.toBlackAndWhite(0.70);

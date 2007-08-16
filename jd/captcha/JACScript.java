@@ -26,7 +26,15 @@ public class JACScript {
      */
     private double           letterSearchLimitValue        = 0.15;
 
-     
+    /**
+     * Pixel die Beim Quickscan übersprungen werden (1-...)
+     */
+    private int quickScan=1;
+    
+    /**
+     * Schwellfaktor für den Quickscan Filter
+     */
+     private double quickScanFilter=0.3;
     
     /**
      * Kontrastwert für die Erkennung ob ein Pixel Farblich zu einem objekt passt (Kontrast  Objektdurchschnitt/pixel)
@@ -109,6 +117,8 @@ public class JACScript {
      */
     private boolean          useAverageGapDetection        = false;
 
+    
+      private int alignAngleSteps =5;
     /**
      * Parameter: Peak Detection verwenden
      */
@@ -252,6 +262,8 @@ public class JACScript {
                         this.setMinimumLetterWidth(Integer.parseInt(cmd[2]));     
                     else if (cmd[1].equalsIgnoreCase("leftAngle"))
                         this.setLeftAngle(Integer.parseInt(cmd[2])); 
+                    else if (cmd[1].equalsIgnoreCase("alignAngleSteps"))
+                        this.setAlignAngleSteps(Integer.parseInt(cmd[2])); 
                     else if (cmd[1].equalsIgnoreCase("rightAngle"))
                         this.setRightAngle(Integer.parseInt(cmd[2])); 
                     else if (cmd[1].equalsIgnoreCase("relativecontrast"))
@@ -266,6 +278,10 @@ public class JACScript {
                         this.setObjectDetectionContrast(Double.parseDouble(cmd[2]));
                     else if (cmd[1].equalsIgnoreCase("minimumObjectArea"))
                         this.setMinimumObjectArea(Integer.parseInt(cmd[2]));
+                    else if (cmd[1].equalsIgnoreCase("quickScanFilter"))
+                        this.setQuickScanFilter(Double.parseDouble(cmd[2]));
+                    else if (cmd[1].equalsIgnoreCase("quickScan"))
+                        this.setQuickScan(Integer.parseInt(cmd[2]));
                     else if (cmd[1].equalsIgnoreCase("useObjectDetection"))
                         this.setUseObjectDetection(cmd[2].equals("true"));
                     else if (cmd[1].equalsIgnoreCase("gaps")) {
@@ -1027,6 +1043,54 @@ public class JACScript {
      */
     public void setRightAngle(int rightAngle) {
         this.rightAngle = rightAngle;
+    }
+
+
+    /**
+     * @return the quickScan
+     */
+    public int getQuickScan() {
+        return quickScan;
+    }
+
+
+    /**
+     * @param quickScan the quickScan to set
+     */
+    public void setQuickScan(int quickScan) {
+        this.quickScan = quickScan;
+    }
+
+
+    /**
+     * @return the quickScanFaktor
+     */
+    public double getQuickScanFilter() {
+        return quickScanFilter;
+    }
+
+
+    /**
+     * @param quickScanFaktor the quickScanFaktor to set
+     */
+    public void setQuickScanFilter(double quickScanFaktor) {
+        this.quickScanFilter = quickScanFaktor;
+    }
+
+
+    /**
+     * @return the alignAngleSteps
+     */
+    public int getAlignAngleSteps() {
+        return alignAngleSteps;
+    }
+
+
+    /**
+     * @param alignAngleSteps the alignAngleSteps to set
+     */
+    public void setAlignAngleSteps(int alignAngleSteps) {
+        this.alignAngleSteps = alignAngleSteps;
     }
 
 }

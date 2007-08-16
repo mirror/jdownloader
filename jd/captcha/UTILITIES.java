@@ -51,6 +51,9 @@ import org.xml.sax.SAXException;
 
 public class UTILITIES {
     private static Logger logger = Plugin.getLogger();
+    /**
+     * @return logger
+     */
     public static Logger getLogger(){
         return logger;
     }
