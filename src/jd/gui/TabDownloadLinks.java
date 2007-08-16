@@ -34,8 +34,9 @@ public class TabDownloadLinks extends JPanel implements PluginListener{
     private final int COL_HOST     = 2;
     private final int COL_PROGRESS = 3;
 
-    private final Color COLOR_ERROR    = new Color(255,0,0,20);
-    private final Color COLOR_DISABLED = new Color(100,100,100,20);
+    private final Color COLOR_DONE     = new Color(  0,255,  0, 20);
+    private final Color COLOR_ERROR    = new Color(255,  0,  0, 20);
+    private final Color COLOR_DISABLED = new Color(100,100,100, 20);
     /**
      * serialVersionUID
      */
@@ -127,7 +128,7 @@ public class TabDownloadLinks extends JPanel implements PluginListener{
         DownloadLink nextDownloadLink = null;
         while(iterator.hasNext()){
             nextDownloadLink = iterator.next();
-            if(nextDownloadLink.isEnabled() && nextDownloadLink.getStatus() == DownloadLink.STATUS_OK)
+            if(nextDownloadLink.isEnabled() && nextDownloadLink.getStatus() == DownloadLink.STATUS_TODO)
                 return nextDownloadLink;
         }
         return null;
@@ -240,7 +241,10 @@ public class TabDownloadLinks extends JPanel implements PluginListener{
                 if (!dLink.isEnabled()){
                     c.setBackground(COLOR_DISABLED);
                 }
-                if(dLink.getStatus()!=DownloadLink.STATUS_OK){
+                else if(dLink.getStatus()==DownloadLink.STATUS_DONE){
+                    c.setBackground(COLOR_DONE);
+                }
+                else if(dLink.getStatus()!=DownloadLink.STATUS_TODO){
                     c.setBackground(COLOR_ERROR);
                 }
             }

@@ -228,10 +228,10 @@ public class JACScript {
      */
     private void executeParameterCommands() {
         if (jacCommands == null || jacCommands.size() == 0) {
-            logger.info("KEINE JAC COMMANDS");
+            logger.warning("KEINE JAC COMMANDS");
             return;
         }
-        logger.info("Execute Script.jas Parameter scripts");
+        logger.fine("Execute Script.jas Parameter scripts");
         try {
             for (int i = 0; i < jacCommands.size(); i++) {
                 String[] cmd = jacCommands.elementAt(i);
@@ -327,13 +327,13 @@ public class JACScript {
             return;
         }       
        
-        logger.info("Execute Script.jas Prepare scripts");
+        logger.fine("Execute Script.jas Prepare scripts");
         captcha.setPrepared(true);
         String[] params;
         try {
             for (int i = 0; i < this.captchaPrepareCommands.size(); i++) {
                 String[] cmd = captchaPrepareCommands.elementAt(i);
-                logger.info("Execute Function: " + cmd[1] + "(" + cmd[2] + ")");
+                logger.fine("Execute Function: " + cmd[1] + "(" + cmd[2] + ")");
                
                 if (cmd[0].equals("parameter")) {
                     logger.severe("Syntax Error in " + method + "/+script.jas");
@@ -439,7 +439,7 @@ public class JACScript {
     public void executeLetterPrepareCommands(Letter letter) {
             
        
-        logger.info("Execute Script.jas Letter Prepare scripts");
+        logger.fine("Execute Script.jas Letter Prepare scripts");
    
         String[] params;
         try {
@@ -491,7 +491,7 @@ public class JACScript {
      * Diese Methode liest das script.jas ein. und parsed es
      */
     private void parseScriptFile() throws IOException{
-        logger.info("parsing Script.jas");
+        logger.fine("parsing Script.jas");
        
         String script = UTILITIES.getFromInputStream(scriptFile.openStream());
         String[] lines = script.split("\r\n");
@@ -614,7 +614,7 @@ public class JACScript {
      *            the gapAndAverageLogic to set
      */
     public void setGapAndAverageLogic(boolean gapAndAverageLogic) {
-        logger.info("SET PARAMETER: [gapAndAverageLogic] = " + gapAndAverageLogic);
+        logger.finer("SET PARAMETER: [gapAndAverageLogic] = " + gapAndAverageLogic);
         this.gapAndAverageLogic = gapAndAverageLogic;
     }
 
@@ -630,7 +630,7 @@ public class JACScript {
      *            the gapDetectionAverageContrast to set
      */
     public void setGapDetectionAverageContrast(double gapDetectionAverageContrast) {
-        logger.info("SET PARAMETER: [gapDetectionAverageContrast] = " + gapDetectionAverageContrast);
+        logger.finer("SET PARAMETER: [gapDetectionAverageContrast] = " + gapDetectionAverageContrast);
         this.gapDetectionAverageContrast = gapDetectionAverageContrast;
     }
 
@@ -646,7 +646,7 @@ public class JACScript {
      *            the gapDetectionPeakContrast to set
      */
     public void setGapDetectionPeakContrast(double gapDetectionPeakContrast) {
-        logger.info("SET PARAMETER: [gapDetectionPeakContrast] = " + gapDetectionPeakContrast);
+        logger.finer("SET PARAMETER: [gapDetectionPeakContrast] = " + gapDetectionPeakContrast);
         this.gapDetectionPeakContrast = gapDetectionPeakContrast;
     }
 
@@ -662,7 +662,7 @@ public class JACScript {
      *            the gaps to set
      */
     public void setGaps(int[] gaps) {
-        logger.info("SET PARAMETER: [gaps] = "+gaps.toString());
+        logger.finer("SET PARAMETER: [gaps] = "+gaps.toString());
         
         this.gaps = gaps;
     }
@@ -679,7 +679,7 @@ public class JACScript {
      *            the gapWidthAverage to set
      */
     public void setGapWidthAverage(int gapWidthAverage) {
-        logger.info("SET PARAMETER: [gapWidthAverage] = " + gapWidthAverage);
+        logger.finer("SET PARAMETER: [gapWidthAverage] = " + gapWidthAverage);
         this.gapWidthAverage = gapWidthAverage;
     }
 
@@ -695,7 +695,7 @@ public class JACScript {
      *            the gapWidthPeak to set
      */
     public void setGapWidthPeak(int gapWidthPeak) {
-        logger.info("SET PARAMETER: [gapWidthPeak] = " + gapWidthPeak);
+        logger.finer("SET PARAMETER: [gapWidthPeak] = " + gapWidthPeak);
         this.gapWidthPeak = gapWidthPeak;
     }
 
@@ -715,7 +715,7 @@ public class JACScript {
      *            the letterSearchLimitValue to set
      */
     public void setLetterSearchLimitValue(double letterSearchLimitValue) {
-        logger.info("SET PARAMETER: [letterSearchLimitValue] = " + letterSearchLimitValue);
+        logger.finer("SET PARAMETER: [letterSearchLimitValue] = " + letterSearchLimitValue);
         this.letterSearchLimitValue = letterSearchLimitValue;
     }
 
@@ -731,7 +731,7 @@ public class JACScript {
      *            the minimumLetterWidth to set
      */
     public void setMinimumLetterWidth(int minimumLetterWidth) {
-        logger.info("SET PARAMETER: [minimumLetterWidth] = " + minimumLetterWidth);
+        logger.finer("SET PARAMETER: [minimumLetterWidth] = " + minimumLetterWidth);
         this.minimumLetterWidth = minimumLetterWidth;
     }
 
@@ -747,7 +747,7 @@ public class JACScript {
      *            the useAverageGapDetection to set
      */
     public void setUseAverageGapDetection(boolean useAverageGapDetection) {
-        logger.info("SET PARAMETER: [useAverageGapDetection] = " + useAverageGapDetection);
+        logger.finer("SET PARAMETER: [useAverageGapDetection] = " + useAverageGapDetection);
         this.useAverageGapDetection = useAverageGapDetection;
     }
 
@@ -764,7 +764,7 @@ public class JACScript {
      *            the usePeakGapdetection to set
      */
     public void setUsePeakGapdetection(boolean usePeakGapdetection) {
-        logger.info("SET PARAMETER: [usePeakGapdetection] = " + usePeakGapdetection);
+        logger.finer("SET PARAMETER: [usePeakGapdetection] = " + usePeakGapdetection);
         this.usePeakGapdetection = usePeakGapdetection;
     }
 
@@ -780,7 +780,7 @@ public class JACScript {
      *            the backgroundSampleCleanContrast to set
      */
     public void setBackgroundSampleCleanContrast(double backgroundSampleCleanContrast) {
-        logger.info("SET PARAMETER: [backgroundSampleCleanContrast] = " + backgroundSampleCleanContrast);
+        logger.finer("SET PARAMETER: [backgroundSampleCleanContrast] = " + backgroundSampleCleanContrast);
         this.backgroundSampleCleanContrast = backgroundSampleCleanContrast;
     }
 
@@ -796,7 +796,7 @@ public class JACScript {
      *            the blackPercent to set
      */
     public void setBlackPercent(double blackPercent) {
-        logger.info("SET PARAMETER: [blackPercent] = " + blackPercent);
+        logger.finer("SET PARAMETER: [blackPercent] = " + blackPercent);
         this.blackPercent = blackPercent;
     }
 
@@ -814,7 +814,7 @@ public class JACScript {
      *            the relativeContrast to set
      */
     public void setRelativeContrast(double relativeContrast) {
-        logger.info("SET PARAMETER: [relativeContrast] = " + relativeContrast);
+        logger.finer("SET PARAMETER: [relativeContrast] = " + relativeContrast);
         this.relativeContrast = relativeContrast;
     }
 
@@ -830,7 +830,7 @@ public class JACScript {
      *            the simplifyFaktor to set
      */
     public void setSimplifyFaktor(int simplifyFaktor) {
-        logger.info("SET PARAMETER: [simplifyFaktor] = " + simplifyFaktor);
+        logger.finer("SET PARAMETER: [simplifyFaktor] = " + simplifyFaktor);
         this.simplifyFaktor = simplifyFaktor;
     }
 
@@ -846,7 +846,7 @@ public class JACScript {
      *            the borderVariance to set
      */
     public void setBorderVariance(int borderVariance) {
-        logger.info("SET PARAMETER: [borderVariance] = " + borderVariance);
+        logger.finer("SET PARAMETER: [borderVariance] = " + borderVariance);
         this.borderVariance = borderVariance;
     }
 
@@ -862,7 +862,7 @@ public class JACScript {
      *            the scanVariance to set
      */
     public void setScanVariance(int scanVariance) {
-        logger.info("SET PARAMETER: [scanVariance] = " + scanVariance);
+        logger.finer("SET PARAMETER: [scanVariance] = " + scanVariance);
         this.scanVariance = scanVariance;
     }
 
@@ -969,7 +969,7 @@ public class JACScript {
      * @param minimumObjectArea the minimumObjectArea to set
      */
     public void setMinimumObjectArea(int minimumObjectArea) {
-        logger.info("SET PARAMETER: [minimumObjectArea] = " + minimumObjectArea);
+        logger.finer("SET PARAMETER: [minimumObjectArea] = " + minimumObjectArea);
         this.minimumObjectArea = minimumObjectArea;
     }
 
@@ -984,7 +984,7 @@ public class JACScript {
      * @param objectColorContrast the objectColorContrast to set
      */
     public void setObjectColorContrast(double objectColorContrast) {
-        logger.info("SET PARAMETER: [objectColorContrast] = " + objectColorContrast);
+        logger.finer("SET PARAMETER: [objectColorContrast] = " + objectColorContrast);
         this.objectColorContrast = objectColorContrast;
     }
 
@@ -999,7 +999,7 @@ public class JACScript {
      * @param objectDetectionContrast the objectDetectionContrast to set
      */
     public void setObjectDetectionContrast(double objectDetectionContrast) {
-        logger.info("SET PARAMETER: [objectDetectionContrast] = " + objectDetectionContrast);
+        logger.finer("SET PARAMETER: [objectDetectionContrast] = " + objectDetectionContrast);
         this.objectDetectionContrast = objectDetectionContrast;
     }
 
@@ -1015,7 +1015,7 @@ public class JACScript {
      * @param useObjectDetection the useObjectDetection to set
      */
     public void setUseObjectDetection(boolean useObjectDetection) {
-        logger.info("SET PARAMETER: [useObjectDetection] = " + useObjectDetection);
+        logger.finer("SET PARAMETER: [useObjectDetection] = " + useObjectDetection);
         this.useObjectDetection = useObjectDetection;
     }
 

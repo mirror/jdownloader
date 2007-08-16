@@ -137,7 +137,7 @@ public class Rapidshare extends PluginForHost{
         todo = currentStep;
         if(index+1 < steps.size())
             currentStep = steps.get(index+1);
-        logger.info(todo.toString());
+        logger.finer(todo.toString());
         switch(todo.getStep()){
             case PluginStep.STEP_WAIT_TIME:
                 todo.setParameter(new Long(waitTime));
@@ -153,6 +153,7 @@ public class Rapidshare extends PluginForHost{
                 boolean success = prepareDownload(downloadLink);
                 if(success){
                     todo.setStatus(PluginStep.STATUS_DONE);
+                    downloadLink.setStatus(DownloadLink.STATUS_DONE);
                     return null;
                 }
                 else{

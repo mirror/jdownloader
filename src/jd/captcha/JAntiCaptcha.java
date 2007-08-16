@@ -139,7 +139,7 @@ public class JAntiCaptcha {
                 getJACInfo();
                 jas = new JACScript(this, cl.getResource(pathMethod+"/script.jas"),method);
                 loadMTHFile();
-                logger.info("letter DB loaded: Buchstaben: " + letterDB.size());
+                logger.fine("letter DB loaded: Buchstaben: " + letterDB.size());
             }
         }
         catch (IOException e) { e.printStackTrace(); }
@@ -153,7 +153,7 @@ public class JAntiCaptcha {
      * @return true/false
      */
     private boolean isMethodPathValid(String method) {
-        logger.info("Methods at " + pathMethod);
+        logger.fine("Methods at " + pathMethod);
         URL url = cl.getResource(pathMethod);
         if (url == null) {
             logger.severe("Die Methode " + method + " kann nicht gefunden werden. JAC Pfad falsch?");
@@ -825,7 +825,7 @@ public class JAntiCaptcha {
         Captcha cap = jac.createCaptcha(img);
         // BasicWindow.showImage(cap.getImageWithGaps(2));
         String ret = jac.checkCaptcha(cap);
-        logger.info(ret);
+        logger.info("captcha text:"+ret);
         return ret;
     }
 
@@ -856,7 +856,7 @@ public class JAntiCaptcha {
      * @return CaptchaCode
      */
     public String checkCaptcha(File captchafile) {
-        logger.info("check " + captchafile);
+        logger.finer("check " + captchafile);
         Image captchaImage = UTILITIES.loadImage(captchafile);
         Captcha captcha = createCaptcha(captchaImage);
         // captcha.printCaptcha();
@@ -929,7 +929,7 @@ public class JAntiCaptcha {
                 // frame4.repack();
                 // frame4.pack();
             }
-            logger.info("Validty: " + correct);
+            logger.finer("Validty: " + correct);
             if (newLetters[i] != null) {
                 ret += akt.getDecodedValue();
             }
@@ -940,7 +940,7 @@ public class JAntiCaptcha {
         }
 
         captcha.setDecodedLetters(newLetters);
-        logger.info("Correct: " + correct + " - " + ((int) (correct / letters.length)));
+        logger.finer("Correct: " + correct + " - " + ((int) (correct / letters.length)));
         captcha.setValityValue((int) (correct / letters.length));
 
         return ret;
@@ -1109,11 +1109,11 @@ public class JAntiCaptcha {
                         counter = 0;
                         counterB += 2;
                     }
-                    logger.info(" New Best value: " + bestResult + " (" + bestValue + ") " + res.getValityPercent() + " good:" + tmp.getGoodDetections() + " bad: " + tmp.getBadDetections());
+                    logger.finer(" New Best value: " + bestResult + " (" + bestValue + ") " + res.getValityPercent() + " good:" + tmp.getGoodDetections() + " bad: " + tmp.getBadDetections());
                     if (jas.getLetterSearchLimitValue() >= 0 && (value == 0 || (value <= jas.getLetterSearchLimitValue() * tmp.getMaxPixelValue() && bestResult.equals(lastResult)))) {
                         res = tmp;
                         tmp.setValityValue(value);
-                        logger.info(" Perfect Match: " + bestResult + " (" + bestValue + ") " + res.getValityPercent() + " good:" + tmp.getGoodDetections() + " bad: " + tmp.getBadDetections());
+                        logger.finer(" Perfect Match: " + bestResult + " (" + bestValue + ") " + res.getValityPercent() + " good:" + tmp.getGoodDetections() + " bad: " + tmp.getBadDetections());
                         return tmp;
                     }
                 }
@@ -1124,7 +1124,7 @@ public class JAntiCaptcha {
         } catch (Exception e) {
             e.printStackTrace();
         }
-        logger.info(" Normal Match: " + bestResult + " (" + bestValue + ") " + res.getValityPercent() + " good:" + res.getGoodDetections() + " bad: " + res.getBadDetections());
+        logger.finer(" Normal Match: " + bestResult + " (" + bestValue + ") " + res.getValityPercent() + " good:" + res.getGoodDetections() + " bad: " + res.getBadDetections());
         return res;
 
     }
@@ -1169,7 +1169,7 @@ public class JAntiCaptcha {
      *            the imageType to set
      */
     public void setImageType(String imageType) {
-        logger.info("SET PARAMETER: [imageType] = " + imageType);
+        logger.finer("SET PARAMETER: [imageType] = " + imageType);
         this.imageType = imageType;
     }
 
@@ -1185,7 +1185,7 @@ public class JAntiCaptcha {
      *            the letterNum to set
      */
     public void setLetterNum(int letterNum) {
-        logger.info("SET PARAMETER: [letterNum] = " + letterNum);
+        logger.finer("SET PARAMETER: [letterNum] = " + letterNum);
         this.letterNum = letterNum;
     }
 
@@ -1201,7 +1201,7 @@ public class JAntiCaptcha {
      *            the method to set
      */
     public void setMethod(String method) {
-        logger.info("SET PARAMETER: [method] = " + method);
+        logger.finer("SET PARAMETER: [method] = " + method);
         this.pathMethod = "jd/captcha/methods/"+method;
         this.method = method;
     }
@@ -1218,7 +1218,7 @@ public class JAntiCaptcha {
      *            the methodAuthor to set
      */
     public void setMethodAuthor(String methodAuthor) {
-        logger.info("SET PARAMETER: [methodAuthor] = " + methodAuthor);
+        logger.finer("SET PARAMETER: [methodAuthor] = " + methodAuthor);
         this.methodAuthor = methodAuthor;
     }
 
@@ -1234,7 +1234,7 @@ public class JAntiCaptcha {
      *            the methodName to set
      */
     public void setMethodName(String methodName) {
-        logger.info("SET PARAMETER: [methodName] = " + methodName);
+        logger.finer("SET PARAMETER: [methodName] = " + methodName);
         this.methodName = methodName;
     }
 
@@ -1250,7 +1250,7 @@ public class JAntiCaptcha {
      *            the resultFile to set
      */
     public void setResultFile(String resultFile) {
-        logger.info("SET PARAMETER: [resultFile] = " + resultFile);
+        logger.finer("SET PARAMETER: [resultFile] = " + resultFile);
         this.resultFile = resultFile;
     }
 
@@ -1266,7 +1266,7 @@ public class JAntiCaptcha {
      *            the sourceImage to set
      */
     public void setSourceImage(String sourceImage) {
-        logger.info("SET PARAMETER: [sourceImage] = " + sourceImage);
+        logger.finer("SET PARAMETER: [sourceImage] = " + sourceImage);
         this.sourceImage = sourceImage;
     }
 

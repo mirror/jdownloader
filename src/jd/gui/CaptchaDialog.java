@@ -64,7 +64,7 @@ public class CaptchaDialog extends JDialog implements ActionListener {
 		BufferedImage image;
 		String code = "";
 		try {
-            logger.info(imageAddress);
+            logger.finer("imageAddress:"+imageAddress);
             image = ImageIO.read(new URL(imageAddress));
 			imageIcon = new ImageIcon(image);
 			code = JAntiCaptcha.getCaptchaCode(image, "rapidshare.com");

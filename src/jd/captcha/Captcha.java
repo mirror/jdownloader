@@ -362,7 +362,7 @@ public class Captcha extends PixelGrid {
             return seperatedLetters;
 
         if (owner.getJas().isUseObjectDetection()) {
-            logger.info("Use Object Detection");
+            logger.finer("Use Object Detection");
             Letter[] ret = this.getLetters(letterNum, owner.getJas().getObjectColorContrast(), owner.getJas().getObjectDetectionContrast(), owner.getJas().getMinimumObjectArea());
             if (ret != null) {
                 seperatedLetters = ret;
@@ -374,10 +374,10 @@ public class Captcha extends PixelGrid {
 
         if (!owner.getJas().isUseAverageGapDetection() && !owner.getJas().isUsePeakGapdetection() && owner.getJas().getGaps() != null) {
 
-            logger.info("Use predefined Gaps");
+            logger.finer("Use predefined Gaps");
             return getLetters(letterNum, owner.getJas().getGaps());
         }
-        logger.info("Use Line Detection");
+        logger.finer("Use Line Detection");
         this.gaps = new boolean[getWidth() + 1];
         Letter[] ret = new Letter[letterNum];
         lastletterX = 0;
@@ -753,7 +753,7 @@ public class Captcha extends PixelGrid {
 
         Captcha ret = new Captcha(width, height);
         ret.setOwner(owner);
-        logger.info(width+"/"+height);
+        logger.fine(width+"/"+height);
         
         ret.setColorModel(pg.getColorModel());
         ColorModel cm=pg.getColorModel();
@@ -954,7 +954,7 @@ ret.setPixel((byte[])pg.getPixels());
         int maxWidth;
        
         Vector<PixelObject> splitObjects;
-        logger.info("found " + found);
+        logger.fine("found " + found);
         // Teil die größten Objekte bis man die richtige anzahl an lettern hat
         while (objects.size() > 0 && found < letterNum) {
             PixelObject po = objects.remove(0);
@@ -969,7 +969,7 @@ logger.info(maxWidth+"/"+minWidth);
             }
             while ((found + splitNum) > letterNum)
                 splitNum--;
-            logger.info("teile erstes element " + po.getWidth() + " : splitnum " + splitNum);
+            logger.finer("teile erstes element " + po.getWidth() + " : splitnum " + splitNum);
             if ((found + splitNum - 1) > letterNum || splitNum < 2) {
                 logger.severe("Richtige Letteranzahl 1 konnte nicht ermittelt werden");
                 return null;
@@ -978,7 +978,7 @@ logger.info(maxWidth+"/"+minWidth);
             // found += splitNum - 1;
 
             splitObjects = po.split(splitNum);
-            logger.info("Got spliited: " + splitObjects.size());
+            logger.finer("Got spliited: " + splitObjects.size());
             for (int t = 0; t < splitNum; t++) {
 
                 for (int s = 0; s < objects.size(); s++) {
@@ -986,7 +986,7 @@ logger.info(maxWidth+"/"+minWidth);
                         objects.add(s, splitObjects.elementAt(t));
                         splitObjects.setElementAt(null, t);
                         found++;
-                        logger.info("add split " + found);
+                        logger.finer("add split " + found);
 
                         break;
                     }
@@ -996,11 +996,11 @@ logger.info(maxWidth+"/"+minWidth);
                     objects.add(splitObjects.elementAt(t));
                     splitObjects.setElementAt(null, t);
                     found++;
-                    logger.info("add split " + found);
+                    logger.finer("add split " + found);
                 }
 
             }
-            logger.info("splitted ... treffer: " + found);
+            logger.finer("splitted ... treffer: " + found);
 
         }
         if (found != letterNum) {
@@ -1012,7 +1012,7 @@ logger.info(maxWidth+"/"+minWidth);
             objects.remove(ii);
         }
         Collections.sort(objects);
-        logger.info("Found "+objects.size()+" Elements");
+        logger.finer("Found "+objects.size()+" Elements");
         return objects;
     }
 

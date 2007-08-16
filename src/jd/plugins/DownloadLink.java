@@ -15,12 +15,13 @@ import javax.swing.JProgressBar;
  * @author astaldo
  */
 public class DownloadLink implements Serializable{
-    public final static int STATUS_OK                   = 0;
-    public final static int STATUS_ERROR_UNKNOWN        = 1;
-    public final static int STATUS_ERROR_CAPTCHA_WRONG  = 2;
-    public final static int STATUS_ERROR_DOWNLOAD_LIMIT = 3;
-    public final static int STATUS_ERROR_FILE_ABUSED    = 4;
-    public final static int STATUS_ERROR_FILE_NOT_FOUND = 5;
+    public final static int STATUS_TODO                 = 0;
+    public final static int STATUS_DONE                 = 1;
+    public final static int STATUS_ERROR_UNKNOWN        = 2;
+    public final static int STATUS_ERROR_CAPTCHA_WRONG  = 3;
+    public final static int STATUS_ERROR_DOWNLOAD_LIMIT = 4;
+    public final static int STATUS_ERROR_FILE_ABUSED    = 5;
+    public final static int STATUS_ERROR_FILE_NOT_FOUND = 6;
     /**
      * serialVersionUID
      */
@@ -72,7 +73,7 @@ public class DownloadLink implements Serializable{
     /**
      * Status des DownloadLinks
      */
-    private int status = STATUS_OK;
+    private int status = STATUS_TODO;
     /**
      * Für Serialisierung
      */
