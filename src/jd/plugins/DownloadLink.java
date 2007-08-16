@@ -16,10 +16,11 @@ import javax.swing.JProgressBar;
  */
 public class DownloadLink implements Serializable{
     public final static int STATUS_OK                   = 0;
-    public final static int STATUS_ERROR_CAPTCHA_WRONG  = 1;
-    public final static int STATUS_ERROR_DOWNLOAD_LIMIT = 2;
-    public final static int STATUS_ERROR_FILE_ABUSED    = 3;
-    public final static int STATUS_ERROR_FILE_NOT_FOUND = 4;
+    public final static int STATUS_ERROR_UNKNOWN        = 1;
+    public final static int STATUS_ERROR_CAPTCHA_WRONG  = 2;
+    public final static int STATUS_ERROR_DOWNLOAD_LIMIT = 3;
+    public final static int STATUS_ERROR_FILE_ABUSED    = 4;
+    public final static int STATUS_ERROR_FILE_NOT_FOUND = 5;
     /**
      * serialVersionUID
      */
@@ -44,10 +45,6 @@ public class DownloadLink implements Serializable{
      * Zeigt, ob dieser DownloadLink grad heruntergeladen wird
      */
     private transient boolean inProgress = false;;
-    /**
-     * ID des Plugins
-     */
-    private String pluginID;
     /**
      * Das Plugin, das für diesen Download zuständig ist
      */
@@ -76,7 +73,9 @@ public class DownloadLink implements Serializable{
      * Status des DownloadLinks
      */
     private int status = STATUS_OK;
-
+    /**
+     * Für Serialisierung
+     */
     private DownloadLink(){}
     /**
      * Erzeugt einen neuen DownloadLink
@@ -89,11 +88,10 @@ public class DownloadLink implements Serializable{
      */
     public DownloadLink(PluginForHost plugin, String name, String host, String urlDownload, boolean isEnabled){
         this.plugin      = plugin;
-        this.pluginID    = plugin.getPluginID();
         this.name        = name;
         this.host        = host;
         this.isEnabled   = isEnabled;
-        this.fileOutput = new File("D:\\"+name);
+        this.fileOutput = new File("./"+name);
         try {
             this.urlDownload = new URL(urlDownload);
         }
@@ -147,6 +145,12 @@ public class DownloadLink implements Serializable{
      */
     public JProgressBar getProgressBar(){ return progressBar; }
     /**
+     * Liefert den Status dieses Downloads zurück
+     * 
+     * @return Status des Downloads
+     */
+    public int getStatus()            { return status;        }
+    /**
      * Zeigt, ob dieser Download grad in Bearbeitung ist
      *
      * @return wahr, wenn diese Download grad heruntergeladen wird
@@ -190,6 +194,12 @@ public class DownloadLink implements Serializable{
      */
     public void setInProgress(boolean inProgress) { this.inProgress = inProgress; }
     /**
+     * Setzt den Status des Downloads
+     * 
+     * @param status Der neue Status des Downloads
+     */
+    public void setStatus(int status) { this.status = status; }
+    /**
      * Setzt die Anzahl der heruntergeladenen Bytes fest und aktualisiert die
      * Fortschrittsanzeige
      *
@@ -218,11 +228,5 @@ public class DownloadLink implements Serializable{
             return this.urlDownload.equals(((DownloadLink)obj).urlDownload);
         else
             return super.equals(obj);
-    }
-    public int getStatus() {
-        return status;
-    }
-    public void setStatus(int status) {
-        this.status = status;
     }
 }

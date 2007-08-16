@@ -233,9 +233,9 @@ public class MainWindow extends JFrame implements ClipboardOwner, ControlListene
         
         
         // Einbindung des Log Dialogs
-        logDialog = new LogDialog(this, logger);
-        logDialog.setVisible(true);
-        logDialog.addWindowListener(new LogDialogWindowAdapter());
+//        logDialog = new LogDialog(this, logger);
+//        logDialog.setVisible(true);
+//        logDialog.addWindowListener(new LogDialogWindowAdapter());
     }
     /**
      * Die Bilder werden aus der JAR Datei nachgeladen

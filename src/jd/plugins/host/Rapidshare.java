@@ -36,8 +36,8 @@ public class Rapidshare extends PluginForHost{
      * Das DownloadLimit wurde erreicht
      * (?s)Downloadlimit.*Oder warte ([0-9]+)
      */
-    private Pattern patternErrorDownloadLimitReached = Pattern.compile("(?s)\\((?:oder warte|or wait) [0-9]* (?:minuten|minutes)\\)",Pattern.CASE_INSENSITIVE);
-    private Pattern patternErrorCaptchaWrong         = Pattern.compile("(zugriffscode falsch|code wrong)",Pattern.CASE_INSENSITIVE);
+    private Pattern patternErrorDownloadLimitReached = Pattern.compile("\\((?:oder warte|or wait) ([0-9]*) (?:minuten|minutes)\\)",Pattern.CASE_INSENSITIVE);
+    private Pattern patternErrorCaptchaWrong         = Pattern.compile("(zugriffscode falsch|code wrong)", Pattern.CASE_INSENSITIVE);
     private Pattern patternErrorFileAbused           = Pattern.compile("(darf nicht verteilt werden|forbidden to be shared)",Pattern.CASE_INSENSITIVE);
     private Pattern patternErrorFileNotFound         = Pattern.compile("(datei nicht gefunden|file not found)",Pattern.CASE_INSENSITIVE);
 
@@ -115,6 +115,15 @@ public class Rapidshare extends PluginForHost{
                         return currentStep;
                     }
 
+                    String strCaptchaWrong = getFirstMatch(requestInfo.getHtmlCode(), patternErrorCaptchaWrong, 0);
+                    if(strCaptchaWrong != null){
+                        logger.severe("captchaWrong");
+                        downloadLink.setStatus(DownloadLink.STATUS_ERROR_CAPTCHA_WRONG);
+                        currentStep.setStatus(PluginStep.STATUS_ERROR);
+                        return currentStep;
+                    }
+
+                    downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN);
                     currentStep.setStatus(PluginStep.STATUS_ERROR);
                     logger.warning("could not get downloadInfo");
                     return currentStep;
@@ -139,7 +148,7 @@ public class Rapidshare extends PluginForHost{
                 break;
             case PluginStep.STEP_DOWNLOAD:
                 postParameter.put("mirror",      "on");
-                postParameter.put("accesscode",  "abcd");//;(String)steps.get(1).getParameter());
+                postParameter.put("accesscode",  (String)steps.get(1).getParameter());
                 postParameter.put("actionString",actionString);
                 boolean success = prepareDownload(downloadLink);
                 if(success){

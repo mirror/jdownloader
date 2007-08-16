@@ -185,7 +185,7 @@ public abstract class Plugin{
         String hit = null;
         if(pattern!=null){
             Matcher matcher = pattern.matcher(data);
-            if(matcher.find()){
+            if(matcher.find() && group <=matcher.groupCount()){
                 hit = matcher.group(group);
             }
         }

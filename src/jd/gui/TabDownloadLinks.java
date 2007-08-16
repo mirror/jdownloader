@@ -56,7 +56,9 @@ public class TabDownloadLinks extends JPanel implements PluginListener{
      * Der Logger für Meldungen
      */
     private Logger logger = Plugin.getLogger();
-    private MainWindow parent;
+    /**
+     * Für die Serialisierung
+     */
     private TabDownloadLinks(){}
     /**
      * Erstellt eine neue Tabelle
@@ -65,7 +67,6 @@ public class TabDownloadLinks extends JPanel implements PluginListener{
      */
     public TabDownloadLinks(MainWindow parent){
         super(new BorderLayout());
-        this.parent = parent;
         table = new InternalTable();
         table.setModel(internalTableModel);
 //        table.getColumn(table.getColumnName(COL_PROGRESS)).setCellRenderer(int);
@@ -141,7 +142,6 @@ public class TabDownloadLinks extends JPanel implements PluginListener{
         table.tableChanged(new TableModelEvent(table.getModel()));
     }
     public void pluginEvent(PluginEvent event) {
-        DownloadLink downloadLink=null;
         switch(event.getID()){
             case PluginEvent.PLUGIN_DATA_CHANGED:
                 fireTableChanged();
