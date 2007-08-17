@@ -24,7 +24,7 @@ public class Configuration implements Serializable{
      * Die unterschiedlichen Interaktionen.
      * (ZB Reconnect nach einem Download)
      */
-    private static HashMap<Integer, Vector<Interaction>> interactions;
+    private static HashMap<Integer, Vector<Interaction>> interactions = new HashMap<Integer, Vector<Interaction>>();
     /**
      * Hier sind die Angaben für den Router gespeichert
      */

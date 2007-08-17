@@ -345,6 +345,7 @@ public abstract class Plugin{
         File fileOutput = downloadLink.getFileOutput();
         BufferedInputStream bis;
         int downloadedBytes=0;
+        long start,end,time;
         try{
             byte buffer[] = new byte[READ_BUFFER];
             int count;
@@ -357,6 +358,7 @@ public abstract class Plugin{
             FileOutputStream fos = new FileOutputStream(fileOutput);
             downloadLink.setInProgress(true);
             logger.info("starting download");
+            start = System.currentTimeMillis();
             do{
                 count = bis.read(buffer);
                 if (count != -1){
@@ -368,10 +370,20 @@ public abstract class Plugin{
             }
             while (count != -1 && !aborted); // Muss -1 sein und nicht buffer.length da durch
                                              //  eine langsame Internetverbindung der Puffer nicht immer komplett gefüllt ist
+            end = System.currentTimeMillis();
+            time = end-start;
             fos.close();
             bis.close();
             firePluginEvent(new PluginEvent(this,PluginEvent.PLUGIN_PROGRESS_FINISH,null));
             logger.info("download finished");
+            //   1000 ms = 1s
+            //  60000 ms = 1min
+            //3600000 ms = 1h
+            
+            if(time <1000)
+                logger.info(downloadedBytes+" bytes in "+time/1000+" seconds");
+            else 
+                logger.info(downloadedBytes+" bytes in "+(time/60000)+" minutes and "+time/1000+" seconds");
             return true;
         }
         catch (FileNotFoundException e){
