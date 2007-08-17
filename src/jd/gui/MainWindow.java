@@ -43,6 +43,7 @@ import javax.swing.JTabbedPane;
 import javax.swing.JToggleButton;
 import javax.swing.JToolBar;
 
+import jd.Configuration;
 import jd.controlling.DistributeData;
 import jd.controlling.StartDownloads;
 import jd.controlling.event.ControlEvent;
@@ -132,6 +133,7 @@ public class MainWindow extends JFrame implements ClipboardOwner, ControlListene
      * Das Hauptfenster wird erstellt
      */
     public MainWindow(){
+        logger.info("Version:"+Plugin.VERSION);
         loadImages();
         initActions();
         initMenuBar();
@@ -318,7 +320,7 @@ public class MainWindow extends JFrame implements ClipboardOwner, ControlListene
                 break;
             case JDAction.APP_START_STOP_DOWNLOADS:
                 if(download == null){
-                    download = new StartDownloads(this,tabDownloadTable);
+                    download = new StartDownloads(this,tabDownloadTable, Configuration.getInteractions());
                     download.addControlListener(this);
                     download.start();
                 }

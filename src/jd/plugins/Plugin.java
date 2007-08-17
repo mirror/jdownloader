@@ -48,6 +48,10 @@ public abstract class Plugin{
      */
     public static String LOGGER_NAME ="astaldo.java_downloader";
     /**
+     * Versionsinformationen
+     */
+    public static final String VERSION ="jDownloader_20070817_0";
+    /**
      * Zeigt an, ob das Plugin abgebrochen werden soll
      */
     protected boolean aborted = false;
@@ -251,7 +255,7 @@ public abstract class Plugin{
      * @return Ein Objekt, daß alle Informationen der Zieladresse beinhält
      * @throws IOException
      */
-    public RequestInfo getRequest(URL link)throws IOException{
+    public static RequestInfo getRequest(URL link)throws IOException{
         return getRequest(link, null, null, false);
     }
     /**
@@ -265,7 +269,7 @@ public abstract class Plugin{
      * @return Ein Objekt, daß alle Informationen der Zieladresse beinhält
      * @throws IOException
      */
-    public RequestInfo getRequest(URL link, String cookie, String referrer, boolean redirect)throws IOException{
+    public static RequestInfo getRequest(URL link, String cookie, String referrer, boolean redirect)throws IOException{
         HttpURLConnection httpConnection = (HttpURLConnection)link.openConnection();
         return readFromURL(httpConnection);
     }
@@ -277,7 +281,7 @@ public abstract class Plugin{
      * @return Ein Objekt, daß alle Informationen der Zieladresse beinhält
      * @throws IOException
      */
-    public RequestInfo postRequest(URL link, String parameter)throws IOException{
+    public static RequestInfo postRequest(URL link, String parameter)throws IOException{
         return postRequest(link, null, null, parameter, false);
     }
     /**
@@ -293,7 +297,7 @@ public abstract class Plugin{
      * @return Ein Objekt, daß alle Informationen der Zieladresse beinhält
      * @throws IOException
      */
-    public RequestInfo postRequest(URL link, String cookie, String referrer, String parameter, boolean redirect) throws IOException{
+    public static RequestInfo postRequest(URL link, String cookie, String referrer, String parameter, boolean redirect) throws IOException{
         HttpURLConnection httpConnection = (HttpURLConnection)link.openConnection();
         httpConnection.setInstanceFollowRedirects(redirect);
         httpConnection.setDoOutput(true);
@@ -314,7 +318,7 @@ public abstract class Plugin{
      * @return Ein Objekt, daß alle Informationen der Zieladresse beinhält
      * @throws IOException
      */
-    private RequestInfo readFromURL(HttpURLConnection urlInput)throws IOException{
+    private static RequestInfo readFromURL(HttpURLConnection urlInput)throws IOException{
         BufferedReader rd = new BufferedReader(new InputStreamReader(urlInput.getInputStream()));
         String line;
         StringBuffer htmlCode = new StringBuffer();

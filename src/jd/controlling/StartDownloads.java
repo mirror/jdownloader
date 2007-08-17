@@ -1,9 +1,13 @@
 package jd.controlling;
 
 import java.awt.Frame;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Vector;
 import java.util.logging.Logger;
 
 import jd.controlling.event.ControlEvent;
+import jd.controlling.interaction.Interaction;
 import jd.gui.TabDownloadLinks;
 import jd.gui.Utilities;
 import jd.plugins.DownloadLink;
@@ -42,15 +46,23 @@ public class StartDownloads extends ControlMulticaster{
      */
     private TabDownloadLinks tabDownloadLinks;
     /**
+     * Hiermit werden Interaktionen zum laufenden DownloadThread umgesetzt
+     * (ZB ein Reconnect)
+     */
+    private HashMap<Integer, Vector<Interaction>> interactions;
+    /**
      * Erstellt einen Thread zum Start des Downloadvorganges
      * 
      * @param owner Das übergeordnete Fenster
      * @param tabDownloadLinks Die Komponente, mit den Downloadlinks
+     * @param interactions Hier sind alle möglichen Interaktionen gespeichert
      */
-    public StartDownloads(Frame owner, TabDownloadLinks tabDownloadLinks){
+    public StartDownloads(Frame owner, TabDownloadLinks tabDownloadLinks, HashMap<Integer, Vector<Interaction>> interactions){
         super("JD-StartDownloads");
         this.tabDownloadLinks = tabDownloadLinks;
         this.owner = owner;
+        this.interactions = interactions;
+
     }
     /**
      * Bricht den Downloadvorgang ab
@@ -61,6 +73,7 @@ public class StartDownloads extends ControlMulticaster{
             plugin.abort();
     }
     public void run(){
+        
 
         while((downloadLink = tabDownloadLinks.getNextDownloadLink()) != null){
             downloadLink = tabDownloadLinks.getNextDownloadLink();
@@ -95,9 +108,30 @@ public class StartDownloads extends ControlMulticaster{
             }
             if(step != null && step.getStatus() == PluginStep.STATUS_ERROR){
                 logger.severe("Error occurred while downloading file");
+                handleInteraction(Interaction.INTERACTION_DOWNLOAD_FAILED);
             }
             fireControlEvent(new ControlEvent(ControlEvent.CONTROL_SINGLE_DOWNLOAD_CHANGED));
+            handleInteraction(Interaction.INTERACTION_DOWNLOAD_FINISHED);
         }
         fireControlEvent(new ControlEvent(ControlEvent.CONTROL_ALL_DOWNLOADS_FINISHED));
+        handleInteraction(Interaction.INTERACTION_ALL_DOWNLOADS_FINISHED);
+    }
+    /**
+     * Hier werden die Interaktionen durchgeführt
+     * 
+     * @param interactionID InteraktionsID, die durchgeführt werden soll
+     */
+    private void handleInteraction(int interactionID){
+        Vector<Interaction> localInteractions = interactions.get(interactionID);
+        if(localInteractions != null && localInteractions.size()>0){
+            Iterator<Interaction> iterator = localInteractions.iterator();
+            while(iterator.hasNext()){
+                Interaction i = iterator.next();
+                if(!i.interact()){
+                    logger.severe("interaction failed: "+i);
+                }
+            }
+        }
+        
     }
 }
