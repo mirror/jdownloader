@@ -227,13 +227,16 @@ public class JAntiCaptcha {
      * MTH File wird geladen und verarbeitet
      */
     private void loadMTHFile() throws IOException{
+        logger.fine(cl+"_");
         URL url = cl.getResource(pathMethod+"/letters.mth");
         if (url == null) {
             logger.severe("MTH FILE NOT AVAILABLE.");
-        }
+        }else{
         mth = UTILITIES.parseXmlFile(url.openStream(), false);
+        }
         createLetterDBFormMTH();
         sortLetterDB();
+        
 
     }
 
@@ -657,7 +660,7 @@ public class JAntiCaptcha {
                 return -1;
 
             }
-            if (UTILITIES.getProperty(captchaHash) == null) {
+            if (getCodeFromFileName(captchafile.getName(),captchaHash) == null) {
                 if (captcha.getValityPercent() > (jas.getLetterSearchLimitValue() * 100) || jas.getLetterSearchLimitValue() <= 0) {
 
                     code = UTILITIES.prompt("Bitte Captcha Code eingeben (Press enter to confirm " + guess);
@@ -666,7 +669,7 @@ public class JAntiCaptcha {
                     code = guess;
                 }
             } else {
-                code = UTILITIES.getProperty(captchaHash);
+                code = getCodeFromFileName(captchafile.getName(),captchaHash);
                 logger.warning("captcha code für " + captchaHash + " verwendet: " + code);
 
             }
@@ -693,6 +696,10 @@ public class JAntiCaptcha {
             return -1;
         }
         UTILITIES.setProperty(captchaHash, code);
+       String[] oldName=captchafile.getName().split("\\.");
+       String ext=oldName[oldName.length-1];
+       String newName= captchafile.getParentFile().getAbsolutePath()+UTILITIES.FS+"captcha_"+this.getMethod()+"_code"+code+"."+ext;
+       captchafile.renameTo(new File(newName));
         int ret = 0;
         for (int i = 0; i < letters.length; i++) {
             if (letters[i] == null || letters[i].getWidth() < 2 || letters[i].getHeight() < 2) {
@@ -739,6 +746,16 @@ public class JAntiCaptcha {
         sortLetterDB();
         saveMTHFile();
         return ret;
+    }
+
+    private String getCodeFromFileName(String name, String captchaHash) {
+        //captcha_share.gulli.com_codeph2.gif
+        
+       String[] matches= UTILITIES.getMatches(name, "captcha_°_code°.°");
+       if(matches!=null &&matches.length>0)return matches[1];
+       
+       if(UTILITIES.getProperty(captchaHash)!=null)return UTILITIES.getProperty(captchaHash);
+        return null;
     }
 
     /**
@@ -802,7 +819,7 @@ public class JAntiCaptcha {
 
             String xmlString = result.getWriter().toString();
 
-            if (!UTILITIES.writeLocalFile(new File(pathMethod+"letters.mth"), xmlString)) {
+            if (!UTILITIES.writeLocalFile(new File(pathMethod+UTILITIES.FS+"letters.mth"), xmlString)) {
                 logger.severe("MTHO file Konnte nicht gespeichert werden");
             }
 

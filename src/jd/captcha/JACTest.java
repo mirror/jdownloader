@@ -25,9 +25,9 @@ public class JACTest {
 //
 //        jac.showPreparedCaptcha(new File("captcha\\methods\\rapidshare.com\\captchas\\rapidsharecom12140807171439.jpg"));
           
-        JAntiCaptcha jac= new JAntiCaptcha("filefactory.com");
+        JAntiCaptcha jac= new JAntiCaptcha("share.gulli.com");
        //jac.mergeGif(new File("test.gif"));
-        jac.showPreparedCaptcha(new File("captcha\\methods\\filefactory.com\\captchas\\filefactorycom201100807164620.gif"));
+        jac.showPreparedCaptcha(new File("captcha\\methods\\share.gulli.com\\captchas\\sharegullicom581100807165738.gif"));
         
    
     }

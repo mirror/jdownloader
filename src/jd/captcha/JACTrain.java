@@ -38,6 +38,7 @@ public class JACTrain {
 
                 addURL.setAccessible(true);
                 for(int i=0;i<files.length;i++){
+                    logger.info(files[i].getAbsolutePath());
                     URL jarURL = files[i].toURL();
                     addURL.invoke(urlClassLoader, new Object[]{jarURL});
                 }

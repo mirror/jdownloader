@@ -3,10 +3,10 @@
 ##### erkennung nötig sind #####
 #####################################---Share.gulli.com---####################################
 ##############Set parameter
-param.simplifyFaktor = 1;
+param.simplifyFaktor = 2;
 param.borderVariance=4;
 param.scanVariance=4;
-param.trainOnlyUnknown=false;
+param.trainOnlyUnknown=true;
 param.colorType = b;
 param.relativecontrast=0.90;
 param.gaps={22,47,73};
@@ -23,12 +23,12 @@ param.leftAngle=0;
 param.rightAngle=0;
 #param.objectColorContrast = 0.4;
 #param.objectDetectionContrast = 0.8;
-#param.useObjectDetection = true;
+param.useObjectDetection = false;
 #param.minimumObjectArea = 550;
 ##################Prepare captcha
 
 captcha.prepare.crop(25,8,25,8);
-captcha.prepare.reduceWhiteNoise(5,0.4);
+captcha.prepare.reduceWhiteNoise(4,0.2);
 captcha.prepare.toBlackAndWhite(0.4);
 #captcha.prepare.reduceWhiteNoise(4,1);
 #captcha.prepare.toBlackAndWhite(0.9);
@@ -45,4 +45,4 @@ captcha.prepare.toBlackAndWhite(0.4);
 
 ##################Prepare letter
 
-#letter.prepare.removeSmallObjects(0.3,0.5,75);
+letter.prepare.removeSmallObjects(0.3,0.5,30);
