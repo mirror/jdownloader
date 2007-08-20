@@ -3,7 +3,6 @@ package jd;
 import java.awt.Component;
 import java.awt.Container;
 import java.awt.Dimension;
-import java.awt.Frame;
 import java.awt.GridBagConstraints;
 import java.awt.Image;
 import java.awt.Insets;
@@ -12,7 +11,12 @@ import java.awt.Toolkit;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.FileFilter;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.lang.reflect.Method;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -25,18 +29,21 @@ import java.util.Vector;
 import java.util.logging.Logger;
 
 import javax.imageio.ImageIO;
-
-import sun.misc.Service;
+import javax.swing.JFileChooser;
+import javax.swing.JFrame;
 
 import jd.captcha.Captcha;
 import jd.captcha.JAntiCaptcha;
 import jd.gui.skins.simple.CaptchaDialog;
+import jd.plugins.DownloadLink;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.event.PluginListener;
+import sun.misc.Service;
 
 public class JDUtilities {
+    public static final String CONFIG_PATH = "jDownloader.config";
     private static ResourceBundle resourceBundle = null;
     private static Locale locale = null;
     /**
@@ -52,6 +59,10 @@ public class JDUtilities {
      */
     public static FilterJAR filterJar = new FilterJAR();
     /**
+     * Das aktuelle Verzeichnis (Laden/Speichern)
+     */
+    private static File currentDirectory = null;
+    /**
      * Hier werden alle vorhandenen Plugins zum Dekodieren von Links gespeichert
      */
     private static Vector<PluginForDecrypt> pluginsForDecrypt = new Vector<PluginForDecrypt>();
@@ -59,6 +70,10 @@ public class JDUtilities {
      * Hier werden alle Plugins für die Anbieter gespeichert
      */
     private static Vector<PluginForHost> pluginsForHost = new Vector<PluginForHost>();
+    /**
+     * Die Konfiguration
+     */
+    private static Configuration configuration = new Configuration();
 
     /**
      * Genau wie add, aber mit den Standardwerten iPadX,iPadY=0
@@ -198,7 +213,7 @@ public class JDUtilities {
      * @param captchaAddress Adresse des anzuzeigenden Bildes
      * @return Der vom Benutzer eingegebene Text
      */
-    public static String getCaptcha(Frame owner, Plugin plugin, String captchaAddress){
+    public static String getCaptcha(JFrame owner, Plugin plugin, String captchaAddress){
         boolean useJAC = false;
         if(useJAC){
             try {
@@ -288,6 +303,72 @@ public class JDUtilities {
             iterator.next().addPluginListener(listener);        }
     }
     /**
+     * Lädt ein Objekt aus einer Datei
+     * 
+     * @param frame Ein übergeordnetes Fenster
+     * @param fileInput Falls das Objekt aus einer bekannten Datei geladen werden soll, wird hier die Datei angegeben.
+     *                 Falls nicht, kann der Benutzer über einen Dialog eine Datei aussuchen
+     * @return Das geladene Objekt
+     */
+    public static Object loadObject(JFrame frame, File fileInput){
+        Object objectLoaded = null;
+        if(fileInput != null){
+            JFileChooser fileChooserLoad = new JFileChooser();
+            if(currentDirectory != null)
+                fileChooserLoad.setCurrentDirectory(currentDirectory);
+            if(fileChooserLoad.showOpenDialog(frame) == JFileChooser.APPROVE_OPTION){
+                fileInput = fileChooserLoad.getSelectedFile();
+                currentDirectory = fileChooserLoad.getCurrentDirectory();
+            }
+        }
+        if(fileInput != null){
+            try {
+                FileInputStream fis = new FileInputStream(fileInput);
+                ObjectInputStream ois = new ObjectInputStream(fis);
+                try {
+                    objectLoaded = (Vector<DownloadLink>)ois.readObject();
+                    return objectLoaded;
+                }
+                catch (ClassNotFoundException e) {
+                    e.printStackTrace();
+                }
+                ois.close();
+            }
+            catch (FileNotFoundException e) { e.printStackTrace(); }
+            catch (IOException e)           { e.printStackTrace(); }
+        }
+        return null;
+    }
+    /**
+     * Speichert ein Objekt
+     * 
+     * @param frame ein Fenster
+     * @param objectToSave Das zu speichernde Objekt
+     * @param fileOutput Das File, in das geschrieben werden soll. Falls keins angegeben wird,
+     *                   soll der Benutzer eine Datei auswählen
+     */
+    public static void saveObject(JFrame frame, Object objectToSave, File fileOutput){
+        if(fileOutput == null){
+            JFileChooser fileChooserSave = new JFileChooser();
+            if(currentDirectory != null)
+                fileChooserSave.setCurrentDirectory(currentDirectory);
+            if(fileChooserSave.showSaveDialog(frame) == JFileChooser.APPROVE_OPTION){
+                fileOutput = fileChooserSave.getSelectedFile();
+                currentDirectory = fileChooserSave.getCurrentDirectory();
+            }
+        }
+        if(fileOutput != null){
+            try {
+                FileOutputStream fos = new FileOutputStream(fileOutput);
+                ObjectOutputStream oos = new ObjectOutputStream(fos);
+                oos.writeObject(objectToSave);
+                oos.close();
+            }
+            catch (FileNotFoundException e) { e.printStackTrace(); }
+            catch (IOException e)           { e.printStackTrace(); }
+        }
+    }
+    /**
      * Liefert alle geladenen Plugins zum Entschlüsseln zurück
      * 
      * @return Plugins zum Entschlüsseln
@@ -315,5 +396,11 @@ public class JDUtilities {
                 return pluginsForHost.get(i);
         }
         return null;
+    }
+    public static Configuration getConfiguration() {
+        return configuration;
+    }
+    public static void setConfiguration(Configuration configuration) {
+        JDUtilities.configuration = configuration;
     }
 }

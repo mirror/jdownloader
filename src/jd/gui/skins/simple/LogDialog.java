@@ -1,6 +1,5 @@
 package jd.gui.skins.simple;
 
-import java.awt.Frame;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.event.ActionEvent;
@@ -16,6 +15,7 @@ import java.util.logging.StreamHandler;
 
 import javax.swing.JButton;
 import javax.swing.JDialog;
+import javax.swing.JFrame;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 
@@ -55,7 +55,7 @@ public class LogDialog extends JDialog implements ActionListener {
     * @param logger
     *           The connected Logger
     */
-   public LogDialog(Frame owner, Logger logger) {
+   public LogDialog(JFrame owner, Logger logger) {
       super(owner);
       setModal(false);
       setLayout(new GridBagLayout());

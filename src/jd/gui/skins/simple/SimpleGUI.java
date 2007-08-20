@@ -85,8 +85,8 @@ public class SimpleGUI extends GUIInterface implements ClipboardOwner{
     private JDAction actionStartStopDownload;
     private JDAction actionAdd;
     private JDAction actionDelete;
-    private JDAction actionLoad;
-    private JDAction actionSave;
+    private JDAction actionLoadLinks;
+    private JDAction actionSaveLinks;
     private JDAction actionExit;
     private JDAction actionLog;
     
@@ -114,9 +114,6 @@ public class SimpleGUI extends GUIInterface implements ClipboardOwner{
         buildUI();
         Toolkit.getDefaultToolkit().getSystemClipboard().setContents(new StringSelection(JDOWNLOADER_ID), this);
 
-        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        frame.setIconImage(JD_ICON);
-        frame.setTitle(JD_TITLE);
         frame.pack();
         frame.setVisible(true);
     }
@@ -124,13 +121,13 @@ public class SimpleGUI extends GUIInterface implements ClipboardOwner{
      * Die Aktionen werden initialisiert
      */
     public void initActions(){
-        actionStartStopDownload = new JDAction(this,  "start",     "action.start", JDAction.APP_START_STOP_DOWNLOADS);
-        actionAdd               = new JDAction(this,    "add",       "action.add", JDAction.ITEMS_ADD);
-        actionDelete            = new JDAction(this, "delete",    "action.delete", JDAction.ITEMS_REMOVE);
-        actionLoad              = new JDAction(this,   "load",      "action.load", JDAction.APP_LOAD);
-        actionSave              = new JDAction(this,   "save",      "action.save", JDAction.APP_SAVE);
-        actionExit              = new JDAction(this,   "exit",      "action.exit", JDAction.APP_EXIT);
-        actionLog               = new JDAction(this,    "log",   "action.viewlog", JDAction.VIEW_LOG);
+        actionStartStopDownload = new JDAction(this,  "start", "action.start",  JDAction.APP_START_STOP_DOWNLOADS);
+        actionAdd               = new JDAction(this,    "add", "action.add",    JDAction.ITEMS_ADD);
+        actionDelete            = new JDAction(this, "delete", "action.delete", JDAction.ITEMS_REMOVE);
+        actionLoadLinks         = new JDAction(this,   "load", "action.load",   JDAction.APP_LOAD);
+        actionSaveLinks         = new JDAction(this,   "save", "action.save",   JDAction.APP_SAVE);
+        actionExit              = new JDAction(this,   "exit", "action.exit",   JDAction.APP_EXIT);
+        actionLog               = new JDAction(this,    "log", "action.viewlog",JDAction.VIEW_LOG);
     }
     /**
      * Das Menü wird hier initialisiert
@@ -139,10 +136,10 @@ public class SimpleGUI extends GUIInterface implements ClipboardOwner{
         // file menu
         JMenu menFile         = new JMenu(JDUtilities.getResourceString("menu.file"));
 
-        JMenuItem menFileLoad = new JMenuItem(actionLoad);
+        JMenuItem menFileLoad = new JMenuItem(actionLoadLinks);
         menFileLoad.setIcon(null);
 
-        JMenuItem menFileSave = new JMenuItem(actionSave);
+        JMenuItem menFileSave = new JMenuItem(actionSaveLinks);
         menFileSave.setIcon(null);
 
         JMenuItem menFileExit = new JMenuItem(actionExit);
@@ -230,18 +227,22 @@ public class SimpleGUI extends GUIInterface implements ClipboardOwner{
                 startStopDownloads();
                 break;
             case JDAction.APP_SAVE:
-                saveFile();
+                saveLinks();
                 break;
             case JDAction.APP_LOAD:
-                loadFile();
+                loadLinks();
                 break;
             case JDAction.APP_EXIT:
                 frame.setVisible(false);
+                saveConfig();
                 break;
             case JDAction.VIEW_LOG:
                 logDialog.setVisible(!logDialog.isVisible());
                 break;
-             
+            case JDAction.ITEMS_ADD:
+                String t = null;
+                t.toString();
+                break;
         }
     }
     /**

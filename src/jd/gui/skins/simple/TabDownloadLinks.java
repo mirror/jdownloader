@@ -19,7 +19,6 @@ import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableColumn;
 
 import jd.JDUtilities;
-import jd.controlling.JDAction;
 import jd.plugins.DownloadLink;
 import jd.plugins.Plugin;
 import jd.plugins.event.PluginEvent;

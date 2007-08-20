@@ -1,10 +1,15 @@
 package jd;
 
 import java.awt.Toolkit;
+import java.io.File;
+import java.net.URISyntaxException;
+import java.net.URL;
 import java.util.Iterator;
+import java.util.logging.Logger;
 
 import jd.gui.GUIInterface;
 import jd.gui.skins.simple.SimpleGUI;
+import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 
@@ -30,6 +35,23 @@ public class Main {
         main.go();
     }
     private void go(){
+        Logger logger = Plugin.getLogger();
+        ClassLoader cl = getClass().getClassLoader();
+        URL configURL = cl.getResource(JDUtilities.CONFIG_PATH);
+        if(configURL != null){
+            try {
+                File fileInput = new File(configURL.toURI());
+                Object obj = JDUtilities.loadObject(null, fileInput);
+                if(obj instanceof Configuration){
+                    JDUtilities.setConfiguration((Configuration)obj);
+                }
+            }
+            catch (URISyntaxException e1) { e1.printStackTrace(); }
+        }
+        else{
+            logger.warning("no configuration loaded");
+            
+        }
         JDUtilities.loadPlugins();
         loadImages();
         GUIInterface guiInterface = new SimpleGUI();

@@ -19,35 +19,35 @@ public class Configuration implements Serializable{
     /**
      * Hier wird das Downloadverzeichnis gespeichert
      */
-    private static String downloadDirectory;
+    private String downloadDirectory=".";
     /**
      * Die unterschiedlichen Interaktionen.
      * (ZB Reconnect nach einem Download)
      */
-    private static HashMap<Integer, Vector<Interaction>> interactions = new HashMap<Integer, Vector<Interaction>>();
+    private HashMap<Integer, Vector<Interaction>> interactions = new HashMap<Integer, Vector<Interaction>>();
     /**
      * Hier sind die Angaben für den Router gespeichert
      */
-    private static RouterData routerData;
+    private RouterData routerData;
     /**
      * Benutzername für den Router
      */
-    private static String routerUsername;
+    private String routerUsername;
     /**
      * Password für den Router
      */
-    private static String routerPassword;
+    private String routerPassword;
     
-    public static String getDownloadDirectory() {
+    public String getDownloadDirectory() {
         return downloadDirectory;
     }
-    public static void setDownloadDirectory(String downloadDirectory) {
-        Configuration.downloadDirectory = downloadDirectory;
+    public void setDownloadDirectory(String downloadDirectory) {
+        this.downloadDirectory = downloadDirectory;
     }
-    public static HashMap<Integer, Vector<Interaction>> getInteractions() {
+    public HashMap<Integer, Vector<Interaction>> getInteractions() {
         return interactions;
     }
-    public static RouterData getRouterData() { return routerData;     }
-    public static String getRouterPassword() { return routerPassword; }
-    public static String getRouterUsername() { return routerUsername; }
+    public RouterData getRouterData() { return routerData;     }
+    public String getRouterPassword() { return routerPassword; }
+    public String getRouterUsername() { return routerUsername; }
 }
