@@ -1,4 +1,4 @@
-package jd.gui;
+package jd;
 
 import java.awt.Component;
 import java.awt.Container;
@@ -13,28 +13,52 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.FileFilter;
 import java.io.IOException;
+import java.lang.reflect.Method;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.net.URLClassLoader;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Locale;
 import java.util.ResourceBundle;
+import java.util.Vector;
 import java.util.logging.Logger;
 
 import javax.imageio.ImageIO;
 
+import sun.misc.Service;
+
 import jd.captcha.Captcha;
 import jd.captcha.JAntiCaptcha;
+import jd.gui.skins.simple.CaptchaDialog;
 import jd.plugins.Plugin;
+import jd.plugins.PluginForDecrypt;
+import jd.plugins.PluginForHost;
+import jd.plugins.event.PluginListener;
 
-public class Utilities {
+public class JDUtilities {
     private static ResourceBundle resourceBundle = null;
     private static Locale locale = null;
     /**
      * Alle verfügbaren Bilder werden hier gespeichert
      */
     private static HashMap<String, Image> images = new HashMap<String, Image>();
+    /**
+     * Der Logger für Meldungen
+     */
     private static Logger logger = Plugin.getLogger();
+    /**
+     * Damit werden die JARs rausgesucht
+     */
     public static FilterJAR filterJar = new FilterJAR();
+    /**
+     * Hier werden alle vorhandenen Plugins zum Dekodieren von Links gespeichert
+     */
+    private static Vector<PluginForDecrypt> pluginsForDecrypt = new Vector<PluginForDecrypt>();
+    /**
+     * Hier werden alle Plugins für die Anbieter gespeichert
+     */
+    private static Vector<PluginForHost> pluginsForHost = new Vector<PluginForHost>();
 
     /**
      * Genau wie add, aber mit den Standardwerten iPadX,iPadY=0
@@ -197,6 +221,98 @@ public class Utilities {
             owner.toFront();
             captchaDialog.setVisible(true);
             return captchaDialog.getCaptchaText();
+        }
+        return null;
+    }
+    /**
+     * Hier werden alle Plugins im aktuellen Verzeichnis geparsed (und im Classpath)
+     */
+    public static void loadPlugins(){
+        try {
+            // Alle JAR Dateien, die in diesem Verzeichnis liegen, werden dem
+            // Classloader hinzugefügt.
+            ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+            if(classLoader != null && (classLoader instanceof URLClassLoader)){
+                URLClassLoader urlClassLoader = (URLClassLoader)classLoader;
+                Method         addURL         = URLClassLoader.class.getDeclaredMethod("addURL", new Class[]{URL.class});
+                File           files[]        = new File(".").listFiles(JDUtilities.filterJar);
+
+                addURL.setAccessible(true);
+                for(int i=0;i<files.length;i++){
+                    URL jarURL = files[i].toURL();
+                    addURL.invoke(urlClassLoader, new Object[]{jarURL});
+                }
+            }
+        }
+        catch (Exception e) { }
+
+        Iterator iterator;
+
+        //Zuerst Plugins zum Dekodieren verschlüsselter Links
+        iterator = Service.providers(PluginForDecrypt.class);
+        while(iterator.hasNext())
+        {
+            PluginForDecrypt p = (PluginForDecrypt) iterator.next();
+            pluginsForDecrypt.add(p);
+            logger.info("Decrypt-Plugin : "+p.getPluginName());
+        }
+
+        //Danach die Plugins der verschiedenen Anbieter
+        iterator = Service.providers(PluginForHost.class);
+        while(iterator.hasNext())
+        {
+            PluginForHost p = (PluginForHost) iterator.next();
+            pluginsForHost.add(p);
+            logger.info("Host-Plugin    : "+p.getPluginName());
+        }
+    }
+    
+    /**
+     * Fügt einen PluginListener hinzu
+     * 
+     * @param listener
+     */
+    public void registerListenerPluginsForDecrypt(PluginListener listener){
+        Iterator<PluginForDecrypt> iterator = pluginsForDecrypt.iterator();
+        while(iterator.hasNext()){
+            iterator.next().addPluginListener(listener);        }
+    }
+    /**
+     * Fügt einen PluginListener hinzu
+     * 
+     * @param listener
+     */
+    public void registerListenerPluginsForHost(PluginListener listener){
+        Iterator<PluginForHost> iterator = pluginsForHost.iterator();
+        while(iterator.hasNext()){
+            iterator.next().addPluginListener(listener);        }
+    }
+    /**
+     * Liefert alle geladenen Plugins zum Entschlüsseln zurück
+     * 
+     * @return Plugins zum Entschlüsseln
+     */
+    public static Vector<PluginForDecrypt> getPluginsForDecrypt() {
+        return pluginsForDecrypt;
+    }
+    /**
+     * Liefert alle Plugins zum Downloaden von einem Anbieter zurück
+     * 
+     * @return Plugins zum Downloaden von einem Anbieter 
+     */
+    public static Vector<PluginForHost> getPluginsForHost() {
+        return pluginsForHost;
+    }
+    /**
+     * Sucht ein passendes Plugin für einen Anbieter
+     *
+     * @param host Der Host, von dem das Plugin runterladen kann
+     * @return Ein passendes Plugin oder null
+     */
+    public static PluginForHost getPluginForHost(String host){
+        for(int i=0;i<pluginsForHost.size();i++){
+            if(pluginsForHost.get(i).getHost().equals(host))
+                return pluginsForHost.get(i);
         }
         return null;
     }

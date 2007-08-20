@@ -1,4 +1,4 @@
-package jd.gui;
+package jd.gui.skins.simple;
 
 import java.awt.BorderLayout;
 import java.awt.Component;
@@ -12,6 +12,7 @@ import javax.swing.event.TableModelEvent;
 import javax.swing.table.AbstractTableModel;
 import javax.swing.table.TableCellRenderer;
 
+import jd.JDUtilities;
 import jd.plugins.Plugin;
 import jd.plugins.event.PluginEvent;
 import jd.plugins.event.PluginListener;
@@ -85,11 +86,11 @@ public class TabPluginActivity extends JPanel implements PluginListener{
         /**
          * Bezeichnung der Spalte für den Pluginnamen
          */
-        private String labelColumnName     = Utilities.getResourceString("label.tab.plugin_activity.column_plugin");
+        private String labelColumnName     = JDUtilities.getResourceString("label.tab.plugin_activity.column_plugin");
         /**
          * Bezeichnung der Spalte für die Fortschrittsanzeige
          */
-        private String labelColumnProgress = Utilities.getResourceString("label.tab.plugin_activity.column_progress");
+        private String labelColumnProgress = JDUtilities.getResourceString("label.tab.plugin_activity.column_progress");
 
         public Class<?> getColumnClass(int columnIndex) {
             switch(columnIndex){

@@ -1,4 +1,4 @@
-package jd.gui;
+package jd.gui.skins.simple;
 
 import java.awt.Frame;
 import java.awt.GridBagConstraints;
@@ -18,6 +18,7 @@ import javax.swing.JDialog;
 import javax.swing.JLabel;
 import javax.swing.JTextField;
 
+import jd.JDUtilities;
 import jd.captcha.JAntiCaptcha;
 import jd.plugins.Plugin;
 
@@ -79,12 +80,12 @@ public class CaptchaDialog extends JDialog implements ActionListener {
 		btnOK.addActionListener(this);
 		getRootPane().setDefaultButton(btnOK);
 		setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
-		Utilities.addToGridBag(this, label,     0, 0, 2, 1, 0, 0, null, GridBagConstraints.NONE, GridBagConstraints.CENTER);
-		Utilities.addToGridBag(this, textField, 0, 1, 1, 1, 1, 1, null,	GridBagConstraints.NONE, GridBagConstraints.EAST);
-		Utilities.addToGridBag(this, btnOK,     1, 1, 1, 1, 1, 1, null,	GridBagConstraints.NONE, GridBagConstraints.WEST);
+		JDUtilities.addToGridBag(this, label,     0, 0, 2, 1, 0, 0, null, GridBagConstraints.NONE, GridBagConstraints.CENTER);
+		JDUtilities.addToGridBag(this, textField, 0, 1, 1, 1, 1, 1, null,	GridBagConstraints.NONE, GridBagConstraints.EAST);
+		JDUtilities.addToGridBag(this, btnOK,     1, 1, 1, 1, 1, 1, null,	GridBagConstraints.NONE, GridBagConstraints.WEST);
 
 		pack();
-		setLocation(Utilities.getCenterOfComponent(null, this));
+		setLocation(JDUtilities.getCenterOfComponent(null, this));
 		textField.requestFocusInWindow();
 	}
 

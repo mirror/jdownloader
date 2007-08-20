@@ -1,4 +1,4 @@
-package jd.gui;
+package jd.gui.skins.simple;
 
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
@@ -6,6 +6,7 @@ import java.awt.GridBagLayout;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 
+import jd.JDUtilities;
 import jd.plugins.DownloadLink;
 /**
  * Diese Klasse soll, abhängig von einem DownloadLink die Geschwindigkeit messen
@@ -25,12 +26,12 @@ public class Speedometer extends JPanel{
     
     public Speedometer(){
         setLayout(new GridBagLayout());
-        Utilities.addToGridBag(this, new JLabel("Datei:"),           0, 0, 1, 1, 0, 0, null, GridBagConstraints.NONE, GridBagConstraints.WEST);
-        Utilities.addToGridBag(this, new JLabel("Größe:"),           0, 1, 1, 1, 0, 0, null, GridBagConstraints.NONE, GridBagConstraints.WEST);
-        Utilities.addToGridBag(this, new JLabel("Geschwindigkeit:"), 0, 2, 1, 1, 0, 0, null, GridBagConstraints.NONE, GridBagConstraints.WEST);
-        Utilities.addToGridBag(this, lblDownloadName,                1, 0, 1, 1, 0, 0, null, GridBagConstraints.NONE, GridBagConstraints.WEST);
-        Utilities.addToGridBag(this, lblDownloadSize,                1, 1, 1, 1, 0, 0, null, GridBagConstraints.NONE, GridBagConstraints.WEST);
-        Utilities.addToGridBag(this, lblDownloadSpeed,               1, 2, 1, 1, 0, 0, null, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        JDUtilities.addToGridBag(this, new JLabel("Datei:"),           0, 0, 1, 1, 0, 0, null, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        JDUtilities.addToGridBag(this, new JLabel("Größe:"),           0, 1, 1, 1, 0, 0, null, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        JDUtilities.addToGridBag(this, new JLabel("Geschwindigkeit:"), 0, 2, 1, 1, 0, 0, null, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        JDUtilities.addToGridBag(this, lblDownloadName,                1, 0, 1, 1, 0, 0, null, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        JDUtilities.addToGridBag(this, lblDownloadSize,                1, 1, 1, 1, 0, 0, null, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        JDUtilities.addToGridBag(this, lblDownloadSpeed,               1, 2, 1, 1, 0, 0, null, GridBagConstraints.NONE, GridBagConstraints.WEST);
     }
     public void setDownloadLink(DownloadLink downloadLink){
         this.downloadLink = downloadLink;

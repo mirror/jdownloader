@@ -5,6 +5,7 @@ import java.util.Iterator;
 import java.util.Vector;
 import java.util.logging.Logger;
 
+import jd.JDUtilities;
 import jd.controlling.event.ControlEvent;
 import jd.plugins.DownloadLink;
 import jd.plugins.Plugin;
@@ -46,15 +47,13 @@ public class DistributeData extends ControlMulticaster{
      * Erstellt einen neuen Thread mit dem Text, der verteilt werden soll.
      * Die übergebenen Daten werden durch einen URLDecoder geschickt.
      *
-     * @param pluginsForHost Hier werden alles Plugins übergeben, die von Anbietern Downloads starten können
-     * @param pluginsForDecrypt Hier werden alles Plugins übergeben, die Links entschlüsseln können
      * @param data Daten, die verteilt werden sollen
      */
-    public DistributeData (Vector<PluginForHost> pluginsForHost, Vector<PluginForDecrypt> pluginsForDecrypt, String data){
+    public DistributeData (String data){
         super("JD-DistributeData");
-        this.pluginsForHost = pluginsForHost;
-        this.pluginsForDecrypt = pluginsForDecrypt;
-        this.data = data;
+        this.data              = data;
+        this.pluginsForHost    = JDUtilities.getPluginsForHost();
+        this.pluginsForDecrypt = JDUtilities.getPluginsForDecrypt();
         try {
             this.data = URLDecoder.decode(this.data,"US-ASCII");
         }

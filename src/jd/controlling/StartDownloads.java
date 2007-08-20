@@ -1,15 +1,14 @@
 package jd.controlling;
 
-import java.awt.Frame;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Vector;
 import java.util.logging.Logger;
 
+import jd.JDUtilities;
 import jd.controlling.event.ControlEvent;
 import jd.controlling.interaction.Interaction;
-import jd.gui.TabDownloadLinks;
-import jd.gui.Utilities;
+import jd.gui.GUIInterface;
 import jd.plugins.DownloadLink;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForHost;
@@ -40,11 +39,7 @@ public class StartDownloads extends ControlMulticaster{
     /**
      * Das übergeordnete Fenster
      */
-    private Frame owner;
-    /**
-     * Die Komponente mit den Downloadlinks
-     */
-    private TabDownloadLinks tabDownloadLinks;
+    private GUIInterface guiInterface;
     /**
      * Hiermit werden Interaktionen zum laufenden DownloadThread umgesetzt
      * (ZB ein Reconnect)
@@ -53,14 +48,13 @@ public class StartDownloads extends ControlMulticaster{
     /**
      * Erstellt einen Thread zum Start des Downloadvorganges
      * 
-     * @param owner Das übergeordnete Fenster
+     * @param guiInterface Schnittstelle zur GUI
      * @param tabDownloadLinks Die Komponente, mit den Downloadlinks
      * @param interactions Hier sind alle möglichen Interaktionen gespeichert
      */
-    public StartDownloads(Frame owner, TabDownloadLinks tabDownloadLinks, HashMap<Integer, Vector<Interaction>> interactions){
+    public StartDownloads(GUIInterface guiInterface, HashMap<Integer, Vector<Interaction>> interactions){
         super("JD-StartDownloads");
-        this.tabDownloadLinks = tabDownloadLinks;
-        this.owner = owner;
+        this.guiInterface = guiInterface;
         this.interactions = interactions;
 
     }
@@ -75,8 +69,8 @@ public class StartDownloads extends ControlMulticaster{
     public void run(){
         
 
-        while((downloadLink = tabDownloadLinks.getNextDownloadLink()) != null){
-            downloadLink = tabDownloadLinks.getNextDownloadLink();
+        while((downloadLink = guiInterface.getNextDownloadLink()) != null){
+            downloadLink = guiInterface.getNextDownloadLink();
             logger.info("working on "+downloadLink.getName());
             plugin   = downloadLink.getPlugin();
             plugin.init();
@@ -96,7 +90,7 @@ public class StartDownloads extends ControlMulticaster{
                         catch (InterruptedException e) { e.printStackTrace(); }
                         break;
                     case PluginStep.STEP_CAPTCHA:
-                        String captchaText = Utilities.getCaptcha(owner,plugin, (String)step.getParameter());
+                        String captchaText = JDUtilities.getCaptcha(guiInterface.getFrame(),plugin, (String)step.getParameter());
                         step.setParameter(captchaText);
                         step.setStatus(PluginStep.STATUS_DONE);
                 }

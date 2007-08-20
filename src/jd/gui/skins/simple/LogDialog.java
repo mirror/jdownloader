@@ -1,4 +1,4 @@
-package jd.gui;
+package jd.gui.skins.simple;
 
 import java.awt.Frame;
 import java.awt.GridBagConstraints;
@@ -18,6 +18,7 @@ import javax.swing.JDialog;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 
+import jd.JDUtilities;
 import jd.plugins.LogFormatter;
 
 /**
@@ -71,13 +72,13 @@ public class LogDialog extends JDialog implements ActionListener {
       logScrollPane = new JScrollPane(logField);
       logField.setEditable(false);
 
-      Utilities.addToGridBag(this, logScrollPane, 0, 0, 1, 1, 1, 1, null, GridBagConstraints.BOTH,
+      JDUtilities.addToGridBag(this, logScrollPane, 0, 0, 1, 1, 1, 1, null, GridBagConstraints.BOTH,
             GridBagConstraints.EAST);
-      Utilities.addToGridBag(this, btnOK, 0, 1, 1, 1, 1, 0, null, GridBagConstraints.NONE,
+      JDUtilities.addToGridBag(this, btnOK, 0, 1, 1, 1, 1, 0, null, GridBagConstraints.NONE,
             GridBagConstraints.CENTER);
 
       pack();
-      setLocation(Utilities.getCenterOfComponent(null, this));
+      setLocation(JDUtilities.getCenterOfComponent(null, this));
    }
 
    /*

@@ -1,4 +1,4 @@
-package jd.gui;
+package jd.gui.skins.simple;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
@@ -18,7 +18,8 @@ import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableColumn;
 
-import jd.gui.MainWindow.JDAction;
+import jd.JDUtilities;
+import jd.controlling.JDAction;
 import jd.plugins.DownloadLink;
 import jd.plugins.Plugin;
 import jd.plugins.event.PluginEvent;
@@ -66,7 +67,7 @@ public class TabDownloadLinks extends JPanel implements PluginListener{
      *
      * @param parent Das aufrufende Hauptfenster
      */
-    public TabDownloadLinks(MainWindow parent){
+    public TabDownloadLinks(SimpleGUI parent){
         super(new BorderLayout());
         table = new InternalTable();
         table.setModel(internalTableModel);
@@ -86,7 +87,7 @@ public class TabDownloadLinks extends JPanel implements PluginListener{
         JScrollPane scrollPane = new JScrollPane(table);
         add(scrollPane);
     }
-    public void setLinks(Vector<DownloadLink> links){
+    public void setDownloadLinks(Vector<DownloadLink> links){
         allLinks.clear();
         addLinks(links);
     }
@@ -112,11 +113,7 @@ public class TabDownloadLinks extends JPanel implements PluginListener{
      * @param direction Zeigt wie/wohin die Einträge verschoben werden sollen
      */
     public void moveItems(int direction){
-        int rows[] = table.getSelectedRows();
-        switch(direction){
-            case JDAction.ITEMS_MOVE_TOP:
-                break;
-        }
+        //TODO
     }
     /**
      * Diese Methode liefert den nächsten Download zurück.
@@ -172,10 +169,10 @@ public class TabDownloadLinks extends JPanel implements PluginListener{
          * serialVersionUID
          */
         private static final long serialVersionUID = -357970066822953957L;
-        private String labelIndex    = Utilities.getResourceString("label.tab.download.column_index");
-        private String labelLink     = Utilities.getResourceString("label.tab.download.column_link");
-        private String labelHost     = Utilities.getResourceString("label.tab.download.column_host");
-        private String labelProgress = Utilities.getResourceString("label.tab.download.column_progress");
+        private String labelIndex    = JDUtilities.getResourceString("label.tab.download.column_index");
+        private String labelLink     = JDUtilities.getResourceString("label.tab.download.column_link");
+        private String labelHost     = JDUtilities.getResourceString("label.tab.download.column_host");
+        private String labelProgress = JDUtilities.getResourceString("label.tab.download.column_progress");
         @Override
         public String getColumnName(int column) {
             switch(column){
