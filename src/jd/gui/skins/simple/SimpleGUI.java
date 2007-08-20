@@ -302,7 +302,7 @@ public class SimpleGUI extends GUIInterface implements ClipboardOwner{
     @Override
     public DownloadLink getNextDownloadLink() {
         if(tabDownloadTable != null)
-            tabDownloadTable.getNextDownloadLink();
+            return tabDownloadTable.getNextDownloadLink();
         return null;
     }
 
