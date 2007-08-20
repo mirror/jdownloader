@@ -133,14 +133,6 @@ public class LogDialog extends JDialog implements ActionListener {
          flush();
       }
 
-      /**
-       * Override <tt>StreamHandler.close</tt> to do a flush but not to close the output stream.
-       * That is, we do <b>not</b> close <tt>System.err</tt>.
-       */
-      public void close() {
-         flush();
-      }
-
    }
 
 }
