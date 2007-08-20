@@ -209,7 +209,6 @@ public class SimpleGUI extends GUIInterface implements ClipboardOwner{
         logDialog = new LogDialog(getFrame(), logger);
         logDialog.setVisible(true);
         logDialog.addWindowListener(new LogDialogWindowAdapter());
-        logger.warning("hello");
     }
     
     /**
