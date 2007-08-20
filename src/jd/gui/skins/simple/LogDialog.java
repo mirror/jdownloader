@@ -8,10 +8,11 @@ import java.awt.event.ActionListener;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintStream;
-import java.util.logging.ConsoleHandler;
 import java.util.logging.Handler;
 import java.util.logging.Level;
+import java.util.logging.LogRecord;
 import java.util.logging.Logger;
+import java.util.logging.StreamHandler;
 
 import javax.swing.JButton;
 import javax.swing.JDialog;
@@ -22,8 +23,9 @@ import jd.JDUtilities;
 import jd.plugins.LogFormatter;
 
 /**
- * Ein Dialog, der Logger-Output anzeigen kann.
- * Zur Benutzung muss der OutputStream von {@link #getLogStream()} genutzt werden.
+ * Ein Dialog, der Logger-Output anzeigen kann. Zur Benutzung muss der OutputStream von
+ * {@link #getLogStream()} genutzt werden.
+ * 
  * @author Tom
  */
 public class LogDialog extends JDialog implements ActionListener {
@@ -44,20 +46,20 @@ public class LogDialog extends JDialog implements ActionListener {
     * Knopf zum schliessen des Fensters
     */
    private JButton btnOK;
-   
+
    /**
     * Primary Constructor
     * 
     * @param owner
     *           The owning Frame
-    * @param logger 
+    * @param logger
     *           The connected Logger
     */
    public LogDialog(Frame owner, Logger logger) {
       super(owner);
       setModal(false);
       setLayout(new GridBagLayout());
-      
+
       Handler streamHandler = new LogStreamHandler(new PrintStream(new LogStream()));
       streamHandler.setLevel(Level.ALL);
       streamHandler.setFormatter(new LogFormatter());
@@ -72,8 +74,8 @@ public class LogDialog extends JDialog implements ActionListener {
       logScrollPane = new JScrollPane(logField);
       logField.setEditable(false);
 
-      JDUtilities.addToGridBag(this, logScrollPane, 0, 0, 1, 1, 1, 1, null, GridBagConstraints.BOTH,
-            GridBagConstraints.EAST);
+      JDUtilities.addToGridBag(this, logScrollPane, 0, 0, 1, 1, 1, 1, null,
+            GridBagConstraints.BOTH, GridBagConstraints.EAST);
       JDUtilities.addToGridBag(this, btnOK, 0, 1, 1, 1, 1, 0, null, GridBagConstraints.NONE,
             GridBagConstraints.CENTER);
 
@@ -91,7 +93,7 @@ public class LogDialog extends JDialog implements ActionListener {
          dispose();
       }
    }
-   
+
    /**
     * Ein OutputStream, der die Daten an das log field weiterleitet
     */
@@ -100,21 +102,45 @@ public class LogDialog extends JDialog implements ActionListener {
       @Override
       public void write(int b) throws IOException {
          // den character an das text control anhaengen
-         logField.append( String.valueOf((char) b) );
+         logField.append(String.valueOf((char) b));
       }
-      
+
    }
-   
+
    /**
     * Handler der einen OutputStream unterstuetzt basierend auf einem ConsoleHandler
     */
-   private class LogStreamHandler extends ConsoleHandler {
+   private class LogStreamHandler extends StreamHandler {
 
       public LogStreamHandler(OutputStream stream) {
-         super();
+         // super();
          setOutputStream(stream);
       }
-      
+
+      /**
+       * Publish a <tt>LogRecord</tt>.
+       * <p>
+       * The logging request was made initially to a <tt>Logger</tt> object, which initialized the
+       * <tt>LogRecord</tt> and forwarded it here.
+       * <p>
+       * 
+       * @param record
+       *           description of the log event. A null record is silently ignored and is not
+       *           published
+       */
+      public void publish(LogRecord record) {
+         super.publish(record);
+         flush();
+      }
+
+      /**
+       * Override <tt>StreamHandler.close</tt> to do a flush but not to close the output stream.
+       * That is, we do <b>not</b> close <tt>System.err</tt>.
+       */
+      public void close() {
+         flush();
+      }
+
    }
 
 }
