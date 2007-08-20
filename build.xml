@@ -21,8 +21,11 @@
                 <exclude name = "jd/plugins/decrypt/**"/>
                 <exclude name = "jd/plugins/host/**"/>
             </fileset>
-            <fileset dir="${res}" includes="img/**"/>
-            <fileset dir="${res}" includes="*.properties"/>
+            <fileset dir="${res}">
+                <include name = "img/**"/>
+                <include name = "*.properties"/>   
+                <exclude name = "jd/captcha/methods"/>   
+            </fileset>
         </jar>
         <delete file="Manifest.MF" failonerror="false" />
         
@@ -40,7 +43,10 @@
         </manifest>
         <jar jarfile="${dist}/JAntiCaptcha.jar" manifest="Manifest.MF">
             <fileset dir="${cls}">
-                <include name = "jd/plugins/**"/>
+                <include name = "jd/plugins/Plugin.class"/>
+                <include name = "jd/plugins/LogFormatter.class"/>
+                <include name = "jd/plugins/event/PluginEvent.class"/>
+                <include name = "jd/plugins/event/PluginListener.class"/>
                 <include name = "jd/captcha/**"/>
                 <exclude name = "jd/captcha/methods/**"/>   
             </fileset>
@@ -48,9 +54,8 @@
         <delete file="Manifest.MF" failonerror="false" />
         
         <jar jarfile="${dist}/JAntiCaptchaMethods.jar">
-            <fileset dir="${cls}">
-                <include name = "jd/captcha/**"/>
-                <exclude name = "jd/captcha/**/*.class"/>   
+            <fileset dir="${res}">
+                <include name = "jd/captcha/methods/**"/>
             </fileset>
         </jar>
     </target>

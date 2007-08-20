@@ -67,8 +67,6 @@ public class StartDownloads extends ControlMulticaster{
             plugin.abort();
     }
     public void run(){
-        
-
         while((downloadLink = guiInterface.getNextDownloadLink()) != null){
             downloadLink = guiInterface.getNextDownloadLink();
             logger.info("working on "+downloadLink.getName());
