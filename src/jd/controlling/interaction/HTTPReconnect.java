@@ -36,7 +36,7 @@ public class HTTPReconnect extends Interaction{
         Authenticator.setDefault(new InternalAuthenticator(routerUsername, routerPassword));
 
         //IP auslesen
-        ipBefore = getIPAddress(routerData);
+//        ipBefore = getIPAddress(routerData);
 
         //Trennen
         logger.fine("disconnecting router");
@@ -69,24 +69,24 @@ public class HTTPReconnect extends Interaction{
         catch (IOException e)           { e.printStackTrace(); }
 
         // IP check
-        ipAfter = getIPAddress(routerData);
-        if(ipBefore.equals(ipAfter)){
-            logger.severe("IP address did not change");
-            return false;
-        }
+//        ipAfter = getIPAddress(routerData);
+//        if(ipBefore.equals(ipAfter)){
+//            logger.severe("IP address did not change");
+//            return false;
+//        }
 
         return true;
     }
-    private String getIPAddress(RouterData routerData){
-        try {
-            String urlForIPAddress = routerData.getStatusIPAddress().getWebsite();
-            RequestInfo requestInfo = Plugin.getRequest(new URL(urlForIPAddress));
-            return routerData.getIPAdress(requestInfo.getHtmlCode());
-        }
-        catch (IOException e1) { e1.printStackTrace(); }
-        return null;
-
-    }
+//    private String getIPAddress(RouterData routerData){
+//        try {
+//            String urlForIPAddress = routerData.getStatusIPAddress().getWebsite();
+//            RequestInfo requestInfo = Plugin.getRequest(new URL(urlForIPAddress));
+//            return routerData.getIPAdress(requestInfo.getHtmlCode());
+//        }
+//        catch (IOException e1) { e1.printStackTrace(); }
+//        return null;
+//
+//    }
     @Override
     public String toString() { return "HTTPReconnect "+Configuration.getRouterData(); }
 
