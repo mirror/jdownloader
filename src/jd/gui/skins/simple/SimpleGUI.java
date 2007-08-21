@@ -9,7 +9,6 @@ import java.awt.datatransfer.StringSelection;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.util.Vector;
-import java.util.logging.Logger;
 
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
@@ -31,7 +30,6 @@ import jd.controlling.JDAction;
 import jd.controlling.event.ControlEvent;
 import jd.gui.GUIInterface;
 import jd.plugins.DownloadLink;
-import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.event.PluginEvent;
@@ -57,10 +55,6 @@ public class SimpleGUI extends GUIInterface implements ClipboardOwner{
      * Toolleiste für Knöpfe
      */
     private JToolBar toolBar;
-    /**
-     * Logger für Meldungen des Programmes
-     */
-    private static Logger logger = Plugin.getLogger();
     /**
      * Komponente, die alle Downloads anzeigt
      */
@@ -99,7 +93,6 @@ public class SimpleGUI extends GUIInterface implements ClipboardOwner{
      */
     public SimpleGUI(){
         super();
-        logger.info("Version:"+Plugin.VERSION);
         try {
             UIManager.setLookAndFeel(new WindowsLookAndFeel());
         }

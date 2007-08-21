@@ -4,13 +4,13 @@ import java.io.EOFException;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.io.OutputStream;
 import java.util.Vector;
+import java.util.logging.Logger;
+
+import jd.JDUtilities;
+import jd.plugins.Plugin;
 
 /**
  * Versuch, die Routers.dat auszulesen
@@ -19,6 +19,7 @@ import java.util.Vector;
  * 
  */
 public class Parser {
+    private static Logger logger = Plugin.getLogger();
     Vector<Object> routers = new Vector<Object>();
 
     int positionInFile = 0;
@@ -32,6 +33,7 @@ public class Parser {
                 parseSingleRouter(fis);
                 count++;
             }
+            logger.info(count +" router data loaded");
         } catch (FileNotFoundException e) {
             e.printStackTrace();
         } catch (IOException e) {
@@ -40,48 +42,28 @@ public class Parser {
     }
 
     public void saveFile(File file) {
-        OutputStream fos = null;
-
-        try {
-            fos = new FileOutputStream(file);
-            ObjectOutputStream o = new ObjectOutputStream(fos);
-            o.writeObject(routers);
-
-        } catch (IOException e) {
-            System.err.println(e);
-        } finally {
-            try {
-                fos.close();
-            } catch (Exception e) {
-            }
-        }
+        JDUtilities.saveObject(null, routers, file,"jd",".routers");
     }
 
     public void parseSingleRouter(FileInputStream fis) throws IOException {
-        System.out.println("------------------------");
         RouterData routerData = new RouterData();
 
         routerData.setHttpPort(readInt(fis));
-        // browserDialog = readByte(fis);
         routerData.setLoginType(readByte(fis));
-        // signOnUrl = readNextString(fis);
         routerData.setLoginString(readNextString(fis));
         readLong(fis); // es muss ein long übersprungen werden
-        routerData.setRouterName(readNextString(fis)); // routername wird
-        // gespeichert
+        routerData.setRouterName(readNextString(fis)); // routername wird gespeichert
 
-        // url zum routerhersteller wird übersprungen
-        readNextString(fis);
-        // kommentar vom ersteller wird übersprungen
-        readNextString(fis);
-        // connectionUrl = readNextString(fis);
+        
+        readNextString(fis);// url zum routerhersteller wird übersprungen
+        readNextString(fis);// kommentar vom ersteller wird übersprungen
         routerData.setConnectionConnect(readNextString(fis));
-        // disconnectUrl = readNextString(fis);
         routerData.setConnectionDisconnect(readNextString(fis));
-        // Informationen der Statusseite 1 werden übersprungen
-        for (int i = 0; i < 4; i++) {
-            readNextString(fis);
-        }
+        routerData.setIpAddressSite(readNextString(fis));
+        routerData.setIpAddressOffline(readNextString(fis));
+        routerData.setIpAddressPre(readNextString(fis));
+        routerData.setIpAddressPost(readNextString(fis));
+
         // informationen der Statusseite 2 werden übersprungen
         readNextString(fis);
         int loop1 = readInt(fis);
@@ -106,7 +88,7 @@ public class Parser {
         readNextString(fis);
 
         int loop2 = readInt(fis);
-        System.out.println("loop2 " + loop2);
+//        System.out.println("loop2 " + loop2);
 
         for (int i = 0; i < loop2; i++) {
             readNextString(fis);
@@ -129,6 +111,7 @@ public class Parser {
         byte b[] = new byte[length];
         fis.read(b);
         positionInFile += length;
+//        System.out.println(new String(b));
         return new String(b);
     }
 

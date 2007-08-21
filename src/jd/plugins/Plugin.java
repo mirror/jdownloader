@@ -50,7 +50,7 @@ public abstract class Plugin{
     /**
      * Versionsinformationen
      */
-    public static final String VERSION ="jDownloader_20070817_0";
+    public static final String VERSION ="jDownloader_20070821_0";
     /**
      * Zeigt an, ob das Plugin abgebrochen werden soll
      */
@@ -325,8 +325,8 @@ public abstract class Plugin{
         while ((line = rd.readLine()) != null) {
             htmlCode.append(line);
         }
-        String location = urlInput.getHeaderField("location");
-        String cookie   = urlInput.getHeaderField("Cookie");
+        String location = urlInput.getHeaderField("Location");
+        String cookie   = urlInput.getHeaderField("Set-Cookie");
         rd.close();
         RequestInfo requestInfo = new RequestInfo(htmlCode.toString(),location,cookie,null);
         return requestInfo;

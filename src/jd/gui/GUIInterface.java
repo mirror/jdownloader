@@ -6,6 +6,7 @@ import java.awt.datatransfer.ClipboardOwner;
 import java.awt.datatransfer.Transferable;
 import java.io.File;
 import java.util.Vector;
+import java.util.logging.Logger;
 
 import javax.swing.JFrame;
 
@@ -15,6 +16,7 @@ import jd.controlling.ClipboardHandler;
 import jd.controlling.StartDownloads;
 import jd.controlling.event.ControlListener;
 import jd.plugins.DownloadLink;
+import jd.plugins.Plugin;
 import jd.plugins.PluginForHost;
 import jd.plugins.event.PluginListener;
 
@@ -22,6 +24,10 @@ public abstract class GUIInterface implements PluginListener, ControlListener, C
 
     private final String JD_TITLE  = "jDownloader 0.0.1";
     private final Image JD_ICON = JDUtilities.getImage("mind");
+    /**
+     * Logger für Meldungen des Programmes
+     */
+    protected static Logger logger = Plugin.getLogger();
     /**
      * Der Thread, der das Downloaden realisiert
      */
@@ -31,6 +37,8 @@ public abstract class GUIInterface implements PluginListener, ControlListener, C
      */
     protected Configuration config = JDUtilities.getConfiguration();
     public GUIInterface(){
+        logger.info("Version : "+Plugin.VERSION);
+
         JFrame frame = getFrame();
         if(frame!= null){
             frame.setIconImage(JD_ICON);
@@ -92,7 +100,7 @@ public abstract class GUIInterface implements PluginListener, ControlListener, C
      */
     protected void saveLinks(){
         Vector<DownloadLink> links = getDownloadLinks();
-        JDUtilities.saveObject(getFrame(),links,null);
+        JDUtilities.saveObject(getFrame(),links,null,"jd",".links");
     }
     /**
      * Lädt alle Links aus einer Datei
@@ -110,6 +118,6 @@ public abstract class GUIInterface implements PluginListener, ControlListener, C
         }
     }
     protected void saveConfig(){
-        JDUtilities.saveObject(getFrame(), config, new File(JDUtilities.CONFIG_PATH));
+        JDUtilities.saveObject(getFrame(), config, new File(JDUtilities.CONFIG_PATH),"jd","config");
     }
 }

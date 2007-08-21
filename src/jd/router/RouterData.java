@@ -19,8 +19,6 @@ public class RouterData implements Serializable{
     
     public transient static final int LOGIN_TYPE_AUTH = 0;
     public transient static final int LOGIN_TYPE_WEB  = 1;
-    
-    private static Logger logger = Plugin.getLogger();
     /**
      * Name des Routers
      */
@@ -31,52 +29,35 @@ public class RouterData implements Serializable{
     private String connectionConnect;
     private String connectionDisconnect;
     private String connectionLogoff;
-   // private StatusPageIPAdress statusIPAddress;    
+    private String ipAddressSite;
+    private String ipAddressOffline;
+    private String ipAddressPre;
+    private String ipAddressPost;
     
-    public void setConnectionConnect(String connectionConnect)          {   this.connectionConnect = connectionConnect;         }
-    public String getConnectionConnect()                                {   return connectionConnect;                           }
-    public void setConnectionDisconnect(String connectionDisconnect)    {   this.connectionDisconnect = connectionDisconnect;   }
-    public String getConnectionDisconnect()                             {   return connectionDisconnect;                        }
-    public void setConnectionLogoff(String connectionLogoff)            {   this.connectionLogoff = connectionLogoff;           }
-    public String getConnectionLogoff()                                 {   return connectionLogoff;                            }
-    public void setHttpPort(int httpPort)                               {   this.httpPort = httpPort;                           }
-    public int getHttpPort()                                            {   return httpPort;                                    }
-    public void setLoginString(String loginString)                      {   this.loginString = loginString;                     }
-    public String getLoginString()                                      {   return loginString;                                 }
-    public void setLoginType(int loginType)                             {   this.loginType = loginType;                         }
-    public int getLoginType()                                           {   return loginType;                                   }
-    public void setRouterName(String routerName)                        {   this.routerName = routerName;                       }
-    public String getRouterName()                                       {   return routerName;                                  }
-    //public StatusPageIPAdress getStatusIPAddress() { return statusIPAddress;      }
+    public String getConnectionConnect()                             { return connectionConnect;    }
+    public String getConnectionDisconnect()                          { return connectionDisconnect; }
+    public String getConnectionLogoff()                              { return connectionLogoff;     }
+    public String getLoginString()                                   { return loginString;          }
+    public String getRouterName()                                    { return routerName;           }
+    public String getIpAddressPost()                                 { return ipAddressPost;        }
+    public String getIpAddressPre()                                  { return ipAddressPre;         }
+    public String getIpAddressOffline()                              { return ipAddressOffline;     }
+    public String getIpAddressSite()                                 { return ipAddressSite;        }
+    public int getLoginType()                                        { return loginType;            }
+    public int getHttpPort()                                         { return httpPort;             }
+    public void setConnectionConnect(String connectionConnect)       { this.connectionConnect = connectionConnect;       }
+    public void setConnectionDisconnect(String connectionDisconnect) { this.connectionDisconnect = connectionDisconnect; }
+    public void setConnectionLogoff(String connectionLogoff)         { this.connectionLogoff = connectionLogoff;         }
+    public void setLoginString(String loginString)                   { this.loginString = loginString;                   }
+    public void setHttpPort(int httpPort)                            { this.httpPort = httpPort;                         }
+    public void setLoginType(int loginType)                          { this.loginType = loginType;                       }
+    public void setRouterName(String routerName)                     { this.routerName = routerName;                     }
+    public void setIpAddressPost(String ipAddressPost)               { this.ipAddressPost = ipAddressPost;               }
+    public void setIpAddressPre(String ipAddressPre)                 { this.ipAddressPre = ipAddressPre;                 }
+    public void setIpAddressOffline(String ipAddressOffline)         { this.ipAddressOffline = ipAddressOffline;         }
+    public void setIpAddressSite(String ipAddressSite)               { this.ipAddressSite = ipAddressSite;               }
     
-//    public String getIPAdress(String data){
-//        String ipAddress = null;
-//        if(data.contains(statusIPAddress.offline)){
-//            logger.fine("offline");
-//            return null;
-//        }
-//        int index1 = data.indexOf(statusIPAddress.ipAddressPre)+statusIPAddress.ipAddressPre.length();
-//        int index2 = data.indexOf(statusIPAddress.ipAddressPost);
-//        if(index1!=-1 && index2 != -1 && index2-index1>0){
-//            ipAddress = data.substring(index1, index2);
-//        }
-//        
-//        return ipAddress;
-//    }
     public String toString(){
         return "Router:"+routerName;
     }
-//    public class StatusPageIPAdress{
-//        private String website;
-//        private String offline;
-//        private String ipAddressPre;
-//        private String ipAddressPost;
-//        public String getWebsite() {
-//            return website;
-//        }
-    
-        
-   // }
-    
-    
 }

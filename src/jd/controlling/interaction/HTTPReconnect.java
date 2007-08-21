@@ -6,9 +6,7 @@ import java.net.MalformedURLException;
 import java.net.PasswordAuthentication;
 import java.net.URL;
 
-import jd.Configuration;
 import jd.plugins.Plugin;
-import jd.plugins.RequestInfo;
 import jd.router.RouterData;
 
 /**
@@ -28,9 +26,9 @@ public class HTTPReconnect extends Interaction{
         logger.info("trying to reconnect..");
         String ipBefore;
         String ipAfter;
-        RouterData routerData = Configuration.getRouterData();
-        String routerUsername = Configuration.getRouterUsername();
-        String routerPassword = Configuration.getRouterPassword();
+        RouterData routerData = configuration.getRouterData();
+        String routerUsername = configuration.getRouterUsername();
+        String routerPassword = configuration.getRouterPassword();
         String disconnect     = routerData.getConnectionDisconnect();
         String connect        = routerData.getConnectionConnect();
         Authenticator.setDefault(new InternalAuthenticator(routerUsername, routerPassword));
@@ -79,7 +77,7 @@ public class HTTPReconnect extends Interaction{
     }
 //    private String getIPAddress(RouterData routerData){
 //        try {
-//            String urlForIPAddress = routerData.getStatusIPAddress().getWebsite();
+//            String urlForIPAddress = routerData.getIpAddressSite();
 //            RequestInfo requestInfo = Plugin.getRequest(new URL(urlForIPAddress));
 //            return routerData.getIPAdress(requestInfo.getHtmlCode());
 //        }
@@ -88,7 +86,7 @@ public class HTTPReconnect extends Interaction{
 //
 //    }
     @Override
-    public String toString() { return "HTTPReconnect "+Configuration.getRouterData(); }
+    public String toString() { return "HTTPReconnect "+configuration.getRouterData(); }
 
     private class InternalAuthenticator extends Authenticator {
         private String username, password;
