@@ -128,22 +128,25 @@ public class SimpleGUI extends GUIInterface implements ClipboardOwner{
     public void initMenuBar(){
         // file menu
         JMenu menFile         = new JMenu(JDUtilities.getResourceString("menu.file"));
+        menFile.setMnemonic(JDUtilities.getResourceChar("menu.file_mnem"));
 
-        JMenuItem menFileLoad = new JMenuItem(actionLoadLinks);
-        menFileLoad.setIcon(null);
-
-        JMenuItem menFileSave = new JMenuItem(actionSaveLinks);
-        menFileSave.setIcon(null);
-
-        JMenuItem menFileExit = new JMenuItem(actionExit);
-        menFileExit.setIcon(null);
+        JMenuItem menFileLoad = createMenuItem(actionLoadLinks);
+        JMenuItem menFileSave = createMenuItem(actionSaveLinks);
+        JMenuItem menFileExit = createMenuItem(actionExit);
         
         // view menu
         JMenu menView         = new JMenu(JDUtilities.getResourceString("menu.view"));
+        menView.setMnemonic(JDUtilities.getResourceChar("menu.view_mnem"));
         
         menViewLog = new JCheckBoxMenuItem(actionLog);
         menViewLog.setIcon(null);
-
+        
+        // action menu
+        JMenu menAction       = new JMenu(JDUtilities.getResourceString("menu.action"));
+        menAction.setMnemonic(JDUtilities.getResourceChar("menu.action_mnem"));
+        
+        JMenuItem menDownload = createMenuItem(actionStartStopDownload);
+        
         // add menus to parents
         menFile.add(menFileLoad);
         menFile.add(menFileSave);
@@ -152,9 +155,25 @@ public class SimpleGUI extends GUIInterface implements ClipboardOwner{
         
         menView.add(menViewLog);
         
+        menAction.add(menDownload);
+        
         menuBar.add(menFile);
         menuBar.add(menView);
+        menuBar.add(menAction);
         frame.setJMenuBar(menuBar);
+    }
+     
+    /**
+     * factory method for menu items
+     * @param action action for the menu item
+     * @return the new menu item
+     */
+    private static JMenuItem createMenuItem(JDAction action) {
+        JMenuItem menuItem = new JMenuItem(action);
+        menuItem.setIcon(null);
+        if (action.getAccelerator()!=null)
+           menuItem.setAccelerator(action.getAccelerator());
+        return menuItem;
     }
     /**
      * Hier wird die komplette Oberfläche der Applikation zusammengestrickt

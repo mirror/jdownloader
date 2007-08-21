@@ -23,6 +23,7 @@ import java.net.URLClassLoader;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Locale;
+import java.util.MissingResourceException;
 import java.util.ResourceBundle;
 import java.util.Vector;
 import java.util.logging.Logger;
@@ -171,7 +172,28 @@ public class JDUtilities {
             }
             resourceBundle = ResourceBundle.getBundle("LanguagePack", locale);
         }
-        return resourceBundle.getString(key);
+        String result = null;
+        try {
+           result = resourceBundle.getString(key);
+        }
+        catch (MissingResourceException mrex) {
+           // ignore
+        }
+        return result;
+    }
+    
+    /**
+     * Liefert einer char aus dem aktuellen ResourceBundle zurück
+     * @param key Identifier des gewünschten chars
+     * @return der gewünschte char
+     */
+    public static char getResourceChar(String key) {
+        char result = 0;
+        String s = getResourceString(key);
+        if (s!=null && s.length()>0) {
+            result = s.charAt(0);
+        }
+        return result;
     }
     /**
      * Liefert aus der Map der geladenen Bilder ein Element zurück

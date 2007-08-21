@@ -5,6 +5,7 @@ import java.awt.event.ActionEvent;
 import javax.swing.AbstractAction;
 import javax.swing.Action;
 import javax.swing.ImageIcon;
+import javax.swing.KeyStroke;
 
 import jd.JDUtilities;
 import jd.gui.GUIInterface;
@@ -38,6 +39,7 @@ public class JDAction extends AbstractAction{
 
     private GUIInterface guiInterface;
     private int actionID;
+    private KeyStroke accelerator;
     /**
      * Erstellt ein neues JDAction-Objekt
      * @param guiInterface TODO
@@ -51,8 +53,14 @@ public class JDAction extends AbstractAction{
         putValue(Action.SMALL_ICON, icon);
         putValue(Action.SHORT_DESCRIPTION, JDUtilities.getResourceString(resourceName+".desc"));
         putValue(Action.NAME,              JDUtilities.getResourceString(resourceName+".name"));
+        char mnemonic = JDUtilities.getResourceChar(resourceName+".mnem");
+        if (mnemonic!=0)
+           putValue(Action.MNEMONIC_KEY, new Integer(mnemonic));
         this.actionID = actionID;
         this.guiInterface = guiInterface;
+        String acceleratorString = JDUtilities.getResourceString(resourceName+".accel");
+        if (acceleratorString!=null && acceleratorString.length()>0)
+           accelerator = KeyStroke.getKeyStroke(acceleratorString);
     }
     public void actionPerformed(ActionEvent e) {
         guiInterface.doAction(actionID);
@@ -60,4 +68,7 @@ public class JDAction extends AbstractAction{
     public int getActionID(){
         return actionID;
     }
+   public KeyStroke getAccelerator() {
+      return accelerator;
+   }
 }
