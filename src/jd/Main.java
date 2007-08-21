@@ -13,11 +13,8 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 
-// TODO Astaldo : Programmsteuerung
 // TODO Astaldo : GUI
-// TODO Astaldo : Speedometer
 // TODO Wulfskin: Reconnect Paket
-// TODO Tom     : LogDialog
 //
 // TODO Shortcuts
 // TODO Konfiguration speichern

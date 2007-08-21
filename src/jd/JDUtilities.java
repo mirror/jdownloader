@@ -10,7 +10,6 @@ import java.awt.Point;
 import java.awt.Toolkit;
 import java.awt.image.BufferedImage;
 import java.io.File;
-import java.io.FileFilter;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -57,7 +56,7 @@ public class JDUtilities {
     /**
      * Damit werden die JARs rausgesucht
      */
-    public static FilterJAR filterJar = new FilterJAR();
+    public static JDFileFilter filterJar = new JDFileFilter(null,".jar",false);
     /**
      * Das aktuelle Verzeichnis (Laden/Speichern)
      */
@@ -191,19 +190,6 @@ public class JDUtilities {
      */
     public static void addImage(String imageName, Image image){
         images.put(imageName, image);
-    }
-    /**
-     * Als FileFilter akzeptiert diese Klasse alle .jar Dateien
-     *
-     * @author astaldo
-     */
-    private static class FilterJAR implements FileFilter{
-        public boolean accept(File f) {
-            if(f.getName().endsWith(".jar"))
-                return true;
-            else
-                return false;
-        }
     }
     /**
      * Diese Methode erstellt einen neuen Captchadialog und liefert den eingegebenen Text zurück.
@@ -346,10 +332,15 @@ public class JDUtilities {
      * @param objectToSave Das zu speichernde Objekt
      * @param fileOutput Das File, in das geschrieben werden soll. Falls keins angegeben wird,
      *                   soll der Benutzer eine Datei auswählen
+     * @param name Dateiname
+     * @param extension Dateiendung
      */
-    public static void saveObject(JFrame frame, Object objectToSave, File fileOutput){
+    public static void saveObject(JFrame frame, Object objectToSave, File fileOutput, String name, String extension){
         if(fileOutput == null){
+            JDFileFilter fileFilter = new JDFileFilter(name,extension,true);
             JFileChooser fileChooserSave = new JFileChooser();
+            fileChooserSave.setFileFilter(fileFilter);
+            fileChooserSave.setSelectedFile(fileFilter.getFile());
             if(currentDirectory != null)
                 fileChooserSave.setCurrentDirectory(currentDirectory);
             if(fileChooserSave.showSaveDialog(frame) == JFileChooser.APPROVE_OPTION){
