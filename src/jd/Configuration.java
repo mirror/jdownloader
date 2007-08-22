@@ -28,7 +28,7 @@ public class Configuration implements Serializable{
     /**
      * Hier sind die Angaben für den Router gespeichert
      */
-    private RouterData selectedRouterData;
+    private RouterData routerData;
     /**
      * Benutzername für den Router
      */
@@ -40,12 +40,12 @@ public class Configuration implements Serializable{
     
     public String getDownloadDirectory()                           { return downloadDirectory;  }
     public HashMap<Integer, Vector<Interaction>> getInteractions() { return interactions;       }
-    public RouterData getRouterData()                              { return selectedRouterData; }
+    public RouterData getRouterData()                              { return routerData; }
     public String getRouterPassword()                              { return routerPassword;     }
     public String getRouterUsername()                              { return routerUsername;     }
-    public RouterData getSelectedRouterData()                      { return selectedRouterData; }
+    public RouterData getSelectedRouterData()                      { return routerData; }
     public void setDownloadDirectory(String downloadDirectory)       { this.downloadDirectory = downloadDirectory;   }
     public void setRouterPassword(String routerPassword)             { this.routerPassword = routerPassword;         }
     public void setRouterUsername(String routerUsername)             { this.routerUsername = routerUsername;         }
-    public void setSelectedRouterData(RouterData selectedRouterData) { this.selectedRouterData = selectedRouterData; }
+    public void setSelectedRouterData(RouterData selectedRouterData) { this.routerData = selectedRouterData; }
 }

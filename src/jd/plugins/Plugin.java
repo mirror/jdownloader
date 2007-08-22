@@ -375,12 +375,7 @@ public abstract class Plugin {
         String location = httpConnection.getHeaderField("Location");
         String setcookie = httpConnection.getHeaderField("Set-Cookie");
 
-        String headers = "";
-        for (int i = 0; i < httpConnection.getHeaderFields().size(); i++) {
-            headers += httpConnection.getHeaderField(i) + "\n";
-        }
-
-        return (new RequestInfo("", location, setcookie, headers));
+        return (new RequestInfo("", location, setcookie, httpConnection.getHeaderFields()));
     }
     /**
      * Liest Daten von einer URL
@@ -401,14 +396,8 @@ public abstract class Plugin {
         //ich hab hir mal Location gross und aus cookie Set-Cookie gemacht weil der Server Set-Cookie versendet
         String location = urlInput.getHeaderField("Location");
         String cookie = urlInput.getHeaderField("Set-Cookie");
-        //warum header als String?
-        String headers = "";
-        for (int i = 0; i < urlInput.getHeaderFields().size(); i++) {
-            headers += urlInput.getHeaderField(i) + "\n";
-        }
-
+        RequestInfo requestInfo = new RequestInfo(htmlCode.toString(), location, cookie, urlInput.getHeaderFields());
         rd.close();
-        RequestInfo requestInfo = new RequestInfo(htmlCode.toString(), location, cookie, headers);
         return requestInfo;
     }
     /**

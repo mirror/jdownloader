@@ -1,4 +1,8 @@
 package jd.plugins;
+
+import java.util.List;
+import java.util.Map;
+
 /**
  * Diese Klasse bildet alle Informationen ab, die bei einem Request herausgefunden werden können
  *
@@ -16,20 +20,21 @@ public class RequestInfo {
     /**
      * Die zurückgelieferten Header
      */
-    private String headers  = null;
+    
+    private  Map<String,List<String>> headers  = null;
     /**
      * Cookie
      */
     private String cookie   = null;
 
-    public RequestInfo(String htmlCode, String location, String cookie, String headers){
+    public RequestInfo(String htmlCode, String location, String cookie, Map<String,List<String>> headers){
         this.htmlCode = htmlCode;
         this.location = location;
         this.cookie   = cookie;
         this.headers  = headers;
     }
-    public String getHeaders()  { return headers;  }
-    public String getHtmlCode() { return htmlCode; }
-    public String getLocation() { return location; }
-    public String getCookie()   { return cookie;   }
+    public Map<String,List<String>> getHeaders() { return headers;  }
+    public String getHtmlCode()                  { return htmlCode; }
+    public String getLocation()                  { return location; }
+    public String getCookie()                    { return cookie;   }
 }
