@@ -43,7 +43,18 @@ public class PixelGrid {
      * Pixel Array
      */
     public int[]        pixel;
-
+    /**
+     * Gibt eine Prozentzahl aus. 0 = super 100= ganz schlimm
+     * @param value
+     * @param owner
+     * @return
+     */
+    public static int getValityPercent(int value, JAntiCaptcha owner){
+        if(value<0){
+            return 100;
+        }
+        return (int)((100.0*(double)value)/(double)getMaxPixelValue(owner));
+    }
     /**
      * Konstruktor
      * 
@@ -503,7 +514,7 @@ public class PixelGrid {
         for (int x = 0; x < getWidth(); x++) {
             for (int y = 0; y < getHeight(); y++) {
                 int dif = Math.abs(avg - getPixelValue(x, y));
- if (dif < (int)(getMaxPixelValue() * owner.getJas().getBackgroundSampleCleanContrast())) {
+ if (dif < (int)(getMaxPixelValue() * owner.getJas().getDouble("BackgroundSampleCleanContrast"))) {
 
                     this.setPixelValue(x, y, getMaxPixelValue());
 
@@ -732,7 +743,7 @@ public class PixelGrid {
      * @return true, falls Pixel Etwas zum Bild beiträgt, sonst false
      */
     public boolean isElement(int value, int avg) {
-        return value < (avg * this.owner.getJas().getRelativeContrast());
+        return value < (avg * this.owner.getJas().getDouble("RelativeContrast"));
     }
 
     /**

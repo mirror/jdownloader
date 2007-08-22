@@ -21,6 +21,7 @@ import java.io.StringReader;
 import java.net.URL;
 import java.security.MessageDigest;
 import java.util.Calendar;
+import java.util.Date;
 import java.util.Properties;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
@@ -57,6 +58,9 @@ public class UTILITIES {
     public static Logger getLogger(){
         return logger;
     }
+  public static long getTimer(){
+      return new Date().getTime();
+  }
     /** *********************DEBUG*************************** */
 
     /**

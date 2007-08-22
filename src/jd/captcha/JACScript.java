@@ -2,15 +2,14 @@ package jd.captcha;
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.Method;
 import java.net.URL;
+import java.util.Hashtable;
 import java.util.Vector;
 import java.util.logging.Logger;
 
-
 /**
  * Diese Klasse parsed das JAC Script
- * 
- * 
  * 
  * @author coalado
  */
@@ -18,210 +17,323 @@ public class JACScript {
     /**
      * Logger
      */
-    private Logger           logger                        = UTILITIES.getLogger();
-
-    /**
-     * Prozentwert. Ab dieser Schwelle an Korektheit wird ein Letter als 100%
-     * richtig gewertet
-     */
-    private double           letterSearchLimitValue        = 0.15;
-
-    /**
-     * Pixel die Beim Quickscan übersprungen werden (1-...)
-     */
-    private int quickScan=1;
-    
-    /**
-     * Schwellfaktor für den Quickscan Filter
-     */
-     private double quickScanFilter=0.3;
-    
-    /**
-     * Kontrastwert für die Erkennung ob ein Pixel Farblich zu einem objekt passt (Kontrast  Objektdurchschnitt/pixel)
-     */
-    private  double objectColorContrast=0.3;
-    /**
-     * Kontrastwert zur erkennung eines ObjektPixels (Kontrast  Objekt/hintergrund)
-     */
-    private  double objectDetectionContrast=0.5;
-    /**
-     * Minimale Objektfläche für die Objekterkennung
-     */
-    private int minimumObjectArea=200;
-        
-    /**
-     * GIbt an Ob die langsammere Object Detection anstelle der sonst Üblichen Reihen Detection verwendet werden soll
-     */
-    private boolean useObjectDetection =false;
-    
-
+    private Logger                    logger          = UTILITIES.getLogger();
 
     /**
      * Vector für die Befehle die für die Vorverarbeitung des Captchas verwendet
      * werden. (script.jas)
      */
-    private Vector<String[]> captchaPrepareCommands;
+    private Vector<String[]>          captchaPrepareCommands;
 
     /**
      * Vector für die Befehle die für die Ekennung allgemein gelten (script.jas)
      */
-    private Vector<String[]> jacCommands;
-    
-    private Vector<String[]> letterCommands;
-/**
- * Maximaler Drehwinkel nach links
- */
-    private int leftAngle=-10;
-    /**
-     * Maximaler drehwinkel nach rechts
-     */
-    private int rightAngle=10;
-    /**
-     * Parameter: Gibt die Anzahl der Reihen(Pixel) an die zur peak detection
-     * verwendet werden sollen
-     */
-    private int              gapWidthPeak                  = 1;
+    private Vector<String[]>          jacCommands;
 
-    /**
-     * Gibt die Verwendete Farbkombination an. Siehe JAC Script Docu für
-     * genauere Infos
-     */
-    private String           ColorType                     = "h";
-
-    /**
-     * Parameter: Gibt die Anzahl der reihen an die zur Average Detection
-     * verwendet werden sollen
-     */
-    private int              gapWidthAverage               = 1;
-
-    /**
-     * Parameter: gapAndAverageLogic=true: Es werden Lücken verwendet bei denen
-     * Peak und Average detection zusammenfallen (AND) gapAndAverageLogic=false:
-     * Es werden sowohl peak als Auch Average Lücken verwendet (nur in
-     * Ausnahmefällen) (OR)
-     */
-    private boolean          gapAndAverageLogic            = true;
-
-    /**
-     * Parameter: Der Kontrastwert für die Average Detection. ~1
-     */
-    private double           gapDetectionAverageContrast   = 1.3;
-
-    /**
-     * Parameter: Der Kontrastwert für die Peak Detection. ~0.25
-     */
-    private double           gapDetectionPeakContrast      = 0.25;
-
-    /**
-     * Parameter: Average Detection verwenden
-     */
-    private boolean          useAverageGapDetection        = false;
-
-    
-      private int alignAngleSteps =5;
-    /**
-     * Parameter: Peak Detection verwenden
-     */
-    private boolean          usePeakGapdetection           = true;
-
-    /**
-     * Parameter: Kontrollwert über die minimale Buchstabenbreite
-     */
-    private int              minimumLetterWidth            = 10;
-
-    /**
-     * Parameter: Wert gibt an um welchen faktor die Fingerprints verkleinert
-     * werden. So groß wie möglich, so klein wie nötig Wenn dieser Wert
-     * verändert wird, wrd die MTH File unbrauchbar und muss neu trainiert
-     * werden
-     */
-    private int              simplifyFaktor                = 1;
-
-
-
-
-    /**
-     * Parameter: Allgemeiner Bildkontrastparameter ~0.8 bis 1.2
-     */
-    private double           relativeContrast              = 0.85;
-
-    /**
-     * Parameter: Gibt die Tolleranz beim Säubern des Hintergrunds an ~0.05-0.5
-     */
-    private double           backgroundSampleCleanContrast = 0.1;
-
-    /**
-     * Parameter: Gibt für dieverse SW Umwandlungen den Schwellwert an
-     */
-    private double           blackPercent                  = 0.1;
+    private Vector<String[]>          letterCommands;
 
     /**
      * Werte-Array Wird gaps != null, so werden die Werte als Trennpositionen
      * für die letter detection verwendet. Alle anderen Erkennungen werden dann
      * ignoriert
      */
-    private int[]            gaps;
-
+    private int[]                     gaps;
 
     /**
-     * Gibt an ob beim Training nur falscherkannte Buchstaben gespeichert werden
-     * (true) oder alle (False)
+     * nternes Farbarray. Hier werden die Eingaben über setColorFormat abgelegt
      */
-    private boolean          trainOnlyUnknown              = true;
-
-  
-
+    private int[]                     colorComponents = { 3, 3, 3 };
     /**
-     * Parameter: Scan-Parameter. Gibt an um wieviele Pixel sich Letter und
-     * Vergleichsletter unterscheiden dürfen um verglichen zu werden. Hohe Werte
-     * machen das ganze Langsam
+     * Internet Umrechnungsfaktor. Jenach verwendetem farbmodell. Wird
+     * automatisch gesetzt
      */
-    private int              borderVariance                = 0;
-
+    private int                       colorFaktor;
     /**
-     * Parameter: Scan-Parameter. Gibt an um wieviele Pixel Letter und
-     * Vergleichsletter gegeneinander verschoben werden um die beste
-     * Übereinstimung zu finden. Hohe werte verlangemmen die Erkennung deutlich
+     * Farbwert für den verwendeten Farbraum. 0: hsb 1: RGB
      */
-    private int              scanVariance                  = 0;
-/**
- * Internes Farbarray. Hier werden die Eingaben über setColorFormat abgelegt
- */
-    private int[]            colorComponents               = { 3, 3, 3 };
-/**
- * Internet Umrechnungsfaktor. Jenach verwendetem farbmodell. Wird automatisch gesetzt
- */
-    private int              colorFaktor;
-/**
- * Farbwert für den verwendeten Farbraum. 0: hsb 1: RGB
- */
-    private int              color;
-
-    private JAntiCaptcha owner;
-    
-    private URL scriptFile;
-    private String method;
- 
+    private int                       color;
     /**
-     * 
+     * owner
+     */
+    private JAntiCaptcha              owner;
+    /**
+     * Adresse zum Jacscript
+     */
+    private URL                       scriptFile;
+    /**
+     * Methodenname
+     */
+    private String                    method;
+
+    /**
+     * Hashtable für die parameter
+     */
+    private Hashtable<String, Object> parameter       = new Hashtable<String, Object>();
+
+    /**
      * @param owner
-     * @param jarFile Die Jar Datei mit den Methods
-     * @param script Der Skriptfile in der JAR, das ausgelesen werden soll
-     * @param method Name der Methode, die genutzt wird
+     * @param jarFile
+     *            Die Jar Datei mit den Methods
+     * @param script
+     *            Der Skriptfile in der JAR, das ausgelesen werden soll
+     * @param method
+     *            Name der Methode, die genutzt wird
      */
     public JACScript(JAntiCaptcha owner, URL script, String method) {
-  
-       try {
-        this.owner=owner;
-           this.method=method;
-           this.scriptFile=script;
-           this.parseScriptFile();
-           this.executeParameterCommands();
-    }
-    catch (IOException e) { e.printStackTrace(); }
+
+        try {
+            init();
+            this.owner = owner;
+            this.method = method;
+            this.scriptFile = script;          
+            this.parseScriptFile();
+            this.executeParameterCommands();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
 
     }
 
+    private void init() {
+        /**
+         * Prozentwert. Ab dieser Schwelle an Korektheit wird ein Letter als
+         * 100% richtig gewertet
+         */
+        set("letterSearchLimitValue", 0.15);
+
+        /**
+         * Pixel die Beim Quickscan übersprungen werden (1-...)
+         */
+        set("quickScan", 1);
+
+        /**
+         * Schwellfaktor für den Quickscan Filter
+         */
+        set("quickScanFilter", 0.3);
+
+        /**
+         * Kontrastwert für die Erkennung ob ein Pixel Farblich zu einem objekt
+         * passt (Kontrast Objektdurchschnitt/pixel)
+         */
+        set("objectColorContrast", 0.3);
+        /**
+         * Kontrastwert zur erkennung eines ObjektPixels (Kontrast
+         * Objekt/hintergrund)
+         */
+        set("objectDetectionContrast", 0.5);
+        /**
+         * Minimale Objektfläche für die Objekterkennung
+         */
+        set("minimumObjectArea", 200);
+
+        /**
+         * GIbt an Ob die langsammere Object Detection anstelle der sonst
+         * Üblichen Reihen Detection verwendet werden soll
+         */
+        set("useobjectDetection", false);
+
+        /**
+         * Parameter: Gibt die Anzahl der Reihen(Pixel) an die zur peak
+         * detection verwendet werden sollen
+         */
+        set("gapWidthPeak", 1);
+
+        /**
+         * Gibt die Verwendete Farbkombination an. Siehe JAC Script Docu für
+         * genauere Infos
+         */
+        setColorType("h");
+
+        /**
+         * Parameter: Gibt die Anzahl der reihen an die zur Average Detection
+         * verwendet werden sollen
+         */
+        set("gapWidthAverage", 1);
+
+        /**
+         * Parameter: gapAndAverageLogic=true: Es werden Lücken verwendet bei
+         * denen Peak und Average detection zusammenfallen (AND)
+         * gapAndAverageLogic=false: Es werden sowohl peak als Auch Average
+         * Lücken verwendet (nur in Ausnahmefällen) (OR)
+         */
+        set("gapAndAverageLogic", true);
+
+        /**
+         * Parameter: Der Kontrastwert für die Average Detection. ~1
+         */
+        set("gapDetectionAverageContrast", 1.3);
+
+        /**
+         * Parameter: Der Kontrastwert für die Peak Detection. ~0.25
+         */
+        set("gapDetectionPeakContrast", 0.25);
+
+        /**
+         * Parameter: Average Detection verwenden
+         */
+        set("useAverageGapDetection", false);
+
+        set("alignAngleSteps", 5);
+        /**
+         * Parameter: Peak Detection verwenden
+         */
+        set("usePeakGapdetection", true);
+
+        /**
+         * Parameter: Kontrollwert über die minimale Buchstabenbreite
+         */
+        set("minimumLetterWidth", 10);
+
+        /**
+         * Parameter: Wert gibt an um welchen faktor die Fingerprints
+         * verkleinert werden. So groß wie möglich, so klein wie nötig Wenn
+         * dieser Wert verändert wird, wrd die MTH File unbrauchbar und muss neu
+         * trainiert werden
+         */
+        set("simplifyFaktor", 1);
+
+        /**
+         * Parameter: Allgemeiner Bildkontrastparameter ~0.8 bis 1.2
+         */
+        set("relativeContrast", 0.85);
+
+        /**
+         * Parameter: Gibt die Tolleranz beim Säubern des Hintergrunds an
+         * ~0.05-0.5
+         */
+        set("backgroundSampleCleanContrast", 0.1);
+
+        /**
+         * Parameter: Gibt für dieverse SW Umwandlungen den Schwellwert an
+         */
+        set("blackPercent", 0.1);
+
+        /**
+         * Gibt an ob beim Training nur falscherkannte Buchstaben gespeichert
+         * werden (true) oder alle (False)
+         */
+        set("trainOnlyUnknown", true);
+
+        /**
+         * Parameter: Scan-Parameter. Gibt an um wieviele Pixel sich Letter und
+         * Vergleichsletter unterscheiden dürfen um verglichen zu werden. Hohe
+         * Werte machen das ganze Langsam
+         */
+        set("borderVariance", 0);
+
+        /**
+         * Parameter: Scan-Parameter. Gibt an um wieviele Pixel Letter und
+         * Vergleichsletter gegeneinander verschoben werden um die beste
+         * Übereinstimung zu finden. Hohe werte verlangemmen die Erkennung
+         * deutlich
+         */
+        set("scanVariance", 0);
+        
+        
+        set("findBadLettersRatio",0.3);
+       
+        set("letterMapTollerance",10);
+        
+        set("ignoreLetterMapLimit",20);
+
+    }
+
+    public void set(String key, Object value) {
+        key=key.toLowerCase();
+        if(get(key)==null){
+            logger.info("INIT Parameter: "+key+" = "+value+"("+value.getClass().getName()+")"); 
+        }else{
+        logger.info("Update Parameter: "+key+" = "+value+"("+value.getClass().getName()+")");
+        }
+        parameter.put(key, value);
+    }
+
+    public Object get(String key) {
+        key=key.toLowerCase();
+        return parameter.get(key);
+    }
+
+    public boolean getBoolean(String key) {
+      
+        Object ret = get(key);
+        if (!(ret instanceof Boolean)) {
+            logger.severe("Kein boolean Parameter für " + key);
+            return false;
+        }
+        return (Boolean) ret;
+    }
+
+    public String getString(String key) {
+       
+        Object ret = get(key);
+        if (!(ret instanceof String)) {
+            logger.severe("Kein String Parameter für " + key);
+            return null;
+        }
+        return (String) ret;
+    }
+
+    public int getInteger(String key) {
+       
+        Object ret = get(key);
+        if (!(ret instanceof Integer)) {
+            logger.severe("Kein Integer Parameter für " + key+" ("+ret.getClass().getName()+")");
+            return 0;
+        }
+        return (Integer) ret;
+    }
+
+    public long getLong(String key) {
+        Object ret = get(key);
+        if (!(ret instanceof Integer)) {
+            logger.severe("Kein Long Parameter für " + key);
+            return 0;
+        }
+        return (Long) ret;
+    }
+
+    public double getDouble(String key) {
+        Object ret = get(key);
+        if (!(ret instanceof Double)) {
+            logger.severe("Kein double Parameter für " + key);
+            return 0;
+        }
+        return (Double) ret;
+    }
+
+    public float getFloat(String key) {
+        Object ret = get(key);
+        if (!(ret instanceof Float)) {
+            logger.severe("Kein float Parameter für " + key);
+            return 0;
+        }
+        return (Float) ret;
+    }
+
+    private Object toType(String arg, String key) {
+        Object current=get(key);
+        if (current instanceof String) {
+            return arg;
+        }
+        if (current instanceof Integer) {
+            return Integer.parseInt(arg);
+        }
+        if (current instanceof Float) {
+            return Float.parseFloat(arg);
+        }
+        if (current instanceof Double) {
+            return Double.parseDouble(arg);
+        }
+        if (current instanceof Boolean) {
+            return arg.equalsIgnoreCase("true");
+        }
+        if(current==null){
+            logger.severe("Parameter "+key+" ist nicht initialisiert worden!");
+        }else{
+            logger.severe(current+"Typ " + current.getClass() + " wird nicht unterstützt");
+        }
+        return null;
+    }
 
     /**
      * Diese Methode führt die zuvor eingelesenen JAC Script Befehle aus
@@ -237,96 +349,46 @@ public class JACScript {
                 String[] cmd = jacCommands.elementAt(i);
 
                 if (cmd[0].equals("parameter")) {
-                    if (cmd[1].equalsIgnoreCase("lettersearchlimitvalue"))
-                        this.setLetterSearchLimitValue(Double.parseDouble(cmd[2]));
-                    else if (cmd[1].equalsIgnoreCase("trainonlyunknown"))
-                        this.setTrainOnlyUnknown(cmd[2].equals("true"));
-                    else if (cmd[1].equalsIgnoreCase("scanvariance"))
-                        this.setScanVariance(Integer.parseInt(cmd[2]));
-                    else if (cmd[1].equalsIgnoreCase("bordervariance"))
-                        this.setBorderVariance(Integer.parseInt(cmd[2]));          
-                    else if (cmd[1].equalsIgnoreCase("simplifyfaktor")) {
-                        this.setSimplifyFaktor(Integer.parseInt(cmd[2]));
-                    }
-                    else if (cmd[1].equalsIgnoreCase("gapwidthpeak"))
-                        this.setGapWidthPeak(Integer.parseInt(cmd[2]));
-                    else if (cmd[1].equalsIgnoreCase("gapwidthaverage"))
-                        this.setGapWidthAverage(Integer.parseInt(cmd[2]));
-                    else if (cmd[1].equalsIgnoreCase("ColorType"))
-                        this.setColorType(cmd[2]);
-                    else if (cmd[1].equalsIgnoreCase("gapandaveragelogic"))
-                        this.setGapAndAverageLogic(cmd[2].equals("true"));
-                    else if (cmd[1].equalsIgnoreCase("gapdetectionaveragecontrast"))
-                        this.setGapDetectionAverageContrast(Double.parseDouble(cmd[2]));
-                    else if (cmd[1].equalsIgnoreCase("gapdetectionpeakcontrast"))
-                        this.setGapDetectionPeakContrast(Double.parseDouble(cmd[2]));
-                    else if (cmd[1].equalsIgnoreCase("useaveragegapdetection"))
-                        this.setUseAverageGapDetection(cmd[2].equals("true"));
-                    else if (cmd[1].equalsIgnoreCase("usepeakgapdetection"))
-                        this.setUsePeakGapdetection(cmd[2].equals("true"));
-                    else if (cmd[1].equalsIgnoreCase("minimumletterwidth"))
-                        this.setMinimumLetterWidth(Integer.parseInt(cmd[2]));     
-                    else if (cmd[1].equalsIgnoreCase("leftAngle"))
-                        this.setLeftAngle(Integer.parseInt(cmd[2])); 
-                    else if (cmd[1].equalsIgnoreCase("alignAngleSteps"))
-                        this.setAlignAngleSteps(Integer.parseInt(cmd[2])); 
-                    else if (cmd[1].equalsIgnoreCase("rightAngle"))
-                        this.setRightAngle(Integer.parseInt(cmd[2])); 
-                    else if (cmd[1].equalsIgnoreCase("relativecontrast"))
-                        this.setRelativeContrast(Double.parseDouble(cmd[2]));
-                    else if (cmd[1].equalsIgnoreCase("backgroundsamplecleancontrast"))
-                        this.setBackgroundSampleCleanContrast(Double.parseDouble(cmd[2]));
-                    else if (cmd[1].equalsIgnoreCase("blackpercent"))
-                        this.setBlackPercent(Double.parseDouble(cmd[2]));
-                    else if (cmd[1].equalsIgnoreCase("objectColorContrast"))
-                        this.setObjectColorContrast(Double.parseDouble(cmd[2]));
-                    else if (cmd[1].equalsIgnoreCase("objectDetectionContrast"))
-                        this.setObjectDetectionContrast(Double.parseDouble(cmd[2]));
-                    else if (cmd[1].equalsIgnoreCase("minimumObjectArea"))
-                        this.setMinimumObjectArea(Integer.parseInt(cmd[2]));
-                    else if (cmd[1].equalsIgnoreCase("quickScanFilter"))
-                        this.setQuickScanFilter(Double.parseDouble(cmd[2]));
-                    else if (cmd[1].equalsIgnoreCase("quickScan"))
-                        this.setQuickScan(Integer.parseInt(cmd[2]));
-                    else if (cmd[1].equalsIgnoreCase("useObjectDetection"))
-                        this.setUseObjectDetection(cmd[2].equals("true"));
-                    else if (cmd[1].equalsIgnoreCase("gaps")) {
-                        
+
+                    if (cmd[1].equalsIgnoreCase("gaps")) {
+
                         cmd[2] = cmd[2].substring(1, cmd[2].length() - 1);
                         String[] gaps = cmd[2].split("\\,");
                         int[] newGaps = new int[gaps.length];
-                        for (int ii = 0; ii < gaps.length; ii++){
-                            
+                        for (int ii = 0; ii < gaps.length; ii++) {
                             newGaps[ii] = Integer.parseInt(gaps[ii]);
                         }
-                        this.setGaps(newGaps);          
-                      
-                        
-                        
+                        this.setGaps(newGaps);
+                    } else if (cmd[1].equalsIgnoreCase("colortype")) {
+                        this.setColorType(cmd[2]);
+
                     } else {
-                        logger.severe("Error in " + method + "/+script.jas : Parameter not valid: " + cmd[1] + " = " + cmd[2]);
+                       
+                        this.set(cmd[1].toLowerCase(), this.toType(cmd[2], cmd[1]));
                     }
 
                 } else {
-                    logger.severe("Syntax Error in " + method + "/+script.jas");
+                    logger.severe("Syntax Error in " + method + "/+script.jas ("+cmd[0]+")");
                 }
             }
         } catch (Exception e) {
             logger.severe("Syntax Error in " + method + "/+script.jas");
+            e.printStackTrace();
         }
 
     }
 
     /**
      * Diese Methode führt die zuvor eingelesenen JAc Script Prepare Befehle aus
-     * @param captcha 
+     * 
+     * @param captcha
      */
     public void executePrepareCommands(Captcha captcha) {
         if (captcha.isPrepared()) {
             // ISt schon prepared
             return;
-        }       
-       
+        }
+
         logger.fine("Execute Script.jas Prepare scripts");
         captcha.setPrepared(true);
         String[] params;
@@ -334,7 +396,7 @@ public class JACScript {
             for (int i = 0; i < this.captchaPrepareCommands.size(); i++) {
                 String[] cmd = captchaPrepareCommands.elementAt(i);
                 logger.fine("Execute Function: " + cmd[1] + "(" + cmd[2] + ")");
-               
+
                 if (cmd[0].equals("parameter")) {
                     logger.severe("Syntax Error in " + method + "/+script.jas");
                     // captchaPrepareCommands
@@ -360,8 +422,8 @@ public class JACScript {
                         continue;
                     } else if (cmd[1].equalsIgnoreCase("reduceWhiteNoise")) {
                         captcha.reduceWhiteNoise(Integer.parseInt(params[0].trim()));
-                        continue; 
-                       } else if (cmd[1].equalsIgnoreCase("convertPixel")) {
+                        continue;
+                    } else if (cmd[1].equalsIgnoreCase("convertPixel")) {
                         captcha.convertPixel(params[0].trim());
                         continue;
                     } else if (cmd[1].equalsIgnoreCase("reduceBlackNoise")) {
@@ -373,11 +435,11 @@ public class JACScript {
                     } else if (cmd[1].equalsIgnoreCase("sampleDown")) {
                         captcha.sampleDown(Integer.parseInt(params[0].trim()));
                         continue;
-                    }else if (cmd[1].equalsIgnoreCase("cleanBackgroundByColor")) {
+                    } else if (cmd[1].equalsIgnoreCase("cleanBackgroundByColor")) {
                         captcha.cleanBackgroundByColor(Integer.parseInt(params[0].trim()));
                         continue;
                     }
-                   
+
                     else if (cmd[1].equalsIgnoreCase("saveImageasJpg")) {
 
                         captcha.saveImageasJpg(new File(params[0].trim()));
@@ -392,19 +454,19 @@ public class JACScript {
                         continue;
                     } else if (cmd[1].equalsIgnoreCase("reduceBlackNoise")) {
                         captcha.reduceBlackNoise(Integer.parseInt(params[0].trim()), Double.parseDouble(params[1].trim()));
-                        continue;                   
+                        continue;
                     } else {
                         logger.severe("Error in " + method + "/+script.jas : Function not valid: " + cmd[1] + "(" + cmd[2] + ")");
                     }
-                   
+
                 } else if (cmd[0].equals("function") && (params = cmd[2].split("\\,")).length == 3) {
                     if (cmd[1].equalsIgnoreCase("cleanWithMask")) {
                         captcha.cleanWithMask(owner.createCaptcha(UTILITIES.loadImage(new File(params[0].trim()))), Integer.parseInt(params[1].trim()), Integer.parseInt(params[2].trim()));
                         continue;
-                    }else if (cmd[1].equalsIgnoreCase("removeSmallObjects")) {
+                    } else if (cmd[1].equalsIgnoreCase("removeSmallObjects")) {
                         captcha.removeSmallObjects(Double.parseDouble(params[0].trim()), Double.parseDouble(params[1].trim()), Integer.parseInt(params[2].trim()));
                         continue;
-                    }else {
+                    } else {
                         logger.severe("Error in " + method + "/+script.jas : Function not valid: " + cmd[1] + "(" + cmd[2] + ")");
                     }
 
@@ -415,7 +477,7 @@ public class JACScript {
                         continue;
                     } else if (cmd[1].equalsIgnoreCase("crop")) {
                         captcha.crop(Integer.parseInt(params[0].trim()), Integer.parseInt(params[1].trim()), Integer.parseInt(params[2].trim()), Integer.parseInt(params[3].trim()));
-                    
+
                         continue;
                     }
 
@@ -424,11 +486,11 @@ public class JACScript {
                 } else if (cmd[0].equals("function") && (params = cmd[2].split("\\,")).length == 6) {
 
                 }
-                
+
             }
         } catch (Exception e) {
             logger.severe("Syntax Error in " + method + "/script.jas");
-         
+
         }
         // BasicWindow.showImage(captcha.getImage(),120,80);
     }
@@ -437,62 +499,88 @@ public class JACScript {
      * @param letter
      */
     public void executeLetterPrepareCommands(Letter letter) {
-            
-       
+
         logger.fine("Execute Script.jas Letter Prepare scripts");
-   
+
         String[] params;
         try {
             for (int i = 0; i < this.letterCommands.size(); i++) {
                 String[] cmd = letterCommands.elementAt(i);
                 logger.info("Execute Function: " + cmd[1] + "(" + cmd[2] + ")");
-               
+
                 if (cmd[0].equals("parameter")) {
                     logger.severe("Syntax Error in " + method + "/+script.jas");
                     // captchaPrepareCommands
 
                 } else if (cmd[0].equals("function") && cmd[2] == null) {
 
-                   
                 } else if (cmd[0].equals("function") && (params = cmd[2].split("\\,")).length == 1) {
 
-                 
-
+                    if (cmd[1].equalsIgnoreCase("toBlackAndWhite")) {
+                        letter.toBlackAndWhite(Double.parseDouble(params[0].trim()));
+                        continue;
+                    } else if (cmd[1].equalsIgnoreCase("reduceWhiteNoise")) {
+                        letter.reduceWhiteNoise(Integer.parseInt(params[0].trim()));
+                        continue;
+                    }  else if (cmd[1].equalsIgnoreCase("reduceBlackNoise")) {
+                        letter.reduceBlackNoise(Integer.parseInt(params[0].trim()));
+                        continue;
+                    } else if (cmd[1].equalsIgnoreCase("blurIt")) {
+                        letter.blurIt(Integer.parseInt(params[0].trim()));
+                        continue;
+                    } else if (cmd[1].equalsIgnoreCase("sampleDown")) {
+                        letter.sampleDown(Integer.parseInt(params[0].trim()));
+                        continue;
+                    } else if (cmd[1].equalsIgnoreCase("cleanBackgroundByColor")) {
+                        letter.cleanBackgroundByColor(Integer.parseInt(params[0].trim()));
+                        continue;
+                    }
                 } else if (cmd[0].equals("function") && (params = cmd[2].split("\\,")).length == 2) {
-                 
+                    if (cmd[1].equalsIgnoreCase("reduceWhiteNoise")) {
+                        letter.reduceWhiteNoise(Integer.parseInt(params[0].trim()), Double.parseDouble(params[1].trim()));
+                        continue;
+                    } else if (cmd[1].equalsIgnoreCase("reduceBlackNoise")) {
+                        letter.reduceBlackNoise(Integer.parseInt(params[0].trim()), Double.parseDouble(params[1].trim()));
+                        continue;
                    
+                    } else {
+                        logger.severe("Error in " + method + "/+script.jas : Function not valid: " + cmd[1] + "(" + cmd[2] + ")");
+                    }
                 } else if (cmd[0].equals("function") && (params = cmd[2].split("\\,")).length == 3) {
                     if (cmd[1].equalsIgnoreCase("removeSmallObjects")) {
-                       
+
                         letter.removeSmallObjects(Double.parseDouble(params[0].trim()), Double.parseDouble(params[1].trim()), Integer.parseInt(params[2].trim()));
                         continue;
-                    }else {
+                    }  else if (cmd[1].equalsIgnoreCase("align")){
+                        logger.info(letter.getDim()+"ä");
+                       letter.align( Double.parseDouble(params[0].trim()),Integer.parseInt(params[1].trim()),Integer.parseInt(params[2].trim()));
+                       logger.info(letter.getDim()+"bä");
+                    } else {
                         logger.severe("Error in " + method + "/+script.jas : Function not valid: " + cmd[1] + "(" + cmd[2] + ")");
                     }
 
                 } else if (cmd[0].equals("function") && (params = cmd[2].split("\\,")).length == 4) {
-
-                   
 
                 } else if (cmd[0].equals("function") && (params = cmd[2].split("\\,")).length == 5) {
 
                 } else if (cmd[0].equals("function") && (params = cmd[2].split("\\,")).length == 6) {
 
                 }
-                
+
             }
         } catch (Exception e) {
             logger.severe("Syntax Error in " + method + "/script.jas");
-         
+
         }
         // BasicWindow.showImage(captcha.getImage(),120,80);
     }
+
     /**
      * Diese Methode liest das script.jas ein. und parsed es
      */
-    private void parseScriptFile() throws IOException{
+    private void parseScriptFile() throws IOException {
         logger.fine("parsing Script.jas");
-       
+
         String script = UTILITIES.getFromInputStream(scriptFile.openStream());
         String[] lines = script.split("\r\n");
         if (lines.length == 1)
@@ -532,18 +620,18 @@ public class JACScript {
                 localJacCommands.add(pcmd);
             } else if ((startAt = lines[i].indexOf("letter.prepare.")) == 0) {
                 pcmd = parseCommand(lines[i].substring(startAt + 15));
-                logger.info(pcmd.toString());
-              
+               
+
                 localLetterCommands.add(pcmd);
-                
+
             } else {
                 logger.severe(method + "/script.jas: Syntax error near line " + i + ": " + lines[i]);
             }
         }
-        this.captchaPrepareCommands=localCaptchaPrepareCommands;
-        this.jacCommands=localJacCommands;
-        this.letterCommands=localLetterCommands;
-     
+        this.captchaPrepareCommands = localCaptchaPrepareCommands;
+        this.jacCommands = localJacCommands;
+        this.letterCommands = localLetterCommands;
+
     }
 
     /**
@@ -577,11 +665,6 @@ public class JACScript {
         return ret;
     }
 
-    
-
-
-
-
     /**
      * @return the captchaPrepareCommands
      */
@@ -589,65 +672,11 @@ public class JACScript {
         return captchaPrepareCommands;
     }
 
-
-
     /**
      * @return the jacCommands
      */
     public Vector<String[]> getJacCommands() {
         return jacCommands;
-    }
-
-
- 
-
-
-    /**
-     * @return the gapAndAverageLogic
-     */
-    public boolean getGapAndAverageLogic() {
-        return gapAndAverageLogic;
-    }
-
-    /**
-     * @param gapAndAverageLogic
-     *            the gapAndAverageLogic to set
-     */
-    public void setGapAndAverageLogic(boolean gapAndAverageLogic) {
-        logger.finer("SET PARAMETER: [gapAndAverageLogic] = " + gapAndAverageLogic);
-        this.gapAndAverageLogic = gapAndAverageLogic;
-    }
-
-    /**
-     * @return the gapDetectionAverageContrast
-     */
-    public double getGapDetectionAverageContrast() {
-        return gapDetectionAverageContrast;
-    }
-
-    /**
-     * @param gapDetectionAverageContrast
-     *            the gapDetectionAverageContrast to set
-     */
-    public void setGapDetectionAverageContrast(double gapDetectionAverageContrast) {
-        logger.finer("SET PARAMETER: [gapDetectionAverageContrast] = " + gapDetectionAverageContrast);
-        this.gapDetectionAverageContrast = gapDetectionAverageContrast;
-    }
-
-    /**
-     * @return the gapDetectionPeakContrast
-     */
-    public double getGapDetectionPeakContrast() {
-        return gapDetectionPeakContrast;
-    }
-
-    /**
-     * @param gapDetectionPeakContrast
-     *            the gapDetectionPeakContrast to set
-     */
-    public void setGapDetectionPeakContrast(double gapDetectionPeakContrast) {
-        logger.finer("SET PARAMETER: [gapDetectionPeakContrast] = " + gapDetectionPeakContrast);
-        this.gapDetectionPeakContrast = gapDetectionPeakContrast;
     }
 
     /**
@@ -662,239 +691,17 @@ public class JACScript {
      *            the gaps to set
      */
     public void setGaps(int[] gaps) {
-        logger.finer("SET PARAMETER: [gaps] = "+gaps.toString());
-        
+        logger.finer("SET PARAMETER: [gaps] = " + gaps.toString());
+
         this.gaps = gaps;
     }
 
-    /**
-     * @return the gapWidthAverage
-     */
-    public int getGapWidthAverage() {
-        return gapWidthAverage;
-    }
-
-    /**
-     * @param gapWidthAverage
-     *            the gapWidthAverage to set
-     */
-    public void setGapWidthAverage(int gapWidthAverage) {
-        logger.finer("SET PARAMETER: [gapWidthAverage] = " + gapWidthAverage);
-        this.gapWidthAverage = gapWidthAverage;
-    }
-
-    /**
-     * @return the gapWidthPeak
-     */
-    public int getGapWidthPeak() {
-        return gapWidthPeak;
-    }
-
-    /**
-     * @param gapWidthPeak
-     *            the gapWidthPeak to set
-     */
-    public void setGapWidthPeak(int gapWidthPeak) {
-        logger.finer("SET PARAMETER: [gapWidthPeak] = " + gapWidthPeak);
-        this.gapWidthPeak = gapWidthPeak;
-    }
-
-   
-
-
-
-    /**
-     * @return the letterSearchLimitValue
-     */
-    public double getLetterSearchLimitValue() {
-        return letterSearchLimitValue;
-    }
-
-    /**
-     * @param letterSearchLimitValue
-     *            the letterSearchLimitValue to set
-     */
-    public void setLetterSearchLimitValue(double letterSearchLimitValue) {
-        logger.finer("SET PARAMETER: [letterSearchLimitValue] = " + letterSearchLimitValue);
-        this.letterSearchLimitValue = letterSearchLimitValue;
-    }
-
-    /**
-     * @return the minimumLetterWidth
-     */
-    public int getMinimumLetterWidth() {
-        return minimumLetterWidth;
-    }
-
-    /**
-     * @param minimumLetterWidth
-     *            the minimumLetterWidth to set
-     */
-    public void setMinimumLetterWidth(int minimumLetterWidth) {
-        logger.finer("SET PARAMETER: [minimumLetterWidth] = " + minimumLetterWidth);
-        this.minimumLetterWidth = minimumLetterWidth;
-    }
-
-    /**
-     * @return the useAverageGapDetection
-     */
-    public boolean isUseAverageGapDetection() {
-        return useAverageGapDetection;
-    }
-
-    /**
-     * @param useAverageGapDetection
-     *            the useAverageGapDetection to set
-     */
-    public void setUseAverageGapDetection(boolean useAverageGapDetection) {
-        logger.finer("SET PARAMETER: [useAverageGapDetection] = " + useAverageGapDetection);
-        this.useAverageGapDetection = useAverageGapDetection;
-    }
-
-    /**
-     * @return the usePeakGapdetection
-     */
-    public boolean isUsePeakGapdetection() {
-
-        return usePeakGapdetection;
-    }
-
-    /**
-     * @param usePeakGapdetection
-     *            the usePeakGapdetection to set
-     */
-    public void setUsePeakGapdetection(boolean usePeakGapdetection) {
-        logger.finer("SET PARAMETER: [usePeakGapdetection] = " + usePeakGapdetection);
-        this.usePeakGapdetection = usePeakGapdetection;
-    }
-
-    /**
-     * @return the backgroundSampleCleanContrast
-     */
-    public double getBackgroundSampleCleanContrast() {
-        return backgroundSampleCleanContrast;
-    }
-
-    /**
-     * @param backgroundSampleCleanContrast
-     *            the backgroundSampleCleanContrast to set
-     */
-    public void setBackgroundSampleCleanContrast(double backgroundSampleCleanContrast) {
-        logger.finer("SET PARAMETER: [backgroundSampleCleanContrast] = " + backgroundSampleCleanContrast);
-        this.backgroundSampleCleanContrast = backgroundSampleCleanContrast;
-    }
-
-    /**
-     * @return the blackPercent
-     */
-    public double getBlackPercent() {
-        return blackPercent;
-    }
-
-    /**
-     * @param blackPercent
-     *            the blackPercent to set
-     */
-    public void setBlackPercent(double blackPercent) {
-        logger.finer("SET PARAMETER: [blackPercent] = " + blackPercent);
-        this.blackPercent = blackPercent;
-    }
-
- 
-
-    /**
-     * @return the relativeContrast
-     */
-    public double getRelativeContrast() {
-        return relativeContrast;
-    }
-
-    /**
-     * @param relativeContrast
-     *            the relativeContrast to set
-     */
-    public void setRelativeContrast(double relativeContrast) {
-        logger.finer("SET PARAMETER: [relativeContrast] = " + relativeContrast);
-        this.relativeContrast = relativeContrast;
-    }
-
-    /**
-     * @return the simplifyFaktor
-     */
-    public int getSimplifyFaktor() {
-        return simplifyFaktor;
-    }
-
-    /**
-     * @param simplifyFaktor
-     *            the simplifyFaktor to set
-     */
-    public void setSimplifyFaktor(int simplifyFaktor) {
-        logger.finer("SET PARAMETER: [simplifyFaktor] = " + simplifyFaktor);
-        this.simplifyFaktor = simplifyFaktor;
-    }
-
-    /**
-     * @return the borderVariance
-     */
-    public int getBorderVariance() {
-        return borderVariance;
-    }
-
-    /**
-     * @param borderVariance
-     *            the borderVariance to set
-     */
-    public void setBorderVariance(int borderVariance) {
-        logger.finer("SET PARAMETER: [borderVariance] = " + borderVariance);
-        this.borderVariance = borderVariance;
-    }
-
-    /**
-     * @return the scanVariance
-     */
-    public int getScanVariance() {
-        return scanVariance;
-    }
-
-    /**
-     * @param scanVariance
-     *            the scanVariance to set
-     */
-    public void setScanVariance(int scanVariance) {
-        logger.finer("SET PARAMETER: [scanVariance] = " + scanVariance);
-        this.scanVariance = scanVariance;
-    }
-
-    /**
-     * @return the trainOnlyUnknown
-     */
-    public boolean isTrainOnlyUnknown() {
-        return trainOnlyUnknown;
-    }
-
-    /**
-     * @param trainOnlyUnknown
-     *            the trainOnlyUnknown to set
-     */
-    public void setTrainOnlyUnknown(boolean trainOnlyUnknown) {
-        this.trainOnlyUnknown = trainOnlyUnknown;
-    }
-
-    /**
-     * @return the ColorType
-     */
-    public String getColorType() {
-        return ColorType;
-    }
-    
-  
     /**
      * @param type
      *            the ColorType to set
      */
     public void setColorType(String type) {
-        ColorType = type;
+        set("colorType", type);
         int[] components = { 3, 3, 3 };
         colorFaktor = 1;
 
@@ -930,7 +737,7 @@ public class JACScript {
                 color = 1;
             }
         }
-        
+
         colorComponents = components;
     }
 
@@ -943,11 +750,12 @@ public class JACScript {
 
     /**
      * Gibt die Farbkomponente für die 255^i Gewcihtung zurück
+     * 
      * @param i
      * @return FarbKomponente an i
      */
     public int getColorComponent(int i) {
-       
+
         return colorComponents[i];
     }
 
@@ -956,147 +764,6 @@ public class JACScript {
      */
     public int getColorFormat() {
         return color;
-    }
-
-    /**
-     * @return the minimumObjectArea
-     */
-    public int getMinimumObjectArea() {
-        return minimumObjectArea;
-    }
-
-    /**
-     * @param minimumObjectArea the minimumObjectArea to set
-     */
-    public void setMinimumObjectArea(int minimumObjectArea) {
-        logger.finer("SET PARAMETER: [minimumObjectArea] = " + minimumObjectArea);
-        this.minimumObjectArea = minimumObjectArea;
-    }
-
-    /**
-     * @return the objectColorContrast
-     */
-    public double getObjectColorContrast() {
-        return objectColorContrast;
-    }
-
-    /**
-     * @param objectColorContrast the objectColorContrast to set
-     */
-    public void setObjectColorContrast(double objectColorContrast) {
-        logger.finer("SET PARAMETER: [objectColorContrast] = " + objectColorContrast);
-        this.objectColorContrast = objectColorContrast;
-    }
-
-    /**
-     * @return the objectDetectionContrast
-     */
-    public double getObjectDetectionContrast() {
-        return objectDetectionContrast;
-    }
-
-    /**
-     * @param objectDetectionContrast the objectDetectionContrast to set
-     */
-    public void setObjectDetectionContrast(double objectDetectionContrast) {
-        logger.finer("SET PARAMETER: [objectDetectionContrast] = " + objectDetectionContrast);
-        this.objectDetectionContrast = objectDetectionContrast;
-    }
-
-    /**
-     * @return the useObjectDetection
-     */
-    public boolean isUseObjectDetection() {
-       
-        return useObjectDetection;
-    }
-
-    /**
-     * @param useObjectDetection the useObjectDetection to set
-     */
-    public void setUseObjectDetection(boolean useObjectDetection) {
-        logger.finer("SET PARAMETER: [useObjectDetection] = " + useObjectDetection);
-        this.useObjectDetection = useObjectDetection;
-    }
-
-
-    /**
-     * @return the leftAngle
-     */
-    public int getLeftAngle() {
-        return leftAngle;
-    }
-
-
-    /**
-     * @param leftAngle the leftAngle to set
-     */
-    public void setLeftAngle(int leftAngle) {
-        this.leftAngle = leftAngle;
-    }
-
-
-    /**
-     * @return the rightAngle
-     */
-    public int getRightAngle() {
-        return rightAngle;
-    }
-
-
-    /**
-     * @param rightAngle the rightAngle to set
-     */
-    public void setRightAngle(int rightAngle) {
-        this.rightAngle = rightAngle;
-    }
-
-
-    /**
-     * @return the quickScan
-     */
-    public int getQuickScan() {
-        return quickScan;
-    }
-
-
-    /**
-     * @param quickScan the quickScan to set
-     */
-    public void setQuickScan(int quickScan) {
-        this.quickScan = quickScan;
-    }
-
-
-    /**
-     * @return the quickScanFaktor
-     */
-    public double getQuickScanFilter() {
-        return quickScanFilter;
-    }
-
-
-    /**
-     * @param quickScanFaktor the quickScanFaktor to set
-     */
-    public void setQuickScanFilter(double quickScanFaktor) {
-        this.quickScanFilter = quickScanFaktor;
-    }
-
-
-    /**
-     * @return the alignAngleSteps
-     */
-    public int getAlignAngleSteps() {
-        return alignAngleSteps;
-    }
-
-
-    /**
-     * @param alignAngleSteps the alignAngleSteps to set
-     */
-    public void setAlignAngleSteps(int alignAngleSteps) {
-        this.alignAngleSteps = alignAngleSteps;
     }
 
 }

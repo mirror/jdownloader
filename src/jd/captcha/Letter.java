@@ -32,7 +32,7 @@ public class Letter extends PixelGrid {
 	 * Gibt an wie oft dieser letter negativ aufgefallen ist
 	 */
 	private int badDetections=0;
-
+	public int id;
 	private Letter parent;
     
 	/**
@@ -297,7 +297,9 @@ public class Letter extends PixelGrid {
         PixelObject obj= this.toPixelObject(objectContrast);
      
         PixelObject aligned= obj.align();
-        return aligned.toLetter();
+        Letter newLetter=aligned.toLetter();
+        this.setGrid(newLetter.grid);
+        return this;
         
     }
     /**
@@ -312,7 +314,10 @@ public class Letter extends PixelGrid {
        PixelObject obj= this.toPixelObject(objectContrast);
     
          PixelObject aligned= obj.align(angleA,angleB);
-         return aligned.toLetter();
+         Letter newLetter=aligned.toLetter();
+    
+      this.setGrid(newLetter.grid);
+      return this;
          
      }
 

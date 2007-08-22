@@ -223,7 +223,7 @@ public class Captcha extends PixelGrid {
             height = 2;
         for (int x = Math.max(0, px - halfW); x < Math.min(px + width - halfW, getWidth()); x++) {
             for (int y = Math.max(0, py - halfH); y < Math.min(py + height - halfH, getHeight()); y++) {
-                if (mask.getPixelValue(x, y) > (getMaxPixelValue() * owner.getJas().getBlackPercent())) {
+                if (mask.getPixelValue(x, y) > (getMaxPixelValue() * owner.getJas().getDouble("getBlackPercent"))) {
                     bv = UTILITIES.hexToRgb(getPixelValue(x, y));
                     avg[0]+=bv[0];
                     avg[1]+=bv[1];                
@@ -261,7 +261,7 @@ public class Captcha extends PixelGrid {
 
         for (int x = 0; x < getWidth(); x++) {
             for (int y = 0; y < getHeight(); y++) {
-                if (mask.getPixelValue(x, y) < (getMaxPixelValue() * owner.getJas().getBlackPercent())) {
+                if (mask.getPixelValue(x, y) < (getMaxPixelValue() * owner.getJas().getDouble("getBlackPercent"))) {
                     newgrid[x][y] = getAverage(x, y, width, height, mask);
 
                 } else {
@@ -335,13 +335,13 @@ public class Captcha extends PixelGrid {
             PixelObject obj = letters.elementAt(i);
 
             Letter l = obj.toLetter();
-            l.removeSmallObjects(owner.getJas().getObjectColorContrast(), owner.getJas().getObjectDetectionContrast());
+            l.removeSmallObjects(owner.getJas().getDouble("ObjectColorContrast"), owner.getJas().getDouble("ObjectDetectionContrast"));
             owner.getJas().executeLetterPrepareCommands(l);
-          if(owner.getJas().getLeftAngle()!=0 || owner.getJas().getRightAngle()!=0)  l = l.align(owner.getJas().getObjectDetectionContrast(),owner.getJas().getLeftAngle(),owner.getJas().getRightAngle());
+        //  if(owner.getJas().getInteger("leftAngle")!=0 || owner.getJas().getInteger("rightAngle")!=0)  l = l.align(owner.getJas().getDouble("ObjectDetectionContrast"),owner.getJas().getInteger("leftAngle"),owner.getJas().getInteger("rightAngle"));
            // l.reduceWhiteNoise(2);
             //l.toBlackAndWhite(0.6);
          
-            ret[i] = l.getSimplified(this.owner.getJas().getSimplifyFaktor());
+            ret[i] = l.getSimplified(this.owner.getJas().getInteger("simplifyFaktor"));
             
             this.gaps[letters.elementAt(i).getLocation()[0] + letters.elementAt(i).getWidth()] = true;
         }
@@ -361,9 +361,9 @@ public class Captcha extends PixelGrid {
         if (seperatedLetters != null)
             return seperatedLetters;
 
-        if (owner.getJas().isUseObjectDetection()) {
+        if (owner.getJas().getBoolean("useObjectDetection")) {
             logger.finer("Use Object Detection");
-            Letter[] ret = this.getLetters(letterNum, owner.getJas().getObjectColorContrast(), owner.getJas().getObjectDetectionContrast(), owner.getJas().getMinimumObjectArea());
+            Letter[] ret = this.getLetters(letterNum, owner.getJas().getDouble("ObjectColorContrast"), owner.getJas().getDouble("ObjectDetectionContrast"), owner.getJas().getInteger("MinimumObjectArea"));
             if (ret != null) {
                 seperatedLetters = ret;
                 return ret;
@@ -372,7 +372,7 @@ public class Captcha extends PixelGrid {
             }
         }
 
-        if (!owner.getJas().isUseAverageGapDetection() && !owner.getJas().isUsePeakGapdetection() && owner.getJas().getGaps() != null) {
+        if (!owner.getJas().getBoolean("UseAverageGapDetection") && !owner.getJas().getBoolean("UsePeakGapdetection") && owner.getJas().getGaps() != null) {
 
             logger.finer("Use predefined Gaps");
             return getLetters(letterNum, owner.getJas().getGaps());
@@ -394,9 +394,9 @@ public class Captcha extends PixelGrid {
                 // ret[letterId]= ret[letterId].getSimplified(SIMPLIFYFAKTOR);
             } else {
                 owner.getJas().executeLetterPrepareCommands(ret[letterId]);
-                if(owner.getJas().getLeftAngle()!=0 || owner.getJas().getRightAngle()!=0)  ret[letterId] = ret[letterId].align( owner.getJas().getObjectDetectionContrast(),owner.getJas().getLeftAngle(),owner.getJas().getRightAngle());
+               // if(owner.getJas().getInteger("leftAngle")!=0 || owner.getJas().getInteger("rightAngle")!=0)  ret[letterId] = ret[letterId].align( owner.getJas().getDouble("ObjectDetectionContrast"),owner.getJas().getInteger("leftAngle"),owner.getJas().getInteger("rightAngle"));
                 
-                ret[letterId] = ret[letterId].getSimplified(this.owner.getJas().getSimplifyFaktor());
+                ret[letterId] = ret[letterId].getSimplified(this.owner.getJas().getInteger("simplifyFaktor"));
                
             }
 
@@ -428,9 +428,9 @@ public class Captcha extends PixelGrid {
                 return null;
                 // ret[letterId]= ret[letterId].getSimplified(SIMPLIFYFAKTOR);
             } else {
-                if(owner.getJas().getLeftAngle()!=0 || owner.getJas().getRightAngle()!=0)  ret[letterId] = ret[letterId].align( owner.getJas().getObjectDetectionContrast(),owner.getJas().getLeftAngle(),owner.getJas().getRightAngle());
+               // if(owner.getJas().getInteger("leftAngle")!=0 || owner.getJas().getInteger("rightAngle")!=0)  ret[letterId] = ret[letterId].align( owner.getJas().getDouble("ObjectDetectionContrast"),owner.getJas().getInteger("leftAngle"),owner.getJas().getInteger("rightAngle"));
                 owner.getJas().executeLetterPrepareCommands(ret[letterId]);
-                ret[letterId] = ret[letterId].getSimplified(this.owner.getJas().getSimplifyFaktor());
+                ret[letterId] = ret[letterId].getSimplified(this.owner.getJas().getInteger("simplifyFaktor"));
                 
             }
 
@@ -481,7 +481,7 @@ public class Captcha extends PixelGrid {
             for (int y = 0; y < getHeight(); y++) {
                 int pixelValue;
 
-                for (int line = 0; line < owner.getJas().getGapWidthPeak(); line++) {
+                for (int line = 0; line < owner.getJas().getInteger("GapWidthPeak"); line++) {
                     if (getWidth() > x + line) {
                         pixelValue = getPixelValue(x + line, y);
                         if (pixelValue < rowPeak[x]) {
@@ -490,7 +490,7 @@ public class Captcha extends PixelGrid {
                     }
                 }
 
-                for (int line = 0; line < owner.getJas().getGapWidthAverage(); line++) {
+                for (int line = 0; line < owner.getJas().getInteger("GapWidthAverage"); line++) {
                     if (getWidth() > x + line) {
                         rowAverage[x] = UTILITIES.mixColors(rowAverage[x],getPixelValue(x + line, y),count,1);
                         count++;
@@ -506,25 +506,25 @@ public class Captcha extends PixelGrid {
                 boolean isAverageGap;
                 boolean isOverPeak;
                 boolean isPeakGap;
-               if (owner.getJas().getGapAndAverageLogic()) {
-                    isAverageGap = rowAverage[x] > (average * owner.getJas().getGapDetectionAverageContrast()) || !owner.getJas().isUseAverageGapDetection();
+               if (owner.getJas().getBoolean("GapAndAverageLogic")) {
+                    isAverageGap = rowAverage[x] > (average * owner.getJas().getDouble("GapDetectionAverageContrast")) || !owner.getJas().getBoolean("UseAverageGapDetection");
 
-                    isOverPeak = rowPeak[x] < (average * owner.getJas().getGapDetectionPeakContrast());
-                   isPeakGap = (lastOverPeak && !isOverPeak) || !owner.getJas().isUsePeakGapdetection();
+                    isOverPeak = rowPeak[x] < (average * owner.getJas().getDouble("GapDetectionPeakContrast"));
+                   isPeakGap = (lastOverPeak && !isOverPeak) || !owner.getJas().getBoolean("UsePeakGapdetection");
                     
                     isGap = isAverageGap && isPeakGap;
 
                 } else {
-                    isAverageGap = rowAverage[x] > (average * owner.getJas().getGapDetectionAverageContrast()) && owner.getJas().isUseAverageGapDetection();
-                    isOverPeak = rowPeak[x] < (average * owner.getJas().getGapDetectionPeakContrast());
-                    isPeakGap = (lastOverPeak && !isOverPeak) || !owner.getJas().isUsePeakGapdetection();
+                    isAverageGap = rowAverage[x] > (average * owner.getJas().getDouble("GapDetectionAverageContrast")) && owner.getJas().getBoolean("UseAverageGapDetection");
+                    isOverPeak = rowPeak[x] < (average * owner.getJas().getDouble("GapDetectionPeakContrast"));
+                    isPeakGap = (lastOverPeak && !isOverPeak) || !owner.getJas().getBoolean("UsePeakGapdetection");
                     isGap = isAverageGap || isPeakGap;
                 }
                 lastOverPeak = isOverPeak;
 
-                if (isGap && noGapCount > owner.getJas().getMinimumLetterWidth()) {
+                if (isGap && noGapCount > owner.getJas().getInteger("MinimumLetterWidth")) {
                     break;
-                } else if (rowAverage[x] < (average * owner.getJas().getGapDetectionAverageContrast())) {
+                } else if (rowAverage[x] < (average * owner.getJas().getDouble("GapDetectionAverageContrast"))) {
 
                     noGapCount++;
                 }
@@ -1029,7 +1029,7 @@ logger.info(maxWidth+"/"+minWidth);
 
         for (int x = 0; x < getWidth(); x++) {
             for (int y = 0; y < getHeight(); y++) {
-                if(PixelGrid.getPixelValue(x, y, tmp.grid, owner)>owner.getJas().getBlackPercent()*getMaxPixelValue()){
+                if(PixelGrid.getPixelValue(x, y, tmp.grid, owner)>owner.getJas().getDouble("getBlackPercent")*getMaxPixelValue()){
                     
             
          int newPixelValue=UTILITIES.mixColors(getPixelValue(x,y), PixelGrid.getPixelValue(x, y, tmp.grid, owner));

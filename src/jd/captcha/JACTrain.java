@@ -46,13 +46,15 @@ public class JACTrain {
         }
         catch (Exception e) { }
 
-        JAntiCaptcha jac= new JAntiCaptcha("filefactory.com");
+        JAntiCaptcha jac= new JAntiCaptcha(null,"secured.in");
         //jac.runTestMode(new File("1186941165349_captcha.jpg"));
      
        // jac.showPreparedCaptcha(new File("captcha\\methods\\rapidshare.com\\captchas\\rapidsharecom138040807171852.jpg"));
-        jac.trainAllCaptchas();
+        jac.trainAllCaptchas("..\\methods\\secured.in\\captchas\\");
   
         logger.info("Training Ende");
+        //jac.addLetterMap();
+           // jac.saveMTHFile();
     }
     private static class FilterJAR implements FileFilter{
         public boolean accept(File f) {
