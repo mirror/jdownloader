@@ -15,12 +15,33 @@ import javax.swing.JProgressBar;
  * @author astaldo
  */
 public class DownloadLink implements Serializable{
+    /**
+     * Link muß noch bearbeitet werden
+     */
     public final static int STATUS_TODO                 = 0;
+    /**
+     * Link wurde erfolgreich heruntergeladen
+     */
     public final static int STATUS_DONE                 = 1;
+    /**
+     * Ein unbekannter Fehler ist aufgetreten
+     */
     public final static int STATUS_ERROR_UNKNOWN        = 2;
+    /**
+     * Captcha Text war falsch
+     */
     public final static int STATUS_ERROR_CAPTCHA_WRONG  = 3;
+    /**
+     * Download Limit wurde erreicht
+     */
     public final static int STATUS_ERROR_DOWNLOAD_LIMIT = 4;
+    /**
+     * Der Download ist gelöscht worden (Darf nicht verteilt werden)
+     */
     public final static int STATUS_ERROR_FILE_ABUSED    = 5;
+    /**
+     * Die Datei konnte nicht gefunden werden
+     */
     public final static int STATUS_ERROR_FILE_NOT_FOUND = 6;
     /**
      * serialVersionUID

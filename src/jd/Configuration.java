@@ -38,16 +38,14 @@ public class Configuration implements Serializable{
      */
     private String routerPassword;
     
-    public String getDownloadDirectory() {
-        return downloadDirectory;
-    }
-    public void setDownloadDirectory(String downloadDirectory) {
-        this.downloadDirectory = downloadDirectory;
-    }
-    public HashMap<Integer, Vector<Interaction>> getInteractions() {
-        return interactions;
-    }
-    public RouterData getRouterData() { return selectedRouterData;     }
-    public String getRouterPassword() { return routerPassword; }
-    public String getRouterUsername() { return routerUsername; }
+    public String getDownloadDirectory()                           { return downloadDirectory;  }
+    public HashMap<Integer, Vector<Interaction>> getInteractions() { return interactions;       }
+    public RouterData getRouterData()                              { return selectedRouterData; }
+    public String getRouterPassword()                              { return routerPassword;     }
+    public String getRouterUsername()                              { return routerUsername;     }
+    public RouterData getSelectedRouterData()                      { return selectedRouterData; }
+    public void setDownloadDirectory(String downloadDirectory)       { this.downloadDirectory = downloadDirectory;   }
+    public void setRouterPassword(String routerPassword)             { this.routerPassword = routerPassword;         }
+    public void setRouterUsername(String routerUsername)             { this.routerUsername = routerUsername;         }
+    public void setSelectedRouterData(RouterData selectedRouterData) { this.selectedRouterData = selectedRouterData; }
 }

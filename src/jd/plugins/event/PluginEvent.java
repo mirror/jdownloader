@@ -13,12 +13,29 @@ public class PluginEvent extends AWTEvent{
      * serialVersionUID
      */
     private static final long serialVersionUID = -7243557276278230057L;
-
+    /**
+     * Maximaler Wert für die Fortschrittsanzeige
+     */
     public static final int PLUGIN_PROGRESS_MAX          = 1;
+    /**
+     * Der Wert der Fortschrittsanzeige soll um eins erhöht werden
+     */
     public static final int PLUGIN_PROGRESS_INCREASE     = 2;
+    /**
+     * Der Wert der Fortschrittsanzeige soll auf diesen Wert gesetzt werden
+     */
     public static final int PLUGIN_PROGRESS_VALUE        = 3;
+    /**
+     * Die Vorgang ist beendet
+     */
     public static final int PLUGIN_PROGRESS_FINISH       = 4;
+    /**
+     * Links wurden entschlüsselt
+     */
     public static final int PLUGIN_CRYPT_LINKS_DECRYPTED = 5;
+    /**
+     * Daten des Plugins haben sich geändert
+     */
     public static final int PLUGIN_DATA_CHANGED          = 6;
     /**
      * Plugin, von dem dieses Event ausgegangen ist
@@ -32,7 +49,13 @@ public class PluginEvent extends AWTEvent{
      * Optionaler Parameter
      */
     private Object parameter;
-
+    /**
+     * Erstellt ein neues PluginEvent
+     * 
+     * @param source Das Plugin, daß dieses Event ausgelöst hat
+     * @param eventID Die ID des Events
+     * @param parameter Ein optionaler Parameter
+     */
     public PluginEvent(Plugin source, int eventID, Object parameter){
         super(source,eventID);
         this.source =source;

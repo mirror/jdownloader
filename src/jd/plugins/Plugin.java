@@ -106,8 +106,7 @@ public abstract class Plugin {
      * vornehmen wird. Falls der letzte Schritt erreicht ist, wird null
      * zurückgegeben
      * 
-     * @param parameter
-     *            Ein Übergabeparameter
+     * @param parameter Ein Übergabeparameter
      * @return der nächste Schritt oder null, falls alle abgearbeitet wurden
      */
     public abstract PluginStep getNextStep(Object parameter);
@@ -136,14 +135,12 @@ public abstract class Plugin {
     }
     /**
      * Zeigt, daß diese Plugin gestoppt werden soll
-     * 
      */
     public void abort() {
         aborted = true;
     }
     /**
      * Initialisiert das Plugin vor dem ersten Gebrauch
-     * 
      */
     public void init() {
         currentStep = null;
@@ -174,8 +171,7 @@ public abstract class Plugin {
      * handhaben kann. Dazu wird einfach geprüft, ob ein Treffer des Patterns
      * vorhanden ist.
      * 
-     * @param data
-     *            der zu prüfende Text
+     * @param data der zu prüfende Text
      * @return wahr, falls ein Treffer gefunden wurde.
      */
     public synchronized boolean canHandle(String data) {
@@ -192,13 +188,9 @@ public abstract class Plugin {
      * Findet ein einzelnes Vorkommen und liefert den vollständigen Treffer
      * oder eine Untergruppe zurück
      * 
-     * @param data
-     *            Der zu durchsuchende Text
-     * @param pattern
-     *            Das Muster, nach dem gesucht werden soll
-     * @param group
-     *            Die Gruppe, die zurückgegeben werden soll. 0 ist der
-     *            vollständige Treffer.
+     * @param data Der zu durchsuchende Text
+     * @param pattern Das Muster, nach dem gesucht werden soll
+     * @param group Die Gruppe, die zurückgegeben werden soll. 0 ist der vollständige Treffer.
      * @return Der Treffer
      */
     public String getFirstMatch(String data, Pattern pattern, int group) {
@@ -215,10 +207,8 @@ public abstract class Plugin {
      * Diese Methode findet alle Vorkommnisse des Pluginpatterns in dem Text,
      * und gibt die Treffer als Vector zurück
      * 
-     * @param data
-     *            Der zu durchsuchende Text
-     * @param pattern
-     *            Das Muster, nach dem gesucht werden soll
+     * @param data Der zu durchsuchende Text
+     * @param pattern Das Muster, nach dem gesucht werden soll
      * @return Alle Treffer in dem Text
      */
     public Vector<String> getMatches(String data, Pattern pattern) {
@@ -239,10 +229,8 @@ public abstract class Plugin {
     /**
      * Zählt, wie oft das Pattern des Plugins in dem übergebenen Text vorkommt
      * 
-     * @param data
-     *            Der zu durchsuchende Text
-     * @param pattern
-     *            Das Pattern, daß im Text gefunden werden soll
+     * @param data Der zu durchsuchende Text
+     * @param pattern Das Pattern, daß im Text gefunden werden soll
      * 
      * @return Anzahl der Treffer
      */
@@ -263,8 +251,7 @@ public abstract class Plugin {
      * Diese Funktion schneidet alle Vorkommnisse des vom Plugin unterstützten
      * Pattern aus
      * 
-     * @param data
-     *            Text, aus dem das Pattern ausgeschnitter werden soll
+     * @param data Text, aus dem das Pattern ausgeschnitter werden soll
      * @return Der resultierende String
      */
     public String cutMatches(String data) {
@@ -273,8 +260,7 @@ public abstract class Plugin {
     /**
      * Schickt ein GetRequest an eine Adresse
      * 
-     * @param link
-     *            Die URL, die ausgelesen werden soll
+     * @param link Die URL, die ausgelesen werden soll
      * @return Ein Objekt, daß alle Informationen der Zieladresse beinhält
      * @throws IOException
      */
@@ -282,49 +268,38 @@ public abstract class Plugin {
         return getRequest(link, null, null, false);
     }
     /**
+     * Schickt ein GetRequest an eine Adresse
      * 
-     * @param link
-     *            Der Link, an den die GET Anfrage geschickt werden soll
-     * @param cookie
-     *            Cookie
-     * @param referrer
-     *            Referrer
-     * @param redirect
-     *            Soll einer Weiterleitung gefolgt werden?
+     * @param link Der Link, an den die GET Anfrage geschickt werden soll
+     * @param cookie Cookie
+     * @param referrer Referrer
+     * @param redirect Soll einer Weiterleitung gefolgt werden?
      * @return Ein Objekt, daß alle Informationen der Zieladresse beinhält
      * @throws IOException
      */
-    public static RequestInfo getRequest(URL link, String cookie,
-            String referrer, boolean redirect) throws IOException {
-        HttpURLConnection httpConnection = (HttpURLConnection) link
-                .openConnection();
+    public static RequestInfo getRequest(URL link, String cookie, String referrer, boolean redirect) throws IOException {
+        HttpURLConnection httpConnection = (HttpURLConnection) link.openConnection();
         httpConnection.setInstanceFollowRedirects(redirect);
         //wenn referrer nicht gesetzt wurde nimmt er den host als referer
         if (referrer != null)
             httpConnection.setRequestProperty("Referer", referrer);
         else
-            httpConnection.setRequestProperty("Referer", "http://"
-                    + link.getHost());
+            httpConnection.setRequestProperty("Referer", "http://"+ link.getHost());
         if (cookie != null)
             httpConnection.setRequestProperty("Cookie", cookie);
-        // TODO User-Agend als Option ins menu
+        // TODO User-Agent als Option ins menu
         // hier koennte man mit einer kleinen Datenbank den User-Agent rotieren
         // lassen
         // so ist das Programm nicht so auffallig
-        httpConnection
-                .setRequestProperty(
-                        "User-Agent",
-                        "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1; SV1; .NET CLR 1.1.4322; .NET CLR 2.0.50727)");
+        httpConnection.setRequestProperty("User-Agent","Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1; SV1; .NET CLR 1.1.4322; .NET CLR 2.0.50727)");
 
         return readFromURL(httpConnection);
     }
     /**
      * Schickt ein PostRequest an eine Adresse
      * 
-     * @param link
-     *            Der Link, an den die POST Anfrage geschickt werden soll
-     * @param parameter
-     *            Die Parameter, die übergeben werden sollen
+     * @param link Der Link, an den die POST Anfrage geschickt werden soll
+     * @param parameter Die Parameter, die übergeben werden sollen
      * @return Ein Objekt, daß alle Informationen der Zieladresse beinhält
      * @throws IOException
      */
@@ -336,41 +311,28 @@ public abstract class Plugin {
      * 
      * Schickt ein PostRequest an eine Adresse
      * 
-     * @param link
-     *            Der Link, an den die POST Anfrage geschickt werden soll
-     * @param cookie
-     *            Cookie
-     * @param referrer
-     *            Referrer
-     * @param parameter
-     *            Die Parameter, die übergeben werden sollen
-     * @param redirect
-     *            Soll einer Weiterleitung gefolgt werden?
+     * @param link Der Link, an den die POST Anfrage geschickt werden soll
+     * @param cookie Cookie
+     * @param referrer Referrer
+     * @param parameter Die Parameter, die übergeben werden sollen
+     * @param redirect Soll einer Weiterleitung gefolgt werden?
      * @return Ein Objekt, daß alle Informationen der Zieladresse beinhält
      * @throws IOException
      */
-    public static RequestInfo postRequest(URL link, String cookie,
-            String referrer, String parameter, boolean redirect)
-            throws IOException {
-        HttpURLConnection httpConnection = (HttpURLConnection) link
-                .openConnection();
+    public static RequestInfo postRequest(URL link, String cookie,String referrer, String parameter, boolean redirect) throws IOException {
+        HttpURLConnection httpConnection = (HttpURLConnection) link .openConnection();
         httpConnection.setInstanceFollowRedirects(redirect);
         if (referrer != null)
             httpConnection.setRequestProperty("Referer", referrer);
         else
-            httpConnection.setRequestProperty("Referer", "http://"
-                    + link.getHost());
+            httpConnection.setRequestProperty("Referer", "http://" + link.getHost());
         if (cookie != null)
             httpConnection.setRequestProperty("Cookie", cookie);
         // TODO das gleiche wie bei getRequest
-        httpConnection
-                .setRequestProperty(
-                        "User-Agent",
-                        "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1; SV1; .NET CLR 1.1.4322; .NET CLR 2.0.50727)");
+        httpConnection.setRequestProperty("User-Agent", "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1; SV1; .NET CLR 1.1.4322; .NET CLR 2.0.50727)");
 
         httpConnection.setDoOutput(true);
-        OutputStreamWriter wr = new OutputStreamWriter(httpConnection
-                .getOutputStream());
+        OutputStreamWriter wr = new OutputStreamWriter(httpConnection.getOutputStream());
         if (parameter != null)
             wr.write(parameter);
         wr.flush();
@@ -380,31 +342,30 @@ public abstract class Plugin {
         return requestInfo;
     }
     /**
-     * gibt header- und cookieinformationen aus ohe den HTMLCode herunterzuladen
+     * Gibt header- und cookieinformationen aus ohne den HTMLCode herunterzuladen
+     * 
+     * @param link Der Link, an den die POST Anfrage geschickt werden soll
+     * @param cookie Cookie
+     * @param referrer Referrer
+     * @param parameter Die Parameter, die übergeben werden sollen
+     * @param redirect Soll einer Weiterleitung gefolgt werden?
+     * @return Ein Objekt, daß alle Informationen der Zieladresse beinhält
+     * @throws IOException
      */
-
-    public static RequestInfo postRequestWithoutHtmlCode(URL link,
-            String cookie, String referrer, String parameter, boolean redirect)
-            throws IOException {
-        HttpURLConnection httpConnection = (HttpURLConnection) link
-                .openConnection();
+    public static RequestInfo postRequestWithoutHtmlCode(URL link, String cookie, String referrer, String parameter, boolean redirect)throws IOException {
+        HttpURLConnection httpConnection = (HttpURLConnection) link.openConnection();
         httpConnection.setInstanceFollowRedirects(redirect);
         if (referrer != null)
             httpConnection.setRequestProperty("Referer", referrer);
         else
-            httpConnection.setRequestProperty("Referer", "http://"
-                    + link.getHost());
+            httpConnection.setRequestProperty("Referer", "http://"+ link.getHost());
         if (cookie != null)
             httpConnection.setRequestProperty("Cookie", cookie);
         // TODO das gleiche wie bei getRequest
-        httpConnection
-                .setRequestProperty(
-                        "User-Agent",
-                        "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1; SV1; .NET CLR 1.1.4322; .NET CLR 2.0.50727)");
+        httpConnection.setRequestProperty("User-Agent","Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1; SV1; .NET CLR 1.1.4322; .NET CLR 2.0.50727)");
         if (parameter != null) {
             httpConnection.setDoOutput(true);
-            OutputStreamWriter wr = new OutputStreamWriter(httpConnection
-                    .getOutputStream());
+            OutputStreamWriter wr = new OutputStreamWriter(httpConnection.getOutputStream());
 
             wr.write(parameter);
             wr.flush();
@@ -424,15 +385,12 @@ public abstract class Plugin {
     /**
      * Liest Daten von einer URL
      * 
-     * @param urlInput
-     *            Die URL Verbindung, von der geselen werden soll
+     * @param urlInput Die URL Verbindung, von der geselen werden soll
      * @return Ein Objekt, daß alle Informationen der Zieladresse beinhält
      * @throws IOException
      */
-    private static RequestInfo readFromURL(HttpURLConnection urlInput)
-            throws IOException {
-        BufferedReader rd = new BufferedReader(new InputStreamReader(urlInput
-                .getInputStream()));
+    private static RequestInfo readFromURL(HttpURLConnection urlInput)throws IOException {
+        BufferedReader rd = new BufferedReader(new InputStreamReader(urlInput.getInputStream()));
         String line;
         StringBuffer htmlCode = new StringBuffer();
         while ((line = rd.readLine()) != null) {
@@ -450,24 +408,20 @@ public abstract class Plugin {
         }
 
         rd.close();
-        RequestInfo requestInfo = new RequestInfo(htmlCode.toString(),
-                location, cookie, headers);
+        RequestInfo requestInfo = new RequestInfo(htmlCode.toString(), location, cookie, headers);
         return requestInfo;
     }
     /**
      * Speichert einen InputStream binär auf der Festplatte ab
      * 
-     * @param downloadLink
-     *            der DownloadLink
-     * @param urlConnection
-     *            Wenn bereits vom Plugin eine vorkonfigurierte URLConnection
-     *            vorhanden ist, wird diese hier übergeben und benutzt.
-     *            Ansonsten erfolgt ein normaler GET Download von der URL, die
-     *            im DownloadLink hinterlegt ist
+     * @param downloadLink der DownloadLink
+     * @param urlConnection Wenn bereits vom Plugin eine vorkonfigurierte URLConnection
+     *                      vorhanden ist, wird diese hier übergeben und benutzt.
+     *                      Ansonsten erfolgt ein normaler GET Download von der URL, die
+     *                      im DownloadLink hinterlegt ist
      * @return wahr, wenn alle Daten ausgelesen und gespeichert wurden
      */
-    public boolean download(DownloadLink downloadLink,
-            URLConnection urlConnection) {
+    public boolean download(DownloadLink downloadLink, URLConnection urlConnection) {
         File fileOutput = downloadLink.getFileOutput();
         BufferedInputStream bis;
         int downloadedBytes = 0;
@@ -478,8 +432,7 @@ public abstract class Plugin {
 
             // Falls keine urlConnection übergeben wurde
             if (urlConnection == null)
-                bis = new BufferedInputStream(downloadLink.getUrlDownload()
-                        .openConnection().getInputStream());
+                bis = new BufferedInputStream(downloadLink.getUrlDownload().openConnection().getInputStream());
             else
                 bis = new BufferedInputStream(urlConnection.getInputStream());
             FileOutputStream fos = new FileOutputStream(fileOutput);
@@ -492,13 +445,9 @@ public abstract class Plugin {
                     fos.write(buffer, 0, count);
                     downloadedBytes += count;
                     downloadLink.setDownloadedBytes(downloadedBytes);
-                    firePluginEvent(new PluginEvent(this,
-                            PluginEvent.PLUGIN_DATA_CHANGED, null));
+                    firePluginEvent(new PluginEvent(this, PluginEvent.PLUGIN_DATA_CHANGED, null));
                 }
-            } while (count != -1 && !aborted); // Muss -1 sein und nicht
-            // buffer.length da durch
-            // eine langsame Internetverbindung der Puffer nicht immer komplett
-            // gefüllt ist
+            } while (count != -1 && !aborted); // Muss -1 sein und nicht buffer.length da durch  eine langsame Internetverbindung der Puffer nicht immer komplett gefüllt ist
             end = System.currentTimeMillis();
             time = end - start;
             fos.close();
@@ -506,38 +455,23 @@ public abstract class Plugin {
             firePluginEvent(new PluginEvent(this,
                     PluginEvent.PLUGIN_PROGRESS_FINISH, null));
             logger.info("download finished");
-            // 1000 ms = 1s
-            // 60000 ms = 1min
-            // 3600000 ms = 1h
 
-            if (time < 1000)
-                logger.info(downloadedBytes + " bytes in " + time / 1000
-                        + " seconds");
-            else
-                logger.info(downloadedBytes + " bytes in " + (time / 60000)
-                        + " minutes and " + time / 1000 + " seconds");
+            logger.info(downloadedBytes + " bytes in " + time +" ms");
             return true;
-        } catch (FileNotFoundException e) {
-            logger.severe("file not found. " + e.getLocalizedMessage());
-        } catch (SecurityException e) {
-            logger.severe("not enough rights to write the file. "
-                    + e.getLocalizedMessage());
-        } catch (IOException e) {
-            logger.severe("error occurred while writing to file. "
-                    + e.getLocalizedMessage());
-        }
+        } 
+        catch (FileNotFoundException e) { logger.severe("file not found. " + e.getLocalizedMessage());                      } 
+        catch (SecurityException e)     { logger.severe("not enough rights to write the file. " + e.getLocalizedMessage()); } 
+        catch (IOException e)           { logger.severe("error occurred while writing to file. "+ e.getLocalizedMessage()); }
         return false;
     }
     /**
      * Diese Methode erstellt einen einzelnen String aus einer HashMap mit
      * Parametern für ein Post-Request.
      * 
-     * @param parameters
-     *            HashMap mit den Parametern
+     * @param parameters HashMap mit den Parametern
      * @return Codierter String
      */
-    protected String createPostParameterFromHashMap(
-            HashMap<String, String> parameters) {
+    protected String createPostParameterFromHashMap(HashMap<String, String> parameters) {
         StringBuffer parameterLine = new StringBuffer();
         String parameter;
         Iterator<String> iterator = parameters.keySet().iterator();
@@ -548,8 +482,8 @@ public abstract class Plugin {
             try {
                 if (parameter != null)
                     parameter = URLEncoder.encode(parameter, "US-ASCII");
-            } catch (UnsupportedEncodingException e) {
-            }
+            } 
+            catch (UnsupportedEncodingException e) { }
             parameterLine.append(key);
             parameterLine.append("=");
             parameterLine.append(parameter);

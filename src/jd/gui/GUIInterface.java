@@ -21,8 +21,13 @@ import jd.plugins.PluginForHost;
 import jd.plugins.event.PluginListener;
 
 public abstract class GUIInterface implements PluginListener, ControlListener, ClipboardOwner{
-
+    /**
+     * Titel der Applikation
+     */
     private final String JD_TITLE  = "jDownloader 0.0.1";
+    /**
+     * Icon der Applikation
+     */
     private final Image JD_ICON = JDUtilities.getImage("mind");
     /**
      * Logger für Meldungen des Programmes

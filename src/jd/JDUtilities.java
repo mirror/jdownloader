@@ -176,9 +176,7 @@ public class JDUtilities {
         try {
            result = resourceBundle.getString(key);
         }
-        catch (MissingResourceException mrex) {
-           // ignore
-        }
+        catch (MissingResourceException e) { logger.severe("resource missing."+e.getKey()); }
         return result;
     }
     
@@ -233,9 +231,11 @@ public class JDUtilities {
                 String captchaCode=jac.checkCaptcha(captcha);
                 logger.info(captchaCode);
                 return captchaCode;
-            } catch (MalformedURLException e) {
+            } 
+            catch (MalformedURLException e) {
                 e.printStackTrace();
-            } catch (IOException e) {
+            } 
+            catch (IOException e) {
                 e.printStackTrace();
             }
         }
