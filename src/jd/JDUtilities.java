@@ -220,17 +220,17 @@ public class JDUtilities {
         String envDir=System.getenv("JD_HOME");
         if(envDir == null){
             logger.warning("environment variable JD_HOME not set");
-            envDir = System.getProperty("user.home")+System.getProperty("file.seperator")+".jdownloader/";
+            envDir = System.getProperty("user.home")+System.getProperty("file.separator")+".jdownloader/";
         }
         if(envDir == null)
-            envDir="."+System.getProperty("file.seperator")+".jdownloader/";
+            envDir="."+System.getProperty("file.separator")+".jdownloader/";
         
         File ret=new File(envDir);
         if(!ret.exists()){
             ret.mkdirs();
         }
         return new File(envDir);
-    }
+    } 
     /**
      * Diese Methode erstellt einen neuen Captchadialog und liefert den eingegebenen Text zurück.
      *
