@@ -47,7 +47,7 @@ public class PixelGrid {
      * Gibt eine Prozentzahl aus. 0 = super 100= ganz schlimm
      * @param value
      * @param owner
-     * @return
+     * @return Prozent der Erkennungssicherheit
      */
     public static int getValityPercent(int value, JAntiCaptcha owner){
         if(value<0){

@@ -2,7 +2,7 @@ package jd.captcha;
 
 import java.io.File;
 import java.io.IOException;
-import java.lang.reflect.Method;
+
 import java.net.URL;
 import java.util.Hashtable;
 import java.util.Vector;
@@ -238,6 +238,11 @@ public class JACScript {
 
     }
 
+    /**
+     * Setzt einen neuen parameter
+     * @param key
+     * @param value
+     */
     public void set(String key, Object value) {
         key=key.toLowerCase();
         if(get(key)==null){
@@ -248,11 +253,20 @@ public class JACScript {
         parameter.put(key, value);
     }
 
+    /**
+     * 
+     * @param key
+     * @return Wert passend zu key. casting nötig!
+     */
     public Object get(String key) {
         key=key.toLowerCase();
         return parameter.get(key);
     }
 
+    /**
+     * @param key
+     * @return Boolean Wert
+     */
     public boolean getBoolean(String key) {
       
         Object ret = get(key);
@@ -263,6 +277,10 @@ public class JACScript {
         return (Boolean) ret;
     }
 
+    /**
+     * @param key
+     * @return StringValue
+     */
     public String getString(String key) {
        
         Object ret = get(key);
@@ -273,6 +291,10 @@ public class JACScript {
         return (String) ret;
     }
 
+    /**
+     * @param key
+     * @return IntegerValue
+     */
     public int getInteger(String key) {
        
         Object ret = get(key);
@@ -283,6 +305,10 @@ public class JACScript {
         return (Integer) ret;
     }
 
+    /**
+     * @param key
+     * @return Long Value
+     */
     public long getLong(String key) {
         Object ret = get(key);
         if (!(ret instanceof Integer)) {
@@ -292,6 +318,10 @@ public class JACScript {
         return (Long) ret;
     }
 
+    /**
+     * @param key
+     * @return Double Value
+     */
     public double getDouble(String key) {
         Object ret = get(key);
         if (!(ret instanceof Double)) {
@@ -301,6 +331,10 @@ public class JACScript {
         return (Double) ret;
     }
 
+    /**
+     * @param key
+     * @return Float Value
+     */
     public float getFloat(String key) {
         Object ret = get(key);
         if (!(ret instanceof Float)) {
@@ -309,7 +343,12 @@ public class JACScript {
         }
         return (Float) ret;
     }
-
+/**
+ * Wandelt einen String in den Passenden datentyp um
+ * @param arg
+ * @param key
+ * @return neuer datentyp
+ */
     private Object toType(String arg, String key) {
         Object current=get(key);
         if (current instanceof String) {

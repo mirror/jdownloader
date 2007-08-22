@@ -32,6 +32,9 @@ public class Letter extends PixelGrid {
 	 * Gibt an wie oft dieser letter negativ aufgefallen ist
 	 */
 	private int badDetections=0;
+    /**
+     * ID des letters in der Lettermap
+     */
 	public int id;
 	private Letter parent;
     
