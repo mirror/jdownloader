@@ -262,35 +262,10 @@ public abstract class Plugin {
      * Zeilenumbrueche werden dabei auch unterstuetzt
      */
     public String getBetween(String data, String startpattern, String lastpattern) {
-        String [] data2 = data.split("[\n\r]");
-        Pattern start = Pattern.compile(""+startpattern+"(.*)", Pattern.CASE_INSENSITIVE);
-        Pattern end = Pattern.compile("(.*)"+lastpattern+"", Pattern.CASE_INSENSITIVE);
-        Matcher match;
-        boolean st = false;
-        data="";
-        for (int i = 0; i < data2.length; i++) {
-            if(st)
-            {
-                match = end.matcher(data2[i]);
-                if(match.find())
-                {
-                    data += match.group(1);
-                    return data;
-                }
-                else
-                    data += data2[i]+"\n";
-            }
-            else
-            {
-            match = start.matcher(data2[i]);
-            if(match.find())
-            {
-               st=true;
-               data += match.group(1)+"\n";
-            }
-            }
-        }
-
+        Pattern p = Pattern.compile("(?s)"+startpattern+"(.*?)"+lastpattern, Pattern.CASE_INSENSITIVE);
+        Matcher match = p.matcher(data);
+        if(match.find())
+            return match.group(1);
         return data;
     }
     
