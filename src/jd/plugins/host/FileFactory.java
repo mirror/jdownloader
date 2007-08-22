@@ -34,7 +34,7 @@ public class FileFactory extends PluginForHost{
      *
      * <a target="_top" href="http://archive01.filefactory.com/dl/f/cd66d1//b/3/h/4bb297a8a6f12168/"><img src
      */
-    private Pattern patternForDownloadlink = Pattern.compile("<a target=\"_top\" href=\"([^\"]*))\"><img src");
+    private Pattern patternForDownloadlink = Pattern.compile("<a target=\"_top\" href=\"([^\"]*)\"><img src");
 
     private Pattern patternErrorCaptchaWrong         = Pattern.compile("(Sorry, the verification code you entered was incorrect)", Pattern.CASE_INSENSITIVE);
 
