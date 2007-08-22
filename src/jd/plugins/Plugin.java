@@ -258,6 +258,115 @@ public abstract class Plugin {
         return data.replaceAll(getSupportedLinks().pattern(), "--CUT--");
     }
     /**
+     * hier kann man den text zwischen zwei suchmustern ausgeben lassen
+     * Zeilenumbrueche werden dabei auch unterstuetzt
+     */
+    public String getBetween(String data, String startpattern, String lastpattern) {
+        String [] data2 = data.split("[\n\r]");
+        Pattern start = Pattern.compile(""+startpattern+"(.*)", Pattern.CASE_INSENSITIVE);
+        Pattern end = Pattern.compile("(.*)"+lastpattern+"", Pattern.CASE_INSENSITIVE);
+        Matcher match;
+        boolean st = false;
+        data="";
+        for (int i = 0; i < data2.length; i++) {
+            if(st)
+            {
+                match = end.matcher(data2[i]);
+                if(match.find())
+                {
+                    data += match.group(1);
+                    return data;
+                }
+                else
+                    data += data2[i]+"\n";
+            }
+            else
+            {
+            match = start.matcher(data2[i]);
+            if(match.find())
+            {
+               st=true;
+               data += match.group(1)+"\n";
+            }
+            }
+        }
+
+        return data;
+    }
+    
+    /**
+     * Diese Methode sucht die vordefinierten input type="hidden" zwischen startpattern und lastpattern
+     * und formatiert sie zu einem poststring
+     * z.b. würde bei:
+     * 
+                <input type="hidden" name="f" value="f50b0f" />
+                <input type="hidden" name="h" value="390b4be0182b85b0" />
+                <input type="hidden" name="b" value="9" />    
+     *
+     * f=f50b0f&h=390b4be0182b85b0&b=9 rauskommen
+     */
+    public String getFormInputHidden(String data, String startpattern, String lastpattern)
+    {
+        return getFormInputHidden(getBetween(data, startpattern, lastpattern));
+    }
+    
+    /**
+     * Diese Methode sucht die vordefinierten input type="hidden"
+     * und formatiert sie zu einem poststring
+     * z.b. würde bei:
+     * 
+                <input type="hidden" name="f" value="f50b0f" />
+                <input type="hidden" name="h" value="390b4be0182b85b0" />
+                <input type="hidden" name="b" value="9" />    
+     *
+     * f=f50b0f&h=390b4be0182b85b0&b=9 ausgegeben werden
+     */
+    public String getFormInputHidden(String data) {
+        Pattern intput1 = Pattern.compile("<[ ]?input([^>]*?type=['\"]?hidden['\"]?[^>]*?)[/]?>", Pattern.CASE_INSENSITIVE);
+        Pattern intput2 = Pattern.compile("name=['\"]([^'\"]*?)['\"]", Pattern.CASE_INSENSITIVE);
+        Pattern intput3 = Pattern.compile("value=['\"]([^'\"]*?)['\"]", Pattern.CASE_INSENSITIVE);
+        Pattern intput4 = Pattern.compile("name=([^\\s]*)", Pattern.CASE_INSENSITIVE);
+        Pattern intput5 = Pattern.compile("value=([^\\s]*)", Pattern.CASE_INSENSITIVE);
+        Matcher matcher1 = intput1.matcher(data);
+        Matcher matcher2;
+        Matcher matcher3;
+        Matcher matcher4;
+        Matcher matcher5;
+        String string = "";
+        boolean iscompl;
+        boolean first = true;
+        while (matcher1.find()) {
+            matcher2 = intput2.matcher(matcher1.group(1) + " ");
+            matcher3 = intput3.matcher(matcher1.group(1) + " ");
+            matcher4 = intput4.matcher(matcher1.group(1) + " ");
+            matcher5 = intput5.matcher(matcher1.group(1) + " ");
+            iscompl = false;
+            String szwstring = "";
+            if (matcher2.find()) {
+                iscompl = true;
+                szwstring += matcher2.group(1) + "=";
+            } else if (matcher4.find()) {
+                iscompl = true;
+                szwstring += matcher4.group(1) + "=";
+            }
+            if (matcher3.find() && iscompl)
+                szwstring += matcher3.group(1);
+            else if (matcher5.find() && iscompl)
+                szwstring += matcher5.group(1);
+            else
+                iscompl = false;
+            if (iscompl) {
+                if (!first) {
+                    string += "&" + szwstring;
+                } else {
+                    string += szwstring;
+                    first = false;
+                }
+            }
+        }
+        return string;
+    }
+    /**
      * Schickt ein GetRequest an eine Adresse
      * 
      * @param link Die URL, die ausgelesen werden soll
