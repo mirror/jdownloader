@@ -220,10 +220,15 @@ public class JDUtilities {
         String envDir=System.getenv("JD_HOME");
         if(envDir == null){
             logger.warning("environment variable JD_HOME not set");
-            envDir = System.getProperty("user.home");
+            envDir = System.getProperty("user.home")+System.getProperty("file.seperator")+".jdownloader/";
         }
         if(envDir == null)
-            envDir=".";
+            envDir="."+System.getProperty("file.seperator")+".jdownloader/";
+        
+        File ret=new File(envDir);
+        if(!ret.exists()){
+            ret.mkdirs();
+        }
         return new File(envDir);
     }
     /**
@@ -240,7 +245,7 @@ public class JDUtilities {
             try {
                 logger.info("captchaAddress:"+captchaAddress);
                 String host = plugin.getHost();
-                JAntiCaptcha jac = new JAntiCaptcha(host);
+                JAntiCaptcha jac = new JAntiCaptcha(null,host);
                 BufferedImage captchaImage = ImageIO.read(new URL(captchaAddress));
                 Captcha captcha= jac.createCaptcha(captchaImage);
                 String captchaCode=jac.checkCaptcha(captcha);
