@@ -220,10 +220,10 @@ public class JDUtilities {
         String envDir=System.getenv("JD_HOME");
         if(envDir == null){
             logger.warning("environment variable JD_HOME not set");
-            envDir = System.getProperty("user.home")+System.getProperty("file.separator")+".jdownloader/";
+            envDir = System.getProperty("user.home")+System.getProperty("file.separator")+".jd_home/";
         }
         if(envDir == null)
-            envDir="."+System.getProperty("file.separator")+".jdownloader/";
+            envDir="."+System.getProperty("file.separator")+".jd_home/";
         
         File ret=new File(envDir);
         if(!ret.exists()){
