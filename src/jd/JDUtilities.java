@@ -212,6 +212,21 @@ public class JDUtilities {
         images.put(imageName, image);
     }
     /**
+     * Liefert das Basisverzeichnis für jD zurück.
+     * 
+     * @return ein File, daß das Basisverzeichnis angibt
+     */
+    public static File getJDHomeDirectory(){
+        String envDir=System.getenv("JD_HOME");
+        if(envDir == null){
+            logger.warning("environment variable JD_HOME not set");
+            envDir = System.getProperty("user.home");
+        }
+        if(envDir == null)
+            envDir=".";
+        return new File(envDir);
+    }
+    /**
      * Diese Methode erstellt einen neuen Captchadialog und liefert den eingegebenen Text zurück.
      *
      * @param owner Das übergeordnete Fenster
