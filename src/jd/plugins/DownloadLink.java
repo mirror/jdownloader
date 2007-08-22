@@ -52,6 +52,10 @@ public class DownloadLink implements Serializable{
      */
     private String name;
     /**
+     * TODO downloadpath ueber config setzen
+     */
+    private String downloadPath=".";
+    /**
      * Von hier soll de Download stattfinden
      */
     private URL urlDownload;
@@ -113,7 +117,7 @@ public class DownloadLink implements Serializable{
         this.name        = name;
         this.host        = host;
         this.isEnabled   = isEnabled;
-        this.fileOutput = new File("./"+name);
+        updateFileOutput();
         try {
             this.urlDownload = new URL(urlDownload);
         }
@@ -204,6 +208,10 @@ public class DownloadLink implements Serializable{
      */
     public void setFileOutput(File fileOutput) { this.fileOutput = fileOutput; }
     /**
+     * diese Methode wird aufgerufen wenn der name bzw. der downloadPath geaendert wurde!
+     */
+    public void updateFileOutput() { this.fileOutput = new File(downloadPath+System.getProperty("file.separator")+name); }
+    /**
      * Setzt die URL, von der heruntergeladen werden soll
      *
      * @param urlDownload Die URL von der heruntergeladen werden soll
@@ -250,5 +258,25 @@ public class DownloadLink implements Serializable{
             return this.urlDownload.equals(((DownloadLink)obj).urlDownload);
         else
             return super.equals(obj);
+    }
+    /**
+     * @return downloadPath Downloadpfad
+     */
+    public String getDownloadPath() {
+        return downloadPath;
+    }
+    /**
+     *  Setzt den Downloadpfad neu
+     */
+    public void setDownloadPath(String downloadPath) {
+        this.downloadPath = downloadPath;
+        updateFileOutput();
+    }
+    /**
+     *  Setzt den Namen des Downloads neu
+     */
+    public void setName(String name) {
+        this.name = name;
+        updateFileOutput();
     }
 }
