@@ -23,7 +23,7 @@ public class FileFactory extends PluginForHost{
     /**
      * Das findet die Ziel URL
      */
-    private Pattern patternForNewHost = Pattern.compile("var link = '([^']*' + '[^']*' + '[^']*' + '[0-9]*)';");
+    private Pattern patternForNewHost = Pattern.compile("var link = '([^']*?' \\+ '[^']*?' \\+ '[^']*?' \\+ '[0-9]*?)';");
     /**
      * Das findet die Captcha URL
      * 
@@ -35,7 +35,7 @@ public class FileFactory extends PluginForHost{
      * <a target="_top" href="http://archive01.filefactory.com/dl/f/cd66d1//b/3/h/4bb297a8a6f12168/"><img src
      */
     private Pattern patternForDownloadlink = Pattern.compile("<a target=\"_top\" href=\"([^\"]*)\"><img src");
-
+    //TODO
     private Pattern patternErrorCaptchaWrong         = Pattern.compile("(Sorry, the verification code you entered was incorrect)", Pattern.CASE_INSENSITIVE);
 
     /**
@@ -81,29 +81,25 @@ public class FileFactory extends PluginForHost{
                 //Der Download wird bestätigt
                 requestInfo = getRequest(downloadLink.getUrlDownload());
                 String newURL = getFirstMatch(requestInfo.getHtmlCode(), patternForNewHost, 1);
+
                 if(newURL != null){
                     newURL = "http://www.filefactory.com"+newURL.replaceAll("' \\+ '", "");
+                    
                     requestInfo = getRequest((new URL(newURL)),requestInfo.getCookie(),downloadLink.getName(), true );
-                    actionString = "http://www.filefactory.com"+getFirstMatch(requestInfo.getHtmlCode(), frameForCaptcha, 1);
+                    actionString = "http://www.filefactory.com/"+getFirstMatch(requestInfo.getHtmlCode(), frameForCaptcha, 1);
+                    //TODO hier stimmt noch was nicht mit dem cookie
                     requestInfo = getRequest((new URL(actionString)),requestInfo.getCookie(),newURL, true );
-
+                    System.out.println(requestInfo.getHtmlCode());
                     // captcha Adresse finden
                     captchaAddress = "http://www.filefactory.com"+getFirstMatch(requestInfo.getHtmlCode(),patternForCaptcha,1);
-
+                    System.out.println(captchaAddress);
                     //post daten lesen
                     postTarget = getFormInputHidden(requestInfo.getHtmlCode());
                      
                 }
                 currentStep  = steps.firstElement();
-                if(newURL == null || captchaAddress == null || postTarget == null || actionString == null){
+                if(captchaAddress == null || postTarget == null ){
 
-                    String strCaptchaWrong = getFirstMatch(requestInfo.getHtmlCode(), patternErrorCaptchaWrong, 0);
-                    if(strCaptchaWrong != null){
-                        logger.severe("captchaWrong");
-                        downloadLink.setStatus(DownloadLink.STATUS_ERROR_CAPTCHA_WRONG);
-                        currentStep.setStatus(PluginStep.STATUS_ERROR);
-                        return currentStep;
-                    }
 
                     downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN);
                     currentStep.setStatus(PluginStep.STATUS_ERROR);
