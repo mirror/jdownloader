@@ -23,12 +23,14 @@ public class HTTPReconnect extends Interaction{
 
     @Override
     public boolean interact() {
-        logger.info("trying to reconnect..");
+        logger.info("Starting HTTPReconnect");
         String ipBefore;
         String ipAfter;
         RouterData routerData = configuration.getRouterData();
+        String routerIP       = configuration.getRouterIP();
         String routerUsername = configuration.getRouterUsername();
         String routerPassword = configuration.getRouterPassword();
+        int routerPort        = routerData.getHttpPort();
         String disconnect     = routerData.getConnectionDisconnect();
         String connect        = routerData.getConnectionConnect();
         Authenticator.setDefault(new InternalAuthenticator(routerUsername, routerPassword));
@@ -38,11 +40,20 @@ public class HTTPReconnect extends Interaction{
 
         //Trennen
         logger.fine("disconnecting router");
+        String routerPage;
+        
+        if(routerPort<=0)
+            routerPage = "http://"+routerIP+"/";
+        else
+            routerPage = "http://"+routerIP+":"+routerPort+"/";
+
         if(disconnect.startsWith(RouterData.HTTP_POST)){
             disconnect = disconnect.substring(RouterData.HTTP_POST.length()+1);
-            String[] params = disconnect.split("\\?"); 
+            String[] params = disconnect.split("\\?");
+            routerPage +=params[0];
+            logger.fine("Router page:"+routerPage);
             try {
-                Plugin.postRequest(new URL(params[0]), params[1]);
+                Plugin.postRequest(new URL(routerPage), params[1]);
             }
             catch (MalformedURLException e) { e.printStackTrace(); }
             catch (IOException e)           { e.printStackTrace(); }
@@ -52,7 +63,9 @@ public class HTTPReconnect extends Interaction{
                 disconnect = disconnect.substring(RouterData.HTTP_GET.length());
             }
             try {
-                Plugin.getRequest(new URL(disconnect));
+                routerPage +=disconnect;
+                logger.fine("Router page:"+routerPage);
+                Plugin.getRequest(new URL(routerPage));
             }
             catch (MalformedURLException e) { e.printStackTrace(); }
             catch (IOException e)           { e.printStackTrace(); }

@@ -39,11 +39,14 @@ public class RouterData implements Serializable{
      */
     private int    httpPort;
     /**
-     * String zum Aufbauen der Verbindung (meist Google)
+     * String zum Aufbauen der Verbindung (meist http://www.google.de)
+     * Dieser String ist eine vollständige URL
      */
     private String connectionConnect;
     /**
      * String zum Trennen der Verbindung
+     * Dieser String zeigt die page des Routers an (zB Forms/DiagADSL_1?DiagDSLDisconnect=PPPoE%20Trennung)
+     * Hier muß noch http://<routerIP>/ hinzugefügt werden
      */
     private String connectionDisconnect;
     /**

@@ -102,6 +102,9 @@ public class SimpleGUI extends GUIInterface implements ClipboardOwner{
         tabbedPane = new JTabbedPane();
         menuBar    = new JMenuBar();
         toolBar    = new JToolBar();
+        frame.setIconImage(JD_ICON);
+        frame.setTitle(JD_TITLE);
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         initActions();
         initMenuBar();
         buildUI();
@@ -252,8 +255,6 @@ public class SimpleGUI extends GUIInterface implements ClipboardOwner{
                 logDialog.setVisible(!logDialog.isVisible());
                 break;
             case JDAction.ITEMS_ADD:
-                String t = null;
-                t.toString();
                 break;
         }
     }

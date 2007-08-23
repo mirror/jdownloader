@@ -24,11 +24,11 @@ public abstract class GUIInterface implements PluginListener, ControlListener, C
     /**
      * Titel der Applikation
      */
-    private final String JD_TITLE  = "jDownloader 0.0.1";
+    protected final String JD_TITLE  = "jDownloader 0.0.1";
     /**
      * Icon der Applikation
      */
-    private final Image JD_ICON = JDUtilities.getImage("mind");
+    protected final Image JD_ICON = JDUtilities.getImage("mind");
     /**
      * Logger für Meldungen des Programmes
      */
@@ -43,13 +43,6 @@ public abstract class GUIInterface implements PluginListener, ControlListener, C
     protected Configuration config = JDUtilities.getConfiguration();
     public GUIInterface(){
         logger.info("Version : "+Plugin.VERSION);
-
-        JFrame frame = getFrame();
-        if(frame!= null){
-            frame.setIconImage(JD_ICON);
-            frame.setTitle(JD_TITLE);
-            frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        }
     }
     /**
      * Methode, um eine Veränderung der Zwischenablage zu bemerken und zu verarbeiten

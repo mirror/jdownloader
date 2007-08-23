@@ -7,11 +7,13 @@ import java.net.URL;
 import java.util.Iterator;
 import java.util.logging.Logger;
 
+import jd.controlling.interaction.HTTPReconnect;
 import jd.gui.GUIInterface;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
+import jd.router.RouterData;
 
 // TODO Astaldo : GUI
 // TODO Wulfskin: Reconnect Paket
@@ -32,6 +34,20 @@ public class Main {
         main.go();
     }
     private void go(){
+        
+//  Bitte mal testen        
+//        RouterData routerData = new RouterData();
+//        routerData.setConnectionConnect("http://www.google.de");
+//        routerData.setConnectionDisconnect("Forms/DiagADSL_1?DiagDSLDisconnect=PPPoE%20Trennung");
+//        Configuration configuration = new Configuration();
+//        configuration.setRouterData(routerData);
+//        configuration.setRouterIP("192.168.168.72");
+//        configuration.setRouterUsername("administrator");
+//        configuration.setRouterPassword("geheim"); // Ja es gibt DAUs! :-)
+//        JDUtilities.setConfiguration(configuration);
+//        HTTPReconnect httpReconnect = new HTTPReconnect();
+//        httpReconnect.interact();
+        
         Logger logger = Plugin.getLogger();
         ClassLoader cl = getClass().getClassLoader();
         URL configURL = cl.getResource(JDUtilities.CONFIG_PATH);

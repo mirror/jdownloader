@@ -68,7 +68,7 @@ public class CaptchaDialog extends JDialog implements ActionListener {
             logger.finer("imageAddress:"+imageAddress);
             image = ImageIO.read(new URL(imageAddress));
 			imageIcon = new ImageIcon(image);
-			code = JAntiCaptcha.getCaptchaCode(image,null, "rapidshare.com");
+			code = JAntiCaptcha.getCaptchaCode(image,null, plugin.getHost());
 		} 
         catch (MalformedURLException e) { e.printStackTrace(); } 
         catch (IOException e)           { e.printStackTrace(); }

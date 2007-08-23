@@ -37,15 +37,20 @@ public class Configuration implements Serializable{
      * Password für den Router
      */
     private String routerPassword;
+    /**
+     * IP des Routers
+     */
+    private String routerIP;
     
     public String getDownloadDirectory()                           { return downloadDirectory;  }
     public HashMap<Integer, Vector<Interaction>> getInteractions() { return interactions;       }
-    public RouterData getRouterData()                              { return routerData; }
     public String getRouterPassword()                              { return routerPassword;     }
     public String getRouterUsername()                              { return routerUsername;     }
-    public RouterData getSelectedRouterData()                      { return routerData; }
-    public void setDownloadDirectory(String downloadDirectory)       { this.downloadDirectory = downloadDirectory;   }
-    public void setRouterPassword(String routerPassword)             { this.routerPassword = routerPassword;         }
-    public void setRouterUsername(String routerUsername)             { this.routerUsername = routerUsername;         }
-    public void setSelectedRouterData(RouterData selectedRouterData) { this.routerData = selectedRouterData; }
+    public RouterData getRouterData()                              { return routerData;         }
+    public String getRouterIP()                                    { return routerIP;           }
+    public void setDownloadDirectory(String downloadDirectory) { this.downloadDirectory = downloadDirectory; }
+    public void setRouterPassword(String routerPassword)       { this.routerPassword = routerPassword;       }
+    public void setRouterUsername(String routerUsername)       { this.routerUsername = routerUsername;       }
+    public void setRouterData(RouterData routerData)           { this.routerData = routerData;               }
+    public void setRouterIP(String routerIP)                   { this.routerIP = routerIP;                   }
 }
