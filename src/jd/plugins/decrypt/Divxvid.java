@@ -14,11 +14,8 @@ import jd.plugins.event.PluginEvent;
 public class Divxvid extends PluginForDecrypt {
     private String host = "dxp.divxvid.org";
     private String version = "1.0.0.0";
-    private Pattern patternSupported = Pattern
-            .compile("http://dxp\\.divxvid\\.org/[^\\s\"]*\\.html");
-    private Pattern gate = Pattern.compile(
-            "httpRequestObject.open.'POST', '([^\\s\"]*)'\\);",
-            Pattern.CASE_INSENSITIVE);
+    private Pattern patternSupported = Pattern.compile("http://dxp\\.divxvid\\.org/[^\\s\"]*\\.html");
+    private Pattern gate = Pattern.compile("httpRequestObject.open.'POST', '([^\\s\"]*)'\\);",Pattern.CASE_INSENSITIVE);
     private Pattern outputlocation = Pattern.compile(
             "rsObject = window.open.\"([/|.|a-zA-Z0-9|_|-]*)",
             Pattern.CASE_INSENSITIVE);
@@ -40,34 +37,14 @@ public class Divxvid extends PluginForDecrypt {
     /*
      * Diese wichtigen Infos sollte man sich unbedingt durchlesen
      */
-    @Override
-    public String getCoder() {
-        return "DwD aka James";
-    }
-    @Override
-    public String getHost() {
-        return host;
-    }
-    @Override
-    public String getPluginID() {
-        return "Divxvid-1.0.0.";
-    }
-    @Override
-    public String getPluginName() {
-        return host;
-    }
-    @Override
-    public Pattern getSupportedLinks() {
-        return patternSupported;
-    }
-    @Override
-    public String getVersion() {
-        return version;
-    }
-    @Override
-    public boolean isClipboardEnabled() {
-        return true;
-    }
+    @Override public String getCoder() { return "DwD aka James"; }
+    @Override public String getHost() { return host; }
+    @Override public String getPluginID() { return "Divxvid-1.0.0."; }
+    @Override public String getPluginName() { return host; }
+    @Override public Pattern getSupportedLinks() { return patternSupported; }
+    @Override public String getVersion() { return version; }
+    @Override public boolean isClipboardEnabled() { return true; }
+    @Override public PluginStep getNextStep(Object parameter) { return currentStep; }
 
     @Override
     public Vector<String> decryptLink(String cryptedLink) {
@@ -76,8 +53,7 @@ public class Divxvid extends PluginForDecrypt {
         try {
             url = new URL(cryptedLink);
 
-            String cookie = postRequestWithoutHtmlCode(url, null, null, null,
-                    false).getCookie();
+            String cookie = postRequestWithoutHtmlCode(url, null, null, null,false).getCookie();
 
             String hash = url.getFile();
             hash = hash.substring(1, hash.lastIndexOf("."));
@@ -96,22 +72,20 @@ public class Divxvid extends PluginForDecrypt {
             /*
              * es werden dank divxvid.org hier nur die menge der links gezaehlt
              */
-            int countHits = countOccurences(requestInfo.getHtmlCode(),
-                    premiumdownload);
-            firePluginEvent(new PluginEvent(this,
-                    PluginEvent.PLUGIN_PROGRESS_MAX, countHits));
+            int countHits = countOccurences(requestInfo.getHtmlCode(),premiumdownload);
+            firePluginEvent(new PluginEvent(this,PluginEvent.PLUGIN_PROGRESS_MAX, countHits));
 
             for (int i = 0; i < countHits; i++) {
-                    requestInfo = postRequestWithoutHtmlCode((new URL( getFirstMatch(getRequest(
-                            (new URL("http://dxp.divxvid.org" + outl + "," + i
-                                    + ",1," + hash + ".rs")), cookie, cryptedLink,
-                            true).getHtmlCode(),premiumdownloadlocation,1))), null, null, null, false);
-                    if (requestInfo != null) {
-                        firePluginEvent(new PluginEvent(this,
-                                PluginEvent.PLUGIN_PROGRESS_INCREASE, null));
-                        decryptedLinks.add(requestInfo.getLocation());
-                    }
-                
+                requestInfo = postRequestWithoutHtmlCode((
+                        new URL(getFirstMatch(getRequest((new URL("http://dxp.divxvid.org" + outl + ","+ i + ",1," + hash + ".rs")), cookie,
+                                cryptedLink, true).getHtmlCode(),
+                                premiumdownloadlocation, 1))), null, null,
+                        null, false);
+                if (requestInfo != null) {
+                    firePluginEvent(new PluginEvent(this,
+                            PluginEvent.PLUGIN_PROGRESS_INCREASE, null));
+                    decryptedLinks.add(requestInfo.getLocation());
+                }
 
             }
             logger.info(decryptedLinks.size() + " downloads decrypted");
@@ -127,10 +101,4 @@ public class Divxvid extends PluginForDecrypt {
         return decryptedLinks;
 
     }
-
-    @Override
-    public PluginStep getNextStep(Object parameter) {
-        return currentStep;
-    }
-
 }

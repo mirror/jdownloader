@@ -17,12 +17,11 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.router.RouterData;
 
-// TODO Astaldo : GUI
 // TODO Wulfskin: Reconnect Paket
 //
-// TODO Shortcuts
-// TODO Konfiguration speichern
-//
+// TODO Konfiguration speichern (XML)
+// TODO Richtiges UIInterface
+// TODO Links verschlüsseln (einfach AES)
 
 
 /**

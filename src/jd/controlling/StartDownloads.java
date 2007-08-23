@@ -74,7 +74,7 @@ public class StartDownloads extends ControlMulticaster{
             plugin.init();
             PluginStep step = plugin.getNextStep(downloadLink);
             // Hier werden alle einzelnen Schritte des Plugins durchgegangen,
-            // bis entwerder null zurückgegeben wird oder ein Fehler auftritt
+            // bis entweder null zurückgegeben wird oder ein Fehler auftritt
             fireControlEvent(new ControlEvent(ControlEvent.CONTROL_PLUGIN_HOST_ACTIVE));
             while(!aborted && step != null && step.getStatus()!=PluginStep.STATUS_ERROR){
                 switch(step.getStep()){
