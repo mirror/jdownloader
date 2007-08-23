@@ -4,7 +4,7 @@ package jd.captcha;
 
 
 
-import jd.JDUtilities;
+
 
 
 
@@ -25,9 +25,7 @@ public class JACUpdater {
     }
     private void go(){ 
         
-        WebUpdater wu= new WebUpdater("http://lagcity.de/~JDownloaderFiles/autoUpdate");
-        wu.setDestPath(JDUtilities.getJDHomeDirectory());
-      wu.run();
+        JAntiCaptcha.updateMethods();
         
 
    

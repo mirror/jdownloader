@@ -67,7 +67,45 @@ public class PixelGrid {
         grid = new int[width][height];
 
     }
+    
+    /**
+     * Normalisiert die Pixel und sorgt so für einen höheren Kontrast
+     */
+    public void normalize(){
+        normalize(1);
+        
+    }
+    /**
+     * Normalisiert Pixel und Multipliziert deren wert mit multi. Der Kontrast wird dabei künstlich erhöht bzw erniedrigt.
+     * @param multi
+     */
+ public void normalize(double multi){
+     int max=0;
+     int min= Integer.MAX_VALUE;
+     int akt;
+     for (int y = 0; y < getHeight(); y++) {
+         for (int x = 0; x < getWidth(); x++) {
+             akt= getPixelValue(x,y);
+             if(akt<min && akt >0)min=akt;
+             if(akt>max && akt < getMaxPixelValue())max=akt;
+         }     }
 
+     for (int y = 0; y < getHeight(); y++) {
+         for (int x = 0; x < getWidth(); x++) {
+             akt= getPixelValue(x,y);
+             Double faktor=(double)(max-min)/(double)getMaxPixelValue();
+             
+             akt-=min;
+             akt/=faktor;
+             akt*=multi;
+           akt=Math.min(akt, getMaxPixelValue());
+           akt=Math.max(akt, 0);
+             setPixelValue(x,y,(int)akt);
+        
+         }
+     }
+     
+ }
     /**
      * Gibt die Breite des internen captchagrids zurück
      * @return breite
@@ -514,6 +552,7 @@ public class PixelGrid {
         for (int x = 0; x < getWidth(); x++) {
             for (int y = 0; y < getHeight(); y++) {
                 int dif = Math.abs(avg - getPixelValue(x, y));
+             //  logger.info(getPixelValue(x, y)+"_");
  if (dif < (int)(getMaxPixelValue() * owner.getJas().getDouble("BackgroundSampleCleanContrast"))) {
 
                     this.setPixelValue(x, y, getMaxPixelValue());

@@ -45,6 +45,11 @@ import org.w3c.dom.NodeList;
  */
 public class JAntiCaptcha {
     /**
+     * Pfad zum Update Ordner
+     */
+    private static final String UPDATE_PATH = "http://lagcity.de/~JDownloaderFiles/autoUpdate";
+
+    /**
      * Logger
      */
     private static Logger  logger    = UTILITIES.getLogger();
@@ -143,7 +148,7 @@ public class JAntiCaptcha {
      */
     public JAntiCaptcha(String methodsPath, String methodName) {
 if(methodsPath==null){
-    methodsPath= JDUtilities.getJDHomeDirectory().getAbsolutePath()+"/jd/captcha/methods";
+    methodsPath= UTILITIES.getFullPath(new String[]{JDUtilities.getJDHomeDirectory().getAbsolutePath(),"jd","captcha","metchods"});
 }
         this.methodDir = methodName;
         try {
@@ -189,39 +194,7 @@ if(methodsPath==null){
 
     }
 
-    /**
-     * Diese Methode ist eine TestMethode. Sie kann aufgerufen werden wenn JAC
-     * Standalone laufen soll
-     */
-    public void executeStandaloneCode() {
-        if (this.getResultFile() != null && this.getSourceImage() != null && new File(this.getSourceImage()).exists()) {
-            String hash = UTILITIES.getLocalHash(new File(this.getSourceImage()));
-            logger.info(hash);
-            if (hash.equals("dab07d2b7f1299f762454cda4c6143e7")) {
-                logger.warning("BOT ERKANNT");
-                UTILITIES.writeLocalFile(new File(this.getResultFile()), "");
-
-            } else {
-                Image captchaImage = UTILITIES.loadImage(new File(this.getSourceImage()));
-                Captcha captcha = createCaptcha(captchaImage);
-                String code = this.checkCaptcha(captcha);
-                if (code.indexOf("null") >= 0) {
-                    logger.warning("BOT ERKANNT");
-                    code = "";
-                    UTILITIES.writeLocalFile(new File(this.getResultFile()), code);
-
-                } else {
-                    UTILITIES.writeLocalFile(new File(this.getResultFile()), code);
-                    String fileName = new File(this.getSourceImage()).getName();
-
-                    File file = new File(pathMethod + "/checked/" + captcha.getValityValue() + "_" + fileName);
-                    file.getParentFile().mkdirs();
-                    new File(this.getSourceImage()).renameTo(file);
-                }
-            }
-
-        }
-    }
+ 
 
     /**
      * Diese methode wird aufgerufen um alle captchas im Ordner
@@ -237,11 +210,11 @@ if(methodsPath==null){
             return;
         int newLetters;
         for (int i = 0; i < images.length; i++) {
-            logger.info(images[i].toString());
+            logger.fine(images[i].toString());
 
             newLetters = trainCaptcha(images[i], getLetterNum());
 
-            logger.info("Erkannt: " + newLetters + "/" + getLetterNum());
+            logger.fine("Erkannt: " + newLetters + "/" + getLetterNum());
             if (newLetters > 0) {
                 successFull += newLetters;
                 total += getLetterNum();
@@ -260,6 +233,7 @@ if(methodsPath==null){
         URL url = UTILITIES.getResourceURL(pathMethod + "letters.mth");
         if (url == null) {
             logger.severe("MTH FILE NOT AVAILABLE.");
+            return;
         } else {
             mth = UTILITIES.parseXmlFile(url.openStream(), false);
         }
@@ -286,10 +260,7 @@ if(methodsPath==null){
                 Node childNode = nl.item(i);
                 if (childNode.getNodeName().equals("letter")) {
                     NamedNodeMap att = childNode.getAttributes();
-                    // logger.info(childNode.getNodeName());
-                    // logger.info(childNode.getTextContent());
-                    // logger.info(att.getNamedItem("captchaHash").getNodeValue());
-                    // logger.info(att.getNamedItem("value").getNodeValue());
+   
                     tmp = new Letter();
                     tmp.setOwner(this);
                     if (!tmp.setTextGrid(childNode.getTextContent()))
@@ -305,7 +276,7 @@ if(methodsPath==null){
                     tmp.setGoodDetections(Integer.parseInt(UTILITIES.getAttribute(childNode, "good")));
                     letterDB.add(tmp);
                 } else if (childNode.getNodeName().equals("map")) {
-                    logger.info("Parse LetterMap");
+                    logger.fine("Parse LetterMap");
                     long start2 = UTILITIES.getTimer();
                     String[] map = childNode.getTextContent().split("\\|");
                     letterMap = new int[map.length][map.length];
@@ -316,14 +287,14 @@ if(methodsPath==null){
                         }
 
                     }
-                    logger.info("LetterMap Parsing time: " + (UTILITIES.getTimer() - start2));
+                    logger.fine("LetterMap Parsing time: " + (UTILITIES.getTimer() - start2));
                 }
             }
         } catch (Exception e) {
             logger.severe("Fehler mein lesen der MTHO Datei!!. Methode kann nicht funktionieren!");
 
         }
-        logger.info("Mth Parsing time: " + (UTILITIES.getTimer() - start1));
+        logger.fine("Mth Parsing time: " + (UTILITIES.getTimer() - start1));
     }
 
     /*
@@ -334,6 +305,7 @@ if(methodsPath==null){
         URL url = UTILITIES.getResourceURL(pathMethod+"jacinfo.xml");
         if (url == null) {
             logger.severe("" + pathMethod + "/jacinfo.xml is missing");
+            return;
         }
         Document doc = UTILITIES.parseXmlFile(url.openStream(), false);
 
@@ -369,77 +341,6 @@ if(methodsPath==null){
 
     }
 
-    /**
-     * Veraltete Prepare Funktionen. Die müssen noch hier bleiben bis ich die
-     * entsprechenen jas-script erstellt habe
-     */
-
-    // private void prepare(Captcha captcha) {
-    // captcha.prepared++;
-    // if (captcha.prepared > 1) {
-    // logger.severe("Prepare wird doppelt ausgeführt!!!");
-    // return;
-    // }
-    // logger.info("prepare");
-    // // //BasicWindow.showImage(captcha.getImage(2),"Original als
-    // // Helligkeitsabbildung");
-    // captcha.cleanBackgroundBySample(3, 3, 3, 3);
-    // //BasicWindow.showImage(captcha.getImage(2));
-    // // entfernen");
-    //	
-    // captcha.toBlackAndWhite(0.2);
-    //
-    //
-    //
-    // }
-    // SVZ Prepare
-    // private void prepare(Captcha captcha) {
-    // captcha.prepared++;
-    // if (captcha.prepared > 1) {
-    // logger.severe("Prepare wird doppelt ausgeführt!!!");
-    // return;
-    // }
-    // logger.info("prepare");
-    // // //BasicWindow.showImage(captcha.getImage(2),"Original als
-    // // Helligkeitsabbildung");
-    // captcha.cleanBackgroundBySample(3, 25, 3, 3);
-    // // //BasicWindow.showImage(captcha.getImage(2),"Hintergrundfarbe
-    // // entfernen");
-    // captcha.cleanWithMask(Captcha.getCaptcha(loadImage(new File(
-    // "svzgridmask.jpg"))), 3, 3);
-    // // //BasicWindow.showImage(captcha.getImage(2),"Maskenfilter: Muster
-    // // entfernen");
-    // captcha.toBlackAndWhite(1.1);
-    // // //BasicWindow.showImage(captcha.getImage(2),"BW-Convert: mit Faktor
-    // // 1.1
-    // // in SW-Bild umwandlen");
-    // captcha.reduceWhiteNoise(6);
-    // // //BasicWindow.showImage(captcha.getImage(2),"ReduceNoise: Weiße
-    // // Störungen über einen 6 Pixel Durchmesser entfernen");
-    //
-    // // //BasicWindow.showImage(captcha.getImage(2),"ReduceNoise: Weiße
-    // // Störungen über einen 6 Pixel Durchmesser entfernen");
-    // captcha.toBlackAndWhite(0.2);
-    // // //BasicWindow.showImage(captcha.getImage(2),"BW-Convert: mit Faktor
-    // // 0.2. Elemente die nicht wirklich Schwarz sind werden entfernt");
-    // captcha.reduceWhiteNoise(3);
-    // // //BasicWindow.showImage(captcha.getImage(2),"ReduceNoise: Weiße
-    // // Störungen über einen 3 Pixel Durchmesser entfernen. Buchstaben werden
-    // // dicker");
-    // captcha.toBlackAndWhite(0.2);
-    //
-    // // //BasicWindow.showImage(captcha.getImage(2),"BW-Convert: mit Faktor
-    // // 0.2. Elemente die nicht wirklich Schwarz sind werden entfernt");
-    // captcha.reduceBlackNoise(3, 0.9);
-    // // //BasicWindow.showImage(captcha.getImage(2),"ReduceNoise: Schwarze
-    // // Störungen, Flecken außerhalb der Buchstaben entfernen");
-    // captcha.toBlackAndWhite(1.2);
-    // // //BasicWindow.showImage(captcha.getImage(2),"BW-Convert: mit Faktor
-    // // 1.2. Elemente die leicht grau sind werden zu schwarz");
-    // //
-    // // UTILITIES.wait(5000);
-    //
-    // }
     /**
      * Diese methode trainiert einen captcha
      * 
@@ -487,7 +388,7 @@ if(methodsPath==null){
         d.read(path.getAbsolutePath());
         int n = d.getFrameCount();
 
-        logger.info("Foudn Frames: " + n);
+        logger.fine("Found Frames: " + n);
         int width = (int) d.getFrameSize().getWidth();
         int height = (int) d.getFrameSize().getHeight();
         Captcha merged = new Captcha(width, height);
@@ -567,7 +468,7 @@ if(methodsPath==null){
         frame3.add(new JLabel("Farbraum Anpassung"), UTILITIES.getGBC(2, 2, 2, 2));
         jas.executePrepareCommands(captcha);
 
-        frame3.add(new ImageComponent(captcha.getImage()), UTILITIES.getGBC(0, 4, 2, 2));
+        frame3.add(new ImageComponent(captcha.getImage(3)), UTILITIES.getGBC(0, 4, 2, 2));
         frame3.add(new JLabel("Prepare Code ausgeführt"), UTILITIES.getGBC(2, 4, 2, 2));
 
         // Hole die letters aus dem neuen captcha
@@ -636,7 +537,7 @@ if(methodsPath==null){
         // Prüfe ob dieser captcha schon aufgenommen wurde und überspringe ihn
         // falls ja
         if (isCaptchaInMTH(captchaHash)) {
-            logger.info("ERROR captcha schon aufgenommen" + captchafile);
+            logger.fine("Captcha schon aufgenommen" + captchafile);
             return -1;
         }
         // captcha erstellen
@@ -849,6 +750,7 @@ if(methodsPath==null){
     public Captcha createCaptcha(Image captchaImage) {
         if (captchaImage.getWidth(null) <= 0 || captchaImage.getHeight(null) <= 0) {
             logger.severe("Image Dimensionen zu klein. Image hat keinen Inahlt. Pfad/Url prüfen!");
+            return null;
         }
         Captcha ret = Captcha.getCaptcha(captchaImage, this);
         ret.setOwner(this);
@@ -872,14 +774,14 @@ if(methodsPath==null){
             String xmlString = result.getWriter().toString();
 
             String fileName = pathMethod + "letters.mth";
-            logger.info("Save MTH to " + fileName);
+            logger.fine("Save MTH to " + fileName);
             try {
                 fileName = URLDecoder.decode(fileName, "UTF8");
             } catch (UnsupportedEncodingException e) {
                 // TODO Auto-generated catch block
                 e.printStackTrace();
             }
-
+            fileName=UTILITIES.URLtoPath(fileName);
             if (!UTILITIES.writeLocalFile(new File(fileName), xmlString)) {
                 logger.severe("MTHO file Konnte nicht gespeichert werden");
             }
@@ -906,6 +808,16 @@ if(methodsPath==null){
         String ret = jac.checkCaptcha(cap);
         logger.info("captcha text:" + ret);
         return ret;
+    }
+    /**
+     * Aktualisiert Den Mathod ordner
+     * @return Anzahl der aktualisierten Files
+     */
+    public static int updateMethods(){
+        WebUpdater wu= new WebUpdater(UPDATE_PATH);
+        wu.setDestPath(JDUtilities.getJDHomeDirectory());
+        wu.run();
+        return wu.getUpdatedFiles();
     }
 
     /**
@@ -1163,13 +1075,12 @@ if(methodsPath==null){
                 logger.severe("letterDB nicht vorhanden");
                 return null;
             }
-            // logger.info(letterDB.size() + " letters");
+       
             Letter tmp;
 
             for (int i = 0; i < letterDB.size(); i++) {
                 tmp = letterDB.elementAt(i);
-                // logger.info(tmp.getHeight() + "-" + letter.getHeight() + " /
-                // " + tmp.getWidth() + "-" + letter.getWidth());
+          
                 if (Math.abs(tmp.getHeight() - letter.getHeight()) > jas.getInteger("borderVariance") || Math.abs(tmp.getWidth() - letter.getWidth()) > jas.getInteger("borderVariance")) {
                     continue;
                 }
@@ -1180,29 +1091,12 @@ if(methodsPath==null){
                 }
                 value = scanCompare(letter, tmp);
 
-                // logger.info(" Scanned: "+tmp.getDecodedValue()+" ("+value+")
-                // "+tmp.getValityPercent()+" good:"+tmp.getGoodDetections()+"
-                // bad: "+tmp.getBadDetections());
-                // //frame4.add(new
-                // ImageComponent(tmp.getImage()),UTILITIES.getGBC(counterB*12+0,
-                // counter*2, 2, 2));
-                // //frame4.add(new ImageComponent(letter.getImage()),
-                // UTILITIES.getGBC(counterB*12+8, counter*2, 2, 2));
-                // //frame4.add(new JLabel("VP:"+tmp.getValityPercent()),
-                // UTILITIES.getGBC(counterB*12+10, counter*2, 2, 2));
-                // //frame4.repack();
-                // //frame4.pack();
+           
                 if (value < bestValue) {
                     bestValue = value;
                     bestResult = tmp.getDecodedValue();
                     res = tmp;
-                    tmp.setValityValue(value);
-                    // frame4.add(new ImageComponent(tmp.getImage()),
-                    // UTILITIES.getGBC(counterB * 12 + 2, counter * 2, 2, 2));
-                    // frame4.add(new JLabel("VP:" + tmp.getValityPercent()),
-                    // UTILITIES.getGBC(counterB * 12 + 10, counter * 2, 2, 2));
-                    // frame4.repack();
-                    // frame4.pack();
+             
                     counter++;
                     if (counter > 40) {
                         counter = 0;
@@ -1224,7 +1118,7 @@ if(methodsPath==null){
             e.printStackTrace();
         }
         logger.finer(" Normal Match: " + bestResult + " (" + bestValue + ") " + res.getValityPercent() + " good:" + res.getGoodDetections() + " bad: " + res.getBadDetections());
-        logger.info("Letter erkannt in: " + ((new Date()).getTime() - startTime) + " ms");
+        logger.fine("Letter erkannt in: " + ((new Date()).getTime() - startTime) + " ms");
         return res;
 
     }
@@ -1240,6 +1134,7 @@ if(methodsPath==null){
 
         if (dir == null || !dir.exists()) {
             logger.severe("Image dir nicht gefunden " + path);
+            return null;
         }
 
         File[] entries = dir.listFiles(new FileFilter() {
@@ -1439,7 +1334,7 @@ if(methodsPath==null){
         for (int i = letterDB.size() - 1; i >= 0; i--) {
             tmp = letterDB.elementAt(i);
             if ((tmp.getGoodDetections() == 0 && tmp.getBadDetections() > 0) || ((double) tmp.getBadDetections() / (double) tmp.getGoodDetections()) >= jas.getDouble("findBadLettersRatio")) {
-                logger.severe("bad Letter entfernt: " + tmp.getDecodedValue() + " (" + tmp.getBadDetections() + "/" + tmp.getGoodDetections() + ")");
+                logger.info("bad Letter entfernt: " + tmp.getDecodedValue() + " (" + tmp.getBadDetections() + "/" + tmp.getGoodDetections() + ")");
                 letterDB.removeElementAt(i);
             }
 
@@ -1468,15 +1363,15 @@ if(methodsPath==null){
                 yLetter = letterDB.elementAt(y);
                 value = scanCompare(xLetter, yLetter);
                 letterMap[x][y] = PixelGrid.getValityPercent(value, this);
-                // logger.info(x+"/"+y+"
-                // "+xLetter.getDecodedValue()+"/"+yLetter.getDecodedValue()+" =
-                // "+value+" : "+ letterMap[x][y]);
-            }
-            logger.info("Db Create: " + ((x * 100) / letterDB.size()) + "%");
+            
+     logger.fine           logger.fine("Db Create: " + ((x * 100) / letterDB.size()) + "%");
         }
 
     }
-
+/**
+ * 
+ * @return gibt die Lettermap als String zurück
+ */
     private String getLetterMapString() {
         StringBuffer ret = new StringBuffer();
         int i = 0;
@@ -1491,7 +1386,7 @@ if(methodsPath==null){
                 i++;
             }
             ret.deleteCharAt(ret.length() - 1);
-            logger.info("Db String: " + ((x * 100) / letterDB.size()) + "%");
+            logger.fine("Db String: " + ((x * 100) / letterDB.size()) + "%");
         }
         ret.deleteCharAt(0);
         return ret.toString();

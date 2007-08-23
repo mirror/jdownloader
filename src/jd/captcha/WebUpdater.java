@@ -4,12 +4,13 @@ import java.io.File;
 import java.util.Vector;
 import java.util.logging.Logger;
 
+
 /**
  * @author coalado
  * Webupdater lädt pfad und hash infos von einem server und vergleicht sie mit den lokalen versionen
  * 
  */
-public class WebUpdater {
+public class WebUpdater { 
     /**
      * Pfad zur lis.php auf dem updateserver
      */

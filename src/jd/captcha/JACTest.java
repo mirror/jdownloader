@@ -25,11 +25,11 @@ public class JACTest {
     }
     private void go(){
       
+      
 
-  
-       JAntiCaptcha jac= new JAntiCaptcha(JDUtilities.getJDHomeDirectory().getAbsolutePath()+"/jd/captcha/methods","rapidshare.com");
+       JAntiCaptcha jac= new JAntiCaptcha(null,"secured.in");
      //sharegullicom47210807182105.gif
-     jac.showPreparedCaptcha(new File(JDUtilities.getJDHomeDirectory().getAbsolutePath()+"/jd/captcha/methods"+"/rapidshare.com/captchas/rapidsharecom24190807214810.jpg"));
+     jac.showPreparedCaptcha(new File(JDUtilities.getJDHomeDirectory().getAbsolutePath()+"/jd/captcha/methods"+"/secured.in/captchas/captcha_secured.in_code2z37.jpg"));
       
      //UTILITIES.getLogger().info(JAntiCaptcha.getCaptchaCode(UTILITIES.loadImage(new File(JDUtilities.getJDHomeDirectory().getAbsolutePath()+"/jd/captcha/methods"+"/rapidshare.com/captchas/rapidsharecom24190807214810.jpg")), null, "rapidshare.com"));
      //jac.removeBadLetters();

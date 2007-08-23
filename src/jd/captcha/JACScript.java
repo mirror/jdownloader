@@ -448,6 +448,10 @@ public class JACScript {
                     } else if (cmd[1].equalsIgnoreCase("toBlackAndWhite")) {
                         captcha.toBlackAndWhite();
                         continue;
+                    } else if (cmd[1].equalsIgnoreCase("normalize")) {
+                            captcha.normalize();
+                            continue;
+                    
                     } else if (cmd[1].equalsIgnoreCase("clean")) {
                         captcha.clean();
                         continue;
@@ -461,6 +465,9 @@ public class JACScript {
                         continue;
                     } else if (cmd[1].equalsIgnoreCase("reduceWhiteNoise")) {
                         captcha.reduceWhiteNoise(Integer.parseInt(params[0].trim()));
+                        continue;
+                    } else if (cmd[1].equalsIgnoreCase("normalize")) {
+                        captcha.normalize(Double.parseDouble(params[0].trim()));
                         continue;
                     } else if (cmd[1].equalsIgnoreCase("convertPixel")) {
                         captcha.convertPixel(params[0].trim());
@@ -552,7 +559,11 @@ public class JACScript {
                     // captchaPrepareCommands
 
                 } else if (cmd[0].equals("function") && cmd[2] == null) {
-
+                if (cmd[1].equalsIgnoreCase("normalize")) {
+                    letter.normalize();
+                    continue;
+                }
+            
                 } else if (cmd[0].equals("function") && (params = cmd[2].split("\\,")).length == 1) {
 
                     if (cmd[1].equalsIgnoreCase("toBlackAndWhite")) {
@@ -560,6 +571,9 @@ public class JACScript {
                         continue;
                     } else if (cmd[1].equalsIgnoreCase("reduceWhiteNoise")) {
                         letter.reduceWhiteNoise(Integer.parseInt(params[0].trim()));
+                        continue;
+                    } else if (cmd[1].equalsIgnoreCase("normalize")) {
+                        letter.normalize(Double.parseDouble(params[0].trim()));
                         continue;
                     }  else if (cmd[1].equalsIgnoreCase("reduceBlackNoise")) {
                         letter.reduceBlackNoise(Integer.parseInt(params[0].trim()));

@@ -105,6 +105,25 @@ public class UTILITIES {
       return fileToURI(new File(path));
    
    }
+   /**
+    * Wandelt eine URL in den zugehörigen Path um
+    * @param path
+    * @return Pfad
+    */
+   
+   public static String URLtoPath(URL path){
+       return path.toString().substring(6);
+    
+    }
+   /**
+    * Wandelt einen URL in den zugehörigen Local Pfad um
+    * @param path
+    * @return pfad
+    */
+   public static String URLtoPath(String path){
+       return path.substring(6);
+    
+    }
     /**
      * 
      * @param file
