@@ -19,7 +19,7 @@ public class FileFactory extends PluginForHost{
      */
     private String  host    = "filefactory.com";
     private String  version = "1.0.0.0";
-    private Pattern patternSupported = Pattern.compile("http://www.filefactory.com/file/[^\\s\"]+/");
+    private Pattern patternSupported = Pattern.compile("http://www.filefactory.com/file/[^\\s\"]+/?");
     /**
      * Das findet die Ziel URL
      */
