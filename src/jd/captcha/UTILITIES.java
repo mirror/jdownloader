@@ -22,6 +22,7 @@ import java.io.InputStreamReader;
 import java.io.StringReader;
 import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
+import java.net.SocketTimeoutException;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLClassLoader;
@@ -62,11 +63,11 @@ import org.xml.sax.SAXException;
  */
 
 public class UTILITIES {
-    private static final int    REQUEST_TIMEOUT = 10000;
+    private static  int    REQUEST_TIMEOUT = 10000;
 
-    private static final String USER_AGENT      = "WebUpdater";
+    private static  String USER_AGENT      = "WebUpdater";
 
-    private static final int    READ_TIMEOUT    = 10000;
+    private static  int    READ_TIMEOUT    = 10000;
 
     private static Logger       logger          = Plugin.getLogger();
 
@@ -112,6 +113,7 @@ public class UTILITIES {
     */
    
    public static String URLtoPath(URL path){
+      
        return path.toString().substring(6);
     
     }
@@ -139,9 +141,15 @@ public class UTILITIES {
      */
     public  static URL getResourceURL(String path){
         if(path.startsWith("file:")){
-           path=path.substring(6); 
+            try {
+                return new URLClassLoader(new URL[] { new URL(path) }).getURLs()[0];
+            } catch (MalformedURLException e) {
+                
+                e.printStackTrace();
+            }
         }
         try {
+          
             return new URLClassLoader(new URL[] { new File(path).toURI().toURL() }).getURLs()[0];
         } catch (MalformedURLException e) {          
             e.printStackTrace();
@@ -893,6 +901,7 @@ public class UTILITIES {
      */
     public static String[] getMatches(String source, String pattern) {
         // DEBUG.trace("pattern: "+STRING.getPattern(pattern));
+        if(source==null ||pattern==null)return null;
         Matcher rr = Pattern.compile(getPattern(pattern), Pattern.DOTALL).matcher(source);
         if (!rr.find()) {
             // Keine treffer
@@ -1152,6 +1161,8 @@ public class UTILITIES {
 
         } catch (MalformedURLException e) {
             getLogger().severe(urlStr + " Malformed URL");
+        } catch (SocketTimeoutException e) {
+            //getLogger().severe(urlStr + " Socket Timeout");
         } catch (IOException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
@@ -1276,5 +1287,47 @@ public class UTILITIES {
 
         }
 
+    }
+
+    /**
+     * @return the rEAD_TIMEOUT
+     */
+    public static int getREAD_TIMEOUT() {
+        return READ_TIMEOUT;
+    }
+
+    /**
+     * @param read_timeout the rEAD_TIMEOUT to set
+     */
+    public static void setREAD_TIMEOUT(int read_timeout) {
+        READ_TIMEOUT = read_timeout;
+    }
+
+    /**
+     * @return the rEQUEST_TIMEOUT
+     */
+    public static int getREQUEST_TIMEOUT() {
+        return REQUEST_TIMEOUT;
+    }
+
+    /**
+     * @param request_timeout the rEQUEST_TIMEOUT to set
+     */
+    public static void setREQUEST_TIMEOUT(int request_timeout) {
+        REQUEST_TIMEOUT = request_timeout;
+    }
+
+    /**
+     * @return the uSER_AGENT
+     */
+    public static String getUSER_AGENT() {
+        return USER_AGENT;
+    }
+
+    /**
+     * @param user_agent the uSER_AGENT to set
+     */
+    public static void setUSER_AGENT(String user_agent) {
+        USER_AGENT = user_agent;
     }
 }
