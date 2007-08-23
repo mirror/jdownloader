@@ -150,13 +150,14 @@ public class JAntiCaptcha {
 if(methodsPath==null){
     methodsPath= UTILITIES.getFullPath(new String[]{JDUtilities.getJDHomeDirectory().getAbsolutePath(),"jd","captcha","methods"});
 }
+logger.fine("Benutze methodspath: "+methodsPath);
         this.methodDir = methodName;
         try {
             this.pathMethod = new File(methodsPath + UTILITIES.FS + methodName).toURI().toURL();
         } catch (MalformedURLException e) {  
             e.printStackTrace();
         }
-
+        logger.fine("Benutze methodspath (URL): "+pathMethod);
         try {
             if (isMethodPathValid(this.pathMethod)) {
                 getJACInfo();
