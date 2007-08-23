@@ -84,15 +84,15 @@ public class FileFactory extends PluginForHost{
 
                 if(newURL != null){
                     newURL = "http://www.filefactory.com"+newURL.replaceAll("' \\+ '", "");
+                    requestInfo = getRequest((new URL(newURL)),null,downloadLink.getName(), true );
                     
-                    requestInfo = getRequest((new URL(newURL)),requestInfo.getCookie(),downloadLink.getName(), true );
                     actionString = "http://www.filefactory.com/"+getFirstMatch(requestInfo.getHtmlCode(), frameForCaptcha, 1);
-                    //TODO hier stimmt noch was nicht mit dem cookie
-                    requestInfo = getRequest((new URL(actionString)),requestInfo.getCookie(),newURL, true );
-                    System.out.println(requestInfo.getHtmlCode());
+
+                    actionString = actionString.replaceAll("&amp;", "&");
+                    requestInfo = getRequest((new URL(actionString)),"viewad11=yes",newURL, true );
                     // captcha Adresse finden
                     captchaAddress = "http://www.filefactory.com"+getFirstMatch(requestInfo.getHtmlCode(),patternForCaptcha,1);
-                    System.out.println(captchaAddress);
+                    captchaAddress = captchaAddress.replaceAll("&amp;", "&");
                     //post daten lesen
                     postTarget = getFormInputHidden(requestInfo.getHtmlCode());
                      
@@ -128,6 +128,7 @@ public class FileFactory extends PluginForHost{
                 try {
                     requestInfo = postRequest((new URL(actionString)),requestInfo.getCookie(),actionString,postTarget+"&captcha="+(String)steps.get(1).getParameter(),true);
                     postTarget=getFirstMatch(requestInfo.getHtmlCode(), patternForDownloadlink, 1);
+                    postTarget = postTarget.replaceAll("&amp;", "&");
                     
                 } catch (MalformedURLException e) {
                     // TODO Auto-generated catch block
