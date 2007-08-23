@@ -1363,8 +1363,8 @@ if(methodsPath==null){
                 yLetter = letterDB.elementAt(y);
                 value = scanCompare(xLetter, yLetter);
                 letterMap[x][y] = PixelGrid.getValityPercent(value, this);
-            
-     logger.fine           logger.fine("Db Create: " + ((x * 100) / letterDB.size()) + "%");
+            }
+        logger.fine("Db Create: " + ((x * 100) / letterDB.size()) + "%");
         }
 
     }
