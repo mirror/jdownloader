@@ -3,16 +3,22 @@ package jd.plugins;
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.UnsupportedEncodingException;
+import java.math.BigInteger;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLConnection;
 import java.net.URLEncoder;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Vector;
@@ -39,6 +45,14 @@ import jd.plugins.event.PluginListener;
  * @author astaldo
  */
 public abstract class Plugin {
+    /**
+     * TODO
+     * folgende methoden werden benoetigt
+     * setCaptchaAdress(); //damit setzt man die Internetadresse des Captchafiles
+     * getCaptchaCode();   //damit kann man sich den Captchacode als String holen
+     * getCaptchaFilePath(); //
+     * getCaptchaFile();
+     */
     /**
      * Puffer für Lesevorgänge
      */
@@ -587,5 +601,57 @@ public abstract class Plugin {
                 ((PluginListener) recIt.next()).pluginEvent(pluginEvent);
             }
         }
+    }
+    
+    /**
+     * Gibt den md5hash einer Datei als String aus
+     * @param datei
+     * @return
+     * @throws FileNotFoundException
+     * @throws NoSuchAlgorithmException
+     */
+    public String md5sum(String filepath) throws NoSuchAlgorithmException, FileNotFoundException
+    {
+        File f = new File(filepath);
+        return md5sum(f);
+    }
+    public String md5sum(File file) throws NoSuchAlgorithmException, FileNotFoundException {
+        MessageDigest digest = MessageDigest.getInstance("MD5");
+        InputStream is = new FileInputStream(file);
+        byte[] buffer = new byte[8192];
+        int read = 0;
+        try {
+            while ((read = is.read(buffer)) > 0) {
+                digest.update(buffer, 0, read);
+            }
+            byte[] md5sum = digest.digest();
+            BigInteger bigInt = new BigInteger(1, md5sum);
+            String output = bigInt.toString(16);
+            return output;
+        } catch (IOException e) {
+            throw new RuntimeException("Unable to process file for MD5", e);
+        } finally {
+            try {
+                is.close();
+            } catch (IOException e) {
+                throw new RuntimeException("Unable to close input stream for MD5 calculation", e);
+            }
+        }
+    }
+    /**
+     * Gibt die matches ohne Dublikate als arraylist aus
+     * @param data
+     * @param pattern
+     * @return
+     */
+    public static String[] getUniqueMatches(String data, Pattern pattern) {
+        ArrayList<String> set = new ArrayList<String>();
+        Matcher m = pattern.matcher(data);
+        while (m.find()) {
+            if (!set.contains(m.group())) {
+                set.add(m.group());
+            }
+        }
+        return (String[]) set.toArray(new String[set.size()]);
     }
 }
