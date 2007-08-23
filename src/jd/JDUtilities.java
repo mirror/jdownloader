@@ -61,7 +61,7 @@ public class JDUtilities {
     /**
      * Das aktuelle Verzeichnis (Laden/Speichern)
      */
-    private static File currentDirectory = null;
+    private static File currentDirectory = getJDHomeDirectory();
     /**
      * Hier werden alle vorhandenen Plugins zum Dekodieren von Links gespeichert
      */
@@ -232,6 +232,21 @@ public class JDUtilities {
         return new File(envDir);
     } 
     /**
+     * Liefert einen URLClassLoader zurück, um Dateien aus dem Stammverzeichnis zu laden
+     * 
+     * @return URLClassLoader
+     */
+    public static URLClassLoader getURLClassLoader(){
+        File homeDir = getJDHomeDirectory();
+        URL url=null;
+        try {
+            url = homeDir.toURL();
+            return new URLClassLoader(new URL[]{url});
+        }
+        catch (MalformedURLException e) { e.printStackTrace(); }
+        return null;
+    }
+    /**
      * Diese Methode erstellt einen neuen Captchadialog und liefert den eingegebenen Text zurück.
      *
      * @param owner Das übergeordnete Fenster
@@ -340,7 +355,7 @@ public class JDUtilities {
      */
     public static Object loadObject(JFrame frame, File fileInput){
         Object objectLoaded = null;
-        if(fileInput != null){
+        if(fileInput == null){
             JFileChooser fileChooserLoad = new JFileChooser();
             if(currentDirectory != null)
                 fileChooserLoad.setCurrentDirectory(currentDirectory);
@@ -354,7 +369,7 @@ public class JDUtilities {
                 FileInputStream fis = new FileInputStream(fileInput);
                 ObjectInputStream ois = new ObjectInputStream(fis);
                 try {
-                    objectLoaded = (Vector<DownloadLink>)ois.readObject();
+                    objectLoaded = ois.readObject();
                     return objectLoaded;
                 }
                 catch (ClassNotFoundException e) {
@@ -372,10 +387,11 @@ public class JDUtilities {
      * 
      * @param frame ein Fenster
      * @param objectToSave Das zu speichernde Objekt
-     * @param fileOutput Das File, in das geschrieben werden soll. Falls keins angegeben wird,
-     *                   soll der Benutzer eine Datei auswählen
+     * @param fileOutput Das File, in das geschrieben werden soll.
+     *                   Falls das File ein Verzeichnis ist, wird darunter eine Datei erstellt 
+     *                   Falls keins angegeben wird, soll der Benutzer eine Datei auswählen
      * @param name Dateiname
-     * @param extension Dateiendung
+     * @param extension Dateiendung (mit Punkt)
      */
     public static void saveObject(JFrame frame, Object objectToSave, File fileOutput, String name, String extension){
         if(fileOutput == null){
@@ -391,6 +407,9 @@ public class JDUtilities {
             }
         }
         if(fileOutput != null){
+            if(fileOutput.isDirectory()){
+                fileOutput = new File(fileOutput,name+extension);
+            }
             try {
                 FileOutputStream fos = new FileOutputStream(fileOutput);
                 ObjectOutputStream oos = new ObjectOutputStream(fos);

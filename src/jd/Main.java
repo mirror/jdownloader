@@ -2,8 +2,10 @@ package jd;
 
 import java.awt.Toolkit;
 import java.io.File;
+import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.net.URLClassLoader;
 import java.util.Iterator;
 import java.util.logging.Logger;
 
@@ -49,7 +51,7 @@ public class Main {
 //        httpReconnect.interact();
         
         Logger logger = Plugin.getLogger();
-        ClassLoader cl = getClass().getClassLoader();
+        URLClassLoader cl = JDUtilities.getURLClassLoader();
         URL configURL = cl.getResource(JDUtilities.CONFIG_PATH);
         if(configURL != null){
             try {
@@ -65,6 +67,7 @@ public class Main {
             logger.warning("no configuration loaded");
             
         }
+//        JDUtilities.saveObject(null, new Configuration(), JDUtilities.getJDHomeDirectory(), "jdownloader", ".config");
         JDUtilities.loadPlugins();
         loadImages();
         GUIInterface guiInterface = new SimpleGUI();
