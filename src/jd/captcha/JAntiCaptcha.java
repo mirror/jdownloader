@@ -148,7 +148,7 @@ public class JAntiCaptcha {
      */
     public JAntiCaptcha(String methodsPath, String methodName) {
 if(methodsPath==null){
-    methodsPath= UTILITIES.getFullPath(new String[]{JDUtilities.getJDHomeDirectory().getAbsolutePath(),"jd","captcha","metchods"});
+    methodsPath= UTILITIES.getFullPath(new String[]{JDUtilities.getJDHomeDirectory().getAbsolutePath(),"jd","captcha","methods"});
 }
         this.methodDir = methodName;
         try {
@@ -161,7 +161,7 @@ if(methodsPath==null){
             if (isMethodPathValid(this.pathMethod)) {
                 getJACInfo();
                 // jas = new JACScript(this, pathMethod+"/script.jas",method);
-                jas = new JACScript(this, UTILITIES.getResourceURL(pathMethod + "script.jas"), methodDir);
+                jas = new JACScript(this, UTILITIES.getResourceURL(UTILITIES.getFullPath(new String[] {pathMethod.toString(),"script.jas"})), methodDir);
                 loadMTHFile();
                 logger.fine("letter DB loaded: Buchstaben: " + letterDB.size());
             }
@@ -230,7 +230,7 @@ if(methodsPath==null){
      */
     private void loadMTHFile() throws IOException {
 
-        URL url = UTILITIES.getResourceURL(pathMethod + "letters.mth");
+        URL url = UTILITIES.getResourceURL(UTILITIES.getFullPath(new String[] {pathMethod.toString(),"letters.mth"}));
         if (url == null) {
             logger.severe("MTH FILE NOT AVAILABLE.");
             return;
@@ -300,15 +300,23 @@ if(methodsPath==null){
     /*
      * Die Methode parst die jacinfo.xml
      */
-    private void getJACInfo() throws IOException {
+    private void getJACInfo() {
      
-        URL url = UTILITIES.getResourceURL(pathMethod+"jacinfo.xml");
+        URL url = UTILITIES.getResourceURL(UTILITIES.getFullPath(new String[]{pathMethod.toString(),"jacinfo.xml"}));
         if (url == null) {
             logger.severe("" + pathMethod + "/jacinfo.xml is missing");
             return;
         }
-        Document doc = UTILITIES.parseXmlFile(url.openStream(), false);
-
+ 
+        Document doc;
+        try {
+            doc = UTILITIES.parseXmlFile(url.openStream(), false);
+        } catch (IOException e) {
+            // TODO Auto-generated catch block
+            logger.severe("" + pathMethod + "/jacinfo.xml is missing");
+            return;
+        }
+     
         NodeList nl = doc.getFirstChild().getChildNodes();
         for (int i = 0; i < nl.getLength(); i++) {
             // Get child node
