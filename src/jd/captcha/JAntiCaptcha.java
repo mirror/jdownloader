@@ -305,7 +305,7 @@ logger.fine("Benutze methodspath: "+methodsPath);
      
         URL url = UTILITIES.getResourceURL(UTILITIES.getFullPath(new String[]{pathMethod.toString(),"jacinfo.xml"}));
         if (url == null) {
-            logger.severe("" + UTILITIES.getFullPath(new String[]{pathMethod.toString(),"jacinfo.xml"}) + " is missing");
+            logger.severe("" + UTILITIES.getFullPath(new String[]{pathMethod.toString(),"jacinfo.xml"}) + " is missing1");
             return;
         }
  
@@ -314,7 +314,7 @@ logger.fine("Benutze methodspath: "+methodsPath);
             doc = UTILITIES.parseXmlFile(url.openStream(), false);
         } catch (IOException e) {
             // TODO Auto-generated catch block
-            logger.severe("" + url + " is missing");
+            logger.severe("" + url + " is missing2");
             return;
         }
      
