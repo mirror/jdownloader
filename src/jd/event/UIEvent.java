@@ -14,13 +14,30 @@ public class UIEvent extends AWTEvent{
     private UIInterface uiInterface;
     private int actionID;
     private Object parameter;
-    
-    public static final int UI_LINKS_CHANGED   = 1;
-    public static final int UI_START_DOWNLOADS = 2;
-    public static final int UI_STOP_DOWNLOADS  = 3;
-    public static final int UI_LOAD_LINKS      = 4;
-    public static final int UI_SAVE_LINKS      = 5;
-    public static final int UI_LINKS_TO_PROCESS    = 6;
+    /**
+     * Die DownloadLinks wurden verändert (zB in der Reihenfolge)
+     */
+    public static final int UI_LINKS_CHANGED    = 1;
+    /**
+     * Der Download sol gestartet werden
+     */
+    public static final int UI_START_DOWNLOADS  = 2;
+    /**
+     * Der Download soll angehalten werden
+     */
+    public static final int UI_STOP_DOWNLOADS   = 3;
+    /**
+     * Alle Links sollen geladen werden
+     */
+    public static final int UI_LOAD_LINKS       = 4;
+    /**
+     * Alle Links sollen gespeichert werden
+     */
+    public static final int UI_SAVE_LINKS       = 5;
+    /**
+     * Es sollen Daten überprüft und ggf als DownloadLinks hinzugefügt werden
+     */
+    public static final int UI_LINKS_TO_PROCESS = 6;
     
     public UIEvent(UIInterface uiInterface, int actionID){
         this(uiInterface,actionID,null);

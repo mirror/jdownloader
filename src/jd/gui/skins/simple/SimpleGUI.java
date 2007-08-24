@@ -34,6 +34,7 @@ import javax.swing.UnsupportedLookAndFeelException;
 import jd.Configuration;
 import jd.JDUtilities;
 import jd.controlling.JDAction;
+import jd.event.ControlEvent;
 import jd.event.UIEvent;
 import jd.event.UIListener;
 import jd.gui.UIInterface;
@@ -278,15 +279,32 @@ public class SimpleGUI implements UIInterface, ActionListener{
                 break;
         }
     }
-    
-    public void pluginDataChanged(Plugin plugin) {
-        tabDownloadTable.fireTableChanged();
-    }
     public void pluginEvent(PluginEvent event) {
         if(event.getSource() instanceof PluginForHost)
             tabDownloadTable.pluginEvent(event);
         if(event.getSource() instanceof PluginForDecrypt)
             tabPluginActivity.pluginEvent(event);
+    }
+    public void controlEvent(ControlEvent event){
+        switch(event.getID()){
+            case ControlEvent.CONTROL_PLUGIN_DECRYPT_ACTIVE:
+                setPluginActive((PluginForDecrypt)event.getParameter(), true);
+                break;
+            case ControlEvent.CONTROL_PLUGIN_DECRYPT_INACTIVE:
+                setPluginActive((PluginForDecrypt)event.getParameter(), false);
+                break;
+            case ControlEvent.CONTROL_PLUGIN_HOST_ACTIVE:
+                setPluginActive((PluginForHost)event.getParameter(), true);
+                break;
+            case ControlEvent.CONTROL_PLUGIN_HOST_INACTIVE:
+                setPluginActive((PluginForHost)event.getParameter(), false);
+                break;
+            case ControlEvent.CONTROL_ALL_DOWNLOADS_FINISHED:
+                btnStartStop.setSelected(false);
+                break;
+            case ControlEvent.CONTROL_SINGLE_DOWNLOAD_CHANGED:
+                tabDownloadTable.fireTableChanged();
+        }
     }
     public Vector<DownloadLink> getDownloadLinks() {
         if(tabDownloadTable != null)

@@ -4,6 +4,7 @@ import java.util.Vector;
 import java.util.logging.Logger;
 
 import jd.Configuration;
+import jd.event.ControlEvent;
 import jd.event.UIEvent;
 import jd.event.UIListener;
 import jd.plugins.DownloadLink;
@@ -48,24 +49,17 @@ public interface UIInterface {
      */
     public void setDownloadLinks(Vector<DownloadLink> downloadLinks);
     /**
-     * Zeigt an, daß ein bestimmtes Plugin in/aktiv ist
-     * 
-     * @param plugin Das Plugin, daß in/aktiv ist
-     * @param isActive Zeigt ob das Plugin inaktiv oder aktiv ist
-     */
-    public void setPluginActive(Plugin plugin, boolean isActive);
-    /**
-     * Zeigt, daß sich Daten eines Plugins geändert haben
-     * 
-     * @param plugin Das Plugin, dessen Daten sich geändert haben oder null
-     */
-    public void pluginDataChanged(Plugin plugin);
-    /**
      * Leitet ein PluginEvent weiter
      * 
      * @param event Ein PluginEvent
      */
     public void pluginEvent(PluginEvent event);
+    /**
+     * Leitet ein ControlEvent weiter
+     * 
+     * @param controlEvent ein ControlEvent
+     */
+    public void controlEvent(ControlEvent event);
     /**
      * Fügt einen UIListener hinzu
      * 

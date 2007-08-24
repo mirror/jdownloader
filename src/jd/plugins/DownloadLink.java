@@ -6,6 +6,8 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.logging.Logger;
 
+import jd.JDCrypt;
+
 /**
  * Hier werden alle notwendigen Informationen zu einem einzelnen Download festgehalten.
  * Die Informationen werden dann in einer Tabelle dargestellt
@@ -56,7 +58,7 @@ public class DownloadLink implements Serializable{
     /**
      * Von hier soll de Download stattfinden
      */
-    private URL urlDownload;
+    private String urlDownload;
     /**
      * Hoster des Downloads
      */
@@ -76,11 +78,11 @@ public class DownloadLink implements Serializable{
     /**
      * Maximum der heruntergeladenen Datei (Dateilänge)
      */
-    private int downloadMax;
+    private transient int downloadMax;
     /**
      * Aktuell heruntergeladene Bytes der Datei
      */
-    private int downloadCurrent;
+    private transient int downloadCurrent;
     /**
      * Hierhin soll die Datei gespeichert werden.
      */
@@ -92,7 +94,7 @@ public class DownloadLink implements Serializable{
     /**
      * Status des DownloadLinks
      */
-    private int status = STATUS_TODO;
+    private transient int status = STATUS_TODO;
     /**
      * Erzeugt einen neuen DownloadLink
      *
@@ -108,10 +110,7 @@ public class DownloadLink implements Serializable{
         this.host        = host;
         this.isEnabled   = isEnabled;
         updateFileOutput();
-        try {
-            this.urlDownload = new URL(urlDownload);
-        }
-        catch (MalformedURLException e) {logger.severe("url malformed. "+e.toString());}
+        this.urlDownload = JDCrypt.encrypt(urlDownload);
     }
     /**
      * Liefert den Namen dieses Downloads zurück
@@ -141,7 +140,15 @@ public class DownloadLink implements Serializable{
      *
      * @return Die Download URL
      */
-    public URL getUrlDownload() { return urlDownload; }
+    public URL getUrlDownload() {
+        URL url=null;
+        try {
+            url = new URL(JDCrypt.decrypt(urlDownload));
+        }
+        catch (MalformedURLException e) { e.printStackTrace();  }
+        catch (SecurityException e)     {  e.printStackTrace(); }
+        return url;
+        }
     /**
      * Liefert die bisher heruntergeladenen Bytes zurück
      *
@@ -200,7 +207,7 @@ public class DownloadLink implements Serializable{
      *
      * @param urlDownload Die URL von der heruntergeladen werden soll
      */
-    public void setUrlDownload(URL urlDownload){ this.urlDownload = urlDownload; }
+    public void setUrlDownload(String urlDownload){ this.urlDownload = JDCrypt.encrypt(urlDownload); }
     /**
      * Kennzeichnet den Download als in Bearbeitung oder nicht
      *

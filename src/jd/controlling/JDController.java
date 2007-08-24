@@ -77,21 +77,9 @@ public class JDController implements PluginListener, ControlListener, UIListener
      */
     public void controlEvent(ControlEvent event) {
         switch(event.getID()){
-            case ControlEvent.CONTROL_PLUGIN_DECRYPT_ACTIVE:
-                uiInterface.setPluginActive((PluginForDecrypt)event.getParameter(), true);
-                break;
-            case ControlEvent.CONTROL_PLUGIN_DECRYPT_INACTIVE:
-                uiInterface.setPluginActive((PluginForDecrypt)event.getParameter(), false);
-                break;
-            case ControlEvent.CONTROL_PLUGIN_HOST_ACTIVE:
-                uiInterface.setPluginActive((PluginForHost)event.getParameter(), true);
-                break;
-            case ControlEvent.CONTROL_PLUGIN_HOST_INACTIVE:
-                uiInterface.setPluginActive((PluginForHost)event.getParameter(), false);
-                break;
             case ControlEvent.CONTROL_ALL_DOWNLOADS_FINISHED:
                 download = null;
-                uiInterface.pluginDataChanged(null);
+                uiInterface.controlEvent(event);
                 break;
             case ControlEvent.CONTROL_DISTRIBUTE_FINISHED:
                 Object links = event.getParameter();
@@ -99,6 +87,9 @@ public class JDController implements PluginListener, ControlListener, UIListener
                     downloadLinks.addAll((Vector<DownloadLink>)links);
                 }
                 uiInterface.setDownloadLinks(downloadLinks);
+                break;
+            default:
+                uiInterface.controlEvent(event);
                 break;
         }
     }
