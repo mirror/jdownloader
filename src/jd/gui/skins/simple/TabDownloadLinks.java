@@ -57,10 +57,6 @@ public class TabDownloadLinks extends JPanel implements PluginListener{
      */
     private Logger logger = Plugin.getLogger();
     /**
-     * Für die Serialisierung
-     */
-    private TabDownloadLinks(){}
-    /**
      * Erstellt eine neue Tabelle
      *
      * @param parent Das aufrufende Hauptfenster

@@ -44,10 +44,7 @@ public class JDController implements PluginListener, ControlListener, UIListener
      */
     private Logger logger = Plugin.getLogger();
     
-    public JDController(UIInterface uiInterface){
-        this.uiInterface = uiInterface;
-        
-        uiInterface.addUIListener(this);
+    public JDController(){
         downloadLinks = new Vector<DownloadLink>();
     }
     /**
@@ -94,16 +91,16 @@ public class JDController implements PluginListener, ControlListener, UIListener
                 break;
             case ControlEvent.CONTROL_ALL_DOWNLOADS_FINISHED:
                 download = null;
+                uiInterface.pluginDataChanged(null);
                 break;
             case ControlEvent.CONTROL_DISTRIBUTE_FINISHED:
                 Object links = event.getParameter();
                 if(links != null && links instanceof Vector && ((Vector)links).size()>0){
                     downloadLinks.addAll((Vector<DownloadLink>)links);
                 }
+                uiInterface.setDownloadLinks(downloadLinks);
                 break;
         }
-        uiInterface.controlEvent(event);
-
     }
     
     public void uiEvent(UIEvent uiEvent) {
@@ -161,5 +158,11 @@ public class JDController implements PluginListener, ControlListener, UIListener
      */
     public String getCaptchaCodeFromUser(Plugin plugin, String captchaAddress){
         return uiInterface.getCaptchaCodeFromUser(plugin, captchaAddress);
+    }
+    public void setUiInterface(UIInterface uiInterface) {
+        if(this.uiInterface != null)
+            this.uiInterface.removeUIListener(this);
+        this.uiInterface = uiInterface;
+        uiInterface.addUIListener(this);
     }
 }

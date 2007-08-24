@@ -6,8 +6,6 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.logging.Logger;
 
-import javax.swing.JProgressBar;
-
 /**
  * Hier werden alle notwendigen Informationen zu einem einzelnen Download festgehalten.
  * Die Informationen werden dann in einer Tabelle dargestellt

@@ -34,7 +34,6 @@ import javax.swing.UnsupportedLookAndFeelException;
 import jd.Configuration;
 import jd.JDUtilities;
 import jd.controlling.JDAction;
-import jd.event.ControlEvent;
 import jd.event.UIEvent;
 import jd.event.UIListener;
 import jd.gui.UIInterface;
@@ -279,36 +278,9 @@ public class SimpleGUI implements UIInterface, ActionListener{
                 break;
         }
     }
-    /**
-     * Hier werden ControlEvent ausgewertet
-     */
-    public void controlEvent(ControlEvent event) {
-        switch(event.getID()){
-            case ControlEvent.CONTROL_SINGLE_DOWNLOAD_CHANGED:
-                tabDownloadTable.fireTableChanged();
-                break;
-            case ControlEvent.CONTROL_ALL_DOWNLOADS_FINISHED:
-                btnStartStop.setSelected(false);
-                break;
-            case ControlEvent.CONTROL_DISTRIBUTE_FINISHED:
-                Object links = event.getParameter();
-                if(links != null && links instanceof Vector && ((Vector)links).size()>0){
-                    tabDownloadTable.addLinks((Vector)links);
-                }
-                break;
-            case ControlEvent.CONTROL_PLUGIN_DECRYPT_ACTIVE:
-                statusBar.setPluginForDecryptActive(true);
-                break;
-            case ControlEvent.CONTROL_PLUGIN_DECRYPT_INACTIVE:
-                statusBar.setPluginForDecryptActive(false);
-                break;
-            case ControlEvent.CONTROL_PLUGIN_HOST_ACTIVE:
-                statusBar.setPluginForHostActive(true);
-                break;
-            case ControlEvent.CONTROL_PLUGIN_HOST_INACTIVE:
-                statusBar.setPluginForHostActive(false);
-                break;
-        }
+    
+    public void pluginDataChanged(Plugin plugin) {
+        tabDownloadTable.fireTableChanged();
     }
     public void pluginEvent(PluginEvent event) {
         if(event.getSource() instanceof PluginForHost)
@@ -337,7 +309,14 @@ public class SimpleGUI implements UIInterface, ActionListener{
     }
     public void setConfiguration(Configuration configuration) {    }
     public void setLogger(Logger logger) {    }
-    public void setPluginActive(Plugin plugin, boolean isActive) {    }
+    public void setPluginActive(Plugin plugin, boolean isActive) {   
+        if(plugin instanceof PluginForDecrypt){
+            statusBar.setPluginForDecryptActive(isActive);
+        }
+        else{
+            statusBar.setPluginForHostActive(isActive);
+        }
+    }
     public void addUIListener(UIListener listener) {    
         synchronized (uiListener) {
             uiListener.add(listener);

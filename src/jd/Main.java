@@ -5,18 +5,15 @@ import java.io.File;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLClassLoader;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.logging.Logger;
 
 import jd.controlling.JDController;
-import jd.controlling.interaction.HTTPReconnect;
 import jd.gui.UIInterface;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
-import jd.router.RouterData;
 
 // TODO Wulfskin: Reconnect Paket
 //

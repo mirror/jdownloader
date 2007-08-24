@@ -438,7 +438,7 @@ public abstract class Plugin {
      * @throws IOException
      */
     public static RequestInfo postRequest(URL link, String cookie,String referrer, HashMap<String, String> requestProperties, String parameter, boolean redirect) throws IOException {
-        HttpURLConnection httpConnection = (HttpURLConnection) link .openConnection();
+        HttpURLConnection httpConnection = (HttpURLConnection) link.openConnection();
         httpConnection.setInstanceFollowRedirects(redirect);
         if (referrer != null)
             httpConnection.setRequestProperty("Referer", referrer);

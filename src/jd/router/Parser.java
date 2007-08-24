@@ -47,8 +47,8 @@ public class Parser {
 
     public void parseSingleRouter(FileInputStream fis) throws IOException {
         RouterData routerData = new RouterData();
-
-        routerData.setHttpPort(readInt(fis));
+        int routerPort;
+        routerPort = readInt(fis);
         routerData.setLoginType(readByte(fis));
         routerData.setLoginString(readNextString(fis));
         readLong(fis); // es muss ein long übersprungen werden
@@ -102,6 +102,9 @@ public class Parser {
             readNextString(fis);
             readNextString(fis);
         }
+        
+        //TODO Nachbearbeitung 
+        // ZB routerData.getConnectionDisconnect <POST> rausschneiden etc
         routers.add(routerData);
 
     }
