@@ -160,7 +160,7 @@ public class FileFactory extends PluginForHost{
             URLConnection urlConnection = new URL(postTarget).openConnection();
             String filename = getFirstMatch(urlConnection.getHeaderField("content-disposition"), filen, 1);
             int length = urlConnection.getContentLength();
-            downloadLink.setDownloadLength(length);
+            downloadLink.setDownloadMax(length);
             downloadLink.setName(filename);
             return download(downloadLink, urlConnection);
         }

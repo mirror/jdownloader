@@ -277,7 +277,7 @@ public abstract class Plugin {
      * 
      * @param data Der zu durchsuchende Text
      * @param startPattern der Pattern, bei dem die Suche beginnt
-     * @param endPattern der Pattern, bei dem die Suche endet
+     * @param lastPattern der Pattern, bei dem die Suche endet
      * 
      * @return der Text zwischen den gefundenen stellen oder, falls nichts gefunden wurde, der vollständige Text
      */
@@ -299,10 +299,17 @@ public abstract class Plugin {
                 <input type="hidden" name="b" value="9" />    
      *
      * f=f50b0f&h=390b4be0182b85b0&b=9 rauskommen
+     * 
+     * @param data Der zu durchsuchende Text
+     * @param startPattern der Pattern, bei dem die Suche beginnt
+     * @param lastPattern der Pattern, bei dem die Suche endet
+     * 
+     * @return ein String, der als POST Parameter genutzt werden kann und
+     *         alle Parameter des Formulars enthält
      */
-    public String getFormInputHidden(String data, String startpattern, String lastpattern)
+    public String getFormInputHidden(String data, String startPattern, String lastPattern)
     {
-        return getFormInputHidden(getBetween(data, startpattern, lastpattern));
+        return getFormInputHidden(getBetween(data, startPattern, lastPattern));
     }
     
     /**
@@ -315,6 +322,11 @@ public abstract class Plugin {
                 <input type="hidden" name="b" value="9" />    
      *
      * f=f50b0f&h=390b4be0182b85b0&b=9 ausgegeben werden
+     * 
+     * @param data Der zu durchsuchende Text
+     * 
+     * @return ein String, der als POST Parameter genutzt werden kann und
+     *         alle Parameter des Formulars enthält
      */
     public String getFormInputHidden(String data) {
         Pattern intput1 = Pattern.compile("<[ ]?input([^>]*?type=['\"]?hidden['\"]?[^>]*?)[/]?>", Pattern.CASE_INSENSITIVE);
@@ -537,7 +549,7 @@ public abstract class Plugin {
                 if (count != -1) {
                     fos.write(buffer, 0, count);
                     downloadedBytes += count;
-                    downloadLink.setDownloadedBytes(downloadedBytes);
+                    downloadLink.setDownloadCurrent(downloadedBytes);
                     firePluginEvent(new PluginEvent(this, PluginEvent.PLUGIN_DATA_CHANGED, null));
                 }
             } while (count != -1 && !aborted); // Muss -1 sein und nicht buffer.length da durch  eine langsame Internetverbindung der Puffer nicht immer komplett gefüllt ist
@@ -611,8 +623,8 @@ public abstract class Plugin {
     
     /**
      * Gibt den md5hash einer Datei als String aus
-     * @param datei
-     * @return
+     * @param filepath Dateiname
+     * @return MD5 des Datei
      * @throws FileNotFoundException
      * @throws NoSuchAlgorithmException
      */

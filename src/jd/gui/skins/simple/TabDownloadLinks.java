@@ -193,8 +193,11 @@ public class TabDownloadLinks extends JPanel implements PluginListener{
                     case COL_NAME:     return downloadLink.getName();
                     case COL_HOST:     return downloadLink.getHost();
                     case COL_PROGRESS:
-                        if (downloadLink.isInProgress())
-                            return downloadLink.getProgressBar();
+                        if (downloadLink.isInProgress()){
+                            JProgressBar p = new JProgressBar(0,downloadLink.getDownloadMax());
+                            p.setValue(downloadLink.getDownloadCurrent());
+                            return p;
+                        }
                         else
                             return null;
                 }

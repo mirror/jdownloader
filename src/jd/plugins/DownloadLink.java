@@ -76,9 +76,13 @@ public class DownloadLink implements Serializable{
      */
     private transient PluginForHost plugin;
     /**
-     * Die Fortschrittsanzeige
+     * Maximum der heruntergeladenen Datei (Dateilänge)
      */
-    private transient JProgressBar progressBar = null;
+    private int downloadMax;
+    /**
+     * Aktuell heruntergeladene Bytes der Datei
+     */
+    private int downloadCurrent;
     /**
      * Hierhin soll die Datei gespeichert werden.
      */
@@ -88,21 +92,9 @@ public class DownloadLink implements Serializable{
      */
     private transient Logger logger = Plugin.getLogger();
     /**
-     * Die Größe in Bytes dieser Datei
-     */
-    private transient int downloadLength;
-    /**
-     * Die bereits heruntergeladenen Bytes
-     */
-    private transient int downloadedBytes;
-    /**
      * Status des DownloadLinks
      */
     private int status = STATUS_TODO;
-    /**
-     * Für Serialisierung
-     */
-    private DownloadLink(){}
     /**
      * Erzeugt einen neuen DownloadLink
      *
@@ -157,19 +149,13 @@ public class DownloadLink implements Serializable{
      *
      * @return Anzahl der heruntergeladenen Bytes
      */
-    public int getDownloadedBytes() { return downloadedBytes; }
+    public int getDownloadCurrent() { return downloadCurrent; }
     /**
      * Die Größe der Datei
      *
      * @return Die Größe der Datei
      */
-    public int getDownloadLength() { return downloadLength; }
-    /**
-     * Diese Fortschrittsanzeige zeigt prozentual, wieviel bereits heruntergeladen wurde
-     *
-     * @return Die Fortschrittsanzeige
-     */
-    public JProgressBar getProgressBar(){ return progressBar; }
+    public int getDownloadMax() { return downloadMax; }
     /**
      * Liefert den Status dieses Downloads zurück
      * 
@@ -233,24 +219,19 @@ public class DownloadLink implements Serializable{
      * Setzt die Anzahl der heruntergeladenen Bytes fest und aktualisiert die
      * Fortschrittsanzeige
      *
-     * @param downloadedBytes Anzahl der heruntergeladenen Bytes
+     * @param downloadedCurrent Anzahl der heruntergeladenen Bytes
      */
-    public void setDownloadedBytes(int downloadedBytes) {
-        this.downloadedBytes = downloadedBytes;
-        if(this.progressBar!=null)
-            this.progressBar.setValue(downloadedBytes);
+    public void setDownloadCurrent(int downloadedCurrent) {
+        this.downloadCurrent = downloadedCurrent;
     }
     /**
      * Setzt die Größe der herunterzuladenden Datei, und aktualisiert
      * die Fortschrittsanzeige
      *
-     * @param downloadLength Die Größe der Datei
+     * @param downloadMax Die Größe der Datei
      */
-    public void setDownloadLength(int downloadLength) {
-        this.downloadLength = downloadLength;
-        if(this.progressBar == null)
-            this.progressBar = new JProgressBar();
-        this.progressBar.setMaximum(downloadLength);
+    public void setDownloadMax(int downloadMax) {
+        this.downloadMax = downloadMax;
     }
     @Override
     public boolean equals(Object obj) {

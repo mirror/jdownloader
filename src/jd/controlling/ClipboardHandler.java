@@ -1,6 +1,6 @@
 package jd.controlling;
 
-
+//TODO Überarbeiten
 /**
  * Diese Klasse ist dafür da, zeitverzögert die Zwischenablage zu untersuchen
  *
@@ -21,6 +21,7 @@ public class ClipboardHandler extends Thread {
         this.controller = controller;
     }
     public void run(){
+        
 //        Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
 //        synchronized (clipboard) {
 //            try {

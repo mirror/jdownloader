@@ -177,7 +177,7 @@ public class Rapidshare extends PluginForHost{
             wr.flush();
 
             int length = urlConnection.getContentLength();
-            downloadLink.setDownloadLength(length);
+            downloadLink.setDownloadMax(length);
             return download(downloadLink, urlConnection);
         }
         catch (IOException e) { logger.severe("URL could not be opened. "+e.toString());}

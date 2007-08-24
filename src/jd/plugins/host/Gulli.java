@@ -145,7 +145,7 @@ public class Gulli extends PluginForHost {
             HttpURLConnection dlcon = createPostConnection(dlUrl, "action=download&file="+fileId);
 
             int length = dlcon.getContentLength();
-            dlLink.setDownloadLength(length);
+            dlLink.setDownloadMax(length);
 
             if (dlcon.getContentType().startsWith("text")) {
                 currentStep.setStatus(PluginStep.STATUS_ERROR);

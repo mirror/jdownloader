@@ -36,8 +36,8 @@ public class Speedometer extends JPanel{
     public void setDownloadLink(DownloadLink downloadLink){
         this.downloadLink = downloadLink;
         lblDownloadName.setText(downloadLink.getName());
-        if (downloadLink.getDownloadLength()>0)
-            lblDownloadSize.setText(Integer.toString(downloadLink.getDownloadLength()));
+        if (downloadLink.getDownloadMax()>0)
+            lblDownloadSize.setText(Integer.toString(downloadLink.getDownloadMax()));
     }
 
     private class SpeedometerRefresher extends Thread{
@@ -55,11 +55,11 @@ public class Speedometer extends JPanel{
             
             while(downloadLink!=null && downloadLink.isInProgress()){
                 start = System.currentTimeMillis();
-                downloadedBytes = downloadLink.getDownloadedBytes();
+                downloadedBytes = downloadLink.getDownloadCurrent();
                 try {
                     Thread.sleep(REFRESH_TIME);
                     end = System.currentTimeMillis();
-                    differenceBytes = downloadLink.getDownloadedBytes()-downloadedBytes;
+                    differenceBytes = downloadLink.getDownloadCurrent()-downloadedBytes;
                     downloadedBytes += differenceBytes;
                     differenceTime = end-start;
                     System.out.println(differenceBytes+"bytes in "+differenceTime+" ms");
