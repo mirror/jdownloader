@@ -30,7 +30,7 @@ public class HTTPReconnect extends Interaction{
         String routerIP       = configuration.getRouterIP();
         String routerUsername = configuration.getRouterUsername();
         String routerPassword = configuration.getRouterPassword();
-        int routerPort        = routerData.getHttpPort();
+        int routerPort        = configuration.getRouterPort();
         String disconnect     = routerData.getConnectionDisconnect();
         String connect        = routerData.getConnectionConnect();
         if(routerUsername != null && routerPassword != null)
@@ -48,21 +48,22 @@ public class HTTPReconnect extends Interaction{
         else
             routerPage = "http://"+routerIP+":"+routerPort+"/";
 
-        if(disconnect.startsWith(RouterData.HTTP_POST)){
-            disconnect = disconnect.substring(RouterData.HTTP_POST.length()+1);
-            String[] params = disconnect.split("\\?");
-            routerPage +=params[0];
+        if(routerData.getLoginType() == RouterData.LOGIN_TYPE_WEB_POST){
+            routerPage +=disconnect;
             logger.fine("Router page:"+routerPage);
             try {
-                Plugin.postRequest(new URL(routerPage),null,null,routerData.getDisconnectRequestProperties(), params[1],true);
+                Plugin.postRequest(
+                        new URL(routerPage),
+                        null,
+                        null,
+                        routerData.getDisconnectRequestProperties(), 
+                        routerData.getDisconnectPostParams(),
+                        true);
             }
             catch (MalformedURLException e) { e.printStackTrace(); }
             catch (IOException e)           { e.printStackTrace(); }
         }
         else{
-            if(disconnect.startsWith(RouterData.HTTP_GET)){
-                disconnect = disconnect.substring(RouterData.HTTP_GET.length());
-            }
             try {
                 routerPage +=disconnect;
                 logger.fine("Router page:"+routerPage);

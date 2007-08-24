@@ -41,6 +41,10 @@ public class Configuration implements Serializable{
      * IP des Routers
      */
     private String routerIP;
+    /**
+     * Router Port
+     */
+    private int routerPort;
     
     public String getDownloadDirectory()                           { return downloadDirectory;  }
     public HashMap<Integer, Vector<Interaction>> getInteractions() { return interactions;       }
@@ -48,9 +52,11 @@ public class Configuration implements Serializable{
     public String getRouterUsername()                              { return routerUsername;     }
     public RouterData getRouterData()                              { return routerData;         }
     public String getRouterIP()                                    { return routerIP;           }
+    public int getRouterPort()                                     { return routerPort;             }
     public void setDownloadDirectory(String downloadDirectory) { this.downloadDirectory = downloadDirectory; }
     public void setRouterPassword(String routerPassword)       { this.routerPassword = routerPassword;       }
     public void setRouterUsername(String routerUsername)       { this.routerUsername = routerUsername;       }
     public void setRouterData(RouterData routerData)           { this.routerData = routerData;               }
     public void setRouterIP(String routerIP)                   { this.routerIP = routerIP;                   }
+    public void setRouterPort(int httpPort)                    { this.routerPort = httpPort;                 }
 }

@@ -42,6 +42,7 @@ public class Main {
 //        props.put("CONTENT-TYPE", "text/xml ; charset=\"utf-8\"");
 //        
 //        RouterData routerData = new RouterData();
+//        routerData.setLoginType(RouterData.LOGIN_TYPE_WEB_POST);
 //        routerData.setConnectionConnect("http://www.google.de");
 //        routerData.setConnectionDisconnect("/upnp/control/WANIPConn1");
 //        routerData.setDisconnectPostParams("<?xml version=\"1.0\" encoding=\"utf-8\"?>\r\n<s:Envelope s:encodingStyle=\"http://schemas.xmlsoap.org/soap/encoding/\" xmlns:s=\"http://schemas.xmlsoap.org/soap/envelope/\">\r\n<s:Body>\r\n<u:ForceTermination xmlns:u=\"urn:schemas-upnp-org:service:WANIPConnection:1\" />\r\n</s:Body>\r\n</s:Envelope>");
@@ -50,6 +51,7 @@ public class Main {
 //        Configuration configuration = new Configuration();
 //        configuration.setRouterData(routerData);
 //        configuration.setRouterIP("192.168.178.1");
+//        configuration.setRouterPort(4900);
 //        
 //        JDUtilities.setConfiguration(configuration);
 //        HTTPReconnect httpReconnect = new HTTPReconnect();
@@ -76,7 +78,8 @@ public class Main {
 //        JDUtilities.saveObject(null, new Configuration(), JDUtilities.getJDHomeDirectory(), "jdownloader", ".config");
         JDUtilities.loadPlugins();
         UIInterface uiInterface = new SimpleGUI();
-        JDController controller = new JDController(uiInterface);
+        JDController controller = new JDController();
+        controller.setUiInterface(uiInterface);
         
         Iterator<PluginForHost> iteratorHost = JDUtilities.getPluginsForHost().iterator();
         while(iteratorHost.hasNext()){

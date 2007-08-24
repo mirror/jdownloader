@@ -16,11 +16,10 @@ public class RouterData implements Serializable{
      * serialVersionUID
      */
     private static final long serialVersionUID = 5321872876497404319L;
-    public transient static final String HTTP_POST = "<POST>";
-    public transient static final String HTTP_GET  = "<GET>";
-    
-    public transient static final int LOGIN_TYPE_AUTH = 0;
-    public transient static final int LOGIN_TYPE_WEB  = 1;
+
+    public transient static final int LOGIN_TYPE_AUTH     = 1;
+    public transient static final int LOGIN_TYPE_WEB_GET  = 2;
+    public transient static final int LOGIN_TYPE_WEB_POST = 3;
     
     private static Logger logger = Plugin.getLogger();
     /**
@@ -30,15 +29,11 @@ public class RouterData implements Serializable{
     /**
      * Art des Logins (bisher immer WEB)
      */
-    private int    loginType;
+    private int loginType = LOGIN_TYPE_WEB_GET;
     /**
      * LoginAdresse
      */
     private String loginString;
-    /**
-     * HTTP Port
-     */
-    private int    httpPort;
     /**
      * String zum Aufbauen der Verbindung (meist http://www.google.de)
      * Dieser String ist eine vollständige URL
@@ -97,13 +92,11 @@ public class RouterData implements Serializable{
     public String getIpAddressSite()                      { return ipAddressSite;        }
     public String getDisconnectPostParams()               { return disconnectPostParams; }
     public int getLoginType()                             { return loginType;            }
-    public int getHttpPort()                              { return httpPort;             }
     public Pattern getIpAddressRegEx()                    { return ipAddressRegEx;       }
     public void setConnectionConnect(String connectionConnect)       { this.connectionConnect = connectionConnect;       }
     public void setConnectionDisconnect(String connectionDisconnect) { this.connectionDisconnect = connectionDisconnect; }
     public void setConnectionLogoff(String connectionLogoff)         { this.connectionLogoff = connectionLogoff;         }
     public void setLoginString(String loginString)                   { this.loginString = loginString;                   }
-    public void setHttpPort(int httpPort)                            { this.httpPort = httpPort;                         }
     public void setLoginType(int loginType)                          { this.loginType = loginType;                       }
     public void setRouterName(String routerName)                     { this.routerName = routerName;                     }
     public void setIpAddressPost(String ipAddressPost)               { this.ipAddressPost = ipAddressPost;               }
