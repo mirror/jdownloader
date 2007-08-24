@@ -126,7 +126,7 @@ public class FileFactory extends PluginForHost{
                 break;
             case PluginStep.STEP_DOWNLOAD:
                 try {
-                    requestInfo = postRequest((new URL(actionString)),requestInfo.getCookie(),actionString,postTarget+"&captcha="+(String)steps.get(1).getParameter(),true);
+                    requestInfo = postRequest((new URL(actionString)),requestInfo.getCookie(),actionString,null,postTarget+"&captcha="+(String)steps.get(1).getParameter(), true);
                     postTarget=getFirstMatch(requestInfo.getHtmlCode(), patternForDownloadlink, 1);
                     postTarget = postTarget.replaceAll("&amp;", "&");
                     

@@ -1,6 +1,7 @@
 package jd.router;
 
 import java.io.Serializable;
+import java.util.HashMap;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
@@ -45,10 +46,19 @@ public class RouterData implements Serializable{
     private String connectionConnect;
     /**
      * String zum Trennen der Verbindung
-     * Dieser String zeigt die page des Routers an (zB Forms/DiagADSL_1?DiagDSLDisconnect=PPPoE%20Trennung)
+     * Dieser String zeigt NUR die page des Routers an (zB Forms/DiagADSL_1)
      * Hier muß noch http://<routerIP>/ hinzugefügt werden
      */
     private String connectionDisconnect;
+    /**
+     * Beim Post können hiermit verschiedene Parameter übergeben werden
+     */
+    private HashMap<String, String> disconnectrequestProperties;
+    /**
+     * Beim Trennen sollen diese Parameter als Post verschickt werden
+     * (zB DiagDSLDisconnect=PPPoE%20Trennung))
+     */
+    private String disconnectPostParams;
     /**
      * String zum Ausloggen
      */
@@ -69,20 +79,26 @@ public class RouterData implements Serializable{
      * Dieser Text befindet sich unmittelbar nach der IP-Adresse
      */
     private String ipAddressPost;
+    /**
+     * TODO RegEx wird nicht genutzt
+     */
     private Pattern ipAddressRegEx;
-    
-    public String getConnectionConnect()                             { return connectionConnect;    }
-    public String getConnectionDisconnect()                          { return connectionDisconnect; }
-    public String getConnectionLogoff()                              { return connectionLogoff;     }
-    public String getLoginString()                                   { return loginString;          }
-    public String getRouterName()                                    { return routerName;           }
-    public String getIpAddressPost()                                 { return ipAddressPost;        }
-    public String getIpAddressPre()                                  { return ipAddressPre;         }
-    public String getIpAddressOffline()                              { return ipAddressOffline;     }
-    public String getIpAddressSite()                                 { return ipAddressSite;        }
-    public int getLoginType()                                        { return loginType;            }
-    public int getHttpPort()                                         { return httpPort;             }
-    public Pattern getIpAddressRegEx()                               { return ipAddressRegEx;       }
+    public HashMap<String, String> getDisconnectRequestProperties() { return disconnectrequestProperties; }
+    public void setDisconnectRequestProperties(HashMap<String, String> disconnectRequestProperties) { this.disconnectrequestProperties = disconnectRequestProperties;       }
+
+    public String getConnectionConnect()                  { return connectionConnect;    }
+    public String getConnectionDisconnect()               { return connectionDisconnect; }
+    public String getConnectionLogoff()                   { return connectionLogoff;     }
+    public String getLoginString()                        { return loginString;          }
+    public String getRouterName()                         { return routerName;           }
+    public String getIpAddressPost()                      { return ipAddressPost;        }
+    public String getIpAddressPre()                       { return ipAddressPre;         }
+    public String getIpAddressOffline()                   { return ipAddressOffline;     }
+    public String getIpAddressSite()                      { return ipAddressSite;        }
+    public String getDisconnectPostParams()               { return disconnectPostParams; }
+    public int getLoginType()                             { return loginType;            }
+    public int getHttpPort()                              { return httpPort;             }
+    public Pattern getIpAddressRegEx()                    { return ipAddressRegEx;       }
     public void setConnectionConnect(String connectionConnect)       { this.connectionConnect = connectionConnect;       }
     public void setConnectionDisconnect(String connectionDisconnect) { this.connectionDisconnect = connectionDisconnect; }
     public void setConnectionLogoff(String connectionLogoff)         { this.connectionLogoff = connectionLogoff;         }
@@ -95,6 +111,8 @@ public class RouterData implements Serializable{
     public void setIpAddressOffline(String ipAddressOffline)         { this.ipAddressOffline = ipAddressOffline;         }
     public void setIpAddressSite(String ipAddressSite)               { this.ipAddressSite = ipAddressSite;               }
     public void setIpAddressRegEx(Pattern ipAddressRegEx)            { this.ipAddressRegEx = ipAddressRegEx;             }
+    public void setDisconnectPostParams(String disconnectPostParams) { this.disconnectPostParams = disconnectPostParams; }
+
     /**
      * Liefert die IP Adresse aus einem Text zurück
      * 

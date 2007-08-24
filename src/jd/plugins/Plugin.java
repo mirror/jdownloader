@@ -21,6 +21,7 @@ import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Set;
 import java.util.Vector;
 import java.util.logging.ConsoleHandler;
 import java.util.logging.Formatter;
@@ -421,7 +422,7 @@ public abstract class Plugin {
      */
     public static RequestInfo postRequest(URL link, String parameter)
             throws IOException {
-        return postRequest(link, null, null, parameter, false);
+        return postRequest(link, null, null, null, parameter, false);
     }
     /**
      * 
@@ -430,12 +431,13 @@ public abstract class Plugin {
      * @param link Der Link, an den die POST Anfrage geschickt werden soll
      * @param cookie Cookie
      * @param referrer Referrer
+     * @param requestProperties Hier können noch zusätliche Properties mitgeschickt werden
      * @param parameter Die Parameter, die übergeben werden sollen
      * @param redirect Soll einer Weiterleitung gefolgt werden?
      * @return Ein Objekt, daß alle Informationen der Zieladresse beinhält
      * @throws IOException
      */
-    public static RequestInfo postRequest(URL link, String cookie,String referrer, String parameter, boolean redirect) throws IOException {
+    public static RequestInfo postRequest(URL link, String cookie,String referrer, HashMap<String, String> requestProperties, String parameter, boolean redirect) throws IOException {
         HttpURLConnection httpConnection = (HttpURLConnection) link .openConnection();
         httpConnection.setInstanceFollowRedirects(redirect);
         if (referrer != null)
@@ -444,6 +446,15 @@ public abstract class Plugin {
             httpConnection.setRequestProperty("Referer", "http://" + link.getHost());
         if (cookie != null)
             httpConnection.setRequestProperty("Cookie", cookie);
+        if(requestProperties != null){
+            Set<String> keys = requestProperties.keySet();
+            Iterator<String> iterator = keys.iterator();
+            String key;
+            while(iterator.hasNext()){
+                key = iterator.next();
+                httpConnection.setRequestProperty(key, requestProperties.get(key));
+            }
+        }
         // TODO das gleiche wie bei getRequest
         httpConnection.setRequestProperty("User-Agent", "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1; SV1; .NET CLR 1.1.4322; .NET CLR 2.0.50727)");
 

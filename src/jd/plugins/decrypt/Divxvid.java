@@ -67,7 +67,7 @@ public class Divxvid extends PluginForDecrypt {
 
             requestInfo = postRequest(
                     (new URL("http://dxp.divxvid.org/" + strgate)), null,
-                    cryptedLink, "hash=" + hash, false);
+                    cryptedLink, null, "hash=" + hash, false);
 
             /*
              * es werden dank divxvid.org hier nur die menge der links gezaehlt

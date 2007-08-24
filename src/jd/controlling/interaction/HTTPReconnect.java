@@ -33,7 +33,8 @@ public class HTTPReconnect extends Interaction{
         int routerPort        = routerData.getHttpPort();
         String disconnect     = routerData.getConnectionDisconnect();
         String connect        = routerData.getConnectionConnect();
-        Authenticator.setDefault(new InternalAuthenticator(routerUsername, routerPassword));
+        if(routerUsername != null && routerPassword != null)
+            Authenticator.setDefault(new InternalAuthenticator(routerUsername, routerPassword));
 
         //IP auslesen
 //        ipBefore = getIPAddress(routerData);
@@ -53,7 +54,7 @@ public class HTTPReconnect extends Interaction{
             routerPage +=params[0];
             logger.fine("Router page:"+routerPage);
             try {
-                Plugin.postRequest(new URL(routerPage), params[1]);
+                Plugin.postRequest(new URL(routerPage),null,null,routerData.getDisconnectRequestProperties(), params[1],true);
             }
             catch (MalformedURLException e) { e.printStackTrace(); }
             catch (IOException e)           { e.printStackTrace(); }

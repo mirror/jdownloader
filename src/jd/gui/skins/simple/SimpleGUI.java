@@ -234,7 +234,6 @@ public class SimpleGUI implements UIInterface, ActionListener{
         
         // Einbindung des Log Dialogs
         logDialog = new LogDialog(frame, logger);
-        logDialog.setVisible(true);
         logDialog.addWindowListener(new LogDialogWindowAdapter());
     }
     

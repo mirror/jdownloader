@@ -5,20 +5,22 @@ import java.io.File;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.logging.Logger;
 
 import jd.controlling.JDController;
+import jd.controlling.interaction.HTTPReconnect;
 import jd.gui.UIInterface;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
+import jd.router.RouterData;
 
 // TODO Wulfskin: Reconnect Paket
 //
 // TODO Konfiguration speichern (XML)
-// TODO Richtiges UIInterface
 // TODO Links verschlüsseln (einfach AES)
 
 
@@ -35,14 +37,20 @@ public class Main {
     private void go(){
         
 //  Bitte mal testen        
+//        HashMap<String, String> props = new HashMap<String, String>();
+//        props.put("SOAPACTION", "\"urn:schemas-upnp-org:service:WANIPConnection:1#ForceTermination\"");
+//        props.put("CONTENT-TYPE", "text/xml ; charset=\"utf-8\"");
+//        
 //        RouterData routerData = new RouterData();
 //        routerData.setConnectionConnect("http://www.google.de");
-//        routerData.setConnectionDisconnect("Forms/DiagADSL_1?DiagDSLDisconnect=PPPoE%20Trennung");
+//        routerData.setConnectionDisconnect("/upnp/control/WANIPConn1");
+//        routerData.setDisconnectPostParams("<?xml version=\"1.0\" encoding=\"utf-8\"?>\r\n<s:Envelope s:encodingStyle=\"http://schemas.xmlsoap.org/soap/encoding/\" xmlns:s=\"http://schemas.xmlsoap.org/soap/envelope/\">\r\n<s:Body>\r\n<u:ForceTermination xmlns:u=\"urn:schemas-upnp-org:service:WANIPConnection:1\" />\r\n</s:Body>\r\n</s:Envelope>");
+//        routerData.setDisconnectRequestProperties(props);
+//        
 //        Configuration configuration = new Configuration();
 //        configuration.setRouterData(routerData);
-//        configuration.setRouterIP("192.168.168.72");
-//        configuration.setRouterUsername("administrator");
-//        configuration.setRouterPassword("geheim"); // Ja es gibt DAUs! :-)
+//        configuration.setRouterIP("192.168.178.1");
+//        
 //        JDUtilities.setConfiguration(configuration);
 //        HTTPReconnect httpReconnect = new HTTPReconnect();
 //        httpReconnect.interact();
