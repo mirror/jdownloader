@@ -1,6 +1,7 @@
 package jd.controlling;
 
 import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 
 import javax.swing.AbstractAction;
 import javax.swing.Action;
@@ -8,7 +9,6 @@ import javax.swing.ImageIcon;
 import javax.swing.KeyStroke;
 
 import jd.JDUtilities;
-import jd.gui.GUIInterface;
 
 /**
  * Alle Interaktionen (Knöpfe, Shortcuts) sollten über diese JDAction stattfinden
@@ -37,33 +37,35 @@ public class JDAction extends AbstractAction{
     public static final int APP_EXIT                 = 14;
     public static final int VIEW_LOG                 = 1001;
 
-    private GUIInterface guiInterface;
+    private ActionListener actionListener;
     private int actionID;
     private KeyStroke accelerator;
+    private String ressourceName;
     /**
      * Erstellt ein neues JDAction-Objekt
-     * @param guiInterface TODO
-     * @param iconName
-     * @param resourceName Name der Resource, aus der die Texte geladen werden sollen
+     * @param actionListener ein ActionListener
+     * @param iconName Name des Icons
+     * @param ressourceName Name der Resource, aus der die Texte geladen werden sollen
      * @param actionID ID dieser Aktion
      */
-    public JDAction(GUIInterface guiInterface, String iconName, String resourceName, int actionID){
+    public JDAction(ActionListener actionListener, String iconName, String ressourceName, int actionID){
         super();
+        this.ressourceName = ressourceName;
+        this.actionID = actionID;
+        this.actionListener = actionListener;
         ImageIcon icon = new ImageIcon(JDUtilities.getImage(iconName));
         putValue(Action.SMALL_ICON, icon);
-        putValue(Action.SHORT_DESCRIPTION, JDUtilities.getResourceString(resourceName+".desc"));
-        putValue(Action.NAME,              JDUtilities.getResourceString(resourceName+".name"));
-        char mnemonic = JDUtilities.getResourceChar(resourceName+".mnem");
+        putValue(Action.SHORT_DESCRIPTION, JDUtilities.getResourceString(ressourceName+".desc"));
+        putValue(Action.NAME,              JDUtilities.getResourceString(ressourceName+".name"));
+        char mnemonic = JDUtilities.getResourceChar(ressourceName+".mnem");
         if (mnemonic!=0)
            putValue(Action.MNEMONIC_KEY, new Integer(mnemonic));
-        this.actionID = actionID;
-        this.guiInterface = guiInterface;
-        String acceleratorString = JDUtilities.getResourceString(resourceName+".accel");
+        String acceleratorString = JDUtilities.getResourceString(ressourceName+".accel");
         if (acceleratorString!=null && acceleratorString.length()>0)
            accelerator = KeyStroke.getKeyStroke(acceleratorString);
     }
     public void actionPerformed(ActionEvent e) {
-        guiInterface.doAction(actionID);
+        actionListener.actionPerformed(new ActionEvent(e.getSource(),actionID,ressourceName));
     }
     public int getActionID(){
         return actionID;

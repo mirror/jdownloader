@@ -34,8 +34,7 @@ import javax.swing.JFrame;
 
 import jd.captcha.Captcha;
 import jd.captcha.JAntiCaptcha;
-import jd.gui.skins.simple.CaptchaDialog;
-import jd.plugins.DownloadLink;
+import jd.controlling.JDController;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
@@ -44,7 +43,21 @@ import sun.misc.Service;
 
 public class JDUtilities {
     public static final String CONFIG_PATH = "jDownloader.config";
+    /**
+     * Titel der Applikation
+     */
+    public static final String JD_TITLE  = "jDownloader 0.0.1";
+    /**
+     * Ein URLClassLoader, um Dateien aus dem HomeVerzeichnis zu holen
+     */
+    private static URLClassLoader urlClassLoader = null;
+    /**
+     * RessourceBundle für Texte
+     */
     private static ResourceBundle resourceBundle = null;
+    /**
+     * Angaben über Spracheinstellungen
+     */
     private static Locale locale = null;
     /**
      * Alle verfügbaren Bilder werden hier gespeichert
@@ -176,7 +189,7 @@ public class JDUtilities {
         try {
            result = resourceBundle.getString(key);
         }
-        catch (MissingResourceException e) { logger.severe("resource missing."+e.getKey()); }
+        catch (MissingResourceException e) { logger.warning("resource missing."+e.getKey()); }
         return result;
     }
     
@@ -237,24 +250,26 @@ public class JDUtilities {
      * @return URLClassLoader
      */
     public static URLClassLoader getURLClassLoader(){
-        File homeDir = getJDHomeDirectory();
-        URL url=null;
-        try {
-            url = homeDir.toURL();
-            return new URLClassLoader(new URL[]{url});
+        if (urlClassLoader == null){
+            File homeDir = getJDHomeDirectory();
+            URL url=null;
+            try {
+                url = homeDir.toURL();
+                urlClassLoader = new URLClassLoader(new URL[]{url}, null);
+            }
+            catch (MalformedURLException e) { e.printStackTrace(); }
         }
-        catch (MalformedURLException e) { e.printStackTrace(); }
-        return null;
+        return urlClassLoader;
     }
     /**
      * Diese Methode erstellt einen neuen Captchadialog und liefert den eingegebenen Text zurück.
      *
-     * @param owner Das übergeordnete Fenster
+     * @param controller Der Controller
      * @param plugin Das Plugin, das dieses Captcha fordert (Der Host wird benötigt)
      * @param captchaAddress Adresse des anzuzeigenden Bildes
      * @return Der vom Benutzer eingegebene Text
      */
-    public static String getCaptcha(JFrame owner, Plugin plugin, String captchaAddress){
+    public static String getCaptcha(JDController controller, Plugin plugin, String captchaAddress){
         boolean useJAC = false;
         if(useJAC){
             try {
@@ -275,10 +290,7 @@ public class JDUtilities {
             }
         }
         else{
-            CaptchaDialog captchaDialog = new CaptchaDialog(owner,plugin,captchaAddress);
-            owner.toFront();
-            captchaDialog.setVisible(true);
-            return captchaDialog.getCaptchaText();
+            return controller.getCaptchaCodeFromUser(plugin, captchaAddress);
         }
         return null;
     }
@@ -419,7 +431,7 @@ public class JDUtilities {
             catch (FileNotFoundException e) { e.printStackTrace(); }
             catch (IOException e)           { e.printStackTrace(); }
         }
-    }
+    }    
     /**
      * Liefert alle geladenen Plugins zum Entschlüsseln zurück
      * 

@@ -4,11 +4,17 @@ import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.awt.Toolkit;
-import java.awt.datatransfer.ClipboardOwner;
-import java.awt.datatransfer.StringSelection;
+import java.awt.datatransfer.Clipboard;
+import java.awt.datatransfer.DataFlavor;
+import java.awt.datatransfer.UnsupportedFlavorException;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.io.IOException;
+import java.util.Iterator;
 import java.util.Vector;
+import java.util.logging.Logger;
 
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
@@ -25,24 +31,26 @@ import javax.swing.JToolBar;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
 
+import jd.Configuration;
 import jd.JDUtilities;
 import jd.controlling.JDAction;
-import jd.controlling.event.ControlEvent;
-import jd.gui.GUIInterface;
+import jd.event.ControlEvent;
+import jd.event.UIEvent;
+import jd.event.UIListener;
+import jd.gui.UIInterface;
 import jd.plugins.DownloadLink;
+import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.event.PluginEvent;
 
 import com.sun.java.swing.plaf.windows.WindowsLookAndFeel;
 
-public class SimpleGUI extends GUIInterface implements ClipboardOwner{
+public class SimpleGUI implements UIInterface, ActionListener{
     /**
      * serialVersionUID
      */
     private static final long serialVersionUID = 3966433144683787356L;
-
-    private static final String JDOWNLOADER_ID = "JDownloader active";
     /**
      * Das Hauptfenster
      */
@@ -71,6 +79,12 @@ public class SimpleGUI extends GUIInterface implements ClipboardOwner{
      * Die Statusleiste für Meldungen
      */
     private StatusBar statusBar;
+    /**
+     * Hiermit wird der Eventmechanismus realisiert. Alle hier eingetragenen
+     * Listener werden benachrichtigt, wenn mittels
+     * {@link #firePluginEvent(PluginEvent)} ein Event losgeschickt wird.
+     */
+    public Vector<UIListener> uiListener = null;
     
     /**
      * Ein Togglebutton zum Starten / Stoppen der Downloads
@@ -85,8 +99,9 @@ public class SimpleGUI extends GUIInterface implements ClipboardOwner{
     private JDAction actionLog;
     
     private LogDialog logDialog;
+    private Logger logger = Plugin.getLogger();
 
-   private JCheckBoxMenuItem menViewLog;
+    private JCheckBoxMenuItem menViewLog;
 
     /**
      * Das Hauptfenster wird erstellt
@@ -98,17 +113,17 @@ public class SimpleGUI extends GUIInterface implements ClipboardOwner{
         }
         catch (UnsupportedLookAndFeelException e) {}
         
+        uiListener = new Vector<UIListener>();
         frame      = new JFrame();
         tabbedPane = new JTabbedPane();
         menuBar    = new JMenuBar();
         toolBar    = new JToolBar();
-        frame.setIconImage(JD_ICON);
-        frame.setTitle(JD_TITLE);
+        frame.setIconImage(JDUtilities.getImage("mind"));
+        frame.setTitle(JDUtilities.JD_TITLE);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         initActions();
         initMenuBar();
         buildUI();
-        Toolkit.getDefaultToolkit().getSystemClipboard().setContents(new StringSelection(JDOWNLOADER_ID), this);
 
         frame.pack();
         frame.setVisible(true);
@@ -218,7 +233,7 @@ public class SimpleGUI extends GUIInterface implements ClipboardOwner{
         
         
         // Einbindung des Log Dialogs
-        logDialog = new LogDialog(getFrame(), logger);
+        logDialog = new LogDialog(frame, logger);
         logDialog.setVisible(true);
         logDialog.addWindowListener(new LogDialogWindowAdapter());
     }
@@ -228,33 +243,40 @@ public class SimpleGUI extends GUIInterface implements ClipboardOwner{
      *
      * @param actionID Die erwünschte Aktion
      */
-    public synchronized void doAction(int actionID){
-        switch(actionID){
+    public void actionPerformed(ActionEvent e){
+        switch(e.getID()){
             case JDAction.ITEMS_MOVE_UP:
             case JDAction.ITEMS_MOVE_DOWN:
             case JDAction.ITEMS_MOVE_TOP:
             case JDAction.ITEMS_MOVE_BOTTOM:
                 if(tabbedPane.getSelectedComponent() == tabDownloadTable){
-                    tabDownloadTable.moveItems(actionID);
+                    tabDownloadTable.moveItems(e.getID());
                 }
                 break;
             case JDAction.APP_START_STOP_DOWNLOADS:
-                startStopDownloads();
+                if(btnStartStop.isSelected())
+                    fireUIEvent(new UIEvent(this,UIEvent.UI_START_DOWNLOADS));
+                else
+                    fireUIEvent(new UIEvent(this,UIEvent.UI_STOP_DOWNLOADS));
                 break;
             case JDAction.APP_SAVE:
-                saveLinks();
+                fireUIEvent(new UIEvent(this,UIEvent.UI_SAVE_LINKS));
                 break;
             case JDAction.APP_LOAD:
-                loadLinks();
-                break;
-            case JDAction.APP_EXIT:
-                frame.setVisible(false);
-                saveConfig();
+                fireUIEvent(new UIEvent(this,UIEvent.UI_LOAD_LINKS));
                 break;
             case JDAction.VIEW_LOG:
                 logDialog.setVisible(!logDialog.isVisible());
                 break;
             case JDAction.ITEMS_ADD:
+                Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
+                String data;
+                try {
+                    data = (String)clipboard.getData(DataFlavor.stringFlavor);
+                    fireUIEvent(new UIEvent(this,UIEvent.UI_LINKS_TO_PROCESS,data));
+                }
+                catch (UnsupportedFlavorException e1) {}
+                catch (IOException e1)                {}
                 break;
         }
     }
@@ -267,7 +289,6 @@ public class SimpleGUI extends GUIInterface implements ClipboardOwner{
                 tabDownloadTable.fireTableChanged();
                 break;
             case ControlEvent.CONTROL_ALL_DOWNLOADS_FINISHED:
-                download = null;
                 btnStartStop.setSelected(false);
                 break;
             case ControlEvent.CONTROL_DISTRIBUTE_FINISHED:
@@ -296,30 +317,47 @@ public class SimpleGUI extends GUIInterface implements ClipboardOwner{
         if(event.getSource() instanceof PluginForDecrypt)
             tabPluginActivity.pluginEvent(event);
     }
-    @Override
-    protected Vector<DownloadLink> getDownloadLinks() {
+    public Vector<DownloadLink> getDownloadLinks() {
         if(tabDownloadTable != null)
             return tabDownloadTable.getLinks();
         return null;
     }
-    
-    @Override
-    protected void setDownloadLinks(Vector<DownloadLink> links) {
+    public void setDownloadLinks(Vector<DownloadLink> links) {
         if (tabDownloadTable != null)
             tabDownloadTable.setDownloadLinks(links);
         
     }
-    @Override
-    public JFrame getFrame() {
-        return frame;
+    public String getCaptchaCodeFromUser(Plugin plugin, String captchaAddress) {
+        CaptchaDialog captchaDialog = new CaptchaDialog(frame,plugin,captchaAddress);
+        frame.toFront();
+        captchaDialog.setVisible(true);
+        return captchaDialog.getCaptchaText();
     }
-    @Override
-    public DownloadLink getNextDownloadLink() {
-        if(tabDownloadTable != null)
-            return tabDownloadTable.getNextDownloadLink();
+    public Configuration getConfiguration() {
         return null;
     }
+    public void setConfiguration(Configuration configuration) {    }
+    public void setLogger(Logger logger) {    }
+    public void setPluginActive(Plugin plugin, boolean isActive) {    }
+    public void addUIListener(UIListener listener) {    
+        synchronized (uiListener) {
+            uiListener.add(listener);
+        }
+    }
+    public void removeUIListener(UIListener listener) {    
+        synchronized (uiListener) {
+            uiListener.remove(listener);
+        }
+    }
+    public void fireUIEvent(UIEvent uiEvent) {    
+        synchronized (uiListener) {
+            Iterator<UIListener> recIt = uiListener.iterator();
 
+            while (recIt.hasNext()) {
+                ((UIListener) recIt.next()).uiEvent(uiEvent);
+            }
+        }
+    }
     /**
      * Toggled das MenuItem fuer die Ansicht des Log Fensters
      * 

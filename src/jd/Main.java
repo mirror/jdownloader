@@ -2,20 +2,18 @@ package jd;
 
 import java.awt.Toolkit;
 import java.io.File;
-import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.Iterator;
 import java.util.logging.Logger;
 
-import jd.controlling.interaction.HTTPReconnect;
-import jd.gui.GUIInterface;
+import jd.controlling.JDController;
+import jd.gui.UIInterface;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
-import jd.router.RouterData;
 
 // TODO Wulfskin: Reconnect Paket
 //
@@ -49,6 +47,7 @@ public class Main {
 //        HTTPReconnect httpReconnect = new HTTPReconnect();
 //        httpReconnect.interact();
         
+        loadImages();
         Logger logger = Plugin.getLogger();
         URLClassLoader cl = JDUtilities.getURLClassLoader();
         URL configURL = cl.getResource(JDUtilities.CONFIG_PATH);
@@ -68,16 +67,16 @@ public class Main {
         }
 //        JDUtilities.saveObject(null, new Configuration(), JDUtilities.getJDHomeDirectory(), "jdownloader", ".config");
         JDUtilities.loadPlugins();
-        loadImages();
-        GUIInterface guiInterface = new SimpleGUI();
+        UIInterface uiInterface = new SimpleGUI();
+        JDController controller = new JDController(uiInterface);
         
         Iterator<PluginForHost> iteratorHost = JDUtilities.getPluginsForHost().iterator();
         while(iteratorHost.hasNext()){
-            iteratorHost.next().addPluginListener(guiInterface);
+            iteratorHost.next().addPluginListener(controller);
         }
         Iterator<PluginForDecrypt> iteratorDecrypt = JDUtilities.getPluginsForDecrypt().iterator();
         while(iteratorDecrypt.hasNext()){
-            iteratorDecrypt.next().addPluginListener(guiInterface);
+            iteratorDecrypt.next().addPluginListener(controller);
         }
     }
     /**

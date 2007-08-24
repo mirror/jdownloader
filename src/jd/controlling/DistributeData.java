@@ -6,7 +6,7 @@ import java.util.Vector;
 import java.util.logging.Logger;
 
 import jd.JDUtilities;
-import jd.controlling.event.ControlEvent;
+import jd.event.ControlEvent;
 import jd.plugins.DownloadLink;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
@@ -35,14 +35,6 @@ public class DistributeData extends ControlMulticaster{
      * Plugins zum Entschlüsseln
      */
     private Vector<PluginForDecrypt> pluginsForDecrypt;
-    /**
-     * Dieses Event wird losgeschickt, wenn ein DecryptPlugin aktiv ist
-     */
-    private ControlEvent eventDecryptActive = new ControlEvent(ControlEvent.CONTROL_PLUGIN_DECRYPT_ACTIVE);
-    /**
-     * Dieses Event wird losgeschickt, wenn ein DecryptPlugin nicht mehr aktiv ist
-     */
-    private ControlEvent eventDecryptInactive = new ControlEvent(ControlEvent.CONTROL_PLUGIN_DECRYPT_INACTIVE);
     /**
      * Erstellt einen neuen Thread mit dem Text, der verteilt werden soll.
      * Die übergebenen Daten werden durch einen URLDecoder geschickt.
@@ -74,11 +66,11 @@ public class DistributeData extends ControlMulticaster{
         for(int i=0; i<pluginsForDecrypt.size();i++){
             pDecrypt = pluginsForDecrypt.get(i);
             if(pDecrypt.isClipboardEnabled() && pDecrypt.canHandle(data)){
-                fireControlEvent(eventDecryptActive);
+                fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_PLUGIN_DECRYPT_ACTIVE, pDecrypt));
                 cryptedLinks.addAll(pDecrypt.getMatches(data,pDecrypt.getSupportedLinks()));
                 data = pDecrypt.cutMatches(data);
                 decryptedLinks.addAll(pDecrypt.decryptLinks(cryptedLinks));
-                fireControlEvent(eventDecryptInactive);
+                fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_PLUGIN_DECRYPT_INACTIVE, pDecrypt));
             }
         }
         // Die entschlüsselten Links werden nochmal durch alle DecryptPlugins geschickt.
@@ -93,13 +85,12 @@ public class DistributeData extends ControlMulticaster{
                     String data = iterator.next();
                     if(pDecrypt.isClipboardEnabled() && pDecrypt.canHandle(data)){
                         moreToDo = true;
-                        fireControlEvent(new ControlEvent(ControlEvent.CONTROL_PLUGIN_DECRYPT_ACTIVE));
-                        fireControlEvent(eventDecryptActive);
+                        fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_PLUGIN_DECRYPT_ACTIVE, pDecrypt));
                         logger.info("decryptedLink removed");
                         iterator.remove();
                         decryptedLinks.addAll(pDecrypt.decryptLink(data));
                         iterator = decryptedLinks.iterator();
-                        fireControlEvent(eventDecryptInactive);
+                        fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_PLUGIN_DECRYPT_INACTIVE, pDecrypt));
                     }
                 }
             }
@@ -128,6 +119,6 @@ public class DistributeData extends ControlMulticaster{
                 }
             }
         }
-        fireControlEvent(new ControlEvent(ControlEvent.CONTROL_DISTRIBUTE_FINISHED, links));
+        fireControlEvent(new ControlEvent(this,ControlEvent.CONTROL_DISTRIBUTE_FINISHED, links));
     }
 }

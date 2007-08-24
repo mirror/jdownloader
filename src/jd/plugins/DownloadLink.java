@@ -267,6 +267,8 @@ public class DownloadLink implements Serializable{
     }
     /**
      *  Setzt den Downloadpfad neu
+     *  
+     *  @param downloadPath der neue downloadPfad
      */
     public void setDownloadPath(String downloadPath) {
         this.downloadPath = downloadPath;
@@ -274,6 +276,8 @@ public class DownloadLink implements Serializable{
     }
     /**
      *  Setzt den Namen des Downloads neu
+     *  
+     *  @param name Neuer Name des Downloads
      */
     public void setName(String name) {
         this.name = name;

@@ -3,8 +3,8 @@ package jd.controlling;
 import java.util.Iterator;
 import java.util.Vector;
 
-import jd.controlling.event.ControlEvent;
-import jd.controlling.event.ControlListener;
+import jd.event.ControlEvent;
+import jd.event.ControlListener;
 import jd.plugins.event.PluginEvent;
 /**
  * Diese Klasse  

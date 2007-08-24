@@ -272,11 +272,17 @@ public abstract class Plugin {
         return data.replaceAll(getSupportedLinks().pattern(), "--CUT--");
     }
     /**
-     * hier kann man den text zwischen zwei suchmustern ausgeben lassen
+     * Hier kann man den Text zwischen zwei Suchmustern ausgeben lassen
      * Zeilenumbrueche werden dabei auch unterstuetzt
+     * 
+     * @param data Der zu durchsuchende Text
+     * @param startPattern der Pattern, bei dem die Suche beginnt
+     * @param endPattern der Pattern, bei dem die Suche endet
+     * 
+     * @return der Text zwischen den gefundenen stellen oder, falls nichts gefunden wurde, der vollständige Text
      */
-    public String getBetween(String data, String startpattern, String lastpattern) {
-        Pattern p = Pattern.compile("(?s)"+startpattern+"(.*?)"+lastpattern, Pattern.CASE_INSENSITIVE);
+    public String getBetween(String data, String startPattern, String lastPattern) {
+        Pattern p = Pattern.compile("(?s)"+startPattern+"(.*?)"+lastPattern, Pattern.CASE_INSENSITIVE);
         Matcher match = p.matcher(data);
         if(match.find())
             return match.group(1);

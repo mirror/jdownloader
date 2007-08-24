@@ -67,7 +67,7 @@ public class Secured extends PluginForDecrypt {
                     String capHash = matcher.group(1).substring(8);
                     capHash = capHash.substring(0, capHash.length()-4);
                     
-                    String capTxt = JDUtilities.getCaptcha(new JFrame(), this, "http://"+HOST+"/"+matcher.group(1));
+                    String capTxt = JDUtilities.getCaptcha(null, this, "http://"+HOST+"/"+matcher.group(1));
                     
                     String postData = "captcha_key="+capTxt+"&captcha_hash="+capHash;
                     

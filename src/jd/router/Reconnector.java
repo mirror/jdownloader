@@ -1,13 +1,7 @@
 package jd.router;
 
-import java.io.Serializable;
-import java.util.logging.Logger;
-import java.util.regex.Pattern;
-
 import jd.captcha.UTILITIES;
 import jd.plugins.HTTPPost;
-import jd.plugins.Plugin;
-import jd.plugins.RequestInfo;
 
 /**
  * Hier werden die Daten für einen Router gespeichert

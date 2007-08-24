@@ -3,7 +3,6 @@ package jd.gui.skins.simple;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
-import java.util.Iterator;
 import java.util.Vector;
 import java.util.logging.Logger;
 
@@ -113,21 +112,6 @@ public class TabDownloadLinks extends JPanel implements PluginListener{
      */
     public void moveItems(int direction){
         //TODO
-    }
-    /**
-     * Diese Methode liefert den nächsten Download zurück.
-     *
-     * @return Der nächste aktive Download
-     */
-    public DownloadLink getNextDownloadLink(){
-        Iterator<DownloadLink> iterator = allLinks.iterator();
-        DownloadLink nextDownloadLink = null;
-        while(iterator.hasNext()){
-            nextDownloadLink = iterator.next();
-            if(nextDownloadLink.isEnabled() && nextDownloadLink.getStatus() == DownloadLink.STATUS_TODO)
-                return nextDownloadLink;
-        }
-        return null;
     }
     public Vector<DownloadLink> getLinks(){
         return allLinks;

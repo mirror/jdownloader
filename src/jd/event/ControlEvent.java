@@ -1,10 +1,17 @@
-package jd.controlling.event;
+package jd.event;
+
+import java.awt.AWTEvent;
+
 /**
  * Diese Klasse realisiert Ereignisse, die zum Steuern des Programmes dienen
  * 
  * @author astaldo
  */
-public class ControlEvent {
+public class ControlEvent extends AWTEvent{
+    /**
+     * serialVersionUID
+     */
+    private static final long serialVersionUID = 1639354503246054870L;
     /**
      * Alle Downloads wurden bearbeitet
      */
@@ -44,9 +51,10 @@ public class ControlEvent {
      */
     private Object parameter;
     
-    public ControlEvent(int controlID){ this(controlID,null); }
+    public ControlEvent(Object source,int controlID){ this(source, controlID,null); }
     
-    public ControlEvent(int controlID, Object parameter){
+    public ControlEvent(Object source, int controlID, Object parameter){
+        super(source, controlID);
         this.controlID = controlID;
         this.parameter = parameter;
     } 

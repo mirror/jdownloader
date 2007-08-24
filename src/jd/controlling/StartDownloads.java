@@ -6,9 +6,8 @@ import java.util.Vector;
 import java.util.logging.Logger;
 
 import jd.JDUtilities;
-import jd.controlling.event.ControlEvent;
 import jd.controlling.interaction.Interaction;
-import jd.gui.GUIInterface;
+import jd.event.ControlEvent;
 import jd.plugins.DownloadLink;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForHost;
@@ -39,7 +38,7 @@ public class StartDownloads extends ControlMulticaster{
     /**
      * Das übergeordnete Fenster
      */
-    private GUIInterface guiInterface;
+    private JDController controller;
     /**
      * Hiermit werden Interaktionen zum laufenden DownloadThread umgesetzt
      * (ZB ein Reconnect)
@@ -48,13 +47,13 @@ public class StartDownloads extends ControlMulticaster{
     /**
      * Erstellt einen Thread zum Start des Downloadvorganges
      * 
-     * @param guiInterface Schnittstelle zur GUI
+     * @param controller Controller
      * @param tabDownloadLinks Die Komponente, mit den Downloadlinks
      * @param interactions Hier sind alle möglichen Interaktionen gespeichert
      */
-    public StartDownloads(GUIInterface guiInterface, HashMap<Integer, Vector<Interaction>> interactions){
+    public StartDownloads(JDController controller, HashMap<Integer, Vector<Interaction>> interactions){
         super("JD-StartDownloads");
-        this.guiInterface = guiInterface;
+        this.controller = controller;
         this.interactions = interactions;
 
     }
@@ -67,15 +66,14 @@ public class StartDownloads extends ControlMulticaster{
             plugin.abort();
     }
     public void run(){
-        while((downloadLink = guiInterface.getNextDownloadLink()) != null){
-            downloadLink = guiInterface.getNextDownloadLink();
+        while((downloadLink = controller.getNextDownloadLink()) != null){
             logger.info("working on "+downloadLink.getName());
             plugin   = downloadLink.getPlugin();
             plugin.init();
             PluginStep step = plugin.getNextStep(downloadLink);
             // Hier werden alle einzelnen Schritte des Plugins durchgegangen,
             // bis entweder null zurückgegeben wird oder ein Fehler auftritt
-            fireControlEvent(new ControlEvent(ControlEvent.CONTROL_PLUGIN_HOST_ACTIVE));
+            fireControlEvent(new ControlEvent(this,ControlEvent.CONTROL_PLUGIN_HOST_ACTIVE));
             while(!aborted && step != null && step.getStatus()!=PluginStep.STATUS_ERROR){
                 switch(step.getStep()){
                     case PluginStep.STEP_WAIT_TIME:
@@ -88,13 +86,13 @@ public class StartDownloads extends ControlMulticaster{
                         catch (InterruptedException e) { e.printStackTrace(); }
                         break;
                     case PluginStep.STEP_CAPTCHA:
-                        String captchaText = JDUtilities.getCaptcha(guiInterface.getFrame(),plugin, (String)step.getParameter());
+                        String captchaText = JDUtilities.getCaptcha(controller,plugin, (String)step.getParameter());
                         step.setParameter(captchaText);
                         step.setStatus(PluginStep.STATUS_DONE);
                 }
                 step = plugin.getNextStep(downloadLink);
             }
-            fireControlEvent(new ControlEvent(ControlEvent.CONTROL_PLUGIN_HOST_INACTIVE));
+            fireControlEvent(new ControlEvent(this,ControlEvent.CONTROL_PLUGIN_HOST_INACTIVE));
             if(aborted){
                 logger.warning("Thread aborted");
             }
@@ -102,10 +100,10 @@ public class StartDownloads extends ControlMulticaster{
                 logger.severe("Error occurred while downloading file");
                 handleInteraction(Interaction.INTERACTION_DOWNLOAD_FAILED);
             }
-            fireControlEvent(new ControlEvent(ControlEvent.CONTROL_SINGLE_DOWNLOAD_CHANGED));
+            fireControlEvent(new ControlEvent(this,ControlEvent.CONTROL_SINGLE_DOWNLOAD_CHANGED));
             handleInteraction(Interaction.INTERACTION_DOWNLOAD_FINISHED);
         }
-        fireControlEvent(new ControlEvent(ControlEvent.CONTROL_ALL_DOWNLOADS_FINISHED));
+        fireControlEvent(new ControlEvent(this,ControlEvent.CONTROL_ALL_DOWNLOADS_FINISHED));
         handleInteraction(Interaction.INTERACTION_ALL_DOWNLOADS_FINISHED);
     }
     /**

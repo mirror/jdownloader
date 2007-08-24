@@ -1,13 +1,8 @@
 package jd.plugins;
 
 import java.io.BufferedOutputStream;
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.net.HttpURLConnection;
@@ -16,8 +11,6 @@ import java.net.URL;
 import java.util.Scanner;
 import java.util.logging.Logger;
 import java.util.zip.GZIPInputStream;
-
-import javax.activation.MimetypesFileTypeMap;
 
 /**
  * Diese Klasse unterstützt bei Http Post requests
@@ -193,35 +186,35 @@ public class HTTPPost {
      * @param fileName
      */
     public void sendFile(String path, String fileName) {
-        try {
-            addBoundary();
-            File f = new File(path);
-            MimetypesFileTypeMap ft = new MimetypesFileTypeMap();
-            String ct = ft.getContentType(f);
-
-            addToRequest("\r\nContent-Disposition: form-data; name=\"" + form + "\"; filename=\"" + fileName + "\"");
-            addToRequest("\r\nContent-Type: " + ct + "\r\n\r\n");
-            outputwriter.flush();
-            byte[] b = new byte[1024];
-            InputStream in;
-
-            in = new FileInputStream(f);
-            if (outputByteWriter != null)
-                outputByteWriter.close();
-            outputByteWriter = new BufferedOutputStream(output);
-            int n;
-            while ((n = in.read(b)) > -1) {
-                outputByteWriter.write(b, 0, n);
-            }
-            in.close();
-            outputByteWriter.flush();
-            outputwriter.flush();
-            write("\r\n");
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+//        try {
+//            addBoundary();
+//            File f = new File(path);
+//            MimetypesFileTypeMap ft = new MimetypesFileTypeMap();
+//            String ct = ft.getContentType(f);
+//
+//            addToRequest("\r\nContent-Disposition: form-data; name=\"" + form + "\"; filename=\"" + fileName + "\"");
+//            addToRequest("\r\nContent-Type: " + ct + "\r\n\r\n");
+//            outputwriter.flush();
+//            byte[] b = new byte[1024];
+//            InputStream in;
+//
+//            in = new FileInputStream(f);
+//            if (outputByteWriter != null)
+//                outputByteWriter.close();
+//            outputByteWriter = new BufferedOutputStream(output);
+//            int n;
+//            while ((n = in.read(b)) > -1) {
+//                outputByteWriter.write(b, 0, n);
+//            }
+//            in.close();
+//            outputByteWriter.flush();
+//            outputwriter.flush();
+//            write("\r\n");
+//        } catch (FileNotFoundException e) {
+//            e.printStackTrace();
+//        } catch (IOException e) {
+//            e.printStackTrace();
+//        }
 
     }
 
