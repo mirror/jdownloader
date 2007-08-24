@@ -5,6 +5,7 @@ import java.io.File;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.logging.Logger;
 
@@ -14,6 +15,7 @@ import jd.gui.skins.simple.SimpleGUI;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
+import jd.router.RouterData;
 
 // TODO Wulfskin: Reconnect Paket
 //
@@ -49,7 +51,9 @@ public class Main {
 //        configuration.setRouterData(routerData);
 //        configuration.setRouterIP("192.168.178.1");
 //        configuration.setRouterPort(4900);
-//        
+//        JDUtilities.saveObject(null, configuration, JDUtilities.getJDHomeDirectory(), "jdownloader", ".config", true);
+        
+        
 //        JDUtilities.setConfiguration(configuration);
 //        HTTPReconnect httpReconnect = new HTTPReconnect();
 //        httpReconnect.interact();
@@ -61,7 +65,7 @@ public class Main {
         if(configURL != null){
             try {
                 File fileInput = new File(configURL.toURI());
-                Object obj = JDUtilities.loadObject(null, fileInput);
+                Object obj = JDUtilities.loadObject(null, fileInput, true);
                 if(obj instanceof Configuration){
                     JDUtilities.setConfiguration((Configuration)obj);
                 }
@@ -72,7 +76,9 @@ public class Main {
             logger.warning("no configuration loaded");
             
         }
-//        JDUtilities.saveObject(null, new Configuration(), JDUtilities.getJDHomeDirectory(), "jdownloader", ".config");
+//        Configuration c = new Configuration();
+//        c.setDownloadDirectory("D:\\Downloads");
+//        JDUtilities.saveObject(null, c, JDUtilities.getJDHomeDirectory(), "jdownloader", ".config", true);
         JDUtilities.loadPlugins();
         UIInterface uiInterface = new SimpleGUI();
         JDController controller = new JDController();

@@ -42,7 +42,7 @@ public class Parser {
     }
 
     public void saveFile(File file) {
-        JDUtilities.saveObject(null, routers, file,"jd",".routers");
+        JDUtilities.saveObject(null, routers, file,"jd",".routers", false);
     }
 
     public void parseSingleRouter(FileInputStream fis) throws IOException {

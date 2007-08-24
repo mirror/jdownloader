@@ -9,6 +9,10 @@ import java.awt.Insets;
 import java.awt.Point;
 import java.awt.Toolkit;
 import java.awt.image.BufferedImage;
+import java.beans.XMLDecoder;
+import java.beans.XMLEncoder;
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -363,9 +367,10 @@ public class JDUtilities {
      * @param frame Ein übergeordnetes Fenster
      * @param fileInput Falls das Objekt aus einer bekannten Datei geladen werden soll, wird hier die Datei angegeben.
      *                 Falls nicht, kann der Benutzer über einen Dialog eine Datei aussuchen
+     * @param asXML Soll das Objekt von einer XML Datei aus geladen werden?
      * @return Das geladene Objekt
      */
-    public static Object loadObject(JFrame frame, File fileInput){
+    public static Object loadObject(JFrame frame, File fileInput, boolean asXML){
         Object objectLoaded = null;
         if(fileInput == null){
             JFileChooser fileChooserLoad = new JFileChooser();
@@ -379,18 +384,21 @@ public class JDUtilities {
         if(fileInput != null){
             try {
                 FileInputStream fis = new FileInputStream(fileInput);
-                ObjectInputStream ois = new ObjectInputStream(fis);
-                try {
+                if(asXML){
+                    XMLDecoder xmlDecoder = new XMLDecoder(new BufferedInputStream(fis));
+                    objectLoaded = xmlDecoder.readObject();
+                    xmlDecoder.close();
+                }
+                else{
+                    ObjectInputStream ois = new ObjectInputStream(fis);
                     objectLoaded = ois.readObject();
-                    return objectLoaded;
+                    ois.close();
                 }
-                catch (ClassNotFoundException e) {
-                    e.printStackTrace();
-                }
-                ois.close();
+                return objectLoaded;
             }
-            catch (FileNotFoundException e) { e.printStackTrace(); }
-            catch (IOException e)           { e.printStackTrace(); }
+            catch (ClassNotFoundException e) { e.printStackTrace(); }
+            catch (FileNotFoundException e)  { e.printStackTrace(); }
+            catch (IOException e)            { e.printStackTrace(); }
         }
         return null;
     }
@@ -404,8 +412,9 @@ public class JDUtilities {
      *                   Falls keins angegeben wird, soll der Benutzer eine Datei auswählen
      * @param name Dateiname
      * @param extension Dateiendung (mit Punkt)
+     * @param asXML Soll das Objekt in eine XML Datei gespeichert werden?
      */
-    public static void saveObject(JFrame frame, Object objectToSave, File fileOutput, String name, String extension){
+    public static void saveObject(JFrame frame, Object objectToSave, File fileOutput, String name, String extension, boolean asXML){
         if(fileOutput == null){
             JDFileFilter fileFilter = new JDFileFilter(name,extension,true);
             JFileChooser fileChooserSave = new JFileChooser();
@@ -424,9 +433,16 @@ public class JDUtilities {
             }
             try {
                 FileOutputStream fos = new FileOutputStream(fileOutput);
-                ObjectOutputStream oos = new ObjectOutputStream(fos);
-                oos.writeObject(objectToSave);
-                oos.close();
+                if(asXML){
+                    XMLEncoder xmlEncoder = new XMLEncoder(new BufferedOutputStream(fos));
+                    xmlEncoder.writeObject(objectToSave);
+                    xmlEncoder.close();
+                }
+                else{
+                    ObjectOutputStream oos = new ObjectOutputStream(fos);
+                    oos.writeObject(objectToSave);
+                    oos.close();
+                }
             }
             catch (FileNotFoundException e) { e.printStackTrace(); }
             catch (IOException e)           { e.printStackTrace(); }

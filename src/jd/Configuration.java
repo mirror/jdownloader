@@ -52,7 +52,7 @@ public class Configuration implements Serializable{
     public String getRouterUsername()                              { return routerUsername;     }
     public RouterData getRouterData()                              { return routerData;         }
     public String getRouterIP()                                    { return routerIP;           }
-    public int getRouterPort()                                     { return routerPort;             }
+    public int getRouterPort()                                     { return routerPort;         }
     public void setDownloadDirectory(String downloadDirectory) { this.downloadDirectory = downloadDirectory; }
     public void setRouterPassword(String routerPassword)       { this.routerPassword = routerPassword;       }
     public void setRouterUsername(String routerUsername)       { this.routerUsername = routerUsername;       }
