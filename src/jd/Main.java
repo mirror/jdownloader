@@ -5,7 +5,6 @@ import java.io.File;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLClassLoader;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.logging.Logger;
 
@@ -15,12 +14,9 @@ import jd.gui.skins.simple.SimpleGUI;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
-import jd.router.RouterData;
 
-// TODO Wulfskin: Reconnect Paket
+// TODO Reconnect Paket
 //
-// TODO Konfiguration speichern (XML)
-// TODO Links verschlüsseln (einfach AES)
 
 
 /**
@@ -99,18 +95,19 @@ public class Main {
     private void loadImages(){
         ClassLoader cl = getClass().getClassLoader();
         Toolkit toolkit = Toolkit.getDefaultToolkit();
-        JDUtilities.addImage("add",      toolkit.getImage(cl.getResource("img/add.png")));
-        JDUtilities.addImage("delete",   toolkit.getImage(cl.getResource("img/delete.png")));
-        JDUtilities.addImage("down",     toolkit.getImage(cl.getResource("img/down.png")));
-        JDUtilities.addImage("led_empty",toolkit.getImage(cl.getResource("img/led_empty.gif")));
-        JDUtilities.addImage("led_green",toolkit.getImage(cl.getResource("img/led_green.gif")));
-        JDUtilities.addImage("load",     toolkit.getImage(cl.getResource("img/load.png")));
-        JDUtilities.addImage("mind",     toolkit.getImage(cl.getResource("img/mind.png")));
-        JDUtilities.addImage("save",     toolkit.getImage(cl.getResource("img/save.png")));
-        JDUtilities.addImage("start",    toolkit.getImage(cl.getResource("img/start.png")));
-        JDUtilities.addImage("stop",     toolkit.getImage(cl.getResource("img/stop.png")));
-        JDUtilities.addImage("up",       toolkit.getImage(cl.getResource("img/up.png")));
-        JDUtilities.addImage("exit",     toolkit.getImage(cl.getResource("img/shutdown.png")));
-        JDUtilities.addImage("log",     toolkit.getImage(cl.getResource("img/log.png")));
+        JDUtilities.addImage("add",           toolkit.getImage(cl.getResource("img/add.png")));
+        JDUtilities.addImage("configuration", toolkit.getImage(cl.getResource("img/configuration.png")));
+        JDUtilities.addImage("delete",        toolkit.getImage(cl.getResource("img/delete.png")));
+        JDUtilities.addImage("down",          toolkit.getImage(cl.getResource("img/down.png")));
+        JDUtilities.addImage("led_empty",     toolkit.getImage(cl.getResource("img/led_empty.gif")));
+        JDUtilities.addImage("led_green",     toolkit.getImage(cl.getResource("img/led_green.gif")));
+        JDUtilities.addImage("load",          toolkit.getImage(cl.getResource("img/load.png")));
+        JDUtilities.addImage("mind",          toolkit.getImage(cl.getResource("img/mind.png")));
+        JDUtilities.addImage("save",          toolkit.getImage(cl.getResource("img/save.png")));
+        JDUtilities.addImage("start",         toolkit.getImage(cl.getResource("img/start.png")));
+        JDUtilities.addImage("stop",          toolkit.getImage(cl.getResource("img/stop.png")));
+        JDUtilities.addImage("up",            toolkit.getImage(cl.getResource("img/up.png")));
+        JDUtilities.addImage("exit",          toolkit.getImage(cl.getResource("img/shutdown.png")));
+        JDUtilities.addImage("log",           toolkit.getImage(cl.getResource("img/log.png")));
     }
 }

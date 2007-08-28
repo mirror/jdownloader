@@ -38,6 +38,7 @@ import jd.event.ControlEvent;
 import jd.event.UIEvent;
 import jd.event.UIListener;
 import jd.gui.UIInterface;
+import jd.gui.skins.simple.config.ConfigurationDialog;
 import jd.plugins.DownloadLink;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
@@ -97,6 +98,7 @@ public class SimpleGUI implements UIInterface, ActionListener{
     private JDAction actionSaveLinks;
     private JDAction actionExit;
     private JDAction actionLog;
+    private JDAction actionConfig;
     
     private LogDialog logDialog;
     private Logger logger = Plugin.getLogger();
@@ -132,13 +134,14 @@ public class SimpleGUI implements UIInterface, ActionListener{
      * Die Aktionen werden initialisiert
      */
     public void initActions(){
-        actionStartStopDownload = new JDAction(this,  "start", "action.start",  JDAction.APP_START_STOP_DOWNLOADS);
-        actionAdd               = new JDAction(this,    "add", "action.add",    JDAction.ITEMS_ADD);
-        actionDelete            = new JDAction(this, "delete", "action.delete", JDAction.ITEMS_REMOVE);
-        actionLoadLinks         = new JDAction(this,   "load", "action.load",   JDAction.APP_LOAD);
-        actionSaveLinks         = new JDAction(this,   "save", "action.save",   JDAction.APP_SAVE);
-        actionExit              = new JDAction(this,   "exit", "action.exit",   JDAction.APP_EXIT);
-        actionLog               = new JDAction(this,    "log", "action.viewlog",JDAction.VIEW_LOG);
+        actionStartStopDownload = new JDAction(this,        "start", "action.start",         JDAction.APP_START_STOP_DOWNLOADS);
+        actionAdd               = new JDAction(this,          "add", "action.add",           JDAction.ITEMS_ADD);
+        actionDelete            = new JDAction(this,        "delete", "action.delete",       JDAction.ITEMS_REMOVE);
+        actionLoadLinks         = new JDAction(this,          "load", "action.load",         JDAction.APP_LOAD);
+        actionSaveLinks         = new JDAction(this,          "save", "action.save",         JDAction.APP_SAVE);
+        actionExit              = new JDAction(this,          "exit", "action.exit",         JDAction.APP_EXIT);
+        actionLog               = new JDAction(this,           "log", "action.viewlog",      JDAction.APP_LOG);
+        actionConfig            = new JDAction(this, "configuration", "action.configuration",JDAction.APP_CONFIGURATION);
     }
     /**
      * Das Menü wird hier initialisiert
@@ -152,12 +155,6 @@ public class SimpleGUI implements UIInterface, ActionListener{
         JMenuItem menFileSave = createMenuItem(actionSaveLinks);
         JMenuItem menFileExit = createMenuItem(actionExit);
         
-        // view menu
-        JMenu menView         = new JMenu(JDUtilities.getResourceString("menu.view"));
-        menView.setMnemonic(JDUtilities.getResourceChar("menu.view_mnem"));
-        
-        menViewLog = new JCheckBoxMenuItem(actionLog);
-        menViewLog.setIcon(null);
         
         // action menu
         JMenu menAction       = new JMenu(JDUtilities.getResourceString("menu.action"));
@@ -165,19 +162,31 @@ public class SimpleGUI implements UIInterface, ActionListener{
         
         JMenuItem menDownload = createMenuItem(actionStartStopDownload);
         
+        // extra
+        JMenu menExtra       = new JMenu(JDUtilities.getResourceString("menu.extra"));
+        menAction.setMnemonic(JDUtilities.getResourceChar("menu.extra_mnem"));
+
+        menViewLog = new JCheckBoxMenuItem(actionLog);
+        menViewLog.setIcon(null);
+        if (actionLog.getAccelerator()!=null)
+            menViewLog.setAccelerator(actionLog.getAccelerator());
+
+        JMenuItem menConfig = createMenuItem(actionConfig);
+
         // add menus to parents
         menFile.add(menFileLoad);
         menFile.add(menFileSave);
         menFile.addSeparator();
         menFile.add(menFileExit);
         
-        menView.add(menViewLog);
+        menExtra.add(menViewLog);
+        menExtra.add(menConfig);
         
         menAction.add(menDownload);
         
         menuBar.add(menFile);
-        menuBar.add(menView);
         menuBar.add(menAction);
+        menuBar.add(menExtra);
         frame.setJMenuBar(menuBar);
     }
      
@@ -264,7 +273,7 @@ public class SimpleGUI implements UIInterface, ActionListener{
             case JDAction.APP_LOAD:
                 fireUIEvent(new UIEvent(this,UIEvent.UI_LOAD_LINKS));
                 break;
-            case JDAction.VIEW_LOG:
+            case JDAction.APP_LOG:
                 logDialog.setVisible(!logDialog.isVisible());
                 break;
             case JDAction.ITEMS_ADD:
@@ -276,6 +285,11 @@ public class SimpleGUI implements UIInterface, ActionListener{
                 }
                 catch (UnsupportedFlavorException e1) {}
                 catch (IOException e1)                {}
+                break;
+            case JDAction.APP_CONFIGURATION:
+                boolean configChanged = ConfigurationDialog.showConfig(frame);
+                if (configChanged)
+                    fireUIEvent(new UIEvent(this,UIEvent.UI_SAVE_CONFIG));
                 break;
         }
     }

@@ -147,10 +147,10 @@ public class JAntiCaptcha {
      * @param methodDir
      */
     public JAntiCaptcha(String methodsPath, String methodName) {
-if(methodsPath==null){
-    methodsPath= UTILITIES.getFullPath(new String[]{JDUtilities.getJDHomeDirectory().getAbsolutePath(),"jd","captcha","methods"});
-}
-logger.fine("Benutze methodspath: "+methodsPath);
+        if(methodsPath==null){
+            methodsPath= UTILITIES.getFullPath(new String[]{JDUtilities.getJDHomeDirectory().getAbsolutePath(),"jd","captcha","methods"});
+        }
+        logger.fine("Benutze methodspath: "+methodsPath);
         this.methodDir = methodName;
         try {
             this.pathMethod = new File(methodsPath + UTILITIES.FS + methodName).toURI().toURL();
@@ -171,8 +171,9 @@ logger.fine("Benutze methodspath: "+methodsPath);
         }
 
     }
-
-
+    public static boolean hasMethod(String methodsPath, String methodName){
+        return true;
+    }
 
 
     /**
@@ -181,7 +182,7 @@ logger.fine("Benutze methodspath: "+methodsPath);
      * @param method
      * @return true/false
      */
-    private boolean isMethodPathValid(URL method) {
+    public boolean isMethodPathValid(URL method) {
       
         logger.fine("Methods at " + method);
        

@@ -13,8 +13,6 @@ import jd.event.UIListener;
 import jd.gui.UIInterface;
 import jd.plugins.DownloadLink;
 import jd.plugins.Plugin;
-import jd.plugins.PluginForDecrypt;
-import jd.plugins.PluginForHost;
 import jd.plugins.event.PluginEvent;
 import jd.plugins.event.PluginListener;
 
@@ -107,6 +105,10 @@ public class JDController implements PluginListener, ControlListener, UIListener
                 distributeData = new DistributeData(data);
                 distributeData.addControlListener(this);
                 distributeData.start();
+                break;
+            case UIEvent.UI_SAVE_CONFIG:
+                JDUtilities.saveObject(null, JDUtilities.getConfiguration(), JDUtilities.getJDHomeDirectory(), "jdownloader", ".config", true);
+                break;
         }
     }
     /**

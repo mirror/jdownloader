@@ -16,6 +16,7 @@ public class Configuration implements Serializable{
      * serialVersionUID
      */
     private static final long serialVersionUID = -2709887320616014389L;
+    private boolean useJAC = true;
     /**
      * Hier wird das Downloadverzeichnis gespeichert
      */
@@ -28,19 +29,19 @@ public class Configuration implements Serializable{
     /**
      * Hier sind die Angaben für den Router gespeichert
      */
-    private RouterData routerData;
+    private RouterData routerData = new RouterData();
     /**
      * Benutzername für den Router
      */
-    private String routerUsername;
+    private String routerUsername = null;
     /**
      * Password für den Router
      */
-    private String routerPassword;
+    private String routerPassword = null;
     /**
      * IP des Routers
      */
-    private String routerIP;
+    private String routerIP = null;
     /**
      * Router Port
      */
@@ -53,10 +54,12 @@ public class Configuration implements Serializable{
     public RouterData getRouterData()                              { return routerData;         }
     public String getRouterIP()                                    { return routerIP;           }
     public int getRouterPort()                                     { return routerPort;         }
+    public boolean useJAC()                                        { return useJAC;             }
     public void setDownloadDirectory(String downloadDirectory) { this.downloadDirectory = downloadDirectory; }
     public void setRouterPassword(String routerPassword)       { this.routerPassword = routerPassword;       }
     public void setRouterUsername(String routerUsername)       { this.routerUsername = routerUsername;       }
     public void setRouterData(RouterData routerData)           { this.routerData = routerData;               }
     public void setRouterIP(String routerIP)                   { this.routerIP = routerIP;                   }
     public void setRouterPort(int httpPort)                    { this.routerPort = httpPort;                 }
+    public void setUseJAC(boolean useJAC)                      { this.useJAC = useJAC;                       }
 }

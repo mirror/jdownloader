@@ -107,7 +107,6 @@ public class TabDownloadLinks extends JPanel implements PluginListener{
      * @param direction Zeigt wie/wohin die Einträge verschoben werden sollen
      */
     public void moveItems(int direction){
-        //TODO
     }
     public Vector<DownloadLink> getLinks(){
         return allLinks;

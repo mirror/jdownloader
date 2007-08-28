@@ -12,7 +12,6 @@ import sun.misc.BASE64Encoder;
 public class JDCrypt {
     private final static transient String password   = "jDownloader";
     private final static transient byte[] salt = { (byte) 0xc9,(byte) 0xc9, (byte) 0xc9, (byte) 0xc9, (byte) 0xc9, (byte) 0xc9,(byte) 0xc9, (byte) 0xc9};
-    private final static int                             iterations = 3;
     private static Cipher                 encryptCipher;
     private static Cipher                 decryptCipher;
     private static BASE64Encoder encoder = new sun.misc.BASE64Encoder();

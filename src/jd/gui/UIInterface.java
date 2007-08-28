@@ -57,7 +57,7 @@ public interface UIInterface {
     /**
      * Leitet ein ControlEvent weiter
      * 
-     * @param controlEvent ein ControlEvent
+     * @param event ein ControlEvent
      */
     public void controlEvent(ControlEvent event);
     /**

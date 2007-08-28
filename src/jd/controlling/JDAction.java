@@ -35,7 +35,8 @@ public class JDAction extends AbstractAction{
     public static final int APP_SAVE                 = 12;
     public static final int APP_LOAD                 = 13;
     public static final int APP_EXIT                 = 14;
-    public static final int VIEW_LOG                 = 1001;
+    public static final int APP_LOG                  = 15;
+    public static final int APP_CONFIGURATION        = 16;
 
     private ActionListener actionListener;
     private int actionID;

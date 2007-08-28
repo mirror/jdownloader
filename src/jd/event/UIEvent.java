@@ -38,6 +38,10 @@ public class UIEvent extends AWTEvent{
      * Es sollen Daten überprüft und ggf als DownloadLinks hinzugefügt werden
      */
     public static final int UI_LINKS_TO_PROCESS = 6;
+    /**
+     * Die Konfiguration soll gespeichtert werden
+     */
+    public static final int UI_SAVE_CONFIG = 7;
     
     public UIEvent(UIInterface uiInterface, int actionID){
         this(uiInterface,actionID,null);

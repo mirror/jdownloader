@@ -274,13 +274,12 @@ public class JDUtilities {
      * @return Der vom Benutzer eingegebene Text
      */
     public static String getCaptcha(JDController controller, Plugin plugin, String captchaAddress){
-        boolean useJAC = false;
-        if(useJAC){
+        String host = plugin.getHost();
+        if(JDUtilities.getConfiguration().useJAC() && JAntiCaptcha.hasMethod(null, host)){
             try {
                 logger.info("captchaAddress:"+captchaAddress);
-                String host = plugin.getHost();
-                JAntiCaptcha jac = new JAntiCaptcha(null,host);
                 BufferedImage captchaImage = ImageIO.read(new URL(captchaAddress));
+                JAntiCaptcha jac = new JAntiCaptcha(null,host);
                 Captcha captcha= jac.createCaptcha(captchaImage);
                 String captchaCode=jac.checkCaptcha(captcha);
                 logger.info(captchaCode);

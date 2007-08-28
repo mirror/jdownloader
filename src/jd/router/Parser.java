@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Vector;
 import java.util.logging.Logger;
+import java.util.regex.Pattern;
 
 import jd.JDUtilities;
 import jd.plugins.Plugin;
@@ -47,9 +48,15 @@ public class Parser {
 
     public void parseSingleRouter(FileInputStream fis) throws IOException {
         RouterData routerData = new RouterData();
+        @SuppressWarnings("unused")
         int routerPort;
+        String ipAddressPre;
+        String ipAddressPost;
+        String disconnectString;
+        
+        
         routerPort = readInt(fis);
-        routerData.setLoginType(readByte(fis));
+        readByte(fis);
         routerData.setLoginString(readNextString(fis));
         readLong(fis); // es muss ein long übersprungen werden
         routerData.setRouterName(readNextString(fis)); // routername wird gespeichert
@@ -57,12 +64,12 @@ public class Parser {
         
         readNextString(fis);// url zum routerhersteller wird übersprungen
         readNextString(fis);// kommentar vom ersteller wird übersprungen
-        routerData.setConnectionConnect(readNextString(fis));
-        routerData.setConnectionDisconnect(readNextString(fis));
+        routerData.setConnect(readNextString(fis));
+        disconnectString = readNextString(fis);
         routerData.setIpAddressSite(readNextString(fis));
         routerData.setIpAddressOffline(readNextString(fis));
-        routerData.setIpAddressPre(readNextString(fis));
-        routerData.setIpAddressPost(readNextString(fis));
+        ipAddressPre = readNextString(fis);
+        ipAddressPost = readNextString(fis);
 
         // informationen der Statusseite 2 werden übersprungen
         readNextString(fis);
@@ -71,7 +78,6 @@ public class Parser {
             readNextString(fis);
             readNextString(fis);
         }
-        // hier muss noch rigendwie der sting für das abmelden vom router kommen
         // informationen über die benutzerspezifischen links werden übersprungen
         for (int i = 0; i < 3; i++) {
             readNextString(fis);
@@ -83,8 +89,7 @@ public class Parser {
         fis.read();
         fis.read();
         positionInFile += 5;
-        // signOffUrl = readNextString(fis);
-        routerData.setConnectionLogoff(readNextString(fis));
+        routerData.setLogoff(readNextString(fis));
         readNextString(fis);
 
         int loop2 = readInt(fis);
@@ -103,8 +108,17 @@ public class Parser {
             readNextString(fis);
         }
         
-        //TODO Nachbearbeitung 
-        // ZB routerData.getConnectionDisconnect <POST> rausschneiden etc
+        // Nachbearbeitung 
+        ipAddressPre = Pattern.quote(ipAddressPre);
+        ipAddressPost = Pattern.quote(ipAddressPost);
+        Pattern patternForIPAddress = Pattern.compile(ipAddressPre+"([0-9.]*)"+ipAddressPost);
+        routerData.setIpAddressRegEx(patternForIPAddress);
+        
+        if(disconnectString.startsWith("POST"))
+            disconnectString = disconnectString.substring("POST".length());
+        else if(disconnectString.startsWith("GET"))
+            disconnectString = disconnectString.substring("GET".length());
+        routerData.setDisconnect(disconnectString);
         routers.add(routerData);
 
     }

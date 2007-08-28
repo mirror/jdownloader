@@ -5,8 +5,10 @@ import java.net.Authenticator;
 import java.net.MalformedURLException;
 import java.net.PasswordAuthentication;
 import java.net.URL;
+import java.util.HashMap;
 
 import jd.plugins.Plugin;
+import jd.plugins.RequestInfo;
 import jd.router.RouterData;
 
 /**
@@ -31,55 +33,56 @@ public class HTTPReconnect extends Interaction{
         String routerUsername = configuration.getRouterUsername();
         String routerPassword = configuration.getRouterPassword();
         int routerPort        = configuration.getRouterPort();
-        String disconnect     = routerData.getConnectionDisconnect();
-        String connect        = routerData.getConnectionConnect();
+        String login          = routerData.getLogin();
+        String disconnect     = routerData.getDisconnect();
+        String connect        = routerData.getConnect();
         if(routerUsername != null && routerPassword != null)
             Authenticator.setDefault(new InternalAuthenticator(routerUsername, routerPassword));
 
         //IP auslesen
 //        ipBefore = getIPAddress(routerData);
 
-        //Trennen
-        logger.fine("disconnecting router");
         String routerPage;
         
+        //RouterPage zusammensetzen
         if(routerPort<=0)
             routerPage = "http://"+routerIP+"/";
         else
             routerPage = "http://"+routerIP+":"+routerPort+"/";
-
-        if(routerData.getLoginType() == RouterData.LOGIN_TYPE_WEB_POST){
-            routerPage +=disconnect;
-            logger.fine("Router page:"+routerPage);
-            try {
-                Plugin.postRequest(
-                        new URL(routerPage),
-                        null,
-                        null,
-                        routerData.getDisconnectRequestProperties(), 
-                        routerData.getDisconnectPostParams(),
-                        true);
-            }
-            catch (MalformedURLException e) { e.printStackTrace(); }
-            catch (IOException e)           { e.printStackTrace(); }
+        RequestInfo requestInfo = null;
+        if(login != null){
+            login.replaceAll("%USERNAME%", routerUsername);
+            login.replaceAll("%PASSWORD%", routerPassword);
+            
+            //Anmelden
+            requestInfo = doThis(
+                    "Login",
+                    routerPage+login,
+                    requestInfo,
+                    routerData.getLoginRequestProperties(),
+                    routerData.getLoginPostParams(),
+                    routerData.getLoginType());
         }
-        else{
-            try {
-                routerPage +=disconnect;
-                logger.fine("Router page:"+routerPage);
-                Plugin.getRequest(new URL(routerPage));
-            }
-            catch (MalformedURLException e) { e.printStackTrace(); }
-            catch (IOException e)           { e.printStackTrace(); }
-        }
+        
+        //Disconnect
+        requestInfo = doThis(
+                "Disconnect",
+                routerPage+disconnect,
+                requestInfo,
+                routerData.getDisconnectRequestProperties(),
+                routerData.getDisconnectPostParams(),
+                routerData.getDisconnectType());
 
         // Verbindung wiederaufbauen
         logger.fine("building connection");
-        try {
-            Plugin.getRequest(new URL(connect));
-        }
-        catch (MalformedURLException e) { e.printStackTrace(); }
-        catch (IOException e)           { e.printStackTrace(); }
+        requestInfo = doThis(
+                "Rebuild",
+                routerPage+connect,
+                null,
+                null,
+                null,
+                RouterData.TYPE_WEB_GET);
+
 
         // IP check
 //        ipAfter = getIPAddress(routerData);
@@ -102,6 +105,50 @@ public class HTTPReconnect extends Interaction{
 //    }
     @Override
     public String toString() { return "HTTPReconnect "+configuration.getRouterData(); }
+    
+    private RequestInfo doThis(String action, String page, RequestInfo requestInfo, HashMap<String, String> requestProperties, String params, int type){
+        RequestInfo newRequestInfo = null;
+        if(type == RouterData.TYPE_WEB_POST){
+            logger.fine(action+" via POST:"+page);
+            try {
+                if(requestInfo == null){
+                    newRequestInfo = Plugin.postRequest(
+                        new URL(page),
+                        params);
+                }
+                else{
+                    newRequestInfo = Plugin.postRequest(
+                            new URL(page),
+                            requestInfo.getCookie(),
+                            null,
+                            requestProperties, 
+                            params,
+                            true);
+                }
+            }
+            catch (MalformedURLException e) { e.printStackTrace(); }
+            catch (IOException e)           { e.printStackTrace(); }
+        }
+        else{
+            logger.fine(action+" via GET:"+page);
+            try {
+                if(requestProperties == null){
+                    newRequestInfo = Plugin.getRequest(
+                            new URL(page));
+                }
+                else{
+                    newRequestInfo = Plugin.getRequest(
+                            new URL(page),
+                            requestInfo.getCookie(),
+                            null,
+                            true);
+                }
+            }
+            catch (MalformedURLException e) { e.printStackTrace(); }
+            catch (IOException e)           { e.printStackTrace(); }
+        }
+        return newRequestInfo;
+    } 
 
     private class InternalAuthenticator extends Authenticator {
         private String username, password;
