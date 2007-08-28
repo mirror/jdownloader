@@ -84,6 +84,10 @@ public class DownloadLink implements Serializable{
      */
     private transient int downloadCurrent;
     /**
+     * Die DownloadGeschwindigkeit in bytes/sec
+     */
+    private transient int downloadSpeed;
+    /**
      * Hierhin soll die Datei gespeichert werden.
      */
     private File fileOutput;
@@ -268,5 +272,11 @@ public class DownloadLink implements Serializable{
     public void setName(String name) {
         this.name = name;
         updateFileOutput();
+    }
+    public int getDownloadSpeed() {
+        return downloadSpeed;
+    }
+    public void setDownloadSpeed(int downloadSpeed) {
+        this.downloadSpeed = downloadSpeed;
     }
 }

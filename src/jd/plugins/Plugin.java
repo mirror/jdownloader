@@ -1,6 +1,5 @@
 package jd.plugins;
 
-import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
@@ -16,6 +15,10 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLConnection;
 import java.net.URLEncoder;
+import java.nio.ByteBuffer;
+import java.nio.channels.Channels;
+import java.nio.channels.ReadableByteChannel;
+import java.nio.channels.WritableByteChannel;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
@@ -57,7 +60,7 @@ public abstract class Plugin {
     /**
      * Puffer für Lesevorgänge
      */
-    public final int READ_BUFFER = 1 << 12; // 4096
+    public final int READ_BUFFER = 128*1024;
     /**
      * Name des Loggers
      */
@@ -537,49 +540,89 @@ public abstract class Plugin {
      *                      im DownloadLink hinterlegt ist
      * @return wahr, wenn alle Daten ausgelesen und gespeichert wurden
      */
-    public boolean download(DownloadLink downloadLink, URLConnection urlConnection) {
-        File fileOutput = downloadLink.getFileOutput();
-        BufferedInputStream bis;
-        int downloadedBytes = 0;
-        long start, end, time;
-        try {
-            byte buffer[] = new byte[READ_BUFFER];
-            int count;
+    public boolean download(DownloadLink downloadLink, URLConnection urlConnection) { 
+        File fileOutput = downloadLink.getFileOutput(); 
+        int downloadedBytes = 0; 
+        long start, end, time; 
+        try { 
+            ByteBuffer buffer = ByteBuffer.allocateDirect(READ_BUFFER); 
 
-            // Falls keine urlConnection übergeben wurde
-            if (urlConnection == null)
-                bis = new BufferedInputStream(downloadLink.getUrlDownload().openConnection().getInputStream());
-            else
-                bis = new BufferedInputStream(urlConnection.getInputStream());
-            FileOutputStream fos = new FileOutputStream(fileOutput);
-            downloadLink.setInProgress(true);
-            logger.info("starting download");
-            start = System.currentTimeMillis();
-            do {
-                count = bis.read(buffer);
-                if (count != -1) {
-                    fos.write(buffer, 0, count);
-                    downloadedBytes += count;
-                    downloadLink.setDownloadCurrent(downloadedBytes);
-                    firePluginEvent(new PluginEvent(this, PluginEvent.PLUGIN_DATA_CHANGED, null));
-                }
-            } while (count != -1 && !aborted); // Muss -1 sein und nicht buffer.length da durch  eine langsame Internetverbindung der Puffer nicht immer komplett gefüllt ist
-            end = System.currentTimeMillis();
-            time = end - start;
-            fos.close();
-            bis.close();
-            firePluginEvent(new PluginEvent(this,
-                    PluginEvent.PLUGIN_PROGRESS_FINISH, null));
-            logger.info("download finished");
+            // Falls keine urlConnection übergeben wurde 
+            if (urlConnection == null) 
+                urlConnection = downloadLink.getUrlDownload().openConnection(); 
 
-            logger.info(downloadedBytes + " bytes in " + time +" ms");
-            return true;
+            FileOutputStream fos = new FileOutputStream(fileOutput); 
+
+            // NIO Channels setzen: 
+            ReadableByteChannel source = Channels.newChannel(urlConnection.getInputStream()); 
+            WritableByteChannel dest = fos.getChannel(); 
+
+            // Länge aus HTTP-Header speichern: 
+            int contentLen = urlConnection.getContentLength(); 
+
+            downloadLink.setInProgress(true); 
+            logger.info("starting download"); 
+            start = System.currentTimeMillis(); 
+
+            // Buffer, laufende Variablen resetten: 
+            buffer.clear(); 
+            int bytesLastSpeedCheck=0; 
+            long t1 = System.currentTimeMillis(); 
+
+            for(int i=0;!aborted;i++) { 
+                // Thread kurz schlafen lassen, um zu häufiges Event-fire zu verhindern: 
+                Thread.sleep(100); 
+                int bytes = source.read(buffer); 
+
+                if (bytes==-1) 
+                    break; 
+
+                // Buffer flippen und in File schreiben: 
+                buffer.flip(); 
+                dest.write(buffer); 
+                buffer.compact(); 
+
+                // Laufende Variablen updaten: 
+                downloadedBytes += bytes; 
+                bytesLastSpeedCheck += bytes; 
+
+                if (i % 10 == 0) { // Speedcheck alle 10 Runden = 1 sec 
+                    long t2 = System.currentTimeMillis(); 
+                    // DL-Speed in bytes/sec berechnen: 
+                    int speed = (int)(bytesLastSpeedCheck*1000/(t2-t1)); 
+                    downloadLink.setDownloadSpeed(speed); 
+                    bytesLastSpeedCheck = 0; 
+                    t1 = t2; 
+                } 
+
+                downloadLink.setDownloadCurrent(downloadedBytes); 
+                firePluginEvent(new PluginEvent(this, PluginEvent.PLUGIN_DATA_CHANGED, downloadLink)); 
+            } 
+
+
+            if (contentLen != -1 && downloadedBytes != contentLen) { 
+                logger.info("incomplete download"); 
+                return false; 
+            } 
+
+            end = System.currentTimeMillis(); 
+            time = end - start; 
+            source.close(); 
+            dest.close(); 
+            fos.close(); 
+
+            firePluginEvent(new PluginEvent(this, PluginEvent.PLUGIN_PROGRESS_FINISH, downloadLink)); 
+            logger.info("download finished"); 
+
+            logger.info(downloadedBytes + " bytes in " + time +" ms"); 
+            return true; 
         } 
         catch (FileNotFoundException e) { logger.severe("file not found. " + e.getLocalizedMessage());                      } 
         catch (SecurityException e)     { logger.severe("not enough rights to write the file. " + e.getLocalizedMessage()); } 
-        catch (IOException e)           { logger.severe("error occurred while writing to file. "+ e.getLocalizedMessage()); }
-        return false;
-    }
+        catch (IOException e)           { logger.severe("error occurred while writing to file. "+ e.getLocalizedMessage()); } 
+        catch (InterruptedException e)  { logger.severe("interrupted exception: "+ e.getLocalizedMessage()); } 
+        return false; 
+    } 
     /**
      * Diese Methode erstellt einen einzelnen String aus einer HashMap mit
      * Parametern für ein Post-Request.
