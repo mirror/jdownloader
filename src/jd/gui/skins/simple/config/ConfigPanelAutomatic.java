@@ -1,10 +1,10 @@
 package jd.gui.skins.simple.config;
 
-import javax.swing.JComponent;
+import javax.swing.JPanel;
 
 import jd.Configuration;
 
-public class ConfigPanelAutomatic extends JComponent{
+public class ConfigPanelAutomatic extends JPanel{
 
     /**
      * serialVersionUID

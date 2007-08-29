@@ -9,8 +9,6 @@ import java.util.Vector;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import javax.swing.JFrame;
-
 import jd.JDUtilities;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginStep;

@@ -23,8 +23,7 @@ import jd.JDUtilities;
 import jd.plugins.LogFormatter;
 
 /**
- * Ein Dialog, der Logger-Output anzeigen kann. Zur Benutzung muss der OutputStream von
- * {@link #getLogStream()} genutzt werden.
+ * Ein Dialog, der Logger-Output anzeigen kann. 
  * 
  * @author Tom
  */

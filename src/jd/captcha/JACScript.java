@@ -72,8 +72,6 @@ public class JACScript {
 
     /**
      * @param owner
-     * @param jarFile
-     *            Die Jar Datei mit den Methods
      * @param script
      *            Der Skriptfile in der JAR, das ausgelesen werden soll
      * @param method

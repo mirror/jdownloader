@@ -48,7 +48,6 @@ public class StartDownloads extends ControlMulticaster{
      * Erstellt einen Thread zum Start des Downloadvorganges
      * 
      * @param controller Controller
-     * @param tabDownloadLinks Die Komponente, mit den Downloadlinks
      * @param interactions Hier sind alle möglichen Interaktionen gespeichert
      */
     public StartDownloads(JDController controller, HashMap<Integer, Vector<Interaction>> interactions){

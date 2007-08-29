@@ -52,12 +52,7 @@
             </fileset>
         </jar>
         <delete file="Manifest.MF" failonerror="false" />
-        
-        <jar jarfile="${dist}/JAntiCaptchaMethods.jar">
-            <fileset dir="${res}">
-                <include name = "jd/captcha/methods/**"/>
-            </fileset>
-        </jar>
+
     </target>
     <target name="sign">
         <signjar jar="${dist}/JDownloader.jar"         keystore="jDownloader.keystore" alias="jDownloader" storepass="jDownloader" />

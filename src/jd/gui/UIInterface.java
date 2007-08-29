@@ -14,12 +14,12 @@ import jd.plugins.event.PluginEvent;
 public interface UIInterface {
     /**
      * Liefert alle DownloadLinks zurück
-     * @return
+     * @return Alle DownloadLinks
      */
     public Vector<DownloadLink> getDownloadLinks();
     /**
      * Liefert die Konfiguraion zurück
-     * @return
+     * @return Die Konfiguration
      */
     public Configuration getConfiguration();
     /**

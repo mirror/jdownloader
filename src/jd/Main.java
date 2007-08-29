@@ -56,8 +56,17 @@ public class Main {
         
         loadImages();
         Logger logger = Plugin.getLogger();
-        URLClassLoader cl = JDUtilities.getURLClassLoader();
-        URL configURL = cl.getResource(JDUtilities.CONFIG_PATH);
+
+        URLClassLoader cl=null;
+        URL configURL = null;
+
+        try {
+            cl = JDUtilities.getURLClassLoader();
+            configURL = cl.getResource(JDUtilities.CONFIG_PATH);
+        }
+        catch (RuntimeException e) {
+            e.printStackTrace();
+        }
         if(configURL != null){
             try {
                 File fileInput = new File(configURL.toURI());
@@ -89,6 +98,7 @@ public class Main {
             iteratorDecrypt.next().addPluginListener(controller);
         }
     }
+    
     /**
      * Die Bilder werden aus der JAR Datei nachgeladen
      */

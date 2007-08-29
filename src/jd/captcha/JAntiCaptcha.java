@@ -144,7 +144,6 @@ public class JAntiCaptcha {
     /**
      * @param methodsPath
      * @param methodName
-     * @param methodDir
      */
     public JAntiCaptcha(String methodsPath, String methodName) {
         if(methodsPath==null){

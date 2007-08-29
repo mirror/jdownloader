@@ -57,7 +57,7 @@ public class Parser {
         
         routerPort = readInt(fis);
         readByte(fis);
-        routerData.setLoginString(readNextString(fis));
+        routerData.setLogin(readNextString(fis));
         readLong(fis); // es muss ein long übersprungen werden
         routerData.setRouterName(readNextString(fis)); // routername wird gespeichert
 
@@ -111,8 +111,7 @@ public class Parser {
         // Nachbearbeitung 
         ipAddressPre = Pattern.quote(ipAddressPre);
         ipAddressPost = Pattern.quote(ipAddressPost);
-        Pattern patternForIPAddress = Pattern.compile(ipAddressPre+"([0-9.]*)"+ipAddressPost);
-        routerData.setIpAddressRegEx(patternForIPAddress);
+        routerData.setIpAddressRegEx(ipAddressPre+"([0-9.]*)"+ipAddressPost);
         
         if(disconnectString.startsWith("POST"))
             disconnectString = disconnectString.substring("POST".length());

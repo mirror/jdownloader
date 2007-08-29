@@ -714,7 +714,7 @@ public abstract class Plugin {
      * Gibt die matches ohne Dublikate als arraylist aus
      * @param data
      * @param pattern
-     * @return
+     * @return StringArray mit den Matches
      */
     public static String[] getUniqueMatches(String data, Pattern pattern) {
         ArrayList<String> set = new ArrayList<String>();

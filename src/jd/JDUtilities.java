@@ -13,13 +13,17 @@ import java.beans.XMLDecoder;
 import java.beans.XMLEncoder;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.io.OutputStreamWriter;
 import java.lang.reflect.Method;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -33,8 +37,14 @@ import java.util.Vector;
 import java.util.logging.Logger;
 
 import javax.imageio.ImageIO;
+import javax.jnlp.BasicService;
+import javax.jnlp.FileContents;
+import javax.jnlp.PersistenceService;
+import javax.jnlp.ServiceManager;
+import javax.jnlp.UnavailableServiceException;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
+import javax.swing.JOptionPane;
 
 import jd.captcha.Captcha;
 import jd.captcha.JAntiCaptcha;
@@ -55,6 +65,10 @@ public class JDUtilities {
      * Ein URLClassLoader, um Dateien aus dem HomeVerzeichnis zu holen
      */
     private static URLClassLoader urlClassLoader = null;
+    /**
+     * Das JD-Home Verzeichnis
+     */
+    private static String homeDirectory=null;
     /**
      * RessourceBundle für Texte
      */
@@ -78,7 +92,7 @@ public class JDUtilities {
     /**
      * Das aktuelle Verzeichnis (Laden/Speichern)
      */
-    private static File currentDirectory = getJDHomeDirectory();
+    private static File currentDirectory;
     /**
      * Hier werden alle vorhandenen Plugins zum Dekodieren von Links gespeichert
      */
@@ -233,21 +247,128 @@ public class JDUtilities {
      * 
      * @return ein File, daß das Basisverzeichnis angibt
      */
-    public static File getJDHomeDirectory(){
+    private static File getJDHomeDirectoryFromEnvironment(){
         String envDir=System.getenv("JD_HOME");
         if(envDir == null){
             logger.warning("environment variable JD_HOME not set");
             envDir = System.getProperty("user.home")+System.getProperty("file.separator")+".jd_home/";
+            logger.info("JD_HOME from user.home :"+envDir);
         }
-        if(envDir == null)
+        else
+            logger.info("JD_HOME from environment variable:"+envDir);
+
+        if(envDir == null){
             envDir="."+System.getProperty("file.separator")+".jd_home/";
-        
-        File ret=new File(envDir);
-        if(!ret.exists()){
-            ret.mkdirs();
+            logger.info("JD_HOME from current directory:"+envDir);
         }
-        return new File(envDir);
+        
+        File jdHomeDir=new File(envDir);
+        if(!jdHomeDir.exists()){
+            jdHomeDir.mkdirs();
+        }
+        return jdHomeDir;
     } 
+    /**
+     * Liest JD-HOME aus dem WebStart Cache. 
+     * Ist ein solcher nicht vorhanden, wird der Pfad aus der Umgebungsvariable genommen.
+     * Ist dieser auch nicht vorhanden, wird einfach in das aktuelle Verzeichnis geschrieben
+     * 
+     * @return Das Homeverzeichnis
+     */
+    public static File getJDHomeDirectory(){
+        BasicService basicService; 
+        PersistenceService persistentService; 
+        try { 
+            basicService = (BasicService)ServiceManager.lookup("javax.jnlp.BasicService"); 
+            persistentService = (PersistenceService)ServiceManager.lookup("javax.jnlp.PersistenceService"); 
+        } 
+        catch (UnavailableServiceException e) { 
+            persistentService = null; 
+            basicService = null; 
+            logger.warning("PersistenceService not available.");
+        } 
+        try {
+            if (persistentService != null && basicService != null) { 
+
+                URL codebase = basicService.getCodeBase();
+                FileContents fc=null;
+                URL url =new URL(codebase.toString() + "JD_HOME"); 
+                try {
+                    fc = persistentService.get(url);
+                }
+                catch (Exception e) { }
+                if(fc != null){
+                    BufferedReader reader = new BufferedReader(new InputStreamReader(fc.getInputStream()));
+                    String line = reader.readLine();
+                    reader.close();
+                    File jdHomeDir=new File(line);
+                    if(!jdHomeDir.exists()){
+                        jdHomeDir.mkdirs();
+                    }
+                    logger.info("JD_HOME from WebStart:"+jdHomeDir.getAbsolutePath());
+                    homeDirectory = jdHomeDir.getAbsolutePath();
+                    return jdHomeDir;
+                }
+                else{
+                    logger.info("Creating new entry for JD_HOME");
+                    String newHome = JOptionPane.showInputDialog("Bitte einen Pfad für jDownloader eingeben");
+                    File jdHomeDirFromWS = new File(newHome);
+                    boolean createSuccessfull=true;
+                    if(!jdHomeDirFromWS.exists())
+                        createSuccessfull = jdHomeDirFromWS.mkdirs();
+                    if(createSuccessfull){
+                        persistentService.create(url, 1024);
+                        fc = persistentService.get(url);
+                        BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(fc.getOutputStream(true)));
+                        writer.write(jdHomeDirFromWS.getAbsolutePath());
+                        writer.close();
+                        homeDirectory = jdHomeDirFromWS.getAbsolutePath();
+                        // Da dies anscheinend eine Neuinstallation ist, wird direkt ein Update durchgeführt
+                        JAntiCaptcha.updateMethods();
+                        return jdHomeDirFromWS;
+                    }
+                }
+            }
+        }
+        catch (MalformedURLException e) { e.printStackTrace(); }
+        catch (FileNotFoundException e) { e.printStackTrace(); }
+        catch (IOException e)           { e.printStackTrace(); }
+        return getJDHomeDirectoryFromEnvironment();
+    }
+    /**
+     * Schreibt das Home Verzeichnis in den Webstart Cache
+     * 
+     * @param newHomeDir Das neue JD-HOME
+     */
+    public static void writeJDHomeDirectoryToWebStartCookie(String newHomeDir){
+        BasicService basicService; 
+        PersistenceService persistentService;
+        homeDirectory = newHomeDir;
+        try { 
+            basicService = (BasicService)ServiceManager.lookup("javax.jnlp.BasicService"); 
+            persistentService = (PersistenceService)ServiceManager.lookup("javax.jnlp.PersistenceService"); 
+        } 
+        catch (UnavailableServiceException e) { 
+            persistentService = null; 
+            basicService = null; 
+            logger.warning("PersistenceService not available.");
+        } 
+        try {
+            if (persistentService != null && basicService != null) { 
+
+                URL codebase = basicService.getCodeBase();
+                FileContents fc=null;
+                URL url =new URL(codebase.toString() + "JD_HOME"); 
+                fc = persistentService.get(url);
+                BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(fc.getOutputStream(true)));
+                writer.write(homeDirectory);
+                writer.close();
+            }
+        }
+        catch (MalformedURLException e) { e.printStackTrace(); }
+        catch (FileNotFoundException e) { e.printStackTrace(); }
+        catch (IOException e)           { e.printStackTrace(); }
+    }
     /**
      * Liefert einen URLClassLoader zurück, um Dateien aus dem Stammverzeichnis zu laden
      * 
@@ -481,5 +602,11 @@ public class JDUtilities {
     }
     public static void setConfiguration(Configuration configuration) {
         JDUtilities.configuration = configuration;
+    }
+    public static String getHomeDirectory() {
+        return homeDirectory;
+    }
+    public static void setHomeDirectory(String homeDirectory) {
+        JDUtilities.homeDirectory = homeDirectory;
     }
 }

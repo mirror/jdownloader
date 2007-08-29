@@ -3,6 +3,7 @@ package jd.gui.skins.simple.config;
 import java.awt.Component;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
+import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
@@ -44,10 +45,11 @@ public class ConfigurationDialog extends JDialog implements ActionListener{
         tabbedPane.addTab("Router",        configPanelRouter);
         tabbedPane.addTab("Automatisches", configPanelAutomatic);
         
+        Insets insets = new Insets(5,5,5,5);
         
         JDUtilities.addToGridBag(this, tabbedPane, 0, 0, 2, 1, 1, 1, null, GridBagConstraints.BOTH, GridBagConstraints.CENTER);
-        JDUtilities.addToGridBag(this, btnSave,    0, 1, 1, 1, 1, 1, null, GridBagConstraints.NONE, GridBagConstraints.CENTER);
-        JDUtilities.addToGridBag(this, btnCancel,  1, 1, 1, 1, 1, 1, null, GridBagConstraints.NONE, GridBagConstraints.CENTER);
+        JDUtilities.addToGridBag(this, btnSave,    0, 1, 1, 1, 1, 0, insets, GridBagConstraints.NONE, GridBagConstraints.CENTER);
+        JDUtilities.addToGridBag(this, btnCancel,  1, 1, 1, 1, 1, 0, insets, GridBagConstraints.NONE, GridBagConstraints.CENTER);
         
         pack();
     }

@@ -83,7 +83,7 @@ public class SimpleGUI implements UIInterface, ActionListener{
     /**
      * Hiermit wird der Eventmechanismus realisiert. Alle hier eingetragenen
      * Listener werden benachrichtigt, wenn mittels
-     * {@link #firePluginEvent(PluginEvent)} ein Event losgeschickt wird.
+     * {@link #fireUIEvent(UIEvent)} ein Event losgeschickt wird.
      */
     public Vector<UIListener> uiListener = null;
     
@@ -249,7 +249,7 @@ public class SimpleGUI implements UIInterface, ActionListener{
     /**
      * Hier werden die Aktionen ausgewertet und weitergeleitet
      *
-     * @param actionID Die erwünschte Aktion
+     * @param e Die erwünschte Aktion
      */
     public void actionPerformed(ActionEvent e){
         switch(e.getID()){

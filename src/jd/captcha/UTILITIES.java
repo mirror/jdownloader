@@ -166,7 +166,6 @@ public class UTILITIES {
     
     /**
      * @param url 
-     * @param file
      * @return Gibt die URl zur File zurück
      */
     public static URL getResourceURL(URL url){
