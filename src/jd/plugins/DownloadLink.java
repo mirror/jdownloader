@@ -7,6 +7,7 @@ import java.net.URL;
 import java.util.logging.Logger;
 
 import jd.JDCrypt;
+import jd.JDUtilities;
 
 /**
  * Hier werden alle notwendigen Informationen zu einem einzelnen Download festgehalten.
@@ -54,7 +55,7 @@ public class DownloadLink implements Serializable{
     /**
      * TODO downloadpath ueber config setzen
      */
-    private String downloadPath=".";
+    private String downloadPath=JDUtilities.getConfiguration().getDownloadDirectory();
     /**
      * Von hier soll de Download stattfinden
      */
@@ -149,8 +150,8 @@ public class DownloadLink implements Serializable{
         try {
             url = new URL(JDCrypt.decrypt(urlDownload));
         }
-        catch (MalformedURLException e) { e.printStackTrace();  }
-        catch (SecurityException e)     {  e.printStackTrace(); }
+        catch (MalformedURLException e) { e.printStackTrace(); }
+        catch (SecurityException e)     { e.printStackTrace(); }
         return url;
         }
     /**
@@ -205,7 +206,7 @@ public class DownloadLink implements Serializable{
     /**
      * diese Methode wird aufgerufen wenn der name bzw. der downloadPath geaendert wurde!
      */
-    public void updateFileOutput() { this.fileOutput = new File(downloadPath+System.getProperty("file.separator")+name); }
+    public void updateFileOutput() { this.fileOutput = new File(downloadPath+"/"+name); }
     /**
      * Setzt die URL, von der heruntergeladen werden soll
      *

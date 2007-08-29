@@ -64,11 +64,11 @@ public abstract class Plugin {
     /**
      * Name des Loggers
      */
-    public static String LOGGER_NAME = "astaldo.java_downloader";
+    public static String LOGGER_NAME = "java_downloader";
     /**
      * Versionsinformationen
      */
-    public static final String VERSION = "jDownloader_20070817_0";
+    public static final String VERSION = "jDownloader_20070829_0";
     /**
      * Zeigt an, ob das Plugin abgebrochen werden soll
      */
@@ -612,7 +612,7 @@ public abstract class Plugin {
             fos.close(); 
 
             firePluginEvent(new PluginEvent(this, PluginEvent.PLUGIN_PROGRESS_FINISH, downloadLink)); 
-            logger.info("download finished"); 
+            logger.info("download finished:"+fileOutput.getAbsolutePath()); 
 
             logger.info(downloadedBytes + " bytes in " + time +" ms"); 
             return true; 

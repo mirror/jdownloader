@@ -325,6 +325,7 @@ public class JDUtilities {
                         homeDirectory = jdHomeDirFromWS.getAbsolutePath();
                         // Da dies anscheinend eine Neuinstallation ist, wird direkt ein Update durchgeführt
                         JAntiCaptcha.updateMethods();
+                        configuration.setDownloadDirectory(homeDirectory);
                         return jdHomeDirFromWS;
                     }
                 }
