@@ -13,17 +13,14 @@ import java.beans.XMLDecoder;
 import java.beans.XMLEncoder;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.io.OutputStreamWriter;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -37,14 +34,8 @@ import java.util.Vector;
 import java.util.logging.Logger;
 
 import javax.imageio.ImageIO;
-import javax.jnlp.BasicService;
-import javax.jnlp.FileContents;
-import javax.jnlp.PersistenceService;
-import javax.jnlp.ServiceManager;
-import javax.jnlp.UnavailableServiceException;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
-import javax.swing.JOptionPane;
 
 import jd.captcha.Captcha;
 import jd.captcha.JAntiCaptcha;
@@ -66,9 +57,14 @@ public class JDUtilities {
      */
     private static URLClassLoader urlClassLoader = null;
     /**
-     * Das JD-Home Verzeichnis
+     * Das JD-Home Verzeichnis. Dieses wird nur gesetzt, wenn es aus dem WebStart Cookie gelesen wurde.
+     * Diese Variable kann nämlich im KonfigDialog geändert werden
      */
-    private static String homeDirectory=null;
+    private static String homeDirectory = null;
+    /**
+     * Das ist das File Objekt, daß das HomeDirectory darstellt
+     */
+    private static File homeDirectoryFile = null;
     /**
      * RessourceBundle für Texte
      */
@@ -276,64 +272,28 @@ public class JDUtilities {
      * @return Das Homeverzeichnis
      */
     public static File getJDHomeDirectory(){
-        BasicService basicService; 
-        PersistenceService persistentService; 
-        try { 
-            basicService = (BasicService)ServiceManager.lookup("javax.jnlp.BasicService"); 
-            persistentService = (PersistenceService)ServiceManager.lookup("javax.jnlp.PersistenceService"); 
-        } 
-        catch (UnavailableServiceException e) { 
-            persistentService = null; 
-            basicService = null; 
-            logger.warning("PersistenceService not available.");
-        } 
+        String homeDir = null;
+        if(homeDirectoryFile != null)
+            return homeDirectoryFile;
         try {
-            if (persistentService != null && basicService != null) { 
-
-                URL codebase = basicService.getCodeBase();
-                FileContents fc=null;
-                URL url =new URL(codebase.toString() + "JD_HOME"); 
-                try {
-                    fc = persistentService.get(url);
-                }
-                catch (Exception e) { }
-                if(fc != null){
-                    BufferedReader reader = new BufferedReader(new InputStreamReader(fc.getInputStream()));
-                    String line = reader.readLine();
-                    reader.close();
-                    File jdHomeDir=new File(line);
-                    if(!jdHomeDir.exists()){
-                        jdHomeDir.mkdirs();
-                    }
-                    logger.info("JD_HOME from WebStart:"+jdHomeDir.getAbsolutePath());
-                    homeDirectory = jdHomeDir.getAbsolutePath();
-                    return jdHomeDir;
-                }
-                else{
-                    logger.info("Creating new entry for JD_HOME");
-                    String newHome = JOptionPane.showInputDialog("Bitte einen Pfad für jDownloader eingeben");
-                    File jdHomeDirFromWS = new File(newHome);
-                    boolean createSuccessfull=true;
-                    if(!jdHomeDirFromWS.exists())
-                        createSuccessfull = jdHomeDirFromWS.mkdirs();
-                    if(createSuccessfull){
-                        persistentService.create(url, 1024);
-                        fc = persistentService.get(url);
-                        BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(fc.getOutputStream(true)));
-                        writer.write(jdHomeDirFromWS.getAbsolutePath());
-                        writer.close();
-                        homeDirectory = jdHomeDirFromWS.getAbsolutePath();
-                        // Da dies anscheinend eine Neuinstallation ist, wird direkt ein Update durchgeführt
-                        JAntiCaptcha.updateMethods();
-                        configuration.setDownloadDirectory(homeDirectory);
-                        return jdHomeDirFromWS;
-                    }
-                }
+            if(Class.forName("javax.jnlp.ServiceManager") != null){
+                Class webStartHelper = Class.forName("jd.JDWebStartHelper");
+                Method method = webStartHelper.getDeclaredMethod("getJDHomeDirectoryFromWebStartCookie", new Class[]{});
+                homeDir = (String)method.invoke(webStartHelper, (Object[])null);
             }
         }
-        catch (MalformedURLException e) { e.printStackTrace(); }
-        catch (FileNotFoundException e) { e.printStackTrace(); }
-        catch (IOException e)           { e.printStackTrace(); }
+        catch (ClassNotFoundException e)    {  }
+        catch (SecurityException e)         {  }
+        catch (NoSuchMethodException e)     {  }
+        catch (IllegalArgumentException e)  {  }
+        catch (IllegalAccessException e  )  {  }
+        catch (InvocationTargetException e) {  }
+        catch (Exception e)                 {  }
+
+        if(homeDir != null){
+            setHomeDirectory(homeDir);
+            return homeDirectoryFile;
+        }
         return getJDHomeDirectoryFromEnvironment();
     }
     /**
@@ -342,33 +302,19 @@ public class JDUtilities {
      * @param newHomeDir Das neue JD-HOME
      */
     public static void writeJDHomeDirectoryToWebStartCookie(String newHomeDir){
-        BasicService basicService; 
-        PersistenceService persistentService;
-        homeDirectory = newHomeDir;
-        try { 
-            basicService = (BasicService)ServiceManager.lookup("javax.jnlp.BasicService"); 
-            persistentService = (PersistenceService)ServiceManager.lookup("javax.jnlp.PersistenceService"); 
-        } 
-        catch (UnavailableServiceException e) { 
-            persistentService = null; 
-            basicService = null; 
-            logger.warning("PersistenceService not available.");
-        } 
         try {
-            if (persistentService != null && basicService != null) { 
+            Class webStartHelper = Class.forName("jd.JDWebStartHelper");
+            Method method = webStartHelper.getDeclaredMethod("writeJDHomeDirectoryToWebStartCookie", new Class[]{String.class});
+            String homeDir = (String)method.invoke(webStartHelper, newHomeDir);
+            setHomeDirectory(homeDir);
 
-                URL codebase = basicService.getCodeBase();
-                FileContents fc=null;
-                URL url =new URL(codebase.toString() + "JD_HOME"); 
-                fc = persistentService.get(url);
-                BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(fc.getOutputStream(true)));
-                writer.write(homeDirectory);
-                writer.close();
-            }
         }
-        catch (MalformedURLException e) { e.printStackTrace(); }
-        catch (FileNotFoundException e) { e.printStackTrace(); }
-        catch (IOException e)           { e.printStackTrace(); }
+        catch (ClassNotFoundException e)    { e.printStackTrace(); }
+        catch (SecurityException e)         { e.printStackTrace(); }
+        catch (NoSuchMethodException e)     { e.printStackTrace(); }
+        catch (IllegalArgumentException e)  { e.printStackTrace(); }
+        catch (IllegalAccessException e  )  { e.printStackTrace(); }
+        catch (InvocationTargetException e) { e.printStackTrace(); }
     }
     /**
      * Liefert einen URLClassLoader zurück, um Dateien aus dem Stammverzeichnis zu laden
@@ -430,7 +376,7 @@ public class JDUtilities {
             if(classLoader != null && (classLoader instanceof URLClassLoader)){
                 URLClassLoader urlClassLoader = (URLClassLoader)classLoader;
                 Method         addURL         = URLClassLoader.class.getDeclaredMethod("addURL", new Class[]{URL.class});
-                File           files[]        = new File(".").listFiles(JDUtilities.filterJar);
+                File           files[]        = new File(JDUtilities.getHomeDirectory()+"/plugins").listFiles(JDUtilities.filterJar);
 
                 addURL.setAccessible(true);
                 for(int i=0;i<files.length;i++){
@@ -609,5 +555,8 @@ public class JDUtilities {
     }
     public static void setHomeDirectory(String homeDirectory) {
         JDUtilities.homeDirectory = homeDirectory;
+        homeDirectoryFile = new File(homeDirectory);
+        if(!homeDirectoryFile.exists())
+            homeDirectoryFile.mkdirs();
     }
 }

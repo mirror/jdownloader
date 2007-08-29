@@ -128,6 +128,7 @@ public class SimpleGUI implements UIInterface, ActionListener{
         buildUI();
 
         frame.pack();
+        frame.setLocation(JDUtilities.getCenterOfComponent(null, frame));
         frame.setVisible(true);
     }
     /**

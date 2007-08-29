@@ -62,4 +62,5 @@ public class Configuration implements Serializable{
     public void setRouterIP(String routerIP)                   { this.routerIP = routerIP;                   }
     public void setRouterPort(int httpPort)                    { this.routerPort = httpPort;                 }
     public void setUseJAC(boolean useJAC)                      { this.useJAC = useJAC;                       }
+    public void setInteractions(HashMap<Integer, Vector<Interaction>> interactions) { this.interactions = interactions; }
 }
