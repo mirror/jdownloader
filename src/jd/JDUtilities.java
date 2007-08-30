@@ -373,19 +373,28 @@ public class JDUtilities {
             // Alle JAR Dateien, die in diesem Verzeichnis liegen, werden dem
             // Classloader hinzugefügt.
             ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
-            if(classLoader != null && (classLoader instanceof URLClassLoader)){
+            File           files[]        = new File(JDUtilities.getJDHomeDirectory()+"/plugins").listFiles(JDUtilities.filterJar);
+            if(!(classLoader instanceof URLClassLoader)){
+                URL urls[] = new URL[files.length];
+                for(int i=0;i<files.length;i++){
+                    logger.info("loaded plugins from:"+files[i]);
+                    urls[i] = files[i].toURL();
+                }
+                classLoader = new URLClassLoader(urls);
+            }
+            else {
                 URLClassLoader urlClassLoader = (URLClassLoader)classLoader;
                 Method         addURL         = URLClassLoader.class.getDeclaredMethod("addURL", new Class[]{URL.class});
-                File           files[]        = new File(JDUtilities.getHomeDirectory()+"/plugins").listFiles(JDUtilities.filterJar);
 
                 addURL.setAccessible(true);
                 for(int i=0;i<files.length;i++){
+                    logger.info("loaded plugins from:"+files[i]);
                     URL jarURL = files[i].toURL();
                     addURL.invoke(urlClassLoader, new Object[]{jarURL});
                 }
             }
         }
-        catch (Exception e) { }
+        catch (Exception e) {e.printStackTrace(); }
 
         Iterator iterator;
 

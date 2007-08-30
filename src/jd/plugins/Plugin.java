@@ -68,7 +68,7 @@ public abstract class Plugin {
     /**
      * Versionsinformationen
      */
-    public static final String VERSION = "jDownloader_20070829_0";
+    public static final String VERSION = "jDownloader_20070830_0";
     /**
      * Zeigt an, ob das Plugin abgebrochen werden soll
      */

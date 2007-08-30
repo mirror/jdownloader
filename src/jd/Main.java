@@ -20,35 +20,16 @@ import jd.plugins.PluginForHost;
  *
  * @author astaldo
  */
+
+//TODO FileChosse einbauen
+//TODO JantiCaptcha JDUtilities import entfernen
+
 public class Main {
     public static void main(String args[]){
         Main main = new Main();
         main.go();
     }
     private void go(){
-        
-//  Bitte mal testen        
-//        HashMap<String, String> props = new HashMap<String, String>();
-//        props.put("SOAPACTION", "\"urn:schemas-upnp-org:service:WANIPConnection:1#ForceTermination\"");
-//        props.put("CONTENT-TYPE", "text/xml ; charset=\"utf-8\"");
-//        
-//        RouterData routerData = new RouterData();
-//        routerData.setLoginType(RouterData.LOGIN_TYPE_WEB_POST);
-//        routerData.setConnectionConnect("http://www.google.de");
-//        routerData.setConnectionDisconnect("/upnp/control/WANIPConn1");
-//        routerData.setDisconnectPostParams("<?xml version=\"1.0\" encoding=\"utf-8\"?>\r\n<s:Envelope s:encodingStyle=\"http://schemas.xmlsoap.org/soap/encoding/\" xmlns:s=\"http://schemas.xmlsoap.org/soap/envelope/\">\r\n<s:Body>\r\n<u:ForceTermination xmlns:u=\"urn:schemas-upnp-org:service:WANIPConnection:1\" />\r\n</s:Body>\r\n</s:Envelope>");
-//        routerData.setDisconnectRequestProperties(props);
-//        
-//        Configuration configuration = new Configuration();
-//        configuration.setRouterData(routerData);
-//        configuration.setRouterIP("192.168.178.1");
-//        configuration.setRouterPort(4900);
-//        JDUtilities.saveObject(null, configuration, JDUtilities.getJDHomeDirectory(), "jdownloader", ".config", true);
-        
-        
-//        JDUtilities.setConfiguration(configuration);
-//        HTTPReconnect httpReconnect = new HTTPReconnect();
-//        httpReconnect.interact();
         
         loadImages();
         Logger logger = Plugin.getLogger();
