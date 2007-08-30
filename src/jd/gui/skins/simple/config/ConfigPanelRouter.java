@@ -98,10 +98,6 @@ class ConfigPanelRouter extends JPanel implements ItemListener{
         lblIPAddressRegEx              = new JLabel("RegEx ausdruck zum Lesen der IP",JLabel.RIGHT);
         lblIPAddressSite               = new JLabel("RouterPage für die IPAdresse",JLabel.RIGHT);
         
-        lblLogin.setToolTipText("Als Platzhalter für den Benutzernamen "+HTTPReconnect.VAR_USERNAME+" und für das Password "+HTTPReconnect.VAR_PASSWORD+" nehmen");
-        lblConnect.setToolTipText("Hiermit wird die Verbindung wiederaufgebaut (zb http://www.google.de)");
-        lblLoginRequestProperties.setToolTipText("<HTML>Die Werte werden folgendermaßen eingegeben:<BR>key1==value1;;key2==value2;;key3==value3.1=\"value3.2\"</HTML>");
-        lblLoginRequestProperties.setToolTipText("<HTML>Die Werte werden folgendermaßen eingegeben:<BR>key1==value1;;key2==value2;;key3==value3.1=\"value3.2\"</HTML>");
         txtUsername                    = new JTextField(configuration.getRouterUsername(),30);
         txtPassword                    = new JPasswordField(configuration.getRouterPassword(),30);
         txtRouterIP                    = new JTextField(configuration.getRouterIP(),30);
@@ -119,6 +115,11 @@ class ConfigPanelRouter extends JPanel implements ItemListener{
         txtDisconnectPostParams        = new JTextField(routerData.getDisconnectPostParams(),30);
         txtIPAddressRegEx              = new JTextField(30);
         txtIPAddressSite               = new JTextField(routerData.getIpAddressSite(),30);
+
+        txtLogin.setToolTipText("Als Platzhalter für den Benutzernamen "+HTTPReconnect.VAR_USERNAME+" und für das Password "+HTTPReconnect.VAR_PASSWORD+" nehmen");
+        txtConnect.setToolTipText("Hiermit wird die Verbindung wiederaufgebaut (zb http://www.google.de)");
+        txtLoginRequestProperties.setToolTipText("<HTML>Die Werte werden folgendermaßen eingegeben:<BR>key1==value1;;key2==value2;;key3==value3.1=\"value3.2\"</HTML>");
+        txtDisconnectRequestProperties.setToolTipText("<HTML>Die Werte werden folgendermaßen eingegeben:<BR>key1==value1;;key2==value2;;key3==value3.1=\"value3.2\"</HTML>");
 
         load();
         cboLoginType.addItemListener(this);
