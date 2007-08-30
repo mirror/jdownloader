@@ -1,6 +1,5 @@
 package jd.gui.skins.simple.config;
 
-import java.awt.Component;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
@@ -9,6 +8,7 @@ import java.awt.event.ActionListener;
 
 import javax.swing.JButton;
 import javax.swing.JDialog;
+import javax.swing.JFrame;
 import javax.swing.JTabbedPane;
 
 import jd.Configuration;
@@ -29,7 +29,8 @@ public class ConfigurationDialog extends JDialog implements ActionListener{
     private boolean configChanged = false;
     
     
-    private ConfigurationDialog(){
+    private ConfigurationDialog(JFrame parent){
+        super(parent);
         setModal(true);
         setLayout(new GridBagLayout());
         configuration = JDUtilities.getConfiguration();
@@ -53,9 +54,9 @@ public class ConfigurationDialog extends JDialog implements ActionListener{
         
         pack();
     }
-    public static boolean showConfig(Component parent){
-        ConfigurationDialog c = new ConfigurationDialog();
-        c.setLocation(JDUtilities.getCenterOfComponent(parent, c));
+    public static boolean showConfig(JFrame frame){
+        ConfigurationDialog c = new ConfigurationDialog(frame);
+        c.setLocation(JDUtilities.getCenterOfComponent(frame, c));
         c.setVisible(true);
         return c.configChanged;
     }
@@ -64,6 +65,7 @@ public class ConfigurationDialog extends JDialog implements ActionListener{
         if(e.getSource() == btnSave){
             configPanelGeneral.save();
             configPanelRouter.save();
+            configPanelAutomatic.save();
             configChanged=true;
         }
         setVisible(false);

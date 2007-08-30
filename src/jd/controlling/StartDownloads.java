@@ -103,7 +103,7 @@ public class StartDownloads extends ControlMulticaster{
             handleInteraction(Interaction.INTERACTION_DOWNLOAD_FINISHED);
         }
         fireControlEvent(new ControlEvent(this,ControlEvent.CONTROL_ALL_DOWNLOADS_FINISHED));
-        handleInteraction(Interaction.INTERACTION_ALL_DOWNLOADS_FINISHED);
+        handleInteraction(Interaction.INTERACTION_DOWNLOADS_FINISHED_ALL);
     }
     /**
      * Hier werden die Interaktionen durchgeführt

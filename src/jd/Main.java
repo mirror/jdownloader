@@ -15,10 +15,6 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 
-// TODO Reconnect Paket
-//
-
-
 /**
  * Start der Applikation
  *

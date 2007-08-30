@@ -99,19 +99,19 @@ public class RouterData implements Serializable{
     public int getDisconnectType()                             { return disconnectType;       }
     public int getLoginType()                                  { return loginType;            }
     public String getIpAddressRegEx()                          { return ipAddressRegEx;       }
-    public void setConnect(String connect)                                  { this.connect = connect;                           }
-    public void setDisconnect(String disconnect)                            { this.disconnect = disconnect;                     }
-    public void setLogoff(String logoff)                                    { this.logoff = logoff;                             }
-    public void setLogin(String login)                                      { this.login = login;                               }
-    public void setRouterName(String routerName)                            { this.routerName = routerName;                     }
-    public void setIpAddressOffline(String ipAddressOffline)                { this.ipAddressOffline = ipAddressOffline;         }
-    public void setIpAddressSite(String ipAddressSite)                      { this.ipAddressSite = ipAddressSite;               }
-    public void setIpAddressRegEx(String ipAddressRegEx)                    { this.ipAddressRegEx = ipAddressRegEx;             }
-    public void setDisconnectPostParams(String disconnectPostParams)        { this.disconnectPostParams = disconnectPostParams; }
-    public void setDisconnectType(int loginType)                            { this.disconnectType = loginType;                  }
-    public void setLoginType(int loginType)                                 { this.loginType = loginType;                       }
-    public void setLoginProperties(HashMap<String, String> loginProperties) { this.loginProperties = loginProperties;           }
-    public void setLoginPostParams(String loginPostParams)                  { this.loginPostParams = loginPostParams;           }
+    public void setConnect(String connect)                                         { this.connect = connect;                           }
+    public void setDisconnect(String disconnect)                                   { this.disconnect = disconnect;                     }
+    public void setLogoff(String logoff)                                           { this.logoff = logoff;                             }
+    public void setLogin(String login)                                             { this.login = login;                               }
+    public void setRouterName(String routerName)                                   { this.routerName = routerName;                     }
+    public void setIpAddressOffline(String ipAddressOffline)                       { this.ipAddressOffline = ipAddressOffline;         }
+    public void setIpAddressSite(String ipAddressSite)                             { this.ipAddressSite = ipAddressSite;               }
+    public void setIpAddressRegEx(String ipAddressRegEx)                           { this.ipAddressRegEx = ipAddressRegEx;             }
+    public void setDisconnectPostParams(String disconnectPostParams)               { this.disconnectPostParams = disconnectPostParams; }
+    public void setDisconnectType(int loginType)                                   { this.disconnectType = loginType;                  }
+    public void setLoginType(int loginType)                                        { this.loginType = loginType;                       }
+    public void setLoginRequestProperties(HashMap<String, String> loginProperties) { this.loginProperties = loginProperties;           }
+    public void setLoginPostParams(String loginPostParams)                         { this.loginPostParams = loginPostParams;           }
 
     /**
      * Liefert die IP Adresse aus einem Text zurück

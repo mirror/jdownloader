@@ -21,7 +21,11 @@ public class HTTPReconnect extends Interaction{
     /**
      * serialVersionUID
      */
-    private transient static final long serialVersionUID = 1332164738388120767L;
+    private static final long serialVersionUID = 1332164738388120767L;
+    private static final String NAME ="HTTPReconnect";
+    public static String VAR_USERNAME = "%USERNAME%";
+    public static String VAR_PASSWORD = "%PASSWORD%";
+    
 
     @Override
     public boolean interact() {
@@ -51,8 +55,8 @@ public class HTTPReconnect extends Interaction{
             routerPage = "http://"+routerIP+":"+routerPort+"/";
         RequestInfo requestInfo = null;
         if(login != null){
-            login.replaceAll("%USERNAME%", routerUsername);
-            login.replaceAll("%PASSWORD%", routerPassword);
+            login.replaceAll(VAR_USERNAME, routerUsername);
+            login.replaceAll(VAR_PASSWORD, routerPassword);
             
             //Anmelden
             requestInfo = doThis(
@@ -105,7 +109,10 @@ public class HTTPReconnect extends Interaction{
 //    }
     @Override
     public String toString() { return "HTTPReconnect "+configuration.getRouterData(); }
-    
+    @Override
+    public String getName() {
+        return NAME;
+    }
     private RequestInfo doThis(String action, String page, RequestInfo requestInfo, HashMap<String, String> requestProperties, String params, int type){
         RequestInfo newRequestInfo = null;
         if(type == RouterData.TYPE_WEB_POST){

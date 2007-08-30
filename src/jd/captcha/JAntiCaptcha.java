@@ -313,7 +313,6 @@ public class JAntiCaptcha {
         try {
             doc = UTILITIES.parseXmlFile(url.openStream(), false);
         } catch (IOException e) {
-            // TODO Auto-generated catch block
             logger.severe("" + url + " is missing2");
             return;
         }
@@ -787,7 +786,6 @@ public class JAntiCaptcha {
             try {
                 fileName = URLDecoder.decode(fileName, "UTF8");
             } catch (UnsupportedEncodingException e) {
-                // TODO Auto-generated catch block
                 e.printStackTrace();
             }
             fileName=UTILITIES.URLtoPath(fileName);

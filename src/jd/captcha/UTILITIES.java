@@ -1163,7 +1163,6 @@ public class UTILITIES {
         } catch (SocketTimeoutException e) {
             //getLogger().severe(urlStr + " Socket Timeout");
         } catch (IOException e) {
-            // TODO Auto-generated catch block
             e.printStackTrace();
         }
         return null;
@@ -1221,7 +1220,6 @@ public class UTILITIES {
 
         return ret;
         } catch (UnsupportedEncodingException e) {
-            // TODO Auto-generated catch block
             e.printStackTrace();
         }
         return str;

@@ -3,6 +3,8 @@ package jd.gui.skins.simple.config;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 
 import javax.swing.JButton;
 import javax.swing.JLabel;
@@ -11,8 +13,9 @@ import javax.swing.JTextField;
 
 import jd.Configuration;
 import jd.JDUtilities;
+import jd.captcha.JAntiCaptcha;
 
-public class ConfigPanelGeneral extends JPanel{
+public class ConfigPanelGeneral extends JPanel implements ActionListener{
     /**
      * serialVersionUID
      */
@@ -37,6 +40,7 @@ public class ConfigPanelGeneral extends JPanel{
         txtHomeDir     = new JTextField(JDUtilities.getHomeDirectory(), 30);
         txtDownloadDir = new JTextField(configuration.getDownloadDirectory(),30);
         btnUpdate = new JButton("Update");
+        btnUpdate.addActionListener(this);
         Insets insets = new Insets(1,5,1,5);
         
         int row=0;
@@ -58,4 +62,10 @@ public class ConfigPanelGeneral extends JPanel{
         if(JDUtilities.getHomeDirectory() != null)
             JDUtilities.writeJDHomeDirectoryToWebStartCookie(txtHomeDir.getText().trim());
     }
+    public void actionPerformed(ActionEvent e) {
+        if(e.getSource() == btnUpdate){
+            JAntiCaptcha.updateMethods();
+        }
+    }
+    
 }

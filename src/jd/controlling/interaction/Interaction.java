@@ -24,7 +24,7 @@ public abstract class Interaction implements Serializable{
     /**
      * Zeigt an, daß alle Downloads abgeschlossen wurden
      */
-    public transient final static int INTERACTION_ALL_DOWNLOADS_FINISHED = 2;
+    public transient final static int INTERACTION_DOWNLOADS_FINISHED_ALL = 2;
     /**
      * Zeigt, daß ein einzelner Download nicht fertiggestellt werden konnte
      */
@@ -34,4 +34,5 @@ public abstract class Interaction implements Serializable{
 
     public abstract boolean interact(); 
     public abstract String toString();
+    public abstract String getName();
 }
