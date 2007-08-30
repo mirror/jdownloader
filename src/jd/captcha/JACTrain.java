@@ -1,3 +1,4 @@
+
 package jd.captcha;
 
 
@@ -5,6 +6,7 @@ package jd.captcha;
 import java.util.logging.Logger;
 
 import jd.JDUtilities;
+import jd.captcha.utils.UTILITIES;
 
 /**
  * Jac Training
@@ -45,7 +47,8 @@ public class JACTrain {
 
         JAntiCaptcha jac= new JAntiCaptcha(null,"rapidshare.com");
         //jac.runTestMode(new File("1186941165349_captcha.jpg"));
-     
+     jac.displayLibrary();
+       // jac.setShowDebugGui(true);
        // jac.showPreparedCaptcha(new File("captcha\\methods\\rapidshare.com\\captchas\\rapidsharecom138040807171852.jpg"));
         jac.trainAllCaptchas(JDUtilities.getJDHomeDirectory().getAbsolutePath()+"\\jd\\captcha\\methods\\rapidshare.com\\captchas\\");
   

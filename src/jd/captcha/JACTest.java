@@ -27,9 +27,13 @@ public class JACTest {
       
       
 
-       JAntiCaptcha jac= new JAntiCaptcha(null,"secured.in");
+       JAntiCaptcha jac= new JAntiCaptcha(null,"rapidshare.com");
      //sharegullicom47210807182105.gif
-     jac.showPreparedCaptcha(new File(JDUtilities.getJDHomeDirectory().getAbsolutePath()+"/jd/captcha/methods"+"/secured.in/captchas/captcha_secured.in_code2z37.jpg"));
+      jac.setShowDebugGui(true);
+       LetterComperator.CREATEINTERSECTIONLETTER=true;
+      jac.displayLibrary();
+       jac.getJas().set("quickScanFilter", 100);
+     jac.showPreparedCaptcha(new File(JDUtilities.getJDHomeDirectory().getAbsolutePath()+"/jd/captcha/methods"+"/rapidshare.com/captchas/1188481784981_rapidsharecom22190807214807.jpg"));
       
      //UTILITIES.getLogger().info(JAntiCaptcha.getCaptchaCode(UTILITIES.loadImage(new File(JDUtilities.getJDHomeDirectory().getAbsolutePath()+"/jd/captcha/methods"+"/rapidshare.com/captchas/rapidsharecom24190807214810.jpg")), null, "rapidshare.com"));
      //jac.removeBadLetters();
