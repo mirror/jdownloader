@@ -3,30 +3,39 @@ package jd.gui.skins.simple.config;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
+import java.io.File;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Vector;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
+import javax.swing.JButton;
 import javax.swing.JComboBox;
+import javax.swing.JFileChooser;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JPasswordField;
 import javax.swing.JTextField;
 
 import jd.Configuration;
+import jd.JDFileFilter;
 import jd.JDUtilities;
 import jd.controlling.interaction.HTTPReconnect;
 import jd.plugins.Plugin;
 import jd.router.RouterData;
+import jd.router.RouterParser;
 /**
  * Hier können Routereinstellungen vorgenommen werden
  * 
  * @author astaldo
  */
-class ConfigPanelRouter extends JPanel implements ItemListener{
+class ConfigPanelRouter extends JPanel implements ItemListener, ActionListener{
     private static String GET = "GET";
     private static String POST = "POST";
     /**
@@ -38,6 +47,8 @@ class ConfigPanelRouter extends JPanel implements ItemListener{
     private Configuration configuration;
     private RouterData routerData;
 
+    private JButton btnImport;
+    
     private JLabel lblUsername;
     private JLabel lblPassword;
     private JLabel lblRouterIP;
@@ -98,24 +109,26 @@ class ConfigPanelRouter extends JPanel implements ItemListener{
         lblIPAddressRegEx              = new JLabel("RegEx ausdruck zum Lesen der IP",JLabel.RIGHT);
         lblIPAddressSite               = new JLabel("RouterPage für die IPAdresse",JLabel.RIGHT);
         
-        txtUsername                    = new JTextField(configuration.getRouterUsername(),30);
-        txtPassword                    = new JPasswordField(configuration.getRouterPassword(),30);
-        txtRouterIP                    = new JTextField(configuration.getRouterIP(),30);
-        txtRouterPort                  = new JTextField(Integer.toString(configuration.getRouterPort()),30);
-        txtRouterName                  = new JTextField(routerData.getRouterName(),30);
-        txtLogin                       = new JTextField(routerData.getLogin(),30);
+        txtUsername                    = new JTextField(configuration.getRouterUsername(),10);
+        txtPassword                    = new JPasswordField(configuration.getRouterPassword(),10);
+        txtRouterIP                    = new JTextField(configuration.getRouterIP(),10);
+        txtRouterPort                  = new JTextField(Integer.toString(configuration.getRouterPort()),10);
+        txtRouterName                  = new JTextField(50);
+        txtLogin                       = new JTextField(50);
         cboLoginType                   = new JComboBox(types);
-        txtLoginRequestProperties      = new JTextField(30);
-        txtLoginPostParams             = new JTextField(routerData.getLoginPostParams(),30);
-        txtLogoff                      = new JTextField(routerData.getLogoff(),30);
-        txtConnect                     = new JTextField(routerData.getConnect(),30);
-        txtDisconnect                  = new JTextField(routerData.getDisconnect(),30);
+        txtLoginRequestProperties      = new JTextField(50);
+        txtLoginPostParams             = new JTextField(50);
+        txtLogoff                      = new JTextField(50);
+        txtConnect                     = new JTextField(50);
+        txtDisconnect                  = new JTextField(50);
         cboDisconnectType              = new JComboBox(types);
-        txtDisconnectRequestProperties = new JTextField(30);
-        txtDisconnectPostParams        = new JTextField(routerData.getDisconnectPostParams(),30);
-        txtIPAddressRegEx              = new JTextField(30);
-        txtIPAddressSite               = new JTextField(routerData.getIpAddressSite(),30);
+        txtDisconnectRequestProperties = new JTextField(50);
+        txtDisconnectPostParams        = new JTextField(50);
+        txtIPAddressRegEx              = new JTextField(50);
+        txtIPAddressSite               = new JTextField(50);
 
+        btnImport = new JButton("Import");
+        
         txtLogin.setToolTipText("Als Platzhalter für den Benutzernamen "+HTTPReconnect.VAR_USERNAME+" und für das Password "+HTTPReconnect.VAR_PASSWORD+" nehmen");
         txtConnect.setToolTipText("Hiermit wird die Verbindung wiederaufgebaut (zb http://www.google.de)");
         txtLoginRequestProperties.setToolTipText("<HTML>Die Werte werden folgendermaßen eingegeben:<BR>key1==value1;;key2==value2;;key3==value3.1=\"value3.2\"</HTML>");
@@ -124,10 +137,12 @@ class ConfigPanelRouter extends JPanel implements ItemListener{
         load();
         cboLoginType.addItemListener(this);
         cboDisconnectType.addItemListener(this);
+        btnImport.addActionListener(this);
         
         Insets insets = new Insets(1,5,1,5);
         
         int row=0;
+        JDUtilities.addToGridBag(panel, btnImport,                      0, row++, 2, 1, 1, 1, insets, GridBagConstraints.CENTER, GridBagConstraints.CENTER);
         JDUtilities.addToGridBag(panel, lblUsername,                    0, row++, 1, 1, 1, 1, insets, GridBagConstraints.NONE, GridBagConstraints.EAST);
         JDUtilities.addToGridBag(panel, lblPassword,                    0, row++, 1, 1, 1, 1, insets, GridBagConstraints.NONE, GridBagConstraints.EAST);
         JDUtilities.addToGridBag(panel, lblRouterIP,                    0, row++, 1, 1, 1, 1, insets, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -146,7 +161,7 @@ class ConfigPanelRouter extends JPanel implements ItemListener{
         JDUtilities.addToGridBag(panel, lblIPAddressSite,               0, row++, 1, 1, 1, 1, insets, GridBagConstraints.NONE, GridBagConstraints.EAST);
         JDUtilities.addToGridBag(panel, lblIPAddressRegEx,              0, row++, 1, 1, 1, 1, insets, GridBagConstraints.NONE, GridBagConstraints.EAST);
 
-        row=0;
+        row=1;
         JDUtilities.addToGridBag(panel, txtUsername,                    1, row++, 1, 1, 1, 1, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
         JDUtilities.addToGridBag(panel, txtPassword,                    1, row++, 1, 1, 1, 1, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
         JDUtilities.addToGridBag(panel, txtRouterIP,                    1, row++, 1, 1, 1, 1, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -173,9 +188,19 @@ class ConfigPanelRouter extends JPanel implements ItemListener{
      * Lädt alle Informationen 
      */
     void load(){
-        if(routerData.getIpAddressRegEx() != null){
+        txtRouterName.setText(routerData.getRouterName());
+        txtLogin.setText(routerData.getLogin());
+        txtLoginPostParams.setText(routerData.getLoginPostParams());
+        txtLogoff.setText(routerData.getLogoff());
+        txtConnect.setText(routerData.getConnect());
+        txtDisconnect.setText(routerData.getDisconnect());
+        txtDisconnectPostParams.setText(routerData.getDisconnectPostParams());
+        txtIPAddressSite.setText(routerData.getIpAddressSite());
+
+        if(routerData.getIpAddressRegEx() != null)
             txtIPAddressRegEx.setText(routerData.getIpAddressRegEx().toString()); 
-        }
+        else
+            txtIPAddressRegEx.setText(null);
         if(routerData.getLoginType() == RouterData.TYPE_WEB_GET)
             cboLoginType.setSelectedItem(GET);
         else
@@ -184,17 +209,20 @@ class ConfigPanelRouter extends JPanel implements ItemListener{
             cboDisconnectType.setSelectedItem(GET);
         else
             cboDisconnectType.setSelectedItem(POST);
-        if(routerData.getLoginRequestProperties()!=null){
+        if(routerData.getLoginRequestProperties()!=null)
             txtLoginRequestProperties.setText(mergeHashMap(routerData.getLoginRequestProperties()));
-        }
-        if(routerData.getDisconnectRequestProperties()!=null){
+        else
+            txtLoginRequestProperties.setText(null);
+        if(routerData.getDisconnectRequestProperties()!=null)
             txtDisconnectRequestProperties.setText(mergeHashMap(routerData.getDisconnectRequestProperties()));
-        }
+        else
+            txtDisconnectRequestProperties.setText(null);
     }
     /**
      * Speichert alle Änderungen auf der Maske
      */
     void save(){
+        configuration.setRouterData(routerData);
         configuration.setRouterUsername(txtUsername.getText().trim());
         configuration.setRouterPassword(txtUsername.getText().trim());
         configuration.setRouterIP(txtRouterIP.getText().trim());
@@ -294,9 +322,37 @@ class ConfigPanelRouter extends JPanel implements ItemListener{
             
         }
     }
+    private void importFromRoutersDat(){
+        JFileChooser fileChooser = new JFileChooser();
+        JDFileFilter fileFilter = new JDFileFilter("Routers",".dat",true);
+        File fileRoutersDat;
+        Vector<RouterData> routerData;
+        
+        
+        fileChooser.setFileFilter(fileFilter);
+        fileChooser.showOpenDialog(this);
+        fileRoutersDat = fileChooser.getSelectedFile();
+        if(fileRoutersDat != null){
+            RouterParser parser = new RouterParser();
+            routerData = parser.parseFile(fileRoutersDat);
+            Object selected = JOptionPane.showInputDialog(
+                    this, 
+                    "Bitte wähle deinen Router aus", 
+                    "Router importieren", 
+                    JOptionPane.INFORMATION_MESSAGE, 
+                    null, 
+                    routerData.toArray(), 
+                    null);
+            if(selected != null){
+                this.routerData = (RouterData)selected;
+                load();
+            }
+        }
+    }
     public void itemStateChanged(ItemEvent e) {
         checkComboBoxes();
     }
-    
-    
+    public void actionPerformed(ActionEvent e) {
+        importFromRoutersDat();
+    }
 }

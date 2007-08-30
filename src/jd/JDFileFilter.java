@@ -58,8 +58,8 @@ public class JDFileFilter extends  javax.swing.filechooser.FileFilter implements
     }
 
     public boolean accept(File f) {
-        if(f.isDirectory() && acceptDirectories==false)
-            return false;
+        if(f.isDirectory())
+            return acceptDirectories;
         if(extension != null){
             if(!f.getName().endsWith(extension))
                 return false;
