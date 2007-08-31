@@ -134,6 +134,6 @@ public class RouterData implements Serializable{
         return ipAddress;
     }
     public String toString(){
-        return "Router:"+routerName;
+        return routerName;
     }
 }

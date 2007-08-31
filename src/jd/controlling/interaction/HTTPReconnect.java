@@ -108,7 +108,7 @@ public class HTTPReconnect extends Interaction{
 //
 //    }
     @Override
-    public String toString() { return "HTTPReconnect "+configuration.getRouterData(); }
+    public String toString() { return "HTTPReconnect"; }
     @Override
     public String getName() {
         return NAME;

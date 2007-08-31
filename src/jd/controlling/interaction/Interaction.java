@@ -30,7 +30,11 @@ public abstract class Interaction implements Serializable{
      */
     public transient final static int INTERACTION_DOWNLOAD_FAILED        = 3;
 
-    public static Configuration configuration = JDUtilities.getConfiguration();
+    public static Configuration configuration;
+    
+    public Interaction(){
+        configuration = JDUtilities.getConfiguration();
+    }
 
     public abstract boolean interact(); 
     public abstract String toString();

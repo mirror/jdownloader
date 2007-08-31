@@ -37,8 +37,8 @@ import javax.imageio.ImageIO;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 
-import jd.captcha.Captcha;
 import jd.captcha.JAntiCaptcha;
+import jd.captcha.pixelgrid.Captcha;
 import jd.controlling.JDController;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;

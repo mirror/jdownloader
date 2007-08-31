@@ -10,43 +10,35 @@ import java.util.Vector;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
-import jd.JDUtilities;
 import jd.plugins.Plugin;
 
 /**
- * Versuch, die Routers.dat auszulesen
+ * Diese Klasse ließt eine Routers.dat Datei aus
  * 
  * @author astaldo
- * 
  */
-public class Parser {
+public class RouterParser {
     private static Logger logger = Plugin.getLogger();
-    Vector<Object> routers = new Vector<Object>();
-
     int positionInFile = 0;
 
-    public void parseFile(File file) {
+    public Vector<RouterData> parseFile(File file) {
+        Vector<RouterData> routerData = new Vector<RouterData>();
         int count = 0;
         try {
             FileInputStream fis = new FileInputStream(file);
             int ende = readInt(fis) * 2;
             while (count < ende) {
-                parseSingleRouter(fis);
+                routerData.add(parseSingleRouter(fis));
                 count++;
             }
             logger.info(count +" router data loaded");
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+            return routerData;
+        } 
+        catch (FileNotFoundException e) { e.printStackTrace(); } 
+        catch (IOException e)           { e.printStackTrace(); }
+        return null;
     }
-
-    public void saveFile(File file) {
-        JDUtilities.saveObject(null, routers, file,"jd",".routers", false);
-    }
-
-    public void parseSingleRouter(FileInputStream fis) throws IOException {
+    public RouterData parseSingleRouter(FileInputStream fis) throws IOException {
         RouterData routerData = new RouterData();
         @SuppressWarnings("unused")
         int routerPort;
@@ -118,8 +110,8 @@ public class Parser {
         else if(disconnectString.startsWith("GET"))
             disconnectString = disconnectString.substring("GET".length());
         routerData.setDisconnect(disconnectString);
-        routers.add(routerData);
 
+        return routerData;
     }
 
     private String readNextString(FileInputStream fis) throws IOException {
@@ -176,12 +168,4 @@ public class Parser {
                 + ((long) (readBuffer[4] & 255) << 24)
                 + ((readBuffer[5] & 255) << 16) + ((readBuffer[6] & 255) << 8) + ((readBuffer[7] & 255) << 0));
     }
-
-    public static void main(String args[]) {
-        Parser parser = new Parser();
-
-        parser.parseFile(new File("C:/Dokumente und Einstellungen/rogerssocke/Desktop/jdownloader/routerControl Edit/Routers.dat"));
-        parser.saveFile(new File("routerData.dat"));
-    }
-
 }
