@@ -387,10 +387,12 @@ public class JDUtilities {
                 Method         addURL         = URLClassLoader.class.getDeclaredMethod("addURL", new Class[]{URL.class});
 
                 addURL.setAccessible(true);
-                for(int i=0;i<files.length;i++){
-                    logger.info("loaded plugins from:"+files[i]);
-                    URL jarURL = files[i].toURL();
-                    addURL.invoke(urlClassLoader, new Object[]{jarURL});
+                if(files != null){
+                    for(int i=0;i<files.length;i++){
+                        logger.info("loaded plugins from:"+files[i]);
+                        URL jarURL = files[i].toURL();
+                        addURL.invoke(urlClassLoader, new Object[]{jarURL});
+                    }
                 }
             }
         }

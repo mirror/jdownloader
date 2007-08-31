@@ -35,6 +35,18 @@ public class RequestInfo {
         this.location = location;
         this.cookie   = cookie;
         this.headers  = headers;
+        this.responseCode = responseCode;
+    }
+    /**
+     * Gibt anhand des Rückgabecodes zurück, ob der Aufrufr erfolgreich war oder nicht.
+     * HTTP Codes zwischen 0 und 499 gelten als erfolgreich
+     * @return Wahr, wenn der HTTP Code zwischen 0 und 499 lag
+     */
+    public boolean isOK(){
+        if(responseCode>0 && responseCode<500)
+            return true;
+        else
+            return false;
     }
     public Map<String,List<String>> getHeaders() { return headers;      }
     public String getHtmlCode()                  { return htmlCode;     }

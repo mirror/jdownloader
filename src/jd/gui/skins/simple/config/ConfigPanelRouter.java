@@ -228,7 +228,7 @@ class ConfigPanelRouter extends JPanel implements ItemListener, ActionListener{
     void save(){
         configuration.setRouterData(routerData);
         configuration.setRouterUsername(txtUsername.getText().trim());
-        configuration.setRouterPassword(txtUsername.getText().trim());
+        configuration.setRouterPassword(new String(txtPassword.getPassword()).trim());
         configuration.setRouterIP(txtRouterIP.getText().trim());
         routerData.setRouterName(txtRouterName.getText().trim());
         routerData.setLogin(txtLogin.getText().trim());
@@ -366,6 +366,7 @@ class ConfigPanelRouter extends JPanel implements ItemListener, ActionListener{
                     "Reconnect-Test",
                     JOptionPane.YES_NO_OPTION);
             if(button == JOptionPane.YES_OPTION){
+                save();
                 boolean success = new HTTPReconnect().interact();
                 if (success)
                     JOptionPane.showMessageDialog(this, "RouterTrennung erfolgreich");

@@ -2,7 +2,6 @@ package jd.controlling.interaction;
 
 import java.io.IOException;
 import java.net.Authenticator;
-import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.PasswordAuthentication;
 import java.net.URL;
@@ -55,8 +54,9 @@ public class HTTPReconnect extends Interaction{
 
         //IP auslesen
         ipBefore = getIPAddress(routerPage,routerData);
+        logger.fine("IP before:"+ipBefore);
 
-        if(login != null){
+        if(login != null && !login.equals("")){
             login.replaceAll(VAR_USERNAME, routerUsername);
             login.replaceAll(VAR_PASSWORD, routerPassword);
             
@@ -68,10 +68,10 @@ public class HTTPReconnect extends Interaction{
                     routerData.getLoginRequestProperties(),
                     routerData.getLoginPostParams(),
                     routerData.getLoginType());
-        }
-        if(requestInfo== null || requestInfo.getResponseCode()!=HttpURLConnection.HTTP_OK){
-            logger.severe("Login failed. HTTP-Code:"+requestInfo.getResponseCode());
-            return false;
+            if(requestInfo== null || !requestInfo.isOK()){
+                logger.severe("Login failed. HTTP-Code:"+requestInfo.getResponseCode());
+                return false;
+            }
         }
         //Disconnect
         requestInfo = doThis(
@@ -82,7 +82,7 @@ public class HTTPReconnect extends Interaction{
                 routerData.getDisconnectPostParams(),
                 routerData.getDisconnectType());
 
-        if(requestInfo== null || requestInfo.getResponseCode()!=HttpURLConnection.HTTP_OK){
+        if(requestInfo== null || !requestInfo.isOK()){
             logger.severe("Disconnect failed. HTTP-Code:"+requestInfo.getResponseCode());
             return false;
         }
@@ -90,20 +90,21 @@ public class HTTPReconnect extends Interaction{
         logger.fine("building connection");
         requestInfo = doThis(
                 "Rebuild",
-                routerPage+connect,
+                connect,
                 null,
                 null,
                 null,
                 RouterData.TYPE_WEB_GET);
 
-        if(requestInfo== null || requestInfo.getResponseCode()!=HttpURLConnection.HTTP_OK){
+        if(requestInfo== null || !requestInfo.isOK()){
             logger.severe("Reconnect failed. HTTP-Code:"+requestInfo.getResponseCode());
             return false;
         }
 
         // IP check
         ipAfter = getIPAddress(routerPage,routerData);
-        if(ipBefore.equals(ipAfter)){
+        logger.fine("IP after reconnect:"+ipAfter);
+        if(ipBefore== null || ipAfter==null || ipBefore.equals(ipAfter)){
             logger.severe("IP address did not change");
             return false;
         }
