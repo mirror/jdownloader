@@ -48,6 +48,7 @@ class ConfigPanelRouter extends JPanel implements ItemListener, ActionListener{
     private RouterData routerData;
 
     private JButton btnImport;
+    private JButton btnDisconnect;
     
     private JLabel lblUsername;
     private JLabel lblPassword;
@@ -128,6 +129,7 @@ class ConfigPanelRouter extends JPanel implements ItemListener, ActionListener{
         txtIPAddressSite               = new JTextField(50);
 
         btnImport = new JButton("Import");
+        btnDisconnect = new JButton("DisconnectTest");
         
         txtLogin.setToolTipText("Als Platzhalter für den Benutzernamen "+HTTPReconnect.VAR_USERNAME+" und für das Password "+HTTPReconnect.VAR_PASSWORD+" nehmen");
         txtConnect.setToolTipText("Hiermit wird die Verbindung wiederaufgebaut (zb http://www.google.de)");
@@ -138,11 +140,13 @@ class ConfigPanelRouter extends JPanel implements ItemListener, ActionListener{
         cboLoginType.addItemListener(this);
         cboDisconnectType.addItemListener(this);
         btnImport.addActionListener(this);
+        btnDisconnect.addActionListener(this);
         
         Insets insets = new Insets(1,5,1,5);
         
         int row=0;
         JDUtilities.addToGridBag(panel, btnImport,                      0, row++, 2, 1, 1, 1, insets, GridBagConstraints.CENTER, GridBagConstraints.CENTER);
+        JDUtilities.addToGridBag(panel, btnDisconnect,                  0, row++, 2, 1, 1, 1, insets, GridBagConstraints.CENTER, GridBagConstraints.CENTER);
         JDUtilities.addToGridBag(panel, lblUsername,                    0, row++, 1, 1, 1, 1, insets, GridBagConstraints.NONE, GridBagConstraints.EAST);
         JDUtilities.addToGridBag(panel, lblPassword,                    0, row++, 1, 1, 1, 1, insets, GridBagConstraints.NONE, GridBagConstraints.EAST);
         JDUtilities.addToGridBag(panel, lblRouterIP,                    0, row++, 1, 1, 1, 1, insets, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -161,7 +165,7 @@ class ConfigPanelRouter extends JPanel implements ItemListener, ActionListener{
         JDUtilities.addToGridBag(panel, lblIPAddressSite,               0, row++, 1, 1, 1, 1, insets, GridBagConstraints.NONE, GridBagConstraints.EAST);
         JDUtilities.addToGridBag(panel, lblIPAddressRegEx,              0, row++, 1, 1, 1, 1, insets, GridBagConstraints.NONE, GridBagConstraints.EAST);
 
-        row=1;
+        row=2;
         JDUtilities.addToGridBag(panel, txtUsername,                    1, row++, 1, 1, 1, 1, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
         JDUtilities.addToGridBag(panel, txtPassword,                    1, row++, 1, 1, 1, 1, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
         JDUtilities.addToGridBag(panel, txtRouterIP,                    1, row++, 1, 1, 1, 1, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -353,6 +357,22 @@ class ConfigPanelRouter extends JPanel implements ItemListener, ActionListener{
         checkComboBoxes();
     }
     public void actionPerformed(ActionEvent e) {
-        importFromRoutersDat();
+        if(e.getSource() == btnImport)
+            importFromRoutersDat();
+        else if(e.getSource() == btnDisconnect){
+            int button = JOptionPane.showConfirmDialog(
+                    this, 
+                    "Sollen die Daten gespeichert und der Router getrennt werden?",
+                    "Reconnect-Test",
+                    JOptionPane.YES_NO_OPTION);
+            if(button == JOptionPane.YES_OPTION){
+                boolean success = new HTTPReconnect().interact();
+                if (success)
+                    JOptionPane.showMessageDialog(this, "RouterTrennung erfolgreich");
+                else
+                    JOptionPane.showMessageDialog(this, "RouterTrennung fehlgeschlagen");
+            }
+        }
+            
     }
 }

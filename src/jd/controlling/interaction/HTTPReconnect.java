@@ -2,6 +2,7 @@ package jd.controlling.interaction;
 
 import java.io.IOException;
 import java.net.Authenticator;
+import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.PasswordAuthentication;
 import java.net.URL;
@@ -43,9 +44,6 @@ public class HTTPReconnect extends Interaction{
         if(routerUsername != null && routerPassword != null)
             Authenticator.setDefault(new InternalAuthenticator(routerUsername, routerPassword));
 
-        //IP auslesen
-//        ipBefore = getIPAddress(routerData);
-
         String routerPage;
         
         //RouterPage zusammensetzen
@@ -54,6 +52,10 @@ public class HTTPReconnect extends Interaction{
         else
             routerPage = "http://"+routerIP+":"+routerPort+"/";
         RequestInfo requestInfo = null;
+
+        //IP auslesen
+        ipBefore = getIPAddress(routerPage,routerData);
+
         if(login != null){
             login.replaceAll(VAR_USERNAME, routerUsername);
             login.replaceAll(VAR_PASSWORD, routerPassword);
@@ -67,7 +69,10 @@ public class HTTPReconnect extends Interaction{
                     routerData.getLoginPostParams(),
                     routerData.getLoginType());
         }
-        
+        if(requestInfo== null || requestInfo.getResponseCode()!=HttpURLConnection.HTTP_OK){
+            logger.severe("Login failed. HTTP-Code:"+requestInfo.getResponseCode());
+            return false;
+        }
         //Disconnect
         requestInfo = doThis(
                 "Disconnect",
@@ -77,6 +82,10 @@ public class HTTPReconnect extends Interaction{
                 routerData.getDisconnectPostParams(),
                 routerData.getDisconnectType());
 
+        if(requestInfo== null || requestInfo.getResponseCode()!=HttpURLConnection.HTTP_OK){
+            logger.severe("Disconnect failed. HTTP-Code:"+requestInfo.getResponseCode());
+            return false;
+        }
         // Verbindung wiederaufbauen
         logger.fine("building connection");
         requestInfo = doThis(
@@ -87,26 +96,30 @@ public class HTTPReconnect extends Interaction{
                 null,
                 RouterData.TYPE_WEB_GET);
 
+        if(requestInfo== null || requestInfo.getResponseCode()!=HttpURLConnection.HTTP_OK){
+            logger.severe("Reconnect failed. HTTP-Code:"+requestInfo.getResponseCode());
+            return false;
+        }
 
         // IP check
-//        ipAfter = getIPAddress(routerData);
-//        if(ipBefore.equals(ipAfter)){
-//            logger.severe("IP address did not change");
-//            return false;
-//        }
+        ipAfter = getIPAddress(routerPage,routerData);
+        if(ipBefore.equals(ipAfter)){
+            logger.severe("IP address did not change");
+            return false;
+        }
 
         return true;
     }
-//    private String getIPAddress(RouterData routerData){
-//        try {
-//            String urlForIPAddress = routerData.getIpAddressSite();
-//            RequestInfo requestInfo = Plugin.getRequest(new URL(urlForIPAddress));
-//            return routerData.getIPAdress(requestInfo.getHtmlCode());
-//        }
-//        catch (IOException e1) { e1.printStackTrace(); }
-//        return null;
-//
-//    }
+    private String getIPAddress(String routerPage, RouterData routerData){
+        try {
+            String urlForIPAddress = routerPage + routerData.getIpAddressSite();
+            RequestInfo requestInfo = Plugin.getRequest(new URL(urlForIPAddress));
+            return routerData.getIPAdress(requestInfo.getHtmlCode());
+        }
+        catch (IOException e1) { logger.severe("url not found. "+e1.toString()); }
+        return null;
+
+    }
     @Override
     public String toString() { return "HTTPReconnect"; }
     @Override
@@ -123,7 +136,7 @@ public class HTTPReconnect extends Interaction{
                         new URL(page),
                         params);
                 }
-                else{
+                else if(requestInfo!=null){
                     newRequestInfo = Plugin.postRequest(
                             new URL(page),
                             requestInfo.getCookie(),
@@ -131,6 +144,9 @@ public class HTTPReconnect extends Interaction{
                             requestProperties, 
                             params,
                             true);
+                }
+                else{
+                    newRequestInfo = Plugin.postRequest(new URL(page),params);
                 }
             }
             catch (MalformedURLException e) { e.printStackTrace(); }
@@ -143,16 +159,19 @@ public class HTTPReconnect extends Interaction{
                     newRequestInfo = Plugin.getRequest(
                             new URL(page));
                 }
-                else{
+                else if (requestInfo != null){
                     newRequestInfo = Plugin.getRequest(
                             new URL(page),
                             requestInfo.getCookie(),
                             null,
                             true);
                 }
+                else {
+                    newRequestInfo = Plugin.getRequest(new URL(page));
+                }
             }
-            catch (MalformedURLException e) { e.printStackTrace(); }
-            catch (IOException e)           { e.printStackTrace(); }
+            catch (MalformedURLException e) { logger.severe("url wrong."+e.toString()); }
+            catch (IOException e)           { logger.severe("url not found."+e.toString()); }
         }
         return newRequestInfo;
     } 

@@ -20,7 +20,12 @@ import jd.plugins.Plugin;
 public class RouterParser {
     private static Logger logger = Plugin.getLogger();
     int positionInFile = 0;
-
+    /**
+     * Mit dieser Methode wird eine Routers.dat in einzelne RouterData Objekte zerteilt
+     * 
+     * @param file Die Datei, die importiert werden soll
+     * @return Ein Vector mit eingelesen RouterData Objekten
+     */
     public Vector<RouterData> parseFile(File file) {
         Vector<RouterData> routerData = new Vector<RouterData>();
         int count = 0;
@@ -38,7 +43,14 @@ public class RouterParser {
         catch (IOException e)           { e.printStackTrace(); }
         return null;
     }
-    public RouterData parseSingleRouter(FileInputStream fis) throws IOException {
+    /**
+     * Hier wird ein einzelnes RouterData Objekt eingelesen
+     * 
+     * @param is Der InputStream, der zum Import genutzt werden soll
+     * @return Das ausgelesene RouterData Objekt
+     * @throws IOException
+     */
+    public RouterData parseSingleRouter(InputStream is) throws IOException {
         RouterData routerData = new RouterData();
         @SuppressWarnings("unused")
         int routerPort;
@@ -47,57 +59,57 @@ public class RouterParser {
         String disconnectString;
         
         
-        routerPort = readInt(fis);
-        readByte(fis);
-        routerData.setLogin(readNextString(fis));
-        readLong(fis); // es muss ein long übersprungen werden
-        routerData.setRouterName(readNextString(fis)); // routername wird gespeichert
+        routerPort = readInt(is);
+        readByte(is);
+        routerData.setLogin(readNextString(is));
+        readLong(is); // es muss ein long übersprungen werden
+        routerData.setRouterName(readNextString(is)); // routername wird gespeichert
 
         
-        readNextString(fis);// url zum routerhersteller wird übersprungen
-        readNextString(fis);// kommentar vom ersteller wird übersprungen
-        routerData.setConnect(readNextString(fis));
-        disconnectString = readNextString(fis);
-        routerData.setIpAddressSite(readNextString(fis));
-        routerData.setIpAddressOffline(readNextString(fis));
-        ipAddressPre = readNextString(fis);
-        ipAddressPost = readNextString(fis);
+        readNextString(is);// url zum routerhersteller wird übersprungen
+        readNextString(is);// kommentar vom ersteller wird übersprungen
+        routerData.setConnect(readNextString(is));
+        disconnectString = readNextString(is);
+        routerData.setIpAddressSite(readNextString(is));
+        routerData.setIpAddressOffline(readNextString(is));
+        ipAddressPre = readNextString(is);
+        ipAddressPost = readNextString(is);
 
         // informationen der Statusseite 2 werden übersprungen
-        readNextString(fis);
-        int loop1 = readInt(fis);
+        readNextString(is);
+        int loop1 = readInt(is);
         for (int i = 0; i < loop1; i++) {
-            readNextString(fis);
-            readNextString(fis);
+            readNextString(is);
+            readNextString(is);
         }
         // informationen über die benutzerspezifischen links werden übersprungen
         for (int i = 0; i < 3; i++) {
-            readNextString(fis);
+            readNextString(is);
         }
 
-        fis.read();
-        fis.read();
-        fis.read();
-        fis.read();
-        fis.read();
+        is.read();
+        is.read();
+        is.read();
+        is.read();
+        is.read();
         positionInFile += 5;
-        routerData.setLogoff(readNextString(fis));
-        readNextString(fis);
+        routerData.setLogoff(readNextString(is));
+        readNextString(is);
 
-        int loop2 = readInt(fis);
+        int loop2 = readInt(is);
 //        System.out.println("loop2 " + loop2);
 
         for (int i = 0; i < loop2; i++) {
-            readNextString(fis);
-            readNextString(fis);
+            readNextString(is);
+            readNextString(is);
         }
         // informationen über die statusseite 3 werden übersprungen
-        readNextString(fis);
-        int loop3 = readInt(fis);
+        readNextString(is);
+        int loop3 = readInt(is);
 
         for (int i = 0; i < loop3; i++) {
-            readNextString(fis);
-            readNextString(fis);
+            readNextString(is);
+            readNextString(is);
         }
         
         // Nachbearbeitung 
@@ -113,53 +125,82 @@ public class RouterParser {
 
         return routerData;
     }
-
-    private String readNextString(FileInputStream fis) throws IOException {
-        int length = readShort(fis);
+    /**
+     * Es wird der nächste Text ausgelesen. Dazu wird zuerst die Länge als
+     * Short ausgelesen und dann der Text
+     * 
+     * @param is Der InputStream, der zum Import genutzt werden soll
+     * @return Der eingelesene Text
+     * @throws IOException
+     */
+    private String readNextString(InputStream is) throws IOException {
+        int length = readShort(is);
         byte b[] = new byte[length];
-        fis.read(b);
+        is.read(b);
         positionInFile += length;
 //        System.out.println(new String(b));
         return new String(b);
     }
 
-    // InputStreams
     private byte readBuffer[] = new byte[8];
-
-    public byte readByte(InputStream in) throws IOException {
-        int ch = in.read();
+    /**
+     *  Liest das nächste Byte ein
+     * @param is Der InputStream, der zum Import genutzt werden soll
+     * @return Die ausgelesene Zahl
+     * @throws IOException
+     */
+    public byte readByte(InputStream is) throws IOException {
+        int ch = is.read();
         positionInFile++;
         if (ch < 0)
             throw new EOFException();
         return (byte) (ch);
     }
-
-    public short readShort(InputStream in) throws IOException {
-        int ch1 = in.read();
+    /**
+     * Liest ein Short ein.
+     * 
+     * @param is Der InputStream, der zum Import genutzt werden soll
+     * @return Die ausgelesene Zahl
+     * @throws IOException
+     */
+    public short readShort(InputStream is) throws IOException {
+        int ch1 = is.read();
         positionInFile++;
-        int ch2 = in.read();
+        int ch2 = is.read();
         positionInFile++;
         if ((ch1 | ch2) < 0)
             throw new EOFException();
         return (short) ((ch2 << 8) + (ch1 << 0));
     }
-
-    private int readInt(InputStream in) throws IOException {
-        int ch1 = in.read();
+    /**
+     * Liest einen Integer Wert ein
+     * 
+     * @param is Der InputStream, der zum Import genutzt werden soll
+     * @return Die ausgelesene Zahl
+     * @throws IOException
+     */
+    private int readInt(InputStream is) throws IOException {
+        int ch1 = is.read();
         positionInFile++;
-        int ch2 = in.read();
+        int ch2 = is.read();
         positionInFile++;
-        int ch3 = in.read();
+        int ch3 = is.read();
         positionInFile++;
-        int ch4 = in.read();
+        int ch4 = is.read();
         positionInFile++;
         if ((ch1 | ch2 | ch3 | ch4) < 0)
             throw new EOFException();
         return ((ch4 << 24) + (ch3 << 16) + (ch2 << 8) + (ch1 << 0));
     }
-
-    public final long readLong(InputStream in) throws IOException {
-        in.read(readBuffer, 0, 8);
+    /**
+     * Liest ein Long ein
+     * 
+     * @param is Der InputStream, der zum Import genutzt werden soll
+     * @return Die ausgelesene Zahl
+     * @throws IOException
+     */
+    public final long readLong(InputStream is) throws IOException {
+        is.read(readBuffer, 0, 8);
         positionInFile += 8;
         return (((long) readBuffer[0] << 56)
                 + ((long) (readBuffer[1] & 255) << 48)

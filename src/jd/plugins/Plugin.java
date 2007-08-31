@@ -504,8 +504,12 @@ public abstract class Plugin {
 
         String location = httpConnection.getHeaderField("Location");
         String setcookie = httpConnection.getHeaderField("Set-Cookie");
-
-        return (new RequestInfo("", location, setcookie, httpConnection.getHeaderFields()));
+        int responseCode =HttpURLConnection.HTTP_NOT_IMPLEMENTED; 
+        try {
+            httpConnection.getResponseCode();
+        }
+        catch (IOException e) { }
+        return (new RequestInfo("", location, setcookie, httpConnection.getHeaderFields(),responseCode));
     }
     /**
      * Liest Daten von einer URL
@@ -526,7 +530,12 @@ public abstract class Plugin {
         //ich hab hir mal Location gross und aus cookie Set-Cookie gemacht weil der Server Set-Cookie versendet
         String location = urlInput.getHeaderField("Location");
         String cookie = urlInput.getHeaderField("Set-Cookie");
-        RequestInfo requestInfo = new RequestInfo(htmlCode.toString(), location, cookie, urlInput.getHeaderFields());
+        int responseCode =HttpURLConnection.HTTP_NOT_IMPLEMENTED; 
+        try {
+            urlInput.getResponseCode();
+        }
+        catch (IOException e) { }
+        RequestInfo requestInfo = new RequestInfo(htmlCode.toString(), location, cookie, urlInput.getHeaderFields(),responseCode);
         rd.close();
         return requestInfo;
     }

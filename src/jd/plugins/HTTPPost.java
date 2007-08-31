@@ -235,7 +235,12 @@ public class HTTPPost {
         String htmlCode = read();
         String location = connection.getHeaderField("Location");
         String cookie = connection.getHeaderField("Set-Cookie");
-        return new RequestInfo(htmlCode, location, cookie, connection.getHeaderFields());
+        int responseCode =HttpURLConnection.HTTP_NOT_IMPLEMENTED; 
+        try {
+            connection.getResponseCode();
+        }
+        catch (IOException e) { }
+        return new RequestInfo(htmlCode, location, cookie, connection.getHeaderFields(),responseCode);
     }
 
     /**
