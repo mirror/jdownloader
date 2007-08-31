@@ -580,7 +580,7 @@ public abstract class Plugin {
 
             for(int i=0;!aborted;i++) { 
                 // Thread kurz schlafen lassen, um zu häufiges Event-fire zu verhindern: 
-//                Thread.sleep(100); 
+                Thread.sleep(100); 
                 int bytes = source.read(buffer); 
 
                 if (bytes==-1) 
@@ -595,14 +595,14 @@ public abstract class Plugin {
                 downloadedBytes += bytes; 
                 bytesLastSpeedCheck += bytes; 
 
-//                if (i % 10 == 0) { // Speedcheck alle 10 Runden = 1 sec 
-//                    long t2 = System.currentTimeMillis(); 
-//                    // DL-Speed in bytes/sec berechnen: 
-//                    int speed = (int)(bytesLastSpeedCheck*1000/(t2-t1)); 
-//                    downloadLink.setDownloadSpeed(speed); 
-//                    bytesLastSpeedCheck = 0; 
-//                    t1 = t2; 
-//                } 
+                if (i % 10 == 0) { // Speedcheck alle 10 Runden = 1 sec 
+                    long t2 = System.currentTimeMillis(); 
+                    // DL-Speed in bytes/sec berechnen: 
+                    int speed = (int)(bytesLastSpeedCheck*1000/(t2-t1)); 
+                    downloadLink.setDownloadSpeed(speed); 
+                    bytesLastSpeedCheck = 0; 
+                    t1 = t2; 
+                } 
 
                 downloadLink.setDownloadCurrent(downloadedBytes); 
                 firePluginEvent(new PluginEvent(this, PluginEvent.PLUGIN_DATA_CHANGED, downloadLink)); 
@@ -629,7 +629,7 @@ public abstract class Plugin {
         catch (FileNotFoundException e) { logger.severe("file not found. " + e.getLocalizedMessage());                      } 
         catch (SecurityException e)     { logger.severe("not enough rights to write the file. " + e.getLocalizedMessage()); } 
         catch (IOException e)           { logger.severe("error occurred while writing to file. "+ e.getLocalizedMessage()); } 
-//        catch (InterruptedException e)  { logger.severe("interrupted exception: "+ e.getLocalizedMessage()); } 
+        catch (InterruptedException e)  { logger.severe("interrupted exception: "+ e.getLocalizedMessage()); } 
         return false; 
     } 
     /**
