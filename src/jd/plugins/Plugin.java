@@ -580,7 +580,7 @@ public abstract class Plugin {
 
             for(int i=0;!aborted;i++) { 
                 // Thread kurz schlafen lassen, um zu häufiges Event-fire zu verhindern: 
-                Thread.sleep(100); 
+                Thread.sleep(50); 
                 int bytes = source.read(buffer); 
 
                 if (bytes==-1) 
@@ -595,11 +595,12 @@ public abstract class Plugin {
                 downloadedBytes += bytes; 
                 bytesLastSpeedCheck += bytes; 
 
-                if (i % 10 == 0) { // Speedcheck alle 10 Runden = 1 sec 
+                if (i % 20 == 0) { // Speedcheck alle 10 Runden = 1 sec 
                     long t2 = System.currentTimeMillis(); 
                     // DL-Speed in bytes/sec berechnen: 
                     int speed = (int)(bytesLastSpeedCheck*1000/(t2-t1)); 
-                    downloadLink.setDownloadSpeed(speed); 
+                    downloadLink.setDownloadSpeed(speed);
+                    logger.fine(Integer.toString(speed));
                     bytesLastSpeedCheck = 0; 
                     t1 = t2; 
                 } 

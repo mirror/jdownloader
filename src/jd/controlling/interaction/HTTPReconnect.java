@@ -7,6 +7,7 @@ import java.net.PasswordAuthentication;
 import java.net.URL;
 import java.util.HashMap;
 
+import jd.JDUtilities;
 import jd.plugins.Plugin;
 import jd.plugins.RequestInfo;
 import jd.router.RouterData;
@@ -29,6 +30,8 @@ public class HTTPReconnect extends Interaction{
 
     @Override
     public boolean interact() {
+        configuration = JDUtilities.getConfiguration();
+
         logger.info("Starting HTTPReconnect");
         String ipBefore;
         String ipAfter;
@@ -68,7 +71,11 @@ public class HTTPReconnect extends Interaction{
                     routerData.getLoginRequestProperties(),
                     routerData.getLoginPostParams(),
                     routerData.getLoginType());
-            if(requestInfo== null || !requestInfo.isOK()){
+            if(requestInfo== null){
+                logger.severe("Login failed.");
+                return false;
+            }
+            else if( !requestInfo.isOK()){
                 logger.severe("Login failed. HTTP-Code:"+requestInfo.getResponseCode());
                 return false;
             }
@@ -82,8 +89,12 @@ public class HTTPReconnect extends Interaction{
                 routerData.getDisconnectPostParams(),
                 routerData.getDisconnectType());
 
-        if(requestInfo== null || !requestInfo.isOK()){
-            logger.severe("Disconnect failed. HTTP-Code:"+requestInfo.getResponseCode());
+        if(requestInfo== null){
+            logger.severe("Disconnect failed.");
+            return false;
+        }
+        else if( !requestInfo.isOK()){
+            logger.severe("Disconnect failed HTTP-Code:"+requestInfo.getResponseCode());
             return false;
         }
         // Verbindung wiederaufbauen
@@ -96,7 +107,11 @@ public class HTTPReconnect extends Interaction{
                 null,
                 RouterData.TYPE_WEB_GET);
 
-        if(requestInfo== null || !requestInfo.isOK()){
+        if(requestInfo== null){
+            logger.severe("Reconnect failed.");
+            return false;
+        }
+        else if( !requestInfo.isOK()){
             logger.severe("Reconnect failed. HTTP-Code:"+requestInfo.getResponseCode());
             return false;
         }
