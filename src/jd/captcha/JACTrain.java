@@ -45,12 +45,14 @@ public class JACTrain {
 //        }
 //        catch (Exception e) { }
 
-        JAntiCaptcha jac= new JAntiCaptcha(null,"rapidshare.com");
+        String hoster="filefactory.com";
+
+        JAntiCaptcha jac= new JAntiCaptcha(null,hoster);
         //jac.runTestMode(new File("1186941165349_captcha.jpg"));
      jac.displayLibrary();
        // jac.setShowDebugGui(true);
        // jac.showPreparedCaptcha(new File("captcha\\methods\\rapidshare.com\\captchas\\rapidsharecom138040807171852.jpg"));
-        jac.trainAllCaptchas(JDUtilities.getJDHomeDirectory().getAbsolutePath()+"\\jd\\captcha\\methods\\rapidshare.com\\captchas\\");
+        jac.trainAllCaptchas(JDUtilities.getJDHomeDirectory().getAbsolutePath()+"\\jd\\captcha\\methods\\"+hoster+"\\captchas\\");
   
         logger.info("Training Ende");
         //jac.addLetterMap();

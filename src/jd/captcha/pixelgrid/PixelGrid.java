@@ -4,16 +4,16 @@ import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.Image;
 import java.awt.image.BufferedImage;
+import java.awt.image.IndexColorModel;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
-
 import java.util.Vector;
 import java.util.logging.Logger;
 
 import jd.captcha.JAntiCaptcha;
-
+import jd.captcha.gui.ScrollPaneWindow;
 import jd.captcha.pixelobject.PixelObject;
 import jd.captcha.utils.UTILITIES;
 
@@ -139,6 +139,8 @@ logger.fine(min+" <> "+max+" : "+faktor);
      }
      
  }
+
+
     /**
      * Gibt die Breite des internen captchagrids zurück
      * @return breite
@@ -173,6 +175,9 @@ logger.fine(min+" <> "+max+" : "+faktor);
         }
 
     }
+    
+   
+    
 
     /**
      * Sollte je nach farbmodell den Höchsten pixelwert zurückgeben. RGB:
@@ -631,7 +636,23 @@ logger.fine(min+" <> "+max+" : "+faktor);
         return image;
 
     }
+    public Image getFullImage() {
+        if (getWidth() <= 0 || getHeight() <= 0) {
+            logger.severe("Dimensionen falsch: " + this.getDim());
+            return null;
+        }
+        BufferedImage image = new BufferedImage(getWidth(), getHeight(), BufferedImage.TYPE_INT_RGB);
+        Graphics2D graphics = image.createGraphics();
 
+        for (int y = 0; y < getHeight(); y++) {
+            for (int x = 0; x < getWidth(); x++) {
+                graphics.setColor(new Color(getPixelValue(x, y)==0?0:0xffffff));
+                graphics.fillRect(x, y, 1, 1);
+            }
+        }
+        return image;
+
+    }
     /**
      * Gibt das Pixelgrid als vergrößertes Image zurück
      * 
@@ -846,6 +867,8 @@ logger.fine(min+" <> "+max+" : "+faktor);
      * @return true/False
      */
     public boolean clean() {
+       
+     
         byte topLines = 0;
         byte bottomLines = 0;
         byte leftLines = 0;
@@ -1022,15 +1045,15 @@ public void removeSmallObjects(double contrast, double objectContrast,int maxSiz
         PixelObject object;
 //        ScrollPaneWindow w= new ScrollPaneWindow(this.owner);
 //        w.setTitle("getObjects");
-//        int line=0;
+        int line=0;
         for (int x = 0; x < getWidth(); x++) {
             for (int y = 0; y < getHeight(); y++) {
                 if (tmpGrid[x][y] < 0)
                     continue;
 
-                   // UTILITIES.trace(getPixelValue(x, y)+"<"+(objectContrast * getMaxPixelValue()));
+                
                 if (getPixelValue(x, y) < (objectContrast * getMaxPixelValue())) {
-                   // UTILITIES.trace("START OBJECT "+x+"/"+y+" color: "+getPixelValue(x, y));
+             
                  //Füge 2 Objekte zusammen die scheinbar zusammen gehören
                     
                     dist=100;
@@ -1063,7 +1086,7 @@ public void removeSmallObjects(double contrast, double objectContrast,int maxSiz
 //                   w.setText(4,line,"Area: "+object.getArea());
 //                   w.setImage(5,line,object.toLetter().getImage());
 //                   w.setText(6,line,object.toLetter().getDim());
-//                   line++;
+                   line++;
                     lastObject=object;
                     for (int i = 0; i < ret.size(); i++) {
                         if (object.getArea() > ret.elementAt(i).getArea()) {
@@ -1109,7 +1132,7 @@ public void removeSmallObjects(double contrast, double objectContrast,int maxSiz
             tmpGrid[x][y] = -1;
             
            //Achtung!! Algos funktionieren nur auf sw basis richtig 
-//            grid[x][y] = 254;
+         //grid[x][y] = 254;
             getObject(x - 1, y, tmpGrid, object);
             getObject(x - 1, y - 1, tmpGrid, object);
             getObject(x, y - 1, tmpGrid, object);

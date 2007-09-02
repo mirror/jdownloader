@@ -180,6 +180,7 @@ public class JACScript {
  */
         set("alignAngleSteps", 5);
         
+        set("splitGapsOverlap",4);
         /**
          * Linker winkelrand beim Scannen
          */
@@ -640,6 +641,14 @@ public class JACScript {
                 if (cmd[1].equalsIgnoreCase("normalize")) {
                     letter.normalize();
                     continue;
+                }  else   if (cmd[1].equalsIgnoreCase("clean")) {
+                    letter.clean();
+                    continue;
+                } else if (cmd[1].equalsIgnoreCase("toBlackAndWhite")) {
+                    letter.toBlackAndWhite();
+                    continue;
+                }  else {
+                    logger.severe("Error in " + method + "/+script.jas : Function not valid: " + cmd[1] + "(" + cmd[2] + ")");
                 }
             
                 } else if (cmd[0].equals("function") && (params = cmd[2].split("\\,")).length == 1) {
@@ -678,6 +687,8 @@ public class JACScript {
                     } else if (cmd[1].equalsIgnoreCase("cleanBackgroundByColor")) {
                         letter.cleanBackgroundByColor(Integer.parseInt(params[0].trim()));
                         continue;
+                    }  else {
+                        logger.severe("Error in " + method + "/+script.jas : Function not valid: " + cmd[1] + "(" + cmd[2] + ")");
                     }
                 } else if (cmd[0].equals("function") && (params = cmd[2].split("\\,")).length == 2) {
                     if (cmd[1].equalsIgnoreCase("reduceWhiteNoise")) {

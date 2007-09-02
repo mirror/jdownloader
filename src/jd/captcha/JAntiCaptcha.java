@@ -9,15 +9,18 @@ import java.awt.image.IndexColorModel;
 import java.awt.image.PixelGrabber;
 import java.io.File;
 import java.io.FileFilter;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URLClassLoader;
 import java.net.URLDecoder;
-
 import java.util.Vector;
 import java.util.logging.Logger;
 
+import javax.imageio.ImageIO;
 import javax.swing.AbstractAction;
 import javax.swing.JButton;
 import javax.swing.JLabel;
@@ -35,7 +38,7 @@ import jd.captcha.gui.ImageComponent;
 import jd.captcha.gui.ScrollPaneWindow;
 import jd.captcha.pixelgrid.Captcha;
 import jd.captcha.pixelgrid.Letter;
-
+import jd.captcha.pixelgrid.PixelGrid;
 import jd.captcha.pixelobject.PixelObject;
 import jd.captcha.utils.GifDecoder;
 import jd.captcha.utils.UTILITIES;
@@ -180,12 +183,15 @@ public class JAntiCaptcha {
         }
 
     }
-/**
- * Gibt zurück ob die entsprechende Methode verfügbar ist.
- * @param methodsPath (null bei standard)
- * @param methodName
- * @return true/false
- */
+
+    /**
+     * Gibt zurück ob die entsprechende Methode verfügbar ist.
+     * 
+     * @param methodsPath
+     *            (null bei standard)
+     * @param methodName
+     * @return true/false
+     */
     public static boolean hasMethod(String methodsPath, String methodName) {
         if (methodsPath == null) {
             methodsPath = UTILITIES.getFullPath(new String[] { JDUtilities.getJDHomeDirectory().getAbsolutePath(), "jd", "captcha", "methods", methodName, "" });
@@ -193,13 +199,88 @@ public class JAntiCaptcha {
         return UTILITIES.getURLClassLoader(methodsPath) != null;
     }
 
+    public void exportDB() {
+        File path = UTILITIES.directoryChooser("");
+        File file;
+        BufferedImage img;
+        for (int i = 0; i < letterDB.size(); i++) {
+            img = (BufferedImage) letterDB.elementAt(i).getFullImage();
+            file = new File(path + "/letterDB_" + this.getMethodName() + "/" + i + "_" + letterDB.elementAt(i).getDecodedValue() + ".png");
+            file.mkdirs();
+            try {
+                logger.info("Write Db: " + file);
+                ImageIO.write(img, "png", file);
+            } catch (IOException e) {
 
+                e.printStackTrace();
+            }
+
+        }
+    }
+
+    public void importDB() {
+        File path = UTILITIES.directoryChooser("");
+        letterDB = new Vector<Letter>();
+        this.getResourceFile("letters.mth").delete();
+        Image image;
+        Letter letter;
+        File[] images = getImages(path.getAbsolutePath());
+        for (int i = 0; i < images.length; i++) {
+            image = UTILITIES.loadImage(images[i]);
+            int width = image.getWidth(null);
+            int height = image.getHeight(null);
+            if (width <= 0 || height <= 0) {
+                logger.severe("ERROR: Image nicht korrekt.");
+            }
+            PixelGrabber pg = new PixelGrabber(image, 0, 0, width, height, false);
+            try {
+                pg.grabPixels();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            letter = new Letter();
+
+            letter.setOwner(this);
+
+            ColorModel cm = pg.getColorModel();
+
+            if (!(cm instanceof IndexColorModel)) {
+                // not an indexed file (ie: not a gif file)
+
+                int[] pixel = (int[]) pg.getPixels();
+                int[][] newGrid = new int[width][height];
+                int px = 0;
+                for (int y = 0; y < height; y++) {
+                    for (int x = 0; x < width; x++) {
+                        while(pixel[px]<0)pixel[px]+=0xffffff+1;
+                       // logger.info("- "+pixel[px]);
+                        newGrid[x][y] = pixel[px++]<100?0:PixelGrid.getMaxPixelValue(this);
+                       
+                    }
+                }
+                letter.setGrid(newGrid);                
+                letter.setSourcehash(UTILITIES.getLocalHash(images[i]));
+                letter.setDecodedValue(images[i].getName().split("\\_")[1].split("\\.")[0]);
+                letter.clean();
+                letterDB.add(letter);
+            } else {
+
+                logger.severe("Bildformat von ImportDB nicht unterstützt");
+            }
+
+            // BasicWindow.showImage(ret.getImage());
+
+        }
+        this.sortLetterDB();
+        this.saveMTHFile();
+    }
 
     /**
      * Diese methode wird aufgerufen um alle captchas im Ordner
      * methods/Methodname/captchas zu trainieren
      * 
      * @param path
+     * @throws
      */
     public void trainAllCaptchas(String path) {
 
@@ -497,11 +578,13 @@ public class JAntiCaptcha {
         bw2.setTitle("Freigestellte Buchstaben");
         bw2.setLayout(new GridBagLayout());
         bw2.setSize(300, 300);
+        logger.info("display freistellen");
         bw2.setAlwaysOnTop(true);
         bw2.setLocationByScreenPercent(50, 5);
         bw2.add(new JLabel("Aus Captcha:"), UTILITIES.getGBC(0, 0, 2, 2));
 
         for (int i = 0; i < letters.length; i++) {
+
             bw2.add(new ImageComponent(letters[i].getImage(jas.getInteger("simplifyFaktor"))), UTILITIES.getGBC(i * 2 + 2, 0, 2, 2));
 
         }
@@ -511,7 +594,7 @@ public class JAntiCaptcha {
 
         // Decoden. checkCaptcha verwendet dabei die gecachte Erkennung der
         // letters
-       checkCaptcha(captcha);
+        checkCaptcha(captcha);
         LetterComperator[] lcs = captcha.getLetterComperators();
         for (int i = 0; i < lcs.length; i++) {
             if (lcs[i] == null)
@@ -527,11 +610,13 @@ public class JAntiCaptcha {
         bw2.pack();
         bw2.repack();
     }
-    private void destroyScrollPaneWindows(){
-       while(spw.size()>0){
-           spw.remove(0).destroy();
-       }
+
+    private void destroyScrollPaneWindows() {
+        while (spw.size() > 0) {
+            spw.remove(0).destroy();
+        }
     }
+
     private int trainCaptcha(File captchafile, int letterNum) {
 
         if (!captchafile.exists()) {
@@ -562,13 +647,13 @@ public class JAntiCaptcha {
             bw3.destroy();
         }
         bw3 = BasicWindow.getWindow("JAC Trainer", 600, 450);
-       
+
         bw3.setText(0, 0, "original captcha");
         bw3.setImage(1, 0, captcha.getImage());
-        bw3.setSize(600,400);
+        bw3.setSize(600, 400);
         bw3.setLocationByScreenPercent(50, 5);
         bw3.repack();
-        
+
         // Führe das Prepare aus
         jas.executePrepareCommands(captcha);
         // Hole die letters aus dem neuen captcha
@@ -605,32 +690,36 @@ public class JAntiCaptcha {
         // letters
         guess = checkCaptcha(captcha);
         LetterComperator[] lcs = captcha.getLetterComperators();
-        if (guess!=null && guess.length() == getLetterNum()) {
+        if (guess != null && guess.length() == getLetterNum()) {
             bw3.setText(0, 3, "DB Letter:");
             bw3.setText(0, 4, "Decoded:");
             bw3.setText(0, 5, "UNSicherheit:");
             for (int i = 0; i < lcs.length; i++) {
-               if(lcs[i]!=null &&lcs[i].getB()!=null)bw3.setImage(i + 1, 3, lcs[i].getB().getImage(jas.getInteger("simplifyFaktor")));
-               if(lcs[i]!=null &&lcs[i].getB()!=null)bw3.setText(i + 1, 4, lcs[i].getDecodedValue());
-               if(lcs[i]!=null &&lcs[i].getB()!=null) bw3.setText(i + 1, 5, (double)Math.round(10*lcs[i].getValityPercent())/10.0);
+                if (lcs[i] != null && lcs[i].getB() != null)
+                    bw3.setImage(i + 1, 3, lcs[i].getB().getImage(jas.getInteger("simplifyFaktor")));
+                if (lcs[i] != null && lcs[i].getB() != null)
+                    bw3.setText(i + 1, 4, lcs[i].getDecodedValue());
+                if (lcs[i] != null && lcs[i].getB() != null)
+                    bw3.setText(i + 1, 5, (double) Math.round(10 * lcs[i].getValityPercent()) / 10.0);
 
             }
             bw3.repack();
         } else {
             logger.warning("Erkennung fehlgeschlagen");
         }
-       
+
         logger.info("Decoded Captcha: " + guess + " Vality: " + captcha.getValityPercent());
         if (captcha.getValityPercent() >= 0) {
 
-//            if (guess == null) {
-//                File file = getResourceFile("detectionErrors2/" + (UTILITIES.getTimer()) + "_" + captchafile.getName());
-//                file.getParentFile().mkdirs();
-//                captchafile.renameTo(file);
-//                logger.severe("Letter erkennung fehlgeschlagen");
-//                return -1;
-//
-//            }
+            // if (guess == null) {
+            // File file = getResourceFile("detectionErrors2/" +
+            // (UTILITIES.getTimer()) + "_" + captchafile.getName());
+            // file.getParentFile().mkdirs();
+            // captchafile.renameTo(file);
+            // logger.severe("Letter erkennung fehlgeschlagen");
+            // return -1;
+            //
+            // }
             if (getCodeFromFileName(captchafile.getName(), captchaHash) == null || true) {
                 code = UTILITIES.prompt("Bitte Captcha Code eingeben (Press enter to confirm " + guess, guess);
                 if (code != null && code.equals(guess))
@@ -644,7 +733,7 @@ public class JAntiCaptcha {
 
         } else {
             logger.info("100% ERkennung.. automatisch übernommen");
-            //code = guess;
+            // code = guess;
         }
         if (code == null) {
             File file = getResourceFile("detectionErrors3/" + (UTILITIES.getTimer()) + "_" + captchafile.getName());
@@ -672,7 +761,7 @@ public class JAntiCaptcha {
         int ret = 0;
         for (int i = 0; i < letters.length; i++) {
             if (!code.substring(i, i + 1).equals("-")) {
-                if (guess!=null&&code.length() > i && guess.length() > i && code.substring(i, i + 1).equals(guess.substring(i, i + 1))) {
+                if (guess != null && code.length() > i && guess.length() > i && code.substring(i, i + 1).equals(guess.substring(i, i + 1))) {
                     ret++;
                     if (lcs[i] != null) {
                         lcs[i].getB().markGood();
@@ -736,7 +825,14 @@ public class JAntiCaptcha {
             Letter akt = letterDB.elementAt(i);
             for (int x = 0; x < ret.size(); x++) {
 
-                if ((akt.getGoodDetections() - 5 * akt.getBadDetections()) > (ret.elementAt(x).getGoodDetections() - 5 * ret.elementAt(x).getBadDetections())) {
+                // if ((akt.getGoodDetections() - 5 * akt.getBadDetections()) >
+                // (ret.elementAt(x).getGoodDetections() - 5 *
+                // ret.elementAt(x).getBadDetections())) {
+                // ret.add(x, akt);
+                // akt = null;
+                // break;
+                // }
+                if (akt.getDecodedValue().compareToIgnoreCase(ret.elementAt(x).getDecodedValue()) > 0) {
                     ret.add(x, akt);
                     akt = null;
                     break;
@@ -767,20 +863,28 @@ public class JAntiCaptcha {
         ret.setOwner(this);
         return ret;
     }
-/**
- * Gibt ein FileOebject zu einem resourcstring zurück
- * @param arg
- * @return File zu arg
- */
+
+    /**
+     * Gibt ein FileOebject zu einem resourcstring zurück
+     * 
+     * @param arg
+     * @return File zu arg
+     */
     public File getResourceFile(String arg) {
-        String fileName = cl.getResource(".") + "/" + arg;
+        String fileName = cl.getResource(".")  + arg;
         try {
             fileName = URLDecoder.decode(fileName, "UTF8");
         } catch (UnsupportedEncodingException e) {
-        
+
             e.printStackTrace();
         }
-        return new File(UTILITIES.URLtoPath(fileName));
+        try {
+            return new File(new URI(UTILITIES.urlEncode(fileName)));
+        } catch (URISyntaxException e) {
+
+            e.printStackTrace();
+            return null;
+        }
     }
 
     /**
@@ -896,7 +1000,7 @@ public class JAntiCaptcha {
 
         // Führe prepare aus
         jas.executePrepareCommands(captcha);
-        
+
         LetterComperator[] newLetters = new LetterComperator[this.getLetterNum()];
         String ret = "";
         double correct = 0;
@@ -913,8 +1017,6 @@ public class JAntiCaptcha {
             return null;
         }
 
-        
-
         for (int i = 0; i < letters.length; i++) {
             letters[i].id = i;
             akt = getLetter(letters[i]);
@@ -922,22 +1024,22 @@ public class JAntiCaptcha {
             newLetters[i] = akt;
             if (akt == null || akt.getValityPercent() >= 100.0) {
                 correct += 100.0;
-            } else {      
+            } else {
 
                 correct += akt.getValityPercent();
-           
+
             }
             logger.finer("Validty: " + correct);
             if (newLetters[i] != null) {
                 ret += akt.getDecodedValue();
-            }else{
-                ret+="_";
+            } else {
+                ret += "_";
             }
 
         }
 
         captcha.setLetterComperators(newLetters);
-        if (letters.length != this.getLetterNum() || ret.length()!=this.getLetterNum()) {
+        if (letters.length != this.getLetterNum() || ret.length() != this.getLetterNum()) {
             captcha.setValityPercent(100.0);
             logger.severe("Captcha konnte nicht erkannt werden!");
             return null;
@@ -961,7 +1063,7 @@ public class JAntiCaptcha {
      * @return int 0(super)-0xffffff (ganz übel)
      */
     private LetterComperator getLetter(Letter letter) {
-       
+
         long startTime = UTILITIES.getTimer();
         LetterComperator res = null;
         double lastPercent = 100.0;
@@ -988,7 +1090,7 @@ public class JAntiCaptcha {
             for (int i = 0; i < letterDB.size(); i++) {
                 tmp = letterDB.elementAt(i);
                 if (Math.abs(tmp.getHeight() - letter.getHeight()) > bvX || Math.abs(tmp.getWidth() - letter.getWidth()) > bvY) {
-                   // continue;
+                    // continue;
                 }
                 lc = new LetterComperator(letter, tmp);
                 lc.setScanVariance(0, 0);
@@ -1036,7 +1138,7 @@ public class JAntiCaptcha {
                 res.setDetectionType(LetterComperator.QUICKSCANMATCH);
                 return res;
             } else {
-                logger.warning("Letter nicht ausreichend erkannt. Try Extended "+res.getReliability()+" - "+jas.getDouble("quickScanReliabilityLimit")+" /" +res.getValityPercent()+"-"+jas.getDouble("quickScanValityLimit"));
+                logger.warning("Letter nicht ausreichend erkannt. Try Extended " + res.getReliability() + " - " + jas.getDouble("quickScanReliabilityLimit") + " /" + res.getValityPercent() + "-" + jas.getDouble("quickScanValityLimit"));
                 return getLetterExtended(letter);
             }
         } else {
@@ -1075,12 +1177,12 @@ public class JAntiCaptcha {
                 rightAngle = temp;
                 logger.warning("param.scanAngleLeft>paramscanAngleRight");
             }
-            int steps = Math.max(1,jas.getInteger("scanAngleSteps"));
+            int steps = Math.max(1, jas.getInteger("scanAngleSteps"));
 
             int angle;
             Letter orgLetter = letter;
             LetterComperator lc;
-      
+
             ScrollPaneWindow w = null;
             if (this.isShowDebugGui()) {
                 w = new ScrollPaneWindow(this);
@@ -1089,20 +1191,19 @@ public class JAntiCaptcha {
             }
             int line = 0;
             for (angle = UTILITIES.getJumperStart(leftAngle, rightAngle); UTILITIES.checkJumper(angle, leftAngle, rightAngle); angle = UTILITIES.nextJump(angle, leftAngle, rightAngle, steps)) {
-                
-      
+
                 letter = orgLetter.turn(angle);
-              logger.finer(" Angle " + angle);
+                logger.finer(" Angle " + angle);
                 for (int i = 0; i < letterDB.size(); i++) {
                     tmp = letterDB.elementAt(i);
                     if (Math.abs(tmp.getHeight() - letter.getHeight()) > jas.getInteger("borderVarianceY") || Math.abs(tmp.getWidth() - letter.getWidth()) > jas.getInteger("borderVarianceX")) {
                         // continue;
                     }
-            
+
                     lc = new LetterComperator(letter, tmp);
                     lc.setOwner(this);
                     lc.run();
-          
+
                     if (this.isShowDebugGui()) {
                         w.setText(0, line, angle + "°");
                         w.setImage(1, line, lc.getA().getImage(2));
@@ -1114,7 +1215,6 @@ public class JAntiCaptcha {
                         w.setText(7, line, lc);
                         line++;
                     }
-
 
                     if (res == null || lc.getValityPercent() < res.getValityPercent()) {
                         if (res != null && res.getValityPercent() < lastPercent) {
@@ -1139,7 +1239,8 @@ public class JAntiCaptcha {
                     }
 
                 }
-//                logger.info("Full Angle scan in "+(UTILITIES.getTimer()-startTime2));
+                // logger.info("Full Angle scan in
+                // "+(UTILITIES.getTimer()-startTime2));
             }
             // w.refreshUI();
         } catch (Exception e) {
@@ -1165,7 +1266,7 @@ public class JAntiCaptcha {
     public void displayLibrary() {
         Letter tmp;
         final BasicWindow w = BasicWindow.getWindow("Library: " + letterDB.size() + " Datensätze", 400, 300);
-
+        sortLetterDB();
         w.setLocationByScreenPercent(5, 5);
         final JAntiCaptcha jac = this;
         int x = 0;
@@ -1181,9 +1282,6 @@ public class JAntiCaptcha {
                 /**
                  * 
                  */
-              
-
-           
 
                 public void actionPerformed(ActionEvent evt) {
                     jac.removeLetterFromLibrary(Integer.parseInt(((JButton) evt.getSource()).getText().substring(1)));
@@ -1428,8 +1526,6 @@ public class JAntiCaptcha {
         saveMTHFile();
 
     }
-
-
 
     /**
      * @return gibt die Lettermap als String zurück

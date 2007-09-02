@@ -1256,8 +1256,7 @@ public class UTILITIES {
         String ret = "";
         int i;
         for (i = 0; i < str.length(); i++) {
-            char letter = str.charAt(i);
-        
+            char letter = str.charAt(i);        
              if (allowed.indexOf(letter) >=0) {
                 ret +=  letter;
              }else{

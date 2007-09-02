@@ -16,6 +16,7 @@ import java.util.logging.Logger;
 
 import jd.captcha.JAntiCaptcha;
 import jd.captcha.LetterComperator;
+import jd.captcha.gui.BasicWindow;
 import jd.captcha.pixelobject.PixelObject;
 import jd.captcha.utils.UTILITIES;
 
@@ -451,8 +452,9 @@ public class Captcha extends PixelGrid {
                 // ret[letterId].align(
                 // owner.getJas().getDouble("ObjectDetectionContrast"),owner.getJas().getInteger("leftAngle"),owner.getJas().getInteger("rightAngle"));
                 owner.getJas().executeLetterPrepareCommands(ret[letterId]);
+               
                 ret[letterId] = ret[letterId].getSimplified(this.owner.getJas().getInteger("simplifyFaktor"));
-
+         
             }
 
         }
@@ -564,18 +566,19 @@ public class Captcha extends PixelGrid {
 
     /**
      * Alternativ Methode über das gaps array.
-     * 
+     * TODO: Nicht optimal. Das trim() kann man sich sparen indem man gleich die rihtige Arraygröße wählt
      * @param letterId
      * @param gaps
      * @return Nächster Buchstabe in der Reihe
      */
     private Letter getNextLetter(int letterId, int[] gaps) {
         Letter ret = createLetter();
-
+        int overlap=owner.jas.getInteger("splitGapsOverlap");
         int nextGap = -1;
         if (gaps != null && gaps.length > letterId) {
             nextGap = gaps[letterId];
         }
+   
         if (gaps == null || gaps.length == 0) {
             logger.severe("Das Gaps Array wurde nicht erstellt");
         }
@@ -585,27 +588,26 @@ public class Captcha extends PixelGrid {
         if (letterId > 0 && nextGap <= gaps[letterId - 1]) {
             logger.severe(letterId + " Das Userdefinierte gaps array ist falsch!. Die Gaps müssen aufsteigend sortiert sein!");
         }
-        int[][] letterGrid = new int[getWidth()][getHeight()];
+        int[][] letterGrid = new int[Math.min(getWidth()-1,nextGap+overlap)-Math.max(0,lastletterX-overlap)][getHeight()];
         int x;
-
-        for (x = lastletterX; x < getWidth(); x++) {
+        logger.info("Gap at "+nextGap+" last gap: "+lastletterX+" this: "+Math.max(0,lastletterX-overlap)+" - "+Math.min(getWidth()-1,nextGap+overlap));
+        for (x = Math.max(0,lastletterX-overlap); x < Math.min(getWidth()-1,nextGap+overlap); x++) {
             for (int y = 0; y < getHeight(); y++) {
-                letterGrid[x][y] = getPixelValue(x, y);
+                letterGrid[x-Math.max(0,lastletterX-overlap)][y] = getPixelValue(x, y);
             }
-            if (nextGap == x) {
-                break;
-            }
+            
         }
 
         ret.setGrid(letterGrid);
-
-        if (!ret.trim(lastletterX, x))
-            return null;
+//
+//        if (!ret.trim(Math.max(0,lastletterX-overlap), x)){
+//            return null;
+//        }
 
         if (!ret.clean())
             return null;
 
-        lastletterX = x;
+        lastletterX = x-overlap;
 
         this.gaps[Math.min(lastletterX, getWidth())] = true;
         return ret;
@@ -941,6 +943,7 @@ public class Captcha extends PixelGrid {
 
         // Kleine Objekte ausfiltern
         while (i < objects.size() && objects.elementAt(i++).getArea() > minArea) {
+            logger.info(objects.elementAt(i-1).getWidth()+" Element: "+found+" : "+objects.elementAt(i-1).getArea());
             found++;
         }
 
@@ -963,10 +966,12 @@ public class Captcha extends PixelGrid {
             while ((splitNum = Math.min((int) Math.ceil((double) maxWidth / ((double) minWidth / (double) splitter)), letterNum - found)) < 2) {
                 splitter++;
             }
+            logger.info("l "+splitNum);
             while ((found + splitNum) > letterNum) {
                 splitNum--;
             }
-            while (splitNum > 2 && next != null && maxWidth / splitNum < next.getWidth()) {
+            logger.info("l "+splitNum);
+            while (splitNum > 2 && next != null && maxWidth / splitNum < next.getWidth()*0.75) {
                 splitNum--;
             }
             logger.finer("teile erstes element " + po.getWidth() + " : splitnum " + splitNum);

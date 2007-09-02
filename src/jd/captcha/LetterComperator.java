@@ -181,7 +181,7 @@ public class LetterComperator {
                 //
                 if (this.preScanFilter < 100) {
                     preScan = this.scanPreIntersection(xx, yy, left, top, tmpIntersectionWidth, tmpIntersectionHeight);
-                   // logger.info("_"+quickScan);
+                    //logger.info("_"+preScan);
                     if ((int)preScan > this.preScanFilter){
                         
                 
@@ -189,7 +189,7 @@ public class LetterComperator {
                     }
                
                 }
-//                logger.info("Scan "+tmpIntersectionWidth+"/"+tmpIntersectionHeight+" - "+a.getElementPixel());
+              // logger.info("Scan "+tmpIntersectionWidth+"/"+tmpIntersectionHeight+" - "+a.getElementPixel());
                 value = this.scanIntersection(xx, yy, left, top, tmpIntersectionWidth, tmpIntersectionHeight);
 //                   logger.info(" : "+value);
                 if (value < bestValue) {
