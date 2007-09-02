@@ -320,9 +320,9 @@ public class JACScript {
     public void set(String key, Object value) {
         key=key.toLowerCase();
         if(get(key)==null){
-            logger.info("INIT Parameter: "+key+" = "+value+"("+value.getClass().getName()+")"); 
+            logger.finer("INIT Parameter: "+key+" = "+value+"("+value.getClass().getName()+")"); 
         }else{
-        logger.info("Update Parameter: "+key+" = "+value+"("+value.getClass().getName()+")");
+        logger.finer("Update Parameter: "+key+" = "+value+"("+value.getClass().getName()+")");
         }
         parameter.put(key, value);
     }

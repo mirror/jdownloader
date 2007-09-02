@@ -7,6 +7,7 @@ import java.net.PasswordAuthentication;
 import java.net.URL;
 import java.util.HashMap;
 
+import jd.Configuration;
 import jd.JDUtilities;
 import jd.plugins.Plugin;
 import jd.plugins.RequestInfo;
@@ -30,7 +31,7 @@ public class HTTPReconnect extends Interaction{
 
     @Override
     public boolean interact() {
-        configuration = JDUtilities.getConfiguration();
+        Configuration configuration = JDUtilities.getConfiguration();
 
         logger.info("Starting HTTPReconnect");
         String ipBefore;

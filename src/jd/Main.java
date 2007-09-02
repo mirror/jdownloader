@@ -6,6 +6,7 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.Iterator;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import jd.controlling.JDController;
@@ -49,7 +50,9 @@ public class Main {
                 File fileInput = new File(configURL.toURI());
                 Object obj = JDUtilities.loadObject(null, fileInput, true);
                 if(obj instanceof Configuration){
-                    JDUtilities.setConfiguration((Configuration)obj);
+                    Configuration configuration = (Configuration)obj;
+                    JDUtilities.setConfiguration(configuration);
+                    Plugin.getLogger().setLevel(Level.parse(configuration.getLoggerLevel()));
                 }
             }
             catch (URISyntaxException e1) { e1.printStackTrace(); }

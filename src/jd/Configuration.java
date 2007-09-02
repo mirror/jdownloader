@@ -46,6 +46,10 @@ public class Configuration implements Serializable{
      * Router Port
      */
     private int routerPort;
+    /**
+     * Level für das Logging
+     */
+    private String loggerLevel="ALL";
     
     public String getDownloadDirectory()                           { return downloadDirectory;  }
     public HashMap<Integer, Vector<Interaction>> getInteractions() { return interactions;       }
@@ -63,4 +67,10 @@ public class Configuration implements Serializable{
     public void setRouterPort(int httpPort)                    { this.routerPort = httpPort;                 }
     public void setUseJAC(boolean useJAC)                      { this.useJAC = useJAC;                       }
     public void setInteractions(HashMap<Integer, Vector<Interaction>> interactions) { this.interactions = interactions; }
+    public String getLoggerLevel() {
+        return loggerLevel;
+    }
+    public void setLoggerLevel(String loggerLevel) {
+        this.loggerLevel = loggerLevel;
+    }
 }

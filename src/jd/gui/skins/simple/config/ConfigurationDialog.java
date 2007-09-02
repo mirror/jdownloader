@@ -67,6 +67,8 @@ public class ConfigurationDialog extends JDialog implements ActionListener{
             configPanelRouter.save();
             configPanelAutomatic.save();
             configChanged=true;
+            JDUtilities.setConfiguration(configuration);
+            JDUtilities.saveObject(null, JDUtilities.getConfiguration(), JDUtilities.getJDHomeDirectory(), "jdownloader", ".config", true);
         }
         setVisible(false);
     }

@@ -3,7 +3,6 @@ package jd.controlling.interaction;
 import java.io.Serializable;
 import java.util.logging.Logger;
 
-import jd.Configuration;
 import jd.plugins.Plugin;
 /**
  * Mit dieser Klasse werden Interaktionen (mit dem System) umgesetzt
@@ -29,8 +28,6 @@ public abstract class Interaction implements Serializable{
      */
     public transient final static int INTERACTION_DOWNLOAD_FAILED        = 3;
 
-    public static Configuration configuration;
-    
     public Interaction(){
     }
 

@@ -39,7 +39,7 @@ public class JDWebStartHelper {
         catch (UnavailableServiceException e) { 
             persistentService = null; 
             basicService = null; 
-            logger.warning("PersistenceService not available.");
+            logger.fine("PersistenceService not available.");
         } 
         try {
             if (persistentService != null && basicService != null) { 
