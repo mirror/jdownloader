@@ -51,10 +51,13 @@ public class WebUpdater {
     public void run() {
 
         Vector<Vector<String>> files = getAvailableFiles();
-        logger.info(files.toString());
-        totalFiles = files.size();
-        filterAvailableUpdates(files);
-        updateFiles(files);
+        if(files!= null)
+        {
+            logger.info(files.toString());
+            totalFiles = files.size();
+            filterAvailableUpdates(files);
+            updateFiles(files);
+        }
     }
 /**
  * Updated alle files in files

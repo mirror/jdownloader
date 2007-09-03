@@ -28,7 +28,6 @@ public class HTTPReconnect extends Interaction{
     public static String VAR_USERNAME = "%USERNAME%";
     public static String VAR_PASSWORD = "%PASSWORD%";
     
-
     @Override
     public boolean interact() {
         Configuration configuration = JDUtilities.getConfiguration();
@@ -97,6 +96,11 @@ public class HTTPReconnect extends Interaction{
         else if( !requestInfo.isOK()){
             logger.severe("Disconnect failed HTTP-Code:"+requestInfo.getResponseCode());
             return false;
+        }
+        try {
+            Thread.sleep(500);
+        }
+        catch (InterruptedException e) {
         }
         // Verbindung wiederaufbauen
         logger.fine("building connection");

@@ -225,6 +225,8 @@ public class TabDownloadLinks extends JPanel implements PluginListener{
                 else if(dLink.getStatus()!=DownloadLink.STATUS_TODO){
                     c.setBackground(COLOR_ERROR);
                 }
+                else
+                    c.setBackground(Color.WHITE);
             }
             return c;
         }

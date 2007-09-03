@@ -22,8 +22,21 @@ import jd.plugins.PluginForHost;
  * @author astaldo
  */
 
-//TODO FileChosse einbauen
-//TODO JantiCaptcha JDUtilities import entfernen
+//TODO Clipboard Management
+//TODO Links speichern / laden / editieren(nochmal laden, Passwort merken)
+//TODO LinkGrabber / Pakete
+//TODO VerzeichnisauswahlDialog (zB Beim Initialiseren von WebStart Cookie / DownloadDir)
+//TODO Klänge wiedergeben 
+
+//TODO Fehlerbehandlung der Plugins verbessern
+//TODO HTTPPost Klasse untersuchen
+//TODO Plugin.download überprüfen (Geschwindigkeitsreduzierung durch Thread.sleep?)
+//TODO Interactions ergänzen (Download nicht möglich, Externes Programm ausführen)
+//TODO Interaction - Vector 
+//TODO Plugin Wartezeit static, falls kein HTTP Reconnect genutzt wird (Datetime nextPossibleDownloadAt)
+//TODO TelnetReconnect (später)
+//TODO WebInterface
+//TODO GUI Auswahl
 
 public class Main {
     public static void main(String args[]){

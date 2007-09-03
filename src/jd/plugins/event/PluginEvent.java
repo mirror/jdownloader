@@ -38,6 +38,10 @@ public class PluginEvent extends AWTEvent{
      */
     public static final int PLUGIN_DATA_CHANGED          = 6;
     /**
+     * Download Geschwindigkeit hat sich geÃ¤ndert
+     */
+    public static final int PLUGIN_DOWNLOAD_SPEED        = 7;
+    /**
      * Plugin, von dem dieses Event ausgegangen ist
      */
     private Plugin source;

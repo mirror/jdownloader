@@ -103,15 +103,22 @@ public class ConfigPanelAutomatic extends JPanel{
             i.add((Interaction)cboDownloadFinished.getSelectedItem());
             interactions.put(Interaction.INTERACTION_DOWNLOAD_FINISHED,i);
         }
+        else
+            interactions.remove(Interaction.INTERACTION_DOWNLOAD_FINISHED);
         if(cboDownloadFinishedAll.getSelectedIndex()>0){
             Vector<Interaction> i = new Vector<Interaction>();
             i.add((Interaction)cboDownloadFinishedAll.getSelectedItem());
             interactions.put(Interaction.INTERACTION_DOWNLOADS_FINISHED_ALL,i);
         }
+        else
+            interactions.remove(Interaction.INTERACTION_DOWNLOADS_FINISHED_ALL);
         if(cboDownloadFailed.getSelectedIndex()>0){
             Vector<Interaction> i = new Vector<Interaction>();
             i.add((Interaction)cboDownloadFailed.getSelectedItem());
             interactions.put(Interaction.INTERACTION_DOWNLOAD_FAILED,i);
         }
+        else
+            interactions.remove(Interaction.INTERACTION_DOWNLOAD_FAILED);
+
     }
 }

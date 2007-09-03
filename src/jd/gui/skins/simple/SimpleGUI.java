@@ -162,6 +162,7 @@ public class SimpleGUI implements UIInterface, ActionListener{
         menAction.setMnemonic(JDUtilities.getResourceChar("menu.action_mnem"));
         
         JMenuItem menDownload = createMenuItem(actionStartStopDownload);
+        JMenuItem menAddLinks = createMenuItem(actionAdd);
         
         // extra
         JMenu menExtra       = new JMenu(JDUtilities.getResourceString("menu.extra"));
@@ -184,6 +185,7 @@ public class SimpleGUI implements UIInterface, ActionListener{
         menExtra.add(menConfig);
         
         menAction.add(menDownload);
+        menAction.add(menAddLinks);
         
         menuBar.add(menFile);
         menuBar.add(menAction);
@@ -299,6 +301,9 @@ public class SimpleGUI implements UIInterface, ActionListener{
             tabDownloadTable.pluginEvent(event);
         if(event.getSource() instanceof PluginForDecrypt)
             tabPluginActivity.pluginEvent(event);
+        if(event.getID()== PluginEvent.PLUGIN_DOWNLOAD_SPEED){
+            statusBar.setSpeed((Integer)event.getParameter1());
+        }
     }
     public void controlEvent(ControlEvent event){
         switch(event.getID()){
@@ -408,7 +413,7 @@ public class SimpleGUI implements UIInterface, ActionListener{
 
             setLayout(new GridBagLayout());
             lblMessage             = new JLabel(JDUtilities.getResourceString("label.status.welcome"));
-            lblSpeed               = new JLabel("450 kb/s");
+            lblSpeed               = new JLabel();
             lblPluginHostActive    = new JLabel(imgInactive);
             lblPluginDecryptActive = new JLabel(imgInactive);
             lblPluginDecryptActive.setToolTipText(JDUtilities.getResourceString("tooltip.status.plugin_decrypt"));
@@ -421,6 +426,18 @@ public class SimpleGUI implements UIInterface, ActionListener{
         }
         public void setText(String text){
             lblMessage.setText(text);
+        }
+        /**
+         * Setzt die Downloadgeschwindigkeit
+         * @param speed bytes pro sekunde
+         */
+        public void setSpeed(Integer speed){
+            if(speed>1024){
+                lblSpeed.setText((speed/1024)+"kbytes/sec");
+            }
+            else{
+                lblSpeed.setText(speed+"bytes/sec");
+            }
         }
         /**
          * Zeigt, ob die Plugins zum Downloaden von einem Anbieter arbeiten

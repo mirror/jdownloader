@@ -600,9 +600,9 @@ public abstract class Plugin {
                     // DL-Speed in bytes/sec berechnen: 
                     int speed = (int)(bytesLastSpeedCheck*1000/(t2-t1)); 
                     downloadLink.setDownloadSpeed(speed);
-                    logger.fine(Integer.toString(speed));
                     bytesLastSpeedCheck = 0; 
                     t1 = t2; 
+                    firePluginEvent(new PluginEvent(this, PluginEvent.PLUGIN_DOWNLOAD_SPEED, speed)); 
                 } 
 
                 downloadLink.setDownloadCurrent(downloadedBytes); 

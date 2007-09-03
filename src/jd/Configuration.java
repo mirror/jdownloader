@@ -45,7 +45,7 @@ public class Configuration implements Serializable{
     /**
      * Router Port
      */
-    private int routerPort;
+    private int routerPort=80;
     /**
      * Level für das Logging
      */
