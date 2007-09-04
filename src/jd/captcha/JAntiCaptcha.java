@@ -191,9 +191,9 @@ public class JAntiCaptcha {
      * @return true/false
      */
     public static boolean hasMethod(String methodsPath, String methodName) {
-        if (methodsPath == null) {
-            methodsPath = UTILITIES.getFullPath(new String[] { JDUtilities.getJDHomeDirectory().getAbsolutePath(), "jd", "captcha", "methods", methodName, "" });
-        }
+      
+        methodsPath= UTILITIES.getFullPath(new String[] {methodsPath, methodName, "" });
+      
         return UTILITIES.getURLClassLoader(methodsPath) != null;
     }
 
