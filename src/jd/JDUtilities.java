@@ -343,11 +343,11 @@ public class JDUtilities {
      */
     public static String getCaptcha(JDController controller, Plugin plugin, String captchaAddress){
         String host = plugin.getHost();
-        if(JDUtilities.getConfiguration().useJAC() && JAntiCaptcha.hasMethod(null, host)){
+        if(JDUtilities.getConfiguration().useJAC() && JAntiCaptcha.hasMethod(getJACMethodsDirectory(), host)){
             try {
                 logger.info("captchaAddress:"+captchaAddress);
                 BufferedImage captchaImage = ImageIO.read(new URL(captchaAddress));
-                JAntiCaptcha jac = new JAntiCaptcha(null,host);
+                JAntiCaptcha jac = new JAntiCaptcha(getJACMethodsDirectory(),host);
                 Captcha captcha= jac.createCaptcha(captchaImage);
                 String captchaCode=jac.checkCaptcha(captcha);
                 logger.info(captchaCode);
@@ -563,6 +563,14 @@ public class JDUtilities {
     }
     public static String getHomeDirectory() {
         return homeDirectory;
+    }
+    /**
+     * 
+     * @return gibt den Pfad zu den JAC Methoden zurück 
+     */
+    public static String getJACMethodsDirectory(){
+        String sep=System.getProperty("file.separator");
+        return getJDHomeDirectory()+sep+"jd"+sep+"captcha"+sep+"methods";
     }
     public static void setHomeDirectory(String homeDirectory) {
         JDUtilities.homeDirectory = homeDirectory;
