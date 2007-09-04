@@ -1,5 +1,9 @@
 package jd.controlling;
 
+import java.io.File;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Vector;
@@ -72,6 +76,7 @@ public class StartDownloads extends ControlMulticaster{
             PluginStep step = plugin.getNextStep(downloadLink);
             // Hier werden alle einzelnen Schritte des Plugins durchgegangen,
             // bis entweder null zurückgegeben wird oder ein Fehler auftritt
+            logger.info("Current Step:  "+step);
             fireControlEvent(new ControlEvent(this,ControlEvent.CONTROL_PLUGIN_HOST_ACTIVE));
             while(!aborted && step != null && step.getStatus()!=PluginStep.STATUS_ERROR){
                 switch(step.getStep()){
@@ -85,9 +90,20 @@ public class StartDownloads extends ControlMulticaster{
                         catch (InterruptedException e) { e.printStackTrace(); }
                         break;
                     case PluginStep.STEP_CAPTCHA:
-                        String captchaText = JDUtilities.getCaptcha(controller,plugin, (String)step.getParameter());
+                    
+                        String captchaAdress=(String)step.getParameter();                            
+                        File dest=JDUtilities.getResourceFile("captchas/"+plugin.getPluginName()+"/captcha_"+(new Date().getTime())+".jpg");
+                        JDUtilities.download(dest,captchaAdress);
+                        if(plugin.doBotCheck(dest)){
+                                                    
+                            
+                            step.setParameter(null);
+                            step.setStatus(PluginStep.STATUS_DONE);
+                        }else{
+                        String captchaText = JDUtilities.getCaptcha(controller,plugin, dest);
                         step.setParameter(captchaText);
                         step.setStatus(PluginStep.STATUS_DONE);
+                        }
                 }
                 step = plugin.getNextStep(downloadLink);
             }
@@ -95,7 +111,24 @@ public class StartDownloads extends ControlMulticaster{
             if(aborted){
                 logger.warning("Thread aborted");
             }
-            if(step != null && step.getStatus() == PluginStep.STATUS_ERROR){
+            
+            if(step != null && downloadLink.getStatus() == DownloadLink.STATUS_ERROR_DOWNLOAD_LIMIT&& step.getStatus() == PluginStep.STATUS_ERROR){
+                logger.severe("Error occurred: Wait Time");
+                if(handleInteraction(Interaction.INTERACTION_DOWNLOAD_WAITTIME)){
+                    plugin.resetSteps();
+                }
+                downloadLink.setStatus(DownloadLink.STATUS_TODO);
+            }else if(step != null&& downloadLink.getStatus() == DownloadLink.STATUS_ERROR_CAPTCHA_WRONG&&step.getStatus() == PluginStep.STATUS_ERROR){
+                logger.severe("Error occurred: Captcha Wrong");
+                plugin.resetSteps();
+                downloadLink.setStatus(DownloadLink.STATUS_TODO);
+            }else if(step != null&& downloadLink.getStatus() == DownloadLink.STATUS_ERROR_BOT_DETECTED&&step.getStatus() == PluginStep.STATUS_ERROR){
+                logger.severe("Error occurred: Bot detected");
+                if(handleInteraction(Interaction.INTERACTION_DOWNLOAD_WAITTIME)){
+                    plugin.resetSteps();
+                }
+                downloadLink.setStatus(DownloadLink.STATUS_TODO);
+            }else if(step != null && step.getStatus() == PluginStep.STATUS_ERROR){
                 logger.severe("Error occurred while downloading file");
                 handleInteraction(Interaction.INTERACTION_DOWNLOAD_FAILED);
             }
@@ -104,23 +137,29 @@ public class StartDownloads extends ControlMulticaster{
         }
         fireControlEvent(new ControlEvent(this,ControlEvent.CONTROL_ALL_DOWNLOADS_FINISHED));
         handleInteraction(Interaction.INTERACTION_DOWNLOADS_FINISHED_ALL);
+        logger.info("Alle Downloads beendet");
     }
     /**
      * Hier werden die Interaktionen durchgeführt
      * 
      * @param interactionID InteraktionsID, die durchgeführt werden soll
      */
-    private void handleInteraction(int interactionID){
+    private boolean handleInteraction(int interactionID){
+        boolean ret=true;
         Vector<Interaction> localInteractions = interactions.get(interactionID);
         if(localInteractions != null && localInteractions.size()>0){
             Iterator<Interaction> iterator = localInteractions.iterator();
             while(iterator.hasNext()){
                 Interaction i = iterator.next();
                 if(!i.interact()){
+                    ret=false;
                     logger.severe("interaction failed: "+i);
+                }else{
+                    logger.info("interaction successfull: "+i);
                 }
             }
         }
+        return ret;
         
     }
 }

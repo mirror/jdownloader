@@ -1,5 +1,6 @@
 package jd.gui;
 
+import java.io.File;
 import java.util.Vector;
 import java.util.logging.Logger;
 
@@ -29,7 +30,7 @@ public interface UIInterface {
      * @param captchaAddress Die Adresse des Captchas
      * @return Der erkannte Text
      */
-    public String getCaptchaCodeFromUser(Plugin plugin, String captchaAddress);
+    public String getCaptchaCodeFromUser(Plugin plugin, File captchaAddress);
     /**
      * Setzt den Logger
      * 

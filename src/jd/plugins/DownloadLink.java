@@ -45,6 +45,10 @@ public class DownloadLink implements Serializable{
      */
     public final static int STATUS_ERROR_FILE_NOT_FOUND = 6;
     /**
+     * Die Datei konnte nicht gefunden werden
+     */
+    public final static int STATUS_ERROR_BOT_DETECTED = 7;
+    /**
      * serialVersionUID
      */
     private static final long serialVersionUID = 1981079856214268373L;

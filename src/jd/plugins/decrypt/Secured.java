@@ -1,10 +1,12 @@
 package jd.plugins.decrypt;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.net.URL;
 import java.net.URLConnection;
+import java.util.Date;
 import java.util.Vector;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -64,8 +66,10 @@ public class Secured extends PluginForDecrypt {
                     logger.finest("Captcha Protected");
                     String capHash = matcher.group(1).substring(8);
                     capHash = capHash.substring(0, capHash.length()-4);
-                    
-                    String capTxt = JDUtilities.getCaptcha(null, this, "http://"+HOST+"/"+matcher.group(1));
+                    String captchaAdress="http://"+HOST+"/"+matcher.group(1);                            
+                    File dest=JDUtilities.getResourceFile("captchas/"+this.getPluginName()+"/captcha_"+(new Date().getTime())+".jpg");
+                    JDUtilities.download(dest,captchaAdress);
+                    String capTxt = JDUtilities.getCaptcha(null, this,dest);
                     
                     String postData = "captcha_key="+capTxt+"&captcha_hash="+capHash;
                     
@@ -122,5 +126,9 @@ public class Secured extends PluginForDecrypt {
     @Override
     public PluginStep getNextStep(Object parameter) {
         return currentStep;
+    }
+    @Override
+    public boolean doBotCheck(File file) {        
+        return false;
     }
 }

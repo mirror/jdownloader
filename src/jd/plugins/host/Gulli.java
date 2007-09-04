@@ -1,5 +1,6 @@
 package jd.plugins.host;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
@@ -274,5 +275,9 @@ public class Gulli extends PluginForHost {
             buffer.append(entry.getValue());
         }
         return buffer.toString();
+    }
+    @Override
+    public boolean doBotCheck(File file) {        
+        return false;
     }
 }

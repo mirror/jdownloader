@@ -11,6 +11,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.io.File;
 import java.io.IOException;
 import java.util.Iterator;
 import java.util.Vector;
@@ -336,7 +337,7 @@ public class SimpleGUI implements UIInterface, ActionListener{
             tabDownloadTable.setDownloadLinks(links);
         
     }
-    public String getCaptchaCodeFromUser(Plugin plugin, String captchaAddress) {
+    public String getCaptchaCodeFromUser(Plugin plugin, File captchaAddress) {
         CaptchaDialog captchaDialog = new CaptchaDialog(frame,plugin,captchaAddress);
         frame.toFront();
         captchaDialog.setVisible(true);

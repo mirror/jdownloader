@@ -111,6 +111,14 @@ public abstract class Plugin {
      * @return Der unterstützte Anbieter
      */
     public abstract String getHost();
+    
+    
+    /**
+     * Führt einen Botcheck für den captcha file aus
+     * @param file 
+     * @return true:istBot; false: keinBot
+     */
+    public abstract boolean doBotCheck(File file);
     /**
      * Diese Methode zeigt an, ob das Plugin auf Änderungen in der
      * Zwischenablage reagiert oder nicht
@@ -183,6 +191,18 @@ public abstract class Plugin {
             logger.setLevel(Level.ALL);
         }
         return logger;
+    }
+    
+    
+    /**
+     * @author coalado
+     * Setzt den Pluginfortschritt zurück. Wird Gebraucht um einen Download nochmals zu starten, z.B. nach dem reconnect
+     */
+    public void resetSteps(){
+        currentStep=null;
+        for(int i=0; i<steps.size();i++){
+            steps.elementAt(i).setStatus(0);
+        }
     }
     /**
      * Hier wird geprüft, ob das Plugin diesen Text oder einen Teil davon

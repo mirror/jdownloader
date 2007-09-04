@@ -1,5 +1,6 @@
 package jd.plugins.decrypt;
 
+import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -53,5 +54,8 @@ public class Serienjunkies extends PluginForDecrypt {
 
         return decryptedLinks;
     }
-
+    @Override
+    public boolean doBotCheck(File file) {        
+        return false;
+    }
 }

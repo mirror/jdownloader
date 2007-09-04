@@ -27,7 +27,14 @@ public abstract class Interaction implements Serializable{
      * Zeigt, daß ein einzelner Download nicht fertiggestellt werden konnte
      */
     public transient final static int INTERACTION_DOWNLOAD_FAILED        = 3;
-
+    /**
+     * Zeigt, daß ein einzelner Download wegen Wartezeit nicht starten konnte
+     */
+    public transient final static int INTERACTION_DOWNLOAD_WAITTIME       = 4;
+    /**
+     * Zeigt, daß ein der Bot erkannt wurde
+     */
+    public transient final static int INTERACTION_DOWNLOAD_BOT_DETECTED      = 5;
     public Interaction(){
     }
 

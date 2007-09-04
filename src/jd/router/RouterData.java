@@ -148,7 +148,7 @@ public class RouterData implements Serializable{
      * @return Die IP-Adresse oder null
      */
     public String getIPAdress(String data){
-        logger.info(data);
+       
         String ipAddress = null;
         if(data == null)
             return null;

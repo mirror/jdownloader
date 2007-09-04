@@ -1,5 +1,6 @@
 package jd.controlling;
 
+import java.io.File;
 import java.util.Iterator;
 import java.util.Vector;
 import java.util.logging.Logger;
@@ -149,7 +150,7 @@ public class JDController implements PluginListener, ControlListener, UIListener
      * @param captchaAddress Adresse des anzuzeigenden Bildes
      * @return Text des Captchas
      */
-    public String getCaptchaCodeFromUser(Plugin plugin, String captchaAddress){
+    public String getCaptchaCodeFromUser(Plugin plugin, File captchaAddress){
         return uiInterface.getCaptchaCodeFromUser(plugin, captchaAddress);
     }
     public void setUiInterface(UIInterface uiInterface) {

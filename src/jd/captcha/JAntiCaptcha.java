@@ -1662,6 +1662,11 @@ long timer=UTILITIES.getTimer();
         w.setText(3, i+1, "Falsch: "+(totalLetters-correctLetters));
         UTILITIES.showMessage("Erkennung: "+correctLetters+"/"+totalLetters+" = "+UTILITIES.getPercent(correctLetters,totalLetters)+"%");
     }
+
+    public static void showImage(Image captchaImage) {
+        BasicWindow.showImage(captchaImage);
+        
+    }
     
 //  
 //  private static String[] getMethods() {

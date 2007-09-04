@@ -6,6 +6,7 @@ import java.awt.GridBagLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.image.BufferedImage;
+import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -57,21 +58,21 @@ public class CaptchaDialog extends JDialog implements ActionListener {
      * @param plugin Das Plugin, das dieses Captcha auslesen möchte (name des Hosts wird von JAC benötigt)
 	 * @param imageAddress Die Adresse des Bildes, das angezeigt werden soll
 	 */
-	public CaptchaDialog(Frame owner, Plugin plugin, String imageAddress) {
+	public CaptchaDialog(Frame owner, Plugin plugin, File file) {
 		super(owner);
 		setModal(true);
 		setLayout(new GridBagLayout());
 		ImageIcon imageIcon = null;
 		BufferedImage image;
-		String code = "";
-		try {
-            logger.finer("imageAddress:"+imageAddress);
-            image = ImageIO.read(new URL(imageAddress));
-			imageIcon = new ImageIcon(image);
-			code = JAntiCaptcha.getCaptchaCode(image,null, plugin.getHost());
-		} 
-        catch (MalformedURLException e) { e.printStackTrace(); } 
-        catch (IOException e)           { e.printStackTrace(); }
+		String code = "";            
+         try {
+            image = ImageIO.read(file);
+      
+         imageIcon = new ImageIcon(image);   
+         } catch (IOException e) {       
+             e.printStackTrace();
+         }
+        code = JDUtilities.getCaptcha(null, plugin, file);
 		JLabel label = new JLabel(imageIcon);
 		textField = new JTextField(10);
 		btnOK     = new JButton("OK");

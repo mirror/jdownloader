@@ -1,5 +1,6 @@
 package jd.plugins.host;
 
+import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -165,6 +166,10 @@ public class FileFactory extends PluginForHost{
             return download(downloadLink, urlConnection);
         }
         catch (IOException e) { logger.severe("URL could not be opened. "+e.toString());}
+        return false;
+    }
+    @Override
+    public boolean doBotCheck(File file) {        
         return false;
     }
 }
