@@ -147,7 +147,14 @@ public class BasicWindow extends JFrame {
      * packt das fenster neu
      */
     public void repack() {
-        SwingUtilities.updateComponentTreeUI(this);
+        final BasicWindow _this=this;
+        SwingUtilities.invokeLater(new Runnable() {
+            public void run() {
+                SwingUtilities.updateComponentTreeUI(_this);
+
+            }
+        });
+       
     }
 
     /**

@@ -5,6 +5,7 @@ package jd.captcha;
 import java.io.File;
 
 import jd.JDUtilities;
+import jd.captcha.utils.UTILITIES;
 
 
 
@@ -24,18 +25,19 @@ public class JACTest {
         main.go();
     }
     private void go(){
-      
-      String hoster="filefactory.com";
+      String methodsPath=UTILITIES.getFullPath(new String[] { JDUtilities.getJDHomeDirectory().getAbsolutePath(), "jd", "captcha", "methods"});
+      String hoster="secured.in";
 
-       JAntiCaptcha jac= new JAntiCaptcha(null,hoster);
+       JAntiCaptcha jac= new JAntiCaptcha(methodsPath,hoster);
      //sharegullicom47210807182105.gif
-      jac.setShowDebugGui(true);
-  jac.exportDB();
-    jac.importDB();
-       LetterComperator.CREATEINTERSECTIONLETTER=true;
+//      jac.setShowDebugGui(true);
+//  jac.exportDB();
+//   jac.importDB();
+//      LetterComperator.CREATEINTERSECTIONLETTER=true;
       jac.displayLibrary();
        jac.getJas().set("preScanFilter", 100);
-     jac.showPreparedCaptcha(new File(JDUtilities.getJDHomeDirectory().getAbsolutePath()+"/jd/captcha/methods"+"/"+hoster+"/captchas/"+"filefactorycom119020907161320.gif"));
+//       jac.trainCaptcha(new File(JDUtilities.getJDHomeDirectory().getAbsolutePath()+"/jd/captcha/methods"+"/"+hoster+"/captchas/"+"securedin1730080724541.jpg"), 4);
+     jac.showPreparedCaptcha(new File(JDUtilities.getJDHomeDirectory().getAbsolutePath()+"/jd/captcha/methods"+"/"+hoster+"/captchas/"+"securedin9430080724650.jpg"));
       
      //UTILITIES.getLogger().info(JAntiCaptcha.getCaptchaCode(UTILITIES.loadImage(new File(JDUtilities.getJDHomeDirectory().getAbsolutePath()+"/jd/captcha/methods"+"/rapidshare.com/captchas/rapidsharecom24190807214810.jpg")), null, "rapidshare.com"));
      //jac.removeBadLetters();

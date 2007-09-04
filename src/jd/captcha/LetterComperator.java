@@ -56,27 +56,28 @@ public class LetterComperator {
     public static boolean          CREATEINTERSECTIONLETTER = false;
     private double           pixelErrorA              = 0;
     private double           pixelErrorB              = 0;
-    private double           errorA;
-    private double           errorB;
+    private double           tmpErrorA;
+    private double           tmpErrorB;
     private double           errorAWeight;
     private double           errorbWeight;
-    private int              pixelBButNotA;
-    private int              pixelAButNotB;
+    private int              tmpPixelBButNotA;
+    private int              tmpPixelAButNotB;
     private int              pixelANotB               = 0;
     private int              pixelBNotA               = 0;
     private double           coverageFaktorA          = 0;
     private double           coverageFaktorB          = 0;
-    private double           scanCoverageFaktorA;
-    private double           scanCoverageFaktorB;
+    private double           tmpCoverageFaktorA;
+    private double           tmpCoverageFaktorB;
     private double           coverageFaktorAWeight;
     private double           coverageFaktorBWeight;
+    private int              tmpPixelBoth                = 0;
     private int              pixelBoth                = 0;
     private int              pixelAll;
     private double           totalPixelError          = 0;
     private double           widthFaktor              = 0;
     private double           heightFaktor             = 0;
-    private double           scanHeightFaktor;
-    private double           scanWidthFaktor;
+    private double           tmpHeightFaktor;
+    private double           tmpWidthFaktor;
     private double           localHeightPercent;
     private double           localWidthPercent;
     private int              intersectionStartX       = 0;
@@ -98,14 +99,13 @@ public class LetterComperator {
     private int[][]          elementGrid;
     private int              scanVarianceX            = -1;
     private int              scanVarianceY            = -1;
-    private int              scanTime                 = -1;
-
-    private double           errorTotal;
+    private int              scanTime                 = -1;   
+    private double           tmpErrorTotal;
 
     private int              preScanFaktor;
     private int              preScanFilter;
 
-    private double              preScan;
+    private double              tmpPreScanValue;
     private double              preValityPercent;
 
     /**
@@ -148,7 +148,7 @@ public class LetterComperator {
         }
 
         double value;
-        Letter intersection = new Letter();
+        Letter tmpIntersection = new Letter();
         int left;
         int right;
         int top;
@@ -173,16 +173,16 @@ public class LetterComperator {
                     continue;
                 }
                 if (isCreateIntersectionLetter()) {
-                    intersection = new Letter();
-                    intersection.setOwner(owner);
+                    tmpIntersection = new Letter();
+                    tmpIntersection.setOwner(owner);
                     intersectionGrid = new int[tmpIntersectionWidth][tmpIntersectionHeight];
-                    intersection.setGrid(intersectionGrid);
+                    tmpIntersection.setGrid(intersectionGrid);
                 }
                 //
                 if (this.preScanFilter < 100) {
-                    preScan = this.scanPreIntersection(xx, yy, left, top, tmpIntersectionWidth, tmpIntersectionHeight);
+                    tmpPreScanValue = this.scanPreIntersection(xx, yy, left, top, tmpIntersectionWidth, tmpIntersectionHeight);
                     //logger.info("_"+preScan);
-                    if ((int)preScan > this.preScanFilter){
+                    if ((int)tmpPreScanValue > this.preScanFilter){
                         
                 
                        continue;
@@ -190,32 +190,35 @@ public class LetterComperator {
                
                 }
               // logger.info("Scan "+tmpIntersectionWidth+"/"+tmpIntersectionHeight+" - "+a.getElementPixel());
+               
                 value = this.scanIntersection(xx, yy, left, top, tmpIntersectionWidth, tmpIntersectionHeight);
+//                logger.info(tmpIntersectionWidth+"/"+tmpIntersectionHeight+" : "+(this.loopCounter-loops)+" scanIntersection: "+(UTILITIES.getTimer(timer)));
 //                   logger.info(" : "+value);
                 if (value < bestValue) {
                     bestValue = value;
                     this.setValityPercent(bestValue);
-                    this.setHeightFaktor(scanHeightFaktor);
-                    this.setWidthFaktor(scanWidthFaktor);
+                    this.setHeightFaktor(tmpHeightFaktor);
+                    this.setWidthFaktor(tmpWidthFaktor);
                     this.setIntersectionHeight(tmpIntersectionHeight);
                     this.setIntersectionWidth(tmpIntersectionWidth);
                     this.setIntersectionStartX(xx);
                     this.setIntersectionStartY(yy);
                     this.setBothElementNum(bothElements.size());
-                    this.setCoverageFaktorA(scanCoverageFaktorA);
-                    this.setCoverageFaktorB(scanCoverageFaktorB);
-                    this.setPixelErrorA(errorA);
-                    this.setPreValityPercent(preScan);
-                    this.setPixelErrorB(errorB);
-                    this.setPixelANotB(pixelAButNotB);
-                    this.setPixelBNotA(pixelBButNotA);
-                    this.setPixelBoth(pixelBoth);
-                    this.setPixelErrorB(errorB);
-                    this.setTotalPixelError(errorTotal);
+                    this.setCoverageFaktorA(tmpCoverageFaktorA);
+                    this.setCoverageFaktorB(tmpCoverageFaktorB);
+                    this.setPixelErrorA(tmpErrorA);
+                    this.setPreValityPercent(tmpPreScanValue);
+                    this.setPixelErrorB(tmpErrorB);
+                    this.setPixelANotB(tmpPixelAButNotB);
+                    this.setPixelBNotA(tmpPixelBButNotA);
+                    this.setPixelBoth(tmpPixelBoth);
+                  
+                    this.setTotalPixelError(tmpErrorTotal);
                     if (isCreateIntersectionLetter()) {
-                        this.setIntersectionLetter(intersection);
+                        this.setIntersectionLetter(tmpIntersection);
 
                     }
+                   
                 }
             }
         }
@@ -234,23 +237,24 @@ public class LetterComperator {
         double tmpError;
         int yStep = tmpIntersectionHeight / (preScanFaktor + 1);
 
-        pixelBoth = 0;
-        pixelBButNotA = 0;
-        pixelAButNotB = 0;
+        tmpPixelBoth = 0;
+        tmpPixelBButNotA = 0;
+        tmpPixelAButNotB = 0;
         pixelAll = 0;
         for (int y = yStep; y <= tmpIntersectionHeight - yStep; y += yStep) {
             for (int x = 0; x < tmpIntersectionWidth; x++) {
                 pixelAll++;
+            
                 int pixelType = getPixelType(x, y, xx, yy, left, top);
                 switch (pixelType) {
                     case 0:
-                        pixelBoth++;
+                        tmpPixelBoth++;
                         break;
                     case 1:
-                        pixelBButNotA++;
+                        tmpPixelBButNotA++;
                         break;
                     case 2:
-                        pixelAButNotB++;
+                        tmpPixelAButNotB++;
                         break;
                 }
             }
@@ -258,14 +262,14 @@ public class LetterComperator {
         // logger.info((UTILITIES.getTimer() - startTime)+ "intersection
         // scantime: "+(UTILITIES.getTimer()-starter2));
         if (pixelAll > 0) {
-            errorA = (double) pixelAButNotB / (double) (pixelBoth + pixelAButNotB);
-            errorB = (double) pixelBButNotA / (double) (pixelBButNotA + pixelBoth);
-            errorTotal = errorA * errorAWeight + errorB * errorbWeight;
+            tmpErrorA = (double) tmpPixelAButNotB / (double) (tmpPixelBoth + tmpPixelAButNotB);
+            tmpErrorB = (double) tmpPixelBButNotA / (double) (tmpPixelBButNotA + tmpPixelBoth);
+            tmpErrorTotal = tmpErrorA * errorAWeight + tmpErrorB * errorbWeight;
             localHeightPercent = (double) tmpIntersectionHeight / a.getHeight();
             localWidthPercent = (double) tmpIntersectionWidth / a.getWidth();
             heightFaktor = Math.min(1.0, Math.pow(1.0 - localHeightPercent, 2) * intersectionDimensionWeight);
             widthFaktor = Math.min(1.0, Math.pow(1.0 - localWidthPercent, 3) * intersectionDimensionWeight);
-            tmpError = errorTotal;
+            tmpError = tmpErrorTotal;
             tmpError += heightFaktor;
             tmpError += widthFaktor;
             tmpError /= 4.0;
@@ -281,11 +285,12 @@ public class LetterComperator {
 
         double tmpError;
         pixelAll = 0;
-        pixelBButNotA = 0;
-        pixelAButNotB = 0;
-        pixelBoth = 0;
-        scanCoverageFaktorA = 0;
-        scanCoverageFaktorB = 0;
+        tmpPixelBButNotA = 0;
+        tmpPixelAButNotB = 0;
+        tmpPixelBoth = 0;
+        tmpCoverageFaktorA = 0;
+        tmpCoverageFaktorB = 0;
+//        long starter=UTILITIES.getTimer();
         bothElements.removeAllElements();
         elementGrid = new int[tmpIntersectionWidth][tmpIntersectionHeight];
 
@@ -294,6 +299,7 @@ public class LetterComperator {
 
                 int pixelType = getPixelType(x, y, xx, yy, left, top);
                 pixelAll++;
+             
                 switch (pixelType) {
                     case 0:
                         if (isCreateIntersectionLetter())
@@ -303,11 +309,11 @@ public class LetterComperator {
                         if (element.size() > minCleftSize)
                             bothElements.add(element);
 
-                        pixelBoth++;
+                        tmpPixelBoth++;
                         break;
                     case 1:
                         if (hasNeighbour(x, y, xx, yy, left, top, pixelType) > overlayNoiseSize) {
-                            pixelBButNotA++;
+                            tmpPixelBButNotA++;
                             if (isCreateIntersectionLetter())
                                 intersectionGrid[x][y] = BNACOLOR;
                         } else {
@@ -317,7 +323,7 @@ public class LetterComperator {
                         break;
                     case 2:
                         if (hasNeighbour(x, y, xx, yy, left, top, pixelType) > overlayNoiseSize) {
-                            pixelAButNotB++;
+                            tmpPixelAButNotB++;
                             if (isCreateIntersectionLetter())
                                 intersectionGrid[x][y] = ANBCOLOR;
                         } else {
@@ -332,33 +338,35 @@ public class LetterComperator {
                 }
             }
         }
-        // logger.info((UTILITIES.getTimer() - startTime)+ "intersection
-        // scantime: "+(UTILITIES.getTimer()-starter2));
+        
+//         logger.info("Scanner: "+UTILITIES.getTimer(starter));
         if (pixelAll > 0&& bothElements.size()>0) {
-            errorA = (double) pixelAButNotB / (double) (pixelBoth + pixelAButNotB);
-            errorB = (double) pixelBButNotA / (double) (pixelBButNotA + pixelBoth);
-            errorTotal = errorA * errorAWeight + errorB * errorbWeight;
-            coverageFaktorA = Math.min(1.0, (1.0 - ((double) pixelBoth / (double) a.getElementPixel())) * coverageFaktorAWeight);
-            coverageFaktorB = Math.min(1.0, (1.0 - ((double) pixelBoth / (double) b.getElementPixel())) * coverageFaktorBWeight);
+            tmpErrorA = (double) tmpPixelAButNotB / (double) (tmpPixelBoth + tmpPixelAButNotB);
+            tmpErrorB = (double) tmpPixelBButNotA / (double) (tmpPixelBButNotA + tmpPixelBoth);
+            tmpErrorTotal = tmpErrorA * errorAWeight + tmpErrorB * errorbWeight;
+            tmpCoverageFaktorA = 1.0 - ((double) tmpPixelBoth / (double) a.getElementPixel());
+            tmpCoverageFaktorA = 1.0 - ((double) tmpPixelBoth / (double) b.getElementPixel()) ;
             localHeightPercent = (double) tmpIntersectionHeight / a.getHeight();
             localWidthPercent = (double) tmpIntersectionWidth / a.getWidth();
-            heightFaktor = Math.min(1.0, Math.pow(1.0 - localHeightPercent, 2) * intersectionDimensionWeight);
-            widthFaktor = Math.min(1.0, Math.pow(1.0 - localWidthPercent, 3) * intersectionDimensionWeight);
-            tmpError = errorTotal;
-            tmpError += coverageFaktorA;
-            tmpError += coverageFaktorB;
-            tmpError += heightFaktor;
-            tmpError += widthFaktor;
+            heightFaktor = Math.pow(1.0 - localHeightPercent, 2) ;
+            widthFaktor = Math.pow(1.0 - localWidthPercent, 2);
+            tmpError = tmpErrorTotal;
+            tmpError += Math.min(1.0, tmpCoverageFaktorA * coverageFaktorAWeight);
+            tmpError += Math.min(1.0, tmpCoverageFaktorA* coverageFaktorBWeight);
+            tmpError += Math.min(1.0, heightFaktor* intersectionDimensionWeight);
+            tmpError += Math.min(1.0, widthFaktor* intersectionDimensionWeight);
             tmpError += (bothElements.size() - 1) * cleftFaktor;
             tmpError /= 6.0;
             tmpError = Math.min(1.0, tmpError);
-            // logger.info(pixelBoth+"_"+(tmpIntersectionHeight *
+           // logger.info(pixelBoth+"_"+(tmpIntersectionHeight *
             // tmpIntersectionWidth));
-            if ((pixelBoth * 8) < (tmpIntersectionHeight * tmpIntersectionWidth)) {
-                tmpError = errorA = errorB = errorTotal = 1.0;
+            if ((tmpPixelBoth * 8) < (tmpIntersectionHeight * tmpIntersectionWidth)) {
+                tmpError = tmpErrorA = tmpErrorB = tmpErrorTotal = 1.0;
             }
+            
             return 100.0 * tmpError;
         } else {
+          
             return 100.0;
         }
     }
@@ -394,6 +402,7 @@ public class LetterComperator {
         if (elementGrid[x][y] != 0)
             return null;
         int pt = getPixelType(x, y, xx, yy, left, top);
+     
         if (pt == pixelType) {
             counter.add(pixelType);
             elementGrid[x][y] = pixelType + 100;
@@ -701,9 +710,11 @@ public class LetterComperator {
 
     public String toString() {
         Hashtable<String, Object> hs = new Hashtable<String, Object>();
+        
+  
         hs.put("DecodedValue", getDecodedValue());
-        hs.put("widthFaktor", this.getWidthFaktor());
-        hs.put("heightFaktor", this.getHeightFaktor());
+        hs.put("widthFaktor", this.getWidthFaktor()+"/"+(this.getWidthFaktor()*coverageFaktorAWeight));
+        hs.put("heightFaktor", this.getHeightFaktor()+"/"+(this.getHeightFaktor()*coverageFaktorBWeight));
         hs.put("pixelErrorA", this.getPixelErrorA());
         hs.put("pixelErrorB", this.getPixelErrorB());
         hs.put("pixelErrorTotal", this.getTotalPixelError());
@@ -711,11 +722,25 @@ public class LetterComperator {
         hs.put("pixelAButNotB", this.getPixelANotB());
         hs.put("pixelBButNotA", this.getPixelBNotA());
         hs.put("pixelBoth", this.getPixelBoth());
-        hs.put("coverageA", this.getCoverageFaktorA());
-        hs.put("coverageB", this.getCoverageFaktorB());
+        hs.put("coverageA", this.getCoverageFaktorA()+"/"+(this.getCoverageFaktorA()*intersectionDimensionWeight));
+        hs.put("coverageB", this.getCoverageFaktorB()+"/"+(this.getCoverageFaktorB()*intersectionDimensionWeight));
         hs.put("bothElements", getBothElementsNum());
         hs.put("preCompare", this.getPreValityPercent());
+        
+        double tmpError = this.getTotalPixelError();
+        tmpError += Math.min(1.0, this.getCoverageFaktorA() * coverageFaktorAWeight);
+        tmpError += Math.min(1.0, this.getCoverageFaktorB()* coverageFaktorBWeight);
+        tmpError += Math.min(1.0, this.getHeightFaktor()* intersectionDimensionWeight);
+        tmpError += Math.min(1.0, this.getWidthFaktor()* intersectionDimensionWeight);
+        tmpError += (getBothElementsNum() - 1) * cleftFaktor;
+        tmpError /= 6.0;
+        tmpError = Math.min(1.0, tmpError);
+        
+        hs.put("totalFaktor", tmpError);
         return hs.toString();
+        
+        
+        
     }
 
     /**

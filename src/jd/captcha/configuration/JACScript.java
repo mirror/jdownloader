@@ -321,9 +321,9 @@ public class JACScript {
     public void set(String key, Object value) {
         key=key.toLowerCase();
         if(get(key)==null){
-            logger.finer("INIT Parameter: "+key+" = "+value+"("+value.getClass().getName()+")"); 
+//            logger.finer("INIT Parameter: "+key+" = "+value+"("+value.getClass().getName()+")"); 
         }else{
-        logger.finer("Update Parameter: "+key+" = "+value+"("+value.getClass().getName()+")");
+//        logger.finer("Update Parameter: "+key+" = "+value+"("+value.getClass().getName()+")");
         }
         parameter.put(key, value);
     }
@@ -602,7 +602,11 @@ public class JACScript {
                         continue;
                     } else if (cmd[1].equalsIgnoreCase("crop")) {
                         captcha.crop(Integer.parseInt(params[0].trim()), Integer.parseInt(params[1].trim()), Integer.parseInt(params[2].trim()), Integer.parseInt(params[3].trim()));
-
+                        
+                        continue;
+                    } else if (cmd[1].equalsIgnoreCase("cleanBackgroundByHorizontalSampleLine")) {
+                        captcha.cleanBackgroundByHorizontalSampleLine(Integer.parseInt(params[0].trim()), Integer.parseInt(params[1].trim()), Integer.parseInt(params[2].trim()), Integer.parseInt(params[3].trim()));
+                        
                         continue;
                     }
 

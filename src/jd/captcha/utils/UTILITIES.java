@@ -83,7 +83,9 @@ public class UTILITIES {
     public static long getTimer() {
         return System.currentTimeMillis();
     }
-
+    public static long getTimer(long timer) {
+        return System.currentTimeMillis()-timer;
+    }
     /** *********************DEBUG*************************** */
 
     /**
@@ -1372,5 +1374,9 @@ public class UTILITIES {
      */
     public static void setUSER_AGENT(String user_agent) {
         USER_AGENT = user_agent;
+    }
+
+    public static int getPercent(int a, int b) {
+       return (a*100)/b;
     }
 }

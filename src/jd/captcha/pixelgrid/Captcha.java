@@ -942,7 +942,7 @@ public class Captcha extends PixelGrid {
         Vector<PixelObject> objects = getObjects(contrast, objectContrast);
 
         // Kleine Objekte ausfiltern
-        while (i < objects.size() && objects.elementAt(i++).getArea() > minArea) {
+        while (i < objects.size() && objects.elementAt(i++).getArea() > minArea &&found<=letterNum) {
             logger.info(objects.elementAt(i-1).getWidth()+" Element: "+found+" : "+objects.elementAt(i-1).getArea());
             found++;
         }
@@ -1070,4 +1070,10 @@ public class Captcha extends PixelGrid {
         this.valityPercent = d;
 
     }
+
+public void cleanBackgroundByHorizontalSampleLine(int x1, int x2, int y1, int y2) {
+   int avg=getAverage(x1,y1,x2-x1,y2-y1);
+   cleanBackgroundByColor(avg);
+    
+}
 }

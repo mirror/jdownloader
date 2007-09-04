@@ -357,14 +357,15 @@ public void resizetoHeight(int newHeight){
     int newWidth=(int)Math.ceil((int)((double)getWidth()*faktor));
 
     int[][] newGrid= new int[newWidth][newHeight];
-    
+    int elementPixel=0;
     for (int x = 0; x < newWidth; x++) {
         for (int y = 0; y < newHeight; y++) {
-            int v=grid[(int)Math.round((double)x/faktor)][(int)Math.round((double)y/faktor)];
+            int v=grid[(int)Math.floor((double)x/faktor)][(int)Math.floor((double)y/faktor)];
             newGrid[x][y]=v;
+            if(newGrid[x][y]==0)elementPixel++;
             
         }}   
-    
+    this.setElementPixel(elementPixel);
     this.setGrid(newGrid);
     
     
