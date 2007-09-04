@@ -18,12 +18,15 @@ import jd.plugins.Plugin;
  * @author astaldo
  */
 public class RouterParser {
-    private static Logger logger = Plugin.getLogger();
-    int positionInFile = 0;
+    private static Logger logger         = Plugin.getLogger();
+    int                   positionInFile = 0;
+
     /**
-     * Mit dieser Methode wird eine Routers.dat in einzelne RouterData Objekte zerteilt
+     * Mit dieser Methode wird eine Routers.dat in einzelne RouterData Objekte
+     * zerteilt
      * 
-     * @param file Die Datei, die importiert werden soll
+     * @param file
+     *            Die Datei, die importiert werden soll
      * @return Ein Vector mit eingelesen RouterData Objekten
      */
     public Vector<RouterData> parseFile(File file) {
@@ -36,17 +39,21 @@ public class RouterParser {
                 routerData.add(parseSingleRouter(fis));
                 count++;
             }
-            logger.info(count +" router data loaded");
+            logger.info(count + " router data loaded");
             return routerData;
-        } 
-        catch (FileNotFoundException e) { e.printStackTrace(); } 
-        catch (IOException e)           { e.printStackTrace(); }
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
         return null;
     }
+
     /**
      * Hier wird ein einzelnes RouterData Objekt eingelesen
      * 
-     * @param is Der InputStream, der zum Import genutzt werden soll
+     * @param is
+     *            Der InputStream, der zum Import genutzt werden soll
      * @return Das ausgelesene RouterData Objekt
      * @throws IOException
      */
@@ -57,18 +64,21 @@ public class RouterParser {
         String ipAddressPre;
         String ipAddressPost;
         String disconnectString;
-        
-        
+        String connectString;
+        String login;
+        int index;
         routerPort = readInt(is);
         readByte(is);
-        routerData.setLogin(readNextString(is));
+        login=readNextString(is);
+       
         readLong(is); // es muss ein long übersprungen werden
-        routerData.setRouterName(readNextString(is)); // routername wird gespeichert
+        routerData.setRouterName(readNextString(is)); // routername wird
+                                                        // gespeichert
 
-        
         readNextString(is);// url zum routerhersteller wird übersprungen
         readNextString(is);// kommentar vom ersteller wird übersprungen
-        routerData.setConnect(readNextString(is));
+        
+        connectString=readNextString(is);      
         disconnectString = readNextString(is);
         routerData.setIpAddressSite(readNextString(is));
         routerData.setIpAddressOffline(readNextString(is));
@@ -97,7 +107,7 @@ public class RouterParser {
         readNextString(is);
 
         int loop2 = readInt(is);
-//        System.out.println("loop2 " + loop2);
+        // System.out.println("loop2 " + loop2);
 
         for (int i = 0; i < loop2; i++) {
             readNextString(is);
@@ -111,25 +121,74 @@ public class RouterParser {
             readNextString(is);
             readNextString(is);
         }
-        
-        // Nachbearbeitung 
+
+        // Nachbearbeitung
         ipAddressPre = Pattern.quote(ipAddressPre);
         ipAddressPost = Pattern.quote(ipAddressPost);
-        routerData.setIpAddressRegEx(ipAddressPre+"([0-9.]*)"+ipAddressPost);
-        
-        if(disconnectString.startsWith("POST"))
-            disconnectString = disconnectString.substring("POST".length());
-        else if(disconnectString.startsWith("GET"))
-            disconnectString = disconnectString.substring("GET".length());
-        routerData.setDisconnect(disconnectString);
-
+        routerData.setIpAddressRegEx(ipAddressPre + "([0-9.]*)" + ipAddressPost);
+        //Zerlege Disconnecturl
+        routerData.setDisconnectType(getRequestType(disconnectString));
+        routerData.setDisconnectPostParams(getPostParams(disconnectString));
+        routerData.setDisconnect(getPlainURL(disconnectString));
+        //Zerlege ConnectURL
+        routerData.setConnectType(getRequestType(connectString));
+        routerData.setConnectPostParams(getPostParams(connectString));
+        routerData.setConnect(getPlainURL(connectString));
+        //Zerlege LoginURL
+        routerData.setLoginType(getRequestType(login));
+        routerData.setLoginPostParams(getPostParams(login));
+        routerData.setLogin(getPlainURL(login));
+   
         return routerData;
     }
+
+    private String getPlainURL(String string) {
+        int index;
+        if (string.startsWith("POST")) {
+            string = string.substring("POST".length());
+        
+           if((index=string.indexOf("?"))>0){        
+            
+               string=string.substring(0,index);
+           }
+        } else if (string.startsWith("<POST>")) {
+            string = string.substring("<POST>".length());
+         
+            if((index=string.indexOf("?"))>0){               
+               
+                string=string.substring(0,index);
+            }
+        } else if (string.startsWith("GET")) {
+            string = string.substring("GET".length());
+        } else if (string.startsWith("<GET>")) {
+            string = string.substring("<GET>".length());
+        }
+        return string;
+        
+    }
+
+    private String getPostParams(String string) {
+        int index;
+        if (!string.startsWith("POST")&&!string.startsWith("<POST>"))return null;
+        if((index=string.indexOf("?"))>0){               
+            return string.substring(index+1);         
+        }
+        return null;
+        
+    }
+
+    private int getRequestType(String string) {
+        if (string.startsWith("POST")||string.startsWith("<POST>"))return RouterData.TYPE_WEB_POST;
+        return RouterData.TYPE_WEB_GET;
+        
+    }
+
     /**
-     * Es wird der nächste Text ausgelesen. Dazu wird zuerst die Länge als
-     * Short ausgelesen und dann der Text
+     * Es wird der nächste Text ausgelesen. Dazu wird zuerst die Länge als Short
+     * ausgelesen und dann der Text
      * 
-     * @param is Der InputStream, der zum Import genutzt werden soll
+     * @param is
+     *            Der InputStream, der zum Import genutzt werden soll
      * @return Der eingelesene Text
      * @throws IOException
      */
@@ -138,14 +197,17 @@ public class RouterParser {
         byte b[] = new byte[length];
         is.read(b);
         positionInFile += length;
-//        System.out.println(new String(b));
+        // System.out.println(new String(b));
         return new String(b);
     }
 
     private byte readBuffer[] = new byte[8];
+
     /**
-     *  Liest das nächste Byte ein
-     * @param is Der InputStream, der zum Import genutzt werden soll
+     * Liest das nächste Byte ein
+     * 
+     * @param is
+     *            Der InputStream, der zum Import genutzt werden soll
      * @return Die ausgelesene Zahl
      * @throws IOException
      */
@@ -156,10 +218,12 @@ public class RouterParser {
             throw new EOFException();
         return (byte) (ch);
     }
+
     /**
      * Liest ein Short ein.
      * 
-     * @param is Der InputStream, der zum Import genutzt werden soll
+     * @param is
+     *            Der InputStream, der zum Import genutzt werden soll
      * @return Die ausgelesene Zahl
      * @throws IOException
      */
@@ -172,10 +236,12 @@ public class RouterParser {
             throw new EOFException();
         return (short) ((ch2 << 8) + (ch1 << 0));
     }
+
     /**
      * Liest einen Integer Wert ein
      * 
-     * @param is Der InputStream, der zum Import genutzt werden soll
+     * @param is
+     *            Der InputStream, der zum Import genutzt werden soll
      * @return Die ausgelesene Zahl
      * @throws IOException
      */
@@ -192,21 +258,18 @@ public class RouterParser {
             throw new EOFException();
         return ((ch4 << 24) + (ch3 << 16) + (ch2 << 8) + (ch1 << 0));
     }
+
     /**
      * Liest ein Long ein
      * 
-     * @param is Der InputStream, der zum Import genutzt werden soll
+     * @param is
+     *            Der InputStream, der zum Import genutzt werden soll
      * @return Die ausgelesene Zahl
      * @throws IOException
      */
     public final long readLong(InputStream is) throws IOException {
         is.read(readBuffer, 0, 8);
         positionInFile += 8;
-        return (((long) readBuffer[0] << 56)
-                + ((long) (readBuffer[1] & 255) << 48)
-                + ((long) (readBuffer[2] & 255) << 40)
-                + ((long) (readBuffer[3] & 255) << 32)
-                + ((long) (readBuffer[4] & 255) << 24)
-                + ((readBuffer[5] & 255) << 16) + ((readBuffer[6] & 255) << 8) + ((readBuffer[7] & 255) << 0));
+        return (((long) readBuffer[0] << 56) + ((long) (readBuffer[1] & 255) << 48) + ((long) (readBuffer[2] & 255) << 40) + ((long) (readBuffer[3] & 255) << 32) + ((long) (readBuffer[4] & 255) << 24) + ((readBuffer[5] & 255) << 16) + ((readBuffer[6] & 255) << 8) + ((readBuffer[7] & 255) << 0));
     }
 }

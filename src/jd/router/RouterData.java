@@ -31,6 +31,11 @@ public class RouterData implements Serializable{
      * Art des Disconnects
      */
     private int disconnectType = TYPE_WEB_GET;
+    
+    /**
+     * Art des connects
+     */
+    private int connectType = TYPE_WEB_GET;
     /**
      * Art des Logins
      */
@@ -68,6 +73,16 @@ public class RouterData implements Serializable{
      */
     private String disconnectPostParams = null;
     /**
+     * Beim Post können hiermit verschiedene Parameter zum Verbinden übergeben werden
+     */
+    private HashMap<String, String> connectRequestProperties = null;  
+    
+    /**
+     * Beim Verbinden sollen diese Parameter als Post verschickt werden
+     * (zB DiagDSLDisconnect=PPPoE%20Trennung))
+     */
+    private String                    connectPostParams = null;
+    /**
      * String zum Ausloggen
      */
     private String logoff = null;
@@ -83,6 +98,11 @@ public class RouterData implements Serializable{
      * RegEx zum finden der IPAdresse
      */
     private String ipAddressRegEx;
+    public HashMap<String, String> getConnectRequestProperties() { return connectRequestProperties; }
+    public void setConnectRequestProperties(HashMap<String, String> connectRequestProperties) { this.connectRequestProperties = connectRequestProperties;       }
+
+    
+    
     public HashMap<String, String> getDisconnectRequestProperties() { return disconnectRequestProperties; }
     public void setDisconnectRequestProperties(HashMap<String, String> disconnectRequestProperties) { this.disconnectRequestProperties = disconnectRequestProperties;       }
 
@@ -94,9 +114,11 @@ public class RouterData implements Serializable{
     public String getIpAddressOffline()                        { return ipAddressOffline;     }
     public String getIpAddressSite()                           { return ipAddressSite;        }
     public String getDisconnectPostParams()                    { return disconnectPostParams; }
+    public String getConnectPostParams()                       { return connectPostParams;    }
     public HashMap<String, String> getLoginRequestProperties() { return loginProperties;      }
     public String getLoginPostParams()                         { return loginPostParams;      }
     public int getDisconnectType()                             { return disconnectType;       }
+    public int getConnectType()                                { return connectType;          }
     public int getLoginType()                                  { return loginType;            }
     public String getIpAddressRegEx()                          { return ipAddressRegEx;       }
     public void setConnect(String connect)                                         { this.connect = connect;                           }
@@ -108,7 +130,10 @@ public class RouterData implements Serializable{
     public void setIpAddressSite(String ipAddressSite)                             { this.ipAddressSite = ipAddressSite;               }
     public void setIpAddressRegEx(String ipAddressRegEx)                           { this.ipAddressRegEx = ipAddressRegEx;             }
     public void setDisconnectPostParams(String disconnectPostParams)               { this.disconnectPostParams = disconnectPostParams; }
+    public void setConnectPostParams(String connectPostParams)                     { this.connectPostParams = connectPostParams;       }
+    
     public void setDisconnectType(int loginType)                                   { this.disconnectType = loginType;                  }
+    public void setConnectType(int loginType)                                      { this.connectType = loginType;                     }
     public void setLoginType(int loginType)                                        { this.loginType = loginType;                       }
     public void setLoginRequestProperties(HashMap<String, String> loginProperties) { this.loginProperties = loginProperties;           }
     public void setLoginPostParams(String loginPostParams)                         { this.loginPostParams = loginPostParams;           }
