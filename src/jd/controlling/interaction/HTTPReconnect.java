@@ -4,6 +4,8 @@ import java.io.IOException;
 import java.net.Authenticator;
 import java.net.MalformedURLException;
 import java.net.PasswordAuthentication;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.HashMap;
 
@@ -36,10 +38,10 @@ public class HTTPReconnect extends Interaction{
         String ipBefore;
         String ipAfter;
         RouterData routerData = configuration.getRouterData();
-        String routerIP       = configuration.getRouterIP();
+        String routerIP       = routerData.getRouterIP();
         String routerUsername = configuration.getRouterUsername();
         String routerPassword = configuration.getRouterPassword();
-        int routerPort        = configuration.getRouterPort();
+        int routerPort        = routerData.getRouterPort();
         String login          = routerData.getLogin();
         String disconnect     = routerData.getDisconnect();
         String connect        = routerData.getConnect();
@@ -66,7 +68,7 @@ public class HTTPReconnect extends Interaction{
             //Anmelden
             requestInfo = doThis(
                     "Login",
-                    routerPage+login,
+                    isAbsolute(login)?login:routerPage+login,
                     requestInfo,
                     routerData.getLoginRequestProperties(),
                     routerData.getLoginPostParams(),
@@ -83,7 +85,7 @@ public class HTTPReconnect extends Interaction{
         //Disconnect
         requestInfo = doThis(
                 "Disconnect",
-                routerPage+disconnect,
+                isAbsolute(disconnect)?disconnect:routerPage+disconnect,
                 requestInfo,
                 routerData.getDisconnectRequestProperties(),
                 routerData.getDisconnectPostParams(),
@@ -105,12 +107,12 @@ public class HTTPReconnect extends Interaction{
         // Verbindung wiederaufbauen
         logger.fine("building connection");
         requestInfo = doThis(
-                "Rebuild",
-                connect,
+                "Rebuild",                
+                isAbsolute(connect)?connect:routerPage+connect,
                 null,
-                null,
-                null,
-                RouterData.TYPE_WEB_GET);
+                routerData.getConnectRequestProperties(),
+                routerData.getConnectPostParams(),
+                routerData.getConnectType());
 
         if(requestInfo== null){
             logger.severe("Reconnect failed.");
@@ -132,8 +134,14 @@ public class HTTPReconnect extends Interaction{
         return true;
     }
     private String getIPAddress(String routerPage, RouterData routerData){
+        String urlForIPAddress;
         try {
-            String urlForIPAddress = routerPage + routerData.getIpAddressSite();
+            if(isAbsolute(routerData.getIpAddressSite())){
+                urlForIPAddress = routerData.getIpAddressSite();
+            }else{
+                urlForIPAddress = routerPage + routerData.getIpAddressSite();
+            }
+           
             RequestInfo requestInfo = Plugin.getRequest(new URL(urlForIPAddress));
             return routerData.getIPAdress(requestInfo.getHtmlCode());
         }
@@ -147,15 +155,36 @@ public class HTTPReconnect extends Interaction{
     public String getName() {
         return NAME;
     }
+   /**
+    * @author coalado
+    * @param url
+    * @return Prüft ob enie url Absolut ist.
+    */
+    private boolean isAbsolute(String url){
+        try {
+            URI uri= new URI(url);
+           return uri.isAbsolute();
+        } catch (URISyntaxException e) {
+            return false;
+        }
+    }
     private RequestInfo doThis(String action, String page, RequestInfo requestInfo, HashMap<String, String> requestProperties, String params, int type){
         RequestInfo newRequestInfo = null;
         if(type == RouterData.TYPE_WEB_POST){
             logger.fine(action+" via POST:"+page);
             try {
                 if(requestInfo == null){
+//                    newRequestInfo = Plugin.postRequest(
+//                        new URL(page),
+//                        params);
                     newRequestInfo = Plugin.postRequest(
-                        new URL(page),
-                        params);
+                            new URL(page),
+                            "",
+                            null,
+                            requestProperties, 
+                            params,
+                            true);
+                    
                 }
                 else if(requestInfo!=null){
                     newRequestInfo = Plugin.postRequest(

@@ -1,5 +1,10 @@
 package jd.captcha;
 
+import java.util.logging.Logger;
+
+import jd.captcha.utils.UTILITIES;
+import jd.update.WebUpdater;
+
 
 
 
@@ -15,6 +20,7 @@ package jd.captcha;
  * @author coalado
  */
 public class JACUpdater {
+    private Logger logger = UTILITIES.getLogger();
     /**
      * @param args
      */
@@ -25,8 +31,9 @@ public class JACUpdater {
     }
     private void go(){ 
         
-        JAntiCaptcha.updateMethods();
-        
+//        JAntiCaptcha.updateMethods();
+        WebUpdater web= new WebUpdater("http://lagcity.de/~JDownloaderFiles/autoUpdate");
+        logger.info("New files: "+web.getUpdateNum());
 
    
     }

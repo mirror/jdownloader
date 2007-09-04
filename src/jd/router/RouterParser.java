@@ -10,6 +10,9 @@ import java.util.Vector;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
+import javax.swing.JFrame;
+
+import jd.JDUtilities;
 import jd.plugins.Plugin;
 
 /**
@@ -48,7 +51,29 @@ public class RouterParser {
         }
         return null;
     }
-
+    /**
+     * Mit dieser Methode wird eine routerdata.xml in einzelne RouterData Objekte
+     * zerteilt
+     * 
+     * @param file
+     *            Die XML Datei, die importiert werden soll
+     * @return Ein Vector mit eingelesen RouterData Objekten
+     */
+    public Vector<RouterData> parseXMLFile(File file) {
+     
+        Vector<RouterData> routerData = (Vector<RouterData>)JDUtilities.loadObject(new JFrame(), file, true);
+        return routerData;
+    }
+    /**
+     * konvertiert die routers.dat in eine xml Datei
+     * @param dat
+     * @param xml
+     */
+    public void routerDatToXML(File dat, File xml){
+        RouterParser parser = new RouterParser();       
+       JDUtilities.saveObject(new JFrame(), parser.parseFile(dat), xml, "routerdata", "xml", true);
+        
+    }
     /**
      * Hier wird ein einzelnes RouterData Objekt eingelesen
      * 

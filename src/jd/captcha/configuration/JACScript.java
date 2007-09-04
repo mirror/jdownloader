@@ -560,7 +560,7 @@ public class JACScript {
                         captcha.cleanBackgroundByColor(Integer.parseInt(params[0].trim()));
                         continue;
                     }
-
+                    
                     else if (cmd[1].equalsIgnoreCase("saveImageasJpg")) {
 
                         captcha.saveImageasJpg(new File(params[0].trim()));
@@ -576,13 +576,16 @@ public class JACScript {
                     } else if (cmd[1].equalsIgnoreCase("reduceBlackNoise")) {
                         captcha.reduceBlackNoise(Integer.parseInt(params[0].trim()), Double.parseDouble(params[1].trim()));
                         continue;
-                    } else {
+                    }  else if (cmd[1].equalsIgnoreCase("cleanWithDetailMask")) {
+                        captcha.cleanWithDetailMask(owner.createCaptcha(UTILITIES.loadImage(owner.getResourceFile(params[0].trim()))),Integer.parseInt(params[1].trim()));
+                        continue;
+                    }else {
                         logger.severe("Error in " + method + "/+script.jas : Function not valid: " + cmd[1] + "(" + cmd[2] + ")");
                     }
 
                 } else if (cmd[0].equals("function") && (params = cmd[2].split("\\,")).length == 3) {
                     if (cmd[1].equalsIgnoreCase("cleanWithMask")) {
-                        captcha.cleanWithMask(owner.createCaptcha(UTILITIES.loadImage(new File(params[0].trim()))), Integer.parseInt(params[1].trim()), Integer.parseInt(params[2].trim()));
+                        captcha.cleanWithMask(owner.createCaptcha(UTILITIES.loadImage(owner.getResourceFile(params[0].trim()))), Integer.parseInt(params[1].trim()), Integer.parseInt(params[2].trim()));
                         continue;
                     } else if (cmd[1].equalsIgnoreCase("removeSmallObjects")) {
                         captcha.removeSmallObjects(Double.parseDouble(params[0].trim()), Double.parseDouble(params[1].trim()), Integer.parseInt(params[2].trim()));
@@ -618,7 +621,8 @@ public class JACScript {
 
             }
         } catch (Exception e) {
-            logger.severe("Syntax Error in " + method + "/script.jas");
+            logger.severe("Syntax Error in " + method + "/script.jas (captcha)");
+            e.printStackTrace();
 
         }
         // BasicWindow.showImage(captcha.getImage(),120,80);
@@ -638,7 +642,7 @@ public class JACScript {
                 logger.info("Execute Function: " + cmd[1] + "(" + cmd[2] + ")");
 
                 if (cmd[0].equals("parameter")) {
-                    logger.severe("Syntax Error in " + method + "/+script.jas");
+                    logger.severe("Syntax Error in " + method + "/+script.jas(letter)");
                     // captchaPrepareCommands
 
                 } else if (cmd[0].equals("function") && cmd[2] == null) {

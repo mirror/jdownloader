@@ -32,6 +32,8 @@ public class RouterData implements Serializable{
      */
     private int disconnectType = TYPE_WEB_GET;
     
+    private int routerPort=80;
+    private String routerIP="192.168.0.1";
     /**
      * Art des connects
      */
@@ -97,6 +99,7 @@ public class RouterData implements Serializable{
     /**
      * RegEx zum finden der IPAdresse
      */
+    private String comment=null;
     private String ipAddressRegEx;
     public HashMap<String, String> getConnectRequestProperties() { return connectRequestProperties; }
     public void setConnectRequestProperties(HashMap<String, String> connectRequestProperties) { this.connectRequestProperties = connectRequestProperties;       }
@@ -145,10 +148,11 @@ public class RouterData implements Serializable{
      * @return Die IP-Adresse oder null
      */
     public String getIPAdress(String data){
+        logger.info(data);
         String ipAddress = null;
         if(data == null)
             return null;
-        if(data.contains(ipAddressOffline)){
+        if(ipAddressOffline!=null && ipAddressOffline.length()>0&&data.contains(ipAddressOffline)){
             logger.fine("offline");
             return null;
         }
@@ -160,5 +164,29 @@ public class RouterData implements Serializable{
     }
     public String toString(){
         return routerName;
+    }
+    /**
+     * @return the routerIP
+     */
+    public String getRouterIP() {
+        return routerIP;
+    }
+    /**
+     * @param routerIP the routerIP to set
+     */
+    public void setRouterIP(String routerIP) {
+        this.routerIP = routerIP;
+    }
+    /**
+     * @return the routerPort
+     */
+    public int getRouterPort() {
+        return routerPort;
+    }
+    /**
+     * @param routerPort the routerPort to set
+     */
+    public void setRouterPort(int routerPort) {
+        this.routerPort = routerPort;
     }
 }

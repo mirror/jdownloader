@@ -1,8 +1,6 @@
 package jd.gui.skins.simple.config;
 
 import java.awt.BorderLayout;
-import java.awt.Component;
-import java.awt.Dimension;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
@@ -21,6 +19,7 @@ import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JFileChooser;
+import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
@@ -78,6 +77,7 @@ class ConfigPanelRouter extends JPanel implements ItemListener, ActionListener{
     private JLabel lblDisconnectRequestProperties;
     private JLabel lblDisconnectPostParams;
     private JLabel lblIPAddressRegEx;
+    private JLabel lblIPAddressOffline;
     private JLabel lblIPAddressSite;
     private JLabel lblConnectType;
     private JLabel lblConnectRequestProperties;
@@ -101,6 +101,7 @@ class ConfigPanelRouter extends JPanel implements ItemListener, ActionListener{
     private JTextField txtDisconnectRequestProperties;
     private JTextField txtDisconnectPostParams;
     private JTextField txtIPAddressRegEx;
+    private JTextField txtIPAddressOffline;
     private JTextField txtIPAddressSite;
     private JTextField txtConnectRequestProperties;
     private JTextField txtConnectPostParams;
@@ -129,6 +130,7 @@ class ConfigPanelRouter extends JPanel implements ItemListener, ActionListener{
         lblLogin                       = new JLabel("Anmeldestring",JLabel.RIGHT);
         lblLoginType                   = new JLabel("Art der Anmeldung",JLabel.RIGHT);
         lblLoginRequestProperties      = new JLabel("RequestProperties fürs Login",JLabel.RIGHT);
+        lblIPAddressOffline             = new JLabel("Offlinestring",JLabel.RIGHT);
         lblLoginPostParams             = new JLabel("POST Parameter fürs Login)",JLabel.RIGHT);
         lblLogoff                      = new JLabel("Anmeldestring",JLabel.RIGHT);
         lblConnect                     = new JLabel("Verbindungsaufbau",JLabel.RIGHT);
@@ -146,15 +148,17 @@ class ConfigPanelRouter extends JPanel implements ItemListener, ActionListener{
         
         txtUsername                    = new JTextField(configuration.getRouterUsername());
         txtPassword                    = new JPasswordField(configuration.getRouterPassword());
-        txtRouterIP                    = new JTextField(configuration.getRouterIP());
-        txtRouterPort                  = new JTextField(Integer.toString(configuration.getRouterPort()));
+        txtRouterIP                    = new JTextField(50);
+        txtRouterPort                  = new JTextField(50);
         txtRouterName                  = new JTextField(50);
         txtLogin                       = new JTextField(50);
         cboLoginType                   = new JComboBox(types);
         txtLoginRequestProperties      = new JTextField(50);
         txtLoginPostParams             = new JTextField(50);
         txtLogoff                      = new JTextField(50);
+        txtIPAddressOffline                     = new JTextField(50);
         txtConnect                     = new JTextField(50);
+        
         txtDisconnect                  = new JTextField(50);
         cboDisconnectType              = new JComboBox(types);
         cboConnectType              = new JComboBox(types);
@@ -236,6 +240,7 @@ class ConfigPanelRouter extends JPanel implements ItemListener, ActionListener{
         row=0;
         JDUtilities.addToGridBag(this.pnlIpCheck, lblIPAddressSite,               0, row++, 1, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.EAST);
         JDUtilities.addToGridBag(this.pnlIpCheck, lblIPAddressRegEx,              0, row++, 1, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.EAST);
+        JDUtilities.addToGridBag(this.pnlIpCheck, lblIPAddressOffline,              0, row++, 1, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.EAST);
 
         row=0;
         //Controlbuttons
@@ -272,6 +277,7 @@ class ConfigPanelRouter extends JPanel implements ItemListener, ActionListener{
         row=0;
         JDUtilities.addToGridBag(pnlIpCheck, txtIPAddressSite,               1, row++, 1, 1, 1, 1, insets, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
         JDUtilities.addToGridBag(pnlIpCheck, txtIPAddressRegEx,              1, row++, 1, 1, 1, 1, insets, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+        JDUtilities.addToGridBag(pnlIpCheck, txtIPAddressOffline,              1, row++, 1, 1, 1, 1, insets, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
         
         add(panel,BorderLayout.CENTER);
         checkComboBoxes();
@@ -290,7 +296,9 @@ class ConfigPanelRouter extends JPanel implements ItemListener, ActionListener{
         txtDisconnectPostParams.setText(routerData.getDisconnectPostParams());
         txtConnectPostParams.setText(routerData.getConnectPostParams());
         txtIPAddressSite.setText(routerData.getIpAddressSite());
-
+        txtIPAddressOffline.setText(routerData.getIpAddressOffline());
+        this.txtRouterIP.setText(routerData.getRouterIP());
+        this.txtRouterPort.setText(routerData.getRouterPort()+"");
         if(routerData.getIpAddressRegEx() != null)
             txtIPAddressRegEx.setText(routerData.getIpAddressRegEx().toString()); 
         else
@@ -338,7 +346,7 @@ class ConfigPanelRouter extends JPanel implements ItemListener, ActionListener{
         configuration.setRouterData(routerData);
         configuration.setRouterUsername(txtUsername.getText().trim());
         configuration.setRouterPassword(new String(txtPassword.getPassword()).trim());
-        configuration.setRouterIP(txtRouterIP.getText().trim());
+        routerData.setRouterIP(txtRouterIP.getText().trim());
         routerData.setRouterName(txtRouterName.getText().trim());
         routerData.setLogin(txtLogin.getText().trim());
         routerData.setLoginPostParams(txtLoginPostParams.getText().trim());
@@ -347,9 +355,11 @@ class ConfigPanelRouter extends JPanel implements ItemListener, ActionListener{
         routerData.setDisconnect(txtDisconnect.getText().trim());
         routerData.setDisconnectPostParams(txtDisconnectPostParams.getText().trim());
         routerData.setIpAddressSite(txtIPAddressSite.getText().trim());
-
+        routerData.setIpAddressOffline(txtIPAddressOffline.getText().trim());
+        routerData.setConnectPostParams(txtConnectPostParams.getText().trim());
+      
         try {
-            configuration.setRouterPort(Integer.parseInt(txtRouterPort.getText()));
+            routerData.setRouterPort(Integer.parseInt(txtRouterPort.getText()));
         }
         catch (NumberFormatException e) { logger.severe("routerPort wrong"); }
 
@@ -369,6 +379,7 @@ class ConfigPanelRouter extends JPanel implements ItemListener, ActionListener{
         catch (Exception e) { logger.severe("RegEx for IPAddress wrong"); }
         routerData.setLoginRequestProperties(splitString(txtLoginRequestProperties.getText().trim()));
         routerData.setDisconnectRequestProperties(splitString(txtDisconnectRequestProperties.getText().trim()));
+        routerData.setConnectRequestProperties(splitString(txtConnectRequestProperties.getText().trim()));
     }
     /**
      * Gibt eine Hashmap als String zurück. Das Format ist so;
@@ -447,18 +458,14 @@ class ConfigPanelRouter extends JPanel implements ItemListener, ActionListener{
         }
     }
     private void importFromRoutersDat(){
-        JFileChooser fileChooser = new JFileChooser();
-        JDFileFilter fileFilter = new JDFileFilter("Routers",".dat",true);
+
         File fileRoutersDat;
         Vector<RouterData> routerData;
-        
-        
-        fileChooser.setFileFilter(fileFilter);
-        fileChooser.showOpenDialog(this);
-        fileRoutersDat = fileChooser.getSelectedFile();
+        fileRoutersDat=JDUtilities.getResourceFile("jd/router/routerdata.xml");
         if(fileRoutersDat != null){
             RouterParser parser = new RouterParser();
-            routerData = parser.parseFile(fileRoutersDat);
+ 
+            routerData=parser.parseXMLFile(fileRoutersDat);
             Object selected = JOptionPane.showInputDialog(
                     this, 
                     "Bitte wähle deinen Router aus", 

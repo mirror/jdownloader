@@ -29,7 +29,7 @@ public class JACTestrun {
     private void go(){
 
         String methodsPath=UTILITIES.getFullPath(new String[] { JDUtilities.getJDHomeDirectory().getAbsolutePath(), "jd", "captcha", "methods"});
-        JAntiCaptcha.testMethod(new File("C:/Users/coalado/.jd_home/jd/captcha/methods/secured.in/"));
+        JAntiCaptcha.testMethod(new File("C:/Users/coalado/.jd_home/jd/captcha/methods/serienjunkies.safehost.be/"));
 
 //       File[] methods= JAntiCaptcha.getMethods(methodsPath);
 //      logger.info("Found "+methods.length+" Methods");

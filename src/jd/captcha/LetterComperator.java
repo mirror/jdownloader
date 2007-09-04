@@ -169,7 +169,7 @@ public class LetterComperator {
                 tmpIntersectionWidth = right - left;
                 tmpIntersectionHeight = bottom - top;
                 if (tmpIntersectionWidth <= 0 || tmpIntersectionHeight <= 0) {
-                    logger.warning("Scannvarianzen zu groß: " + tmpIntersectionWidth + "/" + tmpIntersectionHeight);
+//                    logger.warning("Scannvarianzen zu groß: " + tmpIntersectionWidth + "/" + tmpIntersectionHeight);
                     continue;
                 }
                 if (isCreateIntersectionLetter()) {

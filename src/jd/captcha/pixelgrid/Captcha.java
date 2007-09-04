@@ -230,7 +230,7 @@ public class Captcha extends PixelGrid {
             height = 2;
         for (int x = Math.max(0, px - halfW); x < Math.min(px + width - halfW, getWidth()); x++) {
             for (int y = Math.max(0, py - halfH); y < Math.min(py + height - halfH, getHeight()); y++) {
-                if (mask.getPixelValue(x, y) > (getMaxPixelValue() * owner.getJas().getDouble("getBlackPercent"))) {
+               if (mask.getPixelValue(x, y) > 100) {
                     bv = UTILITIES.hexToRgb(getPixelValue(x, y));
                     avg[0] += bv[0];
                     avg[1] += bv[1];
@@ -268,11 +268,12 @@ public class Captcha extends PixelGrid {
 
         for (int x = 0; x < getWidth(); x++) {
             for (int y = 0; y < getHeight(); y++) {
-                if (mask.getPixelValue(x, y) < (getMaxPixelValue() * owner.getJas().getDouble("getBlackPercent"))) {
-                    newgrid[x][y] = getAverage(x, y, width, height, mask);
+                if (mask.getPixelValue(x, y) < 100) {
+                   
+                    PixelGrid.setPixelValue(x, y, newgrid, getAverage(x, y, width, height, mask), this.owner);
 
                 } else {
-                    newgrid[x][y] = getPixelValue(x, y);
+                    newgrid[x][y] = grid[x][y];
                 }
             }
         }
@@ -1074,6 +1075,32 @@ public class Captcha extends PixelGrid {
 public void cleanBackgroundByHorizontalSampleLine(int x1, int x2, int y1, int y2) {
    int avg=getAverage(x1,y1,x2-x1,y2-y1);
    cleanBackgroundByColor(avg);
+    
+}
+
+public void cleanWithDetailMask(Captcha mask, int dif) {
+   
+        int[][] newgrid = new int[getWidth()][getHeight()];
+
+        if (mask.getWidth() != getWidth() || mask.getHeight() != getHeight()) {
+            logger.info("ERROR Maske und Bild passen nicht zusammmen");
+            return;
+        }
+logger.info(dif+"_");
+        for (int x = 0; x < getWidth(); x++) {
+            for (int y = 0; y < getHeight(); y++) {
+                if (Math.abs(mask.getPixelValue(x, y)-getPixelValue(x,y)) < dif) {
+                   
+                    PixelGrid.setPixelValue(x, y, newgrid, getMaxPixelValue(), this.owner);
+
+                } else {
+                    newgrid[x][y] = grid[x][y];
+                }
+            }
+        }
+        grid = newgrid;
+
+    
     
 }
 }

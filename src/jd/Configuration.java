@@ -38,14 +38,7 @@ public class Configuration implements Serializable{
      * Password für den Router
      */
     private String routerPassword = null;
-    /**
-     * IP des Routers
-     */
-    private String routerIP = null;
-    /**
-     * Router Port
-     */
-    private int routerPort=80;
+
     /**
      * Level für das Logging
      */
@@ -56,15 +49,13 @@ public class Configuration implements Serializable{
     public String getRouterPassword()                              { return routerPassword;     }
     public String getRouterUsername()                              { return routerUsername;     }
     public RouterData getRouterData()                              { return routerData;         }
-    public String getRouterIP()                                    { return routerIP;           }
-    public int getRouterPort()                                     { return routerPort;         }
+    
     public boolean useJAC()                                        { return useJAC;             }
     public void setDownloadDirectory(String downloadDirectory) { this.downloadDirectory = downloadDirectory; }
     public void setRouterPassword(String routerPassword)       { this.routerPassword = routerPassword;       }
     public void setRouterUsername(String routerUsername)       { this.routerUsername = routerUsername;       }
     public void setRouterData(RouterData routerData)           { this.routerData = routerData;               }
-    public void setRouterIP(String routerIP)                   { this.routerIP = routerIP;                   }
-    public void setRouterPort(int httpPort)                    { this.routerPort = httpPort;                 }
+
     public void setUseJAC(boolean useJAC)                      { this.useJAC = useJAC;                       }
     public void setInteractions(HashMap<Integer, Vector<Interaction>> interactions) { this.interactions = interactions; }
     public String getLoggerLevel() {

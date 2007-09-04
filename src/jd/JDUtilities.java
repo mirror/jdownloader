@@ -18,13 +18,19 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.io.UnsupportedEncodingException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.net.URLDecoder;
+import java.security.MessageDigest;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Locale;
@@ -39,6 +45,7 @@ import javax.swing.JFrame;
 
 import jd.captcha.JAntiCaptcha;
 import jd.captcha.pixelgrid.Captcha;
+import jd.captcha.utils.UTILITIES;
 import jd.controlling.JDController;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
@@ -565,12 +572,125 @@ public class JDUtilities {
         return homeDirectory;
     }
     /**
-     * 
+      * @author coalado
      * @return gibt den Pfad zu den JAC Methoden zurück 
      */
     public static String getJACMethodsDirectory(){
         String sep=System.getProperty("file.separator");
         return getJDHomeDirectory()+sep+"jd"+sep+"captcha"+sep+"methods";
+    }
+
+    /**
+     * Gibt ein FileOebject zu einem resourcstring zurück
+     * @author coalado
+     * @param arg
+     * @return File zu arg
+     */
+    public static File getResourceFile(String arg) {
+        String fileName = getURLClassLoader().getResource(".")  + arg;
+        try {
+            fileName = URLDecoder.decode(fileName, "UTF8");
+        } catch (UnsupportedEncodingException e) {
+
+            e.printStackTrace();
+        }
+        try {
+            return new File(new URI(urlEncode(fileName)));
+        } catch (URISyntaxException e) {
+
+            e.printStackTrace();
+            return null;
+        }
+    }
+    /**
+     * public static String getLocalHash(File f) Gibt einen MD% Hash der file
+     * zurück
+     * @author coalado
+     * @param f
+     * @return Hashstring Md5
+     */
+    public static String getLocalHash(File f) {
+        try {
+
+            MessageDigest md;
+            md = MessageDigest.getInstance("md5");
+            byte[] b = new byte[1024];
+            InputStream in = new FileInputStream(f);
+            for (int n = 0; (n = in.read(b)) > -1;) {
+                md.update(b, 0, n);
+            }
+            byte[] digest = md.digest();
+            String ret = "";
+            for (int i = 0; i < digest.length; i++) {
+                String tmp = Integer.toHexString(digest[i] & 0xFF);
+                if (tmp.length() < 2)
+                    tmp = "0" + tmp;
+                ret += tmp;
+            }
+            in.close();
+            return ret;
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return "";
+    }
+    /**
+     * @author coalado
+     * Macht ein urlRawEncode und spart dabei die angegebenen Zeichen aus
+     * @param str
+     * @return str URLCodiert
+     */
+    public static String urlEncode(String str) {
+        try {
+            str = URLDecoder.decode(str, "UTF-8");
+    
+        String allowed = "1234567890QWERTZUIOPASDFGHJKLYXCVBNMqwertzuiopasdfghjklyxcvbnm-_.?/:";
+        String ret = "";
+        int i;
+        for (i = 0; i < str.length(); i++) {
+            char letter = str.charAt(i);        
+             if (allowed.indexOf(letter) >=0) {
+                ret +=  letter;
+             }else{
+                 ret+="%"+Integer.toString(letter,16);
+             }
+        }
+
+        return ret;
+        } catch (UnsupportedEncodingException e) {
+           
+            e.printStackTrace();
+        }
+        return str;
+    }
+    
+    /**
+     * @author coalado
+     * @param str
+     * @return str als UTF8Decodiert
+     */
+    public static String UTF8Decode(String str) {
+        try {
+            return new String(str.getBytes(), "UTF-8");
+        } catch (UnsupportedEncodingException e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    /**
+     * @author coalado
+     * @param str
+     * @return str als UTF8 Kodiert
+     */
+    public static String UTF8Encode(String str) {
+        try {
+            return new String(str.getBytes("UTF-8"));
+        } catch (UnsupportedEncodingException e) {
+            e.printStackTrace();
+            return null;
+        }
     }
     public static void setHomeDirectory(String homeDirectory) {
         JDUtilities.homeDirectory = homeDirectory;

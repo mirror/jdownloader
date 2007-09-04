@@ -1280,7 +1280,6 @@ public class UTILITIES {
      */
     public static boolean downloadBinary(String filepath, String fileurl) {
         filepath = filepath.replace("\\", FS);
-
         try {
             fileurl = urlEncode(fileurl.replaceAll("\\\\", "/"));
             File file = new File(filepath);

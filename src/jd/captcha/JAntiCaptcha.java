@@ -42,7 +42,7 @@ import jd.captcha.pixelgrid.PixelGrid;
 import jd.captcha.pixelobject.PixelObject;
 import jd.captcha.utils.GifDecoder;
 import jd.captcha.utils.UTILITIES;
-import jd.captcha.utils.WebUpdater;
+import jd.update.WebUpdater;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -460,63 +460,63 @@ public class JAntiCaptcha {
 
     }
 
-    /**
-     * TestFunktion - Annimierte Gifs verarbeiten
-     * 
-     * @param path
-     */
-    public void mergeGif(File path) {
-        getJas().setColorType("G");
-        GifDecoder d = new GifDecoder();
-        d.read(path.getAbsolutePath());
-        int n = d.getFrameCount();
-
-        logger.fine("Found Frames: " + n);
-        int width = (int) d.getFrameSize().getWidth();
-        int height = (int) d.getFrameSize().getHeight();
-        Captcha merged = new Captcha(width, height);
-        merged.setOwner(this);
-        Captcha tmp;
-
-        for (int i = 0; i < n; i++) {
-            BufferedImage frame = d.getFrame(i);
-            tmp = new Captcha(width, height);
-            tmp.setOwner(this);
-            PixelGrabber pg = new PixelGrabber(frame, 0, 0, width, height, false);
-            try {
-                pg.grabPixels();
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-            ColorModel cm = pg.getColorModel();
-            tmp.setColorModel(cm);
-
-            if (!(cm instanceof IndexColorModel)) {
-                // not an indexed file (ie: not a gif file)
-                tmp.setPixel((int[]) pg.getPixels());
-            } else {
-
-                tmp.setPixel((byte[]) pg.getPixels());
-            }
-            merged.concat(tmp);
-
-        }
-
-        merged.crop(6, 12, 6, 12);
-        // merged.removeSmallObjects(0.3, 0.3);
-        // merged.invert();
-        merged.toBlackAndWhite(0.4);
-        merged.removeSmallObjects(0.3, 0.3, 20);
-        merged.reduceBlackNoise(4, 0.45);
-        merged.toBlackAndWhite(1);
-        // merged.reduceBlackNoise(6, 1.6);
-        // merged.reduceBlackNoise(6, 1.6);
-        // getJas().setBackgroundSampleCleanContrast(0.1);
-        // merged.cleanBackgroundBySample(4, 4, 7, 7);
-
-        BasicWindow.showImage(merged.getImage(4), 160, 60);
-
-    }
+//    /**
+//     * TestFunktion - Annimierte Gifs verarbeiten
+//     * 
+//     * @param path
+//     */
+//    public void mergeGif(File path) {
+//        getJas().setColorType("G");
+//        GifDecoder d = new GifDecoder();
+//        d.read(path.getAbsolutePath());
+//        int n = d.getFrameCount();
+//
+//        logger.fine("Found Frames: " + n);
+//        int width = (int) d.getFrameSize().getWidth();
+//        int height = (int) d.getFrameSize().getHeight();
+//        Captcha merged = new Captcha(width, height);
+//        merged.setOwner(this);
+//        Captcha tmp;
+//
+//        for (int i = 0; i < n; i++) {
+//            BufferedImage frame = d.getFrame(i);
+//            tmp = new Captcha(width, height);
+//            tmp.setOwner(this);
+//            PixelGrabber pg = new PixelGrabber(frame, 0, 0, width, height, false);
+//            try {
+//                pg.grabPixels();
+//            } catch (Exception e) {
+//                e.printStackTrace();
+//            }
+//            ColorModel cm = pg.getColorModel();
+//            tmp.setColorModel(cm);
+//
+//            if (!(cm instanceof IndexColorModel)) {
+//                // not an indexed file (ie: not a gif file)
+//                tmp.setPixel((int[]) pg.getPixels());
+//            } else {
+//
+//                tmp.setPixel((byte[]) pg.getPixels());
+//            }
+//            merged.concat(tmp);
+//
+//        }
+//
+//        merged.crop(6, 12, 6, 12);
+//        // merged.removeSmallObjects(0.3, 0.3);
+//        // merged.invert();
+//        merged.toBlackAndWhite(0.4);
+//        merged.removeSmallObjects(0.3, 0.3, 20);
+//        merged.reduceBlackNoise(4, 0.45);
+//        merged.toBlackAndWhite(1);
+//        // merged.reduceBlackNoise(6, 1.6);
+//        // merged.reduceBlackNoise(6, 1.6);
+//        // getJas().setBackgroundSampleCleanContrast(0.1);
+//        // merged.cleanBackgroundBySample(4, 4, 7, 7);
+//
+//        BasicWindow.showImage(merged.getImage(4), 160, 60);
+//
+//    }
 
     /**
      * Debug Methode. Zeigt den Captcha in verschiedenen bearbeitungsstadien an
@@ -935,8 +935,7 @@ public class JAntiCaptcha {
      * @return Anzahl der aktualisierten Files
      */
     public static int updateMethods() {
-        WebUpdater wu = new WebUpdater(UPDATE_PATH);
-        wu.setDestPath(JDUtilities.getJDHomeDirectory());
+        WebUpdater wu = new WebUpdater(UPDATE_PATH); 
         wu.run();
         return wu.getUpdatedFiles();
     }
