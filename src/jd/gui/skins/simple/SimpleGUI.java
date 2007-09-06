@@ -131,8 +131,7 @@ public class SimpleGUI implements UIInterface, ActionListener{
         frame.setTitle(JDUtilities.JD_TITLE);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         initActions();
-        //Menü wurde durch Buttons ersetzt
-//        initMenuBar();
+        initMenuBar();
         buildUI();
 
         frame.pack();
@@ -174,6 +173,7 @@ public class SimpleGUI implements UIInterface, ActionListener{
         
         JMenuItem menDownload = createMenuItem(actionStartStopDownload);
         JMenuItem menAddLinks = createMenuItem(actionAdd);
+        menAction.setMnemonic(JDUtilities.getResourceChar("menu.action_mnem"));
         
         // extra
         JMenu menExtra       = new JMenu(JDUtilities.getResourceString("menu.extra"));

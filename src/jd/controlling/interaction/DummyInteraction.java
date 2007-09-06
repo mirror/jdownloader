@@ -1,20 +1,7 @@
 package jd.controlling.interaction;
 
-import java.io.IOException;
-import java.net.Authenticator;
-import java.net.MalformedURLException;
-import java.net.PasswordAuthentication;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.URL;
-import java.util.HashMap;
-
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
-
-import jd.plugins.Plugin;
-import jd.plugins.RequestInfo;
-import jd.router.RouterData;
 
 /**
  * Diese Klasse führt eine Test INteraction durch

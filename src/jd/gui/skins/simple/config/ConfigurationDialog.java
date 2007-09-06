@@ -31,6 +31,7 @@ public class ConfigurationDialog extends JDialog implements ActionListener{
     
     private ConfigurationDialog(JFrame parent){
         super(parent);
+        setTitle(JDUtilities.getResourceString("title.config"));
         setModal(true);
         setLayout(new GridBagLayout());
         configuration = JDUtilities.getConfiguration();

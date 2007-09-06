@@ -2,17 +2,12 @@ package jd.plugins.host;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.OutputStreamWriter;
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.net.URLConnection;
-import java.util.HashMap;
 import java.util.regex.Pattern;
 
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginStep;
-import jd.plugins.RequestInfo;
 
 public class HttpLink extends PluginForHost{
     private String  host    = "Unknown";

@@ -38,7 +38,6 @@ import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import jd.captcha.utils.UTILITIES;
 import jd.plugins.event.PluginEvent;
 import jd.plugins.event.PluginListener;
 
@@ -749,10 +748,10 @@ RequestInfo requestInfo=readFromURL(httpConnection);
                     bytesLastSpeedCheck = 0; 
                     t1 = t2; 
                     firePluginEvent(new PluginEvent(this, PluginEvent.PLUGIN_DOWNLOAD_SPEED, speed)); 
+                    firePluginEvent(new PluginEvent(this, PluginEvent.PLUGIN_DATA_CHANGED, downloadLink)); 
                 } 
 
                 downloadLink.setDownloadCurrent(downloadedBytes); 
-                firePluginEvent(new PluginEvent(this, PluginEvent.PLUGIN_DATA_CHANGED, downloadLink)); 
             } 
 
 
