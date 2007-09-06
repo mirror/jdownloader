@@ -128,6 +128,7 @@ public class JDController implements PluginListener, ControlListener, UIListener
             case UIEvent.UI_LINKS_TO_REMOVE:
                 DownloadLink link = (DownloadLink)uiEvent.getParameter();
                 int index= downloadLinks.indexOf(link);
+                if(index<0)return;
                 downloadLinks.remove(index);
                 saveDownloadLinks(JDUtilities.getResourceFile("links.dat"));
                 uiInterface.setDownloadLinks(downloadLinks);
