@@ -15,53 +15,82 @@ import java.util.StringTokenizer;
 import java.util.regex.Pattern;
 
 import jd.plugins.DownloadLink;
+import jd.plugins.Plugin;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginStep;
+import jd.plugins.RequestInfo;
 
 /**
- * HostPlugin für gullishare
- * 
- * TODO: Erzwungene Wartezeit (gibt es die überhaupt noch?)
- *
+ * HostPlugin für gullishare TODO: Erzwungene Wartezeit (gibt es die überhaupt
+ * noch?)
  */
 public class Gulli extends PluginForHost {
-    static private final Pattern PAT_SUPPORTED = Pattern.compile("http://share.gulli.com/.*");
-    static private final Pattern PAT_CAPTCHA = Pattern.compile("<img src=\"(/captcha[^\"]*)");
-    static private final Pattern PAT_FILE_ID = Pattern.compile("<input type=\"hidden\" name=\"file\" value=\"([^\"]*)");
-    static private final Pattern PAT_DOWNLOAD_URL = Pattern.compile("<form action=\"/(download[^\"]*)");
-
+    static private final Pattern PAT_SUPPORTED      = Pattern.compile("http://share.gulli.com/.*");
+    static private final Pattern PAT_CAPTCHA        = Pattern.compile("<img src=\"(/captcha[^\"]*)");
+    static private final Pattern PAT_FILE_ID        = Pattern.compile("<input type=\"hidden\" name=\"file\" value=\"([^\"]*)");
+    static private final Pattern PAT_DOWNLOAD_URL   = Pattern.compile("<form action=\"/(download[^\"]*)");
+    static private final Pattern PAT_DOWNLOAD_LIMIT = Pattern.compile("timeLeft=([^\"]*)&");
+    static private final Pattern PAT_DOWNLOAD_ERROR= Pattern.compile("share.gulli.com/error([^\"]*)");
     
-    static private final String HOST_URL = "http://share.gulli.com/";
-    static private final String DOWNLOAD_URL = "download";
-    static private final String HOST = "share.gulli.com";
-    static private final String PLUGIN_NAME = HOST;
-    static private final String PLUGIN_VERSION = "0";
-    static private final String PLUGIN_ID = PLUGIN_NAME+"-"+VERSION;
-    static private final String CODER = "olimex";
+   
+
+    static private final String  HOST_URL           = "http://share.gulli.com/";
+    static private final String  DOWNLOAD_URL       = "http://share.gulli.com/download";
+    static private final String  HOST               = "share.gulli.com";
+    static private final String  PLUGIN_NAME        = HOST;
+    static private final String  PLUGIN_VERSION     = "0";
+    static private final String  PLUGIN_ID          = PLUGIN_NAME + "-" + VERSION;
+    static private final String  CODER              = "olimex";
 
     /**
      * ID des Files bei gulli
      */
-    private String fileId;
-    
-    /**
-     * Map mit allen erhaltenen Cookies
-     */
-    private Map<String,String> cookieMap = new HashMap<String, String>();
+    private String               fileId;
+    private String               cookie;
+    private String              finalDownloadURL;
+    private HttpURLConnection   finalDownloadConnection;
 
     public Gulli() {
-        steps.add(new PluginStep(PluginStep.STEP_CAPTCHA,  null));
+        steps.add(new PluginStep(PluginStep.STEP_CAPTCHA, null));
+        steps.add(new PluginStep(PluginStep.STEP_WAIT_TIME, null));
         steps.add(new PluginStep(PluginStep.STEP_DOWNLOAD, null));
+
     }
 
-    @Override public String getCoder()                { return CODER;        }
-    @Override public String getPluginName()           { return HOST;             }
-    @Override public Pattern getSupportedLinks()      { return PAT_SUPPORTED; }
-    @Override public String getHost()                 { return HOST;             }
-    @Override public boolean isClipboardEnabled()     { return true;             }
-    @Override public String getVersion()              { return PLUGIN_VERSION;          }
-    @Override public String getPluginID()             { return PLUGIN_ID; }
+    @Override
+    public String getCoder() {
+        return CODER;
+    }
 
+    @Override
+    public String getPluginName() {
+        return HOST;
+    }
+
+    @Override
+    public Pattern getSupportedLinks() {
+        return PAT_SUPPORTED;
+    }
+
+    @Override
+    public String getHost() {
+        return HOST;
+    }
+
+    @Override
+    public boolean isClipboardEnabled() {
+        return true;
+    }
+
+    @Override
+    public String getVersion() {
+        return PLUGIN_VERSION;
+    }
+
+    @Override
+    public String getPluginID() {
+        return PLUGIN_ID;
+    }
 
     @Override
     public URLConnection getURLConnection() {
@@ -71,32 +100,101 @@ public class Gulli extends PluginForHost {
 
     @Override
     public PluginStep getNextStep(Object parameter) {
+        RequestInfo requestInfo;
         try {
-            DownloadLink downloadLink = (DownloadLink)parameter;
-            
-            if(currentStep == null){
-                currentStep = steps.firstElement();
-            } else {
-                currentStep = steps.get(1);
+            DownloadLink downloadLink = (DownloadLink) parameter;
+
+           
+                currentStep = nextStep(currentStep);
+          
+
+            if(currentStep!=null ){
+                logger.finest("STEP "+currentStep.toString());
+            }else{
+                return null;
             }
 
-            logger.finest(currentStep.toString());
-            
-            switch(currentStep.getStep()){
-            case PluginStep.STEP_CAPTCHA:
-            {
-                HttpURLConnection con = createConnection(downloadLink.getUrlDownload().toString());
-                processPage(con,downloadLink);
-            }
-            break;
-            case PluginStep.STEP_DOWNLOAD:
-            {
-                String captchaTxt = (String)steps.get(0).getParameter();
+            switch (currentStep.getStep()) {
+                case PluginStep.STEP_CAPTCHA: 
+                    // con.setRequestProperty("Cookie",
+                    // Plugin.joinMap(cookieMap,"=","; "));
+                    requestInfo = getRequest(downloadLink.getUrlDownload());
 
-                HttpURLConnection con = createPostConnection(DOWNLOAD_URL, "file="+fileId+"&"+"captcha="+captchaTxt);
+                    fileId = getFirstMatch(requestInfo.getHtmlCode(), PAT_FILE_ID, 1);
+                    String captchaLocalUrl = getFirstMatch(requestInfo.getHtmlCode(), PAT_CAPTCHA, 1);
+                    cookie = requestInfo.getCookie();
+                    logger.info(cookie);
+                    logger.finest("Captcha Page");
+                    String captchaUrl = "http://share.gulli.com" + captchaLocalUrl;
+                    currentStep.setParameter(captchaUrl);
+                    currentStep.setStatus(PluginStep.STATUS_USER_INPUT);                
+                    return currentStep;
+                case PluginStep.STEP_WAIT_TIME:
+                    String captchaTxt = (String) steps.get(0).getParameter();
+                    String dlUrl;
+                    logger.info("file=" + fileId + "&" + "captcha=" + captchaTxt);
+                    requestInfo = postRequest(new URL(DOWNLOAD_URL), cookie,null,null,"file=" + fileId + "&" + "captcha=" + captchaTxt,true);
 
-                processPage(con,downloadLink);
-            }
+                    dlUrl = getFirstMatch(requestInfo.getHtmlCode(), PAT_DOWNLOAD_URL, 1);
+
+                    if (dlUrl == null) {
+                        logger.finest("Error Page");
+                    }
+                    logger.info(dlUrl);
+                    try {
+                        Thread.sleep(500);
+                    } catch (InterruptedException e) {
+                        
+                    
+                    }
+                    requestInfo = postRequestWithoutHtmlCode(new URL(HOST_URL+dlUrl), cookie, null, "action=download&file=" + fileId, false);
+                   String red;
+                   String waittime=null;
+                   String error=null;
+                   String url=HOST_URL+dlUrl;
+                   //Redirect folgen und dabei die Cookies weitergeben
+                   //share.gulli.com/error
+                    while((red=requestInfo.getConnection().getHeaderField("Location"))!=null&&(waittime = getFirstMatch(red, PAT_DOWNLOAD_LIMIT, 1))==null&&(error = getFirstMatch(red, PAT_DOWNLOAD_ERROR, 1))==null){
+                        logger.info("red: "+red+" cookie: "+cookie);
+                        url=red;             
+                    requestInfo = getRequestWithoutHtmlCode(new URL(red), cookie, null, false);
+                    
+                    }
+                    
+                  
+                    if (waittime!=null) {
+                      
+                        currentStep.setStatus(PluginStep.STATUS_ERROR);
+                        downloadLink.setStatus(DownloadLink.STATUS_ERROR_DOWNLOAD_LIMIT);
+                        currentStep.setParameter(Long.parseLong(waittime)*60*1000);
+                        
+                        logger.info("Warten "+(Long)currentStep.getParameter());
+                         logger.info(currentStep.toString());
+                    } else if (error!=null) {
+                        logger.info("Error: "+error);
+                        currentStep.setStatus(PluginStep.STATUS_ERROR);
+                        downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN);                       
+
+                    }else{
+                        logger.info("URL: "+url);
+                        finalDownloadURL=url;
+                        finalDownloadConnection=requestInfo.getConnection();
+                    }
+                    return currentStep;
+                case PluginStep.STEP_DOWNLOAD: 
+                   logger.info("dl "+finalDownloadURL);
+                   
+                   int length = finalDownloadConnection.getContentLength();
+                   downloadLink.setDownloadMax(length);
+                   download(downloadLink,(URLConnection)finalDownloadConnection);
+                   currentStep.setStatus(PluginStep.STATUS_DONE);
+                   downloadLink.setStatus(DownloadLink.STATUS_DONE);
+//                    String captchaTxt = (String) steps.get(0).getParameter();
+//                    logger.info("code for gulli " + captchaTxt);
+//                    HttpURLConnection con = createPostConnection(DOWNLOAD_URL, "file=" + fileId + "&" + "captcha=" + captchaTxt);
+//
+//                    processPage(con, downloadLink);
+                   return currentStep;
             }
             return currentStep;
         } catch (IOException e) {
@@ -104,143 +202,85 @@ public class Gulli extends PluginForHost {
             return null;
         }
     }
-    
+
+//    /**
+//     * Verarbeitet von Gulli erhaltene Seite und führt je nach Inhalt eine
+//     * Captcha-Erkennung oder einen Download durch
+//     * 
+//     * @param con
+//     * @param dlLink
+//     * @throws IOException
+//     */
+//    private boolean processPage(HttpURLConnection con, DownloadLink dlLink) throws IOException {
+//        String content = contentToString(con);
+//
+//        fileId = getFirstMatch(content, PAT_FILE_ID, 1);
+//        //
+//        
+//        // gn="center"><img
+//        // src="/captcha;jsessionid=0152060A9FC7C420B1548A5CE4E4D08A?key=fd&amp;id=706307988"
+//        // alt="" border="0" /></p>
+//        String captchaLocalUrl = getFirstMatch(content, PAT_CAPTCHA, 1);
+//
+//        if (captchaLocalUrl != null) {
+//            logger.finest("Captcha Page");
+//            String captchaUrl = "http://share.gulli.com" + captchaLocalUrl;
+//
+//            currentStep = steps.get(0);
+//            currentStep.setParameter(captchaUrl);
+//            currentStep.setStatus(PluginStep.STATUS_USER_INPUT);
+//            return true;
+//        } else {
+//            String dlUrl = getFirstMatch(content, PAT_DOWNLOAD_URL, 1);
+//
+//            if (dlUrl == null) {
+//                logger.finest("Error Page");
+//                currentStep.setStatus(PluginStep.STATUS_ERROR);
+//                return false;
+//            }
+//            logger.finest("Download Page");
+//
+//            try {
+//                Thread.sleep(500);
+//            } catch (InterruptedException e) {
+//
+//            }
+//
+//            HttpURLConnection dlcon = createPostConnection(dlUrl, "action=download&file=" + fileId);
+//
+//            int length = dlcon.getContentLength();
+//            dlLink.setDownloadMax(length);
+//
+//            if (dlcon.getContentType().startsWith("text")) {
+//                currentStep.setStatus(PluginStep.STATUS_ERROR);
+//                dlLink.setStatus(DownloadLink.STATUS_ERROR_DOWNLOAD_LIMIT);
+//                content = contentToString(dlcon);
+//                String waittime = getFirstMatch(content, STR_DOWNLOAD_LIMIT, 1);
+//                logger.info("WAIT " + waittime);
+//
+//                return false;
+//            }
+//            if (download(dlLink, dlcon)) {
+//                currentStep.setStatus(PluginStep.STATUS_DONE);
+//            } else {
+//                currentStep.setStatus(PluginStep.STATUS_ERROR);
+//            }
+//            return true;
+//        }
+//
+//    }
+
+
+
+
+
+
     /**
-     * Verarbeitet von Gulli erhaltene Seite und führt je nach Inhalt eine
-     * Captcha-Erkennung oder einen Download durch
+     * Liest Content von Connection und gibt diesen als String zurück TODO:
+     * auslagern
+     * 
      * @param con
-     * @param dlLink
-     * @throws IOException
-     */
-    private void processPage(HttpURLConnection con, DownloadLink dlLink) throws IOException {
-        String content = contentToString(con);
-        
-        fileId = getFirstMatch(content, PAT_FILE_ID, 1);
-
-        extractCookies(con, cookieMap);
-
-        String captchaLocalUrl = getFirstMatch(content, PAT_CAPTCHA, 1);
-        
-        if (captchaLocalUrl != null) {
-            logger.finest("Captcha Page");
-            String captchaUrl = "http://share.gulli.com"+captchaLocalUrl;
-
-            currentStep = steps.get(0);
-            currentStep.setParameter(captchaUrl);
-            currentStep.setStatus(PluginStep.STATUS_USER_INPUT);
-        } else {
-            String dlUrl = getFirstMatch(content, PAT_DOWNLOAD_URL, 1);
-
-            if (dlUrl == null) {
-                logger.finest("Error Page");
-                currentStep.setStatus(PluginStep.STATUS_ERROR);
-                return;
-            }
-            logger.finest("Download Page");
-
-            try {
-                Thread.sleep(500);
-            } catch (InterruptedException e) {
-
-            }
-            HttpURLConnection dlcon = createPostConnection(dlUrl, "action=download&file="+fileId);
-
-            int length = dlcon.getContentLength();
-            dlLink.setDownloadMax(length);
-
-            if (dlcon.getContentType().startsWith("text")) {
-                currentStep.setStatus(PluginStep.STATUS_ERROR);
-                return;
-            }
-            if (download(dlLink, dlcon)) {
-                currentStep.setStatus(PluginStep.STATUS_DONE);
-            } else {
-                currentStep.setStatus(PluginStep.STATUS_ERROR);
-            }
-        }
-
-    }
-
-    
-    /**
-     * Erzeugt Verbindung zur URL mit gesetzten Cookies 
-     * @param url
-     * @return
-     * @throws IOException
-     */
-    private HttpURLConnection createConnection(String url) throws IOException {
-        logger.finest("URL: "+url);
-        HttpURLConnection con = (HttpURLConnection) new URL(url).openConnection();
-        con.setRequestProperty("Cookie", join(cookieMap,"=","; "));
-        return con;
-    }
-    
-    /**
-     * Folgt HTTP-Redirections
-     * @param con
-     * @return
-     * @throws IOException
-     */
-    private HttpURLConnection followRedir(HttpURLConnection con) throws IOException {
-        if (con.getResponseCode() == 302) {
-            logger.finest("Redir: "+con.getHeaderField("Location"));
-            con = createConnection(con.getHeaderField("Location"));
-            con = followRedir(con);
-        }
-        return con;
-    }
-    
-    /**
-     * Erzeugt HTTP-POST Verbindung zur lokaler URL 
-     * @param localUrl
-     * @param postParameter
-     * @return
-     * @throws IOException
-     */
-    private HttpURLConnection createPostConnection(String localUrl, String postParameter) throws IOException {
-        HttpURLConnection con = createConnection(HOST_URL+localUrl);
-
-        HttpURLConnection.setFollowRedirects(false);
-
-        con.setDoOutput(true);
-
-        OutputStreamWriter wr = new OutputStreamWriter(con.getOutputStream());
-        wr.write(postParameter);
-        wr.flush();
-
-        return followRedir(con);
-    }
-    
-    
-    
-    /**
-     * Sammelt Cookies einer HTTP-Connection und fügt dieser einer Map
-     * hinzu
-     * TODO: auslagern
-     * @param con Connection
-     * @param cookieMap Map in der die Cookies eingefügt werden
-     */
-    private static void extractCookies(HttpURLConnection con, Map<String, String> cookieMap) {
-        Collection<String> cookieHeaders = con.getHeaderFields().get("Set-Cookie");
-
-        if (cookieHeaders == null)
-            return;
-
-        for(String header: cookieHeaders) {
-            try {
-                StringTokenizer st = new StringTokenizer(header, ";=");				
-                cookieMap.put(st.nextToken(), st.nextToken());
-            } catch (NoSuchElementException e) {
-                // ignore
-            }  		
-        }
-
-    }
-    
-    /**
-     * Liest Content von Connection und gibt diesen als String zurück
-     * TODO: auslagern
-     * @param con Connection
+     *            Connection
      * @return Content
      * @throws IOException
      */
@@ -248,36 +288,14 @@ public class Gulli extends PluginForHost {
         InputStreamReader in = new InputStreamReader(con.getInputStream());
         StringBuffer sb = new StringBuffer();
         int chr;
-        while((chr = in.read()) != -1) {
-            sb.append((char)chr);
+        while ((chr = in.read()) != -1) {
+            sb.append((char) chr);
         }
         return sb.toString();
     }
-    
-    /**
-     * Fügt Map als String mit Trennzeichen zusammen 
-     * TODO: auslagern
-     * @param map Map
-     * @param delPair Trennzeichen zwischen Key und Value
-     * @param delMap Trennzeichen zwischen Map-Einträgen
-     * @return
-     */
-    private static String join(Map<String,String> map, String delPair, String delMap) {
-        StringBuffer buffer = new StringBuffer();
-        boolean first = true;
-        for(Map.Entry<String,String> entry: map.entrySet()) {
-            if (first)
-                first = false;
-            else
-                buffer.append(delMap);
-            buffer.append(entry.getKey());
-            buffer.append(delPair);
-            buffer.append(entry.getValue());
-        }
-        return buffer.toString();
-    }
+
     @Override
-    public boolean doBotCheck(File file) {        
+    public boolean doBotCheck(File file) {
         return false;
     }
 }

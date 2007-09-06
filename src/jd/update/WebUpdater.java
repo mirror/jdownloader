@@ -55,7 +55,12 @@ public class WebUpdater {
      *            (Dir Pfad zum Updateserver)
      */
     public WebUpdater(String path) {
-        this.setListPath(path);
+        if(path!=null){
+            this.setListPath(path);
+        }else{
+            this.setListPath( "http://lagcity.de/~JDownloaderFiles/autoUpdate");
+           
+        }
 
     }
 

@@ -43,6 +43,14 @@ public class ControlEvent extends AWTEvent{
      */
     public final static int CONTROL_PLUGIN_HOST_INACTIVE     = 7;
     /**
+     * Interaction aktiv
+     */
+    public final static int CONTROL_PLUGIN_INTERACTION_ACTIVE     = 8;
+    /**
+     * INteraction inaktiv
+     */
+    public final static int CONTROL_PLUGIN_INTERACTION_INACTIVE     = 9;
+    /**
      * Die ID des Ereignisses
      */
     private int controlID;

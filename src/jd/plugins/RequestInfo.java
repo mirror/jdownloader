@@ -1,5 +1,7 @@
 package jd.plugins;
 
+import java.net.HttpURLConnection;
+import java.net.URLConnection;
 import java.util.List;
 import java.util.Map;
 
@@ -25,6 +27,7 @@ public class RequestInfo {
      * Der zurückgelieferte Code
      */
     private int responseCode;
+    private HttpURLConnection connection;
     /**
      * Cookie
      */
@@ -36,6 +39,7 @@ public class RequestInfo {
         this.cookie   = cookie;
         this.headers  = headers;
         this.responseCode = responseCode;
+        
     }
     /**
      * Gibt anhand des Rückgabecodes zurück, ob der Aufrufr erfolgreich war oder nicht.
@@ -53,4 +57,16 @@ public class RequestInfo {
     public String getLocation()                  { return location;     }
     public String getCookie()                    { return cookie;       }
     public int getResponseCode()                 { return responseCode; }
+    /**
+     * @return the connection
+     */
+    public HttpURLConnection getConnection() {
+        return connection;
+    }
+    /**
+     * @param connection the connection to set
+     */
+    public void setConnection(HttpURLConnection connection) {
+        this.connection = connection;
+    }
 }

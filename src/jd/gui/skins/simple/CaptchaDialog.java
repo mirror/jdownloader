@@ -72,7 +72,7 @@ public class CaptchaDialog extends JDialog implements ActionListener {
          } catch (IOException e) {       
              e.printStackTrace();
          }
-        code = JDUtilities.getCaptcha(null, plugin, file);
+        code = JDUtilities.getCaptcha(null,plugin, file);
 		JLabel label = new JLabel(imageIcon);
 		textField = new JTextField(10);
 		btnOK     = new JButton("OK");

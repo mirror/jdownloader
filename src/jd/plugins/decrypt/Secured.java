@@ -69,7 +69,7 @@ public class Secured extends PluginForDecrypt {
                     String captchaAdress="http://"+HOST+"/"+matcher.group(1);                            
                     File dest=JDUtilities.getResourceFile("captchas/"+this.getPluginName()+"/captcha_"+(new Date().getTime())+".jpg");
                     JDUtilities.download(dest,captchaAdress);
-                    String capTxt = JDUtilities.getCaptcha(null, this,dest);
+                    String capTxt = JDUtilities.getCaptcha(null,this,dest);
                     
                     String postData = "captcha_key="+capTxt+"&captcha_hash="+capHash;
                     

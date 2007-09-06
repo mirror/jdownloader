@@ -31,7 +31,7 @@ public class DummyInteraction extends Interaction{
 
     
     @Override
-    public boolean interact() {    
+    public boolean interact(Object arg) {    
         logger.info("Starting Dummy");
         return JOptionPane.showConfirmDialog(new JFrame(), "Dummy Interaction bestätigen?", "Warning", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE) == 0;
     }

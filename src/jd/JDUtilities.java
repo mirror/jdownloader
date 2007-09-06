@@ -9,7 +9,6 @@ import java.awt.Insets;
 import java.awt.MediaTracker;
 import java.awt.Point;
 import java.awt.Toolkit;
-import java.awt.image.BufferedImage;
 import java.beans.XMLDecoder;
 import java.beans.XMLEncoder;
 import java.io.BufferedInputStream;
@@ -41,18 +40,17 @@ import java.util.ResourceBundle;
 import java.util.Vector;
 import java.util.logging.Logger;
 
-import javax.imageio.ImageIO;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 
 import jd.captcha.JAntiCaptcha;
 import jd.captcha.pixelgrid.Captcha;
-import jd.captcha.utils.UTILITIES;
 import jd.controlling.JDController;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.event.PluginListener;
+import jd.update.WebUpdater;
 import sun.misc.Service;
 
 public class JDUtilities {
@@ -235,7 +233,7 @@ public class JDUtilities {
             }
             resourceBundle = ResourceBundle.getBundle("LanguagePack", locale);
         }
-        String result = null;
+        String result = key;
         try {
             result = resourceBundle.getString(key);
         } catch (MissingResourceException e) {
@@ -413,7 +411,7 @@ public class JDUtilities {
             mediaTracker.removeImage(captchaImage);
             JAntiCaptcha jac = new JAntiCaptcha(getJACMethodsDirectory(), host);
             Captcha captcha = jac.createCaptcha(captchaImage);
-            JAntiCaptcha.showImage(captchaImage);
+          
             String captchaCode = jac.checkCaptcha(captcha);
             logger.info(captchaCode);
             return captchaCode;
@@ -831,6 +829,20 @@ public class JDUtilities {
 
         }
 
+    }
+
+    /**
+     * TODO: Serverpfad in de Config aufnehmen
+     * Gleicht das homedir mit dem server ab.
+     * Der Serverpfad steht noch in WebUpdater.java
+     * @author coalado
+     * @return Anzahl der aktualisierten Files
+     */
+    public static int doWebupdate() {
+        WebUpdater wu = new WebUpdater(null); 
+        wu.run();
+        return wu.getUpdatedFiles();
+        
     }
 
 }

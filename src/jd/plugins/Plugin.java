@@ -22,9 +22,13 @@ import java.nio.channels.WritableByteChannel;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Set;
+import java.util.StringTokenizer;
 import java.util.Vector;
 import java.util.logging.ConsoleHandler;
 import java.util.logging.Formatter;
@@ -34,6 +38,7 @@ import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import jd.captcha.utils.UTILITIES;
 import jd.plugins.event.PluginEvent;
 import jd.plugins.event.PluginListener;
 
@@ -192,7 +197,19 @@ public abstract class Plugin {
         }
         return logger;
     }
-    
+    /**
+     * Gibt ausgehend vom aktuellen step den nächsten zurück
+     * @author coalado
+     * @param currentStep
+     * @return nächster step
+     */
+    public PluginStep nextStep(PluginStep currentStep){
+        if(steps==null ||steps.size()==0)return null;
+        if(currentStep==null)return steps.firstElement();
+        int index= steps.indexOf(currentStep)+1;
+        if(steps.size()>index)return steps.elementAt(index);
+        return null;
+    }
     
     /**
      * @author coalado
@@ -203,6 +220,78 @@ public abstract class Plugin {
         for(int i=0; i<steps.size();i++){
             steps.elementAt(i).setStatus(0);
         }
+        firePluginEvent(new PluginEvent(this, PluginEvent.PLUGIN_DATA_CHANGED, null)); 
+    }
+    /**
+     * @author olimex
+     * Fügt Map als String mit Trennzeichen zusammen 
+     * TODO: auslagern
+     * @param map Map
+     * @param delPair Trennzeichen zwischen Key und Value
+     * @param delMap Trennzeichen zwischen Map-Einträgen
+     * @return Key-value pairs
+     */
+    public static String joinMap(Map<String,String> map, String delPair, String delMap) {
+        StringBuffer buffer = new StringBuffer();
+        boolean first = true;
+        for(Map.Entry<String,String> entry: map.entrySet()) {
+            if (first)
+                first = false;
+            else
+                buffer.append(delMap);
+            buffer.append(entry.getKey());
+            buffer.append(delPair);
+            buffer.append(entry.getValue());
+        }
+        return buffer.toString();
+    }
+    
+    /**
+     * Sammelt Cookies einer HTTP-Connection und fügt dieser einer Map hinzu     
+     * @author olimex
+     * @param con
+     *            Connection
+     * @param cookieMap
+     *            Map in der die Cookies eingefügt werden
+     */
+    public static HashMap<String, String> collectCookies(HttpURLConnection con) {
+        Collection<String> cookieHeaders = con.getHeaderFields().get("Set-Cookie");
+        HashMap<String, String> cookieMap=new HashMap<String, String>();
+        if (cookieHeaders == null)
+            return cookieMap;
+
+        for (String header : cookieHeaders) {
+            try {
+               
+              
+                StringTokenizer st = new StringTokenizer(header, ";=");
+                while(st.hasMoreTokens())
+                cookieMap.put(st.nextToken().trim(), st.nextToken().trim());
+
+            } catch (NoSuchElementException e) {
+                // ignore
+            }
+        }
+        return cookieMap;
+
+    }
+    
+    
+    /**
+     * @author coalado
+     * Gibt den kompletten Cookiestring zurück, auch wenn die Cookies über mehrere Header verteilt sind
+     * @param con
+     * @return cookiestring
+     */
+    public static String getCookieString(HttpURLConnection con){
+        return joinMap(collectCookies(con),"=","; ");
+    }
+    /**
+     * @author coalado
+     * @return Gibt den aktuellen Schritt oder null zurück
+     */
+    public PluginStep getCurrentStep(){
+        return currentStep;
     }
     /**
      * Hier wird geprüft, ob das Plugin diesen Text oder einen Teil davon
@@ -432,8 +521,40 @@ public abstract class Plugin {
         // lassen
         // so ist das Programm nicht so auffallig
         httpConnection.setRequestProperty("User-Agent","Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1; SV1; .NET CLR 1.1.4322; .NET CLR 2.0.50727)");
+RequestInfo requestInfo=readFromURL(httpConnection);
+    requestInfo.setConnection(httpConnection);
+        return requestInfo;
+    }
+    
+    public static RequestInfo getRequestWithoutHtmlCode(URL link, String cookie, String referrer, boolean redirect) throws IOException {
+        HttpURLConnection httpConnection = (HttpURLConnection) link.openConnection();
+        httpConnection.setInstanceFollowRedirects(redirect);
+        //wenn referrer nicht gesetzt wurde nimmt er den host als referer
+        if (referrer != null)
+            httpConnection.setRequestProperty("Referer", referrer);
+        else
+            httpConnection.setRequestProperty("Referer", "http://"+ link.getHost());
+        if (cookie != null){
+           
+            httpConnection.setRequestProperty("Cookie", cookie);
+        }
+        // TODO User-Agent als Option ins menu
+        // hier koennte man mit einer kleinen Datenbank den User-Agent rotieren
+        // lassen
+        // so ist das Programm nicht so auffallig
+        httpConnection.setRequestProperty("User-Agent","Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1; SV1; .NET CLR 1.1.4322; .NET CLR 2.0.50727)");
 
-        return readFromURL(httpConnection);
+        String location = httpConnection.getHeaderField("Location");
+        
+        String setcookie = getCookieString(httpConnection);
+        int responseCode =HttpURLConnection.HTTP_NOT_IMPLEMENTED; 
+        try {
+            responseCode = httpConnection.getResponseCode();
+        }
+        catch (IOException e) { }
+        RequestInfo ri=new RequestInfo("", location, setcookie, httpConnection.getHeaderFields(),responseCode);
+        ri.setConnection(httpConnection);
+        return ri;
     }
     /**
      * Schickt ein PostRequest an eine Adresse
@@ -489,6 +610,8 @@ public abstract class Plugin {
 
         RequestInfo requestInfo = readFromURL(httpConnection);
         wr.close();
+        
+        requestInfo.setConnection(httpConnection);
         return requestInfo;
     }
     /**
@@ -523,13 +646,16 @@ public abstract class Plugin {
         }
 
         String location = httpConnection.getHeaderField("Location");
-        String setcookie = httpConnection.getHeaderField("Set-Cookie");
+        
+        String setcookie = getCookieString(httpConnection);
         int responseCode =HttpURLConnection.HTTP_NOT_IMPLEMENTED; 
         try {
             responseCode = httpConnection.getResponseCode();
         }
         catch (IOException e) { }
-        return (new RequestInfo("", location, setcookie, httpConnection.getHeaderFields(),responseCode));
+        RequestInfo ri=new RequestInfo("", location, setcookie, httpConnection.getHeaderFields(),responseCode);
+        ri.setConnection(httpConnection);
+        return ri;
     }
     /**
      * Liest Daten von einer URL
@@ -538,7 +664,7 @@ public abstract class Plugin {
      * @return Ein Objekt, daß alle Informationen der Zieladresse beinhält
      * @throws IOException
      */
-    private static RequestInfo readFromURL(HttpURLConnection urlInput)throws IOException {
+    public static RequestInfo readFromURL(HttpURLConnection urlInput)throws IOException {
         BufferedReader rd = new BufferedReader(new InputStreamReader(urlInput.getInputStream()));
         String line;
         StringBuffer htmlCode = new StringBuffer();
@@ -549,7 +675,7 @@ public abstract class Plugin {
         //wenn du nur informationen ueber den header oder cookies braust benutz bitte postRequestWithoutHtmlCode
         //ich hab hir mal Location gross und aus cookie Set-Cookie gemacht weil der Server Set-Cookie versendet
         String location = urlInput.getHeaderField("Location");
-        String cookie = urlInput.getHeaderField("Set-Cookie");
+        String cookie = getCookieString(urlInput);
         int responseCode =HttpURLConnection.HTTP_NOT_IMPLEMENTED; 
         try {
             responseCode = urlInput.getResponseCode();

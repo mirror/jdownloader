@@ -33,17 +33,26 @@ public class Configuration implements Serializable{
     /**
      * Benutzername für den Router
      */
+  
     private String routerUsername = null;
+    /**
+     * Gibt an wie oft Versucht werden soll eine neue IP zu bekommen. (1&1 lässt grüßen)
+     */
+    private int reconnectRetries=0;
     /**
      * Password für den Router
      */
     private String routerPassword = null;
+    /**
+     * Fertige Downloads entfernen
+     */
+    private boolean removeDownloadedFiles = true;
 
     /**
      * Level für das Logging
      */
     private String loggerLevel="ALL";
-    
+
     public String getDownloadDirectory()                           { return downloadDirectory;  }
     public HashMap<Integer, Vector<Interaction>> getInteractions() { return interactions;       }
     public String getRouterPassword()                              { return routerPassword;     }
@@ -63,5 +72,29 @@ public class Configuration implements Serializable{
     }
     public void setLoggerLevel(String loggerLevel) {
         this.loggerLevel = loggerLevel;
+    }
+    /**
+     * @return the removeDownloadedFiles
+     */
+    public boolean isRemoveDownloadedFiles() {
+        return removeDownloadedFiles;
+    }
+    /**
+     * @param removeDownloadedFiles the removeDownloadedFiles to set
+     */
+    public void setRemoveDownloadedFiles(boolean removeDownloadedFiles) {
+        this.removeDownloadedFiles = removeDownloadedFiles;
+    }
+    /**
+     * @return the reconnectRetries
+     */
+    public int getReconnectRetries() {
+        return reconnectRetries;
+    }
+    /**
+     * @param reconnectRetries the reconnectRetries to set
+     */
+    public void setReconnectRetries(int reconnectRetries) {
+        this.reconnectRetries = reconnectRetries;
     }
 }

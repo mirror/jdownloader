@@ -5,7 +5,10 @@ import java.util.Iterator;
 import java.util.Vector;
 import java.util.logging.Logger;
 
+import javax.swing.JFrame;
+
 import jd.Configuration;
+import jd.JDCrypt;
 import jd.JDUtilities;
 import jd.event.ControlEvent;
 import jd.event.ControlListener;
@@ -45,6 +48,7 @@ public class JDController implements PluginListener, ControlListener, UIListener
     
     public JDController(){
         downloadLinks = new Vector<DownloadLink>();
+        loadDownloadLinks(JDUtilities.getResourceFile("links.dat"));
     }
     /**
      * Startet den Downloadvorgang
@@ -61,7 +65,8 @@ public class JDController implements PluginListener, ControlListener, UIListener
     }
     private void stopDownloads(){
         if(download != null){
-            download.interrupt();
+            download.abortDownload();
+//            download.interrupt();
             download=null;
         }
         else{
@@ -85,6 +90,7 @@ public class JDController implements PluginListener, ControlListener, UIListener
                 if(links != null && links instanceof Vector && ((Vector)links).size()>0){
                     downloadLinks.addAll((Vector<DownloadLink>)links);
                 }
+                saveDownloadLinks(JDUtilities.getResourceFile("links.dat"));
                 uiInterface.setDownloadLinks(downloadLinks);
                 break;
             default:
@@ -110,6 +116,52 @@ public class JDController implements PluginListener, ControlListener, UIListener
             case UIEvent.UI_SAVE_CONFIG:
                 JDUtilities.saveObject(null, JDUtilities.getConfiguration(), JDUtilities.getJDHomeDirectory(), "jdownloader", ".config", true);
                 break;
+            case UIEvent.UI_SAVE_LINKS:
+                File file = (File)uiEvent.getParameter();             
+                saveDownloadLinks(file);
+                break;
+            case UIEvent.UI_LOAD_LINKS:               
+                file = (File)uiEvent.getParameter();               
+                loadDownloadLinks(file);
+             
+                break;
+            case UIEvent.UI_LINKS_TO_REMOVE:
+                DownloadLink link = (DownloadLink)uiEvent.getParameter();
+                int index= downloadLinks.indexOf(link);
+                downloadLinks.remove(index);
+                saveDownloadLinks(JDUtilities.getResourceFile("links.dat"));
+                uiInterface.setDownloadLinks(downloadLinks);
+                break;
+        }
+    }
+  
+    /**
+     * @author coalado
+     * Speichert die Linksliste  ab
+     * @param file
+     */
+    public void saveDownloadLinks(File file){      
+        String[] linkList=new String[downloadLinks.size()];
+        for (int i=0;i<linkList.length;i++){
+            linkList[i]=downloadLinks.elementAt(i).getEncryptedUrlDownload();
+        }
+        JDUtilities.saveObject(new JFrame(), linkList, file, "links", "dat", false);
+    }
+    /**
+     * @author coalado
+     * Lädt eine Linkliste
+     * @param file
+     */
+    public void loadDownloadLinks(File file){
+        if(!file.exists())return;
+        String[] linkList=(String[])JDUtilities.loadObject(new JFrame(),file, false);
+        if(linkList!=null) {
+        for (int i=0;i<linkList.length;i++){
+            distributeData = new DistributeData(JDCrypt.decrypt(linkList[i]));
+            distributeData.addControlListener(this);
+            distributeData.start();
+            
+        }
         }
     }
     /**
@@ -138,11 +190,13 @@ public class JDController implements PluginListener, ControlListener, UIListener
         DownloadLink nextDownloadLink = null;
         while(iterator.hasNext()){
             nextDownloadLink = iterator.next();
-            if(nextDownloadLink.isEnabled() && nextDownloadLink.getStatus() == DownloadLink.STATUS_TODO)
+            if(nextDownloadLink.isEnabled() && nextDownloadLink.getStatus() == DownloadLink.STATUS_TODO&&nextDownloadLink.getRemainingWaittime()==0)
                 return nextDownloadLink;
         }
         return null;
     }
+    
+
     /**
      * Der Benuter soll den Captcha Code erkennen
      * 

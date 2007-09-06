@@ -20,11 +20,13 @@ import java.util.logging.Logger;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JCheckBoxMenuItem;
+import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JTabbedPane;
 import javax.swing.JToggleButton;
@@ -35,6 +37,8 @@ import javax.swing.UnsupportedLookAndFeelException;
 import jd.Configuration;
 import jd.JDUtilities;
 import jd.controlling.JDAction;
+import jd.controlling.interaction.HTTPReconnect;
+import jd.controlling.interaction.Interaction;
 import jd.event.ControlEvent;
 import jd.event.UIEvent;
 import jd.event.UIListener;
@@ -100,6 +104,8 @@ public class SimpleGUI implements UIInterface, ActionListener{
     private JDAction actionExit;
     private JDAction actionLog;
     private JDAction actionConfig;
+    private JDAction actionReconnect;
+    private JDAction actionUpdate;
     
     private LogDialog logDialog;
     private Logger logger = Plugin.getLogger();
@@ -125,7 +131,8 @@ public class SimpleGUI implements UIInterface, ActionListener{
         frame.setTitle(JDUtilities.JD_TITLE);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         initActions();
-        initMenuBar();
+        //Menü wurde durch Buttons ersetzt
+//        initMenuBar();
         buildUI();
 
         frame.pack();
@@ -144,6 +151,9 @@ public class SimpleGUI implements UIInterface, ActionListener{
         actionExit              = new JDAction(this,          "exit", "action.exit",         JDAction.APP_EXIT);
         actionLog               = new JDAction(this,           "log", "action.viewlog",      JDAction.APP_LOG);
         actionConfig            = new JDAction(this, "configuration", "action.configuration",JDAction.APP_CONFIGURATION);
+        actionReconnect         = new JDAction(this,           "reconnect", "action.reconnect",      JDAction.APP_RECONNECT);
+        actionUpdate            = new JDAction(this, "update", "action.update",JDAction.APP_UPDATE);
+    
     }
     /**
      * Das Menü wird hier initialisiert
@@ -234,11 +244,47 @@ public class SimpleGUI implements UIInterface, ActionListener{
         btnDelete.setBorderPainted(false);
         btnDelete.setText(null);
 
+        JButton btnConfig    = new JButton(this.actionConfig);
+        btnConfig.setFocusPainted(false);
+        btnConfig.setBorderPainted(false);
+        btnConfig.setText(null);
+        JButton btnReconnect   = new JButton(this.actionReconnect);
+        btnReconnect.setFocusPainted(false);
+        btnReconnect.setBorderPainted(false);
+        btnReconnect.setText(null); 
+        JButton btnUpdate    = new JButton(this.actionUpdate);
+        btnUpdate.setFocusPainted(false);
+        btnUpdate.setBorderPainted(false);
+        btnUpdate.setText(null); 
+        
+        JButton btnSave    = new JButton(this.actionSaveLinks);
+        btnSave.setFocusPainted(false);
+        btnSave.setBorderPainted(false);
+        btnSave.setText(null); 
+        
+        JButton btnLoad    = new JButton(this.actionLoadLinks);
+        btnLoad.setFocusPainted(false);
+        btnLoad.setBorderPainted(false);
+        btnLoad.setText(null); 
+        
+        JButton btnLog    = new JButton(this.actionLog);
+        btnLog.setFocusPainted(false);
+        btnLog.setBorderPainted(false);
+        btnLog.setText(null); 
         toolBar.setFloatable(false);
+        toolBar.add(btnSave);
+        toolBar.add(btnLoad);
+        toolBar.addSeparator();
         toolBar.add(btnStartStop);
         toolBar.add(btnAdd);
         toolBar.add(btnDelete);
-
+        toolBar.addSeparator();
+        toolBar.add(btnUpdate);
+        toolBar.addSeparator();
+        toolBar.add(btnConfig);        
+        toolBar.add(btnLog);
+        toolBar.addSeparator();
+        toolBar.add(btnReconnect);
         frame.setLayout(new GridBagLayout());
         JDUtilities.addToGridBag(frame, toolBar,     0, 0, 1, 1, 0, 0, null, GridBagConstraints.HORIZONTAL, GridBagConstraints.NORTH);
         JDUtilities.addToGridBag(frame, tabbedPane,  0, 1, 1, 1, 1, 1, null, GridBagConstraints.BOTH,       GridBagConstraints.CENTER);
@@ -272,13 +318,59 @@ public class SimpleGUI implements UIInterface, ActionListener{
                     fireUIEvent(new UIEvent(this,UIEvent.UI_STOP_DOWNLOADS));
                 break;
             case JDAction.APP_SAVE:
-                fireUIEvent(new UIEvent(this,UIEvent.UI_SAVE_LINKS));
+                JFileChooser fc = new JFileChooser();
+                fc.setApproveButtonText("Speichern");
+           
+                fc.setFileSelectionMode(JFileChooser.FILES_ONLY);
+                fc.showOpenDialog(frame);
+                File ret = fc.getSelectedFile();
+                if(ret!=null)
+                fireUIEvent(new UIEvent(this,UIEvent.UI_SAVE_LINKS,ret));
                 break;
             case JDAction.APP_LOAD:
-                fireUIEvent(new UIEvent(this,UIEvent.UI_LOAD_LINKS));
+                fc = new JFileChooser();
+                fc.setApproveButtonText("Speichern");
+                fc.setFileSelectionMode(JFileChooser.FILES_ONLY);
+                fc.showOpenDialog(frame);
+                ret = fc.getSelectedFile();
+                if(ret!=null)
+                fireUIEvent(new UIEvent(this,UIEvent.UI_LOAD_LINKS,ret));
                 break;
             case JDAction.APP_LOG:
                 logDialog.setVisible(!logDialog.isVisible());
+                break;
+                
+            case JDAction.APP_RECONNECT:
+              
+                HTTPReconnect rc=new HTTPReconnect();
+              if(rc.interact(null)){
+                  JOptionPane.showMessageDialog(frame, "Reconnect erfolgreich");
+              }else{
+                  JOptionPane.showMessageDialog(frame, "Reconnect fehlgeschlagen");
+              }
+               
+                break;
+                
+            case JDAction.APP_UPDATE:
+                boolean log=logDialog.isVisible();
+                logDialog.setVisible(true);
+                int files=JDUtilities.doWebupdate();
+               if(files==0){
+                   JOptionPane.showMessageDialog(frame, "Keine Updates verfügbar");
+                           }else{
+                               JOptionPane.showMessageDialog(frame, "Aktualisierte Dateien: "+files);     
+                           }
+                logDialog.setVisible(log);
+                
+                break;
+                
+                
+                
+            case JDAction.ITEMS_REMOVE:
+               
+                    fireUIEvent(new UIEvent(this,UIEvent.UI_LINKS_TO_REMOVE,tabDownloadTable.getSelectedDownloadlink()));
+                
+             
                 break;
             case JDAction.ITEMS_ADD:
                 Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
@@ -322,6 +414,14 @@ public class SimpleGUI implements UIInterface, ActionListener{
                 break;
             case ControlEvent.CONTROL_ALL_DOWNLOADS_FINISHED:
                 btnStartStop.setSelected(false);
+                break;
+            case ControlEvent.CONTROL_PLUGIN_INTERACTION_ACTIVE:
+                statusBar.setText("Interaction: "+((Interaction)event.getParameter()).getName());
+                frame.setTitle(JDUtilities.JD_TITLE+" |Aktion: "+((Interaction)event.getParameter()).getName());
+                break;
+            case ControlEvent.CONTROL_PLUGIN_INTERACTION_INACTIVE:
+                statusBar.setText(null);
+                frame.setTitle(JDUtilities.JD_TITLE);
                 break;
             case ControlEvent.CONTROL_SINGLE_DOWNLOAD_CHANGED:
                 tabDownloadTable.fireTableChanged();
@@ -426,6 +526,7 @@ public class SimpleGUI implements UIInterface, ActionListener{
             JDUtilities.addToGridBag(this, lblPluginDecryptActive, 3, 0, 1, 1, 0, 0, new Insets(0,5,0,5), GridBagConstraints.NONE,       GridBagConstraints.EAST);
         }
         public void setText(String text){
+            if(text==null)text= JDUtilities.getResourceString("label.status.welcome");
             lblMessage.setText(text);
         }
         /**
@@ -433,6 +534,7 @@ public class SimpleGUI implements UIInterface, ActionListener{
          * @param speed bytes pro sekunde
          */
         public void setSpeed(Integer speed){
+            if(speed<0)return;
             if(speed>1024){
                 lblSpeed.setText((speed/1024)+"kbytes/sec");
             }

@@ -35,10 +35,14 @@ public abstract class Interaction implements Serializable{
      * Zeigt, daß ein der Bot erkannt wurde
      */
     public transient final static int INTERACTION_DOWNLOAD_BOT_DETECTED      = 5;
+    /**
+     * Zeigt, daß ein Captcha erkannt werden will
+     */
+    public transient final static int INTERACTION_DOWNLOAD_CAPTCHA      = 6;
     public Interaction(){
     }
 
-    public abstract boolean interact(); 
+    public abstract boolean interact(Object arg); 
     public abstract String toString();
     public abstract String getName();
 }

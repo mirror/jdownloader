@@ -5,17 +5,19 @@ import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.File;
 import java.util.logging.Level;
 
 import javax.swing.JButton;
 import javax.swing.JComboBox;
+import javax.swing.JFileChooser;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
-import javax.swing.JTextField;
 
 import jd.Configuration;
 import jd.JDUtilities;
 import jd.captcha.JAntiCaptcha;
+import jd.gui.skins.simple.components.BrowseFile;
 import jd.plugins.Plugin;
 
 public class ConfigPanelGeneral extends JPanel implements ActionListener{
@@ -27,10 +29,11 @@ public class ConfigPanelGeneral extends JPanel implements ActionListener{
     private JLabel lblHomeDir;
     private JLabel lblUpdate;
     private JLabel lblLoggerLevel;
-    private JTextField txtDownloadDir;
-    private JTextField txtHomeDir;
+    private BrowseFile brsDownloadDir;
+    private BrowseFile brsHomeDir;
     private JComboBox cboLoggerLevel;
     private JButton btnUpdate;
+
     private JPanel panel;
     
     private Configuration configuration;
@@ -41,13 +44,18 @@ public class ConfigPanelGeneral extends JPanel implements ActionListener{
         
         lblDownloadDir = new JLabel("Download Verzeichnis");
         lblHomeDir     = new JLabel("JD Home");
-        lblUpdate      = new JLabel("Java Anti Captcha updaten");
+        lblUpdate      = new JLabel("Update ausführen");
         lblLoggerLevel = new JLabel("Level für's Logging");
-        txtHomeDir     = new JTextField(JDUtilities.getHomeDirectory(), 30);
-        txtDownloadDir = new JTextField(configuration.getDownloadDirectory(),30);
+        brsHomeDir     = new BrowseFile(30);
+      brsHomeDir.setText(JDUtilities.getHomeDirectory()); 
+       brsHomeDir.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+        brsDownloadDir = new BrowseFile(30);
+        brsDownloadDir.setText(configuration.getDownloadDirectory());     
+        brsDownloadDir.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
         cboLoggerLevel = new JComboBox();
         btnUpdate = new JButton("Update");
         btnUpdate.addActionListener(this);
+
         Insets insets = new Insets(1,5,1,5);
         
         cboLoggerLevel.addItem(Level.ALL);
@@ -65,11 +73,11 @@ public class ConfigPanelGeneral extends JPanel implements ActionListener{
         JDUtilities.addToGridBag(panel, cboLoggerLevel, 1, row, 1, 1, 1, 1, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
         row++;
         JDUtilities.addToGridBag(panel, lblDownloadDir, 0, row, 1, 1, 1, 1, insets, GridBagConstraints.NONE, GridBagConstraints.EAST);
-        JDUtilities.addToGridBag(panel, txtDownloadDir, 1, row, 1, 1, 1, 1, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        JDUtilities.addToGridBag(panel, brsDownloadDir, 1, row, 1, 1, 1, 1, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
         row++;
         if(JDUtilities.getHomeDirectory() != null){
             JDUtilities.addToGridBag(panel, lblHomeDir, 0, row, 1, 1, 1, 1, insets, GridBagConstraints.NONE, GridBagConstraints.EAST);
-            JDUtilities.addToGridBag(panel, txtHomeDir, 1, row, 1, 1, 1, 1, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
+            JDUtilities.addToGridBag(panel, brsHomeDir, 1, row, 1, 1, 1, 1, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
             row++;
         }
         JDUtilities.addToGridBag(panel, lblUpdate, 0, row, 1, 1, 1, 1, insets, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -78,16 +86,17 @@ public class ConfigPanelGeneral extends JPanel implements ActionListener{
     }
     void save(){
         Level loggerLevel = (Level)cboLoggerLevel.getSelectedItem();
-        configuration.setDownloadDirectory(txtDownloadDir.getText().trim());
+        configuration.setDownloadDirectory(brsDownloadDir.getText().trim());
         configuration.setLoggerLevel(loggerLevel.getName());
         Plugin.getLogger().setLevel(loggerLevel);
         if(JDUtilities.getHomeDirectory() != null)
-            JDUtilities.writeJDHomeDirectoryToWebStartCookie(txtHomeDir.getText().trim());
+            JDUtilities.writeJDHomeDirectoryToWebStartCookie(brsHomeDir.getText().trim());
     }
     public void actionPerformed(ActionEvent e) {
         if(e.getSource() == btnUpdate){
             JAntiCaptcha.updateMethods();
         }
+        
     }
     
 }

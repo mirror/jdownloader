@@ -112,5 +112,7 @@ public class Main {
         JDUtilities.addImage("up",            toolkit.getImage(cl.getResource("img/up.png")));
         JDUtilities.addImage("exit",          toolkit.getImage(cl.getResource("img/shutdown.png")));
         JDUtilities.addImage("log",           toolkit.getImage(cl.getResource("img/log.png")));
+        JDUtilities.addImage("reconnect",           toolkit.getImage(cl.getResource("img/reconnect.png")));
+        JDUtilities.addImage("update",           toolkit.getImage(cl.getResource("img/update.png")));
     }
 }

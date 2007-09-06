@@ -131,8 +131,11 @@ public class Rapidshare extends PluginForHost {
                     String strWaitTime = getFirstMatch(requestInfo.getHtmlCode(), patternErrorDownloadLimitReached, 1);
                     if (strWaitTime != null) {
                         logger.severe("wait " + strWaitTime + " minutes");
+                        waitTime=Integer.parseInt(strWaitTime)*60*1000;                 
                         downloadLink.setStatus(DownloadLink.STATUS_ERROR_DOWNLOAD_LIMIT);
                         currentStep.setStatus(PluginStep.STATUS_ERROR);
+                        logger.info(" WARTEZEIT SETZEN IN "+currentStep+" : "+waitTime);
+                        currentStep.setParameter((long)waitTime);
                         return currentStep;
                     }
                     String strFileAbused = getFirstMatch(requestInfo.getHtmlCode(), patternErrorFileAbused, 0);

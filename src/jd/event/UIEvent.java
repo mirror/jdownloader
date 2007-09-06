@@ -42,6 +42,11 @@ public class UIEvent extends AWTEvent{
      * Die Konfiguration soll gespeichtert werden
      */
     public static final int UI_SAVE_CONFIG = 7;
+    /**
+     * Ein Downloadlink soll entfernt werden
+     */
+    public static final int UI_LINKS_TO_REMOVE = 8;
+    
     
     public UIEvent(UIInterface uiInterface, int actionID){
         this(uiInterface,actionID,null);

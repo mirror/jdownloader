@@ -18,6 +18,8 @@ import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableColumn;
 
 import jd.JDUtilities;
+import jd.event.ControlEvent;
+import jd.event.ControlListener;
 import jd.plugins.DownloadLink;
 import jd.plugins.Plugin;
 import jd.plugins.event.PluginEvent;
@@ -27,15 +29,17 @@ import jd.plugins.event.PluginListener;
  *
  * @author astaldo
  */
-public class TabDownloadLinks extends JPanel implements PluginListener{
+public class TabDownloadLinks extends JPanel implements PluginListener, ControlListener{
     private final int COL_INDEX    = 0;
     private final int COL_NAME     = 1;
     private final int COL_HOST     = 2;
-    private final int COL_PROGRESS = 3;
+    private final int COL_STATUS   = 3;
+    private final int COL_PROGRESS = 4;
 
     private final Color COLOR_DONE     = new Color(  0,255,  0, 20);
     private final Color COLOR_ERROR    = new Color(255,  0,  0, 20);
     private final Color COLOR_DISABLED = new Color(100,100,100, 20);
+    private final Color COLOR_WAIT= new Color(0,0,100, 20);
     /**
      * serialVersionUID
      */
@@ -74,7 +78,9 @@ public class TabDownloadLinks extends JPanel implements PluginListener{
                 case COL_INDEX:    column.setPreferredWidth(30);  break;
                 case COL_NAME:     column.setPreferredWidth(200); break;
                 case COL_HOST:     column.setPreferredWidth(100); break;
+                case COL_STATUS: column.setPreferredWidth(50); break;
                 case COL_PROGRESS: column.setPreferredWidth(150); break;
+                
             }
         }
 
@@ -124,6 +130,15 @@ public class TabDownloadLinks extends JPanel implements PluginListener{
                 break;
         }
     }
+    
+    public void controlEvent(ControlEvent event) {
+        switch(event.getID()){
+            case ControlEvent.CONTROL_SINGLE_DOWNLOAD_CHANGED:
+                fireTableChanged();
+                break;
+        }
+        
+    }
     private class InternalTable extends JTable{
         /**
          * serialVersionUID
@@ -150,12 +165,14 @@ public class TabDownloadLinks extends JPanel implements PluginListener{
         private String labelIndex    = JDUtilities.getResourceString("label.tab.download.column_index");
         private String labelLink     = JDUtilities.getResourceString("label.tab.download.column_link");
         private String labelHost     = JDUtilities.getResourceString("label.tab.download.column_host");
+        private String labelStatus    = JDUtilities.getResourceString("label.tab.download.column_status");
         private String labelProgress = JDUtilities.getResourceString("label.tab.download.column_progress");
         @Override
         public String getColumnName(int column) {
             switch(column){
                 case COL_INDEX:    return labelIndex;
                 case COL_NAME:     return labelLink;
+                case COL_STATUS :    return labelStatus;
                 case COL_HOST :    return labelHost;
                 case COL_PROGRESS: return labelProgress;
             }
@@ -167,6 +184,8 @@ public class TabDownloadLinks extends JPanel implements PluginListener{
                 case COL_INDEX:
 //                    return Integer.class;
                 case COL_NAME:
+                case COL_STATUS:
+                    return String.class;
                 case COL_HOST:
                     return String.class;
                 case COL_PROGRESS:
@@ -175,7 +194,7 @@ public class TabDownloadLinks extends JPanel implements PluginListener{
             return String.class;
         }
         public int getColumnCount() {
-            return 4;
+            return 5;
         }
         public int getRowCount() {
             return allLinks.size();
@@ -186,6 +205,7 @@ public class TabDownloadLinks extends JPanel implements PluginListener{
                 switch(columnIndex){
                     case COL_INDEX:    return rowIndex;
                     case COL_NAME:     return downloadLink.getName();
+                    case COL_STATUS:     return downloadLink.getStatusText();
                     case COL_HOST:     return downloadLink.getHost();
                     case COL_PROGRESS:
                         if (downloadLink.isInProgress()){
@@ -219,9 +239,15 @@ public class TabDownloadLinks extends JPanel implements PluginListener{
                 if (!dLink.isEnabled()){
                     c.setBackground(COLOR_DISABLED);
                 }
+                else if(dLink.getRemainingWaittime()>0){
+                    c.setBackground(COLOR_WAIT);
+                }
                 else if(dLink.getStatus()==DownloadLink.STATUS_DONE){
                     c.setBackground(COLOR_DONE);
                 }
+                
+                
+                
                 else if(dLink.getStatus()!=DownloadLink.STATUS_TODO){
                     c.setBackground(COLOR_ERROR);
                 }
@@ -231,4 +257,15 @@ public class TabDownloadLinks extends JPanel implements PluginListener{
             return c;
         }
     }
+    /**
+     * @author coalado
+     * @return Aktuell ausgewählter DownloadLink oder Null wenn keiner ausgewählt ist
+     */
+    public DownloadLink getSelectedDownloadlink() {
+        int index=table.getSelectedRow();
+        if(index==-1)return null;
+       return internalTableModel.getDownloadLinkAtRow(index);
+      
+    }
+   
 }

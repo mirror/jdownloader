@@ -29,12 +29,12 @@ public class HTTPReconnect extends Interaction{
     private static final String NAME ="HTTPReconnect";
     public static String VAR_USERNAME = "%USERNAME%";
     public static String VAR_PASSWORD = "%PASSWORD%";
-    
+    private int retries=0;
     @Override
-    public boolean interact() {
+    public boolean interact(Object arg) {
         Configuration configuration = JDUtilities.getConfiguration();
-
-        logger.info("Starting HTTPReconnect");
+        retries++;
+        logger.info("Starting HTTPReconnect #"+retries);
         String ipBefore;
         String ipAfter;
         RouterData routerData = configuration.getRouterData();
@@ -128,6 +128,7 @@ public class HTTPReconnect extends Interaction{
         logger.fine("IP after reconnect:"+ipAfter);
         if(ipBefore== null || ipAfter==null || ipBefore.equals(ipAfter)){
             logger.severe("IP address did not change");
+            if(retries<configuration.getReconnectRetries()||configuration.getReconnectRetries()<=0)return interact(arg);
             return false;
         }
 
