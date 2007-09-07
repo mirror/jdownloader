@@ -17,6 +17,7 @@ import jd.event.UIListener;
 import jd.gui.UIInterface;
 import jd.plugins.DownloadLink;
 import jd.plugins.Plugin;
+import jd.plugins.PluginForHost;
 import jd.plugins.event.PluginEvent;
 import jd.plugins.event.PluginListener;
 
@@ -204,7 +205,21 @@ public class JDController implements PluginListener, ControlListener, UIListener
         if (file.exists()){
             Object obj = JDUtilities.loadObject(null, file, false);
             if(obj != null && obj instanceof Vector){
-                return(Vector<DownloadLink>)obj;
+                Vector<DownloadLink> links =(Vector<DownloadLink>)obj;
+                Iterator<DownloadLink> iterator = links.iterator();
+                DownloadLink localLink;
+                PluginForHost pluginForHost;
+                while (iterator.hasNext()){
+                    localLink = iterator.next();
+                    pluginForHost =JDUtilities.getPluginForHost(localLink.getHost());
+                    if(pluginForHost!=null){
+                        localLink.setPlugin(pluginForHost);
+                    }
+                    else{
+                        logger.severe("couldn't find plugin("+localLink.getHost()+") for this DownloadLink."+localLink.getName());
+                    }
+                }
+                return links;
             }
         }
         return new Vector<DownloadLink>();
