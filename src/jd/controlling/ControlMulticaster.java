@@ -44,8 +44,8 @@ public class ControlMulticaster extends Thread{
      */
     public void fireControlEvent(ControlEvent controlEvent) {
         Iterator<ControlListener> iterator = controlListener.iterator();
-
-        while(iterator.hasNext()) {
+       while(iterator.hasNext()) {
+           
             ((ControlListener)iterator.next()).controlEvent(controlEvent);
         }
     }

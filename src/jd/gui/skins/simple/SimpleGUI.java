@@ -37,7 +37,6 @@ import javax.swing.UnsupportedLookAndFeelException;
 import jd.Configuration;
 import jd.JDUtilities;
 import jd.controlling.JDAction;
-import jd.controlling.interaction.HTTPReconnect;
 import jd.controlling.interaction.Interaction;
 import jd.event.ControlEvent;
 import jd.event.UIEvent;
@@ -52,7 +51,7 @@ import jd.plugins.event.PluginEvent;
 
 import com.sun.java.swing.plaf.windows.WindowsLookAndFeel;
 
-public class SimpleGUI implements UIInterface, ActionListener{
+public class SimpleGUI implements UIInterface, ActionListener, UIListener{
     /**
      * serialVersionUID
      */
@@ -106,11 +105,11 @@ public class SimpleGUI implements UIInterface, ActionListener{
     private JDAction actionConfig;
     private JDAction actionReconnect;
     private JDAction actionUpdate;
-    
+    private JDAction actionDnD;
     private LogDialog logDialog;
     private Logger logger = Plugin.getLogger();
-
-    private JCheckBoxMenuItem menViewLog;
+    Dropper dragNDrop;
+    private JCheckBoxMenuItem menViewLog=null;
 
     /**
      * Das Hauptfenster wird erstellt
@@ -137,6 +136,17 @@ public class SimpleGUI implements UIInterface, ActionListener{
         frame.pack();
         frame.setLocation(JDUtilities.getCenterOfComponent(null, frame));
         frame.setVisible(true);
+    
+    //DND
+        
+        dragNDrop= new Dropper(frame);
+        dragNDrop.addUIListener(this);
+
+        
+    
+    
+    
+    
     }
     /**
      * Die Aktionen werden initialisiert
@@ -144,6 +154,8 @@ public class SimpleGUI implements UIInterface, ActionListener{
     public void initActions(){
         actionStartStopDownload = new JDAction(this,        "start", "action.start",         JDAction.APP_START_STOP_DOWNLOADS);
         actionAdd               = new JDAction(this,          "add", "action.add",           JDAction.ITEMS_ADD);
+        actionDnD               = new JDAction(this,          "dnd", "action.dnd",           JDAction.ITEMS_DND);
+        
         actionDelete            = new JDAction(this,        "delete", "action.delete",       JDAction.ITEMS_REMOVE);
         actionLoadLinks         = new JDAction(this,          "load", "action.load",         JDAction.APP_LOAD);
         actionSaveLinks         = new JDAction(this,          "save", "action.save",         JDAction.APP_SAVE);
@@ -271,6 +283,12 @@ public class SimpleGUI implements UIInterface, ActionListener{
         btnLog.setFocusPainted(false);
         btnLog.setBorderPainted(false);
         btnLog.setText(null); 
+        
+        JButton btnDnD    = new JButton(this.actionDnD);
+        btnDnD.setFocusPainted(false);
+        btnDnD.setBorderPainted(false);
+        btnDnD.setText(null); 
+        
         toolBar.setFloatable(false);
         toolBar.add(btnSave);
         toolBar.add(btnLoad);
@@ -285,6 +303,7 @@ public class SimpleGUI implements UIInterface, ActionListener{
         toolBar.add(btnLog);
         toolBar.addSeparator();
         toolBar.add(btnReconnect);
+        toolBar.add(btnDnD);
         frame.setLayout(new GridBagLayout());
         JDUtilities.addToGridBag(frame, toolBar,     0, 0, 1, 1, 0, 0, null, GridBagConstraints.HORIZONTAL, GridBagConstraints.NORTH);
         JDUtilities.addToGridBag(frame, tabbedPane,  0, 1, 1, 1, 1, 1, null, GridBagConstraints.BOTH,       GridBagConstraints.CENTER);
@@ -312,10 +331,14 @@ public class SimpleGUI implements UIInterface, ActionListener{
                 }
                 break;
             case JDAction.APP_START_STOP_DOWNLOADS:
-                if(btnStartStop.isSelected())
+                if(btnStartStop.isSelected()){
                     fireUIEvent(new UIEvent(this,UIEvent.UI_START_DOWNLOADS));
-                else
+                dragNDrop.setText("Downloads gestartet");
+                }
+                else{
                     fireUIEvent(new UIEvent(this,UIEvent.UI_STOP_DOWNLOADS));
+                    dragNDrop.setText("Downloads angehalten");
+                }
                 break;
             case JDAction.APP_SAVE:
                 JFileChooser fc = new JFileChooser();
@@ -324,8 +347,12 @@ public class SimpleGUI implements UIInterface, ActionListener{
                 fc.setFileSelectionMode(JFileChooser.FILES_ONLY);
                 fc.showOpenDialog(frame);
                 File ret = fc.getSelectedFile();
-                if(ret!=null)
+                if(ret!=null){
                 fireUIEvent(new UIEvent(this,UIEvent.UI_SAVE_LINKS,ret));
+                dragNDrop.setText("Downloadliste gespeichert");
+                }
+                
+                
                 break;
             case JDAction.APP_LOAD:
                 fc = new JFileChooser();
@@ -333,35 +360,34 @@ public class SimpleGUI implements UIInterface, ActionListener{
                 fc.setFileSelectionMode(JFileChooser.FILES_ONLY);
                 fc.showOpenDialog(frame);
                 ret = fc.getSelectedFile();
-                if(ret!=null)
+                if(ret!=null){
                 fireUIEvent(new UIEvent(this,UIEvent.UI_LOAD_LINKS,ret));
+                dragNDrop.setText("Downloadliste geladen");
+                }
                 break;
             case JDAction.APP_LOG:
                 logDialog.setVisible(!logDialog.isVisible());
                 break;
                 
             case JDAction.APP_RECONNECT:
-              
-                HTTPReconnect rc=new HTTPReconnect();
-              if(rc.interact(null)){
-                  JOptionPane.showMessageDialog(frame, "Reconnect erfolgreich");
-              }else{
-                  JOptionPane.showMessageDialog(frame, "Reconnect fehlgeschlagen");
-              }
-               
+                statusBar.setText("Interaction: HTTPReconnect");
+                dragNDrop.setText("Reconnect....");
+                frame.setTitle(JDUtilities.JD_TITLE+" |Aktion: HTTPReconnect");
+                fireUIEvent(new UIEvent(this,UIEvent.UI_INTERACT_RECONNECT));       
+                statusBar.setText(null);
+                frame.setTitle(JDUtilities.JD_TITLE);
+                dragNDrop.setText("");
                 break;
                 
             case JDAction.APP_UPDATE:
-                boolean log=logDialog.isVisible();
-                logDialog.setVisible(true);
-                int files=JDUtilities.doWebupdate();
-               if(files==0){
-                   JOptionPane.showMessageDialog(frame, "Keine Updates verfügbar");
-                           }else{
-                               JOptionPane.showMessageDialog(frame, "Aktualisierte Dateien: "+files);     
-                           }
-                logDialog.setVisible(log);
+                dragNDrop.setText("Webupdate");
+                statusBar.setText("Interaction: Webupdate");
+                frame.setTitle(JDUtilities.JD_TITLE+" |Aktion: Webupdate");
                 
+                fireUIEvent(new UIEvent(this,UIEvent.UI_INTERACT_UPDATE));
+                statusBar.setText(null);
+                frame.setTitle(JDUtilities.JD_TITLE);
+                dragNDrop.setText("");
                 break;
                 
                 
@@ -372,18 +398,35 @@ public class SimpleGUI implements UIInterface, ActionListener{
                 
              
                 break;
+            case JDAction.ITEMS_DND:
+              if(dragNDrop.isVisible()){
+                  dragNDrop.setVisible(false);
+              }else{
+                  dragNDrop.setVisible(true);
+                  dragNDrop.setText("Ziehe Links auf mich!");
+              }
+                break;
             case JDAction.ITEMS_ADD:
                 Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
-                String data;
+                String cb="";
                 try {
-                    data = (String)clipboard.getData(DataFlavor.stringFlavor);
-                    fireUIEvent(new UIEvent(this,UIEvent.UI_LINKS_TO_PROCESS,data));
+                    cb = (String)clipboard.getData(DataFlavor.stringFlavor);
+                  
                 }
                 catch (UnsupportedFlavorException e1) {}
                 catch (IOException e1)                {}
-                break;
+                  String data=JOptionPane.showInputDialog(frame, "Bitte Link eingeben:", cb);
+                  if(data!=null){
+                      fireUIEvent(new UIEvent(this,UIEvent.UI_LINKS_TO_PROCESS,data));  
+                      
+                     
+                  }
+
+                  break;
             case JDAction.APP_CONFIGURATION:
                 boolean configChanged = ConfigurationDialog.showConfig(frame);
+                
+                dragNDrop.setText("Konfiguration");
                 if (configChanged)
                     fireUIEvent(new UIEvent(this,UIEvent.UI_SAVE_CONFIG));
                 break;
@@ -398,6 +441,10 @@ public class SimpleGUI implements UIInterface, ActionListener{
             statusBar.setSpeed((Integer)event.getParameter1());
         }
     }
+    //TODO: OMg was hab ich etzt Zeit gebraucht um rauszufinden dass die GUI gar kein ControlLIstener ist. Vieleicht sollte man diese Funktion dann nicht wie die Listenerfunktionen benennen!
+    /**
+     * Anders als der Name der Funktion vermuten lässt handelt es sich bei der Klasse nicht um einen Controllistener. die Funktion wird von JDControll aufgerufen. LIstenercalls in JDControll werden an die GUI weitergeleitet
+     */
     public void controlEvent(ControlEvent event){
         switch(event.getID()){
             case ControlEvent.CONTROL_PLUGIN_DECRYPT_ACTIVE:
@@ -414,16 +461,23 @@ public class SimpleGUI implements UIInterface, ActionListener{
                 break;
             case ControlEvent.CONTROL_ALL_DOWNLOADS_FINISHED:
                 btnStartStop.setSelected(false);
+                dragNDrop.setText("Downloads fertig!");
                 break;
             case ControlEvent.CONTROL_PLUGIN_INTERACTION_ACTIVE:
+                
+                logger.info("Interaction start. ");
+                dragNDrop.setText("Aktion: "+((Interaction)event.getParameter()).getName());
                 statusBar.setText("Interaction: "+((Interaction)event.getParameter()).getName());
                 frame.setTitle(JDUtilities.JD_TITLE+" |Aktion: "+((Interaction)event.getParameter()).getName());
                 break;
             case ControlEvent.CONTROL_PLUGIN_INTERACTION_INACTIVE:
+                logger.info("Interaction zu ende. rest status");
                 statusBar.setText(null);
                 frame.setTitle(JDUtilities.JD_TITLE);
+                dragNDrop.setText("");
                 break;
             case ControlEvent.CONTROL_SINGLE_DOWNLOAD_CHANGED:
+                //dragNDrop.setText("Download läuft.");
                 tabDownloadTable.fireTableChanged();
         }
     }
@@ -433,8 +487,10 @@ public class SimpleGUI implements UIInterface, ActionListener{
         return null;
     }
     public void setDownloadLinks(Vector<DownloadLink> links) {
-        if (tabDownloadTable != null)
+        if (tabDownloadTable != null){
             tabDownloadTable.setDownloadLinks(links);
+            dragNDrop.setText("Downloads: "+links.size());   
+        }
         
     }
     public String getCaptchaCodeFromUser(Plugin plugin, File captchaAddress) {
@@ -483,11 +539,13 @@ public class SimpleGUI implements UIInterface, ActionListener{
     private final class LogDialogWindowAdapter extends WindowAdapter {
        @Override
        public void windowOpened(WindowEvent e) {
+           if(menViewLog!=null)
           menViewLog.setSelected(true);
        }
 
        @Override
        public void windowClosed(WindowEvent e) {
+           if(menViewLog!=null)
           menViewLog.setSelected(false);
        }
     }
@@ -566,5 +624,40 @@ public class SimpleGUI implements UIInterface, ActionListener{
             else
                 lbl.setIcon(imgInactive);
         }
+    }
+    /**
+     * Zeigt einen Messagedialog an
+     */
+    public void showMessageDialog(String string) {
+        JOptionPane.showMessageDialog(frame, string); 
+        
+    }
+    /**
+     * Zeigt einen Confirm Dialog an
+     * @param string
+     */
+    public void showConfirmDialog(String string) {
+        JOptionPane.showConfirmDialog(frame, string); 
+        
+    }
+    /**
+     * Setzt den text im DropTargets
+     * @param text
+     */
+    public void setDropTargetText(String text){
+        dragNDrop.setText(text);  
+    }
+    
+    public void uiEvent(UIEvent uiEvent) {
+       switch (uiEvent.getID()){
+           case UIEvent.UI_DRAG_AND_DROP:
+              
+               fireUIEvent(new UIEvent(this,UIEvent.UI_LINKS_TO_PROCESS,uiEvent.getParameter()));
+               
+               break;
+           
+           
+       }
+        
     }
 }

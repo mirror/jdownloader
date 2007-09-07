@@ -31,7 +31,6 @@ import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 
-import jd.JDUtilities;
 import jd.captcha.configuration.JACScript;
 import jd.captcha.gui.BasicWindow;
 import jd.captcha.gui.ImageComponent;
@@ -40,7 +39,6 @@ import jd.captcha.pixelgrid.Captcha;
 import jd.captcha.pixelgrid.Letter;
 import jd.captcha.pixelgrid.PixelGrid;
 import jd.captcha.pixelobject.PixelObject;
-import jd.captcha.utils.GifDecoder;
 import jd.captcha.utils.UTILITIES;
 import jd.update.WebUpdater;
 
@@ -855,9 +853,10 @@ public class JAntiCaptcha {
     public Captcha createCaptcha(Image captchaImage) {
         if (captchaImage.getWidth(null) <= 0 || captchaImage.getHeight(null) <= 0) {
             logger.severe("Image Dimensionen zu klein. Image hat keinen Inahlt. Pfad/Url prüfen!");
-
+            return null;
         }
         Captcha ret = Captcha.getCaptcha(captchaImage, this);
+        if(ret==null)return null;
         ret.setOwner(this);
         return ret;
     }
@@ -923,6 +922,10 @@ public class JAntiCaptcha {
         JAntiCaptcha jac = new JAntiCaptcha(methodPath, methodname);
         // BasicWindow.showImage(img);
         Captcha cap = jac.createCaptcha(img);
+        if(cap==null){
+           logger.severe("Captcha Bild konnte nicht eingelesen werden");
+           return "JACerror";
+        }
         // BasicWindow.showImage(cap.getImageWithGaps(2));
         String ret = jac.checkCaptcha(cap);
         logger.info("captcha text:" + ret);
@@ -1196,7 +1199,7 @@ public class JAntiCaptcha {
                     if (Math.abs(tmp.getHeight() - letter.getHeight()) > jas.getInteger("borderVarianceY") || Math.abs(tmp.getWidth() - letter.getWidth()) > jas.getInteger("borderVarianceX")) {
                         // continue;
                     }
-long timer=UTILITIES.getTimer();
+
                     lc = new LetterComperator(letter, tmp);
                     lc.setOwner(this);
                     lc.run();

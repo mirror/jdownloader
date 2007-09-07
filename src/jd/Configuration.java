@@ -52,7 +52,10 @@ public class Configuration implements Serializable{
      * Level für das Logging
      */
     private String loggerLevel="ALL";
-
+/**
+ * Wartezeit zwischen reconnect und erstem IP Check
+ */
+    private int waitForIPCheck=0;
     public String getDownloadDirectory()                           { return downloadDirectory;  }
     public HashMap<Integer, Vector<Interaction>> getInteractions() { return interactions;       }
     public String getRouterPassword()                              { return routerPassword;     }
@@ -96,5 +99,11 @@ public class Configuration implements Serializable{
      */
     public void setReconnectRetries(int reconnectRetries) {
         this.reconnectRetries = reconnectRetries;
+    }
+    public int getWaitForIPCheck() {
+        return waitForIPCheck;
+    }
+    public void setWaitForIPCheck(int waitForIPCheck) {
+        this.waitForIPCheck = waitForIPCheck;
     }
 }

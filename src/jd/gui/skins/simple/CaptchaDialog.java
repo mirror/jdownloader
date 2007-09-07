@@ -8,8 +8,6 @@ import java.awt.event.ActionListener;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.util.logging.Logger;
 
 import javax.imageio.ImageIO;
@@ -20,7 +18,6 @@ import javax.swing.JLabel;
 import javax.swing.JTextField;
 
 import jd.JDUtilities;
-import jd.captcha.JAntiCaptcha;
 import jd.plugins.Plugin;
 
 /**
@@ -49,6 +46,7 @@ public class CaptchaDialog extends JDialog implements ActionListener {
 	 * Das ist der eingegebene captcha Text
 	 */
 	private String captchaText = null;
+    @SuppressWarnings("unused")
     private static Logger logger = Plugin.getLogger();
 
 	/**

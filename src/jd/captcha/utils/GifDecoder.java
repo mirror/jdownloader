@@ -128,7 +128,8 @@ public class GifDecoder {
 
   protected byte[] pixels;
 
-  protected ArrayList frames; // frames read from current file
+  @SuppressWarnings("unchecked")
+protected ArrayList frames; // frames read from current file
 
   protected int frameCount;
 
@@ -521,7 +522,8 @@ public class GifDecoder {
   /**
    * Initializes or re-initializes reader
    */
-  protected void init() {
+  @SuppressWarnings("unchecked")
+protected void init() {
     status = STATUS_OK;
     frameCount = 0;
     frames = new ArrayList();

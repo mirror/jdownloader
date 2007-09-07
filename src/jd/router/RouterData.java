@@ -99,7 +99,7 @@ public class RouterData implements Serializable{
     /**
      * RegEx zum finden der IPAdresse
      */
-    private String comment=null;
+    
     private String ipAddressRegEx;
     public HashMap<String, String> getConnectRequestProperties() { return connectRequestProperties; }
     public void setConnectRequestProperties(HashMap<String, String> connectRequestProperties) { this.connectRequestProperties = connectRequestProperties;       }

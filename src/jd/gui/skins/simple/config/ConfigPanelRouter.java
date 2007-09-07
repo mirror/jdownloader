@@ -38,73 +38,134 @@ import jd.router.RouterParser;
  */
 class ConfigPanelRouter extends JPanel implements ItemListener, ActionListener {
     private static String     GET              = "GET";
+
     private static String     POST             = "POST";
+
     /**
      * serialVersionUID
      */
     private static final long serialVersionUID = -4338544183688967675L;
-//    private JPanel            panel;
+
+    // private JPanel panel;
     private JTabbedPane       tabbedPane;
+
     private JPanel            pnlControl;
+
     private JPanel            pnlRouter;
+
     private JPanel            pnlLogin;
+
     private JPanel            pnlDisconnect;
+
     private JPanel            pnlConnect;
+
     private JPanel            pnlIpCheck;
+
     private Logger            logger           = Plugin.getLogger();
+
     private Configuration     configuration;
+
     private RouterData        routerData;
 
     private JButton           btnImport;
+
     private JButton           btnDisconnect;
 
+    private JLabel            lblWaitForIPCheck;
+
     private JLabel            lblImport;
+
     private JLabel            lblDisconnectTest;
+
     private JLabel            lblUsername;
+
     private JLabel            lblPassword;
+
     private JLabel            lblRouterIP;
+
     private JLabel            lblRouterPort;
+
     private JLabel            lblRouterName;
+
     private JLabel            lblLogin;
+
     private JLabel            lblLoginType;
+
     private JLabel            lblLoginRequestProperties;
+
     private JLabel            lblLoginPostParams;
+
     private JLabel            lblLogoff;
+
     private JLabel            lblConnect;
+
     private JLabel            lblDisconnect;
+
     private JLabel            lblDisconnectType;
+
     private JLabel            lblDisconnectRequestProperties;
+
     private JLabel            lblDisconnectPostParams;
+
     private JLabel            lblIPAddressRegEx;
+
     private JLabel            lblIPAddressOffline;
+
     private JLabel            lblIPAddressSite;
+
     private JLabel            lblRetries;
+
     private JLabel            lblConnectType;
+
     private JLabel            lblConnectRequestProperties;
+
     private JLabel            lblConnectPostParams;
 
     private JTextField        txtUsername;
+
     private JPasswordField    txtPassword;
+
     private JTextField        txtRouterIP;
+
     private JTextField        txtRouterPort;
+
     private JTextField        txtRouterName;
+
     private JTextField        txtLogin;
+
     private JComboBox         cboLoginType;
+
     private JTextField        txtLoginRequestProperties;
+
     private JTextField        txtLoginPostParams;
+
     private JTextField        txtLogoff;
+
     private JTextField        txtConnect;
+
     private JTextField        txtDisconnect;
+
     private JComboBox         cboDisconnectType;
+
     private JComboBox         cboConnectType;
+
     private JTextField        txtDisconnectRequestProperties;
+
     private JTextField        txtDisconnectPostParams;
+
     private JTextField        txtIPAddressRegEx;
+
     private JTextField        txtIPAddressOffline;
+
     private JTextField        txtIPAddressSite;
+
     private JTextField        txtRetries;
+
     private JTextField        txtConnectRequestProperties;
+
     private JTextField        txtConnectPostParams;
+
+    private JTextField        txtWaitForIPCheck;
 
     ConfigPanelRouter(Configuration configuration) {
         super(new BorderLayout());
@@ -143,6 +204,7 @@ class ConfigPanelRouter extends JPanel implements ItemListener, ActionListener {
         lblConnectType = new JLabel("Art des Verbindungsaufbaus", JLabel.RIGHT);
         lblConnectRequestProperties = new JLabel("RequestProperties für den Verbindungsaufbau", JLabel.RIGHT);
         lblConnectPostParams = new JLabel("POST Parameter für den Verbindungsaufbau", JLabel.RIGHT);
+        lblWaitForIPCheck = new JLabel("Wartezeit bis zum ersten IP-Check [sek]", JLabel.RIGHT);
 
         txtUsername = new JTextField(configuration.getRouterUsername());
         txtPassword = new JPasswordField(configuration.getRouterPassword());
@@ -165,6 +227,7 @@ class ConfigPanelRouter extends JPanel implements ItemListener, ActionListener {
         txtIPAddressRegEx = new JTextField(50);
         txtIPAddressSite = new JTextField(50);
         txtRetries = new JTextField(10);
+        txtWaitForIPCheck = new JTextField(10);
         txtConnectRequestProperties = new JTextField(50);
         txtConnectPostParams = new JTextField(50);
 
@@ -185,85 +248,88 @@ class ConfigPanelRouter extends JPanel implements ItemListener, ActionListener {
 
         Insets insets = new Insets(1, 5, 1, 5);
         int row = 0;
-        tabbedPane.addTab(JDUtilities.getResourceString("label.config.router_router"),     pnlRouter);
-        tabbedPane.addTab(JDUtilities.getResourceString("label.config.router_control"),    pnlControl);
-        tabbedPane.addTab(JDUtilities.getResourceString("label.config.router_login"),      pnlLogin);
-        tabbedPane.addTab(JDUtilities.getResourceString("label.config.router_connect"),    pnlConnect);
+        tabbedPane.addTab(JDUtilities.getResourceString("label.config.router_router"), pnlRouter);
+        tabbedPane.addTab(JDUtilities.getResourceString("label.config.router_control"), pnlControl);
+        tabbedPane.addTab(JDUtilities.getResourceString("label.config.router_login"), pnlLogin);
+        tabbedPane.addTab(JDUtilities.getResourceString("label.config.router_connect"), pnlConnect);
         tabbedPane.addTab(JDUtilities.getResourceString("label.config.router_disconnect"), pnlDisconnect);
-        tabbedPane.addTab(JDUtilities.getResourceString("label.config.router_ip_check"),   pnlIpCheck);
+        tabbedPane.addTab(JDUtilities.getResourceString("label.config.router_ip_check"), pnlIpCheck);
 
         row = 0;
 
         // Controlbuttons
-        JDUtilities.addToGridBag(pnlControl, lblImport,         0, row++, 1, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.EAST);
+        JDUtilities.addToGridBag(pnlControl, lblImport, 0, row++, 1, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.EAST);
         JDUtilities.addToGridBag(pnlControl, lblDisconnectTest, 0, row++, 1, 1, 0, 1, insets, GridBagConstraints.NONE, GridBagConstraints.NORTHEAST);
         row = 0;
-        JDUtilities.addToGridBag(pnlControl, btnImport,     1, row++, 1, 1, 1, 0, insets, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+        JDUtilities.addToGridBag(pnlControl, btnImport, 1, row++, 1, 1, 1, 0, insets, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
         JDUtilities.addToGridBag(pnlControl, btnDisconnect, 1, row++, 1, 1, 1, 1, insets, GridBagConstraints.HORIZONTAL, GridBagConstraints.NORTHWEST);
 
         // Router Login
         row = 0;
-        JDUtilities.addToGridBag(pnlLogin, lblUsername,               0, row++, 1, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.EAST);
-        JDUtilities.addToGridBag(pnlLogin, lblPassword,               0, row++, 1, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.EAST);
-        JDUtilities.addToGridBag(pnlLogin, lblLogin,                  0, row++, 1, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.EAST);
-        JDUtilities.addToGridBag(pnlLogin, lblLoginType,              0, row++, 1, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.EAST);
+        JDUtilities.addToGridBag(pnlLogin, lblUsername, 0, row++, 1, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.EAST);
+        JDUtilities.addToGridBag(pnlLogin, lblPassword, 0, row++, 1, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.EAST);
+        JDUtilities.addToGridBag(pnlLogin, lblLogin, 0, row++, 1, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.EAST);
+        JDUtilities.addToGridBag(pnlLogin, lblLoginType, 0, row++, 1, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.EAST);
         JDUtilities.addToGridBag(pnlLogin, lblLoginRequestProperties, 0, row++, 1, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.EAST);
-        JDUtilities.addToGridBag(pnlLogin, lblLoginPostParams,        0, row++, 1, 1, 0, 1, insets, GridBagConstraints.NONE, GridBagConstraints.NORTHEAST);
+        JDUtilities.addToGridBag(pnlLogin, lblLoginPostParams, 0, row++, 1, 1, 0, 1, insets, GridBagConstraints.NONE, GridBagConstraints.NORTHEAST);
         row = 0;
-        JDUtilities.addToGridBag(pnlLogin, txtUsername,               1, row++, 1, 1, 1, 0, insets, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-        JDUtilities.addToGridBag(pnlLogin, txtPassword,               1, row++, 1, 1, 1, 0, insets, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-        JDUtilities.addToGridBag(pnlLogin, txtLogin,                  1, row++, 1, 1, 1, 0, insets, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-        JDUtilities.addToGridBag(pnlLogin, cboLoginType,              1, row++, 1, 1, 1, 0, insets, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+        JDUtilities.addToGridBag(pnlLogin, txtUsername, 1, row++, 1, 1, 1, 0, insets, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+        JDUtilities.addToGridBag(pnlLogin, txtPassword, 1, row++, 1, 1, 1, 0, insets, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+        JDUtilities.addToGridBag(pnlLogin, txtLogin, 1, row++, 1, 1, 1, 0, insets, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+        JDUtilities.addToGridBag(pnlLogin, cboLoginType, 1, row++, 1, 1, 1, 0, insets, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
         JDUtilities.addToGridBag(pnlLogin, txtLoginRequestProperties, 1, row++, 1, 1, 1, 0, insets, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-        JDUtilities.addToGridBag(pnlLogin, txtLoginPostParams,        1, row++, 1, 1, 1, 1, insets, GridBagConstraints.HORIZONTAL, GridBagConstraints.NORTHWEST);
-        
+        JDUtilities.addToGridBag(pnlLogin, txtLoginPostParams, 1, row++, 1, 1, 1, 1, insets, GridBagConstraints.HORIZONTAL, GridBagConstraints.NORTHWEST);
+
         // Routerdaten
         row = 0;
         JDUtilities.addToGridBag(pnlRouter, lblRouterName, 0, row++, 1, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.EAST);
-        JDUtilities.addToGridBag(pnlRouter, lblRouterIP,   0, row++, 1, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.EAST);
+        JDUtilities.addToGridBag(pnlRouter, lblRouterIP, 0, row++, 1, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.EAST);
         JDUtilities.addToGridBag(pnlRouter, lblRouterPort, 0, row++, 1, 1, 0, 1, insets, GridBagConstraints.NONE, GridBagConstraints.NORTHEAST);
         row = 0;
         JDUtilities.addToGridBag(pnlRouter, txtRouterName, 1, row++, 1, 1, 1, 0, insets, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-        JDUtilities.addToGridBag(pnlRouter, txtRouterIP,   1, row++, 1, 1, 1, 0, insets, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+        JDUtilities.addToGridBag(pnlRouter, txtRouterIP, 1, row++, 1, 1, 1, 0, insets, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
         JDUtilities.addToGridBag(pnlRouter, txtRouterPort, 1, row++, 1, 1, 1, 1, insets, GridBagConstraints.HORIZONTAL, GridBagConstraints.NORTHWEST);
-        
+
         // Verbindungsaufbau
         row = 0;
-        JDUtilities.addToGridBag(pnlConnect, lblLogoff,                   0, row++, 1, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.EAST);
-        JDUtilities.addToGridBag(pnlConnect, lblConnect,                  0, row++, 1, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.EAST);
-        JDUtilities.addToGridBag(pnlConnect, lblConnectType,              0, row++, 1, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.EAST);
+        JDUtilities.addToGridBag(pnlConnect, lblLogoff, 0, row++, 1, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.EAST);
+        JDUtilities.addToGridBag(pnlConnect, lblConnect, 0, row++, 1, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.EAST);
+        JDUtilities.addToGridBag(pnlConnect, lblConnectType, 0, row++, 1, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.EAST);
         JDUtilities.addToGridBag(pnlConnect, lblConnectRequestProperties, 0, row++, 1, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.EAST);
-        JDUtilities.addToGridBag(pnlConnect, lblConnectPostParams,        0, row++, 1, 1, 0, 1, insets, GridBagConstraints.NONE, GridBagConstraints.NORTHEAST);
+        JDUtilities.addToGridBag(pnlConnect, lblConnectPostParams, 0, row++, 1, 1, 0, 1, insets, GridBagConstraints.NONE, GridBagConstraints.NORTHEAST);
         row = 0;
-        JDUtilities.addToGridBag(pnlConnect, txtLogoff,                   1, row++, 1, 1, 1, 0, insets, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-        JDUtilities.addToGridBag(pnlConnect, txtConnect,                  1, row++, 1, 1, 1, 0, insets, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-        JDUtilities.addToGridBag(pnlConnect, cboConnectType,              1, row++, 1, 1, 1, 0, insets, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+        JDUtilities.addToGridBag(pnlConnect, txtLogoff, 1, row++, 1, 1, 1, 0, insets, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+        JDUtilities.addToGridBag(pnlConnect, txtConnect, 1, row++, 1, 1, 1, 0, insets, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+        JDUtilities.addToGridBag(pnlConnect, cboConnectType, 1, row++, 1, 1, 1, 0, insets, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
         JDUtilities.addToGridBag(pnlConnect, txtConnectRequestProperties, 1, row++, 1, 1, 1, 0, insets, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-        JDUtilities.addToGridBag(pnlConnect, txtConnectPostParams,        1, row++, 1, 1, 1, 1, insets, GridBagConstraints.HORIZONTAL, GridBagConstraints.NORTHWEST);
+        JDUtilities.addToGridBag(pnlConnect, txtConnectPostParams, 1, row++, 1, 1, 1, 1, insets, GridBagConstraints.HORIZONTAL, GridBagConstraints.NORTHWEST);
 
         // Verbindungsabbau
         row = 0;
-        JDUtilities.addToGridBag(pnlDisconnect, lblDisconnect,                  0, row++, 1, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.EAST);
-        JDUtilities.addToGridBag(pnlDisconnect, lblDisconnectType,              0, row++, 1, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.EAST);
+        JDUtilities.addToGridBag(pnlDisconnect, lblDisconnect, 0, row++, 1, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.EAST);
+        JDUtilities.addToGridBag(pnlDisconnect, lblDisconnectType, 0, row++, 1, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.EAST);
         JDUtilities.addToGridBag(pnlDisconnect, lblDisconnectRequestProperties, 0, row++, 1, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.EAST);
-        JDUtilities.addToGridBag(pnlDisconnect, lblDisconnectPostParams,        0, row++, 1, 1, 0, 1, insets, GridBagConstraints.NONE, GridBagConstraints.NORTHEAST);
+        JDUtilities.addToGridBag(pnlDisconnect, lblDisconnectPostParams, 0, row++, 1, 1, 0, 1, insets, GridBagConstraints.NONE, GridBagConstraints.NORTHEAST);
         row = 0;
-        JDUtilities.addToGridBag(pnlDisconnect, txtDisconnect,                  1, row++, 1, 1, 1, 0, insets, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-        JDUtilities.addToGridBag(pnlDisconnect, cboDisconnectType,              1, row++, 1, 1, 1, 0, insets, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+        JDUtilities.addToGridBag(pnlDisconnect, txtDisconnect, 1, row++, 1, 1, 1, 0, insets, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+        JDUtilities.addToGridBag(pnlDisconnect, cboDisconnectType, 1, row++, 1, 1, 1, 0, insets, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
         JDUtilities.addToGridBag(pnlDisconnect, txtDisconnectRequestProperties, 1, row++, 1, 1, 1, 0, insets, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-        JDUtilities.addToGridBag(pnlDisconnect, txtDisconnectPostParams,        1, row++, 1, 1, 1, 1, insets, GridBagConstraints.HORIZONTAL, GridBagConstraints.NORTHWEST);
-        
+        JDUtilities.addToGridBag(pnlDisconnect, txtDisconnectPostParams, 1, row++, 1, 1, 1, 1, insets, GridBagConstraints.HORIZONTAL, GridBagConstraints.NORTHWEST);
+
         // Ipcheck
         row = 0;
-        JDUtilities.addToGridBag(pnlIpCheck, lblIPAddressSite,    0, row++, 1, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.EAST);
-        JDUtilities.addToGridBag(pnlIpCheck, lblIPAddressRegEx,   0, row++, 1, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.EAST);
+        JDUtilities.addToGridBag(pnlIpCheck, lblIPAddressSite, 0, row++, 1, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.EAST);
+        JDUtilities.addToGridBag(pnlIpCheck, lblIPAddressRegEx, 0, row++, 1, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.EAST);
         JDUtilities.addToGridBag(pnlIpCheck, lblIPAddressOffline, 0, row++, 1, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.EAST);
-        JDUtilities.addToGridBag(pnlIpCheck, lblRetries,          0, row++, 1, 1, 0, 1, insets, GridBagConstraints.NONE, GridBagConstraints.NORTHEAST);
+        JDUtilities.addToGridBag(pnlIpCheck, lblRetries, 0, row++, 1, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.NORTHEAST);
+        JDUtilities.addToGridBag(pnlIpCheck, lblWaitForIPCheck, 0, row++, 1, 1, 0, 1, insets, GridBagConstraints.NONE, GridBagConstraints.NORTHEAST);
+
         row = 0;
-        JDUtilities.addToGridBag(pnlIpCheck, txtIPAddressSite,    1, row++, 1, 1, 1, 0, insets, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-        JDUtilities.addToGridBag(pnlIpCheck, txtIPAddressRegEx,   1, row++, 1, 1, 1, 0, insets, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+        JDUtilities.addToGridBag(pnlIpCheck, txtIPAddressSite, 1, row++, 1, 1, 1, 0, insets, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+        JDUtilities.addToGridBag(pnlIpCheck, txtIPAddressRegEx, 1, row++, 1, 1, 1, 0, insets, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
         JDUtilities.addToGridBag(pnlIpCheck, txtIPAddressOffline, 1, row++, 1, 1, 1, 0, insets, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-        JDUtilities.addToGridBag(pnlIpCheck, txtRetries,          1, row++, 1, 1, 1, 1, insets, GridBagConstraints.HORIZONTAL, GridBagConstraints.NORTHWEST);
+        JDUtilities.addToGridBag(pnlIpCheck, txtRetries, 1, row++, 1, 1, 1, 0, insets, GridBagConstraints.HORIZONTAL, GridBagConstraints.NORTHWEST);
+        JDUtilities.addToGridBag(pnlIpCheck, txtWaitForIPCheck, 1, row++, 1, 1, 1, 1, insets, GridBagConstraints.HORIZONTAL, GridBagConstraints.NORTHWEST);
 
         add(tabbedPane, BorderLayout.CENTER);
         checkComboBoxes();
@@ -284,6 +350,7 @@ class ConfigPanelRouter extends JPanel implements ItemListener, ActionListener {
         txtConnectPostParams.setText(routerData.getConnectPostParams());
         txtIPAddressSite.setText(routerData.getIpAddressSite());
         txtIPAddressOffline.setText(routerData.getIpAddressOffline());
+        this.txtWaitForIPCheck.setText(configuration.getWaitForIPCheck() + "");
         this.txtRouterIP.setText(routerData.getRouterIP());
         this.txtRouterPort.setText(routerData.getRouterPort() + "");
         this.txtRetries.setText(configuration.getReconnectRetries() + "");
@@ -294,19 +361,22 @@ class ConfigPanelRouter extends JPanel implements ItemListener, ActionListener {
         if (routerData.getLoginType() == RouterData.TYPE_WEB_GET) {
 
             cboLoginType.setSelectedItem(GET);
-        } else {
+        }
+        else {
             cboLoginType.setSelectedItem(POST);
         }
         if (routerData.getDisconnectType() == RouterData.TYPE_WEB_GET) {
             cboDisconnectType.setSelectedItem(GET);
 
-        } else {
+        }
+        else {
             cboDisconnectType.setSelectedItem(POST);
         }
         if (routerData.getConnectType() == RouterData.TYPE_WEB_GET) {
             cboConnectType.setSelectedItem(GET);
 
-        } else {
+        }
+        else {
             cboConnectType.setSelectedItem(POST);
         }
 
@@ -328,14 +398,24 @@ class ConfigPanelRouter extends JPanel implements ItemListener, ActionListener {
     /**
      * Speichert alle Änderungen auf der Maske
      */
-    void save(){
+    void save() {
         configuration.setRouterData(routerData);
         configuration.setRouterUsername(txtUsername.getText().trim());
         configuration.setRouterPassword(new String(txtPassword.getPassword()).trim());
         try {
-        configuration.setReconnectRetries(Integer.parseInt(new String(txtRetries.getText()).trim()));
+            configuration.setReconnectRetries(Integer.parseInt(new String(txtRetries.getText()).trim()));
         }
-        catch (NumberFormatException e) { logger.severe("Reconnect retries wrong");}; 
+        catch (NumberFormatException e) {
+            logger.severe("Reconnect retries wrong");
+        }
+        ;
+        try {
+            configuration.setWaitForIPCheck(Integer.parseInt(new String(txtWaitForIPCheck.getText()).trim()));
+        }
+        catch (NumberFormatException e) {
+            logger.severe("txtWaitForIPCheck wrong");
+        }
+        ;
         routerData.setRouterIP(txtRouterIP.getText().trim());
         routerData.setRouterName(txtRouterName.getText().trim());
         routerData.setLogin(txtLogin.getText().trim());
@@ -347,17 +427,19 @@ class ConfigPanelRouter extends JPanel implements ItemListener, ActionListener {
         routerData.setIpAddressSite(txtIPAddressSite.getText().trim());
         routerData.setIpAddressOffline(txtIPAddressOffline.getText().trim());
         routerData.setConnectPostParams(txtConnectPostParams.getText().trim());
-      
+
         try {
             routerData.setRouterPort(Integer.parseInt(txtRouterPort.getText()));
         }
-        catch (NumberFormatException e) { logger.severe("routerPort wrong"); }
+        catch (NumberFormatException e) {
+            logger.severe("routerPort wrong");
+        }
 
-        if(cboLoginType.getSelectedItem().equals(GET))
+        if (cboLoginType.getSelectedItem().equals(GET))
             routerData.setLoginType(RouterData.TYPE_WEB_GET);
         else
             routerData.setLoginType(RouterData.TYPE_WEB_POST);
-        if(cboDisconnectType.getSelectedItem().equals(GET))
+        if (cboDisconnectType.getSelectedItem().equals(GET))
             routerData.setDisconnectType(RouterData.TYPE_WEB_GET);
         else
             routerData.setDisconnectType(RouterData.TYPE_WEB_POST);
@@ -366,7 +448,9 @@ class ConfigPanelRouter extends JPanel implements ItemListener, ActionListener {
             Pattern.compile(txtForPattern);
             routerData.setIpAddressRegEx(txtForPattern);
         }
-        catch (Exception e) { logger.severe("RegEx for IPAddress wrong"); }
+        catch (Exception e) {
+            logger.severe("RegEx for IPAddress wrong");
+        }
         routerData.setLoginRequestProperties(splitString(txtLoginRequestProperties.getText().trim()));
         routerData.setDisconnectRequestProperties(splitString(txtDisconnectRequestProperties.getText().trim()));
         routerData.setConnectRequestProperties(splitString(txtConnectRequestProperties.getText().trim()));
@@ -376,8 +460,7 @@ class ConfigPanelRouter extends JPanel implements ItemListener, ActionListener {
      * Gibt eine Hashmap als String zurück. Das Format ist so;
      * key1=value1;key2=value2;"key3;k"="value;value"...
      * 
-     * @param map
-     *            Die Map, die ausgegeben werden soll
+     * @param map Die Map, die ausgegeben werden soll
      * @return Ein String, der die Werte der HashMap darstellt
      */
     private String mergeHashMap(HashMap<String, String> map) {
@@ -389,23 +472,22 @@ class ConfigPanelRouter extends JPanel implements ItemListener, ActionListener {
             buffer.append(key);
             buffer.append("==");
             buffer.append(map.get(key));
-            if (iterator.hasNext())
-                buffer.append(";;");
+            if (iterator.hasNext()) buffer.append(";;");
         }
         return buffer.toString();
     }
 
     private HashMap<String, String> splitString(String properties) {
         HashMap<String, String> map = new HashMap<String, String>();
-        if (properties == null || properties.equals(""))
-            return map;
+        if (properties == null || properties.equals("")) return map;
         String[] items = properties.split(";;");
         String[] keyValuePair;
         for (int i = 0; i < items.length; i++) {
             keyValuePair = items[i].split("==");
             if (keyValuePair.length == 2) {
                 map.put(keyValuePair[0], keyValuePair[1]);
-            } else {
+            }
+            else {
                 logger.severe("something's wrong with the key/value pair." + keyValuePair[0]);
             }
         }
@@ -420,7 +502,8 @@ class ConfigPanelRouter extends JPanel implements ItemListener, ActionListener {
             lblLoginPostParams.setEnabled(false);
             txtLoginRequestProperties.setEnabled(false);
             txtLoginPostParams.setEnabled(false);
-        } else {
+        }
+        else {
             lblLoginPostParams.setEnabled(true);
             txtLoginRequestProperties.setEnabled(true);
             txtLoginPostParams.setEnabled(true);
@@ -430,7 +513,8 @@ class ConfigPanelRouter extends JPanel implements ItemListener, ActionListener {
             lblDisconnectPostParams.setEnabled(false);
             txtDisconnectRequestProperties.setEnabled(false);
             txtDisconnectPostParams.setEnabled(false);
-        } else {
+        }
+        else {
             lblDisconnectPostParams.setEnabled(true);
             txtDisconnectRequestProperties.setEnabled(true);
             txtDisconnectPostParams.setEnabled(true);
@@ -440,7 +524,8 @@ class ConfigPanelRouter extends JPanel implements ItemListener, ActionListener {
             lblConnectPostParams.setEnabled(false);
             txtConnectRequestProperties.setEnabled(false);
             txtConnectPostParams.setEnabled(false);
-        } else {
+        }
+        else {
             lblConnectPostParams.setEnabled(true);
             txtConnectRequestProperties.setEnabled(true);
             txtConnectPostParams.setEnabled(true);

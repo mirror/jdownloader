@@ -1,7 +1,6 @@
 package jd.plugins;
 
 import java.net.HttpURLConnection;
-import java.net.URLConnection;
 import java.util.List;
 import java.util.Map;
 

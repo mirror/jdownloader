@@ -3,6 +3,7 @@ package jd.gui.skins.simple;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
+import java.awt.Dimension;
 import java.util.Vector;
 import java.util.logging.Logger;
 
@@ -77,19 +78,22 @@ public class TabDownloadLinks extends JPanel implements PluginListener, ControlL
             switch(c){
                 case COL_INDEX:    column.setPreferredWidth(30);  break;
                 case COL_NAME:     column.setPreferredWidth(200); break;
-                case COL_HOST:     column.setPreferredWidth(100); break;
-                case COL_STATUS: column.setPreferredWidth(50); break;
-                case COL_PROGRESS: column.setPreferredWidth(150); break;
+                case COL_HOST:     column.setPreferredWidth(150); break;
+                case COL_STATUS: column.setPreferredWidth(200); break;
+                case COL_PROGRESS: column.setPreferredWidth(250); break;
                 
             }
         }
 
         JScrollPane scrollPane = new JScrollPane(table);
+        scrollPane.setPreferredSize(new Dimension(800,450));
         add(scrollPane);
     }
     public void setDownloadLinks(Vector<DownloadLink> links){
+     
         allLinks.clear();
         addLinks(links);
+       
     }
     /**
      * Hier werden Links zu dieser Tabelle hinzugefügt.
@@ -119,9 +123,17 @@ public class TabDownloadLinks extends JPanel implements PluginListener, ControlL
     }
     /**
      * Hiermit wird die Tabelle aktualisiert
+     * Die MArkierte reihe wird nach dem ändern wieder neu gesetzt
      */
     public void fireTableChanged(){
+        DownloadLink dl= this.getSelectedDownloadlink();
+      
+       int index=allLinks.indexOf(dl);
+        
         table.tableChanged(new TableModelEvent(table.getModel()));
+        if(index>=0){
+            table.setRowSelectionInterval(index, index);
+             }
     }
     public void pluginEvent(PluginEvent event) {
         switch(event.getID()){
@@ -210,8 +222,17 @@ public class TabDownloadLinks extends JPanel implements PluginListener, ControlL
                     case COL_PROGRESS:
                         if (downloadLink.isInProgress()){
                             JProgressBar p = new JProgressBar(0,downloadLink.getDownloadMax());
+                            p.setStringPainted(true);
                             p.setValue(downloadLink.getDownloadCurrent());
                             return p;
+                        }else if(downloadLink.getRemainingWaittime()>0){
+                            JProgressBar p = new JProgressBar(0,downloadLink.getWaitTime());
+                            p.setBackground(new Color(255,  0,  0, 80));
+                            p.setStringPainted(true);
+                            
+                            p.setValue((int)downloadLink.getRemainingWaittime());
+                            return p;
+                            
                         }
                         else
                             return null;
@@ -248,7 +269,7 @@ public class TabDownloadLinks extends JPanel implements PluginListener, ControlL
                 
                 
                 
-                else if(dLink.getStatus()!=DownloadLink.STATUS_TODO){
+                else if(dLink.getStatus()!=DownloadLink.STATUS_TODO&&dLink.getStatus()!=DownloadLink.STATUS_ERROR_DOWNLOAD_LIMIT){
                     c.setBackground(COLOR_ERROR);
                 }
                 else
@@ -258,6 +279,7 @@ public class TabDownloadLinks extends JPanel implements PluginListener, ControlL
         }
     }
     /**
+     * Gibt den Downloadlink der gerade ausgewählten Reihe zurück. Ist keine Reihe ausgewählt wird null zurückgegeben
      * @author coalado
      * @return Aktuell ausgewählter DownloadLink oder Null wenn keiner ausgewählt ist
      */

@@ -37,6 +37,7 @@ import jd.plugins.PluginForHost;
 //TODO TelnetReconnect (später)
 //TODO WebInterface
 //TODO GUI Auswahl
+//TODO Programmstart Interaction muss eingebaut werden
 
 public class Main {
     public static void main(String args[]){
@@ -114,5 +115,6 @@ public class Main {
         JDUtilities.addImage("log",           toolkit.getImage(cl.getResource("img/log.png")));
         JDUtilities.addImage("reconnect",           toolkit.getImage(cl.getResource("img/reconnect.png")));
         JDUtilities.addImage("update",           toolkit.getImage(cl.getResource("img/update.png")));
+        JDUtilities.addImage("dnd",           toolkit.getImage(cl.getResource("img/dnd.png")));
     }
 }

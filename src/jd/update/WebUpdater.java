@@ -78,7 +78,7 @@ public class WebUpdater {
         }
     }
     /**
-     * 
+     * Gibt die Anzahl der aktualisierbaren files zurück.
      * @return Anzahld er neuen Datein
      */
 public int getUpdateNum(){
@@ -286,6 +286,7 @@ public int getUpdateNum(){
     }
 
     /**
+     * Gibt die Anzhal der aktualisierten Files zurück
      * @return the updatedFiles
      */
     public int getUpdatedFiles() {

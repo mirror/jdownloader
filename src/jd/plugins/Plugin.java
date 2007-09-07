@@ -123,6 +123,8 @@ public abstract class Plugin {
      * @return true:istBot; false: keinBot
      */
     public abstract boolean doBotCheck(File file);
+    
+   
     /**
      * Diese Methode zeigt an, ob das Plugin auf Änderungen in der
      * Zwischenablage reagiert oder nicht

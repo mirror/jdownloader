@@ -11,6 +11,23 @@ import java.util.Vector;
  */
 public abstract class PluginForHost extends Plugin{
     public abstract URLConnection        getURLConnection();
+    
+    /**
+     * Stellt das Plugin in den Ausgangszustand zurück (variablen intialisieren etc)
+     * @param file
+     * @return
+     */
+    
+    public abstract void reset();
+    /**
+     * Führt alle restevorgänge aus und bereitet das Plugin dadurch auf einen Neustart vor
+     */
+    public void resetPlugin(){
+        this.resetSteps();
+        this.reset();
+        this.aborted=false;
+    }
+    
     /**
      * Hier werden Treffer für Downloadlinks dieses Anbieters in diesem Text gesucht.
      * Gefundene Links werden dann in einem Vector zurückgeliefert

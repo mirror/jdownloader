@@ -13,6 +13,7 @@ import jd.captcha.utils.UTILITIES;
  * @author coalado
  *
  */
+@SuppressWarnings("unchecked")
 public class PixelObject implements Comparable {
     /**
      * Logger

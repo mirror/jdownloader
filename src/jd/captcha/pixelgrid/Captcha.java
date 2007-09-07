@@ -16,7 +16,6 @@ import java.util.logging.Logger;
 
 import jd.captcha.JAntiCaptcha;
 import jd.captcha.LetterComperator;
-import jd.captcha.gui.BasicWindow;
 import jd.captcha.pixelobject.PixelObject;
 import jd.captcha.utils.UTILITIES;
 
@@ -763,6 +762,7 @@ public class Captcha extends PixelGrid {
 
         int width = image.getWidth(null);
         int height = image.getHeight(null);
+        if(width<=0 ||height<=0)return null;
         if (width <= 0 || height <= 0) {
             logger.severe("ERROR: Image nicht korrekt. Kein Inhalt. Pfad URl angaben Korrigieren");
         }

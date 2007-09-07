@@ -17,6 +17,7 @@ import jd.JDUtilities;
 import jd.controlling.interaction.DummyInteraction;
 import jd.controlling.interaction.HTTPReconnect;
 import jd.controlling.interaction.Interaction;
+import jd.controlling.interaction.WebUpdate;
 
 public class ConfigPanelAutomatic extends JPanel {
 
@@ -33,6 +34,7 @@ public class ConfigPanelAutomatic extends JPanel {
     private JComboBox                             cboDownloadFailed;
     private JComboBox                             cboDownloadWaittime;
     private JComboBox                             cboDownloadBot;
+    private JComboBox                             cboAppStart;
     public ConfigPanelAutomatic(Configuration configuration) {
         this.configuration = configuration;
         this.interactions = configuration.getInteractions();
@@ -43,17 +45,21 @@ public class ConfigPanelAutomatic extends JPanel {
         JLabel lblDownloadFailed = new JLabel("Einzelner Download fehlgeschlagen");
         JLabel lblDownloadWaittime = new JLabel("Einzelner Download hat Wartezeit");
         JLabel lblDownloadBot = new JLabel("Bot erkannt");
+        JLabel lblAppStart = new JLabel("Programmstart");
+       
         cboDownloadFinished = new JComboBox();
         cboDownloadFinishedAll = new JComboBox();
         cboDownloadFailed = new JComboBox();
         cboDownloadWaittime = new JComboBox();
         cboDownloadBot = new JComboBox();
+        cboAppStart = new JComboBox();
         
         cboDownloadFinished.addItem("-");
         cboDownloadFinishedAll.addItem("-");
         cboDownloadFailed.addItem("-");
         cboDownloadWaittime.addItem("-");
         cboDownloadBot.addItem("-");
+        cboAppStart.addItem("-");
         load();
 
         Insets insets = new Insets(1, 5, 1, 5);
@@ -64,6 +70,7 @@ public class ConfigPanelAutomatic extends JPanel {
         JDUtilities.addToGridBag(panel, lblDownloadFailed, 0, row++, 1, 1, 1, 1, insets, GridBagConstraints.NONE, GridBagConstraints.EAST);
         JDUtilities.addToGridBag(panel, lblDownloadWaittime, 0, row++, 1, 1, 1, 1, insets, GridBagConstraints.NONE, GridBagConstraints.EAST);
         JDUtilities.addToGridBag(panel, lblDownloadBot, 0, row++, 1, 1, 1, 1, insets, GridBagConstraints.NONE, GridBagConstraints.EAST);
+        JDUtilities.addToGridBag(panel, lblAppStart, 0, row++, 1, 1, 1, 1, insets, GridBagConstraints.NONE, GridBagConstraints.EAST);
 
         row = 0;
         JDUtilities.addToGridBag(panel, cboDownloadFinished, 1, row++, 1, 1, 1, 1, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -71,6 +78,7 @@ public class ConfigPanelAutomatic extends JPanel {
         JDUtilities.addToGridBag(panel, cboDownloadFailed, 1, row++, 1, 1, 1, 1, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
         JDUtilities.addToGridBag(panel, cboDownloadWaittime, 1, row++, 1, 1, 1, 1, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
         JDUtilities.addToGridBag(panel, cboDownloadBot, 1, row++, 1, 1, 1, 1, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        JDUtilities.addToGridBag(panel, cboAppStart, 1, row++, 1, 1, 1, 1, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
         add(panel);
     }
@@ -124,11 +132,21 @@ public class ConfigPanelAutomatic extends JPanel {
         } else {
             fillComboBox(cboDownloadBot, availableInteractions, null);
         }
+        
+        availableInteractions = getAllInteractions();
+        interaction = interactions.get(Interaction.INTERACTION_APPSTART);
+        if (interaction != null) {
+            availableInteractions.put(interaction.firstElement().getName(), interaction.firstElement());
+            fillComboBox(cboAppStart, availableInteractions, interaction.firstElement());
+        } else {
+            fillComboBox(cboAppStart, availableInteractions, null);
+        }
+
 
     }
 
     private void fillComboBox(JComboBox cbo, Hashtable<String, Interaction> availableInteractions, Interaction selected) {
-        Enumeration en = availableInteractions.keys();
+        Enumeration<String> en = availableInteractions.keys();
         Interaction tmp;
         while (en.hasMoreElements()) {
             tmp = ((Interaction) availableInteractions.get(en.nextElement()));
@@ -146,6 +164,7 @@ public class ConfigPanelAutomatic extends JPanel {
 
         // Hier müssen alle möglichen Interactions eingetragen werden
         it.put((tmp = new HTTPReconnect()).getName(), tmp);
+        it.put((tmp = new WebUpdate()).getName(), tmp);
         it.put((tmp = new DummyInteraction()).getName(), tmp);
         return it;
 
@@ -188,6 +207,14 @@ public class ConfigPanelAutomatic extends JPanel {
             interactions.put(Interaction.INTERACTION_DOWNLOAD_BOT_DETECTED, i);
         } else
             interactions.remove(Interaction.INTERACTION_DOWNLOAD_BOT_DETECTED);
+
+        
+        if (cboAppStart.getSelectedIndex() > 0) {
+            Vector<Interaction> i = new Vector<Interaction>();
+            i.add((Interaction) cboAppStart.getSelectedItem());
+            interactions.put(Interaction.INTERACTION_APPSTART, i);
+        } else
+            interactions.remove(Interaction.INTERACTION_APPSTART);
 
     }
 }

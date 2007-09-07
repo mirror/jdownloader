@@ -9,7 +9,6 @@ import javax.swing.ImageIcon;
 import javax.swing.KeyStroke;
 
 import jd.JDUtilities;
-import jd.captcha.utils.UTILITIES;
 
 /**
  * Alle Interaktionen (Knöpfe, Shortcuts) sollten über diese JDAction stattfinden
@@ -40,6 +39,7 @@ public class JDAction extends AbstractAction{
     public static final int APP_CONFIGURATION        = 16;
     public static final int APP_RECONNECT            = 17;
     public static final int APP_UPDATE               = 18;
+    public static final int ITEMS_DND                =  19;
 
     private ActionListener actionListener;
     private int actionID;

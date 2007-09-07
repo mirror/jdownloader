@@ -315,6 +315,7 @@ public class JDUtilities {
      * 
      * @return Das Homeverzeichnis
      */
+    @SuppressWarnings("unchecked")
     public static File getJDHomeDirectory() {
         String homeDir = null;
         if (homeDirectoryFile != null)
@@ -647,6 +648,7 @@ public class JDUtilities {
     }
 
     /**
+     * Diese Funktion gibt den Pfad zum JAC-Methodenverzeichniss zurück
      * @author coalado
      * @return gibt den Pfad zu den JAC Methoden zurück
      */
@@ -656,7 +658,7 @@ public class JDUtilities {
     }
 
     /**
-     * Gibt ein FileOebject zu einem resourcstring zurück
+     * Gibt ein FileOebject zu einem Resourcstring zurück
      * 
      * @author coalado
      * @param arg

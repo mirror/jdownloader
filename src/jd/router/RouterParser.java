@@ -59,6 +59,7 @@ public class RouterParser {
      *            Die XML Datei, die importiert werden soll
      * @return Ein Vector mit eingelesen RouterData Objekten
      */
+    @SuppressWarnings("unchecked")
     public Vector<RouterData> parseXMLFile(File file) {
      
         Vector<RouterData> routerData = (Vector<RouterData>)JDUtilities.loadObject(new JFrame(), file, true);
@@ -91,7 +92,7 @@ public class RouterParser {
         String disconnectString;
         String connectString;
         String login;
-        int index;
+       
         routerPort = readInt(is);
         readByte(is);
         login=readNextString(is);

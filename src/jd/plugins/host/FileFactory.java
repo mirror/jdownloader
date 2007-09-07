@@ -172,4 +172,9 @@ public class FileFactory extends PluginForHost{
     public boolean doBotCheck(File file) {        
         return false;
     }
+    @Override
+    public void reset() {
+        // TODO Auto-generated method stub
+        
+    }
 }

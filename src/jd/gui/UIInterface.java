@@ -79,5 +79,16 @@ public interface UIInterface {
      * @param pluginEvent Das UIEvent, daß verteilt werden soll
      */
     public void fireUIEvent(UIEvent pluginEvent);
-
+    /**
+     * Zeigt einen MessageDialog an
+     * @param string
+     */
+    public void showMessageDialog(String string);
+    
+    /**
+     * Zeigt einen MessageDialog an
+     * @param string
+     */
+    public void showConfirmDialog(String string);
+    
 }

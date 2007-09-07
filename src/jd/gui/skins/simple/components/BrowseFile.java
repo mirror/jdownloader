@@ -14,12 +14,17 @@ import javax.swing.SwingUtilities;
 import jd.plugins.Plugin;
 
 public class BrowseFile extends JPanel implements ActionListener {
+    /**
+     * 
+     */
+    private static final long serialVersionUID = 1L;
     private JTextField txtInput;
     private JButton    btnBrowse;
     private File       currentPath;
     private int        fileSelectionMode = JFileChooser.FILES_ONLY;
     private String     approveButtonText = "OK";
     private boolean    editable          = false;
+    @SuppressWarnings("unused")
     private Logger logger=Plugin.getLogger();
     public BrowseFile(int width) {
         super();

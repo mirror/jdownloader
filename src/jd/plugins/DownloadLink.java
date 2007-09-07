@@ -8,7 +8,6 @@ import java.util.logging.Logger;
 
 import jd.JDCrypt;
 import jd.JDUtilities;
-import jd.plugins.event.PluginEvent;
 
 /**
  * Hier werden alle notwendigen Informationen zu einem einzelnen Download
@@ -50,6 +49,10 @@ public class DownloadLink implements Serializable {
      * Die Datei konnte nicht gefunden werden
      */
     public final static int         STATUS_ERROR_BOT_DETECTED   = 7;
+    /**
+     * Ein unbekannter Fehler ist aufgetreten. Der Download Soll wiederholt werden
+     */
+    public final static int         STATUS_ERROR_UNKNOWN_RETRY   = 8;
 
     /**
      * Ein unbekannter Fehler ist aufgetreten
@@ -110,13 +113,21 @@ public class DownloadLink implements Serializable {
     /**
      * Logger für Meldungen
      */
+    @SuppressWarnings("unused")
     private transient Logger        logger                      = Plugin.getLogger();
     /**
      * Status des DownloadLinks
      */
     private transient int           status                      = STATUS_TODO;
+    /**
+     * Timestamp bis zu dem die Wartezeit läuft
+     */
     private long mustWaitTil=0;
 
+    /**
+     * Ursprüngliche Wartezeit
+     */
+    private long waittime=0;
     /**
      * Erzeugt einen neuen DownloadLink
      * 
@@ -381,21 +392,46 @@ public String getEncryptedUrlDownload(){
     public void setDownloadSpeed(int downloadSpeed) {
         this.downloadSpeed = downloadSpeed;
     }
+    
+    /**
+     * Setzt den Statustext der in der GUI angezeigt werden kann
+     * @param text
+     */
 public void setStatusText(String text){
     statusText=text;
 }
+
+/**
+ * Erstellt den Statustext, fügt eine eventl Wartezeit hzin und gibt diesen Statusstrin (bevorzugt an die GUI) zurück
+ * @return Statusstring mit eventl Wartezeit
+ */
     public String getStatusText() {
         if(getRemainingWaittime()>0){
-          return   this.statusText+" ("+getRemainingWaittime()/1000+")";
+          return   this.statusText+"Warten: ("+getRemainingWaittime()/1000+"sek.)";
         }
         return this.statusText;
 
     }
-
+/**
+ * Setzt die zeit in ms ab der die Wartezeit vorbei ist.
+ * @param l
+ */
     public void setEndOfWaittime(long l) {
         this.mustWaitTil=l;
+        waittime= l-System.currentTimeMillis();
         
     }
+    /**
+     * Gibt die wartezeit des Downloads zurück
+     * @return Totale Wartezeit
+     */
+    public int getWaitTime(){
+        return (int)waittime;
+    }
+    /**
+     * Gibt die Verbleibende Wartezeit zurück
+     * @return verbleibende wartezeit
+     */
     public long getRemainingWaittime(){
         return Math.max(0, this.mustWaitTil-System.currentTimeMillis());
     }
