@@ -77,7 +77,6 @@ public class DownloadLink implements Serializable {
      * Von hier soll de Download stattfinden
      */
     private String                  urlDownload;
-
     /**
      * Hoster des Downloads
      */
@@ -89,7 +88,7 @@ public class DownloadLink implements Serializable {
     /**
      * Zeigt, ob dieser DownloadLink grad heruntergeladen wird
      */
-    private transient boolean       inProgress                  = false;                                                 ;
+    private transient boolean       inProgress                  = false;
     /**
      * Das Plugin, das für diesen Download zuständig ist
      */
@@ -123,7 +122,6 @@ public class DownloadLink implements Serializable {
      * Timestamp bis zu dem die Wartezeit läuft
      */
     private long mustWaitTil=0;
-
     /**
      * Ursprüngliche Wartezeit
      */
@@ -186,14 +184,13 @@ public class DownloadLink implements Serializable {
     public File getFileOutput() {
         return fileOutput;
     }
-    
-/**
- * @author coalado
- * @return Die verschlüsselte URL
- */
-public String getEncryptedUrlDownload(){
-    return  urlDownload;
-}
+    /**
+     * @author coalado
+     * @return Die verschlüsselte URL
+     */
+    public String getEncryptedUrlDownload(){
+        return  urlDownload;
+    }
     /**
      * Liefert die URL zurück, unter der dieser Download stattfinden soll
      * 

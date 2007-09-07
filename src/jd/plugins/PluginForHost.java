@@ -14,10 +14,7 @@ public abstract class PluginForHost extends Plugin{
     
     /**
      * Stellt das Plugin in den Ausgangszustand zurück (variablen intialisieren etc)
-     * @param file
-     * @return
      */
-    
     public abstract void reset();
     /**
      * Führt alle restevorgänge aus und bereitet das Plugin dadurch auf einen Neustart vor

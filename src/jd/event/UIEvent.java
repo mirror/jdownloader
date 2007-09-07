@@ -43,20 +43,16 @@ public class UIEvent extends AWTEvent{
      */
     public static final int UI_SAVE_CONFIG = 7;
     /**
-     * Ein Downloadlink soll entfernt werden
+     * Ein Update soll durchgeführt werden
      */
-    public static final int UI_LINKS_TO_REMOVE = 8;
-/**
- * Ein Update soll durchgeführt werden
- */
     public static final int UI_INTERACT_UPDATE = 9;
-/**
- * EIn Reconnect soll gemacht werden
- */
+    /**
+     * EIn Reconnect soll gemacht werden
+     */
     public static final int UI_INTERACT_RECONNECT = 10;
     
     /**
-     * DRagAndDrop Event
+     * DragAndDrop Event
      */
         public static final int UI_DRAG_AND_DROP = 11; 
     public UIEvent(UIInterface uiInterface, int actionID){

@@ -5,10 +5,7 @@ import java.util.Iterator;
 import java.util.Vector;
 import java.util.logging.Logger;
 
-import javax.swing.JFrame;
-
 import jd.Configuration;
-import jd.JDCrypt;
 import jd.JDUtilities;
 import jd.controlling.interaction.HTTPReconnect;
 import jd.controlling.interaction.Interaction;
@@ -56,7 +53,6 @@ public class JDController implements PluginListener, ControlListener, UIListener
 
     public JDController() {
         downloadLinks = new Vector<DownloadLink>();
-        loadDownloadLinks(JDUtilities.getResourceFile("links.dat"));
     }
 
     /**
@@ -85,7 +81,7 @@ public class JDController implements PluginListener, ControlListener, UIListener
     }
 
     public void pluginEvent(PluginEvent event) {
-        uiInterface.pluginEvent(event);
+        uiInterface.uiPluginEvent(event);
     }
 
     /**
@@ -97,7 +93,7 @@ public class JDController implements PluginListener, ControlListener, UIListener
         switch (event.getID()) {
             case ControlEvent.CONTROL_ALL_DOWNLOADS_FINISHED:
                 download = null;
-                uiInterface.controlEvent(event);
+                uiInterface.uiControlEvent(event);
                 break;
             case ControlEvent.CONTROL_DISTRIBUTE_FINISHED:
                 Object links = event.getParameter();
@@ -117,10 +113,10 @@ public class JDController implements PluginListener, ControlListener, UIListener
                         iterator.next().setEndOfWaittime(0);
                     }
                 }
-                uiInterface.controlEvent(event);
+                uiInterface.uiControlEvent(event);
                 break;
             default:
-                uiInterface.controlEvent(event);
+                uiInterface.uiControlEvent(event);
                 break;
         }
     }
@@ -151,15 +147,10 @@ public class JDController implements PluginListener, ControlListener, UIListener
                 loadDownloadLinks(file);
 
                 break;
-            case UIEvent.UI_LINKS_TO_REMOVE:
-                DownloadLink link = (DownloadLink) uiEvent.getParameter();
-                int index = downloadLinks.indexOf(link);
-                if (index < 0) return;
-                downloadLinks.remove(index);
+            case UIEvent.UI_LINKS_CHANGED:
+                downloadLinks = uiInterface.getDownloadLinks();
                 saveDownloadLinks(JDUtilities.getResourceFile("links.dat"));
-                uiInterface.setDownloadLinks(downloadLinks);
                 break;
-
             case UIEvent.UI_INTERACT_RECONNECT:
                 HTTPReconnect rc = new HTTPReconnect();
                 if (rc.interact(null)) {
@@ -172,7 +163,6 @@ public class JDController implements PluginListener, ControlListener, UIListener
                 }
                 else {
                     uiInterface.showMessageDialog("Reconnect fehlgeschlagen");
-
                 }
                 uiInterface.setDownloadLinks(downloadLinks);
                 break;
@@ -184,38 +174,31 @@ public class JDController implements PluginListener, ControlListener, UIListener
                 else {
                     uiInterface.showMessageDialog("Aktualisierte Dateien: " + wu.getUpdater().getUpdatedFiles());
                 }
-
                 break;
         }
     }
 
     /**
-     * @author coalado Speichert die Linksliste ab
-     * @param file
+     * Speichert die Linksliste ab
+     * @param file Die Datei, in die die Links gespeichert werden sollen
      */
     public void saveDownloadLinks(File file) {
-        String[] linkList = new String[downloadLinks.size()];
-        for (int i = 0; i < linkList.length; i++) {
-            linkList[i] = downloadLinks.elementAt(i).getEncryptedUrlDownload();
-        }
-        JDUtilities.saveObject(new JFrame(), linkList, file, "links", "dat", false);
+        JDUtilities.saveObject(null, downloadLinks, file, "links", "dat", false);
     }
 
     /**
-     * @author coalado Lädt eine Linkliste
-     * @param file
+     * Lädt eine LinkListe
+     * @param file Die Datei, aus der die Links gelesen werden
+     * @return Ein neuer Vector mit den DownloadLinks
      */
-    public void loadDownloadLinks(File file) {
-        if (!file.exists()) return;
-        String[] linkList = (String[]) JDUtilities.loadObject(new JFrame(), file, false);
-        if (linkList != null) {
-            for (int i = 0; i < linkList.length; i++) {
-                distributeData = new DistributeData(JDCrypt.decrypt(linkList[i]));
-                distributeData.addControlListener(this);
-                distributeData.start();
-
+    public Vector<DownloadLink> loadDownloadLinks(File file) {
+        if (file.exists()){
+            Object obj = JDUtilities.loadObject(null, file, false);
+            if(obj != null && obj instanceof Vector){
+                return(Vector<DownloadLink>)obj;
             }
         }
+        return new Vector<DownloadLink>();
     }
 
     /**
@@ -236,7 +219,14 @@ public class JDController implements PluginListener, ControlListener, UIListener
         downloadLinks = links;
 
     }
-
+    /**
+     * Lädt zum Start das erste Mal alle Links aus einer Datei
+     */
+    public void initDownloadLinks(){
+        downloadLinks = loadDownloadLinks(JDUtilities.getResourceFile("links.dat"));
+        if(uiInterface!=null)
+            uiInterface.setDownloadLinks(downloadLinks);
+    }
     /**
      * Liefert den nächsten DownloadLink
      * 

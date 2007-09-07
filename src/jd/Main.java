@@ -82,6 +82,7 @@ public class Main {
         UIInterface uiInterface = new SimpleGUI();
         JDController controller = new JDController();
         controller.setUiInterface(uiInterface);
+        controller.initDownloadLinks();
         
         Iterator<PluginForHost> iteratorHost = JDUtilities.getPluginsForHost().iterator();
         while(iteratorHost.hasNext()){
@@ -102,19 +103,21 @@ public class Main {
         JDUtilities.addImage("add",           toolkit.getImage(cl.getResource("img/add.png")));
         JDUtilities.addImage("configuration", toolkit.getImage(cl.getResource("img/configuration.png")));
         JDUtilities.addImage("delete",        toolkit.getImage(cl.getResource("img/delete.png")));
+        JDUtilities.addImage("dnd",           toolkit.getImage(cl.getResource("img/dnd.png")));
+        JDUtilities.addImage("dnd_big",       toolkit.getImage(cl.getResource("img/dnd_big.png")));
+        JDUtilities.addImage("dnd_big_filled",toolkit.getImage(cl.getResource("img/dnd_big_filled.png")));
         JDUtilities.addImage("down",          toolkit.getImage(cl.getResource("img/down.png")));
+        JDUtilities.addImage("exit",          toolkit.getImage(cl.getResource("img/shutdown.png")));
         JDUtilities.addImage("led_empty",     toolkit.getImage(cl.getResource("img/led_empty.gif")));
         JDUtilities.addImage("led_green",     toolkit.getImage(cl.getResource("img/led_green.gif")));
         JDUtilities.addImage("load",          toolkit.getImage(cl.getResource("img/load.png")));
+        JDUtilities.addImage("log",           toolkit.getImage(cl.getResource("img/log.png")));
         JDUtilities.addImage("mind",          toolkit.getImage(cl.getResource("img/mind.png")));
+        JDUtilities.addImage("reconnect",     toolkit.getImage(cl.getResource("img/reconnect.png")));
         JDUtilities.addImage("save",          toolkit.getImage(cl.getResource("img/save.png")));
         JDUtilities.addImage("start",         toolkit.getImage(cl.getResource("img/start.png")));
         JDUtilities.addImage("stop",          toolkit.getImage(cl.getResource("img/stop.png")));
         JDUtilities.addImage("up",            toolkit.getImage(cl.getResource("img/up.png")));
-        JDUtilities.addImage("exit",          toolkit.getImage(cl.getResource("img/shutdown.png")));
-        JDUtilities.addImage("log",           toolkit.getImage(cl.getResource("img/log.png")));
-        JDUtilities.addImage("reconnect",           toolkit.getImage(cl.getResource("img/reconnect.png")));
-        JDUtilities.addImage("update",           toolkit.getImage(cl.getResource("img/update.png")));
-        JDUtilities.addImage("dnd",           toolkit.getImage(cl.getResource("img/dnd.png")));
+        JDUtilities.addImage("update",        toolkit.getImage(cl.getResource("img/update.png")));
     }
 }

@@ -4,6 +4,7 @@ import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
+import java.util.Iterator;
 import java.util.Vector;
 import java.util.logging.Logger;
 
@@ -110,6 +111,35 @@ public class TabDownloadLinks extends JPanel implements PluginListener, ControlL
         fireTableChanged();
     }
     /**
+     * Entfernt die aktuell selektierten Links
+     */
+    public void removeSelectedLinks(){
+        Vector<DownloadLink> linksToDelete = getSelectedObjects();
+        allLinks.removeAll(linksToDelete);
+        table.getSelectionModel().clearSelection();
+        fireTableChanged();
+    }
+    /**
+     * Liefert alle selektierten Links zurück
+     * @return Die selektierten Links
+     */
+    public Vector<DownloadLink> getSelectedObjects(){
+        int rows[] = table.getSelectedRows();
+        Vector<DownloadLink> linksSelected = new Vector<DownloadLink>();
+        for(int i=0;i<rows.length;i++){
+            linksSelected.add(allLinks.get(rows[i]));
+        }
+        return linksSelected;
+    }
+    public void setSelectedDownloadLinks(Vector<DownloadLink> selectedDownloadLinks){
+        int index;
+        Iterator<DownloadLink> iterator = selectedDownloadLinks.iterator();
+        while(iterator.hasNext()){
+            index = allLinks.indexOf(iterator.next());
+            table.getSelectionModel().addSelectionInterval(index, index);
+        }
+    }
+    /**
      * TODO Verschieben von zellen
      *
      * Hiermit werden die selektierten Zeilen innerhalb der Tabelle verschoben
@@ -123,17 +153,12 @@ public class TabDownloadLinks extends JPanel implements PluginListener, ControlL
     }
     /**
      * Hiermit wird die Tabelle aktualisiert
-     * Die MArkierte reihe wird nach dem ändern wieder neu gesetzt
+     * Die Markierte reihe wird nach dem ändern wieder neu gesetzt
      */
     public void fireTableChanged(){
-        DownloadLink dl= this.getSelectedDownloadlink();
-      
-       int index=allLinks.indexOf(dl);
-        
+        Vector<DownloadLink> selectedDownloadLinks = getSelectedObjects();
         table.tableChanged(new TableModelEvent(table.getModel()));
-        if(index>=0){
-            table.setRowSelectionInterval(index, index);
-             }
+        setSelectedDownloadLinks(selectedDownloadLinks);
     }
     public void pluginEvent(PluginEvent event) {
         switch(event.getID()){
@@ -278,16 +303,4 @@ public class TabDownloadLinks extends JPanel implements PluginListener, ControlL
             return c;
         }
     }
-    /**
-     * Gibt den Downloadlink der gerade ausgewählten Reihe zurück. Ist keine Reihe ausgewählt wird null zurückgegeben
-     * @author coalado
-     * @return Aktuell ausgewählter DownloadLink oder Null wenn keiner ausgewählt ist
-     */
-    public DownloadLink getSelectedDownloadlink() {
-        int index=table.getSelectedRow();
-        if(index==-1)return null;
-       return internalTableModel.getDownloadLinkAtRow(index);
-      
-    }
-   
 }

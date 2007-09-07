@@ -290,8 +290,8 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener{
         btnDnD.setText(null); 
         
         toolBar.setFloatable(false);
-        toolBar.add(btnSave);
         toolBar.add(btnLoad);
+        toolBar.add(btnSave);
         toolBar.addSeparator();
         toolBar.add(btnStartStop);
         toolBar.add(btnAdd);
@@ -389,14 +389,9 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener{
                 frame.setTitle(JDUtilities.JD_TITLE);
                 dragNDrop.setText("");
                 break;
-                
-                
-                
             case JDAction.ITEMS_REMOVE:
-               
-                    fireUIEvent(new UIEvent(this,UIEvent.UI_LINKS_TO_REMOVE,tabDownloadTable.getSelectedDownloadlink()));
-                
-             
+                    tabDownloadTable.removeSelectedLinks();
+                    fireUIEvent(new UIEvent(this,UIEvent.UI_LINKS_CHANGED,null));
                 break;
             case JDAction.ITEMS_DND:
               if(dragNDrop.isVisible()){
@@ -418,10 +413,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener{
                   String data=JOptionPane.showInputDialog(frame, "Bitte Link eingeben:", cb);
                   if(data!=null){
                       fireUIEvent(new UIEvent(this,UIEvent.UI_LINKS_TO_PROCESS,data));  
-                      
-                     
                   }
-
                   break;
             case JDAction.APP_CONFIGURATION:
                 boolean configChanged = ConfigurationDialog.showConfig(frame);
@@ -432,7 +424,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener{
                 break;
         }
     }
-    public void pluginEvent(PluginEvent event) {
+    public void uiPluginEvent(PluginEvent event) {
         if(event.getSource() instanceof PluginForHost)
             tabDownloadTable.pluginEvent(event);
         if(event.getSource() instanceof PluginForDecrypt)
@@ -441,11 +433,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener{
             statusBar.setSpeed((Integer)event.getParameter1());
         }
     }
-    //TODO: OMg was hab ich etzt Zeit gebraucht um rauszufinden dass die GUI gar kein ControlLIstener ist. Vieleicht sollte man diese Funktion dann nicht wie die Listenerfunktionen benennen!
-    /**
-     * Anders als der Name der Funktion vermuten lässt handelt es sich bei der Klasse nicht um einen Controllistener. die Funktion wird von JDControll aufgerufen. LIstenercalls in JDControll werden an die GUI weitergeleitet
-     */
-    public void controlEvent(ControlEvent event){
+    public void uiControlEvent(ControlEvent event){
         switch(event.getID()){
             case ControlEvent.CONTROL_PLUGIN_DECRYPT_ACTIVE:
                 setPluginActive((PluginForDecrypt)event.getParameter(), true);

@@ -26,7 +26,7 @@ public class Dropper extends JDialog {
         super(owner);
         setModal(false);
         setLayout(new GridBagLayout());
-        target = new DragNDrop(new ImageIcon(JDUtilities.getImage("dnd")).getImage());
+        target = new DragNDrop();
         label= new JLabel("Ziehe Links auf mich!");
         JDUtilities.addToGridBag(this, target, 0, 0, 1, 1, 0, 0, null, GridBagConstraints.CENTER, GridBagConstraints.CENTER);
         JDUtilities.addToGridBag(this, label, 0, 1, 1, 1, 0, 0, null, GridBagConstraints.CENTER, GridBagConstraints.CENTER);

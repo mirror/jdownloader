@@ -54,13 +54,13 @@ public interface UIInterface {
      * 
      * @param event Ein PluginEvent
      */
-    public void pluginEvent(PluginEvent event);
+    public void uiPluginEvent(PluginEvent event);
     /**
      * Leitet ein ControlEvent weiter
      * 
      * @param event ein ControlEvent
      */
-    public void controlEvent(ControlEvent event);
+    public void uiControlEvent(ControlEvent event);
     /**
      * Fügt einen UIListener hinzu
      * 

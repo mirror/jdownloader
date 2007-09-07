@@ -16,6 +16,7 @@ import java.util.logging.Logger;
 
 import javax.swing.JComponent;
 
+import jd.JDUtilities;
 import jd.event.UIEvent;
 import jd.event.UIListener;
 import jd.plugins.Plugin;
@@ -34,7 +35,9 @@ public class DragNDrop extends JComponent implements DropTargetListener  {
      * 
      */
     private Logger logger= Plugin.getLogger();
-    private Image image;
+    private Image imageEmpty;
+    private Image imageFilled;
+    private boolean filled=false;
     /**
      * Hiermit wird der Eventmechanismus realisiert. Alle hier eingetragenen
      * Listener werden benachrichtigt, wenn mittels
@@ -44,13 +47,13 @@ public class DragNDrop extends JComponent implements DropTargetListener  {
     /**
      * @param image
      */
-    public DragNDrop(Image image) {
-       new DropTarget(this, this);
-       uiListener=new Vector<UIListener>();
-        this.image = image;
-        if(image!=null){
-        setPreferredSize(new Dimension(image.getWidth(null), image
-                .getHeight(null)));
+    public DragNDrop() {
+        new DropTarget(this, this);
+        uiListener=new Vector<UIListener>();
+        this.imageEmpty = JDUtilities.getImage("dnd_big");
+        this.imageFilled= JDUtilities.getImage("dnd_big_filled");
+        if(imageEmpty!=null){
+            setPreferredSize(new Dimension(imageEmpty.getWidth(null), imageEmpty.getHeight(null)));
         }
     }
 
@@ -59,7 +62,7 @@ public class DragNDrop extends JComponent implements DropTargetListener  {
      * @return ImageHeight
      */
     public int getImageHeight() {
-        return image.getHeight(this);
+        return imageEmpty.getHeight(this);
 
     }
 
@@ -68,7 +71,7 @@ public class DragNDrop extends JComponent implements DropTargetListener  {
      * @return imagewidth
      */
     public int getImageWidth() {
-        return image.getWidth(this);
+        return imageEmpty.getWidth(this);
 
     }
 
@@ -77,48 +80,41 @@ public class DragNDrop extends JComponent implements DropTargetListener  {
      * @param g 
      */
     public void paintComponent(Graphics g) {
-        g.drawImage(image, 0, 0, null);
+        if (filled)
+            g.drawImage(imageFilled, 0, 0, null);
+        else
+            g.drawImage(imageEmpty, 0, 0, null);
     }
 
-    public void dragEnter(DropTargetDragEvent arg0) {
-  
-        
-    }
-
-    public void dragExit(DropTargetEvent arg0) {
-    
-        
-    }
-
-    public void dragOver(DropTargetDragEvent arg0) {
-       
-        
-    }
+    public void dragEnter(DropTargetDragEvent arg0) { }
+    public void dragExit(DropTargetEvent arg0)      { }    
+    public void dragOver(DropTargetDragEvent arg0)  { }
 /**
  * Wird aufgerufen sobald etwas gedropt wurde. Die Funktion liest den Inhalt des Drops aus und benachrichtigt die Listener
  */
     public void drop(DropTargetDropEvent e) {
         logger.info("Drag: DROP "+e.getDropAction()+" : "+e.getSourceActions()+" - "+e.getSource()+" - ");
-        
+        filled=true;
         try {
             Transferable tr = e.getTransferable();
             e.acceptDrop(e.getDropAction());
             if (e.isDataFlavorSupported(DataFlavor.stringFlavor)) {
 
-                    String files = (String) tr
-                                    .getTransferData(DataFlavor.stringFlavor);                   
-                  
-                   logger.info(files);
-                        fireUIEvent(new UIEvent(this,UIEvent.UI_DRAG_AND_DROP,files));
-                
-            } else {
+                String files = (String) tr.getTransferData(DataFlavor.stringFlavor);                   
+
+                logger.info(files);
+                fireUIEvent(new UIEvent(this,UIEvent.UI_DRAG_AND_DROP,files));
+
+            } 
+            else {
                 logger.info("UU");
             }
-//            e.dropComplete(true);
-    } catch (Exception exc) {
-//            e.rejectDrop();
+//          e.dropComplete(true);
+        } catch (Exception exc) {
+//          e.rejectDrop();
             exc.printStackTrace();
-    } 
+        } 
+        repaint();
     }
 /**
  * UI Add LIstener Funktion. Fügt einen Listener hinzu
@@ -152,13 +148,6 @@ public class DragNDrop extends JComponent implements DropTargetListener  {
             }
         }
     }
-
     public void dropActionChanged(DropTargetDragEvent dtde) {
-      
-        
     }
-    
-    
-
-   
 }

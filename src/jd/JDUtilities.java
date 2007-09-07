@@ -279,7 +279,9 @@ public class JDUtilities {
      *            Das hinzuzufügende Bild
      */
     public static void addImage(String imageName, Image image) {
+        Toolkit.getDefaultToolkit().prepareImage(image, -1, -1, null);
         images.put(imageName, image);
+        
     }
 
     /**
