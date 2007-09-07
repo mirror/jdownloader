@@ -74,11 +74,13 @@ public class HTTPReconnect extends Interaction {
             if (requestInfo == null) {
                 logger.severe("Login failed.");
                 this.setCallCode(Interaction.INTERACTION_CALL_ERROR);
+               
                 return false;
             }
             else if (!requestInfo.isOK()) {
                 logger.severe("Login failed. HTTP-Code:" + requestInfo.getResponseCode());
                 this.setCallCode(Interaction.INTERACTION_CALL_ERROR);
+                
                 return false;
             }
         }
@@ -88,11 +90,13 @@ public class HTTPReconnect extends Interaction {
         if (requestInfo == null) {
             logger.severe("Disconnect failed.");
             this.setCallCode(Interaction.INTERACTION_CALL_ERROR);
+          
             return false;
         }
         else if (!requestInfo.isOK()) {
             logger.severe("Disconnect failed HTTP-Code:" + requestInfo.getResponseCode());
             this.setCallCode(Interaction.INTERACTION_CALL_ERROR);
+           
             return false;
         }
         try {
@@ -107,11 +111,13 @@ public class HTTPReconnect extends Interaction {
         if (requestInfo == null) {
             logger.severe("Reconnect failed.");
             this.setCallCode(Interaction.INTERACTION_CALL_ERROR);
+            
             return false;
         }
         else if (!requestInfo.isOK()) {
             logger.severe("Reconnect failed. HTTP-Code:" + requestInfo.getResponseCode());
             this.setCallCode(Interaction.INTERACTION_CALL_ERROR);
+           
             return false;
         }
 
@@ -124,9 +130,11 @@ public class HTTPReconnect extends Interaction {
                 return interact(arg);
             }
             this.setCallCode(Interaction.INTERACTION_CALL_ERROR);
+            retries=0;
             return false;
         }
         this.setCallCode(Interaction.INTERACTION_CALL_SUCCESS);
+        retries=0;
         return true;
     }
 
@@ -156,7 +164,7 @@ public class HTTPReconnect extends Interaction {
     }
 
     @Override
-    public String getName() {
+    public String getInteractionName() {
         return NAME;
     }
 
@@ -235,5 +243,11 @@ public class HTTPReconnect extends Interaction {
         protected PasswordAuthentication getPasswordAuthentication() {
             return new PasswordAuthentication(username, password.toCharArray());
         }
+    }
+
+    @Override
+    public void run() {
+        //Nichts zu tun. INteraction braucht keinen Thread
+        
     }
 }

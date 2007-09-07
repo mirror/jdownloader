@@ -28,7 +28,9 @@ public class ControlMulticaster extends Thread{
      * @param listener Ein neuer Listener
      */
     public void addControlListener(ControlListener listener) {
-        controlListener.add(listener);
+       if(controlListener.indexOf(listener)==-1){
+           controlListener.add(listener);
+       }
     }
     /**
      * Emtfernt einen Listener

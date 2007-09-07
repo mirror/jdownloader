@@ -368,13 +368,13 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener{
                 break;
                 
             case JDAction.APP_RECONNECT:
-                statusBar.setText("Interaction: HTTPReconnect");
-                dragNDrop.setText("Reconnect....");
-                frame.setTitle(JDUtilities.JD_TITLE+" |Aktion: HTTPReconnect");
+//                statusBar.setText("Interaction: HTTPReconnect");
+//                dragNDrop.setText("Reconnect....");
+//                frame.setTitle(JDUtilities.JD_TITLE+" |Aktion: HTTPReconnect");
                 fireUIEvent(new UIEvent(this,UIEvent.UI_INTERACT_RECONNECT));       
-                statusBar.setText(null);
-                frame.setTitle(JDUtilities.JD_TITLE);
-                dragNDrop.setText("");
+//                statusBar.setText(null);
+//                frame.setTitle(JDUtilities.JD_TITLE);
+//                dragNDrop.setText("");
                 break;
                 
             case JDAction.APP_UPDATE:
@@ -452,9 +452,9 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener{
             case ControlEvent.CONTROL_PLUGIN_INTERACTION_ACTIVE:
                 
                 logger.info("Interaction start. ");
-                dragNDrop.setText("Aktion: "+((Interaction)event.getParameter()).getName());
-                statusBar.setText("Interaction: "+((Interaction)event.getParameter()).getName());
-                frame.setTitle(JDUtilities.JD_TITLE+" |Aktion: "+((Interaction)event.getParameter()).getName());
+                dragNDrop.setText("Aktion: "+((Interaction)event.getParameter()).getInteractionName());
+                statusBar.setText("Interaction: "+((Interaction)event.getParameter()).getInteractionName());
+                frame.setTitle(JDUtilities.JD_TITLE+" |Aktion: "+((Interaction)event.getParameter()).getInteractionName());
                 break;
             case ControlEvent.CONTROL_PLUGIN_INTERACTION_INACTIVE:
                 logger.info("Interaction zu ende. rest status");

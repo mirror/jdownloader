@@ -80,10 +80,11 @@ public class JDController implements PluginListener, ControlListener, UIListener
             logger.warning("no active download");
         }
     }
+
     /**
      * Beendet das Programm
      */
-    private void exit(){
+    private void exit() {
         saveDownloadLinks(JDUtilities.getResourceFile("links.dat"));
         System.exit(0);
     }
@@ -116,9 +117,15 @@ public class JDController implements PluginListener, ControlListener, UIListener
                 // Macht einen Wartezeit reset wenn die HTTPReconnect
                 // Interaction eine neue IP gebracht hat
                 if (interaction instanceof HTTPReconnect && interaction.getCallCode() == Interaction.INTERACTION_CALL_SUCCESS) {
-                    Iterator<DownloadLink> iterator = downloadLinks.iterator();
+                    Iterator<DownloadLink> iterator = downloadLinks.iterator();                 
+                    // stellt die Wartezeiten zurück
+                    DownloadLink i;
                     while (iterator.hasNext()) {
-                        iterator.next().setEndOfWaittime(0);
+                        i = iterator.next();
+                        if (i.getRemainingWaittime() > 0) {
+                            i.setEndOfWaittime(0);
+                            i.setStatus(DownloadLink.STATUS_TODO);
+                        }
                     }
                 }
                 uiInterface.uiControlEvent(event);
@@ -163,12 +170,18 @@ public class JDController implements PluginListener, ControlListener, UIListener
                 break;
             case UIEvent.UI_INTERACT_RECONNECT:
                 HTTPReconnect rc = new HTTPReconnect();
+                rc.addControlListener(this);
                 if (rc.interact(null)) {
-                    uiInterface.showMessageDialog("Reconnect erfolgreich");                  
+                    uiInterface.showMessageDialog("Reconnect erfolgreich");
                     Iterator<DownloadLink> iterator = downloadLinks.iterator();
                     // stellt die Wartezeiten zurück
+                    DownloadLink i;
                     while (iterator.hasNext()) {
-                        iterator.next().setEndOfWaittime(0);
+                        i = iterator.next();
+                        if (i.getRemainingWaittime() > 0) {
+                            i.setEndOfWaittime(0);
+                            i.setStatus(DownloadLink.STATUS_TODO);
+                        }
                     }
                 }
                 else {
@@ -190,6 +203,7 @@ public class JDController implements PluginListener, ControlListener, UIListener
 
     /**
      * Speichert die Linksliste ab
+     * 
      * @param file Die Datei, in die die Links gespeichert werden sollen
      */
     public void saveDownloadLinks(File file) {
@@ -198,11 +212,12 @@ public class JDController implements PluginListener, ControlListener, UIListener
 
     /**
      * Lädt eine LinkListe
+     * 
      * @param file Die Datei, aus der die Links gelesen werden
      * @return Ein neuer Vector mit den DownloadLinks
      */
     public Vector<DownloadLink> loadDownloadLinks(File file) {
-        if (file.exists()){
+        if (file.exists()) {
             Object obj = JDUtilities.loadObject(null, file, false);
             if(obj != null && obj instanceof Vector){
                 Vector<DownloadLink> links =(Vector<DownloadLink>)obj;
@@ -243,14 +258,15 @@ public class JDController implements PluginListener, ControlListener, UIListener
         downloadLinks = links;
 
     }
+
     /**
      * Lädt zum Start das erste Mal alle Links aus einer Datei
      */
-    public void initDownloadLinks(){
+    public void initDownloadLinks() {
         downloadLinks = loadDownloadLinks(JDUtilities.getResourceFile("links.dat"));
-        if(uiInterface!=null)
-            uiInterface.setDownloadLinks(downloadLinks);
+        if (uiInterface != null) uiInterface.setDownloadLinks(downloadLinks);
     }
+
     /**
      * Liefert den nächsten DownloadLink
      * 

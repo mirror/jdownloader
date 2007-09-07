@@ -41,8 +41,13 @@ public class WebUpdate extends Interaction {
     }
 
     @Override
-    public String getName() {
+    public String getInteractionName() {
 
         return NAME;
+    }
+    @Override
+    public void run() {
+        //Nichts zu tun. INteraction braucht keinen Thread
+        
     }
 }

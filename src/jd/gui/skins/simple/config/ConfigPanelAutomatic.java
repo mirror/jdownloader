@@ -93,7 +93,7 @@ public class ConfigPanelAutomatic extends JPanel {
         availableInteractions = getAllInteractions();
         interaction = interactions.get(Interaction.INTERACTION_DOWNLOAD_FINISHED);
         if (interaction != null) {
-            availableInteractions.put(interaction.firstElement().getName(), interaction.firstElement());
+            availableInteractions.put(interaction.firstElement().getInteractionName(), interaction.firstElement());
             fillComboBox(cboDownloadFinished, availableInteractions, interaction.firstElement());
 
         } else {
@@ -102,7 +102,7 @@ public class ConfigPanelAutomatic extends JPanel {
         availableInteractions = getAllInteractions();
         interaction = interactions.get(Interaction.INTERACTION_DOWNLOADS_FINISHED_ALL);
         if (interaction != null) {
-            availableInteractions.put(interaction.firstElement().getName(), interaction.firstElement());
+            availableInteractions.put(interaction.firstElement().getInteractionName(), interaction.firstElement());
             fillComboBox(cboDownloadFinishedAll, availableInteractions, interaction.firstElement());
         } else {
             fillComboBox(cboDownloadFinishedAll, availableInteractions, null);
@@ -110,7 +110,7 @@ public class ConfigPanelAutomatic extends JPanel {
         availableInteractions = getAllInteractions();
         interaction = interactions.get(Interaction.INTERACTION_DOWNLOAD_FAILED);
         if (interaction != null) {
-            availableInteractions.put(interaction.firstElement().getName(), interaction.firstElement());
+            availableInteractions.put(interaction.firstElement().getInteractionName(), interaction.firstElement());
             fillComboBox(cboDownloadFailed, availableInteractions, interaction.firstElement());
         } else {
             fillComboBox(cboDownloadFailed, availableInteractions, null);
@@ -118,7 +118,7 @@ public class ConfigPanelAutomatic extends JPanel {
         availableInteractions = getAllInteractions();
         interaction = interactions.get(Interaction.INTERACTION_DOWNLOAD_WAITTIME);
         if (interaction != null) {
-            availableInteractions.put(interaction.firstElement().getName(), interaction.firstElement());
+            availableInteractions.put(interaction.firstElement().getInteractionName(), interaction.firstElement());
             fillComboBox(cboDownloadWaittime, availableInteractions, interaction.firstElement());
         } else {
             fillComboBox(cboDownloadWaittime, availableInteractions, null);
@@ -127,7 +127,7 @@ public class ConfigPanelAutomatic extends JPanel {
         availableInteractions = getAllInteractions();
         interaction = interactions.get(Interaction.INTERACTION_DOWNLOAD_BOT_DETECTED);
         if (interaction != null) {
-            availableInteractions.put(interaction.firstElement().getName(), interaction.firstElement());
+            availableInteractions.put(interaction.firstElement().getInteractionName(), interaction.firstElement());
             fillComboBox(cboDownloadBot, availableInteractions, interaction.firstElement());
         } else {
             fillComboBox(cboDownloadBot, availableInteractions, null);
@@ -136,7 +136,7 @@ public class ConfigPanelAutomatic extends JPanel {
         availableInteractions = getAllInteractions();
         interaction = interactions.get(Interaction.INTERACTION_APPSTART);
         if (interaction != null) {
-            availableInteractions.put(interaction.firstElement().getName(), interaction.firstElement());
+            availableInteractions.put(interaction.firstElement().getInteractionName(), interaction.firstElement());
             fillComboBox(cboAppStart, availableInteractions, interaction.firstElement());
         } else {
             fillComboBox(cboAppStart, availableInteractions, null);
@@ -163,9 +163,9 @@ public class ConfigPanelAutomatic extends JPanel {
         Interaction tmp;
 
         // Hier müssen alle möglichen Interactions eingetragen werden
-        it.put((tmp = new HTTPReconnect()).getName(), tmp);
-        it.put((tmp = new WebUpdate()).getName(), tmp);
-        it.put((tmp = new DummyInteraction()).getName(), tmp);
+        it.put((tmp = new HTTPReconnect()).getInteractionName(), tmp);
+        it.put((tmp = new WebUpdate()).getInteractionName(), tmp);
+        it.put((tmp = new DummyInteraction()).getInteractionName(), tmp);
         return it;
 
     }

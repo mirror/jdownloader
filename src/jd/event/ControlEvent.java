@@ -50,6 +50,10 @@ public class ControlEvent extends AWTEvent{
      * INteraction inaktiv
      */
     public final static int CONTROL_PLUGIN_INTERACTION_INACTIVE     = 9;
+    
+    /**. Dieses Event ist unabhängig von inaktiv. eine Interaction die in einem thread läuft kann Aktiv sein und trotzdem schon zurückgekehrt
+     */
+    public final static int CONTROL_PLUGIN_INTERACTION_RETURNED    = 10;
     /**
      * Die ID des Ereignisses
      */

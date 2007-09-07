@@ -257,6 +257,7 @@ private void clearDownloadListStatus() {
         if (handleInteraction(Interaction.INTERACTION_DOWNLOAD_WAITTIME, this)) {
             
             downloadLink.setStatus(DownloadLink.STATUS_TODO);
+            downloadLink.setEndOfWaittime(0);
         }
 
     }
@@ -276,7 +277,7 @@ private void clearDownloadListStatus() {
         fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SINGLE_DOWNLOAD_CHANGED));
        
         downloadLink.setStatus(DownloadLink.STATUS_TODO);
-
+       
     }
 
     /**
@@ -385,7 +386,8 @@ private void clearDownloadListStatus() {
 
             while (iterator.hasNext()) {
                 Interaction i = iterator.next();
-                fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_PLUGIN_INTERACTION_ACTIVE,i));
+                i.addControlListener(controller);
+//                fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_PLUGIN_INTERACTION_ACTIVE,i));
                 if (!i.interact(this)) {
                     ret = false;
                     logger.severe("interaction failed: " + i);
@@ -393,7 +395,7 @@ private void clearDownloadListStatus() {
                 else {
                     logger.info("interaction successfull: " + i);
                 }
-                fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_PLUGIN_INTERACTION_INACTIVE,i));
+//                fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_PLUGIN_INTERACTION_INACTIVE,i));
            ;
             }
         }
