@@ -13,6 +13,7 @@ import javax.swing.JTabbedPane;
 
 import jd.Configuration;
 import jd.JDUtilities;
+import jd.gui.UIInterface;
 
 public class ConfigurationDialog extends JDialog implements ActionListener{
     /**
@@ -27,15 +28,16 @@ public class ConfigurationDialog extends JDialog implements ActionListener{
     private JButton btnSave;
     private JButton btnCancel;
     private boolean configChanged = false;
+    private UIInterface uiinterface;
     
-    
-    private ConfigurationDialog(JFrame parent){
+    private ConfigurationDialog(JFrame parent,UIInterface uiinterface){
         super(parent);
+        this.uiinterface=uiinterface;
         setTitle(JDUtilities.getResourceString("title.config"));
         setModal(true);
         setLayout(new GridBagLayout());
         configuration = JDUtilities.getConfiguration();
-        configPanelGeneral   = new ConfigPanelGeneral(configuration);
+        configPanelGeneral   = new ConfigPanelGeneral(configuration,uiinterface);
         configPanelRouter    = new ConfigPanelRouter(configuration);
         configPanelAutomatic = new ConfigPanelAutomatic(configuration);
         btnSave = new JButton("Speichern");
@@ -55,8 +57,8 @@ public class ConfigurationDialog extends JDialog implements ActionListener{
         
         pack();
     }
-    public static boolean showConfig(JFrame frame){
-        ConfigurationDialog c = new ConfigurationDialog(frame);
+    public static boolean showConfig(JFrame frame,UIInterface uiinterface){
+        ConfigurationDialog c = new ConfigurationDialog(frame,uiinterface);
         c.setLocation(JDUtilities.getCenterOfComponent(frame, c));
         c.setVisible(true);
         return c.configChanged;

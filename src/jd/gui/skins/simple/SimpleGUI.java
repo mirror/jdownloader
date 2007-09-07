@@ -378,14 +378,9 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener{
                 break;
                 
             case JDAction.APP_UPDATE:
-                dragNDrop.setText("Webupdate");
-                statusBar.setText("Interaction: Webupdate");
-                frame.setTitle(JDUtilities.JD_TITLE+" |Aktion: Webupdate");
-                
+            
                 fireUIEvent(new UIEvent(this,UIEvent.UI_INTERACT_UPDATE));
-                statusBar.setText(null);
-                frame.setTitle(JDUtilities.JD_TITLE);
-                dragNDrop.setText("");
+              
                 break;
             case JDAction.ITEMS_REMOVE:
                     tabDownloadTable.removeSelectedLinks();
@@ -414,7 +409,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener{
                   }
                   break;
             case JDAction.APP_CONFIGURATION:
-                boolean configChanged = ConfigurationDialog.showConfig(frame);
+                boolean configChanged = ConfigurationDialog.showConfig(frame,this);
                 
                 dragNDrop.setText("Konfiguration");
                 if (configChanged)

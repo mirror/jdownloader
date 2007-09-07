@@ -187,7 +187,9 @@ public class StartDownloads extends ControlMulticaster {
             else {
                 downloadLink.setStatusText("Fertig");
                 fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SINGLE_DOWNLOAD_CHANGED));
-                handleInteraction(Interaction.INTERACTION_DOWNLOAD_FINISHED, this);
+        
+                Interaction.handleInteraction(interactions.get(Interaction.INTERACTION_DOWNLOAD_FINISHED),controller,this);
+
 
             }
 
@@ -237,7 +239,8 @@ private void clearDownloadListStatus() {
         downloadLink.setStatusText("Unbekannter Fehler");
         fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SINGLE_DOWNLOAD_CHANGED));
         logger.severe("Error occurred while downloading file");
-        handleInteraction(Interaction.INTERACTION_DOWNLOAD_FAILED, this);
+       
+        Interaction.handleInteraction(interactions.get(Interaction.INTERACTION_DOWNLOAD_FAILED),controller,this);
 
     }
 
@@ -254,7 +257,7 @@ private void clearDownloadListStatus() {
         logger.severe("Error occurred: Bot detected");
         downloadLink.setStatusText("Bot erkannt");
         fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SINGLE_DOWNLOAD_CHANGED));
-        if (handleInteraction(Interaction.INTERACTION_DOWNLOAD_WAITTIME, this)) {
+        if (Interaction.handleInteraction(interactions.get(Interaction.INTERACTION_DOWNLOAD_WAITTIME),controller,this)) {
             
             downloadLink.setStatus(DownloadLink.STATUS_TODO);
             downloadLink.setEndOfWaittime(0);
@@ -296,7 +299,7 @@ private void clearDownloadListStatus() {
         fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SINGLE_DOWNLOAD_CHANGED));
         // Download Zeit. Versuch durch eine INteraction einen reconnect
         // zu machen. wenn das klappt nochmal versuchen
-        if (handleInteraction(Interaction.INTERACTION_DOWNLOAD_WAITTIME, this)) {
+        if (Interaction.handleInteraction(interactions.get(Interaction.INTERACTION_DOWNLOAD_WAITTIME),controller,this)) {
           
             
             downloadLink.setStatus(DownloadLink.STATUS_TODO);
@@ -363,7 +366,7 @@ private void clearDownloadListStatus() {
 
         if (!hasWaittimeLinks) {
             fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_ALL_DOWNLOADS_FINISHED));
-            handleInteraction(Interaction.INTERACTION_DOWNLOADS_FINISHED_ALL, this);
+            Interaction.handleInteraction(interactions.get(Interaction.INTERACTION_DOWNLOADS_FINISHED_ALL),controller,this);
             logger.info("Alle Downloads beendet");
         }
         else {
@@ -371,39 +374,5 @@ private void clearDownloadListStatus() {
         }
 
     }
-
-    /**
-     * Hier werden die Interaktionen durchgeführt
-     * 
-     * @param interactionID InteraktionsID, die durchgeführt werden soll
-     */
-    private boolean handleInteraction(int interactionID, Object arg) {
-//fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_PLUGIN_INTERACTION_ACTIVE, this));
-        boolean ret = true;
-        Vector<Interaction> localInteractions = interactions.get(interactionID);
-        if (localInteractions != null && localInteractions.size() > 0) {
-            Iterator<Interaction> iterator = localInteractions.iterator();
-
-            while (iterator.hasNext()) {
-                Interaction i = iterator.next();
-                i.addControlListener(controller);
-//                fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_PLUGIN_INTERACTION_ACTIVE,i));
-                if (!i.interact(this)) {
-                    ret = false;
-                    logger.severe("interaction failed: " + i);
-                }
-                else {
-                    logger.info("interaction successfull: " + i);
-                }
-//                fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_PLUGIN_INTERACTION_INACTIVE,i));
-           ;
-            }
-        }
-        else {
-            return false;
-        }
-
-        return ret;
-
-    }
+   
 }

@@ -23,9 +23,10 @@ public class WebUpdate extends Interaction {
     @Override
     public boolean doInteraction(Object arg) {
         logger.info("Starting WebUpdate");
+        
         updater = new WebUpdater(null);
-        updater.run();
-        return wu.getUpdatedFiles() > 0;
+      start();
+        return true;
 
     }
 /**
@@ -46,8 +47,16 @@ public class WebUpdate extends Interaction {
         return NAME;
     }
     @Override
+    /**
+     * Der eigentlich UpdaterVorgang läuft in einem eigenem Thread ab
+     */
     public void run() {
-        //Nichts zu tun. INteraction braucht keinen Thread
+        updater.run();
+        if(updater.getUpdatedFiles()>0){
+            this.setCallCode(Interaction.INTERACTION_CALL_SUCCESS);    
+        }else{
+            this.setCallCode(Interaction.INTERACTION_CALL_ERROR);    
+        }
         
     }
 }

@@ -5,6 +5,7 @@ import java.util.Iterator;
 import java.util.Vector;
 import java.util.logging.Logger;
 
+import jd.controlling.JDController;
 import jd.event.ControlEvent;
 import jd.event.ControlListener;
 import jd.plugins.Plugin;
@@ -27,8 +28,8 @@ public abstract class Interaction implements Serializable {
  */
     protected boolean                   threadStarted                      = false;
    /**
-    * THread der für die INteraction verwendet werden kann
-    */
+     * THread der für die INteraction verwendet werden kann
+     */
     
     protected Thread thread = null;
     /**
@@ -120,7 +121,8 @@ public abstract class Interaction implements Serializable {
 
     public abstract String getInteractionName();
 /**
- * Thread Funktion. Diese Funktion wird aufgerufen wenn INteraction.start() aufgerufen wird. Dabei wird ein neuer thread erstellt
+ * Thread Funktion. Diese Funktion wird aufgerufen wenn INteraction.start()
+ * aufgerufen wird. Dabei wird ein neuer thread erstellt
  */
     public abstract void run();
 
@@ -201,7 +203,8 @@ public abstract class Interaction implements Serializable {
         fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_PLUGIN_INTERACTION_INACTIVE, this));
     }
 /**
- * Gibt  an ob der Thread Aktiv ist
+ * Gibt an ob der Thread Aktiv ist
+ * 
  * @return
  */
     public boolean isAlive() {
@@ -221,6 +224,40 @@ public abstract class Interaction implements Serializable {
 
         };
         thread.start();
+
+    }
+
+/**
+ * Führt die Interactionen aus
+ * @param localInteractions Interactionen
+ * @param controller Aktueller Kontroller
+ * @param param Parameter für die Interactionen
+ * @return
+ */
+    public static boolean handleInteraction(Vector<Interaction> localInteractions, JDController controller, Object param) {
+        boolean ret = true;       
+        if (localInteractions != null && localInteractions.size() > 0) {
+            Iterator<Interaction> iterator = localInteractions.iterator();
+
+            while (iterator.hasNext()) {
+                Interaction i = iterator.next();
+                i.addControlListener(controller);
+
+                if (!i.interact(param)) {
+                    ret = false;
+                    logger.severe("interaction failed: " + i);
+                }
+                else {
+                    logger.info("interaction successfull: " + i);
+                }
+
+            }
+        }
+        else {
+            return false;
+        }
+
+        return ret;
 
     }
 }

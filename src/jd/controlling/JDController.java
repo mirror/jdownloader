@@ -117,7 +117,7 @@ public class JDController implements PluginListener, ControlListener, UIListener
                 // Macht einen Wartezeit reset wenn die HTTPReconnect
                 // Interaction eine neue IP gebracht hat
                 if (interaction instanceof HTTPReconnect && interaction.getCallCode() == Interaction.INTERACTION_CALL_SUCCESS) {
-                    Iterator<DownloadLink> iterator = downloadLinks.iterator();                 
+                    Iterator<DownloadLink> iterator = downloadLinks.iterator();
                     // stellt die Wartezeiten zurück
                     DownloadLink i;
                     while (iterator.hasNext()) {
@@ -126,6 +126,14 @@ public class JDController implements PluginListener, ControlListener, UIListener
                             i.setEndOfWaittime(0);
                             i.setStatus(DownloadLink.STATUS_TODO);
                         }
+                    }
+                }
+                else if (interaction instanceof WebUpdate) {
+                    if (interaction.getCallCode() == Interaction.INTERACTION_CALL_ERROR) {
+                        uiInterface.showMessageDialog("Keine Updates verfügbar");
+                    }
+                    else {
+                        uiInterface.showMessageDialog("Aktualisierte Dateien: " + ((WebUpdate) interaction).getUpdater().getUpdatedFiles());
                     }
                 }
                 uiInterface.uiControlEvent(event);
@@ -191,12 +199,8 @@ public class JDController implements PluginListener, ControlListener, UIListener
                 break;
             case UIEvent.UI_INTERACT_UPDATE:
                 WebUpdate wu = new WebUpdate();
-                if (wu.interact(null)) {
-                    uiInterface.showMessageDialog("Keine Updates verfügbar");
-                }
-                else {
-                    uiInterface.showMessageDialog("Aktualisierte Dateien: " + wu.getUpdater().getUpdatedFiles());
-                }
+                wu.addControlListener(this);
+                wu.interact(this);
                 break;
         }
     }
@@ -219,19 +223,19 @@ public class JDController implements PluginListener, ControlListener, UIListener
     public Vector<DownloadLink> loadDownloadLinks(File file) {
         if (file.exists()) {
             Object obj = JDUtilities.loadObject(null, file, false);
-            if(obj != null && obj instanceof Vector){
-                Vector<DownloadLink> links =(Vector<DownloadLink>)obj;
+            if (obj != null && obj instanceof Vector) {
+                Vector<DownloadLink> links = (Vector<DownloadLink>) obj;
                 Iterator<DownloadLink> iterator = links.iterator();
                 DownloadLink localLink;
                 PluginForHost pluginForHost;
-                while (iterator.hasNext()){
+                while (iterator.hasNext()) {
                     localLink = iterator.next();
-                    pluginForHost =JDUtilities.getPluginForHost(localLink.getHost());
-                    if(pluginForHost!=null){
+                    pluginForHost = JDUtilities.getPluginForHost(localLink.getHost());
+                    if (pluginForHost != null) {
                         localLink.setPlugin(pluginForHost);
                     }
-                    else{
-                        logger.severe("couldn't find plugin("+localLink.getHost()+") for this DownloadLink."+localLink.getName());
+                    else {
+                        logger.severe("couldn't find plugin(" + localLink.getHost() + ") for this DownloadLink." + localLink.getName());
                     }
                 }
                 return links;

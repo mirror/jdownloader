@@ -16,6 +16,8 @@ import javax.swing.JPanel;
 import jd.Configuration;
 import jd.JDUtilities;
 import jd.captcha.JAntiCaptcha;
+import jd.event.UIEvent;
+import jd.gui.UIInterface;
 import jd.gui.skins.simple.components.BrowseFile;
 import jd.plugins.Plugin;
 
@@ -32,15 +34,15 @@ public class ConfigPanelGeneral extends JPanel implements ActionListener{
     private BrowseFile brsHomeDir;
     private JComboBox cboLoggerLevel;
     private JButton btnUpdate;
-
+    private UIInterface uiinterface;
     private JPanel panel;
     
     private Configuration configuration;
     
-    ConfigPanelGeneral(Configuration configuration){
+    ConfigPanelGeneral(Configuration configuration, UIInterface uiinterface){
         this.configuration = configuration;
         panel = new JPanel(new GridBagLayout());
-        
+        this.uiinterface=uiinterface;
         lblDownloadDir = new JLabel("Download Verzeichnis");
         lblHomeDir     = new JLabel("JD Home");
         lblUpdate      = new JLabel("Update ausführen");
@@ -93,7 +95,8 @@ public class ConfigPanelGeneral extends JPanel implements ActionListener{
     }
     public void actionPerformed(ActionEvent e) {
         if(e.getSource() == btnUpdate){
-            JAntiCaptcha.updateMethods();
+          
+            uiinterface.fireUIEvent(new UIEvent(uiinterface,UIEvent.UI_INTERACT_UPDATE));
         }
         
     }

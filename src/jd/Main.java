@@ -10,6 +10,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import jd.controlling.JDController;
+import jd.controlling.interaction.Interaction;
 import jd.gui.UIInterface;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.plugins.Plugin;
@@ -83,7 +84,7 @@ public class Main {
         JDController controller = new JDController();
         controller.setUiInterface(uiInterface);
         controller.initDownloadLinks();
-        
+   
         Iterator<PluginForHost> iteratorHost = JDUtilities.getPluginsForHost().iterator();
         while(iteratorHost.hasNext()){
             iteratorHost.next().addPluginListener(controller);
@@ -92,6 +93,8 @@ public class Main {
         while(iteratorDecrypt.hasNext()){
             iteratorDecrypt.next().addPluginListener(controller);
         }
+        
+        Interaction.handleInteraction(JDUtilities.getConfiguration().getInteractions().get(Interaction.INTERACTION_APPSTART),controller,this);
     }
     
     /**
