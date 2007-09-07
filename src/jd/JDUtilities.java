@@ -281,7 +281,6 @@ public class JDUtilities {
     public static void addImage(String imageName, Image image) {
         Toolkit.getDefaultToolkit().prepareImage(image, -1, -1, null);
         images.put(imageName, image);
-        
     }
 
     /**
@@ -394,8 +393,7 @@ public class JDUtilities {
      * @param plugin
      *            Das Plugin, das dieses Captcha fordert (Der Host wird
      *            benötigt)
-     * @param dest
-     *            Adresse des anzuzeigenden Bildes
+     * @param file
      * @return Der vom Benutzer eingegebene Text
      */
     public static String getCaptcha(JDController controller, Plugin plugin, File file) {
@@ -500,6 +498,16 @@ public class JDUtilities {
         while (iterator.hasNext()) {
             iterator.next().addPluginListener(listener);
         }
+    }
+    public static File chooseDirectory(){
+        JFileChooser fileChooser = new JFileChooser();
+        fileChooser.setFileFilter(new JDFileFilter(null,null,true));
+        fileChooser.showOpenDialog(null);
+        File selectedFile=fileChooser.getSelectedFile();
+        if(selectedFile==null || selectedFile.isDirectory())
+            return selectedFile;
+        else
+            return selectedFile.getParentFile();
     }
 
     /**
@@ -787,7 +795,7 @@ public class JDUtilities {
      * Lädt eine url lokal herunter
      * 
      * @param file
-     * @param captchaAdress
+     * @param urlString
      * @return Erfolg true/false
      */
     public static boolean download(File file, String urlString) {

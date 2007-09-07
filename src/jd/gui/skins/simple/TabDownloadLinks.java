@@ -90,21 +90,19 @@ public class TabDownloadLinks extends JPanel implements PluginListener, ControlL
         scrollPane.setPreferredSize(new Dimension(800,450));
         add(scrollPane);
     }
-    public void setDownloadLinks(Vector<DownloadLink> links){
-     
+    public void setDownloadLinks(DownloadLink links[]){
         allLinks.clear();
         addLinks(links);
-       
     }
     /**
      * Hier werden Links zu dieser Tabelle hinzugefügt.
      *
      * @param links Ein Vector mit Downloadlinks, die alle hinzugefügt werden sollen
      */
-    public void addLinks(Vector<DownloadLink> links){
-        for(int i=0;i<links.size();i++){
-            if(allLinks.indexOf(links.get(i))==-1)
-                allLinks.add(links.get(i));
+    public void addLinks(DownloadLink links[]){
+        for(int i=0;i<links.length;i++){
+            if(allLinks.indexOf(links[i])==-1)
+                allLinks.add(links[i]);
             else
                 logger.info("download-URL already in Queue");
         }

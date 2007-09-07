@@ -77,7 +77,7 @@ public class StartDownloads extends ControlMulticaster {
         /**
          * Das Plugin, das den aktuellen Download steuert
          */
-      PluginForHost                         plugin;
+        PluginForHost                         plugin;
         while ((downloadLink = controller.getNextDownloadLink()) != null) {
             logger.info("working on " + downloadLink.getName());
             currentPlugin=plugin = downloadLink.getPlugin();

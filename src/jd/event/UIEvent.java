@@ -47,9 +47,13 @@ public class UIEvent extends AWTEvent{
      */
     public static final int UI_INTERACT_UPDATE = 9;
     /**
-     * EIn Reconnect soll gemacht werden
+     * Ein Reconnect soll gemacht werden
      */
     public static final int UI_INTERACT_RECONNECT = 10;
+    /**
+     * Die Anwendung soll geschlossen werden
+     */
+    public static final int UI_EXIT = 11;
     
     /**
      * DragAndDrop Event

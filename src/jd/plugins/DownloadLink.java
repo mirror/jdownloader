@@ -15,7 +15,7 @@ import jd.JDUtilities;
  * 
  * @author astaldo
  */
-public class DownloadLink implements Serializable {
+public class DownloadLink implements Serializable{
     /**
      * Link muß noch bearbeitet werden
      */

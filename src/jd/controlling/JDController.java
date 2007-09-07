@@ -79,6 +79,13 @@ public class JDController implements PluginListener, ControlListener, UIListener
             logger.warning("no active download");
         }
     }
+    /**
+     * Beendet das Programm
+     */
+    private void exit(){
+        saveDownloadLinks(JDUtilities.getResourceFile("links.dat"));
+        System.exit(0);
+    }
 
     public void pluginEvent(PluginEvent event) {
         uiInterface.uiPluginEvent(event);
@@ -106,7 +113,7 @@ public class JDController implements PluginListener, ControlListener, UIListener
             case ControlEvent.CONTROL_PLUGIN_INTERACTION_INACTIVE:
                 Interaction interaction = (Interaction) event.getParameter();
                 // Macht einen Wartezeit reset wenn die HTTPReconnect
-                // INteraction eine neue IP gebracht hat
+                // Interaction eine neue IP gebracht hat
                 if (interaction instanceof HTTPReconnect && interaction.getCallCode() == Interaction.INTERACTION_CALL_SUCCESS) {
                     Iterator<DownloadLink> iterator = downloadLinks.iterator();
                     while (iterator.hasNext()) {
@@ -145,7 +152,9 @@ public class JDController implements PluginListener, ControlListener, UIListener
             case UIEvent.UI_LOAD_LINKS:
                 file = (File) uiEvent.getParameter();
                 loadDownloadLinks(file);
-
+                break;
+            case UIEvent.UI_EXIT:
+                exit();
                 break;
             case UIEvent.UI_LINKS_CHANGED:
                 downloadLinks = uiInterface.getDownloadLinks();

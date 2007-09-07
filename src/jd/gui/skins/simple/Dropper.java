@@ -3,7 +3,6 @@ package jd.gui.skins.simple;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 
-import javax.swing.ImageIcon;
 import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -17,9 +16,13 @@ import jd.gui.skins.simple.components.DragNDrop;
  * 
  * @author Tom
  */
-@SuppressWarnings("serial")
 public class Dropper extends JDialog {
 
+    /**
+     * 8764525546298642601L
+     */
+    private static final long serialVersionUID = 8764525546298642601L;
+    
     private DragNDrop target;
     private JLabel label;
     public Dropper(JFrame owner) {

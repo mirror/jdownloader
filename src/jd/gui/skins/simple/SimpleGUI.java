@@ -141,11 +141,6 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener{
         
         dragNDrop= new Dropper(frame);
         dragNDrop.addUIListener(this);
-
-        
-    
-    
-    
     
     }
     /**
@@ -351,8 +346,6 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener{
                 fireUIEvent(new UIEvent(this,UIEvent.UI_SAVE_LINKS,ret));
                 dragNDrop.setText("Downloadliste gespeichert");
                 }
-                
-                
                 break;
             case JDAction.APP_LOAD:
                 fc = new JFileChooser();
@@ -364,6 +357,11 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener{
                 fireUIEvent(new UIEvent(this,UIEvent.UI_LOAD_LINKS,ret));
                 dragNDrop.setText("Downloadliste geladen");
                 }
+                break;
+            case JDAction.APP_EXIT:
+                frame.setVisible(false);
+                frame.dispose();
+                fireUIEvent(new UIEvent(this,UIEvent.UI_EXIT));
                 break;
             case JDAction.APP_LOG:
                 logDialog.setVisible(!logDialog.isVisible());
@@ -476,10 +474,9 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener{
     }
     public void setDownloadLinks(Vector<DownloadLink> links) {
         if (tabDownloadTable != null){
-            tabDownloadTable.setDownloadLinks(links);
+            tabDownloadTable.setDownloadLinks(links.toArray(new DownloadLink[]{}));
             dragNDrop.setText("Downloads: "+links.size());   
         }
-        
     }
     public String getCaptchaCodeFromUser(Plugin plugin, File captchaAddress) {
         CaptchaDialog captchaDialog = new CaptchaDialog(frame,plugin,captchaAddress);
