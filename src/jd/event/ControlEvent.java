@@ -54,6 +54,9 @@ public class ControlEvent extends AWTEvent{
     /**. Dieses Event ist unabhängig von inaktiv. eine Interaction die in einem thread läuft kann Aktiv sein und trotzdem schon zurückgekehrt
      */
     public final static int CONTROL_PLUGIN_INTERACTION_RETURNED    = 10;
+    public static final int CONTROL_DOWNLOAD_FINISHED = 11;
+    public static final int CONTROL_CAPTCHA_LOADED = 12;
+    public static final int CONTROL_DOWNLOAD_STARTS = 13;
     /**
      * Die ID des Ereignisses
      */

@@ -1,5 +1,7 @@
 package jd.controlling.interaction;
 
+import java.io.Serializable;
+
 import jd.update.WebUpdater;
 
 /**
@@ -7,12 +9,17 @@ import jd.update.WebUpdater;
  * 
  * @author coalado
  */
-public class WebUpdate extends Interaction {
+public class WebUpdate extends Interaction implements Serializable {
+
+    /**
+     * 
+     */
+    private static final long serialVersionUID = 5345996658356704386L;
 
     /**
      * serialVersionUID
      */
-    private static final long   serialVersionUID = 1332164738388120767L;
+ 
 
     private static final String NAME             = "WebUpdate";
 

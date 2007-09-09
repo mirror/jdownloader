@@ -2,8 +2,6 @@ package jd.controlling;
 
 import java.io.File;
 import java.util.Date;
-import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Vector;
 import java.util.logging.Logger;
 
@@ -22,42 +20,35 @@ import jd.plugins.PluginStep;
  */
 public class StartDownloads extends ControlMulticaster {
 
-    
     /**
      * Das Plugin, das den aktuellen Download steuert
      */
- private  PluginForHost                         currentPlugin;
+    private PluginForHost currentPlugin;
+
     /**
      * Wurde der Download abgebrochen?
      */
-    private boolean                               aborted = false;
+    private boolean       aborted = false;
 
     /**
      * Der Logger
      */
-    private Logger                                logger  = Plugin.getLogger();
+    private Logger        logger  = Plugin.getLogger();
 
     /**
      * Das übergeordnete Fenster
      */
-    private JDController                          controller;
-
-    /**
-     * Hiermit werden Interaktionen zum laufenden DownloadThread umgesetzt (ZB
-     * ein Reconnect)
-     */
-    private HashMap<Integer, Vector<Interaction>> interactions;
+    private JDController  controller;
 
     /**
      * Erstellt einen Thread zum Start des Downloadvorganges
      * 
      * @param controller Controller
-     * @param interactions Hier sind alle möglichen Interaktionen gespeichert
+     * @param vector Hier sind alle möglichen Interaktionen gespeichert
      */
-    public StartDownloads(JDController controller, HashMap<Integer, Vector<Interaction>> interactions) {
+    public StartDownloads(JDController controller) {
         super("JD-StartDownloads");
         this.controller = controller;
-        this.interactions = interactions;
 
     }
 
@@ -66,7 +57,7 @@ public class StartDownloads extends ControlMulticaster {
      */
     public void abortDownload() {
         aborted = true;
-        if(currentPlugin!=null)currentPlugin.abort();
+        if (currentPlugin != null) currentPlugin.abort();
     }
 
     public void run() {
@@ -77,13 +68,13 @@ public class StartDownloads extends ControlMulticaster {
         /**
          * Das Plugin, das den aktuellen Download steuert
          */
-        PluginForHost                         plugin;
+        PluginForHost plugin;
         while ((downloadLink = controller.getNextDownloadLink()) != null) {
             logger.info("working on " + downloadLink.getName());
-            currentPlugin=plugin = downloadLink.getPlugin();
+            currentPlugin = plugin = downloadLink.getPlugin();
             plugin.resetPlugin();
             downloadLink.setStatusText("aktiv");
-           
+
             fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SINGLE_DOWNLOAD_CHANGED));
             plugin.init();
             PluginStep step = plugin.getNextStep(downloadLink);
@@ -91,6 +82,7 @@ public class StartDownloads extends ControlMulticaster {
             // bis entweder null zurückgegeben wird oder ein Fehler auftritt
 
             fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_PLUGIN_HOST_ACTIVE));
+
             while (!aborted && step != null && step.getStatus() != PluginStep.STATUS_ERROR) {
                 logger.info("Current Step:  " + step);
                 switch (step.getStep()) {
@@ -103,33 +95,53 @@ public class StartDownloads extends ControlMulticaster {
                             logger.severe("Captchaadresse = null");
                             step.setParameter("");
                             step.setStatus(PluginStep.STATUS_ERROR);
-                            downloadLink.setStatus(DownloadLink.STATUS_ERROR_CAPTCHA_WRONG);
+                            downloadLink.setStatus(DownloadLink.STATUS_ERROR_CAPTCHA_IMAGEERROR);
                             break;
                         }
                         else {
 
                             File dest = JDUtilities.getResourceFile("captchas/" + plugin.getPluginName() + "/captcha_" + (new Date().getTime()) + ".jpg");
-                            if(!JDUtilities.download(dest, captchaAdress)||!dest.exists()){
-                                logger.severe("Captcha Download fehlgeschlagen: "+captchaAdress);
+                            if (!JDUtilities.download(dest, captchaAdress) || !dest.exists()) {
+                                logger.severe("Captcha Download fehlgeschlagen: " + captchaAdress);
                                 step.setParameter("");
                                 step.setStatus(PluginStep.STATUS_ERROR);
-                                downloadLink.setStatus(DownloadLink.STATUS_ERROR_CAPTCHA_WRONG);
-                                break;  
+                                downloadLink.setStatus(DownloadLink.STATUS_ERROR_CAPTCHA_IMAGEERROR);
+                                break;
                             }
+                            fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_CAPTCHA_LOADED, dest));
+                            downloadLink.setLatestCaptchaFile(dest);
                             if (plugin.doBotCheck(dest)) {
-                                downloadLink.setStatusText("Bot erkannt");
-                                fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SINGLE_DOWNLOAD_CHANGED));
-
+                                downloadLink.setStatus(DownloadLink.STATUS_ERROR_BOT_DETECTED);
+                                step.setStatus(PluginStep.STATUS_ERROR);
                                 step.setParameter(null);
-                                step.setStatus(PluginStep.STATUS_DONE);
+                                break;
                             }
                             else {
-                                String captchaText = JDUtilities.getCaptcha(controller, plugin, dest);
-                                logger.info("CaptchaCode: " + captchaText);
-                                downloadLink.setStatusText("Code: " + captchaText);
-                                fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SINGLE_DOWNLOAD_CHANGED));
-                                step.setParameter(captchaText);
-                                step.setStatus(PluginStep.STATUS_DONE);
+                                // führt die erste INteraction zum Captcha
+                                // decoden aus.
+                                if (!Interaction.handleInteraction((Interaction.INTERACTION_DOWNLOAD_CAPTCHA), downloadLink, 0)) {
+                                    String captchaText = JDUtilities.getCaptcha(controller, plugin, dest);
+                                    logger.info("CaptchaCode: " + captchaText);
+                                    downloadLink.setStatusText("Code: " + captchaText);
+                                    fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SINGLE_DOWNLOAD_CHANGED));
+                                    step.setParameter(captchaText);
+                                    step.setStatus(PluginStep.STATUS_DONE);
+                                }
+                                else {
+                                    Interaction[] interacts = Interaction.getInteractions(Interaction.INTERACTION_DOWNLOAD_CAPTCHA);
+                                    if (interacts.length > 0) {
+                                        String captchaText = (String) interacts[0].getProperty("captchaCode");
+                                        if (captchaText == null) {
+                                            // im NOtfall doch JAC nutzen
+                                            captchaText = JDUtilities.getCaptcha(controller, plugin, dest);
+                                        }
+                                        logger.info("CaptchaCode: " + captchaText);
+                                        downloadLink.setStatusText("Code: " + captchaText);
+                                        fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SINGLE_DOWNLOAD_CHANGED));
+                                        step.setParameter(captchaText);
+                                        step.setStatus(PluginStep.STATUS_DONE);
+                                    }
+                                }
                             }
 
                         }
@@ -139,6 +151,10 @@ public class StartDownloads extends ControlMulticaster {
                 if (step != null && downloadLink != null && plugin != null && plugin.nextStep(step) != null) {
                     downloadLink.setStatusText(plugin.nextStep(step).toString());
                     fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SINGLE_DOWNLOAD_CHANGED));
+                }
+                // Bricht ab wenn es Fehler gab
+                if (step.getStatus() == PluginStep.STATUS_ERROR) {
+                    break;
                 }
 
                 step = plugin.getNextStep(downloadLink);
@@ -151,16 +167,16 @@ public class StartDownloads extends ControlMulticaster {
                 downloadLink.setStatusText("Abgebrochen");
                 plugin.abort();
                 logger.warning("Thread aborted");
-                downloadLink.setStatus(DownloadLink.STATUS_TODO);                
+                downloadLink.setStatus(DownloadLink.STATUS_TODO);
                 fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SINGLE_DOWNLOAD_CHANGED));
                 try {
-                    Thread.sleep(3000);
+                    Thread.sleep(1000);
                 }
                 catch (InterruptedException e) {
                 }
-              
+
                 clearDownloadListStatus();
-             
+
                 return;
 
             }
@@ -170,6 +186,19 @@ public class StartDownloads extends ControlMulticaster {
                 this.onErrorWaittime(downloadLink, plugin, step);
 
             }
+
+            else if (step != null && downloadLink.getStatus() == DownloadLink.STATUS_ERROR_STATIC_WAITTIME && step.getStatus() == PluginStep.STATUS_ERROR) {
+                this.onErrorStaticWaittime(downloadLink, plugin, step);
+            }
+            else if (step != null && downloadLink.getStatus() == DownloadLink.STATUS_ERROR_CAPTCHA_IMAGEERROR && step.getStatus() == PluginStep.STATUS_ERROR) {
+                this.onErrorCaptchaImage(downloadLink, plugin, step);
+            }
+            else if (step != null && downloadLink.getStatus() == DownloadLink.STATUS_ERROR_FILE_ABUSED && step.getStatus() == PluginStep.STATUS_ERROR) {
+                this.onErrorAbused(downloadLink, plugin, step);
+            }
+            else if (step != null && downloadLink.getStatus() == DownloadLink.STATUS_ERROR_FILE_NOT_FOUND && step.getStatus() == PluginStep.STATUS_ERROR) {
+                this.onErrorFileNotFound(downloadLink, plugin, step);
+            }
             else if (step != null && downloadLink.getStatus() == DownloadLink.STATUS_ERROR_CAPTCHA_WRONG && step.getStatus() == PluginStep.STATUS_ERROR) {
                 this.onErrorCaptcha(downloadLink, plugin, step);
             }
@@ -177,8 +206,8 @@ public class StartDownloads extends ControlMulticaster {
                 this.onErrorBotdetection(downloadLink, plugin, step);
 
             }
-           
-            else if (step != null && downloadLink.getStatus() == DownloadLink.STATUS_ERROR_UNKNOWN_RETRY&& step.getStatus() == PluginStep.STATUS_ERROR) {
+
+            else if (step != null && downloadLink.getStatus() == DownloadLink.STATUS_ERROR_UNKNOWN_RETRY && step.getStatus() == PluginStep.STATUS_ERROR) {
                 this.onErrorRetry(downloadLink, plugin, step);
             }
             else if (step != null && step.getStatus() == PluginStep.STATUS_ERROR) {
@@ -187,9 +216,9 @@ public class StartDownloads extends ControlMulticaster {
             else {
                 downloadLink.setStatusText("Fertig");
                 fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SINGLE_DOWNLOAD_CHANGED));
-        
-                Interaction.handleInteraction(interactions.get(Interaction.INTERACTION_DOWNLOAD_FINISHED),controller,this);
+                fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_ALL_DOWNLOADS_FINISHED, downloadLink));
 
+                Interaction.handleInteraction((Interaction.INTERACTION_DOWNLOAD_FINISHED), this);
 
             }
 
@@ -197,34 +226,70 @@ public class StartDownloads extends ControlMulticaster {
 
         this.waitForDownloadLinks();
     }
-private void clearDownloadListStatus() {
-    Vector<DownloadLink> links;
-   
-    logger.finer("Clear");
-    links = controller.getDownloadLinks();   
-    for (int i = 0; i < links.size(); i++) {
-        if( links.elementAt(i).getStatus()!=DownloadLink.STATUS_DONE){
-             
-        links.elementAt(i).setStatusText("");
-        links.elementAt(i).setStatus(DownloadLink.STATUS_TODO);
-        }
-      
-    }
-    fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SINGLE_DOWNLOAD_CHANGED));
-    
-}
 
-/**
- * Diese Funktion wird aufgerufen wenn der Download abgebrochen wurde und wiederholt werden soll
- * @param downloadLink
- * @param plugin2
- * @param step
- */
+    private void onErrorStaticWaittime(DownloadLink downloadLink, PluginForHost plugin, PluginStep step) {
+        logger.severe("Error occurred: Static Wait Time " + step);
+        long milliSeconds = (Long) step.getParameter();
+        downloadLink.setEndOfWaittime(System.currentTimeMillis() + milliSeconds);
+        downloadLink.setStatusText("Reconnect ");
+        downloadLink.setInProgress(false);
+        fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SINGLE_DOWNLOAD_CHANGED));
+        // Download Zeit. Versuch durch eine INteraction einen reconnect
+        // zu machen. wenn das klappt nochmal versuchen
+        if (Interaction.handleInteraction((Interaction.INTERACTION_NEED_RECONNECT), this) || Interaction.handleInteraction((Interaction.INTERACTION_DOWNLOAD_WAITTIME), this)) {
+
+            downloadLink.setStatus(DownloadLink.STATUS_TODO);
+            downloadLink.setEndOfWaittime(0);
+        }
+        downloadLink.setStatusText("");
+
+    }
+
+    private void onErrorFileNotFound(DownloadLink downloadLink, PluginForHost plugin, PluginStep step) {
+        downloadLink.setInProgress(false);
+
+    }
+
+    private void onErrorAbused(DownloadLink downloadLink, PluginForHost plugin, PluginStep step) {
+        downloadLink.setInProgress(false);
+
+    }
+
+    private void onErrorCaptchaImage(DownloadLink downloadLink, PluginForHost plugin, PluginStep step) {
+        downloadLink.setInProgress(false);
+
+    }
+
+    private void clearDownloadListStatus() {
+        Vector<DownloadLink> links;
+
+        logger.finer("Clear");
+        links = controller.getDownloadLinks();
+        for (int i = 0; i < links.size(); i++) {
+            if (links.elementAt(i).getStatus() != DownloadLink.STATUS_DONE) {
+                links.elementAt(i).setInProgress(false);
+                links.elementAt(i).setStatusText("");
+                links.elementAt(i).setStatus(DownloadLink.STATUS_TODO);
+            }
+
+        }
+        fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SINGLE_DOWNLOAD_CHANGED));
+
+    }
+
+    /**
+     * Diese Funktion wird aufgerufen wenn der Download abgebrochen wurde und
+     * wiederholt werden soll
+     * 
+     * @param downloadLink
+     * @param plugin2
+     * @param step
+     */
     private void onErrorRetry(DownloadLink downloadLink, PluginForHost plugin, PluginStep step) {
-       
+        downloadLink.setInProgress(false);
         downloadLink.setStatus(DownloadLink.STATUS_TODO);
         downloadLink.setEndOfWaittime(0);
-        
+
     }
 
     /**
@@ -239,8 +304,8 @@ private void clearDownloadListStatus() {
         downloadLink.setStatusText("Unbekannter Fehler");
         fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SINGLE_DOWNLOAD_CHANGED));
         logger.severe("Error occurred while downloading file");
-       
-        Interaction.handleInteraction(interactions.get(Interaction.INTERACTION_DOWNLOAD_FAILED),controller,this);
+        downloadLink.setInProgress(false);
+        Interaction.handleInteraction(Interaction.INTERACTION_DOWNLOAD_FAILED, this);
 
     }
 
@@ -255,14 +320,16 @@ private void clearDownloadListStatus() {
     private void onErrorBotdetection(DownloadLink downloadLink, PluginForHost plugin, PluginStep step) {
         // Bot erkannt. Interaction!
         logger.severe("Error occurred: Bot detected");
-        downloadLink.setStatusText("Bot erkannt");
+        downloadLink.setInProgress(false);
+        downloadLink.setStatusText("Bot erkannt/Reconnect ");
         fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SINGLE_DOWNLOAD_CHANGED));
-        if (Interaction.handleInteraction(interactions.get(Interaction.INTERACTION_DOWNLOAD_WAITTIME),controller,this)) {
-            
+
+        if (Interaction.handleInteraction((Interaction.INTERACTION_NEED_RECONNECT), this) || Interaction.handleInteraction((Interaction.INTERACTION_DOWNLOAD_WAITTIME), this)) {
+
             downloadLink.setStatus(DownloadLink.STATUS_TODO);
             downloadLink.setEndOfWaittime(0);
         }
-
+        logger.severe("Bot detected");
     }
 
     /**
@@ -277,10 +344,11 @@ private void clearDownloadListStatus() {
         logger.severe("Error occurred: Captcha Wrong");
         // captcha Falsch. Download wiederholen
         downloadLink.setStatusText("Code falsch");
+        downloadLink.setInProgress(false);
         fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SINGLE_DOWNLOAD_CHANGED));
-       
+
         downloadLink.setStatus(DownloadLink.STATUS_TODO);
-       
+
     }
 
     /**
@@ -295,17 +363,17 @@ private void clearDownloadListStatus() {
         logger.severe("Error occurred: Wait Time " + step);
         long milliSeconds = (Long) step.getParameter();
         downloadLink.setEndOfWaittime(System.currentTimeMillis() + milliSeconds);
-        downloadLink.setStatusText("");
+        downloadLink.setStatusText("Reconnect ");
+        downloadLink.setInProgress(false);
         fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SINGLE_DOWNLOAD_CHANGED));
         // Download Zeit. Versuch durch eine INteraction einen reconnect
         // zu machen. wenn das klappt nochmal versuchen
-        if (Interaction.handleInteraction(interactions.get(Interaction.INTERACTION_DOWNLOAD_WAITTIME),controller,this)) {
-          
-            
+        if (Interaction.handleInteraction((Interaction.INTERACTION_NEED_RECONNECT), this) || Interaction.handleInteraction((Interaction.INTERACTION_DOWNLOAD_WAITTIME), this)) {
+
             downloadLink.setStatus(DownloadLink.STATUS_TODO);
             downloadLink.setEndOfWaittime(0);
         }
-
+        downloadLink.setStatusText("");
     }
 
     /**
@@ -317,7 +385,7 @@ private void clearDownloadListStatus() {
         Vector<DownloadLink> links;
         DownloadLink link;
         boolean hasWaittimeLinks = false;
-        logger.finer("Wait");
+
         boolean returnToRun = false;
 
         try {
@@ -338,13 +406,13 @@ private void clearDownloadListStatus() {
             // Link mit Wartezeit in der queue
             if (link.getStatus() == DownloadLink.STATUS_ERROR_DOWNLOAD_LIMIT) {
                 if (link.getRemainingWaittime() == 0) {
-                   
+
                     link.setStatus(DownloadLink.STATUS_TODO);
                     link.setEndOfWaittime(0);
                     returnToRun = true;
 
                 }
-              
+
                 hasWaittimeLinks = true;
                 // Neuer Link hinzugefügt
             }
@@ -366,7 +434,7 @@ private void clearDownloadListStatus() {
 
         if (!hasWaittimeLinks) {
             fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_ALL_DOWNLOADS_FINISHED));
-            Interaction.handleInteraction(interactions.get(Interaction.INTERACTION_DOWNLOADS_FINISHED_ALL),controller,this);
+            Interaction.handleInteraction((Interaction.INTERACTION_DOWNLOADS_FINISHED_ALL), this);
             logger.info("Alle Downloads beendet");
         }
         else {
@@ -374,5 +442,5 @@ private void clearDownloadListStatus() {
         }
 
     }
-   
+
 }

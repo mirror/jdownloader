@@ -16,9 +16,9 @@ import javax.jnlp.FileContents;
 import javax.jnlp.PersistenceService;
 import javax.jnlp.ServiceManager;
 import javax.jnlp.UnavailableServiceException;
+import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 
-import jd.captcha.JAntiCaptcha;
 import jd.plugins.Plugin;
 /**
  * Diese Klasse verhindert, daß beim Start als Applikation WebStart Klassen nicht gefunden werden.
@@ -41,9 +41,10 @@ public class JDWebStartHelper {
             basicService = null; 
             logger.fine("PersistenceService not available.");
         } 
+      
         try {
             if (persistentService != null && basicService != null) { 
-
+                Installer inst= new Installer();
                 URL codebase = basicService.getCodeBase();
                 FileContents fc=null;
                 URL url =new URL(codebase.toString() + "JD_HOME"); 
@@ -66,7 +67,9 @@ public class JDWebStartHelper {
                 }
                 else{
                     logger.info("Creating new entry for JD_HOME");
-                    String newHome = JOptionPane.showInputDialog("Bitte einen Pfad für jDownloader eingeben");
+                    //String newHome = JOptionPane.showInputDialog("Bitte einen Pfad für jDownloader eingeben");
+                    String newHome= inst.getDirectory("Bitte einen Pfad für jDownloader eingeben",JDUtilities.getJDHomeDirectoryFromEnvironment());
+                    if(newHome==null)newHome=JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath();
                     File homeDirectoryFile = new File(newHome);
                     boolean createSuccessfull=true;
                     if(!homeDirectoryFile.exists())
@@ -79,8 +82,11 @@ public class JDWebStartHelper {
                         writer.close();
 //                        homeDirectory = homeDirectoryFile.getAbsolutePath();
                         // Da dies anscheinend eine Neuinstallation ist, wird direkt ein Update durchgeführt
-                        JAntiCaptcha.updateMethods();
-                        JDUtilities.getConfiguration().setDownloadDirectory(homeDirectoryFile.getAbsolutePath());
+                        String dlDir= inst.getDirectory("Bitte das Download Zielverzeichnis angeben!",JDUtilities.getJDHomeDirectoryFromEnvironment());
+                        if(dlDir==null)dlDir=JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath();
+                        inst.doUpdate();
+                        JOptionPane.showMessageDialog(new JFrame(),"Vielen Dank für die Installation von jDownloader! \r\nUm mit dem Download zu starten sollten Sie in der Konfiguration \r\ndie Routereinstellungen (Router->Kontrolle->Import) und unter \r\nAutomatisierung  die Reconnect Einstellungen vervollständigen. \r\n\r\nViel Spaß!");
+                        JDUtilities.getConfiguration().setDownloadDirectory(dlDir);
                         return homeDirectoryFile.getAbsolutePath();
                     }
                 }

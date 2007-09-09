@@ -127,15 +127,12 @@ public class Gulli extends PluginForHost {
                     fileId = getFirstMatch(requestInfo.getHtmlCode(), PAT_FILE_ID, 1);
                     String captchaLocalUrl = getFirstMatch(requestInfo.getHtmlCode(), PAT_CAPTCHA, 1);
                     if (captchaLocalUrl == null) {
-                        logger.severe("Captcha URL konnte nicht gefunden werden");
-                        downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN_RETRY);
+                        logger.severe("Captcha URL konnte nicht gefunden werden "+downloadLink.getUrlDownload());
+                        downloadLink.setStatus(DownloadLink.STATUS_ERROR_STATIC_WAITTIME);
                         currentStep.setStatus(PluginStep.STATUS_ERROR);
+                        currentStep.setParameter(3*60);
 
-                        try {
-                            Thread.sleep(5000);
-                        }
-                        catch (InterruptedException e) {
-                        }
+                       
                         return currentStep;
 
                     }

@@ -13,12 +13,14 @@ import java.beans.XMLDecoder;
 import java.beans.XMLEncoder;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.UnsupportedEncodingException;
@@ -72,7 +74,14 @@ public class JDUtilities {
     /**
      * Das ist das File Objekt, daß das HomeDirectory darstellt
      */
+    
+   
     private static File                     homeDirectoryFile = null;
+    
+    /**
+     * Der DownloadController
+     */
+    private static JDController controller=null;
     /**
      * RessourceBundle für Texte
      */
@@ -137,6 +146,14 @@ public class JDUtilities {
      *            Positionierung der Komponente innerhalb der zugewiesen Zelle/n
      */
     public static void addToGridBag(Container cont, Component comp, int x, int y, int width, int height, int weightX, int weightY, Insets insets, int fill, int anchor) {
+        if(cont==null){
+            logger.severe("Container ==null");
+            return;
+        }
+        if(comp==null){
+            logger.severe("Componente ==null");
+            return;
+        }
         addToGridBag(cont, comp, x, y, width, height, weightX, weightY, insets, 0, 0, fill, anchor);
     }
 
@@ -288,7 +305,7 @@ public class JDUtilities {
      * 
      * @return ein File, daß das Basisverzeichnis angibt
      */
-    private static File getJDHomeDirectoryFromEnvironment() {
+    public static File getJDHomeDirectoryFromEnvironment() {
         String envDir = System.getenv("JD_HOME");
         if (envDir == null) {
             logger.warning("environment variable JD_HOME not set");
@@ -856,5 +873,90 @@ public class JDUtilities {
         return wu.getUpdatedFiles();
         
     }
+    
+    /**
+     * Führt einen Shell befehl aus und wartet bis dieser abgearbeitet ist
+     * @param command
+     * @throws IOException 
+     */
+    public static void runCommandAndWait(String command) throws IOException {
+      
+            Runtime rt = Runtime.getRuntime();
+            Process pr = rt.exec(command, null, new File(command.split(" ")[0]).getParentFile());
+
+            BufferedReader br = new BufferedReader(new InputStreamReader(pr
+                    .getInputStream()));
+         
+            while ((br.readLine()) != null) {
+                
+
+            }
+       
+    }
+/**
+ * Führt einen Befehl aus, wartet bis dieser abgearbeitet wurde und gibt dessen rückgabe als String zurück
+ * @param command
+ * @return
+ * @throws IOException 
+ */
+    public static String runCommandWaitAndReturn(String command) throws IOException {
+        String ret = "";
+      
+            Runtime rt = Runtime.getRuntime();
+            Process pr = rt.exec(command, null, new File(command.split(" ")[0]).getParentFile());
+
+            BufferedReader br = new BufferedReader(new InputStreamReader(pr
+                    .getInputStream()));
+            String line;
+
+            while ((line = br.readLine()) != null) {
+                ret += line;
+
+            }
+      
+        return ret;
+    }
+/**
+ * Führt einen befehl aus und wartet nicht! bis dieser abgearbeitet wurde
+ * @param command
+ * @throws IOException 
+ */
+    public static void runCommand(String command) throws IOException {
+        if (command == null) {
+            return;
+        }
+    
+            Runtime rt = Runtime.getRuntime();
+            rt.exec(command, null, new File(command.split(" ")[0]).getParentFile());
+            
+
+       
+    }
+/**
+ * Gibt den verwendeten Controller zurück
+ * @return
+ */
+public static JDController getController() {
+    return controller;
+}
+/**
+ * Setzt den Controller
+ * @param controller
+ */
+public static void setController(JDController con) {
+    controller = con;
+}
+/**
+ * Ersetzt die Platzhalter in einem String
+ * @param command
+ * @return
+ */
+public static String replacePlaceHolder(String command) {
+    if(controller==null)return command;
+    command=  command.replaceAll("\\%LASTFILE", controller.getLastFinishedFile());
+    command=command.replaceAll("\\%CAPTCHAIMAGE", controller.getLastCaptchaImage());
+    return command;
+}
+
 
 }

@@ -63,7 +63,7 @@ public class Main {
         if(configURL != null){
             try {
                 File fileInput = new File(configURL.toURI());
-                Object obj = JDUtilities.loadObject(null, fileInput, true);
+                Object obj = JDUtilities.loadObject(null, fileInput, false);
                 if(obj instanceof Configuration){
                     Configuration configuration = (Configuration)obj;
                     JDUtilities.setConfiguration(configuration);
@@ -85,6 +85,8 @@ public class Main {
         controller.setUiInterface(uiInterface);
         controller.initDownloadLinks();
    
+        
+        
         Iterator<PluginForHost> iteratorHost = JDUtilities.getPluginsForHost().iterator();
         while(iteratorHost.hasNext()){
             iteratorHost.next().addPluginListener(controller);
@@ -93,8 +95,8 @@ public class Main {
         while(iteratorDecrypt.hasNext()){
             iteratorDecrypt.next().addPluginListener(controller);
         }
-        
-        Interaction.handleInteraction(JDUtilities.getConfiguration().getInteractions().get(Interaction.INTERACTION_APPSTART),controller,this);
+      
+        Interaction.handleInteraction(Interaction.INTERACTION_APPSTART,this);
     }
     
     /**

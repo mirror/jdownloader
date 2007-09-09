@@ -52,8 +52,13 @@ public class JDController implements PluginListener, ControlListener, UIListener
      */
     private Logger               logger         = Plugin.getLogger();
 
+    private File                 lastCaptchaLoaded;
+
+    private DownloadLink         lastDownloadFinished;
+
     public JDController() {
         downloadLinks = new Vector<DownloadLink>();
+        JDUtilities.setController(this);
     }
 
     /**
@@ -61,7 +66,7 @@ public class JDController implements PluginListener, ControlListener, UIListener
      */
     private void startDownloads() {
         if (download == null) {
-            download = new StartDownloads(this, config.getInteractions());
+            download = new StartDownloads(this);
             download.addControlListener(this);
             download.start();
         }
@@ -100,6 +105,13 @@ public class JDController implements PluginListener, ControlListener, UIListener
     public void controlEvent(ControlEvent event) {
 
         switch (event.getID()) {
+            case ControlEvent.CONTROL_DOWNLOAD_FINISHED:
+                lastDownloadFinished = (DownloadLink) event.getParameter();
+                break;
+            case ControlEvent.CONTROL_CAPTCHA_LOADED:
+                lastCaptchaLoaded = (File) event.getParameter();
+                break;
+
             case ControlEvent.CONTROL_ALL_DOWNLOADS_FINISHED:
                 download = null;
                 uiInterface.uiControlEvent(event);
@@ -127,6 +139,7 @@ public class JDController implements PluginListener, ControlListener, UIListener
                             i.setStatus(DownloadLink.STATUS_TODO);
                         }
                     }
+                    Interaction.handleInteraction(Interaction.INTERACTION_AFTER_RECONNECT, this);
                 }
                 else if (interaction instanceof WebUpdate) {
                     if (interaction.getCallCode() == Interaction.INTERACTION_CALL_ERROR) {
@@ -159,7 +172,7 @@ public class JDController implements PluginListener, ControlListener, UIListener
                 distributeData.start();
                 break;
             case UIEvent.UI_SAVE_CONFIG:
-                JDUtilities.saveObject(null, JDUtilities.getConfiguration(), JDUtilities.getJDHomeDirectory(), "jdownloader", ".config", true);
+                JDUtilities.saveObject(null, JDUtilities.getConfiguration(), JDUtilities.getJDHomeDirectory(), "jdownloader", ".config", false);
                 break;
             case UIEvent.UI_SAVE_LINKS:
                 File file = (File) uiEvent.getParameter();
@@ -177,9 +190,8 @@ public class JDController implements PluginListener, ControlListener, UIListener
                 saveDownloadLinks(JDUtilities.getResourceFile("links.dat"));
                 break;
             case UIEvent.UI_INTERACT_RECONNECT:
-                HTTPReconnect rc = new HTTPReconnect();
-                rc.addControlListener(this);
-                if (rc.interact(null)) {
+                ;
+                if (Interaction.handleInteraction(Interaction.INTERACTION_NEED_RECONNECT, this)) {
                     uiInterface.showMessageDialog("Reconnect erfolgreich");
                     Iterator<DownloadLink> iterator = downloadLinks.iterator();
                     // stellt die Wartezeiten zurück
@@ -189,11 +201,24 @@ public class JDController implements PluginListener, ControlListener, UIListener
                         if (i.getRemainingWaittime() > 0) {
                             i.setEndOfWaittime(0);
                             i.setStatus(DownloadLink.STATUS_TODO);
+
                         }
                     }
+
+                    if (Interaction.getInteractions(Interaction.INTERACTION_NEED_RECONNECT).length != 1) {
+                        uiInterface.showMessageDialog("Es sind " + Interaction.getInteractions(Interaction.INTERACTION_NEED_RECONNECT).length + " Interactionen für den Reconnect festgelegt. \r\nEventl. wurde der Reconnect mehrmals ausgeführt. \r\nBitte Event einstellen (Konfiguration->Eventmanager)");
+
+                    }
+
                 }
                 else {
-                    uiInterface.showMessageDialog("Reconnect fehlgeschlagen");
+
+                    if (Interaction.getInteractions(Interaction.INTERACTION_NEED_RECONNECT).length != 1) {
+                        uiInterface.showMessageDialog("Reconnect fehlgeschlagen\r\nEs ist kein Event(oder mehrere) für die Reconnect festgelegt. \r\nBitte Event einstellen (Konfiguration->Eventmanager)");
+                    }
+                    else {
+                        uiInterface.showMessageDialog("Reconnect fehlgeschlagen");
+                    }
                 }
                 uiInterface.setDownloadLinks(downloadLinks);
                 break;
@@ -307,4 +332,15 @@ public class JDController implements PluginListener, ControlListener, UIListener
         this.uiInterface = uiInterface;
         uiInterface.addUIListener(this);
     }
+
+    public String getLastFinishedFile() {
+        if (this.lastDownloadFinished == null) return "";
+        return this.lastDownloadFinished.getFileOutput().getAbsolutePath();
+    }
+
+    public String getLastCaptchaImage() {
+        if (this.lastCaptchaLoaded == null) return "";
+        return this.lastCaptchaLoaded.getAbsolutePath();
+    }
+
 }

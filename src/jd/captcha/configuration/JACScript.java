@@ -201,7 +201,7 @@ public class JACScript {
         /**
          * Parameter: Kontrollwert über die minimale Buchstabenbreite
          */
-        set("minimumLetterWidth", 10);
+        set("minimumLetterWidth", 0);
 
         /**
          * Parameter: Wert gibt an um welchen faktor die Fingerprints

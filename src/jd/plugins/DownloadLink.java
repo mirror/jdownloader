@@ -53,7 +53,16 @@ public class DownloadLink implements Serializable{
      * Ein unbekannter Fehler ist aufgetreten. Der Download Soll wiederholt werden
      */
     public final static int         STATUS_ERROR_UNKNOWN_RETRY   = 8;
+    /**
+     * Es gab Fehler mit dem captchabild (konnte nicht geladn werden)
+     */
+    
+    public final static int         STATUS_ERROR_CAPTCHA_IMAGEERROR  = 9;
 
+    /**
+     * Zeigt an, dass der Download aus unbekannten Gründen warten muss. z.B. weil Die Ip gerade gesperrt ist, oder eine Session id abgelaufen ist
+     */
+    public final static int         STATUS_ERROR_STATIC_WAITTIME  = 10;
     /**
      * Ein unbekannter Fehler ist aufgetreten
      */
@@ -126,6 +135,10 @@ public class DownloadLink implements Serializable{
      * Ursprüngliche Wartezeit
      */
     private long waittime=0;
+    /**
+     * Lokaler Pfad zum letzten captchafile
+     */
+    private File latestCaptchaFile=null;
     /**
      * Erzeugt einen neuen DownloadLink
      * 
@@ -431,5 +444,14 @@ public void setStatusText(String text){
      */
     public long getRemainingWaittime(){
         return Math.max(0, this.mustWaitTil-System.currentTimeMillis());
+    }
+
+    public void setLatestCaptchaFile(File dest) {
+       this.latestCaptchaFile=dest;
+        
+    }
+
+    public File getLatestCaptchaFile() {
+        return latestCaptchaFile;
     }
 }

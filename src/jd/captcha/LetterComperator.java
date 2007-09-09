@@ -269,7 +269,7 @@ public class LetterComperator {
             localHeightPercent = (double) tmpIntersectionHeight / a.getHeight();
             localWidthPercent = (double) tmpIntersectionWidth / a.getWidth();
             heightFaktor = Math.min(1.0, Math.pow(1.0 - localHeightPercent, 2) * intersectionDimensionWeight);
-            widthFaktor = Math.min(1.0, Math.pow(1.0 - localWidthPercent, 3) * intersectionDimensionWeight);
+            widthFaktor = Math.min(1.0, Math.pow(1.0 - localWidthPercent, 2) * intersectionDimensionWeight);
             tmpError = tmpErrorTotal;
             tmpError += heightFaktor;
             tmpError += widthFaktor;
@@ -714,8 +714,8 @@ public class LetterComperator {
         
   
         hs.put("DecodedValue", getDecodedValue());
-        hs.put("widthFaktor", this.getWidthFaktor()+"/"+(this.getWidthFaktor()*coverageFaktorAWeight));
-        hs.put("heightFaktor", this.getHeightFaktor()+"/"+(this.getHeightFaktor()*coverageFaktorBWeight));
+        hs.put("widthFaktor", this.getWidthFaktor()+"/"+(this.getWidthFaktor()*intersectionDimensionWeight));
+        hs.put("heightFaktor", this.getHeightFaktor()+"/"+(this.getHeightFaktor()*intersectionDimensionWeight));
         hs.put("pixelErrorA", this.getPixelErrorA());
         hs.put("pixelErrorB", this.getPixelErrorB());
         hs.put("pixelErrorTotal", this.getTotalPixelError());
@@ -723,8 +723,8 @@ public class LetterComperator {
         hs.put("pixelAButNotB", this.getPixelANotB());
         hs.put("pixelBButNotA", this.getPixelBNotA());
         hs.put("pixelBoth", this.getPixelBoth());
-        hs.put("coverageA", this.getCoverageFaktorA()+"/"+(this.getCoverageFaktorA()*intersectionDimensionWeight));
-        hs.put("coverageB", this.getCoverageFaktorB()+"/"+(this.getCoverageFaktorB()*intersectionDimensionWeight));
+        hs.put("coverageA", this.getCoverageFaktorA()+"/"+(this.getCoverageFaktorA()*coverageFaktorAWeight));
+        hs.put("coverageB", this.getCoverageFaktorB()+"/"+(this.getCoverageFaktorB()*coverageFaktorBWeight));
         hs.put("bothElements", getBothElementsNum());
         hs.put("preCompare", this.getPreValityPercent());
         

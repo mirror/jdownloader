@@ -62,6 +62,7 @@ public class UIEvent extends AWTEvent{
     public UIEvent(UIInterface uiInterface, int actionID){
         this(uiInterface,actionID,null);
     }
+    
     public UIEvent(Object uiInterface, int actionID, Object parameter){
         super(uiInterface, actionID);
         if(uiInterface instanceof UIInterface){

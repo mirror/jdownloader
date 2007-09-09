@@ -65,19 +65,19 @@ public class PluginStep {
     public void setStatus(int status)          { this.status = status;       }
     public String toString(){
         StringBuffer buffer = new StringBuffer();
-        buffer.append("step: ");
+        buffer.append("");
         switch(step){
-            case STEP_WAIT_TIME: buffer.append("WAIT_TIME "); break;
-            case STEP_CAPTCHA:   buffer.append("CAPTCHA ");   break;
-            case STEP_DOWNLOAD:  buffer.append("DOWNLOAD ");  break;
-            case STEP_DECRYPT:   buffer.append("DECRYPT ");   break;
+            case STEP_WAIT_TIME: buffer.append("Warten "); break;
+            case STEP_CAPTCHA:   buffer.append("Captcha ");   break;
+            case STEP_DOWNLOAD:  buffer.append("Download ");  break;
+            case STEP_DECRYPT:   buffer.append("Decrypt ");   break;
         }
         buffer.append("status: ");
         switch(status){
-            case STATUS_DONE:       buffer.append("DONE");      break;
-            case STATUS_ERROR:      buffer.append("ERROR");     break;
-            case STATUS_TODO:       buffer.append("TODO");      break;
-            case STATUS_USER_INPUT: buffer.append("USERINPUT"); break;
+            case STATUS_DONE:       buffer.append("Fertig");      break;
+            case STATUS_ERROR:      buffer.append("Fehler");     break;
+            case STATUS_TODO:       buffer.append("");      break;
+            case STATUS_USER_INPUT: buffer.append("Eingabe"); break;
         }
         return buffer.toString();
     }

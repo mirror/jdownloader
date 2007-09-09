@@ -1598,7 +1598,7 @@ public class JAntiCaptcha {
     }
 
     public static void testMethod(File file) {
-        int checkCaptchas=20;
+        int checkCaptchas=40;
         String code;
         String inputCode;
         int totalLetters=0;
@@ -1634,19 +1634,32 @@ public class JAntiCaptcha {
             img=UTILITIES.loadImage(captchaFile);
             w.setText(0, i, captchaFile.getName());
             w.setImage(1, i, img);
+           
             w.repack();
             
           
-           code= JAntiCaptcha.getCaptchaCode(img, methodsPath, methodName);  
-          
-           w.setText(2, i, "JAC:"+code);
+           
+           jac = new JAntiCaptcha(methodsPath, methodName);
+           // BasicWindow.showImage(img);
+           Captcha cap = jac.createCaptcha(img);
+           if(cap==null){
+              logger.severe("Captcha Bild konnte nicht eingelesen werden");
+            continue;
+           }
+           
+           w.setImage(2, i, cap.getImage());
+           // BasicWindow.showImage(cap.getImageWithGaps(2));
+           code = jac.checkCaptcha(cap);
+           w.setImage(3, i, cap.getImage());
+       
+           w.setText(4, i, "JAC:"+code);
            
            w.repack();
            
            
            inputCode = UTILITIES.prompt("Bitte Captcha Code eingeben", code);
          
-           w.setText(3, i, "User:"+inputCode);
+           w.setText(5, i, "User:"+inputCode);
            w.repack();
            if(code==null)code="";
            if(inputCode==null)inputCode="";
@@ -1661,8 +1674,8 @@ public class JAntiCaptcha {
            logger.info("Erkennung: "+correctLetters+"/"+totalLetters+" = "+UTILITIES.getPercent(correctLetters,totalLetters)+"%");
         }
         w.setText(0, i+1, "Erkennung: "+UTILITIES.getPercent(correctLetters,totalLetters)+"%");
-        w.setText(2, i+1, "Richtig: "+correctLetters);
-        w.setText(3, i+1, "Falsch: "+(totalLetters-correctLetters));
+        w.setText(4, i+1, "Richtig: "+correctLetters);
+        w.setText(5, i+1, "Falsch: "+(totalLetters-correctLetters));
         UTILITIES.showMessage("Erkennung: "+correctLetters+"/"+totalLetters+" = "+UTILITIES.getPercent(correctLetters,totalLetters)+"%");
     }
 

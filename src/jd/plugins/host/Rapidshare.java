@@ -182,18 +182,18 @@ public class Rapidshare extends PluginForHost {
                     String strAlreadyLoading = getFirstMatch(requestInfo.getHtmlCode(), patternForAlreadyDownloading, 0);
                     
                     if (strAlreadyLoading != null) {
-                        logger.severe("Already Loading wait " + 60 + " sek. to Retry"+requestInfo.getHtmlCode());
+                        logger.severe("Already Loading wait " + 60 + " sek. to Retry");
                         waitTime =180 * 1000;
-                        downloadLink.setStatus(DownloadLink.STATUS_ERROR_DOWNLOAD_LIMIT);
+                        downloadLink.setStatus(DownloadLink.STATUS_ERROR_STATIC_WAITTIME);
                         currentStep.setStatus(PluginStep.STATUS_ERROR);
                         logger.info(" WARTEZEIT SETZEN IN (already loading)" + currentStep + " : " + waitTime);
                         currentStep.setParameter((long) waitTime);
                         return currentStep;
                     }
                     
-                    downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN_RETRY);
+                    downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN);
                     currentStep.setStatus(PluginStep.STATUS_ERROR);
-                    logger.warning("could not get downloadInfo "+requestInfo.getHtmlCode());
+                    logger.warning("could not get downloadInfo ");
                     try {
                         Thread.sleep(5000);
                     }
@@ -226,8 +226,7 @@ public class Rapidshare extends PluginForHost {
             case PluginStep.STEP_DOWNLOAD:
                 if (steps.get(1).getParameter() == null) {
                     // Bot Erkannt }
-                    downloadLink.setStatus(DownloadLink.STATUS_ERROR_BOT_DETECTED);
-                    todo.setStatus(PluginStep.STATUS_ERROR);
+                 logger.severe("Fehler. Bot erkennung fehlerhaft");
                 }
                 else {
                     postParameter.put("mirror", "on");

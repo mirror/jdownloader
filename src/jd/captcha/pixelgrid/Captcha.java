@@ -959,7 +959,11 @@ public class Captcha extends PixelGrid {
             }
             found--;
             maxWidth = po.getWidth();
+            
             minWidth = minArea / po.getHeight();
+            if(owner.getJas().getInteger("minimumLetterWidth")>0 &&owner.getJas().getInteger("minimumLetterWidth")>minWidth){
+                minWidth=owner.getJas().getInteger("minimumLetterWidth");
+            }
             splitter = 1;
 
             logger.info(maxWidth + "/" + minWidth);
@@ -972,7 +976,7 @@ public class Captcha extends PixelGrid {
                 splitNum--;
             }
             logger.info("l "+splitNum);
-            while (splitNum > 2 && next != null && maxWidth / splitNum < next.getWidth()*0.75) {
+            while (splitNum > 2 && next != null && maxWidth / splitNum < next.getWidth()*0.55) {
                 splitNum--;
             }
             logger.finer("teile erstes element " + po.getWidth() + " : splitnum " + splitNum);

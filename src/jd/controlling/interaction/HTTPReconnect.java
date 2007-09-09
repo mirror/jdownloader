@@ -23,11 +23,16 @@ import jd.router.RouterData;
 public class HTTPReconnect extends Interaction {
 
     /**
+     * 
+     */
+    private static final long serialVersionUID = 5208110144587103071L;
+
+    /**
      * serialVersionUID
      */
-    private static final long   serialVersionUID = 1332164738388120767L;
+  
 
-    private static final String NAME             = "HTTPReconnect";
+    private static final String NAME             = "HTTP Reconnect(routercontrol)";
 
     public static String        VAR_USERNAME     = "%USERNAME%";
 
@@ -43,6 +48,11 @@ public class HTTPReconnect extends Interaction {
         String ipBefore;
         String ipAfter;
         RouterData routerData = configuration.getRouterData();
+        if(routerData==null){
+            this.setCallCode(Interaction.INTERACTION_CALL_ERROR);
+          
+            return false;
+        }
         String routerIP = routerData.getRouterIP();
         String routerUsername = configuration.getRouterUsername();
         String routerPassword = configuration.getRouterPassword();
@@ -50,6 +60,7 @@ public class HTTPReconnect extends Interaction {
         String login = routerData.getLogin();
         String disconnect = routerData.getDisconnect();
         String connect = routerData.getConnect();
+        int waitTime = configuration.getWaitForIPCheck();
         if (routerUsername != null && routerPassword != null) Authenticator.setDefault(new InternalAuthenticator(routerUsername, routerPassword));
 
         String routerPage;
@@ -62,9 +73,10 @@ public class HTTPReconnect extends Interaction {
         RequestInfo requestInfo = null;
 
         // IP auslesen
+      
         ipBefore = getIPAddress(routerPage, routerData);
         logger.fine("IP before:" + ipBefore);
-
+       
         if (login != null && !login.equals("")) {
             login.replaceAll(VAR_USERNAME, routerUsername);
             login.replaceAll(VAR_PASSWORD, routerPassword);
@@ -84,9 +96,10 @@ public class HTTPReconnect extends Interaction {
                 return false;
             }
         }
+       
         // Disconnect
         requestInfo = doThis("Disconnect", isAbsolute(disconnect) ? disconnect : routerPage + disconnect, requestInfo, routerData.getDisconnectRequestProperties(), routerData.getDisconnectPostParams(), routerData.getDisconnectType());
-
+       
         if (requestInfo == null) {
             logger.severe("Disconnect failed.");
             this.setCallCode(Interaction.INTERACTION_CALL_ERROR);
@@ -104,6 +117,7 @@ public class HTTPReconnect extends Interaction {
         }
         catch (InterruptedException e) {
         }
+  
         // Verbindung wiederaufbauen
         logger.fine("building connection");
         requestInfo = doThis("Rebuild", isAbsolute(connect) ? connect : routerPage + connect, null, routerData.getConnectRequestProperties(), routerData.getConnectPostParams(), routerData.getConnectType());
@@ -121,6 +135,25 @@ public class HTTPReconnect extends Interaction {
             return false;
         }
 
+        
+
+     // IP check
+
+     if (waitTime > 0){
+
+     logger.fine("wait " + waitTime + " seconds");
+
+     try {
+
+     Thread.sleep(waitTime * 1000);
+
+     }
+
+     catch (InterruptedException e) {
+
+     }
+
+     }
         // IP check
         ipAfter = getIPAddress(routerPage, routerData);
         logger.fine("IP after reconnect:" + ipAfter);
@@ -140,15 +173,22 @@ public class HTTPReconnect extends Interaction {
 
     private String getIPAddress(String routerPage, RouterData routerData) {
         String urlForIPAddress;
+       
+        if(routerData==null||routerData.getIpAddressSite()==null)return null;
         try {
+           
             if (isAbsolute(routerData.getIpAddressSite())) {
                 urlForIPAddress = routerData.getIpAddressSite();
+              
             }
+            
             else {
+              
                 urlForIPAddress = routerPage + routerData.getIpAddressSite();
             }
-
+           
             RequestInfo requestInfo = Plugin.getRequest(new URL(urlForIPAddress));
+         
             return routerData.getIPAdress(requestInfo.getHtmlCode());
         }
         catch (IOException e1) {
@@ -174,6 +214,7 @@ public class HTTPReconnect extends Interaction {
      * @return Prüft ob enie url Absolut ist.
      */
     private boolean isAbsolute(String url) {
+        if(url==null)return false;
         try {
             URI uri = new URI(url);
             return uri.isAbsolute();

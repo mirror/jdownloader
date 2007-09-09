@@ -1,32 +1,42 @@
 package jd.controlling.interaction;
 
+import java.io.Serializable;
+
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
-
-import jd.event.ControlEvent;
 
 /**
  * Diese Klasse führt eine Test INteraction durch
  * 
  * @author coalado
  */
-public class DummyInteraction extends Interaction {
+public class DummyInteraction extends Interaction implements Serializable {
+
+    /**
+     * 
+     */
+    private static final long   serialVersionUID  = -4390257509319544642L;
 
     /**
      * serialVersionUID
      */
-    private static final long   serialVersionUID = 1332164738388120767L;
 
-    private static final String NAME             = "Dummy";
+    private static final String NAME              = "Dummy";
 
     /**
      * Führt die Normale INteraction zurück. Nach dem Aufruf dieser methode
      * läuft der Download wie geowhnt weiter.
      */
+    public static String        PROPERTY_QUESTION = "INTERACTION_" + NAME + "_QUESTION";
+
+    public DummyInteraction() {
+        setProperty(PROPERTY_QUESTION, "Dummy Interaction. Dieser Text kann in der Konfiguration eingestellt werden");
+    }
+
     @Override
     public boolean doInteraction(Object arg) {
         logger.info("Starting Dummy");
-        if (JOptionPane.showConfirmDialog(new JFrame(), "Dummy Interaction bestätigen?", "Warning", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE) == 0) {
+        if (JOptionPane.showConfirmDialog(new JFrame(), getProperty(PROPERTY_QUESTION), "Warning", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE) == 0) {
             this.setCallCode(Interaction.INTERACTION_CALL_SUCCESS);
             return true;
         }
@@ -53,4 +63,5 @@ public class DummyInteraction extends Interaction {
 
         return NAME;
     }
+
 }
