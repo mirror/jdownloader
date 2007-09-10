@@ -86,7 +86,7 @@ public class DistributeData extends ControlMulticaster{
                     if(pDecrypt.isClipboardEnabled() && pDecrypt.canHandle(data)){
                         moreToDo = true;
                         fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_PLUGIN_DECRYPT_ACTIVE, pDecrypt));
-                        logger.info("decryptedLink removed");
+                        logger.info("decryptedLink removed "+data+">>"+pDecrypt.getHost());
                         iterator.remove();
                         decryptedLinks.addAll(pDecrypt.decryptLink(data));
                         iterator = decryptedLinks.iterator();

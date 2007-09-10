@@ -1,9 +1,15 @@
 package jd.gui.skins.simple;
 
+import java.awt.AWTException;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
+import java.awt.Image;
 import java.awt.Insets;
+import java.awt.MenuItem;
+import java.awt.PopupMenu;
+import java.awt.SystemTray;
 import java.awt.Toolkit;
+import java.awt.TrayIcon;
 import java.awt.datatransfer.Clipboard;
 import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.UnsupportedFlavorException;
@@ -123,6 +129,11 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener{
         
         uiListener = new Vector<UIListener>();
         frame      = new JFrame();
+       
+        
+        
+        
+        
         tabbedPane = new JTabbedPane();
         menuBar    = new JMenuBar();
         toolBar    = new JToolBar();
@@ -141,6 +152,43 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener{
         
         dragNDrop= new Dropper(frame);
         dragNDrop.addUIListener(this);
+        
+        
+        
+        
+        
+        
+        
+        
+//        
+//        
+//        SystemTray tray = SystemTray.getSystemTray();
+//        Image image =  JDUtilities.getImage("start");
+//        PopupMenu popup = new PopupMenu();
+//        MenuItem defaultItem = new MenuItem("Test");
+//      
+//        popup.add(defaultItem);
+//
+//        final TrayIcon trayIcon = new TrayIcon(image, "Tray Demo", popup);
+//
+//        ActionListener actionListener = new ActionListener() {
+//            public void actionPerformed(ActionEvent e) {
+//                trayIcon.displayMessage("Action Event", 
+//                    "An Action Event Has Been Performed!",
+//                    TrayIcon.MessageType.INFO);
+//            }
+//        };
+//                
+//        trayIcon.setImageAutoSize(true);
+//        trayIcon.addActionListener(actionListener);
+//     
+//
+//        try {
+//            tray.add(trayIcon);
+//        } catch (AWTException e) {
+//            System.err.println("TrayIcon could not be added.");
+//        }
+
     
     }
     /**
@@ -640,4 +688,5 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener{
        }
         
     }
+  
 }

@@ -65,7 +65,7 @@ public class FileFactory extends PluginForHost{
     public FileFactory(){
         super();
         steps.add(new PluginStep(PluginStep.STEP_WAIT_TIME, null));
-        steps.add(new PluginStep(PluginStep.STEP_CAPTCHA,  null));
+        steps.add(new PluginStep(PluginStep.STEP_GET_CAPTCHA_FILE,  null));
         steps.add(new PluginStep(PluginStep.STEP_DOWNLOAD, null));
     }
     @Override
@@ -73,7 +73,7 @@ public class FileFactory extends PluginForHost{
         return null;
     }
     @Override
-    public PluginStep getNextStep(Object parameter) {
+    public PluginStep doNextStep(Object parameter) {
         DownloadLink downloadLink = (DownloadLink)parameter;
         
         PluginStep todo=null;
@@ -121,7 +121,7 @@ public class FileFactory extends PluginForHost{
             case PluginStep.STEP_WAIT_TIME:
                 todo.setParameter(new Long(waitTime));
                 break;
-            case PluginStep.STEP_CAPTCHA:
+            case PluginStep.STEP_GET_CAPTCHA_FILE:
                 todo.setParameter(captchaAddress);
                 todo.setStatus(PluginStep.STATUS_USER_INPUT);
                 break;
@@ -177,4 +177,11 @@ public class FileFactory extends PluginForHost{
         // TODO Auto-generated method stub
         
     }
+   
+    public PluginStep doStep(PluginStep step, DownloadLink parameter) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+
 }

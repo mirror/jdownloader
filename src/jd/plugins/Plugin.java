@@ -23,6 +23,7 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -38,6 +39,8 @@ import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import jd.JDUtilities;
+import jd.controlling.interaction.Interaction;
 import jd.plugins.event.PluginEvent;
 import jd.plugins.event.PluginListener;
 
@@ -133,15 +136,24 @@ public abstract class Plugin {
      *         werden soll
      */
     public abstract boolean isClipboardEnabled();
+   
     /**
-     * Diese Methode liefert den nächsten Schritt zurück, den das Plugin
-     * vornehmen wird. Falls der letzte Schritt erreicht ist, wird null
-     * zurückgegeben
-     * 
-     * @param parameter Ein Übergabeparameter
-     * @return der nächste Schritt oder null, falls alle abgearbeitet wurden
+     * Gibt die Date zurück in die der aktuelle captcha geladne werden soll.
+     * @param plugin
+     * @return
      */
-    public abstract PluginStep getNextStep(Object parameter);
+    public File getLocalCaptchaFile(Plugin plugin){
+        File dest = JDUtilities.getResourceFile("captchas/" + plugin.getPluginName() + "/captcha_" + (new Date().getTime()) + ".jpg");
+        return dest;
+    }
+    
+    /**
+     * Führt den aktuellen Schritt aus
+     * @param step
+     * @param parameter
+     * @return der gerade ausgeführte Schritt
+     */
+    public abstract PluginStep doStep(PluginStep step,Object parameter);
     /**
      * Hiermit wird der Eventmechanismus realisiert. Alle hier eingetragenen
      * Listener werden benachrichtigt, wenn mittels
@@ -210,6 +222,19 @@ public abstract class Plugin {
         int index= steps.indexOf(currentStep)+1;
         if(steps.size()>index)return steps.elementAt(index);
         return null;
+    }
+    /**
+     * Gibt ausgehend von übergebenem Schritt den vorherigen zurück
+     * @param currentStep
+     * @return
+     */
+    public PluginStep previousStep(PluginStep currentStep){
+        if(steps==null ||steps.size()==0)return null;
+        if(currentStep==null)return steps.firstElement();
+        int index= steps.indexOf(currentStep)-1;
+        if(index>=0)return steps.elementAt(index);
+        return null;
+        
     }
     
     /**
@@ -883,4 +908,123 @@ RequestInfo requestInfo=readFromURL(httpConnection);
         }
         return (String[]) set.toArray(new String[set.size()]);
     }
+    
+    /**
+     * public static String[] getMatches(String source, String pattern) Gibt
+     * alle treffer in source nach dem pattern zurück. Platzhalter ist nur !! °
+     * 
+     * @param source
+     * @param pattern als Pattern wird ein Normaler String mit ° als Wildcard verwendet. 
+     * @return Alle TReffer
+     */
+    public static String[] getMatches(String source, String pattern) {
+        // DEBUG.trace("pattern: "+STRING.getPattern(pattern));
+        if(source==null ||pattern==null)return null;
+        Matcher rr = Pattern.compile(getPattern(pattern), Pattern.DOTALL).matcher(source);
+        if (!rr.find()) {
+            // Keine treffer
+        }
+        try {
+            String[] ret = new String[rr.groupCount()];
+            for (int i = 1; i <= rr.groupCount(); i++) {
+                ret[i - 1] = rr.group(i);
+            }
+            return ret;
+        } catch (IllegalStateException e) {
+
+            return null;
+        }
+    }
+
+ 
+    /**
+     * public static String getPattern(String str) Gibt ein Regex pattern
+     * zurück. ° dient als Platzhalter!
+     * 
+     * @param str
+     * @return REgEx Pattern
+     */
+    public static String getPattern(String str) {
+
+        String allowed = "QWERTZUIOPÜASDFGHJKLÖÄYXCVBNMqwertzuiopasdfghjklyxcvbnm 1234567890";
+        String ret = "";
+        int i;
+        for (i = 0; i < str.length(); i++) {
+            char letter = str.charAt(i);
+            // 176 == °
+            if (letter == 176) {
+                ret += "(.*?)";
+            } else if (allowed.indexOf(letter) == -1) {
+
+                ret += "\\" + letter;
+            } else {
+
+                ret += letter;
+            }
+        }
+
+        return ret;
+    }
+
+
+
+   
+  
+
+    /**
+     * Schreibt alle treffer von pattern in source in den übergebenen vector
+     * @param source
+     * @param pattern als Pattern wird ein Normaler String mit ° als Wildcard verwendet. 
+     * @param container
+     * @return Treffer
+     */
+    public static Vector<Vector<String>> getAllMatches(String source, String pattern) {
+        pattern = getPattern(pattern);
+        Vector<Vector<String>> ret =new Vector<Vector<String>>();
+
+        Vector<String> entry;
+        String tmp;
+        for (Matcher r = Pattern.compile(pattern, Pattern.DOTALL).matcher(source); r.find();) {
+            entry = new Vector<String>();
+
+            for (int x = 1; x <= r.groupCount(); x++) {
+tmp = r.group(x).trim();
+                    entry.add(JDUtilities.UTF8Decode(tmp));
+//                }
+            }
+            ret.add(entry);
+
+        }
+
+        return ret;
+    }
+    public static String getMatch(String source, String pattern,int i,int ii){
+        Vector<Vector<String>> ret=getAllMatches(source, pattern);
+        if(ret.elementAt(i)!=null&&ret.elementAt(i).elementAt(ii)!=null){
+            return ret.elementAt(i).elementAt(ii);
+        }
+        return null
+;
+      }
+  public static String getCaptchaCode(File file, Plugin plugin){
+      DownloadLink dummy=new DownloadLink(plugin, "", "", "", true);
+      dummy.setLatestCaptchaFile(file);
+      Interaction.handleInteraction(Interaction.INTERACTION_DOWNLOAD_CAPTCHA, dummy, 0);
+      Interaction[] interacts = Interaction.getInteractions(Interaction.INTERACTION_DOWNLOAD_CAPTCHA);
+      String captchaText=null;
+      if (interacts.length > 0) {
+          captchaText = (String) interacts[0].getProperty("captchaCode");
+          if (captchaText == null) {
+              // im NOtfall doch JAC nutzen
+              captchaText = JDUtilities.getCaptcha(JDUtilities.getController(), plugin, file);
+          }
+     
+      }else{
+          logger.finer("KEINE captchaINteractions... nutze JAC");
+          captchaText = JDUtilities.getCaptcha(JDUtilities.getController(), plugin, file);
+           
+      }
+      return captchaText;
+      
+  }
 }

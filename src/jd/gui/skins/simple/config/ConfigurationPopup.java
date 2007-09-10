@@ -15,9 +15,19 @@ import jd.Configuration;
 import jd.JDUtilities;
 import jd.gui.UIInterface;
 
-
+/**
+ * Parentklasse für ein 2. Popupfenster. Wird momentan zur Konfiguration der Interactions verwendet
+ * @author coalado
+ *
+ */
 public class ConfigurationPopup extends JDialog implements ActionListener {
 
+    /**
+     * 
+     */
+    private static final long serialVersionUID = 3815946152967454931L;
+
+    @SuppressWarnings("unused")
     private Configuration configuration;
 
     private ConfigPanel   panel;
@@ -26,8 +36,16 @@ public class ConfigurationPopup extends JDialog implements ActionListener {
 
     private JButton       btnCancel;
 
+    @SuppressWarnings("unused")
     private UIInterface   uiinterface;
-
+/**
+ * Erstellt einen Neuen Dialog
+ * @param parent (Parent FEnster)
+ * @param panel   (ConfigPanel (panel inkl. ok/close buttons etc)
+ * @param jpanel  (panel des eigentlichen Konfigfenster)
+ * @param uiinterface
+ * @param configuration
+ */
     public ConfigurationPopup(JFrame parent, ConfigPanel panel,JPanel jpanel, UIInterface uiinterface, Configuration configuration) {
         super(parent);
         this.uiinterface = uiinterface;

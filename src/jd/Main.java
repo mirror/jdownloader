@@ -85,7 +85,7 @@ public class Main {
         controller.setUiInterface(uiInterface);
         controller.initDownloadLinks();
    
-        
+      
         
         Iterator<PluginForHost> iteratorHost = JDUtilities.getPluginsForHost().iterator();
         while(iteratorHost.hasNext()){

@@ -8,9 +8,11 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
 import java.security.NoSuchAlgorithmException;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.regex.Pattern;
 
+import jd.JDUtilities;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginStep;
@@ -110,8 +112,9 @@ public class Rapidshare extends PluginForHost {
 
     public Rapidshare() {
         super();
+//        steps.add(new PluginStep(PluginStep.STEP_PAGE, null));
         steps.add(new PluginStep(PluginStep.STEP_WAIT_TIME, null));
-        steps.add(new PluginStep(PluginStep.STEP_CAPTCHA, null));
+        steps.add(new PluginStep(PluginStep.STEP_GET_CAPTCHA_FILE, null));
         steps.add(new PluginStep(PluginStep.STEP_DOWNLOAD, null));
     }
 
@@ -120,108 +123,38 @@ public class Rapidshare extends PluginForHost {
         return null;
     }
 
-    @Override
-    public PluginStep getNextStep(Object parameter) {
-        DownloadLink downloadLink = (DownloadLink) parameter;
+ 
+    public PluginStep doStep(PluginStep step,DownloadLink downloadLink) {
+       
         RequestInfo requestInfo;
-        PluginStep todo = null;
-        logger.info("get Next Step " + currentStep);
-        if (currentStep == null) {
-            try {
-                // Der Download wird bestätigt
-                requestInfo = getRequest(new URL(downloadLink.getUrlDownloadDecrypted()));
-                String newURL = getFirstMatch(requestInfo.getHtmlCode(), patternForNewHost, 1);
-                if (newURL != null) {
-
-                    // Auswahl ob free oder prem
-                    requestInfo = postRequest(new URL(newURL), "dl.start=free");
-
-                    // captcha Adresse finden
-                    captchaAddress = getFirstMatch(requestInfo.getHtmlCode(), patternForCaptcha, 1);
-
-                    // post daten lesen
-                    postTarget = getFirstMatch(requestInfo.getHtmlCode(), patternForFormData, 1);
-                    actionString = getFirstMatch(requestInfo.getHtmlCode(), patternForFormData, 2);
-                }
-                logger.info(newURL + " - " + captchaAddress + " - " + postTarget + " - " + actionString);
-                currentStep = steps.firstElement();
-                if (newURL == null || captchaAddress == null || postTarget == null || actionString == null) {
-                    logger.info("check pattern "+patternErrorDownloadLimitReached);
-                    String strWaitTime = getFirstMatch(requestInfo.getHtmlCode(), patternErrorDownloadLimitReached, 1);
-                    if (strWaitTime != null) {
-                        logger.severe("wait " + strWaitTime + " minutes");
-                        waitTime = Integer.parseInt(strWaitTime) * 60 * 1000;
-                        downloadLink.setStatus(DownloadLink.STATUS_ERROR_DOWNLOAD_LIMIT);
-                        currentStep.setStatus(PluginStep.STATUS_ERROR);
-                        logger.info(" WARTEZEIT SETZEN IN " + currentStep + " : " + waitTime);
-                        currentStep.setParameter((long) waitTime);
-                        return currentStep;
-                    }
-                    String strFileAbused = getFirstMatch(requestInfo.getHtmlCode(), patternErrorFileAbused, 0);
-                    if (strFileAbused != null) {
-                        logger.severe("file abused");
-                        downloadLink.setStatus(DownloadLink.STATUS_ERROR_FILE_ABUSED);
-                        currentStep.setStatus(PluginStep.STATUS_ERROR);
-                        return currentStep;
-                    }
-                    String strFileNotFound = getFirstMatch(requestInfo.getHtmlCode(), patternErrorFileNotFound, 0);
-                    if (strFileNotFound != null) {
-                        logger.severe("file not found");
-                        downloadLink.setStatus(DownloadLink.STATUS_ERROR_FILE_NOT_FOUND);
-                        currentStep.setStatus(PluginStep.STATUS_ERROR);
-                        return currentStep;
-                    }
-
-                    String strCaptchaWrong = getFirstMatch(requestInfo.getHtmlCode(), patternErrorCaptchaWrong, 0);
-                    if (strCaptchaWrong != null) {
-                        logger.severe("captchaWrong");
-                        downloadLink.setStatus(DownloadLink.STATUS_ERROR_CAPTCHA_WRONG);
-                        currentStep.setStatus(PluginStep.STATUS_ERROR);
-                        return currentStep;
-                    }
-                    String strAlreadyLoading = getFirstMatch(requestInfo.getHtmlCode(), patternForAlreadyDownloading, 0);
-                    
-                    if (strAlreadyLoading != null) {
-                        logger.severe("Already Loading wait " + 60 + " sek. to Retry");
-                        waitTime =180 * 1000;
-                        downloadLink.setStatus(DownloadLink.STATUS_ERROR_STATIC_WAITTIME);
-                        currentStep.setStatus(PluginStep.STATUS_ERROR);
-                        logger.info(" WARTEZEIT SETZEN IN (already loading)" + currentStep + " : " + waitTime);
-                        currentStep.setParameter((long) waitTime);
-                        return currentStep;
-                    }
-                    
-                    downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN);
-                    currentStep.setStatus(PluginStep.STATUS_ERROR);
-                    logger.warning("could not get downloadInfo ");
-                    try {
-                        Thread.sleep(5000);
-                    }
-                    catch (InterruptedException e) {
-                      }
-                    return currentStep;
-                }
-            }
-            catch (MalformedURLException e) {
-                e.printStackTrace();
-            }
-            catch (IOException e) {
-                e.printStackTrace();
-            }
-
+        if(step==null){
+            logger.info("PLugin Ende erreicht.");
+            return null;
         }
-        int index = steps.indexOf(currentStep);
-        todo = currentStep;
-        // Nächster step
-        if (index + 1 < steps.size()) currentStep = steps.get(index + 1);
-        logger.finer("Todo:" + todo.toString());
-        switch (todo.getStep()) {
+        
+        logger.info("get Next Step " + currentStep);
+        
+      
+        switch (step.getStep()) {
+      
+            
             case PluginStep.STEP_WAIT_TIME:
-                todo.setParameter(new Long(waitTime));
+                getDownloadInfo(downloadLink);
+           
                 break;
-            case PluginStep.STEP_CAPTCHA:
-                todo.setParameter(captchaAddress);
-                todo.setStatus(PluginStep.STATUS_USER_INPUT);
+            case PluginStep.STEP_GET_CAPTCHA_FILE:
+                File file=this.getLocalCaptchaFile(this);
+                if (!JDUtilities.download(file, captchaAddress) || !file.exists()) {
+                    logger.severe("Captcha Download fehlgeschlagen: " + captchaAddress);
+                    step.setParameter(null);
+                    step.setStatus(PluginStep.STATUS_ERROR);
+                    downloadLink.setStatus(DownloadLink.STATUS_ERROR_CAPTCHA_IMAGEERROR);
+                    break;
+                }else{
+                    step.setParameter(file);
+                    step.setStatus(PluginStep.STATUS_USER_INPUT);
+                }
+           
                 break;
             case PluginStep.STEP_DOWNLOAD:
                 if (steps.get(1).getParameter() == null) {
@@ -234,25 +167,110 @@ public class Rapidshare extends PluginForHost {
                     postParameter.put("actionString", actionString);
                     boolean success = prepareDownload(downloadLink);
                     if (success) {
-                        todo.setStatus(PluginStep.STATUS_DONE);
+                        step.setStatus(PluginStep.STATUS_DONE);
                         downloadLink.setStatus(DownloadLink.STATUS_DONE);
                         return null;
                     }
                     else if (aborted) {
                         logger.warning("Plugin abgebrochen");
                         downloadLink.setStatus(DownloadLink.STATUS_TODO);
-                        todo.setStatus(PluginStep.STATUS_TODO);
+                        step.setStatus(PluginStep.STATUS_TODO);
 
                     }
                     else {
                         logger.severe("captcha wrong");
                         downloadLink.setStatus(DownloadLink.STATUS_ERROR_CAPTCHA_WRONG);
-                        todo.setStatus(PluginStep.STATUS_ERROR);
+                        step.setStatus(PluginStep.STATUS_ERROR);
                     }
                 }
                 break;
         }
-        return todo;
+        return step;
+    }
+
+    private void getDownloadInfo(DownloadLink downloadLink) {
+        try {
+            // Der Download wird bestätigt
+            RequestInfo requestInfo = getRequest(downloadLink.getUrlDownload());
+            String newURL = getFirstMatch(requestInfo.getHtmlCode(), patternForNewHost, 1);
+            if (newURL != null) {
+
+                // Auswahl ob free oder prem
+                requestInfo = postRequest(new URL(newURL), "dl.start=free");
+
+                // captcha Adresse finden
+                captchaAddress = getFirstMatch(requestInfo.getHtmlCode(), patternForCaptcha, 1);
+
+                // post daten lesen
+                postTarget = getFirstMatch(requestInfo.getHtmlCode(), patternForFormData, 1);
+                actionString = getFirstMatch(requestInfo.getHtmlCode(), patternForFormData, 2);
+            }
+            logger.info(newURL + " - " + captchaAddress + " - " + postTarget + " - " + actionString);
+            currentStep = steps.firstElement();
+            if (newURL == null || captchaAddress == null || postTarget == null || actionString == null) {
+                logger.info("check pattern "+patternErrorDownloadLimitReached);
+                String strWaitTime = getFirstMatch(requestInfo.getHtmlCode(), patternErrorDownloadLimitReached, 1);
+                if (strWaitTime != null) {
+                    logger.severe("wait " + strWaitTime + " minutes");
+                    waitTime = Integer.parseInt(strWaitTime) * 60 * 1000;
+                    downloadLink.setStatus(DownloadLink.STATUS_ERROR_DOWNLOAD_LIMIT);
+                    currentStep.setStatus(PluginStep.STATUS_ERROR);
+                    logger.info(" WARTEZEIT SETZEN IN " + currentStep + " : " + waitTime);
+                    currentStep.setParameter((long) waitTime);
+                    return;
+                }
+                String strFileAbused = getFirstMatch(requestInfo.getHtmlCode(), patternErrorFileAbused, 0);
+                if (strFileAbused != null) {
+                    logger.severe("file abused");
+                    downloadLink.setStatus(DownloadLink.STATUS_ERROR_FILE_ABUSED);
+                    currentStep.setStatus(PluginStep.STATUS_ERROR);
+                    return;
+                }
+                String strFileNotFound = getFirstMatch(requestInfo.getHtmlCode(), patternErrorFileNotFound, 0);
+                if (strFileNotFound != null) {
+                    logger.severe("file not found");
+                    downloadLink.setStatus(DownloadLink.STATUS_ERROR_FILE_NOT_FOUND);
+                    currentStep.setStatus(PluginStep.STATUS_ERROR);
+                    return;
+                }
+
+                String strCaptchaWrong = getFirstMatch(requestInfo.getHtmlCode(), patternErrorCaptchaWrong, 0);
+                if (strCaptchaWrong != null) {
+                    logger.severe("captchaWrong");
+                    downloadLink.setStatus(DownloadLink.STATUS_ERROR_CAPTCHA_WRONG);
+                    currentStep.setStatus(PluginStep.STATUS_ERROR);
+                    return;
+                }
+                String strAlreadyLoading = getFirstMatch(requestInfo.getHtmlCode(), patternForAlreadyDownloading, 0);
+                
+                if (strAlreadyLoading != null) {
+                    logger.severe("Already Loading wait " + 60 + " sek. to Retry");
+                    waitTime =180 * 1000;
+                    downloadLink.setStatus(DownloadLink.STATUS_ERROR_STATIC_WAITTIME);
+                    currentStep.setStatus(PluginStep.STATUS_ERROR);
+                    logger.info(" WARTEZEIT SETZEN IN (already loading)" + currentStep + " : " + waitTime);
+                    currentStep.setParameter((long) waitTime);
+                    return;
+                }
+                
+                downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN);
+                currentStep.setStatus(PluginStep.STATUS_ERROR);
+                logger.warning("could not get downloadInfo ");
+                try {
+                    Thread.sleep(5000);
+                }
+                catch (InterruptedException e) {
+                  }
+                return;
+            }
+        }
+        catch (MalformedURLException e) {
+            e.printStackTrace();
+        }
+        catch (IOException e) {
+            e.printStackTrace();
+        }
+        
     }
 
     private boolean prepareDownload(DownloadLink downloadLink) {
@@ -302,4 +320,6 @@ public class Rapidshare extends PluginForHost {
         postParameter = new HashMap<String, String>();
 
     }
+
+ 
 }

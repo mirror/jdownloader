@@ -73,7 +73,7 @@ public class HttpLink extends PluginForHost {
     }
 
     @Override
-    public PluginStep getNextStep(Object parameter) {
+    public PluginStep doNextStep(Object parameter) {
         DownloadLink downloadLink = (DownloadLink) parameter;
         PluginStep todo = steps.firstElement();
 
@@ -117,4 +117,11 @@ public class HttpLink extends PluginForHost {
     // TODO Auto-generated method stub
 
     }
+
+    @Override
+    public PluginStep doStep(PluginStep step, DownloadLink parameter) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
 }

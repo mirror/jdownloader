@@ -6,7 +6,7 @@ import jd.JDUtilities;
 import jd.plugins.DownloadLink;
 
 /**
- * Diese Klasse führt eine Test INteraction durch
+ * Captach erkennung über JAC
  * 
  * @author coalado
  */
@@ -22,10 +22,7 @@ public class JAntiCaptcha extends Interaction implements Serializable{
 
     private static final String NAME             = "Captcha Erkennung: JAntiCaptcha";
 
-    /**
-     * Führt die Normale INteraction zurück. Nach dem Aufruf dieser methode
-     * läuft der Download wie geowhnt weiter.
-     */
+ 
    
     @Override
     public boolean doInteraction(Object arg) {

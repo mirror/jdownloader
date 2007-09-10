@@ -99,7 +99,7 @@ public class DownloadLink implements Serializable{
     /**
      * Das Plugin, das für diesen Download zuständig ist
      */
-    private transient PluginForHost plugin;
+    private transient Plugin plugin;
     /**
      * Maximum der heruntergeladenen Datei (Dateilänge)
      */
@@ -154,7 +154,7 @@ public class DownloadLink implements Serializable{
      * @param isEnabled
      *            Markiert diesen DownloadLink als aktiviert oder deaktiviert
      */
-    public DownloadLink(PluginForHost plugin, String name, String host, String urlDownload, boolean isEnabled) {
+    public DownloadLink(Plugin plugin, String name, String host, String urlDownload, boolean isEnabled) {
         this.plugin = plugin;
         this.name = name;
         this.host = host;
@@ -193,7 +193,7 @@ public class DownloadLink implements Serializable{
      * 
      * @return Das Plugin
      */
-    public PluginForHost getPlugin() {
+    public Plugin getPlugin() {
         return plugin;
     }
 
@@ -282,7 +282,7 @@ public class DownloadLink implements Serializable{
      * @param plugin
      *            Das für diesen Download zuständige Plugin
      */
-    public void setLoadedPlugin(PluginForHost plugin) {
+    public void setPlugin(Plugin plugin) {
         this.plugin = plugin;
     }
 

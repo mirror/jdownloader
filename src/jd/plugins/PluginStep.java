@@ -12,7 +12,7 @@ public class PluginStep {
     /**
      * Das Captcha Bild soll erkannt werden. Als Rückgabe wird der erkannte Text als Parameter übergeben
      */
-    public final static int STEP_CAPTCHA   = 1 << 2;
+    public final static int STEP_GET_CAPTCHA_FILE   = 1 << 2;
     /**
      * Der Download soll durchgeführt werden. Als Parameter wird der DownloadLink übergeben
      */
@@ -21,6 +21,10 @@ public class PluginStep {
      * Ein Link soll entschlüsselt werden
      */
     public final static int STEP_DECRYPT   = 1 << 4;
+    /**
+     * Eine Seite Soll geladen werden. ZUm auswerten von Parametern etc
+     */
+    public final static int STEP_PAGE  = 1 << 5;
     /**
      * Dieser Schritt muß erst noch stattfinden
      */
@@ -68,9 +72,10 @@ public class PluginStep {
         buffer.append("");
         switch(step){
             case STEP_WAIT_TIME: buffer.append("Warten "); break;
-            case STEP_CAPTCHA:   buffer.append("Captcha ");   break;
+            case STEP_GET_CAPTCHA_FILE:   buffer.append("Captcha ");   break;
             case STEP_DOWNLOAD:  buffer.append("Download ");  break;
             case STEP_DECRYPT:   buffer.append("Decrypt ");   break;
+            case STEP_PAGE:   buffer.append("Laden... ");   break;
         }
         buffer.append("status: ");
         switch(status){

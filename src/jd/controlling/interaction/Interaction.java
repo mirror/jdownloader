@@ -121,17 +121,17 @@ public abstract class Interaction extends Property implements Serializable {
      */
     public static InteractionTrigger          INTERACTION_JAC_UPDATE_NEEDED      = new InteractionTrigger(9, "Captcha Update nötig", "Wird aufgerufen wenn viele captchas falsch erkannt wurden");
 
-    
-   /**
+    /**
      * Nach einem IP wechsel
      */
 
     public final static InteractionTrigger    INTERACTION_AFTER_RECONNECT        = new InteractionTrigger(10, "Nach einem Reconnect", "Nach einem Reconnect");
+
     /**
      * Reconnect nötig
      */
-    public static InteractionTrigger          INTERACTION_NEED_RECONNECT      = new InteractionTrigger(9, "Reconnect nötig", "Ein Reconnect wäre sinnvoll");
-   
+    public static InteractionTrigger          INTERACTION_NEED_RECONNECT         = new InteractionTrigger(9, "Reconnect nötig", "Ein Reconnect wäre sinnvoll");
+
     public Interaction() {
         controlListener = new Vector<ControlListener>();
         this.setTrigger(Interaction.INTERACTION_NO_EVENT);
@@ -264,10 +264,10 @@ public abstract class Interaction extends Property implements Serializable {
      */
     public static boolean handleInteraction(InteractionTrigger interactionevent, Object param) {
         boolean ret = true;
-        Vector<Interaction> interactions = JDUtilities.getConfiguration().getInteractions();
-        int interacts=0;
-        for (int i = 0; i < interactions.size(); i++) {
-            Interaction interaction = interactions.get(i);
+        Interaction[] interactions = JDUtilities.getConfiguration().getInteractions();
+        int interacts = 0;
+        for (int i = 0; i < interactions.length; i++) {
+            Interaction interaction = interactions[i];
             if (interaction == null || interaction.getTrigger() == null || interactionevent == null) continue;
             if (interaction.getTrigger().getID() == interactionevent.getID()) {
                 interaction.addControlListener(JDUtilities.getController());
@@ -282,11 +282,10 @@ public abstract class Interaction extends Property implements Serializable {
             }
 
         }
-if(interacts==0)return false;
+        if (interacts == 0) return false;
         return ret;
 
     }
-    
 
     /**
      * Führt nur die i-te INteraction aus
@@ -298,27 +297,27 @@ if(interacts==0)return false;
      * @return
      */
     public static boolean handleInteraction(InteractionTrigger interactionevent, Object param, int id) {
-   
+
         Vector<Interaction> interactions = JDUtilities.getConfiguration().getInteractions();
 
         for (int i = 0; i < interactions.size(); i++) {
             Interaction interaction = interactions.get(i);
             if (interaction == null || interaction.getTrigger() == null || interactionevent == null) continue;
             if (interaction.getTrigger().getID() == interactionevent.getID()) {
-               if(id==0){
-                interaction.addControlListener(JDUtilities.getController());
-                if (!interaction.interact(param)) {
-                   
-                    logger.severe("interaction failed: " + interaction);
-                    return false;
-                    
+                if (id == 0) {
+                    interaction.addControlListener(JDUtilities.getController());
+                    if (!interaction.interact(param)) {
+
+                        logger.severe("interaction failed: " + interaction);
+                        return false;
+
+                    }
+                    else {
+                        logger.info("interaction successfull: " + interaction);
+                        return true;
+                    }
+
                 }
-                else {
-                    logger.info("interaction successfull: " + interaction);
-                    return true;
-                }
-              
-               }
                 id--;
             }
 
@@ -327,7 +326,11 @@ if(interacts==0)return false;
         return false;
 
     }
-
+/**
+ * Gibt alle Interactionen zum trigger zurück
+ * @param trigger
+ * @return
+ */
     public static Interaction[] getInteractions(InteractionTrigger trigger) {
         Vector<Interaction> interactions = JDUtilities.getConfiguration().getInteractions();
         Vector<Interaction> ret = new Vector<Interaction>();

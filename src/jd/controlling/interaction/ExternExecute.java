@@ -16,9 +16,15 @@ public class ExternExecute extends Interaction implements Serializable {
      * 
      */
     private static final long   serialVersionUID          = 4793649294489149258L;
-
+/**
+ * Unter diesen Namen werden die entsprechenden Parameter gespeichert
+ *
+ */
     public static String        PROPERTY_COMMAND          = "InteractionExternExecute_" + "Command";
-
+    /**
+     * Unter diesen Namen werden die entsprechenden Parameter gespeichert
+     *
+     */
     public static String        PROPERTY_WAIT_TERMINATION = "InteractionExternExecute_" + "WaitTermination";
 
     /**

@@ -8,6 +8,7 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.util.regex.Pattern;
 
+import jd.JDUtilities;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginStep;
@@ -56,7 +57,7 @@ public class Gulli extends PluginForHost {
     private HttpURLConnection    finalDownloadConnection;
 
     public Gulli() {
-        steps.add(new PluginStep(PluginStep.STEP_CAPTCHA, null));
+        steps.add(new PluginStep(PluginStep.STEP_GET_CAPTCHA_FILE, null));
         steps.add(new PluginStep(PluginStep.STEP_WAIT_TIME, null));
         steps.add(new PluginStep(PluginStep.STEP_DOWNLOAD, null));
 
@@ -103,23 +104,13 @@ public class Gulli extends PluginForHost {
         return null;
     }
 
-    @Override
-    public PluginStep getNextStep(Object parameter) {
+    public PluginStep doStep(PluginStep step, DownloadLink parameter) {
         RequestInfo requestInfo;
         try {
             DownloadLink downloadLink = (DownloadLink) parameter;
 
-            currentStep = nextStep(currentStep);
-
-            if (currentStep != null) {
-                logger.finest("STEP " + currentStep.toString());
-            }
-            else {
-                return null;
-            }
-
-            switch (currentStep.getStep()) {
-                case PluginStep.STEP_CAPTCHA:
+            switch (step.getStep()) {
+                case PluginStep.STEP_GET_CAPTCHA_FILE:
                     // con.setRequestProperty("Cookie",
                     // Plugin.joinMap(cookieMap,"=","; "));
                     requestInfo = getRequest(new URL(downloadLink.getUrlDownloadDecrypted()));
@@ -129,11 +120,11 @@ public class Gulli extends PluginForHost {
                     if (captchaLocalUrl == null) {
                         logger.severe("Captcha URL konnte nicht gefunden werden "+downloadLink.getUrlDownload());
                         downloadLink.setStatus(DownloadLink.STATUS_ERROR_STATIC_WAITTIME);
-                        currentStep.setStatus(PluginStep.STATUS_ERROR);
-                        currentStep.setParameter(3*60);
+                        step.setStatus(PluginStep.STATUS_ERROR);
+                        step.setParameter(3*60);
 
                        
-                        return currentStep;
+                        return step;
 
                     }
                     else {
@@ -141,9 +132,20 @@ public class Gulli extends PluginForHost {
                         logger.info(cookie);
                         logger.finest("Captcha Page");
                         String captchaUrl = "http://share.gulli.com" + captchaLocalUrl;
-                        currentStep.setParameter(captchaUrl);
-                        currentStep.setStatus(PluginStep.STATUS_USER_INPUT);
-                        return currentStep;
+                        
+                        File file=this.getLocalCaptchaFile(this);
+                        if (!JDUtilities.download(file, captchaUrl) || !file.exists()) {
+                            logger.severe("Captcha Download fehlgeschlagen: " + captchaUrl);
+                            step.setParameter(null);
+                            step.setStatus(PluginStep.STATUS_ERROR);
+                            downloadLink.setStatus(DownloadLink.STATUS_ERROR_CAPTCHA_IMAGEERROR);
+                            break;
+                        }else{
+                            step.setParameter(file);
+                            step.setStatus(PluginStep.STATUS_USER_INPUT);
+                        }
+                     
+                        return step;
                     }
                 case PluginStep.STEP_WAIT_TIME:
                     String captchaTxt = (String) steps.get(0).getParameter();
@@ -179,17 +181,17 @@ public class Gulli extends PluginForHost {
                     logger.info("abbruch bei :" + red);
                     if (waittime != null) {
 
-                        currentStep.setStatus(PluginStep.STATUS_ERROR);
+                        step.setStatus(PluginStep.STATUS_ERROR);
                         downloadLink.setStatus(DownloadLink.STATUS_ERROR_DOWNLOAD_LIMIT);
-                        currentStep.setParameter(Long.parseLong(waittime) * 60 * 1000);
+                        step.setParameter(Long.parseLong(waittime) * 60 * 1000);
 
-                        logger.info("Warten " + (Long) currentStep.getParameter() + " - " + waittime);
-                        logger.info(currentStep.toString());
+                        logger.info("Warten " + (Long) step.getParameter() + " - " + waittime);
+                        logger.info(step.toString());
                     }
                     else if (error != null) {
                         logger.info("Error: " + error);
                         if (error.indexOf("ticket") > 0) {
-                            currentStep.setStatus(PluginStep.STATUS_ERROR);
+                            step.setStatus(PluginStep.STATUS_ERROR);
                             downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN_RETRY);
                             try {
                                 Thread.sleep(3000);
@@ -198,7 +200,7 @@ public class Gulli extends PluginForHost {
                             }
                         }
                         else {
-                            currentStep.setStatus(PluginStep.STATUS_ERROR);
+                            step.setStatus(PluginStep.STATUS_ERROR);
                             downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN);
                         }
 
@@ -208,14 +210,14 @@ public class Gulli extends PluginForHost {
                         finalDownloadURL = url;
                         finalDownloadConnection = requestInfo.getConnection();
                     }
-                    return currentStep;
+                    return step;
                 case PluginStep.STEP_DOWNLOAD:
                     logger.info("dl " + finalDownloadURL);
 
                     int length = finalDownloadConnection.getContentLength();
                     downloadLink.setDownloadMax(length);
                     download(downloadLink, (URLConnection) finalDownloadConnection);
-                    currentStep.setStatus(PluginStep.STATUS_DONE);
+                    step.setStatus(PluginStep.STATUS_DONE);
                     downloadLink.setStatus(DownloadLink.STATUS_DONE);
                     // String captchaTxt = (String) steps.get(0).getParameter();
                     // logger.info("code for gulli " + captchaTxt);
@@ -224,9 +226,9 @@ public class Gulli extends PluginForHost {
                     // + "captcha=" + captchaTxt);
                     //
                     // processPage(con, downloadLink);
-                    return currentStep;
+                    return step;
             }
-            return currentStep;
+            return step;
         }
         catch (IOException e) {
             e.printStackTrace();
@@ -234,75 +236,6 @@ public class Gulli extends PluginForHost {
         }
     }
 
-    // /**
-    // * Verarbeitet von Gulli erhaltene Seite und führt je nach Inhalt eine
-    // * Captcha-Erkennung oder einen Download durch
-    // *
-    // * @param con
-    // * @param dlLink
-    // * @throws IOException
-    // */
-    // private boolean processPage(HttpURLConnection con, DownloadLink dlLink)
-    // throws IOException {
-    // String content = contentToString(con);
-    //
-    // fileId = getFirstMatch(content, PAT_FILE_ID, 1);
-    // //
-    //        
-    // // gn="center"><img
-    // //
-    // src="/captcha;jsessionid=0152060A9FC7C420B1548A5CE4E4D08A?key=fd&amp;id=706307988"
-    // // alt="" border="0" /></p>
-    // String captchaLocalUrl = getFirstMatch(content, PAT_CAPTCHA, 1);
-    //
-    // if (captchaLocalUrl != null) {
-    // logger.finest("Captcha Page");
-    // String captchaUrl = "http://share.gulli.com" + captchaLocalUrl;
-    //
-    // currentStep = steps.get(0);
-    // currentStep.setParameter(captchaUrl);
-    // currentStep.setStatus(PluginStep.STATUS_USER_INPUT);
-    // return true;
-    // } else {
-    // String dlUrl = getFirstMatch(content, PAT_DOWNLOAD_URL, 1);
-    //
-    // if (dlUrl == null) {
-    // logger.finest("Error Page");
-    // currentStep.setStatus(PluginStep.STATUS_ERROR);
-    // return false;
-    // }
-    // logger.finest("Download Page");
-    //
-    // try {
-    // Thread.sleep(500);
-    // } catch (InterruptedException e) {
-    //
-    // }
-    //
-    // HttpURLConnection dlcon = createPostConnection(dlUrl,
-    // "action=download&file=" + fileId);
-    //
-    // int length = dlcon.getContentLength();
-    // dlLink.setDownloadMax(length);
-    //
-    // if (dlcon.getContentType().startsWith("text")) {
-    // currentStep.setStatus(PluginStep.STATUS_ERROR);
-    // dlLink.setStatus(DownloadLink.STATUS_ERROR_DOWNLOAD_LIMIT);
-    // content = contentToString(dlcon);
-    // String waittime = getFirstMatch(content, STR_DOWNLOAD_LIMIT, 1);
-    // logger.info("WAIT " + waittime);
-    //
-    // return false;
-    // }
-    // if (download(dlLink, dlcon)) {
-    // currentStep.setStatus(PluginStep.STATUS_DONE);
-    // } else {
-    // currentStep.setStatus(PluginStep.STATUS_ERROR);
-    // }
-    // return true;
-    // }
-    //
-    // }
 
     /**
      * Liest Content von Connection und gibt diesen als String zurück TODO:
@@ -335,4 +268,6 @@ public class Gulli extends PluginForHost {
         finalDownloadConnection = null;
 
     }
+
+
 }

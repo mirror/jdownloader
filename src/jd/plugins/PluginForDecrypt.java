@@ -26,11 +26,36 @@ public abstract class PluginForDecrypt extends Plugin{
         return decryptedLinks;
     }
     /**
-     * Die Methode entschlüsselt einen einzelnen Link
+     * Die Methode entschlüsselt einen einzelnen Link. Alle steps werden durchlaufen. Der letzte step muss als parameter einen Vector<String> mit den decoded Links setzen
      *
      * @param cryptedLink Ein einzelner verschlüsselter Link
      *
      * @return Ein Vector mit Klartext-links
      */
-    public abstract Vector<String> decryptLink(String cryptedLink);
+    public Vector<String> decryptLink(String cryptedLink) {
+        
+        
+        
+        PluginStep step=null;
+        while((step=nextStep(step))!=null){
+            doStep(step,cryptedLink);
+            if(nextStep(step)==null){
+                try{
+                return ( Vector<String>)step.getParameter();
+                }catch(Exception e){
+                    logger.severe("DecryptFehler! "+e.getMessage());
+                }
+            }
+        }
+        return  new Vector<String>();
+
+      
+    }
+    public abstract PluginStep doStep(PluginStep step,String parameter);
+    
+    public PluginStep doStep(PluginStep step,Object parameter){
+        return doStep(step, (String) parameter);
+    }
+    
+    
 }
