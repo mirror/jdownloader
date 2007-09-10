@@ -61,7 +61,7 @@ public class JDUtilities {
     /**
      * Titel der Applikation
      */
-    public static final String              JD_TITLE          = "jDownloader 0.0.1";
+    public static final String              JD_TITLE          = "jDownloader 0.0.2";
 
     /**
      * Ein URLClassLoader, um Dateien aus dem HomeVerzeichnis zu holen
@@ -585,7 +585,8 @@ public class JDUtilities {
             }
             catch (IOException e) {
                 e.printStackTrace();
-            }catch (Exception e) {
+            }
+            catch (Exception e) {
                 e.printStackTrace();
             }
         }
@@ -902,16 +903,20 @@ public class JDUtilities {
      * @throws IOException
      */
     public static void runCommandAndWait(String command) throws IOException {
+        try {
+            Runtime rt = Runtime.getRuntime();
+            Process pr = rt.exec(command, null, new File(command.split(" ")[0]).getParentFile());
 
-        Runtime rt = Runtime.getRuntime();
-        Process pr = rt.exec(command, null, new File(command.split(" ")[0]).getParentFile());
+            BufferedReader br = new BufferedReader(new InputStreamReader(pr.getInputStream()));
 
-        BufferedReader br = new BufferedReader(new InputStreamReader(pr.getInputStream()));
+            while ((br.readLine()) != null) {
 
-        while ((br.readLine()) != null) {
+            }
+        }
+        catch (Exception e) {
+            logger.severe("Programmaufruf fehlgeschlagen: " + e.getMessage());
 
         }
-
     }
 
     /**
@@ -924,18 +929,22 @@ public class JDUtilities {
      */
     public static String runCommandWaitAndReturn(String command) throws IOException {
         String ret = "";
+        try {
+            Runtime rt = Runtime.getRuntime();
+            Process pr = rt.exec(command, null, new File(command.split(" ")[0]).getParentFile());
 
-        Runtime rt = Runtime.getRuntime();
-        Process pr = rt.exec(command, null, new File(command.split(" ")[0]).getParentFile());
+            BufferedReader br = new BufferedReader(new InputStreamReader(pr.getInputStream()));
+            String line;
 
-        BufferedReader br = new BufferedReader(new InputStreamReader(pr.getInputStream()));
-        String line;
+            while ((line = br.readLine()) != null) {
+                ret += line;
 
-        while ((line = br.readLine()) != null) {
-            ret += line;
-
+            }
         }
-
+        catch (Exception e) {
+            logger.severe("Programmaufruf fehlgeschlagen: " + e.getMessage());
+            return null;
+        }
         return ret;
     }
 
@@ -949,10 +958,14 @@ public class JDUtilities {
         if (command == null) {
             return;
         }
+        try {
+            Runtime rt = Runtime.getRuntime();
+            rt.exec(command, null, new File(command.split(" ")[0]).getParentFile());
+        }
+        catch (Exception e) {
+            logger.severe("Programmaufruf fehlgeschlagen: " + e.getMessage());
 
-        Runtime rt = Runtime.getRuntime();
-        rt.exec(command, null, new File(command.split(" ")[0]).getParentFile());
-
+        }
     }
 
     /**

@@ -45,7 +45,7 @@ public class WebUpdate extends Interaction implements Serializable {
     }
 
     public String toString() {
-        return NAME;
+        return "WebUpdate durchführen";
     }
 
     @Override

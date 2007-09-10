@@ -1027,4 +1027,5 @@ tmp = r.group(x).trim();
       return captchaText;
       
   }
+
 }

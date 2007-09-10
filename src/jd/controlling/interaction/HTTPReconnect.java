@@ -33,6 +33,10 @@ public class HTTPReconnect extends Interaction {
   
 
     private static final String NAME             = "HTTP Reconnect(routercontrol)";
+/**
+ * Maximal 10 versuche
+ */
+    private static final int MAX_RETRIES = 10;
 
     public static String        VAR_USERNAME     = "%USERNAME%";
 
@@ -159,8 +163,8 @@ public class HTTPReconnect extends Interaction {
         logger.fine("IP after reconnect:" + ipAfter);
         if (ipBefore == null || ipAfter == null || ipBefore.equals(ipAfter)) {
             logger.severe("IP address did not change");
-            if (retries < configuration.getReconnectRetries() || configuration.getReconnectRetries() <= 0) {
-                return interact(arg);
+            if (retries<HTTPReconnect.MAX_RETRIES &&(retries < configuration.getReconnectRetries() || configuration.getReconnectRetries() <= 0)) {
+                return doInteraction(arg);
             }
             this.setCallCode(Interaction.INTERACTION_CALL_ERROR);
             retries=0;
@@ -200,7 +204,7 @@ public class HTTPReconnect extends Interaction {
 
     @Override
     public String toString() {
-        return "HTTPReconnect";
+        return "Interner HTTP Reconnect";
     }
 
     @Override

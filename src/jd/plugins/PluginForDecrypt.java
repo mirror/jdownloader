@@ -1,5 +1,7 @@
 package jd.plugins;
 
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.Iterator;
 import java.util.Vector;
 
@@ -25,6 +27,8 @@ public abstract class PluginForDecrypt extends Plugin{
         }
         return decryptedLinks;
     }
+    private String cryptedLink=null;
+    private String statusText="";
     /**
      * Die Methode entschlüsselt einen einzelnen Link. Alle steps werden durchlaufen. Der letzte step muss als parameter einen Vector<String> mit den decoded Links setzen
      *
@@ -33,7 +37,7 @@ public abstract class PluginForDecrypt extends Plugin{
      * @return Ein Vector mit Klartext-links
      */
     public Vector<String> decryptLink(String cryptedLink) {
-        
+        this.cryptedLink=cryptedLink;
         
         
         PluginStep step=null;
@@ -55,6 +59,25 @@ public abstract class PluginForDecrypt extends Plugin{
     
     public PluginStep doStep(PluginStep step,Object parameter){
         return doStep(step, (String) parameter);
+    }
+    
+    
+    public String getLinkName() {
+        if(cryptedLink==null)return "";
+       try {
+        return new URL(cryptedLink).getFile();
+    }
+    catch (MalformedURLException e) {
+        e.printStackTrace();
+        return "";
+    }        
+    }
+    public String getStatusText() {
+        
+        return this.statusText;
+    }
+    public void setStatusText(String value){
+        statusText=value;
     }
     
     

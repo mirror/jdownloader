@@ -57,6 +57,7 @@ public class Divxvid extends PluginForDecrypt {
         String cryptedLink = (String) parameter;
         switch (step.getStep()) {
             case PluginStep.STEP_DECRYPT:
+                firePluginEvent(new PluginEvent(this,PluginEvent.PLUGIN_PROGRESS_MAX, 1000));
                 Vector<String> decryptedLinks = new Vector<String>();
                 URL url;
                 try {

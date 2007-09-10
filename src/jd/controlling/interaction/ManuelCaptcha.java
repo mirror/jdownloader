@@ -18,7 +18,7 @@ public class ManuelCaptcha extends Interaction implements Serializable{
      * 
      */
     private static final long serialVersionUID = 4732389782312830473L;
-    private static final String NAME             = "Captcha: Manuele Eingabe";
+    private static final String NAME             = "Captcha: Manuelle Eingabe";
 
 
    
@@ -40,7 +40,7 @@ public class ManuelCaptcha extends Interaction implements Serializable{
     }
 
     public String toString() {
-        return NAME;
+        return "Captcha: Manuelle Eingabe und Kontrolle (Bestätigung)";
     }
 
     @Override

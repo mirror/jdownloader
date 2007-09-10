@@ -42,7 +42,7 @@ public class JAntiCaptcha extends Interaction implements Serializable{
     }
 
     public String toString() {
-        return NAME;
+        return "Captcha Erkennung: JAntiCaptcha";
     }
 
     @Override

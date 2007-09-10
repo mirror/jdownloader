@@ -210,8 +210,7 @@ public class StartDownloads extends ControlMulticaster {
             else {
                 downloadLink.setStatusText("Fertig");
                 fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SINGLE_DOWNLOAD_CHANGED));
-                fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_ALL_DOWNLOADS_FINISHED, downloadLink));
-
+               
                 Interaction.handleInteraction((Interaction.INTERACTION_DOWNLOAD_FINISHED), this);
 
             }
@@ -219,6 +218,8 @@ public class StartDownloads extends ControlMulticaster {
         }
 
         this.waitForDownloadLinks();
+        fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_ALL_DOWNLOADS_FINISHED));
+        Interaction.handleInteraction((Interaction.INTERACTION_DOWNLOADS_FINISHED_ALL), this);
     }
 
     private void onErrorStaticWaittime(DownloadLink downloadLink, PluginForHost plugin, PluginStep step) {
@@ -240,17 +241,23 @@ public class StartDownloads extends ControlMulticaster {
     }
 
     private void onErrorFileNotFound(DownloadLink downloadLink, PluginForHost plugin, PluginStep step) {
+        downloadLink.setStatusText("File Not Found");
         downloadLink.setInProgress(false);
+        fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SINGLE_DOWNLOAD_CHANGED));
 
     }
 
     private void onErrorAbused(DownloadLink downloadLink, PluginForHost plugin, PluginStep step) {
+        downloadLink.setStatusText("File Abused");
         downloadLink.setInProgress(false);
+        fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SINGLE_DOWNLOAD_CHANGED));
 
     }
 
     private void onErrorCaptchaImage(DownloadLink downloadLink, PluginForHost plugin, PluginStep step) {
-        downloadLink.setInProgress(false);
+        downloadLink.setStatusText("Captcha Fehler");
+        downloadLink.setInProgress(false); 
+        fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SINGLE_DOWNLOAD_CHANGED));
 
     }
 
@@ -427,8 +434,7 @@ public class StartDownloads extends ControlMulticaster {
         }
 
         if (!hasWaittimeLinks) {
-            fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_ALL_DOWNLOADS_FINISHED));
-            Interaction.handleInteraction((Interaction.INTERACTION_DOWNLOADS_FINISHED_ALL), this);
+           
             logger.info("Alle Downloads beendet");
         }
         else {

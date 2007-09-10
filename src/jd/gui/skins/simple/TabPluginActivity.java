@@ -2,18 +2,21 @@ package jd.gui.skins.simple;
 
 import java.awt.BorderLayout;
 import java.awt.Component;
+import java.awt.Dimension;
 import java.util.Vector;
 
 import javax.swing.JPanel;
 import javax.swing.JProgressBar;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
+import javax.swing.SwingUtilities;
 import javax.swing.event.TableModelEvent;
 import javax.swing.table.AbstractTableModel;
 import javax.swing.table.TableCellRenderer;
+import javax.swing.table.TableColumn;
 
 import jd.JDUtilities;
-import jd.plugins.Plugin;
+import jd.plugins.PluginForDecrypt;
 import jd.plugins.event.PluginEvent;
 import jd.plugins.event.PluginListener;
 /**
@@ -37,12 +40,28 @@ public class TabPluginActivity extends JPanel implements PluginListener{
     public TabPluginActivity(){
         setLayout(new BorderLayout());
         table = new JTable();
+        InternalTableModel internalTableModel=new InternalTableModel();
         table.setModel(new InternalTableModel());
-        table.getColumn(table.getColumnName(1)).setCellRenderer(new ProgressBarRenderer());
-
-        JScrollPane scrollPane = new JScrollPane(table);
+        table.getColumn(table.getColumnName(3)).setCellRenderer(new ProgressBarRenderer());
+        TableColumn column = null;
+        for (int c = 0; c < internalTableModel.getColumnCount(); c++) {
+            column = table.getColumnModel().getColumn(c);
+            switch(c){
+                case 0:    column.setPreferredWidth(230);  break;
+                case 1:     column.setPreferredWidth(150); break;
+                case 2:     column.setPreferredWidth(200); break;
+                case 3: column.setPreferredWidth(250); break;
+               
+                
+            }
+        }
+       this.setVisible(false);
+       JScrollPane scrollPane = new JScrollPane(table);
+       scrollPane.setPreferredSize(new Dimension(800,100));
+      
         add(scrollPane);
     }
+   
     /**
      * Hier kann man auf Ereignisse der Plugins reagieren
      */
@@ -57,20 +76,36 @@ public class TabPluginActivity extends JPanel implements PluginListener{
         }
         // Falls nicht, muß ein beschreibendes Objekt neu angelegt werden
         if(pluginProgress == null){
-            pluginProgress = new PluginProgress(event.getSource());
+            pluginProgress = new PluginProgress((PluginForDecrypt)event.getSource());
             pluginProgresses.add(pluginProgress);
         }
+       this.setVisible(true);
+   
+     
         //Hier werden die Ereignisse interpretiert
         switch(event.getEventID()){
             case PluginEvent.PLUGIN_PROGRESS_MAX:
+                
                 pluginProgress.setMaximum((Integer)event.getParameter1());
                 break;
             case PluginEvent.PLUGIN_PROGRESS_INCREASE:
+                this.setVisible(true);
                 pluginProgress.increaseValue();
                 break;
             case PluginEvent.PLUGIN_PROGRESS_FINISH:
+                
                 break;
         }
+        //Prüfe ob es noch aktive gibt, und entfernt fertige
+        boolean active=false;
+        for(int i=pluginProgresses.size()-1;i>=0;i--){
+            if(pluginProgresses.get(i).progressBar.getPercentComplete()<1.0){
+                active=true;                
+            }else{
+                pluginProgresses.remove(i);  
+            }
+        }
+        if(!active)this.setVisible(false);
         table.tableChanged(new TableModelEvent(table.getModel()));
     }
     /**
@@ -92,15 +127,19 @@ public class TabPluginActivity extends JPanel implements PluginListener{
          */
         private String labelColumnProgress = JDUtilities.getResourceString("label.tab.plugin_activity.column_progress");
 
+        private String labelColumnLink = JDUtilities.getResourceString("label.tab.plugin_activity.column_link");
+        private String labelColumnStatus = JDUtilities.getResourceString("label.tab.plugin_activity.column_status");
         public Class<?> getColumnClass(int columnIndex) {
             switch(columnIndex){
                 case 0: return String.class;
-                case 1: return JProgressBar.class;
+                case 1: return String.class;
+                case 2: return String.class;
+                case 3: return JProgressBar.class;
             }
             return String.class;
         }
         public int getColumnCount() {
-            return 2;
+            return 4;
         }
         public int getRowCount() {
             return pluginProgresses.size();
@@ -109,15 +148,19 @@ public class TabPluginActivity extends JPanel implements PluginListener{
             PluginProgress p = pluginProgresses.get(rowIndex);
 
             switch(columnIndex){
-                case 0: return p.plugin.getPluginName();
-                case 1: return p.progressBar;
+                case 0: return p.plugin.getLinkName();
+                case 1: return p.plugin.getPluginName();
+                case 2: return "("+p.progressBar.getValue()+"/"+p.progressBar.getMaximum()+")"+p.plugin.getStatusText();
+                case 3: return p.progressBar;
             }
             return null;
         }
         public String getColumnName(int column) {
             switch(column){
-                case 0: return labelColumnName;
-                case 1: return labelColumnProgress;
+                case 0: return labelColumnLink;
+                case 1: return labelColumnName;
+                case 2: return labelColumnStatus;
+                case 3: return labelColumnProgress;
             }
             return super.getColumnName(column);
         }
@@ -131,7 +174,7 @@ public class TabPluginActivity extends JPanel implements PluginListener{
         /**
          * Das Plugin, für das die Informationen gelten
          */
-        private Plugin       plugin;
+        private PluginForDecrypt       plugin;
         /**
          * Eine Fortschrittsanzeige
          */
@@ -140,10 +183,10 @@ public class TabPluginActivity extends JPanel implements PluginListener{
          * Der aktuelle Wert
          */
         private int          value;
-        public PluginProgress(Plugin plugin){
+        public PluginProgress(PluginForDecrypt plugin){
             this(plugin,0,0);
         }
-        public PluginProgress(Plugin plugin, int value, int maximum){
+        public PluginProgress(PluginForDecrypt plugin, int value, int maximum){
             this.plugin = plugin;
             this.progressBar = new JProgressBar();
             this.progressBar.setMaximum(maximum);
@@ -158,6 +201,8 @@ public class TabPluginActivity extends JPanel implements PluginListener{
         public void setMaximum(int maximum){
             this.progressBar.setMaximum(maximum);
         }
+        
+      
         /**
          * Erhöht die Fortschrittsanzeige um eins
          */

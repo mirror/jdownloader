@@ -65,7 +65,7 @@ public class ExternExecute extends Interaction implements Serializable {
 
     @Override
     public String toString() {
-        return "Externer Befehl(Programm)";
+        return "Externes Programm aufrufen";
     }
 
     @Override

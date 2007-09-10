@@ -56,6 +56,10 @@ public class ExternReconnect extends Interaction implements Serializable {
      */
 
     private static final String NAME                       = "Extern Reconnect";
+    /**
+     * Maximale Reconnectanzahl
+     */
+    private static final int MAX_RETRIES = 10;
 
     private int                 retries                    = 0;
 
@@ -94,8 +98,8 @@ public class ExternReconnect extends Interaction implements Serializable {
         logger.fine("IP after reconnect:" + ipAfter);
         if (ipBefore == null || ipAfter == null || ipBefore.equals(ipAfter)) {
             logger.severe("IP address did not change");
-            if (retries < maxRetries || maxRetries <= 0) {
-                return interact(arg);
+            if (retries<ExternReconnect.MAX_RETRIES &&(retries < maxRetries || maxRetries <= 0)) {
+                return doInteraction(arg);
             }
             this.setCallCode(Interaction.INTERACTION_CALL_ERROR);
             retries = 0;
@@ -133,7 +137,7 @@ public class ExternReconnect extends Interaction implements Serializable {
 
     @Override
     public String toString() {
-        return "Externer Reconnect";
+        return "Externes Reconnectprogramm aufrufen";
     }
 
     @Override

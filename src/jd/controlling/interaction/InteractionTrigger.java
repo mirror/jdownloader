@@ -63,7 +63,7 @@ public class InteractionTrigger implements Serializable {
     }
 
     public String toString() {
-        return name;
+        return name+" ("+description+")";
     }
 /**
  * Gibt die EventID zurück. Es gibt keine setID!

@@ -1,15 +1,10 @@
 package jd.gui.skins.simple;
 
-import java.awt.AWTException;
+import java.awt.BorderLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
-import java.awt.Image;
 import java.awt.Insets;
-import java.awt.MenuItem;
-import java.awt.PopupMenu;
-import java.awt.SystemTray;
 import java.awt.Toolkit;
-import java.awt.TrayIcon;
 import java.awt.datatransfer.Clipboard;
 import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.UnsupportedFlavorException;
@@ -34,7 +29,7 @@ import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
-import javax.swing.JTabbedPane;
+import javax.swing.JSplitPane;
 import javax.swing.JToggleButton;
 import javax.swing.JToolBar;
 import javax.swing.UIManager;
@@ -85,7 +80,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener{
     /**
      * TabbedPane
      */
-    private JTabbedPane tabbedPane;
+//    private JTabbedPane tabbedPane;
     /**
      * Die Statusleiste für Meldungen
      */
@@ -116,6 +111,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener{
     private Logger logger = Plugin.getLogger();
     Dropper dragNDrop;
     private JCheckBoxMenuItem menViewLog=null;
+    private JSplitPane splitpane;
 
     /**
      * Das Hauptfenster wird erstellt
@@ -134,7 +130,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener{
         
         
         
-        tabbedPane = new JTabbedPane();
+//        tabbedPane = new JTabbedPane();
         menuBar    = new JMenuBar();
         toolBar    = new JToolBar();
         frame.setIconImage(JDUtilities.getImage("mind"));
@@ -275,12 +271,22 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener{
      * Hier wird die komplette Oberfläche der Applikation zusammengestrickt
      */
     private void buildUI(){
-        tabbedPane        = new JTabbedPane();
+//        tabbedPane        = new JTabbedPane();
         tabDownloadTable  = new TabDownloadLinks(this);
         tabPluginActivity = new TabPluginActivity();
         statusBar         = new StatusBar();
-        tabbedPane.addTab(JDUtilities.getResourceString("label.tab.download"),        tabDownloadTable);
-        tabbedPane.addTab(JDUtilities.getResourceString("label.tab.plugin_activity"), tabPluginActivity);
+        splitpane = new JSplitPane();
+        splitpane.setBottomComponent(tabPluginActivity);
+//        JPanel tmp=new JPanel(new BorderLayout());
+//        tmp.add(tabPluginActivity,BorderLayout.NORTH);
+        
+        splitpane.setTopComponent(tabDownloadTable);
+      splitpane.setOrientation(JSplitPane.VERTICAL_SPLIT);
+      
+        
+//        tmp.add(tabDownloadTable,BorderLayout.CENTER);
+//        tabbedPane.addTab(JDUtilities.getResourceString("label.tab.download"),        tmp);
+//        tabbedPane.addTab(JDUtilities.getResourceString("label.tab.plugin_activity"), tabPluginActivity);
 
         btnStartStop  = new JToggleButton(actionStartStopDownload);
         btnStartStop.setSelectedIcon(new ImageIcon(JDUtilities.getImage("stop")));
@@ -349,7 +355,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener{
         toolBar.add(btnDnD);
         frame.setLayout(new GridBagLayout());
         JDUtilities.addToGridBag(frame, toolBar,     0, 0, 1, 1, 0, 0, null, GridBagConstraints.HORIZONTAL, GridBagConstraints.NORTH);
-        JDUtilities.addToGridBag(frame, tabbedPane,  0, 1, 1, 1, 1, 1, null, GridBagConstraints.BOTH,       GridBagConstraints.CENTER);
+        JDUtilities.addToGridBag(frame, splitpane,  0, 1, 1, 1, 1, 1, null, GridBagConstraints.BOTH,       GridBagConstraints.CENTER);
         JDUtilities.addToGridBag(frame, statusBar,   0, 2, 1, 1, 0, 0, null, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
         
         
@@ -369,9 +375,9 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener{
             case JDAction.ITEMS_MOVE_DOWN:
             case JDAction.ITEMS_MOVE_TOP:
             case JDAction.ITEMS_MOVE_BOTTOM:
-                if(tabbedPane.getSelectedComponent() == tabDownloadTable){
-                    tabDownloadTable.moveItems(e.getID());
-                }
+//                if(tabbedPane.getSelectedComponent() == tabDownloadTable){
+//                    tabDownloadTable.moveItems(e.getID());
+//                }
                 break;
             case JDAction.APP_START_STOP_DOWNLOADS:
                 if(btnStartStop.isSelected()){
@@ -473,6 +479,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener{
         if(event.getID()== PluginEvent.PLUGIN_DOWNLOAD_SPEED){
             statusBar.setSpeed((Integer)event.getParameter1());
         }
+        splitpane.setDividerLocation(0.8);
     }
     public void uiControlEvent(ControlEvent event){
         switch(event.getID()){

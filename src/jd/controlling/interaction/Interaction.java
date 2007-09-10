@@ -89,27 +89,27 @@ public abstract class Interaction extends Property implements Serializable {
     /**
      * Zeigt, daß ein einzelner Download nicht fertiggestellt werden konnte
      */
-    public static InteractionTrigger          INTERACTION_DOWNLOAD_FAILED        = new InteractionTrigger(3, "Download fehlgeschlagen", "Download fehlgeschlagen");
+    public static InteractionTrigger          INTERACTION_DOWNLOAD_FAILED        = new InteractionTrigger(3, "Download fehlgeschlagen", "Wird aufgerufen wenn ein Download wegen Fehlern abgebrochen wurde");
 
     /**
      * Zeigt, daß ein einzelner Download wegen Wartezeit nicht starten konnte
      */
-    public static InteractionTrigger          INTERACTION_DOWNLOAD_WAITTIME      = new InteractionTrigger(4, "Download hat Wartezeit", "Download Wartezeit");
+    public static InteractionTrigger          INTERACTION_DOWNLOAD_WAITTIME      = new InteractionTrigger(4, "Download hat Wartezeit", "Das Plugin meldet eine Wartezeit");
 
     /**
      * Zeigt, daß ein der Bot erkannt wurde
      */
-    public static InteractionTrigger          INTERACTION_DOWNLOAD_BOT_DETECTED  = new InteractionTrigger(5, "Bot erkannt", "Bot erkannt");
+    public static InteractionTrigger          INTERACTION_DOWNLOAD_BOT_DETECTED  = new InteractionTrigger(5, "Bot erkannt", "jDownloader wurde als Bot erkannt");
 
     /**
      * Zeigt, daß ein Captcha erkannt werden will
      */
-    public static InteractionTrigger          INTERACTION_DOWNLOAD_CAPTCHA       = new InteractionTrigger(6, "Captcha soll erkannt werden", "inaktiv");
+    public static InteractionTrigger          INTERACTION_DOWNLOAD_CAPTCHA       = new InteractionTrigger(6, "Captcha Erkennung", "Ein Captcha-Bild muss verarbeitet werden");
 
     /**
      * Zeigt den Programmstart an
      */
-    public static InteractionTrigger          INTERACTION_APPSTART               = new InteractionTrigger(7, "Programmstart", "Programmstart");
+    public static InteractionTrigger          INTERACTION_APPSTART               = new InteractionTrigger(7, "Programmstart", "Direkt nach dem Initialisieren von jDownloader");
 
     /**
      * Zeigt den Programmende an
@@ -119,18 +119,18 @@ public abstract class Interaction extends Property implements Serializable {
     /**
      * Zeigt, dass vermutlich JAC veraltet ist
      */
-    public static InteractionTrigger          INTERACTION_JAC_UPDATE_NEEDED      = new InteractionTrigger(9, "Captcha Update nötig", "Wird aufgerufen wenn viele captchas falsch erkannt wurden");
+    public static InteractionTrigger          INTERACTION_JAC_UPDATE_NEEDED      = new InteractionTrigger(9, "Captcha Update nötig", "inaktiv");
 
     /**
      * Nach einem IP wechsel
      */
 
-    public final static InteractionTrigger    INTERACTION_AFTER_RECONNECT        = new InteractionTrigger(10, "Nach einem Reconnect", "Nach einem Reconnect");
+    public final static InteractionTrigger    INTERACTION_AFTER_RECONNECT        = new InteractionTrigger(10, "Nach einem Reconnect", "inaktiv");
 
     /**
      * Reconnect nötig
      */
-    public static InteractionTrigger          INTERACTION_NEED_RECONNECT         = new InteractionTrigger(9, "Reconnect nötig", "Ein Reconnect wäre sinnvoll");
+    public static InteractionTrigger          INTERACTION_NEED_RECONNECT         = new InteractionTrigger(9, "Reconnect nötig", "Alle Trigger bei denen ein Reconnect sinnvoll ist zusammengefasst");
 
     public Interaction() {
         controlListener = new Vector<ControlListener>();

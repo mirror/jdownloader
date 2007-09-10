@@ -88,6 +88,7 @@ public class TabDownloadLinks extends JPanel implements PluginListener, ControlL
 
         JScrollPane scrollPane = new JScrollPane(table);
         scrollPane.setPreferredSize(new Dimension(800,450));
+//        table.setPreferredSize(new Dimension(800,450));
         add(scrollPane);
     }
     public void setDownloadLinks(DownloadLink links[]){
