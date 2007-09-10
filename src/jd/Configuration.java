@@ -11,7 +11,9 @@ import jd.router.RouterData;
  * 
  * @author astaldo
  */
+
 public class Configuration extends Property implements Serializable {
+    public transient static boolean saveAsXML=false;
     /**
      * serialVersionUID
      */

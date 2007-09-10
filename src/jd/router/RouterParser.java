@@ -12,6 +12,7 @@ import java.util.regex.Pattern;
 
 import javax.swing.JFrame;
 
+import jd.Configuration;
 import jd.JDUtilities;
 import jd.plugins.Plugin;
 

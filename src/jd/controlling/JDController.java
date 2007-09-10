@@ -172,7 +172,7 @@ public class JDController implements PluginListener, ControlListener, UIListener
                 distributeData.start();
                 break;
             case UIEvent.UI_SAVE_CONFIG:
-                JDUtilities.saveObject(null, JDUtilities.getConfiguration(), JDUtilities.getJDHomeDirectory(), "jdownloader", ".config", true);
+                JDUtilities.saveObject(null, JDUtilities.getConfiguration(), JDUtilities.getJDHomeDirectory(), "jdownloader", ".config", Configuration.saveAsXML);
                 break;
             case UIEvent.UI_SAVE_LINKS:
                 File file = (File) uiEvent.getParameter();
@@ -237,7 +237,7 @@ public class JDController implements PluginListener, ControlListener, UIListener
      */
     public void saveDownloadLinks(File file) {
 //        JDUtilities.saveObject(null, downloadLinks.toArray(new DownloadLink[]{}), file, "links", "dat", true);
-        JDUtilities.saveObject(null, downloadLinks, file, "links", "dat", true);
+        JDUtilities.saveObject(null, downloadLinks, file, "links", "dat", Configuration.saveAsXML);
     }
 
     /**
@@ -248,7 +248,7 @@ public class JDController implements PluginListener, ControlListener, UIListener
      */
     public Vector<DownloadLink> loadDownloadLinks(File file) {
         if (file.exists()) {
-            Object obj = JDUtilities.loadObject(null, file, true);
+            Object obj = JDUtilities.loadObject(null, file, Configuration.saveAsXML);
             if (obj != null && obj instanceof Vector) {
                 Vector<DownloadLink> links = (Vector<DownloadLink>) obj;
                 Iterator<DownloadLink> iterator = links.iterator();

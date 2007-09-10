@@ -264,10 +264,10 @@ public abstract class Interaction extends Property implements Serializable {
      */
     public static boolean handleInteraction(InteractionTrigger interactionevent, Object param) {
         boolean ret = true;
-        Interaction[] interactions = JDUtilities.getConfiguration().getInteractions();
-        int interacts = 0;
-        for (int i = 0; i < interactions.length; i++) {
-            Interaction interaction = interactions[i];
+        Vector<Interaction> interactions = JDUtilities.getConfiguration().getInteractions(); 
+               int interacts=0; 
+               for (int i = 0; i < interactions.size(); i++) { 
+      Interaction interaction = interactions.get(i); 
             if (interaction == null || interaction.getTrigger() == null || interactionevent == null) continue;
             if (interaction.getTrigger().getID() == interactionevent.getID()) {
                 interaction.addControlListener(JDUtilities.getController());

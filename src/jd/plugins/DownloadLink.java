@@ -282,7 +282,7 @@ public class DownloadLink implements Serializable{
      * @param plugin
      *            Das für diesen Download zuständige Plugin
      */
-    public void setPlugin(Plugin plugin) {
+    public void setLoadedPlugin(Plugin plugin) {
         this.plugin = plugin;
     }
 
