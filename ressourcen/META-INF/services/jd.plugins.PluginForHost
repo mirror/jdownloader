@@ -1,4 +1,4 @@
 jd.plugins.host.Gulli
 jd.plugins.host.Rapidshare
-jd.plugins.host.FileFactory
-jd.plugins.host.HttpLink
+#jd.plugins.host.FileFactory
+#jd.plugins.host.HttpLink
