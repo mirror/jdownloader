@@ -129,7 +129,7 @@ public class Rapidshare extends PluginForHost {
         if (currentStep == null) {
             try {
                 // Der Download wird bestätigt
-                requestInfo = getRequest(downloadLink.getUrlDownload());
+                requestInfo = getRequest(new URL(downloadLink.getUrlDownloadDecrypted()));
                 String newURL = getFirstMatch(requestInfo.getHtmlCode(), patternForNewHost, 1);
                 if (newURL != null) {
 

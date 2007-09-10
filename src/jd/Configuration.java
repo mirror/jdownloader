@@ -1,6 +1,7 @@
 package jd;
 
 import java.io.Serializable;
+import java.util.Vector;
 
 import jd.controlling.interaction.Interaction;
 import jd.router.RouterData;
@@ -27,7 +28,7 @@ public class Configuration extends Property implements Serializable {
      * Die unterschiedlichen Interaktionen. (ZB Reconnect nach einem Download)
      */
 
-    private Interaction[]     interactions          = new Interaction[0];
+    private Vector<Interaction>     interactions          = new Vector<Interaction>();
 
     /**
      * Hier sind die Angaben für den Router gespeichert
@@ -171,7 +172,7 @@ public class Configuration extends Property implements Serializable {
      * @return
      */
 
-    public Interaction[] getInteractions() {
+    public Vector<Interaction> getInteractions() {
         return interactions;
     }
 
@@ -180,7 +181,7 @@ public class Configuration extends Property implements Serializable {
      * 
      * @param interactions
      */
-    public void setInteractions(Interaction[] interactions) {
+    public void setInteractions(Vector<Interaction> interactions) {
         this.interactions = interactions;
     }
 

@@ -98,7 +98,7 @@ public class ConfigurationDialog extends JDialog implements ActionListener {
             configChanged = true;
             JDUtilities.setConfiguration(configuration);
 
-            JDUtilities.saveObject(null, JDUtilities.getConfiguration(), JDUtilities.getJDHomeDirectory(), "jdownloader", ".config", false);
+//            JDUtilities.saveObject(null, JDUtilities.getConfiguration(), JDUtilities.getJDHomeDirectory(), "jdownloader", ".config", true);
         }
         setVisible(false);
     }

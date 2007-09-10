@@ -122,7 +122,7 @@ public class Gulli extends PluginForHost {
                 case PluginStep.STEP_CAPTCHA:
                     // con.setRequestProperty("Cookie",
                     // Plugin.joinMap(cookieMap,"=","; "));
-                    requestInfo = getRequest(downloadLink.getUrlDownload());
+                    requestInfo = getRequest(new URL(downloadLink.getUrlDownloadDecrypted()));
 
                     fileId = getFirstMatch(requestInfo.getHtmlCode(), PAT_FILE_ID, 1);
                     String captchaLocalUrl = getFirstMatch(requestInfo.getHtmlCode(), PAT_CAPTCHA, 1);

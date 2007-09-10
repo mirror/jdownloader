@@ -172,7 +172,7 @@ public class JDController implements PluginListener, ControlListener, UIListener
                 distributeData.start();
                 break;
             case UIEvent.UI_SAVE_CONFIG:
-                JDUtilities.saveObject(null, JDUtilities.getConfiguration(), JDUtilities.getJDHomeDirectory(), "jdownloader", ".config", false);
+                JDUtilities.saveObject(null, JDUtilities.getConfiguration(), JDUtilities.getJDHomeDirectory(), "jdownloader", ".config", true);
                 break;
             case UIEvent.UI_SAVE_LINKS:
                 File file = (File) uiEvent.getParameter();
@@ -236,7 +236,8 @@ public class JDController implements PluginListener, ControlListener, UIListener
      * @param file Die Datei, in die die Links gespeichert werden sollen
      */
     public void saveDownloadLinks(File file) {
-        JDUtilities.saveObject(null, downloadLinks, file, "links", "dat", false);
+//        JDUtilities.saveObject(null, downloadLinks.toArray(new DownloadLink[]{}), file, "links", "dat", true);
+        JDUtilities.saveObject(null, downloadLinks, file, "links", "dat", true);
     }
 
     /**
@@ -247,7 +248,7 @@ public class JDController implements PluginListener, ControlListener, UIListener
      */
     public Vector<DownloadLink> loadDownloadLinks(File file) {
         if (file.exists()) {
-            Object obj = JDUtilities.loadObject(null, file, false);
+            Object obj = JDUtilities.loadObject(null, file, true);
             if (obj != null && obj instanceof Vector) {
                 Vector<DownloadLink> links = (Vector<DownloadLink>) obj;
                 Iterator<DownloadLink> iterator = links.iterator();
@@ -257,7 +258,7 @@ public class JDController implements PluginListener, ControlListener, UIListener
                     localLink = iterator.next();
                     pluginForHost = JDUtilities.getPluginForHost(localLink.getHost());
                     if (pluginForHost != null) {
-                        localLink.setPlugin(pluginForHost);
+                        localLink.setLoadedPlugin(pluginForHost);
                     }
                     else {
                         logger.severe("couldn't find plugin(" + localLink.getHost() + ") for this DownloadLink." + localLink.getName());
@@ -335,7 +336,7 @@ public class JDController implements PluginListener, ControlListener, UIListener
 
     public String getLastFinishedFile() {
         if (this.lastDownloadFinished == null) return "";
-        return this.lastDownloadFinished.getFileOutput().getAbsolutePath();
+        return this.lastDownloadFinished.getFileOutput();
     }
 
     public String getLastCaptchaImage() {

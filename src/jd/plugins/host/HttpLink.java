@@ -2,6 +2,7 @@ package jd.plugins.host;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URL;
 import java.net.URLConnection;
 import java.util.regex.Pattern;
 
@@ -93,7 +94,7 @@ public class HttpLink extends PluginForHost {
 
     private boolean prepareDownload(DownloadLink downloadLink) {
         try {
-            URLConnection urlConnection = downloadLink.getUrlDownload().openConnection();
+            URLConnection urlConnection = new URL(downloadLink.getUrlDownloadDecrypted()).openConnection();
 
             int length = urlConnection.getContentLength();
             logger.info("" + length);

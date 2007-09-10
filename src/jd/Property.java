@@ -12,6 +12,7 @@ public abstract class Property implements Serializable {
 
     private HashMap<String, Object> properties = new HashMap<String, Object>();
 
+    public Property(){}
     /**
      * Speichert einen Wert ab.
      * 
@@ -33,6 +34,14 @@ public abstract class Property implements Serializable {
     public Object getProperty(String key) {
         if(properties==null)properties = new HashMap<String, Object>();
         return properties.get(key);
+    }
+
+    public HashMap<String, Object> getProperties() {
+        return properties;
+    }
+
+    public void setProperties(HashMap<String, Object> properties) {
+        this.properties = properties;
     }
 
 }

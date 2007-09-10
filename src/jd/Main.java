@@ -63,7 +63,7 @@ public class Main {
         if(configURL != null){
             try {
                 File fileInput = new File(configURL.toURI());
-                Object obj = JDUtilities.loadObject(null, fileInput, false);
+                Object obj = JDUtilities.loadObject(null, fileInput, true);
                 if(obj instanceof Configuration){
                     Configuration configuration = (Configuration)obj;
                     JDUtilities.setConfiguration(configuration);

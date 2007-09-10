@@ -697,7 +697,7 @@ RequestInfo requestInfo=readFromURL(httpConnection);
      * @return wahr, wenn alle Daten ausgelesen und gespeichert wurden
      */
     public boolean download(DownloadLink downloadLink, URLConnection urlConnection) { 
-        File fileOutput = downloadLink.getFileOutput(); 
+        File fileOutput = new File(downloadLink.getFileOutput()); 
         int downloadedBytes = 0; 
         long start, end, time; 
         try { 
@@ -705,7 +705,7 @@ RequestInfo requestInfo=readFromURL(httpConnection);
 
             // Falls keine urlConnection übergeben wurde 
             if (urlConnection == null) 
-                urlConnection = downloadLink.getUrlDownload().openConnection(); 
+                urlConnection = new URL(downloadLink.getUrlDownloadDecrypted()).openConnection(); 
 
             FileOutputStream fos = new FileOutputStream(fileOutput); 
 

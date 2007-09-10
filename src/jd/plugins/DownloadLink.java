@@ -2,8 +2,6 @@ package jd.plugins;
 
 import java.io.File;
 import java.io.Serializable;
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.util.logging.Logger;
 
 import jd.JDCrypt;
@@ -117,7 +115,7 @@ public class DownloadLink implements Serializable{
     /**
      * Hierhin soll die Datei gespeichert werden.
      */
-    private File                    fileOutput;
+    private String                  fileOutput;
     /**
      * Logger für Meldungen
      */
@@ -135,6 +133,9 @@ public class DownloadLink implements Serializable{
      * Ursprüngliche Wartezeit
      */
     private long waittime=0;
+    public DownloadLink(){
+        
+    }
     /**
      * Lokaler Pfad zum letzten captchafile
      */
@@ -149,7 +150,7 @@ public class DownloadLink implements Serializable{
      * @param host
      *            Anbieter, von dem dieser Download gestartet wird
      * @param urlDownload
-     *            Die Download URL
+     *            Die Download URL (Entschlüsselt)
      * @param isEnabled
      *            Markiert diesen DownloadLink als aktiviert oder deaktiviert
      */
@@ -179,6 +180,13 @@ public class DownloadLink implements Serializable{
     public String getHost() {
         return host;
     }
+    /**
+     * Legt den Host fest
+     * @param host Der Host für diesen DownloadLink
+     */
+    public void setHost(String host){
+        this.host = host;
+    }
 
     /**
      * Liefert das Plugin zurück, daß diesen DownloadLink handhabt
@@ -194,7 +202,7 @@ public class DownloadLink implements Serializable{
      * 
      * @return Die Datei zum Abspeichern
      */
-    public File getFileOutput() {
+    public String getFileOutput() {
         return fileOutput;
     }
     /**
@@ -205,20 +213,22 @@ public class DownloadLink implements Serializable{
         return  urlDownload;
     }
     /**
-     * Liefert die URL zurück, unter der dieser Download stattfinden soll
+     * Liefert die URL zurück, unter der dieser Download stattfinden soll (Ist verschlüsselt)
      * 
      * @return Die Download URL
      */
-    public URL getUrlDownload() {
-        URL url = null;
-        try {
-            url = new URL(JDCrypt.decrypt(urlDownload));
-        } catch (MalformedURLException e) {
-            e.printStackTrace();
-        } catch (SecurityException e) {
-            e.printStackTrace();
-        }
-        return url;
+    public String getUrlDownload() {
+        return urlDownload;
+    }
+    /**
+     * Liefert die URL zurück, unter der dieser Download stattfinden soll (Entschlüsselt)
+     * 
+     * @return Die Download URL
+     */
+    public String getUrlDownloadDecrypted(){
+        if(urlDownload== null)
+            return null;
+        return JDCrypt.decrypt(urlDownload);
     }
 
     /**
@@ -272,7 +282,7 @@ public class DownloadLink implements Serializable{
      * @param plugin
      *            Das für diesen Download zuständige Plugin
      */
-    public void setPlugin(PluginForHost plugin) {
+    public void setLoadedPlugin(PluginForHost plugin) {
         this.plugin = plugin;
     }
 
@@ -292,7 +302,7 @@ public class DownloadLink implements Serializable{
      * @param fileOutput
      *            Die Datei, in der dieser Download gespeichert werden soll
      */
-    public void setFileOutput(File fileOutput) {
+    public void setFileOutput(String fileOutput) {
         this.fileOutput = fileOutput;
     }
 
@@ -301,17 +311,17 @@ public class DownloadLink implements Serializable{
      * geaendert wurde!
      */
     public void updateFileOutput() {
-        this.fileOutput = new File(downloadPath + "/" + name);
+        this.fileOutput = new File(downloadPath + "/" + name).getAbsolutePath();
     }
 
     /**
-     * Setzt die URL, von der heruntergeladen werden soll
+     * Setzt die URL, von der heruntergeladen werden soll (Ist schon verschlüsselt)
      * 
      * @param urlDownload
      *            Die URL von der heruntergeladen werden soll
      */
     public void setUrlDownload(String urlDownload) {
-        this.urlDownload = JDCrypt.encrypt(urlDownload);
+        this.urlDownload = urlDownload;
     }
 
     /**

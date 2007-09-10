@@ -31,10 +31,10 @@ public abstract class Interaction extends Property implements Serializable {
     private InteractionTrigger                trigger;
 
     /**
-     * THread der für die INteraction verwendet werden kann
+     * THread der für die Interaction verwendet werden kann
      */
 
-    protected Thread                          thread                             = null;
+    protected transient Thread                 thread                             = null;
 
     /**
      * Hiermit wird der Eventmechanismus realisiert. Alle hier eingetragenen
@@ -47,7 +47,7 @@ public abstract class Interaction extends Property implements Serializable {
      * Code der abgerufe werden kann um details über den Ablauf der Interaction
      * zu kriegen
      */
-    protected int                             lastCallCode                       = 0;
+    protected transient int                    lastCallCode                       = 0;
 
     /**
      * Zeigt an dass diese Interaction noch nie aufgerufen wurde
@@ -264,10 +264,10 @@ public abstract class Interaction extends Property implements Serializable {
      */
     public static boolean handleInteraction(InteractionTrigger interactionevent, Object param) {
         boolean ret = true;
-        Interaction[] interactions = JDUtilities.getConfiguration().getInteractions();
-int interacts=0;
-        for (int i = 0; i < interactions.length; i++) {
-            Interaction interaction = interactions[i];
+        Vector<Interaction> interactions = JDUtilities.getConfiguration().getInteractions();
+        int interacts=0;
+        for (int i = 0; i < interactions.size(); i++) {
+            Interaction interaction = interactions.get(i);
             if (interaction == null || interaction.getTrigger() == null || interactionevent == null) continue;
             if (interaction.getTrigger().getID() == interactionevent.getID()) {
                 interaction.addControlListener(JDUtilities.getController());
@@ -299,10 +299,10 @@ if(interacts==0)return false;
      */
     public static boolean handleInteraction(InteractionTrigger interactionevent, Object param, int id) {
    
-        Interaction[] interactions = JDUtilities.getConfiguration().getInteractions();
+        Vector<Interaction> interactions = JDUtilities.getConfiguration().getInteractions();
 
-        for (int i = 0; i < interactions.length; i++) {
-            Interaction interaction = interactions[i];
+        for (int i = 0; i < interactions.size(); i++) {
+            Interaction interaction = interactions.get(i);
             if (interaction == null || interaction.getTrigger() == null || interactionevent == null) continue;
             if (interaction.getTrigger().getID() == interactionevent.getID()) {
                if(id==0){
@@ -329,11 +329,11 @@ if(interacts==0)return false;
     }
 
     public static Interaction[] getInteractions(InteractionTrigger trigger) {
-        Interaction[] interactions = JDUtilities.getConfiguration().getInteractions();
+        Vector<Interaction> interactions = JDUtilities.getConfiguration().getInteractions();
         Vector<Interaction> ret = new Vector<Interaction>();
-        for (int i = 0; i < interactions.length; i++) {
-            if (interactions[i].getTrigger().getID() == trigger.getID()) {
-                ret.add(interactions[i]);
+        for (int i = 0; i < interactions.size(); i++) {
+            if (interactions.get(i).getTrigger().getID() == trigger.getID()) {
+                ret.add(interactions.get(i));
             }
         }
         return ret.toArray(new Interaction[] {});

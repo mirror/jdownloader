@@ -83,7 +83,7 @@ public class ConfigPanelEventmanager extends ConfigPanel implements ActionListen
     public void save() {
         // Interaction[] tmp= new Interaction[interactions.size()];
 
-        configuration.setInteractions(interactions.toArray(new Interaction[] {}));
+        configuration.setInteractions(interactions);
 
     }
 
@@ -91,13 +91,13 @@ public class ConfigPanelEventmanager extends ConfigPanel implements ActionListen
     public void initPanel() {
 
         this.interactions = new Vector<Interaction>();
-        Interaction[] tmp = configuration.getInteractions();
+        Vector<Interaction> tmp = configuration.getInteractions();
 
         if (tmp != null) {
-            for (int i = 0; i < tmp.length; i++) {
+            for (int i = 0; i < tmp.size(); i++) {
 
-                if (tmp[i] != null) {
-                    interactions.add(tmp[i]);
+                if (tmp.get(i) != null) {
+                    interactions.add(tmp.get(i));
                 }
             }
         }
@@ -167,6 +167,7 @@ public class ConfigPanelEventmanager extends ConfigPanel implements ActionListen
         panel.add(topPanel, BorderLayout.NORTH);
         panel.add(config, BorderLayout.CENTER);
         ConfigurationPopup pop = new ConfigurationPopup(new JFrame(), config, panel, uiinterface, configuration);
+        pop.setLocation(JDUtilities.getCenterOfComponent(this, pop));
         pop.setVisible(true);
     }
 
