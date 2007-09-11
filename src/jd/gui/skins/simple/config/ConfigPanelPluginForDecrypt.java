@@ -121,7 +121,7 @@ public class ConfigPanelPluginForDecrypt extends ConfigPanel implements ActionLi
     @Override
     public String getName() {
 
-        return "Host Plugins";
+        return "Decrypt Plugins";
     }
 
     private void openPopupPanel(ConfigPanel config) {
