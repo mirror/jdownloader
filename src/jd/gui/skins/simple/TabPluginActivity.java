@@ -9,7 +9,6 @@ import javax.swing.JPanel;
 import javax.swing.JProgressBar;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
-import javax.swing.SwingUtilities;
 import javax.swing.event.TableModelEvent;
 import javax.swing.table.AbstractTableModel;
 import javax.swing.table.TableCellRenderer;
@@ -102,10 +101,20 @@ public class TabPluginActivity extends JPanel implements PluginListener{
             if(pluginProgresses.get(i).progressBar.getPercentComplete()<1.0){
                 active=true;                
             }else{
+                try {
+                    Thread.sleep(1000);
+                }
+                catch (InterruptedException e) {}
                 pluginProgresses.remove(i);  
+                  
             }
         }
-        if(!active)this.setVisible(false);
+        if(!active){
+              
+                   setVisible(false);
+       
+           
+        }
         table.tableChanged(new TableModelEvent(table.getModel()));
     }
     /**

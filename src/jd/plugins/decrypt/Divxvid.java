@@ -13,7 +13,7 @@ import jd.plugins.RequestInfo;
 import jd.plugins.event.PluginEvent;
 
 public class Divxvid extends PluginForDecrypt {
-    private String host = "dxp.divxvid.org";
+    static private final String host = "dxp.divxvid.org";
     private String version = "1.0.0.0";
     private Pattern patternSupported = Pattern.compile("http://dxp\\.divxvid\\.org/[^\\s\"]*\\.html");
     private Pattern gate = Pattern.compile("httpRequestObject.open.'POST', '([^\\s\"]*)'\\);",Pattern.CASE_INSENSITIVE);

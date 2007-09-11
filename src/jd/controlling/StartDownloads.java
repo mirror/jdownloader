@@ -1,7 +1,6 @@
 package jd.controlling;
 
 import java.io.File;
-import java.util.Date;
 import java.util.Vector;
 import java.util.logging.Logger;
 
@@ -71,7 +70,7 @@ public class StartDownloads extends ControlMulticaster {
         PluginForHost plugin;
         while ((downloadLink = controller.getNextDownloadLink()) != null) {
             logger.info("working on " + downloadLink.getName());
-            currentPlugin = plugin = (PluginForHost)downloadLink.getPlugin();
+            currentPlugin = plugin = (PluginForHost) downloadLink.getPlugin();
             plugin.resetPlugin();
             downloadLink.setStatusText("aktiv");
 
@@ -90,9 +89,9 @@ public class StartDownloads extends ControlMulticaster {
                     case PluginStep.STEP_GET_CAPTCHA_FILE:
                         downloadLink.setStatusText("Captcha");
                         fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SINGLE_DOWNLOAD_CHANGED));
-                        File captcha=null;
-                        if(step.getParameter()!=null &&step.getParameter() instanceof File){
-                        captcha = (File) step.getParameter();
+                        File captcha = null;
+                        if (step.getParameter() != null && step.getParameter() instanceof File) {
+                            captcha = (File) step.getParameter();
                         }
                         if (captcha == null) {
                             logger.severe("Captchaadresse = null");
@@ -101,7 +100,7 @@ public class StartDownloads extends ControlMulticaster {
                             downloadLink.setStatus(DownloadLink.STATUS_ERROR_CAPTCHA_IMAGEERROR);
                             break;
                         }
-                        else {                          
+                        else {
                             fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_CAPTCHA_LOADED, captcha));
                             downloadLink.setLatestCaptchaFile(captcha);
                             if (plugin.doBotCheck(captcha)) {
@@ -110,33 +109,32 @@ public class StartDownloads extends ControlMulticaster {
                                 step.setParameter(null);
                                 break;
                             }
-                          
-                                // führt die erste INteraction zum Captcha
-                                // decoden aus.
-                                if (!Interaction.handleInteraction((Interaction.INTERACTION_DOWNLOAD_CAPTCHA), downloadLink, 0)) {
-                                    String captchaText = JDUtilities.getCaptcha(controller, plugin, captcha);
+
+                            // führt die erste INteraction zum Captcha
+                            // decoden aus.
+                            if (!Interaction.handleInteraction((Interaction.INTERACTION_DOWNLOAD_CAPTCHA), downloadLink, 0)) {
+                                String captchaText = JDUtilities.getCaptcha(controller, plugin, captcha);
+                                logger.info("CaptchaCode: " + captchaText);
+                                downloadLink.setStatusText("Code: " + captchaText);
+                                fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SINGLE_DOWNLOAD_CHANGED));
+                                step.setParameter(captchaText);
+                                step.setStatus(PluginStep.STATUS_DONE);
+                            }
+                            else {
+                                Interaction[] interacts = Interaction.getInteractions(Interaction.INTERACTION_DOWNLOAD_CAPTCHA);
+                                if (interacts.length > 0) {
+                                    String captchaText = (String) interacts[0].getProperty("captchaCode");
+                                    if (captchaText == null) {
+                                        // im NOtfall doch JAC nutzen
+                                        captchaText = JDUtilities.getCaptcha(controller, plugin, captcha);
+                                    }
                                     logger.info("CaptchaCode: " + captchaText);
                                     downloadLink.setStatusText("Code: " + captchaText);
                                     fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SINGLE_DOWNLOAD_CHANGED));
                                     step.setParameter(captchaText);
                                     step.setStatus(PluginStep.STATUS_DONE);
                                 }
-                                else {
-                                    Interaction[] interacts = Interaction.getInteractions(Interaction.INTERACTION_DOWNLOAD_CAPTCHA);
-                                    if (interacts.length > 0) {
-                                        String captchaText = (String) interacts[0].getProperty("captchaCode");
-                                        if (captchaText == null) {
-                                            // im NOtfall doch JAC nutzen
-                                            captchaText = JDUtilities.getCaptcha(controller, plugin, captcha);
-                                        }
-                                        logger.info("CaptchaCode: " + captchaText);
-                                        downloadLink.setStatusText("Code: " + captchaText);
-                                        fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SINGLE_DOWNLOAD_CHANGED));
-                                        step.setParameter(captchaText);
-                                        step.setStatus(PluginStep.STATUS_DONE);
-                                    }
-                                }
-                           
+                            }
 
                         }
                         break;
@@ -210,7 +208,7 @@ public class StartDownloads extends ControlMulticaster {
             else {
                 downloadLink.setStatusText("Fertig");
                 fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SINGLE_DOWNLOAD_CHANGED));
-               
+
                 Interaction.handleInteraction((Interaction.INTERACTION_DOWNLOAD_FINISHED), this);
 
             }
@@ -256,7 +254,7 @@ public class StartDownloads extends ControlMulticaster {
 
     private void onErrorCaptchaImage(DownloadLink downloadLink, PluginForHost plugin, PluginStep step) {
         downloadLink.setStatusText("Captcha Fehler");
-        downloadLink.setInProgress(false); 
+        downloadLink.setInProgress(false);
         fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SINGLE_DOWNLOAD_CHANGED));
 
     }
@@ -434,7 +432,7 @@ public class StartDownloads extends ControlMulticaster {
         }
 
         if (!hasWaittimeLinks) {
-           
+
             logger.info("Alle Downloads beendet");
         }
         else {

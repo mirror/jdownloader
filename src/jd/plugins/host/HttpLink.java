@@ -11,7 +11,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.PluginStep;
 
 public class HttpLink extends PluginForHost {
-    private String  host             = "Unknown";
+    static private final  String  host             = "Unknown";
 
     private String  version          = "1.0.0.0";
 

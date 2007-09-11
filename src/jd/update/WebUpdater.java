@@ -8,6 +8,7 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.Serializable;
 import java.net.MalformedURLException;
 import java.net.SocketTimeoutException;
 import java.net.URL;
@@ -20,14 +21,17 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import jd.JDUtilities;
-
 import jd.plugins.Plugin;
 
 /**
  * @author coalado Webupdater lädt pfad und hash infos von einem server und
  *         vergleicht sie mit den lokalen versionen
  */
-public class WebUpdater {
+public class WebUpdater implements Serializable {
+    /**
+     * 
+     */
+    private static final long serialVersionUID = 1946622313175234371L;
     /**
      * Pfad zur lis.php auf dem updateserver
      */
@@ -40,15 +44,15 @@ public class WebUpdater {
     /**
      * Logger
      */
-    public Logger logger       = Plugin.getLogger();
+    public transient Logger logger       = Plugin.getLogger();
     /**
      * anzahl der aktualisierten Files
      */
-    private int   updatedFiles = 0;
+    private transient int   updatedFiles = 0;
     /**
      * Anzahl der ganzen Files
      */
-    private int   totalFiles   = 0;
+    private transient int   totalFiles   = 0;
 
     /**
      * @param path

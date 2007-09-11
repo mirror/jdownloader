@@ -143,7 +143,8 @@ public class JDController implements PluginListener, ControlListener, UIListener
                 }
                 else if (interaction instanceof WebUpdate) {
                     if (interaction.getCallCode() == Interaction.INTERACTION_CALL_ERROR) {
-                        uiInterface.showMessageDialog("Keine Updates verfügbar");
+                        // uiInterface.showMessageDialog("Keine Updates
+                        // verfügbar");
                     }
                     else {
                         uiInterface.showMessageDialog("Aktualisierte Dateien: " + ((WebUpdate) interaction).getUpdater().getUpdatedFiles());
@@ -236,7 +237,8 @@ public class JDController implements PluginListener, ControlListener, UIListener
      * @param file Die Datei, in die die Links gespeichert werden sollen
      */
     public void saveDownloadLinks(File file) {
-//        JDUtilities.saveObject(null, downloadLinks.toArray(new DownloadLink[]{}), file, "links", "dat", true);
+        // JDUtilities.saveObject(null, downloadLinks.toArray(new
+        // DownloadLink[]{}), file, "links", "dat", true);
         JDUtilities.saveObject(null, downloadLinks, file, "links", "dat", Configuration.saveAsXML);
     }
 

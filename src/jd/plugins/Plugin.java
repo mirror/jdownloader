@@ -40,6 +40,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import jd.JDUtilities;
+import jd.Property;
 import jd.controlling.interaction.Interaction;
 import jd.plugins.event.PluginEvent;
 import jd.plugins.event.PluginListener;
@@ -55,7 +56,7 @@ import jd.plugins.event.PluginListener;
  * 
  * @author astaldo
  */
-public abstract class Plugin {
+public abstract class Plugin{
     /**
      * TODO
      * folgende methoden werden benoetigt
@@ -79,6 +80,7 @@ public abstract class Plugin {
     /**
      * Zeigt an, ob das Plugin abgebrochen werden soll
      */
+    public PluginConfig config;
     protected boolean aborted = false;
     /**
      * Liefert den Namen des Plugins zurück
@@ -169,6 +171,10 @@ public abstract class Plugin {
      */
     protected PluginStep currentStep = null;
     /**
+     * Properties zum abspeichern der einstellungen
+     */
+    private Property properties;
+    /**
      * Ein Logger, um Meldungen darzustellen
      */
     protected static Logger logger = null;
@@ -176,6 +182,18 @@ public abstract class Plugin {
     protected Plugin() {
         pluginListener = new Vector<PluginListener>();
         steps = new Vector<PluginStep>();
+        config= new PluginConfig(this);
+        //Lädt die Konfigurationseinstellungen aus der Konfig
+       if(this.getPluginName()==null){
+           logger.severe("ACHTUNG: die Plugin.getPluginName() Funktion muss einen Wert wiedergeben der zum init schon verfügbar ist, also einen static wert");
+       }
+        if(JDUtilities.getConfiguration().getProperty("PluginConfig_"+this.getPluginName())!=null){
+            properties=(Property)JDUtilities.getConfiguration().getProperty("PluginConfig_"+this.getPluginName());
+        }else{
+        properties=new Property();
+        }
+        logger.info("Load Plugin Properties: "+"PluginConfig_"+this.getPluginName()+" : "+properties);
+        
     }
     /**
      * Zeigt, daß diese Plugin gestoppt werden soll
@@ -209,6 +227,13 @@ public abstract class Plugin {
             logger.setLevel(Level.ALL);
         }
         return logger;
+    }
+    /**
+     * Gibt das Konfigurationsobjekt der INstanz zurück. Die Gui kann daraus Dialogelement zaubern
+     * @return
+     */
+    public PluginConfig getConfig(){
+        return config;
     }
     /**
      * Gibt ausgehend vom aktuellen step den nächsten zurück
@@ -468,6 +493,18 @@ public abstract class Plugin {
      *         alle Parameter des Formulars enthält
      */
     public String getFormInputHidden(String data) {
+        return joinMap(getInputHiddenFields(data),"=","&");
+    }
+    public HashMap<String,String> getInputHiddenFields(String data, String startPattern, String lastPattern)
+    {
+        return getInputHiddenFields(getBetween(data, startPattern, lastPattern));
+    }
+/**
+ * Gibt alle Hidden fields als hasMap zurück
+ * @param data
+ * @return
+ */
+    public HashMap<String,String> getInputHiddenFields(String data) {
         Pattern intput1 = Pattern.compile("<[ ]?input([^>]*?type=['\"]?hidden['\"]?[^>]*?)[/]?>", Pattern.CASE_INSENSITIVE);
         Pattern intput2 = Pattern.compile("name=['\"]([^'\"]*?)['\"]", Pattern.CASE_INSENSITIVE);
         Pattern intput3 = Pattern.compile("value=['\"]([^'\"]*?)['\"]", Pattern.CASE_INSENSITIVE);
@@ -478,39 +515,37 @@ public abstract class Plugin {
         Matcher matcher3;
         Matcher matcher4;
         Matcher matcher5;
-        String string = "";
+       
+        HashMap<String,String> ret=new HashMap<String,String>();
         boolean iscompl;
-        boolean first = true;
+        
         while (matcher1.find()) {
             matcher2 = intput2.matcher(matcher1.group(1) + " ");
             matcher3 = intput3.matcher(matcher1.group(1) + " ");
             matcher4 = intput4.matcher(matcher1.group(1) + " ");
             matcher5 = intput5.matcher(matcher1.group(1) + " ");
             iscompl = false;
-            String szwstring = "";
+           
+            String key,value;
+            key=value=null;
             if (matcher2.find()) {
                 iscompl = true;
-                szwstring += matcher2.group(1) + "=";
+               key= matcher2.group(1);
             } else if (matcher4.find()) {
                 iscompl = true;
-                szwstring += matcher4.group(1) + "=";
+                key=matcher4.group(1);
             }
             if (matcher3.find() && iscompl)
-                szwstring += matcher3.group(1);
+              value=matcher3.group(1);
             else if (matcher5.find() && iscompl)
-                szwstring += matcher5.group(1);
+               value=matcher5.group(1);
             else
                 iscompl = false;
-            if (iscompl) {
-                if (!first) {
-                    string += "&" + szwstring;
-                } else {
-                    string += szwstring;
-                    first = false;
-                }
-            }
+            
+            ret.put(key,value);
+          
         }
-        return string;
+        return ret;
     }
     /**
      * Schickt ein GetRequest an eine Adresse
@@ -1027,5 +1062,11 @@ tmp = r.group(x).trim();
       return captchaText;
       
   }
+public Property getProperties() {
+    return properties;
+}
+public void setProperties(Property properties) {
+    this.properties = properties;
+}
 
 }

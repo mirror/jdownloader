@@ -1,74 +1,145 @@
 package jd.plugins.host;
 
+//requests RMEIUM:
+//#1  (Linkinfos holen, serverID etc
+//POST /files/36717968/Cash_Flow_Bir_Anlik_Hata__Bandrollu__AraFura.zip HTTP/1.1
+//Host: rs102.rapidshare.com
+//User-Agent: Mozilla/5.0 (Windows; U; Windows NT 6.0; de; rv:1.8.1.6) Gecko/20070725 Firefox/2.0.0.6
+//Accept: application/x-shockwave-flash,text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5
+//Accept-Language: de-de,de;q=0.8,en-us;q=0.5,en;q=0.3
+//Accept-Encoding: gzip,deflate
+//Accept-Charset: ISO-8859-1,utf-8;q=0.7,*;q=0.7
+//Keep-Alive: 300
+//Connection: keep-alive
+//Referer: http://rapidshare.com/files/36717968/Cash_Flow_Bir_Anlik_Hata__Bandrollu__AraFura.zip
+//Content-Type: application/x-www-form-urlencoded
+//Content-Length: 16
+//#2  ((Kann man umgehen)  Hier kann man sich den cookie holen, denn amn dirch eine rawURlEncode Funktion aber nachstellen kann
+//POST /cgi-bin/premium.cgi HTTP/1.1
+//Host: rs102.rapidshare.com
+//User-Agent: Mozilla/5.0 (Windows; U; Windows NT 6.0; de; rv:1.8.1.6) Gecko/20070725 Firefox/2.0.0.6
+//Accept: application/x-shockwave-flash,text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5
+//Accept-Language: de-de,de;q=0.8,en-us;q=0.5,en;q=0.3
+//Accept-Encoding: gzip,deflate
+//Accept-Charset: ISO-8859-1,utf-8;q=0.7,*;q=0.7
+//Keep-Alive: 300
+//Connection: keep-alive
+//Referer: http://rs102.rapidshare.com/files/36717968/Cash_Flow_Bir_Anlik_Hata__Bandrollu__AraFura.zip
+//Content-Type: application/x-www-form-urlencoded
+//Content-Length: 137
+//#3 $p ist das passwort 2 mal rawurlencodet. dieser schritt führt zur serverliste
+//POST /files/36717968/Cash_Flow_Bir_Anlik_Hata__Bandrollu__AraFura.zip HTTP/1.1
+//Host: rs102.rapidshare.com
+//User-Agent: Mozilla/5.0 (Windows; U; Windows NT 6.0; de; rv:1.8.1.6) Gecko/20070725 Firefox/2.0.0.6
+//Accept: application/x-shockwave-flash,text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5
+//Accept-Language: de-de,de;q=0.8,en-us;q=0.5,en;q=0.3
+//Accept-Encoding: gzip,deflate
+//Accept-Charset: ISO-8859-1,utf-8;q=0.7,*;q=0.7
+//Keep-Alive: 300
+//Connection: keep-alive
+//Referer: http://rs102.rapidshare.com/cgi-bin/premium.cgi
+//Cookie: user=******-**********
+//Content-Type: application/x-www-form-urlencoded
+//Content-Length: 119
+//
+//l=********&p=***********&dl.start=Download+Cash_Flow_Bir_Anlik_Hata__Bandrollu__AraFura.zip
+//#4  entgültoger download
+//GET /files/36717968/dl/Cash_Flow_Bir_Anlik_Hata__Bandrollu__AraFura.zip HTTP/1.1
+//Host: rs102tl2.rapidshare.com
+//User-Agent: Mozilla/5.0 (Windows; U; Windows NT 6.0; de; rv:1.8.1.6) Gecko/20070725 Firefox/2.0.0.6
+//Accept: application/x-shockwave-flash,text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5
+//Accept-Language: de-de,de;q=0.8,en-us;q=0.5,en;q=0.3
+//Accept-Encoding: gzip,deflate
+//Accept-Charset: ISO-8859-1,utf-8;q=0.7,*;q=0.7
+//Keep-Alive: 300
+//Connection: keep-alive
+//Referer: http://rs102.rapidshare.com/files/36717968/Cash_Flow_Bir_Anlik_Hata__Bandrollu__AraFura.zip
+//Cookie: user=****-*******
+//premiumlogin=1&fileid=36717968&filename=Cash_Flow_Bir_Anlik_Hata__Bandrollu__AraFura.zip&serverid=102&accountid=******&password=******
+//dl.start=PREMIUM
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
+import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
+import java.net.URLDecoder;
 import java.security.NoSuchAlgorithmException;
-import java.util.Date;
 import java.util.HashMap;
+import java.util.Vector;
 import java.util.regex.Pattern;
 
 import jd.JDUtilities;
 import jd.plugins.DownloadLink;
+import jd.plugins.PluginConfig;
+import jd.plugins.PluginConfigEntry;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
 
 public class Rapidshare extends PluginForHost {
-    private String                  host                             = "rapidshare.com";
+    static private final String            host                             = "rapidshare.com";
 
-    private String                  version                          = "1.0.0.0";
+    private String                         version                          = "1.0.0.0";
 
     // http://(?:[^.]*\.)*rapidshare\.com/files/[0-9]*/[^\s"]+
-    private String                  botHash                          = "dab07d2b7f1299f762454cda4c6143e7";
+    private String                         botHash                          = "dab07d2b7f1299f762454cda4c6143e7";
 
-    private Pattern                 patternSupported                 = Pattern.compile("http://(?:rs[0-9]*\\.)*rapidshare\\.com/files/[0-9]+/[^\\s\"]+");
+    private Pattern                        patternSupported                 = Pattern.compile("http://(?:rs[0-9]*\\.)*rapidshare\\.com/files/[0-9]+/[^\\s\"]+");
 
     /**
      * Das findet die Ziel URL für den Post
      */
-    private Pattern                 patternForNewHost                = Pattern.compile("<form *action *= *\"([^\\n\"]*)\"");
+    private Pattern                        patternForNewHost                = Pattern.compile("<form *action *= *\"([^\\n\"]*)\"");
 
     /**
      * Das findet die Captcha URL <form *name *= *"dl" (?s).*<img *src *=
      * *"([^\n"]*)">
      */
-    private Pattern                 patternForCaptcha                = Pattern.compile("<form *name *= *\"dl\" (?s).*<img *src *= *\"([^\\n\"]*)\">");
+    private Pattern                        patternForCaptcha                = Pattern.compile("<form *name *= *\"dl\" (?s).*<img *src *= *\"([^\\n\"]*)\">");
 
     /**
      * <form name="dl".* action="([^\n"]*)"(?s).*?<input type="submit"
      * name="actionstring" value="[^\n"]*"
      */
-    private Pattern                 patternForFormData               = Pattern.compile("<form name=\"dl\".* action=\"([^\\n\"]*)\"(?s).*?<input type=\"submit\" name=\"actionstring\" value=\"([^\\n\"]*)\"");
+    private Pattern                        patternForFormData               = Pattern.compile("<form name=\"dl\".* action=\"([^\\n\"]*)\"(?s).*?<input type=\"submit\" name=\"actionstring\" value=\"([^\\n\"]*)\"");
 
     /**
      * Pattern trifft zu wenn die "Ihre Ip läd gerade eine datei " Seite kommt
      */
-    private Pattern                 patternForAlreadyDownloading    =Pattern.compile("Your IP-address([^\"]*)is already downloading a file");
+    private Pattern                        patternForAlreadyDownloading     = Pattern.compile("Your IP-address([^\"]*)is already downloading a file");
+
     /**
      * Das DownloadLimit wurde erreicht (?s)Downloadlimit.*Oder warte ([0-9]+)
      */
-    private Pattern                 patternErrorDownloadLimitReached = Pattern.compile("\\((?:oder warte|or wait) ([0-9]*) (?:minuten|minutes)\\)", Pattern.CASE_INSENSITIVE);
+    private Pattern                        patternErrorDownloadLimitReached = Pattern.compile("\\((?:oder warte|or wait) ([0-9]*) (?:minuten|minutes)\\)", Pattern.CASE_INSENSITIVE);
 
-    private Pattern                 patternErrorCaptchaWrong         = Pattern.compile("(zugriffscode falsch|code wrong)", Pattern.CASE_INSENSITIVE);
+    private Pattern                        patternErrorCaptchaWrong         = Pattern.compile("(zugriffscode falsch|code wrong)", Pattern.CASE_INSENSITIVE);
 
-    private Pattern                 patternErrorFileAbused           = Pattern.compile("(darf nicht verteilt werden|forbidden to be shared)", Pattern.CASE_INSENSITIVE);
+    private Pattern                        patternErrorFileAbused           = Pattern.compile("(darf nicht verteilt werden|forbidden to be shared)", Pattern.CASE_INSENSITIVE);
 
-    private Pattern                 patternErrorFileNotFound         = Pattern.compile("(datei nicht gefunden|file not found)", Pattern.CASE_INSENSITIVE);
+    private Pattern                        patternErrorFileNotFound         = Pattern.compile("(datei nicht gefunden|file not found)", Pattern.CASE_INSENSITIVE);
 
-    private int                     waitTime                         = 500;
 
-    private String                  captchaAddress;
+    private int                            waitTime                         = 500;
 
-    private String                  postTarget;
+    private String                         captchaAddress;
 
-    private String                  actionString;
+    private String                         postTarget;
 
-    private HashMap<String, String> postParameter                    = new HashMap<String, String>();
+    private String                         actionString;
+
+    private HashMap<String, String>        postParameter                    = new HashMap<String, String>();
+
+    private String                         finalURL;
+
+    private static HashMap<String, String> abb                              = new HashMap<String, String>();
+
+
+
+    private String                         finalCookie;
 
     @Override
     public String getCoder() {
@@ -112,10 +183,46 @@ public class Rapidshare extends PluginForHost {
 
     public Rapidshare() {
         super();
-//        steps.add(new PluginStep(PluginStep.STEP_PAGE, null));
+
         steps.add(new PluginStep(PluginStep.STEP_WAIT_TIME, null));
         steps.add(new PluginStep(PluginStep.STEP_GET_CAPTCHA_FILE, null));
         steps.add(new PluginStep(PluginStep.STEP_DOWNLOAD, null));
+        this.setConfigEelements();
+        abb.put("TeliaSonera", "tl");
+        abb.put("TeliaSonera #2", "tl2");
+        abb.put("GlobalCrossing", "gc");
+        abb.put("GlobalCrossing #2", "gc2");
+        abb.put("Cogent", "cg");
+        abb.put("Cogent #2", "cg2");
+        abb.put("GlobalCrossing", "gc");
+        abb.put("Teleglobe", "tg");
+        abb.put("Level(3)", "l3");
+        abb.put("Level(3) #2", "l32");
+        abb.put("Level(3) #3", "l33");
+        abb.put("Level(3) #4", "l34");
+        abb.put("TeliaSonera", "tl");
+        abb.put("Deutsche Telekom", "dt");
+    }
+
+    private void setConfigEelements() {
+        PluginConfigEntry cfg;
+        config.addEntry(cfg = new PluginConfigEntry(PluginConfig.TYPE_SEPERATOR));
+        config.addEntry(cfg = new PluginConfigEntry(PluginConfig.TYPE_LABEL, "Server Auswahl"));
+
+        config.addEntry(cfg = new PluginConfigEntry(PluginConfig.TYPE_RADIOFIELD, getProperties(), "SELECTED_SERVER", new String[] { "Cognet", "Cognet #2", "GlobalCrossing", "GlobalCrossing #2", "TeliaSonera", "TeliaSonera #2", "Teleglobe", "Level (3)", "Level (3) #2", "Level (3) #3", "Level (3) #4", "zufällig", "wenigste Auslastung" }, "Serverauswahl"));
+        cfg.setDefaultValue("Level (3)");
+        config.addEntry(cfg = new PluginConfigEntry(PluginConfig.TYPE_CHECKBOX, getProperties(), "USE_TELEKOMSERVER", "Telekom Server verwenden falls verfügbar"));
+        cfg.setDefaultValue(false);
+        config.addEntry(cfg = new PluginConfigEntry(PluginConfig.TYPE_SEPERATOR));
+        config.addEntry(cfg = new PluginConfigEntry(PluginConfig.TYPE_LABEL, "Premium Accounts"));
+        config.addEntry(cfg = new PluginConfigEntry(PluginConfig.TYPE_TEXTFIELD, getProperties(), "PREMIUM_USER", "Premium User"));
+        cfg.setDefaultValue("Kundennummer");
+        config.addEntry(cfg = new PluginConfigEntry(PluginConfig.TYPE_TEXTFIELD, getProperties(), "PREMIUM_PASS", "Premium Pass"));
+        cfg.setDefaultValue("Passwort");
+
+        config.addEntry(cfg = new PluginConfigEntry(PluginConfig.TYPE_CHECKBOX, getProperties(), "USE_PREMIUM", "Premium Account verwenden"));
+        cfg.setDefaultValue(false);
+
     }
 
     @Override
@@ -123,75 +230,226 @@ public class Rapidshare extends PluginForHost {
         return null;
     }
 
- 
-    public PluginStep doStep(PluginStep step,DownloadLink downloadLink) {
-       
+    public PluginStep doStep(PluginStep step, DownloadLink downloadLink) {
+
         RequestInfo requestInfo;
-        if(step==null){
+        if (step == null) {
             logger.info("PLugin Ende erreicht.");
             return null;
         }
-        
+
         logger.info("get Next Step " + currentStep);
-        
-      
-        switch (step.getStep()) {
-      
-            
-            case PluginStep.STEP_WAIT_TIME:
-                getDownloadInfo(downloadLink);
-           
-                break;
-            case PluginStep.STEP_GET_CAPTCHA_FILE:
-                File file=this.getLocalCaptchaFile(this);
-                if (!JDUtilities.download(file, captchaAddress) || !file.exists()) {
-                    logger.severe("Captcha Download fehlgeschlagen: " + captchaAddress);
-                    step.setParameter(null);
-                    step.setStatus(PluginStep.STATUS_ERROR);
-                    downloadLink.setStatus(DownloadLink.STATUS_ERROR_CAPTCHA_IMAGEERROR);
-                    break;
-                }else{
-                    step.setParameter(file);
-                    step.setStatus(PluginStep.STATUS_USER_INPUT);
-                }
-           
-                break;
-            case PluginStep.STEP_DOWNLOAD:
-                if (steps.get(1).getParameter() == null) {
-                    // Bot Erkannt }
-                 logger.severe("Fehler. Bot erkennung fehlerhaft");
-                }
-                else {
-                    postParameter.put("mirror", "on");
-                    postParameter.put("accesscode", (String) steps.get(1).getParameter());
-                    postParameter.put("actionString", actionString);
-                    boolean success = prepareDownload(downloadLink);
-                    if (success) {
-                        step.setStatus(PluginStep.STATUS_DONE);
-                        downloadLink.setStatus(DownloadLink.STATUS_DONE);
-                        return null;
-                    }
-                    else if (aborted) {
-                        logger.warning("Plugin abgebrochen");
-                        downloadLink.setStatus(DownloadLink.STATUS_TODO);
-                        step.setStatus(PluginStep.STATUS_TODO);
+        // premium
+        if (this.getProperties().getProperty("USE_PREMIUM") != null && ((Boolean) this.getProperties().getProperty("USE_PREMIUM"))) {
+            String user = (String) this.getProperties().getProperty("PREMIUM_USER");
+            String pass = (String) this.getProperties().getProperty("PREMIUM_PASS");
+            String server = (String) this.getProperties().getProperty("SELECTED_SERVER");
+            Object telekom = this.getProperties().getProperty("USE_TELEKOMSERVER");
+
+            String encodePass = rawUrlEncode(pass);
+            String calcCookie = user + "-" + encodePass;
+    
+            switch (step.getStep()) {
+                case PluginStep.STEP_WAIT_TIME:
+                    try {
+                        // get Startseite
+                        requestInfo = getRequest(new URL(downloadLink.getUrlDownloadDecrypted()));
+                        String newURL = getFirstMatch(requestInfo.getHtmlCode(), patternForNewHost, 1);
+                        if (newURL != null) {
+
+                            // Auswahl ob free oder prem
+                            requestInfo = postRequest(new URL(newURL), "dl.start=PREMIUM");
+
+                            // post daten lesen
+                            HashMap<String, String> fields = getInputHiddenFields(requestInfo.getHtmlCode(), "premium.cgi", "submit");
+                            // Part sollte mal drin bleiben. Der gehört zum
+                            // normalen USer request dazu. lässt sich aber
+                            // umgehen
+                            // String post = joinMap(fields, "=", "&") +
+                            // "&accountid=" + user + "&password=" + pass;
+                            // // Login
+                            // String url = "http://rs" + fields.get("serverid")
+                            // + ".rapidshare.com/cgi-bin/premium.cgi";
+                            // logger.info(url + " - " + post);
+                            //
+                            // requestInfo = postRequest(new URL(url), post);
+                            // String cookie = requestInfo.getCookie();
+                            String cookie = "user=" + calcCookie;
+//                            HashMap<String, String> fields2 = getInputHiddenFields(requestInfo.getHtmlCode(), "Cookie", "wrapper");
+                            // Wieder ein umgebarer part
+                            // post =
+                            // "l="+fields2.get("l")+"&p="+fields2.get("p").replaceAll("\\%","%25")+"&dl.start=Download+"+fields.get("filename").replaceAll("
+                            // ","+");
+                            // url = "http://rs" + fields.get("serverid") +
+                            // ".rapidshare.com/files" + "/" +
+                            // fields.get("fileid") + "/" +
+                            // fields.get("filename");
+                            // logger.info(url + " - " + post);
+                            String post = "l=" + JDUtilities.urlEncode(user) + "&p=" + rawUrlEncode(pass).replaceAll("\\%", "%25") + "&dl.start=Download+" + fields.get("filename").replaceAll(" ", "+");
+                            String url = "http://rs" + fields.get("serverid") + ".rapidshare.com/files" + "/" + fields.get("fileid") + "/" + fields.get("filename");
+                            logger.info(url + " - " + post);
+                            requestInfo = postRequest(new URL(url), cookie, url, null, post, true);
+
+                            HashMap<String, String> fields3 = getInputHiddenFields(requestInfo.getHtmlCode(), "Cookie", "wrapper");
+                            post = joinMap(fields3, "=", "&");
+
+                          
+                            this.finalCookie = cookie;
+
+                            if (telekom != null && (Boolean) telekom && requestInfo.getHtmlCode().indexOf("rs" + fields.get("serverid") + "dt.") > 0) {
+                                // Telekom server
+                                url = "http://rs" + fields.get("serverid") + "dt.rapidshare.com/files" + "/" + fields.get("fileid") + "/dl/" + fields.get("filename");
+
+                            }
+                            else if (server != null && requestInfo.getHtmlCode().indexOf("rs" + fields.get("serverid") + abb.get(server) + ".") > 0) {
+                                // Normaler Wunschserver
+                                url = "http://rs" + fields.get("serverid") + abb.get(server) + ".rapidshare.com/files" + "/" + fields.get("fileid") + "/dl/" + fields.get("filename");
+
+                            }
+                            else {
+                                // ZUfall
+                                Vector<Vector<String>> serverMatches = getAllMatches(requestInfo.getHtmlCode(), "</p><p><table><tr><td><a href=\"http://rs°\">Download via °</a><br>");
+                                int index = (int) (Math.random() * serverMatches.size());
+                                if (serverMatches.size() == 0) {
+                                    step.setStatus(PluginStep.STATUS_ERROR);
+                                    downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN);
+                                    break;
+                                }
+                                else {
+                                    url = "http://rs" + serverMatches.elementAt(index).elementAt(0);
+                                }
+
+                            }
+                            logger.info("final " + url);
+                            this.finalURL = url;
+
+                        }
+                        logger.info(newURL + " - " + captchaAddress + " - " + postTarget + " - " + actionString);
 
                     }
-                    else {
-                        logger.severe("captcha wrong");
-                        downloadLink.setStatus(DownloadLink.STATUS_ERROR_CAPTCHA_WRONG);
+                    catch (Exception e) {
+                        e.printStackTrace();
                         step.setStatus(PluginStep.STATUS_ERROR);
+                        downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN);
                     }
-                }
-                break;
+                case PluginStep.STEP_GET_CAPTCHA_FILE:
+
+                    // schritt überspringen
+                    step.setStatus(PluginStep.STATUS_SKIP);
+                    step = nextStep(step);
+                case PluginStep.STEP_DOWNLOAD:
+
+                    try {
+
+                        requestInfo = getRequestWithoutHtmlCode(new URL(finalURL), finalCookie, finalURL, true);
+
+                        URLConnection urlConnection = requestInfo.getConnection();
+                        int length = urlConnection.getContentLength();
+                        downloadLink.setDownloadMax(length);
+                        if (download(downloadLink, urlConnection)) {
+                            step.setStatus(PluginStep.STATUS_DONE);
+                            downloadLink.setStatus(DownloadLink.STATUS_DONE);
+                            return null;
+                        }
+                        else if (aborted) {
+                            logger.warning("Plugin abgebrochen");
+                            downloadLink.setStatus(DownloadLink.STATUS_TODO);
+                            step.setStatus(PluginStep.STATUS_TODO);
+
+                        }
+                        else {
+                            logger.severe("unknown error");
+                            downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN_RETRY);
+                            step.setStatus(PluginStep.STATUS_ERROR);
+                        }
+                    }
+                    catch (IOException e) {
+                        logger.severe("URL could not be opened. " + e.toString());
+                    }
+            }
+        }
+        else {
+            switch (step.getStep()) {
+
+                case PluginStep.STEP_WAIT_TIME:
+                    getDownloadInfo(downloadLink);
+
+                    break;
+                case PluginStep.STEP_GET_CAPTCHA_FILE:
+                    File file = this.getLocalCaptchaFile(this);
+                    if (!JDUtilities.download(file, captchaAddress) || !file.exists()) {
+                        logger.severe("Captcha Download fehlgeschlagen: " + captchaAddress);
+                        step.setParameter(null);
+                        step.setStatus(PluginStep.STATUS_ERROR);
+                        downloadLink.setStatus(DownloadLink.STATUS_ERROR_CAPTCHA_IMAGEERROR);
+                        break;
+                    }
+                    else {
+                        step.setParameter(file);
+                        step.setStatus(PluginStep.STATUS_USER_INPUT);
+                    }
+
+                    break;
+                case PluginStep.STEP_DOWNLOAD:
+                    if (steps.get(1).getParameter() == null) {
+                        // Bot Erkannt }
+                        logger.severe("Fehler. Bot erkennung fehlerhaft");
+                    }
+                    else {
+                        postParameter.put("mirror", "on");
+                        postParameter.put("accesscode", (String) steps.get(1).getParameter());
+                        postParameter.put("actionString", actionString);
+                        boolean success = prepareDownload(downloadLink);
+                        if (success) {
+                            step.setStatus(PluginStep.STATUS_DONE);
+                            downloadLink.setStatus(DownloadLink.STATUS_DONE);
+                            return null;
+                        }
+                        else if (aborted) {
+                            logger.warning("Plugin abgebrochen");
+                            downloadLink.setStatus(DownloadLink.STATUS_TODO);
+                            step.setStatus(PluginStep.STATUS_TODO);
+
+                        }
+                        else {
+                            logger.severe("captcha wrong");
+                            downloadLink.setStatus(DownloadLink.STATUS_ERROR_CAPTCHA_WRONG);
+                            step.setStatus(PluginStep.STATUS_ERROR);
+                        }
+                    }
+                    break;
+            }
+
         }
         return step;
+    }
+
+    private String rawUrlEncode(String str) {
+        try {
+            str = URLDecoder.decode(str, "UTF-8");
+
+            String ret = "";
+            int i;
+            for (i = 0; i < str.length(); i++) {
+                char letter = str.charAt(i);
+
+                ret += "%" + Integer.toString(letter, 16);
+
+            }
+
+            return ret;
+        }
+        catch (UnsupportedEncodingException e) {
+
+            e.printStackTrace();
+        }
+        return str;
     }
 
     private void getDownloadInfo(DownloadLink downloadLink) {
         try {
             // Der Download wird bestätigt
-            RequestInfo requestInfo = getRequest(new URL(downloadLink.getUrlDownloadDecrypted())); 
+            RequestInfo requestInfo = getRequest(new URL(downloadLink.getUrlDownloadDecrypted()));
             String newURL = getFirstMatch(requestInfo.getHtmlCode(), patternForNewHost, 1);
             if (newURL != null) {
 
@@ -208,7 +466,7 @@ public class Rapidshare extends PluginForHost {
             logger.info(newURL + " - " + captchaAddress + " - " + postTarget + " - " + actionString);
             currentStep = steps.firstElement();
             if (newURL == null || captchaAddress == null || postTarget == null || actionString == null) {
-                logger.info("check pattern "+patternErrorDownloadLimitReached);
+                logger.info("check pattern " + patternErrorDownloadLimitReached);
                 String strWaitTime = getFirstMatch(requestInfo.getHtmlCode(), patternErrorDownloadLimitReached, 1);
                 if (strWaitTime != null) {
                     logger.severe("wait " + strWaitTime + " minutes");
@@ -242,17 +500,17 @@ public class Rapidshare extends PluginForHost {
                     return;
                 }
                 String strAlreadyLoading = getFirstMatch(requestInfo.getHtmlCode(), patternForAlreadyDownloading, 0);
-                
+
                 if (strAlreadyLoading != null) {
                     logger.severe("Already Loading wait " + 60 + " sek. to Retry");
-                    waitTime =180 * 1000;
+                    waitTime = 180 * 1000;
                     downloadLink.setStatus(DownloadLink.STATUS_ERROR_STATIC_WAITTIME);
                     currentStep.setStatus(PluginStep.STATUS_ERROR);
                     logger.info(" WARTEZEIT SETZEN IN (already loading)" + currentStep + " : " + waitTime);
                     currentStep.setParameter((long) waitTime);
                     return;
                 }
-                
+
                 downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN);
                 currentStep.setStatus(PluginStep.STATUS_ERROR);
                 logger.warning("could not get downloadInfo ");
@@ -260,7 +518,7 @@ public class Rapidshare extends PluginForHost {
                     Thread.sleep(5000);
                 }
                 catch (InterruptedException e) {
-                  }
+                }
                 return;
             }
         }
@@ -270,7 +528,7 @@ public class Rapidshare extends PluginForHost {
         catch (IOException e) {
             e.printStackTrace();
         }
-        
+
     }
 
     private boolean prepareDownload(DownloadLink downloadLink) {
@@ -321,5 +579,4 @@ public class Rapidshare extends PluginForHost {
 
     }
 
- 
 }

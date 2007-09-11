@@ -63,8 +63,9 @@ public class JDUtilities {
     /**
      * Titel der Applikation
      */
-    public static final String JD_VERSION="0.0.2";
-    public static final String              JD_TITLE          = "jDownloader"+" "+JD_VERSION;
+    public static final String              JD_VERSION        = "0.0.2";
+
+    public static final String              JD_TITLE          = "jDownloader" + " " + JD_VERSION;
 
     /**
      * Ein URLClassLoader, um Dateien aus dem HomeVerzeichnis zu holen
@@ -556,7 +557,7 @@ public class JDUtilities {
      * @return Das geladene Objekt
      */
     public static Object loadObject(JFrame frame, File fileInput, boolean asXML) {
-        logger.info("load file: "+fileInput+" (xml:"+asXML+")");
+        logger.info("load file: " + fileInput + " (xml:" + asXML + ")");
         Object objectLoaded = null;
         if (fileInput == null) {
             JFileChooser fileChooserLoad = new JFileChooser();
@@ -611,7 +612,7 @@ public class JDUtilities {
      * @param asXML Soll das Objekt in eine XML Datei gespeichert werden?
      */
     public static void saveObject(JFrame frame, Object objectToSave, File fileOutput, String name, String extension, boolean asXML) {
-       
+
         if (fileOutput == null) {
             JDFileFilter fileFilter = new JDFileFilter(name, extension, true);
             JFileChooser fileChooserSave = new JFileChooser();
@@ -626,7 +627,7 @@ public class JDUtilities {
         if (fileOutput != null) {
             if (fileOutput.isDirectory()) {
                 fileOutput = new File(fileOutput, name + extension);
-                logger.info("save file: "+fileOutput+" (xml:"+asXML+") object: "+objectToSave+" - "+extension);
+                logger.info("save file: " + fileOutput + " (xml:" + asXML + ") object: " + objectToSave + " - " + extension);
             }
             try {
                 FileOutputStream fos = new FileOutputStream(fileOutput);
@@ -796,23 +797,28 @@ public class JDUtilities {
         }
         return str;
     }
+
     /**
-     * String str = "http://rapidshare.com&#x2F;&#x66;&#x69;&#x6C;&#x65;&#x73;&#x2F;&#x35;&#x34;&#x35;&#x34;&#x31;&#x34;&#x38;&#x35;&#x2F;&#x63;&#x63;&#x66;&#x32;&#x72;&#x73;&#x64;&#x66;&#x2E;&#x72;&#x61;&#x72;";
-     * Wandelt eine  String in dieser Form in einen normalen String um
+     * 
+     * "http://rapidshare.com&#x2F;&#x66;&#x69;&#x6C;&#x65;&#x73;&#x2F;&#x35;&#x34;&#x35;&#x34;&#x31;&#x34;&#x38;&#x35;&#x2F;&#x63;&#x63;&#x66;&#x32;&#x72;&#x73;&#x64;&#x66;&#x2E;&#x72;&#x61;&#x72;";
+     * Wandelt alle hexkodierten zeichen in diesem Format in normalen text um
+     * 
      * @param str
      * @return decoded string
      */
-        public static String htmlDecode(String str) {
-            String pattern = "\\&\\#x(.*?)\\;";
-             for (Matcher r = Pattern.compile(pattern, Pattern.DOTALL).matcher(str); r.find();) {      for (int x = 1; x <= r.groupCount(); x++) {
-                    if (r.group(0).length() > 0) {                      
-                        char c = (char) Integer.parseInt(r.group(0).substring(3, 5), 16);
-                        str = str.replaceFirst("\\&\\#x(.*?)\\;", c + "");
-                    }
+    public static String htmlDecode(String str) {
+        String pattern = "\\&\\#x(.*?)\\;";
+        for (Matcher r = Pattern.compile(pattern, Pattern.DOTALL).matcher(str); r.find();) {
+            for (int x = 1; x <= r.groupCount(); x++) {
+                if (r.group(0).length() > 0) {
+                    char c = (char) Integer.parseInt(r.group(0).substring(3, 5), 16);
+                    str = str.replaceFirst("\\&\\#x(.*?)\\;", c + "");
                 }
             }
-            return str;
         }
+        return str;
+    }
+
     /**
      * @author coalado
      * @param str

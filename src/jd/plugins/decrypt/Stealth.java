@@ -22,7 +22,7 @@ import jd.plugins.event.PluginEvent;
  * 
  */
 public class Stealth extends PluginForDecrypt {
-    private String  host                 = "Stealth.to";
+    static private final String   host                 = "Stealth.to";
 
     private String  version              = "1.0.0.1";
 

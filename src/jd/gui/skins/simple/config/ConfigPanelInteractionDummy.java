@@ -8,6 +8,7 @@ import jd.Configuration;
 import jd.controlling.interaction.DummyInteraction;
 import jd.controlling.interaction.Interaction;
 import jd.gui.UIInterface;
+import jd.plugins.PluginConfig;
 
 public class ConfigPanelInteractionDummy extends ConfigPanel implements ActionListener {
     /**
@@ -40,7 +41,7 @@ public class ConfigPanelInteractionDummy extends ConfigPanel implements ActionLi
     public void initPanel() {
         ConfigEntry ce;
 
-        ce = new ConfigEntry(ConfigEntry.TYPE_TEXTFIELD, interaction, DummyInteraction.PROPERTY_QUESTION, "Frage");
+        ce = new ConfigEntry(PluginConfig.TYPE_TEXTFIELD, interaction, DummyInteraction.PROPERTY_QUESTION, "Frage");
 
         addConfigEntry(ce);
 

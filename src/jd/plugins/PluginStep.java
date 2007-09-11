@@ -46,6 +46,10 @@ public class PluginStep {
      */
     public final static int STATUS_RETRY       = 4;
     /**
+     *Schritt wird übersprungen
+     */
+    public final static int STATUS_SKIP       = 5;
+    /**
      * Status dieses Schrittes
      */
     private int status = 0;

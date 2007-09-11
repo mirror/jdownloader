@@ -40,7 +40,7 @@ import jd.captcha.pixelgrid.Letter;
 import jd.captcha.pixelgrid.PixelGrid;
 import jd.captcha.pixelobject.PixelObject;
 import jd.captcha.utils.UTILITIES;
-import jd.update.WebUpdater;
+
 
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -56,11 +56,7 @@ import org.w3c.dom.NodeList;
  * @author coalado
  */
 public class JAntiCaptcha {
-    /**
-     * Pfad zum Update Ordner
-     */
-    private static final String      UPDATE_PATH  = "http://lagcity.de/~JDownloaderFiles/autoUpdate";
-
+ 
     /**
      * Logger
      */
@@ -190,7 +186,7 @@ public class JAntiCaptcha {
      */
     public static boolean hasMethod(String methodsPath, String methodName) {
       
-        methodsPath= UTILITIES.getFullPath(new String[] {methodsPath, methodName, "" });
+        methodsPath= UTILITIES.getFullPath(new String[] {methodsPath, methodName, "script.jas" });
       
         return UTILITIES.getURLClassLoader(methodsPath) != null;
     }
@@ -932,16 +928,7 @@ public class JAntiCaptcha {
         return ret;
     }
 
-    /**
-     * Aktualisiert Den Mathod ordner
-     * 
-     * @return Anzahl der aktualisierten Files
-     */
-    public static int updateMethods() {
-        WebUpdater wu = new WebUpdater(UPDATE_PATH); 
-        wu.run();
-        return wu.getUpdatedFiles();
-    }
+
 
     /**
      * Prüft ob der übergeben hash in der MTH file ist

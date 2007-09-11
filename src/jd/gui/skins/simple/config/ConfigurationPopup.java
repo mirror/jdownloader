@@ -73,7 +73,7 @@ public class ConfigurationPopup extends JDialog implements ActionListener {
 
     public void actionPerformed(ActionEvent e) {
         if (e.getSource() == btnSave) {
-            panel.save();
+            if(panel!=null)panel.save();
         }
         setVisible(false);
     }

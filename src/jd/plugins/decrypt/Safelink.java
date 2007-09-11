@@ -12,7 +12,7 @@ import jd.plugins.PluginStep;
 import jd.plugins.event.PluginEvent;
 
 public class Safelink extends PluginForDecrypt {
-    private String host = "safelink.in";
+    static private final String host = "safelink.in";
     private String version = "1.0.0.0";
     private Pattern patternSupported = Pattern.compile("http://(safelink.in|85.17.177.195)/rc-[/|.|a-zA-Z0-9|_|-]*");
     private Pattern Formp = Pattern.compile(

@@ -18,7 +18,7 @@ public class FileFactory extends PluginForHost{
      * ich hab wirklich keine Ahung inwieweit das hier schon funktioniert
      * hab hier noch keinen test machen koennen 
      */
-    private String  host    = "filefactory.com";
+    static private final String   host    = "filefactory.com";
     private String  version = "1.0.0.0";
     private Pattern patternSupported = Pattern.compile("http://www.filefactory.com/file/[^\\s\"]+/?");
     /**

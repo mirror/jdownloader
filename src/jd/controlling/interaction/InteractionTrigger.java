@@ -48,6 +48,8 @@ public class InteractionTrigger implements Serializable {
             ret[i] = events.elementAt(i);
         return ret;
     }
+    
+
 /**
  * Erstellt einen neuen Trigger. ACHTUNG. Beim instanzieren werden die TRigger gleich in einen vector geschrieben und dadurch NIE! vom GarbageCollector erfasst.
  * Man sollte also im Normalen programmablauf keine neuen Trigger mehr Instanzieren
@@ -64,6 +66,9 @@ public class InteractionTrigger implements Serializable {
 
     public String toString() {
         return name+" ("+description+")";
+    }
+    public String getName(){
+        return name;
     }
 /**
  * Gibt die EventID zurück. Es gibt keine setID!

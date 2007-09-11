@@ -9,6 +9,7 @@ import javax.swing.JOptionPane;
 import jd.Configuration;
 import jd.controlling.interaction.ExternExecute;
 import jd.gui.UIInterface;
+import jd.plugins.PluginConfig;
 /**
  * Konfigurationspanel für die INteraction ExternExecute
  * @author coalado
@@ -63,17 +64,17 @@ private ExternExecute externExecute;
     @Override
     public void initPanel() {
         ConfigEntry ce;        
-        ce = new ConfigEntry(ConfigEntry.TYPE_TEXTFIELD, externExecute, ExternExecute.PROPERTY_COMMAND, "Befehl (%LASTFILE,%CAPTCHAIMAGE)");
+        ce = new ConfigEntry(PluginConfig.TYPE_TEXTFIELD, externExecute, ExternExecute.PROPERTY_COMMAND, "Befehl (%LASTFILE,%CAPTCHAIMAGE)");
         ce.setDefaultText("");
         addConfigEntry(ce);       
 
-        ce = new ConfigEntry(ConfigEntry.TYPE_CHECKBOX, externExecute, ExternExecute.PROPERTY_WAIT_TERMINATION, "Warten bis der Befehl beendet wurde?");
+        ce = new ConfigEntry(PluginConfig.TYPE_CHECKBOX, externExecute, ExternExecute.PROPERTY_WAIT_TERMINATION, "Warten bis der Befehl beendet wurde?");
         ce.setDefaultText(true);
         addConfigEntry(ce); 
    
    
 
-        ce = new ConfigEntry(ConfigEntry.TYPE_BUTTON, this, "Testen");
+        ce = new ConfigEntry(PluginConfig.TYPE_BUTTON, this, "Testen");
 
         addConfigEntry(ce);
         add(panel, BorderLayout.CENTER);

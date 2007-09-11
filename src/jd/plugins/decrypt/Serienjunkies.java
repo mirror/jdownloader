@@ -12,7 +12,7 @@ import jd.plugins.PluginStep;
 import jd.plugins.event.PluginEvent;
 
 public class Serienjunkies extends PluginForDecrypt {
-    private String host = "serienjunkies.safehost.be";
+    static private final String  host = "serienjunkies.safehost.be";
     private String version = "1.0.0.0";
     //http://85.17.177.195/sjsafe/f-e657c0c256dd9e58/rc_h324.html
     private Pattern patternSupported = Pattern.compile("http://(serienjunkies.safehost.be/sa.e/rc|85.17.177.195/sjsafe/)[/|.|a-zA-Z0-9|_|-]*");

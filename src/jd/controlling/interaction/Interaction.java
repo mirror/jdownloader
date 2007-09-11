@@ -130,7 +130,7 @@ public abstract class Interaction extends Property implements Serializable {
     /**
      * Reconnect nötig
      */
-    public static InteractionTrigger          INTERACTION_NEED_RECONNECT         = new InteractionTrigger(9, "Reconnect nötig", "Alle Trigger bei denen ein Reconnect sinnvoll ist zusammengefasst");
+    public static InteractionTrigger          INTERACTION_NEED_RECONNECT         = new InteractionTrigger(11, "Reconnect nötig", "Alle Trigger bei denen ein Reconnect sinnvoll ist zusammengefasst");
 
     public Interaction() {
         controlListener = new Vector<ControlListener>();

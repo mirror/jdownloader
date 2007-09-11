@@ -1,0 +1,246 @@
+package jd.gui.skins.simple.config;
+
+import java.awt.BorderLayout;
+import java.awt.Dimension;
+import java.awt.GridBagConstraints;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
+import java.util.Vector;
+
+import javax.swing.JButton;
+import javax.swing.JFrame;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.JTable;
+import javax.swing.table.AbstractTableModel;
+import javax.swing.table.TableColumn;
+
+import jd.Configuration;
+import jd.JDUtilities;
+import jd.gui.UIInterface;
+import jd.plugins.PluginForHost;
+
+public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListener, MouseListener {
+
+    /**
+     * 
+     */
+    private static final long     serialVersionUID = -5219586497809869375L;
+
+    private JButton               btnEdit;
+
+    private JTable                table;
+
+    private Vector<PluginForHost> pluginsForHost;
+
+    private PluginForHost         currentPlugin;
+
+    public ConfigPanelPluginForHost(Configuration configuration, UIInterface uiinterface) {
+        super(configuration, uiinterface);
+        this.pluginsForHost = JDUtilities.getPluginsForHost();
+
+        initPanel();
+
+        load();
+
+    }
+
+    /**
+     * Lädt alle Informationen
+     */
+    public void load() {
+
+    }
+
+    /**
+     * Speichert alle Änderungen auf der Maske
+     */
+    public void save() {
+        // Interaction[] tmp= new Interaction[interactions.size()];
+        PluginForHost plg;
+        for (int i = 0; i < pluginsForHost.size(); i++) {
+            plg = pluginsForHost.elementAt(i);
+            if (plg.getProperties() != null) configuration.setProperty("PluginConfig_" + plg.getPluginName(), plg.getProperties());
+        }
+    }
+
+    @Override
+    public void initPanel() {
+        setLayout(new BorderLayout());
+        table = new JTable();
+        InternalTableModel internalTableModel = new InternalTableModel();
+        table.setModel(new InternalTableModel());
+        this.setPreferredSize(new Dimension(700, 350));
+
+        TableColumn column = null;
+        for (int c = 0; c < internalTableModel.getColumnCount(); c++) {
+            column = table.getColumnModel().getColumn(c);
+            switch (c) {
+
+                case 0:
+                    column.setPreferredWidth(250);
+                    break;
+                case 1:
+                    column.setPreferredWidth(200);
+                    break;
+                case 2:
+                    column.setPreferredWidth(250);
+                    break;
+
+            }
+        }
+
+        // add(scrollPane);
+        // list = new JList();
+        table.addMouseListener(this);
+        JScrollPane scrollpane = new JScrollPane(table);
+        scrollpane.setPreferredSize(new Dimension(400, 200));
+
+        btnEdit = new JButton("Einstellungen");
+
+        btnEdit.addActionListener(this);
+        JDUtilities.addToGridBag(panel, scrollpane, 0, 0, 3, 1, 1, 1, insets, GridBagConstraints.BOTH, GridBagConstraints.CENTER);
+
+        JDUtilities.addToGridBag(panel, btnEdit, 0, 1, 1, 1, 0, 1, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
+
+        // JDUtilities.addToGridBag(this, panel,0, 0, 1, 1, 1, 1, insets,
+        // GridBagConstraints.BOTH, GridBagConstraints.WEST);
+        add(panel, BorderLayout.CENTER);
+
+    }
+
+    private int getSelectedInteractionIndex() {
+        return table.getSelectedRow();
+    }
+
+    @Override
+    public String getName() {
+
+        return "Host Plugins";
+    }
+
+    private void openPopupPanel(ConfigPanel config) {
+        JPanel panel = new JPanel(new BorderLayout());
+
+        // InteractionTrigger[] triggers = InteractionTrigger.getAllTrigger();
+
+        PluginForHost plugin = this.getSelectedPlugin();
+        currentPlugin = plugin;
+        if (plugin == null) return;
+
+        JPanel topPanel = new JPanel();
+        panel.add(topPanel, BorderLayout.NORTH);
+        panel.add(config, BorderLayout.CENTER);
+        ConfigurationPopup pop = new ConfigurationPopup(new JFrame(), config, panel, uiinterface, configuration);
+        pop.setLocation(JDUtilities.getCenterOfComponent(this, pop));
+        pop.setVisible(true);
+    }
+
+    private PluginForHost getSelectedPlugin() {
+        int index = getSelectedInteractionIndex();
+        if (index < 0) return null;
+        return this.pluginsForHost.elementAt(index);
+    }
+
+    public void actionPerformed(ActionEvent e) {
+
+        if (e.getSource() == btnEdit) {
+            editEntry();
+
+        }
+
+    }
+
+    private void editEntry() {
+        PluginForHost plugin = getSelectedPlugin();
+
+        if (plugin != null && plugin.getConfig().getEntries().size() > 0) {
+
+            openPopupPanel(new ConfigPanelPlugin(configuration, uiinterface, plugin));
+
+        }
+
+    }
+
+    public void mouseClicked(MouseEvent e) {
+        if (e.getClickCount() > 1) {
+            editEntry();
+        }
+
+    }
+
+    public void mouseEntered(MouseEvent e) {
+
+    }
+
+    public void mouseExited(MouseEvent e) {
+
+    }
+
+    public void mousePressed(MouseEvent e) {
+
+    }
+
+    public void mouseReleased(MouseEvent e) {
+
+    }
+
+    private class InternalTableModel extends AbstractTableModel {
+
+        /**
+         * 
+         */
+        private static final long serialVersionUID = 1155282457354673850L;
+
+        public Class<?> getColumnClass(int columnIndex) {
+            switch (columnIndex) {
+                case 0:
+                    return String.class;
+                case 1:
+                    return String.class;
+                case 2:
+                    return String.class;
+
+            }
+            return String.class;
+        }
+
+        public int getColumnCount() {
+            return 3;
+        }
+
+        public int getRowCount() {
+            return pluginsForHost.size();
+        }
+
+        public Object getValueAt(int rowIndex, int columnIndex) {
+
+            switch (columnIndex) {
+                case 0:
+                    return pluginsForHost.elementAt(rowIndex).getPluginName();
+                case 1:
+                    return pluginsForHost.elementAt(rowIndex).getPluginID();
+                case 2:
+                    return pluginsForHost.elementAt(rowIndex).getCoder();
+
+            }
+            return null;
+        }
+
+        public String getColumnName(int column) {
+            switch (column) {
+                case 0:
+                    return "Host";
+                case 1:
+                    return "ID";
+                case 2:
+                    return "Ersteller";
+
+            }
+            return super.getColumnName(column);
+        }
+    }
+
+}
