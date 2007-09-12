@@ -265,29 +265,24 @@ public class Rapidshare extends PluginForHost {
                             // Part sollte mal drin bleiben. Der gehört zum
                             // normalen USer request dazu. lässt sich aber
                             // umgehen
-                            // String post = joinMap(fields, "=", "&") +
-                            // "&accountid=" + user + "&password=" + pass;
-                            // // Login
-                            // String url = "http://rs" + fields.get("serverid")
-                            // + ".rapidshare.com/cgi-bin/premium.cgi";
-                            // logger.info(url + " - " + post);
-                            //
-                            // requestInfo = postRequest(new URL(url), post);
-                            // String cookie = requestInfo.getCookie();
-                            String cookie = "user=" + calcCookie;
-//                            HashMap<String, String> fields2 = getInputHiddenFields(requestInfo.getHtmlCode(), "Cookie", "wrapper");
+                             String post = joinMap(fields, "=", "&") +
+                             "&accountid=" + user + "&password=" + pass;
+                             // Login
+                             String url = "http://rs" + fields.get("serverid")
+                             + ".rapidshare.com/cgi-bin/premium.cgi";
+                             logger.info(url + " - " + post);
+                            
+                             requestInfo = postRequest(new URL(url), post);
+                             String cookie = requestInfo.getCookie();
+//                            String cookie = "user=" + calcCookie;
+                             HashMap<String, String> fields2 = getInputHiddenFields(requestInfo.getHtmlCode(), "Cookie", "wrapper");
                             // Wieder ein umgebarer part
-                            // post =
-                            // "l="+fields2.get("l")+"&p="+fields2.get("p").replaceAll("\\%","%25")+"&dl.start=Download+"+fields.get("filename").replaceAll("
-                            // ","+");
-                            // url = "http://rs" + fields.get("serverid") +
-                            // ".rapidshare.com/files" + "/" +
-                            // fields.get("fileid") + "/" +
-                            // fields.get("filename");
-                            // logger.info(url + " - " + post);
-                            String post = "l=" + JDUtilities.urlEncode(user) + "&p=" + rawUrlEncode(pass).replaceAll("\\%", "%25") + "&dl.start=Download+" + fields.get("filename").replaceAll(" ", "+");
-                            String url = "http://rs" + fields.get("serverid") + ".rapidshare.com/files" + "/" + fields.get("fileid") + "/" + fields.get("filename");
-                            logger.info(url + " - " + post);
+                             post =    "l="+fields2.get("l")+"&p="+fields2.get("p").replaceAll("\\%","%25")+"&dl.start=Download+"+fields.get("filename").replaceAll(" ","+");
+                             url = "http://rs" + fields.get("serverid") +".rapidshare.com/files" + "/" +  fields.get("fileid") + "/" + fields.get("filename");
+                             logger.info(url + " - " + post);
+//                           post = "l=" + JDUtilities.urlEncode(user) + "&p=" + rawUrlEncode(pass).replaceAll("\\%", "%25") + "&dl.start=Download+" + fields.get("filename").replaceAll(" ", "+");
+//                           "http://rs" + fields.get("serverid") + ".rapidshare.com/files" + "/" + fields.get("fileid") + "/" + fields.get("filename");
+//                            logger.info(url + " - " + post);
                             requestInfo = postRequest(new URL(url), cookie, url, null, post, true);
 
                             HashMap<String, String> fields3 = getInputHiddenFields(requestInfo.getHtmlCode(), "Cookie", "wrapper");

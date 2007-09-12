@@ -11,13 +11,14 @@ import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
 import jd.plugins.event.PluginEvent;
 
-public class Lixin extends PluginForDecrypt {
+public class Tinyurl extends PluginForDecrypt {
 
-    static private final String  host = "lix.in";
+	static private String host = "tinyurl.com";
 	private String version = "1.0.0.0";
-	private Pattern patternSupported = Pattern.compile("http://lix\\.in/.*");
+	private Pattern patternSupported = Pattern.compile("http://.*tinyurl\\.com/.*");
+	private Pattern patternLink = Pattern.compile("http://tinyurl\\.com/.*");
 	
-    public Lixin() {
+    public Tinyurl() {
         super();
         steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
         currentStep = steps.firstElement();
@@ -25,7 +26,7 @@ public class Lixin extends PluginForDecrypt {
 	
     @Override public String getCoder() { return "Botzi"; }
     @Override public String getHost() { return host; }
-    @Override public String getPluginID() { return "Lix.in-1.0.0."; }
+    @Override public String getPluginID() { return "Tinyurl-1.0.0."; }
     @Override public String getPluginName() { return host; }
     @Override public Pattern getSupportedLinks() { return patternSupported; }
     @Override public String getVersion() { return version; }
@@ -35,19 +36,22 @@ public class Lixin extends PluginForDecrypt {
     	if(step.getStep() == PluginStep.STEP_DECRYPT) {
             Vector<String> decryptedLinks = new Vector<String>();
     		try {
-    			URL url = new URL(parameter);
-    			
     			firePluginEvent(new PluginEvent(this,PluginEvent.PLUGIN_PROGRESS_MAX, 1));
+
+    			URL url = new URL(parameter);
+    			RequestInfo reqinfo = getRequest(url);
     			
-    			//Letzten Teil der URL herausfiltern und postrequest durchführen
-    			String[] result = parameter.split("/");
-    			RequestInfo reqinfo = postRequest(url, "tiny=" + result[result.length-1] + "&submit=continue");
+    			//Besonderen Link herausfinden
+    			if (countOccurences(parameter, patternLink)>0) {
+    				String[] result = parameter.split("/");
+	    			reqinfo = getRequest(new URL("http://tinyurl.com/preview.php?num=" + result[result.length-1]));	    			
+    			}
     			
-    			//Link herausfiltern
+    			//Link der Liste hinzufügen
     			firePluginEvent(new PluginEvent(this,PluginEvent.PLUGIN_PROGRESS_INCREASE, null));
-    			decryptedLinks.add((getBetween(reqinfo.getHtmlCode(), "name=\"ifram\" src=\"", "\" marginwidth")));
+    			decryptedLinks.add(getBetween(reqinfo.getHtmlCode(),"id=\"redirecturl\" href=\"","\">Proceed to"));
     			
-    			//Decrypten abschliessen
+    			//Decrypt abschliessen
     			firePluginEvent(new PluginEvent(this,PluginEvent.PLUGIN_PROGRESS_FINISH, null));
     			logger.info(decryptedLinks.size() + " downloads decrypted");
     			step.setParameter(decryptedLinks);
@@ -56,7 +60,6 @@ public class Lixin extends PluginForDecrypt {
     			e.printStackTrace();
     		}
     	}
-    	
     	return null;
     }
     

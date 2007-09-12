@@ -11,13 +11,14 @@ import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
 import jd.plugins.event.PluginEvent;
 
-public class Lixin extends PluginForDecrypt {
+public class SaveRaidrushWs extends PluginForDecrypt {
 
-    static private final String  host = "lix.in";
+    static private final String  host = "save.raidrush.ws";
 	private String version = "1.0.0.0";
-	private Pattern patternSupported = Pattern.compile("http://lix\\.in/.*");
+	private Pattern patternSupported = Pattern.compile("http://save\\.raidrush\\.ws/\\?id\\=.*");
+	private Pattern patternCount = Pattern.compile("\',\'FREE\',\'");
 	
-    public Lixin() {
+    public SaveRaidrushWs() {
         super();
         steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
         currentStep = steps.firstElement();
@@ -25,7 +26,7 @@ public class Lixin extends PluginForDecrypt {
 	
     @Override public String getCoder() { return "Botzi"; }
     @Override public String getHost() { return host; }
-    @Override public String getPluginID() { return "Lix.in-1.0.0."; }
+    @Override public String getPluginID() { return "Save.Raidrush.ws-1.0.0."; }
     @Override public String getPluginName() { return host; }
     @Override public Pattern getSupportedLinks() { return patternSupported; }
     @Override public String getVersion() { return version; }
@@ -37,16 +38,18 @@ public class Lixin extends PluginForDecrypt {
     		try {
     			URL url = new URL(parameter);
     			
-    			firePluginEvent(new PluginEvent(this,PluginEvent.PLUGIN_PROGRESS_MAX, 1));
+    			RequestInfo reqinfo = getRequest(url);
+
+    			firePluginEvent(new PluginEvent(this,PluginEvent.PLUGIN_PROGRESS_MAX, countOccurences(reqinfo.getHtmlCode(), patternCount)));
+    			Vector<Vector<String>> links = getAllMatches(reqinfo.getHtmlCode(), "\'°\',\'FREE\',\'°\'");
     			
-    			//Letzten Teil der URL herausfiltern und postrequest durchführen
-    			String[] result = parameter.split("/");
-    			RequestInfo reqinfo = postRequest(url, "tiny=" + result[result.length-1] + "&submit=continue");
-    			
-    			//Link herausfiltern
-    			firePluginEvent(new PluginEvent(this,PluginEvent.PLUGIN_PROGRESS_INCREASE, null));
-    			decryptedLinks.add((getBetween(reqinfo.getHtmlCode(), "name=\"ifram\" src=\"", "\" marginwidth")));
-    			
+    			for(int i=0; i<links.size(); i++) {
+    				Vector<String> help = links.get(i);
+    				reqinfo = getRequest(new URL("http://save.raidrush.ws/c.php?id=" + help.get(0) + "&key=" + help.get(1)));
+    				firePluginEvent(new PluginEvent(this,PluginEvent.PLUGIN_PROGRESS_INCREASE, null));
+    				decryptedLinks.add("http://"+reqinfo.getHtmlCode().trim());
+    			}
+    		
     			//Decrypten abschliessen
     			firePluginEvent(new PluginEvent(this,PluginEvent.PLUGIN_PROGRESS_FINISH, null));
     			logger.info(decryptedLinks.size() + " downloads decrypted");

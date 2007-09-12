@@ -109,8 +109,10 @@ public class DistributeData extends ControlMulticaster{
         // Als letztes werden die entschlüsselten Links (soweit überhaupt vorhanden)
         // an die HostPlugins geschickt, damit diese einen Downloadlink erstellen können
         Iterator<String> iterator = decryptedLinks.iterator();
+        logger.info("send "+decryptedLinks.size()+" to hostPlugins");
         while(iterator.hasNext()){
             String decrypted = iterator.next();
+            logger.info("link: "+decrypted);
             for(int i=0; i<pluginsForHost.size();i++){
                 pHost = pluginsForHost.get(i);
                 if(pHost.isClipboardEnabled() && pHost.canHandle(decrypted)){

@@ -250,11 +250,17 @@ public class JAntiCaptcha {
                        
                     }
                 }
-                letter.setGrid(newGrid);                
+                letter.setGrid(newGrid);   
+                letter=              letter.align(-40, +40);
                 letter.setSourcehash(UTILITIES.getLocalHash(images[i]));
                 letter.setDecodedValue(images[i].getName().split("\\_")[1].split("\\.")[0]);
                 letter.clean();
+                
+              
                 letterDB.add(letter);
+
+//                letter.resizetoHeight(35);
+                
             } else {
 
                 logger.severe("Bildformat von ImportDB nicht unterstützt");
@@ -824,6 +830,7 @@ public class JAntiCaptcha {
                 // akt = null;
                 // break;
                 // }
+              
                 if (akt.getDecodedValue().compareToIgnoreCase(ret.elementAt(x).getDecodedValue()) > 0) {
                     ret.add(x, akt);
                     akt = null;

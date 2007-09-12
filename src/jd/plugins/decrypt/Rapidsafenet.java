@@ -10,14 +10,15 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
 import jd.plugins.event.PluginEvent;
+import jd.JDUtilities;
 
-public class Lixin extends PluginForDecrypt {
+public class Rapidsafenet extends PluginForDecrypt {
 
-    static private final String  host = "lix.in";
+    static private final String  host = "rapidsafe.net";
 	private String version = "1.0.0.0";
-	private Pattern patternSupported = Pattern.compile("http://lix\\.in/.*");
+	private Pattern patternSupported = Pattern.compile("http://www\\.rapidsafe\\.net/.*");
 	
-    public Lixin() {
+    public Rapidsafenet() {
         super();
         steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
         currentStep = steps.firstElement();
@@ -25,7 +26,7 @@ public class Lixin extends PluginForDecrypt {
 	
     @Override public String getCoder() { return "Botzi"; }
     @Override public String getHost() { return host; }
-    @Override public String getPluginID() { return "Lix.in-1.0.0."; }
+    @Override public String getPluginID() { return "Rapidsafe.net-1.0.0."; }
     @Override public String getPluginName() { return host; }
     @Override public Pattern getSupportedLinks() { return patternSupported; }
     @Override public String getVersion() { return version; }
@@ -34,27 +35,23 @@ public class Lixin extends PluginForDecrypt {
     @Override public PluginStep doStep(PluginStep step, String parameter) {
     	if(step.getStep() == PluginStep.STEP_DECRYPT) {
             Vector<String> decryptedLinks = new Vector<String>();
+            firePluginEvent(new PluginEvent(this,PluginEvent.PLUGIN_PROGRESS_MAX, 1));
     		try {
     			URL url = new URL(parameter);
+    			RequestInfo reqinfo = getRequest(url);
     			
-    			firePluginEvent(new PluginEvent(this,PluginEvent.PLUGIN_PROGRESS_MAX, 1));
-    			
-    			//Letzten Teil der URL herausfiltern und postrequest durchführen
-    			String[] result = parameter.split("/");
-    			RequestInfo reqinfo = postRequest(url, "tiny=" + result[result.length-1] + "&submit=continue");
-    			
-    			//Link herausfiltern
+    			//Links auslesen und konvertieren
     			firePluginEvent(new PluginEvent(this,PluginEvent.PLUGIN_PROGRESS_INCREASE, null));
-    			decryptedLinks.add((getBetween(reqinfo.getHtmlCode(), "name=\"ifram\" src=\"", "\" marginwidth")));
-    			
-    			//Decrypten abschliessen
-    			firePluginEvent(new PluginEvent(this,PluginEvent.PLUGIN_PROGRESS_FINISH, null));
-    			logger.info(decryptedLinks.size() + " downloads decrypted");
-    			step.setParameter(decryptedLinks);
+    			decryptedLinks.add((JDUtilities.htmlDecode(getBetween(reqinfo.getHtmlCode(),"&nbsp;<FORM ACTION=\"","\" METHOD=\"post\" ID=\"postit\""))));
     		}
     		catch(IOException e) {
     			e.printStackTrace();
     		}
+    		
+    		//Decrypt abschliessen
+    		firePluginEvent(new PluginEvent(this,PluginEvent.PLUGIN_PROGRESS_FINISH, null));
+    		logger.info(decryptedLinks.size() + " downloads decrypted");
+    		step.setParameter(decryptedLinks);
     	}
     	
     	return null;
