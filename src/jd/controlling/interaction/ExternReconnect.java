@@ -60,6 +60,7 @@ public class ExternReconnect extends Interaction implements Serializable {
      * Maximale Reconnectanzahl
      */
     private static final int MAX_RETRIES = 10;
+    private transient static  boolean enabled = false;
 
     private int                 retries                    = 0;
 
@@ -144,7 +145,12 @@ public class ExternReconnect extends Interaction implements Serializable {
     public String getInteractionName() {
         return NAME;
     }
-
+    public static boolean isEnabled(){
+        return enabled;
+    }
+public static void setEnabled(boolean en){
+    enabled=en;
+}
     @Override
     public void run() {
     // Nichts zu tun. INteraction braucht keinen Thread

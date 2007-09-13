@@ -26,7 +26,7 @@ public class DownloadLink implements Serializable{
     /**
      * Ein unbekannter Fehler ist aufgetreten
      */
-
+    
     public final static int         STATUS_ERROR_UNKNOWN        = 2;
     /**
      * Captcha Text war falsch
@@ -97,6 +97,7 @@ public class DownloadLink implements Serializable{
     /**
      * Statustext der von der GUI abgefragt werden kann
      */
+    private transient boolean aborted=false;
     private String statusText="";
     /**
      * Beschreibung des Downloads
@@ -129,11 +130,11 @@ public class DownloadLink implements Serializable{
     /**
      * Maximum der heruntergeladenen Datei (Dateilänge)
      */
-    private transient long           downloadMax;
+    private  long           downloadMax;
     /**
      * Aktuell heruntergeladene Bytes der Datei
      */
-    private transient long           downloadCurrent;
+    private  long           downloadCurrent;
     /**
      * Die DownloadGeschwindigkeit in bytes/sec
      */
@@ -150,7 +151,7 @@ public class DownloadLink implements Serializable{
     /**
      * Status des DownloadLinks
      */
-    private transient int           status                      = STATUS_TODO;
+    private int           status                      = STATUS_TODO;
     /**
      * Timestamp bis zu dem die Wartezeit läuft
      */
@@ -464,6 +465,10 @@ public void setStatusText(String text){
         if(this.isInProgress()&&(speed=getSpeedMeter().getSpeed())>0){
             return   "Speed: "+""+(speed/1000)+"kb/sek.";
         }
+        
+        if(!this.isEnabled()){
+            return   "deaktiviert";
+        }
         return this.statusText;
 
     }
@@ -515,6 +520,14 @@ public void setStatusText(String text){
         }
         return speedMeter;
     }
+
+public boolean isAborted() {
+    return aborted;
+}
+
+public void setAborted(boolean aborted) {
+    this.aborted = aborted;
+}
 
   
 }

@@ -38,6 +38,7 @@ import javax.swing.UnsupportedLookAndFeelException;
 import jd.Configuration;
 import jd.JDUtilities;
 import jd.controlling.JDAction;
+import jd.controlling.interaction.ExternReconnect;
 import jd.controlling.interaction.HTTPReconnect;
 import jd.controlling.interaction.Interaction;
 import jd.event.ControlEvent;
@@ -437,6 +438,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener{
     public void actionPerformed(ActionEvent e) {
         if(e.getSource()==reconnectBox){
             HTTPReconnect.setEnabled(reconnectBox.getSelectedObjects()!=null);
+            ExternReconnect.setEnabled(reconnectBox.getSelectedObjects()!=null);
             return;
         }
         

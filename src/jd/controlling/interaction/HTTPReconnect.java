@@ -21,7 +21,7 @@ import jd.router.RouterData;
  * @author astaldo
  */
 public class HTTPReconnect extends Interaction {
-    private static boolean enabled=true;;
+    private transient static boolean enabled=true;;
     /**
      * 
      */

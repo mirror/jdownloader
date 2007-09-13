@@ -116,6 +116,7 @@ public class JDController implements PluginListener, ControlListener, UIListener
      
             case ControlEvent.CONTROL_SINGLE_DOWNLOAD_FINISHED:
                 lastDownloadFinished = (DownloadLink) event.getParameter();
+                saveDownloadLinks(JDUtilities.getResourceFile("links.dat"));
                 break;
             case ControlEvent.CONTROL_CAPTCHA_LOADED:
                 lastCaptchaLoaded = (File) event.getParameter();
@@ -124,6 +125,7 @@ public class JDController implements PluginListener, ControlListener, UIListener
             case ControlEvent.CONTROL_ALL_DOWNLOADS_FINISHED:
                 download = null;
                 uiInterface.uiControlEvent(event);
+                saveDownloadLinks(JDUtilities.getResourceFile("links.dat"));
                 break;
             case ControlEvent.CONTROL_DISTRIBUTE_FINISHED:
                 Object links = event.getParameter();
@@ -168,6 +170,7 @@ public class JDController implements PluginListener, ControlListener, UIListener
     }
 
     public void uiEvent(UIEvent uiEvent) {
+        Vector<DownloadLink> newLinks;
         switch (uiEvent.getActionID()) {
             case UIEvent.UI_START_DOWNLOADS:
                 startDownloads();
@@ -196,7 +199,9 @@ public class JDController implements PluginListener, ControlListener, UIListener
                 exit();
                 break;
             case UIEvent.UI_LINKS_CHANGED:
-                downloadLinks = uiInterface.getDownloadLinks();
+                newLinks=uiInterface.getDownloadLinks();
+                abortDeletedLink(downloadLinks,newLinks);
+                downloadLinks = newLinks;
                 saveDownloadLinks(JDUtilities.getResourceFile("links.dat"));
                 break;
             case UIEvent.UI_INTERACT_RECONNECT:
@@ -241,6 +246,20 @@ public class JDController implements PluginListener, ControlListener, UIListener
                 wu.interact(this);
                 break;
         }
+    }
+/**
+ * bricht downloads ab wenn diese entfernt wurden
+ * @param oldLinks
+ * @param newLinks
+ */
+    private void abortDeletedLink(Vector<DownloadLink> oldLinks, Vector<DownloadLink> newLinks) {
+       for( int i=0; i<oldLinks.size();i++){
+           if(newLinks.indexOf(oldLinks.elementAt(i))==-1){
+               //Link gefunden der entfernt wurde
+               oldLinks.elementAt(i).setAborted(true);
+           }
+       }
+        
     }
 
     /**

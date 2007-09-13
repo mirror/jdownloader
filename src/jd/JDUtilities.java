@@ -671,7 +671,7 @@ public class JDUtilities {
             logger.severe("Schreibfehler: Fileoutput: null"); 
         }
         
-        Object verifyObject = loadObject(frame,fileOutput,asXML);
+       
         
      
       

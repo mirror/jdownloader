@@ -861,7 +861,7 @@ public abstract class Plugin {
             // long bytesLastSpeedCheck = 0;
             // long t1 = System.currentTimeMillis();
             // long t3 = t1;
-            for (int i = 0; !aborted; i++) {
+            for (int i = 0; (!aborted&&!downloadLink.isAborted()); i++) {
                 // Thread kurz schlafen lassen, um zu häufiges Event-fire zu
                 // verhindern:
                 //coalado: nix schlafen.. ich will speed!   Die Events werden jetzt von der GUI kontrolliert
