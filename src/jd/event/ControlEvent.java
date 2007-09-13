@@ -54,9 +54,22 @@ public class ControlEvent extends AWTEvent{
     /**. Dieses Event ist unabhängig von inaktiv. eine Interaction die in einem thread läuft kann Aktiv sein und trotzdem schon zurückgekehrt
      */
     public final static int CONTROL_PLUGIN_INTERACTION_RETURNED    = 10;
-    public static final int CONTROL_DOWNLOAD_FINISHED = 11;
+    /**
+     * Zeigt an dass ein Einzelner Download beendet wurde. Der Status kann mit Downloadlink.getStatus() abgefragt werden (parameter)
+     */
+    public static final int CONTROL_SINGLE_DOWNLOAD_FINISHED = 11;
+    /**
+     * Gibt an dass ein captcha geladen wurde. der Fiel-Pfad zum captchw wir als parameter erwartet
+     */
     public static final int CONTROL_CAPTCHA_LOADED = 12;
-    public static final int CONTROL_DOWNLOAD_STARTS = 13;
+    /**
+     * Gibt an, dass der Downloadvorgang gestartet wurde
+     */
+    public static final int CONTROL_ALL_DOWNLOAD_START = 13;
+    /**
+     * Gibt an dass ein neuer downlaod begonnen hat. der link wir dals parameter erwartet
+     */
+    public static final int CONTROL_SINGLE_DOWNLOAD_STARTS = 14;
     /**
      * Die ID des Ereignisses
      */

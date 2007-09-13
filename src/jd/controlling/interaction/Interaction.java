@@ -25,11 +25,12 @@ public abstract class Interaction extends Property implements Serializable {
 
     protected transient static Logger         logger                             = Plugin.getLogger();
 
+  
     /**
      * Gibt das Event an bei dem Diese INteraction aktiv wird
      */
     private InteractionTrigger                trigger;
-
+    
     /**
      * THread der für die Interaction verwendet werden kann
      */
@@ -79,12 +80,12 @@ public abstract class Interaction extends Property implements Serializable {
     /**
      * Zeigt an, daß ein einzelner Download beendet wurde
      */
-    public static InteractionTrigger          INTERACTION_DOWNLOAD_FINISHED      = new InteractionTrigger(1, "Download beendet", "Wird aufgerufen sobald ein Download beendet wurde");
+    public static InteractionTrigger          INTERACTION_SINGLE_DOWNLOAD_FINISHED      = new InteractionTrigger(1, "Download beendet", "Wird aufgerufen sobald ein Download beendet wurde");
 
     /**
      * Zeigt an, daß alle Downloads abgeschlossen wurden
      */
-    public static InteractionTrigger          INTERACTION_DOWNLOADS_FINISHED_ALL = new InteractionTrigger(2, "Alle Downloads beendet", "Wird aufgerufen sobald alle Downloads beendet oder abgebrochen wurden");
+    public static InteractionTrigger          INTERACTION_ALL_DOWNLOADS_FINISHED = new InteractionTrigger(2, "Alle Downloads beendet", "Wird aufgerufen sobald alle Downloads beendet oder abgebrochen wurden");
 
     /**
      * Zeigt, daß ein einzelner Download nicht fertiggestellt werden konnte
@@ -135,6 +136,7 @@ public abstract class Interaction extends Property implements Serializable {
     public Interaction() {
         controlListener = new Vector<ControlListener>();
         this.setTrigger(Interaction.INTERACTION_NO_EVENT);
+      
     }
 
     public abstract boolean doInteraction(Object arg);
@@ -167,6 +169,7 @@ public abstract class Interaction extends Property implements Serializable {
      * @return
      */
     public boolean interact(Object arg) {
+     
         fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_PLUGIN_INTERACTION_ACTIVE, this));
         this.setCallCode(Interaction.INTERACTION_CALL_RUNNING);
         boolean success = doInteraction(arg);
@@ -368,4 +371,8 @@ public abstract class Interaction extends Property implements Serializable {
     public String getTriggerName() {
         return getTrigger().toString();
     }
+
+  
+
+  
 }

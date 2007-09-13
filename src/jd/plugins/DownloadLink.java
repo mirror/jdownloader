@@ -6,6 +6,7 @@ import java.util.logging.Logger;
 
 import jd.JDCrypt;
 import jd.JDUtilities;
+import jd.controlling.SpeedMeter;
 
 /**
  * Hier werden alle notwendigen Informationen zu einem einzelnen Download
@@ -61,13 +62,38 @@ public class DownloadLink implements Serializable{
      * Zeigt an, dass der Download aus unbekannten Gründen warten muss. z.B. weil Die Ip gerade gesperrt ist, oder eine Session id abgelaufen ist
      */
     public final static int         STATUS_ERROR_STATIC_WAITTIME  = 10;
+    
     /**
-     * Ein unbekannter Fehler ist aufgetreten
+     * Zeigt an dass die Logins beim premiumlogin nicht richtig waren
      */
+    public static final int STATUS_ERROR_PREMIUM_LOGIN = 11;
+    /**
+     * zeigt einen Premiumspezifischen fehler an
+     */
+    public static final int STATUS_ERROR_PREMIUM = 12;
+  /**
+   * Zeigt an dass der Link fertig geladen wurde
+   */
+    public static final int STATUS_DOWNLOAD_FINISHED = 13;
+    /**
+     * Zeigt an dass der Link nicht vollständig geladen wurde
+     */
+    public static final int STATUS_DOWNLOAD_INCOMPLETE = 14;
+    /**
+     * Zeigt an dass der Link gerade heruntergeladen wird
+     */
+    public static final int STATUS_DOWNLOAD_IN_PROGRESS = 15;
+    
+    /**
+     * Der download ist zur Zeit nicht möglich
+     */
+    public static final int STATUS_ERROR_TEMPORARILY_UNAVAILABLE= 16;
     /**
      * serialVersionUID
      */
     private static final long       serialVersionUID            = 1981079856214268373L;
+ 
+   
     /**
      * Statustext der von der GUI abgefragt werden kann
      */
@@ -103,11 +129,11 @@ public class DownloadLink implements Serializable{
     /**
      * Maximum der heruntergeladenen Datei (Dateilänge)
      */
-    private transient int           downloadMax;
+    private transient long           downloadMax;
     /**
      * Aktuell heruntergeladene Bytes der Datei
      */
-    private transient int           downloadCurrent;
+    private transient long           downloadCurrent;
     /**
      * Die DownloadGeschwindigkeit in bytes/sec
      */
@@ -141,6 +167,10 @@ public class DownloadLink implements Serializable{
      */
     private File latestCaptchaFile=null;
     /**
+     * Speedmeter zum berechnen des downloadspeeds
+     */
+    private transient SpeedMeter speedMeter;
+    /**
      * Erzeugt einen neuen DownloadLink
      * 
      * @param plugin
@@ -159,6 +189,7 @@ public class DownloadLink implements Serializable{
         this.name = name;
         this.host = host;
         this.isEnabled = isEnabled;
+        speedMeter=new SpeedMeter(1000);
         updateFileOutput();
         this.urlDownload = JDCrypt.encrypt(urlDownload);
     }
@@ -236,7 +267,7 @@ public class DownloadLink implements Serializable{
      * 
      * @return Anzahl der heruntergeladenen Bytes
      */
-    public int getDownloadCurrent() {
+    public long getDownloadCurrent() {
         return downloadCurrent;
     }
 
@@ -245,7 +276,7 @@ public class DownloadLink implements Serializable{
      * 
      * @return Die Größe der Datei
      */
-    public int getDownloadMax() {
+    public long getDownloadMax() {
         return downloadMax;
     }
 
@@ -353,7 +384,7 @@ public class DownloadLink implements Serializable{
      * @param downloadedCurrent
      *            Anzahl der heruntergeladenen Bytes
      */
-    public void setDownloadCurrent(int downloadedCurrent) {
+    public void setDownloadCurrent(long downloadedCurrent) {
         this.downloadCurrent = downloadedCurrent;
     }
 
@@ -426,8 +457,12 @@ public void setStatusText(String text){
  * @return Statusstring mit eventl Wartezeit
  */
     public String getStatusText() {
+        int speed;
         if(getRemainingWaittime()>0){
           return   this.statusText+"Warten: ("+getRemainingWaittime()/1000+"sek.)";
+        }
+        if(this.isInProgress()&&(speed=getSpeedMeter().getSpeed())>0){
+            return   "Speed: "+""+(speed/1000)+"kb/sek.";
         }
         return this.statusText;
 
@@ -464,4 +499,22 @@ public void setStatusText(String text){
     public File getLatestCaptchaFile() {
         return latestCaptchaFile;
     }
+
+    public void addBytes(int bytes) {
+      
+        this.getSpeedMeter().addValue(bytes);
+        
+    }
+/**
+ * Gibt den internen Speedmeter zurück
+ * @return Speedmeter
+ */
+    public SpeedMeter getSpeedMeter() {
+        if(speedMeter==null){
+            speedMeter=new SpeedMeter(1000);
+        }
+        return speedMeter;
+    }
+
+  
 }

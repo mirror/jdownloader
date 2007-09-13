@@ -4,14 +4,22 @@ import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
+import java.awt.Point;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
 import java.util.Iterator;
 import java.util.Vector;
 import java.util.logging.Logger;
 
 import javax.swing.JComponent;
+import javax.swing.JMenuItem;
 import javax.swing.JPanel;
+import javax.swing.JPopupMenu;
 import javax.swing.JProgressBar;
 import javax.swing.JScrollPane;
+import javax.swing.JSeparator;
 import javax.swing.JTable;
 import javax.swing.event.TableModelEvent;
 import javax.swing.table.AbstractTableModel;
@@ -22,203 +30,412 @@ import javax.swing.table.TableColumn;
 import jd.JDUtilities;
 import jd.event.ControlEvent;
 import jd.event.ControlListener;
+import jd.event.UIEvent;
 import jd.plugins.DownloadLink;
 import jd.plugins.Plugin;
 import jd.plugins.event.PluginEvent;
 import jd.plugins.event.PluginListener;
+
 /**
  * Diese Tabelle zeigt alle zur Verfügung stehenden Downloads an.
- *
+ * 
  * @author astaldo
  */
-public class TabDownloadLinks extends JPanel implements PluginListener, ControlListener{
-    private final int COL_INDEX    = 0;
-    private final int COL_NAME     = 1;
-    private final int COL_HOST     = 2;
-    private final int COL_STATUS   = 3;
-    private final int COL_PROGRESS = 4;
+public class TabDownloadLinks extends JPanel implements PluginListener, ControlListener, MouseListener, ActionListener {
+    private final int            COL_INDEX          = 0;
 
-    private final Color COLOR_DONE     = new Color(  0,255,  0, 20);
-    private final Color COLOR_ERROR    = new Color(255,  0,  0, 20);
-    private final Color COLOR_DISABLED = new Color(100,100,100, 20);
-    private final Color COLOR_WAIT= new Color(0,0,100, 20);
+    private final int            COL_NAME           = 1;
+
+    private final int            COL_HOST           = 2;
+
+    private final int            COL_STATUS         = 3;
+
+    private final int            COL_PROGRESS       = 4;
+
+    private final Color          COLOR_DONE         = new Color(0, 255, 0, 20);
+
+    private final Color          COLOR_ERROR        = new Color(255, 0, 0, 20);
+
+    private final Color          COLOR_DISABLED     = new Color(50, 50, 50, 50);
+
+    private final Color          COLOR_WAIT         = new Color(0, 0, 100, 20);
+
     /**
      * serialVersionUID
      */
-    private static final long serialVersionUID = 3033753799006526304L;
+    private static final long    serialVersionUID   = 3033753799006526304L;
+
     /**
      * Diese Tabelle enthält die eigentlichen DownloadLinks
      */
-    private InternalTable             table;
+    private InternalTable        table;
+
     /**
      * Das interen TableModel, um die Daten anzuzeigen
      */
-    private InternalTableModel internalTableModel = new InternalTableModel();
+    private InternalTableModel   internalTableModel = new InternalTableModel();
+
     /**
      * Dieser Vector enthält alle Downloadlinks
      */
-    private Vector<DownloadLink> allLinks = new Vector<DownloadLink>();
+    private Vector<DownloadLink> allLinks           = new Vector<DownloadLink>();
+
     /**
      * Der Logger für Meldungen
      */
-    private Logger logger = Plugin.getLogger();
+    private Logger               logger             = Plugin.getLogger();
+
+    private JPopupMenu           popup;
+
+    private SimpleGUI            parent;
+
     /**
      * Erstellt eine neue Tabelle
-     *
+     * 
      * @param parent Das aufrufende Hauptfenster
      */
-    public TabDownloadLinks(SimpleGUI parent){
+    public TabDownloadLinks(SimpleGUI parent) {
         super(new BorderLayout());
+        this.parent = parent;
+        // Set the component to show the popup menu
+
         table = new InternalTable();
+        table.addMouseListener(this);
         table.setModel(internalTableModel);
-//        table.getColumn(table.getColumnName(COL_PROGRESS)).setCellRenderer(int);
+        // table.getColumn(table.getColumnName(COL_PROGRESS)).setCellRenderer(int);
 
         TableColumn column = null;
         for (int c = 0; c < internalTableModel.getColumnCount(); c++) {
             column = table.getColumnModel().getColumn(c);
-            switch(c){
-                case COL_INDEX:    column.setPreferredWidth(30);  break;
-                case COL_NAME:     column.setPreferredWidth(200); break;
-                case COL_HOST:     column.setPreferredWidth(150); break;
-                case COL_STATUS: column.setPreferredWidth(200); break;
-                case COL_PROGRESS: column.setPreferredWidth(250); break;
-                
+            switch (c) {
+                case COL_INDEX:
+                    column.setPreferredWidth(30);
+                    break;
+                case COL_NAME:
+                    column.setPreferredWidth(200);
+                    break;
+                case COL_HOST:
+                    column.setPreferredWidth(150);
+                    break;
+                case COL_STATUS:
+                    column.setPreferredWidth(200);
+                    break;
+                case COL_PROGRESS:
+                    column.setPreferredWidth(250);
+                    break;
+
             }
         }
 
         JScrollPane scrollPane = new JScrollPane(table);
-        scrollPane.setPreferredSize(new Dimension(800,450));
-//        table.setPreferredSize(new Dimension(800,450));
+        scrollPane.setPreferredSize(new Dimension(800, 450));
+        // table.setPreferredSize(new Dimension(800,450));
         add(scrollPane);
     }
-    public void setDownloadLinks(DownloadLink links[]){
+
+    public void setDownloadLinks(DownloadLink links[]) {
         allLinks.clear();
         addLinks(links);
     }
+
+    // Zeigtda s Popup menü an
+
+    private void showPopup(int x, int y, Vector<DownloadLink> downloadLinks) {
+        new InternalPopup(table, x, y, downloadLinks);
+    }
+
     /**
      * Hier werden Links zu dieser Tabelle hinzugefügt.
-     *
-     * @param links Ein Vector mit Downloadlinks, die alle hinzugefügt werden sollen
+     * 
+     * @param links Ein Vector mit Downloadlinks, die alle hinzugefügt werden
+     *            sollen
      */
-    public void addLinks(DownloadLink links[]){
-        for(int i=0;i<links.length;i++){
-            if(allLinks.indexOf(links[i])==-1)
+    public void addLinks(DownloadLink links[]) {
+        for (int i = 0; i < links.length; i++) {
+            if (allLinks.indexOf(links[i]) == -1)
                 allLinks.add(links[i]);
             else
                 logger.info("download-URL already in Queue");
         }
         fireTableChanged();
     }
+
     /**
      * Entfernt die aktuell selektierten Links
      */
-    public void removeSelectedLinks(){
+    public void removeSelectedLinks() {
         Vector<DownloadLink> linksToDelete = getSelectedObjects();
         allLinks.removeAll(linksToDelete);
         table.getSelectionModel().clearSelection();
         fireTableChanged();
+
     }
+
     /**
      * Liefert alle selektierten Links zurück
+     * 
      * @return Die selektierten Links
      */
-    public Vector<DownloadLink> getSelectedObjects(){
+    public Vector<DownloadLink> getSelectedObjects() {
         int rows[] = table.getSelectedRows();
         Vector<DownloadLink> linksSelected = new Vector<DownloadLink>();
-        for(int i=0;i<rows.length;i++){
+        for (int i = 0; i < rows.length; i++) {
             linksSelected.add(allLinks.get(rows[i]));
         }
         return linksSelected;
     }
-    public void setSelectedDownloadLinks(Vector<DownloadLink> selectedDownloadLinks){
+
+    public void setSelectedDownloadLinks(Vector<DownloadLink> selectedDownloadLinks) {
         int index;
         Iterator<DownloadLink> iterator = selectedDownloadLinks.iterator();
-        while(iterator.hasNext()){
+        while (iterator.hasNext()) {
             index = allLinks.indexOf(iterator.next());
             table.getSelectionModel().addSelectionInterval(index, index);
         }
     }
+
     /**
      * TODO Verschieben von zellen
-     *
+     * 
      * Hiermit werden die selektierten Zeilen innerhalb der Tabelle verschoben
-     *
+     * 
      * @param direction Zeigt wie/wohin die Einträge verschoben werden sollen
      */
-    public void moveItems(int direction){
-    }
-    public Vector<DownloadLink> getLinks(){
+    public void moveItems(int direction) {}
+
+    public Vector<DownloadLink> getLinks() {
         return allLinks;
     }
+
     /**
-     * Hiermit wird die Tabelle aktualisiert
-     * Die Markierte reihe wird nach dem ändern wieder neu gesetzt
+     * Hiermit wird die Tabelle aktualisiert Die Markierte reihe wird nach dem
+     * ändern wieder neu gesetzt
      */
-    public void fireTableChanged(){
+    public void fireTableChanged() {
         Vector<DownloadLink> selectedDownloadLinks = getSelectedObjects();
         table.tableChanged(new TableModelEvent(table.getModel()));
         setSelectedDownloadLinks(selectedDownloadLinks);
     }
+
     public void pluginEvent(PluginEvent event) {
-        switch(event.getID()){
+        switch (event.getID()) {
             case PluginEvent.PLUGIN_DATA_CHANGED:
                 fireTableChanged();
                 break;
         }
     }
-    
+
     public void controlEvent(ControlEvent event) {
-        switch(event.getID()){
+        switch (event.getID()) {
             case ControlEvent.CONTROL_SINGLE_DOWNLOAD_CHANGED:
                 fireTableChanged();
                 break;
         }
-        
+
     }
-    private class InternalTable extends JTable{
+
+    public void mouseClicked(MouseEvent e) {
+    // TODO Auto-generated method stub
+
+    }
+
+    public void mouseEntered(MouseEvent e) {
+    // TODO Auto-generated method stub
+
+    }
+
+    public void mouseExited(MouseEvent e) {
+    // TODO Auto-generated method stub
+
+    }
+
+    public void mousePressed(MouseEvent e) {
+        // TODO: isPopupTrigger() funktioniert nicht
+        // logger.info("Press"+e.isPopupTrigger() );
+        if (e.isPopupTrigger() || e.getButton() == MouseEvent.BUTTON3) {
+
+            Point point = e.getPoint();
+            int row = table.rowAtPoint(point);
+            if (this.getSelectedObjects().indexOf(allLinks.elementAt(row)) >= 0) {
+
+            }
+            else {
+                table.getSelectionModel().clearSelection();
+                table.getSelectionModel().addSelectionInterval(row, row);
+            }
+
+            int x = e.getX();
+            int y = e.getY();
+
+            showPopup(x, y, this.getSelectedObjects());
+
+        }
+
+    }
+
+    public void mouseReleased(MouseEvent e) {
+    // TODO Auto-generated method stub
+
+    }
+
+    public void actionPerformed(ActionEvent e) {
+    // TODO Auto-generated method stub
+
+    }
+
+    private class InternalTable extends JTable {
         /**
          * serialVersionUID
          */
-        private static final long serialVersionUID = 4424930948374806098L;
-        private InternalTableCellRenderer internalTableCellRenderer = new InternalTableCellRenderer();
+        private static final long         serialVersionUID          = 4424930948374806098L;
 
+        private InternalTableCellRenderer internalTableCellRenderer = new InternalTableCellRenderer();
 
         @Override
         public TableCellRenderer getCellRenderer(int arg0, int arg1) {
             return internalTableCellRenderer;
         }
     }
+
+    private class InternalPopup extends JPopupMenu implements ActionListener {
+        /**
+         * 
+         */
+        private static final long    serialVersionUID = -6561857482676777562L;
+
+        private JMenuItem            delete;
+
+        private JMenuItem            enable;
+
+        private JMenuItem            info;
+
+        private Vector<DownloadLink> downloadLinks;
+
+        private JMenuItem            top;
+
+        private JMenuItem            bottom;
+
+        public InternalPopup(JTable invoker, int x, int y, Vector<DownloadLink> downloadLink) {
+            popup = new JPopupMenu();
+            this.downloadLinks = downloadLink;
+            // Create and add a menu item
+            delete = new JMenuItem("löschen");
+            enable = new JMenuItem(downloadLink.elementAt(0).isEnabled() ? "deaktivieren" : "aktivieren");
+            info = new JMenuItem("Info anzeigen");
+            top = new JMenuItem("Nach oben");
+            bottom = new JMenuItem("Nach unten");
+            delete.addActionListener(this);
+            enable.addActionListener(this);
+            info.addActionListener(this);
+            top.addActionListener(this);
+            bottom.addActionListener(this);
+            if (downloadLink.size() > 1) {
+                info.setEnabled(false);
+            }
+            popup.add(delete);
+            popup.add(enable);
+            popup.add(new JSeparator());
+            popup.add(top);
+            popup.add(bottom);
+            popup.add(new JSeparator());
+            popup.add(info);
+
+            popup.show(table, x, y);
+
+        }
+
+        public void actionPerformed(ActionEvent e) {
+            if (e.getSource() == delete) {
+                removeSelectedLinks();
+                parent.fireUIEvent(new UIEvent(parent, UIEvent.UI_LINKS_CHANGED, null));
+            }
+            if (e.getSource() == enable) {
+                boolean status = downloadLinks.elementAt(0).isEnabled();
+                for (int i = 0; i < downloadLinks.size(); i++) {
+                    downloadLinks.elementAt(i).setEnabled(!status);
+
+                }
+
+                parent.fireUIEvent(new UIEvent(parent, UIEvent.UI_LINKS_CHANGED, null));
+            }
+
+            if (e.getSource() == info) {
+                showInfoPanel(downloadLinks.elementAt(0));
+            }
+
+            if (e.getSource() == top) {
+
+                allLinks.addAll(0, downloadLinks);
+                table.getSelectionModel().clearSelection();
+                fireTableChanged();
+                parent.fireUIEvent(new UIEvent(parent, UIEvent.UI_LINKS_CHANGED, null));
+            }
+
+            if (e.getSource() == bottom) {
+                allLinks.removeAll(downloadLinks);
+                allLinks.addAll(downloadLinks);
+                table.getSelectionModel().clearSelection();
+                fireTableChanged();
+                parent.fireUIEvent(new UIEvent(parent, UIEvent.UI_LINKS_CHANGED, null));
+            }
+
+        }
+
+    }
+
     /**
-     * Dieses TableModel sorgt dafür, daß die Daten der Downloadlinks korrekt dargestellt werden
-     *
+     * Zeigt ein Informationspanel zum link an
+     * 
+     * @param downloadLink2
+     */
+    private void showInfoPanel(DownloadLink downloadLink) {
+        logger.info("info:_ " + downloadLink);
+
+    }
+
+    /**
+     * Dieses TableModel sorgt dafür, daß die Daten der Downloadlinks korrekt
+     * dargestellt werden
+     * 
      * @author astaldo
      */
-    private class InternalTableModel extends AbstractTableModel{
+    private class InternalTableModel extends AbstractTableModel {
         /**
          * serialVersionUID
          */
         private static final long serialVersionUID = -357970066822953957L;
-        private String labelIndex    = JDUtilities.getResourceString("label.tab.download.column_index");
-        private String labelLink     = JDUtilities.getResourceString("label.tab.download.column_link");
-        private String labelHost     = JDUtilities.getResourceString("label.tab.download.column_host");
-        private String labelStatus    = JDUtilities.getResourceString("label.tab.download.column_status");
-        private String labelProgress = JDUtilities.getResourceString("label.tab.download.column_progress");
+
+        private String            labelIndex       = JDUtilities.getResourceString("label.tab.download.column_index");
+
+        private String            labelLink        = JDUtilities.getResourceString("label.tab.download.column_link");
+
+        private String            labelHost        = JDUtilities.getResourceString("label.tab.download.column_host");
+
+        private String            labelStatus      = JDUtilities.getResourceString("label.tab.download.column_status");
+
+        private String            labelProgress    = JDUtilities.getResourceString("label.tab.download.column_progress");
+
         @Override
         public String getColumnName(int column) {
-            switch(column){
-                case COL_INDEX:    return labelIndex;
-                case COL_NAME:     return labelLink;
-                case COL_STATUS :    return labelStatus;
-                case COL_HOST :    return labelHost;
-                case COL_PROGRESS: return labelProgress;
+            switch (column) {
+                case COL_INDEX:
+                    return labelIndex;
+                case COL_NAME:
+                    return labelLink;
+                case COL_STATUS:
+                    return labelStatus;
+                case COL_HOST:
+                    return labelHost;
+                case COL_PROGRESS:
+                    return labelProgress;
             }
             return null;
         }
 
         public Class<?> getColumnClass(int columnIndex) {
-            switch(columnIndex){
+            switch (columnIndex) {
                 case COL_INDEX:
-//                    return Integer.class;
+                    // return Integer.class;
                 case COL_NAME:
                 case COL_STATUS:
                     return String.class;
@@ -229,34 +446,46 @@ public class TabDownloadLinks extends JPanel implements PluginListener, ControlL
             }
             return String.class;
         }
+
         public int getColumnCount() {
             return 5;
         }
+
         public int getRowCount() {
             return allLinks.size();
         }
+
         public Object getValueAt(int rowIndex, int columnIndex) {
-            if(rowIndex< allLinks.size()){
+            if (rowIndex < allLinks.size()) {
                 DownloadLink downloadLink = allLinks.get(rowIndex);
-                switch(columnIndex){
-                    case COL_INDEX:    return rowIndex;
-                    case COL_NAME:     return downloadLink.getName();
-                    case COL_STATUS:     return downloadLink.getStatusText();
-                    case COL_HOST:     return downloadLink.getHost();
+                switch (columnIndex) {
+                    case COL_INDEX:
+                        return rowIndex;
+                    case COL_NAME:
+                        return downloadLink.getName();
+                    case COL_STATUS:
+                        return downloadLink.getStatusText();
+                    case COL_HOST:
+                        return downloadLink.getHost();
                     case COL_PROGRESS:
-                        if (downloadLink.isInProgress()&&downloadLink.getRemainingWaittime()==0){
-                            JProgressBar p = new JProgressBar(0,downloadLink.getDownloadMax());
+                        if (downloadLink.isInProgress() && downloadLink.getRemainingWaittime() == 0) {
+                            JProgressBar p = new JProgressBar(0, (int) downloadLink.getDownloadMax());
                             p.setStringPainted(true);
-                            p.setValue(downloadLink.getDownloadCurrent());
+                            p.setValue((int) downloadLink.getDownloadCurrent());
+                            p.setString((int) (100 * p.getPercentComplete()) + "% (" + p.getValue() / 1000 + "/" + p.getMaximum() / 1000 + " kb)");
+
                             return p;
-                        }else if(downloadLink.getRemainingWaittime()>0){
-                            JProgressBar p = new JProgressBar(0,downloadLink.getWaitTime());
-                            p.setBackground(new Color(255,  0,  0, 80));
+                        }
+                        else if (downloadLink.getRemainingWaittime() > 0) {
+                            JProgressBar p = new JProgressBar(0, downloadLink.getWaitTime());
+                            p.setBackground(new Color(255, 0, 0, 80));
                             p.setStringPainted(true);
-                            
-                            p.setValue((int)downloadLink.getRemainingWaittime());
+
+                            p.setValue((int) downloadLink.getRemainingWaittime());
+                            p.setString((int) (100 * p.getPercentComplete()) + "% (" + p.getValue() / 1000 + "/" + p.getMaximum() / 1000 + " sek)");
+
                             return p;
-                            
+
                         }
                         else
                             return null;
@@ -264,36 +493,36 @@ public class TabDownloadLinks extends JPanel implements PluginListener, ControlL
             }
             return null;
         }
+
         public DownloadLink getDownloadLinkAtRow(int row) {
             return allLinks.get(row);
         }
 
     }
-    private class InternalTableCellRenderer extends DefaultTableCellRenderer{
+
+    private class InternalTableCellRenderer extends DefaultTableCellRenderer {
         /**
          * serialVersionUID
          */
         private static final long serialVersionUID = -3912572910439565199L;
-        public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column){
-            if(value instanceof JProgressBar)
-                return (JProgressBar)value;
+
+        public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
+            if (value instanceof JProgressBar) return (JProgressBar) value;
 
             Component c = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
-            if(!isSelected){
+            if (!isSelected) {
                 DownloadLink dLink = allLinks.get(row);
-                if (!dLink.isEnabled()){
+                if (!dLink.isEnabled()) {
                     c.setBackground(COLOR_DISABLED);
                 }
-                else if(dLink.getRemainingWaittime()>0){
+                else if (dLink.getRemainingWaittime() > 0) {
                     c.setBackground(COLOR_WAIT);
                 }
-                else if(dLink.getStatus()==DownloadLink.STATUS_DONE){
+                else if (dLink.getStatus() == DownloadLink.STATUS_DONE) {
                     c.setBackground(COLOR_DONE);
                 }
-                
-                
-                
-                else if(dLink.getStatus()!=DownloadLink.STATUS_TODO&&dLink.getStatus()!=DownloadLink.STATUS_ERROR_DOWNLOAD_LIMIT){
+
+                else if (dLink.getStatus() != DownloadLink.STATUS_TODO && dLink.getStatus() != DownloadLink.STATUS_ERROR_DOWNLOAD_LIMIT && dLink.getStatus() != DownloadLink.STATUS_DOWNLOAD_IN_PROGRESS) {
                     c.setBackground(COLOR_ERROR);
                 }
                 else
@@ -302,4 +531,5 @@ public class TabDownloadLinks extends JPanel implements PluginListener, ControlL
             return c;
         }
     }
+
 }

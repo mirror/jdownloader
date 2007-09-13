@@ -261,5 +261,7 @@ public class Configuration extends Property implements Serializable {
         
         setConfigurationVersion(JDUtilities.JD_VERSION);
     }
-
+public String toString(){
+    return "Configuration "+this.getProperties()+" INteraction "+this.interactions;
+}
 }

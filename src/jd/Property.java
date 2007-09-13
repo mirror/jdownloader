@@ -23,7 +23,7 @@ public class Property implements Serializable {
     private static final long serialVersionUID = -6093927038856757256L;
 
     private HashMap<String, Object> properties = new HashMap<String, Object>();
-
+    private long saveCount=0;
     private transient Logger        logger;
 /**
  * 
@@ -39,6 +39,7 @@ public class Property implements Serializable {
      * @param value
      */
     public void setProperty(String key, Object value) {
+        saveCount++;
         if (properties == null) properties = new HashMap<String, Object>();
         properties.put(key, value);
         if (logger == null) logger = Plugin.getLogger();
@@ -48,7 +49,7 @@ public class Property implements Serializable {
     }
 
     public String toString() {
-        return "Property: " + properties;
+        return "Property("+saveCount+"): " + properties;
     }
 
     /**
@@ -67,7 +68,12 @@ public class Property implements Serializable {
     }
 
     public void setProperties(HashMap<String, Object> properties) {
+        saveCount++;
         this.properties = properties;
     }
+    public long getSaveCount(){
+        return saveCount;
+    }
+   
 
 }

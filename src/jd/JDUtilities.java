@@ -405,10 +405,12 @@ public class JDUtilities {
     public static URLClassLoader getURLClassLoader() {
         if (urlClassLoader == null) {
             File homeDir = getJDHomeDirectory();
-            URL url = null;
+            String url = null;
             try {
-                url = homeDir.toURL();
-                urlClassLoader = new URLClassLoader(new URL[] { url }, null);
+                //Url Encode des pfads für den Classloader
+                url = urlEncode(new File((homeDir.getAbsolutePath())).toURI().toURL().toString());
+                logger.info("Create Classloader: for: "+url+"  -->"+new URL(url));
+                urlClassLoader = new URLClassLoader(new URL[] { new URL(url) }, null);
             }
             catch (MalformedURLException e) {
                 e.printStackTrace();
@@ -568,7 +570,10 @@ public class JDUtilities {
             }
         }
         if (fileInput != null) {
+            
+            String hash= getLocalHash(fileInput);
             try {
+                
                 FileInputStream fis = new FileInputStream(fileInput);
                 if (asXML) {
                     XMLDecoder xmlDecoder = new XMLDecoder(new BufferedInputStream(fis));
@@ -580,6 +585,9 @@ public class JDUtilities {
                     objectLoaded = ois.readObject();
                     ois.close();
                 }
+                //Object15475dea4e088fe0e9445da30604acd1
+                //Object80d11614908074272d6b79abe91eeca1
+                logger.info("Loaded Object ("+hash+"): "+objectLoaded);
                 return objectLoaded;
             }
             catch (ClassNotFoundException e) {
@@ -612,7 +620,7 @@ public class JDUtilities {
      * @param asXML Soll das Objekt in eine XML Datei gespeichert werden?
      */
     public static void saveObject(JFrame frame, Object objectToSave, File fileOutput, String name, String extension, boolean asXML) {
-
+        String hashPre;
         if (fileOutput == null) {
             JDFileFilter fileFilter = new JDFileFilter(name, extension, true);
             JFileChooser fileChooserSave = new JFileChooser();
@@ -629,6 +637,8 @@ public class JDUtilities {
                 fileOutput = new File(fileOutput, name + extension);
                 logger.info("save file: " + fileOutput + " (xml:" + asXML + ") object: " + objectToSave + " - " + extension);
             }
+            hashPre=getLocalHash(fileOutput);
+            if(fileOutput.exists())fileOutput.delete();
             try {
                 FileOutputStream fos = new FileOutputStream(fileOutput);
                 if (asXML) {
@@ -648,7 +658,23 @@ public class JDUtilities {
             catch (IOException e) {
                 e.printStackTrace();
             }
+            String hashPost=getLocalHash(fileOutput);
+            
+            if(hashPost==null){
+                logger.severe("Schreibfehler: "+fileOutput+" Datei wurde nicht erstellt");
+            }else if(hashPost.equals(hashPre)){
+                logger.severe("Schreibfehler: "+fileOutput+" Datei wurde nicht überschrieben");
+            }else{
+                logger.finer("Schreibvorgang: "+fileOutput+" erfolgreich: "+hashPost);
+            }
+        }else{
+            logger.severe("Schreibfehler: Fileoutput: null"); 
         }
+        
+        Object verifyObject = loadObject(frame,fileOutput,asXML);
+        
+     
+      
     }
 
     /**
@@ -713,7 +739,17 @@ public class JDUtilities {
      * @return File zu arg
      */
     public static File getResourceFile(String arg) {
-        String fileName = getURLClassLoader().getResource(".") + arg;
+        URLClassLoader cl = getURLClassLoader();
+        if(cl==null){
+            logger.severe("Classloader ==null: ");
+            return null;
+        }
+        URL clURL=getURLClassLoader().getResource(".");
+        if(clURL==null){
+            logger.severe(". resource ==null: ");
+            return null;
+        }
+        String fileName = clURL + arg;
         try {
             fileName = URLDecoder.decode(fileName, "UTF8");
         }
@@ -722,7 +758,13 @@ public class JDUtilities {
             e.printStackTrace();
         }
         try {
-            return new File(new URI(urlEncode(fileName)));
+            logger.info("get resource: "+urlEncode(fileName));
+            URI uri=new URI(urlEncode(fileName));
+            if(uri==null){
+                logger.severe("null resource!: "+arg);
+                return null;
+            }
+            return new File(uri);
         }
         catch (URISyntaxException e) {
 
@@ -741,7 +783,7 @@ public class JDUtilities {
      */
     public static String getLocalHash(File f) {
         try {
-
+if(!f.exists())return null;
             MessageDigest md;
             md = MessageDigest.getInstance("md5");
             byte[] b = new byte[1024];
@@ -763,7 +805,7 @@ public class JDUtilities {
         catch (Exception e) {
             e.printStackTrace();
         }
-        return "";
+        return null;
     }
 
     /**
@@ -776,7 +818,7 @@ public class JDUtilities {
         try {
             str = URLDecoder.decode(str, "UTF-8");
 
-            String allowed = "1234567890QWERTZUIOPASDFGHJKLYXCVBNMqwertzuiopasdfghjklyxcvbnm-_.?/:";
+            String allowed = "1234567890QWERTZUIOPASDFGHJKLYXCVBNMqwertzuiopasdfghjklyxcvbnm-_.?/\\:&=;";
             String ret = "";
             int i;
             for (i = 0; i < str.length(); i++) {
@@ -807,6 +849,7 @@ public class JDUtilities {
      * @return decoded string
      */
     public static String htmlDecode(String str) {
+      
         String pattern = "\\&\\#x(.*?)\\;";
         for (Matcher r = Pattern.compile(pattern, Pattern.DOTALL).matcher(str); r.find();) {
             for (int x = 1; x <= r.groupCount(); x++) {
@@ -818,6 +861,7 @@ public class JDUtilities {
         }
         return str;
     }
+ 
 
     /**
      * @author coalado

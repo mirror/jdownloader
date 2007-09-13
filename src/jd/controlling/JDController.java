@@ -53,11 +53,13 @@ public class JDController implements PluginListener, ControlListener, UIListener
     private Logger               logger         = Plugin.getLogger();
 
     private File                 lastCaptchaLoaded;
-
+    private SpeedMeter speedMeter;
     private DownloadLink         lastDownloadFinished;
 
     public JDController() {
         downloadLinks = new Vector<DownloadLink>();
+        speedMeter= new SpeedMeter(5000);
+    
         JDUtilities.setController(this);
     }
 
@@ -96,6 +98,12 @@ public class JDController implements PluginListener, ControlListener, UIListener
 
     public void pluginEvent(PluginEvent event) {
         uiInterface.uiPluginEvent(event);
+        switch (event.getEventID()){
+            case PluginEvent.PLUGIN_DOWNLOAD_BYTES:
+                speedMeter.addValue((Integer)event.getParameter1());
+                break;
+                
+        }
     }
 
     /**
@@ -105,7 +113,8 @@ public class JDController implements PluginListener, ControlListener, UIListener
     public void controlEvent(ControlEvent event) {
 
         switch (event.getID()) {
-            case ControlEvent.CONTROL_DOWNLOAD_FINISHED:
+     
+            case ControlEvent.CONTROL_SINGLE_DOWNLOAD_FINISHED:
                 lastDownloadFinished = (DownloadLink) event.getParameter();
                 break;
             case ControlEvent.CONTROL_CAPTCHA_LOADED:
@@ -191,7 +200,10 @@ public class JDController implements PluginListener, ControlListener, UIListener
                 saveDownloadLinks(JDUtilities.getResourceFile("links.dat"));
                 break;
             case UIEvent.UI_INTERACT_RECONNECT:
-                ;
+                if(getRunningDownloadNum()>0){
+                    logger.info("Es laufen noch Downloads. Breche zum reconnect Downloads ab!");
+                    stopDownloads();
+                }
                 if (Interaction.handleInteraction(Interaction.INTERACTION_NEED_RECONNECT, this)) {
                     uiInterface.showMessageDialog("Reconnect erfolgreich");
                     Iterator<DownloadLink> iterator = downloadLinks.iterator();
@@ -315,6 +327,24 @@ public class JDController implements PluginListener, ControlListener, UIListener
     }
 
     /**
+     * Liefert die Anzahl der gerade laufenden Downloads. (nur downloads die
+     * sich wirklich in der downloadpahse befinden
+     * 
+     * @returnAnzahld er laufenden Downloadsl
+     */
+    public int getRunningDownloadNum() {
+        int ret = 0;
+        Iterator<DownloadLink> iterator = downloadLinks.iterator();
+        DownloadLink nextDownloadLink = null;
+        while (iterator.hasNext()) {
+            nextDownloadLink = iterator.next();
+            if (nextDownloadLink.getStatus() == DownloadLink.STATUS_DOWNLOAD_IN_PROGRESS) ret++;
+
+        }
+        return ret;
+    }
+
+    /**
      * Der Benuter soll den Captcha Code erkennen
      * 
      * @param plugin Das Plugin, das den Code anfordert
@@ -345,5 +375,11 @@ public class JDController implements PluginListener, ControlListener, UIListener
         if (this.lastCaptchaLoaded == null) return "";
         return this.lastCaptchaLoaded.getAbsolutePath();
     }
+
+    public SpeedMeter getSpeedMeter() {
+        return speedMeter;
+    }
+
+
 
 }

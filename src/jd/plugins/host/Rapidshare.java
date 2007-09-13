@@ -82,6 +82,8 @@ import jd.plugins.RequestInfo;
 public class Rapidshare extends PluginForHost {
     static private final String            host                             = "rapidshare.com";
 
+ 
+
     private String                         version                          = "1.0.0.0";
 
     // http://(?:[^.]*\.)*rapidshare\.com/files/[0-9]*/[^\s"]+
@@ -121,8 +123,7 @@ public class Rapidshare extends PluginForHost {
     private Pattern                        patternErrorFileAbused           = Pattern.compile("(darf nicht verteilt werden|forbidden to be shared)", Pattern.CASE_INSENSITIVE);
 
     private Pattern                        patternErrorFileNotFound         = Pattern.compile("(datei nicht gefunden|file not found)", Pattern.CASE_INSENSITIVE);
-
-
+    private String                              hardwareDefektString ="wegen Hardwaredefekt nicht";
     private int                            waitTime                         = 500;
 
     private String                         captchaAddress;
@@ -215,12 +216,12 @@ public class Rapidshare extends PluginForHost {
         cfg.setDefaultValue(false);
         config.addEntry(cfg = new PluginConfigEntry(PluginConfig.TYPE_SEPERATOR));
         config.addEntry(cfg = new PluginConfigEntry(PluginConfig.TYPE_LABEL, "Premium Accounts"));
-        config.addEntry(cfg = new PluginConfigEntry(PluginConfig.TYPE_TEXTFIELD, getProperties(), "PREMIUM_USER", "Premium User"));
+        config.addEntry(cfg = new PluginConfigEntry(PluginConfig.TYPE_TEXTFIELD, getProperties(), PROPERTY_PREMIUM_USER, "Premium User"));
         cfg.setDefaultValue("Kundennummer");
-        config.addEntry(cfg = new PluginConfigEntry(PluginConfig.TYPE_TEXTFIELD, getProperties(), "PREMIUM_PASS", "Premium Pass"));
+        config.addEntry(cfg = new PluginConfigEntry(PluginConfig.TYPE_TEXTFIELD, getProperties(), PROPERTY_PREMIUM_PASS, "Premium Pass"));
         cfg.setDefaultValue("Passwort");
 
-        config.addEntry(cfg = new PluginConfigEntry(PluginConfig.TYPE_CHECKBOX, getProperties(), "USE_PREMIUM", "Premium Account verwenden"));
+        config.addEntry(cfg = new PluginConfigEntry(PluginConfig.TYPE_CHECKBOX, getProperties(), PROPERTY_USE_PREMIUM, "Premium Account verwenden"));
         cfg.setDefaultValue(false);
 
     }
@@ -254,12 +255,20 @@ public class Rapidshare extends PluginForHost {
                     try {
                         // get Startseite
                         requestInfo = getRequest(new URL(downloadLink.getUrlDownloadDecrypted()));
+                        if(requestInfo.getHtmlCode().indexOf(hardwareDefektString)>0){
+                            //hardewaredefeklt bei rs.com
+                            step.setStatus(PluginStep.STATUS_ERROR);
+                            logger.severe("Rs.com hardwaredefekt");
+                            currentStep.setParameter(60*10);
+                            downloadLink.setStatus(DownloadLink.STATUS_ERROR_TEMPORARILY_UNAVAILABLE);
+                            return step;
+                        }
                         String newURL = getFirstMatch(requestInfo.getHtmlCode(), patternForNewHost, 1);
                         if (newURL != null) {
 
                             // Auswahl ob free oder prem
                             requestInfo = postRequest(new URL(newURL), "dl.start=PREMIUM");
-
+                        
                             // post daten lesen
                             HashMap<String, String> fields = getInputHiddenFields(requestInfo.getHtmlCode(), "premium.cgi", "submit");
                             // Part sollte mal drin bleiben. Der gehört zum
@@ -276,7 +285,14 @@ public class Rapidshare extends PluginForHost {
                              String cookie = requestInfo.getCookie();
 //                            String cookie = "user=" + calcCookie;
                              HashMap<String, String> fields2 = getInputHiddenFields(requestInfo.getHtmlCode(), "Cookie", "wrapper");
-                            // Wieder ein umgebarer part
+                            if(fields2.get("p")==null ||fields2.get("l")==null){
+                                step.setStatus(PluginStep.STATUS_ERROR);
+                                logger.severe("Premiumfehler Login");
+                                downloadLink.setStatus(DownloadLink.STATUS_ERROR_PREMIUM_LOGIN);
+                                return step;
+                                
+                            }
+                             // Wieder ein umgebarer part
                              post =    "l="+fields2.get("l")+"&p="+fields2.get("p").replaceAll("\\%","%25")+"&dl.start=Download+"+fields.get("filename").replaceAll(" ","+");
                              url = "http://rs" + fields.get("serverid") +".rapidshare.com/files" + "/" +  fields.get("fileid") + "/" + fields.get("filename");
                              logger.info(url + " - " + post);
@@ -445,6 +461,16 @@ public class Rapidshare extends PluginForHost {
         try {
             // Der Download wird bestätigt
             RequestInfo requestInfo = getRequest(new URL(downloadLink.getUrlDownloadDecrypted()));
+            if(requestInfo.getHtmlCode().indexOf(hardwareDefektString)>0){
+                //hardewaredefeklt bei rs.com
+                currentStep.setStatus(PluginStep.STATUS_ERROR);
+                currentStep.setParameter(60*10);
+                logger.severe("Rs.com hardwaredefekt");
+                downloadLink.setStatus(DownloadLink.STATUS_ERROR_TEMPORARILY_UNAVAILABLE);
+                return;
+            }
+            
+            
             String newURL = getFirstMatch(requestInfo.getHtmlCode(), patternForNewHost, 1);
             if (newURL != null) {
 

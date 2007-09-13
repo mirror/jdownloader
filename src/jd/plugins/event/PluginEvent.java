@@ -42,6 +42,10 @@ public class PluginEvent extends AWTEvent{
      */
     public static final int PLUGIN_DOWNLOAD_SPEED        = 7;
     /**
+     * Neue Bytes wurden geladen bytes anzahl als parameter
+     */
+    public static final int PLUGIN_DOWNLOAD_BYTES = 0;
+    /**
      * Plugin, von dem dieses Event ausgegangen ist
      */
     private Plugin source;
@@ -68,5 +72,6 @@ public class PluginEvent extends AWTEvent{
     }
     public int getEventID()       { return eventID;   }
     public Plugin getSource()     { return source;    }
+    //Hat das einen grund warumd as getParameter1 heißt?
     public Object getParameter1() { return parameter; }
 }

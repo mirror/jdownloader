@@ -34,7 +34,7 @@ public class Dropper extends JDialog {
         JDUtilities.addToGridBag(this, target, 0, 0, 1, 1, 0, 0, null, GridBagConstraints.CENTER, GridBagConstraints.CENTER);
         JDUtilities.addToGridBag(this, label, 0, 1, 1, 1, 0, 0, null, GridBagConstraints.CENTER, GridBagConstraints.CENTER);
         
-        setSize(40,60);
+        setSize(50,70);
         this.setResizable(false);
         this.setTitle("JD-Drop");
     
@@ -49,6 +49,7 @@ public class Dropper extends JDialog {
      */
     public void setText(String text){
         label.setText(text);
+        this.pack();
     }
     /**
      * Deligiert den UILIstener zur Targetkomponente

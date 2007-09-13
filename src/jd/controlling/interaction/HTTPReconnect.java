@@ -21,7 +21,7 @@ import jd.router.RouterData;
  * @author astaldo
  */
 public class HTTPReconnect extends Interaction {
-
+    private static boolean enabled=true;;
     /**
      * 
      */
@@ -46,6 +46,12 @@ public class HTTPReconnect extends Interaction {
 
     @Override
     public boolean doInteraction(Object arg) {
+        
+        if(!isEnabled()){
+            logger.finer("INteraction nicht ausgeführt. disabled"+this);
+            return false;
+        }
+        
         Configuration configuration = JDUtilities.getConfiguration();
         retries++;
         logger.info("Starting HTTPReconnect #" + retries);
@@ -289,7 +295,12 @@ public class HTTPReconnect extends Interaction {
             return new PasswordAuthentication(username, password.toCharArray());
         }
     }
-
+    public static boolean isEnabled(){
+        return enabled;
+    }
+public static void setEnabled(boolean en){
+    enabled=en;
+}
     @Override
     public void run() {
         //Nichts zu tun. INteraction braucht keinen Thread
