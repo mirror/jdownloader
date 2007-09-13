@@ -554,7 +554,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener{
  * Delligiert die Pluginevents weiter an das host/decryptpanel. CHangedEvents werden abgefangen und im sekundeninterval weitergegeben.
  */
     public void uiPluginEvent(PluginEvent event) {
-
+        splitpane.setDividerLocation(0.8);
         if (event.getSource() instanceof PluginForHost && event.getEventID() == PluginEvent.PLUGIN_DATA_CHANGED) {
             this.hostPluginDataChanged = event;
 
@@ -568,14 +568,14 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener{
         if (event.getSource() instanceof PluginForHost) {
 
             tabDownloadTable.pluginEvent(event);
-            return;
+           return;
         }
         if (event.getSource() instanceof PluginForDecrypt) {
             tabPluginActivity.pluginEvent(event);
-            return;
+          return;
         }
 
-        splitpane.setDividerLocation(0.8);
+       
     }
 
     public void uiControlEvent(ControlEvent event) {
