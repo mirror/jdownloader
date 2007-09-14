@@ -676,7 +676,22 @@ public class JDUtilities {
      
       
     }
-
+    /**
+     * Formatiert Sekunden in das zeitformat stunden:minuten:sekunden
+     * @param Zeit in sekunden
+     * @return formatierte Zeit
+     */
+    public static String formatSeconds(int     eta){
+        
+        int hours=eta/(60*60);
+        eta-=hours*60*60;
+        int minutes=eta/60;
+        int seconds=eta-minutes*60;
+        if(hours==0){
+            return minutes+":"+seconds;
+        }
+        return hours+":"+minutes+":"+seconds;
+    }
     /**
      * Liefert alle geladenen Plugins zum Entschlüsseln zurück
      * 
@@ -849,7 +864,7 @@ if(!f.exists())return null;
      * @return decoded string
      */
     public static String htmlDecode(String str) {
-      
+      // http://rs218.rapidshare.com/files/&#0052;&#x0037;&#0052;&#x0034;&#0049;&#x0032;&#0057;&#x0031;/STE_S04E04.Borderland.German.dTV.XviD-2Br0th3rs.part1.rar
         String pattern = "\\&\\#x(.*?)\\;";
         for (Matcher r = Pattern.compile(pattern, Pattern.DOTALL).matcher(str); r.find();) {
             for (int x = 1; x <= r.groupCount(); x++) {
@@ -859,8 +874,18 @@ if(!f.exists())return null;
                 }
             }
         }
+        pattern = "\\&\\#(.*?)\\;";
+        for (Matcher r = Pattern.compile(pattern, Pattern.DOTALL).matcher(str); r.find();) {
+            for (int x = 1; x <= r.groupCount(); x++) {
+                if (r.group(0).length() > 0) {
+                    char c = (char) Integer.parseInt(r.group(0).substring(3, 5), 10);
+                    str = str.replaceFirst("\\&\\#(.*?)\\;", c + "");
+                }
+            }
+        }
         return str;
     }
+
  
 
     /**
