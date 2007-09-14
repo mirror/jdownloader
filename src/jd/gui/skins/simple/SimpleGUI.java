@@ -257,11 +257,11 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener{
             statusBar.setSpeed(JDUtilities.getController().getSpeedMeter().getSpeed());
         }
         if (hostPluginDataChanged != null) {
-            tabDownloadTable.pluginEvent(hostPluginDataChanged);
+            tabDownloadTable.delegatedPluginEvent(hostPluginDataChanged);
         }
 
         if (decryptPluginDataChanged != null) {
-            tabPluginActivity.pluginEvent(decryptPluginDataChanged);
+            tabPluginActivity.delegatedPluginEvent(decryptPluginDataChanged);
         }
         decryptPluginDataChanged = null;
         hostPluginDataChanged = null;
@@ -554,7 +554,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener{
  * Delligiert die Pluginevents weiter an das host/decryptpanel. CHangedEvents werden abgefangen und im sekundeninterval weitergegeben.
  */
     public void uiPluginEvent(PluginEvent event) {
-        splitpane.setDividerLocation(0.8);
+        
         if (event.getSource() instanceof PluginForHost && event.getEventID() == PluginEvent.PLUGIN_DATA_CHANGED) {
             this.hostPluginDataChanged = event;
 
@@ -567,11 +567,12 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener{
         }
         if (event.getSource() instanceof PluginForHost) {
 
-            tabDownloadTable.pluginEvent(event);
+            tabDownloadTable.delegatedPluginEvent(event);
            return;
         }
         if (event.getSource() instanceof PluginForDecrypt) {
-            tabPluginActivity.pluginEvent(event);
+            splitpane.setDividerLocation(0.8);
+            tabPluginActivity.delegatedPluginEvent(event);
           return;
         }
 

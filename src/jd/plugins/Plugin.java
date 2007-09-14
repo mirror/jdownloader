@@ -989,7 +989,7 @@ public abstract class Plugin {
             Iterator<PluginListener> recIt = pluginListener.iterator();
 
             while (recIt.hasNext()) {
-                ((PluginListener) recIt.next()).pluginEvent(pluginEvent);
+                ((PluginListener) recIt.next()).delegatedPluginEvent(pluginEvent);
             }
         }
     }

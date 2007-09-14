@@ -96,7 +96,7 @@ public class JDController implements PluginListener, ControlListener, UIListener
         System.exit(0);
     }
 
-    public void pluginEvent(PluginEvent event) {
+    public void delegatedPluginEvent(PluginEvent event) {
         uiInterface.uiPluginEvent(event);
         switch (event.getEventID()){
             case PluginEvent.PLUGIN_DOWNLOAD_BYTES:

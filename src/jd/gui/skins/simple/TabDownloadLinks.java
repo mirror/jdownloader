@@ -41,7 +41,7 @@ import jd.plugins.event.PluginListener;
  * 
  * @author astaldo
  */
-public class TabDownloadLinks extends JPanel implements PluginListener, ControlListener, MouseListener, ActionListener {
+public class TabDownloadLinks extends JPanel implements PluginListener, ControlListener, MouseListener {
     private final int            COL_INDEX          = 0;
 
     private final int            COL_NAME           = 1;
@@ -212,14 +212,17 @@ public class TabDownloadLinks extends JPanel implements PluginListener, ControlL
      * ändern wieder neu gesetzt
      */
     public void fireTableChanged() {
-        Vector<DownloadLink> selectedDownloadLinks = getSelectedObjects();
+      
+        
+       Vector<DownloadLink> selectedDownloadLinks = getSelectedObjects();
         table.tableChanged(new TableModelEvent(table.getModel()));
         setSelectedDownloadLinks(selectedDownloadLinks);
     }
 
-    public void pluginEvent(PluginEvent event) {
+    public void delegatedPluginEvent(PluginEvent event) {
         switch (event.getID()) {
             case PluginEvent.PLUGIN_DATA_CHANGED:
+               
                 fireTableChanged();
                 break;
         }
@@ -228,6 +231,7 @@ public class TabDownloadLinks extends JPanel implements PluginListener, ControlL
     public void controlEvent(ControlEvent event) {
         switch (event.getID()) {
             case ControlEvent.CONTROL_SINGLE_DOWNLOAD_CHANGED:
+             
                 fireTableChanged();
                 break;
                 
@@ -283,10 +287,7 @@ public class TabDownloadLinks extends JPanel implements PluginListener, ControlL
 
     }
 
-    public void actionPerformed(ActionEvent e) {
-    // TODO Auto-generated method stub
 
-    }
 
     private class InternalTable extends JTable {
         /**
@@ -295,11 +296,13 @@ public class TabDownloadLinks extends JPanel implements PluginListener, ControlL
         private static final long         serialVersionUID          = 4424930948374806098L;
 
         private InternalTableCellRenderer internalTableCellRenderer = new InternalTableCellRenderer();
-
         @Override
         public TableCellRenderer getCellRenderer(int arg0, int arg1) {
             return internalTableCellRenderer;
         }
+        
+        
+   
     }
 
     private class InternalPopup extends JPopupMenu implements ActionListener {
@@ -395,6 +398,7 @@ public class TabDownloadLinks extends JPanel implements PluginListener, ControlL
                  if(  !downloadLinks.elementAt(i).isInProgress() ){
                      downloadLinks.elementAt(i).setStatus(DownloadLink.STATUS_TODO);
                      downloadLinks.elementAt(i).setStatusText("");
+                     downloadLinks.elementAt(i).reset();
                  }
 
                 }
@@ -427,7 +431,10 @@ public class TabDownloadLinks extends JPanel implements PluginListener, ControlL
          * serialVersionUID
          */
         private static final long serialVersionUID = -357970066822953957L;
-
+        /**
+         * ProgressBar Vectro. Alle progressbars werden einmal angelegt und darin abgespeichert
+         */
+        private  Vector<JProgressBar> progressBars= new Vector<JProgressBar> ();
         private String            labelIndex       = JDUtilities.getResourceString("label.tab.download.column_index");
 
         private String            labelLink        = JDUtilities.getResourceString("label.tab.download.column_link");
@@ -471,6 +478,9 @@ public class TabDownloadLinks extends JPanel implements PluginListener, ControlL
         }
 
         public int getColumnCount() {
+       
+   
+       
             return 5;
         }
 
@@ -479,6 +489,7 @@ public class TabDownloadLinks extends JPanel implements PluginListener, ControlL
         }
 
         public Object getValueAt(int rowIndex, int columnIndex) {
+
             if (rowIndex < allLinks.size()) {
                 DownloadLink downloadLink = allLinks.get(rowIndex);
                 switch (columnIndex) {
@@ -491,16 +502,25 @@ public class TabDownloadLinks extends JPanel implements PluginListener, ControlL
                     case COL_HOST:
                         return downloadLink.getHost();
                     case COL_PROGRESS:
-                        if (downloadLink.isInProgress() && downloadLink.getRemainingWaittime() == 0) {
+                       
+                        if(rowIndex>=progressBars.size()){
                             JProgressBar p = new JProgressBar(0, (int) downloadLink.getDownloadMax());
+                            progressBars.add(rowIndex, p);
+                        }
+                        JProgressBar p =progressBars.elementAt(rowIndex);
+                        if (downloadLink.isInProgress() && downloadLink.getRemainingWaittime() == 0) {
+                            p.setMaximum((int) downloadLink.getDownloadMax());
                             p.setStringPainted(true);
                             p.setValue((int) downloadLink.getDownloadCurrent());
-                            p.setString((int) (100 * p.getPercentComplete()) + "% (" + p.getValue() / 1000 + "/" + p.getMaximum() / 1000 + " kb)");
+                            
+                            
+                            p.setString((int) (100 * p.getPercentComplete()) + "% (" + (double)Math.round((p.getValue() / 10000))/100.0 + "/" + (double)Math.round(p.getMaximum() / 10000)/100.0 + " MB)");
 
                             return p;
                         }
                         else if (downloadLink.getRemainingWaittime() > 0) {
-                            JProgressBar p = new JProgressBar(0, downloadLink.getWaitTime());
+                           
+                            p.setMaximum(downloadLink.getWaitTime());
                             p.setBackground(new Color(255, 0, 0, 80));
                             p.setStringPainted(true);
 
@@ -531,7 +551,7 @@ public class TabDownloadLinks extends JPanel implements PluginListener, ControlL
 
         public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
             if (value instanceof JProgressBar) return (JProgressBar) value;
-
+           
             Component c = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
             if (!isSelected) {
                 DownloadLink dLink = allLinks.get(row);
@@ -551,6 +571,7 @@ public class TabDownloadLinks extends JPanel implements PluginListener, ControlL
                 else
                     c.setBackground(Color.WHITE);
             }
+//          logger.info("jj");
             return c;
         }
     }

@@ -135,10 +135,7 @@ public class DownloadLink implements Serializable{
      * Aktuell heruntergeladene Bytes der Datei
      */
     private  long           downloadCurrent;
-    /**
-     * Die DownloadGeschwindigkeit in bytes/sec
-     */
-    private transient int           downloadSpeed;
+ 
     /**
      * Hierhin soll die Datei gespeichert werden.
      */
@@ -155,11 +152,11 @@ public class DownloadLink implements Serializable{
     /**
      * Timestamp bis zu dem die Wartezeit läuft
      */
-    private long mustWaitTil=0;
+    private transient long mustWaitTil=0;
     /**
      * Ursprüngliche Wartezeit
      */
-    private long waittime=0;
+    private transient long waittime=0;
     public DownloadLink(){
         
     }
@@ -171,6 +168,7 @@ public class DownloadLink implements Serializable{
      * Speedmeter zum berechnen des downloadspeeds
      */
     private transient SpeedMeter speedMeter;
+
     /**
      * Erzeugt einen neuen DownloadLink
      * 
@@ -437,13 +435,7 @@ public class DownloadLink implements Serializable{
         updateFileOutput();
     }
 
-    public int getDownloadSpeed() {
-        return downloadSpeed;
-    }
-
-    public void setDownloadSpeed(int downloadSpeed) {
-        this.downloadSpeed = downloadSpeed;
-    }
+  
     
     /**
      * Setzt den Statustext der in der GUI angezeigt werden kann
@@ -458,12 +450,13 @@ public void setStatusText(String text){
  * @return Statusstring mit eventl Wartezeit
  */
     public String getStatusText() {
+      
         int speed;
         if(getRemainingWaittime()>0){
-          return   this.statusText+"Warten: ("+getRemainingWaittime()/1000+"sek.)";
+          return   this.statusText+"Warten: ("+getRemainingWaittime()/1000+"sek)";
         }
-        if(this.isInProgress()&&(speed=getSpeedMeter().getSpeed())>0){
-            return   "Speed: "+""+(speed/1000)+"kb/sek.";
+        if(this.isInProgress()&&(speed=getDownloadSpeed())>0){
+            return   "Speed: "+""+(speed/1000)+"kb/s.";
         }
         
         if(!this.isEnabled()){
@@ -471,6 +464,17 @@ public void setStatusText(String text){
         }
         return this.statusText;
 
+    }
+    /**
+     * Setzt alle DownloadWErte zurück
+     */
+    public void reset(){
+    
+        
+     
+       downloadMax=0;
+      
+      downloadCurrent=0;
     }
 /**
  * Setzt die zeit in ms ab der die Wartezeit vorbei ist.
@@ -520,7 +524,15 @@ public void setStatusText(String text){
         }
         return speedMeter;
     }
-
+    
+    /**
+     * Gibt die aktuelle Downloadgeschwindigkeit in bytes7sekunde zurück
+     * @return
+     */
+public int getDownloadSpeed(){
+    if(getStatus()!=DownloadLink.STATUS_DOWNLOAD_IN_PROGRESS)return 0;
+    return getSpeedMeter().getSpeed();
+}
 public boolean isAborted() {
     return aborted;
 }

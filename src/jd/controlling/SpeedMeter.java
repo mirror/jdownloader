@@ -23,42 +23,38 @@ public class SpeedMeter {
     }
 
     public void addValue(int value) {
-      
-          
-                times.add(System.currentTimeMillis());
-                entries.add(value);
-               
 
-     
+        times.add(System.currentTimeMillis());
+        entries.add(value);
 
     }
-/**
- * Gibt die durschnittsgeschwindigkeit des letzten intervals zurück
- * @return speed
- */
+
+    /**
+     * Gibt die durschnittsgeschwindigkeit des letzten intervals zurück
+     * 
+     * @return speed
+     */
 
     public int getSpeed() {
         if (times.size() < 2) return 0;
         long bytes = 0;
         long start = -1;
-   
+
         long current = System.currentTimeMillis();
 
-        for (int i = 0; i < times.size(); i++) {
+        for (int i = times.size()-1; i >= 0; i--) {
             if ((current - times.elementAt(i)) > averageOver) {
                 times.remove(i);
                 entries.remove(i);
-                i++;
-            }
-            else if (start == -1) {
-                start = times.elementAt(i);
+
             }
             else {
+                start = times.elementAt(i);
                 bytes += entries.elementAt(i);
             }
         }
-        long dif=System.currentTimeMillis()-start;
-if(dif==0)return 0;
+        long dif = System.currentTimeMillis() - start;
+        if (dif == 0) return 0;
         return (int) ((bytes * 1000) / dif);
     }
 
