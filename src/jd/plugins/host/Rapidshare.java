@@ -702,4 +702,10 @@ public class Rapidshare extends PluginForHost {
 
     }
 
+    @Override
+    public boolean checkAvailability(DownloadLink parameter) {
+        // TODO Auto-generated method stub
+        return false;
+    }
+
 }

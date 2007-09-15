@@ -124,4 +124,10 @@ public class HttpLink extends PluginForHost {
         return null;
     }
 
+    @Override
+    public boolean checkAvailability(DownloadLink parameter) {
+        // TODO Auto-generated method stub
+        return false;
+    }
+
 }

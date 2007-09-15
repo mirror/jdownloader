@@ -1,7 +1,7 @@
 package jd.gui.skins.simple;
 
 import java.awt.BorderLayout;
-import java.awt.Dimension;
+import java.awt.Color;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
@@ -208,7 +208,10 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
                 this.setVisible(false);
                 return;
             }
+            Color c= new Color((int)(Math.random()*0xffffff));
+            c=c.brighter();
             FilePackage fp = new FilePackage();
+            fp.setProperty("color", c);
             fp.setComment(txfComment.getText().trim());
             fp.setPassword(txfPassword.getText().trim());
             fp.setDownloadDirectory(bfSubFolder.getText().trim());

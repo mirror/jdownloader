@@ -62,6 +62,8 @@ public abstract class PluginForHost extends Plugin{
         }
         return links;
     }
+    public abstract boolean checkAvailability (DownloadLink parameter);  
+    
    public abstract PluginStep doStep(PluginStep step,DownloadLink parameter);
     
     public PluginStep doStep(PluginStep step,Object parameter){

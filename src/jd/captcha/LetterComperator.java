@@ -266,13 +266,13 @@ public class LetterComperator {
             tmpErrorA = (double) tmpPixelAButNotB / (double) (tmpPixelBoth + tmpPixelAButNotB);
             tmpErrorB = (double) tmpPixelBButNotA / (double) (tmpPixelBButNotA + tmpPixelBoth);
             tmpErrorTotal = tmpErrorA * errorAWeight + tmpErrorB * errorbWeight;
-            localHeightPercent = (double) tmpIntersectionHeight / a.getHeight();
-            localWidthPercent = (double) tmpIntersectionWidth / a.getWidth();
-            heightFaktor = Math.min(1.0, Math.pow(1.0 - localHeightPercent, 2) * intersectionDimensionWeight);
-            widthFaktor = Math.min(1.0, Math.pow(1.0 - localWidthPercent, 2) * intersectionDimensionWeight);
+            localHeightPercent = (double) tmpIntersectionHeight / (double)b.getHeight();
+            localWidthPercent = (double) tmpIntersectionWidth / (double)b.getWidth();
+            tmpHeightFaktor = Math.pow(1.0 - localHeightPercent, 2);
+            tmpWidthFaktor = Math.pow(1.0 - localWidthPercent, 2);
             tmpError = tmpErrorTotal;
-            tmpError += heightFaktor;
-            tmpError += widthFaktor;
+            tmpError += Math.min(1.0, tmpHeightFaktor* intersectionDimensionWeight);
+            tmpError += Math.min(1.0, tmpWidthFaktor* intersectionDimensionWeight);
             tmpError /= 4.0;
             tmpError *= 1.2;
             tmpError = Math.min(1.0, tmpError);
@@ -346,16 +346,19 @@ public class LetterComperator {
             tmpErrorB = (double) tmpPixelBButNotA / (double) (tmpPixelBButNotA + tmpPixelBoth);
             tmpErrorTotal = tmpErrorA * errorAWeight + tmpErrorB * errorbWeight;
             tmpCoverageFaktorA = 1.0 - ((double) tmpPixelBoth / (double) a.getElementPixel());
-            tmpCoverageFaktorA = 1.0 - ((double) tmpPixelBoth / (double) b.getElementPixel()) ;
-            localHeightPercent = (double) tmpIntersectionHeight / a.getHeight();
-            localWidthPercent = (double) tmpIntersectionWidth / a.getWidth();
-            heightFaktor = Math.pow(1.0 - localHeightPercent, 2) ;
-            widthFaktor = Math.pow(1.0 - localWidthPercent, 2);
+            tmpCoverageFaktorB = 1.0 - ((double) tmpPixelBoth / (double) b.getElementPixel()) ;
+            localHeightPercent = (double) tmpIntersectionHeight / (double)b.getHeight();
+            localWidthPercent = (double) tmpIntersectionWidth /(double) b.getWidth();
+          
+            tmpHeightFaktor = Math.pow(1.0 - localHeightPercent, 2) ;
+            tmpWidthFaktor = Math.pow(1.0 - localWidthPercent, 2);
+//            logger.info(tmpIntersectionWidth+ "/"+a.getWidth()+" = "+localWidthPercent+" --> "+tmpWidthFaktor);
+            
             tmpError = tmpErrorTotal;
             tmpError += Math.min(1.0, tmpCoverageFaktorA * coverageFaktorAWeight);
-            tmpError += Math.min(1.0, tmpCoverageFaktorA* coverageFaktorBWeight);
-            tmpError += Math.min(1.0, heightFaktor* intersectionDimensionWeight);
-            tmpError += Math.min(1.0, widthFaktor* intersectionDimensionWeight);
+            tmpError += Math.min(1.0, tmpCoverageFaktorB* coverageFaktorBWeight);
+            tmpError += Math.min(1.0, tmpHeightFaktor* intersectionDimensionWeight);
+            tmpError += Math.min(1.0, tmpWidthFaktor* intersectionDimensionWeight);
             tmpError += (bothElements.size() - 1) * cleftFaktor;
             tmpError /= 6.0;
             tmpError = Math.min(1.0, tmpError);

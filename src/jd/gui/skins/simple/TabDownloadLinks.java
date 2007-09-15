@@ -596,8 +596,14 @@ this.y=y;
                 else if (dLink.getStatus() != DownloadLink.STATUS_TODO && dLink.getStatus() != DownloadLink.STATUS_ERROR_DOWNLOAD_LIMIT && dLink.getStatus() != DownloadLink.STATUS_DOWNLOAD_IN_PROGRESS) {
                     c.setBackground(COLOR_ERROR);
                 }
-                else
+                else{
                     c.setBackground(Color.WHITE);
+                }
+               if(column==0){
+                   c.setBackground((Color)dLink.getFilePackage().getProperty("color"));  
+               }
+               
+                
             }
 //          logger.info("jj");
             return c;

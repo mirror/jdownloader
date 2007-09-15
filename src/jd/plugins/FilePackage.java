@@ -4,12 +4,13 @@ import java.io.File;
 import java.io.Serializable;
 
 import jd.JDUtilities;
+import jd.Property;
 
 /**
  * Diese Klasse verwaltet Pakete
  * @author coalado
  */
-public class FilePackage implements Serializable{
+public class FilePackage extends Property implements Serializable{
     /**
      * 
      */

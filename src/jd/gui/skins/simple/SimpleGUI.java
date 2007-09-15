@@ -576,8 +576,10 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener{
            return;
         }
         if (event.getSource() instanceof PluginForDecrypt) {
-            splitpane.setDividerLocation(0.8);
+            logger.info("GOT EVENT");
+           
             tabPluginActivity.pluginEvent(event);
+            splitpane.setDividerLocation(0.8);
           return;
         }
 

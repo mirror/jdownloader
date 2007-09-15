@@ -14,6 +14,7 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
+import jd.plugins.event.PluginEvent;
 
 /**
  * DecryptPlugin für secured.in Links
@@ -88,8 +89,6 @@ public class Secured extends PluginForDecrypt {
         return PLUGIN_ID;
     }
 
-   
-
     /**
      * Eine Secured ID in eine URL übersetzen
      * 
@@ -121,8 +120,6 @@ public class Secured extends PluginForDecrypt {
         return info.getHtmlCode();
     }
 
-
-
     @Override
     public boolean doBotCheck(File file) {
         return false;
@@ -141,14 +138,14 @@ public class Secured extends PluginForDecrypt {
                     RequestInfo requestInfo = getRequest(new URL(JS_URL));
                     DOWNLOAD_CMD = getMatch(requestInfo.getHtmlCode(), PAT_DOWNLOAD_CMD, 0, 5);
                     logger.info(DOWNLOAD_CMD);
-
+                    firePluginEvent(new PluginEvent(this, PluginEvent.PLUGIN_PROGRESS_MAX, 1));
                     URL url = new URL(cryptedLink);
                     requestInfo = getRequest(url);
 
                     String html = requestInfo.getHtmlCode();
 
                     for (;;) { // for() läuft bis kein Captcha mehr abgefragt
-                                // wird
+                        // wird
                         Matcher matcher = PAT_CAPTCHA.matcher(html);
 
                         if (matcher.find()) {
@@ -172,15 +169,20 @@ public class Secured extends PluginForDecrypt {
 
                     // Alle File ID aus dem HTML-Code ziehen
                     Matcher matcher = PAT_FILE_ID.matcher(html);
-
-                    while (matcher.find()) {
-                        // ..und URLs erzeugen und anfügen
-                        String fileUrl = decryptId(matcher.group(1));
-                        decryptedLinks.add(fileUrl);
-                        logger.finest("ID: " + matcher.group(1) + " URL:" + fileUrl);
+                    Vector<String> ids = new Vector<String>();
+                    while (matcher.find()) {                    
+                        ids.add(matcher.group(1));
                     }
+                    firePluginEvent(new PluginEvent(this, PluginEvent.PLUGIN_PROGRESS_MAX, ids.size()));
+                    while (ids.size() > 0) {
+                        String fileUrl = this.decryptId(ids.remove(0));
+                        logger.info(fileUrl);
+                        decryptedLinks.add(fileUrl);
+                        firePluginEvent(new PluginEvent(this, PluginEvent.PLUGIN_PROGRESS_INCREASE, null));
 
+                    }
                     logger.finest("URL#: " + decryptedLinks.size());
+                    firePluginEvent(new PluginEvent(this, PluginEvent.PLUGIN_PROGRESS_FINISH, null));
 
                 }
                 catch (Exception e) {

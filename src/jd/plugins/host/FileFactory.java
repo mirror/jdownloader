@@ -186,6 +186,11 @@ public class FileFactory extends PluginForHost{
         // TODO Auto-generated method stub
         return null;
     }
+    @Override
+    public boolean checkAvailability(DownloadLink parameter) {
+        // TODO Auto-generated method stub
+        return false;
+    }
 
 
 }
