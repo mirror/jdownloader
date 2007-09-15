@@ -588,15 +588,19 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener{
    
         switch (event.getID()) {
             case ControlEvent.CONTROL_PLUGIN_DECRYPT_ACTIVE:
+                logger.info("daktive");
                 setPluginActive((PluginForDecrypt) event.getParameter(), true);
                 break;
             case ControlEvent.CONTROL_PLUGIN_DECRYPT_INACTIVE:
+                logger.info("diaktive");
                 setPluginActive((PluginForDecrypt) event.getParameter(), false);
                 break;
             case ControlEvent.CONTROL_PLUGIN_HOST_ACTIVE:
+                logger.info("daktive");
                 setPluginActive((PluginForHost) event.getParameter(), true);
                 break;
             case ControlEvent.CONTROL_PLUGIN_HOST_INACTIVE:
+                logger.info("hiaktive");
                 setPluginActive((PluginForHost) event.getParameter(), false);
                 break;
             case ControlEvent.CONTROL_ALL_DOWNLOADS_FINISHED:

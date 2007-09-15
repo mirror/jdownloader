@@ -170,7 +170,7 @@ public class StartDownloads extends ControlMulticaster {
                 }
 
                 clearDownloadListStatus();
-
+                fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_PLUGIN_HOST_INACTIVE,plugin));
                 return;
 
             }

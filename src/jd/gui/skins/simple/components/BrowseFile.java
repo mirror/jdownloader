@@ -1,5 +1,8 @@
 package jd.gui.skins.simple.components;
 
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
@@ -10,7 +13,9 @@ import javax.swing.JFileChooser;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
 import javax.swing.SwingUtilities;
+import javax.swing.border.EtchedBorder;
 
+import jd.JDUtilities;
 import jd.plugins.Plugin;
 
 public class BrowseFile extends JPanel implements ActionListener {
@@ -31,11 +36,29 @@ public class BrowseFile extends JPanel implements ActionListener {
         txtInput = new JTextField(width);
         txtInput.setEditable(editable);
         txtInput.addActionListener(this);
-
+this.setLayout(new GridBagLayout());
         btnBrowse = new JButton("auswählen");
         btnBrowse.addActionListener(this);
-        this.add(txtInput);
-        this.add(btnBrowse);
+       this.setBorder(new EtchedBorder());
+        JDUtilities.addToGridBag(this, txtInput, 0,0, 1, 1, 1, 0, new Insets(0,0,0,0), GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+        JDUtilities.addToGridBag(this, btnBrowse,1,0,1, 1, 0, 0, new Insets(0,0,0,0), GridBagConstraints.NONE, GridBagConstraints.EAST);
+       
+        SwingUtilities.updateComponentTreeUI(this);
+
+    }
+    
+    public BrowseFile() {
+        super();
+        txtInput = new JTextField();
+        txtInput.setEditable(editable);
+        txtInput.addActionListener(this);
+        this.setLayout(new GridBagLayout());
+        btnBrowse = new JButton("auswählen");
+        btnBrowse.addActionListener(this);
+        this.setBorder(new EtchedBorder());
+        JDUtilities.addToGridBag(this, txtInput, 0,0, 1, 1, 1, 0, new Insets(0,0,0,0), GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+        JDUtilities.addToGridBag(this, btnBrowse,1,0,1, 1, 0, 0, new Insets(0,0,0,0), GridBagConstraints.NONE, GridBagConstraints.EAST);
+       
         SwingUtilities.updateComponentTreeUI(this);
 
     }

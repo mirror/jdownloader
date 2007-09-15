@@ -40,7 +40,7 @@ import jd.plugins.Plugin;
 
 public class LinkGrabber extends JFrame implements ActionListener, DropTargetListener {
 
-    protected Insets             insets = new Insets(1, 5, 1, 5);
+    protected Insets             insets = new Insets(0, 0, 0, 0);
 
     protected Logger             logger = Plugin.getLogger();
 
@@ -93,10 +93,10 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
         btnOk = new JButton("Übernehmen");
         btnCancel = new JButton("Verwerfen");
         btnRemove = new JButton("Markierte entfernen");
-        txfComment = new JTextField(80);
+        txfComment = new JTextField();
 
-        txfPassword = new JTextField(80);
-        bfSubFolder = new BrowseFile(80);
+        txfPassword = new JTextField();
+        bfSubFolder = new BrowseFile();
         bfSubFolder.setEditable(true);
         bfSubFolder.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
         bfSubFolder.setText(JDUtilities.getConfiguration().getDownloadDirectory());
@@ -106,7 +106,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
         btnRemove.addActionListener(this);
 
         list.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
-        scrollPane.setPreferredSize(new Dimension(400, 400));
+//        scrollPane.setPreferredSize(new Dimension(400, 400));
         panel = new JPanel(new GridBagLayout());
         new DropTarget(list, this);
         new DropTarget(this, this);
@@ -124,31 +124,31 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
         //
         // }
         // }
-        int y = 0;
-        JDUtilities.addToGridBag(panel, new JLabel("Hier können alle Links zu einem Paket gesammelt und anschließend Übernommen werden."), 0, y, 8, 1, 0, 0, insets, GridBagConstraints.BOTH, GridBagConstraints.CENTER);
-        y += 1;
+       
+        JDUtilities.addToGridBag(panel, new JLabel("Hier können alle Links zu einem Paket gesammelt und anschließend Übernommen werden."), GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 1, 0, insets, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+      
 
-        JDUtilities.addToGridBag(panel, scrollPane, 0, y, 8, 1, 0, 0, insets, GridBagConstraints.BOTH, GridBagConstraints.CENTER);
-        y += 1;
-        JDUtilities.addToGridBag(panel, btnRemove, 0, y, 1, 1, 1, 0, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
-        y += 1;
-        JDUtilities.addToGridBag(panel, new JSeparator(), 0, y, 8, 1, 0, 0, insets, GridBagConstraints.BOTH, GridBagConstraints.CENTER);
-        y += 1;
-        JDUtilities.addToGridBag(panel, new JLabel("In folgendem Ordner speichern:"), 0, y, 1, 1, 0, 1, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
-        JDUtilities.addToGridBag(panel, bfSubFolder, 1, y, 7, 1, 1, 0, insets, GridBagConstraints.NONE, GridBagConstraints.EAST);
-        y += 1;
+        JDUtilities.addToGridBag(panel, scrollPane, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 1, 1, insets, GridBagConstraints.BOTH, GridBagConstraints.CENTER);
+       
+        JDUtilities.addToGridBag(panel, btnRemove, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 1, 0, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
+     
+        JDUtilities.addToGridBag(panel, new JSeparator(), GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 1, 0, insets, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+     
+        JDUtilities.addToGridBag(panel, new JLabel("In folgendem Ordner speichern:"), GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        JDUtilities.addToGridBag(panel, bfSubFolder, GridBagConstraints.RELATIVE,GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 1, 0, insets, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+     
 
-        JDUtilities.addToGridBag(panel, new JLabel("Archivpasswort:"), 0, y, 1, 1, 0, 1, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
-        JDUtilities.addToGridBag(panel, txfPassword, 1, y, 7, 1, 1, 0, insets, GridBagConstraints.NONE, GridBagConstraints.EAST);
-        y += 1;
-        JDUtilities.addToGridBag(panel, new JLabel("Kommentar:"), 0, y, 8, 1, 0, 1, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
-        y += 1;
-        JDUtilities.addToGridBag(panel, txfComment, 0, y, 8, 1, 0, 0, insets, GridBagConstraints.BOTH, GridBagConstraints.CENTER);
-        y += 1;
-        JDUtilities.addToGridBag(panel, new JSeparator(), 0, y, 8, 1, 0, 0, insets, GridBagConstraints.BOTH, GridBagConstraints.CENTER);
-        y += 1;
-        JDUtilities.addToGridBag(panel, btnOk, 6, y, 1, 1, 1, 0, insets, GridBagConstraints.NONE, GridBagConstraints.EAST);
-        JDUtilities.addToGridBag(panel, btnCancel, 7, y, 1, 1, 1, 0, insets, GridBagConstraints.NONE, GridBagConstraints.EAST);
+        JDUtilities.addToGridBag(panel, new JLabel("Archivpasswort:"), GridBagConstraints.RELATIVE,GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        JDUtilities.addToGridBag(panel, txfPassword, GridBagConstraints.RELATIVE,GridBagConstraints.RELATIVE,GridBagConstraints.REMAINDER, 1, 1, 0, insets, GridBagConstraints.HORIZONTAL, GridBagConstraints.EAST);
+       
+        JDUtilities.addToGridBag(panel, new JLabel("Kommentar:"), GridBagConstraints.RELATIVE,GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 1, 0, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
+       
+        JDUtilities.addToGridBag(panel, txfComment, GridBagConstraints.RELATIVE,GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 1, 0, insets, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+       
+        JDUtilities.addToGridBag(panel, new JSeparator(), GridBagConstraints.RELATIVE,GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 1, 0, insets, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+        
+        JDUtilities.addToGridBag(panel, btnOk, GridBagConstraints.RELATIVE,GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        JDUtilities.addToGridBag(panel, btnCancel, GridBagConstraints.RELATIVE,GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 1, 0, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
         this.add(panel, BorderLayout.CENTER);
     }
 
