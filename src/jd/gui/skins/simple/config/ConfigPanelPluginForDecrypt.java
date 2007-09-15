@@ -64,7 +64,7 @@ public class ConfigPanelPluginForDecrypt extends ConfigPanel implements ActionLi
         PluginForDecrypt plg;
         for (int i = 0; i < pluginsForDecrypt.size(); i++) {
             plg = pluginsForDecrypt.elementAt(i);
-            if (plg.getProperties() != null) configuration.setProperty("PluginDecryptConfig_" + plg.getPluginName(), plg.getProperties());
+            if (plg.getProperties() != null) configuration.setProperty("PluginConfig_" + plg.getPluginName(), plg.getProperties());
         }
 
     }
