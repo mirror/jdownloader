@@ -21,6 +21,11 @@ import jd.plugins.PluginForHost;
 import jd.plugins.event.PluginEvent;
 import jd.plugins.event.PluginListener;
 
+/**
+ * Im Controller wird das ganze App gesteuert. Evebnts werden deligiert.
+ * @author coalado/astaldo
+ *
+ */
 public class JDController implements PluginListener, ControlListener, UIListener {
     /**
      * Der Thread, der das Downloaden realisiert
@@ -67,6 +72,9 @@ public class JDController implements PluginListener, ControlListener, UIListener
 
     private ClipboardHandler                  clipboard;
 
+    /**
+     * 
+     */
     public JDController() {
         downloadLinks = new Vector<DownloadLink>();
         speedMeter = new SpeedMeter(5000);
@@ -106,7 +114,10 @@ public class JDController implements PluginListener, ControlListener, UIListener
         saveDownloadLinks(JDUtilities.getResourceFile("links.dat"));
         System.exit(0);
     }
-
+/**
+ * Eventfunktion für den PLuginlistener
+ * @param event PluginEvent
+ */
     public void pluginEvent(PluginEvent event) {
         uiInterface.deligatedPluginEvent(event);
         switch (event.getEventID()) {
@@ -119,17 +130,18 @@ public class JDController implements PluginListener, ControlListener, UIListener
 
     /**
      * Hier werden ControlEvent ausgewertet
+     * @param event 
      */
-    @SuppressWarnings("unchecked")
+    
     public void controlEvent(ControlEvent event) {
-       
+
         switch (event.getID()) {
 
             case ControlEvent.CONTROL_SINGLE_DOWNLOAD_FINISHED:
                 lastDownloadFinished = (DownloadLink) event.getParameter();
                 saveDownloadLinks(JDUtilities.getResourceFile("links.dat"));
-                if(this.getMissingPackageFiles(lastDownloadFinished)==0){
-                    Interaction.handleInteraction(Interaction.INTERACTION_DOWNLOAD_PACKAGE_FINISHED, this);  
+                if (this.getMissingPackageFiles(lastDownloadFinished) == 0) {
+                    Interaction.handleInteraction(Interaction.INTERACTION_DOWNLOAD_PACKAGE_FINISHED, this);
                 }
                 break;
             case ControlEvent.CONTROL_CAPTCHA_LOADED:
@@ -138,13 +150,13 @@ public class JDController implements PluginListener, ControlListener, UIListener
 
             case ControlEvent.CONTROL_ALL_DOWNLOADS_FINISHED:
                 download = null;
-             
+
                 saveDownloadLinks(JDUtilities.getResourceFile("links.dat"));
                 break;
             case ControlEvent.CONTROL_DISTRIBUTE_FINISHED:
                 Object links = event.getParameter();
                 if (links != null && links instanceof Vector && ((Vector) links).size() > 0) {
-                 
+
                     uiInterface.addLinksToGrabber((Vector<DownloadLink>) links);
                 }
                 break;
@@ -174,15 +186,19 @@ public class JDController implements PluginListener, ControlListener, UIListener
                         uiInterface.showMessageDialog("Aktualisierte Dateien: " + ((WebUpdate) interaction).getUpdater().getUpdatedFiles());
                     }
                 }
-              
+
                 break;
             default:
-                
+
                 break;
         }
-        uiInterface.deligatedControlEvent(event);  
+        uiInterface.deligatedControlEvent(event);
     }
 
+/**
+ * Hier werden die UIEvente ausgewertet
+ * @param uiEvent UIEent
+ */
     public void uiEvent(UIEvent uiEvent) {
         Vector<DownloadLink> newLinks;
         switch (uiEvent.getActionID()) {
@@ -199,7 +215,8 @@ public class JDController implements PluginListener, ControlListener, UIListener
                 distributeData.start();
                 break;
             case UIEvent.UI_SAVE_CONFIG:
-                JDUtilities.saveObject(null, JDUtilities.getConfiguration(), JDUtilities.getJDHomeDirectory(), "jdownloader", ".config", Configuration.saveAsXML);
+               
+                JDUtilities.saveObject(null, JDUtilities.getConfiguration(), JDUtilities.getJDHomeDirectory(), JDUtilities.CONFIG_PATH.split("\\.")[0], "."+ JDUtilities.CONFIG_PATH.split("\\.")[1], Configuration.saveAsXML);
                 break;
             case UIEvent.UI_LINKS_GRABBED:
                 Object links = uiEvent.getParameter();
@@ -208,8 +225,8 @@ public class JDController implements PluginListener, ControlListener, UIListener
                     saveDownloadLinks(JDUtilities.getResourceFile("links.dat"));
                     uiInterface.setDownloadLinks(downloadLinks);
                 }
-                
-               break;
+
+                break;
             case UIEvent.UI_SAVE_LINKS:
                 File file = (File) uiEvent.getParameter();
                 saveDownloadLinks(file);
@@ -373,56 +390,61 @@ public class JDController implements PluginListener, ControlListener, UIListener
         }
         return null;
     }
-    
-    
- /**
-  * Gibt ale links zurück die im selben Package sind wie downloadLink
-  * @param downloadLink
-  * @return
-  */
+
+    /**
+     * Gibt ale links zurück die im selben Package sind wie downloadLink
+     * 
+     * @param downloadLink
+     * @return Alle DownloadLinks die zum selben Package gehören
+     */
     public Vector<DownloadLink> getPackageFiles(DownloadLink downloadLink) {
-        Vector<DownloadLink> ret= new Vector<DownloadLink>();
+        Vector<DownloadLink> ret = new Vector<DownloadLink>();
         ret.add(downloadLink);
         Iterator<DownloadLink> iterator = downloadLinks.iterator();
         DownloadLink nextDownloadLink = null;
         while (iterator.hasNext()) {
             nextDownloadLink = iterator.next();
-            if (downloadLink.getFilePackage()==nextDownloadLink.getFilePackage())ret.add(nextDownloadLink);
+            if (downloadLink.getFilePackage() == nextDownloadLink.getFilePackage()) ret.add(nextDownloadLink);
         }
         return ret;
     }
-/**
- * Gibt die Anzahl der fertigen Downloads im package zurück
- * @param downloadLink
- * @return
- */
-       public int getPackageReadyPercent(DownloadLink downloadLink) {
-           int i=0;
-        if(downloadLink.getStatus()==DownloadLink.STATUS_DONE)i++;
-           Iterator<DownloadLink> iterator = downloadLinks.iterator();
-           DownloadLink nextDownloadLink = null;
-           while (iterator.hasNext()) {
-               nextDownloadLink = iterator.next();
-               if (downloadLink.getFilePackage()==nextDownloadLink.getFilePackage()&&nextDownloadLink.getStatus()==DownloadLink.STATUS_DONE)i++;
-           }
-           return i;
-       }  
-       /**
-        * Gibt die Anzahl der fehlenden FIles zurück
-        * @param downloadLink
-        * @return
-        */
-public int getMissingPackageFiles(DownloadLink downloadLink){
-    int i=0;
-    if(downloadLink.getStatus()!=DownloadLink.STATUS_DONE)i++;
-       Iterator<DownloadLink> iterator = downloadLinks.iterator();
-       DownloadLink nextDownloadLink = null;
-       while (iterator.hasNext()) {
-           nextDownloadLink = iterator.next();
-           if (downloadLink.getFilePackage()==nextDownloadLink.getFilePackage()&&nextDownloadLink.getStatus()!=DownloadLink.STATUS_DONE)i++;
-       }
-       return i;
-}
+
+    /**
+     * Gibt die Anzahl der fertigen Downloads im package zurück
+     * 
+     * @param downloadLink
+     * @return Anzahl der fertigen Files in diesem paket
+     */
+    public int getPackageReadyNum(DownloadLink downloadLink) {
+        int i = 0;
+        if (downloadLink.getStatus() == DownloadLink.STATUS_DONE) i++;
+        Iterator<DownloadLink> iterator = downloadLinks.iterator();
+        DownloadLink nextDownloadLink = null;
+        while (iterator.hasNext()) {
+            nextDownloadLink = iterator.next();
+            if (downloadLink.getFilePackage() == nextDownloadLink.getFilePackage() && nextDownloadLink.getStatus() == DownloadLink.STATUS_DONE) i++;
+        }
+        return i;
+    }
+
+    /**
+     * Gibt die Anzahl der fehlenden FIles zurück
+     * 
+     * @param downloadLink
+     * @return Anzahl der fehlenden Files in diesem Paket
+     */
+    public int getMissingPackageFiles(DownloadLink downloadLink) {
+        int i = 0;
+        if (downloadLink.getStatus() != DownloadLink.STATUS_DONE) i++;
+        Iterator<DownloadLink> iterator = downloadLinks.iterator();
+        DownloadLink nextDownloadLink = null;
+        while (iterator.hasNext()) {
+            nextDownloadLink = iterator.next();
+            if (downloadLink.getFilePackage() == nextDownloadLink.getFilePackage() && nextDownloadLink.getStatus() != DownloadLink.STATUS_DONE) i++;
+        }
+        return i;
+    }
+
     /**
      * Liefert die Anzahl der gerade laufenden Downloads. (nur downloads die
      * sich wirklich in der downloadpahse befinden
@@ -462,21 +484,33 @@ public int getMissingPackageFiles(DownloadLink downloadLink){
         this.uiInterface = uiInterface;
         uiInterface.addUIListener(this);
     }
-
+/**
+ * Gibt das verwendete UIinterface zurpck
+ * @return aktuelles uiInterface
+ */
     public UIInterface getUiInterface() {
         return uiInterface;
     }
-
+/**
+ * 
+ * @return Die zuletzte fertiggestellte datei
+ */
     public String getLastFinishedFile() {
         if (this.lastDownloadFinished == null) return "";
         return this.lastDownloadFinished.getFileOutput();
     }
-
+/**
+ * 
+ * @return ZUletzt bearbeiteter Captcha
+ */
     public String getLastCaptchaImage() {
         if (this.lastCaptchaLoaded == null) return "";
         return this.lastCaptchaLoaded.getAbsolutePath();
     }
 
+    /**
+     * @return gibt das globale speedmeter zurück
+     */
     public SpeedMeter getSpeedMeter() {
         return speedMeter;
     }
