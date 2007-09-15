@@ -64,7 +64,7 @@ public class TabPluginActivity extends JPanel implements PluginListener{
     /**
      * Hier kann man auf Ereignisse der Plugins reagieren
      */
-    public void delegatedPluginEvent(PluginEvent event) {
+    public void pluginEvent(PluginEvent event) {
         PluginProgress pluginProgress = null;
         // Gibts das Plugin bereits?
         for(int i=0;i<pluginProgresses.size();i++){

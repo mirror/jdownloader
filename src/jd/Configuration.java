@@ -75,7 +75,14 @@ public class Configuration extends Property implements Serializable {
     private int                     waitForIPCheck        = 0;
 
     private String                  version="";
-
+    /**
+     * Download timeout);
+     */
+ private int readTimeout=10000;
+ /**
+  * Download timeout);
+  */
+ private int connectTimeout=10000;
     public Configuration() {
     // WebUpdate updater=new WebUpdate();
     // updater.setTrigger(Interaction.INTERACTION_APPSTART);
@@ -263,5 +270,21 @@ public class Configuration extends Property implements Serializable {
     }
 public String toString(){
     return "Configuration "+this.getProperties()+" INteraction "+this.interactions;
+}
+
+public int getReadTimeout() {
+    return readTimeout;
+}
+
+public void setReadTimeout(int readTimeout) {
+    this.readTimeout = readTimeout;
+}
+
+public int getConnectTimeout() {
+    return connectTimeout;
+}
+
+public void setConnectTimeout(int connectTimeout) {
+    this.connectTimeout = connectTimeout;
 }
 }

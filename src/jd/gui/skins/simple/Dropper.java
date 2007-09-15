@@ -36,7 +36,7 @@ public class Dropper extends JDialog {
         
         setSize(50,70);
         this.setResizable(false);
-        this.setTitle("JD-Drop");
+        this.setTitle("Linksammler aktiv (D&D + Clipboard)");
     
         setLocation(20,20);
         this.setAlwaysOnTop(true);

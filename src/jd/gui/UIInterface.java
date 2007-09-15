@@ -54,13 +54,16 @@ public interface UIInterface {
      * 
      * @param event Ein PluginEvent
      */
-    public void uiPluginEvent(PluginEvent event);
+    public void deligatedPluginEvent(PluginEvent event);
     /**
      * Leitet ein ControlEvent weiter
      * 
      * @param event ein ControlEvent
      */
-    public void uiControlEvent(ControlEvent event);
+    public void deligatedControlEvent(ControlEvent event);
+    
+ 
+    
     /**
      * Fügt einen UIListener hinzu
      * 
@@ -90,5 +93,11 @@ public interface UIInterface {
      * @param string
      */
     public void showConfirmDialog(String string);
+    /**
+     * Fügt Links zum Linkgrabber hinzu
+     * @param links
+     */
+    public void addLinksToGrabber(Vector<DownloadLink> links);
+
     
 }

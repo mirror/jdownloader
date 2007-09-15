@@ -6,5 +6,5 @@ package jd.plugins.event;
  * @author astaldo
  */
 public interface PluginListener {
-    public abstract void delegatedPluginEvent(PluginEvent event);
+    public abstract void pluginEvent(PluginEvent event);
 }

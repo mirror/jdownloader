@@ -92,7 +92,7 @@ public class Main {
         // JDUtilities.saveObject(null, c, JDUtilities.getJDHomeDirectory(),
         // "jdownloader", ".config", true);
         JDUtilities.loadPlugins();
-        UIInterface uiInterface = new SimpleGUI();
+       UIInterface uiInterface = new SimpleGUI();
         JDController controller = new JDController();
         controller.setUiInterface(uiInterface);
         controller.initDownloadLinks();

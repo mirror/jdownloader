@@ -14,6 +14,7 @@ import java.util.Vector;
 import java.util.logging.Logger;
 
 import javax.swing.JComponent;
+import javax.swing.JFrame;
 import javax.swing.JMenuItem;
 import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
@@ -159,6 +160,8 @@ public class TabDownloadLinks extends JPanel implements PluginListener, ControlL
         }
         fireTableChanged();
     }
+    
+
 
     /**
      * Entfernt die aktuell selektierten Links
@@ -219,7 +222,7 @@ public class TabDownloadLinks extends JPanel implements PluginListener, ControlL
         setSelectedDownloadLinks(selectedDownloadLinks);
     }
 
-    public void delegatedPluginEvent(PluginEvent event) {
+    public void pluginEvent(PluginEvent event) {
         switch (event.getID()) {
             case PluginEvent.PLUGIN_DATA_CHANGED:
                
@@ -322,7 +325,8 @@ public class TabDownloadLinks extends JPanel implements PluginListener, ControlL
         private JMenuItem            top;
 
         private JMenuItem            bottom;
-
+private int x;
+private int y;
         private JMenuItem reset;
 
         public InternalPopup(JTable invoker, int x, int y, Vector<DownloadLink> downloadLink) {
@@ -353,7 +357,8 @@ public class TabDownloadLinks extends JPanel implements PluginListener, ControlL
             popup.add(bottom);
             popup.add(new JSeparator());
             popup.add(info);
-
+this.x=x;
+this.y=y;
             popup.show(table, x, y);
 
         }
@@ -374,7 +379,13 @@ public class TabDownloadLinks extends JPanel implements PluginListener, ControlL
             }
 
             if (e.getSource() == info) {
-                showInfoPanel(downloadLinks.elementAt(0));
+//                Point p=this.getLocationOnScreen();
+//                if(p==null){logger.info("NULL");
+//                }else{
+                
+                new DownloadInfo(parent.getFrame(),downloadLinks.elementAt(0));
+//            }
+           
             }
 
             if (e.getSource() == top) {
@@ -511,6 +522,8 @@ public class TabDownloadLinks extends JPanel implements PluginListener, ControlL
                         if (downloadLink.isInProgress() && downloadLink.getRemainingWaittime() == 0) {
                             p.setMaximum((int) downloadLink.getDownloadMax());
                             p.setStringPainted(true);
+                            p.setBackground(Color.WHITE);
+                           
                             p.setValue((int) downloadLink.getDownloadCurrent());
                             
                             

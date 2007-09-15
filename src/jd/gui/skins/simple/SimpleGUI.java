@@ -42,6 +42,7 @@ import jd.controlling.interaction.ExternReconnect;
 import jd.controlling.interaction.HTTPReconnect;
 import jd.controlling.interaction.Interaction;
 import jd.event.ControlEvent;
+import jd.event.ControlListener;
 import jd.event.UIEvent;
 import jd.event.UIListener;
 import jd.gui.UIInterface;
@@ -143,6 +144,8 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener{
     private PluginEvent       decryptPluginDataChanged = null;
 
     private JCheckBox reconnectBox;
+
+    private LinkGrabber linkGrabber;
    
 
     /**
@@ -257,11 +260,11 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener{
             statusBar.setSpeed(JDUtilities.getController().getSpeedMeter().getSpeed());
         }
         if (hostPluginDataChanged != null) {
-            tabDownloadTable.delegatedPluginEvent(hostPluginDataChanged);
+            tabDownloadTable.pluginEvent(hostPluginDataChanged);
         }
 
         if (decryptPluginDataChanged != null) {
-            tabPluginActivity.delegatedPluginEvent(decryptPluginDataChanged);
+            tabPluginActivity.pluginEvent(decryptPluginDataChanged);
         }
         decryptPluginDataChanged = null;
         hostPluginDataChanged = null;
@@ -520,8 +523,10 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener{
             case JDAction.ITEMS_DND:
                 if (dragNDrop.isVisible()) {
                     dragNDrop.setVisible(false);
+                    fireUIEvent(new UIEvent(this, UIEvent.UI_SET_CLIPBOARD, false));
                 }
                 else {
+                    fireUIEvent(new UIEvent(this, UIEvent.UI_SET_CLIPBOARD, true));
                     dragNDrop.setVisible(true);
                     dragNDrop.setText("Ziehe Links auf mich!");
                 }
@@ -553,7 +558,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener{
 /**
  * Delligiert die Pluginevents weiter an das host/decryptpanel. CHangedEvents werden abgefangen und im sekundeninterval weitergegeben.
  */
-    public void uiPluginEvent(PluginEvent event) {
+    public void deligatedPluginEvent(PluginEvent event) {
         
         if (event.getSource() instanceof PluginForHost && event.getEventID() == PluginEvent.PLUGIN_DATA_CHANGED) {
             this.hostPluginDataChanged = event;
@@ -567,19 +572,20 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener{
         }
         if (event.getSource() instanceof PluginForHost) {
 
-            tabDownloadTable.delegatedPluginEvent(event);
+            tabDownloadTable.pluginEvent(event);
            return;
         }
         if (event.getSource() instanceof PluginForDecrypt) {
             splitpane.setDividerLocation(0.8);
-            tabPluginActivity.delegatedPluginEvent(event);
+            tabPluginActivity.pluginEvent(event);
           return;
         }
 
        
     }
 
-    public void uiControlEvent(ControlEvent event) {
+    public void deligatedControlEvent(ControlEvent event) {
+   
         switch (event.getID()) {
             case ControlEvent.CONTROL_PLUGIN_DECRYPT_ACTIVE:
                 setPluginActive((PluginForDecrypt) event.getParameter(), true);
@@ -595,9 +601,8 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener{
                 break;
             case ControlEvent.CONTROL_ALL_DOWNLOADS_FINISHED:
                 btnStartStop.setSelected(false);
-                
                 break;
-            case ControlEvent.CONTROL_PLUGIN_INTERACTION_ACTIVE:
+           case ControlEvent.CONTROL_PLUGIN_INTERACTION_ACTIVE:
 
                 logger.info("Interaction start. ");
                statusBar.setText("Interaction: " + ((Interaction) event.getParameter()).getInteractionName());
@@ -612,6 +617,14 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener{
             case ControlEvent.CONTROL_SINGLE_DOWNLOAD_CHANGED:
                
                 tabDownloadTable.fireTableChanged();
+                
+            case ControlEvent.CONTROL_DISTRIBUTE_FINISHED:
+                Object links = event.getParameter();
+                if (links != null && links instanceof Vector && ((Vector) links).size() > 0) {
+                dragNDrop.setText("Downloads: " + this.getDownloadLinks().size()+" (+"+((Vector) links).size()+")");
+                
+                }
+                break;
         }
     }
 
@@ -621,17 +634,27 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener{
     }
 
     public void setDownloadLinks(Vector<DownloadLink> links) {
-        int linkspre=this.getDownloadLinks().size();
+    
         if (tabDownloadTable != null) {
             tabDownloadTable.setDownloadLinks(links.toArray(new DownloadLink[] {}));
            
             
-            int linkspost=this.getDownloadLinks().size();
+        
             
-            dragNDrop.setText("Downloads: " + linkspost+" (+"+(linkspost-linkspre)+")");
+            
         }
     }
-
+    public void addDownloadLinks(Vector<DownloadLink> links) {
+       DownloadLink[] linkList=links.toArray(new DownloadLink[] {});
+    
+        if (tabDownloadTable != null) {
+            tabDownloadTable.setDownloadLinks(linkList);     
+            
+        
+            
+            
+        }
+    }
     public String getCaptchaCodeFromUser(Plugin plugin, File captchaAddress) {
         CaptchaDialog captchaDialog = new CaptchaDialog(frame, plugin, captchaAddress);
         frame.toFront();
@@ -826,6 +849,26 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener{
         }
 
     }
+
+    public JFrame getFrame() {
+      return frame;
+    }
+
+    public void addLinksToGrabber(Vector<DownloadLink> links) {
+        DownloadLink[] linkList=links.toArray(new DownloadLink[] {});
+        if(linkGrabber!=null&&!linkGrabber.isVisible()){
+            linkGrabber.dispose();
+            linkGrabber=null;
+        
+        }
+        if(linkGrabber==null){
+        linkGrabber=new LinkGrabber(this,linkList);
+        linkGrabber.setVisible(true);
+        }
+        
+    }
+
+  
   
   
 

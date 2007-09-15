@@ -425,6 +425,7 @@ public abstract class Plugin {
      */
     public String getFirstMatch(String data, Pattern pattern, int group) {
         String hit = null;
+        if(data==null)return null;
         if (pattern != null) {
             Matcher matcher = pattern.matcher(data);
             if (matcher.find() && group <= matcher.groupCount()) {
@@ -845,8 +846,10 @@ public abstract class Plugin {
             FileOutputStream fos = new FileOutputStream(fileOutput);
 
             // NIO Channels setzen:
+            urlConnection.setReadTimeout(JDUtilities.getConfiguration().getReadTimeout());
+            urlConnection.setConnectTimeout(JDUtilities.getConfiguration().getConnectTimeout());
             ReadableByteChannel source = Channels.newChannel(urlConnection.getInputStream());
-           
+      
             WritableByteChannel dest = fos.getChannel();
 
             // Länge aus HTTP-Header speichern:
@@ -940,7 +943,22 @@ public abstract class Plugin {
 
         return false;
     }
-
+    
+    
+    /**
+     * Holt den Dateinamen aus einem Content-Disposition header. wird dieser nicht gefunden, wird der dateiname aus der url ermittelt
+     * @param urlConnection
+     * @return
+     */
+    public String getFileNameFormHeader(URLConnection urlConnection){
+       
+        String ret= getFirstMatch(urlConnection.getHeaderField("content-disposition"), Pattern.compile("filename=['\"](.*?)['\"]", Pattern.CASE_INSENSITIVE), 1);
+           if(ret==null){
+               int index=Math.max(urlConnection.getURL().getFile().lastIndexOf("/"),urlConnection.getURL().getFile().lastIndexOf("\\"));
+               return urlConnection.getURL().getFile().substring(index+1);
+           }
+return ret;
+       }
     /**
      * Diese Methode erstellt einen einzelnen String aus einer HashMap mit
      * Parametern für ein Post-Request.
@@ -989,7 +1007,7 @@ public abstract class Plugin {
             Iterator<PluginListener> recIt = pluginListener.iterator();
 
             while (recIt.hasNext()) {
-                ((PluginListener) recIt.next()).delegatedPluginEvent(pluginEvent);
+                ((PluginListener) recIt.next()).pluginEvent(pluginEvent);
             }
         }
     }

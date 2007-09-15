@@ -14,10 +14,12 @@ import java.beans.XMLEncoder;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -881,8 +883,42 @@ if(!f.exists())return null;
         }
         return str;
     }
+/**
+ * Schreibt content in eine Lokale textdatei
+ * @param file
+ * @param content
+ * @return
+ */
+    public static boolean writeLocalFile(File file, String content) {
 
- 
+        try {
+            if (file.isFile()) {
+                if (!file.delete()) {
+                   logger.severe("Konnte Datei nicht löschen " + file);
+                    return false;
+                }
+            }
+           
+            if (file.getParent() != null && !file.getParentFile().exists()) {
+                file.getParentFile().mkdirs();
+            }
+            file.createNewFile();
+
+            BufferedWriter f = new BufferedWriter(new FileWriter(file));
+         
+            f.write(content);
+            f.close();
+
+            return true;
+
+        } catch (Exception e) {
+         e.printStackTrace();
+            return false;
+
+        }
+
+    }
+
 
     /**
      * @author coalado

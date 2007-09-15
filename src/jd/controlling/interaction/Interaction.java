@@ -77,6 +77,12 @@ public abstract class Interaction extends Property implements Serializable {
      */
     public static InteractionTrigger          INTERACTION_NO_EVENT               = new InteractionTrigger(0, "Kein Event", "kein Event");
 
+    
+    /**
+     * Reconnect nötig
+     */
+    public static InteractionTrigger          INTERACTION_NEED_RECONNECT         = new InteractionTrigger(11, "Reconnect nötig", "Alle Trigger bei denen ein Reconnect sinnvoll ist zusammengefasst");
+
     /**
      * Zeigt an, daß ein einzelner Download beendet wurde
      */
@@ -106,6 +112,10 @@ public abstract class Interaction extends Property implements Serializable {
      * Zeigt, daß ein Captcha erkannt werden will
      */
     public static InteractionTrigger          INTERACTION_DOWNLOAD_CAPTCHA       = new InteractionTrigger(6, "Captcha Erkennung", "Ein Captcha-Bild muss verarbeitet werden");
+    /**
+     * Letztes Package file geladen
+     */
+        public static final InteractionTrigger INTERACTION_DOWNLOAD_PACKAGE_FINISHED = new InteractionTrigger(12, "Paket fertig", "Wird aufgerufen wenn ein paket fertig geladen wurde");;
 
     /**
      * Zeigt den Programmstart an
@@ -128,10 +138,6 @@ public abstract class Interaction extends Property implements Serializable {
 
     public final static InteractionTrigger    INTERACTION_AFTER_RECONNECT        = new InteractionTrigger(10, "Nach einem Reconnect", "inaktiv");
 
-    /**
-     * Reconnect nötig
-     */
-    public static InteractionTrigger          INTERACTION_NEED_RECONNECT         = new InteractionTrigger(11, "Reconnect nötig", "Alle Trigger bei denen ein Reconnect sinnvoll ist zusammengefasst");
 
     public Interaction() {
         controlListener = new Vector<ControlListener>();

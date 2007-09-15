@@ -156,9 +156,13 @@ public class FileFactory extends PluginForHost{
         }
         return todo;
     }
+
+    
     private boolean prepareDownload(DownloadLink downloadLink){
         try {
             URLConnection urlConnection = new URL(postTarget).openConnection();
+            
+            
             String filename = getFirstMatch(urlConnection.getHeaderField("content-disposition"), filen, 1);
             int length = urlConnection.getContentLength();
             downloadLink.setDownloadMax(length);

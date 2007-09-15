@@ -25,41 +25,52 @@ public class JDController implements PluginListener, ControlListener, UIListener
     /**
      * Der Thread, der das Downloaden realisiert
      */
-    private StartDownloads       download       = null;
+    private StartDownloads                    download        = null;
 
     /**
      * Mit diesem Thread wird eingegebener Text auf Links untersucht
      */
-    private DistributeData       distributeData = null;
+    private DistributeData                    distributeData  = null;
+
+    /**
+     * Hiermit wird der Eventmechanismus realisiert. Alle hier eingetragenen
+     * Listener werden benachrichtigt, wenn mittels
+     * {@link #firePluginEvent(PluginEvent)} ein Event losgeschickt wird.
+     */
+    private transient Vector<ControlListener> controlListener = null;
 
     /**
      * Die Konfiguration
      */
-    protected Configuration      config         = JDUtilities.getConfiguration();
+    protected Configuration                   config          = JDUtilities.getConfiguration();
 
     /**
      * Schnittstelle zur Benutzeroberfläche
      */
-    private UIInterface          uiInterface;
+    private UIInterface                       uiInterface;
 
     /**
      * Die DownloadLinks
      */
-    private Vector<DownloadLink> downloadLinks;
+    private Vector<DownloadLink>              downloadLinks;
 
     /**
      * Der Logger
      */
-    private Logger               logger         = Plugin.getLogger();
+    private Logger                            logger          = Plugin.getLogger();
 
-    private File                 lastCaptchaLoaded;
-    private SpeedMeter speedMeter;
-    private DownloadLink         lastDownloadFinished;
+    private File                              lastCaptchaLoaded;
+
+    private SpeedMeter                        speedMeter;
+
+    private DownloadLink                      lastDownloadFinished;
+
+    private ClipboardHandler                  clipboard;
 
     public JDController() {
         downloadLinks = new Vector<DownloadLink>();
-        speedMeter= new SpeedMeter(5000);
-    
+        speedMeter = new SpeedMeter(5000);
+        clipboard = new ClipboardHandler(this);
         JDUtilities.setController(this);
     }
 
@@ -96,13 +107,13 @@ public class JDController implements PluginListener, ControlListener, UIListener
         System.exit(0);
     }
 
-    public void delegatedPluginEvent(PluginEvent event) {
-        uiInterface.uiPluginEvent(event);
-        switch (event.getEventID()){
+    public void pluginEvent(PluginEvent event) {
+        uiInterface.deligatedPluginEvent(event);
+        switch (event.getEventID()) {
             case PluginEvent.PLUGIN_DOWNLOAD_BYTES:
-                speedMeter.addValue((Integer)event.getParameter1());
+                speedMeter.addValue((Integer) event.getParameter1());
                 break;
-                
+
         }
     }
 
@@ -111,12 +122,15 @@ public class JDController implements PluginListener, ControlListener, UIListener
      */
     @SuppressWarnings("unchecked")
     public void controlEvent(ControlEvent event) {
-
+       
         switch (event.getID()) {
-     
+
             case ControlEvent.CONTROL_SINGLE_DOWNLOAD_FINISHED:
                 lastDownloadFinished = (DownloadLink) event.getParameter();
                 saveDownloadLinks(JDUtilities.getResourceFile("links.dat"));
+                if(this.getMissingPackageFiles(lastDownloadFinished)==0){
+                    Interaction.handleInteraction(Interaction.INTERACTION_DOWNLOAD_PACKAGE_FINISHED, this);  
+                }
                 break;
             case ControlEvent.CONTROL_CAPTCHA_LOADED:
                 lastCaptchaLoaded = (File) event.getParameter();
@@ -124,16 +138,15 @@ public class JDController implements PluginListener, ControlListener, UIListener
 
             case ControlEvent.CONTROL_ALL_DOWNLOADS_FINISHED:
                 download = null;
-                uiInterface.uiControlEvent(event);
+             
                 saveDownloadLinks(JDUtilities.getResourceFile("links.dat"));
                 break;
             case ControlEvent.CONTROL_DISTRIBUTE_FINISHED:
                 Object links = event.getParameter();
                 if (links != null && links instanceof Vector && ((Vector) links).size() > 0) {
-                    downloadLinks.addAll((Vector<DownloadLink>) links);
+                 
+                    uiInterface.addLinksToGrabber((Vector<DownloadLink>) links);
                 }
-                saveDownloadLinks(JDUtilities.getResourceFile("links.dat"));
-                uiInterface.setDownloadLinks(downloadLinks);
                 break;
             case ControlEvent.CONTROL_PLUGIN_INTERACTION_INACTIVE:
                 Interaction interaction = (Interaction) event.getParameter();
@@ -161,12 +174,13 @@ public class JDController implements PluginListener, ControlListener, UIListener
                         uiInterface.showMessageDialog("Aktualisierte Dateien: " + ((WebUpdate) interaction).getUpdater().getUpdatedFiles());
                     }
                 }
-                uiInterface.uiControlEvent(event);
+              
                 break;
             default:
-                uiInterface.uiControlEvent(event);
+                
                 break;
         }
+        uiInterface.deligatedControlEvent(event);  
     }
 
     public void uiEvent(UIEvent uiEvent) {
@@ -187,6 +201,15 @@ public class JDController implements PluginListener, ControlListener, UIListener
             case UIEvent.UI_SAVE_CONFIG:
                 JDUtilities.saveObject(null, JDUtilities.getConfiguration(), JDUtilities.getJDHomeDirectory(), "jdownloader", ".config", Configuration.saveAsXML);
                 break;
+            case UIEvent.UI_LINKS_GRABBED:
+                Object links = uiEvent.getParameter();
+                if (links != null && links instanceof Vector && ((Vector) links).size() > 0) {
+                    downloadLinks.addAll((Vector<DownloadLink>) links);
+                    saveDownloadLinks(JDUtilities.getResourceFile("links.dat"));
+                    uiInterface.setDownloadLinks(downloadLinks);
+                }
+                
+               break;
             case UIEvent.UI_SAVE_LINKS:
                 File file = (File) uiEvent.getParameter();
                 saveDownloadLinks(file);
@@ -198,14 +221,18 @@ public class JDController implements PluginListener, ControlListener, UIListener
             case UIEvent.UI_EXIT:
                 exit();
                 break;
+
+            case UIEvent.UI_SET_CLIPBOARD:
+                this.clipboard.setEnabled((Boolean) uiEvent.getParameter());
+                break;
             case UIEvent.UI_LINKS_CHANGED:
-                newLinks=uiInterface.getDownloadLinks();
-                abortDeletedLink(downloadLinks,newLinks);
+                newLinks = uiInterface.getDownloadLinks();
+                abortDeletedLink(downloadLinks, newLinks);
                 downloadLinks = newLinks;
                 saveDownloadLinks(JDUtilities.getResourceFile("links.dat"));
                 break;
             case UIEvent.UI_INTERACT_RECONNECT:
-                if(getRunningDownloadNum()>0){
+                if (getRunningDownloadNum() > 0) {
                     logger.info("Es laufen noch Downloads. Breche zum reconnect Downloads ab!");
                     stopDownloads();
                 }
@@ -247,19 +274,21 @@ public class JDController implements PluginListener, ControlListener, UIListener
                 break;
         }
     }
-/**
- * bricht downloads ab wenn diese entfernt wurden
- * @param oldLinks
- * @param newLinks
- */
+
+    /**
+     * bricht downloads ab wenn diese entfernt wurden
+     * 
+     * @param oldLinks
+     * @param newLinks
+     */
     private void abortDeletedLink(Vector<DownloadLink> oldLinks, Vector<DownloadLink> newLinks) {
-       for( int i=0; i<oldLinks.size();i++){
-           if(newLinks.indexOf(oldLinks.elementAt(i))==-1){
-               //Link gefunden der entfernt wurde
-               oldLinks.elementAt(i).setAborted(true);
-           }
-       }
-        
+        for (int i = 0; i < oldLinks.size(); i++) {
+            if (newLinks.indexOf(oldLinks.elementAt(i)) == -1) {
+                // Link gefunden der entfernt wurde
+                oldLinks.elementAt(i).setAborted(true);
+            }
+        }
+
     }
 
     /**
@@ -344,12 +373,61 @@ public class JDController implements PluginListener, ControlListener, UIListener
         }
         return null;
     }
-
+    
+    
+ /**
+  * Gibt ale links zurück die im selben Package sind wie downloadLink
+  * @param downloadLink
+  * @return
+  */
+    public Vector<DownloadLink> getPackageFiles(DownloadLink downloadLink) {
+        Vector<DownloadLink> ret= new Vector<DownloadLink>();
+        ret.add(downloadLink);
+        Iterator<DownloadLink> iterator = downloadLinks.iterator();
+        DownloadLink nextDownloadLink = null;
+        while (iterator.hasNext()) {
+            nextDownloadLink = iterator.next();
+            if (downloadLink.getFilePackage()==nextDownloadLink.getFilePackage())ret.add(nextDownloadLink);
+        }
+        return ret;
+    }
+/**
+ * Gibt die Anzahl der fertigen Downloads im package zurück
+ * @param downloadLink
+ * @return
+ */
+       public int getPackageReadyPercent(DownloadLink downloadLink) {
+           int i=0;
+        if(downloadLink.getStatus()==DownloadLink.STATUS_DONE)i++;
+           Iterator<DownloadLink> iterator = downloadLinks.iterator();
+           DownloadLink nextDownloadLink = null;
+           while (iterator.hasNext()) {
+               nextDownloadLink = iterator.next();
+               if (downloadLink.getFilePackage()==nextDownloadLink.getFilePackage()&&nextDownloadLink.getStatus()==DownloadLink.STATUS_DONE)i++;
+           }
+           return i;
+       }  
+       /**
+        * Gibt die Anzahl der fehlenden FIles zurück
+        * @param downloadLink
+        * @return
+        */
+public int getMissingPackageFiles(DownloadLink downloadLink){
+    int i=0;
+    if(downloadLink.getStatus()!=DownloadLink.STATUS_DONE)i++;
+       Iterator<DownloadLink> iterator = downloadLinks.iterator();
+       DownloadLink nextDownloadLink = null;
+       while (iterator.hasNext()) {
+           nextDownloadLink = iterator.next();
+           if (downloadLink.getFilePackage()==nextDownloadLink.getFilePackage()&&nextDownloadLink.getStatus()!=DownloadLink.STATUS_DONE)i++;
+       }
+       return i;
+}
     /**
      * Liefert die Anzahl der gerade laufenden Downloads. (nur downloads die
      * sich wirklich in der downloadpahse befinden
      * 
-     * @returnAnzahld er laufenden Downloadsl
+     * @return Anzahld er laufenden Downloadsl
      */
     public int getRunningDownloadNum() {
         int ret = 0;
@@ -385,6 +463,10 @@ public class JDController implements PluginListener, ControlListener, UIListener
         uiInterface.addUIListener(this);
     }
 
+    public UIInterface getUiInterface() {
+        return uiInterface;
+    }
+
     public String getLastFinishedFile() {
         if (this.lastDownloadFinished == null) return "";
         return this.lastDownloadFinished.getFileOutput();
@@ -399,6 +481,38 @@ public class JDController implements PluginListener, ControlListener, UIListener
         return speedMeter;
     }
 
+    /**
+     * Fügt einen Listener hinzu
+     * 
+     * @param listener Ein neuer Listener
+     */
+    public void addControlListener(ControlListener listener) {
+        if (controlListener == null) controlListener = new Vector<ControlListener>();
+        if (controlListener.indexOf(listener) == -1) {
+            controlListener.add(listener);
+        }
+    }
 
+    /**
+     * Emtfernt einen Listener
+     * 
+     * @param listener Der zu entfernende Listener
+     */
+    public void removeControlListener(ControlListener listener) {
+        controlListener.remove(listener);
+    }
+
+    /**
+     * Verteilt Ein Event an alle Listener
+     * 
+     * @param controlEvent ein abzuschickendes Event
+     */
+    public void fireControlEvent(ControlEvent controlEvent) {
+        if (controlListener == null) controlListener = new Vector<ControlListener>();
+        Iterator<ControlListener> iterator = controlListener.iterator();
+        while (iterator.hasNext()) {
+            ((ControlListener) iterator.next()).controlEvent(controlEvent);
+        }
+    }
 
 }

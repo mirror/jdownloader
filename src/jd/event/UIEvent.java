@@ -58,7 +58,15 @@ public class UIEvent extends AWTEvent{
     /**
      * DragAndDrop Event
      */
-        public static final int UI_DRAG_AND_DROP = 12; 
+        public static final int UI_DRAG_AND_DROP = 12;
+/**
+ * Clipboard an/aus   boolean als parameter
+ */
+    public static final int UI_SET_CLIPBOARD = 13;
+/**
+ * Der Linkgrabber hat Links zurückgegeben
+ */
+public static final int UI_LINKS_GRABBED = 14; 
     public UIEvent(UIInterface uiInterface, int actionID){
         this(uiInterface,actionID,null);
     }
