@@ -43,39 +43,40 @@ import jd.plugins.PluginForHost;
 // TODO GUI Auswahl
 // TODO Programmstart Interaction muss eingebaut werden
 public class Main {
+    /**
+     * @param args
+     */
     public static void main(String args[]) {
         Main main = new Main();
         main.go();
     }
 
-
     private void go() {
-        Logger logger=Plugin.getLogger();
+        Logger logger = Plugin.getLogger();
         loadImages();
 
-        URLClassLoader cl = null;
-        URL configURL = null;
+        File fileInput = null;
 
         try {
-            cl = JDUtilities.getURLClassLoader();
-            configURL = cl.getResource(JDUtilities.CONFIG_PATH);
+
+            fileInput = JDUtilities.getResourceFile(JDUtilities.CONFIG_PATH);
         }
         catch (RuntimeException e) {
             e.printStackTrace();
         }
-        if (configURL != null) {
-            try {
-                File fileInput = new File(configURL.toURI());
-                Object obj = JDUtilities.loadObject(null, fileInput, Configuration.saveAsXML);
-                if (obj instanceof Configuration) {
-                    Configuration configuration = (Configuration) obj;
-                    JDUtilities.setConfiguration(configuration);
-                    Plugin.getLogger().setLevel(Level.parse(configuration.getLoggerLevel()));
-                }
+        logger.finer("Load config from: " + fileInput + " (" + JDUtilities.CONFIG_PATH + ")");
+        if (fileInput != null) {
+
+            Object obj = JDUtilities.loadObject(null, fileInput, Configuration.saveAsXML);
+            if (obj instanceof Configuration) {
+                Configuration configuration = (Configuration) obj;
+                JDUtilities.setConfiguration(configuration);
+                Plugin.getLogger().setLevel(Level.parse(configuration.getLoggerLevel()));
             }
-            catch (URISyntaxException e1) {
-                e1.printStackTrace();
+            else {
+                logger.severe("Configuration error: " + obj);
             }
+
         }
         else {
             logger.warning("no configuration loaded");
@@ -92,7 +93,7 @@ public class Main {
         // JDUtilities.saveObject(null, c, JDUtilities.getJDHomeDirectory(),
         // "jdownloader", ".config", true);
         JDUtilities.loadPlugins();
-       UIInterface uiInterface = new SimpleGUI();
+        UIInterface uiInterface = new SimpleGUI();
         JDController controller = new JDController();
         controller.setUiInterface(uiInterface);
         controller.initDownloadLinks();
