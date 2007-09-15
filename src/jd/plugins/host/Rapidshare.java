@@ -255,7 +255,8 @@ public class Rapidshare extends PluginForHost {
                 case PluginStep.STEP_WAIT_TIME:
                     try {
                         // get Startseite
-                        requestInfo = getRequest(new URL(downloadLink.getUrlDownloadDecrypted()));
+                        // public static RequestInfo getRequest(URL link, String cookie, String referrer, boolean redirect) throws IOException {
+                        requestInfo = getRequest(new URL(downloadLink.getUrlDownloadDecrypted()),"nocookie","",false);
                         if (requestInfo.getHtmlCode().indexOf(hardwareDefektString) > 0) {
                             // hardewaredefeklt bei rs.com
                             step.setStatus(PluginStep.STATUS_ERROR);
@@ -263,6 +264,16 @@ public class Rapidshare extends PluginForHost {
                             currentStep.setParameter(60 * 10);
                             downloadLink.setStatus(DownloadLink.STATUS_ERROR_TEMPORARILY_UNAVAILABLE);
                             return step;
+                        }
+                        if(requestInfo.getConnection().getHeaderField("Location")!=null){
+                            requestInfo = getRequest(new URL("http://rapidshare.com/cgi-bin/premium.cgi?logout=1"),"","",false);
+                            logger.severe("unknown error");
+                            downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN_RETRY);
+                            step.setStatus(PluginStep.STATUS_ERROR);
+//                            this.finalCookie=null;
+//                            this.finalURL = requestInfo.getConnection().getHeaderField("Location");
+                            return step;
+                            
                         }
                         String newURL = getFirstMatch(requestInfo.getHtmlCode(), patternForNewHost, 1);
                         if (newURL != null) {
@@ -548,7 +559,15 @@ public class Rapidshare extends PluginForHost {
                 downloadLink.setStatus(DownloadLink.STATUS_ERROR_TEMPORARILY_UNAVAILABLE);
                 return;
             }
-
+            if(requestInfo.getConnection().getHeaderField("Location")!=null){
+                requestInfo = getRequest(new URL("http://rapidshare.com/cgi-bin/premium.cgi?logout=1"),"","",false);
+                logger.severe("unknown error");
+                downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN_RETRY);
+                currentStep.setStatus(PluginStep.STATUS_ERROR);
+//                this.finalCookie=null;
+//                this.finalURL = requestInfo.getConnection().getHeaderField("Location");
+                return;
+            }
             String newURL = getFirstMatch(requestInfo.getHtmlCode(), patternForNewHost, 1);
             if (newURL != null) {
 

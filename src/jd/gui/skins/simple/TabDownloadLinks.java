@@ -110,13 +110,13 @@ public class TabDownloadLinks extends JPanel implements PluginListener, ControlL
             column = table.getColumnModel().getColumn(c);
             switch (c) {
                 case COL_INDEX:
-                    column.setPreferredWidth(30);
+                    column.setPreferredWidth(20);
                     break;
                 case COL_NAME:
-                    column.setPreferredWidth(200);
+                    column.setPreferredWidth(260);
                     break;
                 case COL_HOST:
-                    column.setPreferredWidth(150);
+                    column.setPreferredWidth(100);
                     break;
                 case COL_STATUS:
                     column.setPreferredWidth(200);
@@ -329,6 +329,8 @@ private int x;
 private int y;
         private JMenuItem reset;
 
+        private JMenuItem openHome;
+
         public InternalPopup(JTable invoker, int x, int y, Vector<DownloadLink> downloadLink) {
             popup = new JPopupMenu();
             this.downloadLinks = downloadLink;
@@ -339,16 +341,19 @@ private int y;
             info = new JMenuItem("Info anzeigen");
             top = new JMenuItem("Nach oben");
             bottom = new JMenuItem("Nach unten");
+            openHome = new JMenuItem("Zielverzeichnis öffen");
             delete.addActionListener(this);
             reset.addActionListener(this);
             enable.addActionListener(this);
             info.addActionListener(this);
+            openHome.addActionListener(this);
             top.addActionListener(this);
             bottom.addActionListener(this);
             if (downloadLink.size() > 1) {
                 info.setEnabled(false);
             }
-            popup.add(reset);
+            popup.add(info);
+            popup.add(openHome);
             popup.add(new JSeparator());
             popup.add(delete);
             popup.add(enable);
@@ -356,7 +361,8 @@ private int y;
             popup.add(top);
             popup.add(bottom);
             popup.add(new JSeparator());
-            popup.add(info);
+            
+            popup.add(reset);
 this.x=x;
 this.y=y;
             popup.show(table, x, y);
@@ -364,6 +370,11 @@ this.y=y;
         }
 
         public void actionPerformed(ActionEvent e) {
+            if (e.getSource() == openHome) {
+                removeSelectedLinks();
+                parent.fireUIEvent(new UIEvent(parent, UIEvent.UI_LINKS_CHANGED, null));
+            }
+            
             if (e.getSource() == delete) {
                 removeSelectedLinks();
                 parent.fireUIEvent(new UIEvent(parent, UIEvent.UI_LINKS_CHANGED, null));
@@ -507,7 +518,11 @@ this.y=y;
                     case COL_INDEX:
                         return rowIndex;
                     case COL_NAME:
-                        return downloadLink.getName();
+                       if(downloadLink.getFilePackage()==null){
+                           return downloadLink.getName();
+                               
+                       }
+                        return downloadLink.getFilePackage().getDownloadDirectoryName()+"/"+downloadLink.getName();
                     case COL_STATUS:
                         return downloadLink.getStatusText();
                     case COL_HOST:

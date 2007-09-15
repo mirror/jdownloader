@@ -619,11 +619,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener{
                 tabDownloadTable.fireTableChanged();
                 
             case ControlEvent.CONTROL_DISTRIBUTE_FINISHED:
-                Object links = event.getParameter();
-                if (links != null && links instanceof Vector && ((Vector) links).size() > 0) {
-                dragNDrop.setText("Downloads: " + this.getDownloadLinks().size()+" (+"+((Vector) links).size()+")");
-                
-                }
+             
                 break;
         }
     }
@@ -864,7 +860,12 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener{
         if(linkGrabber==null){
         linkGrabber=new LinkGrabber(this,linkList);
         linkGrabber.setVisible(true);
+        }else{
+            linkGrabber.addLinks(linkList);
         }
+        
+        dragNDrop.setText("Grabbed: " + linkGrabber.getLinkList().size()+" (+"+((Vector) links).size()+")");
+        
         
     }
 

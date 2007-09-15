@@ -101,7 +101,7 @@ public void setButtonText(String text){
         return currentPath;
     }
     public String getText(){
-        return currentPath.getAbsolutePath();
+        return txtInput.getText();
     }
     public void setText(String text){
         if(text==null)text="";

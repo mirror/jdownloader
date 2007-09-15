@@ -270,8 +270,8 @@ public class DownloadLink implements Serializable, Comparable {
      * @return Die Datei zum Abspeichern
      */
     public String getFileOutput() {
-        if(getFilePackage()!=null &&getFilePackage().getSubFolder()!=null && getFilePackage().getSubFolder().length()>0){
-           return new File(new File(new File(downloadPath),getFilePackage().getSubFolder()), name).getAbsolutePath();
+        if(getFilePackage()!=null &&getFilePackage().getDownloadDirectory()!=null && getFilePackage().getDownloadDirectory().length()>0){
+           return new File(new File(getFilePackage().getDownloadDirectory()), name).getAbsolutePath();
         }else{
             return  new File(new File(downloadPath), name).getAbsolutePath();
       
