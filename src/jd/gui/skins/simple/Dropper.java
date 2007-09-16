@@ -25,6 +25,9 @@ public class Dropper extends JDialog {
     
     private DragNDrop target;
     private JLabel label;
+    /**
+     * @param owner  Owner ist der Parent Frame
+     */
     public Dropper(JFrame owner) {
         super(owner);
         setModal(false);

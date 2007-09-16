@@ -659,7 +659,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener{
     }
     public String getCaptchaCodeFromUser(Plugin plugin, File captchaAddress) {
         CaptchaDialog captchaDialog = new CaptchaDialog(frame, plugin, captchaAddress);
-        frame.toFront();
+        //frame.toFront();
         captchaDialog.setVisible(true);
         return captchaDialog.getCaptchaText();
     }

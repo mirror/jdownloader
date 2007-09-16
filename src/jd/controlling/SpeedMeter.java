@@ -2,9 +2,6 @@ package jd.controlling;
 
 import java.util.Vector;
 
-import jd.plugins.event.PluginEvent;
-import jd.plugins.event.PluginListener;
-
 /**
  * Diese Klasse kann einen Laufenden durschschnitt erstellen
  * 
@@ -18,10 +15,18 @@ public class SpeedMeter {
 
     private Vector<Integer> entries     = new Vector<Integer>();
 
+    /**
+     * KOnstruktor dem die Zeit übergeben werden kann über die der durchschnitt eführt wird
+     * @param average
+     */
     public SpeedMeter(int average) {
         averageOver = 5000;
     }
 
+    /**
+     * Fügt einen weiteren wert hinzu
+     * @param value
+     */
     public void addValue(int value) {
 
         times.add(System.currentTimeMillis());

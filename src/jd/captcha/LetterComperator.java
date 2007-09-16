@@ -711,7 +711,10 @@ public class LetterComperator {
     private void setPixelErrorB(double pixelErrorB) {
         this.pixelErrorB = pixelErrorB;
     }
-
+/**
+ * Gibt einen laaaangenstring mit den meisten entscheidungsparametern aus.Kann zum verlich verwendet werden
+ * @return parameterstring
+ */
     public String toString() {
         Hashtable<String, Object> hs = new Hashtable<String, Object>();
         

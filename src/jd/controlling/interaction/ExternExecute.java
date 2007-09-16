@@ -56,7 +56,7 @@ public class ExternExecute extends Interaction implements Serializable {
                 return true;
             }
         }
-        catch (IOException e) {
+        catch (Exception e) {
 
             e.printStackTrace();
             return false;

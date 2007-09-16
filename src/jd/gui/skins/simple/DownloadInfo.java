@@ -41,6 +41,10 @@ public class DownloadInfo extends JDialog {
 
     private JPanel panel;
 
+    /**
+     * @param frame
+     * @param dlink
+     */
     public DownloadInfo(JFrame frame,DownloadLink dlink) {
         super(frame);
         downloadLink = dlink;

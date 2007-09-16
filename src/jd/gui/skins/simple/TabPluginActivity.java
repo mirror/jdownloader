@@ -109,7 +109,7 @@ public class TabPluginActivity extends JPanel implements PluginListener {
                     }
                     else {
                         try {
-                            Thread.sleep(1000);
+                            Thread.sleep(100);
                         }
                         catch (InterruptedException e) {
                         }

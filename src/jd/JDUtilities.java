@@ -59,7 +59,14 @@ import jd.plugins.event.PluginListener;
 import jd.update.WebUpdater;
 import sun.misc.Service;
 
+/**
+ * @author astaldo/coalado
+ *
+ */
 public class JDUtilities {
+    /**
+     * Parametername für den Konfigpath
+     */
     public static final String              CONFIG_PATH       = "jDownloader.config";
 
     /**
@@ -67,6 +74,9 @@ public class JDUtilities {
      */
     public static final String              JD_VERSION        = "0.0.2";
 
+    /**
+     * Versionsstring der Applikation
+     */
     public static final String              JD_TITLE          = "jDownloader" + " " + JD_VERSION;
 
     /**
@@ -370,6 +380,7 @@ public class JDUtilities {
      * 
      * @param newHomeDir Das neue JD-HOME
      */
+    @SuppressWarnings("unchecked")
     public static void writeJDHomeDirectoryToWebStartCookie(String newHomeDir) {
         try {
             Class webStartHelper = Class.forName("jd.JDWebStartHelper");
@@ -409,9 +420,9 @@ public class JDUtilities {
             File homeDir = getJDHomeDirectory();
             String url = null;
             try {
-                //Url Encode des pfads für den Classloader
+                // Url Encode des pfads für den Classloader
                 url = urlEncode(new File((homeDir.getAbsolutePath())).toURI().toURL().toString());
-                logger.info("Create Classloader: for: "+url+"  -->"+new URL(url));
+                logger.info("Create Classloader: for: " + url + "  -->" + new URL(url));
                 urlClassLoader = new URLClassLoader(new URL[] { new URL(url) }, null);
             }
             catch (MalformedURLException e) {
@@ -464,6 +475,7 @@ public class JDUtilities {
      * Hier werden alle Plugins im aktuellen Verzeichnis geparsed (und im
      * Classpath)
      */
+    @SuppressWarnings("unchecked")
     public static void loadPlugins() {
         try {
             // Alle JAR Dateien, die in diesem Verzeichnis liegen, werden dem
@@ -474,7 +486,7 @@ public class JDUtilities {
                 URL urls[] = new URL[files.length];
                 for (int i = 0; i < files.length; i++) {
                     logger.info("loaded plugins from:" + files[i]);
-                    urls[i] = files[i].toURL();
+                    urls[i] = files[i].toURI().toURL();
                 }
                 classLoader = new URLClassLoader(urls);
             }
@@ -486,7 +498,7 @@ public class JDUtilities {
                 if (files != null) {
                     for (int i = 0; i < files.length; i++) {
                         logger.info("loaded plugins from:" + files[i]);
-                        URL jarURL = files[i].toURL();
+                        URL jarURL = files[i].toURI().toURL();
                         addURL.invoke(urlClassLoader, new Object[] { jarURL });
                     }
                 }
@@ -539,16 +551,6 @@ public class JDUtilities {
         }
     }
 
-    public static File chooseDirectory() {
-        JFileChooser fileChooser = new JFileChooser();
-        fileChooser.setFileFilter(new JDFileFilter(null, null, true));
-        fileChooser.showOpenDialog(null);
-        File selectedFile = fileChooser.getSelectedFile();
-        if (selectedFile == null || selectedFile.isDirectory())
-            return selectedFile;
-        else
-            return selectedFile.getParentFile();
-    }
 
     /**
      * Lädt ein Objekt aus einer Datei
@@ -572,10 +574,10 @@ public class JDUtilities {
             }
         }
         if (fileInput != null) {
-            
-            String hash= getLocalHash(fileInput);
+
+            String hash = getLocalHash(fileInput);
             try {
-                
+
                 FileInputStream fis = new FileInputStream(fileInput);
                 if (asXML) {
                     XMLDecoder xmlDecoder = new XMLDecoder(new BufferedInputStream(fis));
@@ -587,9 +589,9 @@ public class JDUtilities {
                     objectLoaded = ois.readObject();
                     ois.close();
                 }
-                //Object15475dea4e088fe0e9445da30604acd1
-                //Object80d11614908074272d6b79abe91eeca1
-                logger.info("Loaded Object ("+hash+"): "+objectLoaded);
+                // Object15475dea4e088fe0e9445da30604acd1
+                // Object80d11614908074272d6b79abe91eeca1
+                logger.info("Loaded Object (" + hash + "): " + objectLoaded);
                 return objectLoaded;
             }
             catch (ClassNotFoundException e) {
@@ -639,8 +641,8 @@ public class JDUtilities {
                 fileOutput = new File(fileOutput, name + extension);
                 logger.info("save file: " + fileOutput + " (xml:" + asXML + ") object: " + objectToSave + " - " + extension);
             }
-            hashPre=getLocalHash(fileOutput);
-            if(fileOutput.exists())fileOutput.delete();
+            hashPre = getLocalHash(fileOutput);
+            if (fileOutput.exists()) fileOutput.delete();
             try {
                 FileOutputStream fos = new FileOutputStream(fileOutput);
                 if (asXML) {
@@ -660,40 +662,42 @@ public class JDUtilities {
             catch (IOException e) {
                 e.printStackTrace();
             }
-            String hashPost=getLocalHash(fileOutput);
-            
-            if(hashPost==null){
-                logger.severe("Schreibfehler: "+fileOutput+" Datei wurde nicht erstellt");
-            }else if(hashPost.equals(hashPre)){
-                logger.severe("Schreibfehler: "+fileOutput+" Datei wurde nicht überschrieben");
-            }else{
-                logger.finer("Schreibvorgang: "+fileOutput+" erfolgreich: "+hashPost);
+            String hashPost = getLocalHash(fileOutput);
+
+            if (hashPost == null) {
+                logger.severe("Schreibfehler: " + fileOutput + " Datei wurde nicht erstellt");
             }
-        }else{
-            logger.severe("Schreibfehler: Fileoutput: null"); 
+            else if (hashPost.equals(hashPre)) {
+                logger.severe("Schreibfehler: " + fileOutput + " Datei wurde nicht überschrieben");
+            }
+            else {
+                logger.finer("Schreibvorgang: " + fileOutput + " erfolgreich: " + hashPost);
+            }
         }
-        
-       
-        
-     
-      
+        else {
+            logger.severe("Schreibfehler: Fileoutput: null");
+        }
+
     }
+
     /**
      * Formatiert Sekunden in das zeitformat stunden:minuten:sekunden
-     * @param Zeit in sekunden
+     * @param eta toURI().toURL();
+     * 
      * @return formatierte Zeit
      */
-    public static String formatSeconds(int     eta){
-        
-        int hours=eta/(60*60);
-        eta-=hours*60*60;
-        int minutes=eta/60;
-        int seconds=eta-minutes*60;
-        if(hours==0){
-            return minutes+":"+seconds;
+    public static String formatSeconds(int eta) {
+
+        int hours = eta / (60 * 60);
+        eta -= hours * 60 * 60;
+        int minutes = eta / 60;
+        int seconds = eta - minutes * 60;
+        if (hours == 0) {
+            return minutes + ":" + seconds;
         }
-        return hours+":"+minutes+":"+seconds;
+        return hours + ":" + minutes + ":" + seconds;
     }
+
     /**
      * Liefert alle geladenen Plugins zum Entschlüsseln zurück
      * 
@@ -725,14 +729,25 @@ public class JDUtilities {
         return null;
     }
 
+    /**
+     * @return Configuration instanz
+     */
     public static Configuration getConfiguration() {
         return configuration;
     }
 
+    /**
+     * Setzt die Konfigurations instanz
+     * @param configuration
+     */
     public static void setConfiguration(Configuration configuration) {
         JDUtilities.configuration = configuration;
     }
 
+    /**
+     * @author astaldo
+     * @return homeDirectory
+     */
     public static String getHomeDirectory() {
         return homeDirectory;
     }
@@ -757,12 +772,12 @@ public class JDUtilities {
      */
     public static File getResourceFile(String arg) {
         URLClassLoader cl = getURLClassLoader();
-        if(cl==null){
+        if (cl == null) {
             logger.severe("Classloader ==null: ");
             return null;
         }
-        URL clURL=getURLClassLoader().getResource(".");
-        if(clURL==null){
+        URL clURL = getURLClassLoader().getResource(".");
+        if (clURL == null) {
             logger.severe(". resource ==null: ");
             return null;
         }
@@ -775,10 +790,10 @@ public class JDUtilities {
             e.printStackTrace();
         }
         try {
-            logger.info("get resource: "+urlEncode(fileName));
-            URI uri=new URI(urlEncode(fileName));
-            if(uri==null){
-                logger.severe("null resource!: "+arg);
+            logger.info("get resource: " + urlEncode(fileName));
+            URI uri = new URI(urlEncode(fileName));
+            if (uri == null) {
+                logger.severe("null resource!: " + arg);
                 return null;
             }
             return new File(uri);
@@ -800,7 +815,7 @@ public class JDUtilities {
      */
     public static String getLocalHash(File f) {
         try {
-if(!f.exists())return null;
+            if (!f.exists()) return null;
             MessageDigest md;
             md = MessageDigest.getInstance("md5");
             byte[] b = new byte[1024];
@@ -866,59 +881,61 @@ if(!f.exists())return null;
      * @return decoded string
      */
     public static String htmlDecode(String str) {
-      // http://rs218.rapidshare.com/files/&#0052;&#x0037;&#0052;&#x0034;&#0049;&#x0032;&#0057;&#x0031;/STE_S04E04.Borderland.German.dTV.XviD-2Br0th3rs.part1.rar
+        // http://rs218.rapidshare.com/files/&#0052;&#x0037;&#0052;&#x0034;&#0049;&#x0032;&#0057;&#x0031;/STE_S04E04.Borderland.German.dTV.XviD-2Br0th3rs.part1.rar
         String pattern = "\\&\\#x(.*?)\\;";
-        for (Matcher r = Pattern.compile(pattern, Pattern.DOTALL).matcher(str); r.find();) {          
-                if (r.group(1).length() > 0) {
-                    char c = (char) Integer.parseInt(r.group(1), 16);
-                    str = str.replaceFirst("\\&\\#x(.*?)\\;", c + "");
-                }       
+        for (Matcher r = Pattern.compile(pattern, Pattern.DOTALL).matcher(str); r.find();) {
+            if (r.group(1).length() > 0) {
+                char c = (char) Integer.parseInt(r.group(1), 16);
+                str = str.replaceFirst("\\&\\#x(.*?)\\;", c + "");
+            }
         }
         pattern = "\\&\\#(.*?)\\;";
         for (Matcher r = Pattern.compile(pattern, Pattern.DOTALL).matcher(str); r.find();) {
-                if (r.group(1).length() > 0) {
-                    char c = (char) Integer.parseInt(r.group(1), 10);
-                    str = str.replaceFirst("\\&\\#(.*?)\\;", c + "");
-                }
+            if (r.group(1).length() > 0) {
+                char c = (char) Integer.parseInt(r.group(1), 10);
+                str = str.replaceFirst("\\&\\#(.*?)\\;", c + "");
+            }
         }
         return str;
     }
-/**
- * Schreibt content in eine Lokale textdatei
- * @param file
- * @param content
- * @return
- */
+
+    /**
+     * Schreibt content in eine Lokale textdatei
+     * 
+     * @param file
+     * @param content
+     * @return true/False je nach Erfolg des Schreibvorgangs
+     */
     public static boolean writeLocalFile(File file, String content) {
 
         try {
             if (file.isFile()) {
                 if (!file.delete()) {
-                   logger.severe("Konnte Datei nicht löschen " + file);
+                    logger.severe("Konnte Datei nicht löschen " + file);
                     return false;
                 }
             }
-           
+
             if (file.getParent() != null && !file.getParentFile().exists()) {
                 file.getParentFile().mkdirs();
             }
             file.createNewFile();
 
             BufferedWriter f = new BufferedWriter(new FileWriter(file));
-         
+
             f.write(content);
             f.close();
 
             return true;
 
-        } catch (Exception e) {
-         e.printStackTrace();
+        }
+        catch (Exception e) {
+            // e.printStackTrace();
             return false;
 
         }
 
     }
-
 
     /**
      * @author coalado
@@ -950,6 +967,10 @@ if(!f.exists())return null;
         }
     }
 
+    /**
+     * Setzt das Homedirectory und erstellt es notfalls neu
+     * @param homeDirectory
+     */
     public static void setHomeDirectory(String homeDirectory) {
         JDUtilities.homeDirectory = homeDirectory;
         homeDirectoryFile = new File(homeDirectory);
@@ -965,6 +986,31 @@ if(!f.exists())return null;
      */
     public static boolean download(File file, String urlString) {
 
+   
+            try {
+                urlString = URLDecoder.decode(urlString, "UTF-8");
+        
+
+            URL url = new URL(urlString);
+            URLConnection con = url.openConnection();
+            return download(file,con);
+            }
+            catch (UnsupportedEncodingException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            }
+            catch (MalformedURLException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            }
+            catch (IOException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            }
+return false;
+    }
+    public static boolean download(File file, URLConnection con) {
+
         try {
             if (file.isFile()) {
                 if (!file.delete()) {
@@ -977,10 +1023,7 @@ if(!f.exists())return null;
             }
             file.createNewFile();
             BufferedOutputStream output = new BufferedOutputStream(new FileOutputStream(file, true));
-            urlString = URLDecoder.decode(urlString, "UTF-8");
-
-            URL url = new URL(urlString);
-            URLConnection con = url.openConnection();
+           
             BufferedInputStream input = new BufferedInputStream(con.getInputStream());
 
             byte[] b = new byte[1024];
@@ -1010,7 +1053,6 @@ if(!f.exists())return null;
         }
 
     }
-
     /**
      * TODO: Serverpfad in de Config aufnehmen Gleicht das homedir mit dem
      * server ab. Der Serverpfad steht noch in WebUpdater.java
@@ -1053,7 +1095,7 @@ if(!f.exists())return null;
      * dessen rückgabe als String zurück
      * 
      * @param command
-     * @return
+     * @return Ausgabe des aufgerufenen befehls
      * @throws IOException
      */
     public static String runCommandWaitAndReturn(String command) throws IOException {
@@ -1083,7 +1125,7 @@ if(!f.exists())return null;
      * @param command
      * @throws IOException
      */
-    public static void runCommand(String command) throws IOException {
+    public static void runCommand(String command) throws Exception {
         if (command == null) {
             return;
         }
@@ -1100,7 +1142,7 @@ if(!f.exists())return null;
     /**
      * Gibt den verwendeten Controller zurück
      * 
-     * @return
+     * @return gerade verwendete controller-instanz
      */
     public static JDController getController() {
         return controller;
@@ -1108,8 +1150,8 @@ if(!f.exists())return null;
 
     /**
      * Setzt den Controller
+     * @param con controller
      * 
-     * @param controller
      */
     public static void setController(JDController con) {
         controller = con;
@@ -1119,7 +1161,7 @@ if(!f.exists())return null;
      * Ersetzt die Platzhalter in einem String
      * 
      * @param command
-     * @return
+     * @return Neuer String mit ersetzen Platzhaltern
      */
     public static String replacePlaceHolder(String command) {
         if (controller == null) return command;

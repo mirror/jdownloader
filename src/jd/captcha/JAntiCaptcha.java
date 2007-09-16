@@ -153,7 +153,6 @@ public class JAntiCaptcha {
     /**
      * @param methodsPath
      * @param methodName
-     * @param methodDir
      */
 
     public JAntiCaptcha(String methodsPath, String methodName) {
@@ -191,6 +190,9 @@ public class JAntiCaptcha {
         return UTILITIES.getURLClassLoader(methodsPath) != null;
     }
 
+    /**
+     * Exportiert die aktelle Datenbank als PONG einzelbilder
+     */
     public void exportDB() {
         File path = UTILITIES.directoryChooser("");
         File file;
@@ -210,6 +212,9 @@ public class JAntiCaptcha {
         }
     }
 
+    /**
+     * Importiert pNG einzelbilder aus einem ordner und erstellt daraus eine neue db
+     */
     public void importDB() {
         File path = UTILITIES.directoryChooser("");
         letterDB = new Vector<Letter>();
@@ -278,7 +283,6 @@ public class JAntiCaptcha {
      * methods/Methodname/captchas zu trainieren
      * 
      * @param path
-     * @throws
      */
     public void trainAllCaptchas(String path) {
 
@@ -1561,6 +1565,10 @@ public class JAntiCaptcha {
         this.showDebugGui = showDebugGui;
     }
 
+    /**
+     * @param path
+     * @return Gibt die Pfade zu allen methoden zurück
+     */
     public static File[] getMethods(String path) {
       File dir = new File(path);
         
@@ -1583,14 +1591,20 @@ public class JAntiCaptcha {
               });
               return entries;
     }
-
+/**
+ * Führt einen testlauf mit den übergebenen methoden durch
+ * @param methods
+ */
     public static void testMethods(File[] methods) {
         for(int i=0; i<methods.length;i++){
             testMethod(methods[i]);
         }
         
     }
-
+/**
+ * Testet die Angegebene Methode. dabei werden analysebilder erstellt.
+ * @param file
+ */
     public static void testMethod(File file) {
         int checkCaptchas=40;
         String code;

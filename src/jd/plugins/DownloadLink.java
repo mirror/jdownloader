@@ -208,6 +208,8 @@ public class DownloadLink implements Serializable, Comparable {
      */
     private transient SpeedMeter speedMeter;
 
+    private transient Boolean available=null;
+
     /**
      * Erzeugt einen neuen DownloadLink
      * 
@@ -277,6 +279,26 @@ public class DownloadLink implements Serializable, Comparable {
       
         }
        
+    }
+    /**
+     * Gibt zurück ob Dieser Link schon auf verfügbarkeit getestet wurde. 
+     * @return
+     */
+    public boolean isAvailabilityChecked(){
+        return available!=null;
+        
+    }
+    
+    /**
+     * Führt einen verfügbarkeitscheck durch
+     * @return
+     */
+    public boolean isAvailable(){
+       if(this.available!=null){
+           return available;
+       }
+       available=((PluginForHost)getPlugin()).checkAvailability(this);
+       return available;
     }
 
     /**

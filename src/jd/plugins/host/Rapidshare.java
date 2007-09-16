@@ -82,12 +82,12 @@ import jd.plugins.RequestInfo;
 public class Rapidshare extends PluginForHost {
     static private final String            host                             = "rapidshare.com";
 
-    private String                         version                          = "1.0.0.0";
+    private String                         version                          = "1.2.0.0";
 
     // http://(?:[^.]*\.)*rapidshare\.com/files/[0-9]*/[^\s"]+
     private String                         botHash                          = "dab07d2b7f1299f762454cda4c6143e7";
 
-    private Pattern                        patternSupported                 = Pattern.compile("http://(?:rs[0-9]*\\.)*rapidshare\\.com/files/[0-9]+/[^\\s\"]+");
+    private Pattern                        patternSupported                 = Pattern.compile("http://(?:rs[0-9]*\\.|www)*rapidshare\\.com/files/[0-9]+/[^\\s\"]+");
 
     /**
      * Das findet die Ziel URL für den Post
@@ -144,7 +144,7 @@ public class Rapidshare extends PluginForHost {
 
     @Override
     public String getCoder() {
-        return "astaldo";
+        return "astaldo/coalado";
     }
 
     @Override
@@ -228,10 +228,10 @@ public class Rapidshare extends PluginForHost {
 
     }
 
-    @Override
-    public URLConnection getURLConnection() {
-        return null;
-    }
+//    @Override
+//    public URLConnection getURLConnection() {
+//        return null;
+//    }
 
     public PluginStep doStep(PluginStep step, DownloadLink downloadLink) {
 
@@ -348,7 +348,7 @@ public class Rapidshare extends PluginForHost {
                             }
                             else {
                                 // ZUfall
-                                Vector<Vector<String>> serverMatches = getAllMatches(requestInfo.getHtmlCode(), "</p><p><table><tr><td><a href=\"http://rs°\">Download via °</a><br>");
+                                Vector<Vector<String>> serverMatches = getAllSimpleMatches(requestInfo.getHtmlCode(), "</p><p><table><tr><td><a href=\"http://rs°\">Download via °</a><br>");
                                 int index = (int) (Math.random() * serverMatches.size());
                                 if (serverMatches.size() == 0) {
                                     step.setStatus(PluginStep.STATUS_ERROR);
@@ -703,8 +703,28 @@ public class Rapidshare extends PluginForHost {
     }
 
     @Override
-    public boolean checkAvailability(DownloadLink parameter) {
-        // TODO Auto-generated method stub
+    public boolean checkAvailability(DownloadLink downloadLink) {
+        
+            // Der Download wird bestätigt
+            RequestInfo requestInfo;
+            try {
+                requestInfo = getRequest(new URL(downloadLink.getUrlDownloadDecrypted()));
+         
+            if (requestInfo.getHtmlCode().indexOf(hardwareDefektString) > 0) {              
+                return false;
+            }
+            if(requestInfo.getConnection().getHeaderField("Location")!=null){               
+                return true;
+            }
+            String newURL = getFirstMatch(requestInfo.getHtmlCode(), patternForNewHost, 1);
+            String strWaitTime = getFirstMatch(requestInfo.getHtmlCode(), patternErrorDownloadLimitReached, 1);
+            if (newURL != null||strWaitTime!=null) {
+              return true;
+            }
+            
+            }
+            catch (MalformedURLException e) { }
+            catch (IOException e) { }
         return false;
     }
 

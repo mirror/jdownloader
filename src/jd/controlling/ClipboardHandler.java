@@ -6,11 +6,11 @@ import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.UnsupportedFlavorException;
 import java.io.IOException;
 
-//TODO Überarbeiten
+
 /**
  * Diese Klasse ist dafür da, zeitverzögert die Zwischenablage zu untersuchen
  * 
- * @author astaldo
+ * @author astaldo/coalado
  */
 public class ClipboardHandler extends Thread {
     /**
@@ -31,6 +31,9 @@ public class ClipboardHandler extends Thread {
 
     private String data;
 
+    /**
+     * @param controller
+     */
     public ClipboardHandler(JDController controller) {
         super("JD-ClipboardHandler");
         this.controller = controller;
@@ -38,6 +41,9 @@ public class ClipboardHandler extends Thread {
         this.start();
     }
 
+    /* (non-Javadoc)
+     * @see java.lang.Thread#run()
+     */
     public void run() {
 
         
@@ -76,11 +82,17 @@ public class ClipboardHandler extends Thread {
         }
         catch (Exception e) {}
     }
-
+/**
+ * Gibt an ob die clipboard überwachung aktiv ist
+ * @return true/false
+ */
     public boolean isEnabled() {
         return enabled;
     }
-
+/**
+ * Schaltet die clipboardüberwachung an/aus
+ * @param enabled
+ */
     public void setEnabled(boolean enabled) {
         this.enabled = enabled;
         //Verhindert dass beim starten die zwischenablage ausgewertet wird

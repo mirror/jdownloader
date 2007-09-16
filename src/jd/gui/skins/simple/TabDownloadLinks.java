@@ -9,12 +9,12 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
+import java.io.File;
 import java.util.Iterator;
 import java.util.Vector;
 import java.util.logging.Logger;
 
 import javax.swing.JComponent;
-import javax.swing.JFrame;
 import javax.swing.JMenuItem;
 import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
@@ -371,8 +371,13 @@ this.y=y;
 
         public void actionPerformed(ActionEvent e) {
             if (e.getSource() == openHome) {
-                removeSelectedLinks();
-                parent.fireUIEvent(new UIEvent(parent, UIEvent.UI_LINKS_CHANGED, null));
+                try {
+               logger.info("TODO: Win only");
+                  JDUtilities.runCommand("explorer "+"\""+new File(downloadLinks.elementAt(0).getFileOutput()).getParent()+"\"");
+                 }catch(Exception ec){                     
+                 }
+              
+                
             }
             
             if (e.getSource() == delete) {
@@ -530,11 +535,11 @@ this.y=y;
                     case COL_PROGRESS:
                        
                         if(rowIndex>=progressBars.size()){
-                            JProgressBar p = new JProgressBar(0, (int) downloadLink.getDownloadMax());
+                            JProgressBar p = new JProgressBar(0, 1);
                             progressBars.add(rowIndex, p);
                         }
                         JProgressBar p =progressBars.elementAt(rowIndex);
-                        if (downloadLink.isInProgress() && downloadLink.getRemainingWaittime() == 0) {
+                        if (downloadLink.isInProgress() && downloadLink.getRemainingWaittime() == 0&&(int) downloadLink.getDownloadCurrent()>0&&(int) downloadLink.getDownloadCurrent()<=(int) downloadLink.getDownloadMax()) {
                             p.setMaximum((int) downloadLink.getDownloadMax());
                             p.setStringPainted(true);
                             p.setBackground(Color.WHITE);
@@ -546,7 +551,7 @@ this.y=y;
 
                             return p;
                         }
-                        else if (downloadLink.getRemainingWaittime() > 0) {
+                        else if (downloadLink.getRemainingWaittime() > 0&&downloadLink.getWaitTime()>=downloadLink.getRemainingWaittime()) {
                            
                             p.setMaximum(downloadLink.getWaitTime());
                             p.setBackground(new Color(255, 0, 0, 80));

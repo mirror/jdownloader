@@ -84,7 +84,7 @@ public abstract class Plugin {
      * Zeigt an, ob das Plugin abgebrochen werden soll
      */
     public PluginConfig        config;
-
+protected  RequestInfo requestInfo;
     protected boolean          aborted     = false;
 
     /**
@@ -227,6 +227,7 @@ public abstract class Plugin {
         if (this.getPluginName() == null) {
             logger.severe("ACHTUNG: die Plugin.getPluginName() Funktion muss einen Wert wiedergeben der zum init schon verfügbar ist, also einen static wert");
         }
+     
         if (JDUtilities.getConfiguration().getProperty("PluginConfig_" + this.getPluginName()) != null) {
             properties = (Property) JDUtilities.getConfiguration().getProperty("PluginConfig_" + this.getPluginName());
         }
@@ -832,10 +833,13 @@ public abstract class Plugin {
      */
     public boolean download(DownloadLink downloadLink, URLConnection urlConnection) {
         File fileOutput = new File(downloadLink.getFileOutput());
-
+        if (!fileOutput.getParentFile().exists()) {
+            fileOutput.getParentFile().mkdirs();
+        }
+        ByteBuffer hdBuffer = ByteBuffer.allocateDirect(1024*1024*5);
         downloadLink.setStatus(DownloadLink.STATUS_DOWNLOAD_IN_PROGRESS);
         long downloadedBytes = 0;
-
+       
         long start, end, time;
         try {
             ByteBuffer buffer = ByteBuffer.allocateDirect(READ_BUFFER);
@@ -875,11 +879,13 @@ public abstract class Plugin {
 
                 // Buffer flippen und in File schreiben:
                 buffer.flip();
-                dest.write(buffer);
+                
+               dest.write(buffer);
                 buffer.compact();
 
                 // Laufende Variablen updaten:
                 downloadedBytes += bytes;
+          
                 // bytesLastSpeedCheck += bytes;
                 // logger.info("load "+bytesLastSpeedCheck+" - "+bytes);
                 // if (((t3=System.currentTimeMillis())-t1)>200) { // Speedcheck
@@ -1079,7 +1085,7 @@ return ret;
      *            verwendet.
      * @return Alle TReffer
      */
-    public static String[] getMatches(String source, String pattern) {
+    public static String[] getSimpleMatches(String source, String pattern) {
         // DEBUG.trace("pattern: "+STRING.getPattern(pattern));
         if (source == null || pattern == null) return null;
         Matcher rr = Pattern.compile(getPattern(pattern), Pattern.DOTALL).matcher(source);
@@ -1098,7 +1104,21 @@ return ret;
             return null;
         }
     }
-
+/**
+ * Durchsucht source mit pattern ach treffern und gibt Treffer id zurück.
+ * Bei dem Pattern muss es sich um einen String Handeln der ° als Platzhalter verwendet. Alle newline Chars in source müssen mit einem °-PLatzhalter belegt werden
+ * @param source
+ * @param pattern
+ * @param id
+ * @return String Match
+ */
+public static String getSimpleMatch(String source, String pattern, int id){
+    String[] res= getSimpleMatches( source,  pattern);
+    if(res!=null&&res.length>id){
+        return res[id];
+    }
+    return null;
+}
     /**
      * public static String getPattern(String str) Gibt ein Regex pattern
      * zurück. ° dient als Platzhalter!
@@ -1132,14 +1152,14 @@ return ret;
 
     /**
      * Schreibt alle treffer von pattern in source in den übergebenen vector
-     * 
+     * Als rückgabe erhält man einen 2D-Vector 
      * @param source
      * @param pattern als Pattern wird ein Normaler String mit ° als Wildcard
      *            verwendet.
      * @param container
      * @return Treffer
      */
-    public static Vector<Vector<String>> getAllMatches(String source, String pattern) {
+    public static Vector<Vector<String>> getAllSimpleMatches(String source, String pattern) {
         pattern = getPattern(pattern);
         Vector<Vector<String>> ret = new Vector<Vector<String>>();
 
@@ -1159,9 +1179,31 @@ return ret;
 
         return ret;
     }
+    /**
+     * Gibt von allen treffer von pattern in source jeweils den id-ten Match einem vector zurück.
+     * Als pattern kommt ein Simplepattern zum einsatz
+     * @param source
+     * @param pattern
+     * @param id
+     * @return Matchlist
+     */
+    public static Vector<String> getAllSimpleMatches(String source, String pattern, int id) {
+        pattern = getPattern(pattern);
+        Vector<String> ret = new Vector<String>();
+
+     
+        for (Matcher r = Pattern.compile(pattern, Pattern.DOTALL).matcher(source); r.find();) {
+          
+            if( id<r.groupCount())ret.add(r.group(id).trim());          
+
+        }
+
+        return ret;
+    }
+    
 
     public static String getMatch(String source, String pattern, int i, int ii) {
-        Vector<Vector<String>> ret = getAllMatches(source, pattern);
+        Vector<Vector<String>> ret = getAllSimpleMatches(source, pattern);
         if (ret.elementAt(i) != null && ret.elementAt(i).elementAt(ii) != null) {
             return ret.elementAt(i).elementAt(ii);
         }

@@ -21,10 +21,9 @@ import jd.plugins.Plugin;
 import jd.update.WebUpdater;
 
 /**
- * Die Dropperklasse zeigt einen DropTarget Dialog an. Zieht man links oder text
- * darauf, so wird das eingefügt.
- * 
- * @author Tom
+ * Der Installer erscheint nur beim ersten mal STarten der Webstartversion und beim neuinstallieren der webstartversion
+ *  der User kann Basiceinstellungen festlegen
+ * @author Coalado
  */
 public class Installer extends JDialog implements ActionListener {
 
@@ -41,6 +40,9 @@ public class Installer extends JDialog implements ActionListener {
 
     private Vector<JComponent> panels           = new Vector<JComponent>();
 
+    /**
+     * 
+     */
     public Installer() {
         super();
         setModal(false);
@@ -62,6 +64,11 @@ public class Installer extends JDialog implements ActionListener {
         pack();
     }
 
+    /**
+     * @param str
+     * @param path
+     * @return Fragt einen Ordner beim User ab.  mit str kann man gezielt nach einem ordner fragen
+     */
     public String getDirectory(String str,File path) {
         clearPanel();
         logger.info("getHome");
@@ -88,17 +95,17 @@ public class Installer extends JDialog implements ActionListener {
         return null;
 
     }
-
+/**
+ * Wartet auf Userinput
+ * @return true/false
+ */
     private boolean waitFor() {
         while (true) {
             try {
                 Thread.sleep(500);
 
             }
-            catch (InterruptedException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
-            }
+            catch (InterruptedException e) {}
             if (continueInstall) {
                 return true;
             }
@@ -111,6 +118,10 @@ public class Installer extends JDialog implements ActionListener {
 
     }
 
+    /**
+     * Führt ein Webupdate nach der Installation aus und gibt im erfolgsfall true zurück, sonst false
+     * @return true/Fasle
+     */
     public boolean doUpdate() {
         logger.info("Update");
         clearPanel();
@@ -175,13 +186,19 @@ return true;
 
     }
 
+    /**
+     * bricht die INstallation ab
+     */
     public void abortInstallation() {
         cancelInstall = true;
         this.setVisible(false);
         clearPanel();
 
     }
-
+/**
+ * actionPerformed für die buttons
+ * @param e ActionEvent
+ */
     public void actionPerformed(ActionEvent e) {
         continueInstall = true;
         this.setVisible(false);

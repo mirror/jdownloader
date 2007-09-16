@@ -9,6 +9,11 @@ import javax.crypto.spec.PBEParameterSpec;
 import sun.misc.BASE64Decoder;
 import sun.misc.BASE64Encoder;
 
+/**
+ * EInfache verschlüsselung für die Linklisten
+ * @author astaldo
+ *
+ */
 public class JDCrypt {
     private final static transient String password   = "jDownloader";
     private final static transient byte[] salt = { (byte) 0xc9,(byte) 0xc9, (byte) 0xc9, (byte) 0xc9, (byte) 0xc9, (byte) 0xc9,(byte) 0xc9, (byte) 0xc9};

@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
 import java.util.regex.Pattern;
@@ -98,11 +99,11 @@ public class Gulli extends PluginForHost {
         return PLUGIN_ID;
     }
 
-    @Override
-    public URLConnection getURLConnection() {
-        // XXX: ???
-        return null;
-    }
+//    @Override
+//    public URLConnection getURLConnection() {
+//        // XXX: ???
+//        return null;
+//    }
 
     public PluginStep doStep(PluginStep step, DownloadLink parameter) {
         RequestInfo requestInfo;
@@ -270,8 +271,21 @@ public class Gulli extends PluginForHost {
     }
 
     @Override
-    public boolean checkAvailability(DownloadLink parameter) {
+    public boolean checkAvailability(DownloadLink downloadLink) {
         // TODO Auto-generated method stub
+        RequestInfo requestInfo;
+        try {
+            requestInfo = getRequestWithoutHtmlCode(new URL(downloadLink.getUrlDownloadDecrypted()), null, null, false);
+       
+     
+       if(requestInfo.getConnection().getHeaderField("Location")!=null&&requestInfo.getConnection().getHeaderField("Location").indexOf("error")>0){
+           return false;
+       }
+        return true;
+        }
+        catch (MalformedURLException e) {}
+        catch (IOException e) {        }
+       
         return false;
     }
 

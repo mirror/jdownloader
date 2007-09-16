@@ -48,6 +48,10 @@ public class Property implements Serializable {
 
     }
 
+  /**
+   * GIbt die Proprties als String zurück
+   * @return PropertyString
+   */
     public String toString() {
         return "Property("+saveCount+"): " + properties;
     }
@@ -56,21 +60,32 @@ public class Property implements Serializable {
      * Gibt dne Wert zu key zurück
      * 
      * @param key
-     * @return
+     * @return Value zu key
      */
     public Object getProperty(String key) {
         if (properties == null) properties = new HashMap<String, Object>();
         return properties.get(key);
     }
 
+    /**
+     * @return gibt die INterne properties hashmap zurück
+     */
     public HashMap<String, Object> getProperties() {
         return properties;
     }
 
+    /**
+     * setzt die interne prperties hashMap
+     * @param properties
+     */
     public void setProperties(HashMap<String, Object> properties) {
         saveCount++;
         this.properties = properties;
     }
+    /**
+     * Gibt zurück wie oft in dieser propertyinstanz schon Werte geändert wurden
+     * @return zahl der Änderungen
+     */
     public long getSaveCount(){
         return saveCount;
     }

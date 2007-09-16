@@ -16,6 +16,9 @@ import jd.router.RouterData;
  */
 
 public class Configuration extends Property implements Serializable {
+    /**
+     * Gibt an ob die SerializeFunktionen im XMl MOdus Arbeiten oder nocht
+     */
     public transient static boolean saveAsXML             = false;
 
     /**
@@ -83,58 +86,101 @@ public class Configuration extends Property implements Serializable {
   * Download timeout);
   */
  private int connectTimeout=10000;
+    /**
+     * Konstruktor für ein Configuration Object
+     */
     public Configuration() {
     // WebUpdate updater=new WebUpdate();
     // updater.setTrigger(Interaction.INTERACTION_APPSTART);
     // interactions.add(updater);
     }
 
+    /**
+     * Gibt das gewählte downloadDirectory zurück
+     * @return dlDir
+     */
     public String getDownloadDirectory() {
         return downloadDirectory;
     }
 
     // public HashMap<Integer, Vector<Interaction>> getInteractionMap() { return
     // interactionMap; }
+    /**
+     * @return Gibt das Routeradmin Passwort zurück
+     */
     public String getRouterPassword() {
         return routerPassword;
     }
 
+    /**
+     * @return gibt den router-admin-Username zurück
+     */
     public String getRouterUsername() {
         return routerUsername;
     }
 
+    /**
+     * GIbt das routerdata objekt zurück. darin sind alle informationen gespeichert die aus der routerdata.xml importiert worden sind. (für einen router)
+     * @return Gibt das routerdata objekt zurück
+     */
     public RouterData getRouterData() {
         return routerData;
     }
 
+    /**
+     * Gibt an ob JAC verwendet werden soll
+     * TODO: veraltet. nicht emhr verwenden!
+     * @return jac oder nicht jac
+     */
     public boolean useJAC() {
         return useJAC;
     }
 
+    /**
+     * @param downloadDirectory
+     */
     public void setDownloadDirectory(String downloadDirectory) {
         this.downloadDirectory = downloadDirectory;
     }
 
+    /**
+     * @param routerPassword
+     */
     public void setRouterPassword(String routerPassword) {
         this.routerPassword = routerPassword;
     }
 
+    /**
+     * @param routerUsername
+     */
     public void setRouterUsername(String routerUsername) {
         this.routerUsername = routerUsername;
     }
 
+    /**
+     * @param routerData
+     */
     public void setRouterData(RouterData routerData) {
         this.routerData = routerData;
     }
 
+    /**
+     * @param useJAC
+     */
     public void setUseJAC(boolean useJAC) {
         this.useJAC = useJAC;
     }
 
+    /**
+     * @return GIbt zurück welches Loggerlevel eingestellt ist
+     */
     public String getLoggerLevel() {
         return loggerLevel;
     }
 
+    /** Setzt das Loggerlevel. Das Logegrlevel bestimmt bis zu welcher Wichtigkeit debug Informationen im Log ausgegeben werden
+     * @param loggerLevel
+     */
     public void setLoggerLevel(String loggerLevel) {
         this.loggerLevel = loggerLevel;
     }
@@ -170,20 +216,24 @@ public class Configuration extends Property implements Serializable {
     /**
      * Wartezeit zwischen reconnect und erstem IP Check
      * 
-     * @return
+     * @return Wartezeit zwischen reconnect und ip-check
      */
     public int getWaitForIPCheck() {
         return waitForIPCheck;
     }
 
+    /**
+     * Setztd ie Wartezeit zwischen dem Reconnect und dem ersten IP-Check
+     * @param waitForIPCheck
+     */
     public void setWaitForIPCheck(int waitForIPCheck) {
         this.waitForIPCheck = waitForIPCheck;
     }
 
     /**
-     * Gibt die Interactionen zurück
+     * Gibt die Interactionen zurück. Alle eingestellten INteractionen werden hier in einem vector zurückgegeben
      * 
-     * @return
+     * @return  Vector<Interaction> 
      */
 
     public Vector<Interaction> getInteractions() {
@@ -204,7 +254,8 @@ public class Configuration extends Property implements Serializable {
      * alle reconnect Aktionen
      * 
      * @param it
-     * @return
+     * @return Alle interactionen mit dem TRigger it
+
      */
     public Vector<Interaction> getInteractions(InteractionTrigger it) {
         Vector<Interaction> ret = new Vector<Interaction>();
@@ -218,7 +269,7 @@ public class Configuration extends Property implements Serializable {
      * Gibt alle Interactionen zurück bei der die AKtion inter gleicht
      * 
      * @param inter
-     * @return
+     * @return Alle interactionen mit dem Selben interaction-Event wie inter
      */
     public Vector<Interaction> getInteractions(Interaction inter) {
         Vector<Interaction> ret = new Vector<Interaction>();
@@ -239,15 +290,18 @@ public class Configuration extends Property implements Serializable {
     }
 
     /**
-     * Gibt die version der Configfile zurück
+     * Gibt die version der Configfile zurück. Ändert sich die Konfigversion, werden die defaulteinstellungen erneut geschrieben. So wird sichergestellt, dass bei einem Update eine Aktuelle Configfie erstellt wird
      * 
-     * @return
+     * @return Versionsstring der Konfiguration
      */
     public String getConfigurationVersion() {
         if(version==null)return "0.0.0";
         return version;
     }
 
+    /**
+     * Legt die defaulteinstellungen in das configobjekt
+     */
     public void setDefaultValues() {
         // Setze AutoUpdater
 
@@ -268,22 +322,41 @@ public class Configuration extends Property implements Serializable {
         
         setConfigurationVersion(JDUtilities.JD_VERSION);
     }
+
+
+/**
+ * GIbt alle Properties der Config aus
+ * @return toString
+ */
 public String toString(){
     return "Configuration "+this.getProperties()+" INteraction "+this.interactions;
 }
 
+/**
+ * 
+ * @return readTimeout in Millisekunden (für den eigentlichen download)
+ */
 public int getReadTimeout() {
     return readTimeout;
 }
 
+/**Setzt den lese-Timeout für den Download
+ * @param readTimeout
+ */
 public void setReadTimeout(int readTimeout) {
     this.readTimeout = readTimeout;
 }
-
+/**
+ * 
+ * @return gibt den requestTimeout für den download an
+ */
 public int getConnectTimeout() {
     return connectTimeout;
 }
-
+/**
+ * Setzt den requestTimeout für den Download
+ * @param connectTimeout
+ */
 public void setConnectTimeout(int connectTimeout) {
     this.connectTimeout = connectTimeout;
 }

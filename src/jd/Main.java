@@ -65,7 +65,7 @@ public class Main {
             e.printStackTrace();
         }
         logger.finer("Load config from: " + fileInput + " (" + JDUtilities.CONFIG_PATH + ")");
-        if (fileInput != null) {
+        if (fileInput != null&&fileInput.exists()) {
 
             Object obj = JDUtilities.loadObject(null, fileInput, Configuration.saveAsXML);
             if (obj instanceof Configuration) {

@@ -52,11 +52,20 @@ public class JDFileFilter extends  javax.swing.filechooser.FileFilter implements
         return new File(filename.toString());
     }
     
+    /* (non-Javadoc)
+     * @see javax.swing.filechooser.FileFilter#getDescription()
+     */
+    /**
+     * Gibt die Filefilter beschreibung zurück
+     */
     @Override
     public String getDescription() {
         return getFile().toString();
     }
 
+    /* (non-Javadoc)
+     * @see javax.swing.filechooser.FileFilter#accept(java.io.File)
+     */
     public boolean accept(File f) {
         if(f.isDirectory())
             return acceptDirectories;

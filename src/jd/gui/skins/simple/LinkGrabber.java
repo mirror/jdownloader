@@ -14,7 +14,6 @@ import java.awt.dnd.DropTargetEvent;
 import java.awt.dnd.DropTargetListener;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.io.File;
 import java.util.Collections;
 import java.util.Vector;
 import java.util.logging.Logger;
@@ -38,7 +37,18 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.Plugin;
 
+
+/**
+ * Diese Klasse sammelt die Links, bündelt sie zu Paketen und führt einen verfügbarkeitscheck durch
+ * @author coalado
+ *
+ */
 public class LinkGrabber extends JFrame implements ActionListener, DropTargetListener {
+
+    /**
+     * 
+     */
+    private static final long serialVersionUID = 2313000213508156713L;
 
     protected Insets             insets = new Insets(0, 0, 0, 0);
 
@@ -66,6 +76,12 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
 
     private JPanel               panel;
 
+    private JButton btnCheck;
+
+    /**
+     * @param parent GUI
+     * @param linkList neue links
+     */
     public LinkGrabber(SimpleGUI parent, final DownloadLink[] linkList) {
         super();
         this.linkList = new Vector<DownloadLink>();
@@ -93,6 +109,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
         btnOk = new JButton("Übernehmen");
         btnCancel = new JButton("Verwerfen");
         btnRemove = new JButton("Markierte entfernen");
+        btnCheck = new JButton("Verfügbarkeit prüfen");
         txfComment = new JTextField();
 
         txfPassword = new JTextField();
@@ -104,34 +121,22 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
         btnOk.addActionListener(this);
         btnCancel.addActionListener(this);
         btnRemove.addActionListener(this);
-
+        btnCheck.addActionListener(this);
         list.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
 //        scrollPane.setPreferredSize(new Dimension(400, 400));
         panel = new JPanel(new GridBagLayout());
         new DropTarget(list, this);
         new DropTarget(this, this);
-        // TableColumn column = null;
-        // for (int c = 0; c < internalTableModel.getColumnCount(); c++) {
-        // column = table.getColumnModel().getColumn(c);
-        // switch (c) {
-        //
-        // case 0:
-        // column.setPreferredWidth(250);
-        // break;
-        // case 1:
-        // column.setPreferredWidth(250);
-        // break;
-        //
-        // }
-        // }
+ 
        
         JDUtilities.addToGridBag(panel, new JLabel("Hier können alle Links zu einem Paket gesammelt und anschließend Übernommen werden."), GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 1, 0, insets, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
       
 
         JDUtilities.addToGridBag(panel, scrollPane, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 1, 1, insets, GridBagConstraints.BOTH, GridBagConstraints.CENTER);
        
-        JDUtilities.addToGridBag(panel, btnRemove, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 1, 0, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
-     
+        JDUtilities.addToGridBag(panel, btnRemove, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, 1, 1, 0, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        JDUtilities.addToGridBag(panel, btnCheck, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 1, 0, insets, GridBagConstraints.NONE, GridBagConstraints.EAST);
+        
         JDUtilities.addToGridBag(panel, new JSeparator(), GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 1, 0, insets, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
      
         JDUtilities.addToGridBag(panel, new JLabel("In folgendem Ordner speichern:"), GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -152,6 +157,10 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
         this.add(panel, BorderLayout.CENTER);
     }
 
+    /**
+     * Fügt neue Links zum Grabber hinzu
+     * @param linkList
+     */
     public void addLinks(DownloadLink[] linkList) {
         for (int i = 0; i < linkList.length; i++) {
             this.linkList.add(linkList[i]);
@@ -176,32 +185,53 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
 
     }
 
+    /**
+     * Sortiert die Linklist
+     */
+    
     @SuppressWarnings("unchecked")
     public void sortLinkList() {
 
         Collections.sort(linkList);
     }
 
+    /**
+     * Zeichnet die Linklist neu
+     */
     public void fireTableChanged() {
         DefaultListModel tmp = new DefaultListModel();
         list.removeAll();
         for (int i = 0; i < linkList.size(); i++) {
+            if(!linkList.elementAt(i).isAvailabilityChecked()){
             tmp.addElement((i + 1) + ". " + linkList.elementAt(i).getPlugin().getPluginName() + ": " + linkList.elementAt(i).getFileName());
-        }
+            }else{
+                if(linkList.elementAt(i).isAvailable()){
+                    tmp.addElement((i + 1) + ". [online] " + linkList.elementAt(i).getPlugin().getPluginName() + ": " + linkList.elementAt(i).getFileName());
+                    
+                }else{
+                    tmp.addElement((i + 1) + ". [OFFLINE] " + linkList.elementAt(i).getPlugin().getPluginName() + ": " + linkList.elementAt(i).getFileName());
+                    
+                }
+                
+                
+            }
+ }
         list.setModel(tmp);
 
     }
-
+/**
+ * Setzt die Sichtbarkeit des Linkgrabbers
+ */
     public void setVisible(boolean bol) {
         super.setVisible(bol);
 
     }
 
-    public void c() {
-        linkList = new Vector<DownloadLink>();
-        fireTableChanged();
-    }
+ 
 
+    /* (non-Javadoc)
+     * @see java.awt.event.ActionListener#actionPerformed(java.awt.event.ActionEvent)
+     */
     public void actionPerformed(ActionEvent e) {
         if (e.getSource() == this.btnOk) {
             if (linkList.size() == 0) {
@@ -220,17 +250,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
                 linkList.elementAt(i).setFilePackage(fp);
             }
 
-            File file = new File(JDUtilities.getConfiguration().getDownloadDirectory());
-            if (bfSubFolder.getText().trim().length() > 0) {
-
-                file = new File(new File(bfSubFolder.getText().trim()), linkList.elementAt(0).getFileName() + ".info");
-            }
-            else {
-                file = new File(file, linkList.elementAt(0).getFileName() + ".info");
-            }
-            logger.info(file.getAbsolutePath());
-            JDUtilities.writeLocalFile(file, fp.getComment() + "\n" + fp.getDownloadDirectory() + "\n" + fp.getPassword());
-
+    
             parent.fireUIEvent(new UIEvent(this, UIEvent.UI_LINKS_GRABBED, linkList));
             this.setVisible(false);
 
@@ -241,10 +261,39 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
         if (e.getSource() == this.btnRemove) {
             removeSelectedLinks();
         }
-
+        if (e.getSource() == this.btnCheck) {
+           checkLinks();
+        }
         if (e.getSource() == this.btnCancel) {
             this.setVisible(false);
         }
+    }
+
+    private void checkLinks() {
+      
+         new Thread(){
+             public void run(){
+                 
+       
+                for( int i=0; i<linkList.size();i++){
+                    DownloadLink link=linkList.elementAt(i);
+                    link.isAvailable();
+                    fireTableChanged();
+                    
+                    try {
+                        Thread.sleep(20);
+                    }
+                    catch (InterruptedException e) {}
+                }
+
+             }
+         }.start();
+
+            
+
+       
+
+        
     }
 
     public void dragEnter(DropTargetDragEvent arg0) {}

@@ -50,6 +50,10 @@ public class PluginStep {
      */
     public final static int STATUS_SKIP       = 5;
     /**
+     * Warten. Diese Wartezeit muss sein. Reconnecten bringt nichts und wird auch nicht ausgeführt
+     */
+    public final static int STEP_PENDING      = 6;
+    /**
      * Status dieses Schrittes
      */
     private int status = 0;

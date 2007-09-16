@@ -41,7 +41,7 @@ public class SaveRaidrushWs extends PluginForDecrypt {
     			RequestInfo reqinfo = getRequest(url);
 
     			firePluginEvent(new PluginEvent(this,PluginEvent.PLUGIN_PROGRESS_MAX, countOccurences(reqinfo.getHtmlCode(), patternCount)));
-    			Vector<Vector<String>> links = getAllMatches(reqinfo.getHtmlCode(), "\'°\',\'FREE\',\'°\'");
+    			Vector<Vector<String>> links = getAllSimpleMatches(reqinfo.getHtmlCode(), "\'°\',\'FREE\',\'°\'");
     			
     			for(int i=0; i<links.size(); i++) {
     				Vector<String> help = links.get(i);

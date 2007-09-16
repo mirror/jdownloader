@@ -13,7 +13,7 @@ import jd.JDUtilities;
 /**
  * Alle Interaktionen (Knöpfe, Shortcuts) sollten über diese JDAction stattfinden
  *
- * @author astaldo1
+ * @author astaldo
  */
 public class JDAction extends AbstractAction{
     /**

@@ -10,7 +10,7 @@ import java.util.Vector;
  * @author astaldo
  */
 public abstract class PluginForHost extends Plugin{
-    public abstract URLConnection        getURLConnection();
+//    public abstract URLConnection        getURLConnection();
     
     /**
      * Stellt das Plugin in den Ausgangszustand zurück (variablen intialisieren etc)

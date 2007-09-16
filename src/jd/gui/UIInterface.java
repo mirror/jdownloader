@@ -12,6 +12,11 @@ import jd.plugins.DownloadLink;
 import jd.plugins.Plugin;
 import jd.plugins.event.PluginEvent;
 
+/**
+ * INterface für alle GUIS
+ * @author astaldo
+ *
+ */
 public interface UIInterface {
     /**
      * Liefert alle DownloadLinks zurück
