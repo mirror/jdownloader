@@ -65,6 +65,10 @@ public class RequestInfo {
     /**
      * @param connection the connection to set
      */
+    
+    public boolean containsHTML(String pattern){
+        return getHtmlCode().indexOf(pattern)>=0;
+    }
     public void setConnection(HttpURLConnection connection) {
         this.connection = connection;
     }

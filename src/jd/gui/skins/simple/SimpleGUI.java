@@ -558,9 +558,13 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener{
                 break;
             case JDAction.APP_SEARCH:
              
-                data = JOptionPane.showInputDialog(frame, "Suche nach:");
+               
+                SearchDialog s=new SearchDialog(this.getFrame());
+                
+                data=s.getText();
+                logger.info(data);
                 if (data != null) {
-                    fireUIEvent(new UIEvent(this, UIEvent.UI_LINKS_TO_PROCESS, "audio:::"+data));
+                    fireUIEvent(new UIEvent(this, UIEvent.UI_LINKS_TO_PROCESS, data));
                 }
                 break;
             case JDAction.APP_CONFIGURATION:

@@ -29,6 +29,8 @@ public abstract class PluginForSearch extends Plugin {
     public Vector<String> parseContent(String pattern) {
         String[] s=pattern.split("\\:\\:\\:");
         if(s.length<2)return  new Vector<String>();
+        
+        if(!hasCategory(s[0]))return new Vector<String>();
         this.searchPattern =s[1] ;
 
         PluginStep step = null;
@@ -52,8 +54,22 @@ public abstract class PluginForSearch extends Plugin {
         return new Vector<String>();
 
     }
-
-
+/**
+ * Liefert alle Möglichen kategorien des Plugins zurück
+ * @return
+ */
+    public abstract String[] getCategories();
+    /**
+     * Prüft ob das Plugin die angegebene Category liefern kann (filetyoe. z.B.Audio)
+     * @param cat
+     * @return
+     */
+    public boolean hasCategory(String cat){
+        for(int i=0; i<getCategories().length;i++){
+            if(getCategories()[i].equalsIgnoreCase(cat))return true;
+        }
+        return false;
+    }
     public abstract PluginStep doStep(PluginStep step, String parameter);
 
     public PluginStep doStep(PluginStep step, Object parameter) {

@@ -25,21 +25,19 @@ import jd.plugins.event.PluginEvent;
  * 
  */
 public class Esnips extends PluginForSearch {
-    static private final String host               = "esnips.com";
+    static private final String host              = "esnips.com";
 
-    private String              version            = "1.0.0.1";
+    private String              version           = "1.0.0.1";
+private static String[] CATEGORIES =new String[]{"Audio"};
+   
 
-    private Pattern             patternSupported   = Pattern.compile("audio:::*");
+    private static final String SEARCH_URL        = "http://www.esnips.com/_t_/%s/?tab=1&type=MUSIC_FILES&sort=RELEVANCY&q=%s&page=%s";
 
-    private static final String SEARCH_URL         = "http://www.esnips.com/_t_/%s/?tab=1&type=MUSIC_FILES&sort=RELEVANCY&q=%s&page=%s";
+    private static final String NUM_RESULTS       = "<div class=\"numResults\">°&nbsp;audio &amp; music file(s)";
 
-    private static final String NUM_RESULTS        = "<div class=\"numResults\">°&nbsp;audio &amp; music file(s)";
+    private static final String COMMAND_URL       = " <a class=\"CommandLink\" href='°'><strong>°</strong>";
 
-    private static final String COMMAND_URL        = " <a class=\"CommandLink\" href='°'><strong>°</strong>";
-
-
-
-    public static final String  PARAM_MAX_MATCHES  = "MAX_MATCHES";
+    public static final String  PARAM_MAX_MATCHES = "MAX_MATCHES";
 
     public Esnips() {
         super();
@@ -62,7 +60,9 @@ public class Esnips extends PluginForSearch {
 
     @Override
     public Pattern getSupportedLinks() {
-        return patternSupported;
+        String ret="";
+        for( int i=0; i<CATEGORIES.length;i++)ret+="|"+CATEGORIES[i];
+        return Pattern.compile("["+ret.substring(1)+"]:::*");
     }
 
     @Override
@@ -95,7 +95,15 @@ public class Esnips extends PluginForSearch {
         String searchPattern = (String) parameter;
         int maxMatches;
         if (this.getProperties().getProperty(PARAM_MAX_MATCHES) != null) {
-            maxMatches = (Integer) this.getProperties().getProperty(PARAM_MAX_MATCHES);
+//            logger.info(this.getProperties().getProperty(PARAM_MAX_MATCHES).getClass().toString());
+            try {
+                maxMatches = Integer.parseInt((String) this.getProperties().getProperty(PARAM_MAX_MATCHES));
+            }
+            catch (Exception e) {
+                this.getProperties().setProperty(PARAM_MAX_MATCHES, 50);
+                maxMatches = 50;
+            }
+
         }
         else {
             maxMatches = 50;
@@ -110,7 +118,7 @@ public class Esnips extends PluginForSearch {
                 try {
                     while (true) {
                         address = String.format(SEARCH_URL, new Object[] { JDUtilities.urlEncode(searchPattern), URLEncoder.encode(searchPattern, "UTF-8"), page + "" });
-                        setStatusText("Seite "+page);
+                        setStatusText("Seite " + page);
                         logger.info("load " + address);
                         URL url = new URL(address);
                         RequestInfo requestInfo = getRequest(url, null, null, false);
@@ -138,15 +146,15 @@ public class Esnips extends PluginForSearch {
                         String link;
 
                         for (int i = 0; i < matches.size(); i++) {
-//                            link = getLinkDetails(matches.get(i).get(0));
-                            if(matches.get(i).get(0)!=null){
-                            setStatusText(matches.get(i).get(1));
-                            decryptedLinks.add("http://" + host+matches.get(i).get(0));
+                            // link = getLinkDetails(matches.get(i).get(0));
+                            if (matches.get(i).get(0) != null) {
+                                setStatusText(matches.get(i).get(1));
+                                decryptedLinks.add("http://" + host + matches.get(i).get(0));
                             }
-//                            if (link != null) {
-//                                decryptedLinks.add(link);
-//
-//                            }
+                            // if (link != null) {
+                            // decryptedLinks.add(link);
+                            //
+                            // }
                             firePluginEvent(new PluginEvent(this, PluginEvent.PLUGIN_PROGRESS_INCREASE, null));
                             results--;
                         }
@@ -171,6 +179,11 @@ public class Esnips extends PluginForSearch {
         }
         return null;
 
+    }
+
+    @Override
+    public String[] getCategories() {
+        return CATEGORIES;
     }
 
 }

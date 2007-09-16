@@ -15,32 +15,28 @@ import jd.plugins.PluginForHost;
 import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
 
-
-
 public class Uploadedto extends PluginForHost {
-    static private final Pattern PAT_SUPPORTED      = Pattern.compile("http://uploaded.to/\\?id\\=[^\\s\"]+");
+    static private final Pattern PAT_SUPPORTED  = Pattern.compile("http://(?:www\\.)*uploaded.to/\\?id\\=[^\\s\"]+");
 
+    static private final String  HOST           = "uploaded.to";
 
+    static private final String  PLUGIN_NAME    = HOST;
 
-    static private final String  HOST               = "uploaded.to";
+    static private final String  PLUGIN_VERSION = "0";
 
-    static private final String  PLUGIN_NAME        = HOST;
+    static private final String  PLUGIN_ID      = PLUGIN_NAME + "-" + VERSION;
 
-    static private final String  PLUGIN_VERSION     = "0";
+    static private final String  CODER          = "coalado";
 
-    static private final String  PLUGIN_ID          = PLUGIN_NAME + "-" + VERSION;
+    // /Simplepattern
+    static private final String  DOWNLOAD_URL   = "<form name=\"download_form\" method=\"post\" action=\"°\">";
 
-    static private final String  CODER              = "coalado";
+    private static final String  FILE_INFO      = "Dateiname:°</td><td><b>°</b></td></tr>°<tr><td style=\"padding-left:4px;\">Dateityp:°</td><td>°</td></tr>°<tr><td style=\"padding-left:4px;\">Dateig°</td><td>°</td>";
 
-   ///Simplepattern
-    static private final String DOWNLOAD_URL ="<form name=\"download_form\" method=\"post\" action=\"°\">";
-
-
-
-    private String finalURL;
+    private String               finalURL;
 
     public Uploadedto() {
-       
+
         steps.add(new PluginStep(PluginStep.STEP_WAIT_TIME, null));
         steps.add(new PluginStep(PluginStep.STEP_DOWNLOAD, null));
 
@@ -81,11 +77,11 @@ public class Uploadedto extends PluginForHost {
         return PLUGIN_ID;
     }
 
-//    @Override
-//    public URLConnection getURLConnection() {
-//        // XXX: ???
-//        return null;
-//    }
+    // @Override
+    // public URLConnection getURLConnection() {
+    // // XXX: ???
+    // return null;
+    // }
 
     public PluginStep doStep(PluginStep step, DownloadLink parameter) {
         RequestInfo requestInfo;
@@ -93,33 +89,33 @@ public class Uploadedto extends PluginForHost {
             DownloadLink downloadLink = (DownloadLink) parameter;
 
             switch (step.getStep()) {
-                
-                case PluginStep.STEP_WAIT_TIME:
-                logger.info(downloadLink.getUrlDownloadDecrypted());
-                    requestInfo = getRequest(new URL(downloadLink.getUrlDownloadDecrypted()),"lang=de",null,true);
 
-                    String url=getSimpleMatch(requestInfo.getHtmlCode(),DOWNLOAD_URL,0);
+                case PluginStep.STEP_WAIT_TIME:
+                    logger.info(downloadLink.getUrlDownloadDecrypted());
+                    requestInfo = getRequest(new URL(downloadLink.getUrlDownloadDecrypted()), "lang=de", null, true);
+
+                    String url = getSimpleMatch(requestInfo.getHtmlCode(), DOWNLOAD_URL, 0);
                     logger.info(url);
-                    requestInfo = postRequest(new URL(url),"lang=de",null,null,null,false);
-                    if(requestInfo.getConnection().getHeaderField("Location")!=null&&requestInfo.getConnection().getHeaderField("Location").indexOf("error")>0){
+                    requestInfo = postRequest(new URL(url), "lang=de", null, null, null, false);
+                    if (requestInfo.getConnection().getHeaderField("Location") != null && requestInfo.getConnection().getHeaderField("Location").indexOf("error") > 0) {
                         step.setStatus(PluginStep.STATUS_ERROR);
                         downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN_RETRY);
                         step.setParameter(20000l);
                         return step;
                     }
-                    if(requestInfo.getConnection().getHeaderField("Location")!=null){
-                       
-                       this.finalURL="http://"+ requestInfo.getConnection().getRequestProperty("host")+ requestInfo.getConnection().getHeaderField("Location");
-                        
-                       return step;
+                    if (requestInfo.getConnection().getHeaderField("Location") != null) {
+
+                        this.finalURL = "http://" + requestInfo.getConnection().getRequestProperty("host") + requestInfo.getConnection().getHeaderField("Location");
+
+                        return step;
                     }
                     step.setStatus(PluginStep.STATUS_ERROR);
-                    downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN); 
+                    downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN);
                     return step;
                 case PluginStep.STEP_DOWNLOAD:
                     logger.info("dl " + finalURL);
-                    requestInfo=getRequestWithoutHtmlCode(new URL(finalURL),"lang=de",null,false);
-                    if(requestInfo.getConnection().getHeaderField("Location")!=null&&requestInfo.getConnection().getHeaderField("Location").indexOf("error")>0){
+                    requestInfo = getRequestWithoutHtmlCode(new URL(finalURL), "lang=de", null, false);
+                    if (requestInfo.getConnection().getHeaderField("Location") != null && requestInfo.getConnection().getHeaderField("Location").indexOf("error") > 0) {
                         step.setStatus(PluginStep.STATUS_ERROR);
                         downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN_RETRY);
                         step.setParameter(20000l);
@@ -127,19 +123,19 @@ public class Uploadedto extends PluginForHost {
                     }
                     int length = requestInfo.getConnection().getContentLength();
                     downloadLink.setDownloadMax(length);
-                    logger.info("Filename: "+getFileNameFormHeader( requestInfo.getConnection()));
-                    if(getFileNameFormHeader( requestInfo.getConnection())==null||getFileNameFormHeader( requestInfo.getConnection()).indexOf("?")>=0){
-                        
+                    logger.info("Filename: " + getFileNameFormHeader(requestInfo.getConnection()));
+                    if (getFileNameFormHeader(requestInfo.getConnection()) == null || getFileNameFormHeader(requestInfo.getConnection()).indexOf("?") >= 0) {
+
                         step.setStatus(PluginStep.STATUS_ERROR);
                         downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN_RETRY);
                         step.setParameter(20000l);
-                        return step; 
+                        return step;
                     }
-                    downloadLink.setName(getFileNameFormHeader( requestInfo.getConnection()));
+                    downloadLink.setName(getFileNameFormHeader(requestInfo.getConnection()));
                     download(downloadLink, (URLConnection) requestInfo.getConnection());
                     step.setStatus(PluginStep.STATUS_DONE);
                     downloadLink.setStatus(DownloadLink.STATUS_DONE);
-                 
+
                     return step;
             }
             return step;
@@ -149,7 +145,6 @@ public class Uploadedto extends PluginForHost {
             return null;
         }
     }
-
 
     /**
      * Liest Content von Connection und gibt diesen als String zurück TODO:
@@ -176,28 +171,54 @@ public class Uploadedto extends PluginForHost {
 
     @Override
     public void reset() {
-        this.finalURL=null;
+        this.finalURL = null;
 
     }
 
+    public String getDisplayedFilename(DownloadLink downloadLink) {
+        return downloadLink.getName() + " (" + JDUtilities.formatBytesToMB(downloadLink.getDownloadMax()) + ")";
+    }
+
     @Override
-    public boolean checkAvailability(DownloadLink downloadLink) {
+    public boolean getFileInformation(DownloadLink downloadLink) {
         // TODO Auto-generated method stub
         RequestInfo requestInfo;
         try {
             requestInfo = getRequestWithoutHtmlCode(new URL(downloadLink.getUrlDownloadDecrypted()), null, null, false);
-       
-     
-       if(requestInfo.getConnection().getHeaderField("Location")!=null&&requestInfo.getConnection().getHeaderField("Location").indexOf("error")>0){
-           return false;
-       }
-        return true;
+
+            if (requestInfo.getConnection().getHeaderField("Location") != null && requestInfo.getConnection().getHeaderField("Location").indexOf("error") > 0) {
+                return false;
+            }
+            else {
+                if(requestInfo.getConnection().getHeaderField("Location") != null){
+                    requestInfo   =getRequest(new URL("http://"+HOST+requestInfo.getConnection().getHeaderField("Location")),null,null,true);
+                }else{
+                requestInfo= readFromURL(requestInfo.getConnection());
+                }
+                
+                String fileName = JDUtilities.htmlDecode(getSimpleMatch(requestInfo.getHtmlCode(), FILE_INFO, 1));
+                String ext = getSimpleMatch(requestInfo.getHtmlCode(), FILE_INFO, 4);
+                String fileSize = getSimpleMatch(requestInfo.getHtmlCode(), FILE_INFO, 7);
+               
+                downloadLink.setName(fileName.trim() + "" + ext.trim());
+                if (fileSize != null) {
+                    try {
+                        int length = (int) (Double.parseDouble(fileSize.trim().split(" ")[0]) * 1024 * 1024);
+                        downloadLink.setDownloadMax(length);
+                    }
+                    catch (Exception e) {
+                    }
+                }
+
+            }
+            return true;
         }
-        catch (MalformedURLException e) {}
-        catch (IOException e) {        }
-       
+        catch (MalformedURLException e) {
+        }
+        catch (IOException e) {
+        }
+
         return false;
     }
-
 
 }

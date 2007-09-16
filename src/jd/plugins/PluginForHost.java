@@ -65,7 +65,11 @@ public abstract class PluginForHost extends Plugin{
         }
         return links;
     }
-    public abstract boolean checkAvailability (DownloadLink parameter);  
+    public abstract boolean getFileInformation (DownloadLink parameter);  
+    
+    public String getDisplayedFilename(DownloadLink parameter){
+        return parameter.getName();
+    }
     
    public abstract PluginStep doStep(PluginStep step,DownloadLink parameter);
     

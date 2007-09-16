@@ -241,7 +241,7 @@ public class StartDownloads extends ControlMulticaster {
                 //Schreibt die Info File
                 if (downloadLink.getFilePackage() != null) {
                     File file = new File(downloadLink.getFilePackage().getDownloadDirectory());
-                    file = new File(file, downloadLink.getFileName() + ".info");
+                    file = new File(file, downloadLink.getFileNameFrom() + ".info");
 
                     logger.info(file.getAbsolutePath());
                     String info = downloadLink.getFilePackage().getComment() + "\n" + "" + "\n" + downloadLink.getFilePackage().getPassword();

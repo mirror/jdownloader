@@ -36,6 +36,7 @@ import java.net.URLClassLoader;
 import java.net.URLConnection;
 import java.net.URLDecoder;
 import java.security.MessageDigest;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Locale;
@@ -73,7 +74,7 @@ public class JDUtilities {
     /**
      * Titel der Applikation
      */
-    public static final String              JD_VERSION        = "0.0.2";
+    public static final String              JD_VERSION        = "0.0.3 (16.09)";
 
     /**
      * Versionsstring der Applikation
@@ -564,6 +565,8 @@ public class JDUtilities {
             iterator.next().addPluginListener(listener);
         }
     }
+    
+    
     /**
      * Fügt einen PluginListener hinzu
      * 
@@ -738,6 +741,18 @@ public class JDUtilities {
      */
     public static Vector<PluginForSearch> getPluginsForSearch() {
         return pluginsForSearch; 
+    }
+    
+    public static Vector<String> getPluginsForSearchCategories() {
+        Vector<String> ret= new Vector<String>();
+        
+        for( int i=0; i<pluginsForSearch.size();i++){
+            for(int b=0; b<pluginsForSearch.get(i).getCategories().length;b++){
+                if(ret.indexOf(pluginsForSearch.get(i).getCategories()[b])<0)ret.add(pluginsForSearch.get(i).getCategories()[b]);
+            }
+        }
+       Collections.sort(ret);
+       return ret;
     }
     /**
      * Liefert alle Plugins zum Downloaden von einem Anbieter zurück
@@ -914,6 +929,7 @@ public class JDUtilities {
      */
     public static String htmlDecode(String str) {
         // http://rs218.rapidshare.com/files/&#0052;&#x0037;&#0052;&#x0034;&#0049;&#x0032;&#0057;&#x0031;/STE_S04E04.Borderland.German.dTV.XviD-2Br0th3rs.part1.rar
+       if(str==null)return null;
         String pattern = "\\&\\#x(.*?)\\;";
         for (Matcher r = Pattern.compile(pattern, Pattern.DOTALL).matcher(str); r.find();) {
             if (r.group(1).length() > 0) {
@@ -1200,6 +1216,15 @@ return false;
         command = command.replaceAll("\\%LASTFILE", controller.getLastFinishedFile());
         command = command.replaceAll("\\%CAPTCHAIMAGE", controller.getLastCaptchaImage());
         return command;
+    }
+/**
+ * Formatiert Byes in einen MB String [MM.MM MB]
+ * @param downloadMax
+ * @return
+ */
+    public static String formatBytesToMB(long downloadMax) {
+        
+        return Math.round(downloadMax/(1024*10.24))/100.0+" MB";
     }
 
 }

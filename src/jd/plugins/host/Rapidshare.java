@@ -703,7 +703,7 @@ public class Rapidshare extends PluginForHost {
     }
 
     @Override
-    public boolean checkAvailability(DownloadLink downloadLink) {
+    public boolean getFileInformation(DownloadLink downloadLink) {
         
             // Der Download wird bestätigt
             RequestInfo requestInfo;

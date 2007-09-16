@@ -271,7 +271,7 @@ public class Gulli extends PluginForHost {
     }
 
     @Override
-    public boolean checkAvailability(DownloadLink downloadLink) {
+    public boolean getFileInformation(DownloadLink downloadLink) {
         // TODO Auto-generated method stub
         RequestInfo requestInfo;
         try {

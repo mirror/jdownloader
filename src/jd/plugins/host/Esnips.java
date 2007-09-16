@@ -16,16 +16,15 @@ import jd.plugins.RequestInfo;
 
 public class Esnips extends PluginForHost {
 
-    static private final String host                     = "esnips.com";
+    static private final String host               = "esnips.com";
 
-    private String              version                  = "1.0.0.0";
+    private String              version            = "1.0.0.0";
 
-    private Pattern             patternSupported         = Pattern.compile("http://(?:www\\.)*esnips.com/doc/[^\\s\"]+/?");
+    private Pattern             patternSupported   = Pattern.compile("http://(?:www\\.)*esnips.com/doc/[^\\s\"]+/?");
 
     private static final String SWF_PLAYER_TO_FILE = "autoPlay=no&amp;theFile=°&amp;theName=°&amp;thePlayerURL";
 
     private static final String WMP_PLAYER_TO_FILE = "<param name=\"URL\" value=\"°\" ref=\"\">";
-  
 
     @Override
     public String getCoder() {
@@ -59,7 +58,7 @@ public class Esnips extends PluginForHost {
 
     @Override
     public String getPluginID() {
-        return host+version;
+        return host + version;
     }
 
     @Override
@@ -69,14 +68,14 @@ public class Esnips extends PluginForHost {
 
     public Esnips() {
         super();
-      
+
         steps.add(new PluginStep(PluginStep.STEP_DOWNLOAD, null));
     }
 
-//    @Override
-//    public URLConnection getURLConnection() {
-//        return null;
-//    }
+    // @Override
+    // public URLConnection getURLConnection() {
+    // return null;
+    // }
 
     @Override
     public PluginStep doStep(PluginStep step, DownloadLink parameter) {
@@ -87,11 +86,11 @@ public class Esnips extends PluginForHost {
             downloadLink = (DownloadLink) parameter;
 
             switch (step.getStep()) {
-                
+
                 case PluginStep.STEP_DOWNLOAD:
-                    URL url ;
-                    String fileUrl=null;
-                   
+                    URL url;
+                    String fileUrl = null;
+
                     try {
                         url = new URL(downloadLink.getUrlDownloadDecrypted());
 
@@ -104,7 +103,7 @@ public class Esnips extends PluginForHost {
                             fileUrl = "http://" + host + getSimpleMatch(requestInfo.getHtmlCode(), WMP_PLAYER_TO_FILE, 0);
                             fileName = getSimpleMatch(requestInfo.getHtmlCode(), WMP_PLAYER_TO_FILE, 1);
                         }
-                      
+
                     }
                     catch (Exception e) {
                         downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN);
@@ -112,7 +111,6 @@ public class Esnips extends PluginForHost {
                         e.printStackTrace();
                     }
 
-                    
                     requestInfo = getRequestWithoutHtmlCode(new URL(fileUrl), requestInfo.getCookie(), null, true);
 
                     int length = requestInfo.getConnection().getContentLength();
@@ -128,7 +126,7 @@ public class Esnips extends PluginForHost {
                         step.setStatus(PluginStep.STATUS_DONE);
                         downloadLink.setStatus(DownloadLink.STATUS_DONE);
                     }
-                return step;
+                    return step;
 
             }
         }
@@ -173,8 +171,6 @@ public class Esnips extends PluginForHost {
         return null;
     }
 
-    
-
     @Override
     public boolean doBotCheck(File file) {
         return false;
@@ -182,32 +178,44 @@ public class Esnips extends PluginForHost {
 
     @Override
     public void reset() {
-       
+
         requestInfo = null;
 
     }
-
+    public String getDisplayedFilename(DownloadLink downloadLink){
+        return downloadLink.getName()+" ("+JDUtilities.formatBytesToMB(downloadLink.getDownloadMax())+")";
+    }
     @Override
-    public boolean checkAvailability(DownloadLink downloadLink) {
+    public boolean getFileInformation(DownloadLink downloadLink) {
         // TODO Auto-generated method stub
         try {
-            requestInfo = getRequest(new URL(downloadLink.getUrlDownloadDecrypted()),null,null,true);
+            URL url = new URL(downloadLink.getUrlDownloadDecrypted());
 
-            if (!requestInfo.isOK()) {
-                return false;
+            requestInfo = getRequest(url, null, null, true);
+
+            String fileUrl = getSimpleMatch(requestInfo.getHtmlCode(), SWF_PLAYER_TO_FILE, 0);
+            String fileName = getSimpleMatch(requestInfo.getHtmlCode(), SWF_PLAYER_TO_FILE, 1);
+            if (fileUrl == null) {
+
+                fileUrl = "http://" + host + getSimpleMatch(requestInfo.getHtmlCode(), WMP_PLAYER_TO_FILE, 0);
+                fileName = getSimpleMatch(requestInfo.getHtmlCode(), WMP_PLAYER_TO_FILE, 1);
             }
-        }
-        catch (MalformedURLException e) {
-            return false;
-        }
-        catch (IOException e) {
+            requestInfo = getRequestWithoutHtmlCode(new URL(fileUrl), requestInfo.getCookie(), null, true);
 
+            int length = requestInfo.getConnection().getContentLength();
+            downloadLink.setDownloadMax(length);        
+
+            downloadLink.setName(getFileNameFormHeader(requestInfo.getConnection()));           
+             if(downloadLink.getName()==null ||downloadLink.getName().length()==0||length==0)return false;
+            
+            if (fileUrl != null) return true;
+            return false;
+
+        }
+        catch (Exception e) {
             return false;
         }
-        //
-        return true;
+
     }
-
-
 
 }

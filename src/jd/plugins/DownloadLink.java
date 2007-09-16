@@ -208,7 +208,7 @@ public class DownloadLink implements Serializable, Comparable {
      */
     private transient SpeedMeter speedMeter;
 
-    private transient Boolean available=null;
+    private transient Boolean    available         = null;
 
     /**
      * Erzeugt einen neuen DownloadLink
@@ -226,12 +226,12 @@ public class DownloadLink implements Serializable, Comparable {
         this.host = host;
         this.isEnabled = isEnabled;
         speedMeter = new SpeedMeter(1000);
-       
+
         this.urlDownload = JDCrypt.encrypt(urlDownload);
     }
 
     /**
-     * Liefert den Namen dieses Downloads zurück
+     * Liefert den Datei Namen dieses Downloads zurück
      * 
      * @return Name des Downloads
      */
@@ -272,33 +272,37 @@ public class DownloadLink implements Serializable, Comparable {
      * @return Die Datei zum Abspeichern
      */
     public String getFileOutput() {
-        if(getFilePackage()!=null &&getFilePackage().getDownloadDirectory()!=null && getFilePackage().getDownloadDirectory().length()>0){
-           return new File(new File(getFilePackage().getDownloadDirectory()), name).getAbsolutePath();
-        }else{
-            return  new File(new File(downloadPath), name).getAbsolutePath();
-      
+        if (getFilePackage() != null && getFilePackage().getDownloadDirectory() != null && getFilePackage().getDownloadDirectory().length() > 0) {
+            return new File(new File(getFilePackage().getDownloadDirectory()), name).getAbsolutePath();
         }
-       
+        else {
+            return new File(new File(downloadPath), name).getAbsolutePath();
+
+        }
+
     }
+
     /**
-     * Gibt zurück ob Dieser Link schon auf verfügbarkeit getestet wurde. 
+     * Gibt zurück ob Dieser Link schon auf verfügbarkeit getestet wurde.
+     * 
      * @return
      */
-    public boolean isAvailabilityChecked(){
-        return available!=null;
-        
+    public boolean isAvailabilityChecked() {
+        return available != null;
+
     }
-    
+
     /**
      * Führt einen verfügbarkeitscheck durch
+     * 
      * @return
      */
-    public boolean isAvailable(){
-       if(this.available!=null){
-           return available;
-       }
-       available=((PluginForHost)getPlugin()).checkAvailability(this);
-       return available;
+    public boolean isAvailable() {
+        if (this.available != null) {
+            return available;
+        }
+        available = ((PluginForHost) getPlugin()).getFileInformation(this);
+        return available;
     }
 
     /**
@@ -403,7 +407,6 @@ public class DownloadLink implements Serializable, Comparable {
         this.fileOutput = fileOutput;
     }
 
-   
     /**
      * Setzt die URL, von der heruntergeladen werden soll (Ist schon
      * verschlüsselt)
@@ -476,7 +479,7 @@ public class DownloadLink implements Serializable, Comparable {
      */
     public void setDownloadPath(String downloadPath) {
         this.downloadPath = downloadPath;
-     
+
     }
 
     /**
@@ -486,7 +489,7 @@ public class DownloadLink implements Serializable, Comparable {
      */
     public void setName(String name) {
         this.name = name;
-       
+
     }
 
     /**
@@ -536,11 +539,13 @@ public class DownloadLink implements Serializable, Comparable {
     }
 
     /**
-     * Gibt nur den Dateinamen aus der URL extrahiert zurück
+     * Gibt nur den Dateinamen aus der URL extrahiert zurück. Um aufd en
+     * dateinamen zuzugreifen sollte bis auf Ausnamen immer
+     * DownloadLink.getName() verwendet werden
      * 
      * @return
      */
-    public String getFileName() {
+    public String getFileNameFrom() {
         int index = Math.max(this.getUrlDownloadDecrypted().lastIndexOf("/"), this.getUrlDownloadDecrypted().lastIndexOf("\\"));
         return this.getUrlDownloadDecrypted().substring(index + 1);
     }
@@ -620,18 +625,14 @@ public class DownloadLink implements Serializable, Comparable {
     }
 
     public String getPassword() {
-        if(getFilePackage()==null)return null;
+        if (getFilePackage() == null) return null;
         return getFilePackage().getPassword();
     }
 
-   
-
     public String getComment() {
-        if(getFilePackage()==null)return null;
-        return  getFilePackage().getComment();
+        if (getFilePackage() == null) return null;
+        return getFilePackage().getComment();
     }
-
-  
 
     public FilePackage getFilePackage() {
         return filePackage;
@@ -644,15 +645,32 @@ public class DownloadLink implements Serializable, Comparable {
     public int compareTo(Object o) {
         if (o instanceof DownloadLink) {
 
-          if(((DownloadLink) o).getFileName().compareToIgnoreCase(getFileName())>0){
-              return -1;
-          }else if(((DownloadLink) o).getFileName().compareToIgnoreCase(getFileName())<0){
-              return 1;
-          }else{
-              return 0;
-          }
+            if (((DownloadLink) o).getFileNameFrom().compareToIgnoreCase(getFileNameFrom()) > 0) {
+                return -1;
+            }
+            else if (((DownloadLink) o).getFileNameFrom().compareToIgnoreCase(getFileNameFrom()) < 0) {
+                return 1;
+            }
+            else {
+                return 0;
+            }
         }
         return 0;
+    }
+
+    /**
+     * Diese methhode Frag das eigene Plugin welche Informationen über die File
+     * bereit gestellt werden. Der String eignet Sich zur darstellung in der UI
+     * 
+     * @return STring
+     */
+    public String getDisplayedFilename() {
+        if (getPlugin() instanceof PluginForHost) {
+            return ((PluginForHost) getPlugin()).getDisplayedFilename(this);
+        }
+        else {
+            return getName();
+        }
     }
 
 }

@@ -39,7 +39,7 @@ public class RsXXXBlog extends PluginForDecrypt {
 
     @Override
     public String getCoder() {
-        return "Astaldo";
+        return "coalado";
     }
 
     @Override

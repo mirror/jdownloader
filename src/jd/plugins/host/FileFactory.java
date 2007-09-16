@@ -41,6 +41,8 @@ public class FileFactory extends PluginForHost {
     // TODO CaptchaWrong
     private Pattern             patternErrorCaptchaWrong = Pattern.compile("(Sorry, the verification code you entered was incorrect)", Pattern.CASE_INSENSITIVE);
 
+    private static final String DOWNLOAD_INFO            = "<h1 style=\"width:370px;\">°</h1>°<p>°Size:°MB<br />°Description: ";
+    
     private String              captchaAddress;
 
     private String              postTarget;
@@ -96,10 +98,10 @@ public class FileFactory extends PluginForHost {
         steps.add(new PluginStep(PluginStep.STEP_DOWNLOAD, null));
     }
 
-//    @Override
-//    public URLConnection getURLConnection() {
-//        return null;
-//    }
+    // @Override
+    // public URLConnection getURLConnection() {
+    // return null;
+    // }
 
     @Override
     public PluginStep doStep(PluginStep step, DownloadLink parameter) {
@@ -111,7 +113,7 @@ public class FileFactory extends PluginForHost {
 
             switch (step.getStep()) {
                 case PluginStep.STEP_WAIT_TIME:
-                    requestInfo = getRequest(new URL(downloadLink.getUrlDownloadDecrypted()),null,null,true);
+                    requestInfo = getRequest(new URL(downloadLink.getUrlDownloadDecrypted()), null, null, true);
                     String script = getBetween(requestInfo.getHtmlCode(), "var link", "document");
                     if (requestInfo.getHtmlCode().indexOf("this file is no longer available") >= 0) {
                         step.setStatus(PluginStep.STATUS_ERROR);
@@ -124,12 +126,12 @@ public class FileFactory extends PluginForHost {
                     // würde ich die linkzerstückelung gelegentlich ändern. Also
                     // mach ich das ma lieber gleich für beliebige stücke
                     for (int i = 0; i < matches.size(); i++) {
-                        if(url==null)url="http://" + host;
+                        if (url == null) url = "http://" + host;
                         url += matches.elementAt(i).elementAt(0);
                     }
 
                     String newURL = url;
-logger.info(url);
+                    logger.info(url);
                     if (newURL != null) {
                         newURL = newURL.replaceAll("' \\+ '", "");
                         requestInfo = getRequest((new URL(newURL)), null, downloadLink.getName(), true);
@@ -149,7 +151,6 @@ logger.info(url);
                     logger.info(captchaAddress + " : " + postTarget);
                     if (captchaAddress == null || postTarget == null) {
 
-                       
                     }
                     step.setStatus(PluginStep.STATUS_DONE);
                     return step;
@@ -237,15 +238,33 @@ logger.info(url);
         requestInfo = null;
 
     }
-
+    public String getDisplayedFilename(DownloadLink downloadLink){
+        return downloadLink.getName()+" ("+JDUtilities.formatBytesToMB(downloadLink.getDownloadMax())+")";
+    }
     @Override
-    public boolean checkAvailability(DownloadLink downloadLink) {
+    public boolean getFileInformation(DownloadLink downloadLink) {
         // TODO Auto-generated method stub
         try {
-            requestInfo = getRequest(new URL(downloadLink.getUrlDownloadDecrypted()),null,null,true);
+            
+            requestInfo = getRequest(new URL(downloadLink.getUrlDownloadDecrypted()), null, null, true);
 
             if (requestInfo.getHtmlCode().indexOf("this file is no longer available") >= 0) {
                 return false;
+            }
+            else {
+                String fileName = JDUtilities.htmlDecode(getSimpleMatch(requestInfo.getHtmlCode(), DOWNLOAD_INFO, 0));
+                String fileSize = getSimpleMatch(requestInfo.getHtmlCode(), DOWNLOAD_INFO, 3);
+                logger.info(requestInfo.getHtmlCode());
+                logger.info(getAllSimpleMatches(requestInfo.getHtmlCode(), DOWNLOAD_INFO).toString());
+                downloadLink.setName(fileName);
+                if (fileSize != null) {
+                    try {
+                        int length = (int) (Double.parseDouble(fileSize.trim()) * 1024 * 1024);
+                        downloadLink.setDownloadMax(length);
+                    }
+                    catch (Exception e) {
+                    }
+                }
             }
         }
         catch (MalformedURLException e) {
@@ -258,7 +277,5 @@ logger.info(url);
         //
         return true;
     }
-
-
 
 }

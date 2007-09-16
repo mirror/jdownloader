@@ -69,7 +69,11 @@ public abstract class Plugin {
      * Puffer für Lesevorgänge
      */
     public final int           READ_BUFFER = 128 * 1024;
-
+    
+    /**
+     * Der Defualt Accept-language-header. Achtung nicht Ändern. Wird dieser Header geändert müssen die Regexes der PLugins angepasst werden
+     */
+    public static final String ACCEPT_LANGUAGE="de, en-gb;q=0.9, en;q=0.8";
     /**
      * Name des Loggers
      */
@@ -643,6 +647,10 @@ protected  RequestInfo requestInfo;
         // hier koennte man mit einer kleinen Datenbank den User-Agent rotieren
         // lassen
         // so ist das Programm nicht so auffallig
+        
+    
+        httpConnection.setRequestProperty("Accept-Language", ACCEPT_LANGUAGE);
+        
         httpConnection.setRequestProperty("User-Agent", "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1; SV1; .NET CLR 1.1.4322; .NET CLR 2.0.50727)");
         RequestInfo requestInfo = readFromURL(httpConnection);
         requestInfo.setConnection(httpConnection);
@@ -665,6 +673,7 @@ protected  RequestInfo requestInfo;
         // hier koennte man mit einer kleinen Datenbank den User-Agent rotieren
         // lassen
         // so ist das Programm nicht so auffallig
+        httpConnection.setRequestProperty("Accept-Language", ACCEPT_LANGUAGE);
         httpConnection.setRequestProperty("User-Agent", "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1; SV1; .NET CLR 1.1.4322; .NET CLR 2.0.50727)");
 
         String location = httpConnection.getHeaderField("Location");
@@ -715,6 +724,10 @@ protected  RequestInfo requestInfo;
         else
             httpConnection.setRequestProperty("Referer", "http://" + link.getHost());
         if (cookie != null) httpConnection.setRequestProperty("Cookie", cookie);
+        // TODO das gleiche wie bei getRequest
+        httpConnection.setRequestProperty("Accept-Language", ACCEPT_LANGUAGE);
+        httpConnection.setRequestProperty("User-Agent", "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1; SV1; .NET CLR 1.1.4322; .NET CLR 2.0.50727)");
+
         if (requestProperties != null) {
             Set<String> keys = requestProperties.keySet();
             Iterator<String> iterator = keys.iterator();
@@ -724,9 +737,7 @@ protected  RequestInfo requestInfo;
                 httpConnection.setRequestProperty(key, requestProperties.get(key));
             }
         }
-        // TODO das gleiche wie bei getRequest
-        httpConnection.setRequestProperty("User-Agent", "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1; SV1; .NET CLR 1.1.4322; .NET CLR 2.0.50727)");
-
+      
         httpConnection.setDoOutput(true);
         OutputStreamWriter wr = new OutputStreamWriter(httpConnection.getOutputStream());
         if (parameter != null) wr.write(parameter);
@@ -760,6 +771,7 @@ protected  RequestInfo requestInfo;
             httpConnection.setRequestProperty("Referer", "http://" + link.getHost());
         if (cookie != null) httpConnection.setRequestProperty("Cookie", cookie);
         // TODO das gleiche wie bei getRequest
+        httpConnection.setRequestProperty("Accept-Language", ACCEPT_LANGUAGE);
         httpConnection.setRequestProperty("User-Agent", "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1; SV1; .NET CLR 1.1.4322; .NET CLR 2.0.50727)");
         if (parameter != null) {
             httpConnection.setDoOutput(true);
@@ -835,6 +847,7 @@ protected  RequestInfo requestInfo;
      */
     public boolean download(DownloadLink downloadLink, URLConnection urlConnection) {
         File fileOutput = new File(downloadLink.getFileOutput());
+        if(fileOutput==null ||fileOutput.getParentFile()==null)return false;
         if (!fileOutput.getParentFile().exists()) {
             fileOutput.getParentFile().mkdirs();
         }
