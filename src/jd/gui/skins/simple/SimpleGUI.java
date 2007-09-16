@@ -42,7 +42,6 @@ import jd.controlling.interaction.ExternReconnect;
 import jd.controlling.interaction.HTTPReconnect;
 import jd.controlling.interaction.Interaction;
 import jd.event.ControlEvent;
-import jd.event.ControlListener;
 import jd.event.UIEvent;
 import jd.event.UIListener;
 import jd.gui.UIInterface;
@@ -51,6 +50,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
+import jd.plugins.PluginForSearch;
 import jd.plugins.event.PluginEvent;
 
 import com.sun.java.swing.plaf.windows.WindowsLookAndFeel;
@@ -146,6 +146,8 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener{
     private JCheckBox reconnectBox;
 
     private LinkGrabber linkGrabber;
+
+    private JDAction actionSearch;
    
 
     /**
@@ -247,7 +249,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener{
         actionConfig = new JDAction(this, "configuration", "action.configuration", JDAction.APP_CONFIGURATION);
         actionReconnect = new JDAction(this, "reconnect", "action.reconnect", JDAction.APP_RECONNECT);
         actionUpdate = new JDAction(this, "update", "action.update", JDAction.APP_UPDATE);
-
+        actionSearch = new JDAction(this, "search", "action.search", JDAction.APP_SEARCH);
     }
 
     // Funktion wird jede Sekunde aufgerufen
@@ -401,6 +403,12 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener{
         btnDnD.setFocusPainted(false);
         btnDnD.setBorderPainted(false);
         btnDnD.setText(null);
+        
+        
+        JButton btnSearch = new JButton(this.actionSearch);
+        btnSearch.setFocusPainted(false);
+        btnSearch.setBorderPainted(false);
+        btnSearch.setText(null);
 
         toolBar.setFloatable(false);
         toolBar.add(btnLoad);
@@ -409,6 +417,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener{
         toolBar.add(btnStartStop);
         toolBar.add(btnAdd);
         toolBar.add(btnDelete);
+        toolBar.add(btnSearch);
         toolBar.addSeparator();
         toolBar.add(btnUpdate);
         toolBar.addSeparator();
@@ -547,6 +556,13 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener{
                     fireUIEvent(new UIEvent(this, UIEvent.UI_LINKS_TO_PROCESS, data));
                 }
                 break;
+            case JDAction.APP_SEARCH:
+             
+                data = JOptionPane.showInputDialog(frame, "Suche nach:");
+                if (data != null) {
+                    fireUIEvent(new UIEvent(this, UIEvent.UI_LINKS_TO_PROCESS, "audio:::"+data));
+                }
+                break;
             case JDAction.APP_CONFIGURATION:
                 boolean configChanged = ConfigurationDialog.showConfig(frame, this);
 
@@ -570,12 +586,18 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener{
 
             return;
         }
+        
+        if (event.getSource() instanceof PluginForSearch && event.getEventID() == PluginEvent.PLUGIN_DATA_CHANGED) {
+            this.decryptPluginDataChanged = event;
+
+            return;
+        }
         if (event.getSource() instanceof PluginForHost) {
 
             tabDownloadTable.pluginEvent(event);
            return;
         }
-        if (event.getSource() instanceof PluginForDecrypt) {
+        if (event.getSource() instanceof PluginForDecrypt ||event.getSource() instanceof PluginForSearch ) {
             logger.info("GOT EVENT");
            
             tabPluginActivity.pluginEvent(event);

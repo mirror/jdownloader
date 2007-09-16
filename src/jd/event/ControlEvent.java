@@ -70,6 +70,8 @@ public class ControlEvent extends AWTEvent{
      * Gibt an dass ein neuer downlaod begonnen hat. der link wir dals parameter erwartet
      */
     public static final int CONTROL_SINGLE_DOWNLOAD_STARTS = 14;
+    public static final int CONTROL_PLUGIN_SEARCH_ACTIVE = 15;
+    public static final int CONTROL_PLUGIN_SEARCH_INACTIVE = 16;
 
     /**
      * Die ID des Ereignisses

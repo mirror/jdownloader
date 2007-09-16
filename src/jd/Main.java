@@ -2,9 +2,6 @@ package jd;
 
 import java.awt.Toolkit;
 import java.io.File;
-import java.net.URISyntaxException;
-import java.net.URL;
-import java.net.URLClassLoader;
 import java.util.Iterator;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -16,6 +13,7 @@ import jd.gui.skins.simple.SimpleGUI;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
+import jd.plugins.PluginForSearch;
 
 /**
  * Start der Applikation
@@ -97,7 +95,9 @@ public class Main {
         JDController controller = new JDController();
         controller.setUiInterface(uiInterface);
         controller.initDownloadLinks();
-
+//       JDUtilities.registerListenerPluginsForDecrypt(controller);
+//       JDUtilities.registerListenerPluginsForHost(controller);
+//       JDUtilities.registerListenerPluginsForSearch(controller);
         Iterator<PluginForHost> iteratorHost = JDUtilities.getPluginsForHost().iterator();
         while (iteratorHost.hasNext()) {
             iteratorHost.next().addPluginListener(controller);
@@ -105,6 +105,10 @@ public class Main {
         Iterator<PluginForDecrypt> iteratorDecrypt = JDUtilities.getPluginsForDecrypt().iterator();
         while (iteratorDecrypt.hasNext()) {
             iteratorDecrypt.next().addPluginListener(controller);
+        }
+        Iterator<PluginForSearch> iteratorSearch = JDUtilities.getPluginsForSearch().iterator();
+        while (iteratorSearch.hasNext()) {
+            iteratorSearch.next().addPluginListener(controller);
         }
 
         Interaction.handleInteraction(Interaction.INTERACTION_APPSTART, false);
@@ -135,5 +139,6 @@ public class Main {
         JDUtilities.addImage("stop", toolkit.getImage(cl.getResource("img/stop.png")));
         JDUtilities.addImage("up", toolkit.getImage(cl.getResource("img/up.png")));
         JDUtilities.addImage("update", toolkit.getImage(cl.getResource("img/update.png")));
+        JDUtilities.addImage("search", toolkit.getImage(cl.getResource("img/search.png")));
     }
 }

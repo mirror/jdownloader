@@ -53,6 +53,8 @@ public class PluginStep {
      * Warten. Diese Wartezeit muss sein. Reconnecten bringt nichts und wird auch nicht ausgeführt
      */
     public final static int STEP_PENDING      = 6;
+
+    public static final int STEP_SEARCH = 7;
     /**
      * Status dieses Schrittes
      */

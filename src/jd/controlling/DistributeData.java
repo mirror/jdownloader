@@ -11,6 +11,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
+import jd.plugins.PluginForSearch;
 
 /**
  * Diese Klasse läuft in einem Thread und verteilt den Inhalt der Zwischenablage an (unter Umständen auch mehrere) Plugins
@@ -35,6 +36,7 @@ public class DistributeData extends ControlMulticaster{
      * Plugins zum Entschlüsseln
      */
     private Vector<PluginForDecrypt> pluginsForDecrypt;
+    private Vector<PluginForSearch> pluginsForSearch;
     /**
      * Erstellt einen neuen Thread mit dem Text, der verteilt werden soll.
      * Die übergebenen Daten werden durch einen URLDecoder geschickt.
@@ -46,6 +48,7 @@ public class DistributeData extends ControlMulticaster{
         this.data              = data;
         this.pluginsForHost    = JDUtilities.getPluginsForHost();
         this.pluginsForDecrypt = JDUtilities.getPluginsForDecrypt();
+        this.pluginsForSearch = JDUtilities.getPluginsForSearch();
         try {
             this.data = URLDecoder.decode(this.data,"US-ASCII");
         }
@@ -57,9 +60,24 @@ public class DistributeData extends ControlMulticaster{
         Vector<DownloadLink> links    = new Vector<DownloadLink>();
         Vector<String> cryptedLinks   = new Vector<String>();
         Vector<String> decryptedLinks = new Vector<String>();
+   
         PluginForDecrypt pDecrypt;
         PluginForHost    pHost;
-
+        PluginForSearch    pSearch;
+//Zuerst wird data durch die Such PLugins geschickt.
+        
+        for(int i=0; i<pluginsForSearch.size();i++){
+            pSearch = pluginsForSearch.get(i);
+            
+            if(pSearch.canHandle(data)){
+                fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_PLUGIN_SEARCH_ACTIVE, pSearch));
+                decryptedLinks.addAll(pSearch.findLinks(data));
+                data = pSearch.cutMatches(data);
+                fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_PLUGIN_SEARCH_INACTIVE, pSearch));
+            }
+        }
+        
+        
         // Zuerst wird überprüft, ob ein Decrypt-Plugin einen Teil aus der
         // Zwischenablage entschlüsseln kann. Ist das der Fall, wird die entsprechende Stelle
         // verarbeitet und gelöscht, damit sie keinesfalls nochmal verarbeitet wird.

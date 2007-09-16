@@ -85,13 +85,6 @@ public abstract class PluginForDecrypt extends Plugin {
         }
     }
 
-    public String getStatusText() {
 
-        return this.statusText;
-    }
-
-    public void setStatusText(String value) {
-        statusText = value;
-    }
 
 }

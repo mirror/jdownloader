@@ -12,6 +12,8 @@ import java.util.Vector;
 public abstract class PluginForHost extends Plugin{
 //    public abstract URLConnection        getURLConnection();
     
+    private String data;
+
     /**
      * Stellt das Plugin in den Ausgangszustand zurück (variablen intialisieren etc)
      */
@@ -46,6 +48,7 @@ public abstract class PluginForHost extends Plugin{
      * @return Ein Vector mit den gefundenen Downloadlinks
      */
     public Vector<DownloadLink> getDownloadLinks(String data){
+        this.data=data;
         Vector<DownloadLink> links=null;
         Vector<String> hits = getMatches(data, getSupportedLinks());
         if(hits != null && hits.size()>0){
@@ -68,5 +71,11 @@ public abstract class PluginForHost extends Plugin{
     
     public PluginStep doStep(PluginStep step,Object parameter){
         return doStep(step, (DownloadLink) parameter);
+    }
+    
+    @Override
+    public String getLinkName() {
+        
+        return data;
     }
 }

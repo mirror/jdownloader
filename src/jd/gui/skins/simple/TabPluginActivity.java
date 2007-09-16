@@ -15,7 +15,8 @@ import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableColumn;
 
 import jd.JDUtilities;
-import jd.plugins.PluginForDecrypt;
+import jd.plugins.Plugin;
+
 import jd.plugins.event.PluginEvent;
 import jd.plugins.event.PluginListener;
 
@@ -86,7 +87,7 @@ public class TabPluginActivity extends JPanel implements PluginListener {
         }
         // Falls nicht, muß ein beschreibendes Objekt neu angelegt werden
         if (pluginProgress == null) {
-            pluginProgress = new PluginProgress((PluginForDecrypt) event.getSource());
+            pluginProgress = new PluginProgress((Plugin) event.getSource());
             pluginProgresses.add(pluginProgress);
         }
         this.setVisible(true);
@@ -217,7 +218,7 @@ public class TabPluginActivity extends JPanel implements PluginListener {
         /**
          * Das Plugin, für das die Informationen gelten
          */
-        private PluginForDecrypt plugin;
+        private Plugin plugin;
 
         /**
          * Eine Fortschrittsanzeige
@@ -229,11 +230,11 @@ public class TabPluginActivity extends JPanel implements PluginListener {
          */
         private int              value;
 
-        public PluginProgress(PluginForDecrypt plugin) {
+        public PluginProgress(Plugin plugin) {
             this(plugin, 0, 0);
         }
 
-        public PluginProgress(PluginForDecrypt plugin, int value, int maximum) {
+        public PluginProgress(Plugin plugin, int value, int maximum) {
             this.plugin = plugin;
             this.progressBar = new JProgressBar();
             this.progressBar.setMaximum(maximum);

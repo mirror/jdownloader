@@ -41,6 +41,8 @@ public class JDAction extends AbstractAction{
     public static final int APP_UPDATE               = 18;
     public static final int ITEMS_DND                =  19;
 
+    public static final int APP_SEARCH = 20;
+
     private ActionListener actionListener;
     private int actionID;
     private KeyStroke accelerator;

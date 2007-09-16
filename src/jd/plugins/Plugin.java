@@ -14,6 +14,7 @@ import java.math.BigInteger;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLConnection;
+import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.nio.ByteBuffer;
 import java.nio.channels.Channels;
@@ -28,7 +29,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.NoSuchElementException;
-import java.util.Scanner;
 import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.Vector;
@@ -213,6 +213,8 @@ protected  RequestInfo requestInfo;
      * Properties zum abspeichern der einstellungen
      */
     private Property              properties;
+
+    private String statusText;
 
     /**
      * Ein Logger, um Meldungen darzustellen
@@ -414,7 +416,7 @@ protected  RequestInfo requestInfo;
         return false;
     }
 
-    /**
+    /** 
      * Findet ein einzelnes Vorkommen und liefert den vollständigen Treffer oder
      * eine Untergruppe zurück
      * 
@@ -963,6 +965,10 @@ protected  RequestInfo requestInfo;
                int index=Math.max(urlConnection.getURL().getFile().lastIndexOf("/"),urlConnection.getURL().getFile().lastIndexOf("\\"));
                return urlConnection.getURL().getFile().substring(index+1);
            }
+           try {
+            ret=URLDecoder.decode(ret,"UTF-8");
+        }
+        catch (UnsupportedEncodingException e) {};
 return ret;
        }
     /**
@@ -1239,6 +1245,21 @@ public static String getSimpleMatch(String source, String pattern, int id){
 
     public void setProperties(Property properties) {
         this.properties = properties;
+    }
+/**
+ * 
+ * @return gibt den namen des Links an der gerade verarbeitet wird
+ */
+    public abstract String getLinkName() ;
+    
+    
+    public String getStatusText() {
+
+        return this.statusText;
+    }
+
+    public void setStatusText(String value) {
+        statusText = value;
     }
 
 }

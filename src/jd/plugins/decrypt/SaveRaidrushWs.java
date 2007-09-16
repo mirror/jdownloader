@@ -21,7 +21,7 @@ public class SaveRaidrushWs extends PluginForDecrypt {
     public SaveRaidrushWs() {
         super();
         steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
-        currentStep = steps.firstElement();
+     
     }
 	
     @Override public String getCoder() { return "Botzi"; }

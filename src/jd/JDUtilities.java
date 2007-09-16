@@ -55,6 +55,7 @@ import jd.controlling.JDController;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
+import jd.plugins.PluginForSearch;
 import jd.plugins.event.PluginListener;
 import jd.update.WebUpdater;
 import sun.misc.Service;
@@ -136,6 +137,10 @@ public class JDUtilities {
      * Hier werden alle vorhandenen Plugins zum Dekodieren von Links gespeichert
      */
     private static Vector<PluginForDecrypt> pluginsForDecrypt = new Vector<PluginForDecrypt>();
+    /**
+     * Hier werden alle vorhandenen Plugins zum Suchen von Links gespeichert
+     */
+    private static Vector<PluginForSearch> pluginsForSearch = new Vector<PluginForSearch>();
 
     /**
      * Hier werden alle Plugins für die Anbieter gespeichert
@@ -525,6 +530,15 @@ public class JDUtilities {
             pluginsForHost.add(p);
             logger.info("Host-Plugin    : " + p.getPluginName());
         }
+        
+        // Danach die Plugins der verschiedenen Suchengines
+        iterator = Service.providers(PluginForSearch.class);
+        while (iterator.hasNext()) {
+//            logger.info(iterator.next().toString());
+            PluginForSearch p = (PluginForSearch) iterator.next();
+           pluginsForSearch.add(p);
+            logger.info("Search-Plugin    : " + p.getPluginName());
+        }
     }
 
     /**
@@ -532,7 +546,7 @@ public class JDUtilities {
      * 
      * @param listener
      */
-    public void registerListenerPluginsForDecrypt(PluginListener listener) {
+    public static void registerListenerPluginsForDecrypt(PluginListener listener) {
         Iterator<PluginForDecrypt> iterator = pluginsForDecrypt.iterator();
         while (iterator.hasNext()) {
             iterator.next().addPluginListener(listener);
@@ -544,13 +558,23 @@ public class JDUtilities {
      * 
      * @param listener
      */
-    public void registerListenerPluginsForHost(PluginListener listener) {
+    public static void registerListenerPluginsForHost(PluginListener listener) {
         Iterator<PluginForHost> iterator = pluginsForHost.iterator();
         while (iterator.hasNext()) {
             iterator.next().addPluginListener(listener);
         }
     }
-
+    /**
+     * Fügt einen PluginListener hinzu
+     * 
+     * @param listener
+     */
+    public static void registerListenerPluginsForSearch(PluginListener listener) {
+        Iterator<PluginForSearch> iterator = pluginsForSearch.iterator();
+        while (iterator.hasNext()) {
+            iterator.next().addPluginListener(listener);
+        }
+    }
 
     /**
      * Lädt ein Objekt aus einer Datei
@@ -707,6 +731,14 @@ public class JDUtilities {
         return pluginsForDecrypt;
     }
 
+    /**
+     * Liefert alle geladenen Plugins zum Suchen zurück
+     * 
+     * @return Plugins zum Suchen
+     */
+    public static Vector<PluginForSearch> getPluginsForSearch() {
+        return pluginsForSearch; 
+    }
     /**
      * Liefert alle Plugins zum Downloaden von einem Anbieter zurück
      * 
