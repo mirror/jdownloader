@@ -410,6 +410,7 @@ protected  RequestInfo requestInfo;
      * @return wahr, falls ein Treffer gefunden wurde.
      */
     public synchronized boolean canHandle(String data) {
+        if(data==null)return false;
         Pattern pattern = getSupportedLinks();
         if (pattern != null) {
             Matcher matcher = pattern.matcher(data);
