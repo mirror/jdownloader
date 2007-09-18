@@ -1296,7 +1296,6 @@ public static String getSimpleMatch(String source, String pattern, int id){
             m = pattern[i].matcher(data);
             if (m.find()) {
                 basename = m.group(1);
-                host = basename.substring(0, basename.length() - 1);
             }
         }
         if (basename == null) {
@@ -1304,14 +1303,13 @@ public static String getSimpleMatch(String source, String pattern, int id){
             int dot = url.lastIndexOf('/');
             if (dot != -1)
                 basename = url.substring(0, dot + 1);
-            url = url.replace("http://", "");
-            dot = url.indexOf('/');
-            if (dot != -1)
-                host = "http://" + url.substring(0, dot);
-            url = "http://" + url;
-
         }
-
+        url = url.replace("http://", "");
+        int dot = url.indexOf('/');
+        if (dot != -1)
+            host = "http://" + url.substring(0, dot);
+        url = "http://" + url;
+        
         for (int i = 2; i < 4; i++) {
             m = pattern[i].matcher(data);
             while (m.find()) {
