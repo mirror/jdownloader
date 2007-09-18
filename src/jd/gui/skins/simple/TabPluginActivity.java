@@ -103,6 +103,7 @@ public class TabPluginActivity extends JPanel implements PluginListener {
                 pluginProgress.increaseValue();
                 break;
             case PluginEvent.PLUGIN_PROGRESS_FINISH:
+                pluginProgress.setMaximum(-1);
                 boolean active = false;
                 for (int i = pluginProgresses.size() - 1; i >= 0; i--) {
                     if (pluginProgresses.get(i).progressBar.getPercentComplete() < 1.0) {
@@ -248,6 +249,7 @@ public class TabPluginActivity extends JPanel implements PluginListener {
          * @param maximum Maximum-Wert
          */
         public void setMaximum(int maximum) {
+            if(maximum<0)maximum=progressBar.getMaximum();
             this.progressBar.setMaximum(maximum);
         }
 

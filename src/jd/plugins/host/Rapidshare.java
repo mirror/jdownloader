@@ -212,7 +212,7 @@ public class Rapidshare extends PluginForHost {
         config.addEntry(cfg = new PluginConfigEntry(PluginConfig.TYPE_SEPERATOR));
         config.addEntry(cfg = new PluginConfigEntry(PluginConfig.TYPE_LABEL, "Server Auswahl"));
 
-        config.addEntry(cfg = new PluginConfigEntry(PluginConfig.TYPE_RADIOFIELD, getProperties(), "SELECTED_SERVER", new String[] { "Cognet", "Cognet #2", "GlobalCrossing", "GlobalCrossing #2", "TeliaSonera", "TeliaSonera #2", "Teleglobe", "Level (3)", "Level (3) #2", "Level (3) #3", "Level (3) #4", "zufällig", "wenigste Auslastung" }, "Serverauswahl"));
+        config.addEntry(cfg = new PluginConfigEntry(PluginConfig.TYPE_RADIOFIELD, getProperties(), "SELECTED_SERVER", new String[] { "Cognet", "Cognet #2", "GlobalCrossing", "GlobalCrossing #2", "TeliaSonera", "TeliaSonera #2", "Teleglobe", "Level (3)", "Level (3) #2", "Level (3) #3", "Level (3) #4", "zufällig" }, "Serverauswahl"));
         cfg.setDefaultValue("Level (3)");
         config.addEntry(cfg = new PluginConfigEntry(PluginConfig.TYPE_CHECKBOX, getProperties(), "USE_TELEKOMSERVER", "Telekom Server verwenden falls verfügbar"));
         cfg.setDefaultValue(false);

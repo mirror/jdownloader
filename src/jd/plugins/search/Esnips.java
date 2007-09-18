@@ -158,7 +158,7 @@ private static String[] CATEGORIES =new String[]{"Audio"};
                             firePluginEvent(new PluginEvent(this, PluginEvent.PLUGIN_PROGRESS_INCREASE, null));
                             results--;
                         }
-                        if (results <= 0) break;
+                        if (results <= 0|| matches.size()<=0) break;
                         page++;
                     }
                     // decryptedLinks.add(newURL);

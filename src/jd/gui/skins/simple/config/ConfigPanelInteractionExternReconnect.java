@@ -75,12 +75,17 @@ public class ConfigPanelInteractionExternReconnect extends ConfigPanel implement
         ce = new ConfigEntry(PluginConfig.TYPE_TEXTFIELD, configuration, ExternReconnect.PROPERTY_IP_RETRIES, "Anzahl der Reconnectversuche bis zum Abbruch");
         ce.setDefaultText(0);
         addConfigEntry(ce);
-
+        
+        ce = new ConfigEntry(PluginConfig.TYPE_CHECKBOX, configuration, ExternReconnect.PROPERTY_IP_WAIT_FOR_RETURN, "Warten bis der Befehl beendet wurde");
+        ce.setDefaultText(true);
+        addConfigEntry(ce);
+        
+        
         ce = new ConfigEntry(PluginConfig.TYPE_TEXTFIELD, configuration, ExternReconnect.PROPERTY_IP_WAITCHECK, "Wartezeit bis zum IPCheck");
         ce.setDefaultText(0);
         addConfigEntry(ce);
 
-        ce = new ConfigEntry(PluginConfig.TYPE_TEXTFIELD, configuration, ExternReconnect.PROPERTY_RECONNECT_COMMAND, "Reconnectbefehl (Pfadangaben absolut)");
+        ce = new ConfigEntry(PluginConfig.TYPE_BROWSEFILE, configuration, ExternReconnect.PROPERTY_RECONNECT_COMMAND, "Reconnectbefehl (Pfadangaben absolut)");
 
         addConfigEntry(ce);
 

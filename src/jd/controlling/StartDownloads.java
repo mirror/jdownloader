@@ -369,7 +369,7 @@ public class StartDownloads extends ControlMulticaster {
             logger.info("step.getParameter() "+step.getParameter());
         long milliSeconds = (Long) step.getParameter();
         
-        downloadLink.setStatusText("Warten: "+(milliSeconds/1000)+" sek.");
+        downloadLink.setStatusText("Warten: "+JDUtilities.formatSeconds((int)(milliSeconds/1000))+" sek.");
         
         fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SINGLE_DOWNLOAD_CHANGED, null));
         try {

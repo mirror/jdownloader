@@ -74,7 +74,7 @@ public class JDUtilities {
     /**
      * Titel der Applikation
      */
-    public static final String              JD_VERSION        = "0.0.3 (16.09)";
+    public static final String              JD_VERSION        = "0.0.3.1 (17.09)";
 
     /**
      * Versionsstring der Applikation
@@ -720,11 +720,25 @@ public class JDUtilities {
         int minutes = eta / 60;
         int seconds = eta - minutes * 60;
         if (hours == 0) {
-            return minutes + ":" + seconds;
+            return fillInteger(minutes,2,"0") + ":" + fillInteger(seconds,2,"0");
         }
-        return hours + ":" + minutes + ":" + seconds;
+        
+        
+        return fillInteger(hours,2,"0") + ":" + fillInteger(minutes,2,"0") + ":" + fillInteger(seconds,2,"0");
     }
-
+    /**
+     * Hängt an i solange fill vorne an bis die zechenlänge von i gleich num ist
+     * @param i
+     * @param num
+     * @param fill
+     * @return
+     */
+    public static String fillInteger(int i,int num,String fill){
+        String ret=""+i;
+        while(ret.length()<num)ret=fill+ret;
+        return ret;
+        
+    }
     /**
      * Liefert alle geladenen Plugins zum Entschlüsseln zurück
      * 

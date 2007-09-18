@@ -8,6 +8,7 @@ import javax.swing.JOptionPane;
 
 import jd.Configuration;
 import jd.controlling.interaction.ExternExecute;
+import jd.controlling.interaction.ExternReconnect;
 import jd.gui.UIInterface;
 import jd.plugins.PluginConfig;
 /**
@@ -64,7 +65,9 @@ private ExternExecute externExecute;
     @Override
     public void initPanel() {
         ConfigEntry ce;        
-        ce = new ConfigEntry(PluginConfig.TYPE_TEXTFIELD, externExecute, ExternExecute.PROPERTY_COMMAND, "Befehl (%LASTFILE,%CAPTCHAIMAGE)");
+
+        ce = new ConfigEntry(PluginConfig.TYPE_BROWSEFILE, externExecute, ExternExecute.PROPERTY_COMMAND, "Befehl (%LASTFILE,%CAPTCHAIMAGE)");
+
         ce.setDefaultText("");
         addConfigEntry(ce);       
 

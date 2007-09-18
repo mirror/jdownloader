@@ -22,6 +22,7 @@ public class Esnips extends PluginForHost {
 
     private Pattern             patternSupported   = Pattern.compile("http://(?:www\\.)*esnips.com/doc/[^\\s\"]+/?");
 
+
     private static final String SWF_PLAYER_TO_FILE = "autoPlay=no&amp;theFile=°&amp;theName=°&amp;thePlayerURL";
 
     private static final String WMP_PLAYER_TO_FILE = "<param name=\"URL\" value=\"°\" ref=\"\">";

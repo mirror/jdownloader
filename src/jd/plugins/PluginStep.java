@@ -87,12 +87,12 @@ public class PluginStep {
             case STEP_DECRYPT:   buffer.append("Decrypt ");   break;
             case STEP_PAGE:   buffer.append("Laden... ");   break;
         }
-        buffer.append("status: ");
+      
         switch(status){
-            case STATUS_DONE:       buffer.append("Fertig");      break;
-            case STATUS_ERROR:      buffer.append("Fehler");     break;
+            case STATUS_DONE:       buffer.append("status: Fertig");      break;
+            case STATUS_ERROR:      buffer.append("status: Fehler");     break;
             case STATUS_TODO:       buffer.append("");      break;
-            case STATUS_USER_INPUT: buffer.append("Eingabe"); break;
+            case STATUS_USER_INPUT: buffer.append("status: Eingabe"); break;
         }
         return buffer.toString();
     }

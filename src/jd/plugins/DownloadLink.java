@@ -512,7 +512,7 @@ public class DownloadLink implements Serializable, Comparable {
 
         int speed;
         if (getRemainingWaittime() > 0) {
-            return this.statusText + "Warten: (" + getRemainingWaittime() / 1000 + "sek)";
+            return this.statusText + "Warten: (" + JDUtilities.formatSeconds((int)(getRemainingWaittime() / 1000)) + "sek)";
         }
         if (this.isInProgress() && (speed = getDownloadSpeed()) > 0) {
             long remainingBytes = this.getDownloadMax() - this.getDownloadCurrent();

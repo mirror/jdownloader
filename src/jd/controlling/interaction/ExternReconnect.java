@@ -11,58 +11,71 @@ import jd.plugins.Plugin;
 import jd.plugins.RequestInfo;
 
 /**
- * Diese Klasse ruft ein Externes Programm auf. Anschließend wird auf eine Neue IP geprüft
+ * Diese Klasse ruft ein Externes Programm auf. Anschließend wird auf eine Neue
+ * IP geprüft
  * 
  * @author coalado
  */
 public class ExternReconnect extends Interaction implements Serializable {
 
-    
     /**
      * Unter diesen Namen werden die entsprechenden Parameter gespeichert
-     *
+     * 
      */
-    private static final long   serialVersionUID           = 4793649294489149258L;
-/**
- * parameternamen. Hier findet man nur die Namen! unter denen die parameter in die hashmap abgelegt werden
- */
+    private static final long        serialVersionUID            = 4793649294489149258L;
+
+    /**
+     * parameternamen. Hier findet man nur die Namen! unter denen die parameter
+     * in die hashmap abgelegt werden
+     */
     /**
      * Regex zum IP finden
      */
-    public static String        PROPERTY_IP_REGEX          = "InteractionExternReconnect_" + "IPAddressRegEx";
-/**
- * Offlinestring. wird aufd er zielseite dieser string gefunden gilt die Verbindung als beendet
- */
-    public static String        PROPERTY_IP_OFFLINE        = "InteractionExternReconnect_" + "IPAddressOffline";
-/**
- * Gibt an wie lange nach dem Programmaufruf gewartet werden soll bis zu ip überprüfung
- */
-    public static String        PROPERTY_IP_WAITCHECK      = "InteractionExternReconnect_" + "WaitIPCheck";
-/**
- * Gibt an wieviele Versuche unternommen werden
- */
-    public static String        PROPERTY_IP_RETRIES        = "InteractionExternReconnect_" + "Retries";
-/**
- * Gibt den reconnectbefehl an
- */
-    public static String        PROPERTY_RECONNECT_COMMAND = "InteractionExternReconnect_" + "Command";
-/**
- * Seite zur IP Prüfung
- */
-    public static String        PROPERTY_IP_CHECK_SITE     = "InteractionExternReconnect_" + "Site";
+    public static String             PROPERTY_IP_REGEX           = "InteractionExternReconnect_" + "IPAddressRegEx";
+
+    /**
+     * Offlinestring. wird aufd er zielseite dieser string gefunden gilt die
+     * Verbindung als beendet
+     */
+    public static String             PROPERTY_IP_OFFLINE         = "InteractionExternReconnect_" + "IPAddressOffline";
+
+    /**
+     * Gibt an wie lange nach dem Programmaufruf gewartet werden soll bis zu ip
+     * überprüfung
+     */
+    public static String             PROPERTY_IP_WAITCHECK       = "InteractionExternReconnect_" + "WaitIPCheck";
+
+    /**
+     * Gibt an wieviele Versuche unternommen werden
+     */
+    public static String             PROPERTY_IP_RETRIES         = "InteractionExternReconnect_" + "Retries";
+
+    /**
+     * Gibt den reconnectbefehl an
+     */
+    public static String             PROPERTY_RECONNECT_COMMAND  = "InteractionExternReconnect_" + "Command";
+
+    /**
+     * Seite zur IP Prüfung
+     */
+    public static String             PROPERTY_IP_CHECK_SITE      = "InteractionExternReconnect_" + "Site";
+
+    public static final String       PROPERTY_IP_WAIT_FOR_RETURN = "InteractionExternReconnect_" + "WaitReturn";
 
     /**
      * serialVersionUID
      */
 
-    private static final String NAME                       = "Extern Reconnect";
+    private static final String      NAME                        = "Extern Reconnect";
+
     /**
      * Maximale Reconnectanzahl
      */
-    private static final int MAX_RETRIES = 10;
-    private transient static  boolean enabled = false;
+    private static final int         MAX_RETRIES                 = 10;
 
-    private int                 retries                    = 0;
+    private transient static boolean enabled                     = false;
+
+    private int                      retries                     = 0;
 
     @Override
     public boolean doInteraction(Object arg) {
@@ -72,18 +85,29 @@ public class ExternReconnect extends Interaction implements Serializable {
         logger.info("Starting " + NAME + " #" + retries);
         String ipBefore;
         String ipAfter;
-     
 
         // IP auslesen
         ipBefore = getIPAddress();
         logger.fine("IP before:" + ipBefore);
-        try {
-            logger.info(JDUtilities.runCommandWaitAndReturn((String) JDUtilities.getConfiguration().getProperty(PROPERTY_RECONNECT_COMMAND)));
+        if (JDUtilities.getConfiguration().getProperty(PROPERTY_IP_WAIT_FOR_RETURN) == null || (Boolean) JDUtilities.getConfiguration().getProperty(PROPERTY_IP_WAIT_FOR_RETURN)) {
+            try {
+                JDUtilities.runCommandAndWait((String) JDUtilities.getConfiguration().getProperty(PROPERTY_RECONNECT_COMMAND));
+            }
+            catch (IOException e1) {
+
+                e1.printStackTrace();
+                return false;
+            }
         }
-        catch (IOException e1) {
-            // TODO Auto-generated catch block
-            e1.printStackTrace();
-            return false;
+        else {
+            try {
+                JDUtilities.runCommand((String) JDUtilities.getConfiguration().getProperty(PROPERTY_RECONNECT_COMMAND));
+            }
+            catch (Exception e) {
+
+                e.printStackTrace();
+                return false;
+            }
         }
         if (JDUtilities.getConfiguration().getProperty(PROPERTY_IP_WAITCHECK) != null) {
             try {
@@ -99,7 +123,7 @@ public class ExternReconnect extends Interaction implements Serializable {
         logger.fine("IP after reconnect:" + ipAfter);
         if (ipBefore == null || ipAfter == null || ipBefore.equals(ipAfter)) {
             logger.severe("IP address did not change");
-            if (retries<ExternReconnect.MAX_RETRIES &&(retries < maxRetries || maxRetries <= 0)) {
+            if (retries < ExternReconnect.MAX_RETRIES && (retries < maxRetries || maxRetries <= 0)) {
                 return doInteraction(arg);
             }
             this.setCallCode(Interaction.INTERACTION_CALL_ERROR);
@@ -145,12 +169,15 @@ public class ExternReconnect extends Interaction implements Serializable {
     public String getInteractionName() {
         return NAME;
     }
-    public static boolean isEnabled(){
+
+    public static boolean isEnabled() {
         return enabled;
     }
-public static void setEnabled(boolean en){
-    enabled=en;
-}
+
+    public static void setEnabled(boolean en) {
+        enabled = en;
+    }
+
     @Override
     public void run() {
     // Nichts zu tun. INteraction braucht keinen Thread

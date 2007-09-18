@@ -21,6 +21,7 @@ import javax.swing.SwingConstants;
 
 import jd.JDUtilities;
 import jd.Property;
+import jd.gui.skins.simple.components.BrowseFile;
 import jd.plugins.Plugin;
 import jd.plugins.PluginConfig;
 
@@ -108,7 +109,14 @@ public class ConfigEntry extends JPanel {
             input[0] = new JCheckBox();
             this.add(input[0], BorderLayout.EAST);
         }
+        else if (type == PluginConfig.TYPE_BROWSEFILE) {
+            logger.info("ADD Browser");
 
+            input[0] = new BrowseFile();
+            
+            ((BrowseFile)input[0]).setEditable(true);
+            this.add(input[0], BorderLayout.EAST);
+        }
     }
 
     /**
@@ -233,6 +241,10 @@ public class ConfigEntry extends JPanel {
             case PluginConfig.TYPE_LABEL:
 
                 break;
+                
+            case PluginConfig.TYPE_BROWSEFILE:
+                ((BrowseFile) input[0]).setText(text == null ? "" : text.toString());
+                break;
             case PluginConfig.TYPE_RADIOFIELD:
                 for (int i = 0; i < list.length; i++) {
                     JRadioButton radio = (JRadioButton) input[i];
@@ -288,6 +300,9 @@ public class ConfigEntry extends JPanel {
                 return null;
             case PluginConfig.TYPE_SEPERATOR:
                 return null;
+                
+            case PluginConfig.TYPE_BROWSEFILE:
+                return ((BrowseFile) input[0]).getText();
 
         }
 

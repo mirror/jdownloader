@@ -8,6 +8,7 @@ import java.util.Vector;
  *
  */
 public  class PluginConfig {
+    public static final int TYPE_BROWSEFILE = 7;
     public static final int TYPE_SEPERATOR  = 6;
     public static final int TYPE_RADIOFIELD  = 5;
     public static final int TYPE_LABEL  = 4;
@@ -18,6 +19,7 @@ public  class PluginConfig {
     public static final int TYPE_COMBOBOX  = 1;
 
     public static final int TYPE_TEXTFIELD = 0;
+  
     @SuppressWarnings("unused")
     private Plugin plugin;
     private Vector<PluginConfigEntry> content=new Vector<PluginConfigEntry>();

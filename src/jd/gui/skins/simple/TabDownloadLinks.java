@@ -536,7 +536,9 @@ this.y=y;
                        
                         if(rowIndex>=progressBars.size()){
                             JProgressBar p = new JProgressBar(0, 1);
+                           
                             progressBars.add(rowIndex, p);
+                        
                         }
                         JProgressBar p =progressBars.elementAt(rowIndex);
                         if (downloadLink.isInProgress() && downloadLink.getRemainingWaittime() == 0&&(int) downloadLink.getDownloadCurrent()>0&&(int) downloadLink.getDownloadCurrent()<=(int) downloadLink.getDownloadMax()) {
