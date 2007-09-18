@@ -1275,5 +1275,89 @@ public static String getSimpleMatch(String source, String pattern, int id){
     public void setStatusText(String value) {
         statusText = value;
     }
+    /**
+     * Sucht alle Links heraus
+     * @param data ist der Quelltext einer Html-Datei
+     * @param url der Link von dem der Quelltext stammt (um die base automatisch zu setzen) 
+     * @return
+     */
+    public static String[] getHttpLinks(String data, String url) {
+        String[] patternStr = {"<[ ]?base[^>]*?href=['\"]([^>]*?)['\"]", "<[ ]?base[^>]*?href=([^'\"][^\\s]*)", "<[ ]?a[^>]*?href=['\"]([^>]*?)['\"]", "<[ ]?a[^>]*?href=([^'\"][^\\s]*)", "www[^\\s>'\"\\)]*", "http://[^\\s>'\"\\)]*"};
+        Matcher m;
+        String link;
+        Pattern[] pattern = new Pattern[patternStr.length];
+        for (int i = 0; i < patternStr.length; i++) {
+            pattern[i] = Pattern.compile(patternStr[i], Pattern.CASE_INSENSITIVE);
+        }
+        String basename = null;
+        String host = "";
+        ArrayList<String> set = new ArrayList<String>();
+        for (int i = 0; i < 2; i++) {
+            m = pattern[i].matcher(data);
+            if (m.find()) {
+                basename = m.group(1);
+                host = basename.substring(0, basename.length() - 1);
+            }
+        }
+        if (basename == null) {
+            basename = "";
+            int dot = url.lastIndexOf('/');
+            if (dot != -1)
+                basename = url.substring(0, dot + 1);
+            url = url.replace("http://", "");
+            dot = url.indexOf('/');
+            if (dot != -1)
+                host = "http://" + url.substring(0, dot);
+            url = "http://" + url;
 
+        }
+
+        for (int i = 2; i < 4; i++) {
+            m = pattern[i].matcher(data);
+            while (m.find()) {
+                link = m.group(1);
+                link = link.replaceAll("http://.*http://", "http://");
+                if ((link.length() > 6) && (link.substring(0, 7).equals("http://")))
+                    ;
+                else if (link.length() > 0) {
+                    if (link.length() > 2 && link.substring(0, 3).equals("www")) {
+                        link = "http://" + link;
+                    }
+                    if (link.charAt(0) == '/') {
+                        link = host + link;
+                    } else if (link.charAt(0) == '#') {
+                        link = url + link;
+                    } else {
+                        link = basename + link;
+                    }
+
+                }
+                if (!set.contains(link)) {
+                    set.add(link);
+                }
+
+            }
+
+        }
+        data = data.replaceAll("<.*?>", "");
+        m = pattern[4].matcher(data);
+        while (m.find()) {
+            link = "http://" + m.group();
+            link = link.replaceAll("http://.*http://", "http://");
+            if (!set.contains(link)) {
+                set.add(link);
+            }
+        }
+        m = pattern[5].matcher(data);
+        while (m.find()) {
+            link = m.group();
+            link = link.replaceAll("http://.*http://", "http://");
+            if (!set.contains(link)) {
+                set.add(link);
+            }
+        }
+
+        return (String[]) set.toArray(new String[set.size()]);
+
+    }
 }
