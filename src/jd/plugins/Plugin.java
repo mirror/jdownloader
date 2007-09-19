@@ -68,28 +68,29 @@ public abstract class Plugin {
     /**
      * Puffer für Lesevorgänge
      */
-    public final int           READ_BUFFER = 128 * 1024;
-    
+    public final int READ_BUFFER = 128 * 1024;
+
     /**
-     * Der Defualt Accept-language-header. Achtung nicht Ändern. Wird dieser Header geändert müssen die Regexes der PLugins angepasst werden
+     * Der Defualt Accept-language-header. Achtung nicht Ändern. Wird dieser
+     * Header geändert müssen die Regexes der PLugins angepasst werden
      */
-    public static final String ACCEPT_LANGUAGE="de, en-gb;q=0.9, en;q=0.8";
+    public static final String ACCEPT_LANGUAGE = "de, en-gb;q=0.9, en;q=0.8";
     /**
      * Name des Loggers
      */
-    public static String       LOGGER_NAME = "java_downloader";
+    public static String LOGGER_NAME = "java_downloader";
 
     /**
      * Versionsinformationen
      */
-    public static final String VERSION     = "jDownloader_20070830_0";
+    public static final String VERSION = "jDownloader_20070830_0";
 
     /**
      * Zeigt an, ob das Plugin abgebrochen werden soll
      */
-    public PluginConfig        config;
-protected  RequestInfo requestInfo;
-    protected boolean          aborted     = false;
+    public PluginConfig config;
+    protected RequestInfo requestInfo;
+    protected boolean aborted = false;
 
     /**
      * Liefert den Namen des Plugins zurück
@@ -169,7 +170,7 @@ protected  RequestInfo requestInfo;
      * Beispielsweise kann so der JDController die Premiumnutzung abschalten
      * wenn er fehler feststellt
      */
-    public static final String PROPERTY_USE_PREMIUM  = "USE_PREMIUM";
+    public static final String PROPERTY_USE_PREMIUM = "USE_PREMIUM";
 
     /**
      * Property name für die Config. Diese sollten möglichst einheitlich sein.
@@ -206,24 +207,24 @@ protected  RequestInfo requestInfo;
     /**
      * Hier werden alle notwendigen Schritte des Plugins hinterlegt
      */
-    protected Vector<PluginStep>  steps;
+    protected Vector<PluginStep> steps;
 
     /**
      * Enthält den aktuellen Schritt des Plugins
      */
-    protected PluginStep          currentStep    = null;
+    protected PluginStep currentStep = null;
 
     /**
      * Properties zum abspeichern der einstellungen
      */
-    private Property              properties;
+    private Property properties;
 
     private String statusText;
 
     /**
      * Ein Logger, um Meldungen darzustellen
      */
-    protected static Logger       logger         = null;
+    protected static Logger logger = null;
 
     protected Plugin() {
         pluginListener = new Vector<PluginListener>();
@@ -233,11 +234,10 @@ protected  RequestInfo requestInfo;
         if (this.getPluginName() == null) {
             logger.severe("ACHTUNG: die Plugin.getPluginName() Funktion muss einen Wert wiedergeben der zum init schon verfügbar ist, also einen static wert");
         }
-     
+
         if (JDUtilities.getConfiguration().getProperty("PluginConfig_" + this.getPluginName()) != null) {
             properties = (Property) JDUtilities.getConfiguration().getProperty("PluginConfig_" + this.getPluginName());
-        }
-        else {
+        } else {
             properties = new Property();
         }
         logger.info("Load Plugin Properties: " + "PluginConfig_" + this.getPluginName() + " : " + properties);
@@ -298,10 +298,13 @@ protected  RequestInfo requestInfo;
      * @return nächster step
      */
     public PluginStep nextStep(PluginStep currentStep) {
-        if (steps == null || steps.size() == 0) return null;
-        if (currentStep == null) return steps.firstElement();
+        if (steps == null || steps.size() == 0)
+            return null;
+        if (currentStep == null)
+            return steps.firstElement();
         int index = steps.indexOf(currentStep) + 1;
-        if (steps.size() > index) return steps.elementAt(index);
+        if (steps.size() > index)
+            return steps.elementAt(index);
         return null;
     }
 
@@ -312,10 +315,13 @@ protected  RequestInfo requestInfo;
      * @return
      */
     public PluginStep previousStep(PluginStep currentStep) {
-        if (steps == null || steps.size() == 0) return null;
-        if (currentStep == null) return steps.firstElement();
+        if (steps == null || steps.size() == 0)
+            return null;
+        if (currentStep == null)
+            return steps.firstElement();
         int index = steps.indexOf(currentStep) - 1;
-        if (index >= 0) return steps.elementAt(index);
+        if (index >= 0)
+            return steps.elementAt(index);
         return null;
 
     }
@@ -335,9 +341,12 @@ protected  RequestInfo requestInfo;
     /**
      * @author olimex Fügt Map als String mit Trennzeichen zusammen TODO:
      *         auslagern
-     * @param map Map
-     * @param delPair Trennzeichen zwischen Key und Value
-     * @param delMap Trennzeichen zwischen Map-Einträgen
+     * @param map
+     *            Map
+     * @param delPair
+     *            Trennzeichen zwischen Key und Value
+     * @param delMap
+     *            Trennzeichen zwischen Map-Einträgen
      * @return Key-value pairs
      */
     public static String joinMap(Map<String, String> map, String delPair, String delMap) {
@@ -359,13 +368,16 @@ protected  RequestInfo requestInfo;
      * Sammelt Cookies einer HTTP-Connection und fügt dieser einer Map hinzu
      * 
      * @author olimex
-     * @param con Connection
-     * @param cookieMap Map in der die Cookies eingefügt werden
+     * @param con
+     *            Connection
+     * @param cookieMap
+     *            Map in der die Cookies eingefügt werden
      */
     public static HashMap<String, String> collectCookies(HttpURLConnection con) {
         Collection<String> cookieHeaders = con.getHeaderFields().get("Set-Cookie");
         HashMap<String, String> cookieMap = new HashMap<String, String>();
-        if (cookieHeaders == null) return cookieMap;
+        if (cookieHeaders == null)
+            return cookieMap;
 
         for (String header : cookieHeaders) {
             try {
@@ -374,8 +386,7 @@ protected  RequestInfo requestInfo;
                 while (st.hasMoreTokens())
                     cookieMap.put(st.nextToken().trim(), st.nextToken().trim());
 
-            }
-            catch (NoSuchElementException e) {
+            } catch (NoSuchElementException e) {
                 // ignore
             }
         }
@@ -406,11 +417,13 @@ protected  RequestInfo requestInfo;
      * handhaben kann. Dazu wird einfach geprüft, ob ein Treffer des Patterns
      * vorhanden ist.
      * 
-     * @param data der zu prüfende Text
+     * @param data
+     *            der zu prüfende Text
      * @return wahr, falls ein Treffer gefunden wurde.
      */
     public synchronized boolean canHandle(String data) {
-        if(data==null)return false;
+        if (data == null)
+            return false;
         Pattern pattern = getSupportedLinks();
         if (pattern != null) {
             Matcher matcher = pattern.matcher(data);
@@ -421,19 +434,23 @@ protected  RequestInfo requestInfo;
         return false;
     }
 
-    /** 
+    /**
      * Findet ein einzelnes Vorkommen und liefert den vollständigen Treffer oder
      * eine Untergruppe zurück
      * 
-     * @param data Der zu durchsuchende Text
-     * @param pattern Das Muster, nach dem gesucht werden soll
-     * @param group Die Gruppe, die zurückgegeben werden soll. 0 ist der
+     * @param data
+     *            Der zu durchsuchende Text
+     * @param pattern
+     *            Das Muster, nach dem gesucht werden soll
+     * @param group
+     *            Die Gruppe, die zurückgegeben werden soll. 0 ist der
      *            vollständige Treffer.
      * @return Der Treffer
      */
     public String getFirstMatch(String data, Pattern pattern, int group) {
         String hit = null;
-        if(data==null)return null;
+        if (data == null)
+            return null;
         if (pattern != null) {
             Matcher matcher = pattern.matcher(data);
             if (matcher.find() && group <= matcher.groupCount()) {
@@ -447,8 +464,10 @@ protected  RequestInfo requestInfo;
      * Diese Methode findet alle Vorkommnisse des Pluginpatterns in dem Text,
      * und gibt die Treffer als Vector zurück
      * 
-     * @param data Der zu durchsuchende Text
-     * @param pattern Das Muster, nach dem gesucht werden soll
+     * @param data
+     *            Der zu durchsuchende Text
+     * @param pattern
+     *            Das Muster, nach dem gesucht werden soll
      * @return Alle Treffer in dem Text
      */
     public Vector<String> getMatches(String data, Pattern pattern) {
@@ -470,8 +489,10 @@ protected  RequestInfo requestInfo;
     /**
      * Zählt, wie oft das Pattern des Plugins in dem übergebenen Text vorkommt
      * 
-     * @param data Der zu durchsuchende Text
-     * @param pattern Das Pattern, daß im Text gefunden werden soll
+     * @param data
+     *            Der zu durchsuchende Text
+     * @param pattern
+     *            Das Pattern, daß im Text gefunden werden soll
      * 
      * @return Anzahl der Treffer
      */
@@ -493,7 +514,8 @@ protected  RequestInfo requestInfo;
      * Diese Funktion schneidet alle Vorkommnisse des vom Plugin unterstützten
      * Pattern aus
      * 
-     * @param data Text, aus dem das Pattern ausgeschnitter werden soll
+     * @param data
+     *            Text, aus dem das Pattern ausgeschnitter werden soll
      * @return Der resultierende String
      */
     public String cutMatches(String data) {
@@ -504,9 +526,12 @@ protected  RequestInfo requestInfo;
      * Hier kann man den Text zwischen zwei Suchmustern ausgeben lassen
      * Zeilenumbrueche werden dabei auch unterstuetzt
      * 
-     * @param data Der zu durchsuchende Text
-     * @param startPattern der Pattern, bei dem die Suche beginnt
-     * @param lastPattern der Pattern, bei dem die Suche endet
+     * @param data
+     *            Der zu durchsuchende Text
+     * @param startPattern
+     *            der Pattern, bei dem die Suche beginnt
+     * @param lastPattern
+     *            der Pattern, bei dem die Suche endet
      * 
      * @return der Text zwischen den gefundenen stellen oder, falls nichts
      *         gefunden wurde, der vollständige Text
@@ -514,7 +539,8 @@ protected  RequestInfo requestInfo;
     public String getBetween(String data, String startPattern, String lastPattern) {
         Pattern p = Pattern.compile("(?s)" + startPattern + "(.*?)" + lastPattern, Pattern.CASE_INSENSITIVE);
         Matcher match = p.matcher(data);
-        if (match.find()) return match.group(1);
+        if (match.find())
+            return match.group(1);
         return data;
     }
 
@@ -529,9 +555,12 @@ protected  RequestInfo requestInfo;
      * 
      * f=f50b0f&h=390b4be0182b85b0&b=9 rauskommen
      * 
-     * @param data Der zu durchsuchende Text
-     * @param startPattern der Pattern, bei dem die Suche beginnt
-     * @param lastPattern der Pattern, bei dem die Suche endet
+     * @param data
+     *            Der zu durchsuchende Text
+     * @param startPattern
+     *            der Pattern, bei dem die Suche beginnt
+     * @param lastPattern
+     *            der Pattern, bei dem die Suche endet
      * 
      * @return ein String, der als POST Parameter genutzt werden kann und alle
      *         Parameter des Formulars enthält
@@ -550,7 +579,8 @@ protected  RequestInfo requestInfo;
      * 
      * f=f50b0f&h=390b4be0182b85b0&b=9 ausgegeben werden
      * 
-     * @param data Der zu durchsuchende Text
+     * @param data
+     *            Der zu durchsuchende Text
      * 
      * @return ein String, der als POST Parameter genutzt werden kann und alle
      *         Parameter des Formulars enthält
@@ -596,8 +626,7 @@ protected  RequestInfo requestInfo;
             if (matcher2.find()) {
                 iscompl = true;
                 key = matcher2.group(1);
-            }
-            else if (matcher4.find()) {
+            } else if (matcher4.find()) {
                 iscompl = true;
                 key = matcher4.group(1);
             }
@@ -617,7 +646,8 @@ protected  RequestInfo requestInfo;
     /**
      * Schickt ein GetRequest an eine Adresse
      * 
-     * @param link Die URL, die ausgelesen werden soll
+     * @param link
+     *            Die URL, die ausgelesen werden soll
      * @return Ein Objekt, daß alle Informationen der Zieladresse beinhält
      * @throws IOException
      */
@@ -628,10 +658,14 @@ protected  RequestInfo requestInfo;
     /**
      * Schickt ein GetRequest an eine Adresse
      * 
-     * @param link Der Link, an den die GET Anfrage geschickt werden soll
-     * @param cookie Cookie
-     * @param referrer Referrer
-     * @param redirect Soll einer Weiterleitung gefolgt werden?
+     * @param link
+     *            Der Link, an den die GET Anfrage geschickt werden soll
+     * @param cookie
+     *            Cookie
+     * @param referrer
+     *            Referrer
+     * @param redirect
+     *            Soll einer Weiterleitung gefolgt werden?
      * @return Ein Objekt, daß alle Informationen der Zieladresse beinhält
      * @throws IOException
      */
@@ -643,15 +677,15 @@ protected  RequestInfo requestInfo;
             httpConnection.setRequestProperty("Referer", referrer);
         else
             httpConnection.setRequestProperty("Referer", "http://" + link.getHost());
-        if (cookie != null) httpConnection.setRequestProperty("Cookie", cookie);
+        if (cookie != null)
+            httpConnection.setRequestProperty("Cookie", cookie);
         // TODO User-Agent als Option ins menu
         // hier koennte man mit einer kleinen Datenbank den User-Agent rotieren
         // lassen
         // so ist das Programm nicht so auffallig
-        
-    
+
         httpConnection.setRequestProperty("Accept-Language", ACCEPT_LANGUAGE);
-        
+
         httpConnection.setRequestProperty("User-Agent", "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1; SV1; .NET CLR 1.1.4322; .NET CLR 2.0.50727)");
         RequestInfo requestInfo = readFromURL(httpConnection);
         requestInfo.setConnection(httpConnection);
@@ -683,8 +717,7 @@ protected  RequestInfo requestInfo;
         int responseCode = HttpURLConnection.HTTP_NOT_IMPLEMENTED;
         try {
             responseCode = httpConnection.getResponseCode();
-        }
-        catch (IOException e) {
+        } catch (IOException e) {
         }
         RequestInfo ri = new RequestInfo("", location, setcookie, httpConnection.getHeaderFields(), responseCode);
         ri.setConnection(httpConnection);
@@ -694,8 +727,10 @@ protected  RequestInfo requestInfo;
     /**
      * Schickt ein PostRequest an eine Adresse
      * 
-     * @param link Der Link, an den die POST Anfrage geschickt werden soll
-     * @param parameter Die Parameter, die übergeben werden sollen
+     * @param link
+     *            Der Link, an den die POST Anfrage geschickt werden soll
+     * @param parameter
+     *            Die Parameter, die übergeben werden sollen
      * @return Ein Objekt, daß alle Informationen der Zieladresse beinhält
      * @throws IOException
      */
@@ -707,13 +742,18 @@ protected  RequestInfo requestInfo;
      * 
      * Schickt ein PostRequest an eine Adresse
      * 
-     * @param link Der Link, an den die POST Anfrage geschickt werden soll
-     * @param cookie Cookie
-     * @param referrer Referrer
-     * @param requestProperties Hier können noch zusätliche Properties
-     *            mitgeschickt werden
-     * @param parameter Die Parameter, die übergeben werden sollen
-     * @param redirect Soll einer Weiterleitung gefolgt werden?
+     * @param link
+     *            Der Link, an den die POST Anfrage geschickt werden soll
+     * @param cookie
+     *            Cookie
+     * @param referrer
+     *            Referrer
+     * @param requestProperties
+     *            Hier können noch zusätliche Properties mitgeschickt werden
+     * @param parameter
+     *            Die Parameter, die übergeben werden sollen
+     * @param redirect
+     *            Soll einer Weiterleitung gefolgt werden?
      * @return Ein Objekt, daß alle Informationen der Zieladresse beinhält
      * @throws IOException
      */
@@ -724,7 +764,8 @@ protected  RequestInfo requestInfo;
             httpConnection.setRequestProperty("Referer", referrer);
         else
             httpConnection.setRequestProperty("Referer", "http://" + link.getHost());
-        if (cookie != null) httpConnection.setRequestProperty("Cookie", cookie);
+        if (cookie != null)
+            httpConnection.setRequestProperty("Cookie", cookie);
         // TODO das gleiche wie bei getRequest
         httpConnection.setRequestProperty("Accept-Language", ACCEPT_LANGUAGE);
         httpConnection.setRequestProperty("User-Agent", "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1; SV1; .NET CLR 1.1.4322; .NET CLR 2.0.50727)");
@@ -738,10 +779,11 @@ protected  RequestInfo requestInfo;
                 httpConnection.setRequestProperty(key, requestProperties.get(key));
             }
         }
-      
+
         httpConnection.setDoOutput(true);
         OutputStreamWriter wr = new OutputStreamWriter(httpConnection.getOutputStream());
-        if (parameter != null) wr.write(parameter);
+        if (parameter != null)
+            wr.write(parameter);
         wr.flush();
 
         RequestInfo requestInfo = readFromURL(httpConnection);
@@ -755,11 +797,16 @@ protected  RequestInfo requestInfo;
      * Gibt header- und cookieinformationen aus ohne den HTMLCode
      * herunterzuladen
      * 
-     * @param link Der Link, an den die POST Anfrage geschickt werden soll
-     * @param cookie Cookie
-     * @param referrer Referrer
-     * @param parameter Die Parameter, die übergeben werden sollen
-     * @param redirect Soll einer Weiterleitung gefolgt werden?
+     * @param link
+     *            Der Link, an den die POST Anfrage geschickt werden soll
+     * @param cookie
+     *            Cookie
+     * @param referrer
+     *            Referrer
+     * @param parameter
+     *            Die Parameter, die übergeben werden sollen
+     * @param redirect
+     *            Soll einer Weiterleitung gefolgt werden?
      * @return Ein Objekt, daß alle Informationen der Zieladresse beinhält
      * @throws IOException
      */
@@ -770,7 +817,8 @@ protected  RequestInfo requestInfo;
             httpConnection.setRequestProperty("Referer", referrer);
         else
             httpConnection.setRequestProperty("Referer", "http://" + link.getHost());
-        if (cookie != null) httpConnection.setRequestProperty("Cookie", cookie);
+        if (cookie != null)
+            httpConnection.setRequestProperty("Cookie", cookie);
         // TODO das gleiche wie bei getRequest
         httpConnection.setRequestProperty("Accept-Language", ACCEPT_LANGUAGE);
         httpConnection.setRequestProperty("User-Agent", "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1; SV1; .NET CLR 1.1.4322; .NET CLR 2.0.50727)");
@@ -789,8 +837,7 @@ protected  RequestInfo requestInfo;
         int responseCode = HttpURLConnection.HTTP_NOT_IMPLEMENTED;
         try {
             responseCode = httpConnection.getResponseCode();
-        }
-        catch (IOException e) {
+        } catch (IOException e) {
         }
         RequestInfo ri = new RequestInfo("", location, setcookie, httpConnection.getHeaderFields(), responseCode);
         ri.setConnection(httpConnection);
@@ -798,19 +845,21 @@ protected  RequestInfo requestInfo;
     }
 
     /**
-     * Liest Daten von einer URL. LIst den encoding type und kann plaintext und gzip unterscheiden
+     * Liest Daten von einer URL. LIst den encoding type und kann plaintext und
+     * gzip unterscheiden
      * 
-     * @param urlInput Die URL Verbindung, von der geselen werden soll
+     * @param urlInput
+     *            Die URL Verbindung, von der geselen werden soll
      * @return Ein Objekt, daß alle Informationen der Zieladresse beinhält
      * @throws IOException
      */
     public static RequestInfo readFromURL(HttpURLConnection urlInput) throws IOException {
-        
-       // Content-Encoding: gzip
-        BufferedReader rd ;
-       if( urlInput.getHeaderField("Content-Encoding")!=null &&urlInput.getHeaderField("Content-Encoding").equalsIgnoreCase("gzip")){
-           rd = new BufferedReader(new InputStreamReader(new GZIPInputStream(urlInput.getInputStream())));
-        }else{
+
+        // Content-Encoding: gzip
+        BufferedReader rd;
+        if (urlInput.getHeaderField("Content-Encoding") != null && urlInput.getHeaderField("Content-Encoding").equalsIgnoreCase("gzip")) {
+            rd = new BufferedReader(new InputStreamReader(new GZIPInputStream(urlInput.getInputStream())));
+        } else {
             rd = new BufferedReader(new InputStreamReader(urlInput.getInputStream()));
         }
         String line;
@@ -828,8 +877,7 @@ protected  RequestInfo requestInfo;
         int responseCode = HttpURLConnection.HTTP_NOT_IMPLEMENTED;
         try {
             responseCode = urlInput.getResponseCode();
-        }
-        catch (IOException e) {
+        } catch (IOException e) {
         }
         RequestInfo requestInfo = new RequestInfo(htmlCode.toString(), location, cookie, urlInput.getHeaderFields(), responseCode);
         rd.close();
@@ -837,31 +885,36 @@ protected  RequestInfo requestInfo;
     }
 
     /**
-     * Speichert einen InputStream binär auf der Festplatte ab
-     * TODO: Der Sleep  drückt die Geschwindigkeit deutlich
-     * @param downloadLink der DownloadLink
-     * @param urlConnection Wenn bereits vom Plugin eine vorkonfigurierte
-     *            URLConnection vorhanden ist, wird diese hier übergeben und
-     *            benutzt. Ansonsten erfolgt ein normaler GET Download von der
-     *            URL, die im DownloadLink hinterlegt ist
+     * Speichert einen InputStream binär auf der Festplatte ab TODO: Der Sleep
+     * drückt die Geschwindigkeit deutlich
+     * 
+     * @param downloadLink
+     *            der DownloadLink
+     * @param urlConnection
+     *            Wenn bereits vom Plugin eine vorkonfigurierte URLConnection
+     *            vorhanden ist, wird diese hier übergeben und benutzt.
+     *            Ansonsten erfolgt ein normaler GET Download von der URL, die
+     *            im DownloadLink hinterlegt ist
      * @return wahr, wenn alle Daten ausgelesen und gespeichert wurden
      */
     public boolean download(DownloadLink downloadLink, URLConnection urlConnection) {
         File fileOutput = new File(downloadLink.getFileOutput());
-        if(fileOutput==null ||fileOutput.getParentFile()==null)return false;
+        if (fileOutput == null || fileOutput.getParentFile() == null)
+            return false;
         if (!fileOutput.getParentFile().exists()) {
             fileOutput.getParentFile().mkdirs();
         }
-        ByteBuffer hdBuffer = ByteBuffer.allocateDirect(1024*1024*5);
+        ByteBuffer hdBuffer = ByteBuffer.allocateDirect(1024 * 1024 * 5);
         downloadLink.setStatus(DownloadLink.STATUS_DOWNLOAD_IN_PROGRESS);
         long downloadedBytes = 0;
-       
+
         long start, end, time;
         try {
             ByteBuffer buffer = ByteBuffer.allocateDirect(READ_BUFFER);
 
             // Falls keine urlConnection übergeben wurde
-            if (urlConnection == null) urlConnection = new URL(downloadLink.getUrlDownloadDecrypted()).openConnection();
+            if (urlConnection == null)
+                urlConnection = new URL(downloadLink.getUrlDownloadDecrypted()).openConnection();
 
             FileOutputStream fos = new FileOutputStream(fileOutput);
 
@@ -869,13 +922,13 @@ protected  RequestInfo requestInfo;
             urlConnection.setReadTimeout(JDUtilities.getConfiguration().getReadTimeout());
             urlConnection.setConnectTimeout(JDUtilities.getConfiguration().getConnectTimeout());
             ReadableByteChannel source = Channels.newChannel(urlConnection.getInputStream());
-      
+
             WritableByteChannel dest = fos.getChannel();
 
             // Länge aus HTTP-Header speichern:
             int contentLen = urlConnection.getContentLength();
             downloadLink.setDownloadMax(contentLen);
-            
+
             logger.info("starting download");
             start = System.currentTimeMillis();
 
@@ -884,24 +937,26 @@ protected  RequestInfo requestInfo;
             // long bytesLastSpeedCheck = 0;
             // long t1 = System.currentTimeMillis();
             // long t3 = t1;
-            for (int i = 0; (!aborted&&!downloadLink.isAborted()); i++) {
+            for (int i = 0; (!aborted && !downloadLink.isAborted()); i++) {
                 // Thread kurz schlafen lassen, um zu häufiges Event-fire zu
                 // verhindern:
-                //coalado: nix schlafen.. ich will speed!   Die Events werden jetzt von der GUI kontrolliert
+                // coalado: nix schlafen.. ich will speed! Die Events werden
+                // jetzt von der GUI kontrolliert
 
                 int bytes = source.read(buffer);
                 Thread.sleep(0);
-                if (bytes == -1) break;
+                if (bytes == -1)
+                    break;
 
                 // Buffer flippen und in File schreiben:
                 buffer.flip();
-                
-               dest.write(buffer);
+
+                dest.write(buffer);
                 buffer.compact();
 
                 // Laufende Variablen updaten:
                 downloadedBytes += bytes;
-          
+
                 // bytesLastSpeedCheck += bytes;
                 // logger.info("load "+bytesLastSpeedCheck+" - "+bytes);
                 // if (((t3=System.currentTimeMillis())-t1)>200) { // Speedcheck
@@ -945,51 +1000,49 @@ protected  RequestInfo requestInfo;
 
             logger.info(downloadedBytes + " bytes in " + time + " ms");
             return true;
-        }
-        catch (FileNotFoundException e) {
+        } catch (FileNotFoundException e) {
             downloadLink.setStatus(DownloadLink.STATUS_DOWNLOAD_INCOMPLETE);
             logger.severe("file not found. " + e.getLocalizedMessage());
-        }
-        catch (SecurityException e) {
+        } catch (SecurityException e) {
             downloadLink.setStatus(DownloadLink.STATUS_DOWNLOAD_INCOMPLETE);
             logger.severe("not enough rights to write the file. " + e.getLocalizedMessage());
-        }
-        catch (IOException e) {
+        } catch (IOException e) {
             downloadLink.setStatus(DownloadLink.STATUS_DOWNLOAD_INCOMPLETE);
             logger.severe("error occurred while writing to file. " + e.getLocalizedMessage());
-        }
-        catch (InterruptedException e) {
+        } catch (InterruptedException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
         }
 
         return false;
     }
-    
-    
+
     /**
-     * Holt den Dateinamen aus einem Content-Disposition header. wird dieser nicht gefunden, wird der dateiname aus der url ermittelt
+     * Holt den Dateinamen aus einem Content-Disposition header. wird dieser
+     * nicht gefunden, wird der dateiname aus der url ermittelt
+     * 
      * @param urlConnection
      * @return
      */
-    public String getFileNameFormHeader(URLConnection urlConnection){
-       
-        String ret= getFirstMatch(urlConnection.getHeaderField("content-disposition"), Pattern.compile("filename=['\"](.*?)['\"]", Pattern.CASE_INSENSITIVE), 1);
-           if(ret==null){
-               int index=Math.max(urlConnection.getURL().getFile().lastIndexOf("/"),urlConnection.getURL().getFile().lastIndexOf("\\"));
-               return urlConnection.getURL().getFile().substring(index+1);
-           }
-           try {
-            ret=URLDecoder.decode(ret,"UTF-8");
+    public String getFileNameFormHeader(URLConnection urlConnection) {
+
+        String ret = getFirstMatch(urlConnection.getHeaderField("content-disposition"), Pattern.compile("filename=['\"](.*?)['\"]", Pattern.CASE_INSENSITIVE), 1);
+        if (ret == null) {
+            int index = Math.max(urlConnection.getURL().getFile().lastIndexOf("/"), urlConnection.getURL().getFile().lastIndexOf("\\"));
+            return urlConnection.getURL().getFile().substring(index + 1);
         }
-        catch (UnsupportedEncodingException e) {};
-return ret;
-       }
+        try {
+            ret = URLDecoder.decode(ret, "UTF-8");
+        } catch (UnsupportedEncodingException e) {
+        };
+        return ret;
+    }
     /**
      * Diese Methode erstellt einen einzelnen String aus einer HashMap mit
      * Parametern für ein Post-Request.
      * 
-     * @param parameters HashMap mit den Parametern
+     * @param parameters
+     *            HashMap mit den Parametern
      * @return Codierter String
      */
     protected String createPostParameterFromHashMap(HashMap<String, String> parameters) {
@@ -1001,14 +1054,15 @@ return ret;
             key = iterator.next();
             parameter = parameters.get(key);
             try {
-                if (parameter != null) parameter = URLEncoder.encode(parameter, "US-ASCII");
-            }
-            catch (UnsupportedEncodingException e) {
+                if (parameter != null)
+                    parameter = URLEncoder.encode(parameter, "US-ASCII");
+            } catch (UnsupportedEncodingException e) {
             }
             parameterLine.append(key);
             parameterLine.append("=");
             parameterLine.append(parameter);
-            if (iterator.hasNext()) parameterLine.append("&");
+            if (iterator.hasNext())
+                parameterLine.append("&");
         }
 
         return parameterLine.toString();
@@ -1041,7 +1095,8 @@ return ret;
     /**
      * Gibt den md5hash einer Datei als String aus
      * 
-     * @param filepath Dateiname
+     * @param filepath
+     *            Dateiname
      * @return MD5 des Datei
      * @throws FileNotFoundException
      * @throws NoSuchAlgorithmException
@@ -1064,15 +1119,12 @@ return ret;
             BigInteger bigInt = new BigInteger(1, md5sum);
             String output = bigInt.toString(16);
             return output;
-        }
-        catch (IOException e) {
+        } catch (IOException e) {
             throw new RuntimeException("Unable to process file for MD5", e);
-        }
-        finally {
+        } finally {
             try {
                 is.close();
-            }
-            catch (IOException e) {
+            } catch (IOException e) {
                 throw new RuntimeException("Unable to close input stream for MD5 calculation", e);
             }
         }
@@ -1101,13 +1153,15 @@ return ret;
      * alle treffer in source nach dem pattern zurück. Platzhalter ist nur !! °
      * 
      * @param source
-     * @param pattern als Pattern wird ein Normaler String mit ° als Wildcard
+     * @param pattern
+     *            als Pattern wird ein Normaler String mit ° als Wildcard
      *            verwendet.
      * @return Alle TReffer
      */
     public static String[] getSimpleMatches(String source, String pattern) {
         // DEBUG.trace("pattern: "+STRING.getPattern(pattern));
-        if (source == null || pattern == null) return null;
+        if (source == null || pattern == null)
+            return null;
         Matcher rr = Pattern.compile(getPattern(pattern), Pattern.DOTALL).matcher(source);
         if (!rr.find()) {
             // Keine treffer
@@ -1118,27 +1172,29 @@ return ret;
                 ret[i - 1] = rr.group(i);
             }
             return ret;
-        }
-        catch (IllegalStateException e) {
+        } catch (IllegalStateException e) {
 
             return null;
         }
     }
-/**
- * Durchsucht source mit pattern ach treffern und gibt Treffer id zurück.
- * Bei dem Pattern muss es sich um einen String Handeln der ° als Platzhalter verwendet. Alle newline Chars in source müssen mit einem °-PLatzhalter belegt werden
- * @param source
- * @param pattern
- * @param id
- * @return String Match
- */
-public static String getSimpleMatch(String source, String pattern, int id){
-    String[] res= getSimpleMatches( source,  pattern);
-    if(res!=null&&res.length>id){
-        return res[id];
+    /**
+     * Durchsucht source mit pattern ach treffern und gibt Treffer id zurück.
+     * Bei dem Pattern muss es sich um einen String Handeln der ° als
+     * Platzhalter verwendet. Alle newline Chars in source müssen mit einem
+     * °-PLatzhalter belegt werden
+     * 
+     * @param source
+     * @param pattern
+     * @param id
+     * @return String Match
+     */
+    public static String getSimpleMatch(String source, String pattern, int id) {
+        String[] res = getSimpleMatches(source, pattern);
+        if (res != null && res.length > id) {
+            return res[id];
+        }
+        return null;
     }
-    return null;
-}
     /**
      * public static String getPattern(String str) Gibt ein Regex pattern
      * zurück. ° dient als Platzhalter!
@@ -1156,12 +1212,10 @@ public static String getSimpleMatch(String source, String pattern, int id){
             // 176 == °
             if (letter == 176) {
                 ret += "(.*?)";
-            }
-            else if (allowed.indexOf(letter) == -1) {
+            } else if (allowed.indexOf(letter) == -1) {
 
                 ret += "\\" + letter;
-            }
-            else {
+            } else {
 
                 ret += letter;
             }
@@ -1171,10 +1225,12 @@ public static String getSimpleMatch(String source, String pattern, int id){
     }
 
     /**
-     * Schreibt alle treffer von pattern in source in den übergebenen vector
-     * Als rückgabe erhält man einen 2D-Vector 
+     * Schreibt alle treffer von pattern in source in den übergebenen vector Als
+     * rückgabe erhält man einen 2D-Vector
+     * 
      * @param source
-     * @param pattern als Pattern wird ein Normaler String mit ° als Wildcard
+     * @param pattern
+     *            als Pattern wird ein Normaler String mit ° als Wildcard
      *            verwendet.
      * @param container
      * @return Treffer
@@ -1200,8 +1256,9 @@ public static String getSimpleMatch(String source, String pattern, int id){
         return ret;
     }
     /**
-     * Gibt von allen treffer von pattern in source jeweils den id-ten Match einem vector zurück.
-     * Als pattern kommt ein Simplepattern zum einsatz
+     * Gibt von allen treffer von pattern in source jeweils den id-ten Match
+     * einem vector zurück. Als pattern kommt ein Simplepattern zum einsatz
+     * 
      * @param source
      * @param pattern
      * @param id
@@ -1211,16 +1268,15 @@ public static String getSimpleMatch(String source, String pattern, int id){
         pattern = getPattern(pattern);
         Vector<String> ret = new Vector<String>();
 
-     
         for (Matcher r = Pattern.compile(pattern, Pattern.DOTALL).matcher(source); r.find();) {
-          
-            if( id<r.groupCount())ret.add(r.group(id).trim());          
+
+            if (id < r.groupCount())
+                ret.add(r.group(id).trim());
 
         }
 
         return ret;
     }
-    
 
     public static String getMatch(String source, String pattern, int i, int ii) {
         Vector<Vector<String>> ret = getAllSimpleMatches(source, pattern);
@@ -1243,8 +1299,7 @@ public static String getSimpleMatch(String source, String pattern, int id){
                 captchaText = JDUtilities.getCaptcha(JDUtilities.getController(), plugin, file);
             }
 
-        }
-        else {
+        } else {
             logger.finer("KEINE captchaINteractions... nutze JAC");
             captchaText = JDUtilities.getCaptcha(JDUtilities.getController(), plugin, file);
 
@@ -1260,13 +1315,12 @@ public static String getSimpleMatch(String source, String pattern, int id){
     public void setProperties(Property properties) {
         this.properties = properties;
     }
-/**
- * 
- * @return gibt den namen des Links an der gerade verarbeitet wird
- */
-    public abstract String getLinkName() ;
-    
-    
+    /**
+     * 
+     * @return gibt den namen des Links an der gerade verarbeitet wird
+     */
+    public abstract String getLinkName();
+
     public String getStatusText() {
 
         return this.statusText;
@@ -1277,8 +1331,12 @@ public static String getSimpleMatch(String source, String pattern, int id){
     }
     /**
      * Sucht alle Links heraus
-     * @param data ist der Quelltext einer Html-Datei
-     * @param url der Link von dem der Quelltext stammt (um die base automatisch zu setzen) 
+     * 
+     * @param data
+     *            ist der Quelltext einer Html-Datei
+     * @param url
+     *            der Link von dem der Quelltext stammt (um die base automatisch
+     *            zu setzen)
      * @return
      */
     public static String[] getHttpLinks(String data, String url) {
@@ -1289,27 +1347,27 @@ public static String getSimpleMatch(String source, String pattern, int id){
         for (int i = 0; i < patternStr.length; i++) {
             pattern[i] = Pattern.compile(patternStr[i], Pattern.CASE_INSENSITIVE);
         }
-        String basename = null;
+        String basename = "";
         String host = "";
         ArrayList<String> set = new ArrayList<String>();
         for (int i = 0; i < 2; i++) {
             m = pattern[i].matcher(data);
             if (m.find()) {
-                basename = m.group(1);
+                url = m.group(1);
+                break;
             }
         }
-        if (basename == null) {
-            basename = "";
-            int dot = url.lastIndexOf('/');
-            if (dot != -1)
-                basename = url.substring(0, dot + 1);
-        }
+
+        int dot = url.lastIndexOf('/');
+        if (dot != -1)
+            basename = url.substring(0, dot + 1);
+
         url = url.replace("http://", "");
-        int dot = url.indexOf('/');
+        dot = url.indexOf('/');
         if (dot != -1)
             host = "http://" + url.substring(0, dot);
         url = "http://" + url;
-        
+
         for (int i = 2; i < 4; i++) {
             m = pattern[i].matcher(data);
             while (m.find()) {
