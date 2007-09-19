@@ -62,6 +62,13 @@ public class ConfigPanelPlugin extends ConfigPanel implements ActionListener {
                     ce.setDefaultText(entry.getDefaultValue());
 
                     break;
+                    
+                case PluginConfig.TYPE_SPINNER:
+                    ce = new ConfigEntry(entry.getType(), entry.getPropertyInstance(), entry.getPropertyName(), entry.getLabel(),entry.getStart(), entry.getEnd());
+                    ce.setSteps(entry.getStep());
+                    ce.setDefaultText(entry.getDefaultValue());
+
+                    break; 
                 case PluginConfig.TYPE_LABEL:
                     ce = new ConfigEntry(entry.getType(), entry.getLabel());
                     break;

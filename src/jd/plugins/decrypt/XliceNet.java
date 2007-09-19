@@ -25,7 +25,7 @@ public class XliceNet extends PluginForDecrypt {
     private static final String USE_DEPOSITFILES = "USE_DEPOSITFILES";
     private static final String USE_FILES = "USE_FILES";
 	private String version = "1.0.0.0";
-	private Pattern patternSupported = Pattern.compile("http://(?:www\\.)*xlice\\.net/f.*/[^\"'\\s]*");
+	private Pattern patternSupported = getSupportPattern("http://[*]xlice.net/f[+]/[*]");
 	private Pattern patternRapidshare = Pattern.compile("onclick=\".*\'../1/");
 	private Pattern patternGulli = Pattern.compile("onclick=\".*\'../2/");
 	private Pattern patternOxedion = Pattern.compile("onclick=\".*\'go/4/");
@@ -70,7 +70,7 @@ public class XliceNet extends PluginForDecrypt {
             Vector<String> decryptedLinks = new Vector<String>();
     		try {
     			URL url = new URL(parameter);
-    			RequestInfo reqinfo = getRequest(url);
+    			RequestInfo reqinfo = getRequest(url,null,null,true);
     			int count = 0;
     			
     			//Links zählen
@@ -104,18 +104,18 @@ public class XliceNet extends PluginForDecrypt {
 				Vector<Vector<String>> links;
 				String link = "";
 				
-				if(parameter.startsWith("http://xlice.net/file/")) {
+				if(parameter.indexOf("xlice.net/file/")>=0) {
 					link = LinkFile;
 				}
-				if(parameter.startsWith("http://xlice.net/folder/")) {
+				if(parameter.indexOf("xlice.net/folder/")>=0) {
 					link = LinkFolder;
 				}
-
+logger.info(parameter);
 				//Links herausfiltern
 				if( this.getProperties().getProperty(USE_RAPIDSHARE)!=null &&(Boolean) this.getProperties().getProperty(USE_RAPIDSHARE)) {
 					links = getAllSimpleMatches(reqinfo.getHtmlCode(), "/1/°/\'");
 					for(int i=0; i<links.size(); i++) {
-						reqhelp = getRequest(new URL(link + "1/" + links.get(i).get(0)));
+						reqhelp = getRequest(new URL(link + "1/" + links.get(i).get(0)),null,null,true);
 						reqhelp = getRequest(new URL(getBetween(reqhelp.getHtmlCode(), "href=\"", "/\">geht es hier weiter")));
 						if(reqhelp.getLocation() != null) {
 							decryptedLinks.add(reqhelp.getLocation());

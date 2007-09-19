@@ -15,7 +15,7 @@ import jd.plugins.event.PluginEvent;
 public class Divxvid extends PluginForDecrypt {
     static private final String host = "dxp.divxvid.org";
     private String version = "1.0.0.0";
-    private Pattern patternSupported = Pattern.compile("http://dxp\\.divxvid\\.org/[^\\s\"]*\\.html");
+    private Pattern patternSupported =getSupportPattern("http://dxp.divxvid.org/[+]");
     private Pattern gate = Pattern.compile("httpRequestObject.open.'POST', '([^\\s\"]*)'\\);",Pattern.CASE_INSENSITIVE);
     private Pattern outputlocation = Pattern.compile(
             "rsObject = window.open.\"([/|.|a-zA-Z0-9|_|-]*)",

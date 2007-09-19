@@ -55,6 +55,8 @@ public abstract class PluginForHost extends Plugin{
             links = new Vector<DownloadLink>();
             for(int i=0;i<hits.size();i++){
                 String file = hits.get(i);
+             while(file.charAt(0)=='"')file=file.substring(1);
+             while(file.charAt(file.length()-1)=='"')file=file.substring(0,file.length()-1);
                 links.add(new DownloadLink(
                         this,
                         file.substring(file.lastIndexOf("/")+1,file.length()),
@@ -67,7 +69,7 @@ public abstract class PluginForHost extends Plugin{
     }
     public abstract boolean getFileInformation (DownloadLink parameter);  
     
-    public String getDisplayedFilename(DownloadLink parameter){
+    public String getFileInformationString(DownloadLink parameter){
         return parameter.getName();
     }
     

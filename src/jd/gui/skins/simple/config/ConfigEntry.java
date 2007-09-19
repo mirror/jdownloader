@@ -16,7 +16,9 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JRadioButton;
 import javax.swing.JSeparator;
+import javax.swing.JSpinner;
 import javax.swing.JTextField;
+import javax.swing.SpinnerNumberModel;
 import javax.swing.SwingConstants;
 
 import jd.JDUtilities;
@@ -80,6 +82,12 @@ public class ConfigEntry extends JPanel {
 
     private ActionListener    listener;
 
+    private int steps=1;
+
+    private int start;
+
+    private int end;
+
     /**
      * Erstellt einen neuen COnfigentry
      * 
@@ -117,8 +125,43 @@ public class ConfigEntry extends JPanel {
             ((BrowseFile)input[0]).setEditable(true);
             this.add(input[0], BorderLayout.EAST);
         }
-    }
+        
+        else if (type == PluginConfig.TYPE_SPINNER) {
+            logger.info("ADD Spinner");
 
+            input[0] = new BrowseFile();
+            
+            ((BrowseFile)input[0]).setEditable(true);
+            this.add(input[0], BorderLayout.EAST);
+        }
+    }
+    /**
+     * Erstellt einen neuen COnfigentry
+     * 
+     * @param type TypID z.B. ConfigEntry.TYPE_BUTTON
+     * @param propertyInstance Instanz einer propertyklasse (Extends property).
+     * @param propertyName Name der Eigenschaft
+     * @param label Label
+     */
+    ConfigEntry(int type, Property propertyInstance, String propertyName, String label,int start, int end) {
+        this.type = type;
+        this.propertyName = propertyName;
+        this.propertyInstance = propertyInstance;
+        this.label = label;
+        this.setLayout(new BorderLayout());
+        input = new JComponent[1];
+this.start=start;
+this.end=end;
+        this.add(new JLabel(label), BorderLayout.CENTER);
+        if (type == PluginConfig.TYPE_SPINNER) {
+            logger.info("ADD Spinner");
+
+            input[0] = new JSpinner(new SpinnerNumberModel(start, start, end, getSteps()));
+            
+//            ((JSpinner)input[0])
+            this.add(input[0], BorderLayout.EAST);
+        }
+    }
     /**
      * Erstellt einen neuen ConfigEntry
      * 
@@ -245,6 +288,12 @@ public class ConfigEntry extends JPanel {
             case PluginConfig.TYPE_BROWSEFILE:
                 ((BrowseFile) input[0]).setText(text == null ? "" : text.toString());
                 break;
+                
+            case PluginConfig.TYPE_SPINNER:
+               int value=text instanceof Integer?(Integer)text:Integer.parseInt(text.toString());
+             
+                ((JSpinner) input[0]).setModel(new SpinnerNumberModel(value, start, end, getSteps()));
+                break;
             case PluginConfig.TYPE_RADIOFIELD:
                 for (int i = 0; i < list.length; i++) {
                     JRadioButton radio = (JRadioButton) input[i];
@@ -369,5 +418,28 @@ public class ConfigEntry extends JPanel {
 
     public void setListener(ActionListener listener) {
         this.listener = listener;
+    }
+    /**
+     * ERlaubt das setzen einer Schrttgröße. Manche Komponenten brauchen das
+     * @param i
+     */
+    public void setSteps(int i) {
+       this.steps=i;
+        
+    }
+    public int getSteps() {
+        return steps;
+    }
+    public int getStart() {
+        return start;
+    }
+    public void setStart(int start) {
+        this.start = start;
+    }
+    public int getEnd() {
+        return end;
+    }
+    public void setEnd(int end) {
+        this.end = end;
     }
 }

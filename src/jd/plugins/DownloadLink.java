@@ -164,10 +164,6 @@ public class DownloadLink implements Serializable, Comparable {
      */
     private long              downloadCurrent;
 
-    private String            password;
-
-    private String            comment;
-
     /**
      * Hierhin soll die Datei gespeichert werden.
      */
@@ -283,9 +279,12 @@ public class DownloadLink implements Serializable, Comparable {
     }
 
     /**
-     * Gibt zurück ob Dieser Link schon auf verfügbarkeit getestet wurde.
+     * Gibt zurück ob Dieser Link schon auf verfügbarkeit getestet wurde.+ Diese
+     * FUnktion führt keinen!! Check durch. Sie prüft nur ob schon geprüft
+     * worden ist. anschießend kann mit isAvailable() die verfügbarkeit
+     * überprüft werden
      * 
-     * @return
+     * @return Link wurde schon getestet (true) nicht getestet(false)
      */
     public boolean isAvailabilityChecked() {
         return available != null;
@@ -293,9 +292,10 @@ public class DownloadLink implements Serializable, Comparable {
     }
 
     /**
-     * Führt einen verfügbarkeitscheck durch
+     * Führt einen verfügbarkeitscheck durch. GIbt true zurück wenn der link
+     * online ist
      * 
-     * @return
+     * @return true/false
      */
     public boolean isAvailable() {
         if (this.available != null) {
@@ -457,6 +457,11 @@ public class DownloadLink implements Serializable, Comparable {
         this.downloadMax = downloadMax;
     }
 
+    /*
+     * (non-Javadoc)
+     * 
+     * @see java.lang.Object#equals(java.lang.Object)
+     */
     @Override
     public boolean equals(Object obj) {
         if (obj instanceof DownloadLink)
@@ -512,7 +517,7 @@ public class DownloadLink implements Serializable, Comparable {
 
         int speed;
         if (getRemainingWaittime() > 0) {
-            return this.statusText + "Warten: (" + JDUtilities.formatSeconds((int)(getRemainingWaittime() / 1000)) + "sek)";
+            return this.statusText + "Warten: (" + JDUtilities.formatSeconds((int) (getRemainingWaittime() / 1000)) + "sek)";
         }
         if (this.isInProgress() && (speed = getDownloadSpeed()) > 0) {
             long remainingBytes = this.getDownloadMax() - this.getDownloadCurrent();
@@ -539,11 +544,11 @@ public class DownloadLink implements Serializable, Comparable {
     }
 
     /**
-     * Gibt nur den Dateinamen aus der URL extrahiert zurück. Um aufd en
+     * Gibt nur den Dateinamen aus der URL extrahiert zurück. Um auf den
      * dateinamen zuzugreifen sollte bis auf Ausnamen immer
      * DownloadLink.getName() verwendet werden
      * 
-     * @return
+     * @return Datename des Downloads.
      */
     public String getFileNameFrom() {
         int index = Math.max(this.getUrlDownloadDecrypted().lastIndexOf("/"), this.getUrlDownloadDecrypted().lastIndexOf("\\"));
@@ -579,15 +584,33 @@ public class DownloadLink implements Serializable, Comparable {
         return Math.max(0, this.mustWaitTil - System.currentTimeMillis());
     }
 
+    /**
+     * Speichert das zuletzt geladene captchabild für diesen link
+     * 
+     * @param dest
+     */
     public void setLatestCaptchaFile(File dest) {
         this.latestCaptchaFile = dest;
 
     }
 
+    /**
+     * Gibt den Pgad zum zuletzt gespeichertem Captchabild für diesen download
+     * zurück
+     * 
+     * @return captcha pfad
+     */
     public File getLatestCaptchaFile() {
         return latestCaptchaFile;
     }
 
+    /**
+     * Über diese funktion kann das plugin den link benachrichten dass neue
+     * bytes geladen worden sind. dadurchw ird der interne speedmesser
+     * aktualisiert
+     * 
+     * @param bytes
+     */
     public void addBytes(int bytes) {
 
         this.getSpeedMeter().addValue(bytes);
@@ -616,32 +639,64 @@ public class DownloadLink implements Serializable, Comparable {
         return getSpeedMeter().getSpeed();
     }
 
+    /**
+     * @return true falls der download abgebrochen wurde
+     */
     public boolean isAborted() {
         return aborted;
     }
 
+    /**
+     * kann mit setAborted(true) den Download abbrechen
+     * 
+     * @param aborted
+     */
     public void setAborted(boolean aborted) {
         this.aborted = aborted;
     }
 
+    /**
+     * Gibt das archivpasswort zurück
+     * 
+     * @return archivpasswort
+     */
     public String getPassword() {
         if (getFilePackage() == null) return null;
         return getFilePackage().getPassword();
     }
 
+    /**
+     * Gibt den Dateikommentar zurück.
+     * 
+     * @return Dateikommentar
+     */
     public String getComment() {
         if (getFilePackage() == null) return null;
         return getFilePackage().getComment();
     }
 
+    /**
+     * Gibt das Filepacket des Links zurück. Kann auch null sein!! (Gui
+     * abhängig)
+     * 
+     * @return Filepackage
+     */
     public FilePackage getFilePackage() {
         return filePackage;
     }
 
+    /**
+     * Setzt das Filepackage für diesen download
+     * 
+     * @param filePackage
+     */
     public void setFilePackage(FilePackage filePackage) {
         this.filePackage = filePackage;
     }
 
+    /**
+     * Vergleichsfunktion um einen downloadliste alphabetisch zu ordnen
+     */
     public int compareTo(Object o) {
         if (o instanceof DownloadLink) {
 
@@ -664,9 +719,23 @@ public class DownloadLink implements Serializable, Comparable {
      * 
      * @return STring
      */
-    public String getDisplayedFilename() {
+    public String toString() {
+        return this.getUrlDownloadDecrypted();
+    }
+
+    /**
+     * Gibt den Darstellbaren Dateinamen zurück. Dabei handelt es sich nicht
+     * zwangsläufig um einen Valid-Filename. Dieser String eignet sich zur
+     * darstellung des link und kann zusatzinformationen wie dateigröße oder
+     * verfügbarkeit haben Diese Zusatzinformationen liefert das zugehörige
+     * PLugin ACHTUNG: Weil der Dateiname kein zuverlässiger Dateiname sein muss
+     * darf diese FUnktion nicht verwendet werden um eine datei zu benennen.
+     * 
+     * @return Erweiterter "Dateiname"
+     */
+    public String getFileInfomationString() {
         if (getPlugin() instanceof PluginForHost) {
-            return ((PluginForHost) getPlugin()).getDisplayedFilename(this);
+            return ((PluginForHost) getPlugin()).getFileInformationString(this);
         }
         else {
             return getName();

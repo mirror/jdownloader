@@ -36,6 +36,7 @@ import java.net.URLClassLoader;
 import java.net.URLConnection;
 import java.net.URLDecoder;
 import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -74,7 +75,7 @@ public class JDUtilities {
     /**
      * Titel der Applikation
      */
-    public static final String              JD_VERSION        = "0.0.3.1 (17.09)";
+    public static final String              JD_VERSION        = "0.0.3.2 (18.09)";
 
     /**
      * Versionsstring der Applikation
@@ -731,7 +732,7 @@ public class JDUtilities {
      * @param i
      * @param num
      * @param fill
-     * @return
+     * @return aufgefüllte Zeichenkette
      */
     public static String fillInteger(int i,int num,String fill){
         String ret=""+i;
@@ -756,7 +757,10 @@ public class JDUtilities {
     public static Vector<PluginForSearch> getPluginsForSearch() {
         return pluginsForSearch; 
     }
-    
+    /**
+     * Gibt alle Ketegorien zurück für die Suchplugins exestieren. Die Kategorien werden in den Plugins selbst als String definiert
+     * @return Alle Search kategorien
+     */
     public static Vector<String> getPluginsForSearchCategories() {
         Vector<String> ret= new Vector<String>();
         
@@ -776,7 +780,28 @@ public class JDUtilities {
     public static Vector<PluginForHost> getPluginsForHost() {
         return pluginsForHost;
     }
+    /**
+     * GIbt den MD5 hash eines Strings zurück
+     * @param arg
+     * @return MD% hash von arg
+     */
+    public static String getMD5(String arg) {
+        try {
 
+            MessageDigest md = MessageDigest.getInstance("md5");
+            
+            byte[] digest = md.digest( arg.getBytes() );
+            String ret="";
+            for ( byte d : digest ){
+                  ret+=Integer.toHexString( d & 0xFF);
+            }
+            return ret;
+        
+        } catch (NoSuchAlgorithmException e) {
+        
+        }
+        return "";
+    }
     /**
      * Sucht ein passendes Plugin für einen Anbieter
      * 
@@ -1071,6 +1096,12 @@ public class JDUtilities {
             }
 return false;
     }
+    /**
+     * Lädt über eine URLConnection eine datei ehrunter. Zieldatei ist file. 
+     * @param file
+     * @param con
+     * @return Erfolg true/false
+     */
     public static boolean download(File file, URLConnection con) {
 
         try {
@@ -1185,7 +1216,7 @@ return false;
      * Führt einen befehl aus und wartet nicht! bis dieser abgearbeitet wurde
      * 
      * @param command
-     * @throws IOException
+     * @throws Exception 
      */
     public static void runCommand(String command) throws Exception {
         if (command == null) {
@@ -1234,7 +1265,7 @@ return false;
 /**
  * Formatiert Byes in einen MB String [MM.MM MB]
  * @param downloadMax
- * @return
+ * @return MegaByte Formatierter String
  */
     public static String formatBytesToMB(long downloadMax) {
         

@@ -25,6 +25,18 @@ public class Configuration extends Property implements Serializable {
      * serialVersionUID
      */
     private static final long       serialVersionUID      = -2709887320616014389L;
+/**
+ * Parameter für den key unter dem der zugehöroge Wert abgespeichert werden soll
+ */
+    public static final String PARAM_DOWNLOAD_READ_TIMEOUT = "DOWNLOAD_READ_TIMEOUT";
+    /**
+     * Parameter für den key unter dem der zugehöroge Wert abgespeichert werden soll
+     */
+    public static final String PARAM_DOWNLOAD_CONNECT_TIMEOUT = "DOWNLOAD_CONNECT_TIMEOUT";
+    /**
+     * Parameter für den key unter dem der zugehöroge Wert abgespeichert werden soll
+     */
+    public static final String PARAM_DOWNLOAD_MAX_SIMULTAN = "DOWNLOAD_MAX_SIMULTAN";
 
     private boolean                 useJAC                = true;
 
@@ -78,14 +90,7 @@ public class Configuration extends Property implements Serializable {
     private int                     waitForIPCheck        = 0;
 
     private String                  version="";
-    /**
-     * Download timeout);
-     */
- private int readTimeout=10000;
- /**
-  * Download timeout);
-  */
- private int connectTimeout=10000;
+   
     /**
      * Konstruktor für ein Configuration Object
      */
@@ -318,6 +323,9 @@ public class Configuration extends Property implements Serializable {
             jac.setTrigger(it);
             interactions.add(jac);
         }
+        if(getProperty("maxSimultanDownloads")==null||((Integer)getProperty("maxSimultanDownloads"))==0){
+            setProperty("maxSimultanDownloads",3);
+        }
 
         
         setConfigurationVersion(JDUtilities.JD_VERSION);
@@ -331,33 +339,16 @@ public class Configuration extends Property implements Serializable {
 public String toString(){
     return "Configuration "+this.getProperties()+" INteraction "+this.interactions;
 }
+/**
+ * Gibt den Wert zu key zurück. falls dieser Wert == null ist wird der defaultValue zurückgegeben
+ * @param key
+ * @param defaultValue
+ * @return Wert zu key oder defaultValue
+ */
+public Object getProperty(String key, Object defaultValue) {
+   if(getProperty(key)==null)return defaultValue;
+   return getProperty(key);
+}
 
-/**
- * 
- * @return readTimeout in Millisekunden (für den eigentlichen download)
- */
-public int getReadTimeout() {
-    return readTimeout;
-}
 
-/**Setzt den lese-Timeout für den Download
- * @param readTimeout
- */
-public void setReadTimeout(int readTimeout) {
-    this.readTimeout = readTimeout;
-}
-/**
- * 
- * @return gibt den requestTimeout für den download an
- */
-public int getConnectTimeout() {
-    return connectTimeout;
-}
-/**
- * Setzt den requestTimeout für den Download
- * @param connectTimeout
- */
-public void setConnectTimeout(int connectTimeout) {
-    this.connectTimeout = connectTimeout;
-}
 }

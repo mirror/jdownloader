@@ -15,7 +15,7 @@ public class Lixin extends PluginForDecrypt {
 
     static private final String  host = "lix.in";
 	private String version = "1.0.0.0";
-	private Pattern patternSupported = Pattern.compile("http://lix\\.in/.*");
+	private Pattern patternSupported = getSupportPattern("http://lix.in/[+]");
 	
     public Lixin() {
         super();

@@ -16,7 +16,7 @@ import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
 
 public class Uploadedto extends PluginForHost {
-    static private final Pattern PAT_SUPPORTED  = Pattern.compile("http://(?:www\\.)*uploaded.to/\\?id\\=[^\\s\"]+");
+    static private final Pattern PAT_SUPPORTED  = getSupportPattern("http://[*]uploaded.to/\\?id\\=[+]");
 
     static private final String  HOST           = "uploaded.to";
 
@@ -175,7 +175,7 @@ public class Uploadedto extends PluginForHost {
 
     }
 
-    public String getDisplayedFilename(DownloadLink downloadLink) {
+    public String getFileInformationString(DownloadLink downloadLink) {
         return downloadLink.getName() + " (" + JDUtilities.formatBytesToMB(downloadLink.getDownloadMax()) + ")";
     }
 

@@ -20,7 +20,7 @@ import jd.plugins.RequestInfo;
  * noch?)
  */
 public class Gulli extends PluginForHost {
-    static private final Pattern PAT_SUPPORTED      = Pattern.compile("http://share.gulli.com/.*");
+    static private final Pattern PAT_SUPPORTED      = getSupportPattern("http://share.gulli.com/[+]");
 
     static private final Pattern PAT_CAPTCHA        = Pattern.compile("<img src=\"(/captcha[^\"]*)");
 

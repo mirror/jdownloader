@@ -67,7 +67,26 @@ public abstract class PluginForDecrypt extends Plugin {
         return new Vector<String>();
 
     }
-
+    /**
+     * Sucht in data nach allen passenden links und gibt diese als vektor zurück
+     * @param data
+     * @return
+     */
+    public Vector<String> getDycryptableLinks(String data){
+       
+      
+        Vector<String> hits = getMatches(data, getSupportedLinks());
+        if(hits != null && hits.size()>0){
+           
+            for(int i=0;i<hits.size();i++){
+                String file = hits.get(i);
+             while(file.charAt(0)=='"')file=file.substring(1);
+             while(file.charAt(file.length()-1)=='"')file=file.substring(0,file.length()-1);
+               hits.setElementAt(file, i);
+            }
+        }
+        return hits;
+    }
     public abstract PluginStep doStep(PluginStep step, String parameter);
 
     public PluginStep doStep(PluginStep step, Object parameter) {

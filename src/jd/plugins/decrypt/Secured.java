@@ -22,7 +22,7 @@ import jd.plugins.event.PluginEvent;
  */
 public class Secured extends PluginForDecrypt {
 
-    static private final Pattern PAT_SUPPORTED    = Pattern.compile("http://secured.in/download.*");
+    static private final Pattern PAT_SUPPORTED    = getSupportPattern("http://[*]secured.in/download[+]");
 
     static private final Pattern PAT_FILE_ID      = Pattern.compile("accessDownload\\([^']*'([^']*)");
 
@@ -136,7 +136,7 @@ public class Secured extends PluginForDecrypt {
 
                 try {
                     RequestInfo requestInfo = getRequest(new URL(JS_URL));
-                    DOWNLOAD_CMD = getMatch(requestInfo.getHtmlCode(), PAT_DOWNLOAD_CMD, 0, 5);
+                    DOWNLOAD_CMD = getSimpleMatch(requestInfo.getHtmlCode(), PAT_DOWNLOAD_CMD, 0, 5);
                     logger.info(DOWNLOAD_CMD);
                     firePluginEvent(new PluginEvent(this, PluginEvent.PLUGIN_PROGRESS_MAX, 1));
                     URL url = new URL(cryptedLink);

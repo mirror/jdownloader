@@ -10,6 +10,7 @@ import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JFileChooser;
 import javax.swing.JLabel;
+import javax.swing.JTextField;
 
 import jd.Configuration;
 import jd.JDUtilities;
@@ -31,7 +32,7 @@ public class ConfigPanelGeneral extends ConfigPanel implements ActionListener{
     private BrowseFile brsHomeDir;
     private JComboBox cboLoggerLevel;
     private JButton btnUpdate;
-
+  
    
     
     
@@ -47,6 +48,8 @@ public class ConfigPanelGeneral extends ConfigPanel implements ActionListener{
     public void save(){
         Level loggerLevel = (Level)cboLoggerLevel.getSelectedItem();
         configuration.setDownloadDirectory(brsDownloadDir.getText().trim());
+        configuration.setLoggerLevel(loggerLevel.getName());
+     
         configuration.setLoggerLevel(loggerLevel.getName());
         Plugin.getLogger().setLevel(loggerLevel);
         if(JDUtilities.getHomeDirectory() != null)
@@ -64,10 +67,11 @@ public class ConfigPanelGeneral extends ConfigPanel implements ActionListener{
 
         lblDownloadDir = new JLabel("Download Verzeichnis");
         lblHomeDir     = new JLabel("JD Home");
-    
+
         lblLoggerLevel = new JLabel("Level für's Logging");
         brsHomeDir     = new BrowseFile(30);
-      
+  
+    
       brsHomeDir.setText(JDUtilities.getHomeDirectory()); 
       brsHomeDir.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
         brsDownloadDir = new BrowseFile(30);
@@ -110,7 +114,7 @@ public class ConfigPanelGeneral extends ConfigPanel implements ActionListener{
             JDUtilities.addToGridBag(panel, brsHomeDir, 1, row, 1, 1, 1, 1, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
             row++;
         }
- 
+
  
         add(panel,BorderLayout.BEFORE_FIRST_LINE);
 

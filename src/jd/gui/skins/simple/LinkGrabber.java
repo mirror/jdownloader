@@ -257,11 +257,11 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
             }
             else {
                 if (linkList.elementAt(i).isAvailable()) {
-                    tmp.addElement((i + 1) + ". [online] " + linkList.elementAt(i).getPlugin().getPluginName() + ": " + linkList.elementAt(i).getDisplayedFilename());
+                    tmp.addElement((i + 1) + ". [online] " + linkList.elementAt(i).getPlugin().getPluginName() + ": " + linkList.elementAt(i).getFileInfomationString());
 
                 }
                 else {
-                    tmp.addElement((i + 1) + ". [OFFLINE] " + linkList.elementAt(i).getPlugin().getPluginName() + ": " + linkList.elementAt(i).getDisplayedFilename());
+                    tmp.addElement((i + 1) + ". [OFFLINE] " + linkList.elementAt(i).getPlugin().getPluginName() + ": " + linkList.elementAt(i).getFileInfomationString());
 
                 }
 

@@ -46,9 +46,6 @@ public class ClipboardHandler extends Thread {
      */
     public void run() {
 
-        
-        
-   
         try {
             //Verhindert dass beim starten die zwischenablage ausgewertet wird
         data = (String) clipboard.getData(DataFlavor.stringFlavor);

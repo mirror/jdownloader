@@ -28,7 +28,7 @@ public class RsXXXBlog extends PluginForDecrypt {
 
  
    
-    private Pattern patternSupported     = Pattern.compile("http://rs\\.xxx-blog\\.org/com-[\\w]*/[^\\s\"']*");
+    private Pattern patternSupported     = getSupportPattern("http://rs.xxx-blog.org/com-[+]/[+]");
 
 
     public RsXXXBlog() {

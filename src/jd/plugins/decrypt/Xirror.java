@@ -18,7 +18,7 @@ public class Xirror extends PluginForDecrypt {
 
 	final static String host = "xirror.com";
 	private String version = "1.0.0.0";
-	private Pattern patternSupported = Pattern.compile("http://xirror\\.com/spread/[0-9]+/.*.html");
+	private Pattern patternSupported =getSupportPattern("http://[*]xirror.com/spread/[+]/[*]");
 	
     public Xirror() {
         super();

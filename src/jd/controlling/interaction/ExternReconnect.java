@@ -2,6 +2,7 @@ package jd.controlling.interaction;
 
 import java.io.IOException;
 import java.io.Serializable;
+import java.net.SocketTimeoutException;
 import java.net.URL;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -67,7 +68,7 @@ public class ExternReconnect extends Interaction implements Serializable {
      */
 
     private static final String      NAME                        = "Extern Reconnect";
-
+    private transient String lastIP;
     /**
      * Maximale Reconnectanzahl
      */
@@ -88,8 +89,19 @@ public class ExternReconnect extends Interaction implements Serializable {
 
         // IP auslesen
         ipBefore = getIPAddress();
+        if(ipBefore!=null&&lastIP!=null && !lastIP.equals(ipBefore)){
+            
+            
+            lastIP=ipBefore;
+            logger.info("IP Wechsel vermutet:"+lastIP+ "! Falls nicht auf die Rückkehr des Reconnecttools gewartet wird, sollte die Wartezeit bis zum IP-Check erhöht werden");
+            return true;
+        }
+        if(ipBefore!=null){
+            lastIP=ipBefore;
+        }
         logger.fine("IP before:" + ipBefore);
         if (JDUtilities.getConfiguration().getProperty(PROPERTY_IP_WAIT_FOR_RETURN) == null || (Boolean) JDUtilities.getConfiguration().getProperty(PROPERTY_IP_WAIT_FOR_RETURN)) {
+            logger.info("Warte auf Rückkehr");
             try {
                 JDUtilities.runCommandAndWait((String) JDUtilities.getConfiguration().getProperty(PROPERTY_RECONNECT_COMMAND));
             }
@@ -100,6 +112,7 @@ public class ExternReconnect extends Interaction implements Serializable {
             }
         }
         else {
+            logger.info("Nicht warten");
             try {
                 JDUtilities.runCommand((String) JDUtilities.getConfiguration().getProperty(PROPERTY_RECONNECT_COMMAND));
             }
@@ -111,6 +124,7 @@ public class ExternReconnect extends Interaction implements Serializable {
         }
         if (JDUtilities.getConfiguration().getProperty(PROPERTY_IP_WAITCHECK) != null) {
             try {
+                logger.fine("Wait "+JDUtilities.getConfiguration().getProperty(PROPERTY_IP_WAITCHECK)+" sek");
                 Thread.sleep(Integer.parseInt((String) JDUtilities.getConfiguration().getProperty(PROPERTY_IP_WAITCHECK)) * 1000);
             }
             catch (NumberFormatException e) {
@@ -130,6 +144,7 @@ public class ExternReconnect extends Interaction implements Serializable {
             retries = 0;
             return false;
         }
+        lastIP=ipAfter;
         this.setCallCode(Interaction.INTERACTION_CALL_SUCCESS);
         retries = 0;
         return true;
@@ -152,6 +167,9 @@ public class ExternReconnect extends Interaction implements Serializable {
             Matcher matcher = pattern.matcher(data);
             if (matcher.find()) ipAddress = matcher.group(1);
             return ipAddress;
+        }
+        catch (SocketTimeoutException e){
+            logger.severe("Timeout. Es wurde keine Verbindung gefunden. Wartezeit bis zum IP check verlängern!" + e.toString());
         }
         catch (IOException e1) {
             logger.severe(urlForIPAddress + " url not found. " + e1.toString());

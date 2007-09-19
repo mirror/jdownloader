@@ -15,7 +15,7 @@ public class Tinyurl extends PluginForDecrypt {
 
 	static private String host = "tinyurl.com";
 	private String version = "1.0.0.0";
-	private Pattern patternSupported = Pattern.compile("http://.*tinyurl\\.com/.*");
+	private Pattern patternSupported = getSupportPattern("http://[*]tinyurl.com/[+]");
 	private Pattern patternLink = Pattern.compile("http://tinyurl\\.com/.*");
 	
     public Tinyurl() {

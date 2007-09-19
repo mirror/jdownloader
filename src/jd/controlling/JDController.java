@@ -156,7 +156,7 @@ public class JDController implements PluginListener, ControlListener, UIListener
             case ControlEvent.CONTROL_DISTRIBUTE_FINISHED:
                 Object links = event.getParameter();
                 if (links != null && links instanceof Vector && ((Vector) links).size() > 0) {
-
+//schickt die Links zuerst mal zum Linkgrabber
                     uiInterface.addLinksToGrabber((Vector<DownloadLink>) links);
                 }
                 break;
@@ -219,6 +219,8 @@ public class JDController implements PluginListener, ControlListener, UIListener
                 JDUtilities.saveObject(null, JDUtilities.getConfiguration(), JDUtilities.getJDHomeDirectory(), JDUtilities.CONFIG_PATH.split("\\.")[0], "."+ JDUtilities.CONFIG_PATH.split("\\.")[1], Configuration.saveAsXML);
                 break;
             case UIEvent.UI_LINKS_GRABBED:
+                
+                //Event wenn der Linkgrabber mit ok bestätigt wird. Die ausgewählten Links werden als Eventparameter übergeben und können nun der Downloadliste zugeführt werden
                 Object links = uiEvent.getParameter();
                 if (links != null && links instanceof Vector && ((Vector) links).size() > 0) {
                     downloadLinks.addAll((Vector<DownloadLink>) links);

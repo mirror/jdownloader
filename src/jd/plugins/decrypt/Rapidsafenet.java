@@ -16,7 +16,7 @@ public class Rapidsafenet extends PluginForDecrypt {
 
     static private final String  host = "rapidsafe.net";
 	private String version = "1.0.0.0";
-	private Pattern patternSupported = Pattern.compile("http://www\\.rapidsafe\\.net/.*");
+	private Pattern patternSupported = getSupportPattern("http://www.rapidsafe.net/[+]");;
 	
     public Rapidsafenet() {
         super();

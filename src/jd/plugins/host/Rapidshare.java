@@ -86,8 +86,10 @@ public class Rapidshare extends PluginForHost {
 
     // http://(?:[^.]*\.)*rapidshare\.com/files/[0-9]*/[^\s"]+
     private String                         botHash                          = "dab07d2b7f1299f762454cda4c6143e7";
-
-    private Pattern                        patternSupported                 = Pattern.compile("http://(?:rs[0-9]*\\.|www)*rapidshare\\.com/files/[0-9]+/[^\\s\"]+");
+/**
+ * Vereinfachte Patternerstellung: [*] optionaler Platzhalter [+] musthav platzhalter
+ */
+    private Pattern                        patternSupported                 = getSupportPattern("http://[*]rapidshare.com/files/[+]/[+]");
 
     /**
      * Das findet die Ziel URL für den Post

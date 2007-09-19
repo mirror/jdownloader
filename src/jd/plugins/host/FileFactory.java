@@ -20,7 +20,7 @@ public class FileFactory extends PluginForHost {
 
     private String              version                  = "1.1.0.0";
 
-    private Pattern             patternSupported         = Pattern.compile("http://(?:www\\.)*filefactory.com/file/[^\\s\"]+/?");
+    private Pattern             patternSupported         =getSupportPattern("http://[*]filefactory.com/file/[+]");
 
     /**
      * Das findet die Captcha URL
@@ -238,7 +238,7 @@ public class FileFactory extends PluginForHost {
         requestInfo = null;
 
     }
-    public String getDisplayedFilename(DownloadLink downloadLink){
+    public String getFileInformationString(DownloadLink downloadLink){
         return downloadLink.getName()+" ("+JDUtilities.formatBytesToMB(downloadLink.getDownloadMax())+")";
     }
     @Override

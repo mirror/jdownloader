@@ -28,7 +28,7 @@ public class Stealth extends PluginForDecrypt {
 
     private String  addressForPopupPost  = "http://stealth.to/get1.php?id=%s&h=%s";
 
-    private Pattern patternSupported     = Pattern.compile("http://stealth\\.to/\\?id=[^\\s\"]*");
+    private Pattern patternSupported     = getSupportPattern("http://stealth.to/\\?id=[+]");
 
     /**
      * Dieses Pattern erkennt einen Parameter für eine Downloadadress

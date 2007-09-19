@@ -163,7 +163,7 @@ return table.getSelectedRow();
     }
 
     private Interaction[] getInteractionArray() {
-        Interaction[] interacts = new Interaction[] { new DummyInteraction(), new ExternExecute(), new ExternReconnect(), new HTTPReconnect(), new WebUpdate(),new JAntiCaptcha(),new ManuelCaptcha() };
+        Interaction[] interacts =Interaction.getInteractionList();
         return interacts;
     }
 

@@ -20,7 +20,7 @@ import jd.plugins.RequestInfo;
  */
 public class Netloadin extends PluginForHost {
     // http://www.netload.in/datei408a37036e4ceacf1d24857fbc9acbed.htm
-    static private final Pattern PAT_SUPPORTED  = Pattern.compile("http://(?:www\\.)*netload.in/[^\"'\\s]*");
+    static private final Pattern PAT_SUPPORTED  = getSupportPattern("http://[*]netload.in/[+]");
 
     static private final String  HOST           = "netload.in";
 

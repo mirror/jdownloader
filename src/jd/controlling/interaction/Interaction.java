@@ -21,128 +21,126 @@ public abstract class Interaction extends Property implements Serializable {
     /**
      * serialVersionUID
      */
-    private transient static final long       serialVersionUID                   = -5609631258725998799L;
+    private transient static final long       serialVersionUID                      = -5609631258725998799L;
 
-    protected transient static Logger         logger                             = Plugin.getLogger();
+    protected transient static Logger         logger                                = Plugin.getLogger();
 
-  
     /**
      * Gibt das Event an bei dem Diese INteraction aktiv wird
      */
     private InteractionTrigger                trigger;
-    
+
     /**
      * THread der für die Interaction verwendet werden kann
      */
 
-    protected transient Thread                 thread                             = null;
+    protected transient Thread                thread                                = null;
 
     /**
      * Hiermit wird der Eventmechanismus realisiert. Alle hier eingetragenen
      * Listener werden benachrichtigt, wenn mittels
      * {@link #firePluginEvent(PluginEvent)} ein Event losgeschickt wird.
      */
-    private transient Vector<ControlListener> controlListener                    = null;
+    private transient Vector<ControlListener> controlListener                       = null;
 
     /**
      * Code der abgerufe werden kann um details über den Ablauf der Interaction
      * zu kriegen
      */
-    protected transient int                    lastCallCode                       = 0;
+    protected transient int                   lastCallCode                          = 0;
 
     /**
      * Zeigt an dass diese Interaction noch nie aufgerufen wurde
      */
-    public transient final static int         INTERACTION_CALL_NEVERCALLED       = 0;
+    public transient final static int         INTERACTION_CALL_NEVERCALLED          = 0;
 
     /**
      * Zeigt an dass die INteraction erfolgreioch beendet wurde
      */
-    public transient final static int         INTERACTION_CALL_SUCCESS           = 1;
+    public transient final static int         INTERACTION_CALL_SUCCESS              = 1;
 
     /**
      * Zeigt an dass die Interaction mit Fehlern beendet wurde
      */
-    public transient final static int         INTERACTION_CALL_ERROR             = 2;
+    public transient final static int         INTERACTION_CALL_ERROR                = 2;
 
     /**
      * Zeigt dass die INteraction gerade läuft
      */
-    public transient final static int         INTERACTION_CALL_RUNNING           = 3;
+    public transient final static int         INTERACTION_CALL_RUNNING              = 3;
 
     // Download IDS
 
     /**
      * Zeigt an, daß ein einzelner Download beendet wurde
      */
-    public static InteractionTrigger          INTERACTION_NO_EVENT               = new InteractionTrigger(0, "Kein Event", "kein Event");
+    public static InteractionTrigger          INTERACTION_NO_EVENT                  = new InteractionTrigger(0, "Kein Event", "kein Event");
 
-    
     /**
      * Reconnect nötig
      */
-    public static InteractionTrigger          INTERACTION_NEED_RECONNECT         = new InteractionTrigger(11, "Reconnect nötig", "Alle Trigger bei denen ein Reconnect sinnvoll ist zusammengefasst");
+    public static InteractionTrigger          INTERACTION_NEED_RECONNECT            = new InteractionTrigger(11, "Reconnect nötig", "Alle Trigger bei denen ein Reconnect sinnvoll ist zusammengefasst");
 
     /**
      * Zeigt an, daß ein einzelner Download beendet wurde
      */
-    public static InteractionTrigger          INTERACTION_SINGLE_DOWNLOAD_FINISHED      = new InteractionTrigger(1, "Download beendet", "Wird aufgerufen sobald ein Download beendet wurde");
+    public static InteractionTrigger          INTERACTION_SINGLE_DOWNLOAD_FINISHED  = new InteractionTrigger(1, "Download beendet", "Wird aufgerufen sobald ein Download beendet wurde");
 
     /**
      * Zeigt an, daß alle Downloads abgeschlossen wurden
      */
-    public static InteractionTrigger          INTERACTION_ALL_DOWNLOADS_FINISHED = new InteractionTrigger(2, "Alle Downloads beendet", "Wird aufgerufen sobald alle Downloads beendet oder abgebrochen wurden");
+    public static InteractionTrigger          INTERACTION_ALL_DOWNLOADS_FINISHED    = new InteractionTrigger(2, "Alle Downloads beendet", "Wird aufgerufen sobald alle Downloads beendet oder abgebrochen wurden");
 
     /**
      * Zeigt, daß ein einzelner Download nicht fertiggestellt werden konnte
      */
-    public static InteractionTrigger          INTERACTION_DOWNLOAD_FAILED        = new InteractionTrigger(3, "Download fehlgeschlagen", "Wird aufgerufen wenn ein Download wegen Fehlern abgebrochen wurde");
+    public static InteractionTrigger          INTERACTION_DOWNLOAD_FAILED           = new InteractionTrigger(3, "Download fehlgeschlagen", "Wird aufgerufen wenn ein Download wegen Fehlern abgebrochen wurde");
 
     /**
      * Zeigt, daß ein einzelner Download wegen Wartezeit nicht starten konnte
      */
-    public static InteractionTrigger          INTERACTION_DOWNLOAD_WAITTIME      = new InteractionTrigger(4, "Download hat Wartezeit", "Das Plugin meldet eine Wartezeit");
+    public static InteractionTrigger          INTERACTION_DOWNLOAD_WAITTIME         = new InteractionTrigger(4, "Download hat Wartezeit", "Das Plugin meldet eine Wartezeit");
 
     /**
      * Zeigt, daß ein der Bot erkannt wurde
      */
-    public static InteractionTrigger          INTERACTION_DOWNLOAD_BOT_DETECTED  = new InteractionTrigger(5, "Bot erkannt", "jDownloader wurde als Bot erkannt");
+    public static InteractionTrigger          INTERACTION_DOWNLOAD_BOT_DETECTED     = new InteractionTrigger(5, "Bot erkannt", "jDownloader wurde als Bot erkannt");
 
     /**
      * Zeigt, daß ein Captcha erkannt werden will
      */
-    public static InteractionTrigger          INTERACTION_DOWNLOAD_CAPTCHA       = new InteractionTrigger(6, "Captcha Erkennung", "Ein Captcha-Bild muss verarbeitet werden");
+    public static InteractionTrigger          INTERACTION_DOWNLOAD_CAPTCHA          = new InteractionTrigger(6, "Captcha Erkennung", "Ein Captcha-Bild muss verarbeitet werden");
+
     /**
      * Letztes Package file geladen
      */
-        public static final InteractionTrigger INTERACTION_DOWNLOAD_PACKAGE_FINISHED = new InteractionTrigger(12, "Paket fertig", "Wird aufgerufen wenn ein paket fertig geladen wurde");;
+    public static final InteractionTrigger    INTERACTION_DOWNLOAD_PACKAGE_FINISHED = new InteractionTrigger(12, "Paket fertig", "Wird aufgerufen wenn ein paket fertig geladen wurde");                            ;
 
     /**
      * Zeigt den Programmstart an
      */
-    public static InteractionTrigger          INTERACTION_APPSTART               = new InteractionTrigger(7, "Programmstart", "Direkt nach dem Initialisieren von jDownloader");
+    public static InteractionTrigger          INTERACTION_APPSTART                  = new InteractionTrigger(7, "Programmstart", "Direkt nach dem Initialisieren von jDownloader");
 
     /**
      * Zeigt den Programmende an
      */
-    public static InteractionTrigger          INTERACTION_APPTERMINATE           = new InteractionTrigger(8, "Programmende", "inaktiv");
+    public static InteractionTrigger          INTERACTION_APPTERMINATE              = new InteractionTrigger(8, "Programmende", "inaktiv");
 
     /**
      * Zeigt, dass vermutlich JAC veraltet ist
      */
-    public static InteractionTrigger          INTERACTION_JAC_UPDATE_NEEDED      = new InteractionTrigger(9, "Captcha Update nötig", "inaktiv");
+    public static InteractionTrigger          INTERACTION_JAC_UPDATE_NEEDED         = new InteractionTrigger(9, "Captcha Update nötig", "inaktiv");
 
     /**
      * Nach einem IP wechsel
      */
 
-    public final static InteractionTrigger    INTERACTION_AFTER_RECONNECT        = new InteractionTrigger(10, "Nach einem Reconnect", "inaktiv");
-
+    public final static InteractionTrigger    INTERACTION_AFTER_RECONNECT           = new InteractionTrigger(10, "Nach einem Reconnect", "inaktiv");
 
     public Interaction() {
         controlListener = new Vector<ControlListener>();
         this.setTrigger(Interaction.INTERACTION_NO_EVENT);
-      
+
     }
 
     public abstract boolean doInteraction(Object arg);
@@ -175,7 +173,7 @@ public abstract class Interaction extends Property implements Serializable {
      * @return
      */
     public boolean interact(Object arg) {
-     
+
         fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_PLUGIN_INTERACTION_ACTIVE, this));
         this.setCallCode(Interaction.INTERACTION_CALL_RUNNING);
         boolean success = doInteraction(arg);
@@ -273,10 +271,10 @@ public abstract class Interaction extends Property implements Serializable {
      */
     public static boolean handleInteraction(InteractionTrigger interactionevent, Object param) {
         boolean ret = true;
-        Vector<Interaction> interactions = JDUtilities.getConfiguration().getInteractions(); 
-               int interacts=0; 
-               for (int i = 0; i < interactions.size(); i++) { 
-      Interaction interaction = interactions.get(i); 
+        Vector<Interaction> interactions = JDUtilities.getConfiguration().getInteractions();
+        int interacts = 0;
+        for (int i = 0; i < interactions.size(); i++) {
+            Interaction interaction = interactions.get(i);
             if (interaction == null || interaction.getTrigger() == null || interactionevent == null) continue;
             if (interaction.getTrigger().getID() == interactionevent.getID()) {
                 interaction.addControlListener(JDUtilities.getController());
@@ -335,11 +333,13 @@ public abstract class Interaction extends Property implements Serializable {
         return false;
 
     }
-/**
- * Gibt alle Interactionen zum trigger zurück
- * @param trigger
- * @return
- */
+
+    /**
+     * Gibt alle Interactionen zum trigger zurück
+     * 
+     * @param trigger
+     * @return
+     */
     public static Interaction[] getInteractions(InteractionTrigger trigger) {
         Vector<Interaction> interactions = JDUtilities.getConfiguration().getInteractions();
         Vector<Interaction> ret = new Vector<Interaction>();
@@ -372,13 +372,18 @@ public abstract class Interaction extends Property implements Serializable {
     /**
      * Gibt den namen des EventTriggers zurück
      * 
-     * @return
+     * @return Name des Triggers
      */
     public String getTriggerName() {
         return getTrigger().toString();
     }
+/**
+ * Gibt eine Liste aller vefügbaren INteractions zurück. Bei neuen Interactions muss diese hier eingefügt werden
+ * @return Liste mit allen Interactionen
+ */
+    public static Interaction[] getInteractionList() {
 
-  
+        return new Interaction[] { new DummyInteraction(), new ExternExecute(), new ExternReconnect(), new HTTPReconnect(), new WebUpdate(), new JAntiCaptcha(), new ManuelCaptcha() };
+    }
 
-  
 }

@@ -58,7 +58,9 @@ public class StartDownloads extends ControlMulticaster {
         if (currentPlugin != null) currentPlugin.abort();
     }
 
-    /* (non-Javadoc)
+    /*
+     * (non-Javadoc)
+     * 
      * @see java.lang.Thread#run()
      */
     public void run() {
@@ -90,21 +92,21 @@ public class StartDownloads extends ControlMulticaster {
                 logger.info("Current Step:  " + step);
                 switch (step.getStep()) {
                     case PluginStep.STEP_PENDING:
-                     
-                        long wait =(Long)step.getParameter();
-                        logger.info("Erzwungene Wartezeit: "+wait);
-                        while(wait>0){
-                        downloadLink.setStatusText("Erzwungene Wartezeit: "+JDUtilities.formatSeconds((int)(wait/1000)));
-                        fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SINGLE_DOWNLOAD_CHANGED, downloadLink));
-                        
-                        try {
-                            Thread.sleep(1000);
+
+                        long wait = (Long) step.getParameter();
+                        logger.info("Erzwungene Wartezeit: " + wait);
+                        while (wait > 0) {
+                            downloadLink.setStatusText("Erzwungene Wartezeit: " + JDUtilities.formatSeconds((int) (wait / 1000)));
+                            fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SINGLE_DOWNLOAD_CHANGED, downloadLink));
+
+                            try {
+                                Thread.sleep(1000);
+                            }
+                            catch (InterruptedException e) {
+                            }
+                            wait -= 1000;
                         }
-                        catch (InterruptedException e) {}
-                        wait-=1000;
-                        }
-                        
-                        
+
                         break;
                     case PluginStep.STEP_GET_CAPTCHA_FILE:
                         downloadLink.setStatusText("Captcha");
@@ -238,7 +240,7 @@ public class StartDownloads extends ControlMulticaster {
             }
             else {
                 downloadLink.setStatusText("Fertig");
-                //Schreibt die Info File
+                // Schreibt die Info File
                 if (downloadLink.getFilePackage() != null) {
                     File file = new File(downloadLink.getFilePackage().getDownloadDirectory());
                     file = new File(file, downloadLink.getFileNameFrom() + ".info");
@@ -252,7 +254,7 @@ public class StartDownloads extends ControlMulticaster {
                 }
                 fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SINGLE_DOWNLOAD_CHANGED, downloadLink));
                 Interaction.handleInteraction((Interaction.INTERACTION_SINGLE_DOWNLOAD_FINISHED), downloadLink);
-              
+
             }
             fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_PLUGIN_HOST_INACTIVE, plugin));
             fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SINGLE_DOWNLOAD_FINISHED, downloadLink));
@@ -262,7 +264,12 @@ public class StartDownloads extends ControlMulticaster {
         fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_ALL_DOWNLOADS_FINISHED, this));
         Interaction.handleInteraction((Interaction.INTERACTION_ALL_DOWNLOADS_FINISHED), this);
     }
-
+/**
+ * Wird aufgerufen wenn ein Link kurzzeitig nicht verfügbar ist. ER wird deaktiviert und kann zu einem späteren zeitpunkt wieder aktiviert werden
+ * @param downloadLink
+ * @param plugin
+ * @param step
+ */
     private void onErrorTemporarilyUnavailable(DownloadLink downloadLink, PluginForHost plugin, PluginStep step) {
         logger.severe("Error occurred: Temporarily unavailably");
         // long milliSeconds = (Long) step.getParameter();
@@ -274,7 +281,12 @@ public class StartDownloads extends ControlMulticaster {
         fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SINGLE_DOWNLOAD_CHANGED, downloadLink));
 
     }
-
+/**
+ * Wird aufgerufen wenn ein Loginfehler bei premiumaccounts auftritt. Die premiumnutzung beim PLugin wird deaktiviert und der Link wird nochmals versucht
+ * @param downloadLink
+ * @param plugin
+ * @param step
+ */
     private void onErrorPremiumLogin(DownloadLink downloadLink, PluginForHost plugin, PluginStep step) {
         // premium abschalten.
         logger.info("deaktivier PREMIUM für: " + plugin + " Grund: Logins falsch");
@@ -284,7 +296,12 @@ public class StartDownloads extends ControlMulticaster {
         downloadLink.setEndOfWaittime(0);
 
     }
-
+/**
+ * Fehlerfunktion für einen UNbekannten premiumfehler. PLugin-premium-support wird deaktiviert und link wird erneut versucht
+ * @param downloadLink
+ * @param plugin
+ * @param step
+ */
     private void onErrorPremium(DownloadLink downloadLink, PluginForHost plugin, PluginStep step) {
         logger.info("deaktivier PREMIUM für: " + plugin + " Grund: Unbekannt");
         plugin.getProperties().setProperty(Plugin.PROPERTY_USE_PREMIUM, false);
@@ -293,13 +310,19 @@ public class StartDownloads extends ControlMulticaster {
         downloadLink.setEndOfWaittime(0);
 
     }
-
+/**
+ * Wird aufgerufen wenn  Das PLugin eine Immer gleiche Wartezeit meldet. z.B. bei unbekannter Wartezeit
+ * @param downloadLink
+ * @param plugin
+ * @param step
+ */
     private void onErrorStaticWaittime(DownloadLink downloadLink, PluginForHost plugin, PluginStep step) {
         logger.severe("Error occurred: Static Wait Time " + step);
         long milliSeconds;
-        if(step.getParameter()!=null){
-        milliSeconds = (Long) step.getParameter();
-        }else{
+        if (step.getParameter() != null) {
+            milliSeconds = (Long) step.getParameter();
+        }
+        else {
             milliSeconds = 10000;
         }
         downloadLink.setEndOfWaittime(System.currentTimeMillis() + milliSeconds);
@@ -316,28 +339,45 @@ public class StartDownloads extends ControlMulticaster {
         downloadLink.setStatusText("");
 
     }
-
+/**
+ * Wird aufgerufenw ennd as PLugin einen filenot found Fehler meldet
+ * @param downloadLink
+ * @param plugin
+ * @param step
+ */
     private void onErrorFileNotFound(DownloadLink downloadLink, PluginForHost plugin, PluginStep step) {
         downloadLink.setStatusText("File Not Found");
         downloadLink.setInProgress(false);
         fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SINGLE_DOWNLOAD_CHANGED, downloadLink));
 
     }
-
+/**
+ * Wird bei einem File abused Fehler aufgerufen
+ * @param downloadLink
+ * @param plugin
+ * @param step
+ */
     private void onErrorAbused(DownloadLink downloadLink, PluginForHost plugin, PluginStep step) {
         downloadLink.setStatusText("File Abused");
         downloadLink.setInProgress(false);
         fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SINGLE_DOWNLOAD_CHANGED, downloadLink));
 
     }
-
+/**
+ * Wird aufgerufen wenn das Captchabild nicht geladen werden konnte
+ * @param downloadLink
+ * @param plugin
+ * @param step
+ */
     private void onErrorCaptchaImage(DownloadLink downloadLink, PluginForHost plugin, PluginStep step) {
         downloadLink.setStatusText("Captcha Fehler");
         downloadLink.setInProgress(false);
         fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SINGLE_DOWNLOAD_CHANGED, downloadLink));
 
     }
-
+/**
+ * Setzt den Status der Downloadliste zurück. zB. bei einem Abbruch
+ */
     private void clearDownloadListStatus() {
         Vector<DownloadLink> links;
 
@@ -364,21 +404,21 @@ public class StartDownloads extends ControlMulticaster {
      * @param step
      */
     private void onErrorRetry(DownloadLink downloadLink, PluginForHost plugin, PluginStep step) {
-        
-        if(step.getParameter()!=null){
-            logger.info("step.getParameter() "+step.getParameter());
-        long milliSeconds = (Long) step.getParameter();
-        
-        downloadLink.setStatusText("Warten: "+JDUtilities.formatSeconds((int)(milliSeconds/1000))+" sek.");
-        
-        fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SINGLE_DOWNLOAD_CHANGED, null));
-        try {
-            Thread.sleep(milliSeconds);
+
+        if (step.getParameter() != null) {
+            logger.info("step.getParameter() " + step.getParameter());
+            long milliSeconds = (Long) step.getParameter();
+
+            downloadLink.setStatusText("Warten: " + JDUtilities.formatSeconds((int) (milliSeconds / 1000)) + " sek.");
+
+            fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SINGLE_DOWNLOAD_CHANGED, null));
+            try {
+                Thread.sleep(milliSeconds);
+            }
+            catch (InterruptedException e) {
+            }
         }
-        catch (InterruptedException e) { }
-        }
-        
-        
+
         downloadLink.setInProgress(false);
         downloadLink.setStatus(DownloadLink.STATUS_TODO);
         downloadLink.setEndOfWaittime(0);

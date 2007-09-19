@@ -35,6 +35,7 @@ public abstract class PluginForSearch extends Plugin {
 
         PluginStep step = null;
         while ((step = nextStep(step)) != null) {
+            logger.info("do step "+steps.indexOf(step));
             doStep(step, searchPattern);
             if (nextStep(step) == null) {
                 try {

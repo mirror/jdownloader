@@ -55,6 +55,7 @@ public class PluginStep {
     public final static int STEP_PENDING      = 6;
 
     public static final int STEP_SEARCH = 7;
+    public static final int STEP_LOGIN = 8;
     /**
      * Status dieses Schrittes
      */

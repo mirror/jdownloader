@@ -20,7 +20,7 @@ public class Esnips extends PluginForHost {
 
     private String              version            = "1.0.0.0";
 
-    private Pattern             patternSupported   = Pattern.compile("http://(?:www\\.)*esnips.com/doc/[^\\s\"]+/?");
+    private Pattern             patternSupported   = getSupportPattern("http://[*]esnips.com/doc/[+]");
 
 
     private static final String SWF_PLAYER_TO_FILE = "autoPlay=no&amp;theFile=°&amp;theName=°&amp;thePlayerURL";
@@ -183,7 +183,7 @@ public class Esnips extends PluginForHost {
         requestInfo = null;
 
     }
-    public String getDisplayedFilename(DownloadLink downloadLink){
+    public String getFileInformationString(DownloadLink downloadLink){
         return downloadLink.getName()+" ("+JDUtilities.formatBytesToMB(downloadLink.getDownloadMax())+")";
     }
     @Override
