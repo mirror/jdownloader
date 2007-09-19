@@ -5,6 +5,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -1339,8 +1340,21 @@ public abstract class Plugin {
      *            zu setzen)
      * @return
      */
+    /*
+     *     
+        public static void testGetHttpLinks() throws IOException {
+        String input = "";
+        String thisLine;
+        BufferedReader br = new BufferedReader(new FileReader("index.html"));
+        while ((thisLine = br.readLine()) != null)
+            input += thisLine + "\n";
+        String[] dd = getHttpLinks(input, "http://www.google.de/");
+        for (int i = 0; i < dd.length; i++) 
+            System.out.println(dd[i]);
+        }
+     */
     public static String[] getHttpLinks(String data, String url) {
-        String[] patternStr = {"<[ ]?base[^>]*?href=['\"]([^>]*?)['\"]", "<[ ]?base[^>]*?href=([^'\"][^\\s]*)", "<[ ]?a[^>]*?href=['\"]([^>]*?)['\"]", "<[ ]?a[^>]*?href=([^'\"][^\\s]*)", "www[^\\s>'\"\\)]*", "http://[^\\s>'\"\\)]*"};
+        String[] patternStr = {"(?s)<[ ]?base[^>]*?href=['\"]([^>]*?)['\"]", "(?s)<[ ]?base[^>]*?href=([^'\"][^\\s]*)", "(?s)<[ ]?a[^>]*?href=['\"]([^>]*?)['\"]", "(?s)<[ ]?a[^>]*?href=([^'\"][^\\s]*)", "www[^\\s>'\"\\)]*", "http://[^\\s>'\"\\)]*"};
         Matcher m;
         String link;
         Pattern[] pattern = new Pattern[patternStr.length];
@@ -1357,16 +1371,22 @@ public abstract class Plugin {
                 break;
             }
         }
+        if (url != null) {
+            url = url.replace("http://", "");
+            int dot = url.lastIndexOf('/');
+            if (dot != -1)
+                basename = url.substring(0, dot + 1);
+            else
+                basename = "http://" + url + "/";
 
-        int dot = url.lastIndexOf('/');
-        if (dot != -1)
-            basename = url.substring(0, dot + 1);
-
-        url = url.replace("http://", "");
-        dot = url.indexOf('/');
-        if (dot != -1)
-            host = "http://" + url.substring(0, dot);
-        url = "http://" + url;
+            dot = url.indexOf('/');
+            if (dot != -1)
+                host = "http://" + url.substring(0, dot);
+            else
+                host = "http://" + url;
+            url = "http://" + url;
+        } else
+            url = "";
 
         for (int i = 2; i < 4; i++) {
             m = pattern[i].matcher(data);
@@ -1395,7 +1415,7 @@ public abstract class Plugin {
             }
 
         }
-        data = data.replaceAll("<.*?>", "");
+        data = data.replaceAll("(?s)<.*?>", "");
         m = pattern[4].matcher(data);
         while (m.find()) {
             link = "http://" + m.group();
