@@ -4,7 +4,7 @@ import java.io.File;
 import java.io.Serializable;
 
 import jd.JDUtilities;
-import jd.Property;
+import jd.config.Property;
 
 /**
  * Diese Klasse verwaltet Pakete

@@ -12,8 +12,8 @@ import javax.swing.JFileChooser;
 import javax.swing.JLabel;
 import javax.swing.JTextField;
 
-import jd.Configuration;
 import jd.JDUtilities;
+import jd.config.Configuration;
 import jd.event.UIEvent;
 import jd.gui.UIInterface;
 import jd.gui.skins.simple.components.BrowseFile;

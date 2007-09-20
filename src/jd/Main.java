@@ -6,6 +6,7 @@ import java.util.Iterator;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import jd.config.Configuration;
 import jd.controlling.JDController;
 import jd.controlling.interaction.Interaction;
 import jd.gui.UIInterface;

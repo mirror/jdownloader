@@ -12,8 +12,8 @@ import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JTabbedPane;
 
-import jd.Configuration;
 import jd.JDUtilities;
+import jd.config.Configuration;
 import jd.gui.UIInterface;
 /**
  * Diese Klasse ist das Hauptfemster der Konfiguration. Sie verwaltet die Tabpane.

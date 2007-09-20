@@ -7,8 +7,8 @@ import java.net.URLDecoder;
 import java.util.Vector;
 import java.util.regex.Pattern;
 
-import jd.plugins.PluginConfig;
-import jd.plugins.PluginConfigEntry;
+import jd.config.ConfigContainer;
+import jd.config.ConfigEntry;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
@@ -109,16 +109,16 @@ public class Xirror extends PluginForDecrypt {
     }
     
     private void setConfigEelements() {
-    	PluginConfigEntry cfg;
-    	config.addEntry(cfg = new PluginConfigEntry(PluginConfig.TYPE_LABEL, "Hoster Auswahl"));
-        config.addEntry(cfg = new PluginConfigEntry(PluginConfig.TYPE_SEPERATOR));
-        config.addEntry(cfg = new PluginConfigEntry(PluginConfig.TYPE_CHECKBOX, getProperties(), "USE_RAPIDSHARE", "Rapidshare.com"));
+    	ConfigEntry cfg;
+    	config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_LABEL, "Hoster Auswahl"));
+        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_SEPERATOR));
+        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getProperties(), "USE_RAPIDSHARE", "Rapidshare.com"));
         cfg.setDefaultValue(true);
-        config.addEntry(cfg = new PluginConfigEntry(PluginConfig.TYPE_CHECKBOX, getProperties(), "USE_UPLOADED", "Uploaded.to"));
+        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getProperties(), "USE_UPLOADED", "Uploaded.to"));
         cfg.setDefaultValue(false);
-        config.addEntry(cfg = new PluginConfigEntry(PluginConfig.TYPE_CHECKBOX, getProperties(), "USE_NETLOAD", "Netload.in"));
+        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getProperties(), "USE_NETLOAD", "Netload.in"));
         cfg.setDefaultValue(false);
-        config.addEntry(cfg = new PluginConfigEntry(PluginConfig.TYPE_CHECKBOX, getProperties(), "USE_FILEFACTORY", "Filefactory.com"));
+        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getProperties(), "USE_FILEFACTORY", "Filefactory.com"));
         cfg.setDefaultValue(false);
     }
     

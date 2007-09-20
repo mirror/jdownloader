@@ -23,8 +23,8 @@ import javax.swing.JPasswordField;
 import javax.swing.JTabbedPane;
 import javax.swing.JTextField;
 
-import jd.Configuration;
 import jd.JDUtilities;
+import jd.config.Configuration;
 import jd.controlling.interaction.HTTPReconnect;
 import jd.gui.UIInterface;
 import jd.router.RouterData;

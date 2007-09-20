@@ -87,11 +87,23 @@ public abstract class PluginForDecrypt extends Plugin {
         }
         return hits;
     }
+    /**
+     * Diese Methode arbeitet die unterschiedlichen schritte ab. und gibt den gerade abgearbeiteten Schritt jeweisl zurück.
+     * @param step
+     * @param parameter
+     * @return gerade abgeschlossener Schritt
+     */
     public abstract PluginStep doStep(PluginStep step, String parameter);
-
+/**
+ * Deligiert den doStep Call weiter und ändert dabei nur den parametertyp.
+ */
     public PluginStep doStep(PluginStep step, Object parameter) {
         return doStep(step, (String) parameter);
     }
+    /**
+     * Gibt den namen des internen CryptedLinks zurück
+     * @return encryptedLink
+     */
 
     public String getLinkName() {
         if (cryptedLink == null) return "";

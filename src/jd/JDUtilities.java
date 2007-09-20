@@ -53,6 +53,7 @@ import javax.swing.JFrame;
 
 import jd.captcha.JAntiCaptcha;
 import jd.captcha.pixelgrid.Captcha;
+import jd.config.Configuration;
 import jd.controlling.JDController;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;

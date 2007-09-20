@@ -10,8 +10,8 @@ import java.util.logging.Logger;
 
 import javax.swing.JPanel;
 
-import jd.Configuration;
 import jd.JDUtilities;
+import jd.config.Configuration;
 import jd.gui.UIInterface;
 import jd.plugins.Plugin;
 
@@ -21,7 +21,7 @@ public abstract class ConfigPanel extends JPanel{
      */
     private static final long serialVersionUID = 3383448498625377495L;
    private int row=0;
-   private Vector<ConfigEntry> entries= new  Vector<ConfigEntry>();
+   private Vector<GUIConfigEntry> entries= new  Vector<GUIConfigEntry>();
     protected UIInterface uiinterface;
     protected JPanel panel;    
     protected Logger            logger           = Plugin.getLogger();
@@ -34,31 +34,31 @@ public abstract class ConfigPanel extends JPanel{
         this.uiinterface=uiinterface;      
        
     }
-    public void addConfigEntry(ConfigEntry entry){
+    public void addGUIConfigEntry(GUIConfigEntry entry){
      
         JDUtilities.addToGridBag(panel, entry, 0, row, 1, 1, 1, 0, insets, GridBagConstraints.BOTH, GridBagConstraints.EAST);
         entries.add(entry);
         row++;
     }
     public void saveConfigEntries(){
-       Iterator<ConfigEntry> it = entries.iterator();
+       Iterator<GUIConfigEntry> it = entries.iterator();
         
        while(it.hasNext()){
-           ConfigEntry akt=it.next();
-           if(akt.getPropertyInstance()!=null&&akt.getPropertyName()!=null)   
-           akt.getPropertyInstance().setProperty(akt.getPropertyName(),akt.getText());
+           GUIConfigEntry akt=it.next();
+           if(akt.getConfigEntry().getPropertyInstance()!=null&&akt.getConfigEntry().getPropertyName()!=null)   
+           akt.getConfigEntry().getPropertyInstance().setProperty(akt.getConfigEntry().getPropertyName(),akt.getText());
            
            
        }
     }
     public void loadConfigEntries(){
-        Iterator<ConfigEntry> it = entries.iterator();
+        Iterator<GUIConfigEntry> it = entries.iterator();
          
         while(it.hasNext()){
-            ConfigEntry akt=it.next();
+            GUIConfigEntry akt=it.next();
        
-           if(akt.getPropertyInstance()!=null&&akt.getPropertyName()!=null)        
-            akt.setData( akt.getPropertyInstance().getProperty(akt.getPropertyName()));
+           if(akt.getConfigEntry().getPropertyInstance()!=null&&akt.getConfigEntry().getPropertyName()!=null)        
+            akt.setData( akt.getConfigEntry().getPropertyInstance().getProperty(akt.getConfigEntry().getPropertyName()));
             
             
         }

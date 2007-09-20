@@ -2,9 +2,10 @@ package jd.gui.skins.simple.config;
 
 import java.awt.BorderLayout;
 
-import jd.Configuration;
+import jd.config.ConfigContainer;
+import jd.config.ConfigEntry;
+import jd.config.Configuration;
 import jd.gui.UIInterface;
-import jd.plugins.PluginConfig;
 
 /**
  * @author coalado
@@ -38,19 +39,15 @@ public class ConfigPanelDownload extends ConfigPanel{
 
     public void initPanel() {
       
-        ConfigEntry ce;
-        
-        ce= new ConfigEntry(PluginConfig.TYPE_SPINNER, configuration, Configuration.PARAM_DOWNLOAD_READ_TIMEOUT, "Timeout beim Lesen [ms]",0,60000);
-        ce.setDefaultText(10000);
-        ce.setSteps(500);
-        addConfigEntry(ce);
-        ce= new ConfigEntry(PluginConfig.TYPE_SPINNER, configuration, Configuration.PARAM_DOWNLOAD_CONNECT_TIMEOUT, "Timeout beim Verbinden(Request) [ms]",0,60000);
-        ce.setDefaultText(10000);
-        ce.setSteps(500);
-        addConfigEntry(ce);
-        ce= new ConfigEntry(PluginConfig.TYPE_SPINNER, configuration, Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN, "Maximale gleichzeitige Downloads",1,20);
-        ce.setDefaultText(3);
-        addConfigEntry(ce);
+        GUIConfigEntry ce;
+    
+        ce= new GUIConfigEntry( new ConfigEntry(ConfigContainer.TYPE_SPINNER, configuration, Configuration.PARAM_DOWNLOAD_READ_TIMEOUT, "Timeout beim Lesen [ms]",0,60000).setDefaultValue(10000).setStep(500));
+        addGUIConfigEntry(ce);
+        ce= new GUIConfigEntry( new ConfigEntry(ConfigContainer.TYPE_SPINNER, configuration, Configuration.PARAM_DOWNLOAD_CONNECT_TIMEOUT, "Timeout beim Verbinden(Request) [ms]",0,60000).setDefaultValue(10000).setStep(500));
+    
+        addGUIConfigEntry(ce);
+        ce= new GUIConfigEntry( new ConfigEntry(ConfigContainer.TYPE_SPINNER, configuration, Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN, "Maximale gleichzeitige Downloads",1,20).setDefaultValue(3).setStep(1));
+   
         add(panel, BorderLayout.NORTH);
     }
     @Override

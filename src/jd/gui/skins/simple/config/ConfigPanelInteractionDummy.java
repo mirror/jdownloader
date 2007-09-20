@@ -4,11 +4,12 @@ import java.awt.BorderLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
-import jd.Configuration;
+import jd.config.ConfigContainer;
+import jd.config.ConfigEntry;
+import jd.config.Configuration;
 import jd.controlling.interaction.DummyInteraction;
 import jd.controlling.interaction.Interaction;
 import jd.gui.UIInterface;
-import jd.plugins.PluginConfig;
 
 public class ConfigPanelInteractionDummy extends ConfigPanel implements ActionListener {
     /**
@@ -39,11 +40,11 @@ public class ConfigPanelInteractionDummy extends ConfigPanel implements ActionLi
 
     @Override
     public void initPanel() {
-        ConfigEntry ce;
+        GUIConfigEntry ce;
 
-        ce = new ConfigEntry(PluginConfig.TYPE_TEXTFIELD, interaction, DummyInteraction.PROPERTY_QUESTION, "Frage");
+        ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, interaction, DummyInteraction.PROPERTY_QUESTION, "Frage"));
 
-        addConfigEntry(ce);
+        addGUIConfigEntry(ce);
 
         add(panel, BorderLayout.CENTER);
 

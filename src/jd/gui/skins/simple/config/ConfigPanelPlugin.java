@@ -6,11 +6,11 @@ import java.awt.event.ActionListener;
 import java.util.Vector;
 import java.util.logging.Logger;
 
-import jd.Configuration;
+import jd.config.ConfigContainer;
+import jd.config.ConfigEntry;
+import jd.config.Configuration;
 import jd.gui.UIInterface;
 import jd.plugins.Plugin;
-import jd.plugins.PluginConfig;
-import jd.plugins.PluginConfigEntry;
 
 public class ConfigPanelPlugin extends ConfigPanel implements ActionListener {
     /**
@@ -45,46 +45,43 @@ public class ConfigPanelPlugin extends ConfigPanel implements ActionListener {
     @Override
     public void initPanel() {
 
-        Vector<PluginConfigEntry> entries = plugin.getConfig().getEntries();
-        PluginConfigEntry entry;
+        Vector<ConfigEntry> entries = plugin.getConfig().getEntries();
+        ConfigEntry entry;
         for (int i = 0; i < entries.size(); i++) {
             entry = entries.elementAt(i);
 
-            ConfigEntry ce = null;
+            GUIConfigEntry ce = null;
 
             switch (entry.getType()) {
-                case PluginConfig.TYPE_BUTTON:
-                    ce = new ConfigEntry(entry.getType(), entry.getActionListener(), entry.getLabel());
+                case ConfigContainer.TYPE_BUTTON:
+                    ce = new GUIConfigEntry(new ConfigEntry(entry.getType(), entry.getActionListener(), entry.getLabel()));
                     break;
-                case PluginConfig.TYPE_RADIOFIELD:
-                case PluginConfig.TYPE_COMBOBOX:
-                    ce = new ConfigEntry(entry.getType(), entry.getPropertyInstance(), entry.getPropertyName(), entry.getList(), entry.getLabel());
-                    ce.setDefaultText(entry.getDefaultValue());
+                case ConfigContainer.TYPE_RADIOFIELD:
+                case ConfigContainer.TYPE_COMBOBOX:
+                    ce = new GUIConfigEntry(new ConfigEntry(entry.getType(), entry.getPropertyInstance(), entry.getPropertyName(), entry.getList(), entry.getLabel()).setDefaultValue(entry.getDefaultValue()));
 
                     break;
-                    
-                case PluginConfig.TYPE_SPINNER:
-                    ce = new ConfigEntry(entry.getType(), entry.getPropertyInstance(), entry.getPropertyName(), entry.getLabel(),entry.getStart(), entry.getEnd());
-                    ce.setSteps(entry.getStep());
-                    ce.setDefaultText(entry.getDefaultValue());
 
-                    break; 
-                case PluginConfig.TYPE_LABEL:
-                    ce = new ConfigEntry(entry.getType(), entry.getLabel());
-                    break;
-                case PluginConfig.TYPE_SEPERATOR:
-                    ce = new ConfigEntry(entry.getType());
-                    break;
-                case PluginConfig.TYPE_CHECKBOX:
-                case PluginConfig.TYPE_TEXTFIELD:
+                case ConfigContainer.TYPE_SPINNER:
+                    ce = new GUIConfigEntry(new ConfigEntry(entry.getType(), entry.getPropertyInstance(), entry.getPropertyName(), entry.getLabel(), entry.getStart(), entry.getEnd()).setStep(entry.getStep()).setDefaultValue(entry.getDefaultValue()));
 
-                    ce = new ConfigEntry(entry.getType(), entry.getPropertyInstance(), entry.getPropertyName(), entry.getLabel());
-                    ce.setDefaultText(entry.getDefaultValue());
+                    break;
+                case ConfigContainer.TYPE_LABEL:
+                    ce = new GUIConfigEntry(new ConfigEntry(entry.getType(), entry.getLabel()));
+                    break;
+                case ConfigContainer.TYPE_SEPERATOR:
+                    ce = new GUIConfigEntry(new ConfigEntry(entry.getType()));
+                    break;
+                case ConfigContainer.TYPE_CHECKBOX:
+                case ConfigContainer.TYPE_TEXTFIELD:
+
+                    ce = new GUIConfigEntry(new ConfigEntry(entry.getType(), entry.getPropertyInstance(), entry.getPropertyName(), entry.getLabel()).setDefaultValue(entry.getDefaultValue()));
+
                     break;
 
             }
 
-            if (ce != null) addConfigEntry(ce);
+            if (ce != null) addGUIConfigEntry(ce);
 
             add(panel, BorderLayout.CENTER);
         }

@@ -6,12 +6,13 @@ import java.awt.event.ActionListener;
 
 import javax.swing.JOptionPane;
 
-import jd.Configuration;
+import jd.config.ConfigContainer;
+import jd.config.ConfigEntry;
+import jd.config.Configuration;
 import jd.controlling.interaction.ExternReconnect;
 import jd.gui.UIInterface;
-import jd.plugins.PluginConfig;
 /**
- * Diese Klasse ist der Konfig Dialog für Extern reconnect. basiert auf ConfigPanel und der ConfigEntry Klasse
+ * Diese Klasse ist der Konfig Dialog für Extern reconnect. basiert auf ConfigPanel und der GUIConfigEntry Klasse
  * @author coalado
  *
  */
@@ -56,42 +57,42 @@ public class ConfigPanelInteractionExternReconnect extends ConfigPanel implement
 
     @Override
     public void initPanel() {
-        ConfigEntry ce;
+        GUIConfigEntry ce;
 
-        ce = new ConfigEntry(PluginConfig.TYPE_TEXTFIELD, configuration, ExternReconnect.PROPERTY_IP_REGEX, "RegEx zum auslesen der IP");
-        ce.setDefaultText("\\Q<td><b>\\E([0-9.]*)\\Q</b></td>\\E");
-        addConfigEntry(ce);
+        ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, configuration, ExternReconnect.PROPERTY_IP_REGEX, "RegEx zum auslesen der IP").setDefaultValue("\\Q<td><b>\\E([0-9.]*)\\Q</b></td>\\E"));
+   
+        addGUIConfigEntry(ce);
 
         add(panel, BorderLayout.CENTER);
 
-        ce = new ConfigEntry(PluginConfig.TYPE_TEXTFIELD, configuration, ExternReconnect.PROPERTY_IP_CHECK_SITE, "IP-Check-Seite");
-        ce.setDefaultText("http://meineip.de/");
-        addConfigEntry(ce);
+        ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, configuration, ExternReconnect.PROPERTY_IP_CHECK_SITE, "IP-Check-Seite").setDefaultValue("http://meineip.de/"));
+      
+        addGUIConfigEntry(ce);
 
-        ce = new ConfigEntry(PluginConfig.TYPE_TEXTFIELD, configuration, ExternReconnect.PROPERTY_IP_OFFLINE, "Offlinestring");
+        ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, configuration, ExternReconnect.PROPERTY_IP_OFFLINE, "Offlinestring"));
 
-        addConfigEntry(ce);
+        addGUIConfigEntry(ce);
 
-        ce = new ConfigEntry(PluginConfig.TYPE_TEXTFIELD, configuration, ExternReconnect.PROPERTY_IP_RETRIES, "Anzahl der Reconnectversuche bis zum Abbruch");
-        ce.setDefaultText(0);
-        addConfigEntry(ce);
+        ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, configuration, ExternReconnect.PROPERTY_IP_RETRIES, "Anzahl der Reconnectversuche bis zum Abbruch").setDefaultValue(0));
+   
+        addGUIConfigEntry(ce);
         
-        ce = new ConfigEntry(PluginConfig.TYPE_CHECKBOX, configuration, ExternReconnect.PROPERTY_IP_WAIT_FOR_RETURN, "Warten bis der Befehl beendet wurde");
-        ce.setDefaultText(true);
-        addConfigEntry(ce);
+        ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, configuration, ExternReconnect.PROPERTY_IP_WAIT_FOR_RETURN, "Warten bis der Befehl beendet wurde").setDefaultValue(true));
+        
+        addGUIConfigEntry(ce);
         
         
-        ce = new ConfigEntry(PluginConfig.TYPE_TEXTFIELD, configuration, ExternReconnect.PROPERTY_IP_WAITCHECK, "Wartezeit bis zum IPCheck");
-        ce.setDefaultText(0);
-        addConfigEntry(ce);
+        ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, configuration, ExternReconnect.PROPERTY_IP_WAITCHECK, "Wartezeit bis zum IPCheck").setDefaultValue(0));
+      
+        addGUIConfigEntry(ce);
 
-        ce = new ConfigEntry(PluginConfig.TYPE_BROWSEFILE, configuration, ExternReconnect.PROPERTY_RECONNECT_COMMAND, "Reconnectbefehl (Pfadangaben absolut)");
+        ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_BROWSEFILE, configuration, ExternReconnect.PROPERTY_RECONNECT_COMMAND, "Reconnectbefehl (Pfadangaben absolut)"));
 
-        addConfigEntry(ce);
+        addGUIConfigEntry(ce);
 
-        ce = new ConfigEntry(PluginConfig.TYPE_BUTTON, this, "Reconnect Testen");
+        ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_BUTTON, this, "Reconnect Testen"));
 
-        addConfigEntry(ce);
+        addGUIConfigEntry(ce);
 
     }
 

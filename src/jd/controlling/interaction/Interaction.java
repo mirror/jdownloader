@@ -6,7 +6,7 @@ import java.util.Vector;
 import java.util.logging.Logger;
 
 import jd.JDUtilities;
-import jd.Property;
+import jd.config.Property;
 import jd.event.ControlEvent;
 import jd.event.ControlListener;
 import jd.plugins.Plugin;

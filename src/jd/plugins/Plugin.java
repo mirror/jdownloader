@@ -41,9 +41,10 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.zip.GZIPInputStream;
 
-import jd.Configuration;
 import jd.JDUtilities;
-import jd.Property;
+import jd.config.ConfigContainer;
+import jd.config.Configuration;
+import jd.config.Property;
 import jd.controlling.interaction.Interaction;
 import jd.plugins.event.PluginEvent;
 import jd.plugins.event.PluginListener;
@@ -92,7 +93,7 @@ public abstract class Plugin {
     /**
      * Zeigt an, ob das Plugin abgebrochen werden soll
      */
-    public PluginConfig           config;
+    public ConfigContainer           config;
 
     protected RequestInfo         requestInfo;
 
@@ -253,7 +254,7 @@ public abstract class Plugin {
     protected Plugin() {
         pluginListener = new Vector<PluginListener>();
         steps = new Vector<PluginStep>();
-        config = new PluginConfig(this);
+        config = new ConfigContainer(this);
         // Lädt die Konfigurationseinstellungen aus der Konfig
         if (this.getPluginName() == null) {
             logger.severe("ACHTUNG: die Plugin.getPluginName() Funktion muss einen Wert wiedergeben der zum init schon verfügbar ist, also einen static wert");
@@ -311,7 +312,7 @@ public abstract class Plugin {
      * 
      * @return gibt die aktuelle Configuration INstanz zurück
      */
-    public PluginConfig getConfig() {
+    public ConfigContainer getConfig() {
         return config;
     }
 

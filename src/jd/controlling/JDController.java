@@ -5,8 +5,8 @@ import java.util.Iterator;
 import java.util.Vector;
 import java.util.logging.Logger;
 
-import jd.Configuration;
 import jd.JDUtilities;
+import jd.config.Configuration;
 import jd.controlling.interaction.HTTPReconnect;
 import jd.controlling.interaction.Interaction;
 import jd.controlling.interaction.WebUpdate;

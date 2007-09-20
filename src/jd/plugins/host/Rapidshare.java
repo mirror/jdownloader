@@ -72,9 +72,9 @@ import java.util.Vector;
 import java.util.regex.Pattern;
 
 import jd.JDUtilities;
+import jd.config.ConfigContainer;
+import jd.config.ConfigEntry;
 import jd.plugins.DownloadLink;
-import jd.plugins.PluginConfig;
-import jd.plugins.PluginConfigEntry;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
@@ -210,22 +210,22 @@ public class Rapidshare extends PluginForHost {
     }
 
     private void setConfigEelements() {
-        PluginConfigEntry cfg;
-        config.addEntry(cfg = new PluginConfigEntry(PluginConfig.TYPE_SEPERATOR));
-        config.addEntry(cfg = new PluginConfigEntry(PluginConfig.TYPE_LABEL, "Server Auswahl"));
+        ConfigEntry cfg;
+        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_SEPERATOR));
+        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_LABEL, "Server Auswahl"));
 
-        config.addEntry(cfg = new PluginConfigEntry(PluginConfig.TYPE_RADIOFIELD, getProperties(), "SELECTED_SERVER", new String[] { "Cognet", "Cognet #2", "GlobalCrossing", "GlobalCrossing #2", "TeliaSonera", "TeliaSonera #2", "Teleglobe", "Level (3)", "Level (3) #2", "Level (3) #3", "Level (3) #4", "zufällig" }, "Serverauswahl"));
+        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_RADIOFIELD, getProperties(), "SELECTED_SERVER", new String[] { "Cognet", "Cognet #2", "GlobalCrossing", "GlobalCrossing #2", "TeliaSonera", "TeliaSonera #2", "Teleglobe", "Level (3)", "Level (3) #2", "Level (3) #3", "Level (3) #4", "zufällig" }, "Serverauswahl"));
         cfg.setDefaultValue("Level (3)");
-        config.addEntry(cfg = new PluginConfigEntry(PluginConfig.TYPE_CHECKBOX, getProperties(), "USE_TELEKOMSERVER", "Telekom Server verwenden falls verfügbar"));
+        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getProperties(), "USE_TELEKOMSERVER", "Telekom Server verwenden falls verfügbar"));
         cfg.setDefaultValue(false);
-        config.addEntry(cfg = new PluginConfigEntry(PluginConfig.TYPE_SEPERATOR));
-        config.addEntry(cfg = new PluginConfigEntry(PluginConfig.TYPE_LABEL, "Premium Accounts"));
-        config.addEntry(cfg = new PluginConfigEntry(PluginConfig.TYPE_TEXTFIELD, getProperties(), PROPERTY_PREMIUM_USER, "Premium User"));
+        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_SEPERATOR));
+        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_LABEL, "Premium Accounts"));
+        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getProperties(), PROPERTY_PREMIUM_USER, "Premium User"));
         cfg.setDefaultValue("Kundennummer");
-        config.addEntry(cfg = new PluginConfigEntry(PluginConfig.TYPE_TEXTFIELD, getProperties(), PROPERTY_PREMIUM_PASS, "Premium Pass"));
+        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getProperties(), PROPERTY_PREMIUM_PASS, "Premium Pass"));
         cfg.setDefaultValue("Passwort");
 
-        config.addEntry(cfg = new PluginConfigEntry(PluginConfig.TYPE_CHECKBOX, getProperties(), PROPERTY_USE_PREMIUM, "Premium Account verwenden"));
+        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getProperties(), PROPERTY_USE_PREMIUM, "Premium Account verwenden"));
         cfg.setDefaultValue(false);
 
     }

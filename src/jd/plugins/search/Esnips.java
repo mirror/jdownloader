@@ -10,8 +10,8 @@ import java.util.Vector;
 import java.util.regex.Pattern;
 
 import jd.JDUtilities;
-import jd.plugins.PluginConfig;
-import jd.plugins.PluginConfigEntry;
+import jd.config.ConfigContainer;
+import jd.config.ConfigEntry;
 import jd.plugins.PluginForSearch;
 import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
@@ -43,8 +43,8 @@ private static String[] CATEGORIES =new String[]{"Audio"};
         super();
         steps.add(new PluginStep(PluginStep.STEP_SEARCH, null));
 
-        PluginConfigEntry cfg;
-        config.addEntry(cfg = new PluginConfigEntry(PluginConfig.TYPE_TEXTFIELD, getProperties(), PARAM_MAX_MATCHES, "Maximale Treffer"));
+        ConfigEntry cfg;
+        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getProperties(), PARAM_MAX_MATCHES, "Maximale Treffer"));
         cfg.setDefaultValue(50);
     }
 

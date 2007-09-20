@@ -6,11 +6,11 @@ import java.awt.event.ActionListener;
 
 import javax.swing.JOptionPane;
 
-import jd.Configuration;
+import jd.config.ConfigContainer;
+import jd.config.ConfigEntry;
+import jd.config.Configuration;
 import jd.controlling.interaction.ExternExecute;
-import jd.controlling.interaction.ExternReconnect;
 import jd.gui.UIInterface;
-import jd.plugins.PluginConfig;
 /**
  * Konfigurationspanel für die INteraction ExternExecute
  * @author coalado
@@ -64,22 +64,22 @@ private ExternExecute externExecute;
 
     @Override
     public void initPanel() {
-        ConfigEntry ce;        
+        GUIConfigEntry ce;        
 
-        ce = new ConfigEntry(PluginConfig.TYPE_BROWSEFILE, externExecute, ExternExecute.PROPERTY_COMMAND, "Befehl (%LASTFILE,%CAPTCHAIMAGE)");
+        ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_BROWSEFILE, externExecute, ExternExecute.PROPERTY_COMMAND, "Befehl (%LASTFILE,%CAPTCHAIMAGE)").setDefaultValue(""));
 
-        ce.setDefaultText("");
-        addConfigEntry(ce);       
+       
+        addGUIConfigEntry(ce);       
 
-        ce = new ConfigEntry(PluginConfig.TYPE_CHECKBOX, externExecute, ExternExecute.PROPERTY_WAIT_TERMINATION, "Warten bis der Befehl beendet wurde?");
-        ce.setDefaultText(true);
-        addConfigEntry(ce); 
+        ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, externExecute, ExternExecute.PROPERTY_WAIT_TERMINATION, "Warten bis der Befehl beendet wurde?").setDefaultValue(true));
+    
+        addGUIConfigEntry(ce); 
    
    
 
-        ce = new ConfigEntry(PluginConfig.TYPE_BUTTON, this, "Testen");
+        ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_BUTTON, this, "Testen"));
 
-        addConfigEntry(ce);
+        addGUIConfigEntry(ce);
         add(panel, BorderLayout.CENTER);
 
     }

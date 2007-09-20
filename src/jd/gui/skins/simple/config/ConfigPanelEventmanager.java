@@ -21,8 +21,8 @@ import javax.swing.event.TableModelEvent;
 import javax.swing.table.AbstractTableModel;
 import javax.swing.table.TableColumn;
 
-import jd.Configuration;
 import jd.JDUtilities;
+import jd.config.Configuration;
 import jd.controlling.interaction.DummyInteraction;
 import jd.controlling.interaction.ExternExecute;
 import jd.controlling.interaction.ExternReconnect;

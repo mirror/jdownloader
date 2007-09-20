@@ -35,8 +35,8 @@ import javax.swing.JToolBar;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
 
-import jd.Configuration;
 import jd.JDUtilities;
+import jd.config.Configuration;
 import jd.controlling.JDAction;
 import jd.controlling.interaction.ExternReconnect;
 import jd.controlling.interaction.HTTPReconnect;
