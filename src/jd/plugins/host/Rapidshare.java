@@ -731,5 +731,13 @@ public class Rapidshare extends PluginForHost {
     }
 
 
-
+    @Override
+    public int getMaxSimultanDownloadNum() {
+        if (this.getProperties().getProperty("USE_PREMIUM") != null && ((Boolean) this.getProperties().getProperty("USE_PREMIUM"))) {
+        return Integer.MAX_VALUE;
+        }else{
+     
+        return 1;
+        }
+    }
 }

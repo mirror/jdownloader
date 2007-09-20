@@ -246,6 +246,8 @@ public abstract class Plugin {
 
     private String                statusText;
 
+    private long initTime;
+
     /**
      * Ein Logger, um Meldungen darzustellen
      */
@@ -253,6 +255,7 @@ public abstract class Plugin {
 
     protected Plugin() {
         pluginListener = new Vector<PluginListener>();
+        this.initTime=System.currentTimeMillis();
         steps = new Vector<PluginStep>();
         config = new ConfigContainer(this);
         // Lädt die Konfigurationseinstellungen aus der Konfig
@@ -659,10 +662,10 @@ public abstract class Plugin {
         return getRequest(link, null, null, false);
     }
 private static int getReadTimeoutFormConfiguration(){
-    return Integer.parseInt((String)JDUtilities.getConfiguration().getProperty(Configuration.PARAM_DOWNLOAD_READ_TIMEOUT,"10000"));
+    return (Integer)JDUtilities.getConfiguration().getProperty(Configuration.PARAM_DOWNLOAD_READ_TIMEOUT,10000);
 }
 private static int getConnectTimeoutFormConfiguration(){
-    return Integer.parseInt((String)JDUtilities.getConfiguration().getProperty(Configuration.PARAM_DOWNLOAD_CONNECT_TIMEOUT,"10000"));
+    return (Integer)JDUtilities.getConfiguration().getProperty(Configuration.PARAM_DOWNLOAD_CONNECT_TIMEOUT,10000);
 }
     /**
      * Schickt ein GetRequest an eine Adresse
@@ -1079,6 +1082,7 @@ private static int getConnectTimeoutFormConfiguration(){
     // /////////////////////////////////////////////////////
     // Multicaster
     public void addPluginListener(PluginListener listener) {
+        if(listener==null)return;
         synchronized (pluginListener) {
             pluginListener.add(listener);
         }
@@ -1363,7 +1367,7 @@ private static int getConnectTimeoutFormConfiguration(){
  */
     public String getStatusText() {
         if (this.statusText == null) this.statusText = "";
-        return this.statusText;
+        return this.initTime+" : "+this.statusText;
     }
 /**
  * Setzte den Statustext des Plugins.
@@ -1493,5 +1497,10 @@ private static int getConnectTimeoutFormConfiguration(){
             ret += "\"" + links[i] + "\"\r\n";
         }
         return ret;
+    }
+
+    public String getInitID() {
+        // TODO Auto-generated method stub
+        return this.initTime+"<ID";
     }
 }

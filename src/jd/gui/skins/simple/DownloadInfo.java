@@ -108,7 +108,7 @@ public class DownloadInfo extends JDialog {
             }
 
             if (downloadLink.getPlugin().getCurrentStep() != null) {
-                addEntry("Plugin Status", downloadLink.getPlugin().getCurrentStep().toString());
+                addEntry("Plugin Status", downloadLink.getPlugin().getInitID()+" : "+downloadLink.getPlugin().getCurrentStep().toString());
             }
 
         }

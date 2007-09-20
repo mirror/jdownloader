@@ -220,5 +220,9 @@ public class Uploadedto extends PluginForHost {
 
         return false;
     }
-
+    @Override
+    public int getMaxSimultanDownloadNum() {
+     
+        return 1;
+    }
 }

@@ -99,18 +99,18 @@ public class Main {
 //       JDUtilities.registerListenerPluginsForDecrypt(controller);
 //       JDUtilities.registerListenerPluginsForHost(controller);
 //       JDUtilities.registerListenerPluginsForSearch(controller);
-        Iterator<PluginForHost> iteratorHost = JDUtilities.getPluginsForHost().iterator();
-        while (iteratorHost.hasNext()) {
-            iteratorHost.next().addPluginListener(controller);
-        }
-        Iterator<PluginForDecrypt> iteratorDecrypt = JDUtilities.getPluginsForDecrypt().iterator();
-        while (iteratorDecrypt.hasNext()) {
-            iteratorDecrypt.next().addPluginListener(controller);
-        }
-        Iterator<PluginForSearch> iteratorSearch = JDUtilities.getPluginsForSearch().iterator();
-        while (iteratorSearch.hasNext()) {
-            iteratorSearch.next().addPluginListener(controller);
-        }
+//        Iterator<PluginForHost> iteratorHost = JDUtilities.getPluginsForHost().iterator();
+//        while (iteratorHost.hasNext()) {
+//            iteratorHost.next().addPluginListener(controller);
+//        }
+//        Iterator<PluginForDecrypt> iteratorDecrypt = JDUtilities.getPluginsForDecrypt().iterator();
+//        while (iteratorDecrypt.hasNext()) {
+//            iteratorDecrypt.next().addPluginListener(controller);
+//        }
+//        Iterator<PluginForSearch> iteratorSearch = JDUtilities.getPluginsForSearch().iterator();
+//        while (iteratorSearch.hasNext()) {
+//            iteratorSearch.next().addPluginListener(controller);
+//        }
 
         Interaction.handleInteraction(Interaction.INTERACTION_APPSTART, false);
     }

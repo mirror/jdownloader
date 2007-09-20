@@ -231,6 +231,7 @@ public class GUIConfigEntry extends JPanel {
      * @return
      */
     public Object getText() {
+        logger.info(configEntry.getType()+"_2");
         switch (configEntry.getType()) {
             case ConfigContainer.TYPE_TEXTFIELD:
                 return ((JTextField) input[0]).getText();
@@ -256,6 +257,9 @@ public class GUIConfigEntry extends JPanel {
 
             case ConfigContainer.TYPE_BROWSEFILE:
                 return ((BrowseFile) input[0]).getText();
+            case ConfigContainer.TYPE_SPINNER:
+                
+                return ((JSpinner) input[0]).getValue();
 
         }
 

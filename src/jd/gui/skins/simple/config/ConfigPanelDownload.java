@@ -33,6 +33,7 @@ public class ConfigPanelDownload extends ConfigPanel{
     
     }
     public void save(){
+        logger.info("save");
         this.saveConfigEntries();
      }
    
@@ -47,7 +48,7 @@ public class ConfigPanelDownload extends ConfigPanel{
     
         addGUIConfigEntry(ce);
         ce= new GUIConfigEntry( new ConfigEntry(ConfigContainer.TYPE_SPINNER, configuration, Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN, "Maximale gleichzeitige Downloads",1,20).setDefaultValue(3).setStep(1));
-   
+        addGUIConfigEntry(ce);
         add(panel, BorderLayout.NORTH);
     }
     @Override

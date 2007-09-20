@@ -2,6 +2,8 @@ package jd.plugins;
 
 import java.util.Vector;
 
+import jd.JDUtilities;
+
 /**
  * Dies ist die Oberklasse für alle Plugins, die von einem Anbieter Dateien
  * herunterladen können
@@ -64,7 +66,22 @@ public abstract class PluginForHost extends Plugin {
                     file = file.substring(1);
                 while (file.charAt(file.length() - 1) == '"')
                     file = file.substring(0, file.length() - 1);
-                links.add(new DownloadLink(this, file.substring(file.lastIndexOf("/") + 1, file.length()), getHost(), file, true));
+
+                try {
+                    //Zwecks Multidownload braucht jeder Link seine eigene PLugininstanz
+                    PluginForHost plg = this.getClass().newInstance();
+                    plg.addPluginListener(JDUtilities.getController());
+
+                    links.add(new DownloadLink(plg, file.substring(file.lastIndexOf("/") + 1, file.length()), getHost(), file, true));
+                }
+                catch (InstantiationException e) {
+                    // TODO Auto-generated catch block
+                    e.printStackTrace();
+                }
+                catch (IllegalAccessException e) {
+                    // TODO Auto-generated catch block
+                    e.printStackTrace();
+                }
             }
         }
         return links;
@@ -101,6 +118,8 @@ public abstract class PluginForHost extends Plugin {
      */
     public abstract PluginStep doStep(PluginStep step, DownloadLink parameter);
 
+    public abstract int getMaxSimultanDownloadNum();
+
     /**
      * Delegiert den doStep Call mit einem Downloadlink als Parameter weiter an
      * die Plugins
@@ -119,4 +138,5 @@ public abstract class PluginForHost extends Plugin {
 
         return data;
     }
+
 }

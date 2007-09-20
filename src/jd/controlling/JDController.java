@@ -18,19 +18,17 @@ import jd.gui.UIInterface;
 import jd.plugins.DownloadLink;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForHost;
+import jd.plugins.PluginStep;
 import jd.plugins.event.PluginEvent;
 import jd.plugins.event.PluginListener;
 
 /**
  * Im Controller wird das ganze App gesteuert. Evebnts werden deligiert.
+ * 
  * @author coalado/astaldo
- *
+ * 
  */
 public class JDController implements PluginListener, ControlListener, UIListener {
-    /**
-     * Der Thread, der das Downloaden realisiert
-     */
-    private StartDownloads                    download        = null;
 
     /**
      * Mit diesem Thread wird eingegebener Text auf Links untersucht
@@ -68,9 +66,13 @@ public class JDController implements PluginListener, ControlListener, UIListener
 
     private SpeedMeter                        speedMeter;
 
+    private Vector<StartDownloads>            activeLinks     = new Vector<StartDownloads>();
+
     private DownloadLink                      lastDownloadFinished;
 
     private ClipboardHandler                  clipboard;
+
+    private boolean                           aborted         = false;
 
     /**
      * 
@@ -86,25 +88,152 @@ public class JDController implements PluginListener, ControlListener, UIListener
      * Startet den Downloadvorgang
      */
     private void startDownloads() {
-        if (download == null) {
-            download = new StartDownloads(this);
-            download.addControlListener(this);
-            download.start();
+logger.info("StartDownloads");
+aborted=false;
+        fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_ALL_DOWNLOAD_START, this));
+        setDownloadActive();
+
+        
+
+    }
+
+    private void setDownloadActive() {
+        DownloadLink dlink;
+        logger.info("Gleichzeitige Downloads erlaubt: " + getSimultanDownloadNum()+" aktiv:  "+activeLinks.size());
+        while (activeLinks.size() < getSimultanDownloadNum()) {
+            dlink = this.getNextDownloadLink();
+            if (dlink == null) break;
+            this.startDownloadThread(dlink);
+        }
+        // gehe in die Warteschleife wenn noch nicht genug downloads laufen
+        
+      
+        if (activeLinks.size() ==0) this.waitForDownloadLinks();
+    }
+
+    private int getDownloadNumByHost(PluginForHost plugin) {
+        int num = 0;
+        for (int i = 0; i < this.activeLinks.size(); i++) {
+            if (this.activeLinks.get(i).getDownloadLink().getPlugin().getPluginID().equals(plugin.getPluginID())) {
+                num++;
+            }
+
+        }
+        return num;
+    }
+
+    private void cleanActiveVector() {
+        int statusD;
+        logger.info("Clean Activevector");
+        for (int i = this.activeLinks.size() - 1; i >= 0; i--) {
+            statusD = this.activeLinks.get(i).getDownloadLink().getStatus();
+
+            if (statusD == DownloadLink.STATUS_DONE || (this.activeLinks.get(i).getDownloadLink().getPlugin().getCurrentStep() != null && this.activeLinks.get(i).getDownloadLink().getPlugin().getCurrentStep().getStatus() == PluginStep.STATUS_ERROR)) {
+                activeLinks.remove(i);
+            }
+
+        }
+        
+        logger.info("Clean ünrig_ "+activeLinks.size());
+
+    }
+
+    private void startDownloadThread(DownloadLink dlink) {
+        StartDownloads download = new StartDownloads(this, dlink);
+        logger.info("start download: " + dlink);
+        download.addControlListener(this);
+        download.start();
+        activeLinks.add(download);
+    }
+
+    private int getSimultanDownloadNum() {
+        return (Integer) JDUtilities.getConfiguration().getProperty(Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN, 3);
+    }
+
+    /**
+     * Diese Methode prüft wiederholt die Downloadlinks solange welche dabei
+     * sind die Wartezeit haben. Läuft die Wartezeit ab, oder findet ein
+     * reconnect statt, wird wieder die Run methode aufgerifen
+     */
+    private void waitForDownloadLinks() {
+        
+        logger.info("wait");
+        Vector<DownloadLink> links;
+        DownloadLink link;
+        boolean hasWaittimeLinks = false;
+
+        boolean returnToRun = false;
+
+        try {
+            Thread.sleep(1000);
+        }
+        catch (InterruptedException e) {
+
+            e.printStackTrace();
+        }
+
+        fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SINGLE_DOWNLOAD_CHANGED, null));
+
+        links = getDownloadLinks();
+
+        for (int i = 0; i < links.size(); i++) {
+            link = links.elementAt(i);
+            if (!link.isEnabled()) continue;
+            // Link mit Wartezeit in der queue
+            if (link.getStatus() == DownloadLink.STATUS_ERROR_DOWNLOAD_LIMIT) {
+                if (link.getRemainingWaittime() == 0) {
+
+                    link.setStatus(DownloadLink.STATUS_TODO);
+                    link.setEndOfWaittime(0);
+                    returnToRun = true;
+
+                }
+
+                hasWaittimeLinks = true;
+                // Neuer Link hinzugefügt
+            }
+            else if (link.getStatus() == DownloadLink.STATUS_TODO) {
+                returnToRun = true;
+            }
+
+        }
+        
+        
+        if (aborted) {
+
+            logger.warning("Download aborted");
+//            fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_ALL_DOWNLOADS_FINISHED, this));
+//            Interaction.handleInteraction((Interaction.INTERACTION_ALL_DOWNLOADS_FINISHED), this);
+            
+            return;
+
+        }
+        else if (returnToRun) {
+            logger.info("return. there are downloads waiting");
+            this.setDownloadActive();
+            return;
+        }
+
+        if (!hasWaittimeLinks) {
+
+            logger.info("Alle Downloads beendet");
+            fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_ALL_DOWNLOADS_FINISHED, this));
+            Interaction.handleInteraction((Interaction.INTERACTION_ALL_DOWNLOADS_FINISHED), this);
+            
         }
         else {
-            logger.warning("download still active");
+            waitForDownloadLinks();
         }
+
     }
 
     private void stopDownloads() {
-        if (download != null) {
-            download.abortDownload();
-            // download.interrupt();
-            download = null;
-        }
-        else {
-            logger.warning("no active download");
-        }
+        this.aborted = true;
+        for (int i = 0; i < this.activeLinks.size(); i++)
+            activeLinks.get(i).abortDownload();
+
+        this.clearDownloadListStatus();
+
     }
 
     /**
@@ -114,10 +243,32 @@ public class JDController implements PluginListener, ControlListener, UIListener
         saveDownloadLinks(JDUtilities.getResourceFile("links.dat"));
         System.exit(0);
     }
-/**
- * Eventfunktion für den PLuginlistener
- * @param event PluginEvent
- */
+
+    /**
+     * Setzt den Status der Downloadliste zurück. zB. bei einem Abbruch
+     */
+    private void clearDownloadListStatus() {
+        Vector<DownloadLink> links;
+        activeLinks.removeAllElements();
+        logger.finer("Clear");
+        links = getDownloadLinks();
+        for (int i = 0; i < links.size(); i++) {
+            if (links.elementAt(i).getStatus() != DownloadLink.STATUS_DONE) {
+                links.elementAt(i).setInProgress(false);
+                links.elementAt(i).setStatusText("");
+                links.elementAt(i).setStatus(DownloadLink.STATUS_TODO);
+            }
+
+        }
+        fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SINGLE_DOWNLOAD_CHANGED, null));
+
+    }
+
+    /**
+     * Eventfunktion für den PLuginlistener
+     * 
+     * @param event PluginEvent
+     */
     public void pluginEvent(PluginEvent event) {
         uiInterface.deligatedPluginEvent(event);
         switch (event.getEventID()) {
@@ -130,9 +281,10 @@ public class JDController implements PluginListener, ControlListener, UIListener
 
     /**
      * Hier werden ControlEvent ausgewertet
-     * @param event 
+     * 
+     * @param event
      */
-    
+
     public void controlEvent(ControlEvent event) {
 
         switch (event.getID()) {
@@ -143,20 +295,23 @@ public class JDController implements PluginListener, ControlListener, UIListener
                 if (this.getMissingPackageFiles(lastDownloadFinished) == 0) {
                     Interaction.handleInteraction(Interaction.INTERACTION_DOWNLOAD_PACKAGE_FINISHED, this);
                 }
+                // Entferne link aus activevector
+                cleanActiveVector();
+                // Starte neuen download
+                this.setDownloadActive();
                 break;
             case ControlEvent.CONTROL_CAPTCHA_LOADED:
                 lastCaptchaLoaded = (File) event.getParameter();
                 break;
 
             case ControlEvent.CONTROL_ALL_DOWNLOADS_FINISHED:
-                download = null;
 
                 saveDownloadLinks(JDUtilities.getResourceFile("links.dat"));
                 break;
             case ControlEvent.CONTROL_DISTRIBUTE_FINISHED:
                 Object links = event.getParameter();
                 if (links != null && links instanceof Vector && ((Vector) links).size() > 0) {
-//schickt die Links zuerst mal zum Linkgrabber
+                    // schickt die Links zuerst mal zum Linkgrabber
                     uiInterface.addLinksToGrabber((Vector<DownloadLink>) links);
                 }
                 break;
@@ -195,10 +350,11 @@ public class JDController implements PluginListener, ControlListener, UIListener
         uiInterface.deligatedControlEvent(event);
     }
 
-/**
- * Hier werden die UIEvente ausgewertet
- * @param uiEvent UIEent
- */
+    /**
+     * Hier werden die UIEvente ausgewertet
+     * 
+     * @param uiEvent UIEent
+     */
     public void uiEvent(UIEvent uiEvent) {
         Vector<DownloadLink> newLinks;
         switch (uiEvent.getActionID()) {
@@ -215,12 +371,14 @@ public class JDController implements PluginListener, ControlListener, UIListener
                 distributeData.start();
                 break;
             case UIEvent.UI_SAVE_CONFIG:
-               
-                JDUtilities.saveObject(null, JDUtilities.getConfiguration(), JDUtilities.getJDHomeDirectory(), JDUtilities.CONFIG_PATH.split("\\.")[0], "."+ JDUtilities.CONFIG_PATH.split("\\.")[1], Configuration.saveAsXML);
+
+                JDUtilities.saveObject(null, JDUtilities.getConfiguration(), JDUtilities.getJDHomeDirectory(), JDUtilities.CONFIG_PATH.split("\\.")[0], "." + JDUtilities.CONFIG_PATH.split("\\.")[1], Configuration.saveAsXML);
                 break;
             case UIEvent.UI_LINKS_GRABBED:
-                
-                //Event wenn der Linkgrabber mit ok bestätigt wird. Die ausgewählten Links werden als Eventparameter übergeben und können nun der Downloadliste zugeführt werden
+
+                // Event wenn der Linkgrabber mit ok bestätigt wird. Die
+                // ausgewählten Links werden als Eventparameter übergeben und
+                // können nun der Downloadliste zugeführt werden
                 Object links = uiEvent.getParameter();
                 if (links != null && links instanceof Vector && ((Vector) links).size() > 0) {
                     downloadLinks.addAll((Vector<DownloadLink>) links);
@@ -388,9 +546,19 @@ public class JDController implements PluginListener, ControlListener, UIListener
         DownloadLink nextDownloadLink = null;
         while (iterator.hasNext()) {
             nextDownloadLink = iterator.next();
-            if (nextDownloadLink.isEnabled() && nextDownloadLink.getStatus() == DownloadLink.STATUS_TODO && nextDownloadLink.getRemainingWaittime() == 0) return nextDownloadLink;
+            if (!this.isDownloadLinkActive(nextDownloadLink) && !nextDownloadLink.isInProgress() && nextDownloadLink.isEnabled() && nextDownloadLink.getStatus() == DownloadLink.STATUS_TODO && nextDownloadLink.getRemainingWaittime() == 0 && getDownloadNumByHost((PluginForHost) nextDownloadLink.getPlugin()) < ((PluginForHost) nextDownloadLink.getPlugin()).getMaxSimultanDownloadNum()) return nextDownloadLink;
         }
         return null;
+    }
+
+    private boolean isDownloadLinkActive(DownloadLink nextDownloadLink) {
+        for (int i = 0; i < this.activeLinks.size(); i++) {
+            if (this.activeLinks.get(i).getDownloadLink() == nextDownloadLink) {
+                return true;
+            }
+
+        }
+        return false;
     }
 
     /**
@@ -486,25 +654,29 @@ public class JDController implements PluginListener, ControlListener, UIListener
         this.uiInterface = uiInterface;
         uiInterface.addUIListener(this);
     }
-/**
- * Gibt das verwendete UIinterface zurpck
- * @return aktuelles uiInterface
- */
+
+    /**
+     * Gibt das verwendete UIinterface zurpck
+     * 
+     * @return aktuelles uiInterface
+     */
     public UIInterface getUiInterface() {
         return uiInterface;
     }
-/**
- * 
- * @return Die zuletzte fertiggestellte datei
- */
+
+    /**
+     * 
+     * @return Die zuletzte fertiggestellte datei
+     */
     public String getLastFinishedFile() {
         if (this.lastDownloadFinished == null) return "";
         return this.lastDownloadFinished.getFileOutput();
     }
-/**
- * 
- * @return ZUletzt bearbeiteter Captcha
- */
+
+    /**
+     * 
+     * @return ZUletzt bearbeiteter Captcha
+     */
     public String getLastCaptchaImage() {
         if (this.lastCaptchaLoaded == null) return "";
         return this.lastCaptchaLoaded.getAbsolutePath();

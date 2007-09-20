@@ -278,4 +278,10 @@ public class FileFactory extends PluginForHost {
         return true;
     }
 
+    @Override
+    public int getMaxSimultanDownloadNum() {
+     
+        return 1;
+    }
+
 }

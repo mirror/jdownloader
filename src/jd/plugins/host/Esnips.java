@@ -219,4 +219,12 @@ public class Esnips extends PluginForHost {
 
     }
 
+    @Override
+    public int getMaxSimultanDownloadNum() {
+       
+        return 15;
+    }
+
+  
+
 }
