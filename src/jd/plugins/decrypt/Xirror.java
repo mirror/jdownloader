@@ -17,7 +17,7 @@ import jd.plugins.event.PluginEvent;
 public class Xirror extends PluginForDecrypt {
 
 	final static String host = "xirror.com";
-	private String version = "1.0.0.0";
+	private String version = "2.0.0.0";
 	private Pattern patternSupported =getSupportPattern("http://[*]xirror.com/spread/[+]/[*]");
 	
     public Xirror() {
@@ -29,7 +29,7 @@ public class Xirror extends PluginForDecrypt {
 	
     @Override public String getCoder() { return "Botzi"; }
     @Override public String getHost() { return host; }
-    @Override public String getPluginID() { return "Xirror.com-1.0.0."; }
+    @Override public String getPluginID() { return "Xirror.com-2.0.0."; }
     @Override public String getPluginName() { return host; }
     @Override public Pattern getSupportedLinks() { return patternSupported; }
     @Override public String getVersion() { return version; }
@@ -62,43 +62,47 @@ public class Xirror extends PluginForDecrypt {
     			Vector<Vector<String>> g = getAllSimpleMatches(reqinfo.getHtmlCode(), "popup(\"°\", \"°\")");
     			//Rapidshare Link speichern
     			if((Boolean) this.getProperties().getProperty("USE_RAPIDSHARE")) {
-    				firePluginEvent(new PluginEvent(this,PluginEvent.PLUGIN_PROGRESS_INCREASE, null));
     				for( int i=0; i<g.size();i++){
     				    if(g.get(i).get(1).equalsIgnoreCase("rapidshare"))
+    				    {
     				        decryptedLinks.add(rotate(g.get(i).get(0)));
-    				}
-    			
-    				
+        					firePluginEvent(new PluginEvent(this,PluginEvent.PLUGIN_PROGRESS_INCREASE, null));
+    				    }
+    				}	
     			}
     			//Uploaded Link speichern
     			if((Boolean) this.getProperties().getProperty("USE_UPLOADED")) {
-    				firePluginEvent(new PluginEvent(this,PluginEvent.PLUGIN_PROGRESS_INCREASE, null));
                     for( int i=0; i<g.size();i++){
                         if(g.get(i).get(1).equalsIgnoreCase("gulli"))
+                        {
                             decryptedLinks.add(rotate(g.get(i).get(0)));
+        					firePluginEvent(new PluginEvent(this,PluginEvent.PLUGIN_PROGRESS_INCREASE, null));
+                        }
                     }
     			}
     			//Netload Link speichern
     			if((Boolean) this.getProperties().getProperty("USE_NETLOAD")) {
-    				firePluginEvent(new PluginEvent(this,PluginEvent.PLUGIN_PROGRESS_INCREASE, null));
                     for( int i=0; i<g.size();i++){
                         if(g.get(i).get(1).equalsIgnoreCase("netload"))
+                        {
                             decryptedLinks.add(rotate(g.get(i).get(0)));
+        					firePluginEvent(new PluginEvent(this,PluginEvent.PLUGIN_PROGRESS_INCREASE, null));
+                        }
                     }
     			}
     			//Filefactory Link speichern
     			if((Boolean) this.getProperties().getProperty("USE_FILEFACTORY")) {
-    				firePluginEvent(new PluginEvent(this,PluginEvent.PLUGIN_PROGRESS_INCREASE, null));
                     for( int i=0; i<g.size();i++){
                         if(g.get(i).get(1).equalsIgnoreCase("filefactory"))
+                        {
                             decryptedLinks.add(rotate(g.get(i).get(0)));
+        					firePluginEvent(new PluginEvent(this,PluginEvent.PLUGIN_PROGRESS_INCREASE, null));
+                        }
                     }
     			}
     			    			
     			//Decrypt abschliessen
     			firePluginEvent(new PluginEvent(this,PluginEvent.PLUGIN_PROGRESS_FINISH, null));
-    			logger.info(decryptedLinks.size() + " downloads decrypted "+decryptedLinks);
-    			
     			step.setParameter(decryptedLinks);
     		}
     		catch(IOException e) {
