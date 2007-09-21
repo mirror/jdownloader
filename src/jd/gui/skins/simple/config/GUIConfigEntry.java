@@ -4,7 +4,6 @@ import java.awt.BorderLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
-import java.awt.event.ActionListener;
 import java.util.logging.Logger;
 
 import javax.swing.ButtonGroup;
@@ -12,6 +11,7 @@ import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 import javax.swing.JComponent;
+import javax.swing.JFileChooser;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JRadioButton;
@@ -24,7 +24,6 @@ import javax.swing.SwingConstants;
 import jd.JDUtilities;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
-import jd.config.Property;
 import jd.gui.skins.simple.components.BrowseFile;
 import jd.plugins.Plugin;
 
@@ -102,6 +101,15 @@ public class GUIConfigEntry extends JPanel {
                 ((BrowseFile) input[0]).setEditable(true);
                 this.add(input[0], BorderLayout.EAST);
                 break;
+            case ConfigContainer.TYPE_BROWSEFOLDER:
+                logger.info("ADD BrowserFolder");
+                this.add(new JLabel(configEntry.getLabel()), BorderLayout.CENTER);
+                input[0] = new BrowseFile();
+
+                ((BrowseFile) input[0]).setEditable(true);
+                ((BrowseFile) input[0]).setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+                this.add(input[0], BorderLayout.EAST);
+                break;
             case ConfigContainer.TYPE_SPINNER:
                 logger.info("ADD Spinner");
                 this.add(new JLabel(configEntry.getLabel()), BorderLayout.CENTER);
@@ -118,7 +126,8 @@ public class GUIConfigEntry extends JPanel {
                 break;
             case ConfigContainer.TYPE_COMBOBOX:
                 this.add(new JLabel(configEntry.getLabel()), BorderLayout.CENTER);
-                // logger.info("ADD Combobox");
+                logger.info(configEntry.getLabel());
+               logger.info("ADD Combobox");
                 input[0] = new JComboBox(configEntry.getList());
                 for (int i = 0; i < configEntry.getList().length; i++) {
                     if (configEntry.getList()[i].equals(configEntry.getPropertyInstance().getProperty(configEntry.getPropertyName()))) {
@@ -127,7 +136,7 @@ public class GUIConfigEntry extends JPanel {
                     }
                 }
 
-                this.add(input[0], BorderLayout.CENTER);
+                this.add(input[0], BorderLayout.EAST);
                 break;
             case ConfigContainer.TYPE_RADIOFIELD:
                 // logger.info("ADD Radio");
@@ -196,7 +205,7 @@ public class GUIConfigEntry extends JPanel {
             case ConfigContainer.TYPE_LABEL:
 
                 break;
-
+            case ConfigContainer.TYPE_BROWSEFOLDER:
             case ConfigContainer.TYPE_BROWSEFILE:
                 ((BrowseFile) input[0]).setText(text == null ? "" : text.toString());
                 break;
@@ -254,7 +263,7 @@ public class GUIConfigEntry extends JPanel {
                 return null;
             case ConfigContainer.TYPE_SEPERATOR:
                 return null;
-
+            case ConfigContainer.TYPE_BROWSEFOLDER:
             case ConfigContainer.TYPE_BROWSEFILE:
                 return ((BrowseFile) input[0]).getText();
             case ConfigContainer.TYPE_SPINNER:

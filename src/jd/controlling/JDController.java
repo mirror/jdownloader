@@ -74,6 +74,8 @@ public class JDController implements PluginListener, ControlListener, UIListener
 
     private boolean                           aborted         = false;
 
+    private DownloadWatchDog                  watchdog;
+
     /**
      * 
      */
@@ -85,183 +87,24 @@ public class JDController implements PluginListener, ControlListener, UIListener
     }
 
     /**
-     * Startet den Downloadvorgang
+     * Startet den Downloadvorgang. Dies eFUnkton sendet das startdownload event
+     * und aktiviert die ersten downloads
      */
     private void startDownloads() {
-logger.info("StartDownloads");
-aborted=false;
-        fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_ALL_DOWNLOAD_START, this));
-        setDownloadActive();
-
-        
-
+        if(watchdog==null){
+        logger.info("StartDownloads");
+        this.watchdog = new DownloadWatchDog(this);
+        watchdog.start();
+        }
     }
 
-    private void setDownloadActive() {
-        DownloadLink dlink;
-        logger.info("Gleichzeitige Downloads erlaubt: " + getSimultanDownloadNum()+" aktiv:  "+activeLinks.size());
-        while (activeLinks.size() < getSimultanDownloadNum()) {
-            dlink = this.getNextDownloadLink();
-            if (dlink == null) break;
-            this.startDownloadThread(dlink);
-        }
-        // gehe in die Warteschleife wenn noch nicht genug downloads laufen
-        
-      
-        if (activeLinks.size() ==0) this.waitForDownloadLinks();
-    }
-
-    private int getDownloadNumByHost(PluginForHost plugin) {
-        int num = 0;
-        for (int i = 0; i < this.activeLinks.size(); i++) {
-            if (this.activeLinks.get(i).getDownloadLink().getPlugin().getPluginID().equals(plugin.getPluginID())) {
-                num++;
-            }
-
-        }
-        return num;
-    }
-
-    private void cleanActiveVector() {
-        int statusD;
-        logger.info("Clean Activevector");
-        for (int i = this.activeLinks.size() - 1; i >= 0; i--) {
-            statusD = this.activeLinks.get(i).getDownloadLink().getStatus();
-
-            if (statusD == DownloadLink.STATUS_DONE || (this.activeLinks.get(i).getDownloadLink().getPlugin().getCurrentStep() != null && this.activeLinks.get(i).getDownloadLink().getPlugin().getCurrentStep().getStatus() == PluginStep.STATUS_ERROR)) {
-                activeLinks.remove(i);
-            }
-
-        }
-        
-        logger.info("Clean ünrig_ "+activeLinks.size());
-
-    }
-
-    private void startDownloadThread(DownloadLink dlink) {
-        StartDownloads download = new StartDownloads(this, dlink);
-        logger.info("start download: " + dlink);
-        download.addControlListener(this);
-        download.start();
-        activeLinks.add(download);
-    }
-
-    private int getSimultanDownloadNum() {
-        return (Integer) JDUtilities.getConfiguration().getProperty(Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN, 3);
-    }
-
-    /**
-     * Diese Methode prüft wiederholt die Downloadlinks solange welche dabei
-     * sind die Wartezeit haben. Läuft die Wartezeit ab, oder findet ein
-     * reconnect statt, wird wieder die Run methode aufgerifen
-     */
-    private void waitForDownloadLinks() {
-        
-        logger.info("wait");
-        Vector<DownloadLink> links;
-        DownloadLink link;
-        boolean hasWaittimeLinks = false;
-
-        boolean returnToRun = false;
-
-        try {
-            Thread.sleep(1000);
-        }
-        catch (InterruptedException e) {
-
-            e.printStackTrace();
-        }
-
-        fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SINGLE_DOWNLOAD_CHANGED, null));
-
-        links = getDownloadLinks();
-
-        for (int i = 0; i < links.size(); i++) {
-            link = links.elementAt(i);
-            if (!link.isEnabled()) continue;
-            // Link mit Wartezeit in der queue
-            if (link.getStatus() == DownloadLink.STATUS_ERROR_DOWNLOAD_LIMIT) {
-                if (link.getRemainingWaittime() == 0) {
-
-                    link.setStatus(DownloadLink.STATUS_TODO);
-                    link.setEndOfWaittime(0);
-                    returnToRun = true;
-
-                }
-
-                hasWaittimeLinks = true;
-                // Neuer Link hinzugefügt
-            }
-            else if (link.getStatus() == DownloadLink.STATUS_TODO) {
-                returnToRun = true;
-            }
-
-        }
-        
-        
-        if (aborted) {
-
-            logger.warning("Download aborted");
-//            fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_ALL_DOWNLOADS_FINISHED, this));
-//            Interaction.handleInteraction((Interaction.INTERACTION_ALL_DOWNLOADS_FINISHED), this);
-            
-            return;
-
-        }
-        else if (returnToRun) {
-            logger.info("return. there are downloads waiting");
-            this.setDownloadActive();
-            return;
-        }
-
-        if (!hasWaittimeLinks) {
-
-            logger.info("Alle Downloads beendet");
-            fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_ALL_DOWNLOADS_FINISHED, this));
-            Interaction.handleInteraction((Interaction.INTERACTION_ALL_DOWNLOADS_FINISHED), this);
-            
-        }
-        else {
-            waitForDownloadLinks();
-        }
-
-    }
-
-    private void stopDownloads() {
-        this.aborted = true;
-        for (int i = 0; i < this.activeLinks.size(); i++)
-            activeLinks.get(i).abortDownload();
-
-        this.clearDownloadListStatus();
-
-    }
-
+ 
     /**
      * Beendet das Programm
      */
     private void exit() {
         saveDownloadLinks(JDUtilities.getResourceFile("links.dat"));
         System.exit(0);
-    }
-
-    /**
-     * Setzt den Status der Downloadliste zurück. zB. bei einem Abbruch
-     */
-    private void clearDownloadListStatus() {
-        Vector<DownloadLink> links;
-        activeLinks.removeAllElements();
-        logger.finer("Clear");
-        links = getDownloadLinks();
-        for (int i = 0; i < links.size(); i++) {
-            if (links.elementAt(i).getStatus() != DownloadLink.STATUS_DONE) {
-                links.elementAt(i).setInProgress(false);
-                links.elementAt(i).setStatusText("");
-                links.elementAt(i).setStatus(DownloadLink.STATUS_TODO);
-            }
-
-        }
-        fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SINGLE_DOWNLOAD_CHANGED, null));
-
     }
 
     /**
@@ -295,10 +138,13 @@ aborted=false;
                 if (this.getMissingPackageFiles(lastDownloadFinished) == 0) {
                     Interaction.handleInteraction(Interaction.INTERACTION_DOWNLOAD_PACKAGE_FINISHED, this);
                 }
-                // Entferne link aus activevector
-                cleanActiveVector();
-                // Starte neuen download
-                this.setDownloadActive();
+                
+                if(Configuration.FINISHED_DOWNLOADS_REMOVE.equals(JDUtilities.getConfiguration().getProperty(Configuration.PARAM_FINISHED_DOWNLOADS_ACTION))){
+                    downloadLinks.remove(lastDownloadFinished);
+                    
+                    saveDownloadLinks(JDUtilities.getResourceFile("links.dat"));
+                    uiInterface.setDownloadLinks(downloadLinks);
+                }
                 break;
             case ControlEvent.CONTROL_CAPTCHA_LOADED:
                 lastCaptchaLoaded = (File) event.getParameter();
@@ -348,6 +194,13 @@ aborted=false;
                 break;
         }
         uiInterface.deligatedControlEvent(event);
+    }
+
+    private void stopDownloads() {
+        if (watchdog != null) {
+            watchdog.abort();
+            watchdog = null;
+        }
     }
 
     /**
@@ -459,10 +312,13 @@ aborted=false;
      * @param newLinks
      */
     private void abortDeletedLink(Vector<DownloadLink> oldLinks, Vector<DownloadLink> newLinks) {
+        if(watchdog==null)return;
         for (int i = 0; i < oldLinks.size(); i++) {
             if (newLinks.indexOf(oldLinks.elementAt(i)) == -1) {
                 // Link gefunden der entfernt wurde
+                
                 oldLinks.elementAt(i).setAborted(true);
+                watchdog.abortDownloadLink( oldLinks.elementAt(i));
             }
         }
 
@@ -492,12 +348,28 @@ aborted=false;
                 Vector<DownloadLink> links = (Vector<DownloadLink>) obj;
                 Iterator<DownloadLink> iterator = links.iterator();
                 DownloadLink localLink;
-                PluginForHost pluginForHost;
+                PluginForHost pluginForHost=null;
                 while (iterator.hasNext()) {
                     localLink = iterator.next();
-                    pluginForHost = JDUtilities.getPluginForHost(localLink.getHost());
+                  if(localLink.getStatus()==DownloadLink.STATUS_DONE&&Configuration.FINISHED_DOWNLOADS_REMOVE_AT_START.equals(JDUtilities.getConfiguration().getProperty(Configuration.PARAM_FINISHED_DOWNLOADS_ACTION))){
+                      iterator.remove();
+                      continue;
+                  }
+                    //Neue instanz. jeder Link braucht seine eigene Plugininstanz
+                    try {
+                        pluginForHost = JDUtilities.getPluginForHost(localLink.getHost()).getClass().newInstance();
+                    }
+                    catch (InstantiationException e) {
+                       
+                        e.printStackTrace();
+                    }
+                    catch (IllegalAccessException e) {
+                        
+                        e.printStackTrace();
+                    }
                     if (pluginForHost != null) {
                         localLink.setLoadedPlugin(pluginForHost);
+                        pluginForHost.addPluginListener(this);
                     }
                     else {
                         logger.severe("couldn't find plugin(" + localLink.getHost() + ") for this DownloadLink." + localLink.getName());
@@ -536,30 +408,9 @@ aborted=false;
         if (uiInterface != null) uiInterface.setDownloadLinks(downloadLinks);
     }
 
-    /**
-     * Liefert den nächsten DownloadLink
-     * 
-     * @return Der nächste DownloadLink oder null
-     */
-    public DownloadLink getNextDownloadLink() {
-        Iterator<DownloadLink> iterator = downloadLinks.iterator();
-        DownloadLink nextDownloadLink = null;
-        while (iterator.hasNext()) {
-            nextDownloadLink = iterator.next();
-            if (!this.isDownloadLinkActive(nextDownloadLink) && !nextDownloadLink.isInProgress() && nextDownloadLink.isEnabled() && nextDownloadLink.getStatus() == DownloadLink.STATUS_TODO && nextDownloadLink.getRemainingWaittime() == 0 && getDownloadNumByHost((PluginForHost) nextDownloadLink.getPlugin()) < ((PluginForHost) nextDownloadLink.getPlugin()).getMaxSimultanDownloadNum()) return nextDownloadLink;
-        }
-        return null;
-    }
 
-    private boolean isDownloadLinkActive(DownloadLink nextDownloadLink) {
-        for (int i = 0; i < this.activeLinks.size(); i++) {
-            if (this.activeLinks.get(i).getDownloadLink() == nextDownloadLink) {
-                return true;
-            }
 
-        }
-        return false;
-    }
+
 
     /**
      * Gibt ale links zurück die im selben Package sind wie downloadLink

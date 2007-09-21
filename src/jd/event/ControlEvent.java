@@ -56,6 +56,7 @@ public class ControlEvent extends AWTEvent{
     public final static int CONTROL_PLUGIN_INTERACTION_RETURNED    = 10;
     /**
      * Zeigt an dass ein Einzelner Download beendet wurde. Der Status kann mit Downloadlink.getStatus() abgefragt werden (parameter)
+     * Der downloadlink wird per parameter übergeben
      */
     public static final int CONTROL_SINGLE_DOWNLOAD_FINISHED = 11;
     /**

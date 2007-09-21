@@ -70,7 +70,7 @@ public class Main {
             if (obj instanceof Configuration) {
                 Configuration configuration = (Configuration) obj;
                 JDUtilities.setConfiguration(configuration);
-                Plugin.getLogger().setLevel(Level.parse(configuration.getLoggerLevel()));
+                Plugin.getLogger().setLevel((Level)configuration.getProperty(Configuration.PARAM_LOGGER_LEVEL,Level.FINER));
             }
             else {
                 logger.severe("Configuration error: " + obj);

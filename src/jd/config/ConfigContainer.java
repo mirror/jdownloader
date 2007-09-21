@@ -30,6 +30,8 @@ public class ConfigContainer {
 
     public static final int     TYPE_TEXTFIELD  = 0;
 
+    public static final int TYPE_BROWSEFOLDER = 9;
+
     @SuppressWarnings("unused")
     private Object              instance;
 

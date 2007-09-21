@@ -38,6 +38,37 @@ public class Configuration extends Property implements Serializable {
      * Parameter für den key unter dem der zugehöroge Wert abgespeichert werden soll
      */
     public static final String PARAM_DOWNLOAD_MAX_SIMULTAN = "DOWNLOAD_MAX_SIMULTAN";
+    /**
+     * Parameter für den key unter dem der zugehöroge Wert abgespeichert werden soll
+     */
+    public static final String PARAM_LOGGER_LEVEL = "LOGGER_LEVEL";
+    /**
+     * Parameter für den key unter dem der zugehöroge Wert abgespeichert werden soll
+     */
+    public static final String PARAM_HOME_DIRECTORY = "HOME_DIRECTORY";
+    /**
+     * Parameter für den key unter dem der zugehöroge Wert abgespeichert werden soll
+     */
+    public static final String PARAM_DOWNLOAD_DIRECTORY = "DOWNLOAD_DIRECTORY";
+    /**
+     * Parameter für den key unter dem der zugehöroge Wert abgespeichert werden soll
+     */
+    public static final String PARAM_FINISHED_DOWNLOADS_ACTION = "FINISHED_DOWNLOADS_ACTION";
+
+    /**
+     * String ID um einen fertiggestellten download beim programmstart aus der queue zu entfernen
+     */
+    public static final String FINISHED_DOWNLOADS_REMOVE_AT_START = "beim Programstart entfernen";
+    /**
+     * String ID um einen fertiggestellten download nimcht zu entfernen
+     */
+    public static final String FINISHED_DOWNLOADS_NO_REMOVE = "nicht entfernen";
+
+    /**
+     * String ID um einen fertiggestellten download sofort zu entfernen
+     */
+
+    public static final String FINISHED_DOWNLOADS_REMOVE = "sofort entfernen";
 
     private boolean                 useJAC                = true;
 
@@ -75,15 +106,9 @@ public class Configuration extends Property implements Serializable {
      */
     private String                  routerPassword        = null;
 
-    /**
-     * Fertige Downloads entfernen
-     */
-    private boolean                 removeDownloadedFiles = true;
 
-    /**
-     * Level für das Logging
-     */
-    private String                  loggerLevel           = "ALL";
+
+ 
 
     /**
      * Wartezeit zwischen reconnect und erstem IP Check
@@ -177,33 +202,10 @@ public class Configuration extends Property implements Serializable {
         this.useJAC = useJAC;
     }
 
-    /**
-     * @return GIbt zurück welches Loggerlevel eingestellt ist
-     */
-    public String getLoggerLevel() {
-        return loggerLevel;
-    }
+ 
 
-    /** Setzt das Loggerlevel. Das Logegrlevel bestimmt bis zu welcher Wichtigkeit debug Informationen im Log ausgegeben werden
-     * @param loggerLevel
-     */
-    public void setLoggerLevel(String loggerLevel) {
-        this.loggerLevel = loggerLevel;
-    }
 
-    /**
-     * @return the removeDownloadedFiles
-     */
-    public boolean isRemoveDownloadedFiles() {
-        return removeDownloadedFiles;
-    }
 
-    /**
-     * @param removeDownloadedFiles the removeDownloadedFiles to set
-     */
-    public void setRemoveDownloadedFiles(boolean removeDownloadedFiles) {
-        this.removeDownloadedFiles = removeDownloadedFiles;
-    }
 
     /**
      * @return the reconnectRetries

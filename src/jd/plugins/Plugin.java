@@ -885,11 +885,9 @@ private static int getConnectTimeoutFormConfiguration(){
         String location = urlInput.getHeaderField("Location");
         String cookie = getCookieString(urlInput);
         int responseCode = HttpURLConnection.HTTP_NOT_IMPLEMENTED;
-        try {
+      
             responseCode = urlInput.getResponseCode();
-        }
-        catch (IOException e) {
-        }
+       
         RequestInfo requestInfo = new RequestInfo(htmlCode.toString(), location, cookie, urlInput.getHeaderFields(), responseCode);
         rd.close();
         return requestInfo;

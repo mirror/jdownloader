@@ -189,7 +189,7 @@ public class StartDownloads extends ControlMulticaster {
             catch (InterruptedException e) {
             }
 
-            
+            downloadLink.setInProgress(false);
             fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_PLUGIN_HOST_INACTIVE, plugin));
             return;
 
@@ -252,6 +252,7 @@ public class StartDownloads extends ControlMulticaster {
                 }
 
             }
+            downloadLink.setInProgress(false);
             fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SINGLE_DOWNLOAD_CHANGED, downloadLink));
             Interaction.handleInteraction((Interaction.INTERACTION_SINGLE_DOWNLOAD_FINISHED), downloadLink);
 

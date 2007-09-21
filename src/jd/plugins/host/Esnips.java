@@ -109,7 +109,7 @@ public class Esnips extends PluginForHost {
                     catch (Exception e) {
                         downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN);
                         step.setStatus(PluginStep.STATUS_ERROR);
-                        e.printStackTrace();
+//                        e.printStackTrace();
                     }
 
                     requestInfo = getRequestWithoutHtmlCode(new URL(fileUrl), requestInfo.getCookie(), null, true);
