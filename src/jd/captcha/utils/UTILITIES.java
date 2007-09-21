@@ -23,6 +23,7 @@ import java.io.StringReader;
 import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.net.SocketTimeoutException;
+import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLClassLoader;
@@ -52,9 +53,6 @@ import org.w3c.dom.Node;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
-
-
-
 /**
  * Diese Klasse beinhaltet mehrere Hilfsfunktionen
  * 
@@ -62,13 +60,13 @@ import org.xml.sax.SAXException;
  */
 
 public class UTILITIES {
-    private static  int    REQUEST_TIMEOUT = 10000;
+    private static int    REQUEST_TIMEOUT = 10000;
 
-    private static  String USER_AGENT      = "WebUpdater";
+    private static String USER_AGENT      = "WebUpdater";
 
-    private static  int    READ_TIMEOUT    = 10000;
+    private static int    READ_TIMEOUT    = 10000;
 
-    private static Logger       logger          = Plugin.getLogger();
+    private static Logger logger          = Plugin.getLogger();
 
     /**
      * @return logger
@@ -83,9 +81,11 @@ public class UTILITIES {
     public static long getTimer() {
         return System.currentTimeMillis();
     }
+
     public static long getTimer(long timer) {
-        return System.currentTimeMillis()-timer;
+        return System.currentTimeMillis() - timer;
     }
+
     /** *********************DEBUG*************************** */
 
     /**
@@ -100,78 +100,86 @@ public class UTILITIES {
         return c.get(Calendar.DAY_OF_MONTH) + "." + c.get(Calendar.MONTH) + "." + c.get(Calendar.YEAR) + " - " + c.get(Calendar.HOUR_OF_DAY) + ":" + c.get(Calendar.MINUTE) + ":" + c.get(Calendar.SECOND) + " (" + c.get(Calendar.MILLISECOND) + ") : ";
     }
 
-    /** ******************************SYSTEM******************************* 
-     * @param path 
-     * @return URI zu path*/
-   public static String pathToURI(String path){
-      return fileToURI(new File(path));
-   
-   }
-   
-   public static int nextJump(int x, int from, int to, int step) {
-       int start = getJumperStart(from, to);
-       int ret;
-       if (x == start) {
-           ret = start + step;
-           if (ret > to) {
-               ret = start - step;
-           }
-       } else if (x > start) {
-           int dif = x - start;
-           ret = start - dif;
+    /***************************************************************************
+     * ******************************SYSTEM
+     * 
+     * @param path
+     * @return URI zu path
+     */
+    public static String pathToURI(String path) {
+        return fileToURI(new File(path));
 
-       } else {
-           int dif = start - x + step;
-           ret = start + dif;
-           if (ret > to) {
-               ret = start - dif;
-           }
-       }
-
-       return ret;
-
-   }
-
-   public static boolean checkJumper(int x, int from, int to) {
-       return x >= from && x <= to;
-
-   }
-
-   public static int getJumperStart(int from, int to) {
-
-       return from + (to - from) / 2;
-
-   }
-
-   
-   /**
-    *     * TODO: substring(6) ist nicht richtig unter linux!!!!
-    * Wandelt eine URL in den zugehörigen Path um
-    * @param path
-    * @return Pfad
-    */
-   
-   public static String URLtoPath(URL path){
-      
-       return path.toString().substring(6);
-    
     }
-   /**
-    * TODO: substring(6) ist nicht richtig unter linux!!!!
-    * Wandelt einen URL in den zugehörigen Local Pfad um
-    * @param path
-    * @return pfad
-    */
-   public static String URLtoPath(String path){
-       return path.substring(6);
-    
+
+    public static int nextJump(int x, int from, int to, int step) {
+        int start = getJumperStart(from, to);
+        int ret;
+        if (x == start) {
+            ret = start + step;
+            if (ret > to) {
+                ret = start - step;
+            }
+        }
+        else if (x > start) {
+            int dif = x - start;
+            ret = start - dif;
+
+        }
+        else {
+            int dif = start - x + step;
+            ret = start + dif;
+            if (ret > to) {
+                ret = start - dif;
+            }
+        }
+
+        return ret;
+
     }
+
+    public static boolean checkJumper(int x, int from, int to) {
+        return x >= from && x <= to;
+
+    }
+
+    public static int getJumperStart(int from, int to) {
+
+        return from + (to - from) / 2;
+
+    }
+
+    /**
+     * * TODO: substring(6) ist nicht richtig unter linux!!!! Wandelt eine URL
+     * in den zugehörigen Path um
+     * 
+     * @param path
+     * @return Pfad
+     */
+
+    public static String URLtoPath(URL path) {
+
+        return path.toString().substring(6);
+
+    }
+
+    /**
+     * TODO: substring(6) ist nicht richtig unter linux!!!! Wandelt einen URL in
+     * den zugehörigen Local Pfad um
+     * 
+     * @param path
+     * @return pfad
+     */
+    public static String URLtoPath(String path) {
+        return path.substring(6);
+
+    }
+
     /**
      * 
      * @param file
      * @return URI zur file
      */
-    public static String fileToURI(File file) {        
+    public static String fileToURI(File file) {
         return file.toURI().toString();
     }
 
@@ -179,46 +187,55 @@ public class UTILITIES {
      * @param path
      * @return Gibt zum Pfad Path die URL zurück
      */
-    public  static URLClassLoader getURLClassLoader(String path){
-        logger.fine("Loading: "+path);
-        if(path.startsWith("file:")){
-            try {               
-              
+    public static URLClassLoader getURLClassLoader(String path) {
+        logger.fine("Loading: " + path);
+        if (path.startsWith("file:")) {
+            try {
+
+                if (new File(new URI(path)).exists() != true) return null;
+
                 return new URLClassLoader(new URL[] { new URL(path) });
-            } catch (MalformedURLException e) {
-                
+            }
+            catch (URISyntaxException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+
+            }
+            catch (MalformedURLException e) {
+
                 e.printStackTrace();
             }
-        }else{
-        try {
-          
-            return new URLClassLoader(new URL[] { new File(path).toURI().toURL() },null);
-        } catch (MalformedURLException e) {          
-            e.printStackTrace();
-            return null;
         }
+        else {
+            try {
+                if (!new File(path).exists()) return null;
+                return new URLClassLoader(new URL[] { new File(path).toURI().toURL() }, null);
+            }
+            catch (MalformedURLException e) {
+                e.printStackTrace();
+                return null;
+            }
         }
         return null;
     }
-    
-    
-   
+
     /**
      * @param file
      * @return Gibt die URl zur File zurück
      */
-    public static URLClassLoader getURLClassLoader(File file){
+    public static URLClassLoader getURLClassLoader(File file) {
         return getURLClassLoader(file.getAbsolutePath());
     }
-    
+
     /**
-     * @param url 
+     * @param url
      * @param file
      * @return Gibt die URl zur File zurück
      */
-    public static URLClassLoader getURLClassLoader(URL url){
+    public static URLClassLoader getURLClassLoader(URL url) {
         return getURLClassLoader(url.toString());
     }
+
     /**
      * public static void wait(int ms) Hält den aktuellen Thread um ms
      * Millisekunden auf pause
@@ -228,7 +245,8 @@ public class UTILITIES {
     public static void wait(int ms) {
         try {
             Thread.sleep(ms);
-        } catch (InterruptedException e) {
+        }
+        catch (InterruptedException e) {
             e.printStackTrace();
         }
     }
@@ -252,7 +270,8 @@ public class UTILITIES {
                 logger.fine(line);
 
             }
-        } catch (IOException e) {
+        }
+        catch (IOException e) {
 
             e.printStackTrace();
         }
@@ -279,7 +298,8 @@ public class UTILITIES {
                 ret += line;
 
             }
-        } catch (IOException e) {
+        }
+        catch (IOException e) {
 
             e.printStackTrace();
         }
@@ -300,7 +320,8 @@ public class UTILITIES {
             Runtime rt = Runtime.getRuntime();
             rt.exec(command);
 
-        } catch (IOException e) {
+        }
+        catch (IOException e) {
 
             e.printStackTrace();
         }
@@ -321,7 +342,8 @@ public class UTILITIES {
         mediaTracker.addImage(img, 0);
         try {
             mediaTracker.waitForID(0);
-        } catch (InterruptedException e) {
+        }
+        catch (InterruptedException e) {
             return null;
         }
 
@@ -405,8 +427,7 @@ public class UTILITIES {
         JFileChooser fc = new JFileChooser();
 
         fc.setApproveButtonText("OK");
-        if (path != null)
-            fc.setCurrentDirectory(new File(path));
+        if (path != null) fc.setCurrentDirectory(new File(path));
 
         fc.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
         fc.showOpenDialog(new JFrame());
@@ -427,8 +448,7 @@ public class UTILITIES {
         JFileChooser fc = new JFileChooser();
 
         fc.setApproveButtonText("OK");
-        if (path != null)
-            fc.setCurrentDirectory(new File(path));
+        if (path != null) fc.setCurrentDirectory(new File(path));
 
         fc.setFileSelectionMode(JFileChooser.FILES_ONLY);
         fc.showOpenDialog(new JFrame());
@@ -438,15 +458,17 @@ public class UTILITIES {
 
     }
 
-    /** ******************************FILE-SYSTEM************************************ 
-     * @param myClass 
+    /***************************************************************************
+     * ******************************FILE-SYSTEM
+     * 
+     * @param myClass
      * @return Gibt den Pfad zur Klasse zurück
-     * */
-    public static String getPackagePath(Object myClass){
-        String packagePath=myClass.getClass().getPackage().getName().replace(".",System.getProperty("file.separator"));
-      return myClass.getClass().getClassLoader().getResource(packagePath).toString();
+     */
+    public static String getPackagePath(Object myClass) {
+        String packagePath = myClass.getClass().getPackage().getName().replace(".", System.getProperty("file.separator"));
+        return myClass.getClass().getClassLoader().getResource(packagePath).toString();
     }
-    
+
     /**
      * File Seperator
      */
@@ -521,14 +543,14 @@ public class UTILITIES {
 
             for (int i = 0; i < digest.length; i++) {
                 String tmp = Integer.toHexString(digest[i] & 0xFF);
-                if (tmp.length() < 2)
-                    tmp = "0" + tmp;
+                if (tmp.length() < 2) tmp = "0" + tmp;
                 ret += tmp;
             }
             in.close();
             return ret;
 
-        } catch (Exception e) {
+        }
+        catch (Exception e) {
 
             // DEBUG.error(e);
         }
@@ -555,7 +577,8 @@ public class UTILITIES {
             }
             f.close();
             return ret;
-        } catch (IOException e) {
+        }
+        catch (IOException e) {
 
             e.printStackTrace();
         }
@@ -564,6 +587,7 @@ public class UTILITIES {
 
     /**
      * Liest einen String von einem Inputstring
+     * 
      * @param is
      * @return String von is
      */
@@ -580,7 +604,8 @@ public class UTILITIES {
             }
             f.close();
             return ret;
-        } catch (IOException e) {
+        }
+        catch (IOException e) {
 
             e.printStackTrace();
         }
@@ -620,11 +645,13 @@ public class UTILITIES {
                 f.write((byte) content.charAt(i));
             }
             f.close();
-        } catch (FileNotFoundException e) {
+        }
+        catch (FileNotFoundException e) {
 
             e.printStackTrace();
             return false;
-        } catch (IOException e) {
+        }
+        catch (IOException e) {
             e.printStackTrace();
             return false;
         }
@@ -666,7 +693,8 @@ public class UTILITIES {
 
             return true;
 
-        } catch (Exception e) {
+        }
+        catch (Exception e) {
             e.printStackTrace();
             return false;
 
@@ -680,8 +708,7 @@ public class UTILITIES {
      * liest filename als XML ein und gibt ein XML Document zurück. Parameter
      * validating: Macht einen validt check
      * 
-     * @param is
-     *            InputStream
+     * @param is InputStream
      * @param validating
      * @return XML Document
      */
@@ -694,11 +721,14 @@ public class UTILITIES {
             // Create the builder and parse the file
             Document doc = factory.newDocumentBuilder().parse(is);
             return doc;
-        } catch (SAXException e) {
+        }
+        catch (SAXException e) {
             e.printStackTrace();
-        } catch (ParserConfigurationException e) {
+        }
+        catch (ParserConfigurationException e) {
             e.printStackTrace();
-        } catch (IOException e) {
+        }
+        catch (IOException e) {
 
             // DEBUG.error(e);
         }
@@ -722,11 +752,14 @@ public class UTILITIES {
             Document doc = factory.newDocumentBuilder().parse(inSource);
 
             return doc;
-        } catch (SAXException e) {
+        }
+        catch (SAXException e) {
             e.printStackTrace();
-        } catch (ParserConfigurationException e) {
+        }
+        catch (ParserConfigurationException e) {
             e.printStackTrace();
-        } catch (IOException e) {
+        }
+        catch (IOException e) {
 
             // DEBUG.error(e);
         }
@@ -777,12 +810,14 @@ public class UTILITIES {
                 PROPS.load(input);
                 return PROPS.getProperty(key);
 
-            } catch (Exception e) {
+            }
+            catch (Exception e) {
 
                 e.printStackTrace();
                 return null;
             }
-        } else {
+        }
+        else {
             return PROPS.getProperty(key);
         }
 
@@ -799,8 +834,7 @@ public class UTILITIES {
      */
     public static String getProperty(String key, String defaultValue) {
         String ret = getProperty(key);
-        if (ret == null)
-            setProperty(key, defaultValue);
+        if (ret == null) setProperty(key, defaultValue);
         return PROPS.getProperty(key);
     }
 
@@ -813,8 +847,7 @@ public class UTILITIES {
      * @return true/false je nach Erfolg
      */
     public static boolean setProperty(String key, String value) {
-        if (value == null)
-            value = "";
+        if (value == null) value = "";
         if (PROPS == null) {
             FileInputStream input;
             PROPS = new Properties();
@@ -825,12 +858,14 @@ public class UTILITIES {
 
                 PROPS.setProperty(key, value);
 
-            } catch (Exception e) {
+            }
+            catch (Exception e) {
 
                 e.printStackTrace();
                 return false;
             }
-        } else {
+        }
+        else {
             PROPS.setProperty(key, value);
         }
 
@@ -841,20 +876,21 @@ public class UTILITIES {
      * @return true/false je nach Erfolg
      */
     public static boolean savePropertyFile() {
-        if (PROPS == null)
-            return false;
+        if (PROPS == null) return false;
         try {
             FileOutputStream output = new FileOutputStream(PROPERTYFILE);
 
             try {
                 PROPS.store(output, "autosave");
                 return true;
-            } catch (IOException e) {
+            }
+            catch (IOException e) {
 
                 e.printStackTrace();
                 return false;
             }
-        } catch (FileNotFoundException e) {
+        }
+        catch (FileNotFoundException e) {
             return false;
         }
     }
@@ -948,7 +984,7 @@ public class UTILITIES {
      */
     public static String[] getMatches(String source, String pattern) {
         // DEBUG.trace("pattern: "+STRING.getPattern(pattern));
-        if(source==null ||pattern==null)return null;
+        if (source == null || pattern == null) return null;
         Matcher rr = Pattern.compile(getPattern(pattern), Pattern.DOTALL).matcher(source);
         if (!rr.find()) {
             // Keine treffer
@@ -959,30 +995,33 @@ public class UTILITIES {
                 ret[i - 1] = rr.group(i);
             }
             return ret;
-        } catch (IllegalStateException e) {
+        }
+        catch (IllegalStateException e) {
 
             return null;
         }
     }
+
     /**
      * @param path
      * @return Pfad als array{hd,path,filename,extension
      */
-    public static String[] parsePath(String path){
-        String[] ret= new String[4];
-        File file=new File(path);
-        
-       path=file.getAbsolutePath();
-       int first=path.indexOf(FS);
-       int last= path.lastIndexOf(FS);
-       ret[0]=path.substring(0,first+1);
-       ret[1]=path.substring(first+1,last+1);
-       int lastPoint=file.getName().lastIndexOf(".");
-       ret[2]=file.getName().substring(0,lastPoint);
-       ret[3]=file.getName().substring(lastPoint+1);
-            return ret;
-       
+    public static String[] parsePath(String path) {
+        String[] ret = new String[4];
+        File file = new File(path);
+
+        path = file.getAbsolutePath();
+        int first = path.indexOf(FS);
+        int last = path.lastIndexOf(FS);
+        ret[0] = path.substring(0, first + 1);
+        ret[1] = path.substring(first + 1, last + 1);
+        int lastPoint = file.getName().lastIndexOf(".");
+        ret[2] = file.getName().substring(0, lastPoint);
+        ret[3] = file.getName().substring(lastPoint + 1);
+        return ret;
+
     }
+
     /**
      * public static String getPattern(String str) Gibt ein Regex pattern
      * zurück. ° dient als Platzhalter!
@@ -1000,10 +1039,12 @@ public class UTILITIES {
             // 176 == °
             if (letter == 176) {
                 ret += "(.*?)";
-            } else if (allowed.indexOf(letter) == -1) {
+            }
+            else if (allowed.indexOf(letter) == -1) {
 
                 ret += "\\" + letter;
-            } else {
+            }
+            else {
 
                 ret += letter;
             }
@@ -1028,7 +1069,8 @@ public class UTILITIES {
     public static String UTF8Decode(String str) {
         try {
             return new String(str.getBytes(), "UTF-8");
-        } catch (UnsupportedEncodingException e) {
+        }
+        catch (UnsupportedEncodingException e) {
             e.printStackTrace();
             return null;
         }
@@ -1041,7 +1083,8 @@ public class UTILITIES {
     public static String UTF8Encode(String str) {
         try {
             return new String(str.getBytes("UTF-8"));
-        } catch (UnsupportedEncodingException e) {
+        }
+        catch (UnsupportedEncodingException e) {
             e.printStackTrace();
             return null;
         }
@@ -1049,6 +1092,7 @@ public class UTILITIES {
 
     /**
      * Schreibt alle treffer von pattern in source in den übergebenen vector
+     * 
      * @param source
      * @param pattern
      * @param container
@@ -1088,7 +1132,8 @@ public class UTILITIES {
         mediaTracker.addImage(img, 0);
         try {
             mediaTracker.waitForID(0);
-        } catch (InterruptedException e) {
+        }
+        catch (InterruptedException e) {
             return null;
         }
 
@@ -1130,11 +1175,11 @@ public class UTILITIES {
             newName = file.getParent() + FS + newName;
 
             File newFile = new File(newName);
-            if (newFile.exists())
-                return newFile;
+            if (newFile.exists()) return newFile;
             writeImageToJPG(newFile, readImageFromFile(file));
             return newFile;
-        } catch (IOException e) {
+        }
+        catch (IOException e) {
 
             e.printStackTrace();
             return null;
@@ -1187,6 +1232,7 @@ public class UTILITIES {
 
     /**
      * LIest eine webseite ein und gibt deren source zurück
+     * 
      * @param urlStr
      * @return String inhalt von urlStr
      */
@@ -1200,21 +1246,27 @@ public class UTILITIES {
                 ret += r.next();
             }
             return ret;
-        } catch (FileNotFoundException e) {
+        }
+        catch (FileNotFoundException e) {
             getLogger().severe(urlStr + " nicht gefunden");
             // DEBUG.error(e);
-        } catch (URISyntaxException e) {
+        }
+        catch (URISyntaxException e) {
             getLogger().severe(urlStr + " URI yntac error");
 
-        } catch (MalformedURLException e) {
+        }
+        catch (MalformedURLException e) {
             getLogger().severe(urlStr + " Malformed URL");
-        } catch (SocketTimeoutException e) {
-            //getLogger().severe(urlStr + " Socket Timeout");
-        } catch (IOException e) {
-            logger.severe("IOException "+e);
+        }
+        catch (SocketTimeoutException e) {
+            // getLogger().severe(urlStr + " Socket Timeout");
+        }
+        catch (IOException e) {
+            logger.severe("IOException " + e);
         }
         return null;
     }
+
     /**
      * @param arg
      * @return gibr url von arg zurück
@@ -1223,7 +1275,8 @@ public class UTILITIES {
         URL url = null;
         try {
             url = new URL(arg);
-        } catch (MalformedURLException e) {
+        }
+        catch (MalformedURLException e) {
             e.printStackTrace();
         }
         return url;
@@ -1244,7 +1297,7 @@ public class UTILITIES {
         return con;
 
     }
-    
+
     /**
      * @param str
      * @return str URLCodiert
@@ -1252,28 +1305,32 @@ public class UTILITIES {
     public static String urlEncode(String str) {
         try {
             str = URLDecoder.decode(str, "UTF-8");
-    
-        String allowed = "1234567890QWERTZUIOPASDFGHJKLYXCVBNMqwertzuiopasdfghjklyxcvbnm-_.?/:";
-        String ret = "";
-        int i;
-        for (i = 0; i < str.length(); i++) {
-            char letter = str.charAt(i);        
-             if (allowed.indexOf(letter) >=0) {
-                ret +=  letter;
-             }else{
-                 ret+="%"+Integer.toString(letter,16);
-             }
-        }
 
-        return ret;
-        } catch (UnsupportedEncodingException e) {
+            String allowed = "1234567890QWERTZUIOPASDFGHJKLYXCVBNMqwertzuiopasdfghjklyxcvbnm-_.?/:";
+            String ret = "";
+            int i;
+            for (i = 0; i < str.length(); i++) {
+                char letter = str.charAt(i);
+                if (allowed.indexOf(letter) >= 0) {
+                    ret += letter;
+                }
+                else {
+                    ret += "%" + Integer.toString(letter, 16);
+                }
+            }
+
+            return ret;
+        }
+        catch (UnsupportedEncodingException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
         }
         return str;
     }
+
     /**
      * Lädt fileurl nach filepath herunter
+     * 
      * @param filepath
      * @param fileurl
      * @return true/False
@@ -1297,17 +1354,14 @@ public class UTILITIES {
             }
             file.createNewFile();
 
-            BufferedOutputStream output = new BufferedOutputStream(
-                    new FileOutputStream(file, true));
-            fileurl=URLDecoder.decode(fileurl,"UTF-8");
-           
+            BufferedOutputStream output = new BufferedOutputStream(new FileOutputStream(file, true));
+            fileurl = URLDecoder.decode(fileurl, "UTF-8");
+
             URL url = new URL(fileurl);
             URLConnection con = url.openConnection();
-          
-            BufferedInputStream input = new BufferedInputStream(con
-                    .getInputStream());
-            
-            
+
+            BufferedInputStream input = new BufferedInputStream(con.getInputStream());
+
             byte[] b = new byte[1024];
             int len;
             while ((len = input.read(b)) != -1) {
@@ -1315,17 +1369,20 @@ public class UTILITIES {
             }
             output.close();
             input.close();
-          
-            return true;
-        } catch (FileNotFoundException e) {
-        e.printStackTrace();
-            return false;
 
-        } catch (MalformedURLException e) {
+            return true;
+        }
+        catch (FileNotFoundException e) {
             e.printStackTrace();
             return false;
 
-        } catch (Exception e) {
+        }
+        catch (MalformedURLException e) {
+            e.printStackTrace();
+            return false;
+
+        }
+        catch (Exception e) {
             e.printStackTrace();
             return false;
 
@@ -1376,6 +1433,6 @@ public class UTILITIES {
     }
 
     public static int getPercent(int a, int b) {
-       return (a*100)/b;
+        return (a * 100) / b;
     }
 }

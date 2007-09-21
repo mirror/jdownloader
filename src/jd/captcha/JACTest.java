@@ -32,6 +32,7 @@ public class JACTest {
      //sharegullicom47210807182105.gif
       jac.setShowDebugGui(true);
 //  jac.exportDB();
+      UTILITIES.getLogger().info("has method: "+JAntiCaptcha.hasMethod(methodsPath, hoster));
 // jac.importDB();
      LetterComperator.CREATEINTERSECTIONLETTER=true;
       jac.displayLibrary();

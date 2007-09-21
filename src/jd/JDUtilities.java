@@ -452,7 +452,7 @@ public class JDUtilities {
      */
     public static String getCaptcha(JDController controller, Plugin plugin, File file) {
         String host = plugin.getHost();
-        if (JDUtilities.getConfiguration().useJAC() && JAntiCaptcha.hasMethod(getJACMethodsDirectory(), host)) {
+        if (JAntiCaptcha.hasMethod(getJACMethodsDirectory(), host)) {
 
             JFrame jf = new JFrame();
             Image captchaImage = new JFrame().getToolkit().getImage(file.getAbsolutePath());

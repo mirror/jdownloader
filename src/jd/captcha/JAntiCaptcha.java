@@ -158,7 +158,7 @@ public class JAntiCaptcha {
     public JAntiCaptcha(String methodsPath, String methodName) {
         methodsPath= UTILITIES.getFullPath(new String[] {methodsPath, methodName, "" });
         cl = UTILITIES.getURLClassLoader(methodsPath);
-
+if(cl!=null){
         logger.fine("Benutze Classloader: " + cl.getResource("."));
         this.methodDir = methodName;
 
@@ -172,22 +172,25 @@ public class JAntiCaptcha {
             logger.severe("Die Methode " + methodsPath + " kann nicht gefunden werden. JAC Pfad falsch?");
 
         }
-
+}else{
+    
+    logger.severe("Classloader konnte nicht initialisiert werden!");
+}
     }
 
     /**
      * Gibt zurück ob die entsprechende Methode verfügbar ist.
      * 
      * @param methodsPath
-     *            (null bei standard)
+     *           
      * @param methodName
      * @return true/false
      */
     public static boolean hasMethod(String methodsPath, String methodName) {
       
-        methodsPath= UTILITIES.getFullPath(new String[] {methodsPath, methodName, "script.jas" });
       
-        return UTILITIES.getURLClassLoader(methodsPath) != null;
+      
+        return UTILITIES.getURLClassLoader(UTILITIES.getFullPath(new String[] {methodsPath, methodName, "script.jas" })) != null&&UTILITIES.getURLClassLoader(UTILITIES.getFullPath(new String[] {methodsPath, methodName })).getResource(".")!=null;
     }
 
     /**
