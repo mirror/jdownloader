@@ -451,6 +451,7 @@ public class JDUtilities {
      * @return Der vom Benutzer eingegebene Text
      */
     public static String getCaptcha(JDController controller, Plugin plugin, File file) {
+        if(controller==null)controller=getController();
         String host = plugin.getHost();
         if (JAntiCaptcha.hasMethod(getJACMethodsDirectory(), host)) {
 
