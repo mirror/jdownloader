@@ -453,6 +453,8 @@ public class JDUtilities {
     public static String getCaptcha(JDController controller, Plugin plugin, File file) {
         if(controller==null)controller=getController();
         String host = plugin.getHost();
+        
+        logger.info("JAC has Method for: "+host+": "+JAntiCaptcha.hasMethod(getJACMethodsDirectory(), host));
         if (JAntiCaptcha.hasMethod(getJACMethodsDirectory(), host)) {
 
             JFrame jf = new JFrame();

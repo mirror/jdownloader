@@ -18,6 +18,7 @@ import javax.swing.JLabel;
 import javax.swing.JTextField;
 
 import jd.JDUtilities;
+import jd.captcha.JAntiCaptcha;
 import jd.plugins.Plugin;
 
 /**
@@ -70,7 +71,11 @@ public class CaptchaDialog extends JDialog implements ActionListener {
          } catch (IOException e) {       
              e.printStackTrace();
          }
+         String host = plugin.getHost();
+         if(JAntiCaptcha.hasMethod(JDUtilities.getJACMethodsDirectory(), host)){
+            
         code = JDUtilities.getCaptcha(null,plugin, file);
+         }
 		JLabel label = new JLabel(imageIcon);
 		textField = new JTextField(10);
 		btnOK     = new JButton("OK");
