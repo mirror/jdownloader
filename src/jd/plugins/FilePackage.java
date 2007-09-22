@@ -3,8 +3,8 @@ package jd.plugins;
 import java.io.File;
 import java.io.Serializable;
 
-import jd.JDUtilities;
 import jd.config.Property;
+import jd.utils.JDUtilities;
 
 /**
  * Diese Klasse verwaltet Pakete

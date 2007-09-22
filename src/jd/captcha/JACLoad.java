@@ -6,8 +6,8 @@ import java.io.File;
 import java.net.MalformedURLException;
 import java.net.URL;
 
-import jd.JDUtilities;
 import jd.captcha.utils.UTILITIES;
+import jd.utils.JDUtilities;
 
 
 

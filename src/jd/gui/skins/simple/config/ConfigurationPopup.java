@@ -11,9 +11,9 @@ import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 
-import jd.JDUtilities;
 import jd.config.Configuration;
 import jd.gui.UIInterface;
+import jd.utils.JDUtilities;
 
 /**
  * Parentklasse für ein 2. Popupfenster. Wird momentan zur Konfiguration der Interactions verwendet

@@ -8,10 +8,10 @@ import java.util.HashMap;
 import java.util.Vector;
 import java.util.regex.Pattern;
 
-import jd.JDUtilities;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
+import jd.utils.JDUtilities;
 
 /**
  * http://rs.xxx-blog.org/com-UmNkdzY1MjN/file.rar

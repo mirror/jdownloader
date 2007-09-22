@@ -9,11 +9,11 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.HashMap;
 
-import jd.JDUtilities;
 import jd.config.Configuration;
 import jd.plugins.Plugin;
 import jd.plugins.RequestInfo;
 import jd.router.RouterData;
+import jd.utils.JDUtilities;
 
 /**
  * Diese Klasse führt einen Reconnect durch

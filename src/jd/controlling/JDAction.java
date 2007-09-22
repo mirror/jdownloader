@@ -8,7 +8,7 @@ import javax.swing.Action;
 import javax.swing.ImageIcon;
 import javax.swing.KeyStroke;
 
-import jd.JDUtilities;
+import jd.utils.JDUtilities;
 
 /**
  * Alle Interaktionen (Knöpfe, Shortcuts) sollten über diese JDAction stattfinden

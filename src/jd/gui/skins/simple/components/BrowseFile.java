@@ -15,8 +15,8 @@ import javax.swing.JTextField;
 import javax.swing.SwingUtilities;
 import javax.swing.border.EtchedBorder;
 
-import jd.JDUtilities;
 import jd.plugins.Plugin;
+import jd.utils.JDUtilities;
 
 public class BrowseFile extends JPanel implements ActionListener {
     /**

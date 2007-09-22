@@ -9,7 +9,6 @@ import java.util.Vector;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import jd.JDUtilities;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.plugins.Plugin;
@@ -17,6 +16,7 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
 import jd.plugins.event.PluginEvent;
+import jd.utils.JDUtilities;
 
 public class Serienjunkies extends PluginForDecrypt {
     static private final String  host = "serienjunkies.safehost.be";

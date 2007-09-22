@@ -9,12 +9,12 @@ import java.util.Vector;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import jd.JDUtilities;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
 import jd.plugins.event.PluginEvent;
+import jd.utils.JDUtilities;
 
 /**
  * DecryptPlugin für secured.in Links

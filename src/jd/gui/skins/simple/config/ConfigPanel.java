@@ -10,10 +10,10 @@ import java.util.logging.Logger;
 
 import javax.swing.JPanel;
 
-import jd.JDUtilities;
 import jd.config.Configuration;
 import jd.gui.UIInterface;
 import jd.plugins.Plugin;
+import jd.utils.JDUtilities;
 
 public abstract class ConfigPanel extends JPanel{
     /**

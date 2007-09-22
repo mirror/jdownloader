@@ -14,11 +14,11 @@ import javax.swing.table.AbstractTableModel;
 import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableColumn;
 
-import jd.JDUtilities;
 import jd.plugins.Plugin;
 
 import jd.plugins.event.PluginEvent;
 import jd.plugins.event.PluginListener;
+import jd.utils.JDUtilities;
 
 /**
  * Diese Klasse zeigt alle Fortschritte von momenten aktiven Plugins an.

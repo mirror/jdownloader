@@ -3,12 +3,12 @@ package jd.config;
 import java.io.Serializable;
 import java.util.Vector;
 
-import jd.JDUtilities;
 import jd.controlling.interaction.Interaction;
 import jd.controlling.interaction.InteractionTrigger;
 import jd.controlling.interaction.JAntiCaptcha;
 import jd.controlling.interaction.WebUpdate;
 import jd.router.RouterData;
+import jd.utils.JDUtilities;
 
 /**
  * In dieser Klasse werden die benutzerspezifischen Einstellungen festgehalten

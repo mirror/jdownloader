@@ -9,11 +9,11 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.util.regex.Pattern;
 
-import jd.JDUtilities;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
+import jd.utils.JDUtilities;
 
 public class Uploadedto extends PluginForHost {
     static private final Pattern PAT_SUPPORTED  = getSupportPattern("http://[*]uploaded.to/\\?id\\=[+]");
@@ -146,23 +146,7 @@ public class Uploadedto extends PluginForHost {
         }
     }
 
-    /**
-     * Liest Content von Connection und gibt diesen als String zurück TODO:
-     * auslagern
-     * 
-     * @param con Connection
-     * @return Content
-     * @throws IOException
-     */
-    public static String contentToString(HttpURLConnection con) throws IOException {
-        InputStreamReader in = new InputStreamReader(con.getInputStream());
-        StringBuffer sb = new StringBuffer();
-        int chr;
-        while ((chr = in.read()) != -1) {
-            sb.append((char) chr);
-        }
-        return sb.toString();
-    }
+   
 
     @Override
     public boolean doBotCheck(File file) {

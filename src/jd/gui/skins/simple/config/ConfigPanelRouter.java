@@ -24,12 +24,12 @@ import javax.swing.JPasswordField;
 import javax.swing.JTabbedPane;
 import javax.swing.JTextField;
 
-import jd.JDUtilities;
 import jd.config.Configuration;
 import jd.controlling.interaction.HTTPReconnect;
 import jd.plugins.Plugin;
 import jd.router.RouterData;
 import jd.router.RouterParser;
+import jd.utils.JDUtilities;
 
 /**
  * Hier können Routereinstellungen vorgenommen werden

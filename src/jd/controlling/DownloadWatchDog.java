@@ -5,7 +5,6 @@ import java.util.Iterator;
 import java.util.Vector;
 import java.util.logging.Logger;
 
-import jd.JDUtilities;
 import jd.config.Configuration;
 import jd.controlling.interaction.HTTPReconnect;
 import jd.controlling.interaction.Interaction;
@@ -19,6 +18,7 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginForHost;
 import jd.plugins.event.PluginEvent;
 import jd.plugins.event.PluginListener;
+import jd.utils.JDUtilities;
 
 /**
  * Dieser COntroller verwaltet die downloads.WÄhrend StartDownloads.java für die
@@ -55,10 +55,11 @@ public class DownloadWatchDog extends Thread implements PluginListener, ControlL
         DownloadLink link;
         boolean hasWaittimeLinks;
         boolean hasInProgressLinks;
-        
+        aborted=false;
         fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_ALL_DOWNLOAD_START, this));
 
         while (aborted != true) {
+     
             if (activeLinks.size() < getSimultanDownloadNum()) {
                 started = setDownloadActive();
                 logger.info("Started " + started + "Downloads");
@@ -85,7 +86,7 @@ public class DownloadWatchDog extends Thread implements PluginListener, ControlL
                     hasWaittimeLinks=true;
                 }
                 if (link.isInProgress()) {
-                    logger.info("ip: "+link);
+//                    logger.info("ip: "+link);
                     hasInProgressLinks=true;
                 
                 }
@@ -107,6 +108,7 @@ public class DownloadWatchDog extends Thread implements PluginListener, ControlL
             catch (InterruptedException e) {
             }
         }
+        logger.info("RUN END");
     }
 
     /**
@@ -191,6 +193,7 @@ public class DownloadWatchDog extends Thread implements PluginListener, ControlL
     private void startDownloadThread(DownloadLink dlink) {
         StartDownloads download = new StartDownloads(controller, dlink);
         logger.info("start download: " + dlink);
+        dlink.setInProgress(true);
         download.addControlListener(this);
         download.addControlListener(this.controller);
         download.start();
@@ -333,7 +336,11 @@ public class DownloadWatchDog extends Thread implements PluginListener, ControlL
         switch (event.getID()) {
 
             case ControlEvent.CONTROL_SINGLE_DOWNLOAD_FINISHED:
-                removeDownloadLinkFromActiveList((DownloadLink) event.getParameter());
+                if(removeDownloadLinkFromActiveList((DownloadLink) event.getParameter())){
+                    
+                    logger.info("removed aktive download. left: "+this.activeLinks.size());
+                }
+                
                 break;
             case ControlEvent.CONTROL_CAPTCHA_LOADED:
                 break;
@@ -362,6 +369,7 @@ public class DownloadWatchDog extends Thread implements PluginListener, ControlL
             }
 
         }
+        
         return false;
 
     }

@@ -5,8 +5,8 @@ package jd.captcha;
 
 import java.util.logging.Logger;
 
-import jd.JDUtilities;
 import jd.captcha.utils.UTILITIES;
+import jd.utils.JDUtilities;
 
 /**
  * Jac Training
@@ -29,7 +29,7 @@ public class JACTrain {
 
         String methodsPath=UTILITIES.getFullPath(new String[] { JDUtilities.getJDHomeDirectory().getAbsolutePath(), "jd", "captcha", "methods"});
         
-        String hoster="rapidshare.com";
+        String hoster="megaupload.com";
 
         JAntiCaptcha jac= new JAntiCaptcha(methodsPath,hoster);
         //jac.runTestMode(new File("1186941165349_captcha.jpg"));

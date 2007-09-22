@@ -44,16 +44,16 @@ public class Xirror extends PluginForDecrypt {
     			int count = 0;
     			
     			//Anzahl der Links zählen
-    			if((Boolean) this.getProperties().getProperty("USE_RAPIDSHARE")) {
+    			if((Boolean) this.getProperties().getProperty("USE_RAPIDSHARE",true)) {
     				count++;
     			}
-    			if((Boolean) this.getProperties().getProperty("USE_UPLOADED")) {
+    			if((Boolean) this.getProperties().getProperty("USE_UPLOADED",true)) {
     				count++;
     			}
-    			if((Boolean) this.getProperties().getProperty("USE_NETLOAD")) {
+    			if((Boolean) this.getProperties().getProperty("USE_NETLOAD",true)) {
     				count++;
     			}
-    			if((Boolean) this.getProperties().getProperty("USE_FILEFACTORY")) {
+    			if((Boolean) this.getProperties().getProperty("USE_FILEFACTORY",true)) {
     				count++;
     			}
     			firePluginEvent(new PluginEvent(this,PluginEvent.PLUGIN_PROGRESS_MAX, count));
@@ -61,7 +61,7 @@ public class Xirror extends PluginForDecrypt {
     			//Links auslesen und umdrehen
     			Vector<Vector<String>> g = getAllSimpleMatches(reqinfo.getHtmlCode(), "popup(\"°\", \"°\")");
     			//Rapidshare Link speichern
-    			if((Boolean) this.getProperties().getProperty("USE_RAPIDSHARE")) {
+    			if((Boolean) this.getProperties().getProperty("USE_RAPIDSHARE",true)) {
     				for( int i=0; i<g.size();i++){
     				    if(g.get(i).get(1).equalsIgnoreCase("rapidshare"))
     				    {
@@ -71,7 +71,7 @@ public class Xirror extends PluginForDecrypt {
     				}	
     			}
     			//Uploaded Link speichern
-    			if((Boolean) this.getProperties().getProperty("USE_UPLOADED")) {
+    			if((Boolean) this.getProperties().getProperty("USE_UPLOADED",true)) {
                     for( int i=0; i<g.size();i++){
                         if(g.get(i).get(1).equalsIgnoreCase("gulli"))
                         {
@@ -81,7 +81,7 @@ public class Xirror extends PluginForDecrypt {
                     }
     			}
     			//Netload Link speichern
-    			if((Boolean) this.getProperties().getProperty("USE_NETLOAD")) {
+    			if((Boolean) this.getProperties().getProperty("USE_NETLOAD",true)) {
                     for( int i=0; i<g.size();i++){
                         if(g.get(i).get(1).equalsIgnoreCase("netload"))
                         {
@@ -91,7 +91,7 @@ public class Xirror extends PluginForDecrypt {
                     }
     			}
     			//Filefactory Link speichern
-    			if((Boolean) this.getProperties().getProperty("USE_FILEFACTORY")) {
+    			if((Boolean) this.getProperties().getProperty("USE_FILEFACTORY",true)) {
                     for( int i=0; i<g.size();i++){
                         if(g.get(i).get(1).equalsIgnoreCase("filefactory"))
                         {

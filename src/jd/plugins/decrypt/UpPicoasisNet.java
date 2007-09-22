@@ -6,11 +6,11 @@ import java.net.URL;
 import java.util.Vector;
 import java.util.regex.Pattern;
 
-import jd.JDUtilities;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
 import jd.plugins.event.PluginEvent;
+import jd.utils.JDUtilities;
 
 public class UpPicoasisNet extends PluginForDecrypt {
 

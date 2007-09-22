@@ -2,8 +2,8 @@ package jd.controlling.interaction;
 
 import java.io.Serializable;
 
-import jd.JDUtilities;
 import jd.plugins.DownloadLink;
+import jd.utils.JDUtilities;
 
 /**
  * Captach erkennung über JAC

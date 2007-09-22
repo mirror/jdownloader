@@ -9,13 +9,13 @@ import java.net.URLEncoder;
 import java.util.Vector;
 import java.util.regex.Pattern;
 
-import jd.JDUtilities;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.plugins.PluginForSearch;
 import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
 import jd.plugins.event.PluginEvent;
+import jd.utils.JDUtilities;
 
 /**
  * 

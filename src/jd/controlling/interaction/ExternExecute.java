@@ -3,7 +3,7 @@ package jd.controlling.interaction;
 import java.io.IOException;
 import java.io.Serializable;
 
-import jd.JDUtilities;
+import jd.utils.JDUtilities;
 
 /**
  * Diese Klasse führt einen Reconnect durch

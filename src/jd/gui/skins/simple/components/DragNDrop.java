@@ -16,10 +16,10 @@ import java.util.logging.Logger;
 
 import javax.swing.JComponent;
 
-import jd.JDUtilities;
 import jd.event.UIEvent;
 import jd.event.UIListener;
 import jd.plugins.Plugin;
+import jd.utils.JDUtilities;
 
 /**
  * Diese Komponente ist ein Droptarget. und nimmt gedroppte STrings auf

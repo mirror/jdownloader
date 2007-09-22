@@ -5,8 +5,8 @@ import java.io.Serializable;
 import java.util.logging.Logger;
 
 import jd.JDCrypt;
-import jd.JDUtilities;
 import jd.controlling.SpeedMeter;
+import jd.utils.JDUtilities;
 
 /**
  * Hier werden alle notwendigen Informationen zu einem einzelnen Download
@@ -413,8 +413,18 @@ public class DownloadLink implements Serializable, Comparable {
      * 
      * @param urlDownload Die URL von der heruntergeladen werden soll
      */
-    public void setUrlDownload(String urlDownload) {
+    public void setEncryptedUrlDownload(String urlDownload) {
         this.urlDownload = urlDownload;
+    }
+    
+    /**
+     * Setzt die URL, von der heruntergeladen werden soll (Ist NICHt
+     * verschlüsselt)
+     * 
+     * @param urlDownload Die URL von der heruntergeladen werden soll
+     */
+    public void setUrlDownload(String urlDownload){
+        this.urlDownload= JDCrypt.encrypt(urlDownload);
     }
 
     /**

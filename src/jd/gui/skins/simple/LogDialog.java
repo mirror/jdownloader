@@ -19,8 +19,8 @@ import javax.swing.JFrame;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 
-import jd.JDUtilities;
 import jd.plugins.LogFormatter;
+import jd.utils.JDUtilities;
 
 /**
  * Ein Dialog, der Logger-Output anzeigen kann. 

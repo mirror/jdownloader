@@ -6,8 +6,8 @@ package jd.captcha;
 import java.io.File;
 import java.util.logging.Logger;
 
-import jd.JDUtilities;
 import jd.captcha.utils.UTILITIES;
+import jd.utils.JDUtilities;
 
 /**
  * Jac Training

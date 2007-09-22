@@ -7,9 +7,9 @@ import java.net.URL;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import jd.JDUtilities;
 import jd.plugins.Plugin;
 import jd.plugins.RequestInfo;
+import jd.utils.JDUtilities;
 
 /**
  * Diese Klasse ruft ein Externes Programm auf. Anschließend wird auf eine Neue

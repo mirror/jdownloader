@@ -8,11 +8,11 @@ import java.net.URLConnection;
 import java.util.Vector;
 import java.util.regex.Pattern;
 
-import jd.JDUtilities;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
+import jd.utils.JDUtilities;
 
 public class FileFactory extends PluginForHost {
 
@@ -254,7 +254,7 @@ public class FileFactory extends PluginForHost {
             else {
                 String fileName = JDUtilities.htmlDecode(getSimpleMatch(requestInfo.getHtmlCode(), DOWNLOAD_INFO, 0));
                 String fileSize = getSimpleMatch(requestInfo.getHtmlCode(), DOWNLOAD_INFO, 3);
-                logger.info(requestInfo.getHtmlCode());
+               
                 logger.info(getAllSimpleMatches(requestInfo.getHtmlCode(), DOWNLOAD_INFO).toString());
                 downloadLink.setName(fileName);
                 if (fileSize != null) {

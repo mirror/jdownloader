@@ -12,9 +12,9 @@ import java.util.regex.Pattern;
 
 import javax.swing.JFrame;
 
-import jd.JDUtilities;
 import jd.config.Configuration;
 import jd.plugins.Plugin;
+import jd.utils.JDUtilities;
 
 /**
  * Diese Klasse ließt eine Routers.dat Datei aus

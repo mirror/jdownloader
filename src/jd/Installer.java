@@ -19,6 +19,7 @@ import javax.swing.JLabel;
 import jd.gui.skins.simple.components.BrowseFile;
 import jd.plugins.Plugin;
 import jd.update.WebUpdater;
+import jd.utils.JDUtilities;
 
 /**
  * Der Installer erscheint nur beim ersten mal STarten der Webstartversion und beim neuinstallieren der webstartversion

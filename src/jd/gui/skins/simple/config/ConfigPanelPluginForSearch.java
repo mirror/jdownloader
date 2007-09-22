@@ -22,11 +22,11 @@ import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableColumn;
 
-import jd.JDUtilities;
 import jd.config.Configuration;
 import jd.gui.UIInterface;
 
 import jd.plugins.PluginForSearch;
+import jd.utils.JDUtilities;
 
 /**
  * @author coalado

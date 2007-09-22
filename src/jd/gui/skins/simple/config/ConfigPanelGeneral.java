@@ -11,7 +11,6 @@ import javax.swing.JComboBox;
 import javax.swing.JFileChooser;
 import javax.swing.JLabel;
 
-import jd.JDUtilities;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.Configuration;
@@ -19,6 +18,7 @@ import jd.event.UIEvent;
 import jd.gui.UIInterface;
 import jd.gui.skins.simple.components.BrowseFile;
 import jd.plugins.Plugin;
+import jd.utils.JDUtilities;
 
 public class ConfigPanelGeneral extends ConfigPanel{
     /**

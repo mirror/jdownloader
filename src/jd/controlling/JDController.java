@@ -5,7 +5,6 @@ import java.util.Iterator;
 import java.util.Vector;
 import java.util.logging.Logger;
 
-import jd.JDUtilities;
 import jd.config.Configuration;
 import jd.controlling.interaction.HTTPReconnect;
 import jd.controlling.interaction.Interaction;
@@ -21,6 +20,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.PluginStep;
 import jd.plugins.event.PluginEvent;
 import jd.plugins.event.PluginListener;
+import jd.utils.JDUtilities;
 
 /**
  * Im Controller wird das ganze App gesteuert. Evebnts werden deligiert.

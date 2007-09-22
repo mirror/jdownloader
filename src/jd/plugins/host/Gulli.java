@@ -9,11 +9,11 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.util.regex.Pattern;
 
-import jd.JDUtilities;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
+import jd.utils.JDUtilities;
 
 /**
  * HostPlugin für gullishare TODO: Erzwungene Wartezeit (gibt es die überhaupt

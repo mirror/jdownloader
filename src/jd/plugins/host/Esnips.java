@@ -8,11 +8,11 @@ import java.net.URLConnection;
 import java.util.Vector;
 import java.util.regex.Pattern;
 
-import jd.JDUtilities;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
+import jd.utils.JDUtilities;
 
 public class Esnips extends PluginForHost {
 

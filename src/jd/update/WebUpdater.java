@@ -20,8 +20,8 @@ import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import jd.JDUtilities;
 import jd.plugins.Plugin;
+import jd.utils.JDUtilities;
 
 /**
  * @author coalado Webupdater lädt pfad und hash infos von einem server und

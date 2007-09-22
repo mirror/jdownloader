@@ -21,7 +21,6 @@ import javax.swing.event.TableModelEvent;
 import javax.swing.table.AbstractTableModel;
 import javax.swing.table.TableColumn;
 
-import jd.JDUtilities;
 import jd.config.Configuration;
 import jd.controlling.interaction.DummyInteraction;
 import jd.controlling.interaction.ExternExecute;
@@ -33,6 +32,7 @@ import jd.controlling.interaction.JAntiCaptcha;
 import jd.controlling.interaction.ManuelCaptcha;
 import jd.controlling.interaction.WebUpdate;
 import jd.gui.UIInterface;
+import jd.utils.JDUtilities;
 
 public class ConfigPanelEventmanager extends ConfigPanel implements ActionListener, MouseListener {
 

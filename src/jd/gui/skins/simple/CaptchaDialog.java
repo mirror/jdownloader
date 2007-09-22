@@ -17,9 +17,9 @@ import javax.swing.JDialog;
 import javax.swing.JLabel;
 import javax.swing.JTextField;
 
-import jd.JDUtilities;
 import jd.captcha.JAntiCaptcha;
 import jd.plugins.Plugin;
+import jd.utils.JDUtilities;
 
 /**
  * Mit dieser Klasse wird ein Captcha Bild angezeigt

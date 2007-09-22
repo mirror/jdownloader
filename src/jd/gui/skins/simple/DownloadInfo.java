@@ -17,9 +17,9 @@ import javax.swing.JPanel;
 import javax.swing.JSeparator;
 import javax.swing.SwingUtilities;
 
-import jd.JDUtilities;
 import jd.plugins.DownloadLink;
 import jd.plugins.Plugin;
+import jd.utils.JDUtilities;
 
 /**
  * Dies Klasse ziegt informationen zu einem DownloadLink an

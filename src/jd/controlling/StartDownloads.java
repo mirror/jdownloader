@@ -4,13 +4,13 @@ import java.io.File;
 import java.util.Vector;
 import java.util.logging.Logger;
 
-import jd.JDUtilities;
 import jd.controlling.interaction.Interaction;
 import jd.event.ControlEvent;
 import jd.plugins.DownloadLink;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginStep;
+import jd.utils.JDUtilities;
 
 /**
  * In dieser Klasse wird der Download parallel zum Hauptthread gestartet
@@ -95,7 +95,7 @@ public class StartDownloads extends ControlMulticaster {
 
                     long wait = (Long) step.getParameter();
                     logger.info("Erzwungene Wartezeit: " + wait);
-                    while (wait > 0) {
+                    while (wait > 0 && !aborted) {
                         downloadLink.setStatusText("Erzwungene Wartezeit: " + JDUtilities.formatSeconds((int) (wait / 1000)));
                         fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SINGLE_DOWNLOAD_CHANGED, downloadLink));
 
@@ -161,6 +161,9 @@ public class StartDownloads extends ControlMulticaster {
                     }
                     break;
 
+            }
+            if(aborted){
+                break;
             }
             if (step != null && downloadLink != null && plugin != null && plugin.nextStep(step) != null) {
                 downloadLink.setStatusText(plugin.nextStep(step).toString());
@@ -241,17 +244,17 @@ public class StartDownloads extends ControlMulticaster {
         else {
             downloadLink.setStatusText("Fertig");
             // Schreibt die Info File
-            if (downloadLink.getFilePackage() != null) {
-                File file = new File(downloadLink.getFilePackage().getDownloadDirectory());
-                file = new File(file, downloadLink.getFileNameFrom() + ".info");
-
-                logger.info(file.getAbsolutePath());
-                String info = downloadLink.getFilePackage().getComment() + "\n" + "" + "\n" + downloadLink.getFilePackage().getPassword();
-                if (info.length() > 2) {
-                    JDUtilities.writeLocalFile(file, info);
-                }
-
-            }
+//            if (downloadLink.getFilePackage() != null) {
+//                File file = new File(downloadLink.getFilePackage().getDownloadDirectory());
+//                file = new File(file, downloadLink.getFileNameFrom() + ".info");
+//
+//                logger.info(file.getAbsolutePath());
+//                String info = downloadLink.getFilePackage().getComment() + "\n" + "" + "\n" + downloadLink.getFilePackage().getPassword();
+//                if (info.length() > 2) {
+//                    JDUtilities.writeLocalFile(file, info);
+//                }
+//
+//            }
             downloadLink.setInProgress(false);
             fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SINGLE_DOWNLOAD_CHANGED, downloadLink));
             Interaction.handleInteraction((Interaction.INTERACTION_SINGLE_DOWNLOAD_FINISHED), downloadLink);
@@ -482,6 +485,9 @@ public class StartDownloads extends ControlMulticaster {
         fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SINGLE_DOWNLOAD_CHANGED, downloadLink));
 
         downloadLink.setStatus(DownloadLink.STATUS_TODO);
+        
+     
+        downloadLink.setEndOfWaittime(0);
 
     }
 

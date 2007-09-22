@@ -15,6 +15,7 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginForSearch;
+import jd.utils.JDUtilities;
 
 /**
  * Start der Applikation
@@ -87,30 +88,46 @@ public class Main {
             JDUtilities.getConfiguration().setDefaultValues();
 
         }
+        
+        
+//      logger.info( new Vector(Arrays.asList(getSimpleMatches(requestInfo.getHtmlCode(),this.SIMPLEPATTERN_GEN_DOWNLOADLINK)))+"_");
+//      logger.info( new Vector(Arrays.asList(getSimpleMatches(requestInfo.getHtmlCode(),this.SIMPLEPATTERN_GEN_DOWNLOADLINK_link)))+"_");
+//       var a = String.fromCharCode(Math.abs(-56)); ..>8
+//       var d = '4' + String.fromCharCode(Math.sqrt(10000)); --><d
+//       GET /files/0d4d724d830bc600131f2e4628dcecb8/%5BA-E_&_Conclave%5D_Trinity_Blood_01_%5BC94AE728%5D.avi
+    
+        
+        
+      
         // Configuration c = new Configuration();
         // c.setDownloadDirectory("D:\\Downloads");
         // JDUtilities.saveObject(null, c, JDUtilities.getJDHomeDirectory(),
         // "jdownloader", ".config", true);
+        logger.info("Lade Plugins");
         JDUtilities.loadPlugins();
+        logger.info("Lade GUI");
         UIInterface uiInterface = new SimpleGUI();
+        logger.info("Erstelle Controller");
         JDController controller = new JDController();
         controller.setUiInterface(uiInterface);
+        logger.info("Lade Queue");
         controller.initDownloadLinks();
 //       JDUtilities.registerListenerPluginsForDecrypt(controller);
 //       JDUtilities.registerListenerPluginsForHost(controller);
 //       JDUtilities.registerListenerPluginsForSearch(controller);
-//        Iterator<PluginForHost> iteratorHost = JDUtilities.getPluginsForHost().iterator();
-//        while (iteratorHost.hasNext()) {
-//            iteratorHost.next().addPluginListener(controller);
-//        }
-//        Iterator<PluginForDecrypt> iteratorDecrypt = JDUtilities.getPluginsForDecrypt().iterator();
-//        while (iteratorDecrypt.hasNext()) {
-//            iteratorDecrypt.next().addPluginListener(controller);
-//        }
-//        Iterator<PluginForSearch> iteratorSearch = JDUtilities.getPluginsForSearch().iterator();
-//        while (iteratorSearch.hasNext()) {
-//            iteratorSearch.next().addPluginListener(controller);
-//        }
+        logger.info("Registriere Plugins");
+        Iterator<PluginForHost> iteratorHost = JDUtilities.getPluginsForHost().iterator();
+        while (iteratorHost.hasNext()) {
+            iteratorHost.next().addPluginListener(controller);
+        }
+        Iterator<PluginForDecrypt> iteratorDecrypt = JDUtilities.getPluginsForDecrypt().iterator();
+        while (iteratorDecrypt.hasNext()) {
+            iteratorDecrypt.next().addPluginListener(controller);
+        }
+        Iterator<PluginForSearch> iteratorSearch = JDUtilities.getPluginsForSearch().iterator();
+        while (iteratorSearch.hasNext()) {
+            iteratorSearch.next().addPluginListener(controller);
+        }
 
         Interaction.handleInteraction(Interaction.INTERACTION_APPSTART, false);
     }

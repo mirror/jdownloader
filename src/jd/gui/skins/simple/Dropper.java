@@ -7,9 +7,9 @@ import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 
-import jd.JDUtilities;
 import jd.event.UIListener;
 import jd.gui.skins.simple.components.DragNDrop;
+import jd.utils.JDUtilities;
 
 /**
  * Die Dropperklasse zeigt einen DropTarget Dialog an. Zieht man links oder text darauf, so wird das eingefügt.

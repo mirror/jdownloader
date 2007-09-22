@@ -20,6 +20,7 @@ import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 
 import jd.plugins.Plugin;
+import jd.utils.JDUtilities;
 /**
  * Diese Klasse verhindert, daß beim Start als Applikation WebStart Klassen nicht gefunden werden.
  * Diese sind hier gekapselt 

@@ -21,11 +21,11 @@ import javax.swing.JTextField;
 import javax.swing.SpinnerNumberModel;
 import javax.swing.SwingConstants;
 
-import jd.JDUtilities;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.gui.skins.simple.components.BrowseFile;
 import jd.plugins.Plugin;
+import jd.utils.JDUtilities;
 
 /**
  * Diese Klasse fasst ein label / input Paar zusammen und macht das lesen und

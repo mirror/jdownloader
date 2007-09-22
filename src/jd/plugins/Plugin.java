@@ -41,13 +41,13 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.zip.GZIPInputStream;
 
-import jd.JDUtilities;
 import jd.config.ConfigContainer;
 import jd.config.Configuration;
 import jd.config.Property;
 import jd.controlling.interaction.Interaction;
 import jd.plugins.event.PluginEvent;
 import jd.plugins.event.PluginListener;
+import jd.utils.JDUtilities;
 
 /**
  * Diese abstrakte Klasse steuert den Zugriff auf weitere Plugins. Alle Plugins
@@ -150,7 +150,7 @@ public abstract class Plugin {
             patternString = patternString.substring(0, patternString.length() - 2) + "[^\"]" + patternString.substring(patternString.length() - 1);
         }
         // patternString="\""+patternString+"\"";
-        logger.info(patternString);
+//        logger.info(patternString);
         return Pattern.compile(patternString);
     }
 
@@ -269,7 +269,7 @@ public abstract class Plugin {
         else {
             properties = new Property();
         }
-        logger.info("Load Plugin Properties: " + "PluginConfig_" + this.getPluginName() + " : " + properties);
+//        logger.info("Load Plugin Properties: " + "PluginConfig_" + this.getPluginName() + " : " + properties);
 
     }
 

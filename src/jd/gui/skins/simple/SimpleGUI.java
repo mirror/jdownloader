@@ -35,7 +35,6 @@ import javax.swing.JToolBar;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
 
-import jd.JDUtilities;
 import jd.config.Configuration;
 import jd.controlling.JDAction;
 import jd.controlling.interaction.ExternReconnect;
@@ -52,6 +51,7 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginForSearch;
 import jd.plugins.event.PluginEvent;
+import jd.utils.JDUtilities;
 
 import com.sun.java.swing.plaf.windows.WindowsLookAndFeel;
 
@@ -186,7 +186,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener{
         dragNDrop.addUIListener(this);
 
         // Ruft jede sekunde ein UpdateEvent auf
-        new Thread() {
+        new Thread("GUI Interval") {
             public void run() {
                 while (true) {
                     interval();

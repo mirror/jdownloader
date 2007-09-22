@@ -66,7 +66,20 @@ public class Property implements Serializable {
         if (properties == null) properties = new HashMap<String, Object>();
         return properties.get(key);
     }
-
+    /**
+     * Gibtd en wert zu key zurück und falls keiner festgelegt ist def
+     * @param key
+     * @param def
+     * @return value
+     */
+    public Object getProperty(String key,Object def) {
+        if (properties == null) properties = new HashMap<String, Object>();
+        if(getProperty(key)==null){
+            setProperty(key,def);
+            return def;
+        }
+        return properties.get(key);
+    }
     /**
      * @return gibt die INterne properties hashmap zurück
      */

@@ -1,8 +1,12 @@
 package jd.plugins;
 
+import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.net.URLConnection;
 import java.util.Vector;
 
-import jd.JDUtilities;
+import jd.utils.JDUtilities;
 
 /**
  * Dies ist die Oberklasse für alle Plugins, die von einem Anbieter Dateien
@@ -68,7 +72,8 @@ public abstract class PluginForHost extends Plugin {
                     file = file.substring(0, file.length() - 1);
 
                 try {
-                    //Zwecks Multidownload braucht jeder Link seine eigene PLugininstanz
+                    // Zwecks Multidownload braucht jeder Link seine eigene
+                    // PLugininstanz
                     PluginForHost plg = this.getClass().newInstance();
                     plg.addPluginListener(JDUtilities.getController());
 
@@ -128,6 +133,48 @@ public abstract class PluginForHost extends Plugin {
      */
     public PluginStep doStep(PluginStep step, Object parameter) {
         return doStep(step, (DownloadLink) parameter);
+    }
+/**
+ * Kann im Downloadschritt verwendet werden um einen einfachen Download vorzubereiten
+ * @param downloadLink
+ * @param step
+ * @param url
+ * @param cookie
+ * @param redirect
+ * @return
+ */
+    protected boolean defaultDownloadStep(DownloadLink downloadLink, PluginStep step, String url, String cookie, boolean redirect) {
+        try {
+            requestInfo = getRequestWithoutHtmlCode(new URL(url), cookie, null, redirect);
+
+            int length = requestInfo.getConnection().getContentLength();
+            downloadLink.setDownloadMax(length);
+            logger.info("Filename: " + getFileNameFormHeader(requestInfo.getConnection()));
+
+            downloadLink.setName(getFileNameFormHeader(requestInfo.getConnection()));
+            if (!download(downloadLink, (URLConnection) requestInfo.getConnection())) {
+                step.setStatus(PluginStep.STATUS_ERROR);
+                downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN);
+            }
+            else {
+                step.setStatus(PluginStep.STATUS_DONE);
+                downloadLink.setStatus(DownloadLink.STATUS_DONE);
+            }
+            return true;
+        }
+        catch (MalformedURLException e) {
+            
+            e.printStackTrace();
+        }
+        catch (IOException e) {
+           
+            e.printStackTrace();
+        }
+
+        step.setStatus(PluginStep.STATUS_ERROR);
+        downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN);
+        return false;
+
     }
 
     /**

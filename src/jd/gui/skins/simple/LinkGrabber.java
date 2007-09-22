@@ -37,13 +37,13 @@ import javax.swing.JTable;
 import javax.swing.JTextField;
 import javax.swing.ListSelectionModel;
 
-import jd.JDUtilities;
 import jd.event.UIEvent;
 
 import jd.gui.skins.simple.components.BrowseFile;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.Plugin;
+import jd.utils.JDUtilities;
 
 /**
  * Diese Klasse sammelt die Links, bündelt sie zu Paketen und führt einen

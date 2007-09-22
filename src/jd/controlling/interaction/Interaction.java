@@ -5,12 +5,12 @@ import java.util.Iterator;
 import java.util.Vector;
 import java.util.logging.Logger;
 
-import jd.JDUtilities;
 import jd.config.Property;
 import jd.event.ControlEvent;
 import jd.event.ControlListener;
 import jd.plugins.Plugin;
 import jd.plugins.event.PluginEvent;
+import jd.utils.JDUtilities;
 
 /**
  * Mit dieser Klasse werden Interaktionen (mit dem System) umgesetzt
@@ -272,10 +272,15 @@ public abstract class Interaction extends Property implements Serializable {
     public static boolean handleInteraction(InteractionTrigger interactionevent, Object param) {
         boolean ret = true;
         Vector<Interaction> interactions = JDUtilities.getConfiguration().getInteractions();
+       
+            
+          
         int interacts = 0;
         for (int i = 0; i < interactions.size(); i++) {
             Interaction interaction = interactions.get(i);
             if (interaction == null || interaction.getTrigger() == null || interactionevent == null) continue;
+           //Führe keinen reconnect aus wenn noch ein download läuft
+                if((interaction instanceof HTTPReconnect ||interaction instanceof ExternReconnect)&&JDUtilities.getController().getRunningDownloadNum()>0)continue;
             if (interaction.getTrigger().getID() == interactionevent.getID()) {
                 interaction.addControlListener(JDUtilities.getController());
                 interacts++;

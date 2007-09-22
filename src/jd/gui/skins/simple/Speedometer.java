@@ -6,8 +6,8 @@ import java.awt.GridBagLayout;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 
-import jd.JDUtilities;
 import jd.plugins.DownloadLink;
+import jd.utils.JDUtilities;
 /**
  * Diese Klasse soll, abhängig von einem DownloadLink die Geschwindigkeit messen
  * 

@@ -28,7 +28,6 @@ import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableColumn;
 
-import jd.JDUtilities;
 import jd.event.ControlEvent;
 import jd.event.ControlListener;
 import jd.event.UIEvent;
@@ -36,6 +35,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.Plugin;
 import jd.plugins.event.PluginEvent;
 import jd.plugins.event.PluginListener;
+import jd.utils.JDUtilities;
 
 /**
  * Diese Tabelle zeigt alle zur Verfügung stehenden Downloads an.

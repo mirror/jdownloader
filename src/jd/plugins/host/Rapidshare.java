@@ -71,13 +71,13 @@ import java.util.HashMap;
 import java.util.Vector;
 import java.util.regex.Pattern;
 
-import jd.JDUtilities;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
+import jd.utils.JDUtilities;
 
 public class Rapidshare extends PluginForHost {
     static private final String            host                             = "rapidshare.com";

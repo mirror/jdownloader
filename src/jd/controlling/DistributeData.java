@@ -5,13 +5,13 @@ import java.util.Iterator;
 import java.util.Vector;
 import java.util.logging.Logger;
 
-import jd.JDUtilities;
 import jd.event.ControlEvent;
 import jd.plugins.DownloadLink;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginForSearch;
+import jd.utils.JDUtilities;
 
 /**
  * Diese Klasse läuft in einem Thread und verteilt den Inhalt der Zwischenablage
