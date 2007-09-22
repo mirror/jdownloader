@@ -54,31 +54,31 @@ public class MirrorItDe extends PluginForDecrypt {
     			int count = 0;
     			
     			//Links zählen
-    			if((Boolean) this.getProperties().getProperty("USE_RAPIDSHARE")){
+    			if((Boolean) this.getProperties().getProperty("USE_RAPIDSHARE",true)){
     				count = count + countOccurences(reqinfo.getHtmlCode(), patternRapidshare);
     			}
-    			if((Boolean) this.getProperties().getProperty("USE_UPLOADED")){
+    			if((Boolean) this.getProperties().getProperty("USE_UPLOADED",true)){
     				count = count + countOccurences(reqinfo.getHtmlCode(), patternUploaded);
     			}
-    			if((Boolean) this.getProperties().getProperty("USE_SHAREBASE")){
+    			if((Boolean) this.getProperties().getProperty("USE_SHAREBASE",false)){
     				count = count + countOccurences(reqinfo.getHtmlCode(), patternSharebase);
     			}
-    			if((Boolean) this.getProperties().getProperty("USE_SHAREONLINE")){
+    			if((Boolean) this.getProperties().getProperty("USE_SHAREONLINE",false)){
     				count = count + countOccurences(reqinfo.getHtmlCode(), patternShareonline);
     			}
-    			if((Boolean) this.getProperties().getProperty("USE_MEGAUPLOAD")){
+    			if((Boolean) this.getProperties().getProperty("USE_MEGAUPLOAD",true)){
     				count = count + countOccurences(reqinfo.getHtmlCode(), patternMegaupload);
     			}
-    			if((Boolean) this.getProperties().getProperty("USE_FILEFACTORY")){
+    			if((Boolean) this.getProperties().getProperty("USE_FILEFACTORY",true)){
     				count = count + countOccurences(reqinfo.getHtmlCode(), patternFilefactory);
     			}
-    			if((Boolean) this.getProperties().getProperty("USE_NETLOAD")){
+    			if((Boolean) this.getProperties().getProperty("USE_NETLOAD",true)){
     				count = count + countOccurences(reqinfo.getHtmlCode(), patternNetload);
     			}
-    			if((Boolean) this.getProperties().getProperty("USE_SIMPLEUPLOAD")){
+    			if((Boolean) this.getProperties().getProperty("USE_SIMPLEUPLOAD",false)){
     				count = count + countOccurences(reqinfo.getHtmlCode(), patternSimpleupload);
     			}
-    			if((Boolean) this.getProperties().getProperty("USE_LOAD")){
+    			if((Boolean) this.getProperties().getProperty("USE_LOAD",false)){
     				count = count + countOccurences(reqinfo.getHtmlCode(), patternLoad);
     			}
     			firePluginEvent(new PluginEvent(this,PluginEvent.PLUGIN_PROGRESS_MAX, count));
@@ -86,7 +86,7 @@ public class MirrorItDe extends PluginForDecrypt {
     			//Links herausfiltern
     			Vector<Vector<String>> links = getAllSimpleMatches(reqinfo.getHtmlCode(), "class=\"five-stars\" onclick=\"rate(\'°\', 5)°launchDownloadURL(\'°\', \'°\'");
     			for(int i=0; i<links.size(); i++) {
-    				if((links.get(i).get(0).equalsIgnoreCase("rapidsharecom") && (Boolean) this.getProperties().getProperty("USE_RAPIDSHARE")) || ((Boolean) this.getProperties().getProperty("USE_UPLOADED") && links.get(i).get(0).equalsIgnoreCase("uploadedto")) || ((Boolean) this.getProperties().getProperty("USE_SHAREBASE") && links.get(i).get(0).equalsIgnoreCase("sharebasede")) || ((Boolean) this.getProperties().getProperty("USE_SHAREONLINE") && links.get(i).get(0).equalsIgnoreCase("shareonlinebiz")) || ((Boolean) this.getProperties().getProperty("USE_MEGAUPLOAD") && links.get(i).get(0).equalsIgnoreCase("megauploadcom")) || ((Boolean) this.getProperties().getProperty("USE_FILEFACTORY") && links.get(i).get(0).equalsIgnoreCase("filefactorycom"))  || ((Boolean) this.getProperties().getProperty("USE_NETLOAD") && links.get(i).get(0).equalsIgnoreCase("netloadin")) || ((Boolean) this.getProperties().getProperty("USE_SIMPLEUPLOAD") && links.get(i).get(0).equalsIgnoreCase("simpleuploadnet")) || ((Boolean) this.getProperties().getProperty("USE_LOAD") && links.get(i).get(0).equalsIgnoreCase("loadto"))) {
+    				if((links.get(i).get(0).equalsIgnoreCase("rapidsharecom") && (Boolean) this.getProperties().getProperty("USE_RAPIDSHARE",true)) || ((Boolean) this.getProperties().getProperty("USE_UPLOADED",true) && links.get(i).get(0).equalsIgnoreCase("uploadedto")) || ((Boolean) this.getProperties().getProperty("USE_SHAREBASE",false) && links.get(i).get(0).equalsIgnoreCase("sharebasede")) || ((Boolean) this.getProperties().getProperty("USE_SHAREONLINE",false) && links.get(i).get(0).equalsIgnoreCase("shareonlinebiz")) || ((Boolean) this.getProperties().getProperty("USE_MEGAUPLOAD",true) && links.get(i).get(0).equalsIgnoreCase("megauploadcom")) || ((Boolean) this.getProperties().getProperty("USE_FILEFACTORY",true) && links.get(i).get(0).equalsIgnoreCase("filefactorycom"))  || ((Boolean) this.getProperties().getProperty("USE_NETLOAD",true) && links.get(i).get(0).equalsIgnoreCase("netloadin")) || ((Boolean) this.getProperties().getProperty("USE_SIMPLEUPLOAD",false) && links.get(i).get(0).equalsIgnoreCase("simpleuploadnet")) || ((Boolean) this.getProperties().getProperty("USE_LOAD",false) && links.get(i).get(0).equalsIgnoreCase("loadto"))) {
 	    				reqinfo = getRequest(new URL("http://www.mirrorit.de/Out?id=" + URLDecoder.decode(links.get(i).get(2), "UTF-8") + "&num=" + links.get(i).get(3)));
 	    				reqinfo = getRequest(new URL(reqinfo.getLocation()));
 	    				decryptedLinks.add(reqinfo.getLocation());

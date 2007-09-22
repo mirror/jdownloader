@@ -74,28 +74,28 @@ public class XliceNet extends PluginForDecrypt {
     			int count = 0;
     			
     			//Links zählen
-    			if(this.getProperties().getProperty(USE_RAPIDSHARE)!=null &&(Boolean) this.getProperties().getProperty(USE_RAPIDSHARE)) {
+    			if((Boolean) this.getProperties().getProperty(USE_RAPIDSHARE,true)) {
     				count = count + countOccurences(reqinfo.getHtmlCode(), patternRapidshare);
     			}
-    			if(this.getProperties().getProperty(USE_UPLOADED)!=null &&(Boolean) this.getProperties().getProperty(USE_UPLOADED)) {
+    			if((Boolean) this.getProperties().getProperty(USE_UPLOADED,true)) {
     				count = count + countOccurences(reqinfo.getHtmlCode(), patternUploaded);
     			}
-    			if(this.getProperties().getProperty(USE_DEPOSITFILES)!=null &&(Boolean) this.getProperties().getProperty(USE_DEPOSITFILES)) {
+    			if((Boolean) this.getProperties().getProperty(USE_DEPOSITFILES,false)) {
     				count = count + countOccurences(reqinfo.getHtmlCode(), patternDepositfiles);
     			}
-    			if(this.getProperties().getProperty(USE_FILEFACTORY)!=null &&(Boolean) this.getProperties().getProperty(USE_FILEFACTORY)) {
+    			if((Boolean) this.getProperties().getProperty(USE_FILEFACTORY,false)) {
     				count = count + countOccurences(reqinfo.getHtmlCode(), patternFilefactory);
     			}
-    			if(this.getProperties().getProperty(USE_OXEDION)!=null &&(Boolean) this.getProperties().getProperty(USE_OXEDION)) {
+    			if((Boolean) this.getProperties().getProperty(USE_OXEDION,true)) {
     				count = count + countOccurences(reqinfo.getHtmlCode(), patternOxedion);
     			}
-    			if(this.getProperties().getProperty("USE_SIMPLEUPLOAD")!=null &&(Boolean) this.getProperties().getProperty("USE_SIMPLEUPLOAD")) {
+    			if((Boolean) this.getProperties().getProperty("USE_SIMPLEUPLOAD",false)) {
     				count = count + countOccurences(reqinfo.getHtmlCode(), patternSimpleupload);
     			}
-    			if(this.getProperties().getProperty(USE_GULLI)!=null &&(Boolean) this.getProperties().getProperty(USE_GULLI)) {
+    			if((Boolean) this.getProperties().getProperty(USE_GULLI,true)) {
     				count = count + countOccurences(reqinfo.getHtmlCode(), patternGulli);
     			}
-    			if(this.getProperties().getProperty(USE_FILES)!=null &&(Boolean) this.getProperties().getProperty(USE_FILES)) {
+    			if((Boolean) this.getProperties().getProperty(USE_FILES,false)) {
     				count = count + countOccurences(reqinfo.getHtmlCode(), patternFiles);
     			}
     			firePluginEvent(new PluginEvent(this,PluginEvent.PLUGIN_PROGRESS_MAX, count));
@@ -196,7 +196,7 @@ logger.info(parameter);
 					}
 				}
 				
-				if(this.getProperties().getProperty("USE_SIMPLEUPLOAD")!=null &&(Boolean) this.getProperties().getProperty("USE_SIMPLEUPLOAD")) {
+				if(this.getProperties().getProperty("USE_SIMPLEUPLOAD",false)!=null &&(Boolean) this.getProperties().getProperty("USE_SIMPLEUPLOAD",false)) {
 					links = getAllSimpleMatches(reqinfo.getHtmlCode(), "/7/°/\'");
 					
 					for(int i=0; i<links.size(); i++) {

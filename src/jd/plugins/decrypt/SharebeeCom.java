@@ -43,16 +43,16 @@ public class SharebeeCom extends PluginForDecrypt {
     			int count = 0;
     			
     			//Anzahl der Links zählen
-    			if((Boolean) this.getProperties().getProperty("USE_RAPIDSHARE")) {
+    			if((Boolean) this.getProperties().getProperty("USE_RAPIDSHARE",true)) {
     				count++;
     			}
-    			if((Boolean) this.getProperties().getProperty("USE_MEGAUPLOAD")) {
+    			if((Boolean) this.getProperties().getProperty("USE_MEGAUPLOAD",true)) {
     				count++;
     			}
-    			if((Boolean) this.getProperties().getProperty("USE_ZSHARE")) {
+    			if((Boolean) this.getProperties().getProperty("USE_ZSHARE",false)) {
     				count++;
     			}
-    			if((Boolean) this.getProperties().getProperty("USE_BADONGO")) {
+    			if((Boolean) this.getProperties().getProperty("USE_BADONGO",false)) {
     				count++;
     			}
     			firePluginEvent(new PluginEvent(this,PluginEvent.PLUGIN_PROGRESS_MAX, count));
@@ -60,7 +60,7 @@ public class SharebeeCom extends PluginForDecrypt {
     			//Links auslesen und umdrehen
     			Vector<Vector<String>> g = getAllSimpleMatches(reqinfo.getHtmlCode(), "u=°\');return false;\">°</a>");
     			
-    			if((Boolean) this.getProperties().getProperty("USE_RAPIDSHARE")) {
+    			if((Boolean) this.getProperties().getProperty("USE_RAPIDSHARE",true)) {
     				firePluginEvent(new PluginEvent(this,PluginEvent.PLUGIN_PROGRESS_INCREASE, null));
                     for( int i=0; i<g.size();i++){
                         if(g.get(i).get(1).equalsIgnoreCase("Rapidshare"))
@@ -68,7 +68,7 @@ public class SharebeeCom extends PluginForDecrypt {
                     }
     			}
     			
-    			if((Boolean) this.getProperties().getProperty("USE_ZSHARE")) {
+    			if((Boolean) this.getProperties().getProperty("USE_ZSHARE",false)) {
     				firePluginEvent(new PluginEvent(this,PluginEvent.PLUGIN_PROGRESS_INCREASE, null));
                     for( int i=0; i<g.size();i++){
                         if(g.get(i).get(1).equalsIgnoreCase("zSHARE"))
@@ -76,7 +76,7 @@ public class SharebeeCom extends PluginForDecrypt {
                     }
     			}
     			
-    			if((Boolean) this.getProperties().getProperty("USE_MEGAUPLOAD")) {
+    			if((Boolean) this.getProperties().getProperty("USE_MEGAUPLOAD",true)) {
     				firePluginEvent(new PluginEvent(this,PluginEvent.PLUGIN_PROGRESS_INCREASE, null));
                     for( int i=0; i<g.size();i++){
                         if(g.get(i).get(1).equalsIgnoreCase("Megaupload"))
@@ -84,7 +84,7 @@ public class SharebeeCom extends PluginForDecrypt {
                     }
     			}
     			
-    			if((Boolean) this.getProperties().getProperty("USE_BADONGO")) {
+    			if((Boolean) this.getProperties().getProperty("USE_BADONGO",false)) {
     				firePluginEvent(new PluginEvent(this,PluginEvent.PLUGIN_PROGRESS_INCREASE, null));
                     for( int i=0; i<g.size();i++){
                         if(g.get(i).get(1).equalsIgnoreCase("Badongo"))
