@@ -207,11 +207,11 @@ public class Serienjunkies extends PluginForDecrypt {
      * @return
      */
     private Boolean check(String link) {
-    	if((Boolean) this.getProperties().getProperty("USE_NETLOAD") && link.indexOf("netload.in")>=0)
+    	if((Boolean) this.getProperties().getProperty("USE_NETLOAD",true) && link.indexOf("netload.in")>=0)
     		return true;
-    	if((Boolean) this.getProperties().getProperty("USE_RAPIDSHARE") && link.indexOf("rapidshare.com")>=0)
+    	if((Boolean) this.getProperties().getProperty("USE_RAPIDSHARE",true) && link.indexOf("rapidshare.com")>=0)
     		return true;
-    	if((Boolean) this.getProperties().getProperty("USE_RAPIDSHAREDE") && link.indexOf("rapidshare.de")>=0)
+    	if((Boolean) this.getProperties().getProperty("USE_RAPIDSHAREDE",true) && link.indexOf("rapidshare.de")>=0)
     		return true;
     	return false;
     }
