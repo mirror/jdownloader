@@ -1,11 +1,17 @@
 package jd.config;
 
 import java.awt.event.ActionListener;
+import java.io.Serializable;
 import java.util.logging.Logger;
 
 import jd.plugins.Plugin;
 
-public class ConfigEntry {
+public class ConfigEntry implements Serializable {
+
+    /**
+     * 
+     */
+    private static final long serialVersionUID = 7422046260361380162L;
 
     @SuppressWarnings("unused")
     private transient Logger logger = Plugin.getLogger();

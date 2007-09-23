@@ -22,9 +22,11 @@ public class ConfigPanelInteractionExternReconnect extends ConfigPanel implement
      * 
      */
     private static final long serialVersionUID = 4630549888740242517L;
+    private Configuration configuration;
 
     ConfigPanelInteractionExternReconnect(Configuration configuration, UIInterface uiinterface) {
-        super(configuration, uiinterface);
+        super( uiinterface);
+        this.configuration=configuration;
         initPanel();
 
         load();

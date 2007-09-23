@@ -23,7 +23,7 @@ public class ConfigPanelInteractionDummy extends ConfigPanel implements ActionLi
     private Interaction       interaction;
 
     ConfigPanelInteractionDummy(Configuration configuration, UIInterface uiinterface, DummyInteraction interaction) {
-        super(configuration, uiinterface);
+        super(uiinterface);
         this.interaction = interaction;
         initPanel();
         

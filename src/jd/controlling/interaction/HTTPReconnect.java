@@ -306,4 +306,10 @@ public static void setEnabled(boolean en){
         //Nichts zu tun. INteraction braucht keinen Thread
         
     }
+
+    @Override
+    public void initConfig() {
+        // TODO Auto-generated method stub
+        
+    }
 }

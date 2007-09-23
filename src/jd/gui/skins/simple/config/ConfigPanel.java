@@ -11,6 +11,8 @@ import java.util.logging.Logger;
 import javax.swing.JPanel;
 
 import jd.config.Configuration;
+import jd.config.Property;
+import jd.controlling.interaction.Interaction;
 import jd.gui.UIInterface;
 import jd.plugins.Plugin;
 import jd.utils.JDUtilities;
@@ -25,15 +27,16 @@ public abstract class ConfigPanel extends JPanel{
     protected UIInterface uiinterface;
     protected JPanel panel;    
     protected Logger            logger           = Plugin.getLogger();
-    protected Configuration configuration;
+   
     protected  Insets insets = new Insets(1,5,1,5);
-    ConfigPanel(Configuration configuration, UIInterface uiinterface){
-        this.configuration = configuration;
+    ConfigPanel(UIInterface uiinterface){
+        
         this.setLayout(new BorderLayout());
         panel = new JPanel(new GridBagLayout());
         this.uiinterface=uiinterface;      
        
     }
+
     public void addGUIConfigEntry(GUIConfigEntry entry){
      
         JDUtilities.addToGridBag(panel, entry, 0, row, 1, 1, 1, 0, insets, GridBagConstraints.BOTH, GridBagConstraints.EAST);

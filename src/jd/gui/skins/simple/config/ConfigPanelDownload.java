@@ -19,14 +19,15 @@ public class ConfigPanelDownload extends ConfigPanel{
      * 
      */
     private static final long serialVersionUID = 4145243293360008779L;
+private Configuration configuration;
    
     
     
   
     
     ConfigPanelDownload(Configuration configuration, UIInterface uiinterface){
-        super(configuration, uiinterface);
-      
+        super(uiinterface);
+      this.configuration=configuration;
         initPanel();
 
         load();

@@ -17,7 +17,7 @@ import jd.utils.JDUtilities;
  * 
  * @author astaldo/coalado
  */
-public class StartDownloads extends ControlMulticaster {
+public class SingleDownloadController extends ControlMulticaster {
 
     /**
      * Das Plugin, das den aktuellen Download steuert
@@ -46,7 +46,7 @@ public class StartDownloads extends ControlMulticaster {
      * 
      * @param controller Controller
      */
-    public StartDownloads(JDController controller, DownloadLink dlink) {
+    public SingleDownloadController(JDController controller, DownloadLink dlink) {
         super("JD-StartDownloads");
         this.downloadLink = dlink;
         this.controller = controller;

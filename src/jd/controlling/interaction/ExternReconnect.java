@@ -201,4 +201,10 @@ public class ExternReconnect extends Interaction implements Serializable {
     // Nichts zu tun. INteraction braucht keinen Thread
 
     }
+
+    @Override
+    public void initConfig() {
+        // TODO Auto-generated method stub
+        
+    }
 }

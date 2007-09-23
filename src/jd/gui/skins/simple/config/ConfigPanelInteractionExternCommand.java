@@ -30,7 +30,7 @@ public class ConfigPanelInteractionExternCommand extends ConfigPanel implements 
      */
 private ExternExecute externExecute;
     ConfigPanelInteractionExternCommand(Configuration configuration, UIInterface uiinterface, ExternExecute externExecute) {
-        super(configuration, uiinterface);
+        super(uiinterface);
         this.externExecute=externExecute;
         initPanel();
 

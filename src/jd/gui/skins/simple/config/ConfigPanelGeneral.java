@@ -33,10 +33,11 @@ public class ConfigPanelGeneral extends ConfigPanel{
 
 
     private BrowseFile        brsHomeDir;
-
+private Configuration configuration;
 
     ConfigPanelGeneral(Configuration configuration, UIInterface uiinterface) {
-        super(configuration, uiinterface);
+        super(uiinterface);
+        this.configuration=configuration;
         initPanel();
 
         load();
@@ -71,16 +72,16 @@ public class ConfigPanelGeneral extends ConfigPanel{
         ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, configuration, Configuration.PARAM_FINISHED_DOWNLOADS_ACTION, new String[] { Configuration.FINISHED_DOWNLOADS_REMOVE, Configuration.FINISHED_DOWNLOADS_REMOVE_AT_START,Configuration.FINISHED_DOWNLOADS_NO_REMOVE}, "Fertig gestellte Downloads ...").setDefaultValue(Configuration.FINISHED_DOWNLOADS_REMOVE_AT_START));
         addGUIConfigEntry(ce);
 
-        int row = 0;
+   
 
         if (JDUtilities.getHomeDirectory() != null) {
             brsHomeDir=new BrowseFile();
             brsHomeDir.setText(JDUtilities.getHomeDirectory());
             brsHomeDir.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
-            JDUtilities.addToGridBag(panel, lblHomeDir, 0, row, 1, 1, 1, 1, insets, GridBagConstraints.NONE, GridBagConstraints.EAST);
+            JDUtilities.addToGridBag(panel, lblHomeDir, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, 1, 1, 1, 1, insets, GridBagConstraints.NONE, GridBagConstraints.EAST);
 
-            JDUtilities.addToGridBag(panel, brsHomeDir, 1, row, 1, 1, 1, 1, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
-            row++;
+            JDUtilities.addToGridBag(panel, brsHomeDir, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 1, 1, 1, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
+            
         }
 
         add(panel, BorderLayout.NORTH);

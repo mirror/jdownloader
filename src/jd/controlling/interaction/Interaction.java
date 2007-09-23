@@ -5,6 +5,7 @@ import java.util.Iterator;
 import java.util.Vector;
 import java.util.logging.Logger;
 
+import jd.config.ConfigContainer;
 import jd.config.Property;
 import jd.event.ControlEvent;
 import jd.event.ControlListener;
@@ -134,10 +135,12 @@ public abstract class Interaction extends Property implements Serializable {
     /**
      * Nach einem IP wechsel
      */
+    protected transient ConfigContainer       config;
 
     public final static InteractionTrigger    INTERACTION_AFTER_RECONNECT           = new InteractionTrigger(10, "Nach einem Reconnect", "inaktiv");
 
     public Interaction() {
+        config = new ConfigContainer(this);
         controlListener = new Vector<ControlListener>();
         this.setTrigger(Interaction.INTERACTION_NO_EVENT);
 
@@ -272,15 +275,13 @@ public abstract class Interaction extends Property implements Serializable {
     public static boolean handleInteraction(InteractionTrigger interactionevent, Object param) {
         boolean ret = true;
         Vector<Interaction> interactions = JDUtilities.getConfiguration().getInteractions();
-       
-            
-          
+
         int interacts = 0;
         for (int i = 0; i < interactions.size(); i++) {
             Interaction interaction = interactions.get(i);
             if (interaction == null || interaction.getTrigger() == null || interactionevent == null) continue;
-           //Führe keinen reconnect aus wenn noch ein download läuft
-                if((interaction instanceof HTTPReconnect ||interaction instanceof ExternReconnect)&&JDUtilities.getController().getRunningDownloadNum()>0)continue;
+            // Führe keinen reconnect aus wenn noch ein download läuft
+            if ((interaction instanceof HTTPReconnect || interaction instanceof ExternReconnect) && JDUtilities.getController().getRunningDownloadNum() > 0) continue;
             if (interaction.getTrigger().getID() == interactionevent.getID()) {
                 interaction.addControlListener(JDUtilities.getController());
                 interacts++;
@@ -382,13 +383,33 @@ public abstract class Interaction extends Property implements Serializable {
     public String getTriggerName() {
         return getTrigger().toString();
     }
-/**
- * Gibt eine Liste aller vefügbaren INteractions zurück. Bei neuen Interactions muss diese hier eingefügt werden
- * @return Liste mit allen Interactionen
- */
+
+    /**
+     * Gibt eine Liste aller vefügbaren INteractions zurück. Bei neuen
+     * Interactions muss diese hier eingefügt werden
+     * 
+     * @return Liste mit allen Interactionen
+     */
     public static Interaction[] getInteractionList() {
 
         return new Interaction[] { new DummyInteraction(), new ExternExecute(), new ExternReconnect(), new HTTPReconnect(), new WebUpdate(), new JAntiCaptcha(), new ManuelCaptcha() };
+    }
+/**
+ * Da die Knfigurationswünsche nicht gespeichert werden, muss der ConfigContainer immer wieder aufs neue Initialisiert werden. Alle Interactionen müssend azu die initConifg  Methode implementieren 
+ */
+    public abstract void initConfig();
+
+    public ConfigContainer getConfig() {
+        if (config == null) {
+            config = new ConfigContainer(this);
+            initConfig();
+        }
+
+        return config;
+    }
+
+    public void setConfig(ConfigContainer config) {
+        this.config = config;
     }
 
 }

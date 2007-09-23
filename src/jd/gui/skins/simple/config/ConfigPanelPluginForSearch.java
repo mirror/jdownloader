@@ -49,12 +49,12 @@ public class ConfigPanelPluginForSearch extends ConfigPanel implements ActionLis
     private JTable                   table;
 
     private Vector<PluginForSearch> pluginsForSearch;
-
+    private Configuration configuration;
 
 
     public ConfigPanelPluginForSearch(Configuration configuration, UIInterface uiinterface) {
-        super(configuration, uiinterface);
-
+        super(uiinterface);
+        this.configuration=configuration;
         this.pluginsForSearch = JDUtilities.getPluginsForSearch();
         initPanel(); 
 

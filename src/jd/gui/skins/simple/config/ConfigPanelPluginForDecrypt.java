@@ -23,6 +23,7 @@ import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableColumn;
 
 import jd.config.Configuration;
+import jd.config.Property;
 import jd.gui.UIInterface;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
@@ -40,11 +41,13 @@ public class ConfigPanelPluginForDecrypt extends ConfigPanel implements ActionLi
 
     private Vector<PluginForDecrypt> pluginsForDecrypt;
 
+    private Configuration configuration;
+
 //    private PluginForDecrypt         currentPlugin;
 
     public ConfigPanelPluginForDecrypt(Configuration configuration, UIInterface uiinterface) {
-        super(configuration, uiinterface);
-
+        super(uiinterface);
+this.configuration=configuration;
         this.pluginsForDecrypt = JDUtilities.getPluginsForDecrypt();
         initPanel();
 

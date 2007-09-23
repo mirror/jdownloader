@@ -5,7 +5,7 @@ import java.util.Vector;
 
 import jd.controlling.interaction.Interaction;
 import jd.controlling.interaction.InteractionTrigger;
-import jd.controlling.interaction.JAntiCaptcha;
+import jd.controlling.interaction.ManuelCaptcha;
 import jd.controlling.interaction.WebUpdate;
 import jd.router.RouterData;
 import jd.utils.JDUtilities;
@@ -54,7 +54,14 @@ public class Configuration extends Property implements Serializable {
      * Parameter für den key unter dem der zugehöroge Wert abgespeichert werden soll
      */
     public static final String PARAM_FINISHED_DOWNLOADS_ACTION = "FINISHED_DOWNLOADS_ACTION";
-
+    /**
+     * Parameter für den key unter dem der zugehöroge Wert abgespeichert werden soll
+     */
+    public static final String PARAM_MANUAL_CAPTCHA_USE_JAC = "MANUAL_CAPTCHA_USE_JAC";
+    /**
+     * Parameter für den key unter dem der zugehöroge Wert abgespeichert werden soll
+     */
+    public static final String PARAM_MANUAL_CAPTCHA_WAIT_FOR_JAC = "MANUAL_CAPTCHA_WAIT_FOR_JAC";
     /**
      * String ID um einen fertiggestellten download beim programmstart aus der queue zu entfernen
      */
@@ -320,7 +327,7 @@ public class Configuration extends Property implements Serializable {
             interactions.add(wu);
         }
         
-        JAntiCaptcha jac = new JAntiCaptcha();
+        ManuelCaptcha jac = new ManuelCaptcha();
         if (getInteractions(Interaction.INTERACTION_DOWNLOAD_CAPTCHA).size() == 0) {
             InteractionTrigger it = Interaction.INTERACTION_DOWNLOAD_CAPTCHA;
             jac.setTrigger(it);

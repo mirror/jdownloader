@@ -77,7 +77,7 @@ public class JDUtilities {
     /**
      * Titel der Applikation
      */
-    public static final String              JD_VERSION        = "0.0.3.2 (18.09)";
+    public static final String              JD_VERSION        = "0.0.4 (23.09)";
 
     /**
      * Versionsstring der Applikation

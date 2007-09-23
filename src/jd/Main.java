@@ -65,13 +65,13 @@ public class Main {
             e.printStackTrace();
         }
         logger.finer("Load config from: " + fileInput + " (" + JDUtilities.CONFIG_PATH + ")");
-        if (fileInput != null&&fileInput.exists()) {
+        if (fileInput != null && fileInput.exists()) {
 
             Object obj = JDUtilities.loadObject(null, fileInput, Configuration.saveAsXML);
             if (obj instanceof Configuration) {
                 Configuration configuration = (Configuration) obj;
                 JDUtilities.setConfiguration(configuration);
-                Plugin.getLogger().setLevel((Level)configuration.getProperty(Configuration.PARAM_LOGGER_LEVEL,Level.FINER));
+                Plugin.getLogger().setLevel((Level) configuration.getProperty(Configuration.PARAM_LOGGER_LEVEL, Level.FINER));
             }
             else {
                 logger.severe("Configuration error: " + obj);
@@ -83,22 +83,15 @@ public class Main {
 
         }
 
-        if (!JDUtilities.getConfiguration().getConfigurationVersion().equals(JDUtilities.JD_VERSION)) {
-            logger.info("Set Config default Values");
-            JDUtilities.getConfiguration().setDefaultValues();
+        // logger.info( new
+        // Vector(Arrays.asList(getSimpleMatches(requestInfo.getHtmlCode(),this.SIMPLEPATTERN_GEN_DOWNLOADLINK)))+"_");
+        // logger.info( new
+        // Vector(Arrays.asList(getSimpleMatches(requestInfo.getHtmlCode(),this.SIMPLEPATTERN_GEN_DOWNLOADLINK_link)))+"_");
+        // var a = String.fromCharCode(Math.abs(-56)); ..>8
+        // var d = '4' + String.fromCharCode(Math.sqrt(10000)); --><d
+        // GET
+        // /files/0d4d724d830bc600131f2e4628dcecb8/%5BA-E_&_Conclave%5D_Trinity_Blood_01_%5BC94AE728%5D.avi
 
-        }
-        
-        
-//      logger.info( new Vector(Arrays.asList(getSimpleMatches(requestInfo.getHtmlCode(),this.SIMPLEPATTERN_GEN_DOWNLOADLINK)))+"_");
-//      logger.info( new Vector(Arrays.asList(getSimpleMatches(requestInfo.getHtmlCode(),this.SIMPLEPATTERN_GEN_DOWNLOADLINK_link)))+"_");
-//       var a = String.fromCharCode(Math.abs(-56)); ..>8
-//       var d = '4' + String.fromCharCode(Math.sqrt(10000)); --><d
-//       GET /files/0d4d724d830bc600131f2e4628dcecb8/%5BA-E_&_Conclave%5D_Trinity_Blood_01_%5BC94AE728%5D.avi
-    
-        
-        
-      
         // Configuration c = new Configuration();
         // c.setDownloadDirectory("D:\\Downloads");
         // JDUtilities.saveObject(null, c, JDUtilities.getJDHomeDirectory(),
@@ -107,14 +100,28 @@ public class Main {
         JDUtilities.loadPlugins();
         logger.info("Lade GUI");
         UIInterface uiInterface = new SimpleGUI();
+        if (!JDUtilities.getConfiguration().getConfigurationVersion().equals(JDUtilities.JD_VERSION)) {
+            logger.info("Set Config default Values");
+            JDUtilities.getConfiguration().setDefaultValues();
+            File links = JDUtilities.getResourceFile("links.dat");
+            if (links.exists()) {
+                File newFile = new File(links.getAbsolutePath() + ".bup");
+                newFile.delete();
+                links.renameTo(newFile);
+
+            }
+            uiInterface.showMessageDialog("Inkompatible Konfiguration oder Downloadliste gefunden\r\nDefault Einstellungen geladen, Linkliste zurückgestellt");
+
+        }
+
         logger.info("Erstelle Controller");
         JDController controller = new JDController();
         controller.setUiInterface(uiInterface);
         logger.info("Lade Queue");
         controller.initDownloadLinks();
-//       JDUtilities.registerListenerPluginsForDecrypt(controller);
-//       JDUtilities.registerListenerPluginsForHost(controller);
-//       JDUtilities.registerListenerPluginsForSearch(controller);
+        // JDUtilities.registerListenerPluginsForDecrypt(controller);
+        // JDUtilities.registerListenerPluginsForHost(controller);
+        // JDUtilities.registerListenerPluginsForSearch(controller);
         logger.info("Registriere Plugins");
         Iterator<PluginForHost> iteratorHost = JDUtilities.getPluginsForHost().iterator();
         while (iteratorHost.hasNext()) {

@@ -1,8 +1,9 @@
 package jd.config;
 
+import java.io.Serializable;
 import java.util.Vector;
 
-import jd.plugins.Plugin;
+import jd.utils.JDUtilities;
 
 /**
  * Diese Klasse speichert die GUI-Dialog Informationen. Jede GUI kann diese
@@ -11,7 +12,12 @@ import jd.plugins.Plugin;
  * @author coalado
  * 
  */
-public class ConfigContainer {
+public class ConfigContainer implements Serializable {
+    /**
+     * 
+     */
+    private static final long serialVersionUID = 6583843494325603616L;
+
     public static final int     TYPE_SPINNER    = 8;
 
     public static final int     TYPE_BROWSEFILE = 7;
@@ -31,6 +37,7 @@ public class ConfigContainer {
     public static final int     TYPE_TEXTFIELD  = 0;
 
     public static final int TYPE_BROWSEFOLDER = 9;
+    private Property propertyInstance;
 
     @SuppressWarnings("unused")
     private Object              instance;
@@ -39,12 +46,16 @@ public class ConfigContainer {
 
     public ConfigContainer(Object instance) {
         this.instance = instance;
+        propertyInstance=JDUtilities.getConfiguration();
     }
 /**
  * Fügt einen Konfigurationseintrag hinzu
  * @param entry
  */
     public void addEntry(ConfigEntry entry) {
+        if(entry.getPropertyInstance()==null){
+            entry.setPropertyInstance(this.propertyInstance);
+        }
         content.add(entry);
     }
 /**
@@ -63,5 +74,21 @@ public class ConfigContainer {
     public Vector<ConfigEntry> getEntries() {
         return content;
     }
+    /**
+     * Gibt die Propertyinstanz zurück die dieser container zum speichern verwendet(Es werden nur die einstellungen überdeckt bei denen die propertyinstanz bei den COnfigEntries null ist
+    * Default ist die configuration
+     * @return
+     */
+public Property getPropertyInstance() {
+    return propertyInstance;
+}
+
+/**
+ * setzt die Propertyinstanz zurück die dieser container zum speichern verwendet(Es werden nur die einstellungen überdeckt bei denen die propertyinstanz bei den COnfigEntries null ist
+ * @return
+ */
+public void setPropertyInstance(Property propertInstance) {
+    this.propertyInstance = propertInstance;
+}
 
 }

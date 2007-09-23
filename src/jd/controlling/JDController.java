@@ -66,7 +66,7 @@ public class JDController implements PluginListener, ControlListener, UIListener
 
     private SpeedMeter                        speedMeter;
 
-    private Vector<StartDownloads>            activeLinks     = new Vector<StartDownloads>();
+    private Vector<SingleDownloadController>            activeLinks     = new Vector<SingleDownloadController>();
 
     private DownloadLink                      lastDownloadFinished;
 

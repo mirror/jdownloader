@@ -54,11 +54,12 @@ public class ConfigPanelEventmanager extends ConfigPanel implements ActionListen
     private Interaction         currentInteraction;
 
     private JComboBox           cboTrigger;
-
+private Configuration configuration;
     private JTable table;
 
     public ConfigPanelEventmanager(Configuration configuration, UIInterface uiinterface) {
-        super(configuration, uiinterface);
+        super(uiinterface);
+        this.configuration=configuration;
         initPanel();
         
         load();
@@ -273,7 +274,10 @@ return table.getSelectedRow();
                 return; 
             }
             
-            openPopupPanel(null);
+            if(interaction.getConfig().getEntries().size()>0){
+                openPopupPanel(new ConfigPanelInteraction(uiinterface,interaction));  
+            }
+       
         }
 
     }

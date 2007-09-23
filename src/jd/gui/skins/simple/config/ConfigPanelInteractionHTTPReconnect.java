@@ -161,9 +161,10 @@ class ConfigPanelInteractionHTTPReconnect extends ConfigPanel implements ItemLis
     private JTextField        txtConnectPostParams;
 
     private JTextField        txtWaitForIPCheck;
-
+private Configuration configuration;
     ConfigPanelInteractionHTTPReconnect(Configuration configuration, UIInterface uiinterface) {
-        super(configuration, uiinterface);
+        super(uiinterface);
+        this.configuration=configuration;
         initPanel();
 
         load();

@@ -37,7 +37,7 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
     private static final long     serialVersionUID = -5219586497809869375L;
 
     private JButton               btnEdit;
-
+    private Configuration configuration;
     private JTable                table;
 
     private Vector<PluginForHost> pluginsForHost;
@@ -45,7 +45,8 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
     private PluginForHost         currentPlugin;
 
     public ConfigPanelPluginForHost(Configuration configuration, UIInterface uiinterface) {
-        super(configuration, uiinterface);
+        super( uiinterface);
+        this.configuration=configuration;
         this.pluginsForHost = JDUtilities.getPluginsForHost();
 
         initPanel();

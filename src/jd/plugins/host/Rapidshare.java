@@ -111,7 +111,7 @@ public class Rapidshare extends PluginForHost {
     /**
      * Pattern trifft zu wenn die "Ihre Ip läd gerade eine datei " Seite kommt
      */
-    private Pattern                        patternForAlreadyDownloading     = Pattern.compile("Your IP-address([^\"]*)is already downloading a file");
+    private String                        patternForAlreadyDownloading     = "bereits eine Datei runter";
 
     /**
      * Das DownloadLimit wurde erreicht (?s)Downloadlimit.*Oder warte ([0-9]+)
@@ -401,9 +401,9 @@ public class Rapidshare extends PluginForHost {
                                     currentStep.setStatus(PluginStep.STATUS_ERROR);
                                     return currentStep;
                                 }
-                                String strAlreadyLoading = getFirstMatch(requestInfo.getHtmlCode(), patternForAlreadyDownloading, 0);
+                               
 
-                                if (strAlreadyLoading != null) {
+                                if (requestInfo.containsHTML(patternForAlreadyDownloading)) {
                                     logger.severe("Already Loading wait " + 60 + " sek. to Retry");
                                     waitTime = 180 * 1000;
                                     downloadLink.setStatus(DownloadLink.STATUS_ERROR_STATIC_WAITTIME);
@@ -623,9 +623,8 @@ public class Rapidshare extends PluginForHost {
                     currentStep.setStatus(PluginStep.STATUS_ERROR);
                     return;
                 }
-                String strAlreadyLoading = getFirstMatch(requestInfo.getHtmlCode(), patternForAlreadyDownloading, 0);
-
-                if (strAlreadyLoading != null) {
+     
+                if (requestInfo.containsHTML(patternForAlreadyDownloading)) {
                     logger.severe("Already Loading wait " + 60 + " sek. to Retry");
                     waitTime = 180 * 1000;
                     downloadLink.setStatus(DownloadLink.STATUS_ERROR_STATIC_WAITTIME);
