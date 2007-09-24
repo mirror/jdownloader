@@ -38,7 +38,9 @@ import java.net.URLDecoder;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Collections;
+import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.Locale;
 import java.util.MissingResourceException;
@@ -47,6 +49,7 @@ import java.util.Vector;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
 
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
@@ -1276,5 +1279,56 @@ return false;
         
         return Math.round(downloadMax/(1024*10.24))/100.0+" MB";
     }
+
+    /**
+     * GIbt den Integer der sich in src befindet zurück. alle nicht integerzeichen werden ausgefiltert
+     * @param src
+     * @return Integer in src
+     */
+    public static int filterInt(String src){
+        try{
+            
+        return Integer.parseInt(filterString(src,"1234567890"));
+        }catch(NumberFormatException e){
+            return 0;
+        }
+    }
+    /**
+     * Filtert alle nicht lesbaren zeichen aus str
+     * @param str
+     * @return
+     */
+    public static String filterString(String str) {
+
+        String allowed = "QWERTZUIOPÜASDFGHJKLÖÄYXCVBNMqwertzuiopasdfghjklyxcvbnm;:,._-&%(){}#~+ 1234567890";
+        return filterString(str,allowed);
+    
+    }
+   
+/**
+ * Filtert alle zeichen aus str die in filter nicht auftauchen
+ * @param str
+ * @param filter
+ * @return
+ */
+    public static String filterString(String str,String filter) {
+        if(str==null ||filter==null)return "";
+        String allowed = filter;
+        String ret = "";
+        int i;
+        for (i = 0; i < str.length(); i++) {
+            char letter = str.charAt(i);
+        
+             if (allowed.indexOf(letter) >=0) {
+                ret +=  letter;
+             }
+        }
+
+        return ret;
+    }
+    
+
+    
+    
 
 }

@@ -99,7 +99,8 @@ public class Main {
         logger.info("Lade Plugins");
         JDUtilities.loadPlugins();
         logger.info("Lade GUI");
-        UIInterface uiInterface = new SimpleGUI();
+       UIInterface uiInterface = new SimpleGUI();
+//        UIInterface uiInterface = new MainGui();
         if (!JDUtilities.getConfiguration().getConfigurationVersion().equals(JDUtilities.JD_VERSION)) {
             logger.info("Set Config default Values");
             JDUtilities.getConfiguration().setDefaultValues();
