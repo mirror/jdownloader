@@ -64,7 +64,7 @@ public class Serienjunkies extends PluginForDecrypt {
     				String helpstring = "";
     				
     				//Einzellink
-					if(parameter.indexOf("/safe/") >= 0) {
+					if(parameter.indexOf("/safe/") >= 0 || parameter.indexOf("/save/") >= 0) {
 						firePluginEvent(new PluginEvent(this,PluginEvent.PLUGIN_PROGRESS_MAX, 1));
 						helpstring = EinzelLinks(parameter);
 						firePluginEvent(new PluginEvent(this,PluginEvent.PLUGIN_PROGRESS_INCREASE, null));
@@ -140,7 +140,15 @@ public class Serienjunkies extends PluginForDecrypt {
 	        Matcher matcher = patternCaptcha.matcher(reqinfo.getHtmlCode());
 	
 	        	if (matcher.find()) {
-					String captchaAdress = "http://85.17.177.195" + getBetween(reqinfo.getHtmlCode(), "TD><IMG SRC=\"", "\" ALT=\"\" BORDER=\"0\"");
+	        		Vector<Vector<String>> gifs = getAllSimpleMatches(reqinfo.getHtmlCode().toLowerCase(), "<img src=\"°\"°width=°height=°>");
+	        		String captchaAdress = "";
+	        		System.out.println(gifs.size());
+	        		for(int i=0; i<gifs.size(); i++) {
+	        			if (JDUtilities.filterInt(gifs.get(i).get(2))>100 && JDUtilities.filterInt(gifs.get(i).get(3))>=30) {
+	        				captchaAdress = "http://85.17.177.195" + gifs.get(i).get(0);
+	        			}
+					
+	        		}
 					File dest = JDUtilities.getResourceFile("captchas/" + this.getPluginName() + "/captcha_" + (new Date().getTime()) + ".jpg");
 					JDUtilities.download(dest, captchaAdress);
 	
@@ -174,6 +182,7 @@ public class Serienjunkies extends PluginForDecrypt {
     	
     	try {
     		url = url.replaceAll("safe/rc", "safe/frc");
+    		url = url.replaceAll("save/rc", "save/frc");
     		RequestInfo reqinfo = getRequest(new URL(url));
 
 			for (;;) { // for() läuft bis kein Captcha mehr abgefragt
@@ -207,10 +216,12 @@ public class Serienjunkies extends PluginForDecrypt {
      * @return
      */
     private Boolean check(String link) {
+    	if(link == null)
+    		return false;
     	if((Boolean) this.getProperties().getProperty("USE_NETLOAD",true) && link.indexOf("netload.in")>=0)
     		return true;
     	if((Boolean) this.getProperties().getProperty("USE_RAPIDSHARE",true) && link.indexOf("rapidshare.com")>=0)
-    		return true;
+    		return true;System.out.println(link);
     	if((Boolean) this.getProperties().getProperty("USE_RAPIDSHAREDE",true) && link.indexOf("rapidshare.de")>=0)
     		return true;
     	return false;
