@@ -1,7 +1,6 @@
 package jd.controlling;
 
 import java.io.File;
-import java.util.Vector;
 import java.util.logging.Logger;
 
 import jd.controlling.interaction.Interaction;
@@ -45,6 +44,7 @@ public class SingleDownloadController extends ControlMulticaster {
      * Erstellt einen Thread zum Start des Downloadvorganges
      * 
      * @param controller Controller
+     * @param dlink Link, der heruntergeladen werden soll
      */
     public SingleDownloadController(JDController controller, DownloadLink dlink) {
         super("JD-StartDownloads");
@@ -132,7 +132,7 @@ public class SingleDownloadController extends ControlMulticaster {
                             break;
                         }
 
-                        // führt die erste INteraction zum Captcha
+                        // führt die erste Interaction zum Captcha
                         // decoden aus.
                         if (!Interaction.handleInteraction((Interaction.INTERACTION_DOWNLOAD_CAPTCHA), downloadLink, 0)) {
                             String captchaText = JDUtilities.getCaptcha(controller, plugin, captcha);

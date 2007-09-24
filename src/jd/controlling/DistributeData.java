@@ -96,7 +96,7 @@ public class DistributeData extends ControlMulticaster {
                 fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_PLUGIN_SEARCH_INACTIVE, pSearch));
             }
         }
-        // Sucht alle Links und gibt ein Formatierte LIste zurück. das macht es
+        // Sucht alle Links und gibt ein Formatierte Liste zurück. das macht es
         // den Plugin entwicklern einfacher
         data = Plugin.getHttpLinkList(data);
         logger.info("Eingefügt: " + data);

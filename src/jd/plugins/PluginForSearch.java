@@ -1,12 +1,6 @@
 package jd.plugins;
 
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.util.Collection;
-import java.util.Iterator;
 import java.util.Vector;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 /**
  * Dies ist die Oberklasse für alle Plugins, die nach Links suchen sollen. z.B.

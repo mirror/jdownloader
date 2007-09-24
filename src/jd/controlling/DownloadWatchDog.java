@@ -1,18 +1,13 @@
 package jd.controlling;
 
-import java.io.File;
 import java.util.Iterator;
 import java.util.Vector;
 import java.util.logging.Logger;
 
 import jd.config.Configuration;
-import jd.controlling.interaction.HTTPReconnect;
 import jd.controlling.interaction.Interaction;
-import jd.controlling.interaction.WebUpdate;
 import jd.event.ControlEvent;
 import jd.event.ControlListener;
-import jd.event.UIEvent;
-import jd.gui.UIInterface;
 import jd.plugins.DownloadLink;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForHost;
@@ -21,7 +16,7 @@ import jd.plugins.event.PluginListener;
 import jd.utils.JDUtilities;
 
 /**
- * Dieser COntroller verwaltet die downloads.WÄhrend StartDownloads.java für die
+ * Dieser Controller verwaltet die downloads. Während StartDownloads.java für die
  * Steuerung eines einzelnen Downloads zuständig ist, ist DownloadWatchdog für
  * die Verwaltung und steuerung der ganzen Download Liste zuständig
  * 
@@ -115,7 +110,7 @@ public class DownloadWatchDog extends Thread implements PluginListener, ControlL
     }
 
     /**
-     * Deligiert den aufruifd es multicasters an den controller weiter
+     * Delegiert den Aufruf des multicasters an den controller weiter
      * 
      * @param controlEvent
      */
@@ -125,7 +120,7 @@ public class DownloadWatchDog extends Thread implements PluginListener, ControlL
     }
 
     /**
-     * Aktiviert Solange neue Downloads, bis die Maxmalanzahl erreicht ist oder
+     * Aktiviert solange neue Downloads, bis die Maxmalanzahl erreicht ist oder
      * die Liste zueende ist
      * 
      * @return
@@ -145,7 +140,7 @@ public class DownloadWatchDog extends Thread implements PluginListener, ControlL
     }
 
     /**
-     * Gibt die Configeinstellung zurück. WErt vieviele simulaten ndownloads der
+     * Gibt die Configeinstellung zurück, wieviele simultane Downloads der
      * user erlaubt hat
      * 
      * @return
@@ -321,7 +316,7 @@ public class DownloadWatchDog extends Thread implements PluginListener, ControlL
     }
 
     /**
-     * Eventfunktion für den PLuginlistener
+     * Eventfunktion für den Pluginlistener
      * 
      * @param event PluginEvent
      */

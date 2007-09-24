@@ -28,8 +28,6 @@ import jd.controlling.interaction.ExternReconnect;
 import jd.controlling.interaction.HTTPReconnect;
 import jd.controlling.interaction.Interaction;
 import jd.controlling.interaction.InteractionTrigger;
-import jd.controlling.interaction.JAntiCaptcha;
-import jd.controlling.interaction.ManuelCaptcha;
 import jd.controlling.interaction.WebUpdate;
 import jd.gui.UIInterface;
 import jd.utils.JDUtilities;

@@ -2,14 +2,9 @@ package jd.plugins.host;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.net.URLConnection;
-import java.util.Arrays;
 import java.util.HashMap;
-import java.util.Vector;
 import java.util.regex.Pattern;
 
 import jd.plugins.DownloadLink;

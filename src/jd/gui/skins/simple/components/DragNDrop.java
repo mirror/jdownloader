@@ -45,7 +45,7 @@ public class DragNDrop extends JComponent implements DropTargetListener  {
      */
     public Vector<UIListener> uiListener = null;
     /**
-     * @param image
+     * Erzeugt ein neues Drag&Drop Objekt
      */
     public DragNDrop() {
         new DropTarget(this, this);
@@ -58,26 +58,23 @@ public class DragNDrop extends JComponent implements DropTargetListener  {
     }
 
     /**
-     * 
-     * @return ImageHeight
+     * Liefert die Höhe des Bildes zurück
+     * @return Höhe des Bildes
      */
     public int getImageHeight() {
         return imageEmpty.getHeight(this);
 
     }
-
     /**
-     * 
-     * @return imagewidth
+     * Liefert die Breite des Bildes zurück 
+     * @return Breite des Bildes
      */
     public int getImageWidth() {
         return imageEmpty.getWidth(this);
-
     }
-
     /**
-     * zeichnet Bild
-     * @param g 
+     * Zeichnet die Komponente neu
+     * @param g Graphicobjekt
      */
     public void paintComponent(Graphics g) {
         if (filled)
@@ -89,9 +86,9 @@ public class DragNDrop extends JComponent implements DropTargetListener  {
     public void dragEnter(DropTargetDragEvent arg0) { }
     public void dragExit(DropTargetEvent arg0)      { }    
     public void dragOver(DropTargetDragEvent arg0)  { }
-/**
- * Wird aufgerufen sobald etwas gedropt wurde. Die Funktion liest den Inhalt des Drops aus und benachrichtigt die Listener
- */
+    /**
+     * Wird aufgerufen sobald etwas gedropt wurde. Die Funktion liest den Inhalt des Drops aus und benachrichtigt die Listener
+     */
     public void drop(DropTargetDropEvent e) {
         logger.info("Drag: DROP "+e.getDropAction()+" : "+e.getSourceActions()+" - "+e.getSource()+" - ");
         filled=true;
@@ -116,10 +113,10 @@ public class DragNDrop extends JComponent implements DropTargetListener  {
         } 
         repaint();
     }
-/**
- * UI Add LIstener Funktion. Fügt einen Listener hinzu
- * @param listener
- */
+    /**
+     * UI Add LIstener Funktion. Fügt einen Listener hinzu
+     * @param listener
+     */
     public void addUIListener(UIListener listener) {    
         synchronized (uiListener) {
             uiListener.add(listener);

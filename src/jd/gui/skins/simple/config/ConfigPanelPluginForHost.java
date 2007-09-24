@@ -24,8 +24,6 @@ import javax.swing.table.TableColumn;
 
 import jd.config.Configuration;
 import jd.gui.UIInterface;
-
-import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 

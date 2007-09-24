@@ -1,6 +1,5 @@
 package jd.controlling.interaction;
 
-import java.io.IOException;
 import java.io.Serializable;
 
 import jd.utils.JDUtilities;

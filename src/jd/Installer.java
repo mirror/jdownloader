@@ -22,8 +22,8 @@ import jd.update.WebUpdater;
 import jd.utils.JDUtilities;
 
 /**
- * Der Installer erscheint nur beim ersten mal STarten der Webstartversion und beim neuinstallieren der webstartversion
- *  der User kann Basiceinstellungen festlegen
+ * Der Installer erscheint nur bei Neuinstallation der Webstart Version
+ * der User kann grundlegende Einstellungen vornehmen
  * @author Coalado
  */
 public class Installer extends JDialog implements ActionListener {
@@ -32,18 +32,12 @@ public class Installer extends JDialog implements ActionListener {
      * 8764525546298642601L
      */
     private static final long  serialVersionUID = 8764525546298642601L;
-
     private Logger             logger           = Plugin.getLogger();
-
     private boolean            continueInstall  = false;
-
     private boolean            cancelInstall    = false;
 
     private Vector<JComponent> panels           = new Vector<JComponent>();
 
-    /**
-     * 
-     */
     public Installer() {
         super();
         setModal(false);
@@ -96,10 +90,10 @@ public class Installer extends JDialog implements ActionListener {
         return null;
 
     }
-/**
- * Wartet auf Userinput
- * @return true/false
- */
+    /**
+     * Wartet auf Userinput
+     * @return true/false
+     */
     private boolean waitFor() {
         while (true) {
             try {
@@ -114,9 +108,7 @@ public class Installer extends JDialog implements ActionListener {
             if (cancelInstall) {
                 return false;
             }
-
         }
-
     }
 
     /**
@@ -170,25 +162,19 @@ public class Installer extends JDialog implements ActionListener {
         try {
             Thread.sleep(2000);
         }
-        catch (InterruptedException e) {
-        }
+        catch (InterruptedException e) {}
         this.setVisible(false);
-return true;
+        return true;
     }
-    
-    
-   
 
     private void clearPanel() {
-
         while (panels.size() > 0) {
             remove(panels.remove(0));
         }
-
     }
 
     /**
-     * bricht die INstallation ab
+     * Bricht die Installation ab
      */
     public void abortInstallation() {
         cancelInstall = true;
@@ -196,14 +182,8 @@ return true;
         clearPanel();
 
     }
-/**
- * actionPerformed für die buttons
- * @param e ActionEvent
- */
     public void actionPerformed(ActionEvent e) {
         continueInstall = true;
         this.setVisible(false);
-
     }
-
 }

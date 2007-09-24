@@ -640,9 +640,9 @@ public class DownloadLink implements Serializable, Comparable {
     }
 
     /**
-     * Gibt die aktuelle Downloadgeschwindigkeit in bytes7sekunde zurück
+     * Gibt die aktuelle Downloadgeschwindigkeit in bytes/sekunde zurück
      * 
-     * @return
+     * @return Downloadgeschwindigkeit in bytes/sekunde
      */
     public int getDownloadSpeed() {
         if (getStatus() != DownloadLink.STATUS_DOWNLOAD_IN_PROGRESS) return 0;

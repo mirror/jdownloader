@@ -6,9 +6,7 @@ import java.awt.event.ActionListener;
 import java.util.Vector;
 import java.util.logging.Logger;
 
-import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
-import jd.config.Configuration;
 import jd.controlling.interaction.Interaction;
 import jd.gui.UIInterface;
 import jd.plugins.Plugin;

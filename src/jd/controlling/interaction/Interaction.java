@@ -27,12 +27,12 @@ public abstract class Interaction extends Property implements Serializable {
     protected transient static Logger         logger                                = Plugin.getLogger();
 
     /**
-     * Gibt das Event an bei dem Diese INteraction aktiv wird
+     * Gibt das Event an bei dem Diese Interaction aktiv wird
      */
     private InteractionTrigger                trigger;
 
     /**
-     * THread der für die Interaction verwendet werden kann
+     * Thread der für die Interaction verwendet werden kann
      */
 
     protected transient Thread                thread                                = null;
@@ -240,7 +240,7 @@ public abstract class Interaction extends Property implements Serializable {
     }
 
     /**
-     * Gibt an ob der Thread Aktiv ist
+     * Gibt an ob der Thread aktiv ist
      * 
      * @return
      */
@@ -265,12 +265,12 @@ public abstract class Interaction extends Property implements Serializable {
     }
 
     /**
-     * Führt die Interactionen aus
+     * Führt die Interactions aus
      * 
-     * @param param Parameter für die Interactionen
-     * @param interactionID Interactionen
+     * @param interactionevent Trigger der Interaction
+     * @param param Parameter
      * 
-     * @return
+     * @return wahr, wenn die Interaction abgearbeitet werden konnte, ansonsten falsch
      */
     public static boolean handleInteraction(InteractionTrigger interactionevent, Object param) {
         boolean ret = true;
@@ -301,22 +301,21 @@ public abstract class Interaction extends Property implements Serializable {
     }
 
     /**
-     * Führt nur die i-te INteraction aus
+     * Führt nur die i-te Interaction aus
      * 
-     * @param param Parameter für die Interactionen
-     * @param interactionID Interactionen *
-     * @param i I-te INteraction
+     * @param interactionEvent Trigger der Interaction
+     * @param param Parameter für die Interaction
      * 
-     * @return
+     * @return wahr, wenn die Interaction abgearbeitet werden konnte, ansonsten falsch
      */
-    public static boolean handleInteraction(InteractionTrigger interactionevent, Object param, int id) {
+    public static boolean handleInteraction(InteractionTrigger interactionEvent, Object param, int id) {
 
         Vector<Interaction> interactions = JDUtilities.getConfiguration().getInteractions();
 
         for (int i = 0; i < interactions.size(); i++) {
             Interaction interaction = interactions.get(i);
-            if (interaction == null || interaction.getTrigger() == null || interactionevent == null) continue;
-            if (interaction.getTrigger().getID() == interactionevent.getID()) {
+            if (interaction == null || interaction.getTrigger() == null || interactionEvent == null) continue;
+            if (interaction.getTrigger().getID() == interactionEvent.getID()) {
                 if (id == 0) {
                     interaction.addControlListener(JDUtilities.getController());
                     if (!interaction.interact(param)) {
@@ -341,10 +340,10 @@ public abstract class Interaction extends Property implements Serializable {
     }
 
     /**
-     * Gibt alle Interactionen zum trigger zurück
+     * Gibt alle Interactionen zum Trigger zurück
      * 
      * @param trigger
-     * @return
+     * @return  Alle Interactionen zum Trigger zurück
      */
     public static Interaction[] getInteractions(InteractionTrigger trigger) {
         Vector<Interaction> interactions = JDUtilities.getConfiguration().getInteractions();

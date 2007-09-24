@@ -88,11 +88,11 @@ public class Property implements Serializable {
     }
 
     /**
-     * Gibt einen INtegerwert zu key zurück. Es wird versuchtden Wert zu einem
+     * Gibt einen Integerwert zu key zurück. Es wird versucht, den Wert zu einem
      * passendem Integer umzuformen
      * 
-     * @param key
-     * @return
+     * @param key Schlüssel des Wertes
+     * @return Der Wert
      */
     public int getIntegerProperty(String key) {
 

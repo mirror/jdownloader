@@ -17,7 +17,6 @@ import jd.gui.UIInterface;
 import jd.plugins.DownloadLink;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForHost;
-import jd.plugins.PluginStep;
 import jd.plugins.event.PluginEvent;
 import jd.plugins.event.PluginListener;
 import jd.utils.JDUtilities;
@@ -46,39 +45,26 @@ public class JDController implements PluginListener, ControlListener, UIListener
      * Die Konfiguration
      */
     protected Configuration                   config          = JDUtilities.getConfiguration();
-
     /**
      * Schnittstelle zur Benutzeroberfläche
      */
     private UIInterface                       uiInterface;
-
     /**
      * Die DownloadLinks
      */
     private Vector<DownloadLink>              downloadLinks;
-
     /**
      * Der Logger
      */
     private Logger                            logger          = Plugin.getLogger();
-
     private File                              lastCaptchaLoaded;
-
     private SpeedMeter                        speedMeter;
-
-    private Vector<SingleDownloadController>            activeLinks     = new Vector<SingleDownloadController>();
-
+    private Vector<SingleDownloadController>  activeLinks     = new Vector<SingleDownloadController>();
     private DownloadLink                      lastDownloadFinished;
-
     private ClipboardHandler                  clipboard;
-
     private boolean                           aborted         = false;
-
     private DownloadWatchDog                  watchdog;
 
-    /**
-     * 
-     */
     public JDController() {
         downloadLinks = new Vector<DownloadLink>();
         speedMeter = new SpeedMeter(5000);

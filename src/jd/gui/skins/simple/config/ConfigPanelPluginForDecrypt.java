@@ -23,7 +23,6 @@ import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableColumn;
 
 import jd.config.Configuration;
-import jd.config.Property;
 import jd.gui.UIInterface;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;

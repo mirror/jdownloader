@@ -17,7 +17,6 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
-import java.io.File;
 import java.util.Collections;
 import java.util.Vector;
 import java.util.logging.Logger;
@@ -33,12 +32,10 @@ import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
 import javax.swing.JScrollPane;
 import javax.swing.JSeparator;
-import javax.swing.JTable;
 import javax.swing.JTextField;
 import javax.swing.ListSelectionModel;
 
 import jd.event.UIEvent;
-
 import jd.gui.skins.simple.components.BrowseFile;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;

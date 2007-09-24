@@ -209,11 +209,6 @@ public class Configuration extends Property implements Serializable {
         this.useJAC = useJAC;
     }
 
- 
-
-
-
-
     /**
      * @return the reconnectRetries
      */

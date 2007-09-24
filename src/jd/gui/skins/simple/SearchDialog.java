@@ -51,8 +51,6 @@ public class SearchDialog extends JDialog implements ActionListener {
 	 * Erstellt einen neuen Dialog.
 	 * 
 	 * @param owner Das übergeordnete Fenster
-     * @param plugin Das Plugin, das dieses Captcha auslesen möchte (name des Hosts wird von JAC benötigt)
-	 * @param imageAddress Die Adresse des Bildes, das angezeigt werden soll
 	 */
 	public SearchDialog(Frame owner) {
 		super(owner);

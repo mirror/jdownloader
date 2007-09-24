@@ -322,8 +322,7 @@ public abstract class Plugin {
     /**
      * Gibt ausgehend vom aktuellen step den nächsten zurück
      * 
-     * @author coalado
-     * @param currentStep
+     * @param currentStep Der aktuelle Schritt
      * @return nächster step
      */
     public PluginStep nextStep(PluginStep currentStep) {
@@ -1311,12 +1310,12 @@ private static int getConnectTimeoutFormConfiguration(){
         }
         return null;
     }
-/**
- * verwendet die erste Acaptcha Interaction um den captcha auszuwerten
- * @param file
- * @param plugin
- * @return captchacode
- */
+    /**
+     * verwendet die erste Acaptcha Interaction um den captcha auszuwerten
+     * @param file
+     * @param plugin
+     * @return captchacode
+     */
     public static String getCaptchaCode(File file, Plugin plugin) {
         DownloadLink dummy = new DownloadLink(plugin, "", "", "", true);
         dummy.setLatestCaptchaFile(file);
@@ -1339,17 +1338,17 @@ private static int getConnectTimeoutFormConfiguration(){
         return captchaText;
 
     }
-/**
- * gibt das interne properties objekt zurück indem die Plugineinstellungen gespeichert werden
- * @return internes property objekt
- */
+    /**
+     * gibt das interne properties objekt zurück indem die Plugineinstellungen gespeichert werden
+     * @return internes property objekt
+     */
     public Property getProperties() {
         return properties;
     }
-/**
- * Setztd as interne Property Objekt
- * @param properties
- */
+    /**
+     * Setzt das interne Property Objekt
+     * @param properties
+     */
     public void setProperties(Property properties) {
         this.properties = properties;
     }
@@ -1359,18 +1358,18 @@ private static int getConnectTimeoutFormConfiguration(){
      * @return gibt den namen des Links an der gerade verarbeitet wird
      */
     public abstract String getLinkName();
-/**
- * Gibt den Statustext des PLugins zurück. kann von der GUI aufgerufen werden
- * @return Statustext
- */
+    /**
+     * Gibt den Statustext des PLugins zurück. kann von der GUI aufgerufen werden
+     * @return Statustext
+     */
     public String getStatusText() {
         if (this.statusText == null) this.statusText = "";
         return this.initTime+" : "+this.statusText;
     }
-/**
- * Setzte den Statustext des Plugins.
- * @param value
- */
+    /**
+     * Setzte den Statustext des Plugins.
+     * @param value
+     */
     public void setStatusText(String value) {
         statusText = value;
     }
