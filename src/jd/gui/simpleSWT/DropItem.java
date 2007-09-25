@@ -17,26 +17,14 @@ import org.eclipse.swt.widgets.Shell;
 
 public class DropItem {
     private static int closeState = 1;
-    static int[] createCircle(int xOffset, int yOffset, int radius) {
-        int[] circlePoints = new int[10 * radius];
-        for (int loopIndex = 0; loopIndex < 2 * radius + 1; loopIndex++) {
-            int xCurrent = loopIndex - radius;
-            int yCurrent = (int) Math.sqrt(radius * radius - xCurrent * xCurrent);
-            int doubleLoopIndex = 2 * loopIndex;
+    private static int shapex = 33;
+    private static int shapey = 2;
 
-            circlePoints[doubleLoopIndex] = xCurrent + xOffset;
-            circlePoints[doubleLoopIndex + 1] = yCurrent + yOffset;
-            circlePoints[10 * radius - doubleLoopIndex - 2] = xCurrent + xOffset;
-            circlePoints[10 * radius - doubleLoopIndex - 1] = -yCurrent + yOffset;
-        }
 
-        return circlePoints;
-    }
     static void drawClose(Display display, Point size, GC gc, int closeImageState, Color closeBorder) {
 
-        int x = size.x - 30;
-        int y = 15;
-
+        int x=shapex;
+        int y=shapey;
         switch (closeImageState) {
             case 1 : {
                 int[] shape = new int[]{x, y, x + 2, y, x + 4, y + 2, x + 5, y + 2, x + 7, y, x + 9, y, x + 9, y + 2, x + 7, y + 4, x + 7, y + 5, x + 9, y + 7, x + 9, y + 9, x + 7, y + 9, x + 5, y + 7, x + 4, y + 7, x + 2, y + 9, x, y + 9, x, y + 7, x + 2, y + 5, x + 2, y + 4, x, y + 2};
@@ -51,6 +39,7 @@ public class DropItem {
                 int[] shape = new int[]{x, y, x + 2, y, x + 4, y + 2, x + 5, y + 2, x + 7, y, x + 9, y, x + 9, y + 2, x + 7, y + 4, x + 7, y + 5, x + 9, y + 7, x + 9, y + 9, x + 7, y + 9, x + 5, y + 7, x + 4, y + 7, x + 2, y + 9, x, y + 9, x, y + 7, x + 2, y + 5, x + 2, y + 4, x, y + 2};
                 Color fill = new Color(display, new RGB(252, 160, 160));
                 gc.setBackground(fill);
+                
                 gc.fillPolygon(shape);
                 gc.setForeground(closeBorder);
                 gc.drawPolygon(shape);
@@ -58,71 +47,105 @@ public class DropItem {
             }
         }
     }
-
+    private static void drawBackground(Display display, GC gc, int[] shape) {
+        final Color[] colors = new Color[]{display.getSystemColor(SWT.COLOR_GRAY), display.getSystemColor(SWT.COLOR_WHITE), display.getSystemColor(SWT.COLOR_GRAY), display.getSystemColor(SWT.COLOR_WHITE), display.getSystemColor(SWT.COLOR_LIST_SELECTION)};
+        int[] percents = new int[]{25,25,25,25,20};
+        int height=69;
+        int x=0;
+        int y = -25;
+        int width=48;
+        int pos = percents[percents.length - 1] * height / 100;
+        gc.fillRectangle(x, y, width, pos);
+        
+        Color lastColor = colors[colors.length-1];
+        for (int i = percents.length-1; i >= 0; i--) {
+        gc.setForeground(lastColor);
+        lastColor = colors[i];
+        gc.setBackground(lastColor);
+        int gradientHeight = percents[i] * height / 100;
+        gc.fillGradientRectangle(x, y+pos, width, gradientHeight, true);
+        pos += gradientHeight;
+        }
+    }
     public static void main(String[] args) {
         final Display display = new Display();
-        final Shell shell = new Shell(display, SWT.NO_TRIM);
+        final Shell shell = new Shell(display,  SWT.NO_TRIM | SWT.ON_TOP);
         ClassLoader cl = shell.getClass().getClassLoader();
         final Image image = new Image(display, cl.getResourceAsStream("img/swt/paste.png"));
         Region region = new Region();
-        region.add(createCircle(48, 48, 48));
+        final int[] shape = new int[] {0,69,0,69,0,6,1,5,1,4,4,1,5,1,6,0,41,0,42,1,43,1,46,4,46,5,47,6,48,69,48,69};
+        region.add(shape);
+        //region.subtract(new Rectangle(0, 15, 38, 63));
+ 
         shell.setRegion(region);
         shell.setSize(region.getBounds().width, region.getBounds().height);
-        shell.setBackground(display.getSystemColor(SWT.COLOR_GRAY));
         final Point size = shell.getSize();
         final Rectangle bounds = image.getBounds();
         final PaintListener close = new PaintListener() {
             public void paintControl(PaintEvent event) {
                 GC gc = event.gc;
-
-                gc.drawImage(image, 0, 0, bounds.width, bounds.height, 10, 10, size.x - 20, size.y - 20);
                 drawClose(display, size, gc, closeState, display.getSystemColor(SWT.COLOR_BLACK));
 
             }
 
         };
-        shell.addListener(SWT.MouseMove, new Listener() {
+        Listener l = new Listener() {
+            Point origin;
 
+            Rectangle rect = new Rectangle(shapex, shapey, 9, 9);
             public void handleEvent(Event e) {
-                Point pt = new Point(e.x, e.y);
-                Rectangle rect = new Rectangle(shell.getSize().x - 30, 15, 9, 9);
-
-                if (rect.contains(pt)) {
-                    if (closeState > 1)
-                        return;
-                    closeState = 2;
-                    e.gc = new GC(shell);
-                    close.paintControl(new PaintEvent(e));
-                } else if (closeState != 1) {
-                    closeState = 1;
-                    e.gc = new GC(shell);
-                    close.paintControl(new PaintEvent(e));
-                }
+                switch (e.type) {
+                    case SWT.MouseDown:
+                    {
+                        Point pt = new Point(e.x, e.y);
+                      if (rect.contains(pt) && e.button == 1) {
+                          shell.dispose();
+                      } else if (e.button == 1) {
+                          origin = pt;
+                      }
+                      break;
+                    }
+                    case SWT.MouseUp:
+                    {
+                      origin = null;
+                      break;
+                    }
+                    case SWT.MouseMove:
+                    {
+                      if (origin != null) {
+                        Point p = display.map(shell, null, e.x, e.y);
+                        shell.setLocation(p.x - origin.x, p.y - origin.y);
+                      }
+                      else
+                      {
+                          Point pt = new Point(e.x, e.y);
+                          if (rect.contains(pt)) {
+                              if (closeState > 1)
+                                  return;
+                              closeState = 2;
+                              e.gc = new GC(shell);
+                              close.paintControl(new PaintEvent(e));
+                          } else if (closeState != 1) {
+                              closeState = 1;
+                              e.gc = new GC(shell);
+                              close.paintControl(new PaintEvent(e));
+                          }
+                      }
+                      break;
+                    }
+                    }
+ 
             }
 
-        });
-
-        shell.addListener(SWT.MouseDown, new Listener() {
-
-            public void handleEvent(Event e) {
-                System.out.println(e);
-                Point pt = new Point(e.x, e.y);
-                Rectangle rect = new Rectangle(shell.getSize().x - 30, 15, 9, 9);
-
-                if (rect.contains(pt) && e.button == 1) {
-                    shell.dispose();
-                } else if (e.button == 1) {
-                    closeState = 1;
-                    e.gc = new GC(shell);
-                    close.paintControl(new PaintEvent(e));
-                }
-            }
-
-        });
+        };
+        shell.addListener(SWT.MouseDown, l);
+        shell.addListener(SWT.MouseUp, l);
+        shell.addListener(SWT.MouseMove, l);
         shell.addPaintListener(new PaintListener() {
             public void paintControl(PaintEvent event) {
                 GC gc = event.gc;
-                gc.drawImage(image, 0, 0, bounds.width, bounds.height, 10, 10, size.x - 20, size.y - 20);
+                drawBackground(display, gc, shape);
+                gc.drawImage(image, 0, 0, bounds.width, bounds.height, -5, 10, size.x+10, size.y-10 );
             }
 
         });
