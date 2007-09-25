@@ -2,12 +2,6 @@ package jd.gui.simpleSWT;
 
 import java.awt.Dimension;
 import java.awt.Toolkit;
-import java.io.BufferedInputStream;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.ObjectInputStream;
-
 import jd.utils.JDSWTUtilities;
 
 import org.eclipse.swt.SWT;
