@@ -19,7 +19,7 @@ import jd.utils.JDUtilities;
 
 /**
  * $Revision$ 
- * $Author$
+ * $Author: coalado $
  * Start der Applikation
  * 
  * @author astaldo
