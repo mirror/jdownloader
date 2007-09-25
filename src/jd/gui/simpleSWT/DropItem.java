@@ -1,5 +1,7 @@
 package jd.gui.simpleSWT;
 
+
+
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.PaintEvent;
 import org.eclipse.swt.events.PaintListener;
@@ -10,50 +12,56 @@ import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.RGB;
 import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.graphics.Region;
+import org.eclipse.swt.widgets.Dialog;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.Listener;
 import org.eclipse.swt.widgets.Shell;
 
-public class DropItem {
-    private static int closeState = 1;
-    private static int height = 60;
-    private static int width = 50;
-    private static int closex = width - 15;
-    private static int closey = 2;
-    static void drawClose(Display display, GC gc, int closeImageState) {
+public class DropItem extends Dialog{
+
+    public DropItem(Shell parent) {
+        super(parent, SWT.NO_TRIM | SWT.ON_TOP );
+    }
+
+    private int closeState = 1;
+    private final static  int height = 60;
+    private final static int width = 50;
+    private final static int closex = width - 15;
+    private final static int closey = 2;
+    private final static int[] shape = new int[]{0, height, 0, height, 0, 6, 1, 5, 1, 4, 4, 1, 5, 1, 6, 0, width - 7, 0, width - 6, 1, width - 5, 1, width - 2, 4, width - 2, 5, width - 1, 6, width, height, width, height};
+    private final static int[] closeShape = new int[]{closex, closey, closex + 2, closey, closex + 4, closey + 2, closex + 5, closey + 2, closex + 7, closey, closex + 9, closey, closex + 9, closey + 2, closex + 7, closey + 4, closex + 7, closey + 5, closex + 9, closey + 7, closex + 9, closey + 9, closex + 7, closey + 9, closex + 5, closey + 7, closex + 4, closey + 7, closex + 2, closey + 9, closex, closey + 9, closex, closey + 7, closex + 2, closey + 5, closex + 2, closey + 4, closex, closey + 2};
+
+    void drawClose(Display display, GC gc, int closeImageState) {
 
         switch (closeImageState) {
             case 1 : {
-                int[] shape = new int[]{closex, closey, closex + 2, closey, closex + 4, closey + 2, closex + 5, closey + 2, closex + 7, closey, closex + 9, closey, closex + 9, closey + 2, closex + 7, closey + 4, closex + 7, closey + 5, closex + 9, closey + 7, closex + 9, closey + 9, closex + 7, closey + 9, closex + 5, closey + 7, closex + 4, closey + 7, closex + 2, closey + 9, closex, closey + 9, closex, closey + 7, closex + 2, closey + 5, closex + 2, closey + 4, closex, closey + 2};
                 Color fill = display.getSystemColor(SWT.COLOR_WHITE);
                 gc.setBackground(fill);
-                gc.fillPolygon(shape);
+                gc.fillPolygon(closeShape);
                 gc.setForeground(display.getSystemColor(SWT.COLOR_BLACK));
-                gc.drawPolygon(shape);
+                gc.drawPolygon(closeShape);
                 break;
             }
             case 2 : {
-                int[] shape = new int[]{closex, closey, closex + 2, closey, closex + 4, closey + 2, closex + 5, closey + 2, closex + 7, closey, closex + 9, closey, closex + 9, closey + 2, closex + 7, closey + 4, closex + 7, closey + 5, closex + 9, closey + 7, closex + 9, closey + 9, closex + 7, closey + 9, closex + 5, closey + 7, closex + 4, closey + 7, closex + 2, closey + 9, closex, closey + 9, closex, closey + 7, closex + 2, closey + 5, closex + 2, closey + 4, closex, closey + 2};
                 Color fill = new Color(display, new RGB(252, 160, 160));
                 gc.setBackground(fill);
-                gc.fillPolygon(shape);
+                gc.fillPolygon(closeShape);
                 gc.setForeground(display.getSystemColor(SWT.COLOR_BLACK));
-                gc.drawPolygon(shape);
+                gc.drawPolygon(closeShape);
                 break;
             }
             case 3 : {
-                int[] shape = new int[]{closex, closey, closex + 2, closey, closex + 4, closey + 2, closex + 5, closey + 2, closex + 7, closey, closex + 9, closey, closex + 9, closey + 2, closex + 7, closey + 4, closex + 7, closey + 5, closex + 9, closey + 7, closex + 9, closey + 9, closex + 7, closey + 9, closex + 5, closey + 7, closex + 4, closey + 7, closex + 2, closey + 9, closex, closey + 9, closex, closey + 7, closex + 2, closey + 5, closex + 2, closey + 4, closex, closey + 2};
                 Color fill = display.getSystemColor(SWT.COLOR_RED);
                 gc.setBackground(fill);
-                gc.fillPolygon(shape);
+                gc.fillPolygon(closeShape);
                 gc.setForeground(display.getSystemColor(SWT.COLOR_BLACK));
-                gc.drawPolygon(shape);
+                gc.drawPolygon(closeShape);
                 break;
             }
         }
     }
-    private static void drawBackground(Display display, GC gc, int[] shape) {
+    private void drawBackground(Display display, GC gc) {
         final Color[] colors = new Color[]{display.getSystemColor(SWT.COLOR_GRAY), display.getSystemColor(SWT.COLOR_WHITE), display.getSystemColor(SWT.COLOR_GRAY), display.getSystemColor(SWT.COLOR_WHITE), display.getSystemColor(SWT.COLOR_LIST_SELECTION)};
         int[] percents = new int[]{40, 25, 25, 25, 0};
         int x = 0;
@@ -71,18 +79,11 @@ public class DropItem {
             pos += gradientHeight;
         }
     }
-    public static void main(String[] args) {
-        final Display display = new Display();
-        final Shell shell = new Shell(display, SWT.NO_TRIM | SWT.ON_TOP);
+    private void createContents(final Shell shell) {
+        final Display display = shell.getDisplay();
         ClassLoader cl = shell.getClass().getClassLoader();
         final Image image = new Image(display, cl.getResourceAsStream("img/swt/paste.png"));
-        Region region = new Region();
-        final int[] shape = new int[]{0, height, 0, height, 0, 6, 1, 5, 1, 4, 4, 1, 5, 1, 6, 0, width - 7, 0, width - 6, 1, width - 5, 1, width - 2, 4, width - 2, 5, width - 1, 6, width, height, width, height};
-        region.add(shape);
-        // region.subtract(new Rectangle(0, 15, 38, 63));
 
-        shell.setRegion(region);
-        shell.setSize(region.getBounds().width, region.getBounds().height);
 
         final Rectangle bounds = image.getBounds();
         final PaintListener close = new PaintListener() {
@@ -152,20 +153,34 @@ public class DropItem {
             Point size = shell.getSize();
             public void paintControl(PaintEvent event) {
                 GC gc = event.gc;
-                drawBackground(display, gc, shape);
+                drawBackground(display, gc);
                 gc.drawImage(image, 0, 0, bounds.width, bounds.height, -5, 5, size.x + 10, size.y - 5);
             }
 
         });
         shell.addPaintListener(close);
-
-        shell.open();
-
-        while (!shell.isDisposed()) {
-            if (!display.readAndDispatch())
-                display.sleep();
-        }
-        region.dispose();
-        display.dispose();
     }
+    
+    public void open() {
+        
+        Shell shell = new Shell(getParent(), getStyle());
+        Region region = new Region();
+       
+        region.add(shape);
+        // region.subtract(new Rectangle(0, 15, 38, 63));
+
+        shell.setRegion(region);
+        shell.setSize(region.getBounds().width, region.getBounds().height);
+        createContents(shell);
+       // shell.setLocation(parent.getBounds().x + (parent.getSize().x - shell.getSize().x) / 2, parent.getBounds().y + (parent.getSize().y - shell.getSize().y) / 2);
+        shell.open();
+        Display display = getParent().getDisplay();
+        while (!shell.isDisposed()) {
+            if (!display.readAndDispatch()) {
+                display.sleep();
+            }
+            region.dispose();
+        }
+    }
+    
 }
