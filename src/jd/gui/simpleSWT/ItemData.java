@@ -37,7 +37,7 @@ public class ItemData {
     public ProgressBar getProgressBar() {
         return progressBar;
     }
-    public ProgressBar setProgressBar(final TreeItem treeItem) {
+    public ProgressBar setProgressBar(final TreeItem treeItem, final GuiListeners guiListeners) {
         final Tree tree = treeItem.getParent();
         progressBar = new ProgressBar(tree, SWT.SMOOTH);
         final Listener listener = new Listener() {
@@ -69,12 +69,12 @@ public class ItemData {
                     }
 
                     if (isSelected) {
-                        if(e.button != 1 && tree.getSelectionCount() > 1)
+                        if (e.button != 1 && tree.getSelectionCount() > 1)
                             return;
                         items2 = new TreeItem[items.length - 1];
                         int d = 0;
                         for (int i = 0; i < items.length; i++) {
-                            if (items[i] != treeItem) 
+                            if (items[i] != treeItem)
                                 items2[d++] = items[i];
                         }
                     } else {
@@ -87,10 +87,9 @@ public class ItemData {
                     // tree.setSelection(items);
                     tree.setSelection(items2);
                     tree.notifyListeners(SWT.MouseDown, event);
-                    GuiListeners.getListener("toolBarBtSetEnabled").handleEvent(e);
+                    guiListeners.getListener("toolBarBtSetEnabled").handleEvent(e);
                 } else {
-                    if(e.button != 1 && tree.getSelectionCount() > 1)
-                    {
+                    if (e.button != 1 && tree.getSelectionCount() > 1) {
                         TreeItem[] items = tree.getSelection();
                         boolean isSelected = false;
                         for (int i = 0; i < items.length; i++) {
@@ -99,7 +98,8 @@ public class ItemData {
                                 break;
                             }
                         }
-                        if(isSelected) return; 
+                        if (isSelected)
+                            return;
                     }
                     Event event = new Event();
                     event.widget = tree;
@@ -116,7 +116,7 @@ public class ItemData {
                     event.button = 1;
                     tree.notifyListeners(SWT.MouseDown, event);
                     tree.setSelection(treeItem);
-                    GuiListeners.getListener("toolBarBtSetEnabled").handleEvent(e);
+                    guiListeners.getListener("toolBarBtSetEnabled").handleEvent(e);
                 }
 
             }

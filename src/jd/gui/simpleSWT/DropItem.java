@@ -42,6 +42,15 @@ public class DropItem {
                 gc.drawPolygon(shape);
                 break;
             }
+            case 3 : {
+                int[] shape = new int[]{closex, closey, closex + 2, closey, closex + 4, closey + 2, closex + 5, closey + 2, closex + 7, closey, closex + 9, closey, closex + 9, closey + 2, closex + 7, closey + 4, closex + 7, closey + 5, closex + 9, closey + 7, closex + 9, closey + 9, closex + 7, closey + 9, closex + 5, closey + 7, closex + 4, closey + 7, closex + 2, closey + 9, closex, closey + 9, closex, closey + 7, closex + 2, closey + 5, closex + 2, closey + 4, closex, closey + 2};
+                Color fill = display.getSystemColor(SWT.COLOR_RED);
+                gc.setBackground(fill);
+                gc.fillPolygon(shape);
+                gc.setForeground(display.getSystemColor(SWT.COLOR_BLACK));
+                gc.drawPolygon(shape);
+                break;
+            }
         }
     }
     private static void drawBackground(Display display, GC gc, int[] shape) {
@@ -86,14 +95,17 @@ public class DropItem {
         };
         Listener l = new Listener() {
             Point origin;
-
+            boolean closebt = false;
             Rectangle rect = new Rectangle(closex, closey, 9, 9);
             public void handleEvent(Event e) {
                 switch (e.type) {
                     case SWT.MouseDown : {
                         Point pt = new Point(e.x, e.y);
-                        if (rect.contains(pt) && e.button == 1) {
-                            shell.dispose();
+                        if ((e.button == 1) && rect.contains(pt)) {
+                            closeState = 3;
+                            e.gc = new GC(shell);
+                            close.paintControl(new PaintEvent(e));
+                            closebt = true;
                         } else if (e.button == 1) {
                             origin = pt;
                         }
@@ -101,6 +113,11 @@ public class DropItem {
                     }
                     case SWT.MouseUp : {
                         origin = null;
+                        Point pt = new Point(e.x, e.y);
+                        if (closebt && rect.contains(pt))
+                            shell.dispose();
+                        else
+                            closebt = false;
                         break;
                     }
                     case SWT.MouseMove : {

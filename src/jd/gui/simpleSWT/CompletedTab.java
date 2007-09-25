@@ -17,10 +17,15 @@ import org.eclipse.swt.widgets.TreeColumn;
 import org.eclipse.swt.widgets.TreeItem;
 
 public class CompletedTab {
-    public static Tree trCompleted;
-
-    public static CTabItem initCompleted() {
-        CTabFolder folder = MainGui.getFolder();
+    public Tree trCompleted;
+    private CTabFolder folder;
+    private GuiListeners guiListeners;
+    public CompletedTab(CTabFolder folder, GuiListeners guiListeners) {
+        this.folder = folder;
+        this.guiListeners = guiListeners;
+        initCompleted();
+    }
+    private void initCompleted() {
         CTabItem tbCompletedFiles = new CTabItem(folder, SWT.NONE);
         tbCompletedFiles.setText(JDSWTUtilities.getSWTResourceString("CompletedTab.name"));
         tbCompletedFiles.setImage(JDSWTUtilities.getImageSwt("completed"));
@@ -45,18 +50,14 @@ public class CompletedTab {
                 TreeItem[] items = DownloadTab.getSelection(trCompleted);
                 MessageBox mbDelete = new MessageBox(trCompleted.getShell(), SWT.ICON_QUESTION | SWT.YES | SWT.NO);
                 String itemsText = "";
-                if (items.length < 30)
-                {
+                if (items.length < 30) {
                     for (int i = 0; i < items.length; i++) {
                         itemsText += System.getProperty("line.separator") + items[i].getText();
                     }
                     mbDelete.setMessage(JDSWTUtilities.getSWTResourceString("mbDelete.message").replace("%s", itemsText));
-                }
-                else
+                } else
                     itemsText = JDSWTUtilities.getSWTResourceString("mbDelete.messageOver30").replace("%s", itemsText);
-     
 
-                
                 mbDelete.setText(JDSWTUtilities.getSWTResourceString("mbDelete.name"));
                 int response = mbDelete.open();
                 if (response == SWT.YES) {
@@ -68,7 +69,7 @@ public class CompletedTab {
 
             }
         };
-        GuiListeners.addListener("CompletedTab.delete", compDeleteListener);
+        guiListeners.addListener("CompletedTab.delete", compDeleteListener);
         /**
          * Kontextmenu fuer die TreeItems
          */
@@ -79,8 +80,8 @@ public class CompletedTab {
          */
         final MenuItem itemCopy = new MenuItem(menu, SWT.PUSH);
         itemCopy.setText(JDSWTUtilities.getSWTResourceString("itemCopy.name"));
-        itemCopy.addListener(SWT.Selection, GuiListeners.addTreeCopyListener(trCompleted, "CompletedTab.copy"));
-        
+        itemCopy.addListener(SWT.Selection, guiListeners.addTreeCopyListener(trCompleted, "CompletedTab.copy"));
+
         final MenuItem itemDelete = new MenuItem(menu, SWT.PUSH);
         /*
          * Menu zum loeschen von Items
@@ -94,11 +95,9 @@ public class CompletedTab {
                 itemCopy.setEnabled(trCompleted.getSelectionCount() > 0);
             }
         });
-        trCompleted.addListener(SWT.Selection, GuiListeners.initToolBarBtSetEnabledListener());
-        trCompleted.addListener(SWT.Collapse, GuiListeners.getListener("toolBarBtSetEnabled"));
-        return tbCompletedFiles;
+        trCompleted.addListener(SWT.Selection, guiListeners.initToolBarBtSetEnabledListener());
+        trCompleted.addListener(SWT.Collapse, guiListeners.getListener("toolBarBtSetEnabled"));
 
     }
-
 
 }

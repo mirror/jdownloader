@@ -38,37 +38,37 @@ public class GuiListeners {
     // public static final String ST_DISK_READ_QUEUE_LENGTH =
     // "disk.read.queue.length";
 
-    private static HashMap<String, Listener> listeners = new HashMap<String, Listener>();
-    private static HashMap<String, KeyListener> keyListeners = new HashMap<String, KeyListener>();
-    private static HashMap<String, Menu> listenerMenus = new HashMap<String, Menu>();
-    private static ControlListener folderControlListener;
-    private static GUIConfig guiConfig;
-    private static Shell mainGuiShell;
-    private static boolean btStartStopIsClicked = false;
+    private HashMap<String, Listener> listeners = new HashMap<String, Listener>();
+    private HashMap<String, KeyListener> keyListeners = new HashMap<String, KeyListener>();
+    private HashMap<String, Menu> listenerMenus = new HashMap<String, Menu>();
+    private ControlListener folderControlListener;
+    private GUIConfig guiConfig;
+    private Shell mainGuiShell;
+    private boolean btStartStopIsClicked = false;
+    private MainGui mainGui;
 
-    public static void setGuiConfig(GUIConfig guiConfig) {
-        GuiListeners.guiConfig = guiConfig;
+    public GuiListeners(MainGui mainGui) {
+        guiConfig = mainGui.guiConfig;
+        mainGuiShell = mainGui.getShell();
+        this.mainGui = mainGui;
     }
-    public static void setMainGuiShell(Shell mainGuiShell) {
-        GuiListeners.mainGuiShell = mainGuiShell;
-    }
-    public static Listener getListener(String name) {
+    public Listener getListener(String name) {
         return listeners.get(name);
     }
-    public static KeyListener getKeyListener(String name) {
+    public KeyListener getKeyListener(String name) {
         return keyListeners.get(name);
     }
-    public static Listener addListener(String name, Listener listener) {
+    public Listener addListener(String name, Listener listener) {
         return listeners.put(name, listener);
     }
-    public static KeyListener addKeyListener(String name, KeyListener keyListener) {
+    public KeyListener addKeyListener(String name, KeyListener keyListener) {
         return keyListeners.put(name, keyListener);
     }
     // TODO fuellen
-    private static void saveFile(String filename) {
+    private void saveFile(String filename) {
 
     }
-    private static void initOpenfileListener() {
+    private void initOpenfileListener() {
         listeners.put("openFile", new Listener() {
             public void handleEvent(Event event) {
 
@@ -86,7 +86,7 @@ public class GuiListeners {
             }
         });
     }
-    public static Listener initBtOpenListener() {
+    public Listener initBtOpenListener() {
         initOpenfileListener();
         final Menu menu = new Menu(mainGuiShell);
         listenerMenus.put("btOpen", menu);
@@ -106,7 +106,7 @@ public class GuiListeners {
         listeners.put("btOpen", btOpenListener);
         return btOpenListener;
     }
-    public static Listener initSaveAsListener() {
+    public Listener initSaveAsListener() {
         Listener listener = new Listener() {
 
             public void handleEvent(Event arg0) {
@@ -123,7 +123,7 @@ public class GuiListeners {
         listeners.put("saveAs", listener);
         return listener;
     }
-    public static Listener initSaveListener() {
+    public Listener initSaveListener() {
         Listener listener = new Listener() {
 
             public void handleEvent(Event e) {
@@ -138,12 +138,12 @@ public class GuiListeners {
         listeners.put("save", listener);
         return listener;
     }
-    public static MenuItem addListenerMenu(String listener, String name) {
+    public MenuItem addListenerMenu(String listener, String name) {
         MenuItem menuItem = new MenuItem(listenerMenus.get(listener), SWT.NONE);
         menuItem.setText(name);
         return menuItem;
     }
-    private static String[] getMultiFileDialog(Shell shell, String file) {
+    private String[] getMultiFileDialog(Shell shell, String file) {
         FileDialog dialog = new FileDialog(shell, SWT.MULTI);
         if (file != null) {
             dialog.setFileName(file);
@@ -165,7 +165,7 @@ public class GuiListeners {
         return names;
 
     }
-    private static String getFileDialog(Shell shell, String file, int type) {
+    private String getFileDialog(Shell shell, String file, int type) {
         if (type == 1) {
             DirectoryDialog dialog = new DirectoryDialog(shell);
             if (file != null) {
@@ -188,20 +188,20 @@ public class GuiListeners {
         }
 
     }
-    private static void allMainGuiKeyListeners(KeyEvent e) {
+    private void allMainGuiKeyListeners(KeyEvent e) {
         if ((e.keyCode == 'o') && (e.stateMask == SWT.CTRL)) {
             listeners.get("openFile").handleEvent(new Event());
         }
         if ((e.keyCode == 's') && (e.stateMask == SWT.CTRL)) {
             listeners.get("save").handleEvent(new Event());
         }
-        if ((e.keyCode == 's') && (e.stateMask == SWT.SHIFT + SWT.CTRL) && MainGui.getFolder().getSelectionIndex() == 0) {
+        if ((e.keyCode == 's') && (e.stateMask == SWT.SHIFT + SWT.CTRL) && mainGui.folder.getSelectionIndex() == 0) {
             listeners.get("saveAs").handleEvent(new Event());
         }
-        if ((e.keyCode == 'n') && (e.stateMask == SWT.CTRL) && MainGui.getFolder().getSelectionIndex() == 0) {
+        if ((e.keyCode == 'n') && (e.stateMask == SWT.CTRL) && mainGui.folder.getSelectionIndex() == 0) {
             listeners.get("DownloadTab.newFolder").handleEvent(new Event());
         }
-        if ((e.keyCode == 'n') && (e.stateMask == SWT.SHIFT + SWT.CTRL) && MainGui.getFolder().getSelectionIndex() == 0) {
+        if ((e.keyCode == 'n') && (e.stateMask == SWT.SHIFT + SWT.CTRL) && mainGui.folder.getSelectionIndex() == 0) {
             listeners.get("DownloadTab.newContainer").handleEvent(new Event());
         }
         if ((e.keyCode == '9') && (e.stateMask == SWT.CTRL)) {
@@ -212,7 +212,7 @@ public class GuiListeners {
         }
 
     }
-    public static KeyListener initMainGuiKeyListener() {
+    public KeyListener initMainGuiKeyListener() {
         KeyListener mainGuiKeyListener = new KeyListener() {
             public void keyPressed(KeyEvent e) {
                 allMainGuiKeyListeners(e);
@@ -223,7 +223,7 @@ public class GuiListeners {
         keyListeners.put("mainGui", mainGuiKeyListener);
         return mainGuiKeyListener;
     }
-    public static KeyListener initTrDownloadKeyListener() {
+    public KeyListener initTrDownloadKeyListener() {
         KeyListener trDownloadKeyListener = new KeyListener() {
 
             public void keyPressed(KeyEvent e) {
@@ -234,8 +234,8 @@ public class GuiListeners {
                 if ((e.keyCode == 'c') && (e.stateMask == SWT.CTRL)) {
                     copy((Tree) e.widget);
                 }
-                if ((e.keyCode == SWT.F2) && (DownloadTab.getSelection(DownloadTab.trDownload).length > 0)) {
-                    GuiListeners.getListener("DownloadTab.rename").handleEvent(new Event());
+                if ((e.keyCode == SWT.F2) && (DownloadTab.getSelection(mainGui.downloadTab.trDownload).length > 0)) {
+                    getListener("DownloadTab.rename").handleEvent(new Event());
                 }
             }
 
@@ -247,20 +247,20 @@ public class GuiListeners {
         keyListeners.put("trDownload", trDownloadKeyListener);
         return trDownloadKeyListener;
     }
-    public static Listener initToolBarBtSetEnabledListener() {
+    public Listener initToolBarBtSetEnabledListener() {
         Listener toolBarBtSetEnabledListener = new Listener() {
             public void handleEvent(Event e) {
-                MainGui.toolBarBtSetEnabled();
+                mainGui.toolBarBtSetEnabled();
             }
         };
         listeners.put("toolBarBtSetEnabled", toolBarBtSetEnabledListener);
         return toolBarBtSetEnabledListener;
     }
-    public static ControlListener setFolderControlListener(final Table tablePluginActivities) {
+    public ControlListener setFolderControlListener(final Table tablePluginActivities) {
 
         folderControlListener = new ControlAdapter() {
             public void controlResized(ControlEvent e) {
-                final CTabFolder folder = MainGui.getFolder();
+                final CTabFolder folder = mainGui.folder;
                 Rectangle area = folder.getClientArea();
                 Point preferredSize = tablePluginActivities.computeSize(SWT.DEFAULT, SWT.DEFAULT);
                 int width = area.width - 2 * tablePluginActivities.getBorderWidth();
@@ -287,20 +287,24 @@ public class GuiListeners {
         };
         return folderControlListener;
     }
-    public static ControlListener getFolderControlListener() {
+    public ControlListener getFolderControlListener() {
         return folderControlListener;
     }
-    public static Listener initBtPreferencesListener() {
+    public Listener initBtPreferencesListener() {
         Listener btPreferencesListener = new Listener() {
+            PreferencesTab preferencesTab = null;
             public void handleEvent(Event e) {
-                PreferencesTab.initpreferences();
+                if (preferencesTab == null || preferencesTab.tbPreferences.isDisposed()) {
+                    preferencesTab = new PreferencesTab(mainGui);
+                }
+
                 listeners.get("toolBarBtSetEnabled").handleEvent(e);
             }
         };
         listeners.put("btPreferences", btPreferencesListener);
         return btPreferencesListener;
     }
-    public static Listener initBtStartStopListener(final ToolItem btStartPause) {
+    public Listener initBtStartStopListener(final ToolItem btStartPause) {
         final Image btStartImage = btStartPause.getImage();
         final Image btStopImage = JDSWTUtilities.getImageSwt("stop");
         Listener btStartStopListener = new Listener() {
@@ -319,7 +323,7 @@ public class GuiListeners {
         listeners.put("btStartStop", btStartStopListener);
         return btStartStopListener;
     }
-    public static Listener initBtInfoListener() {
+    public Listener initBtInfoListener() {
         final Menu btInfoMenu = new Menu(mainGuiShell);
         listenerMenus.put("btInfo", btInfoMenu);
         Listener btInfoListener = new Listener() {
@@ -336,7 +340,7 @@ public class GuiListeners {
         listeners.put("btInfo", btInfoListener);
         return btInfoListener;
     }
-    public static KeyListener initTrCompKeyListener() {
+    public KeyListener initTrCompKeyListener() {
         KeyListener trCompKeyListener = new KeyListener() {
 
             public void keyPressed(KeyEvent e) {
@@ -357,7 +361,7 @@ public class GuiListeners {
         keyListeners.put("trCompleted", trCompKeyListener);
         return trCompKeyListener;
     }
-    private static void copy(Tree tree) {
+    private void copy(Tree tree) {
         TreeItem[] items = tree.getSelection();
         String evd = "";
         if (items.length > 0) {
@@ -372,7 +376,7 @@ public class GuiListeners {
             clipboard.setContents(new String[]{evd}, new Transfer[]{TextTransfer.getInstance()});
         }
     }
-    public static Listener addTreeCopyListener(final Tree tree, String name) {
+    public Listener addTreeCopyListener(final Tree tree, String name) {
         Listener copyl = new Listener() {
             public void handleEvent(Event event) {
                 copy(tree);
@@ -381,7 +385,7 @@ public class GuiListeners {
         listeners.put(name, copyl);
         return copyl;
     }
-    public static Listener initBtInfoAboutListener() {
+    public Listener initBtInfoAboutListener() {
         Listener btInfoAboutListener = new Listener() {
             public void handleEvent(Event event) {
                 new AboutDialog(mainGuiShell).open();
@@ -391,7 +395,7 @@ public class GuiListeners {
         return btInfoAboutListener;
     }
 
-    public static Listener initMainGuiCloseListener(final Shell shell) {
+    public Listener initMainGuiCloseListener(final Shell shell) {
         Listener mainGuiCloseListener = new Listener() {
             public void handleEvent(Event event) {
                 MessageBox mbMainWindowClose = new MessageBox(shell, SWT.APPLICATION_MODAL | SWT.YES | SWT.NO);
@@ -406,9 +410,9 @@ public class GuiListeners {
                     // guiConfig.setQColumnOrder(trDownload.getColumnOrder());
                     // //TODO Bug der durch TreeEditor beim verschieben der
                     // Columns entsteht beheben
-                    guiConfig.DownloadColumnOrder = DownloadTab.trDownload.getColumnOrder();
+                    guiConfig.DownloadColumnOrder = mainGui.downloadTab.trDownload.getColumnOrder();
                     guiConfig.isMaximized = shell.getMaximized();
-                    ObjectOutputStream objOut = new ObjectOutputStream(new BufferedOutputStream(new FileOutputStream(MainGui.guiConfigFile)));
+                    ObjectOutputStream objOut = new ObjectOutputStream(new BufferedOutputStream(new FileOutputStream(mainGui.guiConfigFile)));
                     objOut.writeObject(guiConfig);
                     objOut.close();
 

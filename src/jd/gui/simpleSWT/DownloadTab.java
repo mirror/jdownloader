@@ -40,22 +40,27 @@ import org.eclipse.swt.widgets.TreeItem;
 
 public class DownloadTab {
 
-    public static Tree trDownload;
+    public Tree trDownload;
     /**
      * Geghoert zum Drag&Drop System
      */
-    private static Object dragSourceItem = null;
-    private static Object dataMap = new Object();
-    public static TreeItem ownSelected = null;
+    private Object dragSourceItem = null;
+    private Object dataMap = new Object();
+    private MainGui mainGui;
+    public TreeItem ownSelected = null;
     /**
      * Liste Aller TreeEditoren
      */
 
-    private static int lastStep = 0;
-    private static int lastTime = (int) System.currentTimeMillis();
-    private static Text renameText;
-    public static CTabItem initDownload() {
-        CTabItem tbDownloadFiles = new CTabItem(MainGui.getFolder(), SWT.NONE);
+    private int lastStep = 0;
+    private int lastTime = (int) System.currentTimeMillis();
+    private Text renameText;
+    public DownloadTab(MainGui mainGui) {
+        this.mainGui = mainGui;
+        initDownload();
+    }
+    private void initDownload() {
+        CTabItem tbDownloadFiles = new CTabItem(mainGui.folder, SWT.NONE);
         tbDownloadFiles.setText(JDSWTUtilities.getSWTResourceString("DownloadTab.name"));
         tbDownloadFiles.setImage(JDSWTUtilities.getImageSwt("download"));
         /**
@@ -111,12 +116,12 @@ public class DownloadTab {
                     // sowieso an letzter stelle hinzugefuegt
                     // wird
                 }
-                GuiListeners.getListener("DownloadTab.rename").handleEvent(new Event());
+                mainGui.guiListeners.getListener("DownloadTab.rename").handleEvent(new Event());
 
             }
 
         };
-        GuiListeners.addListener("DownloadTab.newFolder", newFolderListener);
+        mainGui.guiListeners.addListener("DownloadTab.newFolder", newFolderListener);
 
         Listener newContainerListener = new Listener() {
             public void handleEvent(Event event) {
@@ -168,12 +173,12 @@ public class DownloadTab {
                     // sowieso an letzter stelle hinzugefuegt
                     // wird
                 }
-                GuiListeners.getListener("DownloadTab.rename").handleEvent(new Event());
+                mainGui.guiListeners.getListener("DownloadTab.rename").handleEvent(new Event());
 
             }
 
         };
-        GuiListeners.addListener("DownloadTab.newContainer", newContainerListener);
+        mainGui.guiListeners.addListener("DownloadTab.newContainer", newContainerListener);
 
         Listener deleteListener = new Listener() {
             public void handleEvent(Event event) {
@@ -199,7 +204,7 @@ public class DownloadTab {
 
             }
         };
-        GuiListeners.addListener("DownloadTab.delete", deleteListener);
+        mainGui.guiListeners.addListener("DownloadTab.delete", deleteListener);
 
         Listener goUpListener = new Listener() {
 
@@ -208,7 +213,7 @@ public class DownloadTab {
             }
 
         };
-        GuiListeners.addListener("DownloadTab.goUp", goUpListener);
+        mainGui.guiListeners.addListener("DownloadTab.goUp", goUpListener);
         Listener goDownListener = new Listener() {
 
             public void handleEvent(Event arg0) {
@@ -216,7 +221,7 @@ public class DownloadTab {
             }
 
         };
-        GuiListeners.addListener("DownloadTab.goDown", goDownListener);
+        mainGui.guiListeners.addListener("DownloadTab.goDown", goDownListener);
         Listener goLastUpListener = new Listener() {
 
             public void handleEvent(Event arg0) {
@@ -224,7 +229,7 @@ public class DownloadTab {
             }
 
         };
-        GuiListeners.addListener("DownloadTab.goLastUp", goLastUpListener);
+        mainGui.guiListeners.addListener("DownloadTab.goLastUp", goLastUpListener);
         Listener goLastDownListener = new Listener() {
 
             public void handleEvent(Event arg0) {
@@ -232,7 +237,7 @@ public class DownloadTab {
             }
 
         };
-        GuiListeners.addListener("DownloadTab.goLastDown", goLastDownListener);
+        mainGui.guiListeners.addListener("DownloadTab.goLastDown", goLastDownListener);
         /**
          * Listenersende
          */
@@ -298,36 +303,36 @@ public class DownloadTab {
 
             public void handleEvent(Event e) {
                 lastTime = e.time;
-                TreeColumn[] columns = DownloadTab.trDownload.getColumns();
+                TreeColumn[] columns = trDownload.getColumns();
                 int[] DownloadColumnWidht = new int[columns.length];
                 for (int i = 0; i < (columns.length); i++) {
                     DownloadColumnWidht[i] = columns[i].getWidth();
                 }
                 if (shell.getMaximized() == true)
-                    MainGui.guiConfig.DownloadColumnWidhtMaximized = DownloadColumnWidht;
+                    mainGui.guiConfig.DownloadColumnWidhtMaximized = DownloadColumnWidht;
                 else
-                    MainGui.guiConfig.DownloadColumnWidht = DownloadColumnWidht;
+                    mainGui.guiConfig.DownloadColumnWidht = DownloadColumnWidht;
                 DownloadColumnWidht = null;
 
             }
 
         };
 
-        for (int i = 0; i < MainGui.guiConfig.DownloadColumnWidht.length; i++) {
-            TreeColumn col = JDSWTUtilities.treeCol(JDSWTUtilities.getSWTResourceString("DownloadTab.column" + i + ".name"), trDownload, MainGui.guiConfig.DownloadColumnWidht[i]);
+        for (int i = 0; i < mainGui.guiConfig.DownloadColumnWidht.length; i++) {
+            TreeColumn col = JDSWTUtilities.treeCol(JDSWTUtilities.getSWTResourceString("DownloadTab.column" + i + ".name"), trDownload, mainGui.guiConfig.DownloadColumnWidht[i]);
             col.setResizable(true);
             col.setMoveable(true);
             col.addListener(SWT.Resize, downloadColumnResize);
             col.addListener(SWT.Move, downloadColumnMoveListener);
             col.addListener(SWT.Selection, downloadColumnListener);
         }
-        trDownload.setColumnOrder(MainGui.guiConfig.DownloadColumnOrder);
+        trDownload.setColumnOrder(mainGui.guiConfig.DownloadColumnOrder);
         treeAddDragAndDrop(trDownload);
         // Create the editor and set its attributes
         final TreeEditor editor = new TreeEditor(trDownload);
         editor.horizontalAlignment = SWT.LEFT;
         editor.grabHorizontal = true;
-        GuiListeners.addListener("DownloadTab.trDownload_MouseDown", new Listener() {
+        mainGui.guiListeners.addListener("DownloadTab.trDownload_MouseDown", new Listener() {
 
             public void handleEvent(Event e) {
                 if (trDownload.getSelectionCount() == 1) {
@@ -340,7 +345,7 @@ public class DownloadTab {
                         rect.x += 24;
                         rect.width -= 24;
                         if (rect.contains(pt) && e.button == 1) {
-                            GuiListeners.getListener("DownloadTab.rename").handleEvent(e);
+                            mainGui.guiListeners.getListener("DownloadTab.rename").handleEvent(e);
                             ownSelected = null;
                         } else
                             ownSelected = item;
@@ -352,8 +357,8 @@ public class DownloadTab {
             }
 
         });
-        trDownload.addListener(SWT.MouseDown, GuiListeners.getListener("DownloadTab.trDownload_MouseDown"));
-        GuiListeners.addListener("DownloadTab.rename", new Listener() {
+        trDownload.addListener(SWT.MouseDown, mainGui.guiListeners.getListener("DownloadTab.trDownload_MouseDown"));
+        mainGui.guiListeners.addListener("DownloadTab.rename", new Listener() {
 
             public void handleEvent(Event event) {
                 // Make sure one and only one item is selected when F2 is
@@ -462,7 +467,7 @@ public class DownloadTab {
          */
         final MenuItem itemCopy = new MenuItem(menu, SWT.PUSH);
         itemCopy.setText(JDSWTUtilities.getSWTResourceString("itemCopy.name"));
-        itemCopy.addListener(SWT.Selection, GuiListeners.addTreeCopyListener(trDownload, "DownloadTab.copy"));
+        itemCopy.addListener(SWT.Selection, mainGui.guiListeners.addTreeCopyListener(trDownload, "DownloadTab.copy"));
 
         /*
          * Menu zum loeschen von Items
@@ -476,7 +481,7 @@ public class DownloadTab {
          */
         final MenuItem itemRename = new MenuItem(menu, SWT.PUSH);
         itemRename.setText(JDSWTUtilities.getSWTResourceString("DownloadTab.itemRename.name"));
-        itemRename.addListener(SWT.Selection, GuiListeners.getListener("DownloadTab.rename"));
+        itemRename.addListener(SWT.Selection, mainGui.guiListeners.getListener("DownloadTab.rename"));
 
         new MenuItem(menu, SWT.SEPARATOR);
         MenuItem itemSelectAll = new MenuItem(menu, SWT.PUSH);
@@ -502,9 +507,9 @@ public class DownloadTab {
         {
             String[] text2 = {"Archiv.php", "", "", ""};
 
-            JDSWTUtilities.setTreeItemDownloading(JDSWTUtilities.createTreeitem(trDownload, text2, null, ItemData.STATUS_NOTHING, ItemData.TYPE_FILE));
+            JDSWTUtilities.setTreeItemDownloading(JDSWTUtilities.createTreeitem(trDownload, text2, null, ItemData.STATUS_NOTHING, ItemData.TYPE_FILE), mainGui.guiListeners);
 
-            JDSWTUtilities.setTreeItemDownloading(JDSWTUtilities.createTreeitem(trDownload, text2, null, ItemData.STATUS_NOTHING, ItemData.TYPE_FILE));
+            JDSWTUtilities.setTreeItemDownloading(JDSWTUtilities.createTreeitem(trDownload, text2, null, ItemData.STATUS_NOTHING, ItemData.TYPE_FILE), mainGui.guiListeners);
 
             for (int i = 1; i < 5; i++) {
                 String[] text = {"" + i, "", "", ""};
@@ -516,11 +521,9 @@ public class DownloadTab {
             }
 
         }
-        trDownload.addListener(SWT.Selection, GuiListeners.initToolBarBtSetEnabledListener());
-        trDownload.addListener(SWT.Collapse, GuiListeners.getListener("toolBarBtSetEnabled"));
-        trDownload.addKeyListener(GuiListeners.initTrDownloadKeyListener());
-        return tbDownloadFiles;
-
+        trDownload.addListener(SWT.Selection, mainGui.guiListeners.initToolBarBtSetEnabledListener());
+        trDownload.addListener(SWT.Collapse, mainGui.guiListeners.getListener("toolBarBtSetEnabled"));
+        trDownload.addKeyListener(mainGui.guiListeners.initTrDownloadKeyListener());
     }
     /**
      * Checkt ob das Item Selektiert ist
@@ -529,7 +532,7 @@ public class DownloadTab {
      * @param selection
      * @return
      */
-    private static boolean isSelected(TreeItem item, TreeItem[] selection) {
+    private boolean isSelected(TreeItem item, TreeItem[] selection) {
         for (int i = 0; i < selection.length; i++) {
             if (item == selection[i])
                 return true;
@@ -579,7 +582,7 @@ public class DownloadTab {
      * 
      * @param pos
      */
-    private static void goTo(int pos) {
+    private void goTo(int pos) {
         if ((renameText != null) && !renameText.isDisposed())
             renameText.dispose();
         int pos2;
@@ -689,7 +692,7 @@ public class DownloadTab {
         trDownload.notifyListeners(SWT.Collapse, new Event());
 
     }
-    public static boolean isDragItem(TreeItem item, TreeItem[] dragSourceItems) {
+    public boolean isDragItem(TreeItem item, TreeItem[] dragSourceItems) {
         if (isSelected(item, dragSourceItems))
             return true;
         else {
@@ -700,12 +703,12 @@ public class DownloadTab {
         }
         return false;
     }
-    // public static void moveItem()
+    // public void moveItem()
     /**
      * Hier faengt das Drag&Drop System an und meine Dokumentation hoert auf
      * denn das will sich sowieso keiner antun
      */
-    private static void treeAddDragAndDrop(final Tree tree) {
+    private void treeAddDragAndDrop(final Tree tree) {
         Transfer[] types = new Transfer[]{TextTransfer.getInstance()};
         int operations = DND.DROP_MOVE;
         final DragSource source = new DragSource(tree, operations);
@@ -747,8 +750,8 @@ public class DownloadTab {
                 TreeItem[] items = (TreeItem[]) dragSourceItem;
                 if (event.detail == DND.DROP_MOVE)
                     for (int i = 0; i < items.length; i++) {
-                        if(items[i]!=null)
-                        JDSWTUtilities.disposeItem(items[i]);
+                        if (items[i] != null)
+                            JDSWTUtilities.disposeItem(items[i]);
                     }
                 dragSourceItem = null;
             }
@@ -825,7 +828,7 @@ public class DownloadTab {
                                     if (!isContainer || ((ItemData) ((TreeItem[]) dragSourceItem)[i].getData()).type == ItemData.TYPE_FILE)
                                         selectItems.add(setDataMapItems(parent, ((DataMap[]) dataMap)[i], index + 1));
                                     else
-                                        ((TreeItem[]) dragSourceItem)[i]=null;
+                                        ((TreeItem[]) dragSourceItem)[i] = null;
                                 }
                                 tree.setSelection(selectItems.toArray(new TreeItem[selectItems.size()]));
                                 selectItems = null;
@@ -839,7 +842,7 @@ public class DownloadTab {
                                     if (!isContainer || ((ItemData) ((TreeItem[]) dragSourceItem)[i].getData()).type == ItemData.TYPE_FILE)
                                         selectItems.add(setDataMapItems(item, ((DataMap[]) dataMap)[i], -1));
                                     else
-                                        ((TreeItem[]) dragSourceItem)[i]=null;
+                                        ((TreeItem[]) dragSourceItem)[i] = null;
                                 }
                                 tree.setSelection(selectItems.toArray(new TreeItem[selectItems.size()]));
                                 selectItems = null;
@@ -860,7 +863,7 @@ public class DownloadTab {
                         }
                         if (pt.y < bounds.y + bounds.height / 3) {
                             for (int i = 0; i < ((DataMap[]) dataMap).length; i++) {
-                                    selectItems.add(setDataMapItems(tree, ((DataMap[]) dataMap)[i], index));
+                                selectItems.add(setDataMapItems(tree, ((DataMap[]) dataMap)[i], index));
                             }
                             tree.setSelection(selectItems.toArray(new TreeItem[selectItems.size()]));
                             selectItems = null;
@@ -870,7 +873,7 @@ public class DownloadTab {
                                     if (!isContainer || ((ItemData) ((TreeItem[]) dragSourceItem)[i].getData()).type == ItemData.TYPE_FILE)
                                         selectItems.add(setDataMapItems(tree, ((DataMap[]) dataMap)[i], index + 1));
                                     else
-                                        ((TreeItem[]) dragSourceItem)[i]=null;
+                                        ((TreeItem[]) dragSourceItem)[i] = null;
                                 }
                                 tree.setSelection(selectItems.toArray(new TreeItem[selectItems.size()]));
                                 selectItems = null;
@@ -884,7 +887,7 @@ public class DownloadTab {
                                     if (!isContainer || ((ItemData) ((TreeItem[]) dragSourceItem)[i].getData()).type == ItemData.TYPE_FILE)
                                         selectItems.add(setDataMapItems(item, ((DataMap[]) dataMap)[i], -1));
                                     else
-                                        ((TreeItem[]) dragSourceItem)[i]=null;
+                                        ((TreeItem[]) dragSourceItem)[i] = null;
                                 }
                                 tree.setSelection(selectItems.toArray(new TreeItem[selectItems.size()]));
                                 selectItems = null;
@@ -910,7 +913,7 @@ public class DownloadTab {
      * @param index
      * @return
      */
-    private static TreeItem createTreeitem(Tree parent, String[] text, ItemData itemData, int index) {
+    private TreeItem createTreeitem(Tree parent, String[] text, ItemData itemData, int index) {
         TreeItem treeItem = null;
         treeItem = new TreeItem(parent, SWT.NONE, index);
         addItemData(treeItem, text, itemData);
@@ -926,7 +929,7 @@ public class DownloadTab {
      * @param index
      * @return
      */
-    private static TreeItem createTreeitem(TreeItem parent, String[] text, ItemData itemData, int index) {
+    private TreeItem createTreeitem(TreeItem parent, String[] text, ItemData itemData, int index) {
         TreeItem treeItem = null;
         treeItem = new TreeItem(parent, SWT.NONE, index);
         addItemData(treeItem, text, itemData);
@@ -942,7 +945,7 @@ public class DownloadTab {
      * @param index
      * @return
      */
-    private static TreeItem createTreeitem(Tree parent, String[] text, ItemData itemData) {
+    private TreeItem createTreeitem(Tree parent, String[] text, ItemData itemData) {
         TreeItem treeItem = null;
         treeItem = new TreeItem(parent, SWT.NONE);
         addItemData(treeItem, text, itemData);
@@ -958,7 +961,7 @@ public class DownloadTab {
      * @param index
      * @return
      */
-    private static TreeItem createTreeitem(TreeItem parent, String[] text, ItemData itemData) {
+    private TreeItem createTreeitem(TreeItem parent, String[] text, ItemData itemData) {
         TreeItem treeItem = null;
         treeItem = new TreeItem(parent, SWT.NONE);
         addItemData(treeItem, text, itemData);
@@ -974,7 +977,7 @@ public class DownloadTab {
      * @param status
      * @param type
      */
-    private static void addItemData(final TreeItem item, String[] text, ItemData itemdata) {
+    private void addItemData(final TreeItem item, String[] text, ItemData itemdata) {
         item.setData(itemdata);
         item.setText(text);
         item.setImage(JDSWTUtilities.getTreeImage(item.getDisplay(), itemdata.type, text[0], false));
@@ -983,7 +986,7 @@ public class DownloadTab {
      * TODO ColumnReorder wurde rausgenommen weil die prioritäten jetzt ueber
      * Drag&Drop verwaltet werden
      * 
-     * public static boolean columnReorder(Tree tree, int pos, boolean order) {
+     * public boolean columnReorder(Tree tree, int pos, boolean order) {
      * TreeItem[] items = tree.getItems(); int columns = tree.getColumnCount();
      * Collator collator = Collator.getInstance(Locale.getDefault()); if (order) {
      * for (int i = 1; i < items.length; i++) { String value1 =
@@ -1026,7 +1029,7 @@ public class DownloadTab {
      * Diese Methode Gehoert zum Drag&Drop System sie liest die Informationen
      * aus den Item und seinem Subitems
      */
-    private static DataMap getItemData(TreeItem item, int treeColumnCount) {
+    private DataMap getItemData(TreeItem item, int treeColumnCount) {
         String[] data = new String[treeColumnCount];
         for (int b = 0; b < data.length; b++) {
             data[b] = item.getText(b);
@@ -1057,7 +1060,7 @@ public class DownloadTab {
      * @param index
      * @return
      */
-    private static TreeItem setDataMapItems(TreeItem parent, DataMap map, int index) {
+    private TreeItem setDataMapItems(TreeItem parent, DataMap map, int index) {
 
         TreeItem item;
         if (index > -1)
@@ -1084,7 +1087,7 @@ public class DownloadTab {
      * @param index
      * @return
      */
-    private static TreeItem setDataMapItems(Tree parent, DataMap map, int index) {
+    private TreeItem setDataMapItems(Tree parent, DataMap map, int index) {
 
         TreeItem item;
         if (index > -1)

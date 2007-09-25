@@ -1,6 +1,5 @@
 package jd.gui.simpleSWT;
 
-
 import jd.utils.JDSWTUtilities;
 
 import org.eclipse.swt.SWT;
@@ -22,19 +21,21 @@ public class SWTWarnings extends Dialog {
     private Image image;
     private String warning;
     private int index;
-    public SWTWarnings(Shell parent, String warning, int index, int style) {
+    private GUIConfig guiConfig;
+    public SWTWarnings(Shell parent, GUIConfig guiConfig, String warning, int index, int style) {
         super(parent, style);
         image = parent.getDisplay().getSystemImage(SWT.ICON_WARNING);
         this.warning = warning;
         this.index = index;
+        this.guiConfig = guiConfig;
     }
 
-    public SWTWarnings(Shell parent, String warning, int index) {
-        this(parent, warning, index, SWT.DIALOG_TRIM | SWT.APPLICATION_MODAL);
+    public SWTWarnings(Shell parent, GUIConfig guiConfig, String warning, int index) {
+        this(parent, guiConfig, warning, index, SWT.DIALOG_TRIM | SWT.APPLICATION_MODAL);
     }
 
     public void open() {
-        if(MainGui.guiConfig.warnings[index]==true)
+        if (guiConfig.warnings[index] == true)
             return;
         Shell shell = new Shell(getParent(), getStyle());
         shell.setText(JDSWTUtilities.getSWTResourceString("SWTWarnings.name"));
@@ -68,7 +69,7 @@ public class SWTWarnings extends Dialog {
         checkButton.setText(JDSWTUtilities.getSWTResourceString("SWTWarnings.checkButton.name"));
         checkButton.addListener(SWT.Selection, new Listener() {
             public void handleEvent(Event e) {
-               MainGui.guiConfig.warnings[index]=checkButton.getSelection();
+                guiConfig.warnings[index] = checkButton.getSelection();
             }
         });
 

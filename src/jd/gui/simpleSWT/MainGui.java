@@ -5,7 +5,7 @@ package jd.gui.simpleSWT;
  * @author DwD
  *
  */
-import org.eclipse.swt.layout.FillLayout;
+
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Composite;
@@ -15,8 +15,7 @@ import org.eclipse.swt.widgets.Listener;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.TreeItem;
 import org.eclipse.swt.SWT;
-import java.awt.Dimension;
-import java.awt.Toolkit;
+
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -32,30 +31,31 @@ import org.eclipse.swt.widgets.ToolItem;
 import org.eclipse.swt.custom.CTabFolder;
 import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.Point;
-import org.eclipse.swt.graphics.Rectangle;
-
 
 public class MainGui extends org.eclipse.swt.widgets.Composite {
 
     private Composite compStatusBar;
-    private static CTabFolder folder;
-    public static GUIConfig guiConfig = new GUIConfig();
-    public static File guiConfigFile = new File("guiconf.ser");
-    private static boolean isDownloadTree = true;
+    public CTabFolder folder;
+    public GUIConfig guiConfig = new GUIConfig();
+    public File guiConfigFile = new File("guiconf.ser");
+    private boolean isDownloadTree = true;
+    public GuiListeners guiListeners;
+    private CompletedTab completedTab;
+    public DownloadTab downloadTab;
     // private boolean[] queuedColClicked; TODO von unten
 
-    private static ToolBar toolBar;
-    private static ToolItem btPreferences;
-    private static ToolItem btInfo;
-    private static ToolItem btGoLastDown;
-    private static ToolItem btGoDown;
-    private static ToolItem btGoUp;
-    private static ToolItem btGoLastUp;
-    private static ToolItem btDelete;
-    private static ToolItem btCopy;
-    private static ToolItem btPaste;
-    private static ToolItem btStartStop;
-    private static ToolItem btOpen;
+    private ToolBar toolBar;
+    private ToolItem btPreferences;
+    private ToolItem btInfo;
+    private ToolItem btGoLastDown;
+    private ToolItem btGoDown;
+    private ToolItem btGoUp;
+    private ToolItem btGoLastUp;
+    private ToolItem btDelete;
+    private ToolItem btCopy;
+    private ToolItem btPaste;
+    private ToolItem btStartStop;
+    private ToolItem btOpen;
 
     /**
      * Es werden die Bilder fuer den GUI in den Speicher geladen
@@ -86,13 +86,9 @@ public class MainGui extends org.eclipse.swt.widgets.Composite {
         JDSWTUtilities.addImageSwt("folder", cl.getResourceAsStream("img/swt/mime/folder.png"), display);
     }
 
-
-    public static void main(String[] args) {
-        showGUI();
-    }
-
-
-    public static void showGUI() {
+    public MainGui(org.eclipse.swt.widgets.Composite parent, int style) {
+        super(parent, style);
+        initGUI();
         if ((guiConfigFile).isFile()) {
             ObjectInputStream objIn;
             try {
@@ -111,48 +107,14 @@ public class MainGui extends org.eclipse.swt.widgets.Composite {
             }
 
         }
-        Display display = Display.getDefault();
-        final Shell shell = new Shell(display);
-        MainGui inst = new MainGui(shell, SWT.NULL);
-        Point size = inst.getSize();
-        shell.setText(JDSWTUtilities.getSWTResourceString("MainGui.name"));
-        shell.setLayout(new FillLayout());
-        Rectangle shellBounds = shell.computeTrim(0, 0, size.x, size.y);
-        shell.setSize(shellBounds.width, shellBounds.height);
-        shell.addListener(SWT.Close, GuiListeners.initMainGuiCloseListener(shell));
-        Dimension d = Toolkit.getDefaultToolkit().getScreenSize();
-        shell.setLocation((d.width - guiConfig.GUIsize[0]) / 2, (d.height - guiConfig.GUIsize[1]) / 2);
-        shell.open();
-     
-
-        if(guiConfig.isMaximized)
-        {
-        shell.setLocation(shell.getLocation());
-        shell.setMaximized(true);
-        if(guiConfig.DownloadColumnWidhtMaximized!=null)
-        for (int i = 0; i < guiConfig.DownloadColumnWidhtMaximized.length; i++) {
-            DownloadTab.trDownload.getColumn(i).setWidth(guiConfig.DownloadColumnWidhtMaximized[i]);
-        }
-        }
-        while (!shell.isDisposed()) {
-            if (!display.readAndDispatch())
-                display.sleep();
-        }
-    }
-
-    public MainGui(org.eclipse.swt.widgets.Composite parent, int style) {
-        super(parent, style);
-        initGUI();
     }
 
     private void initGUI() {
         final Shell shell = this.getShell();
         final Display display = this.getDisplay();
-
-        GuiListeners.setGuiConfig(guiConfig);
-        GuiListeners.setMainGuiShell(this.getShell());
+        guiListeners = new GuiListeners(this);
         this.setSize(guiConfig.GUIsize[0], guiConfig.GUIsize[1]);
-        
+
         loadImages(display);
         this.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true));
         GridLayout thisLayout = new GridLayout();
@@ -167,16 +129,16 @@ public class MainGui extends org.eclipse.swt.widgets.Composite {
             {
                 btOpen = JDSWTUtilities.toolBarItem(display, toolBar, "open", SWT.DROP_DOWN);
                 btOpen.setToolTipText(JDSWTUtilities.getSWTResourceString("MainGui.btOpen.desc"));
-                btOpen.addListener(SWT.Selection, GuiListeners.initBtOpenListener());
-                MenuItem btOpenOpen = GuiListeners.addListenerMenu("btOpen", JDSWTUtilities.getSWTResourceString("MainGui.btOpenOpen.name"));
-                btOpenOpen.addListener(SWT.Selection, GuiListeners.getListener("openFile"));
-                MenuItem btOpenSave = GuiListeners.addListenerMenu("btOpen", JDSWTUtilities.getSWTResourceString("MainGui.btOpenSave.name"));
-                btOpenSave.addListener(SWT.Selection, GuiListeners.initSaveListener());
-                MenuItem btOpenSaveAs = GuiListeners.addListenerMenu("btOpen", JDSWTUtilities.getSWTResourceString("MainGui.btOpenSaveAs.name"));
-                btOpenSaveAs.addListener(SWT.Selection, GuiListeners.initSaveAsListener());
+                btOpen.addListener(SWT.Selection, guiListeners.initBtOpenListener());
+                MenuItem btOpenOpen = guiListeners.addListenerMenu("btOpen", JDSWTUtilities.getSWTResourceString("MainGui.btOpenOpen.name"));
+                btOpenOpen.addListener(SWT.Selection, guiListeners.getListener("openFile"));
+                MenuItem btOpenSave = guiListeners.addListenerMenu("btOpen", JDSWTUtilities.getSWTResourceString("MainGui.btOpenSave.name"));
+                btOpenSave.addListener(SWT.Selection, guiListeners.initSaveListener());
+                MenuItem btOpenSaveAs = guiListeners.addListenerMenu("btOpen", JDSWTUtilities.getSWTResourceString("MainGui.btOpenSaveAs.name"));
+                btOpenSaveAs.addListener(SWT.Selection, guiListeners.initSaveAsListener());
                 new ToolItem(toolBar, SWT.SEPARATOR);
                 btStartStop = JDSWTUtilities.toolBarItem(display, toolBar, "start");
-                btStartStop.addListener(SWT.Selection, GuiListeners.initBtStartStopListener(btStartStop));
+                btStartStop.addListener(SWT.Selection, guiListeners.initBtStartStopListener(btStartStop));
                 btStartStop.setToolTipText(JDSWTUtilities.getSWTResourceString("MainGui.btStart.desc"));
                 new ToolItem(toolBar, SWT.SEPARATOR);
                 btPaste = JDSWTUtilities.toolBarItem(display, toolBar, "paste");
@@ -196,20 +158,20 @@ public class MainGui extends org.eclipse.swt.widgets.Composite {
                 btGoLastDown.setToolTipText(JDSWTUtilities.getSWTResourceString("MainGui.btGoLastDown.desc"));
                 new ToolItem(toolBar, SWT.SEPARATOR);
                 btPreferences = JDSWTUtilities.toolBarItem(display, toolBar, "preferences");
-                btPreferences.addListener(SWT.Selection, GuiListeners.initBtPreferencesListener());
+                btPreferences.addListener(SWT.Selection, guiListeners.initBtPreferencesListener());
                 btPreferences.setToolTipText(JDSWTUtilities.getSWTResourceString("MainGui.btPreferences.desc"));
                 btInfo = JDSWTUtilities.toolBarItem(display, toolBar, "info", SWT.DROP_DOWN);
-                btInfo.addListener(SWT.Selection, GuiListeners.initBtInfoListener());
-                MenuItem btInfoHelp = GuiListeners.addListenerMenu("btInfo", JDSWTUtilities.getSWTResourceString("MainGui.btInfoHelp.name"));
-                MenuItem btInfoUpdate = GuiListeners.addListenerMenu("btInfo", JDSWTUtilities.getSWTResourceString("MainGui.btInfoUpdate.name"));
-                MenuItem btInfoAbout = GuiListeners.addListenerMenu("btInfo", JDSWTUtilities.getSWTResourceString("MainGui.btInfoAbout.name"));
-                btInfoAbout.addListener(SWT.Selection, GuiListeners.initBtInfoAboutListener());
+                btInfo.addListener(SWT.Selection, guiListeners.initBtInfoListener());
+                MenuItem btInfoHelp = guiListeners.addListenerMenu("btInfo", JDSWTUtilities.getSWTResourceString("MainGui.btInfoHelp.name"));
+                MenuItem btInfoUpdate = guiListeners.addListenerMenu("btInfo", JDSWTUtilities.getSWTResourceString("MainGui.btInfoUpdate.name"));
+                MenuItem btInfoAbout = guiListeners.addListenerMenu("btInfo", JDSWTUtilities.getSWTResourceString("MainGui.btInfoAbout.name"));
+                btInfoAbout.addListener(SWT.Selection, guiListeners.initBtInfoAboutListener());
             }
 
         }
         {
             folder = new CTabFolder(this, SWT.BORDER);
-            folder.addKeyListener(GuiListeners.initMainGuiKeyListener());
+            folder.addKeyListener(guiListeners.initMainGuiKeyListener());
             folder.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true));
             folder.setSimple(false);
             folder.setUnselectedImageVisible(true);
@@ -218,23 +180,23 @@ public class MainGui extends org.eclipse.swt.widgets.Composite {
             folder.setSelectionForeground(display.getSystemColor(SWT.COLOR_DARK_BLUE));
             folder.setSelectionBackground(new Color[]{display.getSystemColor(SWT.COLOR_GRAY), display.getSystemColor(SWT.COLOR_WHITE), display.getSystemColor(SWT.COLOR_GRAY)}, new int[]{40, 60}, true);
             folder.setFocus();
-            folder.setSelection(DownloadTab.initDownload());
+            downloadTab = new DownloadTab(this);
+            folder.setSelection(0);
 
-            folder.addListener(SWT.Selection, GuiListeners.getListener("toolBarBtSetEnabled"));
-            btDelete.addListener(SWT.Selection, GuiListeners.getListener("DownloadTab.delete"));
-            btCopy.addListener(SWT.Selection, GuiListeners.getListener("DownloadTab.copy"));
-            btGoUp.addListener(SWT.Selection, GuiListeners.getListener("DownloadTab.goUp"));
-            btGoDown.addListener(SWT.Selection, GuiListeners.getListener("DownloadTab.goDown"));
-            btGoLastUp.addListener(SWT.Selection, GuiListeners.getListener("DownloadTab.goLastUp"));
-            btGoLastDown.addListener(SWT.Selection, GuiListeners.getListener("DownloadTab.goLastDown"));
+            folder.addListener(SWT.Selection, guiListeners.getListener("toolBarBtSetEnabled"));
+            btDelete.addListener(SWT.Selection, guiListeners.getListener("DownloadTab.delete"));
+            btCopy.addListener(SWT.Selection, guiListeners.getListener("DownloadTab.copy"));
+            btGoUp.addListener(SWT.Selection, guiListeners.getListener("DownloadTab.goUp"));
+            btGoDown.addListener(SWT.Selection, guiListeners.getListener("DownloadTab.goDown"));
+            btGoLastUp.addListener(SWT.Selection, guiListeners.getListener("DownloadTab.goLastUp"));
+            btGoLastDown.addListener(SWT.Selection, guiListeners.getListener("DownloadTab.goLastDown"));
 
-            CompletedTab.initCompleted();
+            completedTab = new CompletedTab(folder, guiListeners);
+            new LoggerTab(this);
 
-            LoggerTab.initLogger();
+            new StatisticsTab(this);
 
-            StatisticsTab.initStatistics();
-            
-            PluginActivitiesTab.initPluginActivities();
+            new PluginActivitiesTab(this);
 
         }
         {
@@ -244,7 +206,7 @@ public class MainGui extends org.eclipse.swt.widgets.Composite {
             compStatusBarLayout.makeColumnsEqualWidth = true;
             compStatusBar.setLayout(compStatusBarLayout);
         }
-        this.addListener(SWT.Resize, new Listener(){
+        this.addListener(SWT.Resize, new Listener() {
 
             public void handleEvent(Event e) {
                 if (!shell.getMaximized()) {
@@ -252,72 +214,66 @@ public class MainGui extends org.eclipse.swt.widgets.Composite {
                     Point size = shell.getSize();
                     guiConfig.GUIsize = new int[]{size.x, size.y};
 
-                        for (int i = 0; i < MainGui.guiConfig.DownloadColumnWidht.length; i++) {
-                            DownloadTab.trDownload.getColumn(i).setWidth(MainGui.guiConfig.DownloadColumnWidht[i]);
+                    for (int i = 0; i < guiConfig.DownloadColumnWidht.length; i++) {
+                        downloadTab.trDownload.getColumn(i).setWidth(guiConfig.DownloadColumnWidht[i]);
+                    }
+
+                } else {
+
+                    if (guiConfig.DownloadColumnWidhtMaximized != null)
+                        for (int i = 0; i < guiConfig.DownloadColumnWidhtMaximized.length; i++) {
+                            downloadTab.trDownload.getColumn(i).setWidth(guiConfig.DownloadColumnWidhtMaximized[i]);
                         }
-                    
 
                 }
-                else
-                {
 
-                        if(guiConfig.DownloadColumnWidhtMaximized!=null)
-                        for (int i = 0; i < MainGui.guiConfig.DownloadColumnWidhtMaximized.length; i++) {
-                            DownloadTab.trDownload.getColumn(i).setWidth(MainGui.guiConfig.DownloadColumnWidhtMaximized[i]);
-                        }
-                    
-
-                }
-                
-            }});
+            }
+        });
         this.layout();
-        GuiListeners.getListener("toolBarBtSetEnabled").handleEvent(new Event());
+        guiListeners.getListener("toolBarBtSetEnabled").handleEvent(new Event());
     }
 
-    public static void toolBarBtSetEnabled() {
+    public void toolBarBtSetEnabled() {
 
-        if ((folder.getSelectionIndex() == 0) && DownloadTab.trDownload.getSelectionCount() > 0) {
-            TreeItem[] trDownloadSelection = DownloadTab.getSelection(DownloadTab.trDownload);
+        if ((folder.getSelectionIndex() == 0) && downloadTab.trDownload.getSelectionCount() > 0) {
+            TreeItem[] trDownloadSelection = DownloadTab.getSelection(downloadTab.trDownload);
             if (!isDownloadTree) {
                 isDownloadTree = true;
-                btDelete.removeListener(SWT.Selection, GuiListeners.getListener("CompletedTab.delete"));
-                btDelete.addListener(SWT.Selection, GuiListeners.getListener("DownloadTab.delete"));
-                btCopy.removeListener(SWT.Selection, GuiListeners.getListener("CompletedTab.copy"));
-                btCopy.addListener(SWT.Selection, GuiListeners.getListener("DownloadTab.copy"));
+                btDelete.removeListener(SWT.Selection, guiListeners.getListener("CompletedTab.delete"));
+                btDelete.addListener(SWT.Selection, guiListeners.getListener("DownloadTab.delete"));
+                btCopy.removeListener(SWT.Selection, guiListeners.getListener("CompletedTab.copy"));
+                btCopy.addListener(SWT.Selection, guiListeners.getListener("DownloadTab.copy"));
             }
             btDelete.setEnabled(true);
             btCopy.setEnabled(true);
-            if(trDownloadSelection.length<1)
-            {
+            if (trDownloadSelection.length < 1) {
                 btGoLastUp.setEnabled(false);
                 btGoUp.setEnabled(false);
                 btGoDown.setEnabled(false);
                 btGoLastDown.setEnabled(false);
-            }
-            else
-            {
-            if (DownloadTab.trDownload.getItem(0) == (trDownloadSelection[0])) {
-                btGoLastUp.setEnabled(false);
-                btGoUp.setEnabled(false);
             } else {
-                btGoLastUp.setEnabled(true);
-                btGoUp.setEnabled(true);
+                if (downloadTab.trDownload.getItem(0) == (trDownloadSelection[0])) {
+                    btGoLastUp.setEnabled(false);
+                    btGoUp.setEnabled(false);
+                } else {
+                    btGoLastUp.setEnabled(true);
+                    btGoUp.setEnabled(true);
+                }
+                if (downloadTab.trDownload.getItem(downloadTab.trDownload.getItemCount() - 1) == (trDownloadSelection[trDownloadSelection.length - 1])) {
+                    btGoDown.setEnabled(false);
+                    btGoLastDown.setEnabled(false);
+                } else {
+                    btGoDown.setEnabled(true);
+                    btGoLastDown.setEnabled(true);
+                }
             }
-            if (DownloadTab.trDownload.getItem(DownloadTab.trDownload.getItemCount() - 1) == (trDownloadSelection[trDownloadSelection.length - 1])) {
-                btGoDown.setEnabled(false);
-                btGoLastDown.setEnabled(false);
-            } else {
-                btGoDown.setEnabled(true);
-                btGoLastDown.setEnabled(true);
-            }
-            }
-        } else if ((folder.getSelectionIndex() == 1) && CompletedTab.trCompleted.getSelectionCount() > 0) {
+        } else if ((folder.getSelectionIndex() == 1) && completedTab.trCompleted.getSelectionCount() > 0) {
             if (isDownloadTree) {
                 isDownloadTree = false;
-                btDelete.removeListener(SWT.Selection, GuiListeners.getListener("DownloadTab.delete"));
-                btDelete.addListener(SWT.Selection, GuiListeners.getListener("CompletedTab.delete"));
-                btCopy.removeListener(SWT.Selection, GuiListeners.getListener("DownloadTab.copy"));
-                btCopy.addListener(SWT.Selection, GuiListeners.getListener("CompletedTab.copy"));
+                btDelete.removeListener(SWT.Selection, guiListeners.getListener("DownloadTab.delete"));
+                btDelete.addListener(SWT.Selection, guiListeners.getListener("CompletedTab.delete"));
+                btCopy.removeListener(SWT.Selection, guiListeners.getListener("DownloadTab.copy"));
+                btCopy.addListener(SWT.Selection, guiListeners.getListener("CompletedTab.copy"));
             }
             btDelete.setEnabled(true);
             btCopy.setEnabled(true);
@@ -333,11 +289,6 @@ public class MainGui extends org.eclipse.swt.widgets.Composite {
             btGoDown.setEnabled(false);
             btGoLastDown.setEnabled(false);
         }
-    }
-
-
-    public static CTabFolder getFolder() {
-        return folder;
     }
 
 }

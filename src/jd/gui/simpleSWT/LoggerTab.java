@@ -9,21 +9,23 @@ import org.eclipse.swt.widgets.Text;
 
 public class LoggerTab {
 
-    private static Text Logger;
-    private static CTabItem tbLogger;
-
-    public static CTabItem initLogger() {
-        final CTabFolder folder = MainGui.getFolder();
+    private Text Logger;
+    private CTabItem tbLogger;
+    private MainGui mainGui;
+    public LoggerTab(MainGui mainGui) {
+        this.mainGui = mainGui;
+        initLogger();
+    }
+    private void initLogger() {
+        final CTabFolder folder = mainGui.folder;
         tbLogger = new CTabItem(folder, SWT.NONE);
         tbLogger.setText(JDSWTUtilities.getSWTResourceString("LoggerTab.name"));
         {
             Logger = new Text(folder, SWT.MULTI | SWT.V_SCROLL | SWT.H_SCROLL);
-            Logger.addKeyListener(GuiListeners.getKeyListener("mainGui"));
+            Logger.addKeyListener(mainGui.guiListeners.getKeyListener("mainGui"));
             tbLogger.setControl(Logger);
         }
         tbLogger.setImage(JDSWTUtilities.getImageSwt("log"));
-
-        return tbLogger;
 
     }
 
