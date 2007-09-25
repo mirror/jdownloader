@@ -21,7 +21,7 @@ import jd.utils.JDUtilities;
  * $Revision$ 
  * $Author: coalado $
  * Start der Applikation
- * 
+ *  
  * @author astaldo
  */
 
