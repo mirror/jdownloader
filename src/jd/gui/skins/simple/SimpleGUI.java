@@ -36,7 +36,6 @@ import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
 
 import jd.config.Configuration;
-import jd.controlling.JDAction;
 import jd.controlling.interaction.ExternReconnect;
 import jd.controlling.interaction.HTTPReconnect;
 import jd.controlling.interaction.Interaction;
@@ -690,13 +689,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener{
         return captchaDialog.getCaptchaText();
     }
 
-    public Configuration getConfiguration() {
-        return null;
-    }
-
-    public void setConfiguration(Configuration configuration) {}
-
-    public void setLogger(Logger logger) {}
+ 
 
     public void setPluginActive(Plugin plugin, boolean isActive) {
         if (plugin instanceof PluginForDecrypt) {

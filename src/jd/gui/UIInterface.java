@@ -23,11 +23,7 @@ public interface UIInterface {
      * @return Alle DownloadLinks
      */
     public Vector<DownloadLink> getDownloadLinks();
-    /**
-     * Liefert die Konfiguraion zurück
-     * @return Die Konfiguration
-     */
-    public Configuration getConfiguration();
+
     /**
      * Der Benutzer soll den Captcha Code eintippen
      * 
@@ -36,18 +32,8 @@ public interface UIInterface {
      * @return Der erkannte Text
      */
     public String getCaptchaCodeFromUser(Plugin plugin, File captchaAddress);
-    /**
-     * Setzt den Logger
-     * 
-     * @param logger Der neue Logger
-     */
-    public void setLogger       (Logger logger);
-    /**
-     * Legt die neue Konfiguration fest
-     * 
-     * @param configuration Die neue Konfiguration
-     */
-    public void setConfiguration(Configuration configuration);
+
+  
     /**
      * Legt alle DownloadLinks fest
      * 

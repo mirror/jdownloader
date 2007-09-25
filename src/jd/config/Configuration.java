@@ -138,7 +138,8 @@ public class Configuration extends Property implements Serializable {
      * @return dlDir
      */
     public String getDownloadDirectory() {
-        return downloadDirectory;
+        return (String)getProperty(Configuration.PARAM_DOWNLOAD_DIRECTORY,downloadDirectory);
+       
     }
 
     // public HashMap<Integer, Vector<Interaction>> getInteractionMap() { return

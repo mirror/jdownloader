@@ -6,33 +6,48 @@ package jd.gui.simpleSWT;
  *
  */
 
-import org.eclipse.swt.layout.GridData;
-import org.eclipse.swt.layout.GridLayout;
-import org.eclipse.swt.widgets.Composite;
-import org.eclipse.swt.widgets.Display;
-import org.eclipse.swt.widgets.Event;
-import org.eclipse.swt.widgets.Listener;
-import org.eclipse.swt.widgets.Shell;
-import org.eclipse.swt.widgets.TreeItem;
-import org.eclipse.swt.SWT;
-
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.ObjectInputStream;
+import java.util.Iterator;
+import java.util.Vector;
+import java.util.logging.Logger;
 
+import jd.config.Configuration;
+import jd.controlling.interaction.Interaction;
+import jd.event.ControlEvent;
+import jd.event.UIEvent;
+import jd.event.UIListener;
+import jd.gui.UIInterface;
+import jd.plugins.DownloadLink;
+import jd.plugins.Plugin;
+import jd.plugins.PluginForDecrypt;
+import jd.plugins.PluginForHost;
+import jd.plugins.PluginForSearch;
+import jd.plugins.event.PluginEvent;
 import jd.utils.JDSWTUtilities;
+import jd.utils.JDUtilities;
 
-import org.eclipse.swt.widgets.MenuItem;
-import org.eclipse.swt.widgets.ToolBar;
-import org.eclipse.swt.widgets.ToolItem;
+import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.CTabFolder;
 import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.Point;
+import org.eclipse.swt.layout.GridData;
+import org.eclipse.swt.layout.GridLayout;
+import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.widgets.Display;
+import org.eclipse.swt.widgets.Event;
+import org.eclipse.swt.widgets.Listener;
+import org.eclipse.swt.widgets.MenuItem;
+import org.eclipse.swt.widgets.Shell;
+import org.eclipse.swt.widgets.ToolBar;
+import org.eclipse.swt.widgets.ToolItem;
+import org.eclipse.swt.widgets.TreeItem;
 
-public class MainGui extends org.eclipse.swt.widgets.Composite {
+public class MainGui extends org.eclipse.swt.widgets.Composite implements UIInterface{
 
     private Composite compStatusBar;
     public CTabFolder folder;
@@ -56,6 +71,7 @@ public class MainGui extends org.eclipse.swt.widgets.Composite {
     private ToolItem btPaste;
     private ToolItem btStartStop;
     private ToolItem btOpen;
+    private Vector<UIListener> uiListener;
 
     /**
      * Es werden die Bilder fuer den GUI in den Speicher geladen
@@ -89,6 +105,7 @@ public class MainGui extends org.eclipse.swt.widgets.Composite {
     public MainGui(org.eclipse.swt.widgets.Composite parent, int style) {
         super(parent, style);
         initGUI();
+        uiListener = new Vector<UIListener>();
         if ((guiConfigFile).isFile()) {
             ObjectInputStream objIn;
             try {
@@ -289,6 +306,154 @@ public class MainGui extends org.eclipse.swt.widgets.Composite {
             btGoDown.setEnabled(false);
             btGoLastDown.setEnabled(false);
         }
+    }
+/**
+ * Fügt die links zum Linkgrabber hinzu.
+ */
+    public void addLinksToGrabber(Vector<DownloadLink> links) {
+        // TODO Auto-generated method stub
+        
+    }
+
+
+    public void addUIListener(UIListener listener) {
+        synchronized (uiListener) {
+            uiListener.add(listener);
+        }
+    }
+
+    public void removeUIListener(UIListener listener) {
+        synchronized (uiListener) {
+            uiListener.remove(listener);
+        }
+    }
+/**
+ * Eine Liste der möglichen UIEvents ids findet man unter jd.event.UIEvent. Damit kann die ui events an den downloadcontroller schicken
+ */
+    public void fireUIEvent(UIEvent uiEvent) {
+        synchronized (uiListener) {
+            Iterator<UIListener> recIt = uiListener.iterator();
+
+            while (recIt.hasNext()) {
+                ((UIListener) recIt.next()).uiEvent(uiEvent);
+            }
+        }
+    }
+/**
+ * Führt controllevents aus.
+ * 
+ * in der klasse ControlEvent sind alle möglichen eventIDs zu sehen
+ * * oft werden dem event parameter übergeben die mit event.getParameter() abgefragt werden
+ * die parameter sind meistens mit der ventid dokumentiert
+ */
+    public void deligatedControlEvent(ControlEvent event) {
+
+        switch (event.getID()) {
+            case ControlEvent.CONTROL_PLUGIN_DECRYPT_ACTIVE:
+                
+                break;
+            case ControlEvent.CONTROL_PLUGIN_DECRYPT_INACTIVE:
+               
+                break;
+            case ControlEvent.CONTROL_PLUGIN_HOST_ACTIVE:
+             
+                break;
+            case ControlEvent.CONTROL_PLUGIN_HOST_INACTIVE:
+             
+                break;
+            case ControlEvent.CONTROL_ALL_DOWNLOADS_FINISHED:
+              
+                break;
+           case ControlEvent.CONTROL_PLUGIN_INTERACTION_ACTIVE:
+
+               break;
+            case ControlEvent.CONTROL_PLUGIN_INTERACTION_INACTIVE:
+                break;
+            case ControlEvent.CONTROL_SINGLE_DOWNLOAD_CHANGED:
+               
+               
+                
+            case ControlEvent.CONTROL_DISTRIBUTE_FINISHED:
+             
+                break;
+        }
+        
+    }
+/**
+ * auch hier sind in PluginEvent die Event ids dokumentiert. 
+ * oft werden dem event parameter übergeben die mit event.getParameter() abgefragt werden
+ *  die parameter sind meistens mit der ventid dokumentiert
+ */
+    public void deligatedPluginEvent(PluginEvent event) {
+
+        if (event.getSource() instanceof PluginForHost && event.getEventID() == PluginEvent.PLUGIN_DATA_CHANGED) {
+           
+
+            return;
+        }
+        if (event.getSource() instanceof PluginForDecrypt && event.getEventID() == PluginEvent.PLUGIN_DATA_CHANGED) {
+            
+
+            return;
+        }
+        
+        if (event.getSource() instanceof PluginForSearch && event.getEventID() == PluginEvent.PLUGIN_DATA_CHANGED) {
+           
+
+            return;
+        }
+        if (event.getSource() instanceof PluginForHost) {
+
+            
+           return;
+        }
+        if (event.getSource() instanceof PluginForDecrypt ||event.getSource() instanceof PluginForSearch ) {
+        
+          return;
+        }
+        
+    }
+
+
+/**
+ * Muss einen string mit dem captchacode zurückgeben. captchaAddress ist der pfad zur lokalen captchafile, Plugin das entsprechende PLugin
+ */
+    public String getCaptchaCodeFromUser(Plugin plugin, File captchaAddress) {
+        
+        return null;
+    }
+
+/**
+ * Gibt alle downloadlinks in der downloadtabelle zurück
+ */
+    public Vector<DownloadLink> getDownloadLinks() {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+ 
+
+/**
+ * Setzt die downloadLinks in die tabelle und überschreibt die vorhandenen
+ */
+    public void setDownloadLinks(Vector<DownloadLink> downloadLinks) {
+        // TODO Auto-generated method stub
+        
+    }
+
+/**
+ * Zeigt einen Confirm dialog mit string an
+ */
+    public void showConfirmDialog(String string) {
+        // TODO Auto-generated method stub
+        
+    }
+/**
+ * zeugt einen messagedialog an
+ */
+    public void showMessageDialog(String string) {
+        // TODO Auto-generated method stub
+        
     }
 
 }
