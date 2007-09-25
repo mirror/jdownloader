@@ -18,7 +18,7 @@ import jd.plugins.PluginForSearch;
 import jd.utils.JDUtilities;
 
 /**
- * $Revision$ 
+ * $Revision: 242 $ 
  * $Author: coalado $
  * Start der Applikation
  *  

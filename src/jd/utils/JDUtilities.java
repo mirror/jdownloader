@@ -83,7 +83,7 @@ public class JDUtilities {
     public static final String              JD_VERSION        = "0.0.";
 
     
-    public static final String              JD_REVISION ="$Revision$";
+    public static final String              JD_REVISION ="$Revision: 243 $";
     /**
      * Versionsstring der Applikation
      */
