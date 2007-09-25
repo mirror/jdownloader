@@ -4,14 +4,12 @@ import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.awt.event.WindowListener;
 import java.io.File;
-import java.util.Vector;
 import java.util.logging.Logger;
 
 import javax.swing.JButton;
-import javax.swing.JComponent;
 import javax.swing.JDialog;
 import javax.swing.JFileChooser;
 import javax.swing.JLabel;
@@ -22,110 +20,76 @@ import jd.update.WebUpdater;
 import jd.utils.JDUtilities;
 
 /**
- * Der Installer erscheint nur bei Neuinstallation der Webstart Version
- * der User kann grundlegende Einstellungen vornehmen
+ * Der Installer erscheint nur beim ersten mal STarten der Webstartversion und beim neuinstallieren der webstartversion
+ *  der User kann Basiceinstellungen festlegen
  * @author Coalado
  */
-public class Installer extends JDialog implements ActionListener {
+public class Installer extends JDialog implements ActionListener, WindowListener {
 
     /**
      * 8764525546298642601L
      */
     private static final long  serialVersionUID = 8764525546298642601L;
     private Logger             logger           = Plugin.getLogger();
-    private boolean            continueInstall  = false;
-    private boolean            cancelInstall    = false;
 
-    private Vector<JComponent> panels           = new Vector<JComponent>();
-
+    private JLabel lblMessage;
+    private BrowseFile browseFile;
+    private JButton btnOK;
+    private static boolean aborted = false;
+    /**
+     * 
+     */
     public Installer() {
         super();
-        setModal(false);
+        setModal(true);
         setLayout(new GridBagLayout());
 
         this.setTitle("JDownloader Installation");
-
-        // this.setResizable(false);
+        this.setAlwaysOnTop(true);
 
         setLocation(20, 20);
-        this.setAlwaysOnTop(true);
-        addWindowListener(new WindowAdapter() {
-            public void windowClosing(WindowEvent event) {
+        lblMessage = new JLabel();
+        browseFile = new BrowseFile(50);
+        btnOK = new JButton("Weiter");
 
-                abortInstallation();
-            }
-
-        });
-        pack();
+        btnOK.addActionListener(this);
+        addWindowListener(this);
+        JDUtilities.addToGridBag(this, lblMessage, 0, 0, 1, 1, 0, 0, null, GridBagConstraints.CENTER, GridBagConstraints.CENTER);
+        JDUtilities.addToGridBag(this, browseFile, 0, 1, 1, 1, 0, 0, null, GridBagConstraints.CENTER, GridBagConstraints.CENTER);
+        JDUtilities.addToGridBag(this, btnOK,      0, 2, 1, 1, 0, 0, null, GridBagConstraints.CENTER, GridBagConstraints.CENTER);
     }
 
     /**
-     * @param str
-     * @param path
-     * @return Fragt einen Ordner beim User ab.  mit str kann man gezielt nach einem ordner fragen
+     * Fragt einen Ordner beim User ab.  mit str kann man gezielt nach einem ordner fragen
+     * 
+     * @param message Die Nachricht, die dem Benutzer gezeigt werden soll
+     * @param path Standardpfad
+     * @return Dateipfad 
      */
-    public String getDirectory(String str,File path) {
-        clearPanel();
+    public String getDirectory(String message,File path) {
         logger.info("getHome");
-        continueInstall = false;
-        cancelInstall = false;
-        JLabel label1 = new JLabel(str);
-        JDUtilities.addToGridBag(this, label1, 0, 0, 1, 1, 0, 0, null, GridBagConstraints.CENTER, GridBagConstraints.CENTER);
-        panels.add(label1);
-        BrowseFile browse1 = new BrowseFile(50);
-        panels.add(browse1);
-        browse1.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
-        browse1.setCurrentPath(path);
-
-        JDUtilities.addToGridBag(this, browse1, 0, 1, 1, 1, 0, 0, null, GridBagConstraints.CENTER, GridBagConstraints.CENTER);
-        JButton button1 = new JButton("Weiter");
-        panels.add(button1);
-        button1.addActionListener(this);
-        JDUtilities.addToGridBag(this, button1, 0, 2, 1, 1, 0, 0, null, GridBagConstraints.CENTER, GridBagConstraints.CENTER);
+        lblMessage.setText(message);
+        browseFile.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+        browseFile.setCurrentPath(path);
         pack();
+
         setVisible(true);
-        if (waitFor()) {
-            return browse1.getText();
-        }
-        return null;
+        if(aborted)
+            return null;
+        else
+            return browseFile.getText();
 
-    }
-    /**
-     * Wartet auf Userinput
-     * @return true/false
-     */
-    private boolean waitFor() {
-        while (true) {
-            try {
-                Thread.sleep(500);
-
-            }
-            catch (InterruptedException e) {}
-            if (continueInstall) {
-                return true;
-            }
-
-            if (cancelInstall) {
-                return false;
-            }
-        }
     }
 
     /**
-     * Führt ein Webupdate nach der Installation aus und gibt im erfolgsfall true zurück, sonst false
+     * FÃ¼hrt ein Webupdate nach der Installation aus und gibt im erfolgsfall true zurÃ¼ck, sonst false
      * @return true/Fasle
      */
     public boolean doUpdate() {
         logger.info("Update");
-        clearPanel();
-
-        continueInstall = false;
-        cancelInstall = false;
-        JLabel label = new JLabel("Führe nun das Webupdate aus. Benötigte Daten werden geladen.");
-        panels.add(label);
+        JLabel label = new JLabel("FÃ¼hre nun das Webupdate aus. BenÃ¶tigte Daten werden geladen.");
         JDUtilities.addToGridBag(this, label, 0, 0, 1, 1, 0, 0, null, GridBagConstraints.CENTER, GridBagConstraints.CENTER);
         final JLabel ticker = new JLabel("/");
-        panels.add(ticker);
         JDUtilities.addToGridBag(this, ticker, 0, 2, 1, 1, 0, 0, null, GridBagConstraints.CENTER, GridBagConstraints.CENTER);
         pack();
         setVisible(true);
@@ -156,34 +120,40 @@ public class Installer extends JDialog implements ActionListener {
 
         WebUpdater updater = new WebUpdater(null);
         updater.run();
-       
+
         ticker.setText("Aktualisierte Dateien: " + updater.getUpdatedFiles());
 
         try {
             Thread.sleep(2000);
         }
-        catch (InterruptedException e) {}
+        catch (InterruptedException e) { }
         this.setVisible(false);
         return true;
     }
 
-    private void clearPanel() {
-        while (panels.size() > 0) {
-            remove(panels.remove(0));
-        }
-    }
 
     /**
      * Bricht die Installation ab
      */
     public void abortInstallation() {
-        cancelInstall = true;
+        aborted = true;
         this.setVisible(false);
-        clearPanel();
+    }
+    /**
+     * actionPerformed fÃ¼r die buttons
+     * @param e ActionEvent
+     */
+    public void actionPerformed(ActionEvent e) {
+        aborted= false;
+        this.setVisible(false);
 
     }
-    public void actionPerformed(ActionEvent e) {
-        continueInstall = true;
-        this.setVisible(false);
-    }
+    public void windowClosing(WindowEvent e)     { abortInstallation(); }
+    public void windowActivated(WindowEvent e)   {  }
+    public void windowClosed(WindowEvent e)      {  }
+    public void windowDeactivated(WindowEvent e) {  }
+    public void windowDeiconified(WindowEvent e) {  }
+    public void windowIconified(WindowEvent e)   {  }
+    public void windowOpened(WindowEvent e)      {  }
+
 }

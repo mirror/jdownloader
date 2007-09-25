@@ -44,10 +44,14 @@ private Configuration configuration;
         this.saveConfigEntries();
 
         Plugin.getLogger().setLevel((Level) configuration.getProperty(Configuration.PARAM_LOGGER_LEVEL));
-        if (JDUtilities.getHomeDirectory() != null) {
+      
+        if (JDUtilities.getHomeDirectory() != null && !JDUtilities.getHomeDirectory().equalsIgnoreCase(brsHomeDir.getText().trim())) {
             JDUtilities.writeJDHomeDirectoryToWebStartCookie(brsHomeDir.getText().trim());
+            if(uiinterface.showConfirmDialog("Installationsverzeichnis geändert. Soll ein Webupdate durchgeführt werden um das neue Verzeichnis zu aktualisieren(empfohlen)?")){
+            uiinterface.fireUIEvent(new UIEvent(uiinterface, UIEvent.UI_INTERACT_UPDATE));
+            }
         }
-        uiinterface.fireUIEvent(new UIEvent(uiinterface, UIEvent.UI_INTERACT_UPDATE));
+       
     }
 
     @Override

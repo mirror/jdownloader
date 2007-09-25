@@ -83,7 +83,7 @@ public interface UIInterface {
      * Zeigt einen MessageDialog an
      * @param string
      */
-    public void showConfirmDialog(String string);
+    public boolean showConfirmDialog(String string);
     /**
      * Fügt Links zum Linkgrabber hinzu
      * @param links

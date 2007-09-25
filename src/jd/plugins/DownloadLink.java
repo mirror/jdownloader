@@ -117,7 +117,7 @@ public class DownloadLink implements Serializable, Comparable {
      */
     private transient boolean aborted                              = false;
 
-    private String            statusText                           = "";
+    private transient String            statusText                           = "";
 
     /**
      * Beschreibung des Downloads
@@ -394,6 +394,9 @@ public class DownloadLink implements Serializable, Comparable {
      * @param isEnabled Soll dieser DownloadLink aktiviert sein oder nicht
      */
     public void setEnabled(boolean isEnabled) {
+        if(!isEnabled){
+            this.setAborted(true);
+        }
         this.isEnabled = isEnabled;
     }
 
@@ -526,6 +529,7 @@ public class DownloadLink implements Serializable, Comparable {
     public String getStatusText() {
 
         int speed;
+        if(statusText==null)return "";
         if (getRemainingWaittime() > 0) {
             return this.statusText + "Warten: (" + JDUtilities.formatSeconds((int) (getRemainingWaittime() / 1000)) + "sek)";
         }

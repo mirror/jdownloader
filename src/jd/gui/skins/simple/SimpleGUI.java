@@ -168,7 +168,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener{
         menuBar = new JMenuBar();
         toolBar = new JToolBar();
         frame.setIconImage(JDUtilities.getImage("mind"));
-        frame.setTitle(JDUtilities.JD_TITLE);
+        frame.setTitle(getJDTitle());
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
         initActions();
@@ -230,6 +230,10 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener{
         // System.err.println("TrayIcon could not be added.");
         // }
 
+    }
+
+    private String getJDTitle() {
+        return JDUtilities.JD_TITLE+" "+JDUtilities.JD_VERSION+JDUtilities.getRevision()+" ("+JDUtilities.getLastChangeDate()+" "+JDUtilities.getLastChangeTime()+")";
     }
 
     /**
@@ -463,7 +467,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener{
                 // }
                 break;
             case JDAction.APP_START_STOP_DOWNLOADS:
-                if (btnStartStop.isSelected()) {
+                if (btnStartStop.isSelected() &&!JDUtilities.getController().isDownloadRunning()) {
                     fireUIEvent(new UIEvent(this, UIEvent.UI_START_DOWNLOADS));
                   
                 }
@@ -601,7 +605,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener{
            return;
         }
         if (event.getSource() instanceof PluginForDecrypt ||event.getSource() instanceof PluginForSearch ) {
-            logger.info("GOT EVENT");
+          
            
             tabPluginActivity.pluginEvent(event);
             splitpane.setDividerLocation(0.8);
@@ -642,7 +646,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener{
             case ControlEvent.CONTROL_PLUGIN_INTERACTION_INACTIVE:
                 logger.info("Interaction zu ende. rest status");
                 statusBar.setText(null);
-                frame.setTitle(JDUtilities.JD_TITLE);
+                frame.setTitle(getJDTitle());
              
                 break;
             case ControlEvent.CONTROL_SINGLE_DOWNLOAD_CHANGED:
@@ -845,8 +849,8 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener{
      * 
      * @param string
      */
-    public void showConfirmDialog(String string) {
-        JOptionPane.showConfirmDialog(frame, string);
+    public boolean showConfirmDialog(String string) {
+        return JOptionPane.showConfirmDialog(frame, string)==JOptionPane.OK_OPTION;
 
     }
 

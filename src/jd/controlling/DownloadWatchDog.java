@@ -54,7 +54,7 @@ public class DownloadWatchDog extends Thread implements PluginListener, ControlL
         boolean hasInProgressLinks;
         aborted = false;
         interactions = 0;
-        fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_ALL_DOWNLOAD_START, this));
+        deligateFireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_ALL_DOWNLOAD_START, this));
 
         while (aborted != true) {
             if (interactions == 0) {
@@ -66,7 +66,7 @@ public class DownloadWatchDog extends Thread implements PluginListener, ControlL
                 hasWaittimeLinks = false;
                 hasInProgressLinks = false;
 
-                fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SINGLE_DOWNLOAD_CHANGED, null));
+                deligateFireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SINGLE_DOWNLOAD_CHANGED, null));
 
                 links = getDownloadLinks();
 
@@ -91,10 +91,10 @@ public class DownloadWatchDog extends Thread implements PluginListener, ControlL
 
                 }
 
-                if (!hasInProgressLinks && !hasWaittimeLinks && this.getNextDownloadLink() == null) {
+                if (!hasInProgressLinks && !hasWaittimeLinks && this.getNextDownloadLink() == null&&activeLinks!=null&&activeLinks.size()==0) {
 
                     logger.info("Alle Downloads beendet");
-                    fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_ALL_DOWNLOADS_FINISHED, this));
+//                    fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_ALL_DOWNLOADS_FINISHED, this));
                     Interaction.handleInteraction((Interaction.INTERACTION_ALL_DOWNLOADS_FINISHED), this);
                     break;
 
@@ -106,7 +106,11 @@ public class DownloadWatchDog extends Thread implements PluginListener, ControlL
             catch (InterruptedException e) {
             }
         }
+        aborted=true;
         logger.info("RUN END");
+        deligateFireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_ALL_DOWNLOADS_FINISHED, this));
+//        Interaction.handleInteraction((Interaction.INTERACTION_ALL_DOWNLOADS_FINISHED), this);
+        
     }
 
     /**
@@ -114,7 +118,7 @@ public class DownloadWatchDog extends Thread implements PluginListener, ControlL
      * 
      * @param controlEvent
      */
-    private void fireControlEvent(ControlEvent controlEvent) {
+    private void deligateFireControlEvent(ControlEvent controlEvent) {
         controller.fireControlEvent(controlEvent);
 
     }
@@ -311,7 +315,7 @@ public class DownloadWatchDog extends Thread implements PluginListener, ControlL
             }
 
         }
-        fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SINGLE_DOWNLOAD_CHANGED, null));
+        deligateFireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SINGLE_DOWNLOAD_CHANGED, null));
 
     }
 
@@ -395,7 +399,12 @@ public class DownloadWatchDog extends Thread implements PluginListener, ControlL
         DownloadLink nextDownloadLink = null;
         while (iterator.hasNext()) {
             nextDownloadLink = iterator.next();
-            logger.info(""+this.isDownloadLinkActive(nextDownloadLink)+"_"+nextDownloadLink.isInProgress()+"_"+nextDownloadLink.isEnabled()+" - "+nextDownloadLink.getStatus()+" - "+nextDownloadLink.getRemainingWaittime()+" - "+getDownloadNumByHost((PluginForHost) nextDownloadLink.getPlugin()));
+            if(!nextDownloadLink.isInProgress() &&nextDownloadLink.getStatus()==DownloadLink.STATUS_DOWNLOAD_IN_PROGRESS){
+                nextDownloadLink.reset();
+                nextDownloadLink.setStatus(DownloadLink.STATUS_TODO);
+            }
+           
+//          logger.info(nextDownloadLink+" "+!this.isDownloadLinkActive(nextDownloadLink)+"_"+!nextDownloadLink.isInProgress()+"_"+nextDownloadLink.isEnabled()+" - "+(nextDownloadLink.getStatus() == DownloadLink.STATUS_TODO)+" - "+(nextDownloadLink.getRemainingWaittime() == 0)+" - "+(getDownloadNumByHost((PluginForHost) nextDownloadLink.getPlugin()) < ((PluginForHost) nextDownloadLink.getPlugin()).getMaxSimultanDownloadNum())+" : "+nextDownloadLink.getStatus());
             if (!this.isDownloadLinkActive(nextDownloadLink) ){
                 if( !nextDownloadLink.isInProgress() ){
                     if(nextDownloadLink.isEnabled() ){
@@ -466,6 +475,10 @@ public class DownloadWatchDog extends Thread implements PluginListener, ControlL
         SingleDownloadController dlThread = getDownloadThread(link);
         if (dlThread != null) dlThread.abortDownload();
 
+    }
+
+    public boolean isAborted() {
+       return aborted;
     }
 
 }

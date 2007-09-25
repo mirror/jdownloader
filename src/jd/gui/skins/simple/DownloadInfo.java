@@ -83,12 +83,54 @@ public class DownloadInfo extends JDialog {
                 addEntry("Dateigröße", downloadLink.getDownloadMax() + " Bytes");
 
             }
+            if (downloadLink.isAborted()) {
+                addEntry("Download","Abgebrochen");
+
+            }
+            if (downloadLink.isAvailabilityChecked()) {
+                addEntry("Verfügbarkeit",downloadLink.isAvailable()?"Datei OK":"Fehler!");
+
+            }else{
+                addEntry("Verfügbarkeit","ist nicht überprüft");
+ 
+            }
+            
+            if (downloadLink.getDownloadSpeed()>0) {
+                addEntry("Geschwindigkeit",downloadLink.getDownloadSpeed()/1024+" kb/s");
+
+            }
+            
+            if (downloadLink.getFileOutput()!=null) {
+                addEntry("Speicherort",downloadLink.getFileOutput());
+
+            }
+            
+            if (downloadLink.getRemainingWaittime()>0) {
+                addEntry("Wartezeit",downloadLink.getRemainingWaittime()+" sek");
+
+            }
+            
+            if (downloadLink.isInProgress()) {
+                addEntry("Download"," ist in Bearbeitung");
+
+            }else{
+                addEntry("Download"," ist nicht in Bearbeitung");
+            }
+            
+            if (!downloadLink.isEnabled()) {
+                addEntry("Download"," ist deaktiviert");
+
+            }else{
+                addEntry("Download"," ist aktiviert");
+            }
+            
+         
             switch (downloadLink.getStatus()) {
                 case DownloadLink.STATUS_TODO:
                     addEntry("Download Status", "In Warteschlange");
                     break;
                 case DownloadLink.STATUS_DONE:
-                    addEntry("Download Status", downloadLink.getStatusText());
+                    addEntry("Download Status", downloadLink.getStatusText()+"Fertig");
                     break;
                 case DownloadLink.STATUS_ERROR_FILE_ABUSED:
                     addEntry("Download Status", downloadLink.getStatusText() + " ABUSED!");
@@ -101,6 +143,10 @@ public class DownloadInfo extends JDialog {
                     break;
                 case DownloadLink.STATUS_ERROR_UNKNOWN:
                     addEntry("Download Status", downloadLink.getStatusText() + " Unbekannter Fehler");
+                    break;
+                default:
+                    addEntry("Download Status", downloadLink.getStatusText() + "Status ID: "+downloadLink.getStatus());
+                
                     break;
 
             }

@@ -99,7 +99,7 @@ public class DistributeData extends ControlMulticaster {
         // Sucht alle Links und gibt ein Formatierte Liste zurück. das macht es
         // den Plugin entwicklern einfacher
         data = Plugin.getHttpLinkList(data);
-        logger.info("Eingefügt: " + data);
+//        logger.info("Eingefügt: " + data);
         // Zuerst wird überprüft, ob ein Decrypt-Plugin einen Teil aus der
         // Zwischenablage entschlüsseln kann. Ist das der Fall, wird die
         // entsprechende Stelle
@@ -159,7 +159,7 @@ public class DistributeData extends ControlMulticaster {
 
         while (iterator.hasNext()) {
             String decrypted = iterator.next();
-            logger.info("link: " + decrypted);
+//            logger.info("link: " + decrypted);
             for (int i = 0; i < pluginsForHost.size(); i++) {
                 pHost = pluginsForHost.get(i);
                 if (pHost.isClipboardEnabled() && pHost.canHandle(decrypted)) {
@@ -168,7 +168,7 @@ public class DistributeData extends ControlMulticaster {
                 }
             }
         }
-        logger.info("--> " + links);
+//        logger.info("--> " + links);
 
         return links;
     }

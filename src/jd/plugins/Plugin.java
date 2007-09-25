@@ -93,7 +93,7 @@ public abstract class Plugin {
     /**
      * Zeigt an, ob das Plugin abgebrochen werden soll
      */
-    public ConfigContainer           config;
+    public ConfigContainer        config;
 
     protected RequestInfo         requestInfo;
 
@@ -135,12 +135,19 @@ public abstract class Plugin {
      * @see Pattern
      */
     public abstract Pattern getSupportedLinks();
-/**
- * Erstellt ein SupportPattern. dabei gibt es 2 Platzhalter: [*]= Dieser Platzhalter ist optional. hier KANN ein beliebiges zeichen doer keins stehen; [+] Hier muss mindestens ein beliebiges zeichen stehen
- * Da die links in einer liste  "link1"\r\n"link2"\"\n... untersucht werden kann hier eineinfaches pattern verwendet werden. UNd es werden trotzdem zuverlässig alle treffer gefunden.
- * @param patternString
- * @return Gibt ein patternzurück mit dem links gesucht und überprüft werden können
- */
+
+    /**
+     * Erstellt ein SupportPattern. dabei gibt es 2 Platzhalter: [*]= Dieser
+     * Platzhalter ist optional. hier KANN ein beliebiges zeichen doer keins
+     * stehen; [+] Hier muss mindestens ein beliebiges zeichen stehen Da die
+     * links in einer liste "link1"\r\n"link2"\"\n... untersucht werden kann
+     * hier eineinfaches pattern verwendet werden. UNd es werden trotzdem
+     * zuverlässig alle treffer gefunden.
+     * 
+     * @param patternString
+     * @return Gibt ein patternzurück mit dem links gesucht und überprüft werden
+     *         können
+     */
     public static Pattern getSupportPattern(String patternString) {
 
         patternString = patternString.replaceAll("\\[\\*\\]", ".*");
@@ -150,7 +157,7 @@ public abstract class Plugin {
             patternString = patternString.substring(0, patternString.length() - 2) + "[^\"]" + patternString.substring(patternString.length() - 1);
         }
         // patternString="\""+patternString+"\"";
-//        logger.info(patternString);
+        // logger.info(patternString);
         return Pattern.compile(patternString);
     }
 
@@ -182,7 +189,8 @@ public abstract class Plugin {
      * Gibt die Date zurück in die der aktuelle captcha geladne werden soll.
      * 
      * @param plugin
-     * @return Gibt einen Pfadzurück der für die nächste Captchadatei reserviert ist
+     * @return Gibt einen Pfadzurück der für die nächste Captchadatei reserviert
+     *         ist
      */
     public File getLocalCaptchaFile(Plugin plugin) {
         File dest = JDUtilities.getResourceFile("captchas/" + plugin.getPluginName() + "/captcha_" + (new Date().getTime()) + ".jpg");
@@ -246,7 +254,7 @@ public abstract class Plugin {
 
     private String                statusText;
 
-    private long initTime;
+    private long                  initTime;
 
     /**
      * Ein Logger, um Meldungen darzustellen
@@ -255,7 +263,7 @@ public abstract class Plugin {
 
     protected Plugin() {
         pluginListener = new Vector<PluginListener>();
-        this.initTime=System.currentTimeMillis();
+        this.initTime = System.currentTimeMillis();
         steps = new Vector<PluginStep>();
         config = new ConfigContainer(this);
         // Lädt die Konfigurationseinstellungen aus der Konfig
@@ -269,7 +277,8 @@ public abstract class Plugin {
         else {
             properties = new Property();
         }
-//        logger.info("Load Plugin Properties: " + "PluginConfig_" + this.getPluginName() + " : " + properties);
+        // logger.info("Load Plugin Properties: " + "PluginConfig_" +
+        // this.getPluginName() + " : " + properties);
 
     }
 
@@ -327,9 +336,16 @@ public abstract class Plugin {
      */
     public PluginStep nextStep(PluginStep currentStep) {
         if (steps == null || steps.size() == 0) return null;
-        if (currentStep == null) return steps.firstElement();
+        if (currentStep == null) {
+            currentStep = steps.firstElement();
+            return steps.firstElement();
+        }
         int index = steps.indexOf(currentStep) + 1;
-        if (steps.size() > index) return steps.elementAt(index);
+        if (steps.size() > index) {
+            currentStep = steps.elementAt(index);
+            return steps.elementAt(index);
+        }
+        currentStep=null;
         return null;
     }
 
@@ -341,9 +357,16 @@ public abstract class Plugin {
      */
     public PluginStep previousStep(PluginStep currentStep) {
         if (steps == null || steps.size() == 0) return null;
-        if (currentStep == null) return steps.firstElement();
+        if (currentStep == null) {
+            currentStep=steps.firstElement();
+            return steps.firstElement();
+        }
         int index = steps.indexOf(currentStep) - 1;
-        if (index >= 0) return steps.elementAt(index);
+        if (index >= 0) {
+            currentStep=steps.elementAt(index);
+            return steps.elementAt(index);
+        }
+        currentStep=null;
         return null;
 
     }
@@ -587,14 +610,18 @@ public abstract class Plugin {
     public String getFormInputHidden(String data) {
         return joinMap(getInputHiddenFields(data), "=", "&");
     }
-/**
- * Ermittelt alle hidden input felder in einem HTML Text und gibt die hidden variables als hashmap zurück
- * es wird dabei nur der text zwischen start dun endpattern ausgewertet
- * @param data
- * @param startPattern
- * @param lastPattern
- * @return hashmap mit hidden input variablen zwischen startPattern und endPattern
- */
+
+    /**
+     * Ermittelt alle hidden input felder in einem HTML Text und gibt die hidden
+     * variables als hashmap zurück es wird dabei nur der text zwischen start
+     * dun endpattern ausgewertet
+     * 
+     * @param data
+     * @param startPattern
+     * @param lastPattern
+     * @return hashmap mit hidden input variablen zwischen startPattern und
+     *         endPattern
+     */
     public HashMap<String, String> getInputHiddenFields(String data, String startPattern, String lastPattern) {
         return getInputHiddenFields(getBetween(data, startPattern, lastPattern));
     }
@@ -660,12 +687,15 @@ public abstract class Plugin {
     public static RequestInfo getRequest(URL link) throws IOException {
         return getRequest(link, null, null, false);
     }
-private static int getReadTimeoutFormConfiguration(){
-    return (Integer)JDUtilities.getConfiguration().getProperty(Configuration.PARAM_DOWNLOAD_READ_TIMEOUT,10000);
-}
-private static int getConnectTimeoutFormConfiguration(){
-    return (Integer)JDUtilities.getConfiguration().getProperty(Configuration.PARAM_DOWNLOAD_CONNECT_TIMEOUT,10000);
-}
+
+    private static int getReadTimeoutFormConfiguration() {
+        return (Integer) JDUtilities.getConfiguration().getProperty(Configuration.PARAM_DOWNLOAD_READ_TIMEOUT, 10000);
+    }
+
+    private static int getConnectTimeoutFormConfiguration() {
+        return (Integer) JDUtilities.getConfiguration().getProperty(Configuration.PARAM_DOWNLOAD_CONNECT_TIMEOUT, 10000);
+    }
+
     /**
      * Schickt ein GetRequest an eine Adresse
      * 
@@ -699,15 +729,18 @@ private static int getConnectTimeoutFormConfiguration(){
         requestInfo.setConnection(httpConnection);
         return requestInfo;
     }
-/**
- * Führt einen getrequest durch. Gibt die headerinfos zurück, lädt aber die datei noch komplett
- * @param link
- * @param cookie
- * @param referrer
- * @param redirect
- * @return  requestinfos mit headerfields. HTML text wird nicht!! geladen
- * @throws IOException
- */
+
+    /**
+     * Führt einen getrequest durch. Gibt die headerinfos zurück, lädt aber die
+     * datei noch komplett
+     * 
+     * @param link
+     * @param cookie
+     * @param referrer
+     * @param redirect
+     * @return requestinfos mit headerfields. HTML text wird nicht!! geladen
+     * @throws IOException
+     */
     public static RequestInfo getRequestWithoutHtmlCode(URL link, String cookie, String referrer, boolean redirect) throws IOException {
         HttpURLConnection httpConnection = (HttpURLConnection) link.openConnection();
         httpConnection.setReadTimeout(getReadTimeoutFormConfiguration());
@@ -884,9 +917,9 @@ private static int getConnectTimeoutFormConfiguration(){
         String location = urlInput.getHeaderField("Location");
         String cookie = getCookieString(urlInput);
         int responseCode = HttpURLConnection.HTTP_NOT_IMPLEMENTED;
-      
-            responseCode = urlInput.getResponseCode();
-       
+
+        responseCode = urlInput.getResponseCode();
+
         RequestInfo requestInfo = new RequestInfo(htmlCode.toString(), location, cookie, urlInput.getHeaderFields(), responseCode);
         rd.close();
         return requestInfo;
@@ -909,7 +942,7 @@ private static int getConnectTimeoutFormConfiguration(){
         if (!fileOutput.getParentFile().exists()) {
             fileOutput.getParentFile().mkdirs();
         }
-    
+
         downloadLink.setStatus(DownloadLink.STATUS_DOWNLOAD_IN_PROGRESS);
         long downloadedBytes = 0;
 
@@ -960,26 +993,7 @@ private static int getConnectTimeoutFormConfiguration(){
                 // Laufende Variablen updaten:
                 downloadedBytes += bytes;
 
-                // bytesLastSpeedCheck += bytes;
-                // logger.info("load "+bytesLastSpeedCheck+" - "+bytes);
-                // if (((t3=System.currentTimeMillis())-t1)>200) { // Speedcheck
-                // alle 10 Runden = 1 sec
-                //                      
-                //                    
-                // // DL-Speed in bytes/sec berechnen:
-                // int speed = (int) (bytesLastSpeedCheck * 1000 / (t3 - t1));
-                //                 
-                //                   
-                // //logger.info(bytesLastSpeedCheck+" SPEED "+speed);
-                //                   
-                // downloadLink.setDownloadSpeed(speed);
-                // bytesLastSpeedCheck = 0;
-                // t1 = t3;
-                // firePluginEvent(new PluginEvent(this,
-                // PluginEvent.PLUGIN_DOWNLOAD_SPEED, speed));
-                //                   
-                //                    
-                // }
+               
                 downloadLink.addBytes(bytes);
                 firePluginEvent(new PluginEvent(this, PluginEvent.PLUGIN_DOWNLOAD_BYTES, bytes));
                 firePluginEvent(new PluginEvent(this, PluginEvent.PLUGIN_DATA_CHANGED, downloadLink));
@@ -988,6 +1002,7 @@ private static int getConnectTimeoutFormConfiguration(){
 
             if (contentLen != -1 && downloadedBytes != contentLen) {
                 logger.info("incomplete download");
+                
                 downloadLink.setStatus(DownloadLink.STATUS_DOWNLOAD_INCOMPLETE);
                 return false;
             }
@@ -1017,10 +1032,10 @@ private static int getConnectTimeoutFormConfiguration(){
             logger.severe("error occurred while writing to file. " + e.getLocalizedMessage());
         }
         catch (InterruptedException e) {
-            // TODO Auto-generated catch block
+            downloadLink.setStatus(DownloadLink.STATUS_DOWNLOAD_INCOMPLETE);
             e.printStackTrace();
         }
-
+        downloadLink.setStatus(DownloadLink.STATUS_DOWNLOAD_INCOMPLETE);
         return false;
     }
 
@@ -1079,7 +1094,7 @@ private static int getConnectTimeoutFormConfiguration(){
     // /////////////////////////////////////////////////////
     // Multicaster
     public void addPluginListener(PluginListener listener) {
-        if(listener==null)return;
+        if (listener == null) return;
         synchronized (pluginListener) {
             pluginListener.add(listener);
         }
@@ -1113,13 +1128,15 @@ private static int getConnectTimeoutFormConfiguration(){
         File f = new File(filepath);
         return md5sum(f);
     }
-/**
- * Gibt den MD5 hash  von file zurück
- * @param file
- * @return MD5 Hash string
- * @throws NoSuchAlgorithmException
- * @throws FileNotFoundException
- */
+
+    /**
+     * Gibt den MD5 hash von file zurück
+     * 
+     * @param file
+     * @return MD5 Hash string
+     * @throws NoSuchAlgorithmException
+     * @throws FileNotFoundException
+     */
     public String md5sum(File file) throws NoSuchAlgorithmException, FileNotFoundException {
         MessageDigest digest = MessageDigest.getInstance("MD5");
         InputStream is = new FileInputStream(file);
@@ -1295,14 +1312,17 @@ private static int getConnectTimeoutFormConfiguration(){
 
         return ret;
     }
-/**
- * Gibt über die simplepattern alle den x/y ten treffer aus dem 2D-matches array zurück
- * @param source
- * @param pattern
- * @param x
- * @param y
- * @return treffer an der stelle x/y im 2d treffer array
- */
+
+    /**
+     * Gibt über die simplepattern alle den x/y ten treffer aus dem 2D-matches
+     * array zurück
+     * 
+     * @param source
+     * @param pattern
+     * @param x
+     * @param y
+     * @return treffer an der stelle x/y im 2d treffer array
+     */
     public static String getSimpleMatch(String source, String pattern, int x, int y) {
         Vector<Vector<String>> ret = getAllSimpleMatches(source, pattern);
         if (ret.elementAt(x) != null && ret.elementAt(x).elementAt(y) != null) {
@@ -1310,8 +1330,10 @@ private static int getConnectTimeoutFormConfiguration(){
         }
         return null;
     }
+
     /**
      * verwendet die erste Acaptcha Interaction um den captcha auszuwerten
+     * 
      * @param file
      * @param plugin
      * @return captchacode
@@ -1338,15 +1360,20 @@ private static int getConnectTimeoutFormConfiguration(){
         return captchaText;
 
     }
+
     /**
-     * gibt das interne properties objekt zurück indem die Plugineinstellungen gespeichert werden
+     * gibt das interne properties objekt zurück indem die Plugineinstellungen
+     * gespeichert werden
+     * 
      * @return internes property objekt
      */
     public Property getProperties() {
         return properties;
     }
+
     /**
      * Setzt das interne Property Objekt
+     * 
      * @param properties
      */
     public void setProperties(Property properties) {
@@ -1358,16 +1385,21 @@ private static int getConnectTimeoutFormConfiguration(){
      * @return gibt den namen des Links an der gerade verarbeitet wird
      */
     public abstract String getLinkName();
+
     /**
-     * Gibt den Statustext des PLugins zurück. kann von der GUI aufgerufen werden
+     * Gibt den Statustext des PLugins zurück. kann von der GUI aufgerufen
+     * werden
+     * 
      * @return Statustext
      */
     public String getStatusText() {
         if (this.statusText == null) this.statusText = "";
-        return this.initTime+" : "+this.statusText;
+        return this.statusText;
     }
+
     /**
      * Setzte den Statustext des Plugins.
+     * 
      * @param value
      */
     public void setStatusText(String value) {
@@ -1383,20 +1415,16 @@ private static int getConnectTimeoutFormConfiguration(){
      * @return Linkliste aus data extrahiert
      */
     /*
-     *     
-        public static void testGetHttpLinks() throws IOException {
-        String input = "";
-        String thisLine;
-        BufferedReader br = new BufferedReader(new FileReader("index.html"));
-        while ((thisLine = br.readLine()) != null)
-            input += thisLine + "\n";
-        String[] dd = getHttpLinks(input, "http://www.google.de/");
-        for (int i = 0; i < dd.length; i++) 
-            System.out.println(dd[i]);
-        }
+     * 
+     * public static void testGetHttpLinks() throws IOException { String input =
+     * ""; String thisLine; BufferedReader br = new BufferedReader(new
+     * FileReader("index.html")); while ((thisLine = br.readLine()) != null)
+     * input += thisLine + "\n"; String[] dd = getHttpLinks(input,
+     * "http://www.google.de/"); for (int i = 0; i < dd.length; i++)
+     * System.out.println(dd[i]); }
      */
     public static String[] getHttpLinks(String data, String url) {
-        String[] patternStr = {"(?s)<[ ]?base[^>]*?href=['\"]([^>]*?)['\"]", "(?s)<[ ]?base[^>]*?href=([^'\"][^\\s]*)", "(?s)<[ ]?a[^>]*?href=['\"]([^>]*?)['\"]", "(?s)<[ ]?a[^>]*?href=([^'\"][^\\s]*)", "www[^\\s>'\"\\)]*", "http://[^\\s>'\"\\)]*"};
+        String[] patternStr = { "(?s)<[ ]?base[^>]*?href=['\"]([^>]*?)['\"]", "(?s)<[ ]?base[^>]*?href=([^'\"][^\\s]*)", "(?s)<[ ]?a[^>]*?href=['\"]([^>]*?)['\"]", "(?s)<[ ]?a[^>]*?href=([^'\"][^\\s]*)", "www[^\\s>'\"\\)]*", "http://[^\\s>'\"\\)]*" };
         url = url == null ? "" : url;
         Matcher m;
         String link;
@@ -1417,7 +1445,8 @@ private static int getConnectTimeoutFormConfiguration(){
         if (url != null) {
             url = url.replace("http://", "");
             int dot = url.lastIndexOf('/');
-            if (dot != -1) basename = url.substring(0, dot + 1);
+            if (dot != -1)
+                basename = url.substring(0, dot + 1);
             else
                 basename = "http://" + url + "/";
 
@@ -1427,7 +1456,8 @@ private static int getConnectTimeoutFormConfiguration(){
             else
                 host = "http://" + url;
             url = "http://" + url;
-        } else
+        }
+        else
             url = "";
 
         for (int i = 2; i < 4; i++) {
@@ -1498,6 +1528,6 @@ private static int getConnectTimeoutFormConfiguration(){
 
     public String getInitID() {
         // TODO Auto-generated method stub
-        return this.initTime+"<ID";
+        return this.initTime + "<ID";
     }
 }

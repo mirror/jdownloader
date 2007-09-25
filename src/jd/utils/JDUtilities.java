@@ -87,7 +87,7 @@ public class JDUtilities {
     /**
      * Versionsstring der Applikation
      */
-    public static final String              JD_TITLE          = "jDownloader" + " " + JD_VERSION+JD_REVISION.substring(22);
+    public static final String              JD_TITLE          = "jDownloader";
 
     /**
      * Ein URLClassLoader, um Dateien aus dem HomeVerzeichnis zu holen
@@ -192,7 +192,53 @@ public class JDUtilities {
         }
         addToGridBag(cont, comp, x, y, width, height, weightX, weightY, insets, 0, 0, fill, anchor);
     }
-
+/**
+ * parsed den JD_REVISION String auf
+ * @return RevissionID
+ */
+   
+    public static String getRevision(){
+        String[] data=JD_REVISION.split(" ");
+       if(data.length>2)return data[2];
+       return null;
+    }
+    
+    /**
+     * parsed den JD_REVISION String auf
+     * @return Letztes Änderungs datum
+     */
+    public static String getLastChangeDate(){
+        String[] data=JD_REVISION.split(" ");
+       if(data.length>3){
+           String[] date=data[3].split("-");
+           if(date.length!=3)return null;
+           return date[2]+"."+date[1]+"."+date[0];
+       }
+       return null;
+    }
+    /**
+     * parsed den JD_REVISION String auf
+     * @return Letzte änderungsuhrzeit
+     */
+    public static String getLastChangeTime(){
+        String[] data=JD_REVISION.split(" ");
+        if(data.length>4){
+            return data[4].substring(0,data[4].length()-1);
+        
+        }
+        return null;
+    }
+    /**
+     * parsed den JD_REVISION String auf
+     * @return Name des programmierers der die letzten Änderungen durchgeführt hat
+     */
+    public static String getLastChangeAuthor(){
+        String[] data=JD_REVISION.split(" ");
+        if(data.length>5){
+            return data[5];
+        }
+        return null;
+    }
     /**
      * Diese Klasse fuegt eine Komponente einem Container hinzu
      * 

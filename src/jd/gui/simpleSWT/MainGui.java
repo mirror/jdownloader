@@ -457,8 +457,9 @@ public class MainGui extends org.eclipse.swt.widgets.Composite implements UIInte
     /**
      * Zeigt einen Confirm dialog mit string an
      */
-    public void showConfirmDialog(String string) {
+    public boolean showConfirmDialog(String string) {
         // TODO Auto-generated method stub
+        return true;
 
     }
     /**
