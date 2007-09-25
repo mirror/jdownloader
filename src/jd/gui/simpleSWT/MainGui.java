@@ -6,6 +6,8 @@ package jd.gui.simpleSWT;
  *
  */
 
+import java.awt.Dimension;
+import java.awt.Toolkit;
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -35,6 +37,8 @@ import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.CTabFolder;
 import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.Point;
+import org.eclipse.swt.graphics.Rectangle;
+import org.eclipse.swt.layout.FillLayout;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Composite;
@@ -47,7 +51,7 @@ import org.eclipse.swt.widgets.ToolBar;
 import org.eclipse.swt.widgets.ToolItem;
 import org.eclipse.swt.widgets.TreeItem;
 
-public class MainGui extends org.eclipse.swt.widgets.Composite implements UIInterface{
+public class MainGui extends org.eclipse.swt.widgets.Composite implements UIInterface {
 
     private Composite compStatusBar;
     public CTabFolder folder;
@@ -101,10 +105,12 @@ public class MainGui extends org.eclipse.swt.widgets.Composite implements UIInte
         JDSWTUtilities.addImageSwt("default", cl.getResourceAsStream("img/swt/mime/default.png"), display);
         JDSWTUtilities.addImageSwt("folder", cl.getResourceAsStream("img/swt/mime/folder.png"), display);
     }
-
-    public MainGui(org.eclipse.swt.widgets.Composite parent, int style) {
-        super(parent, style);
+    public MainGui() {
+        super(new Shell(Display.getDefault()), SWT.NULL);
         initGUI();
+    }
+
+    private void initGUI() {
         uiListener = new Vector<UIListener>();
         if ((guiConfigFile).isFile()) {
             ObjectInputStream objIn;
@@ -124,9 +130,6 @@ public class MainGui extends org.eclipse.swt.widgets.Composite implements UIInte
             }
 
         }
-    }
-
-    private void initGUI() {
         final Shell shell = this.getShell();
         final Display display = this.getDisplay();
         guiListeners = new GuiListeners(this);
@@ -248,6 +251,24 @@ public class MainGui extends org.eclipse.swt.widgets.Composite implements UIInte
         });
         this.layout();
         guiListeners.getListener("toolBarBtSetEnabled").handleEvent(new Event());
+        Point size = this.getSize();
+        shell.setText(JDSWTUtilities.getSWTResourceString("MainGui.name"));
+        shell.setLayout(new FillLayout());
+        Rectangle shellBounds = shell.computeTrim(0, 0, size.x, size.y);
+        shell.setSize(shellBounds.width, shellBounds.height);
+        shell.addListener(SWT.Close, guiListeners.initMainGuiCloseListener(shell));
+        Dimension d = Toolkit.getDefaultToolkit().getScreenSize();
+        shell.setLocation((d.width - guiConfig.GUIsize[0]) / 2, (d.height - guiConfig.GUIsize[1]) / 2);
+        shell.open();
+
+        if (guiConfig.isMaximized) {
+            shell.setLocation(shell.getLocation());
+            shell.setMaximized(true);
+        }
+        while (!shell.isDisposed()) {
+            if (!display.readAndDispatch())
+                display.sleep();
+        }
     }
 
     public void toolBarBtSetEnabled() {
@@ -307,14 +328,13 @@ public class MainGui extends org.eclipse.swt.widgets.Composite implements UIInte
             btGoLastDown.setEnabled(false);
         }
     }
-/**
- * Fügt die links zum Linkgrabber hinzu.
- */
+    /**
+     * Fügt die links zum Linkgrabber hinzu.
+     */
     public void addLinksToGrabber(Vector<DownloadLink> links) {
         // TODO Auto-generated method stub
-        
-    }
 
+    }
 
     public void addUIListener(UIListener listener) {
         synchronized (uiListener) {
@@ -327,9 +347,10 @@ public class MainGui extends org.eclipse.swt.widgets.Composite implements UIInte
             uiListener.remove(listener);
         }
     }
-/**
- * Eine Liste der möglichen UIEvents ids findet man unter jd.event.UIEvent. Damit kann die ui events an den downloadcontroller schicken
- */
+    /**
+     * Eine Liste der möglichen UIEvents ids findet man unter jd.event.UIEvent.
+     * Damit kann die ui events an den downloadcontroller schicken
+     */
     public void fireUIEvent(UIEvent uiEvent) {
         synchronized (uiListener) {
             Iterator<UIListener> recIt = uiListener.iterator();
@@ -339,121 +360,113 @@ public class MainGui extends org.eclipse.swt.widgets.Composite implements UIInte
             }
         }
     }
-/**
- * Führt controllevents aus.
- * 
- * in der klasse ControlEvent sind alle möglichen eventIDs zu sehen
- * * oft werden dem event parameter übergeben die mit event.getParameter() abgefragt werden
- * die parameter sind meistens mit der ventid dokumentiert
- */
+    /**
+     * Führt controllevents aus.
+     * 
+     * in der klasse ControlEvent sind alle möglichen eventIDs zu sehen * oft
+     * werden dem event parameter übergeben die mit event.getParameter()
+     * abgefragt werden die parameter sind meistens mit der ventid dokumentiert
+     */
     public void deligatedControlEvent(ControlEvent event) {
 
         switch (event.getID()) {
-            case ControlEvent.CONTROL_PLUGIN_DECRYPT_ACTIVE:
-                
-                break;
-            case ControlEvent.CONTROL_PLUGIN_DECRYPT_INACTIVE:
-               
-                break;
-            case ControlEvent.CONTROL_PLUGIN_HOST_ACTIVE:
-             
-                break;
-            case ControlEvent.CONTROL_PLUGIN_HOST_INACTIVE:
-             
-                break;
-            case ControlEvent.CONTROL_ALL_DOWNLOADS_FINISHED:
-              
-                break;
-           case ControlEvent.CONTROL_PLUGIN_INTERACTION_ACTIVE:
+            case ControlEvent.CONTROL_PLUGIN_DECRYPT_ACTIVE :
 
-               break;
-            case ControlEvent.CONTROL_PLUGIN_INTERACTION_INACTIVE:
                 break;
-            case ControlEvent.CONTROL_SINGLE_DOWNLOAD_CHANGED:
-               
-               
-                
-            case ControlEvent.CONTROL_DISTRIBUTE_FINISHED:
-             
+            case ControlEvent.CONTROL_PLUGIN_DECRYPT_INACTIVE :
+
+                break;
+            case ControlEvent.CONTROL_PLUGIN_HOST_ACTIVE :
+
+                break;
+            case ControlEvent.CONTROL_PLUGIN_HOST_INACTIVE :
+
+                break;
+            case ControlEvent.CONTROL_ALL_DOWNLOADS_FINISHED :
+
+                break;
+            case ControlEvent.CONTROL_PLUGIN_INTERACTION_ACTIVE :
+
+                break;
+            case ControlEvent.CONTROL_PLUGIN_INTERACTION_INACTIVE :
+                break;
+            case ControlEvent.CONTROL_SINGLE_DOWNLOAD_CHANGED :
+
+            case ControlEvent.CONTROL_DISTRIBUTE_FINISHED :
+
                 break;
         }
-        
+
     }
-/**
- * auch hier sind in PluginEvent die Event ids dokumentiert. 
- * oft werden dem event parameter übergeben die mit event.getParameter() abgefragt werden
- *  die parameter sind meistens mit der ventid dokumentiert
- */
+    /**
+     * auch hier sind in PluginEvent die Event ids dokumentiert. oft werden dem
+     * event parameter übergeben die mit event.getParameter() abgefragt werden
+     * die parameter sind meistens mit der ventid dokumentiert
+     */
     public void deligatedPluginEvent(PluginEvent event) {
 
         if (event.getSource() instanceof PluginForHost && event.getEventID() == PluginEvent.PLUGIN_DATA_CHANGED) {
-           
 
             return;
         }
         if (event.getSource() instanceof PluginForDecrypt && event.getEventID() == PluginEvent.PLUGIN_DATA_CHANGED) {
-            
 
             return;
         }
-        
+
         if (event.getSource() instanceof PluginForSearch && event.getEventID() == PluginEvent.PLUGIN_DATA_CHANGED) {
-           
 
             return;
         }
         if (event.getSource() instanceof PluginForHost) {
 
-            
-           return;
+            return;
         }
-        if (event.getSource() instanceof PluginForDecrypt ||event.getSource() instanceof PluginForSearch ) {
-        
-          return;
+        if (event.getSource() instanceof PluginForDecrypt || event.getSource() instanceof PluginForSearch) {
+
+            return;
         }
-        
+
     }
 
-
-/**
- * Muss einen string mit dem captchacode zurückgeben. captchaAddress ist der pfad zur lokalen captchafile, Plugin das entsprechende PLugin
- */
+    /**
+     * Muss einen string mit dem captchacode zurückgeben. captchaAddress ist der
+     * pfad zur lokalen captchafile, Plugin das entsprechende PLugin
+     */
     public String getCaptchaCodeFromUser(Plugin plugin, File captchaAddress) {
-        
+
         return null;
     }
 
-/**
- * Gibt alle downloadlinks in der downloadtabelle zurück
- */
+    /**
+     * Gibt alle downloadlinks in der downloadtabelle zurück
+     */
     public Vector<DownloadLink> getDownloadLinks() {
         // TODO Auto-generated method stub
         return null;
     }
 
- 
-
-/**
- * Setzt die downloadLinks in die tabelle und überschreibt die vorhandenen
- */
+    /**
+     * Setzt die downloadLinks in die tabelle und überschreibt die vorhandenen
+     */
     public void setDownloadLinks(Vector<DownloadLink> downloadLinks) {
         // TODO Auto-generated method stub
-        
+
     }
 
-/**
- * Zeigt einen Confirm dialog mit string an
- */
+    /**
+     * Zeigt einen Confirm dialog mit string an
+     */
     public void showConfirmDialog(String string) {
         // TODO Auto-generated method stub
-        
+
     }
-/**
- * zeugt einen messagedialog an
- */
+    /**
+     * zeugt einen messagedialog an
+     */
     public void showMessageDialog(String string) {
         // TODO Auto-generated method stub
-        
+
     }
 
 }
