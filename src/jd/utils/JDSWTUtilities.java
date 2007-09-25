@@ -10,7 +10,9 @@ import java.util.Locale;
 import java.util.MissingResourceException;
 import java.util.ResourceBundle;
 
+import jd.gui.simpleSWT.GuiListeners;
 import jd.gui.simpleSWT.ItemData;
+import jd.gui.simpleSWT.MainGui;
 
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Image;
@@ -122,9 +124,9 @@ public class JDSWTUtilities {
      * @param treeItem
      * @return
      */
-    public static void setTreeItemDownloading(final TreeItem treeItem) {
+    public static void setTreeItemDownloading(final TreeItem treeItem, GuiListeners guiListeners) {
         ItemData itd = new ItemData();
-        itd.setProgressBar(treeItem);
+        itd.setProgressBar(treeItem, guiListeners);
         itd.status=ItemData.STATUS_DOWNLOADING;
         itd.isLocked=true;
         treeItem.setData(itd);
