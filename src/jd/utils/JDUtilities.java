@@ -83,7 +83,7 @@ public class JDUtilities {
     public static final String              JD_VERSION        = "0.0.";
 
     
-    public static final String              JD_REVISION ="$Revision: 243 $";
+    public static final String              JD_REVISION  ="$Id$";
     /**
      * Versionsstring der Applikation
      */
@@ -97,7 +97,7 @@ public class JDUtilities {
     /**
      * Das JD-Home Verzeichnis. Dieses wird nur gesetzt, wenn es aus dem
      * WebStart Cookie gelesen wurde. Diese Variable kann nämlich im
-     * KonfigDialog geändert werden
+     * KonfigDialog geändert werden 
      */
     private static String                   homeDirectory     = null;
 
