@@ -18,7 +18,8 @@ import jd.plugins.PluginForSearch;
 import jd.utils.JDUtilities;
 
 /**
- * $Revision$
+ * $Revision$ 
+ * $Author$
  * Start der Applikation
  * 
  * @author astaldo
