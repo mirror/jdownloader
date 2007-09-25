@@ -10,7 +10,7 @@ import jd.config.Configuration;
 import jd.controlling.JDController;
 import jd.controlling.interaction.Interaction;
 import jd.gui.UIInterface;
-import jd.gui.skins.simple.SimpleGUI;
+import jd.gui.simpleSWT.MainGui;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
@@ -18,6 +18,7 @@ import jd.plugins.PluginForSearch;
 import jd.utils.JDUtilities;
 
 /**
+ * $Revision$
  * Start der Applikation
  * 
  * @author astaldo
@@ -99,8 +100,8 @@ public class Main {
         logger.info("Lade Plugins");
         JDUtilities.loadPlugins();
         logger.info("Lade GUI");
-       UIInterface uiInterface = new SimpleGUI();
-//        UIInterface uiInterface = new MainGui();
+//       UIInterface uiInterface = new SimpleGUI();
+        UIInterface uiInterface = new MainGui();
         if (!JDUtilities.getConfiguration().getConfigurationVersion().equals(JDUtilities.JD_VERSION)) {
             logger.info("Set Config default Values");
             JDUtilities.getConfiguration().setDefaultValues();
