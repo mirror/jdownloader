@@ -80,12 +80,14 @@ public class JDUtilities {
     /**
      * Titel der Applikation
      */
-    public static final String              JD_VERSION        = "0.0.4 (23.09)";
+    public static final String              JD_VERSION        = "0.0.";
 
+    
+    public static final String              JD_REVISION ="$Revision$";
     /**
      * Versionsstring der Applikation
      */
-    public static final String              JD_TITLE          = "jDownloader" + " " + JD_VERSION;
+    public static final String              JD_TITLE          = "jDownloader" + " " + JD_VERSION+JD_REVISION;
 
     /**
      * Ein URLClassLoader, um Dateien aus dem HomeVerzeichnis zu holen
