@@ -21,7 +21,7 @@ public class Configuration extends Property implements Serializable {
      * Gibt an ob die SerializeFunktionen im XMl MOdus Arbeiten oder nocht
      */
     public transient static boolean saveAsXML             = false;
-
+   
     /**
      * serialVersionUID
      */
@@ -333,8 +333,10 @@ public class Configuration extends Property implements Serializable {
             setProperty("maxSimultanDownloads",3);
         }
 
-        
-        setConfigurationVersion(JDUtilities.JD_VERSION);
+        String id="$Id$";
+        if(id.length()>22){
+        setConfigurationVersion(id.substring(22,id.length()-2));
+        }
     }
 
 

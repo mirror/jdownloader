@@ -10,7 +10,7 @@ import jd.config.Configuration;
 import jd.controlling.JDController;
 import jd.controlling.interaction.Interaction;
 import jd.gui.UIInterface;
-import jd.gui.simpleSWT.MainGui;
+import jd.gui.skins.simple.SimpleGUI;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
@@ -101,21 +101,22 @@ public class Main {
         logger.info("Lade Plugins");
         JDUtilities.loadPlugins();
         logger.info("Lade GUI");
-//       UIInterface uiInterface = new SimpleGUI();
-        UIInterface uiInterface = new MainGui();
-        if (!JDUtilities.getConfiguration().getConfigurationVersion().equals(JDUtilities.JD_VERSION)) {
-            logger.info("Set Config default Values");
-            JDUtilities.getConfiguration().setDefaultValues();
-            File links = JDUtilities.getResourceFile("links.dat");
-            if (links.exists()) {
-                File newFile = new File(links.getAbsolutePath() + ".bup");
-                newFile.delete();
-                links.renameTo(newFile);
-
-            }
-            uiInterface.showMessageDialog("Inkompatible Konfiguration oder Downloadliste gefunden\r\nDefault Einstellungen geladen, Linkliste zurückgestellt");
-
-        }
+       UIInterface uiInterface = new SimpleGUI();
+//        UIInterface uiInterface = new MainGui();
+       // Da muss ne bessere Idee her.
+//        if (!JDUtilities.getConfiguration().getConfigurationVersion().equals(JDUtilities.JD_VERSION)) {
+//            logger.info("Set Config default Values");
+//            JDUtilities.getConfiguration().setDefaultValues();
+//            File links = JDUtilities.getResourceFile("links.dat");
+//            if (links.exists()) {
+//                File newFile = new File(links.getAbsolutePath() + ".bup");
+//                newFile.delete();
+//                links.renameTo(newFile);
+//
+//            }
+//            uiInterface.showMessageDialog("Inkompatible Konfiguration oder Downloadliste gefunden\r\nDefault Einstellungen geladen, Linkliste zurückgestellt");
+//
+//        }
 
         logger.info("Erstelle Controller");
         JDController controller = new JDController();
