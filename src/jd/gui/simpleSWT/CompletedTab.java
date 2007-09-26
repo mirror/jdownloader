@@ -14,10 +14,9 @@ import org.eclipse.swt.widgets.MessageBox;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Tree;
 import org.eclipse.swt.widgets.TreeColumn;
-import org.eclipse.swt.widgets.TreeItem;
 
 public class CompletedTab {
-    public Tree trCompleted;
+    public ExtendedTree trCompleted;
     private CTabFolder folder;
     private GuiListeners guiListeners;
     public CompletedTab(CTabFolder folder, GuiListeners guiListeners) {
@@ -30,24 +29,24 @@ public class CompletedTab {
         tbCompletedFiles.setText(JDSWTUtilities.getSWTResourceString("CompletedTab.name"));
         tbCompletedFiles.setImage(JDSWTUtilities.getImageSwt("completed"));
         Shell shell = folder.getShell();
-        trCompleted = new Tree(folder, SWT.BORDER | SWT.MULTI | SWT.FULL_SELECTION);
-        tbCompletedFiles.setControl(trCompleted);
+        trCompleted = new ExtendedTree(folder, SWT.BORDER | SWT.MULTI | SWT.FULL_SELECTION);
+        tbCompletedFiles.setControl(trCompleted.tree);
         trCompleted.setHeaderVisible(true);
-        JDSWTUtilities.treeCol(JDSWTUtilities.getSWTResourceString("CompletedTab.column0.name"), trCompleted, 350);
-        JDSWTUtilities.treeCol(JDSWTUtilities.getSWTResourceString("CompletedTab.column1.name"), trCompleted, 300);
-        JDSWTUtilities.treeCol(JDSWTUtilities.getSWTResourceString("CompletedTab.column2.name"), trCompleted, 100);
+        JDSWTUtilities.treeCol(JDSWTUtilities.getSWTResourceString("CompletedTab.column0.name"), trCompleted.tree, 350);
+        JDSWTUtilities.treeCol(JDSWTUtilities.getSWTResourceString("CompletedTab.column1.name"), trCompleted.tree, 300);
+        JDSWTUtilities.treeCol(JDSWTUtilities.getSWTResourceString("CompletedTab.column2.name"), trCompleted.tree, 100);
         TreeColumn[] columns = trCompleted.getColumns();
         for (int i = 0; i < (columns.length); i++) {
             columns[i].setResizable(true);
             columns[i].setMoveable(true);
         }
         String[] text2 = {"Archiv.php", "", ""};
-
-        JDSWTUtilities.createTreeitem(trCompleted, text2, null, ItemData.STATUS_NOTHING, ItemData.TYPE_FILE);
+        ExtendedTreeItem tr1 = new ExtendedTreeItem(trCompleted);
+        tr1.setText(text2);
 
         Listener compDeleteListener = new Listener() {
             public void handleEvent(Event event) {
-                TreeItem[] items = DownloadTab.getSelection(trCompleted);
+                ExtendedTreeItem[] items = trCompleted.getOwnSelection();
                 MessageBox mbDelete = new MessageBox(trCompleted.getShell(), SWT.ICON_QUESTION | SWT.YES | SWT.NO);
                 String itemsText = "";
                 if (items.length < 30) {
@@ -62,7 +61,7 @@ public class CompletedTab {
                 int response = mbDelete.open();
                 if (response == SWT.YES) {
                     for (int i = 0; i < items.length; i++) {
-                        JDSWTUtilities.disposeItem(items[i]);
+                        items[i].dispose();
                     }
                     trCompleted.notifyListeners(SWT.Collapse, new Event());
                 }
@@ -74,7 +73,7 @@ public class CompletedTab {
          * Kontextmenu fuer die TreeItems
          */
         Menu menu = new Menu(shell, SWT.POP_UP);
-        trCompleted.setMenu(menu);
+        trCompleted.tree.setMenu(menu);
         /*
          * Menu zum Kopieren von Items
          */

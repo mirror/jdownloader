@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.util.HashMap;
 
+import jd.plugins.DownloadLink;
 import jd.utils.JDSWTUtilities;
 
 import org.eclipse.swt.SWT;
@@ -32,7 +33,6 @@ import org.eclipse.swt.widgets.Table;
 import org.eclipse.swt.widgets.TableColumn;
 import org.eclipse.swt.widgets.ToolItem;
 import org.eclipse.swt.widgets.Tree;
-import org.eclipse.swt.widgets.TreeItem;
 
 public class GuiListeners {
     // public static final String ST_DISK_READ_QUEUE_LENGTH =
@@ -232,9 +232,9 @@ public class GuiListeners {
                     listeners.get("DownloadTab.delete").handleEvent(new Event());
                 }
                 if ((e.keyCode == 'c') && (e.stateMask == SWT.CTRL)) {
-                    copy((Tree) e.widget);
+                    copy((ExtendedTree) ((Tree) e.widget).getData());
                 }
-                if ((e.keyCode == SWT.F2) && (DownloadTab.getSelection(mainGui.downloadTab.trDownload).length > 0)) {
+                if ((e.keyCode == SWT.F2) && (((ExtendedTree) ((Tree) e.widget).getData()).getOwnSelection().length > 0)) {
                     getListener("DownloadTab.rename").handleEvent(new Event());
                 }
             }
@@ -349,7 +349,7 @@ public class GuiListeners {
                     listeners.get("CompletedTab.delete").handleEvent(new Event());
                 }
                 if ((e.keyCode == 'c') && (e.stateMask == SWT.CTRL)) {
-                    copy((Tree) e.widget);
+                    copy((ExtendedTree) ((Tree) e.widget).getData());
                 }
             }
 
@@ -361,25 +361,25 @@ public class GuiListeners {
         keyListeners.put("trCompleted", trCompKeyListener);
         return trCompKeyListener;
     }
-    private void copy(Tree tree) {
-        TreeItem[] items = tree.getSelection();
+    private void copy(ExtendedTree trCompleted) {
+        ExtendedTreeItem[] items = (ExtendedTreeItem[]) trCompleted.getSelection();
         String evd = "";
         if (items.length > 0) {
             for (int i = 0; i < items.length - 1; i++) {
-                ItemData itd = (ItemData) items[i].getData();
-                evd += ((itd.link != null) ? itd.link : items[i].getText());
+                DownloadLink downloadLink =  items[i].getDownloadLink();
+                evd += ((downloadLink != null) ? downloadLink.getEncryptedUrlDownload() : items[i].getText());
                 evd += System.getProperty("line.separator");
             }
-            ItemData itd = (ItemData) items[items.length - 1].getData();
-            evd += ((itd.link != null) ? itd.link : items[items.length - 1].getText());
-            Clipboard clipboard = new Clipboard(tree.getDisplay());
+            DownloadLink downloadLink =  items[items.length - 1].getDownloadLink();
+            evd += ((downloadLink != null) ? downloadLink.getEncryptedUrlDownload() : items[items.length - 1].getText());
+            Clipboard clipboard = new Clipboard(trCompleted.tree.getDisplay());
             clipboard.setContents(new String[]{evd}, new Transfer[]{TextTransfer.getInstance()});
         }
     }
-    public Listener addTreeCopyListener(final Tree tree, String name) {
+    public Listener addTreeCopyListener(final ExtendedTree trCompleted, String name) {
         Listener copyl = new Listener() {
             public void handleEvent(Event event) {
-                copy(tree);
+                copy(trCompleted);
             }
         };
         listeners.put(name, copyl);
@@ -410,7 +410,7 @@ public class GuiListeners {
                     // guiConfig.setQColumnOrder(trDownload.getColumnOrder());
                     // //TODO Bug der durch TreeEditor beim verschieben der
                     // Columns entsteht beheben
-                    guiConfig.DownloadColumnOrder = mainGui.downloadTab.trDownload.getColumnOrder();
+                    guiConfig.DownloadColumnOrder = mainGui.downloadTab.trDownload.tree.getColumnOrder();
                     guiConfig.isMaximized = shell.getMaximized();
                     ObjectOutputStream objOut = new ObjectOutputStream(new BufferedOutputStream(new FileOutputStream(mainGui.guiConfigFile)));
                     objOut.writeObject(guiConfig);

@@ -49,7 +49,6 @@ import org.eclipse.swt.widgets.MenuItem;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.ToolBar;
 import org.eclipse.swt.widgets.ToolItem;
-import org.eclipse.swt.widgets.TreeItem;
 
 public class MainGui extends org.eclipse.swt.widgets.Composite implements UIInterface {
 
@@ -235,14 +234,14 @@ public class MainGui extends org.eclipse.swt.widgets.Composite implements UIInte
                     guiConfig.GUIsize = new int[]{size.x, size.y};
 
                     for (int i = 0; i < guiConfig.DownloadColumnWidht.length; i++) {
-                        downloadTab.trDownload.getColumn(i).setWidth(guiConfig.DownloadColumnWidht[i]);
+                        downloadTab.trDownload.tree.getColumn(i).setWidth(guiConfig.DownloadColumnWidht[i]);
                     }
 
                 } else {
 
                     if (guiConfig.DownloadColumnWidhtMaximized != null)
                         for (int i = 0; i < guiConfig.DownloadColumnWidhtMaximized.length; i++) {
-                            downloadTab.trDownload.getColumn(i).setWidth(guiConfig.DownloadColumnWidhtMaximized[i]);
+                            downloadTab.trDownload.tree.getColumn(i).setWidth(guiConfig.DownloadColumnWidhtMaximized[i]);
                         }
 
                 }
@@ -274,7 +273,7 @@ public class MainGui extends org.eclipse.swt.widgets.Composite implements UIInte
     public void toolBarBtSetEnabled() {
 
         if ((folder.getSelectionIndex() == 0) && downloadTab.trDownload.getSelectionCount() > 0) {
-            TreeItem[] trDownloadSelection = DownloadTab.getSelection(downloadTab.trDownload);
+            ExtendedTreeItem[] trDownloadSelection = downloadTab.trDownload.getOwnSelection();
             if (!isDownloadTree) {
                 isDownloadTree = true;
                 btDelete.removeListener(SWT.Selection, guiListeners.getListener("CompletedTab.delete"));
@@ -290,14 +289,14 @@ public class MainGui extends org.eclipse.swt.widgets.Composite implements UIInte
                 btGoDown.setEnabled(false);
                 btGoLastDown.setEnabled(false);
             } else {
-                if (downloadTab.trDownload.getItem(0) == (trDownloadSelection[0])) {
+                if (downloadTab.trDownload.tree.getItem(0) == (trDownloadSelection[0].item)) {
                     btGoLastUp.setEnabled(false);
                     btGoUp.setEnabled(false);
                 } else {
                     btGoLastUp.setEnabled(true);
                     btGoUp.setEnabled(true);
                 }
-                if (downloadTab.trDownload.getItem(downloadTab.trDownload.getItemCount() - 1) == (trDownloadSelection[trDownloadSelection.length - 1])) {
+                if (downloadTab.trDownload.tree.getItem(downloadTab.trDownload.tree.getItemCount() - 1) == (trDownloadSelection[trDownloadSelection.length - 1].item)) {
                     btGoDown.setEnabled(false);
                     btGoLastDown.setEnabled(false);
                 } else {

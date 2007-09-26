@@ -1,10 +1,10 @@
 package jd.gui.simpleSWT;
 
-import java.util.ArrayList;
+
 import java.util.HashMap;
 import java.util.LinkedList;
-import java.util.Vector;
 
+import jd.plugins.DownloadLink;
 import jd.utils.JDSWTUtilities;
 
 import org.eclipse.swt.SWT;
@@ -34,20 +34,17 @@ import org.eclipse.swt.widgets.MenuItem;
 import org.eclipse.swt.widgets.MessageBox;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Text;
-import org.eclipse.swt.widgets.Tree;
 import org.eclipse.swt.widgets.TreeColumn;
 import org.eclipse.swt.widgets.TreeItem;
 
 public class DownloadTab {
 
-    public Tree trDownload;
+    public ExtendedTree trDownload;
     /**
      * Geghoert zum Drag&Drop System
      */
-    private Object dragSourceItem = null;
-    private Object dataMap = new Object();
+    private ExtendedTreeItem[] dragSourceItem;
     private MainGui mainGui;
-    public TreeItem ownSelected = null;
     /**
      * Liste Aller TreeEditoren
      */
@@ -59,7 +56,9 @@ public class DownloadTab {
         this.mainGui = mainGui;
         initDownload();
     }
+
     private void initDownload() {
+
         CTabItem tbDownloadFiles = new CTabItem(mainGui.folder, SWT.NONE);
         tbDownloadFiles.setText(JDSWTUtilities.getSWTResourceString("DownloadTab.name"));
         tbDownloadFiles.setImage(JDSWTUtilities.getImageSwt("download"));
@@ -74,14 +73,14 @@ public class DownloadTab {
                 String[] text = {JDSWTUtilities.getSWTResourceString("DownloadTab.newFolder.name"), "", ""};
 
                 if (trDownload.getSelectionCount() > 0) {
-                    TreeItem[] items = trDownload.getItems();
+                    ExtendedTreeItem[] items = (ExtendedTreeItem[]) trDownload.getItems();
                     int index = 0;
-                    TreeItem item = trDownload.getSelection()[0];
+                    ExtendedTreeItem item = (ExtendedTreeItem) trDownload.getSelection()[0];
 
-                    TreeItem parent = item.getParentItem();
+                    ExtendedTreeItem parent = item.getParentItem();
                     if (parent != null)
                         while (parent != null) {
-                            TreeItem parent2 = parent.getParentItem();
+                            ExtendedTreeItem parent2 = parent.getParentItem();
                             if (parent2 != null)
                                 parent = parent2;
                             else {
@@ -103,14 +102,19 @@ public class DownloadTab {
                             }
                         }
                     }
-
-                    trDownload.setSelection(JDSWTUtilities.createTreeitem(trDownload, text, null, ItemData.STATUS_NOTHING, ItemData.TYPE_FOLDER, index));
+                    ExtendedTreeItem im = new ExtendedTreeItem(trDownload, index);
+                    im.setType(ExtendedTreeItem.TYPE_FOLDER);
+                    im.setText(text);
+                    trDownload.setSelection(im);
                     // workaround fuer die scheiss treeEditoren
                     // laesst die treeEditoren neu zeichnen
                     trDownload.notifyListeners(SWT.Collapse, new Event());
                 } else {
 
-                    trDownload.setSelection(JDSWTUtilities.createTreeitem(trDownload, text, null, ItemData.STATUS_NOTHING, ItemData.TYPE_FOLDER));
+                    ExtendedTreeItem im = new ExtendedTreeItem(trDownload);
+                    im.setType(ExtendedTreeItem.TYPE_FOLDER);
+                    im.setText(text);
+                    trDownload.setSelection(im);
 
                     // muss hier nicht gemacht werden, da das item
                     // sowieso an letzter stelle hinzugefuegt
@@ -131,14 +135,14 @@ public class DownloadTab {
                 String[] text = {JDSWTUtilities.getSWTResourceString("DownloadTab.newContainer.name"), "", ""};
 
                 if (trDownload.getSelectionCount() > 0) {
-                    TreeItem[] items = trDownload.getItems();
+                    ExtendedTreeItem[] items = (ExtendedTreeItem[]) trDownload.getItems();
                     int index = 0;
-                    TreeItem item = trDownload.getSelection()[0];
+                    ExtendedTreeItem item = (ExtendedTreeItem) trDownload.getSelection()[0];
 
-                    TreeItem parent = item.getParentItem();
+                    ExtendedTreeItem parent = item.getParentItem();
                     if (parent != null)
                         while (parent != null) {
-                            TreeItem parent2 = parent.getParentItem();
+                            ExtendedTreeItem parent2 = parent.getParentItem();
                             if (parent2 != null)
                                 parent = parent2;
                             else {
@@ -160,14 +164,19 @@ public class DownloadTab {
                             }
                         }
                     }
-
-                    trDownload.setSelection(JDSWTUtilities.createTreeitem(trDownload, text, null, ItemData.STATUS_NOTHING, ItemData.TYPE_CONTAINER, index));
+                    ExtendedTreeItem im = new ExtendedTreeItem(trDownload, index);
+                    im.setType(ExtendedTreeItem.TYPE_CONTAINER);
+                    im.setText(text);
+                    trDownload.setSelection(im);
                     // workaround fuer die scheiss treeEditoren
                     // laesst die treeEditoren neu zeichnen
                     trDownload.notifyListeners(SWT.Collapse, new Event());
                 } else {
 
-                    trDownload.setSelection(JDSWTUtilities.createTreeitem(trDownload, text, null, ItemData.STATUS_NOTHING, ItemData.TYPE_CONTAINER));
+                    ExtendedTreeItem im = new ExtendedTreeItem(trDownload);
+                    im.setType(ExtendedTreeItem.TYPE_CONTAINER);
+                    im.setText(text);
+                    trDownload.setSelection(im);
 
                     // muss hier nicht gemacht werden, da das item
                     // sowieso an letzter stelle hinzugefuegt
@@ -182,7 +191,7 @@ public class DownloadTab {
 
         Listener deleteListener = new Listener() {
             public void handleEvent(Event event) {
-                TreeItem[] items = getSelection(trDownload);
+                ExtendedTreeItem[] items = trDownload.getOwnSelection();
                 MessageBox mbDelete = new MessageBox(trDownload.getShell(), SWT.ICON_QUESTION | SWT.YES | SWT.NO);
                 String itemsText = "";
                 if (items.length < 30) {
@@ -197,7 +206,7 @@ public class DownloadTab {
                 int response = mbDelete.open();
                 if (response == SWT.YES) {
                     for (int i = 0; i < items.length; i++) {
-                        JDSWTUtilities.disposeItem(items[i]);
+                        items[i].dispose();
                     }
                     trDownload.notifyListeners(SWT.Collapse, new Event());
                 }
@@ -243,8 +252,8 @@ public class DownloadTab {
          */
         CTabFolder folder = tbDownloadFiles.getParent();
         final Shell shell = folder.getShell();
-        trDownload = new Tree(folder, SWT.BORDER | SWT.MULTI | SWT.FULL_SELECTION);
-        tbDownloadFiles.setControl(trDownload);
+        trDownload = new ExtendedTree(folder, SWT.BORDER | SWT.MULTI | SWT.FULL_SELECTION);
+        tbDownloadFiles.setControl(trDownload.tree);
         trDownload.setHeaderVisible(true);
         /*
          * Workearound fuer ColumnReorder
@@ -319,7 +328,7 @@ public class DownloadTab {
         };
 
         for (int i = 0; i < mainGui.guiConfig.DownloadColumnWidht.length; i++) {
-            TreeColumn col = JDSWTUtilities.treeCol(JDSWTUtilities.getSWTResourceString("DownloadTab.column" + i + ".name"), trDownload, mainGui.guiConfig.DownloadColumnWidht[i]);
+            TreeColumn col = JDSWTUtilities.treeCol(JDSWTUtilities.getSWTResourceString("DownloadTab.column" + i + ".name"), trDownload.tree, mainGui.guiConfig.DownloadColumnWidht[i]);
             col.setResizable(true);
             col.setMoveable(true);
             col.addListener(SWT.Resize, downloadColumnResize);
@@ -327,30 +336,30 @@ public class DownloadTab {
             col.addListener(SWT.Selection, downloadColumnListener);
         }
         trDownload.setColumnOrder(mainGui.guiConfig.DownloadColumnOrder);
-        treeAddDragAndDrop(trDownload);
+        treeAddDragAndDrop();
         // Create the editor and set its attributes
-        final TreeEditor editor = new TreeEditor(trDownload);
+        final TreeEditor editor = new TreeEditor(trDownload.tree);
         editor.horizontalAlignment = SWT.LEFT;
         editor.grabHorizontal = true;
         mainGui.guiListeners.addListener("DownloadTab.trDownload_MouseDown", new Listener() {
-
+            ExtendedTreeItem ownSelected = null;
             public void handleEvent(Event e) {
                 if (trDownload.getSelectionCount() == 1) {
-                    TreeItem item = trDownload.getSelection()[0];
-                    if (((ItemData) item.getData()).isLocked)
+                    ExtendedTreeItem[] items = trDownload.getOwnSelection();
+                    if (items.length == 0)
                         ownSelected = null;
-                    else if (ownSelected != null && ownSelected == item) {
+                    else if (ownSelected != null && ownSelected == items[0]) {
                         Point pt = new Point(e.x, e.y);
-                        Rectangle rect = item.getBounds(0);
+                        Rectangle rect = items[0].item.getBounds(0);
                         rect.x += 24;
                         rect.width -= 24;
                         if (rect.contains(pt) && e.button == 1) {
                             mainGui.guiListeners.getListener("DownloadTab.rename").handleEvent(e);
                             ownSelected = null;
                         } else
-                            ownSelected = item;
+                            ownSelected = items[0];
                     } else
-                        ownSelected = item;
+                        ownSelected = items[0];
                 } else {
                     ownSelected = null;
                 }
@@ -365,16 +374,16 @@ public class DownloadTab {
                 // pressed
 
                 // Determine the item to edit
-                TreeItem[] tItems = getSelection(trDownload);
+                ExtendedTreeItem[] tItems = trDownload.getOwnSelection();
                 if (tItems.length < 1)
                     return;
-                final TreeItem item = tItems[0];
+                final ExtendedTreeItem item = tItems[0];
                 trDownload.setSelection(item);
 
-                if (item == null || item.isDisposed())
+                if (item == null || item.item.isDisposed())
                     return;
                 // Create a text field to do the editing
-                renameText = new Text(trDownload, SWT.NONE);
+                renameText = new Text(trDownload.tree, SWT.NONE);
                 renameText.setText(item.getText(0));
                 renameText.selectAll();
                 renameText.setFocus();
@@ -384,7 +393,6 @@ public class DownloadTab {
 
                 renameText.addFocusListener(new FocusAdapter() {
                     public void focusLost(FocusEvent event) {
-                        JDSWTUtilities.redrawTreeImage(item, renameText.getText());
                         item.setText(0, renameText.getText());
                         renameText.dispose();
                     }
@@ -393,7 +401,7 @@ public class DownloadTab {
 
                     public void handleEvent(Event e) {
                         Point pt = new Point(e.x, e.y);
-                        Rectangle rect = item.getBounds(0);
+                        Rectangle rect = item.item.getBounds(0);
                         rect.x += 24;
                         rect.width -= 24;
                         if (!rect.contains(pt)) {
@@ -413,11 +421,12 @@ public class DownloadTab {
                 renameText.addKeyListener(new KeyAdapter() {
                     public void keyPressed(KeyEvent event) {
                         switch (event.keyCode) {
-                            case SWT.CR :
+                            case SWT.CR : {
                                 // Enter hit--set the text into the tree and
                                 // drop through
-                                JDSWTUtilities.redrawTreeImage(item, renameText.getText());
-                                item.setText(0, renameText.getText());
+                                renameText.notifyListeners(SWT.FocusOut, new Event());
+                                break;
+                            }
                             case SWT.ESC :
                                 // End editing session
                                 renameText.dispose();
@@ -435,7 +444,7 @@ public class DownloadTab {
 
                 });
 
-                editor.setEditor(renameText, item);
+                editor.setEditor(renameText, item.item);
 
             }
         });
@@ -444,7 +453,7 @@ public class DownloadTab {
          * Kontextmenu fuer die TreeItems
          */
         Menu menu = new Menu(shell, SWT.POP_UP);
-        trDownload.setMenu(menu);
+        trDownload.tree.setMenu(menu);
         /*
          * Menu zum erstellen neuer Ordner
          */
@@ -458,7 +467,7 @@ public class DownloadTab {
         MenuItem itemNewContainer = new MenuItem(menu, SWT.PUSH);
         itemNewContainer.setText(JDSWTUtilities.getSWTResourceString("DownloadTab.itemNewContainer.name"));
         itemNewContainer.addListener(SWT.Selection, newContainerListener);
-        trDownload.setMenu(menu);
+        trDownload.tree.setMenu(menu);
 
         new MenuItem(menu, SWT.SEPARATOR);
 
@@ -488,7 +497,7 @@ public class DownloadTab {
         itemSelectAll.setText(JDSWTUtilities.getSWTResourceString("itemSelectAll.name"));
         itemSelectAll.addListener(SWT.Selection, new Listener() {
             public void handleEvent(Event e) {
-                trDownload.selectAll();
+                trDownload.tree.selectAll();
 
             }
         });
@@ -498,7 +507,7 @@ public class DownloadTab {
             public void menuShown(org.eclipse.swt.events.MenuEvent e) {
                 boolean isSelected = trDownload.getSelectionCount() > 0;
                 itemDelete.setEnabled(isSelected);
-                itemRename.setEnabled(getSelection(trDownload).length > 0);
+                itemRename.setEnabled(trDownload.getOwnSelection().length > 0);
                 itemCopy.setEnabled(isSelected);
 
             }
@@ -507,24 +516,15 @@ public class DownloadTab {
         {
             String[] text2 = {"Archiv.php", "", "", ""};
 
-            JDSWTUtilities.setTreeItemDownloading(JDSWTUtilities.createTreeitem(trDownload, text2, null, ItemData.STATUS_NOTHING, ItemData.TYPE_FILE), mainGui.guiListeners);
-
-            JDSWTUtilities.setTreeItemDownloading(JDSWTUtilities.createTreeitem(trDownload, text2, null, ItemData.STATUS_NOTHING, ItemData.TYPE_FILE), mainGui.guiListeners);
-
-            for (int i = 1; i < 5; i++) {
-                String[] text = {"" + i, "", "", ""};
-                JDSWTUtilities.createTreeitem(trDownload, text, "http://google.de", ItemData.STATUS_NOTHING, i);
-            }
-            String[] text3 = {"rar", "php", "exe", "jar", "jpg", "txt"};
-            for (int i = 0; i < text3.length; i++) {
-                JDSWTUtilities.createTreeitem(trDownload, new String[]{"file" + i + "." + text3[i], "", "", ""}, "http://google.de", ItemData.STATUS_NOTHING, ItemData.TYPE_FILE);
-            }
+            ExtendedTreeItem tr1 = new ExtendedTreeItem(trDownload);
+            tr1.setText(text2);
 
         }
         trDownload.addListener(SWT.Selection, mainGui.guiListeners.initToolBarBtSetEnabledListener());
         trDownload.addListener(SWT.Collapse, mainGui.guiListeners.getListener("toolBarBtSetEnabled"));
-        trDownload.addKeyListener(mainGui.guiListeners.initTrDownloadKeyListener());
+        trDownload.tree.addKeyListener(mainGui.guiListeners.initTrDownloadKeyListener());
     }
+
     /**
      * Checkt ob das Item Selektiert ist
      * 
@@ -532,48 +532,12 @@ public class DownloadTab {
      * @param selection
      * @return
      */
-    private boolean isSelected(TreeItem item, TreeItem[] selection) {
+    private boolean isPartof(ExtendedTreeItem item, ExtendedTreeItem[] selection) {
         for (int i = 0; i < selection.length; i++) {
             if (item == selection[i])
                 return true;
         }
         return false;
-    }
-    /**
-     * Checkt ob ein ElternItem selektiert ist
-     * 
-     * @param item
-     * @return
-     */
-    private static boolean isParentSelected(TreeItem item) {
-        TreeItem[] selection = item.getParent().getSelection();
-        TreeItem parent = item.getParentItem();
-        while (parent != null) {
-            for (int i = 0; i < selection.length; i++) {
-                if (parent == selection[i])
-                    return true;
-            }
-            parent = parent.getParentItem();
-        }
-        return false;
-    }
-    /**
-     * Gibt die selektierten Items ohne die selektierten UnterItems dessen
-     * ElternItem selektiert sind aus. Boah was fuer ein komplizierter Satz
-     * 
-     * @param tree
-     * @return
-     */
-    static TreeItem[] getSelection(Tree tree) {
-        TreeItem[] selection = tree.getSelection();
-        ArrayList<TreeItem> ownselected = new ArrayList<TreeItem>();
-        for (int i = 0; i < selection.length; i++) {
-            if (!isParentSelected(selection[i])) {
-                if (!((ItemData) selection[i].getData()).isLocked)
-                    ownselected.add(selection[i]);
-            }
-        }
-        return (TreeItem[]) ownselected.toArray(new TreeItem[ownselected.size()]);
     }
     /**
      * Diese Methode ist fuer die Buttons in der Toolbar die die Items
@@ -591,53 +555,37 @@ public class DownloadTab {
             pos = -1;
         } else
             pos2 = 1;
-        HashMap<TreeItem, Integer> lostItems = new HashMap<TreeItem, Integer>();
-        HashMap<TreeItem, Integer> addItems = new HashMap<TreeItem, Integer>();
+        HashMap<ExtendedTreeItem, Integer> lostItems = new HashMap<ExtendedTreeItem, Integer>();
+        HashMap<ExtendedTreeItem, Integer> addItems = new HashMap<ExtendedTreeItem, Integer>();
 
         int toTree = 0;
-        TreeItem[] items = getSelection(trDownload);
-        TreeItem[] itemsToSelect = new TreeItem[items.length];
-        DataMap[] dat = (DataMap[]) new DataMap[items.length];
+        ExtendedTreeItem[] items = trDownload.getOwnSelection();
+        ExtendedTreeItem[] itemsToSelect = new ExtendedTreeItem[items.length];
         for (int i = 0; i < items.length; i++) {
             int cc = i;
             if (pos == 2 || pos == 3)
                 cc = items.length - i - 1;
-            dat[i] = getItemData(items[cc], trDownload.getColumnCount());
             if (pos < 3) {
-                TreeItem parent = items[cc].getParentItem();
+                ExtendedTreeItem parent = items[cc].getParentItem();
                 if (parent != null) {
-                    TreeItem[] items2 = parent.getItems();
-                    int index = 0;
-                    for (int b = 0; b < items2.length; b++) {
-                        if (items2[b] == items[cc]) {
-                            index = b;
-                            break;
-                        }
-                    }
+                    int index = parent.item.indexOf(items[cc].item);
 
-                    if (pos < 0 & index > 0 || pos > 0 & index != (items2.length - 1)) {
+                    if (pos < 0 & index > 0 || pos > 0 & index != (parent.item.getItemCount() - 1)) {
                         if (pos == 2) {
-                            while (isSelected(parent.getItem(index + 1), items))
+                            while (isPartof(parent.getItem(index + 1), items))
                                 index++;
 
                             if (lostItems.containsKey(parent))
                                 index = index - ((Integer) lostItems.get(parent));
                         }
-                        itemsToSelect[i] = setDataMapItems(parent, dat[i], index + pos);
+                        items[cc].setPosition(parent, index + pos);
+                        itemsToSelect[i] = items[cc];
                     } else {
-                        TreeItem parent2 = parent.getParentItem();
+                        ExtendedTreeItem parent2 = parent.getParentItem();
                         if (parent2 == null)
-                            items2 = trDownload.getItems();
+                            index = trDownload.tree.indexOf(parent.item);
                         else
-                            items2 = parent2.getItems();
-
-                        index = 0;
-                        for (int b = 0; b < items2.length; b++) {
-                            if (items2[b] == parent) {
-                                index = b;
-                                break;
-                            }
-                        }
+                            index = parent2.item.indexOf(parent.item);
                         if (pos == 2)
                             if (lostItems.containsKey(parent)) {
                                 Integer inte = ((Integer) lostItems.get(parent));
@@ -649,7 +597,8 @@ public class DownloadTab {
                         if (parent2 == null) {
                             if (pos == 2)
                                 index = index + toTree;
-                            itemsToSelect[i] = setDataMapItems(trDownload, dat[i], index + pos2);
+                            items[cc].setPosition(trDownload, index + pos2);
+                            itemsToSelect[i] = items[cc];
                             toTree++;
                         } else {
 
@@ -662,13 +611,14 @@ public class DownloadTab {
                                 } else {
                                     addItems.put(parent2, 1);
                                 }
-                            itemsToSelect[i] = setDataMapItems(parent2, dat[i], index + pos2);
+                            items[cc].setPosition(parent2, index + pos2);
+                            itemsToSelect[i] = items[cc];
 
                         }
 
                     }
                 } else {
-                    TreeItem[] items2 = trDownload.getItems();
+                    ExtendedTreeItem[] items2 = (ExtendedTreeItem[]) trDownload.getItems();
                     int index = 0;
                     for (int b = 0; b < items2.length; b++) {
                         if (items2[b] == items[cc]) {
@@ -677,28 +627,30 @@ public class DownloadTab {
                         }
                     }
                     if (pos == 2)
-                        while (isSelected(trDownload.getItem(index + 1), items))
+                        while (isPartof((ExtendedTreeItem) trDownload.getItem(index + 1), items))
                             index++;
-                    itemsToSelect[i] = setDataMapItems(trDownload, dat[i], index + pos + toTree);
+                    items[cc].setPosition(trDownload, index + pos + toTree);
+                    itemsToSelect[i] = items[cc];
                 }
             } else if (pos == 3) {
-                itemsToSelect[i] = setDataMapItems(trDownload, dat[i], 0);
+                items[cc].setPosition(trDownload, 0);
+                itemsToSelect[i] = items[cc];
             } else {
-                itemsToSelect[i] = setDataMapItems(trDownload, dat[i], -1);
+                items[cc].setPosition(trDownload);
+                itemsToSelect[i] = items[cc];
             }
-            JDSWTUtilities.disposeItem(items[cc]);
         }
         trDownload.setSelection(itemsToSelect);
         trDownload.notifyListeners(SWT.Collapse, new Event());
 
     }
-    public boolean isDragItem(TreeItem item, TreeItem[] dragSourceItems) {
-        if (isSelected(item, dragSourceItems))
+    public boolean isDragItem(ExtendedTreeItem item, ExtendedTreeItem[] dragSourceItems) {
+        if (isPartof(item, dragSourceItems))
             return true;
         else {
-            TreeItem parent = item.getParentItem();
+            ExtendedTreeItem parent = item.getParentItem();
             if (parent != null)
-                if (isDragItem(parent, dragSourceItems))
+                if (isPartof(parent, dragSourceItems))
                     return true;
         }
         return false;
@@ -708,17 +660,18 @@ public class DownloadTab {
      * Hier faengt das Drag&Drop System an und meine Dokumentation hoert auf
      * denn das will sich sowieso keiner antun
      */
-    private void treeAddDragAndDrop(final Tree tree) {
+    private void treeAddDragAndDrop() {
+        final ExtendedTree tree = trDownload;
         Transfer[] types = new Transfer[]{TextTransfer.getInstance()};
         int operations = DND.DROP_MOVE;
-        final DragSource source = new DragSource(tree, operations);
+        final DragSource source = new DragSource(tree.tree, operations);
         source.setTransfer(types);
         source.addDragListener(new DragSourceListener() {
             public void dragStart(DragSourceEvent event) {
                 if ((renameText != null) && !renameText.isDisposed())
                     renameText.dispose();
                 event.doit = true;
-                TreeItem[] selection = getSelection(tree);
+                ExtendedTreeItem[] selection = tree.getOwnSelection();
                 if (selection.length == 0) {
                     event.doit = false;
                 }
@@ -729,44 +682,33 @@ public class DownloadTab {
 
             public void dragSetData(DragSourceEvent event) {
 
-                TreeItem[] items = (TreeItem[]) dragSourceItem;
-                DataMap[] dat = (DataMap[]) new DataMap[items.length];
                 String evd = "";
-                for (int i = 0; i < items.length; i++) {
-                    dat[i] = getItemData(items[i], tree.getColumnCount());
-                    ItemData itd = (ItemData) items[i].getData();
-                    if (itd.link != null)
-                        evd += itd.link + ((i != items.length - 1) ? System.getProperty("line.separator") : "");
+                for (int i = 0; i < dragSourceItem.length; i++) {
+                    DownloadLink downloadLink = dragSourceItem[i].getDownloadLink();
+                    if (downloadLink != null)
+                        evd += downloadLink.getEncryptedUrlDownload() + ((i != dragSourceItem.length - 1) ? System.getProperty("line.separator") : "");
                     else
-                        evd += items[i].getText() + ((i != items.length - 1) ? System.getProperty("line.separator") : "");
+                        evd += dragSourceItem[i].getText() + ((i != dragSourceItem.length - 1) ? System.getProperty("line.separator") : "");
                 }
 
                 event.data = evd;
-                dataMap = dat;
             }
 
             public void dragFinished(DragSourceEvent event) {
-
-                TreeItem[] items = (TreeItem[]) dragSourceItem;
-                if (event.detail == DND.DROP_MOVE)
-                    for (int i = 0; i < items.length; i++) {
-                        if (items[i] != null)
-                            JDSWTUtilities.disposeItem(items[i]);
-                    }
                 dragSourceItem = null;
             }
         });
 
-        DropTarget target = new DropTarget(tree, operations);
+        DropTarget target = new DropTarget(tree.tree, operations);
         target.setTransfer(types);
 
         target.addDropListener(new DropTargetAdapter() {
             public void dragOver(DropTargetEvent event) {
                 event.feedback = DND.FEEDBACK_EXPAND | DND.FEEDBACK_SCROLL;
                 if (event.item != null) {
-                    TreeItem item = (TreeItem) event.item;
-                    Point pt = tree.getDisplay().map(null, tree, event.x, event.y);
-                    Rectangle bounds = item.getBounds();
+                    ExtendedTreeItem item = (ExtendedTreeItem)((TreeItem) event.item).getData();;
+                    Point pt = tree.getDisplay().map(null, tree.tree, event.x, event.y);
+                    Rectangle bounds = item.item.getBounds();
                     if (pt.y < bounds.y + bounds.height / 3) {
                         event.feedback |= DND.FEEDBACK_INSERT_BEFORE;
                     } else if (pt.y > bounds.y + 2 * bounds.height / 3) {
@@ -787,64 +729,58 @@ public class DownloadTab {
                     return;
                 }
                 if (event.item == null) {
-                    TreeItem[] selectItems = new TreeItem[((DataMap[]) dataMap).length];
-                    for (int i = 0; i < ((DataMap[]) dataMap).length; i++) {
-                        selectItems[i] = setDataMapItems(tree, ((DataMap[]) dataMap)[i], -1);
+                    for (int i = 0; i < dragSourceItem.length; i++) {
+                        dragSourceItem[i].setPosition(tree);
                     }
-                    tree.setSelection(selectItems);
-                    selectItems = null;
+                    tree.setSelection(dragSourceItem);
 
                 } else {
-                    TreeItem item = (TreeItem) event.item;
-                    boolean isContainer = ((ItemData) item.getData()).type == ItemData.TYPE_CONTAINER;
-                    LinkedList<TreeItem> selectItems = new LinkedList<TreeItem>();
-                    if (isDragItem(item, (TreeItem[]) dragSourceItem)) {
+                    ExtendedTreeItem item = (ExtendedTreeItem)((TreeItem) event.item).getData();
+                    boolean isContainer = item.getType() == ExtendedTreeItem.TYPE_CONTAINER;
+
+                    if (isDragItem(item, dragSourceItem)) {
                         event.detail = DND.DROP_NONE;
                         return;
                     }
-                    Point pt = tree.getDisplay().map(null, tree, event.x, event.y);
+                    Point pt = tree.getDisplay().map(null, tree.tree, event.x, event.y);
                     Rectangle bounds = item.getBounds();
-                    TreeItem parent = item.getParentItem();
+                    ExtendedTreeItem parent = item.getParentItem();
+          
                     if (parent != null) {
-                        TreeItem[] items = parent.getItems();
-                        int index = 0;
-                        for (int i = 0; i < items.length; i++) {
-                            if (items[i] == item) {
-                                index = i;
-                                break;
-                            }
-                        }
-
+                        System.out.println();
+                        int index = parent.item.indexOf(item.item);
                         if (pt.y < bounds.y + bounds.height / 3) {
-                            for (int i = 0; i < ((DataMap[]) dataMap).length; i++) {
-                                selectItems.add(setDataMapItems(parent, ((DataMap[]) dataMap)[i], index));
+                            for (int i = 0; i < dragSourceItem.length; i++) {
+                                dragSourceItem[i].setPosition(parent, index);
                             }
-                            tree.setSelection(selectItems.toArray(new TreeItem[selectItems.size()]));
-                            selectItems = null;
+                            tree.setSelection(dragSourceItem);
                         } else if (pt.y > bounds.y + 2 * bounds.height / 3) {
-                            if (((ItemData) item.getData()).type == ItemData.TYPE_FOLDER | isContainer) {
-
-                                for (int i = 0; i < ((DataMap[]) dataMap).length; i++) {
-                                    if (!isContainer || ((ItemData) ((TreeItem[]) dragSourceItem)[i].getData()).type == ItemData.TYPE_FILE)
-                                        selectItems.add(setDataMapItems(parent, ((DataMap[]) dataMap)[i], index + 1));
-                                    else
-                                        ((TreeItem[]) dragSourceItem)[i] = null;
+                            if (item.getType() == ExtendedTreeItem.TYPE_FOLDER | isContainer) {
+                                LinkedList<ExtendedTreeItem> selectItems = new LinkedList<ExtendedTreeItem>();
+                                for (int i = 0; i < dragSourceItem.length; i++) {
+                                    if (!isContainer || dragSourceItem[i].getType() == ExtendedTreeItem.TYPE_FILE)
+                                    {
+                                        dragSourceItem[i].setPosition(parent, index + 1);
+                                        selectItems.add(dragSourceItem[i]);
+                                    }
                                 }
-                                tree.setSelection(selectItems.toArray(new TreeItem[selectItems.size()]));
+                                tree.setSelection(selectItems.toArray(new ExtendedTreeItem[selectItems.size()]));
                                 selectItems = null;
                             } else {
                                 event.detail = DND.DROP_NONE;
                                 return;
                             }
                         } else {
-                            if (((ItemData) item.getData()).type == ItemData.TYPE_FOLDER | isContainer) {
-                                for (int i = 0; i < ((DataMap[]) dataMap).length; i++) {
-                                    if (!isContainer || ((ItemData) ((TreeItem[]) dragSourceItem)[i].getData()).type == ItemData.TYPE_FILE)
-                                        selectItems.add(setDataMapItems(item, ((DataMap[]) dataMap)[i], -1));
-                                    else
-                                        ((TreeItem[]) dragSourceItem)[i] = null;
+                            if (item.getType() == ExtendedTreeItem.TYPE_FOLDER | isContainer) {
+                                LinkedList<ExtendedTreeItem> selectItems = new LinkedList<ExtendedTreeItem>();
+                                for (int i = 0; i < dragSourceItem.length; i++) {
+                                    if (!isContainer || dragSourceItem[i].getType() == ExtendedTreeItem.TYPE_FILE)
+                                    {
+                                        dragSourceItem[i].setPosition(item);
+                                        selectItems.add(dragSourceItem[i]);
+                                    }
                                 }
-                                tree.setSelection(selectItems.toArray(new TreeItem[selectItems.size()]));
+                                tree.setSelection(selectItems.toArray(new ExtendedTreeItem[selectItems.size()]));
                                 selectItems = null;
                             } else {
                                 event.detail = DND.DROP_NONE;
@@ -853,43 +789,39 @@ public class DownloadTab {
                         }
 
                     } else {
-                        TreeItem[] items = tree.getItems();
-                        int index = 0;
-                        for (int i = 0; i < items.length; i++) {
-                            if (items[i] == item) {
-                                index = i;
-                                break;
-                            }
-                        }
+                        int index = tree.tree.indexOf(item.item);
                         if (pt.y < bounds.y + bounds.height / 3) {
-                            for (int i = 0; i < ((DataMap[]) dataMap).length; i++) {
-                                selectItems.add(setDataMapItems(tree, ((DataMap[]) dataMap)[i], index));
+                            for (int i = 0; i < dragSourceItem.length; i++) {
+                                dragSourceItem[i].setPosition(tree, index);
                             }
-                            tree.setSelection(selectItems.toArray(new TreeItem[selectItems.size()]));
-                            selectItems = null;
+                            tree.setSelection(dragSourceItem);
                         } else if (pt.y > bounds.y + 2 * bounds.height / 3) {
-                            if (((ItemData) item.getData()).type == ItemData.TYPE_FOLDER | isContainer) {
-                                for (int i = 0; i < ((DataMap[]) dataMap).length; i++) {
-                                    if (!isContainer || ((ItemData) ((TreeItem[]) dragSourceItem)[i].getData()).type == ItemData.TYPE_FILE)
-                                        selectItems.add(setDataMapItems(tree, ((DataMap[]) dataMap)[i], index + 1));
-                                    else
-                                        ((TreeItem[]) dragSourceItem)[i] = null;
+                            if (item.getType() == ExtendedTreeItem.TYPE_FOLDER | isContainer) {
+                                LinkedList<ExtendedTreeItem> selectItems = new LinkedList<ExtendedTreeItem>();
+                                for (int i = 0; i < dragSourceItem.length; i++) {
+                                    if (!isContainer || dragSourceItem[i].getType() == ExtendedTreeItem.TYPE_FILE)
+                                    {
+                                        dragSourceItem[i].setPosition(tree, index + 1);
+                                        selectItems.add(dragSourceItem[i]);
+                                    }
                                 }
-                                tree.setSelection(selectItems.toArray(new TreeItem[selectItems.size()]));
+                                tree.setSelection(selectItems.toArray(new ExtendedTreeItem[selectItems.size()]));
                                 selectItems = null;
                             } else {
                                 event.detail = DND.DROP_NONE;
                                 return;
                             }
                         } else {
-                            if (((ItemData) item.getData()).type == ItemData.TYPE_FOLDER | isContainer) {
-                                for (int i = 0; i < ((DataMap[]) dataMap).length; i++) {
-                                    if (!isContainer || ((ItemData) ((TreeItem[]) dragSourceItem)[i].getData()).type == ItemData.TYPE_FILE)
-                                        selectItems.add(setDataMapItems(item, ((DataMap[]) dataMap)[i], -1));
-                                    else
-                                        ((TreeItem[]) dragSourceItem)[i] = null;
+                            if (item.getType() == ExtendedTreeItem.TYPE_FOLDER | isContainer) {
+                                LinkedList<ExtendedTreeItem> selectItems = new LinkedList<ExtendedTreeItem>();
+                                for (int i = 0; i < dragSourceItem.length; i++) {
+                                    if (!isContainer || dragSourceItem[i].getType() == ExtendedTreeItem.TYPE_FILE)
+                                    {
+                                        dragSourceItem[i].setPosition(item);
+                                        selectItems.add(dragSourceItem[i]);
+                                    }
                                 }
-                                tree.setSelection(selectItems.toArray(new TreeItem[selectItems.size()]));
+                                tree.setSelection(selectItems.toArray(new ExtendedTreeItem[selectItems.size()]));
                                 selectItems = null;
                             } else {
                                 event.detail = DND.DROP_NONE;
@@ -902,227 +834,6 @@ public class DownloadTab {
                 tree.notifyListeners(SWT.Collapse, new Event());
             }
         });
-    }
-    /**
-     * Diese Methode gehoert zum Drag&Drop System und erstellt ein neues
-     * TreeItem
-     * 
-     * @param parent
-     * @param text
-     * @param itemData
-     * @param index
-     * @return
-     */
-    private TreeItem createTreeitem(Tree parent, String[] text, ItemData itemData, int index) {
-        TreeItem treeItem = null;
-        treeItem = new TreeItem(parent, SWT.NONE, index);
-        addItemData(treeItem, text, itemData);
-        return treeItem;
-    }
-    /**
-     * Diese Methode gehoert zum Drag&Drop System und erstellt ein neues
-     * TreeItem
-     * 
-     * @param parent
-     * @param text
-     * @param itemData
-     * @param index
-     * @return
-     */
-    private TreeItem createTreeitem(TreeItem parent, String[] text, ItemData itemData, int index) {
-        TreeItem treeItem = null;
-        treeItem = new TreeItem(parent, SWT.NONE, index);
-        addItemData(treeItem, text, itemData);
-        return treeItem;
-    }
-    /**
-     * Diese Methode gehoert zum Drag&Drop System und erstellt ein neues
-     * TreeItem
-     * 
-     * @param parent
-     * @param text
-     * @param itemData
-     * @param index
-     * @return
-     */
-    private TreeItem createTreeitem(Tree parent, String[] text, ItemData itemData) {
-        TreeItem treeItem = null;
-        treeItem = new TreeItem(parent, SWT.NONE);
-        addItemData(treeItem, text, itemData);
-        return treeItem;
-    }
-    /**
-     * Diese Methode gehoert zum Drag&Drop System und erstellt ein neues
-     * TreeItem
-     * 
-     * @param parent
-     * @param text
-     * @param itemData
-     * @param index
-     * @return
-     */
-    private TreeItem createTreeitem(TreeItem parent, String[] text, ItemData itemData) {
-        TreeItem treeItem = null;
-        treeItem = new TreeItem(parent, SWT.NONE);
-        addItemData(treeItem, text, itemData);
-        return treeItem;
-    }
-    /**
-     * Mit dieser Methode werden die Daten dem TreeItem hinzugefuegt sie gehoert
-     * zum Drag&Drop System
-     * 
-     * @param item
-     * @param text
-     * @param link
-     * @param status
-     * @param type
-     */
-    private void addItemData(final TreeItem item, String[] text, ItemData itemdata) {
-        item.setData(itemdata);
-        item.setText(text);
-        item.setImage(JDSWTUtilities.getTreeImage(item.getDisplay(), itemdata.type, text[0], false));
-    }
-    /**
-     * TODO ColumnReorder wurde rausgenommen weil die prioritäten jetzt ueber
-     * Drag&Drop verwaltet werden
-     * 
-     * public boolean columnReorder(Tree tree, int pos, boolean order) {
-     * TreeItem[] items = tree.getItems(); int columns = tree.getColumnCount();
-     * Collator collator = Collator.getInstance(Locale.getDefault()); if (order) {
-     * for (int i = 1; i < items.length; i++) { String value1 =
-     * items[i].getText(pos); for (int j = 0; j < i; j++) { String value2 =
-     * items[j].getText(pos);
-     * 
-     * if (collator.compare(value1, value2) > 0) { String[] values = new
-     * String[columns]; for (int k = 0; k < columns; k++) values[k] =
-     * items[i].getText(k); String[][] values2 = null; if
-     * (items[i].getItemCount() > 0) { TreeItem[] subItems =
-     * items[i].getItems(); values2 = new String[subItems.length][columns]; for
-     * (int k = 0; k < subItems.length; k++) { for (int index = 0; index <
-     * columns; index++) { values2[k][index] = subItems[k].getText(index); } } }
-     * items[i].dispose(); TreeItem item = new TreeItem(tree, SWT.NONE, j);
-     * item.setText(values); if (values2 != null) {
-     * 
-     * for (int k = 0; k < values2.length; k++) { TreeItem items2 = new
-     * TreeItem(item, SWT.NONE); items2.setText(values2[k]); } }
-     * 
-     * items = tree.getItems(); break; } } } return false; } else { for (int i =
-     * 1; i < items.length; i++) { String value1 = items[i].getText(pos); for
-     * (int j = 0; j < i; j++) { String value2 = items[j].getText(pos);
-     * 
-     * if (collator.compare(value1, value2) < 0) { String[] values = new
-     * String[columns]; for (int k = 0; k < columns; k++) values[k] =
-     * items[i].getText(k); String[][] values2 = null; if
-     * (items[i].getItemCount() > 0) { TreeItem[] subItems =
-     * items[i].getItems(); values2 = new String[subItems.length][columns]; for
-     * (int k = 0; k < subItems.length; k++) { for (int index = 0; index <
-     * columns; index++) { values2[k][index] = subItems[k].getText(index); } } }
-     * items[i].dispose(); TreeItem item = new TreeItem(tree, SWT.NONE, j);
-     * item.setText(values); if (values2 != null) {
-     * 
-     * for (int k = 0; k < values2.length; k++) { TreeItem items2 = new
-     * TreeItem(item, SWT.NONE); items2.setText(values2[k]); } } items =
-     * tree.getItems(); break; } } } return true; } }
-     */
-
-    /**
-     * Diese Methode Gehoert zum Drag&Drop System sie liest die Informationen
-     * aus den Item und seinem Subitems
-     */
-    private DataMap getItemData(TreeItem item, int treeColumnCount) {
-        String[] data = new String[treeColumnCount];
-        for (int b = 0; b < data.length; b++) {
-            data[b] = item.getText(b);
-        }
-        DataMap dat = new DataMap(data, (ItemData) item.getData());
-        TreeItem[] itm = item.getItems();
-        for (int i = 0; i < itm.length; i++) {
-            if (itm[i].getItemCount() > 0)
-                dat.dataMap.add(getItemData(itm[i], treeColumnCount));
-            else {
-                String[] datac = new String[treeColumnCount];
-                for (int b = 0; b < data.length; b++) {
-                    datac[b] = itm[i].getText(b);
-                }
-                DataMap dat2 = new DataMap(datac, (ItemData) itm[i].getData());
-                dat.dataMap.add(dat2);
-            }
-
-        }
-        return dat;
-    }
-    /**
-     * Diese Methode Gehoert zum Drag&Drop System es werden die ausgelesenen
-     * Items neu erstellt
-     * 
-     * @param parent
-     * @param map
-     * @param index
-     * @return
-     */
-    private TreeItem setDataMapItems(TreeItem parent, DataMap map, int index) {
-
-        TreeItem item;
-        if (index > -1)
-            item = createTreeitem(parent, map.text, map.itemData, index);
-        else
-            item = createTreeitem(parent, map.text, map.itemData);
-        for (int j = 0; j < map.dataMap.size(); j++) {
-            DataMap map2 = map.dataMap.get(j);
-            TreeItem items = createTreeitem(item, map2.text, map2.itemData);
-            for (int i = 0; i < map2.dataMap.size(); i++) {
-                setDataMapItems(items, map2.dataMap.get(i), -1);
-            }
-
-        }
-        return item;
-    }
-
-    /**
-     * Diese Methode Gehoert zum Drag&Drop System es werden die ausgelesenen
-     * Items neu erstellt
-     * 
-     * @param parent
-     * @param map
-     * @param index
-     * @return
-     */
-    private TreeItem setDataMapItems(Tree parent, DataMap map, int index) {
-
-        TreeItem item;
-        if (index > -1)
-            item = createTreeitem(parent, map.text, map.itemData, index);
-        else
-            item = createTreeitem(parent, map.text, map.itemData);
-        for (int j = 0; j < map.dataMap.size(); j++) {
-            DataMap map2 = map.dataMap.get(j);
-            TreeItem items = createTreeitem(item, map2.text, map2.itemData);
-            for (int i = 0; i < map2.dataMap.size(); i++) {
-                setDataMapItems(items, map2.dataMap.get(i), -1);
-            }
-
-        }
-        return item;
-    }
-
-    /**
-     * gehoert auch zum Drag&Drop System und wird zum zwischenspeichern der
-     * TreeItems Verwendet
-     * 
-     * @author DwD
-     * 
-     */
-
-}
-class DataMap {
-
-    public Vector<DataMap> dataMap = new Vector<DataMap>();
-    public String[] text;
-    public ItemData itemData;
-
-    public DataMap(String[] text, ItemData itemData) {
-        this.text = text;
-        this.itemData = itemData;
     }
 
 }
