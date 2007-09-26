@@ -42,7 +42,6 @@ public class Linkshield extends PluginForDecrypt {
 				firePluginEvent(new PluginEvent(this,PluginEvent.PLUGIN_PROGRESS_MAX, 1));
 				
 				RequestInfo reqinfo = getRequest(new URL(parameter), null, null, true);
-				System.out.println(reqinfo.getHtmlCode());
 
 				firePluginEvent(new PluginEvent(this,PluginEvent.PLUGIN_PROGRESS_INCREASE, null));
     			decryptedLinks.add((getBetween(reqinfo.getHtmlCode(), "<frame src=(?!blank)", ">")));
