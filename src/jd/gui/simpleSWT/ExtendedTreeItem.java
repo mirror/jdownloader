@@ -22,11 +22,10 @@ public class ExtendedTreeItem {
      * Hier werden TreeItemImages reingeladen fals sie benoetigt werden
      */
     private static HashMap<String, ImageMap> programmImages = new HashMap<String, ImageMap>();
-    /**
-     * Achtung wenn ein neuer TYPE gesetzt wird muss dafuer in der
-     * jd.JDSWTUtilities.java die Methode getTreeImage gegebenenfalls angepasst
-     * werden und neue Bilder in der MainGui.java Methode loadImages() geladen
-     * werden
+    /*
+     * Achtung wenn ein neuer TYPE gesetzt wird muss dafuer die Methode
+     * ProgrammImage() gegebenenfalls angepasst werden und neue Bilder in der
+     * MainGui.java Methode loadImages() geladen werden
      */
     public final static int STATUS_NOTHING = 1;
     public final static int STATUS_ERROR = 2;
@@ -37,43 +36,73 @@ public class ExtendedTreeItem {
     public final static int TYPE_CONTAINER = 3;
     public final static int TYPE_LOCKEDCONTAINER = 4;
     public final static int TYPE_DEFAULT = 5;
+    public final static int LOCKSTATE_UNLOCKED = 1;
+    public final static int LOCKSTATE_LOCKED = 2;
+    public final static int LOCKSTATE_FOREVERLOCKED = 3;
     public boolean drawProgrammImage = true;
     public TreeItem item;
     private int status = STATUS_NOTHING;
     private int type = TYPE_FILE;
-    private boolean isLocked = false;
+    private int isLocked = LOCKSTATE_UNLOCKED;
     private DownloadLink downloadLink = null;
     private TreeEditor editor = null;
     private ProgressBar progressBar = null;
-
+    /**
+     * Konstruktor
+     * 
+     * @param parent
+     */
     public ExtendedTreeItem(ExtendedTree parent) {
         item = new TreeItem(parent.tree, SWT.NONE);
         item.setData(this);
     }
-
+    /**
+     * Konstruktor
+     * 
+     * @param parent
+     */
     public ExtendedTreeItem(ExtendedTreeItem parent) {
         item = new TreeItem(parent.item, SWT.NONE);
         item.setData(this);
     }
-
+    /**
+     * Konstruktor
+     * 
+     * @param parent
+     * @param index
+     */
     public ExtendedTreeItem(ExtendedTree parent, int index) {
         item = new TreeItem(parent.tree, SWT.NONE, index);
         item.setData(this);
     }
-
+    /**
+     * Konstruktor
+     * 
+     * @param parent
+     * @param index
+     */
     public ExtendedTreeItem(ExtendedTreeItem parent, int index) {
         item = new TreeItem(parent.item, SWT.NONE, index);
         item.setData(this);
     }
-
+    /**
+     * 
+     * @return ElternItem
+     */
     public ExtendedTreeItem getParentItem() {
-        return ((item.getParentItem()!=null)?((ExtendedTreeItem) item.getParentItem().getData()):null);
+        return ((item.getParentItem() != null) ? ((ExtendedTreeItem) item.getParentItem().getData()) : null);
     }
-
+    /**
+     * 
+     * @return subitem
+     */
     public ExtendedTreeItem getItem(int index) {
         return (ExtendedTreeItem) item.getItem(index).getData();
     }
-
+    /**
+     * 
+     * @return all subitems
+     */
     public ExtendedTreeItem[] getItems() {
         ExtendedTreeItem[] returnExtendedTreeItems = new ExtendedTreeItem[item.getItemCount()];
         for (int i = 0; i < item.getItemCount(); i++) {
@@ -87,6 +116,7 @@ public class ExtendedTreeItem {
             getItem(i).dispose();
         }
         disposeProgressBar();
+        disposeProgrammImage();
         item.dispose();
     }
 
@@ -147,8 +177,7 @@ public class ExtendedTreeItem {
     /**
      * Diese Methode gibt das Bild fuer den Entsprechenden Typ aus
      * 
-     * @param display
-     * @param type
+     * @param filename
      * @return
      */
     private Image ProgrammImage(String filename) {
@@ -205,11 +234,15 @@ public class ExtendedTreeItem {
         return JDSWTUtilities.getImageSwt("default");
 
     }
-
+    /**
+     * Zeichnet das Progammimage fals noetig neu
+     * 
+     * @param newFilename
+     */
     private void redrawProgrammImage(String newFilename) {
 
         String oldFilename = getText(0);
-        if (item.getImage()==null) {
+        if (item.getImage() == null) {
             item.setImage(ProgrammImage(newFilename));
             return;
         }
@@ -246,6 +279,9 @@ public class ExtendedTreeItem {
 
         }
     }
+    /**
+     * Gibt den text von jedem column als Array aus
+     */
     public String[] getTextArray() {
         String[] returnStrings = new String[item.getParent().getColumnCount()];
         for (int i = 0; i < returnStrings.length; i++) {
@@ -253,6 +289,9 @@ public class ExtendedTreeItem {
         }
         return returnStrings;
     }
+    /**
+     * Gibt das Bild von jedem column als Array aus
+     */
     public Image[] getImages() {
         Image[] returnImages = new Image[item.getParent().getColumnCount()];
         for (int i = 0; i < returnImages.length; i++) {
@@ -260,11 +299,20 @@ public class ExtendedTreeItem {
         }
         return returnImages;
     }
-
+    /**
+     * Gibt die Progressbar aus
+     * 
+     * @return
+     */
     public ProgressBar getProgressBar() {
         return getdata().progressBar;
     }
-    public void setProgressBar(final int index) {
+    /**
+     * initialisiert die Progressbar
+     * 
+     * @param column
+     */
+    public void setProgressBar(final int column) {
         final Tree tree = item.getParent();
         final TreeItem treeItem = item;
         progressBar = new ProgressBar(tree, SWT.SMOOTH);
@@ -277,7 +325,7 @@ public class ExtendedTreeItem {
                     int x = 0;
                     int[] c = tree.getColumnOrder();
                     for (int i = 0; i < c.length; i++) {
-                        if (c[i] == index)
+                        if (c[i] == column)
                             break;
                         x += tree.getColumn(c[i]).getWidth();
 
@@ -334,7 +382,7 @@ public class ExtendedTreeItem {
                     int x = 0;
                     int[] c = tree.getColumnOrder();
                     for (int i = 0; i < c.length; i++) {
-                        if (c[i] == index)
+                        if (c[i] == column)
                             break;
                         x += tree.getColumn(c[i]).getWidth();
 
@@ -356,7 +404,7 @@ public class ExtendedTreeItem {
         progressBar.setMenu(tree.getMenu());
         editor = new TreeEditor(tree);
         editor.grabHorizontal = editor.grabVertical = true;
-        editor.setEditor(progressBar, treeItem, index);
+        editor.setEditor(progressBar, treeItem, column);
         setData(this);
     }
 
@@ -376,40 +424,68 @@ public class ExtendedTreeItem {
     public void setTreeItemDownloading() {
         setProgressBar(2);
         setStatus(ExtendedTreeItem.STATUS_DOWNLOADING);
-        lock();
+        setlockState(3);
     }
-    
-    public ExtendedTreeItem getdata()
-    {
+    /**
+     * 
+     * @return ExtendedTreeItem
+     */
+    public ExtendedTreeItem getdata() {
         return (ExtendedTreeItem) item.getData();
-        
+
     }
+    /**
+     * 
+     * @return status
+     */
     public int getStatus() {
         return getdata().status;
     }
+    /**
+     * 
+     * @return type
+     */
     public int getType() {
         return getdata().type;
     }
-
+    /**
+     * 
+     * @return DownloadLink
+     */
     public DownloadLink getDownloadLink() {
         return getdata().downloadLink;
     }
+    /**
+     * 
+     * @param status
+     */
     public void setStatus(int status) {
         this.status = status;
         setData(this);
     }
-    
+    /**
+     * 
+     * @param type
+     */
     public void setType(int type) {
         this.type = type;
         setData(this);
     }
-    
+    /**
+     * 
+     * @param downloadLink
+     */
     public void setDownloadLink(DownloadLink downloadLink) {
         this.downloadLink = downloadLink;
         setData(this);
     }
-    private ExtendedTreeItem setex(ExtendedTreeItem ex)
-    {
+    /**
+     * Interne Methode zum setzen der neuen Position
+     * 
+     * @param ex
+     * @return
+     */
+    private ExtendedTreeItem setex(ExtendedTreeItem ex) {
         for (int i = 0; i < item.getItemCount(); i++) {
             System.out.println(i);
             getItem(i).setex(new ExtendedTreeItem(ex));
@@ -422,46 +498,88 @@ public class ExtendedTreeItem {
         disposeProgrammImage();
         return ex;
     }
-    
+    /**
+     * 
+     * @param ExtendedTreeItem
+     *            parent
+     */
     public void setPosition(ExtendedTreeItem parent) {
         ExtendedTreeItem ex = new ExtendedTreeItem(parent);
-        ex=setex(ex);
+        ex = setex(ex);
         item.dispose();
-        item=ex.item;
+        item = ex.item;
 
     }
+    /**
+     * 
+     * @param ExtendedTree
+     *            parent
+     */
     public void setPosition(ExtendedTree parent) {
         ExtendedTreeItem ex = new ExtendedTreeItem(parent);
-        ex=setex(ex);
+        ex = setex(ex);
         item.dispose();
-        item=ex.item;
+        item = ex.item;
     }
+    /**
+     * 
+     * @param ExtendedTreeItem
+     *            parent
+     * @param index
+     */
     public void setPosition(ExtendedTreeItem parent, int index) {
         ExtendedTreeItem ex = new ExtendedTreeItem(parent, index);
-        ex=setex(ex);
+        ex = setex(ex);
         item.dispose();
-        item=ex.item;
+        item = ex.item;
     }
+    /**
+     * 
+     * @param ExtendedTree
+     *            parent
+     * @param index
+     */
     public void setPosition(ExtendedTree parent, int index) {
         ExtendedTreeItem ex = new ExtendedTreeItem(parent, index);
-        ex=setex(ex);
+        ex = setex(ex);
         item.dispose();
-        item=ex.item;
+        item = ex.item;
     }
+    /**
+     * 
+     * @return ItemCount
+     */
     private int getItemCount() {
         return item.getItemCount();
     }
-
-    private void setData(Object itemData) {
+    /**
+     * 
+     * @param itemData
+     */
+    public void setData(Object itemData) {
         item.setData(itemData);
     }
-
-    public void lock() {
-        isLocked = true;
-        item.setData(this);
+    /**
+     * setzt des Sperrstatus des TreeItems
+     * 
+     */
+    public void setlockState(int state) {
+        isLocked = state;
     }
+
+    /**
+     * 
+     * @return Sperrstatus des TreeItems
+     */
+    public int getlockState() {
+        return isLocked;
+    }
+    /**
+     * 
+     * @return Ob das TreeItem locked ist
+     */
     public boolean isLocked() {
-        return getdata().isLocked;
+        return getdata().isLocked > LOCKSTATE_UNLOCKED;
 
     }
     /**
@@ -483,6 +601,14 @@ public class ExtendedTreeItem {
         return false;
     }
 
+    public String getText() {
+        return item.getText();
+    }
+
+    public Rectangle getBounds() {
+        return item.getBounds();
+    }
+
     private class ImageMap {
 
         private int usageCount;
@@ -491,14 +617,6 @@ public class ExtendedTreeItem {
             this.image = image;
             usageCount = 1;
         }
-    }
-
-    public String getText() {
-        return item.getText();
-    }
-
-    public Rectangle getBounds() {
-        return item.getBounds();
     }
 
 }
