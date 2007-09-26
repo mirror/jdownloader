@@ -20,7 +20,7 @@ public class SpeedMeter {
      * @param average
      */
     public SpeedMeter(int average) {
-        averageOver = 5000;
+        averageOver = average;
     }
 
     /**
