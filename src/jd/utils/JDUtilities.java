@@ -116,7 +116,7 @@ public class JDUtilities {
      * RessourceBundle für Texte
      */
     private static ResourceBundle           resourceBundle    = null;
-
+ 
     /**
      * Angaben über Spracheinstellungen
      */
