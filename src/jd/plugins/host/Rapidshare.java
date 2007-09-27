@@ -290,8 +290,14 @@ public class Rapidshare extends PluginForHost {
                             // umgehen
                             String post = joinMap(fields, "=", "&") + "&accountid=" + user + "&password=" + pass;
                             // Login
-                            String url = "http://rs" + fields.get("serverid") + ".rapidshare.com/cgi-bin/premium.cgi";
-                            logger.info(url + " - " + post);
+                            String url;
+                            if(fields.get("serverid")==null){
+                                url = "http://rapidshare.com/cgi-bin/premium.cgi";
+                                  
+                            }else{
+                            url = "http://rs" + fields.get("serverid") + ".rapidshare.com/cgi-bin/premium.cgi";
+                            
+                            }logger.info(url + " - " + post);
 
                             requestInfo = postRequest(new URL(url), post);
                             String cookie = requestInfo.getCookie();

@@ -46,7 +46,7 @@ public class RequestInfo {
      * @return Wahr, wenn der HTTP Code zwischen 0 und 499 lag
      */
     public boolean isOK(){
-        if(responseCode>0 && responseCode<500)
+        if(responseCode>-2 && responseCode<500)
             return true;
         else
             return false;
