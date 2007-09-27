@@ -22,7 +22,7 @@ public class LoggerTab {
         tbLogger.setText(JDSWTUtilities.getSWTResourceString("LoggerTab.name"));
         {
             Logger = new Text(folder, SWT.MULTI | SWT.V_SCROLL | SWT.H_SCROLL);
-            Logger.addKeyListener(mainGui.guiListeners.getKeyListener("mainGui"));
+            Logger.addListener(SWT.KeyDown, mainGui.guiListeners.getListener("mainGuiKey"));
             tbLogger.setControl(Logger);
         }
         tbLogger.setImage(JDSWTUtilities.getImageSwt("log"));

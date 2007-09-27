@@ -1,7 +1,5 @@
 package jd.gui.simpleSWT;
 
-
-import java.util.HashMap;
 import java.util.LinkedList;
 
 import jd.plugins.DownloadLink;
@@ -20,10 +18,6 @@ import org.eclipse.swt.dnd.DropTargetAdapter;
 import org.eclipse.swt.dnd.DropTargetEvent;
 import org.eclipse.swt.dnd.TextTransfer;
 import org.eclipse.swt.dnd.Transfer;
-import org.eclipse.swt.events.FocusAdapter;
-import org.eclipse.swt.events.FocusEvent;
-import org.eclipse.swt.events.KeyAdapter;
-import org.eclipse.swt.events.KeyEvent;
 import org.eclipse.swt.events.MenuAdapter;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.Rectangle;
@@ -70,42 +64,39 @@ public class DownloadTab {
                 /**
                  * TODO
                  */
-                String[] text = {JDSWTUtilities.getSWTResourceString("DownloadTab.newFolder.name"), "", ""};
+                String text = JDSWTUtilities.getSWTResourceString("DownloadTab.newFolder.name");
 
                 if (trDownload.getSelectionCount() > 0) {
-                    ExtendedTreeItem[] items = (ExtendedTreeItem[]) trDownload.getItems();
-                    int index = 0;
                     ExtendedTreeItem item = (ExtendedTreeItem) trDownload.getSelection()[0];
-
-                    ExtendedTreeItem parent = item.getParentItem();
-                    if (parent != null)
-                        while (parent != null) {
+                        ExtendedTreeItem parent = item.getParentItem();
+                        if (parent == null) {
+                            int index = trDownload.tree.indexOf(item.item);
+                            ExtendedTreeItem im = new ExtendedTreeItem(trDownload, index);
+                            im.setType(ExtendedTreeItem.TYPE_FOLDER);
+                            im.setText(text);
+                            trDownload.setSelection(im);
+                        } else if (parent.getType() == ExtendedTreeItem.TYPE_FOLDER && !item.isLocked()) {
+                            int index = parent.item.indexOf(item.item);
+                            ExtendedTreeItem im = new ExtendedTreeItem(parent, index);
+                            im.setType(ExtendedTreeItem.TYPE_FOLDER);
+                            im.setText(text);
+                            trDownload.setSelection(im);
+                        } else {
                             ExtendedTreeItem parent2 = parent.getParentItem();
-                            if (parent2 != null)
-                                parent = parent2;
-                            else {
-                                for (int i = 0; i < items.length; i++) {
-                                    if (items[i] == parent) {
-                                        index = i;
-                                        parent = null;
-                                        break;
-                                    }
-                                }
-                            }
-                        }
-
-                    else {
-                        for (int i = 0; i < items.length; i++) {
-                            if (items[i] == item) {
-                                index = i;
-                                break;
-                            }
+                            if (parent2 == null) {
+                                int index = trDownload.tree.indexOf(parent.item);
+                                ExtendedTreeItem im = new ExtendedTreeItem(trDownload, index);
+                                im.setType(ExtendedTreeItem.TYPE_FOLDER);
+                                im.setText(text);
+                                trDownload.setSelection(im);
+                            } else {
+                                int index = parent2.item.indexOf(parent.item);
+                                ExtendedTreeItem im = new ExtendedTreeItem(parent2, index);
+                                im.setType(ExtendedTreeItem.TYPE_FOLDER);
+                                im.setText(text);
+                                trDownload.setSelection(im);
                         }
                     }
-                    ExtendedTreeItem im = new ExtendedTreeItem(trDownload, index);
-                    im.setType(ExtendedTreeItem.TYPE_FOLDER);
-                    im.setText(text);
-                    trDownload.setSelection(im);
                     // workaround fuer die scheiss treeEditoren
                     // laesst die treeEditoren neu zeichnen
                     trDownload.notifyListeners(SWT.Collapse, new Event());
@@ -135,41 +126,36 @@ public class DownloadTab {
                 String[] text = {JDSWTUtilities.getSWTResourceString("DownloadTab.newContainer.name"), "", ""};
 
                 if (trDownload.getSelectionCount() > 0) {
-                    ExtendedTreeItem[] items = (ExtendedTreeItem[]) trDownload.getItems();
-                    int index = 0;
                     ExtendedTreeItem item = (ExtendedTreeItem) trDownload.getSelection()[0];
-
-                    ExtendedTreeItem parent = item.getParentItem();
-                    if (parent != null)
-                        while (parent != null) {
+                        ExtendedTreeItem parent = item.getParentItem();
+                        if (parent == null) {
+                            int index = trDownload.tree.indexOf(item.item);
+                            ExtendedTreeItem im = new ExtendedTreeItem(trDownload, index);
+                            im.setType(ExtendedTreeItem.TYPE_CONTAINER);
+                            im.setText(text);
+                            trDownload.setSelection(im);
+                        } else if (parent.getType() == ExtendedTreeItem.TYPE_FOLDER && !item.isLocked()) {
+                            int index = parent.item.indexOf(item.item);
+                            ExtendedTreeItem im = new ExtendedTreeItem(parent, index);
+                            im.setType(ExtendedTreeItem.TYPE_CONTAINER);
+                            im.setText(text);
+                            trDownload.setSelection(im);
+                        } else {
                             ExtendedTreeItem parent2 = parent.getParentItem();
-                            if (parent2 != null)
-                                parent = parent2;
-                            else {
-                                for (int i = 0; i < items.length; i++) {
-                                    if (items[i] == parent) {
-                                        index = i;
-                                        parent = null;
-                                        break;
-                                    }
-                                }
-                            }
-                        }
-
-                    else {
-                        for (int i = 0; i < items.length; i++) {
-                            if (items[i] == item) {
-                                index = i;
-                                break;
-                            }
+                            if (parent2 == null) {
+                                int index = trDownload.tree.indexOf(parent.item);
+                                ExtendedTreeItem im = new ExtendedTreeItem(trDownload, index);
+                                im.setType(ExtendedTreeItem.TYPE_CONTAINER);
+                                im.setText(text);
+                                trDownload.setSelection(im);
+                            } else {
+                                int index = parent2.item.indexOf(parent.item);
+                                ExtendedTreeItem im = new ExtendedTreeItem(parent2, index);
+                                im.setType(ExtendedTreeItem.TYPE_CONTAINER);
+                                im.setText(text);
+                                trDownload.setSelection(im);
                         }
                     }
-                    ExtendedTreeItem im = new ExtendedTreeItem(trDownload, index);
-                    im.setType(ExtendedTreeItem.TYPE_CONTAINER);
-                    im.setText(text);
-                    trDownload.setSelection(im);
-                    // workaround fuer die scheiss treeEditoren
-                    // laesst die treeEditoren neu zeichnen
                     trDownload.notifyListeners(SWT.Collapse, new Event());
                 } else {
 
@@ -261,7 +247,6 @@ public class DownloadTab {
         Listener downloadColumnListener = new Listener() {
 
             public void handleEvent(Event e) {
-                System.out.println(e);
                 lastStep = 0;
                 lastTime = e.time + 5000;
             }
@@ -391,11 +376,14 @@ public class DownloadTab {
                 // If the text field loses focus, set its text into the tree
                 // and end the editing session
 
-                renameText.addFocusListener(new FocusAdapter() {
-                    public void focusLost(FocusEvent event) {
+                renameText.addListener(SWT.FocusOut, new Listener() {
+
+                    public void handleEvent(Event e) {
                         item.setText(0, renameText.getText());
                         renameText.dispose();
+
                     }
+
                 });
                 final Listener mouseDown = new Listener() {
 
@@ -418,9 +406,10 @@ public class DownloadTab {
                 // editing
                 // session
 
-                renameText.addKeyListener(new KeyAdapter() {
-                    public void keyPressed(KeyEvent event) {
-                        switch (event.keyCode) {
+                renameText.addListener(SWT.KeyDown, new Listener() {
+
+                    public void handleEvent(Event e) {
+                        switch (e.keyCode) {
                             case SWT.CR : {
                                 // Enter hit--set the text into the tree and
                                 // drop through
@@ -432,12 +421,14 @@ public class DownloadTab {
                                 renameText.dispose();
                                 break;
                         }
+
                     }
+
                 });
 
                 renameText.addListener(SWT.Dispose, new Listener() {
 
-                    public void handleEvent(Event arg0) {
+                    public void handleEvent(Event e) {
                         trDownload.removeListener(SWT.MouseDown, mouseDown);
 
                     }
@@ -522,7 +513,7 @@ public class DownloadTab {
         }
         trDownload.addListener(SWT.Selection, mainGui.guiListeners.initToolBarBtSetEnabledListener());
         trDownload.addListener(SWT.Collapse, mainGui.guiListeners.getListener("toolBarBtSetEnabled"));
-        trDownload.tree.addKeyListener(mainGui.guiListeners.initTrDownloadKeyListener());
+        trDownload.tree.addListener(SWT.KeyDown, mainGui.guiListeners.initTrDownloadKeyListener());
     }
 
     /**
@@ -555,12 +546,8 @@ public class DownloadTab {
             pos = -1;
         } else
             pos2 = 1;
-        HashMap<ExtendedTreeItem, Integer> lostItems = new HashMap<ExtendedTreeItem, Integer>();
-        HashMap<ExtendedTreeItem, Integer> addItems = new HashMap<ExtendedTreeItem, Integer>();
 
-        int toTree = 0;
         ExtendedTreeItem[] items = trDownload.getOwnSelection();
-        ExtendedTreeItem[] itemsToSelect = new ExtendedTreeItem[items.length];
         for (int i = 0; i < items.length; i++) {
             int cc = i;
             if (pos == 2 || pos == 3)
@@ -571,76 +558,29 @@ public class DownloadTab {
                     int index = parent.item.indexOf(items[cc].item);
 
                     if (pos < 0 & index > 0 || pos > 0 & index != (parent.item.getItemCount() - 1)) {
-                        if (pos == 2) {
-                            while (isPartof(parent.getItem(index + 1), items))
-                                index++;
-
-                            if (lostItems.containsKey(parent))
-                                index = index - ((Integer) lostItems.get(parent));
-                        }
                         items[cc].setPosition(parent, index + pos);
-                        itemsToSelect[i] = items[cc];
                     } else {
                         ExtendedTreeItem parent2 = parent.getParentItem();
-                        if (parent2 == null)
-                            index = trDownload.tree.indexOf(parent.item);
-                        else
-                            index = parent2.item.indexOf(parent.item);
-                        if (pos == 2)
-                            if (lostItems.containsKey(parent)) {
-                                Integer inte = ((Integer) lostItems.get(parent));
-                                lostItems.remove(parent);
-                                lostItems.put(parent, inte++);
-                            } else {
-                                lostItems.put(parent, 1);
-                            }
                         if (parent2 == null) {
-                            if (pos == 2)
-                                index = index + toTree;
+                            index = trDownload.tree.indexOf(parent.item);
                             items[cc].setPosition(trDownload, index + pos2);
-                            itemsToSelect[i] = items[cc];
-                            toTree++;
                         } else {
-
-                            if (pos == 2)
-                                if (addItems.containsKey(parent2)) {
-                                    Integer inte = ((Integer) addItems.get(parent2));
-                                    index = index + inte;
-                                    addItems.remove(parent2);
-                                    addItems.put(parent2, inte++);
-                                } else {
-                                    addItems.put(parent2, 1);
-                                }
+                            index = parent2.item.indexOf(parent.item);
                             items[cc].setPosition(parent2, index + pos2);
-                            itemsToSelect[i] = items[cc];
-
                         }
 
                     }
                 } else {
-                    ExtendedTreeItem[] items2 = (ExtendedTreeItem[]) trDownload.getItems();
-                    int index = 0;
-                    for (int b = 0; b < items2.length; b++) {
-                        if (items2[b] == items[cc]) {
-                            index = b;
-                            break;
-                        }
-                    }
-                    if (pos == 2)
-                        while (isPartof((ExtendedTreeItem) trDownload.getItem(index + 1), items))
-                            index++;
-                    items[cc].setPosition(trDownload, index + pos + toTree);
-                    itemsToSelect[i] = items[cc];
+                    int index = trDownload.tree.indexOf(items[cc].item);
+                    items[cc].setPosition(trDownload, index + pos);
                 }
             } else if (pos == 3) {
                 items[cc].setPosition(trDownload, 0);
-                itemsToSelect[i] = items[cc];
             } else {
                 items[cc].setPosition(trDownload);
-                itemsToSelect[i] = items[cc];
             }
         }
-        trDownload.setSelection(itemsToSelect);
+        trDownload.setSelection(items);
         trDownload.notifyListeners(SWT.Collapse, new Event());
 
     }
@@ -706,7 +646,7 @@ public class DownloadTab {
             public void dragOver(DropTargetEvent event) {
                 event.feedback = DND.FEEDBACK_EXPAND | DND.FEEDBACK_SCROLL;
                 if (event.item != null) {
-                    ExtendedTreeItem item = (ExtendedTreeItem)((TreeItem) event.item).getData();;
+                    ExtendedTreeItem item = (ExtendedTreeItem) ((TreeItem) event.item).getData();;
                     Point pt = tree.getDisplay().map(null, tree.tree, event.x, event.y);
                     Rectangle bounds = item.item.getBounds();
                     if (pt.y < bounds.y + bounds.height / 3) {
@@ -735,7 +675,7 @@ public class DownloadTab {
                     tree.setSelection(dragSourceItem);
 
                 } else {
-                    ExtendedTreeItem item = (ExtendedTreeItem)((TreeItem) event.item).getData();
+                    ExtendedTreeItem item = (ExtendedTreeItem) ((TreeItem) event.item).getData();
                     boolean isContainer = item.getType() == ExtendedTreeItem.TYPE_CONTAINER;
 
                     if (isDragItem(item, dragSourceItem)) {
@@ -745,9 +685,8 @@ public class DownloadTab {
                     Point pt = tree.getDisplay().map(null, tree.tree, event.x, event.y);
                     Rectangle bounds = item.getBounds();
                     ExtendedTreeItem parent = item.getParentItem();
-          
+
                     if (parent != null) {
-                        System.out.println();
                         int index = parent.item.indexOf(item.item);
                         if (pt.y < bounds.y + bounds.height / 3) {
                             for (int i = 0; i < dragSourceItem.length; i++) {
@@ -758,8 +697,7 @@ public class DownloadTab {
                             if (item.getType() == ExtendedTreeItem.TYPE_FOLDER | isContainer) {
                                 LinkedList<ExtendedTreeItem> selectItems = new LinkedList<ExtendedTreeItem>();
                                 for (int i = 0; i < dragSourceItem.length; i++) {
-                                    if (!isContainer || dragSourceItem[i].getType() == ExtendedTreeItem.TYPE_FILE)
-                                    {
+                                    if (!isContainer || dragSourceItem[i].getType() == ExtendedTreeItem.TYPE_FILE) {
                                         dragSourceItem[i].setPosition(parent, index + 1);
                                         selectItems.add(dragSourceItem[i]);
                                     }
@@ -774,8 +712,7 @@ public class DownloadTab {
                             if (item.getType() == ExtendedTreeItem.TYPE_FOLDER | isContainer) {
                                 LinkedList<ExtendedTreeItem> selectItems = new LinkedList<ExtendedTreeItem>();
                                 for (int i = 0; i < dragSourceItem.length; i++) {
-                                    if (!isContainer || dragSourceItem[i].getType() == ExtendedTreeItem.TYPE_FILE)
-                                    {
+                                    if (!isContainer || dragSourceItem[i].getType() == ExtendedTreeItem.TYPE_FILE) {
                                         dragSourceItem[i].setPosition(item);
                                         selectItems.add(dragSourceItem[i]);
                                     }
@@ -799,8 +736,7 @@ public class DownloadTab {
                             if (item.getType() == ExtendedTreeItem.TYPE_FOLDER | isContainer) {
                                 LinkedList<ExtendedTreeItem> selectItems = new LinkedList<ExtendedTreeItem>();
                                 for (int i = 0; i < dragSourceItem.length; i++) {
-                                    if (!isContainer || dragSourceItem[i].getType() == ExtendedTreeItem.TYPE_FILE)
-                                    {
+                                    if (!isContainer || dragSourceItem[i].getType() == ExtendedTreeItem.TYPE_FILE) {
                                         dragSourceItem[i].setPosition(tree, index + 1);
                                         selectItems.add(dragSourceItem[i]);
                                     }
@@ -815,8 +751,7 @@ public class DownloadTab {
                             if (item.getType() == ExtendedTreeItem.TYPE_FOLDER | isContainer) {
                                 LinkedList<ExtendedTreeItem> selectItems = new LinkedList<ExtendedTreeItem>();
                                 for (int i = 0; i < dragSourceItem.length; i++) {
-                                    if (!isContainer || dragSourceItem[i].getType() == ExtendedTreeItem.TYPE_FILE)
-                                    {
+                                    if (!isContainer || dragSourceItem[i].getType() == ExtendedTreeItem.TYPE_FILE) {
                                         dragSourceItem[i].setPosition(item);
                                         selectItems.add(dragSourceItem[i]);
                                     }

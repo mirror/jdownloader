@@ -16,8 +16,6 @@ import org.eclipse.swt.dnd.Transfer;
 import org.eclipse.swt.events.ControlAdapter;
 import org.eclipse.swt.events.ControlEvent;
 import org.eclipse.swt.events.ControlListener;
-import org.eclipse.swt.events.KeyEvent;
-import org.eclipse.swt.events.KeyListener;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.Rectangle;
@@ -39,7 +37,6 @@ public class GuiListeners {
     // "disk.read.queue.length";
 
     private HashMap<String, Listener> listeners = new HashMap<String, Listener>();
-    private HashMap<String, KeyListener> keyListeners = new HashMap<String, KeyListener>();
     private HashMap<String, Menu> listenerMenus = new HashMap<String, Menu>();
     private ControlListener folderControlListener;
     private GUIConfig guiConfig;
@@ -55,14 +52,8 @@ public class GuiListeners {
     public Listener getListener(String name) {
         return listeners.get(name);
     }
-    public KeyListener getKeyListener(String name) {
-        return keyListeners.get(name);
-    }
     public Listener addListener(String name, Listener listener) {
         return listeners.put(name, listener);
-    }
-    public KeyListener addKeyListener(String name, KeyListener keyListener) {
-        return keyListeners.put(name, keyListener);
     }
     // TODO fuellen
     private void saveFile(String filename) {
@@ -188,7 +179,7 @@ public class GuiListeners {
         }
 
     }
-    private void allMainGuiKeyListeners(KeyEvent e) {
+    private void allMainGuiKeyListeners(Event e) {
         if ((e.keyCode == 'o') && (e.stateMask == SWT.CTRL)) {
             listeners.get("openFile").handleEvent(new Event());
         }
@@ -212,21 +203,23 @@ public class GuiListeners {
         }
 
     }
-    public KeyListener initMainGuiKeyListener() {
-        KeyListener mainGuiKeyListener = new KeyListener() {
-            public void keyPressed(KeyEvent e) {
+    
+    public Listener initMainGuiKeyListener()
+    {
+        Listener mainGuiKeyListener = new Listener() {
+            public void handleEvent(Event e) {
                 allMainGuiKeyListeners(e);
-            }
-            public void keyReleased(KeyEvent e) {
+                
             }
         };
-        keyListeners.put("mainGui", mainGuiKeyListener);
+        listeners.put("mainGuiKey", mainGuiKeyListener);
         return mainGuiKeyListener;
     }
-    public KeyListener initTrDownloadKeyListener() {
-        KeyListener trDownloadKeyListener = new KeyListener() {
 
-            public void keyPressed(KeyEvent e) {
+    public Listener initTrDownloadKeyListener() {
+        Listener trDownloadKeyListener = new Listener() {
+
+            public void handleEvent(Event e) {
                 allMainGuiKeyListeners(e);
                 if ((e.keyCode == SWT.DEL) && (((Tree) e.widget).getSelectionCount() > 0)) {
                     listeners.get("DownloadTab.delete").handleEvent(new Event());
@@ -237,14 +230,11 @@ public class GuiListeners {
                 if ((e.keyCode == SWT.F2) && (((ExtendedTree) ((Tree) e.widget).getData()).getOwnSelection().length > 0)) {
                     getListener("DownloadTab.rename").handleEvent(new Event());
                 }
-            }
-
-            public void keyReleased(KeyEvent e) {
-
+                
             }
 
         };
-        keyListeners.put("trDownload", trDownloadKeyListener);
+        listeners.put("trDownloadKey", trDownloadKeyListener);
         return trDownloadKeyListener;
     }
     public Listener initToolBarBtSetEnabledListener() {
@@ -340,10 +330,10 @@ public class GuiListeners {
         listeners.put("btInfo", btInfoListener);
         return btInfoListener;
     }
-    public KeyListener initTrCompKeyListener() {
-        KeyListener trCompKeyListener = new KeyListener() {
+    public Listener initTrCompKeyListener() {
+        Listener trCompKeyListener = new Listener() {
 
-            public void keyPressed(KeyEvent e) {
+            public void handleEvent(Event e) {
                 allMainGuiKeyListeners(e);
                 if ((e.keyCode == SWT.DEL) && (((Tree) e.widget).getSelectionCount() > 0)) {
                     listeners.get("CompletedTab.delete").handleEvent(new Event());
@@ -351,14 +341,10 @@ public class GuiListeners {
                 if ((e.keyCode == 'c') && (e.stateMask == SWT.CTRL)) {
                     copy((ExtendedTree) ((Tree) e.widget).getData());
                 }
+                
             }
-
-            public void keyReleased(KeyEvent e) {
-
-            }
-
         };
-        keyListeners.put("trCompleted", trCompKeyListener);
+        listeners.put("trCompletedKey", trCompKeyListener);
         return trCompKeyListener;
     }
     private void copy(ExtendedTree trCompleted) {

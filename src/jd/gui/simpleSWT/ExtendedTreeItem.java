@@ -1,6 +1,7 @@
 package jd.gui.simpleSWT;
 
 import java.util.HashMap;
+import java.util.Vector;
 
 import jd.plugins.DownloadLink;
 import jd.utils.JDSWTUtilities;
@@ -22,6 +23,7 @@ public class ExtendedTreeItem {
      * Hier werden TreeItemImages reingeladen fals sie benoetigt werden
      */
     private static HashMap<String, ImageMap> programmImages = new HashMap<String, ImageMap>();
+    private static Vector<DownloadLink> downloadlinks = new Vector<DownloadLink>();
     /*
      * Achtung wenn ein neuer TYPE gesetzt wird muss dafuer die Methode
      * ProgrammImage() gegebenenfalls angepasst werden und neue Bilder in der
@@ -44,9 +46,9 @@ public class ExtendedTreeItem {
     private int status = STATUS_NOTHING;
     private int type = TYPE_FILE;
     private int isLocked = LOCKSTATE_UNLOCKED;
-    private DownloadLink downloadLink = null;
     private TreeEditor editor = null;
     private ProgressBar progressBar = null;
+    private DownloadLink downloadlink = null;
     /**
      * Konstruktor
      * 
@@ -144,32 +146,33 @@ public class ExtendedTreeItem {
     public String getText(int i) {
         return item.getText(i);
     }
-
+    private void setTextDownloadlink(String text) {
+        if (downloadlink != null) {
+            int index = downloadlinks.indexOf(downloadlink);
+            downloadlink.setName(text);
+            downloadlinks.set(index, downloadlink);
+        }
+    }
     public void setText(int column, String text) {
 
         if (column == 0) {
-            if (downloadLink != null)
-                downloadLink.setName(text);
-            if (drawProgrammImage)
-                redrawProgrammImage(text);
+            setTextDownloadlink(text);
+            redrawProgrammImage(text);
         }
         item.setText(column, text);
         setData(this);
     }
     public void setText(String text) {
-        if (drawProgrammImage)
-            redrawProgrammImage(text);
+        redrawProgrammImage(text);
         item.setText(text);
-        if (downloadLink != null)
-            downloadLink.setName(text);
+        setTextDownloadlink(text);
         setData(this);
     }
     public void setText(String[] text) {
-        if (drawProgrammImage)
-            redrawProgrammImage(text[0]);
+
+        redrawProgrammImage(text[0]);
         item.setText(text);
-        if (downloadLink != null)
-            downloadLink.setName(text[0]);
+        setTextDownloadlink(text[0]);
         setData(this);
 
     }
@@ -240,7 +243,8 @@ public class ExtendedTreeItem {
      * @param newFilename
      */
     private void redrawProgrammImage(String newFilename) {
-
+        if (!drawProgrammImage)
+            return;
         String oldFilename = getText(0);
         if (item.getImage() == null) {
             item.setImage(ProgrammImage(newFilename));
@@ -453,7 +457,7 @@ public class ExtendedTreeItem {
      * @return DownloadLink
      */
     public DownloadLink getDownloadLink() {
-        return getdata().downloadLink;
+        return downloadlink;
     }
     /**
      * 
@@ -476,8 +480,13 @@ public class ExtendedTreeItem {
      * @param downloadLink
      */
     public void setDownloadLink(DownloadLink downloadLink) {
-        this.downloadLink = downloadLink;
-        setData(this);
+        if (this.downloadlink != null) {
+            downloadlinks.set(downloadlinks.indexOf(this.downloadlink), downloadLink);
+            this.downloadlink = downloadLink;
+        } else {
+            downloadlinks.add(downloadLink);
+            this.downloadlink = downloadLink;
+        }
     }
     /**
      * Interne Methode zum setzen der neuen Position
@@ -485,18 +494,15 @@ public class ExtendedTreeItem {
      * @param ex
      * @return
      */
-    private ExtendedTreeItem setex(ExtendedTreeItem ex) {
-        for (int i = 0; i < item.getItemCount(); i++) {
-            System.out.println(i);
-            getItem(i).setex(new ExtendedTreeItem(ex));
+    private void setex(TreeItem ex) {
+        while (item.getItemCount() > 0) {
+            getItem(0).setex(new TreeItem(ex, SWT.None));
         }
-
-        ex.setStatus(getStatus());
-        ex.setType(getType());
-        ex.setDownloadLink(getDownloadLink());
         ex.setText(getTextArray());
-        disposeProgrammImage();
-        return ex;
+        ex.setData(this);
+        ex.setImage(item.getImage());
+        item.dispose();
+        item = ex;
     }
     /**
      * 
@@ -504,10 +510,7 @@ public class ExtendedTreeItem {
      *            parent
      */
     public void setPosition(ExtendedTreeItem parent) {
-        ExtendedTreeItem ex = new ExtendedTreeItem(parent);
-        ex = setex(ex);
-        item.dispose();
-        item = ex.item;
+        setex(new TreeItem(parent.item, SWT.None));
 
     }
     /**
@@ -516,10 +519,7 @@ public class ExtendedTreeItem {
      *            parent
      */
     public void setPosition(ExtendedTree parent) {
-        ExtendedTreeItem ex = new ExtendedTreeItem(parent);
-        ex = setex(ex);
-        item.dispose();
-        item = ex.item;
+        setex(new TreeItem(parent.tree, SWT.None));
     }
     /**
      * 
@@ -528,10 +528,7 @@ public class ExtendedTreeItem {
      * @param index
      */
     public void setPosition(ExtendedTreeItem parent, int index) {
-        ExtendedTreeItem ex = new ExtendedTreeItem(parent, index);
-        ex = setex(ex);
-        item.dispose();
-        item = ex.item;
+        setex(new TreeItem(parent.item, SWT.None, index));
     }
     /**
      * 
@@ -540,10 +537,8 @@ public class ExtendedTreeItem {
      * @param index
      */
     public void setPosition(ExtendedTree parent, int index) {
-        ExtendedTreeItem ex = new ExtendedTreeItem(parent, index);
-        ex = setex(ex);
-        item.dispose();
-        item = ex.item;
+        setex(new TreeItem(parent.tree, SWT.None, index));
+
     }
     /**
      * 

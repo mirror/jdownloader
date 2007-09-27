@@ -190,7 +190,7 @@ public class MainGui extends org.eclipse.swt.widgets.Composite implements UIInte
         }
         {
             folder = new CTabFolder(this, SWT.BORDER);
-            folder.addKeyListener(guiListeners.initMainGuiKeyListener());
+            folder.addListener(SWT.KeyDown,guiListeners.initMainGuiKeyListener());
             folder.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true));
             folder.setSimple(false);
             folder.setUnselectedImageVisible(true);

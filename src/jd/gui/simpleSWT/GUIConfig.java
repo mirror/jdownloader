@@ -1,5 +1,6 @@
 package jd.gui.simpleSWT;
 import java.io.Serializable;
+import java.util.HashMap;
 public class GUIConfig implements Serializable {
     
     public static final long serialVersionUID = 1L;
@@ -10,5 +11,5 @@ public class GUIConfig implements Serializable {
     public boolean isMaximized = false;
     public String btOpenFile;
     public String save;
-    public boolean[] warnings = new boolean[jd.gui.simpleSWT.SWTWarnings.count];
+    public HashMap<String, Boolean> warnings = new HashMap<String, Boolean>();
 }
