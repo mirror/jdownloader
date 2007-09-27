@@ -42,8 +42,11 @@ public class RequestInfo {
     }
     /**
      * Gibt anhand des Rückgabecodes zurück, ob der Aufrufr erfolgreich war oder nicht.
-     * HTTP Codes zwischen 0 und 499 gelten als erfolgreich
-     * @return Wahr, wenn der HTTP Code zwischen 0 und 499 lag
+     * HTTP Codes zwischen -2 und 499 gelten als erfolgreich
+     * Negative Codes beudeuten dass der Server ( wie es z.B. machne Router HTTP Server machen) keinen responseCode zurückgegeben hat). In diesem Fall wird trotzdem true zurückgegeben
+     * 
+     * 
+     * @return Wahr, wenn der HTTP Code zwischen -2 und 499 lag
      */
     public boolean isOK(){
         if(responseCode>-2 && responseCode<500)
