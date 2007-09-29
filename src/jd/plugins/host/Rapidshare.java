@@ -281,7 +281,7 @@ public class Rapidshare extends PluginForHost {
                         if (newURL != null) {
 
                             // Auswahl ob free oder prem
-                            requestInfo = postRequest(new URL(newURL), "dl.start=PREMIUM");
+                            requestInfo = postRequest(new URL(newURL), null,null,null,"dl.start=PREMIUM",true);
 
                             // post daten lesen
                             HashMap<String, String> fields = getInputHiddenFields(requestInfo.getHtmlCode(), "premium.cgi", "submit");
@@ -580,9 +580,11 @@ public class Rapidshare extends PluginForHost {
             if (newURL != null) {
 
                 // Auswahl ob free oder prem
-                requestInfo = postRequest(new URL(newURL), "dl.start=free");
-
+                requestInfo = postRequest(new URL(newURL), null,null,null,"dl.start=free",true);
+               logger.fine(requestInfo.getHtmlCode());
                 // captcha Adresse finden
+               
+//               <p><h3><font color="#CC0000">PREMIUM-Downloader 1999504 (<a href="http://rapidshare.com/cgi-bin/premium.cgi?logout=1">Logout</a>)</font></h3><p>Du hast <font color="red">http://rapidshare.com/files/12196127/DUCKS.part02.rar</font> (<b>99614</b> KB) angefordert.</p><p><table><tr><td><a href="http://rs16gc2.rapidshare.com/files/12196127/dl/DUCKS.part02.rar">Download via GlobalCrossing #2</a><br>
                 captchaAddress = getFirstMatch(requestInfo.getHtmlCode(), patternForCaptcha, 1);
 
                 // post daten lesen

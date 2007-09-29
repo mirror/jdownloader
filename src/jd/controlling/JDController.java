@@ -28,6 +28,9 @@ import jd.utils.JDUtilities;
  * 
  */
 public class JDController implements PluginListener, ControlListener, UIListener {
+    public static final int DOWNLOAD_TERMINATION_IN_PROGRESS = 0;
+    public static final int DOWNLOAD_RUNNING = 2;
+    public static final int DOWNLOAD_NOT_RUNNING = 3;
 
     /**
      * Mit diesem Thread wird eingegebener Text auf Links untersucht
@@ -50,7 +53,10 @@ public class JDController implements PluginListener, ControlListener, UIListener
      * Schnittstelle zur Benutzeroberfläche
      */
     private UIInterface                       uiInterface;
-
+    /**
+     * Hier kann de Status des Downloads gespeichert werden.
+     */
+    private int downloadStatus;
     /**
      * Die DownloadLinks
      */
@@ -81,23 +87,24 @@ public class JDController implements PluginListener, ControlListener, UIListener
         clipboard = new ClipboardHandler(this);
         JDUtilities.setController(this);
     }
-    public boolean isDownloadRunning(){
-        return watchdog!=null && !watchdog.isAborted();
+    public int getDownloadStatus(){
+       if(watchdog==null || watchdog.isAborted()){
+           return DOWNLOAD_NOT_RUNNING;
+       }else{
+           return this.downloadStatus;
+       }
     }
     /**
      * Startet den Downloadvorgang. Dies eFUnkton sendet das startdownload event
      * und aktiviert die ersten downloads
      */
-    private void startDownloads() {
-        if (!isDownloadRunning()) {
+    private synchronized void startDownloads() {
+        if (getDownloadStatus()==DOWNLOAD_NOT_RUNNING) {
+            setDownloadStatus(DOWNLOAD_RUNNING);
             logger.info("StartDownloads");
             this.watchdog = new DownloadWatchDog(this);
           
             watchdog.start();
-        }else{
-            // Wer auch immer einen download start angefordert hat obwohl schon einer läuft sollte darüber informiert werden dass er schon lief
-           fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_ALL_DOWNLOADS_FINISHED, false));
-
         }
     }
 
@@ -200,8 +207,9 @@ public class JDController implements PluginListener, ControlListener, UIListener
 
     private void stopDownloads() {
         if (watchdog != null) {
+            setDownloadStatus(DOWNLOAD_TERMINATION_IN_PROGRESS);
             watchdog.abort();
-           
+            setDownloadStatus(DOWNLOAD_NOT_RUNNING);
         }
     }
 
@@ -589,6 +597,9 @@ public class JDController implements PluginListener, ControlListener, UIListener
             logger.info(" --> "+((ControlListener) iterator.next()));
             ((ControlListener) iterator.next()).controlEvent(controlEvent);
         }
+    }
+    public void setDownloadStatus(int downloadStatus) {
+        this.downloadStatus = downloadStatus;
     }
 
 }

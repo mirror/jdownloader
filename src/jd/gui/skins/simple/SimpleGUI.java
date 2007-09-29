@@ -35,7 +35,7 @@ import javax.swing.JToolBar;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
 
-import jd.config.Configuration;
+import jd.controlling.JDController;
 import jd.controlling.interaction.ExternReconnect;
 import jd.controlling.interaction.HTTPReconnect;
 import jd.controlling.interaction.Interaction;
@@ -467,11 +467,11 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener{
                 // }
                 break;
             case JDAction.APP_START_STOP_DOWNLOADS:
-                if (btnStartStop.isSelected() &&!JDUtilities.getController().isDownloadRunning()) {
+                if (btnStartStop.isSelected() &&JDUtilities.getController().getDownloadStatus()==JDController.DOWNLOAD_NOT_RUNNING) {
                     fireUIEvent(new UIEvent(this, UIEvent.UI_START_DOWNLOADS));
                   
                 }
-                else {
+                else if(!btnStartStop.isSelected() &&JDUtilities.getController().getDownloadStatus()==JDController.DOWNLOAD_RUNNING) {
                     fireUIEvent(new UIEvent(this, UIEvent.UI_STOP_DOWNLOADS));
                   
                 }

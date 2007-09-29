@@ -17,28 +17,30 @@ import jd.utils.JDUtilities;
  * @author astaldo/coalado
  */
 public class SingleDownloadController extends ControlMulticaster {
+   
 
     /**
      * Das Plugin, das den aktuellen Download steuert
      */
-    private PluginForHost currentPlugin;
+    private PluginForHost    currentPlugin;
 
     /**
      * Wurde der Download abgebrochen?
      */
-    private boolean       aborted = false;
+    private boolean          aborted                 = false;
+
 
     /**
      * Der Logger
      */
-    private Logger        logger  = Plugin.getLogger();
+    private Logger           logger                  = Plugin.getLogger();
 
     /**
      * Das übergeordnete Fenster
      */
-    private JDController  controller;
+    private JDController     controller;
 
-    private DownloadLink  downloadLink;
+    private DownloadLink     downloadLink;
 
     /**
      * Erstellt einen Thread zum Start des Downloadvorganges
@@ -54,11 +56,13 @@ public class SingleDownloadController extends ControlMulticaster {
     }
 
     /**
-     * Bricht den Downloadvorgang ab
+     * Bricht den Downloadvorgang ab.
      */
     public void abortDownload() {
         aborted = true;
+      
         if (currentPlugin != null) currentPlugin.abort();
+
     }
 
     /*
@@ -90,6 +94,7 @@ public class SingleDownloadController extends ControlMulticaster {
         while (!aborted && step != null && step.getStatus() != PluginStep.STATUS_ERROR) {
 
             logger.info("Current Step:  " + step);
+            downloadLink.setStatusText("running...");
             switch (step.getStep()) {
                 case PluginStep.STEP_PENDING:
 
@@ -162,7 +167,8 @@ public class SingleDownloadController extends ControlMulticaster {
                     break;
 
             }
-            if(aborted){
+            if (aborted) {
+
                 break;
             }
             if (step != null && downloadLink != null && plugin != null && plugin.nextStep(step) != null) {
@@ -194,6 +200,7 @@ public class SingleDownloadController extends ControlMulticaster {
 
             downloadLink.setInProgress(false);
             fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_PLUGIN_HOST_INACTIVE, plugin));
+          
             return;
 
         }
@@ -244,17 +251,19 @@ public class SingleDownloadController extends ControlMulticaster {
         else {
             downloadLink.setStatusText("Fertig");
             // Schreibt die Info File
-//            if (downloadLink.getFilePackage() != null) {
-//                File file = new File(downloadLink.getFilePackage().getDownloadDirectory());
-//                file = new File(file, downloadLink.getFileNameFrom() + ".info");
-//
-//                logger.info(file.getAbsolutePath());
-//                String info = downloadLink.getFilePackage().getComment() + "\n" + "" + "\n" + downloadLink.getFilePackage().getPassword();
-//                if (info.length() > 2) {
-//                    JDUtilities.writeLocalFile(file, info);
-//                }
-//
-//            }
+            // if (downloadLink.getFilePackage() != null) {
+            // File file = new
+            // File(downloadLink.getFilePackage().getDownloadDirectory());
+            // file = new File(file, downloadLink.getFileNameFrom() + ".info");
+            //
+            // logger.info(file.getAbsolutePath());
+            // String info = downloadLink.getFilePackage().getComment() + "\n" +
+            // "" + "\n" + downloadLink.getFilePackage().getPassword();
+            // if (info.length() > 2) {
+            // JDUtilities.writeLocalFile(file, info);
+            // }
+            //
+            // }
             downloadLink.setInProgress(false);
             fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SINGLE_DOWNLOAD_CHANGED, downloadLink));
             Interaction.handleInteraction((Interaction.INTERACTION_SINGLE_DOWNLOAD_FINISHED), downloadLink);
@@ -262,8 +271,6 @@ public class SingleDownloadController extends ControlMulticaster {
         }
         fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_PLUGIN_HOST_INACTIVE, plugin));
         fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SINGLE_DOWNLOAD_FINISHED, downloadLink));
-
-     
 
     }
 
@@ -397,8 +404,6 @@ public class SingleDownloadController extends ControlMulticaster {
 
     }
 
-
-
     /**
      * Diese Funktion wird aufgerufen wenn der Download abgebrochen wurde und
      * wiederholt werden soll
@@ -485,8 +490,7 @@ public class SingleDownloadController extends ControlMulticaster {
         fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SINGLE_DOWNLOAD_CHANGED, downloadLink));
 
         downloadLink.setStatus(DownloadLink.STATUS_TODO);
-        
-     
+
         downloadLink.setEndOfWaittime(0);
 
     }
@@ -516,10 +520,11 @@ public class SingleDownloadController extends ControlMulticaster {
         downloadLink.setStatusText("");
     }
 
-  
-
     public DownloadLink getDownloadLink() {
-       return this.downloadLink;
+        return this.downloadLink;
     }
+
+
+
 
 }

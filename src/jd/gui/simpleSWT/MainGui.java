@@ -16,10 +16,7 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.util.Iterator;
 import java.util.Vector;
-import java.util.logging.Logger;
 
-import jd.config.Configuration;
-import jd.controlling.interaction.Interaction;
 import jd.event.ControlEvent;
 import jd.event.UIEvent;
 import jd.event.UIListener;
@@ -30,7 +27,6 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginForSearch;
 import jd.plugins.event.PluginEvent;
-import jd.utils.JDUtilities;
 
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.CTabFolder;

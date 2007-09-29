@@ -18,6 +18,7 @@ public abstract class PluginForHost extends Plugin {
     // public abstract URLConnection getURLConnection();
 
     private String data;
+ 
 
     /**
      * Stellt das Plugin in den Ausgangszustand zurück (variablen intialisieren
@@ -48,7 +49,10 @@ public abstract class PluginForHost extends Plugin {
             logger.info(this + " PLuginende erreicht!");
             return null;
         }
-        return doStep(currentStep, parameter);
+       
+        PluginStep ret=doStep(currentStep, parameter);
+       
+        return ret;
     }
 
     /**

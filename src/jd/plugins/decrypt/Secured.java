@@ -137,7 +137,7 @@ public class Secured extends PluginForDecrypt {
                 try {
                     RequestInfo requestInfo = getRequest(new URL(JS_URL));
                     DOWNLOAD_CMD = getSimpleMatch(requestInfo.getHtmlCode(), PAT_DOWNLOAD_CMD, 0, 5);
-                    logger.info(DOWNLOAD_CMD);
+                    
                     firePluginEvent(new PluginEvent(this, PluginEvent.PLUGIN_PROGRESS_MAX, 1));
                     URL url = new URL(cryptedLink);
                     requestInfo = getRequest(url);
@@ -176,7 +176,7 @@ public class Secured extends PluginForDecrypt {
                     firePluginEvent(new PluginEvent(this, PluginEvent.PLUGIN_PROGRESS_MAX, ids.size()));
                     while (ids.size() > 0) {
                         String fileUrl = this.decryptId(ids.remove(0));
-                        logger.info(fileUrl);
+                       
                         decryptedLinks.add(fileUrl);
                         firePluginEvent(new PluginEvent(this, PluginEvent.PLUGIN_PROGRESS_INCREASE, null));
 

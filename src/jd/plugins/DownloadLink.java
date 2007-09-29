@@ -221,7 +221,7 @@ public class DownloadLink implements Serializable, Comparable {
         this.name = name;
         this.host = host;
         this.isEnabled = isEnabled;
-        speedMeter = new SpeedMeter(1000);
+        speedMeter = new SpeedMeter(5000);
 
         this.urlDownload = JDCrypt.encrypt(urlDownload);
     }
@@ -638,7 +638,7 @@ public class DownloadLink implements Serializable, Comparable {
      */
     public SpeedMeter getSpeedMeter() {
         if (speedMeter == null) {
-            speedMeter = new SpeedMeter(1000);
+            speedMeter = new SpeedMeter(5000);
         }
         return speedMeter;
     }

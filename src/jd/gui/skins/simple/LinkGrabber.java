@@ -84,8 +84,6 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
 
     private JButton              btnCheck;
 
-   
-
     /**
      * @param parent GUI
      * @param linkList neue links
@@ -132,7 +130,6 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
         btnCancel.addActionListener(this);
         btnRemove.addActionListener(this);
         btnCheck.addActionListener(this);
-       
 
         list.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
         // scrollPane.setPreferredSize(new Dimension(400, 400));
@@ -317,7 +314,6 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
             removeSelectedLinks();
         }
 
-      
         if (e.getSource() == this.btnCheck) {
             checkLinks();
         }
@@ -327,10 +323,11 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
     }
 
     private void removeOfflineFiles() {
+
         new Thread() {
             public void run() {
 
-                for (int i = linkList.size() - 1; i >= 0; i--) {
+                for (int i = linkList.size() - 1; i >= 0 && isVisible() && linkList.size() > i; i--) {
                     DownloadLink link = linkList.elementAt(i);
                     if (!link.isAvailable()) {
                         linkList.remove(i);
@@ -354,7 +351,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
         new Thread() {
             public void run() {
 
-                for (int i = 0; i < linkList.size(); i++) {
+                for (int i = 0; i < linkList.size() && isVisible() && linkList.size() > i; i++) {
                     DownloadLink link = linkList.elementAt(i);
                     link.isAvailable();
                     fireTableChanged();
@@ -461,7 +458,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
             popup.add(delete);
             popup.add(info);
             popup.add(load);
-           
+
             popup.add(new JSeparator());
             popup.add(deleteNotSelected);
             popup.add(deleteOffline);
@@ -489,7 +486,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
                 new Thread() {
                     public void run() {
 
-                        for (int i = 0; i < indeces.length; i++) {
+                        for (int i = 0; i < indeces.length && isVisible() && linkList.size() > i; i++) {
                             linkList.get(indeces[i]).isAvailable();
                             try {
                                 Thread.sleep(50);
@@ -543,7 +540,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
 
             }
             else {
-             
+
                 list.setSelectedIndex(row);
             }
 

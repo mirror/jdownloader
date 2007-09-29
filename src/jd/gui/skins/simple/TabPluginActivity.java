@@ -179,6 +179,8 @@ public class TabPluginActivity extends JPanel implements PluginListener {
         }
 
         public Object getValueAt(int rowIndex, int columnIndex) {
+            
+            if(pluginProgresses.size()<=rowIndex)return null;
             PluginProgress p = pluginProgresses.get(rowIndex);
 
             switch (columnIndex) {

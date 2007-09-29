@@ -21,46 +21,47 @@ import jd.utils.JDUtilities;
  * @author astaldo
  */
 public class HTTPReconnect extends Interaction {
-    private transient static boolean enabled=true;
+    private transient static boolean enabled          = true;
+
     /**
      * 
      */
-    private static final long serialVersionUID = 5208110144587103071L;
+    private static final long        serialVersionUID = 5208110144587103071L;
 
     /**
      * serialVersionUID
      */
-  
 
-    private static final String NAME             = "HTTP Reconnect(routercontrol)";
-/**
- * Maximal 10 versuche
- */
-    private static final int MAX_RETRIES = 10;
+    private static final String      NAME             = "HTTP Reconnect(routercontrol)";
 
-    public static String        VAR_USERNAME     = "%USERNAME%";
+    /**
+     * Maximal 10 versuche
+     */
+    private static final int         MAX_RETRIES      = 10;
 
-    public static String        VAR_PASSWORD     = "%PASSWORD%";
+    public static String             VAR_USERNAME     = "%USERNAME%";
 
-    private int                 retries          = 0;
+    public static String             VAR_PASSWORD     = "%PASSWORD%";
+
+    private int                      retries          = 0;
 
     @Override
     public boolean doInteraction(Object arg) {
-        
-        if(!isEnabled()){
-            logger.finer("INteraction nicht ausgeführt. disabled"+this);
+
+        if (!isEnabled()) {
+            logger.finer("INteraction nicht ausgeführt. disabled" + this);
             return false;
         }
-        
+
         Configuration configuration = JDUtilities.getConfiguration();
         retries++;
         logger.info("Starting HTTPReconnect #" + retries);
         String ipBefore;
         String ipAfter;
         RouterData routerData = configuration.getRouterData();
-        if(routerData==null){
+        if (routerData == null) {
             this.setCallCode(Interaction.INTERACTION_CALL_ERROR);
-          
+
             return false;
         }
         String routerIP = routerData.getRouterIP();
@@ -83,10 +84,10 @@ public class HTTPReconnect extends Interaction {
         RequestInfo requestInfo = null;
 
         // IP auslesen
-      
+
         ipBefore = getIPAddress(routerPage, routerData);
         logger.fine("IP before:" + ipBefore);
-       
+
         if (login != null && !login.equals("")) {
             login.replaceAll(VAR_USERNAME, routerUsername);
             login.replaceAll(VAR_PASSWORD, routerPassword);
@@ -96,30 +97,30 @@ public class HTTPReconnect extends Interaction {
             if (requestInfo == null) {
                 logger.severe("Login failed.");
                 this.setCallCode(Interaction.INTERACTION_CALL_ERROR);
-               
+
                 return false;
             }
             else if (!requestInfo.isOK()) {
                 logger.severe("Login failed. HTTP-Code:" + requestInfo.getResponseCode());
                 this.setCallCode(Interaction.INTERACTION_CALL_ERROR);
-                
+
                 return false;
             }
         }
-       
+
         // Disconnect
         requestInfo = doThis("Disconnect", isAbsolute(disconnect) ? disconnect : routerPage + disconnect, requestInfo, routerData.getDisconnectRequestProperties(), routerData.getDisconnectPostParams(), routerData.getDisconnectType());
-       
+
         if (requestInfo == null) {
             logger.severe("Disconnect failed.");
             this.setCallCode(Interaction.INTERACTION_CALL_ERROR);
-          
+
             return false;
         }
         else if (!requestInfo.isOK()) {
             logger.severe("Disconnect failed HTTP-Code:" + requestInfo.getResponseCode());
             this.setCallCode(Interaction.INTERACTION_CALL_ERROR);
-           
+
             return false;
         }
         try {
@@ -127,7 +128,7 @@ public class HTTPReconnect extends Interaction {
         }
         catch (InterruptedException e) {
         }
-  
+
         // Verbindung wiederaufbauen
         logger.fine("building connection");
         requestInfo = doThis("Rebuild", isAbsolute(connect) ? connect : routerPage + connect, null, routerData.getConnectRequestProperties(), routerData.getConnectPostParams(), routerData.getConnectType());
@@ -135,70 +136,68 @@ public class HTTPReconnect extends Interaction {
         if (requestInfo == null) {
             logger.severe("Reconnect failed.");
             this.setCallCode(Interaction.INTERACTION_CALL_ERROR);
-            
+
             return false;
         }
         else if (!requestInfo.isOK()) {
             logger.severe("Reconnect failed. HTTP-Code:" + requestInfo.getResponseCode());
             this.setCallCode(Interaction.INTERACTION_CALL_ERROR);
-           
+
             return false;
         }
 
-        
+        // IP check
 
-     // IP check
+        if (waitTime > 0) {
 
-     if (waitTime > 0){
+            logger.fine("wait " + waitTime + " seconds");
 
-     logger.fine("wait " + waitTime + " seconds");
+            try {
 
-     try {
+                Thread.sleep(waitTime * 1000);
 
-     Thread.sleep(waitTime * 1000);
+            }
 
-     }
+            catch (InterruptedException e) {
 
-     catch (InterruptedException e) {
+            }
 
-     }
-
-     }
+        }
         // IP check
         ipAfter = getIPAddress(routerPage, routerData);
         logger.fine("IP after reconnect:" + ipAfter);
         if (ipBefore == null || ipAfter == null || ipBefore.equals(ipAfter)) {
             logger.severe("IP address did not change");
-            if (retries<HTTPReconnect.MAX_RETRIES &&(retries < configuration.getReconnectRetries() || configuration.getReconnectRetries() <= 0)) {
+            if (retries < HTTPReconnect.MAX_RETRIES && (retries < configuration.getReconnectRetries() || configuration.getReconnectRetries() <= 0)) {
                 return doInteraction(arg);
             }
             this.setCallCode(Interaction.INTERACTION_CALL_ERROR);
-            retries=0;
+            retries = 0;
             return false;
         }
         this.setCallCode(Interaction.INTERACTION_CALL_SUCCESS);
-        retries=0;
+        retries = 0;
         return true;
     }
 
     private String getIPAddress(String routerPage, RouterData routerData) {
         String urlForIPAddress;
-       
-        if(routerData==null||routerData.getIpAddressSite()==null)return null;
+
+        if (routerData == null || routerData.getIpAddressSite() == null) return null;
         try {
-           
+
             if (isAbsolute(routerData.getIpAddressSite())) {
                 urlForIPAddress = routerData.getIpAddressSite();
-              
+
             }
-            
+
             else {
-              
+
                 urlForIPAddress = routerPage + routerData.getIpAddressSite();
             }
-           
+
             RequestInfo requestInfo = Plugin.getRequest(new URL(urlForIPAddress));
-         
+
             return routerData.getIPAdress(requestInfo.getHtmlCode());
         }
         catch (IOException e1) {
@@ -224,7 +223,7 @@ public class HTTPReconnect extends Interaction {
      * @return Prüft ob enie url Absolut ist.
      */
     private boolean isAbsolute(String url) {
-        if(url==null)return false;
+        if (url == null) return false;
         try {
             URI uri = new URI(url);
             return uri.isAbsolute();
@@ -295,21 +294,24 @@ public class HTTPReconnect extends Interaction {
             return new PasswordAuthentication(username, password.toCharArray());
         }
     }
-    public static boolean isEnabled(){
+
+    public static boolean isEnabled() {
         return enabled;
     }
-public static void setEnabled(boolean en){
-    enabled=en;
-}
+
+    public static void setEnabled(boolean en) {
+        enabled = en;
+    }
+
     @Override
     public void run() {
-        //Nichts zu tun. INteraction braucht keinen Thread
-        
+    // Nichts zu tun. INteraction braucht keinen Thread
+
     }
 
     @Override
     public void initConfig() {
-        // TODO Auto-generated method stub
-        
+    // TODO Auto-generated method stub
+
     }
 }

@@ -528,7 +528,7 @@ public class JDUtilities {
             return captchaCode;
 
         }
-        else {
+        else { 
             return controller.getCaptchaCodeFromUser(plugin, file);
         }
 
