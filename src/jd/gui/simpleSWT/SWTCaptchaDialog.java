@@ -4,7 +4,6 @@ package jd.gui.simpleSWT;
 import java.io.File;
 
 import jd.plugins.Plugin;
-import jd.utils.JDSWTUtilities;
 
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.CLabel;

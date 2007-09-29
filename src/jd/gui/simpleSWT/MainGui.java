@@ -30,7 +30,6 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginForSearch;
 import jd.plugins.event.PluginEvent;
-import jd.utils.JDSWTUtilities;
 import jd.utils.JDUtilities;
 
 import org.eclipse.swt.SWT;

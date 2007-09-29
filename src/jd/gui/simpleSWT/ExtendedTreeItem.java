@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Vector;
 
 import jd.plugins.DownloadLink;
-import jd.utils.JDSWTUtilities;
+import jd.plugins.FilePackage;
 
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.TreeEditor;
@@ -23,7 +23,6 @@ public class ExtendedTreeItem {
      * Hier werden TreeItemImages reingeladen fals sie benoetigt werden
      */
     private static HashMap<String, ImageMap> programmImages = new HashMap<String, ImageMap>();
-    private static Vector<DownloadLink> downloadlinks = new Vector<DownloadLink>();
     /*
      * Achtung wenn ein neuer TYPE gesetzt wird muss dafuer die Methode
      * ProgrammImage() gegebenenfalls angepasst werden und neue Bilder in der
@@ -49,6 +48,7 @@ public class ExtendedTreeItem {
     private TreeEditor editor = null;
     private ProgressBar progressBar = null;
     private DownloadLink downloadlink = null;
+    private FilePackage filePackage = null;
     /**
      * Konstruktor
      * 
@@ -122,6 +122,24 @@ public class ExtendedTreeItem {
         item.dispose();
     }
 
+    public Vector<DownloadLink> getdownloadlinks() {
+        Vector<DownloadLink> downloadlinks = new Vector<DownloadLink>();
+        if(getType()==TYPE_FILE)
+        {
+            if(getStatus()!=STATUS_DOWNLOADING)
+                    downloadlinks.add(getDownloadLink());
+            return downloadlinks;
+        }
+        ExtendedTreeItem[] items = getItems();
+        for (int i = 0; i < items.length; i++) {
+            DownloadLink dl = items[i].getDownloadLink();
+            if(dl!=null)
+                downloadlinks.add(dl);
+            else
+                downloadlinks.addAll(items[i].getdownloadlinks());
+        }
+        return downloadlinks;
+    }
     public void disposeProgrammImage() {
         String extension = null;
         if (getType() == ExtendedTreeItem.TYPE_FILE && (getText(0) != null)) {
@@ -146,34 +164,45 @@ public class ExtendedTreeItem {
     public String getText(int i) {
         return item.getText(i);
     }
-    private void setTextDownloadlink(String text) {
-        if (downloadlink != null) {
-            int index = downloadlinks.indexOf(downloadlink);
-            downloadlink.setName(text);
-            downloadlinks.set(index, downloadlink);
+    private void setTextDownloadlink() {
+        ExtendedTreeItem[] extendedTreeItems = getItems();
+        for (int i = 0; i < extendedTreeItems.length; i++) {
+            extendedTreeItems[i].setTextDownloadlink();
         }
+        if (getType() != TYPE_FILE) {
+            if (this.filePackage == null)
+                this.filePackage = new FilePackage();
+            this.filePackage.setDownloadDirectory((getParentItem() != null) ? getParentItem().getFilePackage().getDownloadDirectory() + getText() + System.getProperty("file.separator") : getText() + System.getProperty("file.separator"));
+        } else if (getParentItem() != null && downloadlink!=null) {
+            downloadlink.setFilePackage(getParentItem().filePackage);
+        }
+        setData(this);
     }
     public void setText(int column, String text) {
 
         if (column == 0) {
-            setTextDownloadlink(text);
             redrawProgrammImage(text);
+            item.setText(column, text);
+            setData(this);
+            setTextDownloadlink();
+        } else {
+            item.setText(column, text);
+            setData(this);
         }
-        item.setText(column, text);
-        setData(this);
+
     }
     public void setText(String text) {
         redrawProgrammImage(text);
         item.setText(text);
-        setTextDownloadlink(text);
         setData(this);
+        setTextDownloadlink();
     }
     public void setText(String[] text) {
 
         redrawProgrammImage(text[0]);
         item.setText(text);
-        setTextDownloadlink(text[0]);
         setData(this);
+        setTextDownloadlink();
 
     }
 
@@ -457,7 +486,7 @@ public class ExtendedTreeItem {
      * @return DownloadLink
      */
     public DownloadLink getDownloadLink() {
-        return downloadlink;
+        return getdata().downloadlink;
     }
     /**
      * 
@@ -480,13 +509,8 @@ public class ExtendedTreeItem {
      * @param downloadLink
      */
     public void setDownloadLink(DownloadLink downloadLink) {
-        if (this.downloadlink != null) {
-            downloadlinks.set(downloadlinks.indexOf(this.downloadlink), downloadLink);
-            this.downloadlink = downloadLink;
-        } else {
-            downloadlinks.add(downloadLink);
-            this.downloadlink = downloadLink;
-        }
+        this.downloadlink = downloadLink;
+        setData(this);
     }
     /**
      * Interne Methode zum setzen der neuen Position
@@ -511,7 +535,7 @@ public class ExtendedTreeItem {
      */
     public void setPosition(ExtendedTreeItem parent) {
         setex(new TreeItem(parent.item, SWT.None));
-
+        setTextDownloadlink();
     }
     /**
      * 
@@ -520,6 +544,7 @@ public class ExtendedTreeItem {
      */
     public void setPosition(ExtendedTree parent) {
         setex(new TreeItem(parent.tree, SWT.None));
+        setTextDownloadlink();
     }
     /**
      * 
@@ -529,6 +554,7 @@ public class ExtendedTreeItem {
      */
     public void setPosition(ExtendedTreeItem parent, int index) {
         setex(new TreeItem(parent.item, SWT.None, index));
+        setTextDownloadlink();
     }
     /**
      * 
@@ -538,6 +564,7 @@ public class ExtendedTreeItem {
      */
     public void setPosition(ExtendedTree parent, int index) {
         setex(new TreeItem(parent.tree, SWT.None, index));
+        setTextDownloadlink();
 
     }
     /**
@@ -560,6 +587,7 @@ public class ExtendedTreeItem {
      */
     public void setlockState(int state) {
         isLocked = state;
+        setData(this);
     }
 
     /**
@@ -567,7 +595,7 @@ public class ExtendedTreeItem {
      * @return Sperrstatus des TreeItems
      */
     public int getlockState() {
-        return isLocked;
+        return getdata().isLocked;
     }
     /**
      * 
@@ -612,6 +640,14 @@ public class ExtendedTreeItem {
             this.image = image;
             usageCount = 1;
         }
+    }
+
+    public FilePackage getFilePackage() {
+        return getdata().filePackage;
+    }
+    public void setFilePackage(FilePackage filePackage) {
+        this.filePackage = filePackage;
+        setData(this);
     }
 
 }

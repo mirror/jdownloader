@@ -1,6 +1,5 @@
 package jd.gui.simpleSWT;
 
-import jd.utils.JDSWTUtilities;
 
 import org.eclipse.swt.*;
 import org.eclipse.swt.custom.CLabel;

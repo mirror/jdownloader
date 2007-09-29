@@ -6,7 +6,6 @@ import java.io.ObjectOutputStream;
 import java.util.HashMap;
 
 import jd.plugins.DownloadLink;
-import jd.utils.JDSWTUtilities;
 
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.CTabFolder;
@@ -156,7 +155,7 @@ public class GuiListeners {
         return names;
 
     }
-    private String getFileDialog(Shell shell, String file, int type) {
+    public String getFileDialog(Shell shell, String file, int type) {
         if (type == 1) {
             DirectoryDialog dialog = new DirectoryDialog(shell);
             if (file != null) {
@@ -357,7 +356,7 @@ public class GuiListeners {
                 evd += System.getProperty("line.separator");
             }
             DownloadLink downloadLink =  items[items.length - 1].getDownloadLink();
-            evd += ((downloadLink != null) ? downloadLink.getEncryptedUrlDownload() : items[items.length - 1].getText());
+            evd += ((downloadLink != null) ? downloadLink.getUrlDownload() : items[items.length - 1].getText());
             Clipboard clipboard = new Clipboard(trCompleted.tree.getDisplay());
             clipboard.setContents(new String[]{evd}, new Transfer[]{TextTransfer.getInstance()});
         }

@@ -1,6 +1,9 @@
 package jd.gui.simpleSWT;
 
 import java.util.LinkedList;
+import java.util.Vector;
+
+import jd.plugins.DownloadLink;
 
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Display;
@@ -94,7 +97,16 @@ public class ExtendedTree {
     }
     public void removeListener(int i, Listener listener) {
         tree.removeListener(i, listener);
-        
     }
+    
+    public Vector<DownloadLink> getdownloadlinks() {
+        Vector<DownloadLink> downloadlinks = new Vector<DownloadLink>();
+        ExtendedTreeItem[] items = getItems();
+        for (int i = 0; i < items.length; i++) {
+                downloadlinks.addAll(items[i].getdownloadlinks());
+        }
+        return downloadlinks;
+    }
+    
 
 }
