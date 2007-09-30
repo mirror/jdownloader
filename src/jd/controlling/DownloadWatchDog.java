@@ -333,6 +333,7 @@ public class DownloadWatchDog extends Thread implements PluginListener, ControlL
                 links.elementAt(i).setInProgress(false);
                 links.elementAt(i).setStatusText("");
                 links.elementAt(i).setStatus(DownloadLink.STATUS_TODO);
+                links.elementAt(i).setEndOfWaittime(0);
             }
 
         }

@@ -2,6 +2,7 @@ package jd;
 
 import java.awt.Toolkit;
 import java.io.File;
+import java.net.CookieHandler;
 import java.util.Iterator;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -22,7 +23,6 @@ import jd.utils.JDUtilities;
  * 
  * @author astaldo
  */
-
 
 // TODO Links speichern / laden / editieren(nochmal laden, Passwort merken)
 // TODO Klänge wiedergeben
@@ -84,25 +84,28 @@ public class Main {
         JDUtilities.loadPlugins();
         logger.info("Lade GUI");
         UIInterface uiInterface = new SimpleGUI();
-
+        // deaktiviere den Cookie Handler. Cookies müssen komplett selbst
+        // verwaltet werden. Da JD später sowohl standalone, als auch im
+        // Webstart laufen soll muss die Cookieverwaltung selbst übernommen
+        // werdn
+        CookieHandler.setDefault(null);
         logger.info("Erstelle Controller");
         JDController controller = new JDController();
         controller.setUiInterface(uiInterface);
         logger.info("Lade Queue");
-        if(!controller.initDownloadLinks()){
-           
-      
-          File links = JDUtilities.getResourceFile("links.dat");
-          if (links.exists()) {
-              File newFile = new File(links.getAbsolutePath() + ".bup");
-              newFile.delete();
-              links.renameTo(newFile);
-              uiInterface.showMessageDialog("Linkliste inkompatibel. \r\nBackup angelegt: "+newFile+" Liste geleert!");
+        if (!controller.initDownloadLinks()) {
 
-          }
-         
+            File links = JDUtilities.getResourceFile("links.dat");
+            if (links.exists()) {
+                File newFile = new File(links.getAbsolutePath() + ".bup");
+                newFile.delete();
+                links.renameTo(newFile);
+                uiInterface.showMessageDialog("Linkliste inkompatibel. \r\nBackup angelegt: " + newFile + " Liste geleert!");
+
+            }
+
         }
-   
+
         logger.info("Registriere Plugins");
         Iterator<PluginForHost> iteratorHost = JDUtilities.getPluginsForHost().iterator();
         while (iteratorHost.hasNext()) {

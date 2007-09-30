@@ -19,7 +19,7 @@ public abstract class ConfigPanel extends JPanel{
      * serialVersionUID
      */
     private static final long serialVersionUID = 3383448498625377495L;
-   private int row=0;
+
    private Vector<GUIConfigEntry> entries= new  Vector<GUIConfigEntry>();
     protected UIInterface uiinterface;
     protected JPanel panel;    
@@ -36,9 +36,9 @@ public abstract class ConfigPanel extends JPanel{
 
     public void addGUIConfigEntry(GUIConfigEntry entry){
      
-        JDUtilities.addToGridBag(panel, entry, 0, row, 1, 1, 1, 0, insets, GridBagConstraints.BOTH, GridBagConstraints.EAST);
+        JDUtilities.addToGridBag(panel, entry, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 1, 0, insets, GridBagConstraints.BOTH, GridBagConstraints.EAST);
         entries.add(entry);
-        row++;
+      
     }
     public void saveConfigEntries(){
        Iterator<GUIConfigEntry> it = entries.iterator();

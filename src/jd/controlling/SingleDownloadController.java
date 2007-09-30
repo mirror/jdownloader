@@ -17,30 +17,28 @@ import jd.utils.JDUtilities;
  * @author astaldo/coalado
  */
 public class SingleDownloadController extends ControlMulticaster {
-   
 
     /**
      * Das Plugin, das den aktuellen Download steuert
      */
-    private PluginForHost    currentPlugin;
+    private PluginForHost currentPlugin;
 
     /**
      * Wurde der Download abgebrochen?
      */
-    private boolean          aborted                 = false;
-
+    private boolean       aborted = false;
 
     /**
      * Der Logger
      */
-    private Logger           logger                  = Plugin.getLogger();
+    private Logger        logger  = Plugin.getLogger();
 
     /**
      * Das übergeordnete Fenster
      */
-    private JDController     controller;
+    private JDController  controller;
 
-    private DownloadLink     downloadLink;
+    private DownloadLink  downloadLink;
 
     /**
      * Erstellt einen Thread zum Start des Downloadvorganges
@@ -61,9 +59,9 @@ public class SingleDownloadController extends ControlMulticaster {
     public void abortDownload() {
         downloadLink.setStatusText("termination...");
         aborted = true;
-      
+
         if (currentPlugin != null) currentPlugin.abort();
-        
+
     }
 
     /*
@@ -201,70 +199,54 @@ public class SingleDownloadController extends ControlMulticaster {
 
             downloadLink.setInProgress(false);
             fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_PLUGIN_HOST_INACTIVE, plugin));
-          
+
             return;
 
         }
+        if (step != null && step.getStatus() == PluginStep.STATUS_ERROR) {
+            switch (downloadLink.getStatus()) {
+                case DownloadLink.STATUS_ERROR_DOWNLOAD_LIMIT:
+                    this.onErrorWaittime(downloadLink, plugin, step);
+                    break;
+                case DownloadLink.STATUS_ERROR_STATIC_WAITTIME:
+                    this.onErrorStaticWaittime(downloadLink, plugin, step);
+                    break;
+                case DownloadLink.STATUS_ERROR_TEMPORARILY_UNAVAILABLE:
+                    this.onErrorTemporarilyUnavailable(downloadLink, plugin, step);
+                    break;
+                case DownloadLink.STATUS_ERROR_TO_MANY_USERS:
+                    this.onErrorToManyUsers(downloadLink, plugin, step);
+                    break;
+                case DownloadLink.STATUS_ERROR_CAPTCHA_IMAGEERROR:
+                    this.onErrorCaptchaImage(downloadLink, plugin, step);
+                    break;
+                case DownloadLink.STATUS_ERROR_FILE_ABUSED:
+                    this.onErrorAbused(downloadLink, plugin, step);
+                    break;
+                case DownloadLink.STATUS_ERROR_UNKNOWN_RETRY:
+                    this.onErrorRetry(downloadLink, plugin, step);
+                    break;
+                case DownloadLink.STATUS_ERROR_FILE_NOT_FOUND:
+                    this.onErrorFileNotFound(downloadLink, plugin, step);
+                    break;
+                case DownloadLink.STATUS_ERROR_CAPTCHA_WRONG:
+                    this.onErrorCaptcha(downloadLink, plugin, step);
+                    break;
+                case DownloadLink.STATUS_ERROR_PREMIUM:
+                    this.onErrorPremium(downloadLink, plugin, step);
+                    break;
+                case DownloadLink.STATUS_ERROR_PREMIUM_LOGIN:
+                    this.onErrorPremiumLogin(downloadLink, plugin, step);
+                    break;
+                default:
+                    this.onErrorUnknown(downloadLink, plugin, step);
 
-        if (step != null && downloadLink.getStatus() == DownloadLink.STATUS_ERROR_DOWNLOAD_LIMIT && step.getStatus() == PluginStep.STATUS_ERROR) {
+            }
 
-            this.onErrorWaittime(downloadLink, plugin, step);
-
-        }
-
-        else if (step != null && downloadLink.getStatus() == DownloadLink.STATUS_ERROR_STATIC_WAITTIME && step.getStatus() == PluginStep.STATUS_ERROR) {
-            this.onErrorStaticWaittime(downloadLink, plugin, step);
-        }
-        else if (step != null && downloadLink.getStatus() == DownloadLink.STATUS_ERROR_TEMPORARILY_UNAVAILABLE && step.getStatus() == PluginStep.STATUS_ERROR) {
-            this.onErrorTemporarilyUnavailable(downloadLink, plugin, step);
-        }
-        else if (step != null && downloadLink.getStatus() == DownloadLink.STATUS_ERROR_CAPTCHA_IMAGEERROR && step.getStatus() == PluginStep.STATUS_ERROR) {
-            this.onErrorCaptchaImage(downloadLink, plugin, step);
-        }
-        else if (step != null && downloadLink.getStatus() == DownloadLink.STATUS_ERROR_FILE_ABUSED && step.getStatus() == PluginStep.STATUS_ERROR) {
-            this.onErrorAbused(downloadLink, plugin, step);
-        }
-        else if (step != null && downloadLink.getStatus() == DownloadLink.STATUS_ERROR_FILE_NOT_FOUND && step.getStatus() == PluginStep.STATUS_ERROR) {
-            this.onErrorFileNotFound(downloadLink, plugin, step);
-        }
-        else if (step != null && downloadLink.getStatus() == DownloadLink.STATUS_ERROR_CAPTCHA_WRONG && step.getStatus() == PluginStep.STATUS_ERROR) {
-            this.onErrorCaptcha(downloadLink, plugin, step);
-        }
-        else if (step != null && downloadLink.getStatus() == DownloadLink.STATUS_ERROR_BOT_DETECTED && step.getStatus() == PluginStep.STATUS_ERROR) {
-            this.onErrorBotdetection(downloadLink, plugin, step);
-
-        }
-
-        else if (step != null && downloadLink.getStatus() == DownloadLink.STATUS_ERROR_UNKNOWN_RETRY && step.getStatus() == PluginStep.STATUS_ERROR) {
-            this.onErrorRetry(downloadLink, plugin, step);
-        }
-
-        else if (step != null && downloadLink.getStatus() == DownloadLink.STATUS_ERROR_PREMIUM && step.getStatus() == PluginStep.STATUS_ERROR) {
-            this.onErrorPremium(downloadLink, plugin, step);
-        }
-
-        else if (step != null && downloadLink.getStatus() == DownloadLink.STATUS_ERROR_PREMIUM_LOGIN && step.getStatus() == PluginStep.STATUS_ERROR) {
-            this.onErrorPremiumLogin(downloadLink, plugin, step);
-        }
-        else if (step != null && step.getStatus() == PluginStep.STATUS_ERROR) {
-            this.onErrorUnknown(downloadLink, plugin, step);
         }
         else {
             downloadLink.setStatusText("Fertig");
-            // Schreibt die Info File
-            // if (downloadLink.getFilePackage() != null) {
-            // File file = new
-            // File(downloadLink.getFilePackage().getDownloadDirectory());
-            // file = new File(file, downloadLink.getFileNameFrom() + ".info");
-            //
-            // logger.info(file.getAbsolutePath());
-            // String info = downloadLink.getFilePackage().getComment() + "\n" +
-            // "" + "\n" + downloadLink.getFilePackage().getPassword();
-            // if (info.length() > 2) {
-            // JDUtilities.writeLocalFile(file, info);
-            // }
-            //
-            // }
+       
             downloadLink.setInProgress(false);
             fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SINGLE_DOWNLOAD_CHANGED, downloadLink));
             Interaction.handleInteraction((Interaction.INTERACTION_SINGLE_DOWNLOAD_FINISHED), downloadLink);
@@ -294,7 +276,22 @@ public class SingleDownloadController extends ControlMulticaster {
         fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SINGLE_DOWNLOAD_CHANGED, downloadLink));
 
     }
+    /**
+     * Wiurd aufgerufen wenn ein Link grundsätzlich online ist, aber der Server mommentan zu sehr ausgelastet ist
+     * @param downloadLink
+     * @param plugin
+     * @param step
+     */
+    private void onErrorToManyUsers(DownloadLink downloadLink, PluginForHost plugin, PluginStep step) {
+        logger.severe("Error occurred: Temporarily to many users");
+         long milliSeconds = (Long) step.getParameter();
+         downloadLink.setEndOfWaittime(System.currentTimeMillis() +     milliSeconds);
+        downloadLink.setStatusText("ausgelastet");
+        downloadLink.setInProgress(false);
+        downloadLink.setEnabled(false);
+        fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SINGLE_DOWNLOAD_CHANGED, downloadLink));
 
+    }
     /**
      * Wird aufgerufen wenn ein Loginfehler bei premiumaccounts auftritt. Die
      * premiumnutzung beim PLugin wird deaktiviert und der Link wird nochmals
@@ -524,8 +521,5 @@ public class SingleDownloadController extends ControlMulticaster {
     public DownloadLink getDownloadLink() {
         return this.downloadLink;
     }
-
-
-
 
 }

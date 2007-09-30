@@ -11,7 +11,9 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
+import java.net.CookieHandler;
 import java.net.HttpURLConnection;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLConnection;
 import java.net.URLDecoder;
@@ -27,6 +29,7 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
@@ -688,11 +691,11 @@ public abstract class Plugin {
         return getRequest(link, null, null, false);
     }
 
-    private static int getReadTimeoutFormConfiguration() {
+    private static int getReadTimeoutFromConfiguration() {
         return (Integer) JDUtilities.getConfiguration().getProperty(Configuration.PARAM_DOWNLOAD_READ_TIMEOUT, 10000);
     }
 
-    private static int getConnectTimeoutFormConfiguration() {
+    private static int getConnectTimeoutFromConfiguration() {
         return (Integer) JDUtilities.getConfiguration().getProperty(Configuration.PARAM_DOWNLOAD_CONNECT_TIMEOUT, 10000);
     }
 
@@ -707,10 +710,14 @@ public abstract class Plugin {
      * @throws IOException
      */
     public static RequestInfo getRequest(URL link, String cookie, String referrer, boolean redirect) throws IOException {
+//        logger.finer("get: "+link+"(cookie: "+cookie+")");
+     
+
         HttpURLConnection httpConnection = (HttpURLConnection) link.openConnection();
-        httpConnection.setReadTimeout(getReadTimeoutFormConfiguration());
-        httpConnection.setReadTimeout(getConnectTimeoutFormConfiguration());
+        httpConnection.setReadTimeout(getReadTimeoutFromConfiguration());
+        httpConnection.setReadTimeout(getConnectTimeoutFromConfiguration());
         httpConnection.setInstanceFollowRedirects(redirect);
+   
         // wenn referrer nicht gesetzt wurde nimmt er den host als referer
         if (referrer != null)
             httpConnection.setRequestProperty("Referer", referrer);
@@ -723,10 +730,13 @@ public abstract class Plugin {
         // so ist das Programm nicht so auffallig
 
         httpConnection.setRequestProperty("Accept-Language", ACCEPT_LANGUAGE);
-
+   
+       
         httpConnection.setRequestProperty("User-Agent", "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1; SV1; .NET CLR 1.1.4322; .NET CLR 2.0.50727)");
         RequestInfo requestInfo = readFromURL(httpConnection);
         requestInfo.setConnection(httpConnection);
+  
+   
         return requestInfo;
     }
 
@@ -742,9 +752,10 @@ public abstract class Plugin {
      * @throws IOException
      */
     public static RequestInfo getRequestWithoutHtmlCode(URL link, String cookie, String referrer, boolean redirect) throws IOException {
+//        logger.finer("get: "+link); 
         HttpURLConnection httpConnection = (HttpURLConnection) link.openConnection();
-        httpConnection.setReadTimeout(getReadTimeoutFormConfiguration());
-        httpConnection.setReadTimeout(getConnectTimeoutFormConfiguration());
+        httpConnection.setReadTimeout(getReadTimeoutFromConfiguration());
+        httpConnection.setReadTimeout(getConnectTimeoutFromConfiguration());
         httpConnection.setInstanceFollowRedirects(redirect);
         // wenn referrer nicht gesetzt wurde nimmt er den host als referer
         if (referrer != null)
@@ -803,9 +814,10 @@ public abstract class Plugin {
      * @throws IOException
      */
     public static RequestInfo postRequest(URL link, String cookie, String referrer, HashMap<String, String> requestProperties, String parameter, boolean redirect) throws IOException {
+//        logger.finer("post: "+link+"(cookie:"+cookie+" parameter: "+parameter+")");
         HttpURLConnection httpConnection = (HttpURLConnection) link.openConnection();
-        httpConnection.setReadTimeout(getReadTimeoutFormConfiguration());
-        httpConnection.setReadTimeout(getConnectTimeoutFormConfiguration());
+        httpConnection.setReadTimeout(getReadTimeoutFromConfiguration());
+        httpConnection.setReadTimeout(getConnectTimeoutFromConfiguration());
         httpConnection.setInstanceFollowRedirects(redirect);
         if (referrer != null)
             httpConnection.setRequestProperty("Referer", referrer);
@@ -851,9 +863,10 @@ public abstract class Plugin {
      * @throws IOException
      */
     public static RequestInfo postRequestWithoutHtmlCode(URL link, String cookie, String referrer, String parameter, boolean redirect) throws IOException {
+//        logger.finer("post: "+link);
         HttpURLConnection httpConnection = (HttpURLConnection) link.openConnection();
-        httpConnection.setReadTimeout(getReadTimeoutFormConfiguration());
-        httpConnection.setReadTimeout(getConnectTimeoutFormConfiguration());
+        httpConnection.setReadTimeout(getReadTimeoutFromConfiguration());
+        httpConnection.setReadTimeout(getConnectTimeoutFromConfiguration());
         httpConnection.setInstanceFollowRedirects(redirect);
         if (referrer != null)
             httpConnection.setRequestProperty("Referer", referrer);
@@ -956,8 +969,8 @@ public abstract class Plugin {
             FileOutputStream fos = new FileOutputStream(fileOutput);
 
             // NIO Channels setzen:
-            urlConnection.setReadTimeout(getReadTimeoutFormConfiguration());
-            urlConnection.setReadTimeout(getConnectTimeoutFormConfiguration());
+            urlConnection.setReadTimeout(getReadTimeoutFromConfiguration());
+            urlConnection.setReadTimeout(getConnectTimeoutFromConfiguration());
             ReadableByteChannel source = Channels.newChannel(urlConnection.getInputStream());
 
             WritableByteChannel dest = fos.getChannel();

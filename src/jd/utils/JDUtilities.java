@@ -38,9 +38,7 @@ import java.net.URLDecoder;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Collections;
-import java.util.Enumeration;
 import java.util.HashMap;
-import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.Locale;
 import java.util.MissingResourceException;
@@ -49,7 +47,6 @@ import java.util.Vector;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
 
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;

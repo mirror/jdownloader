@@ -103,7 +103,10 @@ public class DownloadLink implements Serializable {
      * Der download ist zur Zeit nicht möglich
      */
     public static final int   STATUS_ERROR_TEMPORARILY_UNAVAILABLE = 16;
-
+    /**
+     * Der download ist zur Zeit nicht möglich. Die Auslastung der Server ist zu groß
+     */
+    public static final int   STATUS_ERROR_TO_MANY_USERS = 17;
     /**
      * serialVersionUID
      */
