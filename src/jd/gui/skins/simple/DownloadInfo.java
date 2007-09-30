@@ -68,12 +68,12 @@ public class DownloadInfo extends JDialog {
             addEntry("Datei", new File(downloadLink.getFileOutput()).getName() + " @ " + new URL(downloadLink.getUrlDownloadDecrypted()).getHost());
             addEntry(null, null);
 
-            if (downloadLink.getPassword() != null) {
-                addEntry("Archiv Passwort", downloadLink.getPassword());
+            if (downloadLink.getFilePackage() !=null && downloadLink.getFilePackage().getPassword() != null) {
+                addEntry("Archiv Passwort", downloadLink.getFilePackage().getPassword());
 
             }
-            if (downloadLink.getComment() != null) {
-                addEntry("Kommentar", downloadLink.getComment());
+            if (downloadLink.getFilePackage() !=null &&downloadLink.getFilePackage().getComment() != null) {
+                addEntry("Kommentar", downloadLink.getFilePackage().getComment());
             }
             if (downloadLink.getFilePackage() != null) {
                 addEntry("Paket", downloadLink.getFilePackage().toString());

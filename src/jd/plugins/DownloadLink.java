@@ -14,7 +14,7 @@ import jd.utils.JDUtilities;
  * 
  * @author astaldo
  */
-public class DownloadLink implements Serializable, Comparable {
+public class DownloadLink implements Serializable {
     /**
      * Link muß noch bearbeitet werden
      */
@@ -117,7 +117,7 @@ public class DownloadLink implements Serializable, Comparable {
      */
     private transient boolean aborted                              = false;
 
-    private transient String            statusText                           = "";
+    private transient String  statusText                           = "";
 
     /**
      * Beschreibung des Downloads
@@ -128,6 +128,12 @@ public class DownloadLink implements Serializable, Comparable {
      * TODO downloadpath ueber config setzen
      */
     private String            downloadPath                         = JDUtilities.getConfiguration().getDownloadDirectory();
+
+    /**
+     * Wird dieser Wert gesetzt, so wird der Download unter diesem Namen (nicht
+     * Pfad) abgespeichert.
+     */
+    private String            staticFileName;
 
     /**
      * Von hier soll de Download stattfinden
@@ -227,12 +233,14 @@ public class DownloadLink implements Serializable, Comparable {
     }
 
     /**
-     * Liefert den Datei Namen dieses Downloads zurück
+     * Liefert den Datei Namen dieses Downloads zurück. Wurde der Name mit
+     * setStaticFileName(String) festgelegt wird dieser Name zurückgegeben
      * 
      * @return Name des Downloads
      */
     public String getName() {
-        return name;
+        if (this.getStaticFileName() == null) return name;
+        return this.getStaticFileName();
     }
 
     /**
@@ -269,10 +277,10 @@ public class DownloadLink implements Serializable, Comparable {
      */
     public String getFileOutput() {
         if (getFilePackage() != null && getFilePackage().getDownloadDirectory() != null && getFilePackage().getDownloadDirectory().length() > 0) {
-            return new File(new File(getFilePackage().getDownloadDirectory()), name).getAbsolutePath();
+            return new File(new File(getFilePackage().getDownloadDirectory()), getName()).getAbsolutePath();
         }
         else {
-            return new File(new File(downloadPath), name).getAbsolutePath();
+            return new File(new File(downloadPath), getName()).getAbsolutePath();
 
         }
 
@@ -394,7 +402,7 @@ public class DownloadLink implements Serializable, Comparable {
      * @param isEnabled Soll dieser DownloadLink aktiviert sein oder nicht
      */
     public void setEnabled(boolean isEnabled) {
-        if(!isEnabled){
+        if (!isEnabled) {
             this.setAborted(true);
         }
         this.isEnabled = isEnabled;
@@ -419,15 +427,15 @@ public class DownloadLink implements Serializable, Comparable {
     public void setEncryptedUrlDownload(String urlDownload) {
         this.urlDownload = urlDownload;
     }
-    
+
     /**
      * Setzt die URL, von der heruntergeladen werden soll (Ist NICHt
      * verschlüsselt)
      * 
      * @param urlDownload Die URL von der heruntergeladen werden soll
      */
-    public void setUrlDownload(String urlDownload){
-        this.urlDownload= JDCrypt.encrypt(urlDownload);
+    public void setUrlDownload(String urlDownload) {
+        this.urlDownload = JDCrypt.encrypt(urlDownload);
     }
 
     /**
@@ -484,13 +492,6 @@ public class DownloadLink implements Serializable, Comparable {
     }
 
     /**
-     * @return downloadPath Downloadpfad
-     */
-    public String getDownloadPath() {
-        return downloadPath;
-    }
-
-    /**
      * Setzt den Downloadpfad neu
      * 
      * @param downloadPath der neue downloadPfad
@@ -529,7 +530,7 @@ public class DownloadLink implements Serializable, Comparable {
     public String getStatusText() {
 
         int speed;
-        if(statusText==null)return "";
+        if (statusText == null) return "";
         if (getRemainingWaittime() > 0) {
             return this.statusText + "Warten: (" + JDUtilities.formatSeconds((int) (getRemainingWaittime() / 1000)) + "sek)";
         }
@@ -564,7 +565,7 @@ public class DownloadLink implements Serializable, Comparable {
      * 
      * @return Datename des Downloads.
      */
-    public String getFileNameFrom() {
+    public String extractFileNameFromURL() {
         int index = Math.max(this.getUrlDownloadDecrypted().lastIndexOf("/"), this.getUrlDownloadDecrypted().lastIndexOf("\\"));
         return this.getUrlDownloadDecrypted().substring(index + 1);
     }
@@ -670,26 +671,6 @@ public class DownloadLink implements Serializable, Comparable {
     }
 
     /**
-     * Gibt das archivpasswort zurück
-     * 
-     * @return archivpasswort
-     */
-    public String getPassword() {
-        if (getFilePackage() == null) return null;
-        return getFilePackage().getPassword();
-    }
-
-    /**
-     * Gibt den Dateikommentar zurück.
-     * 
-     * @return Dateikommentar
-     */
-    public String getComment() {
-        if (getFilePackage() == null) return null;
-        return getFilePackage().getComment();
-    }
-
-    /**
      * Gibt das Filepacket des Links zurück. Kann auch null sein!! (Gui
      * abhängig)
      * 
@@ -709,32 +690,13 @@ public class DownloadLink implements Serializable, Comparable {
     }
 
     /**
-     * Vergleichsfunktion um einen downloadliste alphabetisch zu ordnen
-     */
-    public int compareTo(Object o) {
-        if (o instanceof DownloadLink) {
-
-            if (((DownloadLink) o).getFileNameFrom().compareToIgnoreCase(getFileNameFrom()) > 0) {
-                return -1;
-            }
-            else if (((DownloadLink) o).getFileNameFrom().compareToIgnoreCase(getFileNameFrom()) < 0) {
-                return 1;
-            }
-            else {
-                return 0;
-            }
-        }
-        return 0;
-    }
-
-    /**
      * Diese methhode Frag das eigene Plugin welche Informationen über die File
      * bereit gestellt werden. Der String eignet Sich zur darstellung in der UI
      * 
      * @return STring
      */
     public String toString() {
-        return this.getUrlDownloadDecrypted();
+        return this.getFileOutput();
     }
 
     /**
@@ -754,6 +716,29 @@ public class DownloadLink implements Serializable, Comparable {
         else {
             return getName();
         }
+    }
+
+    /**
+     * setzt den Statischen Dateinamen. Ist dieser wert != null, sow ird er zum
+     * Speichern der Datei verwendet. ist er ==null, so wird der dateiName im
+     * Plugin automatisch ermittelt. ACHTUNG: Diese Funktion sollte nicht ! von
+     * den PLugins verwendet werden. Sie dient dazu der Gui die Möglichkeit zu
+     * geben unabhängig von den PLugins einen Downloadnamen festzulegen.
+     * userinputs>automatische erkenung Plugins solten setName(String) verwenden
+     * um den Speichernamen anzugeben.
+     * 
+     */
+    public void setStaticFileName(String staticFileName) {
+        this.staticFileName = staticFileName;
+    }
+
+    /**
+     * Gibt den Statischen Downloadnamen zurück. Wird null zurückgegeben, so
+     * wird der dateiname von den jeweiligen plugins automatisch ermittelt.
+     * @return Statischer Dateiname
+     */
+    public String getStaticFileName() {
+        return staticFileName;
     }
 
 }

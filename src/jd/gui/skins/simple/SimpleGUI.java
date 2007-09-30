@@ -54,7 +54,7 @@ import jd.utils.JDUtilities;
 
 import com.sun.java.swing.plaf.windows.WindowsLookAndFeel;
 
-public class SimpleGUI implements UIInterface, ActionListener, UIListener{
+public class SimpleGUI implements UIInterface, ActionListener, UIListener {
     /**
      * serialVersionUID
      */
@@ -142,12 +142,11 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener{
 
     private PluginEvent       decryptPluginDataChanged = null;
 
-    private JCheckBox reconnectBox;
+    private JCheckBox         reconnectBox;
 
-    private LinkGrabber linkGrabber;
+    private LinkGrabber       linkGrabber;
 
-    private JDAction actionSearch;
-   
+    private JDAction          actionSearch;
 
     /**
      * Das Hauptfenster wird erstellt
@@ -155,7 +154,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener{
     public SimpleGUI() {
         super();
         try {
-           
+
             UIManager.setLookAndFeel(new WindowsLookAndFeel());
         }
         catch (UnsupportedLookAndFeelException e) {
@@ -199,8 +198,6 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener{
 
         }.start();
 
-        
-      
         //        
         //        
         // SystemTray tray = SystemTray.getSystemTray();
@@ -233,7 +230,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener{
     }
 
     private String getJDTitle() {
-        return JDUtilities.JD_TITLE+" "+JDUtilities.JD_VERSION+JDUtilities.getRevision()+" ("+JDUtilities.getLastChangeDate()+" "+JDUtilities.getLastChangeTime()+")";
+        return JDUtilities.JD_TITLE + " " + JDUtilities.JD_VERSION + JDUtilities.getRevision() + " (" + JDUtilities.getLastChangeDate() + " " + JDUtilities.getLastChangeTime() + ")";
     }
 
     /**
@@ -406,8 +403,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener{
         btnDnD.setFocusPainted(false);
         btnDnD.setBorderPainted(false);
         btnDnD.setText(null);
-        
-        
+
         JButton btnSearch = new JButton(this.actionSearch);
         btnSearch.setFocusPainted(false);
         btnSearch.setBorderPainted(false);
@@ -429,9 +425,8 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener{
         toolBar.addSeparator();
         toolBar.add(btnReconnect);
         toolBar.add(btnDnD);
-        
-        
-        reconnectBox= new JCheckBox("Reconnect durchführen");
+
+        reconnectBox = new JCheckBox("Reconnect durchführen");
         reconnectBox.setSelected(true);
         reconnectBox.addActionListener(this);
         toolBar.add(reconnectBox);
@@ -451,12 +446,12 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener{
      * @param e Die erwünschte Aktion
      */
     public void actionPerformed(ActionEvent e) {
-        if(e.getSource()==reconnectBox){
-            HTTPReconnect.setEnabled(reconnectBox.getSelectedObjects()!=null);
-            ExternReconnect.setEnabled(reconnectBox.getSelectedObjects()!=null);
+        if (e.getSource() == reconnectBox) {
+            HTTPReconnect.setEnabled(reconnectBox.getSelectedObjects() != null);
+            ExternReconnect.setEnabled(reconnectBox.getSelectedObjects() != null);
             return;
         }
-        
+
         switch (e.getID()) {
             case JDAction.ITEMS_MOVE_UP:
             case JDAction.ITEMS_MOVE_DOWN:
@@ -467,13 +462,22 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener{
                 // }
                 break;
             case JDAction.APP_START_STOP_DOWNLOADS:
-                if (btnStartStop.isSelected() &&JDUtilities.getController().getDownloadStatus()==JDController.DOWNLOAD_NOT_RUNNING) {
+                if (btnStartStop.isSelected() && JDUtilities.getController().getDownloadStatus() == JDController.DOWNLOAD_NOT_RUNNING) {
                     fireUIEvent(new UIEvent(this, UIEvent.UI_START_DOWNLOADS));
-                  
+
                 }
-                else if(!btnStartStop.isSelected() &&JDUtilities.getController().getDownloadStatus()==JDController.DOWNLOAD_RUNNING) {
-                    fireUIEvent(new UIEvent(this, UIEvent.UI_STOP_DOWNLOADS));
-                  
+                else if (!btnStartStop.isSelected() && JDUtilities.getController().getDownloadStatus() == JDController.DOWNLOAD_RUNNING) {
+                    final SimpleGUI _this = this;
+                    // Dieser Thread muss sein, weil die Funktionen zum anhalten
+                    // der Downloads blockiere und sonst die GUI einfriert bis
+                    // alle downloads angehalten wurden. Start/stop vorgänge
+                    // sind während dieser zeit nicht möglich da getDownloadStatus() in der Ausführungszeit auf JDController.DOWNLOAD_TERMINATION_IN_PROGRESS steht
+
+                    new Thread() {
+                        public void run() {
+                            fireUIEvent(new UIEvent(_this, UIEvent.UI_STOP_DOWNLOADS));
+                        }
+                    }.start();
                 }
                 break;
             case JDAction.APP_SAVE:
@@ -485,7 +489,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener{
                 File ret = fc.getSelectedFile();
                 if (ret != null) {
                     fireUIEvent(new UIEvent(this, UIEvent.UI_SAVE_LINKS, ret));
-                  
+
                 }
                 break;
             case JDAction.APP_LOAD:
@@ -496,7 +500,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener{
                 ret = fc.getSelectedFile();
                 if (ret != null) {
                     fireUIEvent(new UIEvent(this, UIEvent.UI_LOAD_LINKS, ret));
-                  
+
                 }
                 break;
             case JDAction.APP_EXIT:
@@ -560,11 +564,10 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener{
                 }
                 break;
             case JDAction.APP_SEARCH:
-             
-               
-                SearchDialog s=new SearchDialog(this.getFrame());
-                
-                data=s.getText();
+
+                SearchDialog s = new SearchDialog(this.getFrame());
+
+                data = s.getText();
                 logger.info(data);
                 if (data != null) {
                     fireUIEvent(new UIEvent(this, UIEvent.UI_LINKS_TO_PROCESS, data));
@@ -573,16 +576,17 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener{
             case JDAction.APP_CONFIGURATION:
                 boolean configChanged = ConfigurationDialog.showConfig(frame, this);
 
-              
                 if (configChanged) fireUIEvent(new UIEvent(this, UIEvent.UI_SAVE_CONFIG));
                 break;
         }
     }
-/**
- * Delligiert die Pluginevents weiter an das host/decryptpanel. CHangedEvents werden abgefangen und im sekundeninterval weitergegeben.
- */
+
+    /**
+     * Delligiert die Pluginevents weiter an das host/decryptpanel.
+     * CHangedEvents werden abgefangen und im sekundeninterval weitergegeben.
+     */
     public void deligatedPluginEvent(PluginEvent event) {
-        
+
         if (event.getSource() instanceof PluginForHost && event.getEventID() == PluginEvent.PLUGIN_DATA_CHANGED) {
             this.hostPluginDataChanged = event;
 
@@ -593,7 +597,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener{
 
             return;
         }
-        
+
         if (event.getSource() instanceof PluginForSearch && event.getEventID() == PluginEvent.PLUGIN_DATA_CHANGED) {
             this.decryptPluginDataChanged = event;
 
@@ -602,21 +606,19 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener{
         if (event.getSource() instanceof PluginForHost) {
 
             tabDownloadTable.pluginEvent(event);
-           return;
+            return;
         }
-        if (event.getSource() instanceof PluginForDecrypt ||event.getSource() instanceof PluginForSearch ) {
-          
-           
+        if (event.getSource() instanceof PluginForDecrypt || event.getSource() instanceof PluginForSearch) {
+
             tabPluginActivity.pluginEvent(event);
             splitpane.setDividerLocation(0.8);
-          return;
+            return;
         }
 
-       
     }
 
     public void deligatedControlEvent(ControlEvent event) {
-   
+
         switch (event.getID()) {
             case ControlEvent.CONTROL_PLUGIN_DECRYPT_ACTIVE:
                 logger.info("decrypt-active");
@@ -637,24 +639,31 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener{
             case ControlEvent.CONTROL_ALL_DOWNLOADS_FINISHED:
                 btnStartStop.setSelected(false);
                 break;
-           case ControlEvent.CONTROL_PLUGIN_INTERACTION_ACTIVE:
+            case ControlEvent.CONTROL_PLUGIN_INTERACTION_ACTIVE:
 
                 logger.info("Interaction start. ");
-               statusBar.setText("Interaction: " + ((Interaction) event.getParameter()).getInteractionName());
+                statusBar.setText("Interaction: " + ((Interaction) event.getParameter()).getInteractionName());
                 frame.setTitle(JDUtilities.JD_TITLE + " |Aktion: " + ((Interaction) event.getParameter()).getInteractionName());
                 break;
             case ControlEvent.CONTROL_PLUGIN_INTERACTION_INACTIVE:
                 logger.info("Interaction zu ende. rest status");
                 statusBar.setText(null);
                 frame.setTitle(getJDTitle());
-             
+
                 break;
             case ControlEvent.CONTROL_SINGLE_DOWNLOAD_CHANGED:
-               
+
                 tabDownloadTable.fireTableChanged();
-                
+
             case ControlEvent.CONTROL_DISTRIBUTE_FINISHED:
-             
+
+                break;
+            case ControlEvent.CONTROL_DOWNLOAD_TERMINATION_ACTIVE:
+                frame.setTitle(getJDTitle() + " - Downloads werden abgebrochen");
+
+                break;
+            case ControlEvent.CONTROL_DOWNLOAD_TERMINATION_INACTIVE:
+                frame.setTitle(getJDTitle());
                 break;
         }
     }
@@ -665,35 +674,28 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener{
     }
 
     public void setDownloadLinks(Vector<DownloadLink> links) {
-    
+
         if (tabDownloadTable != null) {
             tabDownloadTable.setDownloadLinks(links.toArray(new DownloadLink[] {}));
-           
-            
-        
-            
-            
+
         }
     }
+
     public void addDownloadLinks(Vector<DownloadLink> links) {
-       DownloadLink[] linkList=links.toArray(new DownloadLink[] {});
-    
+        DownloadLink[] linkList = links.toArray(new DownloadLink[] {});
+
         if (tabDownloadTable != null) {
-            tabDownloadTable.setDownloadLinks(linkList);     
-            
-        
-            
-            
+            tabDownloadTable.setDownloadLinks(linkList);
+
         }
     }
+
     public String getCaptchaCodeFromUser(Plugin plugin, File captchaAddress) {
         CaptchaDialog captchaDialog = new CaptchaDialog(frame, plugin, captchaAddress);
-        //frame.toFront();
+        // frame.toFront();
         captchaDialog.setVisible(true);
         return captchaDialog.getCaptchaText();
     }
-
- 
 
     public void setPluginActive(Plugin plugin, boolean isActive) {
         if (plugin instanceof PluginForDecrypt) {
@@ -850,7 +852,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener{
      * @param string
      */
     public boolean showConfirmDialog(String string) {
-        return JOptionPane.showConfirmDialog(frame, string)==JOptionPane.OK_OPTION;
+        return JOptionPane.showConfirmDialog(frame, string) == JOptionPane.OK_OPTION;
 
     }
 
@@ -876,32 +878,26 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener{
     }
 
     public JFrame getFrame() {
-      return frame;
+        return frame;
     }
 
     public void addLinksToGrabber(Vector<DownloadLink> links) {
-        DownloadLink[] linkList=links.toArray(new DownloadLink[] {});
-        if(linkGrabber!=null&&!linkGrabber.isVisible()){
+        DownloadLink[] linkList = links.toArray(new DownloadLink[] {});
+        if (linkGrabber != null && !linkGrabber.isVisible()) {
             linkGrabber.dispose();
-            linkGrabber=null;
-        
+            linkGrabber = null;
+
         }
-        if(linkGrabber==null){
-        linkGrabber=new LinkGrabber(this,linkList);
-        linkGrabber.setVisible(true);
-        }else{
+        if (linkGrabber == null) {
+            linkGrabber = new LinkGrabber(this, linkList);
+            linkGrabber.setVisible(true);
+        }
+        else {
             linkGrabber.addLinks(linkList);
         }
-        
-        dragNDrop.setText("Grabbed: " + linkGrabber.getLinkList().size()+" (+"+((Vector) links).size()+")");
-        
-        
+
+        dragNDrop.setText("Grabbed: " + linkGrabber.getLinkList().size() + " (+" + ((Vector) links).size() + ")");
+
     }
-
-  
-  
-  
-
-
 
 }

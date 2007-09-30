@@ -71,9 +71,23 @@ public class ControlEvent extends AWTEvent{
      * Gibt an dass ein neuer downlaod begonnen hat. der link wir dals parameter erwartet
      */
     public static final int CONTROL_SINGLE_DOWNLOAD_STARTS = 14;
+    /**
+     * Gibt an dass ein Suchplugin aktiv ist
+     */
     public static final int CONTROL_PLUGIN_SEARCH_ACTIVE = 15;
+    /**
+     * Gibt an dass ein Suchplugin nun nicht emhr aktiv ist
+     */
     public static final int CONTROL_PLUGIN_SEARCH_INACTIVE = 16;
-
+    /**
+     * Gibt an dass das Abbrechen der Downloads eingeleutet wurde
+     */
+    public static final int CONTROL_DOWNLOAD_TERMINATION_ACTIVE = 17;
+    
+    /**
+     * Gibt an dass der Download nun komplett abgebrochen wurde.
+     */
+    public static final int CONTROL_DOWNLOAD_TERMINATION_INACTIVE = 18;
     /**
      * Die ID des Ereignisses
      */

@@ -296,7 +296,9 @@ public class DownloadWatchDog extends Thread implements PluginListener, ControlL
      
         for (int i = 0; i < this.activeLinks.size(); i++) {
             activeLinks.get(i).abortDownload();
+         
         }
+        deligateFireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SINGLE_DOWNLOAD_CHANGED, null));
         boolean check = true;
         while (true) {
             check = true;
@@ -315,7 +317,7 @@ public class DownloadWatchDog extends Thread implements PluginListener, ControlL
         }
         this.aborted = true;
         this.clearDownloadListStatus();
-
+        
     }
 
     /**

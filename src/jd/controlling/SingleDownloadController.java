@@ -59,10 +59,11 @@ public class SingleDownloadController extends ControlMulticaster {
      * Bricht den Downloadvorgang ab.
      */
     public void abortDownload() {
+        downloadLink.setStatusText("termination...");
         aborted = true;
       
         if (currentPlugin != null) currentPlugin.abort();
-
+        
     }
 
     /*

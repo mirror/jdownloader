@@ -18,6 +18,7 @@ import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.Vector;
 import java.util.logging.Logger;
 
@@ -235,8 +236,28 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
 
     @SuppressWarnings("unchecked")
     public void sortLinkList() {
+        /**
+         * Vergleichsfunktion um einen downloadliste alphabetisch zu ordnen
+         */
 
-        Collections.sort(linkList);
+        Collections.sort(linkList, new Comparator() {
+            public int compare(Object a, Object b) {
+                if (a instanceof DownloadLink && b instanceof DownloadLink) {
+
+                    if (((DownloadLink) a).extractFileNameFromURL().compareToIgnoreCase(((DownloadLink) b).extractFileNameFromURL()) > 0) {
+                        return -1;
+                    }
+                    else if (((DownloadLink) a).extractFileNameFromURL().compareToIgnoreCase(((DownloadLink) b).extractFileNameFromURL()) < 0) {
+                        return 1;
+                    }
+                    else {
+                        return 0;
+                    }
+                }
+                return 0;
+            }
+
+        });
     }
 
     /**
@@ -247,7 +268,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
         list.removeAll();
         for (int i = 0; i < linkList.size(); i++) {
             if (!linkList.elementAt(i).isAvailabilityChecked()) {
-                tmp.addElement((i + 1) + ". " + linkList.elementAt(i).getPlugin().getPluginName() + ": " + linkList.elementAt(i).getFileNameFrom());
+                tmp.addElement((i + 1) + ". " + linkList.elementAt(i).getPlugin().getPluginName() + ": " + linkList.elementAt(i).extractFileNameFromURL());
             }
             else {
                 if (linkList.elementAt(i).isAvailable()) {

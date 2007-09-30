@@ -675,7 +675,7 @@ public class JDUtilities {
                 }
                 // Object15475dea4e088fe0e9445da30604acd1
                 // Object80d11614908074272d6b79abe91eeca1
-                logger.info("Loaded Object (" + hash + "): " + objectLoaded);
+                logger.info("Loaded Object (" + hash + "): ");
                 return objectLoaded;
             }
             catch (ClassNotFoundException e) {
