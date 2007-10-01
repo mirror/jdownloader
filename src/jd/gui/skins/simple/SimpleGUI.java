@@ -29,7 +29,6 @@ import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
-import javax.swing.JScrollPane;
 import javax.swing.JSplitPane;
 import javax.swing.JToggleButton;
 import javax.swing.JToolBar;
@@ -340,11 +339,11 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener {
         tabPluginActivity = new TabPluginActivity();
         statusBar = new StatusBar();
         splitpane = new JSplitPane();
-        splitpane.setBottomComponent(new JScrollPane(tabPluginActivity));
+        splitpane.setBottomComponent(tabPluginActivity);
         // JPanel tmp=new JPanel(new BorderLayout());
         // tmp.add(tabPluginActivity,BorderLayout.NORTH);
 
-        splitpane.setTopComponent(new JScrollPane(tabDownloadTable));
+        splitpane.setTopComponent(tabDownloadTable);
         splitpane.setOrientation(JSplitPane.VERTICAL_SPLIT);
 
         // tmp.add(tabDownloadTable,BorderLayout.CENTER);
