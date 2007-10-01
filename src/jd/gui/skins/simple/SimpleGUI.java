@@ -110,6 +110,10 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener {
     private JDAction          actionReconnect;
     private JDAction          actionUpdate;
     private JDAction          actionDnD;
+    private JDAction          actionItemsTop;
+    private JDAction          actionItemsUp;
+    private JDAction          actionItemsDown;
+    private JDAction          actionItemsBottom;
     private LogDialog         logDialog;
     private Logger            logger                   = Plugin.getLogger();
     Dropper                   dragNDrop;
@@ -223,6 +227,12 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener {
         actionReconnect = new JDAction(this, "reconnect", "action.reconnect", JDAction.APP_RECONNECT);
         actionUpdate = new JDAction(this, "update", "action.update", JDAction.APP_UPDATE);
         actionSearch = new JDAction(this, "search", "action.search", JDAction.APP_SEARCH);
+
+        actionItemsTop    = new JDAction(this, "top",    "action.edit.items_top",    JDAction.ITEMS_MOVE_TOP);
+        actionItemsUp     = new JDAction(this, "up",     "action.edit.items_up",     JDAction.ITEMS_MOVE_UP);
+        actionItemsDown   = new JDAction(this, "down",   "action.edit.items_down",    JDAction.ITEMS_MOVE_DOWN);
+        actionItemsBottom = new JDAction(this, "bottom", "action.edit.items_bottom", JDAction.ITEMS_MOVE_BOTTOM);
+
     }
 
     // Funktion wird jede Sekunde aufgerufen
@@ -257,6 +267,20 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener {
         JMenuItem menFileSave = createMenuItem(actionSaveLinks);
         JMenuItem menFileExit = createMenuItem(actionExit);
 
+        // edit menu
+        JMenu menEdit = new JMenu(JDUtilities.getResourceString("menu.edit"));
+        menFile.setMnemonic(JDUtilities.getResourceChar("menu.edit_mnem"));
+
+        JMenuItem menEditItemTop    = createMenuItem(actionItemsTop);
+        JMenuItem menEditItemUp     = createMenuItem(actionItemsUp);
+        JMenuItem menEditItemDown   = createMenuItem(actionItemsDown);
+        JMenuItem menEditItemBottom = createMenuItem(actionItemsBottom);
+        
+        menEdit.add(menEditItemTop);
+        menEdit.add(menEditItemUp);
+        menEdit.add(menEditItemDown);
+        menEdit.add(menEditItemBottom);
+
         // action menu
         JMenu menAction = new JMenu(JDUtilities.getResourceString("menu.action"));
         menAction.setMnemonic(JDUtilities.getResourceChar("menu.action_mnem"));
@@ -288,6 +312,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener {
         menAction.add(menAddLinks);
 
         menuBar.add(menFile);
+        menuBar.add(menEdit);
         menuBar.add(menAction);
         menuBar.add(menExtra);
         frame.setJMenuBar(menuBar);
@@ -430,9 +455,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener {
             case JDAction.ITEMS_MOVE_DOWN:
             case JDAction.ITEMS_MOVE_TOP:
             case JDAction.ITEMS_MOVE_BOTTOM:
-                // if(tabbedPane.getSelectedComponent() == tabDownloadTable){
-                // tabDownloadTable.moveItems(e.getID());
-                // }
+                tabDownloadTable.moveSelectedItems(e.getID());
                 break;
             case JDAction.APP_START_STOP_DOWNLOADS:
                 if (btnStartStop.isSelected() && JDUtilities.getController().getDownloadStatus() == JDController.DOWNLOAD_NOT_RUNNING) {

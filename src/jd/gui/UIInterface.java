@@ -2,9 +2,7 @@ package jd.gui;
 
 import java.io.File;
 import java.util.Vector;
-import java.util.logging.Logger;
 
-import jd.config.Configuration;
 import jd.event.ControlEvent;
 import jd.event.UIEvent;
 import jd.event.UIListener;

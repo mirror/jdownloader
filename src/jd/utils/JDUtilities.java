@@ -323,7 +323,7 @@ public class JDUtilities {
             result = resourceBundle.getString(key);
         }
         catch (MissingResourceException e) {
-            logger.warning("resource missing." + e.getKey());
+            logger.warning("resource missing:" + e.getKey());
         }
         return result;
     }

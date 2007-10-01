@@ -130,6 +130,7 @@ public class Main {
         ClassLoader cl = getClass().getClassLoader();
         Toolkit toolkit = Toolkit.getDefaultToolkit();
         JDUtilities.addImage("add", toolkit.getImage(cl.getResource("img/add.png")));
+        JDUtilities.addImage("bottom", toolkit.getImage(cl.getResource("img/bottom.png")));
         JDUtilities.addImage("configuration", toolkit.getImage(cl.getResource("img/configuration.png")));
         JDUtilities.addImage("delete", toolkit.getImage(cl.getResource("img/delete.png")));
         JDUtilities.addImage("dnd", toolkit.getImage(cl.getResource("img/dnd.png")));
@@ -146,6 +147,7 @@ public class Main {
         JDUtilities.addImage("save", toolkit.getImage(cl.getResource("img/save.png")));
         JDUtilities.addImage("start", toolkit.getImage(cl.getResource("img/start.png")));
         JDUtilities.addImage("stop", toolkit.getImage(cl.getResource("img/stop.png")));
+        JDUtilities.addImage("top", toolkit.getImage(cl.getResource("img/top.png")));
         JDUtilities.addImage("up", toolkit.getImage(cl.getResource("img/up.png")));
         JDUtilities.addImage("update", toolkit.getImage(cl.getResource("img/update.png")));
         JDUtilities.addImage("search", toolkit.getImage(cl.getResource("img/search.png")));

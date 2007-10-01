@@ -10,6 +10,7 @@ import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.io.File;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.Vector;
 import java.util.logging.Logger;
@@ -48,6 +49,7 @@ public class TabDownloadLinks extends JPanel implements PluginListener, ControlL
     private final int            COL_HOST           = 2;
     private final int            COL_STATUS         = 3;
     private final int            COL_PROGRESS       = 4;
+    
     private final Color          COLOR_DONE         = new Color(0, 255, 0, 20);
     private final Color          COLOR_ERROR        = new Color(255, 0, 0, 20);
     private final Color          COLOR_DISABLED     = new Color(50, 50, 50, 50);
@@ -187,6 +189,22 @@ public class TabDownloadLinks extends JPanel implements PluginListener, ControlL
         }
         return linksSelected;
     }
+    public int[] getIndexes(Vector<DownloadLink>selectedLinks){
+        int rows[] = new int[selectedLinks.size()];;
+        Vector<Integer> indexes = new Vector<Integer>();
+        Iterator iterator = selectedLinks.iterator();
+        
+        while (iterator.hasNext()){
+            indexes.add(allLinks.indexOf(iterator.next()));
+        }
+        Collections.sort(indexes);
+        
+        for(int i=0;i<rows.length;i++){
+            rows[i] = indexes.get(i);
+        }
+        
+        return rows;
+    }
 
     public void setSelectedDownloadLinks(Vector<DownloadLink> selectedDownloadLinks) {
         int index;
@@ -198,13 +216,56 @@ public class TabDownloadLinks extends JPanel implements PluginListener, ControlL
     }
 
     /**
-     * TODO Verschieben von zellen
      * 
      * Hiermit werden die selektierten Zeilen innerhalb der Tabelle verschoben
      * 
      * @param direction Zeigt wie/wohin die Einträge verschoben werden sollen
      */
-    public void moveItems(int direction) {}
+    public void moveSelectedItems(int direction) {
+        Vector<DownloadLink> selectedLinks = getSelectedObjects();
+        table.getSelectionModel().clearSelection();
+        DownloadLink tempLink;
+        Iterator<DownloadLink> iterator;
+        
+        switch(direction){
+            case JDAction.ITEMS_MOVE_TOP:
+                allLinks.removeAll(selectedLinks);
+                allLinks.addAll(0, selectedLinks);
+                break;
+            case JDAction.ITEMS_MOVE_BOTTOM:
+                allLinks.removeAll(selectedLinks);
+                allLinks.addAll(allLinks.size(),selectedLinks);
+                break;
+            case JDAction.ITEMS_MOVE_UP:
+                iterator = selectedLinks.iterator();
+                while (iterator.hasNext()){
+                    int index = allLinks.indexOf(iterator.next());
+                    if(index ==0) break;
+                    tempLink = allLinks.get(index-1);
+                    allLinks.set(index-1, allLinks.get(index));
+                    allLinks.set(index, tempLink);
+                }
+                break;
+            case JDAction.ITEMS_MOVE_DOWN:
+                iterator = selectedLinks.iterator();
+                while (iterator.hasNext()){
+                    int index = allLinks.indexOf(iterator.next());
+                    if(index == allLinks.size()-1) break;
+                    tempLink = allLinks.get(index+1);
+                    allLinks.set(index+1, allLinks.get(index));
+                    allLinks.set(index, tempLink);
+                }
+                break;
+        }
+        fireTableChanged();
+        parent.fireUIEvent(new UIEvent(parent, UIEvent.UI_LINKS_CHANGED, null));
+
+        int rows[] = getIndexes(selectedLinks);
+        for(int i=0;i<rows.length;i++){
+            table.getSelectionModel().addSelectionInterval(rows[i], rows[i]);    
+        }
+        
+    }
 
     public Vector<DownloadLink> getLinks() {
         return allLinks;
@@ -237,29 +298,12 @@ public class TabDownloadLinks extends JPanel implements PluginListener, ControlL
              
                 fireTableChanged();
                 break;
-                
-                
-                
-                
-         
         }
-
     }
 
-    public void mouseClicked(MouseEvent e) {
-    // TODO Auto-generated method stub
-
-    }
-
-    public void mouseEntered(MouseEvent e) {
-    // TODO Auto-generated method stub
-
-    }
-
-    public void mouseExited(MouseEvent e) {
-    // TODO Auto-generated method stub
-
-    }
+    public void mouseClicked(MouseEvent e) { }
+    public void mouseEntered(MouseEvent e) { }
+    public void mouseExited(MouseEvent e)  { }
 
     public void mousePressed(MouseEvent e) {
         // TODO: isPopupTrigger() funktioniert nicht
@@ -313,20 +357,12 @@ public class TabDownloadLinks extends JPanel implements PluginListener, ControlL
          * 
          */
         private static final long    serialVersionUID = -6561857482676777562L;
-
         private JMenuItem            delete;
-
         private JMenuItem            enable;
-
         private JMenuItem            info;
-
         private Vector<DownloadLink> downloadLinks;
-
         private JMenuItem            top;
-
         private JMenuItem            bottom;
-private int x;
-private int y;
         private JMenuItem reset;
 
         private JMenuItem openHome;
@@ -363,8 +399,6 @@ private int y;
             popup.add(new JSeparator());
             
             popup.add(reset);
-this.x=x;
-this.y=y;
             popup.show(table, x, y);
 
         }
@@ -401,23 +435,13 @@ this.y=y;
                 
                 new DownloadInfo(parent.getFrame(),downloadLinks.elementAt(0));
 //            }
-           
             }
 
             if (e.getSource() == top) {
-                allLinks.removeAll(downloadLinks);
-                allLinks.addAll(0, downloadLinks);
-                table.getSelectionModel().clearSelection();
-                fireTableChanged();
-                parent.fireUIEvent(new UIEvent(parent, UIEvent.UI_LINKS_CHANGED, null));
+                moveSelectedItems(JDAction.ITEMS_MOVE_TOP);
             }
-
             if (e.getSource() == bottom) {
-                allLinks.removeAll(downloadLinks);
-                allLinks.addAll(downloadLinks);
-                table.getSelectionModel().clearSelection();
-                fireTableChanged();
-                parent.fireUIEvent(new UIEvent(parent, UIEvent.UI_LINKS_CHANGED, null));
+                moveSelectedItems(JDAction.ITEMS_MOVE_BOTTOM);
             }
             
             if (e.getSource() == reset) {
