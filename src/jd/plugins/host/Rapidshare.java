@@ -83,71 +83,49 @@ public class Rapidshare extends PluginForHost {
     static private final String            host                             = "rapidshare.com";
 
     private String                         version                          = "1.2.0.0";
-
     // http://(?:[^.]*\.)*rapidshare\.com/files/[0-9]*/[^\s"]+
     private String                         botHash                          = "dab07d2b7f1299f762454cda4c6143e7";
-
     /**
      * Vereinfachte Patternerstellung: [*] optionaler Platzhalter [+] musthav
      * platzhalter
      */
     private Pattern                        patternSupported                 = getSupportPattern("http://[*]rapidshare.com/files/[+]/[+]");
-
     /**
      * Das findet die Ziel URL für den Post
      */
     private Pattern                        patternForNewHost                = Pattern.compile("<form *action *= *\"([^\\n\"]*)\"");
-
     /**
      * Das findet die Captcha URL <form *name *= *"dl" (?s).*<img *src *=
      * *"([^\n"]*)">
      */
     private Pattern                        patternForCaptcha                = Pattern.compile("<form *name *= *\"dl\" (?s).*<img *src *= *\"([^\\n\"]*)\">");
-
     /**
      * <form name="dl".* action="([^\n"]*)"(?s).*?<input type="submit"
      * name="actionstring" value="[^\n"]*"
      */
     private Pattern                        patternForFormData               = Pattern.compile("<form name=\"dl\".* action=\"([^\\n\"]*)\"(?s).*?<input type=\"submit\" name=\"actionstring\" value=\"([^\\n\"]*)\"");
-
     /**
      * Pattern trifft zu wenn die "Ihre Ip läd gerade eine datei " Seite kommt
      */
     private String                         patternForAlreadyDownloading     = "bereits eine Datei runter";
-
     /**
      * Das DownloadLimit wurde erreicht (?s)Downloadlimit.*Oder warte ([0-9]+)
      */
     private Pattern                        patternErrorDownloadLimitReached = Pattern.compile("\\((?:oder warte|or wait) ([0-9]*) (?:minuten|minutes)\\)", Pattern.CASE_INSENSITIVE);
-
     private Pattern                        patternErrorCaptchaWrong         = Pattern.compile("(zugriffscode falsch|code wrong)", Pattern.CASE_INSENSITIVE);
-
     private Pattern                        patternErrorFileAbused           = Pattern.compile("(darf nicht verteilt werden|forbidden to be shared)", Pattern.CASE_INSENSITIVE);
-
     private Pattern                        patternErrorFileNotFound         = Pattern.compile("(datei nicht gefunden|file not found)", Pattern.CASE_INSENSITIVE);
-
     private String                         hardwareDefektString             = "wegen Hardwaredefekt nicht";
-
     private String                         toManyUser                       = "Zu viele Benutzer laden gerade Dateien runter";
-
     private int                            waitTime                         = 500;
-
     private String                         captchaAddress;
-
     private String                         postTarget;
-
     private String                         actionString;
-
     private HashMap<String, String>        postParameter                    = new HashMap<String, String>();
-
     private String                         finalURL;
-
     private static HashMap<String, String> serverMap                        = new HashMap<String, String>();
-
     private static String[]                serverList1;
-
     private String                         finalCookie;
-
     private String[]                       serverList2;
 
     @Override

@@ -44,50 +44,35 @@ import jd.utils.JDUtilities;
  */
 public class TabDownloadLinks extends JPanel implements PluginListener, ControlListener, MouseListener {
     private final int            COL_INDEX          = 0;
-
     private final int            COL_NAME           = 1;
-
     private final int            COL_HOST           = 2;
-
     private final int            COL_STATUS         = 3;
-
     private final int            COL_PROGRESS       = 4;
-
     private final Color          COLOR_DONE         = new Color(0, 255, 0, 20);
-
     private final Color          COLOR_ERROR        = new Color(255, 0, 0, 20);
-
     private final Color          COLOR_DISABLED     = new Color(50, 50, 50, 50);
-
     private final Color          COLOR_WAIT         = new Color(0, 0, 100, 20);
-
     /**
      * serialVersionUID
      */
     private static final long    serialVersionUID   = 3033753799006526304L;
-
     /**
      * Diese Tabelle enthält die eigentlichen DownloadLinks
      */
     private InternalTable        table;
-
     /**
      * Das interen TableModel, um die Daten anzuzeigen
      */
     private InternalTableModel   internalTableModel = new InternalTableModel();
-
     /**
      * Dieser Vector enthält alle Downloadlinks
      */
     private Vector<DownloadLink> allLinks           = new Vector<DownloadLink>();
-
     /**
      * Der Logger für Meldungen
      */
     private Logger               logger             = Plugin.getLogger();
-
     private JPopupMenu           popup;
-
     private SimpleGUI            parent;
 
     /**
@@ -101,6 +86,7 @@ public class TabDownloadLinks extends JPanel implements PluginListener, ControlL
         // Set the component to show the popup menu
 
         table = new InternalTable();
+        table.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
         table.addMouseListener(this);
         table.setModel(internalTableModel);
         // table.getColumn(table.getColumnName(COL_PROGRESS)).setCellRenderer(int);
@@ -139,10 +125,24 @@ public class TabDownloadLinks extends JPanel implements PluginListener, ControlL
         addLinks(links);
     }
 
-    // Zeigtda s Popup menü an
+    // Zeigt das Popup menü an
 
     private void showPopup(int x, int y, Vector<DownloadLink> downloadLinks) {
         new InternalPopup(table, x, y, downloadLinks);
+    }
+    private void checkColumnSize(){
+        int minSize=0;
+        int width=0;
+        TableColumn tableColumn =table.getColumnModel().getColumn(COL_NAME); 
+        for(int i=0;i<allLinks.size();i++){
+            String name = (String)table.getValueAt(i, COL_NAME);
+            width = table.getFontMetrics(table.getFont()).stringWidth(name);
+            if (width > minSize)
+                minSize = width;
+        }
+        width+=5;
+        if(width>tableColumn.getWidth())
+            tableColumn.setPreferredWidth(width);
     }
 
     /**
@@ -158,9 +158,9 @@ public class TabDownloadLinks extends JPanel implements PluginListener, ControlL
             else
                 logger.info("download-URL already in Queue");
         }
+        checkColumnSize();
         fireTableChanged();
     }
-    
 
 
     /**
@@ -525,7 +525,6 @@ this.y=y;
                     case COL_NAME:
                        if(downloadLink.getFilePackage()==null){
                            return downloadLink.getName();
-                               
                        }
                         return downloadLink.getFilePackage().getDownloadDirectoryName()+"/"+downloadLink.getName();
                     case COL_STATUS:

@@ -31,24 +31,20 @@ public class JDController implements PluginListener, ControlListener, UIListener
     public static final int DOWNLOAD_TERMINATION_IN_PROGRESS = 0;
     public static final int DOWNLOAD_RUNNING = 2;
     public static final int DOWNLOAD_NOT_RUNNING = 3;
-
     /**
      * Mit diesem Thread wird eingegebener Text auf Links untersucht
      */
     private DistributeData                    distributeData  = null;
-
     /**
      * Hiermit wird der Eventmechanismus realisiert. Alle hier eingetragenen
      * Listener werden benachrichtigt, wenn mittels
      * {@link #firePluginEvent(PluginEvent)} ein Event losgeschickt wird.
      */
     private transient Vector<ControlListener> controlListener = null;
-
     /**
      * Die Konfiguration
      */
     protected Configuration                   config          = JDUtilities.getConfiguration();
-
     /**
      * Schnittstelle zur Benutzeroberfläche
      */
@@ -61,25 +57,18 @@ public class JDController implements PluginListener, ControlListener, UIListener
      * Die DownloadLinks
      */
     private Vector<DownloadLink>              downloadLinks;
-
     /**
      * Der Logger
      */
     private Logger                            logger          = Plugin.getLogger();
-
     private File                              lastCaptchaLoaded;
-
     private SpeedMeter                        speedMeter;
-
-   
     private DownloadLink                      lastDownloadFinished;
-
     private ClipboardHandler                  clipboard;
 
-/**
- * Der Download Watchdog verwaltet die Downloads
- */
-
+    /**
+     * Der Download Watchdog verwaltet die Downloads
+     */
     private DownloadWatchDog                  watchdog;
 
     public JDController() {
@@ -127,7 +116,7 @@ public class JDController implements PluginListener, ControlListener, UIListener
      * @param event PluginEvent
      */
     public void pluginEvent(PluginEvent event) {
-        uiInterface.deligatedPluginEvent(event);
+        uiInterface.delegatedPluginEvent(event);
         switch (event.getEventID()) {
             case PluginEvent.PLUGIN_DOWNLOAD_BYTES:
                 speedMeter.addValue((Integer) event.getParameter1());
@@ -143,9 +132,7 @@ public class JDController implements PluginListener, ControlListener, UIListener
      */
 
     public void controlEvent(ControlEvent event) {
-
         switch (event.getID()) {
-
             case ControlEvent.CONTROL_SINGLE_DOWNLOAD_FINISHED:
                 lastDownloadFinished = (DownloadLink) event.getParameter();
                 saveDownloadLinks(JDUtilities.getResourceFile("links.dat"));
@@ -207,7 +194,7 @@ public class JDController implements PluginListener, ControlListener, UIListener
 
                 break;
         }
-        uiInterface.deligatedControlEvent(event);
+        uiInterface.delegatedControlEvent(event);
     }
 /**
  * Bricht den Download ab und blockiert bis er abgebrochen wurde.
@@ -601,7 +588,7 @@ public class JDController implements PluginListener, ControlListener, UIListener
      */
     public void fireControlEvent(ControlEvent controlEvent) {
 //        logger.info(controlEvent.getID()+" controllistener "+controlEvent);
-        uiInterface.deligatedControlEvent(controlEvent);
+        uiInterface.delegatedControlEvent(controlEvent);
         if (controlListener == null) controlListener = new Vector<ControlListener>();
         Iterator<ControlListener> iterator = controlListener.iterator();
         while (iterator.hasNext()) {

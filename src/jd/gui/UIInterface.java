@@ -45,13 +45,13 @@ public interface UIInterface {
      * 
      * @param event Ein PluginEvent
      */
-    public void deligatedPluginEvent(PluginEvent event);
+    public void delegatedPluginEvent(PluginEvent event);
     /**
      * Leitet ein ControlEvent weiter
      * 
      * @param event ein ControlEvent
      */
-    public void deligatedControlEvent(ControlEvent event);
+    public void delegatedControlEvent(ControlEvent event);
     
  
     

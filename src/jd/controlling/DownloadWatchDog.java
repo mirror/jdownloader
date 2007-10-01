@@ -34,11 +34,8 @@ public class DownloadWatchDog extends Thread implements PluginListener, ControlL
      * Downloadlinks die gerade aktiv sind
      */
     private Vector<SingleDownloadController> activeLinks = new Vector<SingleDownloadController>();
-
     private boolean                          aborted     = false;
-
     private JDController                     controller;
-
     private int                              interactions;
 
     public DownloadWatchDog(JDController controller) {

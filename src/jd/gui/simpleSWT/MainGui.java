@@ -361,7 +361,7 @@ public class MainGui extends org.eclipse.swt.widgets.Composite implements UIInte
      * werden dem event parameter übergeben die mit event.getParameter()
      * abgefragt werden die parameter sind meistens mit der ventid dokumentiert
      */
-    public void deligatedControlEvent(ControlEvent event) {
+    public void delegatedControlEvent(ControlEvent event) {
 
         switch (event.getID()) {
             case ControlEvent.CONTROL_PLUGIN_DECRYPT_ACTIVE :
@@ -397,7 +397,7 @@ public class MainGui extends org.eclipse.swt.widgets.Composite implements UIInte
      * event parameter übergeben die mit event.getParameter() abgefragt werden
      * die parameter sind meistens mit der ventid dokumentiert
      */
-    public void deligatedPluginEvent(PluginEvent event) {
+    public void delegatedPluginEvent(PluginEvent event) {
 
         if (event.getSource() instanceof PluginForHost && event.getEventID() == PluginEvent.PLUGIN_DATA_CHANGED) {
 

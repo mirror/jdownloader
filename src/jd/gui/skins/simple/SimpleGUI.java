@@ -29,6 +29,7 @@ import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.JScrollPane;
 import javax.swing.JSplitPane;
 import javax.swing.JToggleButton;
 import javax.swing.JToolBar;
@@ -64,27 +65,22 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener {
      * Das Hauptfenster
      */
     private JFrame            frame;
-
     /**
      * Die Menüleiste
      */
     private JMenuBar          menuBar;
-
     /**
      * Toolleiste für Knöpfe
      */
     private JToolBar          toolBar;
-
     /**
      * Komponente, die alle Downloads anzeigt
      */
     private TabDownloadLinks  tabDownloadTable;                                ;
-
     /**
      * Komponente, die den Fortschritt aller Plugins anzeigt
      */
     private TabPluginActivity tabPluginActivity;
-
     /**
      * TabbedPane
      */
@@ -93,59 +89,36 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener {
      * Die Statusleiste für Meldungen
      */
     private StatusBar         statusBar;
-
     /**
      * Hiermit wird der Eventmechanismus realisiert. Alle hier eingetragenen
      * Listener werden benachrichtigt, wenn mittels
      * {@link #fireUIEvent(UIEvent)} ein Event losgeschickt wird.
      */
     public Vector<UIListener> uiListener               = null;
-
     /**
      * Ein Togglebutton zum Starten / Stoppen der Downloads
      */
     private JToggleButton     btnStartStop;
-
     private JDAction          actionStartStopDownload;
-
     private JDAction          actionAdd;
-
     private JDAction          actionDelete;
-
     private JDAction          actionLoadLinks;
-
     private JDAction          actionSaveLinks;
-
     private JDAction          actionExit;
-
     private JDAction          actionLog;
-
     private JDAction          actionConfig;
-
     private JDAction          actionReconnect;
-
     private JDAction          actionUpdate;
-
     private JDAction          actionDnD;
-
     private LogDialog         logDialog;
-
     private Logger            logger                   = Plugin.getLogger();
-
     Dropper                   dragNDrop;
-
     private JCheckBoxMenuItem menViewLog               = null;
-
     private JSplitPane        splitpane;
-
     private PluginEvent       hostPluginDataChanged    = null;
-
     private PluginEvent       decryptPluginDataChanged = null;
-
     private JCheckBox         reconnectBox;
-
     private LinkGrabber       linkGrabber;
-
     private JDAction          actionSearch;
 
     /**
@@ -342,11 +315,11 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener {
         tabPluginActivity = new TabPluginActivity();
         statusBar = new StatusBar();
         splitpane = new JSplitPane();
-        splitpane.setBottomComponent(tabPluginActivity);
+        splitpane.setBottomComponent(new JScrollPane(tabPluginActivity));
         // JPanel tmp=new JPanel(new BorderLayout());
         // tmp.add(tabPluginActivity,BorderLayout.NORTH);
 
-        splitpane.setTopComponent(tabDownloadTable);
+        splitpane.setTopComponent(new JScrollPane(tabDownloadTable));
         splitpane.setOrientation(JSplitPane.VERTICAL_SPLIT);
 
         // tmp.add(tabDownloadTable,BorderLayout.CENTER);
@@ -585,7 +558,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener {
      * Delligiert die Pluginevents weiter an das host/decryptpanel.
      * CHangedEvents werden abgefangen und im sekundeninterval weitergegeben.
      */
-    public void deligatedPluginEvent(PluginEvent event) {
+    public void delegatedPluginEvent(PluginEvent event) {
 
         if (event.getSource() instanceof PluginForHost && event.getEventID() == PluginEvent.PLUGIN_DATA_CHANGED) {
             this.hostPluginDataChanged = event;
@@ -617,7 +590,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener {
 
     }
 
-    public void deligatedControlEvent(ControlEvent event) {
+    public void delegatedControlEvent(ControlEvent event) {
 
         switch (event.getID()) {
             case ControlEvent.CONTROL_PLUGIN_DECRYPT_ACTIVE:
