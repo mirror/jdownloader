@@ -33,20 +33,14 @@ public class ConfigPanelPluginForDecrypt extends ConfigPanel implements ActionLi
      * 
      */
     private static final long serialVersionUID = -5308908915544580923L;
-
     private JButton                  btnEdit;
-
     private JTable                   table;
-
     private Vector<PluginForDecrypt> pluginsForDecrypt;
-
     private Configuration configuration;
-
-//    private PluginForDecrypt         currentPlugin;
-
+//  private PluginForDecrypt         currentPlugin;
     public ConfigPanelPluginForDecrypt(Configuration configuration, UIInterface uiinterface) {
         super(uiinterface);
-this.configuration=configuration;
+        this.configuration=configuration;
         this.pluginsForDecrypt = JDUtilities.getPluginsForDecrypt();
         initPanel();
 
@@ -66,7 +60,7 @@ this.configuration=configuration;
      * TODO: PluginsForDecrypt haben noch keinen properties laoder. 
      */
     public void save() {
-    // Interaction[] tmp= new Interaction[interactions.size()];
+        // Interaction[] tmp= new Interaction[interactions.size()];
         PluginForDecrypt plg;
         for (int i = 0; i < pluginsForDecrypt.size(); i++) {
             plg = pluginsForDecrypt.elementAt(i);
@@ -100,7 +94,7 @@ this.configuration=configuration;
 
             }
         }
-        
+
         // add(scrollPane);
         // list = new JList();
         table.addMouseListener(this);
@@ -126,17 +120,16 @@ this.configuration=configuration;
 
     @Override
     public String getName() {
-
         return "Decrypt Plugins";
     }
 
     private void openPopupPanel(ConfigPanel config) {
         JPanel panel = new JPanel(new BorderLayout());
 
-//        InteractionTrigger[] triggers = InteractionTrigger.getAllTrigger();
+//      InteractionTrigger[] triggers = InteractionTrigger.getAllTrigger();
 
         PluginForDecrypt plugin = this.getSelectedPlugin();
-//        currentPlugin = plugin;
+//      currentPlugin = plugin;
         if (plugin == null) return;
 
         JPanel topPanel = new JPanel();
@@ -154,50 +147,26 @@ this.configuration=configuration;
     }
 
     public void actionPerformed(ActionEvent e) {
-
         if (e.getSource() == btnEdit) {
             editEntry();
-
         }
-
     }
-
     private void editEntry() {
         PluginForDecrypt plugin = getSelectedPlugin();
-
         if (plugin != null && plugin.getConfig().getEntries().size() > 0) {
-
             openPopupPanel(new ConfigPanelPlugin(configuration, uiinterface, plugin));
-
         }
-
     }
-
     public void mouseClicked(MouseEvent e) {
         if (e.getClickCount() > 1) {
             editEntry();
         }
-
     }
-
-    public void mouseEntered(MouseEvent e) {
-
-    }
-
-    public void mouseExited(MouseEvent e) {
-
-    }
-
-    public void mousePressed(MouseEvent e) {
-
-    }
-
-    public void mouseReleased(MouseEvent e) {
-
-    }
-
+    public void mouseEntered(MouseEvent e)  { }
+    public void mouseExited(MouseEvent e)   { }
+    public void mousePressed(MouseEvent e)  { }
+    public void mouseReleased(MouseEvent e) { }
     private class InternalTableModel extends AbstractTableModel {
-
         /**
          * 
          */
@@ -251,7 +220,6 @@ this.configuration=configuration;
             return super.getColumnName(column);
         }
     }
-    
     private class InternalTable extends JTable {
         /**
          * serialVersionUID
@@ -263,13 +231,7 @@ this.configuration=configuration;
         public TableCellRenderer getCellRenderer(int arg0, int arg1) {
             return internalTableCellRenderer;
         }
-        
-        
-   
     }
-
-    
-    
     private class InternalTableCellRenderer extends DefaultTableCellRenderer {
         /**
          * serialVersionUID
@@ -278,7 +240,7 @@ this.configuration=configuration;
 
         public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
             if (value instanceof JProgressBar) return (JProgressBar) value;
-           
+
             Component c = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
             if (!isSelected) {
                 PluginForDecrypt plugin = pluginsForDecrypt.get(row);
@@ -289,10 +251,8 @@ this.configuration=configuration;
                     c.setBackground(Color.WHITE);
                     c.setForeground(Color.BLACK);
                 }
-               
-                
+
             }
-//          logger.info("jj");
             return c;
         }
     }

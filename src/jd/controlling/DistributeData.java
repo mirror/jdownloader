@@ -70,7 +70,7 @@ public class DistributeData extends ControlMulticaster {
     }
 
     /**
-     * Ermittelt über die Plugins alle Passenden Linksund gibt diese in einem
+     * Ermittelt über die Plugins alle Passenden Links und gibt diese in einem
      * Vector zurück
      * 
      * @return link-Vector
@@ -109,7 +109,7 @@ public class DistributeData extends ControlMulticaster {
             pDecrypt = pluginsForDecrypt.get(i);
             if (pDecrypt.isClipboardEnabled() && pDecrypt.canHandle(data)) {
                 fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_PLUGIN_DECRYPT_ACTIVE, pDecrypt));
-                cryptedLinks.addAll(pDecrypt.getDycryptableLinks(data));
+                cryptedLinks.addAll(pDecrypt.getDecryptableLinks(data));
                 data = pDecrypt.cutMatches(data);
                 decryptedLinks.addAll(pDecrypt.decryptLinks(cryptedLinks));
                 fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_PLUGIN_DECRYPT_INACTIVE, pDecrypt));

@@ -239,7 +239,6 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
         /**
          * Vergleichsfunktion um einen downloadliste alphabetisch zu ordnen
          */
-
         Collections.sort(linkList, new Comparator() {
             public int compare(Object a, Object b) {
                 if (a instanceof DownloadLink && b instanceof DownloadLink) {

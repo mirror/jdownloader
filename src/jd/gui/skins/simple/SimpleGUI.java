@@ -35,6 +35,7 @@ import javax.swing.JToolBar;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
 
+import jd.JDFileFilter;
 import jd.controlling.JDController;
 import jd.controlling.interaction.ExternReconnect;
 import jd.controlling.interaction.HTTPReconnect;
@@ -102,6 +103,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener {
     private JDAction          actionAdd;
     private JDAction          actionDelete;
     private JDAction          actionLoadLinks;
+    private JDAction          actionLoadContainer;
     private JDAction          actionSaveLinks;
     private JDAction          actionExit;
     private JDAction          actionLog;
@@ -219,6 +221,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener {
 
         actionDelete = new JDAction(this, "delete", "action.delete", JDAction.ITEMS_REMOVE);
         actionLoadLinks = new JDAction(this, "load", "action.load", JDAction.APP_LOAD);
+        actionLoadContainer = new JDAction(this, "loadContainer", "action.load_container", JDAction.APP_LOAD_CONTAINER);
         actionSaveLinks = new JDAction(this, "save", "action.save", JDAction.APP_SAVE);
         actionExit = new JDAction(this, "exit", "action.exit", JDAction.APP_EXIT);
         actionLog = new JDAction(this, "log", "action.viewlog", JDAction.APP_LOG);
@@ -262,6 +265,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener {
         JMenu menFile = new JMenu(JDUtilities.getResourceString("menu.file"));
         menFile.setMnemonic(JDUtilities.getResourceChar("menu.file_mnem"));
 
+        JMenuItem menFileLoadContainer = createMenuItem(actionLoadContainer);
         JMenuItem menFileLoad = createMenuItem(actionLoadLinks);
         JMenuItem menFileSave = createMenuItem(actionSaveLinks);
         JMenuItem menFileExit = createMenuItem(actionExit);
@@ -299,6 +303,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener {
         JMenuItem menConfig = createMenuItem(actionConfig);
 
         // add menus to parents
+        menFile.add(menFileLoadContainer);
         menFile.add(menFileLoad);
         menFile.add(menFileSave);
         menFile.addSeparator();
@@ -477,25 +482,28 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener {
                 break;
             case JDAction.APP_SAVE:
                 JFileChooser fc = new JFileChooser();
-                fc.setApproveButtonText("Speichern");
-
-                fc.setFileSelectionMode(JFileChooser.FILES_ONLY);
-                fc.showOpenDialog(frame);
+                fc.setFileFilter(new JDFileFilter(null,".jdl",true));
+                fc.showSaveDialog(frame);
                 File ret = fc.getSelectedFile();
                 if (ret != null) {
                     fireUIEvent(new UIEvent(this, UIEvent.UI_SAVE_LINKS, ret));
-
                 }
                 break;
             case JDAction.APP_LOAD:
                 fc = new JFileChooser();
-                fc.setApproveButtonText("Speichern");
-                fc.setFileSelectionMode(JFileChooser.FILES_ONLY);
+                fc.setFileFilter(new JDFileFilter(null,"*.jdl",true));
                 fc.showOpenDialog(frame);
                 ret = fc.getSelectedFile();
                 if (ret != null) {
                     fireUIEvent(new UIEvent(this, UIEvent.UI_LOAD_LINKS, ret));
-
+                }
+                break;
+            case JDAction.APP_LOAD_CONTAINER:
+                fc = new JFileChooser();
+                fc.showOpenDialog(frame);
+                File file = fc.getSelectedFile();
+                if (file != null) {
+                    fireUIEvent(new UIEvent(this, UIEvent.UI_LOAD_CONTAINER, file));
                 }
                 break;
             case JDAction.APP_EXIT:

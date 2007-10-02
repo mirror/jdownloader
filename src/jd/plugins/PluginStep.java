@@ -12,39 +12,36 @@ public class PluginStep {
      * Millisekunden
      */
     public final static int STEP_WAIT_TIME        = 1 << 1;
-
     /**
      * Das Captcha Bild soll erkannt werden. Als Rückgabe wird der erkannte Text
      * als Parameter übergeben
      */
     public final static int STEP_GET_CAPTCHA_FILE = 1 << 2;
-
     /**
      * Der Download soll durchgeführt werden. Als Parameter wird der
      * DownloadLink übergeben
      */
     public final static int STEP_DOWNLOAD         = 1 << 3;
-
     /**
      * Ein Link soll entschlüsselt werden
      */
     public final static int STEP_DECRYPT          = 1 << 4;
-
     /**
-     * Eine Seite Soll geladen werden. ZUm auswerten von Parametern etc
+     * Eine Seite soll geladen werden. Zum auswerten von Parametern etc
      */
     public final static int STEP_PAGE             = 1 << 5;
-
+    /**
+     * Eine Containerdatei soll geöffnet werden
+     */
+    public final static int STEP_OPEN_CONTAINER   = 1 << 6;
     /**
      * Dieser Schritt muß erst noch stattfinden
      */
     public final static int STATUS_TODO           = 0;
-
     /**
      * Dieser Schritt wurde fehlerhaft abgearbeitet
      */
     public final static int STATUS_ERROR          = 1;
-
     /**
      * Dieser Schritt wurde erfolgreich durchgeführt
      */

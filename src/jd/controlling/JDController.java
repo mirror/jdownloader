@@ -16,6 +16,7 @@ import jd.event.UIListener;
 import jd.gui.UIInterface;
 import jd.plugins.DownloadLink;
 import jd.plugins.Plugin;
+import jd.plugins.PluginForContainer;
 import jd.plugins.PluginForHost;
 import jd.plugins.event.PluginEvent;
 import jd.plugins.event.PluginListener;
@@ -255,6 +256,10 @@ public class JDController implements PluginListener, ControlListener, UIListener
                 file = (File) uiEvent.getParameter();
                 loadDownloadLinks(file);
                 break;
+            case UIEvent.UI_LOAD_CONTAINER:
+                File containerFile = (File) uiEvent.getParameter();
+                loadContainerFile(containerFile);
+                break;
             case UIEvent.UI_EXIT:
                 exit();
                 break;
@@ -357,30 +362,39 @@ public class JDController implements PluginListener, ControlListener, UIListener
                     Iterator<DownloadLink> iterator = links.iterator();
                     DownloadLink localLink;
                     PluginForHost pluginForHost = null;
+                    PluginForContainer pluginForContainer = null;
                     while (iterator.hasNext()) {
                         localLink = iterator.next();
                         if (localLink.getStatus() == DownloadLink.STATUS_DONE && Configuration.FINISHED_DOWNLOADS_REMOVE_AT_START.equals(JDUtilities.getConfiguration().getProperty(Configuration.PARAM_FINISHED_DOWNLOADS_ACTION))) {
                             iterator.remove();
                             continue;
                         }
-                        // Neue instanz. jeder Link braucht seine eigene
-                        // Plugininstanz
+                        // Anhand des Hostnamens aus dem DownloadLink wird ein passendes Plugin gesucht
                         try {
                             pluginForHost = JDUtilities.getPluginForHost(localLink.getHost()).getClass().newInstance();
                         }
-                        catch (InstantiationException e) {
-
-                            e.printStackTrace();
+                        catch (InstantiationException e) { e.printStackTrace(); }
+                        catch (IllegalAccessException e) { e.printStackTrace(); }
+                        catch (NullPointerException e)   { }
+                        // Gibt es einen Names für ein Containerformat, wird ein passendes Plugin gesucht
+                        try {
+                            if(localLink.getContainer()!=null){
+                                pluginForContainer = JDUtilities.getPluginForContainer(localLink.getContainer()).getClass().newInstance();
+                                pluginForContainer.getAllDownloadLinks(localLink.getContainerFile());
+                            }
                         }
-                        catch (IllegalAccessException e) {
-
-                            e.printStackTrace();
-                        }
+                        catch (InstantiationException e) { e.printStackTrace(); }
+                        catch (IllegalAccessException e) { e.printStackTrace(); }
+                        catch (NullPointerException e)   {}
                         if (pluginForHost != null) {
                             localLink.setLoadedPlugin(pluginForHost);
                             pluginForHost.addPluginListener(this);
                         }
-                        else {
+                        if (pluginForContainer != null){
+                            localLink.setLoadedPluginForContainer(pluginForContainer);
+                            pluginForContainer.addPluginListener(this);
+                        }
+                        if(pluginForHost == null){
                             logger.severe("couldn't find plugin(" + localLink.getHost() + ") for this DownloadLink." + localLink.getName());
                         }
                     }
@@ -390,11 +404,34 @@ public class JDController implements PluginListener, ControlListener, UIListener
             return null;
         }
         catch (Exception e) {
+            e.printStackTrace();
             logger.severe("Linklist Konflikt.");
             return null;
         }
     }
-
+    /**
+     * Hiermit wird eine Containerdatei geöffnet.
+     * Dazu wird zuerst ein passendes Plugin gesucht und danach alle DownloadLinks interpretiert
+     * 
+     * @param file Die Containerdatei
+     */
+    private void loadContainerFile(File file){
+        Vector<PluginForContainer> pluginsForContainer = JDUtilities.getPluginsForContainer();
+        Vector<DownloadLink> downloadLinks = new Vector<DownloadLink>();
+        PluginForContainer pContainer;
+        for (int i = 0; i < pluginsForContainer.size(); i++) {
+            pContainer = pluginsForContainer.get(i);
+            if (pContainer.canHandle(file.getName())) {
+                fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_PLUGIN_DECRYPT_ACTIVE, pContainer));
+                downloadLinks.addAll(pContainer.getAllDownloadLinks(file.getAbsolutePath()));
+                fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_PLUGIN_DECRYPT_INACTIVE, pContainer));
+            }
+        }
+        if (downloadLinks.size() > 0) {
+            // schickt die Links zuerst mal zum Linkgrabber
+            uiInterface.addLinksToGrabber((Vector<DownloadLink>) downloadLinks);
+        }
+    }
     /**
      * Liefert alle DownloadLinks zurück
      * 

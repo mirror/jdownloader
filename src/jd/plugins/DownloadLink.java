@@ -19,86 +19,69 @@ public class DownloadLink implements Serializable {
      * Link muß noch bearbeitet werden
      */
     public final static int   STATUS_TODO                          = 0;
-
     /**
      * Link wurde erfolgreich heruntergeladen
      */
     public final static int   STATUS_DONE                          = 1;
-
     /**
      * Ein unbekannter Fehler ist aufgetreten
      */
-
     public final static int   STATUS_ERROR_UNKNOWN                 = 2;
-
     /**
      * Captcha Text war falsch
      */
     public final static int   STATUS_ERROR_CAPTCHA_WRONG           = 3;
-
     /**
      * Download Limit wurde erreicht
      */
     public final static int   STATUS_ERROR_DOWNLOAD_LIMIT          = 4;
-
     /**
      * Der Download ist gelöscht worden (Darf nicht verteilt werden)
      */
     public final static int   STATUS_ERROR_FILE_ABUSED             = 5;
-
     /**
      * Die Datei konnte nicht gefunden werden
      */
     public final static int   STATUS_ERROR_FILE_NOT_FOUND          = 6;
-
     /**
      * Die Datei konnte nicht gefunden werden
      */
     public final static int   STATUS_ERROR_BOT_DETECTED            = 7;
-
     /**
      * Ein unbekannter Fehler ist aufgetreten. Der Download Soll wiederholt
      * werden
      */
     public final static int   STATUS_ERROR_UNKNOWN_RETRY           = 8;
-
     /**
      * Es gab Fehler mit dem captchabild (konnte nicht geladn werden)
      */
 
     public final static int   STATUS_ERROR_CAPTCHA_IMAGEERROR      = 9;
-
     /**
      * Zeigt an, dass der Download aus unbekannten Gründen warten muss. z.B.
      * weil Die Ip gerade gesperrt ist, oder eine Session id abgelaufen ist
      */
     public final static int   STATUS_ERROR_STATIC_WAITTIME         = 10;
-
     /**
      * Zeigt an dass die Logins beim premiumlogin nicht richtig waren
      */
     public static final int   STATUS_ERROR_PREMIUM_LOGIN           = 11;
-
     /**
      * zeigt einen Premiumspezifischen fehler an
      */
     public static final int   STATUS_ERROR_PREMIUM                 = 12;
-
     /**
      * Zeigt an dass der Link fertig geladen wurde
      */
     public static final int   STATUS_DOWNLOAD_FINISHED             = 13;
-
     /**
      * Zeigt an dass der Link nicht vollständig geladen wurde
      */
     public static final int   STATUS_DOWNLOAD_INCOMPLETE           = 14;
-
     /**
      * Zeigt an dass der Link gerade heruntergeladen wird
      */
     public static final int   STATUS_DOWNLOAD_IN_PROGRESS          = 15;
-
     /**
      * Der download ist zur Zeit nicht möglich
      */
@@ -110,111 +93,100 @@ public class DownloadLink implements Serializable {
     /**
      * serialVersionUID
      */
-
     private FilePackage       filePackage;
-
     private static final long serialVersionUID                     = 1981079856214268373L;
-
     /**
      * Statustext der von der GUI abgefragt werden kann
      */
     private transient boolean aborted                              = false;
-
     private transient String  statusText                           = "";
-
     /**
      * Beschreibung des Downloads
      */
     private String            name;
-
     /**
      * TODO downloadpath ueber config setzen
      */
     private String            downloadPath                         = JDUtilities.getConfiguration().getDownloadDirectory();
-
     /**
      * Wird dieser Wert gesetzt, so wird der Download unter diesem Namen (nicht
      * Pfad) abgespeichert.
      */
     private String            staticFileName;
-
     /**
      * Von hier soll de Download stattfinden
      */
     private String            urlDownload;
-
     /**
      * Hoster des Downloads
      */
     private String            host;
-
+    /**
+     * Containername
+     */
+    private String            container;
+    /**
+     * Dateiname des Containers
+     */
+    private String            containerFile;
+    /**
+     * Index dieses DownloadLinks innerhalb der Containerdatei
+     */
+    private int               containerIndex;
     /**
      * Zeigt an, ob dieser Downloadlink aktiviert ist
      */
     private boolean           isEnabled;
-
     /**
      * Zeigt, ob dieser DownloadLink grad heruntergeladen wird
      */
     private transient boolean inProgress                           = false;
-
     /**
      * Das Plugin, das für diesen Download zuständig ist
      */
-    private transient Plugin  plugin;
-
+    private transient Plugin plugin;
+    /**
+     * Falls vorhanden, das Plugin für den Container, aus der dieser Download geladen wurde
+     */
+    private transient PluginForContainer  pluginForContainer;
     /**
      * Maximum der heruntergeladenen Datei (Dateilänge)
      */
     private long              downloadMax;
-
     /**
      * Aktuell heruntergeladene Bytes der Datei
      */
     private long              downloadCurrent;
-
     /**
      * Hierhin soll die Datei gespeichert werden.
      */
     private String            fileOutput;
-
     /**
      * Logger für Meldungen
      */
     @SuppressWarnings("unused")
     private transient Logger  logger                               = Plugin.getLogger();
-
     /**
      * Status des DownloadLinks
      */
     private int               status                               = STATUS_TODO;
-
     /**
      * Timestamp bis zu dem die Wartezeit läuft
      */
     private transient long    mustWaitTil                          = 0;
-
     /**
      * Ursprüngliche Wartezeit
      */
     private transient long    waittime                             = 0;
-
-    public DownloadLink() {
-
-    }
-
     /**
      * Lokaler Pfad zum letzten captchafile
      */
     private File                 latestCaptchaFile = null;
-
     /**
      * Speedmeter zum berechnen des downloadspeeds
      */
     private transient SpeedMeter speedMeter;
-
     private transient Boolean    available         = null;
-
     /**
      * Erzeugt einen neuen DownloadLink
      * 
@@ -231,8 +203,10 @@ public class DownloadLink implements Serializable {
         this.host = host;
         this.isEnabled = isEnabled;
         speedMeter = new SpeedMeter(5000);
-
-        this.urlDownload = JDCrypt.encrypt(urlDownload);
+        if(urlDownload!=null)
+            this.urlDownload = JDCrypt.encrypt(urlDownload);
+        else
+            urlDownload=null;
     }
 
     /**
@@ -254,16 +228,6 @@ public class DownloadLink implements Serializable {
     public String getHost() {
         return host;
     }
-
-    /**
-     * Legt den Host fest
-     * 
-     * @param host Der Host für diesen DownloadLink
-     */
-    public void setHost(String host) {
-        this.host = host;
-    }
-
     /**
      * Liefert das Plugin zurück, daß diesen DownloadLink handhabt
      * 
@@ -271,6 +235,9 @@ public class DownloadLink implements Serializable {
      */
     public Plugin getPlugin() {
         return plugin;
+    }
+    public PluginForContainer getPluginForContainer(){
+        return pluginForContainer;
     }
 
     /**
@@ -288,7 +255,6 @@ public class DownloadLink implements Serializable {
         }
 
     }
-
     /**
      * Gibt zurück ob Dieser Link schon auf verfügbarkeit getestet wurde.+ Diese
      * FUnktion führt keinen!! Check durch. Sie prüft nur ob schon geprüft
@@ -301,7 +267,6 @@ public class DownloadLink implements Serializable {
         return available != null;
 
     }
-
     /**
      * Führt einen verfügbarkeitscheck durch. GIbt true zurück wenn der link
      * online ist
@@ -315,7 +280,6 @@ public class DownloadLink implements Serializable {
         available = ((PluginForHost) getPlugin()).getFileInformation(this);
         return available;
     }
-
     /**
      * @author coalado
      * @return Die verschlüsselte URL
@@ -341,7 +305,11 @@ public class DownloadLink implements Serializable {
      * @return Die Download URL
      */
     public String getUrlDownloadDecrypted() {
-        if (urlDownload == null) return null;
+        if (urlDownload == null)
+            if(pluginForContainer!=null)
+                return pluginForContainer.getUrlDownloadDecrypted(this);
+            else
+                return null;
         return JDCrypt.decrypt(urlDownload);
     }
 
@@ -395,7 +363,7 @@ public class DownloadLink implements Serializable {
      * 
      * @param plugin Das für diesen Download zuständige Plugin
      */
-    public void setLoadedPlugin(Plugin plugin) {
+    public void setLoadedPlugin(PluginForHost plugin) {
         this.plugin = plugin;
     }
 
@@ -488,7 +456,7 @@ public class DownloadLink implements Serializable {
      */
     @Override
     public boolean equals(Object obj) {
-        if (obj instanceof DownloadLink)
+        if (obj instanceof DownloadLink && this.urlDownload!=null && ((DownloadLink) obj).urlDownload != null)
             return this.urlDownload.equals(((DownloadLink) obj).urlDownload);
         else
             return super.equals(obj);
@@ -613,7 +581,7 @@ public class DownloadLink implements Serializable {
     }
 
     /**
-     * Gibt den Pgad zum zuletzt gespeichertem Captchabild für diesen download
+     * Gibt den Pfad zum zuletzt gespeichertem Captchabild für diesen download
      * zurück
      * 
      * @return captcha pfad
@@ -743,5 +711,23 @@ public class DownloadLink implements Serializable {
     public String getStaticFileName() {
         return staticFileName;
     }
-
+    public void setLoadedPluginForContainer(PluginForContainer pluginForContainer) {
+        this.pluginForContainer = pluginForContainer;
+        container = pluginForContainer.getHost();
+    }
+    public String getContainer() {
+        return container;
+    }
+    public String getContainerFile() {
+        return containerFile;
+    }
+    public void setContainerFile(String containerFile) {
+        this.containerFile = containerFile;
+    }
+    public int getContainerIndex() {
+        return containerIndex;
+    }
+    public void setContainerIndex(int containerIndex) {
+        this.containerIndex = containerIndex;
+    }
 }

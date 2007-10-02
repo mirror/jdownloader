@@ -84,11 +84,9 @@ public abstract class PluginForHost extends Plugin {
                     links.add(new DownloadLink(plg, file.substring(file.lastIndexOf("/") + 1, file.length()), getHost(), file, true));
                 }
                 catch (InstantiationException e) {
-                    // TODO Auto-generated catch block
                     e.printStackTrace();
                 }
                 catch (IllegalAccessException e) {
-                    // TODO Auto-generated catch block
                     e.printStackTrace();
                 }
             }

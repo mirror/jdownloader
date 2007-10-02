@@ -31,7 +31,6 @@ public abstract class PluginForDecrypt extends Plugin {
     }
 
     private String cryptedLink = null;
-
     private String statusText  = "";
 
     /**
@@ -52,7 +51,7 @@ public abstract class PluginForDecrypt extends Plugin {
             if (nextStep(step) == null) {
                 try {
                     if (step.getParameter() == null) {
-                        logger.severe("ACHTUNG Decrypt PLugins müssen im letzten schritt einen  Vector<String> parameter  übergeben!");
+                        logger.severe("ACHTUNG Decrypt Plugins müssen im letzten schritt einen  Vector<String> parameter  übergeben!");
                         return new Vector<String>();
                     }
                     Vector<String>decryptedLinks= (Vector<String>) step.getParameter();
@@ -72,17 +71,15 @@ public abstract class PluginForDecrypt extends Plugin {
      * @param data
      * @return
      */
-    public Vector<String> getDycryptableLinks(String data){
-       
-      
+    public Vector<String> getDecryptableLinks(String data){
         Vector<String> hits = getMatches(data, getSupportedLinks());
         if(hits != null && hits.size()>0){
-           
+
             for(int i=0;i<hits.size();i++){
                 String file = hits.get(i);
-             while(file.charAt(0)=='"')file=file.substring(1);
-             while(file.charAt(file.length()-1)=='"')file=file.substring(0,file.length()-1);
-               hits.setElementAt(file, i);
+                while(file.charAt(0)=='"')file=file.substring(1);
+                while(file.charAt(file.length()-1)=='"')file=file.substring(0,file.length()-1);
+                hits.setElementAt(file, i);
             }
         }
         return hits;

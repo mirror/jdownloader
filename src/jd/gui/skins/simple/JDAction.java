@@ -29,19 +29,19 @@ public class JDAction extends AbstractAction{
     public static final int ITEMS_ENABLE             =  6;
     public static final int ITEMS_ADD                =  7;
     public static final int ITEMS_REMOVE             =  8;
-    public static final int APP_START_STOP_DOWNLOADS =  9;
-    public static final int APP_SHOW_LOG             = 10;
-    public static final int APP_STOP_DOWNLOADS       = 11;
-    public static final int APP_SAVE                 = 12;
-    public static final int APP_LOAD                 = 13;
-    public static final int APP_EXIT                 = 14;
-    public static final int APP_LOG                  = 15;
-    public static final int APP_CONFIGURATION        = 16;
-    public static final int APP_RECONNECT            = 17;
-    public static final int APP_UPDATE               = 18;
-    public static final int ITEMS_DND                =  19;
-
-    public static final int APP_SEARCH = 20;
+    public static final int ITEMS_DND                =  9;
+    public static final int APP_START_STOP_DOWNLOADS = 10;
+    public static final int APP_SHOW_LOG             = 11;
+    public static final int APP_STOP_DOWNLOADS       = 12;
+    public static final int APP_SAVE                 = 13;
+    public static final int APP_LOAD                 = 14;
+    public static final int APP_LOAD_CONTAINER       = 15;
+    public static final int APP_EXIT                 = 16;
+    public static final int APP_LOG                  = 17;
+    public static final int APP_CONFIGURATION        = 18;
+    public static final int APP_RECONNECT            = 19;
+    public static final int APP_UPDATE               = 20;
+    public static final int APP_SEARCH               = 21;
 
     private ActionListener actionListener;
     private int actionID;
