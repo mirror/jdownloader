@@ -164,8 +164,7 @@ public class DownloadLink implements Serializable {
     /**
      * Logger für Meldungen
      */
-    @SuppressWarnings("unused")
-    private transient Logger  logger                               = Plugin.getLogger();
+    private static Logger  logger                               = Plugin.getLogger();
     /**
      * Status des DownloadLinks
      */
@@ -375,6 +374,16 @@ public class DownloadLink implements Serializable {
     public void setEnabled(boolean isEnabled) {
         if (!isEnabled) {
             this.setAborted(true);
+        }
+        if(isEnabled == true){
+            if(host != null && plugin==null){
+                logger.severe("Es ist kein passendes HostPlugin geladen");
+                return;
+            }
+            if(container!=null && pluginForContainer == null){
+                logger.severe("Es ist kein passendes ContainerPlugin geladen");
+                return;
+            }
         }
         this.isEnabled = isEnabled;
     }

@@ -23,9 +23,7 @@ public abstract class Interaction extends Property implements Serializable {
      * serialVersionUID
      */
     private transient static final long       serialVersionUID                      = -5609631258725998799L;
-
-    protected transient static Logger         logger                                = Plugin.getLogger();
-
+    protected static Logger                   logger                                = Plugin.getLogger();
     /**
      * Gibt das Event an bei dem Diese Interaction aktiv wird
      */

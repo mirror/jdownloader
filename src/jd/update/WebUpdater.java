@@ -44,7 +44,7 @@ public class WebUpdater implements Serializable {
     /**
      * Logger
      */
-    public transient Logger logger       = Plugin.getLogger();
+    public static  Logger logger       = Plugin.getLogger();
     /**
      * anzahl der aktualisierten Files
      */

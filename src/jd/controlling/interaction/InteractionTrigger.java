@@ -24,7 +24,7 @@ public class InteractionTrigger implements Serializable {
 
     private static Vector<InteractionTrigger> events           = new Vector<InteractionTrigger>();
 
-    protected transient static Logger         logger           = Plugin.getLogger();
+    protected static Logger                   logger           = Plugin.getLogger();
 
     /**
      * EventiD

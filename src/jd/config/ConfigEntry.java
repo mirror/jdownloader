@@ -14,7 +14,7 @@ public class ConfigEntry implements Serializable {
     private static final long serialVersionUID = 7422046260361380162L;
 
     @SuppressWarnings("unused")
-    private transient Logger logger = Plugin.getLogger();
+    private static Logger logger = Plugin.getLogger();
     private int              type;
 
     private String           label;

@@ -379,8 +379,13 @@ public class JDController implements PluginListener, ControlListener, UIListener
                         // Gibt es einen Names für ein Containerformat, wird ein passendes Plugin gesucht
                         try {
                             if(localLink.getContainer()!=null){
-                                pluginForContainer = JDUtilities.getPluginForContainer(localLink.getContainer()).getClass().newInstance();
-                                pluginForContainer.getAllDownloadLinks(localLink.getContainerFile());
+                                pluginForContainer = JDUtilities.getPluginForContainer(localLink.getContainer());
+                                if(pluginForContainer!=null){
+                                    pluginForContainer = pluginForContainer.getClass().newInstance();
+                                    pluginForContainer.getAllDownloadLinks(localLink.getContainerFile());
+                                }
+                                else
+                                    localLink.setEnabled(false);
                             }
                         }
                         catch (InstantiationException e) { e.printStackTrace(); }
