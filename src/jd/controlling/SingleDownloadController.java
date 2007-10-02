@@ -181,7 +181,7 @@ public class SingleDownloadController extends ControlMulticaster {
 
             step = plugin.doNextStep(downloadLink);
         }
-        // /Der Download ist an dieser Stelle entweder Beendet oder
+        // Der Download ist an dieser Stelle entweder Beendet oder
         // Abgebrochen. Mögliche Ursachen können nun untersucht werden um
         // den download eventl neu zu starten
 
@@ -294,7 +294,7 @@ public class SingleDownloadController extends ControlMulticaster {
     }
     /**
      * Wird aufgerufen wenn ein Loginfehler bei premiumaccounts auftritt. Die
-     * premiumnutzung beim PLugin wird deaktiviert und der Link wird nochmals
+     * premiumnutzung beim Plugin wird deaktiviert und der Link wird nochmals
      * versucht
      * 
      * @param downloadLink
@@ -313,7 +313,7 @@ public class SingleDownloadController extends ControlMulticaster {
 
     /**
      * Fehlerfunktion für einen UNbekannten premiumfehler.
-     * PLugin-premium-support wird deaktiviert und link wird erneut versucht
+     * Plugin-premium-support wird deaktiviert und link wird erneut versucht
      * 
      * @param downloadLink
      * @param plugin
@@ -329,7 +329,7 @@ public class SingleDownloadController extends ControlMulticaster {
     }
 
     /**
-     * Wird aufgerufen wenn Das PLugin eine Immer gleiche Wartezeit meldet. z.B.
+     * Wird aufgerufen wenn Das Plugin eine Immer gleiche Wartezeit meldet. z.B.
      * bei unbekannter Wartezeit
      * 
      * @param downloadLink
@@ -349,7 +349,7 @@ public class SingleDownloadController extends ControlMulticaster {
         downloadLink.setStatusText("Reconnect ");
         downloadLink.setInProgress(false);
         fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SINGLE_DOWNLOAD_CHANGED, downloadLink));
-        // Download Zeit. Versuch durch eine INteraction einen reconnect
+        // Download Zeit. Versuch durch eine Interaction einen reconnect
         // zu machen. wenn das klappt nochmal versuchen
         if (Interaction.handleInteraction((Interaction.INTERACTION_NEED_RECONNECT), this) || Interaction.handleInteraction((Interaction.INTERACTION_DOWNLOAD_WAITTIME), this)) {
 
@@ -361,7 +361,7 @@ public class SingleDownloadController extends ControlMulticaster {
     }
 
     /**
-     * Wird aufgerufenw ennd as PLugin einen filenot found Fehler meldet
+     * Wird aufgerufenw ennd as Plugin einen filenot found Fehler meldet
      * 
      * @param downloadLink
      * @param plugin
@@ -508,7 +508,7 @@ public class SingleDownloadController extends ControlMulticaster {
         downloadLink.setStatusText("Reconnect ");
         downloadLink.setInProgress(false);
         fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SINGLE_DOWNLOAD_CHANGED, downloadLink));
-        // Download Zeit. Versuch durch eine INteraction einen reconnect
+        // Download Zeit. Versuch durch eine Interaction einen reconnect
         // zu machen. wenn das klappt nochmal versuchen
         if (Interaction.handleInteraction((Interaction.INTERACTION_NEED_RECONNECT), this) || Interaction.handleInteraction((Interaction.INTERACTION_DOWNLOAD_WAITTIME), this)) {
 

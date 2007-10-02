@@ -46,7 +46,7 @@ public abstract class PluginForHost extends Plugin {
     public PluginStep doNextStep(Object parameter) {
         currentStep = nextStep(currentStep);
         if (currentStep == null) {
-            logger.info(this + " PLuginende erreicht!");
+            logger.info(this + " Pluginende erreicht!");
             return null;
         }
        
@@ -77,7 +77,7 @@ public abstract class PluginForHost extends Plugin {
 
                 try {
                     // Zwecks Multidownload braucht jeder Link seine eigene
-                    // PLugininstanz
+                    // Plugininstanz
                     PluginForHost plg = this.getClass().newInstance();
                     plg.addPluginListener(JDUtilities.getController());
 
@@ -106,7 +106,7 @@ public abstract class PluginForHost extends Plugin {
     /**
      * Gibt einen String mit den Dateiinformationen zurück. Die Defaultfunktion
      * gibt nur den dateinamen zurück. Allerdings Sollte diese Funktion
-     * überschrieben werden. So kann ein PLugin zusatzinfos zu seinen Links
+     * überschrieben werden. So kann ein Plugin zusatzinfos zu seinen Links
      * anzeigen (Nach dem aufruf von getFileInformation()
      * 
      * @param parameter
@@ -117,7 +117,7 @@ public abstract class PluginForHost extends Plugin {
     }
 
     /**
-     * Diese Funktion verarbeitet jeden Schritt des PLugins.
+     * Diese Funktion verarbeitet jeden Schritt des Plugins.
      * 
      * @param step
      * @param parameter

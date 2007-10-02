@@ -47,7 +47,7 @@ public class ControlEvent extends AWTEvent{
      */
     public final static int CONTROL_PLUGIN_INTERACTION_ACTIVE     = 8;
     /**
-     * INteraction inaktiv
+     * Interaction inaktiv
      */
     public final static int CONTROL_PLUGIN_INTERACTION_INACTIVE     = 9;
     

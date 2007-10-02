@@ -12,7 +12,7 @@ import jd.config.Configuration;
 import jd.controlling.interaction.ExternExecute;
 import jd.gui.UIInterface;
 /**
- * Konfigurationspanel für die INteraction ExternExecute
+ * Konfigurationspanel für die Interaction ExternExecute
  * @author coalado
  *
  */

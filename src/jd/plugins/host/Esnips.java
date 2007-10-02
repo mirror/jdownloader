@@ -14,120 +14,91 @@ import jd.plugins.PluginStep;
 import jd.utils.JDUtilities;
 
 public class Esnips extends PluginForHost {
-
     static private final String host               = "esnips.com";
-
     private String              version            = "1.0.0.0";
-
     private Pattern             patternSupported   = getSupportPattern("http://[*]esnips.com/doc/[+]");
-
-
     private static final String SWF_PLAYER_TO_FILE = "autoPlay=no&amp;theFile=°&amp;theName=°&amp;thePlayerURL";
-
     private static final String WMP_PLAYER_TO_FILE = "<param name=\"URL\" value=\"°\" ref=\"\">";
-
     @Override
     public String getCoder() {
         return "Coalado";
     }
-
     @Override
     public String getHost() {
         return host;
     }
-
     @Override
     public String getPluginName() {
         return host;
     }
-
     @Override
     public Pattern getSupportedLinks() {
         return patternSupported;
     }
-
     @Override
     public String getVersion() {
         return version;
     }
-
     @Override
     public boolean isClipboardEnabled() {
         return true;
     }
-
     @Override
     public String getPluginID() {
         return host + version;
     }
-
     @Override
     public void init() {
         currentStep = null;
     }
-
     public Esnips() {
         super();
-
         steps.add(new PluginStep(PluginStep.STEP_DOWNLOAD, null));
     }
-
     // @Override
     // public URLConnection getURLConnection() {
     // return null;
     // }
-
     @Override
     public PluginStep doStep(PluginStep step, DownloadLink parameter) {
-
         DownloadLink downloadLink = null;
         try {
             logger.info("Step: " + step);
             downloadLink = (DownloadLink) parameter;
-
             switch (step.getStep()) {
-
                 case PluginStep.STEP_DOWNLOAD:
                     URL url;
                     String fileUrl = null;
-
                     try {
                         url = new URL(downloadLink.getUrlDownloadDecrypted());
-
                         requestInfo = getRequest(url, null, null, true);
-
                         fileUrl = getSimpleMatch(requestInfo.getHtmlCode(), SWF_PLAYER_TO_FILE, 0);
                         String fileName = getSimpleMatch(requestInfo.getHtmlCode(), SWF_PLAYER_TO_FILE, 1);
                         if (fileUrl == null) {
-
                             fileUrl = "http://" + host + getSimpleMatch(requestInfo.getHtmlCode(), WMP_PLAYER_TO_FILE, 0);
                             fileName = getSimpleMatch(requestInfo.getHtmlCode(), WMP_PLAYER_TO_FILE, 1);
                         }
-
                     }
-                    catch(MalformedURLException e){
+                    catch (MalformedURLException e) {
                         downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN);
                         step.setStatus(PluginStep.STATUS_ERROR);
                         return step;
                     }
-                    catch (FileNotFoundException e){
+                    catch (FileNotFoundException e) {
                         downloadLink.setStatus(DownloadLink.STATUS_ERROR_FILE_NOT_FOUND);
-                        step.setStatus(PluginStep.STATUS_ERROR); 
+                        step.setStatus(PluginStep.STATUS_ERROR);
                         return step;
                     }
                     catch (Exception e) {
                         downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN);
                         step.setStatus(PluginStep.STATUS_ERROR);
-                      e.printStackTrace();
-                      return step;
+                        e.printStackTrace();
+                        return step;
                     }
-
                     requestInfo = getRequestWithoutHtmlCode(new URL(fileUrl), requestInfo.getCookie(), null, true);
-
                     int length = requestInfo.getConnection().getContentLength();
                     downloadLink.setDownloadMax(length);
                     logger.info("Filename: " + getFileNameFormHeader(requestInfo.getConnection()));
-
                     downloadLink.setName(getFileNameFormHeader(requestInfo.getConnection()));
                     if (!download(downloadLink, (URLConnection) requestInfo.getConnection())) {
                         step.setStatus(PluginStep.STATUS_ERROR);
@@ -138,17 +109,16 @@ public class Esnips extends PluginForHost {
                         downloadLink.setStatus(DownloadLink.STATUS_DONE);
                     }
                     return step;
-
             }
         }
-        catch(MalformedURLException e){
+        catch (MalformedURLException e) {
             downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN);
             step.setStatus(PluginStep.STATUS_ERROR);
             return step;
         }
-        catch (FileNotFoundException e){
+        catch (FileNotFoundException e) {
             downloadLink.setStatus(DownloadLink.STATUS_ERROR_FILE_NOT_FOUND);
-            step.setStatus(PluginStep.STATUS_ERROR); 
+            step.setStatus(PluginStep.STATUS_ERROR);
             return step;
         }
         catch (Exception e) {
@@ -158,93 +128,63 @@ public class Esnips extends PluginForHost {
             return step;
         }
         return step;
-
     }
-
     private String getLinkDetails(String string) {
         URL url;
-
         try {
             url = new URL("http://" + host + string);
-
             requestInfo = getRequest(url, null, null, true);
-
             String fileUrl = getSimpleMatch(requestInfo.getHtmlCode(), SWF_PLAYER_TO_FILE, 0);
             String fileName = getSimpleMatch(requestInfo.getHtmlCode(), SWF_PLAYER_TO_FILE, 1);
             if (fileUrl == null) {
-
                 fileUrl = "http://" + host + getSimpleMatch(requestInfo.getHtmlCode(), WMP_PLAYER_TO_FILE, 0);
                 fileName = getSimpleMatch(requestInfo.getHtmlCode(), WMP_PLAYER_TO_FILE, 1);
             }
             setStatusText(fileName);
             // requestInfo = getRequest(new URL(fileUrl),
             // requestInfo.getCookie(), null, false);
-
             return fileUrl;
         }
-        catch (MalformedURLException e) {
-
-            // e.printStackTrace();
-        }
-        catch (IOException e) {
-            // e.printStackTrace();
-        }
+        catch (MalformedURLException e) { }
+        catch (IOException e)           { }
         return null;
     }
-
     @Override
     public boolean doBotCheck(File file) {
         return false;
     }
-
     @Override
     public void reset() {
-
         requestInfo = null;
-
     }
-    public String getFileInformationString(DownloadLink downloadLink){
-        return downloadLink.getName()+" ("+JDUtilities.formatBytesToMB(downloadLink.getDownloadMax())+")";
+    public String getFileInformationString(DownloadLink downloadLink) {
+        return downloadLink.getName() + " (" + JDUtilities.formatBytesToMB(downloadLink.getDownloadMax()) + ")";
     }
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) {
-        // TODO Auto-generated method stub
         try {
             URL url = new URL(downloadLink.getUrlDownloadDecrypted());
-
             requestInfo = getRequest(url, null, null, true);
-
             String fileUrl = getSimpleMatch(requestInfo.getHtmlCode(), SWF_PLAYER_TO_FILE, 0);
             String fileName = getSimpleMatch(requestInfo.getHtmlCode(), SWF_PLAYER_TO_FILE, 1);
             if (fileUrl == null) {
-
                 fileUrl = "http://" + host + getSimpleMatch(requestInfo.getHtmlCode(), WMP_PLAYER_TO_FILE, 0);
                 fileName = getSimpleMatch(requestInfo.getHtmlCode(), WMP_PLAYER_TO_FILE, 1);
             }
             requestInfo = getRequestWithoutHtmlCode(new URL(fileUrl), requestInfo.getCookie(), null, true);
-
             int length = requestInfo.getConnection().getContentLength();
-            downloadLink.setDownloadMax(length);        
-
-            downloadLink.setName(getFileNameFormHeader(requestInfo.getConnection()));           
-             if(downloadLink.getName()==null ||downloadLink.getName().length()==0||length==0)return false;
-            
+            downloadLink.setDownloadMax(length);
+            downloadLink.setName(getFileNameFormHeader(requestInfo.getConnection()));
+            if (downloadLink.getName() == null || downloadLink.getName().length() == 0 || length == 0) return false;
             if (fileUrl != null) return true;
             return false;
-
         }
         catch (Exception e) {
             return false;
         }
-
     }
-
     @Override
     public int getMaxSimultanDownloadNum() {
-       
         return 15;
     }
-
-  
-
 }

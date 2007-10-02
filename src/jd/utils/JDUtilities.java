@@ -1066,18 +1066,9 @@ public class JDUtilities {
             URLConnection con = url.openConnection();
             return download(file, con);
         }
-        catch (UnsupportedEncodingException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }
-        catch (MalformedURLException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }
-        catch (IOException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }
+        catch (UnsupportedEncodingException e) { e.printStackTrace(); }
+        catch (MalformedURLException e)        { e.printStackTrace(); }
+        catch (IOException e)                  { e.printStackTrace(); }
         return false;
     }
     /**

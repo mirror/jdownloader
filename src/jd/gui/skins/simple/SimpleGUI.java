@@ -502,7 +502,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener {
                 fc = new JFileChooser();
                 fc.showOpenDialog(frame);
                 File file = fc.getSelectedFile();
-                if (file != null) {
+                if (file != null && file.exists()) {
                     fireUIEvent(new UIEvent(this, UIEvent.UI_LOAD_CONTAINER, file));
                 }
                 break;

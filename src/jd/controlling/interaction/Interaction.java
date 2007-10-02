@@ -56,7 +56,7 @@ public abstract class Interaction extends Property implements Serializable {
     public transient final static int         INTERACTION_CALL_NEVERCALLED          = 0;
 
     /**
-     * Zeigt an dass die INteraction erfolgreioch beendet wurde
+     * Zeigt an dass die Interaction erfolgreioch beendet wurde
      */
     public transient final static int         INTERACTION_CALL_SUCCESS              = 1;
 
@@ -66,7 +66,7 @@ public abstract class Interaction extends Property implements Serializable {
     public transient final static int         INTERACTION_CALL_ERROR                = 2;
 
     /**
-     * Zeigt dass die INteraction gerade läuft
+     * Zeigt dass die Interaction gerade läuft
      */
     public transient final static int         INTERACTION_CALL_RUNNING              = 3;
 
@@ -153,14 +153,14 @@ public abstract class Interaction extends Property implements Serializable {
     public abstract String getInteractionName();
 
     /**
-     * Thread Funktion. Diese Funktion wird aufgerufen wenn INteraction.start()
+     * Thread Funktion. Diese Funktion wird aufgerufen wenn Interaction.start()
      * aufgerufen wird. Dabei wird ein neuer thread erstellt
      */
     public abstract void run();
 
     /**
      * Gibt den callcode zurück. Dieser gibt Aufschlussdarüber wie die
-     * INteraction abgelaufen ist
+     * Interaction abgelaufen ist
      * 
      * @return callcode
      */
@@ -357,7 +357,7 @@ public abstract class Interaction extends Property implements Serializable {
     }
 
     /**
-     * Gibt die Interaction ID zurück bei diese INteractiona aktiv wird
+     * Gibt die Interaction ID zurück bei diese Interactiona aktiv wird
      * 
      * @return Interaction ID
      */
@@ -366,7 +366,7 @@ public abstract class Interaction extends Property implements Serializable {
     }
 
     /**
-     * Setzt die INteraction ID (event ID)
+     * Setzt die Interaction ID (event ID)
      * 
      * @param eventID
      */
@@ -384,7 +384,7 @@ public abstract class Interaction extends Property implements Serializable {
     }
 
     /**
-     * Gibt eine Liste aller vefügbaren INteractions zurück. Bei neuen
+     * Gibt eine Liste aller vefügbaren Interactions zurück. Bei neuen
      * Interactions muss diese hier eingefügt werden
      * 
      * @return Liste mit allen Interactionen

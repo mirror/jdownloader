@@ -675,7 +675,7 @@ public class DownloadLink implements Serializable {
      * zwangsläufig um einen Valid-Filename. Dieser String eignet sich zur
      * darstellung des link und kann zusatzinformationen wie dateigröße oder
      * verfügbarkeit haben Diese Zusatzinformationen liefert das zugehörige
-     * PLugin ACHTUNG: Weil der Dateiname kein zuverlässiger Dateiname sein muss
+     * Plugin ACHTUNG: Weil der Dateiname kein zuverlässiger Dateiname sein muss
      * darf diese FUnktion nicht verwendet werden um eine datei zu benennen.
      * 
      * @return Erweiterter "Dateiname"
@@ -693,8 +693,8 @@ public class DownloadLink implements Serializable {
      * setzt den Statischen Dateinamen. Ist dieser wert != null, sow ird er zum
      * Speichern der Datei verwendet. ist er ==null, so wird der dateiName im
      * Plugin automatisch ermittelt. ACHTUNG: Diese Funktion sollte nicht ! von
-     * den PLugins verwendet werden. Sie dient dazu der Gui die Möglichkeit zu
-     * geben unabhängig von den PLugins einen Downloadnamen festzulegen.
+     * den Plugins verwendet werden. Sie dient dazu der Gui die Möglichkeit zu
+     * geben unabhängig von den Plugins einen Downloadnamen festzulegen.
      * userinputs>automatische erkenung Plugins solten setName(String) verwenden
      * um den Speichernamen anzugeben.
      * 

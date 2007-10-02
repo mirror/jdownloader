@@ -76,7 +76,7 @@ public abstract class Plugin {
 
     /**
      * Der Defualt Accept-language-header. Achtung nicht Ändern. Wird dieser
-     * Header geändert müssen die Regexes der PLugins angepasst werden
+     * Header geändert müssen die Regexes der Plugins angepasst werden
      */
     public static final String    ACCEPT_LANGUAGE = "de, en-gb;q=0.9, en;q=0.8";
 
@@ -199,7 +199,7 @@ public abstract class Plugin {
 
     /**
      * Property name für die Config. Diese sollten möglichst einheitlich sein.
-     * Einheitliche Properties erlauben einheitliches umspringen mit PLugins.
+     * Einheitliche Properties erlauben einheitliches umspringen mit Plugins.
      * Beispielsweise kann so der JDController die Premiumnutzung abschalten
      * wenn er fehler feststellt
      */
@@ -207,7 +207,7 @@ public abstract class Plugin {
 
     /**
      * Property name für die Config. Diese sollten möglichst einheitlich sein.
-     * Einheitliche Properties erlauben einheitliches umspringen mit PLugins.
+     * Einheitliche Properties erlauben einheitliches umspringen mit Plugins.
      * Beispielsweise kann so der JDController die Premiumnutzung abschalten
      * wenn er fehler feststellt
      */
@@ -215,7 +215,7 @@ public abstract class Plugin {
 
     /**
      * Property name für die Config. Diese sollten möglichst einheitlich sein.
-     * Einheitliche Properties erlauben einheitliches umspringen mit PLugins.
+     * Einheitliche Properties erlauben einheitliches umspringen mit Plugins.
      * Beispielsweise kann so der JDController die Premiumnutzung abschalten
      * wenn er fehler feststellt
      */
@@ -1363,7 +1363,7 @@ public abstract class Plugin {
 
         }
         else {
-            logger.finer("KEINE captchaINteractions... nutze JAC");
+            logger.finer("KEINE captchaInteractions... nutze JAC");
             captchaText = JDUtilities.getCaptcha(JDUtilities.getController(), plugin, file);
 
         }
@@ -1397,7 +1397,7 @@ public abstract class Plugin {
     public abstract String getLinkName();
 
     /**
-     * Gibt den Statustext des PLugins zurück. kann von der GUI aufgerufen
+     * Gibt den Statustext des Plugins zurück. kann von der GUI aufgerufen
      * werden
      * 
      * @return Statustext
@@ -1537,7 +1537,6 @@ public abstract class Plugin {
     }
 
     public String getInitID() {
-        // TODO Auto-generated method stub
         return this.initTime + "<ID";
     }
 }

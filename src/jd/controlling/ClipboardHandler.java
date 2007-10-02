@@ -97,11 +97,9 @@ public class ClipboardHandler extends Thread {
             data = (String) clipboard.getData(DataFlavor.stringFlavor);
         }
         catch (UnsupportedFlavorException e) {
-            // TODO Auto-generated catch block
             e.printStackTrace();
         }
         catch (IOException e) {
-            // TODO Auto-generated catch block
             e.printStackTrace();
         }  catch (Exception e) {
             e.printStackTrace();

@@ -425,7 +425,7 @@ public class MainGui extends org.eclipse.swt.widgets.Composite implements UIInte
 
     /**
      * Muss einen string mit dem captchacode zurückgeben. captchaAddress ist der
-     * pfad zur lokalen captchafile, Plugin das entsprechende PLugin
+     * pfad zur lokalen captchafile, Plugin das entsprechende Plugin
      */
     public String getCaptchaCodeFromUser(Plugin plugin, File captchaAddress) {
 

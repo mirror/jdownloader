@@ -83,7 +83,7 @@ public class DistributeData extends ControlMulticaster {
         PluginForDecrypt pDecrypt;
         PluginForHost pHost;
         PluginForSearch pSearch;
-        // Zuerst wird data durch die Such PLugins geschickt.
+        // Zuerst wird data durch die Such Plugins geschickt.
 
         for (int i = 0; i < pluginsForSearch.size(); i++) {
             pSearch = pluginsForSearch.get(i);

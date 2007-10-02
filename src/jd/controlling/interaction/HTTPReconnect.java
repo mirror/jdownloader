@@ -49,7 +49,7 @@ public class HTTPReconnect extends Interaction {
     public boolean doInteraction(Object arg) {
 
         if (!isEnabled()) {
-            logger.finer("INteraction nicht ausgeführt. disabled" + this);
+            logger.finer("Interaction nicht ausgeführt. disabled" + this);
             return false;
         }
 
@@ -305,13 +305,11 @@ public class HTTPReconnect extends Interaction {
 
     @Override
     public void run() {
-    // Nichts zu tun. INteraction braucht keinen Thread
+    // Nichts zu tun. Interaction braucht keinen Thread
 
     }
 
     @Override
     public void initConfig() {
-    // TODO Auto-generated method stub
-
     }
 }

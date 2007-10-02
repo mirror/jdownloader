@@ -112,7 +112,7 @@ public class JDController implements PluginListener, ControlListener, UIListener
     }
 
     /**
-     * Eventfunktion für den PLuginlistener
+     * Eventfunktion für den Pluginlistener
      * 
      * @param event PluginEvent
      */

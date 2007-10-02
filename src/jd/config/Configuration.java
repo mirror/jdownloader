@@ -241,7 +241,7 @@ public class Configuration extends Property implements Serializable {
     }
 
     /**
-     * Gibt die Interactionen zurück. Alle eingestellten INteractionen werden hier in einem vector zurückgegeben
+     * Gibt die Interactionen zurück. Alle eingestellten Interactionen werden hier in einem vector zurückgegeben
      * 
      * @return  Vector<Interaction> 
      */
@@ -251,7 +251,7 @@ public class Configuration extends Property implements Serializable {
     }
 
     /**
-     * Setzt die INteractionen
+     * Setzt die Interactionen
      * 
      * @param interactions
      */
@@ -344,7 +344,7 @@ public class Configuration extends Property implements Serializable {
  * @return toString
  */
 public String toString(){
-    return "Configuration "+this.getProperties()+" INteraction "+this.interactions;
+    return "Configuration "+this.getProperties()+" Interaction "+this.interactions;
 }
 /**
  * Gibt den Wert zu key zurück. falls dieser Wert == null ist wird der defaultValue zurückgegeben

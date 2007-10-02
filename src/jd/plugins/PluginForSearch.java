@@ -43,7 +43,7 @@ public abstract class PluginForSearch extends Plugin {
             if (nextStep(step) == null) {
                 try {
                     if (step.getParameter() == null) {
-                        logger.severe("ACHTUNG Search PLugins müssen im letzten schritt einen  Vector<String> parameter  übergeben!");
+                        logger.severe("ACHTUNG Search Plugins müssen im letzten schritt einen  Vector<String> parameter  übergeben!");
                         return new Vector<String>();
                     }
                     Vector<String> foundLinks = (Vector<String>) step.getParameter();
