@@ -197,8 +197,10 @@ public class Rapidshare extends PluginForHost {
     private String getServerFromAbbreviation(String abb) {
 
         Iterator<String> iter = serverMap.keySet().iterator();
+        Object next;
         while (iter.hasNext()) {
-            if (serverMap.get((String) iter.next()).equals(abb)) return (String) iter.next();
+            next=iter.next();
+            if (serverMap.get((String) next).equals(abb)) return (String) next;
 
         }
         return null;
@@ -641,6 +643,7 @@ public class Rapidshare extends PluginForHost {
             }
             // Der Download wird bestätigt
             requestInfo = getRequest(new URL(downloadLink.getUrlDownloadDecrypted()));
+            logger.info(requestInfo.getHtmlCode());
             if (requestInfo.getHtmlCode().indexOf(hardwareDefektString) > 0) {
                 // hardewaredefeklt bei rs.com
                 currentStep.setStatus(PluginStep.STATUS_ERROR);

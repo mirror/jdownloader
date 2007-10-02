@@ -75,8 +75,14 @@ public class Configuration extends Property implements Serializable {
      */
 
     public static final String FINISHED_DOWNLOADS_REMOVE = "sofort entfernen";
+    
+    /**
+     * Parameter für den key unter dem der zugehöroge Wert abgespeichert werden soll
+     */
 
-    private boolean                 useJAC                = true;
+    public static final String PARAM_DISABLE_RECONNECT = "DISABLE_RECONNECT";
+
+
 
     /**
      * Hier wird das Downloadverzeichnis gespeichert
@@ -165,14 +171,7 @@ public class Configuration extends Property implements Serializable {
         return routerData;
     }
 
-    /**
-     * Gibt an ob JAC verwendet werden soll
-     * TODO: veraltet. nicht emhr verwenden!
-     * @return jac oder nicht jac
-     */
-    public boolean useJAC() {
-        return useJAC;
-    }
+
 
     /**
      * @param downloadDirectory
@@ -202,12 +201,7 @@ public class Configuration extends Property implements Serializable {
         this.routerData = routerData;
     }
 
-    /**
-     * @param useJAC
-     */
-    public void setUseJAC(boolean useJAC) {
-        this.useJAC = useJAC;
-    }
+
 
     /**
      * @return the reconnectRetries

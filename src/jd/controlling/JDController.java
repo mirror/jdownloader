@@ -141,7 +141,7 @@ public class JDController implements PluginListener, ControlListener, UIListener
                     Interaction.handleInteraction(Interaction.INTERACTION_DOWNLOAD_PACKAGE_FINISHED, this);
                 }
 
-                if (Configuration.FINISHED_DOWNLOADS_REMOVE.equals(JDUtilities.getConfiguration().getProperty(Configuration.PARAM_FINISHED_DOWNLOADS_ACTION))) {
+                if (lastDownloadFinished.getStatus() == DownloadLink.STATUS_DONE && Configuration.FINISHED_DOWNLOADS_REMOVE.equals(JDUtilities.getConfiguration().getProperty(Configuration.PARAM_FINISHED_DOWNLOADS_ACTION))) {
                     downloadLinks.remove(lastDownloadFinished);
 
                     saveDownloadLinks(JDUtilities.getResourceFile("links.dat"));

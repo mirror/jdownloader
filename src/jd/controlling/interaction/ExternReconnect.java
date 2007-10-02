@@ -205,4 +205,10 @@ public class ExternReconnect extends Interaction implements Serializable {
     @Override
     public void initConfig() {
     }
+
+    @Override
+    public void resetInteraction() {
+        retries=0;
+        
+    }
 }

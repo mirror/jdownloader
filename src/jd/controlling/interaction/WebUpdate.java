@@ -56,4 +56,9 @@ public class WebUpdate extends Interaction implements Serializable {
     }
     @Override
     public void initConfig() {}
+    @Override
+    public void resetInteraction() {
+        // TODO Auto-generated method stub
+        
+    }
 }

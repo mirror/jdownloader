@@ -55,6 +55,12 @@ public class JAntiCaptcha extends Interaction implements Serializable{
     public void initConfig() {
     }
 
+    @Override
+    public void resetInteraction() {
+        // TODO Auto-generated method stub
+        
+    }
+
 
   
 }

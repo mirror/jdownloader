@@ -13,6 +13,7 @@ import javax.swing.JFrame;
 import javax.swing.JTabbedPane;
 
 import jd.config.Configuration;
+import jd.event.UIEvent;
 import jd.gui.UIInterface;
 import jd.utils.JDUtilities;
 /**
@@ -102,7 +103,7 @@ public class ConfigurationDialog extends JDialog implements ActionListener {
             configChanged = true;
             JDUtilities.setConfiguration(configuration);
 
-//            JDUtilities.saveObject(null, JDUtilities.getConfiguration(), JDUtilities.getJDHomeDirectory(), "jdownloader", ".config", true);
+//Entgültig gespeichert wird über ein fireUIEvent(new UIEvent(this, UIEvent.UI_SAVE_CONFIG)); event in simpleGui
         }
         setVisible(false);
     }

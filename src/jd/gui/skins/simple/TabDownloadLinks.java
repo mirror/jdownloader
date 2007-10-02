@@ -155,10 +155,12 @@ public class TabDownloadLinks extends JPanel implements PluginListener, ControlL
      * Entfernt die aktuell selektierten Links
      */
     public void removeSelectedLinks() {
-        Vector<DownloadLink> linksToDelete = getSelectedObjects();
-        allLinks.removeAll(linksToDelete);
-        table.getSelectionModel().clearSelection();
-        fireTableChanged();
+        if(parent.showConfirmDialog("Ausgwählte Links wirklich entfernen?")){
+            Vector<DownloadLink> linksToDelete = getSelectedObjects();
+            allLinks.removeAll(linksToDelete);
+            table.getSelectionModel().clearSelection();
+            fireTableChanged();
+        }
     }
     /**
      * Liefert alle selektierten Links zurück
@@ -475,7 +477,7 @@ public class TabDownloadLinks extends JPanel implements PluginListener, ControlL
                             p.setStringPainted(true);
                             p.setBackground(Color.WHITE);
                             p.setValue((int) downloadLink.getDownloadCurrent());
-                            p.setString((int) (100 * p.getPercentComplete()) + "% (" + (double) Math.round((p.getValue() / 10000)) / 100.0 + "/" + (double) Math.round(p.getMaximum() / 10000) / 100.0 + " MB)");
+                            p.setString((int) (100 * p.getPercentComplete()) + "% (" + JDUtilities.formatBytesToMB(p.getValue()) + "/" +JDUtilities.formatBytesToMB(p.getMaximum()) + ")");
                             return p;
                         }
                         else if (downloadLink.getRemainingWaittime() > 0 && downloadLink.getWaitTime() >= downloadLink.getRemainingWaittime()) {

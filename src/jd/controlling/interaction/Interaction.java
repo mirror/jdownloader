@@ -176,7 +176,9 @@ public abstract class Interaction extends Property implements Serializable {
     public boolean interact(Object arg) {
 
         fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_PLUGIN_INTERACTION_ACTIVE, this));
+        resetInteraction();
         this.setCallCode(Interaction.INTERACTION_CALL_RUNNING);
+        
         boolean success = doInteraction(arg);
         fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_PLUGIN_INTERACTION_RETURNED, this));
         if (!this.isAlive()) {
@@ -185,6 +187,10 @@ public abstract class Interaction extends Property implements Serializable {
         }
         return success;
     }
+/**
+ * Setzt eine INteraction in den Ausgangszustand zurück. z.B. Counter zurückstellen etc.
+ */
+    public abstract void resetInteraction();
 
     /**
      * Setzt den callCode

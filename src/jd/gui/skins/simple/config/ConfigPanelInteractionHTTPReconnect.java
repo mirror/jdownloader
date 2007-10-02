@@ -9,6 +9,8 @@ import java.awt.event.ActionListener;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
 import java.io.File;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Vector;
@@ -26,6 +28,7 @@ import javax.swing.JTextField;
 import jd.config.Configuration;
 import jd.controlling.interaction.HTTPReconnect;
 import jd.gui.UIInterface;
+import jd.plugins.DownloadLink;
 import jd.router.RouterData;
 import jd.router.RouterParser;
 import jd.utils.JDUtilities;
@@ -161,10 +164,12 @@ class ConfigPanelInteractionHTTPReconnect extends ConfigPanel implements ItemLis
     private JTextField        txtConnectPostParams;
 
     private JTextField        txtWaitForIPCheck;
-private Configuration configuration;
+
+    private Configuration     configuration;
+
     ConfigPanelInteractionHTTPReconnect(Configuration configuration, UIInterface uiinterface) {
         super(uiinterface);
-        this.configuration=configuration;
+        this.configuration = configuration;
         initPanel();
 
         load();
@@ -376,6 +381,25 @@ private Configuration configuration;
             RouterParser parser = new RouterParser();
 
             routerData = parser.parseXMLFile(fileRoutersDat);
+
+            Collections.sort(routerData, new Comparator<Object>() {
+                public int compare(Object a, Object b) {
+                    if (a instanceof RouterData && b instanceof RouterData) {
+
+                        if (((RouterData) a).getRouterName().compareToIgnoreCase(((RouterData) b).getRouterName()) > 0) {
+                            return 1;
+                        }
+                        else if (((RouterData) a).getRouterName().compareToIgnoreCase(((RouterData) b).getRouterName()) < 0) {
+                            return -1;
+                        }
+                        else {
+                            return 0;
+                        }
+                    }
+                    return 0;
+                }
+
+            });
             Object selected = JOptionPane.showInputDialog(this, "Bitte wähle deinen Router aus", "Router importieren", JOptionPane.INFORMATION_MESSAGE, null, routerData.toArray(), null);
             if (selected != null) {
                 this.routerData = (RouterData) selected;

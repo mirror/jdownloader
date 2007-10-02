@@ -64,6 +64,12 @@ public class ManuelCaptcha extends Interaction implements Serializable{
         
     }
 
+    @Override
+    public void resetInteraction() {
+        // TODO Auto-generated method stub
+        
+    }
+
 
   
 }

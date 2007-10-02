@@ -312,4 +312,10 @@ public class HTTPReconnect extends Interaction {
     @Override
     public void initConfig() {
     }
+
+    @Override
+    public void resetInteraction() {
+        retries          = 0;
+        
+    }
 }

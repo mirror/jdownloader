@@ -36,6 +36,7 @@ import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
 
 import jd.JDFileFilter;
+import jd.config.Configuration;
 import jd.controlling.JDController;
 import jd.controlling.interaction.ExternReconnect;
 import jd.controlling.interaction.HTTPReconnect;
@@ -429,7 +430,11 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener {
         toolBar.add(btnDnD);
 
         reconnectBox = new JCheckBox("Reconnect durchführen");
-        reconnectBox.setSelected(true);
+        boolean rc=JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_DISABLE_RECONNECT, true);
+        reconnectBox.setSelected(rc);
+        HTTPReconnect.setEnabled(rc);
+        ExternReconnect.setEnabled(rc);
+        
         reconnectBox.addActionListener(this);
         toolBar.add(reconnectBox);
         frame.setLayout(new GridBagLayout());
@@ -451,6 +456,8 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener {
         if (e.getSource() == reconnectBox) {
             HTTPReconnect.setEnabled(reconnectBox.getSelectedObjects() != null);
             ExternReconnect.setEnabled(reconnectBox.getSelectedObjects() != null);
+            JDUtilities.getConfiguration().setProperty(Configuration.PARAM_DISABLE_RECONNECT, reconnectBox.getSelectedObjects() != null);
+            fireUIEvent(new UIEvent(this, UIEvent.UI_SAVE_CONFIG));
             return;
         }
 
@@ -536,8 +543,10 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener {
 
                 break;
             case JDAction.ITEMS_REMOVE:
+                if(this.showConfirmDialog("Ausgewählte Links wirklich entfernen?")){
                 tabDownloadTable.removeSelectedLinks();
                 fireUIEvent(new UIEvent(this, UIEvent.UI_LINKS_CHANGED, null));
+                }
                 break;
             case JDAction.ITEMS_DND:
                 if (dragNDrop.isVisible()) {
