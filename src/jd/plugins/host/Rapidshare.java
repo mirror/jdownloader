@@ -643,7 +643,6 @@ public class Rapidshare extends PluginForHost {
             }
             // Der Download wird bestätigt
             requestInfo = getRequest(new URL(downloadLink.getUrlDownloadDecrypted()));
-            logger.info(requestInfo.getHtmlCode());
             if (requestInfo.getHtmlCode().indexOf(hardwareDefektString) > 0) {
                 // hardewaredefeklt bei rs.com
                 currentStep.setStatus(PluginStep.STATUS_ERROR);
