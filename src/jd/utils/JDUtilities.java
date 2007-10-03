@@ -665,7 +665,7 @@ public class JDUtilities {
                 fileOutput = fileChooserSave.getSelectedFile();
                 currentDirectory = fileChooserSave.getCurrentDirectory();
             }
-        }
+        } 
         if (fileOutput != null) {
             if (fileOutput.isDirectory()) {
                 fileOutput = new File(fileOutput, name + extension);

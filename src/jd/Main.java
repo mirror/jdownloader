@@ -3,6 +3,7 @@ package jd;
 import java.awt.Toolkit;
 import java.io.File;
 import java.net.CookieHandler;
+import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Iterator;
 import java.util.logging.Level;
@@ -129,20 +130,64 @@ public class Main {
 
     /**
      * Die Bilder werden aus der JAR Datei nachgeladen
-     */
+//     */
+//    private void loadImages() {
+//        ClassLoader cl = getClass().getClassLoader();
+//        Toolkit toolkit = Toolkit.getDefaultToolkit();
+//        try {
+//       
+//          
+//            File f = new File(cl.getResource("img").toURI());
+//            String images[] = f.list();
+//            for(int i=0;i<images.length;i++){
+//                if(images[i].indexOf(".")!=-1)
+//                    JDUtilities.addImage(images[i].substring(0, images[i].indexOf(".")), toolkit.getImage(cl.getResource("img/"+images[i])));
+//            }
+//        }
+//        catch (URISyntaxException e) {
+//            e.printStackTrace();
+//        }
+//    }
+    
+    
     private void loadImages() {
         ClassLoader cl = getClass().getClassLoader();
         Toolkit toolkit = Toolkit.getDefaultToolkit();
-        try {
-            File f = new File(cl.getResource("img").toURI());
-            String images[] = f.list();
-            for(int i=0;i<images.length;i++){
-                if(images[i].indexOf(".")!=-1)
-                    JDUtilities.addImage(images[i].substring(0, images[i].indexOf(".")), toolkit.getImage(cl.getResource("img/"+images[i])));
-            }
-        }
-        catch (URISyntaxException e) {
-            e.printStackTrace();
-        }
+        JDUtilities.addImage("add", toolkit.getImage(cl.getResource("img/add.png")));
+        JDUtilities.addImage("configuration", toolkit.getImage(cl.getResource("img/configuration.png")));
+        JDUtilities.addImage("delete", toolkit.getImage(cl.getResource("img/delete.png")));
+        JDUtilities.addImage("dnd", toolkit.getImage(cl.getResource("img/dnd.png")));
+        JDUtilities.addImage("dnd_big", toolkit.getImage(cl.getResource("img/dnd_big.png")));
+        JDUtilities.addImage("dnd_big_filled", toolkit.getImage(cl.getResource("img/dnd_big_filled.png")));
+        JDUtilities.addImage("down", toolkit.getImage(cl.getResource("img/down.png")));
+        JDUtilities.addImage("exit", toolkit.getImage(cl.getResource("img/shutdown.png")));
+        JDUtilities.addImage("led_empty", toolkit.getImage(cl.getResource("img/led_empty.gif")));
+        JDUtilities.addImage("led_green", toolkit.getImage(cl.getResource("img/led_green.gif")));
+        JDUtilities.addImage("load", toolkit.getImage(cl.getResource("img/load.png")));
+        JDUtilities.addImage("log", toolkit.getImage(cl.getResource("img/log.png")));
+        JDUtilities.addImage("mind", toolkit.getImage(cl.getResource("img/mind.png")));
+        JDUtilities.addImage("reconnect", toolkit.getImage(cl.getResource("img/reconnect.png")));
+        JDUtilities.addImage("save", toolkit.getImage(cl.getResource("img/save.png")));
+        JDUtilities.addImage("start", toolkit.getImage(cl.getResource("img/start.png")));
+        JDUtilities.addImage("stop", toolkit.getImage(cl.getResource("img/stop.png")));
+        JDUtilities.addImage("up", toolkit.getImage(cl.getResource("img/up.png")));
+        JDUtilities.addImage("update", toolkit.getImage(cl.getResource("img/update.png")));
+        JDUtilities.addImage("search", toolkit.getImage(cl.getResource("img/search.png")));
+        
+        
+        JDUtilities.addImage("bottom", toolkit.getImage(cl.getResource("img/bottom.png")));
+        JDUtilities.addImage("bug", toolkit.getImage(cl.getResource("img/bug.png")));
+        JDUtilities.addImage("home", toolkit.getImage(cl.getResource("img/home.png")));  
+        JDUtilities.addImage("loadContainer", toolkit.getImage(cl.getResource("img/loadContainer.png")));
+        JDUtilities.addImage("ok", toolkit.getImage(cl.getResource("img/ok.png")));
+        JDUtilities.addImage("pause", toolkit.getImage(cl.getResource("img/pause.png")));
+        JDUtilities.addImage("shutdown", toolkit.getImage(cl.getResource("img/shutdown.png")));
+        JDUtilities.addImage("top", toolkit.getImage(cl.getResource("img/top.png")));
+
+        
+        
+        
+        
+        
     }
 }
