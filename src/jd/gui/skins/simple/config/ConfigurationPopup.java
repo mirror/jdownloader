@@ -1,5 +1,6 @@
 package jd.gui.skins.simple.config;
 
+import java.awt.Frame;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
@@ -8,7 +9,6 @@ import java.awt.event.ActionListener;
 
 import javax.swing.JButton;
 import javax.swing.JDialog;
-import javax.swing.JFrame;
 import javax.swing.JPanel;
 
 import jd.config.Configuration;
@@ -46,7 +46,7 @@ public class ConfigurationPopup extends JDialog implements ActionListener {
  * @param uiinterface
  * @param configuration
  */
-    public ConfigurationPopup(JFrame parent, ConfigPanel panel,JPanel jpanel, UIInterface uiinterface, Configuration configuration) {
+    public ConfigurationPopup(Frame parent, ConfigPanel panel,JPanel jpanel, UIInterface uiinterface, Configuration configuration) {
         super(parent);
         this.uiinterface = uiinterface;
         setTitle("Konfiguration");

@@ -194,7 +194,7 @@ return table.getSelectedRow();
         topPanel.add(cboTrigger);
         panel.add(topPanel, BorderLayout.NORTH);
        if(config!=null) panel.add(config, BorderLayout.CENTER);
-        ConfigurationPopup pop = new ConfigurationPopup(new JFrame(), config, panel, uiinterface, configuration);
+        ConfigurationPopup pop = new ConfigurationPopup(JDUtilities.getParentFrame(this), config, panel, uiinterface, configuration);
         pop.setLocation(JDUtilities.getCenterOfComponent(this, pop));
         pop.setVisible(true);
     }

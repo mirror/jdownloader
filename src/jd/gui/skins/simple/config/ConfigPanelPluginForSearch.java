@@ -149,7 +149,7 @@ public class ConfigPanelPluginForSearch extends ConfigPanel implements ActionLis
         JPanel topPanel = new JPanel();
         panel.add(topPanel, BorderLayout.NORTH);
         panel.add(config, BorderLayout.CENTER);
-        ConfigurationPopup pop = new ConfigurationPopup(new JFrame(), config, panel, uiinterface, configuration);
+        ConfigurationPopup pop = new ConfigurationPopup(JDUtilities.getParentFrame(this), config, panel, uiinterface, configuration);
         pop.setLocation(JDUtilities.getCenterOfComponent(this, pop));
         pop.setVisible(true);
     }

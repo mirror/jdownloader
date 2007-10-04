@@ -3,6 +3,7 @@ package jd.utils;
 import java.awt.Component;
 import java.awt.Container;
 import java.awt.Dimension;
+import java.awt.Frame;
 import java.awt.GridBagConstraints;
 import java.awt.Image;
 import java.awt.Insets;
@@ -172,6 +173,23 @@ public class JDUtilities {
         }
         addToGridBag(cont, comp, x, y, width, height, weightX, weightY, insets, 0, 0, fill, anchor);
     }
+    /**
+     * Geht eine Komponente so lange durch (getParent), bis ein Objekt vom Typ Frame gefunden wird,
+     * oder es keine übergeordnete Komponente gibt
+     *
+     * @param comp Komponente, dessen Frame Objekt gesucht wird
+     * @return Ein Frame Objekt, das die Komponente beinhält oder null, falls keins gefunden wird
+     */
+    public static Frame getParentFrame(Component comp){
+        if(comp == null)
+            return null;
+        while(comp != null && !(comp instanceof Frame))
+            comp = comp.getParent();
+        if(comp instanceof Frame)
+            return (Frame)comp;
+        else
+            return null;
+    }    
     /**
      * parsed den JD_REVISION String auf
      * 

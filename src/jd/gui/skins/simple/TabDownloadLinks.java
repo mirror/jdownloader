@@ -155,12 +155,10 @@ public class TabDownloadLinks extends JPanel implements PluginListener, ControlL
      * Entfernt die aktuell selektierten Links
      */
     public void removeSelectedLinks() {
-        if(parent.showConfirmDialog("Ausgwählte Links wirklich entfernen?")){
-            Vector<DownloadLink> linksToDelete = getSelectedObjects();
-            allLinks.removeAll(linksToDelete);
-            table.getSelectionModel().clearSelection();
-            fireTableChanged();
-        }
+        Vector<DownloadLink> linksToDelete = getSelectedObjects();
+        allLinks.removeAll(linksToDelete);
+        table.getSelectionModel().clearSelection();
+        fireTableChanged();
     }
     /**
      * Liefert alle selektierten Links zurück
