@@ -249,9 +249,11 @@ public class TabDownloadLinks extends JPanel implements PluginListener, ControlL
     /**
      * Hiermit wird die Tabelle aktualisiert Die Markierte reihe wird nach dem
      * ändern wieder neu gesetzt
+     * TODO: Selection verwaltung
      */
     public void fireTableChanged() {
         Vector<DownloadLink> selectedDownloadLinks = getSelectedObjects();
+       
         table.tableChanged(new TableModelEvent(table.getModel()));
         setSelectedDownloadLinks(selectedDownloadLinks);
     }

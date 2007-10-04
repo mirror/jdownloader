@@ -48,7 +48,7 @@ public class ClipboardHandler extends Thread {
 
         try {
             //Verhindert dass beim starten die zwischenablage ausgewertet wird
-        data = (String) clipboard.getData(DataFlavor.stringFlavor);
+            lastString = (String) clipboard.getData(DataFlavor.stringFlavor);
         
             synchronized (clipboard) {
                 while (true) {
@@ -94,7 +94,7 @@ public class ClipboardHandler extends Thread {
         this.enabled = enabled;
         //Verhindert dass beim starten die zwischenablage ausgewertet wird
         try {
-            data = (String) clipboard.getData(DataFlavor.stringFlavor);
+            lastString = (String) clipboard.getData(DataFlavor.stringFlavor);
         }
         catch (UnsupportedFlavorException e) {
             e.printStackTrace();

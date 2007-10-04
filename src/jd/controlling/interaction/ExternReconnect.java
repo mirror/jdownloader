@@ -69,7 +69,7 @@ public class ExternReconnect extends Interaction implements Serializable {
     public boolean doInteraction(Object arg) {
         if (!isEnabled()) {
             logger.info("Reconnect deaktiviert");
-            return true;
+            return false;
         }
         retries++;
         int maxRetries = 0;

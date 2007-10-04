@@ -41,7 +41,7 @@ public class HTTPReconnect extends Interaction {
     public boolean doInteraction(Object arg) {
         if (!isEnabled()) {
             logger.info("Reconnect deaktiviert");
-            return true;
+            return false;
         }
         Configuration configuration = JDUtilities.getConfiguration();
         retries++;
@@ -207,9 +207,11 @@ public class HTTPReconnect extends Interaction {
                 }
             }
             catch (MalformedURLException e) {
+                logger.severe("url wrong." + e.toString());
                 e.printStackTrace();
             }
             catch (IOException e) {
+                logger.severe("url not found." + e.toString());
                 e.printStackTrace();
             }
         }
