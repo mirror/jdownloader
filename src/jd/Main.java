@@ -3,8 +3,6 @@ package jd;
 import java.awt.Toolkit;
 import java.io.File;
 import java.net.CookieHandler;
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.util.Iterator;
 import java.util.logging.Level;
 import java.util.logging.Logger;

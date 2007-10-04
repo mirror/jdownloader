@@ -79,7 +79,8 @@ public interface UIInterface {
     
     /**
      * Zeigt einen MessageDialog an
-     * @param string
+     * @param string Nachricht, die angezeigt werden soll
+     * @return Wahr, falls diese Anfrage bestätigt wurde, andernfalls falsch
      */
     public boolean showConfirmDialog(String string);
     /**
