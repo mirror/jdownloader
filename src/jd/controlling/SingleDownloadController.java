@@ -17,29 +17,23 @@ import jd.utils.JDUtilities;
  * @author astaldo/coalado
  */
 public class SingleDownloadController extends ControlMulticaster {
-
     /**
      * Das Plugin, das den aktuellen Download steuert
      */
     private PluginForHost currentPlugin;
-
     /**
      * Wurde der Download abgebrochen?
      */
     private boolean       aborted = false;
-
     /**
      * Der Logger
      */
     private Logger        logger  = Plugin.getLogger();
-
     /**
      * Das übergeordnete Fenster
      */
     private JDController  controller;
-
     private DownloadLink  downloadLink;
-
     /**
      * Erstellt einen Thread zum Start des Downloadvorganges
      * 
@@ -50,33 +44,25 @@ public class SingleDownloadController extends ControlMulticaster {
         super("JD-StartDownloads");
         this.downloadLink = dlink;
         this.controller = controller;
-
     }
-
     /**
      * Bricht den Downloadvorgang ab.
      */
     public void abortDownload() {
         downloadLink.setStatusText("termination...");
         aborted = true;
-
         if (currentPlugin != null) currentPlugin.abort();
-
     }
-
     /*
      * (non-Javadoc)
      * 
      * @see java.lang.Thread#run()
      */
     public void run() {
-
         /**
          * Das Plugin, das den aktuellen Download steuert
          */
-
         PluginForHost plugin;
-
         logger.info("working on " + downloadLink.getName());
         currentPlugin = plugin = (PluginForHost) downloadLink.getPlugin();
         plugin.resetPlugin();
@@ -87,22 +73,18 @@ public class SingleDownloadController extends ControlMulticaster {
         PluginStep step = plugin.doNextStep(downloadLink);
         // Hier werden alle einzelnen Schritte des Plugins durchgegangen,
         // bis entweder null zurückgegeben wird oder ein Fehler auftritt
-
         fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_PLUGIN_HOST_ACTIVE, plugin));
         fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SINGLE_DOWNLOAD_STARTS, downloadLink));
         while (!aborted && step != null && step.getStatus() != PluginStep.STATUS_ERROR) {
-
             logger.info("Current Step:  " + step);
             downloadLink.setStatusText("running...");
             switch (step.getStep()) {
                 case PluginStep.STEP_PENDING:
-
                     long wait = (Long) step.getParameter();
                     logger.info("Erzwungene Wartezeit: " + wait);
                     while (wait > 0 && !aborted) {
                         downloadLink.setStatusText("Erzwungene Wartezeit: " + JDUtilities.formatSeconds((int) (wait / 1000)));
                         fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SINGLE_DOWNLOAD_CHANGED, downloadLink));
-
                         try {
                             Thread.sleep(1000);
                         }
@@ -110,7 +92,6 @@ public class SingleDownloadController extends ControlMulticaster {
                         }
                         wait -= 1000;
                     }
-
                     break;
                 case PluginStep.STEP_GET_CAPTCHA_FILE:
                     downloadLink.setStatusText("Captcha");
@@ -135,7 +116,6 @@ public class SingleDownloadController extends ControlMulticaster {
                             step.setParameter(null);
                             break;
                         }
-
                         // führt die erste Interaction zum Captcha
                         // decoden aus.
                         if (!Interaction.handleInteraction((Interaction.INTERACTION_DOWNLOAD_CAPTCHA), downloadLink, 0)) {
@@ -161,13 +141,10 @@ public class SingleDownloadController extends ControlMulticaster {
                                 step.setStatus(PluginStep.STATUS_DONE);
                             }
                         }
-
                     }
                     break;
-
             }
             if (aborted) {
-
                 break;
             }
             if (step != null && downloadLink != null && plugin != null && plugin.nextStep(step) != null) {
@@ -178,13 +155,11 @@ public class SingleDownloadController extends ControlMulticaster {
             if (step.getStatus() == PluginStep.STATUS_ERROR) {
                 break;
             }
-
             step = plugin.doNextStep(downloadLink);
         }
         // Der Download ist an dieser Stelle entweder Beendet oder
         // Abgebrochen. Mögliche Ursachen können nun untersucht werden um
         // den download eventl neu zu starten
-
         if (aborted) {
             downloadLink.setStatusText("Abgebrochen");
             plugin.abort();
@@ -196,12 +171,9 @@ public class SingleDownloadController extends ControlMulticaster {
             }
             catch (InterruptedException e) {
             }
-
             downloadLink.setInProgress(false);
             fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_PLUGIN_HOST_INACTIVE, plugin));
-
             return;
-
         }
         if (step != null && step.getStatus() == PluginStep.STATUS_ERROR) {
             switch (downloadLink.getStatus()) {
@@ -240,23 +212,17 @@ public class SingleDownloadController extends ControlMulticaster {
                     break;
                 default:
                     this.onErrorUnknown(downloadLink, plugin, step);
-
             }
-
         }
         else {
             downloadLink.setStatusText("Fertig");
-       
             downloadLink.setInProgress(false);
             fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SINGLE_DOWNLOAD_CHANGED, downloadLink));
             Interaction.handleInteraction((Interaction.INTERACTION_SINGLE_DOWNLOAD_FINISHED), downloadLink);
-
         }
         fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_PLUGIN_HOST_INACTIVE, plugin));
         fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SINGLE_DOWNLOAD_FINISHED, downloadLink));
-
     }
-
     /**
      * Wird aufgerufen wenn ein Link kurzzeitig nicht verfügbar ist. ER wird
      * deaktiviert und kann zu einem späteren zeitpunkt wieder aktiviert werden
@@ -274,7 +240,6 @@ public class SingleDownloadController extends ControlMulticaster {
         downloadLink.setInProgress(false);
         downloadLink.setEnabled(false);
         fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SINGLE_DOWNLOAD_CHANGED, downloadLink));
-
     }
     /**
      * Wiurd aufgerufen wenn ein Link grundsätzlich online ist, aber der Server mommentan zu sehr ausgelastet ist
@@ -284,13 +249,12 @@ public class SingleDownloadController extends ControlMulticaster {
      */
     private void onErrorToManyUsers(DownloadLink downloadLink, PluginForHost plugin, PluginStep step) {
         logger.severe("Error occurred: Temporarily to many users");
-         long milliSeconds = (Long) step.getParameter();
-         downloadLink.setEndOfWaittime(System.currentTimeMillis() +     milliSeconds);
+        long milliSeconds = (Long) step.getParameter();
+        downloadLink.setEndOfWaittime(System.currentTimeMillis() + milliSeconds);
         downloadLink.setStatusText("ausgelastet");
         downloadLink.setInProgress(false);
         downloadLink.setEnabled(false);
         fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SINGLE_DOWNLOAD_CHANGED, downloadLink));
-
     }
     /**
      * Wird aufgerufen wenn ein Loginfehler bei premiumaccounts auftritt. Die
@@ -308,9 +272,7 @@ public class SingleDownloadController extends ControlMulticaster {
         downloadLink.setInProgress(false);
         downloadLink.setStatus(DownloadLink.STATUS_TODO);
         downloadLink.setEndOfWaittime(0);
-
     }
-
     /**
      * Fehlerfunktion für einen UNbekannten premiumfehler.
      * Plugin-premium-support wird deaktiviert und link wird erneut versucht
@@ -325,9 +287,7 @@ public class SingleDownloadController extends ControlMulticaster {
         downloadLink.setInProgress(false);
         downloadLink.setStatus(DownloadLink.STATUS_TODO);
         downloadLink.setEndOfWaittime(0);
-
     }
-
     /**
      * Wird aufgerufen wenn Das Plugin eine Immer gleiche Wartezeit meldet. z.B.
      * bei unbekannter Wartezeit
@@ -352,14 +312,11 @@ public class SingleDownloadController extends ControlMulticaster {
         // Download Zeit. Versuch durch eine Interaction einen reconnect
         // zu machen. wenn das klappt nochmal versuchen
         if (Interaction.handleInteraction((Interaction.INTERACTION_NEED_RECONNECT), this) || Interaction.handleInteraction((Interaction.INTERACTION_DOWNLOAD_WAITTIME), this)) {
-
             downloadLink.setStatus(DownloadLink.STATUS_TODO);
             downloadLink.setEndOfWaittime(0);
         }
         downloadLink.setStatusText("");
-
     }
-
     /**
      * Wird aufgerufenw ennd as Plugin einen filenot found Fehler meldet
      * 
@@ -371,9 +328,7 @@ public class SingleDownloadController extends ControlMulticaster {
         downloadLink.setStatusText("File Not Found");
         downloadLink.setInProgress(false);
         fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SINGLE_DOWNLOAD_CHANGED, downloadLink));
-
     }
-
     /**
      * Wird bei einem File abused Fehler aufgerufen
      * 
@@ -385,9 +340,7 @@ public class SingleDownloadController extends ControlMulticaster {
         downloadLink.setStatusText("File Abused");
         downloadLink.setInProgress(false);
         fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SINGLE_DOWNLOAD_CHANGED, downloadLink));
-
     }
-
     /**
      * Wird aufgerufen wenn das Captchabild nicht geladen werden konnte
      * 
@@ -399,9 +352,7 @@ public class SingleDownloadController extends ControlMulticaster {
         downloadLink.setStatusText("Captcha Fehler");
         downloadLink.setInProgress(false);
         fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SINGLE_DOWNLOAD_CHANGED, downloadLink));
-
     }
-
     /**
      * Diese Funktion wird aufgerufen wenn der Download abgebrochen wurde und
      * wiederholt werden soll
@@ -411,13 +362,10 @@ public class SingleDownloadController extends ControlMulticaster {
      * @param step
      */
     private void onErrorRetry(DownloadLink downloadLink, PluginForHost plugin, PluginStep step) {
-
         if (step.getParameter() != null) {
             logger.info("step.getParameter() " + step.getParameter());
             long milliSeconds = (Long) step.getParameter();
-
             downloadLink.setStatusText("Warten: " + JDUtilities.formatSeconds((int) (milliSeconds / 1000)) + " sek.");
-
             fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SINGLE_DOWNLOAD_CHANGED, null));
             try {
                 Thread.sleep(milliSeconds);
@@ -425,13 +373,10 @@ public class SingleDownloadController extends ControlMulticaster {
             catch (InterruptedException e) {
             }
         }
-
         downloadLink.setInProgress(false);
         downloadLink.setStatus(DownloadLink.STATUS_TODO);
         downloadLink.setEndOfWaittime(0);
-
     }
-
     /**
      * Diese Funktion wird aufgerufen wenn ein Download durch einen unbekannten
      * fehler abgebrochen wurde
@@ -446,9 +391,7 @@ public class SingleDownloadController extends ControlMulticaster {
         logger.severe("Error occurred while downloading file");
         downloadLink.setInProgress(false);
         Interaction.handleInteraction(Interaction.INTERACTION_DOWNLOAD_FAILED, this);
-
     }
-
     /**
      * Diese Funktion wird aufgerufen sobald ein Download wegen einer
      * Botdetection abgebrochen wird
@@ -463,15 +406,12 @@ public class SingleDownloadController extends ControlMulticaster {
         downloadLink.setInProgress(false);
         downloadLink.setStatusText("Bot erkannt/Reconnect ");
         fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SINGLE_DOWNLOAD_CHANGED, downloadLink));
-
         if (Interaction.handleInteraction((Interaction.INTERACTION_NEED_RECONNECT), this) || Interaction.handleInteraction((Interaction.INTERACTION_DOWNLOAD_WAITTIME), this)) {
-
             downloadLink.setStatus(DownloadLink.STATUS_TODO);
             downloadLink.setEndOfWaittime(0);
         }
         logger.severe("Bot detected");
     }
-
     /**
      * Diese Funktion wird aufgerufen wenn ein Download wegen eines
      * captchafehlersabgebrochen wird
@@ -486,13 +426,9 @@ public class SingleDownloadController extends ControlMulticaster {
         downloadLink.setStatusText("Code falsch");
         downloadLink.setInProgress(false);
         fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SINGLE_DOWNLOAD_CHANGED, downloadLink));
-
         downloadLink.setStatus(DownloadLink.STATUS_TODO);
-
         downloadLink.setEndOfWaittime(0);
-
     }
-
     /**
      * Diese Funktion wird aufgerufen wenn Ein Download mit einem Waittimefehler
      * abgebrochen wird
@@ -511,15 +447,12 @@ public class SingleDownloadController extends ControlMulticaster {
         // Download Zeit. Versuch durch eine Interaction einen reconnect
         // zu machen. wenn das klappt nochmal versuchen
         if (Interaction.handleInteraction((Interaction.INTERACTION_NEED_RECONNECT), this) || Interaction.handleInteraction((Interaction.INTERACTION_DOWNLOAD_WAITTIME), this)) {
-
             downloadLink.setStatus(DownloadLink.STATUS_TODO);
             downloadLink.setEndOfWaittime(0);
         }
         downloadLink.setStatusText("");
     }
-
     public DownloadLink getDownloadLink() {
         return this.downloadLink;
     }
-
 }

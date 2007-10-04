@@ -6,19 +6,20 @@ import java.util.Vector;
 import jd.event.ControlEvent;
 import jd.event.ControlListener;
 import jd.plugins.event.PluginEvent;
+
 /**
  * Diese Klasse  
  * 
  * @author astaldo
  */
-public class ControlMulticaster extends Thread{
+public class ControlMulticaster extends Thread {
     /**
      * Hiermit wird der Eventmechanismus realisiert. Alle hier eingetragenen Listener
      * werden benachrichtigt, wenn mittels {@link #firePluginEvent(PluginEvent)} ein
      * Event losgeschickt wird.
      */
     private Vector<ControlListener> controlListener = null;
-    protected ControlMulticaster(String name){
+    protected ControlMulticaster(String name) {
         super(name);
         controlListener = new Vector<ControlListener>();
     }
@@ -28,9 +29,9 @@ public class ControlMulticaster extends Thread{
      * @param listener Ein neuer Listener
      */
     public void addControlListener(ControlListener listener) {
-       if(controlListener.indexOf(listener)==-1){
-           controlListener.add(listener);
-       }
+        if (controlListener.indexOf(listener) == -1) {
+            controlListener.add(listener);
+        }
     }
     /**
      * Emtfernt einen Listener
@@ -46,10 +47,8 @@ public class ControlMulticaster extends Thread{
      */
     public void fireControlEvent(ControlEvent controlEvent) {
         Iterator<ControlListener> iterator = controlListener.iterator();
-       while(iterator.hasNext()) {
-           
-            ((ControlListener)iterator.next()).controlEvent(controlEvent);
+        while (iterator.hasNext()) {
+            ((ControlListener) iterator.next()).controlEvent(controlEvent);
         }
     }
-
 }

@@ -80,6 +80,10 @@ public class ExternReconnect extends Interaction implements Serializable {
 
     @Override
     public boolean doInteraction(Object arg) {
+        if(!isEnabled()){
+            logger.info("Reconnect deaktiviert");
+            return true;
+        }
         retries++;
         int maxRetries = 0;
         if (JDUtilities.getConfiguration().getProperty(PROPERTY_IP_RETRIES) != null) maxRetries = Integer.parseInt((String) JDUtilities.getConfiguration().getProperty(PROPERTY_IP_RETRIES));
