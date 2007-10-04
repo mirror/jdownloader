@@ -39,7 +39,7 @@ public class HTTPReconnect extends Interaction {
     private int                      retries          = 0;
     @Override
     public boolean doInteraction(Object arg) {
-        if(!isEnabled()){
+        if (!isEnabled()) {
             logger.info("Reconnect deaktiviert");
             return true;
         }
@@ -130,6 +130,10 @@ public class HTTPReconnect extends Interaction {
         // IP check
         ipAfter = getIPAddress(routerPage, routerData);
         logger.fine("IP after reconnect:" + ipAfter);
+        if (ipBefore == null && ipAfter == null) {
+            logger.info("Es konnte keine IP ausgelesen werden.");
+            return true;
+        }
         if (ipBefore == null || ipAfter == null || ipBefore.equals(ipAfter)) {
             logger.severe("IP address did not change");
             if (retries < HTTPReconnect.MAX_RETRIES && (retries < configuration.getReconnectRetries() || configuration.getReconnectRetries() <= 0)) {
@@ -150,7 +154,6 @@ public class HTTPReconnect extends Interaction {
             if (isAbsolute(routerData.getIpAddressSite())) {
                 urlForIPAddress = routerData.getIpAddressSite();
             }
-
             else {
                 urlForIPAddress = routerPage + routerData.getIpAddressSite();
             }
@@ -170,11 +173,10 @@ public class HTTPReconnect extends Interaction {
     public String getInteractionName() {
         return NAME;
     }
-
     /**
      * @author coalado
      * @param url
-     * @return Prüft ob enie url Absolut ist.
+     * @return Prüft ob eine URL absolut ist.
      */
     private boolean isAbsolute(String url) {
         if (url == null) return false;
@@ -255,10 +257,8 @@ public class HTTPReconnect extends Interaction {
     }
     @Override
     public void initConfig() {}
-
     @Override
     public void resetInteraction() {
-        retries          = 0;
-        
+        retries = 0;
     }
 }
