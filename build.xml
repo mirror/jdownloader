@@ -10,6 +10,7 @@
     </target>
     
     <target name="jar">
+        <!-- jDownloader -->
         <manifest file="Manifest.MF">
             <attribute name="Created-By" value="astaldo"/>
             <attribute name="Main-Class" value="jd.Main"/>
@@ -20,6 +21,7 @@
                 <exclude name = "jd/captcha/**"/>
                 <exclude name = "jd/plugins/decrypt/**"/>
                 <exclude name = "jd/plugins/host/**"/>
+                <exclude name = "jd/plugins/container/**"/>
             </fileset>
             <fileset dir="${res}">
                 <include name = "img/**"/>
@@ -28,15 +30,20 @@
             </fileset>
         </jar>
         <delete file="Manifest.MF" failonerror="false" />
-        
+    	
+        <!-- Plugins -->
         <jar jarfile="${dist}/JDownloaderPlugins.jar">
             <fileset dir="${cls}">
                 <include name = "jd/plugins/decrypt/**"/>
                 <include name = "jd/plugins/host/**"/>
             </fileset>
-            <fileset dir="${res}" includes="META-INF/services/*"/>
+            <fileset dir="${res}">
+                <include name="META-INF/services/*"/>
+                <exclude name="META-INF/services/jd.plugins.PluginForContainer"/>
+            </fileset> 
         </jar>
-        
+
+    	<!-- AntiCaptcha -->
         <manifest file="Manifest.MF">
             <attribute name="Created-By" value="coalado"/>
             <attribute name="Main-Class" value="jd.captcha.JACTrain"/>
@@ -53,12 +60,24 @@
         </jar>
         <delete file="Manifest.MF" failonerror="false" />
 
+    	<!-- Container -->
+        <jar jarfile="${dist}/JDownloaderContainer.jar">
+            <fileset dir="${cls}">
+                <include name = "jd/plugins/Plugin.class"/>
+                <include name = "jd/plugins/PluginForDecrypt.class"/>
+                <include name = "jd/plugins/PluginForContainer.class"/>
+                <include name = "jd/plugins/container/**"/>
+            	<include name = "META-INF/services/jd.plugins.PluginForContainer"/>
+            </fileset>
+        </jar>
+
     </target>
     <target name="sign">
-        <signjar jar="${dist}/JDownloader.jar"         keystore="jDownloader.keystore" alias="jDownloader" storepass="jDownloader" />
-        <signjar jar="${dist}/JDownloaderPlugins.jar"  keystore="jDownloader.keystore" alias="jDownloader" storepass="jDownloader" />
-        <signjar jar="${dist}/JAntiCaptcha.jar"        keystore="jDownloader.keystore" alias="jDownloader" storepass="jDownloader" />
-        <signjar jar="${dist}/JAntiCaptchaMethods.jar" keystore="jDownloader.keystore" alias="jDownloader" storepass="jDownloader" />
+        <signjar jar="${dist}/JDownloader.jar"          keystore="jDownloader.keystore" alias="jDownloader" storepass="jDownloader" />
+        <signjar jar="${dist}/JDownloaderPlugins.jar"   keystore="jDownloader.keystore" alias="jDownloader" storepass="jDownloader" />
+        <signjar jar="${dist}/JAntiCaptcha.jar"         keystore="jDownloader.keystore" alias="jDownloader" storepass="jDownloader" />
+        <signjar jar="${dist}/JAntiCaptchaMethods.jar"  keystore="jDownloader.keystore" alias="jDownloader" storepass="jDownloader" />
+        <signjar jar="${dist}/JDownloaderContainer.jar" keystore="jDownloader.keystore" alias="jDownloader" storepass="jDownloader" />
     </target>
     
     <target name="eclipseBuild" depends="jar,sign">       </target>

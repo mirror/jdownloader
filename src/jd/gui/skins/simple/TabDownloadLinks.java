@@ -175,7 +175,6 @@ public class TabDownloadLinks extends JPanel implements PluginListener, ControlL
     }
     public int[] getIndexes(Vector<DownloadLink> selectedLinks) {
         int rows[] = new int[selectedLinks.size()];
-        ;
         Vector<Integer> indexes = new Vector<Integer>();
         Iterator iterator = selectedLinks.iterator();
         while (iterator.hasNext()) {
@@ -203,9 +202,9 @@ public class TabDownloadLinks extends JPanel implements PluginListener, ControlL
      */
     public void moveSelectedItems(int direction) {
         Vector<DownloadLink> selectedLinks = getSelectedObjects();
+        int selectedRows[] = table.getSelectedRows();;
         table.getSelectionModel().clearSelection();
         DownloadLink tempLink;
-        Iterator<DownloadLink> iterator;
         switch (direction) {
             case JDAction.ITEMS_MOVE_TOP:
                 allLinks.removeAll(selectedLinks);
@@ -216,23 +215,21 @@ public class TabDownloadLinks extends JPanel implements PluginListener, ControlL
                 allLinks.addAll(allLinks.size(), selectedLinks);
                 break;
             case JDAction.ITEMS_MOVE_UP:
-                iterator = selectedLinks.iterator();
-                while (iterator.hasNext()) {
-                    int index = allLinks.indexOf(iterator.next());
-                    if (index == 0) break;
-                    tempLink = allLinks.get(index - 1);
-                    allLinks.set(index - 1, allLinks.get(index));
-                    allLinks.set(index, tempLink);
+                if(selectedRows[0]>0){
+                    for(int i=0;i<selectedRows.length;i++){
+                        tempLink = allLinks.get(selectedRows[i] - 1);
+                        allLinks.set(selectedRows[i] - 1, allLinks.get(selectedRows[i]));
+                        allLinks.set(selectedRows[i], tempLink);
+                    }
                 }
                 break;
             case JDAction.ITEMS_MOVE_DOWN:
-                iterator = selectedLinks.iterator();
-                while (iterator.hasNext()) {
-                    int index = allLinks.indexOf(iterator.next());
-                    if (index == allLinks.size() - 1) break;
-                    tempLink = allLinks.get(index + 1);
-                    allLinks.set(index + 1, allLinks.get(index));
-                    allLinks.set(index, tempLink);
+                if(selectedRows[selectedRows.length-1]+1<allLinks.size()){
+                    for(int i=selectedRows.length-1;i>=0;i--){
+                        tempLink = allLinks.get(selectedRows[i] + 1);
+                        allLinks.set(selectedRows[i] + 1, allLinks.get(selectedRows[i]));
+                        allLinks.set(selectedRows[i], tempLink);
+                    }
                 }
                 break;
         }
