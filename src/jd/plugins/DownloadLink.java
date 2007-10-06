@@ -578,6 +578,13 @@ public class DownloadLink implements Serializable {
     public long getRemainingWaittime() {
         return Math.max(0, this.mustWaitTil - System.currentTimeMillis());
     }
+    /**
+     * Gibt zurück ob dieser download gerade auf einen reconnect wartet
+     * @return true/False
+     */
+    public boolean waitsForReconnect(){
+        return getRemainingWaittime()>0;
+    }
 
     /**
      * Speichert das zuletzt geladene captchabild für diesen link

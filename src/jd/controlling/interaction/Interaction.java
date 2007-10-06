@@ -114,7 +114,7 @@ public abstract class Interaction extends Property implements Serializable {
     protected transient ConfigContainer       config;
     public final static InteractionTrigger    INTERACTION_AFTER_RECONNECT           = new InteractionTrigger(10, "Nach einem Reconnect", "inaktiv");
     public Interaction() {
-        config = new ConfigContainer(this);
+        config = null;
         controlListener = new Vector<ControlListener>();
         this.setTrigger(Interaction.INTERACTION_NO_EVENT);
     }
@@ -333,17 +333,20 @@ public abstract class Interaction extends Property implements Serializable {
      * @return Liste mit allen Interactionen
      */
     public static Interaction[] getInteractionList() {
-        return new Interaction[] { new DummyInteraction(), new ExternExecute(), new ExternReconnect(), new HTTPReconnect(), new WebUpdate(), new JAntiCaptcha(), new ManuelCaptcha() };
+        return new Interaction[] { new HTTPSendReconnect(),new DummyInteraction(), new ExternExecute(), new ExternReconnect(), new HTTPReconnect(), new WebUpdate(), new JAntiCaptcha(), new ManuelCaptcha() };
     }
     /**
      * Da die Knfigurationswünsche nicht gespeichert werden, muss der ConfigContainer immer wieder aufs neue Initialisiert werden. Alle Interactionen müssend azu die initConifg  Methode implementieren 
      */
     public abstract void initConfig();
     public ConfigContainer getConfig() {
-        if (config == null) {
+        logger.info(config+" # ");
+       if (config == null) {
             config = new ConfigContainer(this);
             initConfig();
-        }
+       }
+        
+      
         return config;
     }
     public void setConfig(ConfigContainer config) {

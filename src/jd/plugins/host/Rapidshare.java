@@ -126,6 +126,7 @@ public class Rapidshare extends PluginForHost {
     private static HashMap<String, String> serverMap                        = new HashMap<String, String>();
     private static String[]                serverList1;
     private String                         finalCookie;
+    private static String premiumCookie=null;
     private String[]                       serverList2;
 
     @Override
@@ -449,7 +450,7 @@ public class Rapidshare extends PluginForHost {
 
                         }
                         this.finalCookie = cookie;
-
+                        premiumCookie=cookie;
                         post = "l=" + fields2.get("l") + "&p=" + fields2.get("p").replaceAll("\\%", "%25") + "&dl.start=Download+" + fields.get("filename").replaceAll(" ", "+");
                         if (telekom) {
                             endServerAbb = "dt";

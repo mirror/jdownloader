@@ -157,7 +157,7 @@ public class HTTPReconnect extends Interaction {
             else {
                 urlForIPAddress = routerPage + routerData.getIpAddressSite();
             }
-            RequestInfo requestInfo = Plugin.getRequest(new URL(urlForIPAddress));
+            RequestInfo requestInfo = Plugin.getRequest(new URL(urlForIPAddress),null,null,true);
             return routerData.getIPAdress(requestInfo.getHtmlCode());
         }
         catch (IOException e1) {

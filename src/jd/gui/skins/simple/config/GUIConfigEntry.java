@@ -15,8 +15,10 @@ import javax.swing.JFileChooser;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JRadioButton;
+import javax.swing.JScrollPane;
 import javax.swing.JSeparator;
 import javax.swing.JSpinner;
+import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.SpinnerNumberModel;
 import javax.swing.SwingConstants;
@@ -85,6 +87,11 @@ public class GUIConfigEntry extends JPanel {
                 this.add(new JLabel(configEntry.getLabel()), BorderLayout.CENTER);
                 input[0] = new JTextField(50);
                 this.add(input[0], BorderLayout.EAST);
+                break;
+            case ConfigContainer.TYPE_TEXTAREA:
+                this.add(new JLabel(configEntry.getLabel()), BorderLayout.BEFORE_FIRST_LINE);
+                input[0] = new JTextArea(20,50);
+                this.add(new JScrollPane(input[0]), BorderLayout.CENTER);
                 break;
             case ConfigContainer.TYPE_CHECKBOX:
 
@@ -190,6 +197,10 @@ public class GUIConfigEntry extends JPanel {
             case ConfigContainer.TYPE_TEXTFIELD:
                 ((JTextField) input[0]).setText(text == null ? "" : text.toString());
                 break;
+                
+            case ConfigContainer.TYPE_TEXTAREA:
+                ((JTextArea) input[0]).setText(text == null ? "" : text.toString());
+                break;
             case ConfigContainer.TYPE_CHECKBOX:
                 if (text == null) text = false;
                 ((JCheckBox) input[0]).setSelected((Boolean) text);
@@ -244,6 +255,8 @@ public class GUIConfigEntry extends JPanel {
         switch (configEntry.getType()) {
             case ConfigContainer.TYPE_TEXTFIELD:
                 return ((JTextField) input[0]).getText();
+            case ConfigContainer.TYPE_TEXTAREA:
+                return ((JTextArea) input[0]).getText();
             case ConfigContainer.TYPE_CHECKBOX:
                 return ((JCheckBox) input[0]).isSelected();
             case ConfigContainer.TYPE_BUTTON:

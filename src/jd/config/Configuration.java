@@ -75,6 +75,9 @@ public class Configuration extends Property implements Serializable {
      * Parameter für den key unter dem der zugehöroge Wert abgespeichert werden soll
      */
     public static final String      PARAM_DISABLE_RECONNECT            = "DISABLE_RECONNECT";
+    public static final String PARAM_HTTPSEND_USER = "HTTPSEND_USER";
+    public static final String PARAM_HTTPSEND_PASS = "HTTPSEND_PASS";
+    public static final String PARAM_HTTPSEND_REQUESTS = "HTTPSEND_REQUESTS";
     /**
      * Hier wird das Downloadverzeichnis gespeichert
      */

@@ -446,7 +446,10 @@ public class SingleDownloadController extends ControlMulticaster {
         fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SINGLE_DOWNLOAD_CHANGED, downloadLink));
         // Download Zeit. Versuch durch eine Interaction einen reconnect
         // zu machen. wenn das klappt nochmal versuchen
-        if (Interaction.handleInteraction((Interaction.INTERACTION_NEED_RECONNECT), this) || Interaction.handleInteraction((Interaction.INTERACTION_DOWNLOAD_WAITTIME), this)) {
+        boolean a=Interaction.handleInteraction((Interaction.INTERACTION_NEED_RECONNECT), this);
+        
+        boolean b=Interaction.handleInteraction((Interaction.INTERACTION_DOWNLOAD_WAITTIME), this);
+        if ( a||b ) {
             downloadLink.setStatus(DownloadLink.STATUS_TODO);
             downloadLink.setEndOfWaittime(0);
         }

@@ -34,8 +34,11 @@ public class DownloadWatchDog extends Thread implements PluginListener, ControlL
      * Downloadlinks die gerade aktiv sind
      */
     private Vector<SingleDownloadController> activeLinks = new Vector<SingleDownloadController>();
+
     private boolean                          aborted     = false;
+
     private JDController                     controller;
+
     private int                              interactions;
 
     public DownloadWatchDog(JDController controller) {
@@ -290,10 +293,10 @@ public class DownloadWatchDog extends Thread implements PluginListener, ControlL
      * erfolgreich abgeborhcen wurden.
      */
     void abort() {
-     
+
         for (int i = 0; i < this.activeLinks.size(); i++) {
             activeLinks.get(i).abortDownload();
-         
+
         }
         deligateFireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SINGLE_DOWNLOAD_CHANGED, null));
         boolean check = true;
@@ -305,7 +308,7 @@ public class DownloadWatchDog extends Thread implements PluginListener, ControlL
                     break;
                 }
             }
-            if(check)break;
+            if (check) break;
             try {
                 Thread.sleep(100);
             }
@@ -314,7 +317,7 @@ public class DownloadWatchDog extends Thread implements PluginListener, ControlL
         }
         this.aborted = true;
         this.clearDownloadListStatus();
-        
+
     }
 
     /**
@@ -355,12 +358,27 @@ public class DownloadWatchDog extends Thread implements PluginListener, ControlL
 
     public void controlEvent(ControlEvent event) {
 
+        Vector<DownloadLink> links;
         switch (event.getID()) {
 
             case ControlEvent.CONTROL_SINGLE_DOWNLOAD_FINISHED:
                 if (removeDownloadLinkFromActiveList((DownloadLink) event.getParameter())) {
 
                     logger.info("removed aktive download. left: " + this.activeLinks.size());
+                }
+                // Wenn ein Download beendet wurde wird überprüft ob gerade ein
+                // Download in der Warteschleife steckt. Wenn ja wird ein
+                // Reconnectversuch gemacht. Die handleInteraction - funktion
+                // blockiert den Aufruf wenn es noch weitere Downloads gibt die
+                // gerade laufen
+                links = getDownloadLinks();
+                for (int i = 0; i < links.size(); i++) {
+                    if (links.get(i).waitsForReconnect()) {
+                        Interaction.handleInteraction((Interaction.INTERACTION_NEED_RECONNECT), this);
+                        break;
+
+                    }
+
                 }
 
                 break;

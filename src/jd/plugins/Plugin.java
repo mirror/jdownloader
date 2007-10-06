@@ -1316,7 +1316,7 @@ public abstract class Plugin {
 
         for (Matcher r = Pattern.compile(pattern, Pattern.DOTALL).matcher(source); r.find();) {
 
-            if (id < r.groupCount()) ret.add(r.group(id).trim());
+            if (id <= r.groupCount()) ret.add(r.group(id).trim());
 
         }
 

@@ -94,6 +94,7 @@ public abstract class PluginForHost extends Plugin {
         return links;
     }
 
+
     /**
      * Holt Informationen zu einem Link. z.B. dateigröße, Dateiname,
      * verfügbarkeit etc.

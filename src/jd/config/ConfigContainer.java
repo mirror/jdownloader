@@ -29,6 +29,8 @@ public class ConfigContainer implements Serializable {
     public static final int     TYPE_TEXTFIELD  = 0;
     public static final int TYPE_BROWSEFOLDER = 9;
 
+    public static final int TYPE_TEXTAREA = 10;
+
     private Property propertyInstance;
 
     @SuppressWarnings("unused")

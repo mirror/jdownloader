@@ -271,7 +271,7 @@ return table.getSelectedRow();
                 openPopupPanel(new ConfigPanelInteractionExternCommand(configuration, uiinterface,(ExternExecute)interaction));
                 return; 
             }
-            
+            logger.info(interaction.getConfig().getEntries()+" _ ");
             if(interaction.getConfig().getEntries().size()>0){
                 openPopupPanel(new ConfigPanelInteraction(uiinterface,interaction));  
             }

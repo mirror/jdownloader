@@ -5,3 +5,5 @@ jd.plugins.host.FileFactory
 jd.plugins.host.Netloadin
 jd.plugins.host.Esnips
 jd.plugins.host.Megauploadcom
+jd.plugins.host.EgoshareCom
+jd.plugins.host.LoadTo
