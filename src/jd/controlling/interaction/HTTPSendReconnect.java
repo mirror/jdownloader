@@ -208,7 +208,7 @@ public class HTTPSendReconnect extends Interaction {
     private String getIPAddress() {
 
         try {
-
+            logger.finer("IP CHeck Via http://meineip.de");
             RequestInfo requestInfo = Plugin.getRequest(new URL("http://meineip.de"),null,null,true);
             Pattern pattern = Pattern.compile("\\Q<td><b>\\E([0-9.]*)\\Q</b></td>\\E");
             Matcher matcher = pattern.matcher(requestInfo.getHtmlCode());

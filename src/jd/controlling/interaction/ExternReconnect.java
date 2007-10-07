@@ -144,7 +144,8 @@ public class ExternReconnect extends Interaction implements Serializable {
         String ipAddressOffline = (String) JDUtilities.getConfiguration().getProperty(PROPERTY_IP_OFFLINE);
         String ipAddressRegEx = (String) JDUtilities.getConfiguration().getProperty(PROPERTY_IP_REGEX);
         try {
-            RequestInfo requestInfo = Plugin.getRequest(new URL(urlForIPAddress));
+            logger.finer("IP CHeck Via "+urlForIPAddress);
+            RequestInfo requestInfo = Plugin.getRequest(new URL(urlForIPAddress),null,null,true);
             String data = requestInfo.getHtmlCode();
             String ipAddress = null;
             if (data == null) return null;

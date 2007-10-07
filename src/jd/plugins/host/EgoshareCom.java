@@ -1,5 +1,11 @@
 package jd.plugins.host;
 
+import jd.plugins.DownloadLink;
+import jd.plugins.PluginForHost;
+import jd.plugins.PluginStep;
+import jd.plugins.RequestInfo;
+import jd.utils.JDUtilities;
+
 import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
@@ -8,19 +14,13 @@ import java.net.URLConnection;
 import java.net.URLDecoder;
 import java.util.regex.Pattern;
 
-import jd.plugins.DownloadLink;
-import jd.plugins.PluginForHost;
-import jd.plugins.PluginStep;
-import jd.plugins.RequestInfo;
-import jd.utils.JDUtilities;
-
 public class EgoshareCom extends PluginForHost {
     private static final String CODER           = "Bo0nZ";
-    private static final String HOST            = "www.egoshare.com";
+    private static final String HOST            = "egoshare.com";
     private static final String PLUGIN_NAME     = HOST;
     private static final String PLUGIN_VERSION  = "1.0.0.0";
     private static final String PLUGIN_ID       = PLUGIN_NAME + "-" + PLUGIN_VERSION;
-    private static final Pattern PAT_SUPPORTED  = getSupportPattern("http://[*]egoshare.com/[+]");
+    private static final Pattern PAT_SUPPORTED  = getSupportPattern("http://[*]egoshare.com/[+]/[+]");
                                                                     
     private String sessionID = "";
     
@@ -46,7 +46,7 @@ public class EgoshareCom extends PluginForHost {
     /*
      * Funktionen
      */
-    // muss aufgrund eines Bugs in DistributeData true zurückgeben, auch wenn die Zwischenablage nicht vom Plugin verarbeitet wird
+    // muss aufgrund eines Bugs in DistributeData true zurÃ¼ckgeben, auch wenn die Zwischenablage nicht vom Plugin verarbeitet wird
     @Override public boolean    isClipboardEnabled() { return true; }
     @Override public boolean    doBotCheck(File file) { return false; } // kein BotCheck
     @Override public String     getCoder() { return CODER; }
@@ -54,7 +54,7 @@ public class EgoshareCom extends PluginForHost {
     @Override public String     getHost() { return HOST; }
     @Override public String     getVersion() { return PLUGIN_VERSION; }
     @Override public String     getPluginID() { return PLUGIN_ID; }
-    @Override public Pattern getSupportedLinks() { return PAT_SUPPORTED; } 
+    @Override public Pattern    getSupportedLinks() { return PAT_SUPPORTED; } 
     
     @Override public void reset() {
         this.sessionID = "";
@@ -97,7 +97,6 @@ public class EgoshareCom extends PluginForHost {
     public PluginStep doStep(PluginStep step, DownloadLink downloadLink) {
         try {
             RequestInfo requestInfo;
-            RequestInfo requestPostInfo;
             URL downloadUrl = new URL(downloadLink.getUrlDownloadDecrypted());
             String finishURL = null;
             
@@ -108,7 +107,8 @@ public class EgoshareCom extends PluginForHost {
                     // Datei geloescht?
                     if (requestInfo.getHtmlCode().indexOf(ERROR_DOWNLOAD_DELETED) > 0) {
                         logger.severe("download was deleted");
-                        downloadLink.setStatus(DownloadLink.STATUS_ERROR_FILE_NOT_FOUND);
+                        // Abused-Status setzen, da es (noch) keinen Deleted-Status gibt :(
+                        downloadLink.setStatus(DownloadLink.STATUS_ERROR_FILE_ABUSED);
                         step.setStatus(PluginStep.STATUS_ERROR);
                         return step;
                     }
@@ -126,17 +126,15 @@ public class EgoshareCom extends PluginForHost {
                     return step;
 
                 case PluginStep.STEP_PENDING:
+                    // immer 4 Sekunden vor dem Download warten!
                     step.setParameter(4000l);
                     return step;
                     
                 case PluginStep.STEP_DOWNLOAD:
                     try {
                         //Formular abschicken und Weiterleitungs-Adresse auslesen (= DL)
-                        requestPostInfo = postRequest(downloadUrl, null, downloadLink.getUrlDownloadDecrypted(), null, "PHPSESSID="+this.sessionID+"&submitname=DOWNLOAD", false);
-                        finishURL = JDUtilities.urlEncode(requestPostInfo.getConnection().getHeaderField("Location"));
-                        
-                       
-                        //String test = new String(finishURL.getBytes(), "utf-8");
+                        requestInfo = postRequest(downloadUrl, null, downloadLink.getUrlDownloadDecrypted(), null, "PHPSESSID="+this.sessionID+"&submitname=DOWNLOAD", false);
+                        finishURL = JDUtilities.urlEncode(requestInfo.getConnection().getHeaderField("Location"));
                         
                         // finishURL nicht gefunden? --> Fehler
                         if (finishURL == null) {
@@ -174,6 +172,8 @@ public class EgoshareCom extends PluginForHost {
                         return step;
                     }
                     catch (IOException e) {
+                        step.setStatus(PluginStep.STATUS_ERROR);
+                        downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN);
                         logger.severe("URL could not be opened. " + e.toString());
                     }
                     
