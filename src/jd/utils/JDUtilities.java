@@ -1116,7 +1116,7 @@ public class JDUtilities {
                 output.write(b, 0, len);
             }
             output.close();
-            input.close();
+            input.close(); 
             return true;
         }
         catch (FileNotFoundException e) {

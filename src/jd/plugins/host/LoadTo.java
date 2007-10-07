@@ -28,8 +28,8 @@ public class LoadTo extends PluginForHost {
      * Suchmasken (z.B. Fehler)
      */
     private static final String ERROR_DOWNLOAD_NOT_FOUND    = "Can't find file. Please check URL.";
-    private static final String DOWNLOAD_INFO               = "<tr><td width=\"80\">Filename:</td><td valign=\"top\"><b>Â°</b></td></tr><tr><td width=\"80\">Size:</td><td>Â° Bytes</td></tr>";
-    private static final String DOWNLOAD_LINK               = "action=\"Â°\" method=\"post\"><input type=\"submit\" value=\"Download the file\"";
+    private static final String DOWNLOAD_INFO               = "<tr><td width=\"80\">Filename:</td><td valign=\"top\"><b>°</b></td></tr><tr><td width=\"80\">Size:</td><td>° Bytes</td></tr>";
+    private static final String DOWNLOAD_LINK               = "action=\"°\" method=\"post\"><input type=\"submit\" value=\"Download the file\"";
     
     /*
      * Konstruktor 
@@ -85,8 +85,8 @@ public class LoadTo extends PluginForHost {
             }
 
         }
-        catch (MalformedURLException e) {  }
-        catch (IOException e) {  }
+        catch (MalformedURLException e) { e.printStackTrace(); }
+        catch (IOException e) { e.printStackTrace(); }
         
         //Datei scheinbar nicht mehr verfuegbar, Fehler?
         return false;
@@ -95,7 +95,7 @@ public class LoadTo extends PluginForHost {
     
     public PluginStep doStep(PluginStep step, DownloadLink downloadLink) {
         try {
-            RequestInfo requestInfo;
+        
             URL downloadUrl = new URL(downloadLink.getUrlDownloadDecrypted());
             
             switch (step.getStep()) {
@@ -109,24 +109,44 @@ public class LoadTo extends PluginForHost {
                         step.setStatus(PluginStep.STATUS_ERROR);
                         return step;
                     }
-
+                    String fileName = JDUtilities.htmlDecode(getSimpleMatch(requestInfo.getHtmlCode(), DOWNLOAD_INFO, 0));
+                    String fileSize = JDUtilities.htmlDecode(getSimpleMatch(requestInfo.getHtmlCode(), DOWNLOAD_INFO, 1));
+                    try {
+                        int length = Integer.parseInt(fileSize.trim());
+                        downloadLink.setDownloadMax(length);
+                    }
+                    catch (Exception e) { 
+                        
+                        downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN_RETRY);
+                        step.setStatus(PluginStep.STATUS_ERROR);
+                        return step; 
+                    }
+                    downloadLink.setName(fileName);
                     //downloadLink auslesen
                     this.downloadURL = JDUtilities.htmlDecode(getSimpleMatch(requestInfo.getHtmlCode(), DOWNLOAD_LINK, 0));
+                   
                     return step;
 
                 case PluginStep.STEP_PENDING:
+                    logger.info("Pedingin");
                     // immer 5 Sekunden vor dem Download warten!
-                    step.setParameter(5000l);
+                    step.setParameter(10l);
                     return step;
                     
                 case PluginStep.STEP_DOWNLOAD:
-                    
+                   
                     try {
                         //Download vorbereiten
-                        URLConnection urlConnection = new URL(this.downloadURL).openConnection();
-                        int length = urlConnection.getContentLength();
+                        URLConnection urlConnection = new URL(this.downloadURL).openConnection();                    
+                        int length = urlConnection.getContentLength();                   
+                        if(Math.abs(length-downloadLink.getDownloadMax())>1024){
+                            logger.warning("Filesize Check fehler. Neustart");
+                            downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN_RETRY);
+                            step.setStatus(PluginStep.STATUS_ERROR);
+                            return step; 
+                        }
                         downloadLink.setDownloadMax(length);
-                        downloadLink.setName(URLDecoder.decode(this.getFileNameFormHeader(urlConnection),"UTF-8"));
+                      
                         
                         //Download starten
                         boolean downloadSuccess = download(downloadLink, urlConnection);
