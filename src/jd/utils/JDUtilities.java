@@ -1097,7 +1097,7 @@ public class JDUtilities {
      * @return Erfolg true/false
      */
     public static boolean download(File file, URLConnection con) {
-        try {
+        try { 
             if (file.isFile()) {
                 if (!file.delete()) {
                     logger.severe("Konnte Datei nicht überschreiben " + file);
