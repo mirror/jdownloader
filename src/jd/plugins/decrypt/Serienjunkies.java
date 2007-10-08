@@ -24,7 +24,9 @@ public class Serienjunkies extends PluginForDecrypt {
     // http://85.17.177.195/sjsafe/f-e657c0c256dd9e58/rc_h324.html
     private Pattern             patternSupported = getSupportPattern("http://85.17.177.195/[+]");
 //    private Pattern             patternCaptcha   = Pattern.compile("e/secure/");
-    private Pattern             patternCaptcha   = Pattern.compile("<FORM.*METHOD=\"post\"(?s).*(?-s)<IMG SRC=\"([^\"]*)\"");
+    private Pattern             patternCaptcha   = null;
+        
+    private String dynamicCaptcha = "<FORM ACTION=\"%s\" METHOD=\"post\"(?s).*?(?-s)<INPUT TYPE=\"HIDDEN\" NAME=\"s\" VALUE=\"([\\w]*)\">(?s).*?(?-s)<IMG SRC=\"([^\"]*)\"";    
     public Serienjunkies() {
         super();
         steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
@@ -73,6 +75,12 @@ public class Serienjunkies extends PluginForDecrypt {
                 Vector<String> decryptedLinks = new Vector<String>();
                 try {
                     URL url = new URL(parameter);
+                    String modifiedURL = url.toString();
+                    modifiedURL = modifiedURL.replaceAll("safe/rc", "safe/frc");
+                    modifiedURL = modifiedURL.replaceAll("save/rc", "save/frc");
+
+                    patternCaptcha = Pattern.compile(String.format(dynamicCaptcha, new Object[]{modifiedURL}));
+                    logger.fine("using patternCaptcha:"+patternCaptcha);
                     RequestInfo reqinfo = getRequest(url);
                     Vector<Vector<String>> links;
                     links = getAllSimpleMatches(reqinfo.getHtmlCode(), " <a href=\"http://°\"");
@@ -141,11 +149,12 @@ public class Serienjunkies extends PluginForDecrypt {
     // Für Links die bei denen die Parts angezeigt werden
     private Vector<String> ContainerLinks(String url) {
         Vector<String> links = new Vector<String>();
+        boolean fileDownloaded = false;
         if (!url.startsWith("http://")) url = "http://" + url;
         try {
             RequestInfo reqinfo = getRequest(new URL(url));
             String cookie = reqinfo.getCookie();
-            for (;;) { // for() läuft bis kein Captcha mehr abgefragt
+            while(true) { // for() läuft bis kein Captcha mehr abgefragt
                 Matcher matcher = patternCaptcha.matcher(reqinfo.getHtmlCode());
                 if (matcher.find()) {
                     Vector<Vector<String>> gifs = getAllSimpleMatches(reqinfo.getHtmlCode(), patternCaptcha);
@@ -157,7 +166,18 @@ public class Serienjunkies extends PluginForDecrypt {
 //                        }
 //                    }
                     File dest = JDUtilities.getResourceFile("captchas/" + this.getPluginName() + "/captcha_" + (new Date().getTime()) + ".jpg");
-                    JDUtilities.download(dest, getRequestWithoutHtmlCode(new URL(captchaAdress), cookie, null, true).getConnection());
+                    fileDownloaded = JDUtilities.download(dest, getRequestWithoutHtmlCode(new URL(captchaAdress), cookie, null, true).getConnection());
+                    if(!fileDownloaded || !dest.exists() || dest.length()==0){
+                        logger.severe("Captcha nicht heruntergeladen, warte und versuche es erneut");
+                        try {
+                            Thread.sleep(1000);
+                            reqinfo = getRequest(new URL(url));
+                            cookie = reqinfo.getCookie();
+                        }
+                        catch (InterruptedException e) { }
+                        continue;
+                    }
+                        
                     String capTxt = Plugin.getCaptchaCode(dest, this);
                     reqinfo = postRequest(new URL(url), "s=" + getBetween(reqinfo.getHtmlCode(), "TYPE=\"HIDDEN\" NAME=\"s\" VALUE=\"", "\"") + "&c=" + capTxt + "&action=Download");
                 }
@@ -180,19 +200,32 @@ public class Serienjunkies extends PluginForDecrypt {
     // Für Links die gleich auf den Hoster relocaten
     private String EinzelLinks(String url) {
         String links = "";
+        boolean fileDownloaded=false;
         if (!url.startsWith("http://")) url = "http://" + url;
         try {
             url = url.replaceAll("safe/rc", "safe/frc");
             url = url.replaceAll("save/rc", "save/frc");
             RequestInfo reqinfo = getRequest(new URL(url));
-            for (;;) { // for() läuft bis kein Captcha mehr abgefragt
+            String cookie = reqinfo.getCookie();
+
+            while(true) { // for() läuft bis kein Captcha mehr abgefragt
                 Matcher matcher = patternCaptcha.matcher(reqinfo.getHtmlCode());
                 if (matcher.find()) {
-                    String captchaAdress = "http://85.17.177.195" + getBetween(reqinfo.getHtmlCode(), "TD><IMG SRC=\"", "\" ALT=\"\" BORDER=\"0\"");
+                    String captchaAdress = "http://85.17.177.195" + matcher.group(2);
                     File dest = JDUtilities.getResourceFile("captchas/" + this.getPluginName() + "/captcha_" + (new Date().getTime()) + ".jpg");
-                    JDUtilities.download(dest, captchaAdress);
+                    fileDownloaded = JDUtilities.download(dest, getRequestWithoutHtmlCode(new URL(captchaAdress), cookie, null, true).getConnection());
+                    if(!fileDownloaded || !dest.exists() || dest.length()==0){
+                        logger.severe("Captcha nicht heruntergeladen, warte und versuche es erneut");
+                        try {
+                            Thread.sleep(1000);
+                            reqinfo = getRequest(new URL(url));
+                            cookie = reqinfo.getCookie();
+                        }
+                        catch (InterruptedException e) { }
+                        continue;
+                    }
                     String capTxt = Plugin.getCaptchaCode(dest, this);
-                    reqinfo = postRequest(new URL(url), "s=" + getBetween(reqinfo.getHtmlCode(), "TYPE=\"HIDDEN\" NAME=\"s\" VALUE=\"", "\"") + "&c=" + capTxt + "&dl.start=Download");
+                    reqinfo = postRequest(new URL(url), "s=" + matcher.group(1) + "&c=" + capTxt + "&dl.start=Download");
                 }
                 else {
                     break;
