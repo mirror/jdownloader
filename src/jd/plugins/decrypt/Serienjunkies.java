@@ -26,7 +26,7 @@ public class Serienjunkies extends PluginForDecrypt {
 //    private Pattern             patternCaptcha   = Pattern.compile("e/secure/");
     private Pattern             patternCaptcha   = null;
         
-    private String dynamicCaptcha = "<FORM ACTION=\"%s\" METHOD=\"post\"(?s).*?(?-s)<INPUT TYPE=\"HIDDEN\" NAME=\"s\" VALUE=\"([\\w]*)\">(?s).*?(?-s)<IMG SRC=\"([^\"]*)\"";    
+    private String dynamicCaptcha = "<FORM ACTION=\".*?%s\" METHOD=\"post\"(?s).*?(?-s)<INPUT TYPE=\"HIDDEN\" NAME=\"s\" VALUE=\"([\\w]*)\">(?s).*?(?-s)<IMG SRC=\"([^\"]*)\"";    
     public Serienjunkies() {
         super();
         steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
@@ -78,6 +78,7 @@ public class Serienjunkies extends PluginForDecrypt {
                     String modifiedURL = url.toString();
                     modifiedURL = modifiedURL.replaceAll("safe/rc", "safe/frc");
                     modifiedURL = modifiedURL.replaceAll("save/rc", "save/frc");
+                    modifiedURL = modifiedURL.substring(modifiedURL.lastIndexOf("/"));
 
                     patternCaptcha = Pattern.compile(String.format(dynamicCaptcha, new Object[]{modifiedURL}));
                     logger.fine("using patternCaptcha:"+patternCaptcha);
@@ -158,7 +159,7 @@ public class Serienjunkies extends PluginForDecrypt {
                 Matcher matcher = patternCaptcha.matcher(reqinfo.getHtmlCode());
                 if (matcher.find()) {
                     Vector<Vector<String>> gifs = getAllSimpleMatches(reqinfo.getHtmlCode(), patternCaptcha);
-                    String captchaAdress = "http://85.17.177.195" + gifs.firstElement().get(0);
+                    String captchaAdress = "http://85.17.177.195" + gifs.firstElement().get(1);
 //                    for (int i = 0; i < gifs.size(); i++) {
 //                        if (gifs.get(i).get(0).indexOf("secure") >= 0 && JDUtilities.filterInt(gifs.get(i).get(2)) > 0 && JDUtilities.filterInt(gifs.get(i).get(3)) > 0) {
 //                            captchaAdress = "http://85.17.177.195" + gifs.get(i).get(0);
@@ -179,7 +180,7 @@ public class Serienjunkies extends PluginForDecrypt {
                     }
                         
                     String capTxt = Plugin.getCaptchaCode(dest, this);
-                    reqinfo = postRequest(new URL(url), "s=" + getBetween(reqinfo.getHtmlCode(), "TYPE=\"HIDDEN\" NAME=\"s\" VALUE=\"", "\"") + "&c=" + capTxt + "&action=Download");
+                    reqinfo = postRequest(new URL(url), "s=" + matcher.group(1) + "&c=" + capTxt + "&action=Download");
                 }
                 else {
                     break;
