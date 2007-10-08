@@ -163,7 +163,7 @@ public class Main {
         JDUtilities.addImage("led_green", toolkit.getImage(cl.getResource("img/led_green.gif")));
         JDUtilities.addImage("load", toolkit.getImage(cl.getResource("img/load.png")));
         JDUtilities.addImage("log", toolkit.getImage(cl.getResource("img/log.png")));
-        JDUtilities.addImage("mind", toolkit.getImage(cl.getResource("img/mind.png")));
+        JDUtilities.addImage("jd_logo", toolkit.getImage(cl.getResource("img/jd_logo.png")));
         JDUtilities.addImage("reconnect", toolkit.getImage(cl.getResource("img/reconnect.png")));
         JDUtilities.addImage("save", toolkit.getImage(cl.getResource("img/save.png")));
         JDUtilities.addImage("start", toolkit.getImage(cl.getResource("img/start.png")));
@@ -181,11 +181,5 @@ public class Main {
         JDUtilities.addImage("pause", toolkit.getImage(cl.getResource("img/pause.png")));
         JDUtilities.addImage("shutdown", toolkit.getImage(cl.getResource("img/shutdown.png")));
         JDUtilities.addImage("top", toolkit.getImage(cl.getResource("img/top.png")));
-
-        
-        
-        
-        
-        
     }
 }

@@ -140,7 +140,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener {
         // tabbedPane = new JTabbedPane();
         menuBar = new JMenuBar();
         toolBar = new JToolBar();
-        frame.setIconImage(JDUtilities.getImage("mind"));
+        frame.setIconImage(JDUtilities.getImage("jd_logo"));
         frame.setTitle(getJDTitle());
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         initActions();
