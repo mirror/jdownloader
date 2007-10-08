@@ -76,6 +76,11 @@ public interface UIInterface {
      * @param string
      */
     public void showMessageDialog(String string);
+    /**
+     * Zeigt einen Eingabe Dialog an
+     * @param string
+     */
+    public String showUserInputDialog(String string);
     
     /**
      * Zeigt einen MessageDialog an

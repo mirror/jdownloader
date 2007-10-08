@@ -789,4 +789,8 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener {
         }
         dragNDrop.setText("Grabbed: " + linkGrabber.getLinkList().size() + " (+" + ((Vector) links).size() + ")");
     }
+    public String showUserInputDialog(String string) {
+        return JOptionPane.showInputDialog(frame, string);
+        
+    }
 }
