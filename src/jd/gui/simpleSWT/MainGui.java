@@ -463,5 +463,9 @@ public class MainGui extends org.eclipse.swt.widgets.Composite implements UIInte
         // TODO Auto-generated method stub
 
     }
+    public String showUserInputDialog(String string) {
+        // TODO Auto-generated method stub
+        return null;
+    }
 
 }
