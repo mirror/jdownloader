@@ -67,6 +67,8 @@ public class UTILITIES {
     private static int    READ_TIMEOUT    = 10000;
 
     private static Logger logger          = Plugin.getLogger();
+    public static String cookie=null;
+    public static boolean useCookies=false;
 
     /**
      * @return logger
@@ -1294,6 +1296,12 @@ public class UTILITIES {
         con.setConnectTimeout(REQUEST_TIMEOUT);
         con.setReadTimeout(READ_TIMEOUT);
         con.setRequestProperty("User-Agent", USER_AGENT);
+        if (useCookies )
+        {
+            if(cookie!=null)
+                con.setRequestProperty("Cookie", cookie);
+            cookie=con.getHeaderField("Set-Cookie");
+        }
         return con;
 
     }
@@ -1358,8 +1366,10 @@ public class UTILITIES {
             fileurl = URLDecoder.decode(fileurl, "UTF-8");
 
             URL url = new URL(fileurl);
-            URLConnection con = url.openConnection();
 
+            URLConnection con = url.openConnection();
+            if (cookie != null && useCookies)
+                con.setRequestProperty("Cookie", cookie);
             BufferedInputStream input = new BufferedInputStream(con.getInputStream());
 
             byte[] b = new byte[1024];

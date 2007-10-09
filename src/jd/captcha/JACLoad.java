@@ -28,7 +28,7 @@ public class JACLoad {
     }
     private void go(){
       String methodsPath=UTILITIES.getFullPath(new String[] { JDUtilities.getJDHomeDirectory().getAbsolutePath(), "jd", "captcha", "methods"});
-      String hoster="sj";
+      String hoster="SerienJunkies.dl.am";
 
    
  loadSerienJunkies(new File(JDUtilities.getJDHomeDirectory().getAbsolutePath()+"/jd/captcha/methods"+"/"+hoster+"/captchas/"), 6000);
@@ -37,10 +37,14 @@ public class JACLoad {
    
     }
     private void loadSerienJunkies(File file, int i) {
+        UTILITIES.useCookies=true;
         long stamp= UTILITIES.getTimer();
         while(i>0){
         i--;
+        UTILITIES.cookie=null;
        String html= UTILITIES.getPagewithScanner("http://85.17.177.195/sjsafe/f-e5750571accc91e7/rc_las-vegas-s04e01-dvdrip.html");
+       html = html.replaceAll("(?s)<!--.*?-->", "");
+       html = html.replaceAll("(?s)<.*?c8d1ae64a5be11b14c8140d243b198d9.gif.*?>", "");
        String path="http://85.17.177.195"+UTILITIES.getMatches(html,"<TD><IMG SRC=\"°\" ALT=\"\" BORDER=\"0\"")[0];
        URL url=null;
        try {
@@ -64,7 +68,7 @@ public class JACLoad {
        UTILITIES.getLogger().info(i+"new captcha: : "+path);
     
         }
-        
+        UTILITIES.useCookies=false;
         
     }
 }
