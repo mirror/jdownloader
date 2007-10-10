@@ -59,25 +59,13 @@
             </fileset>
         </jar>
         <delete file="Manifest.MF" failonerror="false" />
-
-    	<!-- Container -->
-        <jar jarfile="${dist}/JDownloaderContainer.jar">
-            <fileset dir="${cls}">
-                <include name = "jd/plugins/Plugin.class"/>
-                <include name = "jd/plugins/PluginForDecrypt.class"/>
-                <include name = "jd/plugins/PluginForContainer.class"/>
-                <include name = "jd/plugins/container/**"/>
-            	<include name = "META-INF/services/jd.plugins.PluginForContainer"/>
-            </fileset>
-        </jar>
-
     </target>
     <target name="sign">
-        <signjar jar="${dist}/JDownloader.jar"          keystore="jDownloader.keystore" alias="jDownloader" storepass="jDownloader" />
-        <signjar jar="${dist}/JDownloaderPlugins.jar"   keystore="jDownloader.keystore" alias="jDownloader" storepass="jDownloader" />
-        <signjar jar="${dist}/JAntiCaptcha.jar"         keystore="jDownloader.keystore" alias="jDownloader" storepass="jDownloader" />
-        <signjar jar="${dist}/JAntiCaptchaMethods.jar"  keystore="jDownloader.keystore" alias="jDownloader" storepass="jDownloader" />
-        <signjar jar="${dist}/JDownloaderContainer.jar" keystore="jDownloader.keystore" alias="jDownloader" storepass="jDownloader" />
+    	<signjar keystore="jDownloader.keystore" alias="jDownloader" storepass="jDownloader">
+    		<path>
+    		    <fileset dir="${dist}" includes="*.jar" />
+    	    </path>
+    	</signjar>
     </target>
     
     <target name="eclipseBuild" depends="jar,sign">       </target>

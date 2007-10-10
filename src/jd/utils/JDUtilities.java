@@ -16,12 +16,12 @@ import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
-import java.io.File; 
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileWriter;
-import java.io.IOException; 
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.ObjectInputStream;
@@ -500,6 +500,8 @@ public class JDUtilities {
     }
     /**
      * Hier werden alle Plugins im aktuellen Verzeichnis geparsed (und im Classpath)
+     * Beim Start aus Eclipse oder mit java -jar wird ein <code>AppClassLoader(URLClassLoader)</code> benutzt.
+     * Beim Start als WebStart Applikation ein <code>JNLPClassLoader(SecureClassLoader - KEIN URLClassLoader)</code>.
      */
     @SuppressWarnings("unchecked")
     public static void loadPlugins() {
@@ -509,6 +511,7 @@ public class JDUtilities {
             ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
             File files[] = new File(JDUtilities.getJDHomeDirectory() + "/plugins").listFiles(JDUtilities.filterJar);
             if (!(classLoader instanceof URLClassLoader)) {
+                //WebStart
                 URL urls[] = new URL[files.length];
                 for (int i = 0; i < files.length; i++) {
                     logger.info("loaded plugins from:" + files[i]);
@@ -517,9 +520,18 @@ public class JDUtilities {
                 classLoader = new URLClassLoader(urls);
             }
             else {
+                //Application
+                File filesCurrentDir[] = new File(".").listFiles(JDUtilities.filterJar);
                 URLClassLoader urlClassLoader = (URLClassLoader) classLoader;
                 Method addURL = URLClassLoader.class.getDeclaredMethod("addURL", new Class[] { URL.class });
                 addURL.setAccessible(true);
+                if (filesCurrentDir != null) {
+                    for (int i = 0; i < filesCurrentDir.length; i++) {
+                        logger.info("loaded plugins from:" + filesCurrentDir[i]);
+                        URL jarURL = filesCurrentDir[i].toURI().toURL();
+                        addURL.invoke(urlClassLoader, new Object[] { jarURL });
+                    }
+                }
                 if (files != null) {
                     for (int i = 0; i < files.length; i++) {
                         logger.info("loaded plugins from:" + files[i]);
@@ -554,12 +566,17 @@ public class JDUtilities {
             pluginsForSearch.add(p);
             logger.info("Search-Plugin    : " + p.getPluginName());
         }
-        // Danach die Plugins für die unterschiedli
-        iterator = Service.providers(PluginForContainer.class);
-        while (iterator.hasNext()) {
-            PluginForContainer p = (PluginForContainer) iterator.next();
-            pluginsForContainer.add(p);
-            logger.info("Container-Plugin : " + p.getPluginName());
+        
+        iterator = Service.providers(ClassLoader.class);
+        while(iterator.hasNext()){
+            ClassLoader cl = (ClassLoader) iterator.next();
+            // Danach die Plugins für die unterschiedlichen Container
+            Iterator iteratorClass = Service.providers(PluginForContainer.class, cl);
+            while (iteratorClass.hasNext()) {
+                PluginForContainer p = (PluginForContainer) iteratorClass.next();
+                pluginsForContainer.add(p);
+                logger.info("Container-Plugin : " + p.getPluginName());
+            }
         }
     }
     /**
