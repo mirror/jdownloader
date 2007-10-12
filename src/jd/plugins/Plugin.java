@@ -143,7 +143,7 @@ public abstract class Plugin {
         }
         // patternString="\""+patternString+"\"";
         // logger.info(patternString);
-        return Pattern.compile(patternString);
+        return Pattern.compile(patternString,Pattern.CASE_INSENSITIVE);
     }
     /**
      * Liefert den Anbieter zurück, für den dieses Plugin geschrieben wurde
