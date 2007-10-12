@@ -14,7 +14,7 @@ import jd.utils.JDUtilities;
  * 
  * @author astaldo
  */
-public class DownloadLink implements Serializable {
+public class DownloadLink implements Serializable,Comparable<DownloadLink> {
     /**
      * Link muß noch bearbeitet werden
      */
@@ -745,5 +745,9 @@ public class DownloadLink implements Serializable {
     }
     public void setContainerIndex(int containerIndex) {
         this.containerIndex = containerIndex;
+    }
+
+    public int compareTo(DownloadLink o) {
+        return extractFileNameFromURL().compareTo(o.extractFileNameFromURL());
     }
 }

@@ -19,6 +19,7 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Iterator;
 import java.util.Vector;
 import java.util.logging.Logger;
 
@@ -62,6 +63,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
     private JButton              btnCancel;
     private JTextField           txfComment;
     private JTextField           txfPassword;
+    private JTextField           txtName;
     private BrowseFile           bfSubFolder;
     private JScrollPane          scrollPane;
     private JButton              btnRemove;
@@ -99,6 +101,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
         getRootPane().setDefaultButton(btnOk);
         txfComment = new JTextField();
 
+        txtName = new JTextField();
         txfPassword = new JTextField();
         bfSubFolder = new BrowseFile();
         bfSubFolder.setEditable(true);
@@ -132,6 +135,8 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
         JDUtilities.addToGridBag(panel, new JSeparator(), GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 1, 0, insets, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
         JDUtilities.addToGridBag(panel, new JLabel("In folgendem Ordner speichern:"), GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
         JDUtilities.addToGridBag(panel, bfSubFolder, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 1, 0, insets, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+        JDUtilities.addToGridBag(panel, new JLabel("Name des Paketes:"), GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        JDUtilities.addToGridBag(panel, txtName, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 1, 0, insets, GridBagConstraints.HORIZONTAL, GridBagConstraints.EAST);
         JDUtilities.addToGridBag(panel, new JLabel("Archivpasswort:"), GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
         JDUtilities.addToGridBag(panel, txfPassword, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 1, 0, insets, GridBagConstraints.HORIZONTAL, GridBagConstraints.EAST);
         JDUtilities.addToGridBag(panel, new JLabel("Kommentar:"), GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 1, 0, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -152,6 +157,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
             this.linkList.add(linkList[i]);
         }
         sortLinkList();
+        checkForSameName();
         fireTableChanged();
     }
     /**
@@ -193,24 +199,24 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
         /**
          * Vergleichsfunktion um einen downloadliste alphabetisch zu ordnen
          */
-        Collections.sort(linkList, new Comparator() {
-            public int compare(Object a, Object b) {
-                if (a instanceof DownloadLink && b instanceof DownloadLink) {
-
-                    if (((DownloadLink) a).extractFileNameFromURL().compareToIgnoreCase(((DownloadLink) b).extractFileNameFromURL()) > 0) {
-                        return -1;
-                    }
-                    else if (((DownloadLink) a).extractFileNameFromURL().compareToIgnoreCase(((DownloadLink) b).extractFileNameFromURL()) < 0) {
-                        return 1;
-                    }
-                    else {
-                        return 0;
-                    }
-                }
-                return 0;
+        Collections.sort(linkList);
+    }
+    /**
+     * Überprüft die eingetragenen Links, ob Übereinstimmungen im Namen sind. Das Paket wird dann so genannt.
+     */
+    private void checkForSameName(){
+        String tempName;
+        String sameName=null;
+        Iterator<DownloadLink> iterator = linkList.iterator();
+        while (iterator.hasNext()){
+            if(sameName == null){
+                sameName = iterator.next().getName();
             }
-
-        });
+            else{
+                tempName = iterator.next().getName();
+                txtName.setText(JDUtilities.getEqualString(sameName,tempName));
+            }
+        }
     }
 
     /**
@@ -252,9 +258,11 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
         c = c.brighter();
         FilePackage fp = new FilePackage();
         fp.setProperty("color", c);
+        fp.setName(txtName.getText().trim());
         fp.setComment(txfComment.getText().trim());
         fp.setPassword(txfPassword.getText().trim());
         fp.setDownloadDirectory(bfSubFolder.getText().trim());
+        fp.setDownloadLinks(linkList);
 
         for (int i = 0; i < linkList.size(); i++) {
             linkList.elementAt(i).setFilePackage(fp);

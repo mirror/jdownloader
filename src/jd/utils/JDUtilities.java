@@ -147,32 +147,7 @@ public class JDUtilities {
      * Die Konfiguration
      */
     private static Configuration              configuration       = new Configuration();
-    /**
-     * Genau wie add, aber mit den Standardwerten iPadX,iPadY=0
-     * 
-     * @param cont Der Container, dem eine Komponente hinzugefuegt werden soll
-     * @param comp Die Komponente, die hinzugefuegt werden soll
-     * @param x X-Position innerhalb des GriBagLayouts
-     * @param y Y-Position innerhalb des GriBagLayouts
-     * @param width Anzahl der Spalten, ueber die sich diese Komponente erstreckt
-     * @param height Anzahl der Reihen, ueber die sich diese Komponente erstreckt
-     * @param weightX Verteilung von zur Verfuegung stehendem Platz in X-Richtung
-     * @param weightY Verteilung von zur Verfuegung stehendem Platz in Y-Richtung
-     * @param insets Abstände der Komponente
-     * @param fill Verteilung der Komponente innerhalb der zugewiesen Zelle/n
-     * @param anchor Positionierung der Komponente innerhalb der zugewiesen Zelle/n
-     */
-    public static void addToGridBag(Container cont, Component comp, int x, int y, int width, int height, int weightX, int weightY, Insets insets, int fill, int anchor) {
-        if (cont == null) {
-            logger.severe("Container ==null");
-            return;
-        }
-        if (comp == null) {
-            logger.severe("Componente ==null");
-            return;
-        }
-        addToGridBag(cont, comp, x, y, width, height, weightX, weightY, insets, 0, 0, fill, anchor);
-    }
+    
     /**
      * Geht eine Komponente so lange durch (getParent), bis ein Objekt vom Typ Frame gefunden wird,
      * oder es keine übergeordnete Komponente gibt
@@ -270,6 +245,32 @@ public class JDUtilities {
         cons.ipady = iPadY;
         cont.add(comp, cons);
     }
+    /**
+     * Genau wie add, aber mit den Standardwerten iPadX,iPadY=0
+     * 
+     * @param cont Der Container, dem eine Komponente hinzugefuegt werden soll
+     * @param comp Die Komponente, die hinzugefuegt werden soll
+     * @param x X-Position innerhalb des GriBagLayouts
+     * @param y Y-Position innerhalb des GriBagLayouts
+     * @param width Anzahl der Spalten, ueber die sich diese Komponente erstreckt
+     * @param height Anzahl der Reihen, ueber die sich diese Komponente erstreckt
+     * @param weightX Verteilung von zur Verfuegung stehendem Platz in X-Richtung
+     * @param weightY Verteilung von zur Verfuegung stehendem Platz in Y-Richtung
+     * @param insets Abstände der Komponente
+     * @param fill Verteilung der Komponente innerhalb der zugewiesen Zelle/n
+     * @param anchor Positionierung der Komponente innerhalb der zugewiesen Zelle/n
+     */
+    public static void addToGridBag(Container cont, Component comp, int x, int y, int width, int height, int weightX, int weightY, Insets insets, int fill, int anchor) {
+        if (cont == null) {
+            logger.severe("Container ==null");
+            return;
+        }
+        if (comp == null) {
+            logger.severe("Componente ==null");
+            return;
+        }
+        addToGridBag(cont, comp, x, y, width, height, weightX, weightY, insets, 0, 0, fill, anchor);
+    }    
     /**
      * Liefert einen Punkt zurück, mit dem eine Komponente auf eine andere zentriert werden kann
      * 
@@ -1301,5 +1302,31 @@ public class JDUtilities {
             }
         }
         return ret;
+    }
+    /**
+     * Untersucht zwei String, ob zwei String ähnlich anfangen. Der übereinstimmende Text wird dann zurückgegeben 
+     * 
+     * @param a Erster String, der vergleicht werden soll
+     * @param b Zweiter String, der vergleicht werden soll
+     * @return Übereinstimmender Text
+     */
+    public static String getEqualString(String a, String b){
+        String first,second;
+        int index=0;
+        if(a.length()<=b.length()){
+            first = a.toLowerCase();
+            second = b.toLowerCase();
+        }
+        else{
+            first = b;
+            second =a;
+        }
+        for(int i=0;i<first.length();i++){
+            if(first.charAt(i) == second.charAt(i))
+                index=i;
+        }
+        if(index>0)
+            return first.substring(0,index);
+        else return "";
     }
 }

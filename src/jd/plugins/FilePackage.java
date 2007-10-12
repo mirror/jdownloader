@@ -1,7 +1,13 @@
 package jd.plugins;
 
+import java.io.DataOutputStream;
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.Serializable;
+import java.util.Iterator;
+import java.util.Vector;
 
 import jd.config.Property;
 import jd.utils.JDUtilities;
@@ -26,7 +32,9 @@ public class FilePackage extends Property implements Serializable {
     private static final long serialVersionUID = -8859842964299890820L;
     private String            comment;
     private String            password;
+    private String            name;
     private String            downloadDirectory;
+    private Vector<DownloadLink> downloadLinks;
 
     public FilePackage() {
         downloadDirectory = JDUtilities.getConfiguration().getDownloadDirectory();
@@ -35,9 +43,41 @@ public class FilePackage extends Property implements Serializable {
 
     }
     /**
+     * Diese Methode speichert Paketinformationen ab (falls die Datei noch nicht bereits besteht)
+     */
+    public void saveInfoFile(){
+        String filename;
+        if (getName() != null && !getName().equals(""))
+            filename = getName();
+        else
+            filename = getId();
+        filename = getDownloadDirectory()+"/"+filename+".info";
+        try {
+            File infoFile = new File(filename);
+            if(!infoFile.exists()){
+                
+                infoFile.createNewFile();
+                DataOutputStream dos = new DataOutputStream(new FileOutputStream(infoFile));
+                
+                dos.writeBytes("Passwort für die folgenden Archive:"+ getPassword()+"\n\n");
+                
+                Iterator<DownloadLink> iterator = getDownloadLinks().iterator();
+                while(iterator.hasNext()){
+                    dos.writeBytes(iterator.next().getName()+"\n");
+                }
+                dos.close();
+            }
+        }
+        catch (FileNotFoundException e) {
+            e.printStackTrace();
+        }
+        catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+    /**
      * Alles undokumentiert, da selbsterklärend
      */
-
     public String toString() {
         return id;
     }
@@ -105,6 +145,21 @@ public class FilePackage extends Property implements Serializable {
      */
     public boolean hasComment() {
         return comment != null && comment.length() > 0;
+    }
+    public String getName() {
+        return name;
+    }
+    public void setName(String name) {
+        this.name = name;
+    }
+    public String getId() {
+        return id;
+    }
+    public Vector<DownloadLink> getDownloadLinks() {
+        return downloadLinks;
+    }
+    public void setDownloadLinks(Vector<DownloadLink> downloadLinks) {
+        this.downloadLinks = downloadLinks;
     }
 
 }
