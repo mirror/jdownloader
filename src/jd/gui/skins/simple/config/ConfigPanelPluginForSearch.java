@@ -12,7 +12,6 @@ import java.awt.event.MouseListener;
 import java.util.Vector;
 
 import javax.swing.JButton;
-import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.JProgressBar;
 import javax.swing.JScrollPane;
@@ -24,7 +23,6 @@ import javax.swing.table.TableColumn;
 
 import jd.config.Configuration;
 import jd.gui.UIInterface;
-
 import jd.plugins.PluginForSearch;
 import jd.utils.JDUtilities;
 

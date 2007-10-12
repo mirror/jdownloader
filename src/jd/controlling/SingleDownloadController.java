@@ -1,18 +1,11 @@
 package jd.controlling;
 
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
 import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.util.Iterator;
 import java.util.logging.Logger;
 
 import jd.controlling.interaction.Interaction;
 import jd.event.ControlEvent;
 import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginStep;

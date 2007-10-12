@@ -5,12 +5,9 @@ import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.image.BufferedImage;
 import java.io.File;
-import java.io.IOException;
 import java.util.logging.Logger;
 
-import javax.imageio.ImageIO;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JDialog;
@@ -65,17 +62,9 @@ public class CaptchaDialog extends JDialog implements ActionListener {
         setModal(true);
         setLayout(new GridBagLayout());
         ImageIcon imageIcon = null;
-        BufferedImage image;
         String code = "";
         final Configuration  configuration=JDUtilities.getConfiguration();
-        try {
-            image = ImageIO.read(file);
-
-            imageIcon = new ImageIcon(image);
-        }
-        catch (IOException e) {
-            e.printStackTrace();
-        }
+        imageIcon = new ImageIcon(file.getAbsolutePath());
         String host = plugin.getHost();
         logger.info(configuration.getBooleanProperty(Configuration.PARAM_MANUAL_CAPTCHA_USE_JAC)+"_");
         if (configuration.getBooleanProperty(Configuration.PARAM_MANUAL_CAPTCHA_USE_JAC,true)&&JAntiCaptcha.hasMethod(JDUtilities.getJACMethodsDirectory(), host)) {

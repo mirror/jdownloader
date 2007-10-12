@@ -28,7 +28,6 @@ import javax.swing.JTextField;
 import jd.config.Configuration;
 import jd.controlling.interaction.HTTPReconnect;
 import jd.gui.UIInterface;
-import jd.plugins.DownloadLink;
 import jd.router.RouterData;
 import jd.router.RouterParser;
 import jd.utils.JDUtilities;

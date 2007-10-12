@@ -13,7 +13,6 @@ import javax.swing.JFrame;
 import javax.swing.JTabbedPane;
 
 import jd.config.Configuration;
-import jd.event.UIEvent;
 import jd.gui.UIInterface;
 import jd.utils.JDUtilities;
 /**
