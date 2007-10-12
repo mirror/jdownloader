@@ -91,10 +91,12 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
         list = new JList();
         list.addMouseListener(this);
         btnOk = new JButton("Übernehmen");
+        btnOk.setDefaultCapable(true);
         btnCancel = new JButton("Verwerfen");
         btnRemove = new JButton("Markierte entfernen");
         btnCheck = new JButton("Informationen & Verfügbarkeit prüfen");
 
+        getRootPane().setDefaultButton(btnOk);
         txfComment = new JTextField();
 
         txfPassword = new JTextField();
