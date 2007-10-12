@@ -83,6 +83,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
         pack();
         JFrame frame = parent.getFrame();
         this.setTitle("Linksammler aktiv (D&D + Clipboard)");
+        this.setIconImage(JDUtilities.getImage("jd_logo"));
         setLocation((int) (frame.getLocation().getX() + frame.getWidth() / 2 - this.getWidth() / 2), (int) (frame.getLocation().getY() + frame.getHeight() / 2 - this.getHeight() / 2));
         addLinks(linkList);
         pack();

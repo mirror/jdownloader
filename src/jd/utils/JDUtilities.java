@@ -1321,12 +1321,14 @@ public class JDUtilities {
             first = b;
             second =a;
         }
-        for(int i=0;i<first.length();i++){
-            if(first.charAt(i) == second.charAt(i))
-                index=i;
+        for (int i = 0; i < first.length(); i++) {
+            if (first.charAt(i) == second.charAt(i))
+                index = i;
+            else
+                break;
         }
         if(index>0)
-            return first.substring(0,index);
+            return first.substring(0,index+1);
         else return "";
     }
 }
