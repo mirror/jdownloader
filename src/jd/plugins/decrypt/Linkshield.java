@@ -29,7 +29,7 @@ public class Linkshield extends PluginForDecrypt {
     @Override public String getPluginName() { return host; }
     @Override public Pattern getSupportedLinks() { return patternSupported; }
     @Override public String getVersion() { return version; }
-    @Override public boolean isClipboardEnabled() { return true; }
+  
     
     @Override 
     public PluginStep doStep(PluginStep step, String parameter) {

@@ -60,10 +60,7 @@ public class Serienjunkies extends PluginForDecrypt {
     public String getVersion() {
         return version;
     }
-    @Override
-    public boolean isClipboardEnabled() {
-        return true;
-    }
+
     @Override
     public boolean doBotCheck(File file) {
         return false;

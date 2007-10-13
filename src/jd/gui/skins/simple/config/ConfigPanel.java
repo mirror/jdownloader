@@ -45,7 +45,7 @@ public abstract class ConfigPanel extends JPanel{
        
        while(it.hasNext()){
            GUIConfigEntry akt=it.next();
-           logger.info("entries: "+entries.size()+" : "+akt.getConfigEntry().getPropertyInstance());
+//           logger.info("entries: "+entries.size()+" : "+akt.getConfigEntry().getPropertyInstance());
            if(akt.getConfigEntry().getPropertyInstance()!=null&&akt.getConfigEntry().getPropertyName()!=null)   
            akt.getConfigEntry().getPropertyInstance().setProperty(akt.getConfigEntry().getPropertyName(),akt.getText());
            

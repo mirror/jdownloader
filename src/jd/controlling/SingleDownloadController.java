@@ -176,6 +176,7 @@ public class SingleDownloadController extends ControlMulticaster {
             return;
         }
         if (step != null && step.getStatus() == PluginStep.STATUS_ERROR) {
+            logger.info("JJJ"+downloadLink.getStatus());
             switch (downloadLink.getStatus()) {
                 case DownloadLink.STATUS_ERROR_DOWNLOAD_LIMIT:
                     this.onErrorWaittime(downloadLink, plugin, step);
@@ -238,6 +239,10 @@ public class SingleDownloadController extends ControlMulticaster {
         // downloadLink.setEndOfWaittime(System.currentTimeMillis() +
         // milliSeconds);
         downloadLink.setStatusText("temp. Unavailable");
+        try {
+            Thread.sleep(5000);
+        }
+        catch (InterruptedException e) {}
         downloadLink.setInProgress(false);
         downloadLink.setEnabled(false);
         fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SINGLE_DOWNLOAD_CHANGED, downloadLink));

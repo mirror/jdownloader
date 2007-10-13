@@ -6,6 +6,8 @@ import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.UnsupportedFlavorException;
 import java.io.IOException;
 
+import jd.plugins.Plugin;
+
 
 /**
  * Diese Klasse ist dafür da, zeitverzögert die Zwischenablage zu untersuchen
@@ -57,10 +59,12 @@ public class ClipboardHandler extends Thread {
                     }
                     catch (InterruptedException e) {
                     }
+                    
                     if (enabled) {
                         
                         try {
                             data = (String) clipboard.getData(DataFlavor.stringFlavor);
+                            
                             if (data != null && !data.equalsIgnoreCase(lastString)) {
                                 distributeData = new DistributeData(data);
                                 distributeData.addControlListener(controller);
@@ -70,7 +74,7 @@ public class ClipboardHandler extends Thread {
                         }
                         catch (UnsupportedFlavorException e1) {
                         }
-                        catch (IOException e1) {
+                        catch (Exception e1) {
                         }
                     }
                 }

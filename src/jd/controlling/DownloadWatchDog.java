@@ -41,6 +41,8 @@ public class DownloadWatchDog extends Thread implements PluginListener, ControlL
 
     private int                              interactions;
 
+    private boolean pause=false;
+
     public DownloadWatchDog(JDController controller) {
 
         this.controller = controller;
@@ -58,7 +60,7 @@ public class DownloadWatchDog extends Thread implements PluginListener, ControlL
 
         while (aborted != true) {
             if (interactions == 0) {
-                if (activeLinks.size() < getSimultanDownloadNum()) {
+                if (activeLinks.size() < getSimultanDownloadNum()&&!pause) {
                     started = setDownloadActive();
                     // logger.info("Started " + started + "Downloads");
                 }
@@ -91,7 +93,7 @@ public class DownloadWatchDog extends Thread implements PluginListener, ControlL
 
                 }
 
-                if (!hasInProgressLinks && !hasWaittimeLinks && this.getNextDownloadLink() == null && activeLinks != null && activeLinks.size() == 0) {
+                if ((pause &&!hasInProgressLinks) ||(!hasInProgressLinks && !hasWaittimeLinks && this.getNextDownloadLink() == null && activeLinks != null && activeLinks.size() == 0)) {
 
                     logger.info("Alle Downloads beendet");
                     // fireControlEvent(new ControlEvent(this,
@@ -523,6 +525,11 @@ public class DownloadWatchDog extends Thread implements PluginListener, ControlL
 
     public boolean isAborted() {
         return !isAlive();
+    }
+
+    public void pause(boolean value) {
+        this.pause=value;
+        
     }
 
 }

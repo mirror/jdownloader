@@ -179,6 +179,8 @@ public class Main {
         JDUtilities.addImage("loadContainer", toolkit.getImage(cl.getResource("img/loadContainer.png")));
         JDUtilities.addImage("ok", toolkit.getImage(cl.getResource("img/ok.png")));
         JDUtilities.addImage("pause", toolkit.getImage(cl.getResource("img/pause.png")));
+        JDUtilities.addImage("pause_disabled", toolkit.getImage(cl.getResource("img/pause_disabled.png")));
+        JDUtilities.addImage("pause_active", toolkit.getImage(cl.getResource("img/pause_active.png")));
         JDUtilities.addImage("shutdown", toolkit.getImage(cl.getResource("img/shutdown.png")));
         JDUtilities.addImage("top", toolkit.getImage(cl.getResource("img/top.png")));
     }

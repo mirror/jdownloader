@@ -259,7 +259,7 @@ if(cl!=null){
                     }
                 }
                 letter.setGrid(newGrid);   
-               // letter=              letter.align(-40, +40);
+                letter=              letter.align(-40, +40);
                 letter.setSourcehash(UTILITIES.getLocalHash(images[i]));
                 letter.setDecodedValue(images[i].getName().split("\\_")[1].split("\\.")[0]);
                 letter.clean();
@@ -267,7 +267,7 @@ if(cl!=null){
               
                 letterDB.add(letter);
 
-//                letter.resizetoHeight(35);
+               letter.resizetoHeight(25);
                 
             } else {
 

@@ -63,10 +63,6 @@ public class Stealth extends PluginForDecrypt {
         return host;
     }
 
-    @Override
-    public boolean isClipboardEnabled() {
-        return true;
-    }
 
     @Override
     public String getVersion() {

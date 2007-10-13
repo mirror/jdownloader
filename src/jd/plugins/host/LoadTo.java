@@ -56,10 +56,7 @@ public class LoadTo extends PluginForHost {
      */
     // muss aufgrund eines Bugs in DistributeData true zurÃ¼ckgeben, auch wenn
     // die Zwischenablage nicht vom Plugin verarbeitet wird
-    @Override
-    public boolean isClipboardEnabled() {
-        return true;
-    }
+ 
 
     @Override
     public boolean doBotCheck(File file) {

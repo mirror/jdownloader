@@ -91,6 +91,10 @@ public class DownloadLink implements Serializable,Comparable<DownloadLink> {
      */
     public static final int   STATUS_ERROR_TO_MANY_USERS = 17;
     /**
+     * das PLugin meldet einen Fehler. Der Fehlerstring kann via Parameter übergeben werden
+     */
+    public static final int   STATUS_ERROR_PLUGIN_SPECIFIC = 18;
+    /**
      * serialVersionUID
      */
     private FilePackage       filePackage;

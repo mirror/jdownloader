@@ -58,10 +58,7 @@ public class Megauploadcom extends PluginForHost {
     public String getHost() {
         return HOST;
     }
-    @Override
-    public boolean isClipboardEnabled() {
-        return true;
-    }
+ 
     @Override
     public String getVersion() {
         return PLUGIN_VERSION;

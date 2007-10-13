@@ -71,6 +71,10 @@ private Configuration configuration;
         
         ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, configuration, Configuration.PARAM_FINISHED_DOWNLOADS_ACTION, new String[] { Configuration.FINISHED_DOWNLOADS_REMOVE, Configuration.FINISHED_DOWNLOADS_REMOVE_AT_START,Configuration.FINISHED_DOWNLOADS_NO_REMOVE}, "Fertig gestellte Downloads ...").setDefaultValue(Configuration.FINISHED_DOWNLOADS_REMOVE_AT_START));
         addGUIConfigEntry(ce);
+        
+        
+        ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, configuration, Configuration.PARAM_DISABLE_CONFIRM_DIALOGS, "Bestätigungsdialoge nicht anzeigen").setDefaultValue(false));
+        addGUIConfigEntry(ce);
 
    
 

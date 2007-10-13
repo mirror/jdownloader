@@ -53,7 +53,7 @@ public class SerienFreaksTv extends PluginForDecrypt {
     @Override public Pattern getSupportedLinks() { return PAT_SUPPORTED; }
     @Override public String getVersion() { return PLUGIN_VERSION; }
     @Override public boolean doBotCheck(File file) { return false; }
-    @Override public boolean isClipboardEnabled() { return true; }
+
 
     @Override public PluginStep doStep(PluginStep step, String parameter) {
     	if(step.getStep() == PluginStep.STEP_DECRYPT) {

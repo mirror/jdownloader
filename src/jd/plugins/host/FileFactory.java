@@ -54,10 +54,7 @@ public class FileFactory extends PluginForHost {
     public String getVersion() {
         return version;
     }
-    @Override
-    public boolean isClipboardEnabled() {
-        return true;
-    }
+
     @Override
     public String getPluginID() {
         return "FILEFACTORY.COM-1.0.0.";

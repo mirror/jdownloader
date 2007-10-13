@@ -158,14 +158,7 @@ public abstract class Plugin {
      * @return true:istBot; false: keinBot
      */
     public abstract boolean doBotCheck(File file);
-    /**
-     * Diese Methode zeigt an, ob das Plugin auf Änderungen in der
-     * Zwischenablage reagiert oder nicht
-     * 
-     * @return Wahr, wenn die Zwischenablage von diesem Plugin interpretiert
-     *         werden soll
-     */
-    public abstract boolean isClipboardEnabled();
+ 
     /**
      * Gibt die Date zurück in die der aktuelle captcha geladne werden soll.
      * 
@@ -1178,6 +1171,16 @@ public abstract class Plugin {
         pattern = getPattern(pattern);
         Vector<String> ret = new Vector<String>();
         for (Matcher r = Pattern.compile(pattern, Pattern.DOTALL).matcher(source); r.find();) {
+            if (id <= r.groupCount()) ret.add(r.group(id).trim());
+        }
+        return ret;
+    }
+    
+    
+    public static Vector<String> getAllSimpleMatches(String source, Pattern pattern,int id) {
+       
+        Vector<String> ret = new Vector<String>();
+        for (Matcher r = pattern.matcher(source); r.find();) {
             if (id <= r.groupCount()) ret.add(r.group(id).trim());
         }
         return ret;

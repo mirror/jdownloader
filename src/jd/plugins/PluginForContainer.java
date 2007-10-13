@@ -47,7 +47,7 @@ public abstract class PluginForContainer extends PluginForDecrypt{
         PluginForHost pHost;
         for (int i = 0; i < pluginsForHost.size(); i++) {
             pHost = pluginsForHost.get(i);
-            if (pHost.isClipboardEnabled() && pHost.canHandle(data)) {
+            if (pHost.canHandle(data)) {
                 return pHost;
             }
         }

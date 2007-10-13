@@ -43,11 +43,7 @@ public class EgoshareCom extends PluginForHost {
         steps.add(new PluginStep(PluginStep.STEP_DOWNLOAD, null));
     }
     
-    /*
-     * Funktionen
-     */
-    // muss aufgrund eines Bugs in DistributeData true zurÃ¼ckgeben, auch wenn die Zwischenablage nicht vom Plugin verarbeitet wird
-    @Override public boolean    isClipboardEnabled() { return true; }
+
     @Override public boolean    doBotCheck(File file) { return false; } // kein BotCheck
     @Override public String     getCoder() { return CODER; }
     @Override public String     getPluginName() { return PLUGIN_NAME; }

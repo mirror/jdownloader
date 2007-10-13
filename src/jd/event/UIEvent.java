@@ -72,6 +72,8 @@ public class UIEvent extends AWTEvent{
      */
     public static final int UI_LOAD_CONTAINER     = 15;
 
+    public static final int UI_PAUSE_DOWNLOADS = 16;
+
     
     public UIEvent(UIInterface uiInterface, int actionID){
         this(uiInterface,actionID,null);

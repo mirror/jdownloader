@@ -57,10 +57,7 @@ public class RsXXXBlog extends PluginForDecrypt {
         return host;
     }
 
-    @Override
-    public boolean isClipboardEnabled() {
-        return true;
-    }
+ 
 
     @Override
     public String getVersion() {

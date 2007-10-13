@@ -74,10 +74,7 @@ public class Secured extends PluginForDecrypt {
         return HOST;
     }
 
-    @Override
-    public boolean isClipboardEnabled() {
-        return true;
-    }
+  
 
     @Override
     public String getVersion() {

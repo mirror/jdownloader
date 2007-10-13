@@ -116,7 +116,7 @@ public class Rapidshare extends PluginForHost {
     private Pattern                        patternErrorFileAbused           = Pattern.compile("(darf nicht verteilt werden|forbidden to be shared)", Pattern.CASE_INSENSITIVE);
     private Pattern                        patternErrorFileNotFound         = Pattern.compile("(datei nicht gefunden|file not found)", Pattern.CASE_INSENSITIVE);
     private String                         hardwareDefektString             = "wegen Hardwaredefekt nicht";
-    private String                         toManyUser                       = "Zu viele Benutzer laden gerade Dateien runter";
+    private String                         toManyUser                       = "Zu viele Benutzer";
     private int                            waitTime                         = 500;
     private String                         captchaAddress;
     private String                         postTarget;
@@ -128,6 +128,8 @@ public class Rapidshare extends PluginForHost {
     private String                         finalCookie;
     private static String premiumCookie=null;
     private String[]                       serverList2;
+
+    private boolean hardewareError=false;
 
     @Override
     public String getCoder() {
@@ -154,10 +156,7 @@ public class Rapidshare extends PluginForHost {
         return version;
     }
 
-    @Override
-    public boolean isClipboardEnabled() {
-        return true;
-    }
+
 
     @Override
     public String getPluginID() {
@@ -261,8 +260,12 @@ public class Rapidshare extends PluginForHost {
         switch (step.getStep()) {
 
             case PluginStep.STEP_WAIT_TIME:
+                downloadLink.setStatus(-1);
                 String newURL = getDownloadInfo(downloadLink);
-
+                if(step.getStatus()==PluginStep.STATUS_ERROR){
+                    return step;
+                    
+                }
                 // logger.info(newURL + " - " + captchaAddress + " - " +
                 // postTarget
                 // + " - " + actionString);
@@ -652,6 +655,7 @@ public class Rapidshare extends PluginForHost {
                 downloadLink.setStatus(DownloadLink.STATUS_ERROR_TEMPORARILY_UNAVAILABLE);
                 return null;
             }
+            // falls dei meldung auf der Startseite kommt ist der check hier richtig
             if (requestInfo.containsHTML(toManyUser)) {
 
                 currentStep.setStatus(PluginStep.STATUS_ERROR);
@@ -674,16 +678,16 @@ public class Rapidshare extends PluginForHost {
                 }
                 // Auswahl ob free oder prem
                 requestInfo = postRequest(new URL(newURL), null, null, null, "dl.start=free", true);
+//Falls der check erst nach der free auswahl sein muss, dann wäre hier der richtige Platz
+                if (requestInfo.containsHTML(toManyUser)) {
 
-                // captcha Adresse finden
+                    currentStep.setStatus(PluginStep.STATUS_ERROR);
+                    currentStep.setParameter(60 * 2);
+                    logger.severe("Rs.com zuviele User");
+                    downloadLink.setStatus(DownloadLink.STATUS_ERROR_TO_MANY_USERS);
+                    return null;
 
-                // <p><h3><font color="#CC0000">PREMIUM-Downloader 1999504 (<a
-                // href="http://rapidshare.com/cgi-bin/premium.cgi?logout=1">Logout</a>)</font></h3><p>Du
-                // hast <font
-                // color="red">http://rapidshare.com/files/12196127/DUCKS.part02.rar</font>
-                // (<b>99614</b> KB) angefordert.</p><p><table><tr><td><a
-                // href="http://rs16gc2.rapidshare.com/files/12196127/dl/DUCKS.part02.rar">Download
-                // via GlobalCrossing #2</a><br>
+                }
                 captchaAddress = getFirstMatch(requestInfo.getHtmlCode(), patternForCaptcha, 1);
 
                 // post daten lesen
@@ -769,7 +773,14 @@ public class Rapidshare extends PluginForHost {
         postParameter = new HashMap<String, String>();
 
     }
-
+    public String getFileInformationString(DownloadLink parameter){
+        if(this.hardewareError){
+            return "<Hardware Fehler> "+ super.getFileInformationString(parameter);  
+        }else{
+          return  super.getFileInformationString(parameter);  
+        }
+       
+    }
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) {
 
@@ -779,6 +790,7 @@ public class Rapidshare extends PluginForHost {
             requestInfo = getRequest(new URL(downloadLink.getUrlDownloadDecrypted()));
 
             if (requestInfo.getHtmlCode().indexOf(hardwareDefektString) > 0) {
+                this.hardewareError=true;
                 return false;
             }
             if (requestInfo.getConnection().getHeaderField("Location") != null) {

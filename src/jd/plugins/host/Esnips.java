@@ -39,10 +39,7 @@ public class Esnips extends PluginForHost {
     public String getVersion() {
         return version;
     }
-    @Override
-    public boolean isClipboardEnabled() {
-        return true;
-    }
+
     @Override
     public String getPluginID() {
         return host + version;

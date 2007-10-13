@@ -78,6 +78,10 @@ public class Configuration extends Property implements Serializable {
     public static final String PARAM_HTTPSEND_USER = "HTTPSEND_USER";
     public static final String PARAM_HTTPSEND_PASS = "HTTPSEND_PASS";
     public static final String PARAM_HTTPSEND_REQUESTS = "HTTPSEND_REQUESTS";
+    public static final String PARAM_HTTPSEND_IPCHECKWAITTIME = "HTTPSEND_IPCHECKWAITTIME";
+    public static final String PARAM_HTTPSEND_RETRIES = "HTTPSEND_RETRIES";
+    public static final String PARAM_HTTPSEND_WAITFORIPCHANGE = "HTTPSEND_WAITFORIPCHANGE";
+    public static final String PARAM_DISABLE_CONFIRM_DIALOGS = "DISABLE_CONFIRM_DIALOGS";
     /**
      * Hier wird das Downloadverzeichnis gespeichert
      */

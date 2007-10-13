@@ -107,7 +107,7 @@ public class DistributeData extends ControlMulticaster {
         // wird.
         for (int i = 0; i < pluginsForDecrypt.size(); i++) {
             pDecrypt = pluginsForDecrypt.get(i);
-            if (pDecrypt.isClipboardEnabled() && pDecrypt.canHandle(data)) {
+            if ( pDecrypt.canHandle(data)) {
                 fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_PLUGIN_DECRYPT_ACTIVE, pDecrypt));
                 cryptedLinks.addAll(pDecrypt.getDecryptableLinks(data));
                 data = pDecrypt.cutMatches(data);
@@ -126,7 +126,7 @@ public class DistributeData extends ControlMulticaster {
                 Iterator<String> iterator = decryptedLinks.iterator();
                 while (iterator.hasNext()) {
                     String data = iterator.next();
-                    if (pDecrypt.isClipboardEnabled() && pDecrypt.canHandle(data)) {
+                    if (pDecrypt.canHandle(data)) {
                         moreToDo = true;
                         fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_PLUGIN_DECRYPT_ACTIVE, pDecrypt));
                         // logger.info("decryptedLink removed
@@ -145,7 +145,7 @@ public class DistributeData extends ControlMulticaster {
         // Plugins der Hoster geschickt.
         for (int i = 0; i < pluginsForHost.size(); i++) {
             pHost = pluginsForHost.get(i);
-            if (pHost.isClipboardEnabled() && pHost.canHandle(data)) {
+            if (pHost.canHandle(data)) {
                 links.addAll(pHost.getDownloadLinks(data));
                 data = pHost.cutMatches(data);
             }
@@ -162,7 +162,7 @@ public class DistributeData extends ControlMulticaster {
 //            logger.info("link: " + decrypted);
             for (int i = 0; i < pluginsForHost.size(); i++) {
                 pHost = pluginsForHost.get(i);
-                if (pHost.isClipboardEnabled() && pHost.canHandle(decrypted)) {
+                if (pHost.canHandle(decrypted)) {
                     links.addAll(pHost.getDownloadLinks(decrypted));
                     iterator.remove();
                 }

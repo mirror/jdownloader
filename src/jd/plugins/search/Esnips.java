@@ -70,10 +70,7 @@ private static String[] CATEGORIES =new String[]{"Audio"};
         return host;
     }
 
-    @Override
-    public boolean isClipboardEnabled() {
-        return true;
-    }
+
 
     @Override
     public String getVersion() {

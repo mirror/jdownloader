@@ -62,7 +62,7 @@ public class WebUpdater implements Serializable {
         if(path!=null){
             this.setListPath(path);
         }else{
-            this.setListPath( "http://lagcity.de/~JDownloaderFiles/autoUpdate");
+            this.setListPath( "http://jdownloader.ath.cx/autoUpdate");
            
         }
 
