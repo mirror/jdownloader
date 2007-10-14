@@ -2,16 +2,15 @@ package jd.plugins.decrypt;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Vector;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
 import jd.plugins.event.PluginEvent;
+import jd.utils.JDUtilities;
 
 /**
  * http://stealth.to/?id=13wz0z8lds3nun4dihetpsqgzte4t2
@@ -22,20 +21,9 @@ import jd.plugins.event.PluginEvent;
  * 
  */
 public class Stealth extends PluginForDecrypt {
-    static private final String   host                 = "Stealth.to";
-
-    private String  version              = "1.0.0.1";
-
-    private String  addressForPopupPost  = "http://stealth.to/get1.php?id=%s&h=%s";
-
-    private Pattern patternSupported     = getSupportPattern("http://stealth.to/\\?id=[+]");
-
-    /**
-     * Dieses Pattern erkennt einen Parameter für eine Downloadadress
-     * 
-     * popup *\( *\"([0-9]*)\" *, *\"([0-9]*)\" *\)
-     */
-    private Pattern patternLinkParameter = Pattern.compile("popup *\\( *\\\"([0-9]*)\\\" *, *\\\"([0-9]*)\\\" *\\)");
+    static private final String host = "Stealth.to";
+    private String  version = "1.0.0.2";
+    private Pattern patternSupported = getSupportPattern("http://[*]stealth.to/\\?id=[+]");
 
     public Stealth() {
         super();
@@ -73,57 +61,36 @@ public class Stealth extends PluginForDecrypt {
     public String getPluginID() {
         return "STEALTH-1.0.0.";
     }
-
-
- 
-
+    
     @Override
     public boolean doBotCheck(File file) {
         return false;
     }
 
-    @Override
-    public PluginStep doStep(PluginStep step, String parameter) {
-        String cryptedLink = (String) parameter;
-        switch (step.getStep()) {
-            case PluginStep.STEP_DECRYPT:
-                Vector<String> decryptedLinks = new Vector<String>();
-             // Zählen aller verfügbaren Treffer
-                try {
-                    URL url = new URL(cryptedLink);
-                    RequestInfo requestInfo = getRequest(url, null, null, false);
-                    int countHits = countOccurences(requestInfo.getHtmlCode(), patternLinkParameter);
-
-                    firePluginEvent(new PluginEvent(this, PluginEvent.PLUGIN_PROGRESS_MAX, countHits));
-
-                    // Hier werden alle verschlüsselten Links behandelt
-
-                    Matcher matcher = patternLinkParameter.matcher(requestInfo.getHtmlCode());
-                    int position = 0;
-                    while (matcher.find(position)) {
-                        position = matcher.start() + matcher.group().length();
-                        String address = String.format(addressForPopupPost, new Object[] { matcher.group(1), matcher.group(2) });
-                        requestInfo = postRequestWithoutHtmlCode((new URL(address)), null, null, null, false);
-                        if (requestInfo != null) {
-                            firePluginEvent(new PluginEvent(this, PluginEvent.PLUGIN_PROGRESS_INCREASE, null));
-                            decryptedLinks.add(requestInfo.getLocation());
-                        }
-                    }
-                    logger.info(decryptedLinks.size() + " downloads decrypted");
-                    firePluginEvent(new PluginEvent(this, PluginEvent.PLUGIN_PROGRESS_FINISH, null));
-                    currentStep = null;
-                }
-                catch (MalformedURLException e) {
-                    e.printStackTrace();
-                }
-                catch (IOException e) {
-                    e.printStackTrace();
-                }
-                step.setParameter(decryptedLinks);
-                break;
-
-        }
-        return null;
-
+    @Override public PluginStep doStep(PluginStep step, String parameter) {
+    	if(step.getStep() == PluginStep.STEP_DECRYPT) {
+            Vector<String> decryptedLinks = new Vector<String>();
+    		try {
+    			URL url = new URL(parameter);
+    			RequestInfo reqinfo = getRequest(url);
+    			RequestInfo reqhelp = postRequest(new URL("http://stealth.to/ajax.php"), null, parameter, null, "id=" + getBetween(reqinfo.getHtmlCode(), "<div align=\"center\"><a id=\"", "\" href=\"") + "&typ=hit", true);
+    			Vector<Vector<String>> links = getAllSimpleMatches(reqinfo.getHtmlCode(), "dl = window.open(\"°\"");
+    			firePluginEvent(new PluginEvent(this,PluginEvent.PLUGIN_PROGRESS_MAX, links.size()));
+				
+				for(int j=0; j<links.size(); j++) {
+					reqhelp = getRequest(new URL("http://stealth.to/" + links.get(j).get(0)));
+    				decryptedLinks.add(JDUtilities.htmlDecode(getBetween(reqhelp.getHtmlCode(), "iframe src=\"", "\"")));
+    				firePluginEvent(new PluginEvent(this,PluginEvent.PLUGIN_PROGRESS_INCREASE, null));
+				}
+    			
+    			//Decrypt abschliessen
+    			firePluginEvent(new PluginEvent(this,PluginEvent.PLUGIN_PROGRESS_FINISH, null));
+    			step.setParameter(decryptedLinks);
+    		}
+    		catch(IOException e) {
+    			e.printStackTrace();
+    		}
+    	}
+    	return null;
     }
 }
