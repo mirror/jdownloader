@@ -1,7 +1,9 @@
 package jd;
 
+import java.awt.BorderLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
+import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.WindowEvent;
@@ -13,15 +15,18 @@ import javax.swing.JButton;
 import javax.swing.JDialog;
 import javax.swing.JFileChooser;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
 
 import jd.gui.skins.simple.components.BrowseFile;
 import jd.plugins.Plugin;
-import jd.update.WebUpdater;
 import jd.utils.JDUtilities;
 
 /**
- * Der Installer erscheint nur beim ersten mal STarten der Webstartversion und beim neuinstallieren der webstartversion
- *  der User kann Basiceinstellungen festlegen
+ * Der Installer erscheint nur beim ersten mal STarten der Webstartversion und
+ * beim neuinstallieren der webstartversion der User kann Basiceinstellungen
+ * festlegen
+ * 
  * @author Coalado
  */
 public class Installer extends JDialog implements ActionListener, WindowListener {
@@ -29,131 +34,117 @@ public class Installer extends JDialog implements ActionListener, WindowListener
     /**
      * 8764525546298642601L
      */
-    private static final long  serialVersionUID = 8764525546298642601L;
-    private Logger             logger           = Plugin.getLogger();
+    private static final long serialVersionUID = 8764525546298642601L;
 
-    private JLabel lblMessage;
-    private BrowseFile browseFile;
-    private JButton btnOK;
-    private static boolean aborted = false;
+    private Logger            logger           = Plugin.getLogger();
+
+    private JPanel            panel;
+
+    protected Insets          insets           = new Insets(0, 0, 0, 0);
+
+    private BrowseFile        homeDir;
+
+    private BrowseFile        downloadDir;
+
+    private JButton           btnOK;
+
+    private  boolean    aborted          = false;
+
     /**
      * 
      */
-    public Installer() {
+    public Installer(File installPath, File downloadPath) {
         super();
         setModal(true);
-        setLayout(new GridBagLayout());
+        setLayout(new BorderLayout());
 
         this.setTitle("JDownloader Installation");
         this.setAlwaysOnTop(true);
 
         setLocation(20, 20);
-        lblMessage = new JLabel();
-        browseFile = new BrowseFile(50);
-        btnOK = new JButton("Weiter");
+        panel = new JPanel(new GridBagLayout());
 
-        btnOK.addActionListener(this);
+        homeDir = new BrowseFile();
+        homeDir.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+        homeDir.setEditable(true);
+        homeDir.setText(installPath.getAbsolutePath());
+
+        downloadDir = new BrowseFile();
+        downloadDir.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+        downloadDir.setEditable(true);
+        downloadDir.setText(downloadPath.getAbsolutePath());
         addWindowListener(this);
-        JDUtilities.addToGridBag(this, lblMessage, 0, 0, 1, 1, 0, 0, null, GridBagConstraints.CENTER, GridBagConstraints.CENTER);
-        JDUtilities.addToGridBag(this, browseFile, 0, 1, 1, 1, 0, 0, null, GridBagConstraints.CENTER, GridBagConstraints.CENTER);
-        JDUtilities.addToGridBag(this, btnOK,      0, 2, 1, 1, 0, 0, null, GridBagConstraints.CENTER, GridBagConstraints.CENTER);
+        JDUtilities.addToGridBag(panel, new JLabel("Install Directory"), GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        JDUtilities.addToGridBag(panel, homeDir, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 1, 0, insets, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+        JDUtilities.addToGridBag(panel, new JLabel("Default Download Directory"), GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        JDUtilities.addToGridBag(panel, downloadDir, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 1, 0, insets, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+        btnOK = new JButton("Continue...");
+        btnOK.addActionListener(this);
+        JDUtilities.addToGridBag(panel, btnOK, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        this.add(panel, BorderLayout.CENTER);
+        this.pack();
+
+        this.setVisible(true);
     }
 
-    /**
-     * Fragt einen Ordner beim User ab.  mit str kann man gezielt nach einem ordner fragen
-     * 
-     * @param message Die Nachricht, die dem Benutzer gezeigt werden soll
-     * @param path Standardpfad
-     * @return Dateipfad 
-     */
-    public String getDirectory(String message,File path) {
-        logger.info("getHome");
-        lblMessage.setText(message);
-        browseFile.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
-        browseFile.setCurrentPath(path);
-        pack();
+    public void windowClosing(WindowEvent e) {
+        this.aborted=true;
+        JOptionPane.showMessageDialog(this, "Installation aborted!");
+        homeDir.setText("");
+        downloadDir.setText("");
+  
+        
+    }
 
-        setVisible(true);
-        if(aborted)
+    public void windowActivated(WindowEvent e) {}
+
+    public void windowClosed(WindowEvent e) {}
+
+    public void windowDeactivated(WindowEvent e) {}
+
+    public void windowDeiconified(WindowEvent e) {}
+
+    public void windowIconified(WindowEvent e) {}
+
+    public void windowOpened(WindowEvent e) {}
+
+    public String getHomeDir() {
+      
+        new File(homeDir.getText()).mkdirs();
+        if (!new File(homeDir.getText()).exists() || !new File(homeDir.getText()).canRead()) {
+            this.aborted=true;
+            JOptionPane.showMessageDialog(this, "Installation aborted!\r\nInstallation Directory is not valid: " + homeDir.getText());
+            homeDir.setText("");
+            downloadDir.setText("");
+            this.dispose();
+            System.exit(1);
             return null;
-        else
-            return browseFile.getText();
-
-    }
-
-    /**
-     * FÃ¼hrt ein Webupdate nach der Installation aus und gibt im erfolgsfall true zurÃ¼ck, sonst false
-     * @return true/Fasle
-     */
-    public boolean doUpdate() {
-        logger.info("Update");
-        JLabel label = new JLabel("FÃ¼hre nun das Webupdate aus. BenÃ¶tigte Daten werden geladen.");
-        JDUtilities.addToGridBag(this, label, 0, 0, 1, 1, 0, 0, null, GridBagConstraints.CENTER, GridBagConstraints.CENTER);
-        final JLabel ticker = new JLabel("/");
-        JDUtilities.addToGridBag(this, ticker, 0, 2, 1, 1, 0, 0, null, GridBagConstraints.CENTER, GridBagConstraints.CENTER);
-        pack();
-        setVisible(true);
-        Thread th = new Thread() {
-            public void run() {
-                while (true) {
-                    try {
-                        Thread.sleep(300);
-                    }
-                    catch (InterruptedException e) {
-                    }
-
-                    if (ticker.getText().equals("\\")) {
-                        ticker.setText("/");
-
-                    }
-                    else if (ticker.getText().equals("-")) {
-                        ticker.setText("\\");
-                    }
-                    else if (ticker.getText().equals("/")) {
-                        ticker.setText("-");
-                    }
-
-                }
-            }
-        };
-        th.start();
-
-        WebUpdater updater = new WebUpdater(null);
-        updater.run();
-
-        ticker.setText("Aktualisierte Dateien: " + updater.getUpdatedFiles());
-
-        try {
-            Thread.sleep(2000);
         }
-        catch (InterruptedException e) { }
-        this.setVisible(false);
-        return true;
+        return homeDir.getText();
     }
 
+    public String getDownloadDir() {
+        new File(downloadDir.getText()).mkdirs();
+        if (!new File(downloadDir.getText()).exists() || !new File(downloadDir.getText()).canWrite()) {
+            this.aborted=true;
+            JOptionPane.showMessageDialog(this, "Installation aborted!\r\nDownload Directory is not valid: " + homeDir.getText());
+            homeDir.setText("");
+            downloadDir.setText("");
+            this.dispose();
+            System.exit(1);
+            return null;
+        }
 
-    /**
-     * Bricht die Installation ab
-     */
-    public void abortInstallation() {
-        aborted = true;
-        this.setVisible(false);
+        return downloadDir.getText();
     }
-    /**
-     * actionPerformed fÃ¼r die buttons
-     * @param e ActionEvent
-     */
+
     public void actionPerformed(ActionEvent e) {
-        aborted= false;
-        this.setVisible(false);
+  this.setVisible(false);
 
     }
-    public void windowClosing(WindowEvent e)     { abortInstallation(); }
-    public void windowActivated(WindowEvent e)   {  }
-    public void windowClosed(WindowEvent e)      {  }
-    public void windowDeactivated(WindowEvent e) {  }
-    public void windowDeiconified(WindowEvent e) {  }
-    public void windowIconified(WindowEvent e)   {  }
-    public void windowOpened(WindowEvent e)      {  }
+
+    public  boolean isAborted() {
+        return aborted;
+    }
 
 }

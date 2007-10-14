@@ -9,6 +9,7 @@ import java.io.Serializable;
 import java.util.Iterator;
 import java.util.Vector;
 
+import jd.config.Configuration;
 import jd.config.Property;
 import jd.utils.JDUtilities;
 
@@ -37,7 +38,7 @@ public class FilePackage extends Property implements Serializable {
     private Vector<DownloadLink> downloadLinks;
 
     public FilePackage() {
-        downloadDirectory = JDUtilities.getConfiguration().getDownloadDirectory();
+        downloadDirectory = JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_DOWNLOAD_DIRECTORY);
         counter++;
         id = System.currentTimeMillis() + "_" + counter;
 

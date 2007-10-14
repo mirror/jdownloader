@@ -36,6 +36,7 @@ import javax.swing.JSeparator;
 import javax.swing.JTextField;
 import javax.swing.ListSelectionModel;
 
+import jd.config.Configuration;
 import jd.event.UIEvent;
 import jd.gui.skins.simple.components.BrowseFile;
 import jd.plugins.DownloadLink;
@@ -106,7 +107,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
         bfSubFolder = new BrowseFile();
         bfSubFolder.setEditable(true);
         bfSubFolder.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
-        bfSubFolder.setText(JDUtilities.getConfiguration().getDownloadDirectory());
+        bfSubFolder.setText(JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_DOWNLOAD_DIRECTORY));
         scrollPane = new JScrollPane(list);
         btnOk.addActionListener(this);
         btnCancel.addActionListener(this);

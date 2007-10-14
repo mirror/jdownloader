@@ -220,6 +220,7 @@ public class JDController implements PluginListener, ControlListener, UIListener
         Vector<DownloadLink> newLinks;
         switch (uiEvent.getActionID()) {
             case UIEvent.UI_PAUSE_DOWNLOADS:
+                logger.info("KKKK");
                 pauseDownloads((Boolean) uiEvent.getParameter());
                 break;
             case UIEvent.UI_START_DOWNLOADS:
@@ -320,12 +321,8 @@ public class JDController implements PluginListener, ControlListener, UIListener
         }
     }
 
-    private void pauseDownloads(boolean value) {
-        if (getDownloadStatus()==DOWNLOAD_RUNNING) {
-          
-            watchdog.pause(value);
-         
-        }
+    private void pauseDownloads(boolean value) {    
+            watchdog.pause(value);     
         
     }
     /**

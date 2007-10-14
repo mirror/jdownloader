@@ -82,10 +82,7 @@ public class Configuration extends Property implements Serializable {
     public static final String PARAM_HTTPSEND_RETRIES = "HTTPSEND_RETRIES";
     public static final String PARAM_HTTPSEND_WAITFORIPCHANGE = "HTTPSEND_WAITFORIPCHANGE";
     public static final String PARAM_DISABLE_CONFIRM_DIALOGS = "DISABLE_CONFIRM_DIALOGS";
-    /**
-     * Hier wird das Downloadverzeichnis gespeichert
-     */
-    private String                  downloadDirectory                  = ".";
+    
     /**
      * Die unterschiedlichen Interaktionen. (ZB Reconnect nach einem Download)
      */
@@ -119,14 +116,7 @@ public class Configuration extends Property implements Serializable {
     // updater.setTrigger(Interaction.INTERACTION_APPSTART);
     // interactions.add(updater);
     }
-    /**
-     * Gibt das gewählte downloadDirectory zurück
-     * 
-     * @return dlDir
-     */
-    public String getDownloadDirectory() {
-        return (String) getProperty(Configuration.PARAM_DOWNLOAD_DIRECTORY, downloadDirectory);
-    }
+
     // public HashMap<Integer, Vector<Interaction>> getInteractionMap() { return
     // interactionMap; }
     /**
@@ -149,12 +139,8 @@ public class Configuration extends Property implements Serializable {
     public RouterData getRouterData() {
         return routerData;
     }
-    /**
-     * @param downloadDirectory
-     */
-    public void setDownloadDirectory(String downloadDirectory) {
-        this.downloadDirectory = downloadDirectory;
-    }
+
+
     /**
      * @param routerPassword
      */

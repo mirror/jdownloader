@@ -1184,7 +1184,7 @@ public class JDUtilities {
      * 
      * @param command
      * @return Ausgabe des aufgerufenen befehls
-     * @throws IOException
+     * @throws IOException 
      */
     public static String runCommandWaitAndReturn(String command) throws IOException {
         String ret = "";

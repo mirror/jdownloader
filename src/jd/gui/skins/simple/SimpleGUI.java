@@ -479,11 +479,9 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener {
             case JDAction.ITEMS_MOVE_BOTTOM:
                 tabDownloadTable.moveSelectedItems(e.getID());
                 break;
-            case JDAction.APP_PAUSE_DOWNLOADS:
-                if (!btnStartStop.isSelected() && JDUtilities.getController().getDownloadStatus() == JDController.DOWNLOAD_RUNNING) {
-
+            case JDAction.APP_PAUSE_DOWNLOADS:              
                     fireUIEvent(new UIEvent(this, UIEvent.UI_PAUSE_DOWNLOADS, btnPause.isSelected()));
-                }
+               
                 break;
             case JDAction.APP_START_STOP_DOWNLOADS:
                 if (btnStartStop.isSelected() && JDUtilities.getController().getDownloadStatus() == JDController.DOWNLOAD_NOT_RUNNING) {

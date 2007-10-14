@@ -529,6 +529,7 @@ public class DownloadWatchDog extends Thread implements PluginListener, ControlL
 
     public void pause(boolean value) {
         this.pause=value;
+        logger.info("KKK "+value);
         
     }
 

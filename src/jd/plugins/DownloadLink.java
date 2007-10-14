@@ -5,6 +5,7 @@ import java.io.Serializable;
 import java.util.logging.Logger;
 
 import jd.JDCrypt;
+import jd.config.Configuration;
 import jd.controlling.SpeedMeter;
 import jd.utils.JDUtilities;
 
@@ -111,7 +112,7 @@ public class DownloadLink implements Serializable,Comparable<DownloadLink> {
     /**
      * TODO downloadpath ueber config setzen
      */
-    private String            downloadPath                         = JDUtilities.getConfiguration().getDownloadDirectory();
+    private String            downloadPath                         =  JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_DOWNLOAD_DIRECTORY);
     /**
      * Wird dieser Wert gesetzt, so wird der Download unter diesem Namen (nicht
      * Pfad) abgespeichert.
