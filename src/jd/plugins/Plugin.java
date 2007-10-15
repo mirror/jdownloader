@@ -931,7 +931,8 @@ public abstract class Plugin {
      * @return Filename aus dem header (content disposition) extrahiert
      */
     public String getFileNameFormHeader(URLConnection urlConnection) {
-        String ret = getFirstMatch(urlConnection.getHeaderField("content-disposition"), Pattern.compile("filename=['\"](.*?)['\"]", Pattern.CASE_INSENSITIVE), 1);
+    	// old: String ret = getFirstMatch(urlConnection.getHeaderField("content-disposition"), Pattern.compile("filename=['\"](.*?)['\"]", Pattern.CASE_INSENSITIVE), 1);
+        String ret = getFirstMatch(urlConnection.getHeaderField("content-disposition"), Pattern.compile("filename=['\"]?([^'\";]*)", Pattern.CASE_INSENSITIVE), 1);
         if (ret == null) {
             int index = Math.max(urlConnection.getURL().getFile().lastIndexOf("/"), urlConnection.getURL().getFile().lastIndexOf("\\"));
             return urlConnection.getURL().getFile().substring(index + 1);
