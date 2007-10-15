@@ -1213,6 +1213,7 @@ public class JDUtilities {
         if (command == null) {
             return;
         }
+       
         try {
             Runtime rt = Runtime.getRuntime();
             rt.exec(command, null, new File(command.split(" ")[0]).getParentFile());
