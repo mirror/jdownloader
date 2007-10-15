@@ -7,6 +7,8 @@ import java.util.Iterator;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import javax.swing.JOptionPane;
+
 import jd.config.Configuration;
 import jd.controlling.JDController;
 import jd.controlling.interaction.Interaction;
@@ -22,7 +24,6 @@ import jd.utils.JDUtilities;
 /**
  * @author astaldo
  */
-
 // TODO Links speichern / laden / editieren(nochmal laden, Passwort merken)
 // TODO Klänge wiedergeben
 // TODO HTTPPost Klasse untersuchen
@@ -34,18 +35,20 @@ public class Main {
      * @param args
      */
     public static void main(String args[]) {
+        if (SingleInstanceController.isApplicationRunning()) {
+            JOptionPane.showMessageDialog(null, "jDownloader läuft bereits!", "jDownloader", JOptionPane.WARNING_MESSAGE);
+            System.exit(0);
+            return;
+        }
+        SingleInstanceController.bindRMIObject(new SingleInstanceController());
         Main main = new Main();
         main.go();
     }
-
     private void go() {
         Logger logger = Plugin.getLogger();
         loadImages();
-
         File fileInput = null;
-
         try {
-
             fileInput = JDUtilities.getResourceFile(JDUtilities.CONFIG_PATH);
         }
         catch (RuntimeException e) {
@@ -54,7 +57,6 @@ public class Main {
         try {
             logger.finer("Load config from: " + fileInput + " (" + JDUtilities.CONFIG_PATH + ")");
             if (fileInput != null && fileInput.exists()) {
-
                 Object obj = JDUtilities.loadObject(null, fileInput, Configuration.saveAsXML);
                 if (obj instanceof Configuration) {
                     Configuration configuration = (Configuration) obj;
@@ -66,7 +68,6 @@ public class Main {
                     logger.severe("Konfigurationskonflikt. Lade Default einstellungen");
                     JDUtilities.getConfiguration().setDefaultValues();
                 }
-
             }
             else {
                 logger.warning("no configuration loaded");
@@ -78,57 +79,46 @@ public class Main {
             logger.severe("Konfigurationskonflikt. Lade Default einstellungen");
             JDUtilities.getConfiguration().setDefaultValues();
         }
-
         logger.info("Lade Plugins");
         JDUtilities.loadPlugins();
-
-            UIInterface uiInterface = new SimpleGUI();
-            // deaktiviere den Cookie Handler. Cookies müssen komplett selbst
-            // verwaltet werden. Da JD später sowohl standalone, als auch im
-            // Webstart laufen soll muss die Cookieverwaltung selbst übernommen
-            // werdn
-            CookieHandler.setDefault(null);
-            logger.info("Erstelle Controller");
-            JDController controller = new JDController();
-            controller.setUiInterface(uiInterface);
-            logger.info("Lade Queue");
-            if (!controller.initDownloadLinks()) {
-
-                File links = JDUtilities.getResourceFile("links.dat");
-                if (links.exists()) {
-                    File newFile = new File(links.getAbsolutePath() + ".bup");
-                    newFile.delete();
-                    links.renameTo(newFile);
-                    uiInterface.showMessageDialog("Linkliste inkompatibel. \r\nBackup angelegt: " + newFile + " Liste geleert!");
-
-                }
-
+        UIInterface uiInterface = new SimpleGUI();
+        // deaktiviere den Cookie Handler. Cookies müssen komplett selbst
+        // verwaltet werden. Da JD später sowohl standalone, als auch im
+        // Webstart laufen soll muss die Cookieverwaltung selbst übernommen
+        // werdn
+        CookieHandler.setDefault(null);
+        logger.info("Erstelle Controller");
+        JDController controller = new JDController();
+        controller.setUiInterface(uiInterface);
+        logger.info("Lade Queue");
+        if (!controller.initDownloadLinks()) {
+            File links = JDUtilities.getResourceFile("links.dat");
+            if (links.exists()) {
+                File newFile = new File(links.getAbsolutePath() + ".bup");
+                newFile.delete();
+                links.renameTo(newFile);
+                uiInterface.showMessageDialog("Linkliste inkompatibel. \r\nBackup angelegt: " + newFile + " Liste geleert!");
             }
-
-            logger.info("Registriere Plugins");
-            Iterator<PluginForHost> iteratorHost = JDUtilities.getPluginsForHost().iterator();
-            while (iteratorHost.hasNext()) {
-                iteratorHost.next().addPluginListener(controller);
-            }
-            Iterator<PluginForDecrypt> iteratorDecrypt = JDUtilities.getPluginsForDecrypt().iterator();
-            while (iteratorDecrypt.hasNext()) {
-                iteratorDecrypt.next().addPluginListener(controller);
-            }
-            Iterator<PluginForSearch> iteratorSearch = JDUtilities.getPluginsForSearch().iterator();
-            while (iteratorSearch.hasNext()) {
-                iteratorSearch.next().addPluginListener(controller);
-            }
-            Iterator<PluginForContainer> iteratorContainer = JDUtilities.getPluginsForContainer().iterator();
-            while (iteratorContainer.hasNext()) {
-                iteratorContainer.next().addPluginListener(controller);
-            }
-
-            Interaction.handleInteraction(Interaction.INTERACTION_APPSTART, false);
-        
-      
-
+        }
+        logger.info("Registriere Plugins");
+        Iterator<PluginForHost> iteratorHost = JDUtilities.getPluginsForHost().iterator();
+        while (iteratorHost.hasNext()) {
+            iteratorHost.next().addPluginListener(controller);
+        }
+        Iterator<PluginForDecrypt> iteratorDecrypt = JDUtilities.getPluginsForDecrypt().iterator();
+        while (iteratorDecrypt.hasNext()) {
+            iteratorDecrypt.next().addPluginListener(controller);
+        }
+        Iterator<PluginForSearch> iteratorSearch = JDUtilities.getPluginsForSearch().iterator();
+        while (iteratorSearch.hasNext()) {
+            iteratorSearch.next().addPluginListener(controller);
+        }
+        Iterator<PluginForContainer> iteratorContainer = JDUtilities.getPluginsForContainer().iterator();
+        while (iteratorContainer.hasNext()) {
+            iteratorContainer.next().addPluginListener(controller);
+        }
+        Interaction.handleInteraction(Interaction.INTERACTION_APPSTART, false);
     }
-
     /**
      * Die Bilder werden aus der JAR Datei nachgeladen //
      */
@@ -150,7 +140,6 @@ public class Main {
     // e.printStackTrace();
     // }
     // }
-
     private void loadImages() {
         ClassLoader cl = getClass().getClassLoader();
         Toolkit toolkit = Toolkit.getDefaultToolkit();
@@ -174,7 +163,6 @@ public class Main {
         JDUtilities.addImage("up", toolkit.getImage(cl.getResource("img/up.png")));
         JDUtilities.addImage("update", toolkit.getImage(cl.getResource("img/update.png")));
         JDUtilities.addImage("search", toolkit.getImage(cl.getResource("img/search.png")));
-
         JDUtilities.addImage("bottom", toolkit.getImage(cl.getResource("img/bottom.png")));
         JDUtilities.addImage("bug", toolkit.getImage(cl.getResource("img/bug.png")));
         JDUtilities.addImage("home", toolkit.getImage(cl.getResource("img/home.png")));

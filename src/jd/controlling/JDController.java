@@ -5,6 +5,7 @@ import java.util.Iterator;
 import java.util.Vector;
 import java.util.logging.Logger;
 
+import jd.SingleInstanceController;
 import jd.config.Configuration;
 import jd.controlling.interaction.HTTPReconnect;
 import jd.controlling.interaction.Interaction;
@@ -108,6 +109,7 @@ public class JDController implements PluginListener, ControlListener, UIListener
      */
     private void exit() {
         saveDownloadLinks(JDUtilities.getResourceFile("links.dat"));
+        SingleInstanceController.unbindRMIObject();
         System.exit(0);
     }
 
