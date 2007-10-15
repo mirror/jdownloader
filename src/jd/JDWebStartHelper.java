@@ -31,7 +31,12 @@ import jd.utils.JDUtilities;
  */
 public class JDWebStartHelper {
     private static Logger logger = Plugin.getLogger();
-
+    /**
+     * Liefert das JD Home Verzeichnis zurück 
+     * (Anhand der im Webstart gespeicherten Cookie Informationen)
+     * 
+     * @return Das JD Home Verzeichnis oder null, falls ein Problem aufgetaucht ist
+     */
     public static String getJDHomeDirectoryFromWebStartCookie() {
         BasicService basicService;
         PersistenceService persistentService;

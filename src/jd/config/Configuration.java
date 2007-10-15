@@ -5,7 +5,7 @@ import java.util.Vector;
 
 import jd.controlling.interaction.Interaction;
 import jd.controlling.interaction.InteractionTrigger;
-import jd.controlling.interaction.ManuelCaptcha;
+import jd.controlling.interaction.ManualCaptcha;
 import jd.controlling.interaction.WebUpdate;
 import jd.router.RouterData;
 
@@ -258,7 +258,7 @@ public class Configuration extends Property implements Serializable {
             wu.setTrigger(it);
             interactions.add(wu);
         }
-        ManuelCaptcha jac = new ManuelCaptcha();
+        ManualCaptcha jac = new ManualCaptcha();
         if (getInteractions(Interaction.INTERACTION_DOWNLOAD_CAPTCHA).size() == 0) {
             InteractionTrigger it = Interaction.INTERACTION_DOWNLOAD_CAPTCHA;
             jac.setTrigger(it);

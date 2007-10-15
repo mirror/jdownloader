@@ -199,7 +199,6 @@ public class UTILITIES {
                 return new URLClassLoader(new URL[] { new URL(path) });
             }
             catch (URISyntaxException e) {
-                // TODO Auto-generated catch block
                 e.printStackTrace();
 
             }
@@ -1330,7 +1329,6 @@ public class UTILITIES {
             return ret;
         }
         catch (UnsupportedEncodingException e) {
-            // TODO Auto-generated catch block
             e.printStackTrace();
         }
         return str;

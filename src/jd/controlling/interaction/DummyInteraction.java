@@ -53,8 +53,5 @@ public class DummyInteraction extends Interaction implements Serializable {
     @Override
     public void initConfig() {}
     @Override
-    public void resetInteraction() {
-        // TODO Auto-generated method stub
-        
-    }
+    public void resetInteraction() {}
 }

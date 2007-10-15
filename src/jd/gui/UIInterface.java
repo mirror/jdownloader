@@ -21,7 +21,6 @@ public interface UIInterface {
      * @return Alle DownloadLinks
      */
     public Vector<DownloadLink> getDownloadLinks();
-
     /**
      * Der Benutzer soll den Captcha Code eintippen
      * 
@@ -30,8 +29,6 @@ public interface UIInterface {
      * @return Der erkannte Text
      */
     public String getCaptchaCodeFromUser(Plugin plugin, File captchaAddress);
-
-  
     /**
      * Legt alle DownloadLinks fest
      * 
@@ -50,9 +47,6 @@ public interface UIInterface {
      * @param event ein ControlEvent
      */
     public void delegatedControlEvent(ControlEvent event);
-    
- 
-    
     /**
      * Fügt einen UIListener hinzu
      * 
@@ -78,10 +72,10 @@ public interface UIInterface {
     public void showMessageDialog(String string);
     /**
      * Zeigt einen Eingabe Dialog an
-     * @param string
+     * @param string Die Nachricht, die angezeigt werden soll
+     * @return Der vom Benutzer eingegebene Text
      */
     public String showUserInputDialog(String string);
-    
     /**
      * Zeigt einen MessageDialog an
      * @param string Nachricht, die angezeigt werden soll
@@ -93,6 +87,4 @@ public interface UIInterface {
      * @param links
      */
     public void addLinksToGrabber(Vector<DownloadLink> links);
-
-    
 }

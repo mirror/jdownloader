@@ -112,7 +112,4 @@ public abstract class PluginForDecrypt extends Plugin {
             return "";
         }
     }
-
-
-
 }

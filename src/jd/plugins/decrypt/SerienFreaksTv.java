@@ -6,8 +6,6 @@ import java.net.URL;
 import java.util.Date;
 import java.util.Vector;
 import java.util.regex.Pattern;
-import java.util.regex.Matcher;
-import jd.utils.JDUtilities;
 
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -16,7 +14,7 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
 import jd.plugins.event.PluginEvent;
-import java.net.URLDecoder;
+import jd.utils.JDUtilities;
 
 public class SerienFreaksTv extends PluginForDecrypt {
 	private static final String CODER			= "Bo0nZ";
@@ -90,7 +88,7 @@ public class SerienFreaksTv extends PluginForDecrypt {
 	    					String favorit = favorites[i].trim();
 	    					
 	    					//Wenn Favorit leer, dann abbrechen
-	    					if (favorit.isEmpty())
+	    					if (favorit.length() == 0)
 	    						continue;
 	    					
 	    					favPattern = "<FORM ACTION=\"([^\"]+)\" [^>]+ NAME=\"download_form\" [^>]+>.*?<H1>[^<>]+ \\(.*?" + favorit + ".*?, .*?Url.*?\\)</H1>.*?<IMG SRC=\"(/v3/secure/[^\"]+)\" [^>]+>.*?<INPUT TYPE=\"HIDDEN\" NAME=\"([^\"]+)\" VALUE=\"([^\"]+)\">.*?<INPUT TYPE=\"HIDDEN\" NAME=\"([^\"]+)\" VALUE=\"([^\"]+)\">.*?<INPUT TYPE=\"HIDDEN\" NAME=\"([^\"]+)\" VALUE=\"([^\"]+)\">";;

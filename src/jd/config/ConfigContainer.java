@@ -17,18 +17,49 @@ public class ConfigContainer implements Serializable {
      * serialVersionUID
      */
     private static final long serialVersionUID = 6583843494325603616L;
-
+    /**
+     * ConfigElement ist eine Zahlenkomponente (Spinner)
+     */
     public static final int     TYPE_SPINNER    = 8;
+    /**
+     * ConfigElement ist ein Browser für eine Datei
+     */
     public static final int     TYPE_BROWSEFILE = 7;
+    /**
+     * ConfigElement ist eine Trennlinie
+     */
     public static final int     TYPE_SEPERATOR  = 6;
+    /**
+     * ConfigElement ist ein Radiobutton
+     */
     public static final int     TYPE_RADIOFIELD = 5;
+    /**
+     * ConfigElement ist ein Label
+     */
     public static final int     TYPE_LABEL      = 4;
+    /**
+     * ConfigElement ist eine Checkbox
+     */
     public static final int     TYPE_CHECKBOX   = 3;
+    /**
+     * ConfigElement ist ein Button
+     */
     public static final int     TYPE_BUTTON     = 2;
+    /**
+     * ConfigElement ist ein Combobox
+     */
     public static final int     TYPE_COMBOBOX   = 1;
+    /**
+     * ConfigElement ist ein Textfeld
+     */
     public static final int     TYPE_TEXTFIELD  = 0;
+    /**
+     * ConfigElement ist ein Browser für ein Verzeichnis
+     */
     public static final int TYPE_BROWSEFOLDER = 9;
-
+    /**
+     * ConfigElement ist ein Textbereich
+     */
     public static final int TYPE_TEXTAREA = 10;
 
     private Property propertyInstance;
