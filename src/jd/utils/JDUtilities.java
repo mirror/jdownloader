@@ -10,6 +10,7 @@ import java.awt.Insets;
 import java.awt.MediaTracker;
 import java.awt.Point;
 import java.awt.Toolkit;
+import java.awt.TrayIcon;
 import java.beans.XMLDecoder;
 import java.beans.XMLEncoder;
 import java.io.BufferedInputStream;
@@ -27,6 +28,7 @@ import java.io.InputStreamReader;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.UnsupportedEncodingException;
+import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.MalformedURLException;
@@ -411,6 +413,82 @@ public class JDUtilities {
             return homeDirectoryFile;
         }
         return getJDHomeDirectoryFromEnvironment();
+    }
+    
+    /**
+     * Lädt eine Klasse aus dem homedir. UNd instanziert sie mit den gegebenen arumenten
+     * @param classPath
+     * @param arguments
+     * @return
+     */
+    public static Object getHomeDirInstance(String classPath,Object[] arguments){
+       
+            classPath=classPath.replaceAll("\\.class", "");
+            classPath=classPath.replaceAll("\\/", ".");
+            classPath=classPath.replaceAll("\\\\", ".");
+            logger.finer("Load Class form homedir: "+classPath);
+            Class newClass=null;
+            //Zuerst versuchen die klasse aus dem appdir zu laden( praktisch zum entwicklen solcher klassen)
+            try {
+                newClass = Class.forName(classPath);
+            }
+            catch (ClassNotFoundException e1) { }
+            //Falls das nicht geklappt hat wird die klasse im homedir gesucht
+            if(newClass==null){
+                try {
+                    newClass=Class.forName(classPath, true, JDUtilities.getURLClassLoader());
+                }
+                catch (ClassNotFoundException e) {
+                    logger.severe(classPath+": "+e.getLocalizedMessage());
+                    e.printStackTrace();
+                }
+            }
+            try {
+//                newClass = Class.forName(classPath);
+                
+                
+            
+            Class[] classes= new Class[arguments.length];
+            for(int i=0; i<arguments.length;i++){
+                classes[i]=arguments[i].getClass();
+            }
+            Constructor con = newClass.getConstructor(classes);
+            return con.newInstance(arguments);
+            
+            }
+          
+            catch (SecurityException e) {
+                logger.severe(classPath+": "+e.getLocalizedMessage());
+                e.printStackTrace();
+            }
+            catch (NoSuchMethodException e) {
+                logger.severe(classPath+": "+e.getLocalizedMessage());
+                e.printStackTrace();
+            }
+            catch (IllegalArgumentException e) {
+                logger.severe(classPath+": "+e.getLocalizedMessage());
+                e.printStackTrace();
+            }
+            catch (InstantiationException e) {
+                logger.severe(classPath+": "+e.getLocalizedMessage());
+                e.printStackTrace();
+            }
+            catch (IllegalAccessException e) {
+                logger.severe(classPath+": "+e.getLocalizedMessage());
+                e.printStackTrace();
+            }
+            catch (InvocationTargetException e) {
+                logger.severe(classPath+": "+e.getLocalizedMessage());
+                e.printStackTrace();
+            }
+            catch (Exception e) {
+                logger.severe(classPath+": "+e.getLocalizedMessage());
+                e.printStackTrace();
+            }
+      return null;
+
+          
+
     }
     /**
      * Schreibt das Home Verzeichnis in den Webstart Cache
@@ -1238,6 +1316,16 @@ public class JDUtilities {
      */
     public static void setController(JDController con) {
         controller = con;
+    }
+    /**
+     * @return Gibt die verwendete java Version als Double Value zurück. z.B. 1.603
+     */
+    public static Double getJavaVersion(){
+        String version=System.getProperty("java.version");
+        int majorVersion=JDUtilities.filterInt(version.substring(0,version.indexOf(".")));
+        int subversion=JDUtilities.filterInt(version.substring(version.indexOf(".")+1));
+      
+        return Double.parseDouble(majorVersion+"."+subversion);
     }
     /**
      * Ersetzt die Platzhalter in einem String

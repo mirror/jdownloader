@@ -27,6 +27,8 @@ public class ConfigEntry implements Serializable {
     private int              start;
     private int              end;
 
+    private boolean enabled=true;
+
     /**
      * Konstruktor für z.B. Buttons (Label+ Actionlistener)
      * 
@@ -39,6 +41,7 @@ public class ConfigEntry implements Serializable {
         this.type = type;
         this.label = label;
         this.actionListener = listener;
+        enabled=true;
     }
 
     /**
@@ -50,6 +53,7 @@ public class ConfigEntry implements Serializable {
     public ConfigEntry(int type, String label) {
         this.type = type;
         this.label = label;
+        enabled=true;
     }
 
     /**
@@ -68,8 +72,13 @@ public class ConfigEntry implements Serializable {
         this.propertyName = propertyName;
         this.propertyInstance = propertyInstance;
         this.label = label;
+        enabled=true;
     }
 
+    public ConfigEntry setEnabled(boolean value){
+        this.enabled=value;
+        return this;
+    }
     /**
      * Konstruktor z.B. für Combobox oder radiofield ( mehrere werte(list),
      * eine auswahl (property)
@@ -238,6 +247,11 @@ public class ConfigEntry implements Serializable {
     public ConfigEntry setEnd(int end) {
         this.end = end;
         return this;
+    }
+
+    public boolean isEnabled() {
+     
+        return enabled;
     }
 
 }

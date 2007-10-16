@@ -86,11 +86,13 @@ public class GUIConfigEntry extends JPanel {
             case ConfigContainer.TYPE_TEXTFIELD:
                 this.add(new JLabel(configEntry.getLabel()), BorderLayout.CENTER);
                 input[0] = new JTextField(50);
+                input[0].setEnabled(configEntry.isEnabled());
                 this.add(input[0], BorderLayout.EAST);
                 break;
             case ConfigContainer.TYPE_TEXTAREA:
                 this.add(new JLabel(configEntry.getLabel()), BorderLayout.BEFORE_FIRST_LINE);
                 input[0] = new JTextArea(20,50);
+                input[0].setEnabled(configEntry.isEnabled());
                 this.add(new JScrollPane(input[0]), BorderLayout.CENTER);
                 break;
             case ConfigContainer.TYPE_CHECKBOX:
@@ -98,12 +100,14 @@ public class GUIConfigEntry extends JPanel {
                 logger.info("ADD CheckBox");
                 this.add(new JLabel(configEntry.getLabel()), BorderLayout.CENTER);
                 input[0] = new JCheckBox();
+                input[0].setEnabled(configEntry.isEnabled());
                 this.add(input[0], BorderLayout.EAST);
                 break;
             case ConfigContainer.TYPE_BROWSEFILE:
                 logger.info("ADD Browser");
                 this.add(new JLabel(configEntry.getLabel()), BorderLayout.CENTER);
                 input[0] = new BrowseFile();
+                ((BrowseFile) input[0]).setEnabled(configEntry.isEnabled());
 
                 ((BrowseFile) input[0]).setEditable(true);
                 this.add(input[0], BorderLayout.EAST);
@@ -114,6 +118,7 @@ public class GUIConfigEntry extends JPanel {
                 input[0] = new BrowseFile();
 
                 ((BrowseFile) input[0]).setEditable(true);
+                ((BrowseFile) input[0]).setEnabled(configEntry.isEnabled());
                 ((BrowseFile) input[0]).setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
                 this.add(input[0], BorderLayout.EAST);
                 break;
@@ -121,7 +126,7 @@ public class GUIConfigEntry extends JPanel {
                 logger.info("ADD Spinner");
                 this.add(new JLabel(configEntry.getLabel()), BorderLayout.CENTER);
                 input[0] = new JSpinner(new SpinnerNumberModel(configEntry.getStart(), configEntry.getStart(), configEntry.getEnd(), configEntry.getStep()));
-
+                input[0].setEnabled(configEntry.isEnabled());
                 // ((JSpinner)input[0])
                 this.add(input[0], BorderLayout.EAST);
                 break;
@@ -129,6 +134,7 @@ public class GUIConfigEntry extends JPanel {
                 // logger.info("ADD Button");
                 input[0] = new JButton(configEntry.getLabel());
                 ((JButton) input[0]).addActionListener(configEntry.getActionListener());
+                input[0].setEnabled(configEntry.isEnabled());
                 this.add(input[0], BorderLayout.CENTER);
                 break;
             case ConfigContainer.TYPE_COMBOBOX:
@@ -139,10 +145,11 @@ public class GUIConfigEntry extends JPanel {
                 for (int i = 0; i < configEntry.getList().length; i++) {
                     if (configEntry.getList()[i].equals(configEntry.getPropertyInstance().getProperty(configEntry.getPropertyName()))) {
                         ((JComboBox) input[0]).setSelectedIndex(i);
+                        
                         break;
                     }
                 }
-
+                input[0].setEnabled(configEntry.isEnabled());
                 this.add(input[0], BorderLayout.EAST);
                 break;
             case ConfigContainer.TYPE_RADIOFIELD:
@@ -155,6 +162,7 @@ public class GUIConfigEntry extends JPanel {
                     radio = new JRadioButton(configEntry.getList()[i].toString());
                     radio.setActionCommand(configEntry.getList()[i].toString());
                     input[i] = radio;
+                    input[i].setEnabled(configEntry.isEnabled());
                     // Group the radio buttons.
 
                     group.add(radio);

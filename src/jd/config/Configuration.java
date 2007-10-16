@@ -82,6 +82,7 @@ public class Configuration extends Property implements Serializable {
     public static final String PARAM_HTTPSEND_RETRIES = "HTTPSEND_RETRIES";
     public static final String PARAM_HTTPSEND_WAITFORIPCHANGE = "HTTPSEND_WAITFORIPCHANGE";
     public static final String PARAM_DISABLE_CONFIRM_DIALOGS = "DISABLE_CONFIRM_DIALOGS";
+    public static final String PARAM_NO_TRAY = "NO_TRAY";
     
     /**
      * Die unterschiedlichen Interaktionen. (ZB Reconnect nach einem Download)

@@ -24,13 +24,9 @@ jd.plugins.decrypt.UpPicoasisNet
 jd.plugins.decrypt.Xirror
 jd.plugins.decrypt.XliceNet
 jd.plugins.decrypt.DDLWarez
-<<<<<<< .mine
-jd.plugins.decrypt.LinkProtectOrg
-jd.plugins.decrypt.LinkSafeWs
 jd.plugins.decrypt.Linkshield
 jd.plugins.decrypt.YoumirrorBiz
-jd.plugins.decrypt.SerienFreaksTv=======
 jd.plugins.decrypt.SerienFreaksTv
 jd.plugins.decrypt.LinkProtectOrg
 jd.plugins.decrypt.LinkSafeWs
-jd.plugins.decrypt.CodedTo>>>>>>> .r324
+jd.plugins.decrypt.CodedTo
