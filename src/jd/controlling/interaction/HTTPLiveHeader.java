@@ -131,8 +131,8 @@ public class HTTPLiveHeader extends Interaction {
 
         logger.finer("IP befor: " + preIp);
 
-        script = script.replaceAll("\\<", "&lt;");
-        script = script.replaceAll("\\>", "&gt;");
+//        script = script.replaceAll("\\<", "&lt;");
+//        script = script.replaceAll("\\>", "&gt;");
         script = script.replaceAll("\\[\\[\\[", "<");
         script = script.replaceAll("\\]\\]\\]", ">");
         script = script.replaceAll("<REQUEST>", "<REQUEST><![CDATA[");

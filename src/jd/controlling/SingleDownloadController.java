@@ -176,7 +176,7 @@ public class SingleDownloadController extends ControlMulticaster {
             return;
         }
         if (step != null && step.getStatus() == PluginStep.STATUS_ERROR) {
-            logger.info("JJJ"+downloadLink.getStatus());
+           
             switch (downloadLink.getStatus()) {
                 case DownloadLink.STATUS_ERROR_DOWNLOAD_LIMIT:
                     this.onErrorWaittime(downloadLink, plugin, step);
