@@ -47,6 +47,8 @@ public class LinkProtectOrg extends PluginForDecrypt {
     private static final String FORM_SUBMIT = "<input id=\"search-submit\" type=\"submit\" name=\"login\" value=\"°\">";
     private static final String ERROR_CAPTCHA = "Captcha-code wrong. Please retry.";
     private static final String PAGES = "<a href=\"?s=°#down\">°</a>";
+    private static final String PASSWORD = "Visitorpassword:";
+    private static final String WRONG_PASSWORD = "The visitorpassword you have entered is wrong.";
     
     
 
@@ -78,19 +80,35 @@ public class LinkProtectOrg extends PluginForDecrypt {
     			URL url = new URL(strURL);
     			
     			// so lange, bis Captcha richtig eingegeben/erkannt
+    			// so lange, bis Passwort richtig eingegeben
     			while (true) {
 	    			reqinfo = getRequest(url); // Seite aufrufen
 	    			
-	    			String CaptchaURL = null;
-	    			CaptchaURL = getSimpleMatch(reqinfo.getHtmlCode(), CAPTCHA, 0);
+	    			boolean hasPass = false;
+	    			boolean hasCaptcha = false;
+	    			String postData = "";
 	    			
 	    			// formular-elemente
 	    			String formID = getSimpleMatch(reqinfo.getHtmlCode(), FORM_ID, 0);
 	    			String formHash = getSimpleMatch(reqinfo.getHtmlCode(), FORM_HASH, 0);
 	    			String formSubmit = getSimpleMatch(reqinfo.getHtmlCode(), FORM_SUBMIT, 0);
 	    			
+	    			//PASSWORD
+	    			if (formID != null && reqinfo.getHtmlCode().contains(PASSWORD)) {
+	    				hasPass = true;
+	    				// Passwort abfragen
+	                	String pwd = JDUtilities.getController().getUiInterface().showUserInputDialog("Die Links sind mit einem Passwort gesch\u00fctzt. Bitte geben Sie das Passwort ein:");
+	                	// Daten die spaetzer gesendet werden
+	                	postData = "id=" + formID + "&besucherpasswort=" + pwd + "&login=Verify+*";
+	    			}
+	    			
+	    			//CAPTCHA
+	    			String CaptchaURL = null;
+	    			CaptchaURL = getSimpleMatch(reqinfo.getHtmlCode(), CAPTCHA, 0);
+	    			
 	    			// Captcha/Formulardaten vorhanden?
 	    			if (CaptchaURL != null && formID != null && formHash != null && formSubmit != null) {
+	    				hasCaptcha = true;
 	    				CaptchaURL = "http://" + HOST + "/" + CaptchaURL;
 	    				
 	                    File dest = JDUtilities.getResourceFile("captchas/" + this.getPluginName() + "/captcha_" + (new Date().getTime()) + ".gif");
@@ -109,23 +127,40 @@ public class LinkProtectOrg extends PluginForDecrypt {
 	                    }
 	                    
 	                    String plainCaptcha = Plugin.getCaptchaCode(dest, this);
-	                    reqinfo = postRequest(url, "id=" + formID + "&hash=" + formHash + "&code=" + plainCaptcha + "&login=" + formSubmit);
-	                    
+
+	    				// postData enthaelt entweder Passwort-Daten oder nichts
+	    				if (postData.length() > 0)
+	    					postData += "&hash=" + formHash + "&code=" + plainCaptcha;
+	    				else
+	    					postData += "id=" + formID + "&hash=" + formHash + "&code=" + plainCaptcha + "&login=" + formSubmit;
+	    			}
+	    			
+	    			// Passwort oder Captcha vorhanden? Dann Daten senden
+	    			if (hasPass || hasCaptcha) {
+	                	reqinfo = postRequest(url, reqinfo.getCookie(), strURL, null, postData, false);
+	                	
+	                    // Falsches Passwort
+		    			if (reqinfo.getHtmlCode().contains(WRONG_PASSWORD)) {
+	                        logger.severe("Passwort falsch! Versuche erneut.");
+		    				continue; // retry
+		    			}
+		    			
 	                    // Falscher Captcha-Code
 		    			if (reqinfo.getHtmlCode().contains(ERROR_CAPTCHA)) {
 	                        logger.severe("Captcha-Code falsch! Versuche erneut.");
 		    				continue; // retry
 		    			}
 		    			
-		    			// Captcha erkannt, Cookie senden
-		    			String cookie = reqinfo.getCookie();
-		    			reqinfo = getRequest(url,cookie, null, true);
-		    			
+		    			// Passwort richtig und/oder Captcha richtig
+		    			// Seite erneut mir Cookies aufrufen
+	                	if (reqinfo.getLocation() != null) {
+	                		reqinfo = getRequest(url, reqinfo.getCookie(), strURL, false);
+	                	}
+                   
 		    			break; // Schleife abbrechen
-
-		    			
+	    			
 	    			} else {
-	    				// kein Captcha: Schleife abbrechen
+	    				// kein Captcha & kein Pass: Schleife abbrechen
 	    				break;
 	    			}
     			}
