@@ -597,7 +597,7 @@ public class JDUtilities {
                     urls[i] = files[i].toURI().toURL();
                 }
                 classLoader = new URLClassLoader(urls);
-            }
+            } 
             else {
                 //Application
                 File filesCurrentDir[] = new File(".").listFiles(JDUtilities.filterJar);

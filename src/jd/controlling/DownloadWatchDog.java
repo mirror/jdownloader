@@ -295,13 +295,15 @@ public class DownloadWatchDog extends Thread implements PluginListener, ControlL
      * erfolgreich abgeborhcen wurden.
      */
     void abort() {
-
+logger.finer("Breche alle actove links ab");
         for (int i = 0; i < this.activeLinks.size(); i++) {
             activeLinks.get(i).abortDownload();
 
         }
         deligateFireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SINGLE_DOWNLOAD_CHANGED, null));
         boolean check = true;
+        //Warteschleife bis alle activelinks abgebrochen wurden
+        logger.finer("Warten bis alle activeLinks abgebrochen wurden.");
         while (true) {
             check = true;
             for (int i = 0; i < this.activeLinks.size(); i++) {
@@ -317,6 +319,7 @@ public class DownloadWatchDog extends Thread implements PluginListener, ControlL
             catch (InterruptedException e) {
             }
         }
+        logger.finer("Abbruch komplett");
         this.aborted = true;
         this.clearDownloadListStatus();
 

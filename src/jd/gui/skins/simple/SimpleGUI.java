@@ -165,7 +165,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
 
     private JToggleButton     btnPause;
 
-    private SimpleTrayIcon tray;
+    private SimpleTrayIcon    tray;
 
     /**
      * Das Hauptfenster wird erstellt
@@ -216,9 +216,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         if (!JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_NO_TRAY, false)) {
             if (JDUtilities.getJavaVersion() >= 1.6d) {
 
-               tray = (SimpleTrayIcon) JDUtilities.getHomeDirInstance("jd/gui/skins/simple/SimpleTrayIcon.class", new Object[] { this });
-
-              
+                tray = (SimpleTrayIcon) JDUtilities.getHomeDirInstance("jd/gui/skins/simple/SimpleTrayIcon.class", new Object[] { this });
 
             }
             else {
@@ -660,18 +658,39 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
                 logger.info("host-inakcive");
                 setPluginActive((PluginForHost) event.getParameter(), false);
                 break;
+            case ControlEvent.CONTROL_SINGLE_DOWNLOAD_FINISHED:
+
+                showTrayTip("Download", "" + ((DownloadLink) event.getParameter()).getStatusText() + ": " + event.getParameter());
+                break;
             case ControlEvent.CONTROL_ALL_DOWNLOADS_FINISHED:
+                showTrayTip("Downloads", "All downloads finished");
                 btnStartStop.setSelected(false);
                 btnPause.setEnabled(false);
                 btnPause.setSelected(false);
                 break;
             case ControlEvent.CONTROL_PLUGIN_INTERACTION_ACTIVE:
                 logger.info("Interaction start. ");
+//                showTrayTip("Interaction", ((Interaction) event.getParameter()).getInteractionName());
                 statusBar.setText("Interaction: " + ((Interaction) event.getParameter()).getInteractionName());
                 frame.setTitle(JDUtilities.JD_TITLE + " |Aktion: " + ((Interaction) event.getParameter()).getInteractionName());
                 break;
             case ControlEvent.CONTROL_PLUGIN_INTERACTION_INACTIVE:
                 logger.info("Interaction zu ende. rest status");
+//                switch (((Interaction) event.getParameter()).getCallCode()) {
+//                    case Interaction.INTERACTION_CALL_ERROR:
+//                        showTrayTip("Interaction", "Finished (ERROR): " + ((Interaction) event.getParameter()).getInteractionName());
+//
+//                        break;
+//                    case Interaction.INTERACTION_CALL_RUNNING:
+//                        showTrayTip("Interaction", "Finished (RUNNING): " + ((Interaction) event.getParameter()).getInteractionName());
+//
+//                        break;
+//                    case Interaction.INTERACTION_CALL_SUCCESS:
+//                        showTrayTip("Interaction", "Finished (SUCESSFULL): " + ((Interaction) event.getParameter()).getInteractionName());
+//
+//                        break;
+//
+//                }
                 statusBar.setText(null);
                 frame.setTitle(getJDTitle());
                 break;
@@ -686,6 +705,11 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
                 frame.setTitle(getJDTitle());
                 break;
         }
+    }
+
+    private void showTrayTip(String header, String msg) {
+        if (tray == null) return;
+        this.tray.showTip(header, msg);
     }
 
     public Vector<DownloadLink> getDownloadLinks() {
@@ -919,16 +943,16 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
     public void windowDeactivated(WindowEvent e) {}
 
     public void windowDeiconified(WindowEvent e) {
-      
+
     }
 
     public void windowIconified(WindowEvent e) {
-        if (!JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_NO_TRAY, false)&&tray!=null) {
+        if (!JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_NO_TRAY, false) && tray != null) {
             frame.setVisible(false);
             tray.showTip("Minimized", "jDownloader has been minimized to the tray. Doubleclick to show jDownloader!");
-            
+
         }
-        
+
     }
 
     public void windowOpened(WindowEvent e) {}
