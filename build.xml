@@ -1,75 +1,96 @@
 <project default="standardBuild" basedir=".">
 
-    <property name="src"    value="src" />
-    <property name="cls"    value="bin" />
-    <property name="dist"   value="dist" />
-    <property name="res"    value="ressourcen" />
-    
+    <property environment="env"/>
+    <property name="src" value="src" />
+    <property name="cls" value="bin" />
+    <property name="dist" value="dist" />
+    <property name="res" value="ressourcen" />
+
     <target name="compile">
-        <javac srcdir="${src}" destdir="${cls}" encoding="UTF-8" source="1.5"/>
+        <javac srcdir="${src}" destdir="${cls}" encoding="UTF-8" source="1.5" />
     </target>
-    
+
     <target name="jar">
         <!-- jDownloader -->
         <manifest file="Manifest.MF">
-            <attribute name="Created-By" value="astaldo"/>
-            <attribute name="Main-Class" value="jd.Main"/>
+            <attribute name="Created-By" value="astaldo" />
+            <attribute name="Main-Class" value="jd.Main" />
         </manifest>
         <jar jarfile="${dist}/JDownloader.jar" manifest="Manifest.MF">
             <fileset dir="${cls}">
-                <include name = "**/*.class" />
-                <exclude name = "jd/captcha/**"/>
-                <exclude name = "jd/plugins/decrypt/**"/>
-                <exclude name = "jd/plugins/host/**"/>
-                <exclude name = "jd/plugins/container/**"/>
+                <include name="**/*.class" />
+                <exclude name="jd/captcha/**" />
+                <exclude name="jd/plugins/decrypt/**" />
+                <exclude name="jd/plugins/host/**" />
+                <exclude name="jd/plugins/container/**" />
             </fileset>
             <fileset dir="${res}">
-                <include name = "img/**"/>
-                <include name = "*.properties"/>   
-                <exclude name = "jd/captcha/methods"/>   
+                <include name="img/**" />
+                <include name="*.properties" />
+                <exclude name="jd/captcha/methods" />
             </fileset>
         </jar>
         <delete file="Manifest.MF" failonerror="false" />
-    	
+
         <!-- Plugins -->
         <jar jarfile="${dist}/JDownloaderPlugins.jar">
             <fileset dir="${cls}">
-                <include name = "jd/plugins/decrypt/**"/>
-                <include name = "jd/plugins/host/**"/>
+                <include name="jd/plugins/decrypt/**" />
+                <include name="jd/plugins/host/**" />
             </fileset>
             <fileset dir="${res}">
-                <include name="META-INF/services/*"/>
-                <exclude name="META-INF/services/jd.plugins.PluginForContainer"/>
-                <exclude name="META-INF/services/jd.plugins.PluginOptional"/>
-            </fileset> 
+                <include name="META-INF/services/*" />
+                <exclude name="META-INF/services/jd.plugins.PluginForContainer" />
+                <exclude name="META-INF/services/jd.plugins.PluginOptional" />
+            </fileset>
         </jar>
 
-    	<!-- AntiCaptcha -->
+        <!-- AntiCaptcha -->
         <manifest file="Manifest.MF">
-            <attribute name="Created-By" value="coalado"/>
-            <attribute name="Main-Class" value="jd.captcha.JACTrain"/>
+            <attribute name="Created-By" value="coalado" />
+            <attribute name="Main-Class" value="jd.captcha.JACTrain" />
         </manifest>
         <jar jarfile="${dist}/JAntiCaptcha.jar" manifest="Manifest.MF">
             <fileset dir="${cls}">
-                <include name = "jd/plugins/Plugin.class"/>
-                <include name = "jd/plugins/LogFormatter.class"/>
-                <include name = "jd/plugins/event/PluginEvent.class"/>
-                <include name = "jd/plugins/event/PluginListener.class"/>
-                <include name = "jd/captcha/**"/>
-                <exclude name = "jd/captcha/methods/**"/>   
+                <include name="jd/plugins/Plugin.class" />
+                <include name="jd/plugins/LogFormatter.class" />
+                <include name="jd/plugins/event/PluginEvent.class" />
+                <include name="jd/plugins/event/PluginListener.class" />
+                <include name="jd/captcha/**" />
+                <exclude name="jd/captcha/methods/**" />
             </fileset>
         </jar>
         <delete file="Manifest.MF" failonerror="false" />
     </target>
-    <target name="sign">
-    	<signjar keystore="jDownloader.keystore" alias="jDownloader" storepass="jDownloader">
-    		<path>
-    		    <fileset dir="${dist}" includes="*.jar" />
-    	    </path>
-    	</signjar>
+
+    <target name="jarOptional">
+        <javac srcdir="${src}" destdir="${cls}">
+            <include name="jd/plugins/optional/**/*.java"/>
+        </javac>
+            
+        <jar jarfile="${dist}/JDownloaderPluginsOptional.jar">
+            <fileset dir="${cls}">
+                <include name="jd/plugins/optional/**" />
+            </fileset>
+            <fileset dir="${res}">
+                <include name="META-INF/services/jd.plugins.PluginOptional" />
+            </fileset>
+        </jar>
+<!--        <signjar jar="${dist}/JDownloaderPluginsOptional.jar" keystore="jDownloader.keystore" alias="jDownloader" storepass="jDownloader"/>
+    -->    <move file="${dist}/JDownloaderPluginsOptional.jar" tofile="${env.JD_HOME}/plugins/JDownloaderPluginsOptional.jar" />
     </target>
-    
-    <target name="eclipseBuild" depends="jar,sign">       </target>
-    <target name="standardBuild" depends="compile,jar">   </target>
-   
+
+    <target name="sign">
+        <signjar keystore="jDownloader.keystore" alias="jDownloader" storepass="jDownloader">
+            <path>
+                <fileset dir="${dist}" includes="*.jar" />
+            </path>
+        </signjar>
+    </target>
+
+    <target name="eclipseBuild" depends="jar,sign">
+    </target>
+    <target name="standardBuild" depends="compile,jar">
+    </target>
+
 </project>
