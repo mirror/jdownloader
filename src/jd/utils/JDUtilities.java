@@ -63,6 +63,7 @@ import jd.plugins.PluginForContainer;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginForSearch;
+import jd.plugins.PluginOptional;
 import jd.plugins.event.PluginListener;
 import jd.update.WebUpdater;
 import sun.misc.Service;
@@ -144,6 +145,10 @@ public class JDUtilities {
      * Hier werden alle Plugins für die Anbieter gespeichert
      */
     private static Vector<PluginForHost>      pluginsForHost      = new Vector<PluginForHost>();
+    /**
+     * Hier werden optionale Plugins gespeichert
+     */
+    private static Vector<PluginOptional>      pluginsOptional      = new Vector<PluginOptional>();
     /**
      * Die Konfiguration
      */
@@ -590,12 +595,14 @@ public class JDUtilities {
             File files[] = new File(JDUtilities.getJDHomeDirectory() + "/plugins").listFiles(JDUtilities.filterJar);
             if (!(classLoader instanceof URLClassLoader)) {
                 //WebStart
-                URL urls[] = new URL[files.length];
-                for (int i = 0; i < files.length; i++) {
-                    logger.info("loaded plugins from:" + files[i]);
-                    urls[i] = files[i].toURI().toURL();
+                if(files!= null){
+                    URL urls[] = new URL[files.length];
+                    for (int i = 0; i < files.length; i++) {
+                        logger.info("loaded plugins from:" + files[i]);
+                        urls[i] = files[i].toURI().toURL();
+                    }
+                    classLoader = new URLClassLoader(urls);
                 }
-                classLoader = new URLClassLoader(urls);
             } 
             else {
                 //Application
@@ -643,6 +650,17 @@ public class JDUtilities {
             PluginForSearch p = (PluginForSearch) iterator.next();
             pluginsForSearch.add(p);
             logger.info("Search-Plugin    : " + p.getPluginName());
+        }
+        iterator = Service.providers(PluginOptional.class);
+        while (iterator.hasNext()) {
+            try {
+                PluginOptional p = (PluginOptional) iterator.next();
+                pluginsOptional.add(p);
+                logger.info("Optionales-Plugin    : " + p.getPluginName());
+            }
+            catch (Exception e) {
+                e.printStackTrace();
+            }
         }
         
         iterator = Service.providers(ClassLoader.class);
@@ -1418,5 +1436,8 @@ public class JDUtilities {
         if(index>0)
             return first.substring(0,index+1);
         else return "";
+    }
+    public static String getJDTitle() {
+        return JDUtilities.JD_TITLE + " " + JDUtilities.JD_VERSION + JDUtilities.getRevision() + " (" + JDUtilities.getLastChangeDate() + " " + JDUtilities.getLastChangeTime() + ")";
     }
 }

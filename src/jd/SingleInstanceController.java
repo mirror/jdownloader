@@ -12,6 +12,9 @@ import java.rmi.registry.Registry;
 import java.rmi.server.RemoteObject;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.Properties;
+import java.util.logging.Logger;
+
+import jd.plugins.Plugin;
 
 /**
  * Diese Klasse registriert dieses Objekt in der Lokalen Registrierung (läuft auf einem Port) Damit kann überwacht werden, ob jDownloader schon gestartet ist oder nicht
@@ -31,6 +34,7 @@ public class SingleInstanceController extends RemoteObject {
      * RMI Name
      */
     public final static String RMI_NAME         = "JD_SINGLE_INSTANCE_CONTROLLER";
+    private static Logger      logger           = Plugin.getLogger();
     /**
      * Zeigt an, ob diese Applikation bereits gestartet ist oder nicht. Wurde die Applikation bereits gestartet, ist bereits ein Objekt in der Registrierung verknüpft.
      * 
@@ -66,7 +70,7 @@ public class SingleInstanceController extends RemoteObject {
         p.setProperty("sun.rmi.transport.tcp.handshakeTimeout", "1000");
         remoteStub = SingleInstanceController.getRMIObject(RMI_PORT, RMI_NAME);
         if (remoteStub != null) {
-            System.out.println("Das RMI Objekt (" + RMI_NAME + ") ist bereits vorhanden");
+            logger.info("Das RMI Objekt (" + RMI_NAME + ") ist bereits vorhanden");
         }
         else {
             try {
@@ -84,13 +88,13 @@ public class SingleInstanceController extends RemoteObject {
                 remoteStub = (Remote) UnicastRemoteObject.exportObject(remoteObject, 0);
                 // ..und gespeichert
                 localRegistry.bind(RMI_NAME, remoteStub);
-                System.out.println("RMI Objekt (" + RMI_NAME + ") auf Port " + SingleInstanceController.RMI_PORT);
+                logger.info("RMI Objekt (" + RMI_NAME + ") auf Port " + SingleInstanceController.RMI_PORT);
             }
             catch (RemoteException e) {
-                System.out.println("Die Remotefunktionen konnten nicht gestartet werden: " + e.toString());
+                logger.warning("Die Remotefunktionen konnten nicht gestartet werden: " + e.toString());
             }
             catch (AlreadyBoundException e) {
-                System.out.println("Das RMI Objekt (" + RMI_NAME + ") ist bereits vorhanden. " + e.toString());
+                logger.warning("Das RMI Objekt (" + RMI_NAME + ") ist bereits vorhanden. " + e.toString());
             }
         }
         return remoteStub;
@@ -122,16 +126,16 @@ public class SingleInstanceController extends RemoteObject {
         try {
             Registry registry = LocateRegistry.getRegistry(RMI_PORT);
             registry.unbind(RMI_NAME);
-            System.out.println("RMI Objekt (" + RMI_NAME + ") deaktiviert");
+            logger.info("RMI Objekt (" + RMI_NAME + ") deaktiviert");
         }
         catch (AccessException e) {
-            System.out.println("Keine Rechte für diese Aktion. " + e.toString());
+            logger.severe("Keine Rechte für diese Aktion. " + e.toString());
         }
         catch (RemoteException e) {
-            System.out.println("RMI Objekt (" + RMI_NAME + ") nicht vorhanden. " + e.toString());
+            logger.warning("RMI Objekt (" + RMI_NAME + ") nicht vorhanden. " + e.toString());
         }
         catch (NotBoundException e) {
-            System.out.println("Registry nicht verknüpft. " + e.toString());
+            logger.severe("Registry nicht verknüpft. " + e.toString());
         }
     }
 }
