@@ -19,7 +19,7 @@ public class Megauploadcom extends PluginForHost {
     static private final String     HOST                                = "megaupload.com";
     static private final String     PLUGIN_NAME                         = HOST;
     static private final String     PLUGIN_VERSION                      = "0.1";
-    static private final String     PLUGIN_ID                           = PLUGIN_NAME + "-" + VERSION;
+    static private final String     PLUGIN_ID                           = PLUGIN_NAME + "-" + PLUGIN_VERSION;
     static private final String     CODER                               = "coalado";
     static private final String     SIMPLEPATTERN_CAPTCHA_URl           = " <img src=\"/capgen.php?°\">";
     static private final String     SIMPLEPATTERN_FILE_NAME             = "<b>Dateiname:</b>°</div>";

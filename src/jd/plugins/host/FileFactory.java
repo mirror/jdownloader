@@ -57,7 +57,7 @@ public class FileFactory extends PluginForHost {
 
     @Override
     public String getPluginID() {
-        return "FILEFACTORY.COM-1.0.0.";
+        return host+" - "+version;
     }
     @Override
     public void init() {

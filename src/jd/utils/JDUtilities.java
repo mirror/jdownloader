@@ -1126,6 +1126,12 @@ public class JDUtilities {
                 str = str.replaceFirst("\\&\\#(.*?)\\;", c + "");
             }
         }
+        try {
+            str=URLDecoder.decode(str, "UTF-8");
+        }
+        catch (UnsupportedEncodingException e) { }
+        
+        
         return HTMLEntities.unhtmlentities(str);
     }
     /**
@@ -1212,7 +1218,7 @@ public class JDUtilities {
         catch (UnsupportedEncodingException e) { e.printStackTrace(); }
         catch (MalformedURLException e)        { e.printStackTrace(); }
         catch (IOException e)                  { e.printStackTrace(); }
-        return false;
+        return false; 
     }
     /**
      * Lädt über eine URLConnection eine datei ehrunter. Zieldatei ist file.

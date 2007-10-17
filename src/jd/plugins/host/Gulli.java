@@ -31,7 +31,7 @@ public class Gulli extends PluginForHost {
     static private final String  HOST               = "share.gulli.com";
     static private final String  PLUGIN_NAME        = HOST;
     static private final String  PLUGIN_VERSION     = "0";
-    static private final String  PLUGIN_ID          = PLUGIN_NAME + "-" + VERSION;
+    static private final String  PLUGIN_ID          = PLUGIN_NAME + "-" + PLUGIN_VERSION;
     static private final String  CODER              = "olimex/coalado";
     /**
      * ID des Files bei gulli

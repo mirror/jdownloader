@@ -22,7 +22,7 @@ public class Netloadin extends PluginForHost {
     static private final String  HOST             = "netload.in";
     static private final String  PLUGIN_NAME      = HOST;
     static private final String  PLUGIN_VERSION   = "1.0.0";
-    static private final String  PLUGIN_ID        = PLUGIN_NAME + "-" + VERSION;
+    static private final String  PLUGIN_ID        = PLUGIN_NAME + "-" + PLUGIN_VERSION;
     static private final String  CODER            = "coalado";
     // /Simplepattern
     static private final String  DOWNLOAD_URL     = "<div class=\"Free_dl\"><a href=\"°\">";
