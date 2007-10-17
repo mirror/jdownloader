@@ -165,7 +165,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
 
     private JToggleButton     btnPause;
 
-    private SimpleTrayIcon    tray;
+//    private SimpleTrayIcon    tray;
 
     /**
      * Das Hauptfenster wird erstellt
@@ -216,7 +216,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         if (!JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_NO_TRAY, false)) {
             if (JDUtilities.getJavaVersion() >= 1.6d) {
 
-                tray = (SimpleTrayIcon) JDUtilities.getHomeDirInstance("jd/gui/skins/simple/SimpleTrayIcon.class", new Object[] { this });
+//                tray = (SimpleTrayIcon) JDUtilities.getHomeDirInstance("jd/gui/skins/simple/SimpleTrayIcon.class", new Object[] { this });
 
             }
             else {
@@ -660,10 +660,10 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
                 break;
             case ControlEvent.CONTROL_SINGLE_DOWNLOAD_FINISHED:
 
-                showTrayTip("Download", "" + ((DownloadLink) event.getParameter()).getStatusText() + ": " + event.getParameter());
+//                showTrayTip("Download", "" + ((DownloadLink) event.getParameter()).getStatusText() + ": " + event.getParameter());
                 break;
             case ControlEvent.CONTROL_ALL_DOWNLOADS_FINISHED:
-                showTrayTip("Downloads", "All downloads finished");
+//                showTrayTip("Downloads", "All downloads finished");
                 btnStartStop.setSelected(false);
                 btnPause.setEnabled(false);
                 btnPause.setSelected(false);
@@ -707,10 +707,10 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         }
     }
 
-    private void showTrayTip(String header, String msg) {
-        if (tray == null) return;
-        this.tray.showTip(header, msg);
-    }
+//    private void showTrayTip(String header, String msg) {
+//        if (tray == null) return;
+//        this.tray.showTip(header, msg);
+//    }
 
     public Vector<DownloadLink> getDownloadLinks() {
         if (tabDownloadTable != null) return tabDownloadTable.getLinks();
@@ -947,11 +947,11 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
     }
 
     public void windowIconified(WindowEvent e) {
-        if (!JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_NO_TRAY, false) && tray != null) {
-            frame.setVisible(false);
-            tray.showTip("Minimized", "jDownloader has been minimized to the tray. Doubleclick to show jDownloader!");
-
-        }
+//        if (!JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_NO_TRAY, false) && tray != null) {
+//            frame.setVisible(false);
+//            tray.showTip("Minimized", "jDownloader has been minimized to the tray. Doubleclick to show jDownloader!");
+//
+//        }
 
     }
 
