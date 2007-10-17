@@ -56,7 +56,7 @@ public class SearchDialog extends JDialog implements ActionListener {
 		super(owner);
 		setModal(true);
 		setLayout(new GridBagLayout());
-		
+		searchText="";
 		setTitle("jDownloader Suche");
 		textField = new JTextField(30);
 		btnOK     = new JButton("Suche starten");

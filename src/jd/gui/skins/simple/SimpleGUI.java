@@ -479,9 +479,11 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
             case JDAction.APP_SEARCH:
                 SearchDialog s = new SearchDialog(this.getFrame());
                 data = s.getText();
+                if(!data.endsWith(":::")){
                 logger.info(data);
                 if (data != null) {
                     fireUIEvent(new UIEvent(this, UIEvent.UI_LINKS_TO_PROCESS, data));
+                }
                 }
                 break;
             case JDAction.APP_CONFIGURATION:
