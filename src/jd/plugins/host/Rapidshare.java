@@ -445,7 +445,7 @@ public class Rapidshare extends PluginForHost {
 
                         logger.finer("Kein Ticket gefunden. fahre fort");
                         ticketCode = "";
-                        step.setParameter(0l);
+                        step.setParameter(10l);
                         return step;
 
                     }

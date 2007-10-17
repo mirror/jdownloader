@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.net.URLConnection;
 import java.util.HashMap;
 import java.util.regex.Pattern;
 
@@ -16,57 +17,83 @@ import jd.utils.JDUtilities;
 public class Megauploadcom extends PluginForHost {
     // http://www.megaupload.com/de/?d=0XOSKVY9
     static private final Pattern    PAT_SUPPORTED                       = getSupportPattern("http://[*]megaupload.com/[*]\\?d=[+]");
+
     static private final String     HOST                                = "megaupload.com";
+
     static private final String     PLUGIN_NAME                         = HOST;
+
     static private final String     PLUGIN_VERSION                      = "0.1";
-    static private final String     PLUGIN_ID                           = PLUGIN_NAME + "-" + PLUGIN_VERSION;
+
+    static private final String     PLUGIN_ID                           = PLUGIN_NAME + "-" + VERSION;
+
     static private final String     CODER                               = "coalado";
+
     static private final String     SIMPLEPATTERN_CAPTCHA_URl           = " <img src=\"/capgen.php?°\">";
+
     static private final String     SIMPLEPATTERN_FILE_NAME             = "<b>Dateiname:</b>°</div>";
+
     static private final String     SIMPLEPATTERN_FILE_SIZE             = "<b>Dateigr°e:</b>°</div>";
+
     static private final String     SIMPLEPATTERN_CAPTCHA_POST_URL      = "<form method=\"POST\" action=\"°\" target";
+
     static private final String     COOKIE                              = "l=de; v=1; ve_view=1";
+
     static private final String     SIMPLEPATTERN_GEN_DOWNLOADLINK      = "var ° = String.fromCharCode(Math.abs(°));°var ° = '°' + String.fromCharCode(Math.sqrt(°));";
+
     static private final String     SIMPLEPATTERN_GEN_DOWNLOADLINK_LINK = "document.getElementById(\"dlbutton\").innerHTML = '<a href=\"°' ° '°\" onclick=\"loadingdownload();\">";
+
     static private final String     ERROR_TEMP_NOT_AVAILABLE            = "Zugriff auf die Datei ist vor";
+
     static private final String     ERROR_FILENOTFOUND                  = "Dieser Link ist leider nicht";
+
     static private final long       PENDING_WAITTIME                    = 45000;
+
     // /Simplepattern
     private String                  finalURL;
+
     private String                  captchaURL;
+
     private HashMap<String, String> fields;
+
     private String                  captchaPost;
+
     public Megauploadcom() {
         steps.add(new PluginStep(PluginStep.STEP_WAIT_TIME, null));
         steps.add(new PluginStep(PluginStep.STEP_GET_CAPTCHA_FILE, null));
         steps.add(new PluginStep(PluginStep.STEP_PENDING, null));
         steps.add(new PluginStep(PluginStep.STEP_DOWNLOAD, null));
     }
+
     @Override
     public String getCoder() {
         return CODER;
     }
+
     @Override
     public String getPluginName() {
         return HOST;
     }
+
     @Override
     public Pattern getSupportedLinks() {
         return PAT_SUPPORTED;
     }
+
     @Override
     public String getHost() {
         return HOST;
     }
- 
+
     @Override
     public String getVersion() {
         return PLUGIN_VERSION;
     }
+
     @Override
     public String getPluginID() {
         return PLUGIN_ID;
     }
+
     // @Override
     // public URLConnection getURLConnection() {
     // // XXX: ???
@@ -130,8 +157,52 @@ public class Megauploadcom extends PluginForHost {
                     String i = getSimpleMatch(requestInfo.getHtmlCode(), SIMPLEPATTERN_GEN_DOWNLOADLINK, 4) + (char) Math.sqrt(Integer.parseInt(getSimpleMatch(requestInfo.getHtmlCode(), SIMPLEPATTERN_GEN_DOWNLOADLINK, 5).trim()));
                     String url = (JDUtilities.htmlDecode(getSimpleMatch(requestInfo.getHtmlCode(), SIMPLEPATTERN_GEN_DOWNLOADLINK_LINK, 0) + i + l + getSimpleMatch(requestInfo.getHtmlCode(), SIMPLEPATTERN_GEN_DOWNLOADLINK_LINK, 2)));
                     logger.info(".." + url);
-                    defaultDownloadStep(downloadLink, step, url, COOKIE, true);
+
+                    try {
+                        requestInfo = getRequestWithoutHtmlCode(new URL(url), COOKIE, null, true);
+                        if (!requestInfo.isOK()) {
+                            logger.warning("Download Limit!");
+                            step.setStatus(PluginStep.STATUS_ERROR);
+                            downloadLink.setStatus(DownloadLink.STATUS_ERROR_DOWNLOAD_LIMIT);
+                            String wait = requestInfo.getConnection().getHeaderField("Retry-After");
+                            logger.finer("Warten: "+wait+" minuten");
+                            if (wait == null) {
+                                step.setParameter(Long.parseLong(wait.trim()) * 60l * 1000l);
+                            }
+                            else {
+                                step.setParameter(120l * 60l * 1000l);
+                            }
+                            return step;
+
+                        }
+                        int length = requestInfo.getConnection().getContentLength();
+                        downloadLink.setDownloadMax(length);
+                        logger.info("Filename: " + getFileNameFormHeader(requestInfo.getConnection()));
+
+                        downloadLink.setName(getFileNameFormHeader(requestInfo.getConnection()));
+                        if (!download(downloadLink, (URLConnection) requestInfo.getConnection())) {
+                            step.setStatus(PluginStep.STATUS_ERROR);
+                            downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN);
+                        }
+                        else {
+                            step.setStatus(PluginStep.STATUS_DONE);
+                            downloadLink.setStatus(DownloadLink.STATUS_DONE);
+                        }
+                        return step;
+                    }
+                    catch (MalformedURLException e) {
+
+                        e.printStackTrace();
+                    }
+                    catch (IOException e) {
+
+                        e.printStackTrace();
+                    }
+
+                    step.setStatus(PluginStep.STATUS_ERROR);
+                    downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN);
                     return step;
+
             }
             return step;
         }
@@ -140,10 +211,14 @@ public class Megauploadcom extends PluginForHost {
             return null;
         }
     }
+
+    // Retry-After
+
     @Override
     public boolean doBotCheck(File file) {
         return false;
     }
+
     @Override
     public void reset() {
         this.finalURL = null;
@@ -151,9 +226,11 @@ public class Megauploadcom extends PluginForHost {
         this.captchaURL = null;
         this.fields = null;
     }
+
     public String getFileInformationString(DownloadLink downloadLink) {
         return downloadLink.getName() + " (" + JDUtilities.formatBytesToMB(downloadLink.getDownloadMax()) + ")";
     }
+
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) {
         RequestInfo requestInfo;
@@ -184,6 +261,7 @@ public class Megauploadcom extends PluginForHost {
         }
         return true;
     }
+
     @Override
     public int getMaxSimultanDownloadNum() {
         return 1;

@@ -75,17 +75,23 @@ public class CaptchaDialog extends JDialog implements ActionListener {
                     String code = JDUtilities.getCaptcha(null, plugin, file);
                     if (textField.getText().length() == 0 || code.toLowerCase().startsWith(textField.getText().toLowerCase())) {
                         textField.setText(code);
+                        setTitle("jAntiCaptcha fertig. Warte "+JDUtilities.formatSeconds(configuration.getIntegerProperty(Configuration.PARAM_MANUAL_CAPTCHA_WAIT_FOR_JAC,10000)/1000));
+                        logger.finer("jAntiCaptcha fertig. Warte "+JDUtilities.formatSeconds(configuration.getIntegerProperty(Configuration.PARAM_MANUAL_CAPTCHA_WAIT_FOR_JAC,10000)/1000));
+                        try {
+                           Thread.sleep(Math.abs(configuration.getIntegerProperty(Configuration.PARAM_MANUAL_CAPTCHA_WAIT_FOR_JAC,10000)));
+                        }
+                        catch (InterruptedException e) {     e.printStackTrace();
+                        }
+                        if(isVisible()&&textField.getText().equalsIgnoreCase(code) && textField.getText().length()>0){
+                            captchaText = textField.getText();
+                            dispose();
+                        }
+                    }else{
+                        textField.setText("Bitte eingeben!");
+                        setTitle("jAntiCaptcha Fehler. Bitte Code eingeben!");
+                        
                     }
-                    setTitle("jAntiCaptcha fertig. Warte "+JDUtilities.formatSeconds(configuration.getIntegerProperty(Configuration.PARAM_MANUAL_CAPTCHA_WAIT_FOR_JAC,10000)/1000));
-                    try {
-                        Thread.sleep(Math.abs(configuration.getIntegerProperty(Configuration.PARAM_MANUAL_CAPTCHA_WAIT_FOR_JAC)));
-                    }
-                    catch (InterruptedException e) {     e.printStackTrace();
-                    }
-                    if(isVisible()&&textField.getText().equalsIgnoreCase(code)){
-                        captchaText = textField.getText();
-                        dispose();
-                    }
+                   
                 }
             }.start();
         }
