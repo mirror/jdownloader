@@ -23,7 +23,10 @@ public class Uploadedto extends PluginForHost {
     // /Simplepattern
     static private final String  DOWNLOAD_URL   = "<form name=\"download_form\" method=\"post\" action=\"°\">";
     private static final String  FILE_INFO      = "Dateiname:°</td><td><b>°</b></td></tr>°<tr><td style=\"padding-left:4px;\">Dateityp:°</td><td>°</td></tr>°<tr><td style=\"padding-left:4px;\">Dateig°</td><td>°</td>";
+    static private final String	 FILE_NOT_FOUND = "Datei existiert nicht";
+    
     private String               finalURL;
+    
     public Uploadedto() {
         steps.add(new PluginStep(PluginStep.STEP_WAIT_TIME, null));
         steps.add(new PluginStep(PluginStep.STEP_DOWNLOAD, null));
@@ -66,6 +69,15 @@ public class Uploadedto extends PluginForHost {
                 case PluginStep.STEP_WAIT_TIME:
                     logger.info(downloadLink.getUrlDownloadDecrypted());
                     requestInfo = getRequest(new URL(downloadLink.getUrlDownloadDecrypted()), "lang=de", null, true);
+                    
+                    // Datei geloescht?
+                    if (requestInfo.getHtmlCode().contains(FILE_NOT_FOUND)) {
+                        logger.severe("download not found");
+                        downloadLink.setStatus(DownloadLink.STATUS_ERROR_FILE_NOT_FOUND);
+                        step.setStatus(PluginStep.STATUS_ERROR);
+                        return step;
+                    }
+                    
                     String url = getSimpleMatch(requestInfo.getHtmlCode(), DOWNLOAD_URL, 0);
                     logger.info(url);
                     requestInfo = postRequest(new URL(url), "lang=de", null, null, null, false);
@@ -139,6 +151,12 @@ public class Uploadedto extends PluginForHost {
                 else {
                     requestInfo = readFromURL(requestInfo.getConnection());
                 }
+                
+                // Datei geloescht?
+                if (requestInfo.getHtmlCode().contains(FILE_NOT_FOUND)) {
+                	return false;
+                }
+                
                 String fileName = JDUtilities.htmlDecode(getSimpleMatch(requestInfo.getHtmlCode(), FILE_INFO, 1));
                 String ext = getSimpleMatch(requestInfo.getHtmlCode(), FILE_INFO, 4);
                 String fileSize = getSimpleMatch(requestInfo.getHtmlCode(), FILE_INFO, 7);
