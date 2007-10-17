@@ -22,6 +22,7 @@ public class JDTrayIcon extends PluginOptional implements ActionListener{
     private MenuItem clipboard;
     private MenuItem reconnect;
     private MenuItem exit;
+    private boolean uiVisible = true;
     
     @Override public String getCoder()                { return "astaldo";  }
     @Override public String getPluginID()   { return "0.0.0.1";  }
@@ -92,21 +93,8 @@ public class JDTrayIcon extends PluginOptional implements ActionListener{
             firePluginEvent(new PluginEvent(this,PluginEvent.PLUGIN_CONTROL_SHOW_CONFIG,null));
         }
         else {
-            firePluginEvent(new PluginEvent(this,PluginEvent.PLUGIN_CONTROL_SHOW_UI,null));
+            uiVisible = !uiVisible;
+            firePluginEvent(new PluginEvent(this,PluginEvent.PLUGIN_CONTROL_SHOW_UI,uiVisible));
         }
     }
-
-/*
-public class SimpleTrayIcon implements ActionListener {
-
-    public void showTip(String caption, String message) {
-        trayIcon.displayMessage(caption, message, TrayIcon.MessageType.INFO);
-
-    }
-
-    public void setTooltip(String tooltip) {
-        if (tooltip == null) tooltip = ui.getFrame().getTitle();
-        trayIcon.setToolTip(tooltip);
-    }
-}*/
 }
