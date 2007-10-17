@@ -12,5 +12,9 @@ public abstract class PluginOptional extends Plugin{
     @Override public String getHost()            { return null; }
     @Override public String getLinkName()        { return null; }
     @Override public Pattern getSupportedLinks() { return null; }
+    @Override
+    public String getPluginName() {
+        return "JDTrayIcon";
+    }
     public abstract void enable(boolean enable);
 }

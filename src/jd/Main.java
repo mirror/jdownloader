@@ -118,6 +118,11 @@ public class Main {
             iteratorContainer.next().addPluginListener(controller);
         }
         Interaction.handleInteraction(Interaction.INTERACTION_APPSTART, false);
+
+        Iterator<String> iteratorOptional = JDUtilities.getPluginsOptional().keySet().iterator();
+        while (iteratorOptional.hasNext()) {
+            JDUtilities.getPluginsOptional().get(iteratorOptional.next()).addPluginListener(controller);
+        }
     }
     /**
      * Die Bilder werden aus der JAR Datei nachgeladen //

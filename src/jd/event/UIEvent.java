@@ -54,7 +54,6 @@ public class UIEvent extends AWTEvent{
      * Die Anwendung soll geschlossen werden
      */
     public static final int UI_EXIT               = 11;
-
     /**
      * DragAndDrop Event
      */

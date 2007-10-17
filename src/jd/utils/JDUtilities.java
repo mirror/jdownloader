@@ -148,7 +148,7 @@ public class JDUtilities {
     /**
      * Hier werden optionale Plugins gespeichert
      */
-    private static Vector<PluginOptional>      pluginsOptional      = new Vector<PluginOptional>();
+    private static HashMap<String,PluginOptional>      pluginsOptional      = new HashMap<String, PluginOptional>();
     /**
      * Die Konfiguration
      */
@@ -635,31 +635,30 @@ public class JDUtilities {
         while (iterator.hasNext()) {
             PluginForDecrypt p = (PluginForDecrypt) iterator.next();
             pluginsForDecrypt.add(p);
-            logger.info("Decrypt-Plugin  : " + p.getPluginName());
+            logger.info("Decrypt-Plugin    : " + p.getPluginName());
         }
         // Danach die Plugins der verschiedenen Anbieter
         iterator = Service.providers(PluginForHost.class);
         while (iterator.hasNext()) {
             PluginForHost p = (PluginForHost) iterator.next();
             pluginsForHost.add(p);
-            logger.info("Host-Plugin     : " + p.getPluginName());
+            logger.info("Host-Plugin       : " + p.getPluginName());
         }
         // Danach die Plugins der verschiedenen Suchengines
         iterator = Service.providers(PluginForSearch.class);
         while (iterator.hasNext()) {
             PluginForSearch p = (PluginForSearch) iterator.next();
             pluginsForSearch.add(p);
-            logger.info("Search-Plugin    : " + p.getPluginName());
+            logger.info("Search-Plugin     : " + p.getPluginName());
         }
         iterator = Service.providers(PluginOptional.class);
         while (iterator.hasNext()) {
             try {
                 PluginOptional p = (PluginOptional) iterator.next();
-                pluginsOptional.add(p);
-                logger.info("Optionales-Plugin    : " + p.getPluginName());
+                pluginsOptional.put(p.getPluginName(),p);
+                logger.info("Optionales-Plugin : " + p.getPluginName());
             }
-            catch (Exception e) {
-                e.printStackTrace();
+            catch (Error e) {
             }
         }
         
@@ -717,6 +716,12 @@ public class JDUtilities {
         Iterator<PluginForContainer> iterator = pluginsForContainer.iterator();
         while (iterator.hasNext()) {
             iterator.next().addPluginListener(listener);
+        }
+    }
+    public static void registerListenerPluginsOptional(PluginListener listener) {
+        Iterator<String> iterator = pluginsOptional.keySet().iterator();
+        while (iterator.hasNext()) {
+            pluginsOptional.get(iterator.next()).addPluginListener(listener);
         }
     }
 
@@ -917,7 +922,14 @@ public class JDUtilities {
         return pluginsForHost;
     }
     /**
-     * GIbt den MD5 hash eines Strings zurück
+     * Liefert alle optionalen Plugins zurücl
+     * @return Alle optionalen Plugins 
+     */
+    public static HashMap<String,PluginOptional> getPluginsOptional() {
+        return pluginsOptional;
+    }
+    /**
+     * Gibt den MD5 hash eines Strings zurück
      * 
      * @param arg
      * @return MD% hash von arg

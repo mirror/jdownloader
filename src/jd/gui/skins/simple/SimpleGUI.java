@@ -14,6 +14,7 @@ import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 import java.io.File;
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Vector;
 import java.util.logging.Logger;
@@ -52,6 +53,7 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginForSearch;
+import jd.plugins.PluginOptional;
 import jd.plugins.event.PluginEvent;
 import jd.utils.JDUtilities;
 
@@ -126,7 +128,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
     private JDAction          actionSearch;
     private JDAction          actionPause;
     private JToggleButton     btnPause;
-    // private SimpleTrayIcon tray;
+    private String pluginsOptional[] = new String[]{"TrayIcon"};
     /**
      * Das Hauptfenster wird erstellt
      */
@@ -168,17 +170,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
                 }
             }
         }.start();
-        loadTrayIcon();
-    }
-    private void loadTrayIcon() {
-        if (!JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_NO_TRAY, false)) {
-            if (JDUtilities.getJavaVersion() >= 1.6d) {
-                // tray = (SimpleTrayIcon) JDUtilities.getHomeDirInstance("jd/gui/skins/simple/SimpleTrayIcon.class", new Object[] { this });
-            }
-            else {
-                logger.warning("Tray icon is supported with javaversions>=1.6. >Your Version: " + JDUtilities.getJavaVersion());
-            }
-        }
+        enableOptionalPlugins(true);
     }
     /**
      * Die Aktionen werden initialisiert
@@ -574,6 +566,32 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
             splitpane.setDividerLocation(0.8);
             return;
         }
+        if(event.getSource() instanceof PluginOptional){
+            JDAction actionToDo = null;
+            switch (event.getEventID()){
+                case PluginEvent.PLUGIN_CONTROL_DND:
+                    actionToDo = actionDnD;
+                    break;
+                case PluginEvent.PLUGIN_CONTROL_EXIT:
+                    actionToDo = actionExit;
+                    break;
+                case PluginEvent.PLUGIN_CONTROL_RECONNECT:
+                    actionToDo = actionReconnect;
+                    break;
+                case PluginEvent.PLUGIN_CONTROL_SHOW_CONFIG:
+                    actionToDo = actionConfig;
+                    break;
+                case PluginEvent.PLUGIN_CONTROL_SHOW_UI:
+                    frame.setVisible((Boolean)event.getParameter1());
+                    break;
+                case PluginEvent.PLUGIN_CONTROL_START_STOP:
+                    actionToDo = actionStartStopDownload;
+                    break;
+            }
+            if(actionToDo != null)
+                actionPerformed(new ActionEvent(this,actionToDo.getActionID(),""));
+
+        }
     }
     public void delegatedControlEvent(ControlEvent event) {
         switch (event.getID()) {
@@ -834,19 +852,26 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
     public String showUserInputDialog(String string) {
         return JOptionPane.showInputDialog(frame, string);
     }
+    /**
+     * Diese Methode de/aktiviert optionale Plugins
+     * @param enable Zeigt, ob das Plugin deaktiviert oder aktiviert werden soll
+     */
+    private void enableOptionalPlugins(boolean enable){
+        HashMap<String, PluginOptional> plugins = JDUtilities.getPluginsOptional();
+        for(int i=0;i<pluginsOptional.length;i++){
+            if(plugins.containsKey(pluginsOptional[i])){
+                plugins.get(pluginsOptional[i]).enable(enable);
+            }
+        }
+    }
     public void windowClosing(WindowEvent e) {
+        enableOptionalPlugins(false);
         fireUIEvent(new UIEvent(this, UIEvent.UI_EXIT, null));
     }
     public void windowClosed(WindowEvent e) {}
     public void windowActivated(WindowEvent e) {}
     public void windowDeactivated(WindowEvent e) {}
     public void windowDeiconified(WindowEvent e) {}
-    public void windowIconified(WindowEvent e) {
-    // if (!JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_NO_TRAY, false) && tray != null) {
-    // frame.setVisible(false);
-    // tray.showTip("Minimized", "jDownloader has been minimized to the tray. Doubleclick to show jDownloader!");
-    //
-    //        }
-    }
+    public void windowIconified(WindowEvent e) { }
     public void windowOpened(WindowEvent e) {}
 }
