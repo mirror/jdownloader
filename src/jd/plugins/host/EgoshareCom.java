@@ -29,7 +29,7 @@ public class EgoshareCom extends PluginForHost {
      */
     private static final String ERROR_DOWNLOAD_DELETED  = "Download was deleted";
     private static final String ERROR_DOWNLOAD_NOT_FOUND = "No Download associated with that id";
-    private static final String DOWNLOAD_INFO           = "<td>Filename: </td><td><b>°</b></td>°<td>Filesize: </td><td><b>° MB</b></td>";
+    private static final String DOWNLOAD_INFO           = "Filename: </td><td><b>°</b></td></tr>°°°<tr><td>Filesize: </td><td><b>° MB</b></td>";
     private static final String SESSION_ID              = "<input type=\"hidden\" value=\"°\" name=\"PHPSESSID\" />";
     
     /*
@@ -65,7 +65,7 @@ public class EgoshareCom extends PluginForHost {
             RequestInfo requestInfo = getRequest(new URL(downloadLink.getUrlDownloadDecrypted()));
 
             String fileName = JDUtilities.htmlDecode(getSimpleMatch(requestInfo.getHtmlCode(), DOWNLOAD_INFO, 0));
-            String fileSize = JDUtilities.htmlDecode(getSimpleMatch(requestInfo.getHtmlCode(), DOWNLOAD_INFO, 2));
+            String fileSize = JDUtilities.htmlDecode(getSimpleMatch(requestInfo.getHtmlCode(), DOWNLOAD_INFO, 4));
 
             //Wurden DownloadInfos gefunden? --> Datei ist vorhanden/online
             if (fileName != null && fileSize != null) {
