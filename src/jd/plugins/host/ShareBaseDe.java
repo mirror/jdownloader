@@ -174,7 +174,11 @@ public class ShareBaseDe extends PluginForHost {
                         downloadLink.setDownloadMax(length);
                         String filename = URLDecoder.decode(this.getFileNameFormHeader(urlConnection),"UTF-8");
                         downloadLink.setName(filename);
-                        
+                        if (!hasEnoughHDSpace(downloadLink)) {
+                            downloadLink.setStatus(DownloadLink.STATUS_ERROR_NO_FREE_SPACE);
+                            step.setStatus(PluginStep.STATUS_ERROR);
+                            return step;
+                        }
                         //Download starten
                         boolean downloadSuccess = download(downloadLink, urlConnection);
                         

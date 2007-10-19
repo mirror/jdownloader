@@ -90,7 +90,7 @@ public class Gulli extends PluginForHost {
                         logger.severe("Captcha URL konnte nicht gefunden werden " + downloadLink.getUrlDownload());
                         downloadLink.setStatus(DownloadLink.STATUS_ERROR_STATIC_WAITTIME);
                         step.setStatus(PluginStep.STATUS_ERROR);
-                        step.setParameter(3 * 60);
+                        step.setParameter(3l * 60l);
                         return step;
                     }
                     else {
@@ -173,6 +173,11 @@ public class Gulli extends PluginForHost {
                     logger.info("dl " + finalDownloadURL);
                     int length = finalDownloadConnection.getContentLength();
                     downloadLink.setDownloadMax(length);
+                    if (!hasEnoughHDSpace(downloadLink)) {
+                        downloadLink.setStatus(DownloadLink.STATUS_ERROR_NO_FREE_SPACE);
+                        step.setStatus(PluginStep.STATUS_ERROR);
+                        return step;
+                    }
                     download(downloadLink, (URLConnection) finalDownloadConnection);
                     step.setStatus(PluginStep.STATUS_DONE);
                     downloadLink.setStatus(DownloadLink.STATUS_DONE);

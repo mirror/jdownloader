@@ -4,6 +4,7 @@ import java.awt.Toolkit;
 import java.io.File;
 import java.net.CookieHandler;
 import java.util.Iterator;
+import java.util.Vector;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -19,6 +20,7 @@ import jd.plugins.PluginForContainer;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginForSearch;
+import jd.plugins.UserPlugin;
 import jd.utils.JDUtilities;
 
 /**
@@ -81,6 +83,7 @@ public class Main {
         }
         logger.info("Lade Plugins");
         JDUtilities.loadPlugins();
+       
         UIInterface uiInterface = new SimpleGUI();
         // deaktiviere den Cookie Handler. Cookies müssen komplett selbst
         // verwaltet werden. Da JD später sowohl standalone, als auch im
@@ -90,6 +93,7 @@ public class Main {
         logger.info("Erstelle Controller");
         JDController controller = new JDController();
         controller.setUiInterface(uiInterface);
+       
         logger.info("Lade Queue");
         if (!controller.initDownloadLinks()) {
             File links = JDUtilities.getResourceFile("links.dat");
@@ -123,6 +127,13 @@ public class Main {
         while (iteratorOptional.hasNext()) {
             JDUtilities.getPluginsOptional().get(iteratorOptional.next()).addPluginListener(controller);
         }
+        
+         Vector<UserPlugin> userPlugins = JDUtilities.getUserPlugins();
+         
+         Iterator<UserPlugin> iteratorUserPlugins = userPlugins.iterator();
+         while (iteratorUserPlugins.hasNext()) {
+             iteratorUserPlugins.next().addPluginListener(controller);
+         }
     }
     /**
      * Die Bilder werden aus der JAR Datei nachgeladen //

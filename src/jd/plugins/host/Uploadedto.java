@@ -113,6 +113,11 @@ public class Uploadedto extends PluginForHost {
                         return step;
                     }
                     downloadLink.setName(getFileNameFormHeader(requestInfo.getConnection()));
+                    if (!hasEnoughHDSpace(downloadLink)) {
+                        downloadLink.setStatus(DownloadLink.STATUS_ERROR_NO_FREE_SPACE);
+                        step.setStatus(PluginStep.STATUS_ERROR);
+                        return step;
+                    }
                     download(downloadLink, (URLConnection) requestInfo.getConnection());
                     step.setStatus(PluginStep.STATUS_DONE);
                     downloadLink.setStatus(DownloadLink.STATUS_DONE);

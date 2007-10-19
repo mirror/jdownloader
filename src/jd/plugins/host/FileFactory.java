@@ -16,40 +16,58 @@ import jd.utils.JDUtilities;
 
 public class FileFactory extends PluginForHost {
     static private final String host                     = "filefactory.com";
+
     private String              version                  = "1.1.0.0";
+
     private Pattern             patternSupported         = getSupportPattern("http://[*]filefactory.com/file/[+]");
+
     /**
      * Das findet die Captcha URL
      */
     private Pattern             frameForCaptcha          = Pattern.compile("<iframe src=\"/(check[^\"]*)\" frameborder=\"0\"");
+
     private Pattern             patternForCaptcha        = Pattern.compile("src=\"(/captcha2/captcha.php\\?[^\"]*)\" alt=");
+
     /**
-     * <a target="_top" href="http://archive01.filefactory.com/dl/f/cd66d1//b/3/h/4bb297a8a6f12168/"><img src
+     * <a target="_top"
+     * href="http://archive01.filefactory.com/dl/f/cd66d1//b/3/h/4bb297a8a6f12168/"><img
+     * src
      */
     private Pattern             patternForDownloadlink   = Pattern.compile("<a target=\"_top\" href=\"([^\"]*)\"><img src");
+
     // TODO CaptchaWrong
     private Pattern             patternErrorCaptchaWrong = Pattern.compile("(Sorry, the verification code you entered was incorrect)", Pattern.CASE_INSENSITIVE);
+
     private static final String DOWNLOAD_INFO            = "<h1 style=\"width:370px;\">°</h1>°<p>°Size:°MB<br />°Description: ";
+
     private String              captchaAddress;
+
     private String              postTarget;
+
     private String              actionString;
+
     private RequestInfo         requestInfo;
+
     @Override
     public String getCoder() {
         return "DwD/Coalado";
     }
+
     @Override
     public String getHost() {
         return host;
     }
+
     @Override
     public String getPluginName() {
         return host;
     }
+
     @Override
     public Pattern getSupportedLinks() {
         return patternSupported;
     }
+
     @Override
     public String getVersion() {
         return version;
@@ -57,18 +75,21 @@ public class FileFactory extends PluginForHost {
 
     @Override
     public String getPluginID() {
-        return host+" - "+version;
+        return host + " - " + version;
     }
+
     @Override
     public void init() {
         currentStep = null;
     }
+
     public FileFactory() {
         super();
         steps.add(new PluginStep(PluginStep.STEP_WAIT_TIME, null));
         steps.add(new PluginStep(PluginStep.STEP_GET_CAPTCHA_FILE, null));
         steps.add(new PluginStep(PluginStep.STEP_DOWNLOAD, null));
     }
+
     // @Override
     // public URLConnection getURLConnection() {
     // return null;
@@ -88,6 +109,12 @@ public class FileFactory extends PluginForHost {
                         downloadLink.setStatus(DownloadLink.STATUS_ERROR_FILE_ABUSED);
                         return step;
                     }
+                    if (requestInfo.containsHTML("no free download slots")) {
+                        step.setStatus(PluginStep.STATUS_ERROR);
+                        downloadLink.setStatus(DownloadLink.STATUS_ERROR_TEMPORARILY_UNAVAILABLE);
+                        return step;
+                    }
+                  
                     Vector<Vector<String>> matches = getAllSimpleMatches(script, "'°'");
                     String url = null;
                     // URL wird hier aus js zusamengebastelt. Wäre ich ff, dann
@@ -141,16 +168,35 @@ public class FileFactory extends PluginForHost {
                         step.setStatus(PluginStep.STATUS_ERROR);
                         e.printStackTrace();
                     }
-                    boolean success = prepareDownload(downloadLink);
-                    if (success) {
-                        step.setStatus(PluginStep.STATUS_DONE);
-                        downloadLink.setStatus(DownloadLink.STATUS_DONE);
-                        return null;
+               
+                    try {
+                        URLConnection urlConnection = new URL(postTarget).openConnection();
+                        int length = urlConnection.getContentLength();
+                        downloadLink.setDownloadMax(length);
+                        downloadLink.setName(this.getFileNameFormHeader(urlConnection));
+
+                        if (!hasEnoughHDSpace(downloadLink)) {
+                            downloadLink.setStatus(DownloadLink.STATUS_ERROR_NO_FREE_SPACE);
+                            step.setStatus(PluginStep.STATUS_ERROR);
+                            return step;
+                        }
+                        if (download(downloadLink, urlConnection)) {
+                            step.setStatus(PluginStep.STATUS_DONE);
+                            downloadLink.setStatus(DownloadLink.STATUS_DONE);
+                            return null;
+                        }
+                        else {
+                            logger.severe("captcha wrong");
+                            downloadLink.setStatus(DownloadLink.STATUS_ERROR_CAPTCHA_WRONG);
+                            step.setStatus(PluginStep.STATUS_ERROR);
+                        }
                     }
-                    else {
-                        logger.severe("captcha wrong");
-                        downloadLink.setStatus(DownloadLink.STATUS_ERROR_CAPTCHA_WRONG);
+                    catch (IOException e) {
+                        logger.severe("URL could not be opened. " + e.toString());
+
+                        downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN);
                         step.setStatus(PluginStep.STATUS_ERROR);
+                        return step;
                     }
                     break;
             }
@@ -163,6 +209,7 @@ public class FileFactory extends PluginForHost {
         }
         return step;
     }
+
     private boolean prepareDownload(DownloadLink downloadLink) {
         try {
             URLConnection urlConnection = new URL(postTarget).openConnection();
@@ -176,10 +223,12 @@ public class FileFactory extends PluginForHost {
         }
         return false;
     }
+
     @Override
     public boolean doBotCheck(File file) {
         return false;
     }
+
     @Override
     public void reset() {
         captchaAddress = null;
@@ -187,9 +236,11 @@ public class FileFactory extends PluginForHost {
         actionString = null;
         requestInfo = null;
     }
+
     public String getFileInformationString(DownloadLink downloadLink) {
         return downloadLink.getName() + " (" + JDUtilities.formatBytesToMB(downloadLink.getDownloadMax()) + ")";
     }
+
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) {
         try {
@@ -221,6 +272,7 @@ public class FileFactory extends PluginForHost {
         //
         return true;
     }
+
     @Override
     public int getMaxSimultanDownloadNum() {
         return 1;

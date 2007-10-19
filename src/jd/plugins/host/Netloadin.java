@@ -1,6 +1,7 @@
 package jd.plugins.host;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -172,6 +173,11 @@ public class Netloadin extends PluginForHost {
                     downloadLink.setDownloadMax(length);
                     logger.info("Filename: " + getFileNameFormHeader(requestInfo.getConnection()));
                     downloadLink.setName(getFileNameFormHeader(requestInfo.getConnection()));
+                    if (!hasEnoughHDSpace(downloadLink)) {
+                        downloadLink.setStatus(DownloadLink.STATUS_ERROR_NO_FREE_SPACE);
+                        step.setStatus(PluginStep.STATUS_ERROR);
+                        return step;
+                    }
                     if (!download(downloadLink, (URLConnection) requestInfo.getConnection())) {
                         step.setStatus(PluginStep.STATUS_ERROR);
                         downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN);
@@ -183,10 +189,20 @@ public class Netloadin extends PluginForHost {
                     return step;
             }
             return step;
-        }
-        catch (IOException e) {
+        } catch (FileNotFoundException e) {
             e.printStackTrace();
-            return null;
+            step.setStatus(PluginStep.STATUS_ERROR);
+            parameter.setStatus(DownloadLink.STATUS_ERROR_FILE_NOT_FOUND);
+            return step;
+        
+        }
+        
+        catch (Exception e) {
+            e.printStackTrace();
+            step.setStatus(PluginStep.STATUS_ERROR);
+            parameter.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN);
+            
+            return step;
         }
     }
     /*
@@ -221,10 +237,12 @@ public class Netloadin extends PluginForHost {
     public boolean getFileInformation(DownloadLink downloadLink) {
         RequestInfo requestInfo;
         try {
-            requestInfo = getRequestWithoutHtmlCode(new URL(downloadLink.getUrlDownloadDecrypted()), null, null, false);
+            requestInfo = getRequest(new URL(downloadLink.getUrlDownloadDecrypted()), null, null, false);
+         
             if (requestInfo.getHtmlCode().indexOf(FILE_NOT_FOUND) > 0) {
                 return false;
             }
+           
             return true;
         }
         catch (MalformedURLException e) {

@@ -202,7 +202,7 @@ public class JDController implements PluginListener, ControlListener, UIListener
 /**
  * Bricht den Download ab und blockiert bis er abgebrochen wurde.
  */
-    private void stopDownloads() {
+    public void stopDownloads() {
         if (getDownloadStatus()==DOWNLOAD_RUNNING) {
             setDownloadStatus(DOWNLOAD_TERMINATION_IN_PROGRESS);
             fireControlEvent(new ControlEvent(this,ControlEvent.CONTROL_DOWNLOAD_TERMINATION_ACTIVE,this ));

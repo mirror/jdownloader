@@ -988,7 +988,9 @@ public abstract class Plugin {
     public void firePluginEvent(PluginEvent pluginEvent) {
         synchronized (pluginListener) {
             Iterator<PluginListener> recIt = pluginListener.iterator();
+            
             while (recIt.hasNext()) {
+//                logger.info("OOO"+recIt.next());
                 ((PluginListener) recIt.next()).pluginEvent(pluginEvent);
             }
         }

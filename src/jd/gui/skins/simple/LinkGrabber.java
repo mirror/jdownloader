@@ -156,6 +156,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
     public void addLinks(DownloadLink[] linkList) {
         for (int i = 0; i < linkList.length; i++) {
             this.linkList.add(linkList[i]);
+            logger.info(linkList[i].getUrlDownloadDecrypted()+" # ");
         }
         sortLinkList();
         checkForSameName();

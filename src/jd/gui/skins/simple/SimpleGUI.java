@@ -54,6 +54,7 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginForSearch;
 import jd.plugins.PluginOptional;
+import jd.plugins.UserPlugin;
 import jd.plugins.event.PluginEvent;
 import jd.utils.JDUtilities;
 
@@ -568,7 +569,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
             splitpane.setDividerLocation(0.8);
             return;
         }
-        if(event.getSource() instanceof PluginOptional){
+        if(event.getSource() instanceof PluginOptional || event.getSource() instanceof UserPlugin){
             JDAction actionToDo = null;
             switch (event.getEventID()){
                 case PluginEvent.PLUGIN_CONTROL_DND:

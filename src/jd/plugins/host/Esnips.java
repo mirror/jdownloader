@@ -97,6 +97,11 @@ public class Esnips extends PluginForHost {
                     downloadLink.setDownloadMax(length);
                     logger.info("Filename: " + getFileNameFormHeader(requestInfo.getConnection()));
                     downloadLink.setName(getFileNameFormHeader(requestInfo.getConnection()));
+                    if(!hasEnoughHDSpace(downloadLink)){
+                        downloadLink.setStatus(DownloadLink.STATUS_ERROR_NO_FREE_SPACE);
+                        step.setStatus(PluginStep.STATUS_ERROR);
+                        return step;
+                    }
                     if (!download(downloadLink, (URLConnection) requestInfo.getConnection())) {
                         step.setStatus(PluginStep.STATUS_ERROR);
                         downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN);

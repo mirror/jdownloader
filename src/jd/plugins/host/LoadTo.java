@@ -193,7 +193,11 @@ public class LoadTo extends PluginForHost {
                     return step;
 
                 case PluginStep.STEP_DOWNLOAD:
-
+                    if (!hasEnoughHDSpace(downloadLink)) {
+                        downloadLink.setStatus(DownloadLink.STATUS_ERROR_NO_FREE_SPACE);
+                        step.setStatus(PluginStep.STATUS_ERROR);
+                        return step;
+                    }
                     // Download starten
                     boolean downloadSuccess = download(downloadLink, urlConnection);
 

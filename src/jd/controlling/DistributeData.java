@@ -56,7 +56,7 @@ public class DistributeData extends ControlMulticaster {
         this.pluginsForDecrypt = JDUtilities.getPluginsForDecrypt();
         this.pluginsForSearch = JDUtilities.getPluginsForSearch();
         try {
-            this.data = URLDecoder.decode(this.data, "UTF-8");
+//            this.data = URLDecoder.decode(this.data, "UTF-8");
         }
         catch (Exception e) {
             logger.warning("text not url decodeable");
@@ -98,7 +98,16 @@ public class DistributeData extends ControlMulticaster {
         }
         // Sucht alle Links und gibt ein Formatierte Liste zurück. das macht es
         // den Plugin entwicklern einfacher
+        
         data = Plugin.getHttpLinkList(data);
+        
+        try {
+          this.data = URLDecoder.decode(this.data, "UTF-8");
+      }
+      catch (Exception e) {
+          logger.warning("text not url decodeable");
+      }
+
 //        logger.info("Eingefügt: " + data);
         // Zuerst wird überprüft, ob ein Decrypt-Plugin einen Teil aus der
         // Zwischenablage entschlüsseln kann. Ist das der Fall, wird die

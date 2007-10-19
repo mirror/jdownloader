@@ -211,6 +211,9 @@ public class SingleDownloadController extends ControlMulticaster {
                 case DownloadLink.STATUS_ERROR_PREMIUM_LOGIN:
                     this.onErrorPremiumLogin(downloadLink, plugin, step);
                     break;
+                case DownloadLink.STATUS_ERROR_NO_FREE_SPACE:
+                    this.onErrorNoFreeSpace(downloadLink, plugin, step);
+                    break;
                 default:
                     this.onErrorUnknown(downloadLink, plugin, step);
             }
@@ -224,6 +227,13 @@ public class SingleDownloadController extends ControlMulticaster {
         }
         fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_PLUGIN_HOST_INACTIVE, plugin));
         fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SINGLE_DOWNLOAD_FINISHED, downloadLink));
+    }
+    private void onErrorNoFreeSpace(DownloadLink downloadLink2, PluginForHost plugin, PluginStep step) {
+        downloadLink.setStatusText("Zu wenig Speicherplatz");
+        downloadLink.setInProgress(false);
+        fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SINGLE_DOWNLOAD_CHANGED, downloadLink));
+       
+        
     }
     /**
      * Wird aufgerufen wenn ein Link kurzzeitig nicht verfügbar ist. ER wird

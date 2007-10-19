@@ -50,6 +50,8 @@ private Configuration configuration;
         addGUIConfigEntry(ce);
         ce= new GUIConfigEntry( new ConfigEntry(ConfigContainer.TYPE_SPINNER, configuration, Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN, "Maximale gleichzeitige Downloads",1,20).setDefaultValue(3).setStep(1));
         addGUIConfigEntry(ce);
+        ce= new GUIConfigEntry( new ConfigEntry(ConfigContainer.TYPE_SPINNER, configuration, Configuration.PARAM_MIN_FREE_SPACE, "Downloads stoppen wenn der freie Speicherplatz weniger ist als [MB]",0,10000).setDefaultValue(100).setStep(10));
+        addGUIConfigEntry(ce);
         add(panel, BorderLayout.NORTH);
     }
     @Override

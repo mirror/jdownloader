@@ -74,6 +74,7 @@ import java.util.regex.Pattern;
 
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
+import jd.config.Configuration;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginStep;
@@ -136,6 +137,8 @@ public class Rapidshare extends PluginForHost {
     private String                         ticketCodePattern                = "unescape('°')}";
 
     private String                         hardwareDefektString             = "wegen Hardwaredefekt nicht";
+
+    private String                         deletedByUploaderString          = "Grund: Vom Uploader";
 
     private String                         toManyUser                       = "Zu viele Benutzer";
 
@@ -288,7 +291,7 @@ public class Rapidshare extends PluginForHost {
         }
         logger.info("get Next Step " + step);
         // premium
-        if (this.getProperties().getProperty("USE_PREMIUM") != null && ((Boolean) this.getProperties().getProperty("USE_PREMIUM"))) {
+        if (this.getProperties().getProperty("USE_PREMIUM") != null && this.getProperties().getBooleanProperty("USE_PREMIUM", false)) {
             return this.doPremiumStep(step, downloadLink);
         }
         else {
@@ -325,6 +328,14 @@ public class Rapidshare extends PluginForHost {
                         downloadLink.setStatus(DownloadLink.STATUS_ERROR_TEMPORARILY_UNAVAILABLE);
                         return step;
                     }
+
+                    if (requestInfo.containsHTML(deletedByUploaderString)) {                      
+                        step.setStatus(PluginStep.STATUS_ERROR);
+                        logger.severe("Vom Uploader gelöscht");
+                        downloadLink.setStatus(DownloadLink.STATUS_ERROR_FILE_NOT_FOUND);
+                        return step;
+                    }
+
                     // falls dei meldung auf der Startseite kommt ist der check
                     // hier
                     // richtig
@@ -363,7 +374,7 @@ public class Rapidshare extends PluginForHost {
                         return step;
                     }
                     return step;
-                }              
+                }
                 catch (Exception e) {
                     e.printStackTrace();
                 }
@@ -451,7 +462,7 @@ public class Rapidshare extends PluginForHost {
                     }
 
                 }
-              catch (Exception e) {
+                catch (Exception e) {
                     e.printStackTrace();
                 }
                 downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN);
@@ -563,22 +574,53 @@ public class Rapidshare extends PluginForHost {
                     postParameter.put("mirror", "on");
                     postParameter.put("accesscode", (String) steps.get(2).getParameter());
                     postParameter.put("actionString", actionString);
-                    boolean success = prepareDownload(downloadLink);
-                    if (success) {
-                        step.setStatus(PluginStep.STATUS_DONE);
-                        downloadLink.setStatus(DownloadLink.STATUS_DONE);
-                        return null;
-                    }
-                    else if (aborted) {
-                        logger.warning("Plugin abgebrochen");
-                        downloadLink.setStatus(DownloadLink.STATUS_TODO);
-                        step.setStatus(PluginStep.STATUS_TODO);
+
+                    try {
+
+                        logger.info("Loading from: " + postTarget.substring(0, 30));
+                        URLConnection urlConnection = new URL(postTarget).openConnection();
+                        urlConnection.setDoOutput(true);
+
+                        // Post Parameter vorbereiten
+                        String postParams = createPostParameterFromHashMap(postParameter);
+                        OutputStreamWriter wr = new OutputStreamWriter(urlConnection.getOutputStream());
+                        wr.write(postParams);
+                        wr.flush();
+                        // content-disposition: Attachment;
+                        // filename=a_mc_cs3_g_cd.rsdf
+                        downloadLink.setName(getFileNameFormHeader(urlConnection));
+                        int length = urlConnection.getContentLength();
+                        downloadLink.setDownloadMax(length);
+
+                        if (!hasEnoughHDSpace(downloadLink)) {
+                            downloadLink.setStatus(DownloadLink.STATUS_ERROR_NO_FREE_SPACE);
+                            step.setStatus(PluginStep.STATUS_ERROR);
+                            return step;
+                        }
+
+                        if (download(downloadLink, urlConnection)) {
+                            step.setStatus(PluginStep.STATUS_DONE);
+                            downloadLink.setStatus(DownloadLink.STATUS_DONE);
+                            return null;
+                        }
+                        else if (aborted) {
+                            logger.warning("Plugin abgebrochen");
+                            downloadLink.setStatus(DownloadLink.STATUS_TODO);
+                            step.setStatus(PluginStep.STATUS_TODO);
+
+                        }
+                        else {
+                            logger.severe("captcha wrong");
+                            downloadLink.setStatus(DownloadLink.STATUS_ERROR_CAPTCHA_WRONG);
+                            step.setStatus(PluginStep.STATUS_ERROR);
+                        }
 
                     }
-                    else {
-                        logger.severe("captcha wrong");
-                        downloadLink.setStatus(DownloadLink.STATUS_ERROR_CAPTCHA_WRONG);
+                    catch (IOException e) {
+                        logger.severe("URL could not be opened. " + e.toString());
+                        downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN);
                         step.setStatus(PluginStep.STATUS_ERROR);
+                        return step;
                     }
                 }
                 break;
@@ -624,7 +666,12 @@ public class Rapidshare extends PluginForHost {
                         downloadLink.setStatus(DownloadLink.STATUS_ERROR_TEMPORARILY_UNAVAILABLE);
                         return step;
                     }
-
+                    if (requestInfo.containsHTML(deletedByUploaderString)) {                      
+                        step.setStatus(PluginStep.STATUS_ERROR);
+                        logger.severe("Vom Uploader gelöscht");
+                        downloadLink.setStatus(DownloadLink.STATUS_ERROR_FILE_NOT_FOUND);
+                        return step;
+                    }
                     String newURL = getFirstMatch(requestInfo.getHtmlCode(), patternForNewHost, 1);
                     if (newURL != null) {
                         if (aborted) {
@@ -815,7 +862,14 @@ public class Rapidshare extends PluginForHost {
                     URLConnection urlConnection = requestInfo.getConnection();
                     int length = urlConnection.getContentLength();
                     downloadLink.setDownloadMax(length);
+
                     downloadLink.setName(getFileNameFormHeader(urlConnection));
+
+                    if (!hasEnoughHDSpace(downloadLink)) {
+                        downloadLink.setStatus(DownloadLink.STATUS_ERROR_NO_FREE_SPACE);
+                        step.setStatus(PluginStep.STATUS_ERROR);
+                        return step;
+                    }
                     if (download(downloadLink, urlConnection)) {
                         step.setStatus(PluginStep.STATUS_DONE);
                         downloadLink.setStatus(DownloadLink.STATUS_DONE);
@@ -860,31 +914,6 @@ public class Rapidshare extends PluginForHost {
             e.printStackTrace();
         }
         return str;
-    }
-
-    private boolean prepareDownload(DownloadLink downloadLink) {
-
-        try {
-
-            logger.info("Loading from: " + postTarget.substring(0, 30));
-            URLConnection urlConnection = new URL(postTarget).openConnection();
-            urlConnection.setDoOutput(true);
-
-            // Post Parameter vorbereiten
-            String postParams = createPostParameterFromHashMap(postParameter);
-            OutputStreamWriter wr = new OutputStreamWriter(urlConnection.getOutputStream());
-            wr.write(postParams);
-            wr.flush();
-            // content-disposition: Attachment; filename=a_mc_cs3_g_cd.rsdf
-            downloadLink.setName(getFileNameFormHeader(urlConnection));
-            int length = urlConnection.getContentLength();
-            downloadLink.setDownloadMax(length);
-            return download(downloadLink, urlConnection);
-        }
-        catch (IOException e) {
-            logger.severe("URL could not be opened. " + e.toString());
-        }
-        return false;
     }
 
     @Override

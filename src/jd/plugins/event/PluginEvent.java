@@ -95,6 +95,7 @@ public class PluginEvent extends AWTEvent {
         this.eventID = eventID;
         this.parameter = parameter;
     }
+    
     public int getEventID() {
         return eventID;
     }

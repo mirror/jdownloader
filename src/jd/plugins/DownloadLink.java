@@ -96,10 +96,15 @@ public class DownloadLink implements Serializable,Comparable<DownloadLink> {
      */
     public static final int   STATUS_ERROR_PLUGIN_SPECIFIC = 18;
     /**
+     * zeigt an, dass nicht genügend Speicherplatz vorhanden ist
+     */
+    public static final int STATUS_ERROR_NO_FREE_SPACE = 19;
+    /**
      * serialVersionUID
      */
     private FilePackage       filePackage;
     private static final long serialVersionUID                     = 1981079856214268373L;
+  
     /**
      * Statustext der von der GUI abgefragt werden kann
      */
@@ -204,6 +209,7 @@ public class DownloadLink implements Serializable,Comparable<DownloadLink> {
     public DownloadLink(Plugin plugin, String name, String host, String urlDownload, boolean isEnabled) {
         this.plugin = plugin;
         this.name = name;
+        downloadMax=0;
         this.host = host;
         this.isEnabled = isEnabled;
         speedMeter = new SpeedMeter(5000);
@@ -332,6 +338,7 @@ public class DownloadLink implements Serializable,Comparable<DownloadLink> {
      * @return Die Größe der Datei
      */
     public long getDownloadMax() {
+        
         return downloadMax;
     }
 

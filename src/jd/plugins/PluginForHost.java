@@ -1,11 +1,13 @@
 package jd.plugins;
 
+import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
 import java.util.Vector;
 
+import jd.config.Configuration;
 import jd.utils.JDUtilities;
 
 /**
@@ -18,7 +20,6 @@ public abstract class PluginForHost extends Plugin {
     // public abstract URLConnection getURLConnection();
 
     private String data;
- 
 
     /**
      * Stellt das Plugin in den Ausgangszustand zurück (variablen intialisieren
@@ -49,9 +50,9 @@ public abstract class PluginForHost extends Plugin {
             logger.info(this + " Pluginende erreicht!");
             return null;
         }
-       
-        PluginStep ret=doStep(currentStep, parameter);
-       
+
+        PluginStep ret = doStep(currentStep, parameter);
+
         return ret;
     }
 
@@ -65,6 +66,7 @@ public abstract class PluginForHost extends Plugin {
     public Vector<DownloadLink> getDownloadLinks(String data) {
         this.data = data;
         Vector<DownloadLink> links = null;
+
         Vector<String> hits = getMatches(data, getSupportedLinks());
         if (hits != null && hits.size() > 0) {
             links = new Vector<DownloadLink>();
@@ -94,6 +96,20 @@ public abstract class PluginForHost extends Plugin {
         return links;
     }
 
+    /**
+     * prüft ob genug Speicherplatz für den download zur Verfügung steht
+     * 
+     * @param downloadLink
+     * @return true/false
+     */
+    protected boolean hasEnoughHDSpace(DownloadLink downloadLink) {
+        
+        File file = new File(downloadLink.getFileOutput());
+        if (file.getParentFile() != null && file.getParentFile().exists()) {
+            file = file.getParentFile();
+        }
+        return file.getFreeSpace()-downloadLink.getDownloadMax() > ((long) JDUtilities.getConfiguration().getIntegerProperty(Configuration.PARAM_MIN_FREE_SPACE, 100)) * 1024l * 1024l;
+    }
 
     /**
      * Holt Informationen zu einem Link. z.B. dateigröße, Dateiname,
@@ -137,15 +153,18 @@ public abstract class PluginForHost extends Plugin {
     public PluginStep doStep(PluginStep step, Object parameter) {
         return doStep(step, (DownloadLink) parameter);
     }
-/**
- * Kann im Downloadschritt verwendet werden um einen einfachen Download vorzubereiten
- * @param downloadLink
- * @param step
- * @param url
- * @param cookie
- * @param redirect
- * @return
- */
+
+    /**
+     * Kann im Downloadschritt verwendet werden um einen einfachen Download
+     * vorzubereiten
+     * 
+     * @param downloadLink
+     * @param step
+     * @param url
+     * @param cookie
+     * @param redirect
+     * @return
+     */
     protected boolean defaultDownloadStep(DownloadLink downloadLink, PluginStep step, String url, String cookie, boolean redirect) {
         try {
             requestInfo = getRequestWithoutHtmlCode(new URL(url), cookie, null, redirect);
@@ -166,11 +185,11 @@ public abstract class PluginForHost extends Plugin {
             return true;
         }
         catch (MalformedURLException e) {
-            
+
             e.printStackTrace();
         }
         catch (IOException e) {
-           
+
             e.printStackTrace();
         }
 
