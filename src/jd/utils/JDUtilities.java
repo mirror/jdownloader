@@ -81,7 +81,7 @@ public class JDUtilities {
     public static final String                     CONFIG_PATH         = "jDownloader.config";
 
     /**
-     * Titel der Applikation
+     * Titel der Applikation 
      */
     public static final String                     JD_VERSION          = "0.0.";
 
