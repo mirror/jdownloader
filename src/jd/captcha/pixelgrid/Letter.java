@@ -421,7 +421,7 @@ public void resizetoHeight(int newHeight){
         
     }
 
-    private PixelObject toPixelObject(double objectContrast) {
+    public PixelObject toPixelObject(double objectContrast) {
         PixelObject object = new PixelObject(this);
         object.setWhiteContrast(objectContrast);
         for (int x = 0; x < getWidth(); x++) {

@@ -103,12 +103,12 @@ public abstract class PluginForHost extends Plugin {
      * @return true/false
      */
     protected boolean hasEnoughHDSpace(DownloadLink downloadLink) {
-        
-        File file = new File(downloadLink.getFileOutput());
-        if (file.getParentFile() != null && file.getParentFile().exists()) {
-            file = file.getParentFile();
-        }
-        return file.getFreeSpace()-downloadLink.getDownloadMax() > ((long) JDUtilities.getConfiguration().getIntegerProperty(Configuration.PARAM_MIN_FREE_SPACE, 100)) * 1024l * 1024l;
+        return true;
+//        File file = new File(downloadLink.getFileOutput());
+//        if (file.getParentFile() != null && file.getParentFile().exists()) {
+//            file = file.getParentFile();
+//        }
+//        return file.getFreeSpace()-downloadLink.getDownloadMax() > ((long) JDUtilities.getConfiguration().getIntegerProperty(Configuration.PARAM_MIN_FREE_SPACE, 100)) * 1024l * 1024l;
     }
 
     /**

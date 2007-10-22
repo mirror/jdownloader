@@ -29,7 +29,7 @@ public class JACTrain {
 
         String methodsPath=UTILITIES.getFullPath(new String[] { JDUtilities.getJDHomeDirectory().getAbsolutePath(), "jd", "captcha", "methods"});
         
-        String hoster="serienfreakz.tv";
+        String hoster="uploaded.to";
 
         JAntiCaptcha jac= new JAntiCaptcha(methodsPath,hoster);
         //jac.runTestMode(new File("1186941165349_captcha.jpg"));

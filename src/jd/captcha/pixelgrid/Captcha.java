@@ -10,6 +10,8 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.Collections;
 import java.util.Vector;
 import java.util.logging.Logger;
@@ -51,11 +53,14 @@ public class Captcha extends PixelGrid {
      * Einträge mit true bedeuten eine Lücke
      */
     private boolean[]          gaps;
+
     /**
      * Speichert das original RGB Pixelgrid
      */
     public int[][]             rgbGrid;
+
     private static Logger      logger      = UTILITIES.getLogger();
+
     private ColorModel         colorModel;
 
     private LetterComperator[] letterComperators;
@@ -93,8 +98,7 @@ public class Captcha extends PixelGrid {
      * @return Höhe
      */
     public int getHeight() {
-        if (grid.length == 0)
-            return 0;
+        if (grid.length == 0) return 0;
         return grid[0].length;
     }
 
@@ -118,7 +122,8 @@ public class Captcha extends PixelGrid {
                     Color.RGBtoHSB(c.getRed(), c.getGreen(), c.getBlue(), col);
                     col[3] = 0;
 
-                } else if (owner.getJas().getColorFormat() == 1) {
+                }
+                else if (owner.getJas().getColorFormat() == 1) {
 
                     col[0] = (float) c.getRed() / 255;
                     col[1] = (float) c.getGreen() / 255;
@@ -156,7 +161,8 @@ public class Captcha extends PixelGrid {
                     Color.RGBtoHSB(c.getRed(), c.getGreen(), c.getBlue(), col);
                     col[3] = 0;
 
-                } else if (owner.getJas().getColorFormat() == 1) {
+                }
+                else if (owner.getJas().getColorFormat() == 1) {
 
                     col[0] = (float) c.getRed() / 255;
                     col[1] = (float) c.getGreen() / 255;
@@ -191,7 +197,8 @@ public class Captcha extends PixelGrid {
                     Color.RGBtoHSB(c.getRed(), c.getGreen(), c.getBlue(), col);
                     col[3] = 0;
 
-                } else if (owner.getJas().getColorFormat() == 1) {
+                }
+                else if (owner.getJas().getColorFormat() == 1) {
 
                     col[0] = (float) c.getRed() / 255;
                     col[1] = (float) c.getGreen() / 255;
@@ -223,13 +230,11 @@ public class Captcha extends PixelGrid {
         int i = 0;
         int halfW = width / 2;
         int halfH = height / 2;
-        if (width == 1 && px == 0)
-            width = 2;
-        if (height == 1 && py == 0)
-            height = 2;
+        if (width == 1 && px == 0) width = 2;
+        if (height == 1 && py == 0) height = 2;
         for (int x = Math.max(0, px - halfW); x < Math.min(px + width - halfW, getWidth()); x++) {
             for (int y = Math.max(0, py - halfH); y < Math.min(py + height - halfH, getHeight()); y++) {
-               if (mask.getPixelValue(x, y) > 100) {
+                if (mask.getPixelValue(x, y) > 100) {
                     bv = UTILITIES.hexToRgb(getPixelValue(x, y));
                     avg[0] += bv[0];
                     avg[1] += bv[1];
@@ -250,12 +255,9 @@ public class Captcha extends PixelGrid {
      * Entfernt Störungen über eine Maske und ersetzt diese mit den umliegenden
      * pixeln
      * 
-     * @param mask
-     *            Maske
-     * @param width
-     *            breite des Ersatzfeldes
-     * @param height
-     *            Höhe des Ersatzfeldes
+     * @param mask Maske
+     * @param width breite des Ersatzfeldes
+     * @param height Höhe des Ersatzfeldes
      */
     public void cleanWithMask(Captcha mask, int width, int height) {
         int[][] newgrid = new int[getWidth()][getHeight()];
@@ -268,10 +270,11 @@ public class Captcha extends PixelGrid {
         for (int x = 0; x < getWidth(); x++) {
             for (int y = 0; y < getHeight(); y++) {
                 if (mask.getPixelValue(x, y) < 100) {
-                   
+
                     PixelGrid.setPixelValue(x, y, newgrid, getAverage(x, y, width, height, mask), this.owner);
 
-                } else {
+                }
+                else {
                     newgrid[x][y] = grid[x][y];
                 }
             }
@@ -283,8 +286,7 @@ public class Captcha extends PixelGrid {
     /**
      * Gibt einen vereifgachten captcha zurück. /gröber
      * 
-     * @param faktor
-     *            der vereinfachung
+     * @param faktor der vereinfachung
      * @return neuer captcha
      */
     public Captcha getSimplified(int faktor) {
@@ -326,20 +328,15 @@ public class Captcha extends PixelGrid {
     /**
      * Benutzt die Objekterkennung um alle Buchstaben zu finden
      * 
-     * @param letterNum
-     *            Anzahl der zu suchenen Buchstaben
-     * @param contrast
-     *            Kontrast innerhalb der Elemente
-     * @param objectContrast
-     *            Kontrast der Elemente zum Hintergrund
-     * @param minArea
-     *            MindestFläche eines Elements
+     * @param letterNum Anzahl der zu suchenen Buchstaben
+     * @param contrast Kontrast innerhalb der Elemente
+     * @param objectContrast Kontrast der Elemente zum Hintergrund
+     * @param minArea MindestFläche eines Elements
      * @return Erkannte Buchstaben
      */
     public Letter[] getLetters(int letterNum, double contrast, double objectContrast, int minArea) {
         Vector<PixelObject> letters = getBiggestObjects(letterNum, minArea, contrast, objectContrast);
-        if (letters == null)
-            return null;
+        if (letters == null) return null;
         this.gaps = new boolean[getWidth() + 1];
         Letter[] ret = new Letter[letterNum];
         for (int i = 0; i < letters.size(); i++) {
@@ -367,21 +364,55 @@ public class Captcha extends PixelGrid {
      * Versucht die Buchstaben aus dem captcha zu extrahieren und gibt ein
      * letter-array zuück
      * 
-     * @param letterNum
-     *            Anzahl der vermuteten Buchstaben
+     * @param letterNum Anzahl der vermuteten Buchstaben
      * @return Array mit den gefundenen Lettern
      */
     public Letter[] getLetters(int letterNum) {
-        if (seperatedLetters != null)
-            return seperatedLetters;
 
+        if (seperatedLetters != null) return seperatedLetters;
+
+        if (owner.getJas().getString("useSpecialGetLetters") != null && owner.getJas().getString("useSpecialGetLetters").length() > 0) {
+            String[] ref = owner.getJas().getString("useSpecialGetLetters").split("\\.");
+            if (ref.length != 2) {
+                logger.severe("useSpecialGetLetters should have the format Class.Method");
+                return null;
+            }
+            String cl = ref[0];
+            String methodname = ref[1];
+
+            Class newClass;
+            try {
+                newClass = Class.forName("jd.captcha.specials." + cl);
+
+                Class[] parameterTypes = new Class[] {this.getClass()};
+                Method method = newClass.getMethod(methodname, parameterTypes);
+                Object[] arguments = new Object[] {this};
+                Object instance = null;
+                Letter[] ret=(Letter[]) method.invoke(instance, arguments);
+                if (ret != null) {
+                    seperatedLetters = ret;
+                    return ret;
+                }
+                else {
+                    logger.severe("Special detection failed.");
+                    return null;
+                }
+               
+            }          
+            catch (Exception e) {
+                logger.severe("Fehler in useSpecialGetLetters:" + e.getLocalizedMessage() + " / " + owner.getJas().getString("useSpecialGetLetters"));
+                e.printStackTrace();
+            }
+            return null;
+        }
         if (owner.getJas().getBoolean("useObjectDetection")) {
             logger.finer("Use Object Detection");
             Letter[] ret = this.getLetters(letterNum, owner.getJas().getDouble("ObjectColorContrast"), owner.getJas().getDouble("ObjectDetectionContrast"), owner.getJas().getInteger("MinimumObjectArea"));
             if (ret != null) {
                 seperatedLetters = ret;
                 return ret;
-            } else {
+            }
+            else {
                 logger.severe("Object detection failed. Try alternative Methods");
             }
         }
@@ -402,11 +433,13 @@ public class Captcha extends PixelGrid {
             if (ret[letterId] == null) {
                 if (owner.getJas().getGaps() != null) {
                     return getLetters(letterNum, owner.getJas().getGaps());
-                } else {
+                }
+                else {
                     return null;
                 }
                 // ret[letterId]= ret[letterId].getSimplified(SIMPLIFYFAKTOR);
-            } else {
+            }
+            else {
                 owner.getJas().executeLetterPrepareCommands(ret[letterId]);
                 // if(owner.getJas().getInteger("leftAngle")!=0 ||
                 // owner.getJas().getInteger("rightAngle")!=0) ret[letterId] =
@@ -446,15 +479,16 @@ public class Captcha extends PixelGrid {
 
                 return null;
                 // ret[letterId]= ret[letterId].getSimplified(SIMPLIFYFAKTOR);
-            } else {
+            }
+            else {
                 // if(owner.getJas().getInteger("leftAngle")!=0 ||
                 // owner.getJas().getInteger("rightAngle")!=0) ret[letterId] =
                 // ret[letterId].align(
                 // owner.getJas().getDouble("ObjectDetectionContrast"),owner.getJas().getInteger("leftAngle"),owner.getJas().getInteger("rightAngle"));
                 owner.getJas().executeLetterPrepareCommands(ret[letterId]);
-               
+
                 ret[letterId] = ret[letterId].getSimplified(this.owner.getJas().getInteger("simplifyFaktor"));
-         
+
             }
 
         }
@@ -476,8 +510,7 @@ public class Captcha extends PixelGrid {
      * Sucht angefangen bei der aktullen Positiond en ncähsten letter und gibt
      * ihn zurück
      * 
-     * @param letterId
-     *            Id des Letters (0-letterNum-1)
+     * @param letterId Id des Letters (0-letterNum-1)
      * @return Letter gefundener Letter
      */
     private Letter getNextLetter(int letterId) {
@@ -533,7 +566,8 @@ public class Captcha extends PixelGrid {
 
                 isGap = isAverageGap && isPeakGap;
 
-            } else {
+            }
+            else {
                 isAverageGap = rowAverage[x] > (average * owner.getJas().getDouble("GapDetectionAverageContrast")) && owner.getJas().getBoolean("UseAverageGapDetection");
                 isOverPeak = rowPeak[x] < (average * owner.getJas().getDouble("GapDetectionPeakContrast"));
                 isPeakGap = (lastOverPeak && !isOverPeak) || !owner.getJas().getBoolean("UsePeakGapdetection");
@@ -543,7 +577,8 @@ public class Captcha extends PixelGrid {
 
             if (isGap && noGapCount > owner.getJas().getInteger("MinimumLetterWidth")) {
                 break;
-            } else if (rowAverage[x] < (average * owner.getJas().getDouble("GapDetectionAverageContrast"))) {
+            }
+            else if (rowAverage[x] < (average * owner.getJas().getDouble("GapDetectionAverageContrast"))) {
 
                 noGapCount++;
             }
@@ -552,11 +587,9 @@ public class Captcha extends PixelGrid {
 
         ret.setGrid(letterGrid);
 
-        if (!ret.trim(lastletterX, x))
-            return null;
+        if (!ret.trim(lastletterX, x)) return null;
 
-        if (!ret.clean())
-            return null;
+        if (!ret.clean()) return null;
 
         lastletterX = x;
 
@@ -565,20 +598,21 @@ public class Captcha extends PixelGrid {
     }
 
     /**
-     * Alternativ Methode über das gaps array.
-     * TODO: Nicht optimal. Das trim() kann man sich sparen indem man gleich die rihtige Arraygröße wählt
+     * Alternativ Methode über das gaps array. TODO: Nicht optimal. Das trim()
+     * kann man sich sparen indem man gleich die rihtige Arraygröße wählt
+     * 
      * @param letterId
      * @param gaps
      * @return Nächster Buchstabe in der Reihe
      */
     private Letter getNextLetter(int letterId, int[] gaps) {
         Letter ret = createLetter();
-        int overlap=owner.jas.getInteger("splitGapsOverlap");
+        int overlap = owner.jas.getInteger("splitGapsOverlap");
         int nextGap = -1;
         if (gaps != null && gaps.length > letterId) {
             nextGap = gaps[letterId];
         }
-   
+
         if (gaps == null || gaps.length == 0) {
             logger.severe("Das Gaps Array wurde nicht erstellt");
         }
@@ -588,26 +622,25 @@ public class Captcha extends PixelGrid {
         if (letterId > 0 && nextGap <= gaps[letterId - 1]) {
             logger.severe(letterId + " Das Userdefinierte gaps array ist falsch!. Die Gaps müssen aufsteigend sortiert sein!");
         }
-        int[][] letterGrid = new int[Math.min(getWidth()-1,nextGap+overlap)-Math.max(0,lastletterX-overlap)][getHeight()];
+        int[][] letterGrid = new int[Math.min(getWidth() - 1, nextGap + overlap) - Math.max(0, lastletterX - overlap)][getHeight()];
         int x;
-        logger.info("Gap at "+nextGap+" last gap: "+lastletterX+" this: "+Math.max(0,lastletterX-overlap)+" - "+Math.min(getWidth()-1,nextGap+overlap));
-        for (x = Math.max(0,lastletterX-overlap); x < Math.min(getWidth()-1,nextGap+overlap); x++) {
+        logger.info("Gap at " + nextGap + " last gap: " + lastletterX + " this: " + Math.max(0, lastletterX - overlap) + " - " + Math.min(getWidth() - 1, nextGap + overlap));
+        for (x = Math.max(0, lastletterX - overlap); x < Math.min(getWidth() - 1, nextGap + overlap); x++) {
             for (int y = 0; y < getHeight(); y++) {
-                letterGrid[x-Math.max(0,lastletterX-overlap)][y] = getPixelValue(x, y);
+                letterGrid[x - Math.max(0, lastletterX - overlap)][y] = getPixelValue(x, y);
             }
-            
+
         }
 
         ret.setGrid(letterGrid);
-//
-//        if (!ret.trim(Math.max(0,lastletterX-overlap), x)){
-//            return null;
-//        }
+        //
+        // if (!ret.trim(Math.max(0,lastletterX-overlap), x)){
+        // return null;
+        // }
 
-        if (!ret.clean())
-            return null;
+        if (!ret.clean()) return null;
 
-        lastletterX = x-overlap;
+        lastletterX = x - overlap;
 
         this.gaps[Math.min(lastletterX, getWidth())] = true;
         return ret;
@@ -616,8 +649,7 @@ public class Captcha extends PixelGrid {
     /**
      * Gibt den Captcha als Bild mit Trennzeilen für die gaps zurück
      * 
-     * @param faktor
-     *            Vergrößerung
+     * @param faktor Vergrößerung
      * @return neues Image
      */
 
@@ -636,8 +668,7 @@ public class Captcha extends PixelGrid {
     /**
      * Speichert den captcha als Bild mit Trennstrichen ab
      * 
-     * @param file .
-     *            ZielPfad
+     * @param file . ZielPfad
      */
     public void saveImageasJpgWithGaps(File file) {
         BufferedImage bimg = null;
@@ -653,13 +684,16 @@ public class Captcha extends PixelGrid {
             JPEGImageEncoder jpeg = JPEGCodec.createJPEGEncoder(fos);
             jpeg.encode(bimg);
             fos.close();
-        } catch (FileNotFoundException e) {
+        }
+        catch (FileNotFoundException e) {
 
             e.printStackTrace();
-        } catch (ImageFormatException e) {
+        }
+        catch (ImageFormatException e) {
 
             e.printStackTrace();
-        } catch (IOException e) {
+        }
+        catch (IOException e) {
 
             e.printStackTrace();
         }
@@ -678,8 +712,7 @@ public class Captcha extends PixelGrid {
         for (int y = 0; y < getHeight(); y++) {
             for (int x = 0; x < getWidth(); x++) {
                 pix[pixel] = getPixelValue(x, y);
-                if (gaps[x] == true)
-                    pix[pixel] = 0;
+                if (gaps[x] == true) pix[pixel] = 0;
                 pixel++;
             }
         }
@@ -696,8 +729,8 @@ public class Captcha extends PixelGrid {
         for (int y = 0; y < getHeight(); y++) {
             for (int x = 0; x < getWidth(); x++) {
                 pix[x][y] = grid[x][y];
-                if (gaps[x] == true)
-                    pix[x][y] = 0;
+                if(gaps!=null && gaps.length+1>x)
+                if (gaps[x] == true) pix[x][y] = 0;
 
             }
         }
@@ -762,7 +795,7 @@ public class Captcha extends PixelGrid {
 
         int width = image.getWidth(null);
         int height = image.getHeight(null);
-        if(width<=0 ||height<=0)return null;
+        if (width <= 0 || height <= 0) return null;
         if (width <= 0 || height <= 0) {
             logger.severe("ERROR: Image nicht korrekt. Kein Inhalt. Pfad URl angaben Korrigieren");
         }
@@ -770,7 +803,8 @@ public class Captcha extends PixelGrid {
 
         try {
             pg.grabPixels();
-        } catch (Exception e) {
+        }
+        catch (Exception e) {
             e.printStackTrace();
         }
 
@@ -784,7 +818,8 @@ public class Captcha extends PixelGrid {
         if (!(cm instanceof IndexColorModel)) {
             // not an indexed file (ie: not a gif file)
             ret.setPixel((int[]) pg.getPixels());
-        } else {
+        }
+        else {
 
             ; // UTILITIES.trace("COLORS: "+numColors);
             ret.setPixel((byte[]) pg.getPixels());
@@ -798,6 +833,7 @@ public class Captcha extends PixelGrid {
 
     /**
      * Setzt Pixel als byte[] (z.B. aus einem Gif
+     * 
      * @param bpixel
      */
     public void setPixel(byte[] bpixel) {
@@ -816,7 +852,8 @@ public class Captcha extends PixelGrid {
                     Color.RGBtoHSB(c.getRed(), c.getGreen(), c.getBlue(), col);
                     col[3] = 0;
 
-                } else if (owner.getJas().getColorFormat() == 1) {
+                }
+                else if (owner.getJas().getColorFormat() == 1) {
 
                     col[0] = (float) c.getRed() / 255;
                     col[1] = (float) c.getGreen() / 255;
@@ -833,10 +870,12 @@ public class Captcha extends PixelGrid {
         }
 
     }
-/**
- * Setzt das verwendete Colormodel
- * @param colorModel
- */
+
+    /**
+     * Setzt das verwendete Colormodel
+     * 
+     * @param colorModel
+     */
     public void setColorModel(ColorModel colorModel) {
         this.colorModel = colorModel;
 
@@ -855,12 +894,9 @@ public class Captcha extends PixelGrid {
         int newWidth = (a.getWidth() + b.getWidth() + 6);
         int newHeight = Math.max(a.getHeight(), b.getHeight());
         Captcha ret = new Captcha(newWidth, newHeight);
-        if (a.owner != null)
-            ret.setOwner(a.owner);
-        if (ret.owner == null)
-            ret.setOwner(b.owner);
-        if (ret.owner == null)
-            logger.warning("Owner konnte nicht bestimmt werden!Dieser captcha ist nur eingeschränkt verwendbar.");
+        if (a.owner != null) ret.setOwner(a.owner);
+        if (ret.owner == null) ret.setOwner(b.owner);
+        if (ret.owner == null) logger.warning("Owner konnte nicht bestimmt werden!Dieser captcha ist nur eingeschränkt verwendbar.");
         ret.grid = new int[newWidth][newHeight];
         for (int x = 0; x < a.getWidth(); x++) {
             for (int y = 0; y < newHeight; y++) {
@@ -888,10 +924,8 @@ public class Captcha extends PixelGrid {
     /**
      * Factory Funktion gibt einen captcha von File zurück
      * 
-     * @param file
-     *            Pfad zum bild
-     * @param owner
-     *            Parameter Dump JAntiCaptcha
+     * @param file Pfad zum bild
+     * @param owner Parameter Dump JAntiCaptcha
      * @return Captcha neuer captcha
      */
     public static Captcha getCaptcha(File file, JAntiCaptcha owner) {
@@ -909,8 +943,7 @@ public class Captcha extends PixelGrid {
     }
 
     /**
-     * @param prepared
-     *            the prepared to set
+     * @param prepared the prepared to set
      */
     public void setPrepared(boolean prepared) {
         this.prepared = prepared;
@@ -919,15 +952,11 @@ public class Captcha extends PixelGrid {
     /**
      * Holt die größten Objekte aus dem captcha
      * 
-     * @param letterNum
-     *            anzahl der zu suchenden objekte
-     * @param minArea
-     *            mindestFläche der Objekte
-     * @param contrast
-     *            Kontrast zur erkennung der farbunterschiede (z.B. 0.3)
-     * @param objectContrast
-     *            Kontrast zur erkennung einens objektstartpunkte (z.B. 0.5 bei
-     *            weißem Hintergrund)
+     * @param letterNum anzahl der zu suchenden objekte
+     * @param minArea mindestFläche der Objekte
+     * @param contrast Kontrast zur erkennung der farbunterschiede (z.B. 0.3)
+     * @param objectContrast Kontrast zur erkennung einens objektstartpunkte
+     *            (z.B. 0.5 bei weißem Hintergrund)
      * @return Vector mit den gefundenen Objekten
      */
 
@@ -943,8 +972,8 @@ public class Captcha extends PixelGrid {
         Vector<PixelObject> objects = getObjects(contrast, objectContrast);
 
         // Kleine Objekte ausfiltern
-        while (i < objects.size() && objects.elementAt(i++).getArea() > minArea &&found<=letterNum) {
-            logger.info(objects.elementAt(i-1).getWidth()+" Element: "+found+" : "+objects.elementAt(i-1).getArea());
+        while (i < objects.size() && objects.elementAt(i++).getArea() > minArea && found <= letterNum) {
+            logger.info(objects.elementAt(i - 1).getWidth() + " Element: " + found + " : " + objects.elementAt(i - 1).getArea());
             found++;
         }
 
@@ -959,24 +988,24 @@ public class Captcha extends PixelGrid {
             }
             found--;
             maxWidth = po.getWidth();
-            
+
             minWidth = minArea / po.getHeight();
-            if(owner.getJas().getInteger("minimumLetterWidth")>0 &&owner.getJas().getInteger("minimumLetterWidth")>minWidth){
-                minWidth=owner.getJas().getInteger("minimumLetterWidth");
+            if (owner.getJas().getInteger("minimumLetterWidth") > 0 && owner.getJas().getInteger("minimumLetterWidth") > minWidth) {
+                minWidth = owner.getJas().getInteger("minimumLetterWidth");
             }
             splitter = 1;
 
             logger.info(maxWidth + "/" + minWidth);
-            //ermittle die Vermutliche Buchstabenanzahl im Ersten captcha
+            // ermittle die Vermutliche Buchstabenanzahl im Ersten captcha
             while ((splitNum = Math.min((int) Math.ceil((double) maxWidth / ((double) minWidth / (double) splitter)), letterNum - found)) < 2) {
                 splitter++;
             }
-            logger.info("l "+splitNum);
+            logger.info("l " + splitNum);
             while ((found + splitNum) > letterNum) {
                 splitNum--;
             }
-            logger.info("l "+splitNum);
-            while (splitNum > 2 && next != null && maxWidth / splitNum < next.getWidth()*0.55) {
+            logger.info("l " + splitNum);
+            while (splitNum > 2 && next != null && maxWidth / splitNum < next.getWidth() * 0.55) {
                 splitNum--;
             }
             logger.finer("teile erstes element " + po.getWidth() + " : splitnum " + splitNum);
@@ -987,10 +1016,11 @@ public class Captcha extends PixelGrid {
 
             // found += splitNum - 1;
 
-            splitObjects = po.split(splitNum,owner.jas.getInteger("splitPixelObjectsOverlap"));
+            splitObjects = po.split(splitNum, owner.jas.getInteger("splitPixelObjectsOverlap"));
             logger.finer("Got splited: " + splitObjects.size());
-            //Füge die geteilen Objekte wieder dem Objektvektor hinzu. Eventl müssen sie nochmals geteil werden.
-            
+            // Füge die geteilen Objekte wieder dem Objektvektor hinzu. Eventl
+            // müssen sie nochmals geteil werden.
+
             for (int t = 0; t < splitNum; t++) {
 
                 for (int s = 0; s < objects.size(); s++) {
@@ -1023,7 +1053,8 @@ public class Captcha extends PixelGrid {
         for (int ii = objects.size() - 1; ii >= found; ii--) {
             objects.remove(ii);
         }
-        //Sortiert die Objekte nun endlich in der richtigen Reihenfolge (von link nach rechts)
+        // Sortiert die Objekte nun endlich in der richtigen Reihenfolge (von
+        // link nach rechts)
         Collections.sort(objects);
         logger.finer("Found " + objects.size() + " Elements");
         return objects;
@@ -1051,60 +1082,65 @@ public class Captcha extends PixelGrid {
         }
 
     }
-/**
- * Setzte die ermittelten LetterComperators
- * @param newLetters
- */
+
+    /**
+     * Setzte die ermittelten LetterComperators
+     * 
+     * @param newLetters
+     */
     public void setLetterComperators(LetterComperator[] newLetters) {
         this.letterComperators = newLetters;
 
     }
-/**
- * Gibt die Ermittelten lettercomperators zurück
- * @return letterComperators
- */
+
+    /**
+     * Gibt die Ermittelten lettercomperators zurück
+     * 
+     * @return letterComperators
+     */
     public LetterComperator[] getLetterComperators() {
         return this.letterComperators;
 
     }
-/**
- * Setztd en valityPercent Wert
- * @param d
- */
+
+    /**
+     * Setztd en valityPercent Wert
+     * 
+     * @param d
+     */
     public void setValityPercent(double d) {
         this.valityPercent = d;
 
     }
 
-public void cleanBackgroundByHorizontalSampleLine(int x1, int x2, int y1, int y2) {
-   int avg=getAverage(x1,y1,x2-x1,y2-y1);
-   cleanBackgroundByColor(avg);
-    
-}
+    public void cleanBackgroundByHorizontalSampleLine(int x1, int x2, int y1, int y2) {
+        int avg = getAverage(x1, y1, x2 - x1, y2 - y1);
+        cleanBackgroundByColor(avg);
 
-public void cleanWithDetailMask(Captcha mask, int dif) {
-   
+    }
+
+    public void cleanWithDetailMask(Captcha mask, int dif) {
+
         int[][] newgrid = new int[getWidth()][getHeight()];
 
         if (mask.getWidth() != getWidth() || mask.getHeight() != getHeight()) {
             logger.info("ERROR Maske und Bild passen nicht zusammmen");
             return;
         }
-logger.info(dif+"_");
+        logger.info(dif + "_");
         for (int x = 0; x < getWidth(); x++) {
             for (int y = 0; y < getHeight(); y++) {
-                if (Math.abs(mask.getPixelValue(x, y)-getPixelValue(x,y)) < dif) {
-                   
+                if (Math.abs(mask.getPixelValue(x, y) - getPixelValue(x, y)) < dif) {
+
                     PixelGrid.setPixelValue(x, y, newgrid, getMaxPixelValue(), this.owner);
 
-                } else {
+                }
+                else {
                     newgrid[x][y] = grid[x][y];
                 }
             }
         }
         grid = newgrid;
 
-    
-    
-}
+    }
 }

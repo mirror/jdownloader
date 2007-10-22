@@ -131,8 +131,8 @@ public class HTTPLiveHeader extends Interaction {
 
         logger.finer("IP befor: " + preIp);
 
-//        script = script.replaceAll("\\<", "&lt;");
-//        script = script.replaceAll("\\>", "&gt;");
+        // script = script.replaceAll("\\<", "&lt;");
+        // script = script.replaceAll("\\>", "&gt;");
         script = script.replaceAll("\\[\\[\\[", "<");
         script = script.replaceAll("\\]\\]\\]", ">");
         script = script.replaceAll("<REQUEST>", "<REQUEST><![CDATA[");
@@ -288,16 +288,41 @@ public class HTTPLiveHeader extends Interaction {
         HashMap<String, String> requestProperties = new HashMap<String, String>();
         String[] tmp = request.split("\\%\\%\\%(.*?)\\%\\%\\%");
         Vector<String> params = Plugin.getAllSimpleMatches(request, "%%%°%%%", 1);
+        if (params.size() > 0) {
+            String req;
+            if (request.startsWith(params.get(0))) {
+                req = "";
+                logger.finer("Variables: " + this.variables);
+                logger.finer("Headerproperties: " + this.headerProperties);
+                for (int i = 0; i <= tmp.length; i++) {
+                    logger.finer("Replace variable: " + getModifiedVariable(params.get(i - 1)) + "(" + params.get(i - 1) + ")");
 
-        String req = tmp[0];
-        for (int i = 1; i < tmp.length; i++) {
-            req += getModifiedVariable(params.get(i - 1)) + tmp[i];
+                    req += getModifiedVariable(params.get(i - 1));
+                    if (i < tmp.length) {
+                        req += tmp[i];
+                    }
+                }
+            }
+            else {
+                req = tmp[0];
+                logger.finer("Variables: " + this.variables);
+                logger.finer("Headerproperties: " + this.headerProperties);
+                for (int i = 1; i <= tmp.length; i++) {
+                    if(i>params.size())continue;
+                    logger.finer("Replace variable: " + getModifiedVariable(params.get(i - 1)) + "(" + params.get(i - 1) + ")");
+
+                    req += getModifiedVariable(params.get(i - 1));
+                    if (i < tmp.length) {
+                        req += tmp[i];
+                    }
+                }
+            }
+
+            request = req;
         }
-
-        request = req;
         String[] requestLines = splitLines(request);
         if (requestLines.length == 0) {
-            logger.severe("Parse Fehler:" + req);
+            logger.severe("Parse Fehler:" + request);
             return null;
         }
         // RequestType
@@ -326,8 +351,10 @@ public class HTTPLiveHeader extends Interaction {
             }
             String[] p = requestLines[li].split("\\:");
             if (p.length < 2) {
-                logger.severe("Syntax Fehler in: " + requestLines[li]);
-                return null;
+                logger.warning("Syntax Fehler in: " + requestLines[li] + "\r\n Vermute Post Parameter");
+                headersEnd = true;
+                li--;
+                continue;
             }
             requestProperties.put(p[0].trim(), requestLines[li].substring(p[0].length() + 1).trim());
 
@@ -359,7 +386,7 @@ public class HTTPLiveHeader extends Interaction {
 
             }
             else {
-                logger.finer("POST" + "http://" + host + path + " " + post);
+                logger.finer("POST " + "http://" + host + path + " " + post);
                 HttpURLConnection httpConnection = (HttpURLConnection) new URL("http://" + host + path).openConnection();
                 httpConnection.setInstanceFollowRedirects(false);
                 httpConnection.setConnectTimeout(5000);
@@ -383,10 +410,11 @@ public class HTTPLiveHeader extends Interaction {
             }
 
             Set<Entry<String, List<String>>> set = requestInfo.getHeaders().entrySet();
-
+            logger.finer("Answer: ");
             for (Map.Entry<String, List<String>> me : set) {
                 if (me.getValue() != null && me.getValue().size() > 0) {
                     this.headerProperties.put(me.getKey(), me.getValue().get(0));
+                    logger.finer(me.getKey() + " : " + me.getValue().get(0));
                 }
             }
 
@@ -396,6 +424,7 @@ public class HTTPLiveHeader extends Interaction {
             logger.severe("IO Error: " + e.getLocalizedMessage());
             return null;
         }
+
         return requestInfo;
 
     }
@@ -500,9 +529,9 @@ public class HTTPLiveHeader extends Interaction {
         ConfigEntry cfg;
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, JDUtilities.getConfiguration(), Configuration.PARAM_HTTPSEND_USER, "Login User"));
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, JDUtilities.getConfiguration(), Configuration.PARAM_HTTPSEND_PASS, "Login Passwort"));
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_SPINNER, JDUtilities.getConfiguration(), Configuration.PARAM_HTTPSEND_IPCHECKWAITTIME, "Wartezeit bis zum ersten IP-Check[sek]",0,600).setDefaultValue(0));
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_SPINNER, JDUtilities.getConfiguration(), Configuration.PARAM_HTTPSEND_RETRIES, "Max. Wiederholungen (-1 = unendlich)",-1,20).setDefaultValue(0));
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_SPINNER, JDUtilities.getConfiguration(), Configuration.PARAM_HTTPSEND_WAITFORIPCHANGE, "Auf neue IP warten [sek]",0,600).setDefaultValue(10));
+        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_SPINNER, JDUtilities.getConfiguration(), Configuration.PARAM_HTTPSEND_IPCHECKWAITTIME, "Wartezeit bis zum ersten IP-Check[sek]", 0, 600).setDefaultValue(0));
+        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_SPINNER, JDUtilities.getConfiguration(), Configuration.PARAM_HTTPSEND_RETRIES, "Max. Wiederholungen (-1 = unendlich)", -1, 20).setDefaultValue(0));
+        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_SPINNER, JDUtilities.getConfiguration(), Configuration.PARAM_HTTPSEND_WAITFORIPCHANGE, "Auf neue IP warten [sek]", 0, 600).setDefaultValue(10));
 
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_TEXTAREA, JDUtilities.getConfiguration(), Configuration.PARAM_HTTPSEND_REQUESTS, "HTTP Script"));
         logger.info("init config " + getConfig());
@@ -515,5 +544,3 @@ public class HTTPLiveHeader extends Interaction {
     }
 
 }
-
-

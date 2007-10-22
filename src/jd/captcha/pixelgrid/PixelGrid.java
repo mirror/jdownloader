@@ -12,6 +12,8 @@ import java.util.Vector;
 import java.util.logging.Logger;
 
 import jd.captcha.JAntiCaptcha;
+import jd.captcha.gui.BasicWindow;
+import jd.captcha.gui.ScrollPaneWindow;
 import jd.captcha.pixelobject.PixelObject;
 import jd.captcha.utils.UTILITIES;
 
@@ -408,6 +410,8 @@ logger.fine(min+" <> "+max+" : "+faktor);
         if (height == 1 && py == 0)
             height = 2;
 
+
+
         for (int x = Math.max(0, px - halfW); x < Math.min(px + width - halfW, getWidth()); x++) {
             for (int y = Math.max(0, py - halfH); y < Math.min(py + height - halfH, getHeight()); y++) {
                 if (x != px || y != py) {
@@ -422,9 +426,11 @@ logger.fine(min+" <> "+max+" : "+faktor);
 
             }
         }
+        if(i>0){
         avg[0]/=i;
         avg[1]/=i;                
-        avg[2]/=i;        
+        avg[2]/=i;  
+        }
         return UTILITIES.rgbToHex(avg);
     }
 
@@ -1050,7 +1056,7 @@ public void removeSmallObjects(double contrast, double objectContrast,int maxSiz
                     continue;
 
                 
-                if (getPixelValue(x, y) < (objectContrast * getMaxPixelValue())) {
+                if (getPixelValue(x, y) <= (objectContrast * getMaxPixelValue())) {
              
                  //Füge 2 Objekte zusammen die scheinbar zusammen gehören
                     
@@ -1068,30 +1074,35 @@ public void removeSmallObjects(double contrast, double objectContrast,int maxSiz
                                 break;
                             }
                         }
-//                        logger.finer("Verfolge weiter Letztes Object: area:"+lastObject.getArea()+" dist: "+dist);
+                        logger.finer("Verfolge weiter Letztes Object: area:"+lastObject.getArea()+" dist: "+dist);
                    
                     }else{
                         object = new PixelObject(this);
                         object.setContrast(contrast);
+//                        logger.info("Kontrast: "+contrast+" : "+objectContrast);
                         object.setWhiteContrast(objectContrast); 
                     }
-//                    w.setImage(0,line,getImage());
+//                  if(object.getArea()>200)  w.setImage(0,line,getImage());
                     getObject(x, y, tmpGrid, object);
-                  // logger.info(object.getSize()+" avg "+object.getAverage()+" area: "+object.getArea());
-//                   w.setImage(1,line,getImage());
+//                   logger.info(object.getSize()+" avg "+object.getAverage()+" area: "+object.getArea());
+                    if(object.getArea()>200){
+//                    w.setImage(1,line,getImage());
 //                   w.setText(2,line,"Size: "+ object.getSize());
 //                   w.setText(3,line,"AVG: "+object.getAverage());
 //                   w.setText(4,line,"Area: "+object.getArea());
 //                   w.setImage(5,line,object.toLetter().getImage());
 //                   w.setText(6,line,object.toLetter().getDim());
+                    }
                    line++;
                     lastObject=object;
                     for (int i = 0; i < ret.size(); i++) {
                         if (object.getArea() > ret.elementAt(i).getArea()) {
                           
                             ret.add(i, object);
-//                            logger.finer("Found Object size:"+object.getSize()+" "+object.getWidth()+" - "+object.getArea());
-                            
+//                          logger.finer("Found Object size:"+object.getSize()+" "+object.getWidth()+" - "+object.getArea());
+                       
+//                          BasicWindow.showImage(this.getImage());
+                          
                             object = null;
                             break;
                         }
@@ -1130,7 +1141,7 @@ public void removeSmallObjects(double contrast, double objectContrast,int maxSiz
             tmpGrid[x][y] = -1;
             
            //Achtung!! Algos funktionieren nur auf sw basis richtig 
-         //grid[x][y] = 254;
+//         grid[x][y] = 254;
             getObject(x - 1, y, tmpGrid, object);
             getObject(x - 1, y - 1, tmpGrid, object);
             getObject(x, y - 1, tmpGrid, object);

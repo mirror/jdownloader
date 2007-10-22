@@ -171,6 +171,11 @@ public class JACScript {
          */
         set("gapDetectionPeakContrast", 0.25);
 
+        
+        set("useSpecialGetLetters", "");
+        
+        
+        set("LetterSearchLimitFalsePercent",100);
         /**
          * Parameter: Average Detection verwenden
          */
@@ -477,7 +482,7 @@ public class JACScript {
                         this.setColorType(cmd[2]);
 
                     } else {
-                       
+                       logger.info(cmd[1]+" - "+cmd[2]);
                         this.set(cmd[1].toLowerCase(), this.toType(cmd[2], cmd[1]));
                     }
 

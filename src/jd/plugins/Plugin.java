@@ -889,7 +889,7 @@ public abstract class Plugin {
                 downloadLink.setDownloadCurrent(downloadedBytes);
             }
             if (contentLen != -1 && downloadedBytes != contentLen) {
-                logger.info("incomplete download");
+                logger.info("incomplete download: bytes loaded: "+downloadedBytes+"/"+contentLen);
                 downloadLink.setStatus(DownloadLink.STATUS_DOWNLOAD_INCOMPLETE);
                 return false;
             }
@@ -905,19 +905,23 @@ public abstract class Plugin {
             return true;
         }
         catch (FileNotFoundException e) {
-            downloadLink.setStatus(DownloadLink.STATUS_DOWNLOAD_INCOMPLETE);
+           
             logger.severe("file not found. " + e.getLocalizedMessage());
         }
         catch (SecurityException e) {
-            downloadLink.setStatus(DownloadLink.STATUS_DOWNLOAD_INCOMPLETE);
+            
             logger.severe("not enough rights to write the file. " + e.getLocalizedMessage());
         }
         catch (IOException e) {
-            downloadLink.setStatus(DownloadLink.STATUS_DOWNLOAD_INCOMPLETE);
+         
             logger.severe("error occurred while writing to file. " + e.getLocalizedMessage());
         }
         catch (InterruptedException e) {
-            downloadLink.setStatus(DownloadLink.STATUS_DOWNLOAD_INCOMPLETE);
+            logger.severe("interrupted. " + e.getLocalizedMessage());
+            e.printStackTrace();
+        }
+        catch (Exception e) {
+            logger.severe("exception. " + e.getLocalizedMessage());
             e.printStackTrace();
         }
         downloadLink.setStatus(DownloadLink.STATUS_DOWNLOAD_INCOMPLETE);

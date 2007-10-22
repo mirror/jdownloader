@@ -17,6 +17,8 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URLClassLoader;
 import java.net.URLDecoder;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.Vector;
 import java.util.logging.Logger;
 
@@ -41,7 +43,6 @@ import jd.captcha.pixelgrid.PixelGrid;
 import jd.captcha.pixelobject.PixelObject;
 import jd.captcha.utils.UTILITIES;
 
-
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NamedNodeMap;
@@ -56,7 +57,7 @@ import org.w3c.dom.NodeList;
  * @author coalado
  */
 public class JAntiCaptcha {
- 
+
     /**
      * Logger
      */
@@ -136,10 +137,14 @@ public class JAntiCaptcha {
 
     @SuppressWarnings("unused")
     private BasicWindow              bw3;
+
     @SuppressWarnings("unused")
     private BasicWindow              bw4;
+
     private Vector<ScrollPaneWindow> spw          = new Vector<ScrollPaneWindow>();
+
     private boolean                  showDebugGui = false;
+
     /**
      * jas Script Instanz. Sie verarbneitet das JACScript und speichert die
      * Parameter
@@ -156,41 +161,41 @@ public class JAntiCaptcha {
      */
 
     public JAntiCaptcha(String methodsPath, String methodName) {
-        methodsPath= UTILITIES.getFullPath(new String[] {methodsPath, methodName, "" });
+        methodsPath = UTILITIES.getFullPath(new String[] { methodsPath, methodName, "" });
         cl = UTILITIES.getURLClassLoader(methodsPath);
-if(cl!=null){
-        logger.fine("Benutze Classloader: " + cl.getResource("."));
-        this.methodDir = methodName;
-
         if (cl != null) {
-            getJACInfo();
+            logger.fine("Benutze Classloader: " + cl.getResource("."));
+            this.methodDir = methodName;
 
-            jas = new JACScript(this, cl, methodDir);
-            loadMTHFile();
-            logger.fine("letter DB loaded: Buchstaben: " + letterDB.size());
-        } else {
-            logger.severe("Die Methode " + methodsPath + " kann nicht gefunden werden. JAC Pfad falsch?");
+            if (cl != null) {
+                getJACInfo();
 
+                jas = new JACScript(this, cl, methodDir);
+                loadMTHFile();
+                logger.fine("letter DB loaded: Buchstaben: " + letterDB.size());
+            }
+            else {
+                logger.severe("Die Methode " + methodsPath + " kann nicht gefunden werden. JAC Pfad falsch?");
+
+            }
         }
-}else{
-    
-    logger.severe("Classloader konnte nicht initialisiert werden!");
-}
+        else {
+
+            logger.severe("Classloader konnte nicht initialisiert werden!");
+        }
     }
 
     /**
      * Gibt zurück ob die entsprechende Methode verfügbar ist.
      * 
      * @param methodsPath
-     *           
+     * 
      * @param methodName
      * @return true/false
      */
     public static boolean hasMethod(String methodsPath, String methodName) {
-      
-      
-      
-        return UTILITIES.getURLClassLoader(UTILITIES.getFullPath(new String[] {methodsPath, methodName, "script.jas" })) != null&&UTILITIES.getURLClassLoader(UTILITIES.getFullPath(new String[] {methodsPath, methodName })).getResource(".")!=null;
+
+        return UTILITIES.getURLClassLoader(UTILITIES.getFullPath(new String[] { methodsPath, methodName, "script.jas" })) != null && UTILITIES.getURLClassLoader(UTILITIES.getFullPath(new String[] { methodsPath, methodName })).getResource(".") != null;
     }
 
     /**
@@ -207,7 +212,8 @@ if(cl!=null){
             try {
                 logger.info("Write Db: " + file);
                 ImageIO.write(img, "png", file);
-            } catch (IOException e) {
+            }
+            catch (IOException e) {
 
                 e.printStackTrace();
             }
@@ -216,7 +222,8 @@ if(cl!=null){
     }
 
     /**
-     * Importiert pNG einzelbilder aus einem ordner und erstellt daraus eine neue db
+     * Importiert pNG einzelbilder aus einem ordner und erstellt daraus eine
+     * neue db
      */
     public void importDB() {
         File path = UTILITIES.directoryChooser("");
@@ -235,7 +242,8 @@ if(cl!=null){
             PixelGrabber pg = new PixelGrabber(image, 0, 0, width, height, false);
             try {
                 pg.grabPixels();
-            } catch (Exception e) {
+            }
+            catch (Exception e) {
                 e.printStackTrace();
             }
             letter = new Letter();
@@ -252,24 +260,25 @@ if(cl!=null){
                 int px = 0;
                 for (int y = 0; y < height; y++) {
                     for (int x = 0; x < width; x++) {
-                        while(pixel[px]<0)pixel[px]+=0xffffff+1;
-                       // logger.info("- "+pixel[px]);
-                        newGrid[x][y] = pixel[px++]<100?0:PixelGrid.getMaxPixelValue(this);
-                       
+                        while (pixel[px] < 0)
+                            pixel[px] += 0xffffff + 1;
+                        // logger.info("- "+pixel[px]);
+                        newGrid[x][y] = pixel[px++] < 100 ? 0 : PixelGrid.getMaxPixelValue(this);
+
                     }
                 }
-                letter.setGrid(newGrid);   
-                letter=              letter.align(-40, +40);
+                letter.setGrid(newGrid);
+                letter = letter.align(-40, +40);
                 letter.setSourcehash(UTILITIES.getLocalHash(images[i]));
                 letter.setDecodedValue(images[i].getName().split("\\_")[1].split("\\.")[0]);
                 letter.clean();
-                
-              
+
                 letterDB.add(letter);
 
-               letter.resizetoHeight(25);
-                
-            } else {
+                letter.resizetoHeight(25);
+
+            }
+            else {
 
                 logger.severe("Bildformat von ImportDB nicht unterstützt");
             }
@@ -292,8 +301,7 @@ if(cl!=null){
         int successFull = 0;
         int total = 0;
         File[] images = getImages(path);
-        if (images == null)
-            return;
+        if (images == null) return;
         int newLetters;
         for (int i = 0; i < images.length; i++) {
             logger.fine(images[i].toString());
@@ -320,7 +328,8 @@ if(cl!=null){
         if (is == null) {
             logger.severe("MTH FILE NOT AVAILABLE.");
             // return;
-        } else {
+        }
+        else {
 
             mth = UTILITIES.parseXmlFile(is, false);
 
@@ -340,8 +349,7 @@ if(cl!=null){
         long start1 = UTILITIES.getTimer();
         try {
 
-            if (mth == null || mth.getFirstChild() == null)
-                return;
+            if (mth == null || mth.getFirstChild() == null) return;
             NodeList nl = mth.getFirstChild().getChildNodes();
             Letter tmp;
             for (int i = 0; i < nl.getLength(); i++) {
@@ -352,8 +360,8 @@ if(cl!=null){
 
                     tmp = new Letter();
                     tmp.setOwner(this);
-                    if (!tmp.setTextGrid(childNode.getTextContent()))
-                        continue;;
+                    if (!tmp.setTextGrid(childNode.getTextContent())) continue;
+                    ;
                     String id = UTILITIES.getAttribute(childNode, "id");
                     if (id != null) {
                         tmp.id = Integer.parseInt(id);
@@ -363,7 +371,8 @@ if(cl!=null){
                     tmp.setBadDetections(Integer.parseInt(UTILITIES.getAttribute(childNode, "bad")));
                     tmp.setGoodDetections(Integer.parseInt(UTILITIES.getAttribute(childNode, "good")));
                     letterDB.add(tmp);
-                } else if (childNode.getNodeName().equals("map")) {
+                }
+                else if (childNode.getNodeName().equals("map")) {
                     logger.fine("Parse LetterMap");
                     long start2 = UTILITIES.getTimer();
                     String[] map = childNode.getTextContent().split("\\|");
@@ -378,7 +387,8 @@ if(cl!=null){
                     logger.fine("LetterMap Parsing time: " + (UTILITIES.getTimer() - start2));
                 }
             }
-        } catch (Exception e) {
+        }
+        catch (Exception e) {
             logger.severe("Fehler mein lesen der MTHO Datei!!. Methode kann nicht funktionieren!");
 
         }
@@ -434,10 +444,8 @@ if(cl!=null){
     /**
      * Diese methode trainiert einen captcha
      * 
-     * @param captchafile
-     *            File zum Bild
-     * @param letterNum
-     *            Anzahl der Buchstaben im captcha
+     * @param captchafile File zum Bild
+     * @param letterNum Anzahl der Buchstaben im captcha
      * @return int -1: Übersprungen Sonst: anzahl der richtig erkanten Letter
      */
 
@@ -467,63 +475,63 @@ if(cl!=null){
 
     }
 
-//    /**
-//     * TestFunktion - Annimierte Gifs verarbeiten
-//     * 
-//     * @param path
-//     */
-//    public void mergeGif(File path) {
-//        getJas().setColorType("G");
-//        GifDecoder d = new GifDecoder();
-//        d.read(path.getAbsolutePath());
-//        int n = d.getFrameCount();
-//
-//        logger.fine("Found Frames: " + n);
-//        int width = (int) d.getFrameSize().getWidth();
-//        int height = (int) d.getFrameSize().getHeight();
-//        Captcha merged = new Captcha(width, height);
-//        merged.setOwner(this);
-//        Captcha tmp;
-//
-//        for (int i = 0; i < n; i++) {
-//            BufferedImage frame = d.getFrame(i);
-//            tmp = new Captcha(width, height);
-//            tmp.setOwner(this);
-//            PixelGrabber pg = new PixelGrabber(frame, 0, 0, width, height, false);
-//            try {
-//                pg.grabPixels();
-//            } catch (Exception e) {
-//                e.printStackTrace();
-//            }
-//            ColorModel cm = pg.getColorModel();
-//            tmp.setColorModel(cm);
-//
-//            if (!(cm instanceof IndexColorModel)) {
-//                // not an indexed file (ie: not a gif file)
-//                tmp.setPixel((int[]) pg.getPixels());
-//            } else {
-//
-//                tmp.setPixel((byte[]) pg.getPixels());
-//            }
-//            merged.concat(tmp);
-//
-//        }
-//
-//        merged.crop(6, 12, 6, 12);
-//        // merged.removeSmallObjects(0.3, 0.3);
-//        // merged.invert();
-//        merged.toBlackAndWhite(0.4);
-//        merged.removeSmallObjects(0.3, 0.3, 20);
-//        merged.reduceBlackNoise(4, 0.45);
-//        merged.toBlackAndWhite(1);
-//        // merged.reduceBlackNoise(6, 1.6);
-//        // merged.reduceBlackNoise(6, 1.6);
-//        // getJas().setBackgroundSampleCleanContrast(0.1);
-//        // merged.cleanBackgroundBySample(4, 4, 7, 7);
-//
-//        BasicWindow.showImage(merged.getImage(4), 160, 60);
-//
-//    }
+    // /**
+    // * TestFunktion - Annimierte Gifs verarbeiten
+    // *
+    // * @param path
+    // */
+    // public void mergeGif(File path) {
+    // getJas().setColorType("G");
+    // GifDecoder d = new GifDecoder();
+    // d.read(path.getAbsolutePath());
+    // int n = d.getFrameCount();
+    //
+    // logger.fine("Found Frames: " + n);
+    // int width = (int) d.getFrameSize().getWidth();
+    // int height = (int) d.getFrameSize().getHeight();
+    // Captcha merged = new Captcha(width, height);
+    // merged.setOwner(this);
+    // Captcha tmp;
+    //
+    // for (int i = 0; i < n; i++) {
+    // BufferedImage frame = d.getFrame(i);
+    // tmp = new Captcha(width, height);
+    // tmp.setOwner(this);
+    // PixelGrabber pg = new PixelGrabber(frame, 0, 0, width, height, false);
+    // try {
+    // pg.grabPixels();
+    // } catch (Exception e) {
+    // e.printStackTrace();
+    // }
+    // ColorModel cm = pg.getColorModel();
+    // tmp.setColorModel(cm);
+    //
+    // if (!(cm instanceof IndexColorModel)) {
+    // // not an indexed file (ie: not a gif file)
+    // tmp.setPixel((int[]) pg.getPixels());
+    // } else {
+    //
+    // tmp.setPixel((byte[]) pg.getPixels());
+    // }
+    // merged.concat(tmp);
+    //
+    // }
+    //
+    // merged.crop(6, 12, 6, 12);
+    // // merged.removeSmallObjects(0.3, 0.3);
+    // // merged.invert();
+    // merged.toBlackAndWhite(0.4);
+    // merged.removeSmallObjects(0.3, 0.3, 20);
+    // merged.reduceBlackNoise(4, 0.45);
+    // merged.toBlackAndWhite(1);
+    // // merged.reduceBlackNoise(6, 1.6);
+    // // merged.reduceBlackNoise(6, 1.6);
+    // // getJas().setBackgroundSampleCleanContrast(0.1);
+    // // merged.cleanBackgroundBySample(4, 4, 7, 7);
+    //
+    // BasicWindow.showImage(merged.getImage(4), 160, 60);
+    //
+    // }
 
     /**
      * Debug Methode. Zeigt den Captcha in verschiedenen bearbeitungsstadien an
@@ -602,8 +610,7 @@ if(cl!=null){
         checkCaptcha(captcha);
         LetterComperator[] lcs = captcha.getLetterComperators();
         for (int i = 0; i < lcs.length; i++) {
-            if (lcs[i] == null)
-                continue;
+            if (lcs[i] == null) continue;
             bw2.add(new JLabel("Aus Datenbank:"), UTILITIES.getGBC(0, 6, 2, 2));
             bw2.add(new ImageComponent(lcs[i].getB().getImage(jas.getInteger("simplifyFaktor"))), UTILITIES.getGBC(i * 2 + 2, 6, 2, 2));
             bw2.add(new JLabel("Wert:"), UTILITIES.getGBC(0, 8, 2, 2));
@@ -665,13 +672,14 @@ if(cl!=null){
         Letter[] letters = captcha.getLetters(letterNum);
         // UTILITIES.wait(40000);
         // prüfe auf Erfolgreiche Lettererkennung
-        if (letters == null || letters.length != this.getLetterNum()) {
-            File file = getResourceFile("detectionErrors1/" + (UTILITIES.getTimer()) + "_" + captchafile.getName());
-            file.getParentFile().mkdirs();
-            captchafile.renameTo(file);
-            logger.severe("2. Lettererkennung ist fehlgeschlagen!");
-            return -1;
-        }
+        // if (letters == null || letters.length != this.getLetterNum()) {
+        // File file = getResourceFile("detectionErrors1/" +
+        // (UTILITIES.getTimer()) + "_" + captchafile.getName());
+        // file.getParentFile().mkdirs();
+        // captchafile.renameTo(file);
+        // logger.severe("2. Lettererkennung ist fehlgeschlagen!");
+        // return -1;
+        // }
         for (int i = 0; i < letters.length; i++) {
             if (letters[i] == null || letters[i].getWidth() < 2 || letters[i].getHeight() < 2) {
                 File file = getResourceFile("detectionErrors5/" + (UTILITIES.getTimer()) + "_" + captchafile.getName());
@@ -695,26 +703,24 @@ if(cl!=null){
         // letters
         guess = checkCaptcha(captcha);
         LetterComperator[] lcs = captcha.getLetterComperators();
-        if (guess != null && guess.length() == getLetterNum()) {
+        if (guess != null /* && guess.length() == getLetterNum() */) {
             bw3.setText(0, 3, "DB Letter:");
             bw3.setText(0, 4, "Decoded:");
             bw3.setText(0, 5, "UNSicherheit:");
             for (int i = 0; i < lcs.length; i++) {
-                if (lcs[i] != null && lcs[i].getB() != null)
-                    bw3.setImage(i + 1, 3, lcs[i].getB().getImage(jas.getInteger("simplifyFaktor")));
-                if (lcs[i] != null && lcs[i].getB() != null)
-                    bw3.setText(i + 1, 4, lcs[i].getDecodedValue());
-                if (lcs[i] != null && lcs[i].getB() != null)
-                    bw3.setText(i + 1, 5, (double) Math.round(10 * lcs[i].getValityPercent()) / 10.0);
+                if (lcs[i] != null && lcs[i].getB() != null) bw3.setImage(i + 1, 3, lcs[i].getB().getImage(jas.getInteger("simplifyFaktor")));
+                if (lcs[i] != null && lcs[i].getB() != null) bw3.setText(i + 1, 4, lcs[i].getDecodedValue());
+                if (lcs[i] != null && lcs[i].getB() != null) bw3.setText(i + 1, 5, (double) Math.round(10 * lcs[i].getValityPercent()) / 10.0);
 
             }
             bw3.repack();
-        } else {
+        }
+        else {
             logger.warning("Erkennung fehlgeschlagen");
         }
 
         logger.info("Decoded Captcha: " + guess + " Vality: " + captcha.getValityPercent());
-        if (captcha.getValityPercent() >= 0||true) {
+        if (captcha.getValityPercent() >= 0 || true) {
 
             // if (guess == null) {
             // File file = getResourceFile("detectionErrors2/" +
@@ -727,16 +733,17 @@ if(cl!=null){
             // }
             if (getCodeFromFileName(captchafile.getName(), captchaHash) == null || true) {
                 code = UTILITIES.prompt("Bitte Captcha Code eingeben (Press enter to confirm " + guess, guess);
-                if (code != null && code.equals(guess))
-                    code = "";
+                if (code != null && code.equals(guess)) code = "";
 
-            } else {
+            }
+            else {
                 code = getCodeFromFileName(captchafile.getName(), captchaHash);
                 logger.warning("captcha code für " + captchaHash + " verwendet: " + code);
 
             }
 
-        } else {
+        }
+        else {
             logger.info("100% ERkennung.. automatisch übernommen");
             // code = guess;
         }
@@ -779,12 +786,15 @@ if(cl!=null){
                         letters[i].setDecodedValue(code.substring(i, i + 1));
                         letterDB.add(letters[i]);
                         bw3.setText(i + 1, 6, "ok +");
-                    } else {
+                    }
+                    else {
                         bw3.setText(i + 1, 6, "ok -");
                     }
                     bw3.repack();
-                } else {
-                    if (lcs[i] != null && letterDB.size() > 30) {
+                }
+                else {
+                    logger.info(letterDB + " - ");
+                    if (lcs != null && lcs[i] != null && letterDB.size() > 30) {
                         lcs[i].getB().markBad();
                     }
                     letters[i].setOwner(this);
@@ -795,7 +805,8 @@ if(cl!=null){
                     bw3.setText(i + 1, 6, "no +");
                     bw3.repack();
                 }
-            } else {
+            }
+            else {
                 bw3.setText(i + 1, 6, "-");
                 bw3.repack();
             }
@@ -810,8 +821,7 @@ if(cl!=null){
         // captcha_share.gulli.com_codeph2.gif
 
         String[] matches = UTILITIES.getMatches(name, "captcha_°_code°.°");
-        if (matches != null && matches.length > 0)
-            return matches[1];
+        if (matches != null && matches.length > 0) return matches[1];
 
         return null;
     }
@@ -837,15 +847,14 @@ if(cl!=null){
                 // akt = null;
                 // break;
                 // }
-              
+
                 if (akt.getDecodedValue().compareToIgnoreCase(ret.elementAt(x).getDecodedValue()) > 0) {
                     ret.add(x, akt);
                     akt = null;
                     break;
                 }
             }
-            if (akt != null)
-                ret.add(akt);
+            if (akt != null) ret.add(akt);
 
         }
 
@@ -856,8 +865,7 @@ if(cl!=null){
     /**
      * Factory Methode zur Captcha erstellung
      * 
-     * @param captchaImage
-     *            Image instanz
+     * @param captchaImage Image instanz
      * @return captcha
      */
     public Captcha createCaptcha(Image captchaImage) {
@@ -866,7 +874,7 @@ if(cl!=null){
             return null;
         }
         Captcha ret = Captcha.getCaptcha(captchaImage, this);
-        if(ret==null)return null;
+        if (ret == null) return null;
         ret.setOwner(this);
         return ret;
     }
@@ -878,16 +886,18 @@ if(cl!=null){
      * @return File zu arg
      */
     public File getResourceFile(String arg) {
-        String fileName = cl.getResource(".")  + arg;
+        String fileName = cl.getResource(".") + arg;
         try {
             fileName = URLDecoder.decode(fileName, "UTF8");
-        } catch (UnsupportedEncodingException e) {
+        }
+        catch (UnsupportedEncodingException e) {
 
             e.printStackTrace();
         }
         try {
             return new File(new URI(UTILITIES.urlEncode(fileName)));
-        } catch (URISyntaxException e) {
+        }
+        catch (URISyntaxException e) {
 
             e.printStackTrace();
             return null;
@@ -914,7 +924,8 @@ if(cl!=null){
                 logger.severe("MTHO file Konnte nicht gespeichert werden");
             }
 
-        } catch (TransformerException e) {
+        }
+        catch (TransformerException e) {
             e.printStackTrace();
         }
 
@@ -932,17 +943,15 @@ if(cl!=null){
         JAntiCaptcha jac = new JAntiCaptcha(methodPath, methodname);
         // BasicWindow.showImage(img);
         Captcha cap = jac.createCaptcha(img);
-        if(cap==null){
-           logger.severe("Captcha Bild konnte nicht eingelesen werden");
-           return "JACerror";
+        if (cap == null) {
+            logger.severe("Captcha Bild konnte nicht eingelesen werden");
+            return "JACerror";
         }
         // BasicWindow.showImage(cap.getImageWithGaps(2));
         String ret = jac.checkCaptcha(cap);
         logger.info("captcha text:" + ret);
         return ret;
     }
-
-
 
     /**
      * Prüft ob der übergeben hash in der MTH file ist
@@ -951,12 +960,10 @@ if(cl!=null){
      * @return true/false
      */
     private boolean isCaptchaInMTH(String captchaHash) {
-        if (letterDB == null)
-            return false;
+        if (letterDB == null) return false;
 
         for (int i = 0; i < letterDB.size(); i++) {
-            if (letterDB.elementAt(i).getSourcehash().equals(captchaHash))
-                return true;
+            if (letterDB.elementAt(i).getSourcehash().equals(captchaHash)) return true;
         }
 
         return false;
@@ -966,8 +973,7 @@ if(cl!=null){
     /**
      * Gibt den erkannten CaptchaText zurück
      * 
-     * @param captchafile
-     *            Pfad zum Bild
+     * @param captchafile Pfad zum Bild
      * @return CaptchaCode
      */
     public String checkCaptcha(File captchafile) {
@@ -993,61 +999,88 @@ if(cl!=null){
      * keinen fall den fehler machen und sich auf Wert aus dem getdecodedLetters
      * array verlassen
      * 
-     * @param captcha
-     *            Captcha instanz
+     * @param captcha Captcha instanz
      * @return CaptchaCode
      */
     public String checkCaptcha(Captcha captcha) {
 
         // Führe prepare aus
         jas.executePrepareCommands(captcha);
+        Letter[] letters = captcha.getLetters(getLetterNum());
 
-        LetterComperator[] newLetters = new LetterComperator[this.getLetterNum()];
+        LetterComperator[] newLetters = new LetterComperator[letters.length];
         String ret = "";
         double correct = 0;
         LetterComperator akt;
-        Letter[] letters = captcha.getLetters(getLetterNum());
+
         if (letters == null) {
             captcha.setValityPercent(100.0);
             logger.severe("Captcha konnte nicht erkannt werden!1");
             return null;
         }
-        if (letters.length != this.getLetterNum()) {
-            captcha.setValityPercent(100.0);
-            logger.severe("Captcha konnte nicht erkannt werden!2");
-            return null;
-        }
+        // if (letters.length != this.getLetterNum()) {
+        // captcha.setValityPercent(100.0);
+        // logger.severe("Captcha konnte nicht erkannt werden!2");
+        // return null;
+        // }
 
+        // Scannen
+        Vector<LetterComperator> newLettersVector = new Vector<LetterComperator>();
         for (int i = 0; i < letters.length; i++) {
             letters[i].id = i;
             akt = getLetter(letters[i]);
+            newLettersVector.add(akt);
 
-            newLetters[i] = akt;
+        }
+if(letters.length>getLetterNum()){
+        // sortieren
+        Collections.sort(newLettersVector, new Comparator<LetterComperator>() {
+            public int compare(LetterComperator obj1, LetterComperator obj2) {
+
+                if (obj1.getValityPercent() < obj2.getValityPercent()) return -1;
+                if (obj1.getValityPercent() > obj2.getValityPercent()) return 1;
+                return 0;
+            }
+        });
+
+        // schlechte entfernen
+        logger.info(getLetterNum()+"");
+        for (int i = newLettersVector.size() - 1; i >= getLetterNum(); i--) {
+            newLettersVector.remove(i);
+        }
+
+        // Wieder in die richtige reihenfolge sortieren
+        Collections.sort(newLettersVector, new Comparator<LetterComperator>() {
+            public int compare(LetterComperator obj1, LetterComperator obj2) {
+
+                if (obj1.getA().id < obj2.getA().id) return -1;
+                if (obj1.getA().id > obj2.getA().id) return 1;
+                return 0;
+            }
+        });
+}
+        for (int i = 0; i < newLettersVector.size(); i++) {
+            akt = newLettersVector.get(i);
+            ret += akt.getDecodedValue();
+         
+            akt.getA().id = i;
+
             if (akt == null || akt.getValityPercent() >= 100.0) {
                 correct += 100.0;
-            } else {
+            }
+            else {
 
                 correct += akt.getValityPercent();
 
             }
             logger.finer("Validty: " + correct);
-            if (newLetters[i] != null) {
-                ret += akt.getDecodedValue();
-            } else {
-                ret += "_";
-            }
-
         }
 
-        captcha.setLetterComperators(newLetters);
-        if (letters.length != this.getLetterNum() || ret.length() != this.getLetterNum()) {
-            captcha.setValityPercent(100.0);
-            logger.severe("Captcha konnte nicht erkannt werden!");
-            return null;
-        } else {
-            logger.finer("Vality: " + ((int) (correct / letters.length)));
-            captcha.setValityPercent(correct / (double) letters.length);
-        }
+        captcha.setLetterComperators( newLettersVector.toArray(new LetterComperator[]{}));
+
+        logger.finer("Vality: " + ((int) (correct / letters.length)));
+        captcha.setValityPercent(correct / (double) letters.length);
+
         return ret;
     }
 
@@ -1057,10 +1090,8 @@ if(cl!=null){
      * heißt das, dass derjenige TReffer als gut eingestuft wird, bei dem der
      * Datenbank datensatz möglichst optimal überdeckt wird.
      * 
-     * @param a
-     *            Original Letter
-     * @param b
-     *            Vergleichsletter
+     * @param a Original Letter
+     * @param b Vergleichsletter
      * @return int 0(super)-0xffffff (ganz übel)
      */
     private LetterComperator getLetter(Letter letter) {
@@ -1120,14 +1151,16 @@ if(cl!=null){
                         return res;
                     }
                     logger.finer("dim " + lc.getA().getDim() + "|" + lc.getB().getDim() + " New Best value: " + lc.getDecodedValue() + " " + lc.getValityPercent() + " good:" + tmp.getGoodDetections() + " bad: " + tmp.getBadDetections() + " - " + lc);
-                } else if (res != null) {
+                }
+                else if (res != null) {
                     if (lc.getValityPercent() < lastPercent) {
                         lastPercent = lc.getValityPercent();
                     }
                 }
             }
 
-        } catch (Exception e) {
+        }
+        catch (Exception e) {
 
             e.printStackTrace();
         }
@@ -1138,11 +1171,13 @@ if(cl!=null){
             if (res.getReliability() >= jas.getDouble("quickScanReliabilityLimit") && res.getValityPercent() < jas.getDouble("quickScanValityLimit")) {
                 res.setDetectionType(LetterComperator.QUICKSCANMATCH);
                 return res;
-            } else {
+            }
+            else {
                 logger.warning("Letter nicht ausreichend erkannt. Try Extended " + res.getReliability() + " - " + jas.getDouble("quickScanReliabilityLimit") + " /" + res.getValityPercent() + "-" + jas.getDouble("quickScanValityLimit"));
                 return getLetterExtended(letter);
             }
-        } else {
+        }
+        else {
             logger.warning("Letter nicht erkannt. Try Extended");
             return getLetterExtended(letter);
         }
@@ -1152,8 +1187,7 @@ if(cl!=null){
     /**
      * Sucht in der MTH ANch dem besten übereinstimmenem letter
      * 
-     * @param letter
-     *            (refferenz)
+     * @param letter (refferenz)
      * @return Letter. Beste Übereinstimmung
      */
     private LetterComperator getLetterExtended(Letter letter) {
@@ -1194,7 +1228,7 @@ if(cl!=null){
             for (angle = UTILITIES.getJumperStart(leftAngle, rightAngle); UTILITIES.checkJumper(angle, leftAngle, rightAngle); angle = UTILITIES.nextJump(angle, leftAngle, rightAngle, steps)) {
 
                 letter = orgLetter.turn(angle);
-                logger.finer(" Angle " + angle+" : "+letter.getDim());
+                logger.finer(" Angle " + angle + " : " + letter.getDim());
                 for (int i = 0; i < letterDB.size(); i++) {
                     tmp = letterDB.elementAt(i);
                     if (Math.abs(tmp.getHeight() - letter.getHeight()) > jas.getInteger("borderVarianceY") || Math.abs(tmp.getWidth() - letter.getWidth()) > jas.getInteger("borderVarianceX")) {
@@ -1204,7 +1238,8 @@ if(cl!=null){
                     lc = new LetterComperator(letter, tmp);
                     lc.setOwner(this);
                     lc.run();
-//logger.info("Duration: "+(UTILITIES.getTimer()-timer) +" Loops: "+lc.loopCounter);
+                    // logger.info("Duration: "+(UTILITIES.getTimer()-timer) +"
+                    // Loops: "+lc.loopCounter);
                     if (this.isShowDebugGui()) {
                         w.setText(0, line, angle + "°");
                         w.setImage(1, line, lc.getA().getImage(2));
@@ -1233,7 +1268,8 @@ if(cl!=null){
 
                         logger.finer("Angle " + angle + "dim " + lc.getA().getDim() + "|" + lc.getB().getDim() + " New Best value: " + lc.getDecodedValue() + " " + lc.getValityPercent() + " good:" + tmp.getGoodDetections() + " bad: " + tmp.getBadDetections() + " - " + lc);
 
-                    } else if (res != null) {
+                    }
+                    else if (res != null) {
                         if (lc.getValityPercent() < lastPercent) {
                             lastPercent = lc.getValityPercent();
                         }
@@ -1244,7 +1280,8 @@ if(cl!=null){
                 // "+(UTILITIES.getTimer()-startTime2));
             }
             // w.refreshUI();
-        } catch (Exception e) {
+        }
+        catch (Exception e) {
             e.printStackTrace();
         }
 
@@ -1252,7 +1289,8 @@ if(cl!=null){
             logger.finer(" Normal Match: " + res.getB().getDecodedValue() + " " + res.getValityPercent() + " good:" + res.getB().getGoodDetections() + " bad: " + res.getB().getBadDetections());
             logger.fine("Letter erkannt in: " + (UTILITIES.getTimer() - startTime) + " ms");
             res.setReliability(lastPercent - res.getValityPercent());
-        } else {
+        }
+        else {
 
             logger.severe("Letter nicht erkannt");
         }
@@ -1326,7 +1364,8 @@ if(cl!=null){
                 if (pathname.getName().endsWith(".jpg") || pathname.getName().endsWith(".png") || pathname.getName().endsWith(".gif")) {
 
                     return true;
-                } else {
+                }
+                else {
                     return false;
                 }
             }
@@ -1336,7 +1375,6 @@ if(cl!=null){
 
     }
 
-
     /**
      * @return the imageType
      */
@@ -1345,8 +1383,7 @@ if(cl!=null){
     }
 
     /**
-     * @param imageType
-     *            the imageType to set
+     * @param imageType the imageType to set
      */
     public void setImageType(String imageType) {
         logger.finer("SET PARAMETER: [imageType] = " + imageType);
@@ -1361,8 +1398,7 @@ if(cl!=null){
     }
 
     /**
-     * @param letterNum
-     *            the letterNum to set
+     * @param letterNum the letterNum to set
      */
     public void setLetterNum(int letterNum) {
         logger.finer("SET PARAMETER: [letterNum] = " + letterNum);
@@ -1395,8 +1431,7 @@ if(cl!=null){
     }
 
     /**
-     * @param methodAuthor
-     *            the methodAuthor to set
+     * @param methodAuthor the methodAuthor to set
      */
     public void setMethodAuthor(String methodAuthor) {
         logger.finer("SET PARAMETER: [methodAuthor] = " + methodAuthor);
@@ -1411,8 +1446,7 @@ if(cl!=null){
     }
 
     /**
-     * @param methodName
-     *            the methodName to set
+     * @param methodName the methodName to set
      */
     public void setMethodName(String methodName) {
         logger.finer("SET PARAMETER: [methodName] = " + methodName);
@@ -1427,8 +1461,7 @@ if(cl!=null){
     }
 
     /**
-     * @param resultFile
-     *            the resultFile to set
+     * @param resultFile the resultFile to set
      */
     public void setResultFile(String resultFile) {
         logger.finer("SET PARAMETER: [resultFile] = " + resultFile);
@@ -1443,8 +1476,7 @@ if(cl!=null){
     }
 
     /**
-     * @param sourceImage
-     *            the sourceImage to set
+     * @param sourceImage the sourceImage to set
      */
     public void setSourceImage(String sourceImage) {
         logger.finer("SET PARAMETER: [sourceImage] = " + sourceImage);
@@ -1561,8 +1593,7 @@ if(cl!=null){
     }
 
     /**
-     * @param showDebugGui
-     *            the showDebugGui to set
+     * @param showDebugGui the showDebugGui to set
      */
     public void setShowDebugGui(boolean showDebugGui) {
         this.showDebugGui = showDebugGui;
@@ -1573,128 +1604,129 @@ if(cl!=null){
      * @return Gibt die Pfade zu allen methoden zurück
      */
     public static File[] getMethods(String path) {
-      File dir = new File(path);
-        
-              if (dir == null || !dir.exists()) {
-                  logger.severe("Resource dir nicht gefunden: "+path);
-        
-              }
-        
-              File[] entries = dir.listFiles(new FileFilter() {
-                  public boolean accept(File pathname) {
-                      // logger.info(pathname.getName());
-                      if (pathname.isDirectory() && new File(pathname.getAbsoluteFile()+UTILITIES.FS+"jacinfo.xml").exists()) {
-        
-                          return true;
-                      } else {
-                          return false;
-                      }
-                  }
-        
-              });
-              return entries;
+        File dir = new File(path);
+
+        if (dir == null || !dir.exists()) {
+            logger.severe("Resource dir nicht gefunden: " + path);
+
+        }
+
+        File[] entries = dir.listFiles(new FileFilter() {
+            public boolean accept(File pathname) {
+                // logger.info(pathname.getName());
+                if (pathname.isDirectory() && new File(pathname.getAbsoluteFile() + UTILITIES.FS + "jacinfo.xml").exists()) {
+
+                    return true;
+                }
+                else {
+                    return false;
+                }
+            }
+
+        });
+        return entries;
     }
-/**
- * Führt einen testlauf mit den übergebenen methoden durch
- * @param methods
- */
+
+    /**
+     * Führt einen testlauf mit den übergebenen methoden durch
+     * 
+     * @param methods
+     */
     public static void testMethods(File[] methods) {
-        for(int i=0; i<methods.length;i++){
+        for (int i = 0; i < methods.length; i++) {
             testMethod(methods[i]);
         }
-        
+
     }
-/**
- * Testet die Angegebene Methode. dabei werden analysebilder erstellt.
- * @param file
- */
+
+    /**
+     * Testet die Angegebene Methode. dabei werden analysebilder erstellt.
+     * 
+     * @param file
+     */
     public static void testMethod(File file) {
-        int checkCaptchas=20;
+        int checkCaptchas = 10;
         String code;
         String inputCode;
-        int totalLetters=0;
-        int correctLetters=0;
+        int totalLetters = 0;
+        int correctLetters = 0;
         File captchaFile;
         Image img;
-        String methodsPath=file.getParentFile().getAbsolutePath();
-        String methodName=file.getName();
-        File captchaDir=UTILITIES.getFullFile(new String[]{file.getAbsolutePath(),"captchas"});
-        logger.info("Test Method: "+methodName+" at "+methodsPath);
-        JAntiCaptcha jac= new JAntiCaptcha(methodsPath,methodName);
+        String methodsPath = file.getParentFile().getAbsolutePath();
+        String methodName = file.getName();
+        File captchaDir = UTILITIES.getFullFile(new String[] { file.getAbsolutePath(), "captchas" });
+        logger.info("Test Method: " + methodName + " at " + methodsPath);
+        JAntiCaptcha jac = new JAntiCaptcha(methodsPath, methodName);
         File[] entries = captchaDir.listFiles(new FileFilter() {
             public boolean accept(File pathname) {
                 // logger.info(pathname.getName());
                 if (pathname.getName().endsWith(".jpg") || pathname.getName().endsWith(".png") || pathname.getName().endsWith(".gif")) {
 
                     return true;
-                } else {
+                }
+                else {
                     return false;
                 }
             }
-  
+
         });
-        ScrollPaneWindow w=new ScrollPaneWindow(jac);
+        ScrollPaneWindow w = new ScrollPaneWindow(jac);
         w.setTitle(" Test Captchas: " + file.getAbsolutePath());
         w.resizeWindow(100);
-        logger.info("Found Testcaptchas: "+entries.length);
-        int testNum=Math.min(checkCaptchas, entries.length);
-        logger.info("Test "+testNum+" Captchas");
-        int i=0;
-        for(i=0; i<testNum;i++){
-            captchaFile= entries[(int)(Math.random()*entries.length)];
-            img=UTILITIES.loadImage(captchaFile);
+        logger.info("Found Testcaptchas: " + entries.length);
+        int testNum = Math.min(checkCaptchas, entries.length);
+        logger.info("Test " + testNum + " Captchas");
+        int i = 0;
+        for (i = 0; i < testNum; i++) {
+            captchaFile = entries[(int) (Math.random() * entries.length)];
+            img = UTILITIES.loadImage(captchaFile);
             w.setText(0, i, captchaFile.getName());
             w.setImage(1, i, img);
-           
+
             w.repack();
-            
-          
-           
-           jac = new JAntiCaptcha(methodsPath, methodName);
-           // BasicWindow.showImage(img);
-           Captcha cap = jac.createCaptcha(img);
-           if(cap==null){
-              logger.severe("Captcha Bild konnte nicht eingelesen werden");
-            continue;
-           }
-           
-           w.setImage(2, i, cap.getImage());
-           // BasicWindow.showImage(cap.getImageWithGaps(2));
-           code = jac.checkCaptcha(cap);
-           w.setImage(3, i, cap.getImage());
-       
-           w.setText(4, i, "JAC:"+code);
-           
-           w.repack();
-           
-           
-           inputCode = UTILITIES.prompt("Bitte Captcha Code eingeben", code);
-         
-           w.setText(5, i, "User:"+inputCode);
-           w.repack();
-           if(code==null)code="";
-           if(inputCode==null)inputCode="";
-           code=code.toLowerCase();
-           inputCode=inputCode.toLowerCase();
-           for( int x=0; x<inputCode.length();x++){
-               totalLetters++;
-               if(inputCode.charAt(x)==code.charAt(x)){
-                   correctLetters++;
-               }
-           }
-           logger.info("Erkennung: "+correctLetters+"/"+totalLetters+" = "+UTILITIES.getPercent(correctLetters,totalLetters)+"%");
+
+            jac = new JAntiCaptcha(methodsPath, methodName);
+            // BasicWindow.showImage(img);
+            Captcha cap = jac.createCaptcha(img);
+            if (cap == null) {
+                logger.severe("Captcha Bild konnte nicht eingelesen werden");
+                continue;
+            }
+
+            w.setImage(2, i, cap.getImage());
+            // BasicWindow.showImage(cap.getImageWithGaps(2));
+            code = jac.checkCaptcha(cap);
+            w.setImage(3, i, cap.getImage());
+
+            w.setText(4, i, "JAC:" + code);
+
+            w.repack();
+
+            inputCode = UTILITIES.prompt("Bitte Captcha Code eingeben", code);
+
+            w.setText(5, i, "User:" + inputCode);
+            w.repack();
+            if (code == null) code = "";
+            if (inputCode == null) inputCode = "";
+            code = code.toLowerCase();
+            inputCode = inputCode.toLowerCase();
+            for (int x = 0; x < inputCode.length(); x++) {
+                totalLetters++;
+                if (inputCode.charAt(x) == code.charAt(x)) {
+                    correctLetters++;
+                }
+            }
+            logger.info("Erkennung: " + correctLetters + "/" + totalLetters + " = " + UTILITIES.getPercent(correctLetters, totalLetters) + "%");
         }
-        w.setText(0, i+1, "Erkennung: "+UTILITIES.getPercent(correctLetters,totalLetters)+"%");
-        w.setText(4, i+1, "Richtig: "+correctLetters);
-        w.setText(5, i+1, "Falsch: "+(totalLetters-correctLetters));
-        UTILITIES.showMessage("Erkennung: "+correctLetters+"/"+totalLetters+" = "+UTILITIES.getPercent(correctLetters,totalLetters)+"%");
+        w.setText(0, i + 1, "Erkennung: " + UTILITIES.getPercent(correctLetters, totalLetters) + "%");
+        w.setText(4, i + 1, "Richtig: " + correctLetters);
+        w.setText(5, i + 1, "Falsch: " + (totalLetters - correctLetters));
+        UTILITIES.showMessage("Erkennung: " + correctLetters + "/" + totalLetters + " = " + UTILITIES.getPercent(correctLetters, totalLetters) + "%");
     }
 
- 
-    
-//  
-//  private static String[] getMethods() {
+    //  
+    // private static String[] getMethods() {
 
-//
-//  }
+    //
+    // }
 }

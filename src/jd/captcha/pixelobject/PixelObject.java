@@ -141,7 +141,7 @@ public class PixelObject implements Comparable {
      * @return Prüft ob die farbe color zum Objekt passt
      */
     public boolean doesColorAverageFit(int color) {
-        if(getSize()>3000){
+        if(getSize()>50000){
             logger.severe("Objekt scheint sehr groß zu werden. objectColorContrast zu hoch?");
             return false;
         }
@@ -344,5 +344,8 @@ public class PixelObject implements Comparable {
      */
     public int getYMin() {
         return yMin;
+    }
+    public String toString(){
+       return super.toString()+" "+this.getLocation()[0]; 
     }
 }

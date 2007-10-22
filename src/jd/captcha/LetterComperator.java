@@ -190,10 +190,10 @@ public class LetterComperator {
                     }
                
                 }
-              // logger.info("Scan "+tmpIntersectionWidth+"/"+tmpIntersectionHeight+" - "+a.getElementPixel());
+//               logger.info("Scan "+tmpIntersectionWidth+"/"+tmpIntersectionHeight+" - "+a.getElementPixel());
                
                 value = this.scanIntersection(xx, yy, left, top, tmpIntersectionWidth, tmpIntersectionHeight);
-//                logger.info(tmpIntersectionWidth+"/"+tmpIntersectionHeight+" : "+(this.loopCounter-loops)+" scanIntersection: "+(UTILITIES.getTimer(timer)));
+//                logger.info(tmpIntersectionWidth+"/"+tmpIntersectionHeight+" : "+" scanIntersection: ");
 //                   logger.info(" : "+value);
                 if (value < bestValue) {
                     bestValue = value;
