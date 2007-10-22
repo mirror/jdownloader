@@ -1007,7 +1007,7 @@ public class JAntiCaptcha {
         // Führe prepare aus
         jas.executePrepareCommands(captcha);
         Letter[] letters = captcha.getLetters(getLetterNum());
-
+if(letters==null)return null;
         LetterComperator[] newLetters = new LetterComperator[letters.length];
         String ret = "";
         double correct = 0;

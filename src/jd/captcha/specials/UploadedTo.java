@@ -49,10 +49,11 @@ public class UploadedTo {
     private static Logger       logger                  = Plugin.getLogger();
 
     public static Letter[] getLetters(Captcha captcha) {
+      
         Vector<PixelObject> letters = getObjects(captcha);
-   
+    
         if (letters == null) return null;
-
+       
         Letter[] ret = new Letter[letters.size()];
         for (int i = 0; i < letters.size(); i++) {
 
@@ -88,8 +89,10 @@ public class UploadedTo {
         int minWidth = Integer.MAX_VALUE;
         int maxWidth;
         // Alle Objekte aus dem captcha holen. Sie sind nach der Größe Sortiert
+     
         Vector<PixelObject> objects = captcha.getObjects(OBJECTCOLORCONTRAST, OBJECTDETECTIONCONTRAST);
-        logger.info(""+objects);
+//        logger.info(""+objects);
+        logger.info("start");
         Collections.sort(objects, new Comparator<PixelObject> (){
             public int compare(PixelObject obj1, PixelObject obj2)
             {
@@ -98,8 +101,8 @@ public class UploadedTo {
                 if(obj1.getLocation()[0]>obj2.getLocation()[0])return -1;
                 return 0;
             }});
-        
-        logger.info(""+objects);
+        logger.info("end");
+//        logger.info(""+objects);
         Vector<PixelObject> filtered = new Vector<PixelObject>();
    
         for (int i = objects.size() - 1; i >= 0; i--) {

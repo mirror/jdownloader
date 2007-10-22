@@ -84,6 +84,8 @@ public class Configuration extends Property implements Serializable {
     public static final String PARAM_DISABLE_CONFIRM_DIALOGS = "DISABLE_CONFIRM_DIALOGS";
     public static final String PARAM_NO_TRAY = "NO_TRAY";
     public static final String PARAM_MIN_FREE_SPACE = "MIN_FREE_SPACE";
+    public static final String PARAM_START_DOWNLOADS_AFTER_START = "START_DOWNLOADS_AFTER_START";
+    public static final String PARAM_USE_PACKETNAME_AS_SUBFOLDER = "USE_PACKETNAME_AS_SUBFOLDER";
     
     /**
      * Die unterschiedlichen Interaktionen. (ZB Reconnect nach einem Download)

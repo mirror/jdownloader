@@ -52,14 +52,19 @@ public class ConfigPanelGeneral extends ConfigPanel {
         addGUIConfigEntry(ce);
         ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, configuration, Configuration.PARAM_DISABLE_CONFIRM_DIALOGS, "Bestätigungsdialoge nicht anzeigen").setDefaultValue(false));
         addGUIConfigEntry(ce);
-        if(JDUtilities.getJavaVersion()>=1.6d){
-            ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, configuration, Configuration.PARAM_NO_TRAY, "Trayicon deaktivieren").setDefaultValue(false));
-               
-        }else{
-        ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, configuration, Configuration.PARAM_NO_TRAY, "Trayicon deaktivieren").setDefaultValue(true).setEnabled(false));
-        }
-        addGUIConfigEntry(ce);
+//        if(JDUtilities.getJavaVersion()>=1.6d){
+//            ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, configuration, Configuration.PARAM_NO_TRAY, "Trayicon deaktivieren").setDefaultValue(false));
+//               
+//        }else{
+//        ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, configuration, Configuration.PARAM_NO_TRAY, "Trayicon deaktivieren").setDefaultValue(true).setEnabled(false));
+//        }
+//        addGUIConfigEntry(ce);
        
+        ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, configuration, Configuration.PARAM_START_DOWNLOADS_AFTER_START, "Download beim Programmstart beginnen").setDefaultValue(false));
+        addGUIConfigEntry(ce);
+        
+        ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, configuration, Configuration.PARAM_USE_PACKETNAME_AS_SUBFOLDER, "Wenn möglich Unterordner mit Paketname erstellen").setDefaultValue(false));
+        addGUIConfigEntry(ce);
         
         if (JDUtilities.getHomeDirectory() != null) {
             brsHomeDir = new BrowseFile();

@@ -17,6 +17,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
+import java.io.File;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.Vector;
@@ -45,7 +46,8 @@ import jd.plugins.Plugin;
 import jd.utils.JDUtilities;
 
 /**
- * Diese Klasse sammelt die Links, bündelt sie zu Paketen und führt einen verfügbarkeitscheck durch
+ * Diese Klasse sammelt die Links, bündelt sie zu Paketen und führt einen
+ * verfügbarkeitscheck durch
  * 
  * @author coalado
  */
@@ -54,21 +56,37 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
      * 
      */
     private static final long    serialVersionUID = 2313000213508156713L;
+
     protected Insets             insets           = new Insets(0, 0, 0, 0);
+
     protected Logger             logger           = Plugin.getLogger();
+
     private SimpleGUI            parent;
+
     private Vector<DownloadLink> linkList;
+
     private JButton              btnOk;
+
     private JList                list;
+
     private JButton              btnCancel;
+
     private JTextField           txfComment;
+
     private JTextField           txfPassword;
+
     private JTextField           txtName;
+
     private BrowseFile           bfSubFolder;
+
     private JScrollPane          scrollPane;
+
     private JButton              btnRemove;
+
     private JPanel               panel;
+
     private JButton              btnCheck;
+
     /**
      * @param parent GUI
      * @param linkList neue links
@@ -156,12 +174,13 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
     public void addLinks(DownloadLink[] linkList) {
         for (int i = 0; i < linkList.length; i++) {
             this.linkList.add(linkList[i]);
-            logger.info(linkList[i].getUrlDownloadDecrypted()+" # ");
+            logger.info(linkList[i].getUrlDownloadDecrypted() + " # ");
         }
         sortLinkList();
         checkForSameName();
         fireTableChanged();
     }
+
     /**
      * Entfernt die aktuell selektierten Links
      */
@@ -172,12 +191,14 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
         }
         fireTableChanged();
     }
+
     public void removeLinks(int[] rows) {
         for (int i = rows.length - 1; i >= 0; i--) {
             linkList.remove(rows[i]);
         }
         fireTableChanged();
     }
+
     public void removeLinksExcept(int[] rows) {
         for (int i = linkList.size() - 1; i >= 0; i--) {
             boolean isin = false;
@@ -203,20 +224,22 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
          */
         Collections.sort(linkList);
     }
+
     /**
-     * Überprüft die eingetragenen Links, ob Übereinstimmungen im Namen sind. Das Paket wird dann so genannt.
+     * Überprüft die eingetragenen Links, ob Übereinstimmungen im Namen sind.
+     * Das Paket wird dann so genannt.
      */
-    private void checkForSameName(){
+    private void checkForSameName() {
         String tempName;
-        String sameName=null;
+        String sameName = null;
         Iterator<DownloadLink> iterator = linkList.iterator();
-        while (iterator.hasNext()){
-            if(sameName == null){
+        while (iterator.hasNext()) {
+            if (sameName == null) {
                 sameName = iterator.next().getName();
             }
-            else{
+            else {
                 tempName = iterator.next().getName();
-                txtName.setText(JDUtilities.getEqualString(sameName,tempName));
+                txtName.setText(JDUtilities.getEqualString(sameName, tempName));
             }
         }
     }
@@ -242,12 +265,14 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
         }
         list.setModel(tmp);
     }
+
     /**
      * Setzt die Sichtbarkeit des Linkgrabbers
      */
     public void setVisible(boolean bol) {
         super.setVisible(bol);
     }
+
     public void confirm(int[] indeces) {
         if (indeces != null) {
             this.removeLinksExcept(indeces);
@@ -263,7 +288,21 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
         fp.setName(txtName.getText().trim());
         fp.setComment(txfComment.getText().trim());
         fp.setPassword(txfPassword.getText().trim());
-        fp.setDownloadDirectory(bfSubFolder.getText().trim());
+        if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_PACKETNAME_AS_SUBFOLDER, false)) {
+            File file = new File(new File(bfSubFolder.getText().trim()), txtName.getText().trim());
+            if (!file.exists()) {
+                file.mkdirs();
+            }
+            if (!file.exists()) {
+                fp.setDownloadDirectory(file.getAbsolutePath());
+            }
+            else {
+                fp.setDownloadDirectory(bfSubFolder.getText().trim());
+            }
+        }
+        else {
+            fp.setDownloadDirectory(bfSubFolder.getText().trim());
+        }
         fp.setDownloadLinks(linkList);
 
         for (int i = 0; i < linkList.size(); i++) {
@@ -274,6 +313,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
         this.setVisible(false);
         parent.setDropTargetText("Downloads hinzugefügt: " + linkList.size());
     }
+
     /*
      * (non-Javadoc)
      * 
@@ -293,6 +333,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
             this.setVisible(false);
         }
     }
+
     private void removeOfflineFiles() {
         new Thread() {
             public void run() {
@@ -305,11 +346,13 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
                     try {
                         Thread.sleep(20);
                     }
-                    catch (InterruptedException e) { }
+                    catch (InterruptedException e) {
+                    }
                 }
             }
         }.start();
     }
+
     private void checkLinks() {
         new Thread() {
             public void run() {
@@ -320,16 +363,22 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
                     try {
                         Thread.sleep(20);
                     }
-                    catch (InterruptedException e) { }
+                    catch (InterruptedException e) {
+                    }
                 }
             }
         }.start();
     }
+
     public void dragEnter(DropTargetDragEvent arg0) {}
+
     public void dragExit(DropTargetEvent arg0) {}
+
     public void dragOver(DropTargetDragEvent arg0) {}
+
     /**
-     * Wird aufgerufen sobald etwas gedropt wurde. Die Funktion liest den Inhalt des Drops aus und benachrichtigt die Listener
+     * Wird aufgerufen sobald etwas gedropt wurde. Die Funktion liest den Inhalt
+     * des Drops aus und benachrichtigt die Listener
      */
     public void drop(DropTargetDropEvent e) {
         logger.info("Drag: DROP " + e.getDropAction() + " : " + e.getSourceActions() + " - " + e.getSource() + " - ");
@@ -352,23 +401,35 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
         }
         repaint();
     }
+
     public void dropActionChanged(DropTargetDragEvent dtde) {}
+
     public Vector<DownloadLink> getLinkList() {
         return linkList;
     }
+
     private class InternalPopup extends JPopupMenu implements ActionListener {
         /**
          * 
          */
         private static final long serialVersionUID = -6561857482676777562L;
+
         private JMenuItem         delete;
+
         private JMenuItem         deleteNotSelected;
+
         private JMenuItem         info;
+
         private JPopupMenu        popup;
+
         private JMenuItem         load;
+
         private JMenuItem         offline;
+
         private int[]             indeces;
+
         private JMenuItem         deleteOffline;
+
         public InternalPopup(JList invoker, int x, int y) {
             popup = new JPopupMenu();
             indeces = invoker.getSelectedIndices();
@@ -394,6 +455,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
             popup.add(offline);
             popup.show(list, x, y);
         }
+
         public void actionPerformed(ActionEvent e) {
             if (e.getSource() == deleteOffline) {
                 removeOfflineFiles();
@@ -427,10 +489,15 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
             }
         }
     }
+
     public void mouseClicked(MouseEvent e) {}
+
     public void mouseEntered(MouseEvent e) {}
+
     public void mouseExited(MouseEvent e) {}
+
     public void mouseReleased(MouseEvent e) {}
+
     public void mousePressed(MouseEvent e) {
         // TODO: isPopupTrigger() funktioniert nicht
         logger.info("Press" + e.isPopupTrigger());

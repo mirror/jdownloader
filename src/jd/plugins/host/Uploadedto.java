@@ -90,6 +90,7 @@ public class Uploadedto extends PluginForHost {
                     logger.info(url);
                     requestInfo = postRequest(new URL(url), "lang=de", null, null, null, false);
                     if (requestInfo.getConnection().getHeaderField("Location") != null && requestInfo.getConnection().getHeaderField("Location").indexOf("error") > 0) {
+                        logger.severe("Unbekannter fehler.. retry in 20 sekunden");
                         step.setStatus(PluginStep.STATUS_ERROR);
                         downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN_RETRY);
                         step.setParameter(20000l);

@@ -44,7 +44,7 @@ public class ManualCaptcha extends Interaction implements Serializable {
     public void initConfig() {
         ConfigEntry cfg;
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, JDUtilities.getConfiguration(), Configuration.PARAM_MANUAL_CAPTCHA_USE_JAC, "jAntiCaptcha Werte anzeigen").setDefaultValue(true));
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_SPINNER, JDUtilities.getConfiguration(), Configuration.PARAM_MANUAL_CAPTCHA_WAIT_FOR_JAC, "Bei jAntiCaptcha Ergebnis [x] Millisekunden warten und dann fortfahren", 0, 30000).setDefaultValue(10000).setStep(1000));
+        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_SPINNER, JDUtilities.getConfiguration(), Configuration.PARAM_MANUAL_CAPTCHA_WAIT_FOR_JAC, "Bei jAntiCaptcha Ergebnis [x] Millisekunden warten und dann fortfahren", 0, 30000).setDefaultValue(3000).setStep(1000));
     }
     @Override
     public void resetInteraction() {

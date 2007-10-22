@@ -78,7 +78,7 @@ public class CaptchaDialog extends JDialog implements ActionListener {
                         setTitle("jAntiCaptcha fertig. Warte "+JDUtilities.formatSeconds(configuration.getIntegerProperty(Configuration.PARAM_MANUAL_CAPTCHA_WAIT_FOR_JAC,10000)/1000));
                         logger.finer("jAntiCaptcha fertig. Warte "+JDUtilities.formatSeconds(configuration.getIntegerProperty(Configuration.PARAM_MANUAL_CAPTCHA_WAIT_FOR_JAC,10000)/1000));
                         try {
-                           Thread.sleep(Math.abs(configuration.getIntegerProperty(Configuration.PARAM_MANUAL_CAPTCHA_WAIT_FOR_JAC,10000)));
+                           Thread.sleep(Math.abs(configuration.getIntegerProperty(Configuration.PARAM_MANUAL_CAPTCHA_WAIT_FOR_JAC,3000)));
                         }
                         catch (InterruptedException e) {     e.printStackTrace();
                         }

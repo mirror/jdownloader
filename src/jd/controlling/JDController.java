@@ -93,9 +93,9 @@ public class JDController implements PluginListener, ControlListener, UIListener
     }
     /**
      * Startet den Downloadvorgang. Dies eFUnkton sendet das startdownload event
-     * und aktiviert die ersten downloads
+     * und aktiviert die ersten downloads.
      */
-    private synchronized void startDownloads() {
+    public synchronized void startDownloads() {
         if (getDownloadStatus()==DOWNLOAD_NOT_RUNNING) {
             setDownloadStatus(DOWNLOAD_RUNNING);
             logger.info("StartDownloads");

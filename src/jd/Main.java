@@ -13,6 +13,7 @@ import javax.swing.JOptionPane;
 import jd.config.Configuration;
 import jd.controlling.JDController;
 import jd.controlling.interaction.Interaction;
+import jd.event.UIEvent;
 import jd.gui.UIInterface;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.plugins.Plugin;
@@ -46,6 +47,7 @@ public class Main {
         Main main = new Main();
         main.go();
     }
+
     private void go() {
         Logger logger = Plugin.getLogger();
         loadImages();
@@ -83,8 +85,7 @@ public class Main {
         }
         logger.info("Lade Plugins");
         JDUtilities.loadPlugins();
-       
-        UIInterface uiInterface = new SimpleGUI();
+
         // deaktiviere den Cookie Handler. Cookies müssen komplett selbst
         // verwaltet werden. Da JD später sowohl standalone, als auch im
         // Webstart laufen soll muss die Cookieverwaltung selbst übernommen
@@ -92,12 +93,13 @@ public class Main {
         CookieHandler.setDefault(null);
         logger.info("Erstelle Controller");
         JDController controller = new JDController();
+        UIInterface uiInterface = new SimpleGUI();
         controller.setUiInterface(uiInterface);
-       
+
         logger.info("Lade Queue");
         if (!controller.initDownloadLinks()) {
             File links = JDUtilities.getResourceFile("links.dat");
-            if (links.exists()) {
+            if (links != null && links.exists()) {
                 File newFile = new File(links.getAbsolutePath() + ".bup");
                 newFile.delete();
                 links.renameTo(newFile);
@@ -127,14 +129,19 @@ public class Main {
         while (iteratorOptional.hasNext()) {
             JDUtilities.getPluginsOptional().get(iteratorOptional.next()).addPluginListener(controller);
         }
-        
-         Vector<UserPlugin> userPlugins = JDUtilities.getUserPlugins();
-         
-         Iterator<UserPlugin> iteratorUserPlugins = userPlugins.iterator();
-         while (iteratorUserPlugins.hasNext()) {
-             iteratorUserPlugins.next().addPluginListener(controller);
-         }
+
+        Vector<UserPlugin> userPlugins = JDUtilities.getUserPlugins();
+
+        Iterator<UserPlugin> iteratorUserPlugins = userPlugins.iterator();
+        while (iteratorUserPlugins.hasNext()) {
+            iteratorUserPlugins.next().addPluginListener(controller);
+        }
+        // Startet die Downloads nach dem start
+        if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_START_DOWNLOADS_AFTER_START, false)) {
+            uiInterface.fireUIEvent(new UIEvent(uiInterface, UIEvent.UI_START_DOWNLOADS));
+        }
     }
+
     /**
      * Die Bilder werden aus der JAR Datei nachgeladen //
      */
