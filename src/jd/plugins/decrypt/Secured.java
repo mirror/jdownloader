@@ -141,26 +141,34 @@ public class Secured extends PluginForDecrypt {
                     requestInfo = getRequest(url);
 
                     String html = requestInfo.getHtmlCode();
-
+                    File captchaFile = null;
+                    String capTxt = null;
                     for (;;) { // for() läuft bis kein Captcha mehr abgefragt
                         // wird
                         Matcher matcher = PAT_CAPTCHA.matcher(html);
 
                         if (matcher.find()) {
+                            if(captchaFile!=null && capTxt != null){
+                                JDUtilities.appendInfoToFilename(captchaFile,capTxt, false);
+                            }
+
                             logger.finest("Captcha Protected");
                             String capHash = matcher.group(1).substring(8);
                             capHash = capHash.substring(0, capHash.length() - 4);
                             String captchaAdress = "http://" + HOST + "/" + matcher.group(1);
-                            File dest = JDUtilities.getResourceFile("captchas/" + this.getPluginName() + "/captcha_" + (new Date().getTime()) + ".jpg");
-                            JDUtilities.download(dest, captchaAdress);
+                            captchaFile = getLocalCaptchaFile(this);
+                            JDUtilities.download(captchaFile, captchaAdress);
 
-                            String capTxt = Plugin.getCaptchaCode(dest, this);
+                            capTxt = Plugin.getCaptchaCode(captchaFile, this);
                             String postData = "captcha_key=" + capTxt + "&captcha_hash=" + capHash;
 
                             requestInfo = postRequest(url, postData);
                             html = requestInfo.getHtmlCode();
                         }
                         else {
+                            if(captchaFile!=null && capTxt != null){
+                                JDUtilities.appendInfoToFilename(captchaFile,capTxt, true);
+                            }
                             break;
                         }
                     }

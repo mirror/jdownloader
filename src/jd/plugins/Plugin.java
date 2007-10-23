@@ -23,6 +23,7 @@ import java.nio.channels.WritableByteChannel;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
@@ -159,6 +160,9 @@ public abstract class Plugin {
      */
     public abstract boolean doBotCheck(File file);
  
+    protected File getLocalCaptchaFile(Plugin plugin) {
+        return getLocalCaptchaFile(plugin,".jpg");
+    }
     /**
      * Gibt die Date zurück in die der aktuelle captcha geladne werden soll.
      * 
@@ -166,8 +170,12 @@ public abstract class Plugin {
      * @return Gibt einen Pfadzurück der für die nächste Captchadatei reserviert
      *         ist
      */
-    public File getLocalCaptchaFile(Plugin plugin) {
-        File dest = JDUtilities.getResourceFile("captchas/" + plugin.getPluginName() + "/captcha_" + (new Date().getTime()) + ".jpg");
+    protected File getLocalCaptchaFile(Plugin plugin, String extension) {
+        if (extension == null) extension =".jpg";
+        Calendar calendar = Calendar.getInstance();
+        String date = String.format("%1$td.%1$tm.%1$tY_%1$tH.%1$tM.%1$tS",calendar);
+//        File dest = JDUtilities.getResourceFile("captchas/" + plugin.getPluginName() + "/captcha_" + (new Date().getTime()) + ".jpg");
+        File dest = JDUtilities.getResourceFile("captchas/" + plugin.getPluginName() + "/"+date+extension);
         return dest;
     }
     /**
@@ -1225,7 +1233,7 @@ public abstract class Plugin {
         if (interacts.length > 0) {
             captchaText = (String) interacts[0].getProperty("captchaCode");
             if (captchaText == null) {
-                // im NOtfall doch JAC nutzen
+                // im Notfall doch JAC nutzen
                 captchaText = JDUtilities.getCaptcha(JDUtilities.getController(), plugin, file);
             }
         }

@@ -85,7 +85,10 @@ public class SerienFreaksTv extends PluginForDecrypt {
     			} else if (countOccurences(strURL, FILE_URL) > 0) {
     			// ist der Link ein Download?
 					// bis Captcha erkannt
+    			    File captchaFile = null;
+    			    String plainCaptcha = null;
 					while (true) {
+
 						Vector<Vector<String>> results = null;
 		    			reqinfo = getRequest(url);
 	
@@ -140,7 +143,7 @@ public class SerienFreaksTv extends PluginForDecrypt {
 						
 						// CAPTCHA
 						captchaURL = "http://" + HOST + captchaURL;
-	                    File captchaFile = JDUtilities.getResourceFile("captchas/" + this.getPluginName() + "/captcha_" + (new Date().getTime()) + ".gif");
+	                    captchaFile = getLocalCaptchaFile(this,".gif");
 	                    
 	                    // Captcha downloaden
 	                    boolean dlSuccess = JDUtilities.download(captchaFile, captchaURL);
@@ -156,11 +159,14 @@ public class SerienFreaksTv extends PluginForDecrypt {
 	                    }
 		                    
 	                    // Captcha-Erkennung
-	                    String plainCaptcha = Plugin.getCaptchaCode(captchaFile, this);
+	                    plainCaptcha = Plugin.getCaptchaCode(captchaFile, this);
 	                    reqinfo = postRequest(new URL(formURL), "code=" + plainCaptcha + "&" + formHiddenName1 + "=" + formHiddenValue1 + "&" + formHiddenName2 + "=" + formHiddenValue2 + "&" + formHiddenName3 + "=" + formHiddenValue3);
 	                    
 	                    // Falscher Captcha-Code?
 	                    if (reqinfo.getHtmlCode().contains(ERROR_CAPTCHA)) {
+                            if(captchaFile!=null && plainCaptcha != null){
+                                JDUtilities.appendInfoToFilename(captchaFile,plainCaptcha, false);
+                            }
 	                        logger.severe("falscher Captcha-Code");
 	                    	continue; // retry
 	
@@ -170,9 +176,12 @@ public class SerienFreaksTv extends PluginForDecrypt {
 	                    }
 	                    
 	                    // Captcha erkannt
+                        if(captchaFile!=null && plainCaptcha != null){
+                            JDUtilities.appendInfoToFilename(captchaFile,plainCaptcha, true);
+                        }
 	                    break;
 					}
-	    			
+
 	    			// suche nach Links
 					Vector<Vector<String>> links = getAllSimpleMatches(reqinfo.getHtmlCode(), DL_LINK);
 	                firePluginEvent(new PluginEvent(this,PluginEvent.PLUGIN_PROGRESS_MAX, links.size()));

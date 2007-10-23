@@ -78,6 +78,8 @@ public class LinkProtectOrg extends PluginForDecrypt {
     		try {
     			String strURL = parameter;
     			URL url = new URL(strURL);
+    			File captchaFile = null;
+    			String plainCaptcha = null;
     			
     			// so lange, bis Captcha richtig eingegeben/erkannt
     			// so lange, bis Passwort richtig eingegeben
@@ -111,13 +113,13 @@ public class LinkProtectOrg extends PluginForDecrypt {
 	    				hasCaptcha = true;
 	    				CaptchaURL = "http://" + HOST + "/" + CaptchaURL;
 	    				
-	                    File dest = JDUtilities.getResourceFile("captchas/" + this.getPluginName() + "/captcha_" + (new Date().getTime()) + ".gif");
+	                    captchaFile = getLocalCaptchaFile(this, ".gif");
 	                    
 	                    // Captcha downloaden
-	                    boolean dlSuccess = JDUtilities.download(dest, CaptchaURL);
+	                    boolean dlSuccess = JDUtilities.download(captchaFile, CaptchaURL);
 	                    
 	                    // Captcha-Download nicht erfolgreich?
-	                    if(!dlSuccess || !dest.exists() || dest.length()==0){
+	                    if(!dlSuccess || !captchaFile.exists() || captchaFile.length()==0){
 	                        logger.severe("Captcha-Download nicht erfolgreich. Versuche erneut.");
 	                        
 	                        try { Thread.sleep(1000);
@@ -126,7 +128,7 @@ public class LinkProtectOrg extends PluginForDecrypt {
 	                        continue; // retry
 	                    }
 	                    
-	                    String plainCaptcha = Plugin.getCaptchaCode(dest, this);
+	                    plainCaptcha = Plugin.getCaptchaCode(captchaFile, this);
 
 	    				// postData enthaelt entweder Passwort-Daten oder nichts
 	    				if (postData.length() > 0)
@@ -142,12 +144,18 @@ public class LinkProtectOrg extends PluginForDecrypt {
 	                    // Falsches Passwort
 		    			if (reqinfo.getHtmlCode().contains(WRONG_PASSWORD)) {
 	                        logger.severe("Passwort falsch! Versuche erneut.");
+                            if(captchaFile!=null && plainCaptcha != null){
+                                JDUtilities.appendInfoToFilename(captchaFile,plainCaptcha, false);
+                            }
 		    				continue; // retry
 		    			}
 		    			
 	                    // Falscher Captcha-Code
 		    			if (reqinfo.getHtmlCode().contains(ERROR_CAPTCHA)) {
 	                        logger.severe("Captcha-Code falsch! Versuche erneut.");
+                            if(captchaFile!=null && plainCaptcha != null){
+                                JDUtilities.appendInfoToFilename(captchaFile,plainCaptcha, false);
+                            }
 		    				continue; // retry
 		    			}
 		    			
@@ -156,10 +164,16 @@ public class LinkProtectOrg extends PluginForDecrypt {
 	                	if (reqinfo.getLocation() != null) {
 	                		reqinfo = getRequest(url, reqinfo.getCookie(), strURL, false);
 	                	}
+                        if(captchaFile!=null && plainCaptcha != null){
+                            JDUtilities.appendInfoToFilename(captchaFile,plainCaptcha, true);
+                        }
                    
 		    			break; // Schleife abbrechen
 	    			
 	    			} else {
+                        if(captchaFile!=null && plainCaptcha != null){
+                            JDUtilities.appendInfoToFilename(captchaFile,plainCaptcha, true);
+                        }
 	    				// kein Captcha & kein Pass: Schleife abbrechen
 	    				break;
 	    			}

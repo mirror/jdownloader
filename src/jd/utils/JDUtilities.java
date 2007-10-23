@@ -79,102 +79,82 @@ public class JDUtilities {
      * Parametername für den Konfigpath
      */
     public static final String                     CONFIG_PATH         = "jDownloader.config";
-
     /**
      * Titel der Applikation 
      */
     public static final String                     JD_VERSION          = "0.0.";
-
     public static final String                     JD_REVISION         = "$Id$";
-
     /**
      * Versionsstring der Applikation
      */
     public static final String                     JD_TITLE            = "jDownloader";
-
     /**
      * Ein URLClassLoader, um Dateien aus dem HomeVerzeichnis zu holen
      */
     private static URLClassLoader                  urlClassLoader      = null;
-
     /**
      * Das JD-Home Verzeichnis. Dieses wird nur gesetzt, wenn es aus dem
      * WebStart Cookie gelesen wurde. Diese Variable kann nämlich im
      * KonfigDialog geändert werden
      */
     private static String                          homeDirectory       = null;
-
     /**
      * Das ist das File Objekt, daß das HomeDirectory darstellt
      */
     private static File                            homeDirectoryFile   = null;
-
     /**
      * Der DownloadController
      */
     private static JDController                    controller          = null;
-
     /**
      * RessourceBundle für Texte
      */
     private static ResourceBundle                  resourceBundle      = null;
-
     /**
      * Angaben über Spracheinstellungen
      */
     private static Locale                          locale              = null;
-
     /**
      * Alle verfügbaren Bilder werden hier gespeichert
      */
     private static HashMap<String, Image>          images              = new HashMap<String, Image>();
-
     /**
      * Der Logger für Meldungen
      */
     private static Logger                          logger              = Plugin.getLogger();
-
     /**
      * Damit werden die JARs rausgesucht
      */
     public static JDFileFilter                     filterJar           = new JDFileFilter(null, ".jar", false);
-
     /**
      * Das aktuelle Verzeichnis (Laden/Speichern)
      */
     private static File                            currentDirectory;
-
     /**
      * Hier werden alle vorhandenen Plugins zum Dekodieren von Links gespeichert
      */
     private static Vector<PluginForDecrypt>        pluginsForDecrypt   = new Vector<PluginForDecrypt>();
-
     /**
      * Hier werden alle vorhandenen Plugins zum Suchen von Links gespeichert
      */
     private static Vector<PluginForSearch>         pluginsForSearch    = new Vector<PluginForSearch>();
-
     /**
      * Hier werden alle vorhandenen Plugins zum Öffnen verschlüsselter
      * Containerfiles gespeichert
      */
     private static Vector<PluginForContainer>      pluginsForContainer = new Vector<PluginForContainer>();
-
     /**
      * Hier werden alle Plugins für die Anbieter gespeichert
      */
     private static Vector<PluginForHost>           pluginsForHost      = new Vector<PluginForHost>();
-
     /**
      * Hier werden optionale Plugins gespeichert
      */
     private static HashMap<String, PluginOptional> pluginsOptional     = new HashMap<String, PluginOptional>();
-
     /**
      * Die Konfiguration
      */
     private static Configuration                   configuration       = new Configuration();
-
     /**
      * Geht eine Komponente so lange durch (getParent), bis ein Objekt vom Typ
      * Frame gefunden wird, oder es keine übergeordnete Komponente gibt
@@ -192,7 +172,6 @@ public class JDUtilities {
         else
             return null;
     }
-
     /**
      * parsed den JD_REVISION String auf
      * 
@@ -203,7 +182,6 @@ public class JDUtilities {
         if (data.length > 2) return data[2];
         return null;
     }
-
     /**
      * parsed den JD_REVISION String auf
      * 
@@ -218,7 +196,6 @@ public class JDUtilities {
         }
         return null;
     }
-
     /**
      * parsed den JD_REVISION String auf
      * 
@@ -231,7 +208,6 @@ public class JDUtilities {
         }
         return null;
     }
-
     /**
      * parsed den JD_REVISION String auf
      * 
@@ -245,7 +221,6 @@ public class JDUtilities {
         }
         return null;
     }
-
     /**
      * Diese Klasse fuegt eine Komponente einem Container hinzu
      * 
@@ -285,7 +260,6 @@ public class JDUtilities {
         cons.ipady = iPadY;
         cont.add(comp, cons);
     }
-
     /**
      * Genau wie add, aber mit den Standardwerten iPadX,iPadY=0
      * 
@@ -317,7 +291,6 @@ public class JDUtilities {
         }
         addToGridBag(cont, comp, x, y, width, height, weightX, weightY, insets, 0, 0, fill, anchor);
     }
-
     /**
      * Liefert einen Punkt zurück, mit dem eine Komponente auf eine andere
      * zentriert werden kann
@@ -345,7 +318,6 @@ public class JDUtilities {
         center.y -= child.getHeight() / 2;
         return center;
     }
-
     /**
      * Liefert eine Zeichenkette aus dem aktuellen ResourceBundle zurück
      * 
@@ -368,7 +340,6 @@ public class JDUtilities {
         }
         return result;
     }
-
     /**
      * Liefert einer char aus dem aktuellen ResourceBundle zurück
      * 
@@ -383,7 +354,6 @@ public class JDUtilities {
         }
         return result;
     }
-
     /**
      * Liefert aus der Map der geladenen Bilder ein Element zurück
      * 
@@ -394,7 +364,6 @@ public class JDUtilities {
     public static Image getImage(String imageName) {
         return images.get(imageName);
     }
-
     /**
      * Fügt ein Bild zur Map hinzu
      * 
@@ -405,7 +374,6 @@ public class JDUtilities {
         Toolkit.getDefaultToolkit().prepareImage(image, -1, -1, null);
         images.put(imageName, image);
     }
-
     /**
      * Liefert das Basisverzeichnis für jD zurück.
      * 
@@ -430,7 +398,6 @@ public class JDUtilities {
         }
         return jdHomeDir;
     }
-
     /**
      * Liest JD-HOME aus dem WebStart Cache. Ist ein solcher nicht vorhanden,
      * wird der Pfad aus der Umgebungsvariable genommen. Ist dieser auch nicht
@@ -469,7 +436,6 @@ public class JDUtilities {
         }
         return getJDHomeDirectoryFromEnvironment();
     }
-
     /**
      * Lädt eine Klasse aus dem homedir. UNd instanziert sie mit den gegebenen
      * arumenten
@@ -479,7 +445,6 @@ public class JDUtilities {
      * @return
      */
     public static Object getHomeDirInstance(String classPath, Object[] arguments) {
-
         classPath = classPath.replaceAll("\\.class", "");
         classPath = classPath.replaceAll("\\/", ".");
         classPath = classPath.replaceAll("\\\\", ".");
@@ -495,8 +460,7 @@ public class JDUtilities {
         // Falls das nicht geklappt hat wird die klasse im homedir gesucht
         if (newClass == null) {
             try {
-                 String url = urlEncode(new File((getJDHomeDirectory().getAbsolutePath())).toURI().toURL().toString());
-               
+                String url = urlEncode(new File((getJDHomeDirectory().getAbsolutePath())).toURI().toURL().toString());
                 URLClassLoader cl = new URLClassLoader(new URL[] { new URL(url) }, Thread.currentThread().getContextClassLoader());
                 newClass = Class.forName(classPath, true, cl);
             }
@@ -511,16 +475,13 @@ public class JDUtilities {
         }
         try {
             // newClass = Class.forName(classPath);
-
             Class[] classes = new Class[arguments.length];
             for (int i = 0; i < arguments.length; i++) {
                 classes[i] = arguments[i].getClass();
             }
             Constructor con = newClass.getConstructor(classes);
             return con.newInstance(arguments);
-
         }
-
         catch (SecurityException e) {
             logger.severe(classPath + ": " + e.getLocalizedMessage());
             e.printStackTrace();
@@ -550,9 +511,7 @@ public class JDUtilities {
             e.printStackTrace();
         }
         return null;
-
     }
-
     /**
      * Schreibt das Home Verzeichnis in den Webstart Cache
      * 
@@ -585,7 +544,6 @@ public class JDUtilities {
             e.printStackTrace();
         }
     }
-
     /**
      * Liefert einen URLClassLoader zurück, um Dateien aus dem Stammverzeichnis
      * zu laden
@@ -601,7 +559,6 @@ public class JDUtilities {
                 url = urlEncode(new File((homeDir.getAbsolutePath())).toURI().toURL().toString());
                 logger.info("Create Classloader: for: " + url + "  -->" + new URL(url));
                 urlClassLoader = new URLClassLoader(new URL[] { new URL(url) }, null);
-                
             }
             catch (MalformedURLException e) {
                 e.printStackTrace();
@@ -609,7 +566,6 @@ public class JDUtilities {
         }
         return urlClassLoader;
     }
-
     /**
      * Diese Methode erstellt einen neuen Captchadialog und liefert den
      * eingegebenen Text zurück.
@@ -646,7 +602,6 @@ public class JDUtilities {
             return controller.getCaptchaCodeFromUser(plugin, file);
         }
     }
-
     /**
      * Hier werden alle Plugins im aktuellen Verzeichnis geparsed (und im
      * Classpath) Beim Start aus Eclipse oder mit java -jar wird ein
@@ -729,7 +684,6 @@ public class JDUtilities {
             catch (Error e) {
             }
         }
-
         iterator = Service.providers(ClassLoader.class);
         while (iterator.hasNext()) {
             ClassLoader cl = (ClassLoader) iterator.next();
@@ -742,7 +696,6 @@ public class JDUtilities {
             }
         }
     }
-
     /**
      * Fügt einen PluginListener hinzu
      * 
@@ -754,7 +707,6 @@ public class JDUtilities {
             iterator.next().addPluginListener(listener);
         }
     }
-
     /**
      * Fügt einen PluginListener hinzu
      * 
@@ -766,7 +718,6 @@ public class JDUtilities {
             iterator.next().addPluginListener(listener);
         }
     }
-
     /**
      * Fügt einen PluginListener hinzu
      * 
@@ -779,7 +730,6 @@ public class JDUtilities {
             iterator.next().addPluginListener(listener);
         }
     }
-
     /**
      * Fügt einen PluginListener hinzu
      * TODO: unused
@@ -791,16 +741,15 @@ public class JDUtilities {
             iterator.next().addPluginListener(listener);
         }
     }
-/*
- * TODO: unused
- */
+    /*
+     * TODO: unused
+     */
     public static void registerListenerPluginsOptional(PluginListener listener) {
         Iterator<String> iterator = pluginsOptional.keySet().iterator();
         while (iterator.hasNext()) {
             pluginsOptional.get(iterator.next()).addPluginListener(listener);
         }
     }
-
     /**
      * Lädt ein Objekt aus einer Datei
      * 
@@ -856,7 +805,6 @@ public class JDUtilities {
         }
         return null;
     }
-
     /**
      * Speichert ein Objekt
      * 
@@ -924,7 +872,6 @@ public class JDUtilities {
             logger.severe("Schreibfehler: Fileoutput: null");
         }
     }
-
     /**
      * Formatiert Sekunden in das zeitformat stunden:minuten:sekunden
      * 
@@ -942,7 +889,6 @@ public class JDUtilities {
         }
         return fillInteger(hours, 2, "0") + ":" + fillInteger(minutes, 2, "0") + ":" + fillInteger(seconds, 2, "0");
     }
-
     /**
      * Hängt an i solange fill vorne an bis die zechenlänge von i gleich num ist
      * 
@@ -957,7 +903,6 @@ public class JDUtilities {
             ret = fill + ret;
         return ret;
     }
-
     /**
      * Liefert alle geladenen Plugins zum Entschlüsseln zurück
      * 
@@ -966,7 +911,6 @@ public class JDUtilities {
     public static Vector<PluginForDecrypt> getPluginsForDecrypt() {
         return pluginsForDecrypt;
     }
-
     /**
      * Liefert alle geladenen Plugins zum Suchen zurück
      * 
@@ -975,7 +919,6 @@ public class JDUtilities {
     public static Vector<PluginForSearch> getPluginsForSearch() {
         return pluginsForSearch;
     }
-
     /**
      * Liefert alle geladenen Plugins zum Laden von Containerdateien zurück
      * 
@@ -984,7 +927,6 @@ public class JDUtilities {
     public static Vector<PluginForContainer> getPluginsForContainer() {
         return pluginsForContainer;
     }
-
     /**
      * Gibt alle Ketegorien zurück für die Suchplugins exestieren. Die
      * Kategorien werden in den Plugins selbst als String definiert
@@ -1001,7 +943,6 @@ public class JDUtilities {
         Collections.sort(ret);
         return ret;
     }
-
     /**
      * Liefert alle Plugins zum Downloaden von einem Anbieter zurück
      * 
@@ -1010,7 +951,6 @@ public class JDUtilities {
     public static Vector<PluginForHost> getPluginsForHost() {
         return pluginsForHost;
     }
-
     /**
      * Liefert alle optionalen Plugins zurücl
      * 
@@ -1019,7 +959,6 @@ public class JDUtilities {
     public static HashMap<String, PluginOptional> getPluginsOptional() {
         return pluginsOptional;
     }
-
     /**
      * Gibt den MD5 hash eines Strings zurück
      * 
@@ -1040,7 +979,6 @@ public class JDUtilities {
         }
         return "";
     }
-
     /**
      * Sucht ein passendes Plugin für einen Anbieter
      * 
@@ -1053,37 +991,26 @@ public class JDUtilities {
         }
         return null;
     }
-
     public static Vector<UserPlugin> getUserPlugins() {
         File pluginDir = getResourceFile("/jd/plugins/userPlugins/");
-logger.info(pluginDir+"");
+        logger.info(pluginDir + "");
         Vector<UserPlugin> ret = new Vector<UserPlugin>();
-
         File[] contents = pluginDir.listFiles(new FilenameFilter() {
             public boolean accept(File d, String name) {
-                logger.info(new File(d,name)+" ");
-                return name.endsWith(".class") && new File(d,name).isFile();
+                logger.info(new File(d, name) + " ");
+                return name.endsWith(".class") && new File(d, name).isFile();
             }
         });
-if(contents==null){
-    logger.info("Kein UserPlugin Verzeichnis gefunden: "+pluginDir);
-    return ret;
-}
-
-logger.info(" UserPlugin Verzeichnis gefunden: "+contents);
-
+        if (contents == null) {
+            logger.info("Kein UserPlugin Verzeichnis gefunden: " + pluginDir);
+            return ret;
+        }
+        logger.info(" UserPlugin Verzeichnis gefunden: " + contents);
         UserPlugin tmp = null;
         for (int i = 0; i < contents.length; i++) {
-            
-            
-            
-            
-            
-            
             logger.info("lade jd/plugins/userPlugins/" + contents[i].getName());
             try {
                 tmp = (UserPlugin) getHomeDirInstance("jd/plugins/userPlugins/" + contents[i].getName(), new Object[] {});
-           
             }
             catch (Exception e) {
                 logger.severe("Fehler beim laden eines UserPlugins: " + contents[i] + " : " + e.getLocalizedMessage());
@@ -1091,14 +1018,12 @@ logger.info(" UserPlugin Verzeichnis gefunden: "+contents);
             if (tmp != null) {
                 ret.add(tmp);
                 tmp.addPluginListener(JDUtilities.getController());
-              
                 tmp.enable(true);
                 tmp = null;
             }
         }
         return ret;
     }
-
     /**
      * Sucht ein passendes Plugin für ein Containerfile
      * 
@@ -1111,14 +1036,12 @@ logger.info(" UserPlugin Verzeichnis gefunden: "+contents);
         }
         return null;
     }
-
     /**
      * @return Configuration instanz
      */
     public static Configuration getConfiguration() {
         return configuration;
     }
-
     /**
      * Setzt die Konfigurations instanz
      * 
@@ -1127,7 +1050,6 @@ logger.info(" UserPlugin Verzeichnis gefunden: "+contents);
     public static void setConfiguration(Configuration configuration) {
         JDUtilities.configuration = configuration;
     }
-
     /**
      * @author astaldo
      * @return homeDirectory
@@ -1135,7 +1057,6 @@ logger.info(" UserPlugin Verzeichnis gefunden: "+contents);
     public static String getHomeDirectory() {
         return homeDirectory;
     }
-
     /**
      * Diese Funktion gibt den Pfad zum JAC-Methodenverzeichniss zurück
      * 
@@ -1146,7 +1067,6 @@ logger.info(" UserPlugin Verzeichnis gefunden: "+contents);
         String sep = System.getProperty("file.separator");
         return getJDHomeDirectory() + sep + "jd" + sep + "captcha" + sep + "methods";
     }
-
     /**
      * Gibt ein FileOebject zu einem Resourcstring zurück
      * 
@@ -1186,7 +1106,6 @@ logger.info(" UserPlugin Verzeichnis gefunden: "+contents);
             return null;
         }
     }
-
     /**
      * public static String getLocalHash(File f) Gibt einen MD% Hash der file
      * zurück
@@ -1220,7 +1139,6 @@ logger.info(" UserPlugin Verzeichnis gefunden: "+contents);
         }
         return null;
     }
-
     /**
      * @author coalado Macht ein urlRawEncode und spart dabei die angegebenen
      *         Zeichen aus
@@ -1249,7 +1167,6 @@ logger.info(" UserPlugin Verzeichnis gefunden: "+contents);
         }
         return str;
     }
-
     /**
      * 
      * "http://rapidshare.com&#x2F;&#x66;&#x69;&#x6C;&#x65;&#x73;&#x2F;&#x35;&#x34;&#x35;&#x34;&#x31;&#x34;&#x38;&#x35;&#x2F;&#x63;&#x63;&#x66;&#x32;&#x72;&#x73;&#x64;&#x66;&#x2E;&#x72;&#x61;&#x72;";
@@ -1280,10 +1197,8 @@ logger.info(" UserPlugin Verzeichnis gefunden: "+contents);
         }
         catch (UnsupportedEncodingException e) {
         }
-
         return HTMLEntities.unhtmlentities(str);
     }
-
     /**
      * Schreibt content in eine Lokale textdatei
      * 
@@ -1313,7 +1228,6 @@ logger.info(" UserPlugin Verzeichnis gefunden: "+contents);
             return false;
         }
     }
-
     /**
      * @author coalado
      * @param str
@@ -1328,7 +1242,6 @@ logger.info(" UserPlugin Verzeichnis gefunden: "+contents);
             return null;
         }
     }
-
     /**
      * @author coalado
      * @param str
@@ -1343,7 +1256,6 @@ logger.info(" UserPlugin Verzeichnis gefunden: "+contents);
             return null;
         }
     }
-
     /**
      * Setzt das Homedirectory und erstellt es notfalls neu
      * 
@@ -1354,7 +1266,6 @@ logger.info(" UserPlugin Verzeichnis gefunden: "+contents);
         homeDirectoryFile = new File(homeDirectory);
         if (!homeDirectoryFile.exists()) homeDirectoryFile.mkdirs();
     }
-
     /**
      * Lädt eine url lokal herunter
      * 
@@ -1380,7 +1291,6 @@ logger.info(" UserPlugin Verzeichnis gefunden: "+contents);
         }
         return false;
     }
-
     /**
      * Lädt über eine URLConnection eine datei ehrunter. Zieldatei ist file.
      * 
@@ -1424,7 +1334,6 @@ logger.info(" UserPlugin Verzeichnis gefunden: "+contents);
             return false;
         }
     }
-
     /**
      * TODO: Serverpfad in de Config aufnehmen Gleicht das homedir mit dem
      * server ab. Der Serverpfad steht noch in WebUpdater.java
@@ -1437,7 +1346,6 @@ logger.info(" UserPlugin Verzeichnis gefunden: "+contents);
         wu.run();
         return wu.getUpdatedFiles();
     }
-
     /**
      * Führt einen Shell befehl aus und wartet bis dieser abgearbeitet ist
      * 
@@ -1456,7 +1364,6 @@ logger.info(" UserPlugin Verzeichnis gefunden: "+contents);
             logger.severe("Programmaufruf fehlgeschlagen: " + e.getMessage());
         }
     }
-
     /**
      * Führt einen Befehl aus, wartet bis dieser abgearbeitet wurde und gibt
      * dessen rückgabe als String zurück
@@ -1482,7 +1389,6 @@ logger.info(" UserPlugin Verzeichnis gefunden: "+contents);
         }
         return ret;
     }
-
     /**
      * Führt einen befehl aus und wartet nicht! bis dieser abgearbeitet wurde
      * 
@@ -1493,7 +1399,6 @@ logger.info(" UserPlugin Verzeichnis gefunden: "+contents);
         if (command == null) {
             return;
         }
-
         try {
             Runtime rt = Runtime.getRuntime();
             rt.exec(command, null, new File(command.split(" ")[0]).getParentFile());
@@ -1502,7 +1407,6 @@ logger.info(" UserPlugin Verzeichnis gefunden: "+contents);
             logger.severe("Programmaufruf fehlgeschlagen: " + e.getMessage());
         }
     }
-
     /**
      * Gibt den verwendeten Controller zurück
      * 
@@ -1511,7 +1415,6 @@ logger.info(" UserPlugin Verzeichnis gefunden: "+contents);
     public static JDController getController() {
         return controller;
     }
-
     /**
      * Setzt den Controller
      * 
@@ -1521,7 +1424,6 @@ logger.info(" UserPlugin Verzeichnis gefunden: "+contents);
     public static void setController(JDController con) {
         controller = con;
     }
-
     /**
      * @return Gibt die verwendete java Version als Double Value zurück. z.B.
      *         1.603
@@ -1530,10 +1432,8 @@ logger.info(" UserPlugin Verzeichnis gefunden: "+contents);
         String version = System.getProperty("java.version");
         int majorVersion = JDUtilities.filterInt(version.substring(0, version.indexOf(".")));
         int subversion = JDUtilities.filterInt(version.substring(version.indexOf(".") + 1));
-
         return Double.parseDouble(majorVersion + "." + subversion);
     }
-
     /**
      * Ersetzt die Platzhalter in einem String
      * 
@@ -1546,7 +1446,6 @@ logger.info(" UserPlugin Verzeichnis gefunden: "+contents);
         command = command.replaceAll("\\%CAPTCHAIMAGE", controller.getLastCaptchaImage());
         return command;
     }
-
     /**
      * Formatiert Byes in einen MB String [MM.MM MB]
      * 
@@ -1556,7 +1455,6 @@ logger.info(" UserPlugin Verzeichnis gefunden: "+contents);
     public static String formatBytesToMB(long downloadMax) {
         return Math.round(downloadMax / (1024 * 10.24)) / 100.0 + " MB";
     }
-
     /**
      * GIbt den Integer der sich in src befindet zurück. alle nicht
      * integerzeichen werden ausgefiltert
@@ -1572,7 +1470,6 @@ logger.info(" UserPlugin Verzeichnis gefunden: "+contents);
             return 0;
         }
     }
-
     /**
      * Filtert alle nicht lesbaren zeichen aus str
      * 
@@ -1583,7 +1480,6 @@ logger.info(" UserPlugin Verzeichnis gefunden: "+contents);
         String allowed = "QWERTZUIOPÜASDFGHJKLÖÄYXCVBNMqwertzuiopasdfghjklyxcvbnm;:,._-&%(){}#~+ 1234567890";
         return filterString(str, allowed);
     }
-
     /**
      * Filtert alle zeichen aus str die in filter nicht auftauchen
      * 
@@ -1604,7 +1500,6 @@ logger.info(" UserPlugin Verzeichnis gefunden: "+contents);
         }
         return ret;
     }
-
     /**
      * Untersucht zwei String, ob zwei String ähnlich anfangen. Der
      * übereinstimmende Text wird dann zurückgegeben
@@ -1635,8 +1530,24 @@ logger.info(" UserPlugin Verzeichnis gefunden: "+contents);
         else
             return "";
     }
-
     public static String getJDTitle() {
         return JDUtilities.JD_TITLE + " " + JDUtilities.JD_VERSION + JDUtilities.getRevision() + " (" + JDUtilities.getLastChangeDate() + " " + JDUtilities.getLastChangeTime() + ")";
+    }
+    /**
+     * Fügt dem Dateinamen den erkannten Code noch hinzu
+     * @param file Die Datei, der der Captchacode angefügt werden soll
+     * @param captchaCode Der erkannte Captchacode
+     * @param isGood Zeigt, ob der erkannte Captchacode korrekt ist
+     */
+    public static void appendInfoToFilename(File file, String captchaCode, boolean isGood ){
+        String dest = file.getAbsolutePath();
+        String isGoodText;
+        if(isGood)
+            isGoodText="_GOOD";
+        else
+            isGoodText="_BAD";
+        int idx=dest.lastIndexOf('.'); 
+        dest = dest.substring(0, idx)+"_"+captchaCode.toUpperCase()+isGoodText+dest.substring(idx);
+        file.renameTo(new File(dest));
     }
 }

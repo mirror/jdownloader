@@ -152,9 +152,14 @@ public class Serienjunkies extends PluginForDecrypt {
         try {
             RequestInfo reqinfo = getRequest(new URL(url));
             String cookie = reqinfo.getCookie();
+            File captchaFile = null;
+            String capTxt = null;
             while(true) { // for() läuft bis kein Captcha mehr abgefragt
                 Matcher matcher = patternCaptcha.matcher(reqinfo.getHtmlCode());
                 if (matcher.find()) {
+                    if(captchaFile!=null && capTxt != null){
+                        JDUtilities.appendInfoToFilename(captchaFile,capTxt, false);
+                    }
                     Vector<Vector<String>> gifs = getAllSimpleMatches(reqinfo.getHtmlCode(), patternCaptcha);
                     String captchaAdress = "http://85.17.177.195" + gifs.firstElement().get(1);
 //                    for (int i = 0; i < gifs.size(); i++) {
@@ -163,9 +168,9 @@ public class Serienjunkies extends PluginForDecrypt {
 //                            logger.info(gifs.get(i).get(0));
 //                        }
 //                    }
-                    File dest = JDUtilities.getResourceFile("captchas/" + this.getPluginName() + "/captcha_" + (new Date().getTime()) + ".jpg");
-                    fileDownloaded = JDUtilities.download(dest, getRequestWithoutHtmlCode(new URL(captchaAdress), cookie, null, true).getConnection());
-                    if(!fileDownloaded || !dest.exists() || dest.length()==0){
+                    captchaFile = getLocalCaptchaFile(this,".gif");
+                    fileDownloaded = JDUtilities.download(captchaFile, getRequestWithoutHtmlCode(new URL(captchaAdress), cookie, null, true).getConnection());
+                    if(!fileDownloaded || !captchaFile.exists() || captchaFile.length()==0){
                         logger.severe("Captcha nicht heruntergeladen, warte und versuche es erneut");
                         try {
                             Thread.sleep(1000);
@@ -176,10 +181,13 @@ public class Serienjunkies extends PluginForDecrypt {
                         continue;
                     }
                         
-                    String capTxt = Plugin.getCaptchaCode(dest, this);
+                    capTxt = Plugin.getCaptchaCode(captchaFile, this);
                     reqinfo = postRequest(new URL(url), "s=" + matcher.group(1) + "&c=" + capTxt + "&action=Download");
                 }
                 else {
+                    if(captchaFile!=null && capTxt != null){
+                        JDUtilities.appendInfoToFilename(captchaFile,capTxt, true);
+                    }
                     break;
                 }
             }
@@ -205,14 +213,18 @@ public class Serienjunkies extends PluginForDecrypt {
             url = url.replaceAll("save/rc", "save/frc");
             RequestInfo reqinfo = getRequest(new URL(url));
             String cookie = reqinfo.getCookie();
-
+            File captchaFile = null;
+            String capTxt = null;
             while(true) { // for() läuft bis kein Captcha mehr abgefragt
+                if(captchaFile!=null && capTxt != null){
+                    JDUtilities.appendInfoToFilename(captchaFile,capTxt, false);
+                }
                 Matcher matcher = patternCaptcha.matcher(reqinfo.getHtmlCode());
                 if (matcher.find()) {
                     String captchaAdress = "http://85.17.177.195" + matcher.group(2);
-                    File dest = JDUtilities.getResourceFile("captchas/" + this.getPluginName() + "/captcha_" + (new Date().getTime()) + ".jpg");
-                    fileDownloaded = JDUtilities.download(dest, getRequestWithoutHtmlCode(new URL(captchaAdress), cookie, null, true).getConnection());
-                    if(!fileDownloaded || !dest.exists() || dest.length()==0){
+                    captchaFile = getLocalCaptchaFile(this,".gif");
+                    fileDownloaded = JDUtilities.download(captchaFile, getRequestWithoutHtmlCode(new URL(captchaAdress), cookie, null, true).getConnection());
+                    if(!fileDownloaded || !captchaFile.exists() || captchaFile.length()==0){
                         logger.severe("Captcha nicht heruntergeladen, warte und versuche es erneut");
                         try {
                             Thread.sleep(1000);
@@ -222,12 +234,15 @@ public class Serienjunkies extends PluginForDecrypt {
                         catch (InterruptedException e) { }
                         continue;
                     }
-                    String capTxt = Plugin.getCaptchaCode(dest, this);
+                    capTxt = Plugin.getCaptchaCode(captchaFile, this);
                     reqinfo = postRequest(new URL(url), "s=" + matcher.group(1) + "&c=" + capTxt + "&dl.start=Download");
                 }
                 else {
                     break;
                 }
+            }
+            if(captchaFile!=null && capTxt != null){
+                JDUtilities.appendInfoToFilename(captchaFile,capTxt, true);
             }
             links = reqinfo.getLocation();
         }
