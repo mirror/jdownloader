@@ -1550,4 +1550,10 @@ public class JDUtilities {
         dest = dest.substring(0, idx)+"_"+captchaCode.toUpperCase()+isGoodText+dest.substring(idx);
         file.renameTo(new File(dest));
     }
+    public static Locale getLocale() {
+        return locale;
+    }
+    public static void setLocale(Locale locale) {
+        JDUtilities.locale = locale;
+    }
 }

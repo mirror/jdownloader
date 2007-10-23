@@ -1,7 +1,10 @@
 package jd.config;
 
 import java.io.Serializable;
+import java.util.Locale;
 import java.util.Vector;
+
+import sun.util.resources.LocaleData;
 
 import jd.controlling.interaction.Interaction;
 import jd.controlling.interaction.InteractionTrigger;
@@ -86,7 +89,11 @@ public class Configuration extends Property implements Serializable {
     public static final String PARAM_MIN_FREE_SPACE = "MIN_FREE_SPACE";
     public static final String PARAM_START_DOWNLOADS_AFTER_START = "START_DOWNLOADS_AFTER_START";
     public static final String PARAM_USE_PACKETNAME_AS_SUBFOLDER = "USE_PACKETNAME_AS_SUBFOLDER";
-    
+    /**
+     * Hiermit kann die Sprache von JD gesetzt werden
+     */
+    public static final String      PARAM_LOCALE                 = "LOCALE";
+
     /**
      * Die unterschiedlichen Interaktionen. (ZB Reconnect nach einem Download)
      */

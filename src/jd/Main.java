@@ -4,6 +4,7 @@ import java.awt.Toolkit;
 import java.io.File;
 import java.net.CookieHandler;
 import java.util.Iterator;
+import java.util.Locale;
 import java.util.Vector;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -66,6 +67,7 @@ public class Main {
                     Configuration configuration = (Configuration) obj;
                     JDUtilities.setConfiguration(configuration);
                     Plugin.getLogger().setLevel((Level) configuration.getProperty(Configuration.PARAM_LOGGER_LEVEL, Level.FINER));
+                    JDUtilities.setLocale((Locale)configuration.getProperty(Configuration.PARAM_LOCALE, Locale.getDefault()));
                 }
                 else {
                     logger.severe("Configuration error: " + obj);
