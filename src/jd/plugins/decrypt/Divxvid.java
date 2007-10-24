@@ -21,7 +21,7 @@ public class Divxvid extends PluginForDecrypt {
             "rsObject = window.open.\"([/|.|a-zA-Z0-9|_|-]*)",
             Pattern.CASE_INSENSITIVE);
     private Pattern premiumdownload = Pattern.compile(
-            "value=\"free\" onclick=\"javascript:download",
+            "value=\"download\" onclick=\"javascript:download",
             Pattern.CASE_INSENSITIVE);
     /*
      * ist leider notwendig da wir das Dateiformat nicht kennen!
@@ -84,7 +84,6 @@ public class Divxvid extends PluginForDecrypt {
                      */
                     int countHits = countOccurences(requestInfo.getHtmlCode(),premiumdownload);
                     firePluginEvent(new PluginEvent(this,PluginEvent.PLUGIN_PROGRESS_MAX, countHits));
-
                     for (int i = 0; i < countHits; i++) {
                         requestInfo = postRequestWithoutHtmlCode((
                                 new URL(getFirstMatch(getRequest((new URL("http://dxp.divxvid.org" + outl + ","+ i + ",1," + hash + ".rs")), cookie,
