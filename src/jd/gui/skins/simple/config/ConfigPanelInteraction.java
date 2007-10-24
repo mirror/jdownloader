@@ -31,7 +31,7 @@ public class ConfigPanelInteraction extends ConfigPanel implements ActionListene
     @SuppressWarnings("unused")
     private Logger            logger           = Plugin.getLogger();
 
-    private Interaction       interaction;
+    protected Interaction       interaction;
 
     public ConfigPanelInteraction(UIInterface uiinterface, Interaction interaction) {
         super(uiinterface);
@@ -53,6 +53,7 @@ public class ConfigPanelInteraction extends ConfigPanel implements ActionListene
     public void initPanel() {
 
         Vector<ConfigEntry> entries = interaction.getConfig().getEntries();
+       
         ConfigEntry entry;
         for (int i = 0; i < entries.size(); i++) {
             entry = entries.elementAt(i);

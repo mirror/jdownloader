@@ -255,7 +255,7 @@ return table.getSelectedRow();
                 return;
             }
             else if (interaction instanceof ExternReconnect) {
-                openPopupPanel(new ConfigPanelInteractionExternReconnect(configuration, uiinterface));
+                openPopupPanel(new ConfigPanelInteractionExternReconnect(configuration, uiinterface,interaction));
                 return;
                 
             }

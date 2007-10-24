@@ -293,7 +293,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
             if (!file.exists()) {
                 file.mkdirs();
             }
-            if (!file.exists()) {
+            if (file.exists()) {
                 fp.setDownloadDirectory(file.getAbsolutePath());
             }
             else {

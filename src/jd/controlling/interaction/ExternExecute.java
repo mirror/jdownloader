@@ -2,6 +2,9 @@ package jd.controlling.interaction;
 
 import java.io.Serializable;
 
+import jd.config.ConfigContainer;
+import jd.config.ConfigEntry;
+import jd.config.Configuration;
 import jd.utils.JDUtilities;
 
 /**
@@ -35,22 +38,11 @@ public class ExternExecute extends Interaction implements Serializable {
         if (command == null) return false;
         command = JDUtilities.replacePlaceHolder(command);
         logger.info("Call " + command);
-        try {
-            if (wait) {
-                String ret;
-                ret = JDUtilities.runCommandWaitAndReturn(command);
-                logger.info("Result: " + ret);
-                return true;
-            }
-            else {
-                JDUtilities.runCommand(command);
-                return true;
-            }
-        }
-        catch (Exception e) {
-            e.printStackTrace();
-            return false;
-        }
+       
+       
+            JDUtilities.runCommand(command, "", null, wait?60:0);
+            return true;
+    
     }
     @Override
     public String toString() {
@@ -65,7 +57,9 @@ public class ExternExecute extends Interaction implements Serializable {
     // Nichts zu tun. Interaction braucht keinen Thread
     }
     @Override
-    public void initConfig() {}
+    public void initConfig() {
+      
+    }
     @Override
     public void resetInteraction() {
     }

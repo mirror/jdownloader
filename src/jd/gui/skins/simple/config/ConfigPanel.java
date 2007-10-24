@@ -24,7 +24,7 @@ public abstract class ConfigPanel extends JPanel{
     protected UIInterface uiinterface;
     protected JPanel panel;    
     protected Logger            logger           = Plugin.getLogger();
-   
+  
     protected  Insets insets = new Insets(1,5,1,5);
     ConfigPanel(UIInterface uiinterface){
         
@@ -33,7 +33,7 @@ public abstract class ConfigPanel extends JPanel{
         this.uiinterface=uiinterface;      
        
     }
-
+    
     public void addGUIConfigEntry(GUIConfigEntry entry){
      
         JDUtilities.addToGridBag(panel, entry, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 1, 0, insets, GridBagConstraints.BOTH, GridBagConstraints.EAST);

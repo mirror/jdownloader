@@ -89,6 +89,9 @@ public class Configuration extends Property implements Serializable {
     public static final String PARAM_MIN_FREE_SPACE = "MIN_FREE_SPACE";
     public static final String PARAM_START_DOWNLOADS_AFTER_START = "START_DOWNLOADS_AFTER_START";
     public static final String PARAM_USE_PACKETNAME_AS_SUBFOLDER = "USE_PACKETNAME_AS_SUBFOLDER";
+    public static final String                    PARAM_GLOBAL_IP_CHECK_SITE = "GLOBAL_IP_CHECK_SITE";
+
+    public static final String                    PARAM_GLOBAL_IP_PATTERN    = "GLOBAL_IP_PATTERN";
     /**
      * Hiermit kann die Sprache von JD gesetzt werden
      */

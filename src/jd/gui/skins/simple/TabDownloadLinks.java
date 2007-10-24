@@ -350,7 +350,7 @@ public class TabDownloadLinks extends JPanel implements PluginListener, ControlL
             if (e.getSource() == openHome) {
                 try {
                     logger.info("TODO: Win only");
-                    JDUtilities.runCommand("explorer " + "\"" + new File(downloadLinks.elementAt(0).getFileOutput()).getParent() + "\"");
+                    JDUtilities.runCommand("explorer","\"" + new File(downloadLinks.elementAt(0).getFileOutput()).getParent() + "\"",null,0);
                 }
                 catch (Exception ec) {
                 }

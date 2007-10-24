@@ -1061,15 +1061,16 @@ if(letters.length>getLetterNum()){
 }
         for (int i = 0; i < newLettersVector.size(); i++) {
             akt = newLettersVector.get(i);
-            ret += akt.getDecodedValue();
+           
          
-            akt.getA().id = i;
+           
 
             if (akt == null || akt.getValityPercent() >= 100.0) {
                 correct += 100.0;
             }
             else {
-
+                ret += akt.getDecodedValue();
+                akt.getA().id = i;
                 correct += akt.getValityPercent();
 
             }

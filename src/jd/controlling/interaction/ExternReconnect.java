@@ -1,12 +1,22 @@
 package jd.controlling.interaction;
 
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.io.IOException;
 import java.io.Serializable;
 import java.net.SocketTimeoutException;
 import java.net.URL;
+import java.util.Iterator;
+import java.util.Vector;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import javax.swing.JOptionPane;
+
+import jd.config.ConfigContainer;
+import jd.config.ConfigEntry;
+import jd.config.Configuration;
+import jd.gui.skins.simple.config.GUIConfigEntry;
 import jd.plugins.Plugin;
 import jd.plugins.RequestInfo;
 import jd.utils.JDUtilities;
@@ -22,172 +32,148 @@ public class ExternReconnect extends Interaction implements Serializable {
      * Unter diesen Namen werden die entsprechenden Parameter gespeichert
      * 
      */
-    private static final long        serialVersionUID            = 4793649294489149258L;
+    private static final long        serialVersionUID                   = 4793649294489149258L;
+
     /**
      * parameternamen. Hier findet man nur die Namen! unter denen die parameter
      * in die hashmap abgelegt werden
      */
-    /**
-     * Regex zum IP finden
-     */
-    public static String             PROPERTY_IP_REGEX           = "InteractionExternReconnect_" + "IPAddressRegEx";
-    /**
-     * Offlinestring. wird aufd er zielseite dieser string gefunden gilt die
-     * Verbindung als beendet
-     */
-    public static String             PROPERTY_IP_OFFLINE         = "InteractionExternReconnect_" + "IPAddressOffline";
-    /**
-     * Gibt an wie lange nach dem Programmaufruf gewartet werden soll bis zu ip
-     * überprüfung
-     */
-    public static String             PROPERTY_IP_WAITCHECK       = "InteractionExternReconnect_" + "WaitIPCheck";
-    /**
-     * Gibt an wieviele Versuche unternommen werden
-     */
-    public static String             PROPERTY_IP_RETRIES         = "InteractionExternReconnect_" + "Retries";
+
+
     /**
      * Gibt den reconnectbefehl an
      */
-    public static String             PROPERTY_RECONNECT_COMMAND  = "InteractionExternReconnect_" + "Command";
-    /**
-     * Seite zur IP Prüfung
-     */
-    public static String             PROPERTY_IP_CHECK_SITE      = "InteractionExternReconnect_" + "Site";
-    public static final String       PROPERTY_IP_WAIT_FOR_RETURN = "InteractionExternReconnect_" + "WaitReturn";
+    public static String             PROPERTY_RECONNECT_COMMAND         = "InteractionExternReconnect_" + "Command";
+
+ 
+    public static final String       PROPERTY_IP_WAIT_FOR_RETURN        = "WAIT_FOR_RETURN";
+
     /**
      * serialVersionUID
      */
-    private static final String      NAME                        = "Extern Reconnect";
+    private static final String      NAME                               = "Extern Reconnect";
+
     private transient String         lastIP;
+
     /**
      * Maximale Reconnectanzahl
      */
-    private static final int         MAX_RETRIES                 = 10;
-    private transient static boolean enabled                     = false;
-    private int                      retries                     = 0;
+    private static final int         MAX_RETRIES                        = 10;
+
+    private static final String      PROPERTY_EXTERN_RECONNECT_DISABLED = "EXTERN_RECONNECT_DISABLED";
+
+    private static final String      PROPERTY_RECONNECT_EXECUTE_FOLDER  = "RECONNECT_EXECUTE_FOLDER";
+
+    private static final String PROPERTY_RECONNECT_PARAMETER = "RECONNECT_PARAMETER";
+
+    private static final String PARAM_IPCHECKWAITTIME = "IPCHECKWAITTIME";
+
+    private static final String PARAM_RETRIES = "RETRIES";
+
+    private static final String PARAM_WAITFORIPCHANGE = "WAITFORIPCHANGE";
+
+    private transient static boolean enabled                            = false;
+
+    private int                      retries                            = 0;
+
     @Override
     public boolean doInteraction(Object arg) {
-        if (!isEnabled()) {
+        if (!isEnabled() || getBooleanProperty(PROPERTY_EXTERN_RECONNECT_DISABLED, false)) {
             logger.info("Reconnect deaktiviert");
             return false;
         }
+       
         retries++;
-        int maxRetries = 0;
-        if (JDUtilities.getConfiguration().getProperty(PROPERTY_IP_RETRIES) != null) maxRetries = Integer.parseInt((String) JDUtilities.getConfiguration().getProperty(PROPERTY_IP_RETRIES));
+     
+       
+        int waitForReturn=getIntegerProperty(PROPERTY_IP_WAIT_FOR_RETURN, 0);
+        String executeIn=getStringProperty(PROPERTY_RECONNECT_EXECUTE_FOLDER);
+        String command=getStringProperty(PROPERTY_RECONNECT_COMMAND);
+        String parameter=getStringProperty(PROPERTY_RECONNECT_PARAMETER);
+   
+        int waittime = getIntegerProperty(PARAM_IPCHECKWAITTIME, 0);
+        int maxretries = getIntegerProperty(PARAM_RETRIES, 0);
+        int waitForIp = getIntegerProperty(PARAM_WAITFORIPCHANGE, 10);
+       
         logger.info("Starting " + NAME + " #" + retries);
-        String ipBefore;
-        String ipAfter;
-        // IP auslesen
-        ipBefore = getIPAddress();
-        if (ipBefore != null && lastIP != null && !lastIP.equals(ipBefore)) {
-            lastIP = ipBefore;
-            logger.info("IP Wechsel vermutet:" + lastIP + "! Falls nicht auf die Rückkehr des Reconnecttools gewartet wird, sollte die Wartezeit bis zum IP-Check erhöht werden");
-            return true;
+        String preIp = JDUtilities.getIPAddress();
+
+        logger.finer("IP befor: " + preIp);
+       logger.finer("Execute Returns: "+ JDUtilities.runCommand(command, parameter, executeIn, waitForReturn));
+        logger.finer("Wait " + waittime + " seconds ...");
+        try {
+            Thread.sleep(waittime * 1000);
         }
-        if (ipBefore != null) {
-            lastIP = ipBefore;
+        catch (InterruptedException e) {
         }
-        logger.fine("IP before:" + ipBefore);
-        if (JDUtilities.getConfiguration().getProperty(PROPERTY_IP_WAIT_FOR_RETURN) == null || (Boolean) JDUtilities.getConfiguration().getProperty(PROPERTY_IP_WAIT_FOR_RETURN)) {
-            logger.info("Warte auf Rückkehr");
+
+        String afterIP = JDUtilities.getIPAddress();
+        logger.finer("Ip after: " + afterIP);
+        long endTime = System.currentTimeMillis() + waitForIp * 1000;
+        while (System.currentTimeMillis() <= endTime && afterIP.equals(preIp)) {
             try {
-                JDUtilities.runCommandAndWait((String) JDUtilities.getConfiguration().getProperty(PROPERTY_RECONNECT_COMMAND));
-            }
-            catch (IOException e1) {
-                e1.printStackTrace();
-                return false;
-            }
-        }
-        else {
-            logger.info("Nicht warten");
-            try {
-                JDUtilities.runCommand((String) JDUtilities.getConfiguration().getProperty(PROPERTY_RECONNECT_COMMAND));
-            }
-            catch (Exception e) {
-                e.printStackTrace();
-                return false;
-            }
-        }
-        if (JDUtilities.getConfiguration().getProperty(PROPERTY_IP_WAITCHECK) != null) {
-            try {
-                logger.fine("Wait " + JDUtilities.getConfiguration().getProperty(PROPERTY_IP_WAITCHECK) + " sek");
-                Thread.sleep(Integer.parseInt((String) JDUtilities.getConfiguration().getProperty(PROPERTY_IP_WAITCHECK)) * 1000);
-            }
-            catch (NumberFormatException e) {
+                Thread.sleep(5 * 1000);
             }
             catch (InterruptedException e) {
             }
+            afterIP = JDUtilities.getIPAddress();
+            logger.finer("Ip Check: " + afterIP);
         }
-        // IP check
-        ipAfter = getIPAddress();
-        logger.fine("IP after reconnect:" + ipAfter);
-        if (ipBefore == null && ipAfter == null) {
-            logger.info("Es konnte keine IP ausgelesen werden.");
+        if (!afterIP.equals(preIp)) {
             return true;
         }
-        if (ipBefore == null || ipAfter == null || ipBefore.equals(ipAfter)) {
-            logger.severe("IP address did not change");
-            if (retries < ExternReconnect.MAX_RETRIES && (retries < maxRetries || maxRetries <= 0)) {
-                return doInteraction(arg);
-            }
-            this.setCallCode(Interaction.INTERACTION_CALL_ERROR);
-            retries = 0;
-            return false;
+        if (retries <= maxretries) {
+            return doInteraction(arg);
         }
-        lastIP = ipAfter;
-        this.setCallCode(Interaction.INTERACTION_CALL_SUCCESS);
-        retries = 0;
-        return true;
+        return false;
     }
-    private String getIPAddress() {
-        String urlForIPAddress = (String) JDUtilities.getConfiguration().getProperty(PROPERTY_IP_CHECK_SITE);
-        String ipAddressOffline = (String) JDUtilities.getConfiguration().getProperty(PROPERTY_IP_OFFLINE);
-        String ipAddressRegEx = (String) JDUtilities.getConfiguration().getProperty(PROPERTY_IP_REGEX);
-        try {
-            logger.finer("IP CHeck Via "+urlForIPAddress);
-            RequestInfo requestInfo = Plugin.getRequest(new URL(urlForIPAddress),null,null,true);
-            String data = requestInfo.getHtmlCode();
-            String ipAddress = null;
-            if (data == null) return null;
-            if (ipAddressOffline != null && ipAddressOffline.length() > 0 && data.contains(ipAddressOffline)) {
-                logger.fine("offline");
-                return null;
-            }
-            Pattern pattern = Pattern.compile(ipAddressRegEx);
-            Matcher matcher = pattern.matcher(data);
-            if (matcher.find()) ipAddress = matcher.group(1);
-            return ipAddress;
-        }
-        catch (SocketTimeoutException e) {
-            logger.severe("Timeout. Es wurde keine Verbindung gefunden. Wartezeit bis zum IP check verlängern!" + e.toString());
-        }
-        catch (IOException e1) {
-            logger.severe(urlForIPAddress + " url not found. " + e1.toString());
-        }
-        return null;
-    }
+
+
     @Override
     public String toString() {
         return "Externes Reconnectprogramm aufrufen";
     }
+
     @Override
     public String getInteractionName() {
         return NAME;
     }
+
     public static boolean isEnabled() {
         return enabled;
     }
+
     public static void setEnabled(boolean en) {
         enabled = en;
     }
+
     @Override
     public void run() {
     // Nichts zu tun. Interaction braucht keinen Thread
     }
+
     @Override
-    public void initConfig() {}
+    public void initConfig() {
+        ConfigEntry cfg;
+        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this, PROPERTY_EXTERN_RECONNECT_DISABLED, "Event deaktiviert").setDefaultValue(false));
+        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, this, PROPERTY_RECONNECT_COMMAND, "Befehl"));
+        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, this, PROPERTY_RECONNECT_PARAMETER, "Parameter"));
+
+        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_BROWSEFOLDER, this, PROPERTY_RECONNECT_EXECUTE_FOLDER, "Ausführen in (Ordner der Anwendung)"));
+        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_SPINNER, JDUtilities.getConfiguration(), PARAM_IPCHECKWAITTIME, "Wartezeit bis zum ersten IP-Check[sek]", 0, 600).setDefaultValue(0));
+        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_SPINNER, JDUtilities.getConfiguration(), PARAM_RETRIES, "Max. Wiederholungen (-1 = unendlich)", -1, 20).setDefaultValue(0));
+        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_SPINNER, JDUtilities.getConfiguration(), PARAM_WAITFORIPCHANGE, "Auf neue IP warten [sek]", 0, 600).setDefaultValue(10));
+
+        
+        
+       config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_SPINNER, this, PROPERTY_IP_WAIT_FOR_RETURN, "Warten x Sekunden bis Befehl beendet ist[sek]",0,600).setDefaultValue(0));
+  
+     
+    }
+
     @Override
     public void resetInteraction() {
         retries = 0;
     }
+
 }

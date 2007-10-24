@@ -132,12 +132,9 @@ public class Main {
             JDUtilities.getPluginsOptional().get(iteratorOptional.next()).addPluginListener(controller);
         }
 
-        Vector<UserPlugin> userPlugins = JDUtilities.getUserPlugins();
+       JDUtilities.loadActivePlugins();
 
-        Iterator<UserPlugin> iteratorUserPlugins = userPlugins.iterator();
-        while (iteratorUserPlugins.hasNext()) {
-            iteratorUserPlugins.next().addPluginListener(controller);
-        }
+      
         // Startet die Downloads nach dem start
         if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_START_DOWNLOADS_AFTER_START, false)) {
             uiInterface.fireUIEvent(new UIEvent(uiInterface, UIEvent.UI_START_DOWNLOADS));

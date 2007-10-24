@@ -127,7 +127,7 @@ public class HTTPLiveHeader extends Interaction {
 
             return parseError("Kein RequestText gesetzt");
         }
-        String preIp = getIPAddress();
+        String preIp = JDUtilities.getIPAddress();
 
         logger.finer("IP befor: " + preIp);
 
@@ -237,7 +237,7 @@ public class HTTPLiveHeader extends Interaction {
         catch (InterruptedException e) {
         }
 
-        String afterIP = getIPAddress();
+        String afterIP = JDUtilities.getIPAddress();
         logger.finer("Ip after: " + afterIP);
         long endTime = System.currentTimeMillis() + waitForIp * 1000;
         while (System.currentTimeMillis() <= endTime && afterIP.equals(preIp)) {
@@ -246,7 +246,7 @@ public class HTTPLiveHeader extends Interaction {
             }
             catch (InterruptedException e) {
             }
-            afterIP = getIPAddress();
+            afterIP = JDUtilities.getIPAddress();
             logger.finer("Ip Check: " + afterIP);
         }
         if (!afterIP.equals(preIp)) {
@@ -469,23 +469,7 @@ public class HTTPLiveHeader extends Interaction {
         return false;
     }
 
-    private String getIPAddress() {
-
-        try {
-            logger.finer("IP Check via http://meineip.de");
-            RequestInfo requestInfo = Plugin.getRequest(new URL("http://meineip.de"), null, null, true);
-            Pattern pattern = Pattern.compile("\\Q<td><b>\\E([0-9.]*)\\Q</b></td>\\E");
-            Matcher matcher = pattern.matcher(requestInfo.getHtmlCode());
-            if (matcher.find()) {
-                return matcher.group(1);
-            }
-            return null;
-        }
-        catch (IOException e1) {
-            logger.severe("url not found. " + e1.toString());
-        }
-        return "offline";
-    }
+   
 
     @Override
     public String toString() {
