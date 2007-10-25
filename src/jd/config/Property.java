@@ -47,7 +47,7 @@ public class Property implements Serializable {
         properties.put(key, value);
         if (logger == null) logger = Plugin.getLogger();
 
-        logger.finer("Config property: " + key + " = " + value+" - "+this);
+//        logger.finer("Config property: " + key + " = " + value+" - "+this);
 
     }
 
