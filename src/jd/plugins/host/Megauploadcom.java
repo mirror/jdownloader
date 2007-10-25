@@ -243,6 +243,11 @@ public class Megauploadcom extends PluginForHost {
         try {
             requestInfo = getRequest(new URL(downloadLink.getUrlDownloadDecrypted()), "l=de; v=1; ve_view=1", null, true);
             if (requestInfo.containsHTML(ERROR_TEMP_NOT_AVAILABLE) || requestInfo.containsHTML(ERROR_FILENOTFOUND)) {
+                this.setStatusText("Temp. not available");
+                return false;
+            }
+            if ( requestInfo.containsHTML(ERROR_FILENOTFOUND)) {
+                this.setStatusText("File Not Found");
                 return false;
             }
             String fileName = JDUtilities.htmlDecode(getSimpleMatch(requestInfo.getHtmlCode(), SIMPLEPATTERN_FILE_NAME, 0));

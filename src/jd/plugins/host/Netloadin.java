@@ -240,6 +240,7 @@ public class Netloadin extends PluginForHost {
             requestInfo = getRequest(new URL(downloadLink.getUrlDownloadDecrypted()), null, null, false);
          
             if (requestInfo.getHtmlCode().indexOf(FILE_NOT_FOUND) > 0) {
+                this.setStatusText("File Not Found");
                 return false;
             }
            

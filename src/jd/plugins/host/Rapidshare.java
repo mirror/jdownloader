@@ -487,7 +487,7 @@ public class Rapidshare extends PluginForHost {
                     postParameter.put("accesscode", captchaTxt);
                     postParameter.put("actionString", actionString);
                     try {
-                        logger.info("Loading from: " + postTarget.substring(0, 30));
+                        logger.info(actionString);
                         URLConnection urlConnection = new URL(postTarget).openConnection();
                         urlConnection.setDoOutput(true);
                         // Post Parameter vorbereiten
@@ -824,6 +824,7 @@ public class Rapidshare extends PluginForHost {
             requestInfo = getRequest(new URL(downloadLink.getUrlDownloadDecrypted()));
             if (requestInfo.getHtmlCode().indexOf(hardwareDefektString) > 0) {
                 this.hardewareError = true;
+                this.setStatusText("Hareware Error");
                 return false;
             }
             if (requestInfo.getConnection().getHeaderField("Location") != null) {

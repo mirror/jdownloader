@@ -251,7 +251,7 @@ public class FileFactory extends PluginForHost {
             else {
                 String fileName = JDUtilities.htmlDecode(getSimpleMatch(requestInfo.getHtmlCode(), DOWNLOAD_INFO, 0));
                 String fileSize = getSimpleMatch(requestInfo.getHtmlCode(), DOWNLOAD_INFO, 3);
-                logger.info(getAllSimpleMatches(requestInfo.getHtmlCode(), DOWNLOAD_INFO).toString());
+               
                 downloadLink.setName(fileName);
                 if (fileSize != null) {
                     try {

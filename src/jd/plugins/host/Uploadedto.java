@@ -172,6 +172,7 @@ public class Uploadedto extends PluginForHost {
         try {
             requestInfo = getRequestWithoutHtmlCode(new URL(downloadLink.getUrlDownloadDecrypted()), null, null, false);
             if (requestInfo.getConnection().getHeaderField("Location") != null && requestInfo.getConnection().getHeaderField("Location").indexOf("error") > 0) {
+                this.setStatusText("Error");
                 return false;
             }
             else {
@@ -184,6 +185,7 @@ public class Uploadedto extends PluginForHost {
                 
                 // Datei geloescht?
                 if (requestInfo.getHtmlCode().contains(FILE_NOT_FOUND)) {
+                    this.setStatusText("File Not Found");
                 	return false;
                 }
                 

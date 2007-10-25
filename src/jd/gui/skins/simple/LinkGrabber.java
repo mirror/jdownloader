@@ -15,6 +15,8 @@ import java.awt.dnd.DropTargetEvent;
 import java.awt.dnd.DropTargetListener;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.io.File;
@@ -51,7 +53,7 @@ import jd.utils.JDUtilities;
  * 
  * @author coalado
  */
-public class LinkGrabber extends JFrame implements ActionListener, DropTargetListener, MouseListener {
+public class LinkGrabber extends JFrame implements ActionListener, DropTargetListener, MouseListener, KeyListener {
     /**
      * 
      */
@@ -95,7 +97,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
         super();
         this.linkList = new Vector<DownloadLink>();
         this.parent = parent;
-
+        
         setLayout(new BorderLayout());
         this.setTitle("Link Sammler");
         initGrabber();
@@ -111,6 +113,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
     private void initGrabber() {
         list = new JList();
         list.addMouseListener(this);
+        list.addKeyListener(this);
         btnOk = new JButton("Übernehmen");
         btnOk.setDefaultCapable(true);
         btnCancel = new JButton("Verwerfen");
@@ -515,4 +518,18 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
             new InternalPopup(list, x, y);
         }
     }
+
+    public void keyPressed(KeyEvent e) { 
+        logger.info(e.getKeyCode()+" - "+KeyEvent.VK_DELETE+" - "+e.getKeyChar());
+    }
+
+    public void keyReleased(KeyEvent e) {
+      if( e.getKeyCode()==KeyEvent.VK_DELETE){
+          this.removeSelectedLinks();
+      }
+        logger.info(e.getKeyCode()+" - "+KeyEvent.VK_DELETE+" - "+e.getKeyChar());
+        
+    }
+
+    public void keyTyped(KeyEvent e) {  }
 }

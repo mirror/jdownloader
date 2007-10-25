@@ -53,6 +53,7 @@ public class TabDownloadLinks extends JPanel implements PluginListener, ControlL
     private final Color          COLOR_ERROR        = new Color(255, 0, 0, 20);
     private final Color          COLOR_DISABLED     = new Color(50, 50, 50, 50);
     private final Color          COLOR_WAIT         = new Color(0, 0, 100, 20);
+    private  final Color            COLOR_ERROR_OFFLINE = new Color(255, 0, 0, 60);
     /**
      * serialVersionUID
      */
@@ -313,6 +314,7 @@ public class TabDownloadLinks extends JPanel implements PluginListener, ControlL
         private JMenuItem            bottom;
         private JMenuItem            reset;
         private JMenuItem            openHome;
+        private JMenuItem loadinfo;
         public InternalPopup(JTable invoker, int x, int y, Vector<DownloadLink> downloadLink) {
             popup = new JPopupMenu();
             this.downloadLinks = downloadLink;
@@ -321,6 +323,7 @@ public class TabDownloadLinks extends JPanel implements PluginListener, ControlL
             delete = new JMenuItem("löschen");
             enable = new JMenuItem(downloadLink.elementAt(0).isEnabled() ? "deaktivieren" : "aktivieren");
             info = new JMenuItem("Info anzeigen");
+            loadinfo = new JMenuItem("Infos laden(Verfügbarkeit)");
             top = new JMenuItem("Nach oben");
             bottom = new JMenuItem("Nach unten");
             openHome = new JMenuItem("Zielverzeichnis öffen");
@@ -328,12 +331,14 @@ public class TabDownloadLinks extends JPanel implements PluginListener, ControlL
             reset.addActionListener(this);
             enable.addActionListener(this);
             info.addActionListener(this);
+            loadinfo.addActionListener(this);
             openHome.addActionListener(this);
             top.addActionListener(this);
             bottom.addActionListener(this);
             if (downloadLink.size() > 1) {
                 info.setEnabled(false);
             }
+            popup.add(loadinfo);
             popup.add(info);
             popup.add(openHome);
             popup.add(new JSeparator());
@@ -373,6 +378,25 @@ public class TabDownloadLinks extends JPanel implements PluginListener, ControlL
                 new DownloadInfo(parent.getFrame(), downloadLinks.elementAt(0));
                 //            }
             }
+            if (e.getSource() == loadinfo) {
+                Vector<DownloadLink> selectedDownloadLinks = getSelectedObjects();
+                logger.info("selectedDownloadLinks "+selectedDownloadLinks.size());
+                logger.info(selectedDownloadLinks+"");
+                for (int i = 0; i < selectedDownloadLinks.size(); i++) {
+                    DownloadLink link = selectedDownloadLinks.elementAt(i);
+                    link.isAvailable();
+                    fireTableChanged();
+                    try {
+                        Thread.sleep(20);
+                    }
+                    catch (InterruptedException e2) {
+                    }
+                }
+                
+                parent.fireUIEvent(new UIEvent(parent, UIEvent.UI_LINKS_CHANGED, null));
+              
+            }
+            
             if (e.getSource() == top) {
                 moveSelectedItems(JDAction.ITEMS_MOVE_TOP);
             }
@@ -500,6 +524,7 @@ public class TabDownloadLinks extends JPanel implements PluginListener, ControlL
          * serialVersionUID
          */
         private static final long serialVersionUID = -3912572910439565199L;
+    
         public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
             if (value instanceof JProgressBar) return (JProgressBar) value;
             Component c = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
@@ -516,6 +541,10 @@ public class TabDownloadLinks extends JPanel implements PluginListener, ControlL
                 }
                 else if (dLink.getStatus() != DownloadLink.STATUS_TODO && dLink.getStatus() != DownloadLink.STATUS_ERROR_DOWNLOAD_LIMIT && dLink.getStatus() != DownloadLink.STATUS_DOWNLOAD_IN_PROGRESS) {
                     c.setBackground(COLOR_ERROR);
+                }
+                
+                else if (dLink.isAvailabilityChecked() && !dLink.isAvailable()) {
+                    c.setBackground(COLOR_ERROR_OFFLINE);
                 }
                 else {
                     c.setBackground(Color.WHITE);

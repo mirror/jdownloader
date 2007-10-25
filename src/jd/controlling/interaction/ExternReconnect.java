@@ -110,7 +110,8 @@ public class ExternReconnect extends Interaction implements Serializable {
         String afterIP = JDUtilities.getIPAddress();
         logger.finer("Ip after: " + afterIP);
         long endTime = System.currentTimeMillis() + waitForIp * 1000;
-        while (System.currentTimeMillis() <= endTime && afterIP.equals(preIp)) {
+        logger.info("Wait "+waitForIp+" sek for new ip");
+        while (System.currentTimeMillis() <= endTime && (afterIP.equals(preIp)|| afterIP.equals("offline"))) {
             try {
                 Thread.sleep(5 * 1000);
             }
@@ -119,9 +120,10 @@ public class ExternReconnect extends Interaction implements Serializable {
             afterIP = JDUtilities.getIPAddress();
             logger.finer("Ip Check: " + afterIP);
         }
-        if (!afterIP.equals(preIp)) {
+        if (!afterIP.equals(preIp) && !afterIP.equals("offline")) {
             return true;
         }
+        logger.finer("Retries: "+retries+"/"+maxretries);
         if (retries <= maxretries) {
             return doInteraction(arg);
         }
@@ -160,9 +162,9 @@ public class ExternReconnect extends Interaction implements Serializable {
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, this, PROPERTY_RECONNECT_PARAMETER, "Parameter"));
 
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_BROWSEFOLDER, this, PROPERTY_RECONNECT_EXECUTE_FOLDER, "Ausführen in (Ordner der Anwendung)"));
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_SPINNER, JDUtilities.getConfiguration(), PARAM_IPCHECKWAITTIME, "Wartezeit bis zum ersten IP-Check[sek]", 0, 600).setDefaultValue(0));
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_SPINNER, JDUtilities.getConfiguration(), PARAM_RETRIES, "Max. Wiederholungen (-1 = unendlich)", -1, 20).setDefaultValue(0));
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_SPINNER, JDUtilities.getConfiguration(), PARAM_WAITFORIPCHANGE, "Auf neue IP warten [sek]", 0, 600).setDefaultValue(10));
+        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_SPINNER, this, PARAM_IPCHECKWAITTIME, "Wartezeit bis zum ersten IP-Check[sek]", 0, 600).setDefaultValue(0));
+        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_SPINNER, this, PARAM_RETRIES, "Max. Wiederholungen (-1 = unendlich)", -1, 20).setDefaultValue(0));
+        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_SPINNER, this, PARAM_WAITFORIPCHANGE, "Auf neue IP warten [sek]", 0, 600).setDefaultValue(10));
 
         
         

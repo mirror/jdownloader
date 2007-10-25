@@ -499,7 +499,9 @@ public class DownloadLink implements Serializable,Comparable<DownloadLink> {
      * @param name Neuer Name des Downloads
      */
     public void setName(String name) {
+        if(name!=null){
         this.name = name;
+        }
 
     }
 
@@ -522,7 +524,12 @@ public class DownloadLink implements Serializable,Comparable<DownloadLink> {
     public String getStatusText() {
 
         int speed;
-        if (statusText == null) return "";
+        if (statusText == null){
+            if (this.isAvailabilityChecked()) {
+                return this.isAvailable()?"":"[OFFLINE]";
+            }
+            return "";
+        }
         if (getRemainingWaittime() > 0) {
             return this.statusText + "Warten: (" + JDUtilities.formatSeconds((int) (getRemainingWaittime() / 1000)) + "sek)";
         }
@@ -535,6 +542,10 @@ public class DownloadLink implements Serializable,Comparable<DownloadLink> {
 
         if (!this.isEnabled()) {
             return "deaktiviert";
+        }
+        
+        if (this.isAvailabilityChecked()) {
+            return this.isAvailable()?statusText:"[OFFLINE] "+statusText;
         }
         return this.statusText;
 
