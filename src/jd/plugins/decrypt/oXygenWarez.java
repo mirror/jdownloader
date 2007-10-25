@@ -15,7 +15,7 @@ import jd.utils.JDUtilities;
 public class oXygenWarez extends PluginForDecrypt {
     static private final String host = "oxygen-warez.com";
     private String version = "1.0.0.0";
-    private Pattern patternSupported =Pattern.compile("http://oxygen-warez.com/(category|\\?id=).*",Pattern.CASE_INSENSITIVE);
+    private Pattern patternSupported =Pattern.compile("http://(.*?)oxygen-warez.com/(category|\\?id=).*",Pattern.CASE_INSENSITIVE);
     private Pattern CAPTCHAPATTERN = Pattern.compile("<TD><IMG SRC=\"(/gfx/secure/[^\"]+)\" ALT=\"\" BORDER=\"0\" WIDTH=\"90\" HEIGHT=\"30\">",Pattern.CASE_INSENSITIVE);
     private Pattern FORMLOCATION = Pattern.compile("(?s)FORM ACTION=\"(/\\?id=[0-9]+)\" ENCTYPE=\"multipart/form-data\"",
             Pattern.CASE_INSENSITIVE);
