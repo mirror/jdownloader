@@ -177,7 +177,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
             logger.info(linkList[i].getUrlDownloadDecrypted() + " # ");
         }
         sortLinkList();
-        checkForSameName();
+        if(txtName.getName()==null || txtName.getName().trim().length()==0) checkForSameName();
         fireTableChanged();
     }
 
@@ -230,6 +230,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
      * Das Paket wird dann so genannt.
      */
     private void checkForSameName() {
+     
         String tempName;
         String sameName = null;
         Iterator<DownloadLink> iterator = linkList.iterator();

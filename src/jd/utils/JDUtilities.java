@@ -1049,6 +1049,7 @@ public class JDUtilities {
 
     public static void loadActivePlugins() {
         File[] plugins = getAvailableUserPlugins();
+        if(plugins==null)return;
         for (int i = 0; i < plugins.length; i++) {
             String param = "OPTIONAL_PLUGIN_" + plugins[i].getName();
             boolean b = getConfiguration().getBooleanProperty(param, false);

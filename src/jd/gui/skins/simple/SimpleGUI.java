@@ -440,6 +440,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
                 break;
             case JDAction.APP_LOG:
                 logDialog.setVisible(!logDialog.isVisible());
+                menViewLog.setSelected(!logDialog.isVisible());
                 break;
             case JDAction.APP_RECONNECT:
                 this.doReconnect();
@@ -650,6 +651,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
                 frame.setTitle(JDUtilities.getJDTitle());
                 break;
             case ControlEvent.CONTROL_SINGLE_DOWNLOAD_CHANGED:
+             
                 tabDownloadTable.fireTableChanged();
             case ControlEvent.CONTROL_DISTRIBUTE_FINISHED:
                 break;
