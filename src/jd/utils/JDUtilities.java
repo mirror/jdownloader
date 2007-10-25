@@ -108,7 +108,7 @@ public class JDUtilities {
     /**
      * Das ist das File Objekt, daß das HomeDirectory darstellt
      */
-    private static File                            homeDirectoryFile          = null;
+    private static File                             homeDirectoryFile          = null;
 
     /**
      * Der DownloadController
