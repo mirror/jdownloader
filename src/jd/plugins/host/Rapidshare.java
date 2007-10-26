@@ -280,7 +280,7 @@ public class Rapidshare extends PluginForHost {
                     // richtig
                     if (requestInfo.containsHTML(toManyUser)) {
                         step.setStatus(PluginStep.STATUS_ERROR);
-                        step.setParameter(60 * 2);
+                        step.setParameter(60l * 2l);
                         logger.severe("Rs.com zuviele User");
                         downloadLink.setStatus(DownloadLink.STATUS_ERROR_TO_MANY_USERS);
                         return step;
@@ -333,7 +333,7 @@ public class Rapidshare extends PluginForHost {
                     // Fehlerbehandlung nach free/premium auswahl
                     if (requestInfo.containsHTML(toManyUser)) {
                         step.setStatus(PluginStep.STATUS_ERROR);
-                        step.setParameter(60 * 2);
+                        step.setParameter(60l * 2l);
                         logger.severe("Rs.com zuviele User");
                         downloadLink.setStatus(DownloadLink.STATUS_ERROR_TO_MANY_USERS);
                         return step;
