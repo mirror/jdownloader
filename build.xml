@@ -23,6 +23,7 @@
                 <exclude name="jd/plugins/decrypt/**" />
                 <exclude name="jd/plugins/host/**" />
                 <exclude name="jd/plugins/container/**" />
+                <exclude name="jd/plugins/optional/**" />
             </fileset>
             <fileset dir="${res}">
                 <include name="img/**" />
