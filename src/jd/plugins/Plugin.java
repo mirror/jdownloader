@@ -944,12 +944,20 @@ public abstract class Plugin {
      */
     public String getFileNameFormHeader(URLConnection urlConnection) {
     	// old: String ret = getFirstMatch(urlConnection.getHeaderField("content-disposition"), Pattern.compile("filename=['\"](.*?)['\"]", Pattern.CASE_INSENSITIVE), 1);
-        String ret = getFirstMatch(urlConnection.getHeaderField("content-disposition"), Pattern.compile("filename=['\"]?([^'\";]*)", Pattern.CASE_INSENSITIVE), 1);
-        if (ret == null) {
+        //logger.info("header dispo: "+urlConnection.getHeaderField("content-disposition"));
+        String ret;
+        if (urlConnection.getHeaderField("content-disposition")==null ) {
+           
             int index = Math.max(urlConnection.getURL().getFile().lastIndexOf("/"), urlConnection.getURL().getFile().lastIndexOf("\\"));
             return urlConnection.getURL().getFile().substring(index + 1);
         }
+        
+        String cd=urlConnection.getHeaderField("content-disposition").toLowerCase();
+        ret=cd.substring(cd.indexOf("filename=")+9);
+        while(ret.startsWith("\"")||ret.startsWith("'"))ret=ret.substring(1);
+        while(ret.endsWith("\"")||ret.endsWith("'"))ret=ret.substring(0,ret.length()-1);
         try {
+           
             ret = URLDecoder.decode(ret, "UTF-8");
         }
         catch (UnsupportedEncodingException e) {

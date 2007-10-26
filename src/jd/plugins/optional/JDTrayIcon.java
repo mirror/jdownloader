@@ -97,4 +97,8 @@ public class JDTrayIcon extends PluginOptional implements ActionListener{
             firePluginEvent(new PluginEvent(this,PluginEvent.PLUGIN_CONTROL_SHOW_UI,uiVisible));
         }
     }
+    @Override
+    public String getRequirements() {
+     return "JRE 1.6+";
+    }
 }

@@ -35,7 +35,7 @@ public class JDClassLoader extends java.lang.ClassLoader {
         this.classLoaderParent = classLoaderParent;
         logger.fine("rootDir:"+rootDir);
         try {
-            rootClassLoader = new URLClassLoader(new URL[]{new File(rootDir).toURI().toURL()});
+            rootClassLoader = new URLClassLoader(new URL[]{new File(rootDir).toURI().toURL()},null);
         }
         catch (MalformedURLException e1) {
             e1.printStackTrace();
@@ -47,6 +47,7 @@ public class JDClassLoader extends java.lang.ClassLoader {
             for(int i=0;i<jars.length;i++){
                 try {
                     jars[i] = new JarFile(files[i]);
+                  
                 }
                 catch (IOException e) {
                 }
@@ -78,14 +79,18 @@ public class JDClassLoader extends java.lang.ClassLoader {
             }
         }
         URL url = rootClassLoader.getResource(name);
-        if(url != null)
+        
+        if(url != null){
             return url;
+        }
         url = super.getResource(name);
+        
         if(url != null)
             return url;
         try {
             //Falls immer noch nichts vorhanden, wird ein neu erzeugtes File Objekt zurückgegeben
             //Ist für das Abspeichern der Captcha notwendig
+       
             return new File(rootDir+"/"+name).toURI().toURL();
         }
         catch (MalformedURLException e) {

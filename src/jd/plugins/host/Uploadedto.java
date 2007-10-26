@@ -124,6 +124,7 @@ public class Uploadedto extends PluginForHost {
                     requestInfo = getRequestWithoutHtmlCode(new URL(finalURL), "lang=de", null, false);
                     if (requestInfo.getConnection().getHeaderField("Location") != null && requestInfo.getConnection().getHeaderField("Location").indexOf("error") > 0) {
                         step.setStatus(PluginStep.STATUS_ERROR);
+                        logger.severe("Fehler 1 Errorpage wird angezeigt");
                         downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN_RETRY);
                         step.setParameter(20000l);
                         return step;
@@ -133,6 +134,7 @@ public class Uploadedto extends PluginForHost {
                     logger.info("Filename: " + getFileNameFormHeader(requestInfo.getConnection()));
                     if (getFileNameFormHeader(requestInfo.getConnection()) == null || getFileNameFormHeader(requestInfo.getConnection()).indexOf("?") >= 0) {
                         step.setStatus(PluginStep.STATUS_ERROR);
+                        logger.severe("Fehler 2 Dateiname kann nicht ermittelt werden");
                         downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN_RETRY);
                         step.setParameter(20000l);
                         return step;

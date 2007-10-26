@@ -600,9 +600,11 @@ public class JDUtilities {
         iterator = Service.providers(PluginOptional.class, jdClassLoader);
         while (iterator.hasNext()) {
             try {
+              
                 PluginOptional p = (PluginOptional) iterator.next();
                 pluginsOptional.put(p.getPluginName(), p);
                 logger.info("Optionales-Plugin : " + p.getPluginName());
+             
             }
             catch (Error e) {
                 e.printStackTrace();
@@ -621,59 +623,59 @@ public class JDUtilities {
             }
         }
     }
-    /**
-     * Fügt einen PluginListener hinzu
-     * 
-     * @param listener
-     */
-    public static void registerListenerPluginsForDecrypt(PluginListener listener) {
-        Iterator<PluginForDecrypt> iterator = pluginsForDecrypt.iterator();
-        while (iterator.hasNext()) {
-            iterator.next().addPluginListener(listener);
-        }
-    }
-    /**
-     * Fügt einen PluginListener hinzu
-     * 
-     * @param listener
-     */
-    public static void registerListenerPluginsForHost(PluginListener listener) {
-        Iterator<PluginForHost> iterator = pluginsForHost.iterator();
-        while (iterator.hasNext()) {
-            iterator.next().addPluginListener(listener);
-        }
-    }
-    /**
-     * Fügt einen PluginListener hinzu
-     * 
-     * @param listener TODO: unused
-     */
-    public static void registerListenerPluginsForSearch(PluginListener listener) {
-        Iterator<PluginForSearch> iterator = pluginsForSearch.iterator();
-        while (iterator.hasNext()) {
-            iterator.next().addPluginListener(listener);
-        }
-    }
-    /**
-     * Fügt einen PluginListener hinzu TODO: unused
-     * 
-     * @param listener
-     */
-    public static void registerListenerPluginsForContainer(PluginListener listener) {
-        Iterator<PluginForContainer> iterator = pluginsForContainer.iterator();
-        while (iterator.hasNext()) {
-            iterator.next().addPluginListener(listener);
-        }
-    }
-    /*
-     * TODO: unused
-     */
-    public static void registerListenerPluginsOptional(PluginListener listener) {
-        Iterator<String> iterator = pluginsOptional.keySet().iterator();
-        while (iterator.hasNext()) {
-            pluginsOptional.get(iterator.next()).addPluginListener(listener);
-        }
-    }
+//    /**
+//     * Fügt einen PluginListener hinzu
+//     * 
+//     * @param listener
+//     */
+//    public static void registerListenerPluginsForDecrypt(PluginListener listener) {
+//        Iterator<PluginForDecrypt> iterator = pluginsForDecrypt.iterator();
+//        while (iterator.hasNext()) {
+//            iterator.next().addPluginListener(listener);
+//        }
+//    }
+//    /**
+//     * Fügt einen PluginListener hinzu
+//     * 
+//     * @param listener
+//     */
+//    public static void registerListenerPluginsForHost(PluginListener listener) {
+//        Iterator<PluginForHost> iterator = pluginsForHost.iterator();
+//        while (iterator.hasNext()) {
+//            iterator.next().addPluginListener(listener);
+//        }
+//    }
+//    /**
+//     * Fügt einen PluginListener hinzu
+//     * 
+//     * @param listener TODO: unused
+//     */
+//    public static void registerListenerPluginsForSearch(PluginListener listener) {
+//        Iterator<PluginForSearch> iterator = pluginsForSearch.iterator();
+//        while (iterator.hasNext()) {
+//            iterator.next().addPluginListener(listener);
+//        }
+//    }
+//    /**
+//     * Fügt einen PluginListener hinzu TODO: unused
+//     * 
+//     * @param listener
+//     */
+//    public static void registerListenerPluginsForContainer(PluginListener listener) {
+//        Iterator<PluginForContainer> iterator = pluginsForContainer.iterator();
+//        while (iterator.hasNext()) {
+//            iterator.next().addPluginListener(listener);
+//        }
+//    }
+//    /*
+//     * TODO: unused
+//     */
+//    public static void registerListenerPluginsOptional(PluginListener listener) {
+//        Iterator<String> iterator = pluginsOptional.keySet().iterator();
+//        while (iterator.hasNext()) {
+//            pluginsOptional.get(iterator.next()).addPluginListener(listener);
+//        }
+//    }
     /**
      * Lädt ein Objekt aus einer Datei
      * 
@@ -909,66 +911,8 @@ public class JDUtilities {
         }
         return null;
     }
-    public static void loadActivePlugins() {
-        File[] plugins = getAvailableUserPlugins();
-        if (plugins == null) return;
-        for (int i = 0; i < plugins.length; i++) {
-            String param = "OPTIONAL_PLUGIN_" + plugins[i].getName();
-            boolean b = getConfiguration().getBooleanProperty(param, false);
-            if (b) {
-                URL url;
-                try {
-                    url = plugins[i].toURI().toURL();
-                    URL u = new URL("jar", "", url + "!/");
-                    new JarLoader(u);
-                    // new JarClassLoader(u);
-                }
-                catch (MalformedURLException e) {
-                    // TODO Auto-generated catch block
-                    e.printStackTrace();
-                }
-                catch (IOException e) {
-                    // TODO Auto-generated catch block
-                    e.printStackTrace();
-                }
-            }
-        }
-    }
-    public static File[] getAvailableUserPlugins() {
-        File pluginDir = getResourceFile("/plugins/");
-        logger.info(pluginDir + "");
-        File[] contents = pluginDir.listFiles(new FilenameFilter() {
-            public boolean accept(File d, String name) {
-                logger.info(new File(d, name) + " ");
-                return name.endsWith(".jar") && new File(d, name).isFile();
-            }
-        });
-        if (contents == null) {
-            logger.info("Kein UserPlugin Verzeichnis gefunden: " + pluginDir);
-            return contents;
-        }
-        logger.info(" UserPlugin Verzeichnis gefunden: " + contents);
-        return contents;
-        //        
-        // UserPlugin tmp = null;
-        // for (int i = 0; i < contents.length; i++) {
-        // logger.info("lade jd/plugins/" + contents[i].getName());
-        // try {
-        // tmp = (UserPlugin) getHomeDirInstance("jd/plugins/" +
-        // contents[i].getName(), new Object[] {});
-        // }
-        // catch (Exception e) {
-        // logger.severe("Fehler beim laden eines UserPlugins: " + contents[i] +
-        // " : " + e.getLocalizedMessage());
-        // }
-        // if (tmp != null) {
-        // ret.add(tmp);
-        // tmp.addPluginListener(JDUtilities.getController());
-        // tmp.enable(true);
-        // tmp = null;
-        // }
-        // }
-    }
+
+  
     /**
      * Sucht ein passendes Plugin für ein Containerfile
      * 
@@ -1026,6 +970,7 @@ public class JDUtilities {
             return null;
         }
         URL clURL = getJDClassLoader().getResource(resource);
+        logger.info(clURL+"");
         if (clURL != null) {
             try {
                 return new File(clURL.toURI());

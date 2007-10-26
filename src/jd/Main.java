@@ -3,6 +3,7 @@ package jd;
 import java.awt.Toolkit;
 import java.io.File;
 import java.net.CookieHandler;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Locale;
 import java.util.Vector;
@@ -22,6 +23,7 @@ import jd.plugins.PluginForContainer;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginForSearch;
+import jd.plugins.PluginOptional;
 import jd.plugins.UserPlugin;
 import jd.utils.JDUtilities;
 
@@ -67,7 +69,7 @@ public class Main {
                     Configuration configuration = (Configuration) obj;
                     JDUtilities.setConfiguration(configuration);
                     Plugin.getLogger().setLevel((Level) configuration.getProperty(Configuration.PARAM_LOGGER_LEVEL, Level.FINER));
-                    JDUtilities.setLocale((Locale)configuration.getProperty(Configuration.PARAM_LOCALE, Locale.getDefault()));
+                    JDUtilities.setLocale((Locale) configuration.getProperty(Configuration.PARAM_LOCALE, Locale.getDefault()));
                 }
                 else {
                     logger.severe("Configuration error: " + obj);
@@ -132,13 +134,23 @@ public class Main {
             JDUtilities.getPluginsOptional().get(iteratorOptional.next()).addPluginListener(controller);
         }
 
-       JDUtilities.loadActivePlugins();
+        HashMap<String, PluginOptional> pluginsOptional = JDUtilities.getPluginsOptional();
 
-      
+        Iterator<String> iterator = pluginsOptional.keySet().iterator();
+        String key;
+        while (iterator.hasNext()) {
+            key = iterator.next();
+            PluginOptional plg = pluginsOptional.get(key);
+            if (JDUtilities.getConfiguration().getBooleanProperty("OPTIONAL_PLUGIN_" + plg.getPluginName(), false)) {
+                pluginsOptional.get(key).enable(true);
+            }
+        }
+
         // Startet die Downloads nach dem start
         if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_START_DOWNLOADS_AFTER_START, false)) {
             uiInterface.fireUIEvent(new UIEvent(uiInterface, UIEvent.UI_START_DOWNLOADS));
         }
+
     }
 
     /**

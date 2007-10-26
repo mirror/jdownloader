@@ -129,7 +129,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
     private JDAction          actionSearch;
     private JDAction          actionPause;
     private JToggleButton     btnPause;
-    private String pluginsOptional[] = new String[]{"TrayIcon"};
+   
     /**
      * Das Hauptfenster wird erstellt
      */
@@ -171,7 +171,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
                 }
             }
         }.start();
-        enableOptionalPlugins(true);
+       // enableOptionalPlugins(true);
     }
     /**
      * Die Aktionen werden initialisiert
@@ -861,16 +861,16 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
      * Diese Methode de/aktiviert optionale Plugins
      * @param enable Zeigt, ob das Plugin deaktiviert oder aktiviert werden soll
      */
-    private void enableOptionalPlugins(boolean enable){
-        HashMap<String, PluginOptional> plugins = JDUtilities.getPluginsOptional();
-        for(int i=0;i<pluginsOptional.length;i++){
-            if(plugins.containsKey(pluginsOptional[i])){
-                plugins.get(pluginsOptional[i]).enable(enable);
-            }
-        }
-    }
+//    private void enableOptionalPlugins(boolean enable){
+//        HashMap<String, PluginOptional> plugins = JDUtilities.getPluginsOptional();
+//        for(int i=0;i<pluginsOptional.length;i++){
+//            if(plugins.containsKey(pluginsOptional[i])){
+//                plugins.get(pluginsOptional[i]).enable(enable);
+//            }
+//        }
+//    }
     public void windowClosing(WindowEvent e) {
-        enableOptionalPlugins(false);
+//        enableOptionalPlugins(false);
         fireUIEvent(new UIEvent(this, UIEvent.UI_EXIT, null));
     }
     public void windowClosed(WindowEvent e) {}
