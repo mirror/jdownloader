@@ -73,7 +73,7 @@ public class Uploadedto extends PluginForHost {
             DownloadLink downloadLink = (DownloadLink) parameter;
             switch (step.getStep()) {
                 case PluginStep.STEP_WAIT_TIME:
-                    logger.info(downloadLink.getUrlDownloadDecrypted());
+                    
                     requestInfo = getRequest(new URL(downloadLink.getUrlDownloadDecrypted()), "lang=de", null, true);
                     
                     // Datei geloescht?
@@ -87,8 +87,7 @@ public class Uploadedto extends PluginForHost {
 
                     this.postTarget = getFirstMatch(requestInfo.getHtmlCode(),CAPTCHA_TEXTFLD, 1);
                     String url = getSimpleMatch(requestInfo.getHtmlCode(), DOWNLOAD_URL, 0);
-                    System.out.println(requestInfo.getHtmlCode());
-                    logger.info(url);
+                                        
                     requestInfo = postRequest(new URL(url), "lang=de", null, null, null, false);
                     if (requestInfo.getConnection().getHeaderField("Location") != null && requestInfo.getConnection().getHeaderField("Location").indexOf("error") > 0) {
                         logger.severe("Unbekannter fehler.. retry in 20 sekunden");
