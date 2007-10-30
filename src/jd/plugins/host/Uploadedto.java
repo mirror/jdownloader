@@ -22,7 +22,7 @@ public class Uploadedto extends PluginForHost {
     static private final String  PLUGIN_ID      = PLUGIN_NAME + "-" + PLUGIN_VERSION;
     static private final String  CODER          = "coalado/DwD CAPTCHA fix";
     // /Simplepattern
-    static private final String  DOWNLOAD_URL   = "<form name=\"download_form\" method=\"post\" action=\"°\">";
+    static private final String  DOWNLOAD_URL   = "<form name=\"download_form\" onsubmit=\"startDownload();\" method=\"post\" action=\"°\">";
     private static final String  FILE_INFO      = "Dateiname:°</td><td><b>°</b></td></tr>°<tr><td style=\"padding-left:4px;\">Dateityp:°</td><td>°</td></tr>°<tr><td style=\"padding-left:4px;\">Dateig°</td><td>°</td>";
     static private final String	 FILE_NOT_FOUND = "Datei existiert nicht";
     private static final Pattern  CAPTCHA_FLE = Pattern.compile("<img name=\"img_captcha\" src=\"(.*?)\" border=0 />");
@@ -87,6 +87,7 @@ public class Uploadedto extends PluginForHost {
 
                     this.postTarget = getFirstMatch(requestInfo.getHtmlCode(),CAPTCHA_TEXTFLD, 1);
                     String url = getSimpleMatch(requestInfo.getHtmlCode(), DOWNLOAD_URL, 0);
+                    System.out.println(requestInfo.getHtmlCode());
                     logger.info(url);
                     requestInfo = postRequest(new URL(url), "lang=de", null, null, null, false);
                     if (requestInfo.getConnection().getHeaderField("Location") != null && requestInfo.getConnection().getHeaderField("Location").indexOf("error") > 0) {
