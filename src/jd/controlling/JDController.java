@@ -30,42 +30,55 @@ import jd.utils.JDUtilities;
  * 
  */
 public class JDController implements PluginListener, ControlListener, UIListener {
-    public static final int DOWNLOAD_TERMINATION_IN_PROGRESS = 0;
-    public static final int DOWNLOAD_RUNNING = 2;
-    public static final int DOWNLOAD_NOT_RUNNING = 3;
+    public static final int                   DOWNLOAD_TERMINATION_IN_PROGRESS = 0;
+
+    public static final int                   DOWNLOAD_RUNNING                 = 2;
+
+    public static final int                   DOWNLOAD_NOT_RUNNING             = 3;
+
     /**
      * Mit diesem Thread wird eingegebener Text auf Links untersucht
      */
-    private DistributeData                    distributeData  = null;
+    private DistributeData                    distributeData                   = null;
+
     /**
      * Hiermit wird der Eventmechanismus realisiert. Alle hier eingetragenen
      * Listener werden benachrichtigt, wenn mittels
      * {@link #firePluginEvent(PluginEvent)} ein Event losgeschickt wird.
      */
-    private transient Vector<ControlListener> controlListener = null;
+    private transient Vector<ControlListener> controlListener                  = null;
+
     /**
      * Die Konfiguration
      */
-    protected Configuration                   config          = JDUtilities.getConfiguration();
+    protected Configuration                   config                           = JDUtilities.getConfiguration();
+
     /**
      * Schnittstelle zur Benutzeroberfläche
      */
     private UIInterface                       uiInterface;
+
     /**
      * Hier kann de Status des Downloads gespeichert werden.
      */
-    private int downloadStatus;
+    private int                               downloadStatus;
+
     /**
      * Die DownloadLinks
      */
     private Vector<DownloadLink>              downloadLinks;
+
     /**
      * Der Logger
      */
-    private Logger                            logger          = Plugin.getLogger();
+    private Logger                            logger                           = Plugin.getLogger();
+
     private File                              lastCaptchaLoaded;
+
     private SpeedMeter                        speedMeter;
+
     private DownloadLink                      lastDownloadFinished;
+
     private ClipboardHandler                  clipboard;
 
     /**
@@ -77,29 +90,32 @@ public class JDController implements PluginListener, ControlListener, UIListener
         downloadLinks = new Vector<DownloadLink>();
         speedMeter = new SpeedMeter(10000);
         clipboard = new ClipboardHandler(this);
-        downloadStatus=DOWNLOAD_NOT_RUNNING;
+        downloadStatus = DOWNLOAD_NOT_RUNNING;
         JDUtilities.setController(this);
     }
+
     /**
      * Gibt den Status (ID) der downloads zurück
+     * 
      * @return
      */
-    public int getDownloadStatus(){  
-        if(watchdog==null || watchdog.isAborted()&&downloadStatus==DOWNLOAD_RUNNING){
-           setDownloadStatus(DOWNLOAD_NOT_RUNNING) ;
+    public int getDownloadStatus() {
+        if (watchdog == null || watchdog.isAborted() && downloadStatus == DOWNLOAD_RUNNING) {
+            setDownloadStatus(DOWNLOAD_NOT_RUNNING);
         }
-           return this.downloadStatus;
-   
+        return this.downloadStatus;
+
     }
+
     /**
      * Startet den Downloadvorgang. Dies eFUnkton sendet das startdownload event
      * und aktiviert die ersten downloads.
      */
     public synchronized void startDownloads() {
-        if (getDownloadStatus()==DOWNLOAD_NOT_RUNNING) {
+        if (getDownloadStatus() == DOWNLOAD_NOT_RUNNING) {
             setDownloadStatus(DOWNLOAD_RUNNING);
             logger.info("StartDownloads");
-            this.watchdog = new DownloadWatchDog(this);          
+            this.watchdog = new DownloadWatchDog(this);
             watchdog.start();
         }
     }
@@ -199,17 +215,18 @@ public class JDController implements PluginListener, ControlListener, UIListener
         }
         uiInterface.delegatedControlEvent(event);
     }
-/**
- * Bricht den Download ab und blockiert bis er abgebrochen wurde.
- */
+
+    /**
+     * Bricht den Download ab und blockiert bis er abgebrochen wurde.
+     */
     public void stopDownloads() {
-        if (getDownloadStatus()==DOWNLOAD_RUNNING) {
+        if (getDownloadStatus() == DOWNLOAD_RUNNING) {
             setDownloadStatus(DOWNLOAD_TERMINATION_IN_PROGRESS);
-            fireControlEvent(new ControlEvent(this,ControlEvent.CONTROL_DOWNLOAD_TERMINATION_ACTIVE,this ));
-          
+            fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_DOWNLOAD_TERMINATION_ACTIVE, this));
+
             watchdog.abort();
             setDownloadStatus(DOWNLOAD_NOT_RUNNING);
-            fireControlEvent(new ControlEvent(this,ControlEvent.CONTROL_DOWNLOAD_TERMINATION_INACTIVE,this ));
+            fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_DOWNLOAD_TERMINATION_INACTIVE, this));
         }
     }
 
@@ -323,10 +340,11 @@ public class JDController implements PluginListener, ControlListener, UIListener
         }
     }
 
-    private void pauseDownloads(boolean value) {    
-            watchdog.pause(value);     
-        
+    private void pauseDownloads(boolean value) {
+        watchdog.pause(value);
+
     }
+
     /**
      * bricht downloads ab wenn diese entfernt wurden
      * 
@@ -379,18 +397,25 @@ public class JDController implements PluginListener, ControlListener, UIListener
                             iterator.remove();
                             continue;
                         }
-                        // Anhand des Hostnamens aus dem DownloadLink wird ein passendes Plugin gesucht
+                        // Anhand des Hostnamens aus dem DownloadLink wird ein
+                        // passendes Plugin gesucht
                         try {
                             pluginForHost = JDUtilities.getPluginForHost(localLink.getHost()).getClass().newInstance();
                         }
-                        catch (InstantiationException e) { e.printStackTrace(); }
-                        catch (IllegalAccessException e) { e.printStackTrace(); }
-                        catch (NullPointerException e)   { }
-                        // Gibt es einen Names für ein Containerformat, wird ein passendes Plugin gesucht
+                        catch (InstantiationException e) {
+                            e.printStackTrace();
+                        }
+                        catch (IllegalAccessException e) {
+                            e.printStackTrace();
+                        }
+                        catch (NullPointerException e) {
+                        }
+                        // Gibt es einen Names für ein Containerformat, wird ein
+                        // passendes Plugin gesucht
                         try {
-                            if(localLink.getContainer()!=null){
+                            if (localLink.getContainer() != null) {
                                 pluginForContainer = JDUtilities.getPluginForContainer(localLink.getContainer());
-                                if(pluginForContainer!=null){
+                                if (pluginForContainer != null) {
                                     pluginForContainer = pluginForContainer.getClass().newInstance();
                                     pluginForContainer.getAllDownloadLinks(localLink.getContainerFile());
                                 }
@@ -398,18 +423,23 @@ public class JDController implements PluginListener, ControlListener, UIListener
                                     localLink.setEnabled(false);
                             }
                         }
-                        catch (InstantiationException e) { e.printStackTrace(); }
-                        catch (IllegalAccessException e) { e.printStackTrace(); }
-                        catch (NullPointerException e)   {}
+                        catch (InstantiationException e) {
+                            e.printStackTrace();
+                        }
+                        catch (IllegalAccessException e) {
+                            e.printStackTrace();
+                        }
+                        catch (NullPointerException e) {
+                        }
                         if (pluginForHost != null) {
                             localLink.setLoadedPlugin(pluginForHost);
                             pluginForHost.addPluginListener(this);
                         }
-                        if (pluginForContainer != null){
+                        if (pluginForContainer != null) {
                             localLink.setLoadedPluginForContainer(pluginForContainer);
                             pluginForContainer.addPluginListener(this);
                         }
-                        if(pluginForHost == null){
+                        if (pluginForHost == null) {
                             logger.severe("couldn't find plugin(" + localLink.getHost() + ") for this DownloadLink." + localLink.getName());
                         }
                     }
@@ -424,13 +454,14 @@ public class JDController implements PluginListener, ControlListener, UIListener
             return null;
         }
     }
+
     /**
-     * Hiermit wird eine Containerdatei geöffnet.
-     * Dazu wird zuerst ein passendes Plugin gesucht und danach alle DownloadLinks interpretiert
+     * Hiermit wird eine Containerdatei geöffnet. Dazu wird zuerst ein passendes
+     * Plugin gesucht und danach alle DownloadLinks interpretiert
      * 
      * @param file Die Containerdatei
      */
-    private void loadContainerFile(File file){
+    private void loadContainerFile(File file) {
         Vector<PluginForContainer> pluginsForContainer = JDUtilities.getPluginsForContainer();
         Vector<DownloadLink> downloadLinks = new Vector<DownloadLink>();
         PluginForContainer pContainer;
@@ -447,6 +478,7 @@ public class JDController implements PluginListener, ControlListener, UIListener
             uiInterface.addLinksToGrabber((Vector<DownloadLink>) downloadLinks);
         }
     }
+
     /**
      * Liefert alle DownloadLinks zurück
      * 
@@ -468,6 +500,7 @@ public class JDController implements PluginListener, ControlListener, UIListener
 
     /**
      * Lädt zum Start das erste Mal alle Links aus einer Datei
+     * 
      * @return true/False je nach Erfolg
      */
     public boolean initDownloadLinks() {
@@ -576,7 +609,7 @@ public class JDController implements PluginListener, ControlListener, UIListener
         if (this.uiInterface != null) this.uiInterface.removeUIListener(this);
         this.uiInterface = uiInterface;
         uiInterface.addUIListener(this);
-      
+
     }
 
     /**
@@ -595,6 +628,15 @@ public class JDController implements PluginListener, ControlListener, UIListener
     public String getLastFinishedFile() {
         if (this.lastDownloadFinished == null) return "";
         return this.lastDownloadFinished.getFileOutput();
+    }
+
+    /**
+     * 
+     * @return Die zuletzte fertiggestellte datei
+     */
+    public DownloadLink getLastFinishedDownloadLink() {
+
+        return lastDownloadFinished;
     }
 
     /**
@@ -640,21 +682,39 @@ public class JDController implements PluginListener, ControlListener, UIListener
      * @param controlEvent ein abzuschickendes Event
      */
     public void fireControlEvent(ControlEvent controlEvent) {
-//        logger.info(controlEvent.getID()+" controllistener "+controlEvent);
+        // logger.info(controlEvent.getID()+" controllistener "+controlEvent);
         uiInterface.delegatedControlEvent(controlEvent);
         if (controlListener == null) controlListener = new Vector<ControlListener>();
         Iterator<ControlListener> iterator = controlListener.iterator();
         while (iterator.hasNext()) {
-            logger.info(" --> "+((ControlListener) iterator.next()));
+            logger.info(" --> " + ((ControlListener) iterator.next()));
             ((ControlListener) iterator.next()).controlEvent(controlEvent);
         }
     }
+
     /**
-     * Setzt den Downloadstatus. Status Ids aus JDController.** sollten verwendet werden
+     * Setzt den Downloadstatus. Status Ids aus JDController.** sollten
+     * verwendet werden
+     * 
      * @param downloadStatus
      */
     public void setDownloadStatus(int downloadStatus) {
         this.downloadStatus = downloadStatus;
+    }
+/**
+ * Setzt de Status aller Links zurück die nicht gerade geladen werden.
+ */
+    public void resetAllLinks() {
+        for (int i = 0; i < downloadLinks.size(); i++) {
+            if (!downloadLinks.elementAt(i).isInProgress()) {
+                downloadLinks.elementAt(i).setStatus(DownloadLink.STATUS_TODO);
+                downloadLinks.elementAt(i).setStatusText("");
+                downloadLinks.elementAt(i).reset();
+                fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SINGLE_DOWNLOAD_CHANGED, downloadLinks.elementAt(i)));
+            }
+            
+        }
+
     }
 
 }

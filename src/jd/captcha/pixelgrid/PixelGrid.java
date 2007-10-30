@@ -578,7 +578,17 @@ logger.fine(min+" <> "+max+" : "+faktor);
 
         return ret;
     }
+    public static int[][] getGridCopy(int[][] grid) {
+        if(grid.length==0)return null;
+        int[][] ret = new int[grid.length][grid[0].length];
+        for (int x = 0; x < grid.length; x++) {
+            for (int y = 0; y < grid[0].length; y++) {
+                ret[x][y]=grid[x][y];
+            }
+        }
 
+        return ret;
+    }
     /**
      * Nimmt an der angegebenen Positiond en farbwert auf und entfernt desen aus
      * dem ganzen Bild
@@ -1178,6 +1188,9 @@ public void removeSmallObjects(double contrast, double objectContrast,int maxSiz
             setPixelValue(object.elementAt(i)[0], object.elementAt(i)[1], color);
         }
 
+    }
+    public int[][] getGrid() {
+        return grid;
     }
 
 

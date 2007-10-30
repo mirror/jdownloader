@@ -38,6 +38,7 @@ public class Serienjunkies extends PluginForDecrypt {
      */
     @Override
     public String getCoder() {
+        //von  coa gefixed
         return "DwD aka James / Botzi";
     }
     @Override
@@ -46,7 +47,7 @@ public class Serienjunkies extends PluginForDecrypt {
     }
     @Override
     public String getPluginID() {
-        return "Serienjunkies-2.0.0.";
+        return "Serienjunkies-2.0.1.";
     }
     @Override
     public String getPluginName() {
@@ -79,27 +80,44 @@ public class Serienjunkies extends PluginForDecrypt {
 
                     patternCaptcha = Pattern.compile(String.format(dynamicCaptcha, new Object[]{modifiedURL}));
                     logger.fine("using patternCaptcha:"+patternCaptcha);
-                    RequestInfo reqinfo = getRequest(url);
+                    RequestInfo reqinfo = getRequest(url,null,null,true);
+                    
+                    String furl=getSimpleMatch(reqinfo.getHtmlCode(), "<FRAME SRC=\"°"+modifiedURL+"\"", 0);
+                    if(furl!=null){
+                        url=new URL(furl+modifiedURL);
+                        logger.info("Frame found. frame url: "+furl+modifiedURL);
+                        reqinfo = getRequest(url,null,null,true);
+                        parameter=furl+modifiedURL;
+                        
+                    }
+               
+                    logger.info(reqinfo.getHtmlCode());
+                   
+                   
                     Vector<Vector<String>> links;
                     links = getAllSimpleMatches(reqinfo.getHtmlCode(), " <a href=\"http://°\"");
                     Vector<String> helpvector = new Vector<String>();
                     String helpstring = "";
                     // Einzellink
                     if (parameter.indexOf("/safe/") >= 0 || parameter.indexOf("/save/") >= 0) {
+                        logger.info("safe link");
                         firePluginEvent(new PluginEvent(this, PluginEvent.PLUGIN_PROGRESS_MAX, 1));
                         helpstring = EinzelLinks(parameter);
                         firePluginEvent(new PluginEvent(this, PluginEvent.PLUGIN_PROGRESS_INCREASE, null));
                         if (check(helpstring)) decryptedLinks.add(helpstring);
                     }
                     else if (parameter.indexOf("/sjsafe/") >= 0) {
+                        logger.info("sjsafe link");
                         firePluginEvent(new PluginEvent(this, PluginEvent.PLUGIN_PROGRESS_MAX, 1));
                         helpvector = ContainerLinks(parameter);
+                        
                         firePluginEvent(new PluginEvent(this, PluginEvent.PLUGIN_PROGRESS_INCREASE, null));
                         for (int j = 0; j < helpvector.size(); j++) {
                             if (check(helpvector.get(j))) decryptedLinks.add(helpvector.get(j));
                         }
                     }
                     else {
+                        logger.info("else link");
                         firePluginEvent(new PluginEvent(this, PluginEvent.PLUGIN_PROGRESS_MAX, links.size()));
                         // Kategorien
                         for (int i = 0; i < links.size(); i++) {
@@ -183,6 +201,7 @@ public class Serienjunkies extends PluginForDecrypt {
                         
                     capTxt = Plugin.getCaptchaCode(captchaFile, this);
                     reqinfo = postRequest(new URL(url), "s=" + matcher.group(1) + "&c=" + capTxt + "&action=Download");
+                   
                 }
                 else {
                     if(captchaFile!=null && capTxt != null){
@@ -190,6 +209,9 @@ public class Serienjunkies extends PluginForDecrypt {
                     }
                     break;
                 }
+            }
+            if(reqinfo.getLocation()!=null){
+                links.add(reqinfo.getLocation());
             }
             Vector<Vector<String>> links1 = getAllSimpleMatches(reqinfo.getHtmlCode(), "FORM ACTION=\"°\"");
             for (int i = 0; i < links1.size(); i++) {

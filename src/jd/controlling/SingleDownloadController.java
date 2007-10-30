@@ -217,16 +217,20 @@ public class SingleDownloadController extends ControlMulticaster {
                 default:
                     this.onErrorUnknown(downloadLink, plugin, step);
             }
+            fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_PLUGIN_HOST_INACTIVE, plugin));
+            fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SINGLE_DOWNLOAD_FINISHED, downloadLink));
+            
         }
         else {
             downloadLink.setStatusText("Fertig");
             downloadLink.setInProgress(false);
             downloadLink.getFilePackage().saveInfoFile();
             fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SINGLE_DOWNLOAD_CHANGED, downloadLink));
+            fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_PLUGIN_HOST_INACTIVE, plugin));
+            fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SINGLE_DOWNLOAD_FINISHED, downloadLink));
             Interaction.handleInteraction((Interaction.INTERACTION_SINGLE_DOWNLOAD_FINISHED), downloadLink);
         }
-        fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_PLUGIN_HOST_INACTIVE, plugin));
-        fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SINGLE_DOWNLOAD_FINISHED, downloadLink));
+  
     }
     private void onErrorNoFreeSpace(DownloadLink downloadLink2, PluginForHost plugin, PluginStep step) {
         downloadLink.setStatusText("Zu wenig Speicherplatz");
