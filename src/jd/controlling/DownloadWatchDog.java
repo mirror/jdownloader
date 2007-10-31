@@ -25,6 +25,8 @@ import jd.utils.JDUtilities;
  */
 public class DownloadWatchDog extends Thread implements PluginListener, ControlListener {
 
+ 
+
     /**
      * Der Logger
      */
@@ -39,7 +41,7 @@ public class DownloadWatchDog extends Thread implements PluginListener, ControlL
 
     private JDController                     controller;
 
-    private int                              interactions;
+  
 
     private boolean pause=false;
 
@@ -55,11 +57,11 @@ public class DownloadWatchDog extends Thread implements PluginListener, ControlL
         boolean hasWaittimeLinks;
         boolean hasInProgressLinks;
         aborted = false;
-        interactions = 0;
+    
         deligateFireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_ALL_DOWNLOAD_START, this));
 
         while (aborted != true) {
-            if (interactions == 0) {
+            if (Interaction.getInteractionsRunning() == 0) {
                 if (activeLinks.size() < getSimultanDownloadNum()&&!pause) {
                     started = setDownloadActive();
                     // logger.info("Started " + started + "Downloads");
@@ -98,7 +100,7 @@ public class DownloadWatchDog extends Thread implements PluginListener, ControlL
                     logger.info("Alle Downloads beendet");
                     // fireControlEvent(new ControlEvent(this,
                     // ControlEvent.CONTROL_ALL_DOWNLOADS_FINISHED, this));
-                    Interaction.handleInteraction((Interaction.INTERACTION_ALL_DOWNLOADS_FINISHED), this);
+//                    Interaction.handleInteraction((Interaction.INTERACTION_ALL_DOWNLOADS_FINISHED), this);
                     break;
 
                 }
@@ -198,6 +200,8 @@ public class DownloadWatchDog extends Thread implements PluginListener, ControlL
     // }
 
     private void startDownloadThread(DownloadLink dlink) {
+        
+        Interaction.handleInteraction(Interaction.INTERACTION_BEFORE_DOWNLOAD, dlink);
         SingleDownloadController download = new SingleDownloadController(controller, dlink);
         logger.info("start download: " + dlink);
         dlink.setInProgress(true);
@@ -396,10 +400,10 @@ logger.finer("Breche alle actove links ab");
             case ControlEvent.CONTROL_DISTRIBUTE_FINISHED:
                 break;
             case ControlEvent.CONTROL_PLUGIN_INTERACTION_INACTIVE:
-                this.interactions++;
+             
 
             case ControlEvent.CONTROL_PLUGIN_INTERACTION_RETURNED:
-                this.interactions--;
+          
             default:
 
                 break;

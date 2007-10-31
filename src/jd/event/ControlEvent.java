@@ -88,6 +88,12 @@ public class ControlEvent extends AWTEvent{
      * Gibt an dass der Download nun komplett abgebrochen wurde.
      */
     public static final int CONTROL_DOWNLOAD_TERMINATION_INACTIVE = 18;
+    public static final int CONTROL_SINGLE_DOWNLOAD_FINISHED_ERROR_SERVER_BUSY = 19;
+    public static final int CONTROL_SINGLE_DOWNLOAD_FINISHED_ERROR_FILENOTFOUND = 20;
+
+    public static final int CONTROL_SINGLE_DOWNLOAD_FINISHED_ERROR_CAPTCHA = 21;
+    public static final int CONTROL_SINGLE_DOWNLOAD_FINISHED_ERROR_PREMIUM = 22;
+    public static final int CONTROL_SINGLE_DOWNLOAD_FINISHED_ERROR = 23;
     /**
      * Die ID des Ereignisses
      */

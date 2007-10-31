@@ -49,7 +49,7 @@ public class ResetLink extends Interaction implements Serializable {
         String type= this.getStringProperty(PARAM_LAST_OR_ALL, (String)OPTIONS[1]);
         JDController controller = JDUtilities.getController();
         if(type.equals((String)OPTIONS[0])){
-            
+            controller.resetAllLinks();
         }else if(type.equals((String)OPTIONS[1])){
             DownloadLink link=controller.getLastFinishedDownloadLink();
             if(link!=null){

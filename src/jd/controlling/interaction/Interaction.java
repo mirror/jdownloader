@@ -71,7 +71,7 @@ public abstract class Interaction extends Property implements Serializable {
     /**
      * Zeigt an, daß ein einzelner Download beendet wurde
      */
-    public static InteractionTrigger          INTERACTION_SINGLE_DOWNLOAD_FINISHED  = new InteractionTrigger(1, "Download beendet", "Wird aufgerufen sobald ein Download beendet wurde");
+    public static InteractionTrigger          INTERACTION_SINGLE_DOWNLOAD_FINISHED  = new InteractionTrigger(1, "Download erfolgreich beendet", "Wird aufgerufen sobald ein Download erfolgreich beendet wurde");
     /**
      * Zeigt an, daß alle Downloads abgeschlossen wurden
      */
@@ -95,24 +95,26 @@ public abstract class Interaction extends Property implements Serializable {
     /**
      * Letztes Package file geladen
      */
-    public static final InteractionTrigger    INTERACTION_DOWNLOAD_PACKAGE_FINISHED = new InteractionTrigger(12, "Paket fertig", "Wird aufgerufen wenn ein paket fertig geladen wurde");                            ;
+    public static final InteractionTrigger    INTERACTION_DOWNLOAD_PACKAGE_FINISHED = new InteractionTrigger(12, "Paket fertig", "Wird aufgerufen wenn ein Paket fertig geladen wurde");
+    public static final InteractionTrigger INTERACTION_BEFORE_DOWNLOAD = new InteractionTrigger(13, "Vor einem Download", "Wird aufgerufen bevor ein neuer Download gestartet wird");;                            ;
     /**
      * Zeigt den Programmstart an
      */
     public static InteractionTrigger          INTERACTION_APPSTART                  = new InteractionTrigger(7, "Programmstart", "Direkt nach dem Initialisieren von jDownloader");
-    /**
-     * Zeigt den Programmende an
-     */
-    public static InteractionTrigger          INTERACTION_APPTERMINATE              = new InteractionTrigger(8, "Programmende", "inaktiv");
-    /**
-     * Zeigt, dass vermutlich JAC veraltet ist
-     */
-    public static InteractionTrigger          INTERACTION_JAC_UPDATE_NEEDED         = new InteractionTrigger(9, "Captcha Update nötig", "inaktiv");
-    /**
-     * Nach einem IP wechsel
-     */
+//    /**
+//     * Zeigt den Programmende an
+//     */
+//    public static InteractionTrigger          INTERACTION_APPTERMINATE              = new InteractionTrigger(8, "Programmende", "inaktiv");
+//    /**
+//     * Zeigt, dass vermutlich JAC veraltet ist
+//     */
+//    public static InteractionTrigger          INTERACTION_JAC_UPDATE_NEEDED         = new InteractionTrigger(9, "Captcha Update nötig", "inaktiv");
+//    /**
+//     * Nach einem IP wechsel
+//     */
+    private static int interactionsRunning=0;
     protected transient ConfigContainer       config;
-    public final static InteractionTrigger    INTERACTION_AFTER_RECONNECT           = new InteractionTrigger(10, "Nach einem Reconnect", "inaktiv");
+//    public final static InteractionTrigger    INTERACTION_AFTER_RECONNECT           = new InteractionTrigger(10, "Nach einem Reconnect", "inaktiv");
     public Interaction() {
         config = null;
         controlListener = new Vector<ControlListener>();
@@ -143,6 +145,8 @@ public abstract class Interaction extends Property implements Serializable {
      * @return
      */
     public boolean interact(Object arg) {
+        interactionsRunning++;
+     logger.finer("Interactions(start) running: "+interactionsRunning);
         fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_PLUGIN_INTERACTION_ACTIVE, this));
         resetInteraction();
         this.setCallCode(Interaction.INTERACTION_CALL_RUNNING);
@@ -151,6 +155,8 @@ public abstract class Interaction extends Property implements Serializable {
         if (!this.isAlive()) {
             fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_PLUGIN_INTERACTION_INACTIVE, this));
         }
+        interactionsRunning--;
+        logger.finer("Interactions(end) running: "+interactionsRunning);
         return success;
     }
     /**
@@ -234,16 +240,18 @@ public abstract class Interaction extends Property implements Serializable {
      */
     public static boolean handleInteraction(InteractionTrigger interactionevent, Object param) {
         boolean ret = true;
+        logger.finer("Interaction start: Trigger: "+interactionevent.getName());
         Vector<Interaction> interactions = JDUtilities.getConfiguration().getInteractions();
         int interacts = 0;
         for (int i = 0; i < interactions.size(); i++) {
             Interaction interaction = interactions.get(i);
             if (interaction == null || interaction.getTrigger() == null || interactionevent == null) continue;
             // Führe keinen reconnect aus wenn noch ein download läuft
-            if ((interaction instanceof HTTPReconnect || interaction instanceof ExternReconnect) && JDUtilities.getController().getRunningDownloadNum() > 0) continue;
+            if ((interaction instanceof HTTPLiveHeader ||interaction instanceof HTTPReconnect || interaction instanceof ExternReconnect) && JDUtilities.getController().getRunningDownloadNum() > 0) continue;
             if (interaction.getTrigger().getID() == interactionevent.getID()) {
                 interaction.addControlListener(JDUtilities.getController());
                 interacts++;
+                logger.finer("Aktion start: "+interaction.getInteractionName()+"("+param+")");
                 if (!interaction.interact(param)) {
                     ret = false;
                     logger.severe("interaction failed: " + interaction);
@@ -352,4 +360,8 @@ public abstract class Interaction extends Property implements Serializable {
     public void setConfig(ConfigContainer config) {
         this.config = config;
     }
+    public static int getInteractionsRunning() {
+        return interactionsRunning;
+    }
+
 }

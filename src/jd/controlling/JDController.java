@@ -196,7 +196,7 @@ public class JDController implements PluginListener, ControlListener, UIListener
                             i.setStatus(DownloadLink.STATUS_TODO);
                         }
                     }
-                    Interaction.handleInteraction(Interaction.INTERACTION_AFTER_RECONNECT, this);
+         
                 }
                 else if (interaction instanceof WebUpdate) {
                     if (interaction.getCallCode() == Interaction.INTERACTION_CALL_ERROR) {

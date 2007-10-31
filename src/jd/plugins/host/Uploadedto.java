@@ -122,9 +122,20 @@ public class Uploadedto extends PluginForHost {
                     logger.info("dl " + finalURL);
                     postParameter.put(postTarget, (String) steps.get(1).getParameter());
                     requestInfo = getRequestWithoutHtmlCode(new URL(finalURL), "lang=de", null, false);
+                    
+                   
+                    if (requestInfo.getConnection().getHeaderField("Location") != null && requestInfo.getConnection().getHeaderField("Location").indexOf("error-captcha") > 0) {
+                        step.setStatus(PluginStep.STATUS_ERROR);
+                        logger.severe("captcha Falsch");                        
+                        downloadLink.setStatus(DownloadLink.STATUS_ERROR_CAPTCHA_WRONG);
+                        
+                        return step;
+                    }
+                    
                     if (requestInfo.getConnection().getHeaderField("Location") != null && requestInfo.getConnection().getHeaderField("Location").indexOf("error") > 0) {
                         step.setStatus(PluginStep.STATUS_ERROR);
-                        logger.severe("Fehler 1 Errorpage wird angezeigt");
+                        logger.severe("Fehler 1 Errorpage wird angezeigt "+requestInfo.getConnection().getHeaderField("Location"));
+                        
                         downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN_RETRY);
                         step.setParameter(20000l);
                         return step;
