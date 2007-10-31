@@ -84,7 +84,7 @@ public class JDUtilities {
     public static final String                     JD_VERSION          = "0.0.";
     public static final String                     JD_REVISION         = "$Id$";
     /**
-     * Versionsstring der Applikation
+     * Versionsstring der Applikation 
      */
     public static final String                     JD_TITLE            = "jDownloader";
     /**
