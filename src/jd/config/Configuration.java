@@ -267,6 +267,7 @@ public class Configuration extends Property implements Serializable {
     public void setDefaultValues() {
         // Setze AutoUpdater
         WebUpdate wu = new WebUpdate();
+       
         if (getInteractions(wu).size() == 0) {
             InteractionTrigger it = Interaction.INTERACTION_APPSTART;
             wu.setTrigger(it);
@@ -281,6 +282,10 @@ public class Configuration extends Property implements Serializable {
         if (getProperty("maxSimultanDownloads") == null || ((Integer) getProperty("maxSimultanDownloads")) == 0) {
             setProperty("maxSimultanDownloads", 3);
         }
+        if (getProperty("maxSimultanDownloads") == null || ((Integer) getProperty("maxSimultanDownloads")) == 0) {
+            setProperty("maxSimultanDownloads", 3);
+        }
+        
         String id = "$Id$";
         if (id.length() > 22) {
             setConfigurationVersion(id.substring(22, id.length() - 2));

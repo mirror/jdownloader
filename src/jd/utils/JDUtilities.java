@@ -1218,20 +1218,26 @@ public class JDUtilities {
     }
     /**
      * Prüft anhand der Globalen IP Check einstellungen die IP
-     * 
+     *  
      * @return ip oder /offline
      */
     public static String getIPAddress() {
-        String site = getConfiguration().getStringProperty(Configuration.PARAM_GLOBAL_IP_CHECK_SITE, "http://www.meineip.de");
-        String patt = getConfiguration().getStringProperty(Configuration.PARAM_GLOBAL_IP_PATTERN, "\\Q<td><b>\\E([0-9.]*)\\Q</b></td>\\E");
+        String site = getConfiguration().getStringProperty(Configuration.PARAM_GLOBAL_IP_CHECK_SITE, "http://www.ip-adress.com");
+        String patt = getConfiguration().getStringProperty(Configuration.PARAM_GLOBAL_IP_PATTERN, "txt \\+\\= \\\"([0-9.]*)\\:\\<br\\>");
         try {
             logger.finer("IP Check via " + site);
             RequestInfo requestInfo = Plugin.getRequest(new URL(site), null, null, true);
             Pattern pattern = Pattern.compile(patt);
             Matcher matcher = pattern.matcher(requestInfo.getHtmlCode());
             if (matcher.find()) {
+                if(matcher.groupCount()>0){
                 return matcher.group(1);
+                }else{
+                    logger.severe("bad Regex: "+patt);
+                    return null;
+                }
             }
+            logger.info(requestInfo.getHtmlCode());
             return null;
         }
         catch (IOException e1) {

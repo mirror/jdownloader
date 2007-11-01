@@ -559,6 +559,7 @@ public class DownloadLink implements Serializable,Comparable<DownloadLink> {
         downloadMax = 0;
 
         downloadCurrent = 0;
+        aborted=false;
     }
 
     /**

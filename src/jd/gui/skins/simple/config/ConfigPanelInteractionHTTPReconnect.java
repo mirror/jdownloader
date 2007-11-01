@@ -104,11 +104,7 @@ class ConfigPanelInteractionHTTPReconnect extends ConfigPanel implements ItemLis
 
     private JLabel            lblDisconnectPostParams;
 
-    private JLabel            lblIPAddressRegEx;
 
-    private JLabel            lblIPAddressOffline;
-
-    private JLabel            lblIPAddressSite;
 
     private JLabel            lblRetries;
 
@@ -150,11 +146,7 @@ class ConfigPanelInteractionHTTPReconnect extends ConfigPanel implements ItemLis
 
     private JTextField        txtDisconnectPostParams;
 
-    private JTextField        txtIPAddressRegEx;
 
-    private JTextField        txtIPAddressOffline;
-
-    private JTextField        txtIPAddressSite;
 
     private JTextField        txtRetries;
 
@@ -186,16 +178,12 @@ class ConfigPanelInteractionHTTPReconnect extends ConfigPanel implements ItemLis
         txtDisconnect.setText(routerData.getDisconnect());
         txtDisconnectPostParams.setText(routerData.getDisconnectPostParams());
         txtConnectPostParams.setText(routerData.getConnectPostParams());
-        txtIPAddressSite.setText(routerData.getIpAddressSite());
-        txtIPAddressOffline.setText(routerData.getIpAddressOffline());
+
         this.txtWaitForIPCheck.setText(configuration.getWaitForIPCheck() + "");
         this.txtRouterIP.setText(routerData.getRouterIP());
         this.txtRouterPort.setText(routerData.getRouterPort() + "");
         this.txtRetries.setText(configuration.getReconnectRetries() + "");
-        if (routerData.getIpAddressRegEx() != null)
-            txtIPAddressRegEx.setText(routerData.getIpAddressRegEx().toString());
-        else
-            txtIPAddressRegEx.setText(null);
+ 
         if (routerData.getLoginType() == RouterData.TYPE_WEB_GET) {
 
             cboLoginType.setSelectedItem(GET);
@@ -262,8 +250,7 @@ class ConfigPanelInteractionHTTPReconnect extends ConfigPanel implements ItemLis
         routerData.setConnect(txtConnect.getText().trim());
         routerData.setDisconnect(txtDisconnect.getText().trim());
         routerData.setDisconnectPostParams(txtDisconnectPostParams.getText().trim());
-        routerData.setIpAddressSite(txtIPAddressSite.getText().trim());
-        routerData.setIpAddressOffline(txtIPAddressOffline.getText().trim());
+
         routerData.setConnectPostParams(txtConnectPostParams.getText().trim());
 
         try {
@@ -281,14 +268,7 @@ class ConfigPanelInteractionHTTPReconnect extends ConfigPanel implements ItemLis
             routerData.setDisconnectType(RouterData.TYPE_WEB_GET);
         else
             routerData.setDisconnectType(RouterData.TYPE_WEB_POST);
-        try {
-            String txtForPattern = txtIPAddressRegEx.getText().trim();
-            Pattern.compile(txtForPattern);
-            routerData.setIpAddressRegEx(txtForPattern);
-        }
-        catch (Exception e) {
-            logger.severe("RegEx for IPAddress wrong");
-        }
+     
         routerData.setLoginRequestProperties(splitString(txtLoginRequestProperties.getText().trim()));
         routerData.setDisconnectRequestProperties(splitString(txtDisconnectRequestProperties.getText().trim()));
         routerData.setConnectRequestProperties(splitString(txtConnectRequestProperties.getText().trim()));
@@ -453,7 +433,7 @@ class ConfigPanelInteractionHTTPReconnect extends ConfigPanel implements ItemLis
         lblLogin = new JLabel("Anmeldestring", JLabel.RIGHT);
         lblLoginType = new JLabel("Art der Anmeldung", JLabel.RIGHT);
         lblLoginRequestProperties = new JLabel("RequestProperties fürs Login", JLabel.RIGHT);
-        lblIPAddressOffline = new JLabel("Offlinestring", JLabel.RIGHT);
+       
         lblLoginPostParams = new JLabel("POST Parameter fürs Login)", JLabel.RIGHT);
         lblLogoff = new JLabel("Anmeldestring", JLabel.RIGHT);
         lblConnect = new JLabel("Verbindungsaufbau", JLabel.RIGHT);
@@ -461,8 +441,7 @@ class ConfigPanelInteractionHTTPReconnect extends ConfigPanel implements ItemLis
         lblDisconnectType = new JLabel("Art des Verbindungsabbruchs", JLabel.RIGHT);
         lblDisconnectRequestProperties = new JLabel("RequestProperties für den Verbindungsabbruch", JLabel.RIGHT);
         lblDisconnectPostParams = new JLabel("POST Parameter für den Verbindungsabbruch", JLabel.RIGHT);
-        lblIPAddressRegEx = new JLabel("RegEx ausdruck zum Lesen der IP", JLabel.RIGHT);
-        lblIPAddressSite = new JLabel("RouterPage für die IPAdresse", JLabel.RIGHT);
+
         lblRetries = new JLabel("Versuche (0=unendlich)", JLabel.RIGHT);
         lblConnectType = new JLabel("Art des Verbindungsaufbaus", JLabel.RIGHT);
         lblConnectRequestProperties = new JLabel("RequestProperties für den Verbindungsaufbau", JLabel.RIGHT);
@@ -479,7 +458,7 @@ class ConfigPanelInteractionHTTPReconnect extends ConfigPanel implements ItemLis
         txtLoginRequestProperties = new JTextField(50);
         txtLoginPostParams = new JTextField(50);
         txtLogoff = new JTextField(50);
-        txtIPAddressOffline = new JTextField(50);
+      
         txtConnect = new JTextField(50);
 
         txtDisconnect = new JTextField(50);
@@ -487,8 +466,7 @@ class ConfigPanelInteractionHTTPReconnect extends ConfigPanel implements ItemLis
         cboConnectType = new JComboBox(types);
         txtDisconnectRequestProperties = new JTextField(50);
         txtDisconnectPostParams = new JTextField(50);
-        txtIPAddressRegEx = new JTextField(50);
-        txtIPAddressSite = new JTextField(50);
+
         txtRetries = new JTextField(10);
         txtWaitForIPCheck = new JTextField(10);
         txtConnectRequestProperties = new JTextField(50);
@@ -581,17 +559,11 @@ class ConfigPanelInteractionHTTPReconnect extends ConfigPanel implements ItemLis
 
         // Ipcheck
         row = 0;
-        JDUtilities.addToGridBag(pnlIpCheck, lblIPAddressSite, 0, row++, 1, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.EAST);
-        JDUtilities.addToGridBag(pnlIpCheck, lblIPAddressRegEx, 0, row++, 1, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.EAST);
-        JDUtilities.addToGridBag(pnlIpCheck, lblIPAddressOffline, 0, row++, 1, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.EAST);
-        JDUtilities.addToGridBag(pnlIpCheck, lblRetries, 0, row++, 1, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.NORTHEAST);
+      JDUtilities.addToGridBag(pnlIpCheck, lblRetries, 0, row++, 1, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.NORTHEAST);
         JDUtilities.addToGridBag(pnlIpCheck, lblWaitForIPCheck, 0, row++, 1, 1, 0, 1, insets, GridBagConstraints.NONE, GridBagConstraints.NORTHEAST);
 
         row = 0;
-        JDUtilities.addToGridBag(pnlIpCheck, txtIPAddressSite, 1, row++, 1, 1, 1, 0, insets, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-        JDUtilities.addToGridBag(pnlIpCheck, txtIPAddressRegEx, 1, row++, 1, 1, 1, 0, insets, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-        JDUtilities.addToGridBag(pnlIpCheck, txtIPAddressOffline, 1, row++, 1, 1, 1, 0, insets, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-        JDUtilities.addToGridBag(pnlIpCheck, txtRetries, 1, row++, 1, 1, 1, 0, insets, GridBagConstraints.HORIZONTAL, GridBagConstraints.NORTHWEST);
+      JDUtilities.addToGridBag(pnlIpCheck, txtRetries, 1, row++, 1, 1, 1, 0, insets, GridBagConstraints.HORIZONTAL, GridBagConstraints.NORTHWEST);
         JDUtilities.addToGridBag(pnlIpCheck, txtWaitForIPCheck, 1, row++, 1, 1, 1, 1, insets, GridBagConstraints.HORIZONTAL, GridBagConstraints.NORTHWEST);
 
         add(tabbedPane, BorderLayout.CENTER);

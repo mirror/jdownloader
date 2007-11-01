@@ -104,11 +104,13 @@ public abstract class PluginForHost extends Plugin {
      */
     protected boolean hasEnoughHDSpace(DownloadLink downloadLink) {
         return true;
-//        File file = new File(downloadLink.getFileOutput());
-//        if (file.getParentFile() != null && file.getParentFile().exists()) {
-//            file = file.getParentFile();
-//        }
-//        return file.getFreeSpace()-downloadLink.getDownloadMax() > ((long) JDUtilities.getConfiguration().getIntegerProperty(Configuration.PARAM_MIN_FREE_SPACE, 100)) * 1024l * 1024l;
+        // File file = new File(downloadLink.getFileOutput());
+        // if (file.getParentFile() != null && file.getParentFile().exists()) {
+        // file = file.getParentFile();
+        // }
+        // return file.getFreeSpace()-downloadLink.getDownloadMax() > ((long)
+        // JDUtilities.getConfiguration().getIntegerProperty(Configuration.PARAM_MIN_FREE_SPACE,
+        // 100)) * 1024l * 1024l;
     }
 
     /**
@@ -140,18 +142,28 @@ public abstract class PluginForHost extends Plugin {
      * @param parameter
      * @return
      */
-    public abstract PluginStep doStep(PluginStep step, DownloadLink parameter);
+    public abstract PluginStep doStep(PluginStep step, DownloadLink parameter) throws Exception;
 
     public abstract int getMaxSimultanDownloadNum();
 
     /**
      * Delegiert den doStep Call mit einem Downloadlink als Parameter weiter an
-     * die Plugins
+     * die Plugins. Und fängt übrige Exceptions ab.
      * 
      * @param parameter Downloadlink
      */
     public PluginStep doStep(PluginStep step, Object parameter) {
-        return doStep(step, (DownloadLink) parameter);
+
+        try {
+            return doStep(step, (DownloadLink) parameter);
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+            step.setStatus(PluginStep.STATUS_ERROR);
+            ((DownloadLink) parameter).setStatus(DownloadLink.STATUS_ERROR_UNKNOWN);
+
+            return step;
+        }
     }
 
     /**

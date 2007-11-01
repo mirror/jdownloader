@@ -70,7 +70,7 @@ public class HTTPReconnect extends Interaction {
             routerPage = "http://" + routerIP + ":" + routerPort + "/";
         RequestInfo requestInfo = null;
         // IP auslesen
-        ipBefore = getIPAddress(routerPage, routerData);
+        ipBefore = JDUtilities.getIPAddress();
         logger.fine("IP before:" + ipBefore);
         if (login != null && !login.equals("")) {
             login.replaceAll(VAR_USERNAME, routerUsername);
@@ -128,7 +128,7 @@ public class HTTPReconnect extends Interaction {
             }
         }
         // IP check
-        ipAfter = getIPAddress(routerPage, routerData);
+        ipAfter = JDUtilities.getIPAddress();
         logger.fine("IP after reconnect:" + ipAfter);
         if (ipBefore == null && ipAfter == null) {
             logger.info("Es konnte keine IP ausgelesen werden.");
@@ -147,25 +147,7 @@ public class HTTPReconnect extends Interaction {
         retries = 0;
         return true;
     }
-    private String getIPAddress(String routerPage, RouterData routerData) {
-        String urlForIPAddress;
-        if (routerData == null || routerData.getIpAddressSite() == null) return null;
-        try {
-            if (isAbsolute(routerData.getIpAddressSite())) {
-                urlForIPAddress = routerData.getIpAddressSite();
-            }
-            else {
-                urlForIPAddress = routerPage + routerData.getIpAddressSite();
-            }
-            logger.finer("IP CHeck Via "+urlForIPAddress);
-            RequestInfo requestInfo = Plugin.getRequest(new URL(urlForIPAddress),null,null,true);
-            return routerData.getIPAdress(requestInfo.getHtmlCode());
-        }
-        catch (IOException e1) {
-            logger.severe("url not found. " + e1.toString());
-        }
-        return null;
-    }
+   
     @Override
     public String toString() {
         return "Interner HTTP Reconnect";

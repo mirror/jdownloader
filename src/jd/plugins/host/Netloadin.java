@@ -8,6 +8,8 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.util.regex.Pattern;
 
+import jd.config.ConfigContainer;
+import jd.config.ConfigEntry;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginStep;
@@ -40,12 +42,15 @@ public class Netloadin extends PluginForHost {
     static private final String  DOWNLOAD_CAPTCHA = "download_captcha.tpl";
     static private final String  DOWNLOAD_START   = "download_load.tpl";
     static private final String  DOWNLOAD_WAIT    = "download_wait.tpl";
+
     private String               finalURL;
     private String               captchaURL;
     private String               fileID;
     private String               postURL;
     private String               sessionID;
+    private String userCookie;
     public Netloadin() {
+        setConfigElements();
         steps.add(new PluginStep(PluginStep.STEP_WAIT_TIME, null));
         steps.add(new PluginStep(PluginStep.STEP_GET_CAPTCHA_FILE, null));
         steps.add(new PluginStep(PluginStep.STEP_WAIT_TIME, null));
@@ -82,9 +87,28 @@ public class Netloadin extends PluginForHost {
     // // XXX: ???
     // return null;
     // }
-    public PluginStep doStep(PluginStep step, DownloadLink parameter) {
+    public PluginStep doStep(PluginStep step, DownloadLink parameter) throws MalformedURLException, IOException {
+        DownloadLink downloadLink = (DownloadLink) parameter;
+        RequestInfo requestInfo;
+        if (step == null) {
+            logger.info("Plugin Ende erreicht.");
+            return null;
+        }
+        logger.info("get Next Step " + step);
+        // premium
+        if (this.getProperties().getProperty("USE_PREMIUM") != null && this.getProperties().getBooleanProperty("USE_PREMIUM", false)) {
+            return this.doPremiumStep(step, downloadLink);
+        }
+        else {
+            return this.doFreeStep(step, downloadLink);
+        }
+        
+        
+    }
+    private PluginStep doFreeStep(PluginStep step, DownloadLink downloadLink) {
+
         try {
-            DownloadLink downloadLink = (DownloadLink) parameter;
+            
             switch (step.getStep()) {
                 case PluginStep.STEP_WAIT_TIME:
                     if (captchaURL == null) {
@@ -192,7 +216,7 @@ public class Netloadin extends PluginForHost {
         } catch (FileNotFoundException e) {
             e.printStackTrace();
             step.setStatus(PluginStep.STATUS_ERROR);
-            parameter.setStatus(DownloadLink.STATUS_ERROR_FILE_NOT_FOUND);
+            downloadLink.setStatus(DownloadLink.STATUS_ERROR_FILE_NOT_FOUND);
             return step;
         
         }
@@ -200,10 +224,83 @@ public class Netloadin extends PluginForHost {
         catch (Exception e) {
             e.printStackTrace();
             step.setStatus(PluginStep.STATUS_ERROR);
-            parameter.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN);
+            downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN);
             
             return step;
         }
+    }
+    private PluginStep doPremiumStep(PluginStep step, DownloadLink downloadLink) throws MalformedURLException, IOException  {
+        String user = (String) this.getProperties().getProperty("PREMIUM_USER");
+        String pass = (String) this.getProperties().getProperty("PREMIUM_PASS");
+        switch (step.getStep()) {
+            case PluginStep.STEP_WAIT_TIME:
+                //Login
+                if(finalURL==null){
+                
+                 //SessionID holen
+                    requestInfo = getRequest(new URL(downloadLink.getUrlDownloadDecrypted()), null, null, true);
+                    this.sessionID = requestInfo.getCookie();
+                    logger.finer("sessionID: "+sessionID);
+                    if (requestInfo.getHtmlCode().indexOf(FILE_NOT_FOUND) > 0) {
+                        downloadLink.setStatus(DownloadLink.STATUS_ERROR_FILE_NOT_FOUND);
+                        step.setStatus(PluginStep.STATUS_ERROR);
+                        return step;
+                    }
+                    
+                   //Login Cookie abholen
+                    requestInfo= postRequest(new URL("http://" + HOST + "/index.php"),sessionID,downloadLink.getUrlDownloadDecrypted(),null,"txtuser="+user+"&txtpass="+pass+"&txtcheck=login&txtlogin=", false);
+                    this.userCookie= requestInfo.getCookie();
+                    logger.finer("Usercookie: "+userCookie+" ->"+requestInfo.getLocation());
+                    
+                    //Vorbereitungsseite laden
+                    requestInfo=getRequest(new URL("http://" + HOST + "/"+requestInfo.getLocation()), sessionID+" "+userCookie, null, false);
+                    this.finalURL = getSimpleMatch(requestInfo.getHtmlCode(), NEW_HOST_URL, 0);
+                    if(finalURL==null){ 
+                        logger.severe("Error: could not get final URL");
+                        downloadLink.setStatus(DownloadLink.STATUS_ERROR_PREMIUM);
+                        step.setStatus(PluginStep.STATUS_ERROR);
+                        return step;
+                    }
+                 
+                    
+                  return step;
+                }else{
+                    step.setStatus(PluginStep.STATUS_SKIP);
+                    downloadLink.setStatusText("Premiumdownload");
+                    return step;
+                }
+            case PluginStep.STEP_PENDING:
+                step.setParameter(100l);
+             
+                return step;
+            case PluginStep.STEP_GET_CAPTCHA_FILE:
+                step.setStatus(PluginStep.STATUS_SKIP);
+                downloadLink.setStatusText("Premiumdownload");
+                return step;
+            case PluginStep.STEP_DOWNLOAD:
+                logger.info("dl " + finalURL);
+                requestInfo = getRequestWithoutHtmlCode(new URL(finalURL), sessionID, null, false);
+                int length = requestInfo.getConnection().getContentLength();
+                downloadLink.setDownloadMax(length);
+                logger.info("Filename: " + getFileNameFormHeader(requestInfo.getConnection()));
+                downloadLink.setName(getFileNameFormHeader(requestInfo.getConnection()));
+            
+                if (!hasEnoughHDSpace(downloadLink)) {
+                    downloadLink.setStatus(DownloadLink.STATUS_ERROR_NO_FREE_SPACE);
+                    step.setStatus(PluginStep.STATUS_ERROR);
+                    return step;
+                }
+                if (!download(downloadLink, (URLConnection) requestInfo.getConnection())) {
+                    step.setStatus(PluginStep.STATUS_ERROR);
+                    downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN);
+                }
+                else {
+                    step.setStatus(PluginStep.STATUS_DONE);
+                    downloadLink.setStatus(DownloadLink.STATUS_DONE);
+                }
+                return step;
+        }
+        return step;
     }
     /*
      * (non-Javadoc)
@@ -243,6 +340,10 @@ public class Netloadin extends PluginForHost {
                 this.setStatusText("File Not Found");
                 return false;
             }
+            
+      
+            
+           
            
             return true;
         }
@@ -254,6 +355,21 @@ public class Netloadin extends PluginForHost {
     }
     @Override
     public int getMaxSimultanDownloadNum() {
+        if (this.getProperties().getBooleanProperty("USE_PREMIUM", false)) {
+            return 20;
+        }else{
         return 1;
+        }
+    }
+    private void setConfigElements() {
+        ConfigEntry cfg;
+        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_LABEL, "Premium Account"));
+        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getProperties(), PROPERTY_PREMIUM_USER, "Premium User"));
+        cfg.setDefaultValue("Kundennummer");
+        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getProperties(), PROPERTY_PREMIUM_PASS, "Premium Pass"));
+        cfg.setDefaultValue("Passwort");
+        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getProperties(), PROPERTY_USE_PREMIUM, "Premium Account verwenden"));
+        cfg.setDefaultValue(false);
+ 
     }
 }

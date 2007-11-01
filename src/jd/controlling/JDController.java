@@ -524,7 +524,7 @@ public class JDController implements PluginListener, ControlListener, UIListener
      */
     public Vector<DownloadLink> getPackageFiles(DownloadLink downloadLink) {
         Vector<DownloadLink> ret = new Vector<DownloadLink>();
-        ret.add(downloadLink);
+//        ret.add(downloadLink);
         Iterator<DownloadLink> iterator = downloadLinks.iterator();
         DownloadLink nextDownloadLink = null;
         while (iterator.hasNext()) {

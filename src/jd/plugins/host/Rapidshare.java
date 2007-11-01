@@ -175,7 +175,7 @@ public class Rapidshare extends PluginForHost {
         steps.add(new PluginStep(PluginStep.STEP_GET_CAPTCHA_FILE, null));
         // Downloads
         steps.add(new PluginStep(PluginStep.STEP_DOWNLOAD, null));
-        this.setConfigEelements();
+        this.setConfigElements();
         serverMap.put("TeliaSonera", "tl");
         serverMap.put("TeliaSonera #2", "tl2");
         serverMap.put("GlobalCrossing", "gc");
@@ -201,7 +201,7 @@ public class Rapidshare extends PluginForHost {
         }
         return null;
     }
-    private void setConfigEelements() {
+    private void setConfigElements() {
         ConfigEntry cfg;
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_SEPERATOR));
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_LABEL, "Bevorzugte Server (*1)"));

@@ -897,7 +897,7 @@ public abstract class Plugin {
                 downloadLink.setDownloadCurrent(downloadedBytes);
             }
             if (contentLen != -1 && downloadedBytes != contentLen) {
-                logger.info("incomplete download: bytes loaded: "+downloadedBytes+"/"+contentLen);
+                logger.info(aborted+" - "+downloadLink.isAborted()+" incomplete download: bytes loaded: "+downloadedBytes+"/"+contentLen);
                 downloadLink.setStatus(DownloadLink.STATUS_DOWNLOAD_INCOMPLETE);
                 return false;
             }

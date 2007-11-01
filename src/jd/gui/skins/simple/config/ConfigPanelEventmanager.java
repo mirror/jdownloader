@@ -266,10 +266,7 @@ return table.getSelectedRow();
             else if (interaction instanceof WebUpdate) {
 
             }
-            else if (interaction instanceof ExternExecute) {
-                openPopupPanel(new ConfigPanelInteractionExternCommand(configuration, uiinterface,(ExternExecute)interaction));
-                return; 
-            }
+            
             logger.info(interaction.getConfig().getEntries()+" _ ");
             if(interaction.getConfig().getEntries().size()>0){
                 openPopupPanel(new ConfigPanelInteraction(uiinterface,interaction));  
