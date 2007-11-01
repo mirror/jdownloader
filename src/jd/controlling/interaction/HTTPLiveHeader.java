@@ -118,7 +118,7 @@ public class HTTPLiveHeader extends Interaction {
 
         String user = configuration.getStringProperty(Configuration.PARAM_HTTPSEND_USER);
         String pass = configuration.getStringProperty(Configuration.PARAM_HTTPSEND_PASS);
-
+        String ip = configuration.getStringProperty(Configuration.PARAM_HTTPSEND_IP);
         retries++;
         logger.info("Starting  #" + retries);
         if (user != null || pass != null) Authenticator.setDefault(new InternalAuthenticator(user, pass));
@@ -141,6 +141,9 @@ public class HTTPLiveHeader extends Interaction {
         script = script.replaceAll("</RESPONSE>", "]]></RESPONSE>");
         Document xmlScript;
         variables = new HashMap<String, String>();
+        variables.put("user", user);
+        variables.put("pass", pass);
+        variables.put("routerip", ip);
         headerProperties = new HashMap<String, String>();
         try {
             xmlScript = parseXmlString(script, false);
@@ -511,8 +514,10 @@ public class HTTPLiveHeader extends Interaction {
     public void initConfig() {
 
         ConfigEntry cfg;
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, JDUtilities.getConfiguration(), Configuration.PARAM_HTTPSEND_USER, "Login User"));
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, JDUtilities.getConfiguration(), Configuration.PARAM_HTTPSEND_PASS, "Login Passwort"));
+        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, JDUtilities.getConfiguration(), Configuration.PARAM_HTTPSEND_USER, "Login User (->%%%user%%%)"));
+        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, JDUtilities.getConfiguration(), Configuration.PARAM_HTTPSEND_PASS, "Login Passwort (->%%%pass%%%)"));
+        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, JDUtilities.getConfiguration(), Configuration.PARAM_HTTPSEND_IP, "RouterIP (->%%%routerip%%%)"));
+        
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_SPINNER, JDUtilities.getConfiguration(), Configuration.PARAM_HTTPSEND_IPCHECKWAITTIME, "Wartezeit bis zum ersten IP-Check[sek]", 0, 600).setDefaultValue(0));
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_SPINNER, JDUtilities.getConfiguration(), Configuration.PARAM_HTTPSEND_RETRIES, "Max. Wiederholungen (-1 = unendlich)", -1, 20).setDefaultValue(0));
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_SPINNER, JDUtilities.getConfiguration(), Configuration.PARAM_HTTPSEND_WAITFORIPCHANGE, "Auf neue IP warten [sek]", 0, 600).setDefaultValue(10));

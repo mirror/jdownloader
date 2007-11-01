@@ -612,7 +612,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
                 setPluginActive((PluginForHost) event.getParameter(), true);
                 break;
             case ControlEvent.CONTROL_PLUGIN_HOST_INACTIVE:
-                logger.info("host-inakcive");
+                logger.info("host-inactive");
                 setPluginActive((PluginForHost) event.getParameter(), false);
                 break;
             case ControlEvent.CONTROL_SINGLE_DOWNLOAD_FINISHED:

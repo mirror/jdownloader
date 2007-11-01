@@ -472,7 +472,7 @@ class ConfigPanelInteractionHTTPReconnect extends ConfigPanel implements ItemLis
         txtConnectRequestProperties = new JTextField(50);
         txtConnectPostParams = new JTextField(50);
 
-        btnImport = new JButton("Import");
+        btnImport = new JButton("Router auswählen");
         btnDisconnect = new JButton("DisconnectTest");
 
         txtLogin.setToolTipText("Als Platzhalter für den Benutzernamen " + HTTPReconnect.VAR_USERNAME + " und für das Password " + HTTPReconnect.VAR_PASSWORD + " nehmen");

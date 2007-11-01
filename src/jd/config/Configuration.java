@@ -96,6 +96,7 @@ public class Configuration extends Property implements Serializable {
      * Hiermit kann die Sprache von JD gesetzt werden
      */
     public static final String      PARAM_LOCALE                 = "LOCALE";
+    public static final String PARAM_HTTPSEND_IP = "HTTPSEND_IP";
 
     /**
      * Die unterschiedlichen Interaktionen. (ZB Reconnect nach einem Download)
