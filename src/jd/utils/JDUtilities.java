@@ -1222,8 +1222,8 @@ public class JDUtilities {
      * @return ip oder /offline
      */
     public static String getIPAddress() {
-        String site = getConfiguration().getStringProperty(Configuration.PARAM_GLOBAL_IP_CHECK_SITE, "http://www.ip-adress.com");
-        String patt = getConfiguration().getStringProperty(Configuration.PARAM_GLOBAL_IP_PATTERN, "txt \\+\\= \\\"([0-9.]*)\\:\\<br\\>");
+        String site = getConfiguration().getStringProperty(Configuration.PARAM_GLOBAL_IP_CHECK_SITE, "http://checkip.dyndns.org");
+        String patt = getConfiguration().getStringProperty(Configuration.PARAM_GLOBAL_IP_PATTERN, "Address\\: ([0-9.]*)\\<\\/body\\>");
         try {
             logger.finer("IP Check via " + site);
             RequestInfo requestInfo = Plugin.getRequest(new URL(site), null, null, true);

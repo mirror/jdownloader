@@ -57,9 +57,9 @@ private Configuration configuration;
         
         addGUIConfigEntry(ce);
         
-        ce= new GUIConfigEntry( new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, configuration, Configuration.PARAM_GLOBAL_IP_CHECK_SITE, "IP prüfen über (Website)").setDefaultValue("http://www.ip-adress.com"));
+        ce= new GUIConfigEntry( new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, configuration, Configuration.PARAM_GLOBAL_IP_CHECK_SITE, "IP prüfen über (Website)").setDefaultValue("http://checkip.dyndns.org"));
         addGUIConfigEntry(ce);
-        ce= new GUIConfigEntry( new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, configuration, Configuration.PARAM_GLOBAL_IP_PATTERN, "RegEx zum filtern der IP").setDefaultValue("txt \\+\\= \\\"([0-9.]*)\\:\\<br\\>"));
+        ce= new GUIConfigEntry( new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, configuration, Configuration.PARAM_GLOBAL_IP_PATTERN, "RegEx zum filtern der IP").setDefaultValue("Address\\: ([0-9.]*)\\<\\/body\\>"));
         addGUIConfigEntry(ce);
         add(panel, BorderLayout.NORTH);
     }
