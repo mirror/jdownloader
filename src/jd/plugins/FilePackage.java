@@ -46,36 +46,7 @@ public class FilePackage extends Property implements Serializable {
     /**
      * Diese Methode speichert Paketinformationen ab (falls die Datei noch nicht bereits besteht)
      */
-    public void saveInfoFile(){
-        String filename;
-        if (getName() != null && !getName().equals(""))
-            filename = getName();
-        else
-            filename = getId();
-        filename = getDownloadDirectory()+"/"+filename+".info";
-        try {
-            File infoFile = new File(filename);
-            if(!infoFile.exists()){
-                
-                infoFile.createNewFile();
-                DataOutputStream dos = new DataOutputStream(new FileOutputStream(infoFile));
-                
-                dos.writeBytes("Passwort für die folgenden Archive:"+ getPassword()+"\n\n");
-                
-                Iterator<DownloadLink> iterator = getDownloadLinks().iterator();
-                while(iterator.hasNext()){
-                    dos.writeBytes(iterator.next().getName()+"\n");
-                }
-                dos.close();
-            }
-        }
-        catch (FileNotFoundException e) {
-            e.printStackTrace();
-        }
-        catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
+   
     /**
      * Alles undokumentiert, da selbsterklärend
      */

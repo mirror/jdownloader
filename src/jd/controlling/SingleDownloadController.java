@@ -233,7 +233,7 @@ public class SingleDownloadController extends ControlMulticaster {
         else {
             downloadLink.setStatusText("Fertig");
             downloadLink.setInProgress(false);
-            downloadLink.getFilePackage().saveInfoFile();
+          
             fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SINGLE_DOWNLOAD_CHANGED, downloadLink));
             fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_PLUGIN_HOST_INACTIVE, plugin));
             fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SINGLE_DOWNLOAD_FINISHED, downloadLink));
