@@ -24,22 +24,17 @@ import jd.utils.JDUtilities;
  * @author coalado
  * 
  */
-public class Esnips extends PluginForSearch {
-    static private final String host              = "esnips.com";
+public class Musiclounge extends PluginForSearch {
+    static private final String host              = "musiclounge.dl.am";
 
     private String              version           = "1.0.0.1";
 private static String[] CATEGORIES =new String[]{"Audio"};
    
 
-    private static final String SEARCH_URL        = "http://www.esnips.com/_t_/%s/?tab=1&type=MUSIC_FILES&sort=RELEVANCY&q=%s&page=%s";
-
-    private static final String NUM_RESULTS       = "<div class=\"numResults\">°&nbsp;file(s)";
-
-    private static final String COMMAND_URL       = " <a class=\"CommandLink\" href='°'><strong>°</strong>";
-
+    private static final String SEARCH_URL        = "http://ml0ung4.iespana.es/search1.php";
     public static final String  PARAM_MAX_MATCHES = "MAX_MATCHES";
 
-    public Esnips() {
+    public Musiclounge() {
         super();
         steps.add(new PluginStep(PluginStep.STEP_SEARCH, null));
 
@@ -50,9 +45,9 @@ private static String[] CATEGORIES =new String[]{"Audio"};
 
     @Override
     public String getCoder() {
-        return "Coalado";
+        return "jdown";
     }
-
+ 
     @Override
     public String getPluginName() {
         return host;
@@ -79,7 +74,7 @@ private static String[] CATEGORIES =new String[]{"Audio"};
 
     @Override
     public String getPluginID() {
-        return "eSnipes " + version;
+        return "musiclounge " + version;
     }
 
     @Override
@@ -90,21 +85,7 @@ private static String[] CATEGORIES =new String[]{"Audio"};
     @Override
     public PluginStep doStep(PluginStep step, String parameter) {
         String searchPattern = (String) parameter;
-        int maxMatches;
-        if (this.getProperties().getProperty(PARAM_MAX_MATCHES) != null) {
-//            logger.info(this.getProperties().getProperty(PARAM_MAX_MATCHES).getClass().toString());
-            try {
-                maxMatches = Integer.parseInt((String) this.getProperties().getProperty(PARAM_MAX_MATCHES));
-            }
-            catch (Exception e) {
-                this.getProperties().setProperty(PARAM_MAX_MATCHES, 50);
-                maxMatches = 50;
-            }
-
-        }
-        else {
-            maxMatches = 50;
-        }
+logger.info("Search "+parameter);
         switch (step.getStep()) {
             case PluginStep.STEP_SEARCH:
                 Vector<String[]> decryptedLinks = new Vector<String[]>();
@@ -113,40 +94,22 @@ private static String[] CATEGORIES =new String[]{"Audio"};
                 String address;
                 int results = 0;
                 try {
-                    while (true) {
-                        address = String.format(SEARCH_URL, new Object[] { JDUtilities.urlEncode(searchPattern), URLEncoder.encode(searchPattern, "UTF-8"), page + "" });
-                        setStatusText("Seite " + page);
-                        logger.info("load " + address);
-                        URL url = new URL(address);
-                        RequestInfo requestInfo = getRequest(url, null, null, false);
-                        if (page == 1) {
-                            String numResults = getSimpleMatch(requestInfo.getHtmlCode(), NUM_RESULTS, 0);
-                            if (numResults == null) {
-                                logger.info("No Results");
-                                step.setParameter(decryptedLinks);
-                                return step;
-                            }
-
-                            try {
-                                results = Integer.parseInt(numResults.trim());
-                            }
-                            catch (Exception e) {
-                                logger.info("Number exc " + numResults);
-                                step.setParameter(decryptedLinks);
-                                return step;
-                            }
-                            results = Math.min(maxMatches, results);
-                            //
-                            firePluginEvent(new PluginEvent(this, PluginEvent.PLUGIN_PROGRESS_MAX, results));
-                        }
-                        Vector<Vector<String>> matches = getAllSimpleMatches(requestInfo.getHtmlCode(), COMMAND_URL);
+                   
+                        
+                      
+                        URL url = new URL(SEARCH_URL);
+                        RequestInfo requestInfo = postRequest(url, null,null,null,"q="+JDUtilities.urlEncode(searchPattern)+"&action=search",true);
+                       
+                     
+                      
+                       Vector<Vector<String>> matches = getAllSimpleMatches(requestInfo.getHtmlCode(), "<a href=\"°\" target=\"_blank\">°</a> |");
                         String link;
-
+                        firePluginEvent(new PluginEvent(this, PluginEvent.PLUGIN_PROGRESS_MAX, matches.size()));
                         for (int i = 0; i < matches.size(); i++) {
                             // link = getLinkDetails(matches.get(i).get(0));
                             if (matches.get(i).get(0) != null) {
                                 setStatusText(matches.get(i).get(1));
-                                decryptedLinks.add(new String[]{"http://" + host + matches.get(i).get(0),null,null});
+                                decryptedLinks.add(new String[]{matches.get(i).get(0),"musiclounge.dl.am",null});
                             }
                             // if (link != null) {
                             // decryptedLinks.add(link);
@@ -155,9 +118,9 @@ private static String[] CATEGORIES =new String[]{"Audio"};
                             firePluginEvent(new PluginEvent(this, PluginEvent.PLUGIN_PROGRESS_INCREASE, null));
                             results--;
                         }
-                        if (results <= 0|| matches.size()<=0) break;
-                        page++;
-                    }
+                      
+                      
+                   
                     // decryptedLinks.add(newURL);
                 }
                 catch (UnsupportedEncodingException e) {

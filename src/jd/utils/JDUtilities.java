@@ -1264,7 +1264,7 @@ public class JDUtilities {
             else {
                 logger.severe("Working drectory " + runIn + " does not exist!");
             }
-        }
+        } 
         Process process;
         try {
             logger.finer("Start " + command + " " + parameter + " in " + runIn + " wait " + waitForReturn);

@@ -45,6 +45,8 @@ import jd.gui.skins.simple.components.BrowseFile;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.Plugin;
+import jd.plugins.PluginForDecrypt;
+import jd.plugins.PluginForSearch;
 import jd.utils.JDUtilities;
 
 /**
@@ -175,10 +177,24 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
      * @param linkList
      */
     public void addLinks(DownloadLink[] linkList) {
+        String comment=txfComment.getText();
+        String password=txfPassword.getText();
+        
         for (int i = 0; i < linkList.length; i++) {
             this.linkList.add(linkList[i]);
-            logger.info(linkList[i].getUrlDownloadDecrypted() + " # ");
+            logger.info(linkList[i].getUrlDownloadDecrypted());
+            if(linkList[i].getSourcePluginPassword()!=null &&password.indexOf(linkList[i].getSourcePluginPassword())<0){
+                password+= "|"+linkList[i].getSourcePluginPassword();
+            }
+            if(linkList[i].getSourcePluginComment()!=null &&comment.indexOf(linkList[i].getSourcePluginComment())<0){
+                comment+= "|"+linkList[i].getSourcePluginComment();
+            }
+       
         }
+        if(comment.startsWith("|"))comment=comment.substring(1);
+        if(password.startsWith("|"))password=password.substring(1);
+        txfComment.setText(comment);
+        txfPassword.setText(password.trim());
         sortLinkList();
         if(txtName.getName()==null || txtName.getName().trim().length()==0) checkForSameName();
         fireTableChanged();

@@ -41,11 +41,11 @@ public class Main {
      * @param args
      */
     public static void main(String args[]) {
-        if (SingleInstanceController.isApplicationRunning()) {
-            JOptionPane.showMessageDialog(null, "jDownloader läuft bereits!", "jDownloader", JOptionPane.WARNING_MESSAGE);
-            System.exit(0);
-            return;
-        }
+//        if (SingleInstanceController.isApplicationRunning()) {
+//            JOptionPane.showMessageDialog(null, "jDownloader läuft bereits!", "jDownloader", JOptionPane.WARNING_MESSAGE);
+//            System.exit(0);
+//            return;
+//        }
         SingleInstanceController.bindRMIObject(new SingleInstanceController());
         Main main = new Main();
         main.go();

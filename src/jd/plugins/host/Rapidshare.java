@@ -75,6 +75,7 @@ import java.util.regex.Pattern;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.Configuration;
+import jd.gui.skins.simple.config.GUIConfigEntry;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginStep;
@@ -83,6 +84,7 @@ import jd.utils.JDUtilities;
 
 public class Rapidshare extends PluginForHost {
     static private final String            host                             = "rapidshare.com";
+ 
     private String                         version                          = "1.2.0.0";
     // http://(?:[^.]*\.)*rapidshare\.com/files/[0-9]*/[^\s"]+
     private String                         botHash                          = "dab07d2b7f1299f762454cda4c6143e7";
@@ -132,11 +134,13 @@ public class Rapidshare extends PluginForHost {
     private static HashMap<String, String> serverMap                        = new HashMap<String, String>();
     private static String[]                serverList1;
     private String                         finalCookie;
-    private static String                  premiumCookie                    = null;
+   
     private String[]                       serverList2;
     private boolean                        hardewareError                   = false;
     private String                         ticketCode;
     private String                         newURL;
+    
+    private static final String PROPERTY_BYTES_TO_LOAD = "BYTES_TO_LOAD";
     @Override
     public String getCoder() {
         return "astaldo/coalado";
@@ -226,6 +230,9 @@ public class Rapidshare extends PluginForHost {
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_LABEL, "WICHTIG! "));
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_LABEL, "(*1)Premiumuser müssen die Bevorzugten Server in den Rapidshare-Online-Optionen (rs.com Premiumbereich) einstellen falls sie Direktlinks aktiviert haben!"));
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_LABEL, "(*2)Betrifft nur Freeuser"));
+        config.addEntry(cfg =  new ConfigEntry(ConfigContainer.TYPE_SPINNER, getProperties(), PROPERTY_BYTES_TO_LOAD, "Nur die ersten * KiloBytes jeder Datei laden[-1 to disable]",-1,100000).setDefaultValue(-1).setStep(500));
+        
+      
     }
     // @Override
     // public URLConnection getURLConnection() {
@@ -505,7 +512,7 @@ public class Rapidshare extends PluginForHost {
                             step.setStatus(PluginStep.STATUS_ERROR);
                             return step;
                         }
-                        if (download(downloadLink, urlConnection)) {
+                        if (download(downloadLink, urlConnection,1024*getProperties().getIntegerProperty(PROPERTY_BYTES_TO_LOAD,-1))) {
                             step.setStatus(PluginStep.STATUS_DONE);
                             downloadLink.setStatus(DownloadLink.STATUS_DONE);
                             JDUtilities.appendInfoToFilename(captchaFile, captchaTxt, true);
@@ -616,7 +623,7 @@ public class Rapidshare extends PluginForHost {
                             return step;
                         }
                         this.finalCookie = cookie;
-                        premiumCookie = cookie;
+                    
                         post = "l=" + fields2.get("l") + "&p=" + fields2.get("p").replaceAll("\\%", "%25") + "&dl.start=Download+" + fields.get("filename").replaceAll(" ", "+");
                         url = "http://rs" + fields.get("serverid") + ".rapidshare.com/files" + "/" + fields.get("fileid") + "/" + fields.get("filename");
                         requestInfo = postRequestWithoutHtmlCode(new URL(url), cookie, url, post, true);
@@ -748,7 +755,7 @@ public class Rapidshare extends PluginForHost {
                         step.setStatus(PluginStep.STATUS_ERROR);
                         return step;
                     }
-                    if (download(downloadLink, urlConnection)) {
+                    if (download(downloadLink, urlConnection,1024*getProperties().getIntegerProperty(PROPERTY_BYTES_TO_LOAD,-1))) {
                         step.setStatus(PluginStep.STATUS_DONE);
                         downloadLink.setStatus(DownloadLink.STATUS_DONE);
                         return null;

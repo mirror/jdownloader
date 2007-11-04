@@ -21,42 +21,65 @@ import jd.utils.JDUtilities;
  */
 public class Gulli extends PluginForHost {
     static private final Pattern PAT_SUPPORTED      = getSupportPattern("http://share.gulli.com/[+]");
+
     static private final Pattern PAT_CAPTCHA        = Pattern.compile("<img src=\"(/captcha[^\"]*)");
+
     static private final Pattern PAT_FILE_ID        = Pattern.compile("<input type=\"hidden\" name=\"file\" value=\"([^\"]*)");
+
     static private final Pattern PAT_DOWNLOAD_URL   = Pattern.compile("<form action=\"/(download[^\"]*)");
+
     static private final Pattern PAT_DOWNLOAD_LIMIT = Pattern.compile("timeLeft=([^\"]*)&");
+
     static private final Pattern PAT_DOWNLOAD_ERROR = Pattern.compile("share.gulli.com/error([^\"]*)");
+
     static private final String  HOST_URL           = "http://share.gulli.com/";
+
     static private final String  DOWNLOAD_URL       = "http://share.gulli.com/download";
+
     static private final String  HOST               = "share.gulli.com";
+
     static private final String  PLUGIN_NAME        = HOST;
+
     static private final String  PLUGIN_VERSION     = "0";
+
     static private final String  PLUGIN_ID          = PLUGIN_NAME + "-" + PLUGIN_VERSION;
+
     static private final String  CODER              = "olimex/coalado";
+
     /**
      * ID des Files bei gulli
      */
     private String               fileId;
+
     private String               cookie;
+
     private String               finalDownloadURL;
+
     private HttpURLConnection    finalDownloadConnection;
+
+    private boolean              serverIPChecked;
+
     public Gulli() {
         steps.add(new PluginStep(PluginStep.STEP_GET_CAPTCHA_FILE, null));
         steps.add(new PluginStep(PluginStep.STEP_WAIT_TIME, null));
         steps.add(new PluginStep(PluginStep.STEP_DOWNLOAD, null));
     }
+
     @Override
     public String getCoder() {
         return CODER;
     }
+
     @Override
     public String getPluginName() {
         return HOST;
     }
+
     @Override
     public Pattern getSupportedLinks() {
         return PAT_SUPPORTED;
     }
+
     @Override
     public String getHost() {
         return HOST;
@@ -66,17 +89,20 @@ public class Gulli extends PluginForHost {
     public String getVersion() {
         return PLUGIN_VERSION;
     }
+
     @Override
     public String getPluginID() {
         return PLUGIN_ID;
     }
-    //    @Override
-    //    public URLConnection getURLConnection() {
-    //        // XXX: ???
-    //        return null;
-    //    }
+
+    // @Override
+    // public URLConnection getURLConnection() {
+    // // XXX: ???
+    // return null;
+    // }
     public PluginStep doStep(PluginStep step, DownloadLink parameter) {
-        RequestInfo requestInfo;
+        RequestInfo requestInfo = null;
+        String dlUrl=null;
         try {
             DownloadLink downloadLink = (DownloadLink) parameter;
             switch (step.getStep()) {
@@ -86,11 +112,15 @@ public class Gulli extends PluginForHost {
                     requestInfo = getRequest(new URL(downloadLink.getUrlDownloadDecrypted()));
                     fileId = getFirstMatch(requestInfo.getHtmlCode(), PAT_FILE_ID, 1);
                     String captchaLocalUrl = getFirstMatch(requestInfo.getHtmlCode(), PAT_CAPTCHA, 1);
+                    dlUrl = getFirstMatch(requestInfo.getHtmlCode(), PAT_DOWNLOAD_URL, 1);
+                  
+
                     if (captchaLocalUrl == null) {
-                        logger.severe("Captcha URL konnte nicht gefunden werden " + downloadLink.getUrlDownload());
-                        downloadLink.setStatus(DownloadLink.STATUS_ERROR_STATIC_WAITTIME);
+
+                        logger.severe("Download for your Ip Temp. not available");
                         step.setStatus(PluginStep.STATUS_ERROR);
-                        step.setParameter(3l * 60l);
+                        downloadLink.setStatus(DownloadLink.STATUS_ERROR_DOWNLOAD_LIMIT);
+                        step.setParameter(30 * 1000l);
                         return step;
                     }
                     else {
@@ -111,15 +141,22 @@ public class Gulli extends PluginForHost {
                             step.setStatus(PluginStep.STATUS_USER_INPUT);
                         }
                         return step;
+
                     }
                 case PluginStep.STEP_WAIT_TIME:
-                    String captchaTxt = (String) steps.get(0).getParameter();
-                    String dlUrl;
-                    logger.info("file=" + fileId + "&" + "captcha=" + captchaTxt);
-                    requestInfo = postRequest(new URL(DOWNLOAD_URL), cookie, null, null, "file=" + fileId + "&" + "captcha=" + captchaTxt, true);
+                   
+                        String captchaTxt = (String) steps.get(0).getParameter();
+
+                        logger.info("file=" + fileId + "&" + "captcha=" + captchaTxt);
+                        requestInfo = postRequest(new URL(DOWNLOAD_URL), cookie, null, null, "file=" + fileId + "&" + "captcha=" + captchaTxt, true);
+                    
                     dlUrl = getFirstMatch(requestInfo.getHtmlCode(), PAT_DOWNLOAD_URL, 1);
+                    
                     if (dlUrl == null) {
                         logger.finest("Error Page");
+                        step.setStatus(PluginStep.STATUS_ERROR);
+                        downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN);
+                        return step;
                     }
                     logger.info(dlUrl);
                     try {
@@ -197,6 +234,7 @@ public class Gulli extends PluginForHost {
             return null;
         }
     }
+
     /**
      * Liest Content von Connection und gibt diesen als String zurück TODO:
      * auslagern
@@ -214,17 +252,21 @@ public class Gulli extends PluginForHost {
         }
         return sb.toString();
     }
+
     @Override
     public boolean doBotCheck(File file) {
         return false;
     }
+
     @Override
     public void reset() {
         fileId = null;
         cookie = null;
         finalDownloadURL = null;
         finalDownloadConnection = null;
+        serverIPChecked = false;
     }
+
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) {
         RequestInfo requestInfo;
@@ -235,10 +277,13 @@ public class Gulli extends PluginForHost {
             }
             return true;
         }
-        catch (MalformedURLException e) { }
-        catch (IOException e)           { }
+        catch (MalformedURLException e) {
+        }
+        catch (IOException e) {
+        }
         return false;
     }
+
     @Override
     public int getMaxSimultanDownloadNum() {
         return 1;

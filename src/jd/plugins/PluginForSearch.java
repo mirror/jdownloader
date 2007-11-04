@@ -12,8 +12,8 @@ public abstract class PluginForSearch extends Plugin {
 
     private String searchPattern;
 
-    public Vector<String> findLinks(String pattern) {
-        Vector<String> foundLinks = new Vector<String>();
+    public Vector<String[]> findLinks(String pattern) {
+        Vector<String[]> foundLinks = new Vector<String[]>();
 
         foundLinks.addAll(parseContent(pattern));
 
@@ -29,11 +29,11 @@ public abstract class PluginForSearch extends Plugin {
      * @return Aller Ergebnisse die in den suchplugins für die gewählte
      *         Kategorie und den gewählten suchstring gef7unden wurden
      */
-    public Vector<String> parseContent(String pattern) {
+    public Vector<String[]> parseContent(String pattern) {
         String[] s = pattern.split("\\:\\:\\:");
-        if (s.length < 2) return new Vector<String>();
+        if (s.length < 2) return new Vector<String[]>();
 
-        if (!hasCategory(s[0])) return new Vector<String>();
+        if (!hasCategory(s[0])) return new Vector<String[]>();
         this.searchPattern = s[1];
 
         PluginStep step = null;
@@ -43,19 +43,30 @@ public abstract class PluginForSearch extends Plugin {
             if (nextStep(step) == null) {
                 try {
                     if (step.getParameter() == null) {
-                        logger.severe("ACHTUNG Search Plugins müssen im letzten schritt einen  Vector<String> parameter  übergeben!");
-                        return new Vector<String>();
+                        logger.severe("ACHTUNG Search Plugins müssen im letzten schritt einen  Vector<String[]> parameter  übergeben!");
+                        return new Vector<String[]>();
                     }
-                    Vector<String> foundLinks = (Vector<String>) step.getParameter();
+                    Vector<String[]> foundLinks = (Vector<String[]>) step.getParameter();
                     logger.info("Got " + foundLinks.size() + " links");
                     return foundLinks;
                 }
                 catch (Exception e) {
-                    logger.severe("SearchFehler! " + e.getMessage());
+                    try {
+                        Vector<String> foundLinksTmp = (Vector<String>) step.getParameter();
+                        Vector<String[]> foundLinks = (Vector<String[]>) step.getParameter();
+                        for (int i = 0; i < foundLinksTmp.size(); i++) {
+                            foundLinks.add(new String[] { foundLinksTmp.get(i), null, null });
+                        }
+                        logger.info("Got " + foundLinks.size() + " links");
+                        return foundLinks;
+                    }
+                    catch (Exception e2) {
+                        logger.severe("Searcherror: " + e2.getMessage());
+                    }
                 }
             }
         }
-        return new Vector<String>();
+        return new Vector<String[]>();
 
     }
 
@@ -74,6 +85,7 @@ public abstract class PluginForSearch extends Plugin {
      * @return
      */
     public boolean hasCategory(String cat) {
+        logger.info(cat);
         for (int i = 0; i < getCategories().length; i++) {
             if (getCategories()[i].equalsIgnoreCase(cat)) return true;
         }
@@ -106,4 +118,5 @@ public abstract class PluginForSearch extends Plugin {
 
         return searchPattern;
     }
+
 }

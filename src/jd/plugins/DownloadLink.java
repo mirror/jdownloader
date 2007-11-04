@@ -196,6 +196,9 @@ public class DownloadLink implements Serializable,Comparable<DownloadLink> {
      */
     private transient SpeedMeter speedMeter;
     private transient Boolean    available         = null;
+   
+    private String sourcePluginPassword=null;
+    private String sourcePluginComment=null;
     /**
      * Erzeugt einen neuen DownloadLink
      * 
@@ -774,4 +777,22 @@ public class DownloadLink implements Serializable,Comparable<DownloadLink> {
     public int compareTo(DownloadLink o) {
         return extractFileNameFromURL().compareTo(o.extractFileNameFromURL());
     }
+
+
+
+public String getSourcePluginPassword() {
+    return sourcePluginPassword;
+}
+
+public void setSourcePluginPassword(String sourcePluginPassword) {
+    this.sourcePluginPassword = sourcePluginPassword;
+}
+
+public String getSourcePluginComment() {
+    return sourcePluginComment;
+}
+
+public void setSourcePluginComment(String sourcePluginComment) {
+    this.sourcePluginComment = sourcePluginComment;
+}
 }

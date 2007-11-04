@@ -849,7 +849,12 @@ public abstract class Plugin {
      * @return wahr, wenn alle Daten ausgelesen und gespeichert wurden
      */
     public boolean download(DownloadLink downloadLink, URLConnection urlConnection) {
-        File fileOutput = new File(downloadLink.getFileOutput());
+        
+        return download(downloadLink,urlConnection,-1);
+    
+    }
+    public boolean download(DownloadLink downloadLink, URLConnection urlConnection, int bytesToLoad) {
+        File fileOutput = new File(downloadLink.getFileOutput()+".jdd");
         if (fileOutput == null || fileOutput.getParentFile() == null) return false;
         if (!fileOutput.getParentFile().exists()) {
             fileOutput.getParentFile().mkdirs();
@@ -869,6 +874,10 @@ public abstract class Plugin {
             WritableByteChannel dest = fos.getChannel();
             // Länge aus HTTP-Header speichern:
             int contentLen = urlConnection.getContentLength();
+            if(bytesToLoad>0){
+                contentLen=bytesToLoad;
+             logger.info("Load only the first "+bytesToLoad+" kb");   
+            }
             downloadLink.setDownloadMax(contentLen);
             logger.info("starting download");
             start = System.currentTimeMillis();
@@ -895,8 +904,10 @@ public abstract class Plugin {
                 firePluginEvent(new PluginEvent(this, PluginEvent.PLUGIN_DOWNLOAD_BYTES, bytes));
                 firePluginEvent(new PluginEvent(this, PluginEvent.PLUGIN_DATA_CHANGED, downloadLink));
                 downloadLink.setDownloadCurrent(downloadedBytes);
+                
+                if(bytesToLoad>0&&downloadedBytes>=bytesToLoad)break;
             }
-            if (contentLen != -1 && downloadedBytes != contentLen) {
+            if (bytesToLoad<=0&&contentLen != -1 && downloadedBytes < contentLen) {
                 logger.info(aborted+" - "+downloadLink.isAborted()+" incomplete download: bytes loaded: "+downloadedBytes+"/"+contentLen);
                 downloadLink.setStatus(DownloadLink.STATUS_DOWNLOAD_INCOMPLETE);
                 return false;
@@ -906,6 +917,7 @@ public abstract class Plugin {
             source.close();
             dest.close();
             fos.close();
+            fileOutput.renameTo(new File(downloadLink.getFileOutput()));
             downloadLink.setStatus(DownloadLink.STATUS_DOWNLOAD_FINISHED);
             firePluginEvent(new PluginEvent(this, PluginEvent.PLUGIN_PROGRESS_FINISH, downloadLink));
             logger.info("download finished:" + fileOutput.getAbsolutePath());

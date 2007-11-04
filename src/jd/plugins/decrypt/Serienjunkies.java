@@ -20,18 +20,20 @@ import jd.utils.JDUtilities;
 
 public class Serienjunkies extends PluginForDecrypt {
     static private final String host             = "serienjunkies.safehost.be";
+    private static final String DEFAULT_PASSWORD = "serienjunkies.dl.am";
     private String              version          = "2.0.0.0";
     // http://85.17.177.195/sjsafe/f-e657c0c256dd9e58/rc_h324.html
     private Pattern             patternSupported = getSupportPattern("http://85.17.177.195/[+]");
 //    private Pattern             patternCaptcha   = Pattern.compile("e/secure/");
     private Pattern             patternCaptcha   = null;
-        
+
     private String dynamicCaptcha = "<FORM ACTION=\".*?%s\" METHOD=\"post\"(?s).*?(?-s)<INPUT TYPE=\"HIDDEN\" NAME=\"s\" VALUE=\"([\\w]*)\">(?s).*?(?-s)<IMG SRC=\"([^\"]*)\"";    
     public Serienjunkies() {
         super();
         steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
         currentStep = steps.firstElement();
-        this.setConfigEelements();
+        this.setConfigElements();
+       
     }
     /*
      * Diese wichtigen Infos sollte man sich unbedingt durchlesen
@@ -70,7 +72,7 @@ public class Serienjunkies extends PluginForDecrypt {
     public PluginStep doStep(PluginStep step, String parameter) {
         switch (step.getStep()) {
             case PluginStep.STEP_DECRYPT:
-                Vector<String> decryptedLinks = new Vector<String>();
+                Vector<String[]> decryptedLinks = new Vector<String[]>();
                 try {
                     URL url = new URL(parameter);
                     String modifiedURL = url.toString();
@@ -104,7 +106,7 @@ public class Serienjunkies extends PluginForDecrypt {
                         firePluginEvent(new PluginEvent(this, PluginEvent.PLUGIN_PROGRESS_MAX, 1));
                         helpstring = EinzelLinks(parameter);
                         firePluginEvent(new PluginEvent(this, PluginEvent.PLUGIN_PROGRESS_INCREASE, null));
-                        if (check(helpstring)) decryptedLinks.add(helpstring);
+                        if (check(helpstring)) decryptedLinks.add(new String[]{helpstring,DEFAULT_PASSWORD,null});
                     }
                     else if (parameter.indexOf("/sjsafe/") >= 0) {
                         logger.info("sjsafe link");
@@ -113,7 +115,7 @@ public class Serienjunkies extends PluginForDecrypt {
                         
                         firePluginEvent(new PluginEvent(this, PluginEvent.PLUGIN_PROGRESS_INCREASE, null));
                         for (int j = 0; j < helpvector.size(); j++) {
-                            if (check(helpvector.get(j))) decryptedLinks.add(helpvector.get(j));
+                            if (check(helpvector.get(j))) decryptedLinks.add(new String[]{helpvector.get(j),DEFAULT_PASSWORD,null});
                         }
                     }
                     else {
@@ -124,17 +126,17 @@ public class Serienjunkies extends PluginForDecrypt {
                             firePluginEvent(new PluginEvent(this, PluginEvent.PLUGIN_PROGRESS_INCREASE, null));
                             if (links.get(i).get(0).indexOf("/safe/") >= 0) {
                                 helpstring = EinzelLinks(links.get(i).get(0));
-                                if (check(helpstring)) decryptedLinks.add(helpstring);
+                                if (check(helpstring)) decryptedLinks.add(new String[]{helpstring,DEFAULT_PASSWORD,null});
                             }
                             else if (links.get(i).get(0).indexOf("/sjsafe/") >= 0) {
                                 helpvector = ContainerLinks(links.get(i).get(0));
                                 for (int j = 0; j < helpvector.size(); j++) {
-                                    if (check(helpvector.get(j))) decryptedLinks.add(helpvector.get(j));
+                                    if (check(helpvector.get(j))) decryptedLinks.add(new String[]{helpvector.get(j),DEFAULT_PASSWORD,null});
                                 }
                             }
                             else {
-                                decryptedLinks.add(links.get(i).get(0));
-                                if (check(links.get(i).get(0))) decryptedLinks.add(links.get(i).get(0));
+                                decryptedLinks.add(new String[]{links.get(i).get(0),DEFAULT_PASSWORD,null});
+                                if (check(links.get(i).get(0))) decryptedLinks.add(new String[]{links.get(i).get(0),DEFAULT_PASSWORD,null});
                             }
                         }
                     }
@@ -151,8 +153,12 @@ public class Serienjunkies extends PluginForDecrypt {
         }
         return null;
     }
-    private void setConfigEelements() {
+  
+    private void setConfigElements() {
         ConfigEntry cfg;
+        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_LABEL, "Default Passwort"));
+        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getProperties(), "DEFAULT_PASSWORT", "Passwort").setDefaultValue(DEFAULT_PASSWORD));
+        
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_LABEL, "Hoster Auswahl"));
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_SEPERATOR));
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getProperties(), "USE_RAPIDSHARE", "Rapidshare.com"));
