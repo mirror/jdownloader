@@ -151,14 +151,12 @@ public class oXygenWarez extends PluginForDecrypt {
                         }
                         break;
                     }
-                    System.out.println(reqinfo.getHtmlCode());
                     Vector<Vector<String>> links = getAllSimpleMatches(reqinfo.getHtmlCode(), DL_LINK);
                     firePluginEvent(new PluginEvent(this, PluginEvent.PLUGIN_PROGRESS_MAX, links.size()));
 
                     for (int i = 0; i < links.size(); i++) {
                         String link = JDUtilities.urlEncode(links.get(i).get(0));
                         link = link.replaceAll("http://.*http://", "http://");
-                        System.out.println(link);
                         decryptedLinks.add(new String[]{link, pw, null});
 
                         firePluginEvent(new PluginEvent(this, PluginEvent.PLUGIN_PROGRESS_INCREASE, null));
