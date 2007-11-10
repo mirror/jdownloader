@@ -9,10 +9,10 @@ import java.awt.TrayIcon;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
-import jd.gui.UIInterface;
 import jd.plugins.PluginOptional;
 import jd.plugins.event.PluginEvent;
 import jd.utils.JDUtilities;
+import sun.misc.Service;
 
 public class JDTrayIcon extends PluginOptional implements ActionListener{
     private TrayIcon trayIcon;
@@ -29,7 +29,7 @@ public class JDTrayIcon extends PluginOptional implements ActionListener{
     @Override public String getPluginName() { return "TrayIcon"; }
     @Override public String getVersion()    { return "0.0.0.1";  }
     @Override
-    public void enable(boolean enable) {
+    public void enable(boolean enable) throws Exception{
         if(enable){
             initGUI();
         }
@@ -38,9 +38,12 @@ public class JDTrayIcon extends PluginOptional implements ActionListener{
                 SystemTray.getSystemTray().remove(trayIcon);
         }
     }
-    private void initGUI(){
-
+    private void initGUI()throws Exception{
+   
+try{
         SystemTray tray = SystemTray.getSystemTray();
+
+        Service s;
         Image image = JDUtilities.getImage("jd_logo");
         PopupMenu popup = new PopupMenu();
         trayIcon = new TrayIcon(image, JDUtilities.getJDTitle(), popup);
@@ -76,6 +79,10 @@ public class JDTrayIcon extends PluginOptional implements ActionListener{
         popup.add(reconnect);
         popup.addSeparator();
         popup.add(exit);
+}catch(Exception e){
+    logger.severe("Error initializing SystemTray");
+    return;
+}
     }
     public void actionPerformed(ActionEvent e) {
         if (e.getSource() == exit) {

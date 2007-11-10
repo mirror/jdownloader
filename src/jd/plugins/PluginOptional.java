@@ -18,6 +18,6 @@ public abstract class PluginOptional extends Plugin{
     }
     
 
-    public abstract void enable(boolean enable);
+    public abstract void enable(boolean enable) throws Exception;
     public abstract String getRequirements();
 }

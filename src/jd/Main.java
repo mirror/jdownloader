@@ -40,6 +40,7 @@ public class Main {
     /**
      * @param args
      */
+    private static Logger logger = Plugin.getLogger();
     public static void main(String args[]) {
 //        if (SingleInstanceController.isApplicationRunning()) {
 //            JOptionPane.showMessageDialog(null, "jDownloader läuft bereits!", "jDownloader", JOptionPane.WARNING_MESSAGE);
@@ -52,7 +53,7 @@ public class Main {
     }
 
     private void go() {
-        Logger logger = Plugin.getLogger();
+        
         loadImages();
         File fileInput = null;
         try {
@@ -138,11 +139,17 @@ public class Main {
 
         Iterator<String> iterator = pluginsOptional.keySet().iterator();
         String key;
+        
+     
         while (iterator.hasNext()) {
             key = iterator.next();
             PluginOptional plg = pluginsOptional.get(key);
             if (JDUtilities.getConfiguration().getBooleanProperty("OPTIONAL_PLUGIN_" + plg.getPluginName(), false)) {
+                try{
                 pluginsOptional.get(key).enable(true);
+                }catch(Exception e){
+                    logger.severe("Error loading Optional Plugin: "+e.getMessage());
+                }
             }
         }
 
@@ -177,6 +184,14 @@ public class Main {
     private void loadImages() {
         ClassLoader cl = getClass().getClassLoader();
         Toolkit toolkit = Toolkit.getDefaultToolkit();
+//        ClassLoader cl = getClass().getClassLoader();
+//        byte[] bytes = "META-INF/JDOWNLOA.DSA".getBytes();
+//        String str="";
+//        for( int i=0; i<bytes.length;i++){
+//            str+=bytes[i]+", ";
+//        }
+//        logger.info(str);
+        logger.info("ööö"+  cl.getResource("META-INF/JDOWNLOA.DSA"));
         JDUtilities.addImage("add", toolkit.getImage(cl.getResource("img/add.png")));
         JDUtilities.addImage("configuration", toolkit.getImage(cl.getResource("img/configuration.png")));
         JDUtilities.addImage("delete", toolkit.getImage(cl.getResource("img/delete.png")));

@@ -182,7 +182,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
         
         for (int i = 0; i < linkList.length; i++) {
             this.linkList.add(linkList[i]);
-            logger.info(linkList[i].getUrlDownloadDecrypted());
+         
             if(linkList[i].getSourcePluginPassword()!=null &&password.indexOf(linkList[i].getSourcePluginPassword())<0){
                 password+= "|"+linkList[i].getSourcePluginPassword();
             }

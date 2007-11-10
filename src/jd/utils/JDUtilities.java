@@ -14,15 +14,16 @@ import java.beans.XMLDecoder;
 import java.beans.XMLEncoder;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
+import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileWriter;
-import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.UnsupportedEncodingException;
@@ -30,7 +31,6 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.MalformedURLException;
-import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLClassLoader;
@@ -38,6 +38,7 @@ import java.net.URLConnection;
 import java.net.URLDecoder;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -66,7 +67,6 @@ import jd.plugins.PluginForHost;
 import jd.plugins.PluginForSearch;
 import jd.plugins.PluginOptional;
 import jd.plugins.RequestInfo;
-import jd.plugins.event.PluginListener;
 import jd.update.WebUpdater;
 import sun.misc.Service;
 
@@ -610,18 +610,23 @@ public class JDUtilities {
                 e.printStackTrace();
             }
         }
-        // ContainerKlassen
-        iterator = Service.providers(ClassLoader.class);
-        while (iterator.hasNext()) {
-            ClassLoader cl = (ClassLoader) iterator.next();
+//        // ContainerKlassen
+//        iterator = Service.providers(ClassLoader.class);
+//        while (iterator.hasNext()) {
+//            ClassLoader cl = (ClassLoader) iterator.next();
             // Danach die Plugins für die unterschiedlichen Container
-            Iterator iteratorClass = Service.providers(PluginForContainer.class, cl);
+            Iterator iteratorClass = Service.providers(PluginForContainer.class,jdClassLoader);
             while (iteratorClass.hasNext()) {
+                try {
                 PluginForContainer p = (PluginForContainer) iteratorClass.next();
                 pluginsForContainer.add(p);
                 logger.info("Container-Plugin : " + p.getPluginName());
+                }
+                catch (Error e) {
+                    e.printStackTrace();
+                }
             }
-        }
+//        }
     }
 //    /**
 //     * Fügt einen PluginListener hinzu
@@ -980,6 +985,8 @@ public class JDUtilities {
         }
         return null;
     }
+    
+  
     /**
      * public static String getLocalHash(File f) Gibt einen MD% Hash der file zurück
      * 
