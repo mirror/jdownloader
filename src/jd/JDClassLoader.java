@@ -137,7 +137,6 @@ public class JDClassLoader extends java.lang.ClassLoader {
         if (c == null) {
             JarEntry entry=null;
             for(int i=0;i<jars.length;i++){
-                System.out.println(jars[i].getEntry(name));
                 entry = jars[i].getJarEntry(name.replace('.', '/')+".class");
                 if(entry != null){
                     try {
