@@ -223,6 +223,10 @@ public class SingleDownloadController extends ControlMulticaster {
                 case DownloadLink.STATUS_ERROR_NO_FREE_SPACE:
                     this.onErrorNoFreeSpace(downloadLink, plugin, step);
                     break;
+                    
+                case DownloadLink.STATUS_ERROR_PLUGIN_SPECIFIC:
+                    this.onErrorPluginSpecific(downloadLink, plugin, step);
+                    break;
                 default:
                     this.onErrorUnknown(downloadLink, plugin, step);
             }
@@ -240,6 +244,18 @@ public class SingleDownloadController extends ControlMulticaster {
             Interaction.handleInteraction((Interaction.INTERACTION_SINGLE_DOWNLOAD_FINISHED), downloadLink);
         }
 
+    }
+
+    private void onErrorPluginSpecific(DownloadLink downloadLink2, PluginForHost plugin, PluginStep step) {
+        String message = (String) step.getParameter();
+        logger.severe("Error occurred: "+message);
+        
+     
+        downloadLink.setStatusText(message);
+        downloadLink.setInProgress(false);
+        downloadLink.setEnabled(false);
+        fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SINGLE_DOWNLOAD_CHANGED, downloadLink));
+        
     }
 
     private void onErrorNoFreeSpace(DownloadLink downloadLink2, PluginForHost plugin, PluginStep step) {

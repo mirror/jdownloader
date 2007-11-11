@@ -597,6 +597,15 @@ public class JDUtilities {
             pluginsForSearch.add(p);
             logger.info("Search-Plugin     : " + p.getPluginName());
         }
+        
+        // Danach die Plugins der verschiedenen Suchengines
+        iterator = Service.providers(PluginForContainer.class);
+        while (iterator.hasNext()) {
+            PluginForContainer p = (PluginForContainer) iterator.next();
+            pluginsForContainer.add(p);
+            logger.info("Container-Plugin : " + p.getPluginName());
+        }
+        try {
         iterator = Service.providers(PluginOptional.class, jdClassLoader);
         while (iterator.hasNext()) {
             try {
@@ -610,22 +619,26 @@ public class JDUtilities {
                 e.printStackTrace();
             }
         }
+        } 
+        catch (Error e) {
+            e.printStackTrace();
+        }
 //        // ContainerKlassen
 //        iterator = Service.providers(ClassLoader.class);
 //        while (iterator.hasNext()) {
 //            ClassLoader cl = (ClassLoader) iterator.next();
             // Danach die Plugins für die unterschiedlichen Container
-            Iterator iteratorClass = Service.providers(PluginForContainer.class,jdClassLoader);
-            while (iteratorClass.hasNext()) {
-                try {
-                PluginForContainer p = (PluginForContainer) iteratorClass.next();
-                pluginsForContainer.add(p);
-                logger.info("Container-Plugin : " + p.getPluginName());
-                }
-                catch (Error e) {
-                    e.printStackTrace();
-                }
-            }
+//            Iterator iteratorClass = Service.providers(PluginForContainer.class,jdClassLoader);
+//            while (iteratorClass.hasNext()) {
+//                try {
+//                PluginForContainer p = (PluginForContainer) iteratorClass.next();
+//                pluginsForContainer.add(p);
+//                logger.info("Container-Plugin : " + p.getPluginName());
+//                }
+//                catch (Error e) {
+//                    e.printStackTrace();
+//                }
+//            }
 //        }
     }
 //    /**

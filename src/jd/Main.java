@@ -100,7 +100,10 @@ public class Main {
         JDController controller = new JDController();
         UIInterface uiInterface = new SimpleGUI();
         controller.setUiInterface(uiInterface);
-
+        // Startet die Downloads nach dem start
+        if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_START_DOWNLOADS_AFTER_START, false)) {
+            uiInterface.fireUIEvent(new UIEvent(uiInterface, UIEvent.UI_START_DOWNLOADS));
+        }
         logger.info("Lade Queue");
         if (!controller.initDownloadLinks()) {
             File links = JDUtilities.getResourceFile("links.dat");
@@ -153,10 +156,7 @@ public class Main {
             }
         }
 
-        // Startet die Downloads nach dem start
-        if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_START_DOWNLOADS_AFTER_START, false)) {
-            uiInterface.fireUIEvent(new UIEvent(uiInterface, UIEvent.UI_START_DOWNLOADS));
-        }
+    
 
     }
 

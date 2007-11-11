@@ -4,7 +4,7 @@ import java.io.Serializable;
 import java.util.Locale;
 import java.util.Vector;
 
-import sun.util.resources.LocaleData;
+
 
 import jd.controlling.interaction.Interaction;
 import jd.controlling.interaction.InteractionTrigger;

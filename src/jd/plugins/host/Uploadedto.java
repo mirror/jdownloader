@@ -43,6 +43,8 @@ public class Uploadedto extends PluginForHost {
 
     private HashMap<String, String> postParameter                = new HashMap<String, String>();
 
+    private static String           lastPassword                 = null;
+
     private String                  captchaAddress;
 
     private String                  postTarget;
@@ -108,6 +110,52 @@ public class Uploadedto extends PluginForHost {
                         step.setStatus(PluginStep.STATUS_ERROR);
                         return step;
                     }
+
+                    // 3 Versuche
+                    String pass = null;
+                    if (requestInfo.containsHTML("file_key")) {
+                        logger.info("File is Password protected1");
+                        if (lastPassword != null) {
+                            logger.info("Try last pw: " + lastPassword);
+                            pass = lastPassword;
+                            requestInfo = postRequest(new URL(downloadLink.getUrlDownloadDecrypted()), "lang=de", null, null, "lang=de&file_key=" + pass, false);
+
+                        }
+                        else {
+                            pass = JDUtilities.getController().getUiInterface().showUserInputDialog("Password?");
+                            logger.info("Password: " + pass);
+                            requestInfo = postRequest(new URL(downloadLink.getUrlDownloadDecrypted()), "lang=de", null, null, "lang=de&file_key=" + pass, false);
+                        }
+
+                    }
+                    if (requestInfo.containsHTML("file_key")) {
+                        logger.info("File is Password protected2");
+                        pass = JDUtilities.getController().getUiInterface().showUserInputDialog("Password?");
+                        logger.info("Password: " + pass);
+                        requestInfo = postRequest(new URL(downloadLink.getUrlDownloadDecrypted()), "lang=de", null, null, "lang=de&file_key=" + pass, false);
+
+                    }
+                    if (requestInfo.containsHTML("file_key")) {
+                        logger.info("File is Password protected3");
+                        pass = JDUtilities.getController().getUiInterface().showUserInputDialog("Password?");
+                        logger.info("Password: " + pass);
+                        requestInfo = postRequest(new URL(downloadLink.getUrlDownloadDecrypted()), "lang=de", null, null, "lang=de&file_key=" + pass, false);
+
+                    }
+                    if (requestInfo.containsHTML("file_key")) {
+                        logger.severe("Wrong password entered");
+
+                        downloadLink.setStatus(DownloadLink.STATUS_ERROR_PLUGIN_SPECIFIC);
+                        step.setParameter("Wrong Password");
+                        step.setStatus(PluginStep.STATUS_ERROR);
+                        return step;
+
+                    }
+                    if (pass != null) {
+                        lastPassword = pass;
+                    }
+
+                    // logger.info(requestInfo.getHtmlCode());
                     this.captchaAddress = "http://" + requestInfo.getConnection().getRequestProperty("host") + "/" + getFirstMatch(requestInfo.getHtmlCode(), CAPTCHA_FLE, 1);
 
                     this.postTarget = getFirstMatch(requestInfo.getHtmlCode(), CAPTCHA_TEXTFLD, 1);
