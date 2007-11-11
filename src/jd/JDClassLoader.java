@@ -27,6 +27,7 @@ public class JDClassLoader extends java.lang.ClassLoader {
     private URLClassLoader rootClassLoader;
     private JarFile jars[];
     private Logger logger = Plugin.getLogger();
+    public URLClassLoader pluginClassLoader;
     
     public JDClassLoader(String rootDir, ClassLoader classLoaderParent) {
         if (rootDir == null) 
@@ -105,7 +106,7 @@ public class JDClassLoader extends java.lang.ClassLoader {
             for (int i = 0; i < jars.length; i++) {
                 entry = jars[i].getJarEntry(name);
                 if (entry != null) try {
-                    urls.add(new URL("jar:file:/"+jars[i].getName().replace("\\", "/")+"!/"+entry.getName()));
+                    urls.add(new URL("jar:file://"+jars[i].getName().replace("\\", "/")+"!/"+entry.getName()));
                 }
                 catch (MalformedURLException e) {
                 }
