@@ -27,7 +27,6 @@ public class JDClassLoader extends java.lang.ClassLoader {
     private URLClassLoader rootClassLoader;
     private JarFile jars[];
     private Logger logger = Plugin.getLogger();
-    public URLClassLoader pluginClassLoader;
     
     public JDClassLoader(String rootDir, ClassLoader classLoaderParent) {
         if (rootDir == null) 
