@@ -958,7 +958,7 @@ public abstract class Plugin {
     	// old: String ret = getFirstMatch(urlConnection.getHeaderField("content-disposition"), Pattern.compile("filename=['\"](.*?)['\"]", Pattern.CASE_INSENSITIVE), 1);
         //logger.info("header dispo: "+urlConnection.getHeaderField("content-disposition"));
         String ret;
-        if (urlConnection.getHeaderField("content-disposition")==null ) {
+        if (urlConnection.getHeaderField("content-disposition")==null||urlConnection.getHeaderField("content-disposition").indexOf("filename=")<0 ) {
            
             int index = Math.max(urlConnection.getURL().getFile().lastIndexOf("/"), urlConnection.getURL().getFile().lastIndexOf("\\"));
             return urlConnection.getURL().getFile().substring(index + 1);
