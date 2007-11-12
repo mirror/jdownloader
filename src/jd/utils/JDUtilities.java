@@ -86,7 +86,7 @@ public class JDUtilities {
     /**
      * Versionsstring der Applikation 
      */
-    public static final String                     JD_TITLE            = "jDownloader";
+    public static final String                      JD_TITLE            = "jDownloader";
     /**
      * Ein URLClassLoader, um Dateien aus dem HomeVerzeichnis zu holen
      */
