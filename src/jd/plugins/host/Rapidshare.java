@@ -412,6 +412,7 @@ public class Rapidshare extends PluginForHost {
                 Boolean telekom = !(this.getProperties().getProperty("USE_TELEKOMSERVER") == null || !(Boolean) this.getProperties().getProperty("USE_TELEKOMSERVER"));
                 boolean preselected = this.getProperties().getBooleanProperty("USE_PRESELECTED", true);
                 ticketCode = requestInfo.getHtmlCode() + " " + ticketCode;
+                logger.info(ticketCode);
                 captchaAddress = getFirstMatch(ticketCode, patternForCaptcha, 1);
                 // post daten lesen
                 postTarget = getFirstMatch(ticketCode, patternForFormData, 1);

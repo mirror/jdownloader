@@ -27,6 +27,7 @@ public class JDClassLoader extends java.lang.ClassLoader {
     private URLClassLoader rootClassLoader;
     private JarFile jars[];
     private Logger logger = Plugin.getLogger();
+    private String separator=System.getProperty("file.separator");
     
     public JDClassLoader(String rootDir, ClassLoader classLoaderParent) {
         if (rootDir == null) 
@@ -41,7 +42,7 @@ public class JDClassLoader extends java.lang.ClassLoader {
             e1.printStackTrace();
         }
         //Hier werden die JAR Dateien ausgelesen
-        File files[] = new File(rootDir+"/plugins").listFiles(new JDFileFilter(null, ".jar", true));
+        File files[] = new File(new File(rootDir),"plugins").listFiles(new JDFileFilter(null, ".jar", true));
         if(files!=null){
             jars = new JarFile[files.length];
             for(int i=0;i<jars.length;i++){
@@ -91,7 +92,7 @@ public class JDClassLoader extends java.lang.ClassLoader {
             //Falls immer noch nichts vorhanden, wird ein neu erzeugtes File Objekt zurückgegeben
             //Ist für das Abspeichern der Captcha notwendig
        
-            return new File(rootDir+"/"+name).toURI().toURL();
+            return new File(new File(rootDir),name).toURI().toURL();
         }
         catch (MalformedURLException e) {
         }
@@ -105,9 +106,11 @@ public class JDClassLoader extends java.lang.ClassLoader {
             for (int i = 0; i < jars.length; i++) {
                 entry = jars[i].getJarEntry(name);
                 if (entry != null) try {
-                    urls.add(new URL("jar:file://"+jars[i].getName().replace("\\", "/")+"!/"+entry.getName()));
-                }
+                    //Das sollte nun hoffentlich eine Systemunabhängige Implementierung sein.
+                   urls.add(new URL("jar","",new File(jars[i].getName()).toURI().toURL()+"!/"+entry.getName())); 
+               }
                 catch (MalformedURLException e) {
+                    e.printStackTrace();
                 }
             }
         }
@@ -137,7 +140,7 @@ public class JDClassLoader extends java.lang.ClassLoader {
         if (c == null) {
             JarEntry entry=null;
             for(int i=0;i<jars.length;i++){
-                entry = jars[i].getJarEntry(name.replace('.', '/')+".class");
+                entry = jars[i].getJarEntry(name.replace('.', separator.charAt(0))+".class");
                 if(entry != null){
                     try {
                         byte data[] = loadClassData(jars[i], entry);
