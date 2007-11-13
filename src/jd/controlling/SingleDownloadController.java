@@ -253,7 +253,7 @@ public class SingleDownloadController extends ControlMulticaster {
      
         downloadLink.setStatusText(message);
         downloadLink.setInProgress(false);
-        downloadLink.setEnabled(false);
+//        downloadLink.setEnabled(false);
         fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SINGLE_DOWNLOAD_CHANGED, downloadLink));
         
     }

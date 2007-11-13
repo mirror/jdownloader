@@ -42,12 +42,14 @@ public class JDClassLoader extends java.lang.ClassLoader {
             e1.printStackTrace();
         }
         //Hier werden die JAR Dateien ausgelesen
-        File files[] = new File(new File(rootDir),"plugins").listFiles(new JDFileFilter(null, ".jar", true));
+        File files[] = new File(new File(rootDir),"plugins").listFiles(new JDFileFilter(null, ".jar", false));
         if(files!=null){
             jars = new JarFile[files.length];
             for(int i=0;i<jars.length;i++){
                 try {
+                    logger.finer("Jar file loaded: "+files[i].getAbsolutePath());
                     jars[i] = new JarFile(files[i]);
+                    
                   
                 }
                 catch (IOException e) {
@@ -66,13 +68,15 @@ public class JDClassLoader extends java.lang.ClassLoader {
     }
     @Override
     public URL getResource(String name) {
-//        System.out.println("getResource:"+name);
+       System.out.println("getResource:"+name);
         if (jars != null) {
             //An dieser Stelle werden die JAR Dateien überprüft
             JarEntry entry;
             for (int i = 0; i < jars.length; i++) {
-                entry = jars[i].getJarEntry(name);
-                if (entry != null) try {
+               
+               
+                if (jars[i] != null && ( entry = jars[i].getJarEntry(name))!=null) try {
+                    System.out.println("getResource:"+entry.getName());
                     return new URL(entry.getName());
                 }
                 catch (MalformedURLException e) {
@@ -104,9 +108,10 @@ public class JDClassLoader extends java.lang.ClassLoader {
         if (jars != null) {
             JarEntry entry;
             for (int i = 0; i < jars.length; i++) {
-                entry = jars[i].getJarEntry(name);
-                if (entry != null) try {
+                ;
+                if (jars[i]!=null &&(entry = jars[i].getJarEntry(name)) != null) try {
                     //Das sollte nun hoffentlich eine Systemunabhängige Implementierung sein.
+                    logger.finer(new File(jars[i].getName()).toURI().toURL()+"!/"+entry.getName());
                    urls.add(new URL("jar","",new File(jars[i].getName()).toURI().toURL()+"!/"+entry.getName())); 
                }
                 catch (MalformedURLException e) {

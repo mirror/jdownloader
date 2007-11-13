@@ -27,6 +27,7 @@ public class Filer extends PluginForHost {
     static private final String CODER = "DwD";
     static private final String FILE_NOT_FOUND = "Konnte Download nicht finden";
     static private final String FILE_NOT_FOUND2 = "Oops! We couldn't find this page for you.";
+    static private final String FREE_USER_LIMIT="Momentan sind die Limits f&uuml;r Free-Downloads erreicht";
     static private final String CAPTCHAADRESS = "http://www.filer.net/captcha.png";
     static private final Pattern DOWNLOAD = Pattern.compile("<form method=\"post\" action=\"(\\/dl\\/.*?)\">", Pattern.CASE_INSENSITIVE);
     static private final Pattern WAITTIME = Pattern.compile("Bitte warten Sie ([\\d]+)", Pattern.CASE_INSENSITIVE);
@@ -116,6 +117,16 @@ public class Filer extends PluginForHost {
                     String code = (String) steps.get(1).getParameter();
                     requestInfo = postRequest(new URL(url), cookie, url, null, "captcha=" + code + "&Download=Download", true);
                     dlink = getFirstMatch(requestInfo.getHtmlCode(), DOWNLOAD, 1);
+                   
+                    
+                   
+                    if (requestInfo.containsHTML(FREE_USER_LIMIT)) {
+                        logger.severe("Free User Limit reached");
+                        downloadLink.setStatus(DownloadLink.STATUS_ERROR_PLUGIN_SPECIFIC);
+                        step.setParameter("Free User Limit");
+                        step.setStatus(PluginStep.STATUS_ERROR);
+                        return step;
+                    }
                     if (requestInfo.getHtmlCode().contains(FILE_NOT_FOUND)) {
                         logger.severe("Die Datei existiert nicht");
                         downloadLink.setStatus(DownloadLink.STATUS_ERROR_FILE_NOT_FOUND);
@@ -136,7 +147,7 @@ public class Filer extends PluginForHost {
 
                     if (dlink == null) {
                         logger.severe("Der Downloadlink konnte nicht gefunden werden");
-                        downloadLink.setStatus(DownloadLink.STATUS_ERROR_FILE_NOT_FOUND);
+                        downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN);
                         step.setStatus(PluginStep.STATUS_ERROR);
                         return step;
                     }
@@ -151,7 +162,7 @@ public class Filer extends PluginForHost {
                     step.setParameter(61000l);
                     break;
                 case PluginStep.STEP_DOWNLOAD :
-                    logger.info("dl " + dlink);
+                  
 
                     requestInfo = postRequestWithoutHtmlCode(new URL(dlink), cookie, url, "Download!=Download!", true);
                     if (requestInfo.getConnection().getHeaderField("Location") != null && requestInfo.getConnection().getHeaderField("Location").indexOf("error") > 0) {

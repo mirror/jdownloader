@@ -42,11 +42,11 @@ public class Main {
      */
     private static Logger logger = Plugin.getLogger();
     public static void main(String args[]) {
-//        if (SingleInstanceController.isApplicationRunning()) {
-//            JOptionPane.showMessageDialog(null, "jDownloader läuft bereits!", "jDownloader", JOptionPane.WARNING_MESSAGE);
-//            System.exit(0);
-//            return;
-//        }
+        if (SingleInstanceController.isApplicationRunning()) {
+            JOptionPane.showMessageDialog(null, "jDownloader läuft bereits!", "jDownloader", JOptionPane.WARNING_MESSAGE);
+            System.exit(0);
+            return;
+        }
         SingleInstanceController.bindRMIObject(new SingleInstanceController());
         Main main = new Main();
         main.go();
