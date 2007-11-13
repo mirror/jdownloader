@@ -25,7 +25,6 @@ import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collection;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -1416,5 +1415,40 @@ public abstract class Plugin {
     }
     public String getInitID() {
         return this.initTime + "<ID";
+    }
+    /**
+     * Gibt einen Cookie mit Hilfe der cookies.txt von Mozilla bzw. FireFox aus
+     * @param link
+     * @param cookiefile
+     * @return
+     */
+    public String parseMozillaCookie(URL link, File cookiefile) {
+        if (cookiefile.isFile()) {
+            try {
+                Pattern cookiePattern = Pattern.compile(".*?[\\s]+(TRUE|FALSE)[\\s/]+(TRUE|FALSE)[\\s]+[0-9]{10}[\\s]+(.*?)[\\s]+(.*)", Pattern.CASE_INSENSITIVE);
+                HashMap<String, String> inp = new HashMap<String, String>();
+                String thisLine;
+                FileInputStream fin = new FileInputStream(cookiefile);
+                BufferedReader myInput = new BufferedReader(new InputStreamReader(fin));
+                String hostname = link.getHost();
+                String hostname2 = hostname + ".*";
+                if (hostname.matches(".*?\\..*?\\..*?"))
+                    hostname = hostname.replaceFirst(".*?\\.", ".");
+                hostname = hostname + ".*";
+                while ((thisLine = myInput.readLine()) != null) {
+                    if (thisLine.matches(hostname) || thisLine.matches(hostname2)) {
+   
+                        Matcher matcher = cookiePattern.matcher(thisLine);
+                        if (matcher.find()) {
+                            inp.put(matcher.group(3), matcher.group(4));
+                        }
+                    }
+                }
+                return joinMap(inp, "=", ";");
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+        return null;
     }
 }
