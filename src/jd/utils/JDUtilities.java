@@ -126,7 +126,7 @@ public class JDUtilities {
     /**
      * Das aktuelle Verzeichnis (Laden/Speichern)
      */
-    private static File                            currentDirectory;
+    private static File                             currentDirectory;
     /**
      * Hier werden alle vorhandenen Plugins zum Dekodieren von Links gespeichert
      */

@@ -27,7 +27,7 @@ public class JDClassLoader extends java.lang.ClassLoader {
     private URLClassLoader rootClassLoader;
     private JarFile jars[];
     private Logger logger = Plugin.getLogger();
-    private String separator=System.getProperty("file.separator");
+
     
     public JDClassLoader(String rootDir, ClassLoader classLoaderParent) {
         if (rootDir == null) 
@@ -111,8 +111,12 @@ public class JDClassLoader extends java.lang.ClassLoader {
                 ;
                 if (jars[i]!=null &&(entry = jars[i].getJarEntry(name)) != null) try {
                     //Das sollte nun hoffentlich eine Systemunabhängige Implementierung sein.
-                    logger.finer(new File(jars[i].getName()).toURI().toURL()+"!/"+entry.getName());
-                   urls.add(new URL("jar","",new File(jars[i].getName()).toURI().toURL()+"!/"+entry.getName())); 
+                    
+                    String url=new File(jars[i].getName().replace("\\", "/")).toURI().toURL()+"!/"+entry.getName();
+////                    url=url.replace("file:/", "file://");
+//                   logger.finer(new URL("jar","",url)+"");
+//                   logger.finer("jar:file:/"+jars[i].getName().replace("\\", "/")+"!/"+entry.getName());
+                   urls.add(new URL("jar","",url)); 
                }
                 catch (MalformedURLException e) {
                     e.printStackTrace();
@@ -145,7 +149,7 @@ public class JDClassLoader extends java.lang.ClassLoader {
         if (c == null) {
             JarEntry entry=null;
             for(int i=0;i<jars.length;i++){
-                entry = jars[i].getJarEntry(name.replace('.', separator.charAt(0))+".class");
+                entry = jars[i].getJarEntry(name.replace('.', '/')+".class");
                 if(entry != null){
                     try {
                         byte data[] = loadClassData(jars[i], entry);
