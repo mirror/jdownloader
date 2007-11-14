@@ -1461,5 +1461,28 @@ public abstract class Plugin {
         jdUnrar unrar = new jdUnrar();
         unrar.addToPasswordlist(password);
     }
-    
+    /**
+     * Diese Methode sucht nach passwörtern in einem Datensatz
+     * @param data
+     * @return
+     */
+    public static Vector<String> findPasswords(String data)
+    {
+       data = data.replaceAll("(?s)<!-- .*? -->", "").replaceAll("(?s)<script .*?>.*?</script>", "").replaceAll("(?s)<.*?>", "").replaceAll("Spoiler:", "");
+       System.out.println(data);
+       Vector<String> ret = new Vector<String>();
+       Pattern pattern = Pattern.compile("(pw|passwort|password|pass)[\\s]?[:]?[\\s]*?[\"']([^\"']+)[\"']", Pattern.CASE_INSENSITIVE);
+       Matcher matcher = pattern.matcher(data);
+       while (matcher.find()) {
+           if(matcher.group(2).length()>3 && !matcher.group(2).matches(".*(rar|zip|jpg|gif|png|html|php|avi|mpg)$"))
+           ret.add(matcher.group(2));
+       }
+       pattern = Pattern.compile("(pw|passwort|password|pass)[\\s]?[:]?[\\s]*?([^\"'\\s]+)[\\s]", Pattern.CASE_INSENSITIVE);
+       matcher = pattern.matcher(data);
+       while (matcher.find()) {
+           if(matcher.group(2).length()>3 && !matcher.group(2).matches(".*(rar|zip|jpg|gif|png|html|php|avi|mpg)$"))
+           ret.add(matcher.group(2));
+       }
+       return ret;
+    }
 }

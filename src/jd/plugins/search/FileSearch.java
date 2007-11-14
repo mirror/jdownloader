@@ -28,6 +28,7 @@ public class FileSearch extends PluginForSearch {
     private static final String PARAM_INST = "INST";
     private String MOZILLACOOKIE;
     private boolean useMozillaCookie = false;
+    private Vector<String> passwords;
     public FileSearch() {
         super();
 
@@ -87,14 +88,17 @@ public class FileSearch extends PluginForSearch {
             if (cookie == null && useMozillaCookie)
                 cookie = parseMozillaCookie(url, new File(MOZILLACOOKIE));
             RequestInfo requestInfo = getRequest(url, cookie, ref, true);
+            passwords.addAll(findPasswords(requestInfo.getHtmlCode()));
             inst -= 1;
             firePluginEvent(new PluginEvent(this, PluginEvent.PLUGIN_PROGRESS_INCREASE, null));
             String[] links = getHttpLinks(requestInfo.getHtmlCode(), link);
             if (inst != 0)
+            {
                 for (int i = 0; i < links.length; i++) {
                     decryptedLinks.addAll(getLinklist(links[i], requestInfo.getCookie(), url, inst));
                     decryptedLinks.add(links[i]);
                 }
+            }
             else
                 for (int i = 0; i < links.length; i++) {
                     decryptedLinks.add(links[i]);
@@ -124,9 +128,26 @@ public class FileSearch extends PluginForSearch {
                 Vector<String[]> decryptedLinks = new Vector<String[]>();
                 int inst = getIntParam(PARAM_INST, 1);
                 firePluginEvent(new PluginEvent(this, PluginEvent.PLUGIN_PROGRESS_MAX, inst));
+                passwords=new Vector<String>();
                 Vector<String> de = getLinklist(searchPattern, null, null, inst);
+                
+                Vector<String> unique = new Vector<String>();
+                String pw = null;
+                if(passwords.size()>0)
+                {
+                pw = "{\""+passwords.get(0)+"\"";
+                unique.add(passwords.get(0));
+                for (int i = 1; i < passwords.size(); i++) {
+                    if(!unique.contains(passwords.get(i)))
+                    {
+                    pw += ",\""+passwords.get(i)+"\"";
+                    unique.add(passwords.get(i));
+                    }
+                }
+                pw +="}";
+                }
                 for (int i = 0; i < de.size(); i++) {
-                    String[] link = new String[]{de.get(i), null, null};
+                    String[] link = new String[]{de.get(i), pw, null};
                     if (!decryptedLinks.contains(link))
                         decryptedLinks.add(link);
                 }
