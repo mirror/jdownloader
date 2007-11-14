@@ -13,22 +13,33 @@ import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Vector;
+import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import jd.controlling.interaction.Unrar;
+import jd.plugins.Plugin;
+import jd.utils.JDUtilities;
 
-public class Unrar {
-    public Config config;
+public class jdUnrar {
+    private File passwordList = new File(JDUtilities.getJDHomeDirectory(), "passwordlist.xml");
     private HashMap<File, String> files;
     public HashMap<String, Integer> passwordlist;
     public String standardPassword = null;
     private static final String allOk = "(?s).*[\\s]+All OK[\\s].*";
+    private static final Pattern ExtractingPattern = Pattern.compile("Extracting  (.*?)[\\s]+OK");
+    
+    public String unrar = null;
+    public int maxFilesize = 2;
+    public boolean overwriteFiles = false, autoDelete = true;
+    public static Logger logger = Plugin.getLogger();
     /**
      * Konstruktor zum entpacken aller Rar-Archive im angegebenen Ordner,
      * Passwoerter werden aus der PasswortListe entnommen fals vorhanden
      * 
      * @param path
      */
-    public Unrar(String path) {
+    public jdUnrar(String path) {
         this(new File(path));
     }
     /**
@@ -37,7 +48,7 @@ public class Unrar {
      * 
      * @param path
      */
-    public Unrar(File path) {
+    public jdUnrar(File path) {
         this(path.listFiles(), null);
     }
     /**
@@ -48,7 +59,7 @@ public class Unrar {
      * @param file
      * @param password
      */
-    public Unrar(String file, String password) {
+    public jdUnrar(String file, String password) {
         this(new File[]{new File(file)}, password);
     }
     /**
@@ -59,7 +70,7 @@ public class Unrar {
      * @param file
      * @param password
      */
-    public Unrar(File file, String password) {
+    public jdUnrar(File file, String password) {
         this(new File[]{file}, password);
     }
     /**
@@ -71,7 +82,7 @@ public class Unrar {
      * @param password
      */
     @SuppressWarnings("unchecked")
-    public Unrar(File[] files, String password) {
+    public jdUnrar(File[] files, String password) {
         HashMap<File, String> filelist = new HashMap<File, String>();
         for (int i = 0; i < files.length; i++) {
             filelist.put(files[i], password);
@@ -86,7 +97,7 @@ public class Unrar {
      * @param files
      * @param password
      */
-    public Unrar(File[] files) {
+    public jdUnrar(File[] files) {
         this(files, null);
     }
     /**
@@ -97,35 +108,41 @@ public class Unrar {
      * 
      * @param files
      */
-    public Unrar(HashMap<File, String> files) {
+    public jdUnrar(HashMap<File, String> files) {
         this.files = files;
         loadObjects();
     }
     @SuppressWarnings("unchecked")
     private void loadObjects() {
-        File configfile = new File(Config.unraritHome, "config.cfg");
-        if (configfile.exists()) {
-            this.config = (Config) Utilities.loadObject(configfile, false);
-            if (config.passwordList.exists())
-                this.passwordlist = (HashMap<String, Integer>) Utilities.loadObject(config.passwordList, true);
+        // private int maxFilesize = 500000;
+        // public boolean overwriteFiles = false, autoDelete = true;
+        if (passwordList.isFile()) {
+            this.passwordlist = (HashMap<String, Integer>) Utilities.loadObject(passwordList, true);
         } else {
-            this.config = new Config();
-            if (!Config.unraritHome.exists())
-                Config.unraritHome.mkdir();
-            saveConfig();
-            if (config.passwordList.exists())
-                this.passwordlist = (HashMap<String, Integer>) Utilities.loadObject(config.passwordList, true);
-            else {
-                this.passwordlist = new HashMap<String, Integer>();
-                savePasswordList();
-            }
+
+            this.passwordlist = new HashMap<String, Integer>();
+            savePasswordList();
         }
     }
     private void savePasswordList() {
-        Utilities.saveObject(this.passwordlist, config.passwordList, true);
+        Utilities.saveObject(this.passwordlist, passwordList, true);
     }
-    public void saveConfig() {
-        Utilities.saveObject(this.config, new File(Config.unraritHome, "config.cfg"), false);
+
+    private int getIntParam(String param, int defaultValue) {
+        int retint;
+        if (JDUtilities.getConfiguration().getProperty(param) != null) {
+            try {
+                retint = Integer.parseInt((String) JDUtilities.getConfiguration().getProperty(param));
+            } catch (Exception e) {
+                JDUtilities.getConfiguration().setProperty(param, defaultValue);
+                retint = defaultValue;
+            }
+
+        } else {
+            retint = defaultValue;
+        }
+        return retint;
+
     }
 
     /**
@@ -134,19 +151,14 @@ public class Unrar {
      * command kann z.b.: durch textfeld.settext(Unrarit.autoGetUnrarCommand());
      * in ein Textfeld gelesen werden
      */
-    public void setUnrarCommand(String unrarCommand) {
-        config.unrar = unrarCommand;
-        saveConfig();
-    }
     public String getUnrarCommand() {
-        if (config.unrar == null) {
-            config.unrar = autoGetUnrarCommand();
-            if (config.unrar == null)
-                logger("Can't find unrar command");
-            saveConfig();
-            return config.unrar;
+        if (unrar == null) {
+            unrar = autoGetUnrarCommand();
+            if (unrar == null)
+                logger.severe("Can't find unrar command");
+            return unrar;
         } else {
-            return config.unrar;
+            return unrar;
         }
 
     }
@@ -182,9 +194,6 @@ public class Unrar {
         }
         return programm;
     }
-    private void logger(Object message) {
-        System.out.println("" + message);
-    }
 
     public void addToPasswordlist(String password) {
         if (!passwordlist.containsKey(password)) {
@@ -193,7 +202,9 @@ public class Unrar {
             savePasswordList();
         }
     }
+    @SuppressWarnings("unchecked")
     public void addToPasswordlist(File passwords) {
+
         try {
             String thisLine;
             FileInputStream fin = new FileInputStream((File) passwords);
@@ -203,10 +214,11 @@ public class Unrar {
                     passwordlist.put(thisLine, 1);
             }
         } catch (IOException e) {
-            logger(e);
+            logger.severe("" + e);
         }
         passwordlist = (HashMap<String, Integer>) sortByValue(passwordlist);
         savePasswordList();
+        
     }
     @SuppressWarnings("unchecked")
     private static Map sortByValue(Map map) {
@@ -228,37 +240,48 @@ public class Unrar {
         passwordlist.put(password, passwordlist.get(password) + 1);
         passwordlist = (HashMap<String, Integer>) sortByValue(passwordlist);
     }
+    private void newDownload(File file, String str)
+    {
+        Matcher matcher = ExtractingPattern.matcher(str);
+        Vector<File> files = new Vector<File>();
+        while (matcher.find()) {
+            files.add(new File(file,matcher.group(1)));
+        }
+        
+        jdUnrar jdunr = new jdUnrar(files.toArray(new File[files.size()]));
+        jdunr.unrar();
+    }
     private void passwordlist(File file, String password) {
-        logger("Extracting " + file.getName());
+        logger.info("Extracting " + file.getName());
         if (password != null) {
             int z = checkarchiv(file, password);
             if (z > 1) {
                 if (z == 2)
-                    logger("Password incorect");
+                    logger.warning("Password incorect");
                 return;
             }
             String str = execprozess(file, password);
             if (str.matches(allOk)) {
-                logger("All OK");
+                logger.finest("All OK");
                 addToPasswordlist(password);
                 return;
             } else {
-                logger(str);
+                logger.severe(str);
                 return;
             }
         } else if (standardPassword != null) {
             int z = checkarchiv(file, standardPassword);
             if (z > 1) {
                 if (z == 2)
-                    logger("Password incorect");
+                    logger.warning("Password incorect");
                 return;
             }
             if (execprozess(file, standardPassword).matches(allOk)) {
-                logger("All OK");
+                logger.finest("All OK");
                 addToPasswordlist(standardPassword);
                 return;
             } else {
-                logger("Can't extract " + file.getName());
+                logger.warning("Can't extract " + file.getName());
                 return;
             }
         } else {
@@ -268,31 +291,29 @@ public class Unrar {
                 return;
             if (z == 1) {
                 if (execprozess(file, "").matches(allOk))
-                    logger("All OK");
+                    logger.finest("All OK");
                 else
-                    logger("Can't extract " + file.getName());
+                    logger.warning("Can't extract " + file.getName());
                 return;
             } else {
                 long time = -System.currentTimeMillis();
                 for (Map.Entry<String, Integer> entry : passwordlist.entrySet()) {
-                    
+
                     password = entry.getKey();
                     z = checkarchiv(file, password);
                     if (z == 3)
                         return;
                     if (z == 1) {
-                        logger("Password "+password+" found in " + (time + System.currentTimeMillis()) / 1000 + " sec");
-                        if (execprozess(file, password).matches(allOk))
-                        {
-                            logger("All OK");
+                        logger.info("Password " + password + " found in " + (time + System.currentTimeMillis()) / 1000 + " sec");
+                        if (execprozess(file, password).matches(allOk)) {
+                            logger.finest("All OK");
                             reorderPasswordList(password);
-                        }
-                        else
-                            logger("Can't extract " + file.getName());
+                        } else
+                            logger.warning("Can't extract " + file.getName());
                         return;
                     }
                 }
-                logger("Can't extract " + file.getName() + "  (it seems like the password isn't in the list?)");
+                logger.severe("Can't extract " + file.getName() + "  (it seems like the password isn't in the list?)");
 
             }
         }
@@ -328,8 +349,8 @@ public class Unrar {
 
     private int checkarchiv(File file, String password) {
         try {
-            String ext = ((password != "") ? " -p" + password : " -p-") + " -ierr t -sl"+config.maxFilesize+" ";
-            Process p = Runtime.getRuntime().exec(config.unrar + ext + file.getName(), null, file.getParentFile());
+            String ext = ((password != "") ? " -p" + password : " -p-") + " -ierr t -sl" + maxFilesize * 1000000 + " ";
+            Process p = Runtime.getRuntime().exec(unrar + ext + file.getName(), null, file.getParentFile());
             String str = startInputListener(p, file.getParentFile());
             if (str.indexOf(" (password incorrect ?)") != -1)
                 return 2;
@@ -337,15 +358,14 @@ public class Unrar {
                 Pattern pattern = Pattern.compile("(Cannot find volume .*)", Pattern.CASE_INSENSITIVE);
                 Matcher matcher = pattern.matcher(str);
                 while (matcher.find()) {
-                    logger(matcher.group());
+                    logger.warning(matcher.group());
                 }
                 return 3;
-            } else if(str.indexOf("No files to extract") != -1 || str.matches(allOk))
+            } else if (str.indexOf("No files to extract") != -1 || str.matches(allOk))
                 return 1;
-            else
-            {
-                logger("unknown error");
-                logger(str);
+            else {
+                logger.severe("unknown error");
+                logger.severe(str);
                 return 3;
             }
 
@@ -357,18 +377,19 @@ public class Unrar {
     private String execprozess(File file, String password) {
 
         try {
-            String ext = ((password != "") ? " -p" + password : " -p-") + ((config.overwriteFiles) ? " -o+" : " -o-") + " -ierr x ";
-            Process p = Runtime.getRuntime().exec(config.unrar + ext + file.getName(), null, file.getParentFile());
+            String ext = ((password != "") ? " -p" + password : " -p-") + ((overwriteFiles) ? " -o+" : " -o-") + " -ierr x ";
+            Process p = Runtime.getRuntime().exec(unrar + ext + file.getName(), null, file.getParentFile());
             String str = startInputListener(p, file.getParentFile());
-            if (config.autoDelete) {
+            if (autoDelete) {
                 if (str.matches(allOk)) {
                     Pattern pattern = Pattern.compile("Extracting from (.*)");
                     Matcher matcher = pattern.matcher(str);
                     while (matcher.find()) {
                         File delfile = new File(file.getParentFile(), matcher.group(1));
                         if (!delfile.isFile() || !delfile.delete())
-                            logger("Can't delete " + delfile.getName());
+                            logger.warning("Can't delete " + delfile.getName());
                     }
+                    newDownload(file, str);
                 }
             }
             return str;
@@ -382,8 +403,13 @@ public class Unrar {
      * Startet den Entpackungsprozess
      */
     public void unrar() {
-        config.unrar = getUnrarCommand();
-        if (config.unrar == null) {
+        unrar = getUnrarCommand();
+        logger.info("Starting Unrar (DwD)");
+        logger.info("Config->unrar: "+unrar);
+        logger.info("Config->maxFilesize: "+maxFilesize);
+        logger.info("Config->standardPassword: "+standardPassword);
+        logger.info("Config->autoDelete: "+autoDelete);
+        if (unrar == null) {
             return;
         }
         for (Map.Entry<File, String> entry : files.entrySet()) {
@@ -395,7 +421,7 @@ public class Unrar {
                 else if (!name.matches(".*part[0-9]+.rar$") && name.matches(".*rar$"))
                     passwordlist(entry.getKey(), entry.getValue());
             } else
-                logger(file.getName() + " isn't a file");
+                logger.fine(file.getName() + " isn't a file");
 
         }
         closeEvent();
