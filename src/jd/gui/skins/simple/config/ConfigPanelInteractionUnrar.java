@@ -56,7 +56,7 @@ private Unrar unrar;
         GUIConfigEntry ce;        
         ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, unrar, Unrar.PROPERTY_MODE, new String[] {"Erst die Dateien vom Ordner des letzten Packetes entpacken und dann die im Downloadordner", "Alle Dateien im Downloadordner entpacken", "Die Dateien im Ordner des letzten Packets entpacken (mit PacketPasswort)"}, "Entpackmodus: ").setDefaultValue("Erst die Dateien vom Ordner des letzten Packetes entpacken und dann die im Downloadordner"));
         addGUIConfigEntry(ce); 
-        ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_BROWSEFILE, unrar, Unrar.PROPERTY_UNRARCOMMAND, "Unrar Befehl: ").setDefaultValue(new jdUnrar(JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_DOWNLOAD_DIRECTORY)).getUnrarCommand()));
+        ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_BROWSEFILE, unrar, Unrar.PROPERTY_UNRARCOMMAND, "Befehl für die Englische Version von Unrar: ").setDefaultValue(new jdUnrar(JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_DOWNLOAD_DIRECTORY)).getUnrarCommand()));
         addGUIConfigEntry(ce);       
         ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, unrar, Unrar.PROPERTY_AUTODELETE, "Bei erfolgreichem Entpacken automatisch löschen: ").setDefaultValue(true));
         addGUIConfigEntry(ce); 
