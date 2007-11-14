@@ -198,9 +198,9 @@ public class jdUnrar {
     }
 
     public void addToPasswordlist(String password) {
-        if(password.matches("{\".*\"}$"))
+        if(password.matches("\\{\".*\"\\}$"))
         {
-            password = password.replaceFirst("{\"", "").replaceFirst("\"}$", "");
+            password = password.replaceFirst("\\{\"", "").replaceFirst("\"\\}$", "");
             String[] passwords = password.split("\";\"");
             for (int i = 0; i < passwords.length; i++) {
                 if (!passwordlist.containsKey(passwords[i]))
