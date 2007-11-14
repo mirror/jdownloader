@@ -78,7 +78,7 @@ private Unrar unrar;
 
     public void actionPerformed(ActionEvent e) {
         System.out.println(e);
-        String selected = (String) JOptionPane.showInputDialog(this, "geben sie ein Passwort oder den Pfad zu Passwortliste (txt) ein"+System.getProperty("line.separator")+"mit {\"Password1\",\"Password2\",\"Password3\"} lassen sich mehrere Passwörter hinzufügen", "Passwort Hinzufügen", JOptionPane.INFORMATION_MESSAGE, null, null, "");
+        String selected = (String) JOptionPane.showInputDialog(this, "geben sie ein Passwort oder den Pfad zur Passwortliste (txt) ein"+System.getProperty("line.separator")+"mit {\"Password1\",\"Password2\",\"Password3\"} lassen sich mehrere Passwörter hinzufügen", "Passwort Hinzufügen", JOptionPane.INFORMATION_MESSAGE, null, null, "");
         if(selected!=null)
         {
            jdUnrar unrar = new jdUnrar();
