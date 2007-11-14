@@ -27,6 +27,7 @@ import jd.controlling.interaction.ExternReconnect;
 import jd.controlling.interaction.HTTPReconnect;
 import jd.controlling.interaction.Interaction;
 import jd.controlling.interaction.InteractionTrigger;
+import jd.controlling.interaction.Unrar;
 import jd.controlling.interaction.WebUpdate;
 import jd.gui.UIInterface;
 import jd.utils.JDUtilities;
@@ -256,6 +257,11 @@ return table.getSelectedRow();
             }
             else if (interaction instanceof ExternReconnect) {
                 openPopupPanel(new ConfigPanelInteractionExternReconnect(configuration, uiinterface,interaction));
+                return;
+                
+            }
+            else if (interaction instanceof Unrar) {
+                openPopupPanel(new ConfigPanelInteractionUnrar(configuration, uiinterface,(Unrar) interaction));
                 return;
                 
             }
