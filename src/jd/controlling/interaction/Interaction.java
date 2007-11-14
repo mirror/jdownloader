@@ -247,7 +247,7 @@ public abstract class Interaction extends Property implements Serializable {
             Interaction interaction = interactions.get(i);
             if (interaction == null || interaction.getTrigger() == null || interactionevent == null) continue;
             // Führe keinen reconnect aus wenn noch ein download läuft
-            if ((interaction instanceof HTTPLiveHeader ||interaction instanceof HTTPReconnect || interaction instanceof ExternReconnect) && JDUtilities.getController().getRunningDownloadNum() > 0) continue;
+            if ((interaction instanceof HTTPLiveHeader ||interaction instanceof HTTPReconnect || interaction instanceof ExternReconnect || interaction instanceof Unrar) && JDUtilities.getController().getRunningDownloadNum() > 0) continue;
             if (interaction.getTrigger().getID() == interactionevent.getID()) {
                 interaction.addControlListener(JDUtilities.getController());
                 interacts++;
@@ -341,7 +341,7 @@ public abstract class Interaction extends Property implements Serializable {
      * @return Liste mit allen Interactionen
      */
     public static Interaction[] getInteractionList() {
-        return new Interaction[] { new HTTPLiveHeader(),new DummyInteraction(), new ExternExecute(), new ExternReconnect(), new HTTPReconnect(), new WebUpdate(), new JAntiCaptcha(), new ManualCaptcha(),new JDExit(), new ResetLink(),new InfoFileWriter() };
+        return new Interaction[] { new HTTPLiveHeader(),new Unrar(), new DummyInteraction(), new ExternExecute(), new ExternReconnect(), new HTTPReconnect(), new WebUpdate(), new JAntiCaptcha(), new ManualCaptcha(),new JDExit(), new ResetLink(),new InfoFileWriter() };
     }
     /**
      * Da die Knfigurationswünsche nicht gespeichert werden, muss der ConfigContainer immer wieder aufs neue Initialisiert werden. Alle Interactionen müssend azu die initConifg  Methode implementieren 
