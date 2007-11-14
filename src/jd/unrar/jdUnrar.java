@@ -145,6 +145,7 @@ public class jdUnrar {
             unrar = autoGetUnrarCommand();
             if (unrar == null)
                 logger.severe("Can't find unrar command");
+                logger.severe("Please load the English version of unrar from http://www.rarlab.com/rar_add.htm for your OS");
             return unrar;
         } else {
             return unrar;
@@ -249,6 +250,10 @@ public class jdUnrar {
         }
         
         jdUnrar jdunr = new jdUnrar(files.toArray(new File[files.size()]));
+        jdunr.autoDelete=autoDelete;
+        jdunr.unrar=unrar;
+        jdunr.maxFilesize=maxFilesize;
+        jdunr.overwriteFiles=overwriteFiles;
         jdunr.unrar();
     }
     private void passwordlist(File file, String password) {
@@ -267,6 +272,7 @@ public class jdUnrar {
                 return;
             } else {
                 logger.severe(str);
+                logger.severe("Please load the English version of unrar from http://www.rarlab.com/rar_add.htm for your OS");
                 return;
             }
         } else if (standardPassword != null) {
@@ -366,6 +372,7 @@ public class jdUnrar {
             else {
                 logger.severe("unknown error");
                 logger.severe(str);
+                logger.severe("Please load the English version of unrar from http://www.rarlab.com/rar_add.htm for your OS");
                 return 3;
             }
 
