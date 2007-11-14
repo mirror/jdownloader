@@ -48,15 +48,7 @@ public class Unrar extends Interaction implements Serializable {
         if (dLink != null)
             password = dLink.getFilePackage().getPassword();
 
-        if (mode == 1 || mode == 2) {
-            jdUnrar unrar = new jdUnrar(JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_DOWNLOAD_DIRECTORY));
-            unrar.addToPasswordlist(password);
-            unrar.overwriteFiles=getBooleanProperty(Unrar.PROPERTY_OVERWRITE_FILES, false);
-            unrar.autoDelete=getBooleanProperty(Unrar.PROPERTY_AUTODELETE, false);
-            unrar.unrar=getStringProperty(Unrar.PROPERTY_UNRARCOMMAND);
-            unrar.maxFilesize=getIntegerProperty(Unrar.PROPERTY_MAX_FILESIZE, 2);
-            unrar.unrar();
-        }
+
         if (mode == 1 || mode == 3) {
 
             if (controller.getLastFinishedDownloadLink()==null)
@@ -71,6 +63,15 @@ public class Unrar extends Interaction implements Serializable {
                 unrar = new jdUnrar(files);
             else
                 unrar = new jdUnrar(files, password);
+            unrar.overwriteFiles=getBooleanProperty(Unrar.PROPERTY_OVERWRITE_FILES, false);
+            unrar.autoDelete=getBooleanProperty(Unrar.PROPERTY_AUTODELETE, false);
+            unrar.unrar=getStringProperty(Unrar.PROPERTY_UNRARCOMMAND);
+            unrar.maxFilesize=getIntegerProperty(Unrar.PROPERTY_MAX_FILESIZE, 2);
+            unrar.unrar();
+        }
+        if (mode == 1 || mode == 2) {
+            jdUnrar unrar = new jdUnrar(JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_DOWNLOAD_DIRECTORY));
+            unrar.addToPasswordlist(password);
             unrar.overwriteFiles=getBooleanProperty(Unrar.PROPERTY_OVERWRITE_FILES, false);
             unrar.autoDelete=getBooleanProperty(Unrar.PROPERTY_AUTODELETE, false);
             unrar.unrar=getStringProperty(Unrar.PROPERTY_UNRARCOMMAND);
