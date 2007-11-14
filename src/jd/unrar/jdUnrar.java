@@ -17,7 +17,6 @@ import java.util.Vector;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import jd.controlling.interaction.Unrar;
 import jd.plugins.Plugin;
 import jd.utils.JDUtilities;
 
@@ -33,6 +32,13 @@ public class jdUnrar {
     public int maxFilesize = 2;
     public boolean overwriteFiles = false, autoDelete = true;
     public static Logger logger = Plugin.getLogger();
+    /**
+     * Konstruktor Hinzufügen von Passwoertern
+     *
+     */
+    public jdUnrar() {
+        loadObjects();
+    }
     /**
      * Konstruktor zum entpacken aller Rar-Archive im angegebenen Ordner,
      * Passwoerter werden aus der PasswortListe entnommen fals vorhanden
@@ -126,23 +132,6 @@ public class jdUnrar {
     }
     private void savePasswordList() {
         Utilities.saveObject(this.passwordlist, passwordList, true);
-    }
-
-    private int getIntParam(String param, int defaultValue) {
-        int retint;
-        if (JDUtilities.getConfiguration().getProperty(param) != null) {
-            try {
-                retint = Integer.parseInt((String) JDUtilities.getConfiguration().getProperty(param));
-            } catch (Exception e) {
-                JDUtilities.getConfiguration().setProperty(param, defaultValue);
-                retint = defaultValue;
-            }
-
-        } else {
-            retint = defaultValue;
-        }
-        return retint;
-
     }
 
     /**

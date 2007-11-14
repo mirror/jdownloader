@@ -2,7 +2,6 @@ package jd.controlling.interaction;
 
 import java.io.File;
 import java.io.Serializable;
-import java.util.Vector;
 
 import jd.config.Configuration;
 import jd.controlling.JDController;
@@ -38,7 +37,7 @@ public class Unrar extends Interaction implements Serializable {
         if (mo != null) {
             if (mo.matches("Alle Dateien im Downloadordner entpacken"))
                 mode = 2;
-            else if (mo.matches("Die Dateien vom letzten Packet entpacken"))
+            else if (mo.matches("Die Dateien im Ordner des letzten Packets entpacken (mit PacketPasswort)"))
                 mode = 3;
         }
 
@@ -49,20 +48,16 @@ public class Unrar extends Interaction implements Serializable {
             password = dLink.getFilePackage().getPassword();
 
 
-        if (mode == 1 || mode == 3) {
+        if (dLink!=null && (mode == 1 || mode == 3)) {
 
-            if (controller.getLastFinishedDownloadLink()==null)
-                return true;
-            Vector<DownloadLink> filesv = controller.getPackageFiles(dLink);
-            File[] files = new File[filesv.size()];
-            for (int i = 0; i < files.length; i++) {
-                files[i] = new File(filesv.get(i).getFileOutput());
+
+            jdUnrar unrar = new jdUnrar(new File(dLink.getFileOutput()).getParentFile());
+            if (!password.isEmpty())
+            {
+                unrar.standardPassword=password;
+                unrar.addToPasswordlist(password);
             }
-            jdUnrar unrar;
-            if (password.isEmpty())
-                unrar = new jdUnrar(files);
-            else
-                unrar = new jdUnrar(files, password);
+                
             unrar.overwriteFiles=getBooleanProperty(Unrar.PROPERTY_OVERWRITE_FILES, false);
             unrar.autoDelete=getBooleanProperty(Unrar.PROPERTY_AUTODELETE, false);
             unrar.unrar=getStringProperty(Unrar.PROPERTY_UNRARCOMMAND);
@@ -71,6 +66,7 @@ public class Unrar extends Interaction implements Serializable {
         }
         if (mode == 1 || mode == 2) {
             jdUnrar unrar = new jdUnrar(JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_DOWNLOAD_DIRECTORY));
+            if(!password.isEmpty() && mode == 2)
             unrar.addToPasswordlist(password);
             unrar.overwriteFiles=getBooleanProperty(Unrar.PROPERTY_OVERWRITE_FILES, false);
             unrar.autoDelete=getBooleanProperty(Unrar.PROPERTY_AUTODELETE, false);

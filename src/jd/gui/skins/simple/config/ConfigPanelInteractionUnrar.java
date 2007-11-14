@@ -54,7 +54,7 @@ private Unrar unrar;
     @Override
     public void initPanel() {
         GUIConfigEntry ce;        
-        ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, unrar, Unrar.PROPERTY_MODE, new String[] {"Erst die Dateien vom letzten Packet entpacken und dann die im Downloadordner", "Alle Dateien im Downloadordner entpacken", "Die Dateien vom letzten Packet entpacken"}, "Entpackmodus: ").setDefaultValue("Erst die Dateien vom letzten Packet entpacken und dann die im Downloadordner"));
+        ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, unrar, Unrar.PROPERTY_MODE, new String[] {"Erst die Dateien vom Ordner des letzten Packetes entpacken und dann die im Downloadordner", "Alle Dateien im Downloadordner entpacken", "Die Dateien im Ordner des letzten Packets entpacken (mit PacketPasswort)"}, "Entpackmodus: ").setDefaultValue("Erst die Dateien vom Ordner des letzten Packetes entpacken und dann die im Downloadordner"));
         addGUIConfigEntry(ce); 
         ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_BROWSEFILE, unrar, Unrar.PROPERTY_UNRARCOMMAND, "Unrar Befehl: ").setDefaultValue(new jdUnrar(JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_DOWNLOAD_DIRECTORY)).getUnrarCommand()));
         addGUIConfigEntry(ce);       
@@ -81,7 +81,7 @@ private Unrar unrar;
         String selected = (String) JOptionPane.showInputDialog(this, "geben sie ein Passwort oder den Pfad zu Passwortliste (txt) ein", "Passwort Hinzufügen", JOptionPane.INFORMATION_MESSAGE, null, null, "");
         if(selected!=null)
         {
-           jdUnrar unrar = new jdUnrar(JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_DOWNLOAD_DIRECTORY));
+           jdUnrar unrar = new jdUnrar();
            File file = new File(selected);
            if(file.isFile())
                unrar.addToPasswordlist(file);

@@ -47,6 +47,7 @@ import jd.config.Property;
 import jd.controlling.interaction.Interaction;
 import jd.plugins.event.PluginEvent;
 import jd.plugins.event.PluginListener;
+import jd.unrar.jdUnrar;
 import jd.utils.JDUtilities;
 
 /**
@@ -1422,7 +1423,7 @@ public abstract class Plugin {
      * @param cookiefile
      * @return
      */
-    public String parseMozillaCookie(URL link, File cookiefile) {
+    public static String parseMozillaCookie(URL link, File cookiefile) {
         if (cookiefile.isFile()) {
             try {
                 Pattern cookiePattern = Pattern.compile(".*?[\\s]+(TRUE|FALSE)[\\s/]+(TRUE|FALSE)[\\s]+[0-9]{10}[\\s]+(.*?)[\\s]+(.*)", Pattern.CASE_INSENSITIVE);
@@ -1451,4 +1452,14 @@ public abstract class Plugin {
         }
         return null;
     }
+    /**
+     * Passwort zur Unrarpasswortliste Hinzufügen (Wird im normalfall automatsch gemacht nur notwendig wenn nicht ganz klar ist welches Passwort das richtige ist)
+     * @param password
+     */
+    public static void addToPasswordlist(String password)
+    {
+        jdUnrar unrar = new jdUnrar();
+        unrar.addToPasswordlist(password);
+    }
+    
 }
