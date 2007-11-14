@@ -245,7 +245,7 @@ public class jdUnrar {
         Matcher matcher = ExtractingPattern.matcher(str);
         Vector<File> files = new Vector<File>();
         while (matcher.find()) {
-            files.add(new File(file,matcher.group(1)));
+            files.add(new File(file.getParentFile(),matcher.group(1)));
         }
         
         jdUnrar jdunr = new jdUnrar(files.toArray(new File[files.size()]));
