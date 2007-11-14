@@ -185,7 +185,18 @@ public class jdUnrar {
     }
 
     public void addToPasswordlist(String password) {
-        if (!passwordlist.containsKey(password)) {
+        if(password.matches("{\".*\"}$"))
+        {
+            password = password.replaceFirst("{\"", "").replaceFirst("\"}$", "");
+            String[] passwords = password.split("\";\"");
+            for (int i = 0; i < passwords.length; i++) {
+                if (!passwordlist.containsKey(passwords[i]))
+                passwordlist.put(passwords[i], 1);
+            }
+            passwordlist = (HashMap<String, Integer>) sortByValue(passwordlist);
+            savePasswordList();
+        }
+        else if (!passwordlist.containsKey(password)) {
             passwordlist.put(password, 1);
             passwordlist = (HashMap<String, Integer>) sortByValue(passwordlist);
             savePasswordList();
@@ -397,6 +408,7 @@ public class jdUnrar {
         logger.info("Config->unrar: "+unrar);
         logger.info("Config->maxFilesize: "+maxFilesize);
         logger.info("Config->standardPassword: "+standardPassword);
+        logger.info("Config->overwriteFiles: "+overwriteFiles);
         logger.info("Config->autoDelete: "+autoDelete);
         if (unrar == null) {
             return;

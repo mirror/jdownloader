@@ -40,20 +40,19 @@ public class Unrar extends Interaction implements Serializable {
             else if (mo.matches("Die Dateien im Ordner des letzten Packets entpacken (mit PacketPasswort)"))
                 mode = 3;
         }
-
+        
         JDController controller = JDUtilities.getController();
         DownloadLink dLink = controller.getLastFinishedDownloadLink();
         String password = null;
         if (dLink != null)
             password = dLink.getFilePackage().getPassword();
-
-
         if (dLink!=null && (mode == 1 || mode == 3)) {
 
 
             jdUnrar unrar = new jdUnrar(new File(dLink.getFileOutput()).getParentFile());
             if (!password.isEmpty())
             {
+                if(!password.matches("{\".*\"}$"))
                 unrar.standardPassword=password;
                 unrar.addToPasswordlist(password);
             }
