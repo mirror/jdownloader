@@ -231,7 +231,8 @@ public class Rapidshare extends PluginForHost {
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_LABEL, "(*1)Premiumuser müssen die Bevorzugten Server in den Rapidshare-Online-Optionen (rs.com Premiumbereich) einstellen falls sie Direktlinks aktiviert haben!"));
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_LABEL, "(*2)Betrifft nur Freeuser"));
         config.addEntry(cfg =  new ConfigEntry(ConfigContainer.TYPE_SPINNER, getProperties(), PROPERTY_BYTES_TO_LOAD, "Nur die ersten * KiloBytes jeder Datei laden[-1 to disable]",-1,100000).setDefaultValue(-1).setStep(500));
-        
+        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getProperties(), "USE_SSL", "SSL Downloadlink verwenden"));
+        cfg.setDefaultValue(false);
       
     }
     // @Override
@@ -267,7 +268,10 @@ public class Rapidshare extends PluginForHost {
                         return step;
                     }
                     // Der Download wird bestätigt
-                    requestInfo = getRequest(new URL(downloadLink.getUrlDownloadDecrypted().replaceFirst("http://", "http://ssl.")));
+                    String link = downloadLink.getUrlDownloadDecrypted();
+                    if(this.getProperties().getBooleanProperty("USE_SSL", false))
+                        link = link.replaceFirst("http://", "http://ssl.");
+                    requestInfo = getRequest(new URL(link));
             
                     if (requestInfo.getHtmlCode().indexOf(hardwareDefektString) > 0) {
                         // hardewaredefeklt bei rs.com
@@ -566,7 +570,10 @@ public class Rapidshare extends PluginForHost {
                     // public static RequestInfo getRequest(URL link, String
                     // cookie, String referrer, boolean redirect) throws
                     // IOException {
-                    requestInfo = getRequest(new URL(downloadLink.getUrlDownloadDecrypted()), null, "", false);
+                    String link = downloadLink.getUrlDownloadDecrypted();
+                    if(this.getProperties().getBooleanProperty("USE_SSL", false))
+                        link = link.replaceFirst("http://", "http://ssl.");
+                    requestInfo = getRequest(new URL(link), null, "", false);
                     if (requestInfo.getHtmlCode().indexOf(hardwareDefektString) > 0) {
                         // hardewaredefeklt bei rs.com
                         step.setStatus(PluginStep.STATUS_ERROR);
