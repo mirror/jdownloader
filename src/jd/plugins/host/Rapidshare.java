@@ -245,6 +245,14 @@ public class Rapidshare extends PluginForHost {
             logger.info("Plugin Ende erreicht.");
             return null;
         }
+        String link=downloadLink.getUrlDownloadDecrypted();
+        if(link.contains("://ssl.")||!link.startsWith("http://rapidshare.com")){
+            link="http://rapidshare.com"+link.substring(link.indexOf("rapidshare.com")+14);
+            logger.finer("URL korrigiert: "+link);
+            downloadLink.setUrlDownload(link);
+        }
+                
+          
         logger.info("get Next Step " + step);
         // premium
         if (this.getProperties().getProperty("USE_PREMIUM") != null && this.getProperties().getBooleanProperty("USE_PREMIUM", false)) {
@@ -837,7 +845,13 @@ public class Rapidshare extends PluginForHost {
         // Der Download wird bestätigt
         RequestInfo requestInfo;
         try {
-            String link = downloadLink.getUrlDownloadDecrypted();
+            String link=downloadLink.getUrlDownloadDecrypted();
+            if(link.contains("://ssl.")||!link.startsWith("http://rapidshare.com")){
+                link="http://rapidshare.com"+link.substring(link.indexOf("rapidshare.com")+14);
+                logger.finer("URL korrigiert: "+link);
+                downloadLink.setUrlDownload(link);
+            }
+                 
             if(this.getProperties().getBooleanProperty("USE_SSL", true))
                 link = link.replaceFirst("http://", "http://ssl.");
             requestInfo = getRequest(new URL(link));
