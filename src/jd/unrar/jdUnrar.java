@@ -236,7 +236,7 @@ public class jdUnrar {
                 else
                 {
                     File winrarexe = new File(new File(System.getenv("ProgramFiles"), "Winrar"), "unrar.exe");
-                    if (unrarexe.isFile())
+                    if (winrarexe.isFile())
                     {
                         logger.info("unrar.exe found in "+winrarexe.getAbsolutePath());
                         logger.info("to prevent language complications the file will be copied to "+unrarexe.getAbsolutePath());
