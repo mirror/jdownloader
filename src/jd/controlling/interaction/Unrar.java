@@ -35,9 +35,9 @@ public class Unrar extends Interaction implements Serializable {
         String mo = getStringProperty(PROPERTY_MODE);
         int mode = 1;
         if (mo != null) {
-            if (mo.matches("Alle Dateien im Downloadordner entpacken"))
+            if (mo.matches("Alle Dateien im Downloadordner entpacken (Passwortsuche)"))
                 mode = 2;
-            else if (mo.matches("Die Dateien im Ordner des letzten Packets entpacken (mit PacketPasswort)"))
+            else if (mo.matches("Die Dateien im Ordner des letzten Pakets entpacken (mit PaketPasswort)"))
                 mode = 3;
         }
         

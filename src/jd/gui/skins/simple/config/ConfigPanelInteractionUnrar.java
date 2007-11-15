@@ -54,7 +54,7 @@ private Unrar unrar;
     @Override
     public void initPanel() {
         GUIConfigEntry ce;        
-        ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, unrar, Unrar.PROPERTY_MODE, new String[] {"Erst die Dateien vom Ordner des letzten Packetes entpacken und dann die im Downloadordner", "Alle Dateien im Downloadordner entpacken", "Die Dateien im Ordner des letzten Packets entpacken (mit PacketPasswort)"}, "Entpackmodus: ").setDefaultValue("Erst die Dateien vom Ordner des letzten Packetes entpacken und dann die im Downloadordner"));
+        ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, unrar, Unrar.PROPERTY_MODE, new String[] {"Erst die Dateien vom Ordner des letzten Paketes entpacken (mit PaketPasswort) und dann die im Downloadordner (Passwortsuche)", "Alle Dateien im Downloadordner entpacken (Passwortsuche)", "Die Dateien im Ordner des letzten Pakets entpacken (mit PaketPasswort)"}, "Entpackmodus: ").setDefaultValue("Erst die Dateien vom Ordner des letzten Paketes entpacken (mit PaketPasswort) und dann die im Downloadordner (Passwortsuche)"));
         addGUIConfigEntry(ce); 
         ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_BROWSEFILE, unrar, Unrar.PROPERTY_UNRARCOMMAND, "Befehl für die Englische Version von Unrar: ").setDefaultValue(new jdUnrar(JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_DOWNLOAD_DIRECTORY)).getUnrarCommand()));
         addGUIConfigEntry(ce);       
