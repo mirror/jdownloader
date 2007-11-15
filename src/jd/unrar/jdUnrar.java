@@ -3,6 +3,7 @@ package jd.unrar;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.Collections;
@@ -27,14 +28,14 @@ public class jdUnrar {
     public String standardPassword = null;
     private static final String allOk = "(?s).*[\\s]+All OK[\\s].*";
     private static final Pattern ExtractingPattern = Pattern.compile("Extracting  (.*?)[\\s]+OK");
-    
+
     public String unrar = null;
     public int maxFilesize = 2;
     public boolean overwriteFiles = false, autoDelete = true;
     public static Logger logger = Plugin.getLogger();
     /**
      * Konstruktor Hinzufügen von Passwoertern
-     *
+     * 
      */
     public jdUnrar() {
         loadObjects();
@@ -145,13 +146,79 @@ public class jdUnrar {
             unrar = autoGetUnrarCommand();
             if (unrar == null)
                 logger.severe("Can't find unrar command");
-                logger.severe("Please load the English version of unrar from http://www.rarlab.com/rar_add.htm for your OS");
+            logger.severe("Please load the English version of unrar from http://www.rarlab.com/rar_add.htm for your OS");
             return unrar;
         } else {
             return unrar;
         }
 
     }
+    /**
+     * Zum Kopieren von einem Ort zum anderen
+     * @param fromFileName
+     * @param toFileName
+     * @throws IOException
+     */
+    public static void copy(File fromFile, File toFile) throws IOException {
+
+        if (!fromFile.exists())
+            throw new IOException("FileCopy: " + "no such source file: " + fromFile.getName());
+        if (!fromFile.isFile())
+            throw new IOException("FileCopy: " + "can't copy directory: " + fromFile.getName());
+        if (!fromFile.canRead())
+            throw new IOException("FileCopy: " + "source file is unreadable: " + fromFile.getName());
+
+        if (toFile.isDirectory())
+            toFile = new File(toFile, fromFile.getName());
+
+        if (toFile.exists()) {
+            if (!toFile.canWrite())
+                throw new IOException("FileCopy: " + "destination file is unwriteable: " + fromFile.getName());
+            System.out.print("Overwrite existing file " + toFile.getName() + "? (Y/N): ");
+            System.out.flush();
+            BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
+            String response = in.readLine();
+            if (!response.equals("Y") && !response.equals("y"))
+                throw new IOException("FileCopy: " + "existing file was not overwritten.");
+        } else {
+            String parent = toFile.getParent();
+            if (parent == null)
+                parent = System.getProperty("user.dir");
+            File dir = new File(parent);
+            if (!dir.exists())
+                throw new IOException("FileCopy: " + "destination directory doesn't exist: " + parent);
+            if (dir.isFile())
+                throw new IOException("FileCopy: " + "destination is not a directory: " + parent);
+            if (!dir.canWrite())
+                throw new IOException("FileCopy: " + "destination directory is unwriteable: " + parent);
+        }
+
+        FileInputStream from = null;
+        FileOutputStream to = null;
+        try {
+            from = new FileInputStream(fromFile);
+            to = new FileOutputStream(toFile);
+            byte[] buffer = new byte[4096];
+            int bytesRead;
+
+            while ((bytesRead = from.read(buffer)) != -1)
+                to.write(buffer, 0, bytesRead); // write
+        } finally {
+            if (from != null)
+                try {
+                    from.close();
+                } catch (IOException e) {
+                    ;
+                }
+            if (to != null)
+                try {
+                    to.close();
+                } catch (IOException e) {
+                    ;
+                }
+        }
+    }
+
     /**
      * Versucht den Programmpfad von unrar bzw unrar.exe zu finden
      * 
@@ -168,15 +235,18 @@ public class jdUnrar {
                     programm = unrarexe.getAbsolutePath();
                 else
                 {
-                    unrarexe = new File(JDUtilities.getJDHomeDirectory(), "UnRAR.exe");
+                    File winrarexe = new File(new File(System.getenv("ProgramFiles"), "Winrar"), "unrar.exe");
                     if (unrarexe.isFile())
-                        programm = unrarexe.getAbsolutePath();
-                    /*
-                    else
                     {
-                        logger.info("Can't find unrar.exe try to download unrar from www.rarlab.com");
+                        logger.info("unrar.exe found in "+winrarexe.getAbsolutePath());
+                        logger.info("to prevent language complications the file will be copied to "+unrarexe.getAbsolutePath());
+                        copy(winrarexe, unrarexe);
+                        programm = unrarexe.getAbsolutePath();
                     }
-                    */
+                    /*
+                     * else { logger.info("Can't find unrar.exe try to download
+                     * unrar from www.rarlab.com"); }
+                     */
                 }
             } catch (Throwable e) {
             }
@@ -196,20 +266,17 @@ public class jdUnrar {
         }
         return programm;
     }
-
     public void addToPasswordlist(String password) {
-        if(password.matches("\\{\".*\"\\}$"))
-        {
+        if (password.matches("\\{\".*\"\\}$")) {
             password = password.replaceFirst("\\{\"", "").replaceFirst("\"\\}$", "");
             String[] passwords = password.split("\";\"");
             for (int i = 0; i < passwords.length; i++) {
                 if (!passwordlist.containsKey(passwords[i]))
-                passwordlist.put(passwords[i], 1);
+                    passwordlist.put(passwords[i], 1);
             }
             passwordlist = (HashMap<String, Integer>) sortByValue(passwordlist);
             savePasswordList();
-        }
-        else if (!passwordlist.containsKey(password)) {
+        } else if (!passwordlist.containsKey(password)) {
             passwordlist.put(password, 1);
             passwordlist = (HashMap<String, Integer>) sortByValue(passwordlist);
             savePasswordList();
@@ -231,7 +298,7 @@ public class jdUnrar {
         }
         passwordlist = (HashMap<String, Integer>) sortByValue(passwordlist);
         savePasswordList();
-        
+
     }
     @SuppressWarnings("unchecked")
     private static Map sortByValue(Map map) {
@@ -253,19 +320,18 @@ public class jdUnrar {
         passwordlist.put(password, passwordlist.get(password) + 1);
         passwordlist = (HashMap<String, Integer>) sortByValue(passwordlist);
     }
-    private void newDownload(File file, String str)
-    {
+    private void newDownload(File file, String str) {
         Matcher matcher = ExtractingPattern.matcher(str);
         Vector<File> files = new Vector<File>();
         while (matcher.find()) {
-            files.add(new File(file.getParentFile(),matcher.group(1)));
+            files.add(new File(file.getParentFile(), matcher.group(1)));
         }
-        
+
         jdUnrar jdunr = new jdUnrar(files.toArray(new File[files.size()]));
-        jdunr.autoDelete=autoDelete;
-        jdunr.unrar=unrar;
-        jdunr.maxFilesize=maxFilesize;
-        jdunr.overwriteFiles=overwriteFiles;
+        jdunr.autoDelete = autoDelete;
+        jdunr.unrar = unrar;
+        jdunr.maxFilesize = maxFilesize;
+        jdunr.overwriteFiles = overwriteFiles;
         jdunr.unrar();
     }
     private void passwordlist(File file, String password) {
@@ -424,11 +490,11 @@ public class jdUnrar {
     public void unrar() {
         unrar = getUnrarCommand();
         logger.info("Starting Unrar (DwD)");
-        logger.info("Config->unrar: "+unrar);
-        logger.info("Config->maxFilesize: "+maxFilesize);
-        logger.info("Config->standardPassword: "+standardPassword);
-        logger.info("Config->overwriteFiles: "+overwriteFiles);
-        logger.info("Config->autoDelete: "+autoDelete);
+        logger.info("Config->unrar: " + unrar);
+        logger.info("Config->maxFilesize: " + maxFilesize);
+        logger.info("Config->standardPassword: " + standardPassword);
+        logger.info("Config->overwriteFiles: " + overwriteFiles);
+        logger.info("Config->autoDelete: " + autoDelete);
         if (unrar == null) {
             return;
         }
