@@ -32,47 +32,51 @@ public class Unrar extends Interaction implements Serializable {
     public static final String PROPERTY_MAX_FILESIZE = "PROPERTY_MAX_FILESIZE";
     @Override
     public boolean doInteraction(Object arg) {
-        String mo = getStringProperty(PROPERTY_MODE);
-        int mode = 1;
-        if (mo != null) {
-            if (mo.matches("Alle Dateien im Downloadordner entpacken (Passwortsuche)"))
-                mode = 2;
-            else if (mo.matches("Die Dateien im Ordner des letzten Pakets entpacken (mit PaketPasswort)"))
-                mode = 3;
-        }
-        
-        JDController controller = JDUtilities.getController();
-        DownloadLink dLink = controller.getLastFinishedDownloadLink();
-        String password = null;
-        if (dLink != null)
-            password = dLink.getFilePackage().getPassword();
-        if (dLink!=null && (mode == 1 || mode == 3)) {
-
-
-            jdUnrar unrar = new jdUnrar(new File(dLink.getFileOutput()).getParentFile());
-            if (!password.isEmpty())
-            {
-                if(!password.matches("\\{\".*\"\\}$"))
-                unrar.standardPassword=password;
-                unrar.addToPasswordlist(password);
-            }
+        new Thread(new Runnable(){
+            public void run() {
+                String mo = getStringProperty(PROPERTY_MODE);
+                int mode = 1;
+                if (mo != null) {
+                    if (mo.matches("Alle Dateien im Downloadordner entpacken (Passwortsuche)"))
+                        mode = 2;
+                    else if (mo.matches("Die Dateien im Ordner des letzten Pakets entpacken (mit PaketPasswort)"))
+                        mode = 3;
+                }
                 
-            unrar.overwriteFiles=getBooleanProperty(Unrar.PROPERTY_OVERWRITE_FILES, false);
-            unrar.autoDelete=getBooleanProperty(Unrar.PROPERTY_AUTODELETE, false);
-            unrar.unrar=getStringProperty(Unrar.PROPERTY_UNRARCOMMAND);
-            unrar.maxFilesize=getIntegerProperty(Unrar.PROPERTY_MAX_FILESIZE, 2);
-            unrar.unrar();
-        }
-        if (mode == 1 || mode == 2) {
-            jdUnrar unrar = new jdUnrar(JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_DOWNLOAD_DIRECTORY));
-            if(!password.isEmpty() && mode == 2)
-            unrar.addToPasswordlist(password);
-            unrar.overwriteFiles=getBooleanProperty(Unrar.PROPERTY_OVERWRITE_FILES, false);
-            unrar.autoDelete=getBooleanProperty(Unrar.PROPERTY_AUTODELETE, false);
-            unrar.unrar=getStringProperty(Unrar.PROPERTY_UNRARCOMMAND);
-            unrar.maxFilesize=getIntegerProperty(Unrar.PROPERTY_MAX_FILESIZE, 2);
-            unrar.unrar();
-        }
+                JDController controller = JDUtilities.getController();
+                DownloadLink dLink = controller.getLastFinishedDownloadLink();
+                String password = null;
+                if (dLink != null)
+                    password = dLink.getFilePackage().getPassword();
+                if (dLink!=null && (mode == 1 || mode == 3)) {
+
+
+                    jdUnrar unrar = new jdUnrar(new File(dLink.getFileOutput()).getParentFile());
+                    if (!password.isEmpty())
+                    {
+                        if(!password.matches("\\{\".*\"\\}$"))
+                        unrar.standardPassword=password;
+                        unrar.addToPasswordlist(password);
+                    }
+                        
+                    unrar.overwriteFiles=getBooleanProperty(Unrar.PROPERTY_OVERWRITE_FILES, false);
+                    unrar.autoDelete=getBooleanProperty(Unrar.PROPERTY_AUTODELETE, false);
+                    unrar.unrar=getStringProperty(Unrar.PROPERTY_UNRARCOMMAND);
+                    unrar.maxFilesize=getIntegerProperty(Unrar.PROPERTY_MAX_FILESIZE, 2);
+                    unrar.unrar();
+                }
+                if (mode == 1 || mode == 2) {
+                    jdUnrar unrar = new jdUnrar(JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_DOWNLOAD_DIRECTORY));
+                    if(!password.isEmpty() && mode == 2)
+                    unrar.addToPasswordlist(password);
+                    unrar.overwriteFiles=getBooleanProperty(Unrar.PROPERTY_OVERWRITE_FILES, false);
+                    unrar.autoDelete=getBooleanProperty(Unrar.PROPERTY_AUTODELETE, false);
+                    unrar.unrar=getStringProperty(Unrar.PROPERTY_UNRARCOMMAND);
+                    unrar.maxFilesize=getIntegerProperty(Unrar.PROPERTY_MAX_FILESIZE, 2);
+                    unrar.unrar();
+                }
+                
+            }}).start();
         return true;
 
     }
