@@ -4,8 +4,10 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.util.Vector;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
@@ -22,8 +24,9 @@ import jd.utils.JDUtilities;
  */
 public class Stealth extends PluginForDecrypt {
     static private final String host = "Stealth.to";
-    private String  version = "1.0.0.2";
+    private String  version = "1.0.0.3";
     private Pattern patternSupported = getSupportPattern("http://[*]stealth.to/\\?id=[+]");
+    private Pattern patternCaptcha = Pattern.compile("captcha_img.php\\?PHPSESSID");
 
     public Stealth() {
         super();
@@ -73,6 +76,36 @@ public class Stealth extends PluginForDecrypt {
     		try {
     			URL url = new URL(parameter);
     			RequestInfo reqinfo = getRequest(url);
+    			String capTxt = "";
+    			File captchaFile = null;
+    			
+    			for (;;) { // for() läuft bis kein Captcha mehr abgefragt
+                    // wird
+                    Matcher matcher = patternCaptcha.matcher(reqinfo.getHtmlCode());
+
+                    if (matcher.find()) {
+                        if(captchaFile!=null && capTxt != null){
+                            JDUtilities.appendInfoToFilename(captchaFile,capTxt, false);
+                        }
+                        String[] help = reqinfo.getCookie().split("=");
+                        logger.finest("Captcha Protected");
+                        String captchaAdress = "http://stealth.to/captcha_img.php?PHPSESSID=" + help[2];
+                        captchaFile = getLocalCaptchaFile(this);
+                        JDUtilities.download(captchaFile, captchaAdress);
+
+                        capTxt = Plugin.getCaptchaCode(captchaFile, this);
+                        String postData = "txtCode="+capTxt+"&eintrag=OK";
+
+                        reqinfo = postRequest(url, "PHPSESSID=" + help[2], parameter, null, postData, true);
+                    }
+                    else {
+                        if(captchaFile!=null && capTxt != null){
+                            JDUtilities.appendInfoToFilename(captchaFile,capTxt, true);
+                        }
+                        break;
+                    }
+                }
+    			
     			RequestInfo reqhelp = postRequest(new URL("http://stealth.to/ajax.php"), null, parameter, null, "id=" + getBetween(reqinfo.getHtmlCode(), "<div align=\"center\"><a id=\"", "\" href=\"") + "&typ=hit", true);
     			Vector<Vector<String>> links = getAllSimpleMatches(reqinfo.getHtmlCode(), "dl = window.open(\"°\"");
     			firePluginEvent(new PluginEvent(this,PluginEvent.PLUGIN_PROGRESS_MAX, links.size()));
