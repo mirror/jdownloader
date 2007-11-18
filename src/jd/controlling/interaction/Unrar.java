@@ -40,7 +40,7 @@ public class Unrar extends Interaction implements Serializable {
                     password = dLink.getFilePackage().getPassword();
 
                 jdUnrar unrar = new jdUnrar(JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_DOWNLOAD_DIRECTORY));
-                if (!password.isEmpty()) {
+                if (password!=null && !password.isEmpty()) {
                     if (!password.matches("\\{\".*\"\\}$"))
                         unrar.standardPassword = password;
                     unrar.addToPasswordlist(password);
@@ -50,6 +50,11 @@ public class Unrar extends Interaction implements Serializable {
                 unrar.unrar = getStringProperty(Unrar.PROPERTY_UNRARCOMMAND);
                 unrar.maxFilesize = getIntegerProperty(Unrar.PROPERTY_MAX_FILESIZE, 2);
                 unrar.unrar();
+                unrar = new jdUnrar(JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_DOWNLOAD_DIRECTORY));
+                unrar.overwriteFiles = getBooleanProperty(Unrar.PROPERTY_OVERWRITE_FILES, false);
+                unrar.autoDelete = getBooleanProperty(Unrar.PROPERTY_AUTODELETE, false);
+                unrar.unrar = getStringProperty(Unrar.PROPERTY_UNRARCOMMAND);
+                unrar.maxFilesize = getIntegerProperty(Unrar.PROPERTY_MAX_FILESIZE, 2);
                 unrar.unrar();
 
             }
