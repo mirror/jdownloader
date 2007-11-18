@@ -90,7 +90,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
     private JPanel panel;
 
     private JButton btnCheck;
-    
+
     private JButton btnSort;
 
     /**
@@ -125,7 +125,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
         btnCancel = new JButton("Verwerfen");
         btnRemove = new JButton("Markierte entfernen");
         btnCheck = new JButton("Informationen & Verfügbarkeit prüfen");
-        btnSort = new JButton("Nach Hostnamen Sortieren"); 
+        btnSort = new JButton("Nach Hostnamen Sortieren");
         getRootPane().setDefaultButton(btnOk);
         txfComment = new JTextField();
 
@@ -355,17 +355,13 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
     public void actionPerformed(ActionEvent e) {
         if (e.getSource() == this.btnOk) {
             confirm(null);
-        }
-        else if (e.getSource() == this.btnRemove) {
+        } else if (e.getSource() == this.btnRemove) {
             removeSelectedLinks();
-        }
-        else if (e.getSource() == this.btnCheck) {
+        } else if (e.getSource() == this.btnCheck) {
             checkLinks();
-        }
-        else if (e.getSource() == this.btnSort) {
+        } else if (e.getSource() == this.btnSort) {
             sortByHostname();
-        }
-        else if (e.getSource() == this.btnCancel) {
+        } else if (e.getSource() == this.btnCancel) {
             this.setVisible(false);
         }
     }
@@ -374,15 +370,25 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
         new Thread() {
             public void run() {
                 Vector<String> mirrorlist = new Vector<String>();
+                Vector<DownloadLink> mirrorlinks = new Vector<DownloadLink>();
+                for (int i = 0; i < linkList.size(); i++) {
+                    if (linkList.elementAt(i).isAvailabilityChecked()) {
+                        if (linkList.elementAt(i).isAvailable()) {
+                            if (mirrorlist.contains(linkList.elementAt(i).getName().toLowerCase().replaceFirst("\\.htm.?$", "")))
+                                mirrorlinks.add(linkList.elementAt(i));
+                            else {
+                                mirrorlist.add(linkList.elementAt(i).getName().toLowerCase().replaceFirst("\\.htm.?$", ""));
+                            }
+
+                        }
+                    }
+                }
                 for (int i = linkList.size() - 1; i >= 0 && isVisible() && linkList.size() > i; i--) {
                     DownloadLink link = linkList.elementAt(i);
-                    if (!link.isAvailable()) {
+                    if (!link.isAvailable() || mirrorlinks.contains(link)) {
                         linkList.remove(i);
-                    } else if (mirrorlist.contains(linkList.elementAt(i).getName().toLowerCase().replaceFirst("\\.htm.?$", ""))) {
-                        linkList.remove(i);
-                    } else
-                        mirrorlist.add(linkList.elementAt(i).getName().toLowerCase().replaceFirst("\\.htm.?$", ""));
-                    fireTableChanged();
+                        fireTableChanged();
+                    }
                     try {
                         Thread.sleep(20);
                     } catch (InterruptedException e) {
@@ -391,11 +397,10 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
             }
         }.start();
     }
-    private void sortByHostname()
-    {
+    private void sortByHostname() {
         new Thread() {
             @SuppressWarnings("unchecked")
-            public void run() {                
+            public void run() {
                 Collections.sort(linkList, new Comparator() {
                     public int compare(Object o1, Object o2) {
                         return ((Comparable) ((DownloadLink) (o2)).getHost()).compareTo(((DownloadLink) (o1)).getHost());
