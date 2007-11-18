@@ -45,9 +45,6 @@ public class Unrar extends Interaction implements Serializable {
                         unrar.standardPassword = password;
                     unrar.addToPasswordlist(password);
                 }
-
-                if (!password.isEmpty())
-                    unrar.addToPasswordlist(password);
                 unrar.overwriteFiles = getBooleanProperty(Unrar.PROPERTY_OVERWRITE_FILES, false);
                 unrar.autoDelete = getBooleanProperty(Unrar.PROPERTY_AUTODELETE, false);
                 unrar.unrar = getStringProperty(Unrar.PROPERTY_UNRARCOMMAND);
