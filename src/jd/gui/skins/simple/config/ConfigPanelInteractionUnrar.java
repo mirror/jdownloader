@@ -22,25 +22,24 @@ import jd.unrar.jdUnrar;
 import jd.utils.JDUtilities;
 /**
  * Konfigurationspanel für Unrar
+ * 
  * @author DwD
- *
+ * 
  */
 
-public class ConfigPanelInteractionUnrar extends ConfigPanel implements ActionListener{
+public class ConfigPanelInteractionUnrar extends ConfigPanel implements ActionListener {
 
-
-
-/**
+    /**
      * 
      */
     private static final long serialVersionUID = -1543456288909278519L;
     /**
      * Instanz zum speichern der parameter
      */
-private Unrar unrar;
+    private Unrar unrar;
     ConfigPanelInteractionUnrar(Configuration configuration, UIInterface uiinterface, Unrar unrar) {
         super(uiinterface);
-        this.unrar=unrar;
+        this.unrar = unrar;
         initPanel();
 
         load();
@@ -56,18 +55,17 @@ private Unrar unrar;
         this.loadConfigEntries();
     }
 
-
     @Override
     public void initPanel() {
-        GUIConfigEntry ce;        
+        GUIConfigEntry ce;
         ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_BROWSEFILE, unrar, Unrar.PROPERTY_UNRARCOMMAND, "Befehl für die Englische Version von Unrar: ").setDefaultValue(new jdUnrar(JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_DOWNLOAD_DIRECTORY)).getUnrarCommand()));
-        addGUIConfigEntry(ce);       
+        addGUIConfigEntry(ce);
         ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, unrar, Unrar.PROPERTY_AUTODELETE, "Bei erfolgreichem Entpacken automatisch löschen: ").setDefaultValue(true));
-        addGUIConfigEntry(ce); 
+        addGUIConfigEntry(ce);
         ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, unrar, Unrar.PROPERTY_OVERWRITE_FILES, "Dateien automatisch überschreiben: ").setDefaultValue(false));
-        addGUIConfigEntry(ce); 
-        ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, unrar, Unrar.PROPERTY_MAX_FILESIZE, "Maximale Dateigröße für die Passwortsuche in MB: ",0,500).setDefaultValue(2));
-        addGUIConfigEntry(ce); 
+        addGUIConfigEntry(ce);
+        ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, unrar, Unrar.PROPERTY_MAX_FILESIZE, "Maximale Dateigröße für die Passwortsuche in MB: ", 0, 500).setDefaultValue(2));
+        addGUIConfigEntry(ce);
         ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_BUTTON, this, "Passwortliste bearbeiten"));
         addGUIConfigEntry(ce);
         add(panel, BorderLayout.CENTER);
@@ -81,113 +79,91 @@ private Unrar unrar;
     }
 
     public void actionPerformed(ActionEvent e) {
-        System.out.println(((SimpleGUI)this.uiinterface).getFrame());
-        new jdUnrarPasswordListDialog(((SimpleGUI)this.uiinterface).getFrame()).setVisible(true);
-
-        /*
-        System.out.println(e);
-        String selected = (String) JOptionPane.showInputDialog(this, "geben sie ein Passwort oder den Pfad zur Passwortliste (txt) ein"+System.getProperty("line.separator")+"mit {\"Password1\",\"Password2\",\"Password3\"} lassen sich mehrere Passwörter hinzufügen", "Passwort Hinzufügen", JOptionPane.INFORMATION_MESSAGE, null, null, "");
-        if(selected!=null)
-        {
-           jdUnrar unrar = new jdUnrar();
-           File file = new File(selected);
-           if(file.isFile())
-               unrar.addToPasswordlist(file);
-           else
-               unrar.addToPasswordlist(selected);
-        }
-        */
+        System.out.println(((SimpleGUI) this.uiinterface).getFrame());
+        new jdUnrarPasswordListDialog(((SimpleGUI) this.uiinterface).getFrame()).setVisible(true);
     }
 }
 /**
- * Ein Dialog, der Passwort-Output anzeigen kann. 
+ * Ein Dialog, der Passwort-Output anzeigen kann.
  * 
  * @author DwD
  */
 class jdUnrarPasswordListDialog extends JDialog implements ActionListener {
 
-   /**
+    /**
      * 
      */
     private static final long serialVersionUID = 1L;
 
-/**
-    * JTextField wo der Passwort Output eingetragen wird
-    */
-   private JTextArea pwField;
+    /**
+     * JTextField wo der Passwort Output eingetragen wird
+     */
+    private JTextArea pwField;
 
-   /**
-    * JScrollPane fuer das pwField
-    */
-   private JScrollPane pwScrollPane;
+    /**
+     * JScrollPane fuer das pwField
+     */
+    private JScrollPane pwScrollPane;
 
-   /**
-    * Knopf zum schliessen des Fensters
-    */
-   private JButton btnCancel;
-   /**
-    * Knopf zum scheichern der Passwörter
-    */
-   private JButton btnSave;
+    /**
+     * Knopf zum schliessen des Fensters
+     */
+    private JButton btnCancel;
+    /**
+     * Knopf zum scheichern der Passwörter
+     */
+    private JButton btnSave;
 
-   /**
-    * Primary Constructor
-    * 
-    * @param owner
-    *           The owning Frame
-    */
-   public jdUnrarPasswordListDialog(JFrame owner) {
-      super(owner);
-      setModal(true);
-      setLayout(new GridBagLayout());
+    /**
+     * Primary Constructor
+     * 
+     * @param owner
+     *            The owning Frame
+     */
+    public jdUnrarPasswordListDialog(JFrame owner) {
+        super(owner);
+        setModal(true);
+        setLayout(new GridBagLayout());
 
+        btnCancel = new JButton("Abbrechen");
+        btnCancel.addActionListener(this);
+        btnSave = new JButton("Speichern");
+        btnSave.addActionListener(this);
+        getRootPane().setDefaultButton(btnSave);
+        setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
 
-      btnCancel = new JButton("Abbrechen");
-      btnCancel.addActionListener(this);
-      btnSave = new JButton("Speichern");
-      btnSave.addActionListener(this);
-      getRootPane().setDefaultButton(btnSave);
-      setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
+        pwField = new JTextArea(10, 60);
+        pwScrollPane = new JScrollPane(pwField);
+        pwField.setEditable(true);
+        jdUnrar unrar = new jdUnrar();
+        String[] pws = unrar.returnPasswords();
+        for (int i = 0; i < pws.length; i++) {
+            pwField.append(pws[i] + System.getProperty("line.separator"));
+        }
 
-      pwField = new JTextArea(10, 60);
-      pwScrollPane = new JScrollPane(pwField);
-      pwField.setEditable(true);
-      jdUnrar unrar = new jdUnrar();
-      String[] pws = unrar.returnPasswords();
-      for (int i = 0; i < pws.length; i++) {
-          pwField.append(pws[i]+System.getProperty("line.separator"));
+        JDUtilities.addToGridBag(this, pwScrollPane, 0, 0, 2, 1, 1, 1, null, GridBagConstraints.BOTH, GridBagConstraints.CENTER);
+        JDUtilities.addToGridBag(this, btnSave, 0, 1, 1, 1, 1, 0, null, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        JDUtilities.addToGridBag(this, btnCancel, 1, 1, 1, 1, 1, 0, null, GridBagConstraints.NONE, GridBagConstraints.WEST);
+
+        pack();
+        setLocation(JDUtilities.getCenterOfComponent(null, this));
+
     }
 
+    /*
+     * (non-Javadoc)
+     * 
+     * @see java.awt.event.ActionListener#actionPerformed(java.awt.event.ActionEvent)
+     */
+    public void actionPerformed(ActionEvent e) {
+        if (e.getSource() == btnSave) {
+            jdUnrar unrar = new jdUnrar();
+            unrar.editPasswordlist(pwField.getText().split(System.getProperty("line.separator")));
+            dispose();
 
-      JDUtilities.addToGridBag(this, pwScrollPane, 0, 0, 2, 1, 1, 1, null,
-            GridBagConstraints.BOTH, GridBagConstraints.CENTER);
-      JDUtilities.addToGridBag(this, btnSave, 0, 1, 1, 1, 1, 0, null, GridBagConstraints.NONE,
-              GridBagConstraints.WEST);
-      JDUtilities.addToGridBag(this, btnCancel, 1, 1, 1, 1, 1, 0, null, GridBagConstraints.NONE,
-            GridBagConstraints.WEST);
-
-
-      pack();
-      setLocation(JDUtilities.getCenterOfComponent(null, this));
-      
-      
-   }
-
-   /*
-    * (non-Javadoc)
-    * 
-    * @see java.awt.event.ActionListener#actionPerformed(java.awt.event.ActionEvent)
-    */
-   public void actionPerformed(ActionEvent e) {
-      if (e.getSource() == btnCancel) {
-         dispose();
-      }
-      else
-      {
-          jdUnrar unrar = new jdUnrar();
-          unrar.editPasswordlist(pwField.getText().split(System.getProperty("line.separator")));
-          dispose();
-      }
-   }
+        } else {
+            dispose();
+        }
+    }
 
 }

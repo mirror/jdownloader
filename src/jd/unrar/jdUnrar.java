@@ -162,9 +162,10 @@ public class jdUnrar {
     public String getUnrarCommand() {
         if (unrar == null) {
             unrar = autoGetUnrarCommand();
-            if (unrar == null)
+            if (unrar == null) {
                 logger.severe("Can't find unrar command");
-            logger.severe("Please load the English version of unrar from http://www.rarlab.com/rar_add.htm for your OS");
+                logger.severe("Please load the English version of unrar from http://www.rarlab.com/rar_add.htm for your OS");
+            }
             return unrar;
         } else {
             return unrar;
@@ -283,29 +284,27 @@ public class jdUnrar {
         }
         return programm;
     }
-    public String[] returnPasswords()
-    {
+    public String[] returnPasswords() {
         String[] ret = new String[passwordlist.size()];
         int i = 0;
         for (Map.Entry<String, Integer> entry : passwordlist.entrySet()) {
-            ret[i++]=entry.getKey();
+            ret[i++] = entry.getKey();
         }
         return ret;
     }
-    public void editPasswordlist(String[] passwords)
-    {
+    public void editPasswordlist(String[] passwords) {
         HashMap<String, Integer> pws = new HashMap<String, Integer>();
         for (int i = 0; i < passwords.length; i++) {
-            //lieber auf nummer sicher
-            if(passwords[i]!=null && !passwords[i].isEmpty() && !passwords[i].matches("[\\s]*"))
-            {
-            if (passwordlist.containsKey(passwords[i]))
-                pws.put(passwords[i], passwordlist.get(passwords[i]));
-            else
-                pws.put(passwords[i], 1);
+            // lieber auf nummer sicher
+            passwords[i] = passwords[i].trim();
+            if (passwords[i] != null && !passwords[i].isEmpty() && !passwords[i].matches("[\\s]*")) {
+                if (passwordlist.containsKey(passwords[i]))
+                    pws.put(passwords[i], passwordlist.get(passwords[i]));
+                else
+                    pws.put(passwords[i], 1);
             }
         }
-        passwordlist=pws;
+        passwordlist = pws;
         passwordlist = (HashMap<String, Integer>) sortByValue(passwordlist);
         savePasswordList();
     }
@@ -314,12 +313,14 @@ public class jdUnrar {
             password = password.replaceFirst("\\{\"", "").replaceFirst("\"\\}$", "");
             String[] passwords = password.split("\";\"");
             for (int i = 0; i < passwords.length; i++) {
-                if (passwords[i]!=null && !passwords[i].isEmpty() && !passwords[i].matches("[\\s]*") && !passwordlist.containsKey(passwords[i]))
+                passwords[i] = passwords[i].trim();
+                if (passwords[i] != null && !passwords[i].isEmpty() && !passwords[i].matches("[\\s]*") && !passwordlist.containsKey(passwords[i]))
                     passwordlist.put(passwords[i], 1);
             }
             passwordlist = (HashMap<String, Integer>) sortByValue(passwordlist);
             savePasswordList();
-        } else if (password!=null && !password.isEmpty() && !password.matches("[\\s]*") && !passwordlist.containsKey(password)) {
+        } else if (password != null && !password.isEmpty() && !password.matches("[\\s]*") && !passwordlist.containsKey(password)) {
+            password = password.trim();
             passwordlist.put(password, 1);
             passwordlist = (HashMap<String, Integer>) sortByValue(passwordlist);
             savePasswordList();
@@ -333,7 +334,8 @@ public class jdUnrar {
             FileInputStream fin = new FileInputStream((File) passwords);
             BufferedReader myInput = new BufferedReader(new InputStreamReader(fin));
             while ((thisLine = myInput.readLine()) != null) {
-                if (thisLine!=null && !thisLine.isEmpty() && !thisLine.matches("[\\s]*") && !passwordlist.containsKey(thisLine))
+                thisLine = thisLine.trim();
+                if (thisLine != null && !thisLine.isEmpty() && !thisLine.matches("[\\s]*") && !passwordlist.containsKey(thisLine))
                     passwordlist.put(thisLine, 1);
             }
         } catch (IOException e) {
