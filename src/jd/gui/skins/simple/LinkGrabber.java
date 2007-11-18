@@ -47,6 +47,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForSearch;
+import jd.unrar.jdUnrar;
 import jd.utils.JDUtilities;
 
 /**
@@ -195,6 +196,8 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
         if(password.startsWith("|"))password=password.substring(1);
         txfComment.setText(comment);
         txfPassword.setText(password.trim());
+        jdUnrar unrar = new jdUnrar();
+        unrar.addToPasswordlist(password);
         sortLinkList();
         if(txtName.getName()==null || txtName.getName().trim().length()==0) checkForSameName();
         fireTableChanged();
