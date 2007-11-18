@@ -105,11 +105,8 @@ public class FileSearch extends PluginForSearch {
                 }
 
         } catch (MalformedURLException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
+            logger.warning("Konnte zu "+link+"keine Verbindung aufbauen");
         } catch (IOException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
         }
 
         return decryptedLinks;
@@ -123,6 +120,11 @@ public class FileSearch extends PluginForSearch {
         logger.info("Search " + parameter);
         switch (step.getStep()) {
             case PluginStep.STEP_SEARCH :
+                if(!parameter.toLowerCase().matches("http://.*"))
+                {
+                    logger.severe(parameter+" ist keine Internetadresse");
+                    return null;
+                }
                 MOZILLACOOKIE = this.getProperties().getStringProperty("MOZILLACOOKIE", null);
                 useMozillaCookie = this.getProperties().getBooleanProperty("USE_MOZILLACOOKIE", false);
                 Vector<String[]> decryptedLinks = new Vector<String[]>();
