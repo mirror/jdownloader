@@ -21,6 +21,7 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.io.File;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.Iterator;
 import java.util.Vector;
 import java.util.logging.Logger;
@@ -45,8 +46,6 @@ import jd.gui.skins.simple.components.BrowseFile;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.Plugin;
-import jd.plugins.PluginForDecrypt;
-import jd.plugins.PluginForSearch;
 import jd.unrar.jdUnrar;
 import jd.utils.JDUtilities;
 
@@ -91,6 +90,8 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
     private JPanel panel;
 
     private JButton btnCheck;
+    
+    private JButton btnSort;
 
     /**
      * @param parent
@@ -124,7 +125,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
         btnCancel = new JButton("Verwerfen");
         btnRemove = new JButton("Markierte entfernen");
         btnCheck = new JButton("Informationen & Verfügbarkeit prüfen");
-
+        btnSort = new JButton("Nach Hostnamen Sortieren"); 
         getRootPane().setDefaultButton(btnOk);
         txfComment = new JTextField();
 
@@ -139,7 +140,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
         btnCancel.addActionListener(this);
         btnRemove.addActionListener(this);
         btnCheck.addActionListener(this);
-
+        btnSort.addActionListener(this);
         list.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
         // scrollPane.setPreferredSize(new Dimension(400, 400));
         panel = new JPanel(new GridBagLayout());
@@ -158,7 +159,8 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
         // GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE,
         // GridBagConstraints.RELATIVE, 1, 0, 0, insets,
         // GridBagConstraints.NONE, GridBagConstraints.WEST);
-        JDUtilities.addToGridBag(panel, btnCheck, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 1, 0, insets, GridBagConstraints.NONE, GridBagConstraints.EAST);
+        JDUtilities.addToGridBag(panel, btnSort, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, 1, 1, 0, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        JDUtilities.addToGridBag(panel, btnCheck, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.EAST);
         JDUtilities.addToGridBag(panel, new JSeparator(), GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 1, 0, insets, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
         JDUtilities.addToGridBag(panel, new JLabel("In folgendem Ordner speichern:"), GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
         JDUtilities.addToGridBag(panel, bfSubFolder, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 1, 0, insets, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
@@ -354,13 +356,16 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
         if (e.getSource() == this.btnOk) {
             confirm(null);
         }
-        if (e.getSource() == this.btnRemove) {
+        else if (e.getSource() == this.btnRemove) {
             removeSelectedLinks();
         }
-        if (e.getSource() == this.btnCheck) {
+        else if (e.getSource() == this.btnCheck) {
             checkLinks();
         }
-        if (e.getSource() == this.btnCancel) {
+        else if (e.getSource() == this.btnSort) {
+            sortByHostname();
+        }
+        else if (e.getSource() == this.btnCancel) {
             this.setVisible(false);
         }
     }
@@ -386,7 +391,20 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
             }
         }.start();
     }
-
+    private void sortByHostname()
+    {
+        new Thread() {
+            @SuppressWarnings("unchecked")
+            public void run() {                
+                Collections.sort(linkList, new Comparator() {
+                    public int compare(Object o1, Object o2) {
+                        return ((Comparable) ((DownloadLink) (o2)).getHost()).compareTo(((DownloadLink) (o1)).getHost());
+                    }
+                });
+                fireTableChanged();
+            }
+        }.start();
+    }
     private void removeOfflineFiles() {
         new Thread() {
             public void run() {
