@@ -249,7 +249,7 @@ public class FileFactory extends PluginForHost {
                 return false;
             }
             else {
-                String fileName = JDUtilities.htmlDecode(getSimpleMatch(requestInfo.getHtmlCode(), DOWNLOAD_INFO, 0));
+                String fileName = JDUtilities.htmlDecode(getSimpleMatch(requestInfo.getHtmlCode().replaceAll("\\&\\#8203\\;", ""), DOWNLOAD_INFO, 0));
                 String fileSize = getSimpleMatch(requestInfo.getHtmlCode(), DOWNLOAD_INFO, 3);
                
                 downloadLink.setName(fileName);
