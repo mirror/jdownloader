@@ -24,7 +24,7 @@ public class Unrar extends Interaction implements Serializable {
      */
 
     private static final String NAME = "Unrar";
-    public static final String PROPERTY_UNRARCOMMAND = "PROPERTY_UNRARCOMMAND";
+    public static final String PROPERTY_UNRARCOMMAND = "PROPERTY_UNRARCMD";
     public static final String PROPERTY_AUTODELETE = "PROPERTY_AUTODELETE";
     public static final String PROPERTY_OVERWRITE_FILES = "PROPERTY_OVERWRITE_FILES";
     public static final String PROPERTY_MAX_FILESIZE = "PROPERTY_MAX_FILESIZE";
