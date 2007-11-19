@@ -193,7 +193,7 @@ public class jdUnrar {
         String OS = System.getProperty("os.name").toLowerCase();
         if ((OS.indexOf("nt") > -1) || (OS.indexOf("windows") > -1)) {
             try {
-                File unrarexe = new File(JDUtilities.getJDHomeDirectory(), "tools/windows/unrarw32/unrar.exe");
+                File unrarexe = new File(JDUtilities.getJDHomeDirectory().getAbsolutePath()+System.getProperty("file.separator")+"tools"+System.getProperty("file.separator")+"windows"+System.getProperty("file.separator")+"unrarw32"+System.getProperty("file.separator")+"unrar.exe");
                 if (unrarexe.isFile())
                     programm = unrarexe.getAbsolutePath();
                 else return null;

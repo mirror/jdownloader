@@ -61,7 +61,7 @@ public class ConfigPanelInteractionUnrar extends ConfigPanel implements ActionLi
         String unrarcmd=JDUtilities.getConfiguration().getStringProperty("GUNRARCOMMAND");
         if(unrarcmd==null)
         {
-        unrarcmd=new jdUnrar(JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_DOWNLOAD_DIRECTORY)).getUnrarCommand();
+        unrarcmd=new jdUnrar().getUnrarCommand();
         if(unrarcmd==null)
             JDUtilities.getConfiguration().setProperty("GUNRARCOMMAND", "NOT FOUND");
         else
