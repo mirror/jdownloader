@@ -36,6 +36,7 @@ import java.net.URL;
 import java.net.URLClassLoader;
 import java.net.URLConnection;
 import java.net.URLDecoder;
+import java.nio.channels.FileChannel;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
@@ -1462,5 +1463,29 @@ public class JDUtilities {
     }
     public static void setLocale(Locale locale) {
         JDUtilities.locale = locale;
+    }
+    /**
+     * Zum Kopieren von einem Ort zum anderen
+     * 
+     * @param in
+     * @param out
+     * @throws IOException
+     */
+    public static void copyFile(File in, File out) throws IOException {
+        FileChannel inChannel = new FileInputStream(in).getChannel();
+        FileChannel outChannel = new FileOutputStream(out).getChannel();
+        try {
+            inChannel.transferTo(0, inChannel.size(), outChannel);
+            // or
+            // outChannel.transferFrom
+            // (inChannel, 0, inChannel.size());
+        } catch (IOException e) {
+            throw e;
+        } finally {
+            if (inChannel != null)
+                inChannel.close();
+            if (outChannel != null)
+                outChannel.close();
+        }
     }
 }

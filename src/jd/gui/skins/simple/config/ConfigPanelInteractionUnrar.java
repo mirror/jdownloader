@@ -58,7 +58,20 @@ public class ConfigPanelInteractionUnrar extends ConfigPanel implements ActionLi
     @Override
     public void initPanel() {
         GUIConfigEntry ce;
-        ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_BROWSEFILE, unrar, Unrar.PROPERTY_UNRARCOMMAND, "Befehl für die Englische Version von Unrar: ").setDefaultValue(new jdUnrar(JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_DOWNLOAD_DIRECTORY)).getUnrarCommand()));
+        String unrarcmd=JDUtilities.getConfiguration().getStringProperty("GLOBAL_UNRARCOMMAND");
+        if(unrarcmd==null)
+        {
+        unrarcmd=new jdUnrar(JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_DOWNLOAD_DIRECTORY)).getUnrarCommand();
+        if(unrarcmd==null)
+            JDUtilities.getConfiguration().setProperty("GLOBAL_UNRARCOMMAND", "NOT FOUND");
+        else
+            JDUtilities.getConfiguration().setProperty("GLOBAL_UNRARCOMMAND", unrarcmd);
+        }
+        else if(unrarcmd.matches("NOT FOUND"))
+            unrarcmd=null;
+        
+        
+        ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_BROWSEFILE, unrar, Unrar.PROPERTY_UNRARCOMMAND, "Befehl für die Englische Version von Unrar: ").setDefaultValue(unrarcmd));
         addGUIConfigEntry(ce);
         ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, unrar, Unrar.PROPERTY_AUTODELETE, "Bei erfolgreichem Entpacken automatisch löschen: ").setDefaultValue(true));
         addGUIConfigEntry(ce);
@@ -79,7 +92,6 @@ public class ConfigPanelInteractionUnrar extends ConfigPanel implements ActionLi
     }
 
     public void actionPerformed(ActionEvent e) {
-        System.out.println(((SimpleGUI) this.uiinterface).getFrame());
         new jdUnrarPasswordListDialog(((SimpleGUI) this.uiinterface).getFrame()).setVisible(true);
     }
 }

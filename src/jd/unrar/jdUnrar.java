@@ -3,7 +3,6 @@ package jd.unrar;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.Collections;
@@ -172,72 +171,6 @@ public class jdUnrar {
         }
 
     }
-    /**
-     * Zum Kopieren von einem Ort zum anderen
-     * 
-     * @param fromFileName
-     * @param toFileName
-     * @throws IOException
-     */
-    public static void copy(File fromFile, File toFile) throws IOException {
-
-        if (!fromFile.exists())
-            throw new IOException("FileCopy: " + "no such source file: " + fromFile.getName());
-        if (!fromFile.isFile())
-            throw new IOException("FileCopy: " + "can't copy directory: " + fromFile.getName());
-        if (!fromFile.canRead())
-            throw new IOException("FileCopy: " + "source file is unreadable: " + fromFile.getName());
-
-        if (toFile.isDirectory())
-            toFile = new File(toFile, fromFile.getName());
-
-        if (toFile.exists()) {
-            if (!toFile.canWrite())
-                throw new IOException("FileCopy: " + "destination file is unwriteable: " + fromFile.getName());
-            System.out.print("Overwrite existing file " + toFile.getName() + "? (Y/N): ");
-            System.out.flush();
-            BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
-            String response = in.readLine();
-            if (!response.equals("Y") && !response.equals("y"))
-                throw new IOException("FileCopy: " + "existing file was not overwritten.");
-        } else {
-            String parent = toFile.getParent();
-            if (parent == null)
-                parent = System.getProperty("user.dir");
-            File dir = new File(parent);
-            if (!dir.exists())
-                throw new IOException("FileCopy: " + "destination directory doesn't exist: " + parent);
-            if (dir.isFile())
-                throw new IOException("FileCopy: " + "destination is not a directory: " + parent);
-            if (!dir.canWrite())
-                throw new IOException("FileCopy: " + "destination directory is unwriteable: " + parent);
-        }
-
-        FileInputStream from = null;
-        FileOutputStream to = null;
-        try {
-            from = new FileInputStream(fromFile);
-            to = new FileOutputStream(toFile);
-            byte[] buffer = new byte[4096];
-            int bytesRead;
-
-            while ((bytesRead = from.read(buffer)) != -1)
-                to.write(buffer, 0, bytesRead); // write
-        } finally {
-            if (from != null)
-                try {
-                    from.close();
-                } catch (IOException e) {
-                    ;
-                }
-            if (to != null)
-                try {
-                    to.close();
-                } catch (IOException e) {
-                    ;
-                }
-        }
-    }
 
     /**
      * Versucht den Programmpfad von unrar bzw unrar.exe zu finden
@@ -258,7 +191,7 @@ public class jdUnrar {
                     if (winrarexe.isFile()) {
                         logger.info("unrar.exe found in " + winrarexe.getAbsolutePath());
                         logger.info("to prevent language complications the file will be copied to " + unrarexe.getAbsolutePath());
-                        copy(winrarexe, unrarexe);
+                        JDUtilities.copyFile(winrarexe, unrarexe);
                         programm = unrarexe.getAbsolutePath();
                     }
                     /*
