@@ -193,22 +193,10 @@ public class jdUnrar {
         String OS = System.getProperty("os.name").toLowerCase();
         if ((OS.indexOf("nt") > -1) || (OS.indexOf("windows") > -1)) {
             try {
-                File unrarexe = new File(JDUtilities.getJDHomeDirectory(), "unrar.exe");
+                File unrarexe = new File(JDUtilities.getJDHomeDirectory(), "tools/windows/unrarw32/unrar.exe");
                 if (unrarexe.isFile())
                     programm = unrarexe.getAbsolutePath();
-                else {
-                    File winrarexe = new File(new File(System.getenv("ProgramFiles"), "Winrar"), "unrar.exe");
-                    if (winrarexe.isFile()) {
-                        logger.info("unrar.exe found in " + winrarexe.getAbsolutePath());
-                        logger.info("to prevent language complications the file will be copied to " + unrarexe.getAbsolutePath());
-                        JDUtilities.copyFile(winrarexe, unrarexe);
-                        programm = unrarexe.getAbsolutePath();
-                    }
-                    /*
-                     * else { logger.info("Can't find unrar.exe try to download
-                     * unrar from www.rarlab.com"); }
-                     */
-                }
+                else return null;
             } catch (Throwable e) {
             }
         } else {
