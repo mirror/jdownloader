@@ -105,6 +105,16 @@ public class jdUnrar {
     }
     private static Vector<File> vFileList(File file) {
         Vector<File> ret = new Vector<File>();
+        if(file==null)
+        {
+            logger.severe("File is Null");
+            return ret;
+        }
+        if(!file.isDirectory())
+        {
+            logger.severe(file.getAbsolutePath()+" is not a Folder");
+            return ret;
+        }
         File[] list = file.listFiles();
         for (int i = 0; i < list.length; i++) {
             if (list[i].isDirectory())
