@@ -223,7 +223,7 @@ public abstract class Plugin {
     /**
      * Ein Logger, um Meldungen darzustellen
      */
-    public static Logger       logger         = null;
+    public static Logger       logger         = JDUtilities.getLogger();
     protected Plugin() {
         pluginListener = new Vector<PluginListener>();
         this.initTime = System.currentTimeMillis();
