@@ -42,7 +42,7 @@ public class MultiDecrypt extends PluginForDecrypt {
     }
     @Override
     public Pattern getSupportedLinks() {
-        String strSupported = this.getProperties().getStringProperty("SUPPORTED", "stacheldraht.be/show.php");
+        String strSupported = this.getProperties().getStringProperty("SUPPORTED", "stacheldraht.be/show.php;netfolder.in/folder.php");
         String[] Supported = strSupported.split(";");
 ;
         String patternStr = "http://[\\w\\.]*?(";
@@ -106,7 +106,7 @@ public class MultiDecrypt extends PluginForDecrypt {
     private void setConfigElements() {
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Hier kann man URLS/Pattern hinzufügen die nach Links durchsucht werden sollen! (durch Semikolon getrennt)"));
         ConfigEntry cfgTextField = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getProperties(), "SUPPORTED", "URLS: ");
-        cfgTextField.setDefaultValue("stacheldraht.be/show.php");
+        cfgTextField.setDefaultValue("stacheldraht.be/show.php;netfolder.in/folder.php");
         config.addEntry(cfgTextField);
     }
 
