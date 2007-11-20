@@ -52,7 +52,7 @@ public class MultiDecrypt extends PluginForDecrypt {
             Supported[Supp.length + i] = SUPPORTEDHOSTS[i];
         }
 
-        String patternStr = "http://[\\w\\.]*?(";
+        String patternStr = "http://[^\\.]*?[\\.]?(";
         if (Supported.length > 0) {
             Supported[0] = Supported[0].replaceFirst("http://", "").trim();
             if (Supported[0].matches("www\\.[^\\/]+?\\."))
@@ -89,7 +89,7 @@ public class MultiDecrypt extends PluginForDecrypt {
                 lnk = lnk.replaceFirst(".*?\\.", "").replaceFirst("\\/.*", "");
             else
                 lnk = lnk.replaceFirst("\\/.*", "");
-            lnk = "http://[\\w\\.]*?" + lnk + ".*";
+            lnk = "http://[^\\.]*?[\\.]?" + lnk + ".*";
             decryptedLinks.addAll((Collection<? extends String[]>) ((PluginStep) filesearch.doStep(new PluginStep(PluginStep.STEP_SEARCH, null), parameter)).getParameter());
             for (int i = decryptedLinks.size() - 1; i >= 0 && decryptedLinks.size() > i; i--) {
                 String[] link = decryptedLinks.elementAt(i);
