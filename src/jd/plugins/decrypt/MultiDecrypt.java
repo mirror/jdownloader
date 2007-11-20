@@ -54,7 +54,7 @@ public class MultiDecrypt extends PluginForDecrypt {
 
         String patternStr = "http://[^\\.]*?[\\.]?(";
             boolean b = false;
-            for (int i = 1; i < Supported.length; i++) {
+            for (int i = 0; i < Supported.length; i++) {
                 Supported[i] = Supported[i].replaceFirst("http://", "").trim();
                 if (Supported[i].matches("www\\.[^\\/]+?\\..*"))
                     Supported[i] = Supported[i].replaceFirst(".*?\\.", "");
