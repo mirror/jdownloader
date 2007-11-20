@@ -1385,7 +1385,7 @@ public abstract class Plugin {
         m = pattern[6].matcher(data);
         while (m.find()) {
             link = "http://" + m.group();
-            link = link.replaceAll("http://.*http://", "http://");
+            link = JDUtilities.htmlDecode(link.replaceAll("http://.*http://", "http://"));
             if (!set.contains(link)) {
                 set.add(link);
             }
@@ -1393,7 +1393,7 @@ public abstract class Plugin {
         m = pattern[7].matcher(data);
         while (m.find()) {
             link = m.group();
-            link = link.replaceAll("http://.*http://", "http://");
+            link = JDUtilities.htmlDecode(link.replaceAll("http://.*http://", "http://"));
             if (!set.contains(link)) {
                 set.add(link);
             }

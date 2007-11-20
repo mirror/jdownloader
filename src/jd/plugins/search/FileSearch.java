@@ -25,7 +25,7 @@ public class FileSearch extends PluginForSearch {
 
     private String version = "1.0.0.1";
     private static String[] CATEGORIES = new String[]{"Alles (FileSearchplugin)"};
-    private static final String PARAM_INST = "INST";
+    public static final String PARAM_INST = "INST";
     private String MOZILLACOOKIE;
     private boolean useMozillaCookie = false;
     private Vector<String> passwords;
@@ -161,7 +161,7 @@ public class FileSearch extends PluginForSearch {
 
     }
 
-    private int getIntParam(String param, int defaultValue) {
+    public int getIntParam(String param, int defaultValue) {
         int minFilesize;
         if (this.getProperties().getProperty(param) != null) {
             try {
