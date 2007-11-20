@@ -16,7 +16,7 @@ public class MultiDecrypt extends PluginForDecrypt {
 
     static private String host = "MultiDecrypt";
     private String version = "0.1";
-    static private String[] SUPPORTEDHOSTS = new String[]{"stacheldraht.be/show.php", "netfolder.in/folder.php"};
+    static private String[] SUPPORTEDHOSTS = new String[]{"stacheldraht.be/show.php"};
     public MultiDecrypt() {
         super();
         steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
