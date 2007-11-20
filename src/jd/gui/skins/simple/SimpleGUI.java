@@ -414,6 +414,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
                 fireUIEvent(new UIEvent(this, UIEvent.UI_PAUSE_DOWNLOADS, btnPause.isSelected()));
                 break;
             case JDAction.APP_TESTER:
+                logger.finer("Test trigger pressed");
                 Interaction.handleInteraction(Interaction.INTERACTION_TESTTRIGGER, false);
                 break;
             case JDAction.APP_START_STOP_DOWNLOADS:

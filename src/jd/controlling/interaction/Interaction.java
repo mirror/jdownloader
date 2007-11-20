@@ -249,13 +249,11 @@ public abstract class Interaction extends Property implements Serializable {
             Interaction interaction = interactions.get(i);
             if (interaction == null || interaction.getTrigger() == null || interactionevent == null) continue;
             // Führe keinen reconnect aus wenn noch ein download läuft
-           boolean isrc=false;
+        
             if ((interaction instanceof HTTPLiveHeader ||interaction instanceof HTTPReconnect || interaction instanceof ExternReconnect) ){
-                isrc=true;
+              
                 if(JDUtilities.getController().getRunningDownloadNum() > 0) {
                     continue;
-                }else{
-                    Interaction.handleInteraction(Interaction.INTERACTION_BEFORE_RECONNECT, false);
                 }
             }
             
@@ -271,9 +269,7 @@ public abstract class Interaction extends Property implements Serializable {
                 else {
                     logger.info("interaction successfull: " + interaction);
                 }
-                if(isrc){
-                    Interaction.handleInteraction(Interaction.INTERACTION_AFTER_RECONNECT, false); 
-                }
+              
             }
         }
         if (interacts == 0) return false;

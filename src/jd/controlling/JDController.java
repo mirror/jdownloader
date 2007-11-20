@@ -306,6 +306,9 @@ public class JDController implements PluginListener, ControlListener, UIListener
                     logger.info("Es laufen noch Downloads. Breche zum reconnect Downloads ab!");
                     stopDownloads();
                 }
+                
+                Interaction.handleInteraction(Interaction.INTERACTION_BEFORE_RECONNECT, this);
+       
                 if (Interaction.handleInteraction(Interaction.INTERACTION_NEED_RECONNECT, this)) {
                     uiInterface.showMessageDialog("Reconnect erfolgreich");
                     Iterator<DownloadLink> iterator = downloadLinks.iterator();
@@ -320,10 +323,10 @@ public class JDController implements PluginListener, ControlListener, UIListener
                         }
                     }
 
-                    if (Interaction.getInteractions(Interaction.INTERACTION_NEED_RECONNECT).length != 1) {
-                        uiInterface.showMessageDialog("Es sind " + Interaction.getInteractions(Interaction.INTERACTION_NEED_RECONNECT).length + " Interactionen für den Reconnect festgelegt. \r\nEventl. wurde der Reconnect mehrmals ausgeführt. \r\nBitte Event einstellen (Konfiguration->Eventmanager)");
-
-                    }
+//                    if (Interaction.getInteractions(Interaction.INTERACTION_NEED_RECONNECT).length != 1) {
+//                        uiInterface.showMessageDialog("Es sind " + Interaction.getInteractions(Interaction.INTERACTION_NEED_RECONNECT).length + " Interactionen für den Reconnect festgelegt. \r\nEventl. wurde der Reconnect mehrmals ausgeführt. \r\nBitte Event einstellen (Konfiguration->Eventmanager)");
+//
+//                    }
 
                 }
                 else {
@@ -335,6 +338,8 @@ public class JDController implements PluginListener, ControlListener, UIListener
                         uiInterface.showMessageDialog("Reconnect fehlgeschlagen");
                     }
                 }
+              
+                Interaction.handleInteraction(Interaction.INTERACTION_AFTER_RECONNECT, this);
                 uiInterface.setDownloadLinks(downloadLinks);
                 break;
             case UIEvent.UI_INTERACT_UPDATE:
