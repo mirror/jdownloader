@@ -19,12 +19,12 @@ import jd.plugins.event.PluginEvent;
 import jd.utils.JDUtilities;
 
 public class Serienjunkies extends PluginForDecrypt {
-    static private final String host             = "serienjunkies.safehost.be";
+    static private final String host             = "serienjunkies.org";
     private static final String DEFAULT_PASSWORD = "serienjunkies.dl.am";
     private String              version          = "2.0.0.0";
     // http://85.17.177.195/sjsafe/f-e657c0c256dd9e58/rc_h324.html
     //http://serienjunki.es/sjsafe/f-3221260b2fc369e2/rc_scrubs610.html
-    private Pattern             patternSupported = getSupportPattern("http://(85.17.177.195|serienjunki\\.es)/s[+]");
+    private Pattern             patternSupported = getSupportPattern("http://(serienjunkies.org|85.17.177.195|serienjunki\\.es)/s[+]");
 //    private Pattern             patternCaptcha   = Pattern.compile("e/secure/");
     private Pattern             patternCaptcha   = null;
 
