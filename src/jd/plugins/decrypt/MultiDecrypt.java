@@ -16,7 +16,7 @@ public class MultiDecrypt extends PluginForDecrypt {
 
     static private String host = "MultiDecrypt";
     private String version = "0.1";
-    static private String[] SUPPORTEDHOSTS = new String[]{"stacheldraht.be/show.php"};
+    static private String[] SUPPORTEDHOSTS = new String[]{"http://www.stacheldraht.be/show.php"};
     public MultiDecrypt() {
         super();
         steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
@@ -55,12 +55,12 @@ public class MultiDecrypt extends PluginForDecrypt {
         String patternStr = "http://[^\\.]*?[\\.]?(";
         if (Supported.length > 0) {
             Supported[0] = Supported[0].replaceFirst("http://", "").trim();
-            if (Supported[0].matches("www\\.[^\\/]+?\\."))
+            if (Supported[0].matches("www\\.[^\\/]+?\\..*"))
                 Supported[0] = Supported[0].replaceFirst(".*?\\.", "");
             patternStr += Supported[0];
             for (int i = 1; i < Supported.length; i++) {
                 Supported[i] = Supported[i].replaceFirst("http://", "").trim();
-                if (Supported[i].matches("www\\.[^\\/]+?\\."))
+                if (Supported[i].matches("www\\.[^\\/]+?\\..*"))
                     Supported[i] = Supported[i].replaceFirst(".*?\\.", "");
                 patternStr += "|" + Supported[i];
             }
@@ -85,7 +85,7 @@ public class MultiDecrypt extends PluginForDecrypt {
                 filesearch.getProperties().setProperty(FileSearch.PARAM_INST, 1);
             String lnk = parameter.replaceFirst("http://", "").trim();
 
-            if (lnk.matches("[^\\/]+?\\.[^\\/]+?\\."))
+            if (lnk.matches("[^\\/]+?\\.[^\\/]+?\\..*"))
                 lnk = lnk.replaceFirst(".*?\\.", "").replaceFirst("\\/.*", "");
             else
                 lnk = lnk.replaceFirst("\\/.*", "");
@@ -115,7 +115,7 @@ public class MultiDecrypt extends PluginForDecrypt {
             for (int i = 0; i < SUPPORTEDHOSTS.length; i++) {
                String lnk = SUPPORTEDHOSTS[i].replaceFirst("http://", "").trim();
 
-                if (lnk.matches("[^\\/]+?\\.[^\\/]+?\\."))
+                if (lnk.matches("www\\.[^\\/]+?\\..*"))
                     lnk = lnk.replaceFirst(".*?\\.", "").replaceFirst("\\/.*", "");
                 else
                     lnk = lnk.replaceFirst("\\/.*", "");
