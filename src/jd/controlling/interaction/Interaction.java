@@ -259,7 +259,7 @@ public abstract class Interaction extends Property implements Serializable {
                 }
             }
             
-            Interaction.handleInteraction(Interaction.INTERACTION_TESTTRIGGER, false);
+        
             if (interaction.getTrigger().getID() == interactionevent.getID()) {
                 interaction.addControlListener(JDUtilities.getController());
                 interacts++;
