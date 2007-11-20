@@ -53,19 +53,21 @@ public class MultiDecrypt extends PluginForDecrypt {
         }
 
         String patternStr = "http://[^\\.]*?[\\.]?(";
-        if (Supported.length > 0) {
-            Supported[0] = Supported[0].replaceFirst("http://", "").trim();
-            if (Supported[0].matches("www\\.[^\\/]+?\\..*"))
-                Supported[0] = Supported[0].replaceFirst(".*?\\.", "");
-            patternStr += Supported[0];
+            boolean b = false;
             for (int i = 1; i < Supported.length; i++) {
                 Supported[i] = Supported[i].replaceFirst("http://", "").trim();
                 if (Supported[i].matches("www\\.[^\\/]+?\\..*"))
                     Supported[i] = Supported[i].replaceFirst(".*?\\.", "");
+                if(b && !Supported[i].trim().isEmpty())
                 patternStr += "|" + Supported[i];
-            }
+                else if(!b && !Supported[i].trim().isEmpty() )
+                {
+                    b=true;
+                    patternStr += Supported[0];
+                }
         }
         patternStr += ").*";
+        logger.info(patternStr);
         return Pattern.compile(patternStr, Pattern.CASE_INSENSITIVE);
     }
     @Override
