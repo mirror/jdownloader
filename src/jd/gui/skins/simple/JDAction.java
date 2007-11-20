@@ -47,6 +47,8 @@ public class JDAction extends AbstractAction{
     public static final int APP_LOAD_DLC = 23;
 
     public static final int APP_SAVE_DLC = 24;
+    public static final int APP_TESTER= 25;
+    
 
     private ActionListener actionListener;
     private int actionID;

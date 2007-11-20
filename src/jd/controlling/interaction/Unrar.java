@@ -30,35 +30,7 @@ public class Unrar extends Interaction implements Serializable {
     public static final String PROPERTY_MAX_FILESIZE = "PROPERTY_MAX_FILESIZE";
     @Override
     public boolean doInteraction(Object arg) {
-        new Thread(new Runnable() {
-            public void run() {
-
-                JDController controller = JDUtilities.getController();
-                DownloadLink dLink = controller.getLastFinishedDownloadLink();
-                String password = null;
-                if (dLink != null)
-                    password = dLink.getFilePackage().getPassword();
-
-                jdUnrar unrar = new jdUnrar(JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_DOWNLOAD_DIRECTORY));
-                if (password!=null && !password.isEmpty()) {
-                    if (!password.matches("\\{\".*\"\\}$"))
-                        unrar.standardPassword = password;
-                    unrar.addToPasswordlist(password);
-                }
-                unrar.overwriteFiles = getBooleanProperty(Unrar.PROPERTY_OVERWRITE_FILES, false);
-                unrar.autoDelete = getBooleanProperty(Unrar.PROPERTY_AUTODELETE, false);
-                unrar.unrar = getStringProperty(Unrar.PROPERTY_UNRARCOMMAND);
-                unrar.maxFilesize = getIntegerProperty(Unrar.PROPERTY_MAX_FILESIZE, 2);
-                unrar.unrar();
-                unrar = new jdUnrar(JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_DOWNLOAD_DIRECTORY));
-                unrar.overwriteFiles = getBooleanProperty(Unrar.PROPERTY_OVERWRITE_FILES, false);
-                unrar.autoDelete = getBooleanProperty(Unrar.PROPERTY_AUTODELETE, false);
-                unrar.unrar = getStringProperty(Unrar.PROPERTY_UNRARCOMMAND);
-                unrar.maxFilesize = getIntegerProperty(Unrar.PROPERTY_MAX_FILESIZE, 2);
-                unrar.unrar();
-
-            }
-        }).start();
+        start();
         return true;
 
     }
@@ -72,7 +44,29 @@ public class Unrar extends Interaction implements Serializable {
     }
     @Override
     public void run() {
-        // Nichts zu tun. Interaction braucht keinen Thread
+        JDController controller = JDUtilities.getController();
+        DownloadLink dLink = controller.getLastFinishedDownloadLink();
+        String password = null;
+        if (dLink != null)
+            password = dLink.getFilePackage().getPassword();
+
+        jdUnrar unrar = new jdUnrar(JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_DOWNLOAD_DIRECTORY));
+        if (password!=null && !password.isEmpty()) {
+            if (!password.matches("\\{\".*\"\\}$"))
+                unrar.standardPassword = password;
+            unrar.addToPasswordlist(password);
+        }
+        unrar.overwriteFiles = getBooleanProperty(Unrar.PROPERTY_OVERWRITE_FILES, false);
+        unrar.autoDelete = getBooleanProperty(Unrar.PROPERTY_AUTODELETE, false);
+        unrar.unrar = getStringProperty(Unrar.PROPERTY_UNRARCOMMAND);
+        unrar.maxFilesize = getIntegerProperty(Unrar.PROPERTY_MAX_FILESIZE, 2);
+        unrar.unrar();
+        unrar = new jdUnrar(JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_DOWNLOAD_DIRECTORY));
+        unrar.overwriteFiles = getBooleanProperty(Unrar.PROPERTY_OVERWRITE_FILES, false);
+        unrar.autoDelete = getBooleanProperty(Unrar.PROPERTY_AUTODELETE, false);
+        unrar.unrar = getStringProperty(Unrar.PROPERTY_UNRARCOMMAND);
+        unrar.maxFilesize = getIntegerProperty(Unrar.PROPERTY_MAX_FILESIZE, 2);
+        unrar.unrar();
     }
     @Override
     public void initConfig() {

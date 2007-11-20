@@ -100,11 +100,14 @@ public abstract class Interaction extends Property implements Serializable {
      * Zeigt den Programmstart an
      */
     public static InteractionTrigger          INTERACTION_APPSTART                  = new InteractionTrigger(7, "Programmstart", "Direkt nach dem Initialisieren von jDownloader");
-//    /**
-//     * Zeigt den Programmende an
-//     */
-//    public static InteractionTrigger          INTERACTION_APPTERMINATE              = new InteractionTrigger(8, "Programmende", "inaktiv");
-//    /**
+    /**
+     * Zeigt den TestTrigger an
+     */
+   public static InteractionTrigger          INTERACTION_TESTTRIGGER            = new InteractionTrigger(8, "Testtrigger", "Dieser trigger kann über das Menü ausgelöst werden");
+
+   public static InteractionTrigger          INTERACTION_BEFORE_RECONNECT            = new InteractionTrigger(13, "Vor dem Reconnect", "Vor dem eigentlichen Reconnect");
+   public static InteractionTrigger          INTERACTION_AFTER_RECONNECT            = new InteractionTrigger(14, "Nach dem Reconnect", "Nach dem eigentlichen Reconnect"); 
+   //    /**
 //     * Zeigt, dass vermutlich JAC veraltet ist
 //     */
 //    public static InteractionTrigger          INTERACTION_JAC_UPDATE_NEEDED         = new InteractionTrigger(9, "Captcha Update nötig", "inaktiv");
@@ -246,7 +249,17 @@ public abstract class Interaction extends Property implements Serializable {
             Interaction interaction = interactions.get(i);
             if (interaction == null || interaction.getTrigger() == null || interactionevent == null) continue;
             // Führe keinen reconnect aus wenn noch ein download läuft
-            if ((interaction instanceof HTTPLiveHeader ||interaction instanceof HTTPReconnect || interaction instanceof ExternReconnect || interaction instanceof Unrar) && JDUtilities.getController().getRunningDownloadNum() > 0) continue;
+           boolean isrc=false;
+            if ((interaction instanceof HTTPLiveHeader ||interaction instanceof HTTPReconnect || interaction instanceof ExternReconnect) ){
+                isrc=true;
+                if(JDUtilities.getController().getRunningDownloadNum() > 0) {
+                    continue;
+                }else{
+                    Interaction.handleInteraction(Interaction.INTERACTION_BEFORE_RECONNECT, false);
+                }
+            }
+            
+            Interaction.handleInteraction(Interaction.INTERACTION_TESTTRIGGER, false);
             if (interaction.getTrigger().getID() == interactionevent.getID()) {
                 interaction.addControlListener(JDUtilities.getController());
                 interacts++;
@@ -257,6 +270,9 @@ public abstract class Interaction extends Property implements Serializable {
                 }
                 else {
                     logger.info("interaction successfull: " + interaction);
+                }
+                if(isrc){
+                    Interaction.handleInteraction(Interaction.INTERACTION_AFTER_RECONNECT, false); 
                 }
             }
         }

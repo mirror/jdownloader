@@ -130,6 +130,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
     private JToggleButton     btnPause;
     private JDAction actionLoadDLC;
     private JDAction actionSaveDLC;
+    private JDAction actionTester;
    
     /**
      * Das Hauptfenster wird erstellt
@@ -189,6 +190,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
    
         actionExit = new JDAction(this, "exit", "action.exit", JDAction.APP_EXIT);
         actionLog = new JDAction(this, "log", "action.viewlog", JDAction.APP_LOG);
+        actionTester = new JDAction(this, "jd_logo", "action.tester", JDAction.APP_TESTER);
         actionConfig = new JDAction(this, "configuration", "action.configuration", JDAction.APP_CONFIGURATION);
         actionReconnect = new JDAction(this, "reconnect", "action.reconnect", JDAction.APP_RECONNECT);
         actionUpdate = new JDAction(this, "update", "action.update", JDAction.APP_UPDATE);
@@ -254,6 +256,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         menViewLog.setIcon(null);
         if (actionLog.getAccelerator() != null) menViewLog.setAccelerator(actionLog.getAccelerator());
         JMenuItem menConfig = createMenuItem(actionConfig);
+        JMenuItem menTester = createMenuItem(actionTester);
         // add menus to parents
         menFile.add(menFileLoadContainer);
         menFile.add(menFileLoad);
@@ -261,7 +264,10 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         menFile.addSeparator();
         menFile.add(menFileExit);
         menExtra.add(menViewLog);
+        menExtra.add(menTester);
         menExtra.add(menConfig);
+        
+        
         menAction.add(menDownload);
         menAction.add(menAddLinks);
         menuBar.add(menFile);
@@ -406,6 +412,9 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
                 break;
             case JDAction.APP_PAUSE_DOWNLOADS:
                 fireUIEvent(new UIEvent(this, UIEvent.UI_PAUSE_DOWNLOADS, btnPause.isSelected()));
+                break;
+            case JDAction.APP_TESTER:
+                Interaction.handleInteraction(Interaction.INTERACTION_TESTTRIGGER, false);
                 break;
             case JDAction.APP_START_STOP_DOWNLOADS:
                 this.startStopDownloads();
