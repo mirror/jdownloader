@@ -104,7 +104,7 @@ public class MultiDecrypt extends PluginForDecrypt {
     }
 
     private void setConfigElements() {
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Hier kann man URLS/Pattern hinzufügen die vom FileSearch Plugin durchsucht werden sollen! (durch Semikolon getrennt)"));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Hier kann man URLS/Pattern hinzufügen die nach Links durchsucht werden sollen! (durch Semikolon getrennt)"));
         ConfigEntry cfgTextField = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getProperties(), "SUPPORTED", "URLS: ");
         cfgTextField.setDefaultValue("stacheldraht.be/show.php");
         config.addEntry(cfgTextField);
