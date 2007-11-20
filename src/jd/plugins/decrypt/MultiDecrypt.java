@@ -55,12 +55,12 @@ public class MultiDecrypt extends PluginForDecrypt {
         String patternStr = "http://[\\w\\.]*?(";
         if (Supported.length > 0) {
             Supported[0] = Supported[0].replaceFirst("http://", "").trim();
-            if (Supported[0].matches("[^\\/]+?\\.[^\\/]+?\\."))
+            if (Supported[0].matches("www\\.[^\\/]+?\\."))
                 Supported[0] = Supported[0].replaceFirst(".*?\\.", "");
             patternStr += Supported[0];
             for (int i = 1; i < Supported.length; i++) {
                 Supported[i] = Supported[i].replaceFirst("http://", "").trim();
-                if (Supported[i].matches("[^\\/]+?\\.[^\\/]+?\\."))
+                if (Supported[i].matches("www\\.[^\\/]+?\\."))
                     Supported[i] = Supported[i].replaceFirst(".*?\\.", "");
                 patternStr += "|" + Supported[i];
             }
