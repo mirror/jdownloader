@@ -42,16 +42,24 @@ public class MultiDecrypt extends PluginForDecrypt {
     }
     @Override
     public Pattern getSupportedLinks() {
-        String strSupported = this.getProperties().getStringProperty("SUPPORTED", "");
+        String strSupported = this.getProperties().getStringProperty("SUPPORTED", "").trim();
+        String[] Supported;
+        if(!strSupported.isEmpty())
+        {
         String[] Supp = strSupported.split(System.getProperty("line.separator"));
-        String[] Supported = new String[Supp.length + SUPPORTEDHOSTS.length];
+        Supported = new String[Supp.length+SUPPORTEDHOSTS.length];
         for (int i = 0; i < Supp.length; i++) {
             Supported[i] = Supp[i];
         }
         for (int i = 0; i < SUPPORTEDHOSTS.length; i++) {
             Supported[Supp.length + i] = SUPPORTEDHOSTS[i];
         }
+        }
+        else
+        Supported = SUPPORTEDHOSTS;
 
+        if(Supported==null || Supported.length<1)
+            return null;
         String patternStr = "http://[^\\.]*?[\\.]?(";
             boolean b = false;
             for (int i = 0; i < Supported.length; i++) {
@@ -114,17 +122,17 @@ public class MultiDecrypt extends PluginForDecrypt {
 
     private void setConfigElements() {
         String[] hosts = new String[SUPPORTEDHOSTS.length];
-            for (int i = 0; i < SUPPORTEDHOSTS.length; i++) {
-               String lnk = SUPPORTEDHOSTS[i].replaceFirst("http://", "").trim();
+        for (int i = 0; i < SUPPORTEDHOSTS.length; i++) {
+            String lnk = SUPPORTEDHOSTS[i].replaceFirst("http://", "").trim();
 
-                if (lnk.matches("www\\.[^\\/]+?\\..*"))
-                    lnk = lnk.replaceFirst(".*?\\.", "").replaceFirst("\\/.*", "");
-                else
-                    lnk = lnk.replaceFirst("\\/.*", "");
-                hosts[i]=lnk;
-            }
-        if(hosts.length>0)
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, null, null, hosts, "Folgende Seiten sind hier fest eingetragen: "));
+            if (lnk.matches("www\\.[^\\/]+?\\..*"))
+                lnk = lnk.replaceFirst(".*?\\.", "").replaceFirst("\\/.*", "");
+            else
+                lnk = lnk.replaceFirst("\\/.*", "");
+            hosts[i] = lnk;
+        }
+        if (hosts.length > 0)
+            config.addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, null, null, hosts, "Folgende Seiten sind hier fest eingetragen: "));
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Hier kann man URLS/Pattern hinzufügen die nach Links durchsucht werden sollen!"));
         ConfigEntry cfgTextField = new ConfigEntry(ConfigContainer.TYPE_TEXTAREA, getProperties(), "SUPPORTED", "URLS: ");
         cfgTextField.setDefaultValue("");
