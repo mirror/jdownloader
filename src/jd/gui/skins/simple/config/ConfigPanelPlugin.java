@@ -10,6 +10,7 @@ import jd.config.ConfigEntry;
 import jd.config.Configuration;
 import jd.gui.UIInterface;
 import jd.plugins.Plugin;
+import jd.utils.JDUtilities;
 
 public class ConfigPanelPlugin extends ConfigPanel implements ActionListener {
     /**
@@ -21,7 +22,7 @@ public class ConfigPanelPlugin extends ConfigPanel implements ActionListener {
      * serialVersionUID
      */
     @SuppressWarnings("unused")
-    private Logger            logger           = Plugin.getLogger();
+    private Logger            logger           = JDUtilities.getLogger();
 
     private Plugin            plugin;
 

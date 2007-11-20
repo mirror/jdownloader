@@ -32,10 +32,6 @@ import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.Vector;
-import java.util.logging.ConsoleHandler;
-import java.util.logging.Formatter;
-import java.util.logging.Handler;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -78,10 +74,7 @@ public abstract class Plugin {
      * Header geändert müssen die Regexes der Plugins angepasst werden
      */
     public static final String    ACCEPT_LANGUAGE = "de, en-gb;q=0.9, en;q=0.8";
-    /**
-     * Name des Loggers
-     */
-    public static String          LOGGER_NAME     = "java_downloader";
+
     /**
      * Versionsinformationen
      */
@@ -230,7 +223,7 @@ public abstract class Plugin {
     /**
      * Ein Logger, um Meldungen darzustellen
      */
-    protected static Logger       logger         = null;
+    public static Logger       logger         = null;
     protected Plugin() {
         pluginListener = new Vector<PluginListener>();
         this.initTime = System.currentTimeMillis();
@@ -260,25 +253,6 @@ public abstract class Plugin {
      */
     public void init() {
         currentStep = null;
-    }
-    /**
-     * Liefert die Klasse zurück, mit der Nachrichten ausgegeben werden können
-     * Falls dieser Logger nicht existiert, wird ein neuer erstellt
-     * 
-     * @return LogKlasse
-     */
-    public static Logger getLogger() {
-        if (logger == null) {
-            logger = Logger.getLogger(Plugin.LOGGER_NAME);
-            Formatter formatter = new LogFormatter();
-            logger.setUseParentHandlers(false);
-            Handler console = new ConsoleHandler();
-            console.setLevel(Level.ALL);
-            console.setFormatter(formatter);
-            logger.addHandler(console);
-            logger.setLevel(Level.ALL);
-        }
-        return logger;
     }
     /**
      * Gibt das Konfigurationsobjekt der INstanz zurück. Die Gui kann daraus

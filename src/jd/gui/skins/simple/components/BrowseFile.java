@@ -14,7 +14,6 @@ import javax.swing.JPanel;
 import javax.swing.JTextField;
 import javax.swing.border.EtchedBorder;
 
-import jd.plugins.Plugin;
 import jd.utils.JDUtilities;
 
 public class BrowseFile extends JPanel implements ActionListener {
@@ -36,7 +35,7 @@ public class BrowseFile extends JPanel implements ActionListener {
     private boolean           editable          = false;
 
     @SuppressWarnings("unused")
-    private Logger            logger            = Plugin.getLogger();
+    private Logger            logger            = JDUtilities.getLogger();
 
     public BrowseFile(int width) {
         super();

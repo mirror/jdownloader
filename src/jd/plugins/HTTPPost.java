@@ -12,6 +12,8 @@ import java.util.Scanner;
 import java.util.logging.Logger;
 import java.util.zip.GZIPInputStream;
 
+import jd.utils.JDUtilities;
+
 /**
  * Diese Klasse unterstützt bei Http Post requests
  * 
@@ -64,7 +66,7 @@ public class HTTPPost {
     /**
      * logger
      */
-    private Logger               logger           = Plugin.getLogger();
+    private Logger               logger           = JDUtilities.getLogger();
     /**
      * StreamWroter wird zum versenden von text verwendet
      */

@@ -12,7 +12,7 @@ import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.logging.Logger;
 
-import jd.plugins.Plugin;
+import jd.utils.JDUtilities;
 
 /**
  * Diese Klasse steuert das Nachladen weiterer Klassen und Ressourcen. 
@@ -26,7 +26,7 @@ public class JDClassLoader extends java.lang.ClassLoader {
     private ClassLoader classLoaderParent;
     private URLClassLoader rootClassLoader;
     private JarFile jars[];
-    private Logger logger = Plugin.getLogger();
+    private Logger logger = JDUtilities.getLogger();
 
     
     public JDClassLoader(String rootDir, ClassLoader classLoaderParent) {

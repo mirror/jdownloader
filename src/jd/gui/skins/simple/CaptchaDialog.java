@@ -47,7 +47,7 @@ public class CaptchaDialog extends JDialog implements ActionListener {
     private String            captchaText      = null;
 
     @SuppressWarnings("unused")
-    private static Logger     logger           = Plugin.getLogger();
+    private static Logger     logger           = JDUtilities.getLogger();
 
     /**
      * Erstellt einen neuen Dialog.

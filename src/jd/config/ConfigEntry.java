@@ -4,7 +4,7 @@ import java.awt.event.ActionListener;
 import java.io.Serializable;
 import java.util.logging.Logger;
 
-import jd.plugins.Plugin;
+import jd.utils.JDUtilities;
 
 public class ConfigEntry implements Serializable {
 
@@ -14,7 +14,7 @@ public class ConfigEntry implements Serializable {
     private static final long serialVersionUID = 7422046260361380162L;
 
     @SuppressWarnings("unused")
-    private static Logger logger = Plugin.getLogger();
+    private static Logger logger = JDUtilities.getLogger();
     private int              type;
 
     private String           label;

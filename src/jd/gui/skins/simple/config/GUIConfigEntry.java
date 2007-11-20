@@ -26,7 +26,6 @@ import javax.swing.SwingConstants;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.gui.skins.simple.components.BrowseFile;
-import jd.plugins.Plugin;
 import jd.utils.JDUtilities;
 
 /**
@@ -46,7 +45,7 @@ public class GUIConfigEntry extends JPanel {
      * Checkbox id
      */
 
-    protected Logger          logger           = Plugin.getLogger();
+    protected Logger          logger           = JDUtilities.getLogger();
 
 
 

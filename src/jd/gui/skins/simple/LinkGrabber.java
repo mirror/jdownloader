@@ -45,7 +45,6 @@ import jd.event.UIEvent;
 import jd.gui.skins.simple.components.BrowseFile;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
-import jd.plugins.Plugin;
 import jd.unrar.jdUnrar;
 import jd.utils.JDUtilities;
 
@@ -63,7 +62,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
 
     protected Insets insets = new Insets(0, 0, 0, 0);
 
-    protected Logger logger = Plugin.getLogger();
+    protected Logger logger = JDUtilities.getLogger();
 
     private SimpleGUI parent;
 

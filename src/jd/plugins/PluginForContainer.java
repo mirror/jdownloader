@@ -3,7 +3,6 @@ package jd.plugins;
 import java.io.File;
 import java.util.Vector;
 
-import jd.plugins.container.ContainerInfo;
 import jd.utils.JDUtilities;
 
 /**

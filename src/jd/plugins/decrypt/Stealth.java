@@ -88,6 +88,13 @@ public class Stealth extends PluginForDecrypt {
                             JDUtilities.appendInfoToFilename(captchaFile,capTxt, false);
                         }
                         String[] help = reqinfo.getCookie().split("=");
+                        if(help.length<2){
+                            logger.severe("Error sessionid: "+reqinfo.getCookie());
+                            firePluginEvent(new PluginEvent(this,PluginEvent.PLUGIN_PROGRESS_FINISH, null));
+                            step.setParameter(decryptedLinks);
+                            return step;
+                            
+                        }
                         logger.finest("Captcha Protected");
                         String captchaAdress = "http://stealth.to/captcha_img.php?PHPSESSID=" + help[2];
                         captchaFile = getLocalCaptchaFile(this);

@@ -17,7 +17,6 @@ import java.util.Vector;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import jd.plugins.Plugin;
 import jd.utils.JDUtilities;
 
 public class jdUnrar {
@@ -30,7 +29,7 @@ public class jdUnrar {
     public String unrar = null;
     public int maxFilesize = 2;
     public boolean overwriteFiles = false, autoDelete = true;
-    public static Logger logger = Plugin.getLogger();
+    public static Logger logger = JDUtilities.getLogger();
     /**
      * Konstruktor Hinzufügen von Passwoertern
      * 

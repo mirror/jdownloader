@@ -9,7 +9,7 @@ import java.util.logging.Logger;
 import jd.config.ConfigEntry;
 import jd.controlling.interaction.Interaction;
 import jd.gui.UIInterface;
-import jd.plugins.Plugin;
+import jd.utils.JDUtilities;
 
 /**
  * Diese Klasse kann die ConfigContainer instanz einer Interaction verwenden um
@@ -29,7 +29,7 @@ public class ConfigPanelInteraction extends ConfigPanel implements ActionListene
      * serialVersionUID
      */
     @SuppressWarnings("unused")
-    private Logger            logger           = Plugin.getLogger();
+    private Logger            logger           = JDUtilities.getLogger();
 
     protected Interaction       interaction;
 

@@ -19,7 +19,6 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 
 import jd.gui.skins.simple.components.BrowseFile;
-import jd.plugins.Plugin;
 import jd.utils.JDUtilities;
 
 /**
@@ -36,7 +35,7 @@ public class Installer extends JDialog implements ActionListener, WindowListener
      */
     private static final long serialVersionUID = 8764525546298642601L;
 
-    private Logger            logger           = Plugin.getLogger();
+    private Logger            logger           = JDUtilities.getLogger();
 
     private JPanel            panel;
 

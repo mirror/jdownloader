@@ -117,7 +117,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
     private JDAction          actionItemsAdd;
     private JDAction          actionItemsDelete;
     private LogDialog         logDialog;
-    private Logger            logger                   = Plugin.getLogger();
+    private Logger            logger                   = JDUtilities.getLogger();
     Dropper                   dragNDrop;
     private JCheckBoxMenuItem menViewLog               = null;
     private JSplitPane        splitpane;
@@ -415,6 +415,10 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
                 fc.setFileFilter(new JDFileFilter(null, ".dlc", true));
                 fc.showSaveDialog(frame);
                 File ret = fc.getSelectedFile();
+                if(JDUtilities.getFileExtension(ret)==null||!JDUtilities.getFileExtension(ret).equalsIgnoreCase("dlc")){
+                    
+                    ret= new File(ret.getAbsolutePath()+".dlc");
+                }
                 if (ret != null) {
                     fireUIEvent(new UIEvent(this, UIEvent.UI_SAVE_LINKS, ret));
                 }

@@ -13,7 +13,6 @@ import javax.swing.JDialog;
 import javax.swing.JLabel;
 import javax.swing.JTextField;
 
-import jd.plugins.Plugin;
 import jd.utils.JDUtilities;
 
 /**
@@ -45,7 +44,7 @@ public class SearchDialog extends JDialog implements ActionListener {
 	
 
     @SuppressWarnings("unused")
-    private static Logger logger = Plugin.getLogger();
+    private static Logger logger = JDUtilities.getLogger();
 
 	/**
 	 * Erstellt einen neuen Dialog.

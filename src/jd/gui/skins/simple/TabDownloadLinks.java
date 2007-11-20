@@ -33,7 +33,6 @@ import jd.event.ControlEvent;
 import jd.event.ControlListener;
 import jd.event.UIEvent;
 import jd.plugins.DownloadLink;
-import jd.plugins.Plugin;
 import jd.plugins.event.PluginEvent;
 import jd.plugins.event.PluginListener;
 import jd.utils.JDUtilities;
@@ -73,7 +72,7 @@ public class TabDownloadLinks extends JPanel implements PluginListener, ControlL
     /**
      * Der Logger für Meldungen
      */
-    private Logger               logger             = Plugin.getLogger();
+    private Logger               logger             = JDUtilities.getLogger();
     private JPopupMenu           popup;
     private SimpleGUI            parent;
     /**

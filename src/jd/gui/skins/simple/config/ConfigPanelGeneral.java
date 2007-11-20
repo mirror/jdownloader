@@ -14,7 +14,6 @@ import jd.config.Configuration;
 import jd.event.UIEvent;
 import jd.gui.UIInterface;
 import jd.gui.skins.simple.components.BrowseFile;
-import jd.plugins.Plugin;
 import jd.utils.JDUtilities;
 
 public class ConfigPanelGeneral extends ConfigPanel {
@@ -33,7 +32,7 @@ public class ConfigPanelGeneral extends ConfigPanel {
     }
     public void save() {
         this.saveConfigEntries();
-        Plugin.getLogger().setLevel((Level) configuration.getProperty(Configuration.PARAM_LOGGER_LEVEL));
+        JDUtilities.getLogger().setLevel((Level) configuration.getProperty(Configuration.PARAM_LOGGER_LEVEL));
         if (JDUtilities.getHomeDirectory() != null && !JDUtilities.getHomeDirectory().equalsIgnoreCase(brsHomeDir.getText().trim())) {
             JDUtilities.writeJDHomeDirectoryToWebStartCookie(brsHomeDir.getText().trim());
             if (uiinterface.showConfirmDialog("Installationsverzeichnis geändert. Soll ein Webupdate durchgeführt werden um das neue Verzeichnis zu aktualisieren(empfohlen)?")) {

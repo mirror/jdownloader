@@ -4,7 +4,7 @@ import java.io.Serializable;
 import java.util.HashMap;
 import java.util.logging.Logger;
 
-import jd.plugins.Plugin;
+import jd.utils.JDUtilities;
 
 /**
  * Von dieser Klasse kann abgeleitet werden wenn die Neue Klasse Properties
@@ -32,7 +32,7 @@ public class Property implements Serializable {
      * 
      */
     public Property() {
-        logger = Plugin.getLogger();
+        logger = JDUtilities.getLogger();
     }
 
     /**
@@ -45,7 +45,7 @@ public class Property implements Serializable {
         saveCount++;
         if (properties == null) properties = new HashMap<String, Object>();
         properties.put(key, value);
-        if (logger == null) logger = Plugin.getLogger();
+        if (logger == null) logger = JDUtilities.getLogger();
 
 //        logger.finer("Config property: " + key + " = " + value+" - "+this);
 

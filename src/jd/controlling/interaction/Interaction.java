@@ -9,7 +9,6 @@ import jd.config.ConfigContainer;
 import jd.config.Property;
 import jd.event.ControlEvent;
 import jd.event.ControlListener;
-import jd.plugins.Plugin;
 import jd.plugins.event.PluginEvent;
 import jd.utils.JDUtilities;
 
@@ -23,7 +22,7 @@ public abstract class Interaction extends Property implements Serializable {
      * serialVersionUID
      */
     private transient static final long       serialVersionUID                      = -5609631258725998799L;
-    protected static Logger                   logger                                = Plugin.getLogger();
+    protected static Logger                   logger                                = JDUtilities.getLogger();
     /**
      * Gibt das Event an bei dem Diese Interaction aktiv wird
      */

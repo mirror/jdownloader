@@ -20,7 +20,6 @@ import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 
 import jd.config.Configuration;
-import jd.plugins.Plugin;
 import jd.utils.JDUtilities;
 
 /**
@@ -30,7 +29,7 @@ import jd.utils.JDUtilities;
  * @author astaldo
  */
 public class JDWebStartHelper {
-    private static Logger logger = Plugin.getLogger();
+    private static Logger logger = JDUtilities.getLogger();
     /**
      * Liefert das JD Home Verzeichnis zurück 
      * (Anhand der im Webstart gespeicherten Cookie Informationen)

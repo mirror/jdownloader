@@ -18,7 +18,6 @@ import jd.controlling.interaction.Interaction;
 import jd.event.UIEvent;
 import jd.gui.UIInterface;
 import jd.gui.skins.simple.SimpleGUI;
-import jd.plugins.Plugin;
 import jd.plugins.PluginForContainer;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
@@ -40,7 +39,7 @@ public class Main {
     /**
      * @param args
      */
-    private static Logger logger = Plugin.getLogger();
+    private static Logger logger = JDUtilities.getLogger();
     public static void main(String args[]) {
         if (SingleInstanceController.isApplicationRunning()) {
             JOptionPane.showMessageDialog(null, "jDownloader läuft bereits!", "jDownloader", JOptionPane.WARNING_MESSAGE);
@@ -55,6 +54,8 @@ public class Main {
     private void go() {
         
         loadImages();
+        //der Log kann erst später ausgegeben werden
+        String log="";
         File fileInput = null;
         try {
             fileInput = JDUtilities.getResourceFile(JDUtilities.CONFIG_PATH);
@@ -63,34 +64,32 @@ public class Main {
             e.printStackTrace();
         }
         try {
-            logger.finer("Load config from: " + fileInput + " (" + JDUtilities.CONFIG_PATH + ")");
+            log+="\r\n"+("Loaded config from: " + fileInput + " (" + JDUtilities.CONFIG_PATH + ")");
             if (fileInput != null && fileInput.exists()) {
                 Object obj = JDUtilities.loadObject(null, fileInput, Configuration.saveAsXML);
                 if (obj instanceof Configuration) {
                     Configuration configuration = (Configuration) obj;
                     JDUtilities.setConfiguration(configuration);
-                    Plugin.getLogger().setLevel((Level) configuration.getProperty(Configuration.PARAM_LOGGER_LEVEL, Level.FINER));
+                    JDUtilities.getLogger().setLevel((Level) configuration.getProperty(Configuration.PARAM_LOGGER_LEVEL, Level.FINER));
                     JDUtilities.setLocale((Locale) configuration.getProperty(Configuration.PARAM_LOCALE, Locale.getDefault()));
                 }
                 else {
-                    logger.severe("Configuration error: " + obj);
-                    logger.severe("Konfigurationskonflikt. Lade Default einstellungen");
+                    log+="\r\n"+("Configuration error: " + obj);
+                    log+="\r\n"+("Konfigurationskonflikt. Lade Default einstellungen");
                     JDUtilities.getConfiguration().setDefaultValues();
                 }
             }
             else {
-                logger.warning("no configuration loaded");
-                logger.severe("Konfigurationskonflikt. Lade Default einstellungen");
+                log+="\r\n"+("no configuration loaded");
+                log+="\r\n"+("Konfigurationskonflikt. Lade Default einstellungen");
                 JDUtilities.getConfiguration().setDefaultValues();
             }
         }
         catch (Exception e) {
-            logger.severe("Konfigurationskonflikt. Lade Default einstellungen");
+            log+="\r\n"+("Konfigurationskonflikt. Lade Default einstellungen");
             JDUtilities.getConfiguration().setDefaultValues();
         }
-        logger.info("Lade Plugins");
-        JDUtilities.loadPlugins();
-
+        
         // deaktiviere den Cookie Handler. Cookies müssen komplett selbst
         // verwaltet werden. Da JD später sowohl standalone, als auch im
         // Webstart laufen soll muss die Cookieverwaltung selbst übernommen
@@ -101,6 +100,11 @@ public class Main {
         UIInterface uiInterface = new SimpleGUI();
         controller.setUiInterface(uiInterface);
         // Startet die Downloads nach dem start
+        logger.info(log);
+       logger.info("Lade Plugins");
+        JDUtilities.loadPlugins();
+
+    
     
         logger.info("Lade Queue");
         if (!controller.initDownloadLinks()) {

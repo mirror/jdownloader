@@ -24,9 +24,10 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
@@ -40,7 +41,6 @@ import java.net.URLDecoder;
 import java.nio.channels.FileChannel;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -49,6 +49,10 @@ import java.util.MissingResourceException;
 import java.util.ResourceBundle;
 import java.util.Scanner;
 import java.util.Vector;
+import java.util.logging.ConsoleHandler;
+import java.util.logging.Formatter;
+import java.util.logging.Handler;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -62,6 +66,7 @@ import jd.captcha.JAntiCaptcha;
 import jd.captcha.pixelgrid.Captcha;
 import jd.config.Configuration;
 import jd.controlling.JDController;
+import jd.plugins.LogFormatter;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForContainer;
 import jd.plugins.PluginForDecrypt;
@@ -80,7 +85,12 @@ public class JDUtilities {
      * Parametername für den Konfigpath
      */
     public static final String                     CONFIG_PATH         = "jDownloader.config";
-
+    /**
+     * Name des Loggers
+     */
+    public static String          LOGGER_NAME     = "java_downloader";
+    
+  
     /**
      * Titel der Applikation
      */
@@ -133,7 +143,7 @@ public class JDUtilities {
     /**
      * Der Logger für Meldungen
      */
-    private static Logger                          logger              = Plugin.getLogger();
+    private static Logger                          logger              = JDUtilities.getLogger();
 
     /**
      * Damit werden die JARs rausgesucht
@@ -1671,5 +1681,62 @@ public class JDUtilities {
     public static void setLocale(Locale locale) {
         JDUtilities.locale = locale;
     }
+/***
+ * Gibt die Endung einer FIle zurück oder null
+ * @param ret
+ * @return
+ */
+    public static String getFileExtension(File ret) {
+      String str=ret.getAbsolutePath();
+      int i1=str.indexOf("/");
+      int i2=str.indexOf("\\");
+      int i3=str.indexOf(".");
+      
+      if(i3>i2 && i3>i1){
+          return str.substring(i3+1);
+      }
+      return null;
+    }
+
+/**
+ * Liefert die Klasse zurück, mit der Nachrichten ausgegeben werden können
+ * Falls dieser Logger nicht existiert, wird ein neuer erstellt
+ * 
+ * @return LogKlasse
+ */
+public static Logger getLogger() {
+    if (logger == null) {
+        
+        logger = Logger.getLogger(LOGGER_NAME);
+        Formatter formatter = new LogFormatter();
+        logger.setUseParentHandlers(false);
+        Handler console = new ConsoleHandler();
+        console.setLevel(Level.ALL);
+        console.setFormatter(formatter);
+        logger.addHandler(console);
+    
+        logger.setLevel(Level.ALL);
+        logger.finer("Init Logger:"+LOGGER_NAME);
+    }
+    return logger;
+}
+/**
+ * Fügt dem Log eine Exception hinzu
+ * @param e
+ */
+public static void logException(Exception e){
+    getLogger().log(Level.SEVERE, "Exception", e);
+}
+/**
+ * Gibt den Stacktrace einer exception zurück
+ * @param e
+ * @return
+ */
+public static String getStackTraceForException(Exception e) {    
+    StringWriter sw = new StringWriter(2000);
+    PrintWriter pw = new PrintWriter(sw);
+    e.printStackTrace(pw);
+    return sw.getBuffer().toString();
+ }
 
 }

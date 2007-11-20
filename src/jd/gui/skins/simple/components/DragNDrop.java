@@ -18,7 +18,6 @@ import javax.swing.JComponent;
 
 import jd.event.UIEvent;
 import jd.event.UIListener;
-import jd.plugins.Plugin;
 import jd.utils.JDUtilities;
 
 /**
@@ -34,7 +33,7 @@ public class DragNDrop extends JComponent implements DropTargetListener  {
     /**
      * 
      */
-    private Logger logger= Plugin.getLogger();
+    private Logger logger= JDUtilities.getLogger();
     private Image imageEmpty;
     private Image imageFilled;
     private boolean filled=false;

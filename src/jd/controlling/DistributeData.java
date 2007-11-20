@@ -24,7 +24,7 @@ public class DistributeData extends ControlMulticaster {
     /**
      * Der Logger
      */
-    private static Logger            logger = Plugin.getLogger();
+    private static Logger            logger = JDUtilities.getLogger();
 
     /**
      * Die zu verteilenden Daten

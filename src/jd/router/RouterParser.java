@@ -12,7 +12,6 @@ import java.util.regex.Pattern;
 
 import javax.swing.JFrame;
 
-import jd.plugins.Plugin;
 import jd.utils.JDUtilities;
 
 /**
@@ -21,7 +20,7 @@ import jd.utils.JDUtilities;
  * @author astaldo
  */
 public class RouterParser {
-    private static Logger logger         = Plugin.getLogger();
+    private static Logger logger         = JDUtilities.getLogger();
     int                   positionInFile = 0;
 
     /**

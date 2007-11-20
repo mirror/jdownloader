@@ -6,7 +6,7 @@ import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import jd.plugins.Plugin;
+import jd.utils.JDUtilities;
 /**
  * Hier werden die Daten für einen Router gespeichert
  * 
@@ -22,7 +22,7 @@ public class RouterData implements Serializable{
     public transient static final int TYPE_WEB_GET  = 2;
     public transient static final int TYPE_WEB_POST = 3;
     
-    private static Logger logger = Plugin.getLogger();
+    private static Logger logger = JDUtilities.getLogger();
     /**
      * Name des Routers
      */

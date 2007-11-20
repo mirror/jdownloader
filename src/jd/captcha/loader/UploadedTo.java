@@ -33,7 +33,7 @@ public class UploadedTo {
 
     private long        initTime;
 
-    private Logger      logger  = Plugin.getLogger();
+    private Logger      logger  = JDUtilities.getLogger();
 
     private String      hoster;
 

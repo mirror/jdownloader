@@ -9,7 +9,6 @@ import jd.controlling.interaction.Interaction;
 import jd.event.ControlEvent;
 import jd.event.ControlListener;
 import jd.plugins.DownloadLink;
-import jd.plugins.Plugin;
 import jd.plugins.PluginForHost;
 import jd.plugins.event.PluginEvent;
 import jd.plugins.event.PluginListener;
@@ -30,7 +29,7 @@ public class DownloadWatchDog extends Thread implements PluginListener, ControlL
     /**
      * Der Logger
      */
-    private Logger                           logger      = Plugin.getLogger();
+    private Logger                           logger      = JDUtilities.getLogger();
 
     /**
      * Downloadlinks die gerade aktiv sind

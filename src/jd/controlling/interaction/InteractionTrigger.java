@@ -4,7 +4,7 @@ import java.io.Serializable;
 import java.util.Vector;
 import java.util.logging.Logger;
 
-import jd.plugins.Plugin;
+import jd.utils.JDUtilities;
 
 /**
  * Diese Klasse stellt einen Trigger für den Eventmanager dar
@@ -24,7 +24,7 @@ public class InteractionTrigger implements Serializable {
 
     private static Vector<InteractionTrigger> events           = new Vector<InteractionTrigger>();
 
-    protected static Logger                   logger           = Plugin.getLogger();
+    protected static Logger                   logger           = JDUtilities.getLogger();
 
     /**
      * EventiD

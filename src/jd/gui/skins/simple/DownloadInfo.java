@@ -14,7 +14,6 @@ import javax.swing.JPanel;
 import javax.swing.JSeparator;
 
 import jd.plugins.DownloadLink;
-import jd.plugins.Plugin;
 import jd.utils.JDUtilities;
 
 /**
@@ -26,7 +25,7 @@ public class DownloadInfo extends JDialog {
      */
     private static final long serialVersionUID = -9146764850581039090L;
     @SuppressWarnings("unused")
-    private static Logger     logger           = Plugin.getLogger();
+    private static Logger     logger           = JDUtilities.getLogger();
     private DownloadLink      downloadLink;
     private int               i                = 0;
     private JPanel            panel;

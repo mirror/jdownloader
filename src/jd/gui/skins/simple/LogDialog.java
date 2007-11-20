@@ -4,6 +4,7 @@ import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintStream;
@@ -15,10 +16,12 @@ import java.util.logging.StreamHandler;
 
 import javax.swing.JButton;
 import javax.swing.JDialog;
+import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 
+import jd.config.Configuration;
 import jd.plugins.LogFormatter;
 import jd.utils.JDUtilities;
 
@@ -46,6 +49,8 @@ public class LogDialog extends JDialog implements ActionListener {
     */
    private JButton btnOK;
 
+private JButton btnSave;
+
    /**
     * Primary Constructor
     * 
@@ -66,18 +71,21 @@ public class LogDialog extends JDialog implements ActionListener {
 
       btnOK = new JButton("OK");
       btnOK.addActionListener(this);
+      btnSave = new JButton("Save to file");
+      btnSave.addActionListener(this);
       getRootPane().setDefaultButton(btnOK);
       setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
 
       logField = new JTextArea(10, 60);
       logScrollPane = new JScrollPane(logField);
-      logField.setEditable(false);
+      logField.setEditable(true);
 
       JDUtilities.addToGridBag(this, logScrollPane, 0, 0, 1, 1, 1, 1, null,
             GridBagConstraints.BOTH, GridBagConstraints.EAST);
       JDUtilities.addToGridBag(this, btnOK, 0, 1, 1, 1, 1, 0, null, GridBagConstraints.NONE,
             GridBagConstraints.CENTER);
-
+      JDUtilities.addToGridBag(this, btnSave, 0, 1, 1, 1, 1, 0, null, GridBagConstraints.NONE,
+              GridBagConstraints.WEST);
       pack();
       setLocation(JDUtilities.getCenterOfComponent(null, this));
    }
@@ -91,6 +99,23 @@ public class LogDialog extends JDialog implements ActionListener {
       if (e.getSource() == btnOK) {
          dispose();
       }
+      
+      if (e.getSource() == btnSave) {
+          JFileChooser fc = new JFileChooser();
+          fc.setApproveButtonText("Save");
+          if (JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_CURRENT_BROWSE_PATH, null) != null) fc.setCurrentDirectory(new File(JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_CURRENT_BROWSE_PATH, null)));
+          fc.setFileSelectionMode(JFileChooser.FILES_ONLY);
+          fc.showOpenDialog(this);
+          File ret = fc.getSelectedFile();
+          if(ret!=null){
+              String content=logField.getSelectedText();
+              if(content==null ||content.length()==0){
+                  content=logField.getText();
+              }
+              JDUtilities.writeLocalFile(ret, content);
+              JDUtilities.getLogger().info("Log saved to file: "+ret.getAbsolutePath());
+          }
+       }
    }
 
    /**

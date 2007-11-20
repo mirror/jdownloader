@@ -174,7 +174,7 @@ public class DownloadLink implements Serializable,Comparable<DownloadLink> {
     /**
      * Logger für Meldungen
      */
-    private static Logger  logger                               = Plugin.getLogger();
+    private static Logger  logger                               = JDUtilities.getLogger();
     /**
      * Status des DownloadLinks
      */

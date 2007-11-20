@@ -14,7 +14,7 @@ import java.rmi.server.UnicastRemoteObject;
 import java.util.Properties;
 import java.util.logging.Logger;
 
-import jd.plugins.Plugin;
+import jd.utils.JDUtilities;
 
 /**
  * Diese Klasse registriert dieses Objekt in der Lokalen Registrierung (läuft auf einem Port) Damit kann überwacht werden, ob jDownloader schon gestartet ist oder nicht
@@ -34,7 +34,7 @@ public class SingleInstanceController extends RemoteObject {
      * RMI Name
      */
     public final static String RMI_NAME         = "JD_SINGLE_INSTANCE_CONTROLLER";
-    private static Logger      logger           = Plugin.getLogger();
+    private static Logger      logger           = JDUtilities.getLogger();
     /**
      * Zeigt an, ob diese Applikation bereits gestartet ist oder nicht. Wurde die Applikation bereits gestartet, ist bereits ein Objekt in der Registrierung verknüpft.
      * 

@@ -45,7 +45,7 @@ import javax.swing.JOptionPane;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
-import jd.plugins.Plugin;
+import jd.utils.JDUtilities;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.NamedNodeMap;
@@ -66,7 +66,7 @@ public class UTILITIES {
 
     private static int    READ_TIMEOUT    = 10000;
 
-    private static Logger logger          = Plugin.getLogger();
+    private static Logger logger          = JDUtilities.getLogger();
     public static String cookie=null;
     public static boolean useCookies=false;
 

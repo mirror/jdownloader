@@ -11,7 +11,6 @@ import java.util.logging.Logger;
 import javax.swing.JPanel;
 
 import jd.gui.UIInterface;
-import jd.plugins.Plugin;
 import jd.utils.JDUtilities;
 
 public abstract class ConfigPanel extends JPanel{
@@ -23,7 +22,7 @@ public abstract class ConfigPanel extends JPanel{
    private Vector<GUIConfigEntry> entries= new  Vector<GUIConfigEntry>();
     protected UIInterface uiinterface;
     protected JPanel panel;    
-    protected Logger            logger           = Plugin.getLogger();
+    protected Logger            logger           = JDUtilities.getLogger();
   
     protected  Insets insets = new Insets(1,5,1,5);
     ConfigPanel(UIInterface uiinterface){

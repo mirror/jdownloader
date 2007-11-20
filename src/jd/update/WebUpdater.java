@@ -20,7 +20,6 @@ import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import jd.plugins.Plugin;
 import jd.utils.JDUtilities;
 
 /**
@@ -44,7 +43,7 @@ public class WebUpdater implements Serializable {
     /**
      * Logger
      */
-    public static  Logger logger       = Plugin.getLogger();
+    public static  Logger logger       = JDUtilities.getLogger();
     /**
      * anzahl der aktualisierten Files
      */

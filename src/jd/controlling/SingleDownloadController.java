@@ -30,7 +30,7 @@ public class SingleDownloadController extends ControlMulticaster {
     /**
      * Der Logger
      */
-    private Logger        logger  = Plugin.getLogger();
+    private Logger        logger  = JDUtilities.getLogger();
 
     /**
      * Das übergeordnete Fenster

@@ -11,7 +11,7 @@ import java.util.logging.Logger;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
-import jd.plugins.Plugin;
+import jd.utils.JDUtilities;
 
 /**
  * Simple utility class that unzips
@@ -20,7 +20,7 @@ import jd.plugins.Plugin;
  */
 public final class UnzipUtil {
 
-   private static Logger logger = Plugin.getLogger();
+   private static Logger logger = JDUtilities.getLogger();
 
    /**
     * Unzips a file to a given location

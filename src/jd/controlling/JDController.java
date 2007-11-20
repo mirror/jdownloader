@@ -76,7 +76,7 @@ public class JDController implements PluginListener, ControlListener, UIListener
     /**
      * Der Logger
      */
-    private Logger                            logger                           = Plugin.getLogger();
+    private Logger                            logger                           = JDUtilities.getLogger();
 
     private File                              lastCaptchaLoaded;
 
@@ -438,7 +438,7 @@ public class JDController implements PluginListener, ControlListener, UIListener
                     continue;
                 }
                 logger.finer("Call Redirect: "+ri.getLocation());
-                ri = Plugin.postRequest(new URL(ri.getLocation()), null, null, null, "data="+xml, true);
+                ri = Plugin.postRequest(new URL(ri.getLocation()), null, null, null, "jd=1&data="+xml, true);
                 // CHeck ob der call erfolgreich war
                 
              

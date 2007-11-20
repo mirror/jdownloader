@@ -9,7 +9,7 @@ import jd.captcha.gui.BasicWindow;
 import jd.captcha.pixelgrid.Captcha;
 import jd.captcha.pixelgrid.Letter;
 import jd.captcha.pixelobject.PixelObject;
-import jd.plugins.Plugin;
+import jd.utils.JDUtilities;
 
 /**
  * 
@@ -46,7 +46,7 @@ public class UploadedTo {
     
 
 
-    private static Logger       logger                  = Plugin.getLogger();
+    private static Logger       logger                  = JDUtilities.getLogger();
 
     public static Letter[] getLetters(Captcha captcha) {
       

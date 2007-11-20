@@ -97,6 +97,7 @@ public class Configuration extends Property implements Serializable {
      */
     public static final String      PARAM_LOCALE                 = "LOCALE";
     public static final String PARAM_HTTPSEND_IP = "HTTPSEND_IP";
+    public static final String PARAM_CURRENT_BROWSE_PATH = "CURRENT_BROWSE_PATH";
 
     /**
      * Die unterschiedlichen Interaktionen. (ZB Reconnect nach einem Download)
