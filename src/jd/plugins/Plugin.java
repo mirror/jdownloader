@@ -1321,7 +1321,7 @@ public abstract class Plugin {
      * System.out.println(dd[i]); }
      */
     public static String[] getHttpLinks(String data, String url) {
-        String[] patternStr = { "(?s)<[ ]?base[^>]*?href=['\"]([^>]*?)['\"]", "(?s)<[ ]?base[^>]*?href=([^'\"][^\\s]*)", "(?s)<[ ]?a[^>]*?href=['\"]([^>]*?)['\"]", "(?s)<[ ]?a[^>]*?href=([^'\"][^\\s]*)", "www[^\\s>'\"\\)]*", "http://[^\\s>'\"\\)]*" };
+        String[] patternStr = { "(?s)<[ ]?base[^>]*?href=['\"]([^>]*?)['\"]", "(?s)<[ ]?base[^>]*?href=([^'\"][^\\s]*)", "(?s)<[ ]?a[^>]*?href=['\"]([^>]*?)['\"]", "(?s)<[ ]?a[^>]*?href=([^'\"][^\\s]*)","(?s)<[ ]?form[^>]*?action=['\"]([^>]*?)['\"]", "(?s)<[ ]?form[^>]*?action=([^'\"][^\\s]*)", "www[^\\s>'\"\\)]*", "http://[^\\s>'\"\\)]*" };
         url = url == null ? "" : url;
         Matcher m;
         String link;
@@ -1335,7 +1335,7 @@ public abstract class Plugin {
         for (int i = 0; i < 2; i++) {
             m = pattern[i].matcher(data);
             if (m.find()) {
-                url = m.group(1);
+                url = JDUtilities.htmlDecode(m.group(1));
                 break;
             }
         }
@@ -1355,10 +1355,10 @@ public abstract class Plugin {
         }
         else
             url = "";
-        for (int i = 2; i < 4; i++) {
+        for (int i = 2; i < 6; i++) {
             m = pattern[i].matcher(data);
             while (m.find()) {
-                link = m.group(1);
+                link = JDUtilities.htmlDecode(m.group(1));
                 link = link.replaceAll("http://.*http://", "http://");
                 if ((link.length() > 6) && (link.substring(0, 7).equals("http://")))
                     ;
@@ -1382,7 +1382,7 @@ public abstract class Plugin {
             }
         }
         data = data.replaceAll("(?s)<.*?>", "");
-        m = pattern[4].matcher(data);
+        m = pattern[6].matcher(data);
         while (m.find()) {
             link = "http://" + m.group();
             link = link.replaceAll("http://.*http://", "http://");
@@ -1390,7 +1390,7 @@ public abstract class Plugin {
                 set.add(link);
             }
         }
-        m = pattern[5].matcher(data);
+        m = pattern[7].matcher(data);
         while (m.find()) {
             link = m.group();
             link = link.replaceAll("http://.*http://", "http://");
@@ -1469,20 +1469,32 @@ public abstract class Plugin {
     public static Vector<String> findPasswords(String data)
     {
        data = data.replaceAll("(?s)<!-- .*? -->", "").replaceAll("(?s)<script .*?>.*?</script>", "").replaceAll("(?s)<.*?>", "").replaceAll("Spoiler:", "");
-       System.out.println(data);
        Vector<String> ret = new Vector<String>();
-       Pattern pattern = Pattern.compile("(pw|passwort|password|pass)[\\s]?[:]?[\\s]*?[\"']([^\"']+)[\"']", Pattern.CASE_INSENSITIVE);
+       Pattern pattern = Pattern.compile("(pw|passwort|password|pass)[\\s]*?[\"']([^\"']+)[\"']", Pattern.CASE_INSENSITIVE);
        Matcher matcher = pattern.matcher(data);
        while (matcher.find()) {
-           if(matcher.group(2).length()>3 && !matcher.group(2).matches(".*(rar|zip|jpg|gif|png|html|php|avi|mpg)$"))
+           if(matcher.group(2).length()>5 && !matcher.group(2).matches(".*(rar|zip|jpg|gif|png|html|php|avi|mpg)$"))
            ret.add(matcher.group(2));
        }
-       pattern = Pattern.compile("(pw|passwort|password|pass)[\\s]?[:]?[\\s]*?([^\"'\\s]+)[\\s]", Pattern.CASE_INSENSITIVE);
+       pattern = Pattern.compile("(pw|passwort|password|pass)[\\s]?[\\s]*?([^\"'\\s]+)[\\s]", Pattern.CASE_INSENSITIVE);
+       matcher = pattern.matcher(data);
+       while (matcher.find()) {
+           if(matcher.group(2).length()>5 && !matcher.group(2).matches(".*(rar|zip|jpg|gif|png|html|php|avi|mpg)$"))
+           ret.add(matcher.group(2));
+       }
+       pattern = Pattern.compile("(pw|passwort|password|pass)[\\s]?\\:[\\s]*?[\"']([^\"']+)[\"']", Pattern.CASE_INSENSITIVE);
        matcher = pattern.matcher(data);
        while (matcher.find()) {
            if(matcher.group(2).length()>3 && !matcher.group(2).matches(".*(rar|zip|jpg|gif|png|html|php|avi|mpg)$"))
            ret.add(matcher.group(2));
        }
+       pattern = Pattern.compile("(pw|passwort|password|pass)[\\s]?\\:[\\s]*?([^\"'\\s]+)[\\s]", Pattern.CASE_INSENSITIVE);
+       matcher = pattern.matcher(data);
+       while (matcher.find()) {
+           if(matcher.group(2).length()>3 && !matcher.group(2).matches(".*(rar|zip|jpg|gif|png|html|php|avi|mpg)$"))
+           ret.add(matcher.group(2));
+       }
+       
        return ret;
     }
 }
