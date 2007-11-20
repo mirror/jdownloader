@@ -17,7 +17,7 @@ public class YoumirrorBiz extends PluginForDecrypt {
 
 	final static String host = "youmirror.biz";
 	private String version = "1.0.0.0";
-	private Pattern patternSupported = getSupportPattern("http://[*]youmirror.biz/f[+]");
+	private Pattern patternSupported = getSupportPattern("http://[*]youmirror.biz/adfree/f[+]");
 	private Pattern patternRapidshare = Pattern.compile("1\" target=\"_blank\">rapidshare.com");
 	private Pattern patternNetload = Pattern.compile("2\" target=\"_blank\">netload.in");
 	private Pattern patternUploaded = Pattern.compile("4\" target=\"_blank\">uploaded.to");

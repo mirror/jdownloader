@@ -13,7 +13,7 @@ import jd.plugins.event.PluginEvent;
 
 public class AirfreshSteelhosterCom extends PluginForDecrypt {
 
-	final static String host = "airfrash.steelhoster.com";
+	final static String host = "airfresh.steelhoster.com";
 	private String version = "1.0.0.0";
 	private Pattern patternSupported = getSupportPattern("http://airfresh.steelhoster.com/\\?[+]");
 	

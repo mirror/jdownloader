@@ -16,7 +16,7 @@ public class Rapidsafenet extends PluginForDecrypt {
 
     static private final String  host = "rapidsafe.net";
 	private String version = "1.0.0.0";
-	private Pattern patternSupported = getSupportPattern("http://www.rapidsafe.net/[+]");;
+	private Pattern patternSupported = getSupportPattern("http://[*]rapidsafe.net/[+]");;
 	
     public Rapidsafenet() {
         super();
@@ -50,7 +50,6 @@ public class Rapidsafenet extends PluginForDecrypt {
     		
     		//Decrypt abschliessen
     		firePluginEvent(new PluginEvent(this,PluginEvent.PLUGIN_PROGRESS_FINISH, null));
-    		logger.info(decryptedLinks.size() + " downloads decrypted");
     		step.setParameter(decryptedLinks);
     	}
     	

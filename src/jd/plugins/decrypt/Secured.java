@@ -3,7 +3,6 @@ package jd.plugins.decrypt;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.Vector;
 import java.util.regex.Matcher;
@@ -187,7 +186,6 @@ public class Secured extends PluginForDecrypt {
                         firePluginEvent(new PluginEvent(this, PluginEvent.PLUGIN_PROGRESS_INCREASE, null));
 
                     }
-                    logger.finest("URL#: " + decryptedLinks.size());
                     firePluginEvent(new PluginEvent(this, PluginEvent.PLUGIN_PROGRESS_FINISH, null));
 
                 }

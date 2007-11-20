@@ -53,7 +53,6 @@ public class Tinyurl extends PluginForDecrypt {
     			
     			//Decrypt abschliessen
     			firePluginEvent(new PluginEvent(this,PluginEvent.PLUGIN_PROGRESS_FINISH, null));
-    			logger.info(decryptedLinks.size() + " downloads decrypted");
     			step.setParameter(decryptedLinks);
     		}
     		catch(IOException e) {

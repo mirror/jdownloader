@@ -3,7 +3,6 @@ package jd.plugins.decrypt;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
-import java.util.Date;
 import java.util.Vector;
 import java.util.regex.Pattern;
 

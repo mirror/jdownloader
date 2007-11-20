@@ -56,7 +56,6 @@ public class Safelink extends PluginForDecrypt {
                     decryptedLinks.add(link);
                     }
                     firePluginEvent(new PluginEvent(this,PluginEvent.PLUGIN_PROGRESS_INCREASE, null));
-                    logger.info(decryptedLinks.size() + " download decrypted");
                     firePluginEvent(new PluginEvent(this, PluginEvent.PLUGIN_PROGRESS_FINISH, null));
                     currentStep = null;
                 } 

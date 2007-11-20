@@ -49,7 +49,6 @@ public class Filer extends PluginForDecrypt {
                     firePluginEvent(new PluginEvent(this,PluginEvent.PLUGIN_PROGRESS_INCREASE, null));
                 }
                 firePluginEvent(new PluginEvent(this,PluginEvent.PLUGIN_PROGRESS_FINISH, null));
-                logger.info(decryptedLinks.size() + " downloads decrypted");
                 step.setParameter(decryptedLinks);
             }
             catch(IOException e) {

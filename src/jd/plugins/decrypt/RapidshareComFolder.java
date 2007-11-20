@@ -11,11 +11,10 @@ import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
 import jd.plugins.event.PluginEvent;
 import jd.utils.JDUtilities;
-import jd.gui.UIInterface;
 
 public class RapidshareComFolder extends PluginForDecrypt {
 
-    static private final String  host = "rapidshare.com Folder";
+    static private final String  host = "rapidshare.com folder";
 	private String version = "1.0.0.0";
 	private Pattern patternSupported = getSupportPattern("http://[*]rapidshare.com/users/[+]");
 	private String password = "";
@@ -37,8 +36,6 @@ public class RapidshareComFolder extends PluginForDecrypt {
     
     @Override public PluginStep doStep(PluginStep step, String parameter) {
     	if(step.getStep() == PluginStep.STEP_DECRYPT) {
-            Vector<Vector<String>> links;
-
     		try {
     			url = new URL(parameter);
     			RequestInfo reqinfo = getRequest(url);
