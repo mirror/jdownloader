@@ -20,6 +20,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
@@ -79,84 +80,109 @@ public class JDUtilities {
      * Parametername für den Konfigpath
      */
     public static final String                     CONFIG_PATH         = "jDownloader.config";
+
     /**
      * Titel der Applikation
      */
     public static final String                     JD_VERSION          = "0.0.";
+
     public static final String                     JD_REVISION         = "$Id$";
+
     /**
-     * Versionsstring der Applikation 
+     * Versionsstring der Applikation
      */
-    public static final String                      JD_TITLE            = "jDownloader";
+    public static final String                     JD_TITLE            = "jDownloader";
+
     /**
      * Ein URLClassLoader, um Dateien aus dem HomeVerzeichnis zu holen
      */
     private static JDClassLoader                   jdClassLoader       = null;
+
     /**
-     * Das JD-Home Verzeichnis. Dieses wird nur gesetzt, wenn es aus dem WebStart Cookie gelesen wurde. Diese Variable kann nämlich im KonfigDialog geändert werden
+     * Das JD-Home Verzeichnis. Dieses wird nur gesetzt, wenn es aus dem
+     * WebStart Cookie gelesen wurde. Diese Variable kann nämlich im
+     * KonfigDialog geändert werden
      */
     private static String                          homeDirectory       = null;
+
     /**
      * Das ist das File Objekt, daß das HomeDirectory darstellt
      */
     private static File                            homeDirectoryFile   = null;
+
     /**
      * Der DownloadController
      */
     private static JDController                    controller          = null;
+
     /**
      * RessourceBundle für Texte
      */
     private static ResourceBundle                  resourceBundle      = null;
+
     /**
      * Angaben über Spracheinstellungen
      */
     private static Locale                          locale              = null;
+
     /**
      * Alle verfügbaren Bilder werden hier gespeichert
      */
     private static HashMap<String, Image>          images              = new HashMap<String, Image>();
+
     /**
      * Der Logger für Meldungen
      */
     private static Logger                          logger              = Plugin.getLogger();
+
     /**
      * Damit werden die JARs rausgesucht
      */
     public static JDFileFilter                     filterJar           = new JDFileFilter(null, ".jar", false);
+
     /**
      * Das aktuelle Verzeichnis (Laden/Speichern)
      */
-    private static File                             currentDirectory;
+    private static File                            currentDirectory;
+
     /**
      * Hier werden alle vorhandenen Plugins zum Dekodieren von Links gespeichert
      */
     private static Vector<PluginForDecrypt>        pluginsForDecrypt   = new Vector<PluginForDecrypt>();
+
     /**
      * Hier werden alle vorhandenen Plugins zum Suchen von Links gespeichert
      */
     private static Vector<PluginForSearch>         pluginsForSearch    = new Vector<PluginForSearch>();
+
     /**
-     * Hier werden alle vorhandenen Plugins zum Öffnen verschlüsselter Containerfiles gespeichert
+     * Hier werden alle vorhandenen Plugins zum Öffnen verschlüsselter
+     * Containerfiles gespeichert
      */
     private static Vector<PluginForContainer>      pluginsForContainer = new Vector<PluginForContainer>();
+
     /**
      * Hier werden alle Plugins für die Anbieter gespeichert
      */
     private static Vector<PluginForHost>           pluginsForHost      = new Vector<PluginForHost>();
+
     /**
      * Hier werden optionale Plugins gespeichert
      */
     private static HashMap<String, PluginOptional> pluginsOptional     = new HashMap<String, PluginOptional>();
+
     /**
      * Die Konfiguration
      */
     private static Configuration                   configuration       = new Configuration();
+
     /**
-     * Geht eine Komponente so lange durch (getParent), bis ein Objekt vom Typ Frame gefunden wird, oder es keine übergeordnete Komponente gibt
+     * Geht eine Komponente so lange durch (getParent), bis ein Objekt vom Typ
+     * Frame gefunden wird, oder es keine übergeordnete Komponente gibt
      * 
      * @param comp Komponente, dessen Frame Objekt gesucht wird
-     * @return Ein Frame Objekt, das die Komponente beinhält oder null, falls keins gefunden wird
+     * @return Ein Frame Objekt, das die Komponente beinhält oder null, falls
+     *         keins gefunden wird
      */
     public static Frame getParentFrame(Component comp) {
         if (comp == null) return null;
@@ -167,6 +193,7 @@ public class JDUtilities {
         else
             return null;
     }
+
     /**
      * parsed den JD_REVISION String auf
      * 
@@ -177,6 +204,7 @@ public class JDUtilities {
         if (data.length > 2) return data[2];
         return null;
     }
+
     /**
      * parsed den JD_REVISION String auf
      * 
@@ -191,6 +219,7 @@ public class JDUtilities {
         }
         return null;
     }
+
     /**
      * parsed den JD_REVISION String auf
      * 
@@ -203,10 +232,12 @@ public class JDUtilities {
         }
         return null;
     }
+
     /**
      * parsed den JD_REVISION String auf
      * 
-     * @return Name des programmierers der die letzten Änderungen durchgeführt hat
+     * @return Name des programmierers der die letzten Änderungen durchgeführt
+     *         hat
      */
     public static String getLastChangeAuthor() {
         String[] data = JD_REVISION.split(" ");
@@ -215,6 +246,7 @@ public class JDUtilities {
         }
         return null;
     }
+
     /**
      * Diese Klasse fuegt eine Komponente einem Container hinzu
      * 
@@ -222,15 +254,22 @@ public class JDUtilities {
      * @param comp Die Komponente, die hinzugefuegt werden soll
      * @param x X-Position innerhalb des GriBagLayouts
      * @param y Y-Position innerhalb des GriBagLayouts
-     * @param width Anzahl der Spalten, ueber die sich diese Komponente erstreckt
-     * @param height Anzahl der Reihen, ueber die sich diese Komponente erstreckt
-     * @param weightX Verteilung von zur Verfuegung stehendem Platz in X-Richtung
-     * @param weightY Verteilung von zur Verfuegung stehendem Platz in Y-Richtung
+     * @param width Anzahl der Spalten, ueber die sich diese Komponente
+     *            erstreckt
+     * @param height Anzahl der Reihen, ueber die sich diese Komponente
+     *            erstreckt
+     * @param weightX Verteilung von zur Verfuegung stehendem Platz in
+     *            X-Richtung
+     * @param weightY Verteilung von zur Verfuegung stehendem Platz in
+     *            Y-Richtung
      * @param insets Abständer der Komponente
-     * @param iPadX Leerraum zwischen einer GridBagZelle und deren Inhalt (X-Richtung)
-     * @param iPadY Leerraum zwischen einer GridBagZelle und deren Inhalt (Y-Richtung)
+     * @param iPadX Leerraum zwischen einer GridBagZelle und deren Inhalt
+     *            (X-Richtung)
+     * @param iPadY Leerraum zwischen einer GridBagZelle und deren Inhalt
+     *            (Y-Richtung)
      * @param fill Verteilung der Komponente innerhalb der zugewiesen Zelle/n
-     * @param anchor Positionierung der Komponente innerhalb der zugewiesen Zelle/n
+     * @param anchor Positionierung der Komponente innerhalb der zugewiesen
+     *            Zelle/n
      */
     public static void addToGridBag(Container cont, Component comp, int x, int y, int width, int height, int weightX, int weightY, Insets insets, int iPadX, int iPadY, int fill, int anchor) {
         GridBagConstraints cons = new GridBagConstraints();
@@ -247,6 +286,7 @@ public class JDUtilities {
         cons.ipady = iPadY;
         cont.add(comp, cons);
     }
+
     /**
      * Genau wie add, aber mit den Standardwerten iPadX,iPadY=0
      * 
@@ -254,13 +294,18 @@ public class JDUtilities {
      * @param comp Die Komponente, die hinzugefuegt werden soll
      * @param x X-Position innerhalb des GriBagLayouts
      * @param y Y-Position innerhalb des GriBagLayouts
-     * @param width Anzahl der Spalten, ueber die sich diese Komponente erstreckt
-     * @param height Anzahl der Reihen, ueber die sich diese Komponente erstreckt
-     * @param weightX Verteilung von zur Verfuegung stehendem Platz in X-Richtung
-     * @param weightY Verteilung von zur Verfuegung stehendem Platz in Y-Richtung
+     * @param width Anzahl der Spalten, ueber die sich diese Komponente
+     *            erstreckt
+     * @param height Anzahl der Reihen, ueber die sich diese Komponente
+     *            erstreckt
+     * @param weightX Verteilung von zur Verfuegung stehendem Platz in
+     *            X-Richtung
+     * @param weightY Verteilung von zur Verfuegung stehendem Platz in
+     *            Y-Richtung
      * @param insets Abstände der Komponente
      * @param fill Verteilung der Komponente innerhalb der zugewiesen Zelle/n
-     * @param anchor Positionierung der Komponente innerhalb der zugewiesen Zelle/n
+     * @param anchor Positionierung der Komponente innerhalb der zugewiesen
+     *            Zelle/n
      */
     public static void addToGridBag(Container cont, Component comp, int x, int y, int width, int height, int weightX, int weightY, Insets insets, int fill, int anchor) {
         if (cont == null) {
@@ -273,12 +318,15 @@ public class JDUtilities {
         }
         addToGridBag(cont, comp, x, y, width, height, weightX, weightY, insets, 0, 0, fill, anchor);
     }
+
     /**
-     * Liefert einen Punkt zurück, mit dem eine Komponente auf eine andere zentriert werden kann
+     * Liefert einen Punkt zurück, mit dem eine Komponente auf eine andere
+     * zentriert werden kann
      * 
      * @param parent Die Komponente, an der ausgerichtet wird
      * @param child Die Komponente die ausgerichtet werden soll
-     * @return Ein Punkt, mit dem diese Komponente mit der setLocation Methode zentriert dargestellt werden kann
+     * @return Ein Punkt, mit dem diese Komponente mit der setLocation Methode
+     *         zentriert dargestellt werden kann
      */
     public static Point getCenterOfComponent(Component parent, Component child) {
         Point center;
@@ -298,6 +346,7 @@ public class JDUtilities {
         center.y -= child.getHeight() / 2;
         return center;
     }
+
     /**
      * Liefert eine Zeichenkette aus dem aktuellen ResourceBundle zurück
      * 
@@ -320,6 +369,7 @@ public class JDUtilities {
         }
         return result;
     }
+
     /**
      * Liefert einer char aus dem aktuellen ResourceBundle zurück
      * 
@@ -334,15 +384,18 @@ public class JDUtilities {
         }
         return result;
     }
+
     /**
      * Liefert aus der Map der geladenen Bilder ein Element zurück
      * 
      * @param imageName Name des Bildes das zurückgeliefert werden soll
-     * @return Das gewünschte Bild oder null, falls es nicht gefunden werden kann
+     * @return Das gewünschte Bild oder null, falls es nicht gefunden werden
+     *         kann
      */
     public static Image getImage(String imageName) {
         return images.get(imageName);
     }
+
     /**
      * Fügt ein Bild zur Map hinzu
      * 
@@ -353,6 +406,7 @@ public class JDUtilities {
         Toolkit.getDefaultToolkit().prepareImage(image, -1, -1, null);
         images.put(imageName, image);
     }
+
     /**
      * Liefert das Basisverzeichnis für jD zurück.
      * 
@@ -377,9 +431,11 @@ public class JDUtilities {
         }
         return jdHomeDir;
     }
+
     /**
-     * Liest JD-HOME aus dem WebStart Cache. Ist ein solcher nicht vorhanden, wird der Pfad aus der Umgebungsvariable genommen. Ist dieser auch nicht vorhanden, wird einfach in das aktuelle
-     * Verzeichnis geschrieben
+     * Liest JD-HOME aus dem WebStart Cache. Ist ein solcher nicht vorhanden,
+     * wird der Pfad aus der Umgebungsvariable genommen. Ist dieser auch nicht
+     * vorhanden, wird einfach in das aktuelle Verzeichnis geschrieben
      * 
      * @return Das Homeverzeichnis
      */
@@ -414,8 +470,10 @@ public class JDUtilities {
         }
         return getJDHomeDirectoryFromEnvironment();
     }
+
     /**
-     * Lädt eine Klasse aus dem homedir. UNd instanziert sie mit den gegebenen arumenten
+     * Lädt eine Klasse aus dem homedir. UNd instanziert sie mit den gegebenen
+     * arumenten
      * 
      * @param classPath
      * @param arguments
@@ -489,6 +547,7 @@ public class JDUtilities {
         }
         return null;
     }
+
     /**
      * Schreibt das Home Verzeichnis in den Webstart Cache
      * 
@@ -521,8 +580,10 @@ public class JDUtilities {
             e.printStackTrace();
         }
     }
+
     /**
-     * Liefert einen URLClassLoader zurück, um Dateien aus dem Stammverzeichnis zu laden
+     * Liefert einen URLClassLoader zurück, um Dateien aus dem Stammverzeichnis
+     * zu laden
      * 
      * @return URLClassLoader
      */
@@ -536,11 +597,14 @@ public class JDUtilities {
         }
         return jdClassLoader;
     }
+
     /**
-     * Diese Methode erstellt einen neuen Captchadialog und liefert den eingegebenen Text zurück.
+     * Diese Methode erstellt einen neuen Captchadialog und liefert den
+     * eingegebenen Text zurück.
      * 
      * @param controller Der Controller
-     * @param plugin Das Plugin, das dieses Captcha fordert (Der Host wird benötigt)
+     * @param plugin Das Plugin, das dieses Captcha fordert (Der Host wird
+     *            benötigt)
      * @param file
      * @return Der vom Benutzer eingegebene Text
      */
@@ -570,8 +634,9 @@ public class JDUtilities {
             return controller.getCaptchaCodeFromUser(plugin, file);
         }
     }
+
     /**
-     * Hier werden alle Plugins aus dem Classpath(".") geparsed 
+     * Hier werden alle Plugins aus dem Classpath(".") geparsed
      */
     @SuppressWarnings("unchecked")
     public static void loadPlugins() {
@@ -598,7 +663,7 @@ public class JDUtilities {
             pluginsForSearch.add(p);
             logger.info("Search-Plugin     : " + p.getPluginName());
         }
-        
+
         // Danach die Plugins der verschiedenen Suchengines
         iterator = Service.providers(PluginForContainer.class);
         while (iterator.hasNext()) {
@@ -607,99 +672,108 @@ public class JDUtilities {
             logger.info("Container-Plugin : " + p.getPluginName());
         }
         try {
-        iterator = Service.providers(PluginOptional.class, jdClassLoader);
-        while (iterator.hasNext()) {
-            try {
-              
-                PluginOptional p = (PluginOptional) iterator.next();
-                pluginsOptional.put(p.getPluginName(), p);
-                logger.info("Optionales-Plugin : " + p.getPluginName());
-             
-            }
-            catch (Error e) {
-                e.printStackTrace();
+            iterator = Service.providers(PluginOptional.class, jdClassLoader);
+            while (iterator.hasNext()) {
+                try {
+
+                    PluginOptional p = (PluginOptional) iterator.next();
+                    pluginsOptional.put(p.getPluginName(), p);
+                    logger.info("Optionales-Plugin : " + p.getPluginName());
+
+                }
+                catch (Error e) {
+                    e.printStackTrace();
+                }
             }
         }
-        } 
         catch (Error e) {
             e.printStackTrace();
         }
-//        // ContainerKlassen
-//        iterator = Service.providers(ClassLoader.class);
-//        while (iterator.hasNext()) {
-//            ClassLoader cl = (ClassLoader) iterator.next();
-            // Danach die Plugins für die unterschiedlichen Container
-//            Iterator iteratorClass = Service.providers(PluginForContainer.class,jdClassLoader);
-//            while (iteratorClass.hasNext()) {
-//                try {
-//                PluginForContainer p = (PluginForContainer) iteratorClass.next();
-//                pluginsForContainer.add(p);
-//                logger.info("Container-Plugin : " + p.getPluginName());
-//                }
-//                catch (Error e) {
-//                    e.printStackTrace();
-//                }
-//            }
-//        }
+        // // ContainerKlassen
+        // iterator = Service.providers(ClassLoader.class);
+        // while (iterator.hasNext()) {
+        // ClassLoader cl = (ClassLoader) iterator.next();
+        // Danach die Plugins für die unterschiedlichen Container
+        // Iterator iteratorClass =
+        // Service.providers(PluginForContainer.class,jdClassLoader);
+        // while (iteratorClass.hasNext()) {
+        // try {
+        // PluginForContainer p = (PluginForContainer) iteratorClass.next();
+        // pluginsForContainer.add(p);
+        // logger.info("Container-Plugin : " + p.getPluginName());
+        // }
+        // catch (Error e) {
+        // e.printStackTrace();
+        // }
+        // }
+        // }
     }
-//    /**
-//     * Fügt einen PluginListener hinzu
-//     * 
-//     * @param listener
-//     */
-//    public static void registerListenerPluginsForDecrypt(PluginListener listener) {
-//        Iterator<PluginForDecrypt> iterator = pluginsForDecrypt.iterator();
-//        while (iterator.hasNext()) {
-//            iterator.next().addPluginListener(listener);
-//        }
-//    }
-//    /**
-//     * Fügt einen PluginListener hinzu
-//     * 
-//     * @param listener
-//     */
-//    public static void registerListenerPluginsForHost(PluginListener listener) {
-//        Iterator<PluginForHost> iterator = pluginsForHost.iterator();
-//        while (iterator.hasNext()) {
-//            iterator.next().addPluginListener(listener);
-//        }
-//    }
-//    /**
-//     * Fügt einen PluginListener hinzu
-//     * 
-//     * @param listener TODO: unused
-//     */
-//    public static void registerListenerPluginsForSearch(PluginListener listener) {
-//        Iterator<PluginForSearch> iterator = pluginsForSearch.iterator();
-//        while (iterator.hasNext()) {
-//            iterator.next().addPluginListener(listener);
-//        }
-//    }
-//    /**
-//     * Fügt einen PluginListener hinzu TODO: unused
-//     * 
-//     * @param listener
-//     */
-//    public static void registerListenerPluginsForContainer(PluginListener listener) {
-//        Iterator<PluginForContainer> iterator = pluginsForContainer.iterator();
-//        while (iterator.hasNext()) {
-//            iterator.next().addPluginListener(listener);
-//        }
-//    }
-//    /*
-//     * TODO: unused
-//     */
-//    public static void registerListenerPluginsOptional(PluginListener listener) {
-//        Iterator<String> iterator = pluginsOptional.keySet().iterator();
-//        while (iterator.hasNext()) {
-//            pluginsOptional.get(iterator.next()).addPluginListener(listener);
-//        }
-//    }
+
+    // /**
+    // * Fügt einen PluginListener hinzu
+    // *
+    // * @param listener
+    // */
+    // public static void registerListenerPluginsForDecrypt(PluginListener
+    // listener) {
+    // Iterator<PluginForDecrypt> iterator = pluginsForDecrypt.iterator();
+    // while (iterator.hasNext()) {
+    // iterator.next().addPluginListener(listener);
+    // }
+    // }
+    // /**
+    // * Fügt einen PluginListener hinzu
+    // *
+    // * @param listener
+    // */
+    // public static void registerListenerPluginsForHost(PluginListener
+    // listener) {
+    // Iterator<PluginForHost> iterator = pluginsForHost.iterator();
+    // while (iterator.hasNext()) {
+    // iterator.next().addPluginListener(listener);
+    // }
+    // }
+    // /**
+    // * Fügt einen PluginListener hinzu
+    // *
+    // * @param listener TODO: unused
+    // */
+    // public static void registerListenerPluginsForSearch(PluginListener
+    // listener) {
+    // Iterator<PluginForSearch> iterator = pluginsForSearch.iterator();
+    // while (iterator.hasNext()) {
+    // iterator.next().addPluginListener(listener);
+    // }
+    // }
+    // /**
+    // * Fügt einen PluginListener hinzu TODO: unused
+    // *
+    // * @param listener
+    // */
+    // public static void registerListenerPluginsForContainer(PluginListener
+    // listener) {
+    // Iterator<PluginForContainer> iterator = pluginsForContainer.iterator();
+    // while (iterator.hasNext()) {
+    // iterator.next().addPluginListener(listener);
+    // }
+    // }
+    // /*
+    // * TODO: unused
+    // */
+    // public static void registerListenerPluginsOptional(PluginListener
+    // listener) {
+    // Iterator<String> iterator = pluginsOptional.keySet().iterator();
+    // while (iterator.hasNext()) {
+    // pluginsOptional.get(iterator.next()).addPluginListener(listener);
+    // }
+    // }
     /**
      * Lädt ein Objekt aus einer Datei
      * 
      * @param frame Ein übergeordnetes Fenster
-     * @param fileInput Falls das Objekt aus einer bekannten Datei geladen werden soll, wird hier die Datei angegeben. Falls nicht, kann der Benutzer über einen Dialog eine Datei aussuchen
+     * @param fileInput Falls das Objekt aus einer bekannten Datei geladen
+     *            werden soll, wird hier die Datei angegeben. Falls nicht, kann
+     *            der Benutzer über einen Dialog eine Datei aussuchen
      * @param asXML Soll das Objekt von einer XML Datei aus geladen werden?
      * @return Das geladene Objekt
      */
@@ -748,12 +822,15 @@ public class JDUtilities {
         }
         return null;
     }
+
     /**
      * Speichert ein Objekt
      * 
      * @param frame ein Fenster
      * @param objectToSave Das zu speichernde Objekt
-     * @param fileOutput Das File, in das geschrieben werden soll. Falls das File ein Verzeichnis ist, wird darunter eine Datei erstellt Falls keins angegeben wird, soll der Benutzer eine Datei
+     * @param fileOutput Das File, in das geschrieben werden soll. Falls das
+     *            File ein Verzeichnis ist, wird darunter eine Datei erstellt
+     *            Falls keins angegeben wird, soll der Benutzer eine Datei
      *            auswählen
      * @param name Dateiname
      * @param extension Dateiendung (mit Punkt)
@@ -813,6 +890,7 @@ public class JDUtilities {
             logger.severe("Schreibfehler: Fileoutput: null");
         }
     }
+
     /**
      * Formatiert Sekunden in das zeitformat stunden:minuten:sekunden
      * 
@@ -829,6 +907,7 @@ public class JDUtilities {
         }
         return fillInteger(hours, 2, "0") + ":" + fillInteger(minutes, 2, "0") + ":" + fillInteger(seconds, 2, "0");
     }
+
     /**
      * Hängt an i solange fill vorne an bis die zechenlänge von i gleich num ist
      * 
@@ -843,6 +922,7 @@ public class JDUtilities {
             ret = fill + ret;
         return ret;
     }
+
     /**
      * Liefert alle geladenen Plugins zum Entschlüsseln zurück
      * 
@@ -851,6 +931,7 @@ public class JDUtilities {
     public static Vector<PluginForDecrypt> getPluginsForDecrypt() {
         return pluginsForDecrypt;
     }
+
     /**
      * Liefert alle geladenen Plugins zum Suchen zurück
      * 
@@ -859,6 +940,7 @@ public class JDUtilities {
     public static Vector<PluginForSearch> getPluginsForSearch() {
         return pluginsForSearch;
     }
+
     /**
      * Liefert alle geladenen Plugins zum Laden von Containerdateien zurück
      * 
@@ -867,8 +949,10 @@ public class JDUtilities {
     public static Vector<PluginForContainer> getPluginsForContainer() {
         return pluginsForContainer;
     }
+
     /**
-     * Gibt alle Ketegorien zurück für die Suchplugins exestieren. Die Kategorien werden in den Plugins selbst als String definiert
+     * Gibt alle Ketegorien zurück für die Suchplugins exestieren. Die
+     * Kategorien werden in den Plugins selbst als String definiert
      * 
      * @return Alle Search kategorien
      */
@@ -882,6 +966,7 @@ public class JDUtilities {
         Collections.sort(ret);
         return ret;
     }
+
     /**
      * Liefert alle Plugins zum Downloaden von einem Anbieter zurück
      * 
@@ -890,6 +975,7 @@ public class JDUtilities {
     public static Vector<PluginForHost> getPluginsForHost() {
         return pluginsForHost;
     }
+
     /**
      * Liefert alle optionalen Plugins zurücl
      * 
@@ -898,6 +984,7 @@ public class JDUtilities {
     public static HashMap<String, PluginOptional> getPluginsOptional() {
         return pluginsOptional;
     }
+
     /**
      * Gibt den MD5 hash eines Strings zurück
      * 
@@ -917,7 +1004,8 @@ public class JDUtilities {
         catch (NoSuchAlgorithmException e) {
         }
         return "";
-    } 
+    }
+
     /**
      * Sucht ein passendes Plugin für einen Anbieter
      * 
@@ -931,7 +1019,6 @@ public class JDUtilities {
         return null;
     }
 
-  
     /**
      * Sucht ein passendes Plugin für ein Containerfile
      * 
@@ -944,12 +1031,14 @@ public class JDUtilities {
         }
         return null;
     }
+
     /**
      * @return Configuration instanz
      */
     public static Configuration getConfiguration() {
         return configuration;
     }
+
     /**
      * Setzt die Konfigurations instanz
      * 
@@ -958,6 +1047,7 @@ public class JDUtilities {
     public static void setConfiguration(Configuration configuration) {
         JDUtilities.configuration = configuration;
     }
+
     /**
      * @author astaldo
      * @return homeDirectory
@@ -965,6 +1055,7 @@ public class JDUtilities {
     public static String getHomeDirectory() {
         return homeDirectory;
     }
+
     /**
      * Diese Funktion gibt den Pfad zum JAC-Methodenverzeichniss zurück
      * 
@@ -975,6 +1066,7 @@ public class JDUtilities {
         String sep = System.getProperty("file.separator");
         return getJDHomeDirectory() + sep + "jd" + sep + "captcha" + sep + "methods";
     }
+
     /**
      * Gibt ein FileOebject zu einem Resourcstring zurück
      * 
@@ -989,7 +1081,7 @@ public class JDUtilities {
             return null;
         }
         URL clURL = getJDClassLoader().getResource(resource);
-        logger.info(clURL+"");
+        logger.info(clURL + "");
         if (clURL != null) {
             try {
                 return new File(clURL.toURI());
@@ -999,10 +1091,10 @@ public class JDUtilities {
         }
         return null;
     }
-    
-  
+
     /**
-     * public static String getLocalHash(File f) Gibt einen MD% Hash der file zurück
+     * public static String getLocalHash(File f) Gibt einen MD% Hash der file
+     * zurück
      * 
      * @author coalado
      * @param f
@@ -1033,8 +1125,10 @@ public class JDUtilities {
         }
         return null;
     }
+
     /**
-     * @author coalado Macht ein urlRawEncode und spart dabei die angegebenen Zeichen aus
+     * @author coalado Macht ein urlRawEncode und spart dabei die angegebenen
+     *         Zeichen aus
      * @param str
      * @return str URLCodiert
      */
@@ -1060,6 +1154,7 @@ public class JDUtilities {
         }
         return str;
     }
+
     /**
      * "http://rapidshare.com&#x2F;&#x66;&#x69;&#x6C;&#x65;&#x73;&#x2F;&#x35;&#x34;&#x35;&#x34;&#x31;&#x34;&#x38;&#x35;&#x2F;&#x63;&#x63;&#x66;&#x32;&#x72;&#x73;&#x64;&#x66;&#x2E;&#x72;&#x61;&#x72;";
      * Wandelt alle hexkodierten zeichen in diesem Format in normalen text um
@@ -1091,6 +1186,7 @@ public class JDUtilities {
         }
         return HTMLEntities.unhtmlentities(str);
     }
+
     /**
      * Schreibt content in eine Lokale textdatei
      * 
@@ -1120,6 +1216,91 @@ public class JDUtilities {
             return false;
         }
     }
+
+    /**
+     * public static String getLocalFile(File file) Liest file über einen
+     * bufferdReader ein und gibt den Inhalt asl String zurück
+     * 
+     * @param file
+     * @return File Content als String
+     */
+    public static String getLocalFile(File file) {
+        BufferedReader f;
+        try {
+            f = new BufferedReader(new FileReader(file));
+
+            String line;
+            String ret = "";
+
+            while ((line = f.readLine()) != null) {
+                ret += line + "\r\n";
+            }
+            f.close();
+            return ret;
+        }
+        catch (IOException e) {
+
+            e.printStackTrace();
+        }
+        return "";
+    }
+
+    /**
+     * Zum Kopieren von einem Ort zum anderen
+     * 
+     * @param in
+     * @param out
+     * @throws IOException
+     */
+    public static boolean copyFile(File in, File out) {
+        FileChannel inChannel = null;
+
+        FileChannel outChannel = null;
+        try {
+            if(!out.exists()){
+                out.getParentFile().mkdirs();
+                out.createNewFile();
+            }
+            inChannel = new FileInputStream(in).getChannel();
+
+            outChannel = new FileOutputStream(out).getChannel();
+
+            inChannel.transferTo(0, inChannel.size(), outChannel);
+
+            return true;
+        }
+        catch (FileNotFoundException e1) {
+
+            e1.printStackTrace();
+            if (inChannel != null) try {
+                inChannel.close();
+
+                if (outChannel != null) outChannel.close();
+            }
+            catch (IOException e) {
+
+                e.printStackTrace();
+                return false;
+            }
+            return false;
+        }
+        catch (IOException e) {
+            
+            e.printStackTrace();
+        }
+        try {
+            if (inChannel != null) inChannel.close();
+
+            if (outChannel != null) outChannel.close();
+        }
+        catch (IOException e) {
+
+            e.printStackTrace();
+            return false;
+        }
+        return true;
+    }
+
     /**
      * @author coalado
      * @param str
@@ -1134,6 +1315,7 @@ public class JDUtilities {
             return null;
         }
     }
+
     /**
      * @author coalado
      * @param str
@@ -1148,6 +1330,7 @@ public class JDUtilities {
             return null;
         }
     }
+
     /**
      * Setzt das Homedirectory und erstellt es notfalls neu
      * 
@@ -1158,6 +1341,7 @@ public class JDUtilities {
         homeDirectoryFile = new File(homeDirectory);
         if (!homeDirectoryFile.exists()) homeDirectoryFile.mkdirs();
     }
+
     /**
      * Lädt eine url lokal herunter
      * 
@@ -1183,6 +1367,7 @@ public class JDUtilities {
         }
         return false;
     }
+
     /**
      * Lädt über eine URLConnection eine datei ehrunter. Zieldatei ist file.
      * 
@@ -1226,8 +1411,10 @@ public class JDUtilities {
             return false;
         }
     }
+
     /**
-     * TODO: Serverpfad in de Config aufnehmen Gleicht das homedir mit dem server ab. Der Serverpfad steht noch in WebUpdater.java
+     * TODO: Serverpfad in de Config aufnehmen Gleicht das homedir mit dem
+     * server ab. Der Serverpfad steht noch in WebUpdater.java
      * 
      * @author coalado
      * @return Anzahl der aktualisierten Files
@@ -1237,9 +1424,10 @@ public class JDUtilities {
         wu.run();
         return wu.getUpdatedFiles();
     }
+
     /**
      * Prüft anhand der Globalen IP Check einstellungen die IP
-     *  
+     * 
      * @return ip oder /offline
      */
     public static String getIPAddress() {
@@ -1251,10 +1439,11 @@ public class JDUtilities {
             Pattern pattern = Pattern.compile(patt);
             Matcher matcher = pattern.matcher(requestInfo.getHtmlCode());
             if (matcher.find()) {
-                if(matcher.groupCount()>0){
-                return matcher.group(1);
-                }else{
-                    logger.severe("bad Regex: "+patt);
+                if (matcher.groupCount() > 0) {
+                    return matcher.group(1);
+                }
+                else {
+                    logger.severe("bad Regex: " + patt);
                     return null;
                 }
             }
@@ -1266,6 +1455,7 @@ public class JDUtilities {
         }
         return "offline";
     }
+
     /**
      * Führt einen Externen befehl aus.
      * 
@@ -1273,7 +1463,8 @@ public class JDUtilities {
      * @param parameter
      * @param runIn
      * @param waitForReturn
-     * @return null oder die rückgabe des befehls falls waitforreturn == true ist
+     * @return null oder die rückgabe des befehls falls waitforreturn == true
+     *         ist
      */
     public static String runCommand(String command, String parameter, String runIn, int waitForReturn) {
         String[] params = (command + " " + parameter).split("\\ ");
@@ -1285,7 +1476,7 @@ public class JDUtilities {
             else {
                 logger.severe("Working drectory " + runIn + " does not exist!");
             }
-        } 
+        }
         Process process;
         try {
             logger.finer("Start " + command + " " + parameter + " in " + runIn + " wait " + waitForReturn);
@@ -1318,6 +1509,7 @@ public class JDUtilities {
             return null;
         }
     }
+
     /**
      * Gibt den verwendeten Controller zurück
      * 
@@ -1326,6 +1518,7 @@ public class JDUtilities {
     public static JDController getController() {
         return controller;
     }
+
     /**
      * Setzt den Controller
      * 
@@ -1334,8 +1527,10 @@ public class JDUtilities {
     public static void setController(JDController con) {
         controller = con;
     }
+
     /**
-     * @return Gibt die verwendete java Version als Double Value zurück. z.B. 1.603
+     * @return Gibt die verwendete java Version als Double Value zurück. z.B.
+     *         1.603
      */
     public static Double getJavaVersion() {
         String version = System.getProperty("java.version");
@@ -1343,6 +1538,7 @@ public class JDUtilities {
         int subversion = JDUtilities.filterInt(version.substring(version.indexOf(".") + 1));
         return Double.parseDouble(majorVersion + "." + subversion);
     }
+
     /**
      * Ersetzt die Platzhalter in einem String
      * 
@@ -1355,6 +1551,7 @@ public class JDUtilities {
         command = command.replaceAll("\\%CAPTCHAIMAGE", controller.getLastCaptchaImage());
         return command;
     }
+
     /**
      * Formatiert Byes in einen MB String [MM.MM MB]
      * 
@@ -1364,8 +1561,10 @@ public class JDUtilities {
     public static String formatBytesToMB(long downloadMax) {
         return Math.round(downloadMax / (1024 * 10.24)) / 100.0 + " MB";
     }
+
     /**
-     * GIbt den Integer der sich in src befindet zurück. alle nicht integerzeichen werden ausgefiltert
+     * GIbt den Integer der sich in src befindet zurück. alle nicht
+     * integerzeichen werden ausgefiltert
      * 
      * @param src
      * @return Integer in src
@@ -1378,6 +1577,7 @@ public class JDUtilities {
             return 0;
         }
     }
+
     /**
      * Filtert alle nicht lesbaren zeichen aus str
      * 
@@ -1388,6 +1588,7 @@ public class JDUtilities {
         String allowed = "QWERTZUIOPÜASDFGHJKLÖÄYXCVBNMqwertzuiopasdfghjklyxcvbnm;:,._-&%(){}#~+ 1234567890";
         return filterString(str, allowed);
     }
+
     /**
      * Filtert alle zeichen aus str die in filter nicht auftauchen
      * 
@@ -1408,8 +1609,10 @@ public class JDUtilities {
         }
         return ret;
     }
+
     /**
-     * Untersucht zwei String, ob zwei String ähnlich anfangen. Der übereinstimmende Text wird dann zurückgegeben
+     * Untersucht zwei String, ob zwei String ähnlich anfangen. Der
+     * übereinstimmende Text wird dann zurückgegeben
      * 
      * @param a Erster String, der vergleicht werden soll
      * @param b Zweiter String, der vergleicht werden soll
@@ -1437,9 +1640,11 @@ public class JDUtilities {
         else
             return "";
     }
+
     public static String getJDTitle() {
         return JDUtilities.JD_TITLE + " " + JDUtilities.JD_VERSION + JDUtilities.getRevision() + " (" + JDUtilities.getLastChangeDate() + " " + JDUtilities.getLastChangeTime() + ")";
     }
+
     /**
      * Fügt dem Dateinamen den erkannten Code noch hinzu
      * 
@@ -1458,34 +1663,13 @@ public class JDUtilities {
         dest = dest.substring(0, idx) + "_" + captchaCode.toUpperCase() + isGoodText + dest.substring(idx);
         file.renameTo(new File(dest));
     }
+
     public static Locale getLocale() {
         return locale;
     }
+
     public static void setLocale(Locale locale) {
         JDUtilities.locale = locale;
     }
-    /**
-     * Zum Kopieren von einem Ort zum anderen
-     * 
-     * @param in
-     * @param out
-     * @throws IOException
-     */
-    public static void copyFile(File in, File out) throws IOException {
-        FileChannel inChannel = new FileInputStream(in).getChannel();
-        FileChannel outChannel = new FileOutputStream(out).getChannel();
-        try {
-            inChannel.transferTo(0, inChannel.size(), outChannel);
-            // or
-            // outChannel.transferFrom
-            // (inChannel, 0, inChannel.size());
-        } catch (IOException e) {
-            throw e;
-        } finally {
-            if (inChannel != null)
-                inChannel.close();
-            if (outChannel != null)
-                outChannel.close();
-        }
-    }
+
 }

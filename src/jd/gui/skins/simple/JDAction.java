@@ -33,8 +33,7 @@ public class JDAction extends AbstractAction{
     public static final int APP_START_STOP_DOWNLOADS = 10;
     public static final int APP_SHOW_LOG             = 11;
     public static final int APP_STOP_DOWNLOADS       = 12;
-    public static final int APP_SAVE                 = 13;
-    public static final int APP_LOAD                 = 14;
+
     public static final int APP_LOAD_CONTAINER       = 15;
     public static final int APP_EXIT                 = 16;
     public static final int APP_LOG                  = 17;
@@ -44,6 +43,10 @@ public class JDAction extends AbstractAction{
     public static final int APP_SEARCH               = 21;
 
     public static final int APP_PAUSE_DOWNLOADS = 22;
+
+    public static final int APP_LOAD_DLC = 23;
+
+    public static final int APP_SAVE_DLC = 24;
 
     private ActionListener actionListener;
     private int actionID;

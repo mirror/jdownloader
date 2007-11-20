@@ -715,7 +715,7 @@ public abstract class Plugin {
      * 
      * Schickt ein PostRequest an eine Adresse
      * 
-     * @param link Der Link, an den die POST Anfrage geschickt werden soll
+     * @param string Der Link, an den die POST Anfrage geschickt werden soll
      * @param cookie Cookie
      * @param referrer Referrer
      * @param requestProperties Hier können noch zusätliche Properties
@@ -725,16 +725,16 @@ public abstract class Plugin {
      * @return Ein Objekt, daß alle Informationen der Zieladresse beinhält
      * @throws IOException
      */
-    public static RequestInfo postRequest(URL link, String cookie, String referrer, HashMap<String, String> requestProperties, String parameter, boolean redirect) throws IOException {
+    public static RequestInfo postRequest(URL string, String cookie, String referrer, HashMap<String, String> requestProperties, String parameter, boolean redirect) throws IOException {
         //        logger.finer("post: "+link+"(cookie:"+cookie+" parameter: "+parameter+")");
-        HttpURLConnection httpConnection = (HttpURLConnection) link.openConnection();
+        HttpURLConnection httpConnection = (HttpURLConnection) string.openConnection();
         httpConnection.setReadTimeout(getReadTimeoutFromConfiguration());
         httpConnection.setReadTimeout(getConnectTimeoutFromConfiguration());
         httpConnection.setInstanceFollowRedirects(redirect);
         if (referrer != null)
             httpConnection.setRequestProperty("Referer", referrer);
         else
-            httpConnection.setRequestProperty("Referer", "http://" + link.getHost());
+            httpConnection.setRequestProperty("Referer", "http://" + string.getHost());
         if (cookie != null) httpConnection.setRequestProperty("Cookie", cookie);
         // TODO das gleiche wie bei getRequest
         httpConnection.setRequestProperty("Accept-Language", ACCEPT_LANGUAGE);

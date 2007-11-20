@@ -102,9 +102,8 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
      */
     public JToggleButton      btnStartStop;
     private JDAction          actionStartStopDownload;
-    private JDAction          actionLoadLinks;
+
     private JDAction          actionLoadContainer;
-    private JDAction          actionSaveLinks;
     private JDAction          actionExit;
     private JDAction          actionLog;
     private JDAction          actionConfig;
@@ -129,6 +128,8 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
     private JDAction          actionSearch;
     private JDAction          actionPause;
     private JToggleButton     btnPause;
+    private JDAction actionLoadDLC;
+    private JDAction actionSaveDLC;
    
     /**
      * Das Hauptfenster wird erstellt
@@ -181,9 +182,11 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         actionPause = new JDAction(this, "pause", "action.pause", JDAction.APP_PAUSE_DOWNLOADS);
         actionItemsAdd = new JDAction(this, "add", "action.add", JDAction.ITEMS_ADD);
         actionDnD = new JDAction(this, "dnd", "action.dnd", JDAction.ITEMS_DND);
-        actionLoadLinks = new JDAction(this, "load", "action.load", JDAction.APP_LOAD);
+
         actionLoadContainer = new JDAction(this, "loadContainer", "action.load_container", JDAction.APP_LOAD_CONTAINER);
-        actionSaveLinks = new JDAction(this, "save", "action.save", JDAction.APP_SAVE);
+        actionLoadDLC = new JDAction(this, "load", "action.load_dlc", JDAction.APP_LOAD_DLC);
+        actionSaveDLC = new JDAction(this, "save", "action.save_dlc", JDAction.APP_SAVE_DLC);
+   
         actionExit = new JDAction(this, "exit", "action.exit", JDAction.APP_EXIT);
         actionLog = new JDAction(this, "log", "action.viewlog", JDAction.APP_LOG);
         actionConfig = new JDAction(this, "configuration", "action.configuration", JDAction.APP_CONFIGURATION);
@@ -221,8 +224,8 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         JMenu menFile = new JMenu(JDUtilities.getResourceString("menu.file"));
         menFile.setMnemonic(JDUtilities.getResourceChar("menu.file_mnem"));
         JMenuItem menFileLoadContainer = createMenuItem(actionLoadContainer);
-        JMenuItem menFileLoad = createMenuItem(actionLoadLinks);
-        JMenuItem menFileSave = createMenuItem(actionSaveLinks);
+        JMenuItem menFileLoad = createMenuItem(actionLoadDLC);
+        JMenuItem menFileSave = createMenuItem(actionSaveDLC);
         JMenuItem menFileExit = createMenuItem(actionExit);
         // edit menu
         JMenu menEdit = new JMenu(JDUtilities.getResourceString("menu.edit"));
@@ -329,11 +332,11 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         btnUpdate.setFocusPainted(false);
         btnUpdate.setBorderPainted(false);
         btnUpdate.setText(null);
-        JButton btnSave = new JButton(this.actionSaveLinks);
+        JButton btnSave = new JButton(this.actionSaveDLC);
         btnSave.setFocusPainted(false);
         btnSave.setBorderPainted(false);
         btnSave.setText(null);
-        JButton btnLoad = new JButton(this.actionLoadLinks);
+        JButton btnLoad = new JButton(this.actionLoadDLC);
         btnLoad.setFocusPainted(false);
         btnLoad.setBorderPainted(false);
         btnLoad.setText(null);
@@ -407,18 +410,18 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
             case JDAction.APP_START_STOP_DOWNLOADS:
                 this.startStopDownloads();
                 break;
-            case JDAction.APP_SAVE:
+            case JDAction.APP_SAVE_DLC:
                 JFileChooser fc = new JFileChooser();
-                fc.setFileFilter(new JDFileFilter(null, ".jdl", true));
+                fc.setFileFilter(new JDFileFilter(null, ".dlc", true));
                 fc.showSaveDialog(frame);
                 File ret = fc.getSelectedFile();
                 if (ret != null) {
                     fireUIEvent(new UIEvent(this, UIEvent.UI_SAVE_LINKS, ret));
                 }
                 break;
-            case JDAction.APP_LOAD:
+            case JDAction.APP_LOAD_DLC:
                 fc = new JFileChooser();
-                fc.setFileFilter(new JDFileFilter(null, "*.jdl", true));
+                fc.setFileFilter(new JDFileFilter(null, ".dlc", true));
                 fc.showOpenDialog(frame);
                 ret = fc.getSelectedFile();
                 if (ret != null) {
@@ -433,6 +436,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
                     fireUIEvent(new UIEvent(this, UIEvent.UI_LOAD_CONTAINER, file));
                 }
                 break;
+           
             case JDAction.APP_EXIT:
                 frame.setVisible(false);
                 frame.dispose();

@@ -1,6 +1,9 @@
 package jd.controlling;
 
 import java.io.File;
+import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.Iterator;
 import java.util.Vector;
 import java.util.logging.Logger;
@@ -16,9 +19,11 @@ import jd.event.UIEvent;
 import jd.event.UIListener;
 import jd.gui.UIInterface;
 import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForContainer;
 import jd.plugins.PluginForHost;
+import jd.plugins.RequestInfo;
 import jd.plugins.event.PluginEvent;
 import jd.plugins.event.PluginListener;
 import jd.utils.JDUtilities;
@@ -273,11 +278,11 @@ public class JDController implements PluginListener, ControlListener, UIListener
                 break;
             case UIEvent.UI_SAVE_LINKS:
                 File file = (File) uiEvent.getParameter();
-                saveDownloadLinks(file);
+                saveDLC(file);
                 break;
             case UIEvent.UI_LOAD_LINKS:
                 file = (File) uiEvent.getParameter();
-                loadDownloadLinks(file);
+                loadContainerFile(file);
                 break;
             case UIEvent.UI_LOAD_CONTAINER:
                 File containerFile = (File) uiEvent.getParameter();
@@ -372,7 +377,96 @@ public class JDController implements PluginListener, ControlListener, UIListener
     public void saveDownloadLinks(File file) {
         // JDUtilities.saveObject(null, downloadLinks.toArray(new
         // DownloadLink[]{}), file, "links", "dat", true);
+        
+      
         JDUtilities.saveObject(null, downloadLinks, file, "links", "dat", Configuration.saveAsXML);
+    }
+    
+    public void saveDLC(File file){
+        // JDUtilities.saveObject(null, downloadLinks.toArray(new
+        // DownloadLink[]{}), file, "links", "dat", true);
+
+        String xml = "<dlc>";
+        xml += "<header>";
+        xml += "<generator>";
+        xml += "<app>jDownloader</app>";
+        xml += "<version>" + JDUtilities.getRevision() + "</version>";
+        xml += "<url>http://jdownloader.ath.cx</url>";
+        xml += "</generator>";
+        xml += "<tribute>";
+        xml += "<name>" + this.getUiInterface().showUserInputDialog("Uploader Name") + "</name>";
+        xml += "</tribute>";
+        xml += "<comment>" + this.getUiInterface().showUserInputDialog("Comment") + "</comment>";
+        xml += "<category>" + this.getUiInterface().showUserInputDialog("Category") + "</category>";
+        xml += "</header>";
+        xml += "<content>";
+        Vector<FilePackage> packages = new Vector<FilePackage>();
+        Vector<DownloadLink> links = this.getDownloadLinks();
+
+        for (int i = 0; i < links.size(); i++) {
+            if (!packages.contains(links.get(i).getFilePackage())) {
+                packages.add(links.get(i).getFilePackage());
+            }
+        }
+        for (int i = 0; i < packages.size(); i++) {
+            xml += "<package name=\"" + packages.get(i).getName() + "\">";
+
+            Vector<DownloadLink> tmpLinks = this.getPackageFiles(packages.get(i));
+            for (int x = 0; x < tmpLinks.size(); x++) {
+                xml += "<file>";
+                xml += "<url>" + tmpLinks.get(x).getUrlDownloadDecrypted() + "</url>";
+                xml += "<password>" + packages.get(i).getPassword() + "</password>";
+                xml += "<comment>" + packages.get(i).getComment() + "</comment>";
+                xml += "</file>";
+            }
+            xml += "</package>";
+        }
+
+        xml += "</content>";
+        xml += "</dlc>";
+        
+        xml=JDUtilities.urlEncode(xml);
+        try {
+            URL[] services = new URL[] { new URL("http://recrypt1.ath.cx/service.php"), new URL("http://recrypt2.ath.cx/service.php"), new URL("http://recrypt3.ath.cx/service.php") };
+            int url = 0;
+            while (url < services.length) {
+                //Get redirect url
+                logger.finer("Call "+services[url]);
+                RequestInfo ri = Plugin.getRequestWithoutHtmlCode(services[url], null, null, false);
+                if (!ri.isOK() || ri.getLocation()==null) {
+                    url++;
+                    continue;
+                }
+                logger.finer("Call Redirect: "+ri.getLocation());
+                ri = Plugin.postRequest(new URL(ri.getLocation()), null, null, null, "data="+xml, true);
+                // CHeck ob der call erfolgreich war
+                
+             
+                
+                if (!ri.isOK() || !ri.containsHTML("dlc")) {
+                    url++;
+                    continue;
+                }
+                else {
+                    String dlcString = ri.getHtmlCode();
+                    JDUtilities.writeLocalFile(file, dlcString);
+                    this.getUiInterface().showMessageDialog("DLC encryption successfull");
+                    
+                    return;
+                }
+
+            }
+        }
+        catch (MalformedURLException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+        catch (IOException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+        logger.severe("DLC creation failed");
+        this.getUiInterface().showMessageDialog("DLC encryption failed");
     }
 
     /**
@@ -533,7 +627,17 @@ public class JDController implements PluginListener, ControlListener, UIListener
         }
         return ret;
     }
-
+    public Vector<DownloadLink> getPackageFiles(FilePackage filepackage) {
+        Vector<DownloadLink> ret = new Vector<DownloadLink>();
+//        ret.add(downloadLink);
+        Iterator<DownloadLink> iterator = downloadLinks.iterator();
+        DownloadLink nextDownloadLink = null;
+        while (iterator.hasNext()) {
+            nextDownloadLink = iterator.next();
+            if (filepackage == nextDownloadLink.getFilePackage()) ret.add(nextDownloadLink);
+        }
+        return ret;
+    }
     /**
      * Gibt die Anzahl der fertigen Downloads im package zurück
      * 

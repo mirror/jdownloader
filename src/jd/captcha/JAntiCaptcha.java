@@ -1076,7 +1076,7 @@ if(letters.length>getLetterNum()){
                 correct += akt.getValityPercent();
 
             }
-            logger.finer("Validty: " + correct);
+//            logger.finer("Validty: " + correct);
         }
 
         captcha.setLetterComperators( newLettersVector.toArray(new LetterComperator[]{}));
@@ -1153,7 +1153,7 @@ if(letters.length>getLetterNum()){
                         res.setReliability(lastPercent - res.getValityPercent());
                         return res;
                     }
-                    logger.finer("dim " + lc.getA().getDim() + "|" + lc.getB().getDim() + " New Best value: " + lc.getDecodedValue() + " " + lc.getValityPercent() + " good:" + tmp.getGoodDetections() + " bad: " + tmp.getBadDetections() + " - " + lc);
+//                    logger.finer("dim " + lc.getA().getDim() + "|" + lc.getB().getDim() + " New Best value: " + lc.getDecodedValue() + " " + lc.getValityPercent() + " good:" + tmp.getGoodDetections() + " bad: " + tmp.getBadDetections() + " - " + lc);
                 }
                 else if (res != null) {
                     if (lc.getValityPercent() < lastPercent) {
@@ -1231,7 +1231,7 @@ if(letters.length>getLetterNum()){
             for (angle = UTILITIES.getJumperStart(leftAngle, rightAngle); UTILITIES.checkJumper(angle, leftAngle, rightAngle); angle = UTILITIES.nextJump(angle, leftAngle, rightAngle, steps)) {
 
                 letter = orgLetter.turn(angle);
-                logger.finer(" Angle " + angle + " : " + letter.getDim());
+//                logger.finer(" Angle " + angle + " : " + letter.getDim());
                 for (int i = 0; i < letterDB.size(); i++) {
                     tmp = letterDB.elementAt(i);
                     if (Math.abs(tmp.getHeight() - letter.getHeight()) > jas.getInteger("borderVarianceY") || Math.abs(tmp.getWidth() - letter.getWidth()) > jas.getInteger("borderVarianceX")) {

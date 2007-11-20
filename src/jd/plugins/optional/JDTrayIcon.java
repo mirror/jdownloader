@@ -80,7 +80,7 @@ try{
         popup.addSeparator();
         popup.add(exit);
 }catch(Exception e){
-    logger.severe("Error initializing SystemTray");
+    logger.severe("Error initializing SystemTray "+e.getMessage());
     return;
 }
     }
