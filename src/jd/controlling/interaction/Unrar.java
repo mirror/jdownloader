@@ -51,7 +51,7 @@ public class Unrar extends Interaction implements Serializable {
             password = dLink.getFilePackage().getPassword();
 
         jdUnrar unrar = new jdUnrar(JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_DOWNLOAD_DIRECTORY));
-        if (password!=null && !password.isEmpty()) {
+        if (password!=null && !password.matches("[\\s]*")) {
             if (!password.matches("\\{\".*\"\\}$"))
                 unrar.standardPassword = password;
             unrar.addToPasswordlist(password);
