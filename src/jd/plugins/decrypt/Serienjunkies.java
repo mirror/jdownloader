@@ -63,7 +63,7 @@ public class Serienjunkies extends PluginForDecrypt {
     public Pattern getSupportedLinks() {
         boolean rscom = (Boolean) this.getProperties().getProperty("USE_RAPIDSHARE", true);
         boolean rsde = (Boolean) this.getProperties().getProperty("USE_RAPIDSHAREDE", false);
-        boolean net = (Boolean) this.getProperties().getProperty("USE_NETLOAD", true);
+        boolean net = (Boolean) this.getProperties().getProperty("USE_NETLOAD", false);
         next = false;
         String hosterStr = "";
         if (rscom || rsde || net) {
