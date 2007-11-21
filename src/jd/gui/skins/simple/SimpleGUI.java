@@ -137,11 +137,36 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
      */
     public SimpleGUI() {
         super();
-        try {
-            UIManager.setLookAndFeel(new WindowsLookAndFeel());
+     
+        UIManager.LookAndFeelInfo[] info = UIManager.getInstalledLookAndFeels();
+        boolean plafisSet=false;
+        for( int i=0;i<info.length;i++){
+            if(info[i].getName().equals(JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_PLAF))){
+                try {
+                    UIManager.setLookAndFeel(info[i].getClassName());
+                    plafisSet=true;
+                }
+                catch (UnsupportedLookAndFeelException e) {
+                }
+                catch (ClassNotFoundException e) {
+                 
+                }
+                catch (InstantiationException e) {
+                  
+                }
+                catch (IllegalAccessException e) {
+                   
+                } 
+            }
         }
-        catch (UnsupportedLookAndFeelException e) {
+        if(!plafisSet){
+            try {
+                UIManager.setLookAndFeel(new WindowsLookAndFeel());
+            }
+            catch (UnsupportedLookAndFeelException e) {
+            }
         }
+       
         uiListener = new Vector<UIListener>();
         frame = new JFrame();
         // tabbedPane = new JTabbedPane();
@@ -175,6 +200,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         }.start();
        // enableOptionalPlugins(true);
     }
+
     /**
      * Die Aktionen werden initialisiert
      */

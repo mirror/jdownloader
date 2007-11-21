@@ -7,6 +7,7 @@ import java.util.logging.Level;
 
 import javax.swing.JFileChooser;
 import javax.swing.JLabel;
+import javax.swing.UIManager;
 
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -54,6 +55,18 @@ public class ConfigPanelGeneral extends ConfigPanel {
         addGUIConfigEntry(ce);
         ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, configuration, Configuration.PARAM_DISABLE_CONFIRM_DIALOGS, "Bestätigungsdialoge nicht anzeigen").setDefaultValue(false));
         addGUIConfigEntry(ce);
+        
+        String[] plafs;
+        
+        UIManager.LookAndFeelInfo[] info = UIManager.getInstalledLookAndFeels();
+        plafs=new String[info.length];
+        
+        for( int i=0;i<plafs.length;i++){
+            plafs[i]=info[i].getName();
+        }
+        ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, configuration, Configuration.PARAM_PLAF, plafs,    "Style(benötigt JD-Neustart)").setDefaultValue("Windows"));
+addGUIConfigEntry(ce);
+
 //        if(JDUtilities.getJavaVersion()>=1.6d){
 //            ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, configuration, Configuration.PARAM_NO_TRAY, "Trayicon deaktivieren").setDefaultValue(false));
 //               
@@ -67,6 +80,12 @@ public class ConfigPanelGeneral extends ConfigPanel {
         
         ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, configuration, Configuration.PARAM_USE_PACKETNAME_AS_SUBFOLDER, "Wenn möglich Unterordner mit Paketname erstellen").setDefaultValue(false));
         addGUIConfigEntry(ce);
+        
+        ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, configuration, Configuration.PARAM_CLIPBOARD_ALWAYS_ACTIVE, "Zwischenablage immer überwachen").setDefaultValue(false));
+        addGUIConfigEntry(ce);
+       
+        
+        
         
         if (JDUtilities.getHomeDirectory() != null) {
             brsHomeDir = new BrowseFile();

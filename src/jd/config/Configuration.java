@@ -98,6 +98,8 @@ public class Configuration extends Property implements Serializable {
     public static final String      PARAM_LOCALE                 = "LOCALE";
     public static final String PARAM_HTTPSEND_IP = "HTTPSEND_IP";
     public static final String PARAM_CURRENT_BROWSE_PATH = "CURRENT_BROWSE_PATH";
+    public static final String PARAM_CLIPBOARD_ALWAYS_ACTIVE = "CLIPBOARD_ALWAYS_ACTIVE";
+    public static final String PARAM_PLAF = "PLAF";
 
     /**
      * Die unterschiedlichen Interaktionen. (ZB Reconnect nach einem Download)

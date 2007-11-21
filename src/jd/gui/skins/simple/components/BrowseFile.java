@@ -14,6 +14,7 @@ import javax.swing.JPanel;
 import javax.swing.JTextField;
 import javax.swing.border.EtchedBorder;
 
+import jd.config.Configuration;
 import jd.utils.JDUtilities;
 
 public class BrowseFile extends JPanel implements ActionListener {
@@ -72,10 +73,19 @@ public class BrowseFile extends JPanel implements ActionListener {
     private File getPath() {
         JFileChooser fc = new JFileChooser();
         fc.setApproveButtonText(approveButtonText);
-        if (currentPath != null) fc.setCurrentDirectory(currentPath);
+        if (currentPath != null){
+            fc.setCurrentDirectory(currentPath);
+        }else if (JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_CURRENT_BROWSE_PATH)!=null){
+            fc.setCurrentDirectory(new File(JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_CURRENT_BROWSE_PATH)));
+        }
         fc.setFileSelectionMode(fileSelectionMode);
         fc.showOpenDialog(this);
         File ret = fc.getSelectedFile();
+        if(ret.isDirectory()){
+            JDUtilities.getConfiguration().setProperty(Configuration.PARAM_CURRENT_BROWSE_PATH,ret.getAbsolutePath()); 
+        }else{
+            JDUtilities.getConfiguration().setProperty(Configuration.PARAM_CURRENT_BROWSE_PATH,ret.getParentFile().getAbsolutePath());
+        }
         return ret;
     }
 

@@ -57,7 +57,7 @@ public class ConfigurationDialog extends JDialog implements ActionListener {
         this.addConfigPanel(new ConfigPanelPluginForDecrypt(configuration, uiinterface));
         this.addConfigPanel(new ConfigPanelPluginForSearch(configuration, uiinterface));
         this.addConfigPanel(new ConfigPanelPluginsOptional(configuration, uiinterface));
-        
+        this.addConfigPanel(new ConfigPanelPluginForContainer(configuration, uiinterface));
         
         btnSave = new JButton("Speichern");
         btnSave.addActionListener(this);

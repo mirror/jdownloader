@@ -6,7 +6,8 @@ import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.UnsupportedFlavorException;
 import java.io.IOException;
 
-import jd.plugins.Plugin;
+import jd.config.Configuration;
+import jd.utils.JDUtilities;
 
 
 /**
@@ -60,7 +61,7 @@ public class ClipboardHandler extends Thread {
                     catch (InterruptedException e) {
                     }
                     
-                    if (enabled) {
+                    if (isEnabled()) {
                         
                         try {
                             data = (String) clipboard.getData(DataFlavor.stringFlavor);
@@ -88,7 +89,7 @@ public class ClipboardHandler extends Thread {
  * @return true/false
  */
     public boolean isEnabled() {
-        return enabled;
+        return enabled||JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_CLIPBOARD_ALWAYS_ACTIVE, false);
     }
 /**
  * Schaltet die clipboardüberwachung an/aus
