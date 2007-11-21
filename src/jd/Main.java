@@ -195,7 +195,7 @@ public class Main {
 //            str+=bytes[i]+", ";
 //        }
 //        logger.info(str);
-        logger.info("ööö"+  cl.getResource("META-INF/JDOWNLOA.DSA"));
+       
         JDUtilities.addImage("add", toolkit.getImage(cl.getResource("img/add.png")));
         JDUtilities.addImage("configuration", toolkit.getImage(cl.getResource("img/configuration.png")));
         JDUtilities.addImage("delete", toolkit.getImage(cl.getResource("img/delete.png")));

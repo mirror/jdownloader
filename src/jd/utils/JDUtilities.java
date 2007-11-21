@@ -1721,7 +1721,7 @@ public static Logger getLogger() {
     return logger;
 }
 /**
- * Fügt dem Log eine Exception hinzu
+ * Fügt dem Log eine Exception hinzu 
  * @param e
  */
 public static void logException(Exception e){
