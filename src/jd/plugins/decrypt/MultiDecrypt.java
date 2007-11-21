@@ -44,7 +44,7 @@ public class MultiDecrypt extends PluginForDecrypt {
     public Pattern getSupportedLinks() {
         String strSupported = this.getProperties().getStringProperty("SUPPORTED", "").trim();
         String[] Supported;
-        if(!strSupported.isEmpty())
+        if(!strSupported.matches("[\\s]*"))
         {
         String[] Supp = strSupported.split(System.getProperty("line.separator"));
         Supported = new String[Supp.length+SUPPORTEDHOSTS.length];
@@ -66,9 +66,9 @@ public class MultiDecrypt extends PluginForDecrypt {
                 Supported[i] = Supported[i].replaceFirst("http://", "").trim();
                 if (Supported[i].matches("www\\.[^\\/]+?\\..*"))
                     Supported[i] = Supported[i].replaceFirst(".*?\\.", "");
-                if(b && !Supported[i].trim().isEmpty())
+                if(b && !Supported[i].trim().matches("[\\s]*"))
                 patternStr += "|" + Supported[i];
-                else if(!b && !Supported[i].trim().isEmpty() )
+                else if(!b && !Supported[i].trim().matches("[\\s]*"))
                 {
                     b=true;
                     patternStr += Supported[0];
@@ -103,7 +103,7 @@ public class MultiDecrypt extends PluginForDecrypt {
             decryptedLinks.addAll((Collection<? extends String[]>) ((PluginStep) filesearch.doStep(new PluginStep(PluginStep.STEP_SEARCH, null), parameter)).getParameter());
             for (int i = decryptedLinks.size() - 1; i >= 0 && decryptedLinks.size() > i; i--) {
                 String[] link = decryptedLinks.elementAt(i);
-                if (link[0] == null || link[0].isEmpty() || link[0].matches(lnk))
+                if (link[0] == null || link[0].matches("[\\s]*") || link[0].matches(lnk))
                     decryptedLinks.remove(i);
                 try {
                     Thread.sleep(20);
