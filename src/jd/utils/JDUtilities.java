@@ -1475,7 +1475,7 @@ public class JDUtilities {
      * @param waitForReturn
      * @return null oder die rückgabe des befehls falls waitforreturn == true
      *         ist
-     */ 
+     */  
     public static String runCommand(String command, String parameter, String runIn, int waitForReturn) {
         String[] params = (command + " " + parameter).split("\\ ");
         ProcessBuilder pb = new ProcessBuilder(params);
