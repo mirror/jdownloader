@@ -1,7 +1,6 @@
 package jd.controlling;
 
 import java.io.File;
-import java.util.Iterator;
 import java.util.logging.Logger;
 
 import jd.controlling.interaction.Interaction;
@@ -206,6 +205,9 @@ public class SingleDownloadController extends ControlMulticaster {
                 case DownloadLink.STATUS_ERROR_FILE_ABUSED:
                     this.onErrorAbused(downloadLink, plugin, step);
                     break;
+                case DownloadLink.STATUS_ERROR_FILE_NOT_UPLOADED:
+                    this.onErrorNotUploaded(downloadLink, plugin, step);
+                    break;
                 case DownloadLink.STATUS_ERROR_UNKNOWN_RETRY:
                     this.onErrorRetry(downloadLink, plugin, step);
                     break;
@@ -397,6 +399,19 @@ public class SingleDownloadController extends ControlMulticaster {
      */
     private void onErrorAbused(DownloadLink downloadLink, PluginForHost plugin, PluginStep step) {
         downloadLink.setStatusText("File Abused");
+        downloadLink.setInProgress(false);
+        fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SINGLE_DOWNLOAD_CHANGED, downloadLink));
+    }
+    
+    /**
+     * Wird aufgerufen wenn eine Datei nicht fertig upgeloaded wurde
+     * 
+     * @param downloadLink
+     * @param plugin
+     * @param step
+     */
+    private void onErrorNotUploaded(DownloadLink downloadLink, PluginForHost plugin, PluginStep step) {
+        downloadLink.setStatusText("File not full uploaded");
         downloadLink.setInProgress(false);
         fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SINGLE_DOWNLOAD_CHANGED, downloadLink));
     }

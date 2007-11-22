@@ -125,6 +125,7 @@ public class Rapidshare extends PluginForHost {
     private String                         hardwareDefektString             = "wegen Hardwaredefekt nicht";
     private String                         deletedByUploaderString          = "Grund: Vom Uploader";
     private String                         toManyUser                       = "Zu viele Benutzer";
+    private String						   notUploaded						= "Diese Datei ist noch nicht vollst";
     private int                            waitTime                         = 500;
     private String                         captchaAddress;
     private String                         postTarget;
@@ -322,6 +323,14 @@ public class Rapidshare extends PluginForHost {
                             step.setStatus(PluginStep.STATUS_ERROR);
                             return step;
                         }
+                        
+                        if (requestInfo.containsHTML(notUploaded)) {
+                        	logger.severe("file not full uploaded");
+                        	downloadLink.setStatus(DownloadLink.STATUS_ERROR_FILE_NOT_UPLOADED);
+                        	step.setStatus(PluginStep.STATUS_ERROR);
+                        	return step;
+                        }
+                        
                         downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN);
                         step.setStatus(PluginStep.STATUS_ERROR);
                         logger.warning("could not get downloadInfo ");

@@ -100,6 +100,11 @@ public class DownloadLink implements Serializable,Comparable<DownloadLink> {
      */
     public static final int STATUS_ERROR_NO_FREE_SPACE = 19;
     /**
+     * Die angefordete Datei wurde noch nicht fertig upgeloaded
+     */
+    public static final int STATUS_ERROR_FILE_NOT_UPLOADED = 20;
+    
+    /**
      * serialVersionUID
      */
     private FilePackage       filePackage;
