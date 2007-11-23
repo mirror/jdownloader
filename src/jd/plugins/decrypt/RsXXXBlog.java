@@ -29,7 +29,7 @@ public class RsXXXBlog extends PluginForDecrypt {
  
    
     private Pattern patternSupported     = getSupportPattern("http://rs.xxx-blog.org/com-[+]/[+]");
-
+    private static final String DEFAULT_PASSWORD = "xxx-blog.dl.am";
 
     public RsXXXBlog() {
         super();
@@ -82,14 +82,14 @@ public class RsXXXBlog extends PluginForDecrypt {
         String cryptedLink = (String) parameter;
         switch (step.getStep()) {
             case PluginStep.STEP_DECRYPT:
-                Vector<String> decryptedLinks = new Vector<String>();
+                Vector<String[]> decryptedLinks = new Vector<String[]>();
              // Zählen aller verfügbaren Treffer
                 try {
                     URL url = new URL(cryptedLink);
                     RequestInfo requestInfo = getRequest(url, null, null, false);
                    HashMap<String,String> fields=this.getInputHiddenFields(requestInfo.getHtmlCode(),"postit","starten");
                   String newURL= "http://rapidshare.com"+JDUtilities.htmlDecode(fields.get("uri"));
-                  decryptedLinks.add(newURL);
+                  decryptedLinks.add(new String[]{newURL, DEFAULT_PASSWORD, null});
                 }
                 catch (MalformedURLException e) {
                     e.printStackTrace();
