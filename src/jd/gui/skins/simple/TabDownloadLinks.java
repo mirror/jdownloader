@@ -43,38 +43,55 @@ import jd.utils.JDUtilities;
  * @author astaldo
  */
 public class TabDownloadLinks extends JPanel implements PluginListener, ControlListener, MouseListener {
-    private final int            COL_INDEX          = 0;
-    private final int            COL_NAME           = 1;
-    private final int            COL_HOST           = 2;
-    private final int            COL_STATUS         = 3;
-    private final int            COL_PROGRESS       = 4;
-    private final Color          COLOR_DONE         = new Color(0, 255, 0, 20);
-    private final Color          COLOR_ERROR        = new Color(255, 0, 0, 20);
-    private final Color          COLOR_DISABLED     = new Color(50, 50, 50, 50);
-    private final Color          COLOR_WAIT         = new Color(0, 0, 100, 20);
-    private  final Color            COLOR_ERROR_OFFLINE = new Color(255, 0, 0, 60);
+    private final int            COL_INDEX           = 0;
+
+    private final int            COL_NAME            = 1;
+
+    private final int            COL_HOST            = 2;
+
+    private final int            COL_STATUS          = 3;
+
+    private final int            COL_PROGRESS        = 4;
+
+    private final Color          COLOR_DONE          = new Color(0, 255, 0, 20);
+
+    private final Color          COLOR_ERROR         = new Color(255, 0, 0, 20);
+
+    private final Color          COLOR_DISABLED      = new Color(50, 50, 50, 50);
+
+    private final Color          COLOR_WAIT          = new Color(0, 0, 100, 20);
+
+    private final Color          COLOR_ERROR_OFFLINE = new Color(255, 0, 0, 60);
+
     /**
      * serialVersionUID
      */
-    private static final long    serialVersionUID   = 3033753799006526304L;
+    private static final long    serialVersionUID    = 3033753799006526304L;
+
     /**
      * Diese Tabelle enthält die eigentlichen DownloadLinks
      */
     private InternalTable        table;
+
     /**
      * Das interen TableModel, um die Daten anzuzeigen
      */
-    private InternalTableModel   internalTableModel = new InternalTableModel();
+    private InternalTableModel   internalTableModel  = new InternalTableModel();
+
     /**
      * Dieser Vector enthält alle Downloadlinks
      */
-    private Vector<DownloadLink> allLinks           = new Vector<DownloadLink>();
+    private Vector<DownloadLink> allLinks            = new Vector<DownloadLink>();
+
     /**
      * Der Logger für Meldungen
      */
-    private Logger               logger             = JDUtilities.getLogger();
+    private Logger               logger              = JDUtilities.getLogger();
+
     private JPopupMenu           popup;
+
     private SimpleGUI            parent;
+
     /**
      * Erstellt eine neue Tabelle
      * 
@@ -115,14 +132,17 @@ public class TabDownloadLinks extends JPanel implements PluginListener, ControlL
         // table.setPreferredSize(new Dimension(800,450));
         add(scrollPane);
     }
+
     public void setDownloadLinks(DownloadLink links[]) {
         allLinks.clear();
         addLinks(links);
     }
+
     // Zeigt das Popup menü an
     private void showPopup(int x, int y, Vector<DownloadLink> downloadLinks) {
         new InternalPopup(table, x, y, downloadLinks);
     }
+
     private void checkColumnSize() {
         int minSize = 0;
         int width = 0;
@@ -135,6 +155,7 @@ public class TabDownloadLinks extends JPanel implements PluginListener, ControlL
         width += 5;
         if (width > tableColumn.getWidth()) tableColumn.setPreferredWidth(width);
     }
+
     /**
      * Hier werden Links zu dieser Tabelle hinzugefügt.
      * 
@@ -151,6 +172,7 @@ public class TabDownloadLinks extends JPanel implements PluginListener, ControlL
         checkColumnSize();
         fireTableChanged();
     }
+
     /**
      * Entfernt die aktuell selektierten Links
      */
@@ -160,6 +182,7 @@ public class TabDownloadLinks extends JPanel implements PluginListener, ControlL
         table.getSelectionModel().clearSelection();
         fireTableChanged();
     }
+
     /**
      * Liefert alle selektierten Links zurück
      * 
@@ -173,6 +196,7 @@ public class TabDownloadLinks extends JPanel implements PluginListener, ControlL
         }
         return linksSelected;
     }
+
     public int[] getIndexes(Vector<DownloadLink> selectedLinks) {
         int rows[] = new int[selectedLinks.size()];
         Vector<Integer> indexes = new Vector<Integer>();
@@ -186,6 +210,7 @@ public class TabDownloadLinks extends JPanel implements PluginListener, ControlL
         }
         return rows;
     }
+
     public void setSelectedDownloadLinks(Vector<DownloadLink> selectedDownloadLinks) {
         int index;
         Iterator<DownloadLink> iterator = selectedDownloadLinks.iterator();
@@ -194,6 +219,7 @@ public class TabDownloadLinks extends JPanel implements PluginListener, ControlL
             table.getSelectionModel().addSelectionInterval(index, index);
         }
     }
+
     /**
      * 
      * Hiermit werden die selektierten Zeilen innerhalb der Tabelle verschoben
@@ -202,7 +228,8 @@ public class TabDownloadLinks extends JPanel implements PluginListener, ControlL
      */
     public void moveSelectedItems(int direction) {
         Vector<DownloadLink> selectedLinks = getSelectedObjects();
-        int selectedRows[] = table.getSelectedRows();;
+        int selectedRows[] = table.getSelectedRows();
+        ;
         table.getSelectionModel().clearSelection();
         DownloadLink tempLink;
         switch (direction) {
@@ -215,8 +242,8 @@ public class TabDownloadLinks extends JPanel implements PluginListener, ControlL
                 allLinks.addAll(allLinks.size(), selectedLinks);
                 break;
             case JDAction.ITEMS_MOVE_UP:
-                if(selectedRows[0]>0){
-                    for(int i=0;i<selectedRows.length;i++){
+                if (selectedRows[0] > 0) {
+                    for (int i = 0; i < selectedRows.length; i++) {
                         tempLink = allLinks.get(selectedRows[i] - 1);
                         allLinks.set(selectedRows[i] - 1, allLinks.get(selectedRows[i]));
                         allLinks.set(selectedRows[i], tempLink);
@@ -224,8 +251,8 @@ public class TabDownloadLinks extends JPanel implements PluginListener, ControlL
                 }
                 break;
             case JDAction.ITEMS_MOVE_DOWN:
-                if(selectedRows[selectedRows.length-1]+1<allLinks.size()){
-                    for(int i=selectedRows.length-1;i>=0;i--){
+                if (selectedRows[selectedRows.length - 1] + 1 < allLinks.size()) {
+                    for (int i = selectedRows.length - 1; i >= 0; i--) {
                         tempLink = allLinks.get(selectedRows[i] + 1);
                         allLinks.set(selectedRows[i] + 1, allLinks.get(selectedRows[i]));
                         allLinks.set(selectedRows[i], tempLink);
@@ -240,20 +267,22 @@ public class TabDownloadLinks extends JPanel implements PluginListener, ControlL
             table.getSelectionModel().addSelectionInterval(rows[i], rows[i]);
         }
     }
+
     public Vector<DownloadLink> getLinks() {
         return allLinks;
     }
+
     /**
      * Hiermit wird die Tabelle aktualisiert Die Markierte reihe wird nach dem
-     * ändern wieder neu gesetzt
-     * TODO: Selection verwaltung
+     * ändern wieder neu gesetzt TODO: Selection verwaltung
      */
     public void fireTableChanged() {
         Vector<DownloadLink> selectedDownloadLinks = getSelectedObjects();
-       
+
         table.tableChanged(new TableModelEvent(table.getModel()));
         setSelectedDownloadLinks(selectedDownloadLinks);
     }
+
     public void pluginEvent(PluginEvent event) {
         switch (event.getID()) {
             case PluginEvent.PLUGIN_DATA_CHANGED:
@@ -261,6 +290,7 @@ public class TabDownloadLinks extends JPanel implements PluginListener, ControlL
                 break;
         }
     }
+
     public void controlEvent(ControlEvent event) {
         switch (event.getID()) {
             case ControlEvent.CONTROL_SINGLE_DOWNLOAD_CHANGED:
@@ -268,10 +298,15 @@ public class TabDownloadLinks extends JPanel implements PluginListener, ControlL
                 break;
         }
     }
-    public void mouseClicked(MouseEvent e)  { }
-    public void mouseEntered(MouseEvent e)  { }
-    public void mouseExited(MouseEvent e)   { }
-    public void mouseReleased(MouseEvent e) { }
+
+    public void mouseClicked(MouseEvent e) {}
+
+    public void mouseEntered(MouseEvent e) {}
+
+    public void mouseExited(MouseEvent e) {}
+
+    public void mouseReleased(MouseEvent e) {}
+
     public void mousePressed(MouseEvent e) {
         // TODO: isPopupTrigger() funktioniert nicht
         // logger.info("Press"+e.isPopupTrigger() );
@@ -289,31 +324,45 @@ public class TabDownloadLinks extends JPanel implements PluginListener, ControlL
             showPopup(x, y, this.getSelectedObjects());
         }
     }
+
     private class InternalTable extends JTable {
         /**
          * serialVersionUID
          */
         private static final long         serialVersionUID          = 4424930948374806098L;
+
         private InternalTableCellRenderer internalTableCellRenderer = new InternalTableCellRenderer();
+
         @Override
         public TableCellRenderer getCellRenderer(int arg0, int arg1) {
             return internalTableCellRenderer;
         }
     }
+
     private class InternalPopup extends JPopupMenu implements ActionListener {
         /**
          * 
          */
         private static final long    serialVersionUID = -6561857482676777562L;
+
         private JMenuItem            delete;
+
         private JMenuItem            enable;
+
         private JMenuItem            info;
+
         private Vector<DownloadLink> downloadLinks;
+
         private JMenuItem            top;
+
         private JMenuItem            bottom;
+
         private JMenuItem            reset;
+
         private JMenuItem            openHome;
-        private JMenuItem loadinfo;
+
+        private JMenuItem            loadinfo;
+
         public InternalPopup(JTable invoker, int x, int y, Vector<DownloadLink> downloadLink) {
             popup = new JPopupMenu();
             this.downloadLinks = downloadLink;
@@ -350,11 +399,12 @@ public class TabDownloadLinks extends JPanel implements PluginListener, ControlL
             popup.add(reset);
             popup.show(table, x, y);
         }
+
         public void actionPerformed(ActionEvent e) {
             if (e.getSource() == openHome) {
                 try {
                     logger.info("TODO: Win only");
-                    JDUtilities.runCommand("explorer","\"" + new File(downloadLinks.elementAt(0).getFileOutput()).getParent() + "\"",null,0);
+                    JDUtilities.runCommand("explorer", new String[] { new File(downloadLinks.elementAt(0).getFileOutput()).getParent() }, null, 0);
                 }
                 catch (Exception ec) {
                 }
@@ -371,16 +421,16 @@ public class TabDownloadLinks extends JPanel implements PluginListener, ControlL
                 parent.fireUIEvent(new UIEvent(parent, UIEvent.UI_LINKS_CHANGED, null));
             }
             if (e.getSource() == info) {
-                //                Point p=this.getLocationOnScreen();
-                //                if(p==null){logger.info("NULL");
-                //                }else{
+                // Point p=this.getLocationOnScreen();
+                // if(p==null){logger.info("NULL");
+                // }else{
                 new DownloadInfo(parent.getFrame(), downloadLinks.elementAt(0));
-                //            }
+                // }
             }
             if (e.getSource() == loadinfo) {
                 Vector<DownloadLink> selectedDownloadLinks = getSelectedObjects();
-                logger.info("selectedDownloadLinks "+selectedDownloadLinks.size());
-                logger.info(selectedDownloadLinks+"");
+                logger.info("selectedDownloadLinks " + selectedDownloadLinks.size());
+                logger.info(selectedDownloadLinks + "");
                 for (int i = 0; i < selectedDownloadLinks.size(); i++) {
                     DownloadLink link = selectedDownloadLinks.elementAt(i);
                     link.isAvailable();
@@ -391,11 +441,11 @@ public class TabDownloadLinks extends JPanel implements PluginListener, ControlL
                     catch (InterruptedException e2) {
                     }
                 }
-                
+
                 parent.fireUIEvent(new UIEvent(parent, UIEvent.UI_LINKS_CHANGED, null));
-              
+
             }
-            
+
             if (e.getSource() == top) {
                 moveSelectedItems(JDAction.ITEMS_MOVE_TOP);
             }
@@ -415,6 +465,7 @@ public class TabDownloadLinks extends JPanel implements PluginListener, ControlL
             }
         }
     }
+
     /**
      * Dieses TableModel sorgt dafür, daß die Daten der Downloadlinks korrekt
      * dargestellt werden
@@ -426,15 +477,23 @@ public class TabDownloadLinks extends JPanel implements PluginListener, ControlL
          * serialVersionUID
          */
         private static final long    serialVersionUID = -357970066822953957L;
+
         /**
-         * ProgressBar Vectro. Alle progressbars werden einmal angelegt und darin abgespeichert
+         * ProgressBar Vectro. Alle progressbars werden einmal angelegt und
+         * darin abgespeichert
          */
         private Vector<JProgressBar> progressBars     = new Vector<JProgressBar>();
+
         private String               labelIndex       = JDUtilities.getResourceString("label.tab.download.column_index");
+
         private String               labelLink        = JDUtilities.getResourceString("label.tab.download.column_link");
+
         private String               labelHost        = JDUtilities.getResourceString("label.tab.download.column_host");
+
         private String               labelStatus      = JDUtilities.getResourceString("label.tab.download.column_status");
+
         private String               labelProgress    = JDUtilities.getResourceString("label.tab.download.column_progress");
+
         @Override
         public String getColumnName(int column) {
             switch (column) {
@@ -451,6 +510,7 @@ public class TabDownloadLinks extends JPanel implements PluginListener, ControlL
             }
             return null;
         }
+
         public Class<?> getColumnClass(int columnIndex) {
             switch (columnIndex) {
                 case COL_INDEX:
@@ -465,12 +525,15 @@ public class TabDownloadLinks extends JPanel implements PluginListener, ControlL
             }
             return String.class;
         }
+
         public int getColumnCount() {
             return 5;
         }
+
         public int getRowCount() {
             return allLinks.size();
         }
+
         public Object getValueAt(int rowIndex, int columnIndex) {
             if (rowIndex < allLinks.size()) {
                 DownloadLink downloadLink = allLinks.get(rowIndex);
@@ -497,7 +560,7 @@ public class TabDownloadLinks extends JPanel implements PluginListener, ControlL
                             p.setStringPainted(true);
                             p.setBackground(Color.WHITE);
                             p.setValue((int) downloadLink.getDownloadCurrent());
-                            p.setString((int) (100 * p.getPercentComplete()) + "% (" + JDUtilities.formatBytesToMB(p.getValue()) + "/" +JDUtilities.formatBytesToMB(p.getMaximum()) + ")");
+                            p.setString((int) (100 * p.getPercentComplete()) + "% (" + JDUtilities.formatBytesToMB(p.getValue()) + "/" + JDUtilities.formatBytesToMB(p.getMaximum()) + ")");
                             return p;
                         }
                         else if (downloadLink.getRemainingWaittime() > 0 && downloadLink.getWaitTime() >= downloadLink.getRemainingWaittime()) {
@@ -514,16 +577,18 @@ public class TabDownloadLinks extends JPanel implements PluginListener, ControlL
             }
             return null;
         }
+
         public DownloadLink getDownloadLinkAtRow(int row) {
             return allLinks.get(row);
         }
     }
+
     private class InternalTableCellRenderer extends DefaultTableCellRenderer {
         /**
          * serialVersionUID
          */
         private static final long serialVersionUID = -3912572910439565199L;
-    
+
         public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
             if (value instanceof JProgressBar) return (JProgressBar) value;
             Component c = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
@@ -541,7 +606,7 @@ public class TabDownloadLinks extends JPanel implements PluginListener, ControlL
                 else if (dLink.getStatus() != DownloadLink.STATUS_TODO && dLink.getStatus() != DownloadLink.STATUS_ERROR_DOWNLOAD_LIMIT && dLink.getStatus() != DownloadLink.STATUS_DOWNLOAD_IN_PROGRESS) {
                     c.setBackground(COLOR_ERROR);
                 }
-                
+
                 else if (dLink.isAvailabilityChecked() && !dLink.isAvailable()) {
                     c.setBackground(COLOR_ERROR_OFFLINE);
                 }
@@ -552,7 +617,7 @@ public class TabDownloadLinks extends JPanel implements PluginListener, ControlL
                     c.setBackground((Color) dLink.getFilePackage().getProperty("color"));
                 }
             }
-            //          logger.info("jj");
+            // logger.info("jj");
             return c;
         }
     }

@@ -170,7 +170,7 @@ class jdUnrarPasswordListDialog extends JDialog implements ActionListener {
     public void actionPerformed(ActionEvent e) {
         if (e.getSource() == btnSave) {
             jdUnrar unrar = new jdUnrar();
-            unrar.editPasswordlist(pwField.getText().split(System.getProperty("line.separator")));
+            unrar.editPasswordlist(JDUtilities.splitByNewline(pwField.getText()));
             dispose();
 
         } else {

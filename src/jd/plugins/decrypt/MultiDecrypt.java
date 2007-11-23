@@ -11,6 +11,7 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginStep;
 import jd.plugins.event.PluginEvent;
 import jd.plugins.search.FileSearch;
+import jd.utils.JDUtilities;
 
 public class MultiDecrypt extends PluginForDecrypt {
 
@@ -46,7 +47,7 @@ public class MultiDecrypt extends PluginForDecrypt {
         String[] Supported;
         if(!strSupported.matches("[\\s]*"))
         {
-        String[] Supp = strSupported.split(System.getProperty("line.separator"));
+        String[] Supp = JDUtilities.splitByNewline(strSupported);
         Supported = new String[Supp.length+SUPPORTEDHOSTS.length];
         for (int i = 0; i < Supp.length; i++) {
             Supported[i] = Supp[i];

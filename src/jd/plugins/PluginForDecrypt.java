@@ -55,7 +55,7 @@ public abstract class PluginForDecrypt extends Plugin {
 
             if (nextStep(step) == null) {
                 Vector links = (Vector) step.getParameter();
-                if (links == null || links.size() == 0) {
+                if (links == null ) {
                     logger.severe("ACHTUNG Decrypt Plugins müssen im letzten schritt einen  Vector<String[]> oder Vector<String> parameter  übergeben!");
 
                     return new Vector<String[]>();

@@ -99,7 +99,7 @@ public class ExternReconnect extends Interaction implements Serializable {
         String preIp = JDUtilities.getIPAddress();
 
         logger.finer("IP befor: " + preIp);
-       logger.finer("Execute Returns: "+ JDUtilities.runCommand(command, parameter, executeIn, waitForReturn));
+       logger.finer("Execute Returns: "+ JDUtilities.runCommand(command, JDUtilities.splitByNewline(parameter), executeIn, waitForReturn));
         logger.finer("Wait " + waittime + " seconds ...");
         try {
             Thread.sleep(waittime * 1000);
@@ -159,7 +159,7 @@ public class ExternReconnect extends Interaction implements Serializable {
         ConfigEntry cfg;
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this, PROPERTY_EXTERN_RECONNECT_DISABLED, "Event deaktiviert").setDefaultValue(false));
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, this, PROPERTY_RECONNECT_COMMAND, "Befehl"));
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, this, PROPERTY_RECONNECT_PARAMETER, "Parameter"));
+        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_TEXTAREA, this, PROPERTY_RECONNECT_PARAMETER, "Parameter (1 Parameter/Zeile)"));
 
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_BROWSEFOLDER, this, PROPERTY_RECONNECT_EXECUTE_FOLDER, "Ausführen in (Ordner der Anwendung)"));
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_SPINNER, this, PARAM_IPCHECKWAITTIME, "Wartezeit bis zum ersten IP-Check[sek]", 0, 600).setDefaultValue(0));

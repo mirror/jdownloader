@@ -396,6 +396,9 @@ public class Rapidshare extends PluginForHost {
                         return step;
                     }
                     String wait = getSimpleMatch(requestInfo.getHtmlCode(), ticketWaitTimepattern, 0);
+               
+                    
+                    logger.info(ticketWaitTimepattern);
                     if (wait != null) {
                         long pendingTime = Long.parseLong(wait);
                         logger.info("Ticket: wait " + pendingTime + " seconds");

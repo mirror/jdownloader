@@ -85,12 +85,12 @@ public class JDUtilities {
      * Parametername für den Konfigpath
      */
     public static final String                     CONFIG_PATH         = "jDownloader.config";
+
     /**
      * Name des Loggers
      */
-    public static String          LOGGER_NAME     = "java_downloader";
-    
-  
+    public static String                           LOGGER_NAME         = "java_downloader";
+
     /**
      * Titel der Applikation
      */
@@ -356,7 +356,10 @@ public class JDUtilities {
         center.y -= child.getHeight() / 2;
         return center;
     }
-
+public static String[] splitByNewline(String arg){
+    if(arg==null)return new String[]{};
+    return arg.split("[\r|\n|\r\n]{1,2}");
+}
     /**
      * Liefert eine Zeichenkette aus dem aktuellen ResourceBundle zurück
      * 
@@ -653,6 +656,7 @@ public class JDUtilities {
         getJDClassLoader();
         Iterator iterator;
         // Zuerst Plugins zum Dekodieren verschlüsselter Links
+        logger.finer("Load decryter");
         iterator = Service.providers(PluginForDecrypt.class);
         while (iterator.hasNext()) {
             PluginForDecrypt p = (PluginForDecrypt) iterator.next();
@@ -660,6 +664,7 @@ public class JDUtilities {
             logger.info("Decrypt-Plugin    : " + p.getPluginName());
         }
         // Danach die Plugins der verschiedenen Anbieter
+        logger.finer("Load Host plugins");
         iterator = Service.providers(PluginForHost.class);
         while (iterator.hasNext()) {
             PluginForHost p = (PluginForHost) iterator.next();
@@ -667,6 +672,7 @@ public class JDUtilities {
             logger.info("Host-Plugin       : " + p.getPluginName());
         }
         // Danach die Plugins der verschiedenen Suchengines
+        logger.finer("Load Search plugins");
         iterator = Service.providers(PluginForSearch.class);
         while (iterator.hasNext()) {
             PluginForSearch p = (PluginForSearch) iterator.next();
@@ -674,8 +680,9 @@ public class JDUtilities {
             logger.info("Search-Plugin     : " + p.getPluginName());
         }
 
-        // Danach die Plugins der verschiedenen Suchengines
+        logger.finer("Load Containerplugins");
         iterator = Service.providers(PluginForContainer.class);
+
         while (iterator.hasNext()) {
             PluginForContainer p = (PluginForContainer) iterator.next();
             pluginsForContainer.add(p);
@@ -1267,7 +1274,7 @@ public class JDUtilities {
 
         FileChannel outChannel = null;
         try {
-            if(!out.exists()){
+            if (!out.exists()) {
                 out.getParentFile().mkdirs();
                 out.createNewFile();
             }
@@ -1295,7 +1302,7 @@ public class JDUtilities {
             return false;
         }
         catch (IOException e) {
-            
+
             e.printStackTrace();
         }
         try {
@@ -1475,9 +1482,22 @@ public class JDUtilities {
      * @param waitForReturn
      * @return null oder die rückgabe des befehls falls waitforreturn == true
      *         ist
-     */  
-    public static String runCommand(String command, String parameter, String runIn, int waitForReturn) {
-        String[] params = (command + " " + parameter).split("\\ ");
+     */
+    public static String runCommand(String command, String[] parameter, String runIn, int waitForReturn) {
+
+        if (parameter == null) parameter = new String[] {};
+        String[] params = new String[parameter.length + 1];
+        params[0] = command;
+        System.arraycopy(parameter, 0, params, 1, parameter.length);
+        Vector<String> tmp = new Vector<String>();
+        String par = "";
+        for (int i = 0; i < params.length; i++) {
+            if (params[i] != null && params[i].trim().length() > 0) {
+                par += params[i] + " ";
+                tmp.add(params[i].trim());
+            }
+        }
+        params = tmp.toArray(new String[] {});
         ProcessBuilder pb = new ProcessBuilder(params);
         if (runIn != null && runIn.length() > 0) {
             if (new File(runIn).exists()) {
@@ -1488,8 +1508,9 @@ public class JDUtilities {
             }
         }
         Process process;
+
         try {
-            logger.finer("Start " + command + " " + parameter + " in " + runIn + " wait " + waitForReturn);
+            logger.finer("Start " + par + " in " + runIn + " wait " + waitForReturn);
             process = pb.start();
             if (waitForReturn > 0) {
                 long t = System.currentTimeMillis();
@@ -1681,62 +1702,68 @@ public class JDUtilities {
     public static void setLocale(Locale locale) {
         JDUtilities.locale = locale;
     }
-/***
- * Gibt die Endung einer FIle zurück oder null
- * @param ret
- * @return
- */
+
+    /***************************************************************************
+     * Gibt die Endung einer FIle zurück oder null
+     * 
+     * @param ret
+     * @return
+     */
     public static String getFileExtension(File ret) {
-      String str=ret.getAbsolutePath();
-      int i1=str.indexOf("/");
-      int i2=str.indexOf("\\");
-      int i3=str.indexOf(".");
-      
-      if(i3>i2 && i3>i1){
-          return str.substring(i3+1);
-      }
-      return null;
+        String str = ret.getAbsolutePath();
+        int i1 = str.indexOf("/");
+        int i2 = str.indexOf("\\");
+        int i3 = str.indexOf(".");
+
+        if (i3 > i2 && i3 > i1) {
+            return str.substring(i3 + 1);
+        }
+        return null;
     }
 
-/**
- * Liefert die Klasse zurück, mit der Nachrichten ausgegeben werden können
- * Falls dieser Logger nicht existiert, wird ein neuer erstellt
- * 
- * @return LogKlasse
- */
-public static Logger getLogger() {
-    if (logger == null) {
-        
-        logger = Logger.getLogger(LOGGER_NAME);
-        Formatter formatter = new LogFormatter();
-        logger.setUseParentHandlers(false);
-        Handler console = new ConsoleHandler();
-        console.setLevel(Level.ALL);
-        console.setFormatter(formatter);
-        logger.addHandler(console);
-    
-        logger.setLevel(Level.ALL);
-        logger.finer("Init Logger:"+LOGGER_NAME);
+    /**
+     * Liefert die Klasse zurück, mit der Nachrichten ausgegeben werden können
+     * Falls dieser Logger nicht existiert, wird ein neuer erstellt
+     * 
+     * @return LogKlasse
+     */
+    public static Logger getLogger() {
+        if (logger == null) {
+
+            logger = Logger.getLogger(LOGGER_NAME);
+            Formatter formatter = new LogFormatter();
+            logger.setUseParentHandlers(false);
+            Handler console = new ConsoleHandler();
+            console.setLevel(Level.ALL);
+            console.setFormatter(formatter);
+            logger.addHandler(console);
+
+            logger.setLevel(Level.ALL);
+            logger.finer("Init Logger:" + LOGGER_NAME);
+        }
+        return logger;
     }
-    return logger;
-}
-/**
- * Fügt dem Log eine Exception hinzu 
- * @param e
- */
-public static void logException(Exception e){
-    getLogger().log(Level.SEVERE, "Exception", e);
-}
-/**
- * Gibt den Stacktrace einer exception zurück
- * @param e
- * @return
- */
-public static String getStackTraceForException(Exception e) {    
-    StringWriter sw = new StringWriter(2000);
-    PrintWriter pw = new PrintWriter(sw);
-    e.printStackTrace(pw);
-    return sw.getBuffer().toString();
- }
+
+    /**
+     * Fügt dem Log eine Exception hinzu
+     * 
+     * @param e
+     */
+    public static void logException(Exception e) {
+        getLogger().log(Level.SEVERE, "Exception", e);
+    }
+
+    /**
+     * Gibt den Stacktrace einer exception zurück
+     * 
+     * @param e
+     * @return
+     */
+    public static String getStackTraceForException(Exception e) {
+        StringWriter sw = new StringWriter(2000);
+        PrintWriter pw = new PrintWriter(sw);
+        e.printStackTrace(pw);
+        return sw.getBuffer().toString();
+    }
 
 }

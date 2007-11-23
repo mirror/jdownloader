@@ -116,6 +116,7 @@ public class Main {
                 uiInterface.showMessageDialog("Linkliste inkompatibel. \r\nBackup angelegt: " + newFile + " Liste geleert!");
             }
         }
+        logger.info("OS: "+System.getProperty("os.name")+", "+System.getProperty("os.arch")+", "+System.getProperty("os.version"));
         logger.info("Registriere Plugins");
         Iterator<PluginForHost> iteratorHost = JDUtilities.getPluginsForHost().iterator();
         while (iteratorHost.hasNext()) {

@@ -595,9 +595,9 @@ public class JAntiCaptcha {
         bw2.setAlwaysOnTop(true);
         bw2.setLocationByScreenPercent(50, 5);
         bw2.add(new JLabel("Aus Captcha:"), UTILITIES.getGBC(0, 0, 2, 2));
-        Letter test=letters[2].getLinedLetter();
+        //Letter test=letters[2].getLinedLetter();
         
-        BasicWindow.showImage(test.getImage(10));
+        //BasicWindow.showImage(test.getImage(10));
         for (int i = 0; i < letters.length; i++) {
      
             bw2.add(new ImageComponent(letters[i].getImage(jas.getInteger("simplifyFaktor"))), UTILITIES.getGBC(i * 2 + 2, 0, 2, 2));

@@ -48,9 +48,9 @@ public class ExternExecute extends Interaction implements Serializable {
         String executeIn=Replacer.insertVariables(getStringProperty(PROPERTY_EXECUTE_FOLDER));
         String command=Replacer.insertVariables(getStringProperty(PROPERTY_COMMAND));
         String parameter=Replacer.insertVariables(getStringProperty(PROPERTY_PARAMETER));   
-       
+     
    
-       logger.finer("Execute Returns: "+ JDUtilities.runCommand(command, parameter, executeIn, waitForReturn));
+       logger.finer("Execute Returns: "+ JDUtilities.runCommand(command, JDUtilities.splitByNewline(parameter), executeIn, waitForReturn));
        return true;
     
     }
@@ -81,7 +81,7 @@ public class ExternExecute extends Interaction implements Serializable {
         
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this, PROPERTY_DISABLED, "Event deaktiviert").setDefaultValue(false));
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, this, PROPERTY_COMMAND, "Befehl (Platzhalter möglich)"));
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, this, PROPERTY_PARAMETER, "Parameter (Platzhalter möglich)"));
+        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_TEXTAREA, this, PROPERTY_PARAMETER, "Parameter (1 Parameter pro Zeile)"));
 
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_BROWSEFOLDER, this, PROPERTY_EXECUTE_FOLDER, "Ausführen in (Ordner der Anwendung)"));
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_SPINNER, this, PROPERTY_WAIT_FOR_RETURN, "Warten x Sekunden bis Befehl beendet ist[sek]",0,600).setDefaultValue(0));

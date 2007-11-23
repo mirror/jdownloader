@@ -84,7 +84,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
     /**
      * Komponente, die den Fortschritt aller Plugins anzeigt
      */
-    private TabPluginActivity tabPluginActivity;
+    private TabProgress tabPluginActivity;
     /**
      * TabbedPane
      */
@@ -320,7 +320,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
     private void buildUI() {
         // tabbedPane = new JTabbedPane();
         tabDownloadTable = new TabDownloadLinks(this);
-        tabPluginActivity = new TabPluginActivity();
+        tabPluginActivity = new TabProgress();
         statusBar = new StatusBar();
         splitpane = new JSplitPane();
         splitpane.setBottomComponent(tabPluginActivity);
