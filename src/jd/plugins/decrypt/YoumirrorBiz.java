@@ -202,7 +202,7 @@ public class YoumirrorBiz extends PluginForDecrypt {
     				decryptedLinks.add(getBetween(reqhelp.getHtmlCode(), "src=\"", "\""));
     				firePluginEvent(new PluginEvent(this,PluginEvent.PLUGIN_PROGRESS_INCREASE, null));
     			}
-    			System.out.println(decryptedLinks.toString());
+
     			//Decrypt abschliessen
     			firePluginEvent(new PluginEvent(this,PluginEvent.PLUGIN_PROGRESS_FINISH, null));
     			step.setParameter(decryptedLinks);
