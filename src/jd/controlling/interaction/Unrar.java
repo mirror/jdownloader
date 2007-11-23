@@ -67,6 +67,7 @@ public class Unrar extends Interaction implements Serializable {
         unrar.unrar = getStringProperty(Unrar.PROPERTY_UNRARCOMMAND);
         unrar.maxFilesize = getIntegerProperty(Unrar.PROPERTY_MAX_FILESIZE, 2);
         unrar.unrar();
+        this.setCallCode(Interaction.INTERACTION_CALL_SUCCESS);
     }
     @Override
     public void initConfig() {

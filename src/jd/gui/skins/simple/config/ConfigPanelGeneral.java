@@ -84,7 +84,11 @@ addGUIConfigEntry(ce);
         ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, configuration, Configuration.PARAM_CLIPBOARD_ALWAYS_ACTIVE, "Zwischenablage immer überwachen").setDefaultValue(false));
         addGUIConfigEntry(ce);
        
-        
+
+        ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, configuration, Configuration.PARAM_WEBUPDATE_LOAD_ALL_TOOLS, "Webupdate: Alle Erweiterungen aktualisieren (auch OS-fremde)").setDefaultValue(false));
+        addGUIConfigEntry(ce);
+        ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, configuration, Configuration.PARAM_WEBUPDATE_AUTO_RESTART, "Webupdate:  automatisch ausführen!").setDefaultValue(true));
+        addGUIConfigEntry(ce);
         
         
         if (JDUtilities.getHomeDirectory() != null) {

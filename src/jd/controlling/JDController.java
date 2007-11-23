@@ -204,13 +204,13 @@ public class JDController implements PluginListener, ControlListener, UIListener
          
                 }
                 else if (interaction instanceof WebUpdate) {
-                    if (interaction.getCallCode() == Interaction.INTERACTION_CALL_ERROR) {
-                        // uiInterface.showMessageDialog("Keine Updates
-                        // verfügbar");
-                    }
-                    else {
-                        uiInterface.showMessageDialog("Aktualisierte Dateien: " + ((WebUpdate) interaction).getUpdater().getUpdatedFiles());
-                    }
+//                    if (interaction.getCallCode() == Interaction.INTERACTION_CALL_ERROR) {
+//                        // uiInterface.showMessageDialog("Keine Updates
+//                        // verfügbar");
+//                    }
+//                    else {
+//                        uiInterface.showMessageDialog("Aktualisierte Dateien: " + ((WebUpdate) interaction).getUpdater().getUpdatedFiles());
+//                    }
                 }
 
                 break;

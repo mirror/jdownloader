@@ -40,6 +40,7 @@ public class Main {
      * @param args
      */
     private static Logger logger = JDUtilities.getLogger();
+
     public static void main(String args[]) {
         if (SingleInstanceController.isApplicationRunning()) {
             JOptionPane.showMessageDialog(null, "jDownloader läuft bereits!", "jDownloader", JOptionPane.WARNING_MESSAGE);
@@ -52,10 +53,10 @@ public class Main {
     }
 
     private void go() {
-        
+
         loadImages();
-        //der Log kann erst später ausgegeben werden
-        String log="";
+        // der Log kann erst später ausgegeben werden
+        String log = "";
         File fileInput = null;
         try {
             fileInput = JDUtilities.getResourceFile(JDUtilities.CONFIG_PATH);
@@ -64,7 +65,7 @@ public class Main {
             e.printStackTrace();
         }
         try {
-            log+="\r\n"+("Loaded config from: " + fileInput + " (" + JDUtilities.CONFIG_PATH + ")");
+            log += "\r\n" + ("Loaded config from: " + fileInput + " (" + JDUtilities.CONFIG_PATH + ")");
             if (fileInput != null && fileInput.exists()) {
                 Object obj = JDUtilities.loadObject(null, fileInput, Configuration.saveAsXML);
                 if (obj instanceof Configuration) {
@@ -74,22 +75,22 @@ public class Main {
                     JDUtilities.setLocale((Locale) configuration.getProperty(Configuration.PARAM_LOCALE, Locale.getDefault()));
                 }
                 else {
-                    log+="\r\n"+("Configuration error: " + obj);
-                    log+="\r\n"+("Konfigurationskonflikt. Lade Default einstellungen");
+                    log += "\r\n" + ("Configuration error: " + obj);
+                    log += "\r\n" + ("Konfigurationskonflikt. Lade Default einstellungen");
                     JDUtilities.getConfiguration().setDefaultValues();
                 }
             }
             else {
-                log+="\r\n"+("no configuration loaded");
-                log+="\r\n"+("Konfigurationskonflikt. Lade Default einstellungen");
+                log += "\r\n" + ("no configuration loaded");
+                log += "\r\n" + ("Konfigurationskonflikt. Lade Default einstellungen");
                 JDUtilities.getConfiguration().setDefaultValues();
             }
         }
         catch (Exception e) {
-            log+="\r\n"+("Konfigurationskonflikt. Lade Default einstellungen");
+            log += "\r\n" + ("Konfigurationskonflikt. Lade Default einstellungen");
             JDUtilities.getConfiguration().setDefaultValues();
         }
-        
+
         // deaktiviere den Cookie Handler. Cookies müssen komplett selbst
         // verwaltet werden. Da JD später sowohl standalone, als auch im
         // Webstart laufen soll muss die Cookieverwaltung selbst übernommen
@@ -101,11 +102,9 @@ public class Main {
         controller.setUiInterface(uiInterface);
         // Startet die Downloads nach dem start
         logger.info(log);
-       logger.info("Lade Plugins");
+        logger.info("Lade Plugins");
         JDUtilities.loadPlugins();
 
-    
-    
         logger.info("Lade Queue");
         if (!controller.initDownloadLinks()) {
             File links = JDUtilities.getResourceFile("links.dat");
@@ -116,7 +115,7 @@ public class Main {
                 uiInterface.showMessageDialog("Linkliste inkompatibel. \r\nBackup angelegt: " + newFile + " Liste geleert!");
             }
         }
-        logger.info("OS: "+System.getProperty("os.name")+", "+System.getProperty("os.arch")+", "+System.getProperty("os.version"));
+        logger.info("OS: " + System.getProperty("os.name") + ", " + System.getProperty("os.arch") + ", " + System.getProperty("os.version"));
         logger.info("Registriere Plugins");
         Iterator<PluginForHost> iteratorHost = JDUtilities.getPluginsForHost().iterator();
         while (iteratorHost.hasNext()) {
@@ -134,7 +133,6 @@ public class Main {
         while (iteratorContainer.hasNext()) {
             iteratorContainer.next().addPluginListener(controller);
         }
-      
 
         Iterator<String> iteratorOptional = JDUtilities.getPluginsOptional().keySet().iterator();
         while (iteratorOptional.hasNext()) {
@@ -145,16 +143,16 @@ public class Main {
 
         Iterator<String> iterator = pluginsOptional.keySet().iterator();
         String key;
-        
-     
+
         while (iterator.hasNext()) {
             key = iterator.next();
             PluginOptional plg = pluginsOptional.get(key);
             if (JDUtilities.getConfiguration().getBooleanProperty("OPTIONAL_PLUGIN_" + plg.getPluginName(), false)) {
-                try{
-                pluginsOptional.get(key).enable(true);
-                }catch(Exception e){
-                    logger.severe("Error loading Optional Plugin: "+e.getMessage());
+                try {
+                    pluginsOptional.get(key).enable(true);
+                }
+                catch (Exception e) {
+                    logger.severe("Error loading Optional Plugin: " + e.getMessage());
                 }
             }
         }
@@ -163,6 +161,25 @@ public class Main {
             uiInterface.fireUIEvent(new UIEvent(uiInterface, UIEvent.UI_START_DOWNLOADS));
         }
 
+        String hash="";
+        if(JDUtilities.getResourceFile("updateLog.txt").exists()){
+        hash= JDUtilities.getLocalHash(JDUtilities.getResourceFile("updateLog.txt"));
+        }
+        String hashChangeLog="";
+    
+        if (!JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_UPDATE_HASH, "").equals(hash+hashChangeLog)) {
+            logger.info("Returned from Update");
+            String lastLog = JDUtilities.getLocalFile(JDUtilities.getResourceFile("updateLog.txt"));
+            logger.info("UpdateLog: " + log);
+           
+           if( JDUtilities.getController().getUiInterface().showConfirmDialog("Update!"+System.getProperty("line.separator") + lastLog+System.getProperty("line.separator")+System.getProperty("line.separator")+"Show Codechanges?")){
+               JDUtilities.getController().getUiInterface().showMessageDialog(JDUtilities.getLocalFile(JDUtilities.getResourceFile("changeLog.txt")));
+           }
+        }
+        
+        JDUtilities.getConfiguration().setProperty(Configuration.PARAM_UPDATE_HASH, hash+hashChangeLog);
+        JDUtilities.saveObject(null, JDUtilities.getConfiguration(), JDUtilities.getJDHomeDirectory(), JDUtilities.CONFIG_PATH.split("\\.")[0], "." + JDUtilities.CONFIG_PATH.split("\\.")[1], Configuration.saveAsXML);
+        
     }
 
     /**
@@ -189,14 +206,14 @@ public class Main {
     private void loadImages() {
         ClassLoader cl = getClass().getClassLoader();
         Toolkit toolkit = Toolkit.getDefaultToolkit();
-//        ClassLoader cl = getClass().getClassLoader();
-//        byte[] bytes = "META-INF/JDOWNLOA.DSA".getBytes();
-//        String str="";
-//        for( int i=0; i<bytes.length;i++){
-//            str+=bytes[i]+", ";
-//        }
-//        logger.info(str);
-       
+        // ClassLoader cl = getClass().getClassLoader();
+        // byte[] bytes = "META-INF/JDOWNLOA.DSA".getBytes();
+        // String str="";
+        // for( int i=0; i<bytes.length;i++){
+        // str+=bytes[i]+", ";
+        // }
+        // logger.info(str);
+
         JDUtilities.addImage("add", toolkit.getImage(cl.getResource("img/add.png")));
         JDUtilities.addImage("configuration", toolkit.getImage(cl.getResource("img/configuration.png")));
         JDUtilities.addImage("delete", toolkit.getImage(cl.getResource("img/delete.png")));

@@ -100,7 +100,9 @@ public class Configuration extends Property implements Serializable {
     public static final String PARAM_CURRENT_BROWSE_PATH = "CURRENT_BROWSE_PATH";
     public static final String PARAM_CLIPBOARD_ALWAYS_ACTIVE = "CLIPBOARD_ALWAYS_ACTIVE";
     public static final String PARAM_PLAF = "PLAF";
-
+    public static final String PARAM_WEBUPDATE_LOAD_ALL_TOOLS = "WEBUPDATE_LOAD_ALL_TOOLS";
+    public static final String PARAM_WEBUPDATE_AUTO_RESTART = "WEBUPDATE_AUTO_RESTART";
+    public static final String PARAM_UPDATE_HASH = "UPDATE_HASH";
     /**
      * Die unterschiedlichen Interaktionen. (ZB Reconnect nach einem Download)
      */
