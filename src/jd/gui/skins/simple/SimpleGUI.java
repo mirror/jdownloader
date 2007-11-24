@@ -40,6 +40,7 @@ import javax.swing.UnsupportedLookAndFeelException;
 import jd.JDFileFilter;
 import jd.config.Configuration;
 import jd.controlling.JDController;
+import jd.controlling.ProgressController;
 import jd.controlling.interaction.ExternReconnect;
 import jd.controlling.interaction.HTTPReconnect;
 import jd.controlling.interaction.Interaction;
@@ -65,26 +66,32 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
      * serialVersionUID
      */
     private static final long serialVersionUID         = 3966433144683787356L;
+
     /**
      * Das Hauptfenster
      */
     private JFrame            frame;
+
     /**
      * Die Menüleiste
      */
     private JMenuBar          menuBar;
+
     /**
      * Toolleiste für Knöpfe
      */
     private JToolBar          toolBar;
+
     /**
      * Komponente, die alle Downloads anzeigt
      */
-    private TabDownloadLinks  tabDownloadTable;                                ;
+    private TabDownloadLinks  tabDownloadTable;                                   ;
+
     /**
      * Komponente, die den Fortschritt aller Plugins anzeigt
      */
-    private TabProgress tabPluginActivity;
+    private TabProgress       progressBar;
+
     /**
      * TabbedPane
      */
@@ -93,80 +100,112 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
      * Die Statusleiste für Meldungen
      */
     private StatusBar         statusBar;
+
     /**
-     * Hiermit wird der Eventmechanismus realisiert. Alle hier eingetragenen Listener werden benachrichtigt, wenn mittels {@link #fireUIEvent(UIEvent)} ein Event losgeschickt wird.
+     * Hiermit wird der Eventmechanismus realisiert. Alle hier eingetragenen
+     * Listener werden benachrichtigt, wenn mittels
+     * {@link #fireUIEvent(UIEvent)} ein Event losgeschickt wird.
      */
     public Vector<UIListener> uiListener               = null;
+
     /**
      * Ein Togglebutton zum Starten / Stoppen der Downloads
      */
     public JToggleButton      btnStartStop;
+
     private JDAction          actionStartStopDownload;
 
     private JDAction          actionLoadContainer;
+
     private JDAction          actionExit;
+
     private JDAction          actionLog;
+
     private JDAction          actionConfig;
+
     private JDAction          actionReconnect;
+
     private JDAction          actionUpdate;
+
     private JDAction          actionDnD;
+
     private JDAction          actionItemsTop;
+
     private JDAction          actionItemsUp;
+
     private JDAction          actionItemsDown;
+
     private JDAction          actionItemsBottom;
+
     private JDAction          actionItemsAdd;
+
     private JDAction          actionItemsDelete;
+
     private LogDialog         logDialog;
+
     private Logger            logger                   = JDUtilities.getLogger();
+
     Dropper                   dragNDrop;
+
     private JCheckBoxMenuItem menViewLog               = null;
+
     private JSplitPane        splitpane;
+
     private PluginEvent       hostPluginDataChanged    = null;
+
     private PluginEvent       decryptPluginDataChanged = null;
+
     private JCheckBox         reconnectBox;
+
     private LinkGrabber       linkGrabber;
+
     private JDAction          actionSearch;
+
     private JDAction          actionPause;
+
     private JToggleButton     btnPause;
-    private JDAction actionLoadDLC;
-    private JDAction actionSaveDLC;
-    private JDAction actionTester;
-   
+
+    private JDAction          actionLoadDLC;
+
+    private JDAction          actionSaveDLC;
+
+    private JDAction          actionTester;
+
     /**
      * Das Hauptfenster wird erstellt
      */
     public SimpleGUI() {
         super();
-     
+
         UIManager.LookAndFeelInfo[] info = UIManager.getInstalledLookAndFeels();
-        boolean plafisSet=false;
-        for( int i=0;i<info.length;i++){
-            if(info[i].getName().equals(JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_PLAF))){
+        boolean plafisSet = false;
+        for (int i = 0; i < info.length; i++) {
+            if (info[i].getName().equals(JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_PLAF))) {
                 try {
                     UIManager.setLookAndFeel(info[i].getClassName());
-                    plafisSet=true;
+                    plafisSet = true;
                 }
                 catch (UnsupportedLookAndFeelException e) {
                 }
                 catch (ClassNotFoundException e) {
-                 
+
                 }
                 catch (InstantiationException e) {
-                  
+
                 }
                 catch (IllegalAccessException e) {
-                   
-                } 
+
+                }
             }
         }
-        if(!plafisSet){
+        if (!plafisSet) {
             try {
                 UIManager.setLookAndFeel(new WindowsLookAndFeel());
             }
             catch (UnsupportedLookAndFeelException e) {
             }
         }
-       
+
         uiListener = new Vector<UIListener>();
         frame = new JFrame();
         // tabbedPane = new JTabbedPane();
@@ -198,7 +237,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
                 }
             }
         }.start();
-       // enableOptionalPlugins(true);
+        // enableOptionalPlugins(true);
     }
 
     /**
@@ -213,7 +252,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         actionLoadContainer = new JDAction(this, "loadContainer", "action.load_container", JDAction.APP_LOAD_CONTAINER);
         actionLoadDLC = new JDAction(this, "load", "action.load_dlc", JDAction.APP_LOAD_DLC);
         actionSaveDLC = new JDAction(this, "save", "action.save_dlc", JDAction.APP_SAVE_DLC);
-   
+
         actionExit = new JDAction(this, "exit", "action.exit", JDAction.APP_EXIT);
         actionLog = new JDAction(this, "log", "action.viewlog", JDAction.APP_LOG);
         actionTester = new JDAction(this, "jd_logo", "action.tester", JDAction.APP_TESTER);
@@ -227,9 +266,11 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         actionItemsDown = new JDAction(this, "down", "action.edit.items_down", JDAction.ITEMS_MOVE_DOWN);
         actionItemsBottom = new JDAction(this, "bottom", "action.edit.items_bottom", JDAction.ITEMS_MOVE_BOTTOM);
     }
+
     // Funktion wird jede Sekunde aufgerufen
     /**
-     * Diese Funktion wird in einem 1000 ms interval aufgerufen und kann dazu verwendet werden die GUI zu aktuelisieren
+     * Diese Funktion wird in einem 1000 ms interval aufgerufen und kann dazu
+     * verwendet werden die GUI zu aktuelisieren
      */
     private void interval() {
         if (JDUtilities.getController() != null) {
@@ -238,12 +279,11 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         if (hostPluginDataChanged != null) {
             tabDownloadTable.pluginEvent(hostPluginDataChanged);
         }
-        if (decryptPluginDataChanged != null) {
-            tabPluginActivity.pluginEvent(decryptPluginDataChanged);
-        }
+        this.progressBar.updateController(null);
         decryptPluginDataChanged = null;
         hostPluginDataChanged = null;
     }
+
     /**
      * Das Menü wird hier initialisiert
      */
@@ -292,8 +332,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         menExtra.add(menViewLog);
         menExtra.add(menTester);
         menExtra.add(menConfig);
-        
-        
+
         menAction.add(menDownload);
         menAction.add(menAddLinks);
         menuBar.add(menFile);
@@ -302,6 +341,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         menuBar.add(menExtra);
         frame.setJMenuBar(menuBar);
     }
+
     /**
      * factory method for menu items
      * 
@@ -314,16 +354,17 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         if (action.getAccelerator() != null) menuItem.setAccelerator(action.getAccelerator());
         return menuItem;
     }
+
     /**
      * Hier wird die komplette Oberfläche der Applikation zusammengestrickt
      */
     private void buildUI() {
         // tabbedPane = new JTabbedPane();
         tabDownloadTable = new TabDownloadLinks(this);
-        tabPluginActivity = new TabProgress();
+        progressBar = new TabProgress();
         statusBar = new StatusBar();
         splitpane = new JSplitPane();
-        splitpane.setBottomComponent(tabPluginActivity);
+        splitpane.setBottomComponent(progressBar);
         // JPanel tmp=new JPanel(new BorderLayout());
         // tmp.add(tabPluginActivity,BorderLayout.NORTH);
         splitpane.setTopComponent(tabDownloadTable);
@@ -416,6 +457,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         logDialog = new LogDialog(frame, logger);
         logDialog.addWindowListener(new LogDialogWindowAdapter());
     }
+
     /**
      * Hier werden die Aktionen ausgewertet und weitergeleitet
      * 
@@ -451,9 +493,9 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
                 fc.setFileFilter(new JDFileFilter(null, ".dlc", true));
                 fc.showSaveDialog(frame);
                 File ret = fc.getSelectedFile();
-                if(JDUtilities.getFileExtension(ret)==null||!JDUtilities.getFileExtension(ret).equalsIgnoreCase("dlc")){
-                    
-                    ret= new File(ret.getAbsolutePath()+".dlc");
+                if (JDUtilities.getFileExtension(ret) == null || !JDUtilities.getFileExtension(ret).equalsIgnoreCase("dlc")) {
+
+                    ret = new File(ret.getAbsolutePath() + ".dlc");
                 }
                 if (ret != null) {
                     fireUIEvent(new UIEvent(this, UIEvent.UI_SAVE_LINKS, ret));
@@ -476,7 +518,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
                     fireUIEvent(new UIEvent(this, UIEvent.UI_LOAD_CONTAINER, file));
                 }
                 break;
-           
+
             case JDAction.APP_EXIT:
                 frame.setVisible(false);
                 frame.dispose();
@@ -525,11 +567,11 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
             case JDAction.APP_SEARCH:
                 SearchDialog s = new SearchDialog(this.getFrame());
                 data = s.getText();
-                if(!data.endsWith(":::")){
-                logger.info(data);
-                if (data != null) {
-                    fireUIEvent(new UIEvent(this, UIEvent.UI_LINKS_TO_PROCESS, data));
-                }
+                if (!data.endsWith(":::")) {
+                    logger.info(data);
+                    if (data != null) {
+                        fireUIEvent(new UIEvent(this, UIEvent.UI_LINKS_TO_PROCESS, data));
+                    }
                 }
                 break;
             case JDAction.APP_CONFIGURATION:
@@ -538,6 +580,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
                 break;
         }
     }
+
     public void toggleDnD() {
         if (dragNDrop.isVisible()) {
             dragNDrop.setVisible(false);
@@ -549,6 +592,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
             dragNDrop.setText("Ziehe Links auf mich!");
         }
     }
+
     public void doReconnect() {
         // statusBar.setText("Interaction: HTTPReconnect");
         // dragNDrop.setText("Reconnect....");
@@ -567,6 +611,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         // frame.setTitle(JDUtilities.JD_TITLE);
         // dragNDrop.setText("");
     }
+
     public void startStopDownloads() {
         if (btnStartStop.isSelected() && JDUtilities.getController().getDownloadStatus() == JDController.DOWNLOAD_NOT_RUNNING) {
             btnPause.setEnabled(true);
@@ -589,8 +634,10 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
             }.start();
         }
     }
+
     /**
-     * Delligiert die Pluginevents weiter an das host/decryptpanel. CHangedEvents werden abgefangen und im sekundeninterval weitergegeben.
+     * Delligiert die Pluginevents weiter an das host/decryptpanel.
+     * CHangedEvents werden abgefangen und im sekundeninterval weitergegeben.
      */
     public void delegatedPluginEvent(PluginEvent event) {
         if (event.getSource() instanceof PluginForHost && event.getEventID() == PluginEvent.PLUGIN_DATA_CHANGED) {
@@ -610,13 +657,13 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
             return;
         }
         if (event.getSource() instanceof PluginForDecrypt || event.getSource() instanceof PluginForSearch) {
-            tabPluginActivity.pluginEvent(event);
+            // progressBar.pluginEvent(event);
             splitpane.setDividerLocation(0.8);
             return;
         }
-        if(event.getSource() instanceof PluginOptional || event.getSource() instanceof UserPlugin){
+        if (event.getSource() instanceof PluginOptional || event.getSource() instanceof UserPlugin) {
             JDAction actionToDo = null;
-            switch (event.getEventID()){
+            switch (event.getEventID()) {
                 case PluginEvent.PLUGIN_CONTROL_DND:
                     actionToDo = actionDnD;
                     break;
@@ -630,26 +677,33 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
                     actionToDo = actionConfig;
                     break;
                 case PluginEvent.PLUGIN_CONTROL_SHOW_UI:
-                    frame.setVisible((Boolean)event.getParameter1());
+                    frame.setVisible((Boolean) event.getParameter1());
                     break;
                 case PluginEvent.PLUGIN_CONTROL_START_STOP:
                     actionToDo = actionStartStopDownload;
                     break;
             }
-            if(actionToDo != null)
-                actionPerformed(new ActionEvent(this,actionToDo.getActionID(),""));
+            if (actionToDo != null) actionPerformed(new ActionEvent(this, actionToDo.getActionID(), ""));
 
         }
     }
+
     public void delegatedControlEvent(ControlEvent event) {
         switch (event.getID()) {
+
             case ControlEvent.CONTROL_PLUGIN_DECRYPT_ACTIVE:
                 logger.info("decrypt-active");
                 setPluginActive((PluginForDecrypt) event.getParameter(), true);
                 break;
+
             case ControlEvent.CONTROL_PLUGIN_DECRYPT_INACTIVE:
                 logger.info("decrypt-inactive");
                 setPluginActive((PluginForDecrypt) event.getParameter(), false);
+                break;
+            case ControlEvent.CONTROL_ON_PROGRESS:
+
+                handleProgressController((ProgressController) event.getSource(), event.getParameter());
+
                 break;
             case ControlEvent.CONTROL_PLUGIN_HOST_ACTIVE:
                 logger.info("host-active");
@@ -660,7 +714,9 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
                 setPluginActive((PluginForHost) event.getParameter(), false);
                 break;
             case ControlEvent.CONTROL_SINGLE_DOWNLOAD_FINISHED:
-                // showTrayTip("Download", "" + ((DownloadLink) event.getParameter()).getStatusText() + ": " + event.getParameter());
+                // showTrayTip("Download", "" + ((DownloadLink)
+                // event.getParameter()).getStatusText() + ": " +
+                // event.getParameter());
                 break;
             case ControlEvent.CONTROL_ALL_DOWNLOADS_FINISHED:
                 // showTrayTip("Downloads", "All downloads finished");
@@ -670,7 +726,8 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
                 break;
             case ControlEvent.CONTROL_PLUGIN_INTERACTION_ACTIVE:
                 logger.info("Interaction start. ");
-                // showTrayTip("Interaction", ((Interaction) event.getParameter()).getInteractionName());
+                // showTrayTip("Interaction", ((Interaction)
+                // event.getParameter()).getInteractionName());
                 statusBar.setText("Interaction: " + ((Interaction) event.getParameter()).getInteractionName());
                 frame.setTitle(JDUtilities.JD_TITLE + " |Aktion: " + ((Interaction) event.getParameter()).getInteractionName());
                 break;
@@ -678,15 +735,18 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
                 logger.info("Interaction zu ende. rest status");
                 // switch (((Interaction) event.getParameter()).getCallCode()) {
                 // case Interaction.INTERACTION_CALL_ERROR:
-                // showTrayTip("Interaction", "Finished (ERROR): " + ((Interaction) event.getParameter()).getInteractionName());
+                // showTrayTip("Interaction", "Finished (ERROR): " +
+                // ((Interaction) event.getParameter()).getInteractionName());
                 //
                 // break;
                 // case Interaction.INTERACTION_CALL_RUNNING:
-                // showTrayTip("Interaction", "Finished (RUNNING): " + ((Interaction) event.getParameter()).getInteractionName());
+                // showTrayTip("Interaction", "Finished (RUNNING): " +
+                // ((Interaction) event.getParameter()).getInteractionName());
                 //
                 // break;
                 // case Interaction.INTERACTION_CALL_SUCCESS:
-                // showTrayTip("Interaction", "Finished (SUCESSFULL): " + ((Interaction) event.getParameter()).getInteractionName());
+                // showTrayTip("Interaction", "Finished (SUCESSFULL): " +
+                // ((Interaction) event.getParameter()).getInteractionName());
                 //
                 // break;
                 //
@@ -695,7 +755,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
                 frame.setTitle(JDUtilities.getJDTitle());
                 break;
             case ControlEvent.CONTROL_SINGLE_DOWNLOAD_CHANGED:
-             
+
                 tabDownloadTable.fireTableChanged();
             case ControlEvent.CONTROL_DISTRIBUTE_FINISHED:
                 break;
@@ -707,6 +767,24 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
                 break;
         }
     }
+
+    private void handleProgressController(ProgressController source, Object parameter) {
+        if (!this.progressBar.hasController(source) && !source.isFinished()) {
+            progressBar.addController(source);
+        }
+        else if (source.isFinished()) {
+            progressBar.removeController(source);
+        }
+        else {
+            progressBar.updateController(source);
+        }
+
+        if (progressBar.getControllers().size() > 0) {
+            splitpane.setDividerLocation(0.8);
+
+        }
+    }
+
     // private void showTrayTip(String header, String msg) {
     // if (tray == null) return;
     // this.tray.showTip(header, msg);
@@ -715,23 +793,27 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         if (tabDownloadTable != null) return tabDownloadTable.getLinks();
         return null;
     }
+
     public void setDownloadLinks(Vector<DownloadLink> links) {
         if (tabDownloadTable != null) {
             tabDownloadTable.setDownloadLinks(links.toArray(new DownloadLink[] {}));
         }
     }
+
     public void addDownloadLinks(Vector<DownloadLink> links) {
         DownloadLink[] linkList = links.toArray(new DownloadLink[] {});
         if (tabDownloadTable != null) {
             tabDownloadTable.setDownloadLinks(linkList);
         }
     }
+
     public String getCaptchaCodeFromUser(Plugin plugin, File captchaAddress) {
         CaptchaDialog captchaDialog = new CaptchaDialog(frame, plugin, captchaAddress);
         // frame.toFront();
         captchaDialog.setVisible(true);
         return captchaDialog.getCaptchaText();
     }
+
     public void setPluginActive(Plugin plugin, boolean isActive) {
         if (plugin instanceof PluginForDecrypt) {
             statusBar.setPluginForDecryptActive(isActive);
@@ -740,16 +822,19 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
             statusBar.setPluginForHostActive(isActive);
         }
     }
+
     public void addUIListener(UIListener listener) {
         synchronized (uiListener) {
             uiListener.add(listener);
         }
     }
+
     public void removeUIListener(UIListener listener) {
         synchronized (uiListener) {
             uiListener.remove(listener);
         }
     }
+
     public void fireUIEvent(UIEvent uiEvent) {
         synchronized (uiListener) {
             Iterator<UIListener> recIt = uiListener.iterator();
@@ -758,6 +843,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
             }
         }
     }
+
     /**
      * Toggled das MenuItem fuer die Ansicht des Log Fensters
      * 
@@ -768,11 +854,13 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         public void windowOpened(WindowEvent e) {
             if (menViewLog != null) menViewLog.setSelected(true);
         }
+
         @Override
         public void windowClosed(WindowEvent e) {
             if (menViewLog != null) menViewLog.setSelected(false);
         }
     }
+
     /**
      * Diese Klasse realisiert eine StatusBar
      * 
@@ -783,12 +871,19 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
          * serialVersionUID
          */
         private static final long serialVersionUID = 3676496738341246846L;
+
         private JLabel            lblMessage;
+
         private JLabel            lblSpeed;
+
         private JLabel            lblPluginHostActive;
+
         private JLabel            lblPluginDecryptActive;
+
         private ImageIcon         imgActive;
+
         private ImageIcon         imgInactive;
+
         public StatusBar() {
             imgActive = new ImageIcon(JDUtilities.getImage("led_green"));
             imgInactive = new ImageIcon(JDUtilities.getImage("led_empty"));
@@ -804,10 +899,12 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
             JDUtilities.addToGridBag(this, lblPluginHostActive, 2, 0, 1, 1, 0, 0, new Insets(0, 5, 0, 0), GridBagConstraints.NONE, GridBagConstraints.EAST);
             JDUtilities.addToGridBag(this, lblPluginDecryptActive, 3, 0, 1, 1, 0, 0, new Insets(0, 5, 0, 5), GridBagConstraints.NONE, GridBagConstraints.EAST);
         }
+
         public void setText(String text) {
             if (text == null) text = JDUtilities.getResourceString("label.status.welcome");
             lblMessage.setText(text);
         }
+
         /**
          * Setzt die Downloadgeschwindigkeit
          * 
@@ -822,6 +919,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
                 lblSpeed.setText(speed + "bytes/sec");
             }
         }
+
         /**
          * Zeigt, ob die Plugins zum Downloaden von einem Anbieter arbeiten
          * 
@@ -830,6 +928,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         public void setPluginForHostActive(boolean active) {
             setPluginActive(lblPluginHostActive, active);
         }
+
         /**
          * Zeigt an, ob die Plugins zum Entschlüsseln von Links arbeiten
          * 
@@ -838,6 +937,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         public void setPluginForDecryptActive(boolean active) {
             setPluginActive(lblPluginDecryptActive, active);
         }
+
         /**
          * Ändert das genutzte Bild eines Labels, um In/Aktivität anzuzeigen
          * 
@@ -851,12 +951,14 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
                 lbl.setIcon(imgInactive);
         }
     }
+
     /**
      * Zeigt einen Messagedialog an
      */
     public void showMessageDialog(String string) {
         JOptionPane.showMessageDialog(frame, string);
     }
+
     /**
      * Zeigt einen Confirm Dialog an
      * 
@@ -865,6 +967,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
     public boolean showConfirmDialog(String string) {
         return JOptionPane.showConfirmDialog(frame, string) == JOptionPane.OK_OPTION;
     }
+
     /**
      * Setzt den text im DropTargets
      * 
@@ -873,6 +976,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
     public void setDropTargetText(String text) {
         dragNDrop.setText(text);
     }
+
     public void uiEvent(UIEvent uiEvent) {
         switch (uiEvent.getID()) {
             case UIEvent.UI_DRAG_AND_DROP:
@@ -880,9 +984,11 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
                 break;
         }
     }
+
     public JFrame getFrame() {
         return frame;
     }
+
     public void addLinksToGrabber(Vector<DownloadLink> links) {
         DownloadLink[] linkList = links.toArray(new DownloadLink[] {});
         if (linkGrabber != null && !linkGrabber.isVisible()) {
@@ -898,29 +1004,39 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         }
         dragNDrop.setText("Grabbed: " + linkGrabber.getLinkList().size() + " (+" + ((Vector) links).size() + ")");
     }
+
     public String showUserInputDialog(String string) {
         return JOptionPane.showInputDialog(frame, string);
     }
+
     /**
      * Diese Methode de/aktiviert optionale Plugins
+     * 
      * @param enable Zeigt, ob das Plugin deaktiviert oder aktiviert werden soll
      */
-//    private void enableOptionalPlugins(boolean enable){
-//        HashMap<String, PluginOptional> plugins = JDUtilities.getPluginsOptional();
-//        for(int i=0;i<pluginsOptional.length;i++){
-//            if(plugins.containsKey(pluginsOptional[i])){
-//                plugins.get(pluginsOptional[i]).enable(enable);
-//            }
-//        }
-//    }
+    // private void enableOptionalPlugins(boolean enable){
+    // HashMap<String, PluginOptional> plugins =
+    // JDUtilities.getPluginsOptional();
+    // for(int i=0;i<pluginsOptional.length;i++){
+    // if(plugins.containsKey(pluginsOptional[i])){
+    // plugins.get(pluginsOptional[i]).enable(enable);
+    // }
+    // }
+    // }
     public void windowClosing(WindowEvent e) {
-//        enableOptionalPlugins(false);
+        // enableOptionalPlugins(false);
         fireUIEvent(new UIEvent(this, UIEvent.UI_EXIT, null));
     }
+
     public void windowClosed(WindowEvent e) {}
+
     public void windowActivated(WindowEvent e) {}
+
     public void windowDeactivated(WindowEvent e) {}
+
     public void windowDeiconified(WindowEvent e) {}
-    public void windowIconified(WindowEvent e) { }
+
+    public void windowIconified(WindowEvent e) {}
+
     public void windowOpened(WindowEvent e) {}
 }

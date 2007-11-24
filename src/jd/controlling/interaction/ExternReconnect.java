@@ -1,24 +1,10 @@
 package jd.controlling.interaction;
 
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.io.IOException;
 import java.io.Serializable;
-import java.net.SocketTimeoutException;
-import java.net.URL;
-import java.util.Iterator;
-import java.util.Vector;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
-import javax.swing.JOptionPane;
 
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
-import jd.config.Configuration;
-import jd.gui.skins.simple.config.GUIConfigEntry;
-import jd.plugins.Plugin;
-import jd.plugins.RequestInfo;
+import jd.controlling.ProgressController;
 import jd.utils.JDUtilities;
 
 /**
@@ -84,7 +70,9 @@ public class ExternReconnect extends Interaction implements Serializable {
         }
        
         retries++;
+     ProgressController progress= new ProgressController(10);
      
+     progress.setStatusText("ExternReconnect #"+retries);
        
         int waitForReturn=getIntegerProperty(PROPERTY_IP_WAIT_FOR_RETURN, 0);
         String executeIn=getStringProperty(PROPERTY_RECONNECT_EXECUTE_FOLDER);
@@ -98,6 +86,8 @@ public class ExternReconnect extends Interaction implements Serializable {
         logger.info("Starting " + NAME + " #" + retries);
         String preIp = JDUtilities.getIPAddress();
 
+        progress.increase(1);
+        progress.setStatusText("ExternReconnect Old IP:"+preIp);
         logger.finer("IP befor: " + preIp);
        logger.finer("Execute Returns: "+ JDUtilities.runCommand(command, JDUtilities.splitByNewline(parameter), executeIn, waitForReturn));
         logger.finer("Wait " + waittime + " seconds ...");
@@ -109,8 +99,10 @@ public class ExternReconnect extends Interaction implements Serializable {
 
         String afterIP = JDUtilities.getIPAddress();
         logger.finer("Ip after: " + afterIP);
+        progress.setStatusText("ExternReconnect New IP:"+afterIP+"("+preIp+")");
         long endTime = System.currentTimeMillis() + waitForIp * 1000;
         logger.info("Wait "+waitForIp+" sek for new ip");
+       
         while (System.currentTimeMillis() <= endTime && (afterIP.equals(preIp)|| afterIP.equals("offline"))) {
             try {
                 Thread.sleep(5 * 1000);
@@ -118,15 +110,19 @@ public class ExternReconnect extends Interaction implements Serializable {
             catch (InterruptedException e) {
             }
             afterIP = JDUtilities.getIPAddress();
+            progress.setStatusText("(WAITING)ExternReconnect New IP:"+afterIP+"("+preIp+")");
             logger.finer("Ip Check: " + afterIP);
         }
         if (!afterIP.equals(preIp) && !afterIP.equals("offline")) {
+            progress.finalize();
             return true;
         }
         logger.finer("Retries: "+retries+"/"+maxretries);
         if (retries <= maxretries) {
+            progress.finalize();
             return doInteraction(arg);
         }
+        progress.finalize();
         return false;
     }
 

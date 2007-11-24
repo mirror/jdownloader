@@ -583,21 +583,29 @@ public class JDController implements PluginListener, ControlListener, UIListener
      * @param file Die Containerdatei
      */
     private void loadContainerFile(File file) {
+   
+       
         Vector<PluginForContainer> pluginsForContainer = JDUtilities.getPluginsForContainer();
         Vector<DownloadLink> downloadLinks = new Vector<DownloadLink>();
         PluginForContainer pContainer;
+        ProgressController progress = new ProgressController(pluginsForContainer.size());
         for (int i = 0; i < pluginsForContainer.size(); i++) {
             pContainer = pluginsForContainer.get(i);
+            progress.setStatusText("Containerplugin: "+pContainer.getPluginName());
             if (pContainer.canHandle(file.getName())) {
+                progress.setSource(pContainer);
                 fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_PLUGIN_DECRYPT_ACTIVE, pContainer));
                 downloadLinks.addAll(pContainer.getContainedDownloadlinks(file.getAbsolutePath()));
                 fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_PLUGIN_DECRYPT_INACTIVE, pContainer));
             }
+            progress.increase(1);
         }
+        progress.setStatusText(downloadLinks.size()+" links found");
         if (downloadLinks.size() > 0) {
             // schickt die Links zuerst mal zum Linkgrabber
             uiInterface.addLinksToGrabber((Vector<DownloadLink>) downloadLinks);
         }
+        progress.finalize();
     }
 
     /**

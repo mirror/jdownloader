@@ -24,6 +24,7 @@ import javax.xml.parsers.ParserConfigurationException;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.Configuration;
+import jd.controlling.ProgressController;
 import jd.plugins.Plugin;
 import jd.plugins.RequestInfo;
 import jd.utils.JDUtilities;
@@ -121,16 +122,18 @@ public class HTTPLiveHeader extends Interaction {
         String ip = configuration.getStringProperty(Configuration.PARAM_HTTPSEND_IP);
         retries++;
         logger.info("Starting  #" + retries);
+        ProgressController progress= new ProgressController(10);
+        progress.setStatusText("HTTPLiveHeader #"+retries);
         if (user != null || pass != null) Authenticator.setDefault(new InternalAuthenticator(user, pass));
 
         if (script == null) {
-
+progress.finalize();
             return parseError("Kein RequestText gesetzt");
         }
         String preIp = JDUtilities.getIPAddress();
 
         logger.finer("IP befor: " + preIp);
-
+        progress.setStatusText("(IP)HTTPLiveHeader :"+preIp);
         // script = script.replaceAll("\\<", "&lt;");
         // script = script.replaceAll("\\>", "&gt;");
         script = script.replaceAll("\\[\\[\\[", "<");
@@ -145,15 +148,20 @@ public class HTTPLiveHeader extends Interaction {
         variables.put("pass", pass);
         variables.put("routerip", ip);
         headerProperties = new HashMap<String, String>();
+        progress.increase(1);
         try {
             xmlScript = parseXmlString(script, false);
             Node root = xmlScript.getChildNodes().item(0);
             if (root == null || !root.getNodeName().equalsIgnoreCase("HSRC")) {
+                progress.finalize();
                 return parseError("Root Node must be [[[HSRC]]]*[/HSRC]");
             }
             RequestInfo requestInfo = null;
             NodeList steps = root.getChildNodes();
+            progress.addToMax(steps.getLength());
             for (int step = 0; step < steps.getLength(); step++) {
+                progress.setStatusText("(STEP)HTTPLiveHeader :"+step);
+                progress.increase(1);
                 Node current = steps.item(step);
                 short type = current.getNodeType();
 
@@ -162,12 +170,16 @@ public class HTTPLiveHeader extends Interaction {
                     continue;
                 }
                 if (!current.getNodeName().equalsIgnoreCase("STEP")) {
+                    progress.finalize();
                     return parseError("Root Node should only contain [[[STEP]]]*[[[/STEP]]] ChildTag: " + current.getNodeName());
                 }
                 NodeList toDos = current.getChildNodes();
                 for (int toDoStep = 0; toDoStep < toDos.getLength(); toDoStep++) {
                     Node toDo = toDos.item(toDoStep);
+                    progress.setStatusText("("+toDo.getNodeName()+")HTTPLiveHeader");
                     if (toDo.getNodeName().equalsIgnoreCase("DEFINE")) {
+                       
+                    
                         NamedNodeMap attributes = toDo.getAttributes();
                         for (int attribute = 0; attribute < attributes.getLength(); attribute++) {
                             variables.put(attributes.item(attribute).getNodeName(), attributes.item(attribute).getNodeValue());
@@ -177,6 +189,7 @@ public class HTTPLiveHeader extends Interaction {
                     }
                     if (toDo.getNodeName().equalsIgnoreCase("REQUEST")) {
                         if (toDo.getChildNodes().getLength() != 1) {
+                            progress.finalize();
                             return parseError("A REQUEST Tag is not allowed to have childTags.");
                         }
                         requestInfo = doRequest(toDo.getChildNodes().item(0).getNodeValue().trim());
@@ -187,11 +200,13 @@ public class HTTPLiveHeader extends Interaction {
                     if (toDo.getNodeName().equalsIgnoreCase("RESPONSE")) {
                         logger.finer("get Response");
                         if (toDo.getChildNodes().getLength() != 1) {
+                            progress.finalize();
                             return parseError("A RESPONSE Tag is not allowed to have childTags.");
                         }
 
                         NamedNodeMap attributes = toDo.getAttributes();
                         if (attributes.getNamedItem("keys") == null) {
+                            progress.finalize();
                             return parseError("A RESPONSE Node needs a Keys Attribute: " + toDo);
                         }
                         String[] keys = attributes.getNamedItem("keys").getNodeValue().split("\\;");
@@ -216,17 +231,20 @@ public class HTTPLiveHeader extends Interaction {
 
         }
         catch (SAXException e) {
+            progress.finalize();
             return this.parseError(e.getMessage());
         }
 
         catch (ParserConfigurationException e) {
 
             e.printStackTrace();
+            progress.finalize();
             return this.parseError(e.getMessage());
         }
         catch (Exception e) {
 
             e.printStackTrace();
+            progress.finalize();
             return this.parseError(e.getCause() + " : " + e.getMessage());
         }
 
@@ -234,6 +252,8 @@ public class HTTPLiveHeader extends Interaction {
         int maxretries = configuration.getIntegerProperty(Configuration.PARAM_HTTPSEND_RETRIES, 0);
         int waitForIp = configuration.getIntegerProperty(Configuration.PARAM_HTTPSEND_WAITFORIPCHANGE, 10);
         logger.finer("Wait " + waittime + " seconds ...");
+        progress.increase(1);
+        progress.setStatusText("("+"WAIT"+")HTTPLiveHeader ");
         try {
             Thread.sleep(waittime * 1000);
         }
@@ -242,6 +262,9 @@ public class HTTPLiveHeader extends Interaction {
 
         String afterIP = JDUtilities.getIPAddress();
         logger.finer("Ip after: " + afterIP);
+        progress.increase(1);
+        progress.setStatusText("("+"IPCHECK"+")HTTPLiveHeader "+preIp+"/"+afterIP);
+    
         long endTime = System.currentTimeMillis() + waitForIp * 1000;
         while (System.currentTimeMillis() <= endTime && afterIP.equals(preIp)) {
             try {
@@ -250,14 +273,18 @@ public class HTTPLiveHeader extends Interaction {
             catch (InterruptedException e) {
             }
             afterIP = JDUtilities.getIPAddress();
+            progress.setStatusText("("+"IPCHECK"+")HTTPLiveHeader "+preIp+"/"+afterIP);
             logger.finer("Ip Check: " + afterIP);
         }
         if (!afterIP.equals(preIp)) {
+            progress.finalize();
             return true;
         }
         if (retries <= maxretries) {
+            progress.finalize();
             return doInteraction(arg);
         }
+        progress.finalize();
         return false;
     }
 
@@ -288,6 +315,7 @@ public class HTTPLiveHeader extends Interaction {
         String post = "";
         String host = null;
         RequestInfo requestInfo;
+        ProgressController progress= new ProgressController(10);
         HashMap<String, String> requestProperties = new HashMap<String, String>();
         String[] tmp = request.split("\\%\\%\\%(.*?)\\%\\%\\%");
         Vector<String> params = Plugin.getAllSimpleMatches(request, "%%%°%%%", 1);

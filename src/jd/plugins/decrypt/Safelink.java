@@ -48,7 +48,7 @@ public class Safelink extends PluginForDecrypt {
             case PluginStep.STEP_DECRYPT:
                 Vector<String> decryptedLinks = new Vector<String>();
                 try {
-                    firePluginEvent(new PluginEvent(this, PluginEvent.PLUGIN_PROGRESS_MAX, 1));
+                   progress.setRange( 1);
                     String html=getRequest(new URL(cryptedLink)).getHtmlCode();
                     String id=getFirstMatch(html, Formp, 1);
                     if(id!=null){
@@ -56,7 +56,7 @@ public class Safelink extends PluginForDecrypt {
                     decryptedLinks.add(link);
                     }
                     firePluginEvent(new PluginEvent(this,PluginEvent.PLUGIN_PROGRESS_INCREASE, null));
-                    firePluginEvent(new PluginEvent(this, PluginEvent.PLUGIN_PROGRESS_FINISH, null));
+                    //veraltet: firePluginEvent(new PluginEvent(this, PluginEvent.PLUGIN_PROGRESS_FINISH, null));
                     currentStep = null;
                 } 
                 catch (MalformedURLException e) { e.printStackTrace(); } 

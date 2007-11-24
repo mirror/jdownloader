@@ -90,7 +90,7 @@ public class FileSearch extends PluginForSearch {
             RequestInfo requestInfo = getRequest(url, cookie, ref, true);
             passwords.addAll(findPasswords(requestInfo.getHtmlCode()));
             inst -= 1;
-            firePluginEvent(new PluginEvent(this, PluginEvent.PLUGIN_PROGRESS_INCREASE, null));
+             progress.increase( 1);
             String[] links = getHttpLinks(requestInfo.getHtmlCode(), link);
             if (inst != 0)
             {
@@ -129,7 +129,7 @@ public class FileSearch extends PluginForSearch {
                 useMozillaCookie = this.getProperties().getBooleanProperty("USE_MOZILLACOOKIE", false);
                 Vector<String[]> decryptedLinks = new Vector<String[]>();
                 int inst = getIntParam(PARAM_INST, 1);
-                firePluginEvent(new PluginEvent(this, PluginEvent.PLUGIN_PROGRESS_MAX, inst));
+                progress.setRange( inst);
                 passwords=new Vector<String>();
                 Vector<String> de = getLinklist(searchPattern, null, null, inst);
                 
@@ -153,7 +153,7 @@ public class FileSearch extends PluginForSearch {
                     if (!decryptedLinks.contains(link))
                         decryptedLinks.add(link);
                 }
-                firePluginEvent(new PluginEvent(this, PluginEvent.PLUGIN_PROGRESS_FINISH, null));
+                //veraltet: firePluginEvent(new PluginEvent(this, PluginEvent.PLUGIN_PROGRESS_FINISH, null));
                 step.setParameter(decryptedLinks);
                 return step;
         }

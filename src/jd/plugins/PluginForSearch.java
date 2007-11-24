@@ -2,6 +2,8 @@ package jd.plugins;
 
 import java.util.Vector;
 
+import jd.controlling.ProgressController;
+
 /**
  * Dies ist die Oberklasse für alle Plugins, die nach Links suchen sollen. z.B.
  * mp3 search plugins
@@ -11,12 +13,14 @@ import java.util.Vector;
 public abstract class PluginForSearch extends Plugin {
 
     private String searchPattern;
-
+    protected ProgressController progress;
     public Vector<String[]> findLinks(String pattern) {
+        progress=new ProgressController();
+        progress.setStatusText("Search-"+getPluginName()+": "+pattern);
         Vector<String[]> foundLinks = new Vector<String[]>();
 
         foundLinks.addAll(parseContent(pattern));
-
+        progress.finalize();
         return foundLinks;
     }
 

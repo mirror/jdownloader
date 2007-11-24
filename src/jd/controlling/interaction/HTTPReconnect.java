@@ -10,6 +10,7 @@ import java.net.URL;
 import java.util.HashMap;
 
 import jd.config.Configuration;
+import jd.controlling.ProgressController;
 import jd.plugins.Plugin;
 import jd.plugins.RequestInfo;
 import jd.router.RouterData;
@@ -43,14 +44,18 @@ public class HTTPReconnect extends Interaction {
             logger.info("Reconnect deaktiviert");
             return false;
         }
+        ProgressController progress = new ProgressController(5);
         Configuration configuration = JDUtilities.getConfiguration();
         retries++;
         logger.info("Starting HTTPReconnect #" + retries);
+        progress.setStatusText("HTTPReconnect retry #"+retries);
+        progress.increase(1);
         String ipBefore;
         String ipAfter;
         RouterData routerData = configuration.getRouterData();
         if (routerData == null) {
             this.setCallCode(Interaction.INTERACTION_CALL_ERROR);
+            progress.finalize();
             return false;
         }
         String routerIP = routerData.getRouterIP();
@@ -71,6 +76,8 @@ public class HTTPReconnect extends Interaction {
         RequestInfo requestInfo = null;
         // IP auslesen
         ipBefore = JDUtilities.getIPAddress();
+        progress.increase(1);
+        progress.setStatusText("(login)HTTPReconnect - Old IP: "+ipBefore);
         logger.fine("IP before:" + ipBefore);
         if (login != null && !login.equals("")) {
             login.replaceAll(VAR_USERNAME, routerUsername);
@@ -80,24 +87,30 @@ public class HTTPReconnect extends Interaction {
             if (requestInfo == null) {
                 logger.severe("Login failed.");
                 this.setCallCode(Interaction.INTERACTION_CALL_ERROR);
+                progress.finalize();
                 return false;
             }
             else if (!requestInfo.isOK()) {
                 logger.severe("Login failed. HTTP-Code:" + requestInfo.getResponseCode());
                 this.setCallCode(Interaction.INTERACTION_CALL_ERROR);
+                progress.finalize();
                 return false;
             }
         }
         // Disconnect
+        progress.increase(1);
+        progress.setStatusText("(disconnect)HTTPReconnect - Old IP: "+ipBefore);
         requestInfo = doThis("Disconnect", isAbsolute(disconnect) ? disconnect : routerPage + disconnect, requestInfo, routerData.getDisconnectRequestProperties(), routerData.getDisconnectPostParams(), routerData.getDisconnectType());
         if (requestInfo == null) {
             logger.severe("Disconnect failed.");
             this.setCallCode(Interaction.INTERACTION_CALL_ERROR);
+            progress.finalize();
             return false;
         }
         else if (!requestInfo.isOK()) {
             logger.severe("Disconnect failed HTTP-Code:" + requestInfo.getResponseCode());
             this.setCallCode(Interaction.INTERACTION_CALL_ERROR);
+            progress.finalize();
             return false;
         }
         try {
@@ -105,22 +118,30 @@ public class HTTPReconnect extends Interaction {
         }
         catch (InterruptedException e) {
         }
+        
+        progress.setStatusText("(connect)HTTPReconnect - Old IP: "+ipBefore);
         // Verbindung wiederaufbauen
+        progress.increase(1);
         logger.fine("building connection");
         requestInfo = doThis("Rebuild", isAbsolute(connect) ? connect : routerPage + connect, null, routerData.getConnectRequestProperties(), routerData.getConnectPostParams(), routerData.getConnectType());
         if (requestInfo == null) {
             logger.severe("Reconnect failed.");
             this.setCallCode(Interaction.INTERACTION_CALL_ERROR);
+            progress.finalize();
             return false;
         }
         else if (!requestInfo.isOK()) {
             logger.severe("Reconnect failed. HTTP-Code:" + requestInfo.getResponseCode());
             this.setCallCode(Interaction.INTERACTION_CALL_ERROR);
+            progress.finalize();
             return false;
         }
         // IP check
         if (waitTime > 0) {
+            progress.setRange(progress.getMax()+waitTime);
+            progress.setStatusText("(wait)HTTPReconnect - "+waitTime+" Sec");
             logger.fine("wait " + waitTime + " seconds");
+            progress.increase(1);
             try {
                 Thread.sleep(waitTime * 1000);
             }
@@ -128,23 +149,29 @@ public class HTTPReconnect extends Interaction {
             }
         }
         // IP check
+        progress.increase(1);
         ipAfter = JDUtilities.getIPAddress();
+        progress.setStatusText("(ipCheck)HTTPReconnect - "+ipBefore+"/"+ipAfter);
         logger.fine("IP after reconnect:" + ipAfter);
         if (ipBefore == null && ipAfter == null) {
             logger.info("Es konnte keine IP ausgelesen werden.");
+            progress.finalize();
             return true;
         }
         if (ipBefore == null || ipAfter == null || ipBefore.equals(ipAfter)) {
             logger.severe("IP address did not change");
             if (retries < HTTPReconnect.MAX_RETRIES && (retries < configuration.getReconnectRetries() || configuration.getReconnectRetries() <= 0)) {
+                progress.finalize();
                 return doInteraction(arg);
             }
             this.setCallCode(Interaction.INTERACTION_CALL_ERROR);
             retries = 0;
+            progress.finalize();
             return false;
         }
         this.setCallCode(Interaction.INTERACTION_CALL_SUCCESS);
         retries = 0;
+        progress.finalize();
         return true;
     }
    

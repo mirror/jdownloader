@@ -137,7 +137,7 @@ private static String[] CATEGORIES =new String[]{"Audio"};
                             }
                             results = Math.min(maxMatches, results);
                             //
-                            firePluginEvent(new PluginEvent(this, PluginEvent.PLUGIN_PROGRESS_MAX, results));
+                           progress.setRange( results);
                         }
                         Vector<Vector<String>> matches = getAllSimpleMatches(requestInfo.getHtmlCode(), COMMAND_URL);
                         String link;
@@ -152,7 +152,7 @@ private static String[] CATEGORIES =new String[]{"Audio"};
                             // decryptedLinks.add(link);
                             //
                             // }
-                            firePluginEvent(new PluginEvent(this, PluginEvent.PLUGIN_PROGRESS_INCREASE, null));
+                             progress.increase( 1);
                             results--;
                         }
                         if (results <= 0|| matches.size()<=0) break;
@@ -169,7 +169,7 @@ private static String[] CATEGORIES =new String[]{"Audio"};
                 catch (IOException e) {
                     e.printStackTrace();
                 }
-                firePluginEvent(new PluginEvent(this, PluginEvent.PLUGIN_PROGRESS_FINISH, null));
+                //veraltet: firePluginEvent(new PluginEvent(this, PluginEvent.PLUGIN_PROGRESS_FINISH, null));
                 step.setParameter(decryptedLinks);
                 return step;
 

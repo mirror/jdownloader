@@ -95,6 +95,10 @@ public class ControlEvent extends AWTEvent{
     public static final int CONTROL_SINGLE_DOWNLOAD_FINISHED_ERROR_PREMIUM = 22;
     public static final int CONTROL_SINGLE_DOWNLOAD_FINISHED_ERROR = 23;
     /**
+     * Gibt an dass ein plugin, eine INteraction etc. einen Forschritt gemacht haben. Das entsprechende Event wird aus der ProgressController klasse  ausgelöst
+     */
+    public static final int CONTROL_ON_PROGRESS = 24;
+    /**
      * Die ID des Ereignisses
      */
     private int controlID;

@@ -114,7 +114,7 @@ public class Serienjunkies extends PluginForDecrypt {
 
                     }
 
-                    logger.info(reqinfo.getHtmlCode());
+//                    logger.info(reqinfo.getHtmlCode());
 
                     Vector<Vector<String>> links;
                     links = getAllSimpleMatches(reqinfo.getHtmlCode(), " <a href=\"http://°\"");
@@ -124,33 +124,33 @@ public class Serienjunkies extends PluginForDecrypt {
 
                     if (parameter.indexOf("/safe/") >= 0 || parameter.indexOf("/save/") >= 0) {
                         logger.info("safe link");
-                        firePluginEvent(new PluginEvent(this, PluginEvent.PLUGIN_PROGRESS_MAX, 1));
+                       progress.setRange( 1);
                         helpstring = EinzelLinks(parameter);
-                        firePluginEvent(new PluginEvent(this, PluginEvent.PLUGIN_PROGRESS_INCREASE, null));
+                         progress.increase( 1);
                         decryptedLinks.add(new String[]{helpstring, DEFAULT_PASSWORD, null});
                     } else if (parameter.indexOf("download.serienjunkies.org") >= 0) {
                         logger.info("sjsafe link");
-                        firePluginEvent(new PluginEvent(this, PluginEvent.PLUGIN_PROGRESS_MAX, 1));
+                       progress.setRange( 1);
                         helpvector = ContainerLinks(parameter);
-                        firePluginEvent(new PluginEvent(this, PluginEvent.PLUGIN_PROGRESS_INCREASE, null));
+                         progress.increase( 1);
                         for (int j = 0; j < helpvector.size(); j++) {
                             decryptedLinks.add(new String[]{helpvector.get(j), DEFAULT_PASSWORD, null});
                         }
                     } else if (parameter.indexOf("/sjsafe/") >= 0) {
                         logger.info("sjsafe link");
-                        firePluginEvent(new PluginEvent(this, PluginEvent.PLUGIN_PROGRESS_MAX, 1));
+                       progress.setRange( 1);
                         helpvector = ContainerLinks(parameter);
 
-                        firePluginEvent(new PluginEvent(this, PluginEvent.PLUGIN_PROGRESS_INCREASE, null));
+                         progress.increase( 1);
                         for (int j = 0; j < helpvector.size(); j++) {
                             decryptedLinks.add(new String[]{helpvector.get(j), DEFAULT_PASSWORD, null});
                         }
                     } else {
                         logger.info("else link");
-                        firePluginEvent(new PluginEvent(this, PluginEvent.PLUGIN_PROGRESS_MAX, links.size()));
+                       progress.setRange( links.size());
                         // Kategorien
                         for (int i = 0; i < links.size(); i++) {
-                            firePluginEvent(new PluginEvent(this, PluginEvent.PLUGIN_PROGRESS_INCREASE, null));
+                             progress.increase( 1);
                             if (links.get(i).get(0).indexOf("/safe/") >= 0) {
                                 helpstring = EinzelLinks(links.get(i).get(0));
                                 decryptedLinks.add(new String[]{helpstring, DEFAULT_PASSWORD, null});
@@ -170,7 +170,7 @@ public class Serienjunkies extends PluginForDecrypt {
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
-                firePluginEvent(new PluginEvent(this, PluginEvent.PLUGIN_PROGRESS_FINISH, null));
+                //veraltet: firePluginEvent(new PluginEvent(this, PluginEvent.PLUGIN_PROGRESS_FINISH, null));
                 step.setParameter(decryptedLinks);
         }
         return null;

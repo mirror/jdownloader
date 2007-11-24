@@ -5,12 +5,16 @@ import java.net.URL;
 import java.util.Iterator;
 import java.util.Vector;
 
+import jd.controlling.ProgressController;
+
 /**
  * Dies ist die Oberklasse für alle Plugins, die Links entschlüsseln können
  * 
  * @author astaldo
  */
 public abstract class PluginForDecrypt extends Plugin {
+    protected ProgressController progress;
+
     /**
      * Diese Methode entschlüsselt Links.
      * 
@@ -21,6 +25,11 @@ public abstract class PluginForDecrypt extends Plugin {
      *            herausgefiltert
      * @return Ein Vector mit Klartext-links
      */
+    
+    public PluginForDecrypt(){
+      
+      
+    }
     public Vector<String[]> decryptLinks(Vector<String> cryptedLinks) {
         Vector<String[]> decryptedLinks = new Vector<String[]>();
         Iterator<String> iterator = cryptedLinks.iterator();
@@ -47,9 +56,10 @@ public abstract class PluginForDecrypt extends Plugin {
      */
     public Vector<String[]> decryptLink(String cryptedLink) {
         this.cryptedLink = cryptedLink;
-
+        progress=new ProgressController();
+        progress.setStatusText("decrypt-"+getPluginName()+": "+cryptedLink);
         PluginStep step = null;
-        logger.info("djjj "+cryptedLink);
+      
         while ((step = nextStep(step)) != null) {
             doStep(step, cryptedLink);
 
@@ -57,7 +67,7 @@ public abstract class PluginForDecrypt extends Plugin {
                 Vector links = (Vector) step.getParameter();
                 if (links == null ) {
                     logger.severe("ACHTUNG Decrypt Plugins müssen im letzten schritt einen  Vector<String[]> oder Vector<String> parameter  übergeben!");
-
+                    progress.finalize();
                     return new Vector<String[]>();
                 }
                 Vector<String[]> decryptedLinks = new Vector<String[]>();
@@ -69,15 +79,17 @@ public abstract class PluginForDecrypt extends Plugin {
                             decryptedLinks.add(new String[] { (String) links.get(i), null, null });
                         }
                         logger.info("Got " + decryptedLinks.size() + " links1 "+links);
+                        progress.finalize();
                         return decryptedLinks;
                     }
                     else if (links.get(0) instanceof String[]) {
                         logger.info("Got " + links.size() + " links2 "+links);
+                        progress.finalize();
                         return (Vector<String[]>) links;
                     }
                     else {
                         logger.severe("ACHTUNG Decrypt Plugins müssen im letzten schritt einen  Vector<String[]> oder Vector<String> parameter  übergeben!");
-
+                        progress.finalize();
                         return new Vector<String[]>();
                     }
 
@@ -90,6 +102,7 @@ public abstract class PluginForDecrypt extends Plugin {
 
             }
         }
+        progress.finalize();
         return new Vector<String[]>();
 
     }

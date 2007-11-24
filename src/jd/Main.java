@@ -97,9 +97,14 @@ public class Main {
         // werdn
         CookieHandler.setDefault(null);
         logger.info("Erstelle Controller");
-        JDController controller = new JDController();
-        UIInterface uiInterface = new SimpleGUI();
-        controller.setUiInterface(uiInterface);
+        final JDController controller = new JDController();
+      
+    
+      
+                UIInterface uiInterface = new SimpleGUI();
+         controller.setUiInterface(uiInterface);
+     
+
         // Startet die Downloads nach dem start
         logger.info(log);
         logger.info("Lade Plugins");
@@ -112,7 +117,7 @@ public class Main {
                 File newFile = new File(links.getAbsolutePath() + ".bup");
                 newFile.delete();
                 links.renameTo(newFile);
-                uiInterface.showMessageDialog("Linkliste inkompatibel. \r\nBackup angelegt: " + newFile + " Liste geleert!");
+                controller.getUiInterface().showMessageDialog("Linkliste inkompatibel. \r\nBackup angelegt: " + newFile + " Liste geleert!");
             }
         }
         logger.info("OS: " + System.getProperty("os.name") + ", " + System.getProperty("os.arch") + ", " + System.getProperty("os.version"));
@@ -158,7 +163,7 @@ public class Main {
         }
         Interaction.handleInteraction(Interaction.INTERACTION_APPSTART, false);
         if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_START_DOWNLOADS_AFTER_START, false)) {
-            uiInterface.fireUIEvent(new UIEvent(uiInterface, UIEvent.UI_START_DOWNLOADS));
+            controller.getUiInterface().fireUIEvent(new UIEvent(controller.getUiInterface(), UIEvent.UI_START_DOWNLOADS));
         }
 
         String hash="";

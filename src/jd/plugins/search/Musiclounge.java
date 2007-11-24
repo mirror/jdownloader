@@ -104,7 +104,7 @@ logger.info("Search "+parameter);
                       
                        Vector<Vector<String>> matches = getAllSimpleMatches(requestInfo.getHtmlCode(), "<a href=\"°\" target=\"_blank\">°</a> |");
                         String link;
-                        firePluginEvent(new PluginEvent(this, PluginEvent.PLUGIN_PROGRESS_MAX, matches.size()));
+                       progress.setRange( matches.size());
                         for (int i = 0; i < matches.size(); i++) {
                             // link = getLinkDetails(matches.get(i).get(0));
                             if (matches.get(i).get(0) != null) {
@@ -115,7 +115,7 @@ logger.info("Search "+parameter);
                             // decryptedLinks.add(link);
                             //
                             // }
-                            firePluginEvent(new PluginEvent(this, PluginEvent.PLUGIN_PROGRESS_INCREASE, null));
+                             progress.increase( 1);
                             results--;
                         }
                       
@@ -132,7 +132,7 @@ logger.info("Search "+parameter);
                 catch (IOException e) {
                     e.printStackTrace();
                 }
-                firePluginEvent(new PluginEvent(this, PluginEvent.PLUGIN_PROGRESS_FINISH, null));
+                //veraltet: firePluginEvent(new PluginEvent(this, PluginEvent.PLUGIN_PROGRESS_FINISH, null));
                 step.setParameter(decryptedLinks);
                 return step;
 

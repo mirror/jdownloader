@@ -7,6 +7,7 @@ import java.util.logging.Logger;
 
 import jd.config.ConfigContainer;
 import jd.config.Property;
+
 import jd.event.ControlEvent;
 import jd.event.ControlListener;
 import jd.plugins.event.PluginEvent;
@@ -261,14 +262,18 @@ public abstract class Interaction extends Property implements Serializable {
             if (interaction.getTrigger().getID() == interactionevent.getID()) {
                 interaction.addControlListener(JDUtilities.getController());
                 interacts++;
+              
+                
                 logger.finer("Aktion start: "+interaction.getInteractionName()+"("+param+")");
                 if (!interaction.interact(param)) {
                     ret = false;
                     logger.severe("interaction failed: " + interaction);
+              
                 }
                 else {
                     logger.info("interaction successfull: " + interaction);
                 }
+            
               
             }
         }

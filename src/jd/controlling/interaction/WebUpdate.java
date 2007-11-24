@@ -4,6 +4,7 @@ import java.io.Serializable;
 import java.util.Vector;
 
 import jd.config.Configuration;
+import jd.controlling.ProgressController;
 import jd.update.WebUpdater;
 import jd.utils.JDUtilities;
 
@@ -56,10 +57,15 @@ public class WebUpdate extends Interaction implements Serializable {
      * Der eigentlich UpdaterVorgang läuft in einem eigenem Thread ab
      */
     public void run() {
+        
         Vector<Vector<String>> files = updater.getAvailableFiles();
+        int org;
+        ProgressController progress = new ProgressController(org=files.size());
+        progress.setStatusText("Update Check");
         if (files != null) {
           
             updater.filterAvailableUpdates(files,JDUtilities.getResourceFile("."));
+            progress.setStatus(org-files.size());
             if (files.size() > 0) {
                 logger.info("New Updates Available! "+files);
                 JDUtilities.download(JDUtilities.getResourceFile("webupdater.jar"), "http://jdownloader.ath.cx/webupdater.jar");
@@ -79,10 +85,12 @@ public class WebUpdate extends Interaction implements Serializable {
                 }
 
             }
+  
 
         }
         
         this.setCallCode(Interaction.INTERACTION_CALL_SUCCESS);
+        progress.finalize();
 logger.info(updater.getLogger().toString());
         // updater.run();
         // if (updater.getUpdatedFiles() > 0) {

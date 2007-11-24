@@ -5,6 +5,7 @@ import java.io.Serializable;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.Configuration;
+import jd.controlling.ProgressController;
 import jd.plugins.DownloadLink;
 import jd.utils.JDUtilities;
 
@@ -22,10 +23,18 @@ public class ManualCaptcha extends Interaction implements Serializable {
     public ManualCaptcha() {}
     @Override
     public boolean doInteraction(Object arg) {
+        logger.info("start");
+        ProgressController progress = new ProgressController(2);
+     
+        progress.setStatusText("Manual Captcha (JAC supported)");
         logger.info("Starting Manuell captcha");
         DownloadLink dink = (DownloadLink) arg;
+        progress.increase(1);
         String captchaText = JDUtilities.getController().getCaptchaCodeFromUser(dink.getPlugin(), dink.getLatestCaptchaFile());
+        progress.increase(1);
         setProperty("captchaCode", captchaText);
+        logger.info("ende");
+        progress.finalize();
         if (captchaText != null && captchaText.length() > 0) return true;
         return false;
     }

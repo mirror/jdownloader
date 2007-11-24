@@ -88,7 +88,7 @@ public class MultiDecrypt extends PluginForDecrypt {
     public PluginStep doStep(PluginStep step, String parameter) {
         if (step.getStep() == PluginStep.STEP_DECRYPT) {
             Vector<String[]> decryptedLinks = new Vector<String[]>();
-            firePluginEvent(new PluginEvent(this, PluginEvent.PLUGIN_PROGRESS_MAX, 1));
+           progress.setRange( 1);
             FileSearch filesearch = new FileSearch();
 
             int inst = filesearch.getIntParam(FileSearch.PARAM_INST, 1);
@@ -113,8 +113,8 @@ public class MultiDecrypt extends PluginForDecrypt {
             }
             if (inst != 1)
                 filesearch.getProperties().setProperty(FileSearch.PARAM_INST, inst);
-            firePluginEvent(new PluginEvent(this, PluginEvent.PLUGIN_PROGRESS_INCREASE, null));
-            firePluginEvent(new PluginEvent(this, PluginEvent.PLUGIN_PROGRESS_FINISH, null));
+             progress.increase( 1);
+            //veraltet: firePluginEvent(new PluginEvent(this, PluginEvent.PLUGIN_PROGRESS_FINISH, null));
             logger.info(decryptedLinks.size() + " links Found");
             step.setParameter(decryptedLinks);
         }

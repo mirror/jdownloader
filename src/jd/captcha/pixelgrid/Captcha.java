@@ -842,7 +842,11 @@ public class Captcha extends PixelGrid {
         for (int y = 0; y < getHeight(); y++) {
             for (int x = 0; x < getWidth(); x++) {
                 // grid[x][y] = pixel[i++];
+                try{
                 this.pixel[i] = ((IndexColorModel) colorModel).getRGB(bpixel[i]);
+                }catch(Exception e){
+                    this.pixel[i]=0;   
+                }
 
                 Color c = new Color(pixel[i]);
                 float[] col = new float[4];
