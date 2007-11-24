@@ -1765,5 +1765,21 @@ public static String[] splitByNewline(String arg){
         e.printStackTrace(pw);
         return sw.getBuffer().toString();
     }
+/**
+ * verschlüsselt string mit der übergebenen encryption (Containerpluginname
+ * @param string
+ * @param encryption
+ * @return ciphertext
+ */ 
+    public static String encrypt(String string, String encryption) {
+       Vector<PluginForContainer> pfc = JDUtilities.getPluginsForContainer();
+       for( int i=0; i<pfc.size();i++){
+           if(pfc.get(i).getPluginName().equalsIgnoreCase(encryption)){
+               return pfc.get(i).encrypt(string);
+           }
+       }
+       return null;
+        
+    }
 
 }
