@@ -530,6 +530,7 @@ public class JDController implements PluginListener, ControlListener, UIListener
                             e.printStackTrace();
                         }
                         catch (NullPointerException e) {
+                            e.printStackTrace();
                         }
                         // Gibt es einen Names für ein Containerformat, wird ein
                         // passendes Plugin gesucht
@@ -537,20 +538,18 @@ public class JDController implements PluginListener, ControlListener, UIListener
                             if (localLink.getContainer() != null) {
                                 pluginForContainer = JDUtilities.getPluginForContainer(localLink.getContainer());
                                 if (pluginForContainer != null) {
-                                    pluginForContainer = pluginForContainer.getClass().newInstance();
+                                    pluginForContainer=pluginForContainer.getPlugin(localLink.getContainerFile());
+                                   // pluginForContainer.
+                                   
                                     pluginForContainer.getContainedDownloadlinks(localLink.getContainerFile());
                                 }
                                 else
                                     localLink.setEnabled(false);
                             }
                         }
-                        catch (InstantiationException e) {
-                            e.printStackTrace();
-                        }
-                        catch (IllegalAccessException e) {
-                            e.printStackTrace();
-                        }
+                  
                         catch (NullPointerException e) {
+                            e.printStackTrace();
                         }
                         if (pluginForHost != null) {
                             localLink.setLoadedPlugin(pluginForHost);
@@ -589,8 +588,12 @@ public class JDController implements PluginListener, ControlListener, UIListener
         Vector<DownloadLink> downloadLinks = new Vector<DownloadLink>();
         PluginForContainer pContainer;
         ProgressController progress = new ProgressController(pluginsForContainer.size());
+        logger.info("load Container: "+file);
+        
         for (int i = 0; i < pluginsForContainer.size(); i++) {
+            
             pContainer = pluginsForContainer.get(i);
+            logger.info(i+". "+"Containerplugin: "+pContainer.getPluginName());
             progress.setStatusText("Containerplugin: "+pContainer.getPluginName());
             if (pContainer.canHandle(file.getName())) {
                 progress.setSource(pContainer);
@@ -633,16 +636,12 @@ public class JDController implements PluginListener, ControlListener, UIListener
      * @return true/False je nach Erfolg
      */
     public boolean initDownloadLinks() {
-        Vector<DownloadLink> list = loadDownloadLinks(JDUtilities.getResourceFile("links.dat"));
-        if (list != null) {
+       
             downloadLinks = loadDownloadLinks(JDUtilities.getResourceFile("links.dat"));
+            if(downloadLinks==null)return false;
             if (uiInterface != null) uiInterface.setDownloadLinks(downloadLinks);
             return true;
-        }
-        else {
-
-            return false;
-        }
+       
     }
 
     /**

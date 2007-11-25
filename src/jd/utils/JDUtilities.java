@@ -50,6 +50,7 @@ import java.util.ResourceBundle;
 import java.util.Scanner;
 import java.util.Vector;
 import java.util.logging.ConsoleHandler;
+import java.util.logging.FileHandler;
 import java.util.logging.Formatter;
 import java.util.logging.Handler;
 import java.util.logging.Level;
@@ -356,10 +357,12 @@ public class JDUtilities {
         center.y -= child.getHeight() / 2;
         return center;
     }
-public static String[] splitByNewline(String arg){
-    if(arg==null)return new String[]{};
-    return arg.split("[\r|\n|\r\n]{1,2}");
-}
+
+    public static String[] splitByNewline(String arg) {
+        if (arg == null) return new String[] {};
+        return arg.split("[\r|\n|\r\n]{1,2}");
+    }
+
     /**
      * Liefert eine Zeichenkette aus dem aktuellen ResourceBundle zurück
      * 
@@ -1734,6 +1737,7 @@ public static String[] splitByNewline(String arg){
             Formatter formatter = new LogFormatter();
             logger.setUseParentHandlers(false);
             Handler console = new ConsoleHandler();
+       
             console.setLevel(Level.ALL);
             console.setFormatter(formatter);
             logger.addHandler(console);
@@ -1742,6 +1746,23 @@ public static String[] splitByNewline(String arg){
             logger.finer("Init Logger:" + LOGGER_NAME);
         }
         return logger;
+    }
+    public static boolean initFileLogger(){
+        try {
+            if (getConfiguration().getBooleanProperty(Configuration.PARAM_WRITE_LOG, true)) {
+                Handler file_handler = new FileHandler(getConfiguration().getStringProperty(Configuration.PARAM_WRITE_LOG_PATH, getResourceFile("jd_log.txt").getAbsolutePath()));
+                logger.addHandler(file_handler);
+                logger.info("File Logger active: "+getConfiguration().getStringProperty(Configuration.PARAM_WRITE_LOG_PATH, getResourceFile("jd_log.txt").getAbsolutePath()));
+                return true;
+            }
+        }
+        catch (SecurityException e) {
+            e.printStackTrace();
+        }
+        catch (IOException e) {
+            e.printStackTrace();
+        }
+        return false;
     }
 
     /**
@@ -1765,21 +1786,23 @@ public static String[] splitByNewline(String arg){
         e.printStackTrace(pw);
         return sw.getBuffer().toString();
     }
-/**
- * verschlüsselt string mit der übergebenen encryption (Containerpluginname
- * @param string
- * @param encryption
- * @return ciphertext
- */ 
+
+    /**
+     * verschlüsselt string mit der übergebenen encryption (Containerpluginname
+     * 
+     * @param string
+     * @param encryption
+     * @return ciphertext
+     */
     public static String encrypt(String string, String encryption) {
-       Vector<PluginForContainer> pfc = JDUtilities.getPluginsForContainer();
-       for( int i=0; i<pfc.size();i++){
-           if(pfc.get(i).getPluginName().equalsIgnoreCase(encryption)){
-               return pfc.get(i).encrypt(string);
-           }
-       }
-       return null;
-        
+        Vector<PluginForContainer> pfc = JDUtilities.getPluginsForContainer();
+        for (int i = 0; i < pfc.size(); i++) {
+            if (pfc.get(i).getPluginName().equalsIgnoreCase(encryption)) {
+                return pfc.get(i).encrypt(string);
+            }
+        }
+        return null;
+
     }
 
 }

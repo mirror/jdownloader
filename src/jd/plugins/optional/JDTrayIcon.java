@@ -14,98 +14,130 @@ import jd.plugins.event.PluginEvent;
 import jd.utils.JDUtilities;
 import sun.misc.Service;
 
-public class JDTrayIcon extends PluginOptional implements ActionListener{
+public class JDTrayIcon extends PluginOptional implements ActionListener {
     private TrayIcon trayIcon;
+
     private MenuItem showHide;
+
     private MenuItem configuration;
+
     private MenuItem startStop;
+
     private MenuItem clipboard;
+
     private MenuItem reconnect;
+
     private MenuItem exit;
-    private boolean uiVisible = true;
-    
-    @Override public String getCoder()                { return "astaldo";  }
-    @Override public String getPluginID()   { return "0.0.0.1";  }
-    @Override public String getPluginName() { return "TrayIcon"; }
-    @Override public String getVersion()    { return "0.0.0.1";  }
+
+    private boolean  uiVisible = true;
+
     @Override
-    public void enable(boolean enable) throws Exception{
-        if(enable){
+    public String getCoder() {
+        return "astaldo";
+    }
+
+    @Override
+    public String getPluginID() {
+        return "0.0.0.1";
+    }
+
+    @Override
+    public String getPluginName() {
+        return "TrayIcon";
+    }
+
+    @Override
+    public String getVersion() {
+        return "0.0.0.1";
+    }
+
+    @Override
+    public void enable(boolean enable) throws Exception {
+        if(JDUtilities.getJavaVersion()>=1.6){
+        if (enable) {
+            logger.info("Systemtray ok: java "+JDUtilities.getJavaVersion());
             initGUI();
         }
-        else{
-            if(trayIcon != null)
-                SystemTray.getSystemTray().remove(trayIcon);
+        else {
+            if (trayIcon != null) SystemTray.getSystemTray().remove(trayIcon);
+        }
+        }else{
+            logger.severe("Error initializing SystemTray: Tray is supported since Java 1.6. your Version: "+JDUtilities.getJavaVersion());
         }
     }
-    private void initGUI()throws Exception{
-   
-try{
-        SystemTray tray = SystemTray.getSystemTray();
 
-        Service s;
-        Image image = JDUtilities.getImage("jd_logo");
-        PopupMenu popup = new PopupMenu();
-        trayIcon = new TrayIcon(image, JDUtilities.getJDTitle(), popup);
+    private void initGUI() {
 
-        trayIcon.setImageAutoSize(true);
-        trayIcon.addActionListener(this);
         try {
-            tray.add(trayIcon);
-        }
-        catch (AWTException e) {
-            logger.severe("TrayIcon could not be added.");
-        }
-        showHide      = new MenuItem("Show/Hide");
-        configuration = new MenuItem("Configuration");
-        startStop     = new MenuItem("Start/Stop");
-        clipboard     = new MenuItem("Clipboard");
-        reconnect     = new MenuItem("Reconnect");
-        exit          = new MenuItem("Exit");
+            SystemTray tray = SystemTray.getSystemTray();
 
-        showHide.addActionListener(this);
-        configuration.addActionListener(this);
-        startStop.addActionListener(this);
-        clipboard.addActionListener(this);
-        reconnect.addActionListener(this);
-        exit.addActionListener(this);
+            Service s;
+            Image image = JDUtilities.getImage("jd_logo");
+            PopupMenu popup = new PopupMenu();
+            trayIcon = new TrayIcon(image, JDUtilities.getJDTitle(), popup);
 
-        popup.add(showHide);
-        popup.addSeparator();
-        popup.add(startStop);
-        popup.addSeparator();
-        popup.add(clipboard);
-        popup.add(configuration);
-        popup.add(reconnect);
-        popup.addSeparator();
-        popup.add(exit);
-}catch(Exception e){
-    logger.severe("Error initializing SystemTray "+e.getMessage());
-    return;
-}
+            trayIcon.setImageAutoSize(true);
+            trayIcon.addActionListener(this);
+            try {
+                tray.add(trayIcon);
+            }
+            catch (AWTException e) {
+                logger.severe("TrayIcon could not be added.");
+            }
+            showHide = new MenuItem("Show/Hide");
+            configuration = new MenuItem("Configuration");
+            startStop = new MenuItem("Start/Stop");
+            clipboard = new MenuItem("Clipboard");
+            reconnect = new MenuItem("Reconnect");
+            exit = new MenuItem("Exit");
+
+            showHide.addActionListener(this);
+            configuration.addActionListener(this);
+            startStop.addActionListener(this);
+            clipboard.addActionListener(this);
+            reconnect.addActionListener(this);
+            exit.addActionListener(this);
+
+            popup.add(showHide);
+            popup.addSeparator();
+            popup.add(startStop);
+            popup.addSeparator();
+            popup.add(clipboard);
+            popup.add(configuration);
+            popup.add(reconnect);
+            popup.addSeparator();
+            popup.add(exit);
+        }
+        catch (Exception e) {
+            logger.severe("Error initializing SystemTray " + e.getMessage());
+            return;
+        }
     }
+
     public void actionPerformed(ActionEvent e) {
         if (e.getSource() == exit) {
-            firePluginEvent(new PluginEvent(this,PluginEvent.PLUGIN_CONTROL_EXIT,null));        }
+            firePluginEvent(new PluginEvent(this, PluginEvent.PLUGIN_CONTROL_EXIT, null));
+        }
         else if (e.getSource() == reconnect) {
-            firePluginEvent(new PluginEvent(this,PluginEvent.PLUGIN_CONTROL_RECONNECT,null));
+            firePluginEvent(new PluginEvent(this, PluginEvent.PLUGIN_CONTROL_RECONNECT, null));
         }
         else if (e.getSource() == clipboard) {
-            firePluginEvent(new PluginEvent(this,PluginEvent.PLUGIN_CONTROL_DND,null));
+            firePluginEvent(new PluginEvent(this, PluginEvent.PLUGIN_CONTROL_DND, null));
         }
         else if (e.getSource() == startStop) {
-            firePluginEvent(new PluginEvent(this,PluginEvent.PLUGIN_CONTROL_START_STOP,null));
+            firePluginEvent(new PluginEvent(this, PluginEvent.PLUGIN_CONTROL_START_STOP, null));
         }
         else if (e.getSource() == configuration) {
-            firePluginEvent(new PluginEvent(this,PluginEvent.PLUGIN_CONTROL_SHOW_CONFIG,null));
+            firePluginEvent(new PluginEvent(this, PluginEvent.PLUGIN_CONTROL_SHOW_CONFIG, null));
         }
         else {
             uiVisible = !uiVisible;
-            firePluginEvent(new PluginEvent(this,PluginEvent.PLUGIN_CONTROL_SHOW_UI,uiVisible));
+            firePluginEvent(new PluginEvent(this, PluginEvent.PLUGIN_CONTROL_SHOW_UI, uiVisible));
         }
     }
+
     @Override
     public String getRequirements() {
-     return "JRE 1.6+";
+        return "JRE 1.6+";
     }
 }

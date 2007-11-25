@@ -3,6 +3,8 @@ package jd.gui.skins.simple.config;
 import java.awt.BorderLayout;
 import java.awt.GridBagConstraints;
 import java.util.Locale;
+import java.util.logging.FileHandler;
+import java.util.logging.Handler;
 import java.util.logging.Level;
 
 import javax.swing.JFileChooser;
@@ -89,6 +91,13 @@ addGUIConfigEntry(ce);
         addGUIConfigEntry(ce);
         ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, configuration, Configuration.PARAM_WEBUPDATE_AUTO_RESTART, "Webupdate:  automatisch ausführen!").setDefaultValue(true));
         addGUIConfigEntry(ce);
+
+        ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, configuration, Configuration.PARAM_WRITE_LOG, "Filelogger: Log in datei schreiben").setDefaultValue(true));
+        addGUIConfigEntry(ce);
+        
+        ce= new GUIConfigEntry( new ConfigEntry(ConfigContainer.TYPE_BROWSEFILE, configuration, Configuration.PARAM_WRITE_LOG_PATH, "Filelogger: Pfad zur Logfile").setDefaultValue(JDUtilities.getResourceFile("jd_log.txt").getAbsolutePath()));
+        addGUIConfigEntry(ce);
+
         
         
         if (JDUtilities.getHomeDirectory() != null) {

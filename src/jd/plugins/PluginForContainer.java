@@ -1,6 +1,7 @@
 package jd.plugins;
 
 import java.io.File;
+import java.util.HashMap;
 import java.util.Vector;
 
 import jd.utils.JDUtilities;
@@ -15,7 +16,7 @@ public abstract class PluginForContainer extends PluginForDecrypt {
     protected String               md5;
 
     protected Vector<String>       downloadLinksURL;
-
+    private static HashMap<String,PluginForContainer> plugins= new HashMap<String,PluginForContainer>();
     protected Vector<DownloadLink> containedLinks = new Vector<DownloadLink>();
 
     /**
@@ -83,9 +84,9 @@ public abstract class PluginForContainer extends PluginForDecrypt {
     
         if(containedLinks==null||containedLinks.size()==0){
             doStep(new PluginStep(PluginStep.STEP_OPEN_CONTAINER, null), filename);
-            logger.info(filename+" containes "+containedLinks);
+            logger.info(filename+" Parse");
         }
- logger.info(filename+" containes "+containedLinks);
+ //logger.info(filename+" Cached");
         return containedLinks;
     }
 
@@ -103,6 +104,31 @@ public abstract class PluginForContainer extends PluginForDecrypt {
             if (pHost.canHandle(data)) {
                 return pHost;
             }
+        }
+        return null;
+    }
+
+
+/**
+ * Gibt das passende plugin für diesen container zurück. falls schon eins exestiert wird dieses zurückgegeben.
+ * @param containerFile
+ * @return
+ */
+    public PluginForContainer getPlugin(String containerFile) {
+        if(plugins.containsKey(containerFile))return plugins.get(containerFile);
+        try {
+            PluginForContainer newPlugin = this.getClass().newInstance();
+            plugins.put(containerFile, newPlugin);
+            return newPlugin;
+        }
+        catch (InstantiationException e) {
+     
+           JDUtilities.logException(e);
+            e.printStackTrace();
+        }
+        catch (IllegalAccessException e) {
+            JDUtilities.logException(e);
+            e.printStackTrace();
         }
         return null;
     }

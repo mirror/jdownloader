@@ -39,7 +39,7 @@ public class Main {
     /**
      * @param args
      */
-    private static Logger logger = JDUtilities.getLogger();
+    private static Logger logger=JDUtilities.getLogger();
 
     public static void main(String args[]) {
         if (SingleInstanceController.isApplicationRunning()) {
@@ -106,6 +106,8 @@ public class Main {
      
 
         // Startet die Downloads nach dem start
+        
+         JDUtilities.initFileLogger();
         logger.info(log);
         logger.info("Lade Plugins");
         JDUtilities.loadPlugins();
