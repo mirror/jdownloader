@@ -638,7 +638,11 @@ public class JDController implements PluginListener, ControlListener, UIListener
     public boolean initDownloadLinks() {
        
             downloadLinks = loadDownloadLinks(JDUtilities.getResourceFile("links.dat"));
-            if(downloadLinks==null)return false;
+            if(downloadLinks==null){
+                downloadLinks= new Vector<DownloadLink>();
+                if (uiInterface != null) uiInterface.setDownloadLinks(downloadLinks);
+                return false;
+            }
             if (uiInterface != null) uiInterface.setDownloadLinks(downloadLinks);
             return true;
        

@@ -7,22 +7,21 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Serializable;
 import java.io.UnsupportedEncodingException;
+import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
-import java.net.SocketTimeoutException;
 import java.net.URL;
 import java.net.URLConnection;
 import java.net.URLDecoder;
 import java.security.MessageDigest;
 import java.util.Date;
-import java.util.Scanner;
 import java.util.Vector;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.zip.GZIPInputStream;
 
 import jd.utils.HTMLEntities;
 
@@ -64,7 +63,7 @@ public class WebUpdater implements Serializable {
      * @param path (Dir Pfad zum Updateserver)
      */
     public WebUpdater(String path) {
-        logger= new StringBuffer();
+        logger = new StringBuffer();
         if (path != null) {
             this.setListPath(path);
         }
@@ -81,8 +80,7 @@ public class WebUpdater implements Serializable {
     }
 
     public void log(String buf) {
-        if(logger!=null)
-        logger.append(new Date() + ":" + buf + System.getProperty("line.separator"));
+        if (logger != null) logger.append(new Date() + ":" + buf + System.getProperty("line.separator"));
     }
 
     public StringBuffer getLogger() {
@@ -159,51 +157,50 @@ public class WebUpdater implements Serializable {
         String hash;
         for (int i = files.size() - 1; i >= 0; i--) {
             akt = new File(files.elementAt(i).elementAt(0)).getAbsolutePath();
-            String[] tmp= files.elementAt(i).elementAt(0).split("\\?");
-            
+            String[] tmp = files.elementAt(i).elementAt(0).split("\\?");
+
             akt = new File(tmp[0]).getAbsolutePath();
             if (!new File(akt).exists()) {
-                log("New file. "+files.elementAt(i)+" - "+akt);
+                log("New file. " + files.elementAt(i) + " - " + akt);
                 continue;
             }
             hash = getLocalHash(new File(akt));
 
             if (!hash.equalsIgnoreCase(files.elementAt(i).elementAt(1))) {
-                log("UPDATE AV. "+files.elementAt(i)+" - "+hash);
+                log("UPDATE AV. " + files.elementAt(i) + " - " + hash);
                 continue;
             }
-            log("OLD:  "+files.elementAt(i)+" - "+hash);
-            files.removeElementAt(i);
-        }
-
-    } 
-    public void filterAvailableUpdates(Vector<Vector<String>> files,File dir) {
-        log(files.toString());
-        String akt;
-        String hash;
-        for (int i = files.size() - 1; i >= 0; i--) {
-            String[] tmp= files.elementAt(i).elementAt(0).split("\\?");
-      
-                akt = new File(dir,tmp[0]).getAbsolutePath();
-          
-           
-            
-  
-            if (!new File(akt).exists()) {
-                log("New file. "+files.elementAt(i)+" - "+akt);
-                continue;
-            }
-            hash = getLocalHash(new File(akt));
-
-            if (!hash.equalsIgnoreCase(files.elementAt(i).elementAt(1))) {
-                log("UPDATE AV. "+files.elementAt(i)+" - "+hash);
-                continue;
-            }
-            log("OLD:  "+files.elementAt(i)+" - "+hash);
+            log("OLD:  " + files.elementAt(i) + " - " + hash);
             files.removeElementAt(i);
         }
 
     }
+
+    public void filterAvailableUpdates(Vector<Vector<String>> files, File dir) {
+        log(files.toString());
+        String akt;
+        String hash;
+        for (int i = files.size() - 1; i >= 0; i--) {
+            String[] tmp = files.elementAt(i).elementAt(0).split("\\?");
+
+            akt = new File(dir, tmp[0]).getAbsolutePath();
+
+            if (!new File(akt).exists()) {
+                log("New file. " + files.elementAt(i) + " - " + akt);
+                continue;
+            }
+            hash = getLocalHash(new File(akt));
+
+            if (!hash.equalsIgnoreCase(files.elementAt(i).elementAt(1))) {
+                log("UPDATE AV. " + files.elementAt(i) + " - " + hash);
+                continue;
+            }
+            log("OLD:  " + files.elementAt(i) + " - " + hash);
+            files.removeElementAt(i);
+        }
+
+    }
+
     private String getLocalHash(File f) {
         try {
             if (!f.exists()) return null;
@@ -234,55 +231,61 @@ public class WebUpdater implements Serializable {
      * Liest alle files vom server
      * 
      * @return Vector mit allen verfügbaren files
-     * @throws UnsupportedEncodingException 
+     * @throws UnsupportedEncodingException
      */
     public Vector<Vector<String>> getAvailableFiles() {
-        String source = getPage(listPath);
-
-        String pattern = "\\$(.*?)\\=\\\"(.*?)\\\"\\;(.*?)";
-
+        String source;
         Vector<Vector<String>> ret = new Vector<Vector<String>>();
-        if (source == null) {
-            log(listPath + " nicht verfüpgbar");
-            return null;
-        }
-        Vector<String> entry;
-        String tmp;
-        String[] os=new String[]{"windows","mac","linux"};
-        for (Matcher r = Pattern.compile(pattern, Pattern.DOTALL).matcher(source); r.find();) {
-            entry = new Vector<String>();
-String tmp2="";
-            for (int x = 1; x <= r.groupCount(); x++) {
-                if ((tmp = r.group(x).trim()).length() > 0) {
-                    entry.add(UTF8Decode(tmp));
-                 
-                        tmp2+=htmlDecode(UTF8Decode(tmp))+" ";
-                 
-                }
+        try {
+            source = getRequest(new URL(listPath));
+
+            String pattern = "\\$(.*?)\\=\\\"(.*?)\\\"\\;(.*?)";
+
+            if (source == null) {
+                log(listPath + " nicht verfüpgbar");
+                return null;
             }
-            boolean osFound=false;
-            boolean correctOS=false;
-            for( int i=0;i<os.length;i++){
-                if(tmp2.toLowerCase().indexOf(os[i])>=0){
-                    osFound=true;
-                    if(System.getProperty("os.name").toLowerCase().indexOf(os[i])>=0){
-                        correctOS=true; 
+            Vector<String> entry;
+            String tmp;
+            String[] os = new String[] { "windows", "mac", "linux" };
+            for (Matcher r = Pattern.compile(pattern, Pattern.DOTALL).matcher(source); r.find();) {
+                entry = new Vector<String>();
+                String tmp2 = "";
+                for (int x = 1; x <= r.groupCount(); x++) {
+                    if ((tmp = r.group(x).trim()).length() > 0) {
+                        entry.add(UTF8Decode(tmp));
+
+                        tmp2 += htmlDecode(UTF8Decode(tmp)) + " ";
+
                     }
                 }
-                    
-                
-            }
-            if(!osFound||(osFound&&correctOS)){
-                ret.add(entry);
-            }else{
-                log("OS Filter: "+tmp2);
-                
-            }
+                boolean osFound = false;
+                boolean correctOS = false;
+                for (int i = 0; i < os.length; i++) {
+                    if (tmp2.toLowerCase().indexOf(os[i]) >= 0) {
+                        osFound = true;
+                        if (System.getProperty("os.name").toLowerCase().indexOf(os[i]) >= 0) {
+                            correctOS = true;
+                        }
+                    }
 
+                }
+                if (!osFound || (osFound && correctOS)) {
+                    ret.add(entry);
+                }
+                else {
+                    log("OS Filter: " + tmp2);
+
+                }
+
+            }
         }
-
+        catch (MalformedURLException e) {          
+            e.printStackTrace();
+        }
         return ret;
     }
+
     public static String htmlDecode(String str) {
         // http://rs218.rapidshare.com/files/&#0052;&#x0037;&#0052;&#x0034;&#0049;&#x0032;&#0057;&#x0031;/STE_S04E04.Borderland.German.dTV.XviD-2Br0th3rs.part1.rar
         if (str == null) return null;
@@ -307,6 +310,7 @@ String tmp2="";
         }
         return HTMLEntities.unhtmlentities(str);
     }
+
     /**
      * @author coalado
      * @param str
@@ -328,34 +332,33 @@ String tmp2="";
      * @param urlStr
      * @return String inhalt von urlStr
      */
-    private String getPage(String urlStr) {
-        URL url;
-        URLConnection con;
-        Scanner reader;
-        BufferedReader input;
+    public String getRequest(URL link) {
         try {
-            url = new URL(urlStr);
-            con = url.openConnection();
-            input = new BufferedReader(new InputStreamReader(con.getInputStream()));
-            reader = new Scanner(input).useDelimiter("\\Z");
-            String ret = "";
-            while (reader.hasNext()) {
-                ret += reader.next();
+            HttpURLConnection httpConnection = (HttpURLConnection) link.openConnection();
+            httpConnection.setReadTimeout(10000);
+            httpConnection.setReadTimeout(10000);
+            httpConnection.setInstanceFollowRedirects(true);
+            httpConnection.setRequestProperty("User-Agent", "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1; SV1; .NET CLR 1.1.4322; .NET CLR 2.0.50727)");
+            // Content-Encoding: gzip
+            BufferedReader rd;
+            if (httpConnection.getHeaderField("Content-Encoding") != null && httpConnection.getHeaderField("Content-Encoding").equalsIgnoreCase("gzip")) {
+                rd = new BufferedReader(new InputStreamReader(new GZIPInputStream(httpConnection.getInputStream())));
             }
-            return ret;
+            else {
+                rd = new BufferedReader(new InputStreamReader(httpConnection.getInputStream()));
+            }
+            String line;
+            StringBuffer htmlCode = new StringBuffer();
+            while ((line = rd.readLine()) != null) {
 
+                htmlCode.append(line + "\n");
+            }
+            httpConnection.disconnect();
+
+            return htmlCode.toString();
         }
-        catch (FileNotFoundException e) {
-            log(urlStr + " nicht gefunden");
-        }
-        catch (MalformedURLException e) {
-            log(urlStr + " Malformed URL");
-        }
-        catch (SocketTimeoutException e) {
-            log(urlStr + " Socket Timeout");
-        }
-        catch (IOException e) {
-            log("IOException " + e);
+        catch (Exception e) {
+            e.printStackTrace();
         }
         return null;
     }
