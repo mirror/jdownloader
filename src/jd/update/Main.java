@@ -42,10 +42,11 @@ public class Main {
         updater.setLogger(log);
         trace("Start Webupdate");
         Vector<Vector<String>> files = updater.getAvailableFiles();
+        boolean success=false;
         if (files != null) {
            // int totalFiles = files.size();
             updater.filterAvailableUpdates(files);
-            updater.updateFiles(files);
+           updater.updateFiles(files);
         }
 
         trace(updater.getLogger().toString());
@@ -53,8 +54,11 @@ public class Main {
         trace(new File("updateLog.txt").getAbsoluteFile());
        writeLocalFile(new File("updateLog.txt"), log.toString());
         if(restart){
+            if(new File("webcheck.tmp").exists()){
+                new File("webcheck.tmp").delete(); 
+            }
             runCommand("javaws", new String[] { "jDownloader.jnlp" },new File(".").getAbsolutePath(), 0);
-            
+           
         }
 
     }

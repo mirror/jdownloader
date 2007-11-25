@@ -55,6 +55,10 @@ public class ConfigPanelEventmanager extends ConfigPanel implements ActionListen
 private Configuration configuration;
     private JTable table;
 
+    private JButton btnTop;
+
+    private JButton btnBottom;
+
     public ConfigPanelEventmanager(Configuration configuration, UIInterface uiinterface) {
         super(uiinterface);
         this.configuration=configuration;
@@ -136,14 +140,20 @@ private Configuration configuration;
         btnAdd = new JButton("+");
         btnRemove = new JButton("-");
         btnEdit = new JButton("Einstellungen");
+        btnTop = new JButton("nach oben!");
+        btnBottom = new JButton("nach unten!");
+        btnTop.addActionListener(this);
+        btnBottom.addActionListener(this);
         btnAdd.addActionListener(this);
         btnRemove.addActionListener(this);
         btnEdit.addActionListener(this);
-        JDUtilities.addToGridBag(panel, scrollpane, 0, 0, 3, 1, 1, 1, insets, GridBagConstraints.BOTH, GridBagConstraints.CENTER);
+        JDUtilities.addToGridBag(panel, scrollpane, 0, 0, 5, 1, 1, 1, insets, GridBagConstraints.BOTH, GridBagConstraints.CENTER);
 
         JDUtilities.addToGridBag(panel, btnAdd, 0, 1, 1, 1, 0, 1, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
         JDUtilities.addToGridBag(panel, btnRemove, 1, 1, 1, 1, 0, 1, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
         JDUtilities.addToGridBag(panel, btnEdit, 2, 1, 1, 1, 0, 1, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        JDUtilities.addToGridBag(panel, btnTop, 3, 1, 1, 1, 0, 1, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        JDUtilities.addToGridBag(panel, btnBottom, 4, 1, 1, 1, 0, 1, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
         // JDUtilities.addToGridBag(this, panel,0, 0, 1, 1, 1, 1, insets,
         // GridBagConstraints.BOTH, GridBagConstraints.WEST);
@@ -206,6 +216,31 @@ return table.getSelectedRow();
     }
 
     public void actionPerformed(ActionEvent e) {
+        
+        if (e.getSource() == btnTop) {
+            Interaction interaction = getSelectedInteraction();
+            int currentIndex=interactions.indexOf(interaction);
+            interactions.remove(currentIndex);
+            int nextIndex=Math.max(0,currentIndex-1);
+            interactions.insertElementAt(interaction, nextIndex);
+            table.tableChanged(new TableModelEvent(table.getModel()));
+            table.getSelectionModel().addSelectionInterval(nextIndex, nextIndex);
+        
+            
+            
+            
+        }
+        if (e.getSource() == btnBottom) {
+            Interaction interaction = getSelectedInteraction();
+            int currentIndex=interactions.indexOf(interaction);
+            interactions.remove(currentIndex);
+            int nextIndex=Math.min(interactions.size(),currentIndex+1);
+            interactions.insertElementAt(interaction, nextIndex);
+            table.tableChanged(new TableModelEvent(table.getModel()));
+            table.getSelectionModel().addSelectionInterval(nextIndex, nextIndex);
+            
+            
+        }
         if (e.getSource() == btnAdd) {
             InteractionTrigger[] events = InteractionTrigger.getAllTrigger();
             InteractionTrigger event = (InteractionTrigger) JOptionPane.showInputDialog(this, "Trigger auswählen", "Wann soll eine Aktion ausgeführt werden?", JOptionPane.QUESTION_MESSAGE, null, events, null);

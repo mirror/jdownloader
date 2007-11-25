@@ -96,6 +96,7 @@ public class Main {
         // Webstart laufen soll muss die Cookieverwaltung selbst übernommen
         // werdn
         CookieHandler.setDefault(null);
+        logger.info("JD-Version: "+JDUtilities.getJDTitle());
         logger.info("Erstelle Controller");
         final JDController controller = new JDController();
       
@@ -163,7 +164,14 @@ public class Main {
                 }
             }
         }
+        if( JDUtilities.getResourceFile("webcheck.tmp").exists()&&JDUtilities.getLocalFile(JDUtilities.getResourceFile("webcheck.tmp")).indexOf("(Revision"+JDUtilities.getRevision()+")")>0){
+            JDUtilities.getController().getUiInterface().showMessageDialog("Failed Update detected!\r\nIt seems that the previous webupdate failed.\r\nPlease ensure that your java-version is equal- or above 1.5.\r\nMore infos at http://www.syncom.org/projects/jdownloader/wiki/FAQ.\r\n\r\nErrorcode: \r\n"+JDUtilities.getLocalFile(JDUtilities.getResourceFile("webcheck.tmp")));
+            JDUtilities.getResourceFile("webcheck.tmp").delete();
+            JDUtilities.getConfiguration().setProperty(Configuration.PARAM_WEBUPDATE_AUTO_RESTART, false);
+        }else{
+        
         Interaction.handleInteraction(Interaction.INTERACTION_APPSTART, false);
+        }
         if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_START_DOWNLOADS_AFTER_START, false)) {
             controller.getUiInterface().fireUIEvent(new UIEvent(controller.getUiInterface(), UIEvent.UI_START_DOWNLOADS));
         }
@@ -180,7 +188,7 @@ public class Main {
             logger.info("UpdateLog: " + log);
            
            if( JDUtilities.getController().getUiInterface().showConfirmDialog("Update!"+System.getProperty("line.separator") + lastLog+System.getProperty("line.separator")+System.getProperty("line.separator")+"Show Codechanges?")){
-               JDUtilities.getController().getUiInterface().showMessageDialog(JDUtilities.getLocalFile(JDUtilities.getResourceFile("changeLog.txt")));
+               JDUtilities.getController().getUiInterface().showMessageDialog(JDUtilities.UTF8Encode(JDUtilities.getLocalFile(JDUtilities.getResourceFile("changeLog.txt")).substring(0,1000)+"..."));
            }
         }
         
