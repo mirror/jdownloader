@@ -91,6 +91,8 @@ public class JDController implements PluginListener, ControlListener, UIListener
      */
     private DownloadWatchDog                  watchdog;
 
+    private Vector<DownloadLink> finishedLinks= new Vector<DownloadLink>();
+
     public JDController() {
         downloadLinks = new Vector<DownloadLink>();
         speedMeter = new SpeedMeter(10000);
@@ -160,6 +162,8 @@ public class JDController implements PluginListener, ControlListener, UIListener
             case ControlEvent.CONTROL_SINGLE_DOWNLOAD_FINISHED:
                 lastDownloadFinished = (DownloadLink) event.getParameter();
                 saveDownloadLinks(JDUtilities.getResourceFile("links.dat"));
+                
+                this.addToFinished(lastDownloadFinished);
                 if (this.getMissingPackageFiles(lastDownloadFinished) == 0) {
                     Interaction.handleInteraction(Interaction.INTERACTION_DOWNLOAD_PACKAGE_FINISHED, this);
                 }
@@ -223,7 +227,22 @@ public class JDController implements PluginListener, ControlListener, UIListener
         }
         uiInterface.delegatedControlEvent(event);
     }
-
+/**
+ * Fügt einen Downloadlink der Finishedliste hinzu.
+ * @param lastDownloadFinished
+ */
+    private void addToFinished(DownloadLink lastDownloadFinished) {
+        this.finishedLinks.add(lastDownloadFinished);
+        
+    }
+    /**
+     * Gibt alle in dieser Session beendeten Downloadlinks zurück. unabhängig davon ob sie noch in der dl liste stehen oder nicht
+     * @return
+     */
+    public Vector<DownloadLink> getFinishedLinks() {
+        return finishedLinks;
+        
+    }
     /**
      * Bricht den Download ab und blockiert bis er abgebrochen wurde.
      */
