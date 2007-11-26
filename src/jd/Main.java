@@ -6,7 +6,6 @@ import java.net.CookieHandler;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Locale;
-import java.util.Vector;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -23,7 +22,6 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginForSearch;
 import jd.plugins.PluginOptional;
-import jd.plugins.UserPlugin;
 import jd.utils.JDUtilities;
 
 /**
@@ -62,7 +60,7 @@ public class Main {
             fileInput = JDUtilities.getResourceFile(JDUtilities.CONFIG_PATH);
         }
         catch (RuntimeException e) {
-            e.printStackTrace();
+             e.printStackTrace();
         }
         try {
             log += "\r\n" + ("Loaded config from: " + fileInput + " (" + JDUtilities.CONFIG_PATH + ")");
@@ -215,7 +213,7 @@ public class Main {
     // }
     // }
     // catch (URISyntaxException e) {
-    // e.printStackTrace();
+    //  e.printStackTrace();
     // }
     // }
     private void loadImages() {

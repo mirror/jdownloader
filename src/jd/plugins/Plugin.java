@@ -912,11 +912,11 @@ public abstract class Plugin {
         }
         catch (InterruptedException e) {
             logger.severe("interrupted. " + e.getLocalizedMessage());
-            e.printStackTrace();
+             e.printStackTrace();
         }
         catch (Exception e) {
             logger.severe("exception. " + e.getLocalizedMessage());
-            e.printStackTrace();
+             e.printStackTrace();
         }
         downloadLink.setStatus(DownloadLink.STATUS_DOWNLOAD_INCOMPLETE);
         return false;
@@ -1421,7 +1421,7 @@ public abstract class Plugin {
                 }
                 return joinMap(inp, "=", ";");
             } catch (Exception e) {
-                e.printStackTrace();
+                 e.printStackTrace();
             }
         }
         return null;

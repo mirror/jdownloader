@@ -2,8 +2,6 @@ package jd.controlling.interaction;
 
 import java.io.Serializable;
 
-import jd.utils.JDUtilities;
-
 /**
  * Diese Klasse führt eine Test Interaction durch
  * 

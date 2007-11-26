@@ -1,10 +1,7 @@
 package jd.config;
 
 import java.io.Serializable;
-import java.util.Locale;
 import java.util.Vector;
-
-
 
 import jd.controlling.interaction.Interaction;
 import jd.controlling.interaction.InteractionTrigger;

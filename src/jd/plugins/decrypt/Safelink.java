@@ -10,6 +10,7 @@ import java.util.regex.Pattern;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginStep;
 import jd.plugins.event.PluginEvent;
+import jd.utils.JDUtilities;
 
 public class Safelink extends PluginForDecrypt {
     static private final String host = "safelink.in";
@@ -59,8 +60,8 @@ public class Safelink extends PluginForDecrypt {
                     //veraltet: firePluginEvent(new PluginEvent(this, PluginEvent.PLUGIN_PROGRESS_FINISH, null));
                     currentStep = null;
                 } 
-                catch (MalformedURLException e) { e.printStackTrace(); } 
-                catch (IOException e) { e.printStackTrace(); }
+                catch (MalformedURLException e) {  e.printStackTrace(); } 
+                catch (IOException e) {  e.printStackTrace(); }
 
                 step.setParameter(decryptedLinks);
                 break;

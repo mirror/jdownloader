@@ -5,7 +5,6 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.net.URLEncoder;
 import java.util.Vector;
 import java.util.regex.Pattern;
 
@@ -14,7 +13,6 @@ import jd.config.ConfigEntry;
 import jd.plugins.PluginForSearch;
 import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
-import jd.plugins.event.PluginEvent;
 import jd.utils.JDUtilities;
 
 /**
@@ -124,13 +122,13 @@ logger.info("Search "+parameter);
                     // decryptedLinks.add(newURL);
                 }
                 catch (UnsupportedEncodingException e) {
-                    e.printStackTrace();
+                     e.printStackTrace();
                 }
                 catch (MalformedURLException e) {
-                    e.printStackTrace();
+                     e.printStackTrace();
                 }
                 catch (IOException e) {
-                    e.printStackTrace();
+                     e.printStackTrace();
                 }
                 //veraltet: firePluginEvent(new PluginEvent(this, PluginEvent.PLUGIN_PROGRESS_FINISH, null));
                 step.setParameter(decryptedLinks);

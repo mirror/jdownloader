@@ -166,7 +166,7 @@ public class FileFactory extends PluginForHost {
                     catch (Exception e) {
                         downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN);
                         step.setStatus(PluginStep.STATUS_ERROR);
-                        e.printStackTrace();
+                         e.printStackTrace();
                     }
                
                     try {
@@ -204,7 +204,7 @@ public class FileFactory extends PluginForHost {
         catch (Exception e) {
             downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN);
             step.setStatus(PluginStep.STATUS_ERROR);
-            e.printStackTrace();
+             e.printStackTrace();
             return step;
         }
         return step;

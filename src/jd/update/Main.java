@@ -3,19 +3,9 @@ package jd.update;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
-import java.io.IOException;
-import java.io.OutputStream;
-import java.io.PrintStream;
 import java.util.Scanner;
 import java.util.Vector;
-import java.util.logging.Handler;
-import java.util.logging.Level;
-import java.util.logging.LogRecord;
-import java.util.logging.Logger;
-import java.util.logging.StreamHandler;
 
-import jd.config.Configuration;
-import jd.plugins.LogFormatter;
 import jd.utils.JDUtilities;
 
 
@@ -95,7 +85,7 @@ public class Main {
            return true;
        }
        catch (Exception e) {
-           // e.printStackTrace();
+           //  e.printStackTrace();
            return false;
        }
    }
@@ -161,7 +151,7 @@ public class Main {
            return null;
        }
        catch (Exception e) {
-           e.printStackTrace();
+            e.printStackTrace();
            trace("Error executing " + command + ": " + e.getLocalizedMessage());
            return null;
        }

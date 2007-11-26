@@ -26,6 +26,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.io.OutputStream;
+import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
@@ -701,12 +703,13 @@ public class JDUtilities {
                     logger.info("Optionales-Plugin : " + p.getPluginName());
 
                 }
-                catch (Error e) {
+                catch (Exception e) {
                     e.printStackTrace();
                 }
             }
         }
-        catch (Error e) {
+        catch (Exception e) {
+
             e.printStackTrace();
         }
         // // ContainerKlassen
@@ -1737,22 +1740,52 @@ public class JDUtilities {
             Formatter formatter = new LogFormatter();
             logger.setUseParentHandlers(false);
             Handler console = new ConsoleHandler();
-       
+
             console.setLevel(Level.ALL);
             console.setFormatter(formatter);
             logger.addHandler(console);
 
             logger.setLevel(Level.ALL);
             logger.finer("Init Logger:" + LOGGER_NAME);
+            //Leitet System.out zum Logger um.
+            final PrintStream err = System.err;
+            OutputStream os = new OutputStream() {
+                private StringBuffer buffer = new StringBuffer();
+                @Override
+                public void write(int b) throws IOException {
+                    //err.write(b);                 
+                    if ((b == 13 || b == 10)) {
+                        if (buffer.length() > 0) {
+                            JDUtilities.getLogger().severe(buffer.toString());
+                        }
+                        buffer = new StringBuffer();
+
+                    }
+                    else {
+                        buffer.append((char) b);
+                    }
+
+                }
+
+            };
+            System.setErr(new PrintStream(os));
+            try{
+            String t=null;
+            t.charAt(0);
+            }catch(Exception e){
+                e.printStackTrace();
+            }
+
         }
         return logger;
     }
-    public static boolean initFileLogger(){
+
+    public static boolean initFileLogger() {
         try {
             if (getConfiguration().getBooleanProperty(Configuration.PARAM_WRITE_LOG, true)) {
                 Handler file_handler = new FileHandler(getConfiguration().getStringProperty(Configuration.PARAM_WRITE_LOG_PATH, getResourceFile("jd_log.txt").getAbsolutePath()));
                 logger.addHandler(file_handler);
-                logger.info("File Logger active: "+getConfiguration().getStringProperty(Configuration.PARAM_WRITE_LOG_PATH, getResourceFile("jd_log.txt").getAbsolutePath()));
+                logger.info("File Logger active: " + getConfiguration().getStringProperty(Configuration.PARAM_WRITE_LOG_PATH, getResourceFile("jd_log.txt").getAbsolutePath()));
                 return true;
             }
         }
@@ -1772,6 +1805,13 @@ public class JDUtilities {
      */
     public static void logException(Exception e) {
         getLogger().log(Level.SEVERE, "Exception", e);
+        e.printStackTrace();
+    }
+
+    public static void logException(Error e) {
+        getLogger().log(Level.SEVERE, "Error", e);
+        e.printStackTrace();
+
     }
 
     /**

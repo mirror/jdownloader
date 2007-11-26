@@ -14,7 +14,6 @@ import jd.config.ConfigEntry;
 import jd.plugins.PluginForSearch;
 import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
-import jd.plugins.event.PluginEvent;
 import jd.utils.JDUtilities;
 
 /**
@@ -161,13 +160,13 @@ private static String[] CATEGORIES =new String[]{"Audio"};
                     // decryptedLinks.add(newURL);
                 }
                 catch (UnsupportedEncodingException e) {
-                    e.printStackTrace();
+                     e.printStackTrace();
                 }
                 catch (MalformedURLException e) {
-                    e.printStackTrace();
+                     e.printStackTrace();
                 }
                 catch (IOException e) {
-                    e.printStackTrace();
+                     e.printStackTrace();
                 }
                 //veraltet: firePluginEvent(new PluginEvent(this, PluginEvent.PLUGIN_PROGRESS_FINISH, null));
                 step.setParameter(decryptedLinks);

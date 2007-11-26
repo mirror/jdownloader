@@ -214,7 +214,7 @@ public class Netloadin extends PluginForHost {
             }
             return step;
         } catch (FileNotFoundException e) {
-            e.printStackTrace();
+             e.printStackTrace();
             step.setStatus(PluginStep.STATUS_ERROR);
             downloadLink.setStatus(DownloadLink.STATUS_ERROR_FILE_NOT_FOUND);
             return step;
@@ -222,7 +222,7 @@ public class Netloadin extends PluginForHost {
         }
         
         catch (Exception e) {
-            e.printStackTrace();
+             e.printStackTrace();
             step.setStatus(PluginStep.STATUS_ERROR);
             downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN);
             

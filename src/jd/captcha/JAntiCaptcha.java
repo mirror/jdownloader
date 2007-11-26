@@ -42,6 +42,7 @@ import jd.captcha.pixelgrid.Letter;
 import jd.captcha.pixelgrid.PixelGrid;
 import jd.captcha.pixelobject.PixelObject;
 import jd.captcha.utils.UTILITIES;
+import jd.utils.JDUtilities;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -215,7 +216,7 @@ public class JAntiCaptcha {
             }
             catch (IOException e) {
 
-                e.printStackTrace();
+                 e.printStackTrace();
             }
 
         }
@@ -244,7 +245,7 @@ public class JAntiCaptcha {
                 pg.grabPixels();
             }
             catch (Exception e) {
-                e.printStackTrace();
+                 e.printStackTrace();
             }
             letter = new Letter();
 
@@ -501,7 +502,7 @@ public class JAntiCaptcha {
     // try {
     // pg.grabPixels();
     // } catch (Exception e) {
-    // e.printStackTrace();
+    //  e.printStackTrace();
     // }
     // ColorModel cm = pg.getColorModel();
     // tmp.setColorModel(cm);
@@ -894,14 +895,14 @@ public class JAntiCaptcha {
         }
         catch (UnsupportedEncodingException e) {
 
-            e.printStackTrace();
+             e.printStackTrace();
         }
         try {
             return new File(new URI(UTILITIES.urlEncode(fileName)));
         }
         catch (URISyntaxException e) {
 
-            e.printStackTrace();
+             e.printStackTrace();
             return null;
         }
     }
@@ -928,7 +929,7 @@ public class JAntiCaptcha {
 
         }
         catch (TransformerException e) {
-            e.printStackTrace();
+             e.printStackTrace();
         }
 
     }
@@ -1165,7 +1166,7 @@ if(letters.length>getLetterNum()){
         }
         catch (Exception e) {
 
-            e.printStackTrace();
+             e.printStackTrace();
         }
         if (res != null) {
             logger.finer(" Normal Match: " + res.getB().getDecodedValue() + " " + res.getValityPercent() + " good:" + res.getB().getGoodDetections() + " bad: " + res.getB().getBadDetections());
@@ -1285,7 +1286,7 @@ if(letters.length>getLetterNum()){
             // w.refreshUI();
         }
         catch (Exception e) {
-            e.printStackTrace();
+             e.printStackTrace();
         }
 
         if (res != null) {

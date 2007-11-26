@@ -486,11 +486,11 @@ public class JDController implements PluginListener, ControlListener, UIListener
         }
         catch (MalformedURLException e) {
             // TODO Auto-generated catch block
-            e.printStackTrace();
+             e.printStackTrace();
         }
         catch (IOException e) {
             // TODO Auto-generated catch block
-            e.printStackTrace();
+             e.printStackTrace();
         }
         logger.severe("DLC creation failed");
         this.getUiInterface().showMessageDialog("DLC encryption failed");
@@ -524,13 +524,13 @@ public class JDController implements PluginListener, ControlListener, UIListener
                             pluginForHost = JDUtilities.getPluginForHost(localLink.getHost()).getClass().newInstance();
                         }
                         catch (InstantiationException e) {
-                            e.printStackTrace();
+                             e.printStackTrace();
                         }
                         catch (IllegalAccessException e) {
-                            e.printStackTrace();
+                             e.printStackTrace();
                         }
                         catch (NullPointerException e) {
-                            e.printStackTrace();
+                             e.printStackTrace();
                         }
                         // Gibt es einen Names für ein Containerformat, wird ein
                         // passendes Plugin gesucht
@@ -540,8 +540,8 @@ public class JDController implements PluginListener, ControlListener, UIListener
                                 if (pluginForContainer != null) {
                                     pluginForContainer=pluginForContainer.getPlugin(localLink.getContainerFile());
                                    // pluginForContainer.
-                                   
-                                    pluginForContainer.getContainedDownloadlinks(localLink.getContainerFile());
+                                    pluginForContainer.initContainer(localLink.getContainerFile());
+                                    pluginForContainer.getContainedDownloadlinks();
                                 }
                                 else
                                     localLink.setEnabled(false);
@@ -549,7 +549,7 @@ public class JDController implements PluginListener, ControlListener, UIListener
                         }
                   
                         catch (NullPointerException e) {
-                            e.printStackTrace();
+                             e.printStackTrace();
                         }
                         if (pluginForHost != null) {
                             localLink.setLoadedPlugin(pluginForHost);
@@ -569,7 +569,7 @@ public class JDController implements PluginListener, ControlListener, UIListener
             return null;
         }
         catch (Exception e) {
-            e.printStackTrace();
+             e.printStackTrace();
             logger.severe("Linklist Konflikt.");
             return null;
         }
@@ -598,7 +598,8 @@ public class JDController implements PluginListener, ControlListener, UIListener
             if (pContainer.canHandle(file.getName())) {
                 progress.setSource(pContainer);
                 fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_PLUGIN_DECRYPT_ACTIVE, pContainer));
-                downloadLinks.addAll(pContainer.getContainedDownloadlinks(file.getAbsolutePath()));
+                pContainer.initContainer(file.getAbsolutePath());
+                downloadLinks.addAll(pContainer.getContainedDownloadlinks());
                 fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_PLUGIN_DECRYPT_INACTIVE, pContainer));
             }
             progress.increase(1);

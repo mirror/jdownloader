@@ -112,9 +112,9 @@ public class HTTPPost {
             HttpURLConnection.setFollowRedirects(follow);
 
         } catch (MalformedURLException e) {
-            e.printStackTrace();
+             e.printStackTrace();
         } catch (IOException e) {
-            e.printStackTrace();
+             e.printStackTrace();
         }
 
     }
@@ -177,7 +177,7 @@ public class HTTPPost {
             outputwriter.flush();
         } catch (Exception e) {
 
-            e.printStackTrace();
+             e.printStackTrace();
         }
     }
 
@@ -213,9 +213,9 @@ public class HTTPPost {
 //            outputwriter.flush();
 //            write("\r\n");
 //        } catch (FileNotFoundException e) {
-//            e.printStackTrace();
+//             e.printStackTrace();
 //        } catch (IOException e) {
-//            e.printStackTrace();
+//             e.printStackTrace();
 //        }
 
     }
@@ -267,7 +267,7 @@ public class HTTPPost {
             ret = connection.getInputStream();
         } catch (IOException e) {
             logger.severe(this.url + " : 500 Internal Server Error");
-            // e.printStackTrace();
+            //  e.printStackTrace();
         }
         this.connected = true;
         return ret;
@@ -284,7 +284,7 @@ public class HTTPPost {
             outputwriter.flush();
 
         } catch (IOException e) {
-            e.printStackTrace();
+             e.printStackTrace();
         }
     }
 
@@ -301,7 +301,7 @@ public class HTTPPost {
             if (output != null)
                 output.close();
         } catch (IOException e) {
-            e.printStackTrace();
+             e.printStackTrace();
         }
     }
 
@@ -335,7 +335,7 @@ public class HTTPPost {
         try {
             input.close();
         } catch (IOException e) {
-            e.printStackTrace();
+             e.printStackTrace();
         }
         return ret;
 
@@ -362,7 +362,7 @@ public class HTTPPost {
             input.close();
             return ret;
         } catch (IOException e) {
-            e.printStackTrace();
+             e.printStackTrace();
             return "";
         }
 
@@ -377,9 +377,9 @@ public class HTTPPost {
             outputwriter = new OutputStreamWriter(output=connection.getOutputStream());
 
         } catch (MalformedURLException e) {
-            e.printStackTrace();
+             e.printStackTrace();
         } catch (IOException e) {
-            e.printStackTrace();
+             e.printStackTrace();
         }
     }
 

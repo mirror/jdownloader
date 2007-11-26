@@ -8,7 +8,6 @@ import javax.swing.JOptionPane;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.Configuration;
-import jd.controlling.interaction.ExternReconnect;
 import jd.controlling.interaction.Interaction;
 import jd.gui.UIInterface;
 /**

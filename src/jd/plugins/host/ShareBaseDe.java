@@ -164,7 +164,7 @@ public class ShareBaseDe extends PluginForHost {
                     catch (Exception e) {
                         downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN);
                         step.setStatus(PluginStep.STATUS_ERROR);
-                        e.printStackTrace();
+                         e.printStackTrace();
                     }
                     
                     try {
@@ -205,7 +205,7 @@ public class ShareBaseDe extends PluginForHost {
             return step;            
         }
         catch (IOException e) {
-            e.printStackTrace();
+             e.printStackTrace();
             return null;
         }
     }  

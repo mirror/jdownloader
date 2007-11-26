@@ -218,11 +218,11 @@ public class HTTPReconnect extends Interaction {
             }
             catch (MalformedURLException e) {
                 logger.severe("url wrong." + e.toString());
-                e.printStackTrace();
+                 e.printStackTrace();
             }
             catch (IOException e) {
                 logger.severe("url not found." + e.toString());
-                e.printStackTrace();
+                 e.printStackTrace();
             }
         }
         else {

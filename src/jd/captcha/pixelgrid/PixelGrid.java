@@ -12,10 +12,9 @@ import java.util.Vector;
 import java.util.logging.Logger;
 
 import jd.captcha.JAntiCaptcha;
-import jd.captcha.gui.BasicWindow;
-import jd.captcha.gui.ScrollPaneWindow;
 import jd.captcha.pixelobject.PixelObject;
 import jd.captcha.utils.UTILITIES;
+import jd.utils.JDUtilities;
 
 import com.sun.image.codec.jpeg.ImageFormatException;
 import com.sun.image.codec.jpeg.JPEGCodec;
@@ -243,7 +242,7 @@ logger.fine(min+" <> "+max+" : "+faktor);
     // } catch (ArrayIndexOutOfBoundsException e) {
     // UTILITIES.trace("ERROR: Nicht im grid; [" + x + "][" + y
     // + "] grid " + localGrid.length);
-    // e.printStackTrace();
+    //  e.printStackTrace();
     //
     // }
     // }
@@ -284,7 +283,7 @@ logger.fine(min+" <> "+max+" : "+faktor);
         // } catch (ArrayIndexOutOfBoundsException e) {
         // UTILITIES.trace("ERROR: Nicht im grid; [" + x + "][" + y + "] grid "
         // + localGrid.length);
-        // e.printStackTrace();
+        //  e.printStackTrace();
         //
         // }
     }
@@ -811,13 +810,13 @@ logger.fine(min+" <> "+max+" : "+faktor);
             fos.close();
         } catch (FileNotFoundException e) {
 
-            e.printStackTrace();
+             e.printStackTrace();
         } catch (ImageFormatException e) {
 
-            e.printStackTrace();
+             e.printStackTrace();
         } catch (IOException e) {
 
-            e.printStackTrace();
+             e.printStackTrace();
         }
     }
 

@@ -45,7 +45,7 @@ public class Rapidsafenet extends PluginForDecrypt {
     			decryptedLinks.add((JDUtilities.htmlDecode(getBetween(reqinfo.getHtmlCode(),"&nbsp;<FORM ACTION=\"","\" METHOD=\"post\" ID=\"postit\""))));
     		}
     		catch(IOException e) {
-    			e.printStackTrace();
+    			 e.printStackTrace();
     		}
     		
     		//Decrypt abschliessen

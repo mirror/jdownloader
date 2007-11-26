@@ -22,7 +22,6 @@ import javax.swing.table.TableColumn;
 
 import jd.config.Configuration;
 import jd.controlling.interaction.DummyInteraction;
-import jd.controlling.interaction.ExternExecute;
 import jd.controlling.interaction.ExternReconnect;
 import jd.controlling.interaction.HTTPReconnect;
 import jd.controlling.interaction.Interaction;

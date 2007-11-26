@@ -12,6 +12,8 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 
+import jd.utils.JDUtilities;
+
 public class Utilities {
     /**
      * Lädt ein Objekt aus einer Datei
@@ -42,13 +44,13 @@ public class Utilities {
                 }
                 return objectLoaded;
             } catch (ClassNotFoundException e) {
-                e.printStackTrace();
+                 e.printStackTrace();
             } catch (FileNotFoundException e) {
-                e.printStackTrace();
+                 e.printStackTrace();
             } catch (IOException e) {
-                e.printStackTrace();
+                 e.printStackTrace();
             } catch (Exception e) {
-                e.printStackTrace();
+                 e.printStackTrace();
             }
         }
         return null;
@@ -87,9 +89,9 @@ public class Utilities {
                     oos.close();
                 }
             } catch (FileNotFoundException e) {
-                e.printStackTrace();
+                 e.printStackTrace();
             } catch (IOException e) {
-                e.printStackTrace();
+                 e.printStackTrace();
             }
         }
     }

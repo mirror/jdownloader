@@ -5,7 +5,6 @@ import java.util.Comparator;
 import java.util.Vector;
 import java.util.logging.Logger;
 
-import jd.captcha.gui.BasicWindow;
 import jd.captcha.pixelgrid.Captcha;
 import jd.captcha.pixelgrid.Letter;
 import jd.captcha.pixelobject.PixelObject;

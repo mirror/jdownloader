@@ -101,7 +101,7 @@ public class ImageFap extends PluginForHost {
 
             }
         } catch (IOException e) {
-            e.printStackTrace();
+             e.printStackTrace();
             return null;
         }
         return null;

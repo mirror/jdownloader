@@ -1,13 +1,11 @@
 package jd.plugins;
 
-import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
 import java.util.Vector;
 
-import jd.config.Configuration;
 import jd.utils.JDUtilities;
 
 /**
@@ -86,10 +84,10 @@ public abstract class PluginForHost extends Plugin {
                     links.add(new DownloadLink(plg, file.substring(file.lastIndexOf("/") + 1, file.length()), getHost(), file, true));
                 }
                 catch (InstantiationException e) {
-                    e.printStackTrace();
+                     e.printStackTrace();
                 }
                 catch (IllegalAccessException e) {
-                    e.printStackTrace();
+                     e.printStackTrace();
                 }
             }
         }
@@ -158,7 +156,7 @@ public abstract class PluginForHost extends Plugin {
             return doStep(step, (DownloadLink) parameter);
         }
         catch (Exception e) {
-            e.printStackTrace();
+             e.printStackTrace();
             step.setStatus(PluginStep.STATUS_ERROR);
             ((DownloadLink) parameter).setStatus(DownloadLink.STATUS_ERROR_UNKNOWN);
 
@@ -198,11 +196,11 @@ public abstract class PluginForHost extends Plugin {
         }
         catch (MalformedURLException e) {
 
-            e.printStackTrace();
+             e.printStackTrace();
         }
         catch (IOException e) {
 
-            e.printStackTrace();
+             e.printStackTrace();
         }
 
         step.setStatus(PluginStep.STATUS_ERROR);

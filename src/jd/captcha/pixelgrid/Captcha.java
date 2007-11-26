@@ -10,7 +10,6 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Collections;
 import java.util.Vector;
@@ -20,6 +19,7 @@ import jd.captcha.JAntiCaptcha;
 import jd.captcha.LetterComperator;
 import jd.captcha.pixelobject.PixelObject;
 import jd.captcha.utils.UTILITIES;
+import jd.utils.JDUtilities;
 
 import com.sun.image.codec.jpeg.ImageFormatException;
 import com.sun.image.codec.jpeg.JPEGCodec;
@@ -401,7 +401,7 @@ public class Captcha extends PixelGrid {
             }          
             catch (Exception e) {
                 logger.severe("Fehler in useSpecialGetLetters:" + e.getLocalizedMessage() + " / " + owner.getJas().getString("useSpecialGetLetters"));
-                e.printStackTrace();
+                 e.printStackTrace();
             }
             return null;
         }
@@ -687,15 +687,15 @@ public class Captcha extends PixelGrid {
         }
         catch (FileNotFoundException e) {
 
-            e.printStackTrace();
+             e.printStackTrace();
         }
         catch (ImageFormatException e) {
 
-            e.printStackTrace();
+             e.printStackTrace();
         }
         catch (IOException e) {
 
-            e.printStackTrace();
+             e.printStackTrace();
         }
     }
 
@@ -805,7 +805,7 @@ public class Captcha extends PixelGrid {
             pg.grabPixels();
         }
         catch (Exception e) {
-            e.printStackTrace();
+             e.printStackTrace();
         }
 
         Captcha ret = new Captcha(width, height);

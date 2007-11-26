@@ -2,7 +2,6 @@ package jd.utils;
 
 import java.util.Calendar;
 import java.util.Vector;
-import java.util.regex.Pattern;
 
 import jd.controlling.JDController;
 import jd.plugins.DownloadLink;

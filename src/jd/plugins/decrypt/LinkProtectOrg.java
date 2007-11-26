@@ -3,22 +3,16 @@ package jd.plugins.decrypt;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
-import java.util.Date;
+import java.net.URLDecoder;
 import java.util.Vector;
 import java.util.regex.Pattern;
-import jd.utils.JDUtilities;
-
-/*import com.gargoylesoftware.htmlunit.*;
-import com.gargoylesoftware.htmlunit.html.*;
-import com.gargoylesoftware.htmlunit.javascript.*;
-import com.gargoylesoftware.htmlunit.javascript.host.*;*/
 
 import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
 import jd.plugins.event.PluginEvent;
-import java.net.URLDecoder;
+import jd.utils.JDUtilities;
 
 public class LinkProtectOrg extends PluginForDecrypt {
 	private static final String CODER			= "Bo0nZ";
@@ -286,7 +280,7 @@ public class LinkProtectOrg extends PluginForDecrypt {
     			step.setParameter(decryptedLinks);
     		}
     		catch(IOException e) {
-    			e.printStackTrace();
+    			 e.printStackTrace();
     		}
     	}
     	return null;

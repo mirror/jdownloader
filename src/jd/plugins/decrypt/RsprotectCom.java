@@ -49,7 +49,7 @@ public class RsprotectCom extends PluginForDecrypt {
     			step.setParameter(decryptedLinks);
     		}
     		catch(IOException e) {
-    			e.printStackTrace();
+    			 e.printStackTrace();
     		}
     	}
     	return null;

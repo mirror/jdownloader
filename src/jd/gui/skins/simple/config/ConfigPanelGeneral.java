@@ -3,8 +3,6 @@ package jd.gui.skins.simple.config;
 import java.awt.BorderLayout;
 import java.awt.GridBagConstraints;
 import java.util.Locale;
-import java.util.logging.FileHandler;
-import java.util.logging.Handler;
 import java.util.logging.Level;
 
 import javax.swing.JFileChooser;

@@ -6,6 +6,7 @@ import java.util.Iterator;
 import java.util.Vector;
 
 import jd.controlling.ProgressController;
+import jd.utils.JDUtilities;
 
 /**
  * Dies ist die Oberklasse für alle Plugins, die Links entschlüsseln können
@@ -70,6 +71,10 @@ public abstract class PluginForDecrypt extends Plugin {
                     progress.finalize();
                     return new Vector<String[]>();
                 }
+                if(links.size()==0){
+                    progress.finalize();
+                    return new Vector<String[]>();
+                }
                 Vector<String[]> decryptedLinks = new Vector<String[]>();
                 try {
                     if (links.get(0) instanceof String) {
@@ -96,7 +101,7 @@ public abstract class PluginForDecrypt extends Plugin {
                 }
                 catch (Exception e) {
 
-                    e.printStackTrace();
+                     e.printStackTrace();
                     logger.severe("Decrypterror: " + e.getMessage());
                 }
 
@@ -158,7 +163,7 @@ public abstract class PluginForDecrypt extends Plugin {
             return new URL(cryptedLink).getFile();
         }
         catch (MalformedURLException e) {
-            e.printStackTrace();
+             e.printStackTrace();
             return "";
         }
     }

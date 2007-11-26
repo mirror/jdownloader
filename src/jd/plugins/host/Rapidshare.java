@@ -74,8 +74,6 @@ import java.util.regex.Pattern;
 
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
-import jd.config.Configuration;
-import jd.gui.skins.simple.config.GUIConfigEntry;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginStep;
@@ -339,7 +337,7 @@ public class Rapidshare extends PluginForHost {
                     return step;
                 }
                 catch (Exception e) {
-                    e.printStackTrace();
+                     e.printStackTrace();
                 }
                 downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN);
                 step.setStatus(PluginStep.STATUS_ERROR);
@@ -415,7 +413,7 @@ public class Rapidshare extends PluginForHost {
                     }
                 }
                 catch (Exception e) {
-                    e.printStackTrace();
+                     e.printStackTrace();
                 }
                 downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN);
                 step.setStatus(PluginStep.STATUS_ERROR);
@@ -749,7 +747,7 @@ public class Rapidshare extends PluginForHost {
                     }
                 }
                 catch (Exception e) {
-                    e.printStackTrace();
+                     e.printStackTrace();
                     step.setStatus(PluginStep.STATUS_ERROR);
                     downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN);
                 }
@@ -818,7 +816,7 @@ public class Rapidshare extends PluginForHost {
             return ret;
         }
         catch (UnsupportedEncodingException e) {
-            e.printStackTrace();
+             e.printStackTrace();
         }
         return str;
     }
@@ -828,10 +826,10 @@ public class Rapidshare extends PluginForHost {
             return this.md5sum(file).equals(botHash);
         }
         catch (NoSuchAlgorithmException e) {
-            e.printStackTrace();
+             e.printStackTrace();
         }
         catch (FileNotFoundException e) {
-            e.printStackTrace();
+             e.printStackTrace();
         }
         return false;
     }

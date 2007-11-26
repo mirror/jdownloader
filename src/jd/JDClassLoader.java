@@ -119,7 +119,7 @@ public class JDClassLoader extends java.lang.ClassLoader {
                    urls.add(new URL("jar","",url)); 
                }
                 catch (MalformedURLException e) {
-                    e.printStackTrace();
+                     e.printStackTrace();
                 }
             }
         }
@@ -158,10 +158,10 @@ public class JDClassLoader extends java.lang.ClassLoader {
                         if (c == null) throw new ClassNotFoundException(name);
                     }
                     catch (ClassFormatError e) {
-                        e.printStackTrace();
+                         e.printStackTrace();
                     }
                     catch (IOException e) {
-                        e.printStackTrace();
+                         e.printStackTrace();
                     }
                 }
             }

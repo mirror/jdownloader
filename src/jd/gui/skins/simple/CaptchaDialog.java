@@ -80,7 +80,7 @@ public class CaptchaDialog extends JDialog implements ActionListener {
                         try {
                            Thread.sleep(Math.abs(configuration.getIntegerProperty(Configuration.PARAM_MANUAL_CAPTCHA_WAIT_FOR_JAC,3000)));
                         }
-                        catch (InterruptedException e) {     e.printStackTrace();
+                        catch (InterruptedException e) {      e.printStackTrace();
                         }
                         if(isVisible()&&textField.getText().equalsIgnoreCase(code) && textField.getText().length()>0){
                             captchaText = textField.getText();
@@ -133,7 +133,7 @@ public class CaptchaDialog extends JDialog implements ActionListener {
             }
             catch (InterruptedException e) {
 
-                e.printStackTrace();
+                 e.printStackTrace();
             }
         }
         return captchaText;

@@ -69,7 +69,7 @@ public class RapidshareComFolder extends PluginForDecrypt {
     			step.setParameter(decryptedLinks);
     		}
     		catch(IOException e) {
-    			e.printStackTrace();
+    			 e.printStackTrace();
     		}
     	}
     	
@@ -94,7 +94,7 @@ public class RapidshareComFolder extends PluginForDecrypt {
     			getLinks(reqhelp.getHtmlCode());
     		}
     		catch (IOException e) {
-    			e.printStackTrace();
+    			 e.printStackTrace();
     		}
     	}
     	

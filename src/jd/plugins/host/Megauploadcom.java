@@ -197,11 +197,11 @@ public class Megauploadcom extends PluginForHost {
                     }
                     catch (MalformedURLException e) {
 
-                        e.printStackTrace();
+                         e.printStackTrace();
                     }
                     catch (IOException e) {
 
-                        e.printStackTrace();
+                         e.printStackTrace();
                     }
 
                     step.setStatus(PluginStep.STATUS_ERROR);
@@ -212,7 +212,7 @@ public class Megauploadcom extends PluginForHost {
             return step;
         }
         catch (IOException e) {
-            e.printStackTrace();
+             e.printStackTrace();
             return null;
         }
     }

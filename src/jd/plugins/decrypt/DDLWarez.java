@@ -10,6 +10,7 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
 import jd.plugins.event.PluginEvent;
+import jd.utils.JDUtilities;
 
 public class DDLWarez extends PluginForDecrypt {
     final static String host = "ddl-warez.org";
@@ -57,7 +58,7 @@ public class DDLWarez extends PluginForDecrypt {
                 step.setParameter(decryptedLinks);
             }
             catch(IOException e) {
-                e.printStackTrace();
+                 e.printStackTrace();
             }
         }
         return null;

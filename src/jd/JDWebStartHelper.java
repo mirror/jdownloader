@@ -113,13 +113,13 @@ public class JDWebStartHelper {
             }
         }
         catch (MalformedURLException e) {
-            e.printStackTrace();
+             e.printStackTrace();
         }
         catch (FileNotFoundException e) {
-            e.printStackTrace();
+             e.printStackTrace();
         }
         catch (IOException e) {
-            e.printStackTrace();
+             e.printStackTrace();
         }
         return null;
     }
@@ -158,13 +158,13 @@ public class JDWebStartHelper {
             }
         }
         catch (MalformedURLException e) {
-            e.printStackTrace();
+             e.printStackTrace();
         }
         catch (FileNotFoundException e) {
-            e.printStackTrace();
+             e.printStackTrace();
         }
         catch (IOException e) {
-            e.printStackTrace();
+             e.printStackTrace();
         }
         return null;
     }

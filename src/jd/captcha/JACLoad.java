@@ -51,7 +51,7 @@ public class JACLoad {
          url= new URL(path);
     }
     catch (MalformedURLException e) {
-        e.printStackTrace();
+         e.printStackTrace();
     }
     int c=0;
     File dest=new File(file,"captcha_"+c+"_"+url.getPath().substring(url.getPath().lastIndexOf("/")+1));

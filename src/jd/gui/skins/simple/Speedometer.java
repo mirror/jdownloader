@@ -66,7 +66,7 @@ public class Speedometer extends JPanel{
                     
                 }
                 catch (InterruptedException e) {
-                    e.printStackTrace();
+                     e.printStackTrace();
                 }
             }
         }

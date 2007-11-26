@@ -92,10 +92,10 @@ public class RsXXXBlog extends PluginForDecrypt {
                   decryptedLinks.add(new String[]{newURL, DEFAULT_PASSWORD, null});
                 }
                 catch (MalformedURLException e) {
-                    e.printStackTrace();
+                     JDUtilities.logException(e);
                 }
                 catch (IOException e) {
-                    e.printStackTrace();
+                     JDUtilities.logException(e);
                 }
                 step.setParameter(decryptedLinks);
                 break;

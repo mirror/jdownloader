@@ -80,7 +80,7 @@ public class ExternExecute extends Interaction implements Serializable {
         
         
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this, PROPERTY_DISABLED, "Event deaktiviert").setDefaultValue(false));
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, this, PROPERTY_COMMAND, "Befehl (Platzhalter möglich)"));
+        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, this, PROPERTY_COMMAND, "Befehl (absolute Pfade verwenden)"));
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_TEXTAREA, this, PROPERTY_PARAMETER, "Parameter (1 Parameter pro Zeile)"));
 
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_BROWSEFOLDER, this, PROPERTY_EXECUTE_FOLDER, "Ausführen in (Ordner der Anwendung)"));

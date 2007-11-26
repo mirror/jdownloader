@@ -237,13 +237,13 @@ progress.finalize();
 
         catch (ParserConfigurationException e) {
 
-            e.printStackTrace();
+             e.printStackTrace();
             progress.finalize();
             return this.parseError(e.getMessage());
         }
         catch (Exception e) {
 
-            e.printStackTrace();
+             e.printStackTrace();
             progress.finalize();
             return this.parseError(e.getCause() + " : " + e.getMessage());
         }

@@ -3,7 +3,6 @@ package jd.captcha.configuration;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-
 import java.net.URLClassLoader;
 import java.util.Hashtable;
 import java.util.Vector;
@@ -13,6 +12,7 @@ import jd.captcha.JAntiCaptcha;
 import jd.captcha.pixelgrid.Captcha;
 import jd.captcha.pixelgrid.Letter;
 import jd.captcha.utils.UTILITIES;
+import jd.utils.JDUtilities;
 
 /**
  * Diese Klasse parsed das JAC Script
@@ -98,7 +98,7 @@ public class JACScript {
             this.parseScriptFile();
             this.executeParameterCommands();
         } catch (IOException e) {
-            e.printStackTrace();
+             e.printStackTrace();
         }
 
     }
@@ -492,7 +492,7 @@ public class JACScript {
             }
         } catch (Exception e) {
             logger.severe("Syntax Error in " + method + "/+script.jas");
-            e.printStackTrace();
+             e.printStackTrace();
         }
 
     }
@@ -627,7 +627,7 @@ public class JACScript {
             }
         } catch (Exception e) {
             logger.severe("Syntax Error in " + method + "/script.jas (captcha)");
-            e.printStackTrace();
+             e.printStackTrace();
 
         }
         // BasicWindow.showImage(captcha.getImage(),120,80);
@@ -754,7 +754,7 @@ public class JACScript {
             }
         } catch (Exception e) {
             logger.severe("Syntax Error in " + method + "/script.jas");
-            e.printStackTrace();
+             e.printStackTrace();
 
         }
         // BasicWindow.showImage(captcha.getImage(),120,80);

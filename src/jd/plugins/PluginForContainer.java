@@ -19,6 +19,8 @@ public abstract class PluginForContainer extends PluginForDecrypt {
     private static HashMap<String,PluginForContainer> plugins= new HashMap<String,PluginForContainer>();
     protected Vector<DownloadLink> containedLinks = new Vector<DownloadLink>();
 
+
+
     /**
      * Diese Methode liefert eine URL zurück, von der aus der Download gestartet
      * werden kann
@@ -67,26 +69,27 @@ public abstract class PluginForContainer extends PluginForDecrypt {
                 logger.severe("Could not copy file to homedir");
 
             }
+     
             return doStep(step, res);
 
         }
         return null;
     }
-
+public void initContainer(String filename){
+    if(containedLinks==null||containedLinks.size()==0){
+        doStep(new PluginStep(PluginStep.STEP_OPEN_CONTAINER, null), filename);
+        logger.info(filename+" Parse");
+    }
+}
     /**
      * Liefert alle in der Containerdatei enthaltenen Dateien als DownloadLinks
-     * zurück. Dabei wird das Plugin Schritt für Schritt abgearbeitet. Auf das Stepsystem wird hier verzichtet.
+     * zurück.
      * 
      * @param filename Die Containerdatei
      * @return Ein Vector mit DownloadLinks
      */
-    public Vector<DownloadLink> getContainedDownloadlinks(String filename) {
-    
-        if(containedLinks==null||containedLinks.size()==0){
-            doStep(new PluginStep(PluginStep.STEP_OPEN_CONTAINER, null), filename);
-            logger.info(filename+" Parse");
-        }
- //logger.info(filename+" Cached");
+    public Vector<DownloadLink> getContainedDownloadlinks() {   
+
         return containedLinks;
     }
 
@@ -123,12 +126,12 @@ public abstract class PluginForContainer extends PluginForDecrypt {
         }
         catch (InstantiationException e) {
      
-           JDUtilities.logException(e);
-            e.printStackTrace();
+           e.printStackTrace();
+             e.printStackTrace();
         }
         catch (IllegalAccessException e) {
-            JDUtilities.logException(e);
             e.printStackTrace();
+             e.printStackTrace();
         }
         return null;
     }

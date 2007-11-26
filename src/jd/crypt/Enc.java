@@ -1,6 +1,5 @@
 package jd.crypt;
 
-import jd.plugins.Plugin;
 
 
 // AESencrypt: AES encryption

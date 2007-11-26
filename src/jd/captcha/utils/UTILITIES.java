@@ -199,12 +199,12 @@ public class UTILITIES {
                 return new URLClassLoader(new URL[] { new URL(path) });
             }
             catch (URISyntaxException e) {
-                e.printStackTrace();
+                 e.printStackTrace();
 
             }
             catch (MalformedURLException e) {
 
-                e.printStackTrace();
+                 e.printStackTrace();
             }
         }
         else {
@@ -213,7 +213,7 @@ public class UTILITIES {
                 return new URLClassLoader(new URL[] { new File(path).toURI().toURL() }, null);
             }
             catch (MalformedURLException e) {
-                e.printStackTrace();
+                 e.printStackTrace();
                 return null;
             }
         }
@@ -248,7 +248,7 @@ public class UTILITIES {
             Thread.sleep(ms);
         }
         catch (InterruptedException e) {
-            e.printStackTrace();
+             e.printStackTrace();
         }
     }
 
@@ -274,7 +274,7 @@ public class UTILITIES {
         }
         catch (IOException e) {
 
-            e.printStackTrace();
+             e.printStackTrace();
         }
     }
 
@@ -302,7 +302,7 @@ public class UTILITIES {
         }
         catch (IOException e) {
 
-            e.printStackTrace();
+             e.printStackTrace();
         }
         return ret;
     }
@@ -324,7 +324,7 @@ public class UTILITIES {
         }
         catch (IOException e) {
 
-            e.printStackTrace();
+             e.printStackTrace();
         }
     }
 
@@ -581,7 +581,7 @@ public class UTILITIES {
         }
         catch (IOException e) {
 
-            e.printStackTrace();
+             e.printStackTrace();
         }
         return "";
     }
@@ -608,7 +608,7 @@ public class UTILITIES {
         }
         catch (IOException e) {
 
-            e.printStackTrace();
+             e.printStackTrace();
         }
         return "";
     }
@@ -649,11 +649,11 @@ public class UTILITIES {
         }
         catch (FileNotFoundException e) {
 
-            e.printStackTrace();
+             e.printStackTrace();
             return false;
         }
         catch (IOException e) {
-            e.printStackTrace();
+             e.printStackTrace();
             return false;
         }
         return true;
@@ -696,7 +696,7 @@ public class UTILITIES {
 
         }
         catch (Exception e) {
-            e.printStackTrace();
+             e.printStackTrace();
             return false;
 
         }
@@ -724,10 +724,10 @@ public class UTILITIES {
             return doc;
         }
         catch (SAXException e) {
-            e.printStackTrace();
+             e.printStackTrace();
         }
         catch (ParserConfigurationException e) {
-            e.printStackTrace();
+             e.printStackTrace();
         }
         catch (IOException e) {
 
@@ -755,10 +755,10 @@ public class UTILITIES {
             return doc;
         }
         catch (SAXException e) {
-            e.printStackTrace();
+             e.printStackTrace();
         }
         catch (ParserConfigurationException e) {
-            e.printStackTrace();
+             e.printStackTrace();
         }
         catch (IOException e) {
 
@@ -814,7 +814,7 @@ public class UTILITIES {
             }
             catch (Exception e) {
 
-                e.printStackTrace();
+                 e.printStackTrace();
                 return null;
             }
         }
@@ -862,7 +862,7 @@ public class UTILITIES {
             }
             catch (Exception e) {
 
-                e.printStackTrace();
+                 e.printStackTrace();
                 return false;
             }
         }
@@ -887,7 +887,7 @@ public class UTILITIES {
             }
             catch (IOException e) {
 
-                e.printStackTrace();
+                 e.printStackTrace();
                 return false;
             }
         }
@@ -1072,7 +1072,7 @@ public class UTILITIES {
             return new String(str.getBytes(), "UTF-8");
         }
         catch (UnsupportedEncodingException e) {
-            e.printStackTrace();
+             e.printStackTrace();
             return null;
         }
     }
@@ -1086,7 +1086,7 @@ public class UTILITIES {
             return new String(str.getBytes("UTF-8"));
         }
         catch (UnsupportedEncodingException e) {
-            e.printStackTrace();
+             e.printStackTrace();
             return null;
         }
     }
@@ -1182,7 +1182,7 @@ public class UTILITIES {
         }
         catch (IOException e) {
 
-            e.printStackTrace();
+             e.printStackTrace();
             return null;
         }
 
@@ -1278,7 +1278,7 @@ public class UTILITIES {
             url = new URL(arg);
         }
         catch (MalformedURLException e) {
-            e.printStackTrace();
+             e.printStackTrace();
         }
         return url;
     }
@@ -1329,7 +1329,7 @@ public class UTILITIES {
             return ret;
         }
         catch (UnsupportedEncodingException e) {
-            e.printStackTrace();
+             e.printStackTrace();
         }
         return str;
     }
@@ -1381,17 +1381,17 @@ public class UTILITIES {
             return true;
         }
         catch (FileNotFoundException e) {
-            e.printStackTrace();
+             e.printStackTrace();
             return false;
 
         }
         catch (MalformedURLException e) {
-            e.printStackTrace();
+             e.printStackTrace();
             return false;
 
         }
         catch (Exception e) {
-            e.printStackTrace();
+             e.printStackTrace();
             return false;
 
         }

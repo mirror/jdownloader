@@ -9,7 +9,6 @@ import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginStep;
-import jd.plugins.event.PluginEvent;
 import jd.plugins.search.FileSearch;
 import jd.utils.JDUtilities;
 

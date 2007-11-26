@@ -11,7 +11,6 @@ import jd.config.ConfigEntry;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
-import jd.plugins.event.PluginEvent;
 import jd.utils.JDUtilities;
 
 public class oXygenWarez extends PluginForDecrypt {
@@ -167,7 +166,7 @@ public class oXygenWarez extends PluginForDecrypt {
                     step.setParameter(decryptedLinks);
 
                 } catch (IOException e) {
-                    e.printStackTrace();
+                     e.printStackTrace();
                 }
 
         }

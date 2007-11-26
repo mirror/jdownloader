@@ -25,6 +25,7 @@ import java.util.zip.GZIPInputStream;
 
 import jd.utils.HTMLEntities;
 
+
 /**
  * @author coalado Webupdater lädt pfad und hash infos von einem server und
  *         vergleicht sie mit den lokalen versionen
