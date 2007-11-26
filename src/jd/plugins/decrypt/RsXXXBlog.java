@@ -29,7 +29,7 @@ public class RsXXXBlog extends PluginForDecrypt {
  
    
     private Pattern patternSupported     = getSupportPattern("http://rs.xxx-blog.org/com-[+]/[+]");
-    private static final String DEFAULT_PASSWORD = "xxx-blog.dl.am";
+    private static final String DEFAULT_PASSWORD = "xxx-blog.org";
 
     public RsXXXBlog() {
         super();
