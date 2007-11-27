@@ -15,8 +15,10 @@ public abstract class PluginForSearch extends Plugin {
     private String searchPattern;
     protected ProgressController progress;
     public Vector<String[]> findLinks(String pattern) {
-        progress=new ProgressController();
-        progress.setStatusText("Search-"+getPluginName()+": "+pattern);
+        if(progress==null){
+            progress=new ProgressController();
+            progress.setStatusText("Search-"+getPluginName()+": "+pattern);
+        }
         Vector<String[]> foundLinks = new Vector<String[]>();
 
         foundLinks.addAll(parseContent(pattern));
@@ -33,7 +35,7 @@ public abstract class PluginForSearch extends Plugin {
      * @return Aller Ergebnisse die in den suchplugins für die gewählte
      *         Kategorie und den gewählten suchstring gef7unden wurden
      */
-    public Vector<String[]> parseContent(String pattern) {
+    private Vector<String[]> parseContent(String pattern) {
         String[] s = pattern.split("\\:\\:\\:");
         if (s.length < 2) return new Vector<String[]>();
 

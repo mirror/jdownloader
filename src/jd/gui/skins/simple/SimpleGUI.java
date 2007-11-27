@@ -47,6 +47,7 @@ import jd.event.ControlEvent;
 import jd.event.UIEvent;
 import jd.event.UIListener;
 import jd.gui.UIInterface;
+import jd.gui.skins.simple.components.TextAreaDialog;
 import jd.gui.skins.simple.config.ConfigurationDialog;
 import jd.plugins.DownloadLink;
 import jd.plugins.Plugin;
@@ -236,6 +237,8 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
                 }
             }
         }.start();
+  
+        
         // enableOptionalPlugins(true);
     }
 

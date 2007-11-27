@@ -9,6 +9,7 @@ import java.util.Locale;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 
 import jd.config.Configuration;
@@ -17,6 +18,7 @@ import jd.controlling.interaction.Interaction;
 import jd.event.UIEvent;
 import jd.gui.UIInterface;
 import jd.gui.skins.simple.SimpleGUI;
+import jd.gui.skins.simple.components.TextAreaDialog;
 import jd.plugins.PluginForContainer;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
@@ -185,12 +187,11 @@ public class Main {
             String lastLog = JDUtilities.getLocalFile(JDUtilities.getResourceFile("updateLog.txt"));
             logger.info("UpdateLog: " + log);
            
-           if( JDUtilities.getController().getUiInterface().showConfirmDialog("Update!"+System.getProperty("line.separator") + lastLog+System.getProperty("line.separator")+System.getProperty("line.separator")+"Show Codechanges?")){
+           if( JDUtilities.getController().getUiInterface().showConfirmDialog("Update!"+System.getProperty("line.separator") + lastLog.substring(0,1000)+"... "+System.getProperty("line.separator")+System.getProperty("line.separator")+"Show Codechanges?")){
                JDUtilities.getController().getUiInterface().showMessageDialog(JDUtilities.UTF8Encode(JDUtilities.getLocalFile(JDUtilities.getResourceFile("changeLog.txt")).substring(0,1000)+"..."));
            }
         }
-        
-        JDUtilities.getConfiguration().setProperty(Configuration.PARAM_UPDATE_HASH, hash+hashChangeLog);
+       JDUtilities.getConfiguration().setProperty(Configuration.PARAM_UPDATE_HASH, hash+hashChangeLog);
         JDUtilities.saveObject(null, JDUtilities.getConfiguration(), JDUtilities.getJDHomeDirectory(), JDUtilities.CONFIG_PATH.split("\\.")[0], "." + JDUtilities.CONFIG_PATH.split("\\.")[1], Configuration.saveAsXML);
         
     }

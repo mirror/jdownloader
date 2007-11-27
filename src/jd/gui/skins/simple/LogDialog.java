@@ -22,141 +22,179 @@ import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 
 import jd.config.Configuration;
+import jd.gui.skins.simple.components.TextAreaDialog;
 import jd.plugins.LogFormatter;
 import jd.utils.JDUtilities;
 
 /**
- * Ein Dialog, der Logger-Output anzeigen kann. 
+ * Ein Dialog, der Logger-Output anzeigen kann.
  * 
  * @author Tom
  */
 public class LogDialog extends JDialog implements ActionListener {
 
-   private static final long serialVersionUID = -5753733398829409112L;
+    private static final long serialVersionUID = -5753733398829409112L;
 
-   /**
-    * JTextField wo der Logger Output eingetragen wird
-    */
-   private JTextArea logField;
+    /**
+     * JTextField wo der Logger Output eingetragen wird
+     */
+    private JTextArea         logField;
 
-   /**
-    * JScrollPane fuer das logField
-    */
-   private JScrollPane logScrollPane;
+    /**
+     * JScrollPane fuer das logField
+     */
+    private JScrollPane       logScrollPane;
 
-   /**
-    * Knopf zum schliessen des Fensters
-    */
-   private JButton btnOK;
+    /**
+     * Knopf zum schliessen des Fensters
+     */
+    private JButton           btnOK;
 
-private JButton btnSave;
+    private JButton           btnSave;
 
-   /**
-    * Primary Constructor
-    * 
-    * @param owner
-    *           The owning Frame
-    * @param logger
-    *           The connected Logger
-    */
-   public LogDialog(JFrame owner, Logger logger) {
-      super(owner);
-      setModal(false);
-      setLayout(new GridBagLayout());
+    private JButton           btnCensor;
 
-      Handler streamHandler = new LogStreamHandler(new PrintStream(new LogStream()));
-      streamHandler.setLevel(Level.ALL);
-      streamHandler.setFormatter(new LogFormatter());
-      logger.addHandler(streamHandler);
+    private JFrame            owner;
 
-      btnOK = new JButton("OK");
-      btnOK.addActionListener(this);
-      btnSave = new JButton("Save to file");
-      btnSave.addActionListener(this);
-      getRootPane().setDefaultButton(btnOK);
-      setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
+    private JButton           btnUpload;
 
-      logField = new JTextArea(10, 60);
-      logScrollPane = new JScrollPane(logField);
-      logField.setEditable(true);
+    /**
+     * Primary Constructor
+     * 
+     * @param owner The owning Frame
+     * @param logger The connected Logger
+     */
+    public LogDialog(JFrame owner, Logger logger) {
+        super(owner);
+        this.owner = owner;
+        setModal(false);
+        setLayout(new GridBagLayout());
 
-      JDUtilities.addToGridBag(this, logScrollPane, 0, 0, 1, 1, 1, 1, null,
-            GridBagConstraints.BOTH, GridBagConstraints.EAST);
-      JDUtilities.addToGridBag(this, btnOK, 0, 1, 1, 1, 1, 0, null, GridBagConstraints.NONE,
-            GridBagConstraints.CENTER);
-      JDUtilities.addToGridBag(this, btnSave, 0, 1, 1, 1, 1, 0, null, GridBagConstraints.NONE,
-              GridBagConstraints.WEST);
-      pack();
-      setLocation(JDUtilities.getCenterOfComponent(null, this));
-   }
+        Handler streamHandler = new LogStreamHandler(new PrintStream(new LogStream()));
+        streamHandler.setLevel(Level.ALL);
+        streamHandler.setFormatter(new LogFormatter());
+        logger.addHandler(streamHandler);
 
-   /*
-    * (non-Javadoc)
-    * 
-    * @see java.awt.event.ActionListener#actionPerformed(java.awt.event.ActionEvent)
-    */
-   public void actionPerformed(ActionEvent e) {
-      if (e.getSource() == btnOK) {
-         dispose();
-      }
-      
-      if (e.getSource() == btnSave) {
-          JFileChooser fc = new JFileChooser();
-          fc.setApproveButtonText("Save");
-          if (JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_CURRENT_BROWSE_PATH, null) != null) fc.setCurrentDirectory(new File(JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_CURRENT_BROWSE_PATH, null)));
-          fc.setFileSelectionMode(JFileChooser.FILES_ONLY);
-          fc.showOpenDialog(this);
-          File ret = fc.getSelectedFile();
-          if(ret!=null){
-              String content=logField.getSelectedText();
-              if(content==null ||content.length()==0){
-                  content=logField.getText();
-              }
-              JDUtilities.writeLocalFile(ret, content);
-              JDUtilities.getLogger().info("Log saved to file: "+ret.getAbsolutePath());
-          }
-       }
-   }
+        btnOK = new JButton("OK");
+        btnOK.addActionListener(this);
+        btnSave = new JButton("Save to file");
+        btnSave.addActionListener(this);
 
-   /**
-    * Ein OutputStream, der die Daten an das log field weiterleitet
-    */
-   private class LogStream extends OutputStream {
+        btnCensor = new JButton("Censor Log");
+        btnCensor.addActionListener(this);
 
-      @Override
-      public void write(int b) throws IOException {
-         // den character an das text control anhaengen
-         logField.append(String.valueOf((char) b));
-      }
+        btnUpload = new JButton("Upload Log");
+        btnUpload.addActionListener(this);
+        getRootPane().setDefaultButton(btnOK);
+        setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
 
-   }
+        logField = new JTextArea(10, 60);
+        logScrollPane = new JScrollPane(logField);
+        logField.setEditable(true);
 
-   /**
-    * Handler der einen OutputStream unterstuetzt basierend auf einem ConsoleHandler
-    */
-   private class LogStreamHandler extends StreamHandler {
+        JDUtilities.addToGridBag(this, logScrollPane, 0, 0, 5, 1, 1, 1, null, GridBagConstraints.BOTH, GridBagConstraints.EAST);
+        JDUtilities.addToGridBag(this, btnOK, 0, 1, 1, 1, 1, 0, null, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        JDUtilities.addToGridBag(this, btnSave, 1, 1, 1, 1, 1, 0, null, GridBagConstraints.NONE, GridBagConstraints.EAST);
 
-      public LogStreamHandler(OutputStream stream) {
-         // super();
-         setOutputStream(stream);
-      }
+        JDUtilities.addToGridBag(this, btnCensor, 2, 1, 1, 1, 1, 0, null, GridBagConstraints.NONE, GridBagConstraints.EAST);
+        JDUtilities.addToGridBag(this, btnUpload, 3, 1, 1, 1, 1, 0, null, GridBagConstraints.NONE, GridBagConstraints.EAST);
+        pack();
+        setLocation(JDUtilities.getCenterOfComponent(null, this));
+    }
 
-      /**
-       * Publish a <tt>LogRecord</tt>.
-       * <p>
-       * The logging request was made initially to a <tt>Logger</tt> object, which initialized the
-       * <tt>LogRecord</tt> and forwarded it here.
-       * <p>
-       * 
-       * @param record
-       *           description of the log event. A null record is silently ignored and is not
-       *           published
-       */
-      public void publish(LogRecord record) {
-         super.publish(record);
-         flush();
-      }
+    /*
+     * (non-Javadoc)
+     * 
+     * @see java.awt.event.ActionListener#actionPerformed(java.awt.event.ActionEvent)
+     */
+    public void actionPerformed(ActionEvent e) {
+        if (e.getSource() == btnOK) {
+            dispose();
+        }
 
-   }
+        if (e.getSource() == btnCensor) {
+            String txt;
+            String[] censor = JDUtilities.splitByNewline(txt = TextAreaDialog.showDialog(owner, "Censor Log!", "Add Elements to censor. Use 'replaceme==replacement' or just 'deleteme' in a line. Regexes ar possible!", JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_CENSOR_FIELD, "PREMIUM\\_USER\\=(.*?)\\,==PREMIUMUSER" + System.getProperty("line.separator") + "PREMIUM\\_PASS\\=(.*?)\\,==PREMIUMPASS")));
+
+            if (censor.length > 0) {
+                JDUtilities.getConfiguration().setProperty(Configuration.PARAM_CENSOR_FIELD, txt);
+                String content = logField.getSelectedText();
+                if (content == null || content.length() == 0) {
+                    content = logField.getText();
+                }
+                for (int i = 0; i < censor.length; i++) {
+                    content = content.replace(censor[i], "[********]");
+                    content = content.replaceAll(censor[i], "[********]");
+                    String[] tmp = content.split("\\=\\=");
+                    if (tmp.length == 2) {
+                        content = content.replaceAll(tmp[0], tmp[1]);
+                        content = content.replace(tmp[0], tmp[1]);
+                    }
+                }
+                logField.setText(content);
+
+            }
+        }
+        if (e.getSource() == btnUpload) {
+            TextAreaDialog.showDialog(owner, "Censor Log!", "Add Elements to censor. Use 'replaceme==replacement' or just 'deleteme' in a line. Regexes ar possible!", JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_CENSOR_FIELD, "PREMIUM\\_USER\\=(.*?)\\,==PREMIUMUSER" + System.getProperty("line.separator") + "PREMIUM\\_PASS\\=(.*?)\\,==PREMIUMPASS"));
+        }
+        if (e.getSource() == btnSave) {
+            JFileChooser fc = new JFileChooser();
+            fc.setApproveButtonText("Save");
+            if (JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_CURRENT_BROWSE_PATH, null) != null) fc.setCurrentDirectory(new File(JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_CURRENT_BROWSE_PATH, null)));
+            fc.setFileSelectionMode(JFileChooser.FILES_ONLY);
+            fc.showOpenDialog(this);
+            File ret = fc.getSelectedFile();
+            if (ret != null) {
+                String content = logField.getSelectedText();
+                if (content == null || content.length() == 0) {
+                    content = logField.getText();
+                }
+                JDUtilities.writeLocalFile(ret, content);
+                JDUtilities.getLogger().info("Log saved to file: " + ret.getAbsolutePath());
+            }
+        }
+    }
+
+    /**
+     * Ein OutputStream, der die Daten an das log field weiterleitet
+     */
+    private class LogStream extends OutputStream {
+
+        @Override
+        public void write(int b) throws IOException {
+            // den character an das text control anhaengen
+            logField.append(String.valueOf((char) b));
+        }
+
+    }
+
+    /**
+     * Handler der einen OutputStream unterstuetzt basierend auf einem
+     * ConsoleHandler
+     */
+    private class LogStreamHandler extends StreamHandler {
+
+        public LogStreamHandler(OutputStream stream) {
+            // super();
+            setOutputStream(stream);
+        }
+
+        /**
+         * Publish a <tt>LogRecord</tt>.
+         * <p>
+         * The logging request was made initially to a <tt>Logger</tt> object,
+         * which initialized the <tt>LogRecord</tt> and forwarded it here.
+         * <p>
+         * 
+         * @param record description of the log event. A null record is silently
+         *            ignored and is not published
+         */
+        public void publish(LogRecord record) {
+            super.publish(record);
+            flush();
+        }
+
+    }
 
 }

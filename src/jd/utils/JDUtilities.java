@@ -1769,12 +1769,7 @@ public class JDUtilities {
 
             };
             System.setErr(new PrintStream(os));
-            try{
-            String t=null;
-            t.charAt(0);
-            }catch(Exception e){
-                e.printStackTrace();
-            }
+         
 
         }
         return logger;
