@@ -53,7 +53,10 @@ public abstract class PluginForContainer extends PluginForDecrypt {
      */
     public PluginStep doStep(PluginStep step, String parameter) {
         String file = (String) parameter;
-       
+       if(file==null){
+           logger.severe("Containerfile == null");
+           return step;
+       }
         File f = new File(file);
         if(md5==null)md5=JDUtilities.getLocalHash(f);
     
@@ -76,6 +79,7 @@ public abstract class PluginForContainer extends PluginForDecrypt {
         return null;
     }
 public void initContainer(String filename){
+    if(filename==null)return;
     if(containedLinks==null||containedLinks.size()==0){
         doStep(new PluginStep(PluginStep.STEP_OPEN_CONTAINER, null), filename);
         logger.info(filename+" Parse");
@@ -90,7 +94,7 @@ public void initContainer(String filename){
      */
     public Vector<DownloadLink> getContainedDownloadlinks() {   
 
-        return containedLinks;
+        return containedLinks==null?new Vector<DownloadLink>():containedLinks;
     }
 
     /** 

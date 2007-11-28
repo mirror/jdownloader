@@ -111,7 +111,7 @@ public abstract class Interaction extends Property implements Serializable {
 
     public static InteractionTrigger          INTERACTION_AFTER_UNRAR     = new InteractionTrigger(9, "Nach dem Entpacken", "Wird aufgerufen wenn die Unrar-Aktion beendet wurde.");
     
-    public static InteractionTrigger          INTERACTION_AFTER_DOWNLOAD_AND_INTERACTIONS     = new InteractionTrigger(9, "Downloads & Interactionen abgecshlossen", "Wird aufgerufen wenn alle Downloads und alle Interactionen beendet sind.");
+    public static InteractionTrigger          INTERACTION_AFTER_DOWNLOAD_AND_INTERACTIONS     = new InteractionTrigger(9, "Downloads & Interactionen abgeschlossen", "Wird aufgerufen wenn alle Downloads und alle Interactionen beendet sind.");
     
 
 

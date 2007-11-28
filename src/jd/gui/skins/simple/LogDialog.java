@@ -120,7 +120,7 @@ public class LogDialog extends JDialog implements ActionListener {
 
         if (e.getSource() == btnCensor) {
             String txt;
-            String[] censor = JDUtilities.splitByNewline(txt = TextAreaDialog.showDialog(owner, "Censor Log!", "Add Elements to censor. Use 'replaceme==replacement' or just 'deleteme' in a line. Regexes ar possible!", JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_CENSOR_FIELD, "PREMIUM\\_USER\\=(.*?)\\,==PREMIUMUSER" + System.getProperty("line.separator") + "PREMIUM\\_PASS\\=(.*?)\\,==PREMIUMPASS")));
+            String[] censor = JDUtilities.splitByNewline(txt = TextAreaDialog.showDialog(owner, "Censor Log!", "Add Elements to censor. Use 'replaceme==replacement' or just 'deleteme' in a line. Regexes ar possible!", JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_CENSOR_FIELD, "" + System.getProperty("line.separator") + "")));
 
             if (censor.length > 0) {
                 JDUtilities.getConfiguration().setProperty(Configuration.PARAM_CENSOR_FIELD, txt);
@@ -145,6 +145,30 @@ public class LogDialog extends JDialog implements ActionListener {
             }
         }
         if (e.getSource() == btnUpload) {
+            String txt;
+            String[] censor = JDUtilities.splitByNewline(txt = TextAreaDialog.showDialog(owner, "Censor Log!", "Add Elements to censor. Use 'replaceme==replacement' or just 'deleteme' in a line. Regexes ar possible!", JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_CENSOR_FIELD, "" + System.getProperty("line.separator") + "")));
+
+            if (censor.length > 0) {
+                JDUtilities.getConfiguration().setProperty(Configuration.PARAM_CENSOR_FIELD, txt);
+                JDUtilities.saveObject(null, JDUtilities.getConfiguration(), JDUtilities.getJDHomeDirectory(), JDUtilities.CONFIG_PATH.split("\\.")[0], "." + JDUtilities.CONFIG_PATH.split("\\.")[1], Configuration.saveAsXML);
+                
+                String content = logField.getSelectedText();
+                if (content == null || content.length() == 0) {
+                    content = logField.getText();
+                }
+                for (int i = 0; i < censor.length; i++) {
+                    content = content.replace(censor[i], "[********]");
+                    content = content.replaceAll(censor[i], "[********]");
+                    String[] tmp = content.split("\\=\\=");
+                    if (tmp.length == 2) {
+                        content = content.replaceAll(tmp[0], tmp[1]);
+                        content = content.replace(tmp[0], tmp[1]);
+                    }
+                }
+                logField.setText(content);
+             
+
+            }
           String name=JDUtilities.getController().getUiInterface().showUserInputDialog("Your name?");
           if(name!=null){
               String content = logField.getSelectedText();
