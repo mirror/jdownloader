@@ -187,8 +187,9 @@ public class Main {
             String lastLog = JDUtilities.getLocalFile(JDUtilities.getResourceFile("updateLog.txt"));
             logger.info("UpdateLog: " + log);
            
-           if( JDUtilities.getController().getUiInterface().showConfirmDialog("Update!"+System.getProperty("line.separator") + lastLog.substring(0,1000)+"... "+System.getProperty("line.separator")+System.getProperty("line.separator")+"Show Codechanges?")){
-               JDUtilities.getController().getUiInterface().showMessageDialog(JDUtilities.UTF8Encode(JDUtilities.getLocalFile(JDUtilities.getResourceFile("changeLog.txt")).substring(0,1000)+"..."));
+           if( JDUtilities.getController().getUiInterface().showConfirmDialog("Update!"+System.getProperty("line.separator") + lastLog.substring(0,Math.min(lastLog.length()-1,1000))+"... "+System.getProperty("line.separator")+System.getProperty("line.separator")+"Show Codechanges?")){
+              String changelog=JDUtilities.getLocalFile(JDUtilities.getResourceFile("changeLog.txt"));
+               JDUtilities.getController().getUiInterface().showMessageDialog(JDUtilities.UTF8Encode(changelog.substring(0,Math.min(changelog.length()-1,1000))+"..."));
            }
         }
        JDUtilities.getConfiguration().setProperty(Configuration.PARAM_UPDATE_HASH, hash+hashChangeLog);
