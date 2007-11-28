@@ -3,6 +3,7 @@ package jd.captcha.pixelobject;
 import java.util.Vector;
 import java.util.logging.Logger;
 
+import jd.captcha.JAntiCaptcha;
 import jd.captcha.pixelgrid.Letter;
 import jd.captcha.pixelgrid.PixelGrid;
 import jd.captcha.utils.UTILITIES;
@@ -104,12 +105,12 @@ public class PixelObject implements Comparable {
         int[] tmp = { x, y, color };
         int tmpAvg = avg;
         avg = UTILITIES.mixColors(avg, color, getSize(), 1);
-        // logger.info(" AVG "+avg+" ("+color+")");
+        // if(JAntiCaptcha.isLoggerActive())logger.info(" AVG "+avg+" ("+color+")");
         if (Math.abs(avg - tmpAvg) < (owner.getMaxPixelValue() * this.contrast)) {
             noAvgChanges++;
             if (avgIsSaveNum <= noAvgChanges && saveAvg == 0) {
                 saveAvg = avg;
-                // logger.info("saveAvg "+avg);
+                // if(JAntiCaptcha.isLoggerActive())logger.info("saveAvg "+avg);
 
             }
         }
@@ -168,12 +169,12 @@ public class PixelObject implements Comparable {
      */
     public boolean doesColorAverageFit(int color) {
         if (getSize() > 50000) {
-            logger.severe("Objekt scheint sehr groß zu werden. objectColorContrast zu hoch?");
+            if(JAntiCaptcha.isLoggerActive())logger.severe("Objekt scheint sehr groß zu werden. objectColorContrast zu hoch?");
             return false;
         }
 
         int tavg = saveAvg == 0 ? avg : saveAvg;
-        // logger.info(tavg+"-"+color+" : "+(int)Math.abs(tavg -
+        // if(JAntiCaptcha.isLoggerActive())logger.info(tavg+"-"+color+" : "+(int)Math.abs(tavg -
         // color)+"<"+(int)(owner.getMaxPixelValue() * this.contrast)+" =
         // "+(((int)Math.abs(tavg - color) < (int)(owner.getMaxPixelValue() *
         // this.contrast))));

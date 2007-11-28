@@ -266,7 +266,7 @@ progress.finalize();
         progress.setStatusText("("+"IPCHECK"+")HTTPLiveHeader "+preIp+"/"+afterIP);
     
         long endTime = System.currentTimeMillis() + waitForIp * 1000;
-        while (System.currentTimeMillis() <= endTime && afterIP.equals(preIp)) {
+        while (System.currentTimeMillis() <= endTime && (afterIP==null||afterIP.equals(preIp))) {
             try {
                 Thread.sleep(5 * 1000);
             }

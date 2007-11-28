@@ -6,7 +6,6 @@ import java.util.Iterator;
 import java.util.Vector;
 
 import jd.controlling.ProgressController;
-import jd.utils.JDUtilities;
 
 /**
  * Dies ist die Oberklasse für alle Plugins, die Links entschlüsseln können

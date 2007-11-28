@@ -230,7 +230,11 @@ public class SingleDownloadController extends ControlMulticaster {
                 case DownloadLink.STATUS_ERROR_PLUGIN_SPECIFIC:
                     this.onErrorPluginSpecific(downloadLink, plugin, step);
                     break;
+                case DownloadLink.STATUS_ERROR_BOT_DETECTED:
+                    this.onErrorBotdetection(downloadLink, plugin, step);
+                    break;
                 default:
+                    logger.info("Uknown error id: "+downloadLink.getStatus());
                     this.onErrorUnknown(downloadLink, plugin, step);
             }
             fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_PLUGIN_HOST_INACTIVE, plugin));
@@ -363,7 +367,7 @@ public class SingleDownloadController extends ControlMulticaster {
         }
         downloadLink.setEndOfWaittime(System.currentTimeMillis() + milliSeconds);
         downloadLink.setStatusText("Reconnect ");
-        downloadLink.setInProgress(false);
+        downloadLink.setInProgress(true);
         fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SINGLE_DOWNLOAD_CHANGED, downloadLink));
         // Download Zeit. Versuch durch eine Interaction einen reconnect
         // zu machen. wenn das klappt nochmal versuchen
@@ -484,13 +488,24 @@ public class SingleDownloadController extends ControlMulticaster {
         downloadLink.setInProgress(false);
         downloadLink.setStatusText("Bot erkannt/Reconnect ");
         fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SINGLE_DOWNLOAD_CHANGED, downloadLink));
-        Interaction.handleInteraction(Interaction.INTERACTION_BEFORE_RECONNECT, this);
+       if(plugin.getBotWaittime()<0) Interaction.handleInteraction(Interaction.INTERACTION_BEFORE_RECONNECT, this);
         
-        if (Interaction.handleInteraction((Interaction.INTERACTION_NEED_RECONNECT), this) || Interaction.handleInteraction((Interaction.INTERACTION_DOWNLOAD_WAITTIME), this)) {
+        if (plugin.getBotWaittime()<0&&(Interaction.handleInteraction((Interaction.INTERACTION_NEED_RECONNECT), this) || Interaction.handleInteraction((Interaction.INTERACTION_DOWNLOAD_WAITTIME), this))) {
             downloadLink.setStatus(DownloadLink.STATUS_TODO);
             downloadLink.setEndOfWaittime(0);
+        }else if(plugin.getBotWaittime()>0){
+
+            downloadLink.setEndOfWaittime(System.currentTimeMillis() + plugin.getBotWaittime());
+            downloadLink.setStatusText("Botwait ");
+            downloadLink.setInProgress(false);
+            downloadLink.setStatus(DownloadLink.STATUS_ERROR_STATIC_WAITTIME);
+  
+            fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SINGLE_DOWNLOAD_CHANGED, downloadLink));
+            
         }
-        Interaction.handleInteraction(Interaction.INTERACTION_AFTER_RECONNECT, this);
+        if(plugin.getBotWaittime()<0)Interaction.handleInteraction(Interaction.INTERACTION_AFTER_RECONNECT, this);
+        
+        
         logger.severe("Bot detected");
     }
 

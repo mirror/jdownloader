@@ -1470,7 +1470,7 @@ public class JDUtilities {
                     return null;
                 }
             }
-            logger.info(requestInfo.getHtmlCode());
+            logger.info("IP Check failed. Ip not found via regex: "+patt+" on "+site+" htmlcode: "+requestInfo.getHtmlCode());
             return null;
         }
         catch (IOException e1) {

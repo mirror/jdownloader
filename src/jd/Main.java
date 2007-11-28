@@ -9,7 +9,6 @@ import java.util.Locale;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 
 import jd.config.Configuration;
@@ -18,7 +17,6 @@ import jd.controlling.interaction.Interaction;
 import jd.event.UIEvent;
 import jd.gui.UIInterface;
 import jd.gui.skins.simple.SimpleGUI;
-import jd.gui.skins.simple.components.TextAreaDialog;
 import jd.plugins.PluginForContainer;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;

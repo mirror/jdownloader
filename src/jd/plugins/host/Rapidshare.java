@@ -232,7 +232,10 @@ public class Rapidshare extends PluginForHost {
         config.addEntry(cfg =  new ConfigEntry(ConfigContainer.TYPE_SPINNER, getProperties(), PROPERTY_BYTES_TO_LOAD, "Nur die ersten * KiloBytes jeder Datei laden[-1 to disable]",-1,100000).setDefaultValue(-1).setStep(500));
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getProperties(), "USE_SSL", "SSL Downloadlink verwenden"));
         cfg.setDefaultValue(true);
-      
+        config.addEntry(cfg =  new ConfigEntry(ConfigContainer.TYPE_SPINNER, getProperties(), "WAIT_WHEN_BOT_DETECTED", "Wartezeit [ms] wenn Bot erkannt wird.(-1 für Reconnect)",-1,600000).setDefaultValue(-1).setStep(1000));
+        
+        
+        
     }
     // @Override
     // public URLConnection getURLConnection() {
@@ -247,7 +250,7 @@ public class Rapidshare extends PluginForHost {
         String link=downloadLink.getUrlDownloadDecrypted();
         if(link.contains("://ssl.")||!link.startsWith("http://rapidshare.com")){
             link="http://rapidshare.com"+link.substring(link.indexOf("rapidshare.com")+14);
-            logger.finer("URL korrigiert: "+link);
+          
             downloadLink.setUrlDownload(link);
         }
                 
@@ -352,7 +355,7 @@ public class Rapidshare extends PluginForHost {
                         return step;
                     }
                     // Auswahl ob free oder prem
-                    logger.info("URL: " + newURL);
+                  
                     requestInfo = postRequest(new URL(newURL), null, null, null, "dl.start=free", true);
                     // Falls der check erst nach der free auswahl sein muss,
                     // dann
@@ -396,7 +399,7 @@ public class Rapidshare extends PluginForHost {
                     String wait = getSimpleMatch(requestInfo.getHtmlCode(), ticketWaitTimepattern, 0);
                
                     
-                    logger.info(ticketWaitTimepattern);
+             
                     if (wait != null) {
                         long pendingTime = Long.parseLong(wait);
                         logger.info("Ticket: wait " + pendingTime + " seconds");
@@ -435,7 +438,7 @@ public class Rapidshare extends PluginForHost {
                 Boolean telekom = !(this.getProperties().getProperty("USE_TELEKOMSERVER") == null || !(Boolean) this.getProperties().getProperty("USE_TELEKOMSERVER"));
                 boolean preselected = this.getProperties().getBooleanProperty("USE_PRESELECTED", true);
                 ticketCode = requestInfo.getHtmlCode() + " " + ticketCode;
-                logger.info(ticketCode);
+             
                 captchaAddress = getFirstMatch(ticketCode, patternForCaptcha, 1);
                 // post daten lesen
                 postTarget = getFirstMatch(ticketCode, patternForFormData, 1);
@@ -518,7 +521,7 @@ public class Rapidshare extends PluginForHost {
                     postParameter.put("accesscode", captchaTxt);
                     postParameter.put("actionString", actionString);
                     try {
-                        logger.info(actionString);
+                       
                         URLConnection urlConnection = new URL(postTarget).openConnection();
                         urlConnection.setDoOutput(true);
                         // Post Parameter vorbereiten
@@ -893,5 +896,10 @@ public class Rapidshare extends PluginForHost {
         else {
             return 1;
         }
+    }
+    
+    public long getBotWaittime() {
+        
+      return  getProperties().getIntegerProperty("WAIT_WHEN_BOT_DETECTED", -1);
     }
 }

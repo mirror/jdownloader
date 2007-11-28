@@ -10,7 +10,6 @@ import java.util.regex.Pattern;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginStep;
 import jd.plugins.event.PluginEvent;
-import jd.utils.JDUtilities;
 
 public class Safelink extends PluginForDecrypt {
     static private final String host = "safelink.in";

@@ -112,7 +112,7 @@ public class Letter extends PixelGrid {
         int width = right - left;
         int[][] tmp = new int[width][getHeight()];
         if (getWidth() < right) {
-            logger.severe("Letter dim: " + getWidth() + " - " + getHeight() + ". Cannot trim to " + left + "-" + right);
+            if(JAntiCaptcha.isLoggerActive())logger.severe("Letter dim: " + getWidth() + " - " + getHeight() + ". Cannot trim to " + left + "-" + right);
             return false;
         }
         for (int x = 0; x < width; x++) {
@@ -243,7 +243,7 @@ public class Letter extends PixelGrid {
      */
     public void markGood() {
         this.goodDetections++;
-        logger.warning("GOOD detection : (" + this.toString() + ") ");
+        if(JAntiCaptcha.isLoggerActive())logger.warning("GOOD detection : (" + this.toString() + ") ");
     }
 
     /**
@@ -252,7 +252,7 @@ public class Letter extends PixelGrid {
     public void markBad() {
         this.badDetections++;
 
-        logger.warning("Bad detection : (" + this.toString() + ") ");
+        if(JAntiCaptcha.isLoggerActive())logger.warning("Bad detection : (" + this.toString() + ") ");
 
     }
 
@@ -320,11 +320,11 @@ public class Letter extends PixelGrid {
         double bestValue = Double.MAX_VALUE;
         Letter res = null;
         Letter tmp;
-        // logger.info("JJ"+angleA+" - "+angleB);
+        // if(JAntiCaptcha.isLoggerActive())logger.info("JJ"+angleA+" - "+angleB);
         for (int angle = angleA; angle < angleB; angle += accuracy) {
 
             tmp = turn(angle < 0 ? 360 + angle : angle);
-            // logger.info("..
+            // if(JAntiCaptcha.isLoggerActive())logger.info("..
             // "+((double)tmp.getWidth()/(double)tmp.getHeight()));
             // BasicWindow.showImage(tmp.getImage(1),(angle<0?360+angle:angle)+"_");
             if (((double) tmp.getWidth() / (double) tmp.getHeight()) < bestValue) {
@@ -379,7 +379,7 @@ public class Letter extends PixelGrid {
 
         int newWidth = (int) (Math.abs(Math.cos(angle * Math.PI) * getWidth()) + Math.abs(Math.sin(angle * Math.PI) * getHeight()));
         int newHeight = (int) (Math.abs(Math.sin(angle * Math.PI) * getWidth()) + Math.abs(Math.cos(angle * Math.PI) * getHeight()));
-        // logger.info(getWidth()+"/"+getHeight()+" --> "+newWidth+"/"+newHeight
+        // if(JAntiCaptcha.isLoggerActive())logger.info(getWidth()+"/"+getHeight()+" --> "+newWidth+"/"+newHeight
         // +"("+angle+"/"+(angle*180)+"/"+Math.cos(sizeAngle *
         // Math.PI)+"/"+Math.sin(sizeAngle * Math.PI));
         int left = (newWidth - getWidth()) / 2;
@@ -516,7 +516,7 @@ public class Letter extends PixelGrid {
         while (true) {
 
             map = getLocalMap(newGrid, x, y);
-            // logger.info(x+" - "+y);
+            // if(JAntiCaptcha.isLoggerActive())logger.info(x+" - "+y);
             try {
                 filterGrid[x][y] = newGrid[x][y];
 
@@ -583,10 +583,10 @@ public class Letter extends PixelGrid {
             }
         }
 
-//        logger.info("elements: " + ret);
-//        logger.info(map[0][0] + "-" + map[1][0] + "-" + map[2][0]);
-//        logger.info(map[0][1] + "-" + map[1][1] + "-" + map[2][1]);
-//        logger.info(map[0][2] + "-" + map[1][2] + "-" + map[2][2]);
+//        if(JAntiCaptcha.isLoggerActive())logger.info("elements: " + ret);
+//        if(JAntiCaptcha.isLoggerActive())logger.info(map[0][0] + "-" + map[1][0] + "-" + map[2][0]);
+//        if(JAntiCaptcha.isLoggerActive())logger.info(map[0][1] + "-" + map[1][1] + "-" + map[2][1]);
+//        if(JAntiCaptcha.isLoggerActive())logger.info(map[0][2] + "-" + map[1][2] + "-" + map[2][2]);
         return ret;
     }
 
@@ -677,29 +677,29 @@ int firstChange=0;
                 int ax = border.get(i)[0];
 
                 int ay = border.get(i)[1];
-                logger.info(ax + "/" + ay);
+                if(JAntiCaptcha.isLoggerActive())logger.info(ax + "/" + ay);
                 int[][] map = this.getLocalMap(grid, ax, ay);
   
                 int a = getObjectsNum(map);
                 map[1][1] = 0xff000;
 
                 int b = getObjectsNum(map);
-                logger.info(a + " --->> " + b);
+                if(JAntiCaptcha.isLoggerActive())logger.info(a + " --->> " + b);
                 if (a == b) {
                     changed++;
                     this.setPixelValue(ax, ay, 0xff0000);
                 }
                 else {
               
-                  logger.info(map[0][0] + "-" + map[1][0] + "-" + map[2][0]);
-                  logger.info(map[0][1] + "-" + map[1][1] + "-" + map[2][1]);
-                  logger.info(map[0][2] + "-" + map[1][2] + "-" + map[2][2]);
+                  if(JAntiCaptcha.isLoggerActive())logger.info(map[0][0] + "-" + map[1][0] + "-" + map[2][0]);
+                  if(JAntiCaptcha.isLoggerActive())logger.info(map[0][1] + "-" + map[1][1] + "-" + map[2][1]);
+                  if(JAntiCaptcha.isLoggerActive())logger.info(map[0][2] + "-" + map[1][2] + "-" + map[2][2]);
                     this.setPixelValue(ax, ay, 0);
                 }
 
             }
             BasicWindow.showImage(this.getImage(5));
-            logger.info("changed "+changed);
+            if(JAntiCaptcha.isLoggerActive())logger.info("changed "+changed);
             if(firstChange==0)firstChange=changed;
             if ( changed*20<=firstChange) break;
 
@@ -751,7 +751,7 @@ int firstChange=0;
                     // 0 || y + yy > this.getHeight() - 1) ||
                     if ((grid[x + xx][y + yy] > 0) && angleMap[xx + 1][yy + 1] >= 0) {
 
-                        // logger.info(xx+","+yy+" - "+angleMap[xx+1][yy+1]);
+                        // if(JAntiCaptcha.isLoggerActive())logger.info(xx+","+yy+" - "+angleMap[xx+1][yy+1]);
                         angle = count * angle + angleMap[xx + 1][yy + 1];
                         count++;
                         angle /= count;

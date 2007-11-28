@@ -45,6 +45,7 @@ import javax.swing.JOptionPane;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
+import jd.captcha.JAntiCaptcha;
 import jd.utils.JDUtilities;
 
 import org.w3c.dom.Document;
@@ -190,7 +191,7 @@ public class UTILITIES {
      * @return Gibt zum Pfad Path die URL zurück
      */
     public static URLClassLoader getURLClassLoader(String path) {
-        logger.fine("Loading: " + path);
+        if(JAntiCaptcha.isLoggerActive())logger.fine("Loading: " + path);
         if (path.startsWith("file:")) {
             try {
 
@@ -268,7 +269,7 @@ public class UTILITIES {
             BufferedReader br = new BufferedReader(new InputStreamReader(pr.getInputStream()));
             String line;
             while ((line = br.readLine()) != null) {
-                logger.fine(line);
+                if(JAntiCaptcha.isLoggerActive())logger.fine(line);
 
             }
         }
@@ -629,12 +630,12 @@ public class UTILITIES {
 
             if (file.isFile()) {
                 if (!file.delete()) {
-                    logger.warning("Konnte Datei nicht löschen " + file);
+                    if(JAntiCaptcha.isLoggerActive())logger.warning("Konnte Datei nicht löschen " + file);
                     return false;
                 }
 
             }
-            logger.info("DIR :" + file.getParent());
+            if(JAntiCaptcha.isLoggerActive())logger.info("DIR :" + file.getParent());
             if (file.getParent() != null && !file.getParentFile().exists()) {
                 file.getParentFile().mkdirs();
             }
@@ -675,12 +676,12 @@ public class UTILITIES {
 
             if (file.isFile()) {
                 if (!file.delete()) {
-                    logger.warning("Konnte Datei nicht löschen " + file);
+                    if(JAntiCaptcha.isLoggerActive())logger.warning("Konnte Datei nicht löschen " + file);
                     return false;
                 }
 
             }
-            logger.info("DIR :" + file.getParent());
+            if(JAntiCaptcha.isLoggerActive())logger.info("DIR :" + file.getParent());
             if (file.getParent() != null && !file.getParentFile().exists()) {
                 file.getParentFile().mkdirs();
             }
@@ -777,7 +778,7 @@ public class UTILITIES {
     public static String getAttribute(Node childNode, String key) {
         NamedNodeMap att = childNode.getAttributes();
         if (att == null || att.getNamedItem(key) == null) {
-            logger.severe("ERROR: XML Attribute missing: " + key);
+            if(JAntiCaptcha.isLoggerActive())logger.severe("ERROR: XML Attribute missing: " + key);
             return null;
         }
         return att.getNamedItem(key).getNodeValue();
@@ -807,7 +808,7 @@ public class UTILITIES {
             PROPS = new Properties();
             try {
                 input = new FileInputStream(PROPERTYFILE);
-                logger.info(PROPERTYFILE);
+                if(JAntiCaptcha.isLoggerActive())logger.info(PROPERTYFILE);
                 PROPS.load(input);
                 return PROPS.getProperty(key);
 
@@ -854,7 +855,7 @@ public class UTILITIES {
             PROPS = new Properties();
             try {
                 input = new FileInputStream(PROPERTYFILE);
-                logger.info("create " + PROPERTYFILE);
+                if(JAntiCaptcha.isLoggerActive())logger.info("create " + PROPERTYFILE);
                 PROPS.load(input);
 
                 PROPS.setProperty(key, value);
@@ -1263,7 +1264,7 @@ public class UTILITIES {
             // getLogger().severe(urlStr + " Socket Timeout");
         }
         catch (IOException e) {
-            logger.severe("IOException " + e);
+            if(JAntiCaptcha.isLoggerActive())logger.severe("IOException " + e);
         }
         return null;
     }

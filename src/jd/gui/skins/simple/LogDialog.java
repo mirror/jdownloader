@@ -8,6 +8,9 @@ import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintStream;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.net.URLEncoder;
 import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
@@ -18,12 +21,15 @@ import javax.swing.JButton;
 import javax.swing.JDialog;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
+import javax.swing.JOptionPane;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 
 import jd.config.Configuration;
 import jd.gui.skins.simple.components.TextAreaDialog;
 import jd.plugins.LogFormatter;
+import jd.plugins.Plugin;
+import jd.plugins.RequestInfo;
 import jd.utils.JDUtilities;
 
 /**
@@ -118,6 +124,8 @@ public class LogDialog extends JDialog implements ActionListener {
 
             if (censor.length > 0) {
                 JDUtilities.getConfiguration().setProperty(Configuration.PARAM_CENSOR_FIELD, txt);
+                JDUtilities.saveObject(null, JDUtilities.getConfiguration(), JDUtilities.getJDHomeDirectory(), JDUtilities.CONFIG_PATH.split("\\.")[0], "." + JDUtilities.CONFIG_PATH.split("\\.")[1], Configuration.saveAsXML);
+                
                 String content = logField.getSelectedText();
                 if (content == null || content.length() == 0) {
                     content = logField.getText();
@@ -132,11 +140,37 @@ public class LogDialog extends JDialog implements ActionListener {
                     }
                 }
                 logField.setText(content);
+             
 
             }
         }
         if (e.getSource() == btnUpload) {
-            TextAreaDialog.showDialog(owner, "Censor Log!", "Add Elements to censor. Use 'replaceme==replacement' or just 'deleteme' in a line. Regexes ar possible!", JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_CENSOR_FIELD, "PREMIUM\\_USER\\=(.*?)\\,==PREMIUMUSER" + System.getProperty("line.separator") + "PREMIUM\\_PASS\\=(.*?)\\,==PREMIUMPASS"));
+          String name=JDUtilities.getController().getUiInterface().showUserInputDialog("Your name?");
+          if(name!=null){
+              String content = logField.getSelectedText();
+              if (content == null || content.length() == 0) {
+                  content = logField.getText();
+              }
+              RequestInfo requestInfo=null;
+              try {
+                requestInfo = Plugin.postRequestWithoutHtmlCode(new URL("http://jd_"+JDUtilities.getMD5(content)+".pastebin.com/pastebin.php"), null, null, "parent_pid=&format=text&code2="+URLEncoder.encode(content,"UTF-8")+"&poster="+URLEncoder.encode(name,"UTF-8")+"&paste=Send&expiry=m&email=", false);
+            }
+            catch (MalformedURLException e1) {
+                // TODO Auto-generated catch block
+                e1.printStackTrace();
+            }
+            catch (IOException e1) {
+                // TODO Auto-generated catch block
+                e1.printStackTrace();
+            }
+            if(requestInfo!=null &&requestInfo.isOK()){
+            JOptionPane.showInputDialog(this, "Log-Link", requestInfo.getLocation());
+            }else{
+                JOptionPane.showMessageDialog(this, "Upload failed");
+            }
+              
+          }
+          
         }
         if (e.getSource() == btnSave) {
             JFileChooser fc = new JFileChooser();

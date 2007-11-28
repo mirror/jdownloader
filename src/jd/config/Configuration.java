@@ -103,6 +103,7 @@ public class Configuration extends Property implements Serializable {
     public static final String PARAM_WRITE_LOG = "WRITE_LOG";
     public static final String PARAM_WRITE_LOG_PATH = "WRITE_LOG_PATH";
     public static final String PARAM_CENSOR_FIELD = "CENSOR_FIELD";
+    public static final String PARAM_JAC_LOG = "JAC_DOLOG";
     /**
      * Die unterschiedlichen Interaktionen. (ZB Reconnect nach einem Download)
      */

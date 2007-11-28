@@ -269,7 +269,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
                 sameName = iterator.next().getName();
             } else {
                 tempName = iterator.next().getName();
-                txtName.setText(JDUtilities.getEqualString(sameName, tempName));
+                txtName.setText(JDUtilities.getEqualString(sameName, tempName).replace(".part", "(archiv)"));
             }
         }
     }

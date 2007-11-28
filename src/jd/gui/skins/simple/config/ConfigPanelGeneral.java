@@ -96,7 +96,9 @@ addGUIConfigEntry(ce);
         ce= new GUIConfigEntry( new ConfigEntry(ConfigContainer.TYPE_BROWSEFILE, configuration, Configuration.PARAM_WRITE_LOG_PATH, "Filelogger: Pfad zur Logfile").setDefaultValue(JDUtilities.getResourceFile("jd_log.txt").getAbsolutePath()));
         addGUIConfigEntry(ce);
 
-        
+        ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, configuration, Configuration.PARAM_JAC_LOG, "jAntiCaptcha: Log aktiv").setDefaultValue(false));
+        addGUIConfigEntry(ce);
+       
         
         if (JDUtilities.getHomeDirectory() != null) {
             brsHomeDir = new BrowseFile();

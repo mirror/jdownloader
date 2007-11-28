@@ -14,7 +14,6 @@ import java.util.logging.Logger;
 import jd.captcha.JAntiCaptcha;
 import jd.captcha.pixelobject.PixelObject;
 import jd.captcha.utils.UTILITIES;
-import jd.utils.JDUtilities;
 
 import com.sun.image.codec.jpeg.ImageFormatException;
 import com.sun.image.codec.jpeg.JPEGCodec;
@@ -111,7 +110,7 @@ public void normalize(double multi,double cutMax, double cutMin){
 
 
 Double faktor=(double)(max-min)/(double)getMaxPixelValue();
-logger.fine(min+" <> "+max+" : "+faktor);
+if(JAntiCaptcha.isLoggerActive())logger.fine(min+" <> "+max+" : "+faktor);
      for (int y = 0; y < getHeight(); y++) {
          for (int x = 0; x < getWidth(); x++) {
              akt= getPixelValue(x,y);
@@ -129,7 +128,7 @@ logger.fine(min+" <> "+max+" : "+faktor);
              akt-=min;
              akt/=faktor;
              akt*=multi;
-             //logger.fine(getPixelValue(x,y)+" = "+akt);
+             //if(JAntiCaptcha.isLoggerActive())logger.fine(getPixelValue(x,y)+" = "+akt);
            akt=Math.min(akt, getMaxPixelValue());
            akt=Math.max(akt, 0);
              setPixelValue(x,y,(int)akt);
@@ -612,7 +611,7 @@ logger.fine(min+" <> "+max+" : "+faktor);
         for (int x = 0; x < getWidth(); x++) {
             for (int y = 0; y < getHeight(); y++) {
                 int dif = Math.abs(avg - getPixelValue(x, y));
-             //  logger.info(getPixelValue(x, y)+"_");
+             //  if(JAntiCaptcha.isLoggerActive())logger.info(getPixelValue(x, y)+"_");
  if (dif < (int)(getMaxPixelValue() * owner.getJas().getDouble("BackgroundSampleCleanContrast"))) {
 
                     this.setPixelValue(x, y, getMaxPixelValue());
@@ -634,7 +633,7 @@ logger.fine(min+" <> "+max+" : "+faktor);
      */
     public Image getImage() {
         if (getWidth() <= 0 || getHeight() <= 0) {
-            logger.severe("Dimensionen falsch: " + this.getDim());
+            if(JAntiCaptcha.isLoggerActive())logger.severe("Dimensionen falsch: " + this.getDim());
             return null;
         }
         BufferedImage image = new BufferedImage(getWidth(), getHeight(), BufferedImage.TYPE_INT_RGB);
@@ -651,7 +650,7 @@ logger.fine(min+" <> "+max+" : "+faktor);
     }
     public Image getFullImage() {
         if (getWidth() <= 0 || getHeight() <= 0) {
-            logger.severe("Dimensionen falsch: " + this.getDim());
+            if(JAntiCaptcha.isLoggerActive())logger.severe("Dimensionen falsch: " + this.getDim());
             return null;
         }
         BufferedImage image = new BufferedImage(getWidth(), getHeight(), BufferedImage.TYPE_INT_RGB);
@@ -675,7 +674,7 @@ logger.fine(min+" <> "+max+" : "+faktor);
      */
     public Image getImage(int faktor) {
         if ((getWidth() * faktor) <= 0 || (getHeight() * faktor) <= 0) {
-            //logger.severe("Bild zu Klein. Fehler!!. Buhcstbaen nicht richtig erkannt?");
+            //if(JAntiCaptcha.isLoggerActive())logger.severe("Bild zu Klein. Fehler!!. Buhcstbaen nicht richtig erkannt?");
             BufferedImage image = new BufferedImage(1, 1, BufferedImage.TYPE_INT_RGB);
             
             return image;
@@ -841,7 +840,7 @@ logger.fine(min+" <> "+max+" : "+faktor);
      * Gibt ein ACSI bild des Captchas aus
      */
     public void printGrid() {
-        logger.info("\r\n" + getString());
+        if(JAntiCaptcha.isLoggerActive())logger.info("\r\n" + getString());
     }
 
     /**
@@ -920,7 +919,7 @@ logger.fine(min+" <> "+max+" : "+faktor);
         }
 
         if (leftLines >= getWidth() || (getWidth() - rightLines) > getWidth()) {
-            logger.severe("cleaning failed. nothing left1");
+            if(JAntiCaptcha.isLoggerActive())logger.severe("cleaning failed. nothing left1");
             
             grid = new int[0][0];
             return false;
@@ -955,7 +954,7 @@ logger.fine(min+" <> "+max+" : "+faktor);
         }
 
         if ((getWidth() - leftLines - rightLines) < 0 || (getHeight() - topLines - bottomLines) < 0) {
-            logger.severe("cleaning failed. nothing left");
+            if(JAntiCaptcha.isLoggerActive())logger.severe("cleaning failed. nothing left");
             grid = new int[0][0];
             return false;
         }
@@ -1083,17 +1082,17 @@ public void removeSmallObjects(double contrast, double objectContrast,int maxSiz
                                 break;
                             }
                         }
-                        logger.finer("Verfolge weiter Letztes Object: area:"+lastObject.getArea()+" dist: "+dist);
+                        if(JAntiCaptcha.isLoggerActive())logger.finer("Verfolge weiter Letztes Object: area:"+lastObject.getArea()+" dist: "+dist);
                    
                     }else{
                         object = new PixelObject(this);
                         object.setContrast(contrast);
-//                        logger.info("Kontrast: "+contrast+" : "+objectContrast);
+//                        if(JAntiCaptcha.isLoggerActive())logger.info("Kontrast: "+contrast+" : "+objectContrast);
                         object.setWhiteContrast(objectContrast); 
                     }
 //                  if(object.getArea()>200)  w.setImage(0,line,getImage());
                     getObject(x, y, tmpGrid, object);
-//                   logger.info(object.getSize()+" avg "+object.getAverage()+" area: "+object.getArea());
+//                   if(JAntiCaptcha.isLoggerActive())logger.info(object.getSize()+" avg "+object.getAverage()+" area: "+object.getArea());
                     if(object.getArea()>200){
 //                    w.setImage(1,line,getImage());
 //                   w.setText(2,line,"Size: "+ object.getSize());
@@ -1108,7 +1107,7 @@ public void removeSmallObjects(double contrast, double objectContrast,int maxSiz
                         if (object.getArea() > ret.elementAt(i).getArea()) {
                           
                             ret.add(i, object);
-//                          logger.finer("Found Object size:"+object.getSize()+" "+object.getWidth()+" - "+object.getArea());
+//                          if(JAntiCaptcha.isLoggerActive())logger.finer("Found Object size:"+object.getSize()+" "+object.getWidth()+" - "+object.getArea());
                        
 //                          BasicWindow.showImage(this.getImage());
                           
@@ -1118,7 +1117,7 @@ public void removeSmallObjects(double contrast, double objectContrast,int maxSiz
                     }
                     if (object != null){
                         ret.add(object); 
-//                        logger.finer("Found Object size:"+object.getSize()+" "+object.getWidth()+" - "+object.getArea());
+//                        if(JAntiCaptcha.isLoggerActive())logger.finer("Found Object size:"+object.getSize()+" "+object.getWidth()+" - "+object.getArea());
                         
                     }
                     

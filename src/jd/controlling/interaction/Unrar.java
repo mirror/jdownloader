@@ -76,6 +76,7 @@ public class Unrar extends Interaction implements Serializable {
         progress.increase(1);
         progress.finalize();
         this.setCallCode(Interaction.INTERACTION_CALL_SUCCESS);
+        Interaction.handleInteraction(Interaction.INTERACTION_AFTER_UNRAR, null);
     }
     @Override
     public void initConfig() {

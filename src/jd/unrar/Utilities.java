@@ -12,8 +12,6 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 
-import jd.utils.JDUtilities;
-
 public class Utilities {
     /**
      * Lädt ein Objekt aus einer Datei

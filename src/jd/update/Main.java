@@ -6,8 +6,6 @@ import java.io.FileWriter;
 import java.util.Scanner;
 import java.util.Vector;
 
-import jd.utils.JDUtilities;
-
 
 public class Main {
     /**

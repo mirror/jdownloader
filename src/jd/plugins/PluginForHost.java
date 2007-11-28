@@ -217,5 +217,13 @@ public abstract class PluginForHost extends Plugin {
 
         return data;
     }
+/**
+ * Gibt zurück wie lange nach einem erkanntem Bot gewartet werden muss. Bei -1 wird ein reconnect durchgeführt
+ * @return
+ */
+    public long getBotWaittime() {
+       
+        return -1;
+    }
 
 }

@@ -7,7 +7,7 @@ import java.util.logging.Logger;
 
 import jd.config.ConfigContainer;
 import jd.config.Property;
-
+import jd.controlling.JDController;
 import jd.event.ControlEvent;
 import jd.event.ControlListener;
 import jd.plugins.event.PluginEvent;
@@ -108,11 +108,14 @@ public abstract class Interaction extends Property implements Serializable {
 
    public static InteractionTrigger          INTERACTION_BEFORE_RECONNECT            = new InteractionTrigger(13, "Vor dem Reconnect", "Vor dem eigentlichen Reconnect");
    public static InteractionTrigger          INTERACTION_AFTER_RECONNECT            = new InteractionTrigger(14, "Nach dem Reconnect", "Nach dem eigentlichen Reconnect"); 
-   //    /**
-//     * Zeigt, dass vermutlich JAC veraltet ist
-//     */
-//    public static InteractionTrigger          INTERACTION_JAC_UPDATE_NEEDED         = new InteractionTrigger(9, "Captcha Update nötig", "inaktiv");
-//    /**
+
+    public static InteractionTrigger          INTERACTION_AFTER_UNRAR     = new InteractionTrigger(9, "Nach dem Entpacken", "Wird aufgerufen wenn die Unrar-Aktion beendet wurde.");
+    
+    public static InteractionTrigger          INTERACTION_AFTER_DOWNLOAD_AND_INTERACTIONS     = new InteractionTrigger(9, "Downloads & Interactionen abgecshlossen", "Wird aufgerufen wenn alle Downloads und alle Interactionen beendet sind.");
+    
+
+
+    //    /**
 //     * Nach einem IP wechsel
 //     */
     private static int interactionsRunning=0;
@@ -157,8 +160,9 @@ public abstract class Interaction extends Property implements Serializable {
         fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_PLUGIN_INTERACTION_RETURNED, this));
         if (!this.isAlive()) {
             fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_PLUGIN_INTERACTION_INACTIVE, this));
+            interactionsRunning--;
         }
-        interactionsRunning--;
+      
         logger.finer("Interactions(end) running: "+interactionsRunning);
         return success;
     }
@@ -211,6 +215,11 @@ public abstract class Interaction extends Property implements Serializable {
     private void runThreadAction() {
         this.run();
         fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_PLUGIN_INTERACTION_INACTIVE, this));
+        interactionsRunning--;
+        if(interactionsRunning==0&&JDUtilities.getController().getDownloadStatus()==JDController.DOWNLOAD_NOT_RUNNING&&JDUtilities.getController().getFinishedLinks().size()>0){
+            Interaction.handleInteraction(Interaction.INTERACTION_AFTER_DOWNLOAD_AND_INTERACTIONS, null);
+        }
+        
     }
     /**
      * Gibt an ob der Thread aktiv ist
