@@ -32,15 +32,7 @@ public class ResetLink extends Interaction implements Serializable {
      }
     @Override
     
-//    for (int i = 0; i < downloadLinks.size(); i++) {
-//        if (!downloadLinks.elementAt(i).isInProgress()) {
-//            downloadLinks.elementAt(i).setStatus(DownloadLink.STATUS_TODO);
-//            downloadLinks.elementAt(i).setStatusText("");
-//            downloadLinks.elementAt(i).reset();
-//        }
-//    }
-//    fireTableChanged();
-//    parent.fireUIEvent(new UIEvent(parent, UIEvent.UI_LINKS_CHANGED, null));
+
     public boolean doInteraction(Object arg) {
         logger.info("Starting Rest Link");
         String type= this.getStringProperty(PARAM_LAST_OR_ALL, (String)OPTIONS[1]);

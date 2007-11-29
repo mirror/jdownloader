@@ -48,7 +48,7 @@ public abstract class PluginForHost extends Plugin {
             logger.info(this + " Pluginende erreicht!");
             return null;
         }
-
+        logger.info("Current Step:  " + currentStep);
         PluginStep ret = doStep(currentStep, parameter);
 
         return ret;

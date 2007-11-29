@@ -222,6 +222,13 @@ public abstract class Interaction extends Property implements Serializable {
         
     }
     /**
+     * 
+     * @return Anzahl der gerade aktiven Interactionen
+     */
+    public static int getRunningInteractionsNum(){
+        return interactionsRunning;
+    }
+    /**
      * Gibt an ob der Thread aktiv ist
      * 
      * @return

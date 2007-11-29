@@ -169,8 +169,9 @@ public class JDController implements PluginListener, ControlListener, UIListener
                 }
 
                 if (lastDownloadFinished.getStatus() == DownloadLink.STATUS_DONE && Configuration.FINISHED_DOWNLOADS_REMOVE.equals(JDUtilities.getConfiguration().getProperty(Configuration.PARAM_FINISHED_DOWNLOADS_ACTION))) {
+                    logger.info("REM1");
                     downloadLinks.remove(lastDownloadFinished);
-
+                   
                     saveDownloadLinks(JDUtilities.getResourceFile("links.dat"));
                     uiInterface.setDownloadLinks(downloadLinks);
                 }
@@ -318,9 +319,12 @@ public class JDController implements PluginListener, ControlListener, UIListener
                 this.clipboard.setEnabled((Boolean) uiEvent.getParameter());
                 break;
             case UIEvent.UI_LINKS_CHANGED:
-                newLinks = uiInterface.getDownloadLinks();
+               
+                newLinks = uiInterface.getDownloadLinks();             
                 abortDeletedLink(downloadLinks, newLinks);
-                downloadLinks = newLinks;
+                //newLinks darf nicht einfach übernommen werden sonst bearbeiten controller und gui den selben vector.
+                downloadLinks.clear();
+                downloadLinks.addAll(newLinks);      
                 saveDownloadLinks(JDUtilities.getResourceFile("links.dat"));
                 break;
             case UIEvent.UI_INTERACT_RECONNECT:
@@ -391,12 +395,14 @@ public class JDController implements PluginListener, ControlListener, UIListener
      * @param newLinks
      */
     private void abortDeletedLink(Vector<DownloadLink> oldLinks, Vector<DownloadLink> newLinks) {
+        logger.info("abort "+oldLinks.size()+" - "+newLinks.size());
         if (watchdog == null) return;
         for (int i = 0; i < oldLinks.size(); i++) {
             if (newLinks.indexOf(oldLinks.elementAt(i)) == -1) {
                 // Link gefunden der entfernt wurde
-
-                oldLinks.elementAt(i).setAborted(true);
+logger.finer("Found link that hast been removed: "+oldLinks.elementAt(i));
+                //oldLinks.elementAt(i).setAborted(true);
+                
                 watchdog.abortDownloadLink(oldLinks.elementAt(i));
             }
         }
@@ -636,19 +642,11 @@ public class JDController implements PluginListener, ControlListener, UIListener
      * 
      * @return Alle DownloadLinks zurück
      */
-    protected Vector<DownloadLink> getDownloadLinks() {
+    public Vector<DownloadLink> getDownloadLinks() {
         return downloadLinks;
     }
 
-    /**
-     * Setzt alle DownloadLinks neu
-     * 
-     * @param links Die neuen DownloadLinks
-     */
-    protected void setDownloadLinks(Vector<DownloadLink> links) {
-        downloadLinks = links;
 
-    }
 
     /**
      * Lädt zum Start das erste Mal alle Links aus einer Datei

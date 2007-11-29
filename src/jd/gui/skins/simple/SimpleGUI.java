@@ -47,7 +47,6 @@ import jd.event.ControlEvent;
 import jd.event.UIEvent;
 import jd.event.UIListener;
 import jd.gui.UIInterface;
-import jd.gui.skins.simple.components.TextAreaDialog;
 import jd.gui.skins.simple.config.ConfigurationDialog;
 import jd.plugins.DownloadLink;
 import jd.plugins.Plugin;
@@ -55,7 +54,6 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginForSearch;
 import jd.plugins.PluginOptional;
-import jd.plugins.UserPlugin;
 import jd.plugins.event.PluginEvent;
 import jd.utils.JDUtilities;
 
@@ -539,13 +537,16 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
             case JDAction.ITEMS_REMOVE:
                 if (!JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_DISABLE_CONFIRM_DIALOGS, false)) {
                     if (this.showConfirmDialog("Ausgewählte Links wirklich entfernen?")) {
+                  
                         tabDownloadTable.removeSelectedLinks();
-                        fireUIEvent(new UIEvent(this, UIEvent.UI_LINKS_CHANGED, null));
+                       
+                        fireUIEvent(new UIEvent(this, UIEvent.UI_LINKS_CHANGED, this.getDownloadLinks()));
+                       
                     }
                 }
                 else {
                     tabDownloadTable.removeSelectedLinks();
-                    fireUIEvent(new UIEvent(this, UIEvent.UI_LINKS_CHANGED, null));
+                    fireUIEvent(new UIEvent(this, UIEvent.UI_LINKS_CHANGED, this.getDownloadLinks()));
                 }
                 break;
             case JDAction.ITEMS_DND:
@@ -663,7 +664,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
             splitpane.setDividerLocation(0.8);
             return;
         }
-        if (event.getSource() instanceof PluginOptional || event.getSource() instanceof UserPlugin) {
+        if (event.getSource() instanceof PluginOptional ) {
             JDAction actionToDo = null;
             switch (event.getEventID()) {
                 case PluginEvent.PLUGIN_CONTROL_DND:

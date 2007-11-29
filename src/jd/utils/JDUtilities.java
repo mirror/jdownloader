@@ -1183,7 +1183,7 @@ public class JDUtilities {
      * Wandelt alle hexkodierten zeichen in diesem Format in normalen text um
      * 
      * @param str
-     * @return decoded string
+     * @return decoded string 
      */
     public static String htmlDecode(String str) {
         // http://rs218.rapidshare.com/files/&#0052;&#x0037;&#0052;&#x0034;&#0049;&#x0032;&#0057;&#x0031;/STE_S04E04.Borderland.German.dTV.XviD-2Br0th3rs.part1.rar

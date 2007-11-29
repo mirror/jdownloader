@@ -299,15 +299,20 @@ public class DownloadWatchDog extends Thread implements PluginListener, ControlL
      */
     void abort() {
 logger.finer("Breche alle actove links ab");
+ProgressController progress = new ProgressController(activeLinks.size());
+progress.setStatusText("Stopping all downloads");
         for (int i = 0; i < this.activeLinks.size(); i++) {
             activeLinks.get(i).abortDownload();
 
         }
+        
         deligateFireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SINGLE_DOWNLOAD_CHANGED, null));
         boolean check = true;
         //Warteschleife bis alle activelinks abgebrochen wurden
         logger.finer("Warten bis alle activeLinks abgebrochen wurden.");
+    
         while (true) {
+            progress.increase(1);
             check = true;
             for (int i = 0; i < this.activeLinks.size(); i++) {
                 if (activeLinks.get(i).isAlive()) {
@@ -317,11 +322,12 @@ logger.finer("Breche alle actove links ab");
             }
             if (check) break;
             try {
-                Thread.sleep(100);
+                Thread.sleep(500);
             }
             catch (InterruptedException e) {
             }
         }
+        progress.finalize();
         logger.finer("Abbruch komplett");
         this.aborted = true;
         this.clearDownloadListStatus();
@@ -527,7 +533,10 @@ logger.finer("Breche alle actove links ab");
      */
     public void abortDownloadLink(DownloadLink link) {
         SingleDownloadController dlThread = getDownloadThread(link);
-        if (dlThread != null) dlThread.abortDownload();
+        if (dlThread != null){ 
+            dlThread.abortDownload();
+            removeDownloadLinkFromActiveList(link);   
+        };
 
     }
 

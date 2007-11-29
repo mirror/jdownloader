@@ -126,7 +126,7 @@ public class Replacer {
      
      if(key.equalsIgnoreCase("SYSTEM.TIME")){
          Calendar c = Calendar.getInstance();
-            return JDUtilities.fillInteger(c.get(Calendar.HOUR),2,"0")+":"+JDUtilities.fillInteger(c.get(Calendar.MINUTE),2,"0")+":"+JDUtilities.fillInteger(c.get(Calendar.SECOND),2,"0");
+            return JDUtilities.fillInteger(c.get(Calendar.HOUR_OF_DAY),2,"0")+":"+JDUtilities.fillInteger(c.get(Calendar.MINUTE),2,"0")+":"+JDUtilities.fillInteger(c.get(Calendar.SECOND),2,"0");
             
         }
   if(key.equalsIgnoreCase("JD.LAST_CHANGE_TIME")){

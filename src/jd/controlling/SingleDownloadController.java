@@ -77,13 +77,15 @@ public class SingleDownloadController extends ControlMulticaster {
         downloadLink.setInProgress(true);
         fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SINGLE_DOWNLOAD_CHANGED, downloadLink));
         plugin.init();
+      
         PluginStep step = plugin.doNextStep(downloadLink);
+       
         // Hier werden alle einzelnen Schritte des Plugins durchgegangen,
         // bis entweder null zurückgegeben wird oder ein Fehler auftritt
         fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_PLUGIN_HOST_ACTIVE, plugin));
         fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SINGLE_DOWNLOAD_STARTS, downloadLink));
         while (!aborted && step != null && step.getStatus() != PluginStep.STATUS_ERROR) {
-            logger.info("Current Step:  " + step);
+       
             downloadLink.setStatusText("running...");
             if (step.getStatus() != PluginStep.STATUS_SKIP) {
                 switch (step.getStep()) {
@@ -164,6 +166,7 @@ public class SingleDownloadController extends ControlMulticaster {
             if (step.getStatus() == PluginStep.STATUS_ERROR) {
                 break;
             }
+         
             step = plugin.doNextStep(downloadLink);
         }
         // Der Download ist an dieser Stelle entweder Beendet oder

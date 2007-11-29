@@ -178,9 +178,13 @@ public class TabDownloadLinks extends JPanel implements PluginListener, ControlL
      */
     public void removeSelectedLinks() {
         Vector<DownloadLink> linksToDelete = getSelectedObjects();
+       
         allLinks.removeAll(linksToDelete);
+     
         table.getSelectionModel().clearSelection();
+        
         fireTableChanged();
+    
     }
 
     /**
@@ -261,7 +265,7 @@ public class TabDownloadLinks extends JPanel implements PluginListener, ControlL
                 break;
         }
         fireTableChanged();
-        parent.fireUIEvent(new UIEvent(parent, UIEvent.UI_LINKS_CHANGED, null));
+        parent.fireUIEvent(new UIEvent(parent, UIEvent.UI_LINKS_CHANGED, parent.getDownloadLinks()));
         int rows[] = getIndexes(selectedLinks);
         for (int i = 0; i < rows.length; i++) {
             table.getSelectionModel().addSelectionInterval(rows[i], rows[i]);
@@ -411,14 +415,14 @@ public class TabDownloadLinks extends JPanel implements PluginListener, ControlL
             }
             if (e.getSource() == delete) {
                 removeSelectedLinks();
-                parent.fireUIEvent(new UIEvent(parent, UIEvent.UI_LINKS_CHANGED, null));
+                parent.fireUIEvent(new UIEvent(parent, UIEvent.UI_LINKS_CHANGED, parent.getDownloadLinks()));
             }
             if (e.getSource() == enable) {
                 boolean status = downloadLinks.elementAt(0).isEnabled();
                 for (int i = 0; i < downloadLinks.size(); i++) {
                     downloadLinks.elementAt(i).setEnabled(!status);
                 }
-                parent.fireUIEvent(new UIEvent(parent, UIEvent.UI_LINKS_CHANGED, null));
+                parent.fireUIEvent(new UIEvent(parent, UIEvent.UI_LINKS_CHANGED, parent.getDownloadLinks()));
             }
             if (e.getSource() == info) {
                 // Point p=this.getLocationOnScreen();
@@ -442,7 +446,7 @@ public class TabDownloadLinks extends JPanel implements PluginListener, ControlL
                     }
                 }
 
-                parent.fireUIEvent(new UIEvent(parent, UIEvent.UI_LINKS_CHANGED, null));
+                parent.fireUIEvent(new UIEvent(parent, UIEvent.UI_LINKS_CHANGED, parent.getDownloadLinks()));
 
             }
 
@@ -461,7 +465,7 @@ public class TabDownloadLinks extends JPanel implements PluginListener, ControlL
                     }
                 }
                 fireTableChanged();
-                parent.fireUIEvent(new UIEvent(parent, UIEvent.UI_LINKS_CHANGED, null));
+                parent.fireUIEvent(new UIEvent(parent, UIEvent.UI_LINKS_CHANGED, parent.getDownloadLinks()));
             }
         }
     }

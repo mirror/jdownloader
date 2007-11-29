@@ -8,14 +8,18 @@ import java.net.URLConnection;
 import java.util.HashMap;
 import java.util.regex.Pattern;
 
+import jd.config.ConfigContainer;
+import jd.config.ConfigEntry;
 import jd.plugins.DownloadLink;
+import jd.plugins.Plugin;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
 import jd.utils.JDUtilities;
 
 public class Uploadedto extends PluginForHost {
-    static private final Pattern    PAT_SUPPORTED                = getSupportPattern("http://[*]uploaded.to/\\?id\\=[+]");
+
+    static private final Pattern    PAT_SUPPORTED                = getSupportPattern("http://[*]uploaded.to[+]");
 
     static private final String     HOST                         = "uploaded.to";
 
@@ -32,6 +36,8 @@ public class Uploadedto extends PluginForHost {
     static private final String     DOWNLOAD_URL                 = "<form name=\"download_form\" onsubmit=\"startDownload();\" method=\"post\" action=\"°\">";
 
     static private final String     DOWNLOAD_URL_WITHOUT_CAPTCHA = "<form name=\"download_form\" method=\"post\" action=\"°\">";
+
+    static private final String     DOWNLOAD_URL_PREMIUM         = "<form name=\"download_form\" method=\"post\" action=\"°\">";
 
     private static final String     FILE_INFO                    = "Dateiname:°</td><td><b>°</b></td></tr>°<tr><td style=\"padding-left:4px;\">Dateityp:°</td><td>°</td></tr>°<tr><td style=\"padding-left:4px;\">Dateig°</td><td>°</td>";
 
@@ -53,10 +59,13 @@ public class Uploadedto extends PluginForHost {
 
     private boolean                 useCaptchaVersion;
 
+    private String                  cookie;
+
     public Uploadedto() {
         steps.add(new PluginStep(PluginStep.STEP_WAIT_TIME, null));
         steps.add(new PluginStep(PluginStep.STEP_GET_CAPTCHA_FILE, null));
         steps.add(new PluginStep(PluginStep.STEP_DOWNLOAD, null));
+        setConfigElements();
     }
 
     @Override
@@ -95,6 +104,15 @@ public class Uploadedto extends PluginForHost {
     // return null;
     // }
     public PluginStep doStep(PluginStep step, DownloadLink parameter) {
+        if (getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM, false)) {
+
+            return doPremiumStep(step, parameter);
+        }
+        // http://uploaded.to/file/6t2rrq
+        // http://uploaded.to/?id=6t2rrq
+        // http://uploaded.to/file/6t2rrq/blabla.rar
+        // Url correction
+        correctURL(parameter);
         RequestInfo requestInfo;
         try {
             DownloadLink downloadLink = (DownloadLink) parameter;
@@ -299,9 +317,192 @@ public class Uploadedto extends PluginForHost {
             return step;
         }
         catch (IOException e) {
-             e.printStackTrace();
-            return null;
+            e.printStackTrace();
+            step.setStatus(PluginStep.STATUS_ERROR);
+            logger.severe("Unbekannter Fehler. siehe Exception");
+            parameter.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN);
+            step.setParameter(20000l);
+            return step;
         }
+    }
+
+    private PluginStep doPremiumStep(PluginStep step, DownloadLink parameter) {
+        correctURL(parameter);
+
+        RequestInfo requestInfo;
+        String user = getProperties().getStringProperty(PROPERTY_PREMIUM_USER);
+        String pass = getProperties().getStringProperty(PROPERTY_PREMIUM_PASS);
+
+        if (user == null || pass == null) {
+
+            step.setStatus(PluginStep.STATUS_ERROR);
+            logger.severe("Premiumfehler Logins are incorrect");
+            parameter.setStatus(DownloadLink.STATUS_ERROR_PREMIUM_LOGIN);
+            return step;
+
+        }
+        try {
+            DownloadLink downloadLink = (DownloadLink) parameter;
+            switch (step.getStep()) {
+                // Wird als login verwendet
+                case PluginStep.STEP_WAIT_TIME:
+                    logger.info("login");
+                    requestInfo = Plugin.postRequest(new URL("http://uploaded.to/login"), null, null, null, "email=Honk&password=fxnsvzh", false);
+                    if (requestInfo.getCookie().indexOf("auth") < 0) {
+                        step.setStatus(PluginStep.STATUS_ERROR);
+                        logger.severe("Premiumfehler Login");
+                        downloadLink.setStatus(DownloadLink.STATUS_ERROR_PREMIUM_LOGIN);
+                        return step;
+                    }
+                    cookie = requestInfo.getCookie();
+
+                    return step;
+                case PluginStep.STEP_GET_CAPTCHA_FILE:
+                    step.setStatus(PluginStep.STATUS_SKIP);
+                    downloadLink.setStatusText("Premiumdownload");
+                    step = nextStep(step);
+                    return step;
+                case PluginStep.STEP_DOWNLOAD:
+
+                    requestInfo = getRequest(new URL(downloadLink.getUrlDownloadDecrypted()), cookie, null, false);
+                    // Datei geloescht?
+                    if (requestInfo.getHtmlCode().contains(FILE_NOT_FOUND)) {
+                        logger.severe("download not found");
+                        downloadLink.setStatus(DownloadLink.STATUS_ERROR_FILE_NOT_FOUND);
+                        step.setStatus(PluginStep.STATUS_ERROR);
+                        return step;
+                    }
+
+                    // 3 Versuche
+                    String filepass = null;
+                    if (requestInfo.containsHTML("file_key")) {
+                        logger.info("File is Password protected1");
+                        if (lastPassword != null) {
+                            logger.info("Try last pw: " + lastPassword);
+                            filepass = lastPassword;
+                            requestInfo = postRequest(new URL(downloadLink.getUrlDownloadDecrypted()), cookie, null, null, "lang=de&file_key=" + filepass, false);
+
+                        }
+                        else {
+                            filepass = JDUtilities.getController().getUiInterface().showUserInputDialog("Password?");
+                            logger.info("Password: " + pass);
+                            requestInfo = postRequest(new URL(downloadLink.getUrlDownloadDecrypted()), cookie, null, null, "lang=de&file_key=" + filepass, false);
+                        }
+
+                    }
+                    if (requestInfo.containsHTML("file_key")) {
+                        logger.info("File is Password protected2");
+                        filepass = JDUtilities.getController().getUiInterface().showUserInputDialog("Password?");
+                        logger.info("Password: " + pass);
+                        requestInfo = postRequest(new URL(downloadLink.getUrlDownloadDecrypted()), cookie, null, null, "lang=de&file_key=" + filepass, false);
+
+                    }
+                    if (requestInfo.containsHTML("file_key")) {
+                        logger.info("File is Password protected3");
+                        filepass = JDUtilities.getController().getUiInterface().showUserInputDialog("Password?");
+                        logger.info("Password: " + pass);
+                        requestInfo = postRequest(new URL(downloadLink.getUrlDownloadDecrypted()), cookie, null, null, "lang=de&file_key=" + filepass, false);
+
+                    }
+                    if (requestInfo.containsHTML("file_key")) {
+                        logger.severe("Wrong password entered");
+
+                        downloadLink.setStatus(DownloadLink.STATUS_ERROR_PLUGIN_SPECIFIC);
+                        step.setParameter("Wrong Password");
+                        step.setStatus(PluginStep.STATUS_ERROR);
+                        return step;
+
+                    }
+                    if (filepass != null) {
+                        lastPassword = filepass;
+                    }
+                    String newURL = null;
+                    if (requestInfo.getConnection().getHeaderField("Location") == null || requestInfo.getConnection().getHeaderField("Location").length() < 10) {
+                        newURL = getSimpleMatch(requestInfo.getHtmlCode(), DOWNLOAD_URL_PREMIUM, 0);
+                        logger.info(requestInfo.getHtmlCode());
+                        if (newURL == null) {
+                            logger.severe("Indirekter Link konnte nicht gefunden werden");
+
+                            downloadLink.setStatus(DownloadLink.STATUS_ERROR_PLUGIN_SPECIFIC);
+                            step.setParameter("Indirect Link Error");
+                            step.setStatus(PluginStep.STATUS_ERROR);
+                            return step;
+                        }
+
+                        requestInfo = postRequest(new URL(newURL), cookie, null, null, null, false);
+
+                        if (requestInfo.getConnection().getHeaderField("Location") == null || requestInfo.getConnection().getHeaderField("Location").length() < 10) {
+                            if (getFileNameFormHeader(requestInfo.getConnection()) == null || getFileNameFormHeader(requestInfo.getConnection()).indexOf("?") >= 0) {
+                                step.setStatus(PluginStep.STATUS_ERROR);
+                                logger.severe("Endlink not found");
+                                downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN);
+
+                                return step;
+                            }
+
+                        }
+                    }
+                    else {
+                        logger.info("Direct Downloads active");
+
+                    }
+                    String redirect = requestInfo.getConnection().getHeaderField("Location");
+                    if (!redirect.startsWith("http://") && newURL != null) {
+
+                        redirect = "http://" + new URL(newURL).getHost() + redirect;
+
+                    }
+
+                    requestInfo = getRequestWithoutHtmlCode(new URL(redirect), cookie, null, false);
+                    int length = requestInfo.getConnection().getContentLength();
+                    downloadLink.setDownloadMax(length);
+                    logger.info("Filename: " + getFileNameFormHeader(requestInfo.getConnection()));
+                    if (getFileNameFormHeader(requestInfo.getConnection()) == null || getFileNameFormHeader(requestInfo.getConnection()).indexOf("?") >= 0) {
+                        step.setStatus(PluginStep.STATUS_ERROR);
+                        logger.severe("Fehler 2 Dateiname kann nicht ermittelt werden");
+                        downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN);
+
+                        return step;
+                    }
+                    downloadLink.setName(getFileNameFormHeader(requestInfo.getConnection()));
+                    if (!hasEnoughHDSpace(downloadLink)) {
+                        downloadLink.setStatus(DownloadLink.STATUS_ERROR_NO_FREE_SPACE);
+                        step.setStatus(PluginStep.STATUS_ERROR);
+                        return step;
+                    }
+                    download(downloadLink, (URLConnection) requestInfo.getConnection());
+                    step.setStatus(PluginStep.STATUS_DONE);
+                    downloadLink.setStatus(DownloadLink.STATUS_DONE);
+                    return step;
+            }
+            return step;
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+            step.setStatus(PluginStep.STATUS_ERROR);
+            logger.severe("Unbekannter Fehler. siehe Exception");
+            parameter.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN);
+
+            return step;
+        }
+    }
+
+    /**
+     * Korrigiert den Downloadlink in ein einheitliches Format
+     * 
+     * @param parameter
+     */
+    private void correctURL(DownloadLink parameter) {
+        String link = parameter.getUrlDownloadDecrypted();
+        link = link.replace("/?id=", "/file/");
+        link = link.replace("?id=", "file/");
+        String[] parts = link.split("\\/");
+        String newLink = "";
+        for (int t = 0; t < Math.min(parts.length, 5); t++)
+            newLink += parts[t] + "/";
+
+        parameter.setUrlDownload(newLink);
+
     }
 
     @Override
@@ -312,6 +513,7 @@ public class Uploadedto extends PluginForHost {
     @Override
     public void reset() {
         this.finalURL = null;
+        cookie = null;
     }
 
     public String getFileInformationString(DownloadLink downloadLink) {
@@ -321,6 +523,7 @@ public class Uploadedto extends PluginForHost {
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) {
         RequestInfo requestInfo;
+        correctURL(downloadLink);
         try {
             requestInfo = getRequestWithoutHtmlCode(new URL(downloadLink.getUrlDownloadDecrypted()), null, null, false);
             if (requestInfo.getConnection().getHeaderField("Location") != null && requestInfo.getConnection().getHeaderField("Location").indexOf("error") > 0) {
@@ -347,7 +550,14 @@ public class Uploadedto extends PluginForHost {
                 downloadLink.setName(fileName.trim() + "" + ext.trim());
                 if (fileSize != null) {
                     try {
-                        int length = (int) (Double.parseDouble(fileSize.trim().split(" ")[0]) * 1024 * 1024);
+                        int length = (int) (Double.parseDouble(fileSize.trim().split(" ")[0]));
+                        if (fileSize.toLowerCase().indexOf("mb") > 0) {
+                            length *= 1024 * 1024;
+                        }
+                        else if (fileSize.toLowerCase().indexOf("kb") > 0) {
+                            length *= 1024;
+                        }
+
                         downloadLink.setDownloadMax(length);
                     }
                     catch (Exception e) {
@@ -361,6 +571,18 @@ public class Uploadedto extends PluginForHost {
         catch (IOException e) {
         }
         return false;
+    }
+
+    private void setConfigElements() {
+        ConfigEntry cfg;
+        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_LABEL, "Premium Account"));
+        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getProperties(), PROPERTY_PREMIUM_USER, "Premium User"));
+        cfg.setDefaultValue("Kundennummer");
+        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getProperties(), PROPERTY_PREMIUM_PASS, "Premium Pass"));
+        cfg.setDefaultValue("Passwort");
+        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getProperties(), PROPERTY_USE_PREMIUM, "Premium Account verwenden"));
+        cfg.setDefaultValue(false);
+
     }
 
     @Override
