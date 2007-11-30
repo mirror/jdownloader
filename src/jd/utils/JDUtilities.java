@@ -1545,7 +1545,7 @@ public class JDUtilities {
             logger.severe("Error executing " + command + ": " + e.getLocalizedMessage());
             return null;
         }
-    }
+    } 
 
     /**
      * Gibt den verwendeten Controller zurück
