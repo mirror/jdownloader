@@ -17,7 +17,7 @@ import jd.plugins.RequestInfo;
 import jd.utils.JDUtilities;
 
 public class Serienjunkies extends PluginForDecrypt {
-    static private final String host = "serienjunkies.org";
+    private String host = "Serienjunkies.org";
     private static final String DEFAULT_PASSWORD = "serienjunkies.dl.am";
     private String version = "3.0.0.0";
     private Pattern patternCaptcha = null;
@@ -44,11 +44,11 @@ public class Serienjunkies extends PluginForDecrypt {
     }
     @Override
     public String getPluginID() {
-        return "Serienjunkies-3.0.1.";
+        return host+"-3.0.1.";
     }
     @Override
     public String getPluginName() {
-        return "SerienJunkies.org";
+        return host;
     }
     private String isNext() {
         if (next)
@@ -179,7 +179,8 @@ public class Serienjunkies extends PluginForDecrypt {
         ConfigEntry cfg;
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_LABEL, "Default Passwort"));
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getProperties(), "DEFAULT_PASSWORT", "Passwort").setDefaultValue(DEFAULT_PASSWORD));
-
+        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getProperties(), "USE_JAC", "Manuelle Captchaeingabe für Containerlinks"));
+        cfg.setDefaultValue(true);
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_LABEL, "Hoster Auswahl"));
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_SEPERATOR));
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getProperties(), "USE_RAPIDSHARE", "Rapidshare.com"));
@@ -188,9 +189,12 @@ public class Serienjunkies extends PluginForDecrypt {
         cfg.setDefaultValue(false);
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getProperties(), "USE_NETLOAD", "Netload.in"));
         cfg.setDefaultValue(false);
+
     }
     // Für Links die bei denen die Parts angezeigt werden
     private Vector<String> ContainerLinks(String url) {
+        if(!((Boolean) this.getProperties().getProperty("USE_JAC", true)))
+            host = "containerlinks."+host;
         Vector<String> links = new Vector<String>();
         boolean fileDownloaded = false;
         if (!url.startsWith("http://"))
@@ -252,10 +256,12 @@ public class Serienjunkies extends PluginForDecrypt {
         } catch (IOException e) {
              e.printStackTrace();
         }
+        host = "Serienjunkies.org";
         return links;
     }
     // Für Links die gleich auf den Hoster relocaten
     private String EinzelLinks(String url) {
+        host = "einzellinks."+host;
         String links = "";
         boolean fileDownloaded = false;
         if (!url.startsWith("http://"))
@@ -268,11 +274,11 @@ public class Serienjunkies extends PluginForDecrypt {
             File captchaFile = null;
             String capTxt = null;
             while (true) { // for() läuft bis kein Captcha mehr abgefragt
-                if (captchaFile != null && capTxt != null) {
-                    JDUtilities.appendInfoToFilename(captchaFile, capTxt, false);
-                }
                 Matcher matcher = patternCaptcha.matcher(reqinfo.getHtmlCode());
                 if (matcher.find()) {
+                    if (captchaFile != null && capTxt != null) {
+                        JDUtilities.appendInfoToFilename(captchaFile, capTxt, false);
+                    }
                     String captchaAdress = "http://serienjunki.es" + matcher.group(2);
                     captchaFile = getLocalCaptchaFile(this, ".gif");
                     fileDownloaded = JDUtilities.download(captchaFile, getRequestWithoutHtmlCode(new URL(captchaAdress), cookie, null, true).getConnection());
@@ -286,12 +292,14 @@ public class Serienjunkies extends PluginForDecrypt {
                         }
                         continue;
                     }
+
                     capTxt = Plugin.getCaptchaCode(captchaFile, this);
+
+                    reqinfo = postRequest(new URL(url), "s=" + matcher.group(1) + "&c=" + capTxt + "&dl.start=Download");
+                } else {
                     if (captchaFile != null && capTxt != null) {
                         JDUtilities.appendInfoToFilename(captchaFile, capTxt, true);
                     }
-                    reqinfo = postRequest(new URL(url), "s=" + matcher.group(1) + "&c=" + capTxt + "&dl.start=Download");
-                } else {
                     break;
                 }
             }
@@ -300,6 +308,7 @@ public class Serienjunkies extends PluginForDecrypt {
         } catch (IOException e) {
              e.printStackTrace();
         }
+        host = "Serienjunkies.org";
         return links;
     }
 
