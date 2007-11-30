@@ -19,7 +19,7 @@ import jd.utils.JDUtilities;
 public class Serienjunkies extends PluginForDecrypt {
     private String host = "Serienjunkies.org";
     private static final String DEFAULT_PASSWORD = "serienjunkies.dl.am";
-    private String version = "3.0.0.0";
+    private String version = "4.0.0.0";
     private Pattern patternCaptcha = null;
     private boolean next = false;
     private String dynamicCaptcha = "<FORM ACTION=\".*?%s\" METHOD=\"post\"(?s).*?(?-s)<INPUT TYPE=\"HIDDEN\" NAME=\"s\" VALUE=\"([\\w]*)\">(?s).*?(?-s)<IMG SRC=\"([^\"]*)\"";
@@ -44,7 +44,7 @@ public class Serienjunkies extends PluginForDecrypt {
     }
     @Override
     public String getPluginID() {
-        return host+"-3.0.1.";
+        return host+"-"+version;
     }
     @Override
     public String getPluginName() {
