@@ -71,7 +71,7 @@ public class ConfigPanelInteraction extends ConfigPanel implements ActionListene
 
     @Override
     public String getName() {
-
+if(interaction==null){return "no Action";}
         return "Interaction Konfiguration: "+interaction.getInteractionName();
     }
 

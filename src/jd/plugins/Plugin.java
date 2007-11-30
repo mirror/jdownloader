@@ -43,7 +43,7 @@ import jd.config.Property;
 import jd.controlling.interaction.Interaction;
 import jd.plugins.event.PluginEvent;
 import jd.plugins.event.PluginListener;
-import jd.unrar.jdUnrar;
+import jd.unrar.JUnrar;
 import jd.utils.JDUtilities;
 
 /**
@@ -1432,7 +1432,7 @@ public abstract class Plugin {
      */
     public static void addToPasswordlist(String password)
     {
-        jdUnrar unrar = new jdUnrar();
+        JUnrar unrar = new JUnrar();
         unrar.addToPasswordlist(password);
     }
     /**

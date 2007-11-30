@@ -45,7 +45,7 @@ import jd.event.UIEvent;
 import jd.gui.skins.simple.components.BrowseFile;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
-import jd.unrar.jdUnrar;
+import jd.unrar.JUnrar;
 import jd.utils.JDUtilities;
 
 /**
@@ -202,7 +202,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
             password = password.substring(1);
         txfComment.setText(comment);
         txfPassword.setText(password.trim());
-        jdUnrar unrar = new jdUnrar();
+        JUnrar unrar = new JUnrar();
         unrar.addToPasswordlist(password);
         sortLinkList();
         if (txtName.getName() == null || txtName.getName().trim().length() == 0)

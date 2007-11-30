@@ -288,8 +288,9 @@ public class TabProgress extends JPanel {
     }
 
     public void removeController(ProgressController source) {
+       int index=controllers.indexOf(source);
        
-        bars.remove(controllers.indexOf(source));
+      bars.remove(index);
         controllers.remove(source);
         updateController(source);
    

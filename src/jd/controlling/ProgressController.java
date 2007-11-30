@@ -78,6 +78,7 @@ public class ProgressController {
     }
     public void fireChanges(){
        // JDUtilities.getLogger().info("FIRE "+this);
+        if(!this.isFinished())
         JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_ON_PROGRESS, this.source));
     }
 
@@ -97,7 +98,8 @@ public class ProgressController {
        // JDUtilities.getLogger().info(this.toString());
         this.finished=true;
         this.currentValue=this.max;
-        fireChanges();
+        JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_ON_PROGRESS, this.source));
+        
     }
 
     public int getMax() {

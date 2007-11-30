@@ -18,7 +18,7 @@ import jd.config.Configuration;
 import jd.controlling.interaction.Unrar;
 import jd.gui.UIInterface;
 import jd.gui.skins.simple.SimpleGUI;
-import jd.unrar.jdUnrar;
+import jd.unrar.JUnrar;
 import jd.utils.JDUtilities;
 /**
  * Konfigurationspanel für Unrar
@@ -61,7 +61,7 @@ public class ConfigPanelInteractionUnrar extends ConfigPanel implements ActionLi
         String unrarcmd=JDUtilities.getConfiguration().getStringProperty("GUNRARCOMMAND");
         if(unrarcmd==null)
         {
-        unrarcmd=new jdUnrar().getUnrarCommand();
+        unrarcmd=new JUnrar().getUnrarCommand();
         if(unrarcmd==null)
             JDUtilities.getConfiguration().setProperty("GUNRARCOMMAND", "NOT FOUND");
         else
@@ -147,7 +147,7 @@ class jdUnrarPasswordListDialog extends JDialog implements ActionListener {
         pwField = new JTextArea(10, 60);
         pwScrollPane = new JScrollPane(pwField);
         pwField.setEditable(true);
-        jdUnrar unrar = new jdUnrar();
+        JUnrar unrar = new JUnrar();
         String[] pws = unrar.returnPasswords();
         for (int i = 0; i < pws.length; i++) {
             pwField.append(pws[i] + System.getProperty("line.separator"));
@@ -169,7 +169,7 @@ class jdUnrarPasswordListDialog extends JDialog implements ActionListener {
      */
     public void actionPerformed(ActionEvent e) {
         if (e.getSource() == btnSave) {
-            jdUnrar unrar = new jdUnrar();
+            JUnrar unrar = new JUnrar();
             unrar.editPasswordlist(JDUtilities.splitByNewline(pwField.getText()));
             dispose();
 
