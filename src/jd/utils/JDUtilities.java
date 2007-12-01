@@ -98,7 +98,7 @@ public class JDUtilities {
      * Titel der Applikation
      */
     public static final String                     JD_VERSION          = "0.0.";
-
+ 
     public static final String                     JD_REVISION         = "$Id$";
 
     /**
