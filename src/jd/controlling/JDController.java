@@ -91,7 +91,7 @@ public class JDController implements PluginListener, ControlListener, UIListener
      */
     private DownloadWatchDog                  watchdog;
 
-    private Vector<DownloadLink> finishedLinks= new Vector<DownloadLink>();
+    private Vector<DownloadLink>              finishedLinks                    = new Vector<DownloadLink>();
 
     public JDController() {
         downloadLinks = new Vector<DownloadLink>();
@@ -162,7 +162,7 @@ public class JDController implements PluginListener, ControlListener, UIListener
             case ControlEvent.CONTROL_SINGLE_DOWNLOAD_FINISHED:
                 lastDownloadFinished = (DownloadLink) event.getParameter();
                 saveDownloadLinks(JDUtilities.getResourceFile("links.dat"));
-                
+
                 this.addToFinished(lastDownloadFinished);
                 if (this.getMissingPackageFiles(lastDownloadFinished) == 0) {
                     Interaction.handleInteraction(Interaction.INTERACTION_DOWNLOAD_PACKAGE_FINISHED, this);
@@ -171,7 +171,7 @@ public class JDController implements PluginListener, ControlListener, UIListener
                 if (lastDownloadFinished.getStatus() == DownloadLink.STATUS_DONE && Configuration.FINISHED_DOWNLOADS_REMOVE.equals(JDUtilities.getConfiguration().getProperty(Configuration.PARAM_FINISHED_DOWNLOADS_ACTION))) {
                     logger.info("REM1");
                     downloadLinks.remove(lastDownloadFinished);
-                   
+
                     saveDownloadLinks(JDUtilities.getResourceFile("links.dat"));
                     uiInterface.setDownloadLinks(downloadLinks);
                 }
@@ -228,22 +228,28 @@ public class JDController implements PluginListener, ControlListener, UIListener
         }
         uiInterface.delegatedControlEvent(event);
     }
-/**
- * Fügt einen Downloadlink der Finishedliste hinzu.
- * @param lastDownloadFinished
- */
+
+    /**
+     * Fügt einen Downloadlink der Finishedliste hinzu.
+     * 
+     * @param lastDownloadFinished
+     */
     private void addToFinished(DownloadLink lastDownloadFinished) {
         this.finishedLinks.add(lastDownloadFinished);
-        
+
     }
+
     /**
-     * Gibt alle in dieser Session beendeten Downloadlinks zurück. unabhängig davon ob sie noch in der dl liste stehen oder nicht
+     * Gibt alle in dieser Session beendeten Downloadlinks zurück. unabhängig
+     * davon ob sie noch in der dl liste stehen oder nicht
+     * 
      * @return
      */
     public Vector<DownloadLink> getFinishedLinks() {
         return finishedLinks;
-        
+
     }
+
     /**
      * Bricht den Download ab und blockiert bis er abgebrochen wurde.
      */
@@ -319,12 +325,13 @@ public class JDController implements PluginListener, ControlListener, UIListener
                 this.clipboard.setEnabled((Boolean) uiEvent.getParameter());
                 break;
             case UIEvent.UI_LINKS_CHANGED:
-               
-                newLinks = uiInterface.getDownloadLinks();             
+
+                newLinks = uiInterface.getDownloadLinks();
                 abortDeletedLink(downloadLinks, newLinks);
-                //newLinks darf nicht einfach übernommen werden sonst bearbeiten controller und gui den selben vector.
+                // newLinks darf nicht einfach übernommen werden sonst
+                // bearbeiten controller und gui den selben vector.
                 downloadLinks.clear();
-                downloadLinks.addAll(newLinks);      
+                downloadLinks.addAll(newLinks);
                 saveDownloadLinks(JDUtilities.getResourceFile("links.dat"));
                 break;
             case UIEvent.UI_INTERACT_RECONNECT:
@@ -395,14 +402,14 @@ public class JDController implements PluginListener, ControlListener, UIListener
      * @param newLinks
      */
     private void abortDeletedLink(Vector<DownloadLink> oldLinks, Vector<DownloadLink> newLinks) {
-        logger.info("abort "+oldLinks.size()+" - "+newLinks.size());
+        logger.info("abort " + oldLinks.size() + " - " + newLinks.size());
         if (watchdog == null) return;
         for (int i = 0; i < oldLinks.size(); i++) {
             if (newLinks.indexOf(oldLinks.elementAt(i)) == -1) {
                 // Link gefunden der entfernt wurde
-logger.finer("Found link that hast been removed: "+oldLinks.elementAt(i));
-                //oldLinks.elementAt(i).setAborted(true);
-                
+                logger.finer("Found link that hast been removed: " + oldLinks.elementAt(i));
+                // oldLinks.elementAt(i).setAborted(true);
+
                 watchdog.abortDownloadLink(oldLinks.elementAt(i));
             }
         }
@@ -447,26 +454,25 @@ logger.finer("Found link that hast been removed: "+oldLinks.elementAt(i));
                 packages.add(links.get(i).getFilePackage());
             }
         }
-        logger.info("Found "+packages.size());
-        for (int i = 0; i < packages.size(); i++) {       
+        logger.info("Found " + packages.size());
+        for (int i = 0; i < packages.size(); i++) {
             xml += "<package name=\"" + packages.get(i).getName() + "\">";
-            
-          
+
             Vector<DownloadLink> tmpLinks = this.getPackageFiles(packages.get(i));
             for (int x = 0; x < tmpLinks.size(); x++) {
                 xml += "<file>";
                 xml += "<url>" + tmpLinks.get(x).getUrlDownloadDecrypted() + "</url>";
                 xml += "<password>" + packages.get(i).getPassword() + "</password>";
                 xml += "<comment>" + packages.get(i).getComment() + "</comment>";
-                logger.info("Found pw"+packages.get(i).getPassword());
-                logger.info("Found comment"+packages.get(i).getComment());
+                logger.info("Found pw" + packages.get(i).getPassword());
+                logger.info("Found comment" + packages.get(i).getComment());
                 xml += "</file>";
             }
             xml += "</package>";
         }
 
         xml += "</content>";
-        logger.info(  xml);
+        logger.info(xml);
         xml = JDUtilities.encrypt(xml, "DLC Parser");
 
         logger.info(xml);
@@ -490,7 +496,7 @@ logger.finer("Found link that hast been removed: "+oldLinks.elementAt(i));
                     continue;
                 }
                 logger.finer("Call Redirect: " + ri.getLocation());
-        
+
                 ri = Plugin.postRequest(new URL(ri.getLocation()), null, null, null, "jd=1&data=" + xml, true);
                 // CHeck ob der call erfolgreich war
 
@@ -500,7 +506,7 @@ logger.finer("Found link that hast been removed: "+oldLinks.elementAt(i));
                 }
                 else {
                     String dlcString = ri.getHtmlCode();
-                    
+
                     JDUtilities.writeLocalFile(file, dlcString);
                     this.getUiInterface().showMessageDialog("DLC encryption successfull");
 
@@ -511,11 +517,11 @@ logger.finer("Found link that hast been removed: "+oldLinks.elementAt(i));
         }
         catch (MalformedURLException e) {
             // TODO Auto-generated catch block
-             e.printStackTrace();
+            e.printStackTrace();
         }
         catch (IOException e) {
             // TODO Auto-generated catch block
-             e.printStackTrace();
+            e.printStackTrace();
         }
         logger.severe("DLC creation failed");
         this.getUiInterface().showMessageDialog("DLC encryption failed");
@@ -549,13 +555,13 @@ logger.finer("Found link that hast been removed: "+oldLinks.elementAt(i));
                             pluginForHost = JDUtilities.getPluginForHost(localLink.getHost()).getClass().newInstance();
                         }
                         catch (InstantiationException e) {
-                             e.printStackTrace();
+                            e.printStackTrace();
                         }
                         catch (IllegalAccessException e) {
-                             e.printStackTrace();
+                            e.printStackTrace();
                         }
                         catch (NullPointerException e) {
-                             e.printStackTrace();
+                            e.printStackTrace();
                         }
                         // Gibt es einen Names für ein Containerformat, wird ein
                         // passendes Plugin gesucht
@@ -563,8 +569,8 @@ logger.finer("Found link that hast been removed: "+oldLinks.elementAt(i));
                             if (localLink.getContainer() != null) {
                                 pluginForContainer = JDUtilities.getPluginForContainer(localLink.getContainer());
                                 if (pluginForContainer != null) {
-                                    pluginForContainer=pluginForContainer.getPlugin(localLink.getContainerFile());
-                                   // pluginForContainer.
+                                    pluginForContainer = pluginForContainer.getPlugin(localLink.getContainerFile());
+                                    // pluginForContainer.
                                     pluginForContainer.initContainer(localLink.getContainerFile());
                                     pluginForContainer.getContainedDownloadlinks();
                                 }
@@ -572,9 +578,9 @@ logger.finer("Found link that hast been removed: "+oldLinks.elementAt(i));
                                     localLink.setEnabled(false);
                             }
                         }
-                  
+
                         catch (NullPointerException e) {
-                             e.printStackTrace();
+                            e.printStackTrace();
                         }
                         if (pluginForHost != null) {
                             localLink.setLoadedPlugin(pluginForHost);
@@ -594,7 +600,7 @@ logger.finer("Found link that hast been removed: "+oldLinks.elementAt(i));
             return null;
         }
         catch (Exception e) {
-             e.printStackTrace();
+            e.printStackTrace();
             logger.severe("Linklist Konflikt.");
             return null;
         }
@@ -607,29 +613,35 @@ logger.finer("Found link that hast been removed: "+oldLinks.elementAt(i));
      * @param file Die Containerdatei
      */
     private void loadContainerFile(File file) {
-   
-       
+
         Vector<PluginForContainer> pluginsForContainer = JDUtilities.getPluginsForContainer();
         Vector<DownloadLink> downloadLinks = new Vector<DownloadLink>();
         PluginForContainer pContainer;
         ProgressController progress = new ProgressController(pluginsForContainer.size());
-        logger.info("load Container: "+file);
-        
+        logger.info("load Container: " + file);
+
         for (int i = 0; i < pluginsForContainer.size(); i++) {
-            
+
             pContainer = pluginsForContainer.get(i);
-            logger.info(i+". "+"Containerplugin: "+pContainer.getPluginName());
-            progress.setStatusText("Containerplugin: "+pContainer.getPluginName());
+            logger.info(i + ". " + "Containerplugin: " + pContainer.getPluginName());
+            progress.setStatusText("Containerplugin: " + pContainer.getPluginName());
             if (pContainer.canHandle(file.getName())) {
-                progress.setSource(pContainer);
-                fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_PLUGIN_DECRYPT_ACTIVE, pContainer));
-                pContainer.initContainer(file.getAbsolutePath());
-                downloadLinks.addAll(pContainer.getContainedDownloadlinks());
-                fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_PLUGIN_DECRYPT_INACTIVE, pContainer));
+                // es muss jeweils eine neue plugininstanz erzeugt werden
+                try {
+                    pContainer = pContainer.getClass().newInstance();
+                    progress.setSource(pContainer);
+                    fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_PLUGIN_DECRYPT_ACTIVE, pContainer));
+                    pContainer.initContainer(file.getAbsolutePath());
+                    downloadLinks.addAll(pContainer.getContainedDownloadlinks());
+                    fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_PLUGIN_DECRYPT_INACTIVE, pContainer));
+                }
+                catch (Exception e) {
+                    e.printStackTrace();
+                }
             }
             progress.increase(1);
         }
-        progress.setStatusText(downloadLinks.size()+" links found");
+        progress.setStatusText(downloadLinks.size() + " links found");
         if (downloadLinks.size() > 0) {
             // schickt die Links zuerst mal zum Linkgrabber
             uiInterface.addLinksToGrabber((Vector<DownloadLink>) downloadLinks);
@@ -646,24 +658,22 @@ logger.finer("Found link that hast been removed: "+oldLinks.elementAt(i));
         return downloadLinks;
     }
 
-
-
     /**
      * Lädt zum Start das erste Mal alle Links aus einer Datei
      * 
      * @return true/False je nach Erfolg
      */
     public boolean initDownloadLinks() {
-       
-            downloadLinks = loadDownloadLinks(JDUtilities.getResourceFile("links.dat"));
-            if(downloadLinks==null){
-                downloadLinks= new Vector<DownloadLink>();
-                if (uiInterface != null) uiInterface.setDownloadLinks(downloadLinks);
-                return false;
-            }
+
+        downloadLinks = loadDownloadLinks(JDUtilities.getResourceFile("links.dat"));
+        if (downloadLinks == null) {
+            downloadLinks = new Vector<DownloadLink>();
             if (uiInterface != null) uiInterface.setDownloadLinks(downloadLinks);
-            return true;
-       
+            return false;
+        }
+        if (uiInterface != null) uiInterface.setDownloadLinks(downloadLinks);
+        return true;
+
     }
 
     /**

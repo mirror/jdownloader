@@ -13,46 +13,71 @@ import jd.plugins.event.PluginEvent;
 
 public class Tinyurl extends PluginForDecrypt {
 
-	static private String host = "tinyurl.com";
-	private String version = "1.0.0.0";
-	private Pattern patternSupported = getSupportPattern("http://[*]tinyurl.com/[+]");
-	private Pattern patternLink = Pattern.compile("http://tinyurl\\.com/.*");
-	
+    static private String host             = "tinyurl.com";
+
+    private String        version          = "1.0.0.0";
+
+    private Pattern       patternSupported = getSupportPattern("http://[*]tinyurl.com/[+]");
+
+    private Pattern       patternLink      = Pattern.compile("http://tinyurl\\.com/.*");
+
     public Tinyurl() {
         super();
         steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
         currentStep = steps.firstElement();
     }
-	
-    @Override public String getCoder() { return "Botzi"; }
-    @Override public String getHost() { return host; }
-    @Override public String getPluginID() { return "Tinyurl-1.0.0."; }
-    @Override public String getPluginName() { return host; }
-    @Override public Pattern getSupportedLinks() { return patternSupported; }
-    @Override public String getVersion() { return version; }
-    
-    
+
+    @Override
+    public String getCoder() {
+        return "Botzi";
+    }
+
+    @Override
+    public String getHost() {
+        return host;
+    }
+
+    @Override
+    public String getPluginID() {
+        return "Tinyurl-1.0.0.";
+    }
+
+    @Override
+    public String getPluginName() {
+        return host;
+    }
+
+    @Override
+    public Pattern getSupportedLinks() {
+        return patternSupported;
+    }
+
+    @Override
+    public String getVersion() {
+        return version;
+    }
+
     @Override public PluginStep doStep(PluginStep step, String parameter) {
     	if(step.getStep() == PluginStep.STEP_DECRYPT) {
             Vector<String> decryptedLinks = new Vector<String>();
     		try {
-    			firePluginEvent(new PluginEvent(this,PluginEvent.PLUGIN_PROGRESS_MAX, 1));
+    			progress.setRange( 1);
 
     			URL url = new URL(parameter);
     			RequestInfo reqinfo = getRequest(url);
     			
-    			//Besonderen Link herausfinden
+    			// Besonderen Link herausfinden
     			if (countOccurences(parameter, patternLink)>0) {
     				String[] result = parameter.split("/");
 	    			reqinfo = getRequest(new URL("http://tinyurl.com/preview.php?num=" + result[result.length-1]));	    			
     			}
     			
-    			//Link der Liste hinzufügen
-    			firePluginEvent(new PluginEvent(this,PluginEvent.PLUGIN_PROGRESS_INCREASE, null));
+    			// Link der Liste hinzufügen
+    		progress.increase(1);
     			decryptedLinks.add(getBetween(reqinfo.getHtmlCode(),"id=\"redirecturl\" href=\"","\">Proceed to"));
     			
-    			//Decrypt abschliessen
-    			firePluginEvent(new PluginEvent(this,PluginEvent.PLUGIN_PROGRESS_FINISH, null));
+    			// Decrypt abschliessen
+    			
     			step.setParameter(decryptedLinks);
     		}
     		catch(IOException e) {
@@ -61,8 +86,9 @@ public class Tinyurl extends PluginForDecrypt {
     	}
     	return null;
     }
-    
-    @Override public boolean doBotCheck(File file) {        
+
+    @Override
+    public boolean doBotCheck(File file) {
         return false;
     }
 }

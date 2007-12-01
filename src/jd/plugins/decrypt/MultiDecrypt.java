@@ -14,9 +14,12 @@ import jd.utils.JDUtilities;
 
 public class MultiDecrypt extends PluginForDecrypt {
 
-    static private String host = "MultiDecrypt";
-    private String version = "0.1";
-    static private String[] SUPPORTEDHOSTS = new String[]{"stacheldraht.be/show.php"};
+    static private String   host           = "MultiDecrypt";
+
+    private String          version        = "0.1";
+
+    static private String[] SUPPORTEDHOSTS = new String[] { "stacheldraht.be/show.php" };
+
     public MultiDecrypt() {
         super();
         steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
@@ -28,56 +31,57 @@ public class MultiDecrypt extends PluginForDecrypt {
     public String getCoder() {
         return "DwD";
     }
+
     @Override
     public String getHost() {
         return host;
     }
+
     @Override
     public String getPluginID() {
         return "MultiDecrypt-0.1";
     }
+
     @Override
     public String getPluginName() {
         return host;
     }
+
     @Override
     public Pattern getSupportedLinks() {
         String strSupported = this.getProperties().getStringProperty("SUPPORTED", "").trim();
         String[] Supported;
-        if(!strSupported.matches("[\\s]*"))
-        {
-        String[] Supp = JDUtilities.splitByNewline(strSupported);
-        Supported = new String[Supp.length+SUPPORTEDHOSTS.length];
-        for (int i = 0; i < Supp.length; i++) {
-            Supported[i] = Supp[i];
-        }
-        for (int i = 0; i < SUPPORTEDHOSTS.length; i++) {
-            Supported[Supp.length + i] = SUPPORTEDHOSTS[i];
-        }
+        if (!strSupported.matches("[\\s]*")) {
+            String[] Supp = JDUtilities.splitByNewline(strSupported);
+            Supported = new String[Supp.length + SUPPORTEDHOSTS.length];
+            for (int i = 0; i < Supp.length; i++) {
+                Supported[i] = Supp[i];
+            }
+            for (int i = 0; i < SUPPORTEDHOSTS.length; i++) {
+                Supported[Supp.length + i] = SUPPORTEDHOSTS[i];
+            }
         }
         else
-        Supported = SUPPORTEDHOSTS;
+            Supported = SUPPORTEDHOSTS;
 
-        if(Supported==null || Supported.length<1)
-            return null;
+        if (Supported == null || Supported.length < 1) return null;
         String patternStr = "http://[^\\.]*?[\\.]?(";
-            boolean b = false;
-            for (int i = 0; i < Supported.length; i++) {
-                Supported[i] = Supported[i].replaceFirst("http://", "").trim();
-                if (Supported[i].matches("www\\.[^\\/]+?\\..*"))
-                    Supported[i] = Supported[i].replaceFirst(".*?\\.", "");
-                if(b && !Supported[i].trim().matches("[\\s]*"))
+        boolean b = false;
+        for (int i = 0; i < Supported.length; i++) {
+            Supported[i] = Supported[i].replaceFirst("http://", "").trim();
+            if (Supported[i].matches("www\\.[^\\/]+?\\..*")) Supported[i] = Supported[i].replaceFirst(".*?\\.", "");
+            if (b && !Supported[i].trim().matches("[\\s]*"))
                 patternStr += "|" + Supported[i];
-                else if(!b && !Supported[i].trim().matches("[\\s]*"))
-                {
-                    b=true;
-                    patternStr += Supported[0];
-                }
+            else if (!b && !Supported[i].trim().matches("[\\s]*")) {
+                b = true;
+                patternStr += Supported[0];
+            }
         }
         patternStr += ").*";
         logger.info(patternStr);
         return Pattern.compile(patternStr, Pattern.CASE_INSENSITIVE);
     }
+
     @Override
     public String getVersion() {
         return version;
@@ -87,12 +91,11 @@ public class MultiDecrypt extends PluginForDecrypt {
     public PluginStep doStep(PluginStep step, String parameter) {
         if (step.getStep() == PluginStep.STEP_DECRYPT) {
             Vector<String[]> decryptedLinks = new Vector<String[]>();
-           progress.setRange( 1);
+            progress.setRange(1);
             FileSearch filesearch = new FileSearch();
 
             int inst = filesearch.getIntParam(FileSearch.PARAM_INST, 1);
-            if (inst != 1)
-                filesearch.getProperties().setProperty(FileSearch.PARAM_INST, 1);
+            if (inst != 1) filesearch.getProperties().setProperty(FileSearch.PARAM_INST, 1);
             String lnk = parameter.replaceFirst("http://", "").trim();
 
             if (lnk.matches("[^\\/]+?\\.[^\\/]+?\\..*"))
@@ -103,17 +106,17 @@ public class MultiDecrypt extends PluginForDecrypt {
             decryptedLinks.addAll((Collection<? extends String[]>) ((PluginStep) filesearch.doStep(new PluginStep(PluginStep.STEP_SEARCH, null), parameter)).getParameter());
             for (int i = decryptedLinks.size() - 1; i >= 0 && decryptedLinks.size() > i; i--) {
                 String[] link = decryptedLinks.elementAt(i);
-                if (link[0] == null || link[0].matches("[\\s]*") || link[0].matches(lnk))
-                    decryptedLinks.remove(i);
+                if (link[0] == null || link[0].matches("[\\s]*") || link[0].matches(lnk)) decryptedLinks.remove(i);
                 try {
                     Thread.sleep(20);
-                } catch (InterruptedException e) {
+                }
+                catch (InterruptedException e) {
                 }
             }
-            if (inst != 1)
-                filesearch.getProperties().setProperty(FileSearch.PARAM_INST, inst);
-             progress.increase( 1);
-            //veraltet: firePluginEvent(new PluginEvent(this, PluginEvent.PLUGIN_PROGRESS_FINISH, null));
+            if (inst != 1) filesearch.getProperties().setProperty(FileSearch.PARAM_INST, inst);
+            progress.increase(1);
+            // veraltet: firePluginEvent(new PluginEvent(this,
+            // PluginEvent.PLUGIN_PROGRESS_FINISH, null));
             logger.info(decryptedLinks.size() + " links Found");
             step.setParameter(decryptedLinks);
         }
@@ -131,8 +134,7 @@ public class MultiDecrypt extends PluginForDecrypt {
                 lnk = lnk.replaceFirst("\\/.*", "");
             hosts[i] = lnk;
         }
-        if (hosts.length > 0)
-            config.addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, null, null, hosts, "Folgende Seiten sind hier fest eingetragen: "));
+        if (hosts.length > 0) config.addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, null, null, hosts, "Folgende Seiten sind hier fest eingetragen: "));
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Hier kann man URLS/Pattern hinzufügen die nach Links durchsucht werden sollen!"));
         ConfigEntry cfgTextField = new ConfigEntry(ConfigContainer.TYPE_TEXTAREA, getProperties(), "SUPPORTED", "URLS: ");
         cfgTextField.setDefaultValue("");

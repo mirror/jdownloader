@@ -284,20 +284,34 @@ public class Uploadedto extends PluginForHost {
                         logger.info("dl " + finalURL);
 
                         requestInfo = getRequestWithoutHtmlCode(new URL(finalURL), "lang=de", null, false);
-
+                       
                         if (requestInfo.getConnection().getHeaderField("Location") != null && requestInfo.getConnection().getHeaderField("Location").indexOf("error") > 0) {
                             step.setStatus(PluginStep.STATUS_ERROR);
                             logger.severe("Fehler 1 Errorpage wird angezeigt " + requestInfo.getConnection().getHeaderField("Location"));
 
                             downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN_RETRY);
-                            step.setParameter(10000l);
+                            step.setParameter(20000l);
                             return step;
                         }
                         int length = requestInfo.getConnection().getContentLength();
                         downloadLink.setDownloadMax(length);
+                        
+                        int w=0;
+                        while(requestInfo.getHeaders().size()<2){
+                            w++;
+                            downloadLink.setStatusText("Warte auf Verbindung...");
+                            try {
+                                Thread.sleep(1000);
+                            }
+                            catch (InterruptedException e) {}
+                            if(w>30){
+                                logger.severe("ERROR!!!");
+                                break;
+                            }
+                        }
                         logger.info("Filename: " + getFileNameFormHeader(requestInfo.getConnection()));
-                        logger.info("Filenam2e: " + getFileNameFormHeader(requestInfo.getConnection()));
-                        logger.info("Headers: "+requestInfo.getHeaders());
+                        
+                        logger.info("Headers: "+requestInfo.getHeaders().size());
                         logger.info("Connection: "+requestInfo.getConnection());
                         logger.info("Code: \r\n"+requestInfo.getHtmlCode());
                         
@@ -593,6 +607,10 @@ public class Uploadedto extends PluginForHost {
 
     @Override
     public int getMaxSimultanDownloadNum() {
+        if (getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM, false)) {
+
+            return 20;
+        }
         return 1;
     }
 }

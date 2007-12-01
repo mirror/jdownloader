@@ -22,13 +22,12 @@ import jd.utils.JDUtilities;
  * 
  */
 public class RsXXXBlog extends PluginForDecrypt {
-    static private final String   host                 = "rs.xxx-blog.org";
+    static private final String host             = "rs.xxx-blog.org";
 
-    private String  version              = "1.0.0.1";
+    private String              version          = "1.0.0.1";
 
- 
-   
-    private Pattern patternSupported     = getSupportPattern("http://rs.xxx-blog.org/com-[+]/[+]");
+    private Pattern             patternSupported = getSupportPattern("http://rs.xxx-blog.org/com-[+]/[+]");
+
     private static final String DEFAULT_PASSWORD = "xxx-blog.org";
 
     public RsXXXBlog() {
@@ -57,8 +56,6 @@ public class RsXXXBlog extends PluginForDecrypt {
         return host;
     }
 
- 
-
     @Override
     public String getVersion() {
         return version;
@@ -68,9 +65,6 @@ public class RsXXXBlog extends PluginForDecrypt {
     public String getPluginID() {
         return "xxx-blog.org-1.0.0.";
     }
-
-
- 
 
     @Override
     public boolean doBotCheck(File file) {
@@ -83,19 +77,19 @@ public class RsXXXBlog extends PluginForDecrypt {
         switch (step.getStep()) {
             case PluginStep.STEP_DECRYPT:
                 Vector<String[]> decryptedLinks = new Vector<String[]>();
-             // Zählen aller verfügbaren Treffer
+                // Zählen aller verfügbaren Treffer
                 try {
                     URL url = new URL(cryptedLink);
                     RequestInfo requestInfo = getRequest(url, null, null, false);
-                   HashMap<String,String> fields=this.getInputHiddenFields(requestInfo.getHtmlCode(),"postit","starten");
-                  String newURL= "http://rapidshare.com"+JDUtilities.htmlDecode(fields.get("uri"));
-                  decryptedLinks.add(new String[]{newURL, DEFAULT_PASSWORD, null});
+                    HashMap<String, String> fields = this.getInputHiddenFields(requestInfo.getHtmlCode(), "postit", "starten");
+                    String newURL = "http://rapidshare.com" + JDUtilities.htmlDecode(fields.get("uri"));
+                    decryptedLinks.add(new String[] { newURL, DEFAULT_PASSWORD, null });
                 }
                 catch (MalformedURLException e) {
-                     JDUtilities.logException(e);
+                    JDUtilities.logException(e);
                 }
                 catch (IOException e) {
-                     JDUtilities.logException(e);
+                    JDUtilities.logException(e);
                 }
                 step.setParameter(decryptedLinks);
                 break;

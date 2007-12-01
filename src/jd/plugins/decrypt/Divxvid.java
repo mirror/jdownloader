@@ -13,98 +13,113 @@ import jd.plugins.RequestInfo;
 import jd.plugins.event.PluginEvent;
 
 public class Divxvid extends PluginForDecrypt {
-    static private final String host = "dxp.divxvid.org";
-    private String version = "1.0.0.0";
-    private Pattern patternSupported =getSupportPattern("http://dxp.divxvid.org/[+]");
-    private Pattern gate = Pattern.compile("httpRequestObject.open.'POST', '([^\\s\"]*)'\\);",Pattern.CASE_INSENSITIVE);
-    private Pattern outputlocation = Pattern.compile(
-            "rsObject = window.open.\"([/|.|a-zA-Z0-9|_|-]*)",
-            Pattern.CASE_INSENSITIVE);
-    private Pattern premiumdownload = Pattern.compile(
-            "value=\"download\" onclick=\"javascript:download",
-            Pattern.CASE_INSENSITIVE);
+    static private final String host                    = "dxp.divxvid.org";
+
+    private String              version                 = "1.0.0.0";
+
+    private Pattern             patternSupported        = getSupportPattern("http://dxp.divxvid.org/[+]");
+
+    private Pattern             gate                    = Pattern.compile("httpRequestObject.open.'POST', '([^\\s\"]*)'\\);", Pattern.CASE_INSENSITIVE);
+
+    private Pattern             outputlocation          = Pattern.compile("rsObject = window.open.\"([/|.|a-zA-Z0-9|_|-]*)", Pattern.CASE_INSENSITIVE);
+
+    private Pattern             premiumdownload         = Pattern.compile("value=\"download\" onclick=\"javascript:download", Pattern.CASE_INSENSITIVE);
+
     /*
      * ist leider notwendig da wir das Dateiformat nicht kennen!
      */
-    private Pattern premiumdownloadlocation = Pattern.compile(
-            "form name=\"dxp\" action=\"(.*)\" method=\"post\"",
-            Pattern.CASE_INSENSITIVE);
+    private Pattern             premiumdownloadlocation = Pattern.compile("form name=\"dxp\" action=\"(.*)\" method=\"post\"", Pattern.CASE_INSENSITIVE);
 
     public Divxvid() {
         super();
         steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
         currentStep = steps.firstElement();
     }
+
     /*
      * Diese wichtigen Infos sollte man sich unbedingt durchlesen
      */
-    @Override public String getCoder() { return "DwD aka James"; }
-    @Override public String getHost() { return host; }
-    @Override public String getPluginID() { return "Divxvid-1.0.0."; }
-    @Override public String getPluginName() { return host; }
-    @Override public Pattern getSupportedLinks() { return patternSupported; }
-    @Override public String getVersion() { return version; }
-   
-
-
-  
     @Override
-    public boolean doBotCheck(File file) {        
+    public String getCoder() {
+        return "DwD aka James";
+    }
+
+    @Override
+    public String getHost() {
+        return host;
+    }
+
+    @Override
+    public String getPluginID() {
+        return "Divxvid-1.0.0.";
+    }
+
+    @Override
+    public String getPluginName() {
+        return host;
+    }
+
+    @Override
+    public Pattern getSupportedLinks() {
+        return patternSupported;
+    }
+
+    @Override
+    public String getVersion() {
+        return version;
+    }
+
+    @Override
+    public boolean doBotCheck(File file) {
         return false;
     }
+
     @Override
     public PluginStep doStep(PluginStep step, String parameter) {
         String cryptedLink = (String) parameter;
         switch (step.getStep()) {
             case PluginStep.STEP_DECRYPT:
-                firePluginEvent(new PluginEvent(this,PluginEvent.PLUGIN_PROGRESS_MAX, 1000));
+                progress.setRange(1000);
                 Vector<String> decryptedLinks = new Vector<String>();
                 URL url;
                 try {
                     url = new URL(cryptedLink);
 
-                    String cookie = postRequestWithoutHtmlCode(url, null, null, null,false).getCookie();
+                    String cookie = postRequestWithoutHtmlCode(url, null, null, null, false).getCookie();
 
                     String hash = url.getFile();
                     hash = hash.substring(1, hash.lastIndexOf("."));
-                    RequestInfo requestInfo = getRequest((new URL(
-                            "http://dxp.divxvid.org/script/old_loader.php")), cookie,
-                            cryptedLink, false);
+                    RequestInfo requestInfo = getRequest((new URL("http://dxp.divxvid.org/script/old_loader.php")), cookie, cryptedLink, false);
 
                     String input = requestInfo.getHtmlCode();
-                    String strgate=getFirstMatch(input, gate, 1);
-                    String outl=getFirstMatch(input, outputlocation, 1);
+                    String strgate = getFirstMatch(input, gate, 1);
+                    String outl = getFirstMatch(input, outputlocation, 1);
 
-                    requestInfo = postRequest(
-                            (new URL("http://dxp.divxvid.org/" + strgate)), null,
-                            cryptedLink, null, "hash=" + hash, false);
+                    requestInfo = postRequest((new URL("http://dxp.divxvid.org/" + strgate)), null, cryptedLink, null, "hash=" + hash, false);
 
                     /*
-                     * es werden dank divxvid.org hier nur die menge der links gezaehlt
+                     * es werden dank divxvid.org hier nur die menge der links
+                     * gezaehlt
                      */
-                    int countHits = countOccurences(requestInfo.getHtmlCode(),premiumdownload);
-                    firePluginEvent(new PluginEvent(this,PluginEvent.PLUGIN_PROGRESS_MAX, countHits));
+                    int countHits = countOccurences(requestInfo.getHtmlCode(), premiumdownload);
+                    progress.setRange(countHits);
                     for (int i = 0; i < countHits; i++) {
-                        requestInfo = postRequestWithoutHtmlCode((
-                                new URL(getFirstMatch(getRequest((new URL("http://dxp.divxvid.org" + outl + ","+ i + ",1," + hash + ".rs")), cookie,
-                                        cryptedLink, true).getHtmlCode(),
-                                        premiumdownloadlocation, 1))), null, null,
-                                null, false);
+                        requestInfo = postRequestWithoutHtmlCode((new URL(getFirstMatch(getRequest((new URL("http://dxp.divxvid.org" + outl + "," + i + ",1," + hash + ".rs")), cookie, cryptedLink, true).getHtmlCode(), premiumdownloadlocation, 1))), null, null, null, false);
                         if (requestInfo != null) {
-                            firePluginEvent(new PluginEvent(this,
-                                    PluginEvent.PLUGIN_PROGRESS_INCREASE, null));
+                            firePluginEvent(new PluginEvent(this, PluginEvent.PLUGIN_PROGRESS_INCREASE, null));
                             decryptedLinks.add(requestInfo.getLocation());
                         }
 
                     }
                     logger.info(decryptedLinks.size() + " downloads decrypted");
-                    firePluginEvent(new PluginEvent(this,
-                            PluginEvent.PLUGIN_PROGRESS_FINISH, null));
+                    firePluginEvent(new PluginEvent(this, PluginEvent.PLUGIN_PROGRESS_FINISH, null));
                     currentStep = null;
-                } catch (MalformedURLException e) {
-                     e.printStackTrace();
-                } catch (IOException e) {
-                     e.printStackTrace();
+                }
+                catch (MalformedURLException e) {
+                    e.printStackTrace();
+                }
+                catch (IOException e) {
+                    e.printStackTrace();
                 }
 
                 step.setParameter(decryptedLinks);

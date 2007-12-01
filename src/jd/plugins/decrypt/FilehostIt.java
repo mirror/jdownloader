@@ -13,24 +13,48 @@ import jd.plugins.event.PluginEvent;
 
 public class FilehostIt extends PluginForDecrypt {
 
-	final static String host = "filehost.it";
-	private String version = "1.0.0.0";
-	private Pattern patternSupported = getSupportPattern("http://[*]filehost.it/[+]");
-	
+    final static String host             = "filehost.it";
+
+    private String      version          = "1.0.0.0";
+
+    private Pattern     patternSupported = getSupportPattern("http://[*]filehost.it/[+]");
+
     public FilehostIt() {
         super();
         steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
         currentStep = steps.firstElement();
     }
-	
-    @Override public String getCoder() { return "Botzi"; }
-    @Override public String getHost() { return host; }
-    @Override public String getPluginID() { return "Filehost.it-1.0.0."; }
-    @Override public String getPluginName() { return host; }
-    @Override public Pattern getSupportedLinks() { return patternSupported; }
-    @Override public String getVersion() { return version; }
 
-    
+    @Override
+    public String getCoder() {
+        return "Botzi";
+    }
+
+    @Override
+    public String getHost() {
+        return host;
+    }
+
+    @Override
+    public String getPluginID() {
+        return "Filehost.it-1.0.0.";
+    }
+
+    @Override
+    public String getPluginName() {
+        return host;
+    }
+
+    @Override
+    public Pattern getSupportedLinks() {
+        return patternSupported;
+    }
+
+    @Override
+    public String getVersion() {
+        return version;
+    }
+
     @Override public PluginStep doStep(PluginStep step, String parameter) {
     	if(step.getStep() == PluginStep.STEP_DECRYPT) {
             Vector<String> decryptedLinks = new Vector<String>();
@@ -41,15 +65,15 @@ public class FilehostIt extends PluginForDecrypt {
 
     			
     			links = getAllSimpleMatches(reqinfo.getHtmlCode(), "<td>\n								<div align=\"center\"><a href=\"°\">");
-    			firePluginEvent(new PluginEvent(this,PluginEvent.PLUGIN_PROGRESS_MAX, links.size()));
+    			progress.setRange( links.size());
     			
 				for(int i=0; i<links.size(); i++) {
 					decryptedLinks.add(links.get(i).get(0));
-					firePluginEvent(new PluginEvent(this,PluginEvent.PLUGIN_PROGRESS_INCREASE, null));
+				progress.increase(1);
 				}
     			
-    			//Decrypt abschliessen
-    			firePluginEvent(new PluginEvent(this,PluginEvent.PLUGIN_PROGRESS_FINISH, null));
+    			// Decrypt abschliessen
+    			
     			step.setParameter(decryptedLinks);
     		}
     		catch(IOException e) {
@@ -58,8 +82,9 @@ public class FilehostIt extends PluginForDecrypt {
     	}
     	return null;
     }
-    
-    @Override public boolean doBotCheck(File file) {        
+
+    @Override
+    public boolean doBotCheck(File file) {
         return false;
     }
 }

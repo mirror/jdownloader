@@ -14,23 +14,35 @@ import jd.plugins.RequestInfo;
 import jd.utils.JDUtilities;
 
 public class oXygenWarez extends PluginForDecrypt {
-    static private final String host = "oxygen-warez.com";
-    private String version = "1.0.0.2";
-    private static final String DEFAULT_PASSWORD = "www.oxygen-warez.com";
-    private Pattern patternSupported = Pattern.compile("http://.*?oxygen-warez.com/(category|\\?id=).*", Pattern.CASE_INSENSITIVE);
-    private Pattern PASSWORT = Pattern.compile("<P><B>Passwort:</B> <A HREF=\"\" onClick=\"CopyToClipboard\\(this\\); return\\(false\\);\">(.+?)</A></P>");
-    private static final String DL_LINK = "<FORM ACTION=\"°\" METHOD=\"POST\" STYLE=\"display: inline;\" TARGET=\"_blank\">";
-    private static final String ERROR_CAPTCHA = "Der Sichheitscode wurde falsch eingeben!";
+    static private final String host               = "oxygen-warez.com";
+
+    private String              version            = "1.0.0.2";
+
+    private static final String DEFAULT_PASSWORD   = "www.oxygen-warez.com";
+
+    private Pattern             patternSupported   = Pattern.compile("http://.*?oxygen-warez.com/(category|\\?id=).*", Pattern.CASE_INSENSITIVE);
+
+    private Pattern             PASSWORT           = Pattern.compile("<P><B>Passwort:</B> <A HREF=\"\" onClick=\"CopyToClipboard\\(this\\); return\\(false\\);\">(.+?)</A></P>");
+
+    private static final String DL_LINK            = "<FORM ACTION=\"°\" METHOD=\"POST\" STYLE=\"display: inline;\" TARGET=\"_blank\">";
+
+    private static final String ERROR_CAPTCHA      = "Der Sichheitscode wurde falsch eingeben!";
+
     private static final String ERROR_CAPTCHA_TIME = "Der Sichheitscode ist abgelaufen!";
-    private String pw = "";
-    String strFavorites = this.getProperties().getStringProperty("FAVORITES", "rapidshare.com;uploaded.to;xirror.to");
-    String[] favorites = strFavorites.split(";");
+
+    private String              pw                 = "";
+
+    String                      strFavorites       = this.getProperties().getStringProperty("FAVORITES", "rapidshare.com;uploaded.to;xirror.to");
+
+    String[]                    favorites          = strFavorites.split(";");
+
     public oXygenWarez() {
         super();
         steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
         currentStep = steps.firstElement();
         this.setConfigElements();
     }
+
     /*
      * Diese wichtigen Infos sollte man sich unbedingt durchlesen
      */
@@ -38,22 +50,27 @@ public class oXygenWarez extends PluginForDecrypt {
     public String getCoder() {
         return "DwD";
     }
+
     @Override
     public String getHost() {
         return host;
     }
+
     @Override
     public String getPluginID() {
         return "oXygenWarez-1.0.0.";
     }
+
     @Override
     public String getPluginName() {
         return host;
     }
+
     @Override
     public Pattern getSupportedLinks() {
         return patternSupported;
     }
+
     @Override
     public String getVersion() {
         return version;
@@ -63,10 +80,11 @@ public class oXygenWarez extends PluginForDecrypt {
     public boolean doBotCheck(File file) {
         return false;
     }
+
     @Override
     public PluginStep doStep(PluginStep step, String parameter) {
         switch (step.getStep()) {
-            case PluginStep.STEP_DECRYPT :
+            case PluginStep.STEP_DECRYPT:
                 Vector<String[]> decryptedLinks = new Vector<String[]>();
 
                 RequestInfo reqinfo;
@@ -90,18 +108,19 @@ public class oXygenWarez extends PluginForDecrypt {
 
                             // Zum Schluss nach Default-Download suchen anstatt
                             // nach Favorit
-                            
+
                             if (favorites.length == i) {
                                 favPattern = "<FORM ACTION=\"([^\"]+)\" [^>]+ NAME=\"download_form\" [^>]+>.*?<H1>Download \\(.*?, .*?Url.*?\\)</H1>.*?<IMG SRC=\"(/gfx/secure/[^\"]+)\" [^>]+>.*?<INPUT TYPE=\"HIDDEN\" NAME=\"([^\"]+)\" VALUE=\"([^\"]+)\">.*?<INPUT TYPE=\"HIDDEN\" NAME=\"([^\"]+)\" VALUE=\"([^\"]+)\">.*?<INPUT TYPE=\"HIDDEN\" NAME=\"([^\"]+)\" VALUE=\"([^\"]+)\">.*?<INPUT TYPE=\"HIDDEN\" NAME=\"([^\"]+)\" VALUE=\"([^\"]+)\">";
-                            } else {
+                            }
+                            else {
                                 // Favorit
                                 String favorit = favorites[i].trim();
 
                                 // Wenn Favorit leer, dann abbrechen
-                                if (favorit.length() == 0)
-                                    continue;
+                                if (favorit.length() == 0) continue;
 
-                                favPattern = "<FORM ACTION=\"([^\"]+)\" [^>]+ NAME=\"download_form\" [^>]+>.*?<H1>[^<>]+ \\(.*?" + favorit + ".*?, .*?Url.*?\\)</H1>.*?<IMG SRC=\"(/gfx/secure/[^\"]+)\" [^>]+>.*?<INPUT TYPE=\"HIDDEN\" NAME=\"([^\"]+)\" VALUE=\"([^\"]+)\">.*?<INPUT TYPE=\"HIDDEN\" NAME=\"([^\"]+)\" VALUE=\"([^\"]+)\">.*?<INPUT TYPE=\"HIDDEN\" NAME=\"([^\"]+)\" VALUE=\"([^\"]+)\">.*?<INPUT TYPE=\"HIDDEN\" NAME=\"([^\"]+)\" VALUE=\"([^\"]+)\">";;
+                                favPattern = "<FORM ACTION=\"([^\"]+)\" [^>]+ NAME=\"download_form\" [^>]+>.*?<H1>[^<>]+ \\(.*?" + favorit + ".*?, .*?Url.*?\\)</H1>.*?<IMG SRC=\"(/gfx/secure/[^\"]+)\" [^>]+>.*?<INPUT TYPE=\"HIDDEN\" NAME=\"([^\"]+)\" VALUE=\"([^\"]+)\">.*?<INPUT TYPE=\"HIDDEN\" NAME=\"([^\"]+)\" VALUE=\"([^\"]+)\">.*?<INPUT TYPE=\"HIDDEN\" NAME=\"([^\"]+)\" VALUE=\"([^\"]+)\">.*?<INPUT TYPE=\"HIDDEN\" NAME=\"([^\"]+)\" VALUE=\"([^\"]+)\">";
+                                ;
                             }
 
                             results = getAllSimpleMatches(htmlCode, Pattern.compile(favPattern, Pattern.MULTILINE | Pattern.DOTALL));
@@ -112,7 +131,7 @@ public class oXygenWarez extends PluginForDecrypt {
                             }
                         } // end for
                         // Links herausfiltern
-            
+
                         String formURL = "http://" + host + results.get(0).get(0);
                         String postvar = results.get(0).get(2) + "=" + results.get(0).get(3) + "&" + results.get(0).get(4) + "=" + results.get(0).get(5) + "&" + results.get(0).get(6) + "=" + results.get(0).get(7) + "&" + results.get(0).get(8) + "=" + results.get(0).get(9);
                         String captchaurl = "http://" + host + results.get(0).get(1);
@@ -128,8 +147,7 @@ public class oXygenWarez extends PluginForDecrypt {
                         pw = getFirstMatch(reqinfo.getHtmlCode(), PASSWORT, 1);
                         if (pw.matches("") || pw.matches("na") || pw.matches("n\\/a") || pw.matches("n\\|a"))
                             pw = DEFAULT_PASSWORD;
-                        else if (pw.matches("(keines|keins|none|no|nein)"))
-                            pw = "";
+                        else if (pw.matches("(keines|keins|none|no|nein)")) pw = "";
 
                         reqinfo = postRequest(new URL(formURL), inpHidden);
                         if (reqinfo.getHtmlCode().contains(ERROR_CAPTCHA)) {
@@ -139,7 +157,8 @@ public class oXygenWarez extends PluginForDecrypt {
                             logger.severe("falscher Captcha-Code");
                             continue; // retry
 
-                        } else if (reqinfo.getHtmlCode().contains(ERROR_CAPTCHA_TIME)) {
+                        }
+                        else if (reqinfo.getHtmlCode().contains(ERROR_CAPTCHA_TIME)) {
                             logger.severe("Captcha-Code abgelaufen");
                             continue; // retry
                         }
@@ -151,27 +170,30 @@ public class oXygenWarez extends PluginForDecrypt {
                         break;
                     }
                     Vector<Vector<String>> links = getAllSimpleMatches(reqinfo.getHtmlCode(), DL_LINK);
-                   progress.setRange( links.size());
+                    progress.setRange(links.size());
 
                     for (int i = 0; i < links.size(); i++) {
                         String link = JDUtilities.urlEncode(links.get(i).get(0));
                         link = link.replaceAll("http://.*http://", "http://");
-                        decryptedLinks.add(new String[]{link, pw, null});
+                        decryptedLinks.add(new String[] { link, pw, null });
 
-                         progress.increase( 1);
+                        progress.increase(1);
                     }
 
                     // Decrypt abschliessen
-                    //veraltet: firePluginEvent(new PluginEvent(this, PluginEvent.PLUGIN_PROGRESS_FINISH, null));
+                    // veraltet: firePluginEvent(new PluginEvent(this,
+                    // PluginEvent.PLUGIN_PROGRESS_FINISH, null));
                     step.setParameter(decryptedLinks);
 
-                } catch (IOException e) {
-                     e.printStackTrace();
+                }
+                catch (IOException e) {
+                    e.printStackTrace();
                 }
 
         }
         return null;
     }
+
     private void setConfigElements() {
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Default Passwort"));
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getProperties(), "DEFAULT_PASSWORT", "Passwort").setDefaultValue(DEFAULT_PASSWORD));

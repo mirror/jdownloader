@@ -15,56 +15,90 @@ import jd.plugins.event.PluginEvent;
 
 public class XliceNet extends PluginForDecrypt {
 
-	final static String host = "xlice.net";
-    private static final String USE_RAPIDSHARE = "USE_RAPIDSHARE";
-    private static final String USE_UPLOADED = "USE_UPLOADED";
-    private static final String USE_FILEFACTORY = "USE_FILEFACTORY";
-    private static final String USE_OXEDION = "USE_OXEDION";
-    private static final String USE_GULLI = "USE_GULLI";
-    private static final String USE_SIMPLEUPLOAD = "USE_SIMPLEUPLOAD";
-    private static final String USE_DEPOSITFILES = "USE_DEPOSITFILES";
-    private static final String USE_FILES = "USE_FILES";
-	private String version = "1.0.0.0";
-	private Pattern patternSupported = getSupportPattern("http://[*]xlice.net/f[+]/[*]");
-	private Pattern patternRapidshare = Pattern.compile("onclick=\".*\'../1/");
-	private Pattern patternGulli = Pattern.compile("onclick=\".*\'../2/");
-	private Pattern patternOxedion = Pattern.compile("onclick=\".*\'go/4/");
-	private Pattern patternFiles = Pattern.compile("onclick=\".*\'../5/");
-	private Pattern patternUploaded = Pattern.compile("onclick=\".*\'../6/");
-	private Pattern patternSimpleupload = Pattern.compile("onclick=\".*\'../7/");
-	private Pattern patternDepositfiles = Pattern.compile("onclick=\".*\'../9/");
-	private Pattern patternFilefactory = Pattern.compile("onclick=\".*\'../10/");
-	
-	private String LinkFile = "http://xlice.net/dl/";
-	private String LinkFolder = "http://xlice.net/go/";
-	/*
-	 * 1	Rapidshare
-	 * 2	Gullishare
-	 * 3
-	 * 4	Oxedion
-	 * 5	Files.to
-	 * 6	uploaded.o
-	 * 7	Simpleupload
-	 * 8
-	 * 9	Depositfiles
-	 * 10	Filefactory
-	 */
-	
+    final static String         host                = "xlice.net";
+
+    private static final String USE_RAPIDSHARE      = "USE_RAPIDSHARE";
+
+    private static final String USE_UPLOADED        = "USE_UPLOADED";
+
+    private static final String USE_FILEFACTORY     = "USE_FILEFACTORY";
+
+    private static final String USE_OXEDION         = "USE_OXEDION";
+
+    private static final String USE_GULLI           = "USE_GULLI";
+
+    private static final String USE_SIMPLEUPLOAD    = "USE_SIMPLEUPLOAD";
+
+    private static final String USE_DEPOSITFILES    = "USE_DEPOSITFILES";
+
+    private static final String USE_FILES           = "USE_FILES";
+
+    private String              version             = "1.0.0.0";
+
+    private Pattern             patternSupported    = getSupportPattern("http://[*]xlice.net/f[+]/[*]");
+
+    private Pattern             patternRapidshare   = Pattern.compile("onclick=\".*\'../1/");
+
+    private Pattern             patternGulli        = Pattern.compile("onclick=\".*\'../2/");
+
+    private Pattern             patternOxedion      = Pattern.compile("onclick=\".*\'go/4/");
+
+    private Pattern             patternFiles        = Pattern.compile("onclick=\".*\'../5/");
+
+    private Pattern             patternUploaded     = Pattern.compile("onclick=\".*\'../6/");
+
+    private Pattern             patternSimpleupload = Pattern.compile("onclick=\".*\'../7/");
+
+    private Pattern             patternDepositfiles = Pattern.compile("onclick=\".*\'../9/");
+
+    private Pattern             patternFilefactory  = Pattern.compile("onclick=\".*\'../10/");
+
+    private String              LinkFile            = "http://xlice.net/dl/";
+
+    private String              LinkFolder          = "http://xlice.net/go/";
+
+    /*
+     * 1 Rapidshare 2 Gullishare 3 4 Oxedion 5 Files.to 6 uploaded.o 7
+     * Simpleupload 8 9 Depositfiles 10 Filefactory
+     */
+
     public XliceNet() {
         super();
         steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
         currentStep = steps.firstElement();
         this.setConfigEelements();
     }
-	
-    @Override public String getCoder() { return "Botzi"; }
-    @Override public String getHost() { return host; }
-    @Override public String getPluginID() { return "Xlice.net-1.0.0."; }
-    @Override public String getPluginName() { return host; }
-    @Override public Pattern getSupportedLinks() { return patternSupported; }
-    @Override public String getVersion() { return version; }
-  
-    
+
+    @Override
+    public String getCoder() {
+        return "Botzi";
+    }
+
+    @Override
+    public String getHost() {
+        return host;
+    }
+
+    @Override
+    public String getPluginID() {
+        return "Xlice.net-1.0.0.";
+    }
+
+    @Override
+    public String getPluginName() {
+        return host;
+    }
+
+    @Override
+    public Pattern getSupportedLinks() {
+        return patternSupported;
+    }
+
+    @Override
+    public String getVersion() {
+        return version;
+    }
+
     @Override public PluginStep doStep(PluginStep step, String parameter) {
     	if(step.getStep() == PluginStep.STEP_DECRYPT) {
             Vector<String> decryptedLinks = new Vector<String>();
@@ -73,7 +107,7 @@ public class XliceNet extends PluginForDecrypt {
     			RequestInfo reqinfo = getRequest(url,null,null,true);
     			int count = 0;
     			
-    			//Links zählen
+    			// Links zählen
     			if((Boolean) this.getProperties().getProperty(USE_RAPIDSHARE,true)) {
     				count = count + countOccurences(reqinfo.getHtmlCode(), patternRapidshare);
     			}
@@ -98,7 +132,7 @@ public class XliceNet extends PluginForDecrypt {
     			if((Boolean) this.getProperties().getProperty(USE_FILES,false)) {
     				count = count + countOccurences(reqinfo.getHtmlCode(), patternFiles);
     			}
-    			firePluginEvent(new PluginEvent(this,PluginEvent.PLUGIN_PROGRESS_MAX, count));
+    			progress.setRange( count);
 
 				RequestInfo reqhelp = null;
 				Vector<Vector<String>> links;
@@ -111,7 +145,7 @@ public class XliceNet extends PluginForDecrypt {
 					link = LinkFolder;
 				}
 logger.info(parameter);
-				//Links herausfiltern
+				// Links herausfiltern
 				if( this.getProperties().getProperty(USE_RAPIDSHARE)!=null &&(Boolean) this.getProperties().getProperty(USE_RAPIDSHARE)) {
 					links = getAllSimpleMatches(reqinfo.getHtmlCode(), "/1/°/\'");
 					for(int i=0; i<links.size(); i++) {
@@ -119,11 +153,11 @@ logger.info(parameter);
 						reqhelp = getRequest(new URL(getBetween(reqhelp.getHtmlCode(), "href=\"", "/\">geht es hier weiter")));
 						if(reqhelp.getLocation() != null) {
 							decryptedLinks.add(reqhelp.getLocation());
-							firePluginEvent(new PluginEvent(this,PluginEvent.PLUGIN_PROGRESS_INCREASE, null));
+						progress.increase(1);
 						}
 						else {
 							decryptedLinks.add("");
-							firePluginEvent(new PluginEvent(this,PluginEvent.PLUGIN_PROGRESS_INCREASE, null));
+						progress.increase(1);
 						}
 					}
 				}
@@ -136,11 +170,11 @@ logger.info(parameter);
 						reqhelp = getRequest(new URL(getBetween(reqhelp.getHtmlCode(), "href=\"", "/\">geht es hier weiter")));
 						if(reqhelp.getLocation() != null) {
 							decryptedLinks.add(reqhelp.getLocation());
-							firePluginEvent(new PluginEvent(this,PluginEvent.PLUGIN_PROGRESS_INCREASE, null));
+						progress.increase(1);
 						}
 						else {
 							decryptedLinks.add("");
-							firePluginEvent(new PluginEvent(this,PluginEvent.PLUGIN_PROGRESS_INCREASE, null));
+						progress.increase(1);
 						}
 					}
 				}
@@ -153,11 +187,11 @@ logger.info(parameter);
 						reqhelp = getRequest(new URL(getBetween(reqhelp.getHtmlCode(), "href=\"", "/\">geht es hier weiter")));
 						if(reqhelp.getLocation() != null) {
 							decryptedLinks.add(reqhelp.getLocation());
-							firePluginEvent(new PluginEvent(this,PluginEvent.PLUGIN_PROGRESS_INCREASE, null));
+						progress.increase(1);
 						}
 						else {
 							decryptedLinks.add("");
-							firePluginEvent(new PluginEvent(this,PluginEvent.PLUGIN_PROGRESS_INCREASE, null));
+						progress.increase(1);
 						}
 					}
 				}
@@ -170,11 +204,11 @@ logger.info(parameter);
 						reqhelp = getRequest(new URL(getBetween(reqhelp.getHtmlCode(), "href=\"", "/\">geht es hier weiter")));
 						if(reqhelp.getLocation() != null) {
 							decryptedLinks.add(reqhelp.getLocation());
-							firePluginEvent(new PluginEvent(this,PluginEvent.PLUGIN_PROGRESS_INCREASE, null));
+						progress.increase(1);
 						}
 						else {
 							decryptedLinks.add("");
-							firePluginEvent(new PluginEvent(this,PluginEvent.PLUGIN_PROGRESS_INCREASE, null));
+						progress.increase(1);
 						}
 					}
 				}
@@ -187,11 +221,11 @@ logger.info(parameter);
 						reqhelp = getRequest(new URL(getBetween(reqhelp.getHtmlCode(), "href=\"", "/\">geht es hier weiter")));
 						if(reqhelp.getLocation() != null) {
 							decryptedLinks.add(reqhelp.getLocation());
-							firePluginEvent(new PluginEvent(this,PluginEvent.PLUGIN_PROGRESS_INCREASE, null));
+						progress.increase(1);
 						}
 						else {
 							decryptedLinks.add("");
-							firePluginEvent(new PluginEvent(this,PluginEvent.PLUGIN_PROGRESS_INCREASE, null));
+						progress.increase(1);
 						}
 					}
 				}
@@ -204,11 +238,11 @@ logger.info(parameter);
 						reqhelp = getRequest(new URL(getBetween(reqhelp.getHtmlCode(), "href=\"", "/\">geht es hier weiter")));
 						if(reqhelp.getLocation() != null) {
 							decryptedLinks.add(reqhelp.getLocation());
-							firePluginEvent(new PluginEvent(this,PluginEvent.PLUGIN_PROGRESS_INCREASE, null));
+						progress.increase(1);
 						}
 						else {
 							decryptedLinks.add("");
-							firePluginEvent(new PluginEvent(this,PluginEvent.PLUGIN_PROGRESS_INCREASE, null));
+						progress.increase(1);
 						}
 					}
 				}
@@ -221,11 +255,11 @@ logger.info(parameter);
 						reqhelp = getRequest(new URL(getBetween(reqhelp.getHtmlCode(), "href=\"", "/\">geht es hier weiter")));
 						if(reqhelp.getLocation() != null) {
 							decryptedLinks.add(reqhelp.getLocation());
-							firePluginEvent(new PluginEvent(this,PluginEvent.PLUGIN_PROGRESS_INCREASE, null));
+						progress.increase(1);
 						}
 						else {
 							decryptedLinks.add("");
-							firePluginEvent(new PluginEvent(this,PluginEvent.PLUGIN_PROGRESS_INCREASE, null));
+						progress.increase(1);
 						}
 					}
 				}
@@ -238,17 +272,17 @@ logger.info(parameter);
 						reqhelp = getRequest(new URL(getBetween(reqhelp.getHtmlCode(), "href=\"", "/\">geht es hier weiter")));
 						if(reqhelp.getLocation() != null) {
 							decryptedLinks.add(reqhelp.getLocation());
-							firePluginEvent(new PluginEvent(this,PluginEvent.PLUGIN_PROGRESS_INCREASE, null));
+						progress.increase(1);
 						}
 						else {
 							decryptedLinks.add("");
-							firePluginEvent(new PluginEvent(this,PluginEvent.PLUGIN_PROGRESS_INCREASE, null));
+						progress.increase(1);
 						}
 					}
 				}
 				System.out.println(decryptedLinks.size());
-    			//Decrypt abschliessen
-    			firePluginEvent(new PluginEvent(this,PluginEvent.PLUGIN_PROGRESS_FINISH, null));
+    			// Decrypt abschliessen
+    			
     			logger.info(decryptedLinks.size() + " downloads decrypted "+decryptedLinks);
     			step.setParameter(decryptedLinks);
     		}
@@ -258,19 +292,21 @@ logger.info(parameter);
     	}
     	return null;
     }
-    
+
     private void setConfigEelements() {
-    	ConfigEntry cfg;
-    	config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_LABEL, "Hoster Auswahl"));
+        ConfigEntry cfg;
+        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_LABEL, "Hoster Auswahl"));
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_SEPERATOR));
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getProperties(), USE_RAPIDSHARE, "Rapidshare.com"));
         cfg.setDefaultValue(true);
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getProperties(), USE_UPLOADED, "Uploaded.to"));
         cfg.setDefaultValue(false);
-        //config.addEntry(cfg = new PluginConfigEntry(PluginConfig.TYPE_CHECKBOX, getProperties(), "USE_NETLOAD", "Netload.in"));
-        //cfg.setDefaultValue(false);
+        // config.addEntry(cfg = new
+        // PluginConfigEntry(PluginConfig.TYPE_CHECKBOX, getProperties(),
+        // "USE_NETLOAD", "Netload.in"));
+        // cfg.setDefaultValue(false);
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getProperties(), USE_FILEFACTORY, "Filefactory.com"));
-        cfg.setDefaultValue(false);        
+        cfg.setDefaultValue(false);
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getProperties(), USE_OXEDION, "Oxedion.com"));
         cfg.setDefaultValue(false);
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getProperties(), USE_GULLI, "Share.Gulli.com"));
@@ -282,8 +318,9 @@ logger.info(parameter);
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getProperties(), USE_FILES, "Files.to"));
         cfg.setDefaultValue(false);
     }
-    
-    @Override public boolean doBotCheck(File file) {        
+
+    @Override
+    public boolean doBotCheck(File file) {
         return false;
     }
 }

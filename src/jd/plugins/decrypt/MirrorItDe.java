@@ -16,35 +16,67 @@ import jd.plugins.event.PluginEvent;
 
 public class MirrorItDe extends PluginForDecrypt {
 
-	final static String host = "mirrorit.de";
-	private String version = "1.0.0.0";
-	private Pattern patternSupported = getSupportPattern("http://[*]mirrorit.de/\\?id=[+]");
-	
-	private Pattern patternRapidshare = Pattern.compile("Rapidshare");
-	private Pattern patternUploaded = Pattern.compile("Uploaded.de");
-	private Pattern patternSharebase = Pattern.compile("ShareBase");
-	private Pattern patternShareonline = Pattern.compile("Share-Online.biz");
-	private Pattern patternMegaupload = Pattern.compile("MegaUpload.com");
-	private Pattern patternFilefactory = Pattern.compile("FileFactory");
-	private Pattern patternNetload = Pattern.compile("Netload.in");
-	private Pattern patternSimpleupload = Pattern.compile("SimpleUpload");
-	private Pattern patternLoad = Pattern.compile("Load.to");
-	
+    final static String host                = "mirrorit.de";
+
+    private String      version             = "1.0.0.0";
+
+    private Pattern     patternSupported    = getSupportPattern("http://[*]mirrorit.de/\\?id=[+]");
+
+    private Pattern     patternRapidshare   = Pattern.compile("Rapidshare");
+
+    private Pattern     patternUploaded     = Pattern.compile("Uploaded.de");
+
+    private Pattern     patternSharebase    = Pattern.compile("ShareBase");
+
+    private Pattern     patternShareonline  = Pattern.compile("Share-Online.biz");
+
+    private Pattern     patternMegaupload   = Pattern.compile("MegaUpload.com");
+
+    private Pattern     patternFilefactory  = Pattern.compile("FileFactory");
+
+    private Pattern     patternNetload      = Pattern.compile("Netload.in");
+
+    private Pattern     patternSimpleupload = Pattern.compile("SimpleUpload");
+
+    private Pattern     patternLoad         = Pattern.compile("Load.to");
+
     public MirrorItDe() {
         super();
         steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
         currentStep = steps.firstElement();
         this.setConfigEelements();
     }
-	
-    @Override public String getCoder() { return "Botzi"; }
-    @Override public String getHost() { return host; }
-    @Override public String getPluginID() { return "Mirrorit.de-1.0.0."; }
-    @Override public String getPluginName() { return host; }
-    @Override public Pattern getSupportedLinks() { return patternSupported; }
-    @Override public String getVersion() { return version; }
 
-    
+    @Override
+    public String getCoder() {
+        return "Botzi";
+    }
+
+    @Override
+    public String getHost() {
+        return host;
+    }
+
+    @Override
+    public String getPluginID() {
+        return "Mirrorit.de-1.0.0.";
+    }
+
+    @Override
+    public String getPluginName() {
+        return host;
+    }
+
+    @Override
+    public Pattern getSupportedLinks() {
+        return patternSupported;
+    }
+
+    @Override
+    public String getVersion() {
+        return version;
+    }
+
     @Override public PluginStep doStep(PluginStep step, String parameter) {
     	if(step.getStep() == PluginStep.STEP_DECRYPT) {
             Vector<String> decryptedLinks = new Vector<String>();
@@ -53,7 +85,7 @@ public class MirrorItDe extends PluginForDecrypt {
     			RequestInfo reqinfo = getRequest(url);
     			int count = 0;
     			
-    			//Links zählen
+    			// Links zählen
     			if((Boolean) this.getProperties().getProperty("USE_RAPIDSHARE",true)){
     				count = count + countOccurences(reqinfo.getHtmlCode(), patternRapidshare);
     			}
@@ -81,21 +113,21 @@ public class MirrorItDe extends PluginForDecrypt {
     			if((Boolean) this.getProperties().getProperty("USE_LOAD",false)){
     				count = count + countOccurences(reqinfo.getHtmlCode(), patternLoad);
     			}
-    			firePluginEvent(new PluginEvent(this,PluginEvent.PLUGIN_PROGRESS_MAX, count));
+    			progress.setRange( count);
     			
-    			//Links herausfiltern
+    			// Links herausfiltern
     			Vector<Vector<String>> links = getAllSimpleMatches(reqinfo.getHtmlCode(), "class=\"five-stars\" onclick=\"rate(\'°\', 5)°launchDownloadURL(\'°\', \'°\'");
     			for(int i=0; i<links.size(); i++) {
     				if((links.get(i).get(0).equalsIgnoreCase("rapidsharecom") && (Boolean) this.getProperties().getProperty("USE_RAPIDSHARE",true)) || ((Boolean) this.getProperties().getProperty("USE_UPLOADED",true) && links.get(i).get(0).equalsIgnoreCase("uploadedto")) || ((Boolean) this.getProperties().getProperty("USE_SHAREBASE",false) && links.get(i).get(0).equalsIgnoreCase("sharebasede")) || ((Boolean) this.getProperties().getProperty("USE_SHAREONLINE",false) && links.get(i).get(0).equalsIgnoreCase("shareonlinebiz")) || ((Boolean) this.getProperties().getProperty("USE_MEGAUPLOAD",true) && links.get(i).get(0).equalsIgnoreCase("megauploadcom")) || ((Boolean) this.getProperties().getProperty("USE_FILEFACTORY",true) && links.get(i).get(0).equalsIgnoreCase("filefactorycom"))  || ((Boolean) this.getProperties().getProperty("USE_NETLOAD",true) && links.get(i).get(0).equalsIgnoreCase("netloadin")) || ((Boolean) this.getProperties().getProperty("USE_SIMPLEUPLOAD",false) && links.get(i).get(0).equalsIgnoreCase("simpleuploadnet")) || ((Boolean) this.getProperties().getProperty("USE_LOAD",false) && links.get(i).get(0).equalsIgnoreCase("loadto"))) {
 	    				reqinfo = getRequest(new URL("http://www.mirrorit.de/Out?id=" + URLDecoder.decode(links.get(i).get(2), "UTF-8") + "&num=" + links.get(i).get(3)));
 	    				reqinfo = getRequest(new URL(reqinfo.getLocation()));
 	    				decryptedLinks.add(reqinfo.getLocation());
-	    				firePluginEvent(new PluginEvent(this,PluginEvent.PLUGIN_PROGRESS_INCREASE, null));
+	    			progress.increase(1);
     				}
     			}
     			    			
-    			//Decrypt abschliessen
-    			firePluginEvent(new PluginEvent(this,PluginEvent.PLUGIN_PROGRESS_FINISH, null));
+    			// Decrypt abschliessen
+    			
     			step.setParameter(decryptedLinks);
     		}
     		catch(IOException e) {
@@ -104,10 +136,10 @@ public class MirrorItDe extends PluginForDecrypt {
     	}
     	return null;
     }
-    
+
     private void setConfigEelements() {
-    	ConfigEntry cfg;
-    	config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_LABEL, "Hoster Auswahl"));
+        ConfigEntry cfg;
+        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_LABEL, "Hoster Auswahl"));
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_SEPERATOR));
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getProperties(), "USE_RAPIDSHARE", "Rapidshare.com"));
         cfg.setDefaultValue(true);
@@ -128,8 +160,9 @@ public class MirrorItDe extends PluginForDecrypt {
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getProperties(), "USE_MEGAUPLOAD", "Megaupload.com"));
         cfg.setDefaultValue(false);
     }
-    
-    @Override public boolean doBotCheck(File file) {        
+
+    @Override
+    public boolean doBotCheck(File file) {
         return false;
     }
 }

@@ -16,10 +16,14 @@ import jd.plugins.event.PluginEvent;
 
 public class ShareOnAll extends PluginForDecrypt {
 
-    final static String host = "shareonall.com";
-    private String version = "1.0.0.0";
-    private Pattern patternSupported = getSupportPattern("http://[*]shareonall.com/[+]");
-    private String[][] conf = new String[][]{{"USE_RAPIDSHARE", "Rapidshare.com"}, {"USE_FILEFACTORY", "Filefactory.com"}, {"USE_MEGAUPLOAD", "Megaupload.com"}, {"USE_DEPOSITFILES", "DepositFiles.com"}, {"USE_DIVSHARE", "DivShare.com"}, {"USE_ZSHARE", "ZShare.net"}};
+    final static String host             = "shareonall.com";
+
+    private String      version          = "1.0.0.0";
+
+    private Pattern     patternSupported = getSupportPattern("http://[*]shareonall.com/[+]");
+
+    private String[][]  conf             = new String[][] { { "USE_RAPIDSHARE", "Rapidshare.com" }, { "USE_FILEFACTORY", "Filefactory.com" }, { "USE_MEGAUPLOAD", "Megaupload.com" }, { "USE_DEPOSITFILES", "DepositFiles.com" }, { "USE_DIVSHARE", "DivShare.com" }, { "USE_ZSHARE", "ZShare.net" } };
+
     public ShareOnAll() {
         super();
         steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
@@ -31,22 +35,27 @@ public class ShareOnAll extends PluginForDecrypt {
     public String getCoder() {
         return "DwD";
     }
+
     @Override
     public String getHost() {
         return host;
     }
+
     @Override
     public String getPluginID() {
         return "ShareOnAll.com-1.0.0.";
     }
+
     @Override
     public String getPluginName() {
         return host;
     }
+
     @Override
     public Pattern getSupportedLinks() {
         return patternSupported;
     }
+
     @Override
     public String getVersion() {
         return version;
@@ -58,12 +67,13 @@ public class ShareOnAll extends PluginForDecrypt {
             if ((Boolean) this.getProperties().getProperty(conf[i][0], true)) {
                 Pattern pattern = Pattern.compile(".*" + conf[i][1] + ".*", Pattern.CASE_INSENSITIVE);
                 Matcher matcher = pattern.matcher(link);
-                if(matcher.find())return true;
+                if (matcher.find()) return true;
             }
 
         }
         return false;
     }
+
     @Override
     public PluginStep doStep(PluginStep step, String parameter) {
         if (step.getStep() == PluginStep.STEP_DECRYPT) {
@@ -75,18 +85,19 @@ public class ShareOnAll extends PluginForDecrypt {
 
                 // Links herausfiltern
                 Vector<Vector<String>> links = getAllSimpleMatches(reqinfo.getHtmlCode(), "<a href=\'°\' target='_blank'>");
-                firePluginEvent(new PluginEvent(this,PluginEvent.PLUGIN_PROGRESS_MAX, links.size()));
+                progress.setRange(links.size());
                 for (int i = 0; i < links.size(); i++) {
-                    if (checkLink(links.get(i).get(0)))
-                        decryptedLinks.add(links.get(i).get(0));
-                    firePluginEvent(new PluginEvent(this,PluginEvent.PLUGIN_PROGRESS_INCREASE, null));
+                    if (checkLink(links.get(i).get(0))) decryptedLinks.add(links.get(i).get(0));
+                    progress.increase(1);
                 }
 
                 // Decrypt abschliessen
-                //veraltet: firePluginEvent(new PluginEvent(this, PluginEvent.PLUGIN_PROGRESS_FINISH, null));
+                // veraltet: firePluginEvent(new PluginEvent(this,
+                // PluginEvent.PLUGIN_PROGRESS_FINISH, null));
                 step.setParameter(decryptedLinks);
-            } catch (IOException e) {
-                 e.printStackTrace();
+            }
+            catch (IOException e) {
+                e.printStackTrace();
             }
         }
         return null;

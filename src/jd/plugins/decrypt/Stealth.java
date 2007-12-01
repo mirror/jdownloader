@@ -23,10 +23,13 @@ import jd.utils.JDUtilities;
  * 
  */
 public class Stealth extends PluginForDecrypt {
-    static private final String host = "Stealth.to";
-    private String  version = "1.0.0.3";
-    private Pattern patternSupported = getSupportPattern("http://[*]stealth.to/\\?id=[+]");
-    private Pattern patternCaptcha = Pattern.compile("captcha_img.php\\?PHPSESSID");
+    static private final String host             = "Stealth.to";
+
+    private String              version          = "1.0.0.3";
+
+    private Pattern             patternSupported = getSupportPattern("http://[*]stealth.to/\\?id=[+]");
+
+    private Pattern             patternCaptcha   = Pattern.compile("captcha_img.php\\?PHPSESSID");
 
     public Stealth() {
         super();
@@ -54,7 +57,6 @@ public class Stealth extends PluginForDecrypt {
         return host;
     }
 
-
     @Override
     public String getVersion() {
         return version;
@@ -64,7 +66,7 @@ public class Stealth extends PluginForDecrypt {
     public String getPluginID() {
         return "STEALTH-1.0.0.";
     }
-    
+
     @Override
     public boolean doBotCheck(File file) {
         return false;
@@ -90,7 +92,7 @@ public class Stealth extends PluginForDecrypt {
                         String[] help = reqinfo.getCookie().split("=");
                         if(help.length<2){
                             logger.severe("Error sessionid: "+reqinfo.getCookie());
-                            firePluginEvent(new PluginEvent(this,PluginEvent.PLUGIN_PROGRESS_FINISH, null));
+                        
                             step.setParameter(decryptedLinks);
                             return step;
                             
@@ -115,16 +117,16 @@ public class Stealth extends PluginForDecrypt {
     			
     			RequestInfo reqhelp = postRequest(new URL("http://stealth.to/ajax.php"), null, parameter, null, "id=" + getBetween(reqinfo.getHtmlCode(), "<div align=\"center\"><a id=\"", "\" href=\"") + "&typ=hit", true);
     			Vector<Vector<String>> links = getAllSimpleMatches(reqinfo.getHtmlCode(), "dl = window.open(\"°\"");
-    			firePluginEvent(new PluginEvent(this,PluginEvent.PLUGIN_PROGRESS_MAX, links.size()));
+    			progress.setRange( links.size());
 				
 				for(int j=0; j<links.size(); j++) {
 					reqhelp = getRequest(new URL("http://stealth.to/" + links.get(j).get(0)));
     				decryptedLinks.add(JDUtilities.htmlDecode(getBetween(reqhelp.getHtmlCode(), "iframe src=\"", "\"")));
-    				firePluginEvent(new PluginEvent(this,PluginEvent.PLUGIN_PROGRESS_INCREASE, null));
+    			progress.increase(1);
 				}
     			
-    			//Decrypt abschliessen
-    			firePluginEvent(new PluginEvent(this,PluginEvent.PLUGIN_PROGRESS_FINISH, null));
+    			// Decrypt abschliessen
+    			
     			step.setParameter(decryptedLinks);
     		}
     		catch(IOException e) {
