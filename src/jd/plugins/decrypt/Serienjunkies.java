@@ -17,7 +17,7 @@ import jd.plugins.RequestInfo;
 import jd.utils.JDUtilities;
 
 public class Serienjunkies extends PluginForDecrypt {
-    private String host = "Serienjunkies.org";
+    private static final String host = "Serienjunkies.org";
     private static final String DEFAULT_PASSWORD = "serienjunkies.dl.am";
     private String version = "4.0.0.0";
     private Pattern patternCaptcha = null;
@@ -193,8 +193,7 @@ public class Serienjunkies extends PluginForDecrypt {
     }
     // Für Links die bei denen die Parts angezeigt werden
     private Vector<String> ContainerLinks(String url) {
-        if(!((Boolean) this.getProperties().getProperty("USE_JAC", true)))
-            host = "containerlinks."+host;
+
         Vector<String> links = new Vector<String>();
         boolean fileDownloaded = false;
         if (!url.startsWith("http://"))
@@ -233,8 +232,14 @@ public class Serienjunkies extends PluginForDecrypt {
                         }
                         continue;
                     }
-
+                    if(((Boolean) this.getProperties().getProperty("USE_JAC", true)))
                     capTxt = Plugin.getCaptchaCode(captchaFile, this);
+                    else
+                    {
+                        sjCaptcha sj = new sjCaptcha();
+                        sj.host = "containerlinks.Serienjunkies.org";
+                        capTxt = Plugin.getCaptchaCode(captchaFile, sj);
+                    }
                     reqinfo = postRequest(new URL(url), "s=" + matcher.group(1) + "&c=" + capTxt + "&action=Download");
 
                 } else {
@@ -256,12 +261,10 @@ public class Serienjunkies extends PluginForDecrypt {
         } catch (IOException e) {
              e.printStackTrace();
         }
-        host = "Serienjunkies.org";
         return links;
     }
     // Für Links die gleich auf den Hoster relocaten
     private String EinzelLinks(String url) {
-        host = "einzellinks."+host;
         String links = "";
         boolean fileDownloaded = false;
         if (!url.startsWith("http://"))
@@ -293,7 +296,7 @@ public class Serienjunkies extends PluginForDecrypt {
                         continue;
                     }
 
-                    capTxt = Plugin.getCaptchaCode(captchaFile, this);
+                    capTxt = Plugin.getCaptchaCode(captchaFile, new sjCaptcha());
 
                     reqinfo = postRequest(new URL(url), "s=" + matcher.group(1) + "&c=" + capTxt + "&dl.start=Download");
                 } else {
@@ -308,8 +311,51 @@ public class Serienjunkies extends PluginForDecrypt {
         } catch (IOException e) {
              e.printStackTrace();
         }
-        host = "Serienjunkies.org";
         return links;
+    }
+    class sjCaptcha extends PluginForDecrypt
+    {
+        public String host = "einzellinks.Serienjunkies.org";
+        @Override
+        public PluginStep doStep(PluginStep step, String parameter) {
+            return null;
+        }
+
+        @Override
+        public boolean doBotCheck(File file) {
+            return false;
+        }
+
+        @Override
+        public String getCoder() {
+            return "DwD";
+        }
+
+        @Override
+        public String getHost() {
+            return host;
+        }
+
+        @Override
+        public String getPluginID() {
+            return host+"1.0.0";
+        }
+
+        @Override
+        public String getPluginName() {
+            return host;
+        }
+
+        @Override
+        public Pattern getSupportedLinks() {
+            return null;
+        }
+
+        @Override
+        public String getVersion() {
+            return "1.0.0";
+        }
+        
     }
 
 }
