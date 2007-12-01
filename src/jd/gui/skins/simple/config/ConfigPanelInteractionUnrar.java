@@ -61,7 +61,7 @@ public class ConfigPanelInteractionUnrar extends ConfigPanel implements ActionLi
         String unrarcmd=JDUtilities.getConfiguration().getStringProperty("GUNRARCOMMAND");
         if(unrarcmd==null)
         {
-        unrarcmd=new JUnrar().getUnrarCommand();
+        unrarcmd=new JUnrar(false).getUnrarCommand();
         if(unrarcmd==null)
             JDUtilities.getConfiguration().setProperty("GUNRARCOMMAND", "NOT FOUND");
         else
@@ -76,6 +76,8 @@ public class ConfigPanelInteractionUnrar extends ConfigPanel implements ActionLi
         ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, unrar, Unrar.PROPERTY_AUTODELETE, "Bei erfolgreichem Entpacken automatisch löschen: ").setDefaultValue(true));
         addGUIConfigEntry(ce);
         ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, unrar, Unrar.PROPERTY_OVERWRITE_FILES, "Dateien automatisch überschreiben: ").setDefaultValue(false));
+        addGUIConfigEntry(ce);
+        ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, unrar, Unrar.PROPERTY_EXTENDED_PW_SEARCH, "Erweiterte Passwortsuche aktivieren: ").setDefaultValue(true));
         addGUIConfigEntry(ce);
         ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, unrar, Unrar.PROPERTY_MAX_FILESIZE, "Maximale Dateigröße für die Passwortsuche in MB: ", 0, 500).setDefaultValue(2));
         addGUIConfigEntry(ce);
@@ -147,7 +149,7 @@ class jdUnrarPasswordListDialog extends JDialog implements ActionListener {
         pwField = new JTextArea(10, 60);
         pwScrollPane = new JScrollPane(pwField);
         pwField.setEditable(true);
-        JUnrar unrar = new JUnrar();
+        JUnrar unrar = new JUnrar(false);
         String[] pws = unrar.returnPasswords();
         for (int i = 0; i < pws.length; i++) {
             pwField.append(pws[i] + System.getProperty("line.separator"));
@@ -169,7 +171,7 @@ class jdUnrarPasswordListDialog extends JDialog implements ActionListener {
      */
     public void actionPerformed(ActionEvent e) {
         if (e.getSource() == btnSave) {
-            JUnrar unrar = new JUnrar();
+            JUnrar unrar = new JUnrar(false);
             unrar.editPasswordlist(JDUtilities.splitByNewline(pwField.getText()));
             dispose();
 

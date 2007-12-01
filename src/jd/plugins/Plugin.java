@@ -1432,7 +1432,7 @@ public abstract class Plugin {
      */
     public static void addToPasswordlist(String password)
     {
-        JUnrar unrar = new JUnrar();
+        JUnrar unrar = new JUnrar(false);
         unrar.addToPasswordlist(password);
     }
     /**

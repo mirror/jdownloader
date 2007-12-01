@@ -202,7 +202,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
             password = password.substring(1);
         txfComment.setText(comment);
         txfPassword.setText(password.trim());
-        JUnrar unrar = new JUnrar();
+        JUnrar unrar = new JUnrar(false);
         unrar.addToPasswordlist(password);
         sortLinkList();
         if (txtName.getName() == null || txtName.getName().trim().length() == 0)

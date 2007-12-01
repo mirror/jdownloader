@@ -26,6 +26,7 @@ public class Unrar extends Interaction implements Serializable {
     /**
      * serialVersionUID
      */
+    private static boolean      IS_RUNNING               = false;
 
     private static final String NAME                     = "Unrar";
 
@@ -36,6 +37,8 @@ public class Unrar extends Interaction implements Serializable {
     public static final String  PROPERTY_OVERWRITE_FILES = "PROPERTY_OVERWRITE_FILES";
 
     public static final String  PROPERTY_MAX_FILESIZE    = "PROPERTY_MAX_FILESIZE";
+
+    public static final String PROPERTY_EXTENDED_PW_SEARCH = "PROPERTY_EXTENDED_PW_SEARCH";
 
     @Override
     public boolean doInteraction(Object arg) {
@@ -53,12 +56,13 @@ public class Unrar extends Interaction implements Serializable {
     public String getInteractionName() {
         return NAME;
     }
+
     private JUnrar getUnrar() {
         JDController controller = JDUtilities.getController();
         DownloadLink dLink = controller.getLastFinishedDownloadLink();
         String password = null;
         if (dLink != null) password = dLink.getFilePackage().getPassword();
-   
+
         JUnrar unrar = new JUnrar();
         if (password != null && !password.matches("[\\s]*")) {
             if (!password.matches("\\{\".*\"\\}$")) unrar.standardPassword = password;
@@ -68,52 +72,64 @@ public class Unrar extends Interaction implements Serializable {
         unrar.autoDelete = getBooleanProperty(Unrar.PROPERTY_AUTODELETE, false);
         unrar.unrar = getStringProperty(Unrar.PROPERTY_UNRARCOMMAND);
         unrar.maxFilesize = getIntegerProperty(Unrar.PROPERTY_MAX_FILESIZE, 2);
+        unrar.useExtendedPasswordSearch=getBooleanProperty(Unrar.PROPERTY_EXTENDED_PW_SEARCH, true);
         return unrar;
     }
+
     @Override
     public void run() {
-    
-        JUnrar unrar=getUnrar();
-        Vector<DownloadLink> finishedLinks = JDUtilities.getController().getFinishedLinks();
-        Vector<String> folders = new Vector<String>();
-        for (int i = 0; i < finishedLinks.size(); i++) {
-            logger.info("finished File: "+finishedLinks.get(i).getFileOutput());
-            File folder = new File(finishedLinks.get(i).getFileOutput()).getParentFile();
-            logger.info("Folder: "+folder);
-            if (folder.exists()) {
-                if (folders.indexOf(folder.getAbsolutePath()) == -1) {
-                    logger.info("Add unrardir: "+folder.getAbsolutePath());
-                    folders.add(folder.getAbsolutePath());
+        if (!IS_RUNNING) {
+            IS_RUNNING = true;
+            JUnrar unrar = getUnrar();
+            Vector<DownloadLink> finishedLinks = JDUtilities.getController().getFinishedLinks();
+            Vector<String> folders = new Vector<String>();
+            for (int i = 0; i < finishedLinks.size(); i++) {
+                logger.info("finished File: " + finishedLinks.get(i).getFileOutput());
+                File folder = new File(finishedLinks.get(i).getFileOutput()).getParentFile();
+                logger.info("Folder: " + folder);
+                if (folder.exists()) {
+                    if (folders.indexOf(folder.getAbsolutePath()) == -1) {
+                        logger.info("Add unrardir: " + folder.getAbsolutePath());
+                        folders.add(folder.getAbsolutePath());
+                    }
                 }
             }
+            folders.add(JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_DOWNLOAD_DIRECTORY));
+            logger.info("dirs: " + folders);
+            unrar.setFolders(folders);
+            Vector<String> newFolderList = unrar.unrar();
+            // Entpacken bis nichts mehr gefunden wurde
+
+            if (newFolderList != null && newFolderList.size() > 0) {
+                unrar = getUnrar();
+                unrar.setFolders(newFolderList);
+                newFolderList = unrar.unrar();
+            }
+            if (newFolderList != null && newFolderList.size() > 0) {
+                unrar = getUnrar();
+                unrar.setFolders(newFolderList);
+                newFolderList = unrar.unrar();
+            }
+
+            // unrar = new
+            // jdUnrar(JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_DOWNLOAD_DIRECTORY));
+            // unrar.overwriteFiles =
+            // getBooleanProperty(Unrar.PROPERTY_OVERWRITE_FILES, false);
+            // unrar.autoDelete = getBooleanProperty(Unrar.PROPERTY_AUTODELETE,
+            // false);
+            // unrar.unrar = getStringProperty(Unrar.PROPERTY_UNRARCOMMAND);
+            // unrar.maxFilesize =
+            // getIntegerProperty(Unrar.PROPERTY_MAX_FILESIZE, 2);
+            // progress.setStatusText("Unrar directory");
+            // unrar.unrar();
+            IS_RUNNING = false;
+            this.setCallCode(Interaction.INTERACTION_CALL_SUCCESS);
+            Interaction.handleInteraction(Interaction.INTERACTION_AFTER_UNRAR, null);
         }
-        folders.add(JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_DOWNLOAD_DIRECTORY));
-        logger.info("dirs: "+folders);
-        unrar.setFolders(folders);
-        Vector<String> newFolderList = unrar.unrar();
-//Entpacken bis nichts mehr gefunden wurde
-      
-        if(newFolderList!=null&&newFolderList.size()>0){
-            unrar=getUnrar();
-            unrar.setFolders(newFolderList);
-            newFolderList = unrar.unrar();
+        else {
+            this.setCallCode(Interaction.INTERACTION_CALL_ERROR);
+            logger.warning("UNrar Skipped. THere is already an unrar Process running");
         }
-        if(newFolderList!=null&&newFolderList.size()>0){
-            unrar=getUnrar();
-            unrar.setFolders(newFolderList);
-            newFolderList = unrar.unrar();
-        }
-     
-//        unrar = new jdUnrar(JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_DOWNLOAD_DIRECTORY));
-//        unrar.overwriteFiles = getBooleanProperty(Unrar.PROPERTY_OVERWRITE_FILES, false);
-//        unrar.autoDelete = getBooleanProperty(Unrar.PROPERTY_AUTODELETE, false);
-//        unrar.unrar = getStringProperty(Unrar.PROPERTY_UNRARCOMMAND);
-//        unrar.maxFilesize = getIntegerProperty(Unrar.PROPERTY_MAX_FILESIZE, 2);
-//        progress.setStatusText("Unrar directory");
-//        unrar.unrar();
- 
-        this.setCallCode(Interaction.INTERACTION_CALL_SUCCESS);
-        Interaction.handleInteraction(Interaction.INTERACTION_AFTER_UNRAR, null);
     }
 
     @Override
