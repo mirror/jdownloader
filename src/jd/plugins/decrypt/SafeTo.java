@@ -118,7 +118,7 @@ public class SafeTo extends PluginForDecrypt {
                         break;
                     }
                 }
-                progress.setRange(progress.setRange(fileIDs.size()));
+               progress.setRange(fileIDs.size());
 
                 for (int i = 0; i < fileIDs.size(); i++) {
                     reqinfo = getRequest(new URL("http://85.17.45.96/~safe/futsch.php?i=" + fileIDs.get(i).get(0)));

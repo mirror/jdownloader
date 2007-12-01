@@ -25,7 +25,7 @@ public class Utilities {
      * @param asXML
      *            Soll das Objekt von einer XML Datei aus geladen werden?
      * @return Das geladene Objekt
-     */
+     */ 
     public static Object loadObject(File fileInput, boolean asXML) {
         Object objectLoaded = null;
         if (fileInput != null && fileInput.exists()) {
