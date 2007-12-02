@@ -50,23 +50,23 @@ public class TabProgress extends JPanel {
         setLayout(new BorderLayout());
         table = new JTable();
         InternalTableModel internalTableModel;
-        table.setModel(internalTableModel=new InternalTableModel());
+        table.setModel(internalTableModel = new InternalTableModel());
         table.getColumn(table.getColumnName(1)).setCellRenderer(new ProgressBarRenderer());
         TableColumn column = null;
-         for (int c = 0; c < internalTableModel.getColumnCount(); c++) {
-         column = table.getColumnModel().getColumn(c);
-         switch (c) {
-         case 0:
-         column.setPreferredWidth(600);
-         break;
-                   
-         case 1:
-         column.setPreferredWidth(230);
-         break;
-        
-         }
-         }
-       this.setVisible(false);
+        for (int c = 0; c < internalTableModel.getColumnCount(); c++) {
+            column = table.getColumnModel().getColumn(c);
+            switch (c) {
+                case 0:
+                    column.setPreferredWidth(600);
+                    break;
+
+                case 1:
+                    column.setPreferredWidth(230);
+                    break;
+
+            }
+        }
+        this.setVisible(false);
         JScrollPane scrollPane = new JScrollPane(table);
         scrollPane.setPreferredSize(new Dimension(800, 100));
 
@@ -173,7 +173,7 @@ public class TabProgress extends JPanel {
         }
 
         public int getRowCount() {
-            
+
             return controllers.size();
         }
 
@@ -274,43 +274,42 @@ public class TabProgress extends JPanel {
         return controllers.contains(source);
     }
 
-    public void addController(ProgressController source) {
-        this.controllers.add(0,source);
+    public  synchronized void addController(ProgressController source) {
+        this.controllers.add(0, source);
 
-       
         JProgressBar progressBar = new JProgressBar();
         progressBar.setMaximum(source.getMax());
         progressBar.setValue(source.getValue());
         progressBar.setStringPainted(true);
-        bars.add(0,progressBar);
+        bars.add(0, progressBar);
         updateController(source);
 
     }
 
-    public void removeController(ProgressController source) {
-       int index=controllers.indexOf(source);
-       
-      bars.remove(index);
+    public  synchronized void removeController(ProgressController source) {
+        int index = controllers.indexOf(source);
+
+        bars.remove(index);
         controllers.remove(source);
         updateController(source);
-   
 
     }
 
-    public void updateController(ProgressController source) {
- if(source==null){
-     table.tableChanged(new TableModelEvent(table.getModel()));
-     return;
- }
+    public  synchronized void updateController(ProgressController source) {
+        if (source == null) {
+            table.tableChanged(new TableModelEvent(table.getModel()));
+            return;
+        }
         if (controllers.size() > 0) {
             if (source.isFinished()) {
 
             }
             else {
                 this.setVisible(true);
-
+                if(controllers.indexOf(source)<bars.size()){
                 bars.get(controllers.indexOf(source)).setMaximum(source.getMax());
                 bars.get(controllers.indexOf(source)).setValue(source.getValue());
+                }
 
             }
 
