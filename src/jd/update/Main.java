@@ -8,6 +8,7 @@ import java.util.Vector;
 
 
 public class Main {
+  
     /**
      * @param args
      */
@@ -18,11 +19,14 @@ public class Main {
          StringBuffer  log    = new StringBuffer();
          boolean all=false;
          boolean restart=false;
+         int runtype=1;
        for( int i=0; i<args.length;i++){
            
            if(args[i].trim().equalsIgnoreCase("/all"))all=true;
            if(args[i].trim().equalsIgnoreCase("/restart"))restart=true;
-           
+           if(args[i].trim().equalsIgnoreCase("/rt0"))runtype=0;
+           if(args[i].trim().equalsIgnoreCase("/rt1"))runtype=1;
+           if(args[i].trim().equalsIgnoreCase("/rt2"))runtype=2;
            log.append("Parameter "+i+" "+args[i]+" "+System.getProperty("line.separator"));
        }
        
@@ -45,7 +49,13 @@ public class Main {
             if(new File("webcheck.tmp").exists()){
                 new File("webcheck.tmp").delete(); 
             }
+            if(runtype==0){
             runCommand("javaws", new String[] { "jDownloader.jnlp" },new File(".").getAbsolutePath(), 0);
+            }else if(runtype==1){
+                runCommand("java", new String[] { "jd/Main.class" },new File(".").getAbsolutePath(), 0);
+            }else{
+                runCommand("java", new String[] { "-jar","jDownloader.jar" },new File(".").getAbsolutePath(), 0);
+            }
            
         }
 

@@ -96,7 +96,7 @@ public class JDController implements PluginListener, ControlListener, UIListener
     public JDController() {
         downloadLinks = new Vector<DownloadLink>();
         speedMeter = new SpeedMeter(10000);
-        clipboard = new ClipboardHandler(this);
+        clipboard = new ClipboardHandler();
         downloadStatus = DOWNLOAD_NOT_RUNNING;
         JDUtilities.setController(this);
     }
@@ -226,6 +226,7 @@ public class JDController implements PluginListener, ControlListener, UIListener
 
                 break;
         }
+        if(uiInterface!=null)
         uiInterface.delegatedControlEvent(event);
     }
 
@@ -271,6 +272,7 @@ public class JDController implements PluginListener, ControlListener, UIListener
      */
     public void uiEvent(UIEvent uiEvent) {
         Vector<DownloadLink> newLinks;
+
         switch (uiEvent.getActionID()) {
             case UIEvent.UI_PAUSE_DOWNLOADS:
                 logger.info("KKKK");
@@ -315,6 +317,7 @@ public class JDController implements PluginListener, ControlListener, UIListener
                 break;
             case UIEvent.UI_LOAD_CONTAINER:
                 File containerFile = (File) uiEvent.getParameter();
+           
                 loadContainerFile(containerFile);
                 break;
             case UIEvent.UI_EXIT:
@@ -612,7 +615,7 @@ public class JDController implements PluginListener, ControlListener, UIListener
      * 
      * @param file Die Containerdatei
      */
-    private void loadContainerFile(File file) {
+    public void loadContainerFile(File file) {
 
         Vector<PluginForContainer> pluginsForContainer = JDUtilities.getPluginsForContainer();
         Vector<DownloadLink> downloadLinks = new Vector<DownloadLink>();
@@ -623,7 +626,7 @@ public class JDController implements PluginListener, ControlListener, UIListener
         for (int i = 0; i < pluginsForContainer.size(); i++) {
 
             pContainer = pluginsForContainer.get(i);
-            logger.info(i + ". " + "Containerplugin: " + pContainer.getPluginName());
+            //logger.info(i + ". " + "Containerplugin: " + pContainer.getPluginName());
             progress.setStatusText("Containerplugin: " + pContainer.getPluginName());
             if (pContainer.canHandle(file.getName())) {
                 // es muss jeweils eine neue plugininstanz erzeugt werden

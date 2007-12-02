@@ -163,7 +163,7 @@ public class Main {
             }
         }
         if( JDUtilities.getResourceFile("webcheck.tmp").exists()&&JDUtilities.getLocalFile(JDUtilities.getResourceFile("webcheck.tmp")).indexOf("(Revision"+JDUtilities.getRevision()+")")>0){
-            JDUtilities.getController().getUiInterface().showMessageDialog("Failed Update detected!\r\nIt seems that the previous webupdate failed.\r\nPlease ensure that your java-version is equal- or above 1.5.\r\nMore infos at http://www.syncom.org/projects/jdownloader/wiki/FAQ.\r\n\r\nErrorcode: \r\n"+JDUtilities.getLocalFile(JDUtilities.getResourceFile("webcheck.tmp")));
+            JDUtilities.getController().getUiInterface().showTextAreaDialog("Error","Failed Update detected!","It seems that the previous webupdate failed.\r\nPlease ensure that your java-version is equal- or above 1.5.\r\nMore infos at http://www.syncom.org/projects/jdownloader/wiki/FAQ.\r\n\r\nErrorcode: \r\n"+JDUtilities.getLocalFile(JDUtilities.getResourceFile("webcheck.tmp")));
             JDUtilities.getResourceFile("webcheck.tmp").delete();
             JDUtilities.getConfiguration().setProperty(Configuration.PARAM_WEBUPDATE_AUTO_RESTART, false);
         }else{
@@ -179,15 +179,16 @@ public class Main {
         hash= JDUtilities.getLocalHash(JDUtilities.getResourceFile("updateLog.txt"));
         }
         String hashChangeLog="";
-    
+    JDUtilities.getRunType();
         if (!JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_UPDATE_HASH, "").equals(hash+hashChangeLog)) {
             logger.info("Returned from Update");
             String lastLog = JDUtilities.getLocalFile(JDUtilities.getResourceFile("updateLog.txt"));
             logger.info("UpdateLog: " + log);
-           
-           if( JDUtilities.getController().getUiInterface().showConfirmDialog("Update!"+System.getProperty("line.separator") + lastLog.substring(0,Math.min(lastLog.length()-1,1000))+"... "+System.getProperty("line.separator")+System.getProperty("line.separator")+"Show Codechanges?")){
+            JDUtilities.getController().getUiInterface().showTextAreaDialog("Update!","Changes:",lastLog);
+        
+           if(JDUtilities.getController().getUiInterface().showConfirmDialog("Show code-changes")){
               String changelog=JDUtilities.getLocalFile(JDUtilities.getResourceFile("changeLog.txt"));
-               JDUtilities.getController().getUiInterface().showMessageDialog(JDUtilities.UTF8Encode(changelog.substring(0,Math.min(changelog.length()-1,1000))+"..."));
+               JDUtilities.getController().getUiInterface().showTextAreaDialog("Updates","Changes:",JDUtilities.UTF8Encode(changelog+"..."));
            }
         }
        JDUtilities.getConfiguration().setProperty(Configuration.PARAM_UPDATE_HASH, hash+hashChangeLog);

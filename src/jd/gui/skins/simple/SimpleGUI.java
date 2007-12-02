@@ -47,6 +47,7 @@ import jd.event.ControlEvent;
 import jd.event.UIEvent;
 import jd.event.UIListener;
 import jd.gui.UIInterface;
+import jd.gui.skins.simple.components.TextAreaDialog;
 import jd.gui.skins.simple.config.ConfigurationDialog;
 import jd.plugins.DownloadLink;
 import jd.plugins.Plugin;
@@ -983,8 +984,13 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
     public void uiEvent(UIEvent uiEvent) {
         switch (uiEvent.getID()) {
             case UIEvent.UI_DRAG_AND_DROP:
-                fireUIEvent(new UIEvent(this, UIEvent.UI_LINKS_TO_PROCESS, uiEvent.getParameter()));
+                if(uiEvent.getParameter() instanceof String){
+                    fireUIEvent(new UIEvent(this, UIEvent.UI_LINKS_TO_PROCESS, uiEvent.getParameter()));
+                }else{
+                fireUIEvent(new UIEvent(this, UIEvent.UI_LOAD_CONTAINER, uiEvent.getParameter()));
+                }
                 break;
+        
         }
     }
 
@@ -1042,4 +1048,9 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
     public void windowIconified(WindowEvent e) {}
 
     public void windowOpened(WindowEvent e) {}
+
+    public String showTextAreaDialog(String title,String question,String def) {
+      return TextAreaDialog.showDialog(this.getFrame(), title, question, def);
+        
+    }
 }

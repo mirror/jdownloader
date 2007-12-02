@@ -76,13 +76,13 @@ public class WebUpdate extends Interaction implements Serializable {
                 if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_WEBUPDATE_AUTO_RESTART, true)) {
                    //Eine checkfile schreiben. Diese CheckFile wird vom webupdater gelöscht. Wird sie beim restart von JD wiedergefunden wird eine warnmeldung angezeigt, weild as darauf hindeutet dass der webupdater fehlerhaft funktioniert hat
                     JDUtilities.writeLocalFile(JDUtilities.getResourceFile("webcheck.tmp"), new Date().toString()+"\r\n(Revision"+JDUtilities.getRevision()+")");
-                    logger.info(JDUtilities.runCommand("java", new String[] { "-jar", "webupdater.jar", JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_WEBUPDATE_LOAD_ALL_TOOLS, false) ? "/all" : "", JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_WEBUPDATE_AUTO_RESTART, true) ? "/restart" : "" }, JDUtilities.getResourceFile(".").getAbsolutePath(), 0));
+                    logger.info(JDUtilities.runCommand("java", new String[] { "-jar", "webupdater.jar", JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_WEBUPDATE_LOAD_ALL_TOOLS, false) ? "/all" : "", JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_WEBUPDATE_AUTO_RESTART, true) ? "/restart" : "" ,"/rt"+JDUtilities.getRunType()}, JDUtilities.getResourceFile(".").getAbsolutePath(), 0));
                     System.exit(0);
                 }
                 else {
                     if (JDUtilities.getController().getUiInterface().showConfirmDialog(files.size() + " update(s) available. Start Webupdater now?")) {
                         JDUtilities.writeLocalFile(JDUtilities.getResourceFile("webcheck.tmp"), new Date().toString()+"\r\n(Revision"+JDUtilities.getRevision()+")");
-                        logger.info(JDUtilities.runCommand("java", new String[] { "-jar", "webupdater.jar", JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_WEBUPDATE_LOAD_ALL_TOOLS, false) ? "/all" : "", JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_WEBUPDATE_AUTO_RESTART, true) ? "/restart" : "" }, JDUtilities.getResourceFile(".").getAbsolutePath(), 0));
+                        logger.info(JDUtilities.runCommand("java", new String[] { "-jar", "webupdater.jar", JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_WEBUPDATE_LOAD_ALL_TOOLS, false) ? "/all" : "", JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_WEBUPDATE_AUTO_RESTART, true) ? "/restart" : "" ,"/rt"+JDUtilities.getRunType()}, JDUtilities.getResourceFile(".").getAbsolutePath(), 0));
                         System.exit(0);
                     }
 

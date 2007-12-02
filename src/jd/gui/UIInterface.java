@@ -87,4 +87,9 @@ public interface UIInterface {
      * @param links
      */
     public void addLinksToGrabber(Vector<DownloadLink> links);
+    /**
+     * Zeigt einen Textarea dialog an
+     * @param string
+     */
+    public String showTextAreaDialog(String title,String question,String def);
 }

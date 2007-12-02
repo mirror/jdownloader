@@ -403,6 +403,7 @@ public class JUnrar {
             Vector<String> params = new Vector<String>();
 
             params.add("-p-");
+            params.add("-v");
             params.add("-ierr");
             params.add("vt");
             params.add(file.getName());

@@ -42,7 +42,22 @@ public class JDClassLoader extends java.lang.ClassLoader {
             e1.printStackTrace();
         }
         //Hier werden die JAR Dateien ausgelesen
-        File files[] = new File(new File(rootDir),"plugins").listFiles(new JDFileFilter(null, ".jar", false));
+        File[] files = new File(new File(rootDir),"plugins").listFiles(new JDFileFilter(null, ".jar", false));
+        if(files!=null){
+            jars = new JarFile[files.length];
+            for(int i=0;i<jars.length;i++){
+                try {
+                    logger.finer("Jar file loaded: "+files[i].getAbsolutePath());
+                    jars[i] = new JarFile(files[i]);
+                    
+                  
+                }
+                catch (IOException e) {
+                }
+            }
+        }
+      //Hier werden lokale JAR Dateien ausgelesen
+       files = new File(".").listFiles(new JDFileFilter(null, ".jar", false));
         if(files!=null){
             jars = new JarFile[files.length];
             for(int i=0;i<jars.length;i++){
@@ -64,6 +79,7 @@ public class JDClassLoader extends java.lang.ClassLoader {
         url = rootClassLoader.findResource(name);
         if(url!= null)
             return url;
+   
         return super.findResource(name);
     }
     @Override
@@ -92,6 +108,9 @@ public class JDClassLoader extends java.lang.ClassLoader {
         
         if(url != null)
             return url;
+        url=this.classLoaderParent.getResource(name);
+        if(url != null)
+            return url;
         try {
             //Falls immer noch nichts vorhanden, wird ein neu erzeugtes File Objekt zurückgegeben
             //Ist für das Abspeichern der Captcha notwendig
@@ -105,6 +124,7 @@ public class JDClassLoader extends java.lang.ClassLoader {
     @Override
     public Enumeration<URL> getResources(String name) throws IOException {
         Vector<URL> urls = new Vector<URL>();
+      
         if (jars != null) {
             JarEntry entry;
             for (int i = 0; i < jars.length; i++) {
@@ -123,6 +143,11 @@ public class JDClassLoader extends java.lang.ClassLoader {
                 }
             }
         }
+        Enumeration<URL> en = classLoaderParent.getResources(name);
+        while(en.hasMoreElements()){
+            urls.add(en.nextElement());
+        }
+
         return urls.elements();
     }
     /**

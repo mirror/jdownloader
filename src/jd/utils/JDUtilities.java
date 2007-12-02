@@ -44,6 +44,7 @@ import java.nio.channels.FileChannel;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Collections;
+import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Locale;
@@ -98,13 +99,19 @@ public class JDUtilities {
      * Titel der Applikation
      */
     public static final String                     JD_VERSION          = "0.0.";
- 
+
     public static final String                     JD_REVISION         = "$Id$";
 
     /**
      * Versionsstring der Applikation
      */
     public static final String                     JD_TITLE            = "jDownloader";
+
+    private static final int                       RUNTYPE_WEBSTART    = 0;
+
+    private static final int                       RUNTYPE_LOCAL       = 1;
+
+    private static final int                       RUNTYPE_LOCAL_JARED = 2;
 
     /**
      * Ein URLClassLoader, um Dateien aus dem HomeVerzeichnis zu holen
@@ -434,8 +441,15 @@ public class JDUtilities {
         String envDir = System.getenv("JD_HOME");
         if (envDir == null) {
             logger.warning("environment variable JD_HOME not set");
-            envDir = System.getProperty("user.home") + System.getProperty("file.separator") + ".jd_home/";
-            logger.info("JD_HOME from user.home :" + envDir);
+            if (getRunType() == RUNTYPE_LOCAL_JARED) {
+                envDir = new File(".").getAbsolutePath();
+                logger.info("JD_HOME from current Path :" + envDir);
+            }
+            else {
+                envDir = System.getProperty("user.home") + System.getProperty("file.separator") + ".jd_home/";
+                logger.info("JD_HOME from user.home :" + envDir);
+            }
+
         }
         else
             logger.info("JD_HOME from environment variable:" + envDir);
@@ -461,26 +475,29 @@ public class JDUtilities {
     public static File getJDHomeDirectory() {
         String homeDir = null;
         if (homeDirectoryFile != null) return homeDirectoryFile;
-        try {
-            if (Class.forName("javax.jnlp.ServiceManager") != null) {
-                Class webStartHelper = Class.forName("jd.JDWebStartHelper");
-                Method method = webStartHelper.getDeclaredMethod("getJDHomeDirectoryFromWebStartCookie", new Class[] {});
-                homeDir = (String) method.invoke(webStartHelper, (Object[]) null);
+        int runtype = getRunType();
+        if (runtype == RUNTYPE_WEBSTART) {
+            try {
+                if (Class.forName("javax.jnlp.ServiceManager") != null) {
+                    Class webStartHelper = Class.forName("jd.JDWebStartHelper");
+                    Method method = webStartHelper.getDeclaredMethod("getJDHomeDirectoryFromWebStartCookie", new Class[] {});
+                    homeDir = (String) method.invoke(webStartHelper, (Object[]) null);
+                }
             }
-        }
-        catch (ClassNotFoundException e) {
-        }
-        catch (SecurityException e) {
-        }
-        catch (NoSuchMethodException e) {
-        }
-        catch (IllegalArgumentException e) {
-        }
-        catch (IllegalAccessException e) {
-        }
-        catch (InvocationTargetException e) {
-        }
-        catch (Exception e) {
+            catch (ClassNotFoundException e) {
+            }
+            catch (SecurityException e) {
+            }
+            catch (NoSuchMethodException e) {
+            }
+            catch (IllegalArgumentException e) {
+            }
+            catch (IllegalAccessException e) {
+            }
+            catch (InvocationTargetException e) {
+            }
+            catch (Exception e) {
+            }
         }
         if (homeDir != null) {
             setHomeDirectory(homeDir);
@@ -700,7 +717,7 @@ public class JDUtilities {
         Iterator iterator;
         // Zuerst Plugins zum Dekodieren verschlüsselter Links
         logger.finer("Load decryter");
-        iterator = Service.providers(PluginForDecrypt.class);
+        iterator = Service.providers(PluginForDecrypt.class, jdClassLoader);
         while (iterator.hasNext()) {
             PluginForDecrypt p = (PluginForDecrypt) iterator.next();
             pluginsForDecrypt.add(p);
@@ -708,7 +725,7 @@ public class JDUtilities {
         }
         // Danach die Plugins der verschiedenen Anbieter
         logger.finer("Load Host plugins");
-        iterator = Service.providers(PluginForHost.class);
+        iterator = Service.providers(PluginForHost.class, jdClassLoader);
         while (iterator.hasNext()) {
             PluginForHost p = (PluginForHost) iterator.next();
             pluginsForHost.add(p);
@@ -716,7 +733,7 @@ public class JDUtilities {
         }
         // Danach die Plugins der verschiedenen Suchengines
         logger.finer("Load Search plugins");
-        iterator = Service.providers(PluginForSearch.class);
+        iterator = Service.providers(PluginForSearch.class, jdClassLoader);
         while (iterator.hasNext()) {
             PluginForSearch p = (PluginForSearch) iterator.next();
             pluginsForSearch.add(p);
@@ -724,7 +741,7 @@ public class JDUtilities {
         }
 
         logger.finer("Load Containerplugins");
-        iterator = Service.providers(PluginForContainer.class);
+        iterator = Service.providers(PluginForContainer.class, jdClassLoader);
 
         while (iterator.hasNext()) {
             PluginForContainer p = (PluginForContainer) iterator.next();
@@ -1221,7 +1238,7 @@ public class JDUtilities {
      * Wandelt alle hexkodierten zeichen in diesem Format in normalen text um
      * 
      * @param str
-     * @return decoded string 
+     * @return decoded string
      */
     public static String htmlDecode(String str) {
         // http://rs218.rapidshare.com/files/&#0052;&#x0037;&#0052;&#x0034;&#0049;&#x0032;&#0057;&#x0031;/STE_S04E04.Borderland.German.dTV.XviD-2Br0th3rs.part1.rar
@@ -1243,7 +1260,7 @@ public class JDUtilities {
         try {
             str = URLDecoder.decode(str, "UTF-8");
         }
-        catch (UnsupportedEncodingException e) {
+        catch (Exception e) {
         }
         return HTMLEntities.unhtmlentities(str);
     }
@@ -1279,6 +1296,34 @@ public class JDUtilities {
     }
 
     /**
+     * 
+     */
+    public static int getRunType() {
+
+        try {
+
+            Enumeration<URL> en = Thread.currentThread().getContextClassLoader().getResources("jd/Main.class");
+            if (en.hasMoreElements()) {
+                String root = en.nextElement().toString();
+                logger.info("ROOT:" + root);
+                if (root.indexOf("http://") >= 0) {
+                    return RUNTYPE_WEBSTART;
+                }
+                if (root.indexOf("jar") >= 0) {
+                    return RUNTYPE_LOCAL_JARED;
+                }
+            }
+            return RUNTYPE_LOCAL;
+        }
+        catch (Exception e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+        return 0;
+
+    }
+
+    /**
      * public static String getLocalFile(File file) Liest file über einen
      * bufferdReader ein und gibt den Inhalt asl String zurück
      * 
@@ -1286,6 +1331,7 @@ public class JDUtilities {
      * @return File Content als String
      */
     public static String getLocalFile(File file) {
+        if (!file.exists()) return "";
         BufferedReader f;
         try {
             f = new BufferedReader(new FileReader(file));
@@ -1508,7 +1554,7 @@ public class JDUtilities {
                     return null;
                 }
             }
-            logger.info("IP Check failed. Ip not found via regex: "+patt+" on "+site+" htmlcode: "+requestInfo.getHtmlCode());
+            logger.info("IP Check failed. Ip not found via regex: " + patt + " on " + site + " htmlcode: " + requestInfo.getHtmlCode());
             return null;
         }
         catch (IOException e1) {
@@ -1583,7 +1629,7 @@ public class JDUtilities {
             logger.severe("Error executing " + command + ": " + e.getLocalizedMessage());
             return null;
         }
-    } 
+    }
 
     /**
      * Gibt den verwendeten Controller zurück
@@ -1785,13 +1831,14 @@ public class JDUtilities {
 
             logger.setLevel(Level.ALL);
             logger.finer("Init Logger:" + LOGGER_NAME);
-            //Leitet System.out zum Logger um.
+            // Leitet System.out zum Logger um.
             final PrintStream err = System.err;
             OutputStream os = new OutputStream() {
                 private StringBuffer buffer = new StringBuffer();
+
                 @Override
                 public void write(int b) throws IOException {
-                    //err.write(b);                 
+                    // err.write(b);
                     if ((b == 13 || b == 10)) {
                         if (buffer.length() > 0) {
                             JDUtilities.getLogger().severe(buffer.toString());
@@ -1807,7 +1854,6 @@ public class JDUtilities {
 
             };
             System.setErr(new PrintStream(os));
-         
 
         }
         return logger;
