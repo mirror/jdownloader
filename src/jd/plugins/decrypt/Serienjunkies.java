@@ -14,7 +14,6 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
-import jd.unrar.Utilities;
 import jd.utils.JDUtilities;
 
 public class Serienjunkies extends PluginForDecrypt {

@@ -9,7 +9,6 @@ import java.util.regex.Pattern;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
-import jd.plugins.event.PluginEvent;
 
 public class Lixin extends PluginForDecrypt {
 
@@ -61,7 +60,7 @@ public class Lixin extends PluginForDecrypt {
     		try {
     			URL url = new URL(parameter);
     			
-    			progress.setRange( 1);
+    			progress.setRange(1);
     			
     			// Letzten Teil der URL herausfiltern und postrequest
                 // durchführen
@@ -69,7 +68,7 @@ public class Lixin extends PluginForDecrypt {
     			RequestInfo reqinfo = postRequest(url, "tiny=" + result[result.length-1] + "&submit=continue");
     			
     			// Link herausfiltern
-    		progress.increase(1);
+    			progress.increase(1);
     			decryptedLinks.add((getBetween(reqinfo.getHtmlCode(), "name=\"ifram\" src=\"", "\" marginwidth")));
     			
     			// Decrypten abschliessen

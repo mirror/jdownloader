@@ -9,7 +9,6 @@ import java.util.regex.Pattern;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
-import jd.plugins.event.PluginEvent;
 
 public class LinkSafeWs extends PluginForDecrypt {
     private static final String  CODER          = "Bo0nZ";
