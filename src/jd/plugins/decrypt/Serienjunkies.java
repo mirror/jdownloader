@@ -14,6 +14,7 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
+import jd.unrar.Utilities;
 import jd.utils.JDUtilities;
 
 public class Serienjunkies extends PluginForDecrypt {
@@ -256,9 +257,7 @@ public class Serienjunkies extends PluginForDecrypt {
                     if (((Boolean) this.getProperties().getProperty("USE_JAC", true)))
                         capTxt = Plugin.getCaptchaCode(captchaFile, this);
                     else {
-                        sjCaptcha sj = new sjCaptcha();
-                        sj.host = "containerlinks.Serienjunkies.org";
-                        capTxt = Plugin.getCaptchaCode(captchaFile, sj);
+                        capTxt = JDUtilities.getCaptcha(this, "containerlinks.Serienjunkies.org", captchaFile);
                     }
                     reqinfo = postRequest(new URL(url), "s=" + matcher.group(1) + "&c=" + capTxt + "&action=Download");
 
@@ -318,9 +317,7 @@ public class Serienjunkies extends PluginForDecrypt {
                         }
                         continue;
                     }
-
-                    capTxt = Plugin.getCaptchaCode(captchaFile, new sjCaptcha());
-
+                    capTxt = JDUtilities.getCaptcha(this, "einzellinks.Serienjunkies.org", captchaFile);
                     reqinfo = postRequest(new URL(url), "s=" + matcher.group(1) + "&c=" + capTxt + "&dl.start=Download");
                 }
                 else {
@@ -337,51 +334,6 @@ public class Serienjunkies extends PluginForDecrypt {
             e.printStackTrace();
         }
         return links;
-    }
-
-    class sjCaptcha extends PluginForDecrypt {
-        public String host = "einzellinks.Serienjunkies.org";
-
-        @Override
-        public PluginStep doStep(PluginStep step, String parameter) {
-            return null;
-        }
-
-        @Override
-        public boolean doBotCheck(File file) {
-            return false;
-        }
-
-        @Override
-        public String getCoder() {
-            return "DwD";
-        }
-
-        @Override
-        public String getHost() {
-            return host;
-        }
-
-        @Override
-        public String getPluginID() {
-            return host + "1.0.0";
-        }
-
-        @Override
-        public String getPluginName() {
-            return host;
-        }
-
-        @Override
-        public Pattern getSupportedLinks() {
-            return null;
-        }
-
-        @Override
-        public String getVersion() {
-            return "1.0.0";
-        }
-
     }
 
 }

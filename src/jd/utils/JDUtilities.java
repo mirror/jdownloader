@@ -615,20 +615,20 @@ public class JDUtilities {
         }
         return jdClassLoader;
     }
-
+    
+    
     /**
      * Diese Methode erstellt einen neuen Captchadialog und liefert den
      * eingegebenen Text zurück.
      * 
      * @param controller Der Controller
-     * @param plugin Das Plugin, das dieses Captcha fordert (Der Host wird
-     *            benötigt)
+     * @param plugin Das Plugin, das dieses Captcha fordert 
+     * @param host der Host von dem die Methode verwendet werden soll
      * @param file
      * @return Der vom Benutzer eingegebene Text
      */
-    public static String getCaptcha(JDController controller, Plugin plugin, File file) {
+    public static String getCaptcha(JDController controller, Plugin plugin, String host, File file) {
         if (controller == null) controller = getController();
-        String host = plugin.getHost();
         logger.info("JAC has Method for: " + host + ": " + JAntiCaptcha.hasMethod(getJACMethodsDirectory(), host));
         if (JAntiCaptcha.hasMethod(getJACMethodsDirectory(), host)) {
             JFrame jf = new JFrame();
@@ -651,6 +651,44 @@ public class JDUtilities {
         else {
             return controller.getCaptchaCodeFromUser(plugin, file);
         }
+    }
+
+    /**
+     * Diese Methode erstellt einen neuen Captchadialog und liefert den
+     * eingegebenen Text zurück.
+     * 
+     * @param controller Der Controller
+     * @param plugin Das Plugin, das dieses Captcha fordert (Der Host wird
+     *            benötigt)
+     * @param file
+     * @return Der vom Benutzer eingegebene Text
+     */
+    public static String getCaptcha(JDController controller, Plugin plugin, File file) {
+        return getCaptcha(controller, plugin, plugin.getHost(), file);
+    }
+    /**
+     * Diese Methode erstellt einen neuen Captchadialog und liefert den
+     * eingegebenen Text zurück.
+     * 
+     * @param plugin Das Plugin, das dieses Captcha fordert (Der Host wird
+     *            benötigt)
+     * @param file
+     * @return Der vom Benutzer eingegebene Text
+     */
+    public static String getCaptcha(Plugin plugin, File file) {
+        return getCaptcha(getController(), plugin, plugin.getHost(), file);
+    }
+    /**
+     * Diese Methode erstellt einen neuen Captchadialog und liefert den
+     * eingegebenen Text zurück.
+     * 
+     * @param plugin Das Plugin, das dieses Captcha fordert 
+     * @param host der Host von dem die Methode verwendet werden soll
+     * @param file
+     * @return Der vom Benutzer eingegebene Text
+     */
+    public static String getCaptcha(Plugin plugin, String host,  File file) {
+        return getCaptcha(getController(), plugin, host, file);
     }
 
     /**
