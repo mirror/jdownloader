@@ -1,10 +1,19 @@
 package jd.update;
 
+import java.awt.BorderLayout;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.util.Scanner;
 import java.util.Vector;
+
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JScrollPane;
+import javax.swing.JTextArea;
+import javax.swing.UIManager;
+import javax.swing.UnsupportedLookAndFeelException;
+import javax.swing.plaf.metal.MetalLookAndFeel;
 
 
 public class Main {
@@ -12,11 +21,41 @@ public class Main {
     /**
      * @param args
      */
- 
+
+
+
+
+
+
+
 
 
     public static void main(String args[]) {
-         StringBuffer  log    = new StringBuffer();
+         final StringBuffer  log    = new StringBuffer();
+         try {
+             UIManager.setLookAndFeel(new MetalLookAndFeel());
+         }
+         catch (UnsupportedLookAndFeelException e) {
+         }
+        JFrame frame= new JFrame();
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        frame.setTitle("JD Update");
+         final JTextArea logWindow = new JTextArea(10, 60);
+         JScrollPane scrollPane = new JScrollPane(logWindow);
+         logWindow.setEditable(true);
+         
+      
+             frame.add(new JLabel("Webupdate is running..."),BorderLayout.NORTH);
+     
+       log.append("Starting...");
+             logWindow.setText(log.toString());
+         
+         frame.add(scrollPane,BorderLayout.CENTER);
+   
+         frame.pack();
+         frame.setVisible(true);
+         
+      
          boolean all=false;
          boolean restart=false;
          int runtype=1;
@@ -28,8 +67,19 @@ public class Main {
            if(args[i].trim().equalsIgnoreCase("/rt1"))runtype=1;
            if(args[i].trim().equalsIgnoreCase("/rt2"))runtype=2;
            log.append("Parameter "+i+" "+args[i]+" "+System.getProperty("line.separator"));
+           logWindow.setText(log.toString());
        }
-       
+       new Thread(){
+           public void run(){
+               while(true){
+                   logWindow.setText(log.toString());
+                   try {
+                    Thread.sleep(1000);
+                }
+                catch (InterruptedException e) {}
+               }
+           }
+       }.start();
         WebUpdater updater = new WebUpdater(null);
         updater.setLogger(log);
         trace("Start Webupdate");
@@ -43,22 +93,33 @@ public class Main {
 
         trace(updater.getLogger().toString());
         trace("End Webupdate");
+        logWindow.setText(log.toString());
         trace(new File("updateLog.txt").getAbsoluteFile());
-       writeLocalFile(new File("updateLog.txt"), log.toString());
+      
         if(restart){
             if(new File("webcheck.tmp").exists()){
                 new File("webcheck.tmp").delete(); 
             }
-            if(runtype==0){
-            runCommand("javaws", new String[] { "jDownloader.jnlp" },new File(".").getAbsolutePath(), 0);
-            }else if(runtype==1){
-                runCommand("java", new String[] { "jd/Main.class" },new File(".").getAbsolutePath(), 0);
+            if(runtype==2){
+                log.append("Start java -jar JDownloader.jar in "+new File("").getAbsolutePath());
+                runCommand("java", new String[] { "-jar","jDownloader.jar" },new File("").getAbsolutePath(), 0);
+            }else if(runtype==1 &&new File("jd/Main.class").exists()){
+                log.append("java Main.class in "+new File("jd/").getAbsolutePath());
+                runCommand("java", new String[] { "Main.class" },new File("jd/").getAbsolutePath(), 0);
             }else{
-                runCommand("java", new String[] { "-jar","jDownloader.jar" },new File(".").getAbsolutePath(), 0);
+                log.append("Start jDownloader.jnlp in "+new File("").getAbsolutePath());
+                runCommand("javaws", new String[] { "jDownloader.jnlp" },new File("").getAbsolutePath(), 0);
+                
             }
            
         }
-
+        logWindow.setText(log.toString());
+        writeLocalFile(new File("updateLog.txt"), log.toString());
+        try {
+            Thread.sleep(10000);
+        }
+        catch (InterruptedException e) {}
+        System.exit(0);
     }
 
    public static void trace(Object arg){
@@ -121,8 +182,12 @@ public class Main {
                tmp.add(params[i].trim());
            }
        }
+       
+
        params = tmp.toArray(new String[] {});
        ProcessBuilder pb = new ProcessBuilder(params);
+       
+       
        if (runIn != null && runIn.length() > 0) {
            if (new File(runIn).exists()) {
                pb.directory(new File(runIn));

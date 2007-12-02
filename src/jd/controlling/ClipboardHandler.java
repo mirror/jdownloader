@@ -100,8 +100,10 @@ public class ClipboardHandler extends Thread {
                     }
                     if (flavors[i].isFlavorTextType() && flavors[i].getRepresentationClass() == String.class) {
                         String data = (String) clipboard.getData(flavors[i]);
+                        data=data.trim();
                         if (!data.equals(olddata)) {
                             olddata = data;
+                            logger.info(data.length()+" - "+olddata.length());
                             logger.info(data+" - "+olddata);
                              distributeData = new DistributeData(data);
                              distributeData.addControlListener(

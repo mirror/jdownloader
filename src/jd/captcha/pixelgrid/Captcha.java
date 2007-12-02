@@ -415,7 +415,7 @@ public class Captcha extends PixelGrid {
                 if(JAntiCaptcha.isLoggerActive())logger.severe("Object detection failed. Try alternative Methods");
             }
         }
-
+        if(owner.getJas().getBoolean("cancelIfObjectDetectionFailed"))return null;
         if (!owner.getJas().getBoolean("UseAverageGapDetection") && !owner.getJas().getBoolean("UsePeakGapdetection") && owner.getJas().getGaps() != null) {
 
             if(JAntiCaptcha.isLoggerActive())logger.finer("Use predefined Gaps");

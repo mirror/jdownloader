@@ -821,8 +821,8 @@ public class JUnrar {
         this.srcFolders = folders;
         files = new HashMap<File, String>();
         HashMap<File, String> filelist = new HashMap<File, String>();
-        progress.setStatusText("Scan download-directories");
-        progress.increase(1);
+        if(progress!=null)progress.setStatusText("Scan download-directories");
+        if(progress!=null)progress.increase(1);
         for (int i = 0; i < srcFolders.size(); i++) {
             if (srcFolders.get(i) != null) {
                 Vector<File> list = vFileList(new File(srcFolders.get(i)));
@@ -836,6 +836,10 @@ public class JUnrar {
 
     public byte getArchiveProtection() {
         return archivProtected;
+    }
+
+    public HashMap<File, String> getFiles() {
+        return files;
     }
 
 }

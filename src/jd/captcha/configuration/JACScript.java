@@ -225,6 +225,8 @@ public class JACScript {
          * Gewichtung des B fehlers
          */
         set("errorBWeight",1.0);
+        
+        set("cancelIfObjectDetectionFailed",false);
         /**
          * Gewichtung des größenunterschieds Ausschnitt/Originale
          */

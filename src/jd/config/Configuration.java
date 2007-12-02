@@ -3,9 +3,11 @@ package jd.config;
 import java.io.Serializable;
 import java.util.Vector;
 
+import jd.controlling.interaction.ContainerReloader;
 import jd.controlling.interaction.Interaction;
 import jd.controlling.interaction.InteractionTrigger;
 import jd.controlling.interaction.ManualCaptcha;
+import jd.controlling.interaction.Unrar;
 import jd.controlling.interaction.WebUpdate;
 import jd.router.RouterData;
 
@@ -280,6 +282,20 @@ public class Configuration extends Property implements Serializable {
             wu.setTrigger(it);
             interactions.add(wu);
         }
+  
+        Unrar ur= new Unrar();
+        if (getInteractions(ur).size() == 0) {
+            InteractionTrigger it = Interaction.INTERACTION_SINGLE_DOWNLOAD_FINISHED;
+            ur.setTrigger(it);
+            interactions.add(ur);
+        }
+        ContainerReloader cr= new ContainerReloader();
+        if (getInteractions(cr).size() == 0) {
+            InteractionTrigger it = Interaction.INTERACTION_SINGLE_DOWNLOAD_FINISHED;
+            cr.setTrigger(it);
+            interactions.add(cr);
+        }
+        
         ManualCaptcha jac = new ManualCaptcha();
         if (getInteractions(Interaction.INTERACTION_DOWNLOAD_CAPTCHA).size() == 0) {
             InteractionTrigger it = Interaction.INTERACTION_DOWNLOAD_CAPTCHA;
