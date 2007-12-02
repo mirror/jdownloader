@@ -171,6 +171,12 @@ public abstract class Interaction extends Property implements Serializable {
      */
     public abstract void resetInteraction();
     /**
+     * Initialisiert die Interaction beim JD start
+     */
+    public  void initInteraction(){
+        //nothing to init
+    }
+    /**
      * Setzt den callCode
      * 
      * @param callCode

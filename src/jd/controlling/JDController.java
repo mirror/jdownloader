@@ -98,9 +98,20 @@ public class JDController implements PluginListener, ControlListener, UIListener
         speedMeter = new SpeedMeter(10000);
         clipboard = new ClipboardHandler();
         downloadStatus = DOWNLOAD_NOT_RUNNING;
+    
         JDUtilities.setController(this);
+        initInteractions();
     }
-
+    /**
+     * Initialisiert alle Interactions
+     */
+    private void initInteractions(){
+        Vector<Interaction> interactions = JDUtilities.getConfiguration().getInteractions();
+        
+        for (int i = 0; i < interactions.size(); i++) {
+            interactions.get(i).initInteraction();
+        }
+    }
     /**
      * Gibt den Status (ID) der downloads zurück
      * 

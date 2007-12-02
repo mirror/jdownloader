@@ -37,19 +37,25 @@ public class ContainerReloader extends Interaction implements Serializable {
         
         getNewFiles();
     }
-
+    public void  initInteraction(){
+        getNewFiles();
+    }
     private Vector<String> getNewFiles() {
         JUnrar unrar = new JUnrar(false);
         if(lastAllFiles==null)lastAllFiles= new Vector<String>();
-        Vector<DownloadLink> finishedLinks = JDUtilities.getController().getFinishedLinks();
+        Vector<DownloadLink> finishedLinks ;
+        if(JDUtilities.getController()==null){
+            finishedLinks=new    Vector<DownloadLink>();
+        }else{
+       finishedLinks = JDUtilities.getController().getFinishedLinks();
+        }
         Vector<String> folders = new Vector<String>();
         for (int i = 0; i < finishedLinks.size(); i++) {
-            logger.info("finished File: " + finishedLinks.get(i).getFileOutput());
+           
             File folder = new File(finishedLinks.get(i).getFileOutput()).getParentFile();
-            logger.info("Folder: " + folder);
+           
             if (folder.exists()) {
-                if (folders.indexOf(folder.getAbsolutePath()) == -1) {
-                    logger.info("Add unrardir: " + folder.getAbsolutePath());
+                if (folders.indexOf(folder.getAbsolutePath()) == -1) {                
                     folders.add(folder.getAbsolutePath());
                 }
             }
@@ -64,7 +70,7 @@ public class ContainerReloader extends Interaction implements Serializable {
             allFiles.add(entry.getKey().getAbsolutePath());
             if (this.lastAllFiles.indexOf(entry.getKey().getAbsolutePath()) == -1) {
                 newFiles.add(entry.getKey().getAbsolutePath());
-                logger.info("New file scanned:" + entry.getKey().getAbsolutePath());
+                logger.info("New file:" + entry.getKey().getAbsolutePath());
             }
 
         }
@@ -86,7 +92,7 @@ public class ContainerReloader extends Interaction implements Serializable {
     public void run() {}
 
     public String toString() {
-        return NAME;
+        return "ContainerLoader: Lädt geladene Container";
     }
 
     @Override
@@ -96,7 +102,10 @@ public class ContainerReloader extends Interaction implements Serializable {
 
     @Override
     public void initConfig() {
-       
+        ConfigEntry cfg;
+        //int type, Property propertyInstance, String propertyName, Object[] list, String label
+        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_SEPERATOR));
+        
     }
 
     @Override

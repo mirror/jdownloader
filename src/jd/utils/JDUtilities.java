@@ -1305,7 +1305,7 @@ public class JDUtilities {
             Enumeration<URL> en = Thread.currentThread().getContextClassLoader().getResources("jd/Main.class");
             if (en.hasMoreElements()) {
                 String root = en.nextElement().toString();
-                logger.info("ROOT:" + root);
+              
                 if (root.indexOf("http://") >= 0) {
                     return RUNTYPE_WEBSTART;
                 }
