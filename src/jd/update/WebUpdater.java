@@ -181,6 +181,7 @@ public class WebUpdater implements Serializable {
         log(files.toString());
         String akt;
         String hash;
+        try{
         for (int i = files.size() - 1; i >= 0; i--) {
             String[] tmp = files.elementAt(i).elementAt(0).split("\\?");
 
@@ -196,8 +197,11 @@ public class WebUpdater implements Serializable {
                 log("UPDATE AV. " + files.elementAt(i) + " - " + hash);
                 continue;
             }
-            log("OLD:  " + files.elementAt(i) + " - " + hash);
+           // log("OLD:  " + files.elementAt(i) + " - " + hash);
             files.removeElementAt(i);
+        }
+        }catch(Exception e){
+            log(e.getLocalizedMessage());
         }
 
     }

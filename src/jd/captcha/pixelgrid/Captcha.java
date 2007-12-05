@@ -404,6 +404,18 @@ public class Captcha extends PixelGrid {
             }
             return null;
         }
+        if (owner.getJas().getBoolean("useColorObjectDetection")) {
+            if(JAntiCaptcha.isLoggerActive())logger.finer("Use Color Object Detection");
+            Letter[] ret = this.getColoredLetters(letterNum);
+            if (ret != null) {
+                seperatedLetters = ret;
+                return ret;
+            }
+            else {
+                if(JAntiCaptcha.isLoggerActive())logger.severe("Color Object detection failed. Try alternative Methods");
+            }
+        }
+        
         if (owner.getJas().getBoolean("useObjectDetection")) {
             if(JAntiCaptcha.isLoggerActive())logger.finer("Use Object Detection");
             Letter[] ret = this.getLetters(letterNum, owner.getJas().getDouble("ObjectColorContrast"), owner.getJas().getDouble("ObjectDetectionContrast"), owner.getJas().getInteger("MinimumObjectArea"));
@@ -452,6 +464,11 @@ public class Captcha extends PixelGrid {
         }
         seperatedLetters = ret;
         return ret;
+    }
+
+    private Letter[] getColoredLetters(int letterNum) {
+        Vector<PixelObject> letters = getColorObjects();
+        return null;
     }
 
     /**

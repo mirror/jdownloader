@@ -32,7 +32,7 @@ public class Uploadedto extends PluginForHost {
     static private final String     CODER                        = "coalado/DwD CAPTCHA fix";
 
     // /Simplepattern
-
+static private final String DOWNLOAD_LIMIT_REACHED="Free-Traffic ist aufgebraucht";
     static private final String     DOWNLOAD_URL                 = "<form name=\"download_form\" onsubmit=\"startDownload();\" method=\"post\" action=\"°\">";
 
     static private final String     DOWNLOAD_URL_WITHOUT_CAPTCHA = "<form name=\"download_form\" method=\"post\" action=\"°\">";
@@ -120,7 +120,16 @@ public class Uploadedto extends PluginForHost {
                 case PluginStep.STEP_WAIT_TIME:
 
                     requestInfo = getRequest(new URL(downloadLink.getUrlDownloadDecrypted()), "lang=de", null, true);
-
+///?view=error_traffic_exceeded_free
+                    if(requestInfo.containsHTML(DOWNLOAD_LIMIT_REACHED)||(requestInfo.getLocation()!=null &&requestInfo.getLocation().indexOf("traffic_exceeded")>=0)){
+                        
+                        int waitTime = 60 * 60 * 1000;
+                        downloadLink.setStatus(DownloadLink.STATUS_ERROR_DOWNLOAD_LIMIT);
+                        step.setStatus(PluginStep.STATUS_ERROR);
+                        logger.info("Traffic Limit reached....");
+                        step.setParameter((long) waitTime);
+                        return step;
+                    }
                     // Datei geloescht?
                     if (requestInfo.getHtmlCode().contains(FILE_NOT_FOUND)) {
                         logger.severe("download not found");
@@ -186,6 +195,16 @@ public class Uploadedto extends PluginForHost {
                         url = getSimpleMatch(requestInfo.getHtmlCode(), DOWNLOAD_URL_WITHOUT_CAPTCHA, 0);
                         logger.finer("Use Captcha free Plugin: " + url);
                         requestInfo = postRequest(new URL(url), "lang=de", null, null, null, false);
+                      ///?view=error_traffic_exceeded_free
+                        if(requestInfo.containsHTML(DOWNLOAD_LIMIT_REACHED)||(requestInfo.getLocation()!=null &&requestInfo.getLocation().indexOf("traffic_exceeded")>=0)){
+                            
+                            int waitTime = 60 * 60 * 1000;
+                            downloadLink.setStatus(DownloadLink.STATUS_ERROR_DOWNLOAD_LIMIT);
+                            step.setStatus(PluginStep.STATUS_ERROR);
+                            logger.info("Traffic Limit reached....");
+                            step.setParameter((long) waitTime);
+                            return step;
+                        }
                         if (requestInfo.getConnection().getHeaderField("Location") != null) {
                             this.finalURL = "http://" + requestInfo.getConnection().getRequestProperty("host") + requestInfo.getConnection().getHeaderField("Location");
                             return step;
@@ -197,6 +216,17 @@ public class Uploadedto extends PluginForHost {
                         useCaptchaVersion = true;
                         logger.finer("Use Captcha Plugin");
                         requestInfo = postRequest(new URL(url), "lang=de", null, null, null, false);
+                      ///?view=error_traffic_exceeded_free
+                        if(requestInfo.containsHTML(DOWNLOAD_LIMIT_REACHED)||(requestInfo.getLocation()!=null &&requestInfo.getLocation().indexOf("traffic_exceeded")>=0)){
+                            
+                            int waitTime = 60 * 60 * 1000;
+                            downloadLink.setStatus(DownloadLink.STATUS_ERROR_DOWNLOAD_LIMIT);
+                            step.setStatus(PluginStep.STATUS_ERROR);
+                            logger.info("Traffic Limit reached....");
+                            step.setParameter((long) waitTime);
+                            return step;
+                        }
+                        
                         if (requestInfo.getConnection().getHeaderField("Location") != null && requestInfo.getConnection().getHeaderField("Location").indexOf("error") > 0) {
                             logger.severe("Unbekannter fehler.. retry in 20 sekunden");
                             step.setStatus(PluginStep.STATUS_ERROR);
@@ -240,7 +270,16 @@ public class Uploadedto extends PluginForHost {
                         logger.info("dl " + finalURL);
                         postParameter.put(postTarget, (String) steps.get(1).getParameter());
                         requestInfo = getRequestWithoutHtmlCode(new URL(finalURL), "lang=de", null, false);
-
+                      ///?view=error_traffic_exceeded_free
+                        if(requestInfo.containsHTML(DOWNLOAD_LIMIT_REACHED)||(requestInfo.getLocation()!=null &&requestInfo.getLocation().indexOf("traffic_exceeded")>=0)){
+                            
+                            int waitTime = 60 * 60 * 1000;
+                            downloadLink.setStatus(DownloadLink.STATUS_ERROR_DOWNLOAD_LIMIT);
+                            step.setStatus(PluginStep.STATUS_ERROR);
+                            logger.info("Traffic Limit reached....");
+                            step.setParameter((long) waitTime);
+                            return step;
+                        }
                         if (requestInfo.getConnection().getHeaderField("Location") != null && requestInfo.getConnection().getHeaderField("Location").indexOf("error-captcha") > 0) {
                             step.setStatus(PluginStep.STATUS_ERROR);
                             logger.severe("captcha Falsch");

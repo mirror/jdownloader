@@ -42,15 +42,16 @@ public class JDClassLoader extends java.lang.ClassLoader {
             e1.printStackTrace();
         }
         //Hier werden die JAR Dateien ausgelesen
+        Vector<JarFile> jarFiles= new Vector<JarFile>();
         File[] files = new File(new File(rootDir),"plugins").listFiles(new JDFileFilter(null, ".jar", false));
         if(files!=null){
-            jars = new JarFile[files.length];
-            for(int i=0;i<jars.length;i++){
+            //jars = new JarFile[files.length];
+            for(int i=0;i<files.length;i++){
                 try {
                     logger.finer("Jar file loaded: "+files[i].getAbsolutePath());
-                    jars[i] = new JarFile(files[i]);
+                    //jars[i] = new JarFile(files[i]);
                     
-                  
+                    jarFiles.add(new JarFile(files[i]));
                 }
                 catch (IOException e) {
                 }
@@ -59,18 +60,19 @@ public class JDClassLoader extends java.lang.ClassLoader {
       //Hier werden lokale JAR Dateien ausgelesen
        files = new File(".").listFiles(new JDFileFilter(null, ".jar", false));
         if(files!=null){
-            jars = new JarFile[files.length];
-            for(int i=0;i<jars.length;i++){
+           // jars = new JarFile[files.length];
+            for(int i=0;i<files.length;i++){
                 try {
                     logger.finer("Jar file loaded: "+files[i].getAbsolutePath());
-                    jars[i] = new JarFile(files[i]);
-                    
+                  
+                    jarFiles.add(new JarFile(files[i]));
                   
                 }
                 catch (IOException e) {
                 }
             }
         }
+        jars=jarFiles.toArray(new JarFile[]{});
     }
 
     @Override

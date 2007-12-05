@@ -85,6 +85,8 @@ public class PixelObject implements Comparable {
 
     private double        whiteContrast = 1;
 
+    private int letterColor=0;
+
     /**
      * @param owner
      */
@@ -272,7 +274,7 @@ public class PixelObject implements Comparable {
         }
         for (int i = 0; i < getSize(); i++) {
             int[] akt = elementAt(i);
-            ret[akt[0] - xMin][akt[1] - yMin] = 0;
+            ret[akt[0] - xMin][akt[1] - yMin] = getAverage();
 
         }
         Letter l = owner.createLetter();
@@ -454,4 +456,9 @@ public class PixelObject implements Comparable {
        return ret;
        
     }
+
+public void setColor(int pixelValue) {
+    this.letterColor=pixelValue;
+    
+}
 }

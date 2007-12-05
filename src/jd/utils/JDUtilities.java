@@ -646,6 +646,7 @@ public class JDUtilities {
      */
     public static String getCaptcha(JDController controller, Plugin plugin, String host, File file) {
         if (controller == null) controller = getController();
+        
         logger.info("JAC has Method for: " + host + ": " + JAntiCaptcha.hasMethod(getJACMethodsDirectory(), host));
         if (JAntiCaptcha.hasMethod(getJACMethodsDirectory(), host)) {
             JFrame jf = new JFrame();
@@ -748,7 +749,8 @@ public class JDUtilities {
             pluginsForContainer.add(p);
             logger.info("Container-Plugin : " + p.getPluginName());
         }
-        try {
+        logger.info("Load Optional-Plugins");
+      
             iterator = Service.providers(PluginOptional.class, jdClassLoader);
             while (iterator.hasNext()) {
                 try {
@@ -762,11 +764,7 @@ public class JDUtilities {
                     e.printStackTrace();
                 }
             }
-        }
-        catch (Exception e) {
-
-            e.printStackTrace();
-        }
+      
         // // ContainerKlassen
         // iterator = Service.providers(ClassLoader.class);
         // while (iterator.hasNext()) {

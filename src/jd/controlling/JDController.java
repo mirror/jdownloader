@@ -869,7 +869,7 @@ public class JDController implements PluginListener, ControlListener, UIListener
      */
     public void fireControlEvent(ControlEvent controlEvent) {
         // logger.info(controlEvent.getID()+" controllistener "+controlEvent);
-        uiInterface.delegatedControlEvent(controlEvent);
+       if(uiInterface!=null) uiInterface.delegatedControlEvent(controlEvent);
         if (controlListener == null) controlListener = new Vector<ControlListener>();
         Iterator<ControlListener> iterator = controlListener.iterator();
         while (iterator.hasNext()) {

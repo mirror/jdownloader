@@ -1730,7 +1730,8 @@ if(letters.length>getLetterNum()){
     }
 
     public static boolean isLoggerActive() {
-        return JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_JAC_LOG, false);
+        return true;
+       // return JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_JAC_LOG, false);
        
     }
 

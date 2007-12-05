@@ -36,6 +36,8 @@ import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
+import sun.misc.BASE64Encoder;
+
 /**
  * Diese Klasse kann mehrere HTTPrequests durchführen. Um damit einen reconnect
  * zu simulieren
@@ -122,18 +124,18 @@ public class HTTPLiveHeader extends Interaction {
         String ip = configuration.getStringProperty(Configuration.PARAM_HTTPSEND_IP);
         retries++;
         logger.info("Starting  #" + retries);
-        ProgressController progress= new ProgressController(10);
-        progress.setStatusText("HTTPLiveHeader #"+retries);
+        ProgressController progress = new ProgressController(10);
+        progress.setStatusText("HTTPLiveHeader #" + retries);
         if (user != null || pass != null) Authenticator.setDefault(new InternalAuthenticator(user, pass));
 
         if (script == null) {
-progress.finalize();
+            progress.finalize();
             return parseError("Kein RequestText gesetzt");
         }
         String preIp = JDUtilities.getIPAddress();
 
         logger.finer("IP befor: " + preIp);
-        progress.setStatusText("(IP)HTTPLiveHeader :"+preIp);
+        progress.setStatusText("(IP)HTTPLiveHeader :" + preIp);
         // script = script.replaceAll("\\<", "&lt;");
         // script = script.replaceAll("\\>", "&gt;");
         script = script.replaceAll("\\[\\[\\[", "<");
@@ -146,6 +148,8 @@ progress.finalize();
         variables = new HashMap<String, String>();
         variables.put("user", user);
         variables.put("pass", pass);
+        variables.put("basicauth", new BASE64Encoder().encode((user + ":" + pass).getBytes()));
+
         variables.put("routerip", ip);
         headerProperties = new HashMap<String, String>();
         progress.increase(1);
@@ -160,7 +164,7 @@ progress.finalize();
             NodeList steps = root.getChildNodes();
             progress.addToMax(steps.getLength());
             for (int step = 0; step < steps.getLength(); step++) {
-                progress.setStatusText("(STEP)HTTPLiveHeader :"+step);
+                progress.setStatusText("(STEP)HTTPLiveHeader :" + step);
                 progress.increase(1);
                 Node current = steps.item(step);
                 short type = current.getNodeType();
@@ -176,13 +180,49 @@ progress.finalize();
                 NodeList toDos = current.getChildNodes();
                 for (int toDoStep = 0; toDoStep < toDos.getLength(); toDoStep++) {
                     Node toDo = toDos.item(toDoStep);
-                    progress.setStatusText("("+toDo.getNodeName()+")HTTPLiveHeader");
+                    progress.setStatusText("(" + toDo.getNodeName() + ")HTTPLiveHeader");
                     if (toDo.getNodeName().equalsIgnoreCase("DEFINE")) {
-                       
-                    
+
                         NamedNodeMap attributes = toDo.getAttributes();
                         for (int attribute = 0; attribute < attributes.getLength(); attribute++) {
-                            variables.put(attributes.item(attribute).getNodeName(), attributes.item(attribute).getNodeValue());
+                            String key = attributes.item(attribute).getNodeName();
+                            String value = attributes.item(attribute).getNodeValue();
+                            String[] tmp = value.split("\\%\\%\\%(.*?)\\%\\%\\%");
+                            Vector<String> params = Plugin.getAllSimpleMatches(value, "%%%°%%%", 1);
+                            if (params.size() > 0) {
+                                String req;
+                                if (value.startsWith(params.get(0))) {
+                                    req = "";
+                                    logger.finer("Variables: " + this.variables);
+                                    logger.finer("Headerproperties: " + this.headerProperties);
+                                    for (int i = 0; i <= tmp.length; i++) {
+                                        logger.finer("Replace variable: " + getModifiedVariable(params.get(i - 1)) + "(" + params.get(i - 1) + ")");
+
+                                        req += getModifiedVariable(params.get(i - 1));
+                                        if (i < tmp.length) {
+                                            req += tmp[i];
+                                        }
+                                    }
+                                }
+                                else {
+                                    req = tmp[0];
+                                    logger.finer("Variables: " + this.variables);
+                                    logger.finer("Headerproperties: " + this.headerProperties);
+                                    for (int i = 1; i <= tmp.length; i++) {
+                                        if (i > params.size()) continue;
+                                        logger.finer("Replace variable: " + getModifiedVariable(params.get(i - 1)) + "(" + params.get(i - 1) + ")");
+
+                                        req += getModifiedVariable(params.get(i - 1));
+                                        if (i < tmp.length) {
+                                            req += tmp[i];
+                                        }
+                                    }
+                                }
+
+                                value = req;
+                            }
+
+                            variables.put(key, value);
                         }
 
                         logger.finer("Variables set: " + variables);
@@ -237,13 +277,13 @@ progress.finalize();
 
         catch (ParserConfigurationException e) {
 
-             e.printStackTrace();
+            e.printStackTrace();
             progress.finalize();
             return this.parseError(e.getMessage());
         }
         catch (Exception e) {
 
-             e.printStackTrace();
+            e.printStackTrace();
             progress.finalize();
             return this.parseError(e.getCause() + " : " + e.getMessage());
         }
@@ -253,7 +293,7 @@ progress.finalize();
         int waitForIp = configuration.getIntegerProperty(Configuration.PARAM_HTTPSEND_WAITFORIPCHANGE, 10);
         logger.finer("Wait " + waittime + " seconds ...");
         progress.increase(1);
-        progress.setStatusText("("+"WAIT"+")HTTPLiveHeader ");
+        progress.setStatusText("(" + "WAIT" + ")HTTPLiveHeader ");
         try {
             Thread.sleep(waittime * 1000);
         }
@@ -263,17 +303,17 @@ progress.finalize();
         String afterIP = JDUtilities.getIPAddress();
         logger.finer("Ip after: " + afterIP);
         progress.increase(1);
-        progress.setStatusText("("+"IPCHECK"+")HTTPLiveHeader "+preIp+"/"+afterIP);
-    
+        progress.setStatusText("(" + "IPCHECK" + ")HTTPLiveHeader " + preIp + "/" + afterIP);
+
         long endTime = System.currentTimeMillis() + waitForIp * 1000;
-        while (System.currentTimeMillis() <= endTime && (afterIP==null||afterIP.equals(preIp))) {
+        while (System.currentTimeMillis() <= endTime && (afterIP == null || afterIP.equals(preIp))) {
             try {
                 Thread.sleep(5 * 1000);
             }
             catch (InterruptedException e) {
             }
             afterIP = JDUtilities.getIPAddress();
-            progress.setStatusText("("+"IPCHECK"+")HTTPLiveHeader "+preIp+"/"+afterIP);
+            progress.setStatusText("(" + "IPCHECK" + ")HTTPLiveHeader " + preIp + "/" + afterIP);
             logger.finer("Ip Check: " + afterIP);
         }
         if (!afterIP.equals(preIp)) {
@@ -315,7 +355,7 @@ progress.finalize();
         String post = "";
         String host = null;
         RequestInfo requestInfo;
-        ProgressController progress= new ProgressController(10);
+        ProgressController progress = new ProgressController(10);
         HashMap<String, String> requestProperties = new HashMap<String, String>();
         String[] tmp = request.split("\\%\\%\\%(.*?)\\%\\%\\%");
         Vector<String> params = Plugin.getAllSimpleMatches(request, "%%%°%%%", 1);
@@ -339,7 +379,7 @@ progress.finalize();
                 logger.finer("Variables: " + this.variables);
                 logger.finer("Headerproperties: " + this.headerProperties);
                 for (int i = 1; i <= tmp.length; i++) {
-                    if(i>params.size())continue;
+                    if (i > params.size()) continue;
                     logger.finer("Replace variable: " + getModifiedVariable(params.get(i - 1)) + "(" + params.get(i - 1) + ")");
 
                     req += getModifiedVariable(params.get(i - 1));
@@ -417,6 +457,7 @@ progress.finalize();
 
             }
             else {
+                post = post.trim();
                 logger.finer("POST " + "http://" + host + path + " " + post);
                 HttpURLConnection httpConnection = (HttpURLConnection) new URL("http://" + host + path).openConnection();
                 httpConnection.setInstanceFollowRedirects(false);
@@ -431,7 +472,10 @@ progress.finalize();
                         httpConnection.setRequestProperty(key, requestProperties.get(key));
                     }
                 }
+
+                httpConnection.setRequestProperty("Content-Length", post.length() + "");
                 httpConnection.setDoOutput(true);
+                httpConnection.connect();
                 OutputStreamWriter wr = new OutputStreamWriter(httpConnection.getOutputStream());
                 if (post != null) wr.write(post);
                 wr.flush();
@@ -490,6 +534,9 @@ progress.finalize();
             else if (fnc.equalsIgnoreCase("MD5")) {
                 ret = JDUtilities.getMD5(ret);
             }
+            else if (fnc.equalsIgnoreCase("BASE64")) {
+                ret = new BASE64Encoder().encode(ret.getBytes());
+            }
         }
         return ret;
     }
@@ -499,8 +546,6 @@ progress.finalize();
         logger.severe(string);
         return false;
     }
-
-   
 
     @Override
     public String toString() {
@@ -545,7 +590,7 @@ progress.finalize();
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, JDUtilities.getConfiguration(), Configuration.PARAM_HTTPSEND_USER, "Login User (->%%%user%%%)"));
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, JDUtilities.getConfiguration(), Configuration.PARAM_HTTPSEND_PASS, "Login Passwort (->%%%pass%%%)"));
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, JDUtilities.getConfiguration(), Configuration.PARAM_HTTPSEND_IP, "RouterIP (->%%%routerip%%%)"));
-        
+
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_SPINNER, JDUtilities.getConfiguration(), Configuration.PARAM_HTTPSEND_IPCHECKWAITTIME, "Wartezeit bis zum ersten IP-Check[sek]", 0, 600).setDefaultValue(0));
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_SPINNER, JDUtilities.getConfiguration(), Configuration.PARAM_HTTPSEND_RETRIES, "Max. Wiederholungen (-1 = unendlich)", -1, 20).setDefaultValue(0));
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_SPINNER, JDUtilities.getConfiguration(), Configuration.PARAM_HTTPSEND_WAITFORIPCHANGE, "Auf neue IP warten [sek]", 0, 600).setDefaultValue(10));

@@ -96,20 +96,23 @@ public class ClipboardHandler extends Thread {
                             }
                         }
                         // ((List)clipboard.getData(flavors[i])).
+                        break;
 
                     }
-                    if (flavors[i].isFlavorTextType() && flavors[i].getRepresentationClass() == String.class) {
+                    if (flavors[i].isFlavorTextType() && flavors[i].getRepresentationClass() == String.class && flavors[i].getHumanPresentableName().equals("Unicode String")) {
                         String data = (String) clipboard.getData(flavors[i]);
+                      
                         data=data.trim();
                         if (!data.equals(olddata)) {
                             olddata = data;
                             logger.info(data.length()+" - "+olddata.length());
-                            logger.info(data+" - "+olddata);
+                            logger.info("|"+data+"|"+" - "+"|"+olddata+"|");
                              distributeData = new DistributeData(data);
                              distributeData.addControlListener(
                              JDUtilities.getController());
                            distributeData.start();
                         }
+                        break;
 
                     }
 

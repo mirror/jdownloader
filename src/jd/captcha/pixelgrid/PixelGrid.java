@@ -8,10 +8,13 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Vector;
 import java.util.logging.Logger;
 
 import jd.captcha.JAntiCaptcha;
+import jd.captcha.gui.BasicWindow;
 import jd.captcha.pixelobject.PixelObject;
 import jd.captcha.utils.UTILITIES;
 
@@ -41,106 +44,108 @@ public class PixelGrid {
      * Internes grid
      */
     public int[][]      grid;
- 
-
 
     /**
      * Pixel Array
      */
     public int[]        pixel;
+
     /**
      * Gibt eine Prozentzahl aus. 0 = super 100= ganz schlimm
+     * 
      * @param value
      * @param owner
      * @return Prozent der Erkennungssicherheit
      */
-    public static int getValityPercent(int value, JAntiCaptcha owner){
-        if(value<0){
+    public static int getValityPercent(int value, JAntiCaptcha owner) {
+        if (value < 0) {
             return 100;
         }
-        return (int)((100.0*(double)value)/(double)getMaxPixelValue(owner));
+        return (int) ((100.0 * (double) value) / (double) getMaxPixelValue(owner));
     }
+
     /**
      * Konstruktor
      * 
-     * @param width
-     *            Breite des Bildes in pixel
-     * @param height
-     *            Höhe des Bildes in Pixel
+     * @param width Breite des Bildes in pixel
+     * @param height Höhe des Bildes in Pixel
      */
     public PixelGrid(int width, int height) {
         grid = new int[width][height];
 
     }
- 
+
     /**
      * Normalisiert die Pixel und sorgt so für einen höheren Kontrast
      */
-    public void normalize(){
+    public void normalize() {
         normalize(1);
-        
+
     }
+
     /**
-     * Normalisiert Pixel und Multipliziert deren wert mit multi. Der Kontrast wird dabei künstlich erhöht bzw erniedrigt.
+     * Normalisiert Pixel und Multipliziert deren wert mit multi. Der Kontrast
+     * wird dabei künstlich erhöht bzw erniedrigt.
+     * 
      * @param multi
      */
- public void normalize(double multi){
-     normalize(multi,0,0);
- }
- 
- /**
-  * Normalisiert den Bereich zwischen cutMin und CutMax
- * @param multi
- * @param cutMax
- * @param cutMin
- */
-public void normalize(double multi,double cutMax, double cutMin){
-     int max=0;
-     int min= Integer.MAX_VALUE;
-     int akt;
-     cutMin*=getMaxPixelValue();
-     cutMax*=getMaxPixelValue();
-     cutMax=getMaxPixelValue()-cutMax;
-     for (int y = 0; y < getHeight(); y++) {
-         for (int x = 0; x < getWidth(); x++) {
-             akt= getPixelValue(x,y);
-             if(akt<min && akt >cutMin)min=akt;
-             if(akt>max && akt < cutMax)max=akt;
-         }     }
+    public void normalize(double multi) {
+        normalize(multi, 0, 0);
+    }
 
+    /**
+     * Normalisiert den Bereich zwischen cutMin und CutMax
+     * 
+     * @param multi
+     * @param cutMax
+     * @param cutMin
+     */
+    public void normalize(double multi, double cutMax, double cutMin) {
+        int max = 0;
+        int min = Integer.MAX_VALUE;
+        int akt;
+        cutMin *= getMaxPixelValue();
+        cutMax *= getMaxPixelValue();
+        cutMax = getMaxPixelValue() - cutMax;
+        for (int y = 0; y < getHeight(); y++) {
+            for (int x = 0; x < getWidth(); x++) {
+                akt = getPixelValue(x, y);
+                if (akt < min && akt > cutMin) min = akt;
+                if (akt > max && akt < cutMax) max = akt;
+            }
+        }
 
-Double faktor=(double)(max-min)/(double)getMaxPixelValue();
-if(JAntiCaptcha.isLoggerActive())logger.fine(min+" <> "+max+" : "+faktor);
-     for (int y = 0; y < getHeight(); y++) {
-         for (int x = 0; x < getWidth(); x++) {
-             akt= getPixelValue(x,y);
-             if(akt<=cutMin){
-                 setPixelValue(x,y,0);
-                 continue;
-             }
-             if(akt>=cutMax){
-                 setPixelValue(x,y,getMaxPixelValue());
-                 continue;  
-             }
-             
-             
-             
-             akt-=min;
-             akt/=faktor;
-             akt*=multi;
-             //if(JAntiCaptcha.isLoggerActive())logger.fine(getPixelValue(x,y)+" = "+akt);
-           akt=Math.min(akt, getMaxPixelValue());
-           akt=Math.max(akt, 0);
-             setPixelValue(x,y,(int)akt);
-        
-         }
-     }
-     
- }
+        Double faktor = (double) (max - min) / (double) getMaxPixelValue();
+        if (JAntiCaptcha.isLoggerActive()) logger.fine(min + " <> " + max + " : " + faktor);
+        for (int y = 0; y < getHeight(); y++) {
+            for (int x = 0; x < getWidth(); x++) {
+                akt = getPixelValue(x, y);
+                if (akt <= cutMin) {
+                    setPixelValue(x, y, 0);
+                    continue;
+                }
+                if (akt >= cutMax) {
+                    setPixelValue(x, y, getMaxPixelValue());
+                    continue;
+                }
 
+                akt -= min;
+                akt /= faktor;
+                akt *= multi;
+                // if(JAntiCaptcha.isLoggerActive())logger.fine(getPixelValue(x,y)+"
+                // = "+akt);
+                akt = Math.min(akt, getMaxPixelValue());
+                akt = Math.max(akt, 0);
+                setPixelValue(x, y, (int) akt);
+
+            }
+        }
+
+    }
 
     /**
      * Gibt die Breite des internen captchagrids zurück
+     * 
      * @return breite
      */
     public int getWidth() {
@@ -149,19 +154,18 @@ if(JAntiCaptcha.isLoggerActive())logger.fine(min+" <> "+max+" : "+faktor);
 
     /**
      * Gibt die Höhe des internen captchagrids zurück
+     * 
      * @return Höhe
      */
     public int getHeight() {
-        if (grid.length == 0)
-            return 0;
+        if (grid.length == 0) return 0;
         return grid[0].length;
     }
 
     /**
      * Nimmt ein int-array auf und wandelt es in das interne Grid um
      * 
-     * @param pixel
-     *            Pixel Array
+     * @param pixel Pixel Array
      */
     public void setPixel(int[] pixel) {
         this.pixel = pixel;
@@ -173,9 +177,6 @@ if(JAntiCaptcha.isLoggerActive())logger.fine(min+" <> "+max+" : "+faktor);
         }
 
     }
-    
-   
-    
 
     /**
      * Sollte je nach farbmodell den Höchsten pixelwert zurückgeben. RGB:
@@ -186,14 +187,17 @@ if(JAntiCaptcha.isLoggerActive())logger.fine(min+" <> "+max+" : "+faktor);
     public int getMaxPixelValue() {
         return getMaxPixelValue(owner);
     }
+
     /**
      * Gibt den maxpixelvalue mit faktor gewichtet zurück
+     * 
      * @param faktor
      * @return maxpixelvalue
      */
     public int getMaxPixelValue(double faktor) {
-        return (int)((double)getMaxPixelValue(owner)*faktor);
+        return (int) ((double) getMaxPixelValue(owner) * faktor);
     }
+
     /**
      * @param owner
      * @return Maximaler PixelWert
@@ -220,12 +224,9 @@ if(JAntiCaptcha.isLoggerActive())logger.fine(min+" <> "+max+" : "+faktor);
      * 
      * @param x
      * @param y
-     * @param localGrid
-     *            Grid inn der richtigen größe für x,y
-     * @param value
-     *            Pixelwert
-     * @param owner
-     *            JAntiCaptcha Instanz als Parameterdump
+     * @param localGrid Grid inn der richtigen größe für x,y
+     * @param value Pixelwert
+     * @param owner JAntiCaptcha Instanz als Parameterdump
      */
     // public static void setPixelValue(int x, int y, int[][] localGrid,
     // int value, JAntiCaptcha owner) {
@@ -241,7 +242,7 @@ if(JAntiCaptcha.isLoggerActive())logger.fine(min+" <> "+max+" : "+faktor);
     // } catch (ArrayIndexOutOfBoundsException e) {
     // UTILITIES.trace("ERROR: Nicht im grid; [" + x + "][" + y
     // + "] grid " + localGrid.length);
-    //  e.printStackTrace();
+    // e.printStackTrace();
     //
     // }
     // }
@@ -282,7 +283,7 @@ if(JAntiCaptcha.isLoggerActive())logger.fine(min+" <> "+max+" : "+faktor);
         // } catch (ArrayIndexOutOfBoundsException e) {
         // UTILITIES.trace("ERROR: Nicht im grid; [" + x + "][" + y + "] grid "
         // + localGrid.length);
-        //  e.printStackTrace();
+        // e.printStackTrace();
         //
         // }
     }
@@ -306,9 +307,9 @@ if(JAntiCaptcha.isLoggerActive())logger.fine(min+" <> "+max+" : "+faktor);
      * @return Pixelwert bei x,y
      */
     public static int getPixelValue(int x, int y, int[][] grid, JAntiCaptcha owner) {
-        if(x<0||x>=grid.length)return -1;
-        if(y<0||grid.length==0||y>=grid[0].length)return -1;
-        return grid[x][y];       
+        if (x < 0 || x >= grid.length) return -1;
+        if (y < 0 || grid.length == 0 || y >= grid[0].length) return -1;
+        return grid[x][y];
 
     }
 
@@ -318,25 +319,26 @@ if(JAntiCaptcha.isLoggerActive())logger.fine(min+" <> "+max+" : "+faktor);
      * @return int
      */
     public int getAverage() {
-        int[] avg = {0,0,0};
+        int[] avg = { 0, 0, 0 };
         int[] bv;
         int i = 0;
 
         for (int x = 0; x < getWidth(); x++) {
             for (int y = 0; y < getHeight(); y++) {
-                // Nicht die Colormix Funktion verwenden!!! DIe gibt nur in zurück, das ist nicht ausreichend
+                // Nicht die Colormix Funktion verwenden!!! DIe gibt nur in
+                // zurück, das ist nicht ausreichend
                 bv = UTILITIES.hexToRgb(getPixelValue(x, y));
-                avg[0]+=bv[0];
-                avg[1]+=bv[1];                
-                avg[2]+=bv[2];              
+                avg[0] += bv[0];
+                avg[1] += bv[1];
+                avg[2] += bv[2];
                 i++;
 
             }
         }
-        if(i==0)return 0;
-        avg[0]/=i;
-        avg[1]/=i;                
-        avg[2]/=i;        
+        if (i == 0) return 0;
+        avg[0] /= i;
+        avg[1] /= i;
+        avg[2] /= i;
         return UTILITIES.rgbToHex(avg);
 
     }
@@ -344,41 +346,35 @@ if(JAntiCaptcha.isLoggerActive())logger.fine(min+" <> "+max+" : "+faktor);
     /**
      * Gibt den Durschnittlichen Pixelwert im angegebenen raum zurück
      * 
-     * @param px
-     *            Position x
-     * @param py
-     *            Position y
-     * @param width
-     *            Breite des Ausschnitts
-     * @param height
-     *            Höhe des Ausschnitts
+     * @param px Position x
+     * @param py Position y
+     * @param width Breite des Ausschnitts
+     * @param height Höhe des Ausschnitts
      * @return int Durchschnittswert
      */
     public int getAverage(int px, int py, int width, int height) {
-        int[] avg = {0,0,0};
+        int[] avg = { 0, 0, 0 };
         int[] bv;
         int i = 0;
         int halfW = width / 2;
         int halfH = height / 2;
-        if (width == 1 && px == 0)
-            width = 2;
-        if (height == 1 && py == 0)
-            height = 2;
+        if (width == 1 && px == 0) width = 2;
+        if (height == 1 && py == 0) height = 2;
 
         for (int x = Math.max(0, px - halfW); x < Math.min(px + width - halfW, getWidth()); x++) {
             for (int y = Math.max(0, py - halfH); y < Math.min(py + height - halfH, getHeight()); y++) {
                 bv = UTILITIES.hexToRgb(getPixelValue(x, y));
-                avg[0]+=bv[0];
-                avg[1]+=bv[1];                
-                avg[2]+=bv[2];              
+                avg[0] += bv[0];
+                avg[1] += bv[1];
+                avg[2] += bv[2];
                 i++;
 
             }
         }
 
-        avg[0]/=i;
-        avg[1]/=i;                
-        avg[2]/=i;        
+        avg[0] /= i;
+        avg[1] /= i;
+        avg[2] /= i;
         return UTILITIES.rgbToHex(avg);
     }
 
@@ -387,47 +383,39 @@ if(JAntiCaptcha.isLoggerActive())logger.fine(min+" <> "+max+" : "+faktor);
      * Allerdings wird hier im Vergleich zu getAverage(int px,int py,int
      * width,int height) der Punkt slebet nicht mitberechnet
      * 
-     * @param px
-     *            Position x
-     * @param py
-     *            Position y
-     * @param width
-     *            Breite des Ausschnitts
-     * @param height
-     *            Höhe des Ausschnitts
+     * @param px Position x
+     * @param py Position y
+     * @param width Breite des Ausschnitts
+     * @param height Höhe des Ausschnitts
      * @return int Durchschnittswert
      */
     public int getAverageWithoutPoint(int px, int py, int width, int height) {
-        int[] avg = {0,0,0};
+        int[] avg = { 0, 0, 0 };
         int[] bv;
         int i = 0;
         int halfW = width / 2;
         int halfH = height / 2;
-        if (width == 1 && px == 0)
-            width = 2;
-        if (height == 1 && py == 0)
-            height = 2;
-
-
+        if (width == 1 && px == 0) width = 2;
+        if (height == 1 && py == 0) height = 2;
 
         for (int x = Math.max(0, px - halfW); x < Math.min(px + width - halfW, getWidth()); x++) {
             for (int y = Math.max(0, py - halfH); y < Math.min(py + height - halfH, getHeight()); y++) {
                 if (x != px || y != py) {
 
                     bv = UTILITIES.hexToRgb(getPixelValue(x, y));
-                    avg[0]+=bv[0];
-                    avg[1]+=bv[1];                
-                    avg[2]+=bv[2];              
+                    avg[0] += bv[0];
+                    avg[1] += bv[1];
+                    avg[2] += bv[2];
                     i++;
 
                 }
 
             }
         }
-        if(i>0){
-        avg[0]/=i;
-        avg[1]/=i;                
-        avg[2]/=i;  
+        if (i > 0) {
+            avg[0] /= i;
+            avg[1] /= i;
+            avg[2] /= i;
         }
         return UTILITIES.rgbToHex(avg);
     }
@@ -442,11 +430,11 @@ if(JAntiCaptcha.isLoggerActive())logger.fine(min+" <> "+max+" : "+faktor);
 
     /**
      * Erzeugt ein schwarzweiß bild
-     * @param contrast 
-     *            Schwellwert für die Kontrasterkennung
+     * 
+     * @param contrast Schwellwert für die Kontrasterkennung
      */
     public void toBlackAndWhite(double contrast) {
-     
+
         for (int x = 0; x < getWidth(); x++) {
             for (int y = 0; y < getHeight(); y++) {
 
@@ -458,6 +446,7 @@ if(JAntiCaptcha.isLoggerActive())logger.fine(min+" <> "+max+" : "+faktor);
 
     /**
      * Schneidet das grid zurecht
+     * 
      * @param leftPadding
      * @param topPadding
      * @param rightPadding
@@ -466,7 +455,7 @@ if(JAntiCaptcha.isLoggerActive())logger.fine(min+" <> "+max+" : "+faktor);
     public void crop(int leftPadding, int topPadding, int rightPadding, int bottomPadding) {
         int newWidth = getWidth() - (leftPadding + rightPadding);
         int newHeight = getHeight() - (topPadding + bottomPadding);
-        
+
         int[][] newGrid = new int[newWidth][newHeight];
 
         for (int x = 0; x < newWidth; x++) {
@@ -476,14 +465,13 @@ if(JAntiCaptcha.isLoggerActive())logger.fine(min+" <> "+max+" : "+faktor);
         }
 
         this.grid = newGrid;
-       
+
     }
 
     /**
      * Macht das Bild gröber
      * 
-     * @param faktor
-     *            Grobheit
+     * @param faktor Grobheit
      */
     public void sampleDown(int faktor) {
         int newWidth = (int) Math.ceil(getWidth() / faktor);
@@ -527,8 +515,7 @@ if(JAntiCaptcha.isLoggerActive())logger.fine(min+" <> "+max+" : "+faktor);
     /**
      * Lässt das Bild verschwimmen
      * 
-     * @param faktor
-     *            Stärke des Effekts
+     * @param faktor Stärke des Effekts
      */
     public void blurIt(int faktor) {
 
@@ -562,31 +549,33 @@ if(JAntiCaptcha.isLoggerActive())logger.fine(min+" <> "+max+" : "+faktor);
 
     }
 
-/**
- * 
- * @return Kopie des Internen Grids
- */
+    /**
+     * 
+     * @return Kopie des Internen Grids
+     */
     public int[][] getGridCopy() {
         int[][] ret = new int[getWidth()][getHeight()];
         for (int x = 0; x < getWidth(); x++) {
             for (int y = 0; y < getHeight(); y++) {
-                ret[x][y]=grid[x][y];
+                ret[x][y] = grid[x][y];
             }
         }
 
         return ret;
     }
+
     public static int[][] getGridCopy(int[][] grid) {
-        if(grid.length==0)return null;
+        if (grid.length == 0) return null;
         int[][] ret = new int[grid.length][grid[0].length];
         for (int x = 0; x < grid.length; x++) {
             for (int y = 0; y < grid[0].length; y++) {
-                ret[x][y]=grid[x][y];
+                ret[x][y] = grid[x][y];
             }
         }
 
         return ret;
     }
+
     /**
      * Nimmt an der angegebenen Positiond en farbwert auf und entfernt desen aus
      * dem ganzen Bild
@@ -602,8 +591,11 @@ if(JAntiCaptcha.isLoggerActive())logger.fine(min+" <> "+max+" : "+faktor);
         cleanBackgroundByColor(avg);
 
     }
+
     /**
-     * Entfernt Alle Pixel die über getBackgroundSampleCleanContrast an avg liegen
+     * Entfernt Alle Pixel die über getBackgroundSampleCleanContrast an avg
+     * liegen
+     * 
      * @param avg
      */
     public void cleanBackgroundByColor(int avg) {
@@ -611,13 +603,14 @@ if(JAntiCaptcha.isLoggerActive())logger.fine(min+" <> "+max+" : "+faktor);
         for (int x = 0; x < getWidth(); x++) {
             for (int y = 0; y < getHeight(); y++) {
                 int dif = Math.abs(avg - getPixelValue(x, y));
-             //  if(JAntiCaptcha.isLoggerActive())logger.info(getPixelValue(x, y)+"_");
- if (dif < (int)(getMaxPixelValue() * owner.getJas().getDouble("BackgroundSampleCleanContrast"))) {
+                // if(JAntiCaptcha.isLoggerActive())logger.info(getPixelValue(x,
+                // y)+"_");
+                if (dif < (int) (getMaxPixelValue() * owner.getJas().getDouble("BackgroundSampleCleanContrast"))) {
 
                     this.setPixelValue(x, y, getMaxPixelValue());
 
-                } else {
-
+                }
+                else {
 
                 }
 
@@ -626,6 +619,7 @@ if(JAntiCaptcha.isLoggerActive())logger.fine(min+" <> "+max+" : "+faktor);
         // grid = newgrid;
 
     }
+
     /**
      * Gibt das Pixelgrid als Image zurück
      * 
@@ -633,7 +627,7 @@ if(JAntiCaptcha.isLoggerActive())logger.fine(min+" <> "+max+" : "+faktor);
      */
     public Image getImage() {
         if (getWidth() <= 0 || getHeight() <= 0) {
-            if(JAntiCaptcha.isLoggerActive())logger.severe("Dimensionen falsch: " + this.getDim());
+            if (JAntiCaptcha.isLoggerActive()) logger.severe("Dimensionen falsch: " + this.getDim());
             return null;
         }
         BufferedImage image = new BufferedImage(getWidth(), getHeight(), BufferedImage.TYPE_INT_RGB);
@@ -648,9 +642,10 @@ if(JAntiCaptcha.isLoggerActive())logger.fine(min+" <> "+max+" : "+faktor);
         return image;
 
     }
+
     public Image getFullImage() {
         if (getWidth() <= 0 || getHeight() <= 0) {
-            if(JAntiCaptcha.isLoggerActive())logger.severe("Dimensionen falsch: " + this.getDim());
+            if (JAntiCaptcha.isLoggerActive()) logger.severe("Dimensionen falsch: " + this.getDim());
             return null;
         }
         BufferedImage image = new BufferedImage(getWidth(), getHeight(), BufferedImage.TYPE_INT_RGB);
@@ -658,25 +653,26 @@ if(JAntiCaptcha.isLoggerActive())logger.fine(min+" <> "+max+" : "+faktor);
 
         for (int y = 0; y < getHeight(); y++) {
             for (int x = 0; x < getWidth(); x++) {
-                graphics.setColor(new Color(getPixelValue(x, y)==0?0:0xffffff));
+                graphics.setColor(new Color(getPixelValue(x, y) == 0 ? 0 : 0xffffff));
                 graphics.fillRect(x, y, 1, 1);
             }
         }
         return image;
 
     }
+
     /**
      * Gibt das Pixelgrid als vergrößertes Image zurück
      * 
-     * @param faktor
-     *            Vergrößerung
+     * @param faktor Vergrößerung
      * @return Neues Bild
      */
     public Image getImage(int faktor) {
         if ((getWidth() * faktor) <= 0 || (getHeight() * faktor) <= 0) {
-            //if(JAntiCaptcha.isLoggerActive())logger.severe("Bild zu Klein. Fehler!!. Buhcstbaen nicht richtig erkannt?");
+            // if(JAntiCaptcha.isLoggerActive())logger.severe("Bild zu Klein.
+            // Fehler!!. Buhcstbaen nicht richtig erkannt?");
             BufferedImage image = new BufferedImage(1, 1, BufferedImage.TYPE_INT_RGB);
-            
+
             return image;
 
         }
@@ -696,8 +692,7 @@ if(JAntiCaptcha.isLoggerActive())logger.fine(min+" <> "+max+" : "+faktor);
     /**
      * Entfernt weißes Rauschen
      * 
-     * @param faktor
-     *            Stärke des Effekts
+     * @param faktor Stärke des Effekts
      */
     public void reduceWhiteNoise(int faktor) {
         reduceWhiteNoise(faktor, 1.0);
@@ -706,11 +701,9 @@ if(JAntiCaptcha.isLoggerActive())logger.fine(min+" <> "+max+" : "+faktor);
     /**
      * Entfernt weißes Rauschen
      * 
-     * @param faktor
-     *            Prüfradius
-     * @param contrast
-     *            Kontrasteinstellungen.je kleiner, desto mehr Pixel werden als
-     *            störung erkannt, hat bei sw bildern kaum auswirkungen
+     * @param faktor Prüfradius
+     * @param contrast Kontrasteinstellungen.je kleiner, desto mehr Pixel werden
+     *            als störung erkannt, hat bei sw bildern kaum auswirkungen
      */
     public void reduceWhiteNoise(int faktor, double contrast) {
         int avg = getAverage();
@@ -720,7 +713,8 @@ if(JAntiCaptcha.isLoggerActive())logger.fine(min+" <> "+max+" : "+faktor);
                 // Korrektur weil sonst das linke obere PUxel schwarz wird.
                 if (x == 0 && y == 0 && faktor < 3) {
                     newGrid[0][0] = grid[0][0];
-                } else {
+                }
+                else {
 
                     if (!isElement(getPixelValue(x, y), (int) (avg * contrast))) {
                         setPixelValue(x, y, newGrid, getAverageWithoutPoint(x, y, faktor, faktor), this.owner);
@@ -750,8 +744,7 @@ if(JAntiCaptcha.isLoggerActive())logger.fine(min+" <> "+max+" : "+faktor);
     /**
      * Entfernt Schwarze Störungen
      * 
-     * @param faktor
-     *            Stärke
+     * @param faktor Stärke
      */
     public void reduceBlackNoise(int faktor) {
         reduceBlackNoise(faktor, 1.0);
@@ -760,10 +753,8 @@ if(JAntiCaptcha.isLoggerActive())logger.fine(min+" <> "+max+" : "+faktor);
     /**
      * Entfernt schwarze Störungen
      * 
-     * @param faktor
-     *            prüfradius
-     * @param contrast
-     *            Kontrasteinstellungen
+     * @param faktor prüfradius
+     * @param contrast Kontrasteinstellungen
      */
     public void reduceBlackNoise(int faktor, double contrast) {
         int avg = getAverage();
@@ -773,12 +764,14 @@ if(JAntiCaptcha.isLoggerActive())logger.fine(min+" <> "+max+" : "+faktor);
 
                 if (x == 0 && y == 0 && faktor < 3) {
                     newGrid[0][0] = grid[0][0];
-                } else {
+                }
+                else {
                     int localAVG = getAverageWithoutPoint(x, y, faktor, faktor);
                     if (isElement(getPixelValue(x, y), (int) (avg * contrast)) && localAVG >= (contrast * getMaxPixelValue())) {
 
                         setPixelValue(x, y, newGrid, (int) (localAVG), this.owner);
-                    } else {
+                    }
+                    else {
                         setPixelValue(x, y, newGrid, getPixelValue(x, y), this.owner);
                     }
                 }
@@ -790,8 +783,7 @@ if(JAntiCaptcha.isLoggerActive())logger.fine(min+" <> "+max+" : "+faktor);
     /**
      * Speichert das Bild asl JPG ab
      * 
-     * @param file
-     *            Zielpfad
+     * @param file Zielpfad
      */
     public void saveImageasJpg(File file) {
         BufferedImage bimg = null;
@@ -807,15 +799,18 @@ if(JAntiCaptcha.isLoggerActive())logger.fine(min+" <> "+max+" : "+faktor);
             JPEGImageEncoder jpeg = JPEGCodec.createJPEGEncoder(fos);
             jpeg.encode(bimg);
             fos.close();
-        } catch (FileNotFoundException e) {
+        }
+        catch (FileNotFoundException e) {
 
-             e.printStackTrace();
-        } catch (ImageFormatException e) {
+            e.printStackTrace();
+        }
+        catch (ImageFormatException e) {
 
-             e.printStackTrace();
-        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        catch (IOException e) {
 
-             e.printStackTrace();
+            e.printStackTrace();
         }
     }
 
@@ -840,7 +835,7 @@ if(JAntiCaptcha.isLoggerActive())logger.fine(min+" <> "+max+" : "+faktor);
      * Gibt ein ACSI bild des Captchas aus
      */
     public void printGrid() {
-        if(JAntiCaptcha.isLoggerActive())logger.info("\r\n" + getString());
+        if (JAntiCaptcha.isLoggerActive()) logger.info("\r\n" + getString());
     }
 
     /**
@@ -854,8 +849,7 @@ if(JAntiCaptcha.isLoggerActive())logger.fine(min+" <> "+max+" : "+faktor);
      * Kontrasterkennung. Prüft ob der wert über einer Schwelle ist
      * 
      * @param value
-     * @param avg
-     *            vergleichswet (meistens durchschnitsswert)
+     * @param avg vergleichswet (meistens durchschnitsswert)
      * @return true, falls Pixel Etwas zum Bild beiträgt, sonst false
      */
     public boolean isElement(int value, int avg) {
@@ -865,8 +859,7 @@ if(JAntiCaptcha.isLoggerActive())logger.fine(min+" <> "+max+" : "+faktor);
     /**
      * Setzt das interne Pixelgrid
      * 
-     * @param letterGrid
-     *            int[][]
+     * @param letterGrid int[][]
      */
     public void setGrid(int[][] letterGrid) {
         grid = letterGrid;
@@ -879,14 +872,13 @@ if(JAntiCaptcha.isLoggerActive())logger.fine(min+" <> "+max+" : "+faktor);
      * @return true/False
      */
     public boolean clean() {
-       
-     
+
         byte topLines = 0;
         byte bottomLines = 0;
         byte leftLines = 0;
         byte rightLines = 0;
         int avg = getAverage();
-        
+
         for (int x = 0; x < getWidth(); x++) {
             boolean rowIsClear = true;
             ;
@@ -897,8 +889,7 @@ if(JAntiCaptcha.isLoggerActive())logger.fine(min+" <> "+max+" : "+faktor);
                     break;
                 }
             }
-            if (!rowIsClear)
-                break;
+            if (!rowIsClear) break;
             leftLines++;
         }
 
@@ -912,15 +903,14 @@ if(JAntiCaptcha.isLoggerActive())logger.fine(min+" <> "+max+" : "+faktor);
                     break;
                 }
             }
-            if (!rowIsClear)
-                break;
+            if (!rowIsClear) break;
 
             rightLines++;
         }
 
         if (leftLines >= getWidth() || (getWidth() - rightLines) > getWidth()) {
-            if(JAntiCaptcha.isLoggerActive())logger.severe("cleaning failed. nothing left1");
-            
+            if (JAntiCaptcha.isLoggerActive()) logger.severe("cleaning failed. nothing left1");
+
             grid = new int[0][0];
             return false;
 
@@ -934,8 +924,7 @@ if(JAntiCaptcha.isLoggerActive())logger.fine(min+" <> "+max+" : "+faktor);
                     break;
                 }
             }
-            if (!lineIsClear)
-                break;
+            if (!lineIsClear) break;
             topLines++;
         }
 
@@ -948,13 +937,12 @@ if(JAntiCaptcha.isLoggerActive())logger.fine(min+" <> "+max+" : "+faktor);
                     break;
                 }
             }
-            if (!lineIsClear)
-                break;
+            if (!lineIsClear) break;
             bottomLines++;
         }
 
         if ((getWidth() - leftLines - rightLines) < 0 || (getHeight() - topLines - bottomLines) < 0) {
-            if(JAntiCaptcha.isLoggerActive())logger.severe("cleaning failed. nothing left");
+            if (JAntiCaptcha.isLoggerActive()) logger.severe("cleaning failed. nothing left");
             grid = new int[0][0];
             return false;
         }
@@ -967,7 +955,6 @@ if(JAntiCaptcha.isLoggerActive())logger.fine(min+" <> "+max+" : "+faktor);
 
         }
         grid = ret;
-      
 
         return true;
 
@@ -995,8 +982,7 @@ if(JAntiCaptcha.isLoggerActive())logger.fine(min+" <> "+max+" : "+faktor);
     }
 
     /**
-     * @param owner
-     *            the owner to set
+     * @param owner the owner to set
      */
     public void setOwner(JAntiCaptcha owner) {
         this.owner = owner;
@@ -1013,35 +999,37 @@ if(JAntiCaptcha.isLoggerActive())logger.fine(min+" <> "+max+" : "+faktor);
         ret.setOwner(owner);
         return ret;
     }
-/**
- * Entfernt kleine Objekte aus dem Bild
- * @param contrast
- * @param objectContrast
- */
-public void removeSmallObjects(double contrast, double objectContrast){
-    Vector<PixelObject> ret=getObjects(contrast, objectContrast);
 
-    for( int i=1;i<ret.size();i++){
-      
-        this.removeObjectFromGrid(ret.elementAt(i));
-        
+    /**
+     * Entfernt kleine Objekte aus dem Bild
+     * 
+     * @param contrast
+     * @param objectContrast
+     */
+    public void removeSmallObjects(double contrast, double objectContrast) {
+        Vector<PixelObject> ret = getObjects(contrast, objectContrast);
+
+        for (int i = 1; i < ret.size(); i++) {
+
+            this.removeObjectFromGrid(ret.elementAt(i));
+
+        }
     }
-}
 
-/**
- * @param contrast
- * @param objectContrast
- * @param maxSize
- */
-public void removeSmallObjects(double contrast, double objectContrast,int maxSize){
-    Vector<PixelObject> ret=getObjects(contrast, objectContrast);
+    /**
+     * @param contrast
+     * @param objectContrast
+     * @param maxSize
+     */
+    public void removeSmallObjects(double contrast, double objectContrast, int maxSize) {
+        Vector<PixelObject> ret = getObjects(contrast, objectContrast);
 
-    for( int i=0;i<ret.size();i++){
-      if(ret.elementAt(i).getSize()<maxSize)
-        this.removeObjectFromGrid(ret.elementAt(i));
-        
+        for (int i = 0; i < ret.size(); i++) {
+            if (ret.elementAt(i).getSize() < maxSize) this.removeObjectFromGrid(ret.elementAt(i));
+
+        }
     }
-}
+
     /**
      * Ermittelt alle Objekte im Captcha
      * 
@@ -1053,81 +1041,152 @@ public void removeSmallObjects(double contrast, double objectContrast,int maxSiz
         int[][] tmpGrid = getGridCopy();
         int dist;
         Vector<PixelObject> ret = new Vector<PixelObject>();
-        PixelObject lastObject=null;
+        PixelObject lastObject = null;
         PixelObject object;
-//        ScrollPaneWindow w= new ScrollPaneWindow(this.owner);
-//        w.setTitle("getObjects");
-        int line=0;
+        // ScrollPaneWindow w= new ScrollPaneWindow(this.owner);
+        // w.setTitle("getObjects");
+        int line = 0;
         for (int x = 0; x < getWidth(); x++) {
             for (int y = 0; y < getHeight(); y++) {
-                if (tmpGrid[x][y] < 0)
-                    continue;
+                if (tmpGrid[x][y] < 0) continue;
 
-                
                 if (getPixelValue(x, y) <= (objectContrast * getMaxPixelValue())) {
-             
-                 //Füge 2 Objekte zusammen die scheinbar zusammen gehören
-                    
-                    dist=100;
-                    if(lastObject!=null){
-                        dist=(int)(Math.pow(x-(lastObject.getXMin()+lastObject.getWidth()/2),2)+Math.pow(y-(lastObject.getYMin()+lastObject.getHeight()/2),2));
+
+                    // Füge 2 Objekte zusammen die scheinbar zusammen gehören
+
+                    dist = 100;
+                    if (lastObject != null) {
+                        dist = (int) (Math.pow(x - (lastObject.getXMin() + lastObject.getWidth() / 2), 2) + Math.pow(y - (lastObject.getYMin() + lastObject.getHeight() / 2), 2));
                     }
-                    
-                    if(lastObject!=null &&lastObject.getArea()<owner.getJas().getInteger("minimumObjectArea")&&dist<Math.pow(owner.getJas().getInteger("minimumLetterWidth")/2+1,2)){
-                        
-                        object=lastObject;
+
+                    if (lastObject != null && lastObject.getArea() < owner.getJas().getInteger("minimumObjectArea") && dist < Math.pow(owner.getJas().getInteger("minimumLetterWidth") / 2 + 1, 2)) {
+
+                        object = lastObject;
                         for (int i = 0; i < ret.size(); i++) {
-                            if (ret.elementAt(i)==object) {
+                            if (ret.elementAt(i) == object) {
                                 ret.remove(i);
                                 break;
                             }
                         }
-                        if(JAntiCaptcha.isLoggerActive())logger.finer("Verfolge weiter Letztes Object: area:"+lastObject.getArea()+" dist: "+dist);
-                   
-                    }else{
+                        if (JAntiCaptcha.isLoggerActive()) logger.finer("Verfolge weiter Letztes Object: area:" + lastObject.getArea() + " dist: " + dist);
+
+                    }
+                    else {
                         object = new PixelObject(this);
                         object.setContrast(contrast);
-//                        if(JAntiCaptcha.isLoggerActive())logger.info("Kontrast: "+contrast+" : "+objectContrast);
-                        object.setWhiteContrast(objectContrast); 
+                        // if(JAntiCaptcha.isLoggerActive())logger.info("Kontrast:
+                        // "+contrast+" : "+objectContrast);
+                        object.setWhiteContrast(objectContrast);
                     }
-//                  if(object.getArea()>200)  w.setImage(0,line,getImage());
+                    // if(object.getArea()>200) w.setImage(0,line,getImage());
                     getObject(x, y, tmpGrid, object);
-//                   if(JAntiCaptcha.isLoggerActive())logger.info(object.getSize()+" avg "+object.getAverage()+" area: "+object.getArea());
-                    if(object.getArea()>200){
-//                    w.setImage(1,line,getImage());
-//                   w.setText(2,line,"Size: "+ object.getSize());
-//                   w.setText(3,line,"AVG: "+object.getAverage());
-//                   w.setText(4,line,"Area: "+object.getArea());
-//                   w.setImage(5,line,object.toLetter().getImage());
-//                   w.setText(6,line,object.toLetter().getDim());
+                    // if(JAntiCaptcha.isLoggerActive())logger.info(object.getSize()+"
+                    // avg "+object.getAverage()+" area: "+object.getArea());
+                    if (object.getArea() > 200) {
+                        // w.setImage(1,line,getImage());
+                        // w.setText(2,line,"Size: "+ object.getSize());
+                        // w.setText(3,line,"AVG: "+object.getAverage());
+                        // w.setText(4,line,"Area: "+object.getArea());
+                        // w.setImage(5,line,object.toLetter().getImage());
+                        // w.setText(6,line,object.toLetter().getDim());
                     }
-                   line++;
-                    lastObject=object;
+                    line++;
+                    lastObject = object;
                     for (int i = 0; i < ret.size(); i++) {
                         if (object.getArea() > ret.elementAt(i).getArea()) {
-                          
+
                             ret.add(i, object);
-//                          if(JAntiCaptcha.isLoggerActive())logger.finer("Found Object size:"+object.getSize()+" "+object.getWidth()+" - "+object.getArea());
-                       
-//                          BasicWindow.showImage(this.getImage());
-                          
+                            // if(JAntiCaptcha.isLoggerActive())logger.finer("Found
+                            // Object size:"+object.getSize()+"
+                            // "+object.getWidth()+" - "+object.getArea());
+
+                            // BasicWindow.showImage(this.getImage());
+
                             object = null;
                             break;
                         }
                     }
-                    if (object != null){
-                        ret.add(object); 
-//                        if(JAntiCaptcha.isLoggerActive())logger.finer("Found Object size:"+object.getSize()+" "+object.getWidth()+" - "+object.getArea());
-                        
+                    if (object != null) {
+                        ret.add(object);
+                        // if(JAntiCaptcha.isLoggerActive())logger.finer("Found
+                        // Object size:"+object.getSize()+"
+                        // "+object.getWidth()+" - "+object.getArea());
+
                     }
-                    
-                    
+
                 }
             }
         }
-//        w.refreshUI();
+        // w.refreshUI();
         return ret;
 
+    }
+
+    protected Vector<PixelObject> getColorObjects() {
+
+        int percent = owner.getJas().getInteger("colorObjectDetectionPercent");
+        int running = owner.getJas().getInteger("colorObjectDetectionRunningAverage");
+        percent = 5;
+        running = 1000;
+        logger.info("Max pixel value: " + this.getMaxPixelValue());
+        // Erstelle Farbverteilungsmap
+        HashMap<Integer, PixelObject> map = new HashMap<Integer, PixelObject>();
+        logger.info("" + UTILITIES.getColorDifference(new int[] { 0, 0, 204 }, new int[] { 0, 0, 184 }));
+        logger.info("" + UTILITIES.getColorDifference(new int[] { 0, 0, 204 }, new int[] { 60, 10, 240 }));
+
+        logger.info("" + UTILITIES.getColorDifference(new int[] { 255, 255, 255 }, new int[] { 0, 0, 0 }));
+        for (int x = 0; x < getWidth(); x++) {
+            for (int y = 0; y < getHeight(); y++) {
+
+                int[] bv = UTILITIES.hexToRgb(getPixelValue(x, y));
+                Integer key = getPixelValue(x, y);
+
+                if (map.get(key) == null) {
+                    Iterator<Integer> iterator = map.keySet().iterator();
+                    boolean found = false;
+                    int bestKey = -1;
+                    double bestValue = 255;
+                    double dif = 255;
+                    while (iterator.hasNext()) {
+                        Integer key2 = iterator.next();
+                        dif = UTILITIES.getColorDifference(bv, UTILITIES.hexToRgb(map.get(key2).getAverage()));
+                        if (dif < bestValue) {
+                            bestKey = key2;
+                            bestValue = dif;
+                            // map.get(key2).add(x, y, getPixelValue(x, y));
+
+                        }
+
+                    }
+                    if (bestValue < 30.0) {
+                        map.get(bestKey).add(x, y, getPixelValue(x, y));
+                        found = true;
+                    }
+                    if (!found) {
+                        PixelObject object = new PixelObject(this);
+                        object.setColor(getPixelValue(x, y));
+                        object.add(x, y, getPixelValue(x, y));
+              
+                        map.put(key, object);
+                    }
+
+                }
+                else {
+                    map.get(key).add(x, y, getPixelValue(x, y));
+
+                }
+            }
+        }
+        int total = getWidth() * getHeight();
+        Iterator<Integer> iterator = map.keySet().iterator();
+
+        while (iterator.hasNext()) {
+            Integer key = iterator.next();
+            BasicWindow.showImage(map.get(key).toLetter().getImage(3), key + ""+ map.get(key).getAverage());
+
+        }
+
+        return null;
     }
 
     /**
@@ -1140,16 +1199,15 @@ public void removeSmallObjects(double contrast, double objectContrast,int maxSiz
      */
     private void getObject(int x, int y, int[][] tmpGrid, PixelObject object) {
 
-        if (x < 0 || y < 0 || tmpGrid.length <= x || tmpGrid[0].length <= y || tmpGrid[x][y] < 0)
-            return;
+        if (x < 0 || y < 0 || tmpGrid.length <= x || tmpGrid[0].length <= y || tmpGrid[x][y] < 0) return;
         int localValue = PixelGrid.getPixelValue(x, y, tmpGrid, owner);
-//UTILITIES.trace(x+"/"+y);
+        // UTILITIES.trace(x+"/"+y);
         if (object.doesColorAverageFit(localValue)) {
             object.add(x, y, localValue);
             tmpGrid[x][y] = -1;
-            
-           //Achtung!! Algos funktionieren nur auf sw basis richtig 
-//         grid[x][y] = 254;
+
+            // Achtung!! Algos funktionieren nur auf sw basis richtig
+            // grid[x][y] = 254;
             getObject(x - 1, y, tmpGrid, object);
             getObject(x - 1, y - 1, tmpGrid, object);
             getObject(x, y - 1, tmpGrid, object);
@@ -1163,7 +1221,7 @@ public void removeSmallObjects(double contrast, double objectContrast,int maxSiz
         return;
 
     }
-    
+
     /**
      * Entfernt ein Objekt aus dem Captcha (färbt es weiß ein)
      * 
@@ -1178,8 +1236,7 @@ public void removeSmallObjects(double contrast, double objectContrast,int maxSiz
      * Färbt ein objekt im zugehörigem Captcha ein
      * 
      * @param object
-     * @param color
-     *            Farbe
+     * @param color Farbe
      */
     public void colorObject(PixelObject object, int color) {
         for (int i = 0; i < object.getSize(); i++) {
@@ -1187,9 +1244,9 @@ public void removeSmallObjects(double contrast, double objectContrast,int maxSiz
         }
 
     }
+
     public int[][] getGrid() {
         return grid;
     }
-
 
 }

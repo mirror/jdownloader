@@ -133,6 +133,9 @@ public class JACScript {
          * Üblichen Reihen Detection verwendet werden soll
          */
         set("useobjectDetection", false);
+        set("useColorObjectDetection",false);
+        set("colorObjectDetectionPercent",15);
+        set("colorObjectDetectionRunningAverage",255);
 
         /**
          * Parameter: Gibt die Anzahl der Reihen(Pixel) an die zur peak

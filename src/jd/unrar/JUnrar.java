@@ -191,6 +191,10 @@ public class JUnrar {
                 ret.add(list[i]);
 
             }
+            if(ret.size()>300){
+                logger.warning("FileSearch interrupted. Your Download Destinationdirectory may contain to many files.");
+                return ret;
+            }
         }
         return ret;
     }
