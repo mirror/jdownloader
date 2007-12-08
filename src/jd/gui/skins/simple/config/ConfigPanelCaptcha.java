@@ -115,6 +115,6 @@ addGUIConfigEntry(ce);
     }
     @Override
     public String getName() {
-        return "Allgemein";
+        return "jAntiCaptcha/inactiv";
     }
 }

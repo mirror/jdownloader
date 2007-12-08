@@ -257,6 +257,7 @@ public class Rapidshare extends PluginForHost {
           
         logger.info("get Next Step " + step);
         // premium
+      
         if (this.getProperties().getProperty("USE_PREMIUM") != null && this.getProperties().getBooleanProperty("USE_PREMIUM", false)) {
             return this.doPremiumStep(step, downloadLink);
         }
