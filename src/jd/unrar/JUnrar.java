@@ -432,7 +432,7 @@ public class JUnrar {
         if (str.indexOf("*") != -1) {
             HashMap<String, Integer> protectedFiles = new HashMap<String, Integer>();
             logger.finer("Single File Protection");
-            Pattern pattern = Pattern.compile("\\*(.*)[\n\r]+.*?([0-9]+)", Pattern.CASE_INSENSITIVE);
+            Pattern pattern = Pattern.compile("\\*(.*)"+System.getProperty("line.separator")+".*?([0-9]+)", Pattern.CASE_INSENSITIVE);
             Matcher matcher = pattern.matcher(str);
             while (matcher.find()) {
                 if (!protectedFiles.containsKey(matcher.group(1)))
