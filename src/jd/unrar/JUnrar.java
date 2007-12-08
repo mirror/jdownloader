@@ -432,12 +432,14 @@ public class JUnrar {
         if (str.indexOf("*") != -1) {
             HashMap<String, Integer> protectedFiles = new HashMap<String, Integer>();
             logger.finer("Single File Protection");
-            Pattern pattern = Pattern.compile("\\*(.*)[\n\r].*?([0-9]+)", Pattern.CASE_INSENSITIVE);
+            Pattern pattern = Pattern.compile("\\*(.*)[\n\r]+.*?([0-9]+)", Pattern.CASE_INSENSITIVE);
             Matcher matcher = pattern.matcher(str);
             while (matcher.find()) {
                 if (!protectedFiles.containsKey(matcher.group(1)))
                     protectedFiles.put(matcher.group(1), Integer.parseInt(matcher.group(2)));
             }
+            if(protectedFiles.size()>0)
+            {
             protectedFiles = ((HashMap<String, Integer>) revSortByValue(protectedFiles));
             Entry<String, Integer> entry = protectedFiles.entrySet().iterator().next();
             if (entry.getValue() <= maxFilesize) {
@@ -449,6 +451,13 @@ public class JUnrar {
                 extendPasswordSearch = true;
                 Set<String> set = protectedFiles.keySet();
                 return set.toArray(new String[set.size()]);
+            }
+            }
+            else
+            {
+                logger.severe(str);
+                logger.severe("Please load the English version of unrar from http://www.rarlab.com/rar_add.htm for your OS");
+                return FILE_ERROR;
             }
 
         } else if (str.indexOf(" (password incorrect ?)") != -1) {
