@@ -773,10 +773,13 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
     }
 
     private void handleProgressController(ProgressController source, Object parameter) {
+     
         if (!this.progressBar.hasController(source) && !source.isFinished()) {
+            logger.info("JJJ0");
             progressBar.addController(source);
         }
         else if (source.isFinished()) {
+            logger.info("JJJ1");
             progressBar.removeController(source);
         }
         else {

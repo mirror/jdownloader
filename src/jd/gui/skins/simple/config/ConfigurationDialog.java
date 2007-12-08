@@ -1,5 +1,6 @@
 package jd.gui.skins.simple.config;
 
+import java.awt.ComponentOrientation;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
@@ -8,6 +9,7 @@ import java.awt.event.ActionListener;
 import java.util.Vector;
 
 import javax.swing.JButton;
+import javax.swing.JCheckBox;
 import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JTabbedPane;
@@ -41,6 +43,8 @@ public class ConfigurationDialog extends JDialog implements ActionListener {
 
     private Vector<ConfigPanel>                   configPanels     = new Vector<ConfigPanel>();
 
+    private JCheckBox chbExpert;
+
     private ConfigurationDialog(JFrame parent, UIInterface uiinterface) {
         super(parent);
         this.uiinterface = uiinterface;
@@ -49,8 +53,14 @@ public class ConfigurationDialog extends JDialog implements ActionListener {
         setLayout(new GridBagLayout());
         configuration = JDUtilities.getConfiguration();
         tabbedPane = new JTabbedPane();
+        tabbedPane.setComponentOrientation(ComponentOrientation.LEFT_TO_RIGHT);
+        tabbedPane.setTabLayoutPolicy(JTabbedPane.SCROLL_TAB_LAYOUT);
+        tabbedPane.setTabPlacement(JTabbedPane.LEFT);
         this.addConfigPanel(new ConfigPanelGeneral(configuration, uiinterface));
         this.addConfigPanel(new ConfigPanelDownload(configuration, uiinterface));
+        this.addConfigPanel(new ConfigPanelReconnect(configuration, uiinterface));
+        this.addConfigPanel(new ConfigPanelCaptcha(configuration, uiinterface));
+        
         this.addConfigPanel(new ConfigPanelEventmanager(configuration, uiinterface));
        
         this.addConfigPanel(new ConfigPanelPluginForHost(configuration, uiinterface));
@@ -63,12 +73,16 @@ public class ConfigurationDialog extends JDialog implements ActionListener {
         btnSave.addActionListener(this);
         btnCancel = new JButton("Abbrechen");
         btnCancel.addActionListener(this);
-
+        chbExpert= new JCheckBox("Experten Ansicht");
+        chbExpert.setSelected(configuration.getBooleanProperty(Configuration.PARAM_USE_EXPERT_VIEW, false));
+        chbExpert.addActionListener(this);
         Insets insets = new Insets(5, 5, 5, 5);
 
-        JDUtilities.addToGridBag(this, tabbedPane, 0, 0, 2, 1, 1, 1, null, GridBagConstraints.BOTH, GridBagConstraints.CENTER);
-        JDUtilities.addToGridBag(this, btnSave, 0, 1, 1, 1, 1, 0, insets, GridBagConstraints.NONE, GridBagConstraints.CENTER);
-        JDUtilities.addToGridBag(this, btnCancel, 1, 1, 1, 1, 1, 0, insets, GridBagConstraints.NONE, GridBagConstraints.CENTER);
+        JDUtilities.addToGridBag(this, tabbedPane, 0, 0, 3, 1, 1, 1, null, GridBagConstraints.BOTH, GridBagConstraints.CENTER);
+        JDUtilities.addToGridBag(this, chbExpert, 0, 1, 1, 1, 1, 0, insets, GridBagConstraints.NONE, GridBagConstraints.EAST);
+        
+        JDUtilities.addToGridBag(this, btnSave, 1, 1, 1, 1, 1, 0, insets, GridBagConstraints.NONE, GridBagConstraints.EAST);
+        JDUtilities.addToGridBag(this, btnCancel, 2, 1, 1, 1, 1, 0, insets, GridBagConstraints.NONE, GridBagConstraints.EAST);
 
         pack();
     }
@@ -105,8 +119,19 @@ public class ConfigurationDialog extends JDialog implements ActionListener {
             JDUtilities.setConfiguration(configuration);
 
 //Entgültig gespeichert wird über ein fireUIEvent(new UIEvent(this, UIEvent.UI_SAVE_CONFIG)); event in simpleGui
+           
         }
-        setVisible(false);
+     if(e.getSource()==this.chbExpert){
+         configuration.setProperty(Configuration.PARAM_USE_EXPERT_VIEW, chbExpert.isSelected());
+         JDUtilities.saveConfig();
+         if(JDUtilities.getController().getUiInterface().showConfirmDialog("Diese Einstellung benötigt einen JD-Neustart. Neustart jetzt durchführen?")){
+             JDUtilities.restartJD();
+         }
+         return;
+     }
+         
+         
+         setVisible(false);
     }
 
 }

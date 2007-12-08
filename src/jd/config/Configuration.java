@@ -8,7 +8,7 @@ import jd.controlling.interaction.Interaction;
 import jd.controlling.interaction.InteractionTrigger;
 import jd.controlling.interaction.ManualCaptcha;
 import jd.controlling.interaction.Unrar;
-import jd.controlling.interaction.WebUpdate;
+
 import jd.router.RouterData;
 
 /**
@@ -106,6 +106,7 @@ public class Configuration extends Property implements Serializable {
     public static final String PARAM_WRITE_LOG_PATH = "WRITE_LOG_PATH";
     public static final String PARAM_CENSOR_FIELD = "CENSOR_FIELD";
     public static final String PARAM_JAC_LOG = "JAC_DOLOG";
+    public static final String PARAM_USE_EXPERT_VIEW = "USE_EXPERT_VIEW";
     /**
      * Die unterschiedlichen Interaktionen. (ZB Reconnect nach einem Download)
      */
@@ -274,14 +275,8 @@ public class Configuration extends Property implements Serializable {
      * Legt die defaulteinstellungen in das configobjekt
      */
     public void setDefaultValues() {
-        // Setze AutoUpdater
-        WebUpdate wu = new WebUpdate();
-       
-        if (getInteractions(wu).size() == 0) {
-            InteractionTrigger it = Interaction.INTERACTION_APPSTART;
-            wu.setTrigger(it);
-            interactions.add(wu);
-        }
+      
+     
   
         Unrar ur= new Unrar();
         if (getInteractions(ur).size() == 0) {

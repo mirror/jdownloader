@@ -111,8 +111,17 @@ public class JDUtilities {
 
     private static final int                       RUNTYPE_LOCAL       = 1;
 
-    private static final int                       RUNTYPE_LOCAL_JARED = 2;
+    public static final int                       RUNTYPE_LOCAL_JARED = 2;
 
+    private static  Vector<PluginForSearch> pluginsForSearch = null;
+
+    private static  Vector<PluginForContainer> pluginsForContainer = null;
+
+    private static  Vector<PluginForHost> pluginsForHost = null;
+
+    private static  HashMap<String, PluginOptional> pluginsOptional = null;
+    
+    private static Vector<PluginForDecrypt> pluginsForDecrypt;
     /**
      * Ein URLClassLoader, um Dateien aus dem HomeVerzeichnis zu holen
      */
@@ -166,35 +175,11 @@ public class JDUtilities {
     private static File                            currentDirectory;
 
     /**
-     * Hier werden alle vorhandenen Plugins zum Dekodieren von Links gespeichert
-     */
-    private static Vector<PluginForDecrypt>        pluginsForDecrypt   = new Vector<PluginForDecrypt>();
-
-    /**
-     * Hier werden alle vorhandenen Plugins zum Suchen von Links gespeichert
-     */
-    private static Vector<PluginForSearch>         pluginsForSearch    = new Vector<PluginForSearch>();
-
-    /**
-     * Hier werden alle vorhandenen Plugins zum Öffnen verschlüsselter
-     * Containerfiles gespeichert
-     */
-    private static Vector<PluginForContainer>      pluginsForContainer = new Vector<PluginForContainer>();
-
-    /**
-     * Hier werden alle Plugins für die Anbieter gespeichert
-     */
-    private static Vector<PluginForHost>           pluginsForHost      = new Vector<PluginForHost>();
-
-    /**
-     * Hier werden optionale Plugins gespeichert
-     */
-    private static HashMap<String, PluginOptional> pluginsOptional     = new HashMap<String, PluginOptional>();
-
-    /**
      * Die Konfiguration
      */
     private static Configuration                   configuration       = new Configuration();
+
+
 
     /**
      * Geht eine Komponente so lange durch (getParent), bis ein Objekt vom Typ
@@ -709,81 +694,6 @@ public class JDUtilities {
         return getCaptcha(getController(), plugin, host, file);
     }
 
-    /**
-     * Hier werden alle Plugins aus dem Classpath(".") geparsed
-     */
-    @SuppressWarnings("unchecked")
-    public static void loadPlugins() {
-        getJDClassLoader();
-        Iterator iterator;
-        // Zuerst Plugins zum Dekodieren verschlüsselter Links
-        logger.finer("Load decryter");
-        iterator = Service.providers(PluginForDecrypt.class, jdClassLoader);
-        while (iterator.hasNext()) {
-            PluginForDecrypt p = (PluginForDecrypt) iterator.next();
-            pluginsForDecrypt.add(p);
-            logger.info("Decrypt-Plugin    : " + p.getPluginName());
-        }
-        // Danach die Plugins der verschiedenen Anbieter
-        logger.finer("Load Host plugins");
-        iterator = Service.providers(PluginForHost.class, jdClassLoader);
-        while (iterator.hasNext()) {
-            PluginForHost p = (PluginForHost) iterator.next();
-            pluginsForHost.add(p);
-            logger.info("Host-Plugin       : " + p.getPluginName());
-        }
-        // Danach die Plugins der verschiedenen Suchengines
-        logger.finer("Load Search plugins");
-        iterator = Service.providers(PluginForSearch.class, jdClassLoader);
-        while (iterator.hasNext()) {
-            PluginForSearch p = (PluginForSearch) iterator.next();
-            pluginsForSearch.add(p);
-            logger.info("Search-Plugin     : " + p.getPluginName());
-        }
-
-        logger.finer("Load Containerplugins");
-        iterator = Service.providers(PluginForContainer.class, jdClassLoader);
-
-        while (iterator.hasNext()) {
-            PluginForContainer p = (PluginForContainer) iterator.next();
-            pluginsForContainer.add(p);
-            logger.info("Container-Plugin : " + p.getPluginName());
-        }
-        logger.info("Load Optional-Plugins");
-      
-            iterator = Service.providers(PluginOptional.class, jdClassLoader);
-            while (iterator.hasNext()) {
-                try {
-
-                    PluginOptional p = (PluginOptional) iterator.next();
-                    pluginsOptional.put(p.getPluginName(), p);
-                    logger.info("Optionales-Plugin : " + p.getPluginName());
-
-                }
-                catch (Exception e) {
-                    e.printStackTrace();
-                }
-            }
-      
-        // // ContainerKlassen
-        // iterator = Service.providers(ClassLoader.class);
-        // while (iterator.hasNext()) {
-        // ClassLoader cl = (ClassLoader) iterator.next();
-        // Danach die Plugins für die unterschiedlichen Container
-        // Iterator iteratorClass =
-        // Service.providers(PluginForContainer.class,jdClassLoader);
-        // while (iteratorClass.hasNext()) {
-        // try {
-        // PluginForContainer p = (PluginForContainer) iteratorClass.next();
-        // pluginsForContainer.add(p);
-        // logger.info("Container-Plugin : " + p.getPluginName());
-        // }
-        // catch (Error e) {
-        // e.printStackTrace();
-        // }
-        // }
-        // }
-    }
 
     // /**
     // * Fügt einen PluginListener hinzu
@@ -1303,7 +1213,7 @@ public class JDUtilities {
             Enumeration<URL> en = Thread.currentThread().getContextClassLoader().getResources("jd/Main.class");
             if (en.hasMoreElements()) {
                 String root = en.nextElement().toString();
-              
+              logger.info(root);
                 if (root.indexOf("http://") >= 0) {
                     return RUNTYPE_WEBSTART;
                 }
@@ -1920,6 +1830,43 @@ public class JDUtilities {
         }
         return null;
 
+    }
+
+    public static void setPluginForDecryptList(Vector<PluginForDecrypt> loadPlugins) {
+       pluginsForDecrypt=loadPlugins;
+        
+    }
+
+    public static void setPluginForHostList(Vector<PluginForHost> loadPlugins) {
+       pluginsForHost=loadPlugins;
+        
+    }
+
+    public static void setPluginForSearchList(Vector<PluginForSearch> loadPlugins) {
+        pluginsForSearch=loadPlugins;
+        
+    }
+
+    public static void setPluginForContainerList(Vector<PluginForContainer> loadPlugins) {
+     pluginsForContainer=loadPlugins;
+        
+    }
+
+    public static void setPluginOptionalList(HashMap<String, PluginOptional> loadPlugins) {
+        pluginsOptional=loadPlugins;
+        
+    }
+
+    public static void restartJD() {
+        logger.info(JDUtilities.runCommand("java", new String[] { "-jar", "JDownloader.jar",  }, JDUtilities.getResourceFile(".").getAbsolutePath(), 0));
+        System.exit(0);
+        
+    }
+
+    public static void saveConfig() {
+        JDUtilities.saveObject(null, JDUtilities.getConfiguration(), JDUtilities.getJDHomeDirectory(), JDUtilities.CONFIG_PATH.split("\\.")[0], "." + JDUtilities.CONFIG_PATH.split("\\.")[1], Configuration.saveAsXML);
+
+        
     }
 
 }

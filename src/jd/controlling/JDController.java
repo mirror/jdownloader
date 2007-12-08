@@ -8,11 +8,11 @@ import java.util.Iterator;
 import java.util.Vector;
 import java.util.logging.Logger;
 
+import jd.JDInit;
 import jd.SingleInstanceController;
 import jd.config.Configuration;
 import jd.controlling.interaction.HTTPReconnect;
 import jd.controlling.interaction.Interaction;
-import jd.controlling.interaction.WebUpdate;
 import jd.event.ControlEvent;
 import jd.event.ControlListener;
 import jd.event.UIEvent;
@@ -219,18 +219,7 @@ public class JDController implements PluginListener, ControlListener, UIListener
                     }
 
                 }
-                else if (interaction instanceof WebUpdate) {
-                    // if (interaction.getCallCode() ==
-                    // Interaction.INTERACTION_CALL_ERROR) {
-                    // // uiInterface.showMessageDialog("Keine Updates
-                    // // verfügbar");
-                    // }
-                    // else {
-                    // uiInterface.showMessageDialog("Aktualisierte Dateien: " +
-                    // ((WebUpdate)
-                    // interaction).getUpdater().getUpdatedFiles());
-                    // }
-                }
+              
 
                 break;
             default:
@@ -397,9 +386,7 @@ public class JDController implements PluginListener, ControlListener, UIListener
                 uiInterface.setDownloadLinks(downloadLinks);
                 break;
             case UIEvent.UI_INTERACT_UPDATE:
-                WebUpdate wu = new WebUpdate();
-                wu.addControlListener(this);
-                wu.interact(this);
+              new JDInit().doWebupdate();
                 break;
         }
     }

@@ -17,7 +17,7 @@ import jd.gui.UIInterface;
 import jd.gui.skins.simple.components.BrowseFile;
 import jd.utils.JDUtilities;
 
-public class ConfigPanelGeneral extends ConfigPanel {
+public class ConfigPanelCaptcha extends ConfigPanel {
     /**
      * serialVersionUID
      */
@@ -25,7 +25,7 @@ public class ConfigPanelGeneral extends ConfigPanel {
     private JLabel            lblHomeDir;
     private BrowseFile        brsHomeDir;
     private Configuration     configuration;
-    ConfigPanelGeneral(Configuration configuration, UIInterface uiinterface) {
+    ConfigPanelCaptcha(Configuration configuration, UIInterface uiinterface) {
         super(uiinterface);
         this.configuration = configuration;
         initPanel();

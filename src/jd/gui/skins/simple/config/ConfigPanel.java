@@ -10,6 +10,7 @@ import java.util.logging.Logger;
 
 import javax.swing.JPanel;
 
+import jd.config.Configuration;
 import jd.gui.UIInterface;
 import jd.utils.JDUtilities;
 
@@ -34,9 +35,10 @@ public abstract class ConfigPanel extends JPanel{
     }
     
     public void addGUIConfigEntry(GUIConfigEntry entry){
-     
+   if(!entry.isExpertEntry()||JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_EXPERT_VIEW,false)){
         JDUtilities.addToGridBag(panel, entry, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 1, 0, insets, GridBagConstraints.BOTH, GridBagConstraints.EAST);
         entries.add(entry);
+   }
       
     }
     public void saveConfigEntries(){

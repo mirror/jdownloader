@@ -27,7 +27,7 @@ import jd.controlling.interaction.HTTPReconnect;
 import jd.controlling.interaction.Interaction;
 import jd.controlling.interaction.InteractionTrigger;
 import jd.controlling.interaction.Unrar;
-import jd.controlling.interaction.WebUpdate;
+
 import jd.gui.UIInterface;
 import jd.utils.JDUtilities;
 
@@ -300,12 +300,10 @@ return table.getSelectedRow();
                 
             }
             else if (interaction instanceof HTTPReconnect) {
-                openPopupPanel(new ConfigPanelInteractionHTTPReconnect(configuration, uiinterface));
+                openPopupPanel(new SubPanelHTTPReconnect(configuration, uiinterface));
                 return;
             }
-            else if (interaction instanceof WebUpdate) {
-
-            }
+         
             
             logger.info(interaction.getConfig().getEntries()+" _ ");
             if(interaction.getConfig().getEntries().size()>0){

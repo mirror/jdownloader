@@ -379,7 +379,7 @@ public abstract class Interaction extends Property implements Serializable {
      * @return Liste mit allen Interactionen
      */
     public static Interaction[] getInteractionList() {
-        return new Interaction[] { new HTTPLiveHeader(),new Unrar(), new DummyInteraction(), new ExternExecute(), new ExternReconnect(), new HTTPReconnect(), new WebUpdate(), new JAntiCaptcha(), new ManualCaptcha(),new JDExit(), new ResetLink(),new InfoFileWriter(), new ContainerReloader() };
+        return new Interaction[] { new HTTPLiveHeader(),new Unrar(), new DummyInteraction(), new ExternExecute(), new ExternReconnect(), new HTTPReconnect(),  new JAntiCaptcha(), new ManualCaptcha(),new JDExit(), new ResetLink(),new InfoFileWriter(), new ContainerReloader() };
     }
     /**
      * Da die Knfigurationswünsche nicht gespeichert werden, muss der ConfigContainer immer wieder aufs neue Initialisiert werden. Alle Interactionen müssend azu die initConifg  Methode implementieren 

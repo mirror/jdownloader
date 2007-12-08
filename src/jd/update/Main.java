@@ -100,6 +100,7 @@ public class Main {
             if(new File("webcheck.tmp").exists()){
                 new File("webcheck.tmp").delete(); 
             }
+            log.append("Local: "+new File("").getAbsolutePath());
             if(runtype==2){
                 log.append("Start java -jar JDownloader.jar in "+new File("").getAbsolutePath());
                 runCommand("java", new String[] { "-jar","jDownloader.jar" },new File("").getAbsolutePath(), 0);

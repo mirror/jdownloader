@@ -69,7 +69,7 @@ public class WebUpdater implements Serializable {
             this.setListPath(path);
         }
         else {
-            this.setListPath("http://jdownloader.ath.cx/autoUpdate");
+            this.setListPath("http://jdownloader.ath.cx/autoUpdate2");
 
         }
 
@@ -171,7 +171,7 @@ public class WebUpdater implements Serializable {
                 log("UPDATE AV. " + files.elementAt(i) + " - " + hash);
                 continue;
             }
-            log("OLD:  " + files.elementAt(i) + " - " + hash);
+            //log("OLD:  " + files.elementAt(i) + " - " + hash);
             files.removeElementAt(i);
         }
 

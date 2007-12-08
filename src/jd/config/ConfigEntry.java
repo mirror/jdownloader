@@ -29,6 +29,8 @@ public class ConfigEntry implements Serializable {
 
     private boolean enabled=true;
 
+    private boolean expertEntry =false;
+
     /**
      * Konstruktor für z.B. Buttons (Label+ Actionlistener)
      * 
@@ -252,6 +254,15 @@ public class ConfigEntry implements Serializable {
     public boolean isEnabled() {
      
         return enabled;
+    }
+
+    public ConfigEntry setExpertEntry(boolean b) {
+        this.expertEntry =b;
+        return this;
+    }
+
+    public boolean isExpertEntry() {
+        return expertEntry;
     }
 
 }

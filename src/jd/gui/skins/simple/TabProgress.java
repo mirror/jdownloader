@@ -73,65 +73,8 @@ public class TabProgress extends JPanel {
         add(scrollPane);
     }
 
-    //
-    // /**
-    // * Hier kann man auf Ereignisse der Plugins reagieren
-    // */
-    // public void pluginEvent(PluginEvent event) {
-    // PluginProgress pluginProgress = null;
-    // // Gibts das Plugin bereits?
-    // for (int i = 0; i < pluginProgresses.size(); i++) {
-    // if (pluginProgresses.get(i).plugin == event.getSource()) {
-    // pluginProgress = pluginProgresses.get(i);
-    // break;
-    // }
-    // }
-    // // Falls nicht, muß ein beschreibendes Objekt neu angelegt werden
-    // if (pluginProgress == null) {
-    // pluginProgress = new PluginProgress((Plugin) event.getSource());
-    // pluginProgresses.add(pluginProgress);
-    // }
-    // this.setVisible(true);
-    //
-    // // Hier werden die Ereignisse interpretiert
-    // switch (event.getEventID()) {
-    // case PluginEvent.PLUGIN_PROGRESS_MAX:
-    //
-    // pluginProgress.setMaximum((Integer) event.getParameter1());
-    // break;
-    // case PluginEvent.PLUGIN_PROGRESS_INCREASE:
-    //
-    // pluginProgress.increaseValue();
-    // break;
-    // case PluginEvent.PLUGIN_PROGRESS_FINISH:
-    // pluginProgress.setMaximum(-1);
-    // boolean active = false;
-    // for (int i = pluginProgresses.size() - 1; i >= 0; i--) {
-    // if (pluginProgresses.get(i).progressBar.getPercentComplete() < 1.0) {
-    // active = true;
-    // }
-    // else {
-    // try {
-    // Thread.sleep(100);
-    // }
-    // catch (InterruptedException e) {
-    // }
-    // pluginProgresses.remove(i);
-    //
-    // }
-    // }
-    // if (!active) {
-    //
-    // setVisible(false);
-    //
-    // }
-    // break;
-    // }
-    // // Prüfe ob es noch aktive gibt, und entfernt fertige
-    //
-    // table.tableChanged(new TableModelEvent(table.getModel()));
-    // }
-
+  
+    
     /**
      * Das TableModel ist notwendig, um die Daten darzustellen
      * 
@@ -270,32 +213,34 @@ public class TabProgress extends JPanel {
 
     }
 
-    public boolean hasController(ProgressController source) {
+    public synchronized boolean hasController(ProgressController source) {
         return controllers.contains(source);
     }
 
-    public  synchronized void addController(ProgressController source) {
-        this.controllers.add(0, source);
+    public synchronized void addController(ProgressController source) {
 
         JProgressBar progressBar = new JProgressBar();
         progressBar.setMaximum(source.getMax());
         progressBar.setValue(source.getValue());
         progressBar.setStringPainted(true);
         bars.add(0, progressBar);
+        this.controllers.add(0, source);
         updateController(source);
 
     }
 
-    public  synchronized void removeController(ProgressController source) {
+    public synchronized void removeController(ProgressController source) {
         int index = controllers.indexOf(source);
 
-        bars.remove(index);
-        controllers.remove(source);
-        updateController(source);
+        if (index >= 0) {
+            bars.remove(index);
+            controllers.remove(source);
+            updateController(source);
+        }
 
     }
 
-    public  synchronized void updateController(ProgressController source) {
+    public synchronized void updateController(ProgressController source) {
         if (source == null) {
             table.tableChanged(new TableModelEvent(table.getModel()));
             return;
@@ -306,9 +251,9 @@ public class TabProgress extends JPanel {
             }
             else {
                 this.setVisible(true);
-                if(controllers.indexOf(source)<bars.size()){
-                bars.get(controllers.indexOf(source)).setMaximum(source.getMax());
-                bars.get(controllers.indexOf(source)).setValue(source.getValue());
+                if (controllers.indexOf(source) < bars.size()) {
+                    bars.get(controllers.indexOf(source)).setMaximum(source.getMax());
+                    bars.get(controllers.indexOf(source)).setValue(source.getValue());
                 }
 
             }
@@ -322,7 +267,7 @@ public class TabProgress extends JPanel {
 
     }
 
-    public Vector<ProgressController> getControllers() {
+    public synchronized Vector<ProgressController> getControllers() {
 
         return controllers;
     }

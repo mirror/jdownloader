@@ -1561,7 +1561,7 @@ public abstract class Plugin {
      * @return
      */
     public static Vector<String> findPasswords(String data) {
-        data = data.replaceAll("(?s)<!-- .*? -->", "").replaceAll("(?s)<script .*?>.*?</script>", "").replaceAll("(?s)<.*?>", "").replaceAll("Spoiler:", "").replaceAll("(no.{0,2}|kein.{0,8}|ohne.{0,8}|nicht.{0,8})(pw|passwort|password|pass)", "").replaceAll("(pw|passwort|password|pass).{0,12}(nicht|falsch|wrong)", "");
+        data = data.replaceAll("(?s)<!-- .*? -->", "").replaceAll("(?s)<script .*?>.*?</script>", "").replaceAll("(?s)<.*?>", "").replaceAll("Spoiler:", "");
         Vector<String> ret = new Vector<String>();
         Pattern pattern = Pattern.compile("(pw|passwort|password|pass)[\\s]*?[\"']([^\"']+)[\"']", Pattern.CASE_INSENSITIVE);
         Matcher matcher = pattern.matcher(data);
@@ -1586,26 +1586,5 @@ public abstract class Plugin {
 
         return ret;
     }
-    public static String findPassword(String data)
-    {
-        Vector<String> passwords = findPasswords(data);
-        Vector<String> unique = new Vector<String>();
-        String pw = "";
-        if(passwords.size()==1)
-            return passwords.get(0);
-        else if(passwords.size()>0)
-        {
-        pw = "{\""+passwords.get(0)+"\"";
-        unique.add(passwords.get(0));
-        for (int i = 1; i < passwords.size(); i++) {
-            if(!unique.contains(passwords.get(i)))
-            {
-            pw += ",\""+passwords.get(i)+"\"";
-            unique.add(passwords.get(i));
-            }
-        }
-        pw +="}";
-        }
-        return pw;
-    }
+
 }

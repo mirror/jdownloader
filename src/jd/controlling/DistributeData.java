@@ -76,6 +76,7 @@ public class DistributeData extends ControlMulticaster {
      * @return link-Vector
      */
     public Vector<DownloadLink> findLinks() {
+        if(pluginsForSearch==null)return new Vector<DownloadLink>();
         Vector<DownloadLink> links = new Vector<DownloadLink>();
         Vector<String> cryptedLinks = new Vector<String>();
         // Array weil an pos 1 und 2 passwort und comment stehen können
@@ -100,7 +101,7 @@ public class DistributeData extends ControlMulticaster {
         }
         // Sucht alle Links und gibt ein Formatierte Liste zurück. das macht es
         // den Plugin entwicklern einfacher
-        String foundpassword = Plugin.findPassword(data);
+
         data = Plugin.getHttpLinkList(data);
 
         try {
@@ -182,16 +183,7 @@ public class DistributeData extends ControlMulticaster {
         for (int i = 0; i < pluginsForHost.size(); i++) {
             pHost = pluginsForHost.get(i);
             if (pHost.canHandle(data)) {
-                Vector<DownloadLink> dl = pHost.getDownloadLinks(data);
-                if(!foundpassword.matches("[\\s]*"))
-                {
-                for (int j = 0; j < dl.size(); j++) {
-                    DownloadLink da = dl.get(j);
-                    da.setSourcePluginPassword(foundpassword);
-                    dl.set(j, da);
-                }
-                }
-                links.addAll(dl);
+                links.addAll(pHost.getDownloadLinks(data));
                 data = pHost.cutMatches(data);
             }
         }
@@ -217,7 +209,7 @@ public class DistributeData extends ControlMulticaster {
                         Vector<DownloadLink> dLinks = pHost.getDownloadLinks(decrypted[0]);
                         for (int c = 0; c < dLinks.size(); c++) {
 
-                            dLinks.get(c).setSourcePluginPassword((decrypted[1] == null) ? foundpassword : decrypted[1]);
+                            dLinks.get(c).setSourcePluginPassword(decrypted[1]);
                             dLinks.get(c).setSourcePluginComment(decrypted[2]);
 
                         }

@@ -1143,6 +1143,7 @@ public class PixelGrid {
 
                 if (map.get(key) == null) {
                     Iterator<Integer> iterator = map.keySet().iterator();
+
                     boolean found = false;
                     int bestKey = -1;
                     double bestValue = 255;
@@ -1166,7 +1167,7 @@ public class PixelGrid {
                         PixelObject object = new PixelObject(this);
                         object.setColor(getPixelValue(x, y));
                         object.add(x, y, getPixelValue(x, y));
-              
+
                         map.put(key, object);
                     }
 
@@ -1178,11 +1179,23 @@ public class PixelGrid {
             }
         }
         int total = getWidth() * getHeight();
+
         Iterator<Integer> iterator = map.keySet().iterator();
 
         while (iterator.hasNext()) {
+
+            Iterator<Integer> innerIt = map.keySet().iterator();
+
+            while (innerIt.hasNext()) {
+
+            }
+
+        }
+        iterator = map.keySet().iterator();
+
+        while (iterator.hasNext()) {
             Integer key = iterator.next();
-            BasicWindow.showImage(map.get(key).toLetter().getImage(3), key + ""+ map.get(key).getAverage());
+            BasicWindow.showImage(map.get(key).toLetter().getImage(3), key + "" + map.get(key).getAverage());
 
         }
 

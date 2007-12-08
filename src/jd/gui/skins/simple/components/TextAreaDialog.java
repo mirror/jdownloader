@@ -70,10 +70,10 @@ public class TextAreaDialog extends JDialog implements ActionListener {
        pack();
         this.setVisible(true);
         
-        setLocation(JDUtilities.getCenterOfComponent(null, this));
+        //setLocation(JDUtilities.getCenterOfComponent(null, this));
         getRootPane().setDefaultButton(btnOk);
         setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
-     
+        this.setLocationRelativeTo(null);
 
     }
     public static String showDialog(JFrame frame, String title, String question, String def){

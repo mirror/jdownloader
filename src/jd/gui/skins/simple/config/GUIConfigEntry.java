@@ -189,7 +189,9 @@ public class GUIConfigEntry extends JPanel {
 
         }
     }
-
+    public boolean isExpertEntry(){
+        return configEntry.isExpertEntry();
+    }
 
     /**
      * Setz daten ind ei INput Komponente
