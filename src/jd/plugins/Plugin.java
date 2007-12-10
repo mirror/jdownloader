@@ -1103,7 +1103,7 @@ public abstract class Plugin {
      * @throws FileNotFoundException
      * @throws NoSuchAlgorithmException
      */
-    public String md5sum(String filepath) throws NoSuchAlgorithmException, FileNotFoundException {
+    public static String md5sum(String filepath) throws NoSuchAlgorithmException, FileNotFoundException {
         File f = new File(filepath);
         return md5sum(f);
     }
@@ -1116,7 +1116,7 @@ public abstract class Plugin {
      * @throws NoSuchAlgorithmException
      * @throws FileNotFoundException
      */
-    public String md5sum(File file) throws NoSuchAlgorithmException, FileNotFoundException {
+    public static String md5sum(File file) throws NoSuchAlgorithmException, FileNotFoundException {
         MessageDigest digest = MessageDigest.getInstance("MD5");
         InputStream is = new FileInputStream(file);
         byte[] buffer = new byte[8192];
