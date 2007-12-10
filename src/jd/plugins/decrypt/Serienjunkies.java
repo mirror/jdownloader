@@ -199,7 +199,7 @@ public class Serienjunkies extends PluginForDecrypt {
         ConfigEntry cfg;
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_LABEL, "Default Passwort"));
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getProperties(), "DEFAULT_PASSWORT", "Passwort").setDefaultValue(DEFAULT_PASSWORD));
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getProperties(), "USE_JAC", "Manuelle Captchaeingabe für Containerlinks"));
+        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getProperties(), "USE_JAC", "Manuelle Captchaeingabe"));
         cfg.setDefaultValue(true);
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_LABEL, "Hoster Auswahl"));
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_SEPERATOR));
@@ -316,7 +316,11 @@ public class Serienjunkies extends PluginForDecrypt {
                         }
                         continue;
                     }
-                    capTxt = JDUtilities.getCaptcha(this, "einzellinks.Serienjunkies.org", captchaFile);
+                    if (((Boolean) this.getProperties().getProperty("USE_JAC", true)))
+                        capTxt = Plugin.getCaptchaCode(captchaFile, this);
+                    else {
+                        capTxt = JDUtilities.getCaptcha(this, "containerlinks.Serienjunkies.org", captchaFile);
+                    }
                     reqinfo = postRequest(new URL(url), "s=" + matcher.group(1) + "&c=" + capTxt + "&dl.start=Download");
                 }
                 else {
