@@ -1019,7 +1019,6 @@ public class JUnrar {
 
                 } else if (!name.matches(".*part[0-9]+.rar$") && name.matches(".*rar$")) {
                     logger.finer("Single archive: " + entry.getKey());
-                    System.out.println(!isFileInUnpackedList(entry.getKey()));
                     if ((autoDelete || !isFileInUnpackedList(entry.getKey())) && extractFile(entry.getKey(), entry.getValue())) {
                         ret.add(entry.getKey().getParentFile().getAbsolutePath());
                     }
