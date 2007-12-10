@@ -3,10 +3,8 @@ package jd.unrar;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.security.NoSuchAlgorithmException;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -23,13 +21,12 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import jd.controlling.ProgressController;
-import jd.plugins.Plugin;
 import jd.utils.JDUtilities;
 
 public class JUnrar {
     private File passwordList = new File(JDUtilities.getJDHomeDirectory(), "passwordlist.xml");
     private File unpacked = new File(JDUtilities.getJDHomeDirectory(), "unpacked.dat");
-    private HashMap<File, String> unpackedlist;
+    private Vector<File> unpackedlist;
     private HashMap<File, String> files;
 
     public HashMap<String, Integer> passwordlist;
@@ -139,7 +136,6 @@ public class JUnrar {
 
         this.files = filelist;
         loadObjects();
-        loadUnpackedList();
     }
 
     /**
@@ -237,34 +233,30 @@ public class JUnrar {
     private void loadUnpackedList() {
         if (!autoDelete) {
             if (unpacked.isFile()) {
-                this.unpackedlist = (HashMap<File, String>) Utilities.loadObject(unpacked, false);
+                this.unpackedlist = (Vector<File>) Utilities.loadObject(unpacked, false);
                 freeUnpackedList();
             } else {
-                this.unpackedlist = new HashMap<File, String>();
+                this.unpackedlist = new Vector<File>();
                 saveUnpackedList();
             }
         }
     }
+    private boolean isFileInUnpackedList(File file) {
+        for (int i = 0; i < unpackedlist.size(); i++) {
+            if (unpackedlist.get(i).equals(file))
+                return true;
+        }
+        return false;
+
+    }
     private void freeUnpackedList() {
         if (!autoDelete) {
-        HashMap<File, String> ret = new HashMap<File, String>();
-        for (Map.Entry<File, String> entry : unpackedlist.entrySet()) {
-            File file = entry.getKey();
-            String md5 = entry.getValue();
-            try {
-                if (file.exists() && (md5 == Plugin.md5sum(file)))
-                    ret.put(file, md5);
-            } catch (NoSuchAlgorithmException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
-            } catch (FileNotFoundException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
+            for (int i = 0; i < unpackedlist.size(); i++) {
+                File file = unpackedlist.get(i);
+                if (!file.exists())
+                    unpackedlist.remove(i);
             }
-
-        }
-        this.unpackedlist = ret;
-        saveUnpackedList();
+            saveUnpackedList();
         }
     }
     private void saveUnpackedList() {
@@ -960,19 +952,16 @@ public class JUnrar {
             if (str.matches(allOk)) {
                 Pattern pattern = Pattern.compile("Extracting from (.*)");
                 Matcher matcher = pattern.matcher(str);
-                if (autoDelete)
-                {
-                while (matcher.find()) {
-                    File delfile = new File(file.getParentFile(), matcher.group(1));
-                    if (!delfile.isFile() || !delfile.delete())
-                        logger.warning("Can't delete " + delfile.getName());
-                }
-                }
-                else
-                {
+                if (autoDelete) {
+                    while (matcher.find()) {
+                        File delfile = new File(file.getParentFile(), matcher.group(1));
+                        if (!delfile.isFile() || !delfile.delete())
+                            logger.warning("Can't delete " + delfile.getName());
+                    }
+                } else {
                     while (matcher.find()) {
                         File ufile = new File(file.getParentFile(), matcher.group(1));
-                        unpackedlist.put(ufile, Plugin.md5sum(ufile));
+                        unpackedlist.add(ufile);
                     }
                     saveUnpackedList();
                 }
@@ -1015,7 +1004,7 @@ public class JUnrar {
         if (unrar == null) {
             return null;
         }
-
+        loadUnpackedList();
         progress.setStatusText("Filter filelist");
         progress.increase(1);
         for (Map.Entry<File, String> entry : files.entrySet()) {
@@ -1024,12 +1013,14 @@ public class JUnrar {
                 String name = file.getName();
                 if (name.matches(".*part[0]*[1].rar$")) {
                     logger.finer("Multipart archive: " + entry.getKey());
-                    if (extractFile(entry.getKey(), entry.getValue())) {
+                    if ((autoDelete || !isFileInUnpackedList(entry.getKey())) && extractFile(entry.getKey(), entry.getValue())) {
                         ret.add(entry.getKey().getParentFile().getAbsolutePath());
                     }
+
                 } else if (!name.matches(".*part[0-9]+.rar$") && name.matches(".*rar$")) {
                     logger.finer("Single archive: " + entry.getKey());
-                    if (extractFile(entry.getKey(), entry.getValue())) {
+                    System.out.println(!isFileInUnpackedList(entry.getKey()));
+                    if ((autoDelete || !isFileInUnpackedList(entry.getKey())) && extractFile(entry.getKey(), entry.getValue())) {
                         ret.add(entry.getKey().getParentFile().getAbsolutePath());
                     }
                 } else {
@@ -1054,6 +1045,7 @@ public class JUnrar {
     @SuppressWarnings("unchecked")
     public void setFolders(Vector<String> folders) {
         this.srcFolders = folders;
+        loadUnpackedList();
         files = new HashMap<File, String>();
         HashMap<File, String> filelist = new HashMap<File, String>();
         if (progress != null)
@@ -1067,17 +1059,9 @@ public class JUnrar {
                     if (autoDelete && list.get(ii).getName().matches(".*\\.rar$"))
                         filelist.put(list.get(ii), null);
                     else if (list.get(ii).getName().matches(".*\\.rar$")) {
-                        try {
-                            if (!unpackedlist.containsValue(Plugin.md5sum(list.get(ii)))) {
+                            if (!isFileInUnpackedList(list.get(ii))) {
                                 filelist.put(list.get(ii), null);
                             }
-                        } catch (NoSuchAlgorithmException e) {
-                            // TODO Auto-generated catch block
-                            e.printStackTrace();
-                        } catch (FileNotFoundException e) {
-                            // TODO Auto-generated catch block
-                            e.printStackTrace();
-                        }
                     }
                 }
             }
