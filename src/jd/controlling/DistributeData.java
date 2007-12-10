@@ -24,30 +24,31 @@ public class DistributeData extends ControlMulticaster {
     /**
      * Der Logger
      */
-    private static Logger            logger = JDUtilities.getLogger();
+    private static Logger logger = JDUtilities.getLogger();
 
     /**
      * Die zu verteilenden Daten
      */
-    private String                   data;
+    private String data;
 
     /**
      * Plugins der Anbieter
      */
-    private Vector<PluginForHost>    pluginsForHost;
+    private Vector<PluginForHost> pluginsForHost;
 
     /**
      * Plugins zum Entschlüsseln
      */
     private Vector<PluginForDecrypt> pluginsForDecrypt;
 
-    private Vector<PluginForSearch>  pluginsForSearch;
+    private Vector<PluginForSearch> pluginsForSearch;
 
     /**
      * Erstellt einen neuen Thread mit dem Text, der verteilt werden soll. Die
      * übergebenen Daten werden durch einen URLDecoder geschickt.
      * 
-     * @param data Daten, die verteilt werden sollen
+     * @param data
+     *            Daten, die verteilt werden sollen
      */
     public DistributeData(String data) {
         super("JD-DistributeData");
@@ -57,8 +58,7 @@ public class DistributeData extends ControlMulticaster {
         this.pluginsForSearch = JDUtilities.getPluginsForSearch();
         try {
             // this.data = URLDecoder.decode(this.data, "UTF-8");
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             logger.warning("text not url decodeable");
         }
     }
@@ -76,12 +76,13 @@ public class DistributeData extends ControlMulticaster {
      * @return link-Vector
      */
     public Vector<DownloadLink> findLinks() {
-        if(pluginsForSearch==null)return new Vector<DownloadLink>();
+        if (pluginsForSearch == null)
+            return new Vector<DownloadLink>();
         Vector<DownloadLink> links = new Vector<DownloadLink>();
         Vector<String> cryptedLinks = new Vector<String>();
         // Array weil an pos 1 und 2 passwort und comment stehen können
         Vector<String[]> decryptedLinks = new Vector<String[]>();
-
+        String foundpassword = Plugin.findPassword(data);
         PluginForDecrypt pDecrypt;
         PluginForHost pHost;
         PluginForSearch pSearch;
@@ -106,8 +107,7 @@ public class DistributeData extends ControlMulticaster {
 
         try {
             this.data = URLDecoder.decode(this.data, "UTF-8");
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             logger.warning("text not url decodeable");
         }
 
@@ -150,24 +150,25 @@ public class DistributeData extends ControlMulticaster {
                         Vector<String[]> tmpLinks = pDecrypt.decryptLink(data[0]);
                         String password = data[1] == null ? "" : data[1];
                         String comment = data[2] == null ? "" : data[2];
-                        logger.info("p "+password);
+                        logger.info("p " + password);
                         for (int ii = 0; ii < tmpLinks.size(); ii++) {
-                            logger.info(" Link: "+tmpLinks.get(ii)+" - ");
+                            logger.info(" Link: " + tmpLinks.get(ii) + " - ");
                             if (tmpLinks.get(ii)[1] != null) {
                                 tmpLinks.get(ii)[1] = password + "|" + tmpLinks.get(ii)[1];
-                                while ( tmpLinks.get(ii)[1].startsWith("|")) tmpLinks.get(ii)[1]= tmpLinks.get(ii)[1].substring(1);
-                            }else{
-                                tmpLinks.get(ii)[1]=password;
+                                while (tmpLinks.get(ii)[1].startsWith("|"))
+                                    tmpLinks.get(ii)[1] = tmpLinks.get(ii)[1].substring(1);
+                            } else {
+                                tmpLinks.get(ii)[1] = password;
                             }
                             if (tmpLinks.get(ii)[2] != null) {
                                 tmpLinks.get(ii)[2] = comment + "|" + tmpLinks.get(ii)[2];
-                                while ( tmpLinks.get(ii)[2].startsWith("|")) tmpLinks.get(ii)[2]= tmpLinks.get(ii)[2].substring(1);
-                            }else{
-                                tmpLinks.get(ii)[2]=comment;
+                                while (tmpLinks.get(ii)[2].startsWith("|"))
+                                    tmpLinks.get(ii)[2] = tmpLinks.get(ii)[2].substring(1);
+                            } else {
+                                tmpLinks.get(ii)[2] = comment;
                             }
                         }
-                
-                     
+
                         decryptedLinks.addAll(tmpLinks);
 
                         iterator = decryptedLinks.iterator();
@@ -175,15 +176,22 @@ public class DistributeData extends ControlMulticaster {
                     }
                 }
             }
-        }
-        while (moreToDo);
+        } while (moreToDo);
 
         // Danach wird der (noch verbleibende) Inhalt der Zwischenablage an die
         // Plugins der Hoster geschickt.
         for (int i = 0; i < pluginsForHost.size(); i++) {
             pHost = pluginsForHost.get(i);
             if (pHost.canHandle(data)) {
-                links.addAll(pHost.getDownloadLinks(data));
+                Vector<DownloadLink> dl = pHost.getDownloadLinks(data);
+                if (!foundpassword.matches("[\\s]*")) {
+                    for (int j = 0; j < dl.size(); j++) {
+                        DownloadLink da = dl.get(j);
+                        da.setSourcePluginPassword(foundpassword);
+                        dl.set(j, da);
+                    }
+                }
+                links.addAll(dl);
                 data = pHost.cutMatches(data);
             }
         }
@@ -209,7 +217,7 @@ public class DistributeData extends ControlMulticaster {
                         Vector<DownloadLink> dLinks = pHost.getDownloadLinks(decrypted[0]);
                         for (int c = 0; c < dLinks.size(); c++) {
 
-                            dLinks.get(c).setSourcePluginPassword(decrypted[1]);
+                            dLinks.get(c).setSourcePluginPassword((decrypted[1] == null) ? foundpassword : decrypted[1]);
                             dLinks.get(c).setSourcePluginComment(decrypted[2]);
 
                         }
@@ -217,8 +225,7 @@ public class DistributeData extends ControlMulticaster {
                         links.addAll(dLinks);
                         iterator.remove();
                     }
-                }
-                catch (Exception e) {
+                } catch (Exception e) {
                     logger.severe("Decrypter/Search Fehler: " + e.getMessage());
                 }
             }

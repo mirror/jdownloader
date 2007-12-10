@@ -67,29 +67,29 @@ public abstract class Plugin {
     /**
      * Puffer für Lesevorgänge
      */
-    public final int              READ_BUFFER     = 128 * 1024;
+    public final int READ_BUFFER = 128 * 1024;
 
-    protected static final String END_OF_LINK     = "[^\"]*";
+    protected static final String END_OF_LINK = "[^\"]*";
 
     /**
      * Der Defualt Accept-language-header. Achtung nicht Ändern. Wird dieser
      * Header geändert müssen die Regexes der Plugins angepasst werden
      */
-    public static final String    ACCEPT_LANGUAGE = "de, en-gb;q=0.9, en;q=0.8";
+    public static final String ACCEPT_LANGUAGE = "de, en-gb;q=0.9, en;q=0.8";
 
     /**
      * Versionsinformationen
      */
-    public static final String    VERSION         = "jDownloader_20070830_0";
+    public static final String VERSION = "jDownloader_20070830_0";
 
     /**
      * Zeigt an, ob das Plugin abgebrochen werden soll
      */
-    public ConfigContainer        config;
+    public ConfigContainer config;
 
-    protected RequestInfo         requestInfo;
+    protected RequestInfo requestInfo;
 
-    protected boolean             aborted         = false;
+    protected boolean aborted = false;
 
     /**
      * Liefert den Namen des Plugins zurück
@@ -178,7 +178,8 @@ public abstract class Plugin {
      *         ist
      */
     protected File getLocalCaptchaFile(Plugin plugin, String extension) {
-        if (extension == null) extension = ".jpg";
+        if (extension == null)
+            extension = ".jpg";
         Calendar calendar = Calendar.getInstance();
         String date = String.format("%1$td.%1$tm.%1$tY_%1$tH.%1$tM.%1$tS", calendar);
         // File dest = JDUtilities.getResourceFile("captchas/" +
@@ -194,7 +195,7 @@ public abstract class Plugin {
      * Beispielsweise kann so der JDController die Premiumnutzung abschalten
      * wenn er fehler feststellt
      */
-    public static final String PROPERTY_USE_PREMIUM  = "USE_PREMIUM";
+    public static final String PROPERTY_USE_PREMIUM = "USE_PREMIUM";
 
     /**
      * Property name für die Config. Diese sollten möglichst einheitlich sein.
@@ -231,26 +232,26 @@ public abstract class Plugin {
     /**
      * Hier werden alle notwendigen Schritte des Plugins hinterlegt
      */
-    protected Vector<PluginStep>  steps;
+    protected Vector<PluginStep> steps;
 
     /**
      * Enthält den aktuellen Schritt des Plugins
      */
-    protected PluginStep          currentStep    = null;
+    protected PluginStep currentStep = null;
 
     /**
      * Properties zum abspeichern der einstellungen
      */
-    private Property              properties;
+    private Property properties;
 
-    private String                statusText;
+    private String statusText;
 
-    private long                  initTime;
+    private long initTime;
 
     /**
      * Ein Logger, um Meldungen darzustellen
      */
-    public static Logger          logger         = JDUtilities.getLogger();
+    public static Logger logger = JDUtilities.getLogger();
 
     protected Plugin() {
         pluginListener = new Vector<PluginListener>();
@@ -263,8 +264,7 @@ public abstract class Plugin {
         }
         if (JDUtilities.getConfiguration().getProperty("PluginConfig_" + this.getPluginName()) != null) {
             properties = (Property) JDUtilities.getConfiguration().getProperty("PluginConfig_" + this.getPluginName());
-        }
-        else {
+        } else {
             properties = new Property();
         }
         // logger.info("Load Plugin Properties: " + "PluginConfig_" +
@@ -298,11 +298,13 @@ public abstract class Plugin {
     /**
      * Gibt ausgehend vom aktuellen step den nächsten zurück
      * 
-     * @param currentStep Der aktuelle Schritt
+     * @param currentStep
+     *            Der aktuelle Schritt
      * @return nächster step
      */
     public PluginStep nextStep(PluginStep currentStep) {
-        if (steps == null || steps.size() == 0) return null;
+        if (steps == null || steps.size() == 0)
+            return null;
         if (currentStep == null) {
             currentStep = steps.firstElement();
             return steps.firstElement();
@@ -323,7 +325,8 @@ public abstract class Plugin {
      * @return Gibt den vorherigen step relativ zu currentstep zurück
      */
     public PluginStep previousStep(PluginStep currentStep) {
-        if (steps == null || steps.size() == 0) return null;
+        if (steps == null || steps.size() == 0)
+            return null;
         if (currentStep == null) {
             currentStep = steps.firstElement();
             return steps.firstElement();
@@ -352,9 +355,12 @@ public abstract class Plugin {
     /**
      * @author olimex Fügt Map als String mit Trennzeichen zusammen TODO:
      *         auslagern
-     * @param map Map
-     * @param delPair Trennzeichen zwischen Key und Value
-     * @param delMap Trennzeichen zwischen Map-Einträgen
+     * @param map
+     *            Map
+     * @param delPair
+     *            Trennzeichen zwischen Key und Value
+     * @param delMap
+     *            Trennzeichen zwischen Map-Einträgen
      * @return Key-value pairs
      */
     public static String joinMap(Map<String, String> map, String delPair, String delMap) {
@@ -376,20 +382,21 @@ public abstract class Plugin {
      * Sammelt Cookies einer HTTP-Connection und fügt dieser einer Map hinzu
      * 
      * @author olimex
-     * @param con Connection
+     * @param con
+     *            Connection
      * @return HashMap mit allen cookies
      */
     public static HashMap<String, String> collectCookies(HttpURLConnection con) {
         Collection<String> cookieHeaders = con.getHeaderFields().get("Set-Cookie");
         HashMap<String, String> cookieMap = new HashMap<String, String>();
-        if (cookieHeaders == null) return cookieMap;
+        if (cookieHeaders == null)
+            return cookieMap;
         for (String header : cookieHeaders) {
             try {
                 StringTokenizer st = new StringTokenizer(header, ";=");
                 while (st.hasMoreTokens())
                     cookieMap.put(st.nextToken().trim(), st.nextToken().trim());
-            }
-            catch (NoSuchElementException e) {
+            } catch (NoSuchElementException e) {
                 // ignore
             }
         }
@@ -419,11 +426,13 @@ public abstract class Plugin {
      * handhaben kann. Dazu wird einfach geprüft, ob ein Treffer des Patterns
      * vorhanden ist.
      * 
-     * @param data der zu prüfende Text
+     * @param data
+     *            der zu prüfende Text
      * @return wahr, falls ein Treffer gefunden wurde.
      */
     public synchronized boolean canHandle(String data) {
-        if (data == null) return false;
+        if (data == null)
+            return false;
         Pattern pattern = getSupportedLinks();
         if (pattern != null) {
             Matcher matcher = pattern.matcher(data);
@@ -438,15 +447,19 @@ public abstract class Plugin {
      * Findet ein einzelnes Vorkommen und liefert den vollständigen Treffer oder
      * eine Untergruppe zurück
      * 
-     * @param data Der zu durchsuchende Text
-     * @param pattern Das Muster, nach dem gesucht werden soll
-     * @param group Die Gruppe, die zurückgegeben werden soll. 0 ist der
+     * @param data
+     *            Der zu durchsuchende Text
+     * @param pattern
+     *            Das Muster, nach dem gesucht werden soll
+     * @param group
+     *            Die Gruppe, die zurückgegeben werden soll. 0 ist der
      *            vollständige Treffer.
      * @return Der Treffer
      */
     public String getFirstMatch(String data, Pattern pattern, int group) {
         String hit = null;
-        if (data == null) return null;
+        if (data == null)
+            return null;
         if (pattern != null) {
             Matcher matcher = pattern.matcher(data);
             if (matcher.find() && group <= matcher.groupCount()) {
@@ -460,8 +473,10 @@ public abstract class Plugin {
      * Diese Methode findet alle Vorkommnisse des Pluginpatterns in dem Text,
      * und gibt die Treffer als Vector zurück
      * 
-     * @param data Der zu durchsuchende Text
-     * @param pattern Das Muster, nach dem gesucht werden soll
+     * @param data
+     *            Der zu durchsuchende Text
+     * @param pattern
+     *            Das Muster, nach dem gesucht werden soll
      * @return Alle Treffer in dem Text
      */
     public Vector<String> getMatches(String data, Pattern pattern) {
@@ -483,8 +498,10 @@ public abstract class Plugin {
     /**
      * Zählt, wie oft das Pattern des Plugins in dem übergebenen Text vorkommt
      * 
-     * @param data Der zu durchsuchende Text
-     * @param pattern Das Pattern, daß im Text gefunden werden soll
+     * @param data
+     *            Der zu durchsuchende Text
+     * @param pattern
+     *            Das Pattern, daß im Text gefunden werden soll
      * 
      * @return Anzahl der Treffer
      */
@@ -505,7 +522,8 @@ public abstract class Plugin {
      * Diese Funktion schneidet alle Vorkommnisse des vom Plugin unterstützten
      * Pattern aus
      * 
-     * @param data Text, aus dem das Pattern ausgeschnitter werden soll
+     * @param data
+     *            Text, aus dem das Pattern ausgeschnitter werden soll
      * @return Der resultierende String
      */
     public String cutMatches(String data) {
@@ -516,9 +534,12 @@ public abstract class Plugin {
      * Hier kann man den Text zwischen zwei Suchmustern ausgeben lassen
      * Zeilenumbrueche werden dabei auch unterstuetzt
      * 
-     * @param data Der zu durchsuchende Text
-     * @param startPattern der Pattern, bei dem die Suche beginnt
-     * @param lastPattern der Pattern, bei dem die Suche endet
+     * @param data
+     *            Der zu durchsuchende Text
+     * @param startPattern
+     *            der Pattern, bei dem die Suche beginnt
+     * @param lastPattern
+     *            der Pattern, bei dem die Suche endet
      * 
      * @return der Text zwischen den gefundenen stellen oder, falls nichts
      *         gefunden wurde, der vollständige Text
@@ -526,7 +547,8 @@ public abstract class Plugin {
     public String getBetween(String data, String startPattern, String lastPattern) {
         Pattern p = Pattern.compile("(?s)" + startPattern + "(.*?)" + lastPattern, Pattern.CASE_INSENSITIVE);
         Matcher match = p.matcher(data);
-        if (match.find()) return match.group(1);
+        if (match.find())
+            return match.group(1);
         return data;
     }
 
@@ -541,9 +563,12 @@ public abstract class Plugin {
      * 
      * f=f50b0f&h=390b4be0182b85b0&b=9 rauskommen
      * 
-     * @param data Der zu durchsuchende Text
-     * @param startPattern der Pattern, bei dem die Suche beginnt
-     * @param lastPattern der Pattern, bei dem die Suche endet
+     * @param data
+     *            Der zu durchsuchende Text
+     * @param startPattern
+     *            der Pattern, bei dem die Suche beginnt
+     * @param lastPattern
+     *            der Pattern, bei dem die Suche endet
      * 
      * @return ein String, der als POST Parameter genutzt werden kann und alle
      *         Parameter des Formulars enthält
@@ -562,7 +587,8 @@ public abstract class Plugin {
      * 
      * f=f50b0f&h=390b4be0182b85b0&b=9 ausgegeben werden
      * 
-     * @param data Der zu durchsuchende Text
+     * @param data
+     *            Der zu durchsuchende Text
      * 
      * @return ein String, der als POST Parameter genutzt werden kann und alle
      *         Parameter des Formulars enthält
@@ -616,8 +642,7 @@ public abstract class Plugin {
             if (matcher2.find()) {
                 iscompl = true;
                 key = matcher2.group(1);
-            }
-            else if (matcher4.find()) {
+            } else if (matcher4.find()) {
                 iscompl = true;
                 key = matcher4.group(1);
             }
@@ -635,7 +660,8 @@ public abstract class Plugin {
     /**
      * Schickt ein GetRequest an eine Adresse
      * 
-     * @param link Die URL, die ausgelesen werden soll
+     * @param link
+     *            Die URL, die ausgelesen werden soll
      * @return Ein Objekt, daß alle Informationen der Zieladresse beinhält
      * @throws IOException
      */
@@ -654,10 +680,14 @@ public abstract class Plugin {
     /**
      * Schickt ein GetRequest an eine Adresse
      * 
-     * @param link Der Link, an den die GET Anfrage geschickt werden soll
-     * @param cookie Cookie
-     * @param referrer Referrer
-     * @param redirect Soll einer Weiterleitung gefolgt werden?
+     * @param link
+     *            Der Link, an den die GET Anfrage geschickt werden soll
+     * @param cookie
+     *            Cookie
+     * @param referrer
+     *            Referrer
+     * @param redirect
+     *            Soll einer Weiterleitung gefolgt werden?
      * @return Ein Objekt, daß alle Informationen der Zieladresse beinhält
      * @throws IOException
      */
@@ -672,7 +702,8 @@ public abstract class Plugin {
             httpConnection.setRequestProperty("Referer", referrer);
         else
             httpConnection.setRequestProperty("Referer", "http://" + link.getHost());
-        if (cookie != null) httpConnection.setRequestProperty("Cookie", cookie);
+        if (cookie != null)
+            httpConnection.setRequestProperty("Cookie", cookie);
         // TODO User-Agent als Option ins menu
         // hier koennte man mit einer kleinen Datenbank den User-Agent rotieren
         // lassen
@@ -720,8 +751,7 @@ public abstract class Plugin {
         int responseCode = HttpURLConnection.HTTP_NOT_IMPLEMENTED;
         try {
             responseCode = httpConnection.getResponseCode();
-        }
-        catch (IOException e) {
+        } catch (IOException e) {
         }
         httpConnection.connect();
         RequestInfo ri = new RequestInfo("", location, setcookie, httpConnection.getHeaderFields(), responseCode);
@@ -732,8 +762,10 @@ public abstract class Plugin {
     /**
      * Schickt ein PostRequest an eine Adresse
      * 
-     * @param link Der Link, an den die POST Anfrage geschickt werden soll
-     * @param parameter Die Parameter, die übergeben werden sollen
+     * @param link
+     *            Der Link, an den die POST Anfrage geschickt werden soll
+     * @param parameter
+     *            Die Parameter, die übergeben werden sollen
      * @return Ein Objekt, daß alle Informationen der Zieladresse beinhält
      * @throws IOException
      */
@@ -745,13 +777,18 @@ public abstract class Plugin {
      * 
      * Schickt ein PostRequest an eine Adresse
      * 
-     * @param string Der Link, an den die POST Anfrage geschickt werden soll
-     * @param cookie Cookie
-     * @param referrer Referrer
-     * @param requestProperties Hier können noch zusätliche Properties
-     *            mitgeschickt werden
-     * @param parameter Die Parameter, die übergeben werden sollen
-     * @param redirect Soll einer Weiterleitung gefolgt werden?
+     * @param string
+     *            Der Link, an den die POST Anfrage geschickt werden soll
+     * @param cookie
+     *            Cookie
+     * @param referrer
+     *            Referrer
+     * @param requestProperties
+     *            Hier können noch zusätliche Properties mitgeschickt werden
+     * @param parameter
+     *            Die Parameter, die übergeben werden sollen
+     * @param redirect
+     *            Soll einer Weiterleitung gefolgt werden?
      * @return Ein Objekt, daß alle Informationen der Zieladresse beinhält
      * @throws IOException
      */
@@ -766,7 +803,8 @@ public abstract class Plugin {
             httpConnection.setRequestProperty("Referer", referrer);
         else
             httpConnection.setRequestProperty("Referer", "http://" + string.getHost());
-        if (cookie != null) httpConnection.setRequestProperty("Cookie", cookie);
+        if (cookie != null)
+            httpConnection.setRequestProperty("Cookie", cookie);
         // TODO das gleiche wie bei getRequest
         httpConnection.setRequestProperty("Accept-Language", ACCEPT_LANGUAGE);
         httpConnection.setRequestProperty("User-Agent", "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1; SV1; .NET CLR 1.1.4322; .NET CLR 2.0.50727)");
@@ -779,14 +817,15 @@ public abstract class Plugin {
                 httpConnection.setRequestProperty(key, requestProperties.get(key));
             }
         }
-        if(parameter!=null){
-        parameter=parameter.trim();
-        httpConnection.setRequestProperty("Content-Length", parameter.length()+"");
+        if (parameter != null) {
+            parameter = parameter.trim();
+            httpConnection.setRequestProperty("Content-Length", parameter.length() + "");
         }
         httpConnection.setDoOutput(true);
         httpConnection.connect();
         OutputStreamWriter wr = new OutputStreamWriter(httpConnection.getOutputStream());
-        if (parameter != null) wr.write(parameter);
+        if (parameter != null)
+            wr.write(parameter);
         wr.flush();
         RequestInfo requestInfo = readFromURL(httpConnection);
         wr.close();
@@ -798,11 +837,16 @@ public abstract class Plugin {
      * Gibt header- und cookieinformationen aus ohne den HTMLCode
      * herunterzuladen
      * 
-     * @param link Der Link, an den die POST Anfrage geschickt werden soll
-     * @param cookie Cookie
-     * @param referrer Referrer
-     * @param parameter Die Parameter, die übergeben werden sollen
-     * @param redirect Soll einer Weiterleitung gefolgt werden?
+     * @param link
+     *            Der Link, an den die POST Anfrage geschickt werden soll
+     * @param cookie
+     *            Cookie
+     * @param referrer
+     *            Referrer
+     * @param parameter
+     *            Die Parameter, die übergeben werden sollen
+     * @param redirect
+     *            Soll einer Weiterleitung gefolgt werden?
      * @return Ein Objekt, daß alle Informationen der Zieladresse beinhält
      * @throws IOException
      */
@@ -816,15 +860,17 @@ public abstract class Plugin {
             httpConnection.setRequestProperty("Referer", referrer);
         else
             httpConnection.setRequestProperty("Referer", "http://" + link.getHost());
-        if (cookie != null) httpConnection.setRequestProperty("Cookie", cookie);
+        if (cookie != null)
+            httpConnection.setRequestProperty("Cookie", cookie);
         // TODO das gleiche wie bei getRequest
         httpConnection.setRequestProperty("Accept-Language", ACCEPT_LANGUAGE);
         httpConnection.setRequestProperty("User-Agent", "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1; SV1; .NET CLR 1.1.4322; .NET CLR 2.0.50727)");
-        
+
         if (parameter != null) {
-            if(parameter==null)parameter="";
-            parameter=parameter.trim();
-            httpConnection.setRequestProperty("Content-Length", parameter.length()+"");
+            if (parameter == null)
+                parameter = "";
+            parameter = parameter.trim();
+            httpConnection.setRequestProperty("Content-Length", parameter.length() + "");
             httpConnection.setDoOutput(true);
             httpConnection.connect();
             OutputStreamWriter wr = new OutputStreamWriter(httpConnection.getOutputStream());
@@ -837,8 +883,7 @@ public abstract class Plugin {
         int responseCode = HttpURLConnection.HTTP_NOT_IMPLEMENTED;
         try {
             responseCode = httpConnection.getResponseCode();
-        }
-        catch (IOException e) {
+        } catch (IOException e) {
         }
         httpConnection.connect();
         RequestInfo ri = new RequestInfo("", location, setcookie, httpConnection.getHeaderFields(), responseCode);
@@ -850,7 +895,8 @@ public abstract class Plugin {
      * Liest Daten von einer URL. LIst den encoding type und kann plaintext und
      * gzip unterscheiden
      * 
-     * @param urlInput Die URL Verbindung, von der geselen werden soll
+     * @param urlInput
+     *            Die URL Verbindung, von der geselen werden soll
      * @return Ein Objekt, daß alle Informationen der Zieladresse beinhält
      * @throws IOException
      */
@@ -859,8 +905,7 @@ public abstract class Plugin {
         BufferedReader rd;
         if (urlInput.getHeaderField("Content-Encoding") != null && urlInput.getHeaderField("Content-Encoding").equalsIgnoreCase("gzip")) {
             rd = new BufferedReader(new InputStreamReader(new GZIPInputStream(urlInput.getInputStream())));
-        }
-        else {
+        } else {
             rd = new BufferedReader(new InputStreamReader(urlInput.getInputStream()));
         }
         String line;
@@ -886,11 +931,13 @@ public abstract class Plugin {
      * Speichert einen InputStream binär auf der Festplatte ab TODO: Der Sleep
      * drückt die Geschwindigkeit deutlich
      * 
-     * @param downloadLink der DownloadLink
-     * @param urlConnection Wenn bereits vom Plugin eine vorkonfigurierte
-     *            URLConnection vorhanden ist, wird diese hier übergeben und
-     *            benutzt. Ansonsten erfolgt ein normaler GET Download von der
-     *            URL, die im DownloadLink hinterlegt ist
+     * @param downloadLink
+     *            der DownloadLink
+     * @param urlConnection
+     *            Wenn bereits vom Plugin eine vorkonfigurierte URLConnection
+     *            vorhanden ist, wird diese hier übergeben und benutzt.
+     *            Ansonsten erfolgt ein normaler GET Download von der URL, die
+     *            im DownloadLink hinterlegt ist
      * @return wahr, wenn alle Daten ausgelesen und gespeichert wurden
      */
     public boolean download(DownloadLink downloadLink, URLConnection urlConnection) {
@@ -901,7 +948,8 @@ public abstract class Plugin {
 
     public boolean download(DownloadLink downloadLink, URLConnection urlConnection, int bytesToLoad) {
         File fileOutput = new File(downloadLink.getFileOutput() + ".jdd");
-        if (fileOutput == null || fileOutput.getParentFile() == null) return false;
+        if (fileOutput == null || fileOutput.getParentFile() == null)
+            return false;
         if (!fileOutput.getParentFile().exists()) {
             fileOutput.getParentFile().mkdirs();
         }
@@ -911,7 +959,8 @@ public abstract class Plugin {
         try {
             ByteBuffer buffer = ByteBuffer.allocateDirect(READ_BUFFER);
             // Falls keine urlConnection übergeben wurde
-            if (urlConnection == null) urlConnection = new URL(downloadLink.getUrlDownloadDecrypted()).openConnection();
+            if (urlConnection == null)
+                urlConnection = new URL(downloadLink.getUrlDownloadDecrypted()).openConnection();
             FileOutputStream fos = new FileOutputStream(fileOutput);
             // NIO Channels setzen:
             urlConnection.setReadTimeout(getReadTimeoutFromConfiguration());
@@ -939,7 +988,8 @@ public abstract class Plugin {
                 // jetzt von der GUI kontrolliert
                 int bytes = source.read(buffer);
                 Thread.sleep(0);
-                if (bytes == -1) break;
+                if (bytes == -1)
+                    break;
                 // Buffer flippen und in File schreiben:
                 buffer.flip();
                 dest.write(buffer);
@@ -951,7 +1001,8 @@ public abstract class Plugin {
                 firePluginEvent(new PluginEvent(this, PluginEvent.PLUGIN_DATA_CHANGED, downloadLink));
                 downloadLink.setDownloadCurrent(downloadedBytes);
 
-                if (bytesToLoad > 0 && downloadedBytes >= bytesToLoad) break;
+                if (bytesToLoad > 0 && downloadedBytes >= bytesToLoad)
+                    break;
             }
             if (bytesToLoad <= 0 && contentLen != -1 && downloadedBytes < contentLen) {
                 logger.info(aborted + " - " + downloadLink.isAborted() + " incomplete download: bytes loaded: " + downloadedBytes + "/" + contentLen);
@@ -978,25 +1029,20 @@ public abstract class Plugin {
             logger.info("download finished:" + fileOutput.getAbsolutePath());
             logger.info(downloadedBytes + " bytes in " + time + " ms");
             return true;
-        }
-        catch (FileNotFoundException e) {
+        } catch (FileNotFoundException e) {
 
             logger.severe("file not found. " + e.getLocalizedMessage());
-        }
-        catch (SecurityException e) {
+        } catch (SecurityException e) {
 
             logger.severe("not enough rights to write the file. " + e.getLocalizedMessage());
-        }
-        catch (IOException e) {
+        } catch (IOException e) {
 
             logger.severe("error occurred while writing to file. " + e.getLocalizedMessage());
-        }
-        catch (InterruptedException e) {
+        } catch (InterruptedException e) {
             logger.severe("interrupted. " + e.getLocalizedMessage());
             e.printStackTrace();
-        }
-        catch (Exception e) {
-          
+        } catch (Exception e) {
+
             e.printStackTrace();
         }
         firePluginEvent(new PluginEvent(this, PluginEvent.PLUGIN_PROGRESS_FINISH, downloadLink));
@@ -1034,10 +1080,8 @@ public abstract class Plugin {
         try {
 
             ret = URLDecoder.decode(ret, "UTF-8");
-        }
-        catch (UnsupportedEncodingException e) {
-        }
-        ;
+        } catch (UnsupportedEncodingException e) {
+        };
         return ret;
     }
 
@@ -1045,7 +1089,8 @@ public abstract class Plugin {
      * Diese Methode erstellt einen einzelnen String aus einer HashMap mit
      * Parametern für ein Post-Request.
      * 
-     * @param parameters HashMap mit den Parametern
+     * @param parameters
+     *            HashMap mit den Parametern
      * @return Codierter String
      */
     protected String createPostParameterFromHashMap(HashMap<String, String> parameters) {
@@ -1057,14 +1102,15 @@ public abstract class Plugin {
             key = iterator.next();
             parameter = parameters.get(key);
             try {
-                if (parameter != null) parameter = URLEncoder.encode(parameter, "US-ASCII");
-            }
-            catch (UnsupportedEncodingException e) {
+                if (parameter != null)
+                    parameter = URLEncoder.encode(parameter, "US-ASCII");
+            } catch (UnsupportedEncodingException e) {
             }
             parameterLine.append(key);
             parameterLine.append("=");
             parameterLine.append(parameter);
-            if (iterator.hasNext()) parameterLine.append("&");
+            if (iterator.hasNext())
+                parameterLine.append("&");
         }
         return parameterLine.toString();
     }
@@ -1072,7 +1118,8 @@ public abstract class Plugin {
     // /////////////////////////////////////////////////////
     // Multicaster
     public void addPluginListener(PluginListener listener) {
-        if (listener == null) return;
+        if (listener == null)
+            return;
         synchronized (pluginListener) {
             pluginListener.add(listener);
         }
@@ -1098,7 +1145,8 @@ public abstract class Plugin {
     /**
      * Gibt den md5hash einer Datei als String aus
      * 
-     * @param filepath Dateiname
+     * @param filepath
+     *            Dateiname
      * @return MD5 des Datei
      * @throws FileNotFoundException
      * @throws NoSuchAlgorithmException
@@ -1129,15 +1177,12 @@ public abstract class Plugin {
             BigInteger bigInt = new BigInteger(1, md5sum);
             String output = bigInt.toString(16);
             return output;
-        }
-        catch (IOException e) {
+        } catch (IOException e) {
             throw new RuntimeException("Unable to process file for MD5", e);
-        }
-        finally {
+        } finally {
             try {
                 is.close();
-            }
-            catch (IOException e) {
+            } catch (IOException e) {
                 throw new RuntimeException("Unable to close input stream for MD5 calculation", e);
             }
         }
@@ -1166,13 +1211,15 @@ public abstract class Plugin {
      * alle treffer in source nach dem pattern zurück. Platzhalter ist nur !! °
      * 
      * @param source
-     * @param pattern als Pattern wird ein Normaler String mit ° als Wildcard
+     * @param pattern
+     *            als Pattern wird ein Normaler String mit ° als Wildcard
      *            verwendet.
      * @return Alle TReffer
      */
     public static String[] getSimpleMatches(String source, String pattern) {
         // DEBUG.trace("pattern: "+STRING.getPattern(pattern));
-        if (source == null || pattern == null) return null;
+        if (source == null || pattern == null)
+            return null;
         Matcher rr = Pattern.compile(getPattern(pattern), Pattern.DOTALL).matcher(source);
         if (!rr.find()) {
             // Keine treffer
@@ -1183,8 +1230,7 @@ public abstract class Plugin {
                 ret[i - 1] = rr.group(i);
             }
             return ret;
-        }
-        catch (IllegalStateException e) {
+        } catch (IllegalStateException e) {
             return null;
         }
     }
@@ -1224,11 +1270,9 @@ public abstract class Plugin {
             // 176 == °
             if (letter == 176) {
                 ret += "(.*?)";
-            }
-            else if (allowed.indexOf(letter) == -1) {
+            } else if (allowed.indexOf(letter) == -1) {
                 ret += "\\" + letter;
-            }
-            else {
+            } else {
                 ret += letter;
             }
         }
@@ -1239,8 +1283,10 @@ public abstract class Plugin {
      * Schreibt alle Treffer von pattern in source in den übergebenen Vector.
      * Als Rückgabe erhält man einen 2D-Vector
      * 
-     * @param source Quelltext
-     * @param pattern als Pattern wird ein Normaler String mit ° als Wildcard
+     * @param source
+     *            Quelltext
+     * @param pattern
+     *            als Pattern wird ein Normaler String mit ° als Wildcard
      *            verwendet.
      * @return Treffer
      */
@@ -1252,8 +1298,10 @@ public abstract class Plugin {
      * Schreibt alle treffer von pattern in source in den übergebenen vector Als
      * Rückgabe erhält man einen 2D-Vector
      * 
-     * @param source Quelltext
-     * @param pattern Ein RegEx Pattern
+     * @param source
+     *            Quelltext
+     * @param pattern
+     *            Ein RegEx Pattern
      * @return Treffer
      */
     public static Vector<Vector<String>> getAllSimpleMatches(String source, Pattern pattern) {
@@ -1284,7 +1332,8 @@ public abstract class Plugin {
         pattern = getPattern(pattern);
         Vector<String> ret = new Vector<String>();
         for (Matcher r = Pattern.compile(pattern, Pattern.DOTALL).matcher(source); r.find();) {
-            if (id <= r.groupCount()) ret.add(r.group(id).trim());
+            if (id <= r.groupCount())
+                ret.add(r.group(id).trim());
         }
         return ret;
     }
@@ -1293,7 +1342,8 @@ public abstract class Plugin {
 
         Vector<String> ret = new Vector<String>();
         for (Matcher r = pattern.matcher(source); r.find();) {
-            if (id <= r.groupCount()) ret.add(r.group(id).trim());
+            if (id <= r.groupCount())
+                ret.add(r.group(id).trim());
         }
         return ret;
     }
@@ -1335,8 +1385,7 @@ public abstract class Plugin {
                 // im Notfall doch JAC nutzen
                 captchaText = JDUtilities.getCaptcha(JDUtilities.getController(), plugin, file);
             }
-        }
-        else {
+        } else {
             logger.finer("KEINE captchaInteractions... nutze JAC");
             captchaText = JDUtilities.getCaptcha(JDUtilities.getController(), plugin, file);
         }
@@ -1375,7 +1424,8 @@ public abstract class Plugin {
      * @return Statustext
      */
     public String getStatusText() {
-        if (this.statusText == null) this.statusText = "";
+        if (this.statusText == null)
+            this.statusText = "";
         return this.statusText;
     }
 
@@ -1391,8 +1441,10 @@ public abstract class Plugin {
     /**
      * Sucht alle Links heraus
      * 
-     * @param data ist der Quelltext einer Html-Datei
-     * @param url der Link von dem der Quelltext stammt (um die base automatisch
+     * @param data
+     *            ist der Quelltext einer Html-Datei
+     * @param url
+     *            der Link von dem der Quelltext stammt (um die base automatisch
      *            zu setzen)
      * @return Linkliste aus data extrahiert
      */
@@ -1406,7 +1458,7 @@ public abstract class Plugin {
      * System.out.println(dd[i]); }
      */
     public static String[] getHttpLinks(String data, String url) {
-        String[] patternStr = { "(?s)<[ ]?base[^>]*?href=['\"]([^>]*?)['\"]", "(?s)<[ ]?base[^>]*?href=([^'\"][^\\s]*)", "(?s)<[ ]?a[^>]*?href=['\"]([^>]*?)['\"]", "(?s)<[ ]?a[^>]*?href=([^'\"][^\\s]*)", "(?s)<[ ]?form[^>]*?action=['\"]([^>]*?)['\"]", "(?s)<[ ]?form[^>]*?action=([^'\"][^\\s]*)", "www[^\\s>'\"\\)]*", "http://[^\\s>'\"\\)]*" };
+        String[] patternStr = {"(?s)<[ ]?base[^>]*?href=['\"]([^>]*?)['\"]", "(?s)<[ ]?base[^>]*?href=([^'\"][^\\s]*)", "(?s)<[ ]?a[^>]*?href=['\"]([^>]*?)['\"]", "(?s)<[ ]?a[^>]*?href=([^'\"][^\\s]*)", "(?s)<[ ]?form[^>]*?action=['\"]([^>]*?)['\"]", "(?s)<[ ]?form[^>]*?action=([^'\"][^\\s]*)", "www[^\\s>'\"\\)]*", "http://[^\\s>'\"\\)]*"};
         url = url == null ? "" : url;
         Matcher m;
         String link;
@@ -1437,8 +1489,7 @@ public abstract class Plugin {
             else
                 host = "http://" + url;
             url = "http://" + url;
-        }
-        else
+        } else
             url = "";
         for (int i = 2; i < 6; i++) {
             m = pattern[i].matcher(data);
@@ -1453,11 +1504,9 @@ public abstract class Plugin {
                     }
                     if (link.charAt(0) == '/') {
                         link = host + link;
-                    }
-                    else if (link.charAt(0) == '#') {
+                    } else if (link.charAt(0) == '#') {
                         link = url + link;
-                    }
-                    else {
+                    } else {
                         link = basename + link;
                     }
                 }
@@ -1522,7 +1571,8 @@ public abstract class Plugin {
                 BufferedReader myInput = new BufferedReader(new InputStreamReader(fin));
                 String hostname = link.getHost();
                 String hostname2 = hostname + ".*";
-                if (hostname.matches(".*?\\..*?\\..*?")) hostname = hostname.replaceFirst(".*?\\.", ".");
+                if (hostname.matches(".*?\\..*?\\..*?"))
+                    hostname = hostname.replaceFirst(".*?\\.", ".");
                 hostname = hostname + ".*";
                 while ((thisLine = myInput.readLine()) != null) {
                     if (thisLine.matches(hostname) || thisLine.matches(hostname2)) {
@@ -1534,8 +1584,7 @@ public abstract class Plugin {
                     }
                 }
                 return joinMap(inp, "=", ";");
-            }
-            catch (Exception e) {
+            } catch (Exception e) {
                 e.printStackTrace();
             }
         }
@@ -1561,30 +1610,53 @@ public abstract class Plugin {
      * @return
      */
     public static Vector<String> findPasswords(String data) {
-        data = data.replaceAll("(?s)<!-- .*? -->", "").replaceAll("(?s)<script .*?>.*?</script>", "").replaceAll("(?s)<.*?>", "").replaceAll("Spoiler:", "");
+        data = data.replaceAll("(?s)<!-- .*? -->", "").replaceAll("(?s)<script .*?>.*?</script>", "").replaceAll("(?s)<.*?>", "").replaceAll("Spoiler:", "").replaceAll("(no.{0,2}|kein.{0,8}|ohne.{0,8}|nicht.{0,8})(pw|passwort|password|pass)", "").replaceAll("(pw|passwort|password|pass).{0,12}(nicht|falsch|wrong)", "");
         Vector<String> ret = new Vector<String>();
         Pattern pattern = Pattern.compile("(pw|passwort|password|pass)[\\s]*?[\"']([^\"']+)[\"']", Pattern.CASE_INSENSITIVE);
         Matcher matcher = pattern.matcher(data);
         while (matcher.find()) {
-            if (matcher.group(2).length() > 5 && !matcher.group(2).matches(".*(rar|zip|jpg|gif|png|html|php|avi|mpg)$")) ret.add(matcher.group(2));
+            if (matcher.group(2).length() > 5 && !matcher.group(2).matches(".*(rar|zip|jpg|gif|png|html|php|avi|mpg)$"))
+                ret.add(matcher.group(2));
         }
         pattern = Pattern.compile("(pw|passwort|password|pass)[\\s]?[\\s]*?([^\"'\\s]+)[\\s]", Pattern.CASE_INSENSITIVE);
         matcher = pattern.matcher(data);
         while (matcher.find()) {
-            if (matcher.group(2).length() > 5 && !matcher.group(2).matches(".*(rar|zip|jpg|gif|png|html|php|avi|mpg)$")) ret.add(matcher.group(2));
+            if (matcher.group(2).length() > 5 && !matcher.group(2).matches(".*(rar|zip|jpg|gif|png|html|php|avi|mpg)$"))
+                ret.add(matcher.group(2));
         }
         pattern = Pattern.compile("(pw|passwort|password|pass)[\\s]?\\:[\\s]*?[\"']([^\"']+)[\"']", Pattern.CASE_INSENSITIVE);
         matcher = pattern.matcher(data);
         while (matcher.find()) {
-            if (matcher.group(2).length() > 3 && !matcher.group(2).matches(".*(rar|zip|jpg|gif|png|html|php|avi|mpg)$")) ret.add(matcher.group(2));
+            if (matcher.group(2).length() > 3 && !matcher.group(2).matches(".*(rar|zip|jpg|gif|png|html|php|avi|mpg)$"))
+                ret.add(matcher.group(2));
         }
         pattern = Pattern.compile("(pw|passwort|password|pass)[\\s]?\\:[\\s]*?([^\"'\\s]+)[\\s]", Pattern.CASE_INSENSITIVE);
         matcher = pattern.matcher(data);
         while (matcher.find()) {
-            if (matcher.group(2).length() > 3 && !matcher.group(2).matches(".*(rar|zip|jpg|gif|png|html|php|avi|mpg)$")) ret.add(matcher.group(2));
+            if (matcher.group(2).length() > 3 && !matcher.group(2).matches(".*(rar|zip|jpg|gif|png|html|php|avi|mpg)$"))
+                ret.add(matcher.group(2));
         }
 
         return ret;
     }
 
+    public static String findPassword(String data) {
+        Vector<String> passwords = findPasswords(data);
+        Vector<String> unique = new Vector<String>();
+        String pw = "";
+        if (passwords.size() == 1)
+            return passwords.get(0);
+        else if (passwords.size() > 0) {
+            pw = "{\"" + passwords.get(0) + "\"";
+            unique.add(passwords.get(0));
+            for (int i = 1; i < passwords.size(); i++) {
+                if (!unique.contains(passwords.get(i))) {
+                    pw += ",\"" + passwords.get(i) + "\"";
+                    unique.add(passwords.get(i));
+                }
+            }
+            pw += "}";
+        }
+        return pw;
+    }
 }
