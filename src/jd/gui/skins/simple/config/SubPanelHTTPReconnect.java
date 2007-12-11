@@ -65,7 +65,7 @@ class SubPanelHTTPReconnect extends ConfigPanel implements ItemListener, ActionL
 
     private JButton           btnImport;
 
-    private JButton           btnDisconnect;
+
 
     private JLabel            lblWaitForIPCheck;
 
@@ -391,19 +391,10 @@ class SubPanelHTTPReconnect extends ConfigPanel implements ItemListener, ActionL
     }
 
     public void actionPerformed(ActionEvent e) {
-        if (e.getSource() == btnImport)
+        if (e.getSource() == btnImport){
             importFromRoutersDat();
-        else if (e.getSource() == btnDisconnect) {
-            int button = JOptionPane.showConfirmDialog(this, "Sollen die Daten gespeichert und der Router getrennt werden?", "Reconnect-Test", JOptionPane.YES_NO_OPTION);
-            if (button == JOptionPane.YES_OPTION) {
-                save();
-                boolean success = new HTTPReconnect().interact(null);
-                if (success)
-                    JOptionPane.showMessageDialog(this, "RouterTrennung erfolgreich");
-                else
-                    JOptionPane.showMessageDialog(this, "RouterTrennung fehlgeschlagen");
-            }
         }
+ 
 
     }
 
@@ -472,7 +463,7 @@ class SubPanelHTTPReconnect extends ConfigPanel implements ItemListener, ActionL
         txtConnectPostParams = new JTextField(50);
 
         btnImport = new JButton("Router auswählen");
-        btnDisconnect = new JButton("DisconnectTest");
+       
 
         txtLogin.setToolTipText("Als Platzhalter für den Benutzernamen " + HTTPReconnect.VAR_USERNAME + " und für das Password " + HTTPReconnect.VAR_PASSWORD + " nehmen");
         txtConnect.setToolTipText("Hiermit wird die Verbindung wiederaufgebaut (zb http://www.google.de)");
@@ -483,8 +474,7 @@ class SubPanelHTTPReconnect extends ConfigPanel implements ItemListener, ActionL
         cboDisconnectType.addItemListener(this);
         cboConnectType.addItemListener(this);
         btnImport.addActionListener(this);
-        btnDisconnect.addActionListener(this);
-
+    
         Insets insets = new Insets(1, 5, 1, 5);
         int row = 0;
         tabbedPane.addTab(JDUtilities.getResourceString("label.config.router_control"), pnlControl);
@@ -502,8 +492,7 @@ class SubPanelHTTPReconnect extends ConfigPanel implements ItemListener, ActionL
         JDUtilities.addToGridBag(pnlControl, lblDisconnectTest, 0, row++, 1, 1, 0, 1, insets, GridBagConstraints.NONE, GridBagConstraints.NORTHEAST);
         row = 0;
         JDUtilities.addToGridBag(pnlControl, btnImport, 1, row++, 1, 1, 1, 0, insets, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-        JDUtilities.addToGridBag(pnlControl, btnDisconnect, 1, row++, 1, 1, 1, 1, insets, GridBagConstraints.HORIZONTAL, GridBagConstraints.NORTHWEST);
-
+      
         // Router Login
         row = 0;
         JDUtilities.addToGridBag(pnlLogin, lblUsername, 0, row++, 1, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.EAST);

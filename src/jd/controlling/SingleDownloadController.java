@@ -375,8 +375,9 @@ public class SingleDownloadController extends ControlMulticaster {
         // Download Zeit. Versuch durch eine Interaction einen reconnect
         // zu machen. wenn das klappt nochmal versuchen
         Interaction.handleInteraction((Interaction.INTERACTION_BEFORE_RECONNECT), this);
-     
-        if (Interaction.handleInteraction((Interaction.INTERACTION_NEED_RECONNECT), this) || Interaction.handleInteraction((Interaction.INTERACTION_DOWNLOAD_WAITTIME), this)) {
+        Interaction.handleInteraction((Interaction.INTERACTION_NEED_RECONNECT), this);
+        Interaction.handleInteraction((Interaction.INTERACTION_DOWNLOAD_WAITTIME), this);
+        if (JDUtilities.reconnect()) {
             downloadLink.setStatus(DownloadLink.STATUS_TODO);
             downloadLink.setEndOfWaittime(0);
         }
@@ -491,9 +492,13 @@ public class SingleDownloadController extends ControlMulticaster {
         downloadLink.setInProgress(false);
         downloadLink.setStatusText("Bot erkannt/Reconnect ");
         fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SINGLE_DOWNLOAD_CHANGED, downloadLink));
-       if(plugin.getBotWaittime()<0) Interaction.handleInteraction(Interaction.INTERACTION_BEFORE_RECONNECT, this);
+       if(plugin.getBotWaittime()<0){
+            Interaction.handleInteraction(Interaction.INTERACTION_BEFORE_RECONNECT, this);
+            Interaction.handleInteraction((Interaction.INTERACTION_NEED_RECONNECT), this);
+            Interaction.handleInteraction((Interaction.INTERACTION_DOWNLOAD_WAITTIME), this);    
         
-        if (plugin.getBotWaittime()<0&&(Interaction.handleInteraction((Interaction.INTERACTION_NEED_RECONNECT), this) || Interaction.handleInteraction((Interaction.INTERACTION_DOWNLOAD_WAITTIME), this))) {
+        }
+        if (plugin.getBotWaittime()<0&&JDUtilities.reconnect()) {
             downloadLink.setStatus(DownloadLink.STATUS_TODO);
             downloadLink.setEndOfWaittime(0);
         }else if(plugin.getBotWaittime()>0){
@@ -551,7 +556,7 @@ public class SingleDownloadController extends ControlMulticaster {
         boolean a = Interaction.handleInteraction((Interaction.INTERACTION_NEED_RECONNECT), this);
         Interaction.handleInteraction(Interaction.INTERACTION_AFTER_RECONNECT, this);
         boolean b = Interaction.handleInteraction((Interaction.INTERACTION_DOWNLOAD_WAITTIME), this);
-        if (a || b) {
+        if (JDUtilities.reconnect()) {
             downloadLink.setStatus(DownloadLink.STATUS_TODO);
             downloadLink.setEndOfWaittime(0);
         }

@@ -17,6 +17,25 @@ import jd.utils.JDUtilities;
  * @author DwD
  */
 public class Unrar extends Interaction implements Serializable {
+    private static Unrar INSTANCE = null;
+
+    // DIese Interaction sollte nur einmal exisitieren und wird deshalb über
+    // eine factory aufgerufen.
+    private Unrar() {
+        super();
+    }
+
+    public static Unrar getInstance() {
+        if (INSTANCE == null) {
+            if (JDUtilities.getConfiguration().getProperty(Configuration.PARAM_UNRAR_INSTANCE, null) != null) {
+                INSTANCE = (Unrar) JDUtilities.getConfiguration().getProperty(Configuration.PARAM_UNRAR_INSTANCE, null);
+                return INSTANCE;
+            }
+            INSTANCE = new Unrar();
+        }
+        return INSTANCE;
+
+    }
 
     /**
      * 
@@ -37,6 +56,8 @@ public class Unrar extends Interaction implements Serializable {
     public static final String  PROPERTY_OVERWRITE_FILES = "PROPERTY_OVERWRITE_FILES";
 
     public static final String  PROPERTY_MAX_FILESIZE    = "PROPERTY_MAX_FILESIZE";
+
+    public static final String  PROPERTY_ENABLED         = "PROPERTY_ENABLED";
 
     @Override
     public boolean doInteraction(Object arg) {

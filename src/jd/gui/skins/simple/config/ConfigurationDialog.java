@@ -60,7 +60,8 @@ public class ConfigurationDialog extends JDialog implements ActionListener {
         this.addConfigPanel(new ConfigPanelDownload(configuration, uiinterface));
         this.addConfigPanel(new ConfigPanelReconnect(configuration, uiinterface));
         this.addConfigPanel(new ConfigPanelCaptcha(configuration, uiinterface));
-        
+        this.addConfigPanel(new ConfigPanelUnrar(configuration, uiinterface));  
+        this.addConfigPanel(new ConfigPanelInfoFileWriter(configuration, uiinterface));
         this.addConfigPanel(new ConfigPanelEventmanager(configuration, uiinterface));
        
         this.addConfigPanel(new ConfigPanelPluginForHost(configuration, uiinterface));

@@ -67,7 +67,7 @@ public abstract class Interaction extends Property implements Serializable {
     /**
      * Reconnect nötig
      */
-    public static InteractionTrigger          INTERACTION_NEED_RECONNECT            = new InteractionTrigger(11, "Reconnect nötig", "Alle Trigger bei denen ein Reconnect sinnvoll ist zusammengefasst");
+    public static InteractionTrigger          INTERACTION_NEED_RECONNECT          = new InteractionTrigger(11, "Reconnect nötig", "Alle Trigger bei denen ein Reconnect sinnvoll ist zusammengefasst");
     /**
      * Zeigt an, daß ein einzelner Download beendet wurde
      */
@@ -379,7 +379,7 @@ public abstract class Interaction extends Property implements Serializable {
      * @return Liste mit allen Interactionen
      */
     public static Interaction[] getInteractionList() {
-        return new Interaction[] { new HTTPLiveHeader(),new Unrar(), new DummyInteraction(), new ExternExecute(), new ExternReconnect(), new HTTPReconnect(),  new JAntiCaptcha(), new ManualCaptcha(),new JDExit(), new ResetLink(),new InfoFileWriter(), new ContainerReloader() };
+        return new Interaction[] { new ExternExecute(), new JDExit(), new ResetLink()};
     }
     /**
      * Da die Knfigurationswünsche nicht gespeichert werden, muss der ConfigContainer immer wieder aufs neue Initialisiert werden. Alle Interactionen müssend azu die initConifg  Methode implementieren 

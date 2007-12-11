@@ -46,7 +46,6 @@ import java.security.NoSuchAlgorithmException;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Locale;
 import java.util.MissingResourceException;
 import java.util.ResourceBundle;
@@ -70,6 +69,11 @@ import jd.captcha.JAntiCaptcha;
 import jd.captcha.pixelgrid.Captcha;
 import jd.config.Configuration;
 import jd.controlling.JDController;
+import jd.controlling.interaction.ExternReconnect;
+import jd.controlling.interaction.HTTPLiveHeader;
+import jd.controlling.interaction.HTTPReconnect;
+import jd.controlling.interaction.Unrar;
+import jd.gui.UIInterface;
 import jd.plugins.LogFormatter;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForContainer;
@@ -79,7 +83,6 @@ import jd.plugins.PluginForSearch;
 import jd.plugins.PluginOptional;
 import jd.plugins.RequestInfo;
 import jd.update.WebUpdater;
-import sun.misc.Service;
 
 /**
  * @author astaldo/coalado
@@ -111,17 +114,18 @@ public class JDUtilities {
 
     private static final int                       RUNTYPE_LOCAL       = 1;
 
-    public static final int                       RUNTYPE_LOCAL_JARED = 2;
+    public static final int                        RUNTYPE_LOCAL_JARED = 2;
 
-    private static  Vector<PluginForSearch> pluginsForSearch = null;
+    private static Vector<PluginForSearch>         pluginsForSearch    = null;
 
-    private static  Vector<PluginForContainer> pluginsForContainer = null;
+    private static Vector<PluginForContainer>      pluginsForContainer = null;
 
-    private static  Vector<PluginForHost> pluginsForHost = null;
+    private static Vector<PluginForHost>           pluginsForHost      = null;
 
-    private static  HashMap<String, PluginOptional> pluginsOptional = null;
-    
-    private static Vector<PluginForDecrypt> pluginsForDecrypt;
+    private static HashMap<String, PluginOptional> pluginsOptional     = null;
+
+    private static Vector<PluginForDecrypt>        pluginsForDecrypt;
+
     /**
      * Ein URLClassLoader, um Dateien aus dem HomeVerzeichnis zu holen
      */
@@ -178,8 +182,6 @@ public class JDUtilities {
      * Die Konfiguration
      */
     private static Configuration                   configuration       = new Configuration();
-
-
 
     /**
      * Geht eine Komponente so lange durch (getParent), bis ein Objekt vom Typ
@@ -617,21 +619,20 @@ public class JDUtilities {
         }
         return jdClassLoader;
     }
-    
-    
+
     /**
      * Diese Methode erstellt einen neuen Captchadialog und liefert den
      * eingegebenen Text zurück.
      * 
      * @param controller Der Controller
-     * @param plugin Das Plugin, das dieses Captcha fordert 
+     * @param plugin Das Plugin, das dieses Captcha fordert
      * @param host der Host von dem die Methode verwendet werden soll
      * @param file
      * @return Der vom Benutzer eingegebene Text
      */
     public static String getCaptcha(JDController controller, Plugin plugin, String host, File file) {
         if (controller == null) controller = getController();
-        
+
         logger.info("JAC has Method for: " + host + ": " + JAntiCaptcha.hasMethod(getJACMethodsDirectory(), host));
         if (JAntiCaptcha.hasMethod(getJACMethodsDirectory(), host)) {
             JFrame jf = new JFrame();
@@ -669,6 +670,7 @@ public class JDUtilities {
     public static String getCaptcha(JDController controller, Plugin plugin, File file) {
         return getCaptcha(controller, plugin, plugin.getHost(), file);
     }
+
     /**
      * Diese Methode erstellt einen neuen Captchadialog und liefert den
      * eingegebenen Text zurück.
@@ -681,19 +683,19 @@ public class JDUtilities {
     public static String getCaptcha(Plugin plugin, File file) {
         return getCaptcha(getController(), plugin, plugin.getHost(), file);
     }
+
     /**
      * Diese Methode erstellt einen neuen Captchadialog und liefert den
      * eingegebenen Text zurück.
      * 
-     * @param plugin Das Plugin, das dieses Captcha fordert 
+     * @param plugin Das Plugin, das dieses Captcha fordert
      * @param host der Host von dem die Methode verwendet werden soll
      * @param file
      * @return Der vom Benutzer eingegebene Text
      */
-    public static String getCaptcha(Plugin plugin, String host,  File file) {
+    public static String getCaptcha(Plugin plugin, String host, File file) {
         return getCaptcha(getController(), plugin, host, file);
     }
-
 
     // /**
     // * Fügt einen PluginListener hinzu
@@ -1049,8 +1051,8 @@ public class JDUtilities {
      * @return gibt den Pfad zu den JAC Methoden zurück
      */
     public static String getJACMethodsDirectory() {
-        String sep = System.getProperty("file.separator");
-        return getJDHomeDirectory() + sep + "jd" + sep + "captcha" + sep + "methods";
+      
+        return "jd/captcha/methods/";
     }
 
     /**
@@ -1213,7 +1215,7 @@ public class JDUtilities {
             Enumeration<URL> en = Thread.currentThread().getContextClassLoader().getResources("jd/Main.class");
             if (en.hasMoreElements()) {
                 String root = en.nextElement().toString();
-              logger.info(root);
+                logger.info(root);
                 if (root.indexOf("http://") >= 0) {
                     return RUNTYPE_WEBSTART;
                 }
@@ -1833,40 +1835,69 @@ public class JDUtilities {
     }
 
     public static void setPluginForDecryptList(Vector<PluginForDecrypt> loadPlugins) {
-       pluginsForDecrypt=loadPlugins;
-        
+        pluginsForDecrypt = loadPlugins;
+
     }
 
     public static void setPluginForHostList(Vector<PluginForHost> loadPlugins) {
-       pluginsForHost=loadPlugins;
-        
+        pluginsForHost = loadPlugins;
+
     }
 
     public static void setPluginForSearchList(Vector<PluginForSearch> loadPlugins) {
-        pluginsForSearch=loadPlugins;
-        
+        pluginsForSearch = loadPlugins;
+
     }
 
     public static void setPluginForContainerList(Vector<PluginForContainer> loadPlugins) {
-     pluginsForContainer=loadPlugins;
-        
+        pluginsForContainer = loadPlugins;
+
     }
 
     public static void setPluginOptionalList(HashMap<String, PluginOptional> loadPlugins) {
-        pluginsOptional=loadPlugins;
-        
+        pluginsOptional = loadPlugins;
+
     }
 
     public static void restartJD() {
-        logger.info(JDUtilities.runCommand("java", new String[] { "-jar", "JDownloader.jar",  }, JDUtilities.getResourceFile(".").getAbsolutePath(), 0));
+        logger.info(JDUtilities.runCommand("java", new String[] { "-jar", "JDownloader.jar", }, JDUtilities.getResourceFile(".").getAbsolutePath(), 0));
         System.exit(0);
-        
+
     }
 
     public static void saveConfig() {
         JDUtilities.saveObject(null, JDUtilities.getConfiguration(), JDUtilities.getJDHomeDirectory(), JDUtilities.CONFIG_PATH.split("\\.")[0], "." + JDUtilities.CONFIG_PATH.split("\\.")[1], Configuration.saveAsXML);
 
-        
     }
+
+    public static UIInterface getGUI() {
+        return JDUtilities.getController().getUiInterface();
+    }
+
+    /**
+     * Führt über die in der cnfig gegebenen daten einen reconnect durch.
+     * 
+     * @return
+     */
+
+    public static boolean reconnect() {
+        String type = getConfiguration().getStringProperty(Configuration.PARAM_RECONNECT_TYPE, null);
+        if (type == null) {
+            getGUI().showMessageDialog("Reconnect is not configured. Config->Reconnect!");
+            return false;
+        }
+        if (type.equals("HTTPReconnect/Routercontrol")) {
+           return new HTTPReconnect().doInteraction(null);
+        }
+        if (type.equals("LiveHeader/Curl")) {
+            return new HTTPLiveHeader().doInteraction(null);
+        }
+        if (type.equals("Extern")) {
+            return new ExternReconnect().doInteraction(null);
+        }
+return true;
+    }
+
+  
 
 }

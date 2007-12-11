@@ -1,5 +1,6 @@
 package jd.controlling.interaction;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.StringReader;
@@ -18,6 +19,7 @@ import java.util.Map.Entry;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import javax.swing.JFrame;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
@@ -50,6 +52,8 @@ public class HTTPLiveHeader extends Interaction {
      * serialVersionUID
      */
     private static final String      NAME        = "HTTP Live Header";
+
+    private static final String      SEPARATOR   = System.getProperty("line.separator");
 
     /**
      * Maximal 10 versuche
@@ -107,8 +111,19 @@ public class HTTPLiveHeader extends Interaction {
         return att.getNamedItem(key).getNodeValue();
     }
 
+    public Vector<String[]> getLHScripts() {
+        File f = JDUtilities.getResourceFile("jd/router/lhdb.xml");
+        if (!f.exists()) {
+            logger.severe("jd/router/lhdb.xml does not exist");
+            return new Vector<String[]>();
+        }
+
+        return (Vector<String[]>) JDUtilities.loadObject(new JFrame(), f, true);
+    }
+
     @Override
     public boolean doInteraction(Object arg) {
+         //getDatabase();
         if (!isEnabled()) {
             logger.info("Reconnect deaktiviert");
             return false;
@@ -326,6 +341,183 @@ public class HTTPLiveHeader extends Interaction {
         }
         progress.finalize();
         return false;
+    }
+
+    private void getDatabase() {
+        Vector<String[]> db = new Vector<String[]>();
+        String[] cScript = null;
+        try {
+
+            RequestInfo requestInfo = Plugin.getRequest(new URL("http://files.thau-ex.de/reconnect/"));
+            Vector<Vector<String>> cats = Plugin.getAllSimpleMatches(requestInfo.getHtmlCode(), "<a href=?cat_select=°>");
+
+            for (int i = 0; i < cats.size(); i++) {
+                requestInfo = Plugin.getRequest(new URL("http://files.thau-ex.de/reconnect/?cat_select=" + cats.get(i).get(0)));
+                Vector<Vector<String>> router = Plugin.getAllSimpleMatches(requestInfo.getHtmlCode(), "<a class=\"link\" href=?cat_select=°&show=°>°</a>");
+
+                for (int t = 0; t < router.size(); t++) {
+                    String endURL = "http://files.thau-ex.de/reconnect/?cat_select=" + router.get(t).get(0) + "&show=" + router.get(t).get(1);
+                    requestInfo = Plugin.getRequest(new URL(endURL));
+                    // s logger.info(requestInfo.getHtmlCode() + "");
+
+                    String code = Plugin.getSimpleMatch(requestInfo.getHtmlCode(), "<textarea name=\"ReconnectCode\" °>°</textarea", 1);
+
+                    String script = getScriptFromCURL(code);
+                    if (script == null) {
+
+                        cScript = new String[] { router.get(t).get(0), router.get(t).get(2), code };
+                    }
+                    else {
+                        cScript = new String[] { router.get(t).get(0), router.get(t).get(2), script };
+                    }
+                    db.add(cScript);
+
+                }
+
+            }
+
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+        }
+        
+        HashMap<String, Boolean> ch = new HashMap<String, Boolean>();
+        for (int i = db.size() - 1; i >= 0; i--) {
+            if (ch.containsKey(db.get(i)[0] + db.get(i)[1] + db.get(i)[2])) {
+                db.remove(i);
+            }
+            else {
+
+                ch.put(db.get(i)[0] + db.get(i)[1] + db.get(i)[2], true);
+            }
+        }
+        ch.clear();
+        JDUtilities.saveObject(new JFrame(), db, JDUtilities.getResourceFile("lhdb.xml"), "lhdb", ".xml", true);
+    }
+
+    private String[] getParameter(String code) {
+        logger.info("st " + code);
+        boolean qOpen = false;
+        Vector<String> ret = new Vector<String>();
+        int c = 0;
+        int last = 0;
+        int url = -1;
+        while (true) {
+
+            int l = code.indexOf(" ", c);
+            int s = l;
+
+            if (s == -1) s = code.length();
+            String param = " " + code.substring(last, s).trim() + " ";
+            // logger.info(param);
+            if ((param.split("\"").length + 1) % 2 != 0) {
+                // logger.info("ERROR " + param.split("\"").length);
+                c = s + 1;
+                if (s == code.length()) break;
+                continue;
+            }
+            param = param.trim();
+            if (param.startsWith("\"")) param = param.substring(1, param.length());
+            if (param.endsWith("\"")) param = param.substring(0, param.length() - 1);
+            ret.add(param);
+            if (url < 0) {
+                try {
+                    new URL(param);
+                    url = ret.size();
+                }
+                catch (Exception e) {
+
+                }
+            }
+            c = s + 1;
+            last = c;
+            if (s == code.length()) break;
+
+        }
+        logger.info("" + ret);
+        if (url != 2 && url > 0) {
+            String u = ret.remove(url - 1);
+            ret.add(1, u);
+
+        }
+        return ret.toArray(new String[] {});
+
+    }
+
+    private String getScriptFromCURL(String code) {
+        String ret = "[[[HSRC]]]" + SEPARATOR + "";
+        try {
+
+            String[] lines = JDUtilities.splitByNewline(code);
+            for (int i = 0; i < lines.length; i++) {
+                if (lines[i].trim().toLowerCase().startsWith("curl")) {
+                    try {
+                        String[] params = getParameter(lines[i]);
+                        if (params.length < 2) continue;
+                        String url = params[1];
+                        logger.info(lines[i] + " : " + url);
+                        String host = new URL(url).getHost();
+                        String path = new URL(url).getFile();
+
+                        // String[] login=new URL(url).getUserInfo().split(":");
+
+                        ret += "    [[[STEP]]]" + SEPARATOR + "";
+                        ret += "        [[[REQUEST]]]" + SEPARATOR + "";
+                        if (lines[i].indexOf("-d ") >= 0) {
+                            ret += "            POST " + path + " HTTP/1.1" + SEPARATOR + "";
+                            ret += "            Host: " + "%%%routerip%%%" + "" + SEPARATOR + "";
+
+                        }
+                        else {
+                            ret += "            GET " + path + " HTTP/1.1" + SEPARATOR + "";
+                            ret += "            Host: " + "%%%routerip%%%" + "" + SEPARATOR + "";
+                        }
+                        for (int t = 2; t < params.length; t++) {
+                            if (params[t].equalsIgnoreCase("-H")) {
+                                t++;
+                                ret += "            "+params[t] + SEPARATOR;
+                            }
+                            else if (params[t].equalsIgnoreCase("-d")) {
+                                t++;
+                                ret += SEPARATOR +  "            "+params[t];
+                            }
+                            else if (params[t].equalsIgnoreCase("-u")) {
+                                t++;
+                                ret +=  "            "+"Authorization: Basic %%%basicauth%%%" + SEPARATOR;
+                            }
+
+                            else if (params[t].equalsIgnoreCase("-b")) {
+                                t++;
+                                ret +=  "            "+"Cookie: %%%Set-Cookie%%%" + SEPARATOR;
+                            }
+                            else if (params[t].equalsIgnoreCase("-e") || params[t].equalsIgnoreCase("--referer")) {
+                                t++;
+                                ret +=  "            "+"Referer: " + params[t] + SEPARATOR;
+                            }
+                            else {
+                                logger.info("Unknown flag: " + params[t] + " - ");
+                            }
+
+                        }
+                        ret += SEPARATOR + "        [[[/REQUEST]]]" + SEPARATOR;
+                        ret += "    [[[/STEP]]]" + SEPARATOR;
+
+                    }
+                    catch (Exception e) {
+                        e.printStackTrace();
+                        return null;
+                    }
+                }
+
+            }
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+            return null;
+
+        }
+        ret += "[[[/HSRC]]]" + SEPARATOR;
+        return ret;
     }
 
     private void getVariables(String patStr, String[] keys, RequestInfo requestInfo) {
@@ -586,17 +778,7 @@ public class HTTPLiveHeader extends Interaction {
     @Override
     public void initConfig() {
 
-        ConfigEntry cfg;
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, JDUtilities.getConfiguration(), Configuration.PARAM_HTTPSEND_USER, "Login User (->%%%user%%%)"));
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, JDUtilities.getConfiguration(), Configuration.PARAM_HTTPSEND_PASS, "Login Passwort (->%%%pass%%%)"));
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, JDUtilities.getConfiguration(), Configuration.PARAM_HTTPSEND_IP, "RouterIP (->%%%routerip%%%)"));
 
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_SPINNER, JDUtilities.getConfiguration(), Configuration.PARAM_HTTPSEND_IPCHECKWAITTIME, "Wartezeit bis zum ersten IP-Check[sek]", 0, 600).setDefaultValue(5).setExpertEntry(true));
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_SPINNER, JDUtilities.getConfiguration(), Configuration.PARAM_HTTPSEND_RETRIES, "Max. Wiederholungen (-1 = unendlich)", -1, 20).setDefaultValue(5).setExpertEntry(true));
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_SPINNER, JDUtilities.getConfiguration(), Configuration.PARAM_HTTPSEND_WAITFORIPCHANGE, "Auf neue IP warten [sek]", 0, 600).setDefaultValue(20).setExpertEntry(true));
-
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_TEXTAREA, JDUtilities.getConfiguration(), Configuration.PARAM_HTTPSEND_REQUESTS, "HTTP Script"));
-        logger.info("init config " + getConfig());
 
     }
 

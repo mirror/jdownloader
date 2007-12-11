@@ -148,58 +148,6 @@ public class TabProgress extends JPanel {
         }
     }
 
-    // /**
-    // * Diese Klasse sorgt lediglich dafür, die Informationen zum Fortschritt
-    // * eines Plugin festzuhalten
-    // *
-    // * @author astaldo
-    // */
-    // private class PluginProgress {
-    // /**
-    // * Das Plugin, für das die Informationen gelten
-    // */
-    // private Plugin plugin;
-    //
-    // /**
-    // * Eine Fortschrittsanzeige
-    // */
-    // private JProgressBar progressBar;
-    //
-    // /**
-    // * Der aktuelle Wert
-    // */
-    // private int value;
-    //
-    // public PluginProgress(Plugin plugin) {
-    // this(plugin, 0, 0);
-    // }
-    //
-    // public PluginProgress(Plugin plugin, int value, int maximum) {
-    // this.plugin = plugin;
-    // this.progressBar = new JProgressBar();
-    // this.progressBar.setMaximum(maximum);
-    // this.progressBar.setValue(value);
-    // this.progressBar.setStringPainted(true);
-    // }
-    //
-    // /**
-    // * Legt das Maximum der Fortschrittsanzeige fest
-    // *
-    // * @param maximum Maximum-Wert
-    // */
-    // public void setMaximum(int maximum) {
-    // if(maximum<0)maximum=progressBar.getMaximum();
-    // this.progressBar.setMaximum(maximum);
-    // }
-    //
-    // /**
-    // * Erhöht die Fortschrittsanzeige um eins
-    // */
-    // public void increaseValue() {
-    // this.value++;
-    // this.progressBar.setValue(value);
-    // }
-    // }
 
     /**
      * Diese Klasse zeichnet eine JProgressBar in der Tabelle

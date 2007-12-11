@@ -288,21 +288,9 @@ return table.getSelectedRow();
             if (interaction instanceof DummyInteraction) {
                 openPopupPanel(new ConfigPanelInteractionDummy(configuration, uiinterface,(DummyInteraction)interaction));
                 return;
-            }
-            else if (interaction instanceof ExternReconnect) {
-                openPopupPanel(new ConfigPanelInteractionExternReconnect(configuration, uiinterface,interaction));
-                return;
-                
-            }
-            else if (interaction instanceof Unrar) {
-                openPopupPanel(new ConfigPanelInteractionUnrar(configuration, uiinterface,(Unrar) interaction));
-                return;
-                
-            }
-            else if (interaction instanceof HTTPReconnect) {
-                openPopupPanel(new SubPanelHTTPReconnect(configuration, uiinterface));
-                return;
-            }
+            }      
+           
+          
          
             
             logger.info(interaction.getConfig().getEntries()+" _ ");

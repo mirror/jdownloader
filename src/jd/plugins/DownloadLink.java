@@ -328,7 +328,7 @@ public class DownloadLink implements Serializable,Comparable<DownloadLink> {
                 return pluginForContainer.getUrlDownloadDecrypted(this);
             else
                 return null;
-        logger.info("link:" +urlDownload);
+        //logger.info("link:" +urlDownload);
         return JDCrypt.decrypt(urlDownload);
     }
 

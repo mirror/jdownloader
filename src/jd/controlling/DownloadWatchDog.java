@@ -390,6 +390,7 @@ progress.setStatusText("Stopping all downloads");
                     if (links.get(i).waitsForReconnect()) {
                         Interaction.handleInteraction(Interaction.INTERACTION_BEFORE_RECONNECT, this);
                         Interaction.handleInteraction((Interaction.INTERACTION_NEED_RECONNECT), this);
+                        JDUtilities.reconnect();
                         Interaction.handleInteraction(Interaction.INTERACTION_AFTER_RECONNECT, this);
                         break;
 

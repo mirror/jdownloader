@@ -27,7 +27,7 @@ import jd.utils.JDUtilities;
  * 
  */
 
-public class ConfigPanelInteractionUnrar extends ConfigPanel implements ActionListener {
+public class ConfigPanelUnrar extends ConfigPanel implements ActionListener {
 
     /**
      * 
@@ -37,17 +37,22 @@ public class ConfigPanelInteractionUnrar extends ConfigPanel implements ActionLi
      * Instanz zum speichern der parameter
      */
     private Unrar unrar;
-    ConfigPanelInteractionUnrar(Configuration configuration, UIInterface uiinterface, Unrar unrar) {
+    private Configuration configuration;
+    ConfigPanelUnrar(Configuration configuration, UIInterface uiinterface) {
         super(uiinterface);
-        this.unrar = unrar;
+        this.unrar = Unrar.getInstance();
         initPanel();
-
+this.configuration=configuration;
         load();
     }
 
     public void save() {
 
+    
         this.saveConfigEntries();
+      
+            configuration.setProperty(Configuration.PARAM_UNRAR_INSTANCE, unrar);
+     
     }
 
     public void load() {
@@ -70,25 +75,26 @@ public class ConfigPanelInteractionUnrar extends ConfigPanel implements ActionLi
         else if(unrarcmd.matches("NOT FOUND"))
             unrarcmd=null;
         
-        
+        ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, unrar, Unrar.PROPERTY_ENABLED, "Unrar aktivieren").setDefaultValue(true));
+        addGUIConfigEntry(ce);
         ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_BROWSEFILE, unrar, Unrar.PROPERTY_UNRARCOMMAND, "Befehl für die Englische Version von Unrar: ").setDefaultValue(unrarcmd));
         addGUIConfigEntry(ce);
         ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, unrar, Unrar.PROPERTY_AUTODELETE, "Bei erfolgreichem Entpacken automatisch löschen: ").setDefaultValue(true));
         addGUIConfigEntry(ce);
         ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, unrar, Unrar.PROPERTY_OVERWRITE_FILES, "Dateien automatisch überschreiben: ").setDefaultValue(false));
         addGUIConfigEntry(ce);
-        ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, unrar, Unrar.PROPERTY_MAX_FILESIZE, "Maximale Dateigröße für die Passwortsuche in MB: ", 0, 500).setDefaultValue(2));
+        ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, unrar, Unrar.PROPERTY_MAX_FILESIZE, "Maximale Dateigröße für die Passwortsuche in MB: ", 0, 500).setDefaultValue(2).setExpertEntry(true));
         addGUIConfigEntry(ce);
         ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_BUTTON, this, "Passwortliste bearbeiten"));
         addGUIConfigEntry(ce);
-        add(panel, BorderLayout.CENTER);
+        add(panel, BorderLayout.NORTH);
 
     }
 
     @Override
     public String getName() {
 
-        return "Unrar";
+        return "Unrar(inactive)";
     }
 
     public void actionPerformed(ActionEvent e) {

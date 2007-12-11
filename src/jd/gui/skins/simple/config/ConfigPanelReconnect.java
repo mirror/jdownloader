@@ -4,6 +4,7 @@ import java.awt.BorderLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
+import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
@@ -16,14 +17,13 @@ import jd.controlling.interaction.HTTPLiveHeader;
 import jd.controlling.interaction.Interaction;
 import jd.gui.UIInterface;
 import jd.gui.skins.simple.components.BrowseFile;
+import jd.utils.JDUtilities;
 
 public class ConfigPanelReconnect extends ConfigPanel implements ActionListener {
     /**
      * serialVersionUID
      */
-    private static final long      serialVersionUID     = 3383448498625377495L;
-
-    private static final String    PARAM_RECONNECT_TYPE = null;
+    private static final long      serialVersionUID = 3383448498625377495L;
 
     private JLabel                 lblHomeDir;
 
@@ -35,11 +35,13 @@ public class ConfigPanelReconnect extends ConfigPanel implements ActionListener 
 
     private JComboBox              box;
 
-    private SubPanelHTTPReconnect  httpReconnect        = null;
+    private SubPanelHTTPReconnect  httpReconnect    = null;
 
-    private ConfigPanelInteraction lh;
+    private SubPanelLiveHeaderReconnect lh;
 
     private ConfigPanelInteraction er;
+
+    private JButton                btn;
 
     ConfigPanelReconnect(Configuration configuration, UIInterface uiinterface) {
         super(uiinterface);
@@ -50,17 +52,17 @@ public class ConfigPanelReconnect extends ConfigPanel implements ActionListener 
 
     public void save() {
         this.saveConfigEntries();
-       if(httpReconnect!=null) httpReconnect.save();
-       if(httpReconnect!=null) httpReconnect.saveConfigEntries();
-       if(lh!=null) lh.save();
-       if(lh!=null) lh.saveConfigEntries();
-       if(er!=null) er.save();
-       if(er!=null) er.saveConfigEntries();
+        if (httpReconnect != null) httpReconnect.save();
+        if (httpReconnect != null) httpReconnect.saveConfigEntries();
+        if (lh != null) lh.save();
+        if (lh != null) lh.saveConfigEntries();
+        if (er != null) er.save();
+        if (er != null) er.saveConfigEntries();
     }
 
     @Override
     public void initPanel() {
-        String reconnectType = configuration.getStringProperty(PARAM_RECONNECT_TYPE);
+        String reconnectType = configuration.getStringProperty(Configuration.PARAM_RECONNECT_TYPE);
         JPanel p = new JPanel();
 
         box = new JComboBox(new String[] { "HTTPReconnect/Routercontrol", "LiveHeader/Curl", "Extern" });
@@ -73,6 +75,8 @@ public class ConfigPanelReconnect extends ConfigPanel implements ActionListener 
         // panel.add(new JSeparator());
         if (reconnectType != null) box.setSelectedItem(reconnectType);
         add(panel, BorderLayout.NORTH);
+        panel.add(btn = new JButton("Test Reconnect"));
+        btn.addActionListener(this);
         this.setReconnectType();
     }
 
@@ -92,7 +96,7 @@ public class ConfigPanelReconnect extends ConfigPanel implements ActionListener 
         }
         else if (((String) box.getSelectedItem()).equals("LiveHeader/Curl")) {
 
-            panel.add(lh = new ConfigPanelInteraction(uiinterface, (Interaction) new HTTPLiveHeader()), BorderLayout.PAGE_END);
+            panel.add(lh = new SubPanelLiveHeaderReconnect(uiinterface, (Interaction) new HTTPLiveHeader()), BorderLayout.PAGE_END);
 
         }
         else if (((String) box.getSelectedItem()).equals("Extern")) {
@@ -110,17 +114,25 @@ public class ConfigPanelReconnect extends ConfigPanel implements ActionListener 
 
     @Override
     public String getName() {
-        return "Reconnect/inactiv";
+        return "Reconnect";
     }
 
     public void actionPerformed(ActionEvent e) {
 
         if (e.getSource() == box) {
 
-            configuration.setProperty(PARAM_RECONNECT_TYPE, (String) box.getSelectedItem());
+            configuration.setProperty(Configuration.PARAM_RECONNECT_TYPE, (String) box.getSelectedItem());
             setReconnectType();
 
         }
-
+        if (e.getSource() == btn) {
+          save();
+            if (JDUtilities.reconnect()) {
+                JDUtilities.getGUI().showMessageDialog("Reconnect successfull");
+            }
+            else {
+                JDUtilities.getGUI().showMessageDialog("Reconnect failed!");
+            }
+        }
     }
 }

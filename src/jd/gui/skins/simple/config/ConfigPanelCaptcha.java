@@ -1,120 +1,242 @@
 package jd.gui.skins.simple.config;
 
 import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.Dimension;
 import java.awt.GridBagConstraints;
-import java.util.Locale;
-import java.util.logging.Level;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
+import java.io.File;
+import java.util.HashMap;
+import java.util.Vector;
 
-import javax.swing.JFileChooser;
-import javax.swing.JLabel;
-import javax.swing.UIManager;
+import javax.swing.JCheckBox;
+import javax.swing.JProgressBar;
+import javax.swing.JScrollPane;
+import javax.swing.JTable;
+import javax.swing.event.TableModelEvent;
+import javax.swing.table.AbstractTableModel;
+import javax.swing.table.DefaultTableCellRenderer;
+import javax.swing.table.TableCellRenderer;
+import javax.swing.table.TableColumn;
 
-import jd.config.ConfigContainer;
-import jd.config.ConfigEntry;
+import jd.captcha.JAntiCaptcha;
 import jd.config.Configuration;
-import jd.event.UIEvent;
 import jd.gui.UIInterface;
-import jd.gui.skins.simple.components.BrowseFile;
+
+import jd.plugins.PluginForSearch;
 import jd.utils.JDUtilities;
 
-public class ConfigPanelCaptcha extends ConfigPanel {
+public class ConfigPanelCaptcha extends ConfigPanel implements MouseListener{
+
+
+
+
+
+
     /**
-     * serialVersionUID
+     * 
      */
-    private static final long serialVersionUID = 3383448498625377495L;
-    private JLabel            lblHomeDir;
-    private BrowseFile        brsHomeDir;
-    private Configuration     configuration;
-    ConfigPanelCaptcha(Configuration configuration, UIInterface uiinterface) {
+  
+
+
+
+    private JTable                   table;
+
+    private Configuration configuration;
+
+    private File[] methods;
+
+
+
+    public ConfigPanelCaptcha(Configuration configuration, UIInterface uiinterface) {
         super(uiinterface);
-        this.configuration = configuration;
-        initPanel();
+        this.configuration=configuration;
+       methods = JAntiCaptcha.getMethods("jd/captcha/methods/");
+       logger.info(methods.length+"");
+  
+ 
+       
+        initPanel(); 
+
         load();
+
     }
+
+    /**
+     * Lädt alle Informationen
+     */
+    public void load() {
+
+    }
+
+    /**
+     * Speichert alle Änderungen auf der Maske
+     */
     public void save() {
-        this.saveConfigEntries();
-        JDUtilities.getLogger().setLevel((Level) configuration.getProperty(Configuration.PARAM_LOGGER_LEVEL));
-        if (JDUtilities.getHomeDirectory() != null && !JDUtilities.getHomeDirectory().equalsIgnoreCase(brsHomeDir.getText().trim())) {
-            JDUtilities.writeJDHomeDirectoryToWebStartCookie(brsHomeDir.getText().trim());
-            if (uiinterface.showConfirmDialog("Installationsverzeichnis geändert. Soll ein Webupdate durchgeführt werden um das neue Verzeichnis zu aktualisieren(empfohlen)?")) {
-                uiinterface.fireUIEvent(new UIEvent(uiinterface, UIEvent.UI_INTERACT_UPDATE));
-            }
-        }
+    // Interaction[] tmp= new Interaction[interactions.size()];
+//        PluginForSearch plg;
+//        for (int i = 0; i < pluginsForSearch.size(); i++) {
+//            plg = pluginsForSearch.elementAt(i);
+//            if (plg.getProperties() != null) configuration.setProperty("PluginConfig_" + plg.getPluginName(), plg.getProperties());
+//        }
+
+    }
+    public void mouseClicked(MouseEvent e) {
+        
+            
+        
+        
+        configuration.setProperty(Configuration.PARAM_JAC_METHODS+"_"+methods[table.getSelectedRow()].getName(),!configuration.getBooleanProperty(Configuration.PARAM_JAC_METHODS+"_"+methods[table.getSelectedRow()].getName(),true));
+        table.tableChanged(new TableModelEvent(table.getModel()));
     }
     @Override
     public void initPanel() {
-        GUIConfigEntry ce;
-        ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, configuration, Configuration.PARAM_LOCALE, new Locale[] { Locale.GERMAN, Locale.ENGLISH }, "Sprache").setDefaultValue(Locale.getDefault()));
-        addGUIConfigEntry(ce);
-        ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, configuration, Configuration.PARAM_LOGGER_LEVEL, new Level[] { Level.ALL, Level.FINEST, Level.FINER, Level.FINE, Level.INFO, Level.WARNING, Level.SEVERE, Level.OFF }, "Level für's Logging").setDefaultValue(Level.FINER).setExpertEntry(true));
-        addGUIConfigEntry(ce);
-        ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_BROWSEFOLDER, configuration, Configuration.PARAM_DOWNLOAD_DIRECTORY, "Default Download Verzeichnis").setDefaultValue(JDUtilities.getJDHomeDirectory().getAbsolutePath()));
-        addGUIConfigEntry(ce);
-        ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, configuration, Configuration.PARAM_FINISHED_DOWNLOADS_ACTION, new String[] { Configuration.FINISHED_DOWNLOADS_REMOVE, Configuration.FINISHED_DOWNLOADS_REMOVE_AT_START, Configuration.FINISHED_DOWNLOADS_NO_REMOVE },
-                "Fertig gestellte Downloads ...").setDefaultValue(Configuration.FINISHED_DOWNLOADS_REMOVE_AT_START).setExpertEntry(true));
-        addGUIConfigEntry(ce);
-        ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, configuration, Configuration.PARAM_DISABLE_CONFIRM_DIALOGS, "Bestätigungsdialoge nicht anzeigen").setDefaultValue(false).setExpertEntry(true));
-        addGUIConfigEntry(ce);
-        
-        String[] plafs;
-        
-        UIManager.LookAndFeelInfo[] info = UIManager.getInstalledLookAndFeels();
-        plafs=new String[info.length];
-        
-        for( int i=0;i<plafs.length;i++){
-            plafs[i]=info[i].getName();
+        setLayout(new BorderLayout());
+        table = new JTable();
+        InternalTableModel internalTableModel = new InternalTableModel();
+        table.setModel(new InternalTableModel());
+      table.setEditingRow(0);
+table.addMouseListener(this);
+        this.setPreferredSize(new Dimension(700, 350));
+
+        TableColumn column = null;
+        for (int c = 0; c < internalTableModel.getColumnCount(); c++) {
+            column = table.getColumnModel().getColumn(c);
+            switch (c) {
+
+                case 0:
+                    column.setPreferredWidth(50);
+                    break;
+                case 1:
+                    column.setPreferredWidth(600);
+                    break;
+         
+
+            }
         }
-        ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, configuration, Configuration.PARAM_PLAF, plafs,    "Style(benötigt JD-Neustart)").setDefaultValue("Windows"));
-addGUIConfigEntry(ce);
-
-//        if(JDUtilities.getJavaVersion()>=1.6d){
-//            ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, configuration, Configuration.PARAM_NO_TRAY, "Trayicon deaktivieren").setDefaultValue(false));
-//               
-//        }else{
-//        ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, configuration, Configuration.PARAM_NO_TRAY, "Trayicon deaktivieren").setDefaultValue(true).setEnabled(false));
-//        }
-//        addGUIConfigEntry(ce);
-       
-        ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, configuration, Configuration.PARAM_START_DOWNLOADS_AFTER_START, "Download beim Programmstart beginnen").setDefaultValue(false));
-        addGUIConfigEntry(ce);
         
-        ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, configuration, Configuration.PARAM_USE_PACKETNAME_AS_SUBFOLDER, "Wenn möglich Unterordner mit Paketname erstellen").setDefaultValue(false));
-        addGUIConfigEntry(ce);
-        
-        ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, configuration, Configuration.PARAM_CLIPBOARD_ALWAYS_ACTIVE, "Zwischenablage immer überwachen").setDefaultValue(false));
-        addGUIConfigEntry(ce);
-       
+        // add(scrollPane);
+        // list = new JList();
+    
+        JScrollPane scrollpane = new JScrollPane(table);
+        scrollpane.setPreferredSize(new Dimension(400, 200));
 
-        ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, configuration, Configuration.PARAM_WEBUPDATE_LOAD_ALL_TOOLS, "Webupdate: Alle Erweiterungen aktualisieren (auch OS-fremde)").setDefaultValue(false).setExpertEntry(true));
-        addGUIConfigEntry(ce);
-        ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, configuration, Configuration.PARAM_WEBUPDATE_AUTO_RESTART, "Webupdate:  automatisch ausführen!").setDefaultValue(false).setExpertEntry(true));
-        addGUIConfigEntry(ce);
+      
 
-        ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, configuration, Configuration.PARAM_WRITE_LOG, "Filelogger: Log in Datei schreiben").setDefaultValue(true));
-        addGUIConfigEntry(ce);
-        
-        ce= new GUIConfigEntry( new ConfigEntry(ConfigContainer.TYPE_BROWSEFILE, configuration, Configuration.PARAM_WRITE_LOG_PATH, "Filelogger: Pfad zur Logfile").setDefaultValue(JDUtilities.getResourceFile("jd_log.txt").getAbsolutePath()));
-        addGUIConfigEntry(ce);
+    
+        JDUtilities.addToGridBag(panel, scrollpane, 0, 0, 3, 1, 1, 1, insets, GridBagConstraints.BOTH, GridBagConstraints.CENTER);
 
-        ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, configuration, Configuration.PARAM_JAC_LOG, "jAntiCaptcha: Log aktiv").setDefaultValue(false).setExpertEntry(true));
-        addGUIConfigEntry(ce);
-       
         
-        if (JDUtilities.getHomeDirectory() != null) {
-            brsHomeDir = new BrowseFile();
-            brsHomeDir.setText(JDUtilities.getHomeDirectory());
-            brsHomeDir.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
-            JDUtilities.addToGridBag(panel, lblHomeDir, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, 1, 1, 1, 1, insets, GridBagConstraints.NONE, GridBagConstraints.EAST);
-            JDUtilities.addToGridBag(panel, brsHomeDir, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 1, 1, 1, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
-        }
-        add(panel, BorderLayout.NORTH);
+        // JDUtilities.addToGridBag(this, panel,0, 0, 1, 1, 1, 1, insets,
+        // GridBagConstraints.BOTH, GridBagConstraints.WEST);
+        add(panel, BorderLayout.CENTER);
+
     }
-    @Override
-    public void load() {
-        this.loadConfigEntries();
+
+    private int getSelectedIndex() {
+        return table.getSelectedRow();
     }
+
     @Override
     public String getName() {
-        return "jAntiCaptcha/inactiv";
+
+        return "jAntiCaptcha";
     }
+
+
+    private File getSelectedMethod() {
+        int index = getSelectedIndex();
+        if (index < 0) return null;
+        return this.methods[index];
+    }
+
+
+
+
+
+    private class InternalTableModel extends AbstractTableModel {
+
+        /**
+         * 
+         */
+        private static final long serialVersionUID = 1155282457354673850L;
+
+        public Class<?> getColumnClass(int columnIndex) {
+            switch (columnIndex) {
+                case 0:
+                    return Boolean.class;
+                case 1:
+                    return String.class;
+           
+
+            }
+            return String.class;
+        }
+
+        public int getColumnCount() {
+            return 2;
+        }
+
+        public int getRowCount() {
+            return methods.length;
+        }
+
+        public Object getValueAt(int rowIndex, int columnIndex) {
+
+            switch (columnIndex) {
+                case 0:                  
+                    return configuration.getBooleanProperty(Configuration.PARAM_JAC_METHODS+"_"+methods[rowIndex].getName(),true);
+                case 1:
+                    return methods[rowIndex].getName()+" : "+(configuration.getBooleanProperty(Configuration.PARAM_JAC_METHODS+"_"+methods[rowIndex].getName(),true)?"Automatische Erkennung":"Manuelle Eingabe");
+            
+
+            }
+            return null;
+        }
+
+        public String getColumnName(int column) {
+            switch (column) {
+                case 0:
+                    return "Verwenden";
+                case 1:
+                    return "Methode";
+           
+
+            }
+            return super.getColumnName(column);
+        }
+    }
+
+
+
+
+
+    public void mouseEntered(MouseEvent e) {
+        // TODO Auto-generated method stub
+        
+    }
+
+    public void mouseExited(MouseEvent e) {
+        // TODO Auto-generated method stub
+        
+    }
+
+    public void mousePressed(MouseEvent e) {
+        // TODO Auto-generated method stub
+        
+    }
+
+    public void mouseReleased(MouseEvent e) {
+        // TODO Auto-generated method stub
+        
+    }
+    
+
+    
+    
+
+    
+
 }

@@ -186,57 +186,57 @@ public class UTILITIES {
         return file.toURI().toString();
     }
 
-    /**
-     * @param path
-     * @return Gibt zum Pfad Path die URL zurück
-     */
-    public static URLClassLoader getURLClassLoader(String path) {
-        if(JAntiCaptcha.isLoggerActive())logger.fine("Loading: " + path);
-        if (path.startsWith("file:")) {
-            try {
+//    /**
+//     * @param path
+//     * @return Gibt zum Pfad Path die URL zurück
+//     */
+//    public static URLClassLoader getURLClassLoader(String path) {
+//        if(JAntiCaptcha.isLoggerActive())logger.fine("Loading: " + path);
+//        if (path.startsWith("file:")) {
+//            try {
+//
+//                if (new File(new URI(path)).exists() != true) return null;
+//
+//                return new URLClassLoader(new URL[] { new URL(path) });
+//            }
+//            catch (URISyntaxException e) {
+//                 e.printStackTrace();
+//
+//            }
+//            catch (MalformedURLException e) {
+//
+//                 e.printStackTrace();
+//            }
+//        }
+//        else {
+//            try {
+//                if (!new File(path).exists()) return null;
+//                return new URLClassLoader(new URL[] { new File(path).toURI().toURL() }, null);
+//            }
+//            catch (MalformedURLException e) {
+//                 e.printStackTrace();
+//                return null;
+//            }
+//        }
+//        return null;
+//    }
 
-                if (new File(new URI(path)).exists() != true) return null;
+//    /**
+//     * @param file
+//     * @return Gibt die URl zur File zurück
+//     */
+//    public static URLClassLoader getURLClassLoader(File file) {
+//        return getURLClassLoader(file.getAbsolutePath());
+//    }
 
-                return new URLClassLoader(new URL[] { new URL(path) });
-            }
-            catch (URISyntaxException e) {
-                 e.printStackTrace();
-
-            }
-            catch (MalformedURLException e) {
-
-                 e.printStackTrace();
-            }
-        }
-        else {
-            try {
-                if (!new File(path).exists()) return null;
-                return new URLClassLoader(new URL[] { new File(path).toURI().toURL() }, null);
-            }
-            catch (MalformedURLException e) {
-                 e.printStackTrace();
-                return null;
-            }
-        }
-        return null;
-    }
-
-    /**
-     * @param file
-     * @return Gibt die URl zur File zurück
-     */
-    public static URLClassLoader getURLClassLoader(File file) {
-        return getURLClassLoader(file.getAbsolutePath());
-    }
-
-    /**
-     * @param url
-     * @param file
-     * @return Gibt die URl zur File zurück
-     */
-    public static URLClassLoader getURLClassLoader(URL url) {
-        return getURLClassLoader(url.toString());
-    }
+//    /**
+//     * @param url
+//     * @param file
+//     * @return Gibt die URl zur File zurück
+//     */
+//    public static URLClassLoader getURLClassLoader(URL url) {
+//        return getURLClassLoader(url.toString());
+//    }
 
     /**
      * public static void wait(int ms) Hält den aktuellen Thread um ms
@@ -743,6 +743,7 @@ public class UTILITIES {
      * @return XML Dokument
      */
     public static Document parseXmlString(String xmlString, boolean validating) {
+        if(xmlString==null)return null;
         try {
             // Create a builder factory
             DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();

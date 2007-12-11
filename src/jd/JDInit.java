@@ -44,6 +44,7 @@ public class JDInit {
 
     void init() {
         CookieHandler.setDefault(null);
+      
 
     }
 
@@ -129,37 +130,36 @@ public class JDInit {
         }
 
         if (!allOK) {
-            File home=null;
-            home=new File(System.getProperty("jdhome",JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath()));
+            File home = null;
+            home = new File(System.getProperty("jdhome", JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath()));
             Installer inst = new Installer(home, JDUtilities.getJDHomeDirectoryFromEnvironment());
             if (!inst.isAborted() && inst.getHomeDir() != null && inst.getDownloadDir() != null) {
 
                 String newHome = inst.getHomeDir();
-               logger.info("Home Dir: " + newHome);
+                logger.info("Home Dir: " + newHome);
                 File homeDirectoryFile = new File(newHome);
                 boolean createSuccessfull = true;
                 if (!homeDirectoryFile.exists()) createSuccessfull = homeDirectoryFile.mkdirs();
-                if (createSuccessfull&&homeDirectoryFile.canWrite()) {
-System.setProperty("jdhome", homeDirectoryFile.getAbsolutePath());
+                if (createSuccessfull && homeDirectoryFile.canWrite()) {
+                    System.setProperty("jdhome", homeDirectoryFile.getAbsolutePath());
                     String dlDir = inst.getDownloadDir();
-            
+
                     JOptionPane.showMessageDialog(new JFrame(), "Welcome to jDownloader. Download missing files.");
 
                     JDUtilities.getConfiguration().setProperty(Configuration.PARAM_DOWNLOAD_DIRECTORY, dlDir);
-                   
-                            JDUtilities.download(new File(homeDirectoryFile,"webupdater.jar"), "http://jdownloader.ath.cx/autoUpdate2/webupdater.jar");
-        
-                         JDUtilities.setHomeDirectory(homeDirectoryFile.getAbsolutePath());
-                         
-                         JDUtilities.saveConfig();
-                               logger.info(JDUtilities.runCommand("java", new String[] { "-jar", "webupdater.jar","/restart", "/rt" + JDUtilities.RUNTYPE_LOCAL_JARED }, homeDirectoryFile.getAbsolutePath(), 0));
-                                System.exit(0);
-                                                      
 
-                        }
+                    JDUtilities.download(new File(homeDirectoryFile, "webupdater.jar"), "http://jdownloader.ath.cx/autoUpdate2/webupdater.jar");
+
+                    JDUtilities.setHomeDirectory(homeDirectoryFile.getAbsolutePath());
+
+                    JDUtilities.saveConfig();
+                    logger.info(JDUtilities.runCommand("java", new String[] { "-jar", "webupdater.jar", "/restart", "/rt" + JDUtilities.RUNTYPE_LOCAL_JARED }, homeDirectoryFile.getAbsolutePath(), 0));
+                    System.exit(0);
+
+                }
 
                 JOptionPane.showMessageDialog(new JFrame(), "Fehler. Bitte wähle Pfade mit Schreibrechten!");
-  
+
                 System.exit(1);
                 inst.dispose();
             }
@@ -169,7 +169,13 @@ System.setProperty("jdhome", homeDirectoryFile.getAbsolutePath());
                 inst.dispose();
             }
         }
+        this.afterConfigIsLoaded();
         return JDUtilities.getConfiguration();
+    }
+
+    private void afterConfigIsLoaded() {
+      
+        
     }
 
     public JDController initController() {
@@ -184,87 +190,109 @@ System.setProperty("jdhome", homeDirectoryFile.getAbsolutePath());
 
     public Vector<PluginForDecrypt> loadPluginForDecrypt() {
         Vector<PluginForDecrypt> plugins = new Vector<PluginForDecrypt>();
+        try {
+            JDClassLoader jdClassLoader = JDUtilities.getJDClassLoader();
+            Iterator iterator;
+            logger.finer("Load PLugins");
+            iterator = Service.providers(PluginForDecrypt.class, jdClassLoader);
+            while (iterator.hasNext()) {
+                PluginForDecrypt p = (PluginForDecrypt) iterator.next();
 
-        JDClassLoader jdClassLoader = JDUtilities.getJDClassLoader();
-        Iterator iterator;
-        logger.finer("Load PLugins");
-        iterator = Service.providers(PluginForDecrypt.class, jdClassLoader);
-        while (iterator.hasNext()) {
-            PluginForDecrypt p = (PluginForDecrypt) iterator.next();
-
-            plugins.add(p);
+                plugins.add(p);
+            }
+            return plugins;
         }
-        return plugins;
+        catch (Exception e) {
+            e.printStackTrace();
+            return plugins;
+        }
     }
 
     public Vector<PluginForHost> loadPluginForHost() {
         Vector<PluginForHost> plugins = new Vector<PluginForHost>();
+        try {
+            JDClassLoader jdClassLoader = JDUtilities.getJDClassLoader();
+            Iterator iterator;
+            logger.finer("Load PLugins");
+            iterator = Service.providers(PluginForHost.class, jdClassLoader);
+            while (iterator.hasNext()) {
+                PluginForHost p = (PluginForHost) iterator.next();
 
-        JDClassLoader jdClassLoader = JDUtilities.getJDClassLoader();
-        Iterator iterator;
-        logger.finer("Load PLugins");
-        iterator = Service.providers(PluginForHost.class, jdClassLoader);
-        while (iterator.hasNext()) {
-            PluginForHost p = (PluginForHost) iterator.next();
-
-            plugins.add(p);
+                plugins.add(p);
+            }
+            return plugins;
         }
-        return plugins;
+        catch (Exception e) {
+            e.printStackTrace();
+            return plugins;
+        }
     }
 
     public Vector<PluginForSearch> loadPluginForSearch() {
         Vector<PluginForSearch> plugins = new Vector<PluginForSearch>();
+        try {
+            JDClassLoader jdClassLoader = JDUtilities.getJDClassLoader();
+            Iterator iterator;
+            logger.finer("Load PLugins");
+            iterator = Service.providers(PluginForSearch.class, jdClassLoader);
+            while (iterator.hasNext()) {
+                PluginForSearch p = (PluginForSearch) iterator.next();
 
-        JDClassLoader jdClassLoader = JDUtilities.getJDClassLoader();
-        Iterator iterator;
-        logger.finer("Load PLugins");
-        iterator = Service.providers(PluginForSearch.class, jdClassLoader);
-        while (iterator.hasNext()) {
-            PluginForSearch p = (PluginForSearch) iterator.next();
-
-            plugins.add(p);
+                plugins.add(p);
+            }
+            return plugins;
         }
-        return plugins;
+        catch (Exception e) {
+            e.printStackTrace();
+            return plugins;
+        }
     }
 
     public Vector<PluginForContainer> loadPluginForContainer() {
         Vector<PluginForContainer> plugins = new Vector<PluginForContainer>();
+        try {
+            JDClassLoader jdClassLoader = JDUtilities.getJDClassLoader();
+            Iterator iterator;
+            logger.finer("Load PLugins");
+            iterator = Service.providers(PluginForContainer.class, jdClassLoader);
+            while (iterator.hasNext()) {
+                PluginForContainer p = (PluginForContainer) iterator.next();
 
-        JDClassLoader jdClassLoader = JDUtilities.getJDClassLoader();
-        Iterator iterator;
-        logger.finer("Load PLugins");
-        iterator = Service.providers(PluginForContainer.class, jdClassLoader);
-        while (iterator.hasNext()) {
-            PluginForContainer p = (PluginForContainer) iterator.next();
-
-            plugins.add(p);
+                plugins.add(p);
+            }
+            return plugins;
         }
-        return plugins;
+        catch (Exception e) {
+            e.printStackTrace();
+            return plugins;
+        }
     }
 
     public HashMap<String, PluginOptional> loadPluginOptional() {
         HashMap<String, PluginOptional> pluginsOptional = new HashMap<String, PluginOptional>();
+        try {
+            JDClassLoader jdClassLoader = JDUtilities.getJDClassLoader();
+            Iterator iterator;
 
-        JDClassLoader jdClassLoader = JDUtilities.getJDClassLoader();
-        Iterator iterator;
+            iterator = Service.providers(PluginOptional.class, jdClassLoader);
+            while (iterator.hasNext()) {
+                try {
 
-        iterator = Service.providers(PluginOptional.class, jdClassLoader);
-        while (iterator.hasNext()) {
-            try {
+                    PluginOptional p = (PluginOptional) iterator.next();
+                    pluginsOptional.put(p.getPluginName(), p);
+                    logger.info("Optionales-Plugin : " + p.getPluginName());
 
-                PluginOptional p = (PluginOptional) iterator.next();
-                pluginsOptional.put(p.getPluginName(), p);
-                logger.info("Optionales-Plugin : " + p.getPluginName());
-
+                }
+                catch (Exception e) {
+                    e.printStackTrace();
+                }
             }
-            catch (Exception e) {
-                e.printStackTrace();
-            }
-            catch (ServiceConfigurationError e) {
-                e.printStackTrace();
-            }
+            return pluginsOptional;    
         }
-        return pluginsOptional;
+        catch (Exception e) {
+            e.printStackTrace();
+            return pluginsOptional;
+        }
     }
 
     public void loadDownloadQueue() {

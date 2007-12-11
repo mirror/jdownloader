@@ -344,8 +344,8 @@ public class JDController implements PluginListener, ControlListener, UIListener
                 }
 
                 Interaction.handleInteraction(Interaction.INTERACTION_BEFORE_RECONNECT, this);
-
-                if (Interaction.handleInteraction(Interaction.INTERACTION_NEED_RECONNECT, this)) {
+                Interaction.handleInteraction(Interaction.INTERACTION_NEED_RECONNECT, this);
+                if (  JDUtilities.reconnect()) {
                     uiInterface.showMessageDialog("Reconnect erfolgreich");
                     Iterator<DownloadLink> iterator = downloadLinks.iterator();
                     // stellt die Wartezeiten zurück
@@ -374,12 +374,9 @@ public class JDController implements PluginListener, ControlListener, UIListener
                 }
                 else {
 
-                    if (Interaction.getInteractions(Interaction.INTERACTION_NEED_RECONNECT).length != 1) {
-                        uiInterface.showMessageDialog("Reconnect fehlgeschlagen\r\nEs ist kein Event(oder mehrere) für die Reconnect festgelegt. \r\nBitte Event einstellen (Konfiguration->Eventmanager)");
-                    }
-                    else {
+                    
                         uiInterface.showMessageDialog("Reconnect fehlgeschlagen");
-                    }
+                 
                 }
 
                 Interaction.handleInteraction(Interaction.INTERACTION_AFTER_RECONNECT, this);
