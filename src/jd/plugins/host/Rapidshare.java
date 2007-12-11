@@ -518,9 +518,10 @@ public class Rapidshare extends PluginForHost {
                 else {
                     String captchaTxt = (String) steps.get(2).getParameter();
                     File captchaFile = downloadLink.getLatestCaptchaFile();
+                    actionString.replace(" ", "+");
                     postParameter.put("mirror", "on");
                     postParameter.put("accesscode", captchaTxt);
-                    postParameter.put("actionString", actionString);
+                    postParameter.put("actionstring", actionString);
                     try {
                        
                         URLConnection urlConnection = new URL(postTarget).openConnection();

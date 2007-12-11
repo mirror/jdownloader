@@ -86,7 +86,6 @@ public class JDClassLoader extends java.lang.ClassLoader {
     }
     @Override
     public URL getResource(String name) {
-       System.out.println("getResource:"+name);
         if (jars != null) {
             //An dieser Stelle werden die JAR Dateien überprüft
             JarEntry entry;
