@@ -70,18 +70,18 @@ public class ConfigPanelPluginsOptional extends ConfigPanel implements ActionLis
         HashMap<String, PluginOptional> pluginsOptional = JDUtilities.getPluginsOptional();
         
         plugins= new Vector<PluginOptional>();
-        
-        Iterator<String> iterator = pluginsOptional.keySet().iterator();
-        String key;
-        while (iterator.hasNext()) {
-            key = iterator.next();
-            plugins.add(pluginsOptional.get(key));         
+        if(pluginsOptional != null && pluginsOptional.size()>0){
+            Iterator<String> iterator = pluginsOptional.keySet().iterator();
+            String key;
+            while (iterator.hasNext()) {
+                key = iterator.next();
+                plugins.add(pluginsOptional.get(key));         
+            }
+
+            initPanel();
+
+            load();
         }
-    
-        initPanel();
-
-        load();
-
     }
 
     private String getConfigParamKey(PluginOptional pluginOptional) {

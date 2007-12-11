@@ -28,6 +28,7 @@ import jd.plugins.PluginOptional;
 import jd.update.WebUpdater;
 import jd.utils.JDUtilities;
 import sun.misc.Service;
+import sun.misc.ServiceConfigurationError;
 
 /**
  * @author coalado
@@ -259,6 +260,9 @@ System.setProperty("jdhome", homeDirectoryFile.getAbsolutePath());
             catch (Exception e) {
                 e.printStackTrace();
             }
+            catch (ServiceConfigurationError e) {
+                e.printStackTrace();
+            }
         }
         return pluginsOptional;
     }
@@ -283,7 +287,11 @@ System.setProperty("jdhome", homeDirectoryFile.getAbsolutePath());
         JDUtilities.setPluginForHostList(this.loadPluginForHost());
         JDUtilities.setPluginForSearchList(this.loadPluginForSearch());
         JDUtilities.setPluginForContainerList(this.loadPluginForContainer());
-        JDUtilities.setPluginOptionalList(this.loadPluginOptional());
+        try {
+            JDUtilities.setPluginOptionalList(this.loadPluginOptional());
+        }
+        catch (Exception e1) {
+        }
 
         Iterator<PluginForHost> iteratorHost = JDUtilities.getPluginsForHost().iterator();
         while (iteratorHost.hasNext()) {

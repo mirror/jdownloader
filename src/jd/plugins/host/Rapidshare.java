@@ -405,6 +405,7 @@ public class Rapidshare extends PluginForHost {
                         long pendingTime = Long.parseLong(wait);
                         logger.info("Ticket: wait " + pendingTime + " seconds");
                         ticketCode = JDUtilities.htmlDecode(getSimpleMatch(requestInfo.getHtmlCode(), ticketCodePattern, 0));
+                        System.out.println(ticketCode);
                         step.setParameter(pendingTime * 1000);
                         return step;
                     }
@@ -518,7 +519,7 @@ public class Rapidshare extends PluginForHost {
                 else {
                     String captchaTxt = (String) steps.get(2).getParameter();
                     File captchaFile = downloadLink.getLatestCaptchaFile();
-                    actionString.replace(" ", "+");
+                    actionString = actionString.replace(' ','+');
                     postParameter.put("mirror", "on");
                     postParameter.put("accesscode", captchaTxt);
                     postParameter.put("actionstring", actionString);
@@ -544,7 +545,7 @@ public class Rapidshare extends PluginForHost {
                         if (download(downloadLink, urlConnection,1024*getProperties().getIntegerProperty(PROPERTY_BYTES_TO_LOAD,-1))) {
                             step.setStatus(PluginStep.STATUS_DONE);
                             downloadLink.setStatus(DownloadLink.STATUS_DONE);
-                            JDUtilities.appendInfoToFilename(captchaFile, captchaTxt, true);
+                            JDUtilities.appendInfoToFilename(captchaFile, actionString+"_"+captchaTxt, true);
                             return null;
                         }
                         else if (aborted) {
@@ -554,7 +555,7 @@ public class Rapidshare extends PluginForHost {
                         }
                         else {
                             logger.severe("captcha wrong");
-                            JDUtilities.appendInfoToFilename(captchaFile, captchaTxt, false);
+                            JDUtilities.appendInfoToFilename(captchaFile, actionString+"_"+captchaTxt, false);
                             downloadLink.setStatus(DownloadLink.STATUS_ERROR_CAPTCHA_WRONG);
                             step.setStatus(PluginStep.STATUS_ERROR);
                         }
