@@ -28,7 +28,8 @@ public class JUnrar {
     private File unpacked = new File(JDUtilities.getJDHomeDirectory(), "unpacked.dat");
     private Vector<File> unpackedlist;
     private HashMap<File, String> files;
-
+    private static Object[][] filesignatures = {{"avi", new Integer[][]{{82, 73, 70, 70}}}, {"mpg", new Integer[][]{{0, 0, 1, 186, -1, 0}}}, {"mpeg", new Integer[][]{{0, 0, 1, 186, -1, 0}}}, {"rar", new Integer[][]{{82, 97, 114, 33, 26, 7}}}, {"wmv", new Integer[][]{{48, 38, 178, 117, 142, 102}}}, {"mp3", new Integer[][]{{73, 68, 51, 3, 0}, {255, 251, 104, -1, 0, -1,}, {255, 251, 64, -1, 0, -1}}}, {"exe", new Integer[][]{{77, 90, 144, 0, 3, 0}}}, {"bz2", new Integer[][]{{66, 90, 104, 54, 49, 65}}}, {"gz", new Integer[][]{{31, 139, 8, 0}}}, {"doc", new Integer[][]{{208, 207, 17, 224, 161, 177}}}, {"pdf", new Integer[][]{{37, 80, 68, 70, 45, 49}}}, {"wma", new Integer[][]{{48, 38, 178, 117, 142, 102}}}, {"jpg", new Integer[][]{{255, 216, 255, 224, 0, 16}, {255, 216, 255, 225, 39, 222}}}, {"m4a", new Integer[][]{{0, 0, 0, 32, 102, 116}}}, {"mdf", new Integer[][]{{0, 255, 255, 255, 255, 255}}}, {"xcf", new Integer[][]{{103, 105, 109, 112, 32, 120}}}};
+    private Integer[][] typicalFilesignatures = {{80, 75, 3, 4, -1, 0,}, {82, 73, 70, 70}, {0, 255, 255, 255, 255, 255}, {48, 38, 178, 117, 142, 102}, {208, 207, 17, 224, 161, 177}};
     public HashMap<String, Integer> passwordlist;
 
     public String standardPassword = null;
@@ -276,7 +277,24 @@ public class JUnrar {
             savePasswordList();
         }
     }
+    private boolean isInFilesignatures(String filename)
+    {
+        int dot = filename.lastIndexOf('.');
+        if (dot == -1)
+            return false;
 
+        String extention = filename.substring(dot + 1).toLowerCase();
+        for (int i = 0; i < filesignatures.length; i++) {
+            if(((String) filesignatures[i][0]).equals(extention))
+            {
+                typicalFilesignatures=(Integer[][]) filesignatures[i][1];
+                logger.info(extention+" is a supported filetype");
+                return true;
+            }
+        }
+        return false;
+        
+    }
     private void savePasswordList() {
         Utilities.saveObject(this.passwordlist, passwordList, true);
     }
@@ -486,6 +504,13 @@ public class JUnrar {
                 } else {
                     logger.finer("There is no protected file matches the maximal filesize try to crack the passwort by filesignatures (not 100% safe)");
                     extendPasswordSearch = true;
+                    for (Map.Entry<String, Integer> ent : protectedFiles.entrySet()) {
+                        String name = ent.getKey();
+                        if(isInFilesignatures(name))
+                        {
+                           return new String[] {name};
+                        }
+                    }
                     Set<String> set = protectedFiles.keySet();
                     return set.toArray(new String[set.size()]);
                 }
@@ -694,24 +719,18 @@ public class JUnrar {
             p.destroy();
             // Wenn In der Liste Mehr als 2 aneinanderhängende Großbuchstaben
             // sind wird davon ausgegangen das das Passwort richtig ist
-            if (d > 2)
+            if (d > 3)
                 return d;
 
             // Vector zu Array
             Integer[] fl = flist.toArray(new Integer[flist.size()]);
-
-            /*
-             * filesigs enthält Signaturen von vielen Dateitypen exe, wmv, mp3,
-             * avi, rar, mpg, jpg, pdf, flv, wma, zip -1 ist ein beliebiger Wert
-             */
-            final Integer[][] filesigs = new Integer[][]{{0, 0, 0, 32, 102, 116}, {77, 90, 144, 0, 3, 0}, {70, 76, 86, 1, 5, 0}, {102, 76, 97, 67, 0, 0}, {48, 38, 178, 117, 142, 102}, {37, 80, 68, 70, 45, 49}, {208, 207, 17, 224, 161, 177}, {82, 97, 114, 33}, {80, 75, 3, 4}, {82, 73, 70, 70}, {255, 216, 255, 225, 39, 222}, {255, 216, 255, 224, 0, 16}, {255, 251, -1, -1, 0}, {73, 68, 51, 3, 0}, {0, 0, 1, 186, 33, 0}};
-
+            
             // Checkt ob die Signatur mit einer der Signaturen von filesigs
             // übereinstimmt wenn ja dann gibt er 10 aus sonst den Wert von d
-            for (int j = 0; j < filesigs.length; j++) {
+            for (int j = 0; j < typicalFilesignatures.length; j++) {
                 boolean b = true;
-                for (int i = 0; i < filesigs[j].length; i++) {
-                    if (filesigs[j][i] != -1 && !filesigs[j][i].equals(fl[i])) {
+                for (int i = 0; i < typicalFilesignatures[j].length; i++) {
+                    if (typicalFilesignatures[j][i] != -1 && !typicalFilesignatures[j][i].equals(fl[i])) {
                         b = false;
                         break;
                     }
@@ -871,14 +890,14 @@ public class JUnrar {
                 int st = startExtendetInputListener(p);
                 /*
                  * siehe startExtendetInputListener wenn der Wert von
-                 * startExtendetInputListener 2 ist wird das Passwort erstmal
+                 * startExtendetInputListener 3 ist wird das Passwort erstmal
                  * als unsicher eingestuft es wird geschaut ob eine andere
-                 * passwortgeschützte Datei im Archiv mit dem Passwort auch 2
+                 * passwortgeschützte Datei im Archiv mit dem Passwort auch 3
                  * annimmt wenn ja wird das Passwort als sicher eingestuft
                  */
-                if (st > 2 || (st == 2 && bool)) {
+                if (st > 3 || (st == 3 && bool)) {
                     return 1;
-                } else if (st == 2) {
+                } else if (st == 3) {
                     bool = true;
                 }
             }
@@ -1058,9 +1077,9 @@ public class JUnrar {
                     if (autoDelete && list.get(ii).getName().matches(".*\\.rar$"))
                         filelist.put(list.get(ii), null);
                     else if (list.get(ii).getName().matches(".*\\.rar$")) {
-                            if (!isFileInUnpackedList(list.get(ii))) {
-                                filelist.put(list.get(ii), null);
-                            }
+                        if (!isFileInUnpackedList(list.get(ii))) {
+                            filelist.put(list.get(ii), null);
+                        }
                     }
                 }
             }
