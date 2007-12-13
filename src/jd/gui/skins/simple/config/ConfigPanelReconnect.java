@@ -127,7 +127,7 @@ public class ConfigPanelReconnect extends ConfigPanel implements ActionListener 
         }
         if (e.getSource() == btn) {
           save();
-            if (JDUtilities.reconnect()) {
+            if (JDUtilities.getController().reconnect()) {
                 JDUtilities.getGUI().showMessageDialog("Reconnect successfull");
             }
             else {

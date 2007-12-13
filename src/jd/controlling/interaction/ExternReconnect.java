@@ -50,13 +50,13 @@ public class ExternReconnect extends Interaction implements Serializable {
 
     private static final String      PROPERTY_RECONNECT_EXECUTE_FOLDER  = "RECONNECT_EXECUTE_FOLDER";
 
-    private static final String PROPERTY_RECONNECT_PARAMETER = "RECONNECT_PARAMETER";
+    private static final String PROPERTY_RECONNECT_PARAMETER = "EXTERN_RECONNECT__PARAMETER";
 
-    private static final String PARAM_IPCHECKWAITTIME = "IPCHECKWAITTIME";
+    private static final String PARAM_IPCHECKWAITTIME = "EXTERN_RECONNECT_IPCHECKWAITTIME";
 
-    private static final String PARAM_RETRIES = "RETRIES";
+    private static final String PARAM_RETRIES = "EXTERN_RECONNECT_RETRIES";
 
-    private static final String PARAM_WAITFORIPCHANGE = "WAITFORIPCHANGE";
+    private static final String PARAM_WAITFORIPCHANGE = "EXTERN_RECONNECT_WAITFORIPCHANGE";
 
     private transient static boolean enabled                            = false;
 
@@ -64,7 +64,7 @@ public class ExternReconnect extends Interaction implements Serializable {
 
     @Override
     public boolean doInteraction(Object arg) {
-        if (!isEnabled() || getBooleanProperty(PROPERTY_EXTERN_RECONNECT_DISABLED, false)) {
+        if (!isEnabled() || JDUtilities.getConfiguration().getBooleanProperty(PROPERTY_EXTERN_RECONNECT_DISABLED, false)) {
             logger.info("Reconnect deaktiviert");
             return false;
         }
@@ -74,14 +74,14 @@ public class ExternReconnect extends Interaction implements Serializable {
      
      progress.setStatusText("ExternReconnect #"+retries);
        
-        int waitForReturn=getIntegerProperty(PROPERTY_IP_WAIT_FOR_RETURN, 0);
-        String executeIn=getStringProperty(PROPERTY_RECONNECT_EXECUTE_FOLDER);
-        String command=getStringProperty(PROPERTY_RECONNECT_COMMAND);
-        String parameter=getStringProperty(PROPERTY_RECONNECT_PARAMETER);
+        int waitForReturn=JDUtilities.getConfiguration().getIntegerProperty(PROPERTY_IP_WAIT_FOR_RETURN, 0);
+        String executeIn=JDUtilities.getConfiguration().getStringProperty(PROPERTY_RECONNECT_EXECUTE_FOLDER);
+        String command=JDUtilities.getConfiguration().getStringProperty(PROPERTY_RECONNECT_COMMAND);
+        String parameter=JDUtilities.getConfiguration().getStringProperty(PROPERTY_RECONNECT_PARAMETER);
    
-        int waittime = getIntegerProperty(PARAM_IPCHECKWAITTIME, 0);
-        int maxretries = getIntegerProperty(PARAM_RETRIES, 0);
-        int waitForIp = getIntegerProperty(PARAM_WAITFORIPCHANGE, 10);
+        int waittime = JDUtilities.getConfiguration().getIntegerProperty(PARAM_IPCHECKWAITTIME, 0);
+        int maxretries = JDUtilities.getConfiguration().getIntegerProperty(PARAM_RETRIES, 0);
+        int waitForIp = JDUtilities.getConfiguration().getIntegerProperty(PARAM_WAITFORIPCHANGE, 10);
        
         logger.info("Starting " + NAME + " #" + retries);
         String preIp = JDUtilities.getIPAddress();
@@ -153,18 +153,18 @@ public class ExternReconnect extends Interaction implements Serializable {
     @Override
     public void initConfig() {
         ConfigEntry cfg;
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this, PROPERTY_EXTERN_RECONNECT_DISABLED, "Event deaktiviert").setDefaultValue(false).setExpertEntry(true));
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, this, PROPERTY_RECONNECT_COMMAND, "Befehl (absolute Pfade verwenden)"));
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_TEXTAREA, this, PROPERTY_RECONNECT_PARAMETER, "Parameter (1 Parameter/Zeile)").setExpertEntry(true));
+        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, JDUtilities.getConfiguration(), PROPERTY_EXTERN_RECONNECT_DISABLED, "Event deaktiviert").setDefaultValue(false).setExpertEntry(true));
+        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, JDUtilities.getConfiguration(), PROPERTY_RECONNECT_COMMAND, "Befehl (absolute Pfade verwenden)"));
+        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_TEXTAREA, JDUtilities.getConfiguration(), PROPERTY_RECONNECT_PARAMETER, "Parameter (1 Parameter/Zeile)").setExpertEntry(true));
 
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_BROWSEFOLDER, this, PROPERTY_RECONNECT_EXECUTE_FOLDER, "Ausführen in (Ordner der Anwendung)"));
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_SPINNER, this, PARAM_IPCHECKWAITTIME, "Wartezeit bis zum ersten IP-Check[sek]", 0, 600).setDefaultValue(5).setExpertEntry(true));
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_SPINNER, this, PARAM_RETRIES, "Max. Wiederholungen (-1 = unendlich)", -1, 20).setDefaultValue(5).setExpertEntry(true));
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_SPINNER, this, PARAM_WAITFORIPCHANGE, "Auf neue IP warten [sek]", 0, 600).setDefaultValue(20).setExpertEntry(true));
+        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_BROWSEFOLDER, JDUtilities.getConfiguration(), PROPERTY_RECONNECT_EXECUTE_FOLDER, "Ausführen in (Ordner der Anwendung)"));
+        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_SPINNER, JDUtilities.getConfiguration(), PARAM_IPCHECKWAITTIME, "Wartezeit bis zum ersten IP-Check[sek]", 0, 600).setDefaultValue(5).setExpertEntry(true));
+        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_SPINNER, JDUtilities.getConfiguration(), PARAM_RETRIES, "Max. Wiederholungen (-1 = unendlich)", -1, 20).setDefaultValue(5).setExpertEntry(true));
+        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_SPINNER, JDUtilities.getConfiguration(), PARAM_WAITFORIPCHANGE, "Auf neue IP warten [sek]", 0, 600).setDefaultValue(20).setExpertEntry(true));
 
         
         
-       config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_SPINNER, this, PROPERTY_IP_WAIT_FOR_RETURN, "Warten x Sekunden bis Befehl beendet ist[sek]",0,600).setDefaultValue(0).setExpertEntry(true));
+       config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_SPINNER, JDUtilities.getConfiguration(), PROPERTY_IP_WAIT_FOR_RETURN, "Warten x Sekunden bis Befehl beendet ist[sek]",0,600).setDefaultValue(0).setExpertEntry(true));
   
      
     }

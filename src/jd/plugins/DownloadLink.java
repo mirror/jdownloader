@@ -436,6 +436,7 @@ public class DownloadLink implements Serializable,Comparable<DownloadLink> {
      * @param urlDownload Die URL von der heruntergeladen werden soll
      */
     public void setUrlDownload(String urlDownload) {
+        
         this.urlDownload = JDCrypt.encrypt(urlDownload);
     }
 

@@ -4,6 +4,7 @@ import java.io.File;
 import java.util.logging.Logger;
 
 import jd.controlling.interaction.Interaction;
+import jd.controlling.interaction.Unrar;
 import jd.event.ControlEvent;
 import jd.plugins.DownloadLink;
 import jd.plugins.Plugin;
@@ -252,6 +253,8 @@ public class SingleDownloadController extends ControlMulticaster {
             fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_PLUGIN_HOST_INACTIVE, plugin));
             fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SINGLE_DOWNLOAD_FINISHED, downloadLink));
             Interaction.handleInteraction((Interaction.INTERACTION_SINGLE_DOWNLOAD_FINISHED), downloadLink);
+            String unrarType=JDUtilities.getConfiguration().getStringProperty(Unrar.PROPERTY_ENABLED_TYPE,Unrar.ENABLED_TYPE_NEVER);
+if(unrarType.equals(Unrar.ENABLED_TYPE_ALWAYS))controller.getUnrarModule().interact(downloadLink);
         }
 
     }
@@ -377,7 +380,7 @@ public class SingleDownloadController extends ControlMulticaster {
         Interaction.handleInteraction((Interaction.INTERACTION_BEFORE_RECONNECT), this);
         Interaction.handleInteraction((Interaction.INTERACTION_NEED_RECONNECT), this);
         Interaction.handleInteraction((Interaction.INTERACTION_DOWNLOAD_WAITTIME), this);
-        if (JDUtilities.reconnect()) {
+        if (controller.reconnect()) {
             downloadLink.setStatus(DownloadLink.STATUS_TODO);
             downloadLink.setEndOfWaittime(0);
         }
@@ -498,7 +501,7 @@ public class SingleDownloadController extends ControlMulticaster {
             Interaction.handleInteraction((Interaction.INTERACTION_DOWNLOAD_WAITTIME), this);    
         
         }
-        if (plugin.getBotWaittime()<0&&JDUtilities.reconnect()) {
+        if (plugin.getBotWaittime()<0&&controller.reconnect()) {
             downloadLink.setStatus(DownloadLink.STATUS_TODO);
             downloadLink.setEndOfWaittime(0);
         }else if(plugin.getBotWaittime()>0){
@@ -556,7 +559,7 @@ public class SingleDownloadController extends ControlMulticaster {
         boolean a = Interaction.handleInteraction((Interaction.INTERACTION_NEED_RECONNECT), this);
         Interaction.handleInteraction(Interaction.INTERACTION_AFTER_RECONNECT, this);
         boolean b = Interaction.handleInteraction((Interaction.INTERACTION_DOWNLOAD_WAITTIME), this);
-        if (JDUtilities.reconnect()) {
+        if (controller.reconnect()) {
             downloadLink.setStatus(DownloadLink.STATUS_TODO);
             downloadLink.setEndOfWaittime(0);
         }

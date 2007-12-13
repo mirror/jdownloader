@@ -11,8 +11,12 @@ import java.util.logging.Logger;
 import jd.JDInit;
 import jd.SingleInstanceController;
 import jd.config.Configuration;
+import jd.controlling.interaction.ExternReconnect;
+import jd.controlling.interaction.HTTPLiveHeader;
 import jd.controlling.interaction.HTTPReconnect;
+import jd.controlling.interaction.InfoFileWriter;
 import jd.controlling.interaction.Interaction;
+import jd.controlling.interaction.Unrar;
 import jd.event.ControlEvent;
 import jd.event.ControlListener;
 import jd.event.UIEvent;
@@ -93,25 +97,31 @@ public class JDController implements PluginListener, ControlListener, UIListener
 
     private Vector<DownloadLink>              finishedLinks                    = new Vector<DownloadLink>();
 
+    private Unrar                             unrarModule;
+
+    private InfoFileWriter                    infoFileWriterModule;
+
     public JDController() {
         downloadLinks = new Vector<DownloadLink>();
         speedMeter = new SpeedMeter(10000);
         clipboard = new ClipboardHandler();
         downloadStatus = DOWNLOAD_NOT_RUNNING;
-    
+
         JDUtilities.setController(this);
         initInteractions();
     }
+
     /**
      * Initialisiert alle Interactions
      */
-    private void initInteractions(){
+    private void initInteractions() {
         Vector<Interaction> interactions = JDUtilities.getConfiguration().getInteractions();
-        
+
         for (int i = 0; i < interactions.size(); i++) {
             interactions.get(i).initInteraction();
         }
     }
+
     /**
      * Gibt den Status (ID) der downloads zurück
      * 
@@ -177,6 +187,13 @@ public class JDController implements PluginListener, ControlListener, UIListener
                 this.addToFinished(lastDownloadFinished);
                 if (this.getMissingPackageFiles(lastDownloadFinished) == 0) {
                     Interaction.handleInteraction(Interaction.INTERACTION_DOWNLOAD_PACKAGE_FINISHED, this);
+                    if (lastDownloadFinished.getFilePackage().isUnPack()) {
+                        String unrarType = JDUtilities.getConfiguration().getStringProperty(Unrar.PROPERTY_ENABLED_TYPE, Unrar.ENABLED_TYPE_NEVER);
+                        if (unrarType.equals(Unrar.ENABLED_TYPE_LINKGRABBER)) this.getUnrarModule().interact(lastDownloadFinished);
+                    }
+                    
+                    if (lastDownloadFinished.getFilePackage().isWriteInfoFile()) this.getInfoFileWriterModule().interact(lastDownloadFinished);
+                    
                 }
 
                 if (lastDownloadFinished.getStatus() == DownloadLink.STATUS_DONE && Configuration.FINISHED_DOWNLOADS_REMOVE.equals(JDUtilities.getConfiguration().getProperty(Configuration.PARAM_FINISHED_DOWNLOADS_ACTION))) {
@@ -219,15 +236,13 @@ public class JDController implements PluginListener, ControlListener, UIListener
                     }
 
                 }
-              
 
                 break;
             default:
 
                 break;
         }
-        if(uiInterface!=null)
-        uiInterface.delegatedControlEvent(event);
+        if (uiInterface != null) uiInterface.delegatedControlEvent(event);
     }
 
     /**
@@ -317,7 +332,7 @@ public class JDController implements PluginListener, ControlListener, UIListener
                 break;
             case UIEvent.UI_LOAD_CONTAINER:
                 File containerFile = (File) uiEvent.getParameter();
-           
+
                 loadContainerFile(containerFile);
                 break;
             case UIEvent.UI_EXIT:
@@ -345,7 +360,7 @@ public class JDController implements PluginListener, ControlListener, UIListener
 
                 Interaction.handleInteraction(Interaction.INTERACTION_BEFORE_RECONNECT, this);
                 Interaction.handleInteraction(Interaction.INTERACTION_NEED_RECONNECT, this);
-                if (  JDUtilities.reconnect()) {
+                if (reconnect()) {
                     uiInterface.showMessageDialog("Reconnect erfolgreich");
                     Iterator<DownloadLink> iterator = downloadLinks.iterator();
                     // stellt die Wartezeiten zurück
@@ -374,16 +389,15 @@ public class JDController implements PluginListener, ControlListener, UIListener
                 }
                 else {
 
-                    
-                        uiInterface.showMessageDialog("Reconnect fehlgeschlagen");
-                 
+                    uiInterface.showMessageDialog("Reconnect fehlgeschlagen");
+
                 }
 
                 Interaction.handleInteraction(Interaction.INTERACTION_AFTER_RECONNECT, this);
                 uiInterface.setDownloadLinks(downloadLinks);
                 break;
             case UIEvent.UI_INTERACT_UPDATE:
-              new JDInit().doWebupdate();
+                new JDInit().doWebupdate();
                 break;
         }
     }
@@ -621,7 +635,8 @@ public class JDController implements PluginListener, ControlListener, UIListener
         for (int i = 0; i < pluginsForContainer.size(); i++) {
 
             pContainer = pluginsForContainer.get(i);
-            //logger.info(i + ". " + "Containerplugin: " + pContainer.getPluginName());
+            // logger.info(i + ". " + "Containerplugin: " +
+            // pContainer.getPluginName());
             progress.setStatusText("Containerplugin: " + pContainer.getPluginName());
             if (pContainer.canHandle(file.getName())) {
                 // es muss jeweils eine neue plugininstanz erzeugt werden
@@ -853,7 +868,7 @@ public class JDController implements PluginListener, ControlListener, UIListener
      */
     public void fireControlEvent(ControlEvent controlEvent) {
         // logger.info(controlEvent.getID()+" controllistener "+controlEvent);
-       if(uiInterface!=null) uiInterface.delegatedControlEvent(controlEvent);
+        if (uiInterface != null) uiInterface.delegatedControlEvent(controlEvent);
         if (controlListener == null) controlListener = new Vector<ControlListener>();
         Iterator<ControlListener> iterator = controlListener.iterator();
         while (iterator.hasNext()) {
@@ -886,6 +901,50 @@ public class JDController implements PluginListener, ControlListener, UIListener
 
         }
 
+    }
+
+    public void setUnrarModule(Unrar instance) {
+        this.unrarModule = instance;
+
+    }
+
+    public void setInfoFileWriterModule(InfoFileWriter instance) {
+        // TODO Auto-generated method stub
+        this.infoFileWriterModule = instance;
+
+    }
+
+    public Unrar getUnrarModule() {
+        return unrarModule;
+    }
+
+    public InfoFileWriter getInfoFileWriterModule() {
+        return infoFileWriterModule;
+    }
+
+    /**
+     * Führt über die in der cnfig gegebenen daten einen reconnect durch.
+     * 
+     * @return
+     */
+
+    public boolean reconnect() {
+        String type = JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_RECONNECT_TYPE, null);
+        if (type == null) {
+
+            this.uiInterface.showMessageDialog("Reconnect is not configured. Config->Reconnect!");
+            return false;
+        }
+        if (type.equals("HTTPReconnect/Routercontrol")) {
+            return new HTTPReconnect().interact(null);
+        }
+        if (type.equals("LiveHeader/Curl")) {
+            return new HTTPLiveHeader().interact(null);
+        }
+        if (type.equals("Extern")) {
+            return new ExternReconnect().interact(null);
+        }
+        return true;
     }
 
 }

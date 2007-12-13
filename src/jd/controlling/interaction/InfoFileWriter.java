@@ -54,9 +54,9 @@ public class InfoFileWriter extends Interaction implements Serializable {
 
 
     @Override
-    public boolean doInteraction(Object arg) {
-        String content = getStringProperty(PARAM_INFO_STRING, INFO_STRING_DEFAULT);
-        String filename = getStringProperty(PARAM_FILENAME, FILENAME_DEFAULT);
+    protected boolean doInteraction(Object arg) {
+        String content = JDUtilities.getConfiguration().getStringProperty(PARAM_INFO_STRING, INFO_STRING_DEFAULT);
+        String filename = JDUtilities.getConfiguration().getStringProperty(PARAM_FILENAME, FILENAME_DEFAULT);
 
         content = Replacer.insertVariables(content);
   
@@ -105,11 +105,11 @@ public class InfoFileWriter extends Interaction implements Serializable {
             keys[i] = "%" + Replacer.KEYS[i][0] + "%" + "   (" + Replacer.KEYS[i][1] + ")";
         }
 
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, this, "VARS", keys, "Available variables"));
+        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, JDUtilities.getConfiguration(), "VARS", keys, "Available variables"));
 
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, this, PARAM_FILENAME, "Filename:").setDefaultValue(FILENAME_DEFAULT));
+        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, JDUtilities.getConfiguration(), PARAM_FILENAME, "Filename:").setDefaultValue(FILENAME_DEFAULT));
 
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_TEXTAREA, this, PARAM_INFO_STRING, "Content:").setDefaultValue(INFO_STRING_DEFAULT));
+        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_TEXTAREA, JDUtilities.getConfiguration(), PARAM_INFO_STRING, "Content:").setDefaultValue(INFO_STRING_DEFAULT));
 
     }
 

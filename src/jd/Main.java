@@ -60,6 +60,7 @@ public class Main {
 
         init.initPlugins();
         init.loadDownloadQueue();
+        init.loadModules();
         init.checkUpdate();
 
         init.doWebupdate();

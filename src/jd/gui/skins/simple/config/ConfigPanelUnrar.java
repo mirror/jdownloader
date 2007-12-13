@@ -5,6 +5,7 @@ import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.util.logging.Level;
 
 import javax.swing.JButton;
 import javax.swing.JDialog;
@@ -56,34 +57,35 @@ this.configuration=configuration;
     }
 
     public void load() {
-
         this.loadConfigEntries();
     }
 
     @Override
     public void initPanel() {
         GUIConfigEntry ce;
+        configuration=JDUtilities.getConfiguration();
         String unrarcmd=JDUtilities.getConfiguration().getStringProperty("GUNRARCOMMAND");
         if(unrarcmd==null)
         {
         unrarcmd=new JUnrar(false).getUnrarCommand();
         if(unrarcmd==null)
-            JDUtilities.getConfiguration().setProperty("GUNRARCOMMAND", "NOT FOUND");
+            configuration.setProperty("GUNRARCOMMAND", "NOT FOUND");
         else
-            JDUtilities.getConfiguration().setProperty("GUNRARCOMMAND", unrarcmd);
+            configuration.setProperty("GUNRARCOMMAND", unrarcmd);
         }
         else if(unrarcmd.matches("NOT FOUND"))
             unrarcmd=null;
         
-        ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, unrar, Unrar.PROPERTY_ENABLED, "Unrar aktivieren").setDefaultValue(true));
+//        ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, configuration, Unrar.PROPERTY_ENABLED_TYPE,new String[] { Unrar.ENABLED_TYPE_ALWAYS,Unrar.ENABLED_TYPE_LINKGRABBER,Unrar.ENABLED_TYPE_NEVER },"Unrar aktivieren:").setDefaultValue(Unrar.ENABLED_TYPE_LINKGRABBER));
+        ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, configuration, Unrar.PROPERTY_ENABLED_TYPE, new String[] { Unrar.ENABLED_TYPE_ALWAYS,Unrar.ENABLED_TYPE_LINKGRABBER,Unrar.ENABLED_TYPE_NEVER }, "Unrar aktivieren:").setDefaultValue(Unrar.ENABLED_TYPE_LINKGRABBER));
         addGUIConfigEntry(ce);
-        ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_BROWSEFILE, unrar, Unrar.PROPERTY_UNRARCOMMAND, "Befehl für die Englische Version von Unrar: ").setDefaultValue(unrarcmd));
+        ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_BROWSEFILE, configuration, Unrar.PROPERTY_UNRARCOMMAND, "Befehl für die Englische Version von Unrar: ").setDefaultValue(unrarcmd));
         addGUIConfigEntry(ce);
-        ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, unrar, Unrar.PROPERTY_AUTODELETE, "Bei erfolgreichem Entpacken automatisch löschen: ").setDefaultValue(true));
+        ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, configuration, Unrar.PROPERTY_AUTODELETE, "Bei erfolgreichem Entpacken automatisch löschen: ").setDefaultValue(true));
         addGUIConfigEntry(ce);
-        ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, unrar, Unrar.PROPERTY_OVERWRITE_FILES, "Dateien automatisch überschreiben: ").setDefaultValue(false));
+        ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, configuration, Unrar.PROPERTY_OVERWRITE_FILES, "Dateien automatisch überschreiben: ").setDefaultValue(false));
         addGUIConfigEntry(ce);
-        ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, unrar, Unrar.PROPERTY_MAX_FILESIZE, "Maximale Dateigröße für die Passwortsuche in MB: ", 0, 500).setDefaultValue(2).setExpertEntry(true));
+        ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, configuration, Unrar.PROPERTY_MAX_FILESIZE, "Maximale Dateigröße für die Passwortsuche in MB: ", 0, 500).setDefaultValue(2).setExpertEntry(true));
         addGUIConfigEntry(ce);
         ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_BUTTON, this, "Passwortliste bearbeiten"));
         addGUIConfigEntry(ce);
@@ -94,7 +96,7 @@ this.configuration=configuration;
     @Override
     public String getName() {
 
-        return "Unrar(inactive)";
+        return "Unrar";
     }
 
     public void actionPerformed(ActionEvent e) {

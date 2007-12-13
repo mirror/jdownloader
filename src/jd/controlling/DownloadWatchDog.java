@@ -60,6 +60,7 @@ public class DownloadWatchDog extends Thread implements PluginListener, ControlL
         deligateFireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_ALL_DOWNLOAD_START, this));
 
         while (aborted != true) {
+            logger.info("JJ "+Interaction.getInteractionsRunning());
             if (Interaction.getInteractionsRunning() == 0) {
                 if (activeLinks.size() < getSimultanDownloadNum()&&!pause) {
                     started = setDownloadActive();
@@ -209,89 +210,6 @@ public class DownloadWatchDog extends Thread implements PluginListener, ControlL
         download.start();
         activeLinks.add(download);
     }
-
-    //
-    // /**
-    // * Diese Methode prüft wiederholt die Downloadlinks solange welche dabei
-    // * sind die Wartezeit haben. Läuft die Wartezeit ab, oder findet ein
-    // * reconnect statt, wird wieder die Run methode aufgerifen
-    // */
-    // private void waitForDownloadLinks() {
-    //
-    // logger.info("wait");
-    // Vector<DownloadLink> links;
-    // DownloadLink link;
-    // boolean hasWaittimeLinks = false;
-    //
-    // boolean returnToRun = false;
-    //
-    // try {
-    // Thread.sleep(1000);
-    // }
-    // catch (InterruptedException e) {
-    //
-    //  e.printStackTrace();
-    // }
-    //
-    // fireControlEvent(new ControlEvent(this,
-    // ControlEvent.CONTROL_SINGLE_DOWNLOAD_CHANGED, null));
-    //
-    // links = getDownloadLinks();
-    //
-    // for (int i = 0; i < links.size(); i++) {
-    // link = links.elementAt(i);
-    // if (!link.isEnabled()) continue;
-    // // Link mit Wartezeit in der queue
-    // if (link.getStatus() == DownloadLink.STATUS_ERROR_DOWNLOAD_LIMIT) {
-    // if (link.getRemainingWaittime() == 0) {
-    //
-    // link.setStatus(DownloadLink.STATUS_TODO);
-    // link.setEndOfWaittime(0);
-    // returnToRun = true;
-    //
-    // }
-    //
-    // hasWaittimeLinks = true;
-    // // Neuer Link hinzugefügt
-    // }
-    // else if (link.getStatus() == DownloadLink.STATUS_TODO) {
-    // returnToRun = true;
-    // }
-    //
-    // }
-    //
-    // if (aborted) {
-    //
-    // logger.warning("Download aborted");
-    // // fireControlEvent(new ControlEvent(this,
-    // // ControlEvent.CONTROL_ALL_DOWNLOADS_FINISHED, this));
-    // //
-    // Interaction.handleInteraction((Interaction.INTERACTION_ALL_DOWNLOADS_FINISHED),
-    // // this);
-    //
-    // return;
-    //
-    // }
-    // else if (returnToRun) {
-    // logger.info("return. there are downloads waiting");
-    // this.setDownloadActive();
-    // return;
-    // }
-    //
-    // if (!hasWaittimeLinks) {
-    //
-    // logger.info("Alle Downloads beendet");
-    // fireControlEvent(new ControlEvent(this,
-    // ControlEvent.CONTROL_ALL_DOWNLOADS_FINISHED, this));
-    // Interaction.handleInteraction((Interaction.INTERACTION_ALL_DOWNLOADS_FINISHED),
-    // this);
-    //
-    // }
-    // else {
-    // waitForDownloadLinks();
-    // }
-    //
-    // }
     /**
      * Bricht den Watchdog ab. Alle laufenden downloads werden beendet und die
      * downloadliste zurückgesetzt. Diese Funktion blockiert bis alle Downloads
@@ -390,7 +308,7 @@ progress.setStatusText("Stopping all downloads");
                     if (links.get(i).waitsForReconnect()) {
                         Interaction.handleInteraction(Interaction.INTERACTION_BEFORE_RECONNECT, this);
                         Interaction.handleInteraction((Interaction.INTERACTION_NEED_RECONNECT), this);
-                        JDUtilities.reconnect();
+                        controller.reconnect();
                         Interaction.handleInteraction(Interaction.INTERACTION_AFTER_RECONNECT, this);
                         break;
 

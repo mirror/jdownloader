@@ -126,7 +126,7 @@ public abstract class Interaction extends Property implements Serializable {
         controlListener = new Vector<ControlListener>();
         this.setTrigger(Interaction.INTERACTION_NO_EVENT);
     }
-    public abstract boolean doInteraction(Object arg);
+    protected abstract boolean doInteraction(Object arg);
     public abstract String toString();
     public abstract String getInteractionName();
     /**
@@ -143,6 +143,10 @@ public abstract class Interaction extends Property implements Serializable {
     public int getCallCode() {
         return lastCallCode;
     }
+    
+    public boolean getWaitForTermination(){
+        return true;
+    }
     /**
      * ruft die doInteraction Funktion auf. Und setzt das Ergebnis als callCode.
      * Der Statuscode kann mit getCallCode abgerufen werden
@@ -152,18 +156,25 @@ public abstract class Interaction extends Property implements Serializable {
      */
     public boolean interact(Object arg) {
         interactionsRunning++;
-     logger.finer("Interactions(start) running: "+interactionsRunning);
+     logger.finer("Interactions(start) running: "+interactionsRunning+" - "+this);
         fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_PLUGIN_INTERACTION_ACTIVE, this));
         resetInteraction();
         this.setCallCode(Interaction.INTERACTION_CALL_RUNNING);
         boolean success = doInteraction(arg);
         fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_PLUGIN_INTERACTION_RETURNED, this));
         if (!this.isAlive()) {
+           
             fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_PLUGIN_INTERACTION_INACTIVE, this));
             interactionsRunning--;
+            logger.info("Interaction finished: "+interactionsRunning+" - "+this);
+         
+        }else if(!getWaitForTermination()){
+            
+            interactionsRunning--;
+            logger.info("Interaction finished: "+interactionsRunning+" - "+this);
         }
       
-        logger.finer("Interactions(end) running: "+interactionsRunning);
+       
         return success;
     }
     /**
@@ -221,7 +232,9 @@ public abstract class Interaction extends Property implements Serializable {
     private void runThreadAction() {
         this.run();
         fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_PLUGIN_INTERACTION_INACTIVE, this));
-        interactionsRunning--;
+        if(getWaitForTermination()){interactionsRunning--;
+        logger.finer("Interaction finaly finished: "+interactionsRunning+" - "+this);
+        }
         if(interactionsRunning==0&&JDUtilities.getController().getDownloadStatus()==JDController.DOWNLOAD_NOT_RUNNING&&JDUtilities.getController().getFinishedLinks().size()>0){
             Interaction.handleInteraction(Interaction.INTERACTION_AFTER_DOWNLOAD_AND_INTERACTIONS, null);
         }

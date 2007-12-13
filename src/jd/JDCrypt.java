@@ -56,19 +56,21 @@ public class JDCrypt {
      * @return String the encrypted string.
      * @exception SecurityException Description of the Exception
      */
+    //encryption is temp disabled
     public static String encrypt(String str) throws SecurityException {
-        if(encryptCipher == null || decryptCipher == null)
-            init();
-        try {
-            byte[] b = str.getBytes(charset);
-            byte[] enc = encryptCipher.doFinal(b);
-            return encoder.encode(enc);
-        }
-        catch (Exception e) {
-            throw new SecurityException("Could not encrypt: " + e.getMessage());
-        }
+        return str;
+//        if(encryptCipher == null || decryptCipher == null)
+//            init();
+//        try {
+//            byte[] b = str.getBytes(charset);
+//            byte[] enc = encryptCipher.doFinal(b);
+//            return encoder.encode(enc);
+//        }
+//        catch (Exception e) {
+//            throw new SecurityException("Could not encrypt: " + e.getMessage());
+//        }
+//    
     }
-
     /**
      * Entschlüsselt eine Zeichenkette, welche mit der Methode encrypt
      * verschlüsselt wurde.
@@ -78,15 +80,18 @@ public class JDCrypt {
      * @exception SecurityException Description of the Exception
      */
     public static String decrypt(String str) throws SecurityException {
-        if(encryptCipher == null || decryptCipher == null)
-            init();
-        try {
-            byte[] dec = decoder.decodeBuffer(str);
-            byte[] b = decryptCipher.doFinal(dec);
-            return new String(b, charset);
-        }
-        catch (Exception e) {
-            throw new SecurityException("Could not decrypt: " + e.getMessage());
-        }
+        return str;
     }
+
+//        if(encryptCipher == null || decryptCipher == null)
+//            init();
+//        try {
+//            byte[] dec = decoder.decodeBuffer(str);
+//            byte[] b = decryptCipher.doFinal(dec);
+//            return new String(b, charset);
+//        }
+//        catch (Exception e) {
+//            throw new SecurityException("Could not decrypt: " + e.getMessage());
+//        }
+//    }
 }

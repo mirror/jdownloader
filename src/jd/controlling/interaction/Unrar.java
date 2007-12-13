@@ -3,6 +3,7 @@ package jd.controlling.interaction;
 import java.io.File;
 import java.io.Serializable;
 import java.util.Vector;
+import java.util.logging.Level;
 
 import jd.config.Configuration;
 import jd.controlling.JDController;
@@ -49,21 +50,31 @@ public class Unrar extends Interaction implements Serializable {
 
     private static final String NAME                     = "Unrar";
 
-    public static final String  PROPERTY_UNRARCOMMAND    = "PROPERTY_UNRARCMD";
+    public static final String  PROPERTY_UNRARCOMMAND    = "UNRAR_PROPERTY_UNRARCMD";
 
-    public static final String  PROPERTY_AUTODELETE      = "PROPERTY_AUTODELETE";
+    public static final String  PROPERTY_AUTODELETE      = "UNRAR_PROPERTY_AUTODELETE";
 
-    public static final String  PROPERTY_OVERWRITE_FILES = "PROPERTY_OVERWRITE_FILES";
+    public static final String  PROPERTY_OVERWRITE_FILES = "UNRAR_PROPERTY_OVERWRITE_FILES";
 
-    public static final String  PROPERTY_MAX_FILESIZE    = "PROPERTY_MAX_FILESIZE";
+    public static final String  PROPERTY_MAX_FILESIZE    = "UNRAR_PROPERTY_MAX_FILESIZE";
 
-    public static final String  PROPERTY_ENABLED         = "PROPERTY_ENABLED";
+    public static final String  PROPERTY_ENABLED_TYPE         = "UNRAR_PROPERTY_ENABLED";
+
+    public static final String ENABLED_TYPE_NEVER = "never";
+
+    public static final String ENABLED_TYPE_ALWAYS = "always";
+
+    public static final String ENABLED_TYPE_LINKGRABBER = "per link/Linkgrabber";
 
     @Override
     public boolean doInteraction(Object arg) {
         start();
         return true;
 
+    }
+    
+    public boolean getWaitForTermination(){
+        return false;
     }
 
     @Override
@@ -87,10 +98,10 @@ public class Unrar extends Interaction implements Serializable {
             if (!password.matches("\\{\".*\"\\}$")) unrar.standardPassword = password;
             unrar.addToPasswordlist(password);
         }
-        unrar.overwriteFiles = getBooleanProperty(Unrar.PROPERTY_OVERWRITE_FILES, false);
-        unrar.autoDelete = getBooleanProperty(Unrar.PROPERTY_AUTODELETE, false);
-        unrar.unrar = getStringProperty(Unrar.PROPERTY_UNRARCOMMAND);
-        unrar.maxFilesize = getIntegerProperty(Unrar.PROPERTY_MAX_FILESIZE, 2);
+        unrar.overwriteFiles = JDUtilities.getConfiguration().getBooleanProperty(Unrar.PROPERTY_OVERWRITE_FILES, false);
+        unrar.autoDelete = JDUtilities.getConfiguration().getBooleanProperty(Unrar.PROPERTY_AUTODELETE, false);
+        unrar.unrar = JDUtilities.getConfiguration().getStringProperty(Unrar.PROPERTY_UNRARCOMMAND);
+        unrar.maxFilesize = JDUtilities.getConfiguration().getIntegerProperty(Unrar.PROPERTY_MAX_FILESIZE, 2);
         return unrar;
     }
 
@@ -129,17 +140,7 @@ public class Unrar extends Interaction implements Serializable {
                 newFolderList = unrar.unrar();
             }
 
-            // unrar = new
-            // jdUnrar(JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_DOWNLOAD_DIRECTORY));
-            // unrar.overwriteFiles =
-            // getBooleanProperty(Unrar.PROPERTY_OVERWRITE_FILES, false);
-            // unrar.autoDelete = getBooleanProperty(Unrar.PROPERTY_AUTODELETE,
-            // false);
-            // unrar.unrar = getStringProperty(Unrar.PROPERTY_UNRARCOMMAND);
-            // unrar.maxFilesize =
-            // getIntegerProperty(Unrar.PROPERTY_MAX_FILESIZE, 2);
-            // progress.setStatusText("Unrar directory");
-            // unrar.unrar();
+      
             IS_RUNNING = false;
             this.setCallCode(Interaction.INTERACTION_CALL_SUCCESS);
             Interaction.handleInteraction(Interaction.INTERACTION_AFTER_UNRAR, null);

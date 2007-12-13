@@ -17,7 +17,9 @@ import javax.swing.JOptionPane;
 import jd.config.Configuration;
 import jd.controlling.JDController;
 import jd.controlling.ProgressController;
+import jd.controlling.interaction.InfoFileWriter;
 import jd.controlling.interaction.Interaction;
+import jd.controlling.interaction.Unrar;
 import jd.gui.UIInterface;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.plugins.PluginForContainer;
@@ -28,7 +30,6 @@ import jd.plugins.PluginOptional;
 import jd.update.WebUpdater;
 import jd.utils.JDUtilities;
 import sun.misc.Service;
-import sun.misc.ServiceConfigurationError;
 
 /**
  * @author coalado
@@ -227,7 +228,13 @@ public class JDInit {
             return plugins;
         }
     }
-
+ public void loadModules(){
+     JDUtilities.getController().setUnrarModule(Unrar.getInstance());
+     JDUtilities.getController().setInfoFileWriterModule(InfoFileWriter.getInstance());
+     
+     
+     
+ }
     public Vector<PluginForSearch> loadPluginForSearch() {
         Vector<PluginForSearch> plugins = new Vector<PluginForSearch>();
         try {

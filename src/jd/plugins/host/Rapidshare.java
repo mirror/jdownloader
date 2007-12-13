@@ -231,7 +231,7 @@ public class Rapidshare extends PluginForHost {
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_LABEL, "(*2)Betrifft nur Freeuser"));
         config.addEntry(cfg =  new ConfigEntry(ConfigContainer.TYPE_SPINNER, getProperties(), PROPERTY_BYTES_TO_LOAD, "Nur die ersten * KiloBytes jeder Datei laden[-1 to disable]",-1,100000).setDefaultValue(-1).setStep(500));
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getProperties(), "USE_SSL", "SSL Downloadlink verwenden"));
-        cfg.setDefaultValue(true);
+        cfg.setDefaultValue(false);
         config.addEntry(cfg =  new ConfigEntry(ConfigContainer.TYPE_SPINNER, getProperties(), "WAIT_WHEN_BOT_DETECTED", "Wartezeit [ms] wenn Bot erkannt wird.(-1 für Reconnect)",-1,600000).setDefaultValue(-1).setStep(1000));
         
         
@@ -280,7 +280,7 @@ public class Rapidshare extends PluginForHost {
                     }
                     // Der Download wird bestätigt
                     String link = downloadLink.getUrlDownloadDecrypted();
-                    if(this.getProperties().getBooleanProperty("USE_SSL", true))
+                    if(this.getProperties().getBooleanProperty("USE_SSL", false))
                         link = link.replaceFirst("http://", "http://ssl.");
                     requestInfo = getRequest(new URL(link));
             
@@ -542,6 +542,7 @@ public class Rapidshare extends PluginForHost {
                             step.setStatus(PluginStep.STATUS_ERROR);
                             return step;
                         }
+                        logger.info("link: "+postTarget);
                         if (download(downloadLink, urlConnection,1024*getProperties().getIntegerProperty(PROPERTY_BYTES_TO_LOAD,-1))) {
                             step.setStatus(PluginStep.STATUS_DONE);
                             downloadLink.setStatus(DownloadLink.STATUS_DONE);

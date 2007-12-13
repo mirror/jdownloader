@@ -51,6 +51,6 @@ public class ConfigPanelInfoFileWriter extends ConfigPanel {
     }
     @Override
     public String getName() {
-        return "Info Datei(inactive)";
+        return "Info Datei";
     }
 }

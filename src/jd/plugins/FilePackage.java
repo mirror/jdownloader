@@ -29,6 +29,8 @@ public class FilePackage extends Property implements Serializable {
     private String            comment;
     private String            password;
     private String            name;
+    private boolean            unPack;
+    private boolean            writeInfoFile;
     private String            downloadDirectory;
     private Vector<DownloadLink> downloadLinks;
 
@@ -36,6 +38,7 @@ public class FilePackage extends Property implements Serializable {
         downloadDirectory = JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_DOWNLOAD_DIRECTORY);
         counter++;
         id = System.currentTimeMillis() + "_" + counter;
+        
 
     }
     /**
@@ -127,6 +130,22 @@ public class FilePackage extends Property implements Serializable {
     }
     public void setDownloadLinks(Vector<DownloadLink> downloadLinks) {
         this.downloadLinks = downloadLinks;
+    }
+
+    public boolean isUnPack() {
+        return unPack;
+    }
+
+    public void setUnPack(boolean unPack) {
+        this.unPack = unPack;
+    }
+
+    public boolean isWriteInfoFile() {
+        return writeInfoFile;
+    }
+
+    public void setWriteInfoFile(boolean writeInfoFile) {
+        this.writeInfoFile = writeInfoFile;
     }
 
 }

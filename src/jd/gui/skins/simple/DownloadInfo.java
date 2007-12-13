@@ -59,6 +59,12 @@ public class DownloadInfo extends JDialog {
         if (downloadLink.getFilePackage() != null) {
             addEntry("Paket", downloadLink.getFilePackage().toString());
         }
+        if (downloadLink.getFilePackage() != null) {
+            addEntry("Unrar", downloadLink.getFilePackage().isUnPack()?"Yes":"No");
+        }
+        if (downloadLink.getFilePackage() != null) {
+            addEntry("InfoFile", downloadLink.getFilePackage().isWriteInfoFile()?"Yes":"No");
+        }
         if (downloadLink.getDownloadMax() > 0) {
             addEntry("Dateigröße", downloadLink.getDownloadMax() + " Bytes");
         }

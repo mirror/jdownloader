@@ -142,6 +142,7 @@ public class GUIConfigEntry extends JPanel {
                //logger.info("ADD Combobox");
                 input[0] = new JComboBox(configEntry.getList());
                 for (int i = 0; i < configEntry.getList().length; i++) {
+                  
                     if (configEntry.getList()[i].equals(configEntry.getPropertyInstance().getProperty(configEntry.getPropertyName()))) {
                         ((JComboBox) input[0]).setSelectedIndex(i);
                         

@@ -28,6 +28,7 @@ import java.util.logging.Logger;
 
 import javax.swing.DefaultListModel;
 import javax.swing.JButton;
+import javax.swing.JCheckBox;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -92,6 +93,10 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
 
     private JButton btnSort;
 
+    private JCheckBox unrar;
+
+    private JCheckBox infoFileWriter;
+
     /**
      * @param parent
      *            GUI
@@ -145,7 +150,9 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
         panel = new JPanel(new GridBagLayout());
         new DropTarget(list, this);
         new DropTarget(this, this);
-
+        
+        unrar= new JCheckBox("Unrar this package after download");
+        infoFileWriter= new JCheckBox("Write infoFIle for this package");
         JDUtilities.addToGridBag(panel, new JLabel("Hier können alle Links zu einem Paket gesammelt und anschließend Übernommen werden."), GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 1, 0, insets, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
         JDUtilities.addToGridBag(panel, scrollPane, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 1, 1, insets, GridBagConstraints.BOTH, GridBagConstraints.CENTER);
@@ -170,6 +177,11 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
         JDUtilities.addToGridBag(panel, new JLabel("Kommentar:"), GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 1, 0, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
         JDUtilities.addToGridBag(panel, txfComment, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 1, 0, insets, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
         JDUtilities.addToGridBag(panel, new JSeparator(), GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 1, 0, insets, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+        JDUtilities.addToGridBag(panel, unrar, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 1, 0, insets, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+        JDUtilities.addToGridBag(panel, infoFileWriter, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 1, 0, insets, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+        
+        
+        
         JDUtilities.addToGridBag(panel, btnOk, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
         JDUtilities.addToGridBag(panel, btnCancel, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 1, 0, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
         this.add(panel, BorderLayout.CENTER);
@@ -202,11 +214,16 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
             password = password.substring(1);
         txfComment.setText(comment);
         txfPassword.setText(password.trim());
+      
         JUnrar unrar = new JUnrar(false);
         unrar.addToPasswordlist(password);
         sortLinkList();
         if (txtName.getName() == null || txtName.getName().trim().length() == 0)
             checkForSameName();
+        
+        if(txfPassword.getText().length()>0||txfComment.getText().length()>0){
+            infoFileWriter.setSelected(true);
+        }
         fireTableChanged();
     }
 
@@ -323,6 +340,8 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
         fp.setName(txtName.getText().trim());
         fp.setComment(txfComment.getText().trim());
         fp.setPassword(txfPassword.getText().trim());
+        fp.setUnPack(unrar.isSelected());
+        fp.setWriteInfoFile(infoFileWriter.isSelected());
         if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_PACKETNAME_AS_SUBFOLDER, false)) {
             File file = new File(new File(bfSubFolder.getText().trim()), txtName.getText().trim());
             if (!file.exists()) {

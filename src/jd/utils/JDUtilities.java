@@ -1874,29 +1874,9 @@ public class JDUtilities {
         return JDUtilities.getController().getUiInterface();
     }
 
-    /**
-     * Führt über die in der cnfig gegebenen daten einen reconnect durch.
-     * 
-     * @return
-     */
 
-    public static boolean reconnect() {
-        String type = getConfiguration().getStringProperty(Configuration.PARAM_RECONNECT_TYPE, null);
-        if (type == null) {
-            getGUI().showMessageDialog("Reconnect is not configured. Config->Reconnect!");
-            return false;
-        }
-        if (type.equals("HTTPReconnect/Routercontrol")) {
-           return new HTTPReconnect().doInteraction(null);
-        }
-        if (type.equals("LiveHeader/Curl")) {
-            return new HTTPLiveHeader().doInteraction(null);
-        }
-        if (type.equals("Extern")) {
-            return new ExternReconnect().doInteraction(null);
-        }
-return true;
-    }
+
+
 
   
 
