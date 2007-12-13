@@ -157,7 +157,6 @@ public class XLSpreadCom extends PluginForDecrypt {
     			}
     			
     			// Decrypt abschliessen
-    			System.out.println(decryptedLinks.toString());
     			step.setParameter(decryptedLinks);
     		}
     		catch(IOException e) {
