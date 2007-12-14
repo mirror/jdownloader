@@ -21,7 +21,7 @@ public class Serienjunkies extends PluginForDecrypt {
 
     private static final String DEFAULT_PASSWORD = "serienjunkies.dl.am";
 
-    private String              version          = "4.0.0.0";
+    private String              version          = "4.1.0.0";
 
     private Pattern             patternCaptcha   = null;
 
@@ -75,6 +75,7 @@ public class Serienjunkies extends PluginForDecrypt {
         boolean rscom = (Boolean) this.getProperties().getProperty("USE_RAPIDSHARE", true);
         boolean rsde = (Boolean) this.getProperties().getProperty("USE_RAPIDSHAREDE", false);
         boolean net = (Boolean) this.getProperties().getProperty("USE_NETLOAD", false);
+        boolean uploaded = (Boolean) this.getProperties().getProperty("USE_UPLOADED", false);
         next = false;
         String hosterStr = "";
         if (rscom || rsde || net) {
@@ -82,11 +83,13 @@ public class Serienjunkies extends PluginForDecrypt {
             if (rscom) hosterStr += isNext() + "rc";
             if (rsde) hosterStr += isNext() + "rs";
             if (net) hosterStr += isNext() + "nl";
+            if (uploaded) hosterStr += isNext() + "ut";
             hosterStr += ")[\\_\\-]";
         }
         else {
             hosterStr += "not";
         }
+        //http://download.serienjunkies.org/f-170bd7b99547753c/ut_drhouse317.html
         return Pattern.compile("http://(download.serienjunkies.org|serienjunkies.org/s|85.17.177.195/s|serienjunki.es/s).*" + hosterStr + ".*", Pattern.CASE_INSENSITIVE);
     }
 
@@ -208,6 +211,8 @@ public class Serienjunkies extends PluginForDecrypt {
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getProperties(), "USE_RAPIDSHAREDE", "Rapidshare.de"));
         cfg.setDefaultValue(false);
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getProperties(), "USE_NETLOAD", "Netload.in"));
+        cfg.setDefaultValue(false);
+        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getProperties(), "USE_UPLOADED", "Uploaded.to"));
         cfg.setDefaultValue(false);
 
     }
