@@ -40,8 +40,6 @@ import jd.JDFileFilter;
 import jd.config.Configuration;
 import jd.controlling.JDController;
 import jd.controlling.ProgressController;
-import jd.controlling.interaction.ExternReconnect;
-import jd.controlling.interaction.HTTPReconnect;
 import jd.controlling.interaction.Interaction;
 import jd.event.ControlEvent;
 import jd.event.UIEvent;
@@ -49,6 +47,7 @@ import jd.event.UIListener;
 import jd.gui.UIInterface;
 import jd.gui.skins.simple.components.TextAreaDialog;
 import jd.gui.skins.simple.config.ConfigurationDialog;
+import jd.gui.skins.simple.config.jdUnrarPasswordListDialog;
 import jd.plugins.DownloadLink;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
@@ -169,6 +168,10 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
     private JDAction          actionSaveDLC;
 
     private JDAction          actionTester;
+    
+    private JDAction          actionUnrar;
+    
+    private JDAction          actionPasswordlist;
 
     /**
      * Das Hauptfenster wird erstellt
@@ -257,6 +260,8 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         actionExit = new JDAction(this, "exit", "action.exit", JDAction.APP_EXIT);
         actionLog = new JDAction(this, "log", "action.viewlog", JDAction.APP_LOG);
         actionTester = new JDAction(this, "jd_logo", "action.tester", JDAction.APP_TESTER);
+        actionUnrar = new JDAction(this, "jd_logo", "action.unrar", JDAction.APP_UNRAR);
+        actionPasswordlist = new JDAction(this, "jd_logo", "action.passwordlist", JDAction.APP_PASSWORDLIST);
         actionConfig = new JDAction(this, "configuration", "action.configuration", JDAction.APP_CONFIGURATION);
         actionReconnect = new JDAction(this, "reconnect", "action.reconnect", JDAction.APP_RECONNECT);
         actionUpdate = new JDAction(this, "update", "action.update", JDAction.APP_UPDATE);
@@ -324,6 +329,8 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         if (actionLog.getAccelerator() != null) menViewLog.setAccelerator(actionLog.getAccelerator());
         JMenuItem menConfig = createMenuItem(actionConfig);
         JMenuItem menTester = createMenuItem(actionTester);
+        JMenuItem menUnrar = createMenuItem(actionUnrar);
+        JMenuItem menPasswordlist = createMenuItem(actionPasswordlist);
         // add menus to parents
         menFile.add(menFileLoadContainer);
         menFile.add(menFileLoad);
@@ -333,7 +340,8 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         menExtra.add(menViewLog);
         menExtra.add(menTester);
         menExtra.add(menConfig);
-
+        menExtra.add(menUnrar);
+        menExtra.add(menPasswordlist);
         menAction.add(menDownload);
         menAction.add(menAddLinks);
         menuBar.add(menFile);
@@ -484,6 +492,13 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
             case JDAction.APP_TESTER:
                 logger.finer("Test trigger pressed");
                 Interaction.handleInteraction(Interaction.INTERACTION_TESTTRIGGER, false);
+                break;
+            case JDAction.APP_UNRAR:
+                logger.finer("Unrar");
+                JDUtilities.getController().getUnrarModule().interact(null);
+                break;
+            case JDAction.APP_PASSWORDLIST:
+                new jdUnrarPasswordListDialog(((SimpleGUI) JDUtilities.getController().getUiInterface()).getFrame()).setVisible(true);
                 break;
             case JDAction.APP_START_STOP_DOWNLOADS:
                 this.startStopDownloads();

@@ -3,11 +3,9 @@ package jd.controlling.interaction;
 import java.io.File;
 import java.io.Serializable;
 import java.util.Vector;
-import java.util.logging.Level;
 
 import jd.config.Configuration;
 import jd.controlling.JDController;
-import jd.controlling.ProgressController;
 import jd.plugins.DownloadLink;
 import jd.unrar.JUnrar;
 import jd.utils.JDUtilities;
@@ -48,7 +46,7 @@ public class Unrar extends Interaction implements Serializable {
      */
     private static boolean      IS_RUNNING               = false;
 
-    private static final String NAME                     = "Unrar";
+    private static final String NAME                     = JDUtilities.getResourceString("unrar.name");
 
     public static final String  PROPERTY_UNRARCOMMAND    = "UNRAR_PROPERTY_UNRARCMD";
 
@@ -60,11 +58,11 @@ public class Unrar extends Interaction implements Serializable {
 
     public static final String  PROPERTY_ENABLED_TYPE         = "UNRAR_PROPERTY_ENABLED";
 
-    public static final String ENABLED_TYPE_NEVER = "never";
+    public static final String ENABLED_TYPE_NEVER = JDUtilities.getResourceString("unrar.interaction.never");
 
-    public static final String ENABLED_TYPE_ALWAYS = "always";
+    public static final String ENABLED_TYPE_ALWAYS = JDUtilities.getResourceString("unrar.interaction.always");
 
-    public static final String ENABLED_TYPE_LINKGRABBER = "per link/Linkgrabber";
+    public static final String ENABLED_TYPE_LINKGRABBER = JDUtilities.getResourceString("unrar.interaction.linkgrabber");
 
     @Override
     public boolean doInteraction(Object arg) {
@@ -79,7 +77,7 @@ public class Unrar extends Interaction implements Serializable {
 
     @Override
     public String toString() {
-        return "Unrar Programm ausführen";
+        return JDUtilities.getResourceString("unrar.interaction.name");
     }
 
     @Override
@@ -95,7 +93,7 @@ public class Unrar extends Interaction implements Serializable {
 
         JUnrar unrar = new JUnrar();
         if (password != null && !password.matches("[\\s]*")) {
-            if (!password.matches("\\{\".*\"\\}$")) unrar.standardPassword = password;
+            if (!password.matches("\\{\".*\"\\}")) unrar.standardPassword = password;
             unrar.addToPasswordlist(password);
         }
         unrar.overwriteFiles = JDUtilities.getConfiguration().getBooleanProperty(Unrar.PROPERTY_OVERWRITE_FILES, false);
