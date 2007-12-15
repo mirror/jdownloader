@@ -18,11 +18,11 @@ import java.util.Iterator;
 import java.util.Vector;
 import java.util.logging.Logger;
 
+import javax.swing.AbstractButton;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JCheckBoxMenuItem;
-import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JMenu;
@@ -45,6 +45,7 @@ import jd.event.ControlEvent;
 import jd.event.UIEvent;
 import jd.event.UIListener;
 import jd.gui.UIInterface;
+import jd.gui.skins.simple.components.JDFileChooser;
 import jd.gui.skins.simple.components.TextAreaDialog;
 import jd.gui.skins.simple.config.ConfigurationDialog;
 import jd.gui.skins.simple.config.jdUnrarPasswordListDialog;
@@ -113,7 +114,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
 
     private JDAction          actionStartStopDownload;
 
-    private JDAction          actionLoadContainer;
+    private JDAction          removeFinished;
 
     private JDAction          actionExit;
 
@@ -172,6 +173,10 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
     private JDAction          actionUnrar;
     
     private JDAction          actionPasswordlist;
+
+    private JDAction doReconnect;
+
+    private AbstractButton btnToggleReconnect;
 
     /**
      * Das Hauptfenster wird erstellt
@@ -248,29 +253,32 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
      * Die Aktionen werden initialisiert
      */
     public void initActions() {
-        actionStartStopDownload = new JDAction(this, "start", "action.start", JDAction.APP_START_STOP_DOWNLOADS);
-        actionPause = new JDAction(this, "pause", "action.pause", JDAction.APP_PAUSE_DOWNLOADS);
+        actionStartStopDownload = new JDAction(this, "next", "action.start", JDAction.APP_START_STOP_DOWNLOADS);
+        actionPause = new JDAction(this, "stop_after", "action.pause", JDAction.APP_PAUSE_DOWNLOADS);
         actionItemsAdd = new JDAction(this, "add", "action.add", JDAction.ITEMS_ADD);
-        actionDnD = new JDAction(this, "dnd", "action.dnd", JDAction.ITEMS_DND);
+        actionDnD = new JDAction(this, "clipboard", "action.dnd", JDAction.ITEMS_DND);
 
-        actionLoadContainer = new JDAction(this, "loadContainer", "action.load_container", JDAction.APP_LOAD_CONTAINER);
         actionLoadDLC = new JDAction(this, "load", "action.load_dlc", JDAction.APP_LOAD_DLC);
         actionSaveDLC = new JDAction(this, "save", "action.save_dlc", JDAction.APP_SAVE_DLC);
 
         actionExit = new JDAction(this, "exit", "action.exit", JDAction.APP_EXIT);
-        actionLog = new JDAction(this, "log", "action.viewlog", JDAction.APP_LOG);
+        actionLog = new JDAction(this, "terminal", "action.viewlog", JDAction.APP_LOG);
         actionTester = new JDAction(this, "jd_logo", "action.tester", JDAction.APP_TESTER);
         actionUnrar = new JDAction(this, "jd_logo", "action.unrar", JDAction.APP_UNRAR);
         actionPasswordlist = new JDAction(this, "jd_logo", "action.passwordlist", JDAction.APP_PASSWORDLIST);
         actionConfig = new JDAction(this, "configuration", "action.configuration", JDAction.APP_CONFIGURATION);
         actionReconnect = new JDAction(this, "reconnect", "action.reconnect", JDAction.APP_RECONNECT);
-        actionUpdate = new JDAction(this, "update", "action.update", JDAction.APP_UPDATE);
-        actionSearch = new JDAction(this, "search", "action.search", JDAction.APP_SEARCH);
+        actionUpdate = new JDAction(this, "update_manager", "action.update", JDAction.APP_UPDATE);
+        actionSearch = new JDAction(this, "find", "action.search", JDAction.APP_SEARCH);
         actionItemsDelete = new JDAction(this, "delete", "action.edit.items_remove", JDAction.ITEMS_REMOVE);
         actionItemsTop = new JDAction(this, "top", "action.edit.items_top", JDAction.ITEMS_MOVE_TOP);
-        actionItemsUp = new JDAction(this, "up", "action.edit.items_up", JDAction.ITEMS_MOVE_UP);
+        actionItemsUp = new JDAction(this, "go_top", "action.edit.items_up", JDAction.ITEMS_MOVE_UP);
         actionItemsDown = new JDAction(this, "down", "action.edit.items_down", JDAction.ITEMS_MOVE_DOWN);
-        actionItemsBottom = new JDAction(this, "bottom", "action.edit.items_bottom", JDAction.ITEMS_MOVE_BOTTOM);
+        actionItemsBottom = new JDAction(this, "go_bottom", "action.edit.items_bottom", JDAction.ITEMS_MOVE_BOTTOM);
+        doReconnect = new JDAction(this, "reconnect_ok", "action.edit.items_bottom", JDAction.ITEMS_MOVE_BOTTOM);
+        
+    
+    
     }
 
     // Funktion wird jede Sekunde aufgerufen
@@ -297,7 +305,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         // file menu
         JMenu menFile = new JMenu(JDUtilities.getResourceString("menu.file"));
         menFile.setMnemonic(JDUtilities.getResourceChar("menu.file_mnem"));
-        JMenuItem menFileLoadContainer = createMenuItem(actionLoadContainer);
+        
         JMenuItem menFileLoad = createMenuItem(actionLoadDLC);
         JMenuItem menFileSave = createMenuItem(actionSaveDLC);
         JMenuItem menFileExit = createMenuItem(actionExit);
@@ -332,7 +340,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         JMenuItem menUnrar = createMenuItem(actionUnrar);
         JMenuItem menPasswordlist = createMenuItem(actionPasswordlist);
         // add menus to parents
-        menFile.add(menFileLoadContainer);
+ 
         menFile.add(menFileLoad);
         menFile.add(menFileSave);
         menFile.addSeparator();
@@ -384,16 +392,23 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         // tabbedPane.addTab(JDUtilities.getResourceString("label.tab.plugin_activity"),
         // tabPluginActivity);
         btnStartStop = new JToggleButton(actionStartStopDownload);
-        btnStartStop.setSelectedIcon(new ImageIcon(JDUtilities.getImage("stop")));
+      if(JDUtilities.getImage("stop")!=null) btnStartStop.setSelectedIcon(new ImageIcon(JDUtilities.getImage("stop")));
         btnStartStop.setFocusPainted(false);
         btnStartStop.setBorderPainted(false);
         btnStartStop.setText(null);
         btnPause = new JToggleButton(actionPause);
-        btnPause.setSelectedIcon(new ImageIcon(JDUtilities.getImage("pause_active")));
+       if(JDUtilities.getImage("stop_after_active")!=null) btnPause.setSelectedIcon(new ImageIcon(JDUtilities.getImage("stop_after_active")));
         btnPause.setFocusPainted(false);
         btnPause.setBorderPainted(false);
         btnPause.setText(null);
         btnPause.setEnabled(false);
+        btnToggleReconnect=new JToggleButton(doReconnect);
+        if(JDUtilities.getImage("reconnect_bad")!=null) btnToggleReconnect.setSelectedIcon(new ImageIcon(JDUtilities.getImage("reconnect_bad")));
+        btnToggleReconnect.setFocusPainted(false);
+        btnToggleReconnect.setBorderPainted(false);
+        btnToggleReconnect.setText(null);
+        btnToggleReconnect.setEnabled(true);  
+        
         JButton btnAdd = new JButton(actionItemsAdd);
         btnAdd.setFocusPainted(false);
         btnAdd.setBorderPainted(false);
@@ -451,11 +466,12 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         toolBar.addSeparator();
         toolBar.add(btnReconnect);
         toolBar.add(btnDnD);
-        reconnectBox = new JCheckBox("Reconnect durchführen");
-        boolean rc = JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_DISABLE_RECONNECT, true);
-
-        reconnectBox.addActionListener(this);
-        toolBar.add(reconnectBox);
+        toolBar.add(btnToggleReconnect);
+//        reconnectBox = new JCheckBox("Reconnect durchführen");
+//        boolean rc = JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_DISABLE_RECONNECT, true);
+//
+//        reconnectBox.addActionListener(this);
+//        toolBar.add(reconnectBox);
         frame.setLayout(new GridBagLayout());
         JDUtilities.addToGridBag(frame, toolBar, 0, 0, 1, 1, 0, 0, null, GridBagConstraints.HORIZONTAL, GridBagConstraints.NORTH);
         JDUtilities.addToGridBag(frame, splitpane, 0, 1, 1, 1, 1, 1, null, GridBagConstraints.BOTH, GridBagConstraints.CENTER);
@@ -504,10 +520,11 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
                 this.startStopDownloads();
                 break;
             case JDAction.APP_SAVE_DLC:
-                JFileChooser fc = new JFileChooser();
+                JDFileChooser fc = new JDFileChooser("_LOADSAVEDLC");
                 fc.setFileFilter(new JDFileFilter(null, ".dlc", true));
                 fc.showSaveDialog(frame);
                 File ret = fc.getSelectedFile();
+                if(ret==null)return;
                 if (JDUtilities.getFileExtension(ret) == null || !JDUtilities.getFileExtension(ret).equalsIgnoreCase("dlc")) {
 
                     ret = new File(ret.getAbsolutePath() + ".dlc");
@@ -517,22 +534,15 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
                 }
                 break;
             case JDAction.APP_LOAD_DLC:
-                fc = new JFileChooser();
-                fc.setFileFilter(new JDFileFilter(null, ".dlc", true));
+                fc = new JDFileChooser("_LOADSAVEDLC");
+                fc.setFileFilter(new JDFileFilter(null, ".dlc|.rsdf|.ccf", true));
                 fc.showOpenDialog(frame);
                 ret = fc.getSelectedFile();
                 if (ret != null) {
                     fireUIEvent(new UIEvent(this, UIEvent.UI_LOAD_LINKS, ret));
                 }
                 break;
-            case JDAction.APP_LOAD_CONTAINER:
-                fc = new JFileChooser();
-                fc.showOpenDialog(frame);
-                File file = fc.getSelectedFile();
-                if (file != null && file.exists()) {
-                    fireUIEvent(new UIEvent(this, UIEvent.UI_LOAD_CONTAINER, file));
-                }
-                break;
+   
 
             case JDAction.APP_EXIT:
                 frame.setVisible(false);
@@ -906,7 +916,9 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         private ImageIcon         imgInactive;
 
         public StatusBar() {
+            if(JDUtilities.getImage("led_green")!=null)
             imgActive = new ImageIcon(JDUtilities.getImage("led_green"));
+            if(JDUtilities.getImage("led_empty")!=null)
             imgInactive = new ImageIcon(JDUtilities.getImage("led_empty"));
             setLayout(new GridBagLayout());
             lblMessage = new JLabel(JDUtilities.getResourceString("label.status.welcome"));
@@ -1004,7 +1016,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
                 if(uiEvent.getParameter() instanceof String){
                     fireUIEvent(new UIEvent(this, UIEvent.UI_LINKS_TO_PROCESS, uiEvent.getParameter()));
                 }else{
-                fireUIEvent(new UIEvent(this, UIEvent.UI_LOAD_CONTAINER, uiEvent.getParameter()));
+                fireUIEvent(new UIEvent(this, UIEvent.UI_LOAD_LINKS, uiEvent.getParameter()));
                 }
                 break;
         
