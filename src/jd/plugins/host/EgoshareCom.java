@@ -185,6 +185,13 @@ public class EgoshareCom extends PluginForHost {
              e.printStackTrace();
             return null;
         }
+    }
+
+
+    @Override
+    public void resetPluginGlobals() {
+        // TODO Auto-generated method stub
+        
     }  
     
 }

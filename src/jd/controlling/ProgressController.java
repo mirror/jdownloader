@@ -42,9 +42,10 @@ public class ProgressController {
     public Object getSource(){
         return source;
     }
-    public ProgressController(int max) {
+    public ProgressController(String name, int max) {
      this.id=idCounter++;
         this.max = max;
+        this.statusText="init "+name;
         currentValue = 0;
         finished=false;
         fireChanges();
@@ -52,8 +53,8 @@ public class ProgressController {
  public String toString(){
      return id+": "+super.toString();
  }
-    public ProgressController() {
-       this(100);
+    public ProgressController(String name) {
+       this(name,100);
     }
 
     public void setRange(int max){

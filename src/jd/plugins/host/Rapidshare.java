@@ -67,6 +67,7 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.net.URLDecoder;
 import java.security.NoSuchAlgorithmException;
+
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Vector;
@@ -108,6 +109,7 @@ public class Rapidshare extends PluginForHost {
     /**
      * Pattern trifft zu wenn die "Ihre Ip läd gerade eine datei " Seite kommt
      */
+    private long END_OF_DOWNLOAD_LIMIT=0;
     private String                         patternForAlreadyDownloading     = "bereits eine Datei runter";
     /**
      * Das DownloadLimit wurde erreicht (?s)Downloadlimit.*Oder warte ([0-9]+)
@@ -265,10 +267,26 @@ public class Rapidshare extends PluginForHost {
             return this.doFreeStep(step, downloadLink);
         }
     }
+    
+ 
     private PluginStep doFreeStep(PluginStep step, DownloadLink downloadLink) {
+        if (END_OF_DOWNLOAD_LIMIT>System.currentTimeMillis()) {
+            long waitTime=System.currentTimeMillis()-END_OF_DOWNLOAD_LIMIT;
+            logger.severe("wait (intern) " + waitTime + " minutes");            
+            downloadLink.setStatus(DownloadLink.STATUS_ERROR_DOWNLOAD_LIMIT);           
+            step.setStatus(PluginStep.STATUS_ERROR);
+            logger.info(" WARTEZEIT SETZEN IN " + step + " : " + waitTime);
+            step.setParameter((long) waitTime);
+            return step;
+        }
+        
+        logger.info(aborted+"");
+        
         switch (step.getStep()) {
             case PluginStep.STEP_WAIT_TIME:
-                newURL = null;
+                newURL = null;             
+                
+                
                 try {
                     if (aborted) {
                         // Häufige abbruchstellen sorgen für einen Zügigen
@@ -374,6 +392,7 @@ public class Rapidshare extends PluginForHost {
                         logger.severe("wait " + strWaitTime + " minutes");
                         waitTime = Integer.parseInt(strWaitTime) * 60 * 1000;
                         downloadLink.setStatus(DownloadLink.STATUS_ERROR_DOWNLOAD_LIMIT);
+                        END_OF_DOWNLOAD_LIMIT=System.currentTimeMillis()+waitTime;
                         step.setStatus(PluginStep.STATUS_ERROR);
                         logger.info(" WARTEZEIT SETZEN IN " + step + " : " + waitTime);
                         step.setParameter((long) waitTime);
@@ -848,6 +867,7 @@ public class Rapidshare extends PluginForHost {
         actionString = null;
         postParameter = new HashMap<String, String>();
         ticketCode = "";
+       
     }
     public String getFileInformationString(DownloadLink parameter) {
         if (this.hardewareError) {
@@ -905,5 +925,10 @@ public class Rapidshare extends PluginForHost {
     public long getBotWaittime() {
         
       return  getProperties().getIntegerProperty("WAIT_WHEN_BOT_DETECTED", -1);
+    }
+    @Override
+    public void resetPluginGlobals() {
+        END_OF_DOWNLOAD_LIMIT=0;
+        
     }
 }

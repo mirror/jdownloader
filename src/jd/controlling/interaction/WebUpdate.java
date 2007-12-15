@@ -61,7 +61,7 @@ public class WebUpdate extends Interaction implements Serializable {
         
         Vector<Vector<String>> files = updater.getAvailableFiles();
         int org;
-        ProgressController progress = new ProgressController(org=files.size());
+        ProgressController progress = new ProgressController("Webupdater",org=files.size());
         progress.setStatusText("Update Check");
         if (files != null) {
           

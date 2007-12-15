@@ -372,4 +372,9 @@ public class Netloadin extends PluginForHost {
         cfg.setDefaultValue(false);
  
     }
+    @Override
+    public void resetPluginGlobals() {
+        // TODO Auto-generated method stub
+        
+    }
 }

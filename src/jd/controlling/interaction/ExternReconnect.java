@@ -70,7 +70,7 @@ public class ExternReconnect extends Interaction implements Serializable {
         }
        
         retries++;
-     ProgressController progress= new ProgressController(10);
+     ProgressController progress= new ProgressController("ExternReconnect",10);
      
      progress.setStatusText("ExternReconnect #"+retries);
        

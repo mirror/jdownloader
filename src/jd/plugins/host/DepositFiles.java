@@ -218,4 +218,9 @@ public class DepositFiles extends PluginForHost {
     public int getMaxSimultanDownloadNum() {
         return 1;
     }
+    @Override
+    public void resetPluginGlobals() {
+        // TODO Auto-generated method stub
+        
+    }
 }

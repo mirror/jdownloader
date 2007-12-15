@@ -2,6 +2,9 @@ package jd;
 
 import java.awt.Graphics;
 import java.awt.Image;
+import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.logging.Logger;
 
 import javax.swing.JOptionPane;
@@ -11,6 +14,8 @@ import jd.config.Configuration;
 import jd.controlling.JDController;
 import jd.event.UIEvent;
 import jd.gui.UIInterface;
+import jd.plugins.Plugin;
+import jd.plugins.RequestInfo;
 import jd.utils.JDUtilities;
 
 /**
@@ -68,7 +73,11 @@ public class Main {
         if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_START_DOWNLOADS_AFTER_START, false)) {
             controller.getUiInterface().fireUIEvent(new UIEvent(controller.getUiInterface(), UIEvent.UI_START_DOWNLOADS));
         }
+        
+        
         window.dispose();
+     
+        
 
     }
 

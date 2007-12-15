@@ -189,4 +189,9 @@ public class Esnips extends PluginForHost {
     public int getMaxSimultanDownloadNum() {
         return 15;
     }
+    @Override
+    public void resetPluginGlobals() {
+        // TODO Auto-generated method stub
+        
+    }
 }

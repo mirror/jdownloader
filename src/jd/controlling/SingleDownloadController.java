@@ -241,6 +241,7 @@ public class SingleDownloadController extends ControlMulticaster {
                     logger.info("Uknown error id: "+downloadLink.getStatus());
                     this.onErrorUnknown(downloadLink, plugin, step);
             }
+            downloadLink.setInProgress(false);
             fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_PLUGIN_HOST_INACTIVE, plugin));
             fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SINGLE_DOWNLOAD_FINISHED, downloadLink));
 
@@ -265,7 +266,7 @@ if(unrarType.equals(Unrar.ENABLED_TYPE_ALWAYS))controller.getUnrarModule().inter
         
      
         downloadLink.setStatusText(message);
-        downloadLink.setInProgress(false);
+     
 //        downloadLink.setEnabled(false);
         fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SINGLE_DOWNLOAD_CHANGED, downloadLink));
         
@@ -273,7 +274,7 @@ if(unrarType.equals(Unrar.ENABLED_TYPE_ALWAYS))controller.getUnrarModule().inter
 
     private void onErrorNoFreeSpace(DownloadLink downloadLink2, PluginForHost plugin, PluginStep step) {
         downloadLink.setStatusText("Zu wenig Speicherplatz");
-        downloadLink.setInProgress(false);
+    
         fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SINGLE_DOWNLOAD_CHANGED, downloadLink));
 
     }
@@ -297,7 +298,7 @@ if(unrarType.equals(Unrar.ENABLED_TYPE_ALWAYS))controller.getUnrarModule().inter
         }
         catch (InterruptedException e) {
         }
-        downloadLink.setInProgress(false);
+        
         downloadLink.setEnabled(false);
         fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SINGLE_DOWNLOAD_CHANGED, downloadLink));
     }
@@ -315,7 +316,7 @@ if(unrarType.equals(Unrar.ENABLED_TYPE_ALWAYS))controller.getUnrarModule().inter
         long milliSeconds = (Long) step.getParameter();
         downloadLink.setEndOfWaittime(System.currentTimeMillis() + milliSeconds);
         downloadLink.setStatusText("ausgelastet");
-        downloadLink.setInProgress(false);
+    
         downloadLink.setEnabled(false);
         fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SINGLE_DOWNLOAD_CHANGED, downloadLink));
     }
@@ -333,7 +334,7 @@ if(unrarType.equals(Unrar.ENABLED_TYPE_ALWAYS))controller.getUnrarModule().inter
         // premium abschalten.
         logger.info("deaktivier PREMIUM für: " + plugin + " Grund: Logins falsch");
         plugin.getProperties().setProperty(Plugin.PROPERTY_USE_PREMIUM, false);
-        downloadLink.setInProgress(false);
+    
         downloadLink.setStatus(DownloadLink.STATUS_TODO);
         downloadLink.setEndOfWaittime(0);
     }
@@ -349,7 +350,7 @@ if(unrarType.equals(Unrar.ENABLED_TYPE_ALWAYS))controller.getUnrarModule().inter
     private void onErrorPremium(DownloadLink downloadLink, PluginForHost plugin, PluginStep step) {
         logger.info("deaktivier PREMIUM für: " + plugin + " Grund: Unbekannt");
         plugin.getProperties().setProperty(Plugin.PROPERTY_USE_PREMIUM, false);
-        downloadLink.setInProgress(false);
+      
         downloadLink.setStatus(DownloadLink.STATUS_TODO);
         downloadLink.setEndOfWaittime(0);
     }
@@ -373,7 +374,7 @@ if(unrarType.equals(Unrar.ENABLED_TYPE_ALWAYS))controller.getUnrarModule().inter
         }
         downloadLink.setEndOfWaittime(System.currentTimeMillis() + milliSeconds);
         downloadLink.setStatusText("Reconnect ");
-        downloadLink.setInProgress(true);
+       // downloadLink.setInProgress(true);
         fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SINGLE_DOWNLOAD_CHANGED, downloadLink));
         // Download Zeit. Versuch durch eine Interaction einen reconnect
         // zu machen. wenn das klappt nochmal versuchen
@@ -397,7 +398,7 @@ if(unrarType.equals(Unrar.ENABLED_TYPE_ALWAYS))controller.getUnrarModule().inter
      */
     private void onErrorFileNotFound(DownloadLink downloadLink, PluginForHost plugin, PluginStep step) {
         downloadLink.setStatusText("File Not Found");
-        downloadLink.setInProgress(false);
+      
         fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SINGLE_DOWNLOAD_CHANGED, downloadLink));
     }
 
@@ -410,7 +411,7 @@ if(unrarType.equals(Unrar.ENABLED_TYPE_ALWAYS))controller.getUnrarModule().inter
      */
     private void onErrorAbused(DownloadLink downloadLink, PluginForHost plugin, PluginStep step) {
         downloadLink.setStatusText("File Abused");
-        downloadLink.setInProgress(false);
+     
         fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SINGLE_DOWNLOAD_CHANGED, downloadLink));
     }
     
@@ -423,7 +424,7 @@ if(unrarType.equals(Unrar.ENABLED_TYPE_ALWAYS))controller.getUnrarModule().inter
      */
     private void onErrorNotUploaded(DownloadLink downloadLink, PluginForHost plugin, PluginStep step) {
         downloadLink.setStatusText("File not full uploaded");
-        downloadLink.setInProgress(false);
+   
         fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SINGLE_DOWNLOAD_CHANGED, downloadLink));
     }
 
@@ -436,7 +437,7 @@ if(unrarType.equals(Unrar.ENABLED_TYPE_ALWAYS))controller.getUnrarModule().inter
      */
     private void onErrorCaptchaImage(DownloadLink downloadLink, PluginForHost plugin, PluginStep step) {
         downloadLink.setStatusText("Captcha Fehler");
-        downloadLink.setInProgress(false);
+   
         fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SINGLE_DOWNLOAD_CHANGED, downloadLink));
     }
 
@@ -492,12 +493,13 @@ if(unrarType.equals(Unrar.ENABLED_TYPE_ALWAYS))controller.getUnrarModule().inter
     private void onErrorBotdetection(DownloadLink downloadLink, PluginForHost plugin, PluginStep step) {
         // Bot erkannt. Interaction!
         logger.severe("Error occurred: Bot detected");
-        downloadLink.setInProgress(false);
+     
         downloadLink.setStatusText("Bot erkannt/Reconnect ");
         fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SINGLE_DOWNLOAD_CHANGED, downloadLink));
        if(plugin.getBotWaittime()<0){
             Interaction.handleInteraction(Interaction.INTERACTION_BEFORE_RECONNECT, this);
             Interaction.handleInteraction((Interaction.INTERACTION_NEED_RECONNECT), this);
+        
             Interaction.handleInteraction((Interaction.INTERACTION_DOWNLOAD_WAITTIME), this);    
         
         }
@@ -508,7 +510,7 @@ if(unrarType.equals(Unrar.ENABLED_TYPE_ALWAYS))controller.getUnrarModule().inter
 
             downloadLink.setEndOfWaittime(System.currentTimeMillis() + plugin.getBotWaittime());
             downloadLink.setStatusText("Botwait ");
-            downloadLink.setInProgress(false);
+          
             downloadLink.setStatus(DownloadLink.STATUS_ERROR_STATIC_WAITTIME);
   
             fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SINGLE_DOWNLOAD_CHANGED, downloadLink));
@@ -532,7 +534,7 @@ if(unrarType.equals(Unrar.ENABLED_TYPE_ALWAYS))controller.getUnrarModule().inter
         logger.severe("Error occurred: Captcha Wrong");
         // captcha Falsch. Download wiederholen
         downloadLink.setStatusText("Code falsch");
-        downloadLink.setInProgress(false);
+     
         fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SINGLE_DOWNLOAD_CHANGED, downloadLink));
         downloadLink.setStatus(DownloadLink.STATUS_TODO);
         downloadLink.setEndOfWaittime(0);
@@ -551,18 +553,19 @@ if(unrarType.equals(Unrar.ENABLED_TYPE_ALWAYS))controller.getUnrarModule().inter
         long milliSeconds = (Long) step.getParameter();
         downloadLink.setEndOfWaittime(System.currentTimeMillis() + milliSeconds);
         downloadLink.setStatusText("Reconnect ");
-        downloadLink.setInProgress(false);
+     
         fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SINGLE_DOWNLOAD_CHANGED, downloadLink));
         // Download Zeit. Versuch durch eine Interaction einen reconnect
         // zu machen. wenn das klappt nochmal versuchen
         Interaction.handleInteraction(Interaction.INTERACTION_BEFORE_RECONNECT, this);
         boolean a = Interaction.handleInteraction((Interaction.INTERACTION_NEED_RECONNECT), this);
-        Interaction.handleInteraction(Interaction.INTERACTION_AFTER_RECONNECT, this);
+       
         boolean b = Interaction.handleInteraction((Interaction.INTERACTION_DOWNLOAD_WAITTIME), this);
         if (controller.reconnect()) {
             downloadLink.setStatus(DownloadLink.STATUS_TODO);
             downloadLink.setEndOfWaittime(0);
         }
+        Interaction.handleInteraction(Interaction.INTERACTION_AFTER_RECONNECT, this);
         downloadLink.setStatusText("");
     }
 

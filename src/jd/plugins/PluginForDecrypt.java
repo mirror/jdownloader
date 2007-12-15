@@ -56,7 +56,7 @@ public abstract class PluginForDecrypt extends Plugin {
      */
     public Vector<String[]> decryptLink(String cryptedLink) {
         this.cryptedLink = cryptedLink;
-        progress=new ProgressController();
+        progress=new ProgressController("Decrypter: "+this.getLinkName());
         progress.setStatusText("decrypt-"+getPluginName()+": "+cryptedLink);
         PluginStep step = null;
       

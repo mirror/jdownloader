@@ -60,7 +60,7 @@ public class DownloadWatchDog extends Thread implements PluginListener, ControlL
         deligateFireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_ALL_DOWNLOAD_START, this));
 
         while (aborted != true) {
-            logger.info("JJ "+Interaction.getInteractionsRunning());
+           
             if (Interaction.getInteractionsRunning() == 0) {
                 if (activeLinks.size() < getSimultanDownloadNum()&&!pause) {
                     started = setDownloadActive();
@@ -217,7 +217,7 @@ public class DownloadWatchDog extends Thread implements PluginListener, ControlL
      */
     void abort() {
 logger.finer("Breche alle actove links ab");
-ProgressController progress = new ProgressController(activeLinks.size());
+ProgressController progress = new ProgressController("Termination",activeLinks.size());
 progress.setStatusText("Stopping all downloads");
         for (int i = 0; i < this.activeLinks.size(); i++) {
             activeLinks.get(i).abortDownload();
@@ -376,14 +376,7 @@ progress.setStatusText("Stopping all downloads");
                 nextDownloadLink.setStatus(DownloadLink.STATUS_TODO);
             }
 
-            // logger.info(nextDownloadLink+"
-            // "+!this.isDownloadLinkActive(nextDownloadLink)+"_"+!nextDownloadLink.isInProgress()+"_"+nextDownloadLink.isEnabled()+"
-            // - "+(nextDownloadLink.getStatus() == DownloadLink.STATUS_TODO)+"
-            // - "+(nextDownloadLink.getRemainingWaittime() == 0)+" -
-            // "+(getDownloadNumByHost((PluginForHost)
-            // nextDownloadLink.getPlugin()) < ((PluginForHost)
-            // nextDownloadLink.getPlugin()).getMaxSimultanDownloadNum())+" :
-            // "+nextDownloadLink.getStatus());
+          //   logger.info(nextDownloadLink+""+!this.isDownloadLinkActive(nextDownloadLink)+"_"+!nextDownloadLink.isInProgress()+"_"+nextDownloadLink.isEnabled()+"- "+(nextDownloadLink.getStatus() == DownloadLink.STATUS_TODO)+" - "+(nextDownloadLink.getRemainingWaittime() == 0)+" -   "+(getDownloadNumByHost((PluginForHost)nextDownloadLink.getPlugin()) < ((PluginForHost)nextDownloadLink.getPlugin()).getMaxSimultanDownloadNum())+" :"+nextDownloadLink.getStatus());
             if (!this.isDownloadLinkActive(nextDownloadLink)) {
                 if (!nextDownloadLink.isInProgress()) {
                     if (nextDownloadLink.isEnabled()) {

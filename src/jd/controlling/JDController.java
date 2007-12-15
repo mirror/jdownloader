@@ -191,9 +191,9 @@ public class JDController implements PluginListener, ControlListener, UIListener
                         String unrarType = JDUtilities.getConfiguration().getStringProperty(Unrar.PROPERTY_ENABLED_TYPE, Unrar.ENABLED_TYPE_NEVER);
                         if (unrarType.equals(Unrar.ENABLED_TYPE_LINKGRABBER)) this.getUnrarModule().interact(lastDownloadFinished);
                     }
-                    
+
                     if (lastDownloadFinished.getFilePackage().isWriteInfoFile()) this.getInfoFileWriterModule().interact(lastDownloadFinished);
-                    
+
                 }
 
                 if (lastDownloadFinished.getStatus() == DownloadLink.STATUS_DONE && Configuration.FINISHED_DOWNLOADS_REMOVE.equals(JDUtilities.getConfiguration().getProperty(Configuration.PARAM_FINISHED_DOWNLOADS_ACTION))) {
@@ -362,29 +362,6 @@ public class JDController implements PluginListener, ControlListener, UIListener
                 Interaction.handleInteraction(Interaction.INTERACTION_NEED_RECONNECT, this);
                 if (reconnect()) {
                     uiInterface.showMessageDialog("Reconnect erfolgreich");
-                    Iterator<DownloadLink> iterator = downloadLinks.iterator();
-                    // stellt die Wartezeiten zurück
-                    DownloadLink i;
-                    while (iterator.hasNext()) {
-                        i = iterator.next();
-                        if (i.getRemainingWaittime() > 0) {
-                            i.setEndOfWaittime(0);
-                            i.setStatus(DownloadLink.STATUS_TODO);
-
-                        }
-                    }
-
-                    // if
-                    // (Interaction.getInteractions(Interaction.INTERACTION_NEED_RECONNECT).length
-                    // != 1) {
-                    // uiInterface.showMessageDialog("Es sind " +
-                    // Interaction.getInteractions(Interaction.INTERACTION_NEED_RECONNECT).length
-                    // + " Interactionen für den Reconnect festgelegt.
-                    // \r\nEventl. wurde der Reconnect mehrmals ausgeführt.
-                    // \r\nBitte Event einstellen
-                    // (Konfiguration->Eventmanager)");
-                    //
-                    // }
 
                 }
                 else {
@@ -629,7 +606,7 @@ public class JDController implements PluginListener, ControlListener, UIListener
         Vector<PluginForContainer> pluginsForContainer = JDUtilities.getPluginsForContainer();
         Vector<DownloadLink> downloadLinks = new Vector<DownloadLink>();
         PluginForContainer pContainer;
-        ProgressController progress = new ProgressController(pluginsForContainer.size());
+        ProgressController progress = new ProgressController("Containerloader",pluginsForContainer.size());
         logger.info("load Container: " + file);
 
         for (int i = 0; i < pluginsForContainer.size(); i++) {
@@ -929,22 +906,44 @@ public class JDController implements PluginListener, ControlListener, UIListener
      */
 
     public boolean reconnect() {
+        logger.info("Reconnect: "+JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_DISABLE_RECONNECT, true));
+        if (!JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_DISABLE_RECONNECT, true)) {
+            logger.finer("Reconnect is disabled. Enable the CheckBox in the Toolbar to reactivate it");
+            return false;
+        }
         String type = JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_RECONNECT_TYPE, null);
         if (type == null) {
 
-            this.uiInterface.showMessageDialog("Reconnect is not configured. Config->Reconnect!");
+            logger.severe("Reconnect is not configured. Config->Reconnect!");
             return false;
         }
+        boolean ret = false;
         if (type.equals("HTTPReconnect/Routercontrol")) {
-            return new HTTPReconnect().interact(null);
+            ret = new HTTPReconnect().interact(null);
         }
         if (type.equals("LiveHeader/Curl")) {
-            return new HTTPLiveHeader().interact(null);
+            ret = new HTTPLiveHeader().interact(null);
         }
         if (type.equals("Extern")) {
-            return new ExternReconnect().interact(null);
+            ret = new ExternReconnect().interact(null);
         }
-        return true;
+        logger.info("Reconnect success: "+ret);
+        if (ret) {
+            Iterator<DownloadLink> iterator = downloadLinks.iterator();
+
+            DownloadLink i;
+            while (iterator.hasNext()) {
+                i = iterator.next();
+                if (i.getRemainingWaittime() > 0) {
+                    i.setEndOfWaittime(0);
+                    ((PluginForHost)i.getPlugin()).resetPluginGlobals();
+                    i.setStatus(DownloadLink.STATUS_TODO);
+
+                }
+            }
+
+        }
+        return ret;
     }
 
 }

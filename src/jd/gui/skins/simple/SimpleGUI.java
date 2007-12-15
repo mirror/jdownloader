@@ -445,9 +445,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         toolBar.add(btnDnD);
         reconnectBox = new JCheckBox("Reconnect durchführen");
         boolean rc = JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_DISABLE_RECONNECT, true);
-        reconnectBox.setSelected(rc);
-        HTTPReconnect.setEnabled(rc);
-        ExternReconnect.setEnabled(rc);
+
         reconnectBox.addActionListener(this);
         toolBar.add(reconnectBox);
         frame.setLayout(new GridBagLayout());
@@ -466,10 +464,11 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
      */
     public void actionPerformed(ActionEvent e) {
         if (e.getSource() == reconnectBox) {
-            HTTPReconnect.setEnabled(reconnectBox.getSelectedObjects() != null);
-            ExternReconnect.setEnabled(reconnectBox.getSelectedObjects() != null);
-            JDUtilities.getConfiguration().setProperty(Configuration.PARAM_DISABLE_RECONNECT, reconnectBox.getSelectedObjects() != null);
+            
+            JDUtilities.getConfiguration().setProperty(Configuration.PARAM_DISABLE_RECONNECT,       reconnectBox.isSelected()/*reconnectBox.getSelectedObjects() != null*/);
+     
             fireUIEvent(new UIEvent(this, UIEvent.UI_SAVE_CONFIG));
+            if(      !reconnectBox.isSelected())this.showMessageDialog("Reconnect is now disabled! Do not forget to reactivate this feature!");
             return;
         }
         switch (e.getID()) {

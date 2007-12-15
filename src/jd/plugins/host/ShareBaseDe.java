@@ -208,6 +208,13 @@ public class ShareBaseDe extends PluginForHost {
              e.printStackTrace();
             return null;
         }
+    }
+
+
+    @Override
+    public void resetPluginGlobals() {
+        // TODO Auto-generated method stub
+        
     }  
     
 }

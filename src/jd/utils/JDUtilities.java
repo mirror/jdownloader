@@ -34,6 +34,7 @@ import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.net.ConnectException;
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.net.URL;
@@ -69,10 +70,6 @@ import jd.captcha.JAntiCaptcha;
 import jd.captcha.pixelgrid.Captcha;
 import jd.config.Configuration;
 import jd.controlling.JDController;
-import jd.controlling.interaction.ExternReconnect;
-import jd.controlling.interaction.HTTPLiveHeader;
-import jd.controlling.interaction.HTTPReconnect;
-import jd.controlling.interaction.Unrar;
 import jd.gui.UIInterface;
 import jd.plugins.LogFormatter;
 import jd.plugins.Plugin;
@@ -1466,6 +1463,10 @@ public class JDUtilities {
             }
             logger.info("IP Check failed. Ip not found via regex: " + patt + " on " + site + " htmlcode: " + requestInfo.getHtmlCode());
             return null;
+        }
+        catch(ConnectException e1){
+            logger.severe("Offline. " + e1.toString());
+            return "offline";
         }
         catch (IOException e1) {
             logger.severe("url not found. " + e1.toString());

@@ -592,6 +592,9 @@ public class DownloadLink implements Serializable,Comparable<DownloadLink> {
     public void setEndOfWaittime(long l) {
         this.mustWaitTil = l;
         waittime = l - System.currentTimeMillis();
+        if(waittime<=0){
+            ((PluginForHost)this.getPlugin()).resetPlugin();
+        }
 
     }
 

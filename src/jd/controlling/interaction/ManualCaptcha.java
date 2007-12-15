@@ -24,7 +24,7 @@ public class ManualCaptcha extends Interaction implements Serializable {
     @Override
     public boolean doInteraction(Object arg) {
         logger.info("start");
-        ProgressController progress = new ProgressController(2);
+        ProgressController progress = new ProgressController("Captcha Input",2);
      
         progress.setStatusText("Manual Captcha (JAC supported)");
         logger.info("Starting Manuell captcha");

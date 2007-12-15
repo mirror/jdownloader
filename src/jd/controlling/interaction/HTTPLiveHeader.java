@@ -139,7 +139,7 @@ public class HTTPLiveHeader extends Interaction {
         String ip = configuration.getStringProperty(Configuration.PARAM_HTTPSEND_IP);
         retries++;
         logger.info("Starting  #" + retries);
-        ProgressController progress = new ProgressController(10);
+        ProgressController progress = new ProgressController("HTTPLiveHeader Reconnect",10);
         progress.setStatusText("HTTPLiveHeader #" + retries);
         if (user != null || pass != null) Authenticator.setDefault(new InternalAuthenticator(user, pass));
 
@@ -321,7 +321,7 @@ public class HTTPLiveHeader extends Interaction {
         progress.setStatusText("(" + "IPCHECK" + ")HTTPLiveHeader " + preIp + "/" + afterIP);
 
         long endTime = System.currentTimeMillis() + waitForIp * 1000;
-        while (System.currentTimeMillis() <= endTime && (afterIP == null || afterIP.equals(preIp))) {
+        while (System.currentTimeMillis() <= endTime && (afterIP.equalsIgnoreCase("offline")||afterIP == null || afterIP.equals(preIp))) {
             try {
                 Thread.sleep(5 * 1000);
             }
@@ -547,7 +547,7 @@ public class HTTPLiveHeader extends Interaction {
         String post = "";
         String host = null;
         RequestInfo requestInfo;
-        ProgressController progress = new ProgressController(10);
+      
         HashMap<String, String> requestProperties = new HashMap<String, String>();
         String[] tmp = request.split("\\%\\%\\%(.*?)\\%\\%\\%");
         Vector<String> params = Plugin.getAllSimpleMatches(request, "%%%°%%%", 1);

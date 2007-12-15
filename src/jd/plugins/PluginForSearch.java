@@ -16,7 +16,7 @@ public abstract class PluginForSearch extends Plugin {
     protected ProgressController progress;
     public Vector<String[]> findLinks(String pattern) {
         if(progress==null){
-            progress=new ProgressController();
+            progress=new ProgressController("Search: "+this.getLinkName());
             progress.setStatusText("Search-"+getPluginName()+": "+pattern);
         }
         Vector<String[]> foundLinks = new Vector<String[]>();

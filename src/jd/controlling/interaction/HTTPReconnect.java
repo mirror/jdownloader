@@ -44,7 +44,7 @@ public class HTTPReconnect extends Interaction {
             logger.info("Reconnect deaktiviert");
             return false;
         }
-        ProgressController progress = new ProgressController(5);
+        ProgressController progress = new ProgressController("HTTPReconnect",5);
         Configuration configuration = JDUtilities.getConfiguration();
         retries++;
         logger.info("Starting HTTPReconnect #" + retries);

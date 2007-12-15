@@ -652,4 +652,10 @@ static private final String DOWNLOAD_LIMIT_REACHED="Free-Traffic ist aufgebrauch
         }
         return 1;
     }
+
+    @Override
+    public void resetPluginGlobals() {
+        // TODO Auto-generated method stub
+        
+    }
 }

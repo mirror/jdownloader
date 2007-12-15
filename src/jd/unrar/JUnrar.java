@@ -69,7 +69,7 @@ public class JUnrar {
      * 
      */
     public JUnrar() {
-        progress = new ProgressController(100);
+        progress = new ProgressController("Default Unrar",100);
         progress.setStatusText("Unrar-process");
         loadObjects();
     }
@@ -128,7 +128,7 @@ public class JUnrar {
      */
     @SuppressWarnings("unchecked")
     public JUnrar(File[] files, String password) {
-        progress = new ProgressController(100);
+        progress = new ProgressController("Unrar",100);
         progress.setStatusText("Unrar-process");
         HashMap<File, String> filelist = new HashMap<File, String>();
         for (int i = 0; i < files.length; i++) {

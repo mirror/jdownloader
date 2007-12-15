@@ -27,13 +27,17 @@ public abstract class PluginForHost extends Plugin {
 
     /**
      * Führt alle restevorgänge aus und bereitet das Plugin dadurch auf einen
-     * Neustart vor
+     * Neustart vor. Sollte nicht überschrieben werden
      */
-    public void resetPlugin() {
+    public final void resetPlugin() {
         this.resetSteps();
         this.reset();
         this.aborted = false;
     }
+    /**
+     * Setzt globale Plugineinstellungen wie eine Globale Hosterwartezeit zurück.
+     */
+    public abstract void resetPluginGlobals();
 
     /**
      * Diese methode führt den Nächsten schritt aus. Der gerade ausgeführte

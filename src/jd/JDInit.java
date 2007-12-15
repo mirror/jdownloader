@@ -381,10 +381,14 @@ public class JDInit {
                 WebUpdater updater = new WebUpdater(null);
                 logger.finer("Get available files");
                 Vector<Vector<String>> files = updater.getAvailableFiles();
+                if(files==null){
+                    logger.severe("Webupdater offline");
+                    return;
+                }
                 logger.finer("Files found: " + files);
                 int org;
                 logger.finer("init progressbar");
-                ProgressController progress = new ProgressController(org = files.size());
+                ProgressController progress = new ProgressController("Webupdate",org = files.size());
                 progress.setStatusText("Update Check");
                 if (files != null) {
 
