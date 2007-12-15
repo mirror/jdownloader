@@ -92,8 +92,7 @@ ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, configura
     }
 
     public void actionPerformed(ActionEvent e) {
-        logger.severe("passwort gui klasse fehlt!!!");
-      //  new jdUnrarPasswordListDialog(((SimpleGUI) this.uiinterface).getFrame()).setVisible(true);
+       new jdUnrarPasswordListDialog(((SimpleGUI) this.uiinterface).getFrame()).setVisible(true);
     }
 }
 
