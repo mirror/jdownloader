@@ -129,7 +129,7 @@ public class JDClassLoader extends java.lang.ClassLoader {
         if (jars != null) {
             JarEntry entry;
             for (int i = 0; i < jars.length; i++) {
-                ;
+                logger.info(jars[i]+" -tttt "+jars[i].entries());
                 if (jars[i]!=null &&(entry = jars[i].getJarEntry(name)) != null) try {
                     //Das sollte nun hoffentlich eine Systemunabhängige Implementierung sein.
                     
@@ -145,8 +145,11 @@ public class JDClassLoader extends java.lang.ClassLoader {
             }
         }
         Enumeration<URL> en = classLoaderParent.getResources(name);
+      
         while(en.hasMoreElements()){
-            urls.add(en.nextElement());
+           URL tmp = en.nextElement();
+          
+            urls.add(tmp);
         }
 
         return urls.elements();

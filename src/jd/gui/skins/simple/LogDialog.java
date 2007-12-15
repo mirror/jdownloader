@@ -199,7 +199,6 @@ public class LogDialog extends JDialog implements ActionListener {
         if (e.getSource() == btnSave) {
             JFileChooser fc = new JFileChooser();
             fc.setApproveButtonText("Save");
-            if (JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_CURRENT_BROWSE_PATH, null) != null) fc.setCurrentDirectory(new File(JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_CURRENT_BROWSE_PATH, null)));
             fc.setFileSelectionMode(JFileChooser.FILES_ONLY);
             fc.showOpenDialog(this);
             File ret = fc.getSelectedFile();

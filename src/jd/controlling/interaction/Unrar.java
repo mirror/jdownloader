@@ -25,7 +25,7 @@ public class Unrar extends Interaction implements Serializable {
     }
 
     public static Unrar getInstance() {
-        if (INSTANCE == null) {
+        if (INSTANCE == null) { 
             if (JDUtilities.getConfiguration().getProperty(Configuration.PARAM_UNRAR_INSTANCE, null) != null) {
                 INSTANCE = (Unrar) JDUtilities.getConfiguration().getProperty(Configuration.PARAM_UNRAR_INSTANCE, null);
                 return INSTANCE;
@@ -64,6 +64,8 @@ public class Unrar extends Interaction implements Serializable {
 
     public static final String ENABLED_TYPE_LINKGRABBER = JDUtilities.getResourceString("unrar.interaction.linkgrabber");
 
+    public static final String PROPERTY_WAIT_FOR_TERMINATION = "UNRAR_WAIT_FOR_TERMINATION";
+
     @Override
     public boolean doInteraction(Object arg) {
         start();
@@ -72,7 +74,7 @@ public class Unrar extends Interaction implements Serializable {
     }
     
     public boolean getWaitForTermination(){
-        return false;
+     return JDUtilities.getConfiguration().getBooleanProperty(Unrar.PROPERTY_WAIT_FOR_TERMINATION,false);
     }
 
     @Override

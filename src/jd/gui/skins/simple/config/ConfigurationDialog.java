@@ -1,5 +1,6 @@
 package jd.gui.skins.simple.config;
 
+import java.awt.Color;
 import java.awt.ComponentOrientation;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
@@ -8,11 +9,17 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.Vector;
 
+import javax.swing.BorderFactory;
+import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JDialog;
 import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+import javax.swing.JSeparator;
 import javax.swing.JTabbedPane;
+import javax.swing.SwingConstants;
 
 import jd.config.Configuration;
 import jd.gui.UIInterface;
@@ -56,19 +63,19 @@ public class ConfigurationDialog extends JDialog implements ActionListener {
         tabbedPane.setComponentOrientation(ComponentOrientation.LEFT_TO_RIGHT);
         tabbedPane.setTabLayoutPolicy(JTabbedPane.SCROLL_TAB_LAYOUT);
         tabbedPane.setTabPlacement(JTabbedPane.LEFT);
-        this.addConfigPanel(new ConfigPanelGeneral(configuration, uiinterface));
-        this.addConfigPanel(new ConfigPanelDownload(configuration, uiinterface));
-        this.addConfigPanel(new ConfigPanelReconnect(configuration, uiinterface));
-        this.addConfigPanel(new ConfigPanelCaptcha(configuration, uiinterface));
-        this.addConfigPanel(new ConfigPanelUnrar(configuration, uiinterface));  
-        this.addConfigPanel(new ConfigPanelInfoFileWriter(configuration, uiinterface));
-        this.addConfigPanel(new ConfigPanelEventmanager(configuration, uiinterface));
+        this.addConfigPanel(new ConfigPanelGeneral(configuration, uiinterface),"home","General settings");
+        this.addConfigPanel(new ConfigPanelDownload(configuration, uiinterface),"network_local","Download/Network settings");
+        this.addConfigPanel(new ConfigPanelReconnect(configuration, uiinterface),"reboot","Reconnect settings");
+        this.addConfigPanel(new ConfigPanelCaptcha(configuration, uiinterface),"ocr","OCR Captcha settings");
+        this.addConfigPanel(new ConfigPanelUnrar(configuration, uiinterface),"package","Archiv extract settings");  
+        this.addConfigPanel(new ConfigPanelInfoFileWriter(configuration, uiinterface),"load","'Info File Writer' settings");
+        this.addConfigPanel(new ConfigPanelEventmanager(configuration, uiinterface),"switch","Eventmanager");
        
-        this.addConfigPanel(new ConfigPanelPluginForHost(configuration, uiinterface));
-        this.addConfigPanel(new ConfigPanelPluginForDecrypt(configuration, uiinterface));
-        this.addConfigPanel(new ConfigPanelPluginForSearch(configuration, uiinterface));
-        this.addConfigPanel(new ConfigPanelPluginsOptional(configuration, uiinterface));
-        this.addConfigPanel(new ConfigPanelPluginForContainer(configuration, uiinterface));
+        this.addConfigPanel(new ConfigPanelPluginForHost(configuration, uiinterface),"star","Host Plugin settings");
+        this.addConfigPanel(new ConfigPanelPluginForDecrypt(configuration, uiinterface),"tip","Decrypter Plugin settings");
+        this.addConfigPanel(new ConfigPanelPluginForSearch(configuration, uiinterface),"find","Search Plugin settings");
+        this.addConfigPanel(new ConfigPanelPluginsOptional(configuration, uiinterface),"edit_redo","Optional Plugin settings");
+        this.addConfigPanel(new ConfigPanelPluginForContainer(configuration, uiinterface),"database","Link-Container settings");
         
         btnSave = new JButton("Speichern");
         btnSave.addActionListener(this);
@@ -79,11 +86,11 @@ public class ConfigurationDialog extends JDialog implements ActionListener {
         chbExpert.addActionListener(this);
         Insets insets = new Insets(5, 5, 5, 5);
 
-        JDUtilities.addToGridBag(this, tabbedPane, 0, 0, 3, 1, 1, 1, null, GridBagConstraints.BOTH, GridBagConstraints.CENTER);
-        JDUtilities.addToGridBag(this, chbExpert, 0, 1, 1, 1, 1, 0, insets, GridBagConstraints.NONE, GridBagConstraints.EAST);
+        JDUtilities.addToGridBag(this, tabbedPane,  0, 0, 3, 3, 1, 1, null, GridBagConstraints.BOTH, GridBagConstraints.NORTHWEST);
+        JDUtilities.addToGridBag(this, chbExpert,  0, 4, 1, 1, 1, -1, insets, GridBagConstraints.HORIZONTAL, GridBagConstraints.SOUTHEAST);
         
-        JDUtilities.addToGridBag(this, btnSave, 1, 1, 1, 1, 1, 0, insets, GridBagConstraints.NONE, GridBagConstraints.EAST);
-        JDUtilities.addToGridBag(this, btnCancel, 2, 1, 1, 1, 1, 0, insets, GridBagConstraints.NONE, GridBagConstraints.EAST);
+        JDUtilities.addToGridBag(this, btnSave,  1, 4, 1, 1, 0, -1, insets, GridBagConstraints.NONE, GridBagConstraints.SOUTHEAST);
+        JDUtilities.addToGridBag(this, btnCancel, 2,4,1, 1, 0, -1, insets, GridBagConstraints.NONE, GridBagConstraints.SOUTHEAST);
 
         pack();
     }
@@ -93,9 +100,15 @@ public class ConfigurationDialog extends JDialog implements ActionListener {
      * Fügt einen neuen ConfigTab hinzu
      * @param configPanel
      */
-    private void addConfigPanel(ConfigPanel configPanel) {
+    private void addConfigPanel(ConfigPanel configPanel,String img,String title ) {
         this.configPanels.add(configPanel);
-        tabbedPane.addTab(configPanel.getName(), configPanel);
+        JPanel p = new JPanel(new GridBagLayout());
+        
+        JDUtilities.addToGridBag(p, new JLabel(title,new ImageIcon(JDUtilities.getImage(img)),SwingConstants.LEFT), GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 1, 0, null, GridBagConstraints.HORIZONTAL, GridBagConstraints.FIRST_LINE_START);
+       JDUtilities.addToGridBag(p, new JSeparator(), GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 1, 0, null, GridBagConstraints.HORIZONTAL, GridBagConstraints.NORTH);
+        JDUtilities.addToGridBag(p, configPanel, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 1, 1, null, GridBagConstraints.BOTH, GridBagConstraints.NORTH);
+   
+        tabbedPane.addTab(configPanel.getName(), p);
 
     }
 /**

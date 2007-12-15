@@ -57,8 +57,8 @@ public class DragNDrop extends JComponent implements DropTargetListener {
     public DragNDrop() {
         new DropTarget(this, this);
         uiListener = new Vector<UIListener>();
-        this.imageEmpty = JDUtilities.getImage("dnd_big");
-        this.imageFilled = JDUtilities.getImage("dnd_big_filled");
+        this.imageEmpty = JDUtilities.getImage("clipboard");
+        this.imageFilled = JDUtilities.getImage("clipboard");
         if (imageEmpty != null) {
             setPreferredSize(new Dimension(imageEmpty.getWidth(null), imageEmpty.getHeight(null)));
         }

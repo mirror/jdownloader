@@ -48,7 +48,6 @@ import jd.gui.UIInterface;
 import jd.gui.skins.simple.components.JDFileChooser;
 import jd.gui.skins.simple.components.TextAreaDialog;
 import jd.gui.skins.simple.config.ConfigurationDialog;
-import jd.gui.skins.simple.config.jdUnrarPasswordListDialog;
 import jd.plugins.DownloadLink;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
@@ -172,7 +171,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
     
     private JDAction          actionUnrar;
     
-    private JDAction          actionPasswordlist;
+    //private JDAction          actionPasswordlist;
 
     private JDAction doReconnect;
 
@@ -265,7 +264,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         actionLog = new JDAction(this, "terminal", "action.viewlog", JDAction.APP_LOG);
         actionTester = new JDAction(this, "jd_logo", "action.tester", JDAction.APP_TESTER);
         actionUnrar = new JDAction(this, "jd_logo", "action.unrar", JDAction.APP_UNRAR);
-        actionPasswordlist = new JDAction(this, "jd_logo", "action.passwordlist", JDAction.APP_PASSWORDLIST);
+      //  actionPasswordlist = new JDAction(this, "jd_logo", "action.passwordlist", JDAction.APP_PASSWORDLIST);
         actionConfig = new JDAction(this, "configuration", "action.configuration", JDAction.APP_CONFIGURATION);
         actionReconnect = new JDAction(this, "reconnect", "action.reconnect", JDAction.APP_RECONNECT);
         actionUpdate = new JDAction(this, "update_manager", "action.update", JDAction.APP_UPDATE);
@@ -338,7 +337,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         JMenuItem menConfig = createMenuItem(actionConfig);
         JMenuItem menTester = createMenuItem(actionTester);
         JMenuItem menUnrar = createMenuItem(actionUnrar);
-        JMenuItem menPasswordlist = createMenuItem(actionPasswordlist);
+       // JMenuItem menPasswordlist = createMenuItem(actionPasswordlist);
         // add menus to parents
  
         menFile.add(menFileLoad);
@@ -349,7 +348,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         menExtra.add(menTester);
         menExtra.add(menConfig);
         menExtra.add(menUnrar);
-        menExtra.add(menPasswordlist);
+       // menExtra.add(menPasswordlist);
         menAction.add(menDownload);
         menAction.add(menAddLinks);
         menuBar.add(menFile);
@@ -514,7 +513,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
                 JDUtilities.getController().getUnrarModule().interact(null);
                 break;
             case JDAction.APP_PASSWORDLIST:
-                new jdUnrarPasswordListDialog(((SimpleGUI) JDUtilities.getController().getUiInterface()).getFrame()).setVisible(true);
+               // new jdUnrarPasswordListDialog(((SimpleGUI) JDUtilities.getController().getUiInterface()).getFrame()).setVisible(true);
                 break;
             case JDAction.APP_START_STOP_DOWNLOADS:
                 this.startStopDownloads();

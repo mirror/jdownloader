@@ -68,9 +68,10 @@ public class JDAction extends AbstractAction{
         this.ressourceName = ressourceName;
         this.actionID = actionID;
         this.actionListener = actionListener;
-     
+     if(JDUtilities.getImage(iconName)!=null){
         ImageIcon icon = new ImageIcon(JDUtilities.getImage(iconName));
         putValue(Action.SMALL_ICON, icon);
+     }
         putValue(Action.SHORT_DESCRIPTION, JDUtilities.getResourceString(ressourceName+".desc"));
         putValue(Action.NAME,              JDUtilities.getResourceString(ressourceName+".name"));
         char mnemonic = JDUtilities.getResourceChar(ressourceName+".mnem");

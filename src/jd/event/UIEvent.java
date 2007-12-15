@@ -69,7 +69,7 @@ public class UIEvent extends AWTEvent{
     /**
      * Eine Containerdatei soll geladen werden
      */
-    public static final int UI_LOAD_CONTAINER     = 15;
+  //  public static final int UI_LOAD_CONTAINER     = 15;
 
     public static final int UI_PAUSE_DOWNLOADS = 16;
 

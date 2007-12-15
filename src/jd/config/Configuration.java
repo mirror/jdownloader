@@ -3,7 +3,7 @@ package jd.config;
 import java.io.Serializable;
 import java.util.Vector;
 
-import jd.controlling.interaction.ContainerReloader;
+
 import jd.controlling.interaction.Interaction;
 import jd.controlling.interaction.InteractionTrigger;
 import jd.controlling.interaction.ManualCaptcha;
@@ -363,25 +363,9 @@ public class Configuration extends Property implements Serializable {
      */
     public void setDefaultValues() {
 
-        Unrar ur = Unrar.getInstance();
-        if (getInteractions(ur).size() == 0) {
-            InteractionTrigger it = Interaction.INTERACTION_SINGLE_DOWNLOAD_FINISHED;
-            ur.setTrigger(it);
-            interactions.add(ur);
-        }
-        ContainerReloader cr = new ContainerReloader();
-        if (getInteractions(cr).size() == 0) {
-            InteractionTrigger it = Interaction.INTERACTION_SINGLE_DOWNLOAD_FINISHED;
-            cr.setTrigger(it);
-            interactions.add(cr);
-        }
+   
+  
 
-        ManualCaptcha jac = new ManualCaptcha();
-        if (getInteractions(Interaction.INTERACTION_DOWNLOAD_CAPTCHA).size() == 0) {
-            InteractionTrigger it = Interaction.INTERACTION_DOWNLOAD_CAPTCHA;
-            jac.setTrigger(it);
-            interactions.add(jac);
-        }
         if (getProperty("maxSimultanDownloads") == null || ((Integer) getProperty("maxSimultanDownloads")) == 0) {
             setProperty("maxSimultanDownloads", 3);
         }

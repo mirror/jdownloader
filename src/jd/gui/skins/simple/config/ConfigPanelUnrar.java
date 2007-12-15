@@ -1,4 +1,4 @@
-package jd.gui.skins.simple.config;
+﻿package jd.gui.skins.simple.config;
 
 import java.awt.BorderLayout;
 import java.awt.event.ActionEvent;
@@ -75,6 +75,9 @@ this.configuration=configuration;
         ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, configuration, Unrar.PROPERTY_AUTODELETE, JDUtilities.getResourceString("unrar.config.delete")).setDefaultValue(true));
         addGUIConfigEntry(ce);
         ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, configuration, Unrar.PROPERTY_OVERWRITE_FILES, JDUtilities.getResourceString("unrar.config.overwrite")).setDefaultValue(false));
+addGUIConfigEntry(ce);        
+ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, configuration,  Unrar.PROPERTY_WAIT_FOR_TERMINATION, "Erst nach dem Entpacken mit dem Download fortfahren").setDefaultValue(false));
+        
         addGUIConfigEntry(ce);
         ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_BUTTON, this, JDUtilities.getResourceString("action.passwordlist.name")));
         addGUIConfigEntry(ce);
@@ -89,7 +92,8 @@ this.configuration=configuration;
     }
 
     public void actionPerformed(ActionEvent e) {
-        new jdUnrarPasswordListDialog(((SimpleGUI) this.uiinterface).getFrame()).setVisible(true);
+        logger.severe("passwort gui klasse fehlt!!!");
+      //  new jdUnrarPasswordListDialog(((SimpleGUI) this.uiinterface).getFrame()).setVisible(true);
     }
 }
 

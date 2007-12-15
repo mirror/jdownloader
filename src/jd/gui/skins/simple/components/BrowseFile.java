@@ -9,7 +9,6 @@ import java.io.File;
 import java.util.logging.Logger;
 
 import javax.swing.JButton;
-import javax.swing.JFileChooser;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
 import javax.swing.border.EtchedBorder;
@@ -29,7 +28,7 @@ public class BrowseFile extends JPanel implements ActionListener {
 
     private File              currentPath;
 
-    private int               fileSelectionMode = JFileChooser.FILES_ONLY;
+    private int               fileSelectionMode = JDFileChooser.FILES_ONLY;
 
     private String            approveButtonText = "OK";
 
@@ -71,21 +70,11 @@ public class BrowseFile extends JPanel implements ActionListener {
     }
 
     private File getPath() {
-        JFileChooser fc = new JFileChooser();
-        fc.setApproveButtonText(approveButtonText);
-        if (currentPath != null){
-            fc.setCurrentDirectory(currentPath);
-        }else if (JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_CURRENT_BROWSE_PATH)!=null){
-            fc.setCurrentDirectory(new File(JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_CURRENT_BROWSE_PATH)));
-        }
+        JDFileChooser fc = new JDFileChooser();
+        fc.setApproveButtonText(approveButtonText);      
         fc.setFileSelectionMode(fileSelectionMode);
         fc.showOpenDialog(this);
-        File ret = fc.getSelectedFile();
-        if(ret.isDirectory()){
-            JDUtilities.getConfiguration().setProperty(Configuration.PARAM_CURRENT_BROWSE_PATH,ret.getAbsolutePath()); 
-        }else{
-            JDUtilities.getConfiguration().setProperty(Configuration.PARAM_CURRENT_BROWSE_PATH,ret.getParentFile().getAbsolutePath());
-        }
+        File ret = fc.getSelectedFile();   
         return ret;
     }
 

@@ -181,6 +181,35 @@ public class JDUtilities {
     private static Configuration                   configuration       = new Configuration();
 
     /**
+     * Gibt das aktuelle Working Directory zurück. Beim FilebRowser etc wird da s gebraucht.
+     * @return
+     */
+    public static File getCurrentWorkingDirectory(String id){
+        if(id==null)id="";
+        String dlDir= JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_DOWNLOAD_DIRECTORY,null);
+        String lastDir=JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_CURRENT_BROWSE_PATH+id, null);
+        
+        File dlDirectory;
+       File lastDirectory;
+        if(dlDir==null){
+            dlDirectory= new File("");
+        }else{
+            dlDirectory= new File(dlDir);
+        }
+        
+        if(lastDir==null)return dlDirectory;
+        return new File(lastDir);      
+        
+    }
+    /**
+     * Setztd as aktuelle woringdirectory für den filebrowser
+     * @param f
+     */
+    public static void setCurrentWorkingDirectory(File f,String id){
+        if(id==null)id="";
+        JDUtilities.getConfiguration().setProperty(Configuration.PARAM_CURRENT_BROWSE_PATH+id,f.getAbsolutePath());
+    }
+    /**
      * Geht eine Komponente so lange durch (getParent), bis ein Objekt vom Typ
      * Frame gefunden wird, oder es keine übergeordnete Komponente gibt
      * 
@@ -402,6 +431,9 @@ public class JDUtilities {
      *         kann
      */
     public static Image getImage(String imageName) {
+        if(images.get(imageName)==null){
+            logger.severe("No Image named "+imageName+".png found");
+        }
         return images.get(imageName);
     }
 
@@ -1711,6 +1743,7 @@ public class JDUtilities {
      * @return
      */
     public static String getFileExtension(File ret) {
+        if(ret==null)return null;
         String str = ret.getAbsolutePath();
         int i1 = str.indexOf("/");
         int i2 = str.indexOf("\\");

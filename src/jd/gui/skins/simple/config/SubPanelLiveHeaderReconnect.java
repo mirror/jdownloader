@@ -1,44 +1,21 @@
 package jd.gui.skins.simple.config;
 
 import java.awt.BorderLayout;
-import java.awt.GridBagConstraints;
-import java.awt.GridBagLayout;
-import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.ItemEvent;
-import java.awt.event.ItemListener;
-import java.io.File;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Locale;
 import java.util.Vector;
-import java.util.logging.Level;
 
-import javax.swing.JButton;
-import javax.swing.JComboBox;
-import javax.swing.JFileChooser;
-import javax.swing.JLabel;
 import javax.swing.JOptionPane;
-import javax.swing.JPanel;
-import javax.swing.JPasswordField;
-import javax.swing.JTabbedPane;
-import javax.swing.JTextField;
-import javax.swing.UIManager;
 
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.Configuration;
 import jd.controlling.interaction.HTTPLiveHeader;
-import jd.controlling.interaction.HTTPReconnect;
 import jd.controlling.interaction.Interaction;
-import jd.event.UIEvent;
 import jd.gui.UIInterface;
-import jd.gui.skins.simple.components.BrowseFile;
-import jd.router.RouterData;
-import jd.router.RouterParser;
 import jd.utils.JDUtilities;
 
 class SubPanelLiveHeaderReconnect extends ConfigPanel implements ActionListener {

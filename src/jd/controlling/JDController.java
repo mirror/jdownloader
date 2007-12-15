@@ -330,11 +330,7 @@ public class JDController implements PluginListener, ControlListener, UIListener
                 file = (File) uiEvent.getParameter();
                 loadContainerFile(file);
                 break;
-            case UIEvent.UI_LOAD_CONTAINER:
-                File containerFile = (File) uiEvent.getParameter();
-
-                loadContainerFile(containerFile);
-                break;
+        
             case UIEvent.UI_EXIT:
                 exit();
                 break;

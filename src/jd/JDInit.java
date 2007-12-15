@@ -2,6 +2,7 @@ package jd;
 
 import java.awt.Toolkit;
 import java.io.File;
+import java.io.IOException;
 import java.net.CookieHandler;
 import java.util.Date;
 import java.util.HashMap;
@@ -48,43 +49,63 @@ public class JDInit {
       
 
     }
-
+/**
+ * Bilder werden dynamisch aus dem Homedir geladen.
+ */
     public void loadImages() {
-        ClassLoader cl = getClass().getClassLoader();
+        ClassLoader cl = JDUtilities.getJDClassLoader();
         Toolkit toolkit = Toolkit.getDefaultToolkit();
-
-        JDUtilities.addImage("add", toolkit.getImage(cl.getResource("img/add.png")));
-        JDUtilities.addImage("configuration", toolkit.getImage(cl.getResource("img/configuration.png")));
-        JDUtilities.addImage("delete", toolkit.getImage(cl.getResource("img/delete.png")));
-        JDUtilities.addImage("dnd", toolkit.getImage(cl.getResource("img/dnd.png")));
-        JDUtilities.addImage("dnd_big", toolkit.getImage(cl.getResource("img/dnd_big.png")));
-        JDUtilities.addImage("dnd_big_filled", toolkit.getImage(cl.getResource("img/dnd_big_filled.png")));
-        JDUtilities.addImage("down", toolkit.getImage(cl.getResource("img/down.png")));
-        JDUtilities.addImage("exit", toolkit.getImage(cl.getResource("img/shutdown.png")));
-        JDUtilities.addImage("led_empty", toolkit.getImage(cl.getResource("img/led_empty.gif")));
-        JDUtilities.addImage("led_green", toolkit.getImage(cl.getResource("img/led_green.gif")));
-        JDUtilities.addImage("load", toolkit.getImage(cl.getResource("img/load.png")));
-        JDUtilities.addImage("log", toolkit.getImage(cl.getResource("img/log.png")));
-        JDUtilities.addImage("jd_logo", toolkit.getImage(cl.getResource("img/jd_logo.png")));
-        JDUtilities.addImage("jd_logo_large", toolkit.getImage(cl.getResource("img/jd_logo_large.png")));
-        JDUtilities.addImage("jd_logo_blog", toolkit.getImage(cl.getResource("img/jd_blog.png")));
-        JDUtilities.addImage("reconnect", toolkit.getImage(cl.getResource("img/reconnect.png")));
-        JDUtilities.addImage("save", toolkit.getImage(cl.getResource("img/save.png")));
-        JDUtilities.addImage("start", toolkit.getImage(cl.getResource("img/start.png")));
-        JDUtilities.addImage("stop", toolkit.getImage(cl.getResource("img/stop.png")));
-        JDUtilities.addImage("up", toolkit.getImage(cl.getResource("img/up.png")));
-        JDUtilities.addImage("update", toolkit.getImage(cl.getResource("img/update.png")));
-        JDUtilities.addImage("search", toolkit.getImage(cl.getResource("img/search.png")));
-        JDUtilities.addImage("bottom", toolkit.getImage(cl.getResource("img/bottom.png")));
-        JDUtilities.addImage("bug", toolkit.getImage(cl.getResource("img/bug.png")));
-        JDUtilities.addImage("home", toolkit.getImage(cl.getResource("img/home.png")));
-        JDUtilities.addImage("loadContainer", toolkit.getImage(cl.getResource("img/loadContainer.png")));
-        JDUtilities.addImage("ok", toolkit.getImage(cl.getResource("img/ok.png")));
-        JDUtilities.addImage("pause", toolkit.getImage(cl.getResource("img/pause.png")));
-        JDUtilities.addImage("pause_disabled", toolkit.getImage(cl.getResource("img/pause_disabled.png")));
-        JDUtilities.addImage("pause_active", toolkit.getImage(cl.getResource("img/pause_active.png")));
-        JDUtilities.addImage("shutdown", toolkit.getImage(cl.getResource("img/shutdown.png")));
-        JDUtilities.addImage("top", toolkit.getImage(cl.getResource("img/top.png")));
+     
+        
+       File dir=JDUtilities.getResourceFile("jd/img/");
+        
+        String[] images = dir.list();
+        if(images==null||images.length==0){
+            logger.severe("Could not find the img directory");
+            return;
+        }
+        for( int i=0; i<images.length;i++){
+            if(images[i].toLowerCase().endsWith(".png")){
+                File f=new File(images[i]);
+                
+               logger.finer("Loaded image: "+f.getName().split("\\.")[0]+" from "+cl.getResource("jd/img/"+f.getName()));
+                JDUtilities.addImage(f.getName().split("\\.")[0], toolkit.getImage(cl.getResource("jd/img/"+f.getName())));
+            }
+            
+        }
+//        
+//        JDUtilities.addImage("add", toolkit.getImage(cl.getResource("img/add.png")));
+//        JDUtilities.addImage("configuration", toolkit.getImage(cl.getResource("img/configuration.png")));
+//        JDUtilities.addImage("delete", toolkit.getImage(cl.getResource("img/delete.png")));
+//        JDUtilities.addImage("dnd", toolkit.getImage(cl.getResource("img/dnd.png")));
+//        JDUtilities.addImage("clipboard", toolkit.getImage(cl.getResource("img/clipboard.png")));
+//        JDUtilities.addImage("clipboard", toolkit.getImage(cl.getResource("img/clipboard.png")));
+//        JDUtilities.addImage("down", toolkit.getImage(cl.getResource("img/down.png")));
+//        JDUtilities.addImage("exit", toolkit.getImage(cl.getResource("img/shutdown.png")));
+//        JDUtilities.addImage("led_empty", toolkit.getImage(cl.getResource("img/led_empty.gif")));
+//        JDUtilities.addImage("led_green", toolkit.getImage(cl.getResource("img/led_green.gif")));
+//        JDUtilities.addImage("load", toolkit.getImage(cl.getResource("img/load.png")));
+//        JDUtilities.addImage("log", toolkit.getImage(cl.getResource("img/log.png")));
+//        JDUtilities.addImage("jd_logo", toolkit.getImage(cl.getResource("img/jd_logo.png")));
+//        JDUtilities.addImage("jd_logo_large", toolkit.getImage(cl.getResource("img/jd_logo_large.png")));
+//        JDUtilities.addImage("jd_logo_blog", toolkit.getImage(cl.getResource("img/jd_blog.png")));
+//        JDUtilities.addImage("reconnect", toolkit.getImage(cl.getResource("img/reconnect.png")));
+//        JDUtilities.addImage("save", toolkit.getImage(cl.getResource("img/save.png")));
+//        JDUtilities.addImage("start", toolkit.getImage(cl.getResource("img/start.png")));
+//        JDUtilities.addImage("stop", toolkit.getImage(cl.getResource("img/stop.png")));
+//        JDUtilities.addImage("up", toolkit.getImage(cl.getResource("img/up.png")));
+//        JDUtilities.addImage("update", toolkit.getImage(cl.getResource("img/update.png")));
+//        JDUtilities.addImage("search", toolkit.getImage(cl.getResource("img/search.png")));
+//        JDUtilities.addImage("bottom", toolkit.getImage(cl.getResource("img/bottom.png")));
+//        JDUtilities.addImage("bug", toolkit.getImage(cl.getResource("img/bug.png")));
+//        JDUtilities.addImage("home", toolkit.getImage(cl.getResource("img/home.png")));
+//        JDUtilities.addImage("loadContainer", toolkit.getImage(cl.getResource("img/loadContainer.png")));
+//        JDUtilities.addImage("ok", toolkit.getImage(cl.getResource("img/ok.png")));
+//        JDUtilities.addImage("pause", toolkit.getImage(cl.getResource("img/pause.png")));
+//        JDUtilities.addImage("pause_disabled", toolkit.getImage(cl.getResource("img/pause_disabled.png")));
+//        JDUtilities.addImage("pause_active", toolkit.getImage(cl.getResource("img/pause_active.png")));
+//        JDUtilities.addImage("shutdown", toolkit.getImage(cl.getResource("img/shutdown.png")));
+//        JDUtilities.addImage("top", toolkit.getImage(cl.getResource("img/top.png")));
     }
 
     public Configuration loadConfiguration() {
