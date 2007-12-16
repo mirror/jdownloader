@@ -9,6 +9,7 @@ import java.util.Map.Entry;
 import java.util.logging.Logger;
 
 import jd.JDFileFilter;
+import jd.config.Configuration;
 
 /**
  * Diese Klasse stellt Methoden zur Verfügung um in einen String mitPlatzhaltern
@@ -43,7 +44,8 @@ public class JDLocale {
         if (data.containsKey(key)) return data.get(key);
         logger.info("Key not found: " + key);
         data.put(key, def);
-        saveData();
+        
+        if(JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_LANG_EDITMODE))saveData();
         return def;
 
     }

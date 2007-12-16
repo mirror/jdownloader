@@ -166,6 +166,8 @@ public class Configuration extends Property implements Serializable {
 
     public static final String PARAM_FILEWRITER_INSTANCE = "FILEWRITER_INSTANCE";
 
+    public static final String PARAM_LANG_EDITMODE = "LANG_EDITMODE";
+
     /**
      * Die unterschiedlichen Interaktionen. (ZB Reconnect nach einem Download)
      */

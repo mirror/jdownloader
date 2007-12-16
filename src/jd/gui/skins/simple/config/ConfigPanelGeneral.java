@@ -90,10 +90,13 @@ addGUIConfigEntry(ce);
         ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, configuration, Configuration.PARAM_WRITE_LOG, JDLocale.L("gui.config.general.filelogger.active","Filelogger: Log in Datei schreiben")).setDefaultValue(true));
         addGUIConfigEntry(ce);
         
+      
+        
         ce= new GUIConfigEntry( new ConfigEntry(ConfigContainer.TYPE_BROWSEFILE, configuration, Configuration.PARAM_WRITE_LOG_PATH, JDLocale.L("gui.config.general.filelogger.path","Filelogger: Pfad zur Logfile")).setDefaultValue(JDUtilities.getResourceFile("jd_log.txt").getAbsolutePath()));
         addGUIConfigEntry(ce);
 
-     
+        ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, configuration, Configuration.PARAM_LANG_EDITMODE, JDLocale.L("gui.config.general.langeditMode","Sprachdatei Editiermodus")).setDefaultValue(false).setExpertEntry(true));
+        addGUIConfigEntry(ce);
        
         
         if (JDUtilities.getHomeDirectory() != null) {

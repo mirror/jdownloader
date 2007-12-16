@@ -24,11 +24,12 @@ public class Main {
 
     public static void main(String args[]) {
         JDLocale.setLocale("german");
-        if (SingleInstanceController.isApplicationRunning()) {
-            JOptionPane.showMessageDialog(null, JDLocale.L("sys.warning.multiple_instance"), JDLocale.L("sys.header.jdownloader"), JOptionPane.WARNING_MESSAGE);
-            System.exit(0);
-            return;
-        }
+        //rausgenommen verlängert nur den startvorgang
+//        if (SingleInstanceController.isApplicationRunning()) {
+//            JOptionPane.showMessageDialog(null, JDLocale.L("sys.warning.multiple_instance"), JDLocale.L("sys.header.jdownloader","JDownloader runs already"), JOptionPane.WARNING_MESSAGE);
+//            System.exit(0);
+//            return;
+//        }
         SingleInstanceController.bindRMIObject(new SingleInstanceController());
         Main main = new Main();
         main.go();

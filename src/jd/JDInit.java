@@ -2,7 +2,6 @@ package jd;
 
 import java.awt.Toolkit;
 import java.io.File;
-import java.io.IOException;
 import java.net.CookieHandler;
 import java.util.Date;
 import java.util.HashMap;
@@ -29,6 +28,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.PluginForSearch;
 import jd.plugins.PluginOptional;
 import jd.update.WebUpdater;
+import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 import sun.misc.Service;
 
@@ -125,7 +125,7 @@ public class JDInit {
                     Configuration configuration = (Configuration) obj;
                     JDUtilities.setConfiguration(configuration);
                     JDUtilities.getLogger().setLevel((Level) configuration.getProperty(Configuration.PARAM_LOGGER_LEVEL, Level.FINER));
-                    JDUtilities.setLocale((Locale) configuration.getProperty(Configuration.PARAM_LOCALE, Locale.getDefault()));
+                    JDLocale.setLocale(configuration.getStringProperty(Configuration.PARAM_LOCALE,"german"));
                 }
                 else {
                     // log += "\r\n" + ("Configuration error: " + obj);
@@ -136,16 +136,16 @@ public class JDInit {
                 }
             }
             else {
-                // log += "\r\n" + ("no configuration loaded");
-                // log += "\r\n" + ("Konfigurationskonflikt. Lade Default
-                // einstellungen");
+                logger.info ("no configuration loaded");
+                logger.info ("Konfigurationskonflikt. Lade Default einstellungen");
+                
                 allOK = false;
                 if (JDUtilities.getConfiguration() == null) JDUtilities.getConfiguration().setDefaultValues();
             }
         }
         catch (Exception e) {
-            // log += "\r\n" + ("Konfigurationskonflikt. Lade Default
-            // einstellungen");
+           logger.info("Konfigurationskonflikt. Lade Default einstellungen");
+           e.printStackTrace();
             allOK = false;
             if (JDUtilities.getConfiguration() == null) JDUtilities.setConfiguration(new Configuration());
             JDUtilities.getConfiguration().setDefaultValues();
@@ -166,7 +166,7 @@ public class JDInit {
                     System.setProperty("jdhome", homeDirectoryFile.getAbsolutePath());
                     String dlDir = inst.getDownloadDir();
 
-                    JOptionPane.showMessageDialog(new JFrame(), "Welcome to jDownloader. Download missing files.");
+                    JOptionPane.showMessageDialog(new JFrame(), JDLocale.L("installer.welcome","Welcome to jDownloader. Download missing files."));
 
                     JDUtilities.getConfiguration().setProperty(Configuration.PARAM_DOWNLOAD_DIRECTORY, dlDir);
 
@@ -180,14 +180,14 @@ public class JDInit {
 
                 }
 
-                JOptionPane.showMessageDialog(new JFrame(), "Fehler. Bitte wähle Pfade mit Schreibrechten!");
+                JOptionPane.showMessageDialog(new JFrame(), JDLocale.L("installer.error.noWriteRights","Fehler. Bitte wähle Pfade mit Schreibrechten!"));
 
                 System.exit(1);
                 inst.dispose();
             }
             else {
-                JOptionPane.showMessageDialog(new JFrame(), "Fehler. Installation abgebrochen");
-                System.exit(1);
+                JOptionPane.showMessageDialog(new JFrame(), JDLocale.L("installer.abortInstallation","Fehler. Installation abgebrochen"));
+                System.exit(0);
                 inst.dispose();
             }
         }
@@ -330,7 +330,7 @@ public class JDInit {
                 File newFile = new File(links.getAbsolutePath() + ".bup");
                 newFile.delete();
                 links.renameTo(newFile);
-                JDUtilities.getController().getUiInterface().showMessageDialog("Linkliste inkompatibel. \r\nBackup angelegt: " + newFile + " Liste geleert!");
+                JDUtilities.getController().getUiInterface().showMessageDialog(JDLocale.L("sys.warning.linklist.incompatible","Linkliste inkompatibel. \r\nBackup angelegt."));
             }
         }
 
@@ -409,8 +409,8 @@ public class JDInit {
                 logger.finer("Files found: " + files);
                 int org;
                 logger.finer("init progressbar");
-                ProgressController progress = new ProgressController("Webupdate",org = files.size());
-                progress.setStatusText("Update Check");
+                ProgressController progress = new ProgressController(JDLocale.L("init.webupdate.progress.0_title","Webupdate"),org = files.size());
+                progress.setStatusText(JDLocale.L("init.webupdate.progress.1_title","Update Check"));
                 if (files != null) {
 
                     updater.filterAvailableUpdates(files, JDUtilities.getResourceFile("."));
