@@ -16,7 +16,7 @@ import jd.utils.JDUtilities;
 public class FileFactory extends PluginForHost {
     static private final String host = "filefactory.com";
 
-    private String version = "1.1.0.0";
+    private String version = "1.2.0.0";
 
     private static Pattern patternSupported = getSupportPattern("http://[*]filefactory.com/file/[+]");
 
