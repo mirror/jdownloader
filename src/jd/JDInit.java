@@ -39,6 +39,7 @@ import sun.misc.Service;
 public class JDInit {
 
     private static Logger logger = JDUtilities.getLogger();
+    private boolean installerVisible=false;
 
     public JDInit() {
 
@@ -154,6 +155,7 @@ public class JDInit {
         if (!allOK) {
             File home = null;
             home = new File(System.getProperty("jdhome", JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath()));
+            installerVisible=true;
             Installer inst = new Installer(home, JDUtilities.getJDHomeDirectoryFromEnvironment());
             if (!inst.isAborted() && inst.getHomeDir() != null && inst.getDownloadDir() != null) {
 
@@ -474,6 +476,11 @@ public class JDInit {
         }
         JDUtilities.getConfiguration().setProperty(Configuration.PARAM_UPDATE_HASH, hash);
         JDUtilities.saveConfig();
+    }
+
+    public boolean installerWasVisible() {
+        // TODO Auto-generated method stub
+        return installerVisible;
     }
 
 }

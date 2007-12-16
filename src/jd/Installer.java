@@ -19,6 +19,7 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 
 import jd.gui.skins.simple.components.BrowseFile;
+import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
 /**
@@ -57,7 +58,7 @@ public class Installer extends JDialog implements ActionListener, WindowListener
         setModal(true);
         setLayout(new BorderLayout());
 
-        this.setTitle("JDownloader Installation");
+        this.setTitle(JDLocale.L("installer.title","JDownloader Installation"));
         this.setAlwaysOnTop(true);
 
         setLocation(20, 20);
@@ -73,11 +74,11 @@ public class Installer extends JDialog implements ActionListener, WindowListener
         downloadDir.setEditable(true);
         downloadDir.setText(downloadPath.getAbsolutePath());
         addWindowListener(this);
-        JDUtilities.addToGridBag(panel, new JLabel("Install Directory"), GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        JDUtilities.addToGridBag(panel, new JLabel(JDLocale.L("installer.installDir","Install Directory")), GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
         JDUtilities.addToGridBag(panel, homeDir, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 1, 0, insets, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-        JDUtilities.addToGridBag(panel, new JLabel("Default Download Directory"), GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        JDUtilities.addToGridBag(panel, new JLabel(JDLocale.L("installer.downloadDir","Downloaddirectory")), GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
         JDUtilities.addToGridBag(panel, downloadDir, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 1, 0, insets, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-        btnOK = new JButton("Continue...");
+        btnOK = new JButton(JDLocale.L("gui.btn_continue","Continue..."));
         btnOK.addActionListener(this);
         JDUtilities.addToGridBag(panel, btnOK, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
         this.add(panel, BorderLayout.CENTER);
@@ -88,7 +89,7 @@ public class Installer extends JDialog implements ActionListener, WindowListener
 
     public void windowClosing(WindowEvent e) {
         this.aborted=true;
-        JOptionPane.showMessageDialog(this, "Installation aborted!");
+        JOptionPane.showMessageDialog(this, JDLocale.L("installer.aborted","Installation aborted!"));
         homeDir.setText("");
         downloadDir.setText("");
   
@@ -112,7 +113,7 @@ public class Installer extends JDialog implements ActionListener, WindowListener
         new File(homeDir.getText()).mkdirs();
         if (!new File(homeDir.getText()).exists() || !new File(homeDir.getText()).canRead()) {
             this.aborted=true;
-            JOptionPane.showMessageDialog(this, "Installation aborted!\r\nInstallation Directory is not valid: " + homeDir.getText());
+            JOptionPane.showMessageDialog(this, JDLocale.L("installer.aborted.dirNotValid","Installation aborted!\r\nInstallation Directory is not valid: ") + homeDir.getText());
             homeDir.setText("");
             downloadDir.setText("");
             this.dispose();
@@ -126,7 +127,7 @@ public class Installer extends JDialog implements ActionListener, WindowListener
         new File(downloadDir.getText()).mkdirs();
         if (!new File(downloadDir.getText()).exists() || !new File(downloadDir.getText()).canWrite()) {
             this.aborted=true;
-            JOptionPane.showMessageDialog(this, "Installation aborted!\r\nDownload Directory is not valid: " + homeDir.getText());
+            JOptionPane.showMessageDialog(this, JDLocale.L("installer.aborted.dirNotValid","Installation aborted!\r\nDownload Directory is not valid: ") + homeDir.getText());
             homeDir.setText("");
             downloadDir.setText("");
             this.dispose();
