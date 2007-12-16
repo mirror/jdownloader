@@ -351,7 +351,16 @@ public class JDUtilities {
         }
         addToGridBag(cont, comp, x, y, width, height, weightX, weightY, insets, 0, 0, fill, anchor);
     }
-
+    public static String sprintf(String pattern, String[] inset){
+        
+        for(int i=0; i<inset.length;i++){
+            int ind=pattern.indexOf("%s");
+            pattern=pattern.substring(0,ind)+inset[i]+pattern.substring(ind+2);
+            
+        }
+        
+        return pattern;
+    }
     /**
      * Liefert einen Punkt zurück, mit dem eine Komponente auf eine andere
      * zentriert werden kann

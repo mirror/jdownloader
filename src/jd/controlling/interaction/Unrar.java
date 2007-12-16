@@ -8,6 +8,7 @@ import jd.config.Configuration;
 import jd.controlling.JDController;
 import jd.plugins.DownloadLink;
 import jd.unrar.JUnrar;
+import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
 /**
@@ -46,7 +47,7 @@ public class Unrar extends Interaction implements Serializable {
      */
     private static boolean      IS_RUNNING               = false;
 
-    private static final String NAME                     = JDUtilities.getResourceString("unrar.name");
+    private static final String NAME                     = JDLocale.L("interaction.unrar.name");
 
     public static final String  PROPERTY_UNRARCOMMAND    = "UNRAR_PROPERTY_UNRARCMD";
 
@@ -58,11 +59,11 @@ public class Unrar extends Interaction implements Serializable {
 
     public static final String  PROPERTY_ENABLED_TYPE         = "UNRAR_PROPERTY_ENABLED";
 
-    public static final String ENABLED_TYPE_NEVER = JDUtilities.getResourceString("unrar.interaction.never");
+    public static final String ENABLED_TYPE_NEVER = JDLocale.L("interaction.unrar.never");
 
-    public static final String ENABLED_TYPE_ALWAYS = JDUtilities.getResourceString("unrar.interaction.always");
+    public static final String ENABLED_TYPE_ALWAYS = JDLocale.L("interaction.unrar.always");
 
-    public static final String ENABLED_TYPE_LINKGRABBER = JDUtilities.getResourceString("unrar.interaction.linkgrabber");
+    public static final String ENABLED_TYPE_LINKGRABBER = JDLocale.L("interaction.unrar.linkgrabber");
 
     public static final String PROPERTY_WAIT_FOR_TERMINATION = "UNRAR_WAIT_FOR_TERMINATION";
 
@@ -79,7 +80,7 @@ public class Unrar extends Interaction implements Serializable {
 
     @Override
     public String toString() {
-        return JDUtilities.getResourceString("unrar.interaction.name");
+        return JDLocale.L("interaction.unrar.name");
     }
 
     @Override

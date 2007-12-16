@@ -17,6 +17,7 @@ import javax.swing.JTextField;
 import jd.captcha.JAntiCaptcha;
 import jd.config.Configuration;
 import jd.plugins.Plugin;
+import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
 /**
@@ -68,14 +69,14 @@ public class CaptchaDialog extends JDialog implements ActionListener {
         String host = plugin.getHost();
         logger.info(configuration.getBooleanProperty(Configuration.PARAM_MANUAL_CAPTCHA_USE_JAC)+"_");
         if (configuration.getBooleanProperty(Configuration.PARAM_MANUAL_CAPTCHA_USE_JAC,true)&&JAntiCaptcha.hasMethod(JDUtilities.getJACMethodsDirectory(), host)) {
-            setTitle("jAntiCaptcha aktiv!");
+            setTitle(JDLocale.L("gui.captchaWindow.title","jAntiCaptcha aktiv!"));
             new Thread("JAC") {
                 public void run() {
 
                     String code = JDUtilities.getCaptcha(null, plugin, file);
                     if (textField.getText().length() == 0 || code.toLowerCase().startsWith(textField.getText().toLowerCase())) {
                         textField.setText(code);
-                        setTitle("jAntiCaptcha fertig. Warte "+JDUtilities.formatSeconds(configuration.getIntegerProperty(Configuration.PARAM_MANUAL_CAPTCHA_WAIT_FOR_JAC,10000)/1000));
+                        setTitle(JDLocale.L("gui.captchaWindow.title_wait","jAntiCaptcha fertig. Warte ")+JDUtilities.formatSeconds(configuration.getIntegerProperty(Configuration.PARAM_MANUAL_CAPTCHA_WAIT_FOR_JAC,10000)/1000));
                         logger.finer("jAntiCaptcha fertig. Warte "+JDUtilities.formatSeconds(configuration.getIntegerProperty(Configuration.PARAM_MANUAL_CAPTCHA_WAIT_FOR_JAC,10000)/1000));
                         try {
                            Thread.sleep(Math.abs(configuration.getIntegerProperty(Configuration.PARAM_MANUAL_CAPTCHA_WAIT_FOR_JAC,3000)));
@@ -87,8 +88,8 @@ public class CaptchaDialog extends JDialog implements ActionListener {
                             dispose();
                         }
                     }else{
-                        textField.setText("Bitte eingeben!");
-                        setTitle("jAntiCaptcha Fehler. Bitte Code eingeben!");
+                        textField.setText(JDLocale.L("gui.captchaWindow.askForInput","Bitte eingeben!"));
+                        setTitle(JDLocale.L("gui.captchaWindow.title_error","jAntiCaptcha Fehler. Bitte Code eingeben!"));
                         
                     }
                    
@@ -97,7 +98,7 @@ public class CaptchaDialog extends JDialog implements ActionListener {
         }
         JLabel label = new JLabel(imageIcon);
         textField = new JTextField(10);
-        btnOK = new JButton("OK");
+        btnOK = new JButton(JDLocale.L("gui.btn_ok","OK"));
         textField.setText(code);
         textField.selectAll();
         btnOK.addActionListener(this);

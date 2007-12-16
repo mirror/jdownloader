@@ -2,6 +2,8 @@ package jd.controlling.interaction;
 
 import java.io.Serializable;
 
+import jd.utils.JDLocale;
+
 /**
  * Diese Klasse führt eine Test Interaction durch
  * 
@@ -16,7 +18,7 @@ public class JDExit extends Interaction implements Serializable {
     /**
      * serialVersionUID
      */
-    private static final String NAME              = "JD Beenden";
+    private static final String NAME              = JDLocale.L("interaction.jdexit.name","JD Beenden");
     /**
      * Führt die Normale Interaction zurück. Nach dem Aufruf dieser methode
      * läuft der Download wie geowhnt weiter.

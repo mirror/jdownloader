@@ -10,6 +10,7 @@ import jd.config.ConfigEntry;
 import jd.config.Configuration;
 import jd.gui.UIInterface;
 import jd.plugins.Plugin;
+import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
 public class ConfigPanelPlugin extends ConfigPanel implements ActionListener {
@@ -62,7 +63,7 @@ public class ConfigPanelPlugin extends ConfigPanel implements ActionListener {
     @Override
     public String getName() {
 
-        return "Dummy Konfiguration";
+        return JDLocale.L("gui.config.plugin.defaultName","Plugin Konfiguration");
     }
 
     @Override

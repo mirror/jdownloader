@@ -14,6 +14,7 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 
+import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
 /**
@@ -47,9 +48,9 @@ public class TextAreaDialog extends JDialog implements ActionListener {
         setModal(true);
         setLayout(new BorderLayout());
 
-        btnCancel = new JButton("Cancel");
+        btnCancel = new JButton(JDLocale.L("gui.btn_cancel","Cancel"));
         btnCancel.addActionListener(this);
-        btnOk = new JButton("OK");
+        btnOk = new JButton(JDLocale.L("gui.btn_ok","OK"));
         btnOk.addActionListener(this);
         setTitle(title);
         textArea = new JTextArea(10, 60);

@@ -7,6 +7,7 @@ import jd.config.ConfigEntry;
 import jd.controlling.JDController;
 import jd.event.ControlEvent;
 import jd.plugins.DownloadLink;
+import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
 
@@ -20,9 +21,9 @@ public class ResetLink extends Interaction implements Serializable {
     /**
      * serialVersionUID
      */
-    private static final String NAME              = "Downloadlink zurücksetzen";
+    private static final String NAME              = JDLocale.L("interaction.resetLink.name","Downloadlink zurücksetzen");
     private static final String PARAM_LAST_OR_ALL = "LAST_OR_ALL";
-    private static final Object[] OPTIONS = new Object[]{"all Links","only last Link"};
+    private static final Object[] OPTIONS = new Object[]{JDLocale.L("interaction.resetLink.options.all","all Links"),JDLocale.L("interaction.resetLink.options.lastLink","only last Link")};
     /**
      * Führt die Normale Interaction zurück. Nach dem Aufruf dieser methode
      * läuft der Download wie geowhnt weiter.
@@ -69,7 +70,7 @@ public class ResetLink extends Interaction implements Serializable {
     public void initConfig() {
         ConfigEntry cfg;
         //int type, Property propertyInstance, String propertyName, Object[] list, String label
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, this, PARAM_LAST_OR_ALL, OPTIONS,"Welcher Link soll zurückgesetzt werden?").setDefaultValue(OPTIONS[1]));
+        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, this, PARAM_LAST_OR_ALL, OPTIONS,JDLocale.L("interaction.resetLink.whichLink","Welcher Link soll zurückgesetzt werden?")).setDefaultValue(OPTIONS[1]));
         
         
     }

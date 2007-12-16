@@ -24,6 +24,7 @@ import javax.swing.table.TableColumn;
 import jd.config.Configuration;
 import jd.gui.UIInterface;
 import jd.plugins.PluginForHost;
+import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
 public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListener, MouseListener {
@@ -103,7 +104,7 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
         JScrollPane scrollpane = new JScrollPane(table);
         scrollpane.setPreferredSize(new Dimension(400, 200));
 
-        btnEdit = new JButton("Einstellungen");
+        btnEdit = new JButton(JDLocale.L("gui.config.plugin.host.btn_settings","Einstellungen"));
 
         btnEdit.addActionListener(this);
         JDUtilities.addToGridBag(panel, scrollpane, 0, 0, 3, 1, 1, 1, insets, GridBagConstraints.BOTH, GridBagConstraints.CENTER);
@@ -123,7 +124,7 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
     @Override
     public String getName() {
 
-        return "Host Plugins";
+        return JDLocale.L("gui.config.plugin.host.name","Host Plugins");
     }
 
     private void openPopupPanel(ConfigPanel config) {
@@ -237,11 +238,11 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
         public String getColumnName(int column) {
             switch (column) {
                 case 0:
-                    return "Host";
+                    return JDLocale.L("gui.config.plugin.host.column_host","Host");
                 case 1:
-                    return "ID";
+                    return JDLocale.L("gui.config.plugin.host.column_id","ID");
                 case 2:
-                    return "Ersteller";
+                    return JDLocale.L("gui.config.plugin.host.column_author","Ersteller");
 
             }
             return super.getColumnName(column);

@@ -280,7 +280,7 @@ public class Rapidshare extends PluginForHost {
             return step;
         }
         
-        logger.info(aborted+"");
+
         
         switch (step.getStep()) {
             case PluginStep.STEP_WAIT_TIME:

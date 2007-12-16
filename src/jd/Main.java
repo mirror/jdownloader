@@ -2,9 +2,6 @@ package jd;
 
 import java.awt.Graphics;
 import java.awt.Image;
-import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.util.logging.Logger;
 
 import javax.swing.JOptionPane;
@@ -14,8 +11,7 @@ import jd.config.Configuration;
 import jd.controlling.JDController;
 import jd.event.UIEvent;
 import jd.gui.UIInterface;
-import jd.plugins.Plugin;
-import jd.plugins.RequestInfo;
+import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
 /**
@@ -27,8 +23,9 @@ public class Main {
     private static Logger logger = JDUtilities.getLogger();
 
     public static void main(String args[]) {
+        JDLocale.setLocale("german");
         if (SingleInstanceController.isApplicationRunning()) {
-            JOptionPane.showMessageDialog(null, "jDownloader läuft bereits!", "jDownloader", JOptionPane.WARNING_MESSAGE);
+            JOptionPane.showMessageDialog(null, JDLocale.L("sys.warning.multiple_instance"), JDLocale.L("sys.header.jdownloader"), JOptionPane.WARNING_MESSAGE);
             System.exit(0);
             return;
         }
@@ -74,7 +71,8 @@ public class Main {
             controller.getUiInterface().fireUIEvent(new UIEvent(controller.getUiInterface(), UIEvent.UI_START_DOWNLOADS));
         }
         
-        
+       
+    
         window.dispose();
      
         

@@ -9,6 +9,7 @@ import javax.swing.JLabel;
 
 import jd.event.UIListener;
 import jd.gui.skins.simple.components.DragNDrop;
+import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
 /**
@@ -33,13 +34,13 @@ public class Dropper extends JDialog {
         setModal(false);
         setLayout(new GridBagLayout());
         target = new DragNDrop();
-        label= new JLabel("Ziehe Links auf mich!");
+        label= new JLabel(JDLocale.L("gui.droptarget.label","Ziehe Links auf mich!"));
         JDUtilities.addToGridBag(this, target, 0, 0, 1, 1, 0, 0, null, GridBagConstraints.CENTER, GridBagConstraints.CENTER);
         JDUtilities.addToGridBag(this, label, 0, 1, 1, 1, 0, 0, null, GridBagConstraints.CENTER, GridBagConstraints.CENTER);
         
         setSize(50,70);
         this.setResizable(false);
-        this.setTitle("Linksammler aktiv (D&D + Clipboard)");
+        this.setTitle(JDLocale.L("gui.droptarget.title","Linksammler aktiv (D&D + Clipboard)"));
     
         setLocation(20,20);
         this.setAlwaysOnTop(true);

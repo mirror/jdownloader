@@ -1,31 +1,22 @@
 package jd.gui.skins.simple.config;
 
 import java.awt.BorderLayout;
-import java.awt.Color;
-import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.GridBagConstraints;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.io.File;
-import java.util.HashMap;
-import java.util.Vector;
 
-import javax.swing.JCheckBox;
-import javax.swing.JProgressBar;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.event.TableModelEvent;
 import javax.swing.table.AbstractTableModel;
-import javax.swing.table.DefaultTableCellRenderer;
-import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableColumn;
 
 import jd.captcha.JAntiCaptcha;
 import jd.config.Configuration;
 import jd.gui.UIInterface;
-
-import jd.plugins.PluginForSearch;
+import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
 public class ConfigPanelCaptcha extends ConfigPanel implements MouseListener{
@@ -142,7 +133,7 @@ table.addMouseListener(this);
     @Override
     public String getName() {
 
-        return "jAntiCaptcha";
+        return JDLocale.L("gui.config.jac.name","jAntiCaptcha");
     }
 
 
@@ -189,7 +180,7 @@ table.addMouseListener(this);
                 case 0:                  
                     return configuration.getBooleanProperty(Configuration.PARAM_JAC_METHODS+"_"+methods[rowIndex].getName(),true);
                 case 1:
-                    return methods[rowIndex].getName()+" : "+(configuration.getBooleanProperty(Configuration.PARAM_JAC_METHODS+"_"+methods[rowIndex].getName(),true)?"Automatische Erkennung":"Manuelle Eingabe");
+                    return methods[rowIndex].getName()+" : "+(configuration.getBooleanProperty(Configuration.PARAM_JAC_METHODS+"_"+methods[rowIndex].getName(),true)?JDLocale.L("gui.config.jac.status.auto","Automatische Erkennung"):JDLocale.L("gui.config.jac.status.noauto","Manuelle Eingabe"));
             
 
             }
@@ -199,9 +190,9 @@ table.addMouseListener(this);
         public String getColumnName(int column) {
             switch (column) {
                 case 0:
-                    return "Verwenden";
+                    return JDLocale.L("gui.config.jac.column.use","Verwenden");
                 case 1:
-                    return "Methode";
+                    return JDLocale.L("gui.config.jac.column.method","Methode");
            
 
             }

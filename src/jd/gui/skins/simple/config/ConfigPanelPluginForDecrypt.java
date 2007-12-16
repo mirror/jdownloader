@@ -24,6 +24,7 @@ import javax.swing.table.TableColumn;
 import jd.config.Configuration;
 import jd.gui.UIInterface;
 import jd.plugins.PluginForDecrypt;
+import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
 public class ConfigPanelPluginForDecrypt extends ConfigPanel implements ActionListener, MouseListener {
@@ -100,7 +101,7 @@ public class ConfigPanelPluginForDecrypt extends ConfigPanel implements ActionLi
         JScrollPane scrollpane = new JScrollPane(table);
         scrollpane.setPreferredSize(new Dimension(400, 200));
 
-        btnEdit = new JButton("Einstellungen");
+        btnEdit = new JButton(JDLocale.L("gui.config.plugin.decrypt.btn_settings","Einstellungen"));
 
         btnEdit.addActionListener(this);
         JDUtilities.addToGridBag(panel, scrollpane, 0, 0, 3, 1, 1, 1, insets, GridBagConstraints.BOTH, GridBagConstraints.CENTER);
@@ -119,7 +120,7 @@ public class ConfigPanelPluginForDecrypt extends ConfigPanel implements ActionLi
 
     @Override
     public String getName() {
-        return "Decrypt Plugins";
+        return JDLocale.L("gui.config.plugin.decrypt.name","Decrypt Plugins");
     }
 
     private void openPopupPanel(ConfigPanel config) {
@@ -209,11 +210,11 @@ public class ConfigPanelPluginForDecrypt extends ConfigPanel implements ActionLi
         public String getColumnName(int column) {
             switch (column) {
                 case 0:
-                    return "Host";
+                    return JDLocale.L("gui.config.plugin.container.column_host","Host");
                 case 1:
-                    return "ID";
+                    return JDLocale.L("gui.config.plugin.container.column_id","ID");
                 case 2:
-                    return "Ersteller";
+                    return JDLocale.L("gui.config.plugin.container.column_author","Ersteller");
 
             }
             return super.getColumnName(column);

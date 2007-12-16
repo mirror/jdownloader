@@ -7,6 +7,7 @@ import java.util.Vector;
 import jd.config.Configuration;
 import jd.controlling.ProgressController;
 import jd.update.WebUpdater;
+import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
 /**
@@ -23,7 +24,7 @@ public class WebUpdate extends Interaction implements Serializable {
     /**
      * serialVersionUID
      */
-    private static final String NAME             = "WebUpdate";
+    private static final String NAME             = JDLocale.L("interaction.webupdate.name","WebUpdate");
 
     private WebUpdater          updater;
 
@@ -45,7 +46,7 @@ public class WebUpdate extends Interaction implements Serializable {
     }
 
     public String toString() {
-        return "WebUpdate durchführen";
+        return JDLocale.L("interaction.webupdate.toString","WebUpdate durchführen");
     }
 
     @Override
@@ -63,7 +64,7 @@ public class WebUpdate extends Interaction implements Serializable {
         if(files==null||files.size()==0)return;
         int org;
         ProgressController progress = new ProgressController("Webupdater",org=files.size());
-        progress.setStatusText("Update Check");
+        progress.setStatusText(JDLocale.L("interaction.webupdate.progress.updateCheck","Update Check"));
         if (files != null) {
           
             updater.filterAvailableUpdates(files,JDUtilities.getResourceFile("."));

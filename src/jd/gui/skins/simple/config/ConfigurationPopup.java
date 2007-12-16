@@ -13,6 +13,7 @@ import javax.swing.JPanel;
 
 import jd.config.Configuration;
 import jd.gui.UIInterface;
+import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
 /**
@@ -49,15 +50,15 @@ public class ConfigurationPopup extends JDialog implements ActionListener {
     public ConfigurationPopup(Frame parent, ConfigPanel panel,JPanel jpanel, UIInterface uiinterface, Configuration configuration) {
         super(parent);
         this.uiinterface = uiinterface;
-        setTitle("Konfiguration");
+        setTitle(JDLocale.L("gui.config.popup.title","Konfiguration"));
         setModal(true);
         setLayout(new GridBagLayout());
         this.configuration = configuration;
 
         this.panel = panel;
-        btnSave = new JButton("OK");
+        btnSave = new JButton(JDLocale.L("gui.config.popup.btn_ok","OK"));
         btnSave.addActionListener(this);
-        btnCancel = new JButton("Abbrechen");
+        btnCancel = new JButton(JDLocale.L("gui.config.popup.btn_cancel","Abbrechen"));
         btnCancel.addActionListener(this);
 
         Insets insets = new Insets(5, 5, 5, 5);

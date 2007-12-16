@@ -48,6 +48,7 @@ import jd.gui.UIInterface;
 import jd.gui.skins.simple.components.JDFileChooser;
 import jd.gui.skins.simple.components.TextAreaDialog;
 import jd.gui.skins.simple.config.ConfigurationDialog;
+import jd.gui.skins.simple.config.jdUnrarPasswordListDialog;
 import jd.plugins.DownloadLink;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
@@ -55,6 +56,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.PluginForSearch;
 import jd.plugins.PluginOptional;
 import jd.plugins.event.PluginEvent;
+import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
 import com.sun.java.swing.plaf.windows.WindowsLookAndFeel;
@@ -218,7 +220,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         menuBar = new JMenuBar();
         toolBar = new JToolBar();
         frame.addWindowListener(this);
-        frame.setIconImage(JDUtilities.getImage("jd_logo"));
+        frame.setIconImage(JDUtilities.getImage(JDLocale.L("gui.images.jd_logo")));
         frame.setTitle(JDUtilities.getJDTitle());
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         initActions();
@@ -252,29 +254,29 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
      * Die Aktionen werden initialisiert
      */
     public void initActions() {
-        actionStartStopDownload = new JDAction(this, "next", "action.start", JDAction.APP_START_STOP_DOWNLOADS);
-        actionPause = new JDAction(this, "stop_after", "action.pause", JDAction.APP_PAUSE_DOWNLOADS);
-        actionItemsAdd = new JDAction(this, "add", "action.add", JDAction.ITEMS_ADD);
-        actionDnD = new JDAction(this, "clipboard", "action.dnd", JDAction.ITEMS_DND);
+        actionStartStopDownload = new JDAction(this, JDLocale.L("gui.images.next"), "action.start", JDAction.APP_START_STOP_DOWNLOADS);
+        actionPause = new JDAction(this, JDLocale.L("gui.images.stop_after"), "action.pause", JDAction.APP_PAUSE_DOWNLOADS);
+        actionItemsAdd = new JDAction(this, JDLocale.L("gui.images.add"), "action.add", JDAction.ITEMS_ADD);
+        actionDnD = new JDAction(this, JDLocale.L("gui.images.clipboard"), "action.dnd", JDAction.ITEMS_DND);
 
-        actionLoadDLC = new JDAction(this, "load", "action.load_dlc", JDAction.APP_LOAD_DLC);
-        actionSaveDLC = new JDAction(this, "save", "action.save_dlc", JDAction.APP_SAVE_DLC);
+        actionLoadDLC = new JDAction(this, JDLocale.L("gui.images.load"), "action.load", JDAction.APP_LOAD_DLC);
+        actionSaveDLC = new JDAction(this, JDLocale.L("gui.images.save"), "action.save", JDAction.APP_SAVE_DLC);
 
-        actionExit = new JDAction(this, "exit", "action.exit", JDAction.APP_EXIT);
-        actionLog = new JDAction(this, "terminal", "action.viewlog", JDAction.APP_LOG);
-        actionTester = new JDAction(this, "jd_logo", "action.tester", JDAction.APP_TESTER);
-        actionUnrar = new JDAction(this, "jd_logo", "action.unrar", JDAction.APP_UNRAR);
-        actionPasswordlist = new JDAction(this, "jd_logo", "action.passwordlist", JDAction.APP_PASSWORDLIST);
-        actionConfig = new JDAction(this, "configuration", "action.configuration", JDAction.APP_CONFIGURATION);
-        actionReconnect = new JDAction(this, "reconnect", "action.reconnect", JDAction.APP_RECONNECT);
-        actionUpdate = new JDAction(this, "update_manager", "action.update", JDAction.APP_UPDATE);
-        actionSearch = new JDAction(this, "find", "action.search", JDAction.APP_SEARCH);
-        actionItemsDelete = new JDAction(this, "delete", "action.edit.items_remove", JDAction.ITEMS_REMOVE);
-        actionItemsTop = new JDAction(this, "top", "action.edit.items_top", JDAction.ITEMS_MOVE_TOP);
-        actionItemsUp = new JDAction(this, "go_top", "action.edit.items_up", JDAction.ITEMS_MOVE_UP);
-        actionItemsDown = new JDAction(this, "down", "action.edit.items_down", JDAction.ITEMS_MOVE_DOWN);
-        actionItemsBottom = new JDAction(this, "go_bottom", "action.edit.items_bottom", JDAction.ITEMS_MOVE_BOTTOM);
-        doReconnect = new JDAction(this, "reconnect_ok", "action.edit.items_bottom", JDAction.ITEMS_MOVE_BOTTOM);
+        actionExit = new JDAction(this, JDLocale.L("gui.images.exit"), "action.exit", JDAction.APP_EXIT);
+        actionLog = new JDAction(this, JDLocale.L("gui.images.terminal"), "action.viewlog", JDAction.APP_LOG);
+        actionTester = new JDAction(this, JDLocale.L("gui.images.jd_logo"), "action.tester", JDAction.APP_TESTER);
+        actionUnrar = new JDAction(this, JDLocale.L("gui.images.jd_logo"), "action.unrar", JDAction.APP_UNRAR);
+        actionPasswordlist = new JDAction(this, JDLocale.L("gui.images.jd_logo"), "action.passwordlist", JDAction.APP_PASSWORDLIST);
+        actionConfig = new JDAction(this, JDLocale.L("gui.images.configuration"), "action.configuration", JDAction.APP_CONFIGURATION);
+        actionReconnect = new JDAction(this, JDLocale.L("gui.images.reconnect"), "action.reconnect", JDAction.APP_RECONNECT);
+        actionUpdate = new JDAction(this, JDLocale.L("gui.images.update_manager"), "action.update", JDAction.APP_UPDATE);
+        actionSearch = new JDAction(this, JDLocale.L("gui.images.find"), "action.search", JDAction.APP_SEARCH);
+        actionItemsDelete = new JDAction(this, JDLocale.L("gui.images.delete"), "action.edit.items_remove", JDAction.ITEMS_REMOVE);
+        actionItemsTop = new JDAction(this, JDLocale.L("gui.images.top"), "action.edit.items_top", JDAction.ITEMS_MOVE_TOP);
+        actionItemsUp = new JDAction(this, JDLocale.L("gui.images.go_top"), "action.edit.items_up", JDAction.ITEMS_MOVE_UP);
+        actionItemsDown = new JDAction(this, JDLocale.L("gui.images.down"), "action.edit.items_down", JDAction.ITEMS_MOVE_DOWN);
+        actionItemsBottom = new JDAction(this, JDLocale.L("gui.images.go_bottom"), "action.edit.items_bottom", JDAction.ITEMS_MOVE_BOTTOM);
+        doReconnect = new JDAction(this, JDLocale.L("gui.images.reconnect_ok"), "action.edit.items_bottom", JDAction.ITEMS_MOVE_BOTTOM);
         
     
     
@@ -302,15 +304,15 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
      */
     public void initMenuBar() {
         // file menu
-        JMenu menFile = new JMenu(JDUtilities.getResourceString("menu.file"));
-        menFile.setMnemonic(JDUtilities.getResourceChar("menu.file_mnem"));
+        JMenu menFile = new JMenu(JDLocale.L("gui.menu.file"));
+        menFile.setMnemonic(JDLocale.L("gui.menu.file_mnem").charAt(0));
         
         JMenuItem menFileLoad = createMenuItem(actionLoadDLC);
         JMenuItem menFileSave = createMenuItem(actionSaveDLC);
         JMenuItem menFileExit = createMenuItem(actionExit);
         // edit menu
-        JMenu menEdit = new JMenu(JDUtilities.getResourceString("menu.edit"));
-        menFile.setMnemonic(JDUtilities.getResourceChar("menu.edit_mnem"));
+        JMenu menEdit = new JMenu(JDLocale.L("gui.menu.edit"));
+        menFile.setMnemonic(JDLocale.L("gui.menu.edit_mnem").charAt(0));
         JMenuItem menEditItemTop = createMenuItem(actionItemsTop);
         JMenuItem menEditItemUp = createMenuItem(actionItemsUp);
         JMenuItem menEditItemDown = createMenuItem(actionItemsDown);
@@ -323,14 +325,14 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         menEdit.add(menEditItemDown);
         menEdit.add(menEditItemBottom);
         // action menu
-        JMenu menAction = new JMenu(JDUtilities.getResourceString("menu.action"));
-        menAction.setMnemonic(JDUtilities.getResourceChar("menu.action_mnem"));
+        JMenu menAction = new JMenu(JDLocale.L("gui.menu.action"));
+        menAction.setMnemonic(JDLocale.L("gui.menu.action_mnem").charAt(0));
         JMenuItem menDownload = createMenuItem(actionStartStopDownload);
         JMenuItem menAddLinks = createMenuItem(actionItemsAdd);
-        menAction.setMnemonic(JDUtilities.getResourceChar("menu.action_mnem"));
+        menAction.setMnemonic(JDLocale.L("gui.menu.action_mnem").charAt(0));
         // extra
-        JMenu menExtra = new JMenu(JDUtilities.getResourceString("menu.extra"));
-        menAction.setMnemonic(JDUtilities.getResourceChar("menu.extra_mnem"));
+        JMenu menExtra = new JMenu(JDLocale.L("gui.menu.extra"));
+        menAction.setMnemonic(JDLocale.L("gui.menu.extra_mnem").charAt(0));
         menViewLog = new JCheckBoxMenuItem(actionLog);
         menViewLog.setIcon(null);
         if (actionLog.getAccelerator() != null) menViewLog.setAccelerator(actionLog.getAccelerator());
@@ -386,23 +388,23 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         splitpane.setTopComponent(tabDownloadTable);
         splitpane.setOrientation(JSplitPane.VERTICAL_SPLIT);
         // tmp.add(tabDownloadTable,BorderLayout.CENTER);
-        // tabbedPane.addTab(JDUtilities.getResourceString("label.tab.download"),
+        // tabbedPane.addTab(JDLocale.L("gui.tab.download"),
         // tmp);
-        // tabbedPane.addTab(JDUtilities.getResourceString("label.tab.plugin_activity"),
+        // tabbedPane.addTab(JDLocale.L("gui.tab.plugin_activity"),
         // tabPluginActivity);
         btnStartStop = new JToggleButton(actionStartStopDownload);
-      if(JDUtilities.getImage("stop")!=null) btnStartStop.setSelectedIcon(new ImageIcon(JDUtilities.getImage("stop")));
+      if(JDUtilities.getImage(JDLocale.L("gui.images.stop"))!=null) btnStartStop.setSelectedIcon(new ImageIcon(JDUtilities.getImage(JDLocale.L("gui.images.stop"))));
         btnStartStop.setFocusPainted(false);
         btnStartStop.setBorderPainted(false);
         btnStartStop.setText(null);
         btnPause = new JToggleButton(actionPause);
-       if(JDUtilities.getImage("stop_after_active")!=null) btnPause.setSelectedIcon(new ImageIcon(JDUtilities.getImage("stop_after_active")));
+       if(JDUtilities.getImage(JDLocale.L("gui.images.stop_after_active"))!=null) btnPause.setSelectedIcon(new ImageIcon(JDUtilities.getImage(JDLocale.L("gui.images.stop_after_active"))));
         btnPause.setFocusPainted(false);
         btnPause.setBorderPainted(false);
         btnPause.setText(null);
         btnPause.setEnabled(false);
         btnToggleReconnect=new JToggleButton(doReconnect);
-        if(JDUtilities.getImage("reconnect_bad")!=null) btnToggleReconnect.setSelectedIcon(new ImageIcon(JDUtilities.getImage("reconnect_bad")));
+        if(JDUtilities.getImage(JDLocale.L("gui.images.reconnect_bad"))!=null) btnToggleReconnect.setSelectedIcon(new ImageIcon(JDUtilities.getImage(JDLocale.L("gui.images.reconnect_bad"))));
         btnToggleReconnect.setFocusPainted(false);
         btnToggleReconnect.setBorderPainted(false);
         btnToggleReconnect.setText(null);
@@ -513,7 +515,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
                 JDUtilities.getController().getUnrarModule().interact(null);
                 break;
             case JDAction.APP_PASSWORDLIST:
-               // new jdUnrarPasswordListDialog(((SimpleGUI) JDUtilities.getController().getUiInterface()).getFrame()).setVisible(true);
+                new jdUnrarPasswordListDialog(((SimpleGUI) JDUtilities.getController().getUiInterface()).getFrame()).setVisible(true);
                 break;
             case JDAction.APP_START_STOP_DOWNLOADS:
                 this.startStopDownloads();
@@ -915,17 +917,17 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         private ImageIcon         imgInactive;
 
         public StatusBar() {
-            if(JDUtilities.getImage("led_green")!=null)
-            imgActive = new ImageIcon(JDUtilities.getImage("led_green"));
-            if(JDUtilities.getImage("led_empty")!=null)
-            imgInactive = new ImageIcon(JDUtilities.getImage("led_empty"));
+            if(JDUtilities.getImage(JDLocale.L("gui.images.led_green"))!=null)
+            imgActive = new ImageIcon(JDUtilities.getImage(JDLocale.L("gui.images.led_green")));
+            if(JDUtilities.getImage(JDLocale.L("gui.images.led_empty"))!=null)
+            imgInactive = new ImageIcon(JDUtilities.getImage(JDLocale.L("gui.images.led_empty")));
             setLayout(new GridBagLayout());
-            lblMessage = new JLabel(JDUtilities.getResourceString("label.status.welcome"));
+            lblMessage = new JLabel(JDLocale.L("sys.message.welcome"));
             lblSpeed = new JLabel();
             lblPluginHostActive = new JLabel(imgInactive);
             lblPluginDecryptActive = new JLabel(imgInactive);
-            lblPluginDecryptActive.setToolTipText(JDUtilities.getResourceString("tooltip.status.plugin_decrypt"));
-            lblPluginHostActive.setToolTipText(JDUtilities.getResourceString("tooltip.status.plugin_host"));
+            lblPluginDecryptActive.setToolTipText(JDLocale.L("gui.tooltip.plugin_decrypt"));
+            lblPluginHostActive.setToolTipText(JDLocale.L("gui.tooltip.plugin_host"));
             JDUtilities.addToGridBag(this, lblMessage, 0, 0, 1, 1, 1, 1, new Insets(0, 5, 0, 0), GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
             JDUtilities.addToGridBag(this, lblSpeed, 1, 0, 1, 1, 0, 0, new Insets(0, 5, 0, 5), GridBagConstraints.NONE, GridBagConstraints.WEST);
             JDUtilities.addToGridBag(this, lblPluginHostActive, 2, 0, 1, 1, 0, 0, new Insets(0, 5, 0, 0), GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -933,7 +935,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         }
 
         public void setText(String text) {
-            if (text == null) text = JDUtilities.getResourceString("label.status.welcome");
+            if (text == null) text = JDLocale.L("sys.message.welcome");
             lblMessage.setText(text);
         }
 

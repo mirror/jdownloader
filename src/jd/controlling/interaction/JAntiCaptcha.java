@@ -3,6 +3,7 @@ package jd.controlling.interaction;
 import java.io.Serializable;
 
 import jd.plugins.DownloadLink;
+import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
 /**
@@ -20,7 +21,7 @@ public class JAntiCaptcha extends Interaction implements Serializable{
      * serialVersionUID
      */
 
-    private static final String NAME             = "Captcha Erkennung: JAntiCaptcha";
+    private static final String NAME             = JDLocale.L("interaction.jac.name","Captcha Erkennung: JAntiCaptcha");
 
  
    
@@ -42,7 +43,7 @@ public class JAntiCaptcha extends Interaction implements Serializable{
     }
 
     public String toString() {
-        return "Captcha Erkennung: JAntiCaptcha";
+        return JDLocale.L("interaction.jac.toString","Captcha Erkennung: JAntiCaptcha");
     }
 
     @Override

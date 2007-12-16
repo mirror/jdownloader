@@ -11,6 +11,7 @@ import java.awt.event.ActionListener;
 
 import jd.plugins.PluginOptional;
 import jd.plugins.event.PluginEvent;
+import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 import sun.misc.Service;
 
@@ -43,7 +44,7 @@ public class JDTrayIcon extends PluginOptional implements ActionListener {
 
     @Override
     public String getPluginName() {
-        return "TrayIcon";
+        return JDLocale.L("plugins.optional.trayIcon.name","TrayIcon");
     }
 
     @Override
@@ -72,7 +73,7 @@ public class JDTrayIcon extends PluginOptional implements ActionListener {
             SystemTray tray = SystemTray.getSystemTray();
 
             Service s;
-            Image image = JDUtilities.getImage("jd_logo");
+            Image image = JDUtilities.getImage(JDLocale.L("gui.images.jd_logo"));
             PopupMenu popup = new PopupMenu();
             trayIcon = new TrayIcon(image, JDUtilities.getJDTitle(), popup);
 
@@ -84,12 +85,12 @@ public class JDTrayIcon extends PluginOptional implements ActionListener {
             catch (AWTException e) {
                 logger.severe("TrayIcon could not be added.");
             }
-            showHide = new MenuItem("Show/Hide");
-            configuration = new MenuItem("Configuration");
-            startStop = new MenuItem("Start/Stop");
-            clipboard = new MenuItem("Clipboard");
-            reconnect = new MenuItem("Reconnect");
-            exit = new MenuItem("Exit");
+            showHide = new MenuItem(JDLocale.L("plugins.optional.trayIcon.showorhide","Show/Hide"));
+            configuration = new MenuItem(JDLocale.L("plugins.optional.trayIcon.configuration","Configuration"));
+            startStop = new MenuItem(JDLocale.L("plugins.optional.trayIcon.startorstop","Start/Stop"));
+            clipboard = new MenuItem(JDLocale.L("plugins.optional.trayIcon.clipboard","Clipboard"));
+            reconnect = new MenuItem(JDLocale.L("plugins.optional.trayIcon.reconnect","Reconnect"));
+            exit = new MenuItem(JDLocale.L("plugins.optional.trayIcon.exit","Exit"));
 
             showHide.addActionListener(this);
             configuration.addActionListener(this);

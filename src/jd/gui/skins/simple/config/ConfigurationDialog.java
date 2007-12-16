@@ -1,6 +1,5 @@
 package jd.gui.skins.simple.config;
 
-import java.awt.Color;
 import java.awt.ComponentOrientation;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
@@ -9,7 +8,6 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.Vector;
 
-import javax.swing.BorderFactory;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
@@ -23,6 +21,7 @@ import javax.swing.SwingConstants;
 
 import jd.config.Configuration;
 import jd.gui.UIInterface;
+import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 /**
  * Diese Klasse ist das Hauptfemster der Konfiguration. Sie verwaltet die Tabpane.
@@ -55,7 +54,7 @@ public class ConfigurationDialog extends JDialog implements ActionListener {
     private ConfigurationDialog(JFrame parent, UIInterface uiinterface) {
         super(parent);
         this.uiinterface = uiinterface;
-        setTitle(JDUtilities.getResourceString("title.config"));
+        setTitle(JDLocale.L("gui.config.title","Konfiguration"));
         setModal(true);
         setLayout(new GridBagLayout());
         configuration = JDUtilities.getConfiguration();
@@ -63,25 +62,25 @@ public class ConfigurationDialog extends JDialog implements ActionListener {
         tabbedPane.setComponentOrientation(ComponentOrientation.LEFT_TO_RIGHT);
         tabbedPane.setTabLayoutPolicy(JTabbedPane.SCROLL_TAB_LAYOUT);
         tabbedPane.setTabPlacement(JTabbedPane.LEFT);
-        this.addConfigPanel(new ConfigPanelGeneral(configuration, uiinterface),"home","General settings");
-        this.addConfigPanel(new ConfigPanelDownload(configuration, uiinterface),"network_local","Download/Network settings");
-        this.addConfigPanel(new ConfigPanelReconnect(configuration, uiinterface),"reboot","Reconnect settings");
-        this.addConfigPanel(new ConfigPanelCaptcha(configuration, uiinterface),"ocr","OCR Captcha settings");
-        this.addConfigPanel(new ConfigPanelUnrar(configuration, uiinterface),"package","Archiv extract settings");  
-        this.addConfigPanel(new ConfigPanelInfoFileWriter(configuration, uiinterface),"load","'Info File Writer' settings");
-        this.addConfigPanel(new ConfigPanelEventmanager(configuration, uiinterface),"switch","Eventmanager");
+        this.addConfigPanel(new ConfigPanelGeneral(configuration, uiinterface),JDLocale.L("gui.images.config.home","home"),JDLocale.L("gui.config.tabLables.general","General settings"));
+        this.addConfigPanel(new ConfigPanelDownload(configuration, uiinterface),JDLocale.L("gui.images.config.network_local","network_local"),JDLocale.L("gui.config.tabLables.download","Download/Network settings"));
+        this.addConfigPanel(new ConfigPanelReconnect(configuration, uiinterface),JDLocale.L("gui.images.config.reboot","reboot"),JDLocale.L("gui.config.tabLables.reconnect","Reconnect settings"));
+        this.addConfigPanel(new ConfigPanelCaptcha(configuration, uiinterface),JDLocale.L("gui.images.config.ocr","ocr"),JDLocale.L("gui.config.tabLables.jac","OCR Captcha settings"));
+        this.addConfigPanel(new ConfigPanelUnrar(configuration, uiinterface),JDLocale.L("gui.images.config.package","package"),JDLocale.L("gui.config.tabLables.unrar","Archiv extract settings"));  
+        this.addConfigPanel(new ConfigPanelInfoFileWriter(configuration, uiinterface),JDLocale.L("gui.images.config.load","load"),JDLocale.L("gui.config.tabLables.infoFileWriter","'Info File Writer' settings"));
+        this.addConfigPanel(new ConfigPanelEventmanager(configuration, uiinterface),JDLocale.L("gui.images.config.switch","switch"),JDLocale.L("gui.config.tabLables.eventManager","Eventmanager"));
        
-        this.addConfigPanel(new ConfigPanelPluginForHost(configuration, uiinterface),"star","Host Plugin settings");
-        this.addConfigPanel(new ConfigPanelPluginForDecrypt(configuration, uiinterface),"tip","Decrypter Plugin settings");
-        this.addConfigPanel(new ConfigPanelPluginForSearch(configuration, uiinterface),"find","Search Plugin settings");
-        this.addConfigPanel(new ConfigPanelPluginsOptional(configuration, uiinterface),"edit_redo","Optional Plugin settings");
-        this.addConfigPanel(new ConfigPanelPluginForContainer(configuration, uiinterface),"database","Link-Container settings");
+        this.addConfigPanel(new ConfigPanelPluginForHost(configuration, uiinterface),JDLocale.L("gui.images.config.star","star"),JDLocale.L("gui.config.tabLables.hostPlugin","Host Plugin settings"));
+        this.addConfigPanel(new ConfigPanelPluginForDecrypt(configuration, uiinterface),JDLocale.L("gui.images.config.tip","tip"),JDLocale.L("gui.config.tabLables.decryptPlugin","Decrypter Plugin settings"));
+        this.addConfigPanel(new ConfigPanelPluginForSearch(configuration, uiinterface),JDLocale.L("gui.images.config.find","find"),JDLocale.L("gui.config.tabLables.searchPlugin","Search Plugin settings"));
+        this.addConfigPanel(new ConfigPanelPluginsOptional(configuration, uiinterface),JDLocale.L("gui.images.config.edit_redo","edit_redo"),JDLocale.L("gui.config.tabLables.optionalPlugin","Optional Plugin settings"));
+        this.addConfigPanel(new ConfigPanelPluginForContainer(configuration, uiinterface),JDLocale.L("gui.images.config.database","database"),JDLocale.L("gui.config.tabLables.containerPlugin","Link-Container settings"));
         
-        btnSave = new JButton("Speichern");
+        btnSave = new JButton(JDLocale.L("gui.config.btn_save","Speichern"));
         btnSave.addActionListener(this);
-        btnCancel = new JButton("Abbrechen");
+        btnCancel = new JButton(JDLocale.L("gui.config.btn_cancel","Abbrechen"));
         btnCancel.addActionListener(this);
-        chbExpert= new JCheckBox("Experten Ansicht");
+        chbExpert= new JCheckBox(JDLocale.L("gui.config.cbo_expert","Experten Ansicht"));
         chbExpert.setSelected(configuration.getBooleanProperty(Configuration.PARAM_USE_EXPERT_VIEW, false));
         chbExpert.addActionListener(this);
         Insets insets = new Insets(5, 5, 5, 5);
@@ -138,7 +137,7 @@ public class ConfigurationDialog extends JDialog implements ActionListener {
      if(e.getSource()==this.chbExpert){
          configuration.setProperty(Configuration.PARAM_USE_EXPERT_VIEW, chbExpert.isSelected());
          JDUtilities.saveConfig();
-         if(JDUtilities.getController().getUiInterface().showConfirmDialog("Diese Einstellung benötigt einen JD-Neustart. Neustart jetzt durchführen?")){
+         if(JDUtilities.getController().getUiInterface().showConfirmDialog(JDLocale.L("sys.confirm.doRestart","Diese Einstellung benötigt einen JD-Neustart. Neustart jetzt durchführen?"))){
              JDUtilities.restartJD();
          }
          return;

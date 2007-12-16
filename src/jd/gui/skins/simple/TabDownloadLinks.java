@@ -35,6 +35,7 @@ import jd.event.UIEvent;
 import jd.plugins.DownloadLink;
 import jd.plugins.event.PluginEvent;
 import jd.plugins.event.PluginListener;
+import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
 /**
@@ -371,14 +372,14 @@ public class TabDownloadLinks extends JPanel implements PluginListener, ControlL
             popup = new JPopupMenu();
             this.downloadLinks = downloadLink;
             // Create and add a menu item
-            reset = new JMenuItem("Status zurücksetzen");
-            delete = new JMenuItem("löschen");
-            enable = new JMenuItem(downloadLink.elementAt(0).isEnabled() ? "deaktivieren" : "aktivieren");
-            info = new JMenuItem("Info anzeigen");
-            loadinfo = new JMenuItem("Infos laden(Verfügbarkeit)");
-            top = new JMenuItem("Nach oben");
-            bottom = new JMenuItem("Nach unten");
-            openHome = new JMenuItem("Zielverzeichnis öffen");
+            reset = new JMenuItem(JDLocale.L("gui.downloadTab.popup.restStatus","Status zurücksetzen"));
+            delete = new JMenuItem(JDLocale.L("gui.downloadTab.popup.delete","löschen"));
+            enable = new JMenuItem(downloadLink.elementAt(0).isEnabled() ? JDLocale.L("gui.downloadTab.popup.disable","deaktivieren") : JDLocale.L("gui.downloadTab.popup.enable","aktivieren"));
+            info = new JMenuItem(JDLocale.L("gui.downloadTab.popup.showInfos","Info anzeigen"));
+            loadinfo = new JMenuItem(JDLocale.L("gui.downloadTab.popup.checkAvailability","Infos laden(Verfügbarkeit)"));
+            top = new JMenuItem(JDLocale.L("gui.downloadTab.popup.up","Nach oben"));
+            bottom = new JMenuItem(JDLocale.L("gui.downloadTab.popup.down","Nach unten"));
+            openHome = new JMenuItem(JDLocale.L("gui.downloadTab.popup.openDestinationDirectory","Zielverzeichnis öffen"));
             delete.addActionListener(this);
             reset.addActionListener(this);
             enable.addActionListener(this);
@@ -488,15 +489,15 @@ public class TabDownloadLinks extends JPanel implements PluginListener, ControlL
          */
         private Vector<JProgressBar> progressBars     = new Vector<JProgressBar>();
 
-        private String               labelIndex       = JDUtilities.getResourceString("label.tab.download.column_index");
+        private String               labelIndex       = JDLocale.L("gui.tab.download.column_index");
 
-        private String               labelLink        = JDUtilities.getResourceString("label.tab.download.column_link");
+        private String               labelLink        = JDLocale.L("gui.tab.download.column_link");
 
-        private String               labelHost        = JDUtilities.getResourceString("label.tab.download.column_host");
+        private String               labelHost        = JDLocale.L("gui.tab.download.column_host");
 
-        private String               labelStatus      = JDUtilities.getResourceString("label.tab.download.column_status");
+        private String               labelStatus      = JDLocale.L("gui.tab.download.column_status");
 
-        private String               labelProgress    = JDUtilities.getResourceString("label.tab.download.column_progress");
+        private String               labelProgress    = JDLocale.L("gui.tab.download.column_progress");
 
         @Override
         public String getColumnName(int column) {

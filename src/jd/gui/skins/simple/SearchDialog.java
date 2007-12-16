@@ -13,6 +13,7 @@ import javax.swing.JDialog;
 import javax.swing.JLabel;
 import javax.swing.JTextField;
 
+import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
 /**
@@ -56,15 +57,15 @@ public class SearchDialog extends JDialog implements ActionListener {
 		setModal(true);
 		setLayout(new GridBagLayout());
 		searchText="";
-		setTitle("jDownloader Suche");
+		setTitle(JDLocale.L("gui.searchDialog.title","jDownloader Suche"));
 		textField = new JTextField(30);
-		btnOK     = new JButton("Suche starten");
+		btnOK     = new JButton(JDLocale.L("gui.searchDialog.btn_search","Suche starten"));
 		cbo= new JComboBox(JDUtilities.getPluginsForSearchCategories());
         textField.selectAll();
 		btnOK.addActionListener(this);
 		getRootPane().setDefaultButton(btnOK);
 		setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
-		JDUtilities.addToGridBag(this, new JLabel("Nach was wollen Sie suchen?"),     GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 0, 0, null, GridBagConstraints.NONE, GridBagConstraints.WEST);
+		JDUtilities.addToGridBag(this, new JLabel(JDLocale.L("gui.searchDialog.whatToSearchFor","Nach was wollen Sie suchen?")),     GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 0, 0, null, GridBagConstraints.NONE, GridBagConstraints.WEST);
 		JDUtilities.addToGridBag(this, cbo,    GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, 1, 0, 0, null, GridBagConstraints.NONE, GridBagConstraints.WEST);
         
 		JDUtilities.addToGridBag(this, textField,   GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 1, 0, null,	GridBagConstraints.NONE, GridBagConstraints.EAST);

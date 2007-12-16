@@ -24,6 +24,7 @@ import javax.swing.table.TableColumn;
 import jd.config.Configuration;
 import jd.gui.UIInterface;
 import jd.plugins.PluginForSearch;
+import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
 /**
@@ -112,7 +113,7 @@ public class ConfigPanelPluginForSearch extends ConfigPanel implements ActionLis
         JScrollPane scrollpane = new JScrollPane(table);
         scrollpane.setPreferredSize(new Dimension(400, 200));
 
-        btnEdit = new JButton("Einstellungen");
+        btnEdit = new JButton(JDLocale.L("gui.config.plugin.search.btn_settings","Einstellungen"));
 
         btnEdit.addActionListener(this);
         JDUtilities.addToGridBag(panel, scrollpane, 0, 0, 3, 1, 1, 1, insets, GridBagConstraints.BOTH, GridBagConstraints.CENTER);
@@ -132,7 +133,7 @@ public class ConfigPanelPluginForSearch extends ConfigPanel implements ActionLis
     @Override
     public String getName() {
 
-        return "Suche Plugins";
+        return JDLocale.L("gui.config.plugin.search.name","Suche Plugins");
     }
 
     private void openPopupPanel(ConfigPanel config) {
@@ -246,11 +247,11 @@ public class ConfigPanelPluginForSearch extends ConfigPanel implements ActionLis
         public String getColumnName(int column) {
             switch (column) {
                 case 0:
-                    return "Host";
+                    return JDLocale.L("gui.config.plugin.search.column_host","Host");
                 case 1:
-                    return "ID";
+                    return JDLocale.L("gui.config.plugin.search.column_id","ID");
                 case 2:
-                    return "Ersteller";
+                    return JDLocale.L("gui.config.plugin.search.column_author","Ersteller");
 
             }
             return super.getColumnName(column);

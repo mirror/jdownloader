@@ -8,6 +8,7 @@ import javax.swing.Action;
 import javax.swing.ImageIcon;
 import javax.swing.KeyStroke;
 
+import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
 /**
@@ -68,16 +69,17 @@ public class JDAction extends AbstractAction{
         this.ressourceName = ressourceName;
         this.actionID = actionID;
         this.actionListener = actionListener;
+       
      if(JDUtilities.getImage(iconName)!=null){
         ImageIcon icon = new ImageIcon(JDUtilities.getImage(iconName));
         putValue(Action.SMALL_ICON, icon);
      }
-        putValue(Action.SHORT_DESCRIPTION, JDUtilities.getResourceString(ressourceName+".desc"));
-        putValue(Action.NAME,              JDUtilities.getResourceString(ressourceName+".name"));
-        char mnemonic = JDUtilities.getResourceChar(ressourceName+".mnem");
+        putValue(Action.SHORT_DESCRIPTION, JDLocale.L("gui.menu."+ressourceName+".desc"));
+        putValue(Action.NAME,              JDLocale.L("gui.menu."+ressourceName+".name"));
+        char mnemonic = JDLocale.L("gui.menu."+ressourceName+".mnem").charAt(0);
         if (mnemonic!=0)
            putValue(Action.MNEMONIC_KEY, new Integer(mnemonic));
-        String acceleratorString = JDUtilities.getResourceString(ressourceName+".accel");
+        String acceleratorString = JDLocale.L("gui.menu."+ressourceName+".accel");
         if (acceleratorString!=null && acceleratorString.length()>0)
            accelerator = KeyStroke.getKeyStroke(acceleratorString);
     }

@@ -47,6 +47,7 @@ import jd.gui.skins.simple.components.JDFileChooser;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.unrar.JUnrar;
+import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
 /**
@@ -109,12 +110,12 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
         this.parent = parent;
 
         setLayout(new BorderLayout());
-        this.setTitle("Link Sammler");
+       
         initGrabber();
         pack();
         JFrame frame = parent.getFrame();
-        this.setTitle("Linksammler aktiv (D&D + Clipboard)");
-        this.setIconImage(JDUtilities.getImage("jd_logo"));
+        this.setTitle(JDLocale.L("gui.linkgrabber.title","Linksammler aktiv (D&D + Clipboard)"));
+        this.setIconImage(JDUtilities.getImage(JDLocale.L("gui.images.jd_logo")));
         setLocation((int) (frame.getLocation().getX() + frame.getWidth() / 2 - this.getWidth() / 2), (int) (frame.getLocation().getY() + frame.getHeight() / 2 - this.getHeight() / 2));
         addLinks(linkList);
         pack();
@@ -124,12 +125,12 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
         list = new JList();
         list.addMouseListener(this);
         list.addKeyListener(this);
-        btnOk = new JButton("Übernehmen");
+        btnOk = new JButton(JDLocale.L("gui.btn_accept","Übernehmen"));
         btnOk.setDefaultCapable(true);
-        btnCancel = new JButton("Verwerfen");
-        btnRemove = new JButton("Markierte entfernen");
-        btnCheck = new JButton("Informationen & Verfügbarkeit prüfen");
-        btnSort = new JButton("Nach Hostnamen Sortieren");
+        btnCancel = new JButton(JDLocale.L("gui.btn_notaccept","Verwerfen"));
+        btnRemove = new JButton(JDLocale.L("gui.linkgrabber.btn_removeMarked","Markierte entfernen"));
+        btnCheck = new JButton(JDLocale.L("gui.linkgrabber.btn_checkAvailability","Informationen & Verfügbarkeit prüfen"));
+        btnSort = new JButton(JDLocale.L("gui.linkgrabber.btn_sortHost","Nach Hostnamen Sortieren"));
         getRootPane().setDefaultButton(btnOk);
         txfComment = new JTextField();
 
@@ -151,9 +152,9 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
         new DropTarget(list, this);
         new DropTarget(this, this);
         
-        unrar= new JCheckBox("Unrar this package after download");
-        infoFileWriter= new JCheckBox("Write infoFIle for this package");
-        JDUtilities.addToGridBag(panel, new JLabel("Hier können alle Links zu einem Paket gesammelt und anschließend Übernommen werden."), GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 1, 0, insets, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+        unrar= new JCheckBox(JDLocale.L("gui.linkgrabber.doUnrar","Unrar this package after download"));
+        infoFileWriter= new JCheckBox(JDLocale.L("gui.linkgrabber.writeInfoFile","Write infoFile for this package"));
+        JDUtilities.addToGridBag(panel, new JLabel(JDLocale.L("gui.linkgrabber.text","Hier können alle Links zu einem Paket gesammelt und anschließend Übernommen werden.")), GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 1, 0, insets, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
         JDUtilities.addToGridBag(panel, scrollPane, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 1, 1, insets, GridBagConstraints.BOTH, GridBagConstraints.CENTER);
 
@@ -168,13 +169,13 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
         JDUtilities.addToGridBag(panel, btnSort, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, 1, 1, 0, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
         JDUtilities.addToGridBag(panel, btnCheck, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.EAST);
         JDUtilities.addToGridBag(panel, new JSeparator(), GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 1, 0, insets, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-        JDUtilities.addToGridBag(panel, new JLabel("In folgendem Ordner speichern:"), GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        JDUtilities.addToGridBag(panel, new JLabel(JDLocale.L("gui.linkgrabber.saveTo","In folgendem Ordner speichern:")), GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
         JDUtilities.addToGridBag(panel, bfSubFolder, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 1, 0, insets, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-        JDUtilities.addToGridBag(panel, new JLabel("Name des Paketes:"), GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        JDUtilities.addToGridBag(panel, new JLabel(JDLocale.L("gui.linkgrabber.packageName","Name des Paketes:")), GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
         JDUtilities.addToGridBag(panel, txtName, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 1, 0, insets, GridBagConstraints.HORIZONTAL, GridBagConstraints.EAST);
-        JDUtilities.addToGridBag(panel, new JLabel("Archivpasswort:"), GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        JDUtilities.addToGridBag(panel, new JLabel(JDLocale.L("gui.linkgrabber.password","Archivpasswort:")), GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
         JDUtilities.addToGridBag(panel, txfPassword, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 1, 0, insets, GridBagConstraints.HORIZONTAL, GridBagConstraints.EAST);
-        JDUtilities.addToGridBag(panel, new JLabel("Kommentar:"), GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 1, 0, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        JDUtilities.addToGridBag(panel, new JLabel(JDLocale.L("gui.linkgrabber.comment","Kommentar:")), GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 1, 0, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
         JDUtilities.addToGridBag(panel, txfComment, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 1, 0, insets, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
         JDUtilities.addToGridBag(panel, new JSeparator(), GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 1, 0, insets, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
         JDUtilities.addToGridBag(panel, unrar, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 1, 0, insets, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
@@ -286,7 +287,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
                 sameName = iterator.next().getName();
             } else {
                 tempName = iterator.next().getName();
-                txtName.setText(JDUtilities.getEqualString(sameName, tempName).replace(".part", "(archiv)"));
+                txtName.setText(JDUtilities.getEqualString(sameName, tempName).replace(".part", JDLocale.L("gui.linkgrabber.markArchiv","(archiv)")));
             }
         }
     }
@@ -304,14 +305,14 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
             } else {
                 if (linkList.elementAt(i).isAvailable()) {
                     if (mirrorlist.contains(linkList.elementAt(i).getName().toLowerCase().replaceFirst("\\.htm.?$", "")))
-                        tmp.addElement((i + 1) + ". [online] [mirror] " + linkList.elementAt(i).getPlugin().getPluginName() + ": " + linkList.elementAt(i).getFileInfomationString());
+                        tmp.addElement((i + 1) + ". "+JDLocale.L("gui.linkgrabber.markOnline","[online]")+" "+JDLocale.L("gui.linkgrabber.markMirror","[mirror] ") + linkList.elementAt(i).getPlugin().getPluginName() + ": " + linkList.elementAt(i).getFileInfomationString());
                     else {
-                        tmp.addElement((i + 1) + ". [online] " + linkList.elementAt(i).getPlugin().getPluginName() + ": " + linkList.elementAt(i).getFileInfomationString());
+                        tmp.addElement((i + 1) + ". "+JDLocale.L("gui.linkgrabber.markOnline","[online]") + linkList.elementAt(i).getPlugin().getPluginName() + ": " + linkList.elementAt(i).getFileInfomationString());
                         mirrorlist.add(linkList.elementAt(i).getName().toLowerCase().replaceFirst("\\.htm.?$", ""));
                     }
 
                 } else {
-                    tmp.addElement((i + 1) + ". [OFFLINE] " + linkList.elementAt(i).getPlugin().getPluginName() + ": " + linkList.elementAt(i).getFileInfomationString());
+                    tmp.addElement((i + 1) + ". "+JDLocale.L("gui.linkgrabber.markOffline","[OFFLINE]")+" " + linkList.elementAt(i).getPlugin().getPluginName() + ": " + linkList.elementAt(i).getFileInfomationString());
                 }
             }
         }
@@ -363,7 +364,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
 
         parent.fireUIEvent(new UIEvent(this, UIEvent.UI_LINKS_GRABBED, linkList));
         this.setVisible(false);
-        parent.setDropTargetText("Downloads hinzugefügt: " + linkList.size());
+        parent.setDropTargetText(JDLocale.L("gui.dropTarget.downloadsAdded","Downloads hinzugefügt: ") + linkList.size());
     }
 
     /*
@@ -529,13 +530,13 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
             popup = new JPopupMenu();
             indeces = invoker.getSelectedIndices();
             // Create and add a menu item
-            delete = new JMenuItem("Entfernen");
-            info = new JMenuItem("Informationen laden");
-            load = new JMenuItem("Übernehmen");
-            offline = new JMenuItem("Verfügbarkeit prüfen (Alle)");
-            deleteNotSelected = new JMenuItem("Alle anderen entfernen");
-            deleteOffline = new JMenuItem("Alle Defekte Dateien entfernen");
-            deleteOfflineAndMirror = new JMenuItem("Alle Defekte Dateien und Mirrors entfernen");
+            delete = new JMenuItem(JDLocale.L("gui.linkgrabber.popup.remove","Entfernen"));
+            info = new JMenuItem(JDLocale.L("gui.linkgrabber.popup.loadInfos","Informationen laden"));
+            load = new JMenuItem(JDLocale.L("gui.linkgrabber.popup.accept","Übernehmen"));
+            offline = new JMenuItem(JDLocale.L("gui.linkgrabber.popup.checkAvailability","Verfügbarkeit prüfen (Alle)"));
+            deleteNotSelected = new JMenuItem(JDLocale.L("gui.linkgrabber.popup.removeOthers","Alle anderen entfernen"));
+            deleteOffline = new JMenuItem(JDLocale.L("gui.linkgrabber.popup.removeOffline","Alle Defekte Dateien entfernen"));
+            deleteOfflineAndMirror = new JMenuItem(JDLocale.L("gui.linkgrabber.popup.removeOfflineAndMirrors","Alle Defekte Dateien und Mirrors entfernen"));
             delete.addActionListener(this);
             deleteNotSelected.addActionListener(this);
             info.addActionListener(this);

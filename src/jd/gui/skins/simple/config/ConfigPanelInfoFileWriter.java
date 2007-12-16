@@ -13,6 +13,7 @@ import jd.controlling.interaction.InfoFileWriter;
 import jd.event.UIEvent;
 import jd.gui.UIInterface;
 import jd.gui.skins.simple.components.BrowseFile;
+import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
 public class ConfigPanelInfoFileWriter extends ConfigPanel {
@@ -51,6 +52,6 @@ public class ConfigPanelInfoFileWriter extends ConfigPanel {
     }
     @Override
     public String getName() {
-        return "Info Datei";
+        return JDLocale.L("gui.config.infoFileWriter.name","Info Datei");
     }
 }

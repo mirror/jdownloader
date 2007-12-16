@@ -12,6 +12,7 @@ import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 
 import jd.unrar.JUnrar;
+import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
 /**
@@ -56,12 +57,12 @@ public class jdUnrarPasswordListDialog extends JDialog implements ActionListener
         setModal(true);
         setLayout(new GridBagLayout());
         
-        btnCancel = new JButton(JDUtilities.getResourceString("button.cancel.name"));
-        btnCancel.setMnemonic(JDUtilities.getResourceChar("button.cancel.mnem"));
+        btnCancel = new JButton(JDLocale.L("gui.config.unrar.passwordlist.btn_cancel.name"));
+        btnCancel.setMnemonic(JDLocale.L("gui.config.unrar.passwordlist.btn_cancel.mnem").charAt(0));
         btnCancel.addActionListener(this);
         
-        btnSave = new JButton(JDUtilities.getResourceString("button.save.name"));
-        btnSave.setMnemonic(JDUtilities.getResourceChar("button.save.mnem"));
+        btnSave = new JButton(JDLocale.L("gui.config.unrar.passwordlist.btn_save.name"));
+        btnSave.setMnemonic(JDLocale.L("gui.config.unrar.passwordlist.btn_save.mnem").charAt(0));
         
         btnSave.addActionListener(this);
         getRootPane().setDefaultButton(btnSave);

@@ -9,6 +9,7 @@ import java.util.logging.Logger;
 import jd.config.ConfigEntry;
 import jd.controlling.interaction.Interaction;
 import jd.gui.UIInterface;
+import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
 /**
@@ -71,8 +72,8 @@ public class ConfigPanelInteraction extends ConfigPanel implements ActionListene
 
     @Override
     public String getName() {
-if(interaction==null){return "no Action";}
-        return "Interaction Konfiguration: "+interaction.getInteractionName();
+if(interaction==null){return JDLocale.L("gui.config.interaction.noAction","no Action");}
+        return JDLocale.L("gui.config.interaction.getName","Interaction Konfiguration: ")+interaction.getInteractionName();
     }
 
     @Override

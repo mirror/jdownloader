@@ -16,6 +16,7 @@ import jd.config.Configuration;
 import jd.controlling.interaction.HTTPLiveHeader;
 import jd.controlling.interaction.Interaction;
 import jd.gui.UIInterface;
+import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
 class SubPanelLiveHeaderReconnect extends ConfigPanel implements ActionListener {
@@ -43,22 +44,22 @@ class SubPanelLiveHeaderReconnect extends ConfigPanel implements ActionListener 
         GUIConfigEntry ce;
 
         ConfigEntry cfg;
-        ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_BUTTON, this, "Router auswählen"));
+        ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_BUTTON, this, JDLocale.L("gui.config.liveHeader.selectRouter", "Router auswählen")));
         addGUIConfigEntry(ce);
 
-        ce = new GUIConfigEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, JDUtilities.getConfiguration(), Configuration.PARAM_HTTPSEND_USER, "Login User (->%%%user%%%)"));
+        ce = new GUIConfigEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, JDUtilities.getConfiguration(), Configuration.PARAM_HTTPSEND_USER, JDLocale.L("gui.config.liveHeader.user", "Login User (->%%%user%%%)")));
         addGUIConfigEntry(ce);
-        ce = new GUIConfigEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, JDUtilities.getConfiguration(), Configuration.PARAM_HTTPSEND_PASS, "Login Passwort (->%%%pass%%%)"));
+        ce = new GUIConfigEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, JDUtilities.getConfiguration(), Configuration.PARAM_HTTPSEND_PASS, JDLocale.L("gui.config.liveHeader.password", "Login Passwort (->%%%pass%%%)")));
         addGUIConfigEntry(ce);
-        ce = new GUIConfigEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, JDUtilities.getConfiguration(), Configuration.PARAM_HTTPSEND_IP, "RouterIP (->%%%routerip%%%)"));
+        ce = new GUIConfigEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, JDUtilities.getConfiguration(), Configuration.PARAM_HTTPSEND_IP, JDLocale.L("gui.config.liveHeader.routerIP", "RouterIP (->%%%routerip%%%)")));
         addGUIConfigEntry(ce);
-        ce = new GUIConfigEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_SPINNER, JDUtilities.getConfiguration(), Configuration.PARAM_HTTPSEND_IPCHECKWAITTIME, "Wartezeit bis zum ersten IP-Check[sek]", 0, 600).setDefaultValue(5).setExpertEntry(true));
+        ce = new GUIConfigEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_SPINNER, JDUtilities.getConfiguration(), Configuration.PARAM_HTTPSEND_IPCHECKWAITTIME, JDLocale.L("gui.config.liveHeader.waitTimeForIPCheck", "Wartezeit bis zum ersten IP-Check[sek]"), 0, 600).setDefaultValue(5).setExpertEntry(true));
         addGUIConfigEntry(ce);
-        ce = new GUIConfigEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_SPINNER, JDUtilities.getConfiguration(), Configuration.PARAM_HTTPSEND_RETRIES, "Max. Wiederholungen (-1 = unendlich)", -1, 20).setDefaultValue(5).setExpertEntry(true));
+        ce = new GUIConfigEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_SPINNER, JDUtilities.getConfiguration(), Configuration.PARAM_HTTPSEND_RETRIES, JDLocale.L("gui.config.liveHeader.retries", "Max. Wiederholungen (-1 = unendlich)"), -1, 20).setDefaultValue(5).setExpertEntry(true));
         addGUIConfigEntry(ce);
-        ce = new GUIConfigEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_SPINNER, JDUtilities.getConfiguration(), Configuration.PARAM_HTTPSEND_WAITFORIPCHANGE, "Auf neue IP warten [sek]", 0, 600).setDefaultValue(20).setExpertEntry(true));
+        ce = new GUIConfigEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_SPINNER, JDUtilities.getConfiguration(), Configuration.PARAM_HTTPSEND_WAITFORIPCHANGE, JDLocale.L("gui.config.liveHeader.waitForIP", "Auf neue IP warten [sek]"), 0, 600).setDefaultValue(20).setExpertEntry(true));
 
-        routerScript = new GUIConfigEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_TEXTAREA, JDUtilities.getConfiguration(), Configuration.PARAM_HTTPSEND_REQUESTS, "HTTP Script"));
+        routerScript = new GUIConfigEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_TEXTAREA, JDUtilities.getConfiguration(), Configuration.PARAM_HTTPSEND_REQUESTS, JDLocale.L("gui.config.liveHeader.script", "HTTP Script")));
         addGUIConfigEntry(routerScript);
 
         add(panel, BorderLayout.CENTER);
@@ -72,7 +73,7 @@ class SubPanelLiveHeaderReconnect extends ConfigPanel implements ActionListener 
 
     @Override
     public String getName() {
-        return "Reconnect via LiveHeader";
+        return JDLocale.L("gui.config.liveHeader.name", "Reconnect via LiveHeader");
     }
 
     public void actionPerformed(ActionEvent e) {
@@ -113,13 +114,13 @@ class SubPanelLiveHeaderReconnect extends ConfigPanel implements ActionListener 
             d[i] = i + ". " + JDUtilities.htmlDecode(scripts.get(i)[0] + " : " + scripts.get(i)[1]);
         }
 
-        String selected = (String) JOptionPane.showInputDialog(this, "Bitte wähle deinen Router aus", "Router importieren", JOptionPane.INFORMATION_MESSAGE, null, d, null);
+        String selected = (String) JOptionPane.showInputDialog(this, JDLocale.L("gui.config.liveHeader.dialog.selectRouter", "Bitte wähle deinen Router aus"), JDLocale.L("gui.config.liveHeader.dialog.importRouter", "Router importieren"), JOptionPane.INFORMATION_MESSAGE, null, d, null);
         if (selected != null) {
-         
+
             int id = Integer.parseInt(selected.split("\\.")[0]);
             String[] data = scripts.get(id);
-            if(data[2].toLowerCase().indexOf("curl")>=0){
-                JDUtilities.getGUI().showMessageDialog("JD could not convert this curl-batch to a Live-Header Script. Please consult your JD-Support Team!");
+            if (data[2].toLowerCase().indexOf("curl") >= 0) {
+                JDUtilities.getGUI().showMessageDialog(JDLocale.L("gui.config.liveHeader.warning.noCURLConvert", "JD could not convert this curl-batch to a Live-Header Script. Please consult your JD-Support Team!"));
             }
             routerScript.setData(data[2]);
 

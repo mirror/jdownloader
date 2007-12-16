@@ -14,6 +14,7 @@ import javax.swing.JPanel;
 import javax.swing.JSeparator;
 
 import jd.plugins.DownloadLink;
+import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
 /**
@@ -48,77 +49,77 @@ public class DownloadInfo extends JDialog {
         setVisible(true);
     }
     private void initDialog() {
-        addEntry("Datei", new File(downloadLink.getFileOutput()).getName() + " @ " + downloadLink.getHost());
+        addEntry("file", new File(downloadLink.getFileOutput()).getName() + " @ " + downloadLink.getHost());
         addEntry(null, null);
         if (downloadLink.getFilePackage() != null && downloadLink.getFilePackage().getPassword() != null) {
-            addEntry("Archiv Passwort", downloadLink.getFilePackage().getPassword());
+            addEntry("password", downloadLink.getFilePackage().getPassword());
         }
         if (downloadLink.getFilePackage() != null && downloadLink.getFilePackage().getComment() != null) {
-            addEntry("Kommentar", downloadLink.getFilePackage().getComment());
+            addEntry("comment", downloadLink.getFilePackage().getComment());
         }
         if (downloadLink.getFilePackage() != null) {
-            addEntry("Paket", downloadLink.getFilePackage().toString());
+            addEntry("package", downloadLink.getFilePackage().toString());
         }
         if (downloadLink.getFilePackage() != null) {
-            addEntry("Unrar", downloadLink.getFilePackage().isUnPack()?"Yes":"No");
+            addEntry("doUnrar", downloadLink.getFilePackage().isUnPack()?"Yes":"No");
         }
         if (downloadLink.getFilePackage() != null) {
-            addEntry("InfoFile", downloadLink.getFilePackage().isWriteInfoFile()?"Yes":"No");
+            addEntry("writeInfoFile", downloadLink.getFilePackage().isWriteInfoFile()?"Yes":"No");
         }
         if (downloadLink.getDownloadMax() > 0) {
-            addEntry("Dateigröße", downloadLink.getDownloadMax() + " Bytes");
+            addEntry("fileSize", downloadLink.getDownloadMax() + " Bytes");
         }
         if (downloadLink.isAborted()) {
-            addEntry("Download", "Abgebrochen");
+            addEntry("download", "Abgebrochen");
         }
         if (downloadLink.isAvailabilityChecked()) {
-            addEntry("Verfügbarkeit", downloadLink.isAvailable() ? "Datei OK" : "Fehler!");
+            addEntry("available", downloadLink.isAvailable() ? "Datei OK" : "Fehler!");
         }
         else {
-            addEntry("Verfügbarkeit", "ist nicht überprüft");
+            addEntry("available", "ist nicht überprüft");
         }
         if (downloadLink.getDownloadSpeed() > 0) {
-            addEntry("Geschwindigkeit", downloadLink.getDownloadSpeed() / 1024 + " kb/s");
+            addEntry("speed", downloadLink.getDownloadSpeed() / 1024 + " kb/s");
         }
         if (downloadLink.getFileOutput() != null) {
-            addEntry("Speicherort", downloadLink.getFileOutput());
+            addEntry("saveTo", downloadLink.getFileOutput());
         }
         if (downloadLink.getRemainingWaittime() > 0) {
-            addEntry("Wartezeit", downloadLink.getRemainingWaittime() + " sek");
+            addEntry("waitTime", downloadLink.getRemainingWaittime() + " sek");
         }
         if (downloadLink.isInProgress()) {
-            addEntry("Download", " ist in Bearbeitung");
+            addEntry("download", " ist in Bearbeitung");
         }
         else {
-            addEntry("Download", " ist nicht in Bearbeitung");
+            addEntry("download", " ist nicht in Bearbeitung");
         }
         if (!downloadLink.isEnabled()) {
-            addEntry("Download", " ist deaktiviert");
+            addEntry("download", " ist deaktiviert");
         }
         else {
-            addEntry("Download", " ist aktiviert");
+            addEntry("download", " ist aktiviert");
         }
         switch (downloadLink.getStatus()) {
             case DownloadLink.STATUS_TODO:
-                addEntry("Download Status", "In Warteschlange");
+                addEntry("download.status", "In Warteschlange");
                 break;
             case DownloadLink.STATUS_DONE:
-                addEntry("Download Status", downloadLink.getStatusText() + "Fertig");
+                addEntry("download.status", downloadLink.getStatusText() + "Fertig");
                 break;
             case DownloadLink.STATUS_ERROR_FILE_ABUSED:
-                addEntry("Download Status", downloadLink.getStatusText() + " ABUSED!");
+                addEntry("download.status", downloadLink.getStatusText() + " ABUSED!");
                 break;
             case DownloadLink.STATUS_ERROR_FILE_NOT_FOUND:
-                addEntry("Download Status", downloadLink.getStatusText() + " FILE NOT FOUND");
+                addEntry("download.status", downloadLink.getStatusText() + " FILE NOT FOUND");
                 break;
             case DownloadLink.STATUS_ERROR_TEMPORARILY_UNAVAILABLE:
-                addEntry("Download Status", downloadLink.getStatusText() + " Kurzzeitig nicht verfügbar");
+                addEntry("download.status", downloadLink.getStatusText() + " Kurzzeitig nicht verfügbar");
                 break;
             case DownloadLink.STATUS_ERROR_UNKNOWN:
-                addEntry("Download Status", downloadLink.getStatusText() + " Unbekannter Fehler");
+                addEntry("download.status", downloadLink.getStatusText() + " Unbekannter Fehler");
                 break;
             default:
-                addEntry("Download Status", downloadLink.getStatusText() + "Status ID: " + downloadLink.getStatus());
+                addEntry("download.status", downloadLink.getStatusText() + "Status ID: " + downloadLink.getStatus());
                 break;
         }
         if (downloadLink.getPlugin().getCurrentStep() != null) {
@@ -130,7 +131,7 @@ public class DownloadInfo extends JDialog {
             JDUtilities.addToGridBag(panel, new JSeparator(), 0, i, 2, 1, 0, 0, null, GridBagConstraints.BOTH, GridBagConstraints.CENTER);
             return;
         }
-        JDUtilities.addToGridBag(panel, new JLabel(label), 0, i, 1, 1, 0, 1, null, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        JDUtilities.addToGridBag(panel, new JLabel(JDLocale.L("gui.linkInfo."+label,label)), 0, i, 1, 1, 0, 1, null, GridBagConstraints.NONE, GridBagConstraints.WEST);
         JDUtilities.addToGridBag(panel, new JLabel(data), 1, i, 1, 1, 1, 0, null, GridBagConstraints.NONE, GridBagConstraints.EAST);
         i++;
     }

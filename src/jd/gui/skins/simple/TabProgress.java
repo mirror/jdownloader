@@ -16,6 +16,7 @@ import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableColumn;
 
 import jd.controlling.ProgressController;
+import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
 /**
@@ -89,12 +90,12 @@ public class TabProgress extends JPanel {
         /**
          * Bezeichnung der Spalte für den Pluginnamen
          */
-        private String            labelColumnStatusText = JDUtilities.getResourceString("label.tab.plugin_activity.column_plugin");
+        private String            labelColumnStatusText = JDLocale.L("gui.tab.plugin_activity.column_plugin");
 
         /**
          * Bezeichnung der Spalte für die Fortschrittsanzeige
          */
-        private String            labelColumnProgress   = JDUtilities.getResourceString("label.tab.plugin_activity.column_progress");
+        private String            labelColumnProgress   = JDLocale.L("gui.tab.plugin_activity.column_progress");
 
         public String toString() {
             return " col " + controllers.size();

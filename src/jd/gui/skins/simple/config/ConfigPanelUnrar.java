@@ -11,6 +11,7 @@ import jd.controlling.interaction.Unrar;
 import jd.gui.UIInterface;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.unrar.JUnrar;
+import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 /**
  * Konfigurationspanel für Unrar
@@ -68,18 +69,18 @@ this.configuration=configuration;
             unrarcmd=null;
         
 //        ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, configuration, Unrar.PROPERTY_ENABLED_TYPE,new String[] { Unrar.ENABLED_TYPE_ALWAYS,Unrar.ENABLED_TYPE_LINKGRABBER,Unrar.ENABLED_TYPE_NEVER },"Unrar aktivieren:").setDefaultValue(Unrar.ENABLED_TYPE_LINKGRABBER));
-        ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, configuration, Unrar.PROPERTY_ENABLED_TYPE, new String[] { Unrar.ENABLED_TYPE_ALWAYS,Unrar.ENABLED_TYPE_LINKGRABBER,Unrar.ENABLED_TYPE_NEVER }, JDUtilities.getResourceString("unrar.config.activate")).setDefaultValue(Unrar.ENABLED_TYPE_LINKGRABBER));
+        ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, configuration, Unrar.PROPERTY_ENABLED_TYPE, new String[] { Unrar.ENABLED_TYPE_ALWAYS,Unrar.ENABLED_TYPE_LINKGRABBER,Unrar.ENABLED_TYPE_NEVER }, JDLocale.L("gui.config.unrar.activate")).setDefaultValue(Unrar.ENABLED_TYPE_LINKGRABBER));
         addGUIConfigEntry(ce);
-        ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_BROWSEFILE, configuration, Unrar.PROPERTY_UNRARCOMMAND, JDUtilities.getResourceString("unrar.config.cmd")).setDefaultValue(unrarcmd));
+        ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_BROWSEFILE, configuration, Unrar.PROPERTY_UNRARCOMMAND, JDLocale.L("gui.config.unrar.cmd")).setDefaultValue(unrarcmd));
         addGUIConfigEntry(ce);
-        ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, configuration, Unrar.PROPERTY_AUTODELETE, JDUtilities.getResourceString("unrar.config.delete")).setDefaultValue(true));
+        ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, configuration, Unrar.PROPERTY_AUTODELETE, JDLocale.L("gui.config.unrar.delete")).setDefaultValue(true));
         addGUIConfigEntry(ce);
-        ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, configuration, Unrar.PROPERTY_OVERWRITE_FILES, JDUtilities.getResourceString("unrar.config.overwrite")).setDefaultValue(false));
+        ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, configuration, Unrar.PROPERTY_OVERWRITE_FILES, JDLocale.L("gui.config.unrar.overwrite")).setDefaultValue(false));
 addGUIConfigEntry(ce);        
-ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, configuration,  Unrar.PROPERTY_WAIT_FOR_TERMINATION, "Erst nach dem Entpacken mit dem Download fortfahren").setDefaultValue(false));
+ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, configuration,  Unrar.PROPERTY_WAIT_FOR_TERMINATION, JDLocale.L("gui.config.unrar.thread","Erst nach dem Entpacken mit dem Download fortfahren")).setDefaultValue(false));
         
         addGUIConfigEntry(ce);
-        ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_BUTTON, this, JDUtilities.getResourceString("action.passwordlist.name")));
+        ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_BUTTON, this, JDLocale.L("action.passwordlist.name")));
         addGUIConfigEntry(ce);
         add(panel, BorderLayout.NORTH);
 
@@ -88,7 +89,7 @@ ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, configura
     @Override
     public String getName() {
 
-        return JDUtilities.getResourceString("unrar.name");
+        return JDLocale.L("modules.unrar.name");
     }
 
     public void actionPerformed(ActionEvent e) {

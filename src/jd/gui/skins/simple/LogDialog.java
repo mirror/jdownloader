@@ -30,6 +30,7 @@ import jd.gui.skins.simple.components.TextAreaDialog;
 import jd.plugins.LogFormatter;
 import jd.plugins.Plugin;
 import jd.plugins.RequestInfo;
+import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
 /**
@@ -81,15 +82,15 @@ public class LogDialog extends JDialog implements ActionListener {
         streamHandler.setFormatter(new LogFormatter());
         logger.addHandler(streamHandler);
 
-        btnOK = new JButton("OK");
+        btnOK = new JButton(JDLocale.L("gui.btn_ok","OK"));
         btnOK.addActionListener(this);
-        btnSave = new JButton("Save to file");
+        btnSave = new JButton(JDLocale.L("gui.btn_saveToFile","Save to file"));
         btnSave.addActionListener(this);
 
-        btnCensor = new JButton("Censor Log");
+        btnCensor = new JButton(JDLocale.L("gui.logDialog.btn_censor","Censor Log"));
         btnCensor.addActionListener(this);
 
-        btnUpload = new JButton("Upload Log");
+        btnUpload = new JButton(JDLocale.L("gui.logDialog.btn_uploadLog","Upload Log"));
         btnUpload.addActionListener(this);
         getRootPane().setDefaultButton(btnOK);
         setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
@@ -120,7 +121,7 @@ public class LogDialog extends JDialog implements ActionListener {
 
         if (e.getSource() == btnCensor) {
             String txt;
-            String[] censor = JDUtilities.splitByNewline(txt = TextAreaDialog.showDialog(owner, "Censor Log!", "Add Elements to censor. Use 'replaceme==replacement' or just 'deleteme' in a line. Regexes ar possible!", JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_CENSOR_FIELD, "" + System.getProperty("line.separator") + "")));
+            String[] censor = JDUtilities.splitByNewline(txt = TextAreaDialog.showDialog(owner, JDLocale.L("gui.logDialog.censordialog.title","Censor Log!"), JDLocale.L("gui.logDialog.censorDialog.text","Add Elements to censor. Use 'replaceme==replacement' or just 'deleteme' in a line. Regexes ar possible!"), JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_CENSOR_FIELD, "" + System.getProperty("line.separator") + "")));
 
             if (censor.length > 0) {
                 JDUtilities.getConfiguration().setProperty(Configuration.PARAM_CENSOR_FIELD, txt);
@@ -146,7 +147,7 @@ public class LogDialog extends JDialog implements ActionListener {
         }
         if (e.getSource() == btnUpload) {
             String txt;
-            String[] censor = JDUtilities.splitByNewline(txt = TextAreaDialog.showDialog(owner, "Censor Log!", "Add Elements to censor. Use 'replaceme==replacement' or just 'deleteme' in a line. Regexes ar possible!", JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_CENSOR_FIELD, "" + System.getProperty("line.separator") + "")));
+            String[] censor = JDUtilities.splitByNewline(txt = TextAreaDialog.showDialog(owner, JDLocale.L("gui.logDialog.censordialog.title","Censor Log!"), JDLocale.L("gui.logDialog.censorDialog.text","Add Elements to censor. Use 'replaceme==replacement' or just 'deleteme' in a line. Regexes ar possible!"), JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_CENSOR_FIELD, "" + System.getProperty("line.separator") + "")));
 
             if (censor.length > 0) {
                 JDUtilities.getConfiguration().setProperty(Configuration.PARAM_CENSOR_FIELD, txt);
@@ -169,7 +170,7 @@ public class LogDialog extends JDialog implements ActionListener {
              
 
             }
-          String name=JDUtilities.getController().getUiInterface().showUserInputDialog("Your name?");
+          String name=JDUtilities.getController().getUiInterface().showUserInputDialog(JDLocale.L("gui.askName","Your name?"));
           if(name!=null){
               String content = logField.getSelectedText();
               if (content == null || content.length() == 0) {
@@ -188,9 +189,9 @@ public class LogDialog extends JDialog implements ActionListener {
                 e1.printStackTrace();
             }
             if(requestInfo!=null &&requestInfo.isOK()){
-            JOptionPane.showInputDialog(this, "Log-Link", requestInfo.getLocation());
+            JOptionPane.showInputDialog(this, JDLocale.L("gui.logDialog.logLink","Log-Link"), requestInfo.getLocation());
             }else{
-                JOptionPane.showMessageDialog(this, "Upload failed");
+                JOptionPane.showMessageDialog(this, JDLocale.L("gui.logDialog.warning.uploadFailed","Upload failed"));
             }
               
           }
@@ -198,7 +199,7 @@ public class LogDialog extends JDialog implements ActionListener {
         }
         if (e.getSource() == btnSave) {
             JFileChooser fc = new JFileChooser();
-            fc.setApproveButtonText("Save");
+            fc.setApproveButtonText(JDLocale.L("gui.logDialog.btn_save","Save"));
             fc.setFileSelectionMode(JFileChooser.FILES_ONLY);
             fc.showOpenDialog(this);
             File ret = fc.getSelectedFile();

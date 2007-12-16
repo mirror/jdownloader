@@ -28,6 +28,7 @@ import javax.swing.table.TableColumn;
 import jd.config.Configuration;
 import jd.gui.UIInterface;
 import jd.plugins.PluginOptional;
+import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
 /**
@@ -142,14 +143,14 @@ public class ConfigPanelPluginsOptional extends ConfigPanel implements ActionLis
         JScrollPane scrollpane = new JScrollPane(table);
         scrollpane.setPreferredSize(new Dimension(400, 200));
 
-        btnEdit = new JButton("Einstellungen");
+        btnEdit = new JButton(JDLocale.L("gui.config.plugin.optional.btn_settings","Einstellungen"));
 
         btnEdit.addActionListener(this);
-        enableDisable = new JButton("An/Aus");
+        enableDisable = new JButton(JDLocale.L("gui.config.plugin.optional.btn_toggleStatus","An/Aus"));
 
         enableDisable.addActionListener(this);
         
-        JDUtilities.addToGridBag(panel, new JLabel("JD-Restart needed after changes!"), 0, 0, 3, 1, 1, 1, insets, GridBagConstraints.BOTH, GridBagConstraints.CENTER);
+        JDUtilities.addToGridBag(panel, new JLabel(JDLocale.L("gui.warning.restartNeeded","JD-Restart needed after changes!")), 0, 0, 3, 1, 1, 1, insets, GridBagConstraints.BOTH, GridBagConstraints.CENTER);
 
         JDUtilities.addToGridBag(panel, scrollpane, 0, 1, 3, 1, 1, 1, insets, GridBagConstraints.BOTH, GridBagConstraints.CENTER);
 
@@ -165,7 +166,7 @@ public class ConfigPanelPluginsOptional extends ConfigPanel implements ActionLis
     @Override
     public String getName() {
 
-        return "Optional Plugins";
+        return JDLocale.L("gui.config.plugin.optional.name","Optional Plugins");
     }
 
     private void openPopupPanel(ConfigPanel config) {
@@ -279,7 +280,7 @@ public class ConfigPanelPluginsOptional extends ConfigPanel implements ActionLis
                 case 0:
                     return rowIndex + "";
                 case 1:
-                    return configuration.getBooleanProperty(getConfigParamKey(plugins.get(rowIndex)), false) ? "An" : "Aus";
+                    return configuration.getBooleanProperty(getConfigParamKey(plugins.get(rowIndex)), false) ? JDLocale.L("gui.config.plugin.optional.statusActive","An") : JDLocale.L("gui.config.plugin.optional.statusInactive","Aus");
                 case 2:return plugins.get(rowIndex).getPluginName();
                 case 3:return plugins.get(rowIndex).getPluginID();
                 case 4:return plugins.get(rowIndex).getCoder();
@@ -292,17 +293,17 @@ public class ConfigPanelPluginsOptional extends ConfigPanel implements ActionLis
         public String getColumnName(int column) {
             switch (column) {
                 case 0:
-                    return "ID";
+                    return JDLocale.L("gui.config.plugin.optional.column_id","ID");
                 case 1:
-                    return "Status";
+                    return JDLocale.L("gui.config.plugin.optional.column_status","Status");
                 case 2:
-                    return "Plugin";
+                    return JDLocale.L("gui.config.plugin.optional.column_plugin","Plugin");
                 case 3:
-                    return "Version";
+                    return JDLocale.L("gui.config.plugin.optional.column_version","Version");
                 case 4:
-                    return "Coder";
+                    return JDLocale.L("gui.config.plugin.optional.column_author","Coder");
                 case 5:
-                    return "Needs";
+                    return JDLocale.L("gui.config.plugin.optional.column_needs","Needs");
 
             }
             return super.getColumnName(column);

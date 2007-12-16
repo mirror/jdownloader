@@ -13,7 +13,7 @@ import javax.swing.JPanel;
 import javax.swing.JTextField;
 import javax.swing.border.EtchedBorder;
 
-import jd.config.Configuration;
+import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
 public class BrowseFile extends JPanel implements ActionListener {
@@ -43,7 +43,7 @@ public class BrowseFile extends JPanel implements ActionListener {
         txtInput.setEditable(editable);
         txtInput.addActionListener(this);
         this.setLayout(new GridBagLayout());
-        btnBrowse = new JButton("auswählen");
+        btnBrowse = new JButton(JDLocale.L("gui.btn_select","auswählen"));
         btnBrowse.addActionListener(this);
         this.setBorder(new EtchedBorder());
         JDUtilities.addToGridBag(this, txtInput, 0, 0, 1, 1, 1, 0, new Insets(0, 0, 0, 0), GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
@@ -57,7 +57,7 @@ public class BrowseFile extends JPanel implements ActionListener {
         txtInput.setEditable(editable);
         txtInput.addActionListener(this);
         this.setLayout(new GridBagLayout());
-        btnBrowse = new JButton("auswählen");
+        btnBrowse = new JButton(JDLocale.L("gui.btn_select","auswählen"));
         btnBrowse.addActionListener(this);
         this.setBorder(new EtchedBorder());
         JDUtilities.addToGridBag(this, txtInput, 0, 0, 1, 1, 1, 0, new Insets(0, 0, 0, 0), GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);

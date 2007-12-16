@@ -21,14 +21,10 @@ import javax.swing.table.AbstractTableModel;
 import javax.swing.table.TableColumn;
 
 import jd.config.Configuration;
-import jd.controlling.interaction.DummyInteraction;
-import jd.controlling.interaction.ExternReconnect;
-import jd.controlling.interaction.HTTPReconnect;
 import jd.controlling.interaction.Interaction;
 import jd.controlling.interaction.InteractionTrigger;
-import jd.controlling.interaction.Unrar;
-
 import jd.gui.UIInterface;
+import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
 public class ConfigPanelEventmanager extends ConfigPanel implements ActionListener, MouseListener {
@@ -136,11 +132,11 @@ private Configuration configuration;
         table.addMouseListener(this);
         JScrollPane scrollpane = new JScrollPane(table);
         scrollpane.setPreferredSize(new Dimension(400,200));
-        btnAdd = new JButton("+");
-        btnRemove = new JButton("-");
-        btnEdit = new JButton("Einstellungen");
-        btnTop = new JButton("nach oben!");
-        btnBottom = new JButton("nach unten!");
+        btnAdd = new JButton(JDLocale.L("gui.config.eventmanager.btn_add","+"));
+        btnRemove = new JButton(JDLocale.L("gui.config.eventmanager.btn_remove","-"));
+        btnEdit = new JButton(JDLocale.L("gui.config.eventmanager.btn_settings","Einstellungen"));
+        btnTop = new JButton(JDLocale.L("gui.config.eventmanager.btn_up","nach oben!"));
+        btnBottom = new JButton(JDLocale.L("gui.config.eventmanager.btn_down","nach unten!"));
         btnTop.addActionListener(this);
         btnBottom.addActionListener(this);
         btnAdd.addActionListener(this);
@@ -167,7 +163,7 @@ return table.getSelectedRow();
     @Override
     public String getName() {
 
-        return "Eventmanager";
+        return JDLocale.L("gui.config.eventmanager.name","Eventmanager");
     }
 
     private Interaction[] getInteractionArray() {
@@ -199,7 +195,7 @@ return table.getSelectedRow();
         cboTrigger.addActionListener(this);
         cboTrigger.setSelectedIndex(indexT);
         JPanel topPanel = new JPanel();
-        topPanel.add(new JLabel("Trigger Event"));
+        topPanel.add(new JLabel(JDLocale.L("gui.config.eventmanager.trigger","Trigger Event")));
         topPanel.add(cboTrigger);
         panel.add(topPanel, BorderLayout.NORTH);
        if(config!=null) panel.add(config, BorderLayout.CENTER);
@@ -242,12 +238,12 @@ return table.getSelectedRow();
         }
         if (e.getSource() == btnAdd) {
             InteractionTrigger[] events = InteractionTrigger.getAllTrigger();
-            InteractionTrigger event = (InteractionTrigger) JOptionPane.showInputDialog(this, "Trigger auswählen", "Wann soll eine Aktion ausgeführt werden?", JOptionPane.QUESTION_MESSAGE, null, events, null);
+            InteractionTrigger event = (InteractionTrigger) JOptionPane.showInputDialog(this, JDLocale.L("gui.config.eventmanager.new.selectTrigger.title","Trigger auswählen"), JDLocale.L("gui.config.eventmanager.new.selectTrigger.desc","Wann soll eine Aktion ausgeführt werden?"), JOptionPane.QUESTION_MESSAGE, null, events, null);
             if (event == null) return;
             
             
             Interaction[] interacts = getInteractionArray();
-            Interaction interaction = (Interaction) JOptionPane.showInputDialog(this, "Aktion auswählen für \""+event.getName()+"\"", "Welche Aktion soll ausgeführt werden?", JOptionPane.QUESTION_MESSAGE, null, interacts, null);
+            Interaction interaction = (Interaction) JOptionPane.showInputDialog(this, JDUtilities.sprintf(JDLocale.L("gui.config.eventmanager.new.selectAction.title","Aktion auswählen für \"%s\""),new String[]{event.getName()}), JDLocale.L("gui.config.eventmanager.new.selectAction.desc","Welche Aktion soll ausgeführt werden?"), JOptionPane.QUESTION_MESSAGE, null, interacts, null);
 
             if (interaction == null) return;
            
@@ -285,10 +281,7 @@ return table.getSelectedRow();
         if (interaction != null) {
 
         
-            if (interaction instanceof DummyInteraction) {
-                openPopupPanel(new ConfigPanelInteractionDummy(configuration, uiinterface,(DummyInteraction)interaction));
-                return;
-            }      
+       
            
           
          
@@ -367,9 +360,9 @@ return table.getSelectedRow();
         }
         public String getColumnName(int column) {
             switch(column){
-                case 0: return "Aktion";
-                case 1: return "Trigger";
-                case 2: return "Triggerbeschreibung";
+                case 0: return JDLocale.L("gui.config.eventmanager.column.action","Aktion");
+                case 1: return JDLocale.L("gui.config.eventmanager.column.trigger","Trigger");
+                case 2: return JDLocale.L("gui.config.eventmanager.column.triggerDesc","Triggerbeschreibung");
            
             }
             return super.getColumnName(column);

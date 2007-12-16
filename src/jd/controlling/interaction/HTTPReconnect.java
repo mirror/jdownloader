@@ -14,6 +14,7 @@ import jd.controlling.ProgressController;
 import jd.plugins.Plugin;
 import jd.plugins.RequestInfo;
 import jd.router.RouterData;
+import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
 /**
@@ -30,7 +31,7 @@ public class HTTPReconnect extends Interaction {
     /**
      * serialVersionUID
      */
-    private static final String      NAME             = "HTTP Reconnect(routercontrol)";
+    private static final String      NAME             = JDLocale.L("interaction.httpReconnect.name","HTTP Reconnect(routercontrol)");
     /**
      * Maximal 10 versuche
      */
@@ -44,11 +45,11 @@ public class HTTPReconnect extends Interaction {
             logger.info("Reconnect deaktiviert");
             return false;
         }
-        ProgressController progress = new ProgressController("HTTPReconnect",5);
+        ProgressController progress = new ProgressController(JDLocale.L("interaction.httpReconnect.progress.0_title","HTTPReconnect"),5);
         Configuration configuration = JDUtilities.getConfiguration();
         retries++;
         logger.info("Starting HTTPReconnect #" + retries);
-        progress.setStatusText("HTTPReconnect retry #"+retries);
+        progress.setStatusText(JDLocale.L("interaction.httpReconnect.progress.1_retry","HTTPReconnect retry #")+retries);
         progress.increase(1);
         String ipBefore;
         String ipAfter;
@@ -77,7 +78,7 @@ public class HTTPReconnect extends Interaction {
         // IP auslesen
         ipBefore = JDUtilities.getIPAddress();
         progress.increase(1);
-        progress.setStatusText("(login)HTTPReconnect - Old IP: "+ipBefore);
+        progress.setStatusText(JDLocale.L("interaction.httpReconnect.progress.2_login","(login)HTTPReconnect - Old IP: ")+ipBefore);
         logger.fine("IP before:" + ipBefore);
         if (login != null && !login.equals("")) {
             login.replaceAll(VAR_USERNAME, routerUsername);
@@ -99,7 +100,7 @@ public class HTTPReconnect extends Interaction {
         }
         // Disconnect
         progress.increase(1);
-        progress.setStatusText("(disconnect)HTTPReconnect - Old IP: "+ipBefore);
+        progress.setStatusText(JDLocale.L("interaction.httpReconnect.progress.3_disconnect","(disconnect)HTTPReconnect - Old IP: ")+ipBefore);
         requestInfo = doThis("Disconnect", isAbsolute(disconnect) ? disconnect : routerPage + disconnect, requestInfo, routerData.getDisconnectRequestProperties(), routerData.getDisconnectPostParams(), routerData.getDisconnectType());
         if (requestInfo == null) {
             logger.severe("Disconnect failed.");
@@ -119,7 +120,7 @@ public class HTTPReconnect extends Interaction {
         catch (InterruptedException e) {
         }
         
-        progress.setStatusText("(connect)HTTPReconnect - Old IP: "+ipBefore);
+        progress.setStatusText(JDLocale.L("interaction.httpReconnect.progress.4_connect","(connect)HTTPReconnect - Old IP: ")+ipBefore);
         // Verbindung wiederaufbauen
         progress.increase(1);
         logger.fine("building connection");
@@ -139,7 +140,7 @@ public class HTTPReconnect extends Interaction {
         // IP check
         if (waitTime > 0) {
             progress.setRange(progress.getMax()+waitTime);
-            progress.setStatusText("(wait)HTTPReconnect - "+waitTime+" Sec");
+            progress.setStatusText(JDUtilities.sprintf(JDLocale.L("interaction.httpReconnect.progress.5_wait","(wait)HTTPReconnect - %s Sec"),new String[]{""+waitTime}));
             logger.fine("wait " + waitTime + " seconds");
             progress.increase(1);
             try {
@@ -151,7 +152,7 @@ public class HTTPReconnect extends Interaction {
         // IP check
         progress.increase(1);
         ipAfter = JDUtilities.getIPAddress();
-        progress.setStatusText("(ipCheck)HTTPReconnect - "+ipBefore+"/"+ipAfter);
+        progress.setStatusText(JDUtilities.sprintf(JDLocale.L("interaction.httpReconnect.progress.6_ipCheck","(ipCheck)HTTPReconnect - %s / %s"),new String[]{""+ipBefore,""+ipAfter}));
         logger.fine("IP after reconnect:" + ipAfter);
         if (ipBefore == null && ipAfter == null) {
             logger.info("Es konnte keine IP ausgelesen werden.");
@@ -177,7 +178,7 @@ public class HTTPReconnect extends Interaction {
    
     @Override
     public String toString() {
-        return "Interner HTTP Reconnect";
+        return JDLocale.L("interaction.httpReconnect.toString","Interner HTTP Reconnect");
     }
     @Override
     public String getInteractionName() {
