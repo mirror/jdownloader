@@ -553,7 +553,10 @@ public class Rapidshare extends PluginForHost {
                         wr.flush();
                         // content-disposition: Attachment;
                         // filename=a_mc_cs3_g_cd.rsdf
-                        downloadLink.setName(getFileNameFormHeader(urlConnection));
+                        String name = getFileNameFormHeader(urlConnection);
+                        if(name.toLowerCase().matches(".*\\..{1,5}\\.html$"))
+                            name=name.replaceFirst("\\.html$", "");
+                        downloadLink.setName(name);
                         int length = urlConnection.getContentLength();
                         downloadLink.setDownloadMax(length);
                         if (!hasEnoughHDSpace(downloadLink)) {
@@ -802,7 +805,10 @@ public class Rapidshare extends PluginForHost {
                     URLConnection urlConnection = requestInfo.getConnection();
                     int length = urlConnection.getContentLength();
                     downloadLink.setDownloadMax(length);
-                    downloadLink.setName(getFileNameFormHeader(urlConnection));
+                    String name = getFileNameFormHeader(urlConnection);
+                    if(name.toLowerCase().matches(".*\\..{1,5}\\.html$"))
+                        name=name.replaceFirst("\\.html$", "");
+                    downloadLink.setName(name);
                     if (!hasEnoughHDSpace(downloadLink)) {
                         downloadLink.setStatus(DownloadLink.STATUS_ERROR_NO_FREE_SPACE);
                         step.setStatus(PluginStep.STATUS_ERROR);
