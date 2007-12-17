@@ -23,7 +23,7 @@ import jd.utils.JDUtilities;
  * @author astaldo
  */
 public class HTTPReconnect extends Interaction {
-    private transient static boolean enabled          = true;
+ 
     /**
      * 
      */
@@ -41,10 +41,7 @@ public class HTTPReconnect extends Interaction {
     private int                      retries          = 0;
     @Override
     public boolean doInteraction(Object arg) {
-        if (!isEnabled()) {
-            logger.info("Reconnect deaktiviert");
-            return false;
-        }
+     
         ProgressController progress = new ProgressController(JDLocale.L("interaction.httpReconnect.progress.0_title","HTTPReconnect"),5);
         Configuration configuration = JDUtilities.getConfiguration();
         retries++;
@@ -258,12 +255,7 @@ public class HTTPReconnect extends Interaction {
             return new PasswordAuthentication(username, password.toCharArray());
         }
     }
-    public static boolean isEnabled() {
-        return enabled;
-    }
-    public static void setEnabled(boolean en) {
-        enabled = en;
-    }
+
     @Override
     public void run() {
     // Nichts zu tun. Interaction braucht keinen Thread

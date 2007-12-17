@@ -59,17 +59,13 @@ public class ExternReconnect extends Interaction implements Serializable {
 
     private static final String PARAM_WAITFORIPCHANGE = "EXTERN_RECONNECT_WAITFORIPCHANGE";
 
-    private transient static boolean enabled                            = false;
+
 
     private int                      retries                            = 0;
 
     @Override
     public boolean doInteraction(Object arg) {
-        if (!isEnabled() || JDUtilities.getConfiguration().getBooleanProperty(PROPERTY_EXTERN_RECONNECT_DISABLED, false)) {
-            logger.info("Reconnect deaktiviert");
-            return false;
-        }
-       
+   
         retries++;
      ProgressController progress= new ProgressController(JDLocale.L("interaction.externreconnect.progress.0_title","ExternReconnect"),10);
      
@@ -140,13 +136,7 @@ public class ExternReconnect extends Interaction implements Serializable {
         return NAME;
     }
 
-    public static boolean isEnabled() {
-        return enabled;
-    }
 
-    public static void setEnabled(boolean en) {
-        enabled = en;
-    }
 
     @Override
     public void run() {

@@ -123,7 +123,7 @@ public class JDUtilities {
 
     private static Vector<PluginForDecrypt>        pluginsForDecrypt;
 
-    /**
+    /** 
      * Ein URLClassLoader, um Dateien aus dem HomeVerzeichnis zu holen
      */
     private static JDClassLoader                   jdClassLoader       = null;

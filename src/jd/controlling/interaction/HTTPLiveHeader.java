@@ -47,7 +47,7 @@ import sun.misc.BASE64Encoder;
  * 
  */
 public class HTTPLiveHeader extends Interaction {
-    private transient static boolean enabled     = true;
+
 
     /**
      * serialVersionUID
@@ -124,11 +124,7 @@ public class HTTPLiveHeader extends Interaction {
 
     @Override
     public boolean doInteraction(Object arg) {
-         //getDatabase();
-        if (!isEnabled()) {
-            logger.info("Reconnect deaktiviert");
-            return false;
-        }
+   
         // Hole die Config parameter. Über die Parameterkeys wird in der
         // initConfig auch der ConfigContainer für die Gui vorbereitet
         Configuration configuration = JDUtilities.getConfiguration();
@@ -765,13 +761,7 @@ public class HTTPLiveHeader extends Interaction {
         }
     }
 
-    public static boolean isEnabled() {
-        return enabled;
-    }
 
-    public static void setEnabled(boolean en) {
-        enabled = en;
-    }
 
     @Override
     public void run() {
