@@ -19,15 +19,22 @@ import java.util.Map.Entry;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
 import jd.controlling.ProgressController;
 import jd.utils.JDUtilities;
 
 public class JUnrar {
+    public String unrar = null;
+    public long maxFilesize = 2097152; // entspricht 2 mb
+    public boolean overwriteFiles = false, autoDelete = true;
+    public HashMap<File, String> files;
+    // Dateien die noch kommen bzw. bei jDownloader gerade heruntergeladen
+    // werden
+    public String[] followingFiles = null;
+
     private File passwordList = new File(JDUtilities.getJDHomeDirectory(), "passwordlist.xml");
     private File unpacked = new File(JDUtilities.getJDHomeDirectory(), "unpacked.dat");
     private Vector<File> unpackedlist;
-    private HashMap<File, String> files;
+
     private static Object[][] filesignatures = {{"avi", new Integer[][]{{82, 73, 70, 70}}}, {"mpg", new Integer[][]{{0, 0, 1, 186, -1, 0}}}, {"mpeg", new Integer[][]{{0, 0, 1, 186, -1, 0}}}, {"rar", new Integer[][]{{82, 97, 114, 33, 26, 7}}}, {"wmv", new Integer[][]{{48, 38, 178, 117, 142, 102}}}, {"mp3", new Integer[][]{{73, 68, 51, 3, 0}, {255, 251, 104, -1, 0, -1,}, {255, 251, 64, -1, 0, -1}}}, {"exe", new Integer[][]{{77, 90, 144, 0, 3, 0}}}, {"bz2", new Integer[][]{{66, 90, 104, 54, 49, 65}}}, {"gz", new Integer[][]{{31, 139, 8, 0}}}, {"doc", new Integer[][]{{208, 207, 17, 224, 161, 177}}}, {"pdf", new Integer[][]{{37, 80, 68, 70, 45, 49}}}, {"wma", new Integer[][]{{48, 38, 178, 117, 142, 102}}}, {"jpg", new Integer[][]{{255, 216, 255, 224, 0, 16}, {255, 216, 255, 225, 39, 222}}}, {"m4a", new Integer[][]{{0, 0, 0, 32, 102, 116}}}, {"mdf", new Integer[][]{{0, 255, 255, 255, 255, 255}}}, {"xcf", new Integer[][]{{103, 105, 109, 112, 32, 120}}}};
     private Integer[][] typicalFilesignatures = {{80, 75, 3, 4, -1, 0,}, {82, 73, 70, 70}, {0, 255, 255, 255, 255, 255}, {48, 38, 178, 117, 142, 102}, {208, 207, 17, 224, 161, 177}};
     public HashMap<String, Integer> passwordlist;
@@ -36,7 +43,8 @@ public class JUnrar {
 
     private static final String allOk = "(?s).*[\\s]+All OK[\\s].*";
 
-    private static final int MAX_REC_DEPTHS = 2;
+    // private static final int MAX_REC_DEPTHS = 2; //nichtmehr notwendig da
+    // sowieso nur ein unterordner durchscannt werden muss
     /**
      * Erkennungsstring für zu große Dateien (dieser String kann keine Dateiname
      * sein) oder Teilarchiv fehlt
@@ -52,12 +60,6 @@ public class JUnrar {
      */
     private static final String[] PASSWORD_PROTECTEDARCHIV = null;
 
-    public String unrar = null;
-
-    public long maxFilesize = 2097152; // entspricht 2 mb
-
-    public boolean overwriteFiles = false, autoDelete = true;
-
     private Vector<String> srcFolders;
 
     private ProgressController progress;
@@ -69,102 +71,51 @@ public class JUnrar {
      * 
      */
     public JUnrar() {
-        progress = new ProgressController("Default Unrar",100);
+        progress = new ProgressController("Default Unrar", 100);
         progress.setStatusText("Unrar-process");
         loadObjects();
     }
 
     /**
-     * Konstruktor zum entpacken aller Rar-Archive im angegebenen Ordner,
-     * Passwoerter werden aus der PasswortListe entnommen fals vorhanden
+     * Setzt alle Ordner in denen entpackt werden soll
      * 
-     * @param path
-     */
-    public JUnrar(String path) {
-        this(new File(path));
-    }
-
-    /**
-     * Konstruktor zum entpacken aller Rar-Archive im angegebenen Ordner,
-     * Passwoerter werden aus der PasswortListe entnommen fals vorhanden
-     * 
-     * @param path
-     */
-    public JUnrar(File path) {
-        this(fileList(path), null);
-    }
-
-    /**
-     * Konstruktor zum entpacken einer bestimmten Datei wenn das Passwort aus
-     * der PasswortListe geholt werden soll oder kein Passwort benoetigt wird
-     * einfach null als Password setzen
-     * 
-     * @param file
-     * @param password
-     */
-    public JUnrar(String file, String password) {
-        this(new File[]{new File(file)}, password);
-    }
-
-    /**
-     * Konstruktor zum entpacken einer bestimmten Datei wenn das Passwort aus
-     * der PasswortListe geholt werden soll oder kein Passwort benoetigt wird
-     * einfach null als Password setzen
-     * 
-     * @param file
-     * @param password
-     */
-    public JUnrar(File file, String password) {
-        this(new File[]{file}, password);
-    }
-
-    /**
-     * Konstruktor zum entpacken bestimmter Dateien wenn die Passwoerter aus der
-     * PasswortListe geholt werden sollen oder keine Passwoerter benoetigt
-     * werden einfach null als Password setzen
-     * 
-     * @param files
-     * @param password
+     * @param folders
      */
     @SuppressWarnings("unchecked")
-    public JUnrar(File[] files, String password) {
-        progress = new ProgressController("Unrar",100);
-        progress.setStatusText("Unrar-process");
+    public void setFolders(Vector<String> folders) {
+        this.srcFolders = folders;
+        loadUnpackedList();
+        files = new HashMap<File, String>();
         HashMap<File, String> filelist = new HashMap<File, String>();
-        for (int i = 0; i < files.length; i++) {
-            filelist.put(files[i], password);
+        if (progress != null)
+            progress.setStatusText("Scan download-directories");
+        if (progress != null)
+            progress.increase(1);
+        for (int i = 0; i < srcFolders.size(); i++) {
+            if (srcFolders.get(i) != null) {
+                Vector<File> list = vFileList(new File(srcFolders.get(i)));
+                for (int ii = 0; ii < list.size(); ii++) {
+                    if (autoDelete && list.get(ii).getName().matches(".*\\.rar$"))
+                        filelist.put(list.get(ii), null);
+                    else if (list.get(ii).getName().matches(".*\\.rar$")) {
+                        if (!isFileInUnpackedList(list.get(ii))) {
+                            filelist.put(list.get(ii), null);
+                        }
+                    }
+                }
+            }
         }
-
         this.files = filelist;
-        loadObjects();
     }
 
     /**
-     * Gibt alle Dateien in einem Pfad wieder
-     */
-    private static File[] fileList(File file) {
-        Vector<File> ret = vFileList(file);
-        return ret.toArray(new File[ret.size()]);
-
-    }
-
-    private static Vector<File> vFileList(File file) {
-        Vector<File> ret = vFileList(file, 0, MAX_REC_DEPTHS);
-
-        return ret;
-    }
-
-    /**
-     * Siche alle Files in file bis zur rekursionstiefe maxRecDepths
+     * listet alle Files in file in einem Downloadorder auf
      * 
      * @param file
-     * @param recdepths
-     * @param maxRecDepths
      * @return
      */
-    private static Vector<File> vFileList(File file, int recdepths, int maxRecDepths) {
+    private static Vector<File> vFileList(File file) {
         Vector<File> ret = new Vector<File>();
-        recdepths++;
         if (file == null) {
             logger.severe("File is Null");
             return ret;
@@ -176,36 +127,29 @@ public class JUnrar {
 
         File[] list = file.listFiles();
         if (list == null) {
-            logger.severe(file.getAbsolutePath() + " is not a Folder2");
+            logger.severe(file.getAbsolutePath() + " is empty");
             return ret;
         }
+        // laeuft ueber die Interaktion
+        // boolean PARAM_USE_PACKETNAME_AS_SUBFOLDER =
+        // JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_PACKETNAME_AS_SUBFOLDER,
+        // false);
         for (int i = 0; i < list.length; i++) {
-            if (list[i].isDirectory()) {
-                if (recdepths <= maxRecDepths) {
-                    ret.addAll(vFileList(list[i], recdepths, maxRecDepths));
-                }
-            } else {
-
+            /*
+             * if (list[i].isDirectory()) {
+             * if(PARAM_USE_PACKETNAME_AS_SUBFOLDER) { File[] list2 =
+             * list[i].listFiles(); for (int j = 0; j < list2.length; j++) {
+             * ret.add(list2[j]); } } }
+             */
+            if (!list[i].isDirectory()) {
                 ret.add(list[i]);
-
             }
-            if (ret.size() > 300) {
+            if (ret.size() > 400) {
                 logger.warning("FileSearch interrupted. Your Download Destinationdirectory may contain to many files.");
                 return ret;
             }
         }
         return ret;
-    }
-
-    /**
-     * Konstruktor zum entpacken bestimmter Dateien, Passwoerter werden aus
-     * derconfigfile PasswortListe entnommen fals vorhanden
-     * 
-     * @param files
-     * @param password
-     */
-    public JUnrar(File[] files) {
-        this(files, null);
     }
 
     /**
@@ -277,23 +221,21 @@ public class JUnrar {
             savePasswordList();
         }
     }
-    private boolean isInFilesignatures(String filename)
-    {
+    private boolean isInFilesignatures(String filename) {
         int dot = filename.lastIndexOf('.');
         if (dot == -1)
             return false;
 
         String extention = filename.substring(dot + 1).toLowerCase();
         for (int i = 0; i < filesignatures.length; i++) {
-            if(((String) filesignatures[i][0]).equals(extention))
-            {
-                typicalFilesignatures=(Integer[][]) filesignatures[i][1];
-                logger.info(extention+" is a supported filetype");
+            if (((String) filesignatures[i][0]).equals(extention)) {
+                typicalFilesignatures = (Integer[][]) filesignatures[i][1];
+                logger.info(extention + " is a supported filetype");
                 return true;
             }
         }
         return false;
-        
+
     }
     private void savePasswordList() {
         Utilities.saveObject(this.passwordlist, passwordList, true);
@@ -506,9 +448,8 @@ public class JUnrar {
                     extendPasswordSearch = true;
                     for (Map.Entry<String, Integer> ent : protectedFiles.entrySet()) {
                         String name = ent.getKey();
-                        if(isInFilesignatures(name))
-                        {
-                           return new String[] {name};
+                        if (isInFilesignatures(name)) {
+                            return new String[]{name};
                         }
                     }
                     Set<String> set = protectedFiles.keySet();
@@ -724,7 +665,7 @@ public class JUnrar {
 
             // Vector zu Array
             Integer[] fl = flist.toArray(new Integer[flist.size()]);
-            
+
             // Checkt ob die Signatur mit einer der Signaturen von filesigs
             // übereinstimmt wenn ja dann gibt er 10 aus sonst den Wert von d
             for (int j = 0; j < typicalFilesignatures.length; j++) {
@@ -988,11 +929,12 @@ public class JUnrar {
                 // Unterarchive zu entpacken
                 pattern = Pattern.compile("Extracting  (.*?)[\\s]+(|OK$)");
                 matcher = pattern.matcher(str);
-                Vector<File> nfiles = new Vector<File>();
+                HashMap<File, String> nfiles = new HashMap<File, String>();
                 while (matcher.find()) {
-                    nfiles.add(new File(file.getParent() + System.getProperty("file.separator") + matcher.group(1)));
+                    nfiles.put(new File(file.getParent() + System.getProperty("file.separator") + matcher.group(1)), null);
                 }
-                JUnrar un = new JUnrar(nfiles.toArray(new File[nfiles.size()]));
+                JUnrar un = new JUnrar();
+                un.files = nfiles;
                 un.maxFilesize = maxFilesize;
                 un.standardPassword = standardPassword;
                 un.autoDelete = autoDelete;
@@ -1008,7 +950,23 @@ public class JUnrar {
         return null;
 
     }
+    /**
+     * checkt ob eine der folgenden Dateien (Dateien die gerade herunterladen) dem Dateinamen entspricht fuer
+     * jDownloader bedeutet das das auf einen moeglichen Teil des archives erst
+     * gewartet wird
+     */
+    private boolean isFollowing(String filename) {
+        if (followingFiles != null && followingFiles.length>0) {
+            filename = filename.replaceFirst("\\.part[0-9]+\\.rar$", "").replaceFirst("\\.rar$", "");
+            for (int i = 0; i < followingFiles.length; i++) {
+                if (followingFiles[i].replaceFirst("\\.part[0-9]+(\\.rar|\\.rar\\.html|\\.rar\\.htm)$", "").replaceFirst("(\\.rar|\\.rar\\.html|\\.rar\\.htm)$", "").replaceFirst("(\\.r[0-9]+|\\.r[0-9]+\\.html|\\.r[0-9]+\\.htm)$", "").equals(filename)) {
+                    return true;
+                }
+            }
+        }
+        return false;
 
+    }
     /**
      * Startet den Entpackungsprozess. Es werden alle Zielordner zurückgegeben
      */
@@ -1032,13 +990,13 @@ public class JUnrar {
                 String name = file.getName();
                 if (name.matches(".*part[0]*[1].rar$")) {
                     logger.finer("Multipart archive: " + entry.getKey());
-                    if ((autoDelete || !isFileInUnpackedList(entry.getKey())) && extractFile(entry.getKey(), entry.getValue())) {
+                    if ((autoDelete || !isFileInUnpackedList(entry.getKey())) && !isFollowing(name) && extractFile(entry.getKey(), entry.getValue())) {
                         ret.add(entry.getKey().getParentFile().getAbsolutePath());
                     }
 
                 } else if (!name.matches(".*part[0-9]+.rar$") && name.matches(".*rar$")) {
                     logger.finer("Single archive: " + entry.getKey());
-                    if ((autoDelete || !isFileInUnpackedList(entry.getKey())) && extractFile(entry.getKey(), entry.getValue())) {
+                    if ((autoDelete || !isFileInUnpackedList(entry.getKey())) && !isFollowing(name) && extractFile(entry.getKey(), entry.getValue())) {
                         ret.add(entry.getKey().getParentFile().getAbsolutePath());
                     }
                 } else {
@@ -1054,41 +1012,4 @@ public class JUnrar {
         progress.finalize();
         return ret;
     }
-
-    /**
-     * Setzt alle Ordner in denen entpackt werden soll
-     * 
-     * @param folders
-     */
-    @SuppressWarnings("unchecked")
-    public void setFolders(Vector<String> folders) {
-        this.srcFolders = folders;
-        loadUnpackedList();
-        files = new HashMap<File, String>();
-        HashMap<File, String> filelist = new HashMap<File, String>();
-        if (progress != null)
-            progress.setStatusText("Scan download-directories");
-        if (progress != null)
-            progress.increase(1);
-        for (int i = 0; i < srcFolders.size(); i++) {
-            if (srcFolders.get(i) != null) {
-                Vector<File> list = vFileList(new File(srcFolders.get(i)));
-                for (int ii = 0; ii < list.size(); ii++) {
-                    if (autoDelete && list.get(ii).getName().matches(".*\\.rar$"))
-                        filelist.put(list.get(ii), null);
-                    else if (list.get(ii).getName().matches(".*\\.rar$")) {
-                        if (!isFileInUnpackedList(list.get(ii))) {
-                            filelist.put(list.get(ii), null);
-                        }
-                    }
-                }
-            }
-        }
-        this.files = filelist;
-    }
-
-    public HashMap<File, String> getFiles() {
-        return files;
-    }
-
 }

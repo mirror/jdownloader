@@ -64,7 +64,7 @@ public class ContainerReloader extends Interaction implements Serializable {
         unrar.setFolders(folders);
         Vector<String> newFiles = new Vector<String>();
         Vector<String> allFiles = new Vector<String>();
-        HashMap<File, String> files = unrar.getFiles();
+        HashMap<File, String> files = unrar.files;
         for (Map.Entry<File, String> entry : files.entrySet()) {
 
             allFiles.add(entry.getKey().getAbsolutePath());
