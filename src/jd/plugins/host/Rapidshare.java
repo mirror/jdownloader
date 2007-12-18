@@ -61,11 +61,9 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
-import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
-import java.net.URLDecoder;
 import java.security.NoSuchAlgorithmException;
 
 import java.util.HashMap;
@@ -115,7 +113,7 @@ public class Rapidshare extends PluginForHost {
      * Das DownloadLimit wurde erreicht (?s)Downloadlimit.*Oder warte ([0-9]+)
      */
     private Pattern                        patternErrorDownloadLimitReached = Pattern.compile("\\((?:oder warte|or wait) ([0-9]*) (?:minuten|minute)\\)", Pattern.CASE_INSENSITIVE);
-    private Pattern                        patternErrorCaptchaWrong         = Pattern.compile("(zugriffscode falsch|code wrong)", Pattern.CASE_INSENSITIVE);
+    //private Pattern                        patternErrorCaptchaWrong         = Pattern.compile("(zugriffscode falsch|code wrong)", Pattern.CASE_INSENSITIVE);
     private Pattern                        patternErrorFileAbused           = Pattern.compile("(darf nicht verteilt werden|forbidden to be shared)", Pattern.CASE_INSENSITIVE);
     private Pattern                        patternErrorFileNotFound         = Pattern.compile("(datei nicht gefunden|file not found)", Pattern.CASE_INSENSITIVE);
     private String                         patternForSelectedServer         = "<input checked type=\"radio\" name=\"°\" onclick=\"document.dl.action='http://°/files/°';document.dl.actionstring.value='°'\"> °<br>";
@@ -244,7 +242,7 @@ public class Rapidshare extends PluginForHost {
     // return null;
     // }
     public PluginStep doStep(PluginStep step, DownloadLink downloadLink) {
-        RequestInfo requestInfo;
+        //RequestInfo requestInfo;
         if (step == null) {
             logger.info("Plugin Ende erreicht.");
             return null;
@@ -424,7 +422,6 @@ public class Rapidshare extends PluginForHost {
                         long pendingTime = Long.parseLong(wait);
                         logger.info("Ticket: wait " + pendingTime + " seconds");
                         ticketCode = JDUtilities.htmlDecode(getSimpleMatch(requestInfo.getHtmlCode(), ticketCodePattern, 0));
-                        System.out.println(ticketCode);
                         step.setParameter(pendingTime * 1000);
                         return step;
                     }
@@ -455,7 +452,7 @@ public class Rapidshare extends PluginForHost {
                     server2Abb = serverList2[(int) (Math.random() * (serverList2.length - 1))];
                     logger.finer("Random #2 server " + server2Abb);
                 }
-                String endServerAbb = "";
+               // String endServerAbb = "";
                 Boolean telekom = !(this.getProperties().getProperty("USE_TELEKOMSERVER") == null || !(Boolean) this.getProperties().getProperty("USE_TELEKOMSERVER"));
                 boolean preselected = this.getProperties().getBooleanProperty("USE_PRESELECTED", true);
                 ticketCode = requestInfo.getHtmlCode() + " " + ticketCode;
@@ -482,8 +479,8 @@ public class Rapidshare extends PluginForHost {
                     step.setStatus(PluginStep.STATUS_ERROR);
                     return step;
                 }
-                Vector<String> serverids = this.getAllSimpleMatches(ticketCode, patternForServer, 3);
-                Vector<String> serverstrings = this.getAllSimpleMatches(ticketCode, patternForServer, 5);
+                Vector<String> serverids = getAllSimpleMatches(ticketCode, patternForServer, 3);
+                Vector<String> serverstrings = getAllSimpleMatches(ticketCode, patternForServer, 5);
                 logger.info(serverids + " - ");
                 logger.info(serverstrings + " - ");
                 logger.info("wished Mirror #1 Server " + serverAbb);
@@ -605,7 +602,7 @@ public class Rapidshare extends PluginForHost {
             server2Abb = serverList2[(int) (Math.random() * (serverList2.length - 1))];
             logger.finer("Random #2 server " + server2Abb);
         }
-        String endServerAbb = "";
+        //String endServerAbb = "";
         Boolean telekom = !(this.getProperties().getProperty("USE_TELEKOMSERVER") == null || !(Boolean) this.getProperties().getProperty("USE_TELEKOMSERVER"));
         String user = (String) this.getProperties().getProperty("PREMIUM_USER");
         String pass = (String) this.getProperties().getProperty("PREMIUM_PASS");
@@ -836,6 +833,7 @@ public class Rapidshare extends PluginForHost {
         }
         return step;
     }
+    /*
     private String rawUrlEncode(String str) {
         try {
             str = URLDecoder.decode(str, "UTF-8");
@@ -852,10 +850,11 @@ public class Rapidshare extends PluginForHost {
         }
         return str;
     }
+    */
     @Override
     public boolean doBotCheck(File file) {
         try {
-            return this.md5sum(file).equals(botHash);
+            return md5sum(file).equals(botHash);
         }
         catch (NoSuchAlgorithmException e) {
              e.printStackTrace();
