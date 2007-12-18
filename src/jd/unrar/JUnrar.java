@@ -990,15 +990,15 @@ public class JUnrar {
             File file = entry.getKey();
             if (file.isFile()) {
                 String name = file.getName();
-                if (name.matches(".*part[0]*[1].rar$")) {
+                if (name.matches(".*part[0]*[1].rar$") && (autoDelete || !isFileInUnpackedList(entry.getKey())) &&  !isFollowing(name) ) {
                     logger.finer("Multipart archive: " + entry.getKey());
-                    if ((autoDelete || !isFileInUnpackedList(entry.getKey())) && !isFollowing(name) && extractFile(entry.getKey(), entry.getValue())) {
+                    if (extractFile(entry.getKey(), entry.getValue())) {
                         ret.add(entry.getKey().getParentFile().getAbsolutePath());
                     }
 
-                } else if (!name.matches(".*part[0-9]+.rar$") && name.matches(".*rar$")) {
+                } else if (!name.matches(".*part[0-9]+.rar$") && name.matches(".*rar$") && (autoDelete || !isFileInUnpackedList(entry.getKey())) && !isFollowing(name)) {
                     logger.finer("Single archive: " + entry.getKey());
-                    if ((autoDelete || !isFileInUnpackedList(entry.getKey())) && !isFollowing(name) && extractFile(entry.getKey(), entry.getValue())) {
+                    if (extractFile(entry.getKey(), entry.getValue())) {
                         ret.add(entry.getKey().getParentFile().getAbsolutePath());
                     }
                 } else {
