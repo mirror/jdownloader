@@ -959,9 +959,9 @@ public class JUnrar {
      */
     private boolean isFollowing(String filename) {
         if (followingFiles != null && followingFiles.length > 0) {
-            filename = filename.replaceFirst("\\.part[0-9]+\\.rar$", "").replaceFirst("\\.rar$", "");
+            filename = filename.replaceFirst("\\.part[0-9]+\\.rar$", "").replaceFirst("\\.rar$", "").toLowerCase();
             for (int i = 0; i < followingFiles.length; i++) {
-                if (followingFiles[i].replaceFirst("\\.part[0-9]+(\\.rar|\\.rar\\.html|\\.rar\\.htm)$", "").replaceFirst("(\\.rar|\\.rar\\.html|\\.rar\\.htm)$", "").replaceFirst("(\\.r[0-9]+|\\.r[0-9]+\\.html|\\.r[0-9]+\\.htm)$", "").equals(filename)) {
+                if (followingFiles[i].replaceFirst("\\.part[0-9]+(\\.rar|\\.rar\\.html|\\.rar\\.htm)$", "").replaceFirst("(\\.rar|\\.rar\\.html|\\.rar\\.htm)$", "").replaceFirst("(\\.r[0-9]+|\\.r[0-9]+\\.html|\\.r[0-9]+\\.htm)$", "").toLowerCase().equals(filename)) {
                     return true;
                 }
             }
