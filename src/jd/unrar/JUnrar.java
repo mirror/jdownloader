@@ -19,6 +19,8 @@ import java.util.Map.Entry;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import jd.config.Configuration;
 import jd.controlling.ProgressController;
 import jd.utils.JDUtilities;
 
@@ -130,18 +132,20 @@ public class JUnrar {
             logger.severe(file.getAbsolutePath() + " is empty");
             return ret;
         }
-        // laeuft ueber die Interaktion
         // boolean PARAM_USE_PACKETNAME_AS_SUBFOLDER =
         // JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_PACKETNAME_AS_SUBFOLDER,
         // false);
         for (int i = 0; i < list.length; i++) {
-            /*
-             * if (list[i].isDirectory()) {
-             * if(PARAM_USE_PACKETNAME_AS_SUBFOLDER) { File[] list2 =
-             * list[i].listFiles(); for (int j = 0; j < list2.length; j++) {
-             * ret.add(list2[j]); } } }
-             */
-            if (!list[i].isDirectory()) {
+
+            if (list[i].isDirectory()) {
+                File[] list2 = list[i].listFiles();
+                for (int j = 0; j < list2.length; j++) {
+                    ret.add(list2[j]);
+                }
+
+            }
+
+            else {
                 ret.add(list[i]);
             }
             if (ret.size() > 400) {
@@ -951,12 +955,12 @@ public class JUnrar {
 
     }
     /**
-     * checkt ob eine der folgenden Dateien (Dateien die gerade herunterladen) dem Dateinamen entspricht fuer
-     * jDownloader bedeutet das das auf einen moeglichen Teil des archives erst
-     * gewartet wird
+     * checkt ob eine der folgenden Dateien (Dateien die gerade herunterladen)
+     * dem Dateinamen entspricht fuer jDownloader bedeutet das das auf einen
+     * moeglichen Teil des archives erst gewartet wird
      */
     private boolean isFollowing(String filename) {
-        if (followingFiles != null && followingFiles.length>0) {
+        if (followingFiles != null && followingFiles.length > 0) {
             filename = filename.replaceFirst("\\.part[0-9]+\\.rar$", "").replaceFirst("\\.rar$", "");
             for (int i = 0; i < followingFiles.length; i++) {
                 if (followingFiles[i].replaceFirst("\\.part[0-9]+(\\.rar|\\.rar\\.html|\\.rar\\.htm)$", "").replaceFirst("(\\.rar|\\.rar\\.html|\\.rar\\.htm)$", "").replaceFirst("(\\.r[0-9]+|\\.r[0-9]+\\.html|\\.r[0-9]+\\.htm)$", "").equals(filename)) {
