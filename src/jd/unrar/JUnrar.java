@@ -19,8 +19,6 @@ import java.util.Map.Entry;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import jd.config.Configuration;
 import jd.controlling.ProgressController;
 import jd.utils.JDUtilities;
 
@@ -136,7 +134,8 @@ public class JUnrar {
         // JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_PACKETNAME_AS_SUBFOLDER,
         // false);
         for (int i = 0; i < list.length; i++) {
-
+            //Unterordner werden mitaufgelistet 
+            //Das wird eigentlich nichtmehr benoetigt ist aus sicherheitgruenden jedoch noch drinnen
             if (list[i].isDirectory()) {
                 File[] list2 = list[i].listFiles();
                 for (int j = 0; j < list2.length; j++) {
@@ -144,7 +143,6 @@ public class JUnrar {
                 }
 
             }
-
             else {
                 ret.add(list[i]);
             }
