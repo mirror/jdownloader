@@ -2,8 +2,10 @@ package jd.plugins.decrypt;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Vector;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import jd.config.ConfigContainer;
@@ -15,41 +17,43 @@ import jd.utils.JDUtilities;
 
 public class YoumirrorBiz extends PluginForDecrypt {
 
-    final static String host                = "youmirror.biz";
+    final static String host = "youmirror.biz";
 
-    private String      version             = "1.0.0.0";
+    private String version = "2.0.0.0";
 
-    private Pattern     patternSupported    = getSupportPattern("http://[*]youmirror.biz[*]/f[+]");
+    private Pattern patternSupported = getSupportPattern("http://[*]youmirror.biz[*]/f[+]");
 
-    private Pattern     patternRapidshare   = Pattern.compile("1\" target=\"_blank\">rapidshare.com");   // +
+    private Pattern patternRapidshare = Pattern.compile("1\" target=\"_blank\">rapidshare.com"); // +
 
-    private Pattern     patternNetload      = Pattern.compile("2\" target=\"_blank\">netload.in");
+    private Pattern patternNetload = Pattern.compile("2\" target=\"_blank\">netload.in");
 
-    private Pattern     patternUploaded     = Pattern.compile("4\" target=\"_blank\">uploaded.to");      // +
+    private Pattern patternUploaded = Pattern.compile("4\" target=\"_blank\">uploaded.to"); // +
 
-    private Pattern     patternGulli        = Pattern.compile("5\" target=\"_blank\">gulli.com");        // +
+    private Pattern patternGulli = Pattern.compile("5\" target=\"_blank\">gulli.com"); // +
 
-    private Pattern     patternShareonline  = Pattern.compile("6\" target=\"_blank\">share-online.biz"); // +
+    private Pattern patternShareonline = Pattern.compile("6\" target=\"_blank\">share-online.biz"); // +
 
-    private Pattern     patternLoad         = Pattern.compile("7\" target=\"_blank\">load.to");          // +
+    private Pattern patternLoad = Pattern.compile("7\" target=\"_blank\">load.to"); // +
 
-    private Pattern     patternSimpleupload = Pattern.compile("8\" target=\"_blank\">simpleupload.net"); // +
+    private Pattern patternSimpleupload = Pattern.compile("8\" target=\"_blank\">simpleupload.net"); // +
 
-    private Pattern     patternCocoshare    = Pattern.compile("9\" target=\"_blank\">cocoshare.cc");     // +
+    private Pattern patternCocoshare = Pattern.compile("9\" target=\"_blank\">cocoshare.cc"); // +
 
-    private Pattern     patternFilehoster   = Pattern.compile("10\" target=\"_blank\">filehoster.mobi");
+    private Pattern patternFilehoster = Pattern.compile("10\" target=\"_blank\">filehoster.mobi");
 
-    private Pattern     patternMegaupload   = Pattern.compile("11\" target=\"_blank\">megaupload.com");  // +
+    private Pattern patternMegaupload = Pattern.compile("11\" target=\"_blank\">megaupload.com"); // +
 
-    private Pattern     patternSpeedyshare  = Pattern.compile("12\" target=\"_blank\">speedyshare.com"); // +
+    private Pattern patternSpeedyshare = Pattern.compile("12\" target=\"_blank\">speedyshare.com"); // +
 
-    private Pattern     patternArchiv       = Pattern.compile("13\" target=\"_blank\">archiv.to");       // +
+    private Pattern patternArchiv = Pattern.compile("13\" target=\"_blank\">archiv.to"); // +
 
-    private Pattern     patternDatenklo     = Pattern.compile("/14\" target=\"_blank\">datenklo.net");   // +
+    private Pattern patternDatenklo = Pattern.compile("/14\" target=\"_blank\">datenklo.net"); // +
 
-    private Pattern     patternBluehost     = Pattern.compile("/15\" target=\"_blank\">bluehost.to");    // +
+    private Pattern patternBluehost = Pattern.compile("/15\" target=\"_blank\">bluehost.to"); // +
 
-    private Pattern     patternSharebase    = Pattern.compile("/16\" target=\"_blank\">sharebase.de");   // +
+    private Pattern patternSharebase = Pattern.compile("/16\" target=\"_blank\">sharebase.de"); // +
+    
+    private Pattern folderLinks = Pattern.compile("<a href=\"(/adfree/file/.*?)\">", Pattern.CASE_INSENSITIVE);
 
     /*
      * 1 Rapidshare.com 2 Netload.in 3 oxedion (offline) 4 Uploaded.to 5
@@ -67,7 +71,7 @@ public class YoumirrorBiz extends PluginForDecrypt {
 
     @Override
     public String getCoder() {
-        return "Botzi";
+        return "Botzi | DwD (ym.folder)";
     }
 
     @Override
@@ -94,153 +98,176 @@ public class YoumirrorBiz extends PluginForDecrypt {
     public String getVersion() {
         return version;
     }
+    private Vector<String> getLinks(String parameter) {
+        Vector<String> decryptedLinks = new Vector<String>();
+        try {
+            URL url = new URL(parameter);
+            RequestInfo reqinfo = getRequest(url);
+            int count = 0;
+            // Links zählen
+            if ((Boolean) this.getProperties().getProperty("USE_RAPIDSHARE", true) && countOccurences(reqinfo.getHtmlCode(), patternRapidshare) > 0) {
+                count++;
+            }
+            if ((Boolean) this.getProperties().getProperty("USE_NETLOAD", true) && countOccurences(reqinfo.getHtmlCode(), patternNetload) > 0) {
+                count++;
+            }
+            if ((Boolean) this.getProperties().getProperty("USE_UPLOADED", true) && countOccurences(reqinfo.getHtmlCode(), patternUploaded) > 0) {
+                count++;
+            }
+            if ((Boolean) this.getProperties().getProperty("USE_GULLI", true) && countOccurences(reqinfo.getHtmlCode(), patternGulli) > 0) {
+                count++;
+            }
+            if ((Boolean) this.getProperties().getProperty("USE_SHAREONLINE", true) && countOccurences(reqinfo.getHtmlCode(), patternShareonline) > 0) {
+                count++;
+            }
+            if ((Boolean) this.getProperties().getProperty("USE_LOAD", true) && countOccurences(reqinfo.getHtmlCode(), patternLoad) > 0) {
+                count++;
+            }
+            if ((Boolean) this.getProperties().getProperty("USE_SIMPLEUPLOAD", true) && countOccurences(reqinfo.getHtmlCode(), patternSimpleupload) > 0) {
+                count++;
+            }
+            if ((Boolean) this.getProperties().getProperty("USE_COCOSHARE", true) && countOccurences(reqinfo.getHtmlCode(), patternCocoshare) > 0) {
+                count++;
+            }
+            if ((Boolean) this.getProperties().getProperty("USE_FILEHOSTER", true) && countOccurences(reqinfo.getHtmlCode(), patternFilehoster) > 0) {
+                count++;
+            }
+            if ((Boolean) this.getProperties().getProperty("USE_MEGAUPLOAD", true) && countOccurences(reqinfo.getHtmlCode(), patternMegaupload) > 0) {
+                count++;
+            }
+            if ((Boolean) this.getProperties().getProperty("USE_SPEEDYSHARE", true) && countOccurences(reqinfo.getHtmlCode(), patternSpeedyshare) > 0) {
+                count++;
+            }
+            if ((Boolean) this.getProperties().getProperty("USE_ARCHIV", true) && countOccurences(reqinfo.getHtmlCode(), patternArchiv) > 0) {
+                count++;
+            }
+            if ((Boolean) this.getProperties().getProperty("USE_BLUEHOST", true) && countOccurences(reqinfo.getHtmlCode(), patternBluehost) > 0) {
+                count++;
+            }
+            if ((Boolean) this.getProperties().getProperty("USE_DATENKLO", true) && countOccurences(reqinfo.getHtmlCode(), patternDatenklo) > 0) {
+                count++;
+            }
+            if ((Boolean) this.getProperties().getProperty("USE_SHAREBASE", true) && countOccurences(reqinfo.getHtmlCode(), patternSharebase) > 0) {
+                count++;
+            }
 
-    @Override public PluginStep doStep(PluginStep step, String parameter) {
-    	if(step.getStep() == PluginStep.STEP_DECRYPT) {
+            progress.setRange(count);
+
+            RequestInfo reqhelp;
+
+            parameter = parameter.replaceAll("/file/", "/out/");
+            parameter = parameter.replaceAll("/adfree", "");
+
+            if ((Boolean) this.getProperties().getProperty("USE_RAPIDSHARE", true) && countOccurences(reqinfo.getHtmlCode(), patternRapidshare) > 0) {
+                reqhelp = getRequest(new URL(parameter + "/1"));
+                decryptedLinks.add(getBetween(reqhelp.getHtmlCode(), "src=\"", "\""));
+                progress.increase(1);
+            }
+            if ((Boolean) this.getProperties().getProperty("USE_NETLOAD", true) && countOccurences(reqinfo.getHtmlCode(), patternNetload) > 0) {
+                reqhelp = getRequest(new URL(parameter + "/2"));
+                decryptedLinks.add(getBetween(reqhelp.getHtmlCode(), "src=\"", "\""));
+                progress.increase(1);
+            }
+            if ((Boolean) this.getProperties().getProperty("USE_UPLOADED", true) && countOccurences(reqinfo.getHtmlCode(), patternUploaded) > 0) {
+                reqhelp = getRequest(new URL(parameter + "/4"));
+                decryptedLinks.add(getBetween(reqhelp.getHtmlCode(), "src=\"", "\""));
+                progress.increase(1);
+            }
+            if ((Boolean) this.getProperties().getProperty("USE_GULLI", true) && countOccurences(reqinfo.getHtmlCode(), patternGulli) > 0) {
+                reqhelp = getRequest(new URL(parameter + "/5"));
+                decryptedLinks.add(getBetween(reqhelp.getHtmlCode(), "src=\"", "\""));
+                progress.increase(1);
+            }
+            if ((Boolean) this.getProperties().getProperty("USE_SHAREONLINE", true) && countOccurences(reqinfo.getHtmlCode(), patternShareonline) > 0) {
+                reqhelp = getRequest(new URL(parameter + "/6"));
+                decryptedLinks.add(getBetween(reqhelp.getHtmlCode(), "src=\"", "\""));
+                progress.increase(1);
+            }
+            if ((Boolean) this.getProperties().getProperty("USE_LOAD", true) && countOccurences(reqinfo.getHtmlCode(), patternLoad) > 0) {
+                reqhelp = getRequest(new URL(parameter + "/7"));
+                decryptedLinks.add(getBetween(reqhelp.getHtmlCode(), "src=\"", "\""));
+                progress.increase(1);
+            }
+            if ((Boolean) this.getProperties().getProperty("USE_SIMPLEUPLOAD", true) && countOccurences(reqinfo.getHtmlCode(), patternSimpleupload) > 0) {
+                reqhelp = getRequest(new URL(parameter + "/8"));
+                decryptedLinks.add(getBetween(reqhelp.getHtmlCode(), "src=\"", "\""));
+                progress.increase(1);
+            }
+            if ((Boolean) this.getProperties().getProperty("USE_COCOSHARE", true) && countOccurences(reqinfo.getHtmlCode(), patternCocoshare) > 0) {
+                reqhelp = getRequest(new URL(parameter + "/9"));
+                decryptedLinks.add(getBetween(reqhelp.getHtmlCode(), "src=\"", "\""));
+                progress.increase(1);
+            }
+            if ((Boolean) this.getProperties().getProperty("USE_FILEHOSTER", true) && countOccurences(reqinfo.getHtmlCode(), patternFilehoster) > 0) {
+                reqhelp = getRequest(new URL(parameter + "/10"));
+                decryptedLinks.add(getBetween(reqhelp.getHtmlCode(), "src=\"", "\""));
+                progress.increase(1);
+            }
+            if ((Boolean) this.getProperties().getProperty("USE_MEGAUPLOAD", true) && countOccurences(reqinfo.getHtmlCode(), patternMegaupload) > 0) {
+                reqhelp = getRequest(new URL(parameter + "/11"));
+                decryptedLinks.add(getBetween(reqhelp.getHtmlCode(), "src=\"", "\""));
+                progress.increase(1);
+            }
+            if ((Boolean) this.getProperties().getProperty("USE_SPEEDYSHARE", true) && countOccurences(reqinfo.getHtmlCode(), patternSpeedyshare) > 0) {
+                reqhelp = getRequest(new URL(parameter + "/12"));
+                decryptedLinks.add(getBetween(reqhelp.getHtmlCode(), "src=\"", "\""));
+                progress.increase(1);
+            }
+            if ((Boolean) this.getProperties().getProperty("USE_ARCHIV", true) && countOccurences(reqinfo.getHtmlCode(), patternArchiv) > 0) {
+                reqhelp = getRequest(new URL(parameter + "/13"));
+                decryptedLinks.add(getBetween(reqhelp.getHtmlCode(), "src=\"", "\""));
+                progress.increase(1);
+            }
+            if ((Boolean) this.getProperties().getProperty("USE_DATENKLO", true) && countOccurences(reqinfo.getHtmlCode(), patternDatenklo) > 0) {
+                reqhelp = getRequest(new URL(parameter + "/14"));
+                decryptedLinks.add(getBetween(reqhelp.getHtmlCode(), "src=\"", "\""));
+                progress.increase(1);
+            }
+            if ((Boolean) this.getProperties().getProperty("USE_BLUEHOST", true) && countOccurences(reqinfo.getHtmlCode(), patternBluehost) > 0) {
+                reqhelp = getRequest(new URL(parameter + "/15"));
+                decryptedLinks.add(getBetween(reqhelp.getHtmlCode(), "src=\"", "\""));
+                progress.increase(1);
+            }
+            if ((Boolean) this.getProperties().getProperty("USE_SHAREBASE", true) && countOccurences(reqinfo.getHtmlCode(), patternSharebase) > 0) {
+                reqhelp = getRequest(new URL(parameter + "/16"));
+                decryptedLinks.add(getBetween(reqhelp.getHtmlCode(), "src=\"", "\""));
+                progress.increase(1);
+            }
+        } catch (IOException e) {
+            JDUtilities.logException(e);
+        }
+        return decryptedLinks;
+    }
+    @Override
+    public PluginStep doStep(PluginStep step, String parameter) {
+        if (step.getStep() == PluginStep.STEP_DECRYPT) {
             Vector<String> decryptedLinks = new Vector<String>();
-    		try {
-    			URL url = new URL(parameter);
-    			RequestInfo reqinfo = getRequest(url);
-    			int count = 0;
-    			// Links zählen
-    			if((Boolean) this.getProperties().getProperty("USE_RAPIDSHARE", true) && countOccurences(reqinfo.getHtmlCode(), patternRapidshare) > 0) {
-    				count++;
-    			}
-    			if((Boolean) this.getProperties().getProperty("USE_NETLOAD", true) && countOccurences(reqinfo.getHtmlCode(), patternNetload) > 0) {
-    				count++;
-    			}
-    			if((Boolean) this.getProperties().getProperty("USE_UPLOADED", true) && countOccurences(reqinfo.getHtmlCode(), patternUploaded) > 0) {
-    				count++;
-    			}
-    			if((Boolean) this.getProperties().getProperty("USE_GULLI", true) && countOccurences(reqinfo.getHtmlCode(), patternGulli) > 0) {
-    				count++;
-    			}
-    			if((Boolean) this.getProperties().getProperty("USE_SHAREONLINE", true) && countOccurences(reqinfo.getHtmlCode(), patternShareonline) > 0) {
-    				count++;
-    			}
-    			if((Boolean) this.getProperties().getProperty("USE_LOAD", true) && countOccurences(reqinfo.getHtmlCode(), patternLoad) > 0) {
-    				count++;
-    			}
-    			if((Boolean) this.getProperties().getProperty("USE_SIMPLEUPLOAD", true) && countOccurences(reqinfo.getHtmlCode(), patternSimpleupload) > 0) {
-    				count++;
-    			}
-    			if((Boolean) this.getProperties().getProperty("USE_COCOSHARE", true) && countOccurences(reqinfo.getHtmlCode(), patternCocoshare) > 0) {
-    				count++;
-    			}
-    			if((Boolean) this.getProperties().getProperty("USE_FILEHOSTER", true) && countOccurences(reqinfo.getHtmlCode(), patternFilehoster) > 0) {
-    				count++;
-    			}
-    			if((Boolean) this.getProperties().getProperty("USE_MEGAUPLOAD", true) && countOccurences(reqinfo.getHtmlCode(), patternMegaupload) > 0) {
-    				count++;
-    			}
-    			if((Boolean) this.getProperties().getProperty("USE_SPEEDYSHARE", true) && countOccurences(reqinfo.getHtmlCode(), patternSpeedyshare) > 0) {
-    				count++;
-    			}
-    			if((Boolean) this.getProperties().getProperty("USE_ARCHIV", true) && countOccurences(reqinfo.getHtmlCode(), patternArchiv) > 0) {
-    				count++;
-    			}
-    			if((Boolean) this.getProperties().getProperty("USE_BLUEHOST", true) && countOccurences(reqinfo.getHtmlCode(), patternBluehost) > 0) {
-    				count++;
-    			}
-    			if((Boolean) this.getProperties().getProperty("USE_DATENKLO", true) && countOccurences(reqinfo.getHtmlCode(), patternDatenklo) > 0) {
-    				count++;
-    			}
-    			if((Boolean) this.getProperties().getProperty("USE_SHAREBASE", true) && countOccurences(reqinfo.getHtmlCode(), patternSharebase) > 0) {
-    				count++;
-    			}
-    			
-    			progress.setRange( count);
+            if (parameter.matches(".*?/adfree/folder/.*")) {
+                try {
+                    URL url = new URL(parameter);
+                    RequestInfo reqinfo = getRequest(url);
+                    Matcher matcher = folderLinks.matcher(reqinfo.getHtmlCode());
+                    String hst = "http://"+url.getHost();
+                    while (matcher.find()) {
+                        decryptedLinks.addAll(getLinks(hst+matcher.group(1)));
+                    }
+                    
+                } catch (MalformedURLException e) {
+                    // TODO Auto-generated catch block
+                    e.printStackTrace();
+                } catch (IOException e) {
+                    // TODO Auto-generated catch block
+                    e.printStackTrace();
+                }
 
-    			RequestInfo reqhelp;
-    			
-    			parameter = parameter.replaceAll("/file/", "/out/");
-    			parameter = parameter.replaceAll("/adfree", "");
-    			
-    			if((Boolean) this.getProperties().getProperty("USE_RAPIDSHARE", true) && countOccurences(reqinfo.getHtmlCode(), patternRapidshare) > 0) {
-    				reqhelp = getRequest(new URL(parameter + "/1"));
-    				decryptedLinks.add(getBetween(reqhelp.getHtmlCode(), "src=\"", "\""));
-    			progress.increase(1);
-    			}
-    			if((Boolean) this.getProperties().getProperty("USE_NETLOAD", true) && countOccurences(reqinfo.getHtmlCode(), patternNetload) > 0) {
-    				reqhelp = getRequest(new URL(parameter + "/2"));
-    				decryptedLinks.add(getBetween(reqhelp.getHtmlCode(), "src=\"", "\""));
-    			progress.increase(1);
-    			}
-    			if((Boolean) this.getProperties().getProperty("USE_UPLOADED", true) && countOccurences(reqinfo.getHtmlCode(), patternUploaded) > 0) {
-    				reqhelp = getRequest(new URL(parameter + "/4"));
-    				decryptedLinks.add(getBetween(reqhelp.getHtmlCode(), "src=\"", "\""));
-    			progress.increase(1);
-    			}
-    			if((Boolean) this.getProperties().getProperty("USE_GULLI", true) && countOccurences(reqinfo.getHtmlCode(), patternGulli) > 0) {
-    				reqhelp = getRequest(new URL(parameter + "/5"));
-    				decryptedLinks.add(getBetween(reqhelp.getHtmlCode(), "src=\"", "\""));
-    			progress.increase(1);
-    			}
-    			if((Boolean) this.getProperties().getProperty("USE_SHAREONLINE", true) && countOccurences(reqinfo.getHtmlCode(), patternShareonline) > 0) {
-    				reqhelp = getRequest(new URL(parameter + "/6"));
-    				decryptedLinks.add(getBetween(reqhelp.getHtmlCode(), "src=\"", "\""));
-    			progress.increase(1);
-    			}
-    			if((Boolean) this.getProperties().getProperty("USE_LOAD", true) && countOccurences(reqinfo.getHtmlCode(), patternLoad) > 0) {
-    				reqhelp = getRequest(new URL(parameter + "/7"));
-    				decryptedLinks.add(getBetween(reqhelp.getHtmlCode(), "src=\"", "\""));
-    			progress.increase(1);
-    			}
-    			if((Boolean) this.getProperties().getProperty("USE_SIMPLEUPLOAD", true) && countOccurences(reqinfo.getHtmlCode(), patternSimpleupload) > 0) {
-    				reqhelp = getRequest(new URL(parameter + "/8"));
-    				decryptedLinks.add(getBetween(reqhelp.getHtmlCode(), "src=\"", "\""));
-    			progress.increase(1);
-    			}
-    			if((Boolean) this.getProperties().getProperty("USE_COCOSHARE", true) && countOccurences(reqinfo.getHtmlCode(), patternCocoshare) > 0) {
-    				reqhelp = getRequest(new URL(parameter + "/9"));
-    				decryptedLinks.add(getBetween(reqhelp.getHtmlCode(), "src=\"", "\""));
-    			progress.increase(1);
-    			}
-    			if((Boolean) this.getProperties().getProperty("USE_FILEHOSTER", true) && countOccurences(reqinfo.getHtmlCode(), patternFilehoster) > 0) {
-    				reqhelp = getRequest(new URL(parameter + "/10"));
-    				decryptedLinks.add(getBetween(reqhelp.getHtmlCode(), "src=\"", "\""));
-    			progress.increase(1);
-    			}
-    			if((Boolean) this.getProperties().getProperty("USE_MEGAUPLOAD", true) && countOccurences(reqinfo.getHtmlCode(), patternMegaupload) > 0) {
-    				reqhelp = getRequest(new URL(parameter + "/11"));
-    				decryptedLinks.add(getBetween(reqhelp.getHtmlCode(), "src=\"", "\""));
-    			progress.increase(1);
-    			}
-    			if((Boolean) this.getProperties().getProperty("USE_SPEEDYSHARE", true) && countOccurences(reqinfo.getHtmlCode(), patternSpeedyshare) > 0) {
-    				reqhelp = getRequest(new URL(parameter + "/12"));
-    				decryptedLinks.add(getBetween(reqhelp.getHtmlCode(), "src=\"", "\""));
-    			progress.increase(1);
-    			}
-    			if((Boolean) this.getProperties().getProperty("USE_ARCHIV", true) && countOccurences(reqinfo.getHtmlCode(), patternArchiv) > 0) {
-    				reqhelp = getRequest(new URL(parameter + "/13"));
-    				decryptedLinks.add(getBetween(reqhelp.getHtmlCode(), "src=\"", "\""));
-    			progress.increase(1);
-    			}
-    			if((Boolean) this.getProperties().getProperty("USE_DATENKLO", true) && countOccurences(reqinfo.getHtmlCode(), patternDatenklo) > 0) {
-    				reqhelp = getRequest(new URL(parameter + "/14"));
-    				decryptedLinks.add(getBetween(reqhelp.getHtmlCode(), "src=\"", "\""));
-    			progress.increase(1);
-    			}
-    			if((Boolean) this.getProperties().getProperty("USE_BLUEHOST", true) && countOccurences(reqinfo.getHtmlCode(), patternBluehost) > 0) {
-    				reqhelp = getRequest(new URL(parameter + "/15"));
-    				decryptedLinks.add(getBetween(reqhelp.getHtmlCode(), "src=\"", "\""));
-    			progress.increase(1);
-    			}
-    			if((Boolean) this.getProperties().getProperty("USE_SHAREBASE", true) && countOccurences(reqinfo.getHtmlCode(), patternSharebase) > 0) {
-    				reqhelp = getRequest(new URL(parameter + "/16"));
-    				decryptedLinks.add(getBetween(reqhelp.getHtmlCode(), "src=\"", "\""));
-    			progress.increase(1);
-    			}
-
-    			// Decrypt abschliessen
-    			
-    			step.setParameter(decryptedLinks);
-    		}
-    		catch(IOException e) {
-    			 JDUtilities.logException(e);
-    		}
-    	}
-    	return null;
+            }
+            else
+            {
+            decryptedLinks.addAll(getLinks(parameter));
+            }
+            step.setParameter(decryptedLinks);
+        }
+        return null;
     }
 
     private void setConfigEelements() {
