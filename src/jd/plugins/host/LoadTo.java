@@ -24,7 +24,7 @@ public class LoadTo extends PluginForHost {
 
     private static final String  PLUGIN_ID                = PLUGIN_NAME + "-" + PLUGIN_VERSION;
     //www.load.to/?d=f8tM7YMcq5
-    static private final Pattern PAT_SUPPORTED = Pattern.compile("http://.*?load\\.to/\\?d\\=.{10}");
+    static private final Pattern PAT_SUPPORTED = Pattern.compile("http://.*?load\\.to/\\?d\\=.{10}", Pattern.CASE_INSENSITIVE);
 
     private String               downloadURL              = "";
 

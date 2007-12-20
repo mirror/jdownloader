@@ -20,7 +20,7 @@ public class Esnips extends PluginForHost {
     //http://www.esnips.com/doc/b2ab414d-000e-4d0c-9fa7-42d625f4d02f/Partido-en-dos
     //http://www.esnips.com/doc/09bd1900-66ec-4145-8b35-b6c4bf4dfbec/Zero★約束
     //http://www.esnips.com/doc/9ce037c1-efe1-4ff3-93a1-f689bfdd4e3b/山根康広★Get-Along-Together
-    static private final Pattern patternSupported = Pattern.compile("http://.*?esnips\\.com/doc/.{8}\\-.{4}\\-.{4}\\-.{4}\\-.{12}/.*");
+    static private final Pattern patternSupported = Pattern.compile("http://.*?esnips\\.com/doc/.{8}\\-.{4}\\-.{4}\\-.{4}\\-.{12}/.*", Pattern.CASE_INSENSITIVE);
     private static final String SWF_PLAYER_TO_FILE = "autoPlay=no&amp;theFile=°&amp;theName=°&amp;thePlayerURL";
     private static final String WMP_PLAYER_TO_FILE = "<param name=\"URL\" value=\"°\" ref=\"\">";
     @Override

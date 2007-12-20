@@ -20,7 +20,7 @@ public class ShareBaseDe extends PluginForHost {
     private static final String PLUGIN_NAME     = HOST;
     private static final String PLUGIN_VERSION  = "1.0.0.0";
     private static final String PLUGIN_ID       = PLUGIN_NAME + "-" + PLUGIN_VERSION;
-    static private final Pattern PAT_SUPPORTED = Pattern.compile("http://.*?sharebase\\.de/files/[a-zA-Z0-9]{10}\\.html");
+    static private final Pattern PAT_SUPPORTED = Pattern.compile("http://.*?sharebase\\.de/files/[a-zA-Z0-9]{10}\\.html", Pattern.CASE_INSENSITIVE);
                                                                     
     private String cookies = "";
     

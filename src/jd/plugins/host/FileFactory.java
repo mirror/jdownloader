@@ -19,7 +19,7 @@ public class FileFactory extends PluginForHost {
     private String version = "1.2.0.0";
     //http://www.filefactory.com/file/b1bf90/
     //www.filefactory.com/f/ef45b5179409a229/ 
-    static private final Pattern patternSupported = Pattern.compile("http://.*?filefactory\\.com/file/.{6}/?");
+    static private final Pattern patternSupported = Pattern.compile("http://.*?filefactory\\.com/file/.{6}/?", Pattern.CASE_INSENSITIVE);
 
     /**
      * Das findet die Captcha URL

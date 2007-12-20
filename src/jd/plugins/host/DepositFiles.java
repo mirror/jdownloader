@@ -14,7 +14,7 @@ import jd.plugins.RequestInfo;
 import jd.utils.JDUtilities;
 
 public class DepositFiles extends PluginForHost {
-    static private final Pattern PAT_SUPPORTED = Pattern.compile("http://.*?depositfiles\\.com/[\\w\\/]*?files/[\\d]+");
+    static private final Pattern PAT_SUPPORTED = Pattern.compile("http://.*?depositfiles\\.com/[\\w\\/]*?files/[\\d]+", Pattern.CASE_INSENSITIVE);
     static private final String HOST = "depositfiles.com";
     static private final String PLUGIN_NAME = HOST;
     static private final String PLUGIN_VERSION = "0.1";

@@ -18,7 +18,7 @@ import jd.utils.JDUtilities;
 
 public class Megauploadcom extends PluginForHost {
     // http://www.megaupload.com/de/?d=0XOSKVY9
-    static private final Pattern PAT_SUPPORTED = Pattern.compile("http://.*?(megaupload|megarotic|sexuploader)\\.com/.*?\\?d\\=.{8}");
+    static private final Pattern PAT_SUPPORTED = Pattern.compile("http://.*?(megaupload|megarotic|sexuploader)\\.com/.*?\\?d\\=.{8}", Pattern.CASE_INSENSITIVE);
 
     static private final String     HOST                                = "megaupload.com";
 
