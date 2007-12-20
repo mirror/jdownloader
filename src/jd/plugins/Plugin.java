@@ -1458,7 +1458,7 @@ public abstract class Plugin {
      * System.out.println(dd[i]); }
      */
     public static String[] getHttpLinks(String data, String url) {
-        String[] patternStr = {"(?s)<[ ]?base[^>]*?href=['\"]([^>]*?)['\"]", "(?s)<[ ]?base[^>]*?href=([^'\"][^\\s]*)", "(?s)<[ ]?a[^>]*?href=['\"]([^>]*?)['\"]", "(?s)<[ ]?a[^>]*?href=([^'\"][^\\s]*)", "(?s)<[ ]?form[^>]*?action=['\"]([^>]*?)['\"]", "(?s)<[ ]?form[^>]*?action=([^'\"][^\\s]*)", "www[^\\s>'\"\\)]*", "http://[^\\s>'\"\\)]*"};
+        String[] patternStr = {"(?s)<[ ]?base[^>]*?href=['\"]([^>]*?)['\"]", "(?s)<[ ]?base[^>]*?href=([^'\"][^\\s]*)", "(?s)<[ ]?a[^>]*?href=['\"]([^>]*?)['\"]", "(?s)<[ ]?a[^>]*?href=([^'\"][^\\s]*)", "(?s)<[ ]?form[^>]*?action=['\"]([^>]*?)['\"]", "(?s)<[ ]?form[^>]*?action=([^'\"][^\\s]*)", "www[^\\s>'\"\\)]*", "h.{2,3}://[^\\s>'\"\\)]*"};
         url = url == null ? "" : url;
         Matcher m;
         String link;
@@ -1519,7 +1519,7 @@ public abstract class Plugin {
         m = pattern[6].matcher(data);
         while (m.find()) {
             link = "http://" + m.group();
-            link = JDUtilities.htmlDecode(link.replaceAll("http://.*http://", "http://"));
+            link = JDUtilities.htmlDecode(link).replaceFirst("^www\\..*http://", "http://");
             if (!set.contains(link)) {
                 set.add(link);
             }
@@ -1527,7 +1527,7 @@ public abstract class Plugin {
         m = pattern[7].matcher(data);
         while (m.find()) {
             link = m.group();
-            link = JDUtilities.htmlDecode(link.replaceAll("http://.*http://", "http://"));
+            link = JDUtilities.htmlDecode(link).replaceFirst("h.*?://", "http://").replaceFirst("http://.*http://", "http://");
             if (!set.contains(link)) {
                 set.add(link);
             }
