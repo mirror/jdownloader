@@ -1,21 +1,18 @@
 package jd.plugins.decrypt;
 
 import java.io.File;
-import java.io.IOException;
-import java.net.URL;
 import java.util.Vector;
 import java.util.regex.Pattern;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginStep;
-import jd.plugins.RequestInfo;
 
 public class AdrefIn extends PluginForDecrypt {
 
-    final static String host             = "adref.in";
+    final static String host = "adref.in";
 
-    private String      version          = "1.0.0.0";
+    private String version = "2.0.0.0";
 
-    private Pattern     patternSupported = getSupportPattern("http://[+]adref.in/\\?[+]");
+    private Pattern patternSupported = getSupportPattern("http://[+]adref.in/\\?[+]");
 
     public AdrefIn() {
         super();
@@ -25,7 +22,7 @@ public class AdrefIn extends PluginForDecrypt {
 
     @Override
     public String getCoder() {
-        return "Botzi";
+        return "Botzi|DwD v2";
     }
 
     @Override
@@ -35,7 +32,7 @@ public class AdrefIn extends PluginForDecrypt {
 
     @Override
     public String getPluginID() {
-        return "adRef.in-1.0.0.";
+        return "adRef.in-" + version;
     }
 
     @Override
@@ -53,26 +50,21 @@ public class AdrefIn extends PluginForDecrypt {
         return version;
     }
 
-    @Override public PluginStep doStep(PluginStep step, String parameter) {
-    	if(step.getStep() == PluginStep.STEP_DECRYPT) {
+    @Override
+    public PluginStep doStep(PluginStep step, String parameter) {
+        if (step.getStep() == PluginStep.STEP_DECRYPT) {
             Vector<String> decryptedLinks = new Vector<String>();
-    		try {
-    			URL url = new URL(parameter);
-    			RequestInfo reqinfo = getRequest(url);
-    			
-    			progress.setRange( 1);
-    			
-   			progress.increase(1);
-    			decryptedLinks.add(getBetween(reqinfo.getHtmlCode(), "<P><A HREF=\"", "\""));
-    			// Decrypt abschliessen
-    			
-    			step.setParameter(decryptedLinks);
-    		}
-    		catch(IOException e) {
-    			 e.printStackTrace();
-    		}
-    	}
-    	return null;
+
+            progress.setRange(1);
+            parameter=parameter.replaceFirst("http://.*?adref.in/\\?", "");
+            if(!parameter.matches("^http://"))
+                parameter="http://"+parameter;
+            decryptedLinks.add(parameter);
+            progress.increase(1);
+
+            step.setParameter(decryptedLinks);
+        }
+        return null;
     }
 
     @Override
