@@ -22,7 +22,7 @@ public class ShareOnlineBiz extends PluginForHost {
 
     private static final String PLUGIN_ID = PLUGIN_NAME + "-" + PLUGIN_VERSION;
     // http://share-online.biz/dl/1/48DQA0U39
-    private static final Pattern PAT_SUPPORTED = getSupportPattern("http://[*]share-online.biz/dl/[+]");
+    static private final Pattern PAT_SUPPORTED = Pattern.compile("http://.*?share-online\\.biz/dl/[\\d]/[a-zA-Z0-9]{9}");
 
     private static String ERROR_DOWNLOAD_NOT_FOUND = "Invalid download link";
     private static Pattern firstIFrame = Pattern.compile("<iframe src=\"(http://.*?share-online\\.biz/dl_page.php\\?file=.*?)\" style=\"border", Pattern.CASE_INSENSITIVE);

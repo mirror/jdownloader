@@ -20,7 +20,8 @@ public class EgoshareCom extends PluginForHost {
     private static final String PLUGIN_NAME     = HOST;
     private static final String PLUGIN_VERSION  = "1.0.0.0";
     private static final String PLUGIN_ID       = PLUGIN_NAME + "-" + PLUGIN_VERSION;
-    private static final Pattern PAT_SUPPORTED  = getSupportPattern("http://[*]egoshare.com/[+]/[+]");
+    //www.egoshare.com/8c6225ab06b7a89f19f7e5f66e9afca3/hiren_s_bootcd_83zip.html
+    static private final Pattern PAT_SUPPORTED = Pattern.compile("http://.*?egoshare\\.com/.{32}/.*");
                                                                     
     private String sessionID = "";
     

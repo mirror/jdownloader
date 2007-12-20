@@ -18,8 +18,9 @@ import jd.plugins.RequestInfo;
 import jd.utils.JDUtilities;
 
 public class Uploadedto extends PluginForHost {
-
-    static private final Pattern    PAT_SUPPORTED                = getSupportPattern("http://[*]uploaded.to[+]");
+    //uploaded.to/file/40gtfe 
+    //uploaded.to/?id=5tr1m8
+    static private final Pattern PAT_SUPPORTED = Pattern.compile("http://.*?uploaded\\.to/(file/|\\?id\\=)[a-zA-Z0-9]{6}");
 
     static private final String     HOST                         = "uploaded.to";
 

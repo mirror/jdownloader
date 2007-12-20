@@ -21,7 +21,9 @@ import jd.utils.JDUtilities;
  */
 public class Netloadin extends PluginForHost {
     // http://www.netload.in/datei408a37036e4ceacf1d24857fbc9acbed.htm
-    static private final Pattern PAT_SUPPORTED    = getSupportPattern("http://[*]netload.in/[+]");
+    // http://netload.in/datei0eabdd9b6897b96bd2970a9b54afc284.htm
+    //  http://netload.in/mindestens20zeichen
+    static private final Pattern PAT_SUPPORTED = Pattern.compile("http://.*?netload\\.in/.{20}.*");
     static private final String  HOST             = "netload.in";
     static private final String  PLUGIN_NAME      = HOST;
     static private final String  PLUGIN_VERSION   = "1.0.0";

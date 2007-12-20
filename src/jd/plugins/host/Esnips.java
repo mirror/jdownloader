@@ -16,7 +16,11 @@ import jd.utils.JDUtilities;
 public class Esnips extends PluginForHost {
     static private final String host               = "esnips.com";
     private String              version            = "1.0.0.0";
-    private Pattern             patternSupported   = getSupportPattern("http://[*]esnips.com/doc/[+]");
+    //http://www.esnips.com/doc/ecbaae34-3c63-41af-b6b1-ee09638883b2/Morder
+    //http://www.esnips.com/doc/b2ab414d-000e-4d0c-9fa7-42d625f4d02f/Partido-en-dos
+    //http://www.esnips.com/doc/09bd1900-66ec-4145-8b35-b6c4bf4dfbec/Zero★約束
+    //http://www.esnips.com/doc/9ce037c1-efe1-4ff3-93a1-f689bfdd4e3b/山根康広★Get-Along-Together
+    static private final Pattern patternSupported = Pattern.compile("http://.*?esnips\\.com/doc/.{8}\\-.{4}\\-.{4}\\-.{4}\\-.{12}/.*");
     private static final String SWF_PLAYER_TO_FILE = "autoPlay=no&amp;theFile=°&amp;theName=°&amp;thePlayerURL";
     private static final String WMP_PLAYER_TO_FILE = "<param name=\"URL\" value=\"°\" ref=\"\">";
     @Override

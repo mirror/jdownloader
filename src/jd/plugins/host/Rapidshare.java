@@ -89,7 +89,8 @@ public class Rapidshare extends PluginForHost {
      * Vereinfachte Patternerstellung: [*] optionaler Platzhalter [+] musthav
      * platzhalter
      */
-    private Pattern                        patternSupported                 = getSupportPattern("http://[*]rapidshare.com/files/[+]/[+]");
+    //http://rapidshare.com/files/62495619/toca3.lst
+    static private final Pattern patternSupported = Pattern.compile("http://.*?rapidshare\\.com/files/[\\d]{8}/.*");
     /**
      * Das findet die Ziel URL für den Post
      */
