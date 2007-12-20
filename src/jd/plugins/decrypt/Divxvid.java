@@ -16,8 +16,7 @@ public class Divxvid extends PluginForDecrypt {
     static private final String host                    = "dxp.divxvid.org";
 
     private String              version                 = "1.0.0.0";
-
-    private Pattern             patternSupported        = getSupportPattern("http://dxp.divxvid.org/[+]");
+    static private final Pattern patternSupported = Pattern.compile("http://dxp\\.divxvid\\.org/[a-zA-Z0-9]{32}\\.html", Pattern.CASE_INSENSITIVE);
 
     private Pattern             gate                    = Pattern.compile("httpRequestObject.open.'POST', '([^\\s\"]*)'\\);", Pattern.CASE_INSENSITIVE);
 

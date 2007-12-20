@@ -25,8 +25,7 @@ public class RsXXXBlog extends PluginForDecrypt {
     static private final String host             = "rs.xxx-blog.org";
 
     private String              version          = "1.0.0.1";
-
-    private Pattern             patternSupported = getSupportPattern("http://rs.xxx-blog.org/com-[+]/[+]");
+    static private final Pattern patternSupported = Pattern.compile("http://rs\\.xxx-blog\\.org/com-[a-zA-Z0-9]{11}/.*", Pattern.CASE_INSENSITIVE);
 
     private static final String DEFAULT_PASSWORD = "xxx-blog.org";
 

@@ -16,8 +16,8 @@ public class Rapidsafenet extends PluginForDecrypt {
     static private final String host             = "rapidsafe.net";
 
     private String              version          = "1.0.0.0";
-
-    private Pattern             patternSupported = getSupportPattern("http://[*]rapidsafe.net/[+]"); ;
+    //http://www.rapidsafe.net/rsAzNhVDZxYTM/ShapeInstall.zip.html
+    private Pattern             patternSupported = getSupportPattern("http://[*]rapidsafe\\.net/r.-?[a-zA-Z0-9]{11}/.*"); ;
 
     public Rapidsafenet() {
         super();

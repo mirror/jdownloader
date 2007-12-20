@@ -17,7 +17,7 @@ public class UpPicoasisNet extends PluginForDecrypt {
 
     private String      version          = "1.0.0.0";
 
-    private Pattern     patternSupported = getSupportPattern("http://up.picoasis.net/[+]");
+    private Pattern     patternSupported = getSupportPattern("http://up\\.picoasis\\.net/[\\d]+");
 
     public UpPicoasisNet() {
         super();

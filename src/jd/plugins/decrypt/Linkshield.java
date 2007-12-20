@@ -16,7 +16,7 @@ public class Linkshield extends PluginForDecrypt {
 
     private String              version          = "1.0.0.0";
 
-    private Pattern             patternSupported = getSupportPattern("http://[*]linkshield.com/c/[+]");
+    private Pattern             patternSupported = getSupportPattern("http://[*]linkshield\\.com/[sc]/[\\d]+_[\\d]+");
 
     public Linkshield() {
         super();

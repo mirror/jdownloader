@@ -16,8 +16,8 @@ public class RsprotectCom extends PluginForDecrypt {
     final static String host             = "rsprotect.com";
 
     private String      version          = "1.0.0.0";
-
-    private Pattern     patternSupported = getSupportPattern("http://[*]rsprotect\\.com/[+]/[+]");
+    //www.rsprotect.com/rs-QDZkNWZyYTM/uds-AKeys-unp.rar
+    private Pattern             patternSupported   = Pattern.compile("http://.*?rsprotect\\.com/r[sc]-[a-zA-Z0-9]{11}/.*", Pattern.CASE_INSENSITIVE);
 
     public RsprotectCom() {
         super();

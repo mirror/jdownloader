@@ -14,7 +14,7 @@ public class Safelink extends PluginForDecrypt {
     // rs-M2MjVTNyIjN/lvs0123.part1.rar.html
     // http://www.rapidsafe.net/rs-M2MjVTNyIjN/lvs0123.part1.rar.html
     //   http://www.safelink.in/rc-UjZ4MWOwAjN/DG2.part02.rar.html
-    private Pattern patternSupported = Pattern.compile("http://.*?(safelink.in|85.17.177.195)/r[cs]\\-[a-zA-Z0-9]{11}/.*", Pattern.CASE_INSENSITIVE);
+    private Pattern patternSupported = Pattern.compile("http://.*?(safelink\\.in|85\\.17\\.177\\.195)/r[cs]\\-[a-zA-Z0-9]{11}/.*", Pattern.CASE_INSENSITIVE);
 
     public Safelink() {
         super();

@@ -20,8 +20,8 @@ public class LinkSafeWs extends PluginForDecrypt {
     private static final String  PLUGIN_VERSION = "1.0.0.0";
 
     private static final String  PLUGIN_ID      = PLUGIN_NAME + "-" + PLUGIN_VERSION;
-
-    private static final Pattern PAT_SUPPORTED  = getSupportPattern("http://[*]linksafe.ws/files/[+]");
+    //www.linksafe.ws/files/tsud-19659-1/
+    private static final Pattern PAT_SUPPORTED  = Pattern.compile("http://.*?linksafe\\.ws/files/[a-zA-Z0-9]{4}-[\\d]{5}-[\\d]", Pattern.CASE_INSENSITIVE);
 
     /*
      * Suchmasken

@@ -22,7 +22,7 @@ public class SafeTo extends PluginForDecrypt {
 
     private static final String  PLUGIN_ID      = PLUGIN_NAME + "-" + PLUGIN_VERSION;
 
-    private static final Pattern PAT_SUPPORTED  = getSupportPattern("http://[*]safe.to/get.php\\?i=[+]");
+    private static final Pattern PAT_SUPPORTED  = getSupportPattern("http://[*]safe\\.to/get\\.php\\?i=[a-zA-Z0-9]+");
 
     /*
      * Suchmasken

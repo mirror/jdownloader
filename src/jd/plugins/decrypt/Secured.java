@@ -19,8 +19,10 @@ import jd.utils.JDUtilities;
  * 
  */
 public class Secured extends PluginForDecrypt {
-
-    static private final Pattern PAT_SUPPORTED    = getSupportPattern("http://[*]secured.in/download[+]");
+    //secured.in/download-2743-f4917fca.html
+    //secured.in/download-68751-35e358aa.html
+    //secured.in/download-93701-aaf2afda.html -
+    static private final Pattern PAT_SUPPORTED    = getSupportPattern("http://[*]secured\\.in/download-[\\d]+-[a-zA-Z0-9]{8}\\.html");
 
     static private final Pattern PAT_FILE_ID      = Pattern.compile("accessDownload\\([^']*'([^']*)");
 
@@ -37,7 +39,7 @@ public class Secured extends PluginForDecrypt {
 
     static private final String  PLUGIN_ID        = PLUGIN_NAME + "-" + VERSION;
 
-    static private final String  CODER            = "olimex(coalado angepasst/cypher urldecryption DwD)";
+    static private final String  CODER            = "olimex|coalado|DwD";
 
     static private final String  JS_URL           = "http://secured.in/scripts/main_final.js";
 

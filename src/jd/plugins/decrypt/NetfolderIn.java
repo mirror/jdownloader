@@ -16,8 +16,8 @@ public class NetfolderIn extends PluginForDecrypt {
     static private String host             = "netfolder.in";
 
     private String        version          = "1.0.0.0";
-
-    private Pattern       patternSupported = getSupportPattern("http://[*]netfolder.in/folder.php\\?folder_id=[+]");
+    //netfolder.in/folder.php?folder_id=b8b3b0b 
+    static private final Pattern patternSupported = Pattern.compile("http://.*?netfolder\\.in/folder\\.php\\?folder_id\\=[a-zA-Z0-9]{7}", Pattern.CASE_INSENSITIVE);
 
     public NetfolderIn() {
         super();

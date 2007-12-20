@@ -12,13 +12,13 @@ import jd.plugins.RequestInfo;
 
 public class Tinyurl extends PluginForDecrypt {
 
-    static private String host             = "tinyurl.com";
+    static private String host = "tinyurl.com";
 
-    private String        version          = "1.0.0.0";
+    private String version = "2.0.0.0";
+    // tinyurl.com/preview.php?num=37nt3d
+    private Pattern patternSupported = getSupportPattern("http://[*]tinyurl\\.com/(preview\\.php\\?num\\=[a-zA-Z0-9]{6}|[a-zA-Z0-9]{6})");
 
-    private Pattern       patternSupported = getSupportPattern("http://[*]tinyurl.com/[+]");
-
-    private Pattern       patternLink      = Pattern.compile("http://tinyurl\\.com/.*");
+    private Pattern patternLink = Pattern.compile("http://tinyurl\\.com/.*");
 
     public Tinyurl() {
         super();
@@ -28,7 +28,7 @@ public class Tinyurl extends PluginForDecrypt {
 
     @Override
     public String getCoder() {
-        return "Botzi";
+        return "Botzi|DwD v2";
     }
 
     @Override
@@ -56,36 +56,38 @@ public class Tinyurl extends PluginForDecrypt {
         return version;
     }
 
-    @Override public PluginStep doStep(PluginStep step, String parameter) {
-    	if(step.getStep() == PluginStep.STEP_DECRYPT) {
+    @Override
+    public PluginStep doStep(PluginStep step, String parameter) {
+        if (step.getStep() == PluginStep.STEP_DECRYPT) {
             Vector<String> decryptedLinks = new Vector<String>();
-    		try {
-    			progress.setRange( 1);
+            try {
+                progress.setRange(1);
+                if (!parameter.matches("http://.*?tinyurl\\.com/preview\\.php\\?num\\=[a-zA-Z0-9]{6}")) {
+                    parameter=parameter.replaceFirst("tinyurl\\.com/", "tinyurl.com/preview.php?num=");
+                }
 
-    			URL url = new URL(parameter);
-    			RequestInfo reqinfo = getRequest(url);
-    			
-    			// Besonderen Link herausfinden
-    			if (countOccurences(parameter, patternLink)>0) {
-    				String[] result = parameter.split("/");
-	    			reqinfo = getRequest(new URL("http://tinyurl.com/preview.php?num=" + result[result.length-1]));	    			
-    			}
-    			
-    			// Link der Liste hinzufügen
-    		progress.increase(1);
-    			decryptedLinks.add(getBetween(reqinfo.getHtmlCode(),"id=\"redirecturl\" href=\"","\">Proceed to"));
-    			
-    			// Decrypt abschliessen
-    			
-    			step.setParameter(decryptedLinks);
-    		}
-    		catch(IOException e) {
-    			 e.printStackTrace();
-    		}
-    	}
-    	return null;
+                URL url = new URL(parameter);
+                RequestInfo reqinfo = getRequest(url);
+
+                // Besonderen Link herausfinden
+                if (countOccurences(parameter, patternLink) > 0) {
+                    String[] result = parameter.split("/");
+                    reqinfo = getRequest(new URL("http://tinyurl.com/preview.php?num=" + result[result.length - 1]));
+                }
+
+                // Link der Liste hinzufügen
+                progress.increase(1);
+                decryptedLinks.add(getBetween(reqinfo.getHtmlCode(), "id=\"redirecturl\" href=\"", "\">Proceed to"));
+
+                // Decrypt abschliessen
+
+                step.setParameter(decryptedLinks);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+        return null;
     }
-
     @Override
     public boolean doBotCheck(File file) {
         return false;

@@ -16,7 +16,7 @@ public class PicourlDe extends PluginForDecrypt {
 
     private String      version          = "1.0.0.0";
 
-    private Pattern     patternSupported = getSupportPattern("http://[*]picourl.de/[+]");
+    private Pattern     patternSupported = getSupportPattern("http://[*]picourl\\.de/[a-zA-Z0-9]{3}]");
 
     public PicourlDe() {
         super();

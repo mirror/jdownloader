@@ -16,8 +16,8 @@ public class RapidshareComFolder extends PluginForDecrypt {
     static private final String host             = "rapidshare.com folder";
 
     private String              version          = "1.0.0.0";
-
-    private Pattern             patternSupported = getSupportPattern("http://[*]rapidshare.com/users/[+]");
+    //rapidshare.com/users/AM0F5G
+    static private final Pattern patternSupported = Pattern.compile("http://.*?rapidshare\\.com/users/[a-zA-Z0-9]{6}", Pattern.CASE_INSENSITIVE);
 
     private String              password         = "";
 

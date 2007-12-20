@@ -20,8 +20,9 @@ public class YoumirrorBiz extends PluginForDecrypt {
     final static String host = "youmirror.biz";
 
     private String version = "2.0.0.0";
-
-    private Pattern patternSupported = getSupportPattern("http://[*]youmirror.biz[*]/f[+]");
+    //youmirror.biz/folder/bg2yt2jkzzodocv
+    //youmirror.biz/file/30ucgz4t96hxoz5
+    private Pattern patternSupported = getSupportPattern("http://[*]youmirror.biz[*]/(file|folder)/[a-zA-Z0-9]{15}");
 
     private Pattern patternRapidshare = Pattern.compile("1\" target=\"_blank\">rapidshare.com"); // +
 

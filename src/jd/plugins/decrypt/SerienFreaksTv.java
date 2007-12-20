@@ -24,8 +24,8 @@ public class SerienFreaksTv extends PluginForDecrypt {
     private static final String  PLUGIN_VERSION     = "1.0.0.0";
 
     private static final String  PLUGIN_ID          = PLUGIN_NAME + "-" + PLUGIN_VERSION;
-
-    private static final Pattern PAT_SUPPORTED      = getSupportPattern("http://[*]serienfreaks.tv/[+]");
+    //http://serienfreaks.tv/?id=5554
+    private static final Pattern PAT_SUPPORTED      = getSupportPattern("http://[*]serienfreaks\\.tv/\\?id\\=[\\d]+");
 
     /*
      * Suchmasken (z.B. Fehler)

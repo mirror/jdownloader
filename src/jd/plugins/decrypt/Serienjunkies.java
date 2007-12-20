@@ -93,7 +93,7 @@ public class Serienjunkies extends PluginForDecrypt {
             hosterStr += "not";
         }
         // http://download.serienjunkies.org/f-170bd7b99547753c/ut_drhouse317.html
-        return Pattern.compile("http://(download.serienjunkies.org|serienjunkies.org/s|85.17.177.195/s|serienjunki.es/s).*" + hosterStr + ".*", Pattern.CASE_INSENSITIVE);
+        return Pattern.compile("http://(download\\.serienjunkies\\.org|serienjunkies\\.org/s|85\\.17\\.177\\.195/s|serienjunki\\.es/s).*" + hosterStr + ".*", Pattern.CASE_INSENSITIVE);
     }
 
     @Override

@@ -17,8 +17,9 @@ public class XLSpreadCom extends PluginForDecrypt {
     final static String host             = "xlspread.com";
 
     private String      version          = "1.0.0.0";
-
-    private Pattern     patternSupported = getSupportPattern("http://[*]xlspread.com/download.html\\?id=[+]");
+    //http://www.xlspread.com/download.html?id=b0b18a2f966cc247660845508e1111b4
+    //http://www.xlspread.com/download.html?id=61a7912765cb3d04fb98ce2e7dcbb4a4
+    private Pattern     patternSupported = getSupportPattern("http://[*]xlspread.com/download.html\\?id=[a-zA-Z0-9]{32}");
 
     public XLSpreadCom() {
         super();

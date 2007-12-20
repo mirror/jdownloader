@@ -16,7 +16,7 @@ public class CryptGetMoviesOrg extends PluginForDecrypt {
 
     private String      version          = "1.0.0.0";
 
-    private Pattern     patternSupported = getSupportPattern("http://crypt.get-movies.org/[+]");
+    private Pattern     patternSupported = getSupportPattern("http://crypt\\.get-movies\\.org/[\\d]{4}");
 
     public CryptGetMoviesOrg() {
         super();

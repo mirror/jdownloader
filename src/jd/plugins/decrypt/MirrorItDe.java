@@ -21,7 +21,8 @@ public class MirrorItDe extends PluginForDecrypt {
 	
     final static String host                = "mirrorit.de";
     private String      version             = "1.0.0.1";
-    private Pattern     patternSupported    = getSupportPattern("http://[*]mirrorit.de/[+]");
+    //www.mirrorit.de/?id=ec37d6f8038c168
+    static private final Pattern patternSupported = Pattern.compile("http://.*?mirrorit\\.de/\\?id\\=[a-zA-Z0-9]{16}", Pattern.CASE_INSENSITIVE);
     private Pattern     patternRapidshare   = Pattern.compile("Rapidshare");
     private Pattern     patternSharebase    = Pattern.compile("ShareBase");
     private Pattern     patternShareonline  = Pattern.compile("Share-Online.biz");

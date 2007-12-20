@@ -15,7 +15,7 @@ public class AnimeANet extends PluginForDecrypt {
 
     private String      version          = "1.0.0.0";
 
-    private Pattern     patternSupported = getSupportPattern("http://www.animea.net/download/[+]/[*]");
+    private Pattern     patternSupported = getSupportPattern("http://[*]animea\\.net/download/[\\d]+/[*]");
 
     public AnimeANet() {
         super();

@@ -18,8 +18,8 @@ public class Xirror extends PluginForDecrypt {
     final static String host             = "xirror.com";
 
     private String      version          = "2.0.0.0";
-
-    private Pattern     patternSupported = getSupportPattern("http://[*]xirror.com/spread/[+]/[*]");
+   
+    private Pattern     patternSupported = getSupportPattern("http://[*]xirror\\.com/spread/[\\d]{8}/[*]");
 
     public Xirror() {
         super();

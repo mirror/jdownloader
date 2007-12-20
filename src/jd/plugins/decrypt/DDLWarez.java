@@ -15,7 +15,7 @@ public class DDLWarez extends PluginForDecrypt {
 
     private String      version          = "1.0.0.0";
 
-    private Pattern     patternSupported = getSupportPattern("http://[*]ddl-warez.org/detail.php\\?id=[+]");
+    private Pattern     patternSupported = getSupportPattern("http://[*]ddl-warez\\.org/detail\\.php\\?id=[\\d]{4}[*]");
 
     public DDLWarez() {
         super();

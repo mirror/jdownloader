@@ -33,8 +33,11 @@ public class XliceNet extends PluginForDecrypt {
     private static final String USE_FILES           = "USE_FILES";
 
     private String              version             = "1.0.0.0";
+    //xlice.net/folder/13a3169edf4cfd3a438a40c2397724fe/
+    //xlice.net/file/e46b767e51b8dbdf3afb6d3ea3852c4e/ 
+    //xlice.net/file/ff139aafdf5c299c33b218b9750b3d17/%5BSanex%5D%20-
 
-    private Pattern             patternSupported    = getSupportPattern("http://[*]xlice.net/f[+]/[*]");
+    private Pattern             patternSupported    = getSupportPattern("http://[*]xlice.net/(file|folder)/[a-zA-Z0-9]{32}[*]");
 
     private Pattern             patternRapidshare   = Pattern.compile("onclick=\".*\'../1/");
 

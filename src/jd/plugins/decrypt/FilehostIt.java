@@ -15,8 +15,8 @@ public class FilehostIt extends PluginForDecrypt {
     final static String host             = "filehost.it";
 
     private String      version          = "1.0.0.0";
-
-    private Pattern     patternSupported = getSupportPattern("http://[*]filehost.it/[+]");
+//www.filehost.it/multilink/checklinks.php?links=4249 
+    private Pattern     patternSupported = getSupportPattern("http://[*]filehost\\.it/(multi|live)link/checklinks.php\\?links=[\\d]+");
 
     public FilehostIt() {
         super();

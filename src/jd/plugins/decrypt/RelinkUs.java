@@ -16,7 +16,7 @@ public class RelinkUs extends PluginForDecrypt {
 
     private String      version          = "1.0.0.0";
 
-    private Pattern     patternSupported = getSupportPattern("http://[*]relink.us/go.php\\?id=[+]");
+    private Pattern     patternSupported = getSupportPattern("http://[*]relink\\.us/go\\.php\\?id=[\\d]{5}");
 
     public RelinkUs() {
         super();

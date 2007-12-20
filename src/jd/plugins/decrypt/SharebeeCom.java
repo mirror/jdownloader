@@ -17,8 +17,8 @@ public class SharebeeCom extends PluginForDecrypt {
     final static String host             = "sharebee.com";
 
     private String      version          = "1.0.0.0";
-
-    private Pattern     patternSupported = getSupportPattern("http://[*]sharebee.com/[+]");
+    //sharebee.com/67e489cf
+    private Pattern     patternSupported = getSupportPattern("http://[*]sharebee\\.com/[a-zA-Z0-9]{8}");
 
     public SharebeeCom() {
         super();

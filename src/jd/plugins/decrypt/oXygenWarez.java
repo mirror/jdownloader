@@ -20,7 +20,7 @@ public class oXygenWarez extends PluginForDecrypt {
 
     private static final String DEFAULT_PASSWORD   = "www.oxygen-warez.com";
 
-    private Pattern             patternSupported   = Pattern.compile("http://.*?oxygen-warez.com/(category|\\?id=).*", Pattern.CASE_INSENSITIVE);
+    private Pattern             patternSupported   = Pattern.compile("http://.*?oxygen-warez\\.com/(category.*|\\?id\\=[\\d]+)", Pattern.CASE_INSENSITIVE);
 
     private Pattern             PASSWORT           = Pattern.compile("<P><B>Passwort:</B> <A HREF=\"\" onClick=\"CopyToClipboard\\(this\\); return\\(false\\);\">(.+?)</A></P>");
 

@@ -20,8 +20,8 @@ public class CodedTo extends PluginForDecrypt {
     private static final String  PLUGIN_VERSION = "1.0.0.0";
 
     private static final String  PLUGIN_ID      = PLUGIN_NAME + "-" + PLUGIN_VERSION;
-
-    private static final Pattern PAT_SUPPORTED  = getSupportPattern("http://[*]coded.to/[*]\\?jump=[+]");
+    //http://www.coded.to/?jump=6f4920ea25403ec77bee9efce43ea25e
+    static private final Pattern PAT_SUPPORTED = Pattern.compile("http://.*?coded\\.to/.*?\\?jump\\=[a-zA-Z0-9]{32}", Pattern.CASE_INSENSITIVE);
 
     /*
      * Suchmasken
