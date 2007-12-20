@@ -20,7 +20,7 @@ jd.plugins.decrypt.RapidshareComFolder
 jd.plugins.decrypt.RelinkUs
 jd.plugins.decrypt.RsprotectCom
 jd.plugins.decrypt.RsXXXBlog
-#jd.plugins.decrypt.Safelink
+jd.plugins.decrypt.Safelink
 jd.plugins.decrypt.SafeTo
 jd.plugins.decrypt.SaveRaidrushWs
 jd.plugins.decrypt.Secured
