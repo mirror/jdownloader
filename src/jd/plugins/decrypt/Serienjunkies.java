@@ -110,6 +110,8 @@ public class Serienjunkies extends PluginForDecrypt {
     public PluginStep doStep(PluginStep step, String parameter) {
         switch (step.getStep()) {
             case PluginStep.STEP_DECRYPT :
+                addToPasswordlist("serienjunkies.dl.am");
+                addToPasswordlist("serienjunkies.org");
                 Vector<String[]> decryptedLinks = new Vector<String[]>();
                 try {
                     URL url = new URL(parameter);

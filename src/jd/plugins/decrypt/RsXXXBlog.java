@@ -76,6 +76,8 @@ public class RsXXXBlog extends PluginForDecrypt {
         String cryptedLink = (String) parameter;
         switch (step.getStep()) {
             case PluginStep.STEP_DECRYPT:
+                addToPasswordlist("xxx-blog.dl.am");
+                addToPasswordlist("xxx-blog.org");
                 Vector<String[]> decryptedLinks = new Vector<String[]>();
                 // Zählen aller verfügbaren Treffer
                 try {
