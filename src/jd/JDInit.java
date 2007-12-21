@@ -220,9 +220,8 @@ public class JDInit {
             logger.finer("Load PLugins");
             iterator = Service.providers(PluginForDecrypt.class, jdClassLoader);
             while (iterator.hasNext()) {
-                logger.info("Load "+iterator.next());
                 PluginForDecrypt p = (PluginForDecrypt) iterator.next();
-
+                logger.info("Load "+ p);
                 plugins.add(p);
             }
             return plugins;
