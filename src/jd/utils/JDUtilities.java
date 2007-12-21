@@ -96,7 +96,7 @@ public class JDUtilities {
     public static String                           LOGGER_NAME         = "java_downloader";
 
     /**
-     * Titel der Applikation
+     * Titel der Applikation 
      */
     public static final String                     JD_VERSION          = "0.0.";
 
