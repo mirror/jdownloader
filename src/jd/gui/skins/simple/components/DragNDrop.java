@@ -20,7 +20,7 @@ import javax.swing.JComponent;
 
 import jd.event.UIEvent;
 import jd.event.UIListener;
-import jd.utils.JDLocale;
+import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 
 /**
@@ -58,8 +58,8 @@ public class DragNDrop extends JComponent implements DropTargetListener {
     public DragNDrop() {
         new DropTarget(this, this);
         uiListener = new Vector<UIListener>();
-        this.imageEmpty = JDUtilities.getImage(JDLocale.L("gui.images.clipboard"));
-        this.imageFilled = JDUtilities.getImage(JDLocale.L("gui.images.clipboard"));
+        this.imageEmpty = JDUtilities.getImage(JDTheme.I("gui.images.clipboard"));
+        this.imageFilled = JDUtilities.getImage(JDTheme.I("gui.images.clipboard"));
         if (imageEmpty != null) {
             setPreferredSize(new Dimension(imageEmpty.getWidth(null), imageEmpty.getHeight(null)));
         }

@@ -74,8 +74,8 @@ public class Installer extends JDialog implements ActionListener, WindowListener
         downloadDir.setEditable(true);
         downloadDir.setText(downloadPath.getAbsolutePath());
         addWindowListener(this);
-        JDUtilities.addToGridBag(panel, new JLabel(JDLocale.L("installer.installDir","Install Directory")), GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
-        JDUtilities.addToGridBag(panel, homeDir, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 1, 0, insets, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+        //JDUtilities.addToGridBag(panel, new JLabel(JDLocale.L("installer.installDir","Install Directory")), GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        //JDUtilities.addToGridBag(panel, homeDir, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 1, 0, insets, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
         JDUtilities.addToGridBag(panel, new JLabel(JDLocale.L("installer.downloadDir","Downloaddirectory")), GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
         JDUtilities.addToGridBag(panel, downloadDir, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 1, 0, insets, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
         btnOK = new JButton(JDLocale.L("gui.btn_continue","Continue..."));

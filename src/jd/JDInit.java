@@ -6,7 +6,6 @@ import java.net.CookieHandler;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.Locale;
 import java.util.Vector;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -29,6 +28,7 @@ import jd.plugins.PluginForSearch;
 import jd.plugins.PluginOptional;
 import jd.update.WebUpdater;
 import jd.utils.JDLocale;
+import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 import sun.misc.Service;
 
@@ -127,6 +127,7 @@ public class JDInit {
                     JDUtilities.setConfiguration(configuration);
                     JDUtilities.getLogger().setLevel((Level) configuration.getProperty(Configuration.PARAM_LOGGER_LEVEL, Level.FINER));
                     JDLocale.setLocale(configuration.getStringProperty(Configuration.PARAM_LOCALE,"german"));
+                    JDTheme.setTheme(configuration.getStringProperty(Configuration.PARAM_THEME,"default"));
                 }
                 else {
                     // log += "\r\n" + ("Configuration error: " + obj);
@@ -181,13 +182,14 @@ public class JDInit {
                     System.exit(0);
 
                 }
-
+                logger.info("INSTALL abgebrochen");
                 JOptionPane.showMessageDialog(new JFrame(), JDLocale.L("installer.error.noWriteRights","Fehler. Bitte wähle Pfade mit Schreibrechten!"));
 
                 System.exit(1);
                 inst.dispose();
             }
             else {
+                logger.info("INSTALL abgebrochen2");
                 JOptionPane.showMessageDialog(new JFrame(), JDLocale.L("installer.abortInstallation","Fehler. Installation abgebrochen"));
                 System.exit(0);
                 inst.dispose();

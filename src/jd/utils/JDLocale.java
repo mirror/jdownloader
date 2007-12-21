@@ -41,7 +41,7 @@ public class JDLocale {
             return key;
         }
         if (def == null) def = key;
-        if (data.containsKey(key)) return data.get(key);
+        if (data.containsKey(key)) return JDUtilities.UTF8Decode(data.get(key));
         logger.info("Key not found: " + key);
         data.put(key, def);
         
@@ -89,7 +89,7 @@ public class JDLocale {
         String[] lines = JDUtilities.splitByNewline(str);
         for (int i = 0; i < lines.length; i++) {
             int split = lines[i].indexOf("=");
-            if (split <= 0) continue;
+            if (split <= 0||lines[i].startsWith("#")) continue;
             String key = lines[i].substring(0, split).trim();
             String value = lines[i].substring(split + 1).trim();
             if (data.containsKey(key)) {

@@ -23,8 +23,6 @@ import javax.swing.JFrame;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
-import jd.config.ConfigContainer;
-import jd.config.ConfigEntry;
 import jd.config.Configuration;
 import jd.controlling.ProgressController;
 import jd.plugins.Plugin;

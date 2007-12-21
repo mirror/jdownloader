@@ -9,8 +9,6 @@ import java.util.Vector;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.Configuration;
-import jd.controlling.JDController;
-import jd.event.ControlEvent;
 import jd.plugins.DownloadLink;
 import jd.unrar.JUnrar;
 import jd.utils.JDUtilities;

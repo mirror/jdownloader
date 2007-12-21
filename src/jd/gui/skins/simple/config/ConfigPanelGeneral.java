@@ -15,6 +15,7 @@ import jd.config.Configuration;
 import jd.gui.UIInterface;
 import jd.gui.skins.simple.components.BrowseFile;
 import jd.utils.JDLocale;
+import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 
 public class ConfigPanelGeneral extends ConfigPanel {
@@ -43,8 +44,7 @@ public class ConfigPanelGeneral extends ConfigPanel {
     public void initPanel() {
         GUIConfigEntry ce;
         
-        ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, configuration, Configuration.PARAM_LOCALE, JDLocale.getLocaleIDs().toArray(new String[]{}), JDLocale.L("gui.config.general.language","Sprache")).setDefaultValue(Locale.getDefault()));
-        addGUIConfigEntry(ce);
+  
         ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, configuration, Configuration.PARAM_LOGGER_LEVEL, new Level[] { Level.ALL, Level.FINEST, Level.FINER, Level.FINE, Level.INFO, Level.WARNING, Level.SEVERE, Level.OFF }, JDLocale.L("gui.config.general.loggerLevel","Level für's Logging")).setDefaultValue(Level.FINER).setExpertEntry(true));
         addGUIConfigEntry(ce);
         ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_BROWSEFOLDER, configuration, Configuration.PARAM_DOWNLOAD_DIRECTORY, JDLocale.L("gui.config.general.downloadDirectory","Downloadverzeichnis")).setDefaultValue(JDUtilities.getJDHomeDirectory().getAbsolutePath()));
@@ -52,7 +52,10 @@ public class ConfigPanelGeneral extends ConfigPanel {
         ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, configuration, Configuration.PARAM_FINISHED_DOWNLOADS_ACTION, new String[] { Configuration.FINISHED_DOWNLOADS_REMOVE, Configuration.FINISHED_DOWNLOADS_REMOVE_AT_START, Configuration.FINISHED_DOWNLOADS_NO_REMOVE },
                 JDLocale.L("gui.config.general.toDoWithDownloads","Fertig gestellte Downloads ...")).setDefaultValue(Configuration.FINISHED_DOWNLOADS_REMOVE_AT_START).setExpertEntry(true));
         addGUIConfigEntry(ce);
-        
+        ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, configuration, Configuration.PARAM_LOCALE, JDLocale.getLocaleIDs().toArray(new String[]{}), JDLocale.L("gui.config.general.language","Sprache")).setDefaultValue(Locale.getDefault()));
+        addGUIConfigEntry(ce);
+        ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, configuration, Configuration.PARAM_THEME, JDTheme.getThemeIDs().toArray(new String[]{}), JDLocale.L("gui.config.general.theme","Theme")).setDefaultValue("default"));
+        addGUIConfigEntry(ce);
         String[] plafs;
         
         UIManager.LookAndFeelInfo[] info = UIManager.getInstalledLookAndFeels();

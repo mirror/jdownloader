@@ -10,13 +10,7 @@ import java.awt.image.PixelGrabber;
 import java.io.File;
 import java.io.FileFilter;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.StringWriter;
-import java.io.UnsupportedEncodingException;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.URLClassLoader;
-import java.net.URLDecoder;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Vector;
@@ -1710,7 +1704,7 @@ logger.info(methodsPath);
     }
 
     public static boolean isLoggerActive() {
-        return true;
+        return false;
         // return
         // JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_JAC_LOG,
         // false);

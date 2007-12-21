@@ -12,6 +12,7 @@ import java.awt.event.ActionListener;
 import jd.plugins.PluginOptional;
 import jd.plugins.event.PluginEvent;
 import jd.utils.JDLocale;
+import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 import sun.misc.Service;
 
@@ -73,7 +74,7 @@ public class JDTrayIcon extends PluginOptional implements ActionListener {
             SystemTray tray = SystemTray.getSystemTray();
 
             Service s;
-            Image image = JDUtilities.getImage(JDLocale.L("gui.images.jd_logo"));
+            Image image = JDUtilities.getImage(JDTheme.I("gui.images.jd_logo"));
             PopupMenu popup = new PopupMenu();
             trayIcon = new TrayIcon(image, JDUtilities.getJDTitle(), popup);
 

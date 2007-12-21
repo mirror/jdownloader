@@ -2,7 +2,6 @@ package jd.captcha.configuration;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.Hashtable;
 import java.util.Vector;
 import java.util.logging.Logger;

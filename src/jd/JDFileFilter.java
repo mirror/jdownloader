@@ -3,8 +3,6 @@ package jd;
 import java.io.File;
 import java.io.FileFilter;
 
-import jd.utils.JDUtilities;
-
 /**
  * Mit dieser Klasse kann man sowohl bestimmte Dateien aus einem Verzeichnis
  * auflisten als auch einen FileFilter in einem JDFileChooser nutzen

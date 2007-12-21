@@ -36,6 +36,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.ConnectException;
 import java.net.MalformedURLException;
+import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLClassLoader;
@@ -96,7 +97,7 @@ public class JDUtilities {
     public static String                           LOGGER_NAME         = "java_downloader";
 
     /**
-     * Titel der Applikation 
+     * Titel der Applikation
      */
     public static final String                     JD_VERSION          = "0.0.";
 
@@ -123,7 +124,7 @@ public class JDUtilities {
 
     private static Vector<PluginForDecrypt>        pluginsForDecrypt;
 
-    /** 
+    /**
      * Ein URLClassLoader, um Dateien aus dem HomeVerzeichnis zu holen
      */
     private static JDClassLoader                   jdClassLoader       = null;
@@ -181,34 +182,40 @@ public class JDUtilities {
     private static Configuration                   configuration       = new Configuration();
 
     /**
-     * Gibt das aktuelle Working Directory zurück. Beim FilebRowser etc wird da s gebraucht.
+     * Gibt das aktuelle Working Directory zurück. Beim FilebRowser etc wird da
+     * s gebraucht.
+     * 
      * @return
      */
-    public static File getCurrentWorkingDirectory(String id){
-        if(id==null)id="";
-        String dlDir= JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_DOWNLOAD_DIRECTORY,null);
-        String lastDir=JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_CURRENT_BROWSE_PATH+id, null);
-        
+    public static File getCurrentWorkingDirectory(String id) {
+        if (id == null) id = "";
+        String dlDir = JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_DOWNLOAD_DIRECTORY, null);
+        String lastDir = JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_CURRENT_BROWSE_PATH + id, null);
+
         File dlDirectory;
-       File lastDirectory;
-        if(dlDir==null){
-            dlDirectory= new File("");
-        }else{
-            dlDirectory= new File(dlDir);
+        File lastDirectory;
+        if (dlDir == null) {
+            dlDirectory = new File("");
         }
-        
-        if(lastDir==null)return dlDirectory;
-        return new File(lastDir);      
-        
+        else {
+            dlDirectory = new File(dlDir);
+        }
+
+        if (lastDir == null) return dlDirectory;
+        return new File(lastDir);
+
     }
+
     /**
      * Setztd as aktuelle woringdirectory für den filebrowser
+     * 
      * @param f
      */
-    public static void setCurrentWorkingDirectory(File f,String id){
-        if(id==null)id="";
-        JDUtilities.getConfiguration().setProperty(Configuration.PARAM_CURRENT_BROWSE_PATH+id,f.getAbsolutePath());
+    public static void setCurrentWorkingDirectory(File f, String id) {
+        if (id == null) id = "";
+        JDUtilities.getConfiguration().setProperty(Configuration.PARAM_CURRENT_BROWSE_PATH + id, f.getAbsolutePath());
     }
+
     /**
      * Geht eine Komponente so lange durch (getParent), bis ein Objekt vom Typ
      * Frame gefunden wird, oder es keine übergeordnete Komponente gibt
@@ -351,16 +358,18 @@ public class JDUtilities {
         }
         addToGridBag(cont, comp, x, y, width, height, weightX, weightY, insets, 0, 0, fill, anchor);
     }
-    public static String sprintf(String pattern, String[] inset){
-        
-        for(int i=0; i<inset.length;i++){
-            int ind=pattern.indexOf("%s");
-            pattern=pattern.substring(0,ind)+inset[i]+pattern.substring(ind+2);
-            
+
+    public static String sprintf(String pattern, String[] inset) {
+
+        for (int i = 0; i < inset.length; i++) {
+            int ind = pattern.indexOf("%s");
+            pattern = pattern.substring(0, ind) + inset[i] + pattern.substring(ind + 2);
+
         }
-        
+
         return pattern;
     }
+
     /**
      * Liefert einen Punkt zurück, mit dem eine Komponente auf eine andere
      * zentriert werden kann
@@ -440,8 +449,10 @@ public class JDUtilities {
      *         kann
      */
     public static Image getImage(String imageName) {
-        if(images.get(imageName)==null){
-            logger.severe("No Image named "+imageName+".png found");
+        if (images.get(imageName) == null) {
+            ClassLoader cl = JDUtilities.getJDClassLoader();
+            Toolkit toolkit = Toolkit.getDefaultToolkit();
+            return toolkit.getImage(cl.getResource("jd/img/" + imageName + ".png"));
         }
         return images.get(imageName);
     }
@@ -463,21 +474,34 @@ public class JDUtilities {
      * @return ein File, daß das Basisverzeichnis angibt
      */
     public static File getJDHomeDirectoryFromEnvironment() {
-        String envDir = System.getenv("JD_HOME");
-        if (envDir == null) {
-            logger.warning("environment variable JD_HOME not set");
-            if (getRunType() == RUNTYPE_LOCAL_JARED) {
-                envDir = new File(".").getAbsolutePath();
-                logger.info("JD_HOME from current Path :" + envDir);
-            }
-            else {
-                envDir = System.getProperty("user.home") + System.getProperty("file.separator") + ".jd_home/";
-                logger.info("JD_HOME from user.home :" + envDir);
-            }
+        String envDir = null;// System.getenv("JD_HOME");
+        String currentDir = null;
 
+        logger.info("" + Thread.currentThread());
+        logger.info("" + Thread.currentThread().getContextClassLoader());
+        logger.info("" + Thread.currentThread().getContextClassLoader().getResource("jd/Main.class"));
+        String dir = Thread.currentThread().getContextClassLoader().getResource("jd/Main.class").toString().split("jar\\!")[0] + "jar";
+        dir = dir.substring(Math.max(0, dir.indexOf("file:")));
+        logger.info("URI: " + dir);
+        try {
+            currentDir = new File(new URI(dir)).getParentFile().getAbsolutePath();
         }
-        else
-            logger.info("JD_HOME from environment variable:" + envDir);
+        catch (URISyntaxException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+
+        logger.info("RunDir: " + currentDir);
+
+        if (getRunType() == RUNTYPE_LOCAL_JARED) {
+            envDir = currentDir;
+            logger.info("JD_HOME from current Path :" + envDir);
+        }
+        else {
+            envDir = System.getProperty("user.home") + System.getProperty("file.separator") + ".jd_home/";
+            logger.info("JD_HOME from user.home :" + envDir);
+        }
+
         if (envDir == null) {
             envDir = "." + System.getProperty("file.separator") + ".jd_home/";
             logger.info("JD_HOME from current directory:" + envDir);
@@ -1089,7 +1113,7 @@ public class JDUtilities {
      * @return gibt den Pfad zu den JAC Methoden zurück
      */
     public static String getJACMethodsDirectory() {
-      
+
         return "jd/captcha/methods/";
     }
 
@@ -1255,12 +1279,15 @@ public class JDUtilities {
                 String root = en.nextElement().toString();
                 logger.info(root);
                 if (root.indexOf("http://") >= 0) {
+                    logger.info("Depr.: Webstart");
                     return RUNTYPE_WEBSTART;
                 }
                 if (root.indexOf("jar") >= 0) {
+                    logger.info("Default: Local jared");
                     return RUNTYPE_LOCAL_JARED;
                 }
             }
+            logger.info("Dev.: Local splitted");
             return RUNTYPE_LOCAL;
         }
         catch (Exception e) {
@@ -1505,7 +1532,7 @@ public class JDUtilities {
             logger.info("IP Check failed. Ip not found via regex: " + patt + " on " + site + " htmlcode: " + requestInfo.getHtmlCode());
             return null;
         }
-        catch(ConnectException e1){
+        catch (ConnectException e1) {
             logger.severe("Offline. " + e1.toString());
             return "offline";
         }
@@ -1752,7 +1779,7 @@ public class JDUtilities {
      * @return
      */
     public static String getFileExtension(File ret) {
-        if(ret==null)return null;
+        if (ret == null) return null;
         String str = ret.getAbsolutePath();
         int i1 = str.indexOf("/");
         int i2 = str.indexOf("\\");
@@ -1916,11 +1943,5 @@ public class JDUtilities {
     public static UIInterface getGUI() {
         return JDUtilities.getController().getUiInterface();
     }
-
-
-
-
-
-  
 
 }

@@ -48,6 +48,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.unrar.JUnrar;
 import jd.utils.JDLocale;
+import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 
 /**
@@ -115,7 +116,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
         pack();
         JFrame frame = parent.getFrame();
         this.setTitle(JDLocale.L("gui.linkgrabber.title","Linksammler aktiv (D&D + Clipboard)"));
-        this.setIconImage(JDUtilities.getImage(JDLocale.L("gui.images.jd_logo")));
+        this.setIconImage(JDUtilities.getImage(JDTheme.I("gui.images.jd_logo")));
         setLocation((int) (frame.getLocation().getX() + frame.getWidth() / 2 - this.getWidth() / 2), (int) (frame.getLocation().getY() + frame.getHeight() / 2 - this.getHeight() / 2));
         addLinks(linkList);
         pack();

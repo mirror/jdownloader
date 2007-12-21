@@ -3,12 +3,8 @@ package jd.config;
 import java.io.Serializable;
 import java.util.Vector;
 
-
 import jd.controlling.interaction.Interaction;
 import jd.controlling.interaction.InteractionTrigger;
-import jd.controlling.interaction.ManualCaptcha;
-import jd.controlling.interaction.Unrar;
-
 import jd.router.RouterData;
 
 /**
@@ -167,6 +163,8 @@ public class Configuration extends Property implements Serializable {
     public static final String PARAM_FILEWRITER_INSTANCE = "FILEWRITER_INSTANCE";
 
     public static final String PARAM_LANG_EDITMODE = "LANG_EDITMODE";
+
+    public static final String PARAM_THEME = "THEME";
 
     /**
      * Die unterschiedlichen Interaktionen. (ZB Reconnect nach einem Download)

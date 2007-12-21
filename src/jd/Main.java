@@ -16,6 +16,7 @@ import jd.controlling.interaction.ResetLink;
 import jd.event.UIEvent;
 import jd.gui.UIInterface;
 import jd.utils.JDLocale;
+import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 
 /**
@@ -28,6 +29,7 @@ public class Main {
 
     public static void main(String args[]) {
         JDLocale.setLocale("german");
+        JDTheme.setTheme("default");
         // rausgenommen verlängert nur den startvorgang
         // if (SingleInstanceController.isApplicationRunning()) {
         // JOptionPane.showMessageDialog(null,
