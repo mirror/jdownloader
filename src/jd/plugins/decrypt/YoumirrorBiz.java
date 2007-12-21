@@ -22,7 +22,8 @@ public class YoumirrorBiz extends PluginForDecrypt {
     private String version = "2.0.0.0";
     //youmirror.biz/folder/bg2yt2jkzzodocv
     //youmirror.biz/file/30ucgz4t96hxoz5
-    private Pattern patternSupported = getSupportPattern("http://[*]youmirror.biz[*]/(file|folder)/[a-zA-Z0-9]{15}");
+    //http://youmirror.biz/adfree/file/erikxrrc0zdowhx
+    private Pattern patternSupported = getSupportPattern("http://[*]youmirror.biz[*]/(adfree/file|adfree/folder/file|folder)/[a-zA-Z0-9]{15}");
 
     private Pattern patternRapidshare = Pattern.compile("1\" target=\"_blank\">rapidshare.com"); // +
 
