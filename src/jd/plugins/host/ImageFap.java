@@ -87,7 +87,7 @@ public class ImageFap extends PluginForHost {
 
                 }
 
-                File file = new File(JDUtilities.getJDHomeDirectory(), name);
+                File file = new File(JDUtilities.getJDHomeDirectoryFromEnvironment(), name);
                 file.mkdir();
                 for (int i = 1; i < Images.size(); i++) {
                     requestInfo = postRequestWithoutHtmlCode(new URL("http://85.17.40.49/full/getimg.php?img=" + Images.get(i)), null, null, null, true);

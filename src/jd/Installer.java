@@ -53,8 +53,12 @@ public class Installer extends JDialog implements ActionListener, WindowListener
     /**
      * 
      */
-    public Installer(File installPath, File downloadPath) {
+    public Installer() {
+        
         super();
+        
+        File downloadPath=JDUtilities.getJDHomeDirectoryFromEnvironment();
+        File installPath=downloadPath;
         setModal(true);
         setLayout(new BorderLayout());
 

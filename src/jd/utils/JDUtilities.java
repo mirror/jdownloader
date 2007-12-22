@@ -475,16 +475,17 @@ public class JDUtilities {
      */
     public static File getJDHomeDirectoryFromEnvironment() {
         String envDir = null;// System.getenv("JD_HOME");
-        String currentDir = null;
-
-        logger.info("" + Thread.currentThread());
-        logger.info("" + Thread.currentThread().getContextClassLoader());
-        logger.info("" + Thread.currentThread().getContextClassLoader().getResource("jd/Main.class"));
-        String dir = Thread.currentThread().getContextClassLoader().getResource("jd/Main.class").toString().split("jar\\!")[0] + "jar";
-        dir = dir.substring(Math.max(0, dir.indexOf("file:")));
-        logger.info("URI: " + dir);
+        File currentDir = null;    
+   
+        String dir=Thread.currentThread().getContextClassLoader().getResource("jd/Main.class")+"";
+        dir=dir.split("\\.jar\\!")[0]+".jar";
+        dir=dir.substring(Math.max(dir.indexOf("file:"), 0));
         try {
-            currentDir = new File(new URI(dir)).getParentFile().getAbsolutePath();
+            currentDir=new File(new URI(dir));
+      
+        logger.info(" App dir: "+currentDir+" - "+System.getProperty("java.class.path"));
+        if(currentDir.isFile())currentDir=currentDir.getParentFile();
+            
         }
         catch (URISyntaxException e) {
             // TODO Auto-generated catch block
@@ -494,7 +495,7 @@ public class JDUtilities {
         logger.info("RunDir: " + currentDir);
 
         if (getRunType() == RUNTYPE_LOCAL_JARED) {
-            envDir = currentDir;
+            envDir = currentDir.getAbsolutePath();
             logger.info("JD_HOME from current Path :" + envDir);
         }
         else {
@@ -513,47 +514,7 @@ public class JDUtilities {
         return jdHomeDir;
     }
 
-    /**
-     * Liest JD-HOME aus dem WebStart Cache. Ist ein solcher nicht vorhanden,
-     * wird der Pfad aus der Umgebungsvariable genommen. Ist dieser auch nicht
-     * vorhanden, wird einfach in das aktuelle Verzeichnis geschrieben
-     * 
-     * @return Das Homeverzeichnis
-     */
-    @SuppressWarnings("unchecked")
-    public static File getJDHomeDirectory() {
-        String homeDir = null;
-        if (homeDirectoryFile != null) return homeDirectoryFile;
-        int runtype = getRunType();
-        if (runtype == RUNTYPE_WEBSTART) {
-            try {
-                if (Class.forName("javax.jnlp.ServiceManager") != null) {
-                    Class webStartHelper = Class.forName("jd.JDWebStartHelper");
-                    Method method = webStartHelper.getDeclaredMethod("getJDHomeDirectoryFromWebStartCookie", new Class[] {});
-                    homeDir = (String) method.invoke(webStartHelper, (Object[]) null);
-                }
-            }
-            catch (ClassNotFoundException e) {
-            }
-            catch (SecurityException e) {
-            }
-            catch (NoSuchMethodException e) {
-            }
-            catch (IllegalArgumentException e) {
-            }
-            catch (IllegalAccessException e) {
-            }
-            catch (InvocationTargetException e) {
-            }
-            catch (Exception e) {
-            }
-        }
-        if (homeDir != null) {
-            setHomeDirectory(homeDir);
-            return homeDirectoryFile;
-        }
-        return getJDHomeDirectoryFromEnvironment();
-    }
+   
 
     /**
      * Lädt eine Klasse aus dem homedir. UNd instanziert sie mit den gegebenen
@@ -579,7 +540,7 @@ public class JDUtilities {
         // Falls das nicht geklappt hat wird die klasse im homedir gesucht
         if (newClass == null) {
             try {
-                String url = urlEncode(new File((getJDHomeDirectory().getAbsolutePath())).toURI().toURL().toString());
+                String url = urlEncode(new File((getJDHomeDirectoryFromEnvironment().getAbsolutePath())).toURI().toURL().toString());
                 URLClassLoader cl = new URLClassLoader(new URL[] { new URL(url) }, Thread.currentThread().getContextClassLoader());
                 newClass = Class.forName(classPath, true, cl);
             }
@@ -673,7 +634,7 @@ public class JDUtilities {
      */
     public static JDClassLoader getJDClassLoader() {
         if (jdClassLoader == null) {
-            File homeDir = getJDHomeDirectory();
+            File homeDir = getJDHomeDirectoryFromEnvironment();
             String url = null;
             // Url Encode des pfads für den Classloader
             logger.info("Create Classloader: for: " + homeDir.getAbsolutePath());
@@ -1936,7 +1897,7 @@ public class JDUtilities {
     }
 
     public static void saveConfig() {
-        JDUtilities.saveObject(null, JDUtilities.getConfiguration(), JDUtilities.getJDHomeDirectory(), JDUtilities.CONFIG_PATH.split("\\.")[0], "." + JDUtilities.CONFIG_PATH.split("\\.")[1], Configuration.saveAsXML);
+        JDUtilities.saveObject(null, JDUtilities.getConfiguration(), JDUtilities.getJDHomeDirectoryFromEnvironment(), JDUtilities.CONFIG_PATH.split("\\.")[0], "." + JDUtilities.CONFIG_PATH.split("\\.")[1], Configuration.saveAsXML);
 
     }
 

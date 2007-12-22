@@ -43,7 +43,7 @@ public class UploadedTo {
 
         initTime = new Date().getTime();
         while (true) {
-            load(new File(JDUtilities.getJDHomeDirectory().getAbsolutePath() + "/jd/captcha/methods" + "/" + hoster + "/captchas/"), link);
+            load(new File(JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath() + "/jd/captcha/methods" + "/" + hoster + "/captchas/"), link);
 
             counter++;
 

@@ -154,10 +154,10 @@ public class JDInit {
         }
 
         if (!allOK) {
-            File home = null;
-            home = new File(System.getProperty("jdhome", JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath()));
+         
+        
             installerVisible=true;
-            Installer inst = new Installer(home, JDUtilities.getJDHomeDirectoryFromEnvironment());
+            Installer inst = new Installer();
             if (!inst.isAborted() && inst.getHomeDir() != null && inst.getDownloadDir() != null) {
 
                 String newHome = inst.getHomeDir();

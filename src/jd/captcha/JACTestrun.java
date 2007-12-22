@@ -30,7 +30,7 @@ public class JACTestrun {
     private void go(){
 
         @SuppressWarnings("unused")
-        String methodsPath=UTILITIES.getFullPath(new String[] { JDUtilities.getJDHomeDirectory().getAbsolutePath(), "jd", "captcha", "methods"});
+        String methodsPath=UTILITIES.getFullPath(new String[] { JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath(), "jd", "captcha", "methods"});
         JAntiCaptcha.testMethod(new File("C:/Users/coalado/.jd_home/jd/captcha/methods/rapidshare.com/"));
 
 //       File[] methods= JAntiCaptcha.getMethods(methodsPath);

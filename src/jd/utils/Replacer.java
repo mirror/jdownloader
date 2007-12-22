@@ -148,7 +148,7 @@ public class Replacer {
   
   if(key.equalsIgnoreCase("JD.HOME_DIR")){
       
-      return JDUtilities.getJDHomeDirectory().getAbsolutePath();
+      return JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath();
       
   }
   return "";

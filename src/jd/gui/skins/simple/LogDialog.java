@@ -125,7 +125,7 @@ public class LogDialog extends JDialog implements ActionListener {
 
             if (censor.length > 0) {
                 JDUtilities.getConfiguration().setProperty(Configuration.PARAM_CENSOR_FIELD, txt);
-                JDUtilities.saveObject(null, JDUtilities.getConfiguration(), JDUtilities.getJDHomeDirectory(), JDUtilities.CONFIG_PATH.split("\\.")[0], "." + JDUtilities.CONFIG_PATH.split("\\.")[1], Configuration.saveAsXML);
+                JDUtilities.saveObject(null, JDUtilities.getConfiguration(), JDUtilities.getJDHomeDirectoryFromEnvironment(), JDUtilities.CONFIG_PATH.split("\\.")[0], "." + JDUtilities.CONFIG_PATH.split("\\.")[1], Configuration.saveAsXML);
                 
                 String content = logField.getSelectedText();
                 if (content == null || content.length() == 0) {
@@ -151,7 +151,7 @@ public class LogDialog extends JDialog implements ActionListener {
 
             if (censor.length > 0) {
                 JDUtilities.getConfiguration().setProperty(Configuration.PARAM_CENSOR_FIELD, txt);
-                JDUtilities.saveObject(null, JDUtilities.getConfiguration(), JDUtilities.getJDHomeDirectory(), JDUtilities.CONFIG_PATH.split("\\.")[0], "." + JDUtilities.CONFIG_PATH.split("\\.")[1], Configuration.saveAsXML);
+                JDUtilities.saveObject(null, JDUtilities.getConfiguration(), JDUtilities.getJDHomeDirectoryFromEnvironment(), JDUtilities.CONFIG_PATH.split("\\.")[0], "." + JDUtilities.CONFIG_PATH.split("\\.")[1], Configuration.saveAsXML);
                 
                 String content = logField.getSelectedText();
                 if (content == null || content.length() == 0) {

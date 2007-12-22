@@ -27,7 +27,7 @@ public class JACTrain {
     }
     private void go(){
 
-        String methodsPath=UTILITIES.getFullPath(new String[] { JDUtilities.getJDHomeDirectory().getAbsolutePath(), "jd", "captcha", "methods"});
+        String methodsPath=UTILITIES.getFullPath(new String[] { JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath(), "jd", "captcha", "methods"});
         
         String hoster="serienjunkies.org";
 
@@ -36,7 +36,7 @@ public class JACTrain {
      jac.displayLibrary();
        // jac.setShowDebugGui(true);
        // jac.showPreparedCaptcha(new File("captcha\\methods\\rapidshare.com\\captchas\\rapidsharecom138040807171852.jpg"));
-        jac.trainAllCaptchas(JDUtilities.getJDHomeDirectory().getAbsolutePath()+"\\jd\\captcha\\methods\\"+hoster+"\\captchas\\");
+        jac.trainAllCaptchas(JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath()+"\\jd\\captcha\\methods\\"+hoster+"\\captchas\\");
   
         logger.info("Training Ende");
         //jac.addLetterMap();
