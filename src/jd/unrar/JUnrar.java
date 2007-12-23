@@ -416,7 +416,6 @@ public class JUnrar {
             params.add("-p-");
         else
             params.add("-p" + pass);
-        params.add("-v");
         params.add("-ierr");
         params.add("v");
         params.add(file.getName());
