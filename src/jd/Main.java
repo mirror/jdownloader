@@ -45,10 +45,12 @@ public class Main {
     }
 
     private void go() {
-
+        JDInit init = new JDInit();
+        init.init();
+        init.loadImages();
         JWindow window = new JWindow() {
             public void paint(Graphics g) {
-                Image splashImage = getToolkit().getImage("img/jd_logo_large.png");
+                Image splashImage = JDUtilities.getImage("jd_logo_large");
                 g.drawImage(splashImage, 0, 0, this);
             }
         };
@@ -56,9 +58,7 @@ public class Main {
         window.setLocationRelativeTo(null);
         window.setVisible(true);
 
-        JDInit init = new JDInit();
-        init.init();
-        init.loadImages();
+
         logger.info("OS: " + System.getProperty("os.name") + ", " + System.getProperty("os.arch") + ", " + System.getProperty("os.version"));
         logger.info("Registriere Plugins");
         final Configuration configuration = init.loadConfiguration();
