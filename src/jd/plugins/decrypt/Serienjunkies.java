@@ -267,11 +267,14 @@ public class Serienjunkies extends PluginForDecrypt {
             if (reqinfo.getLocation() != null) {
                 links.add(reqinfo.getLocation());
             }
-            Vector<Vector<String>> links1 = getAllSimpleMatches(reqinfo.getHtmlCode(), "FORM ACTION=\"°\"");
-            for (int i = 0; i < links1.size(); i++) {
-                reqinfo = getRequest(new URL(links1.get(i).get(0)));
+            Pattern pattern = Pattern.compile("FORM ACTION=\"(.*?)\"[^>]*?>[^>]*?VALUE=\"Download\"", Pattern.CASE_INSENSITIVE);
+            Matcher matcher = pattern.matcher(reqinfo.getHtmlCode());
+            while (matcher.find()) {
+                reqinfo = getRequest(new URL(matcher.group(1)));
                 reqinfo = getRequest(new URL(getBetween(reqinfo.getHtmlCode(), "SRC=\"", "\"")));
-                links.add(reqinfo.getLocation());
+                String loc = reqinfo.getLocation();
+                if(loc!=null)
+                links.add(loc);
             }
         } catch (IOException e) {
             e.printStackTrace();
