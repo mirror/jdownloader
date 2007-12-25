@@ -78,7 +78,7 @@ public class MultiDecrypt extends PluginForDecrypt {
             }
         }
         patternStr += ").*";
-        logger.info(patternStr);
+        
         return Pattern.compile(patternStr, Pattern.CASE_INSENSITIVE);
     }
 

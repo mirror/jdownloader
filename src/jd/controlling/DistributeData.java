@@ -134,25 +134,44 @@ public class DistributeData extends ControlMulticaster {
         boolean moreToDo;
         do {
             moreToDo = false;
+            logger.info("Size: "+pluginsForDecrypt.size());
             for (int i = 0; i < pluginsForDecrypt.size(); i++) {
                 pDecrypt = pluginsForDecrypt.get(i);
                 Iterator<String[]> iterator = decryptedLinks.iterator();
                 while (iterator.hasNext()) {
                     String[] data = iterator.next();
-                    if (pDecrypt.canHandle(data[0])) {
+                    String localData = Plugin.getHttpLinkList(data[0]);
+
+                    try {
+                      localData = URLDecoder.decode(localData, "UTF-8");
+                    } catch (Exception e) {
+                        logger.warning("text not url decodeable");
+                    }
+                    
+                    
+                   
+                    if (pDecrypt.canHandle(localData)) {
                         moreToDo = true;
+                   
                         fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_PLUGIN_DECRYPT_ACTIVE, pDecrypt));
                         // logger.info("decryptedLink removed
                         // "+data+">>"+pDecrypt.getHost());
                         // Schleift die Passwörter und COmments durch den
                         // Nächsten Decrypter. (bypass)
                         iterator.remove();
-                        Vector<String[]> tmpLinks = pDecrypt.decryptLink(data[0]);
+                        
+                      
+                        cryptedLinks.addAll(pDecrypt.getDecryptableLinks(localData));
+                        localData = pDecrypt.cutMatches(localData);
+                 
+                        
+                        
+                        Vector<String[]> tmpLinks = pDecrypt.decryptLinks(cryptedLinks);
                         String password = data[1] == null ? "" : data[1];
                         String comment = data[2] == null ? "" : data[2];
                         logger.info("p " + password);
                         for (int ii = 0; ii < tmpLinks.size(); ii++) {
-                            logger.info(" Link: " + tmpLinks.get(ii) + " - ");
+                           
                             if (tmpLinks.get(ii)[1] != null) {
                                 tmpLinks.get(ii)[1] = password + "|" + tmpLinks.get(ii)[1];
                                 while (tmpLinks.get(ii)[1].startsWith("|"))

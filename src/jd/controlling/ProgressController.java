@@ -96,7 +96,7 @@ public class ProgressController {
         return finished;
     }
     public void finalize(){
-        JDUtilities.getLogger().info(this.toString());
+        JDUtilities.getLogger().info("FINALIZE "+this.toString()+this.getStatusText());
         this.finished=true;
         this.currentValue=this.max;
         JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_ON_PROGRESS, this.source));

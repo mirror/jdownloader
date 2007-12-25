@@ -165,7 +165,7 @@ public class SerienFreaksTv extends PluginForDecrypt {
                             }
 
                             results = getAllSimpleMatches(reqinfo.getHtmlCode(), Pattern.compile(favPattern, Pattern.MULTILINE | Pattern.DOTALL));
-logger.info(results+"");
+
                             // Favorit/Default-Download gefunden?
                             if (results != null && results.isEmpty() == false) {
                                 break;
@@ -236,7 +236,7 @@ logger.info(results+"");
                     }
 
                     // suche nach Links
-                    logger.info(reqinfo.getHtmlCode());
+                  
                     Vector<Vector<String>> links = getAllSimpleMatches(reqinfo.getHtmlCode(), DL_LINK);
                     progress.setRange(links.size());
 

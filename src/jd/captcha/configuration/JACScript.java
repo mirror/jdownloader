@@ -508,7 +508,7 @@ public class JACScript {
      * @param captcha
      */
     public void executePrepareCommands(Captcha captcha) {
-        if (captcha.isPrepared()) {
+        if (captcha==null ||captcha.isPrepared()) {
             // ISt schon prepared
             return;
         }
