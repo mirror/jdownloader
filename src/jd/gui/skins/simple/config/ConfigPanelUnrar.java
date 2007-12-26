@@ -80,7 +80,7 @@ addGUIConfigEntry(ce);
 ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, configuration,  Unrar.PROPERTY_WAIT_FOR_TERMINATION, JDLocale.L("gui.config.unrar.thread","Erst nach dem Entpacken mit dem Download fortfahren")).setDefaultValue(false));
         
         addGUIConfigEntry(ce);
-        ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_BUTTON, this, JDLocale.L("action.passwordlist.name")));
+        ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_BUTTON, this, JDLocale.L("gui.menu.action.passwordlist.name")));
         addGUIConfigEntry(ce);
         add(panel, BorderLayout.NORTH);
 
