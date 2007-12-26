@@ -496,7 +496,6 @@ public class JUnrar {
     private String preparpassword(String password)
     {
         String retpw = "";
-        retpw+='"';
         for (int i = 0; i < password.length(); i++) {
             char cur = password.charAt(i);
             if(cur=='"')
@@ -506,7 +505,6 @@ public class JUnrar {
             else
                 retpw+=(char) cur;
         }
-        retpw+='"';
         return retpw;
         
     }
