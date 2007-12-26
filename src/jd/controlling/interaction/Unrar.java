@@ -105,7 +105,6 @@ public class Unrar extends Interaction implements Serializable {
         unrar.overwriteFiles = JDUtilities.getConfiguration().getBooleanProperty(Unrar.PROPERTY_OVERWRITE_FILES, false);
         unrar.autoDelete = JDUtilities.getConfiguration().getBooleanProperty(Unrar.PROPERTY_AUTODELETE, false);
         unrar.unrar = JDUtilities.getConfiguration().getStringProperty(Unrar.PROPERTY_UNRARCOMMAND);
-        unrar.maxFilesize = JDUtilities.getConfiguration().getIntegerProperty(Unrar.PROPERTY_MAX_FILESIZE, 2);
         return unrar;
     }
 

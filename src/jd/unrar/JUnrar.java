@@ -5,6 +5,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -24,17 +25,15 @@ import jd.utils.JDUtilities;
 
 public class JUnrar {
     public String unrar = null;
-    public long maxFilesize = 2097152; // entspricht 2 mb
     public boolean overwriteFiles = false, autoDelete = true;
     public HashMap<File, String> files;
     // Dateien die noch kommen bzw. bei jDownloader gerade heruntergeladen
     // werden
     public String[] followingFiles = null;
-
     private File passwordList = new File(JDUtilities.getJDHomeDirectoryFromEnvironment(), "passwordlist.xml");
     private File unpacked = new File(JDUtilities.getJDHomeDirectoryFromEnvironment(), "unpacked.dat");
     private Vector<File> unpackedlist;
-
+    private Integer[] volumes = null;
     private static Object[][] filesignatures = {{"avi", new Integer[][]{{82, 73, 70, 70}}}, {"mpg", new Integer[][]{{0, 0, 1, 186, -1, 0}}}, {"mpeg", new Integer[][]{{0, 0, 1, 186, -1, 0}}}, {"rar", new Integer[][]{{82, 97, 114, 33, 26, 7}}}, {"wmv", new Integer[][]{{48, 38, 178, 117, 142, 102}}}, {"mp3", new Integer[][]{{73, 68, 51, 3, 0}, {255, 251, 104, -1, 0, -1,}, {255, 251, 64, -1, 0, -1}}}, {"exe", new Integer[][]{{77, 90, 144, 0, 3, 0}}}, {"bz2", new Integer[][]{{66, 90, 104, 54, 49, 65}}}, {"gz", new Integer[][]{{31, 139, 8, 0}}}, {"doc", new Integer[][]{{208, 207, 17, 224, 161, 177}}}, {"pdf", new Integer[][]{{37, 80, 68, 70, 45, 49}}}, {"wma", new Integer[][]{{48, 38, 178, 117, 142, 102}}}, {"jpg", new Integer[][]{{255, 216, 255, 224, 0, 16}, {255, 216, 255, 225, 39, 222}}}, {"m4a", new Integer[][]{{0, 0, 0, 32, 102, 116}}}, {"mdf", new Integer[][]{{0, 255, 255, 255, 255, 255}}}, {"xcf", new Integer[][]{{103, 105, 109, 112, 32, 120}}}};
     private Integer[][] typicalFilesignatures = {{80, 75, 3, 4, -1, 0,}, {82, 73, 70, 70}, {0, 255, 255, 255, 255, 255}, {48, 38, 178, 117, 142, 102}, {208, 207, 17, 224, 161, 177}};
     public HashMap<String, Integer> passwordlist;
@@ -134,16 +133,16 @@ public class JUnrar {
         // JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_PACKETNAME_AS_SUBFOLDER,
         // false);
         for (int i = 0; i < list.length; i++) {
-            //Unterordner werden mitaufgelistet 
-            //Das wird eigentlich nichtmehr benoetigt ist aus sicherheitgruenden jedoch noch drinnen
+            // Unterordner werden mitaufgelistet
+            // Das wird eigentlich nichtmehr benoetigt ist aus
+            // sicherheitgruenden jedoch noch drinnen
             if (list[i].isDirectory()) {
                 File[] list2 = list[i].listFiles();
                 for (int j = 0; j < list2.length; j++) {
                     ret.add(list2[j]);
                 }
 
-            }
-            else {
+            } else {
                 ret.add(list[i]);
             }
             if (ret.size() > 400) {
@@ -327,7 +326,7 @@ public class JUnrar {
     public void addToPasswordlist(String password) {
         if (password.matches("\\{\".*\"\\}$")) {
             password = password.replaceFirst("\\{\"", "").replaceFirst("\"\\}$", "");
-            String[] passwords = password.split("\";\"");
+            String[] passwords = password.split("\",\"");
             for (int i = 0; i < passwords.length; i++) {
                 passwords[i] = passwords[i].trim();
                 if (passwords[i] != null && !passwords[i].matches("[\\s]*") && !passwords[i].matches("[\\s]*") && !passwordlist.containsKey(passwords[i]))
@@ -414,20 +413,52 @@ public class JUnrar {
         Vector<String> params = new Vector<String>();
         if (pass == null || pass == "")
             params.add("-p-");
-        else
+        else            
             params.add("-p" + pass);
+        
+        params.add("-v");
         params.add("-ierr");
         params.add("v");
         params.add(file.getName());
         Process p = createProcess(unrar, params.toArray(new String[]{}), file.getParentFile());
-        String str = startInputListener(p, file.getParentFile());
+        String str = startInputListenerwithoutprogress(p, file.getParentFile());
         if (str.indexOf("Cannot find volume") != -1) {
             logger.finer("Volume error");
             logger.finer(str);
             return FILE_ERROR;
         }
-        if (str.indexOf("*") != -1) {
+        if (str.indexOf(" (password incorrect ?)") != -1) {
+            return PASSWORD_PROTECTEDARCHIV;
+        } else {
+            Pattern patternvolumes = Pattern.compile("(.*)" + System.getProperty("line.separator") + ".*?([\\d]+).*?[\\d]+.*[\\d]+\\-[\\d]+\\-[\\d]+ [\\d]+:[\\d]+", Pattern.CASE_INSENSITIVE);
+            Matcher matchervolumes = patternvolumes.matcher(str);
             HashMap<String, Integer> protectedFiles = new HashMap<String, Integer>();
+            ArrayList<String> vFiles = new ArrayList<String>();
+            ArrayList<Integer> vSizes = new ArrayList<Integer>();
+            while (matchervolumes.find()) {
+
+                String name = matchervolumes.group(1);
+                if (name.matches("\\*.*") && !protectedFiles.containsKey(matchervolumes.group(1))) {
+                    name = name.replaceFirst(".", "");
+                    protectedFiles.put(name, Integer.parseInt(matchervolumes.group(2)));
+
+                } else
+                    name = name.replaceFirst(".", "");
+                if (!vFiles.contains(name)) {
+                    vFiles.add(name);
+                    vSizes.add(Integer.parseInt(matchervolumes.group(2)));
+                }
+            }
+            volumes = vSizes.toArray(new Integer[vSizes.size()]);
+            if (volumes.length == 0) {
+                logger.severe("can't finde a file in the archiv: "+file.getName());
+                logger.severe(str);
+                return FILE_ERROR;
+            }
+            if (protectedFiles.size() == 0) {
+                logger.finer("no File Protection");
+                return NO_PROTECTEDFILE;
+            }
             logger.finer("Single File Protection");
             Pattern pattern = Pattern.compile("\\*(.*)" + System.getProperty("line.separator") + ".*?([0-9]+)", Pattern.CASE_INSENSITIVE);
             Matcher matcher = pattern.matcher(str);
@@ -435,42 +466,50 @@ public class JUnrar {
                 if (!protectedFiles.containsKey(matcher.group(1)))
                     protectedFiles.put(matcher.group(1), Integer.parseInt(matcher.group(2)));
             }
-            if (protectedFiles.size() > 0) {
-                protectedFiles = ((HashMap<String, Integer>) revSortByValue(protectedFiles));
-                Entry<String, Integer> entry = protectedFiles.entrySet().iterator().next();
-                if (entry.getValue() <= maxFilesize) {
-                    extendPasswordSearch = false;
-                    // die passwortgeschützte Datei wird komplett überprüft
-                    // deswegen muss nur die kleinste passwortgeschützte Datei
-                    // überprüft werden
-                    return new String[]{entry.getKey()};
-                } else {
-                    logger.finer("There is no protected file matches the maximal filesize try to crack the passwort by filesignatures (not 100% safe)");
-                    extendPasswordSearch = true;
-                    for (Map.Entry<String, Integer> ent : protectedFiles.entrySet()) {
-                        String name = ent.getKey();
-                        if (isInFilesignatures(name)) {
-                            return new String[]{name};
-                        }
-                    }
-                    Set<String> set = protectedFiles.keySet();
-                    return set.toArray(new String[set.size()]);
-                }
+            protectedFiles = ((HashMap<String, Integer>) revSortByValue(protectedFiles));
+            Entry<String, Integer> entry = protectedFiles.entrySet().iterator().next();
+            if (2097152>=entry.getValue()) {
+                extendPasswordSearch = false;
+                // die passwortgeschützte Datei wird komplett überprüft
+                // deswegen muss nur die kleinste passwortgeschützte Datei
+                // überprüft werden
+                return new String[]{entry.getKey()};
             } else {
-                logger.severe(str);
-                logger.severe("Please load the English version of unrar from http://www.rarlab.com/rar_add.htm for your OS");
-                return FILE_ERROR;
+                logger.finer("There is no protected file matches the maximal filesize try to crack the passwort by filesignatures (not 100% safe)");
+                extendPasswordSearch = true;
+                for (Map.Entry<String, Integer> ent : protectedFiles.entrySet()) {
+                    String name = ent.getKey();
+                    if (isInFilesignatures(name)) {
+                        return new String[]{name};
+                    }
+                }
+                Set<String> set = protectedFiles.keySet();
+                return set.toArray(new String[set.size()]);
             }
 
-        } else if (str.indexOf(" (password incorrect ?)") != -1) {
-            return PASSWORD_PROTECTEDARCHIV;
-        } else {
-            return NO_PROTECTEDFILE;
         }
+
         // logger.info(archivProtected+" : "+str);
 
     }
-
+    
+    private String preparpassword(String password)
+    {
+        String retpw = "";
+        retpw+='"';
+        for (int i = 0; i < password.length(); i++) {
+            char cur = password.charAt(i);
+            if(cur=='"')
+            {
+                retpw+='\"';
+            }
+            else
+                retpw+=(char) cur;
+        }
+        retpw+='"';
+        return retpw;
+        
+    }
     /**
      * Entpackt eine Datei
      * 
@@ -480,15 +519,17 @@ public class JUnrar {
      */
 
     private boolean extractFile(File file, String password) {
+        progress.addToMax(100);
+        progress.setStatus(0);
+        progress.setRange(100);
         logger.info("Extracting " + file.getName());
-        progress.addToMax(10);
         progress.setStatusText("Extract: " + file);
         String[] z;
         if (password != null) {
             logger.finer("Password is given: " + password);
             progress.increase(1);
             progress.setStatusText("Checkarchive: " + file);
-
+            password=preparpassword(password);
             z = getProtectedFiles(file, password);
 
             if (z == FILE_ERROR) {
@@ -514,6 +555,7 @@ public class JUnrar {
 
         if (standardPassword != null && password != standardPassword) {
             password = standardPassword;
+            password=preparpassword(password);
             logger.finer("Password is given: " + password);
             progress.increase(1);
             progress.setStatusText("Checkarchive: " + file);
@@ -556,8 +598,12 @@ public class JUnrar {
             return false;
         } else if (z == PASSWORD_PROTECTEDARCHIV) {
             long time = -System.currentTimeMillis();
+            progress.setStatusText("search password");
             for (Map.Entry<String, Integer> entry : passwordlist.entrySet()) {
+
                 password = entry.getKey();
+                password=preparpassword(password);
+                progress.setStatusText("password:"+password);
                 z = getProtectedFiles(file, password);
                 if (z == FILE_ERROR)
                     return false;
@@ -687,6 +733,58 @@ public class JUnrar {
         }
         return d;
     }
+
+    /**
+     * gibt den Inhalt von stderr eines Processes als String aus bei unrar kann
+     * man mit -ierr alle Nachrichten in stderr umleichten wenn password
+     * incorrect in stderr auftaucht bricht er den Prozess sofort ab und löscht
+     * die entpackten Dateien
+     * 
+     * @param p
+     * @param parent
+     * @return stderr
+     */
+    private String startInputListenerwithoutprogress(Process p, File parent) {
+        InputStreamReader ipsr = new InputStreamReader(p.getErrorStream());
+        StringBuffer buff = new StringBuffer();
+        char seperator = System.getProperty("line.separator").charAt(0);
+        try {
+            int temp;
+            do {
+                temp = ipsr.read();
+                buff.append((char) temp);
+                if (((char) temp) == seperator && buff.indexOf(" (password incorrect ?)") != -1) {
+                    p.destroy();
+                }
+            } while ((temp != -1));
+        } catch (Exception e) {
+            Pattern pattern = Pattern.compile("Extracting  (.*)", Pattern.CASE_INSENSITIVE);
+            Matcher matcher = pattern.matcher(buff);
+            while (matcher.find()) {
+                File delfile = new File(parent, matcher.group(1));
+                if (delfile.isFile() && delfile.length() == 0)
+                    delfile.delete();
+            }
+        }
+        return buff.toString();
+    }
+    private Thread delayedProgress(final int steps, final int delay) {
+
+        return new Thread(new Runnable() {
+
+            public void run() {
+                for (int i = 0; i < steps; i++) {
+                    try {
+                        Thread.sleep(delay);
+                    } catch (InterruptedException e) {
+                    }
+                    progress.increase(1);
+                }
+
+            }
+        });
+
+    }
     /**
      * gibt den Inhalt von stderr eines Processes als String aus bei unrar kann
      * man mit -ierr alle Nachrichten in stderr umleichten wenn password
@@ -701,39 +799,63 @@ public class JUnrar {
         InputStreamReader ipsr = new InputStreamReader(p.getErrorStream());
         StringBuffer buff = new StringBuffer();
         char seperator = System.getProperty("line.separator").charAt(0);
-        int changeCount = 0;
+        long max = 0;
+        for (int i = 0; i < volumes.length; i++) {
+            max += volumes[i];
+        }
+        long state = 0;
+        // if (volumes > 1)
+        // vol = max / volumes;
         String text = "";
-        int max = 1000;
-        progress.addToMax(max);
+        int c = 0;
+        int perc = 0;
+        boolean b = true;
+        Thread lastThread = null;
+        int steps = 0;
         try {
             int temp;
             do {
                 temp = ipsr.read();
                 buff.append((char) temp);
-                if (((char) temp) == seperator && buff.indexOf(" (password incorrect ?)") != -1) {
-                    p.destroy();
-                }
-                String[] lines = JDUtilities.splitByNewline(buff.toString());
-
-                String newText = "";
-                for (int i = lines.length - 1; i >= 0; i--) {
-                    if (lines[i].trim().length() > 0)
-                        newText += "<" + lines[i].trim();
-                }
-                if (newText.equals(text)) {
-                    changeCount++;
-                    if (changeCount == 10) {
-                        progress.setStatusText(newText);
-                        if (max > 0) {
-                            progress.increase(3);
-                            max -= 3;
-
-                        }
+                if (((char) temp) == seperator) {
+                    if (buff.indexOf(" (password incorrect ?)") != -1) {
+                        p.destroy();
                     }
-                } else {
-                    changeCount = 0;
+                    if(text.trim().length() > 0)
+                    progress.setStatusText(text);
+                    b=true;
+
+                    text = "";
                 }
-                text = newText;
+                else
+                {
+                    text +=(char) temp;
+                    if (b && text.trim().length() > 0) {
+                        if (text.matches("Extracting  .*")) {
+                            b=false;
+                            state += volumes[c];
+                            steps = (int) (state*100/max);
+                            if (steps > 0) {
+                                if (lastThread != null && lastThread.isAlive()) {
+                                    lastThread.interrupt();
+                                    progress.setStatus(perc);
+                                }
+                                state = 0;
+                                perc += steps;
+                                if (volumes[c] > 10000)
+                                {
+                                    int time = volumes[c]/steps/10000;
+                                    lastThread = delayedProgress(steps, time);
+                                    lastThread.start();
+                                }
+                                else
+                                    progress.setStatus(perc);
+                            }
+                            c++;
+                        }
+
+                    }
+                }
             } while ((temp != -1));
         } catch (Exception e) {
             Pattern pattern = Pattern.compile("Extracting  (.*)", Pattern.CASE_INSENSITIVE);
@@ -744,7 +866,7 @@ public class JUnrar {
                     delfile.delete();
             }
         }
-        progress.increase(max);
+        progress.increase(100);
         return buff.toString();
     }
 
@@ -863,7 +985,7 @@ public class JUnrar {
                 params.add(file.getName());
                 logger.finer("Check Archiv: " + file);
                 Process p = createProcess(unrar, params.toArray(new String[]{}), file.getParentFile());
-                String str = startInputListener(p, file.getParentFile());
+                String str = startInputListenerwithoutprogress(p, file.getParentFile());
                 if (str.indexOf(" (password incorrect ?)") != -1) {
                     logger.finer("Password incorrect");
                     return 2;
@@ -936,7 +1058,6 @@ public class JUnrar {
                 }
                 JUnrar un = new JUnrar();
                 un.files = nfiles;
-                un.maxFilesize = maxFilesize;
                 un.standardPassword = standardPassword;
                 un.autoDelete = autoDelete;
                 un.unrar = unrar;
@@ -975,7 +1096,6 @@ public class JUnrar {
         unrar = getUnrarCommand();
         logger.info("Starting Unrar (DwD|Coalado)");
         logger.info("Config->unrar: " + unrar);
-        logger.info("Config->maxFilesize: " + maxFilesize);
         logger.info("Config->Password: " + standardPassword);
         logger.info("Config->overwriteFiles: " + overwriteFiles);
         logger.info("Config->autoDelete: " + autoDelete);
@@ -989,7 +1109,7 @@ public class JUnrar {
             File file = entry.getKey();
             if (file.isFile()) {
                 String name = file.getName();
-                if (name.matches(".*part[0]*[1].rar$") && (autoDelete || !isFileInUnpackedList(entry.getKey())) &&  !isFollowing(name) ) {
+                if (name.matches(".*part[0]*[1].rar$") && (autoDelete || !isFileInUnpackedList(entry.getKey())) && !isFollowing(name)) {
                     logger.finer("Multipart archive: " + entry.getKey());
                     if (extractFile(entry.getKey(), entry.getValue())) {
                         ret.add(entry.getKey().getParentFile().getAbsolutePath());
