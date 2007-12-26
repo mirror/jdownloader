@@ -458,16 +458,17 @@ public class JDController implements PluginListener, ControlListener, UIListener
 
         xml += "</content>";
         logger.info(xml);
-        xml = JDUtilities.encrypt(xml, "DLC Parser");
+        String[] encrypt = JDUtilities.encrypt(xml, "DLC Parser");
 
-        logger.info(xml);
-        if (xml == null) {
-            logger.severe("JDTC Encryption failed.");
+        logger.info(encrypt[1]+" - "+encrypt[0]);
+        if (encrypt == null) {
+            logger.severe("DLC Encryption failed.");
             this.getUiInterface().showMessageDialog("JDTC Encryption failed.");
             return;
 
         }
-        xml = "<dlc encrypted=\"jdtc\">" + xml + "</dlc>";
+        String key=encrypt[1];
+        xml=encrypt[0];
 
         try {
             URL[] services = new URL[] { new URL("http://recrypt1.ath.cx/service.php"), new URL("http://recrypt2.ath.cx/service.php"), new URL("http://recrypt3.ath.cx/service.php") };
@@ -480,19 +481,21 @@ public class JDController implements PluginListener, ControlListener, UIListener
                     url++;
                     continue;
                 }
-                logger.finer("Call Redirect: " + ri.getLocation());
+                logger.finer("Call Redirect: " + ri.getLocation()+" - "+"jd=1&srcType=jdtc&data=" + key);
 
-                ri = Plugin.postRequest(new URL(ri.getLocation()), null, null, null, "jd=1&data=" + xml, true);
+                ri = Plugin.postRequest(new URL(ri.getLocation()), null, null, null, "jd=1&srcType=jdtc&data=" + key, true);
                 // CHeck ob der call erfolgreich war
 
-                if (!ri.isOK() || !ri.containsHTML("dlc")) {
+                if (!ri.isOK() || !ri.containsHTML("<rc>")) {
                     url++;
                     continue;
                 }
                 else {
-                    String dlcString = ri.getHtmlCode();
-
-                    JDUtilities.writeLocalFile(file, dlcString);
+                    String dlcKey = ri.getHtmlCode();
+                  
+                    dlcKey=   Plugin.getBetween(dlcKey, "<rc>", "</rc>");
+                    logger.info("DLC KEy: "+dlcKey);
+                    JDUtilities.writeLocalFile(file, xml+dlcKey);
                     this.getUiInterface().showMessageDialog("DLC encryption successfull");
 
                     return;

@@ -407,7 +407,8 @@ static private final String DOWNLOAD_LIMIT_REACHED="Free-Traffic ist aufgebrauch
                 // Wird als login verwendet
                 case PluginStep.STEP_WAIT_TIME:
                     logger.info("login");
-                    requestInfo = Plugin.postRequest(new URL("http://uploaded.to/login"), null, null, null, "email=Honk&password=fxnsvzh", false);
+                    requestInfo = Plugin.postRequest(new URL("http://uploaded.to/login"), null, null, null, "email="+user+"&password="+pass, false);
+                    
                     if (requestInfo.getCookie().indexOf("auth") < 0) {
                         step.setStatus(PluginStep.STATUS_ERROR);
                         logger.severe("Premiumfehler Login");

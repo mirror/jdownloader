@@ -544,7 +544,7 @@ public abstract class Plugin {
      * @return der Text zwischen den gefundenen stellen oder, falls nichts
      *         gefunden wurde, der vollständige Text
      */
-    public String getBetween(String data, String startPattern, String lastPattern) {
+    public static String getBetween(String data, String startPattern, String lastPattern) {
         Pattern p = Pattern.compile("(?s)" + startPattern + "(.*?)" + lastPattern, Pattern.CASE_INSENSITIVE);
         Matcher match = p.matcher(data);
         if (match.find())

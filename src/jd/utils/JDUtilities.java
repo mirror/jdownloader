@@ -1854,7 +1854,7 @@ public class JDUtilities {
      * @param encryption
      * @return ciphertext
      */
-    public static String encrypt(String string, String encryption) {
+    public static String[] encrypt(String string, String encryption) {
         Vector<PluginForContainer> pfc = JDUtilities.getPluginsForContainer();
         for (int i = 0; i < pfc.size(); i++) {
             if (pfc.get(i).getPluginName().equalsIgnoreCase(encryption)) {
