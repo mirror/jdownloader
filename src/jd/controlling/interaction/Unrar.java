@@ -109,7 +109,6 @@ public class Unrar extends Interaction implements Serializable {
         if(JDUtilities.getConfiguration().getBooleanProperty(Unrar.PROPERTY_ENABLE_EXTRACTFOLDER, false))
         {
             String efolder = JDUtilities.getConfiguration().getStringProperty(Unrar.PROPERTY_EXTRACTFOLDER, null);
-            System.out.println(efolder);
             if(efolder!=null)
                 unrar.extractFolder=new File(efolder);
         }
