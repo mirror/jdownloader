@@ -21,15 +21,15 @@ public class ClipboardHandler extends Thread {
      */
     private DistributeData distributeData = null;
 
-    public boolean enabled = false;
+    public boolean         enabled        = true;
 
-    private Clipboard clipboard;
+    private Clipboard      clipboard;
 
-    private Logger logger;
+    private Logger         logger;
 
-    private List oldList;
+    private List           oldList;
 
-    private String olddata;
+    private String         olddata;
 
     /**
      */
@@ -38,7 +38,6 @@ public class ClipboardHandler extends Thread {
         clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
 
         logger = JDUtilities.getLogger();
-        this.start();
 
     }
 
@@ -58,13 +57,11 @@ public class ClipboardHandler extends Thread {
      */
     public void setEnabled(boolean enabled) {
         this.enabled = enabled;
-        // Verhindert dass beim starten die zwischenablage ausgewertet wird
 
     }
 
     public void run() {
-        enabled = JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_CLIPBOARD_ALWAYS_ACTIVE, false);
-        while (enabled) {
+        while (isEnabled()) {         
             try {
                 DataFlavor[] flavors = clipboard.getAvailableDataFlavors();
                 for (int i = 0; i < flavors.length; i++) {
@@ -109,15 +106,9 @@ public class ClipboardHandler extends Thread {
                     }
 
                 }
-
-                // String data = (String)
-                // clipboard.getData(DataFlavor.stringFlavor);
-                // logger.info(data);
-                // distributeData = new DistributeData(data);
-                // distributeData.addControlListener(controller);
-                // distributeData.start();
-                Thread.sleep(1000);
-            } catch (Exception e2) {
+                Thread.sleep(100);
+            }
+            catch (Exception e2) {
                 e2.printStackTrace();
             }
         }

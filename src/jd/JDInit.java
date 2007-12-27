@@ -66,7 +66,7 @@ public class JDInit {
             return;
         }
         for( int i=0; i<images.length;i++){
-            if(images[i].toLowerCase().endsWith(".png")){
+            if(images[i].toLowerCase().endsWith(".png")||images[i].toLowerCase().endsWith(".gif")){
                 File f=new File(images[i]);
                 
                logger.finer("Loaded image: "+f.getName().split("\\.")[0]+" from "+cl.getResource("jd/img/"+f.getName()));

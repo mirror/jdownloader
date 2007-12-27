@@ -69,7 +69,7 @@ public abstract class PluginForDecrypt extends Plugin {
                 
                 if (links == null ) {
                     logger.severe("ACHTUNG Decrypt Plugins müssen im letzten schritt einen  Vector<String[]> oder Vector<String> parameter  übergeben!");
-                    logger.info("FINA7: Decrypter: "+cryptedLink);
+                    logger.info("FINA7: Decrypter: "+cryptedLink+"-"+progress);
                     progress.finalize();
                     return new Vector<String[]>();
                 }

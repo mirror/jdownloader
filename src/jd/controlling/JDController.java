@@ -88,7 +88,7 @@ public class JDController implements PluginListener, ControlListener, UIListener
 
     private DownloadLink                      lastDownloadFinished;
 
-    public ClipboardHandler                  clipboard;
+    private ClipboardHandler                  clipboard;
 
     /**
      * Der Download Watchdog verwaltet die Downloads
@@ -105,6 +105,8 @@ public class JDController implements PluginListener, ControlListener, UIListener
         downloadLinks = new Vector<DownloadLink>();
         speedMeter = new SpeedMeter(10000);
         clipboard = new ClipboardHandler();
+        clipboard.setEnabled(false);
+        clipboard.start();
         downloadStatus = DOWNLOAD_NOT_RUNNING;
 
         JDUtilities.setController(this);
@@ -335,9 +337,7 @@ public class JDController implements PluginListener, ControlListener, UIListener
                 exit();
                 break;
 
-            case UIEvent.UI_SET_CLIPBOARD:
-                this.clipboard.setEnabled((Boolean) uiEvent.getParameter());
-                break;
+            
             case UIEvent.UI_LINKS_CHANGED:
 
                 newLinks = uiInterface.getDownloadLinks();
@@ -943,6 +943,18 @@ public class JDController implements PluginListener, ControlListener, UIListener
 
         }
         return ret;
+    }
+
+    public ClipboardHandler getClipboard() {
+        if(clipboard==null || !clipboard.isAlive()){
+            clipboard = new ClipboardHandler();
+        }       
+     
+        return clipboard;
+    }
+
+    public void setClipboard(ClipboardHandler clipboard) {
+        this.clipboard = clipboard;
     }
 
 }

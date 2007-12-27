@@ -51,7 +51,7 @@ public class ProgressController {
         fireChanges();
     }
  public String toString(){
-     return id+": "+super.toString();
+     return "ProgressController "+id;
  }
     public ProgressController(String name) {
        this(name,100);

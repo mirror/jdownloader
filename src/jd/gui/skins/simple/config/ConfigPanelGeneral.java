@@ -35,12 +35,14 @@ public class ConfigPanelGeneral extends ConfigPanel {
     }
     public void save() {
         this.saveConfigEntries();
-        boolean isActive = !JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_CLIPBOARD_ALWAYS_ACTIVE, false);
-        JDUtilities.getConfiguration().setProperty(Configuration.PARAM_CLIPBOARD_ALWAYS_ACTIVE, isActive);
-        ClipboardHandler clb = JDUtilities.getController().clipboard;
-        clb.setEnabled(isActive);
-        if (isActive && !clb.isAlive())
-            JDUtilities.getController().clipboard = new ClipboardHandler();
+        boolean isActive = JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_CLIPBOARD_ALWAYS_ACTIVE, false);
+     
+
+        if (isActive){
+            ClipboardHandler clb = JDUtilities.getController().getClipboard();
+            if(!clb.isAlive())clb.start();
+        }
+          
         JDUtilities.getLogger().setLevel((Level) configuration.getProperty(Configuration.PARAM_LOGGER_LEVEL));
         if (JDUtilities.getHomeDirectory() != null && !JDUtilities.getHomeDirectory().equalsIgnoreCase(brsHomeDir.getText().trim())) {
             JDUtilities.writeJDHomeDirectoryToWebStartCookie(brsHomeDir.getText().trim());

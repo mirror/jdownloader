@@ -531,12 +531,10 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
                 break;
             case JDAction.APP_CLIPBOARD :
                 logger.finer("Clipboard");
-                boolean isActive = !JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_CLIPBOARD_ALWAYS_ACTIVE, false);
-                JDUtilities.getConfiguration().setProperty(Configuration.PARAM_CLIPBOARD_ALWAYS_ACTIVE, isActive);
-                ClipboardHandler clb = JDUtilities.getController().clipboard;
-                clb.setEnabled(isActive);
-                if (isActive && !clb.isAlive())
-                    JDUtilities.getController().clipboard = new ClipboardHandler();
+
+                ClipboardHandler clb = JDUtilities.getController().getClipboard();
+                clb.setEnabled(true);
+                clb.start();
                 break;
             case JDAction.APP_PASSWORDLIST :
                 new jdUnrarPasswordListDialog(((SimpleGUI) JDUtilities.getController().getUiInterface()).getFrame()).setVisible(true);
@@ -635,9 +633,16 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
     public void toggleDnD() {
         if (dragNDrop.isVisible()) {
             dragNDrop.setVisible(false);
-            fireUIEvent(new UIEvent(this, UIEvent.UI_SET_CLIPBOARD, false));
+            JDUtilities.getController().getClipboard().setEnabled(false);
+            
+            
         } else {
-            fireUIEvent(new UIEvent(this, UIEvent.UI_SET_CLIPBOARD, true));
+            ClipboardHandler clb = JDUtilities.getController().getClipboard();
+            clb.setEnabled(true);
+            if(!clb.isAlive()){
+                clb.start();
+            }
+            
             dragNDrop.setVisible(true);
             dragNDrop.setText("Ziehe Links auf mich!");
         }
@@ -820,13 +825,13 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
     private void handleProgressController(ProgressController source, Object parameter) {
 
         if (!this.progressBar.hasController(source) && !source.isFinished()) {
-            logger.info("JJJ0 " + source.getStatusText());
+            logger.info("addController " + source);
             progressBar.addController(source);
         } else if (source.isFinished()) {
-            logger.info("JJJ1 " + source.getStatusText());
+            logger.info("removeController " + source);
             progressBar.removeController(source);
         } else {
-            logger.info("UPD: " + source.getStatusText());
+            logger.info("updateController: " + source);
             progressBar.updateController(source);
         }
 
