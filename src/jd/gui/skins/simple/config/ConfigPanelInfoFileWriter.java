@@ -19,7 +19,7 @@ public class ConfigPanelInfoFileWriter extends ConfigPanel {
     private BrowseFile        brsHomeDir;
     private Configuration     configuration;
     private InfoFileWriter fileWriter;
-    ConfigPanelInfoFileWriter(Configuration configuration, UIInterface uiinterface) {
+    public ConfigPanelInfoFileWriter(Configuration configuration, UIInterface uiinterface) {
         super(uiinterface);
         this.configuration = configuration;
         fileWriter= InfoFileWriter.getInstance();

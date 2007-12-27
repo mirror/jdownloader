@@ -483,7 +483,7 @@ public class JDUtilities {
         try {
             currentDir=new File(new URI(dir));
       
-        logger.info(" App dir: "+currentDir+" - "+System.getProperty("java.class.path"));
+        //logger.info(" App dir: "+currentDir+" - "+System.getProperty("java.class.path"));
         if(currentDir.isFile())currentDir=currentDir.getParentFile();
             
         }
@@ -492,7 +492,7 @@ public class JDUtilities {
             e.printStackTrace();
         }
 
-        logger.info("RunDir: " + currentDir);
+      //  logger.info("RunDir: " + currentDir);
 
         if (getRunType() == RUNTYPE_LOCAL_JARED) {
             envDir = currentDir.getAbsolutePath();
@@ -545,7 +545,7 @@ public class JDUtilities {
                 newClass = Class.forName(classPath, true, cl);
             }
             catch (ClassNotFoundException e) {
-                logger.severe(classPath + ": " + e.getLocalizedMessage());
+                
                 e.printStackTrace();
             }
             catch (MalformedURLException e) {
@@ -563,31 +563,30 @@ public class JDUtilities {
             return con.newInstance(arguments);
         }
         catch (SecurityException e) {
-            logger.severe(classPath + ": " + e.getLocalizedMessage());
-            e.printStackTrace();
+             e.printStackTrace();
         }
         catch (NoSuchMethodException e) {
-            logger.severe(classPath + ": " + e.getLocalizedMessage());
+            
             e.printStackTrace();
         }
         catch (IllegalArgumentException e) {
-            logger.severe(classPath + ": " + e.getLocalizedMessage());
+            
             e.printStackTrace();
         }
         catch (InstantiationException e) {
-            logger.severe(classPath + ": " + e.getLocalizedMessage());
+            
             e.printStackTrace();
         }
         catch (IllegalAccessException e) {
-            logger.severe(classPath + ": " + e.getLocalizedMessage());
+            
             e.printStackTrace();
         }
         catch (InvocationTargetException e) {
-            logger.severe(classPath + ": " + e.getLocalizedMessage());
+            
             e.printStackTrace();
         }
         catch (Exception e) {
-            logger.severe(classPath + ": " + e.getLocalizedMessage());
+            
             e.printStackTrace();
         }
         return null;
@@ -672,7 +671,7 @@ public class JDUtilities {
             JAntiCaptcha jac = new JAntiCaptcha(getJACMethodsDirectory(), host);
             Captcha captcha = jac.createCaptcha(captchaImage);
             String captchaCode = jac.checkCaptcha(captcha);
-            logger.info(captchaCode);
+            logger.info("Code: "+captchaCode);
             return captchaCode;
         }
         else {
@@ -789,7 +788,7 @@ public class JDUtilities {
      * @return Das geladene Objekt
      */
     public static Object loadObject(JFrame frame, File fileInput, boolean asXML) {
-        logger.info("load file: " + fileInput + " (xml:" + asXML + ")");
+        //logger.info("load file: " + fileInput + " (xml:" + asXML + ")");
         Object objectLoaded = null;
         if (fileInput == null) {
             JFileChooser fileChooserLoad = new JFileChooser();
@@ -815,7 +814,7 @@ public class JDUtilities {
                 }
                 // Object15475dea4e088fe0e9445da30604acd1
                 // Object80d11614908074272d6b79abe91eeca1
-                logger.info("Loaded Object (" + hash + "): ");
+               // logger.info("Loaded Object (" + hash + "): ");
                 return objectLoaded;
             }
             catch (ClassNotFoundException e) {
@@ -863,7 +862,7 @@ public class JDUtilities {
         if (fileOutput != null) {
             if (fileOutput.isDirectory()) {
                 fileOutput = new File(fileOutput, name + extension);
-                logger.info("save file: " + fileOutput + " (xml:" + asXML + ") object: " + objectToSave + " - " + extension);
+                //logger.info("save file: " + fileOutput + " (xml:" + asXML + ") object: " + objectToSave + " - " + extension);
             }
             hashPre = getLocalHash(fileOutput);
             if (fileOutput.exists()) fileOutput.delete();
@@ -1092,7 +1091,7 @@ public class JDUtilities {
             return null;
         }
         URL clURL = getJDClassLoader().getResource(resource);
-        logger.info(clURL + "");
+       
         if (clURL != null) {
             try {
                 return new File(clURL.toURI());
@@ -1238,7 +1237,7 @@ public class JDUtilities {
             Enumeration<URL> en = Thread.currentThread().getContextClassLoader().getResources("jd/Main.class");
             if (en.hasMoreElements()) {
                 String root = en.nextElement().toString();
-                logger.info(root);
+               // logger.info(root);
                 if (root.indexOf("http://") >= 0) {
                     logger.info("Depr.: Webstart");
                     return RUNTYPE_WEBSTART;

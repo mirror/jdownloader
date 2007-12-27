@@ -57,10 +57,14 @@ public abstract class PluginForDecrypt extends Plugin {
      */
     public Vector<String[]> decryptLink(String cryptedLink) {
         this.cryptedLink = cryptedLink;
+        if(progress!=null &&!progress.isFinished()){
+            progress.finalize();
+            logger.warning(" Progress ist besetzt von "+progress);
+        }
         progress=new ProgressController("Decrypter: "+this.getLinkName());
         progress.setStatusText("decrypt-"+getPluginName()+": "+cryptedLink);
         PluginStep step = null;
-        logger.info("LOS: Decrypter: "+getPluginName()+": "+cryptedLink);
+       // logger.info("LOS: Decrypter: "+getPluginName()+": "+cryptedLink);
         while ((step = nextStep(step)) != null) {
             doStep(step, cryptedLink);
 
@@ -68,13 +72,13 @@ public abstract class PluginForDecrypt extends Plugin {
                 Vector links = (Vector) step.getParameter();
                 
                 if (links == null ) {
-                    logger.severe("ACHTUNG Decrypt Plugins müssen im letzten schritt einen  Vector<String[]> oder Vector<String> parameter  übergeben!");
-                    logger.info("FINA7: Decrypter: "+cryptedLink+"-"+progress);
+                    //logger.severe("ACHTUNG Decrypt Plugins müssen im letzten schritt einen  Vector<String[]> oder Vector<String> parameter  übergeben!");
+                   // logger.info("FINA7: Decrypter: "+cryptedLink+"-"+progress);
                     progress.finalize();
                     return new Vector<String[]>();
                 }
                 if(links.size()==0){
-                    logger.info("FINA6: Decrypter: "+cryptedLink);
+//                    logger.info("FINA6: Decrypter: "+cryptedLink);
                     progress.finalize();
                 
                     return new Vector<String[]>();
@@ -89,14 +93,14 @@ public abstract class PluginForDecrypt extends Plugin {
                             
                         
                         }
-                        logger.info("Got " + decryptedLinks.size() + " links1 "+links);
-                        logger.info("FINA5: Decrypter: "+cryptedLink);
+//                        logger.info("Got " + decryptedLinks.size() + " links1 "+links);
+//                        logger.info("FINA5: Decrypter: "+cryptedLink);
                         progress.finalize();
                        
                         return decryptedLinks;
                     }
                     else if (links.get(0) instanceof String[]) {
-                        logger.info("Got " + links.size() + " links2 "+links);
+//                        logger.info("Got " + links.size() + " links2 "+links);
                         
                         for (int i = 0; i < links.size(); i++) {
                             ((String[])links.get(i))[0]=JDUtilities.htmlDecode(((String[])links.get(i))[0]);
@@ -104,14 +108,14 @@ public abstract class PluginForDecrypt extends Plugin {
                             
                            
                         }
-                        logger.info("FINA4: Decrypter: "+cryptedLink);
+//                        logger.info("FINA4: Decrypter: "+cryptedLink);
                         progress.finalize();
                      
                         return (Vector<String[]>) links;
                     }
                     else {
-                        logger.severe("ACHTUNG Decrypt Plugins müssen im letzten schritt einen  Vector<String[]> oder Vector<String> parameter  übergeben!");
-                        logger.info("FINA3: Decrypter: "+cryptedLink);
+//                        logger.severe("ACHTUNG Decrypt Plugins müssen im letzten schritt einen  Vector<String[]> oder Vector<String> parameter  übergeben!");
+//                        logger.info("FINA3: Decrypter: "+cryptedLink);
                         progress.finalize();
                         return new Vector<String[]>();
                     }
@@ -120,14 +124,14 @@ public abstract class PluginForDecrypt extends Plugin {
                 catch (Exception e) {
 
                      e.printStackTrace();
-                    logger.severe("Decrypterror: " + e.getMessage());
+//                    logger.severe("Decrypterror: " + e.getMessage());
                 }
-                logger.info("FINA2: Decrypter: "+cryptedLink);
+//                logger.info("FINA2: Decrypter: "+cryptedLink);
                 progress.finalize();
 
             }
         }
-        logger.info("FINA1: Decrypter: "+this.getLinkName());
+//        logger.info("FINA1: Decrypter: "+this.getLinkName());
         progress.finalize();
         return new Vector<String[]>();
 

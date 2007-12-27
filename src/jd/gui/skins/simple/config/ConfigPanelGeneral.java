@@ -26,7 +26,7 @@ public class ConfigPanelGeneral extends ConfigPanel {
     private JLabel lblHomeDir;
     private BrowseFile brsHomeDir;
     private Configuration configuration;
-    ConfigPanelGeneral(Configuration configuration, UIInterface uiinterface) {
+   public ConfigPanelGeneral(Configuration configuration, UIInterface uiinterface) {
         super(uiinterface);
         this.configuration = configuration;
         initPanel();

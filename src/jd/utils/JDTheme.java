@@ -100,7 +100,7 @@ public class JDTheme {
             }
 
         }
-        logger.info(data+"");
+     
 
     }
 

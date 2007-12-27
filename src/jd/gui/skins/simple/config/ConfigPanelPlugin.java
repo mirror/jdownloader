@@ -27,7 +27,7 @@ public class ConfigPanelPlugin extends ConfigPanel implements ActionListener {
 
     private Plugin            plugin;
 
-    ConfigPanelPlugin(Configuration configuration, UIInterface uiinterface, Plugin plugin) {
+    public  ConfigPanelPlugin(Configuration configuration, UIInterface uiinterface, Plugin plugin) {
         super(uiinterface);
         this.plugin = plugin;
         initPanel();

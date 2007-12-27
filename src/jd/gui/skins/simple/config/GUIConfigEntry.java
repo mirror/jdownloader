@@ -1,6 +1,6 @@
 package jd.gui.skins.simple.config;
 
-import java.awt.BorderLayout;
+import java.awt.Dimension;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
@@ -47,22 +47,13 @@ public class GUIConfigEntry extends JPanel {
 
     protected Logger          logger           = JDUtilities.getLogger();
 
-
-
     /**
      * Die input Komponente
      */
 
     private JComponent[]      input;
 
-
     private Insets            insets           = new Insets(1, 5, 1, 5);
-
-
-
-
-
-
 
     private ConfigEntry       configEntry;
 
@@ -77,86 +68,115 @@ public class GUIConfigEntry extends JPanel {
     GUIConfigEntry(ConfigEntry cfg) {
         this.configEntry = cfg;
 
-        this.setLayout(new BorderLayout());
+        this.setLayout(new GridBagLayout());
         input = new JComponent[1];
-
-        
+JComponent left=null;
+JComponent right=null;
+JComponent total=null;
+Insets insets= new Insets(2, 5, 2, 10);
         switch (configEntry.getType()) {
             case ConfigContainer.TYPE_TEXTFIELD:
-                this.add(new JLabel(configEntry.getLabel()), BorderLayout.CENTER);
+                
+                JDUtilities.addToGridBag(this, left=new JLabel(configEntry.getLabel()), GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
+               
                 input[0] = new JTextField(50);
                 input[0].setEnabled(configEntry.isEnabled());
-                this.add(input[0], BorderLayout.EAST);
+             
+                JDUtilities.addToGridBag(this, right=input[0], GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 1, 0, insets, GridBagConstraints.HORIZONTAL, GridBagConstraints.EAST);
+                
                 break;
             case ConfigContainer.TYPE_TEXTAREA:
-                this.add(new JLabel(configEntry.getLabel()), BorderLayout.BEFORE_FIRST_LINE);
-                input[0] = new JTextArea(20,50);
+              
+                JDUtilities.addToGridBag(this, left=new JLabel(configEntry.getLabel()), GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, GridBagConstraints.REMAINDER, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
+                
+               input[0] = new JTextArea(20,20);
                 input[0].setEnabled(configEntry.isEnabled());
-                this.add(new JScrollPane(input[0]), BorderLayout.CENTER);
+           
+                JDUtilities.addToGridBag(this,  total=new JScrollPane(input[0]), GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 1, 1, insets, GridBagConstraints.BOTH, GridBagConstraints.EAST);
+               total.setMinimumSize(new Dimension(200,200));
+               total=null;
                 break;
             case ConfigContainer.TYPE_CHECKBOX:
 
-                //logger.info("ADD CheckBox");
-                this.add(new JLabel(configEntry.getLabel()), BorderLayout.CENTER);
+                // logger.info("ADD CheckBox");
+               
+                JDUtilities.addToGridBag(this, left=new JLabel(configEntry.getLabel()), GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
+                
+            
                 input[0] = new JCheckBox();
                 input[0].setEnabled(configEntry.isEnabled());
-                this.add(input[0], BorderLayout.EAST);
+            
+                JDUtilities.addToGridBag(this, right=input[0], GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 1, 0, insets, GridBagConstraints.HORIZONTAL, GridBagConstraints.EAST);
                 break;
             case ConfigContainer.TYPE_BROWSEFILE:
-                //logger.info("ADD Browser");
-                this.add(new JLabel(configEntry.getLabel()), BorderLayout.CENTER);
+                // logger.info("ADD Browser");
+              
+                JDUtilities.addToGridBag(this, left=new JLabel(configEntry.getLabel()), GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
+                
                 input[0] = new BrowseFile();
                 ((BrowseFile) input[0]).setEnabled(configEntry.isEnabled());
 
                 ((BrowseFile) input[0]).setEditable(true);
-                this.add(input[0], BorderLayout.EAST);
+                JDUtilities.addToGridBag(this,right= input[0], GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 1, 0, insets, GridBagConstraints.HORIZONTAL, GridBagConstraints.EAST);
+              
                 break;
             case ConfigContainer.TYPE_BROWSEFOLDER:
-                //logger.info("ADD BrowserFolder");
-                this.add(new JLabel(configEntry.getLabel()), BorderLayout.CENTER);
+                // logger.info("ADD BrowserFolder");
+               
+                JDUtilities.addToGridBag(this, left=new JLabel(configEntry.getLabel()), GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
+                
                 input[0] = new BrowseFile();
 
                 ((BrowseFile) input[0]).setEditable(true);
                 ((BrowseFile) input[0]).setEnabled(configEntry.isEnabled());
                 ((BrowseFile) input[0]).setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
-                this.add(input[0], BorderLayout.EAST);
+           
+                JDUtilities.addToGridBag(this,right= input[0], GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 1, 0, insets, GridBagConstraints.HORIZONTAL, GridBagConstraints.EAST);
                 break;
             case ConfigContainer.TYPE_SPINNER:
-                //logger.info("ADD Spinner");
-                this.add(new JLabel(configEntry.getLabel()), BorderLayout.CENTER);
+                // logger.info("ADD Spinner");
+             
+                JDUtilities.addToGridBag(this, left=new JLabel(configEntry.getLabel()), GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
+                
                 input[0] = new JSpinner(new SpinnerNumberModel(configEntry.getStart(), configEntry.getStart(), configEntry.getEnd(), configEntry.getStep()));
                 input[0].setEnabled(configEntry.isEnabled());
                 // ((JSpinner)input[0])
-                this.add(input[0], BorderLayout.EAST);
+                JDUtilities.addToGridBag(this,right= input[0], GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 1, 0, insets, GridBagConstraints.HORIZONTAL, GridBagConstraints.EAST);
+              
                 break;
             case ConfigContainer.TYPE_BUTTON:
                 // //logger.info("ADD Button");
                 input[0] = new JButton(configEntry.getLabel());
                 ((JButton) input[0]).addActionListener(configEntry.getActionListener());
                 input[0].setEnabled(configEntry.isEnabled());
-                this.add(input[0], BorderLayout.CENTER);
+                JDUtilities.addToGridBag(this, input[0], GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
+                
+           
                 break;
             case ConfigContainer.TYPE_COMBOBOX:
-                this.add(new JLabel(configEntry.getLabel()), BorderLayout.CENTER);
-                //logger.info(configEntry.getLabel());
-               //logger.info("ADD Combobox");
+              
+                JDUtilities.addToGridBag(this, left=new JLabel(configEntry.getLabel()), GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
+                
+                // logger.info(configEntry.getLabel());
+                // logger.info("ADD Combobox");
                 input[0] = new JComboBox(configEntry.getList());
                 for (int i = 0; i < configEntry.getList().length; i++) {
-                  
+
                     if (configEntry.getList()[i].equals(configEntry.getPropertyInstance().getProperty(configEntry.getPropertyName()))) {
                         ((JComboBox) input[0]).setSelectedIndex(i);
-                        
+
                         break;
                     }
                 }
                 input[0].setEnabled(configEntry.isEnabled());
-                this.add(input[0], BorderLayout.EAST);
+                JDUtilities.addToGridBag(this, right=input[0], GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 1, 0, null, GridBagConstraints.HORIZONTAL, GridBagConstraints.EAST);
+             
                 break;
             case ConfigContainer.TYPE_RADIOFIELD:
                 // //logger.info("ADD Radio");
                 input = new JComponent[configEntry.getList().length];
                 JRadioButton radio;
-                this.setLayout(new GridBagLayout());
+               
                 ButtonGroup group = new ButtonGroup();
                 for (int i = 0; i < configEntry.getList().length; i++) {
                     radio = new JRadioButton(configEntry.getList()[i].toString());
@@ -178,19 +198,25 @@ public class GUIConfigEntry extends JPanel {
                 }
                 break;
             case ConfigContainer.TYPE_LABEL:
-               
-                this.setLayout(new BorderLayout());
-                this.add(new JLabel(configEntry.getLabel()), BorderLayout.WEST);
+
+                JDUtilities.addToGridBag(this, left=new JLabel(configEntry.getLabel()), GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
+                
+              
                 break;
             case ConfigContainer.TYPE_SEPERATOR:
-               // //logger.info("ADD Seperator");
+                // //logger.info("ADD Seperator");
                 input[0] = new JSeparator(SwingConstants.HORIZONTAL);
-                this.add(input[0], BorderLayout.CENTER);
+               
+                JDUtilities.addToGridBag(this, input[0], GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 1, 1, insets, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+                
                 break;
 
         }
+
     }
-    public boolean isExpertEntry(){
+   
+
+    public boolean isExpertEntry() {
         return configEntry.isExpertEntry();
     }
 
@@ -201,13 +227,14 @@ public class GUIConfigEntry extends JPanel {
      */
     public void setData(Object text) {
         if (text == null && configEntry.getDefaultValue() != null) text = configEntry.getDefaultValue();
-        // //logger.info(configEntry.getDefaultValue()+" - "+text + " "+input.length+" -
+        // //logger.info(configEntry.getDefaultValue()+" - "+text + "
+        // "+input.length+" -
         // "+input[0]);
         switch (configEntry.getType()) {
             case ConfigContainer.TYPE_TEXTFIELD:
                 ((JTextField) input[0]).setText(text == null ? "" : text.toString());
                 break;
-                
+
             case ConfigContainer.TYPE_TEXTAREA:
                 ((JTextArea) input[0]).setText(text == null ? "" : text.toString());
                 break;
@@ -234,10 +261,10 @@ public class GUIConfigEntry extends JPanel {
             case ConfigContainer.TYPE_SPINNER:
                 int value = text instanceof Integer ? (Integer) text : Integer.parseInt(text.toString());
 
-                ((JSpinner) input[0]).setModel(new SpinnerNumberModel(value,configEntry.getStart(),configEntry.getEnd(), configEntry.getStep()));
+                ((JSpinner) input[0]).setModel(new SpinnerNumberModel(value, configEntry.getStart(), configEntry.getEnd(), configEntry.getStep()));
                 break;
             case ConfigContainer.TYPE_RADIOFIELD:
-                for (int i = 0; i <configEntry.getList().length; i++) {
+                for (int i = 0; i < configEntry.getList().length; i++) {
                     JRadioButton radio = (JRadioButton) input[i];
                     if (radio.getActionCommand().equals(text)) {
                         radio.setSelected(true);
@@ -252,7 +279,6 @@ public class GUIConfigEntry extends JPanel {
                 break;
         }
 
-       
     }
 
     /**
@@ -261,7 +287,7 @@ public class GUIConfigEntry extends JPanel {
      * @return
      */
     public Object getText() {
-        ////logger.info(configEntry.getType()+"_2");
+        // //logger.info(configEntry.getType()+"_2");
         switch (configEntry.getType()) {
             case ConfigContainer.TYPE_TEXTFIELD:
                 return ((JTextField) input[0]).getText();
@@ -290,7 +316,7 @@ public class GUIConfigEntry extends JPanel {
             case ConfigContainer.TYPE_BROWSEFILE:
                 return ((BrowseFile) input[0]).getText();
             case ConfigContainer.TYPE_SPINNER:
-                
+
                 return ((JSpinner) input[0]).getValue();
 
         }
@@ -298,18 +324,12 @@ public class GUIConfigEntry extends JPanel {
         return null;
     }
 
-
     public ConfigEntry getConfigEntry() {
         return configEntry;
     }
 
-
     public void setConfigEntry(ConfigEntry configEntry) {
         this.configEntry = configEntry;
     }
-
-
-
-
 
 }

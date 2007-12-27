@@ -129,7 +129,7 @@ public class TabProgress extends JPanel {
             JProgressBar b = bars.get(rowIndex);
             switch (columnIndex) {
                 case 0:
-                    return p.getStatusText();
+                    return p.getID()+": "+p.getStatusText();
                 case 1:
                     return b;
 

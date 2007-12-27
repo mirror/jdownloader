@@ -157,7 +157,7 @@ class SubPanelHTTPReconnect extends ConfigPanel implements ItemListener, ActionL
 
     private Configuration     configuration;
 
-    SubPanelHTTPReconnect(Configuration configuration, UIInterface uiinterface) {
+    public SubPanelHTTPReconnect(Configuration configuration, UIInterface uiinterface) {
         super(uiinterface);
         this.configuration = configuration;
         initPanel();

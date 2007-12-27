@@ -15,7 +15,7 @@ import jd.utils.JDUtilities;
 
 /**
  * http://rs.xxx-blog.org/com-UmNkdzY1MjN/file.rar
- * 
+ * http://rs.hoerbuch.in/com-UmY3YGNiRjN/PP-Grun.rar
  * 
  * 
  * @author coalado

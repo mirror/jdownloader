@@ -116,7 +116,7 @@ public class ExternReconnect extends Interaction implements Serializable {
             progress.finalize();
             return true;
         }
-        logger.finer("Retries: "+retries+"/"+maxretries);
+      
         if (retries <= maxretries) {
             progress.finalize();
             return doInteraction(arg);
@@ -146,7 +146,7 @@ public class ExternReconnect extends Interaction implements Serializable {
     @Override
     public void initConfig() {
         ConfigEntry cfg;
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, JDUtilities.getConfiguration(), PROPERTY_RECONNECT_COMMAND, JDLocale.L("interaction.externreconnect.command","Befehl (absolute Pfade verwenden)")));
+        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_BROWSEFILE, JDUtilities.getConfiguration(), PROPERTY_RECONNECT_COMMAND, JDLocale.L("interaction.externreconnect.command","Befehl (absolute Pfade verwenden)")));
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_TEXTAREA, JDUtilities.getConfiguration(), PROPERTY_RECONNECT_PARAMETER, JDLocale.L("interaction.externreconnect.parameter","Parameter (1 Parameter/Zeile)")).setExpertEntry(true));
 
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_BROWSEFOLDER, JDUtilities.getConfiguration(), PROPERTY_RECONNECT_EXECUTE_FOLDER, JDLocale.L("interaction.externreconnect.executeIn","Ausführen in (Ordner der Anwendung)")));

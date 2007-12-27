@@ -1,6 +1,7 @@
 package jd.gui.skins.simple.config;
 
 import java.awt.BorderLayout;
+import java.awt.GridBagConstraints;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
@@ -24,27 +25,27 @@ public class ConfigPanelReconnect extends ConfigPanel implements ActionListener 
     /**
      * serialVersionUID
      */
-    private static final long      serialVersionUID = 3383448498625377495L;
+    private static final long           serialVersionUID = 3383448498625377495L;
 
-    private JLabel                 lblHomeDir;
+    private JLabel                      lblHomeDir;
 
-    private BrowseFile             brsHomeDir;
+    private BrowseFile                  brsHomeDir;
 
-    private Configuration          configuration;
+    private Configuration               configuration;
 
-    private JTabbedPane            tabbedPane;
+    private JTabbedPane                 tabbedPane;
 
-    private JComboBox              box;
+    private JComboBox                   box;
 
-    private SubPanelHTTPReconnect  httpReconnect    = null;
+    private SubPanelHTTPReconnect       httpReconnect    = null;
 
     private SubPanelLiveHeaderReconnect lh;
 
-    private ConfigPanelInteraction er;
+    private ConfigPanelInteraction      er;
 
-    private JButton                btn;
+    private JButton                     btn;
 
-    ConfigPanelReconnect(Configuration configuration, UIInterface uiinterface) {
+    public ConfigPanelReconnect(Configuration configuration, UIInterface uiinterface) {
         super(uiinterface);
         this.configuration = configuration;
         initPanel();
@@ -63,26 +64,27 @@ public class ConfigPanelReconnect extends ConfigPanel implements ActionListener 
 
     @Override
     public void initPanel() {
-        String reconnectType = configuration.getStringProperty(Configuration.PARAM_RECONNECT_TYPE);
+        String reconnectType = configuration.getStringProperty(Configuration.PARAM_RECONNECT_TYPE, JDLocale.L("modules.reconnect.types.httpreconnect", "HTTPReconnect/Routercontrol"));
         JPanel p = new JPanel();
 
-        box = new JComboBox(new String[] { JDLocale.L("modules.reconnect.types.httpreconnect","HTTPReconnect/Routercontrol"), JDLocale.L("modules.reconnect.types.liveheader","LiveHeader/Curl"), JDLocale.L("modules.reconnect.types.extern","Extern" )});
+        box = new JComboBox(new String[] { JDLocale.L("modules.reconnect.types.httpreconnect", "HTTPReconnect/Routercontrol"), JDLocale.L("modules.reconnect.types.liveheader", "LiveHeader/Curl"), JDLocale.L("modules.reconnect.types.extern", "Extern") });
         box.addActionListener(this);
         p.add(new JLabel("Bitte Methode auswählen:"));
         p.add(box);
-        panel.setLayout(new BorderLayout());
-        panel.add(p, BorderLayout.PAGE_START);
-        panel.add(new JSeparator(), BorderLayout.CENTER);
+        JDUtilities.addToGridBag(panel, p, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 0, 0, null, GridBagConstraints.NONE, GridBagConstraints.NORTHWEST);
+        JDUtilities.addToGridBag(panel, new JSeparator(), GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 0, 0, null, GridBagConstraints.NONE, GridBagConstraints.NORTHWEST);
+        JDUtilities.addToGridBag(panel, btn = new JButton("Test Reconnect"), GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 0, 0, null, GridBagConstraints.NONE, GridBagConstraints.NORTHWEST);
+        btn.addActionListener(this);
+
         // panel.add(new JSeparator());
         if (reconnectType != null) box.setSelectedItem(reconnectType);
         add(panel, BorderLayout.NORTH);
-        panel.add(btn = new JButton("Test Reconnect"));
-        btn.addActionListener(this);
+
         this.setReconnectType();
     }
 
     private void setReconnectType() {
-        logger.finer("III " + ((String) box.getSelectedItem()));
+
         if (lh != null) panel.remove(lh);
         if (er != null) panel.remove(er);
         if (httpReconnect != null) panel.remove(httpReconnect);
@@ -90,19 +92,22 @@ public class ConfigPanelReconnect extends ConfigPanel implements ActionListener 
         er = null;
         httpReconnect = null;
 
-        if (((String) box.getSelectedItem()).equals(JDLocale.L("modules.reconnect.types.httpreconnect","HTTPReconnect/Routercontrol"))) {
+        if (((String) box.getSelectedItem()).equals(JDLocale.L("modules.reconnect.types.httpreconnect", "HTTPReconnect/Routercontrol"))) {
+            httpReconnect = new SubPanelHTTPReconnect(configuration, uiinterface);
 
-            panel.add(httpReconnect = new SubPanelHTTPReconnect(configuration, uiinterface), BorderLayout.PAGE_END);
-
-        }
-        else if (((String) box.getSelectedItem()).equals(JDLocale.L("modules.reconnect.types.liveheader","LiveHeader/Curl"))) {
-
-            panel.add(lh = new SubPanelLiveHeaderReconnect(uiinterface, (Interaction) new HTTPLiveHeader()), BorderLayout.PAGE_END);
+            JDUtilities.addToGridBag(panel, httpReconnect, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 1, 1, null, GridBagConstraints.BOTH, GridBagConstraints.NORTH);
 
         }
-        else if (((String) box.getSelectedItem()).equals(JDLocale.L("modules.reconnect.types.extern","Extern"))) {
+        else if (((String) box.getSelectedItem()).equals(JDLocale.L("modules.reconnect.types.liveheader", "LiveHeader/Curl"))) {
+            lh = new SubPanelLiveHeaderReconnect(uiinterface, (Interaction) new HTTPLiveHeader());
 
-            panel.add(er = new ConfigPanelInteraction(uiinterface, (Interaction) new ExternReconnect()), BorderLayout.PAGE_END);
+            JDUtilities.addToGridBag(panel, lh, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 1, 1, null, GridBagConstraints.BOTH, GridBagConstraints.NORTH);
+
+        }
+        else if (((String) box.getSelectedItem()).equals(JDLocale.L("modules.reconnect.types.extern", "Extern"))) {
+            er = new ConfigPanelInteraction(uiinterface, (Interaction) new ExternReconnect());
+
+            JDUtilities.addToGridBag(panel, er, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 1, 1, null, GridBagConstraints.BOTH, GridBagConstraints.NORTH);
 
         }
         this.validate();
@@ -115,7 +120,7 @@ public class ConfigPanelReconnect extends ConfigPanel implements ActionListener 
 
     @Override
     public String getName() {
-        return JDLocale.L("gui.config.reconnect.name","Reconnect");
+        return JDLocale.L("gui.config.reconnect.name", "Reconnect");
     }
 
     public void actionPerformed(ActionEvent e) {
@@ -127,12 +132,12 @@ public class ConfigPanelReconnect extends ConfigPanel implements ActionListener 
 
         }
         if (e.getSource() == btn) {
-          save();
+            save();
             if (JDUtilities.getController().reconnect()) {
-                JDUtilities.getGUI().showMessageDialog(JDLocale.L("gui.warning.reconnectSuccess","Reconnect successfull"));
+                JDUtilities.getGUI().showMessageDialog(JDLocale.L("gui.warning.reconnectSuccess", "Reconnect successfull"));
             }
             else {
-                JDUtilities.getGUI().showMessageDialog(JDLocale.L("gui.warning.reconnectFailed","Reconnect failed!"));
+                JDUtilities.getGUI().showMessageDialog(JDLocale.L("gui.warning.reconnectFailed", "Reconnect failed!"));
             }
         }
     }

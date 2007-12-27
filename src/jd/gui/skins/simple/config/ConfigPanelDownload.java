@@ -26,7 +26,7 @@ private Configuration configuration;
     
   
     
-    ConfigPanelDownload(Configuration configuration, UIInterface uiinterface){
+public ConfigPanelDownload(Configuration configuration, UIInterface uiinterface){
         super(uiinterface);
       this.configuration=configuration;
         initPanel();

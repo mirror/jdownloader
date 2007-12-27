@@ -31,7 +31,7 @@ public class ConfigPanelUnrar extends ConfigPanel implements ActionListener {
      */
     private Unrar unrar;
     private Configuration configuration;
-    ConfigPanelUnrar(Configuration configuration, UIInterface uiinterface) {
+    public   ConfigPanelUnrar(Configuration configuration, UIInterface uiinterface) {
         super(uiinterface);
         this.unrar = Unrar.getInstance();
         initPanel();

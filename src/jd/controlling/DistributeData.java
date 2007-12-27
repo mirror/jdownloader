@@ -24,31 +24,30 @@ public class DistributeData extends ControlMulticaster {
     /**
      * Der Logger
      */
-    private static Logger logger = JDUtilities.getLogger();
+    private static Logger            logger = JDUtilities.getLogger();
 
     /**
      * Die zu verteilenden Daten
      */
-    private String data;
+    private String                   data;
 
     /**
      * Plugins der Anbieter
      */
-    private Vector<PluginForHost> pluginsForHost;
+    private Vector<PluginForHost>    pluginsForHost;
 
     /**
      * Plugins zum Entschlüsseln
      */
     private Vector<PluginForDecrypt> pluginsForDecrypt;
 
-    private Vector<PluginForSearch> pluginsForSearch;
+    private Vector<PluginForSearch>  pluginsForSearch;
 
     /**
      * Erstellt einen neuen Thread mit dem Text, der verteilt werden soll. Die
      * übergebenen Daten werden durch einen URLDecoder geschickt.
      * 
-     * @param data
-     *            Daten, die verteilt werden sollen
+     * @param data Daten, die verteilt werden sollen
      */
     public DistributeData(String data) {
         super("JD-DistributeData");
@@ -58,7 +57,8 @@ public class DistributeData extends ControlMulticaster {
         this.pluginsForSearch = JDUtilities.getPluginsForSearch();
         try {
             // this.data = URLDecoder.decode(this.data, "UTF-8");
-        } catch (Exception e) {
+        }
+        catch (Exception e) {
             logger.warning("text not url decodeable");
         }
     }
@@ -76,8 +76,7 @@ public class DistributeData extends ControlMulticaster {
      * @return link-Vector
      */
     public Vector<DownloadLink> findLinks() {
-        if (pluginsForSearch == null)
-            return new Vector<DownloadLink>();
+        if (pluginsForSearch == null) return new Vector<DownloadLink>();
         Vector<DownloadLink> links = new Vector<DownloadLink>();
         Vector<String> cryptedLinks = new Vector<String>();
         // Array weil an pos 1 und 2 passwort und comment stehen können
@@ -107,7 +106,8 @@ public class DistributeData extends ControlMulticaster {
 
         try {
             this.data = URLDecoder.decode(this.data, "UTF-8");
-        } catch (Exception e) {
+        }
+        catch (Exception e) {
             logger.warning("text not url decodeable");
         }
 
@@ -120,12 +120,26 @@ public class DistributeData extends ControlMulticaster {
         for (int i = 0; i < pluginsForDecrypt.size(); i++) {
             pDecrypt = pluginsForDecrypt.get(i);
             if (pDecrypt.canHandle(data)) {
-                fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_PLUGIN_DECRYPT_ACTIVE, pDecrypt));
-                cryptedLinks.addAll(pDecrypt.getDecryptableLinks(data));
-                data = pDecrypt.cutMatches(data);
-                decryptedLinks.addAll(pDecrypt.decryptLinks(cryptedLinks));
+                //Es wird eine neue instanz erstellt. Jeder decryptvorgang brauchts eine eigene instanz da decryptvorgänge auch paralell laufen können.
+                try {
+                    pDecrypt = pDecrypt.getClass().newInstance();
 
-                fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_PLUGIN_DECRYPT_INACTIVE, pDecrypt));
+                    fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_PLUGIN_DECRYPT_ACTIVE, pDecrypt));
+                    cryptedLinks.addAll(pDecrypt.getDecryptableLinks(data));
+                    data = pDecrypt.cutMatches(data);
+
+                    decryptedLinks.addAll(pDecrypt.decryptLinks(cryptedLinks));
+
+                    fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_PLUGIN_DECRYPT_INACTIVE, pDecrypt));
+                }
+                catch (InstantiationException e) {
+                    // TODO Auto-generated catch block
+                    e.printStackTrace();
+                }
+                catch (IllegalAccessException e) {
+                    // TODO Auto-generated catch block
+                    e.printStackTrace();
+                }
             }
         }
         // Die entschlüsselten Links werden nochmal durch alle DecryptPlugins
@@ -134,7 +148,7 @@ public class DistributeData extends ControlMulticaster {
         boolean moreToDo;
         do {
             moreToDo = false;
-            logger.info("Size: "+pluginsForDecrypt.size());
+            logger.info("Size: " + pluginsForDecrypt.size());
             for (int i = 0; i < pluginsForDecrypt.size(); i++) {
                 pDecrypt = pluginsForDecrypt.get(i);
                 Iterator<String[]> iterator = decryptedLinks.iterator();
@@ -143,47 +157,45 @@ public class DistributeData extends ControlMulticaster {
                     String localData = Plugin.getHttpLinkList(data[0]);
 
                     try {
-                      localData = URLDecoder.decode(localData, "UTF-8");
-                    } catch (Exception e) {
+                        localData = URLDecoder.decode(localData, "UTF-8");
+                    }
+                    catch (Exception e) {
                         logger.warning("text not url decodeable");
                     }
-                    
-                    
-                   
+
                     if (pDecrypt.canHandle(localData)) {
                         moreToDo = true;
-                   
+
                         fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_PLUGIN_DECRYPT_ACTIVE, pDecrypt));
                         // logger.info("decryptedLink removed
                         // "+data+">>"+pDecrypt.getHost());
                         // Schleift die Passwörter und COmments durch den
                         // Nächsten Decrypter. (bypass)
                         iterator.remove();
-                        
-                      
+
                         cryptedLinks.addAll(pDecrypt.getDecryptableLinks(localData));
                         localData = pDecrypt.cutMatches(localData);
-                 
-                        
-                        
+
                         Vector<String[]> tmpLinks = pDecrypt.decryptLinks(cryptedLinks);
                         String password = data[1] == null ? "" : data[1];
                         String comment = data[2] == null ? "" : data[2];
                         logger.info("p " + password);
                         for (int ii = 0; ii < tmpLinks.size(); ii++) {
-                           
+
                             if (tmpLinks.get(ii)[1] != null) {
                                 tmpLinks.get(ii)[1] = password + "|" + tmpLinks.get(ii)[1];
                                 while (tmpLinks.get(ii)[1].startsWith("|"))
                                     tmpLinks.get(ii)[1] = tmpLinks.get(ii)[1].substring(1);
-                            } else {
+                            }
+                            else {
                                 tmpLinks.get(ii)[1] = password;
                             }
                             if (tmpLinks.get(ii)[2] != null) {
                                 tmpLinks.get(ii)[2] = comment + "|" + tmpLinks.get(ii)[2];
                                 while (tmpLinks.get(ii)[2].startsWith("|"))
                                     tmpLinks.get(ii)[2] = tmpLinks.get(ii)[2].substring(1);
-                            } else {
+                            }
+                            else {
                                 tmpLinks.get(ii)[2] = comment;
                             }
                         }
@@ -195,7 +207,8 @@ public class DistributeData extends ControlMulticaster {
                     }
                 }
             }
-        } while (moreToDo);
+        }
+        while (moreToDo);
 
         // Danach wird der (noch verbleibende) Inhalt der Zwischenablage an die
         // Plugins der Hoster geschickt.
@@ -244,7 +257,8 @@ public class DistributeData extends ControlMulticaster {
                         links.addAll(dLinks);
                         iterator.remove();
                     }
-                } catch (Exception e) {
+                }
+                catch (Exception e) {
                     logger.severe("Decrypter/Search Fehler: " + e.getMessage());
                 }
             }

@@ -1,11 +1,13 @@
 package jd.gui.skins.simple.config;
 
 import java.awt.ComponentOrientation;
+import java.awt.Dimension;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.lang.reflect.Constructor;
 import java.util.Vector;
 
 import javax.swing.ImageIcon;
@@ -15,9 +17,12 @@ import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.JScrollPane;
 import javax.swing.JSeparator;
 import javax.swing.JTabbedPane;
 import javax.swing.SwingConstants;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 
 import jd.config.Configuration;
 import jd.gui.UIInterface;
@@ -29,7 +34,7 @@ import jd.utils.JDUtilities;
  * @author coalado/astaldo
  *
  */
-public class ConfigurationDialog extends JDialog implements ActionListener {
+public class ConfigurationDialog extends JDialog implements ActionListener, ChangeListener {
     /**
      * serialVersionUID
      */
@@ -52,6 +57,10 @@ public class ConfigurationDialog extends JDialog implements ActionListener {
 
     private JCheckBox chbExpert;
 
+    private Vector<Class> configClasses= new Vector<Class>();
+    private Vector<JPanel> containerPanels= new Vector<JPanel>();
+
+
     private ConfigurationDialog(JFrame parent, UIInterface uiinterface) {
         super(parent);
         this.uiinterface = uiinterface;
@@ -63,19 +72,22 @@ public class ConfigurationDialog extends JDialog implements ActionListener {
         tabbedPane.setComponentOrientation(ComponentOrientation.LEFT_TO_RIGHT);
         tabbedPane.setTabLayoutPolicy(JTabbedPane.SCROLL_TAB_LAYOUT);
         tabbedPane.setTabPlacement(JTabbedPane.LEFT);
-        this.addConfigPanel(new ConfigPanelGeneral(configuration, uiinterface),JDTheme.I("gui.images.config.home","home"),JDLocale.L("gui.config.tabLables.general","General settings"));
-        this.addConfigPanel(new ConfigPanelDownload(configuration, uiinterface),JDTheme.I("gui.images.config.network_local","network_local"),JDLocale.L("gui.config.tabLables.download","Download/Network settings"));
-        this.addConfigPanel(new ConfigPanelReconnect(configuration, uiinterface),JDTheme.I("gui.images.config.reboot","reboot"),JDLocale.L("gui.config.tabLables.reconnect","Reconnect settings"));
-        this.addConfigPanel(new ConfigPanelCaptcha(configuration, uiinterface),JDTheme.I("gui.images.config.ocr","ocr"),JDLocale.L("gui.config.tabLables.jac","OCR Captcha settings"));
-        this.addConfigPanel(new ConfigPanelUnrar(configuration, uiinterface),JDTheme.I("gui.images.config.package","package"),JDLocale.L("gui.config.tabLables.unrar","Archiv extract settings"));  
-        this.addConfigPanel(new ConfigPanelInfoFileWriter(configuration, uiinterface),JDTheme.I("gui.images.config.load","load"),JDLocale.L("gui.config.tabLables.infoFileWriter","'Info File Writer' settings"));
-        this.addConfigPanel(new ConfigPanelEventmanager(configuration, uiinterface),JDTheme.I("gui.images.config.switch","switch"),JDLocale.L("gui.config.tabLables.eventManager","Eventmanager"));
+        tabbedPane.addChangeListener(this);
+        tabbedPane.setPreferredSize(new Dimension(800,500));
+        this.addConfigPanel(ConfigPanelGeneral.class,JDTheme.I("gui.images.config.home","home"),JDLocale.L("gui.config.tabLables.general","General settings"));
        
-        this.addConfigPanel(new ConfigPanelPluginForHost(configuration, uiinterface),JDTheme.I("gui.images.config.star","star"),JDLocale.L("gui.config.tabLables.hostPlugin","Host Plugin settings"));
-        this.addConfigPanel(new ConfigPanelPluginForDecrypt(configuration, uiinterface),JDTheme.I("gui.images.config.tip","tip"),JDLocale.L("gui.config.tabLables.decryptPlugin","Decrypter Plugin settings"));
-        this.addConfigPanel(new ConfigPanelPluginForSearch(configuration, uiinterface),JDTheme.I("gui.images.config.find","find"),JDLocale.L("gui.config.tabLables.searchPlugin","Search Plugin settings"));
-        this.addConfigPanel(new ConfigPanelPluginsOptional(configuration, uiinterface),JDTheme.I("gui.images.config.edit_redo","edit_redo"),JDLocale.L("gui.config.tabLables.optionalPlugin","Optional Plugin settings"));
-        this.addConfigPanel(new ConfigPanelPluginForContainer(configuration, uiinterface),JDTheme.I("gui.images.config.database","database"),JDLocale.L("gui.config.tabLables.containerPlugin","Link-Container settings"));
+        this.addConfigPanel(ConfigPanelDownload.class,JDTheme.I("gui.images.config.network_local","network_local"),JDLocale.L("gui.config.tabLables.download","Download/Network settings"));
+        this.addConfigPanel(ConfigPanelReconnect.class,JDTheme.I("gui.images.config.reboot","reboot"),JDLocale.L("gui.config.tabLables.reconnect","Reconnect settings"));
+        if(configuration.getBooleanProperty(Configuration.PARAM_USE_EXPERT_VIEW, false)) this.addConfigPanel(ConfigPanelCaptcha.class,JDTheme.I("gui.images.config.ocr","ocr"),JDLocale.L("gui.config.tabLables.jac","OCR Captcha settings"));
+        this.addConfigPanel(ConfigPanelUnrar.class,JDTheme.I("gui.images.config.package","package"),JDLocale.L("gui.config.tabLables.unrar","Archiv extract settings"));  
+        if(configuration.getBooleanProperty(Configuration.PARAM_USE_EXPERT_VIEW, false))this.addConfigPanel(ConfigPanelInfoFileWriter.class,JDTheme.I("gui.images.config.load","load"),JDLocale.L("gui.config.tabLables.infoFileWriter","'Info File Writer' settings"));
+        if(configuration.getBooleanProperty(Configuration.PARAM_USE_EXPERT_VIEW, false))this.addConfigPanel(ConfigPanelEventmanager.class,JDTheme.I("gui.images.config.switch","switch"),JDLocale.L("gui.config.tabLables.eventManager","Eventmanager"));
+       
+        this.addConfigPanel(ConfigPanelPluginForHost.class,JDTheme.I("gui.images.config.star","star"),JDLocale.L("gui.config.tabLables.hostPlugin","Host Plugin settings"));
+        if(configuration.getBooleanProperty(Configuration.PARAM_USE_EXPERT_VIEW, false))this.addConfigPanel(ConfigPanelPluginForDecrypt.class,JDTheme.I("gui.images.config.tip","tip"),JDLocale.L("gui.config.tabLables.decryptPlugin","Decrypter Plugin settings"));
+        if(configuration.getBooleanProperty(Configuration.PARAM_USE_EXPERT_VIEW, false))this.addConfigPanel(ConfigPanelPluginForSearch.class,JDTheme.I("gui.images.config.find","find"),JDLocale.L("gui.config.tabLables.searchPlugin","Search Plugin settings"));
+        this.addConfigPanel(ConfigPanelPluginsOptional.class,JDTheme.I("gui.images.config.edit_redo","edit_redo"),JDLocale.L("gui.config.tabLables.optionalPlugin","Optional Plugin settings"));
+        if(configuration.getBooleanProperty(Configuration.PARAM_USE_EXPERT_VIEW, false))this.addConfigPanel(ConfigPanelPluginForContainer.class,JDTheme.I("gui.images.config.database","database"),JDLocale.L("gui.config.tabLables.containerPlugin","Link-Container settings"));
         
         btnSave = new JButton(JDLocale.L("gui.config.btn_save","Speichern"));
         btnSave.addActionListener(this);
@@ -91,24 +103,55 @@ public class ConfigurationDialog extends JDialog implements ActionListener {
         
         JDUtilities.addToGridBag(this, btnSave,  1, 4, 1, 1, 0, -1, insets, GridBagConstraints.NONE, GridBagConstraints.SOUTHEAST);
         JDUtilities.addToGridBag(this, btnCancel, 2,4,1, 1, 0, -1, insets, GridBagConstraints.NONE, GridBagConstraints.SOUTHEAST);
-
+        
+        paintPanel(0);
         pack();
     }
 
+private void paintPanel(int i) {
+  
+    if(i<configPanels.size()&&configPanels.get(i)!=null){
+        return;
+    }
+        Class class1=configClasses.get(i);
+        ConfigPanel panel = initSubPanel(class1);
+        configPanels.remove(i);
+        configPanels.add(i,panel);
+        JPanel container = containerPanels.get(i);
+         JDUtilities.addToGridBag(container, new JScrollPane(panel), GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 1, 1, null, GridBagConstraints.BOTH, GridBagConstraints.NORTH);
+       
+    }
+
+public ConfigPanel initSubPanel(Class class1){
+    try {
+   
+        Class[] classes = new Class[]{Configuration.class, UIInterface.class};
+        Constructor con = class1.getConstructor(classes);
+        return (ConfigPanel)con.newInstance(new Object[]{configuration,uiinterface});
+    }    
+   
+    catch (Exception e) {
+        
+        e.printStackTrace();
+    }
+    return null;
+}
     /**
      * @author coalado 
      * Fügt einen neuen ConfigTab hinzu
      * @param configPanel
      */
-    private void addConfigPanel(ConfigPanel configPanel,String img,String title ) {
-        this.configPanels.add(configPanel);
+    private void addConfigPanel(Class configPanelClass,String img,String title ) {
+     
+        this.configClasses.add(configPanelClass);
+      
         JPanel p = new JPanel(new GridBagLayout());
-        
+        this.containerPanels.add(p);
+        configPanels.add(null);
         JDUtilities.addToGridBag(p, new JLabel(title,new ImageIcon(JDUtilities.getImage(img)),SwingConstants.LEFT), GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 1, 0, null, GridBagConstraints.HORIZONTAL, GridBagConstraints.FIRST_LINE_START);
        JDUtilities.addToGridBag(p, new JSeparator(), GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 1, 0, null, GridBagConstraints.HORIZONTAL, GridBagConstraints.NORTH);
-        JDUtilities.addToGridBag(p, configPanel, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 1, 1, null, GridBagConstraints.BOTH, GridBagConstraints.NORTH);
-   
-        tabbedPane.addTab(configPanel.getName(), p);
+     
+        tabbedPane.addTab(title, p);
 
     }
 /**
@@ -127,6 +170,7 @@ public class ConfigurationDialog extends JDialog implements ActionListener {
     public void actionPerformed(ActionEvent e) {
         if (e.getSource() == btnSave) {
             for (int i = 0; i < configPanels.size(); i++) {
+                if(  configPanels.elementAt(i)!=null)
                 configPanels.elementAt(i).save();
             }
             configChanged = true;
@@ -146,6 +190,16 @@ public class ConfigurationDialog extends JDialog implements ActionListener {
          
          
          setVisible(false);
+    }
+
+    public void stateChanged(ChangeEvent e) {
+ 
+       int index= tabbedPane.getSelectedIndex();        
+        paintPanel(index);
+        validate();
+        pack();
+       
+        
     }
 
 }
