@@ -39,7 +39,7 @@ public class Main {
         // System.exit(0);
         // return;
         // }
-        SingleInstanceController.bindRMIObject(new SingleInstanceController());
+        //SingleInstanceController.bindRMIObject(new SingleInstanceController());
         Main main = new Main();
         main.go();
     }
