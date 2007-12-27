@@ -258,7 +258,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         actionStartStopDownload = new JDAction(this, JDTheme.I("gui.images.next"), "action.start", JDAction.APP_START_STOP_DOWNLOADS);
         actionPause = new JDAction(this, JDTheme.I("gui.images.stop_after"), "action.pause", JDAction.APP_PAUSE_DOWNLOADS);
         actionItemsAdd = new JDAction(this, JDTheme.I("gui.images.add"), "action.add", JDAction.ITEMS_ADD);
-        actionDnD = new JDAction(this, JDTheme.I("gui.images.clipboardoff"), "action.dnd", JDAction.ITEMS_DND);
+        actionDnD = new JDAction(this, JDTheme.I("gui.images.clipboard"), "action.dnd", JDAction.ITEMS_DND);
 
         actionLoadDLC = new JDAction(this, JDTheme.I("gui.images.load"), "action.load", JDAction.APP_LOAD_DLC);
         actionSaveDLC = new JDAction(this, JDTheme.I("gui.images.save"), "action.save", JDAction.APP_SAVE_DLC);
