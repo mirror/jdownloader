@@ -67,6 +67,10 @@ public class Unrar extends Interaction implements Serializable {
     public static final String ENABLED_TYPE_LINKGRABBER = JDLocale.L("interaction.unrar.linkgrabber");
 
     public static final String PROPERTY_WAIT_FOR_TERMINATION = "UNRAR_WAIT_FOR_TERMINATION";
+    
+    public static final String PROPERTY_ENABLE_EXTRACTFOLDER = "UNRAR_PROPERTY_ENABLE_EXTRACTFOLDER";
+    
+    public static final String PROPERTY_EXTRACTFOLDER = "UNRAR_PROPERTY_EXTRACTFOLDER";
 
     @Override
     public boolean doInteraction(Object arg) {
@@ -102,6 +106,14 @@ public class Unrar extends Interaction implements Serializable {
                 unrar.standardPassword = password;
             unrar.addToPasswordlist(password);
         }
+        if(JDUtilities.getConfiguration().getBooleanProperty(Unrar.PROPERTY_ENABLE_EXTRACTFOLDER, false))
+        {
+            String efolder = JDUtilities.getConfiguration().getStringProperty(Unrar.PROPERTY_EXTRACTFOLDER, null);
+            System.out.println(efolder);
+            if(efolder!=null)
+                unrar.extractFolder=new File(efolder);
+        }
+
         unrar.overwriteFiles = JDUtilities.getConfiguration().getBooleanProperty(Unrar.PROPERTY_OVERWRITE_FILES, false);
         unrar.autoDelete = JDUtilities.getConfiguration().getBooleanProperty(Unrar.PROPERTY_AUTODELETE, false);
         unrar.unrar = JDUtilities.getConfiguration().getStringProperty(Unrar.PROPERTY_UNRARCOMMAND);
