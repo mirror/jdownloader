@@ -21,15 +21,15 @@ public class ClipboardHandler extends Thread {
      */
     private DistributeData distributeData = null;
 
-    private boolean        enabled        = false;
+    public boolean enabled = false;
 
-    private Clipboard      clipboard;
+    private Clipboard clipboard;
 
-    private Logger         logger;
+    private Logger logger;
 
-    private List           oldList;
+    private List oldList;
 
-    private String         olddata;
+    private String olddata;
 
     /**
      */
@@ -63,16 +63,17 @@ public class ClipboardHandler extends Thread {
     }
 
     public void run() {
-        while (true) {
+        enabled = JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_CLIPBOARD_ALWAYS_ACTIVE, false);
+        while (enabled) {
             try {
-
+                System.out.println(enabled);
                 DataFlavor[] flavors = clipboard.getAvailableDataFlavors();
                 for (int i = 0; i < flavors.length; i++) {
 
                     if (flavors[i].isFlavorJavaFileListType()) {
                         List list = (List) clipboard.getData(flavors[i]);
-                        //Prüfen ob es eine neue Liste ist
-                        boolean ch = oldList==null || list.size() != oldList.size();
+                        // Prüfen ob es eine neue Liste ist
+                        boolean ch = oldList == null || list.size() != oldList.size();
                         if (!ch) {
                             for (int t = 0; t < list.size(); t++) {
                                 if (!((File) list.get(t)).getAbsolutePath().equals(((File) oldList.get(t)).getAbsolutePath())) {
@@ -94,16 +95,15 @@ public class ClipboardHandler extends Thread {
                     }
                     if (flavors[i].isFlavorTextType() && flavors[i].getRepresentationClass() == String.class && flavors[i].getHumanPresentableName().equals("Unicode String")) {
                         String data = (String) clipboard.getData(flavors[i]);
-                      
-                        data=data.trim();
+
+                        data = data.trim();
                         if (!data.equals(olddata)) {
                             olddata = data;
-                            logger.info(data.length()+" - "+olddata.length());
-                            logger.info("|"+data+"|"+" - "+"|"+olddata+"|");
-                             distributeData = new DistributeData(data);
-                             distributeData.addControlListener(
-                             JDUtilities.getController());
-                           distributeData.start();
+                            logger.info(data.length() + " - " + olddata.length());
+                            logger.info("|" + data + "|" + " - " + "|" + olddata + "|");
+                            distributeData = new DistributeData(data);
+                            distributeData.addControlListener(JDUtilities.getController());
+                            distributeData.start();
                         }
                         break;
 
@@ -118,8 +118,7 @@ public class ClipboardHandler extends Thread {
                 // distributeData.addControlListener(controller);
                 // distributeData.start();
                 Thread.sleep(1000);
-            }
-            catch (Exception e2) {
+            } catch (Exception e2) {
                 e2.printStackTrace();
             }
         }

@@ -88,7 +88,7 @@ public class JDController implements PluginListener, ControlListener, UIListener
 
     private DownloadLink                      lastDownloadFinished;
 
-    private ClipboardHandler                  clipboard;
+    public ClipboardHandler                  clipboard;
 
     /**
      * Der Download Watchdog verwaltet die Downloads

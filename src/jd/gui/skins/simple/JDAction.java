@@ -51,7 +51,7 @@ public class JDAction extends AbstractAction{
     public static final int APP_TESTER= 25;
     public static final int APP_UNRAR= 26;
     public static final int APP_PASSWORDLIST = 27;
-
+    public static final int APP_CLIPBOARD= 28;
 
     private ActionListener actionListener;
     private int actionID;
