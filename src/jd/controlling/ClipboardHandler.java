@@ -21,15 +21,17 @@ public class ClipboardHandler extends Thread {
      */
     private DistributeData distributeData = null;
 
-    public boolean         enabled        = true;
+    private boolean enabled = true;
 
-    private Clipboard      clipboard;
+    private Clipboard clipboard;
 
-    private Logger         logger;
+    private Logger logger;
 
-    private List           oldList;
+    private List oldList;
 
-    private String         olddata;
+    private Thread saveConfig = null;
+
+    private String olddata;
 
     /**
      */
@@ -38,7 +40,7 @@ public class ClipboardHandler extends Thread {
         clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
 
         logger = JDUtilities.getLogger();
-
+        this.start();
     }
 
     /**
@@ -47,7 +49,11 @@ public class ClipboardHandler extends Thread {
      * @return true/false
      */
     public boolean isEnabled() {
-        return enabled || JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_CLIPBOARD_ALWAYS_ACTIVE, false);
+        return JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_CLIPBOARD_ALWAYS_ACTIVE, false);
+    }
+
+    public void toggleActivation() {
+        setEnabled(!isEnabled());
     }
 
     /**
@@ -55,13 +61,34 @@ public class ClipboardHandler extends Thread {
      * 
      * @param enabled
      */
-    public void setEnabled(boolean enabled) {
+    private void setEnabled(boolean enabled) {
         this.enabled = enabled;
+        JDUtilities.getConfiguration().setProperty(Configuration.PARAM_CLIPBOARD_ALWAYS_ACTIVE, enabled);
+        if (saveConfig != null) {
+            while (saveConfig.isAlive()) {
+                try {
+                    Thread.sleep(100);
+                } catch (InterruptedException e) {
+                    // TODO Auto-generated catch block
+                    e.printStackTrace();
+                }
+            }
+        }
+        saveConfig = new Thread(new Runnable() {
 
+            public void run() {
+                JDUtilities.saveConfig();
+            }
+        });
+        saveConfig.start();
+
+        if (enabled && !this.isAlive())
+            JDUtilities.getController().setClipboard(new ClipboardHandler());
     }
 
     public void run() {
-        while (isEnabled()) {         
+        enabled = isEnabled();
+        while (enabled) {
             try {
                 DataFlavor[] flavors = clipboard.getAvailableDataFlavors();
                 for (int i = 0; i < flavors.length; i++) {
@@ -107,8 +134,7 @@ public class ClipboardHandler extends Thread {
 
                 }
                 Thread.sleep(100);
-            }
-            catch (Exception e2) {
+            } catch (Exception e2) {
                 e2.printStackTrace();
             }
         }

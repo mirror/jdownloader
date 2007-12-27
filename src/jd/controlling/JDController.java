@@ -105,8 +105,6 @@ public class JDController implements PluginListener, ControlListener, UIListener
         downloadLinks = new Vector<DownloadLink>();
         speedMeter = new SpeedMeter(10000);
         clipboard = new ClipboardHandler();
-        clipboard.setEnabled(false);
-        clipboard.start();
         downloadStatus = DOWNLOAD_NOT_RUNNING;
 
         JDUtilities.setController(this);
@@ -946,10 +944,9 @@ public class JDController implements PluginListener, ControlListener, UIListener
     }
 
     public ClipboardHandler getClipboard() {
-        if(clipboard==null || !clipboard.isAlive()){
+        if(clipboard==null){
             clipboard = new ClipboardHandler();
-        }       
-     
+        }
         return clipboard;
     }
 

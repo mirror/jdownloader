@@ -12,7 +12,6 @@ import javax.swing.UIManager;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.Configuration;
-import jd.controlling.ClipboardHandler;
 import jd.gui.UIInterface;
 import jd.gui.skins.simple.components.BrowseFile;
 import jd.utils.JDLocale;
@@ -35,13 +34,6 @@ public class ConfigPanelGeneral extends ConfigPanel {
     }
     public void save() {
         this.saveConfigEntries();
-        boolean isActive = JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_CLIPBOARD_ALWAYS_ACTIVE, false);
-     
-
-        if (isActive){
-            ClipboardHandler clb = JDUtilities.getController().getClipboard();
-            if(!clb.isAlive())clb.start();
-        }
           
         JDUtilities.getLogger().setLevel((Level) configuration.getProperty(Configuration.PARAM_LOGGER_LEVEL));
         if (JDUtilities.getHomeDirectory() != null && !JDUtilities.getHomeDirectory().equalsIgnoreCase(brsHomeDir.getText().trim())) {
@@ -92,9 +84,6 @@ public class ConfigPanelGeneral extends ConfigPanel {
         addGUIConfigEntry(ce);
 
         ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, configuration, Configuration.PARAM_USE_PACKETNAME_AS_SUBFOLDER, JDLocale.L("gui.config.general.createSubFolders", "Wenn möglich Unterordner mit Paketname erstellen")).setDefaultValue(false));
-        addGUIConfigEntry(ce);
-
-        ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, configuration, Configuration.PARAM_CLIPBOARD_ALWAYS_ACTIVE, JDLocale.L("gui.config.general.clipboardObserver", "Zwischenablage immer überwachen")).setDefaultValue(false));
         addGUIConfigEntry(ce);
 
         ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, configuration, Configuration.PARAM_WEBUPDATE_LOAD_ALL_TOOLS, JDLocale.L("gui.config.general.webupdate.osFilter", "Webupdate: Alle Erweiterungen aktualisieren (auch OS-fremde)")).setDefaultValue(false).setExpertEntry(true));

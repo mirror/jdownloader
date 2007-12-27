@@ -18,10 +18,8 @@ import java.util.Iterator;
 import java.util.Vector;
 import java.util.logging.Logger;
 
-import javax.swing.AbstractButton;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
-import javax.swing.JCheckBox;
 import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -38,7 +36,6 @@ import javax.swing.UnsupportedLookAndFeelException;
 
 import jd.JDFileFilter;
 import jd.config.Configuration;
-import jd.controlling.ClipboardHandler;
 import jd.controlling.JDController;
 import jd.controlling.ProgressController;
 import jd.controlling.interaction.Interaction;
@@ -157,8 +154,6 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
 
     private PluginEvent decryptPluginDataChanged = null;
 
-
-
     private LinkGrabber linkGrabber;
 
     private JDAction actionSearch;
@@ -182,6 +177,8 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
     private JDAction doReconnect;
 
     private JToggleButton btnToggleReconnect;
+    
+    private JButton btnClipBoard;
 
     /**
      * Das Hauptfenster wird erstellt
@@ -246,7 +243,14 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
 
         // enableOptionalPlugins(true);
     }
-
+    private String getClipBoardImage()
+    {
+        if(JDUtilities.getController().getClipboard().isEnabled())
+            return JDTheme.I("gui.images.clipboardon");
+        else
+        return JDTheme.I("gui.images.clipboardoff");
+         
+    }
     /**
      * Die Aktionen werden initialisiert
      */
@@ -254,7 +258,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         actionStartStopDownload = new JDAction(this, JDTheme.I("gui.images.next"), "action.start", JDAction.APP_START_STOP_DOWNLOADS);
         actionPause = new JDAction(this, JDTheme.I("gui.images.stop_after"), "action.pause", JDAction.APP_PAUSE_DOWNLOADS);
         actionItemsAdd = new JDAction(this, JDTheme.I("gui.images.add"), "action.add", JDAction.ITEMS_ADD);
-        actionDnD = new JDAction(this, JDTheme.I("gui.images.clipboard"), "action.dnd", JDAction.ITEMS_DND);
+        actionDnD = new JDAction(this, JDTheme.I("gui.images.clipboardoff"), "action.dnd", JDAction.ITEMS_DND);
 
         actionLoadDLC = new JDAction(this, JDTheme.I("gui.images.load"), "action.load", JDAction.APP_LOAD_DLC);
         actionSaveDLC = new JDAction(this, JDTheme.I("gui.images.save"), "action.save", JDAction.APP_SAVE_DLC);
@@ -263,7 +267,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         actionLog = new JDAction(this, JDTheme.I("gui.images.terminal"), "action.viewlog", JDAction.APP_LOG);
         actionTester = new JDAction(this, JDTheme.I("gui.images.jd_logo"), "action.tester", JDAction.APP_TESTER);
         actionUnrar = new JDAction(this, JDTheme.I("gui.images.jd_logo"), "action.unrar", JDAction.APP_UNRAR);
-        actionClipBoard = new JDAction(this, JDTheme.I("gui.images.terminal"), "action.clipboard", JDAction.APP_CLIPBOARD);
+        actionClipBoard = new JDAction(this, getClipBoardImage(), "action.clipboard", JDAction.APP_CLIPBOARD);
         actionPasswordlist = new JDAction(this, JDTheme.I("gui.images.jd_logo"), "action.passwordlist", JDAction.APP_PASSWORDLIST);
         actionConfig = new JDAction(this, JDTheme.I("gui.images.configuration"), "action.configuration", JDAction.APP_CONFIGURATION);
         actionReconnect = new JDAction(this, JDTheme.I("gui.images.reconnect"), "action.reconnect", JDAction.APP_RECONNECT);
@@ -333,11 +337,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         menViewLog.setIcon(null);
         if (actionLog.getAccelerator() != null)
             menViewLog.setAccelerator(actionLog.getAccelerator());
-        JCheckBoxMenuItem menClipBoard = new JCheckBoxMenuItem(actionClipBoard);
-        menClipBoard.setIcon(null);
-        menClipBoard.setState(JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_CLIPBOARD_ALWAYS_ACTIVE, false));
-        if (actionClipBoard.getAccelerator() != null)
-            menClipBoard.setAccelerator(actionClipBoard.getAccelerator());
+        JMenuItem memDnD = createMenuItem(actionDnD);
         JMenuItem menConfig = createMenuItem(actionConfig);
         JMenuItem menTester = createMenuItem(actionTester);
         JMenuItem menUnrar = createMenuItem(actionUnrar);
@@ -351,7 +351,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         menExtra.add(menViewLog);
         menExtra.add(menTester);
         menExtra.add(menConfig);
-        menExtra.add(menClipBoard);
+        menExtra.add(memDnD);
         menExtra.add(menUnrar);
         menExtra.add(menPasswordlist);
         menAction.add(menDownload);
@@ -418,7 +418,6 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         btnToggleReconnect.setText(null);
         btnToggleReconnect.setEnabled(true);
         btnToggleReconnect.setSelected(JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_DISABLE_RECONNECT, false));
-    
 
         JButton btnAdd = new JButton(actionItemsAdd);
         btnAdd.setFocusPainted(false);
@@ -452,10 +451,10 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         btnLog.setFocusPainted(false);
         btnLog.setBorderPainted(false);
         btnLog.setText(null);
-        JButton btnDnD = new JButton(this.actionDnD);
-        btnDnD.setFocusPainted(false);
-        btnDnD.setBorderPainted(false);
-        btnDnD.setText(null);
+        btnClipBoard = new JButton(this.actionClipBoard);
+        btnClipBoard.setFocusPainted(false);
+        btnClipBoard.setBorderPainted(false);
+        btnClipBoard.setText(null);
         JButton btnSearch = new JButton(this.actionSearch);
         btnSearch.setFocusPainted(false);
         btnSearch.setBorderPainted(false);
@@ -476,7 +475,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         toolBar.add(btnLog);
         toolBar.addSeparator();
         toolBar.add(btnReconnect);
-        toolBar.add(btnDnD);
+        toolBar.add(btnClipBoard);
         toolBar.add(btnToggleReconnect);
         // reconnectBox = new JCheckBox("Reconnect durchführen");
         // boolean rc =
@@ -530,10 +529,8 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
                 break;
             case JDAction.APP_CLIPBOARD :
                 logger.finer("Clipboard");
-
-                ClipboardHandler clb = JDUtilities.getController().getClipboard();
-                clb.setEnabled(true);
-                clb.start();
+                JDUtilities.getController().getClipboard().toggleActivation();
+                btnClipBoard.setIcon(new ImageIcon(JDUtilities.getImage(getClipBoardImage())));
                 break;
             case JDAction.APP_PASSWORDLIST :
                 new jdUnrarPasswordListDialog(((SimpleGUI) JDUtilities.getController().getUiInterface()).getFrame()).setVisible(true);
@@ -632,16 +629,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
     public void toggleDnD() {
         if (dragNDrop.isVisible()) {
             dragNDrop.setVisible(false);
-            JDUtilities.getController().getClipboard().setEnabled(false);
-            
-            
         } else {
-            ClipboardHandler clb = JDUtilities.getController().getClipboard();
-            clb.setEnabled(true);
-            if(!clb.isAlive()){
-                clb.start();
-            }
-            
             dragNDrop.setVisible(true);
             dragNDrop.setText("Ziehe Links auf mich!");
         }
