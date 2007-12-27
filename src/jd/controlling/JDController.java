@@ -30,6 +30,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.RequestInfo;
 import jd.plugins.event.PluginEvent;
 import jd.plugins.event.PluginListener;
+import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
 /**
@@ -330,12 +331,11 @@ public class JDController implements PluginListener, ControlListener, UIListener
                 file = (File) uiEvent.getParameter();
                 loadContainerFile(file);
                 break;
-        
+
             case UIEvent.UI_EXIT:
                 exit();
                 break;
 
-            
             case UIEvent.UI_LINKS_CHANGED:
 
                 newLinks = uiInterface.getDownloadLinks();
@@ -458,15 +458,15 @@ public class JDController implements PluginListener, ControlListener, UIListener
         logger.info(xml);
         String[] encrypt = JDUtilities.encrypt(xml, "DLC Parser");
 
-        logger.info(encrypt[1]+" - "+encrypt[0]);
+        logger.info(encrypt[1] + " - " + encrypt[0]);
         if (encrypt == null) {
             logger.severe("DLC Encryption failed.");
             this.getUiInterface().showMessageDialog("JDTC Encryption failed.");
             return;
 
         }
-        String key=encrypt[1];
-        xml=encrypt[0];
+        String key = encrypt[1];
+        xml = encrypt[0];
 
         try {
             URL[] services = new URL[] { new URL("http://recrypt1.ath.cx/service.php"), new URL("http://recrypt2.ath.cx/service.php"), new URL("http://recrypt3.ath.cx/service.php") };
@@ -479,7 +479,7 @@ public class JDController implements PluginListener, ControlListener, UIListener
                     url++;
                     continue;
                 }
-                logger.finer("Call Redirect: " + ri.getLocation()+" - "+"jd=1&srcType=jdtc&data=" + key);
+                logger.finer("Call Redirect: " + ri.getLocation() + " - " + "jd=1&srcType=jdtc&data=" + key);
 
                 ri = Plugin.postRequest(new URL(ri.getLocation()), null, null, null, "jd=1&srcType=jdtc&data=" + key, true);
                 // CHeck ob der call erfolgreich war
@@ -490,11 +490,15 @@ public class JDController implements PluginListener, ControlListener, UIListener
                 }
                 else {
                     String dlcKey = ri.getHtmlCode();
-                  
-                    dlcKey=   Plugin.getBetween(dlcKey, "<rc>", "</rc>");
-                    logger.info("DLC KEy: "+dlcKey);
-                    JDUtilities.writeLocalFile(file, xml+dlcKey);
-                    this.getUiInterface().showMessageDialog("DLC encryption successfull");
+
+                    dlcKey = Plugin.getBetween(dlcKey, "<rc>", "</rc>");
+                    if (dlcKey.trim().length() < 80) {
+                        JDUtilities.getGUI().showMessageDialog(JDLocale.L("sys.dlc.error_version", "DLC Encryption fehlgeschlagen. Bitte stellen Sie sicher dass Sie die aktuellste JD-Version verwenden."));
+                        return;
+                    }
+                    logger.info("DLC KEy: " + dlcKey);
+                    JDUtilities.writeLocalFile(file, xml + dlcKey);
+                    this.getUiInterface().showMessageDialog(JDLocale.L("sys.dlc.success", "DLC encryption successfull"));
 
                     return;
                 }
@@ -603,7 +607,7 @@ public class JDController implements PluginListener, ControlListener, UIListener
         Vector<PluginForContainer> pluginsForContainer = JDUtilities.getPluginsForContainer();
         Vector<DownloadLink> downloadLinks = new Vector<DownloadLink>();
         PluginForContainer pContainer;
-        ProgressController progress = new ProgressController("Containerloader",pluginsForContainer.size());
+        ProgressController progress = new ProgressController("Containerloader", pluginsForContainer.size());
         logger.info("load Container: " + file);
 
         for (int i = 0; i < pluginsForContainer.size(); i++) {
@@ -903,7 +907,7 @@ public class JDController implements PluginListener, ControlListener, UIListener
      */
 
     public boolean reconnect() {
-        logger.info("Reconnect: "+JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_DISABLE_RECONNECT, true));
+        logger.info("Reconnect: " + JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_DISABLE_RECONNECT, true));
         if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_DISABLE_RECONNECT, false)) {
             logger.finer("Reconnect is disabled. Enable the CheckBox in the Toolbar to reactivate it");
             return false;
@@ -924,7 +928,7 @@ public class JDController implements PluginListener, ControlListener, UIListener
         if (type.equals("Extern")) {
             ret = new ExternReconnect().interact(null);
         }
-        logger.info("Reconnect success: "+ret);
+        logger.info("Reconnect success: " + ret);
         if (ret) {
             Iterator<DownloadLink> iterator = downloadLinks.iterator();
 
@@ -933,7 +937,7 @@ public class JDController implements PluginListener, ControlListener, UIListener
                 i = iterator.next();
                 if (i.getRemainingWaittime() > 0) {
                     i.setEndOfWaittime(0);
-                    ((PluginForHost)i.getPlugin()).resetPluginGlobals();
+                    ((PluginForHost) i.getPlugin()).resetPluginGlobals();
                     i.setStatus(DownloadLink.STATUS_TODO);
 
                 }
@@ -944,7 +948,7 @@ public class JDController implements PluginListener, ControlListener, UIListener
     }
 
     public ClipboardHandler getClipboard() {
-        if(clipboard==null){
+        if (clipboard == null) {
             clipboard = new ClipboardHandler();
         }
         return clipboard;
