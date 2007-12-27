@@ -1046,7 +1046,7 @@ public class JUnrar {
                         }
 
                     }
-                } else if(b) {
+                } else if (b) {
                     while (matcher.find()) {
                         File ufile = new File(file.getParentFile(), matcher.group(1));
                         unpackedlist.add(ufile);
@@ -1059,7 +1059,7 @@ public class JUnrar {
                 matcher = pattern.matcher(str);
                 HashMap<File, String> nfiles = new HashMap<File, String>();
                 while (matcher.find()) {
-                    nfiles.put(new File(file.getParent() + System.getProperty("file.separator") + matcher.group(1)), null);
+                        nfiles.put(new File(parent, matcher.group(1)), null);
                 }
                 JUnrar un = new JUnrar();
                 un.files = nfiles;
