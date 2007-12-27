@@ -54,11 +54,12 @@ public class JDClassLoader extends java.lang.ClassLoader {
                     jarFiles.add(new JarFile(files[i]));
                 }
                 catch (IOException e) {
+                    e.printStackTrace();
                 }
             }
         }
       //Hier werden lokale JAR Dateien ausgelesen
-       files = new File(".").listFiles(new JDFileFilter(null, ".jar", false));
+       files = new File(rootDir).listFiles(new JDFileFilter(null, ".jar", false));
         if(files!=null){
            // jars = new JarFile[files.length];
             for(int i=0;i<files.length;i++){

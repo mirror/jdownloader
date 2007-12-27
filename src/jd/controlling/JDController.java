@@ -906,7 +906,7 @@ public class JDController implements PluginListener, ControlListener, UIListener
 
     public boolean reconnect() {
         logger.info("Reconnect: "+JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_DISABLE_RECONNECT, true));
-        if (!JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_DISABLE_RECONNECT, true)) {
+        if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_DISABLE_RECONNECT, false)) {
             logger.finer("Reconnect is disabled. Enable the CheckBox in the Toolbar to reactivate it");
             return false;
         }

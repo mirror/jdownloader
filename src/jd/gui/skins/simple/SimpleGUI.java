@@ -157,7 +157,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
 
     private PluginEvent decryptPluginDataChanged = null;
 
-    private JCheckBox reconnectBox;
+
 
     private LinkGrabber linkGrabber;
 
@@ -181,7 +181,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
 
     private JDAction doReconnect;
 
-    private AbstractButton btnToggleReconnect;
+    private JToggleButton btnToggleReconnect;
 
     /**
      * Das Hauptfenster wird erstellt
@@ -417,6 +417,8 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         btnToggleReconnect.setBorderPainted(false);
         btnToggleReconnect.setText(null);
         btnToggleReconnect.setEnabled(true);
+        btnToggleReconnect.setSelected(JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_DISABLE_RECONNECT, false));
+    
 
         JButton btnAdd = new JButton(actionItemsAdd);
         btnAdd.setFocusPainted(false);
@@ -499,15 +501,12 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
      *            Die erwünschte Aktion
      */
     public void actionPerformed(ActionEvent e) {
-        if (e.getSource() == reconnectBox) {
+        if (e.getSource() == btnToggleReconnect) {
 
-            JDUtilities.getConfiguration().setProperty(Configuration.PARAM_DISABLE_RECONNECT, reconnectBox.isSelected()/*
-                                                                                                                         * reconnectBox.getSelectedObjects() !=
-                                                                                                                         * null
-                                                                                                                         */);
+            JDUtilities.getConfiguration().setProperty(Configuration.PARAM_DISABLE_RECONNECT, btnToggleReconnect.isSelected());
 
             fireUIEvent(new UIEvent(this, UIEvent.UI_SAVE_CONFIG));
-            if (!reconnectBox.isSelected())
+            if (btnToggleReconnect.isSelected())
                 this.showMessageDialog("Reconnect is now disabled! Do not forget to reactivate this feature!");
             return;
         }
