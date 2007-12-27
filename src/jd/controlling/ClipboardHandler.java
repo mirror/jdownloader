@@ -66,7 +66,6 @@ public class ClipboardHandler extends Thread {
         enabled = JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_CLIPBOARD_ALWAYS_ACTIVE, false);
         while (enabled) {
             try {
-                System.out.println(enabled);
                 DataFlavor[] flavors = clipboard.getAvailableDataFlavors();
                 for (int i = 0; i < flavors.length; i++) {
 

@@ -38,7 +38,6 @@ public class ConfigPanelGeneral extends ConfigPanel {
         boolean isActive = !JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_CLIPBOARD_ALWAYS_ACTIVE, false);
         JDUtilities.getConfiguration().setProperty(Configuration.PARAM_CLIPBOARD_ALWAYS_ACTIVE, isActive);
         ClipboardHandler clb = JDUtilities.getController().clipboard;
-        System.out.println("gui:"+isActive);
         clb.setEnabled(isActive);
         if (isActive && !clb.isAlive())
             JDUtilities.getController().clipboard = new ClipboardHandler();
