@@ -34,7 +34,8 @@ public class JUnrar {
     private File passwordList = new File(JDUtilities.getJDHomeDirectoryFromEnvironment(), "passwordlist.xml");
     private File unpacked = new File(JDUtilities.getJDHomeDirectoryFromEnvironment(), "unpacked.dat");
     private Vector<File> unpackedlist;
-    private Integer[] volumes = null;
+    private Integer[] volumess = null;
+    private String[] volumesn = null;
     private static Object[][] filesignatures = {{"avi", new Integer[][]{{82, 73, 70, 70}}}, {"mpg", new Integer[][]{{0, 0, 1, 186, -1, 0}}}, {"mpeg", new Integer[][]{{0, 0, 1, 186, -1, 0}}}, {"rar", new Integer[][]{{82, 97, 114, 33, 26, 7}}}, {"wmv", new Integer[][]{{48, 38, 178, 117, 142, 102}}}, {"mp3", new Integer[][]{{73, 68, 51, 3, 0}, {255, 251, 104, -1, 0, -1,}, {255, 251, 64, -1, 0, -1}}}, {"exe", new Integer[][]{{77, 90, 144, 0, 3, 0}}}, {"bz2", new Integer[][]{{66, 90, 104, 54, 49, 65}}}, {"gz", new Integer[][]{{31, 139, 8, 0}}}, {"doc", new Integer[][]{{208, 207, 17, 224, 161, 177}}}, {"pdf", new Integer[][]{{37, 80, 68, 70, 45, 49}}}, {"wma", new Integer[][]{{48, 38, 178, 117, 142, 102}}}, {"jpg", new Integer[][]{{255, 216, 255, 224, 0, 16}, {255, 216, 255, 225, 39, 222}}}, {"m4a", new Integer[][]{{0, 0, 0, 32, 102, 116}}}, {"mdf", new Integer[][]{{0, 255, 255, 255, 255, 255}}}, {"xcf", new Integer[][]{{103, 105, 109, 112, 32, 120}}}};
     private Integer[][] typicalFilesignatures = {{80, 75, 3, 4, -1, 0,}, {82, 73, 70, 70}, {0, 255, 255, 255, 255, 255}, {48, 38, 178, 117, 142, 102}, {208, 207, 17, 224, 161, 177}};
     public HashMap<String, Integer> passwordlist;
@@ -450,8 +451,9 @@ public class JUnrar {
                     vSizes.add(Integer.parseInt(matchervolumes.group(2)));
                 }
             }
-            volumes = vSizes.toArray(new Integer[vSizes.size()]);
-            if (volumes.length == 0) {
+            volumess = vSizes.toArray(new Integer[vSizes.size()]);
+            volumesn = vFiles.toArray(new String[vFiles.size()]);
+            if (volumess.length == 0) {
                 logger.severe("can't finde a file in the archiv: " + file.getName());
                 logger.severe(str);
                 return FILE_ERROR;
@@ -757,20 +759,34 @@ public class JUnrar {
         }
         return buff.toString();
     }
-    private Thread delayedProgress(final int steps, final int delay) {
+    private Thread delayedProgress(final int steps, final File file, final int  filesize) {
 
         return new Thread(new Runnable() {
-
+            
             public void run() {
-                for (int i = 0; i < steps; i++) {
-                    try {
-                        Thread.sleep(delay);
-                    } catch (InterruptedException e) {
+                int tempfs = 0;
+                int std = filesize/steps;
+                int step = steps;
+                while (step>0)
+                {
+                    if(file.isFile())
+                    {
+                    int size = (int) (file.length()-tempfs);
+                    
+                    int st = (int) (size/std);
+                    System.out.println(size);
+                    System.out.println(st);
+                    if(st>0)
+                    {
+                        tempfs+=(std*st);
+                        step-=st;
+                    progress.increase(st);
                     }
-                    progress.increase(1);
+                    }
+                }
                 }
 
-            }
+            
         });
 
     }
@@ -789,8 +805,8 @@ public class JUnrar {
         StringBuffer buff = new StringBuffer();
         char seperator = System.getProperty("line.separator").charAt(0);
         long max = 0;
-        for (int i = 0; i < volumes.length; i++) {
-            max += volumes[i];
+        for (int i = 0; i < volumess.length; i++) {
+            max += volumess[i];
         }
         long state = 0;
         // if (volumes > 1)
@@ -820,7 +836,7 @@ public class JUnrar {
                     if (b && text.trim().length() > 0) {
                         if (text.matches("Extracting  .*")) {
                             b = false;
-                            state += volumes[c];
+                            state += volumess[c];
                             steps = (int) (state * 100 / max);
                             if (steps > 0) {
                                 if (lastThread != null && lastThread.isAlive()) {
@@ -829,9 +845,8 @@ public class JUnrar {
                                 }
                                 state = 0;
                                 perc += steps;
-                                if (volumes[c] > 10000) {
-                                    int time = volumes[c] / steps / 10000;
-                                    lastThread = delayedProgress(steps, time);
+                                if (volumess[c] > 10000) {
+                                    lastThread = delayedProgress(steps, (b? (new File(volumesn[c])):(new File(parent,  volumesn[c]))), volumess[c]);
                                     lastThread.start();
                                 } else
                                     progress.setStatus(perc);
