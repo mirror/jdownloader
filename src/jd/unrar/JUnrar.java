@@ -496,7 +496,7 @@ public class JUnrar {
 
     }
 
-    private String preparpassword(String password) {
+    private String preparePassword(String password) {
         String retpw = "";
         for (int i = 0; i < password.length(); i++) {
             char cur = password.charAt(i);
@@ -527,7 +527,7 @@ public class JUnrar {
             logger.finer("Password is given: " + password);
             progress.increase(1);
             progress.setStatusText("Checkarchive: " + file);
-            password = preparpassword(password);
+            password = preparePassword(password);
             z = getProtectedFiles(file, password);
 
             if (z == FILE_ERROR) {
@@ -553,7 +553,7 @@ public class JUnrar {
 
         if (standardPassword != null && password != standardPassword) {
             password = standardPassword;
-            password = preparpassword(password);
+            password = preparePassword(password);
             logger.finer("Password is given: " + password);
             progress.increase(1);
             progress.setStatusText("Checkarchive: " + file);
@@ -600,7 +600,7 @@ public class JUnrar {
             for (Map.Entry<String, Integer> entry : passwordlist.entrySet()) {
 
                 password = entry.getKey();
-                password = preparpassword(password);
+                password = preparePassword(password);
                 progress.setStatusText("password:" + password);
                 z = getProtectedFiles(file, password);
                 if (z == FILE_ERROR)
