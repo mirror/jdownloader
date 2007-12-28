@@ -769,13 +769,17 @@ public class JUnrar {
                 int step = steps;
                 while (step>0)
                 {
+                    try {
+                        Thread.sleep(100);
+                    } catch (InterruptedException e) {
+                        // TODO Auto-generated catch block
+                        e.printStackTrace();
+                    }
                     if(file.isFile())
                     {
                     int size = (int) (file.length()-tempfs);
                     
                     int st = (int) (size/std);
-                    System.out.println(size);
-                    System.out.println(st);
                     if(st>0)
                     {
                         tempfs+=(std*st);
