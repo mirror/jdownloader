@@ -808,7 +808,7 @@ public DownloadLink setSourcePluginPasswords(Vector<String> sourcePluginPassword
 }
 public DownloadLink addSourcePluginPassword(String sourcePluginPassword) {
     
-    if(this.sourcePluginPasswords.indexOf(sourcePluginPassword)<0){
+    if(this.sourcePluginPasswords.indexOf(sourcePluginPassword)<0 &&sourcePluginPassword!=null&&sourcePluginPassword.trim().length()>0){
     this.sourcePluginPasswords.add(sourcePluginPassword);
     }
     
@@ -819,10 +819,12 @@ public String getSourcePluginPassword(){
     if(sourcePluginPasswords.size()==1)return sourcePluginPasswords.get(0);
    String ret="{";
    for( int i=0; i<sourcePluginPasswords.size();i++){
+       if(sourcePluginPasswords.get(i).trim().length()>0){
        ret+="\""+sourcePluginPasswords.get(i)+"\"";
            if(i<sourcePluginPasswords.size()-1){
                ret+=", ";
            }
+       }
    }
    ret+="}";
    return ret;
