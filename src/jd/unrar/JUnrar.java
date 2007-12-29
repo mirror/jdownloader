@@ -162,6 +162,8 @@ public class JUnrar {
         this.files = new HashMap<File, String>();
         this.files.put(file, Password);
         loadPasswordlist();
+        progress = new ProgressController("Default Unrar", 100);
+        progress.setStatusText("Unrar-process");
     }
     /**
      * Konstruktor zum entpacken bestimmter Dateien mit verschiedenen
@@ -174,6 +176,8 @@ public class JUnrar {
     public JUnrar(HashMap<File, String> files) {
         this.files = files;
         loadPasswordlist();
+        progress = new ProgressController("Default Unrar", 100);
+        progress.setStatusText("Unrar-process");
     }
     /**
      * KOnstruktor jkann verwendet werden wenn keine progressbar angezeigt
@@ -188,7 +192,7 @@ public class JUnrar {
 
     @SuppressWarnings("unchecked")
     private void loadToExtractList() {
-        if (!useToextractlist) {
+        if (useToextractlist) {
             if (toExtract.isFile()) {
                 this.toExtractlist = (HashMap<File, String>) Utilities.loadObject(toExtract, false);
                 freeToExtractList();
@@ -199,7 +203,7 @@ public class JUnrar {
         }
     }
     private void freeToExtractList() {
-        if (!useToextractlist) {
+        if (useToextractlist) {
             HashMap<File, String> toExtractlistTemp = new HashMap<File, String>();
             for (Map.Entry<File, String> entry : toExtractlist.entrySet()) {
                 File key = entry.getKey();
@@ -211,7 +215,7 @@ public class JUnrar {
         }
     }
     private void addToToExtractList(File file, String password) {
-        if (!useToextractlist) {
+        if (useToextractlist) {
             if (toExtractlist == null)
                 loadToExtractList();
             if (!toExtractlist.containsKey(file)) {
@@ -221,12 +225,12 @@ public class JUnrar {
         }
     }
     private void saveToExtractList() {
-        if (!useToextractlist) {
+        if (useToextractlist) {
             Utilities.saveObject(this.toExtractlist, toExtract, false);
         }
     }
     private void removeFromToExtractList(File file) {
-        if (!useToextractlist) {
+        if (useToextractlist) {
             if (toExtractlist == null)
                 loadToExtractList();
             if (toExtractlist.containsKey(file)) {
