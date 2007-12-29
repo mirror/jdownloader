@@ -6,7 +6,6 @@ import java.util.Iterator;
 import java.util.Vector;
 
 import jd.config.Configuration;
-import jd.controlling.JDController;
 import jd.plugins.DownloadLink;
 import jd.unrar.JUnrar;
 import jd.utils.JDLocale;
@@ -19,6 +18,7 @@ import jd.utils.JDUtilities;
  */
 public class Unrar extends Interaction implements Serializable {
     private static Unrar INSTANCE = null;
+    private DownloadLink lastFinishedDownload = null;
 
     // DIese Interaction sollte nur einmal exisitieren und wird deshalb über
     // eine factory aufgerufen.
@@ -74,6 +74,8 @@ public class Unrar extends Interaction implements Serializable {
 
     @Override
     public boolean doInteraction(Object arg) {
+        if(arg!=null)
+        lastFinishedDownload = (DownloadLink) arg;
         start();
         return true;
 
@@ -94,18 +96,23 @@ public class Unrar extends Interaction implements Serializable {
     }
 
     private JUnrar getUnrar() {
-        JDController controller = JDUtilities.getController();
-        DownloadLink dLink = controller.getLastFinishedDownloadLink();
-        String password = null;
-        if (dLink != null)
-            password = dLink.getFilePackage().getPassword();
-
-        JUnrar unrar = new JUnrar();
-        if (password != null && !password.matches("[\\s]*")) {
-            if (!password.matches("\\{\".*\"\\}"))
-                unrar.standardPassword = password;
-            unrar.addToPasswordlist(password);
+        JUnrar unrar;
+        if (lastFinishedDownload != null)
+        {
+            String password = lastFinishedDownload.getFilePackage().getPassword();
+            if (password.matches("[\\s]*"))
+                password=null;
+            unrar=new JUnrar(new File(lastFinishedDownload.getFileOutput()),password);
+            if(password!=null)
+                unrar.addToPasswordlist(password);
+            unrar.useToextractlist=true;
         }
+        else
+        {
+            unrar = new JUnrar();
+            unrar.useToextractlist=false;
+        }
+
         if(JDUtilities.getConfiguration().getBooleanProperty(Unrar.PROPERTY_ENABLE_EXTRACTFOLDER, false))
         {
             String efolder = JDUtilities.getConfiguration().getStringProperty(Unrar.PROPERTY_EXTRACTFOLDER, null);
@@ -124,6 +131,8 @@ public class Unrar extends Interaction implements Serializable {
         if (!IS_RUNNING) {
             IS_RUNNING = true;
             JUnrar unrar = getUnrar();
+            if (lastFinishedDownload == null)
+            {
             Vector<String> folders = new Vector<String>();
             // wird nur befoetigt wenn PARAM_USE_PACKETNAME_AS_SUBFOLDER auch
             // true ist
@@ -144,16 +153,6 @@ public class Unrar extends Interaction implements Serializable {
             folders.add(JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_DOWNLOAD_DIRECTORY));
             logger.info("dirs: " + folders);
             unrar.setFolders(folders);
-            Vector<String> followingFiles = new Vector<String>();
-            Iterator<DownloadLink> ff = JDUtilities.getController().getDownloadLinks().iterator();
-            while (ff.hasNext()) {
-                DownloadLink dl = ff.next();
-                if (dl.getStatus() != DownloadLink.STATUS_DOWNLOAD_FINISHED && dl.getStatus() != DownloadLink.STATUS_DONE) {
-                    followingFiles.add(dl.getName());
-                }
-            }
-            unrar.followingFiles = followingFiles.toArray(new String[followingFiles.size()]);
-            unrar.unrar();
             // Entpacken bis nichts mehr gefunden wurde (wird jetzt von unrar
             // erledigt indem entpackte dateien nochmal
             // durch unrar geschickt werden
@@ -164,7 +163,17 @@ public class Unrar extends Interaction implements Serializable {
              * newFolderList.size() > 0) { unrar = getUnrar();
              * unrar.setFolders(newFolderList); newFolderList = unrar.unrar(); }
              */
-
+            }
+            Vector<String> followingFiles = new Vector<String>();
+            Iterator<DownloadLink> ff = JDUtilities.getController().getDownloadLinks().iterator();
+            while (ff.hasNext()) {
+                DownloadLink dl = ff.next();
+                if (dl.getStatus() != DownloadLink.STATUS_DOWNLOAD_FINISHED && dl.getStatus() != DownloadLink.STATUS_DONE) {
+                    followingFiles.add(dl.getName());
+                }
+            }
+            unrar.followingFiles = followingFiles.toArray(new String[followingFiles.size()]);
+            unrar.unrar();
             IS_RUNNING = false;
             this.setCallCode(Interaction.INTERACTION_CALL_SUCCESS);
             Interaction.handleInteraction(Interaction.INTERACTION_AFTER_UNRAR, null);
