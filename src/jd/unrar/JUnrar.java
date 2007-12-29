@@ -34,7 +34,7 @@ public class JUnrar {
     private File passwordList = new File(JDUtilities.getJDHomeDirectoryFromEnvironment(), "passwordlist.xml");
     private File unpacked = new File(JDUtilities.getJDHomeDirectoryFromEnvironment(), "unpacked.dat");
     private Vector<File> unpackedlist;
-    private Integer[] volumess = null;
+    private Long[] volumess = null;
     private String[] volumesn = null;
     private static Object[][] filesignatures = {{"avi", new Integer[][]{{82, 73, 70, 70}}}, {"mpg", new Integer[][]{{0, 0, 1, 186, -1, 0}}}, {"mpeg", new Integer[][]{{0, 0, 1, 186, -1, 0}}}, {"rar", new Integer[][]{{82, 97, 114, 33, 26, 7}}}, {"wmv", new Integer[][]{{48, 38, 178, 117, 142, 102}}}, {"mp3", new Integer[][]{{73, 68, 51, 3, 0}, {255, 251, 104, -1, 0, -1,}, {255, 251, 64, -1, 0, -1}}}, {"exe", new Integer[][]{{77, 90, 144, 0, 3, 0}}}, {"bz2", new Integer[][]{{66, 90, 104, 54, 49, 65}}}, {"gz", new Integer[][]{{31, 139, 8, 0}}}, {"doc", new Integer[][]{{208, 207, 17, 224, 161, 177}}}, {"pdf", new Integer[][]{{37, 80, 68, 70, 45, 49}}}, {"wma", new Integer[][]{{48, 38, 178, 117, 142, 102}}}, {"jpg", new Integer[][]{{255, 216, 255, 224, 0, 16}, {255, 216, 255, 225, 39, 222}}}, {"m4a", new Integer[][]{{0, 0, 0, 32, 102, 116}}}, {"mdf", new Integer[][]{{0, 255, 255, 255, 255, 255}}}, {"xcf", new Integer[][]{{103, 105, 109, 112, 32, 120}}}};
     private Integer[][] typicalFilesignatures = {{80, 75, 3, 4, -1, 0,}, {82, 73, 70, 70}, {0, 255, 255, 255, 255, 255}, {48, 38, 178, 117, 142, 102}, {208, 207, 17, 224, 161, 177}};
@@ -434,24 +434,24 @@ public class JUnrar {
         } else {
             Pattern patternvolumes = Pattern.compile("(.*)" + System.getProperty("line.separator") + ".*?([\\d]+).*?[\\d]+.*[\\d]+\\-[\\d]+\\-[\\d]+ [\\d]+:[\\d]+", Pattern.CASE_INSENSITIVE);
             Matcher matchervolumes = patternvolumes.matcher(str);
-            HashMap<String, Integer> protectedFiles = new HashMap<String, Integer>();
+            HashMap<String, Long> protectedFiles = new HashMap<String, Long>();
             ArrayList<String> vFiles = new ArrayList<String>();
-            ArrayList<Integer> vSizes = new ArrayList<Integer>();
+            ArrayList<Long> vSizes = new ArrayList<Long>();
             while (matchervolumes.find()) {
 
                 String name = matchervolumes.group(1);
                 if (name.matches("\\*.*") && !protectedFiles.containsKey(matchervolumes.group(1))) {
                     name = name.replaceFirst(".", "");
-                    protectedFiles.put(name, Integer.parseInt(matchervolumes.group(2)));
+                    protectedFiles.put(name, Long.parseLong(matchervolumes.group(2)));
 
                 } else
                     name = name.replaceFirst(".", "");
                 if (!vFiles.contains(name)) {
                     vFiles.add(name);
-                    vSizes.add(Integer.parseInt(matchervolumes.group(2)));
+                    vSizes.add(Long.parseLong(matchervolumes.group(2)));
                 }
             }
-            volumess = vSizes.toArray(new Integer[vSizes.size()]);
+            volumess = vSizes.toArray(new Long[vSizes.size()]);
             volumesn = vFiles.toArray(new String[vFiles.size()]);
             if (volumess.length == 0) {
                 logger.severe("can't finde a file in the archiv: " + file.getName());
@@ -467,10 +467,10 @@ public class JUnrar {
             Matcher matcher = pattern.matcher(str);
             while (matcher.find()) {
                 if (!protectedFiles.containsKey(matcher.group(1)))
-                    protectedFiles.put(matcher.group(1), Integer.parseInt(matcher.group(2)));
+                    protectedFiles.put(matcher.group(1), Long.parseLong(matcher.group(2)));
             }
-            protectedFiles = ((HashMap<String, Integer>) revSortByValue(protectedFiles));
-            Entry<String, Integer> entry = protectedFiles.entrySet().iterator().next();
+            protectedFiles = ((HashMap<String, Long>) revSortByValue(protectedFiles));
+            Entry<String, Long> entry = protectedFiles.entrySet().iterator().next();
             if (2097152 >= entry.getValue()) {
                 extendPasswordSearch = false;
                 // die passwortgeschützte Datei wird komplett überprüft
@@ -480,7 +480,7 @@ public class JUnrar {
             } else {
                 logger.finer("There is no protected file matches the maximal filesize try to crack the passwort by filesignatures (not 100% safe)");
                 extendPasswordSearch = true;
-                for (Map.Entry<String, Integer> ent : protectedFiles.entrySet()) {
+                for (Map.Entry<String, Long> ent : protectedFiles.entrySet()) {
                     String name = ent.getKey();
                     if (isInFilesignatures(name)) {
                         return new String[]{name};
@@ -759,38 +759,34 @@ public class JUnrar {
         }
         return buff.toString();
     }
-    private Thread delayedProgress(final int steps, final File file, final int  filesize) {
+    private Thread delayedProgress(final int steps, final File file, final Long long1) {
 
         return new Thread(new Runnable() {
-            
+
             public void run() {
-                int tempfs = 0;
-                int std = filesize/steps;
+                long tempfs = 0;
+                long std = long1 / steps;
                 int step = steps;
-                while (step>0)
-                {
+                while (step > 0) {
                     try {
                         Thread.sleep(100);
                     } catch (InterruptedException e) {
                         // TODO Auto-generated catch block
                         e.printStackTrace();
                     }
-                    if(file.isFile())
-                    {
-                    int size = (int) (file.length()-tempfs);
-                    
-                    int st = (int) (size/std);
-                    if(st>0)
-                    {
-                        tempfs+=(std*st);
-                        step-=st;
-                    progress.increase(st);
-                    }
-                    }
-                }
-                }
+                    if (file.isFile()) {
+                        long size = file.length() - tempfs;
 
-            
+                        int st = (int) (size / std);
+                        if (st > 0) {
+                            tempfs += (std * st);
+                            step -= st;
+                            progress.increase(st);
+                        }
+                    }
+                }
+            }
+
         });
 
     }
@@ -850,7 +846,7 @@ public class JUnrar {
                                 state = 0;
                                 perc += steps;
                                 if (volumess[c] > 10000) {
-                                    lastThread = delayedProgress(steps, (b? (new File(volumesn[c])):(new File(parent,  volumesn[c]))), volumess[c]);
+                                    lastThread = delayedProgress(steps, (b ? (new File(volumesn[c])) : (new File(parent, volumesn[c]))), volumess[c]);
                                     lastThread.start();
                                 } else
                                     progress.setStatus(perc);
@@ -1078,7 +1074,7 @@ public class JUnrar {
                 matcher = pattern.matcher(str);
                 HashMap<File, String> nfiles = new HashMap<File, String>();
                 while (matcher.find()) {
-                        nfiles.put(new File(parent, matcher.group(1)), null);
+                    nfiles.put(new File(parent, matcher.group(1)), null);
                 }
                 JUnrar un = new JUnrar();
                 un.files = nfiles;
