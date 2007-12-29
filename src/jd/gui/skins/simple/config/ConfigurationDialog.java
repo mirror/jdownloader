@@ -7,6 +7,7 @@ import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.File;
 import java.lang.reflect.Constructor;
 import java.util.Vector;
 
@@ -84,11 +85,11 @@ public class ConfigurationDialog extends JDialog implements ActionListener, Chan
         if(configuration.getBooleanProperty(Configuration.PARAM_USE_EXPERT_VIEW, false))this.addConfigPanel(ConfigPanelEventmanager.class,JDTheme.I("gui.images.config.switch","switch"),JDLocale.L("gui.config.tabLables.eventManager","Eventmanager"));
        
         this.addConfigPanel(ConfigPanelPluginForHost.class,JDTheme.I("gui.images.config.star","star"),JDLocale.L("gui.config.tabLables.hostPlugin","Host Plugin settings"));
-        if(configuration.getBooleanProperty(Configuration.PARAM_USE_EXPERT_VIEW, false))this.addConfigPanel(ConfigPanelPluginForDecrypt.class,JDTheme.I("gui.images.config.tip","tip"),JDLocale.L("gui.config.tabLables.decryptPlugin","Decrypter Plugin settings"));
+this.addConfigPanel(ConfigPanelPluginForDecrypt.class,JDTheme.I("gui.images.config.tip","tip"),JDLocale.L("gui.config.tabLables.decryptPlugin","Decrypter Plugin settings"));
         if(configuration.getBooleanProperty(Configuration.PARAM_USE_EXPERT_VIEW, false))this.addConfigPanel(ConfigPanelPluginForSearch.class,JDTheme.I("gui.images.config.find","find"),JDLocale.L("gui.config.tabLables.searchPlugin","Search Plugin settings"));
-        this.addConfigPanel(ConfigPanelPluginsOptional.class,JDTheme.I("gui.images.config.edit_redo","edit_redo"),JDLocale.L("gui.config.tabLables.optionalPlugin","Optional Plugin settings"));
+        if(configuration.getBooleanProperty(Configuration.PARAM_USE_EXPERT_VIEW, false)) this.addConfigPanel(ConfigPanelPluginsOptional.class,JDTheme.I("gui.images.config.edit_redo","edit_redo"),JDLocale.L("gui.config.tabLables.optionalPlugin","Optional Plugin settings"));
         if(configuration.getBooleanProperty(Configuration.PARAM_USE_EXPERT_VIEW, false))this.addConfigPanel(ConfigPanelPluginForContainer.class,JDTheme.I("gui.images.config.database","database"),JDLocale.L("gui.config.tabLables.containerPlugin","Link-Container settings"));
-        
+       
         btnSave = new JButton(JDLocale.L("gui.config.btn_save","Speichern"));
         btnSave.addActionListener(this);
         btnCancel = new JButton(JDLocale.L("gui.config.btn_cancel","Abbrechen"));

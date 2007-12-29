@@ -81,94 +81,138 @@ import jd.utils.JDUtilities;
 
 public class Rapidshare extends PluginForHost {
     static private final String            host                             = "rapidshare.com";
- 
+
     private String                         version                          = "1.2.0.0";
+
     // http://(?:[^.]*\.)*rapidshare\.com/files/[0-9]*/[^\s"]+
     private String                         botHash                          = "dab07d2b7f1299f762454cda4c6143e7";
+
     /**
      * Vereinfachte Patternerstellung: [*] optionaler Platzhalter [+] musthav
      * platzhalter
      */
-    //http://rapidshare.com/files/62495619/toca3.lst
-    static private final Pattern patternSupported = Pattern.compile("http://.*?rapidshare\\.com/files/[\\d]{7,9}/.*", Pattern.CASE_INSENSITIVE);
+    // http://rapidshare.com/files/62495619/toca3.lst
+    static private final Pattern           patternSupported                 = Pattern.compile("http://.*?rapidshare\\.com/files/[\\d]{7,9}/.*", Pattern.CASE_INSENSITIVE);
+
     /**
      * Das findet die Ziel URL für den Post
      */
     private Pattern                        patternForNewHost                = Pattern.compile("<form *action *= *\"([^\\n\"]*)\"");
+
     /**
      * Das findet die Captcha URL <form *name *= *"dl" (?s).*<img *src *=
      * *"([^\n"]*)">
      */
     private Pattern                        patternForCaptcha                = Pattern.compile("<form *name *= *\"dl\" (?s).*<img *src *= *\"([^\\n\"]*)\">");
+
     /**
      * <form name="dl".* action="([^\n"]*)"(?s).*?<input type="submit"
      * name="actionstring" value="[^\n"]*"
      */
     private Pattern                        patternForFormData               = Pattern.compile("<form name=\"dl\".* action=\"([^\\n\"]*)\"(?s).*?<input type=\"submit\" name=\"actionstring\" value=\"([^\\n\"]*)\"");
+
     /**
      * Pattern trifft zu wenn die "Ihre Ip läd gerade eine datei " Seite kommt
      */
-    private long END_OF_DOWNLOAD_LIMIT=0;
+
     private String                         patternForAlreadyDownloading     = "bereits eine Datei runter";
+
+    /**
+     * Muss static bleiben!!!. Das Rapidshare Plugin merkt sich so, dass es
+     * gerade wartezeit hat. Überflüssige
+     */
+    private static long                    END_OF_DOWNLOAD_LIMIT            = 0;
+
     /**
      * Das DownloadLimit wurde erreicht (?s)Downloadlimit.*Oder warte ([0-9]+)
      */
     private Pattern                        patternErrorDownloadLimitReached = Pattern.compile("\\((?:oder warte|or wait) ([0-9]*) (?:minuten|minute)\\)", Pattern.CASE_INSENSITIVE);
-    //private Pattern                        patternErrorCaptchaWrong         = Pattern.compile("(zugriffscode falsch|code wrong)", Pattern.CASE_INSENSITIVE);
+
+    // private Pattern patternErrorCaptchaWrong = Pattern.compile("(zugriffscode
+    // falsch|code wrong)", Pattern.CASE_INSENSITIVE);
     private Pattern                        patternErrorFileAbused           = Pattern.compile("(darf nicht verteilt werden|forbidden to be shared)", Pattern.CASE_INSENSITIVE);
+
     private Pattern                        patternErrorFileNotFound         = Pattern.compile("(datei nicht gefunden|file not found)", Pattern.CASE_INSENSITIVE);
+
     private String                         patternForSelectedServer         = "<input checked type=\"radio\" name=\"°\" onclick=\"document.dl.action='http://°/files/°';document.dl.actionstring.value='°'\"> °<br>";
+
     private String                         patternForServer                 = "<input°type=\"radio\" name=\"°\" onclick=\"document.dl.action='http://°/files/°';document.dl.actionstring.value='°'\"> °<br>";
+
     private String                         ticketWaitTimepattern            = "var c=°;";
+
     private String                         ticketCodePattern                = "unescape('°')}";
+
     private String                         hardwareDefektString             = "wegen Hardwaredefekt nicht";
+
     private String                         deletedByUploaderString          = "Grund: Vom Uploader";
+
     private String                         toManyUser                       = "Zu viele Benutzer";
-    private String						   notUploaded						= "Diese Datei ist noch nicht vollst";
+
+    private String                         notUploaded                      = "Diese Datei ist noch nicht vollst";
+
     private int                            waitTime                         = 500;
+
     private String                         captchaAddress;
+
     private String                         postTarget;
+
     private String                         actionString;
+
     private HashMap<String, String>        postParameter                    = new HashMap<String, String>();
+
     private String                         finalURL;
+
     private static HashMap<String, String> serverMap                        = new HashMap<String, String>();
+
     private static String[]                serverList1;
+
     private String                         finalCookie;
-   
+
     private String[]                       serverList2;
+
     private boolean                        hardewareError                   = false;
+
     private String                         ticketCode;
+
     private String                         newURL;
-    
-    private static final String PROPERTY_BYTES_TO_LOAD = "BYTES_TO_LOAD";
+
+    private static final String            PROPERTY_BYTES_TO_LOAD           = "BYTES_TO_LOAD";
+
     @Override
     public String getCoder() {
         return "astaldo/coalado";
     }
+
     @Override
     public String getHost() {
         return host;
     }
+
     @Override
     public String getPluginName() {
         return host;
     }
+
     @Override
     public Pattern getSupportedLinks() {
         return patternSupported;
     }
+
     @Override
     public String getVersion() {
         return version;
     }
+
     @Override
     public String getPluginID() {
         return host + " - " + version;
     }
+
     @Override
     public void init() {
         currentStep = null;
     }
+
     public Rapidshare() {
         super();
         // Prüfe auf Wartezeit wg downloadlimit
@@ -196,6 +240,7 @@ public class Rapidshare extends PluginForHost {
         serverList1 = new String[] { "tl", "tl2", "gc", "gc2", "cg", "cg2", "tg", "l3", "l32", "l33", "l34", "tl", "dt" };
         serverList2 = new String[] { "tl", "gc" };
     }
+
     private String getServerFromAbbreviation(String abb) {
         Iterator<String> iter = serverMap.keySet().iterator();
         Object next;
@@ -205,12 +250,12 @@ public class Rapidshare extends PluginForHost {
         }
         return null;
     }
+
     private void setConfigElements() {
         ConfigEntry cfg;
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_SEPERATOR));
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_LABEL, "Bevorzugte Server (*1)"));
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, getProperties(), "SELECTED_SERVER", new String[] { "Cogent", "Cogent #2", "GlobalCrossing", "GlobalCrossing #2", "TeliaSonera", "TeliaSonera #2", "Teleglobe", "Level (3)", "Level (3) #2", "Level (3) #3", "Level (3) #4",
-                "zufällig" }, "#1"));
+        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, getProperties(), "SELECTED_SERVER", new String[] { "Cogent", "Cogent #2", "GlobalCrossing", "GlobalCrossing #2", "TeliaSonera", "TeliaSonera #2", "Teleglobe", "Level (3)", "Level (3) #2", "Level (3) #3", "Level (3) #4", "zufällig" }, "#1"));
         cfg.setDefaultValue("Level (3)");
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_SEPERATOR));
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, getProperties(), "SELECTED_SERVER#2", new String[] { "Cogent", "TeliaSonera", "Level (3)", "GlobalCrossing", "zufällig" }, "#2"));
@@ -230,35 +275,33 @@ public class Rapidshare extends PluginForHost {
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_LABEL, "WICHTIG! "));
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_LABEL, "(*1)Premiumuser müssen die Bevorzugten Server in den Rapidshare-Online-Optionen (rs.com Premiumbereich) einstellen falls sie Direktlinks aktiviert haben!"));
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_LABEL, "(*2)Betrifft nur Freeuser"));
-        config.addEntry(cfg =  new ConfigEntry(ConfigContainer.TYPE_SPINNER, getProperties(), PROPERTY_BYTES_TO_LOAD, "Nur die ersten * KiloBytes jeder Datei laden[-1 to disable]",-1,100000).setDefaultValue(-1).setStep(500));
+        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_SPINNER, getProperties(), PROPERTY_BYTES_TO_LOAD, "Nur die ersten * KiloBytes jeder Datei laden[-1 to disable]", -1, 100000).setDefaultValue(-1).setStep(500));
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getProperties(), "USE_SSL", "SSL Downloadlink verwenden"));
         cfg.setDefaultValue(false);
-        config.addEntry(cfg =  new ConfigEntry(ConfigContainer.TYPE_SPINNER, getProperties(), "WAIT_WHEN_BOT_DETECTED", "Wartezeit [ms] wenn Bot erkannt wird.(-1 für Reconnect)",-1,600000).setDefaultValue(-1).setStep(1000));
-        
-        
-        
+        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_SPINNER, getProperties(), "WAIT_WHEN_BOT_DETECTED", "Wartezeit [ms] wenn Bot erkannt wird.(-1 für Reconnect)", -1, 600000).setDefaultValue(-1).setStep(1000));
+
     }
+
     // @Override
     // public URLConnection getURLConnection() {
     // return null;
     // }
     public PluginStep doStep(PluginStep step, DownloadLink downloadLink) {
-        //RequestInfo requestInfo;
+        // RequestInfo requestInfo;
         if (step == null) {
             logger.info("Plugin Ende erreicht.");
             return null;
         }
-        String link=downloadLink.getUrlDownloadDecrypted();
-        if(link.contains("://ssl.")||!link.startsWith("http://rapidshare.com")){
-            link="http://rapidshare.com"+link.substring(link.indexOf("rapidshare.com")+14);
-          
+        String link = downloadLink.getUrlDownloadDecrypted();
+        if (link.contains("://ssl.") || !link.startsWith("http://rapidshare.com")) {
+            link = "http://rapidshare.com" + link.substring(link.indexOf("rapidshare.com") + 14);
+
             downloadLink.setUrlDownload(link);
         }
-                
-          
+
         logger.info("get Next Step " + step);
         // premium
-      
+
         if (this.getProperties().getProperty("USE_PREMIUM") != null && this.getProperties().getBooleanProperty("USE_PREMIUM", false)) {
             return this.doPremiumStep(step, downloadLink);
         }
@@ -266,26 +309,23 @@ public class Rapidshare extends PluginForHost {
             return this.doFreeStep(step, downloadLink);
         }
     }
-    
- 
+
     private PluginStep doFreeStep(PluginStep step, DownloadLink downloadLink) {
-        if (END_OF_DOWNLOAD_LIMIT>System.currentTimeMillis()) {
-            long waitTime=System.currentTimeMillis()-END_OF_DOWNLOAD_LIMIT;
-            logger.severe("wait (intern) " + waitTime + " minutes");            
-            downloadLink.setStatus(DownloadLink.STATUS_ERROR_DOWNLOAD_LIMIT);           
+        if (END_OF_DOWNLOAD_LIMIT > System.currentTimeMillis()) {
+            long waitTime = END_OF_DOWNLOAD_LIMIT - System.currentTimeMillis();
+            logger.severe("wait (intern) " + waitTime + " minutes");
+            downloadLink.setStatus(DownloadLink.STATUS_ERROR_DOWNLOAD_LIMIT);
             step.setStatus(PluginStep.STATUS_ERROR);
             logger.info(" WARTEZEIT SETZEN IN " + step + " : " + waitTime);
             step.setParameter((long) waitTime);
             return step;
         }
-        
+        logger.info("Intern: " + END_OF_DOWNLOAD_LIMIT + " - " + System.currentTimeMillis());
 
-        
         switch (step.getStep()) {
             case PluginStep.STEP_WAIT_TIME:
-                newURL = null;             
-                
-                
+                newURL = null;
+
                 try {
                     if (aborted) {
                         // Häufige abbruchstellen sorgen für einen Zügigen
@@ -297,10 +337,9 @@ public class Rapidshare extends PluginForHost {
                     }
                     // Der Download wird bestätigt
                     String link = downloadLink.getUrlDownloadDecrypted();
-                    if(this.getProperties().getBooleanProperty("USE_SSL", false))
-                        link = link.replaceFirst("http://", "http://ssl.");
+                    if (this.getProperties().getBooleanProperty("USE_SSL", false)) link = link.replaceFirst("http://", "http://ssl.");
                     requestInfo = getRequest(new URL(link));
-            
+
                     if (requestInfo.getHtmlCode().indexOf(hardwareDefektString) > 0) {
                         // hardewaredefeklt bei rs.com
                         step.setStatus(PluginStep.STATUS_ERROR);
@@ -342,14 +381,14 @@ public class Rapidshare extends PluginForHost {
                             step.setStatus(PluginStep.STATUS_ERROR);
                             return step;
                         }
-                        
+
                         if (requestInfo.containsHTML(notUploaded)) {
-                        	logger.severe("file not full uploaded");
-                        	downloadLink.setStatus(DownloadLink.STATUS_ERROR_FILE_NOT_UPLOADED);
-                        	step.setStatus(PluginStep.STATUS_ERROR);
-                        	return step;
+                            logger.severe("file not full uploaded");
+                            downloadLink.setStatus(DownloadLink.STATUS_ERROR_FILE_NOT_UPLOADED);
+                            step.setStatus(PluginStep.STATUS_ERROR);
+                            return step;
                         }
-                        
+
                         downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN);
                         step.setStatus(PluginStep.STATUS_ERROR);
                         logger.warning("could not get downloadInfo ");
@@ -358,7 +397,7 @@ public class Rapidshare extends PluginForHost {
                     return step;
                 }
                 catch (Exception e) {
-                     e.printStackTrace();
+                    e.printStackTrace();
                 }
                 downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN);
                 step.setStatus(PluginStep.STATUS_ERROR);
@@ -373,7 +412,7 @@ public class Rapidshare extends PluginForHost {
                         return step;
                     }
                     // Auswahl ob free oder prem
-                  
+
                     requestInfo = postRequest(new URL(newURL), null, null, null, "dl.start=free", true);
                     // Falls der check erst nach der free auswahl sein muss,
                     // dann
@@ -389,9 +428,10 @@ public class Rapidshare extends PluginForHost {
                     String strWaitTime = getFirstMatch(requestInfo.getHtmlCode(), patternErrorDownloadLimitReached, 1);
                     if (strWaitTime != null) {
                         logger.severe("wait " + strWaitTime + " minutes");
-                        waitTime = Integer.parseInt(strWaitTime) * 60 * 1000;
+                        waitTime = (int) (Double.parseDouble(strWaitTime) * 60 * 1000);
                         downloadLink.setStatus(DownloadLink.STATUS_ERROR_DOWNLOAD_LIMIT);
-                        END_OF_DOWNLOAD_LIMIT=System.currentTimeMillis()+waitTime;
+                        END_OF_DOWNLOAD_LIMIT = System.currentTimeMillis() + waitTime;
+                        logger.info("Wait until: " + System.currentTimeMillis() + "+ " + waitTime + " = " + END_OF_DOWNLOAD_LIMIT);
                         step.setStatus(PluginStep.STATUS_ERROR);
                         logger.info(" WARTEZEIT SETZEN IN " + step + " : " + waitTime);
                         step.setParameter((long) waitTime);
@@ -407,18 +447,19 @@ public class Rapidshare extends PluginForHost {
                     // return step;
                     // }
                     if (requestInfo.containsHTML(patternForAlreadyDownloading)) {
-                        logger.severe("Already Loading wait " + 60 + " sek. to Retry");
+                        logger.severe("Already Loading wait " + 180 + " sek. to Retry");
+                        logger.info(requestInfo.getHtmlCode());
                         waitTime = 180 * 1000;
                         downloadLink.setStatus(DownloadLink.STATUS_ERROR_STATIC_WAITTIME);
                         step.setStatus(PluginStep.STATUS_ERROR);
+                        END_OF_DOWNLOAD_LIMIT = System.currentTimeMillis() + waitTime;
+                        logger.info("Wait until: " + System.currentTimeMillis() + "+ " + waitTime + " = " + END_OF_DOWNLOAD_LIMIT);
                         logger.info(" WARTEZEIT SETZEN IN (already loading)" + step + " : " + waitTime);
                         step.setParameter((long) waitTime);
                         return step;
                     }
                     String wait = getSimpleMatch(requestInfo.getHtmlCode(), ticketWaitTimepattern, 0);
-               
-                    
-             
+
                     if (wait != null) {
                         long pendingTime = Long.parseLong(wait);
                         logger.info("Ticket: wait " + pendingTime + " seconds");
@@ -435,7 +476,7 @@ public class Rapidshare extends PluginForHost {
                     }
                 }
                 catch (Exception e) {
-                     e.printStackTrace();
+                    e.printStackTrace();
                 }
                 downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN);
                 step.setStatus(PluginStep.STATUS_ERROR);
@@ -453,11 +494,11 @@ public class Rapidshare extends PluginForHost {
                     server2Abb = serverList2[(int) (Math.random() * (serverList2.length - 1))];
                     logger.finer("Random #2 server " + server2Abb);
                 }
-               // String endServerAbb = "";
+                // String endServerAbb = "";
                 Boolean telekom = !(this.getProperties().getProperty("USE_TELEKOMSERVER") == null || !(Boolean) this.getProperties().getProperty("USE_TELEKOMSERVER"));
                 boolean preselected = this.getProperties().getBooleanProperty("USE_PRESELECTED", true);
                 ticketCode = requestInfo.getHtmlCode() + " " + ticketCode;
-             
+
                 captchaAddress = getFirstMatch(ticketCode, patternForCaptcha, 1);
                 // post daten lesen
                 postTarget = getFirstMatch(ticketCode, patternForFormData, 1);
@@ -536,12 +577,12 @@ public class Rapidshare extends PluginForHost {
                 else {
                     String captchaTxt = (String) steps.get(2).getParameter();
                     File captchaFile = downloadLink.getLatestCaptchaFile();
-                    actionString = actionString.replace(' ','+');
+                    actionString = actionString.replace(' ', '+');
                     postParameter.put("mirror", "on");
                     postParameter.put("accesscode", captchaTxt);
                     postParameter.put("actionstring", actionString);
                     try {
-                       
+
                         URLConnection urlConnection = new URL(postTarget).openConnection();
                         urlConnection.setDoOutput(true);
                         // Post Parameter vorbereiten
@@ -552,8 +593,7 @@ public class Rapidshare extends PluginForHost {
                         // content-disposition: Attachment;
                         // filename=a_mc_cs3_g_cd.rsdf
                         String name = getFileNameFormHeader(urlConnection);
-                        if(name.toLowerCase().matches(".*\\..{1,5}\\.html$"))
-                            name=name.replaceFirst("\\.html$", "");
+                        if (name.toLowerCase().matches(".*\\..{1,5}\\.html$")) name = name.replaceFirst("\\.html$", "");
                         downloadLink.setName(name);
                         int length = urlConnection.getContentLength();
                         downloadLink.setDownloadMax(length);
@@ -562,11 +602,11 @@ public class Rapidshare extends PluginForHost {
                             step.setStatus(PluginStep.STATUS_ERROR);
                             return step;
                         }
-                        logger.info("link: "+postTarget);
-                        if (download(downloadLink, urlConnection,1024*getProperties().getIntegerProperty(PROPERTY_BYTES_TO_LOAD,-1))) {
+                        logger.info("link: " + postTarget);
+                        if (download(downloadLink, urlConnection, 1024 * getProperties().getIntegerProperty(PROPERTY_BYTES_TO_LOAD, -1))) {
                             step.setStatus(PluginStep.STATUS_DONE);
                             downloadLink.setStatus(DownloadLink.STATUS_DONE);
-                            JDUtilities.appendInfoToFilename(captchaFile, actionString+"_"+captchaTxt, true);
+                            JDUtilities.appendInfoToFilename(captchaFile, actionString + "_" + captchaTxt, true);
                             return null;
                         }
                         else if (aborted) {
@@ -576,7 +616,7 @@ public class Rapidshare extends PluginForHost {
                         }
                         else {
                             logger.severe("captcha wrong");
-                            JDUtilities.appendInfoToFilename(captchaFile, actionString+"_"+captchaTxt, false);
+                            JDUtilities.appendInfoToFilename(captchaFile, actionString + "_" + captchaTxt, false);
                             downloadLink.setStatus(DownloadLink.STATUS_ERROR_CAPTCHA_WRONG);
                             step.setStatus(PluginStep.STATUS_ERROR);
                         }
@@ -592,6 +632,7 @@ public class Rapidshare extends PluginForHost {
         }
         return step;
     }
+
     private PluginStep doPremiumStep(PluginStep step, DownloadLink downloadLink) {
         String serverAbb = serverMap.get((String) this.getProperties().getProperty("SELECTED_SERVER"));
         String server2Abb = serverMap.get((String) this.getProperties().getProperty("SELECTED_SERVER#2"));
@@ -603,7 +644,7 @@ public class Rapidshare extends PluginForHost {
             server2Abb = serverList2[(int) (Math.random() * (serverList2.length - 1))];
             logger.finer("Random #2 server " + server2Abb);
         }
-        //String endServerAbb = "";
+        // String endServerAbb = "";
         Boolean telekom = !(this.getProperties().getProperty("USE_TELEKOMSERVER") == null || !(Boolean) this.getProperties().getProperty("USE_TELEKOMSERVER"));
         String user = (String) this.getProperties().getProperty("PREMIUM_USER");
         String pass = (String) this.getProperties().getProperty("PREMIUM_PASS");
@@ -616,8 +657,7 @@ public class Rapidshare extends PluginForHost {
                     // cookie, String referrer, boolean redirect) throws
                     // IOException {
                     String link = downloadLink.getUrlDownloadDecrypted();
-                    if(this.getProperties().getBooleanProperty("USE_SSL", true))
-                        link = link.replaceFirst("http://", "http://ssl.");
+                    if (this.getProperties().getBooleanProperty("USE_SSL", true)) link = link.replaceFirst("http://", "http://ssl.");
                     requestInfo = getRequest(new URL(link), null, "", false);
                     if (requestInfo.getHtmlCode().indexOf(hardwareDefektString) > 0) {
                         // hardewaredefeklt bei rs.com
@@ -677,7 +717,7 @@ public class Rapidshare extends PluginForHost {
                             return step;
                         }
                         this.finalCookie = cookie;
-                    
+
                         post = "l=" + fields2.get("l") + "&p=" + fields2.get("p").replaceAll("\\%", "%25") + "&dl.start=Download+" + fields.get("filename").replaceAll(" ", "+");
                         url = "http://rs" + fields.get("serverid") + ".rapidshare.com/files" + "/" + fields.get("fileid") + "/" + fields.get("filename");
                         requestInfo = postRequestWithoutHtmlCode(new URL(url), cookie, url, post, true);
@@ -774,7 +814,7 @@ public class Rapidshare extends PluginForHost {
                     }
                 }
                 catch (Exception e) {
-                     e.printStackTrace();
+                    e.printStackTrace();
                     step.setStatus(PluginStep.STATUS_ERROR);
                     downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN);
                 }
@@ -799,34 +839,60 @@ public class Rapidshare extends PluginForHost {
                         return step;
                     }
                     logger.info("Loading from: " + finalURL.substring(0, 30));
-                    requestInfo = getRequestWithoutHtmlCode(new URL(finalURL), finalCookie, finalURL, true);
-                    URLConnection urlConnection = requestInfo.getConnection();
-                    int length = urlConnection.getContentLength();
-                    downloadLink.setDownloadMax(length);
-                    String name = getFileNameFormHeader(urlConnection);
-                    if(name.toLowerCase().matches(".*\\..{1,5}\\.html$"))
-                        name=name.replaceFirst("\\.html$", "");
-                    downloadLink.setName(name);
-                    if (!hasEnoughHDSpace(downloadLink)) {
-                        downloadLink.setStatus(DownloadLink.STATUS_ERROR_NO_FREE_SPACE);
-                        step.setStatus(PluginStep.STATUS_ERROR);
-                        return step;
+                    HashMap<String, String> ranger = new HashMap<String, String>();
+                    URLConnection urlConnection;
+                    File fileOutput = new File(downloadLink.getFileOutput() + ".jdd");
+                    if (fileOutput.exists()) {
+                        ranger.put("Range", "bytes=" + fileOutput.length() + "-");
+                        requestInfo = getRequestWithoutHtmlCode(new URL(finalURL), finalCookie, finalURL, ranger, true);
+                         urlConnection = requestInfo.getConnection();
+                        int length = urlConnection.getContentLength() + (int) fileOutput.length();
+                        logger.info(requestInfo.getHeaders() + " - "+length);
+                        downloadLink.setDownloadMax(length);
+
+                        if (download(downloadLink, urlConnection, 1024 * getProperties().getIntegerProperty(PROPERTY_BYTES_TO_LOAD, -1),(int)fileOutput.length())) {
+                            step.setStatus(PluginStep.STATUS_DONE);
+                            downloadLink.setStatus(DownloadLink.STATUS_DONE);
+                            return null;
+                        }
+                        else if (aborted) {
+                            logger.warning("Plugin abgebrochen");
+                            downloadLink.setStatus(DownloadLink.STATUS_TODO);
+                            step.setStatus(PluginStep.STATUS_TODO);
+                        }
+                        else {
+                            logger.severe("unknown error");
+                            downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN_RETRY);
+                            step.setStatus(PluginStep.STATUS_ERROR);
+                        }
+
+                    }else {
+                        requestInfo = getRequestWithoutHtmlCode(new URL(finalURL), finalCookie, finalURL, ranger, true);
+                         urlConnection = requestInfo.getConnection();
+                        int length = urlConnection.getContentLength();
+                        logger.info(requestInfo.getHeaders() + "");
+                        downloadLink.setDownloadMax(length);
+                        String name = getFileNameFormHeader(urlConnection);
+                        if (name.toLowerCase().matches(".*\\..{1,5}\\.html$")) name = name.replaceFirst("\\.html$", "");
+                        downloadLink.setName(name);
+
+                        if (download(downloadLink, urlConnection, 1024 * getProperties().getIntegerProperty(PROPERTY_BYTES_TO_LOAD, -1))) {
+                            step.setStatus(PluginStep.STATUS_DONE);
+                            downloadLink.setStatus(DownloadLink.STATUS_DONE);
+                            return null;
+                        }
+                        else if (aborted) {
+                            logger.warning("Plugin abgebrochen");
+                            downloadLink.setStatus(DownloadLink.STATUS_TODO);
+                            step.setStatus(PluginStep.STATUS_TODO);
+                        }
+                        else {
+                            logger.severe("unknown error");
+                            downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN_RETRY);
+                            step.setStatus(PluginStep.STATUS_ERROR);
+                        }
                     }
-                    if (download(downloadLink, urlConnection,1024*getProperties().getIntegerProperty(PROPERTY_BYTES_TO_LOAD,-1))) {
-                        step.setStatus(PluginStep.STATUS_DONE);
-                        downloadLink.setStatus(DownloadLink.STATUS_DONE);
-                        return null;
-                    }
-                    else if (aborted) {
-                        logger.warning("Plugin abgebrochen");
-                        downloadLink.setStatus(DownloadLink.STATUS_TODO);
-                        step.setStatus(PluginStep.STATUS_TODO);
-                    }
-                    else {
-                        logger.severe("unknown error");
-                        downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN_RETRY);
-                        step.setStatus(PluginStep.STATUS_ERROR);
-                    }
+                  
                 }
                 catch (IOException e) {
                     logger.severe("URL could not be opened. " + e.toString());
@@ -834,37 +900,28 @@ public class Rapidshare extends PluginForHost {
         }
         return step;
     }
+
     /*
-    private String rawUrlEncode(String str) {
-        try {
-            str = URLDecoder.decode(str, "UTF-8");
-            String ret = "";
-            int i;
-            for (i = 0; i < str.length(); i++) {
-                char letter = str.charAt(i);
-                ret += "%" + Integer.toString(letter, 16);
-            }
-            return ret;
-        }
-        catch (UnsupportedEncodingException e) {
-             e.printStackTrace();
-        }
-        return str;
-    }
-    */
+     * private String rawUrlEncode(String str) { try { str =
+     * URLDecoder.decode(str, "UTF-8"); String ret = ""; int i; for (i = 0; i <
+     * str.length(); i++) { char letter = str.charAt(i); ret += "%" +
+     * Integer.toString(letter, 16); } return ret; } catch
+     * (UnsupportedEncodingException e) { e.printStackTrace(); } return str; }
+     */
     @Override
     public boolean doBotCheck(File file) {
         try {
             return md5sum(file).equals(botHash);
         }
         catch (NoSuchAlgorithmException e) {
-             e.printStackTrace();
+            e.printStackTrace();
         }
         catch (FileNotFoundException e) {
-             e.printStackTrace();
+            e.printStackTrace();
         }
         return false;
     }
+
     @Override
     public void reset() {
         waitTime = 500;
@@ -873,8 +930,9 @@ public class Rapidshare extends PluginForHost {
         actionString = null;
         postParameter = new HashMap<String, String>();
         ticketCode = "";
-       
+
     }
+
     public String getFileInformationString(DownloadLink parameter) {
         if (this.hardewareError) {
             return "<Hardware Fehler> " + super.getFileInformationString(parameter);
@@ -883,20 +941,20 @@ public class Rapidshare extends PluginForHost {
             return super.getFileInformationString(parameter);
         }
     }
+
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) {
         // Der Download wird bestätigt
         RequestInfo requestInfo;
         try {
-            String link=downloadLink.getUrlDownloadDecrypted();
-            if(link.contains("://ssl.")||!link.startsWith("http://rapidshare.com")){
-                link="http://rapidshare.com"+link.substring(link.indexOf("rapidshare.com")+14);
-                logger.finer("URL korrigiert: "+link);
+            String link = downloadLink.getUrlDownloadDecrypted();
+            if (link.contains("://ssl.") || !link.startsWith("http://rapidshare.com")) {
+                link = "http://rapidshare.com" + link.substring(link.indexOf("rapidshare.com") + 14);
+                logger.finer("URL korrigiert: " + link);
                 downloadLink.setUrlDownload(link);
             }
-                 
-            if(this.getProperties().getBooleanProperty("USE_SSL", true))
-                link = link.replaceFirst("http://", "http://ssl.");
+
+            if (this.getProperties().getBooleanProperty("USE_SSL", true)) link = link.replaceFirst("http://", "http://ssl.");
             requestInfo = getRequest(new URL(link));
             if (requestInfo.getHtmlCode().indexOf(hardwareDefektString) > 0) {
                 this.hardewareError = true;
@@ -918,6 +976,7 @@ public class Rapidshare extends PluginForHost {
         }
         return false;
     }
+
     @Override
     public int getMaxSimultanDownloadNum() {
         if (this.getProperties().getProperty("USE_PREMIUM") != null && ((Boolean) this.getProperties().getProperty("USE_PREMIUM"))) {
@@ -927,14 +986,15 @@ public class Rapidshare extends PluginForHost {
             return 1;
         }
     }
-    
+
     public long getBotWaittime() {
-        
-      return  getProperties().getIntegerProperty("WAIT_WHEN_BOT_DETECTED", -1);
+
+        return getProperties().getIntegerProperty("WAIT_WHEN_BOT_DETECTED", -1);
     }
+
     @Override
     public void resetPluginGlobals() {
-        END_OF_DOWNLOAD_LIMIT=0;
-        
+        END_OF_DOWNLOAD_LIMIT = 0;
+
     }
 }

@@ -62,6 +62,8 @@ public ConfigPanelDownload(Configuration configuration, UIInterface uiinterface)
         addGUIConfigEntry(ce);
         ce= new GUIConfigEntry( new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, configuration, Configuration.PARAM_GLOBAL_IP_PATTERN, JDLocale.L("gui.config.download.ipcheck.regex","RegEx zum filtern der IP")).setDefaultValue("Address\\: ([0-9.]*)\\<\\/body\\>").setExpertEntry(true));
         addGUIConfigEntry(ce);
+        ce= new GUIConfigEntry( new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, configuration, Configuration.PARAM_GLOBAL_IP_DISABLE, JDLocale.L("gui.config.download.ipcheck.disable","IP Überprüfung deaktivieren")).setDefaultValue(false).setExpertEntry(true));
+        addGUIConfigEntry(ce);
         add(panel, BorderLayout.NORTH);
     }
     @Override

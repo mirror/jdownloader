@@ -760,6 +760,58 @@ public abstract class Plugin {
     }
 
     /**
+     * Führt einen getrequest durch. Gibt die headerinfos zurück, lädt aber die
+     * datei noch komplett
+     * 
+     * @param link
+     * @param cookie
+     * @param referrer
+     * @param redirect
+     * @return requestinfos mit headerfields. HTML text wird nicht!! geladen
+     * @throws IOException
+     */
+    public static RequestInfo getRequestWithoutHtmlCode(URL link, String cookie, String referrer,HashMap<String, String> requestProperties, boolean redirect) throws IOException {
+        // logger.finer("get: "+link);
+        HttpURLConnection httpConnection = (HttpURLConnection) link.openConnection();
+        httpConnection.setReadTimeout(getReadTimeoutFromConfiguration());
+        httpConnection.setReadTimeout(getConnectTimeoutFromConfiguration());
+        httpConnection.setInstanceFollowRedirects(redirect);
+        // wenn referrer nicht gesetzt wurde nimmt er den host als referer
+        if (referrer != null)
+            httpConnection.setRequestProperty("Referer", referrer);
+        else
+            httpConnection.setRequestProperty("Referer", "http://" + link.getHost());
+        if (cookie != null) {
+            httpConnection.setRequestProperty("Cookie", cookie);
+        }
+
+        httpConnection.setRequestProperty("Accept-Language", ACCEPT_LANGUAGE);
+        httpConnection.setRequestProperty("User-Agent", "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1; SV1; .NET CLR 1.1.4322; .NET CLR 2.0.50727)");
+       
+        if (requestProperties != null) {
+            Set<String> keys = requestProperties.keySet();
+            Iterator<String> iterator = keys.iterator();
+            String key;
+            while (iterator.hasNext()) {
+                key = iterator.next();
+                httpConnection.setRequestProperty(key, requestProperties.get(key));
+            }
+        }
+
+        String location = httpConnection.getHeaderField("Location");
+        String setcookie = getCookieString(httpConnection);
+        int responseCode = HttpURLConnection.HTTP_NOT_IMPLEMENTED;
+        try {
+            responseCode = httpConnection.getResponseCode();
+        } catch (IOException e) {
+        }
+        httpConnection.connect();
+        RequestInfo ri = new RequestInfo("", location, setcookie, httpConnection.getHeaderFields(), responseCode);
+        ri.setConnection(httpConnection);
+        return ri;
+    }
+
+    /**
      * Schickt ein PostRequest an eine Adresse
      * 
      * @param link
@@ -1049,7 +1101,127 @@ public abstract class Plugin {
         downloadLink.setStatus(DownloadLink.STATUS_DOWNLOAD_INCOMPLETE);
         return false;
     }
+    public boolean download(DownloadLink downloadLink, URLConnection urlConnection, int bytesToLoad, int resumeAt) {
+        File fileOutput = new File(downloadLink.getFileOutput() + ".jdd");
+        if (fileOutput == null || fileOutput.getParentFile() == null)
+            return false;
+        if (!fileOutput.getParentFile().exists()) {
+            fileOutput.getParentFile().mkdirs();
+        }
+        downloadLink.setStatus(DownloadLink.STATUS_DOWNLOAD_IN_PROGRESS);
+        long downloadedBytes = 0;
+        long start, end, time;
+        try {
+            ByteBuffer buffer = ByteBuffer.allocateDirect(READ_BUFFER);
+            
+          FileOutputStream fos = new FileOutputStream(fileOutput,true);
+            // NIO Channels setzen:
+            urlConnection.setReadTimeout(getReadTimeoutFromConfiguration());
+            urlConnection.setReadTimeout(getConnectTimeoutFromConfiguration());
+            ReadableByteChannel source = Channels.newChannel(urlConnection.getInputStream());
+            WritableByteChannel dest = fos.getChannel();
+            // Länge aus HTTP-Header speichern:
+            String range=urlConnection.getHeaderField("Content-Range");
+            if(range==null||bytesToLoad>0){
+                logger.severe("No Content-Range Header. Retry file");
+                source.close();
+                dest.close();
+                fos.close();
+                return download(downloadLink,urlConnection,bytesToLoad);
+            }
+            range="["+range+"]";
+            logger.info(range);
+            String[] dat = Plugin.getSimpleMatches(range, "[bytes °-°/°]");
+            int contentLen = Integer.parseInt(dat[2]);
+            int startAt = Integer.parseInt(dat[0]);
+            int rest = Integer.parseInt(dat[1]);
+            downloadedBytes=startAt;
+            downloadLink.setDownloadMax(contentLen);
+            downloadLink.setDownloadCurrent(startAt);
+            logger.info("starting download");
+            start = System.currentTimeMillis();
+            // Buffer, laufende Variablen resetten:
+            buffer.clear();
+            // long bytesLastSpeedCheck = 0;
+            // long t1 = System.currentTimeMillis();
+            // long t3 = t1;
+            for (int i = 0; (!aborted && !downloadLink.isAborted()); i++) {
+                // Thread kurz schlafen lassen, um zu häufiges Event-fire zu
+                // verhindern:
+                // coalado: nix schlafen.. ich will speed! Die Events werden
+                // jetzt von der GUI kontrolliert
+                int bytes = source.read(buffer);
+                Thread.sleep(0);
+                if (bytes == -1)
+                    break;
+                // Buffer flippen und in File schreiben:
+                buffer.flip();
+                dest.write(buffer);
+                buffer.compact();
+                // Laufende Variablen updaten:
+                downloadedBytes += bytes;
+                downloadLink.addBytes(bytes);
+                firePluginEvent(new PluginEvent(this, PluginEvent.PLUGIN_DOWNLOAD_BYTES, bytes));
+                firePluginEvent(new PluginEvent(this, PluginEvent.PLUGIN_DATA_CHANGED, downloadLink));
+                downloadLink.setDownloadCurrent(downloadedBytes);
 
+                if (bytesToLoad > 0 && downloadedBytes >= bytesToLoad)
+                    break;
+            }
+            if (downloadedBytes < contentLen) {
+                logger.info(aborted + " - " + downloadLink.isAborted() + " incomplete download: bytes loaded: " + downloadedBytes + "/" + contentLen);
+                downloadLink.setStatus(DownloadLink.STATUS_DOWNLOAD_INCOMPLETE);
+                firePluginEvent(new PluginEvent(this, PluginEvent.PLUGIN_PROGRESS_FINISH, downloadLink));
+                
+                source.close();
+                dest.close();
+                fos.close();
+                return false;
+            }
+            end = System.currentTimeMillis();
+            time = end - start;
+            source.close();
+            dest.close();
+            fos.close();
+            if (new File(downloadLink.getFileOutput()).exists()) {
+                new File(downloadLink.getFileOutput()).delete();
+            }
+            logger.info(new File(downloadLink.getFileOutput()).exists()+"");
+            logger.info(new File(downloadLink.getFileOutput()).canWrite()+"");
+            
+            logger.info(fileOutput.exists()+"");
+            logger.info(fileOutput.canWrite()+"");
+            if (!fileOutput.renameTo(new File(downloadLink.getFileOutput()))) {
+                logger.severe("Could not rename file "+fileOutput+" to " + downloadLink.getFileOutput());
+                downloadLink.setStatus(DownloadLink.STATUS_DOWNLOAD_INCOMPLETE);
+                firePluginEvent(new PluginEvent(this, PluginEvent.PLUGIN_PROGRESS_FINISH, downloadLink));
+                return false;
+            }
+            downloadLink.setStatus(DownloadLink.STATUS_DOWNLOAD_FINISHED);
+            firePluginEvent(new PluginEvent(this, PluginEvent.PLUGIN_PROGRESS_FINISH, downloadLink));
+            logger.info("download finished:" + fileOutput.getAbsolutePath());
+            logger.info(downloadedBytes + " bytes in " + time + " ms");
+            return true;
+        } catch (FileNotFoundException e) {
+
+            logger.severe("file not found. " + e.getLocalizedMessage());
+        } catch (SecurityException e) {
+
+            logger.severe("not enough rights to write the file. " + e.getLocalizedMessage());
+        } catch (IOException e) {
+
+            logger.severe("error occurred while writing to file. " + e.getLocalizedMessage());
+        } catch (InterruptedException e) {
+            logger.severe("interrupted. " + e.getLocalizedMessage());
+            e.printStackTrace();
+        } catch (Exception e) {
+
+            e.printStackTrace();
+        }
+        firePluginEvent(new PluginEvent(this, PluginEvent.PLUGIN_PROGRESS_FINISH, downloadLink));
+        downloadLink.setStatus(DownloadLink.STATUS_DOWNLOAD_INCOMPLETE);
+        return false;
+    }
     /**
      * Holt den Dateinamen aus einem Content-Disposition header. wird dieser
      * nicht gefunden, wird der dateiname aus der url ermittelt

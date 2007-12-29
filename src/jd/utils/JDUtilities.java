@@ -1473,8 +1473,14 @@ public class JDUtilities {
      * @return ip oder /offline
      */
     public static String getIPAddress() {
+        if(getConfiguration().getBooleanProperty(Configuration.PARAM_GLOBAL_IP_DISABLE, false)){
+            logger.finer("IP Check is disabled. return current Milliseconds");
+            return System.currentTimeMillis()+"";
+        }
+        
         String site = getConfiguration().getStringProperty(Configuration.PARAM_GLOBAL_IP_CHECK_SITE, "http://checkip.dyndns.org");
         String patt = getConfiguration().getStringProperty(Configuration.PARAM_GLOBAL_IP_PATTERN, "Address\\: ([0-9.]*)\\<\\/body\\>");
+     
         try {
             logger.finer("IP Check via " + site);
             RequestInfo requestInfo = Plugin.getRequest(new URL(site), null, null, true);
@@ -1485,20 +1491,47 @@ public class JDUtilities {
                     return matcher.group(1);
                 }
                 else {
-                    logger.severe("bad Regex: " + patt);
-                    return null;
+                    logger.severe("Primary bad Regex: " + patt);
+                   
                 }
             }
-            logger.info("IP Check failed. Ip not found via regex: " + patt + " on " + site + " htmlcode: " + requestInfo.getHtmlCode());
-            return null;
+            logger.info("Primary IP Check failed. Ip not found via regex: " + patt + " on " + site + " htmlcode: " + requestInfo.getHtmlCode());
+            
         }
-        catch (ConnectException e1) {
-            logger.severe("Offline. " + e1.toString());
-            return "offline";
-        }
-        catch (IOException e1) {
+      
+        catch (Exception e1) {
             logger.severe("url not found. " + e1.toString());
+          
+            
         }
+        //http://jdown.cwsurf.de/getip.php
+       
+            try {
+                site="http://jdownloader.ath.cx/getip.php";
+                
+                logger.finer("IP Check via http://jdownloader.ath.cx");
+                RequestInfo ri;
+             
+                ri=Plugin.getRequest(new URL(site), null, null, true);
+                String ip=Plugin.getSimpleMatch(ri.getHtmlCode(), "<ip>°</ip>", 0);
+                if(ip==null){
+                    logger.info("Sec. IP Check failed.");
+                    return "offline";
+                }else{
+                    logger.info("Sec. IP Check success. PLease Check Your IP Check settings");
+                    return ip;
+                }
+            }
+          
+            catch (Exception e1) {
+                logger.severe("url not found. " + e1.toString());
+                logger.info("Sec. IP Check failed.");
+               
+            
+                
+            }
+     
+        
         return "offline";
     }
 

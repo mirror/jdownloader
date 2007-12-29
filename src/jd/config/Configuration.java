@@ -166,6 +166,8 @@ public class Configuration extends Property implements Serializable {
 
     public static final String PARAM_THEME = "THEME";
 
+    public static final String PARAM_GLOBAL_IP_DISABLE = "GLOBAL_IP_DISABLE";
+
     /**
      * Die unterschiedlichen Interaktionen. (ZB Reconnect nach einem Download)
      */

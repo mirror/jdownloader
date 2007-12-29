@@ -107,6 +107,7 @@ public class InfoFileWriter extends Interaction implements Serializable {
         }
 
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, JDUtilities.getConfiguration(), "VARS", keys, JDLocale.L("interaction.infoFileWriter.variables","Available variables")));
+        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_RADIOFIELD, JDUtilities.getConfiguration(), "VARS", keys, JDLocale.L("interaction.infoFileWriter.variables","Available variables")));
 
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, JDUtilities.getConfiguration(), PARAM_FILENAME, JDLocale.L("interaction.infoFileWriter.filename","Filename:")).setDefaultValue(FILENAME_DEFAULT));
 
