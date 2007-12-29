@@ -75,7 +75,7 @@ public class FileSearch extends PluginForSearch {
         return false;
     }
 
-    private Vector<String> getLinklist(String link, String cookie, URL referrer, int inst) {
+    private Vector<DownloadLink> getLinklist(String link, String cookie, URL referrer, int inst) {
         Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
         try {
             URL url = new URL(link);
@@ -96,12 +96,12 @@ public class FileSearch extends PluginForSearch {
             {
                 for (int i = 0; i < links.length; i++) {
                     decryptedLinks.addAll(getLinklist(links[i], requestInfo.getCookie(), url, inst));
-                    decryptedLinks.add(this.createDownloadlink(links[i]);
+                    decryptedLinks.add(this.createDownloadlink(links[i]));
                 }
             }
             else
                 for (int i = 0; i < links.length; i++) {
-                    decryptedLinks.add(this.createDownloadlink(links[i]);
+                    decryptedLinks.add(this.createDownloadlink(links[i]));
                 }
 
         } catch (MalformedURLException e) {
@@ -131,27 +131,21 @@ public class FileSearch extends PluginForSearch {
                 int inst = getIntParam(PARAM_INST, 1);
                 if(progress!=null)progress.setRange( inst);
                 passwords=new Vector<String>();
-                Vector<String> de = getLinklist(searchPattern, null, null, inst);
+                Vector<DownloadLink> de = getLinklist(searchPattern, null, null, inst);
                 
                 Vector<String> unique = new Vector<String>();
-                String pw = null;
-                if(passwords.size()>0)
-                {
-                pw = "{\""+passwords.get(0)+"\"";
-                unique.add(passwords.get(0));
-                for (int i = 1; i < passwords.size(); i++) {
+                for (int i = 0; i < passwords.size(); i++) {
                     if(!unique.contains(passwords.get(i)))
                     {
-                    pw += ",\""+passwords.get(i)+"\"";
                     unique.add(passwords.get(i));
                     }
                 }
-                pw +="}";
-                }
+                
                 for (int i = 0; i < de.size(); i++) {
-                    String[] link = new String[]{de.get(i), pw, null};
+                    DownloadLink link = de.get(i);
+                    link.setSourcePluginPasswords(unique);
                     if (!decryptedLinks.contains(link))
-                        decryptedLinks.add(this.createDownloadlink(link);
+                        decryptedLinks.add(link);
                 }
                 //veraltet: firePluginEvent(new PluginEvent(this, PluginEvent.PLUGIN_PROGRESS_FINISH, null));
                 step.setParameter(decryptedLinks);
