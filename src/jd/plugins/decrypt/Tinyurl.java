@@ -1,4 +1,4 @@
-package jd.plugins.decrypt;
+package jd.plugins.decrypt;  import jd.plugins.DownloadLink;
 
 import java.io.File;
 import java.io.IOException;
@@ -59,7 +59,7 @@ public class Tinyurl extends PluginForDecrypt {
     @Override
     public PluginStep doStep(PluginStep step, String parameter) {
         if (step.getStep() == PluginStep.STEP_DECRYPT) {
-            Vector<String> decryptedLinks = new Vector<String>();
+            Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
             try {
                 progress.setRange(1);
                 if (!parameter.matches("http://.*?tinyurl\\.com/preview\\.php\\?num\\=[a-zA-Z0-9]{6}")) {
@@ -77,7 +77,7 @@ public class Tinyurl extends PluginForDecrypt {
 
                 // Link der Liste hinzufügen
                 progress.increase(1);
-                decryptedLinks.add(getBetween(reqinfo.getHtmlCode(), "id=\"redirecturl\" href=\"", "\">Proceed to"));
+                decryptedLinks.add(this.createDownloadlink(getBetween(reqinfo.getHtmlCode(), "id=\"redirecturl\" href=\"", "\">Proceed to")));
 
                 // Decrypt abschliessen
 

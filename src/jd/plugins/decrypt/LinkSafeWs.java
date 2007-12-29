@@ -1,4 +1,4 @@
-package jd.plugins.decrypt;
+package jd.plugins.decrypt;  import jd.plugins.DownloadLink;
 
 import java.io.File;
 import java.io.IOException;
@@ -72,7 +72,7 @@ public class LinkSafeWs extends PluginForDecrypt {
     @Override
     public PluginStep doStep(PluginStep step, String parameter) {
         if (step.getStep() == PluginStep.STEP_DECRYPT) {
-            Vector<String> decryptedLinks = new Vector<String>();
+            Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
             try {
                 String strURL = parameter;
                 URL url = new URL(strURL);
@@ -87,7 +87,7 @@ public class LinkSafeWs extends PluginForDecrypt {
 
                     String newLink = getSimpleMatch(reqinfo.getHtmlCode(), LINK, 0);
 
-                    decryptedLinks.add(newLink);
+                    decryptedLinks.add(this.createDownloadlink(newLink));
                     progress.increase(1);
                 }
 

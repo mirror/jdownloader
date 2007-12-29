@@ -1763,17 +1763,7 @@ public abstract class Plugin {
         return null;
     }
 
-    /**
-     * Passwort zur Unrarpasswortliste Hinzufügen (Wird im normalfall automatsch
-     * gemacht nur notwendig wenn nicht ganz klar ist welches Passwort das
-     * richtige ist)
-     * 
-     * @param password
-     */
-    public static void addToPasswordlist(String password) {
-        JUnrar unrar = new JUnrar(false);
-        unrar.addToPasswordlist(password);
-    }
+
 
     /**
      * Diese Methode sucht nach passwörtern in einem Datensatz
@@ -1782,6 +1772,7 @@ public abstract class Plugin {
      * @return
      */
     public static Vector<String> findPasswords(String data) {
+        if(data==null)return new Vector<String>();
         data = data.replaceAll("(?s)<!-- .*? -->", "").replaceAll("(?s)<script .*?>.*?</script>", "").replaceAll("(?s)<.*?>", "").replaceAll("Spoiler:", "").replaceAll("(no.{0,2}|kein.{0,8}|ohne.{0,8}|nicht.{0,8})(pw|passwort|password|pass)", "").replaceAll("(pw|passwort|password|pass).{0,12}(nicht|falsch|wrong)", "");
         Vector<String> ret = new Vector<String>();
         Pattern pattern = Pattern.compile("(pw|passwort|password|pass)[\\s][\\s]*?[\"']([[^\\:\"'\\s]][^\"'\\s]*)[\"']?", Pattern.CASE_INSENSITIVE);

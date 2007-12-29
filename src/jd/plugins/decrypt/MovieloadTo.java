@@ -1,4 +1,4 @@
-package jd.plugins.decrypt;
+package jd.plugins.decrypt;  import jd.plugins.DownloadLink;
 
 import java.io.File;
 import java.io.IOException;
@@ -21,6 +21,7 @@ public class MovieloadTo extends PluginForDecrypt {
         super();
         steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
         currentStep = steps.firstElement();
+        default_password.add("movieload.to");
     }
 
     @Override
@@ -55,7 +56,7 @@ public class MovieloadTo extends PluginForDecrypt {
 
     @Override public PluginStep doStep(PluginStep step, String parameter) {
     	if(step.getStep() == PluginStep.STEP_DECRYPT) {
-            Vector<String> decryptedLinks = new Vector<String>();
+            Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
     		try {
     			URL url = new URL(parameter);
     			RequestInfo reqinfo = getRequest(url);
@@ -65,7 +66,7 @@ public class MovieloadTo extends PluginForDecrypt {
     			for(int i=0; i<links.size(); i++) {
     				progress.increase(1);
     				reqinfo = getRequest(new URL("http://movieload.to/v2/protector/futsch.php?i=" + links.get(i).get(0)));
-    				decryptedLinks.add(reqinfo.getLocation());
+    				decryptedLinks.add(this.createDownloadlink(reqinfo.getLocation()));
     			}
     			
     			//Decrypt abschliessen    			

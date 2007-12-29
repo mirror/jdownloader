@@ -1,4 +1,4 @@
-package jd.plugins.decrypt;
+package jd.plugins.decrypt;  import jd.plugins.DownloadLink;
 
 import java.io.File;
 import java.io.IOException;
@@ -76,7 +76,7 @@ public class ShareOnAll extends PluginForDecrypt {
     @Override
     public PluginStep doStep(PluginStep step, String parameter) {
         if (step.getStep() == PluginStep.STEP_DECRYPT) {
-            Vector<String> decryptedLinks = new Vector<String>();
+            Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
             try {
                 parameter = parameter.replace("\\?.*", "");
                 URL url = new URL("http://www.shareonall.com/showlinks.php?f=" + getFirstMatch(parameter, Pattern.compile("http://.*?shareonall.com/(.*)", Pattern.CASE_INSENSITIVE), 1));
@@ -86,7 +86,7 @@ public class ShareOnAll extends PluginForDecrypt {
                 Vector<Vector<String>> links = getAllSimpleMatches(reqinfo.getHtmlCode(), "<a href=\'°\' target='_blank'>");
                 progress.setRange(links.size());
                 for (int i = 0; i < links.size(); i++) {
-                    if (checkLink(links.get(i).get(0))) decryptedLinks.add(links.get(i).get(0));
+                    if (checkLink(links.get(i).get(0))) decryptedLinks.add(this.createDownloadlink(links.get(i).get(0)));
                     progress.increase(1);
                 }
 

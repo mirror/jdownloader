@@ -1,4 +1,4 @@
-package jd.plugins.decrypt;
+package jd.plugins.decrypt;  import jd.plugins.DownloadLink;
 
 import java.io.File;
 import java.io.IOException;
@@ -33,6 +33,12 @@ public class Divxvid extends PluginForDecrypt {
         super();
         steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
         currentStep = steps.firstElement();
+        default_password.add("dxp.divxvid.org");
+        default_password.add("dxp");
+        default_password.add("dxp-tivi");
+        default_password.add("DivXviD");
+        default_password.add("dxd.dl.am");
+        
     }
 
     /*
@@ -79,7 +85,7 @@ public class Divxvid extends PluginForDecrypt {
         switch (step.getStep()) {
             case PluginStep.STEP_DECRYPT:
                 progress.setRange(1000);
-                Vector<String> decryptedLinks = new Vector<String>();
+                Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
                 URL url;
                 try {
                     url = new URL(cryptedLink);
@@ -106,7 +112,7 @@ public class Divxvid extends PluginForDecrypt {
                         requestInfo = postRequestWithoutHtmlCode((new URL(getFirstMatch(getRequest((new URL("http://dxp.divxvid.org" + outl + "," + i + ",1," + hash + ".rs")), cookie, cryptedLink, true).getHtmlCode(), premiumdownloadlocation, 1))), null, null, null, false);
                         if (requestInfo != null) {
                             firePluginEvent(new PluginEvent(this, PluginEvent.PLUGIN_PROGRESS_INCREASE, null));
-                            decryptedLinks.add(requestInfo.getLocation());
+                            decryptedLinks.add(this.createDownloadlink(requestInfo.getLocation()));
                         }
 
                     }

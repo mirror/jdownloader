@@ -1,4 +1,4 @@
-package jd.plugins.decrypt;
+package jd.plugins.decrypt;  import jd.plugins.DownloadLink;
 
 import java.io.File;
 import java.io.IOException;
@@ -58,7 +58,7 @@ public class Rapidsafenet extends PluginForDecrypt {
     @Override
     public PluginStep doStep(PluginStep step, String parameter) {
         if (step.getStep() == PluginStep.STEP_DECRYPT) {
-            Vector<String> decryptedLinks = new Vector<String>();
+            Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
             progress.setRange(1);
             try {
                 URL url = new URL(parameter);
@@ -66,7 +66,7 @@ public class Rapidsafenet extends PluginForDecrypt {
 
                 // Links auslesen und konvertieren
                 progress.increase(1);
-                decryptedLinks.add((JDUtilities.htmlDecode(getBetween(reqinfo.getHtmlCode(), "&nbsp;<FORM ACTION=\"", "\" METHOD=\"post\" ID=\"postit\""))));
+                decryptedLinks.add(this.createDownloadlink((JDUtilities.htmlDecode(getBetween(reqinfo.getHtmlCode(), "&nbsp;<FORM ACTION=\"", "\" METHOD=\"post\" ID=\"postit\"")))));
             }
             catch (IOException e) {
                 e.printStackTrace();

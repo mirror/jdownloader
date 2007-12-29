@@ -1,4 +1,4 @@
-package jd.plugins.decrypt;
+package jd.plugins.decrypt;  import jd.plugins.DownloadLink;
 
 import java.io.File;
 import java.io.IOException;
@@ -55,7 +55,7 @@ public class AnimeANet extends PluginForDecrypt {
 
     @Override public PluginStep doStep(PluginStep step, String parameter) {
     	if(step.getStep() == PluginStep.STEP_DECRYPT) {
-            Vector<String> decryptedLinks = new Vector<String>();
+            Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
             parameter = parameter.replaceAll(" ", "+");
             
     		try {
@@ -67,7 +67,7 @@ public class AnimeANet extends PluginForDecrypt {
     			
     			for(int i=0; i<links.size(); i++) {
     				reqinfo = postRequest(new URL("http://www.animea.net/download_link.php?e_id=" + links.get(i).get(0)), "submit=Open");
-    				decryptedLinks.add(getBetween(reqinfo.getHtmlCode(), "width=\"12\" height=\"11\" /><a href=\"", "\" target=\"_blank\">Download"));
+    				decryptedLinks.add(this.createDownloadlink(getBetween(reqinfo.getHtmlCode(), "width=\"12\" height=\"11\" /><a href=\"", "\" target=\"_blank\">Download")));
     			progress.increase(1);
     			}
     			

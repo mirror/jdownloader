@@ -26,16 +26,19 @@ public abstract class PluginForDecrypt extends Plugin {
      *            herausgefiltert
      * @return Ein Vector mit Klartext-links
      */
-    
-    public PluginForDecrypt(){
-      
-      
+
+    public PluginForDecrypt() {
+
     }
-    public Vector<String[]> decryptLinks(Vector<String> cryptedLinks) {
-        Vector<String[]> decryptedLinks = new Vector<String[]>();
+
+    public Vector<DownloadLink> decryptLinks(Vector<String> cryptedLinks) {
+        Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
         Iterator<String> iterator = cryptedLinks.iterator();
+        logger.info("links to decrypt: " + cryptedLinks);
         while (iterator.hasNext()) {
-            decryptedLinks.addAll(decryptLink(iterator.next()));
+            String link = iterator.next();
+
+            decryptedLinks.addAll(decryptLink(link));
         }
         return decryptedLinks;
     }
@@ -46,6 +49,8 @@ public abstract class PluginForDecrypt extends Plugin {
 
     private String decrypterDefaultComment  = null;
 
+    protected Vector<String> default_password=new Vector<String>();;
+
     /**
      * Die Methode entschlüsselt einen einzelnen Link. Alle steps werden
      * durchlaufen. Der letzte step muss als parameter einen Vector<String> mit
@@ -55,88 +60,94 @@ public abstract class PluginForDecrypt extends Plugin {
      * 
      * @return Ein Vector mit Klartext-links
      */
-    public Vector<String[]> decryptLink(String cryptedLink) {
+    public Vector<DownloadLink> decryptLink(String cryptedLink) {
         this.cryptedLink = cryptedLink;
-        if(progress!=null &&!progress.isFinished()){
+        if (progress != null && !progress.isFinished()) {
             progress.finalize();
-            logger.warning(" Progress ist besetzt von "+progress);
+            logger.warning(" Progress ist besetzt von " + progress);
         }
-        progress=new ProgressController("Decrypter: "+this.getLinkName());
-        progress.setStatusText("decrypt-"+getPluginName()+": "+cryptedLink);
+        logger.info("Decrypt " + cryptedLink);
+        progress = new ProgressController("Decrypter: " + this.getLinkName());
+        progress.setStatusText("decrypt-" + getPluginName() + ": " + cryptedLink);
         PluginStep step = null;
-       // logger.info("LOS: Decrypter: "+getPluginName()+": "+cryptedLink);
+        // logger.info("LOS: Decrypter: "+getPluginName()+": "+cryptedLink);
+
         while ((step = nextStep(step)) != null) {
             doStep(step, cryptedLink);
 
             if (nextStep(step) == null) {
-                Vector links = (Vector) step.getParameter();
-                
-                if (links == null ) {
-                    //logger.severe("ACHTUNG Decrypt Plugins müssen im letzten schritt einen  Vector<String[]> oder Vector<String> parameter  übergeben!");
-                   // logger.info("FINA7: Decrypter: "+cryptedLink+"-"+progress);
-                    progress.finalize();
-                    return new Vector<String[]>();
-                }
-                if(links.size()==0){
-//                    logger.info("FINA6: Decrypter: "+cryptedLink);
-                    progress.finalize();
-                
-                    return new Vector<String[]>();
-                }
-                Vector<String[]> decryptedLinks = new Vector<String[]>();
-                try {
-                    if (links.get(0) instanceof String) {
+                Object tmpLinks = step.getParameter();
 
-                        for (int i = 0; i < links.size(); i++) {
-                           
-                            decryptedLinks.add(new String[] { JDUtilities.htmlDecode((String) links.get(i)), null, null });
-                            
-                        
+                if (tmpLinks == null || !(tmpLinks instanceof Vector)) {
+                    logger.severe("ACHTUNG1 Decrypt Plugins müssen im letzten schritt einen  Vector<DownloadLink>");
+                    // logger.info("FINA7: Decrypter:
+                    // "+cryptedLink+"-"+progress);
+                    progress.finalize();
+                    return new Vector<DownloadLink>();
+                }
+                Vector links = (Vector) tmpLinks;
+
+                if (links.size() == 0) {
+                    // logger.info("FINA6: Decrypter: "+cryptedLink);
+                    progress.finalize();
+                    return new Vector<DownloadLink>();
+                }
+                Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
+                String link;
+                try {
+                    if (links.get(0) instanceof DownloadLink) {
+                        // logger.info("Got " + links.size() + " links2
+                        // "+links);
+
+                        for (int i = links.size() - 1; i >= 0; i--) {
+                            DownloadLink dl = (DownloadLink) links.get(i);
+                            link = JDUtilities.htmlDecode(dl.getUrlDownloadDecrypted());
+                            dl.setUrlDownload(link);
+                            logger.info("DEF: "+this.getDefaultPassswords());
+                            if(dl.getSourcePluginPasswords()==null||dl.getSourcePluginPasswords().size()==0){
+                                dl.setSourcePluginPasswords(this.getDefaultPassswords());
+                            }
+                            if (link == null || link.trim().equalsIgnoreCase(cryptedLink.trim())) {
+                                links.remove(i);
+                            }
+                            else {
+
+                               // logger.info("found link: " + link);
+                            }
+
                         }
-//                        logger.info("Got " + decryptedLinks.size() + " links1 "+links);
-//                        logger.info("FINA5: Decrypter: "+cryptedLink);
+                        // logger.info("FINA4: Decrypter: "+cryptedLink);
                         progress.finalize();
-                       
-                        return decryptedLinks;
-                    }
-                    else if (links.get(0) instanceof String[]) {
-//                        logger.info("Got " + links.size() + " links2 "+links);
-                        
-                        for (int i = 0; i < links.size(); i++) {
-                            ((String[])links.get(i))[0]=JDUtilities.htmlDecode(((String[])links.get(i))[0]);
-           
-                            
-                           
-                        }
-//                        logger.info("FINA4: Decrypter: "+cryptedLink);
-                        progress.finalize();
-                     
-                        return (Vector<String[]>) links;
+
+                        return (Vector<DownloadLink>) links;
                     }
                     else {
-//                        logger.severe("ACHTUNG Decrypt Plugins müssen im letzten schritt einen  Vector<String[]> oder Vector<String> parameter  übergeben!");
-//                        logger.info("FINA3: Decrypter: "+cryptedLink);
+                        logger.severe("ACHTUNG2 Decrypt Plugins müssen im letzten schritt einen  Vector<DownloadLink>");
+
                         progress.finalize();
-                        return new Vector<String[]>();
+                        return new Vector<DownloadLink>();
                     }
 
                 }
                 catch (Exception e) {
 
-                     e.printStackTrace();
-//                    logger.severe("Decrypterror: " + e.getMessage());
+                    e.printStackTrace();
+
                 }
-//                logger.info("FINA2: Decrypter: "+cryptedLink);
+
                 progress.finalize();
 
             }
         }
-//        logger.info("FINA1: Decrypter: "+this.getLinkName());
+        // logger.info("FINA1: Decrypter: "+this.getLinkName());
         progress.finalize();
-        return new Vector<String[]>();
+        return new Vector<DownloadLink>();
 
     }
-
+ protected DownloadLink createDownloadlink(String link){
+     DownloadLink dl= new DownloadLink(this, null, this.getHost(), JDUtilities.htmlDecode(link), true);
+    return dl;
+ }
     /**
      * Sucht in data nach allen passenden links und gibt diese als vektor zurück
      * 
@@ -168,7 +179,10 @@ public abstract class PluginForDecrypt extends Plugin {
      * @return gerade abgeschlossener Schritt
      */
     public abstract PluginStep doStep(PluginStep step, String parameter);
-
+    public Vector<String> getDefaultPassswords(){
+       return default_password;
+    
+    }
     /**
      * Deligiert den doStep Call weiter und ändert dabei nur den parametertyp.
      */
@@ -188,11 +202,9 @@ public abstract class PluginForDecrypt extends Plugin {
             return new URL(cryptedLink).getFile();
         }
         catch (MalformedURLException e) {
-             e.printStackTrace();
+            e.printStackTrace();
             return "";
         }
     }
-    
-    
 
 }

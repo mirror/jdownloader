@@ -1,4 +1,4 @@
-package jd.plugins.decrypt;
+package jd.plugins.decrypt;  import jd.plugins.DownloadLink;
 
 import java.io.File;
 import java.io.IOException;
@@ -57,14 +57,14 @@ public class UpPicoasisNet extends PluginForDecrypt {
 
     @Override public PluginStep doStep(PluginStep step, String parameter) {
     	if(step.getStep() == PluginStep.STEP_DECRYPT) {
-            Vector<String> decryptedLinks = new Vector<String>();
+            Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
     		try {
     			URL url = new URL(parameter);
     			RequestInfo reqinfo = getRequest(url);
  			
     			progress.setRange( 1);
     			
-    			decryptedLinks.add(JDUtilities.htmlDecode(getBetween(reqinfo.getHtmlCode(), "frameborder=\"no\" width=\"100%\" src=\"", "\"></iframe>")));
+    			decryptedLinks.add(this.createDownloadlink(JDUtilities.htmlDecode(getBetween(reqinfo.getHtmlCode(), "frameborder=\"no\" width=\"100%\" src=\"", "\"></iframe>"))));
     		progress.increase(1);
     			
     			// Decrypt abschliessen

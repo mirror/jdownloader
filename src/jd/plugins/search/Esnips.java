@@ -11,6 +11,7 @@ import java.util.regex.Pattern;
 
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
+import jd.plugins.DownloadLink;
 import jd.plugins.PluginForSearch;
 import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
@@ -106,7 +107,7 @@ private static String[] CATEGORIES =new String[]{"Audio"};
         }
         switch (step.getStep()) {
             case PluginStep.STEP_SEARCH:
-                Vector<String[]> decryptedLinks = new Vector<String[]>();
+                Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
                 int page = 1;
                 // Zählen aller verfügbaren Treffer
                 String address;
@@ -145,10 +146,10 @@ private static String[] CATEGORIES =new String[]{"Audio"};
                             // link = getLinkDetails(matches.get(i).get(0));
                             if (matches.get(i).get(0) != null) {
                                 setStatusText(matches.get(i).get(1));
-                                decryptedLinks.add(new String[]{"http://" + host + matches.get(i).get(0),null,null});
+                                decryptedLinks.add(this.createDownloadlink("http://" + host + matches.get(i).get(0)));
                             }
                             // if (link != null) {
-                            // decryptedLinks.add(link);
+                            // decryptedLinks.add(this.createDownloadlink(link);
                             //
                             // }
                              progress.increase( 1);
@@ -157,7 +158,7 @@ private static String[] CATEGORIES =new String[]{"Audio"};
                         if (results <= 0|| matches.size()<=0) break;
                         page++;
                     }
-                    // decryptedLinks.add(newURL);
+                    // decryptedLinks.add(this.createDownloadlink(newURL);
                 }
                 catch (UnsupportedEncodingException e) {
                      e.printStackTrace();

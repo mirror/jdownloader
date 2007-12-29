@@ -1,4 +1,4 @@
-package jd.plugins.decrypt;
+package jd.plugins.decrypt;  import jd.plugins.DownloadLink;
 
 import java.io.File;
 import java.io.IOException;
@@ -85,7 +85,7 @@ public class oXygenWarez extends PluginForDecrypt {
     public PluginStep doStep(PluginStep step, String parameter) {
         switch (step.getStep()) {
             case PluginStep.STEP_DECRYPT:
-                Vector<String[]> decryptedLinks = new Vector<String[]>();
+                Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
 
                 RequestInfo reqinfo;
                 try {
@@ -175,7 +175,7 @@ public class oXygenWarez extends PluginForDecrypt {
                     for (int i = 0; i < links.size(); i++) {
                         String link = JDUtilities.urlEncode(links.get(i).get(0));
                         link = link.replaceAll("http://.*http://", "http://");
-                        decryptedLinks.add(new String[] { link, pw, null });
+                        decryptedLinks.add(this.createDownloadlink(link).addSourcePluginPassword(pw));
 
                         progress.increase(1);
                     }

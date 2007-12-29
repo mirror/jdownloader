@@ -1,4 +1,4 @@
-package jd.plugins.decrypt;
+package jd.plugins.decrypt;  import jd.plugins.DownloadLink;
 
 import java.io.File;
 import java.io.IOException;
@@ -34,6 +34,9 @@ public class Serienjunkies extends PluginForDecrypt {
         steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
         currentStep = steps.firstElement();
         this.setConfigElements();
+        
+        default_password.add("serienjunkies.dl.am");
+        default_password.add("serienjunkies.org");
 
     }
 
@@ -110,9 +113,8 @@ public class Serienjunkies extends PluginForDecrypt {
     public PluginStep doStep(PluginStep step, String parameter) {
         switch (step.getStep()) {
             case PluginStep.STEP_DECRYPT :
-                addToPasswordlist("serienjunkies.dl.am");
-                addToPasswordlist("serienjunkies.org");
-                Vector<String[]> decryptedLinks = new Vector<String[]>();
+           
+                Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
                 try {
                     URL url = new URL(parameter);
                     String modifiedURL = url.toString();
@@ -146,14 +148,14 @@ public class Serienjunkies extends PluginForDecrypt {
                         progress.setRange(1);
                         helpstring = EinzelLinks(parameter);
                         progress.increase(1);
-                        decryptedLinks.add(new String[]{helpstring, DEFAULT_PASSWORD, null});
+                        decryptedLinks.add(this.createDownloadlink(helpstring));
                     } else if (parameter.indexOf("download.serienjunkies.org") >= 0) {
                         logger.info("sjsafe link");
                         progress.setRange(1);
                         helpvector = ContainerLinks(parameter);
                         progress.increase(1);
                         for (int j = 0; j < helpvector.size(); j++) {
-                            decryptedLinks.add(new String[]{helpvector.get(j), DEFAULT_PASSWORD, null});
+                            decryptedLinks.add(this.createDownloadlink(helpvector.get(j)));
                         }
                     } else if (parameter.indexOf("/sjsafe/") >= 0) {
                         logger.info("sjsafe link");
@@ -162,7 +164,7 @@ public class Serienjunkies extends PluginForDecrypt {
 
                         progress.increase(1);
                         for (int j = 0; j < helpvector.size(); j++) {
-                            decryptedLinks.add(new String[]{helpvector.get(j), DEFAULT_PASSWORD, null});
+                            decryptedLinks.add(this.createDownloadlink(helpvector.get(j)));
                         }
                     } else {
                         logger.info("else link");
@@ -172,15 +174,15 @@ public class Serienjunkies extends PluginForDecrypt {
                             progress.increase(1);
                             if (links.get(i).get(0).indexOf("/safe/") >= 0) {
                                 helpstring = EinzelLinks(links.get(i).get(0));
-                                decryptedLinks.add(new String[]{helpstring, DEFAULT_PASSWORD, null});
+                                decryptedLinks.add(this.createDownloadlink(helpstring));
                             } else if (links.get(i).get(0).indexOf("/sjsafe/") >= 0) {
                                 helpvector = ContainerLinks(links.get(i).get(0));
                                 for (int j = 0; j < helpvector.size(); j++) {
-                                    decryptedLinks.add(new String[]{helpvector.get(j), DEFAULT_PASSWORD, null});
+                                    decryptedLinks.add(this.createDownloadlink(helpvector.get(j)));
                                 }
                             } else {
-                                decryptedLinks.add(new String[]{links.get(i).get(0), DEFAULT_PASSWORD, null});
-                                decryptedLinks.add(new String[]{links.get(i).get(0), DEFAULT_PASSWORD, null});
+                                decryptedLinks.add(this.createDownloadlink(links.get(i).get(0)));
+                                decryptedLinks.add(this.createDownloadlink(links.get(i).get(0)));
                             }
                         }
                     }

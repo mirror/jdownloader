@@ -10,6 +10,7 @@ import java.util.regex.Pattern;
 
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
+import jd.plugins.DownloadLink;
 import jd.plugins.PluginForSearch;
 import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
@@ -39,6 +40,7 @@ private static String[] CATEGORIES =new String[]{"Audio"};
         ConfigEntry cfg;
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getProperties(), PARAM_MAX_MATCHES, "Maximale Treffer"));
         cfg.setDefaultValue(50);
+        default_password.add("musiclounge.dl.am");
     }
 
     @Override
@@ -86,7 +88,7 @@ private static String[] CATEGORIES =new String[]{"Audio"};
 logger.info("Search "+parameter);
         switch (step.getStep()) {
             case PluginStep.STEP_SEARCH:
-                Vector<String[]> decryptedLinks = new Vector<String[]>();
+                Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
                 int page = 1;
                 // Zählen aller verfügbaren Treffer
                 String address;
@@ -107,10 +109,10 @@ logger.info("Search "+parameter);
                             // link = getLinkDetails(matches.get(i).get(0));
                             if (matches.get(i).get(0) != null) {
                                 setStatusText(matches.get(i).get(1));
-                                decryptedLinks.add(new String[]{matches.get(i).get(0),"musiclounge.dl.am",null});
+                                decryptedLinks.add(this.createDownloadlink(matches.get(i).get(0)));
                             }
                             // if (link != null) {
-                            // decryptedLinks.add(link);
+                            // decryptedLinks.add(this.createDownloadlink(link);
                             //
                             // }
                              progress.increase( 1);
@@ -119,7 +121,7 @@ logger.info("Search "+parameter);
                       
                       
                    
-                    // decryptedLinks.add(newURL);
+                    // decryptedLinks.add(this.createDownloadlink(newURL);
                 }
                 catch (UnsupportedEncodingException e) {
                      e.printStackTrace();

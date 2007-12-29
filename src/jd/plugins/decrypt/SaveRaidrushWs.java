@@ -1,4 +1,4 @@
-package jd.plugins.decrypt;
+package jd.plugins.decrypt;  import jd.plugins.DownloadLink;
 
 import java.io.File;
 import java.io.IOException;
@@ -60,7 +60,7 @@ public class SaveRaidrushWs extends PluginForDecrypt {
 
     @Override public PluginStep doStep(PluginStep step, String parameter) {
     	if(step.getStep() == PluginStep.STEP_DECRYPT) {
-            Vector<String> decryptedLinks = new Vector<String>();
+            Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
     		try {
     			URL url = new URL(parameter);
     			
@@ -73,7 +73,7 @@ public class SaveRaidrushWs extends PluginForDecrypt {
     				Vector<String> help = links.get(i);
     				reqinfo = getRequest(new URL("http://save.raidrush.ws/c.php?id=" + help.get(0) + "&key=" + help.get(1)));
     			progress.increase(1);
-    				decryptedLinks.add("http://"+reqinfo.getHtmlCode().trim());
+    				decryptedLinks.add(this.createDownloadlink("http://"+reqinfo.getHtmlCode().trim()));
     			}
     		
     			// Decrypten abschliessen

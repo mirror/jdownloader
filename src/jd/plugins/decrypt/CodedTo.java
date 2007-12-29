@@ -1,4 +1,4 @@
-package jd.plugins.decrypt;
+package jd.plugins.decrypt;  import jd.plugins.DownloadLink;
 
 import java.io.File;
 import java.io.IOException;
@@ -74,7 +74,7 @@ public class CodedTo extends PluginForDecrypt {
     @Override
     public PluginStep doStep(PluginStep step, String parameter) {
         if (step.getStep() == PluginStep.STEP_DECRYPT) {
-            Vector<String> decryptedLinks = new Vector<String>();
+            Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
             Vector<Vector<String>> files;
             try {
                 String strURL = parameter;
@@ -105,7 +105,7 @@ public class CodedTo extends PluginForDecrypt {
                     String html = JDUtilities.htmlDecode(reqinfo.getHtmlCode());
                     String newLink = getSimpleMatch(html, LINK, 0);
 
-                    decryptedLinks.add(newLink);
+                    decryptedLinks.add(this.createDownloadlink(newLink));
                     progress.increase(1);
                 }
 

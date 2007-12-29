@@ -2,6 +2,7 @@ package jd.plugins;
 
 import java.io.File;
 import java.io.Serializable;
+import java.util.Vector;
 import java.util.logging.Logger;
 
 import jd.JDCrypt;
@@ -202,7 +203,7 @@ public class DownloadLink implements Serializable,Comparable<DownloadLink> {
     private transient SpeedMeter speedMeter;
     private transient Boolean    available         = null;
    
-    private String sourcePluginPassword=null;
+    private Vector<String> sourcePluginPasswords=null;
     private String sourcePluginComment=null;
     /**
      * Erzeugt einen neuen DownloadLink
@@ -217,6 +218,8 @@ public class DownloadLink implements Serializable,Comparable<DownloadLink> {
     public DownloadLink(Plugin plugin, String name, String host, String urlDownload, boolean isEnabled) {
         this.plugin = plugin;
         this.name = name;
+        sourcePluginPasswords=new Vector<String>();
+        
         downloadMax=0;
         this.host = host;
         this.isEnabled = isEnabled;
@@ -225,6 +228,7 @@ public class DownloadLink implements Serializable,Comparable<DownloadLink> {
             this.urlDownload = JDCrypt.encrypt(urlDownload);
         else
             urlDownload=null;
+        if(name==null)this.name=this.extractFileNameFromURL();
     }
 
     /**
@@ -268,7 +272,11 @@ public class DownloadLink implements Serializable,Comparable<DownloadLink> {
             return new File(new File(getFilePackage().getDownloadDirectory()), getName()).getAbsolutePath();
         }
         else {
+            if(downloadPath!=null){
             return new File(new File(downloadPath), getName()).getAbsolutePath();
+            }else{
+                return this.getUrlDownloadDecrypted();
+            }
 
         }
 
@@ -790,19 +798,49 @@ public class DownloadLink implements Serializable,Comparable<DownloadLink> {
 
 
 
-public String getSourcePluginPassword() {
-    return sourcePluginPassword;
+public Vector<String> getSourcePluginPasswords() {
+    return sourcePluginPasswords;
 }
 
-public void setSourcePluginPassword(String sourcePluginPassword) {
-    this.sourcePluginPassword = sourcePluginPassword;
+public DownloadLink setSourcePluginPasswords(Vector<String> sourcePluginPassword) {
+    this.sourcePluginPasswords = sourcePluginPassword;
+    return this;
+}
+public DownloadLink addSourcePluginPassword(String sourcePluginPassword) {
+    
+    if(this.sourcePluginPasswords.indexOf(sourcePluginPassword)<0){
+    this.sourcePluginPasswords.add(sourcePluginPassword);
+    }
+    
+    return this;
+}
+public String getSourcePluginPassword(){
+    if(sourcePluginPasswords.size()==0)return null;
+    if(sourcePluginPasswords.size()==1)return sourcePluginPasswords.get(0);
+   String ret="{";
+   for( int i=0; i<sourcePluginPasswords.size();i++){
+       ret+="\""+sourcePluginPasswords.get(i)+"\"";
+           if(i<sourcePluginPasswords.size()-1){
+               ret+=", ";
+           }
+   }
+   ret+="}";
+   return ret;
 }
 
 public String getSourcePluginComment() {
     return sourcePluginComment;
 }
 
-public void setSourcePluginComment(String sourcePluginComment) {
+public DownloadLink setSourcePluginComment(String sourcePluginComment) {
     this.sourcePluginComment = sourcePluginComment;
+    return this;
+}
+
+public void addSourcePluginPasswords(Vector<String> sourcePluginPasswords) {
+    for(int i=0; i<sourcePluginPasswords.size();i++){
+       this.addSourcePluginPassword(sourcePluginPasswords.get(i));
+    }
+    
 }
 }

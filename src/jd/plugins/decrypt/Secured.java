@@ -1,4 +1,4 @@
-package jd.plugins.decrypt;
+package jd.plugins.decrypt;  import jd.plugins.DownloadLink;
 
 import java.io.File;
 import java.io.IOException;
@@ -126,7 +126,7 @@ public class Secured extends PluginForDecrypt {
         String cryptedLink = (String) parameter;
         switch (step.getStep()) {
             case PluginStep.STEP_DECRYPT:
-                Vector<String> decryptedLinks = new Vector<String>();
+                Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
                 logger.finest("Decrypt: " + cryptedLink);
                 this.cryptedLink = cryptedLink;
 
@@ -181,7 +181,7 @@ public class Secured extends PluginForDecrypt {
                     while (ids.size() > 0) {
                         String fileUrl = this.decryptId(ids.remove(0));
 
-                        decryptedLinks.add(fileUrl);
+                        decryptedLinks.add(this.createDownloadlink(fileUrl));
                         progress.increase(1);
 
                     }

@@ -1,4 +1,4 @@
-package jd.plugins.decrypt;
+package jd.plugins.decrypt;  import jd.plugins.DownloadLink;
 
 import java.io.File;
 import java.io.IOException;
@@ -107,7 +107,7 @@ public class LinkProtectOrg extends PluginForDecrypt {
 
     @Override public PluginStep doStep(PluginStep step, String parameter) {
     	if(step.getStep() == PluginStep.STEP_DECRYPT) {
-            Vector<String> decryptedLinks = new Vector<String>();
+            Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
             RequestInfo reqinfo; // Zum Aufrufen von WebSeiten
     		try {
     			String strURL = parameter;
@@ -240,7 +240,7 @@ public class LinkProtectOrg extends PluginForDecrypt {
     			// Alle Unterseiten zu den Links hinzufuegen (werden danach
                 // decryptet)
     			for (int i=0; i<countSubPages; i++) {
-    				decryptedLinks.add(url + "?s="+(i+2)+"#down");
+    				decryptedLinks.add(this.createDownloadlink(url + "?s="+(i+2)+"#down"));
     			progress.increase(1);
     			}
     			
@@ -258,7 +258,7 @@ public class LinkProtectOrg extends PluginForDecrypt {
     				// hier kann schon eine Weiterleitung zum Hoster kommen
         			if (reqinfo.getLocation() != null) {
         				// Link hinzufuegen
-        				decryptedLinks.add(reqinfo.getLocation());
+        				decryptedLinks.add(this.createDownloadlink(reqinfo.getLocation()));
         			progress.increase(1);
         				continue; // Schleifendurchlauf vorzeitig beenden,
                                     // naechsten Link
@@ -318,7 +318,7 @@ public class LinkProtectOrg extends PluginForDecrypt {
         				newLink = reqinfo.getLocation();
         			}
         			
-    				decryptedLinks.add(newLink);
+    				decryptedLinks.add(this.createDownloadlink(newLink));
     			progress.increase(1);
     			}
     			

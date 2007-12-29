@@ -1,4 +1,4 @@
-package jd.plugins.decrypt;
+package jd.plugins.decrypt;  import jd.plugins.DownloadLink;
 
 import java.io.File;
 import java.io.IOException;
@@ -27,12 +27,13 @@ public class RsHoerbuchin extends PluginForDecrypt {
     private String              version          = "1.0.0.1";
     static private final Pattern patternSupported = Pattern.compile("http://rs\\.hoerbuch\\.in/com-[a-zA-Z0-9]{11}/.*", Pattern.CASE_INSENSITIVE);
 
-    private static final String DEFAULT_PASSWORD = "www.hoerbuch.in";
+
 
     public RsHoerbuchin() {
         super();
         steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
         currentStep = steps.firstElement();
+        default_password.add("www.hoerbuch.in");
     }
 
     @Override
@@ -76,20 +77,20 @@ public class RsHoerbuchin extends PluginForDecrypt {
         switch (step.getStep()) {
             case PluginStep.STEP_DECRYPT:
            
-                Vector<String[]> decryptedLinks = new Vector<String[]>();
+                Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
                 // Zählen aller verfügbaren Treffer
                 try {
                     URL url = new URL(cryptedLink);
                     RequestInfo requestInfo = getRequest(url, null, null, false);
                     HashMap<String, String> fields = this.getInputHiddenFields(requestInfo.getHtmlCode(), "postit", "starten");
                     String newURL = "http://rapidshare.com" + JDUtilities.htmlDecode(fields.get("uri"));
-                    decryptedLinks.add(new String[] { newURL, DEFAULT_PASSWORD, null });
+                    decryptedLinks.add(this.createDownloadlink(newURL));
                 }
                 catch (MalformedURLException e) {
-                    JDUtilities.logException(e);
+                   e.printStackTrace();
                 }
                 catch (IOException e) {
-                    JDUtilities.logException(e);
+                   e.printStackTrace();
                 }
                 step.setParameter(decryptedLinks);
                 break;

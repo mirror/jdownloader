@@ -1,4 +1,4 @@
-package jd.plugins.decrypt;
+package jd.plugins.decrypt;  import jd.plugins.DownloadLink;
 
 import java.io.File;
 import java.io.IOException;
@@ -100,8 +100,8 @@ public class YoumirrorBiz extends PluginForDecrypt {
     public String getVersion() {
         return version;
     }
-    private Vector<String> getLinks(String parameter) {
-        Vector<String> decryptedLinks = new Vector<String>();
+    private Vector<DownloadLink> getLinks(String parameter) {
+        Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
         try {
             URL url = new URL(parameter);
             RequestInfo reqinfo = getRequest(url);
@@ -162,88 +162,88 @@ public class YoumirrorBiz extends PluginForDecrypt {
 
             if ((Boolean) this.getProperties().getProperty("USE_RAPIDSHARE", true) && countOccurences(reqinfo.getHtmlCode(), patternRapidshare) > 0) {
                 reqhelp = getRequest(new URL(parameter + "/1"));
-                decryptedLinks.add(getBetween(reqhelp.getHtmlCode(), "src=\"", "\""));
+                decryptedLinks.add(this.createDownloadlink(getBetween(reqhelp.getHtmlCode(), "src=\"", "\"")));
                 progress.increase(1);
             }
             if ((Boolean) this.getProperties().getProperty("USE_NETLOAD", true) && countOccurences(reqinfo.getHtmlCode(), patternNetload) > 0) {
                 reqhelp = getRequest(new URL(parameter + "/2"));
-                decryptedLinks.add(getBetween(reqhelp.getHtmlCode(), "src=\"", "\""));
+                decryptedLinks.add(this.createDownloadlink(getBetween(reqhelp.getHtmlCode(), "src=\"", "\"")));
                 progress.increase(1);
             }
             if ((Boolean) this.getProperties().getProperty("USE_UPLOADED", true) && countOccurences(reqinfo.getHtmlCode(), patternUploaded) > 0) {
                 reqhelp = getRequest(new URL(parameter + "/4"));
-                decryptedLinks.add(getBetween(reqhelp.getHtmlCode(), "src=\"", "\""));
+                decryptedLinks.add(this.createDownloadlink(getBetween(reqhelp.getHtmlCode(), "src=\"", "\"")));
                 progress.increase(1);
             }
             if ((Boolean) this.getProperties().getProperty("USE_GULLI", true) && countOccurences(reqinfo.getHtmlCode(), patternGulli) > 0) {
                 reqhelp = getRequest(new URL(parameter + "/5"));
-                decryptedLinks.add(getBetween(reqhelp.getHtmlCode(), "src=\"", "\""));
+                decryptedLinks.add(this.createDownloadlink(getBetween(reqhelp.getHtmlCode(), "src=\"", "\"")));
                 progress.increase(1);
             }
             if ((Boolean) this.getProperties().getProperty("USE_SHAREONLINE", true) && countOccurences(reqinfo.getHtmlCode(), patternShareonline) > 0) {
                 reqhelp = getRequest(new URL(parameter + "/6"));
-                decryptedLinks.add(getBetween(reqhelp.getHtmlCode(), "src=\"", "\""));
+                decryptedLinks.add(this.createDownloadlink(getBetween(reqhelp.getHtmlCode(), "src=\"", "\"")));
                 progress.increase(1);
             }
             if ((Boolean) this.getProperties().getProperty("USE_LOAD", true) && countOccurences(reqinfo.getHtmlCode(), patternLoad) > 0) {
                 reqhelp = getRequest(new URL(parameter + "/7"));
-                decryptedLinks.add(getBetween(reqhelp.getHtmlCode(), "src=\"", "\""));
+                decryptedLinks.add(this.createDownloadlink(getBetween(reqhelp.getHtmlCode(), "src=\"", "\"")));
                 progress.increase(1);
             }
             if ((Boolean) this.getProperties().getProperty("USE_SIMPLEUPLOAD", true) && countOccurences(reqinfo.getHtmlCode(), patternSimpleupload) > 0) {
                 reqhelp = getRequest(new URL(parameter + "/8"));
-                decryptedLinks.add(getBetween(reqhelp.getHtmlCode(), "src=\"", "\""));
+                decryptedLinks.add(this.createDownloadlink(getBetween(reqhelp.getHtmlCode(), "src=\"", "\"")));
                 progress.increase(1);
             }
             if ((Boolean) this.getProperties().getProperty("USE_COCOSHARE", true) && countOccurences(reqinfo.getHtmlCode(), patternCocoshare) > 0) {
                 reqhelp = getRequest(new URL(parameter + "/9"));
-                decryptedLinks.add(getBetween(reqhelp.getHtmlCode(), "src=\"", "\""));
+                decryptedLinks.add(this.createDownloadlink(getBetween(reqhelp.getHtmlCode(), "src=\"", "\"")));
                 progress.increase(1);
             }
             if ((Boolean) this.getProperties().getProperty("USE_FILEHOSTER", true) && countOccurences(reqinfo.getHtmlCode(), patternFilehoster) > 0) {
                 reqhelp = getRequest(new URL(parameter + "/10"));
-                decryptedLinks.add(getBetween(reqhelp.getHtmlCode(), "src=\"", "\""));
+                decryptedLinks.add(this.createDownloadlink(getBetween(reqhelp.getHtmlCode(), "src=\"", "\"")));
                 progress.increase(1);
             }
             if ((Boolean) this.getProperties().getProperty("USE_MEGAUPLOAD", true) && countOccurences(reqinfo.getHtmlCode(), patternMegaupload) > 0) {
                 reqhelp = getRequest(new URL(parameter + "/11"));
-                decryptedLinks.add(getBetween(reqhelp.getHtmlCode(), "src=\"", "\""));
+                decryptedLinks.add(this.createDownloadlink(getBetween(reqhelp.getHtmlCode(), "src=\"", "\"")));
                 progress.increase(1);
             }
             if ((Boolean) this.getProperties().getProperty("USE_SPEEDYSHARE", true) && countOccurences(reqinfo.getHtmlCode(), patternSpeedyshare) > 0) {
                 reqhelp = getRequest(new URL(parameter + "/12"));
-                decryptedLinks.add(getBetween(reqhelp.getHtmlCode(), "src=\"", "\""));
+                decryptedLinks.add(this.createDownloadlink(getBetween(reqhelp.getHtmlCode(), "src=\"", "\"")));
                 progress.increase(1);
             }
             if ((Boolean) this.getProperties().getProperty("USE_ARCHIV", true) && countOccurences(reqinfo.getHtmlCode(), patternArchiv) > 0) {
                 reqhelp = getRequest(new URL(parameter + "/13"));
-                decryptedLinks.add(getBetween(reqhelp.getHtmlCode(), "src=\"", "\""));
+                decryptedLinks.add(this.createDownloadlink(getBetween(reqhelp.getHtmlCode(), "src=\"", "\"")));
                 progress.increase(1);
             }
             if ((Boolean) this.getProperties().getProperty("USE_DATENKLO", true) && countOccurences(reqinfo.getHtmlCode(), patternDatenklo) > 0) {
                 reqhelp = getRequest(new URL(parameter + "/14"));
-                decryptedLinks.add(getBetween(reqhelp.getHtmlCode(), "src=\"", "\""));
+                decryptedLinks.add(this.createDownloadlink(getBetween(reqhelp.getHtmlCode(), "src=\"", "\"")));
                 progress.increase(1);
             }
             if ((Boolean) this.getProperties().getProperty("USE_BLUEHOST", true) && countOccurences(reqinfo.getHtmlCode(), patternBluehost) > 0) {
                 reqhelp = getRequest(new URL(parameter + "/15"));
-                decryptedLinks.add(getBetween(reqhelp.getHtmlCode(), "src=\"", "\""));
+                decryptedLinks.add(this.createDownloadlink(getBetween(reqhelp.getHtmlCode(), "src=\"", "\"")));
                 progress.increase(1);
             }
             if ((Boolean) this.getProperties().getProperty("USE_SHAREBASE", true) && countOccurences(reqinfo.getHtmlCode(), patternSharebase) > 0) {
                 reqhelp = getRequest(new URL(parameter + "/16"));
-                decryptedLinks.add(getBetween(reqhelp.getHtmlCode(), "src=\"", "\""));
+                decryptedLinks.add(this.createDownloadlink(getBetween(reqhelp.getHtmlCode(), "src=\"", "\"")));
                 progress.increase(1);
             }
         } catch (IOException e) {
-            JDUtilities.logException(e);
+           e.printStackTrace();
         }
         return decryptedLinks;
     }
     @Override
     public PluginStep doStep(PluginStep step, String parameter) {
         if (step.getStep() == PluginStep.STEP_DECRYPT) {
-            Vector<String> decryptedLinks = new Vector<String>();
+            Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
             if (parameter.matches(".*?/adfree/folder/.*")) {
                 try {
                     URL url = new URL(parameter);

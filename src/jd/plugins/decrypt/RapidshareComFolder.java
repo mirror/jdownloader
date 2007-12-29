@@ -1,4 +1,4 @@
-package jd.plugins.decrypt;
+package jd.plugins.decrypt;  import jd.plugins.DownloadLink;
 
 import java.io.File;
 import java.io.IOException;
@@ -21,7 +21,7 @@ public class RapidshareComFolder extends PluginForDecrypt {
 
     private String              password         = "";
 
-    private Vector<String>      decryptedLinks   = new Vector<String>();
+    private Vector<DownloadLink>      decryptedLinks   = new Vector<DownloadLink>();
 
     private URL                 url;
 
@@ -130,7 +130,7 @@ public class RapidshareComFolder extends PluginForDecrypt {
 
         Vector<Vector<String>> links = getAllSimpleMatches(source, "<center> <a href=\"°\" target=\"_blank\"");
         for (int i = 0; i < links.size(); i++) {
-            decryptedLinks.add(links.get(i).get(0));
+            decryptedLinks.add(this.createDownloadlink(links.get(i).get(0)));
         }
     }
 }

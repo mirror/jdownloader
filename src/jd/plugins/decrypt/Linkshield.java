@@ -1,4 +1,4 @@
-package jd.plugins.decrypt;
+package jd.plugins.decrypt;  import jd.plugins.DownloadLink;
 
 import java.io.File;
 import java.io.IOException;
@@ -57,7 +57,7 @@ public class Linkshield extends PluginForDecrypt {
     @Override 
     public PluginStep doStep(PluginStep step, String parameter) {
     	if(step.getStep() == PluginStep.STEP_DECRYPT) {
-            Vector<String> decryptedLinks = new Vector<String>();
+            Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
     		try {
     			
     			// test link: http://www.linkshield.com/c/976_956
@@ -67,7 +67,7 @@ public class Linkshield extends PluginForDecrypt {
 				RequestInfo reqinfo = getRequest(new URL(parameter), null, null, true);
 
 			progress.increase(1);
-    			decryptedLinks.add((getBetween(reqinfo.getHtmlCode(), "<frame src=(?!blank)", ">")));
+    			decryptedLinks.add(this.createDownloadlink((getBetween(reqinfo.getHtmlCode(), "<frame src=(?!blank)", ">"))));
     			
     			// Decrypten abschliessen
     			

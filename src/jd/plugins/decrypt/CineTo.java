@@ -1,4 +1,4 @@
-package jd.plugins.decrypt;
+package jd.plugins.decrypt;  import jd.plugins.DownloadLink;
 
 import java.io.File;
 import java.io.IOException;
@@ -19,10 +19,12 @@ public class CineTo extends PluginForDecrypt {
 
     private Pattern     patternSupported = getSupportPattern("http://[*]cine.to/protect.php\\?id=[+]");
 
+      
     public CineTo() {
         super();
         steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
         currentStep = steps.firstElement();
+        default_password.add("cine.to");
     }
 
     @Override
@@ -57,7 +59,7 @@ public class CineTo extends PluginForDecrypt {
 
     @Override public PluginStep doStep(PluginStep step, String parameter) {
     	if(step.getStep() == PluginStep.STEP_DECRYPT) {
-            Vector<String> decryptedLinks = new Vector<String>();
+            Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
     		try {
     			URL url = new URL(parameter);
     			RequestInfo reqinfo = getRequest(url);
@@ -75,7 +77,7 @@ public class CineTo extends PluginForDecrypt {
     			Vector<Vector<String>> links = getAllSimpleMatches(reqinfo.getHtmlCode(), "window.open(\'°\'");
     			
     			for(int i=0; i<links.size(); i++) {
-    				decryptedLinks.add(links.get(i).get(0));
+    				decryptedLinks.add(this.createDownloadlink(links.get(i).get(0)));
     			}
     			
     			// Decrypt abschliessen

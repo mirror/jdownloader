@@ -43,7 +43,7 @@ public class JDLocale {
         if (def == null) def = key;
         if (data.containsKey(key)) return JDUtilities.UTF8Decode(data.get(key));
         logger.info("Key not found: " + key);
-        data.put(key, def);
+        data.put(key, JDUtilities.UTF8Encode(def));
         
         if(JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_LANG_EDITMODE))saveData();
         return def;

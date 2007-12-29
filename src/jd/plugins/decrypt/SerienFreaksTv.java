@@ -1,4 +1,4 @@
-package jd.plugins.decrypt;
+package jd.plugins.decrypt;  import jd.plugins.DownloadLink;
 
 import java.io.File;
 import java.io.IOException;
@@ -8,6 +8,7 @@ import java.util.regex.Pattern;
 
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
+import jd.plugins.DownloadLink;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginStep;
@@ -42,7 +43,7 @@ public class SerienFreaksTv extends PluginForDecrypt {
 
     private static final String  FILE_LINK          = "<A HREF=\"?id=°\">";
 
-    private static final String  DEFAULT_PASSWORD   = "serienfreaks.dl.am";
+   
 
     /*
      * Konstruktor
@@ -51,6 +52,8 @@ public class SerienFreaksTv extends PluginForDecrypt {
         super();
         steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
         currentStep = steps.firstElement();
+        default_password.add("serienfreaks.tv");
+        default_password.add("serienfreaks.dl.am");
 
         this.initConfig();
     }
@@ -100,7 +103,7 @@ public class SerienFreaksTv extends PluginForDecrypt {
             String strFavorites = this.getProperties().getStringProperty("FAVORITES", "rapidshare.com;xirror.to");
             String[] favorites = strFavorites.split(";");
 
-            Vector<String[]> decryptedLinks = new Vector<String[]>();
+            Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
             RequestInfo reqinfo; // Zum Aufrufen von WebSeiten
 
             try {
@@ -117,7 +120,9 @@ public class SerienFreaksTv extends PluginForDecrypt {
                     // fuege alle gefundenen Dateien der Kategorie als
                     // Decrypt-Auftrag hinzu
                     for (int i = 0; i < fileLinks.size(); i++) {
-                        decryptedLinks.add(new String[] { url.getProtocol() + "://" + url.getHost() + url.getPath() + "?id=" + fileLinks.get(i).get(0), DEFAULT_PASSWORD, null });
+                       
+                   
+                       decryptedLinks.add(this.createDownloadlink(url.getProtocol() + "://" + url.getHost() + url.getPath() + "?id=" + fileLinks.get(i).get(0)));
                         progress.increase(1);
                     }
 
@@ -241,7 +246,9 @@ public class SerienFreaksTv extends PluginForDecrypt {
                     progress.setRange(links.size());
 
                     for (int i = 0; i < links.size(); i++) {
-                        decryptedLinks.add(new String[] { links.get(i).get(0), DEFAULT_PASSWORD, null });
+                     
+                        
+                        decryptedLinks.add(this.createDownloadlink(links.get(i).get(0)));
                         progress.increase(1);
                     }
 
@@ -261,9 +268,7 @@ public class SerienFreaksTv extends PluginForDecrypt {
 
     private void initConfig() {
         ConfigEntry cfg;
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_LABEL, "Default Passwort"));
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getProperties(), "DEFAULT_PASSWORT", "Passwort").setDefaultValue(DEFAULT_PASSWORD));
-
+      
         ConfigEntry cfgLabel1 = new ConfigEntry(ConfigContainer.TYPE_LABEL, "Hier kannst du deine bevorzugten Hoster angeben (durch Semikolon getrennt).");
         ConfigEntry cfgLabel2 = new ConfigEntry(ConfigContainer.TYPE_LABEL, "Sofern vorhanden wird dann von diesem Hoster geladen, im anderen Fall wird der");
         ConfigEntry cfgLabel3 = new ConfigEntry(ConfigContainer.TYPE_LABEL, "Standard-Hoster verwendet.");

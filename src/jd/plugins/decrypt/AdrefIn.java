@@ -1,8 +1,10 @@
-package jd.plugins.decrypt;
+package jd.plugins.decrypt;  import jd.plugins.DownloadLink;
 
 import java.io.File;
 import java.util.Vector;
 import java.util.regex.Pattern;
+
+import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginStep;
 
@@ -53,13 +55,13 @@ public class AdrefIn extends PluginForDecrypt {
     @Override
     public PluginStep doStep(PluginStep step, String parameter) {
         if (step.getStep() == PluginStep.STEP_DECRYPT) {
-            Vector<String> decryptedLinks = new Vector<String>();
+            Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
 
             progress.setRange(1);
             parameter=parameter.replaceFirst("http://.*?adref.in/\\?", "");
             if(!parameter.matches("^http://"))
                 parameter="http://"+parameter;
-            decryptedLinks.add(parameter);
+            decryptedLinks.add(this.createDownloadlink(parameter));
             progress.increase(1);
 
             step.setParameter(decryptedLinks);

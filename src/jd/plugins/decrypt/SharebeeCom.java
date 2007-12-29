@@ -1,4 +1,4 @@
-package jd.plugins.decrypt;
+package jd.plugins.decrypt;  import jd.plugins.DownloadLink;
 
 import java.io.File;
 import java.io.IOException;
@@ -59,7 +59,7 @@ public class SharebeeCom extends PluginForDecrypt {
 
     @Override public PluginStep doStep(PluginStep step, String parameter) {
     	if(step.getStep() == PluginStep.STEP_DECRYPT) {
-            Vector<String> decryptedLinks = new Vector<String>();
+            Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
     		try {
     			URL url = new URL(parameter);
     			RequestInfo reqinfo = getRequest(url);
@@ -87,7 +87,7 @@ public class SharebeeCom extends PluginForDecrypt {
     			progress.increase(1);
                     for( int i=0; i<g.size();i++){
                         if(g.get(i).get(1).equalsIgnoreCase("Rapidshare"))
-                            decryptedLinks.add(g.get(i).get(0));
+                            decryptedLinks.add(this.createDownloadlink(g.get(i).get(0)));
                     }
     			}
     			
@@ -95,7 +95,7 @@ public class SharebeeCom extends PluginForDecrypt {
     			progress.increase(1);
                     for( int i=0; i<g.size();i++){
                         if(g.get(i).get(1).equalsIgnoreCase("zSHARE"))
-                            decryptedLinks.add(g.get(i).get(0));
+                            decryptedLinks.add(this.createDownloadlink(g.get(i).get(0)));
                     }
     			}
     			
@@ -103,7 +103,7 @@ public class SharebeeCom extends PluginForDecrypt {
     			progress.increase(1);
                     for( int i=0; i<g.size();i++){
                         if(g.get(i).get(1).equalsIgnoreCase("Megaupload"))
-                            decryptedLinks.add(g.get(i).get(0));
+                            decryptedLinks.add(this.createDownloadlink(g.get(i).get(0)));
                     }
     			}
     			
@@ -111,7 +111,7 @@ public class SharebeeCom extends PluginForDecrypt {
     			progress.increase(1);
                     for( int i=0; i<g.size();i++){
                         if(g.get(i).get(1).equalsIgnoreCase("Badongo"))
-                            decryptedLinks.add(g.get(i).get(0));
+                            decryptedLinks.add(this.createDownloadlink(g.get(i).get(0)));
                     }
     			}
     			    			

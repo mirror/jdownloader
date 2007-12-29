@@ -1,4 +1,4 @@
-package jd.plugins.decrypt;
+package jd.plugins.decrypt;  import jd.plugins.DownloadLink;
 
 import java.io.File;
 import java.io.IOException;
@@ -72,7 +72,7 @@ public class MirrorItDe extends PluginForDecrypt {
 
     @Override public PluginStep doStep(PluginStep step, String parameter) {
     	if(step.getStep() == PluginStep.STEP_DECRYPT) {
-            Vector<String> decryptedLinks = new Vector<String>();
+            Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
     		try {
     			URL url = new URL(parameter);
     			RequestInfo reqinfo = getRequest(url);
@@ -114,7 +114,7 @@ public class MirrorItDe extends PluginForDecrypt {
     				if((links.get(i).get(0).equalsIgnoreCase("rapidsharecom") && (Boolean) this.getProperties().getProperty("USE_RAPIDSHARE",true)) || ((Boolean) this.getProperties().getProperty("USE_UPLOADED",true) && links.get(i).get(0).equalsIgnoreCase("uploadedto")) || ((Boolean) this.getProperties().getProperty("USE_SHAREBASE",false) && links.get(i).get(0).equalsIgnoreCase("sharebasede")) || ((Boolean) this.getProperties().getProperty("USE_SHAREONLINE",false) && links.get(i).get(0).equalsIgnoreCase("shareonlinebiz")) || ((Boolean) this.getProperties().getProperty("USE_MEGAUPLOAD",true) && links.get(i).get(0).equalsIgnoreCase("megauploadcom")) || ((Boolean) this.getProperties().getProperty("USE_FILEFACTORY",true) && links.get(i).get(0).equalsIgnoreCase("filefactorycom"))  || ((Boolean) this.getProperties().getProperty("USE_NETLOAD",true) && links.get(i).get(0).equalsIgnoreCase("netloadin")) || ((Boolean) this.getProperties().getProperty("USE_SIMPLEUPLOAD",false) && links.get(i).get(0).equalsIgnoreCase("simpleuploadnet")) || ((Boolean) this.getProperties().getProperty("USE_LOAD",false) && links.get(i).get(0).equalsIgnoreCase("loadto"))) {
 	    				reqinfo = getRequest(new URL("http://www.mirrorit.de/Out?id=" + URLDecoder.decode(links.get(i).get(2), "UTF-8") + "&num=" + links.get(i).get(3)));
 	    				reqinfo = getRequest(new URL(reqinfo.getLocation()));
-	    				decryptedLinks.add(reqinfo.getLocation());
+	    				decryptedLinks.add(this.createDownloadlink(reqinfo.getLocation()));
 	    			progress.increase(1);
     				}
     			}

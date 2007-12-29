@@ -1,4 +1,4 @@
-package jd.plugins.decrypt;
+package jd.plugins.decrypt;  import jd.plugins.DownloadLink;
 
 import java.io.File;
 import java.io.IOException;
@@ -16,11 +16,12 @@ public class DDLWarez extends PluginForDecrypt {
     private String      version          = "1.0.0.0";
 
     private Pattern     patternSupported = getSupportPattern("http://[*]ddl-warez\\.org/detail\\.php\\?id=[\\d]{4}[*]");
-
+  
     public DDLWarez() {
         super();
         steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
         currentStep = steps.firstElement();
+        default_password.add("ddl-warez");
     }
 
     @Override
@@ -56,7 +57,7 @@ public class DDLWarez extends PluginForDecrypt {
     @Override
     public PluginStep doStep(PluginStep step, String parameter) {
         if (step.getStep() == PluginStep.STEP_DECRYPT) {
-            Vector<String> decryptedLinks = new Vector<String>();
+            Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
             try {
                 URL url = new URL(parameter);
                 RequestInfo reqinfo = getRequest(url); // Seite aufrufen
@@ -71,7 +72,7 @@ public class DDLWarez extends PluginForDecrypt {
                     URL urlredirector = new URL(getBetween(reqinfo.getHtmlCode(), "<FRAME SRC=\"", "\""));
                     RequestInfo reqinfoRS = getRequest(urlredirector);
 
-                    decryptedLinks.add(getBetween(reqinfoRS.getHtmlCode(), "<FRAME SRC=\"", "\""));
+                    decryptedLinks.add(this.createDownloadlink(getBetween(reqinfoRS.getHtmlCode(), "<FRAME SRC=\"", "\"")));
                     progress.increase(1);
                 }
 

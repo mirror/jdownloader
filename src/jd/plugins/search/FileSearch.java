@@ -9,6 +9,7 @@ import java.util.regex.Pattern;
 
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
+import jd.plugins.DownloadLink;
 import jd.plugins.PluginForSearch;
 import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
@@ -75,7 +76,7 @@ public class FileSearch extends PluginForSearch {
     }
 
     private Vector<String> getLinklist(String link, String cookie, URL referrer, int inst) {
-        Vector<String> decryptedLinks = new Vector<String>();
+        Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
         try {
             URL url = new URL(link);
             String ref = null;
@@ -95,12 +96,12 @@ public class FileSearch extends PluginForSearch {
             {
                 for (int i = 0; i < links.length; i++) {
                     decryptedLinks.addAll(getLinklist(links[i], requestInfo.getCookie(), url, inst));
-                    decryptedLinks.add(links[i]);
+                    decryptedLinks.add(this.createDownloadlink(links[i]);
                 }
             }
             else
                 for (int i = 0; i < links.length; i++) {
-                    decryptedLinks.add(links[i]);
+                    decryptedLinks.add(this.createDownloadlink(links[i]);
                 }
 
         } catch (MalformedURLException e) {
@@ -126,7 +127,7 @@ public class FileSearch extends PluginForSearch {
                 }
                 MOZILLACOOKIE = this.getProperties().getStringProperty("MOZILLACOOKIE", null);
                 useMozillaCookie = this.getProperties().getBooleanProperty("USE_MOZILLACOOKIE", false);
-                Vector<String[]> decryptedLinks = new Vector<String[]>();
+                Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
                 int inst = getIntParam(PARAM_INST, 1);
                 if(progress!=null)progress.setRange( inst);
                 passwords=new Vector<String>();
@@ -150,7 +151,7 @@ public class FileSearch extends PluginForSearch {
                 for (int i = 0; i < de.size(); i++) {
                     String[] link = new String[]{de.get(i), pw, null};
                     if (!decryptedLinks.contains(link))
-                        decryptedLinks.add(link);
+                        decryptedLinks.add(this.createDownloadlink(link);
                 }
                 //veraltet: firePluginEvent(new PluginEvent(this, PluginEvent.PLUGIN_PROGRESS_FINISH, null));
                 step.setParameter(decryptedLinks);

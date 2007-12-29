@@ -1,4 +1,4 @@
-package jd.plugins.decrypt;
+package jd.plugins.decrypt;  import jd.plugins.DownloadLink;
 
 import java.io.File;
 import java.io.IOException;
@@ -16,12 +16,17 @@ public class CryptGetMoviesOrg extends PluginForDecrypt {
 
     private String      version          = "1.0.0.0";
 
+
     private Pattern     patternSupported = getSupportPattern("http://crypt\\.get-movies\\.org/[\\d]{4}");
 
     public CryptGetMoviesOrg() {
         super();
         steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
         currentStep = steps.firstElement();
+        default_password.add("www.get-movies.6x.to");
+        default_password.add("get-movies.6x.to");
+        default_password.add("get-movies.org");
+        default_password.add("www.get-movies.org");
     }
 
     @Override
@@ -56,14 +61,14 @@ public class CryptGetMoviesOrg extends PluginForDecrypt {
 
     @Override public PluginStep doStep(PluginStep step, String parameter) {
     	if(step.getStep() == PluginStep.STEP_DECRYPT) {
-            Vector<String> decryptedLinks = new Vector<String>();
+            Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
     		try {
     			URL url = new URL(parameter);
     			RequestInfo reqinfo = getRequest(url);
 
     			progress.setRange( 1);
     			
-    			decryptedLinks.add(getBetween(reqinfo.getHtmlCode(), "frameborder=\"no\" width=\"100%\" src=\"", "\"></iframe>"));
+    			decryptedLinks.add(this.createDownloadlink(getBetween(reqinfo.getHtmlCode(), "frameborder=\"no\" width=\"100%\" src=\"", "\"></iframe>")));
     		progress.increase(1);
     			
     			// Decrypt abschliessen

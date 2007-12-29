@@ -1,4 +1,4 @@
-package jd.plugins.decrypt;
+package jd.plugins.decrypt;  import jd.plugins.DownloadLink;
 
 import java.io.File;
 import java.io.IOException;
@@ -56,7 +56,7 @@ public class DipurlCom extends PluginForDecrypt {
 
     @Override public PluginStep doStep(PluginStep step, String parameter) {
     	if(step.getStep() == PluginStep.STEP_DECRYPT) {
-            Vector<String> decryptedLinks = new Vector<String>();
+            Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
     		try {
     			URL url = new URL(parameter);
     			RequestInfo reqinfo = getRequest(url);
@@ -64,7 +64,7 @@ public class DipurlCom extends PluginForDecrypt {
     			progress.setRange( 1);
     			
     		progress.increase(1);
-    			decryptedLinks.add(getBetween(reqinfo.getHtmlCode(), "name=\"page\" src=\"", "\""));
+    			decryptedLinks.add(this.createDownloadlink(getBetween(reqinfo.getHtmlCode(), "name=\"page\" src=\"", "\"")));
     			
     			// Decrypt abschliessen
     			

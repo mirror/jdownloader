@@ -1,4 +1,4 @@
-package jd.plugins.decrypt;
+package jd.plugins.decrypt;  import jd.plugins.DownloadLink;
 
 import java.io.File;
 import java.io.IOException;
@@ -33,6 +33,8 @@ public class RsXXXBlog extends PluginForDecrypt {
         super();
         steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
         currentStep = steps.firstElement();
+        default_password.add ("xxx-blog.dl.am");
+        default_password.add ("xxx-blog.org");
     }
 
     @Override
@@ -75,22 +77,21 @@ public class RsXXXBlog extends PluginForDecrypt {
         String cryptedLink = (String) parameter;
         switch (step.getStep()) {
             case PluginStep.STEP_DECRYPT:
-                addToPasswordlist("xxx-blog.dl.am");
-                addToPasswordlist("xxx-blog.org");
-                Vector<String[]> decryptedLinks = new Vector<String[]>();
+             
+                Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
                 // Zählen aller verfügbaren Treffer
                 try {
                     URL url = new URL(cryptedLink);
                     RequestInfo requestInfo = getRequest(url, null, null, false);
                     HashMap<String, String> fields = this.getInputHiddenFields(requestInfo.getHtmlCode(), "postit", "starten");
                     String newURL = "http://rapidshare.com" + JDUtilities.htmlDecode(fields.get("uri"));
-                    decryptedLinks.add(new String[] { newURL, DEFAULT_PASSWORD, null });
+                    decryptedLinks.add(this.createDownloadlink(newURL));
                 }
                 catch (MalformedURLException e) {
-                    JDUtilities.logException(e);
+                   e.printStackTrace();
                 }
                 catch (IOException e) {
-                    JDUtilities.logException(e);
+                   e.printStackTrace();
                 }
                 step.setParameter(decryptedLinks);
                 break;

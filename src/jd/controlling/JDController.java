@@ -154,7 +154,7 @@ public class JDController implements PluginListener, ControlListener, UIListener
      */
     private void exit() {
         saveDownloadLinks(JDUtilities.getResourceFile("links.dat"));
-        SingleInstanceController.unbindRMIObject();
+        
         System.exit(0);
     }
 

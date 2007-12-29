@@ -1,4 +1,4 @@
-package jd.plugins.decrypt;
+package jd.plugins.decrypt;  import jd.plugins.DownloadLink;
 
 import java.io.File;
 import java.io.IOException;
@@ -57,7 +57,7 @@ public class NetfolderIn extends PluginForDecrypt {
 
     @Override public PluginStep doStep(PluginStep step, String parameter) {
     	if(step.getStep() == PluginStep.STEP_DECRYPT) {
-            Vector<String> decryptedLinks = new Vector<String>();
+            Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
     		try {
     			URL url = new URL(parameter);
     			RequestInfo reqinfo = getRequest(url);
@@ -86,7 +86,7 @@ public class NetfolderIn extends PluginForDecrypt {
     			
     			// Link der Liste hinzufügen
     			for(int i=0; i<links.size(); i++) {
-    				decryptedLinks.add("http://netload.in/" + links.get(i).get(0));
+    				decryptedLinks.add(this.createDownloadlink("http://netload.in/" + links.get(i).get(0)));
     			progress.increase(1);
     			}   			
     			

@@ -3,6 +3,7 @@ package jd.plugins;
 import java.util.Vector;
 
 import jd.controlling.ProgressController;
+import jd.utils.JDUtilities;
 
 /**
  * Dies ist die Oberklasse für alle Plugins, die nach Links suchen sollen. z.B.
@@ -14,12 +15,13 @@ public abstract class PluginForSearch extends Plugin {
 
     private String searchPattern;
     protected ProgressController progress;
-    public Vector<String[]> findLinks(String pattern) {
+    protected Vector<String> default_password=new Vector<String>();;
+    public Vector<DownloadLink> findLinks(String pattern) {
         if(progress==null){
             progress=new ProgressController("Search: "+this.getLinkName());
             progress.setStatusText("Search-"+getPluginName()+": "+pattern);
         }
-        Vector<String[]> foundLinks = new Vector<String[]>();
+        Vector<DownloadLink> foundLinks = new Vector<DownloadLink>();
 
         foundLinks.addAll(parseContent(pattern));
         progress.finalize();
@@ -35,11 +37,11 @@ public abstract class PluginForSearch extends Plugin {
      * @return Aller Ergebnisse die in den suchplugins für die gewählte
      *         Kategorie und den gewählten suchstring gef7unden wurden
      */
-    private Vector<String[]> parseContent(String pattern) {
+    private Vector<DownloadLink> parseContent(String pattern) {
         String[] s = pattern.split("\\:\\:\\:");
-        if (s.length < 2) return new Vector<String[]>();
+        if (s.length < 2) return new Vector<DownloadLink>();
 
-        if (!hasCategory(s[0])) return new Vector<String[]>();
+        if (!hasCategory(s[0])) return new Vector<DownloadLink>();
         this.searchPattern = s[1];
 
         PluginStep step = null;
@@ -50,32 +52,37 @@ public abstract class PluginForSearch extends Plugin {
                 try {
                     if (step.getParameter() == null) {
                         logger.severe("ACHTUNG Search Plugins müssen im letzten schritt einen  Vector<String[]> parameter  übergeben!");
-                        return new Vector<String[]>();
+                        return new Vector<DownloadLink>();
                     }
-                    Vector<String[]> foundLinks = (Vector<String[]>) step.getParameter();
+                    Vector<DownloadLink> foundLinks = (Vector<DownloadLink>) step.getParameter();
                     logger.info("Got " + foundLinks.size() + " links");
                     return foundLinks;
                 }
                 catch (Exception e) {
-                    try {
-                        Vector<String> foundLinksTmp = (Vector<String>) step.getParameter();
-                        Vector<String[]> foundLinks = (Vector<String[]>) step.getParameter();
-                        for (int i = 0; i < foundLinksTmp.size(); i++) {
-                            foundLinks.add(new String[] { foundLinksTmp.get(i), null, null });
-                        }
-                        logger.info("Got " + foundLinks.size() + " links");
-                        return foundLinks;
-                    }
-                    catch (Exception e2) {
-                        logger.severe("Searcherror: " + e2.getMessage());
-                    }
+                   e.printStackTrace();
                 }
             }
         }
-        return new Vector<String[]>();
+        return new Vector<DownloadLink>();
 
     }
-
+    protected DownloadLink createDownloadlink(String link){
+        DownloadLink dl= new DownloadLink(this, null, this.getHost(), JDUtilities.htmlDecode(link), true);
+       return dl;
+    }
+    
+    public String getDefaultPassword(){
+        if(default_password.size()==0)return null;
+       String ret="{";
+       for( int i=0; i<default_password.size();i++){
+           ret+="\""+default_password.get(i)+"\"";
+               if(i<default_password.size()-1){
+                   ret+=", ";
+               }
+       }
+       ret+="}";
+       return ret;
+    }
     /**
      * Liefert alle Möglichen kategorien des Plugins zurück
      * 

@@ -1,4 +1,4 @@
-package jd.plugins.decrypt;
+package jd.plugins.decrypt;  import jd.plugins.DownloadLink;
 
 import java.io.File;
 import java.io.IOException;
@@ -103,7 +103,7 @@ public class XliceNet extends PluginForDecrypt {
 
     @Override public PluginStep doStep(PluginStep step, String parameter) {
     	if(step.getStep() == PluginStep.STEP_DECRYPT) {
-            Vector<String> decryptedLinks = new Vector<String>();
+            Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
     		try {
     			URL url = new URL(parameter);
     			RequestInfo reqinfo = getRequest(url,null,null,true);
@@ -154,11 +154,11 @@ logger.info(parameter);
 						reqhelp = getRequest(new URL(link + "1/" + links.get(i).get(0)),null,null,true);
 						reqhelp = getRequest(new URL(getBetween(reqhelp.getHtmlCode(), "href=\"", "/\">geht es hier weiter")));
 						if(reqhelp.getLocation() != null) {
-							decryptedLinks.add(reqhelp.getLocation());
+							decryptedLinks.add(this.createDownloadlink(reqhelp.getLocation()));
 						progress.increase(1);
 						}
 						else {
-							decryptedLinks.add("");
+//							decryptedLinks.add(this.createDownloadlink(""));
 						progress.increase(1);
 						}
 					}
@@ -171,11 +171,11 @@ logger.info(parameter);
 						reqhelp = getRequest(new URL(link + "2/" + links.get(i).get(0)));
 						reqhelp = getRequest(new URL(getBetween(reqhelp.getHtmlCode(), "href=\"", "/\">geht es hier weiter")));
 						if(reqhelp.getLocation() != null) {
-							decryptedLinks.add(reqhelp.getLocation());
+							decryptedLinks.add(this.createDownloadlink(reqhelp.getLocation()));
 						progress.increase(1);
 						}
 						else {
-							decryptedLinks.add("");
+//							decryptedLinks.add(this.createDownloadlink(""));
 						progress.increase(1);
 						}
 					}
@@ -188,11 +188,11 @@ logger.info(parameter);
 						reqhelp = getRequest(new URL(link + "4/" + links.get(i).get(0)));
 						reqhelp = getRequest(new URL(getBetween(reqhelp.getHtmlCode(), "href=\"", "/\">geht es hier weiter")));
 						if(reqhelp.getLocation() != null) {
-							decryptedLinks.add(reqhelp.getLocation());
+							decryptedLinks.add(this.createDownloadlink(reqhelp.getLocation()));
 						progress.increase(1);
 						}
 						else {
-							decryptedLinks.add("");
+//							decryptedLinks.add(this.createDownloadlink(""));
 						progress.increase(1);
 						}
 					}
@@ -205,11 +205,11 @@ logger.info(parameter);
 						reqhelp = getRequest(new URL(link + "5/" + links.get(i).get(0)));
 						reqhelp = getRequest(new URL(getBetween(reqhelp.getHtmlCode(), "href=\"", "/\">geht es hier weiter")));
 						if(reqhelp.getLocation() != null) {
-							decryptedLinks.add(reqhelp.getLocation());
+							decryptedLinks.add(this.createDownloadlink(reqhelp.getLocation()));
 						progress.increase(1);
 						}
 						else {
-							decryptedLinks.add("");
+//							decryptedLinks.add(this.createDownloadlink(""));
 						progress.increase(1);
 						}
 					}
@@ -222,11 +222,11 @@ logger.info(parameter);
 						reqhelp = getRequest(new URL(link + "6/" + links.get(i).get(0)));
 						reqhelp = getRequest(new URL(getBetween(reqhelp.getHtmlCode(), "href=\"", "/\">geht es hier weiter")));
 						if(reqhelp.getLocation() != null) {
-							decryptedLinks.add(reqhelp.getLocation());
+							decryptedLinks.add(this.createDownloadlink(reqhelp.getLocation()));
 						progress.increase(1);
 						}
 						else {
-							decryptedLinks.add("");
+//							decryptedLinks.add(this.createDownloadlink(""));
 						progress.increase(1);
 						}
 					}
@@ -239,11 +239,11 @@ logger.info(parameter);
 						reqhelp = getRequest(new URL(link + "7/" + links.get(i).get(0)));
 						reqhelp = getRequest(new URL(getBetween(reqhelp.getHtmlCode(), "href=\"", "/\">geht es hier weiter")));
 						if(reqhelp.getLocation() != null) {
-							decryptedLinks.add(reqhelp.getLocation());
+							decryptedLinks.add(this.createDownloadlink(reqhelp.getLocation()));
 						progress.increase(1);
 						}
 						else {
-							decryptedLinks.add("");
+//							decryptedLinks.add(this.createDownloadlink(""));
 						progress.increase(1);
 						}
 					}
@@ -256,11 +256,11 @@ logger.info(parameter);
 						reqhelp = getRequest(new URL(link + "9/" + links.get(i).get(0)));
 						reqhelp = getRequest(new URL(getBetween(reqhelp.getHtmlCode(), "href=\"", "/\">geht es hier weiter")));
 						if(reqhelp.getLocation() != null) {
-							decryptedLinks.add(reqhelp.getLocation());
+							decryptedLinks.add(this.createDownloadlink(reqhelp.getLocation()));
 						progress.increase(1);
 						}
 						else {
-							decryptedLinks.add("");
+//							decryptedLinks.add(this.createDownloadlink(""));
 						progress.increase(1);
 						}
 					}
@@ -273,11 +273,11 @@ logger.info(parameter);
 						reqhelp = getRequest(new URL(link + "10/" + links.get(i).get(0)));
 						reqhelp = getRequest(new URL(getBetween(reqhelp.getHtmlCode(), "href=\"", "/\">geht es hier weiter")));
 						if(reqhelp.getLocation() != null) {
-							decryptedLinks.add(reqhelp.getLocation());
+							decryptedLinks.add(this.createDownloadlink(reqhelp.getLocation()));
 						progress.increase(1);
 						}
 						else {
-							decryptedLinks.add("");
+//							decryptedLinks.add(this.createDownloadlink(""));
 						progress.increase(1);
 						}
 					}
