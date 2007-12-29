@@ -389,9 +389,9 @@ public class JUnrar {
         savePasswordList();
     }
     private String[] getPasswordArray(String password) {
-        if (password.matches("\\{\".*\"\\}$")) {
-            password = password.replaceFirst("\\{\"", "").replaceFirst("\"\\}$", "");
-            return password.split("\"\\,\"");
+        if (password.matches("[\\s]*\\{[\\s]*\".*\"[\\s]*\\}[\\s]*$")) {
+            password = password.replaceFirst("\\[\\s]*{[\\s]*\"", "").replaceFirst("\"\\[\\s]*}[\\s]*$", "");
+            return password.split("\"[\\s]*\\,[\\s]*\"");
         }
         return new String[]{password};
     }
