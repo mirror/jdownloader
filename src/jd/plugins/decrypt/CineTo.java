@@ -75,9 +75,10 @@ public class CineTo extends PluginForDecrypt {
     			reqinfo = postRequest(url, reqinfo.getCookie(), parameter, null, "captcha=" + capText + "&submit=Senden", true);
                 
     			Vector<Vector<String>> links = getAllSimpleMatches(reqinfo.getHtmlCode(), "window.open(\'°\'");
-    			
+    			progress.setRange(links.size());
     			for(int i=0; i<links.size(); i++) {
     				decryptedLinks.add(this.createDownloadlink(links.get(i).get(0)));
+    				progress.increase(1);
     			}
     			
     			// Decrypt abschliessen
