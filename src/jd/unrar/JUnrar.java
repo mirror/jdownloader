@@ -390,7 +390,7 @@ public class JUnrar {
     }
     private String[] getPasswordArray(String password) {
         if (password.matches("[\\s]*\\{[\\s]*\".*\"[\\s]*\\}[\\s]*$")) {
-            password = password.replaceFirst("\\[\\s]*{[\\s]*\"", "").replaceFirst("\"\\[\\s]*}[\\s]*$", "");
+            password = password.replaceFirst("[\\s]*\\{[\\s]*\"", "").replaceFirst("\"[\\s]*\\}[\\s]*$", "");
             return password.split("\"[\\s]*\\,[\\s]*\"");
         }
         return new String[]{password};
