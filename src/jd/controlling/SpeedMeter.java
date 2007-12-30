@@ -1,5 +1,4 @@
 package jd.controlling;
-
 import java.util.Vector;
 
 /**
@@ -11,9 +10,7 @@ import java.util.Vector;
 public class SpeedMeter {
     private long            averageOver = 5000;
 
-    private Vector<Long>    times       = new Vector<Long>();
-
-    private Vector<Integer> entries     = new Vector<Integer>();
+    private Vector<Object[]> entries = new Vector<Object[]>();
 
     /**
      * KOnstruktor dem die Zeit übergeben werden kann über die der durchschnitt eführt wird
@@ -28,10 +25,7 @@ public class SpeedMeter {
      * @param value
      */
     public void addValue(int value) {
-
-        times.add(System.currentTimeMillis());
-        entries.add(value);
-
+        entries.add(new Object[] {System.currentTimeMillis(), value});
     }
 
     /**
@@ -41,21 +35,20 @@ public class SpeedMeter {
      */
 
     public int getSpeed() {
-        if (times.size() < 2) return 0;
+        if (entries.size() < 2) return 0;
         long bytes = 0;
         long start = -1;
 
         long current = System.currentTimeMillis();
-
-        for (int i = times.size()-1; i >= 0; i--) {
-            if ((current - times.elementAt(i)) > averageOver) {
-                times.remove(i);
+        
+        for (int i = entries.size()-1; i >= 0; i--) {
+            Object[] elem = entries.elementAt(i);
+            if ((current - (Long) elem[0]) > averageOver) {
                 entries.remove(i);
-
             }
             else {
-                start = times.elementAt(i);
-                bytes += entries.elementAt(i);
+                start = (Long) elem[0];
+                bytes += (Integer) elem[1];
             }
         }
         long dif = System.currentTimeMillis() - start;
