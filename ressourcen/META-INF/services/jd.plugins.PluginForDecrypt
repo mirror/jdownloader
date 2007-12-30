@@ -41,3 +41,4 @@ jd.plugins.decrypt.MovieloadTo
 #jd.plugins.decrypt.MultiDecrypt
 jd.plugins.decrypt.RsHoerbuchin
 jd.plugins.decrypt.CineTo
+jd.plugins.decrypt.RapidAdsAthCx
