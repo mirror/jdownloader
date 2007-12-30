@@ -196,7 +196,9 @@ public class TabDownloadLinks extends JPanel implements PluginListener, ControlL
     public Vector<DownloadLink> getSelectedObjects() {
         int rows[] = table.getSelectedRows();
         Vector<DownloadLink> linksSelected = new Vector<DownloadLink>();
+        int als = allLinks.size();
         for (int i = 0; i < rows.length; i++) {
+            if(rows[i]<als)
             linksSelected.add(allLinks.get(rows[i]));
         }
         return linksSelected;
