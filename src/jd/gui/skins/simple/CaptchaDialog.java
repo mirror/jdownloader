@@ -66,22 +66,23 @@ public class CaptchaDialog extends JDialog implements ActionListener {
         String code = "";
         final Configuration  configuration=JDUtilities.getConfiguration();
         imageIcon = new ImageIcon(file.getAbsolutePath());
-        String host = plugin.getHost();
-        logger.info(configuration.getBooleanProperty(Configuration.PARAM_MANUAL_CAPTCHA_USE_JAC)+"_");
-        if (configuration.getBooleanProperty(Configuration.PARAM_MANUAL_CAPTCHA_USE_JAC,true)&&JAntiCaptcha.hasMethod(JDUtilities.getJACMethodsDirectory(), host)) {
+        final String host = plugin.getHost();
+        if (!configuration.getBooleanProperty(Configuration.PARAM_CAPTCHA_JAC_DISABLE,false)&&JAntiCaptcha.hasMethod(JDUtilities.getJACMethodsDirectory(), host)) {
             setTitle(JDLocale.L("gui.captchaWindow.title","jAntiCaptcha aktiv!"));
             new Thread("JAC") {
                 public void run() {
 
-                    String code = JDUtilities.getCaptcha(null, plugin, file);
+                    String code = JDUtilities.getCaptcha(plugin, host,file,true);
+                    try { Thread.sleep(1000); } catch (InterruptedException e) {}
                     if (textField.getText().length() == 0 || code.toLowerCase().startsWith(textField.getText().toLowerCase())) {
                         textField.setText(code);
-                        setTitle(JDLocale.L("gui.captchaWindow.title_wait","jAntiCaptcha fertig. Warte ")+JDUtilities.formatSeconds(configuration.getIntegerProperty(Configuration.PARAM_MANUAL_CAPTCHA_WAIT_FOR_JAC,10000)/1000));
-                        logger.finer("jAntiCaptcha fertig. Warte "+JDUtilities.formatSeconds(configuration.getIntegerProperty(Configuration.PARAM_MANUAL_CAPTCHA_WAIT_FOR_JAC,10000)/1000));
-                        try {
-                           Thread.sleep(Math.abs(configuration.getIntegerProperty(Configuration.PARAM_MANUAL_CAPTCHA_WAIT_FOR_JAC,3000)));
-                        }
-                        catch (InterruptedException e) {      e.printStackTrace();
+                        int wait=configuration.getIntegerProperty(Configuration.PARAM_CAPTCHA_INPUT_SHOWTIME,10);
+                        logger.finer("jAntiCaptcha fertig. Warte "+JDUtilities.formatSeconds(wait));
+                        while(wait>0){
+                            
+                        setTitle(JDUtilities.formatSeconds(wait)+" "+JDLocale.L("gui.captchaWindow.title_wait","jAntiCaptcha fertig."));
+                        try { Thread.sleep(1000);}catch (InterruptedException e) { }
+                        wait--;
                         }
                         if(isVisible()&&textField.getText().equalsIgnoreCase(code) && textField.getText().length()>0){
                             captchaText = textField.getText();

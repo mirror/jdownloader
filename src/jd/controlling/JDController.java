@@ -353,7 +353,7 @@ public class JDController implements PluginListener, ControlListener, UIListener
                 }
 
                 Interaction.handleInteraction(Interaction.INTERACTION_BEFORE_RECONNECT, this);
-                Interaction.handleInteraction(Interaction.INTERACTION_NEED_RECONNECT, this);
+               // Interaction.handleInteraction(Interaction.INTERACTION_NEED_RECONNECT, this);
                 if (reconnect()) {
                     uiInterface.showMessageDialog("Reconnect erfolgreich");
 
@@ -910,6 +910,10 @@ public class JDController implements PluginListener, ControlListener, UIListener
         logger.info("Reconnect: " + JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_DISABLE_RECONNECT, true));
         if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_DISABLE_RECONNECT, false)) {
             logger.finer("Reconnect is disabled. Enable the CheckBox in the Toolbar to reactivate it");
+            return false;
+        }
+        if(this.getRunningDownloadNum()>0){
+            logger.finer("Downloads are running. reconnect is disabled");
             return false;
         }
         String type = JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_RECONNECT_TYPE, null);

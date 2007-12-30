@@ -316,7 +316,7 @@ public class Serienjunkies extends PluginForDecrypt {
                         }
                         continue;
                     }
-                    capTxt = JDUtilities.getCaptcha(this, "einzellinks.Serienjunkies.org", captchaFile); 
+                    capTxt = JDUtilities.getCaptcha(this,"einzellinks.Serienjunkies.org", captchaFile,false); 
                     reqinfo = postRequest(new URL(url), "s=" + matcher.group(1) + "&c=" + capTxt + "&dl.start=Download");
                 } else {
                     if (captchaFile != null && capTxt != null) {

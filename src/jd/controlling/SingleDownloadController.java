@@ -129,29 +129,29 @@ public class SingleDownloadController extends ControlMulticaster {
                             }
                             // führt die erste Interaction zum Captcha
                             // decoden aus.
-                            if (!Interaction.handleInteraction((Interaction.INTERACTION_DOWNLOAD_CAPTCHA), downloadLink, 0)) {
-                                String captchaText = JDUtilities.getCaptcha(controller, plugin, captcha);
+                            //if (!Interaction.handleInteraction((Interaction.INTERACTION_DOWNLOAD_CAPTCHA), downloadLink, 0)) {
+                                String captchaText = JDUtilities.getCaptcha(plugin, null,captcha,false);
                                 logger.info("CaptchaCode: " + captchaText);
                                 downloadLink.setStatusText("Code: " + captchaText);
                                 fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SINGLE_DOWNLOAD_CHANGED, downloadLink));
                                 step.setParameter(captchaText);
                                 step.setStatus(PluginStep.STATUS_DONE);
-                            }
-                            else {
-                                Interaction[] interacts = Interaction.getInteractions(Interaction.INTERACTION_DOWNLOAD_CAPTCHA);
-                                if (interacts.length > 0) {
-                                    String captchaText = (String) interacts[0].getProperty("captchaCode");
-                                    if (captchaText == null) {
-                                        // im NOtfall doch JAC nutzen
-                                        captchaText = JDUtilities.getCaptcha(controller, plugin, captcha);
-                                    }
-                                    logger.info("CaptchaCode: " + captchaText);
-                                    downloadLink.setStatusText("Code: " + captchaText);
-                                    fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SINGLE_DOWNLOAD_CHANGED, downloadLink));
-                                    step.setParameter(captchaText);
-                                    step.setStatus(PluginStep.STATUS_DONE);
-                                }
-                            }
+//                            }
+//                            else {
+//                                Interaction[] interacts = Interaction.getInteractions(Interaction.INTERACTION_DOWNLOAD_CAPTCHA);
+//                                if (interacts.length > 0) {
+//                                    String captchaText = (String) interacts[0].getProperty("captchaCode");
+//                                    if (captchaText == null) {
+//                                        // im NOtfall doch JAC nutzen
+//                                        captchaText = JDUtilities.getCaptcha(controller, plugin, captcha);
+//                                    }
+//                                    logger.info("CaptchaCode: " + captchaText);
+//                                    downloadLink.setStatusText("Code: " + captchaText);
+//                                    fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SINGLE_DOWNLOAD_CHANGED, downloadLink));
+//                                    step.setParameter(captchaText);
+//                                    step.setStatus(PluginStep.STATUS_DONE);
+//                                }
+//                            }
                         }
                         break;
                 }
@@ -379,8 +379,8 @@ if(unrarType.equals(Unrar.ENABLED_TYPE_ALWAYS))controller.getUnrarModule().inter
         // Download Zeit. Versuch durch eine Interaction einen reconnect
         // zu machen. wenn das klappt nochmal versuchen
         Interaction.handleInteraction((Interaction.INTERACTION_BEFORE_RECONNECT), this);
-        Interaction.handleInteraction((Interaction.INTERACTION_NEED_RECONNECT), this);
-        Interaction.handleInteraction((Interaction.INTERACTION_DOWNLOAD_WAITTIME), this);
+      //  Interaction.handleInteraction((Interaction.INTERACTION_NEED_RECONNECT), this);
+       // Interaction.handleInteraction((Interaction.INTERACTION_DOWNLOAD_WAITTIME), this);
         if (controller.reconnect()) {
             downloadLink.setStatus(DownloadLink.STATUS_TODO);
             downloadLink.setEndOfWaittime(0);
@@ -498,9 +498,9 @@ if(unrarType.equals(Unrar.ENABLED_TYPE_ALWAYS))controller.getUnrarModule().inter
         fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SINGLE_DOWNLOAD_CHANGED, downloadLink));
        if(plugin.getBotWaittime()<0){
             Interaction.handleInteraction(Interaction.INTERACTION_BEFORE_RECONNECT, this);
-            Interaction.handleInteraction((Interaction.INTERACTION_NEED_RECONNECT), this);
+            //Interaction.handleInteraction((Interaction.INTERACTION_NEED_RECONNECT), this);
         
-            Interaction.handleInteraction((Interaction.INTERACTION_DOWNLOAD_WAITTIME), this);    
+           // Interaction.handleInteraction((Interaction.INTERACTION_DOWNLOAD_WAITTIME), this);    
         
         }
         if (plugin.getBotWaittime()<0&&controller.reconnect()) {
@@ -558,9 +558,9 @@ if(unrarType.equals(Unrar.ENABLED_TYPE_ALWAYS))controller.getUnrarModule().inter
         // Download Zeit. Versuch durch eine Interaction einen reconnect
         // zu machen. wenn das klappt nochmal versuchen
         Interaction.handleInteraction(Interaction.INTERACTION_BEFORE_RECONNECT, this);
-        boolean a = Interaction.handleInteraction((Interaction.INTERACTION_NEED_RECONNECT), this);
+       // boolean a = Interaction.handleInteraction((Interaction.INTERACTION_NEED_RECONNECT), this);
        
-        boolean b = Interaction.handleInteraction((Interaction.INTERACTION_DOWNLOAD_WAITTIME), this);
+      //  boolean b = Interaction.handleInteraction((Interaction.INTERACTION_DOWNLOAD_WAITTIME), this);
         if (controller.reconnect()) {
             downloadLink.setStatus(DownloadLink.STATUS_TODO);
             downloadLink.setEndOfWaittime(0);

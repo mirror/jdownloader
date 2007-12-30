@@ -178,6 +178,18 @@ public class Rapidshare extends PluginForHost {
 
     private static final String            PROPERTY_BYTES_TO_LOAD           = "BYTES_TO_LOAD";
 
+    private static final String PROPERTY_SELECTED_SERVER = "SELECTED_SERVER";
+
+    private static final String PROPERTY_SELECTED_SERVER2 = "SELECTED_SERVER#2";
+
+    private static final String PROPERTY_USE_TELEKOMSERVER = "USE_TELEKOMSERVER";
+
+    private static final String PROPERTY_USE_PRESELECTED = "USE_PRESELECTED";
+
+    private static final String PROPERTY_USE_SSL = "USE_SSL";
+
+    private static final String PROPERTY_WAIT_WHEN_BOT_DETECTED = "WAIT_WHEN_BOT_DETECTED";
+
     @Override
     public String getCoder() {
         return "astaldo/coalado";
@@ -255,14 +267,14 @@ public class Rapidshare extends PluginForHost {
         ConfigEntry cfg;
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_SEPERATOR));
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_LABEL, "Bevorzugte Server (*1)"));
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, getProperties(), "SELECTED_SERVER", new String[] { "Cogent", "Cogent #2", "GlobalCrossing", "GlobalCrossing #2", "TeliaSonera", "TeliaSonera #2", "Teleglobe", "Level (3)", "Level (3) #2", "Level (3) #3", "Level (3) #4", "zufällig" }, "#1"));
+        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, getProperties(), PROPERTY_SELECTED_SERVER, new String[] { "Cogent", "Cogent #2", "GlobalCrossing", "GlobalCrossing #2", "TeliaSonera", "TeliaSonera #2", "Teleglobe", "Level (3)", "Level (3) #2", "Level (3) #3", "Level (3) #4", "zufällig" }, "#1"));
         cfg.setDefaultValue("Level (3)");
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_SEPERATOR));
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, getProperties(), "SELECTED_SERVER#2", new String[] { "Cogent", "TeliaSonera", "Level (3)", "GlobalCrossing", "zufällig" }, "#2"));
+        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, getProperties(), PROPERTY_SELECTED_SERVER2, new String[] { "Cogent", "TeliaSonera", "Level (3)", "GlobalCrossing", "zufällig" }, "#2"));
         cfg.setDefaultValue("TeliaSonera");
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getProperties(), "USE_TELEKOMSERVER", "Telekom Server verwenden falls verfügbar*"));
+        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getProperties(), PROPERTY_USE_TELEKOMSERVER, "Telekom Server verwenden falls verfügbar*"));
         cfg.setDefaultValue(false);
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getProperties(), "USE_PRESELECTED", "Vorauswahl übernehmen (*2)"));
+        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getProperties(), PROPERTY_USE_PRESELECTED, "Vorauswahl übernehmen (*2)"));
         cfg.setDefaultValue(true);
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_SEPERATOR));
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_LABEL, "Premium Accounts"));
@@ -276,9 +288,9 @@ public class Rapidshare extends PluginForHost {
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_LABEL, "(*1)Premiumuser müssen die Bevorzugten Server in den Rapidshare-Online-Optionen (rs.com Premiumbereich) einstellen falls sie Direktlinks aktiviert haben!"));
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_LABEL, "(*2)Betrifft nur Freeuser"));
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_SPINNER, getProperties(), PROPERTY_BYTES_TO_LOAD, "Nur die ersten * KiloBytes jeder Datei laden[-1 to disable]", -1, 100000).setDefaultValue(-1).setStep(500));
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getProperties(), "USE_SSL", "SSL Downloadlink verwenden"));
+        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getProperties(), PROPERTY_USE_SSL, "SSL Downloadlink verwenden"));
         cfg.setDefaultValue(false);
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_SPINNER, getProperties(), "WAIT_WHEN_BOT_DETECTED", "Wartezeit [ms] wenn Bot erkannt wird.(-1 für Reconnect)", -1, 600000).setDefaultValue(-1).setStep(1000));
+        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_SPINNER, getProperties(), PROPERTY_WAIT_WHEN_BOT_DETECTED, "Wartezeit [ms] wenn Bot erkannt wird.(-1 für Reconnect)", -1, 600000).setDefaultValue(-1).setStep(1000));
 
     }
 
@@ -302,7 +314,7 @@ public class Rapidshare extends PluginForHost {
         logger.info("get Next Step " + step);
         // premium
 
-        if (this.getProperties().getProperty("USE_PREMIUM") != null && this.getProperties().getBooleanProperty("USE_PREMIUM", false)) {
+        if (this.getProperties().getProperty(PROPERTY_USE_PREMIUM) != null && this.getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM, false)) {
             return this.doPremiumStep(step, downloadLink);
         }
         else {
@@ -337,7 +349,7 @@ public class Rapidshare extends PluginForHost {
                     }
                     // Der Download wird bestätigt
                     String link = downloadLink.getUrlDownloadDecrypted();
-                    if (this.getProperties().getBooleanProperty("USE_SSL", false)) link = link.replaceFirst("http://", "http://ssl.");
+                    if (this.getProperties().getBooleanProperty(PROPERTY_USE_SSL, false)) link = link.replaceFirst("http://", "http://ssl.");
                     requestInfo = getRequest(new URL(link));
 
                     if (requestInfo.getHtmlCode().indexOf(hardwareDefektString) > 0) {
@@ -483,9 +495,9 @@ public class Rapidshare extends PluginForHost {
                 logger.warning("could not get downloadInfo 2");
                 return step;
             case PluginStep.STEP_GET_CAPTCHA_FILE:
-                String serverAbb = serverMap.get((String) this.getProperties().getProperty("SELECTED_SERVER"));
-                String server2Abb = serverMap.get((String) this.getProperties().getProperty("SELECTED_SERVER#2"));
-                logger.finer("Servers ettings: " + this.getProperties().getProperty("SELECTED_SERVER") + " - " + this.getProperties().getProperty("SELECTED_SERVER#2"));
+                String serverAbb = serverMap.get((String) this.getProperties().getProperty(PROPERTY_SELECTED_SERVER));
+                String server2Abb = serverMap.get((String) this.getProperties().getProperty(PROPERTY_SELECTED_SERVER2));
+                logger.info("Servers ettings: " + this.getProperties().getProperty(PROPERTY_SELECTED_SERVER) + " - " + this.getProperties().getProperty(PROPERTY_SELECTED_SERVER2));
                 if (serverAbb == null) {
                     serverAbb = serverList1[(int) (Math.random() * (serverList1.length - 1))];
                     logger.finer("Random #1 server " + serverAbb);
@@ -495,8 +507,8 @@ public class Rapidshare extends PluginForHost {
                     logger.finer("Random #2 server " + server2Abb);
                 }
                 // String endServerAbb = "";
-                Boolean telekom = !(this.getProperties().getProperty("USE_TELEKOMSERVER") == null || !(Boolean) this.getProperties().getProperty("USE_TELEKOMSERVER"));
-                boolean preselected = this.getProperties().getBooleanProperty("USE_PRESELECTED", true);
+                Boolean telekom = !(this.getProperties().getProperty(PROPERTY_USE_TELEKOMSERVER) == null || !(Boolean) this.getProperties().getProperty(PROPERTY_USE_TELEKOMSERVER));
+                boolean preselected = this.getProperties().getBooleanProperty(PROPERTY_USE_PRESELECTED, true);
                 ticketCode = requestInfo.getHtmlCode() + " " + ticketCode;
 
                 captchaAddress = getFirstMatch(ticketCode, patternForCaptcha, 1);
@@ -528,26 +540,26 @@ public class Rapidshare extends PluginForHost {
                 logger.info("wished Mirror #1 Server " + serverAbb);
                 logger.info("wished Mirror #2 Server " + server2Abb);
                 String selected = getSimpleMatch(ticketCode, patternForSelectedServer, 3);
-                logger.finer("Preselected Server: " + selected);
+                logger.info("Preselected Server: " + selected);
                 if (preselected) {
-                    logger.finer("RS.com-free Use preselected : " + selected);
+                    logger.info("RS.com-free Use preselected : " + selected);
                     actionString = selected;
                 }
                 else if (telekom && ticketCode.indexOf("td.rapidshare.com") >= 0) {
-                    actionString = "Download via Deutsche Telekom";
-                    logger.finer("RS.com-free Use Telekom Server");
+                    actionString = "Download via Deutsche Telekom.";
+                    logger.info("RS.com-free Use Telekom Server");
                 }
                 else if (ticketCode.indexOf(serverAbb + ".rapidshare.com") >= 0) {
-                    logger.finer("RS.com-free Use Mirror #1 Server: " + getServerFromAbbreviation(serverAbb));
+                    logger.info("RS.com-free Use Mirror #1 Server: " + getServerFromAbbreviation(serverAbb));
                     actionString = "Download via " + getServerFromAbbreviation(serverAbb);
                 }
                 else if (ticketCode.indexOf(server2Abb + ".rapidshare.com") >= 0) {
-                    logger.finer("RS.com-free Use Mirror #2 Server: " + getServerFromAbbreviation(server2Abb));
+                    logger.info("RS.com-free Use Mirror #2 Server: " + getServerFromAbbreviation(server2Abb));
                     actionString = "Download via " + getServerFromAbbreviation(server2Abb);
                 }
                 else if (serverstrings.size() > 0) {
                     actionString = serverstrings.get((int) Math.ceil(Math.random() * serverstrings.size()) - 1);
-                    logger.finer("RS.com-free Use Errer random Server: " + actionString);
+                    logger.info("RS.com-free Use Errer random Server: " + actionString);
                 }
                 else {
                     logger.severe("Kein Server gefunden");
@@ -602,7 +614,7 @@ public class Rapidshare extends PluginForHost {
                             step.setStatus(PluginStep.STATUS_ERROR);
                             return step;
                         }
-                        //logger.info("link: " + postTarget);
+                        logger.info("link: " + postTarget.substring(0,30)+" "+actionString);
                         if (download(downloadLink, urlConnection, 1024 * getProperties().getIntegerProperty(PROPERTY_BYTES_TO_LOAD, -1))) {
                             step.setStatus(PluginStep.STATUS_DONE);
                             downloadLink.setStatus(DownloadLink.STATUS_DONE);
@@ -634,8 +646,8 @@ public class Rapidshare extends PluginForHost {
     }
 
     private PluginStep doPremiumStep(PluginStep step, DownloadLink downloadLink) {
-        String serverAbb = serverMap.get((String) this.getProperties().getProperty("SELECTED_SERVER"));
-        String server2Abb = serverMap.get((String) this.getProperties().getProperty("SELECTED_SERVER#2"));
+        String serverAbb = serverMap.get((String) this.getProperties().getProperty(PROPERTY_SELECTED_SERVER));
+        String server2Abb = serverMap.get((String) this.getProperties().getProperty(PROPERTY_SELECTED_SERVER2));
         if (serverAbb == null) {
             serverAbb = serverList1[(int) (Math.random() * (serverList1.length - 1))];
             logger.finer("Random #1 server " + serverAbb);
@@ -645,9 +657,9 @@ public class Rapidshare extends PluginForHost {
             logger.finer("Random #2 server " + server2Abb);
         }
         // String endServerAbb = "";
-        Boolean telekom = !(this.getProperties().getProperty("USE_TELEKOMSERVER") == null || !(Boolean) this.getProperties().getProperty("USE_TELEKOMSERVER"));
-        String user = (String) this.getProperties().getProperty("PREMIUM_USER");
-        String pass = (String) this.getProperties().getProperty("PREMIUM_PASS");
+        Boolean telekom = !(this.getProperties().getProperty(PROPERTY_USE_TELEKOMSERVER) == null || !(Boolean) this.getProperties().getProperty(PROPERTY_USE_TELEKOMSERVER));
+        String user = (String) this.getProperties().getProperty(PROPERTY_PREMIUM_USER);
+        String pass = (String) this.getProperties().getProperty(PROPERTY_PREMIUM_PASS);
         // String encodePass = rawUrlEncode(pass);
         switch (step.getStep()) {
             case PluginStep.STEP_WAIT_TIME:
@@ -657,7 +669,7 @@ public class Rapidshare extends PluginForHost {
                     // cookie, String referrer, boolean redirect) throws
                     // IOException {
                     String link = downloadLink.getUrlDownloadDecrypted();
-                    if (this.getProperties().getBooleanProperty("USE_SSL", true)) link = link.replaceFirst("http://", "http://ssl.");
+                    if (this.getProperties().getBooleanProperty(PROPERTY_USE_SSL, true)) link = link.replaceFirst("http://", "http://ssl.");
                     requestInfo = getRequest(new URL(link), null, "", false);
                     if (requestInfo.getHtmlCode().indexOf(hardwareDefektString) > 0) {
                         // hardewaredefeklt bei rs.com
@@ -954,7 +966,7 @@ public class Rapidshare extends PluginForHost {
                 downloadLink.setUrlDownload(link);
             }
 
-            if (this.getProperties().getBooleanProperty("USE_SSL", true)) link = link.replaceFirst("http://", "http://ssl.");
+            if (this.getProperties().getBooleanProperty(PROPERTY_USE_SSL, true)) link = link.replaceFirst("http://", "http://ssl.");
             requestInfo = getRequest(new URL(link));
             if (requestInfo.getHtmlCode().indexOf(hardwareDefektString) > 0) {
                 this.hardewareError = true;
@@ -979,7 +991,7 @@ public class Rapidshare extends PluginForHost {
 
     @Override
     public int getMaxSimultanDownloadNum() {
-        if (this.getProperties().getProperty("USE_PREMIUM") != null && ((Boolean) this.getProperties().getProperty("USE_PREMIUM"))) {
+        if (this.getProperties().getProperty(PROPERTY_USE_PREMIUM) != null && ((Boolean) this.getProperties().getProperty(PROPERTY_USE_PREMIUM))) {
             return Integer.MAX_VALUE;
         }
         else {
@@ -989,7 +1001,7 @@ public class Rapidshare extends PluginForHost {
 
     public long getBotWaittime() {
 
-        return getProperties().getIntegerProperty("WAIT_WHEN_BOT_DETECTED", -1);
+        return getProperties().getIntegerProperty(PROPERTY_WAIT_WHEN_BOT_DETECTED, -1);
     }
 
     @Override

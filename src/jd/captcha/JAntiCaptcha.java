@@ -177,7 +177,7 @@ logger.info(methodsPath);
      */
     public static boolean hasMethod(String methodsPath, String methodName) {
 
-        return JDUtilities.getResourceFile(methodsPath + "/" + methodName + "/script.jas").exists() && JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_JAC_METHODS + "_" + methodName, true);
+        return JDUtilities.getResourceFile(methodsPath + "/" + methodName + "/script.jas").exists();
     }
 
     /**

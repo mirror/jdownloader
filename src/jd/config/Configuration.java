@@ -65,17 +65,7 @@ public class Configuration extends Property implements Serializable {
      */
     public static final String      PARAM_FINISHED_DOWNLOADS_ACTION    = "FINISHED_DOWNLOADS_ACTION";
 
-    /**
-     * Parameter für den key unter dem der zugehöroge Wert abgespeichert werden
-     * soll
-     */
-    public static final String      PARAM_MANUAL_CAPTCHA_USE_JAC       = "MANUAL_CAPTCHA_USE_JAC";
 
-    /**
-     * Parameter für den key unter dem der zugehöroge Wert abgespeichert werden
-     * soll
-     */
-    public static final String      PARAM_MANUAL_CAPTCHA_WAIT_FOR_JAC  = "MANUAL_CAPTCHA_WAIT_FOR_JAC";
 
     /**
      * String ID um einen fertiggestellten download beim programmstart aus der
@@ -168,6 +158,9 @@ public class Configuration extends Property implements Serializable {
 
     public static final String PARAM_GLOBAL_IP_DISABLE = "GLOBAL_IP_DISABLE";
 
+   
+    public static final String PARAM_CAPTCHA_JAC_DISABLE = "CAPTCHA_JAC_DISBALE";
+    public static final String PARAM_CAPTCHA_INPUT_SHOWTIME = "CAPTCHA_INPUT_SHOWTIME";
     /**
      * Die unterschiedlichen Interaktionen. (ZB Reconnect nach einem Download)
      */

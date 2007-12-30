@@ -11,6 +11,7 @@ import jd.controlling.JDController;
 import jd.event.ControlEvent;
 import jd.event.ControlListener;
 import jd.plugins.event.PluginEvent;
+import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
 /**
@@ -63,64 +64,71 @@ public abstract class Interaction extends Property implements Serializable {
     /**
      * Zeigt an, daß ein einzelner Download beendet wurde
      */
-    public static InteractionTrigger          INTERACTION_NO_EVENT                  = new InteractionTrigger(0, "Kein Event", "kein Event");
+    public static InteractionTrigger          INTERACTION_NO_EVENT                  = new InteractionTrigger(0, JDLocale.L("interaction.trigger.no_event","Kein Event"), JDLocale.L("interaction.trigger.no_event.desc","kein Event"));
     /**
      * Reconnect nötig
      */
-    public static InteractionTrigger          INTERACTION_NEED_RECONNECT          = new InteractionTrigger(11, "Reconnect nötig", "Alle Trigger bei denen ein Reconnect sinnvoll ist zusammengefasst");
+   // public static InteractionTrigger INTERACTION_NEED_RECONNECT = new
+    // InteractionTrigger(11, "Reconnect nötig", "Alle Trigger bei denen ein
+    // Reconnect sinnvoll ist zusammengefasst");
     /**
      * Zeigt an, daß ein einzelner Download beendet wurde
      */
-    public static InteractionTrigger          INTERACTION_SINGLE_DOWNLOAD_FINISHED  = new InteractionTrigger(1, "Download erfolgreich beendet", "Wird aufgerufen sobald ein Download erfolgreich beendet wurde");
+    public static InteractionTrigger          INTERACTION_SINGLE_DOWNLOAD_FINISHED  = new InteractionTrigger(1, JDLocale.L("interaction.trigger.download_successfull","Download erfolgreich beendet"), JDLocale.L("interaction.trigger.download_successfull.desc","Wird aufgerufen sobald ein Download erfolgreich beendet wurde"));
     /**
      * Zeigt an, daß alle Downloads abgeschlossen wurden
      */
-    public static InteractionTrigger          INTERACTION_ALL_DOWNLOADS_FINISHED    = new InteractionTrigger(2, "Alle Downloads beendet", "Wird aufgerufen sobald alle Downloads beendet oder abgebrochen wurden");
+    public static InteractionTrigger          INTERACTION_ALL_DOWNLOADS_FINISHED    = new InteractionTrigger(2, JDLocale.L("interaction.trigger.all_downloads_finished","Alle Downloads beendet"), JDLocale.L("interaction.trigger.all_downloads_finished.desc","Wird aufgerufen sobald alle Downloads beendet oder abgebrochen wurden"));
     /**
      * Zeigt, daß ein einzelner Download nicht fertiggestellt werden konnte
      */
-    public static InteractionTrigger          INTERACTION_DOWNLOAD_FAILED           = new InteractionTrigger(3, "Download fehlgeschlagen", "Wird aufgerufen wenn ein Download wegen Fehlern abgebrochen wurde");
+    public static InteractionTrigger          INTERACTION_DOWNLOAD_FAILED           = new InteractionTrigger(3, JDLocale.L("interaction.trigger.single_download_failed","Download fehlgeschlagen"), JDLocale.L("interaction.trigger.single_download_failed.desc","Wird aufgerufen wenn ein Download wegen Fehlern abgebrochen wurde"));
     /**
      * Zeigt, daß ein einzelner Download wegen Wartezeit nicht starten konnte
      */
-    public static InteractionTrigger          INTERACTION_DOWNLOAD_WAITTIME         = new InteractionTrigger(4, "Download hat Wartezeit", "Das Plugin meldet eine Wartezeit");
+    // public static InteractionTrigger INTERACTION_DOWNLOAD_WAITTIME = new
+    // InteractionTrigger(4, "Download hat Wartezeit", "Das Plugin meldet eine
+    // Wartezeit");
     /**
      * Zeigt, daß ein der Bot erkannt wurde
      */
-    public static InteractionTrigger          INTERACTION_DOWNLOAD_BOT_DETECTED     = new InteractionTrigger(5, "Bot erkannt", "jDownloader wurde als Bot erkannt");
+    public static InteractionTrigger          INTERACTION_DOWNLOAD_BOT_DETECTED     = new InteractionTrigger(5, JDLocale.L("interaction.trigger.bot_detected","Bot erkannt"), JDLocale.L("interaction.trigger.bot_detected.desc","jDownloader wurde als Bot erkannt"));
     /**
      * Zeigt, daß ein Captcha erkannt werden will
      */
-    public static InteractionTrigger          INTERACTION_DOWNLOAD_CAPTCHA          = new InteractionTrigger(6, "Captcha Erkennung", "Ein Captcha-Bild muss verarbeitet werden");
+    // public static InteractionTrigger INTERACTION_DOWNLOAD_CAPTCHA = new
+    // InteractionTrigger(6, "Captcha Erkennung", "Ein Captcha-Bild muss
+    // verarbeitet werden");
     /**
      * Letztes Package file geladen
      */
-    public static final InteractionTrigger    INTERACTION_DOWNLOAD_PACKAGE_FINISHED = new InteractionTrigger(12, "Paket fertig", "Wird aufgerufen wenn ein Paket fertig geladen wurde");
-    public static final InteractionTrigger INTERACTION_BEFORE_DOWNLOAD = new InteractionTrigger(13, "Vor einem Download", "Wird aufgerufen bevor ein neuer Download gestartet wird");;                            ;
+    public static final InteractionTrigger    INTERACTION_DOWNLOAD_PACKAGE_FINISHED = new InteractionTrigger(12, JDLocale.L("interaction.trigger.package_finished","Paket fertig"), JDLocale.L("interaction.trigger.package_finished.desc","Wird aufgerufen wenn ein Paket fertig geladen wurde"));
+    public static final InteractionTrigger INTERACTION_BEFORE_DOWNLOAD = new InteractionTrigger(13, JDLocale.L("interaction.trigger.before_download","Vor einem Download"), JDLocale.L("interaction.trigger.before_download.desc","Wird aufgerufen bevor ein neuer Download gestartet wird"));;                            ;
     /**
      * Zeigt den Programmstart an
      */
-    public static InteractionTrigger          INTERACTION_APPSTART                  = new InteractionTrigger(7, "Programmstart", "Direkt nach dem Initialisieren von jDownloader");
+    public static InteractionTrigger          INTERACTION_APPSTART                  = new InteractionTrigger(7, JDLocale.L("interaction.trigger.app_start","Programmstart"), JDLocale.L("interaction.trigger.app_start.desc","Direkt nach dem Initialisieren von jDownloader"));
     /**
      * Zeigt den TestTrigger an
      */
-   public static InteractionTrigger          INTERACTION_TESTTRIGGER            = new InteractionTrigger(8, "Testtrigger", "Dieser trigger kann über das Menü ausgelöst werden");
+   public static InteractionTrigger          INTERACTION_TESTTRIGGER            = new InteractionTrigger(8, JDLocale.L("interaction.trigger.testtrigger","Testtrigger"), JDLocale.L("interaction.trigger.testtrigger.desc","Dieser trigger kann über das Menü ausgelöst werden"));
 
-   public static InteractionTrigger          INTERACTION_BEFORE_RECONNECT            = new InteractionTrigger(13, "Vor dem Reconnect", "Vor dem eigentlichen Reconnect");
-   public static InteractionTrigger          INTERACTION_AFTER_RECONNECT            = new InteractionTrigger(14, "Nach dem Reconnect", "Nach dem eigentlichen Reconnect"); 
+   public static InteractionTrigger          INTERACTION_BEFORE_RECONNECT            = new InteractionTrigger(13, JDLocale.L("interaction.trigger.before_reconnect","Vor dem Reconnect"), JDLocale.L("interaction.trigger.before_reconnect.desc","Vor dem eigentlichen Reconnect"));
+   public static InteractionTrigger          INTERACTION_AFTER_RECONNECT            = new InteractionTrigger(14, JDLocale.L("interaction.trigger.after_reconnect","Nach dem Reconnect"), JDLocale.L("interaction.trigger.after_reconnect.desc","Nach dem eigentlichen Reconnect")); 
 
-    public static InteractionTrigger          INTERACTION_AFTER_UNRAR     = new InteractionTrigger(9, "Nach dem Entpacken", "Wird aufgerufen wenn die Unrar-Aktion beendet wurde.");
+    public static InteractionTrigger          INTERACTION_AFTER_UNRAR     = new InteractionTrigger(9, JDLocale.L("interaction.trigger.after_extract","Nach dem Entpacken"),  JDLocale.L("interaction.trigger.after_extract.desc","Wird aufgerufen wenn die Unrar-Aktion beendet wurde."));
     
-    public static InteractionTrigger          INTERACTION_AFTER_DOWNLOAD_AND_INTERACTIONS     = new InteractionTrigger(9, "Downloads & Interactionen abgeschlossen", "Wird aufgerufen wenn alle Downloads und alle Interactionen beendet sind.");
+    public static InteractionTrigger          INTERACTION_AFTER_DOWNLOAD_AND_INTERACTIONS     = new InteractionTrigger(15, JDLocale.L("interaction.trigger.downloads_and_interactions_finished","Downloads & Interactionen abgeschlossen"), JDLocale.L("interaction.trigger.downloads_and_interactions_finished.desc","Wird aufgerufen wenn alle Downloads und alle Interactionen beendet sind."));
     
 
 
-    //    /**
-//     * Nach einem IP wechsel
-//     */
+    // /**
+// * Nach einem IP wechsel
+// */
     private static int interactionsRunning=0;
     protected transient ConfigContainer       config;
-//    public final static InteractionTrigger    INTERACTION_AFTER_RECONNECT           = new InteractionTrigger(10, "Nach einem Reconnect", "inaktiv");
+// public final static InteractionTrigger INTERACTION_AFTER_RECONNECT = new
+// InteractionTrigger(10, "Nach einem Reconnect", "inaktiv");
     public Interaction() {
         config = null;
         controlListener = new Vector<ControlListener>();
@@ -178,14 +186,15 @@ public abstract class Interaction extends Property implements Serializable {
         return success;
     }
     /**
-     * Setzt eine INteraction in den Ausgangszustand zurück. z.B. Counter zurückstellen etc.
+     * Setzt eine INteraction in den Ausgangszustand zurück. z.B. Counter
+     * zurückstellen etc.
      */
     public abstract void resetInteraction();
     /**
      * Initialisiert die Interaction beim JD start
      */
     public  void initInteraction(){
-        //nothing to init
+        // nothing to init
     }
     /**
      * Setzt den callCode
@@ -274,7 +283,8 @@ public abstract class Interaction extends Property implements Serializable {
      * @param interactionevent Trigger der Interaction
      * @param param Parameter
      * 
-     * @return wahr, wenn die Interaction abgearbeitet werden konnte, ansonsten falsch
+     * @return wahr, wenn die Interaction abgearbeitet werden konnte, ansonsten
+     *         falsch
      */
     public static boolean handleInteraction(InteractionTrigger interactionevent, Object param) {
         boolean ret = true;
@@ -321,7 +331,8 @@ public abstract class Interaction extends Property implements Serializable {
      * @param interactionEvent Trigger der Interaction
      * @param param Parameter für die Interaction
      * @param id der Interaktion
-     * @return wahr, wenn die Interaction abgearbeitet werden konnte, ansonsten falsch
+     * @return wahr, wenn die Interaction abgearbeitet werden konnte, ansonsten
+     *         falsch
      */
     public static boolean handleInteraction(InteractionTrigger interactionEvent, Object param, int id) {
         Vector<Interaction> interactions = JDUtilities.getConfiguration().getInteractions();
@@ -349,7 +360,7 @@ public abstract class Interaction extends Property implements Serializable {
      * Gibt alle Interactionen zum Trigger zurück
      * 
      * @param trigger
-     * @return  Alle Interactionen zum Trigger zurück
+     * @return Alle Interactionen zum Trigger zurück
      */
     public static Interaction[] getInteractions(InteractionTrigger trigger) {
         Vector<Interaction> interactions = JDUtilities.getConfiguration().getInteractions();
@@ -395,7 +406,9 @@ public abstract class Interaction extends Property implements Serializable {
         return new Interaction[] { new ExternExecute(), new JDExit(), new ResetLink()};
     }
     /**
-     * Da die Knfigurationswünsche nicht gespeichert werden, muss der ConfigContainer immer wieder aufs neue Initialisiert werden. Alle Interactionen müssend azu die initConifg  Methode implementieren 
+     * Da die Knfigurationswünsche nicht gespeichert werden, muss der
+     * ConfigContainer immer wieder aufs neue Initialisiert werden. Alle
+     * Interactionen müssend azu die initConifg Methode implementieren
      */
     public abstract void initConfig();
     public ConfigContainer getConfig() {

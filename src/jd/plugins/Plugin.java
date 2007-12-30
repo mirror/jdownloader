@@ -1546,21 +1546,12 @@ public abstract class Plugin {
      * @return captchacode
      */
     public static String getCaptchaCode(File file, Plugin plugin) {
-        DownloadLink dummy = new DownloadLink(plugin, "", "", "", true);
-        dummy.setLatestCaptchaFile(file);
-        Interaction.handleInteraction(Interaction.INTERACTION_DOWNLOAD_CAPTCHA, dummy, 0);
-        Interaction[] interacts = Interaction.getInteractions(Interaction.INTERACTION_DOWNLOAD_CAPTCHA);
-        String captchaText = null;
-        if (interacts.length > 0) {
-            captchaText = (String) interacts[0].getProperty("captchaCode");
-            if (captchaText == null) {
-                // im Notfall doch JAC nutzen
-                captchaText = JDUtilities.getCaptcha(JDUtilities.getController(), plugin, file);
-            }
-        } else {
-            logger.finer("KEINE captchaInteractions... nutze JAC");
-            captchaText = JDUtilities.getCaptcha(JDUtilities.getController(), plugin, file);
-        }
+     
+      String captchaText = null;
+     
+ 
+            captchaText = JDUtilities.getCaptcha(plugin,null, file,false);
+        
         return captchaText;
     }
 

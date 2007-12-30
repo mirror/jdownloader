@@ -307,7 +307,7 @@ progress.setStatusText("Stopping all downloads");
                 for (int i = 0; i < links.size(); i++) {
                     if (links.get(i).waitsForReconnect()) {
                         Interaction.handleInteraction(Interaction.INTERACTION_BEFORE_RECONNECT, this);
-                        Interaction.handleInteraction((Interaction.INTERACTION_NEED_RECONNECT), this);
+                       // Interaction.handleInteraction((Interaction.INTERACTION_NEED_RECONNECT), this);
                         controller.reconnect();
                         Interaction.handleInteraction(Interaction.INTERACTION_AFTER_RECONNECT, this);
                         break;

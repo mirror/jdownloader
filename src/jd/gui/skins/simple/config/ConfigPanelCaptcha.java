@@ -14,6 +14,8 @@ import javax.swing.table.AbstractTableModel;
 import javax.swing.table.TableColumn;
 
 import jd.captcha.JAntiCaptcha;
+import jd.config.ConfigContainer;
+import jd.config.ConfigEntry;
 import jd.config.Configuration;
 import jd.gui.UIInterface;
 import jd.utils.JDLocale;
@@ -59,7 +61,7 @@ public class ConfigPanelCaptcha extends ConfigPanel implements MouseListener{
      * Lädt alle Informationen
      */
     public void load() {
-
+        this.loadConfigEntries();
     }
 
     /**
@@ -72,6 +74,7 @@ public class ConfigPanelCaptcha extends ConfigPanel implements MouseListener{
 //            plg = pluginsForSearch.elementAt(i);
 //            if (plg.getProperties() != null) configuration.setProperty("PluginConfig_" + plg.getPluginName(), plg.getProperties());
 //        }
+        this.saveConfigEntries();
 
     }
     public void mouseClicked(MouseEvent e) {
@@ -85,6 +88,16 @@ public class ConfigPanelCaptcha extends ConfigPanel implements MouseListener{
     @Override
     public void initPanel() {
         setLayout(new BorderLayout());
+        GUIConfigEntry ce;
+        
+        ce= new GUIConfigEntry( new ConfigEntry(ConfigContainer.TYPE_SPINNER, configuration, Configuration.PARAM_CAPTCHA_INPUT_SHOWTIME, JDLocale.L("gui.config.captcha.show_input_dialog","Zeige den Eingabedialog"),0,180).setDefaultValue(0));
+        addGUIConfigEntry(ce);
+       
+        ce= new GUIConfigEntry( new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, configuration, Configuration.PARAM_CAPTCHA_JAC_DISABLE, JDLocale.L("gui.config.captcha.jac_disable","Automatische Bilderkennung abschalten")).setDefaultValue(false));
+        addGUIConfigEntry(ce);
+        
+        ce= new GUIConfigEntry( new ConfigEntry(ConfigContainer.TYPE_LABEL, JDLocale.L("gui.config.captcha.jac_methods","Automatische Bilderkennung verwenden für:")));
+        addGUIConfigEntry(ce);
         table = new JTable();
         InternalTableModel internalTableModel = new InternalTableModel();
         table.setModel(new InternalTableModel());
@@ -117,7 +130,7 @@ table.addMouseListener(this);
       
 
     
-        JDUtilities.addToGridBag(panel, scrollpane, 0, 0, 3, 1, 1, 1, insets, GridBagConstraints.BOTH, GridBagConstraints.CENTER);
+        JDUtilities.addToGridBag(panel, scrollpane, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 1, 1, insets, GridBagConstraints.BOTH, GridBagConstraints.CENTER);
 
         
         // JDUtilities.addToGridBag(this, panel,0, 0, 1, 1, 1, 1, insets,

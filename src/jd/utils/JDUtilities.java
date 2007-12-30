@@ -34,7 +34,6 @@ import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.net.ConnectException;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -71,6 +70,7 @@ import jd.captcha.JAntiCaptcha;
 import jd.captcha.pixelgrid.Captcha;
 import jd.config.Configuration;
 import jd.controlling.JDController;
+
 import jd.gui.UIInterface;
 import jd.plugins.LogFormatter;
 import jd.plugins.Plugin;
@@ -652,11 +652,20 @@ public class JDUtilities {
      * @param file
      * @return Der vom Benutzer eingegebene Text
      */
-    public static String getCaptcha(JDController controller, Plugin plugin, String host, File file) {
-        if (controller == null) controller = getController();
-
+    public static String getCaptcha(Plugin plugin, String method,File file,boolean forceJAC) {
+      String host;
+      if(method==null){
+          host=plugin.getHost();
+      }else{
+          host=method;
+      }
+    
         logger.info("JAC has Method for: " + host + ": " + JAntiCaptcha.hasMethod(getJACMethodsDirectory(), host));
-        if (JAntiCaptcha.hasMethod(getJACMethodsDirectory(), host)) {
+        if (forceJAC ||(JAntiCaptcha.hasMethod(getJACMethodsDirectory(), host)&&JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_JAC_METHODS + "_" + host, true)&&JDUtilities.getConfiguration().getIntegerProperty(Configuration.PARAM_CAPTCHA_INPUT_SHOWTIME, 0)<=0&&!configuration.getBooleanProperty(Configuration.PARAM_CAPTCHA_JAC_DISABLE,false))) {
+            if(!JAntiCaptcha.hasMethod(getJACMethodsDirectory(), host)||!JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_JAC_METHODS + "_" + host, true)){
+                return null;
+            }
+        
             JFrame jf = new JFrame();
             Image captchaImage = new JFrame().getToolkit().getImage(file.getAbsolutePath());
             MediaTracker mediaTracker = new MediaTracker(jf);
@@ -673,51 +682,16 @@ public class JDUtilities {
             String captchaCode = jac.checkCaptcha(captcha);
             logger.info("Code: "+captchaCode);
             return captchaCode;
-        }
+            }
+       
         else {
-            return controller.getCaptchaCodeFromUser(plugin, file);
+            return getController().getCaptchaCodeFromUser(plugin, file);
         }
     }
 
-    /**
-     * Diese Methode erstellt einen neuen Captchadialog und liefert den
-     * eingegebenen Text zurück.
-     * 
-     * @param controller Der Controller
-     * @param plugin Das Plugin, das dieses Captcha fordert (Der Host wird
-     *            benötigt)
-     * @param file
-     * @return Der vom Benutzer eingegebene Text
-     */
-    public static String getCaptcha(JDController controller, Plugin plugin, File file) {
-        return getCaptcha(controller, plugin, plugin.getHost(), file);
-    }
 
-    /**
-     * Diese Methode erstellt einen neuen Captchadialog und liefert den
-     * eingegebenen Text zurück.
-     * 
-     * @param plugin Das Plugin, das dieses Captcha fordert (Der Host wird
-     *            benötigt)
-     * @param file
-     * @return Der vom Benutzer eingegebene Text
-     */
-    public static String getCaptcha(Plugin plugin, File file) {
-        return getCaptcha(getController(), plugin, plugin.getHost(), file);
-    }
 
-    /**
-     * Diese Methode erstellt einen neuen Captchadialog und liefert den
-     * eingegebenen Text zurück.
-     * 
-     * @param plugin Das Plugin, das dieses Captcha fordert
-     * @param host der Host von dem die Methode verwendet werden soll
-     * @param file
-     * @return Der vom Benutzer eingegebene Text
-     */
-    public static String getCaptcha(Plugin plugin, String host, File file) {
-        return getCaptcha(getController(), plugin, host, file);
-    }
+
 
     // /**
     // * Fügt einen PluginListener hinzu
