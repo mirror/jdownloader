@@ -74,7 +74,6 @@ public class Unrar extends Interaction implements Serializable {
 
     @Override
     public boolean doInteraction(Object arg) {
-        if(arg!=null)
         lastFinishedDownload = (DownloadLink) arg;
         start();
         return true;
