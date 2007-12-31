@@ -1727,33 +1727,38 @@ public abstract class Plugin {
     public static String parseMozillaCookie(URL link, File cookiefile) {
         if (cookiefile.isFile()) {
             try {
-                Pattern cookiePattern = Pattern.compile(".*?[\\s]+(TRUE|FALSE)[\\s/]+(TRUE|FALSE)[\\s]+[0-9]{10}[\\s]+(.*?)[\\s]+(.*)", Pattern.CASE_INSENSITIVE);
+                Pattern cookiePattern = Pattern.compile(".*?[\\s]+(TRUE|FALSE)[\\s]+/(.*?)[\\s]+(TRUE|FALSE)[\\s]+[0-9]{10}[\\s]+(.*?)[\\s]+(.*)", Pattern.CASE_INSENSITIVE);
                 HashMap<String, String> inp = new HashMap<String, String>();
                 String thisLine;
                 FileInputStream fin = new FileInputStream(cookiefile);
                 BufferedReader myInput = new BufferedReader(new InputStreamReader(fin));
-                String hostname = link.getHost();
+                String hostname = link.getHost().toLowerCase();
                 String hostname2 = hostname + ".*";
                 if (hostname.matches(".*?\\..*?\\..*?"))
                     hostname = hostname.replaceFirst(".*?\\.", ".");
-                hostname = hostname + ".*";
+                hostname = "\\.?" + hostname + ".*";
+                String path = link.getPath();
                 while ((thisLine = myInput.readLine()) != null) {
-                    if (thisLine.matches(hostname) || thisLine.matches(hostname2)) {
-
+                    if (thisLine.toLowerCase().matches(hostname) || thisLine.toLowerCase().matches(hostname2)) {
                         Matcher matcher = cookiePattern.matcher(thisLine);
                         if (matcher.find()) {
-                            inp.put(matcher.group(3), matcher.group(4));
+                            String path2 = matcher.group(2);
+                            if (!path2.matches("[\\s]*")) {
+                                path2 = "/?" + path2 + ".*";
+                                if (path.matches(path2))
+                                    inp.put(matcher.group(4), matcher.group(5));
+                            } else
+                                inp.put(matcher.group(4), matcher.group(5));
                         }
                     }
                 }
-                return joinMap(inp, "=", ";");
+                return joinMap(inp, "=", "; ");
             } catch (Exception e) {
                 e.printStackTrace();
             }
         }
         return null;
     }
-
 
 
     /**
