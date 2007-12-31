@@ -38,7 +38,6 @@ public class JUnrar {
     private HashMap<File, String> toExtractlist;
     private Vector<File> unpackedlist;
     private Long[] volumess = null;
-    private String[] volumesn = null;
     private boolean isStandardpassword = false;
     private static Object[][] filesignatures = {{"avi", new Integer[][]{{82, 73, 70, 70}}}, {"mpg", new Integer[][]{{0, 0, 1, 186, -1, 0}}}, {"mpeg", new Integer[][]{{0, 0, 1, 186, -1, 0}}}, {"rar", new Integer[][]{{82, 97, 114, 33, 26, 7}}}, {"wmv", new Integer[][]{{48, 38, 178, 117, 142, 102}}}, {"mp3", new Integer[][]{{73, 68, 51, 3, 0}, {255, 251, 104, -1, 0, -1,}, {255, 251, 64, -1, 0, -1}}}, {"exe", new Integer[][]{{77, 90, 144, 0, 3, 0}}}, {"bz2", new Integer[][]{{66, 90, 104, 54, 49, 65}}}, {"gz", new Integer[][]{{31, 139, 8, 0}}}, {"doc", new Integer[][]{{208, 207, 17, 224, 161, 177}}}, {"pdf", new Integer[][]{{37, 80, 68, 70, 45, 49}}}, {"wma", new Integer[][]{{48, 38, 178, 117, 142, 102}}}, {"jpg", new Integer[][]{{255, 216, 255, 224, 0, 16}, {255, 216, 255, 225, 39, 222}}}, {"m4a", new Integer[][]{{0, 0, 0, 32, 102, 116}}}, {"mdf", new Integer[][]{{0, 255, 255, 255, 255, 255}}}, {"xcf", new Integer[][]{{103, 105, 109, 112, 32, 120}}}};
     private Integer[][] typicalFilesignatures = {{80, 75, 3, 4, -1, 0,}, {82, 73, 70, 70}, {0, 255, 255, 255, 255, 255}, {48, 38, 178, 117, 142, 102}, {208, 207, 17, 224, 161, 177}};
@@ -497,24 +496,26 @@ public class JUnrar {
             Pattern patternvolumes = Pattern.compile("(.*)" + System.getProperty("line.separator") + ".*?([\\d]+).*?[\\d]+.*[\\d]+\\-[\\d]+\\-[\\d]+ [\\d]+:[\\d]+", Pattern.CASE_INSENSITIVE);
             Matcher matchervolumes = patternvolumes.matcher(str);
             HashMap<String, Long> protectedFiles = new HashMap<String, Long>();
-            ArrayList<String> vFiles = new ArrayList<String>();
             ArrayList<Long> vSizes = new ArrayList<Long>();
+            String namen = "";
             while (matchervolumes.find()) {
 
                 String name = matchervolumes.group(1);
-                if (name.matches("\\*.*") && !protectedFiles.containsKey(matchervolumes.group(1))) {
+                if (name.matches("\\*.*")) {
                     name = name.replaceFirst(".", "");
+                    if (!name.equals(namen))
                     protectedFiles.put(name, Long.parseLong(matchervolumes.group(2)));
 
                 } else
                     name = name.replaceFirst(".", "");
-                if (!vFiles.contains(name)) {
-                    vFiles.add(name);
+                if (!name.equals(namen)) {
+                    namen=name;
                     vSizes.add(Long.parseLong(matchervolumes.group(2)));
                 }
             }
             volumess = vSizes.toArray(new Long[vSizes.size()]);
-            volumesn = vFiles.toArray(new String[vFiles.size()]);
+            vSizes.clear();
+            vSizes=null;
             if (volumess.length == 0) {
                 logger.severe("can't finde a file in the archiv: " + file.getName());
                 logger.severe(str);
@@ -817,48 +818,33 @@ public class JUnrar {
         }
         return buff.toString();
     }
-    private Thread delayedProgress(final int steps, final File file, final Long long1) {
-
-        return new Thread(new Runnable() {
-
-            public void run() {
-                long tempfs = 0;
-                long std = long1 / steps;
-                int step = steps;
-                while (step > 0) {
-                    try {
-                        Thread.sleep(100);
-                    } catch (InterruptedException e) {
-                        // TODO Auto-generated catch block
-                        e.printStackTrace();
-                    }
-                    if (file.isFile()) {
-                        long size = file.length() - tempfs;
-
-                        int st = (int) (size / std);
-                        if (st > 0) {
-                            tempfs += (std * st);
-                            step -= st;
-                            progress.increase(st);
-                        }
-                    }
-                }
-            }
-
-        });
-
-    }
-    /**
-     * gibt den Inhalt von stderr eines Processes als String aus bei unrar kann
-     * man mit -ierr alle Nachrichten in stderr umleichten wenn password
-     * incorrect in stderr auftaucht bricht er den Prozess sofort ab und löscht
-     * die entpackten Dateien
+    /*
+     * private Thread delayedProgress(final int steps, final File file, final
+     * Long long1) {
      * 
-     * @param p
-     * @param parent
-     * @return stderr
+     * return new Thread(new Runnable() {
+     * 
+     * public void run() { long tempfs = 0; long std = long1 / steps; int step =
+     * steps; while (step > 0) { try { Thread.sleep(100); } catch
+     * (InterruptedException e) { // TODO Auto-generated catch block
+     * e.printStackTrace(); } if (file.isFile()) { long size = file.length() -
+     * tempfs;
+     * 
+     * int st = (int) (size / std); if (st > 0) { tempfs += (std * st); step -=
+     * st; progress.increase(st); } } } }
+     * 
+     * });
+     *  } /* /** gibt den Inhalt von stderr eines Processes als String aus bei
+     * unrar kann man mit -ierr alle Nachrichten in stderr umleichten wenn
+     * password incorrect in stderr auftaucht bricht er den Prozess sofort ab
+     * und löscht die entpackten Dateien
+     * 
+     * @param p @param parent @return stderr
      */
     private String startInputListener(Process p, File parent) {
+        progress.addToMax(100);
+        progress.setStatus(0);
+        progress.setRange(100);
         InputStreamReader ipsr = new InputStreamReader(p.getErrorStream());
         StringBuffer buff = new StringBuffer();
         char seperator = System.getProperty("line.separator").charAt(0);
@@ -866,20 +852,25 @@ public class JUnrar {
         for (int i = 0; i < volumess.length; i++) {
             max += volumess[i];
         }
+        logger.info("" + volumess.length + " files");
+        logger.info(max / 1024 + " kb total size");
         long state = 0;
         // if (volumes > 1)
         // vol = max / volumes;
         String text = "";
         int c = 0;
         int perc = 0;
+        String prozent = "";
         boolean b = true;
-        Thread lastThread = null;
         int steps = 0;
+        int inc = 0;
+        boolean dd = false;
         try {
             int temp;
             do {
                 temp = ipsr.read();
                 buff.append((char) temp);
+
                 if (((char) temp) == seperator) {
                     if (buff.indexOf(" (password incorrect ?)") != -1) {
                         p.destroy();
@@ -887,33 +878,55 @@ public class JUnrar {
                     if (text.trim().length() > 0)
                         progress.setStatusText(text);
                     b = true;
-
                     text = "";
-                } else {
+                } else if (b) {
                     text += (char) temp;
-                    if (b && text.trim().length() > 0) {
-                        if (text.matches("Extracting  .*")) {
+                    if (text.trim().length() > 0) {
+
+                        if (text.matches("[\\s]*Extracting  .*")) {
                             b = false;
                             state += volumess[c];
+                            if(volumess[c]>1000)
+                            {
+                                dd=true;
                             steps = (int) (state * 100 / max);
                             if (steps > 0) {
-                                if (lastThread != null && lastThread.isAlive()) {
-                                    lastThread.interrupt();
-                                    progress.setStatus(perc);
-                                }
                                 state = 0;
+                                progress.setStatus(perc);
+                                prozent = "";
+                                inc = 0;
                                 perc += steps;
-                                if (volumess[c] > 10000) {
-                                    lastThread = delayedProgress(steps, (b ? (new File(volumesn[c])) : (new File(parent, volumesn[c]))), volumess[c]);
-                                    lastThread.start();
-                                } else
-                                    progress.setStatus(perc);
+                            }
+                            }
+                            else
+                            {
+                                dd=false;
                             }
                             c++;
                         }
 
                     }
                 }
+                if (dd && steps > 0) {
+                    if ((""+(char) temp).matches("\\%")) {
+                        if(prozent.matches("[\\d]+"))
+                        {
+                        int as = Integer.parseInt(prozent) * steps / 100 - inc;
+                        if (as > 0) {
+                            progress.increase(as);
+                            inc+=as;
+                        }
+                        prozent = "";
+                        }
+                    }
+                    else if ((""+(char) temp).matches("[\\d]")) {
+                        prozent += (char) temp;
+                    }
+                    else
+                    {
+                        prozent = "";
+                    }
+        }
             } while ((temp != -1));
         } catch (Exception e) {
             Pattern pattern = Pattern.compile("Extracting  (.*)", Pattern.CASE_INSENSITIVE);
