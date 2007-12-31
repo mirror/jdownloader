@@ -13,26 +13,37 @@
     <target name="jar">
         <!-- jDownloader -->
         <manifest file="Manifest.MF">
-            <attribute name="Created-By" value="astaldo" />
+            <attribute name="Created-By" value="astaldo/coalado" />
             <attribute name="Main-Class" value="jd.Main" />
         </manifest>
         <jar jarfile="${dist}/JDownloader.jar" manifest="Manifest.MF">
             <fileset dir="${cls}">
-                <include name="**/*.class" />
-                <exclude name="jd/captcha/**" />
+                <include name="**/*.class" />                
                 <exclude name="jd/plugins/decrypt/**" />
                 <exclude name="jd/plugins/host/**" />
                 <exclude name="jd/plugins/container/**" />
                 <exclude name="jd/plugins/optional/**" />
             </fileset>
             <fileset dir="${res}">
-                <include name="img/**" />
+                
                 <include name="*.properties" />
                 <exclude name="jd/captcha/methods" />
             </fileset>
         </jar>
         <delete file="Manifest.MF" failonerror="false" />
-
+		<!--Webupdater-->
+		<manifest file="Manifest.MF">
+            <attribute name="Created-By" value="coalado" />
+            <attribute name="Main-Class" value="jd.update.Main" />
+        </manifest>
+        <jar jarfile="${dist}/webupdater.jar" manifest="Manifest.MF">
+            <fileset dir="${cls}">
+                <include name="jd/update/*.class" />    
+				<include name="jd/utils/HTMLEntities.class" /> 				
+            </fileset>
+       
+        </jar>
+        <delete file="Manifest.MF" failonerror="false" />
         <!-- Plugins -->
         <jar jarfile="${dist}/JDownloaderPlugins.jar">
             <fileset dir="${cls}">
@@ -46,40 +57,26 @@
             </fileset>
         </jar>
 
-        <!-- AntiCaptcha -->
-        <manifest file="Manifest.MF">
-            <attribute name="Created-By" value="coalado" />
-            <attribute name="Main-Class" value="jd.captcha.JACTrain" />
-        </manifest>
-        <jar jarfile="${dist}/JAntiCaptcha.jar" manifest="Manifest.MF">
-            <fileset dir="${cls}">
-                <include name="jd/plugins/Plugin.class" />
-                <include name="jd/plugins/LogFormatter.class" />
-                <include name="jd/plugins/event/PluginEvent.class" />
-                <include name="jd/plugins/event/PluginListener.class" />
-                <include name="jd/captcha/**" />
-                <exclude name="jd/captcha/methods/**" />
-            </fileset>
-        </jar>
-        <delete file="Manifest.MF" failonerror="false" />
-    </target>
 
-    <target name="jarOptional">
-        <javac srcdir="${src}" destdir="${cls}">
-            <include name="jd/plugins/optional/**/*.java"/>
-        </javac>
-            
-        <jar jarfile="${dist}/JDownloaderPluginsOptional.jar">
+		
+		
+		<manifest file="Manifest.MF">
+            <attribute name="Created-By" value="coalado" />           
+        </manifest>
+        <jar jarfile="${dist}/JDTrayIcon.jar" manifest="Manifest.MF">
             <fileset dir="${cls}">
-                <include name="jd/plugins/optional/**" />
+                <include name="jd/plugins/optional/JDTrayIcon.class" />        
             </fileset>
-            <fileset dir="${res}">
+			     <fileset dir="${res}">
                 <include name="META-INF/services/jd.plugins.PluginOptional" />
             </fileset>
         </jar>
-<!--        <signjar jar="${dist}/JDownloaderPluginsOptional.jar" keystore="jDownloader.keystore" alias="jDownloader" storepass="jDownloader"/>
-    -->    <move file="${dist}/JDownloaderPluginsOptional.jar" tofile="${env.JD_HOME}/plugins/JDownloaderPluginsOptional.jar" />
+        <delete file="Manifest.MF" failonerror="false" />
+		
+		
     </target>
+
+
 
     <target name="sign">
         <signjar keystore="jDownloader.keystore" alias="jDownloader" storepass="jDownloader">
@@ -93,5 +90,9 @@
     </target>
     <target name="standardBuild" depends="compile,jar">
     </target>
+	
+
+  
+
 
 </project>
