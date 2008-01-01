@@ -1,8 +1,11 @@
 ﻿package jd.gui.skins.simple.config;
 
 import java.awt.BorderLayout;
+import java.awt.GridBagConstraints;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.net.MalformedURLException;
+import java.net.URL;
 
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -10,6 +13,7 @@ import jd.config.Configuration;
 import jd.controlling.interaction.Unrar;
 import jd.gui.UIInterface;
 import jd.gui.skins.simple.SimpleGUI;
+import jd.gui.skins.simple.Link.JLinkButton;
 import jd.unrar.JUnrar;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
@@ -74,6 +78,18 @@ public class ConfigPanelUnrar extends ConfigPanel implements ActionListener {
         // aktivieren:").setDefaultValue(Unrar.ENABLED_TYPE_LINKGRABBER));
         ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, configuration, Unrar.PROPERTY_ENABLED_TYPE, new String[]{Unrar.ENABLED_TYPE_ALWAYS, Unrar.ENABLED_TYPE_LINKGRABBER, Unrar.ENABLED_TYPE_NEVER}, JDLocale.L("gui.config.unrar.activate")).setDefaultValue(Unrar.ENABLED_TYPE_LINKGRABBER));
         addGUIConfigEntry(ce);
+        if(unrarcmd==null)
+        {
+
+            try {
+                JLinkButton bb = new JLinkButton(JDLocale.L("gui.config.unrar.download", "Bitte laden sie Unrar herunter"), new URL("http://www.rarlab.com/rar_add.htm"));
+                JDUtilities.addToGridBag(panel, bb, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 0, 0, null, GridBagConstraints.NONE, GridBagConstraints.NORTHWEST);
+            } catch (MalformedURLException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            }
+
+        }
         ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_BROWSEFILE, configuration, Unrar.PROPERTY_UNRARCOMMAND, JDLocale.L("gui.config.unrar.cmd")).setDefaultValue(unrarcmd));
         addGUIConfigEntry(ce);
         ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, configuration, Unrar.PROPERTY_AUTODELETE, JDLocale.L("gui.config.unrar.delete")).setDefaultValue(true));
