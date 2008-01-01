@@ -2,6 +2,8 @@ package jd;
 
 import java.awt.Graphics;
 import java.awt.Image;
+import java.io.File;
+import java.util.HashMap;
 import java.util.Vector;
 import java.util.logging.Logger;
 
@@ -39,12 +41,15 @@ public class Main {
         // System.exit(0);
         // return;
         // }
-        //SingleInstanceController.bindRMIObject(new SingleInstanceController());
+        // SingleInstanceController.bindRMIObject(new
+        // SingleInstanceController());
         Main main = new Main();
         main.go();
     }
 
     private void go() {
+     
+
         JDInit init = new JDInit();
         init.init();
         init.loadImages();
@@ -58,27 +63,26 @@ public class Main {
         window.setLocationRelativeTo(null);
         window.setVisible(true);
 
-
         logger.info("OS: " + System.getProperty("os.name") + ", " + System.getProperty("os.arch") + ", " + System.getProperty("os.version"));
         logger.info("Registriere Plugins");
         final Configuration configuration = init.loadConfiguration();
-     
+
         final JDController controller = init.initController();
-        if(init.installerWasVisible()){
+        if (init.installerWasVisible()) {
             init.doWebupdate();
-            
-            
-        }else{
-        final UIInterface uiInterface = init.initGUI(controller);
 
-        JDUtilities.initFileLogger();
+        }
+        else {
+            final UIInterface uiInterface = init.initGUI(controller);
 
-        init.initPlugins();
-        init.loadDownloadQueue();
-        init.loadModules();
-        init.checkUpdate();
+            JDUtilities.initFileLogger();
 
-        init.doWebupdate();
+            init.initPlugins();
+            init.loadDownloadQueue();
+            init.loadModules();
+            init.checkUpdate();
+
+            init.doWebupdate();
         }
 
         /*
@@ -101,7 +105,7 @@ public class Main {
             JDUtilities.saveConfig();
         }
         /*
-         * Ende des  Interactionfixes
+         * Ende des Interactionfixes
          */
         if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_START_DOWNLOADS_AFTER_START, false)) {
             controller.getUiInterface().fireUIEvent(new UIEvent(controller.getUiInterface(), UIEvent.UI_START_DOWNLOADS));

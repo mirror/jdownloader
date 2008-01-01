@@ -268,7 +268,9 @@ public class JDInit {
             logger.finer("Load PLugins");
             iterator = Service.providers(PluginForSearch.class, jdClassLoader);
             while (iterator.hasNext()) {
-                PluginForSearch p = (PluginForSearch) iterator.next();
+                Object next = iterator.next();
+                logger.info(next+"");
+                PluginForSearch p = (PluginForSearch) next;
 
                 plugins.add(p);
             }
