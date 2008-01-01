@@ -21,6 +21,7 @@ import java.util.Iterator;
 import java.util.List;
 
 import javax.swing.JButton;
+import javax.swing.JDialog;
 import javax.swing.JEditorPane;
 import javax.swing.JFrame;
 import javax.swing.JScrollPane;
@@ -29,7 +30,7 @@ import javax.swing.JToolBar;
 import javax.swing.event.HyperlinkEvent;
 import javax.swing.event.HyperlinkListener;
 
-public class DnDWebBrowser extends JFrame {
+public class DnDWebBrowser extends JDialog {
 
   /**
      * 
@@ -44,9 +45,9 @@ private WebToolBar toolBar;
 
   private WebBrowserPane browserPane = new WebBrowserPane();
 
-  public DnDWebBrowser() {
-    super("Web Browser");
-
+  public DnDWebBrowser(JFrame owner) {
+      super(owner);
+      setModal(true);
     toolBar = new WebToolBar(browserPane);
 
     browserPane.setDropTarget(new DropTarget(browserPane, DnDConstants.ACTION_COPY,

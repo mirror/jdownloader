@@ -21,6 +21,7 @@ import javax.swing.plaf.ComponentUI;
 import javax.swing.plaf.metal.MetalButtonUI;
 
 import jd.config.Configuration;
+import jd.gui.skins.simple.SimpleGUI;
 import jd.utils.JDUtilities;
 
 import edu.stanford.ejalbert.BrowserLauncher;
@@ -160,7 +161,7 @@ public class JLinkButton extends JButton {
                         }
                     }
                     if (Browser.equals("JavaBrowser")) {
-                        DnDWebBrowser browser = new DnDWebBrowser();
+                        DnDWebBrowser browser = new DnDWebBrowser(((SimpleGUI) JDUtilities.getGUI()).getFrame());
                         browser.goTo(ur);
                         browser.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
                         browser.setSize(800, 600);
