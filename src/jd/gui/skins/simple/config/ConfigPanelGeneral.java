@@ -2,12 +2,17 @@ package jd.gui.skins.simple.config;
 
 import java.awt.BorderLayout;
 import java.awt.GridBagConstraints;
+import java.util.List;
 import java.util.Locale;
 import java.util.logging.Level;
 
 import javax.swing.JFileChooser;
 import javax.swing.JLabel;
 import javax.swing.UIManager;
+
+import edu.stanford.ejalbert.BrowserLauncher;
+import edu.stanford.ejalbert.exception.BrowserLaunchingInitializingException;
+import edu.stanford.ejalbert.exception.UnsupportedOperatingSystemException;
 
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -26,7 +31,7 @@ public class ConfigPanelGeneral extends ConfigPanel {
     private JLabel lblHomeDir;
     private BrowseFile brsHomeDir;
     private Configuration configuration;
-   public ConfigPanelGeneral(Configuration configuration, UIInterface uiinterface) {
+    public ConfigPanelGeneral(Configuration configuration, UIInterface uiinterface) {
         super(uiinterface);
         this.configuration = configuration;
         initPanel();
@@ -34,7 +39,7 @@ public class ConfigPanelGeneral extends ConfigPanel {
     }
     public void save() {
         this.saveConfigEntries();
-          
+
         JDUtilities.getLogger().setLevel((Level) configuration.getProperty(Configuration.PARAM_LOGGER_LEVEL));
         if (JDUtilities.getHomeDirectory() != null && !JDUtilities.getHomeDirectory().equalsIgnoreCase(brsHomeDir.getText().trim())) {
             JDUtilities.writeJDHomeDirectoryToWebStartCookie(brsHomeDir.getText().trim());
@@ -100,6 +105,37 @@ public class ConfigPanelGeneral extends ConfigPanel {
         ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, configuration, Configuration.PARAM_LANG_EDITMODE, JDLocale.L("gui.config.general.langeditMode", "Sprachdatei Editiermodus")).setDefaultValue(false).setExpertEntry(true));
         addGUIConfigEntry(ce);
 
+        Object[] BrowserArray = (Object[]) JDUtilities.getConfiguration().getProperty(Configuration.PARAM_BROWSER_VARS, null);
+
+        if (BrowserArray == null) {
+            BrowserLauncher launcher;
+            List ar = null;
+            try {
+                launcher = new BrowserLauncher();
+                ar = launcher.getBrowserList();
+            } catch (BrowserLaunchingInitializingException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            } catch (UnsupportedOperatingSystemException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            }
+            if (ar.size() < 2) {
+                BrowserArray = new Object[]{"JavaBrowser"};
+            } else {
+                BrowserArray = new Object[ar.size() + 1];
+                for (int i = 0; i < BrowserArray.length - 1; i++) {
+                    BrowserArray[i] = ar.get(i);
+                }
+                BrowserArray[BrowserArray.length - 1] = "JavaBrowser";
+            }
+            JDUtilities.getConfiguration().setProperty(Configuration.PARAM_BROWSER_VARS, BrowserArray);
+            JDUtilities.getConfiguration().setProperty(Configuration.PARAM_BROWSER, BrowserArray[0]);
+            JDUtilities.saveConfig();
+        }
+
+        ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, configuration, Configuration.PARAM_BROWSER, BrowserArray, JDLocale.L("gui.config.general.Browser", "Browser")).setDefaultValue(BrowserArray[0]));
+        addGUIConfigEntry(ce);
         if (JDUtilities.getHomeDirectory() != null) {
             brsHomeDir = new BrowseFile();
             brsHomeDir.setText(JDUtilities.getHomeDirectory());

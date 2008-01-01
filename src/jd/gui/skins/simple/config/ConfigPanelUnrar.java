@@ -62,6 +62,7 @@ public class ConfigPanelUnrar extends ConfigPanel implements ActionListener {
                 configuration.setProperty("GUNRARCOMMAND", "NOT FOUND");
             else
                 configuration.setProperty("GUNRARCOMMAND", unrarcmd);
+            JDUtilities.saveConfig();
         } else if (unrarcmd.matches("NOT FOUND"))
             unrarcmd = null;
 

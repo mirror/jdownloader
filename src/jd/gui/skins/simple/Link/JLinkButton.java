@@ -8,6 +8,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.List;
 
 import javax.swing.Action;
 import javax.swing.ButtonModel;
@@ -18,6 +19,13 @@ import javax.swing.JFrame;
 import javax.swing.UIManager;
 import javax.swing.plaf.ComponentUI;
 import javax.swing.plaf.metal.MetalButtonUI;
+
+import jd.config.Configuration;
+import jd.utils.JDUtilities;
+
+import edu.stanford.ejalbert.BrowserLauncher;
+import edu.stanford.ejalbert.exception.BrowserLaunchingInitializingException;
+import edu.stanford.ejalbert.exception.UnsupportedOperatingSystemException;
 
 public class JLinkButton extends JButton {
     /**
@@ -78,12 +86,29 @@ public class JLinkButton extends JButton {
         this(null, icon, url);
     }
 
-    public JLinkButton(final String text, Icon icon, final URL url) {
+    public JLinkButton(final String text, Icon icon, URL url) {
         super(text, icon);
         linkBehavior = SYSTEM_DEFAULT;
         linkColor = Color.blue;
         colorPressed = Color.red;
         visitedLinkColor = new Color(128, 0, 128);
+        if (url == null && text != null) {
+            if (text.matches("https?://.*")) {
+                try {
+                    url = new URL(text);
+                } catch (MalformedURLException e1) {
+                    // TODO Auto-generated catch block
+                    e1.printStackTrace();
+                }
+            } else if (text.matches("www\\..*?\\..*")) {
+                try {
+                    url = new URL("http://" + text);
+                } catch (MalformedURLException e1) {
+                    // TODO Auto-generated catch block
+                    e1.printStackTrace();
+                }
+            }
+        }
         if (text == null && url != null)
             setText(url.toExternalForm());
         setLinkURL(url);
@@ -91,41 +116,66 @@ public class JLinkButton extends JButton {
         setBorderPainted(false);
         setContentAreaFilled(false);
         setRolloverEnabled(true);
+
         addActionListener(new ActionListener() {
 
             public void actionPerformed(ActionEvent e) {
-                URL ur=null;
-                if (url != null)
-                    ur=url;
-                else if (text != null) {
-                    if (text.matches("https?://.*")) {
+                URL ur = getLinkURL();
+                if (ur != null) {
+                    String Browser = (String) JDUtilities.getConfiguration().getProperty(Configuration.PARAM_BROWSER, null);
+                    if (Browser == null) {
+                        BrowserLauncher launcher;
+                        List ar = null;
                         try {
-                            ur=new URL(text);
-                        } catch (MalformedURLException e1) {
+                            launcher = new BrowserLauncher();
+                            ar = launcher.getBrowserList();
+                        } catch (BrowserLaunchingInitializingException e1) {
+                            // TODO Auto-generated catch block
+                            e1.printStackTrace();
+                        } catch (UnsupportedOperatingSystemException e1) {
                             // TODO Auto-generated catch block
                             e1.printStackTrace();
                         }
-                    } else if (text.matches("www\\..*?\\..*")){
-                        try {
-                            ur=new URL("http://" + text);
-                        } catch (MalformedURLException e1) {
-                            // TODO Auto-generated catch block
-                            e1.printStackTrace();
-                        }
-                    }
-                    else
-                    {
-                        return;
-                    }
-                }
-                else
-                    return;
-                DnDWebBrowser browser = new DnDWebBrowser();
-                browser.goTo(ur);
-                browser.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-                browser.setSize(800, 600);
-                browser.setVisible(true);
 
+                        Object[] BrowserArray = (Object[]) JDUtilities.getConfiguration().getProperty(Configuration.PARAM_BROWSER_VARS, null);
+
+                        if (BrowserArray == null) {
+                            if (ar.size() < 2) {
+                                BrowserArray = new Object[]{"JavaBrowser"};
+                            } else {
+                                BrowserArray = new Object[ar.size() + 1];
+                                for (int i = 0; i < BrowserArray.length - 1; i++) {
+                                    BrowserArray[i] = ar.get(i);
+                                }
+                                BrowserArray[BrowserArray.length - 1] = "JavaBrowser";
+                            }
+                            JDUtilities.getConfiguration().setProperty(Configuration.PARAM_BROWSER_VARS, BrowserArray);
+                            JDUtilities.getConfiguration().setProperty(Configuration.PARAM_BROWSER, BrowserArray[0]);
+                            Browser = (String) BrowserArray[0];
+                            JDUtilities.saveConfig();
+                        }
+                    }
+                    if (Browser.equals("JavaBrowser")) {
+                        DnDWebBrowser browser = new DnDWebBrowser();
+                        browser.goTo(ur);
+                        browser.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+                        browser.setSize(800, 600);
+                        browser.setVisible(true);
+                    } else {
+                        try {
+                            BrowserLauncher launcher = new BrowserLauncher();
+                            launcher.openURLinBrowser(Browser, ur.toString());
+                        } catch (BrowserLaunchingInitializingException e1) {
+                            // TODO Auto-generated catch block
+                            e1.printStackTrace();
+                        } catch (UnsupportedOperatingSystemException e1) {
+                            // TODO Auto-generated catch block
+                            e1.printStackTrace();
+                        }
+
+                    }
+
+                }
             }
         });
 
