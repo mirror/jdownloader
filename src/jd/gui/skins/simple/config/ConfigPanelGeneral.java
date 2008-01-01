@@ -134,7 +134,7 @@ public class ConfigPanelGeneral extends ConfigPanel {
             JDUtilities.saveConfig();
         }
 
-        ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, configuration, Configuration.PARAM_BROWSER, BrowserArray, JDLocale.L("gui.config.general.Browser", "Browser")).setDefaultValue(BrowserArray[0]));
+        ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, configuration, Configuration.PARAM_BROWSER, BrowserArray, JDLocale.L("gui.config.general.Browser", "Browser")).setDefaultValue(BrowserArray[0]).setExpertEntry(true));
         addGUIConfigEntry(ce);
         if (JDUtilities.getHomeDirectory() != null) {
             brsHomeDir = new BrowseFile();
