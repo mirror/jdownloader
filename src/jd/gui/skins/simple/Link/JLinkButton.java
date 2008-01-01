@@ -31,7 +31,11 @@ public class JLinkButton extends JButton {
     /**
      * 
      */
-    private static final long serialVersionUID = 6872529074428315646L;
+    private static final long serialVersionUID = 1L;
+
+    /**
+     * 
+     */
 
     public static final int ALWAYS_UNDERLINE = 0;
 

@@ -34,7 +34,11 @@ public class DnDWebBrowser extends JFrame {
   /**
      * 
      */
-    private static final long serialVersionUID = 2215347106537659141L;
+    private static final long serialVersionUID = 1L;
+
+/**
+     * 
+     */
 
 private WebToolBar toolBar;
 
@@ -116,7 +120,11 @@ class WebBrowserPane extends JEditorPane {
 /**
      * 
      */
-    private static final long serialVersionUID = 7910030213439231615L;
+    private static final long serialVersionUID = 1L;
+
+/**
+     * 
+     */
 
 /**
      * 
@@ -171,7 +179,11 @@ class WebToolBar extends JToolBar implements HyperlinkListener {
   /**
      * 
      */
-    private static final long serialVersionUID = -3472298374837088136L;
+    private static final long serialVersionUID = 1L;
+
+/**
+     * 
+     */
 
 private WebBrowserPane webBrowserPane;
 
