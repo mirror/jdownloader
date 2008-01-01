@@ -188,10 +188,6 @@ public class JDController implements PluginListener, ControlListener, UIListener
                 this.addToFinished(lastDownloadFinished);
                 if (this.getMissingPackageFiles(lastDownloadFinished) == 0) {
                     Interaction.handleInteraction(Interaction.INTERACTION_DOWNLOAD_PACKAGE_FINISHED, this);
-                    if (lastDownloadFinished.getFilePackage().isUnPack()) {
-                        String unrarType = JDUtilities.getConfiguration().getStringProperty(Unrar.PROPERTY_ENABLED_TYPE, Unrar.ENABLED_TYPE_NEVER);
-                        if (unrarType.equals(Unrar.ENABLED_TYPE_LINKGRABBER)) this.getUnrarModule().interact(lastDownloadFinished);
-                    }
 
                     if (lastDownloadFinished.getFilePackage().isWriteInfoFile()) this.getInfoFileWriterModule().interact(lastDownloadFinished);
 
