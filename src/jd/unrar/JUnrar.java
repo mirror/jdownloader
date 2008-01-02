@@ -1113,6 +1113,7 @@ public class JUnrar {
             String str = startInputListener(p, parent);
 
             if (str.matches(allOk)) {
+                addToPasswordlist(password);
                 Pattern pattern = Pattern.compile("Extracting from (.*)");
                 Matcher matcher = pattern.matcher(str);
                 if (autoDelete) {
