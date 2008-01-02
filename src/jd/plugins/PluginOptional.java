@@ -16,8 +16,10 @@ public abstract class PluginOptional extends Plugin{
     public String getPluginName() {
         return "JDTrayIcon";
     }
-    
+
 
     public abstract void enable(boolean enable) throws Exception;
     public abstract String getRequirements();
+    public abstract boolean isExecutable();
+    public abstract boolean execute();
 }

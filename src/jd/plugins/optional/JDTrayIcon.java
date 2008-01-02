@@ -142,4 +142,13 @@ public class JDTrayIcon extends PluginOptional implements ActionListener {
     public String getRequirements() {
         return "JRE 1.6+";
     }
+
+    @Override
+    public boolean isExecutable() {
+        return false;
+    }
+    @Override
+    public boolean execute() {
+        return false;
+    }
 }
