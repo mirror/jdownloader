@@ -1,6 +1,5 @@
 package jd.router;
 
-import java.io.File;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.MalformedURLException;
@@ -9,14 +8,17 @@ import java.net.URL;
 import java.net.UnknownHostException;
 import java.util.Vector;
 
+import jd.config.Configuration;
+import jd.controlling.interaction.HTTPLiveHeader;
 import jd.plugins.Plugin;
 import jd.plugins.RequestInfo;
 import jd.utils.JDUtilities;
 
 public class GetRouterInfo {
-    private String adress = null;
-    private String name = null;
-    private static String[] routerNames = new String[]{"fritz", "3com", "4mbo", "acer", "all130dsl", "all130dsla", "allied", "allnet", "amit", "arcor", "ARK IS-104", "astranet-modem", "asus", "auerswald", "belkin", "bibac", "billion", "broadband", "buffalo", "cnet", "compex", "compu-shack", "conceptronics", "connectec", "d-link", "dc-201", "devolo", "digitus", "dlink", "draytec", "draytek", "edimax", "elsa", "eumex", "fiberline", "fli4l", "free Control", "i-smart", "iplinx", "kobishi", "lanware", "lcs-883r-dsl-4f", "level", "level-one", "levelone", "LG L", "linkpro", "linksys", "longshine", "mentor", "microsoft", "MSI RG", "neteasy", "netgear", "netopia", "nexland", "pearl", "pheenet", "philips", "q-tec", "siemens", "silvercrest", "sitecom", "smc", "sphairon", "st lab", "surecom", "synergy21", "t-com", "targa", "tei6608s", "teledat", "thomson", "tp-link", "trendnet", "trendware", "trust", "robotics", "vantage", "we.com", "x-micro", "zywall", "zyxel"};
+    public String password = null;
+    public String username = null;
+    public String adress = null;
+    private Vector<String[]> routerDatas = null;
     private boolean checkport80(String host) {
         Socket sock;
         try {
@@ -36,9 +38,8 @@ public class GetRouterInfo {
         for (int i = 0; i < hosts.length; i++) {
             try {
                 if (InetAddress.getByName(hosts[i]).isReachable(2)) {
-                    if (checkport80(hosts[i]))
-                    {
-                        adress=hosts[i];
+                    if (checkport80(hosts[i])) {
+                        adress = hosts[i];
                         return hosts[i];
                     }
                 }
@@ -58,9 +59,8 @@ public class GetRouterInfo {
                 try {
                     String lhost = host + i;
                     if (!lhost.equals(ip) && InetAddress.getByName(host).isReachable(2)) {
-                        if (checkport80(host))
-                        {
-                            adress=host;
+                        if (checkport80(host)) {
+                            adress = host;
                             return host;
                         }
                     }
@@ -72,20 +72,23 @@ public class GetRouterInfo {
         return null;
 
     }
-    public String getRouterNames() {
-        if(name!=null)
-            return name;
-        getAdress();
+    public Vector<String[]> getRouterDatas() {
+        if (routerDatas != null)
+            return routerDatas;
+        if (getAdress() == null)
+            return null;
         try {
-            RequestInfo request = Plugin.getRequest(new URL("http://"+adress));
+            RequestInfo request = Plugin.getRequest(new URL("http://" + adress));
             String html = request.getHtmlCode().toLowerCase();
-            for (int i = 0; i < routerNames.length; i++) {
-                if(html.matches("(?s).*"+routerNames[i]+".*"))
-                {
-                    name=routerNames[i];
-                    return routerNames[i];
-                }
+            Vector<String[]> routerData = new HTTPLiveHeader().getLHScripts();
+            Vector<String[]> retRouterData = new Vector<String[]>();
+            for (int i = 0; i < routerData.size(); i++) {
+                String[] dat = routerData.get(i);
+                if (html.matches(dat[3]))
+                    retRouterData.add(dat);
             }
+            routerDatas = retRouterData;
+            return retRouterData;
         } catch (MalformedURLException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
@@ -93,43 +96,67 @@ public class GetRouterInfo {
             // TODO Auto-generated catch block
             e.printStackTrace();
         }
-        
         return null;
 
     }
-    public RouterData[] getRouterDatas()
+    private boolean isEmpty(String arg)
     {
-        if(getRouterNames()==null)
-            return null;
-        File fileRoutersDat;
-        Vector<RouterData> routerData;
-        fileRoutersDat = JDUtilities.getResourceFile("jd/router/routerdata.xml");
-        if (fileRoutersDat != null) {
-            RouterParser parser = new RouterParser();
-
-            routerData = parser.parseXMLFile(fileRoutersDat);
-            Vector<RouterData> retRouterData = new Vector<RouterData>();
-            for (int i = 0; i < routerData.size(); i++) {
-                RouterData dat = routerData.get(i);
-                if(dat.getRouterName().toLowerCase().matches(".*"+name+".*"))
-                retRouterData.add(dat);
+        if(arg==null || arg.matches("[\\s]*"))
+            return true;
+        return false;
+        
+    }
+    public String[] getRouterData() {
+        if(getRouterDatas()==null)
+        return null;
+        int retries = JDUtilities.getConfiguration().getIntegerProperty(Configuration.PARAM_HTTPSEND_RETRIES, 5);
+        int wipchange = JDUtilities.getConfiguration().getIntegerProperty(Configuration.PARAM_HTTPSEND_WAITFORIPCHANGE, 20);
+        JDUtilities.getConfiguration().setProperty(Configuration.PARAM_HTTPSEND_RETRIES, 0);
+        JDUtilities.getConfiguration().setProperty(Configuration.PARAM_HTTPSEND_WAITFORIPCHANGE, 10);
+        JDUtilities.getConfiguration().setProperty(Configuration.PARAM_HTTPSEND_USER, username);
+        JDUtilities.getConfiguration().setProperty(Configuration.PARAM_HTTPSEND_PASS, password);
+        for (int i = 0; i < routerDatas.size(); i++) {
+            String[] data = routerDatas.get(i);
+            if(isEmpty(username))
+            {
+                    JDUtilities.getConfiguration().setProperty(Configuration.PARAM_HTTPSEND_USER, data[4]);
             }
-            return retRouterData.toArray(new RouterData[retRouterData.size()]);
+            else
+            {
+                data[4]=username;
+            }
+            if(isEmpty(password))
+            {
+                    JDUtilities.getConfiguration().setProperty(Configuration.PARAM_HTTPSEND_PASS, data[5]);
+            }
+            else
+            {
+                data[5]=password;
+            }
+            JDUtilities.getConfiguration().setProperty(Configuration.PARAM_HTTPSEND_REQUESTS, data[2]);
+            JDUtilities.saveConfig();
+            if (JDUtilities.getController().reconnect()) {
+                JDUtilities.getConfiguration().setProperty(Configuration.PARAM_HTTPSEND_RETRIES, retries);
+                JDUtilities.getConfiguration().setProperty(Configuration.PARAM_HTTPSEND_WAITFORIPCHANGE, wipchange);
+                JDUtilities.saveConfig();
+                return data;
+            }
         }
         return null;
-        
     }
     /**
      * @param args
      */
     public static void main(String[] args) {
-       GetRouterInfo router = new GetRouterInfo();
-       System.out.println(router.getAdress());
-       System.out.println(router.getRouterNames());
-       RouterData[] retRouterDatas = router.getRouterDatas();
-       for (int i = 0; i < retRouterDatas.length; i++) {
-        System.out.println(retRouterDatas[i].getRouterName());
-       }
+        GetRouterInfo router = new GetRouterInfo();
+        System.out.println(router.getAdress());
+        String[] retRouterDatas = router.getRouterData();
+        if(retRouterDatas!=null)
+        {
+           for (int i = 0; i < retRouterDatas.length; i++) {
+            System.out.println(retRouterDatas[i]);
+        }
+        }
     }
 
 }

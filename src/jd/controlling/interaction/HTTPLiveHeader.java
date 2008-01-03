@@ -9,6 +9,7 @@ import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.PasswordAuthentication;
 import java.net.URL;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -111,13 +112,14 @@ public class HTTPLiveHeader extends Interaction {
     }
 
     public Vector<String[]> getLHScripts() {
-        File f = JDUtilities.getResourceFile("jd/router/lhdb.xml");
-        if (!f.exists()) {
-            logger.severe("jd/router/lhdb.xml does not exist");
-            return new Vector<String[]>();
+        File[] list = new File(new File(JDUtilities.getJDHomeDirectoryFromEnvironment(), "jd"),"router").listFiles();
+        Vector<String[]> ret = new Vector<String[]>();
+        for (int i = 0; i < list.length; i++) {
+            if(list[i].isFile() && list[i].getName().toLowerCase().matches(".*\\.xml$"));
+            ret.addAll((Collection<? extends String[]>) JDUtilities.loadObject(new JFrame(), list[i], true));
         }
 
-        return (Vector<String[]>) JDUtilities.loadObject(new JFrame(), f, true);
+        return ret;
     }
 
     @Override
