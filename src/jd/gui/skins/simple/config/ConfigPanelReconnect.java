@@ -60,10 +60,10 @@ public class ConfigPanelReconnect extends ConfigPanel implements ActionListener 
 
     @Override
     public void initPanel() {
-        String reconnectType = configuration.getStringProperty(Configuration.PARAM_RECONNECT_TYPE, JDLocale.L("modules.reconnect.types.httpreconnect", "HTTPReconnect/Routercontrol"));
+        String reconnectType = configuration.getStringProperty(Configuration.PARAM_RECONNECT_TYPE, JDLocale.L("modules.reconnect.types.liveheader", "LiveHeader/Curl"));
         JPanel p = new JPanel();
 
-        box = new JComboBox(new String[] { JDLocale.L("modules.reconnect.types.liveheader", "Router LiveHeader/Curl"), JDLocale.L("modules.reconnect.types.extern", "Extern") });
+        box = new JComboBox(new String[] { JDLocale.L("modules.reconnect.types.liveheader", "LiveHeader/Curl"), JDLocale.L("modules.reconnect.types.extern", "Extern") });
         box.addActionListener(this);
         p.add(new JLabel("Bitte Methode auswählen:"));
         p.add(box);
@@ -85,7 +85,7 @@ public class ConfigPanelReconnect extends ConfigPanel implements ActionListener 
         if (er != null) panel.remove(er);
         lh = null;
         er = null;
-        if (((String) box.getSelectedItem()).equals(JDLocale.L("modules.reconnect.types.liveheader", "Router LiveHeader/Curl"))) {
+        if (((String) box.getSelectedItem()).equals(JDLocale.L("modules.reconnect.types.liveheader", "LiveHeader/Curl"))) {
             lh = new SubPanelLiveHeaderReconnect(uiinterface, (Interaction) new HTTPLiveHeader());
 
             JDUtilities.addToGridBag(panel, lh, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 1, 1, null, GridBagConstraints.BOTH, GridBagConstraints.NORTH);
