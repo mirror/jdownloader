@@ -64,12 +64,10 @@ public class Unrar extends Interaction implements Serializable {
 
     public static final String ENABLED_TYPE_ALWAYS = JDLocale.L("interaction.unrar.always");
 
- 
-
     public static final String PROPERTY_WAIT_FOR_TERMINATION = "UNRAR_WAIT_FOR_TERMINATION";
-    
+
     public static final String PROPERTY_ENABLE_EXTRACTFOLDER = "UNRAR_PROPERTY_ENABLE_EXTRACTFOLDER";
-    
+
     public static final String PROPERTY_EXTRACTFOLDER = "UNRAR_PROPERTY_EXTRACTFOLDER";
 
     @Override
@@ -96,31 +94,28 @@ public class Unrar extends Interaction implements Serializable {
 
     private JUnrar getUnrar() {
         JUnrar unrar;
-        if (lastFinishedDownload != null)
-        {
+        if (lastFinishedDownload != null) {
+
             String password = lastFinishedDownload.getSourcePluginPassword();
-            if (password!=null&&password.matches("[\\s]*"))
-                password=null;
-            unrar=new JUnrar(new File(lastFinishedDownload.getFileOutput()),password);
-            if(password!=null)
+            if (password != null && password.matches("[\\s]*"))
+                password = null;
+            unrar = new JUnrar(new File(lastFinishedDownload.getFileOutput()), password);
+            if (password != null)
                 unrar.addToPasswordlist(password);
-        }
-        else
+            unrar.useToextractlist = true;
+        } else
         {
             unrar = new JUnrar();
+            unrar.useToextractlist = false;
         }
 
-        if(JDUtilities.getConfiguration().getBooleanProperty(Unrar.PROPERTY_ENABLE_EXTRACTFOLDER, false))
-        {
-            unrar.useToextractlist=true;
+        if (JDUtilities.getConfiguration().getBooleanProperty(Unrar.PROPERTY_ENABLE_EXTRACTFOLDER, false)) {
             String efolder = JDUtilities.getConfiguration().getStringProperty(Unrar.PROPERTY_EXTRACTFOLDER, null);
-            if(efolder!=null)
-                unrar.extractFolder=new File(efolder);
-        }
-        else
-            unrar.useToextractlist=false;
+            if (efolder != null)
+                unrar.extractFolder = new File(efolder);
+        } else
 
-        unrar.overwriteFiles = JDUtilities.getConfiguration().getBooleanProperty(Unrar.PROPERTY_OVERWRITE_FILES, false);
+            unrar.overwriteFiles = JDUtilities.getConfiguration().getBooleanProperty(Unrar.PROPERTY_OVERWRITE_FILES, false);
         unrar.autoDelete = JDUtilities.getConfiguration().getBooleanProperty(Unrar.PROPERTY_AUTODELETE, false);
         unrar.unrar = JDUtilities.getConfiguration().getStringProperty(Unrar.PROPERTY_UNRARCOMMAND);
         return unrar;
@@ -131,38 +126,40 @@ public class Unrar extends Interaction implements Serializable {
         if (!IS_RUNNING) {
             IS_RUNNING = true;
             JUnrar unrar = getUnrar();
-            if (lastFinishedDownload == null)
-            {
-            Vector<String> folders = new Vector<String>();
-            // wird nur befoetigt wenn PARAM_USE_PACKETNAME_AS_SUBFOLDER auch
-            // true ist
-            if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_PACKETNAME_AS_SUBFOLDER, false)) {
-                Vector<DownloadLink> finishedLinks = JDUtilities.getController().getFinishedLinks();
-                for (int i = 0; i < finishedLinks.size(); i++) {
-                    logger.info("finished File: " + finishedLinks.get(i).getFileOutput());
-                    File folder = new File(finishedLinks.get(i).getFileOutput()).getParentFile();
-                    logger.info("Folder: " + folder);
-                    if (folder.exists()) {
-                        if (folders.indexOf(folder.getAbsolutePath()) == -1) {
-                            logger.info("Add unrardir: " + folder.getAbsolutePath());
-                            folders.add(folder.getAbsolutePath());
+            if (lastFinishedDownload == null) {
+                Vector<String> folders = new Vector<String>();
+                // wird nur befoetigt wenn PARAM_USE_PACKETNAME_AS_SUBFOLDER
+                // auch
+                // true ist
+                if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_PACKETNAME_AS_SUBFOLDER, false)) {
+                    Vector<DownloadLink> finishedLinks = JDUtilities.getController().getFinishedLinks();
+                    for (int i = 0; i < finishedLinks.size(); i++) {
+                        logger.info("finished File: " + finishedLinks.get(i).getFileOutput());
+                        File folder = new File(finishedLinks.get(i).getFileOutput()).getParentFile();
+                        logger.info("Folder: " + folder);
+                        if (folder.exists()) {
+                            if (folders.indexOf(folder.getAbsolutePath()) == -1) {
+                                logger.info("Add unrardir: " + folder.getAbsolutePath());
+                                folders.add(folder.getAbsolutePath());
+                            }
                         }
                     }
                 }
-            }
-            folders.add(JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_DOWNLOAD_DIRECTORY));
-            logger.info("dirs: " + folders);
-            unrar.setFolders(folders);
-            // Entpacken bis nichts mehr gefunden wurde (wird jetzt von unrar
-            // erledigt indem entpackte dateien nochmal
-            // durch unrar geschickt werden
-            /*
-             * if (newFolderList != null && newFolderList.size() > 0) { unrar =
-             * getUnrar(); unrar.setFolders(newFolderList); newFolderList =
-             * unrar.unrar(); } if (newFolderList != null &&
-             * newFolderList.size() > 0) { unrar = getUnrar();
-             * unrar.setFolders(newFolderList); newFolderList = unrar.unrar(); }
-             */
+                folders.add(JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_DOWNLOAD_DIRECTORY));
+                logger.info("dirs: " + folders);
+                unrar.setFolders(folders);
+                // Entpacken bis nichts mehr gefunden wurde (wird jetzt von
+                // unrar
+                // erledigt indem entpackte dateien nochmal
+                // durch unrar geschickt werden
+                /*
+                 * if (newFolderList != null && newFolderList.size() > 0) {
+                 * unrar = getUnrar(); unrar.setFolders(newFolderList);
+                 * newFolderList = unrar.unrar(); } if (newFolderList != null &&
+                 * newFolderList.size() > 0) { unrar = getUnrar();
+                 * unrar.setFolders(newFolderList); newFolderList =
+                 * unrar.unrar(); }
+                 */
             }
             Vector<String> followingFiles = new Vector<String>();
             Iterator<DownloadLink> ff = JDUtilities.getController().getDownloadLinks().iterator();
