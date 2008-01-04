@@ -640,11 +640,11 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
                     fp.setDownloadDirectory(file.getAbsolutePath());
                 }
                 else {
-                    fp.setDownloadDirectory(tab.getPackageName());
+                    fp.setDownloadDirectory(tab.getDownloadDirectory());
                 }
             }
             else {
-                fp.setDownloadDirectory(tab.getPackageName());
+                fp.setDownloadDirectory(tab.getDownloadDirectory());
             }
             fp.setDownloadLinks(linkList);
 
@@ -1004,7 +1004,8 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
             brwSaveto.setEditable(true);
             brwSaveto.setFileSelectionMode(JDFileChooser.DIRECTORIES_ONLY);
             brwSaveto.setText(JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_DOWNLOAD_DIRECTORY));
-
+          //  bfSubFolder.setText(JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_DOWNLOAD_DIRECTORY));
+            
             txtName.setPreferredSize(new Dimension(450, 20));
             txtPassword.setPreferredSize(new Dimension(450, 20));
             txtComment.setPreferredSize(new Dimension(450, 20));

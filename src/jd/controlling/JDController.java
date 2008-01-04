@@ -451,10 +451,10 @@ public class JDController implements PluginListener, ControlListener, UIListener
         }
 
         xml += "</content>";
-        logger.info(xml);
+       // logger.info(xml);
         String[] encrypt = JDUtilities.encrypt(xml, "DLC Parser");
 
-        logger.info(encrypt[1] + " - " + encrypt[0]);
+       // logger.info(encrypt[1] + " - ");
         if (encrypt == null) {
             logger.severe("DLC Encryption failed.");
             this.getUiInterface().showMessageDialog("JDTC Encryption failed.");
@@ -479,7 +479,7 @@ public class JDController implements PluginListener, ControlListener, UIListener
 
                 ri = Plugin.postRequest(new URL(ri.getLocation()), null, null, null, "jd=1&srcType=jdtc&data=" + key, true);
                 // CHeck ob der call erfolgreich war
-
+logger.info("Call re: "+ri.getHtmlCode());
                 if (!ri.isOK() || !ri.containsHTML("<rc>")) {
                     url++;
                     continue;
@@ -492,7 +492,7 @@ public class JDController implements PluginListener, ControlListener, UIListener
                         JDUtilities.getGUI().showMessageDialog(JDLocale.L("sys.dlc.error_version", "DLC Encryption fehlgeschlagen. Bitte stellen Sie sicher dass Sie die aktuellste JD-Version verwenden."));
                         return;
                     }
-                    logger.info("DLC KEy: " + dlcKey);
+                    //logger.info("DLC KEy: " + dlcKey);
                     JDUtilities.writeLocalFile(file, xml + dlcKey);
                    if(this.getUiInterface().showConfirmDialog(JDLocale.L("sys.dlc.success", "DLC encryption successfull. Run Testdecrypt now?"))){
                        loadContainerFile(file);

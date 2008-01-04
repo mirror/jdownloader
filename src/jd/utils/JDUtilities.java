@@ -504,15 +504,15 @@ public class JDUtilities {
         switch (getRunType()) {
             case RUNTYPE_LOCAL_JARED:
                 envDir = currentDir.getAbsolutePath();
-                logger.info("JD_HOME from current Path :" + envDir);
+               // logger.info("JD_HOME from current Path :" + envDir);
                 break;
             case RUNTYPE_LOCAL_ENV:
                 envDir = System.getenv("JD_HOME");
-                logger.info("JD_HOME from environment:" + envDir);
+                //logger.info("JD_HOME from environment:" + envDir);
                 break;
             default:
                 envDir = System.getProperty("user.home") + System.getProperty("file.separator") + ".jd_home/";
-                logger.info("JD_HOME from user.home :" + envDir);
+                //logger.info("JD_HOME from user.home :" + envDir);
 
         }
 
@@ -1243,7 +1243,7 @@ public class JDUtilities {
                     return RUNTYPE_WEBSTART;
                 }
                 if (root.indexOf("jar") >= 0) {
-                    logger.info("Default: Local jared");
+                   // logger.info("Default: Local jared");
                     return RUNTYPE_LOCAL_JARED;
                 }
             }
