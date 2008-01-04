@@ -94,6 +94,7 @@ public class Unrar extends Interaction implements Serializable {
 
     private JUnrar getUnrar() {
         JUnrar unrar;
+        System.out.println(lastFinishedDownload);
         if (lastFinishedDownload != null) {
 
             String password = lastFinishedDownload.getSourcePluginPassword();
@@ -103,8 +104,7 @@ public class Unrar extends Interaction implements Serializable {
             if (password != null)
                 unrar.addToPasswordlist(password);
             unrar.useToextractlist = true;
-        } else
-        {
+        } else {
             unrar = new JUnrar();
             unrar.useToextractlist = false;
         }
@@ -113,7 +113,7 @@ public class Unrar extends Interaction implements Serializable {
             String efolder = JDUtilities.getConfiguration().getStringProperty(Unrar.PROPERTY_EXTRACTFOLDER, null);
             if (efolder != null)
                 unrar.extractFolder = new File(efolder);
-        } else
+        } 
 
             unrar.overwriteFiles = JDUtilities.getConfiguration().getBooleanProperty(Unrar.PROPERTY_OVERWRITE_FILES, false);
         unrar.autoDelete = JDUtilities.getConfiguration().getBooleanProperty(Unrar.PROPERTY_AUTODELETE, false);

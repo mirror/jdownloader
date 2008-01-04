@@ -1189,13 +1189,7 @@ public class JUnrar {
         unrar = getUnrarCommand();
         logger.info("Starting Unrar (DwD|Coalado)");
         logger.info("Config->unrar: " + unrar);
-        if(useToextractlist)
-        {
-            if(extractFolder!=null)
-            logger.info("Config->extractFolder: " + extractFolder);
-            else
-                useToextractlist=false;
-        }
+        logger.info("Config->extractFolder: " + extractFolder);
         logger.info("Config->useToextractlist: " + useToextractlist);
 
         
