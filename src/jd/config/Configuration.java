@@ -163,6 +163,8 @@ public class Configuration extends Property implements Serializable {
     public static final String PARAM_CAPTCHA_INPUT_SHOWTIME = "CAPTCHA_INPUT_SHOWTIME";
     public static final String PARAM_BROWSER_VARS = "BROWSER_VARS";
     public static final String PARAM_BROWSER = "BROWSER";
+
+    public static final String PARAM_HOST_PRIORITY = "HOST_PRIORITY";
     /**
      * Die unterschiedlichen Interaktionen. (ZB Reconnect nach einem Download)
      */

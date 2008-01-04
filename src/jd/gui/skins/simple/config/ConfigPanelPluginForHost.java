@@ -5,17 +5,28 @@ import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.GridBagConstraints;
+import java.awt.datatransfer.DataFlavor;
+import java.awt.datatransfer.Transferable;
+import java.awt.dnd.DropTarget;
+import java.awt.dnd.DropTargetDragEvent;
+import java.awt.dnd.DropTargetDropEvent;
+import java.awt.dnd.DropTargetEvent;
+import java.awt.dnd.DropTargetListener;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.util.Vector;
 
+import javax.swing.DropMode;
 import javax.swing.JButton;
 import javax.swing.JPanel;
 import javax.swing.JProgressBar;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
+import javax.swing.JTextArea;
+import javax.swing.ListSelectionModel;
+import javax.swing.event.TableModelEvent;
 import javax.swing.table.AbstractTableModel;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.TableCellRenderer;
@@ -27,7 +38,7 @@ import jd.plugins.PluginForHost;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
-public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListener, MouseListener {
+public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListener, MouseListener ,DropTargetListener{
 
     /**
      * 
@@ -42,11 +53,30 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
 
     private PluginForHost         currentPlugin;
 
+    private PluginForHost draggedPlugin;
+
+   
+
     public ConfigPanelPluginForHost(Configuration configuration, UIInterface uiinterface) {
         super( uiinterface);
         this.configuration=configuration;
-        this.pluginsForHost = JDUtilities.getPluginsForHost();
-
+        
+        Vector<PluginForHost> plgs = new  Vector<PluginForHost>();
+        plgs.addAll(JDUtilities.getPluginsForHost());
+        this.pluginsForHost = new Vector<PluginForHost>();
+        Vector<String> priority = ( Vector<String>)configuration.getProperty(Configuration.PARAM_HOST_PRIORITY, new  Vector<String>());
+        for(int i=0; i<priority.size();i++){
+            for(int b=plgs.size()-1; b>=0;b--){
+                if(plgs.get(b).getHost().equalsIgnoreCase(priority.get(i))){
+                    PluginForHost plg = plgs.remove(b);
+                    pluginsForHost.add(plg);
+                    break;
+                }
+            }
+            
+        }
+        pluginsForHost.addAll(plgs);
+        
         initPanel();
 
         load();
@@ -66,16 +96,27 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
     public void save() {
         // Interaction[] tmp= new Interaction[interactions.size()];
         PluginForHost plg;
+        Vector<String> priority = new Vector<String>();
         for (int i = 0; i < pluginsForHost.size(); i++) {
+           
             plg = pluginsForHost.elementAt(i);
+            priority.add(plg.getHost());
             if (plg.getProperties() != null) configuration.setProperty("PluginConfig_" + plg.getPluginName(), plg.getProperties());
+        
         }
+        configuration.setProperty(Configuration.PARAM_HOST_PRIORITY, priority);
+        
     }
 
     @Override
     public void initPanel() {
         setLayout(new BorderLayout());
         table = new InternalTable();
+        table.getTableHeader().setPreferredSize(new Dimension(-1,25));
+        table.setDragEnabled(true);
+        table.setSelectionMode( ListSelectionModel.SINGLE_SELECTION );
+       // table.setDropMode(DropMode.INSERT_ROWS);
+        new DropTarget(table, this);
         InternalTableModel internalTableModel = new InternalTableModel();
         table.setModel(new InternalTableModel());
         this.setPreferredSize(new Dimension(700, 350));
@@ -84,15 +125,17 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
         for (int c = 0; c < internalTableModel.getColumnCount(); c++) {
             column = table.getColumnModel().getColumn(c);
             switch (c) {
-
                 case 0:
-                    column.setPreferredWidth(250);
+                    column.setPreferredWidth(50);
                     break;
                 case 1:
                     column.setPreferredWidth(200);
                     break;
                 case 2:
-                    column.setPreferredWidth(250);
+                    column.setPreferredWidth(200);
+                    break;
+                case 3:
+                    column.setPreferredWidth(200);
                     break;
 
             }
@@ -107,9 +150,12 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
         btnEdit = new JButton(JDLocale.L("gui.config.plugin.host.btn_settings","Einstellungen"));
 
         btnEdit.addActionListener(this);
-        JDUtilities.addToGridBag(panel, scrollpane, 0, 0, 3, 1, 1, 1, insets, GridBagConstraints.BOTH, GridBagConstraints.CENTER);
+        
+        JDUtilities.addToGridBag(panel, new JTextArea(JDLocale.L("gui.config.plugin.host.desc","Die Reihenfolge der Plugins bestimmt die Prioritäten der automatischen Mirrorauswahl\n\rBevorzugte Hoster sollten oben stehen!")), GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.CENTER);
 
-        JDUtilities.addToGridBag(panel, btnEdit, 0, 1, 1, 1, 0, 1, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        JDUtilities.addToGridBag(panel, scrollpane, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 1, 1, insets, GridBagConstraints.BOTH, GridBagConstraints.CENTER);
+
+        JDUtilities.addToGridBag(panel, btnEdit, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 1, 0, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
         // JDUtilities.addToGridBag(this, panel,0, 0, 1, 1, 1, 1, insets,
         // GridBagConstraints.BOTH, GridBagConstraints.WEST);
@@ -203,18 +249,15 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
         public Class<?> getColumnClass(int columnIndex) {
             switch (columnIndex) {
                 case 0:
-                    return String.class;
-                case 1:
-                    return String.class;
-                case 2:
-                    return String.class;
+                    return Integer.class;
+      
 
             }
             return String.class;
         }
 
         public int getColumnCount() {
-            return 3;
+            return 4;
         }
 
         public int getRowCount() {
@@ -225,10 +268,12 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
 
             switch (columnIndex) {
                 case 0:
-                    return pluginsForHost.elementAt(rowIndex).getPluginName();
+                    return rowIndex;
                 case 1:
-                    return pluginsForHost.elementAt(rowIndex).getPluginID();
+                    return pluginsForHost.elementAt(rowIndex).getPluginName();
                 case 2:
+                    return pluginsForHost.elementAt(rowIndex).getPluginID();
+                case 3:
                     return pluginsForHost.elementAt(rowIndex).getCoder();
 
             }
@@ -238,10 +283,12 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
         public String getColumnName(int column) {
             switch (column) {
                 case 0:
-                    return JDLocale.L("gui.config.plugin.host.column_host","Host");
+                    return JDLocale.L("gui.config.plugin.host.column_id","*");
                 case 1:
-                    return JDLocale.L("gui.config.plugin.host.column_id","ID");
+                    return JDLocale.L("gui.config.plugin.host.column_host","Host");
                 case 2:
+                    return JDLocale.L("gui.config.plugin.host.column_id","ID");
+                case 3:
                     return JDLocale.L("gui.config.plugin.host.column_author","Ersteller");
 
             }
@@ -293,5 +340,55 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
 //          logger.info("jj");
             return c;
         }
+    }
+
+
+
+    public void dragEnter(DropTargetDragEvent e) {
+      int[] draggedRows = table.getSelectedRows();
+      this.draggedPlugin=pluginsForHost.get(draggedRows[0]);
+     
+    }
+
+    public void dragExit(DropTargetEvent dte) {
+        // TODO Auto-generated method stub
+     
+        
+    }
+
+    public void dragOver(DropTargetDragEvent e) {
+        // TODO Auto-generated method stub
+      int id=  table.rowAtPoint(e.getLocation());
+      
+  // table.setSelectionModel(newModel)
+     // table.getSelectionModel().clearSelection();
+   // table.getSelectionModel().addSelectionInterval(id, id);
+      pluginsForHost.remove(draggedPlugin);
+      pluginsForHost.add(id, draggedPlugin);
+      table.tableChanged(new TableModelEvent(table.getModel()));
+      table.getSelectionModel().clearSelection();
+      table.getSelectionModel().addSelectionInterval(id, id);
+    }
+
+    public void drop(DropTargetDropEvent e) {
+
+logger.info("insert at "+table.rowAtPoint(e.getLocation()));
+        try {
+           
+
+            // e.dropComplete(true);
+        }
+        catch (Exception exc) {
+            // e.rejectDrop();
+            exc.printStackTrace();
+        }
+   
+
+    
+    }
+
+    public void dropActionChanged(DropTargetDragEvent dtde) {
+        // TODO Auto-generated method stub
+        
     }
 }

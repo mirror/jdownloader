@@ -226,8 +226,8 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
         mPremiumMirror.addActionListener(this);
         mFreeMirror.addActionListener(this);
         mPriorityMirror.addActionListener(this);
-        mPremiumMirror.setEnabled(false);
-        mFreeMirror.setEnabled(false);
+        mPremiumMirror.setEnabled(true);
+        mFreeMirror.setEnabled(true);
         mPriorityMirror.setEnabled(false);
         this.setJMenuBar(menuBar);
 
