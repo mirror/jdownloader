@@ -104,20 +104,21 @@ public class Unrar extends Interaction implements Serializable {
             unrar=new JUnrar(new File(lastFinishedDownload.getFileOutput()),password);
             if(password!=null)
                 unrar.addToPasswordlist(password);
-            unrar.useToextractlist=true;
         }
         else
         {
             unrar = new JUnrar();
-            unrar.useToextractlist=false;
         }
 
         if(JDUtilities.getConfiguration().getBooleanProperty(Unrar.PROPERTY_ENABLE_EXTRACTFOLDER, false))
         {
+            unrar.useToextractlist=true;
             String efolder = JDUtilities.getConfiguration().getStringProperty(Unrar.PROPERTY_EXTRACTFOLDER, null);
             if(efolder!=null)
                 unrar.extractFolder=new File(efolder);
         }
+        else
+            unrar.useToextractlist=false;
 
         unrar.overwriteFiles = JDUtilities.getConfiguration().getBooleanProperty(Unrar.PROPERTY_OVERWRITE_FILES, false);
         unrar.autoDelete = JDUtilities.getConfiguration().getBooleanProperty(Unrar.PROPERTY_AUTODELETE, false);
