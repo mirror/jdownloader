@@ -19,8 +19,6 @@ import jd.utils.JDUtilities;
 public class Serienjunkies extends PluginForDecrypt {
     private static final String host = "Serienjunkies.org";
 
-    private static final String DEFAULT_PASSWORD = "serienjunkies.org";
-
     private String version = "4.2.0.0";
 
     private Pattern patternCaptcha = null;
@@ -79,24 +77,26 @@ public class Serienjunkies extends PluginForDecrypt {
         boolean rsde = (Boolean) this.getProperties().getProperty("USE_RAPIDSHAREDE", false);
         boolean net = (Boolean) this.getProperties().getProperty("USE_NETLOAD", false);
         boolean uploaded = (Boolean) this.getProperties().getProperty("USE_UPLOADED", false);
+        boolean cat = (Boolean) this.getProperties().getProperty("USE_CAT", true);
         next = false;
         String hosterStr = "";
-        if (rscom || rsde || net) {
+        if (rscom || rsde || net | uploaded) {
             hosterStr += "(";
             if (rscom)
-                hosterStr += isNext() + "rc";
+                hosterStr += isNext() + "rc[\\_\\-]";
             if (rsde)
-                hosterStr += isNext() + "rs";
+                hosterStr += isNext() + "rs[\\_\\-]";
             if (net)
-                hosterStr += isNext() + "nl";
+                hosterStr += isNext() + "nl[\\_\\-]";
             if (uploaded)
-                hosterStr += isNext() + "ut";
-            hosterStr += ")[\\_\\-]";
+                hosterStr += isNext() + "ut[\\_\\-]";
+            if (cat)
+                hosterStr += isNext() + "cat\\=[\\d]+";
+            hosterStr += ")";
         } else {
             hosterStr += "not";
         }
-        // http://download.serienjunkies.org/f-170bd7b99547753c/ut_drhouse317.html
-        return Pattern.compile("http://(download\\.serienjunkies\\.org|serienjunkies\\.org/s|85\\.17\\.177\\.195/s|serienjunki\\.es/s).*" + hosterStr + ".*", Pattern.CASE_INSENSITIVE);
+        return Pattern.compile("http://(download\\.serienjunkies\\.org|"+(cat? "serienjunkies.org|":"")+"serienjunkies\\.org/s|85\\.17\\.177\\.195/s|serienjunki\\.es/s).*" + hosterStr + ".*", Pattern.CASE_INSENSITIVE);
     }
 
     @Override
@@ -108,7 +108,6 @@ public class Serienjunkies extends PluginForDecrypt {
     public boolean doBotCheck(File file) {
         return false;
     }
-
     @Override
     public PluginStep doStep(PluginStep step, String parameter) {
         switch (step.getStep()) {
@@ -117,6 +116,34 @@ public class Serienjunkies extends PluginForDecrypt {
                 Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
                 try {
                     URL url = new URL(parameter);
+                    if(parameter.matches(".*\\?cat\\=[\\d]+"))
+                    {
+                        RequestInfo reqinfo = getRequest(new URL("http://serienjunkies.org/"));
+                        int cat = Integer.parseInt(parameter.replaceFirst(".*cat\\=", "").replaceFirst("[^\\d].*", ""));
+                        Pattern pattern = Pattern.compile("<a href=\"http://serienjunkies.org/\\?cat\\=([\\d]+)\">(.*?)</a><br", Pattern.CASE_INSENSITIVE);
+                        Matcher matcher = pattern.matcher(reqinfo.getHtmlCode());
+                        String name = null;
+                        while (matcher.find()) {
+                            if(Integer.parseInt(matcher.group(1))==cat)
+                            {
+                                name=matcher.group(2).toLowerCase();
+                                break;
+                            }
+                        }
+                        if(name==null)
+                            return null;
+                        reqinfo = getRequest(url, null, null, true);
+                        pattern = Pattern.compile("(?s)<p><strong>"+name+"</strong>(.*?)</p>", Pattern.CASE_INSENSITIVE);
+                        String bet = getFirstMatch(reqinfo.getHtmlCode(), pattern, 1);
+                        pattern = Pattern.compile("<strong>.*?\\:</strong> <a href=\"(.*?)\"", Pattern.CASE_INSENSITIVE);
+                        matcher = pattern.matcher(bet);
+                        while (matcher.find()) {
+                            decryptedLinks.add(this.createDownloadlink(matcher.group(1)));
+                            
+                        }
+                        step.setParameter(decryptedLinks);
+                        return null;
+                    }
                     String modifiedURL = url.toString();
                     modifiedURL = modifiedURL.replaceAll("safe/rc", "safe/frc");
                     modifiedURL = modifiedURL.replaceAll("save/rc", "save/frc");
@@ -200,8 +227,8 @@ public class Serienjunkies extends PluginForDecrypt {
 
     private void setConfigElements() {
         ConfigEntry cfg;
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_LABEL, "Default Passwort"));
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getProperties(), "DEFAULT_PASSWORT", "Passwort").setDefaultValue(DEFAULT_PASSWORD));
+        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getProperties(), "USE_CAT", "Bei Kategorien den neusten Download verwenden"));
+        cfg.setDefaultValue(true);
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_LABEL, "Hoster Auswahl"));
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_SEPERATOR));
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getProperties(), "USE_RAPIDSHARE", "Rapidshare.com"));
