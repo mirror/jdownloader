@@ -94,9 +94,9 @@ public class Unrar extends Interaction implements Serializable {
 
     private JUnrar getUnrar() {
         JUnrar unrar;
-        System.out.println(lastFinishedDownload);
-        if (lastFinishedDownload != null) {
 
+        if (lastFinishedDownload != null) {
+            logger.info("LastFinishedFile:"+lastFinishedDownload);
             String password = lastFinishedDownload.getSourcePluginPassword();
             if (password != null && password.matches("[\\s]*"))
                 password = null;
