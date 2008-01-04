@@ -80,7 +80,7 @@ public class Serienjunkies extends PluginForDecrypt {
         boolean cat = (Boolean) this.getProperties().getProperty("USE_CAT", true);
         next = false;
         String hosterStr = "";
-        if (rscom || rsde || net | uploaded) {
+        if (rscom || rsde || net || uploaded) {
             hosterStr += "(";
             if (rscom)
                 hosterStr += isNext() + "rc[\\_\\-]";
@@ -119,6 +119,8 @@ public class Serienjunkies extends PluginForDecrypt {
                     if(parameter.matches(".*\\?cat\\=[\\d]+"))
                     {
                         RequestInfo reqinfo = getRequest(new URL("http://serienjunkies.org/"));
+                        if(reqinfo.getLocation().matches(".*enter.*"))
+                            reqinfo = getRequest(new URL("http://serienjunkies.org/"));
                         int cat = Integer.parseInt(parameter.replaceFirst(".*cat\\=", "").replaceFirst("[^\\d].*", ""));
                         Pattern pattern = Pattern.compile("<a href=\"http://serienjunkies.org/\\?cat\\=([\\d]+)\">(.*?)</a><br", Pattern.CASE_INSENSITIVE);
                         Matcher matcher = pattern.matcher(reqinfo.getHtmlCode());
@@ -152,7 +154,8 @@ public class Serienjunkies extends PluginForDecrypt {
                     patternCaptcha = Pattern.compile(String.format(dynamicCaptcha, new Object[]{modifiedURL}));
                     logger.fine("using patternCaptcha:" + patternCaptcha);
                     RequestInfo reqinfo = getRequest(url, null, null, true);
-
+                    if(reqinfo.getLocation().matches(".*enter.*"))
+                        reqinfo = getRequest(url, null, null, true);
                     String furl = getSimpleMatch(reqinfo.getHtmlCode(), "<FRAME SRC=\"°" + modifiedURL + "\"", 0);
                     if (furl != null) {
                         url = new URL(furl + modifiedURL);
