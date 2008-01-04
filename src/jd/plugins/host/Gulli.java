@@ -20,7 +20,8 @@ import jd.utils.JDUtilities;
  * noch?)
  */
 public class Gulli extends PluginForHost {
-    static private final Pattern PAT_SUPPORTED = Pattern.compile("http://share\\.gulli\\.com/files/[\\d]{10}.*", Pattern.CASE_INSENSITIVE);
+    //http://share.gulli.com/files/819611887
+    static private final Pattern PAT_SUPPORTED = Pattern.compile("http://share\\.gulli\\.com/files/[\\d]+.*", Pattern.CASE_INSENSITIVE);
 
     static private final Pattern PAT_CAPTCHA        = Pattern.compile("<img src=\"(/captcha[^\"]*)");
 

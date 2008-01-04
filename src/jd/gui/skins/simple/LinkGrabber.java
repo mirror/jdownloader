@@ -607,6 +607,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
     }
 
     protected String[] getPasswordArray(String password) {
+        if(password==null)return new String[]{};
         if (password.matches("[\\s]*\\{[\\s]*\".*\"[\\s]*\\}[\\s]*$")) {
             password = password.replaceFirst("[\\s]*\\{[\\s]*\"", "").replaceFirst("\"[\\s]*\\}[\\s]*$", "");
             return password.split("\"[\\s]*\\,[\\s]*\"");
