@@ -9,6 +9,7 @@ import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.JProgressBar;
 import javax.swing.JSeparator;
 import javax.swing.JTabbedPane;
 
@@ -43,6 +44,8 @@ public class ConfigPanelReconnect extends ConfigPanel implements ActionListener 
 
     private JButton                     btn;
 
+
+
     public ConfigPanelReconnect(Configuration configuration, UIInterface uiinterface) {
         super(uiinterface);
         this.configuration = configuration;
@@ -67,7 +70,7 @@ public class ConfigPanelReconnect extends ConfigPanel implements ActionListener 
         box.addActionListener(this);
         p.add(new JLabel("Bitte Methode auswählen:"));
         p.add(box);
-        JDUtilities.addToGridBag(panel, p, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 0, 0, null, GridBagConstraints.NONE, GridBagConstraints.NORTHWEST);
+       JDUtilities.addToGridBag(panel, p, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 0, 0, null, GridBagConstraints.NONE, GridBagConstraints.NORTHWEST);
         JDUtilities.addToGridBag(panel, new JSeparator(), GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 0, 0, null, GridBagConstraints.NONE, GridBagConstraints.NORTHWEST);
         JDUtilities.addToGridBag(panel, btn = new JButton("Test Reconnect"), GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 0, 0, null, GridBagConstraints.NONE, GridBagConstraints.NORTHWEST);
         btn.addActionListener(this);

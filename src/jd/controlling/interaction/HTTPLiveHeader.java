@@ -330,7 +330,7 @@ public class HTTPLiveHeader extends Interaction {
             progress.setStatusText(JDUtilities.sprintf(pattern, new String[]{  preIp ,afterIP}));
             logger.finer("Ip Check: " + afterIP);
         }
-        if (!afterIP.equals(preIp)) {
+        if (!afterIP.equals(preIp)&&!afterIP.equalsIgnoreCase("offline")) {
             progress.finalize();
             return true;
         }

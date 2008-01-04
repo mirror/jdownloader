@@ -135,7 +135,7 @@ public class ClipboardHandler extends Thread {
                 }
                 Thread.sleep(100);
             } catch (Exception e2) {
-                e2.printStackTrace();
+             //   e2.printStackTrace();
             }
         }
     }

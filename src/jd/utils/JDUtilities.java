@@ -190,7 +190,7 @@ public class JDUtilities {
     /**
      * Gibt das aktuelle Working Directory zurück. Beim FilebRowser etc wird da
      * s gebraucht.
-     *
+     * 
      * @return
      */
     public static File getCurrentWorkingDirectory(String id) {
@@ -214,7 +214,7 @@ public class JDUtilities {
 
     /**
      * Setztd as aktuelle woringdirectory für den filebrowser
-     *
+     * 
      * @param f
      */
     public static void setCurrentWorkingDirectory(File f, String id) {
@@ -225,7 +225,7 @@ public class JDUtilities {
     /**
      * Geht eine Komponente so lange durch (getParent), bis ein Objekt vom Typ
      * Frame gefunden wird, oder es keine übergeordnete Komponente gibt
-     *
+     * 
      * @param comp Komponente, dessen Frame Objekt gesucht wird
      * @return Ein Frame Objekt, das die Komponente beinhält oder null, falls
      *         keins gefunden wird
@@ -242,7 +242,7 @@ public class JDUtilities {
 
     /**
      * parsed den JD_REVISION String auf
-     *
+     * 
      * @return RevissionID
      */
     public static String getRevision() {
@@ -253,7 +253,7 @@ public class JDUtilities {
 
     /**
      * parsed den JD_REVISION String auf
-     *
+     * 
      * @return Letztes Änderungs datum
      */
     public static String getLastChangeDate() {
@@ -268,7 +268,7 @@ public class JDUtilities {
 
     /**
      * parsed den JD_REVISION String auf
-     *
+     * 
      * @return Letzte änderungsuhrzeit
      */
     public static String getLastChangeTime() {
@@ -281,7 +281,7 @@ public class JDUtilities {
 
     /**
      * parsed den JD_REVISION String auf
-     *
+     * 
      * @return Name des programmierers der die letzten Änderungen durchgeführt
      *         hat
      */
@@ -295,7 +295,7 @@ public class JDUtilities {
 
     /**
      * Diese Klasse fuegt eine Komponente einem Container hinzu
-     *
+     * 
      * @param cont Der Container, dem eine Komponente hinzugefuegt werden soll
      * @param comp Die Komponente, die hinzugefuegt werden soll
      * @param x X-Position innerhalb des GriBagLayouts
@@ -335,7 +335,7 @@ public class JDUtilities {
 
     /**
      * Genau wie add, aber mit den Standardwerten iPadX,iPadY=0
-     *
+     * 
      * @param cont Der Container, dem eine Komponente hinzugefuegt werden soll
      * @param comp Die Komponente, die hinzugefuegt werden soll
      * @param x X-Position innerhalb des GriBagLayouts
@@ -379,7 +379,7 @@ public class JDUtilities {
     /**
      * Liefert einen Punkt zurück, mit dem eine Komponente auf eine andere
      * zentriert werden kann
-     *
+     * 
      * @param parent Die Komponente, an der ausgerichtet wird
      * @param child Die Komponente die ausgerichtet werden soll
      * @return Ein Punkt, mit dem diese Komponente mit der setLocation Methode
@@ -411,7 +411,7 @@ public class JDUtilities {
 
     /**
      * Liefert eine Zeichenkette aus dem aktuellen ResourceBundle zurück
-     *
+     * 
      * @param key Identifier der gewünschten Zeichenkette
      * @return Die gewünschte Zeichnenkette
      */
@@ -434,7 +434,7 @@ public class JDUtilities {
 
     /**
      * Liefert einer char aus dem aktuellen ResourceBundle zurück
-     *
+     * 
      * @param key Identifier des gewünschten chars
      * @return der gewünschte char
      */
@@ -449,7 +449,7 @@ public class JDUtilities {
 
     /**
      * Liefert aus der Map der geladenen Bilder ein Element zurück
-     *
+     * 
      * @param imageName Name des Bildes das zurückgeliefert werden soll
      * @return Das gewünschte Bild oder null, falls es nicht gefunden werden
      *         kann
@@ -465,7 +465,7 @@ public class JDUtilities {
 
     /**
      * Fügt ein Bild zur Map hinzu
-     *
+     * 
      * @param imageName Name des Bildes, daß hinzugefügt werden soll
      * @param image Das hinzuzufügende Bild
      */
@@ -476,21 +476,22 @@ public class JDUtilities {
 
     /**
      * Liefert das Basisverzeichnis für jD zurück.
-     *
+     * 
      * @return ein File, daß das Basisverzeichnis angibt
      */
     public static File getJDHomeDirectoryFromEnvironment() {
         String envDir = null;// System.getenv("JD_HOME");
         File currentDir = null;
 
-        String dir=Thread.currentThread().getContextClassLoader().getResource("jd/Main.class")+"";
-        dir=dir.split("\\.jar\\!")[0]+".jar";
-        dir=dir.substring(Math.max(dir.indexOf("file:"), 0));
+        String dir = Thread.currentThread().getContextClassLoader().getResource("jd/Main.class") + "";
+        dir = dir.split("\\.jar\\!")[0] + ".jar";
+        dir = dir.substring(Math.max(dir.indexOf("file:"), 0));
         try {
-            currentDir=new File(new URI(dir));
+            currentDir = new File(new URI(dir));
 
-        //logger.info(" App dir: "+currentDir+" - "+System.getProperty("java.class.path"));
-        if(currentDir.isFile())currentDir=currentDir.getParentFile();
+            // logger.info(" App dir: "+currentDir+" -
+            // "+System.getProperty("java.class.path"));
+            if (currentDir.isFile()) currentDir = currentDir.getParentFile();
 
         }
         catch (URISyntaxException e) {
@@ -498,9 +499,9 @@ public class JDUtilities {
             e.printStackTrace();
         }
 
-      //  logger.info("RunDir: " + currentDir);
+        // logger.info("RunDir: " + currentDir);
 
-        switch (getRunType()){
+        switch (getRunType()) {
             case RUNTYPE_LOCAL_JARED:
                 envDir = currentDir.getAbsolutePath();
                 logger.info("JD_HOME from current Path :" + envDir);
@@ -529,7 +530,7 @@ public class JDUtilities {
     /**
      * Lädt eine Klasse aus dem homedir. UNd instanziert sie mit den gegebenen
      * arumenten
-     *
+     * 
      * @param classPath
      * @param arguments
      * @return
@@ -573,7 +574,7 @@ public class JDUtilities {
             return con.newInstance(arguments);
         }
         catch (SecurityException e) {
-             e.printStackTrace();
+            e.printStackTrace();
         }
         catch (NoSuchMethodException e) {
 
@@ -604,7 +605,7 @@ public class JDUtilities {
 
     /**
      * Schreibt das Home Verzeichnis in den Webstart Cache
-     *
+     * 
      * @param newHomeDir Das neue JD-HOME
      */
     @SuppressWarnings("unchecked")
@@ -638,7 +639,7 @@ public class JDUtilities {
     /**
      * Liefert einen URLClassLoader zurück, um Dateien aus dem Stammverzeichnis
      * zu laden
-     *
+     * 
      * @return URLClassLoader
      */
     public static JDClassLoader getJDClassLoader() {
@@ -655,24 +656,25 @@ public class JDUtilities {
     /**
      * Diese Methode erstellt einen neuen Captchadialog und liefert den
      * eingegebenen Text zurück.
-     *
+     * 
      * @param controller Der Controller
      * @param plugin Das Plugin, das dieses Captcha fordert
      * @param host der Host von dem die Methode verwendet werden soll
      * @param file
      * @return Der vom Benutzer eingegebene Text
      */
-    public static String getCaptcha(Plugin plugin, String method,File file,boolean forceJAC) {
-      String host;
-      if(method==null){
-          host=plugin.getHost();
-      }else{
-          host=method;
-      }
+    public static String getCaptcha(Plugin plugin, String method, File file, boolean forceJAC) {
+        String host;
+        if (method == null) {
+            host = plugin.getHost();
+        }
+        else {
+            host = method;
+        }
 
         logger.info("JAC has Method for: " + host + ": " + JAntiCaptcha.hasMethod(getJACMethodsDirectory(), host));
-        if (forceJAC ||(JAntiCaptcha.hasMethod(getJACMethodsDirectory(), host)&&JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_JAC_METHODS + "_" + host, true)&&JDUtilities.getConfiguration().getIntegerProperty(Configuration.PARAM_CAPTCHA_INPUT_SHOWTIME, 0)<=0&&!configuration.getBooleanProperty(Configuration.PARAM_CAPTCHA_JAC_DISABLE,false))) {
-            if(!JAntiCaptcha.hasMethod(getJACMethodsDirectory(), host)||!JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_JAC_METHODS + "_" + host, true)){
+        if (forceJAC || (JAntiCaptcha.hasMethod(getJACMethodsDirectory(), host) && JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_JAC_METHODS + "_" + host, true) && JDUtilities.getConfiguration().getIntegerProperty(Configuration.PARAM_CAPTCHA_INPUT_SHOWTIME, 0) <= 0 && !configuration.getBooleanProperty(Configuration.PARAM_CAPTCHA_JAC_DISABLE, false))) {
+            if (!JAntiCaptcha.hasMethod(getJACMethodsDirectory(), host) || !JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_JAC_METHODS + "_" + host, true)) {
                 return null;
             }
 
@@ -690,18 +692,14 @@ public class JDUtilities {
             JAntiCaptcha jac = new JAntiCaptcha(getJACMethodsDirectory(), host);
             Captcha captcha = jac.createCaptcha(captchaImage);
             String captchaCode = jac.checkCaptcha(captcha);
-            logger.info("Code: "+captchaCode);
+            logger.info("Code: " + captchaCode);
             return captchaCode;
-            }
+        }
 
         else {
             return getController().getCaptchaCodeFromUser(plugin, file);
         }
     }
-
-
-
-
 
     // /**
     // * Fügt einen PluginListener hinzu
@@ -763,7 +761,7 @@ public class JDUtilities {
     // }
     /**
      * Lädt ein Objekt aus einer Datei
-     *
+     * 
      * @param frame Ein übergeordnetes Fenster
      * @param fileInput Falls das Objekt aus einer bekannten Datei geladen
      *            werden soll, wird hier die Datei angegeben. Falls nicht, kann
@@ -772,7 +770,7 @@ public class JDUtilities {
      * @return Das geladene Objekt
      */
     public static Object loadObject(JFrame frame, File fileInput, boolean asXML) {
-        //logger.info("load file: " + fileInput + " (xml:" + asXML + ")");
+        // logger.info("load file: " + fileInput + " (xml:" + asXML + ")");
         Object objectLoaded = null;
         if (fileInput == null) {
             JFileChooser fileChooserLoad = new JFileChooser();
@@ -798,7 +796,7 @@ public class JDUtilities {
                 }
                 // Object15475dea4e088fe0e9445da30604acd1
                 // Object80d11614908074272d6b79abe91eeca1
-               // logger.info("Loaded Object (" + hash + "): ");
+                // logger.info("Loaded Object (" + hash + "): ");
                 return objectLoaded;
             }
             catch (ClassNotFoundException e) {
@@ -819,7 +817,7 @@ public class JDUtilities {
 
     /**
      * Speichert ein Objekt
-     *
+     * 
      * @param frame ein Fenster
      * @param objectToSave Das zu speichernde Objekt
      * @param fileOutput Das File, in das geschrieben werden soll. Falls das
@@ -846,7 +844,8 @@ public class JDUtilities {
         if (fileOutput != null) {
             if (fileOutput.isDirectory()) {
                 fileOutput = new File(fileOutput, name + extension);
-                //logger.info("save file: " + fileOutput + " (xml:" + asXML + ") object: " + objectToSave + " - " + extension);
+                // logger.info("save file: " + fileOutput + " (xml:" + asXML +
+                // ") object: " + objectToSave + " - " + extension);
             }
             hashPre = getLocalHash(fileOutput);
             if (fileOutput.exists()) fileOutput.delete();
@@ -887,7 +886,7 @@ public class JDUtilities {
 
     /**
      * Formatiert Sekunden in das zeitformat stunden:minuten:sekunden
-     *
+     * 
      * @param eta toURI().toURL();
      * @return formatierte Zeit
      */
@@ -904,7 +903,7 @@ public class JDUtilities {
 
     /**
      * Hängt an i solange fill vorne an bis die zechenlänge von i gleich num ist
-     *
+     * 
      * @param i
      * @param num
      * @param fill
@@ -919,7 +918,7 @@ public class JDUtilities {
 
     /**
      * Liefert alle geladenen Plugins zum Entschlüsseln zurück
-     *
+     * 
      * @return Plugins zum Entschlüsseln
      */
     public static Vector<PluginForDecrypt> getPluginsForDecrypt() {
@@ -928,7 +927,7 @@ public class JDUtilities {
 
     /**
      * Liefert alle geladenen Plugins zum Suchen zurück
-     *
+     * 
      * @return Plugins zum Suchen
      */
     public static Vector<PluginForSearch> getPluginsForSearch() {
@@ -937,7 +936,7 @@ public class JDUtilities {
 
     /**
      * Liefert alle geladenen Plugins zum Laden von Containerdateien zurück
-     *
+     * 
      * @return Plugins zum Laden von Containerdateien
      */
     public static Vector<PluginForContainer> getPluginsForContainer() {
@@ -947,7 +946,7 @@ public class JDUtilities {
     /**
      * Gibt alle Ketegorien zurück für die Suchplugins exestieren. Die
      * Kategorien werden in den Plugins selbst als String definiert
-     *
+     * 
      * @return Alle Search kategorien
      */
     public static Vector<String> getPluginsForSearchCategories() {
@@ -962,17 +961,34 @@ public class JDUtilities {
     }
 
     /**
-     * Liefert alle Plugins zum Downloaden von einem Anbieter zurück
-     *
+     * Liefert alle Plugins zum Downloaden von einem Anbieter zurück. Die liste
+     * wird dabei sortiert zurückgegeben
+     * 
      * @return Plugins zum Downloaden von einem Anbieter
      */
     public static Vector<PluginForHost> getPluginsForHost() {
-        return pluginsForHost;
+        // return pluginsForHost;
+
+        Vector<PluginForHost> plgs = new Vector<PluginForHost>();
+        plgs.addAll(pluginsForHost);
+        Vector<PluginForHost> pfh = new Vector<PluginForHost>();
+        Vector<String> priority = (Vector<String>) configuration.getProperty(Configuration.PARAM_HOST_PRIORITY, new Vector<String>());
+        for (int i = 0; i < priority.size(); i++) {
+            for (int b = plgs.size() - 1; b >= 0; b--) {
+                if (plgs.get(b).getHost().equalsIgnoreCase(priority.get(i))) {
+                    PluginForHost plg = plgs.remove(b);
+                    pfh.add(plg);
+                    break;
+                }
+            }
+        }
+        pfh.addAll(plgs);
+        return pfh;
     }
 
     /**
      * Liefert alle optionalen Plugins zurücl
-     *
+     * 
      * @return Alle optionalen Plugins
      */
     public static HashMap<String, PluginOptional> getPluginsOptional() {
@@ -981,7 +997,7 @@ public class JDUtilities {
 
     /**
      * Gibt den MD5 hash eines Strings zurück
-     *
+     * 
      * @param arg
      * @return MD% hash von arg
      */
@@ -1002,7 +1018,7 @@ public class JDUtilities {
 
     /**
      * Sucht ein passendes Plugin für einen Anbieter
-     *
+     * 
      * @param host Der Host, von dem das Plugin runterladen kann
      * @return Ein passendes Plugin oder null
      */
@@ -1015,7 +1031,7 @@ public class JDUtilities {
 
     /**
      * Sucht ein passendes Plugin für ein Containerfile
-     *
+     * 
      * @param container Der Host, von dem das Plugin runterladen kann
      * @return Ein passendes Plugin oder null
      */
@@ -1035,7 +1051,7 @@ public class JDUtilities {
 
     /**
      * Setzt die Konfigurations instanz
-     *
+     * 
      * @param configuration
      */
     public static void setConfiguration(Configuration configuration) {
@@ -1052,7 +1068,7 @@ public class JDUtilities {
 
     /**
      * Diese Funktion gibt den Pfad zum JAC-Methodenverzeichniss zurück
-     *
+     * 
      * @author coalado
      * @return gibt den Pfad zu den JAC Methoden zurück
      */
@@ -1063,7 +1079,7 @@ public class JDUtilities {
 
     /**
      * Gibt ein FileOebject zu einem Resourcstring zurück
-     *
+     * 
      * @author coalado
      * @param resource Ressource, die geladen werden soll
      * @return File zu arg
@@ -1089,7 +1105,7 @@ public class JDUtilities {
     /**
      * public static String getLocalHash(File f) Gibt einen MD% Hash der file
      * zurück
-     *
+     * 
      * @author coalado
      * @param f
      * @return Hashstring Md5
@@ -1152,7 +1168,7 @@ public class JDUtilities {
     /**
      * "http://rapidshare.com&#x2F;&#x66;&#x69;&#x6C;&#x65;&#x73;&#x2F;&#x35;&#x34;&#x35;&#x34;&#x31;&#x34;&#x38;&#x35;&#x2F;&#x63;&#x63;&#x66;&#x32;&#x72;&#x73;&#x64;&#x66;&#x2E;&#x72;&#x61;&#x72;";
      * Wandelt alle hexkodierten zeichen in diesem Format in normalen text um
-     *
+     * 
      * @param str
      * @return decoded string
      */
@@ -1183,7 +1199,7 @@ public class JDUtilities {
 
     /**
      * Schreibt content in eine Lokale textdatei
-     *
+     * 
      * @param file
      * @param content
      * @return true/False je nach Erfolg des Schreibvorgangs
@@ -1212,7 +1228,7 @@ public class JDUtilities {
     }
 
     /**
-     *
+     * 
      */
     public static int getRunType() {
 
@@ -1221,7 +1237,7 @@ public class JDUtilities {
             Enumeration<URL> en = Thread.currentThread().getContextClassLoader().getResources("jd/Main.class");
             if (en.hasMoreElements()) {
                 String root = en.nextElement().toString();
-               // logger.info(root);
+                // logger.info(root);
                 if (root.indexOf("http://") >= 0) {
                     logger.info("Depr.: Webstart");
                     return RUNTYPE_WEBSTART;
@@ -1231,8 +1247,8 @@ public class JDUtilities {
                     return RUNTYPE_LOCAL_JARED;
                 }
             }
-            if(System.getenv("JD_HOME") != null){
-                if(new File(System.getenv("JD_HOME")).exists()){
+            if (System.getenv("JD_HOME") != null) {
+                if (new File(System.getenv("JD_HOME")).exists()) {
                     logger.info("Dev.: Local splitted from environment variable");
                     return RUNTYPE_LOCAL_ENV;
                 }
@@ -1251,7 +1267,7 @@ public class JDUtilities {
     /**
      * public static String getLocalFile(File file) Liest file über einen
      * bufferdReader ein und gibt den Inhalt asl String zurück
-     *
+     * 
      * @param file
      * @return File Content als String
      */
@@ -1279,7 +1295,7 @@ public class JDUtilities {
 
     /**
      * Zum Kopieren von einem Ort zum anderen
-     *
+     * 
      * @param in
      * @param out
      * @throws IOException
@@ -1365,7 +1381,7 @@ public class JDUtilities {
 
     /**
      * Setzt das Homedirectory und erstellt es notfalls neu
-     *
+     * 
      * @param homeDirectory
      */
     public static void setHomeDirectory(String homeDirectory) {
@@ -1376,7 +1392,7 @@ public class JDUtilities {
 
     /**
      * Lädt eine url lokal herunter
-     *
+     * 
      * @param file
      * @param urlString
      * @return Erfolg true/false
@@ -1402,7 +1418,7 @@ public class JDUtilities {
 
     /**
      * Lädt über eine URLConnection eine datei ehrunter. Zieldatei ist file.
-     *
+     * 
      * @param file
      * @param con
      * @return Erfolg true/false
@@ -1447,7 +1463,7 @@ public class JDUtilities {
     /**
      * TODO: Serverpfad in de Config aufnehmen Gleicht das homedir mit dem
      * server ab. Der Serverpfad steht noch in WebUpdater.java
-     *
+     * 
      * @author coalado
      * @return Anzahl der aktualisierten Files
      */
@@ -1459,13 +1475,13 @@ public class JDUtilities {
 
     /**
      * Prüft anhand der Globalen IP Check einstellungen die IP
-     *
+     * 
      * @return ip oder /offline
      */
     public static String getIPAddress() {
-        if(getConfiguration().getBooleanProperty(Configuration.PARAM_GLOBAL_IP_DISABLE, false)){
+        if (getConfiguration().getBooleanProperty(Configuration.PARAM_GLOBAL_IP_DISABLE, false)) {
             logger.finer("IP Check is disabled. return current Milliseconds");
-            return System.currentTimeMillis()+"";
+            return System.currentTimeMillis() + "";
         }
 
         String site = getConfiguration().getStringProperty(Configuration.PARAM_GLOBAL_IP_CHECK_SITE, "http://checkip.dyndns.org");
@@ -1492,42 +1508,39 @@ public class JDUtilities {
         catch (Exception e1) {
             logger.severe("url not found. " + e1.toString());
 
+        }
+        // http://jdown.cwsurf.de/getip.php
+
+        try {
+            site = "http://jdownloader.ath.cx/getip.php";
+
+            logger.finer("IP Check via http://jdownloader.ath.cx");
+            RequestInfo ri;
+
+            ri = Plugin.getRequest(new URL(site), null, null, true);
+            String ip = Plugin.getSimpleMatch(ri.getHtmlCode(), "<ip>°</ip>", 0);
+            if (ip == null) {
+                logger.info("Sec. IP Check failed.");
+                return "offline";
+            }
+            else {
+                logger.info("Sec. IP Check success. PLease Check Your IP Check settings");
+                return ip;
+            }
+        }
+
+        catch (Exception e1) {
+            logger.severe("url not found. " + e1.toString());
+            logger.info("Sec. IP Check failed.");
 
         }
-        //http://jdown.cwsurf.de/getip.php
-
-            try {
-                site="http://jdownloader.ath.cx/getip.php";
-
-                logger.finer("IP Check via http://jdownloader.ath.cx");
-                RequestInfo ri;
-
-                ri=Plugin.getRequest(new URL(site), null, null, true);
-                String ip=Plugin.getSimpleMatch(ri.getHtmlCode(), "<ip>°</ip>", 0);
-                if(ip==null){
-                    logger.info("Sec. IP Check failed.");
-                    return "offline";
-                }else{
-                    logger.info("Sec. IP Check success. PLease Check Your IP Check settings");
-                    return ip;
-                }
-            }
-
-            catch (Exception e1) {
-                logger.severe("url not found. " + e1.toString());
-                logger.info("Sec. IP Check failed.");
-
-
-
-            }
-
 
         return "offline";
     }
 
     /**
      * Führt einen Externen befehl aus.
-     *
+     * 
      * @param command
      * @param parameter
      * @param runIn
@@ -1595,7 +1608,7 @@ public class JDUtilities {
 
     /**
      * Gibt den verwendeten Controller zurück
-     *
+     * 
      * @return gerade verwendete controller-instanz
      */
     public static JDController getController() {
@@ -1604,7 +1617,7 @@ public class JDUtilities {
 
     /**
      * Setzt den Controller
-     *
+     * 
      * @param con controller
      */
     public static void setController(JDController con) {
@@ -1624,7 +1637,7 @@ public class JDUtilities {
 
     /**
      * Ersetzt die Platzhalter in einem String
-     *
+     * 
      * @param command
      * @return Neuer String mit ersetzen Platzhaltern
      */
@@ -1637,7 +1650,7 @@ public class JDUtilities {
 
     /**
      * Formatiert Byes in einen MB String [MM.MM MB]
-     *
+     * 
      * @param downloadMax
      * @return MegaByte Formatierter String
      */
@@ -1648,7 +1661,7 @@ public class JDUtilities {
     /**
      * GIbt den Integer der sich in src befindet zurück. alle nicht
      * integerzeichen werden ausgefiltert
-     *
+     * 
      * @param src
      * @return Integer in src
      */
@@ -1663,7 +1676,7 @@ public class JDUtilities {
 
     /**
      * Filtert alle nicht lesbaren zeichen aus str
-     *
+     * 
      * @param str
      * @return
      */
@@ -1674,7 +1687,7 @@ public class JDUtilities {
 
     /**
      * Filtert alle zeichen aus str die in filter nicht auftauchen
-     *
+     * 
      * @param str
      * @param filter
      * @return
@@ -1696,7 +1709,7 @@ public class JDUtilities {
     /**
      * Untersucht zwei String, ob zwei String ähnlich anfangen. Der
      * übereinstimmende Text wird dann zurückgegeben
-     *
+     * 
      * @param a Erster String, der vergleicht werden soll
      * @param b Zweiter String, der vergleicht werden soll
      * @return Übereinstimmender Text
@@ -1730,7 +1743,7 @@ public class JDUtilities {
 
     /**
      * Fügt dem Dateinamen den erkannten Code noch hinzu
-     *
+     * 
      * @param file Die Datei, der der Captchacode angefügt werden soll
      * @param captchaCode Der erkannte Captchacode
      * @param isGood Zeigt, ob der erkannte Captchacode korrekt ist
@@ -1757,7 +1770,7 @@ public class JDUtilities {
 
     /***************************************************************************
      * Gibt die Endung einer FIle zurück oder null
-     *
+     * 
      * @param ret
      * @return
      */
@@ -1777,7 +1790,7 @@ public class JDUtilities {
     /**
      * Liefert die Klasse zurück, mit der Nachrichten ausgegeben werden können
      * Falls dieser Logger nicht existiert, wird ein neuer erstellt
-     *
+     * 
      * @return LogKlasse
      */
     public static Logger getLogger() {
@@ -1842,7 +1855,7 @@ public class JDUtilities {
 
     /**
      * Fügt dem Log eine Exception hinzu
-     *
+     * 
      * @param e
      */
     public static void logException(Exception e) {
@@ -1858,7 +1871,7 @@ public class JDUtilities {
 
     /**
      * Gibt den Stacktrace einer exception zurück
-     *
+     * 
      * @param e
      * @return
      */
@@ -1871,7 +1884,7 @@ public class JDUtilities {
 
     /**
      * verschlüsselt string mit der übergebenen encryption (Containerpluginname
-     *
+     * 
      * @param string
      * @param encryption
      * @return ciphertext
@@ -1926,8 +1939,9 @@ public class JDUtilities {
     public static UIInterface getGUI() {
         return JDUtilities.getController().getUiInterface();
     }
-    public static String Base64Decode(String base64){
-        
+
+    public static String Base64Decode(String base64) {
+
         try {
             byte[] plain = new BASE64Decoder().decodeBuffer(base64);
             return new String(plain);
@@ -1936,17 +1950,21 @@ public class JDUtilities {
             return base64;
         }
     }
-    public static String Base64Encode(String plain){
+
+    public static String Base64Encode(String plain) {
         String base64 = new BASE64Encoder().encode(plain.getBytes());
-        
+
         return base64;
     }
+
     public static Point getLastLocation(Component parent, String key, Component child) {
-        Object loc=getConfiguration().getProperty("LOCATION_OF_"+key);
-        if(loc!=null&& loc instanceof Point){
-            return (Point)loc;
+        Object loc = getConfiguration().getProperty("LOCATION_OF_" + key);
+        if (loc != null && loc instanceof Point) {
+            return (Point) loc;
         }
-        return getCenterOfComponent(parent,parent);
+        return getCenterOfComponent(parent, child);
     }
+
+
 
 }

@@ -61,21 +61,9 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
         super( uiinterface);
         this.configuration=configuration;
         
-        Vector<PluginForHost> plgs = new  Vector<PluginForHost>();
-        plgs.addAll(JDUtilities.getPluginsForHost());
-        this.pluginsForHost = new Vector<PluginForHost>();
-        Vector<String> priority = ( Vector<String>)configuration.getProperty(Configuration.PARAM_HOST_PRIORITY, new  Vector<String>());
-        for(int i=0; i<priority.size();i++){
-            for(int b=plgs.size()-1; b>=0;b--){
-                if(plgs.get(b).getHost().equalsIgnoreCase(priority.get(i))){
-                    PluginForHost plg = plgs.remove(b);
-                    pluginsForHost.add(plg);
-                    break;
-                }
-            }
-            
-        }
-        pluginsForHost.addAll(plgs);
+      
+        this.pluginsForHost = JDUtilities.getPluginsForHost();
+    
         
         initPanel();
 

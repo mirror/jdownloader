@@ -31,11 +31,14 @@ public class ContextMenu extends JPopupMenu {
 
     private int[]             indeces;
 
+    private Point point;
+
     public ContextMenu(Component parent, Point point, String[] options, ActionListener list) {
         super();
         this.menus= new Vector<JMenuItem>();
         int x = (int) point.getX();
         int y = (int) point.getY();
+        this.point=point;
         for (int i = 0; i < options.length; i++) {
             JMenuItem menu;
             this.menus.add(menu = new JMenuItem(options[i]));
@@ -45,6 +48,14 @@ public class ContextMenu extends JPopupMenu {
         this.add(new JSeparator());
 
         this.show(parent, x, y);
+    }
+
+    public Point getPoint() {
+        return point;
+    }
+
+    public void setPoint(Point point) {
+        this.point = point;
     }
 
 }

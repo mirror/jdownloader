@@ -12,41 +12,76 @@ import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import javax.swing.JProgressBar;
+
 import jd.config.Configuration;
 import jd.controlling.interaction.HTTPLiveHeader;
+import jd.gui.skins.simple.ProgressDialog;
+
 import jd.plugins.Plugin;
 import jd.plugins.RequestInfo;
 import jd.utils.JDUtilities;
 
 public class GetRouterInfo {
-    public String password = null;
-    public String username = null;
-    public String adress = null;
-    public boolean cancel = false;
-    private Logger logger = JDUtilities.getLogger();
+    public String            password    = null;
+
+    public String            username    = null;
+
+    public String            adress      = null;
+
+    public boolean           cancel      = false;
+
+    private Logger           logger      = JDUtilities.getLogger();
+
     private Vector<String[]> routerDatas = null;
-    private void setPrgressText(String text) {
-        logger.info(text);
+
+    private ProgressDialog   progressBar;
+
+    public GetRouterInfo(ProgressDialog progress) {
+        this.progressBar = progress;
+        if (progressBar != null) progressBar.setMaximum(100);
     }
+
+    private void setProgressText(String text) {
+
+        if (progressBar != null) {
+            progressBar.setString(text);
+            this.progressBar.setStringPainted(true);
+        }
+        else {
+            logger.info(text);
+        }
+    }
+
     private void setProgress(int val) {
-        logger.info(val+"%");
+
+        if (progressBar != null) {
+            progressBar.setValue(val);
+
+        }
+        else {
+            logger.info(val + "%");
+        }
     }
+
     private boolean checkport80(String host) {
         Socket sock;
         try {
             sock = new Socket(host, 80);
             sock.setSoTimeout(200);
             return true;
-        } catch (UnknownHostException e) {
-        } catch (IOException e) {
+        }
+        catch (UnknownHostException e) {
+        }
+        catch (IOException e) {
         }
         return false;
 
     }
+
     public String getAdress() {
-        if (adress != null)
-            return adress;
-        setPrgressText("try to find the router ip");
+        if (adress != null) return adress;
+        setProgressText("try to find the router ip");
         // String[] hosts = new String[]{"192.168.2.1", "192.168.1.1",
         // "192.168.0.1", "fritz.box"};
 
@@ -56,9 +91,8 @@ public class GetRouterInfo {
             Matcher matcher = pattern.matcher(routingt);
             while (matcher.find()) {
                 String hostname = matcher.group(1).trim();
-                if (!hostname.matches("[\\s]*\\*[\\s]*"))
-                {
-                    setPrgressText("testing "+hostname);
+                if (!hostname.matches("[\\s]*\\*[\\s]*")) {
+                    setProgressText("testing " + hostname);
                     try {
                         if (InetAddress.getByName(hostname).isReachable(1500)) {
                             if (checkport80(hostname)) {
@@ -66,10 +100,12 @@ public class GetRouterInfo {
                                 return adress;
                             }
                         }
-                    } catch (UnknownHostException e) {
+                    }
+                    catch (UnknownHostException e) {
                         // TODO Auto-generated catch block
                         e.printStackTrace();
-                    } catch (IOException e) {
+                    }
+                    catch (IOException e) {
                         // TODO Auto-generated catch block
                         e.printStackTrace();
                     }
@@ -78,19 +114,16 @@ public class GetRouterInfo {
             }
         }
         Vector<String> hosts = new Vector<String>();
-        if (!hosts.contains("192.168.2.1"))
-            hosts.add("192.168.2.1");
-        if (!hosts.contains("192.168.1.1"))
-            hosts.add("192.168.1.1");
-        if (!hosts.contains("192.168.0.1"))
-            hosts.add("192.168.0.1");
-        if (!hosts.contains("fritz.box"))
-            hosts.add("fritz.box");
+        if (!hosts.contains("192.168.2.1")) hosts.add("192.168.2.1");
+        if (!hosts.contains("192.168.1.1")) hosts.add("192.168.1.1");
+        if (!hosts.contains("192.168.0.1")) hosts.add("192.168.0.1");
+        if (!hosts.contains("fritz.box")) hosts.add("fritz.box");
         String ip = null;
         try {
             InetAddress myAddr = InetAddress.getLocalHost();
             ip = myAddr.getHostAddress();
-        } catch (UnknownHostException exc) {
+        }
+        catch (UnknownHostException exc) {
         }
         if (ip != null) {
             String host = ip.replace("\\.[\\d]+$", ".");
@@ -103,11 +136,11 @@ public class GetRouterInfo {
             }
         }
         int size = hosts.size();
-        
+
         for (int i = 0; i < size && !cancel; i++) {
             setProgress(i * 100 / size);
             final String hostname = hosts.get(i);
-            setPrgressText("testing "+hostname);
+            setProgressText("testing " + hostname);
             try {
                 if (InetAddress.getByName(hostname).isReachable(1500)) {
                     if (checkport80(hostname)) {
@@ -117,18 +150,18 @@ public class GetRouterInfo {
                     }
                 }
 
-            } catch (IOException e) {
+            }
+            catch (IOException e) {
             }
         }
         setProgress(100);
         return null;
 
     }
+
     public Vector<String[]> getRouterDatas() {
-        if (routerDatas != null)
-            return routerDatas;
-        if (getAdress() == null)
-            return null;
+        if (routerDatas != null) return routerDatas;
+        if (getAdress() == null) return null;
         try {
             // progress.setStatusText("Load possible RouterDatas");
             RequestInfo request = Plugin.getRequest(new URL("http://" + adress));
@@ -137,29 +170,31 @@ public class GetRouterInfo {
             Vector<String[]> retRouterData = new Vector<String[]>();
             for (int i = 0; i < routerData.size(); i++) {
                 String[] dat = routerData.get(i);
-                if (html.matches(dat[3]))
-                    retRouterData.add(dat);
+                if (html.matches(dat[3])) retRouterData.add(dat);
             }
             routerDatas = retRouterData;
             return retRouterData;
-        } catch (MalformedURLException e) {
+        }
+        catch (MalformedURLException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
-        } catch (IOException e) {
+        }
+        catch (IOException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
         }
         return null;
 
     }
+
     private boolean isEmpty(String arg) {
-        if (arg == null || arg.matches("[\\s]*"))
-            return true;
+        if (arg == null || arg.matches("[\\s]*")) return true;
         return false;
 
     }
+
     public String[] getRouterData() {
-        setPrgressText("Get Routerdata");
+        setProgressText("Get Routerdata");
         if (getRouterDatas() == null) {
             return null;
         }
@@ -172,17 +207,19 @@ public class GetRouterInfo {
         final int size = routerDatas.size();
         for (int i = 0; i < size && !cancel; i++) {
             final String[] data = routerDatas.get(i);
-            setPrgressText("Testing router: " + data[1]);
+            setProgressText("Testing router: " + data[1]);
             setProgress(i * 100 / size);
 
             if (isEmpty(username)) {
                 JDUtilities.getConfiguration().setProperty(Configuration.PARAM_HTTPSEND_USER, data[4]);
-            } else {
+            }
+            else {
                 data[4] = username;
             }
             if (isEmpty(password)) {
                 JDUtilities.getConfiguration().setProperty(Configuration.PARAM_HTTPSEND_PASS, data[5]);
-            } else {
+            }
+            else {
                 data[5] = password;
             }
             JDUtilities.getConfiguration().setProperty(Configuration.PARAM_HTTPSEND_REQUESTS, data[2]);

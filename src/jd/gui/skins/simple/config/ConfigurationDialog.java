@@ -2,6 +2,7 @@ package jd.gui.skins.simple.config;
 
 import java.awt.ComponentOrientation;
 import java.awt.Dimension;
+import java.awt.Frame;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
@@ -41,6 +42,8 @@ public class ConfigurationDialog extends JDialog implements ActionListener, Chan
      */
     private static final long                     serialVersionUID = 4046836223202290819L;
 
+    
+
     private Configuration                         configuration;
 
     private JTabbedPane                           tabbedPane;
@@ -55,7 +58,8 @@ public class ConfigurationDialog extends JDialog implements ActionListener, Chan
     private UIInterface                           uiinterface;
 
     private Vector<ConfigPanel>                   configPanels     = new Vector<ConfigPanel>();
-
+public static ConfigurationDialog DIALOG;
+public static Frame PARENTFRAME = null;
     private JCheckBox chbExpert;
 
     private Vector<Class> configClasses= new Vector<Class>();
@@ -64,6 +68,8 @@ public class ConfigurationDialog extends JDialog implements ActionListener, Chan
 
     private ConfigurationDialog(JFrame parent, UIInterface uiinterface) {
         super(parent);
+        DIALOG=this;
+        PARENTFRAME=parent;
         this.uiinterface = uiinterface;
         setTitle(JDLocale.L("gui.config.title","Konfiguration"));
         setModal(true);

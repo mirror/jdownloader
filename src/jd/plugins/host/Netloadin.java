@@ -337,7 +337,9 @@ public class Netloadin extends PluginForHost {
         RequestInfo requestInfo;
         try {
             requestInfo = getRequest(new URL(downloadLink.getUrlDownloadDecrypted()), null, null, false);
-         
+            String name = downloadLink.getName();
+            if (name.toLowerCase().matches(".*\\..{1,5}\\.htm$")) name = name.replaceFirst("\\.htm$", "");
+            downloadLink.setName(name);
             if (requestInfo.getHtmlCode().indexOf(FILE_NOT_FOUND) > 0) {
                 this.setStatusText("File Not Found");
                 return false;

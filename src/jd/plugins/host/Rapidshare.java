@@ -175,6 +175,7 @@ public class Rapidshare extends PluginForHost {
     private String                         ticketCode;
 
     private String                         newURL;
+    private static long LAST_FILE_CHECK=0;
 
     private static final String            PROPERTY_BYTES_TO_LOAD           = "BYTES_TO_LOAD";
 
@@ -957,6 +958,13 @@ public class Rapidshare extends PluginForHost {
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) {
         // Der Download wird bestätigt
+      if((System.currentTimeMillis()-LAST_FILE_CHECK)<500){
+          try {
+            Thread.sleep(System.currentTimeMillis()-LAST_FILE_CHECK);
+        }
+        catch (InterruptedException e) {}
+      }
+      LAST_FILE_CHECK=System.currentTimeMillis();
         RequestInfo requestInfo;
         try {
             String link = downloadLink.getUrlDownloadDecrypted();
@@ -965,7 +973,9 @@ public class Rapidshare extends PluginForHost {
                 logger.finer("URL korrigiert: " + link);
                 downloadLink.setUrlDownload(link);
             }
-
+            String name = downloadLink.getName();
+            if (name.toLowerCase().matches(".*\\..{1,5}\\.html$")) name = name.replaceFirst("\\.html$", "");
+            downloadLink.setName(name);
             if (this.getProperties().getBooleanProperty(PROPERTY_USE_SSL, false)) link = link.replaceFirst("http://", "http://ssl.");
             requestInfo = getRequest(new URL(link));
            
@@ -989,7 +999,7 @@ public class Rapidshare extends PluginForHost {
             }
             
             requestInfo = postRequest(new URL(newURL), null, null, null, "dl.start=free", true);
-         
+            LAST_FILE_CHECK=System.currentTimeMillis();
             String size = getSimpleMatch(requestInfo.getHtmlCode(), "</font> (<b>°</b> °) angefordert.", 0);
             String type = getSimpleMatch(requestInfo.getHtmlCode(), "</font> (<b>°</b> °) angefordert.", 1);
            

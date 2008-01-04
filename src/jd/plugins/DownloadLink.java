@@ -141,6 +141,8 @@ public class DownloadLink implements Serializable,Comparable<DownloadLink> {
      * Containername
      */
     private String            container;
+    
+    private boolean isMirror=false;
     /**
      * Dateiname des Containers
      */
@@ -844,5 +846,13 @@ public void addSourcePluginPasswords(Vector<String> sourcePluginPasswords) {
        this.addSourcePluginPassword(sourcePluginPasswords.get(i));
     }
     
+}
+
+public boolean isMirror() {
+    return isMirror;
+}
+
+public void setMirror(boolean isMirror) {
+    this.isMirror = isMirror;
 }
 }
