@@ -50,6 +50,7 @@ public class TabProgress extends JPanel {
         bars = new Vector<JProgressBar>();
         setLayout(new BorderLayout());
         table = new JTable();
+        table.getTableHeader().setPreferredSize(new Dimension(-1,25));
         InternalTableModel internalTableModel;
         table.setModel(internalTableModel = new InternalTableModel());
         table.getColumn(table.getColumnName(1)).setCellRenderer(new ProgressBarRenderer());

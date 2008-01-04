@@ -78,7 +78,7 @@ public class JDClassLoader extends java.lang.ClassLoader {
 
     @Override
     protected URL findResource(String name) {
-        logger.info(name);
+   
         URL url;
         url = rootClassLoader.findResource(name);
         if(url!= null)
@@ -88,7 +88,7 @@ public class JDClassLoader extends java.lang.ClassLoader {
     }
     @Override
     public URL getResource(String name) {
-        logger.info(name);
+     
         if (jars != null) {
             //An dieser Stelle werden die JAR Dateien überprüft
             JarEntry entry;
@@ -128,7 +128,7 @@ public class JDClassLoader extends java.lang.ClassLoader {
     @Override
     public Enumeration<URL> getResources(String name) throws IOException {
         Vector<URL> urls = new Vector<URL>();
-      logger.info(name);
+    
       Enumeration<URL> en = classLoaderParent.getResources(name);
       
       while(en.hasMoreElements()){

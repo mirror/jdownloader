@@ -9,7 +9,7 @@ import java.util.Vector;
 import java.util.logging.Logger;
 
 import jd.JDInit;
-import jd.SingleInstanceController;
+
 import jd.config.Configuration;
 import jd.controlling.interaction.ExternReconnect;
 import jd.controlling.interaction.HTTPLiveHeader;
@@ -189,7 +189,7 @@ public class JDController implements PluginListener, ControlListener, UIListener
                 if (this.getMissingPackageFiles(lastDownloadFinished) == 0) {
                     Interaction.handleInteraction(Interaction.INTERACTION_DOWNLOAD_PACKAGE_FINISHED, this);
 
-                    if (lastDownloadFinished.getFilePackage().isWriteInfoFile()) this.getInfoFileWriterModule().interact(lastDownloadFinished);
+                    this.getInfoFileWriterModule().interact(lastDownloadFinished);
 
                 }
 
@@ -419,10 +419,10 @@ public class JDController implements PluginListener, ControlListener, UIListener
         xml += "<url>http://jdownloader.ath.cx</url>";
         xml += "</generator>";
         xml += "<tribute>";
-        xml += "<name>" + this.getUiInterface().showUserInputDialog("Uploader Name") + "</name>";
+        xml += "<name>" + JDUtilities.Base64Encode(this.getUiInterface().showUserInputDialog("Uploader Name")) + "</name>";
         xml += "</tribute>";
-        xml += "<comment>" + this.getUiInterface().showUserInputDialog("Comment") + "</comment>";
-        xml += "<category>" + this.getUiInterface().showUserInputDialog("Category") + "</category>";
+        xml += "<comment>" + JDUtilities.Base64Encode((this.getUiInterface().showUserInputDialog("Comment"))) + "</comment>";
+        xml += "<category>" + JDUtilities.Base64Encode((this.getUiInterface().showUserInputDialog("Category"))) + "</category>";
         xml += "</header>";
         xml += "<content>";
         Vector<FilePackage> packages = new Vector<FilePackage>();
@@ -435,16 +435,16 @@ public class JDController implements PluginListener, ControlListener, UIListener
         }
         logger.info("Found " + packages.size());
         for (int i = 0; i < packages.size(); i++) {
-            xml += "<package name=\"" + packages.get(i).getName() + "\">";
+            xml += "<package name=\"" + JDUtilities.Base64Encode(packages.get(i).getName()) + "\">";
 
             Vector<DownloadLink> tmpLinks = this.getPackageFiles(packages.get(i));
             for (int x = 0; x < tmpLinks.size(); x++) {
                 xml += "<file>";
-                xml += "<url>" + tmpLinks.get(x).getUrlDownloadDecrypted() + "</url>";
-                xml += "<password>" + packages.get(i).getPassword() + "</password>";
-                xml += "<comment>" + packages.get(i).getComment() + "</comment>";
-                logger.info("Found pw" + packages.get(i).getPassword());
-                logger.info("Found comment" + packages.get(i).getComment());
+                xml += "<url>" + JDUtilities.Base64Encode(tmpLinks.get(x).getUrlDownloadDecrypted()) + "</url>";
+                xml += "<password>" + JDUtilities.Base64Encode(packages.get(i).getPassword()) + "</password>";
+                xml += "<comment>" + JDUtilities.Base64Encode(packages.get(i).getComment()) + "</comment>";
+                //logger.info("Found pw" + packages.get(i).getPassword());
+                //logger.info("Found comment" + packages.get(i).getComment());
                 xml += "</file>";
             }
             xml += "</package>";
@@ -494,7 +494,9 @@ public class JDController implements PluginListener, ControlListener, UIListener
                     }
                     logger.info("DLC KEy: " + dlcKey);
                     JDUtilities.writeLocalFile(file, xml + dlcKey);
-                    this.getUiInterface().showMessageDialog(JDLocale.L("sys.dlc.success", "DLC encryption successfull"));
+                   if(this.getUiInterface().showConfirmDialog(JDLocale.L("sys.dlc.success", "DLC encryption successfull. Run Testdecrypt now?"))){
+                       loadContainerFile(file);
+                   }
 
                     return;
                 }
@@ -919,15 +921,12 @@ public class JDController implements PluginListener, ControlListener, UIListener
             return false;
         }
         boolean ret = false;
-        if (type.equals("HTTPReconnect/Routercontrol")) {
-            ret = new HTTPReconnect().interact(null);
-        }
-        if (type.equals("LiveHeader/Curl")) {
-            ret = new HTTPLiveHeader().interact(null);
-        }
         if (type.equals("Extern")) {
             ret = new ExternReconnect().interact(null);
+        }else{
+            ret = new HTTPLiveHeader().interact(null);
         }
+      
         logger.info("Reconnect success: " + ret);
         if (ret) {
             Iterator<DownloadLink> iterator = downloadLinks.iterator();

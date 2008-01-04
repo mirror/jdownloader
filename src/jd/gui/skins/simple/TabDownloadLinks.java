@@ -103,6 +103,7 @@ public class TabDownloadLinks extends JPanel implements PluginListener, ControlL
         this.parent = parent;
         // Set the component to show the popup menu
         table = new InternalTable();
+        table.getTableHeader().setPreferredSize(new Dimension(-1,25));
         //table.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
         table.addMouseListener(this);
         table.setModel(internalTableModel);

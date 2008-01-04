@@ -94,6 +94,7 @@ private Configuration configuration;
     public void initPanel() {
         setLayout(new BorderLayout());
         table = new JTable();
+        table.getTableHeader().setPreferredSize(new Dimension(-1,25));
         InternalTableModel internalTableModel=new InternalTableModel();
         table.setModel(new InternalTableModel());
         this.setPreferredSize(new Dimension(700,350));

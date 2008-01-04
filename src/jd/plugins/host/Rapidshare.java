@@ -966,21 +966,48 @@ public class Rapidshare extends PluginForHost {
                 downloadLink.setUrlDownload(link);
             }
 
-            if (this.getProperties().getBooleanProperty(PROPERTY_USE_SSL, true)) link = link.replaceFirst("http://", "http://ssl.");
+            if (this.getProperties().getBooleanProperty(PROPERTY_USE_SSL, false)) link = link.replaceFirst("http://", "http://ssl.");
             requestInfo = getRequest(new URL(link));
+           
             if (requestInfo.getHtmlCode().indexOf(hardwareDefektString) > 0) {
                 this.hardewareError = true;
                 this.setStatusText("Hareware Error");
+               
                 return false;
             }
             if (requestInfo.getConnection().getHeaderField("Location") != null) {
+               
                 return true;
             }
+
             String newURL = getFirstMatch(requestInfo.getHtmlCode(), patternForNewHost, 1);
             String strWaitTime = getFirstMatch(requestInfo.getHtmlCode(), patternErrorDownloadLimitReached, 1);
-            if (newURL != null || strWaitTime != null) {
-                return true;
+            if (newURL == null && strWaitTime == null) {
+                
+               
+                return false;
             }
+            
+            requestInfo = postRequest(new URL(newURL), null, null, null, "dl.start=free", true);
+         
+            String size = getSimpleMatch(requestInfo.getHtmlCode(), "</font> (<b>°</b> °) angefordert.", 0);
+            String type = getSimpleMatch(requestInfo.getHtmlCode(), "</font> (<b>°</b> °) angefordert.", 1);
+           
+            if(size==null||type==null){
+                return false;
+            }
+            int bytes;
+            if(type.equalsIgnoreCase("kb")){
+                bytes=Integer.parseInt(size)*1024;
+                
+            }else    if(type.equalsIgnoreCase("mb")){
+                bytes=Integer.parseInt(size)*1024*1024;
+                
+            }else {
+                bytes=Integer.parseInt(size);
+            }
+            downloadLink.setDownloadMax(bytes);
+         return true;
         }
         catch (MalformedURLException e) {
         }

@@ -61,8 +61,12 @@ import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import javax.swing.JComponent;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
+
+import sun.misc.BASE64Decoder;
+import sun.misc.BASE64Encoder;
 
 import jd.JDClassLoader;
 import jd.JDFileFilter;
@@ -70,8 +74,8 @@ import jd.captcha.JAntiCaptcha;
 import jd.captcha.pixelgrid.Captcha;
 import jd.config.Configuration;
 import jd.controlling.JDController;
-
 import jd.gui.UIInterface;
+import jd.gui.skins.simple.SimpleGUI;
 import jd.plugins.LogFormatter;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForContainer;
@@ -1921,6 +1925,28 @@ public class JDUtilities {
 
     public static UIInterface getGUI() {
         return JDUtilities.getController().getUiInterface();
+    }
+    public static String Base64Decode(String base64){
+        
+        try {
+            byte[] plain = new BASE64Decoder().decodeBuffer(base64);
+            return new String(plain);
+        }
+        catch (IOException e) {
+            return base64;
+        }
+    }
+    public static String Base64Encode(String plain){
+        String base64 = new BASE64Encoder().encode(plain.getBytes());
+        
+        return base64;
+    }
+    public static Point getLastLocation(Component parent, String key, Component child) {
+        Object loc=getConfiguration().getProperty("LOCATION_OF_"+key);
+        if(loc!=null&& loc instanceof Point){
+            return (Point)loc;
+        }
+        return getCenterOfComponent(parent,parent);
     }
 
 }

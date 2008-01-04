@@ -1,5 +1,6 @@
 package jd.gui.skins.simple.components;
 
+import java.awt.Dimension;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
@@ -11,7 +12,7 @@ import java.util.logging.Logger;
 import javax.swing.JButton;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
-import javax.swing.border.EtchedBorder;
+
 
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
@@ -45,7 +46,7 @@ public class BrowseFile extends JPanel implements ActionListener {
         this.setLayout(new GridBagLayout());
         btnBrowse = new JButton(JDLocale.L("gui.btn_select","auswählen"));
         btnBrowse.addActionListener(this);
-        this.setBorder(new EtchedBorder());
+    
         JDUtilities.addToGridBag(this, txtInput, 0, 0, 1, 1, 1, 0, new Insets(0, 0, 0, 0), GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
         JDUtilities.addToGridBag(this, btnBrowse, 1, 0, 1, 1, 0, 0, new Insets(0, 0, 0, 0), GridBagConstraints.NONE, GridBagConstraints.EAST);
 
@@ -59,10 +60,10 @@ public class BrowseFile extends JPanel implements ActionListener {
         this.setLayout(new GridBagLayout());
         btnBrowse = new JButton(JDLocale.L("gui.btn_select","auswählen"));
         btnBrowse.addActionListener(this);
-        this.setBorder(new EtchedBorder());
-        JDUtilities.addToGridBag(this, txtInput, 0, 0, 1, 1, 1, 0, new Insets(0, 0, 0, 0), GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-        JDUtilities.addToGridBag(this, btnBrowse, 1, 0, 1, 1, 0, 0, new Insets(0, 0, 0, 0), GridBagConstraints.NONE, GridBagConstraints.EAST);
-
+      
+        JDUtilities.addToGridBag(this, txtInput, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, 1, 1, 0, new Insets(0, 0, 0, 0), GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+        JDUtilities.addToGridBag(this, btnBrowse, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 0, 0, new Insets(0, 0, 0, 0), GridBagConstraints.NONE, GridBagConstraints.EAST);
+        txtInput.setMinimumSize(new Dimension(150,20));
     }
 
     public void setButtonText(String text) {

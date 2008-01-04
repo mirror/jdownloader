@@ -99,8 +99,9 @@ public class ConfigPanelCaptcha extends ConfigPanel implements MouseListener{
         ce= new GUIConfigEntry( new ConfigEntry(ConfigContainer.TYPE_LABEL, JDLocale.L("gui.config.captcha.jac_methods","Automatische Bilderkennung verwenden für:")));
         addGUIConfigEntry(ce);
         table = new JTable();
+        table.getTableHeader().setPreferredSize(new Dimension(-1,25));
         InternalTableModel internalTableModel = new InternalTableModel();
-        table.setModel(new InternalTableModel());
+        table.setModel(internalTableModel);
       table.setEditingRow(0);
 table.addMouseListener(this);
         this.setPreferredSize(new Dimension(700, 350));

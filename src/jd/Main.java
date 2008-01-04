@@ -9,6 +9,10 @@ import java.util.logging.Logger;
 
 import javax.swing.JWindow;
 
+import edu.stanford.ejalbert.BrowserLauncher;
+import edu.stanford.ejalbert.exception.BrowserLaunchingInitializingException;
+import edu.stanford.ejalbert.exception.UnsupportedOperatingSystemException;
+
 import jd.config.Configuration;
 import jd.controlling.JDController;
 import jd.controlling.interaction.ExternExecute;
@@ -81,7 +85,7 @@ public class Main {
             init.loadDownloadQueue();
             init.loadModules();
             init.checkUpdate();
-
+if(JDUtilities.getRunType()==JDUtilities.RUNTYPE_LOCAL_JARED)
             init.doWebupdate();
         }
 

@@ -264,9 +264,7 @@ public class SingleDownloadController extends ControlMulticaster {
             String unrarType = JDUtilities.getConfiguration().getStringProperty(Unrar.PROPERTY_ENABLED_TYPE, Unrar.ENABLED_TYPE_NEVER);
             if (unrarType.equals(Unrar.ENABLED_TYPE_ALWAYS))
                 controller.getUnrarModule().interact(downloadLink);
-            else if (downloadLink.getFilePackage().isUnPack() && unrarType.equals(Unrar.ENABLED_TYPE_LINKGRABBER)) {
-                controller.getUnrarModule().interact(downloadLink);
-            }
+            
         }
 
     }

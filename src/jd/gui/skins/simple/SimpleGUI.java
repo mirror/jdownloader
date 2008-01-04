@@ -486,6 +486,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         toolBar.add(btnReconnect);
         toolBar.add(btnClipBoard);
         toolBar.add(btnToggleReconnect);
+  
         // reconnectBox = new JCheckBox("Reconnect durchführen");
         // boolean rc =
         // JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_DISABLE_RECONNECT,
@@ -1063,7 +1064,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         else {
             linkGrabber.addLinks(linkList);
         }
-        dragNDrop.setText("Grabbed: " + linkGrabber.getLinkList().size() + " (+" + ((Vector) links).size() + ")");
+        dragNDrop.setText("Grabbed: " + linkList.length + " (+" + ((Vector) links).size() + ")");
     }
 
     public String showUserInputDialog(String string) {

@@ -64,7 +64,7 @@ public class Unrar extends Interaction implements Serializable {
 
     public static final String ENABLED_TYPE_ALWAYS = JDLocale.L("interaction.unrar.always");
 
-    public static final String ENABLED_TYPE_LINKGRABBER = JDLocale.L("interaction.unrar.linkgrabber");
+ 
 
     public static final String PROPERTY_WAIT_FOR_TERMINATION = "UNRAR_WAIT_FOR_TERMINATION";
     
