@@ -11,8 +11,12 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.util.logging.Logger;
+
+import jd.utils.JDUtilities;
 
 public class Utilities {
+
     /**
      * Lädt ein Objekt aus einer Datei
      * 
@@ -43,12 +47,20 @@ public class Utilities {
                 return objectLoaded;
             } catch (ClassNotFoundException e) {
                  e.printStackTrace();
+                 JDUtilities.getLogger().severe("Error while loading "+fileInput.getName()+" try to use bak file");
+                 return loadObject(new File(fileInput.getParent(), fileInput.getName()+".bak"), asXML);
             } catch (FileNotFoundException e) {
-                 e.printStackTrace();
+                e.printStackTrace();
+                JDUtilities.getLogger().severe("Error while loading "+fileInput.getName()+" try to use bak file");
+                return loadObject(new File(fileInput.getParent(), fileInput.getName()+".bak"), asXML);
             } catch (IOException e) {
-                 e.printStackTrace();
+                e.printStackTrace();
+                JDUtilities.getLogger().severe("Error while loading "+fileInput.getName()+" try to use bak file");
+                return loadObject(new File(fileInput.getParent(), fileInput.getName()+".bak"), asXML);
             } catch (Exception e) {
-                 e.printStackTrace();
+                e.printStackTrace();
+                JDUtilities.getLogger().severe("Error while loading "+fileInput.getName()+" try to use bak file");
+                return loadObject(new File(fileInput.getParent(), fileInput.getName()+".bak"), asXML);
             }
         }
         return null;
@@ -74,7 +86,7 @@ public class Utilities {
     public static void saveObject(Object objectToSave, File fileOutput, boolean asXML) {
         if (fileOutput != null) {
             if (fileOutput.exists())
-                fileOutput.delete();
+                fileOutput.renameTo(new File(fileOutput.getParent(), fileOutput.getName()+".bak"));
             try {
                 FileOutputStream fos = new FileOutputStream(fileOutput);
                 if (asXML) {
