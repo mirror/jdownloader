@@ -13,7 +13,7 @@ import jd.unrar.Utilities;
 import jd.utils.JDUtilities;
 
 public class ConvertRouterData {
-    private String ip = "Host: %%%routerip%%%\n";
+    private String ip = "            Host: %%%routerip%%%\r\n";
     private String cookie = null;
     private Vector<String[]> routerData = null;
     private String getType(int type) {
@@ -25,7 +25,7 @@ public class ConvertRouterData {
     }
     private String getPoperties(HashMap<String, String> poperties) {
         if (poperties == null)
-            return "Content-Type: application/x-www-form-urlencoded\n";
+            return "";
         String Script = "";
         for (Map.Entry<String, String> entry : poperties.entrySet()) {
             Script += entry.getKey() + ": " + entry.getValue() + "\n";
@@ -51,7 +51,7 @@ public class ConvertRouterData {
         if (address.matches("http://.*")) {
             cookie = "";
             address = address.replaceFirst("http://", "");
-            ip = "Host: http://" + address.replaceFirst("/.*", "") + "\n";
+            ip = "            Host: http://" + address.replaceFirst("/.*", "") + "\r\n";
             if (!address.matches(".*/.*"))
                 address = "/";
             else
@@ -64,11 +64,11 @@ public class ConvertRouterData {
         if(address.charAt(0)!='/')
             address="/"+address;
         String script = "";
-        script += "\t[[[STEP]]]\n" + "\t\t[[[REQUEST]]]\n" + getType(type) + address + " HTTP/1.1\n" + "Accept-Language: de, en-gb;q=0.9, en;q=0.8" + "User-Agent: Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1; SV1; .NET CLR 1.1.4322; .NET CLR 2.0.50727)\n" + ip + "Accept: text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5\n" + cookie;
+        script += "    [[[STEP]]]\r\n" + "        [[[REQUEST]]]\r\n            " + getType(type) + address + " HTTP/1.1\r\n" + ip + cookie;
         if (type == 3) {
-            script += getPoperties(poperties) + ((post != null) ? ("Content-Length: " + post.length() + "\n\n" + post + "\n") : "\n");
+            script += getPoperties(poperties) + ((post != null) ? ("\r\n" + post + "\r\n") : "\r\n");
         }
-        script += "\t\t[[[/REQUEST]]]\n" + "\t[[[/STEP]]]\n";
+        script += "        [[[/REQUEST]]]\r\n" + "    [[[/STEP]]]\r\n";
         ip = bakip;
         cookie = cookiebak;
         return script;
@@ -81,22 +81,22 @@ public class ConvertRouterData {
         if (routerport != 80)
             port = ":" + routerport;
         if (ip == null || ip.matches("[\\s]*") || ip.matches("192.168.0.1")) {
-            ip = "Host: %%%routerip%%%" + port + "\n";
+            ip = "            Host: %%%routerip%%%" + port + "\n";
         } else {
-            ip = "Host: " + ip + port + "\n";
+            ip = "            Host: " + ip + port + "\r\n";
         }
         String script = "[[[HSRC]]]\n";
         String login = defaultRequest(routerData.getLoginType(), routerData.getLogin(), routerData.getLoginPostParams(), routerData.getLoginRequestProperties());
         if (!login.equals(""))
-            cookie = "Cookie: %%%Set-Cookie%%%\n";
+            cookie = "            Cookie: %%%Set-Cookie%%%\r\n";
         else
-            cookie = "Authorization: Basic %%%basicauth%%%\n";
+            cookie = "            Authorization: Basic %%%basicauth%%%\r\n";
         script += login;
         String disconnect = defaultRequest(routerData.getDisconnectType(), routerData.getDisconnect(), routerData.getDisconnectPostParams(), routerData.getDisconnectRequestProperties());
         if (disconnect.equals(""))
             return null;
         script += disconnect;
-        script += "\t\t[[[STEP]]][[[WAIT seconds=\"1\"/]]][[[/STEP]]]\n";
+        script += "    [[[STEP]]][[[WAIT seconds=\"3\"/]]][[[/STEP]]]\r\n";
 
         script += defaultRequest(routerData.getConnectType(), routerData.getConnect(), routerData.getConnectPostParams(), routerData.getConnectRequestProperties());
         script += defaultRequest(2, routerData.getLogoff(), null, null);
