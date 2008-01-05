@@ -115,7 +115,7 @@ public class HTTPLiveHeader extends Interaction {
         File[] list = new File(new File(JDUtilities.getJDHomeDirectoryFromEnvironment(), "jd"),"router").listFiles();
         Vector<String[]> ret = new Vector<String[]>();
         for (int i = 0; i < list.length; i++) {
-            if(list[i].isFile() && list[i].getName().toLowerCase().matches(".*\\.xml$"));
+            if(list[i].isFile() && list[i].getName().toLowerCase().matches(".*\\.xml$"))
             ret.addAll((Collection<? extends String[]>) JDUtilities.loadObject(new JFrame(), list[i], true));
         }
 
