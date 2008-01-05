@@ -607,7 +607,12 @@ logger.info("Call re: "+ri.getHtmlCode());
                     progress.setSource(pContainer);
                     fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_PLUGIN_DECRYPT_ACTIVE, pContainer));
                     pContainer.initContainer(file.getAbsolutePath());
-                    downloadLinks.addAll(pContainer.getContainedDownloadlinks());
+                    Vector<DownloadLink> links = pContainer.getContainedDownloadlinks();
+                    if(links==null||links.size()==0){
+                        logger.severe("DLC Decryption failed"); 
+                    }else{
+                    downloadLinks.addAll(links);
+                    }
                     fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_PLUGIN_DECRYPT_INACTIVE, pContainer));
                 }
                 catch (Exception e) {
