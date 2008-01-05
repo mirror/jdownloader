@@ -18,7 +18,7 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.util.Vector;
 
-import javax.swing.DropMode;
+
 import javax.swing.JButton;
 import javax.swing.JPanel;
 import javax.swing.JProgressBar;

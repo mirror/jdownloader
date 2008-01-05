@@ -13,7 +13,7 @@ import jd.config.Configuration;
 import jd.controlling.interaction.Unrar;
 import jd.gui.UIInterface;
 import jd.gui.skins.simple.SimpleGUI;
-import jd.gui.skins.simple.Link.JLinkButton;
+
 import jd.unrar.JUnrar;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
@@ -81,13 +81,13 @@ public class ConfigPanelUnrar extends ConfigPanel implements ActionListener {
         if(unrarcmd==null)
         {
 
-            try {
-                JLinkButton bb = new JLinkButton(JDLocale.L("gui.config.unrar.download", "Bitte laden sie Unrar herunter"), new URL("http://www.rarlab.com/rar_add.htm"));
-                JDUtilities.addToGridBag(panel, bb, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 0, 0, null, GridBagConstraints.NONE, GridBagConstraints.NORTHWEST);
-            } catch (MalformedURLException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
-            }
+//            try {
+//                JLinkButton bb = new JLinkButton(JDLocale.L("gui.config.unrar.download", "Bitte laden sie Unrar herunter"), new URL("http://www.rarlab.com/rar_add.htm"));
+//                JDUtilities.addToGridBag(panel, bb, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 0, 0, null, GridBagConstraints.NONE, GridBagConstraints.NORTHWEST);
+//            } catch (MalformedURLException e) {
+//                // TODO Auto-generated catch block
+//                e.printStackTrace();
+//            }
 
         }
         ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_BROWSEFILE, configuration, Unrar.PROPERTY_UNRARCOMMAND, JDLocale.L("gui.config.unrar.cmd")).setDefaultValue(unrarcmd));

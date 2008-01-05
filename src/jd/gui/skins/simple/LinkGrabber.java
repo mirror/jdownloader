@@ -1035,8 +1035,8 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
             InternalTableModel internalTableModel = new InternalTableModel();
             table.addKeyListener(this);
             table.setModel(internalTableModel);
-            table.setAutoCreateRowSorter(true);
-            table.setUpdateSelectionOnSort(true);
+            //table.setAutoCreateRowSorter(true);
+            //table.setUpdateSelectionOnSort(true);
             table.setGridColor(Color.BLUE);
             table.setAutoCreateColumnsFromModel(true);
             table.setModel(internalTableModel);
@@ -1093,7 +1093,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
 
                 int[] rows = table.getSelectedRows();
                 for (int i = rows.length - 1; i >= 0; i--) {
-                    int id = table.convertRowIndexToModel(rows[i]);
+                    int id = rows[i];//table.convertRowIndexToModel(rows[i]);
                     logger.info("remove  " + id);
                     linkList.remove(id);
 
@@ -1116,8 +1116,8 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
                 Vector<DownloadLink> list = new Vector<DownloadLink>();
                 for( int i=0; i<rows.length;i++){
                     
-                    ret.add(table.convertRowIndexToModel(rows[i]));
-                    list.add(linkList.get(table.convertRowIndexToModel(rows[i])));
+                    ret.add(rows[i]);//table.convertRowIndexToModel(rows[i]));
+                    list.add(linkList.get(rows[i]));//table.convertRowIndexToModel(rows[i])));
                     
                 }
             
@@ -1131,8 +1131,8 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
                 Vector<DownloadLink> list = new Vector<DownloadLink>();
                 for( int i=0; i<rows.length;i++){
                     
-                    ret.add(table.convertRowIndexToModel(rows[i]));
-                    list.add(linkList.get(table.convertRowIndexToModel(rows[i])));
+                    ret.add(rows[i]);//table.convertRowIndexToModel(rows[i]));
+                    list.add(linkList.get(rows[i]));//table.convertRowIndexToModel(rows[i])));
                     
                 }
             
@@ -1230,7 +1230,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
             if (e.getKeyCode() == KeyEvent.VK_DELETE) {
                 int[] rows = table.getSelectedRows();
                 for (int i = rows.length - 1; i >= 0; i--) {
-                    int id = table.convertRowIndexToModel(rows[i]);
+                    int id = rows[i];//table.convertRowIndexToModel(rows[i]);
                     this.linkList.remove(id);
                 }
                 this.refreshTable();
@@ -1277,7 +1277,8 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
             public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
 
                 Component c = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
-                int id = table.convertRowIndexToModel(row);
+               // int id = table.convertRowIndexToModel(row);
+                int id=row;
                 DownloadLink dLink = linkList.get(id);
 
                 if (isSelected) {

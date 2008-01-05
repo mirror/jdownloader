@@ -62,7 +62,7 @@ public class Dropper extends JDialog implements MouseListener, MouseMotionListen
         this.setDefaultCloseOperation(WindowConstants.DO_NOTHING_ON_CLOSE);
         setSize(50,70);
         this.setResizable(false);
-        this.setUndecorated(true);
+        this.setUndecorated(false);
       //this.setBackground(new Color(255,255,255,100));
       p.setBackground(new Color(255,255,255,100)); 
         this.setTitle(JDLocale.L("gui.droptarget.title","Linksammler aktiv (D&D + Clipboard)"));
@@ -115,7 +115,7 @@ public void mouseReleased(MouseEvent e) {
     
 }
 public void mouseDragged(MouseEvent e) {
-   this.setLocation(e.getXOnScreen()-point.x,e.getYOnScreen()-point.y);
+   //this.setLocation(e.getXOnScreen()-point.x,e.getYOnScreen()-point.y);
     
 }
 public void mouseMoved(MouseEvent e) {
