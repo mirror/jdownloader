@@ -332,6 +332,7 @@ public class HTTPLiveHeader extends Interaction {
         }
         if (!afterIP.equals(preIp)&&!afterIP.equalsIgnoreCase("offline")) {
             progress.finalize();
+            logger.info("Rec succ: "+afterIP);
             return true;
         }
         if (retries <= maxretries) {
@@ -339,6 +340,7 @@ public class HTTPLiveHeader extends Interaction {
             return doInteraction(arg);
         }
         progress.finalize();
+        logger.info("Rec fail: "+afterIP);
         return false;
     }
 

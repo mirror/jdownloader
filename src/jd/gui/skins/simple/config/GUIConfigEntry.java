@@ -247,6 +247,11 @@ Insets insets= new Insets(2, 5, 2, 10);
         // "+input.length+" -
         // "+input[0]);
         switch (configEntry.getType()) {
+            case ConfigContainer.TYPE_PASSWORDFIELD:
+                ((JPasswordField) input[0]).setText(text == null ? "" : text.toString());
+                break;
+
+            
             case ConfigContainer.TYPE_TEXTFIELD:
                 ((JTextField) input[0]).setText(text == null ? "" : text.toString());
                 break;
@@ -305,6 +310,8 @@ Insets insets= new Insets(2, 5, 2, 10);
     public Object getText() {
         // //logger.info(configEntry.getType()+"_2");
         switch (configEntry.getType()) {
+            case ConfigContainer.TYPE_PASSWORDFIELD:
+                return new String(((JPasswordField) input[0]).getPassword());
             case ConfigContainer.TYPE_TEXTFIELD:
                 return ((JTextField) input[0]).getText();
             case ConfigContainer.TYPE_TEXTAREA:

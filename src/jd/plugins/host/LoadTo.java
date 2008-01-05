@@ -101,7 +101,7 @@ public class LoadTo extends PluginForHost {
 
     @Override
     public int getMaxSimultanDownloadNum() {
-        return 1; // max 1. Download
+        return 3; // max 1. Download
     }
 
     @Override

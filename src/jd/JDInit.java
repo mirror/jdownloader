@@ -254,7 +254,9 @@ public class JDInit {
         }
     }
  public void loadModules(){
+     logger.finer("create Module: Unrar");
      JDUtilities.getController().setUnrarModule(Unrar.getInstance());
+     logger.finer("create Module: InfoFileWriter");
      JDUtilities.getController().setInfoFileWriterModule(InfoFileWriter.getInstance());
      
      

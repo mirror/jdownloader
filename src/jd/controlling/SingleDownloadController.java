@@ -384,7 +384,7 @@ public class SingleDownloadController extends ControlMulticaster {
         fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SINGLE_DOWNLOAD_CHANGED, downloadLink));
         // Download Zeit. Versuch durch eine Interaction einen reconnect
         // zu machen. wenn das klappt nochmal versuchen
-        Interaction.handleInteraction((Interaction.INTERACTION_BEFORE_RECONNECT), this);
+       
         // Interaction.handleInteraction((Interaction.INTERACTION_NEED_RECONNECT),
         // this);
         // Interaction.handleInteraction((Interaction.INTERACTION_DOWNLOAD_WAITTIME),
@@ -393,7 +393,7 @@ public class SingleDownloadController extends ControlMulticaster {
             downloadLink.setStatus(DownloadLink.STATUS_TODO);
             downloadLink.setEndOfWaittime(0);
         }
-        Interaction.handleInteraction(Interaction.INTERACTION_AFTER_RECONNECT, this);
+
         downloadLink.setStatusText("");
     }
 
@@ -503,15 +503,7 @@ public class SingleDownloadController extends ControlMulticaster {
 
         downloadLink.setStatusText("Bot erkannt/Reconnect ");
         fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SINGLE_DOWNLOAD_CHANGED, downloadLink));
-        if (plugin.getBotWaittime() < 0) {
-            Interaction.handleInteraction(Interaction.INTERACTION_BEFORE_RECONNECT, this);
-            // Interaction.handleInteraction((Interaction.INTERACTION_NEED_RECONNECT),
-            // this);
-
-            // Interaction.handleInteraction((Interaction.INTERACTION_DOWNLOAD_WAITTIME),
-            // this);
-
-        }
+    
         if (plugin.getBotWaittime() < 0 && controller.reconnect()) {
             downloadLink.setStatus(DownloadLink.STATUS_TODO);
             downloadLink.setEndOfWaittime(0);
@@ -525,9 +517,7 @@ public class SingleDownloadController extends ControlMulticaster {
             fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SINGLE_DOWNLOAD_CHANGED, downloadLink));
 
         }
-        if (plugin.getBotWaittime() < 0)
-            Interaction.handleInteraction(Interaction.INTERACTION_AFTER_RECONNECT, this);
-
+  
         logger.severe("Bot detected");
     }
 
@@ -566,19 +556,12 @@ public class SingleDownloadController extends ControlMulticaster {
         fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SINGLE_DOWNLOAD_CHANGED, downloadLink));
         // Download Zeit. Versuch durch eine Interaction einen reconnect
         // zu machen. wenn das klappt nochmal versuchen
-        Interaction.handleInteraction(Interaction.INTERACTION_BEFORE_RECONNECT, this);
-        // boolean a =
-        // Interaction.handleInteraction((Interaction.INTERACTION_NEED_RECONNECT),
-        // this);
-
-        // boolean b =
-        // Interaction.handleInteraction((Interaction.INTERACTION_DOWNLOAD_WAITTIME),
-        // this);
+ 
         if (controller.reconnect()) {
             downloadLink.setStatus(DownloadLink.STATUS_TODO);
             downloadLink.setEndOfWaittime(0);
         }
-        Interaction.handleInteraction(Interaction.INTERACTION_AFTER_RECONNECT, this);
+    
         downloadLink.setStatusText("");
     }
 

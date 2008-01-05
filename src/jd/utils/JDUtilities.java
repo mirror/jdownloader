@@ -1577,7 +1577,7 @@ public class JDUtilities {
         try {
             logger.finer("Start " + par + " in " + runIn + " wait " + waitForReturn);
             process = pb.start();
-            if (waitForReturn > 0) {
+            if (waitForReturn > 0 ||waitForReturn<0) {
                 long t = System.currentTimeMillis();
                 while (true) {
                     try {
@@ -1585,7 +1585,7 @@ public class JDUtilities {
                         break;
                     }
                     catch (Exception e) {
-                        if (System.currentTimeMillis() - t > waitForReturn * 1000) {
+                        if (waitForReturn>0&&System.currentTimeMillis() - t > waitForReturn * 1000) {
                             logger.severe(command + ": Prozess ist nach " + waitForReturn + " Sekunden nicht beendet worden. Breche ab.");
                             process.destroy();
                         }

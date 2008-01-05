@@ -179,6 +179,8 @@ class SubPanelLiveHeaderReconnect extends ConfigPanel implements ActionListener 
                         if (pw != null && !pw.matches("[\\s]*")) routerInfo.password = pw;
                         String[] data = routerInfo.getRouterData();
                         if (data == null) {
+                            progress.setVisible(false);
+                            progress.dispose();
                             JDUtilities.getGUI().showMessageDialog(JDLocale.L("gui.config.liveHeader.warning.notFound", "jDownloader konnte ihre Routereinstellung nicht automatisch ermitteln."));
                             return;
                         }

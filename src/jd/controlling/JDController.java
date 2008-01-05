@@ -13,7 +13,7 @@ import jd.JDInit;
 import jd.config.Configuration;
 import jd.controlling.interaction.ExternReconnect;
 import jd.controlling.interaction.HTTPLiveHeader;
-import jd.controlling.interaction.HTTPReconnect;
+
 import jd.controlling.interaction.InfoFileWriter;
 import jd.controlling.interaction.Interaction;
 import jd.controlling.interaction.Unrar;
@@ -218,21 +218,8 @@ public class JDController implements PluginListener, ControlListener, UIListener
                 break;
             case ControlEvent.CONTROL_PLUGIN_INTERACTION_INACTIVE:
                 Interaction interaction = (Interaction) event.getParameter();
-                // Macht einen Wartezeit reset wenn die HTTPReconnect
-                // Interaction eine neue IP gebracht hat
-                if (interaction instanceof HTTPReconnect && interaction.getCallCode() == Interaction.INTERACTION_CALL_SUCCESS) {
-                    Iterator<DownloadLink> iterator = downloadLinks.iterator();
-                    // stellt die Wartezeiten zurück
-                    DownloadLink i;
-                    while (iterator.hasNext()) {
-                        i = iterator.next();
-                        if (i.getRemainingWaittime() > 0) {
-                            i.setEndOfWaittime(0);
-                            i.setStatus(DownloadLink.STATUS_TODO);
-                        }
-                    }
-
-                }
+         
+              
 
                 break;
             default:
@@ -348,7 +335,7 @@ public class JDController implements PluginListener, ControlListener, UIListener
                     stopDownloads();
                 }
 
-                Interaction.handleInteraction(Interaction.INTERACTION_BEFORE_RECONNECT, this);
+               
                // Interaction.handleInteraction(Interaction.INTERACTION_NEED_RECONNECT, this);
                 if (reconnect()) {
                     uiInterface.showMessageDialog("Reconnect erfolgreich");
@@ -359,8 +346,7 @@ public class JDController implements PluginListener, ControlListener, UIListener
                     uiInterface.showMessageDialog("Reconnect fehlgeschlagen");
 
                 }
-
-                Interaction.handleInteraction(Interaction.INTERACTION_AFTER_RECONNECT, this);
+              
                 uiInterface.setDownloadLinks(downloadLinks);
                 break;
             case UIEvent.UI_INTERACT_UPDATE:
@@ -905,6 +891,8 @@ logger.info("Call re: "+ri.getHtmlCode());
      */
 
     public boolean reconnect() {
+        Interaction.handleInteraction(Interaction.INTERACTION_BEFORE_RECONNECT, this);
+        
         logger.info("Reconnect: " + JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_DISABLE_RECONNECT, true));
         if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_DISABLE_RECONNECT, false)) {
             logger.finer("Reconnect is disabled. Enable the CheckBox in the Toolbar to reactivate it");
@@ -942,6 +930,9 @@ logger.info("Call re: "+ri.getHtmlCode());
                 }
             }
 
+        }
+        if(ret){
+            Interaction.handleInteraction(Interaction.INTERACTION_AFTER_RECONNECT, this);
         }
         return ret;
     }

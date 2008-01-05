@@ -962,8 +962,8 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
 
             String pw = vectorToPasswordList(pwList);
 
-            txtComment.setText(comment);
-            txtPassword.setText(pw);
+            if(!txtComment.hasFocus())   txtComment.setText(comment);
+            if(!txtPassword.hasFocus())  txtPassword.setText(pw);
             JUnrar unrar = new JUnrar(false);
             unrar.addToPasswordlist(password);
             refreshTable();
@@ -972,14 +972,22 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
 
         private String vectorToPasswordList(Vector<String> pwList) {
             String pw = "";
+            int c=0;
             for (int i = 0; i < pwList.size(); i++) {
                 if (pwList.get(i).trim().length() > 0) {
                     pw += "\"" + pwList.get(i) + "\"";
                     if ((i + 1) < pwList.size()) pw += ", ";
+                    c++;
                 }
 
             }
-            if (pwList.size() > 0 && pw.trim().length() > 0) pw = "{" + pw + "}";
+            if (pwList.size() > 0 && pw.trim().length() > 0){
+                if(c>1){
+                pw = "{" + pw + "}";
+                }else{
+                    pw=pw.substring(1,pw.length()-2);
+                }
+            }
             return pw;
         }
 
@@ -1057,7 +1065,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
                         column.setMaxWidth(20);
                         break;
                     case 1:
-                        column.setPreferredWidth(150);
+                        column.setMaxWidth(150);
                         break;
                     case 2:
                         column.setPreferredWidth(250);
