@@ -61,6 +61,12 @@ public class ConfigContainer implements Serializable {
      * ConfigElement ist ein Textbereich
      */
     public static final int TYPE_TEXTAREA = 10;
+    
+    /**
+     * ConfigElement ist ein Textbereich
+     */
+    public static final int TYPE_PASSWORDFIELD = 11;
+    
 
     private Property propertyInstance;
 

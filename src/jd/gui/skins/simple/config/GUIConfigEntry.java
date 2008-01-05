@@ -14,6 +14,7 @@ import javax.swing.JComponent;
 import javax.swing.JFileChooser;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.JPasswordField;
 import javax.swing.JRadioButton;
 import javax.swing.JScrollPane;
 import javax.swing.JSeparator;
@@ -75,6 +76,21 @@ JComponent right=null;
 JComponent total=null;
 Insets insets= new Insets(2, 5, 2, 10);
         switch (configEntry.getType()) {
+            
+            
+            
+  case ConfigContainer.TYPE_PASSWORDFIELD:
+                
+                JDUtilities.addToGridBag(this, left=new JLabel(configEntry.getLabel()), GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
+               
+                input[0] = new JPasswordField(50);
+                input[0].setEnabled(configEntry.isEnabled());
+             
+                JDUtilities.addToGridBag(this, right=input[0], GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 1, 0, insets, GridBagConstraints.HORIZONTAL, GridBagConstraints.EAST);
+                
+                break;
+            
+            
             case ConfigContainer.TYPE_TEXTFIELD:
                 
                 JDUtilities.addToGridBag(this, left=new JLabel(configEntry.getLabel()), GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
