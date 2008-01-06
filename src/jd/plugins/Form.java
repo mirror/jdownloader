@@ -76,11 +76,7 @@ public class Form {
             String[] nv = getNameValue(matcher.group(2));
             if(nv!=null)
             {
-                if(!ret.containsKey(nv[0]))
-                {
-                    ret.put(nv[0], ((nv[1]==null)?"":nv[1]));
-                }
-                else if(ret.get(nv[0]).equals(""))
+                if(!ret.containsKey(nv[0]) || ret.get(nv[0]).equals(""))
                     ret.put(nv[0], ((nv[1]==null)?"":nv[1]));
 
             }
