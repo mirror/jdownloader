@@ -12,6 +12,7 @@ public class FormsExample {
     public static void main(String[] args) {
         try {
             //Suche auf Glück bei Google
+            System.out.println("Suche auf Glück bei Google");
             RequestInfo req = Plugin.getRequest(new URL("http://www.google.de/"));
             Form[] forms = Form.getForms(req);
             for (int i = 0; i < forms.length; i++) {
@@ -23,9 +24,10 @@ public class FormsExample {
             req = form.getRequestInfo();
 
             System.out.println(req.getConnection().getURL().toString());
-            System.out.println(req.getLocation());
+            System.out.println(req.getLocation()+"\n\n");
             
             //Eintrag auf Pastebin
+            System.out.println("Eintrag auf Pastebin");
             req = Plugin.getRequest(new URL("http://jdownloader.pastebin.com/"));
             forms = Form.getForms(req);
             for (int i = 0; i < forms.length; i++) {
