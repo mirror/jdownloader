@@ -225,7 +225,7 @@ public class Form {
             ret += "var: " + entry.getKey() + "=" + entry.getValue() + "\n";
         }
         for (Map.Entry<String, String> entry : formProperties.entrySet()) {
-            ret += "formPropertie: " + entry.getKey() + "=" + entry.getValue() + "\n";
+            ret += "formProperty: " + entry.getKey() + "=" + entry.getValue() + "\n";
         }
         return ret;
 
