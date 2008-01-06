@@ -34,7 +34,7 @@ public class Form {
      */
     public HashMap<String, String> vars = new HashMap<String, String>();
     /**
-     * Wird bei der Benutzung von getInputFields automatisch gesetzt
+     * Wird bei der Benutzung von getForms automatisch gesetzt
      */
     private RequestInfo baseRequest;
     private static String[] getNameValue(String data) {
