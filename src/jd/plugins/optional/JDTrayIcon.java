@@ -75,6 +75,8 @@ public class JDTrayIcon extends PluginOptional implements ActionListener {
 
             Service s;
             Image image = JDUtilities.getImage(JDTheme.I("gui.images.jd_logo"));
+            logger.info("Image : "+image);
+            
             PopupMenu popup = new PopupMenu();
             trayIcon = new TrayIcon(image, JDUtilities.getJDTitle(), popup);
 

@@ -113,7 +113,7 @@ public class TabDownloadLinks extends JPanel implements PluginListener, ControlL
             column = table.getColumnModel().getColumn(c);
             switch (c) {
                 case COL_INDEX:
-                  
+                    column.setPreferredWidth(30);
                     column.setMaxWidth(30);
                     break;
                 case COL_NAME:
@@ -126,6 +126,7 @@ public class TabDownloadLinks extends JPanel implements PluginListener, ControlL
                     column.setPreferredWidth(200);
                     break;
                 case COL_PROGRESS:
+                    column.setPreferredWidth(250);
                     column.setMaxWidth(250);
                     break;
             }

@@ -455,6 +455,7 @@ public class JDUtilities {
      *         kann
      */
     public static Image getImage(String imageName) {
+        
         if (images.get(imageName) == null) {
             ClassLoader cl = JDUtilities.getJDClassLoader();
             Toolkit toolkit = Toolkit.getDefaultToolkit();
@@ -1572,6 +1573,7 @@ public class JDUtilities {
                 logger.severe("Working drectory " + runIn + " does not exist!");
             }
         }
+       
         Process process;
 
         try {
@@ -1941,7 +1943,7 @@ public class JDUtilities {
     }
 
     public static String Base64Decode(String base64) {
-
+        if(base64==null)return null;
         try {
             byte[] plain = new BASE64Decoder().decodeBuffer(base64);
             return new String(plain);
@@ -1952,6 +1954,7 @@ public class JDUtilities {
     }
 
     public static String Base64Encode(String plain) {
+        if(plain==null)return null;
         String base64 = new BASE64Encoder().encode(plain.getBytes());
 
         return base64;

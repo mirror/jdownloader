@@ -28,6 +28,7 @@ import javax.swing.event.ChangeListener;
 
 import jd.config.Configuration;
 import jd.gui.UIInterface;
+import jd.plugins.event.PluginEvent;
 import jd.utils.JDLocale;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
@@ -188,10 +189,11 @@ public ConfigPanel initSubPanel(Class class1){
         }
      if(e.getSource()==this.chbExpert){
          configuration.setProperty(Configuration.PARAM_USE_EXPERT_VIEW, chbExpert.isSelected());
-         JDUtilities.saveConfig();
-         if(JDUtilities.getController().getUiInterface().showConfirmDialog(JDLocale.L("sys.confirm.doRestart","Diese Einstellung benötigt einen JD-Neustart. Neustart jetzt durchführen?"))){
-             JDUtilities.restartJD();
-         }
+         JDUtilities.saveConfig();        
+         this.setVisible(false);
+         this.dispose();
+     
+         
          return;
      }
          
