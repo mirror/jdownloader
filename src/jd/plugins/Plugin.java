@@ -40,10 +40,8 @@ import java.util.zip.GZIPInputStream;
 import jd.config.ConfigContainer;
 import jd.config.Configuration;
 import jd.config.Property;
-import jd.controlling.interaction.Interaction;
 import jd.plugins.event.PluginEvent;
 import jd.plugins.event.PluginListener;
-import jd.unrar.JUnrar;
 import jd.utils.JDUtilities;
 
 /**
@@ -593,7 +591,7 @@ public abstract class Plugin {
      * @return ein String, der als POST Parameter genutzt werden kann und alle
      *         Parameter des Formulars enthält
      */
-    public String getFormInputHidden(String data) {
+    public static String getFormInputHidden(String data) {
         return joinMap(getInputHiddenFields(data), "=", "&");
     }
 
@@ -611,15 +609,14 @@ public abstract class Plugin {
     public HashMap<String, String> getInputHiddenFields(String data, String startPattern, String lastPattern) {
         return getInputHiddenFields(getBetween(data, startPattern, lastPattern));
     }
-
     /**
      * Gibt alle Hidden fields als hasMap zurück
      * 
      * @param data
      * @return hasmap mit allen hidden fields variablen
      */
-    public HashMap<String, String> getInputHiddenFields(String data) {
-        Pattern intput1 = Pattern.compile("<[ ]?input([^>]*?type=['\"]?hidden['\"]?[^>]*?)[/]?>", Pattern.CASE_INSENSITIVE);
+    public static HashMap<String, String> getInputHiddenFields(String data) {
+        Pattern intput1 = Pattern.compile("(?s)<[ ]?input([^>]*?type=['\"]?hidden['\"]?[^>]*?)[/]?>", Pattern.CASE_INSENSITIVE);
         Pattern intput2 = Pattern.compile("name=['\"]([^'\"]*?)['\"]", Pattern.CASE_INSENSITIVE);
         Pattern intput3 = Pattern.compile("value=['\"]([^'\"]*?)['\"]", Pattern.CASE_INSENSITIVE);
         Pattern intput4 = Pattern.compile("name=([^\\s]*)", Pattern.CASE_INSENSITIVE);
@@ -1600,7 +1597,6 @@ public abstract class Plugin {
     public void setStatusText(String value) {
         statusText = value;
     }
-
     /**
      * Sucht alle Links heraus
      * 
