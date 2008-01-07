@@ -10,26 +10,28 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import jd.utils.JDUtilities;
+
 public class Form {
-    public static final int METHODE_POST = 0;
-    public static final int METHODE_GET = 1;
+    public static final int METHOD_POST = 0;
+    public static final int METHOD_GET = 1;
+    public static final int METHOD_PUT = 2;
+    public static final int METHOD_UNKNOWN = 99;
     /**
-     * Methode der Form POST = 0 oder GET = 1 PUT fällt weg da es ein
-     * Ausnahmefall ist
+     * Methode der Form POST = 0, GET = 1 ( PUT = 2 wird jedoch bei getRequestInfo nicht unterstützt )
      */
-    public int methode;
+    public int method;
     /**
      * Action der Form entspricht auch oft einer URL
      */
     public String action;
     /**
-     * Die eigenschaften der Form z.B. id oder name (ohne methode und action)
+     * Die eigenschaften der Form z.B. id oder name (ohne method und action)
      * kann zur Identifikation verwendet werden
      */
     public HashMap<String, String> formProperties = new HashMap<String, String>();
     /**
-     * Value und name von Inputs/Textareas/Selectoren
-     * HashMap<name, value>
+     * Value und name von Inputs/Textareas/Selectoren HashMap<name, value>
      * Achtung müssen zum teil noch ausgefüllt werden
      */
     public HashMap<String, String> vars = new HashMap<String, String>();
@@ -52,14 +54,12 @@ public class Form {
             return null;
         matcher = Pattern.compile("value=['\"]([^'\"]*?)['\"]", Pattern.CASE_INSENSITIVE).matcher(data);
 
-
         if (matcher.find())
             value = matcher.group(1);
-        else
-        {        
+        else {
             matcher = Pattern.compile("value=(.*)", Pattern.CASE_INSENSITIVE).matcher(data + " ");
             if (matcher.find())
-            value = matcher.group(1).replaceAll(" [^\\s]+\\=.*", "").trim();
+                value = matcher.group(1).replaceAll(" [^\\s]+\\=.*", "").trim();
         }
         if (value != null && value.matches("[\\s]*"))
             value = null;
@@ -74,10 +74,9 @@ public class Form {
         Matcher matcher = Pattern.compile("(?s)<[\\s]*(input|textarea|select)(.*?)>", Pattern.CASE_INSENSITIVE).matcher(data);
         while (matcher.find()) {
             String[] nv = getNameValue(matcher.group(2));
-            if(nv!=null)
-            {
-                if(!ret.containsKey(nv[0]) || ret.get(nv[0]).equals(""))
-                    ret.put(nv[0], ((nv[1]==null)?"":nv[1]));
+            if (nv != null) {
+                if (!ret.containsKey(nv[0]) || ret.get(nv[0]).equals(""))
+                    ret.put(nv[0], ((nv[1] == null) ? "" : nv[1]));
 
             }
         }
@@ -107,7 +106,7 @@ public class Form {
             if (inForm.matches("(?s)" + matcher)) {
                 Form form = new Form();
                 form.baseRequest = requestInfo;
-                form.methode = 1;
+                form.method = METHOD_GET;
                 Pattern patternfp = Pattern.compile(" ([^\\s]+)\\=[\"'](.*?)[\"']", Pattern.CASE_INSENSITIVE);
                 Matcher matcherfp = patternfp.matcher(formPropertie);
                 while (matcherfp.find()) {
@@ -115,8 +114,15 @@ public class Form {
                     if (pname.toLowerCase().equals("action"))
                         form.action = matcherfp.group(2);
                     else if (pname.toLowerCase().equals("method")) {
-                        if (matcherfp.group(2).toLowerCase().matches(".*post.*"))
-                            form.methode = 0;
+                        String meth = matcherfp.group(2).toLowerCase();
+                        if (meth.matches(".*post.*"))
+                            form.method = METHOD_POST;
+                        else if (meth.matches(".*get.*"))
+                            form.method = METHOD_GET;
+                        else if (meth.matches(".*put.*"))
+                            form.method = METHOD_PUT;
+                        else
+                            form.method = METHOD_UNKNOWN;
                     } else
                         form.formProperties.put(pname, matcherfp.group(2));
                 }
@@ -127,8 +133,15 @@ public class Form {
                     if (pname.toLowerCase().equals("action"))
                         form.action = matcherfp.group(2);
                     else if (pname.toLowerCase().equals("method")) {
-                        if (matcherfp.group(2).toLowerCase().matches(".*post.*"))
-                            form.methode = 0;
+                        String meth = matcherfp.group(2).toLowerCase();
+                        if (meth.matches(".*post.*"))
+                            form.method = METHOD_POST;
+                        else if (meth.matches(".*get.*"))
+                            form.method = METHOD_GET;
+                        else if (meth.matches(".*put.*"))
+                            form.method = METHOD_PUT;
+                        else
+                            form.method = METHOD_UNKNOWN;
                     } else
                         form.formProperties.put(pname, matcherfp.group(2));
                 }
@@ -149,6 +162,16 @@ public class Form {
     }
     @SuppressWarnings("deprecation")
     public RequestInfo getRequestInfo(boolean redirect) {
+        if(method==METHOD_UNKNOWN)
+        {
+            JDUtilities.getLogger().severe("Unknown method");
+            return null;
+        }
+        else if(method==METHOD_PUT)
+        {
+            JDUtilities.getLogger().severe("PUT is not supported");
+            return null;
+        }
         if (baseRequest == null)
             return null;
         URL baseurl = baseRequest.getConnection().getURL();
@@ -181,7 +204,7 @@ public class Form {
             buffer.append(URLEncoder.encode(entry.getValue()));
         }
         String varString = buffer.toString();
-        if (methode == METHODE_GET) {
+        if (method == METHOD_GET) {
             if (varString != null && !varString.matches("[\\s]*")) {
                 if (action.matches("\\?.+"))
                     action += "&";
@@ -198,7 +221,7 @@ public class Form {
                 // TODO Auto-generated catch block
                 e.printStackTrace();
             }
-        } else {
+        } else if (method == METHOD_POST){
             try {
                 return Plugin.postRequest(new URL(action), baseRequest.getCookie(), baseurl.toString(), null, varString, redirect);
             } catch (MalformedURLException e) {
@@ -216,10 +239,14 @@ public class Form {
     public String toString() {
         String ret = "";
         ret += "Action: " + action + "\n";
-        if (methode == METHODE_POST)
-            ret += "Type: POST\n";
-        else
-            ret += "Type: GET\n";
+        if (method == METHOD_POST)
+            ret += "Method: POST\n";
+        else if (method == METHOD_GET)
+            ret += "Method: GET\n";
+        else if (method == METHOD_PUT)
+            ret += "Method: PUT is not supported\n";
+        else if (method == METHOD_UNKNOWN)
+            ret += "Method: Unknown\n";
         
         for (Map.Entry<String, String> entry : vars.entrySet()) {
             ret += "var: " + entry.getKey() + "=" + entry.getValue() + "\n";
