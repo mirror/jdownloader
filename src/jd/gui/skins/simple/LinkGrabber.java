@@ -334,7 +334,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
                     bestIndex = i;
                 }
             }
-            if (bestSim < 60) {
+            if (bestSim < 90) {
                 logger.info("New Tab");
                 addLinkstoTab(new DownloadLink[] { link }, tabList.size());
                 tabList.get(tabList.size() - 1).setPackageName(removeExtension(link.getName()));
@@ -683,11 +683,11 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
                 fp.setDownloadDirectory(file.getAbsolutePath());
             }
             else {
-                fp.setDownloadDirectory(tab.getPackageName());
+                fp.setDownloadDirectory(tab.getDownloadDirectory());
             }
         }
         else {
-            fp.setDownloadDirectory(tab.getPackageName());
+            fp.setDownloadDirectory(tab.getDownloadDirectory());
         }
         fp.setDownloadLinks(linkList);
 
