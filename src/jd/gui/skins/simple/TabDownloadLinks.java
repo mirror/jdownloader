@@ -602,7 +602,7 @@ public class TabDownloadLinks extends JPanel implements PluginListener, ControlL
         public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
             if (value instanceof JProgressBar) return (JProgressBar) value;
             Component c = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
-            if (!isSelected) {
+            if (!isSelected && allLinks.size()<row) {
                 DownloadLink dLink = allLinks.get(row);
                 if (!dLink.isEnabled()) {
                     c.setBackground(COLOR_DISABLED);
