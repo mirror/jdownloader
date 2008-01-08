@@ -87,6 +87,28 @@ public class Form {
         }
         return ret;
     }
+    public static Form[] getForms(String url)
+    {
+        try {
+            return getForms(new URL(url));
+        }
+        catch (MalformedURLException e) {
+            // TODO Automatisch erstellter Catch-Block
+            e.printStackTrace();
+        }
+        return null;
+    }
+    public static Form[] getForms(URL url)
+    {
+        try {
+            return getForms(Plugin.getRequest(url));
+        }
+        catch (IOException e) {
+            // TODO Automatisch erstellter Catch-Block
+            e.printStackTrace();
+        }
+        return null;
+    }
     /**
      * Ein Array mit allen Forms einer Seite
      */
