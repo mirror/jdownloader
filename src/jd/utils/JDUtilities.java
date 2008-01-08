@@ -1277,15 +1277,15 @@ public class JDUtilities {
         BufferedReader f;
         try {
             f = new BufferedReader(new FileReader(file));
-
+            System.gc();
             String line;
-            String ret = "";
-
+            StringBuffer ret = new StringBuffer();
+            String sep = System.getProperty("line.separator");
             while ((line = f.readLine()) != null) {
-                ret += line + "\r\n";
+                ret.append(line + sep);
             }
             f.close();
-            return ret;
+            return ret.toString();
         }
         catch (IOException e) {
 

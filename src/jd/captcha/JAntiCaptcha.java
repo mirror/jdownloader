@@ -94,12 +94,6 @@ public class JAntiCaptcha {
     private String                   resultFile;
 
     /**
-     * XML Dokument für die MTH File
-     */
-
-    private Document                 mth;
-
-    /**
      * Vector mit den Buchstaben aus der MTHO File
      */
     private Vector<Letter>           letterDB;
@@ -308,14 +302,14 @@ logger.info(methodsPath);
     private void loadMTHFile() {
         File f=JDUtilities.getResourceFile("jd/captcha/methods/" + this.methodDirName + "/" + "letters.mth");
         
-        mth = UTILITIES.parseXmlString(JDUtilities.getLocalFile(f), false);
+        Document mth = UTILITIES.parseXmlString(JDUtilities.getLocalFile(f), false);
        logger.info("Get file: " + f);
         if (mth == null) {
             if (JAntiCaptcha.isLoggerActive()) logger.severe("MTH FILE NOT AVAILABLE.");
 
         }
 
-        createLetterDBFormMTH();
+        createLetterDBFormMTH(mth);
         // sortLetterDB();
 
     }
@@ -324,7 +318,7 @@ logger.info(methodsPath);
      * Aus gründen der geschwindigkeit wird die MTH XMl in einen vector
      * umgewandelt
      */
-    private void createLetterDBFormMTH() {
+    private void createLetterDBFormMTH(Document mth) {
         letterDB = new Vector<Letter>();
         long start1 = UTILITIES.getTimer();
         try {

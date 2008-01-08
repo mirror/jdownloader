@@ -135,9 +135,18 @@ public class Serienjunkies extends PluginForDecrypt {
                         if(name==null)
                             return null;
                         reqinfo = getRequest(url, null, null, true);
-                        pattern = Pattern.compile("(?s)<p><strong>"+name+"</strong>(.*?)</p>", Pattern.CASE_INSENSITIVE);
-                        String bet = getFirstMatch(reqinfo.getHtmlCode(), pattern, 1);
-                        pattern = Pattern.compile("<strong>.*?\\:</strong> <a href=\"(.*?)\"", Pattern.CASE_INSENSITIVE);
+                        name+=" ";
+
+                        String bet=null;
+                        while(bet==null)
+                        {
+                            name=name.substring(0, name.length()-1);
+                            if(name.length()==0)
+                                return null;
+                        pattern = Pattern.compile("(?s)<p><strong>"+name+".*?</strong>(.*?)</p>", Pattern.CASE_INSENSITIVE);
+                        bet = getFirstMatch(reqinfo.getHtmlCode(), pattern, 1);
+                        }
+                        pattern = Pattern.compile("<a href=\"(http://download.serienjunkies.org.*?)\"", Pattern.CASE_INSENSITIVE);
                         matcher = pattern.matcher(bet);
                         while (matcher.find()) {
                             decryptedLinks.add(this.createDownloadlink(matcher.group(1)));
