@@ -32,7 +32,7 @@ public class JUnrar {
     // werden
     public String[] followingFiles = null;
     public File extractFolder = null;
-    private File passwordList = new File(JDUtilities.getJDHomeDirectoryFromEnvironment(), "passwordlist.xml");
+    private File passwordList = new File(JDUtilities.getJDHomeDirectoryFromEnvironment(), "passwordlist.dat");
     private File unpacked = new File(JDUtilities.getJDHomeDirectoryFromEnvironment(), "unpacked.dat");
     private File toExtract = new File(JDUtilities.getJDHomeDirectoryFromEnvironment(), "toextract.dat");
     private HashMap<File, String> toExtractlist;
@@ -280,7 +280,7 @@ public class JUnrar {
         // private int maxFilesize = 500000;
         // public boolean overwriteFiles = false, autoDelete = true;
         if (passwordList.isFile()) {
-            this.passwordlist = (HashMap<String, Integer>) Utilities.loadObject(passwordList, true);
+            this.passwordlist = (HashMap<String, Integer>) Utilities.loadObject(passwordList, false);
         } else {
 
             this.passwordlist = new HashMap<String, Integer>();
@@ -304,7 +304,7 @@ public class JUnrar {
 
     }
     private void savePasswordList() {
-        Utilities.saveObject(this.passwordlist, passwordList, true);
+        Utilities.saveObject(this.passwordlist, passwordList, false);
     }
 
     /**
