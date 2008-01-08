@@ -934,7 +934,6 @@ public abstract class Plugin {
             responseCode = httpConnection.getResponseCode();
         } catch (IOException e) {
         }
-        httpConnection.connect();
         RequestInfo ri = new RequestInfo("", location, setcookie, httpConnection.getHeaderFields(), responseCode);
         ri.setConnection(httpConnection);
         return ri;
