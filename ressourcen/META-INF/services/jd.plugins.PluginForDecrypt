@@ -38,7 +38,8 @@ jd.plugins.decrypt.Filer
 jd.plugins.decrypt.XLSpreadCom
 jd.plugins.decrypt.NetfolderIn
 jd.plugins.decrypt.MovieloadTo
-#jd.plugins.decrypt.MultiDecrypt
-jd.plugins.decrypt.RsHoerbuchin
 jd.plugins.decrypt.CineTo
+jd.plugins.decrypt.RsHoerbuchin
+jd.plugins.decrypt.RockHouseIn
 jd.plugins.decrypt.RapidAdsAthCx
+#jd.plugins.decrypt.MultiDecrypt
