@@ -21,7 +21,7 @@ public class Form {
     public static final int METHOD_UNKNOWN = 99;
     public boolean withHtmlCode = true;
     /**
-     * Achtung wenn die Froms nicht mit getForms erstellt wurde müssen method, action, vars von hand gefüllt werden
+     * Achtung wenn die From nicht mit getForms erstellt wurde müssen method, action, vars von hand gefüllt werden
      * @param baseUrl
      * @param Cookie
      * @throws MalformedURLException
@@ -30,7 +30,7 @@ public class Form {
        this(new URL(baseUrl), Cookie);
     }
     /**
-     * Achtung wenn die Froms nicht mit getForms erstellt wurde müssen method, action, vars von hand gefüllt werden
+     * Achtung wenn die From nicht mit getForms erstellt wurde müssen method, action, vars von hand gefüllt werden
      * @param baseUrl
      * @param Cookie
      */
