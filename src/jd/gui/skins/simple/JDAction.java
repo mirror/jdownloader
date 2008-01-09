@@ -53,6 +53,8 @@ public class JDAction extends AbstractAction{
     public static final int APP_PASSWORDLIST = 27;
     public static final int APP_CLIPBOARD= 28;
 
+    public static final int HELP = 29;
+
     private ActionListener actionListener;
     private int actionID;
     private KeyStroke accelerator;

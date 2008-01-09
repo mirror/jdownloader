@@ -650,6 +650,7 @@ public class JDUtilities {
             // Url Encode des pfads für den Classloader
             logger.info("Create Classloader: for: " + homeDir.getAbsolutePath());
             jdClassLoader = new JDClassLoader(homeDir.getAbsolutePath(), Thread.currentThread().getContextClassLoader());
+          
         }
         return jdClassLoader;
     }

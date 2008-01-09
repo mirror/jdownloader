@@ -7,8 +7,6 @@ import java.util.logging.Logger;
 
 import javax.swing.JWindow;
 
-
-
 import jd.captcha.JACController;
 import jd.config.Configuration;
 import jd.controlling.JDController;
@@ -63,6 +61,7 @@ public class Main {
             }
             
         }
+        logger.info(System.getProperty("java.class.path"));
         // rausgenommen verlängert nur den startvorgang
         // if (SingleInstanceController.isApplicationRunning()) {
         // JOptionPane.showMessageDialog(null,
@@ -118,7 +117,8 @@ public class Main {
 if(JDUtilities.getRunType()==JDUtilities.RUNTYPE_LOCAL_JARED)
             init.doWebupdate();
         }
-
+     
+       
         /*
          * Das ist ein kurzeitiger Übergangsfix. der teil löscht Interactionen
          * aus der confog die nicht emhr benötigt werden

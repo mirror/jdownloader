@@ -209,6 +209,7 @@ public class JDInit {
     }
 
     public UIInterface initGUI(JDController controller) {
+     
         UIInterface uiInterface = new SimpleGUI();
         controller.setUiInterface(uiInterface);
         return uiInterface;

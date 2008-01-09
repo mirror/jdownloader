@@ -22,8 +22,8 @@ import javax.swing.plaf.metal.MetalButtonUI;
 
 import jd.config.Configuration;
 import jd.gui.skins.simple.SimpleGUI;
+import jd.gui.skins.simple.Link.DnDWebBrowser;
 import jd.utils.JDUtilities;
-
 import edu.stanford.ejalbert.BrowserLauncher;
 import edu.stanford.ejalbert.exception.BrowserLaunchingInitializingException;
 import edu.stanford.ejalbert.exception.UnsupportedOperatingSystemException;

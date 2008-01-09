@@ -29,6 +29,7 @@ import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.JSeparator;
 import javax.swing.JSplitPane;
 import javax.swing.JToggleButton;
 import javax.swing.JToolBar;
@@ -61,6 +62,13 @@ import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 
 import com.sun.java.swing.plaf.windows.WindowsLookAndFeel;
+
+import edu.stanford.ejalbert.BrowserLauncher;
+
+
+
+
+
 
 public class SimpleGUI implements UIInterface, ActionListener, UIListener, WindowListener {
     /**
@@ -184,6 +192,8 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
 
     private JButton             btnClipBoard;
 
+    private JDAction actionHelp;
+
     /**
      * Das Hauptfenster wird erstellt
      */
@@ -218,6 +228,8 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
             catch (UnsupportedLookAndFeelException e) {
             }
         }
+        
+    
 
         uiListener = new Vector<UIListener>();
         frame = new JFrame();
@@ -294,6 +306,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         actionItemsDown = new JDAction(this, JDTheme.I("gui.images.down"), "action.edit.items_down", JDAction.ITEMS_MOVE_DOWN);
         actionItemsBottom = new JDAction(this, JDTheme.I("gui.images.go_bottom"), "action.edit.items_bottom", JDAction.ITEMS_MOVE_BOTTOM);
         doReconnect = new JDAction(this, JDTheme.I("gui.images.reconnect_ok"), "action.doReconnect", JDAction.ITEMS_MOVE_BOTTOM);
+        actionHelp = new JDAction(this, JDTheme.I("gui.images.help"), "action.help", JDAction.HELP);
 
     }
 
@@ -356,6 +369,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         JMenuItem menTester = createMenuItem(actionTester);
         JMenuItem menUnrar = createMenuItem(actionUnrar);
         JMenuItem menPasswordlist = createMenuItem(actionPasswordlist);
+        JMenuItem help = createMenuItem(actionHelp);
         // add menus to parents
 
         menFile.add(menFileLoad);
@@ -368,6 +382,8 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         menExtra.add(memDnD);
         menExtra.add(menUnrar);
         menExtra.add(menPasswordlist);
+        menExtra.add(new JSeparator());
+        menExtra.add(help);
         menAction.add(menDownload);
         menAction.add(menAddLinks);
         menuBar.add(menFile);
@@ -468,6 +484,13 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         btnSearch.setFocusPainted(false);
         btnSearch.setBorderPainted(false);
         btnSearch.setText(null);
+        JButton btnHelp = new JButton(this.actionHelp);
+        btnHelp.setFocusPainted(false);
+        btnHelp.setBorderPainted(false);
+        btnHelp.setText(null);
+     
+        
+        
         toolBar.setFloatable(false);
         toolBar.add(btnLoad);
         toolBar.add(btnSave);
@@ -486,7 +509,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         toolBar.add(btnReconnect);
         toolBar.add(btnClipBoard);
         toolBar.add(btnToggleReconnect);
-  
+        toolBar.add(btnHelp);
         // reconnectBox = new JCheckBox("Reconnect durchführen");
         // boolean rc =
         // JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_DISABLE_RECONNECT,
@@ -627,6 +650,16 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
                         fireUIEvent(new UIEvent(this, UIEvent.UI_LINKS_TO_PROCESS, data));
                     }
                 }
+                break;
+                
+            case JDAction.HELP:
+                try {
+                    BrowserLauncher browser = new BrowserLauncher();
+                    browser.openURLinBrowser("http://jdownloadersupport.ath.cx");
+                }
+                catch (Exception e1) {e1.printStackTrace();
+                }              
+              
                 break;
             case JDAction.APP_CONFIGURATION:
                 boolean configChanged = ConfigurationDialog.showConfig(frame, this);

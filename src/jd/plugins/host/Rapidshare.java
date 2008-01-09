@@ -762,7 +762,7 @@ public class Rapidshare extends PluginForHost {
 
                         post = "l=" + fields2.get("l") + "&p=" + fields2.get("p").replaceAll("\\%", "%25") + "&dl.start=Download+" + fields.get("filename").replaceAll(" ", "+");
                         url = "http://rs" + fields.get("serverid") + ".rapidshare.com/files" + "/" + fields.get("fileid") + "/" + fields.get("filename");
-                        logger.info("URKL :"+url+" - "+post);
+                        //logger.info("URKL :"+url+" - "+post);
                         requestInfo = postRequestWithoutHtmlCode(new URL(url), cookie, url, post, true);
                         HashMap<String, String> fields3 = getInputHiddenFields(requestInfo.getHtmlCode(), "Cookie", "wrapper");
                         post = joinMap(fields3, "=", "&");
@@ -789,7 +789,7 @@ public class Rapidshare extends PluginForHost {
                             // <a
                             // href="http://rs214cg.rapidshare.com/files/50231143/dl/Discovery.rar">Download
                             // via Cogent</a><br>
-                            logger.info(requestInfo.getHtmlCode());
+                            //logger.info(requestInfo.getHtmlCode());
                             Vector<String> urlStrings = getAllSimpleMatches(requestInfo.getHtmlCode(), "<a href=\"http://rs°\">Download via °</a><br>", 1);
                             logger.info(urlStrings + " - ");
                             logger.info("wished Mirror #1 Server " + serverAbb);

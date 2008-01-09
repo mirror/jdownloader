@@ -18,11 +18,13 @@ import jd.config.Configuration;
 public class JDTheme {
     private static String                  THEME_DIR = "jd/themes/";
 
-    private static Logger                  logger        = JDUtilities.getLogger();
+    private static Logger                  logger    = JDUtilities.getLogger();
 
-    private static HashMap<String, String> data          = new HashMap<String, String>();
+    private static HashMap<String, String> data      = new HashMap<String, String>();
 
-    private static File                  themeFile;                                    ;
+    private static HashMap<String, String> defaultData;
+
+    private static File                    themeFile;                                 ;
 
     public static Vector<String> getThemeIDs() {
         File dir = JDUtilities.getResourceFile(THEME_DIR);
@@ -40,12 +42,19 @@ public class JDTheme {
             logger.severe("Use setTheme() first!");
             return key;
         }
-        if (def == null) def = key;
-        if (data.containsKey(key)) return JDUtilities.UTF8Decode(data.get(key));
-        logger.info("Key not found: " + key);
-        data.put(key, def);
         
-        if(JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_LANG_EDITMODE))saveData();
+        if (data.containsKey(key)) return JDUtilities.UTF8Decode(data.get(key));
+        logger.info("Key not found: " + key+" ("+def+")");
+        logger.info(defaultData+"");
+        if ((def == null||def.length()==0)&&defaultData.containsKey(key)) {
+        def=JDUtilities.UTF8Decode(defaultData.get(key));
+        logger.finer("Use default Icon: "+ def) ;
+        }
+        if (def == null) def = key;
+            data.put(key, def);
+  
+
+        if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_LANG_EDITMODE)) saveData();
         return def;
 
     }
@@ -89,7 +98,7 @@ public class JDTheme {
         String[] lines = JDUtilities.splitByNewline(str);
         for (int i = 0; i < lines.length; i++) {
             int split = lines[i].indexOf("=");
-            if (split <= 0||lines[i].startsWith("#")) continue;
+            if (split <= 0 || lines[i].startsWith("#")) continue;
             String key = lines[i].substring(0, split).trim();
             String value = lines[i].substring(split + 1).trim();
             if (data.containsKey(key)) {
@@ -100,7 +109,35 @@ public class JDTheme {
             }
 
         }
-     
+        if (themeID.equals("default")) {
+            defaultData = data;
+        }
+        if (defaultData == null) {
+            defaultData = new HashMap<String, String>();
+            file = JDUtilities.getResourceFile(THEME_DIR + "default.thm");
+
+            if (!file.exists()) {
+                logger.severe("Theme default not installed");
+                return;
+            }
+            data = new HashMap<String, String>();
+            str = JDUtilities.getLocalFile(file);
+            lines = JDUtilities.splitByNewline(str);
+            for (int i = 0; i < lines.length; i++) {
+                int split = lines[i].indexOf("=");
+                if (split <= 0 || lines[i].startsWith("#")) continue;
+                String key = lines[i].substring(0, split).trim();
+                String value = lines[i].substring(split + 1).trim();
+                if (data.containsKey(key)) {
+                    logger.severe("Dupe found: " + key);
+                }
+                else {
+                    data.put(key, value);
+                }
+
+            }
+
+        }
 
     }
 

@@ -929,6 +929,7 @@ logger.info("Call re: "+ri.getHtmlCode());
                 i = iterator.next();
                 if (i.getRemainingWaittime() > 0) {
                     i.setEndOfWaittime(0);
+                    logger.finer("REset GLOBALS: "+((PluginForHost) i.getPlugin()));
                     ((PluginForHost) i.getPlugin()).resetPluginGlobals();
                     i.setStatus(DownloadLink.STATUS_TODO);
 

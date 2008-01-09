@@ -82,20 +82,20 @@ public static Frame PARENTFRAME = null;
         tabbedPane.setTabPlacement(JTabbedPane.LEFT);
         tabbedPane.addChangeListener(this);
         tabbedPane.setPreferredSize(new Dimension(800,500));
-        this.addConfigPanel(ConfigPanelGeneral.class,JDTheme.I("gui.images.config.home","home"),JDLocale.L("gui.config.tabLables.general","General settings"));
+        this.addConfigPanel(ConfigPanelGeneral.class,JDTheme.I("gui.images.config.home"),JDLocale.L("gui.config.tabLables.general","General settings"));
        
-        this.addConfigPanel(ConfigPanelDownload.class,JDTheme.I("gui.images.config.network_local","network_local"),JDLocale.L("gui.config.tabLables.download","Download/Network settings"));
-        this.addConfigPanel(ConfigPanelReconnect.class,JDTheme.I("gui.images.config.reboot","reboot"),JDLocale.L("gui.config.tabLables.reconnect","Reconnect settings"));
+        this.addConfigPanel(ConfigPanelDownload.class,JDTheme.I("gui.images.config.network_local"),JDLocale.L("gui.config.tabLables.download","Download/Network settings"));
+        this.addConfigPanel(ConfigPanelReconnect.class,JDTheme.I("gui.images.config.reboot"),JDLocale.L("gui.config.tabLables.reconnect","Reconnect settings"));
         if(configuration.getBooleanProperty(Configuration.PARAM_USE_EXPERT_VIEW, false)) this.addConfigPanel(ConfigPanelCaptcha.class,JDTheme.I("gui.images.config.ocr","ocr"),JDLocale.L("gui.config.tabLables.jac","OCR Captcha settings"));
-        this.addConfigPanel(ConfigPanelUnrar.class,JDTheme.I("gui.images.config.package","package"),JDLocale.L("gui.config.tabLables.unrar","Archiv extract settings"));  
+        this.addConfigPanel(ConfigPanelUnrar.class,JDTheme.I("gui.images.config.package"),JDLocale.L("gui.config.tabLables.unrar","Archiv extract settings"));  
         if(configuration.getBooleanProperty(Configuration.PARAM_USE_EXPERT_VIEW, false))this.addConfigPanel(ConfigPanelInfoFileWriter.class,JDTheme.I("gui.images.config.load","load"),JDLocale.L("gui.config.tabLables.infoFileWriter","'Info File Writer' settings"));
         if(configuration.getBooleanProperty(Configuration.PARAM_USE_EXPERT_VIEW, false))this.addConfigPanel(ConfigPanelEventmanager.class,JDTheme.I("gui.images.config.switch","switch"),JDLocale.L("gui.config.tabLables.eventManager","Eventmanager"));
        
-        this.addConfigPanel(ConfigPanelPluginForHost.class,JDTheme.I("gui.images.config.star","star"),JDLocale.L("gui.config.tabLables.hostPlugin","Host Plugin settings"));
-this.addConfigPanel(ConfigPanelPluginForDecrypt.class,JDTheme.I("gui.images.config.tip","tip"),JDLocale.L("gui.config.tabLables.decryptPlugin","Decrypter Plugin settings"));
-        if(configuration.getBooleanProperty(Configuration.PARAM_USE_EXPERT_VIEW, false))this.addConfigPanel(ConfigPanelPluginForSearch.class,JDTheme.I("gui.images.config.find","find"),JDLocale.L("gui.config.tabLables.searchPlugin","Search Plugin settings"));
-        if(configuration.getBooleanProperty(Configuration.PARAM_USE_EXPERT_VIEW, false)) this.addConfigPanel(ConfigPanelPluginsOptional.class,JDTheme.I("gui.images.config.edit_redo","edit_redo"),JDLocale.L("gui.config.tabLables.optionalPlugin","Optional Plugin settings"));
-        if(configuration.getBooleanProperty(Configuration.PARAM_USE_EXPERT_VIEW, false))this.addConfigPanel(ConfigPanelPluginForContainer.class,JDTheme.I("gui.images.config.database","database"),JDLocale.L("gui.config.tabLables.containerPlugin","Link-Container settings"));
+        this.addConfigPanel(ConfigPanelPluginForHost.class,JDTheme.I("gui.images.config.star"),JDLocale.L("gui.config.tabLables.hostPlugin","Host Plugin settings"));
+this.addConfigPanel(ConfigPanelPluginForDecrypt.class,JDTheme.I("gui.images.config.tip"),JDLocale.L("gui.config.tabLables.decryptPlugin","Decrypter Plugin settings"));
+        if(configuration.getBooleanProperty(Configuration.PARAM_USE_EXPERT_VIEW, false))this.addConfigPanel(ConfigPanelPluginForSearch.class,JDTheme.I("gui.images.config.find"),JDLocale.L("gui.config.tabLables.searchPlugin","Search Plugin settings"));
+        if(configuration.getBooleanProperty(Configuration.PARAM_USE_EXPERT_VIEW, false)) this.addConfigPanel(ConfigPanelPluginsOptional.class,JDTheme.I("gui.images.config.edit_redo"),JDLocale.L("gui.config.tabLables.optionalPlugin","Optional Plugin settings"));
+        if(configuration.getBooleanProperty(Configuration.PARAM_USE_EXPERT_VIEW, false))this.addConfigPanel(ConfigPanelPluginForContainer.class,JDTheme.I("gui.images.config.database"),JDLocale.L("gui.config.tabLables.containerPlugin","Link-Container settings"));
        
         btnSave = new JButton(JDLocale.L("gui.config.btn_save","Speichern"));
         btnSave.addActionListener(this);
