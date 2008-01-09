@@ -19,7 +19,9 @@ import java.util.logging.Logger;
 import javax.imageio.ImageIO;
 import javax.swing.AbstractAction;
 import javax.swing.JButton;
+import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 import javax.xml.transform.OutputKeys;
 import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerException;
@@ -36,7 +38,6 @@ import jd.captcha.pixelgrid.Letter;
 import jd.captcha.pixelgrid.PixelGrid;
 import jd.captcha.pixelobject.PixelObject;
 import jd.captcha.utils.UTILITIES;
-import jd.config.Configuration;
 import jd.utils.JDUtilities;
 
 import org.w3c.dom.Document;
@@ -282,8 +283,8 @@ logger.info(methodsPath);
         int newLetters;
         for (int i = 0; i < images.length; i++) {
             if (JAntiCaptcha.isLoggerActive()) logger.fine(images[i].toString());
-
-            newLetters = trainCaptcha(images[i], getLetterNum());
+            int letternum = getLetterNum();
+            newLetters = trainCaptcha(images[i], letternum);
 
             if (JAntiCaptcha.isLoggerActive()) logger.fine("Erkannt: " + newLetters + "/" + getLetterNum());
             if (newLetters > 0) {
@@ -291,7 +292,6 @@ logger.info(methodsPath);
                 total += getLetterNum();
                 if (JAntiCaptcha.isLoggerActive()) logger.info("Erkennungsrate: " + ((100 * successFull / total)));
             }
-
         }
 
     }
@@ -363,7 +363,7 @@ logger.info(methodsPath);
             }
         }
         catch (Exception e) {
-            if (JAntiCaptcha.isLoggerActive()) logger.severe("Fehler mein lesen der MTHO Datei!!. Methode kann nicht funktionieren!");
+            if (JAntiCaptcha.isLoggerActive()) logger.severe("Fehler bein lesen der MTH Datei!!. Methode kann nicht funktionieren!");
 
         }
         if (JAntiCaptcha.isLoggerActive()) logger.fine("Mth Parsing time: " + (UTILITIES.getTimer() - start1));
@@ -637,7 +637,6 @@ logger.info(methodsPath);
             bw3.destroy();
         }
         bw3 = BasicWindow.getWindow("JAC Trainer", 600, 450);
-
         bw3.setText(0, 0, "original captcha");
         bw3.setImage(1, 0, captcha.getImage());
         bw3.setSize(600, 400);
@@ -659,6 +658,14 @@ logger.info(methodsPath);
         // ist fehlgeschlagen!");
         // return -1;
         // }
+        if(letters==null)
+        {
+            File file = getResourceFile("detectionErrors5/" + (UTILITIES.getTimer()) + "_" + captchafile.getName());
+            file.getParentFile().mkdirs();
+            captchafile.renameTo(file);
+            if (JAntiCaptcha.isLoggerActive()) logger.severe("Letter detection error");
+            return -1;
+        }
         for (int i = 0; i < letters.length; i++) {
             if (letters[i] == null || letters[i].getWidth() < 2 || letters[i].getHeight() < 2) {
                 File file = getResourceFile("detectionErrors5/" + (UTILITIES.getTimer()) + "_" + captchafile.getName());
@@ -714,6 +721,13 @@ logger.info(methodsPath);
             if (getCodeFromFileName(captchafile.getName(), captchaHash) == null || true) {
                 code = UTILITIES.prompt("Bitte Captcha Code eingeben (Press enter to confirm " + guess, guess);
                 if (code != null && code.equals(guess)) code = "";
+                else if(code==null)
+                {
+                    boolean doIt= JOptionPane.showConfirmDialog(new JFrame(), "Ja (yes) = beenden (close) \t Nein (no) = nächstes Captcha (next captcha)") == JOptionPane.OK_OPTION;
+                    if(doIt){ 
+                        System.exit(0);
+                    }
+                }
 
             }
             else {
@@ -866,7 +880,7 @@ logger.info(methodsPath);
      * @return File zu arg
      */
     public File getResourceFile(String arg) {
-        return JDUtilities.getResourceFile(this.methodDirName+"/"+arg);
+        return JDUtilities.getResourceFile("jd/captcha/methods/" + this.methodDirName+"/"+arg);
     }
 
     /**

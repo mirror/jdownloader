@@ -3,6 +3,7 @@ package jd.captcha;
 
 
 
+import java.io.File;
 import java.util.logging.Logger;
 
 import jd.captcha.utils.UTILITIES;
@@ -29,15 +30,15 @@ public class JACTrain {
 
         String methodsPath=UTILITIES.getFullPath(new String[] { JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath(), "jd", "captcha", "methods"});
         
-        String hoster="serienjunkies.org";
+        String hoster="datenklo.net2";
 
         JAntiCaptcha jac= new JAntiCaptcha(methodsPath,hoster);
         //jac.runTestMode(new File("1186941165349_captcha.jpg"));
-     jac.displayLibrary();
+    // jac.displayLibrary();
        // jac.setShowDebugGui(true);
-       // jac.showPreparedCaptcha(new File("captcha\\methods\\rapidshare.com\\captchas\\rapidsharecom138040807171852.jpg"));
-        jac.trainAllCaptchas(JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath()+"\\jd\\captcha\\methods\\"+hoster+"\\captchas\\");
-  
+       jac.showPreparedCaptcha(new File("/home/dwd/.jd_home/captchas/datenklo.net/08.01.2008_18.08.52.gif"));
+       // jac.trainAllCaptchas("/home/dwd/.jd_home/captchas/datenklo.net");
+       // jac.saveMTHFile();
         logger.info("Training Ende");
         //jac.addLetterMap();
            // jac.saveMTHFile();

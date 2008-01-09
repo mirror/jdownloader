@@ -2,8 +2,6 @@ package jd;
 
 import java.awt.Graphics;
 import java.awt.Image;
-import java.io.File;
-import java.util.HashMap;
 import java.util.Vector;
 import java.util.logging.Logger;
 
@@ -11,6 +9,7 @@ import javax.swing.JWindow;
 
 
 
+import jd.captcha.JACController;
 import jd.config.Configuration;
 import jd.controlling.JDController;
 import jd.controlling.interaction.ExternExecute;
@@ -34,6 +33,36 @@ public class Main {
     public static void main(String args[]) {
         JDLocale.setLocale("german");
         JDTheme.setTheme("default");
+        boolean stop = false;
+        for (int i = 0; i < args.length; i++) {
+            String string = args[i];
+            if(string.equals("--help") || string.equals("-h"))
+            {
+                String [][] help = new String[][] {
+                        {JDUtilities.getJDTitle(), "Coalado::Astaldo::DwD::Botzi GPL"},
+                        {"http://jdownloader.ath.cx/","http://www.the-lounge.org/viewforum.php?f=217"+System.getProperty("line.separator")},
+                        {"-h, --help","Print help for jDownloader"},
+                        {"-s --show", "Open a menu to show a JAC prepared captcha"},
+                        {"-t --train", "Open a menu to train a JAC method"}};
+                for (int j = 0; j < help.length; j++) {
+                    System.out.println(help[j][0]+"\t"+help[j][1]);
+                }
+                System.exit(0);
+            }
+            else if(string.equals("--show") || string.equals("-s"))
+            {
+                JACController.showDialog(false);
+                stop=true;
+                break;
+            }
+            else if(string.equals("--train") || string.equals("-t"))
+            {
+                JACController.showDialog(true);
+                stop=true;
+                break;
+            }
+            
+        }
         // rausgenommen verlängert nur den startvorgang
         // if (SingleInstanceController.isApplicationRunning()) {
         // JOptionPane.showMessageDialog(null,
@@ -45,8 +74,11 @@ public class Main {
         // }
         // SingleInstanceController.bindRMIObject(new
         // SingleInstanceController());
+        if(!stop)
+        {
         Main main = new Main();
         main.go();
+        }
     }
 
     private void go() {

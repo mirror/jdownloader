@@ -31,7 +31,7 @@ public class BasicWindow extends JFrame {
     /**
      * Gibt an ob beim Schließen des fensters das programm beendet werden sol
      */
-    public boolean            exitSystem       = true;
+    public boolean            exitSystem       = false;
 
     /**
      * Aktuelle X Position der Autopositionierung
