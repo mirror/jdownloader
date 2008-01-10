@@ -208,6 +208,7 @@ public class DistributeData extends ControlMulticaster {
                     pHost = pluginsForHost.get(i);
                     if (pHost.canHandle(decrypted.getUrlDownloadDecrypted())) {
                         Vector<DownloadLink> dLinks = pHost.getDownloadLinks(decrypted.getUrlDownloadDecrypted());
+                        //logger.info(decrypted.getUrlDownloadDecrypted()+" "+pHost.getDownloadLinks(decrypted.getUrlDownloadDecrypted()));
                         for (int c = 0; c < dLinks.size(); c++) {
 
                             dLinks.get(c).addSourcePluginPassword(foundpassword);
@@ -361,8 +362,9 @@ public class DistributeData extends ControlMulticaster {
                 logger.info("engine:" + pSearch.getPluginName());
                 if (pSearch.canHandle(data)) {
                     fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_PLUGIN_SEARCH_ACTIVE, pSearch));
-
-                    decryptedLinks.addAll(pSearch.findLinks(data));
+Vector<DownloadLink> links = pSearch.findLinks(data);
+logger.info(links+"");
+                    decryptedLinks.addAll(links);
 
                     // data = pSearch.cutMatches(data);
                     fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_PLUGIN_SEARCH_INACTIVE, pSearch));
