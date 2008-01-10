@@ -74,6 +74,7 @@ public abstract class PluginForHost extends Plugin {
             links = new Vector<DownloadLink>();
             for (int i = 0; i < hits.size(); i++) {
                 String file = hits.get(i);
+              //( logger.info("File" +file);
                 while (file.charAt(0) == '"')
                     file = file.substring(1);
                 while (file.charAt(file.length() - 1) == '"')

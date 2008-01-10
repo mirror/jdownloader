@@ -21,36 +21,10 @@ public class Form {
     public static final int METHOD_UNKNOWN = 99;
     public boolean withHtmlCode = true;
     /**
-     * Achtung wenn die From nicht mit getForms erstellt wurde müssen method, action, vars von hand gefüllt werden
-     * @param baseUrl
-     * @param Cookie
-     * @throws MalformedURLException
-     */
-    public Form(String baseUrl, String Cookie) throws MalformedURLException {
-       this(new URL(baseUrl), Cookie);
-    }
-    /**
-     * Achtung wenn die From nicht mit getForms erstellt wurde müssen method, action, vars von hand gefüllt werden
-     * @param baseUrl
-     * @param Cookie
-     */
-    public Form(URL baseUrl, String Cookie) {
-        this.baseUrl = baseUrl;
-        this.Cookie = Cookie;
-    }
-    /**
-     * Achtung wenn die From nicht mit getForms erstellt wurde müssen method, action, vars von hand gefüllt werden
-     * @param baseRequest
-     */
-    public Form(RequestInfo baseRequest) {
-        this.baseUrl = baseRequest.getConnection().getURL();
-        this.Cookie = baseRequest.getCookie();
-    }
-    /**
      * Methode der Form POST = 0, GET = 1 ( PUT = 2 wird jedoch bei
      * getRequestInfo nicht unterstützt )
      */
-    public int method=1;
+    public int method;
     /**
      * Action der Form entspricht auch oft einer URL
      */
@@ -68,13 +42,7 @@ public class Form {
     /**
      * Wird bei der Benutzung von getForms automatisch gesetzt
      */
-    private String Cookie;
-    private URL baseUrl;
-    /**
-     * Holt Name und Value aus einem Input...
-     * @param data
-     * @return
-     */
+    private RequestInfo baseRequest;
     private static String[] getNameValue(String data) {
         Matcher matcher = Pattern.compile("name=['\"]([^'\"]*?)['\"]",
                 Pattern.CASE_INSENSITIVE).matcher(data);
@@ -119,7 +87,8 @@ public class Form {
         }
         return ret;
     }
-    public static Form[] getForms(String url) {
+    public static Form[] getForms(String url)
+    {
         try {
             return getForms(new URL(url));
         }
@@ -129,7 +98,8 @@ public class Form {
         }
         return null;
     }
-    public static Form[] getForms(URL url) {
+    public static Form[] getForms(URL url)
+    {
         try {
             return getForms(Plugin.getRequest(url));
         }
@@ -162,7 +132,8 @@ public class Form {
             String inForm = formmatcher.group(2);
             // System.out.println(inForm);
             if (inForm.matches("(?s)" + matcher)) {
-                Form form = new Form(requestInfo);
+                Form form = new Form();
+                form.baseRequest = requestInfo;
                 form.method = METHOD_GET;
                 Pattern patternfp = Pattern.compile(
                         " ([^\\s]+)\\=[\"'](.*?)[\"']",
@@ -219,15 +190,17 @@ public class Form {
             JDUtilities.getLogger().severe("PUT is not supported");
             return null;
         }
+        if (baseRequest == null) return null;
+        URL baseurl = baseRequest.getConnection().getURL();
         if (action == null || action.matches("[\\s]*")) {
-            if (baseUrl == null) return null;
-            action = baseUrl.toString();
+            if (baseurl == null) return null;
+            action = baseurl.toString();
         } else if (!action.matches("http://.*")) {
-            if (baseUrl == null) return null;
+            if (baseurl == null) return null;
             if (action.charAt(0) == '/')
-                action = "http://" + baseUrl.getHost() + action;
+                action = "http://" + baseurl.getHost() + action;
             else {
-                String base = baseUrl.toString();
+                String base = baseurl.toString();
                 if (base.matches("http://.*/"))
                     action = base.substring(0, base.lastIndexOf("/")) + "/"
                             + action;
@@ -260,8 +233,9 @@ public class Form {
                         .setRequestProperty(
                                 "User-Agent",
                                 "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1; SV1; .NET CLR 1.1.4322; .NET CLR 2.0.50727)");
-                urlConnection.setRequestProperty("Cookie", Cookie);
-                urlConnection.setRequestProperty("Referer", baseUrl.toString());
+                urlConnection.setRequestProperty("Cookie", baseRequest
+                        .getCookie());
+                urlConnection.setRequestProperty("Referer", baseurl.toString());
                 return urlConnection;
             }
             catch (MalformedURLException e) {
@@ -281,8 +255,9 @@ public class Form {
                         .setRequestProperty(
                                 "User-Agent",
                                 "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1; SV1; .NET CLR 1.1.4322; .NET CLR 2.0.50727)");
-                urlConnection.setRequestProperty("Cookie", Cookie);
-                urlConnection.setRequestProperty("Referer", baseUrl.toString());
+                urlConnection.setRequestProperty("Cookie", baseRequest
+                        .getCookie());
+                urlConnection.setRequestProperty("Referer", baseurl.toString());
                 urlConnection.setDoOutput(true);
                 OutputStreamWriter wr = new OutputStreamWriter(urlConnection
                         .getOutputStream());
@@ -310,7 +285,8 @@ public class Form {
     }
     public RequestInfo getRequestInfo(boolean redirect) {
         HttpURLConnection connection = (HttpURLConnection) getConnection();
-        if (connection == null) return null;
+        if(connection==null)
+            return null;
         connection.setInstanceFollowRedirects(redirect);
         RequestInfo ri = null;
         int responseCode = HttpURLConnection.HTTP_NOT_IMPLEMENTED;

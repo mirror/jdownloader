@@ -697,8 +697,8 @@ public abstract class Plugin {
         // wenn referrer nicht gesetzt wurde nimmt er den host als referer
         if (referrer != null)
             httpConnection.setRequestProperty("Referer", referrer);
-        else
-            httpConnection.setRequestProperty("Referer", "http://" + link.getHost());
+        
+          //  httpConnection.setRequestProperty("Referer", "http://" + link.getHost());
         if (cookie != null)
             httpConnection.setRequestProperty("Cookie", cookie);
         // TODO User-Agent als Option ins menu

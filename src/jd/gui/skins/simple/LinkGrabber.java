@@ -373,7 +373,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
     private int comparePackages(String a, String b) {
         a = removeExtension(a);
         b = removeExtension(b);
-        logger.info("comp: " + a + " <<->> " + b);
+       // logger.info("comp: " + a + " <<->> " + b);
         int c = 0;
         for (int i = 0; i < Math.min(a.length(), b.length()); i++) {
             if (a.charAt(i) == b.charAt(i)) c++;

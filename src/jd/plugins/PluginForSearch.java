@@ -55,7 +55,7 @@ public abstract class PluginForSearch extends Plugin {
                         return new Vector<DownloadLink>();
                     }
                     Vector<DownloadLink> foundLinks = (Vector<DownloadLink>) step.getParameter();
-                    logger.info("Got " + foundLinks.size() + " links");
+                    logger.info("Got " + foundLinks.size() + " links "+foundLinks);
                     return foundLinks;
                 }
                 catch (Exception e) {

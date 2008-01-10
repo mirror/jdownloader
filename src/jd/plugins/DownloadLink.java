@@ -730,7 +730,7 @@ public class DownloadLink implements Serializable,Comparable<DownloadLink> {
      * @return STring
      */
     public String toString() {
-        return this.getFileOutput();
+        return this.getUrlDownloadDecrypted();//this.getFileOutput();
     }
 
     /**
