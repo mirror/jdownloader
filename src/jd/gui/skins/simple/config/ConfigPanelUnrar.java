@@ -76,7 +76,7 @@ public class ConfigPanelUnrar extends ConfigPanel implements ActionListener {
         // Unrar.ENABLED_TYPE_ALWAYS,Unrar.ENABLED_TYPE_LINKGRABBER,Unrar.ENABLED_TYPE_NEVER
         // },"Unrar
         // aktivieren:").setDefaultValue(Unrar.ENABLED_TYPE_LINKGRABBER));
-        ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, configuration, Unrar.PROPERTY_ENABLED_TYPE, new String[]{Unrar.ENABLED_TYPE_ALWAYS,  Unrar.ENABLED_TYPE_NEVER}, JDLocale.L("gui.config.unrar.activate")).setDefaultValue(Unrar.ENABLED_TYPE_ALWAYS));
+        ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, configuration, Unrar.PROPERTY_ENABLED, JDLocale.L("gui.config.unrar.enabled", "automatisches entpacken aktivieren")).setDefaultValue(true));
         addGUIConfigEntry(ce);
         if(unrarcmd==null)
         {
