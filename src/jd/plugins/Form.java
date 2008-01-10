@@ -220,7 +220,7 @@ public class Form {
         String varString = buffer.toString();
         if (method == METHOD_GET) {
             if (varString != null && !varString.matches("[\\s]*")) {
-                if (action.matches("\\?.+"))
+                if (action.matches(".*\\?.+"))
                     action += "&";
                 else if (action.matches("[^\\?]*")) action += "?";
                 action += varString;
