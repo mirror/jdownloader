@@ -17,182 +17,210 @@ import jd.utils.JDUtilities;
  * @author DwD
  */
 public class Unrar extends Interaction implements Serializable {
-    private static Unrar INSTANCE = null;
-    private DownloadLink lastFinishedDownload = null;
+	private static Unrar INSTANCE = null;
 
-    // DIese Interaction sollte nur einmal exisitieren und wird deshalb über
-    // eine factory aufgerufen.
-    private Unrar() {
-        super();
-    }
+	private DownloadLink lastFinishedDownload = null;
 
-    public static Unrar getInstance() {
-        if (INSTANCE == null) {
-            if (JDUtilities.getConfiguration().getProperty(Configuration.PARAM_UNRAR_INSTANCE, null) != null) {
-                INSTANCE = (Unrar) JDUtilities.getConfiguration().getProperty(Configuration.PARAM_UNRAR_INSTANCE, null);
-                return INSTANCE;
-            }
-            INSTANCE = new Unrar();
-        }
-        return INSTANCE;
+	// DIese Interaction sollte nur einmal exisitieren und wird deshalb über
+	// eine factory aufgerufen.
+	private Unrar() {
+		super();
+	}
 
-    }
+	public static Unrar getInstance() {
+		if (INSTANCE == null) {
+			if (JDUtilities.getConfiguration().getProperty(
+					Configuration.PARAM_UNRAR_INSTANCE, null) != null) {
+				INSTANCE = (Unrar) JDUtilities.getConfiguration().getProperty(
+						Configuration.PARAM_UNRAR_INSTANCE, null);
+				return INSTANCE;
+			}
+			INSTANCE = new Unrar();
+		}
+		return INSTANCE;
 
-    /**
-     * 
-     */
-    private static final long serialVersionUID = 2467582501274722811L;
+	}
 
-    /**
-     * serialVersionUID
-     */
-    private static boolean IS_RUNNING = false;
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 2467582501274722811L;
 
-    private static final String NAME = JDLocale.L("interaction.unrar.name");
+	/**
+	 * serialVersionUID
+	 */
+	private static boolean IS_RUNNING = false;
 
-    public static final String PROPERTY_UNRARCOMMAND = "UNRAR_PROPERTY_UNRARCMD";
+	private static final String NAME = JDLocale.L("interaction.unrar.name");
 
-    public static final String PROPERTY_AUTODELETE = "UNRAR_PROPERTY_AUTODELETE";
+	public static final String PROPERTY_UNRARCOMMAND = "UNRAR_PROPERTY_UNRARCMD";
 
-    public static final String PROPERTY_OVERWRITE_FILES = "UNRAR_PROPERTY_OVERWRITE_FILES";
+	public static final String PROPERTY_AUTODELETE = "UNRAR_PROPERTY_AUTODELETE";
 
-    public static final String PROPERTY_MAX_FILESIZE = "UNRAR_PROPERTY_MAX_FILESIZE";
+	public static final String PROPERTY_OVERWRITE_FILES = "UNRAR_PROPERTY_OVERWRITE_FILES";
 
-    public static final String PROPERTY_ENABLED_TYPE = "UNRAR_PROPERTY_ENABLED";
+	public static final String PROPERTY_MAX_FILESIZE = "UNRAR_PROPERTY_MAX_FILESIZE";
 
-    public static final String ENABLED_TYPE_NEVER = JDLocale.L("interaction.unrar.never");
+	public static final String PROPERTY_ENABLED_TYPE = "UNRAR_PROPERTY_ENABLED";
 
-    public static final String ENABLED_TYPE_ALWAYS = JDLocale.L("interaction.unrar.always");
+	public static final String ENABLED_TYPE_NEVER = JDLocale
+			.L("interaction.unrar.never");
 
-    public static final String PROPERTY_WAIT_FOR_TERMINATION = "UNRAR_WAIT_FOR_TERMINATION";
+	public static final String ENABLED_TYPE_ALWAYS = JDLocale
+			.L("interaction.unrar.always");
 
-    public static final String PROPERTY_ENABLE_EXTRACTFOLDER = "UNRAR_PROPERTY_ENABLE_EXTRACTFOLDER";
+	public static final String PROPERTY_WAIT_FOR_TERMINATION = "UNRAR_WAIT_FOR_TERMINATION";
 
-    public static final String PROPERTY_EXTRACTFOLDER = "UNRAR_PROPERTY_EXTRACTFOLDER";
+	public static final String PROPERTY_ENABLE_EXTRACTFOLDER = "UNRAR_PROPERTY_ENABLE_EXTRACTFOLDER";
 
-    @Override
-    public boolean doInteraction(Object arg) {
-        lastFinishedDownload = (DownloadLink) arg;
-        start();
-        return true;
+	public static final String PROPERTY_EXTRACTFOLDER = "UNRAR_PROPERTY_EXTRACTFOLDER";
 
-    }
+	@Override
+	public boolean doInteraction(Object arg) {
+		lastFinishedDownload = (DownloadLink) arg;
+		start();
+		return true;
 
-    public boolean getWaitForTermination() {
-        return JDUtilities.getConfiguration().getBooleanProperty(Unrar.PROPERTY_WAIT_FOR_TERMINATION, false);
-    }
+	}
 
-    @Override
-    public String toString() {
-        return JDLocale.L("interaction.unrar.name");
-    }
+	public boolean getWaitForTermination() {
+		return JDUtilities.getConfiguration().getBooleanProperty(
+				Unrar.PROPERTY_WAIT_FOR_TERMINATION, false);
+	}
 
-    @Override
-    public String getInteractionName() {
-        return NAME;
-    }
+	@Override
+	public String toString() {
+		return JDLocale.L("interaction.unrar.name");
+	}
 
-    private JUnrar getUnrar() {
-        JUnrar unrar;
+	@Override
+	public String getInteractionName() {
+		return NAME;
+	}
 
-        if (lastFinishedDownload != null) {
-            logger.info("LastFinishedFile:"+lastFinishedDownload);
-            String password = lastFinishedDownload.getSourcePluginPassword();
-            if (password != null && password.matches("[\\s]*"))
-                password = null;
-            if(password==null)
-            {
-                password = lastFinishedDownload.getFilePackage().getPassword();
-                if (password != null && password.matches("[\\s]*"))
-                    password = null;
-                
-            }
-            unrar = new JUnrar(new File(lastFinishedDownload.getFileOutput()), password);
-            if (password != null)
-                unrar.addToPasswordlist(password);
-            unrar.useToextractlist = true;
-        } else {
-            unrar = new JUnrar();
-            unrar.useToextractlist = false;
-        }
+	private JUnrar getUnrar() {
+		JUnrar unrar;
 
-        if (JDUtilities.getConfiguration().getBooleanProperty(Unrar.PROPERTY_ENABLE_EXTRACTFOLDER, false)) {
-            String efolder = JDUtilities.getConfiguration().getStringProperty(Unrar.PROPERTY_EXTRACTFOLDER, null);
-            if (efolder != null)
-                unrar.extractFolder = new File(efolder);
-        } 
+		if (lastFinishedDownload != null) {
+			logger.info("LastFinishedFile:" + lastFinishedDownload);
+			String password = lastFinishedDownload.getSourcePluginPassword();
+			if (password != null && password.matches("[\\s]*"))
+				password = null;
+			if (password == null) {
+				password = lastFinishedDownload.getFilePackage().getPassword();
+				if (password != null && password.matches("[\\s]*"))
+					password = null;
 
-            unrar.overwriteFiles = JDUtilities.getConfiguration().getBooleanProperty(Unrar.PROPERTY_OVERWRITE_FILES, false);
-        unrar.autoDelete = JDUtilities.getConfiguration().getBooleanProperty(Unrar.PROPERTY_AUTODELETE, false);
-        unrar.unrar = JDUtilities.getConfiguration().getStringProperty(Unrar.PROPERTY_UNRARCOMMAND);
-        return unrar;
-    }
+			}
+			unrar = new JUnrar(new File(lastFinishedDownload.getFileOutput()),
+					password);
+			if (password != null)
+				unrar.addToPasswordlist(password);
+			unrar.useToextractlist = true;
+		} else {
+			unrar = new JUnrar();
+			unrar.useToextractlist = false;
+		}
 
-    @Override
-    public void run() {
-        if (!IS_RUNNING) {
-            IS_RUNNING = true;
-            JUnrar unrar = getUnrar();
-            if (lastFinishedDownload == null) {
-                Vector<String> folders = new Vector<String>();
-                // wird nur befoetigt wenn PARAM_USE_PACKETNAME_AS_SUBFOLDER
-                // auch
-                // true ist
-                if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_PACKETNAME_AS_SUBFOLDER, false)) {
-                    Vector<DownloadLink> finishedLinks = JDUtilities.getController().getFinishedLinks();
-                    for (int i = 0; i < finishedLinks.size(); i++) {
-                        logger.info("finished File: " + finishedLinks.get(i).getFileOutput());
-                        File folder = new File(finishedLinks.get(i).getFileOutput()).getParentFile();
-                        logger.info("Folder: " + folder);
-                        if (folder.exists()) {
-                            if (folders.indexOf(folder.getAbsolutePath()) == -1) {
-                                logger.info("Add unrardir: " + folder.getAbsolutePath());
-                                folders.add(folder.getAbsolutePath());
-                            }
-                        }
-                    }
-                }
-                folders.add(JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_DOWNLOAD_DIRECTORY));
-                logger.info("dirs: " + folders);
-                unrar.setFolders(folders);
-                // Entpacken bis nichts mehr gefunden wurde (wird jetzt von
-                // unrar
-                // erledigt indem entpackte dateien nochmal
-                // durch unrar geschickt werden
-                /*
-                 * if (newFolderList != null && newFolderList.size() > 0) {
-                 * unrar = getUnrar(); unrar.setFolders(newFolderList);
-                 * newFolderList = unrar.unrar(); } if (newFolderList != null &&
-                 * newFolderList.size() > 0) { unrar = getUnrar();
-                 * unrar.setFolders(newFolderList); newFolderList =
-                 * unrar.unrar(); }
-                 */
-            }
-            Vector<String> followingFiles = new Vector<String>();
-            Iterator<DownloadLink> ff = JDUtilities.getController().getDownloadLinks().iterator();
-            while (ff.hasNext()) {
-                DownloadLink dl = ff.next();
-                if (dl.getStatus() != DownloadLink.STATUS_DOWNLOAD_FINISHED && dl.getStatus() != DownloadLink.STATUS_DONE) {
-                    followingFiles.add(dl.getName());
-                }
-            }
-            unrar.followingFiles = followingFiles.toArray(new String[followingFiles.size()]);
-            unrar.unrar();
-            IS_RUNNING = false;
-            this.setCallCode(Interaction.INTERACTION_CALL_SUCCESS);
-            Interaction.handleInteraction(Interaction.INTERACTION_AFTER_UNRAR, null);
-        } else {
-            this.setCallCode(Interaction.INTERACTION_CALL_ERROR);
-            logger.warning("UNrar Skipped. THere is already an unrar Process running");
-        }
-    }
+		if (JDUtilities.getConfiguration().getBooleanProperty(
+				Unrar.PROPERTY_ENABLE_EXTRACTFOLDER, false)) {
+			String efolder = JDUtilities.getConfiguration().getStringProperty(
+					Unrar.PROPERTY_EXTRACTFOLDER, null);
+			if (efolder != null)
+				unrar.extractFolder = new File(efolder);
+		}
 
-    @Override
-    public void initConfig() {
+		unrar.overwriteFiles = JDUtilities.getConfiguration()
+				.getBooleanProperty(Unrar.PROPERTY_OVERWRITE_FILES, false);
+		unrar.autoDelete = JDUtilities.getConfiguration().getBooleanProperty(
+				Unrar.PROPERTY_AUTODELETE, false);
+		unrar.unrar = JDUtilities.getConfiguration().getStringProperty(
+				Unrar.PROPERTY_UNRARCOMMAND);
+		return unrar;
+	}
 
-    }
+	@Override
+	public void run() {
+		int c = 0;
+		if (IS_RUNNING)
+			logger
+					.warning("Process is in queue, there is already an unrar process running");
+		while (IS_RUNNING) {
+			if (c++ == 1200)
+				IS_RUNNING = false;
+			try {
+				Thread.sleep(1000);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+		}
+		IS_RUNNING = true;
+		JUnrar unrar = getUnrar();
+		if (lastFinishedDownload == null) {
+			Vector<String> folders = new Vector<String>();
+			// wird nur befoetigt wenn PARAM_USE_PACKETNAME_AS_SUBFOLDER
+			// auch
+			// true ist
+			if (JDUtilities.getConfiguration().getBooleanProperty(
+					Configuration.PARAM_USE_PACKETNAME_AS_SUBFOLDER, false)) {
+				Vector<DownloadLink> finishedLinks = JDUtilities
+						.getController().getFinishedLinks();
+				for (int i = 0; i < finishedLinks.size(); i++) {
+					logger.info("finished File: "
+							+ finishedLinks.get(i).getFileOutput());
+					File folder = new File(finishedLinks.get(i).getFileOutput())
+							.getParentFile();
+					logger.info("Folder: " + folder);
+					if (folder.exists()) {
+						if (folders.indexOf(folder.getAbsolutePath()) == -1) {
+							logger.info("Add unrardir: "
+									+ folder.getAbsolutePath());
+							folders.add(folder.getAbsolutePath());
+						}
+					}
+				}
+			}
+			folders.add(JDUtilities.getConfiguration().getStringProperty(
+					Configuration.PARAM_DOWNLOAD_DIRECTORY));
+			logger.info("dirs: " + folders);
+			unrar.setFolders(folders);
+			// Entpacken bis nichts mehr gefunden wurde (wird jetzt von
+			// unrar
+			// erledigt indem entpackte dateien nochmal
+			// durch unrar geschickt werden
+			/*
+			 * if (newFolderList != null && newFolderList.size() > 0) { unrar =
+			 * getUnrar(); unrar.setFolders(newFolderList); newFolderList =
+			 * unrar.unrar(); } if (newFolderList != null &&
+			 * newFolderList.size() > 0) { unrar = getUnrar();
+			 * unrar.setFolders(newFolderList); newFolderList = unrar.unrar(); }
+			 */
+		}
+		Vector<String> followingFiles = new Vector<String>();
+		Iterator<DownloadLink> ff = JDUtilities.getController()
+				.getDownloadLinks().iterator();
+		while (ff.hasNext()) {
+			DownloadLink dl = ff.next();
+			if (dl.getStatus() != DownloadLink.STATUS_DOWNLOAD_FINISHED
+					&& dl.getStatus() != DownloadLink.STATUS_DONE) {
+				followingFiles.add(dl.getName());
+			}
+		}
+		unrar.followingFiles = followingFiles.toArray(new String[followingFiles
+				.size()]);
+		unrar.unrar();
+		IS_RUNNING = false;
+		this.setCallCode(Interaction.INTERACTION_CALL_SUCCESS);
+		Interaction
+				.handleInteraction(Interaction.INTERACTION_AFTER_UNRAR, null);
+	}
 
-    @Override
-    public void resetInteraction() {
-    }
+	@Override
+	public void initConfig() {
+
+	}
+
+	@Override
+	public void resetInteraction() {
+	}
 }
