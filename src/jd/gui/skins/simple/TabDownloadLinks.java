@@ -117,17 +117,17 @@ public class TabDownloadLinks extends JPanel implements PluginListener, ControlL
                     column.setMaxWidth(30);
                     break;
                 case COL_NAME:
-                    column.setPreferredWidth(260);
+                    column.setPreferredWidth(200);
                     break;
                 case COL_HOST:
                     column.setPreferredWidth(100);
                     break;
                 case COL_STATUS:
-                    column.setPreferredWidth(200);
+                    column.setPreferredWidth(100);
                     break;
                 case COL_PROGRESS:
-                    column.setPreferredWidth(250);
-                    column.setMaxWidth(250);
+                    column.setPreferredWidth(200);
+                    column.setMaxWidth(200);
                     break;
             }
         }
@@ -602,7 +602,7 @@ public class TabDownloadLinks extends JPanel implements PluginListener, ControlL
         public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
             if (value instanceof JProgressBar) return (JProgressBar) value;
             Component c = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
-            if (!isSelected && allLinks.size()<row) {
+            if (!isSelected && row<allLinks.size()-1) {
                 DownloadLink dLink = allLinks.get(row);
                 if (!dLink.isEnabled()) {
                     c.setBackground(COLOR_DISABLED);

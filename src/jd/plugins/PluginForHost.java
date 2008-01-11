@@ -57,6 +57,9 @@ public abstract class PluginForHost extends Plugin {
 
         return ret;
     }
+    public boolean isListOffline(){
+        return true;
+    }
 
     /**
      * Hier werden Treffer für Downloadlinks dieses Anbieters in diesem Text
