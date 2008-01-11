@@ -95,7 +95,6 @@ public class YoumirrorBiz extends PluginForDecrypt {
 			for (int i = 0; i < forms.length; i++) {
 				Form form = forms[i];
 				String location = new Regexp(form.getRequestInfo().getHtmlCode(), "<iframe .*? src=\"(.*?)\"").getFirstMatch();
-				System.out.println(getUseConfig(location));
 				if(getUseConfig(location))
 					decryptedLinks.add(createDownloadlink(location));
 			}
