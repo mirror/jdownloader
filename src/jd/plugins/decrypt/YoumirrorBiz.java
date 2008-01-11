@@ -154,14 +154,11 @@ public class YoumirrorBiz extends PluginForDecrypt {
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_LABEL,
                 "Hoster Auswahl"));
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_SEPERATOR));
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX,
-                getProperties(), USEARRAY[0], USEARRAY[0]));
-        cfg.setDefaultValue(true);
-        for (int i = 1; i < USEARRAY.length; i++) {
+        for (int i = 0; i < USEARRAY.length; i++) {
             config.addEntry(cfg = new ConfigEntry(
                     ConfigContainer.TYPE_CHECKBOX, getProperties(),
                     USEARRAY[i], USEARRAY[i]));
-            cfg.setDefaultValue(false);
+            cfg.setDefaultValue(true);
         }
 	}
 
