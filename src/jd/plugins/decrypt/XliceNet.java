@@ -61,12 +61,8 @@ public class XliceNet extends PluginForDecrypt {
         link=link.toLowerCase();
         for (int i = 0; i < USEARRAY.length; i++) {
             if (link.matches(".*" + USEARRAY[i] + ".*")) {
-                boolean po = false;
-                if (i == 0)
-                    po = getProperties().getBooleanProperty(USEARRAY[i], true);
-                else po = getProperties()
-                        .getBooleanProperty(USEARRAY[i], false);
-                return po;
+                return getProperties()
+                .getBooleanProperty(USEARRAY[i], true);
             }
         }
         return false;
