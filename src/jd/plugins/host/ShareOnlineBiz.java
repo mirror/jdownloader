@@ -22,7 +22,7 @@ public class ShareOnlineBiz extends PluginForHost {
 
 	private static final String PLUGIN_NAME = HOST;
 
-	private static final String PLUGIN_VERSION = "1.0.0.0";
+	private static final String PLUGIN_VERSION = "2.0.0.0";
 
 	private static final String PLUGIN_ID = PLUGIN_NAME + "-" + PLUGIN_VERSION;
 
