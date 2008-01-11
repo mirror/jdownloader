@@ -83,15 +83,18 @@ public class XliceNet extends PluginForDecrypt {
                 String[] links = new Regexp(reqinfo.getHtmlCode(),
                         "<a href=\"(/file/go/.*?)\" target\\=\".blank\"><img src\\=\"/img/.*?_1.gif")
                         .getMatches(1);
+    			progress.setRange(links.length);
                 for (int i = 0; i < links.length; i++) {
                     reqinfo = getRequestWithoutHtmlCode(new URL("http://" + host + links[i]),
                             cookie, parameter, true);
                     String location = reqinfo.getConnection().getURL().toString();
+    				progress.increase(1);
                     if(getUseConfig(location))
                         decryptedLinks.add(createDownloadlink(location));
                 }
                 logger.info(decryptedLinks.size() + " downloads decrypted "
                         + decryptedLinks);
+                
                 step.setParameter(decryptedLinks);
             }
             catch (IOException e) {

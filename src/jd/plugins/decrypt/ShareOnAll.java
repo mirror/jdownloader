@@ -32,7 +32,7 @@ public class ShareOnAll extends PluginForDecrypt {
 
     @Override
     public String getCoder() {
-        return "DwD";
+        return "Anonymous";
     }
 
     @Override

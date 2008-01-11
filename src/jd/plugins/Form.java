@@ -154,7 +154,7 @@ public class Form {
                         else form.method = METHOD_UNKNOWN;
                     } else form.formProperties.put(pname, matcherfp.group(2));
                 }
-                patternfp = Pattern.compile(" ([^\\s]+)\\=[^\"'](.*?)[\\s>]",
+                patternfp = Pattern.compile(" ([^\\s]+)\\=([^\"'][^\\s>]*)",
                         Pattern.CASE_INSENSITIVE);
                 matcherfp = patternfp.matcher(formPropertie);
                 while (matcherfp.find()) {

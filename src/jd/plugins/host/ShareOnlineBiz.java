@@ -268,7 +268,6 @@ public class ShareOnlineBiz extends PluginForHost {
 							return null;
 						}
 						Form form = forms[0];
-						form.method=Form.METHOD_POST;
 						File captchaFile = getLocalCaptchaFile(this, ".png");
 						String captchaAdress = "http://share-online.biz/captcha.php";
 						boolean fileDownloaded = JDUtilities.download(
