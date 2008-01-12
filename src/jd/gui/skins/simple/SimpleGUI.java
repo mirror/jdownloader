@@ -49,6 +49,7 @@ import jd.event.ControlEvent;
 import jd.event.UIEvent;
 import jd.event.UIListener;
 import jd.gui.UIInterface;
+import jd.gui.skins.simple.Link.JLinkButton;
 import jd.gui.skins.simple.components.JDFileChooser;
 import jd.gui.skins.simple.components.TextAreaDialog;
 import jd.gui.skins.simple.config.ConfigurationDialog;
@@ -719,8 +720,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
             //                
             case JDAction.HELP:
                 try {
-                    BrowserLauncher browser = new BrowserLauncher();
-                    browser.openURLinBrowser("http://jdownloadersupport.ath.cx");
+                    JLinkButton.OpenURL("http://jdownloadersupport.ath.cx");
                 }
                 catch (Exception e1) {
                     e1.printStackTrace();
