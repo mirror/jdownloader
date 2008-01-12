@@ -304,6 +304,7 @@ public class JUnrar {
 
     }
     private void savePasswordList() {
+        if(passwordlist.size()>0 && passwordlist!=null)
         Utilities.saveObject(this.passwordlist, passwordList, false);
     }
 
@@ -363,6 +364,8 @@ public class JUnrar {
     }
 
     public String[] returnPasswords() {
+        if(passwordlist.size()>0 && passwordlist!=null)
+        	loadPasswordlist();
         String[] ret = new String[passwordlist.size()];
         int i = 0;
         for (Map.Entry<String, Integer> entry : passwordlist.entrySet()) {
@@ -372,6 +375,8 @@ public class JUnrar {
     }
 
     public void editPasswordlist(String[] passwords) {
+        if(passwordlist.size()>0 && passwordlist!=null)
+        	loadPasswordlist();
         HashMap<String, Integer> pws = new HashMap<String, Integer>();
         for (int i = 0; i < passwords.length; i++) {
             // lieber auf nummer sicher
@@ -395,6 +400,8 @@ public class JUnrar {
         return new String[]{password};
     }
     public void addToPasswordlist(String password) {
+        if(passwordlist.size()>0 && passwordlist!=null)
+        	loadPasswordlist();
         String[] passwords = getPasswordArray(password);
         for (int i = 0; i < passwords.length; i++) {
             passwords[i] = passwords[i].trim();
@@ -407,7 +414,8 @@ public class JUnrar {
 
     @SuppressWarnings("unchecked")
     public void addToPasswordlist(File passwords) {
-
+        if(passwordlist.size()>0 && passwordlist!=null)
+        	loadPasswordlist();
         try {
             String thisLine;
             FileInputStream fin = new FileInputStream((File) passwords);
@@ -465,6 +473,7 @@ public class JUnrar {
     	else
             this.passwordlist.put(password, 1);
         this.passwordlist = (HashMap<String, Integer>) sortByValue(this.passwordlist);
+        savePasswordList();
     }
 
     /**
