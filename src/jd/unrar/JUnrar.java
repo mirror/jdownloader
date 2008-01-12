@@ -459,8 +459,9 @@ public class JUnrar {
     }
 
     private void reorderPasswordList(String password) {
-        passwordlist.put(password, passwordlist.get(password) + 1);
-        passwordlist = (HashMap<String, Integer>) sortByValue(passwordlist);
+    	loadPasswordlist();
+        this.passwordlist.put(password, this.passwordlist.get(password) + 1);
+        this.passwordlist = (HashMap<String, Integer>) sortByValue(this.passwordlist);
     }
 
     /**
@@ -632,8 +633,6 @@ public class JUnrar {
                     if (str.matches(allOk)) {
                         logger.finest("All OK");
                         removeFromToExtractList(file);
-                        if (isStandardpassword)
-                            loadPasswordlist();
                         reorderPasswordList(password);
                         return true;
                     } else {
@@ -666,8 +665,6 @@ public class JUnrar {
                     if (str.matches(allOk)) {
                         logger.finest("All OK");
                         removeFromToExtractList(file);
-                        if (isStandardpassword)
-                            loadPasswordlist();
                         reorderPasswordList(password);
                         return true;
                     } else {
@@ -687,8 +684,6 @@ public class JUnrar {
                 if (str.matches(allOk)) {
                     logger.finest("All OK");
                     removeFromToExtractList(file);
-                    if (isStandardpassword)
-                        loadPasswordlist();
                     reorderPasswordList(password);
                     return true;
                 } else {
@@ -707,7 +702,6 @@ public class JUnrar {
                         logger.finest("All OK");
                         removeFromToExtractList(file);
                         loadPasswordlist();
-                        reorderPasswordList(password);
                         return true;
                     } else {
                         addToToExtractList(file, null);
