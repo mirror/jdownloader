@@ -42,4 +42,5 @@ jd.plugins.decrypt.CineTo
 jd.plugins.decrypt.RsHoerbuchin
 jd.plugins.decrypt.RockHouseIn
 jd.plugins.decrypt.RapidAdsAthCx
+jd.plugins.decrypt.NixPopOrg
 #jd.plugins.decrypt.MultiDecrypt
