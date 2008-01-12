@@ -39,7 +39,7 @@ public class JUnrar {
     private Vector<File> unpackedlist;
     private Long[] volumess = null;
     private boolean isStandardpassword = false;
-    private static Object[][] filesignatures = {{"avi", new Integer[][]{{82, 73, 70, 70}}}, {"mpg", new Integer[][]{{0, 0, 1, 186, -1, 0}}}, {"mpeg", new Integer[][]{{0, 0, 1, 186, -1, 0}}}, {"rar", new Integer[][]{{82, 97, 114, 33, 26, 7}}}, {"wmv", new Integer[][]{{48, 38, 178, 117, 142, 102}}}, {"mp3", new Integer[][]{{73,68,51,4,0},{73, 68, 51, 3, 0}, {255, 251, 104, -1, 0, -1,}, {255, 251, 64, -1, 0, -1}}}, {"exe", new Integer[][]{{77, 90, 144, 0, 3, 0}}}, {"bz2", new Integer[][]{{66, 90, 104, 54, 49, 65}}}, {"gz", new Integer[][]{{31, 139, 8, 0}}}, {"doc", new Integer[][]{{208, 207, 17, 224, 161, 177}}}, {"pdf", new Integer[][]{{37, 80, 68, 70, 45, 49}}}, {"wma", new Integer[][]{{48, 38, 178, 117, 142, 102}}}, {"jpg", new Integer[][]{{255, 216, 255, 224, 0, 16}, {255, 216, 255, 225, 39, 222}}}, {"m4a", new Integer[][]{{0, 0, 0, 32, 102, 116}}}, {"mdf", new Integer[][]{{0, 255, 255, 255, 255, 255}}}, {"xcf", new Integer[][]{{103, 105, 109, 112, 32, 120}}}};
+    private static Object[][] filesignatures = {{"avi", new Integer[][]{{82, 73, 70, 70}}}, {"mpg", new Integer[][]{{0, 0, 1, 186, -1, 0}}}, {"mpeg", new Integer[][]{{0, 0, 1, 186, -1, 0}}}, {"rar", new Integer[][]{{82, 97, 114, 33, 26, 7}}}, {"wmv", new Integer[][]{{48, 38, -1, 117, -1, 102}}}, {"mp3", new Integer[][]{{73,68,51,4,0},{73, 68, 51, 3, 0}, {255, 251, 104, -1, 0, -1,}, {255, 251, 64, -1, 0, -1}}}, {"exe", new Integer[][]{{77, 90, 144, 0, 3, 0}}}, {"bz2", new Integer[][]{{66, 90, 104, 54, 49, 65}}}, {"gz", new Integer[][]{{31, 139, 8, 0}}}, {"doc", new Integer[][]{{208, 207, 17, 224, 161, 177}}}, {"pdf", new Integer[][]{{37, 80, 68, 70, 45, 49}}}, {"wma", new Integer[][]{{48, 38, 178, 117, 142, 102}}}, {"jpg", new Integer[][]{{255, 216, 255, 224, 0, 16}, {255, 216, 255, 225, 39, 222}}}, {"m4a", new Integer[][]{{0, 0, 0, 32, 102, 116}}}, {"mdf", new Integer[][]{{0, 255, 255, 255, 255, 255}}}, {"xcf", new Integer[][]{{103, 105, 109, 112, 32, 120}}}};
     private Integer[][] typicalFilesignatures = {{80, 75, 3, 4, -1, 0,}, {82, 73, 70, 70}, {0, 255, 255, 255, 255, 255}, {48, 38, 178, 117, 142, 102}, {208, 207, 17, 224, 161, 177}};
     public HashMap<String, Integer> passwordlist;
 
@@ -727,6 +727,17 @@ public class JUnrar {
         return false;
     }
     /**
+     * Scheint manchmal 0 und manchmal 65533 zu sein
+     * @param a
+     * @param i
+     * @return
+     */
+    private boolean checkZero(int a , int i) {
+    	if(a==0 && (i==0 || i==65533))return true;
+		return false;
+
+	}
+    /**
      * gibt 10 zurück wenn die ersten 6 zeichen der zu entpackenden Datei einem
      * Syntax von filesigs entsprechen, sonst zählt er die Maximale Anzahl
      * aneinanderliegender Großbuchstaben (Kommen in Signaturen of vor) und gibt
@@ -775,7 +786,7 @@ public class JUnrar {
             for (int j = 0; j < typicalFilesignatures.length; j++) {
                 boolean b = true;
                 for (int i = 0; i < typicalFilesignatures[j].length; i++) {
-                    if (typicalFilesignatures[j][i] != -1 && !typicalFilesignatures[j][i].equals(fl[i])) {
+                    if (typicalFilesignatures[j][i] != -1 && !typicalFilesignatures[j][i].equals(fl[i]) && !checkZero(typicalFilesignatures[j][i], fl[i])) {
                         b = false;
                         break;
                     }
