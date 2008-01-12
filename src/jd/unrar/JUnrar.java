@@ -460,7 +460,10 @@ public class JUnrar {
 
     private void reorderPasswordList(String password) {
     	loadPasswordlist();
-        this.passwordlist.put(password, this.passwordlist.get(password) + 1);
+    	if(passwordlist.containsKey(password))
+            this.passwordlist.put(password, this.passwordlist.get(password) + 1);
+    	else
+            this.passwordlist.put(password, 1);
         this.passwordlist = (HashMap<String, Integer>) sortByValue(this.passwordlist);
     }
 
