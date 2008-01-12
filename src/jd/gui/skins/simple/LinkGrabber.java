@@ -162,9 +162,16 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
         JDUtilities.addToGridBag(this, acceptAll, REL, REL, REL, 1, 1, 0, null, GridBagConstraints.NONE, GridBagConstraints.SOUTHEAST);
         JDUtilities.addToGridBag(this, accept, REL, REL, REM, 1, 0, 0, null, GridBagConstraints.NONE, GridBagConstraints.SOUTHEAST);
 
-        setLocation(JDUtilities.getLastLocation(parentFrame.getFrame(), "linkgrabber", this));
-        this.setPreferredSize(new Dimension(600, 400));
-
+      
+       // this.setPreferredSize(new Dimension(600, 400));
+        this.setName("LINKGRABBER");
+        this.setMinimumSize(SimpleGUI.getLastDimension(this, null));
+    
+        setLocation(SimpleGUI.getLastLocation(parentFrame.getFrame(), null, this));
+        LocationListener list = new LocationListener();
+        this.addComponentListener(list);
+        
+        
         pack();
 
     }

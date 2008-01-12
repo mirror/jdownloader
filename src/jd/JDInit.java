@@ -126,8 +126,8 @@ public class JDInit {
                     Configuration configuration = (Configuration) obj;
                     JDUtilities.setConfiguration(configuration);
                     JDUtilities.getLogger().setLevel((Level) configuration.getProperty(Configuration.PARAM_LOGGER_LEVEL, Level.FINER));
-                    JDLocale.setLocale(configuration.getStringProperty(Configuration.PARAM_LOCALE,"german"));
-                    JDTheme.setTheme(configuration.getStringProperty(Configuration.PARAM_THEME,"default"));
+                    JDLocale.setLocale(JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).getStringProperty(SimpleGUI.PARAM_LOCALE,"german"));
+                    JDTheme.setTheme(JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).getStringProperty(SimpleGUI.PARAM_THEME,"default"));
                 }
                 else {
                     // log += "\r\n" + ("Configuration error: " + obj);

@@ -12,6 +12,7 @@ import javax.swing.JPanel;
 
 import jd.config.Configuration;
 import jd.gui.UIInterface;
+import jd.gui.skins.simple.SimpleGUI;
 import jd.utils.JDUtilities;
 
 public abstract class ConfigPanel extends JPanel {
@@ -39,7 +40,7 @@ public abstract class ConfigPanel extends JPanel {
     }
 
     public void addGUIConfigEntry(GUIConfigEntry entry) {
-        if (!entry.isExpertEntry() || JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_EXPERT_VIEW, false)) {
+        if (!entry.isExpertEntry() || JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).getBooleanProperty(SimpleGUI.PARAM_USE_EXPERT_VIEW, false)) {
             JDUtilities.addToGridBag(panel, entry, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 1, 0, insets, GridBagConstraints.BOTH, GridBagConstraints.EAST);
             entries.add(entry);
         }

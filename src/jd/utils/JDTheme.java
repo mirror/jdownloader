@@ -10,6 +10,7 @@ import java.util.logging.Logger;
 
 import jd.JDFileFilter;
 import jd.config.Configuration;
+import jd.gui.skins.simple.SimpleGUI;
 
 /**
  * Diese Klasse stellt Methoden zur Verfügung um in einen String mitPlatzhaltern
@@ -54,7 +55,7 @@ public class JDTheme {
             data.put(key, def);
   
 
-        if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_LANG_EDITMODE)) saveData();
+        if (JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).getBooleanProperty(SimpleGUI.PARAM_LANG_EDITMODE)) saveData();
         return def;
 
     }

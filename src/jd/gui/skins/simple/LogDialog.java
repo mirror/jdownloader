@@ -121,12 +121,11 @@ public class LogDialog extends JDialog implements ActionListener {
 
         if (e.getSource() == btnCensor) {
             String txt;
-            String[] censor = JDUtilities.splitByNewline(txt = TextAreaDialog.showDialog(owner, JDLocale.L("gui.logDialog.censordialog.title","Censor Log!"), JDLocale.L("gui.logDialog.censorDialog.text","Add Elements to censor. Use 'replaceme==replacement' or just 'deleteme' in a line. Regexes ar possible!"), JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_CENSOR_FIELD, "" + System.getProperty("line.separator") + "")));
+            String[] censor = JDUtilities.splitByNewline(txt = TextAreaDialog.showDialog(owner, JDLocale.L("gui.logDialog.censordialog.title","Censor Log!"), JDLocale.L("gui.logDialog.censorDialog.text","Add Elements to censor. Use 'replaceme==replacement' or just 'deleteme' in a line. Regexes ar possible!"), JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).getStringProperty(SimpleGUI.PARAM_CENSOR_FIELD, "" + System.getProperty("line.separator") + "")));
 
             if (censor.length > 0) {
-                JDUtilities.getConfiguration().setProperty(Configuration.PARAM_CENSOR_FIELD, txt);
-                JDUtilities.saveObject(null, JDUtilities.getConfiguration(), JDUtilities.getJDHomeDirectoryFromEnvironment(), JDUtilities.CONFIG_PATH.split("\\.")[0], "." + JDUtilities.CONFIG_PATH.split("\\.")[1], Configuration.saveAsXML);
-                
+                JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).setProperty(SimpleGUI.PARAM_CENSOR_FIELD, txt);
+               JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).save();
                 String content = logField.getSelectedText();
                 if (content == null || content.length() == 0) {
                     content = logField.getText();
@@ -147,12 +146,11 @@ public class LogDialog extends JDialog implements ActionListener {
         }
         if (e.getSource() == btnUpload) {
             String txt;
-            String[] censor = JDUtilities.splitByNewline(txt = TextAreaDialog.showDialog(owner, JDLocale.L("gui.logDialog.censordialog.title","Censor Log!"), JDLocale.L("gui.logDialog.censorDialog.text","Add Elements to censor. Use 'replaceme==replacement' or just 'deleteme' in a line. Regexes ar possible!"), JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_CENSOR_FIELD, "" + System.getProperty("line.separator") + "")));
+            String[] censor = JDUtilities.splitByNewline(txt = TextAreaDialog.showDialog(owner, JDLocale.L("gui.logDialog.censordialog.title","Censor Log!"), JDLocale.L("gui.logDialog.censorDialog.text","Add Elements to censor. Use 'replaceme==replacement' or just 'deleteme' in a line. Regexes ar possible!"), JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).getStringProperty(SimpleGUI.PARAM_CENSOR_FIELD, "" + System.getProperty("line.separator") + "")));
 
             if (censor.length > 0) {
-                JDUtilities.getConfiguration().setProperty(Configuration.PARAM_CENSOR_FIELD, txt);
-                JDUtilities.saveObject(null, JDUtilities.getConfiguration(), JDUtilities.getJDHomeDirectoryFromEnvironment(), JDUtilities.CONFIG_PATH.split("\\.")[0], "." + JDUtilities.CONFIG_PATH.split("\\.")[1], Configuration.saveAsXML);
-                
+                JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).setProperty(SimpleGUI.PARAM_CENSOR_FIELD, txt);
+                JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).save();
                 String content = logField.getSelectedText();
                 if (content == null || content.length() == 0) {
                     content = logField.getText();

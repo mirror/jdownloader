@@ -61,21 +61,17 @@ import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import javax.swing.JComponent;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
-
-import sun.misc.BASE64Decoder;
-import sun.misc.BASE64Encoder;
 
 import jd.JDClassLoader;
 import jd.JDFileFilter;
 import jd.captcha.JAntiCaptcha;
 import jd.captcha.pixelgrid.Captcha;
 import jd.config.Configuration;
+import jd.config.SubConfiguration;
 import jd.controlling.JDController;
 import jd.gui.UIInterface;
-import jd.gui.skins.simple.SimpleGUI;
 import jd.plugins.LogFormatter;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForContainer;
@@ -85,6 +81,8 @@ import jd.plugins.PluginForSearch;
 import jd.plugins.PluginOptional;
 import jd.plugins.RequestInfo;
 import jd.update.WebUpdater;
+import sun.misc.BASE64Decoder;
+import sun.misc.BASE64Encoder;
 
 /**
  * @author astaldo/coalado
@@ -94,7 +92,7 @@ public class JDUtilities {
      * Parametername für den Konfigpath
      */
     public static final String                     CONFIG_PATH         = "jDownloader.config";
-
+    private static HashMap<String,SubConfiguration> subConfigs=new HashMap<String,SubConfiguration>();
     /**
      * Name des Loggers
      */
@@ -389,7 +387,7 @@ public class JDUtilities {
         Point center;
         if (parent == null || !parent.isShowing()) {
             Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
-            int width = screenSize.width;
+            int width = screenSize.width; 
             int height = screenSize.height;
             center = new Point(width / 2, height / 2);
         }
@@ -636,7 +634,16 @@ public class JDUtilities {
             e.printStackTrace();
         }
     }
-
+    
+    public static SubConfiguration getSubConfig(String name){
+        if(subConfigs.containsKey(name))return subConfigs.get(name);
+        
+        SubConfiguration cfg = new SubConfiguration(name);
+        subConfigs.put(name, cfg);
+        return cfg;
+        
+    
+    }
     /**
      * Liefert einen URLClassLoader zurück, um Dateien aus dem Stammverzeichnis
      * zu laden
@@ -1961,13 +1968,7 @@ public class JDUtilities {
         return base64;
     }
 
-    public static Point getLastLocation(Component parent, String key, Component child) {
-        Object loc = getConfiguration().getProperty("LOCATION_OF_" + key);
-        if (loc != null && loc instanceof Point) {
-            return (Point) loc;
-        }
-        return getCenterOfComponent(parent, child);
-    }
+ 
 
 
 

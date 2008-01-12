@@ -127,7 +127,7 @@ public class JLinkButton extends JButton {
             public void actionPerformed(ActionEvent e) {
                 URL ur = getLinkURL();
                 if (ur != null) {
-                    String Browser = (String) JDUtilities.getConfiguration().getProperty(Configuration.PARAM_BROWSER, null);
+                    String Browser = JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).getStringProperty(SimpleGUI.PARAM_BROWSER, null);
                     if (Browser == null) {
                         BrowserLauncher launcher;
                         List ar = null;
@@ -142,7 +142,7 @@ public class JLinkButton extends JButton {
                             e1.printStackTrace();
                         }
 
-                        Object[] BrowserArray = (Object[]) JDUtilities.getConfiguration().getProperty(Configuration.PARAM_BROWSER_VARS, null);
+                        Object[] BrowserArray = (Object[]) JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).getProperty(SimpleGUI.PARAM_BROWSER_VARS, null);
 
                         if (BrowserArray == null) {
                             if (ar.size() < 2) {
@@ -154,10 +154,10 @@ public class JLinkButton extends JButton {
                                 }
                                 BrowserArray[BrowserArray.length - 1] = "JavaBrowser";
                             }
-                            JDUtilities.getConfiguration().setProperty(Configuration.PARAM_BROWSER_VARS, BrowserArray);
-                            JDUtilities.getConfiguration().setProperty(Configuration.PARAM_BROWSER, BrowserArray[0]);
+                            JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).setProperty(SimpleGUI.PARAM_BROWSER_VARS, BrowserArray);
+                            JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).setProperty(SimpleGUI.PARAM_BROWSER, BrowserArray[0]);
                             Browser = (String) BrowserArray[0];
-                            JDUtilities.saveConfig();
+                            JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).save();
                         }
                     }
                     if (Browser.equals("JavaBrowser")) {

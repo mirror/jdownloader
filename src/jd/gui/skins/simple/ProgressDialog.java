@@ -60,7 +60,7 @@ this.setTitle(JDLocale.L("gui.dialogs.progress.title","Fortschritt...bitte warte
         JDUtilities.addToGridBag(this, progress, REL, REL, REM, 1, 1, 1, null, GridBagConstraints.BOTH, GridBagConstraints.WEST);
         if (ok) JDUtilities.addToGridBag(this, btnOK, REL, REL, cancel ? REL : REM, 1, 1, 0, null, GridBagConstraints.NONE, GridBagConstraints.EAST);
         if (cancel) JDUtilities.addToGridBag(this, btnNOTOK, REL, REL, REM, 1, ok ? 0 : 1, 0, null, GridBagConstraints.NONE, GridBagConstraints.EAST);
-        setLocation(JDUtilities.getLastLocation(owner, "DIALOGS", this));
+        setLocation(SimpleGUI.getLastLocation(owner, "DIALOGS", this));
        
         pack();
         

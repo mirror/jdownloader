@@ -54,20 +54,8 @@ public class ConfigPanelGeneral extends ConfigPanel {
         addGUIConfigEntry(ce);
         ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, configuration, Configuration.PARAM_FINISHED_DOWNLOADS_ACTION, new String[]{Configuration.FINISHED_DOWNLOADS_REMOVE, Configuration.FINISHED_DOWNLOADS_REMOVE_AT_START, Configuration.FINISHED_DOWNLOADS_NO_REMOVE}, JDLocale.L("gui.config.general.toDoWithDownloads", "Fertig gestellte Downloads ...")).setDefaultValue(Configuration.FINISHED_DOWNLOADS_REMOVE_AT_START).setExpertEntry(true));
         addGUIConfigEntry(ce);
-        ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, configuration, Configuration.PARAM_LOCALE, JDLocale.getLocaleIDs().toArray(new String[]{}), JDLocale.L("gui.config.general.language", "Sprache")).setDefaultValue(Locale.getDefault()));
-        addGUIConfigEntry(ce);
-        ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, configuration, Configuration.PARAM_THEME, JDTheme.getThemeIDs().toArray(new String[]{}), JDLocale.L("gui.config.general.theme", "Theme")).setDefaultValue("default"));
-        addGUIConfigEntry(ce);
-        String[] plafs;
-
-        UIManager.LookAndFeelInfo[] info = UIManager.getInstalledLookAndFeels();
-        plafs = new String[info.length];
-
-        for (int i = 0; i < plafs.length; i++) {
-            plafs[i] = info[i].getName();
-        }
-        ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, configuration, Configuration.PARAM_PLAF, plafs, JDLocale.L("gui.config.general.plaf", "Style(benötigt JD-Neustart)")).setDefaultValue("Windows"));
-        addGUIConfigEntry(ce);
+ 
+       
 
         // if(JDUtilities.getJavaVersion()>=1.6d){
         // ce = new GUIConfigEntry(new
@@ -94,46 +82,8 @@ public class ConfigPanelGeneral extends ConfigPanel {
         ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, configuration, Configuration.PARAM_WEBUPDATE_AUTO_RESTART, JDLocale.L("gui.config.general.webupdate.auto", "Webupdate:  automatisch ausführen!")).setDefaultValue(false).setExpertEntry(true));
         addGUIConfigEntry(ce);
 
-//        ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, configuration, Configuration.PARAM_WRITE_LOG, JDLocale.L("gui.config.general.filelogger.active", "Filelogger: Log in Datei schreiben")).setDefaultValue(true));
-//        addGUIConfigEntry(ce);
-//
-//        ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_BROWSEFILE, configuration, Configuration.PARAM_WRITE_LOG_PATH, JDLocale.L("gui.config.general.filelogger.path", "Filelogger: Pfad zur Logfile")).setDefaultValue(JDUtilities.getResourceFile("jd_log.txt").getAbsolutePath()));
-//        addGUIConfigEntry(ce);
 
-        ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, configuration, Configuration.PARAM_LANG_EDITMODE, JDLocale.L("gui.config.general.langeditMode", "Sprachdatei Editiermodus")).setDefaultValue(false).setExpertEntry(true));
-        addGUIConfigEntry(ce);
-//
-//        Object[] BrowserArray = (Object[]) JDUtilities.getConfiguration().getProperty(Configuration.PARAM_BROWSER_VARS, null);
-//
-//        if (BrowserArray == null) {
-//            BrowserLauncher launcher;
-//            List ar = null;
-//            try {
-//                launcher = new BrowserLauncher();
-//                ar = launcher.getBrowserList();
-//            } catch (BrowserLaunchingInitializingException e) {
-//                // TODO Auto-generated catch block
-//                e.printStackTrace();
-//            } catch (UnsupportedOperatingSystemException e) {
-//                // TODO Auto-generated catch block
-//                e.printStackTrace();
-//            }
-//            if (ar.size() < 2) {
-//                BrowserArray = new Object[]{"JavaBrowser"};
-//            } else {
-//                BrowserArray = new Object[ar.size() + 1];
-//                for (int i = 0; i < BrowserArray.length - 1; i++) {
-//                    BrowserArray[i] = ar.get(i);
-//                }
-//                BrowserArray[BrowserArray.length - 1] = "JavaBrowser";
-//            }
-//            JDUtilities.getConfiguration().setProperty(Configuration.PARAM_BROWSER_VARS, BrowserArray);
-//            JDUtilities.getConfiguration().setProperty(Configuration.PARAM_BROWSER, BrowserArray[0]);
-//            JDUtilities.saveConfig();
-//        }
-//
-//        ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, configuration, Configuration.PARAM_BROWSER, BrowserArray, JDLocale.L("gui.config.general.Browser", "Browser")).setDefaultValue(BrowserArray[0]).setExpertEntry(true));
-//        addGUIConfigEntry(ce);
+
         if (JDUtilities.getHomeDirectory() != null) {
             brsHomeDir = new BrowseFile();
             brsHomeDir.setText(JDUtilities.getHomeDirectory());

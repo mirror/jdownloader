@@ -261,7 +261,12 @@ Insets insets= new Insets(2, 5, 2, 10);
                 break;
             case ConfigContainer.TYPE_CHECKBOX:
                 if (text == null) text = false;
+                try{
                 ((JCheckBox) input[0]).setSelected((Boolean) text);
+                }catch(Exception e){
+                    logger.severe("Falcher Wert: "+text);
+                    ((JCheckBox) input[0]).setSelected(false);
+                }
                 break;
             case ConfigContainer.TYPE_BUTTON:
 

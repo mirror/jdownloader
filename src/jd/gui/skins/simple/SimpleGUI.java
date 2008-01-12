@@ -1,5 +1,7 @@
 package jd.gui.skins.simple;
 
+import java.awt.Component;
+import java.awt.Dimension;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
@@ -39,6 +41,7 @@ import javax.swing.WindowConstants;
 
 import jd.JDFileFilter;
 import jd.config.Configuration;
+import jd.config.SubConfiguration;
 import jd.controlling.JDController;
 import jd.controlling.ProgressController;
 import jd.controlling.interaction.Interaction;
@@ -65,43 +68,54 @@ import com.sun.java.swing.plaf.windows.WindowsLookAndFeel;
 
 import edu.stanford.ejalbert.BrowserLauncher;
 
-
-
-
-
-
 public class SimpleGUI implements UIInterface, ActionListener, UIListener, WindowListener {
     /**
      * serialVersionUID
      */
-    private static final long   serialVersionUID              = 3966433144683787356L;
+    private static final long       serialVersionUID              = 3966433144683787356L;
 
-    private static final String PROPERTY_WINDOW_LAST_LOCATION = "WINDOW_LAST_LOCATION";
+    public static final String      PARAM_LOCALE                  = "LOCALE";
+
+    public static final String      PARAM_THEME                   = "THEME";
+
+    public static final String      PARAM_CENSOR_FIELD            = "CENSOR_FIELD";
+
+    public static final String      PARAM_JAC_LOG                 = "JAC_DOLOG";
+
+    public static final String      PARAM_USE_EXPERT_VIEW         = "USE_EXPERT_VIEW";
+
+    public static final String      PARAM_LANG_EDITMODE           = "LANG_EDITMODE";
+
+    public static final String      PARAM_BROWSER_VARS            = "BROWSER_VARS";
+
+    public static final String      PARAM_BROWSER                 = "BROWSER";
+
+    public static final String      GUICONFIGNAME                 = "simpleGUI";
 
     /**
      * Das Hauptfenster
      */
-    private JFrame              frame;
+    private JFrame                  frame;
 
     /**
      * Die Menüleiste
      */
-    private JMenuBar            menuBar;
+    private JMenuBar                menuBar;
 
     /**
      * Toolleiste für Knöpfe
      */
-    private JToolBar            toolBar;
+    private JToolBar                toolBar;
 
     /**
      * Komponente, die alle Downloads anzeigt
      */
-    private TabDownloadLinks    tabDownloadTable;                                        ;
+    private TabDownloadLinks        tabDownloadTable;                                                        ;
 
     /**
      * Komponente, die den Fortschritt aller Plugins anzeigt
      */
-    private TabProgress         progressBar;
+    private TabProgress             progressBar;
 
     /**
      * TabbedPane
@@ -110,89 +124,97 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
     /**
      * Die Statusleiste für Meldungen
      */
-    private StatusBar           statusBar;
+    private StatusBar               statusBar;
 
     /**
      * Hiermit wird der Eventmechanismus realisiert. Alle hier eingetragenen
      * Listener werden benachrichtigt, wenn mittels
      * {@link #fireUIEvent(UIEvent)} ein Event losgeschickt wird.
      */
-    public Vector<UIListener>   uiListener                    = null;
+    public Vector<UIListener>       uiListener                    = null;
 
     /**
      * Ein Togglebutton zum Starten / Stoppen der Downloads
      */
-    public JToggleButton        btnStartStop;
+    public JToggleButton            btnStartStop;
 
-    private JDAction            actionStartStopDownload;
+    private JDAction                actionStartStopDownload;
 
-    private JDAction            removeFinished;
+    private JDAction                removeFinished;
 
-    private JDAction            actionExit;
+    private JDAction                actionExit;
 
-    private JDAction            actionLog;
+    private JDAction                actionLog;
 
-    private JDAction            actionConfig;
+    private JDAction                actionConfig;
 
-    private JDAction            actionReconnect;
+    private JDAction                actionReconnect;
 
-    private JDAction            actionUpdate;
+    private JDAction                actionUpdate;
 
-    private JDAction            actionDnD;
+    private JDAction                actionDnD;
 
-    private JDAction            actionItemsTop;
+    private JDAction                actionItemsTop;
 
-    private JDAction            actionItemsUp;
+    private JDAction                actionItemsUp;
 
-    private JDAction            actionItemsDown;
+    private JDAction                actionItemsDown;
 
-    private JDAction            actionItemsBottom;
+    private JDAction                actionItemsBottom;
 
-    private JDAction            actionItemsAdd;
+    private JDAction                actionItemsAdd;
 
-    private JDAction            actionItemsDelete;
+    private JDAction                actionItemsDelete;
 
-    private LogDialog           logDialog;
+    private LogDialog               logDialog;
 
-    private Logger              logger                        = JDUtilities.getLogger();
+    private Logger                  logger                        = JDUtilities.getLogger();
 
-    Dropper                     dragNDrop;
+    Dropper                         dragNDrop;
 
-    private JCheckBoxMenuItem   menViewLog                    = null;
+    private JCheckBoxMenuItem       menViewLog                    = null;
 
-    private JSplitPane          splitpane;
+    private JSplitPane              splitpane;
 
-    private PluginEvent         hostPluginDataChanged         = null;
+    private PluginEvent             hostPluginDataChanged         = null;
 
-    private PluginEvent         decryptPluginDataChanged      = null;
+    private PluginEvent             decryptPluginDataChanged      = null;
 
-    private LinkGrabber         linkGrabber;
+    private LinkGrabber             linkGrabber;
 
-    private JDAction            actionSearch;
+    // private JDAction actionSearch;
 
-    private JDAction            actionPause;
+    private JDAction                actionPause;
 
-    private JToggleButton       btnPause;
+    private JToggleButton           btnPause;
 
-    private JDAction            actionLoadDLC;
+    private JDAction                actionLoadDLC;
 
-    private JDAction            actionSaveDLC;
+    private JDAction                actionSaveDLC;
 
-    private JDAction            actionTester;
+    private JDAction                actionTester;
 
-    private JDAction            actionUnrar;
+    private JDAction                actionUnrar;
 
-    private JDAction            actionClipBoard;
+    private JDAction                actionClipBoard;
 
-    private JDAction            actionPasswordlist;
+    private JDAction                actionPasswordlist;
 
-    private JDAction            doReconnect;
+    private JDAction                doReconnect;
 
-    private JToggleButton       btnToggleReconnect;
+    private JToggleButton           btnToggleReconnect;
 
-    private JButton             btnClipBoard;
+    private JButton                 btnClipBoard;
 
-    private JDAction actionHelp;
+    private JDAction                actionHelp;
+
+    private LocationListener        locationListener;
+
+    public static final String      PARAM_DISABLE_CONFIRM_DIALOGS = "DISABLE_CONFIRM_DIALOGS";
+
+    private static SubConfiguration guiConfig                     = JDUtilities.getSubConfig(GUICONFIGNAME);
+
+    public static final String      PARAM_PLAF                    = "PLAF";
 
     /**
      * Das Hauptfenster wird erstellt
@@ -201,9 +223,10 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         super();
 
         UIManager.LookAndFeelInfo[] info = UIManager.getInstalledLookAndFeels();
+
         boolean plafisSet = false;
         for (int i = 0; i < info.length; i++) {
-            if (info[i].getName().equals(JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_PLAF))) {
+            if (info[i].getName().equals(guiConfig.getStringProperty(PARAM_PLAF))) {
                 try {
                     UIManager.setLookAndFeel(info[i].getClassName());
                     plafisSet = true;
@@ -228,14 +251,13 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
             catch (UnsupportedLookAndFeelException e) {
             }
         }
-        
-    
 
         uiListener = new Vector<UIListener>();
         frame = new JFrame();
         // tabbedPane = new JTabbedPane();
         menuBar = new JMenuBar();
         toolBar = new JToolBar();
+        this.locationListener = new LocationListener();
         frame.addWindowListener(this);
         frame.setIconImage(JDUtilities.getImage(JDTheme.I("gui.images.jd_logo")));
         frame.setTitle(JDUtilities.getJDTitle());
@@ -244,15 +266,18 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         initMenuBar();
         buildUI();
         frame.pack();
-        frame.setLocation(JDUtilities.getCenterOfComponent(null, frame));
-        if (JDUtilities.getConfiguration().getProperty(PROPERTY_WINDOW_LAST_LOCATION) != null) {
-            frame.setLocation((Point) JDUtilities.getConfiguration().getProperty(PROPERTY_WINDOW_LAST_LOCATION));
 
-        }
+        frame.setName("MAINFRAME");
+        frame.setSize(getLastDimension(frame, null));
+        // frame.setLocation(JDUtilities.getCenterOfComponent(null, frame));
+
+        frame.setLocation(getLastLocation(null, null, frame));
+
         frame.setVisible(true);
         // DND
         dragNDrop = new Dropper(new JFrame());
         dragNDrop.addUIListener(this);
+        frame.addComponentListener(locationListener);
         // Ruft jede sekunde ein UpdateEvent auf
         new Thread("GUI Interval") {
             public void run() {
@@ -268,6 +293,46 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         }.start();
 
         // enableOptionalPlugins(true);
+    }
+
+    public static Point getLastLocation(Component parent, String key, Component child) {
+        if (key == null) key = child.getName();
+        Object loc = guiConfig.getProperty("LOCATION_OF_" + key);
+        //JDUtilities.getLogger().info("Get dim of " + "LOCATION_OF_" + key + " : " + loc);
+        Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
+        int width = screenSize.width;
+        int height = screenSize.height;
+        if (loc != null && loc instanceof Point && ((Point) loc).getX() > 0 && ((Point) loc).getX() < width && ((Point) loc).getY() > 0 && ((Point) loc).getY() < height) {
+            return (Point) loc;
+        }
+        return JDUtilities.getCenterOfComponent(parent, child);
+    }
+
+    public static void saveLastLocation(Component parent, String key) {
+        if (key == null) key = parent.getName();
+        if (parent.isShowing()) {
+            guiConfig.setProperty("LOCATION_OF_" + key, parent.getLocationOnScreen());
+            guiConfig.save();
+        }
+
+    }
+
+    public static Dimension getLastDimension(Component child, String key) {
+        if (key == null) key = child.getName();
+
+        Object loc = guiConfig.getProperty("DIMENSION_OF_" + key);
+        if (loc != null && loc instanceof Dimension) {
+            return (Dimension) loc;
+        }
+        return child.getPreferredSize();
+    }
+
+    public static void saveLastDimension(Component child, String key) {
+        if (key == null) key = child.getName();
+        guiConfig.setProperty("DIMENSION_OF_" + key, child.getSize());
+        //JDUtilities.getLogger().info("DIMEN VOR: " + "DIMENSION_OF_" + key + " : " + child.getSize());
+        guiConfig.save();
+
     }
 
     private String getClipBoardImage() {
@@ -299,7 +364,8 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         actionConfig = new JDAction(this, JDTheme.I("gui.images.configuration"), "action.configuration", JDAction.APP_CONFIGURATION);
         actionReconnect = new JDAction(this, JDTheme.I("gui.images.reconnect"), "action.reconnect", JDAction.APP_RECONNECT);
         actionUpdate = new JDAction(this, JDTheme.I("gui.images.update_manager"), "action.update", JDAction.APP_UPDATE);
-        actionSearch = new JDAction(this, JDTheme.I("gui.images.find"), "action.search", JDAction.APP_SEARCH);
+        // actionSearch = new JDAction(this, JDTheme.I("gui.images.find"),
+        // "action.search", JDAction.APP_SEARCH);
         actionItemsDelete = new JDAction(this, JDTheme.I("gui.images.delete"), "action.edit.items_remove", JDAction.ITEMS_REMOVE);
         actionItemsTop = new JDAction(this, JDTheme.I("gui.images.top"), "action.edit.items_top", JDAction.ITEMS_MOVE_TOP);
         actionItemsUp = new JDAction(this, JDTheme.I("gui.images.go_top"), "action.edit.items_up", JDAction.ITEMS_MOVE_UP);
@@ -480,17 +546,15 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         btnClipBoard.setFocusPainted(false);
         btnClipBoard.setBorderPainted(false);
         btnClipBoard.setText(null);
-        JButton btnSearch = new JButton(this.actionSearch);
-        btnSearch.setFocusPainted(false);
-        btnSearch.setBorderPainted(false);
-        btnSearch.setText(null);
+        // JButton btnSearch = new JButton(this.actionSearch);
+        // btnSearch.setFocusPainted(false);
+        // btnSearch.setBorderPainted(false);
+        // btnSearch.setText(null);
         JButton btnHelp = new JButton(this.actionHelp);
         btnHelp.setFocusPainted(false);
         btnHelp.setBorderPainted(false);
         btnHelp.setText(null);
-     
-        
-        
+
         toolBar.setFloatable(false);
         toolBar.add(btnLoad);
         toolBar.add(btnSave);
@@ -499,7 +563,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         toolBar.add(btnPause);
         toolBar.add(btnAdd);
         toolBar.add(btnDelete);
-        toolBar.add(btnSearch);
+        // toolBar.add(btnSearch);
         toolBar.addSeparator();
         toolBar.add(btnUpdate);
         toolBar.addSeparator();
@@ -609,7 +673,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
                 fireUIEvent(new UIEvent(this, UIEvent.UI_INTERACT_UPDATE));
                 break;
             case JDAction.ITEMS_REMOVE:
-                if (!JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_DISABLE_CONFIRM_DIALOGS, false)) {
+                if (!guiConfig.getBooleanProperty(PARAM_DISABLE_CONFIRM_DIALOGS, false)) {
                     if (this.showConfirmDialog("Ausgewählte Links wirklich entfernen?")) {
 
                         tabDownloadTable.removeSelectedLinks();
@@ -641,25 +705,27 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
                     fireUIEvent(new UIEvent(this, UIEvent.UI_LINKS_TO_PROCESS, data));
                 }
                 break;
-            case JDAction.APP_SEARCH:
-                SearchDialog s = new SearchDialog(this.getFrame());
-                data = s.getText();
-                if (!data.endsWith(":::")) {
-                    logger.info(data);
-                    if (data != null) {
-                        fireUIEvent(new UIEvent(this, UIEvent.UI_LINKS_TO_PROCESS, data));
-                    }
-                }
-                break;
-                
+            // case JDAction.APP_SEARCH:
+            // SearchDialog s = new SearchDialog(this.getFrame());
+            // data = s.getText();
+            // if (!data.endsWith(":::")) {
+            // logger.info(data);
+            // if (data != null) {
+            // fireUIEvent(new UIEvent(this, UIEvent.UI_LINKS_TO_PROCESS,
+            // data));
+            // }
+            // }
+            // break;
+            //                
             case JDAction.HELP:
                 try {
                     BrowserLauncher browser = new BrowserLauncher();
                     browser.openURLinBrowser("http://jdownloadersupport.ath.cx");
                 }
-                catch (Exception e1) {e1.printStackTrace();
-                }              
-              
+                catch (Exception e1) {
+                    e1.printStackTrace();
+                }
+
                 break;
             case JDAction.APP_CONFIGURATION:
                 boolean configChanged = ConfigurationDialog.showConfig(frame, this);
@@ -683,7 +749,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         // dragNDrop.setText("Reconnect....");
         // frame.setTitle(JDUtilities.JD_TITLE+" |Aktion:
         // HTTPReconnect");
-        if (!JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_DISABLE_CONFIRM_DIALOGS, false)) {
+        if (!guiConfig.getBooleanProperty(PARAM_DISABLE_CONFIRM_DIALOGS, false)) {
             int confirm = JOptionPane.showConfirmDialog(frame, "Wollen Sie sicher eine neue Verbindung aufbauen?");
             if (confirm == JOptionPane.OK_OPTION) {
                 fireUIEvent(new UIEvent(this, UIEvent.UI_INTERACT_RECONNECT));
@@ -1104,64 +1170,56 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         return JOptionPane.showInputDialog(frame, string);
     }
 
-    // /**
-    // * Diese Methode de/aktiviert optionale Plugins
-    // *
-    // * @param enable
-    // * Zeigt, ob das Plugin deaktiviert oder aktiviert werden soll
-    // */
-    // private void enableOptionalPlugins(boolean enable){
-    // HashMap<String, PluginOptional> plugins =
-    // JDUtilities.getPluginsOptional();
-    // for(int i=0;i<pluginsOptional.length;i++){
-    // if(plugins.containsKey(pluginsOptional[i])){
-    // plugins.get(pluginsOptional[i]).enable(enable);
-    // }
-    // }
-    // }
-    public void windowClosing(WindowEvent e) {
-        // enableOptionalPlugins(false);
-       boolean doIt= this.showConfirmDialog(JDLocale.L("sys.ask.rlyclose","Wollen Sie jDownloader wirklich schließen?"));
-       if(doIt){ 
-       Point loc = frame.getLocationOnScreen();
-     
-        if (JDUtilities.getConfiguration().getProperty(PROPERTY_WINDOW_LAST_LOCATION) == null || ((Point) JDUtilities.getConfiguration().getProperty(PROPERTY_WINDOW_LAST_LOCATION)).distance(loc.x, loc.y) > 1) {
-            JDUtilities.getConfiguration().setProperty(PROPERTY_WINDOW_LAST_LOCATION, loc);
-            JDUtilities.saveConfig();
-        }
-
-        frame.setVisible(false);
-        frame.dispose();
-        fireUIEvent(new UIEvent(this, UIEvent.UI_EXIT, null));
-       }
-    }
-
-    public void windowClosed(WindowEvent e) {
-
-    }
-
-    public void windowActivated(WindowEvent e) {
-
-    }
-
-    public void windowDeactivated(WindowEvent e) {
-
-    }
-
-    public void windowDeiconified(WindowEvent e) {
-
-    }
-
-    public void windowIconified(WindowEvent e) {
-
-    }
-
-    public void windowOpened(WindowEvent e) {
-
-    }
-
     public String showTextAreaDialog(String title, String question, String def) {
         return TextAreaDialog.showDialog(this.getFrame(), title, question, def);
 
     }
+
+    public void windowClosing(WindowEvent e) {
+        if (e.getComponent() == this.getFrame()) {
+            boolean doIt;
+            if (!guiConfig.getBooleanProperty(PARAM_DISABLE_CONFIRM_DIALOGS, false)) {
+                doIt = this.showConfirmDialog(JDLocale.L("sys.ask.rlyclose", "Wollen Sie jDownloader wirklich schließen?"));
+            }
+            else {
+                doIt = true;
+            }
+            if (doIt) {
+                this.getFrame().setVisible(false);
+                this.getFrame().dispose();
+                this.fireUIEvent(new UIEvent(this, UIEvent.UI_EXIT, null));
+            }
+        }
+    }
+
+    public void windowActivated(WindowEvent e) {
+    // TODO Auto-generated method stub
+
+    }
+
+    public void windowClosed(WindowEvent e) {
+    // TODO Auto-generated method stub
+
+    }
+
+    public void windowDeactivated(WindowEvent e) {
+    // TODO Auto-generated method stub
+
+    }
+
+    public void windowDeiconified(WindowEvent e) {
+    // TODO Auto-generated method stub
+
+    }
+
+    public void windowIconified(WindowEvent e) {
+    // TODO Auto-generated method stub
+
+    }
+
+    public void windowOpened(WindowEvent e) {
+    // TODO Auto-generated method stub
+
+    }
+
 }

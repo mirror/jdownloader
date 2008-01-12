@@ -101,7 +101,7 @@ public class Configuration extends Property implements Serializable {
 
     public static final String      PARAM_HTTPSEND_WAITFORIPCHANGE     = "HTTPSEND_WAITFORIPCHANGE";
 
-    public static final String      PARAM_DISABLE_CONFIRM_DIALOGS      = "DISABLE_CONFIRM_DIALOGS";
+ 
 
     public static final String      PARAM_NO_TRAY                      = "NO_TRAY";
 
@@ -115,10 +115,7 @@ public class Configuration extends Property implements Serializable {
 
     public static final String      PARAM_GLOBAL_IP_PATTERN            = "GLOBAL_IP_PATTERN";
 
-    /**
-     * Hiermit kann die Sprache von JD gesetzt werden
-     */
-    public static final String      PARAM_LOCALE                       = "LOCALE";
+
 
     public static final String      PARAM_HTTPSEND_IP                  = "HTTPSEND_IP";
 
@@ -126,7 +123,7 @@ public class Configuration extends Property implements Serializable {
 
     public static final String      PARAM_CLIPBOARD_ALWAYS_ACTIVE      = "CLIPBOARD_ALWAYS_ACTIVE";
 
-    public static final String      PARAM_PLAF                         = "PLAF";
+   
 
     public static final String      PARAM_WEBUPDATE_LOAD_ALL_TOOLS     = "WEBUPDATE_LOAD_ALL_TOOLS";
 
@@ -138,11 +135,11 @@ public class Configuration extends Property implements Serializable {
 
     public static final String      PARAM_WRITE_LOG_PATH               = "WRITE_LOG_PATH";
 
-    public static final String      PARAM_CENSOR_FIELD                 = "CENSOR_FIELD";
+  
 
-    public static final String      PARAM_JAC_LOG                      = "JAC_DOLOG";
+  
 
-    public static final String      PARAM_USE_EXPERT_VIEW              = "USE_EXPERT_VIEW";
+
 
     public static final String      PARAM_RECONNECT_TYPE               = "RECONNECT_TYPE";
 
@@ -152,19 +149,19 @@ public class Configuration extends Property implements Serializable {
 
     public static final String PARAM_FILEWRITER_INSTANCE = "FILEWRITER_INSTANCE";
 
-    public static final String PARAM_LANG_EDITMODE = "LANG_EDITMODE";
 
-    public static final String PARAM_THEME = "THEME";
+
+    
 
     public static final String PARAM_GLOBAL_IP_DISABLE = "GLOBAL_IP_DISABLE";
 
    
-    public static final String PARAM_CAPTCHA_JAC_DISABLE = "CAPTCHA_JAC_DISBALE";
-    public static final String PARAM_CAPTCHA_INPUT_SHOWTIME = "CAPTCHA_INPUT_SHOWTIME";
-    public static final String PARAM_BROWSER_VARS = "BROWSER_VARS";
-    public static final String PARAM_BROWSER = "BROWSER";
+
+
 
     public static final String PARAM_HOST_PRIORITY = "HOST_PRIORITY";
+    public static final String PARAM_CAPTCHA_JAC_DISABLE = "CAPTCHA_JAC_DISBALE";
+    public static final String PARAM_CAPTCHA_INPUT_SHOWTIME = "CAPTCHA_INPUT_SHOWTIME";
     /**
      * Die unterschiedlichen Interaktionen. (ZB Reconnect nach einem Download)
      */

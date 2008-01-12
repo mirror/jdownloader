@@ -41,7 +41,7 @@ public class JDAction extends AbstractAction{
     public static final int APP_CONFIGURATION        = 18;
     public static final int APP_RECONNECT            = 19;
     public static final int APP_UPDATE               = 20;
-    public static final int APP_SEARCH               = 21;
+    //public static final int APP_SEARCH               = 21;
 
     public static final int APP_PAUSE_DOWNLOADS = 22;
 
