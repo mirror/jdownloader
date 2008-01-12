@@ -669,7 +669,7 @@ public class JDUtilities {
         String host;
         if (method == null) {
             host = plugin.getHost();
-        }
+        } 
         else {
             host = method;
         }
