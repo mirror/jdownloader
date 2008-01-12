@@ -64,7 +64,7 @@ public class RockHouseIn extends PluginForDecrypt {
     			
     			Vector<Vector<String>> links = getAllSimpleMatches(reqinfo.getHtmlCode(), "<td><a href=\'°\' target=\'_blank\'>");
 
-    			default_password.add(getBetween(reqinfo.getHtmlCode(), "<td class=\'button\'>Passwort:</td><td class=\'button\'>", "<"));
+    			default_password.add(jd.utils.JDUtilities.htmlDecode(getBetween(reqinfo.getHtmlCode(), "<td class=\'button\'>Passwort:</td><td class=\'button\'>", "<")));
     			for(int i=0; i<links.size(); i++) {
     				decryptedLinks.add(this.createDownloadlink(links.get(i).get(0).replaceAll("\n", "")));
     			}
