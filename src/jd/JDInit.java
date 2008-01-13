@@ -173,7 +173,7 @@ public class JDInit {
 
                     JDUtilities.getConfiguration().setProperty(Configuration.PARAM_DOWNLOAD_DIRECTORY, dlDir);
 
-                    JDUtilities.download(new File(homeDirectoryFile, "webupdater.jar"), "http://jdownloader.ath.cx/autoUpdate2/webupdater.jar");
+                    JDUtilities.download(new File(homeDirectoryFile, "webupdater.jar"), "http://web146.donau.serverway.de/jdownloader/update/webupdater.jar");
 
                     JDUtilities.setHomeDirectory(homeDirectoryFile.getAbsolutePath());
 
@@ -470,15 +470,15 @@ public class JDInit {
 
         String hash = "";
 
-        if (JDUtilities.getResourceFile("updateLog.txt").exists()) {
-            hash = JDUtilities.getLocalHash(JDUtilities.getResourceFile("updateLog.txt"));
+        if (JDUtilities.getResourceFile("updatemessage.html").exists()) {
+            hash = JDUtilities.getLocalHash(JDUtilities.getResourceFile("updatemessage.html"));
         }
 
         JDUtilities.getRunType();
-        if (!JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_UPDATE_HASH, "").equals(hash)) {
+        if (!JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_UPDATE_HASH, "").equals(hash)||true) {
             logger.info("Returned from Update");
-            String lastLog = JDUtilities.getLocalFile(JDUtilities.getResourceFile("updateLog.txt"));
-            JDUtilities.getController().getUiInterface().showTextAreaDialog("Update!", "Changes:", lastLog);
+            String lastLog = JDUtilities.UTF8Decode(JDUtilities.getLocalFile(JDUtilities.getResourceFile("updatemessage.html")));
+           if(lastLog.trim().length()>5) JDUtilities.getController().getUiInterface().showHTMLDialog("Update!",  lastLog);
 
         }
         JDUtilities.getConfiguration().setProperty(Configuration.PARAM_UPDATE_HASH, hash);

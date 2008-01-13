@@ -5,6 +5,7 @@ import java.awt.Image;
 import java.util.Vector;
 import java.util.logging.Logger;
 
+import javax.swing.JFrame;
 import javax.swing.JWindow;
 
 import jd.captcha.JACController;
@@ -16,6 +17,7 @@ import jd.controlling.interaction.JDExit;
 import jd.controlling.interaction.ResetLink;
 import jd.event.UIEvent;
 import jd.gui.UIInterface;
+import jd.gui.skins.simple.components.HTMLDialog;
 import jd.utils.JDLocale;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
@@ -92,6 +94,7 @@ public class Main {
                 g.drawImage(splashImage, 0, 0, this);
             }
         };
+    
         window.setSize(450, 100);
         window.setLocationRelativeTo(null);
         window.setVisible(true);
@@ -113,9 +116,11 @@ public class Main {
             init.initPlugins();
             init.loadDownloadQueue();
             init.loadModules();
-            init.checkUpdate();
-if(JDUtilities.getRunType()==JDUtilities.RUNTYPE_LOCAL_JARED)
+          
+if(JDUtilities.getRunType()==JDUtilities.RUNTYPE_LOCAL_JARED){
+    init.checkUpdate();
             init.doWebupdate();
+}
         }
      
        

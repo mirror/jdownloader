@@ -57,8 +57,8 @@ public abstract class PluginForHost extends Plugin {
         logger.info("Current Step:  " + currentStep);
         if(!this.isAGBChecked()){
             currentStep.setStatus(PluginStep.STATUS_ERROR);
-            logger.severe("AGBS not signed : "+this.getPluginID());
-            ((DownloadLink)parameter).setStatus(DownloadLink.STATUS_ERROR_AGBS_NOT_SIGNED);
+            logger.severe("AGB not signed : "+this.getPluginID());
+            ((DownloadLink)parameter).setStatus(DownloadLink.STATUS_ERROR_AGB_NOT_SIGNED);
             return currentStep;
         }
         PluginStep ret = doStep(currentStep, parameter);
@@ -161,6 +161,7 @@ public abstract class PluginForHost extends Plugin {
     public abstract int getMaxSimultanDownloadNum();
     public abstract String getAGBLink();
     public boolean isAGBChecked(){
+        //Schreibfehler ist bekannt, allerdings müssten die user alles nochmal einstellenw enn man diesen Key hier ändert.
         return JDUtilities.getSubConfig(CONFIGNAME).getBooleanProperty("AGBS_CHECKED_"+this.getPluginID(), false);
     }
     public void setAGBChecked(boolean value){

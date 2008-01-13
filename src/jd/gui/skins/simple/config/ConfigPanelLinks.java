@@ -74,10 +74,10 @@ if(guiConfig!=null)
           addGUIConfigEntry(ce);
         ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_LINK,  JDLocale.L("gui.config.general.link.unrar", "Unrar"),"http://www.rarlab.com/rar_add.htm"));
         addGUIConfigEntry(ce);
-        ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_LINK,  JDLocale.L("gui.config.general.link.winne", "Wine(Linux)"),"http://www.rarlab.com/rar_add.htm"));
+        ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_LINK,  JDLocale.L("gui.config.general.link.winne", "Wine HQ(Linux)"),"http://winehq.org/"));
         
         addGUIConfigEntry(ce);
-ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_LINK,  JDLocale.L("gui.config.general.link.darwine", "Darwine(MAC)"),"http://www.wireshark.org"));
+ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_LINK,  JDLocale.L("gui.config.general.link.darwine", "Darwine(MAC)"),"http://darwine.sourceforge.net/"));
         
         addGUIConfigEntry(ce);
  ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_LINK,  JDLocale.L("gui.config.general.link.wireshark", "Wireshark"),"http://www.wireshark.org"));

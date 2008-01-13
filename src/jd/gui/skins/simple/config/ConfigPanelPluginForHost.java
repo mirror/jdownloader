@@ -19,6 +19,7 @@ import java.util.Vector;
 
 import javax.swing.AbstractCellEditor;
 import javax.swing.JButton;
+import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
@@ -151,8 +152,9 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
 
         btnEdit.addActionListener(this);
 
-        JDUtilities.addToGridBag(panel, new JTextArea(JDLocale.L("gui.config.plugin.host.desc", "ACHTUNG!! Das JD Team übernimmt keine Verantwortung für die Einhaltung der AGBs der Hoster. Bitte lesen Sie die AGBs aufmerksam und aktivieren Sie das Plugin nur falls Sie sich mit diesen Einverstanden erklären!\r\nDie Reihenfolge der Plugins bestimmt die Prioritäten der automatischen Mirrorauswahl\n\rBevorzugte Hoster sollten oben stehen!")), GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.CENTER);
-
+      
+        JDUtilities.addToGridBag(panel, (new JTextArea(JDLocale.L("gui.config.plugin.host.desc", "ACHTUNG!! Das JD Team übernimmt keine Verantwortung für die Einhaltung der AGB \r\n er Hoster. Bitte lesen Sie die AGB aufmerksam und aktivieren Sie das Plugin nur,\r\nfalls Sie sich mit diesen Einverstanden erklären!\r\nDie Reihenfolge der Plugins bestimmt die Prioritäten der automatischen Mirrorauswahl\n\rBevorzugte Hoster sollten oben stehen!"))), GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 1, 0, insets, GridBagConstraints.NONE, GridBagConstraints.CENTER);
+        
         JDUtilities.addToGridBag(panel, scrollpane, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 1, 1, insets, GridBagConstraints.BOTH, GridBagConstraints.CENTER);
 
         JDUtilities.addToGridBag(panel, btnEdit, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 1, 0, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -276,7 +278,7 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
                     return pluginsForHost.elementAt(rowIndex).getPluginID();
                 case 3:
 
-                    return new JLinkButton(JDLocale.L("gui.config.plugin.host.readAGB", "AGBs akzeptiert"), pluginsForHost.elementAt(rowIndex).getAGBLink());
+                    return new JLinkButton(JDLocale.L("gui.config.plugin.host.readAGB", "AGB akzeptiert"), pluginsForHost.elementAt(rowIndex).getAGBLink());
                 case 4:
 
                     return pluginsForHost.elementAt(rowIndex).isAGBChecked();
@@ -292,7 +294,7 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
         public void setValueAt(Object value, int row, int col) {
             logger.info("Set value: " + value);
             if ((Boolean) value) {
-                if (JDUtilities.getGUI().showConfirmDialog(JDUtilities.sprintf(JDLocale.L("gui.config.plugin.abg_confirm", "Ich habe die AGBs/TOS/FAQ von %s gelesen und erkläre mich damit einverstanden!"), new String[] { pluginsForHost.elementAt(row).getHost() }))) pluginsForHost.elementAt(row).setAGBChecked((Boolean) value);
+                if (JDUtilities.getGUI().showConfirmDialog(JDUtilities.sprintf(JDLocale.L("gui.config.plugin.abg_confirm", "Ich habe die AGB/TOS/FAQ von %s gelesen und erkläre mich damit einverstanden!"), new String[] { pluginsForHost.elementAt(row).getHost() }))) pluginsForHost.elementAt(row).setAGBChecked((Boolean) value);
             }
             else {
                 pluginsForHost.elementAt(row).setAGBChecked((Boolean) value);
@@ -308,7 +310,7 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
                 case 2:
                     return JDLocale.L("gui.config.plugin.host.column_id", "ID");
                 case 3:
-                    return JDLocale.L("gui.config.plugin.host.column_agb", "AGBs");
+                    return JDLocale.L("gui.config.plugin.host.column_agb", "AGB");
                 case 4:
                     return JDLocale.L("gui.config.plugin.host.column_agbChecked", "");
 

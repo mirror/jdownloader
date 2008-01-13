@@ -50,6 +50,7 @@ import jd.event.UIEvent;
 import jd.event.UIListener;
 import jd.gui.UIInterface;
 import jd.gui.skins.simple.Link.JLinkButton;
+import jd.gui.skins.simple.components.HTMLDialog;
 import jd.gui.skins.simple.components.JDFileChooser;
 import jd.gui.skins.simple.components.TextAreaDialog;
 import jd.gui.skins.simple.config.ConfigurationDialog;
@@ -66,8 +67,6 @@ import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 
 import com.sun.java.swing.plaf.windows.WindowsLookAndFeel;
-
-import edu.stanford.ejalbert.BrowserLauncher;
 
 public class SimpleGUI implements UIInterface, ActionListener, UIListener, WindowListener {
     /**
@@ -1221,6 +1220,11 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
     public void windowOpened(WindowEvent e) {
     // TODO Auto-generated method stub
 
+    }
+
+    public boolean showHTMLDialog(String title, String htmlQuestion) {
+       return HTMLDialog.showDialog(getFrame(), title, htmlQuestion);
+      
     }
 
 }

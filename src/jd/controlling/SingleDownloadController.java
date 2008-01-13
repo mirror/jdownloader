@@ -220,8 +220,8 @@ public class SingleDownloadController extends ControlMulticaster {
                 case DownloadLink.STATUS_ERROR_FILE_NOT_UPLOADED :
                     this.onErrorNotUploaded(downloadLink, plugin, step);
                     break;
-                case DownloadLink.STATUS_ERROR_AGBS_NOT_SIGNED :
-                    this.onErrorAGBsNotSigned(downloadLink, plugin, step);
+                case DownloadLink.STATUS_ERROR_AGB_NOT_SIGNED :
+                    this.onErrorAGBNotSigned(downloadLink, plugin, step);
                     break;
                 case DownloadLink.STATUS_ERROR_UNKNOWN_RETRY :
                     this.onErrorRetry(downloadLink, plugin, step);
@@ -271,7 +271,7 @@ public class SingleDownloadController extends ControlMulticaster {
 
     }
 
-    private void onErrorAGBsNotSigned(DownloadLink downloadLink2, PluginForHost plugin, PluginStep step) {
+    private void onErrorAGBNotSigned(DownloadLink downloadLink2, PluginForHost plugin, PluginStep step) {
         downloadLink.setStatusText("AGBs/TOS not signed");
 
         fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SINGLE_DOWNLOAD_CHANGED, downloadLink));

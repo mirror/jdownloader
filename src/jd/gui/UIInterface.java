@@ -92,4 +92,10 @@ public interface UIInterface {
      * @param string
      */
     public String showTextAreaDialog(String title,String question,String def);
+    
+    /**
+     * Zeigt einen HTML dialog an
+     * @param string
+     */
+    public boolean showHTMLDialog(String title,String htmlQuestion);
 }

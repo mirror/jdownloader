@@ -41,12 +41,14 @@ public class JDLocale {
             logger.severe("Use setLocale() first!");
             return key;
         }
+        logger.info(key);
         if (def == null) def = key;
-        if (data.containsKey(key)) return JDUtilities.UTF8Decode(data.get(key));
+        if (data.containsKey(key)) return JDUtilities.UTF8Decode(data.get(key)).replace("\\r", "\r").replace("\\n", "\n");
         logger.info("Key not found: " + key);
         data.put(key, JDUtilities.UTF8Encode(def));
         
         if(JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).getBooleanProperty(SimpleGUI.PARAM_LANG_EDITMODE))saveData();
+    
         return def;
 
     }
@@ -69,7 +71,7 @@ public class JDLocale {
         Vector<String> ret = new Vector<String>();
         while (iterator.hasNext()) {
             i = iterator.next();
-            ret.add(i.getKey() + " = " + i.getValue());
+            ret.add(i.getKey() + " = " + i.getValue().replace("\r", "\\r").replace("\n", "\\n"));
         }
         Collections.sort(ret);
         for (int x = 0; x < ret.size(); x++)

@@ -23,6 +23,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.zip.GZIPInputStream;
 
+import javax.swing.JProgressBar;
+
 import jd.utils.HTMLEntities;
 
 
@@ -60,6 +62,10 @@ public class WebUpdater implements Serializable {
 
     private boolean           allOs;
 
+    private JProgressBar progresslist=null;
+
+    private JProgressBar progressload=null;
+
     /**
      * @param path (Dir Pfad zum Updateserver)
      */
@@ -69,7 +75,7 @@ public class WebUpdater implements Serializable {
             this.setListPath(path);
         }
         else {
-            this.setListPath("http://jdownloader.ath.cx/autoUpdate2");
+            this.setListPath("http://web146.donau.serverway.de/jdownloader/update");
 
         }
 
@@ -125,6 +131,7 @@ public class WebUpdater implements Serializable {
      */
     public void updateFiles(Vector<Vector<String>> files) {
         String akt;
+        if(progressload!=null)this.progressload.setMaximum(files.size());
         updatedFiles = 0;
         for (int i = files.size() - 1; i >= 0; i--) {
 
@@ -143,8 +150,9 @@ public class WebUpdater implements Serializable {
                 }
                 log("Webupdater: ready");
             }
+            if(progressload!=null)   progressload.setValue(files.size()-i);
         }
-
+       if(progressload!=null) progressload.setValue(100);
     }
 
     /**
@@ -240,10 +248,12 @@ public class WebUpdater implements Serializable {
      */
     public Vector<Vector<String>> getAvailableFiles() {
         String source;
+       if(progresslist!=null) this.progresslist.setMaximum(100);
         Vector<Vector<String>> ret = new Vector<Vector<String>>();
         try {
+            if(progresslist!=null)progresslist.setValue(20);
             source = getRequest(new URL(listPath));
-
+            if(progresslist!=null) progresslist.setValue(80);
             String pattern = "\\$(.*?)\\=\\\"(.*?)\\\"\\;(.*?)";
 
             if (source == null) {
@@ -288,6 +298,7 @@ public class WebUpdater implements Serializable {
         catch (MalformedURLException e) {          
             e.printStackTrace();
         }
+        if(progresslist!=null)progresslist.setValue(100);
         return ret;
     }
 
@@ -492,6 +503,16 @@ public class WebUpdater implements Serializable {
      */
     public int getUpdatedFiles() {
         return updatedFiles;
+    }
+
+    public void setListProgress(JProgressBar progresslist) {
+        this.progresslist=progresslist;
+        
+    }
+
+    public void setDownloadProgress(JProgressBar progresslist) {
+        this.progressload=progresslist;
+        
     }
 
 }

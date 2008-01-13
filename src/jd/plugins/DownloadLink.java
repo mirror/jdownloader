@@ -110,7 +110,7 @@ public class DownloadLink implements Serializable,Comparable<DownloadLink> {
      */
     private FilePackage       filePackage;
     private static final long serialVersionUID                     = 1981079856214268373L;
-    public static final int STATUS_ERROR_AGBS_NOT_SIGNED = 21;
+    public static final int STATUS_ERROR_AGB_NOT_SIGNED = 21;
     public static final int STATUS_ERROR_SECURITY = 22;
   
     /**

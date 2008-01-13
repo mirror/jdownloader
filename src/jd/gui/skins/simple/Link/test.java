@@ -18,7 +18,7 @@ public static void main(String[] a) {
     f.getContentPane().setLayout(new GridLayout(0,2));
     f.getContentPane().add(new JLinkButton("http://rapidshare.com/de/faq.html"));
     try {
-        f.getContentPane().add(new JLinkButton("AGBs", new URL("http://rapidshare.com/de/faq.html")));
+        f.getContentPane().add(new JLinkButton("AGB", new URL("http://rapidshare.com/de/faq.html")));
     } catch (MalformedURLException e) {
         // TODO Auto-generated catch block
         e.printStackTrace();
