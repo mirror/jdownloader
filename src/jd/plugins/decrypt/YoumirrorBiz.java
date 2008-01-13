@@ -122,11 +122,6 @@ public class YoumirrorBiz extends PluginForDecrypt {
 						decryptedLinks.addAll(getLinks(hst + links[i]));
 	    				progress.increase(1);
 					}
-					while (matcher.find()) {
-
-						
-					}
-
 				} catch (MalformedURLException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
