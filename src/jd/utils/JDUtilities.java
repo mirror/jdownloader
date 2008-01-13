@@ -371,8 +371,8 @@ public class JDUtilities {
 
         }
 
-        return pattern;
-    }
+        return pattern; 
+    } 
 
     /**
      * Liefert einen Punkt zurück, mit dem eine Komponente auf eine andere

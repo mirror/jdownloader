@@ -475,7 +475,7 @@ public class JDInit {
         }
 
         JDUtilities.getRunType();
-        if (!JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_UPDATE_HASH, "").equals(hash)||true) {
+        if (!JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_UPDATE_HASH, "").equals(hash)) {
             logger.info("Returned from Update");
             String lastLog = JDUtilities.UTF8Decode(JDUtilities.getLocalFile(JDUtilities.getResourceFile("updatemessage.html")));
            if(lastLog.trim().length()>5) JDUtilities.getController().getUiInterface().showHTMLDialog("Update!",  lastLog);

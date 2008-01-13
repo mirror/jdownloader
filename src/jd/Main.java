@@ -116,9 +116,9 @@ public class Main {
             init.initPlugins();
             init.loadDownloadQueue();
             init.loadModules();
-          
+            init.checkUpdate();
 if(JDUtilities.getRunType()==JDUtilities.RUNTYPE_LOCAL_JARED){
-    init.checkUpdate();
+   
             init.doWebupdate();
 }
         }

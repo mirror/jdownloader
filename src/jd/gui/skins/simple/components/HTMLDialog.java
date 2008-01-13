@@ -48,7 +48,7 @@ public class HTMLDialog extends JDialog implements ActionListener {
 
     private HTMLDialog(JFrame frame, String title, String html) {
         super(frame);
-        setModal(true);
+        
         setLayout(new BorderLayout());
 
         btnCancel = new JButton(JDLocale.L("gui.btn_cancel","Cancel"));
@@ -69,14 +69,15 @@ public class HTMLDialog extends JDialog implements ActionListener {
         p.add(btnOk);
         p.add(btnCancel);
         this.add(p,BorderLayout.SOUTH);
-        this.setLocation(JDUtilities.getCenterOfComponent(frame, this));
+        
        pack();
         this.setVisible(true);
-        
+        this.setLocation(JDUtilities.getCenterOfComponent(frame, this));
+        setModal(true);
         //setLocation(JDUtilities.getCenterOfComponent(null, this));
         getRootPane().setDefaultButton(btnOk);
         setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
-        this.setLocationRelativeTo(null);
+       // this.setLocationRelativeTo(null);
 
     }
     public static boolean showDialog(JFrame frame, String title, String question){
