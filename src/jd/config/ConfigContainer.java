@@ -33,7 +33,7 @@ public class ConfigContainer implements Serializable {
      * ConfigElement ist eine Trennlinie
      * ConfigEntry(int type)
      */
-    public static final int     TYPE_SEPERATOR  = 6;
+    public static final int     TYPE_SEPARATOR  = 6;
     /**
      * ConfigElement ist ein Radiobutton
      * ConfigEntry(int type, Property propertyInstance, String propertyName, Object[] list, String label)
@@ -79,6 +79,7 @@ public class ConfigContainer implements Serializable {
      *     public ConfigEntry(int type, Property propertyInstance, String propertyName, String label) {
      */
     public static final int TYPE_PASSWORDFIELD = 11;
+    public static final int TYPE_LINK = 12;
     
 
     private Property propertyInstance;

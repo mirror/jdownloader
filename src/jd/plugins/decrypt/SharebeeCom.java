@@ -129,7 +129,7 @@ public class SharebeeCom extends PluginForDecrypt {
     private void setConfigEelements() {
         ConfigEntry cfg;
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_LABEL, "Hoster Auswahl"));
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_SEPERATOR));
+        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getProperties(), "USE_RAPIDSHARE", "Rapidshare.com"));
         cfg.setDefaultValue(true);
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getProperties(), "USE_ZSHARE", "zShare.net"));

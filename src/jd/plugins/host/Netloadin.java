@@ -381,4 +381,9 @@ public class Netloadin extends PluginForHost {
         // TODO Auto-generated method stub
         
     }
+    @Override
+    public String getAGBLink() {
+        // TODO Auto-generated method stub
+        return "http://netload.in/index.php?id=13";
+    }
 }

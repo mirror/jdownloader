@@ -163,17 +163,26 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
         JDUtilities.addToGridBag(this, accept, REL, REL, REM, 1, 0, 0, null, GridBagConstraints.NONE, GridBagConstraints.SOUTHEAST);
 
       
-       // this.setPreferredSize(new Dimension(600, 400));
+        
         this.setName("LINKGRABBER");
-        this.setMinimumSize(SimpleGUI.getLastDimension(this, null));
-    
-        setLocation(SimpleGUI.getLastLocation(parentFrame.getFrame(), null, this));
-        LocationListener list = new LocationListener();
-        this.addComponentListener(list);
-        
-        
-        pack();
+        this.setPreferredSize(new Dimension(600, 400));
+        http://serienfreaks.tv/?id=6523
+            pack();
+        this.setVisible(true);
+       if(SimpleGUI.getLastDimension(this, null)!=null){
+           this.setPreferredSize(SimpleGUI.getLastDimension(this, null));
+          
+           pack();
+       }
+  
 
+ 
+        LocationListener list = new LocationListener();
+      this.addComponentListener(list);
+     
+        
+        
+       
     }
 
     // private void refreshTabbedPane() {
@@ -372,7 +381,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
             ret = a.substring(0, i).toLowerCase().trim();
         }
 
-        String tmp;
+       
         if (a.equals(ret)) return ret;
         return removeExtension(ret);
 
@@ -419,7 +428,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
 
         tab.addLinks(linkList);
        
-        validate();
+        //validate();
         onPackageNameChanged(tab);
     }
 

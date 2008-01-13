@@ -660,4 +660,10 @@ static private final String DOWNLOAD_LIMIT_REACHED="Free-Traffic ist aufgebrauch
         // TODO Auto-generated method stub
         
     }
+
+    @Override
+    public String getAGBLink() {
+        
+        return "http://uploaded.to/agb";
+    }
 }

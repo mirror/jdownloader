@@ -2,6 +2,7 @@ package jd.gui.skins.simple.config;
 
 import java.awt.BorderLayout;
 import java.awt.GridBagConstraints;
+import java.net.URL;
 import java.util.List;
 import java.util.Locale;
 import java.util.logging.Level;
@@ -16,6 +17,7 @@ import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.Configuration;
 import jd.gui.UIInterface;
+import jd.gui.skins.simple.Link.JLinkButton;
 import jd.gui.skins.simple.components.BrowseFile;
 import jd.utils.JDLocale;
 import jd.utils.JDTheme;
@@ -47,7 +49,8 @@ public class ConfigPanelGeneral extends ConfigPanel {
     @Override
     public void initPanel() {
         GUIConfigEntry ce;
-
+   
+        
         ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, configuration, Configuration.PARAM_LOGGER_LEVEL, new Level[]{Level.ALL, Level.FINEST, Level.FINER, Level.FINE, Level.INFO, Level.WARNING, Level.SEVERE, Level.OFF}, JDLocale.L("gui.config.general.loggerLevel", "Level für's Logging")).setDefaultValue(Level.FINER).setExpertEntry(true));
         addGUIConfigEntry(ce);
         ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_BROWSEFOLDER, configuration, Configuration.PARAM_DOWNLOAD_DIRECTORY, JDLocale.L("gui.config.general.downloadDirectory", "Downloadverzeichnis")).setDefaultValue(JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath()));

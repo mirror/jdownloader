@@ -369,4 +369,10 @@ public class ShareOnlineBiz extends PluginForHost {
 
 	}
 
+    @Override
+    public String getAGBLink() {
+       
+        return "http://share-online.biz/?page=tos";
+    }
+
 }

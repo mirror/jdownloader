@@ -29,7 +29,7 @@ import jd.utils.JDUtilities;
  * 
  * @author Tom
  */
-public class Dropper extends JDialog implements MouseListener, MouseMotionListener {
+public class Dropper extends JDialog implements MouseListener, MouseMotionListener,WindowListener {
 
     /**
      * 8764525546298642601L
@@ -51,14 +51,14 @@ public class Dropper extends JDialog implements MouseListener, MouseMotionListen
         JPanel p= new JPanel(new GridBagLayout());
         p.addMouseListener(this);
         p.addMouseMotionListener(this);
-        
+        this.addWindowListener(this);
         target = new DragNDrop();
         logger= JDUtilities.getLogger();
         label= new JLabel(JDLocale.L("gui.droptarget.label","Ziehe Links auf mich!"));
         JDUtilities.addToGridBag(p, target, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 1, 1, null, GridBagConstraints.NONE, GridBagConstraints.NORTH);
         JDUtilities.addToGridBag(p, label, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 0, 0, null, GridBagConstraints.NONE, GridBagConstraints.SOUTH);
         JDUtilities.addToGridBag(this, p, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 0, 0, null, GridBagConstraints.BOTH, GridBagConstraints.CENTER);
-        p.setBorder(BorderFactory.createBevelBorder(BevelBorder.RAISED));
+       // p.setBorder(BorderFactory.createBevelBorder(BevelBorder.RAISED));
         this.setDefaultCloseOperation(WindowConstants.DO_NOTHING_ON_CLOSE);
         setSize(50,70);
         this.setResizable(false);
@@ -120,6 +120,34 @@ public void mouseDragged(MouseEvent e) {
 }
 public void mouseMoved(MouseEvent e) {
     //JDUtilities.getLogger().info("move");
+    
+}
+public void windowActivated(WindowEvent e) {
+    // TODO Auto-generated method stub
+    
+}
+public void windowClosed(WindowEvent e) {
+    // TODO Auto-generated method stub
+    
+}
+public void windowClosing(WindowEvent e) {
+    this.setVisible(false);
+    
+}
+public void windowDeactivated(WindowEvent e) {
+    // TODO Auto-generated method stub
+    
+}
+public void windowDeiconified(WindowEvent e) {
+    // TODO Auto-generated method stub
+    
+}
+public void windowIconified(WindowEvent e) {
+    // TODO Auto-generated method stub
+    
+}
+public void windowOpened(WindowEvent e) {
+    // TODO Auto-generated method stub
     
 }
 

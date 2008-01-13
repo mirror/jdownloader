@@ -115,6 +115,7 @@ public class ConfigurationDialog extends JDialog implements ActionListener, Chan
 //        if (guiConfig.getBooleanProperty(SimpleGUI.PARAM_USE_EXPERT_VIEW, false)) this.addConfigPanel(ConfigPanelPluginForSearch.class, JDTheme.I("gui.images.config.find"), JDLocale.L("gui.config.tabLables.searchPlugin", "Search Plugin settings"));
         if (guiConfig.getBooleanProperty(SimpleGUI.PARAM_USE_EXPERT_VIEW, false)) this.addConfigPanel(ConfigPanelPluginsOptional.class, JDTheme.I("gui.images.config.edit_redo"), JDLocale.L("gui.config.tabLables.optionalPlugin", "Optional Plugin settings"));
         if (guiConfig.getBooleanProperty(SimpleGUI.PARAM_USE_EXPERT_VIEW, false)) this.addConfigPanel(ConfigPanelPluginForContainer.class, JDTheme.I("gui.images.config.database"), JDLocale.L("gui.config.tabLables.containerPlugin", "Link-Container settings"));
+     this.addConfigPanel(ConfigPanelLinks.class, JDTheme.I("gui.images.config.tip"), JDLocale.L("gui.config.tabLables.links", "Wichtige Links"));
 
         btnSave = new JButton(JDLocale.L("gui.config.btn_save", "Speichern"));
         btnSave.addActionListener(this);
@@ -140,7 +141,7 @@ public class ConfigurationDialog extends JDialog implements ActionListener, Chan
           JDUtilities.getLogger().info("GETLOCATION");
       this.setLocation(SimpleGUI.getLastLocation(parent, null, this));
       LocationListener list = new LocationListener();
-      this.setMinimumSize(SimpleGUI.getLastDimension(this, null));
+     if(SimpleGUI.getLastDimension(this, null)!=null) this.setSize(SimpleGUI.getLastDimension(this, null));
       this.addComponentListener(list);
         this.setVisible(true);
     }

@@ -1,4 +1,5 @@
 package jd.gui.skins.simple.Link;
+
 import java.awt.Color;
 import java.awt.Cursor;
 import java.awt.FontMetrics;
@@ -37,29 +38,29 @@ public class JLinkButton extends JButton {
      * 
      */
 
-    public static final int ALWAYS_UNDERLINE = 0;
+    public static final int   ALWAYS_UNDERLINE = 0;
 
-    public static final int HOVER_UNDERLINE = 1;
+    public static final int   HOVER_UNDERLINE  = 1;
 
-    public static final int NEVER_UNDERLINE = 2;
+    public static final int   NEVER_UNDERLINE  = 2;
 
-    public static final int SYSTEM_DEFAULT = 3;
+    public static final int   SYSTEM_DEFAULT   = 3;
 
-    private int linkBehavior;
+    private int               linkBehavior;
 
-    private Color linkColor;
+    private Color             linkColor;
 
-    private Color colorPressed;
+    private Color             colorPressed;
 
-    private Color visitedLinkColor;
+    private Color             visitedLinkColor;
 
-    private Color disabledLinkColor;
+    private Color             disabledLinkColor;
 
-    private URL buttonURL;
+    private URL               buttonURL;
 
-    private Action defaultAction;
+    private Action            defaultAction;
 
-    private boolean isLinkVisited;
+    private boolean           isLinkVisited;
 
     public JLinkButton() {
         this(null, null, null);
@@ -86,15 +87,70 @@ public class JLinkButton extends JButton {
         this(s, null, url);
     }
 
+    public JLinkButton(String text, String urlstr) {
+        super(text, null);
+        URL url = null;
+        try {
+            url = new URL("http://www.malformed.com");
+        }
+        catch (MalformedURLException e3) {
+        }
+        try {
+            url = new URL(urlstr);
+        }
+        catch (MalformedURLException e2) { }
+
+        linkBehavior = SYSTEM_DEFAULT;
+        linkColor = Color.blue;
+        colorPressed = Color.red;
+        visitedLinkColor = new Color(128, 0, 128);
+        if (url == null && text != null) {
+            if (text.matches("https?://.*")) {
+                try {
+                    url = new URL(text);
+                }
+                catch (MalformedURLException e1) {
+                    // TODO Auto-generated catch block
+                    e1.printStackTrace();
+                }
+            }
+            else if (text.matches("www\\..*?\\..*")) {
+                try {
+                    url = new URL("http://" + text);
+                }
+                catch (MalformedURLException e1) {
+                    // TODO Auto-generated catch block
+                    e1.printStackTrace();
+                }
+            }
+        }
+        if (text == null && url != null) setText(url.toExternalForm());
+        setLinkURL(url);
+        setCursor(Cursor.getPredefinedCursor(12));
+        setBorderPainted(false);
+        setContentAreaFilled(false);
+        setRolloverEnabled(true);
+
+        addActionListener(new ActionListener() {
+
+            public void actionPerformed(ActionEvent e) {
+                OpenURL(getLinkURL());
+            }
+        });
+
+        addActionListener(defaultAction);
+
+    }
+
     public JLinkButton(Icon icon, URL url) {
         this(null, icon, url);
     }
-    public static void OpenURL(String url) throws MalformedURLException
-    {
-			OpenURL(new URL(url));
+
+    public static void OpenURL(String url) throws MalformedURLException {
+        OpenURL(new URL(url));
     }
-    public static void OpenURL(URL url)
-    {
+
+    public static void OpenURL(URL url) {
 
         if (url != null) {
             String Browser = JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).getStringProperty(SimpleGUI.PARAM_BROWSER, null);
@@ -105,10 +161,12 @@ public class JLinkButton extends JButton {
                 try {
                     launcher = new BrowserLauncher();
                     ar = launcher.getBrowserList();
-                } catch (BrowserLaunchingInitializingException e1) {
+                }
+                catch (BrowserLaunchingInitializingException e1) {
                     // TODO Auto-generated catch block
                     e1.printStackTrace();
-                } catch (UnsupportedOperatingSystemException e1) {
+                }
+                catch (UnsupportedOperatingSystemException e1) {
                     // TODO Auto-generated catch block
                     e1.printStackTrace();
                 }
@@ -117,8 +175,9 @@ public class JLinkButton extends JButton {
 
                 if (BrowserArray == null) {
                     if (ar.size() < 2) {
-                        BrowserArray = new Object[]{"JavaBrowser"};
-                    } else {
+                        BrowserArray = new Object[] { "JavaBrowser" };
+                    }
+                    else {
                         BrowserArray = new Object[ar.size() + 1];
                         for (int i = 0; i < BrowserArray.length - 1; i++) {
                             BrowserArray[i] = ar.get(i);
@@ -137,14 +196,17 @@ public class JLinkButton extends JButton {
                 browser.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
                 browser.setSize(800, 600);
                 browser.setVisible(true);
-            } else {
+            }
+            else {
                 try {
                     BrowserLauncher launcher = new BrowserLauncher();
                     launcher.openURLinBrowser(Browser, url.toString());
-                } catch (BrowserLaunchingInitializingException e1) {
+                }
+                catch (BrowserLaunchingInitializingException e1) {
                     // TODO Auto-generated catch block
                     e1.printStackTrace();
-                } catch (UnsupportedOperatingSystemException e1) {
+                }
+                catch (UnsupportedOperatingSystemException e1) {
                     // TODO Auto-generated catch block
                     e1.printStackTrace();
                 }
@@ -153,7 +215,6 @@ public class JLinkButton extends JButton {
 
         }
     }
-    
 
     public JLinkButton(final String text, Icon icon, URL url) {
         super(text, icon);
@@ -165,21 +226,23 @@ public class JLinkButton extends JButton {
             if (text.matches("https?://.*")) {
                 try {
                     url = new URL(text);
-                } catch (MalformedURLException e1) {
+                }
+                catch (MalformedURLException e1) {
                     // TODO Auto-generated catch block
                     e1.printStackTrace();
                 }
-            } else if (text.matches("www\\..*?\\..*")) {
+            }
+            else if (text.matches("www\\..*?\\..*")) {
                 try {
                     url = new URL("http://" + text);
-                } catch (MalformedURLException e1) {
+                }
+                catch (MalformedURLException e1) {
                     // TODO Auto-generated catch block
                     e1.printStackTrace();
                 }
             }
         }
-        if (text == null && url != null)
-            setText(url.toExternalForm());
+        if (text == null && url != null) setText(url.toExternalForm());
         setLinkURL(url);
         setCursor(Cursor.getPredefinedCursor(12));
         setBorderPainted(false);
@@ -189,7 +252,7 @@ public class JLinkButton extends JButton {
         addActionListener(new ActionListener() {
 
             public void actionPerformed(ActionEvent e) {
-            	OpenURL(getLinkURL());
+                OpenURL(getLinkURL());
             }
         });
 
@@ -210,8 +273,7 @@ public class JLinkButton extends JButton {
 
     protected void setupToolTipText() {
         String tip = null;
-        if (buttonURL != null)
-            tip = buttonURL.toExternalForm();
+        if (buttonURL != null) tip = buttonURL.toExternalForm();
         setToolTipText(tip);
     }
 
@@ -260,8 +322,7 @@ public class JLinkButton extends JButton {
         Color colorOld = disabledLinkColor;
         disabledLinkColor = color;
         firePropertyChange("disabledLinkColor", colorOld, color);
-        if (!isEnabled())
-            repaint();
+        if (!isEnabled()) repaint();
     }
 
     public Color getDisabledLinkColor() {
@@ -336,8 +397,7 @@ public class JLinkButton extends JButton {
 class BasicLinkButtonUI extends MetalButtonUI {
     private static final BasicLinkButtonUI ui = new BasicLinkButtonUI();
 
-    public BasicLinkButtonUI() {
-    }
+    public BasicLinkButtonUI() {}
 
     public static ComponentUI createUI(JComponent jcomponent) {
         return ui;
@@ -356,27 +416,26 @@ class BasicLinkButtonUI extends MetalButtonUI {
 
             else
                 bn.setForeground(bn.getLinkColor());
-        } else {
-            if (bn.getDisabledLinkColor() != null)
-                bn.setForeground(bn.getDisabledLinkColor());
+        }
+        else {
+            if (bn.getDisabledLinkColor() != null) bn.setForeground(bn.getDisabledLinkColor());
         }
         super.paintText(g, com, rect, s);
         int behaviour = bn.getLinkBehavior();
         boolean drawLine = false;
         if (behaviour == JLinkButton.HOVER_UNDERLINE) {
-            if (bnModel.isRollover())
-                drawLine = true;
-        } else if (behaviour == JLinkButton.ALWAYS_UNDERLINE || behaviour == JLinkButton.SYSTEM_DEFAULT)
-            drawLine = true;
-        if (!drawLine)
-            return;
+            if (bnModel.isRollover()) drawLine = true;
+        }
+        else if (behaviour == JLinkButton.ALWAYS_UNDERLINE || behaviour == JLinkButton.SYSTEM_DEFAULT) drawLine = true;
+        if (!drawLine) return;
         FontMetrics fm = g.getFontMetrics();
         int x = rect.x + getTextShiftOffset();
         int y = (rect.y + fm.getAscent() + fm.getDescent() + getTextShiftOffset()) - 1;
         if (bnModel.isEnabled()) {
             g.setColor(bn.getForeground());
             g.drawLine(x, y, (x + rect.width) - 1, y);
-        } else {
+        }
+        else {
             g.setColor(bn.getBackground().brighter());
             g.drawLine(x, y, (x + rect.width) - 1, y);
         }

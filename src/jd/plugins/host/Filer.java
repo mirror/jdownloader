@@ -251,4 +251,9 @@ public class Filer extends PluginForHost {
         // TODO Auto-generated method stub
         
     }
+    @Override
+    public String getAGBLink() {
+        // TODO Auto-generated method stub
+        return "http://www.filer.net/faq";
+    }
 }

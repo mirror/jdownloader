@@ -4,6 +4,8 @@ import java.awt.Dimension;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.logging.Logger;
 
 import javax.swing.ButtonGroup;
@@ -26,7 +28,9 @@ import javax.swing.SwingConstants;
 
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
+import jd.gui.skins.simple.Link.JLinkButton;
 import jd.gui.skins.simple.components.BrowseFile;
+import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
 /**
@@ -77,7 +81,23 @@ JComponent total=null;
 Insets insets= new Insets(2, 5, 2, 10);
         switch (configEntry.getType()) {
             
-            
+  case ConfigContainer.TYPE_LINK:
+                
+               
+                try {
+                    input[0] = new JLinkButton(configEntry.getLabel(),new URL(configEntry.getPropertyName()));
+                }
+                catch (MalformedURLException e) {
+                    input[0]=new JLabel(configEntry.getPropertyName());
+                    e.printStackTrace();
+                }
+                
+                input[0].setEnabled(configEntry.isEnabled());
+             
+                JDUtilities.addToGridBag(this, left=input[0], GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 1, 0, insets, GridBagConstraints.HORIZONTAL, GridBagConstraints.EAST);
+                
+                break;
+              
             
   case ConfigContainer.TYPE_PASSWORDFIELD:
                 
@@ -219,7 +239,7 @@ Insets insets= new Insets(2, 5, 2, 10);
                 
               
                 break;
-            case ConfigContainer.TYPE_SEPERATOR:
+            case ConfigContainer.TYPE_SEPARATOR:
                 // //logger.info("ADD Seperator");
                 input[0] = new JSeparator(SwingConstants.HORIZONTAL);
                
@@ -247,6 +267,18 @@ Insets insets= new Insets(2, 5, 2, 10);
         // "+input.length+" -
         // "+input[0]);
         switch (configEntry.getType()) {
+            case ConfigContainer.TYPE_LINK:
+                try {
+                    ((JLinkButton) input[0]).setLinkURL(new URL(text == null ? "" : text.toString()));
+                }
+                catch (MalformedURLException e1) {
+                 
+                    e1.printStackTrace();
+                }
+                break;
+
+            
+            
             case ConfigContainer.TYPE_PASSWORDFIELD:
                 ((JPasswordField) input[0]).setText(text == null ? "" : text.toString());
                 break;
@@ -300,7 +332,7 @@ Insets insets= new Insets(2, 5, 2, 10);
                     }
                 }
 
-            case ConfigContainer.TYPE_SEPERATOR:
+            case ConfigContainer.TYPE_SEPARATOR:
 
                 break;
         }
@@ -315,6 +347,13 @@ Insets insets= new Insets(2, 5, 2, 10);
     public Object getText() {
         // //logger.info(configEntry.getType()+"_2");
         switch (configEntry.getType()) {
+            case ConfigContainer.TYPE_LINK:
+             
+                  return  ((JLinkButton) input[0]).getLinkURL().toString();
+             
+              
+
+            
             case ConfigContainer.TYPE_PASSWORDFIELD:
                 return new String(((JPasswordField) input[0]).getPassword());
             case ConfigContainer.TYPE_TEXTFIELD:
@@ -338,7 +377,7 @@ Insets insets= new Insets(2, 5, 2, 10);
                     if (radio.getSelectedObjects() != null && radio.getSelectedObjects()[0] != null) return radio.getSelectedObjects()[0];
                 }
                 return null;
-            case ConfigContainer.TYPE_SEPERATOR:
+            case ConfigContainer.TYPE_SEPARATOR:
                 return null;
             case ConfigContainer.TYPE_BROWSEFOLDER:
             case ConfigContainer.TYPE_BROWSEFILE:

@@ -711,7 +711,7 @@ public abstract class Plugin {
         requestInfo.setConnection(httpConnection);
         return requestInfo;
     }
-
+  
     /**
      * Führt einen getrequest durch. Gibt die headerinfos zurück, lädt aber die
      * datei noch komplett
@@ -723,6 +723,7 @@ public abstract class Plugin {
      * @return requestinfos mit headerfields. HTML text wird nicht!! geladen
      * @throws IOException
      */
+
     public static RequestInfo getRequestWithoutHtmlCode(URL link, String cookie, String referrer, boolean redirect) throws IOException {
         // logger.finer("get: "+link);
         HttpURLConnection httpConnection = (HttpURLConnection) link.openConnection();
@@ -1080,12 +1081,16 @@ public abstract class Plugin {
         } catch (FileNotFoundException e) {
 
             logger.severe("file not found. " + e.getLocalizedMessage());
+            downloadLink.setStatus(DownloadLink.STATUS_ERROR_FILE_NOT_FOUND);
         } catch (SecurityException e) {
 
             logger.severe("not enough rights to write the file. " + e.getLocalizedMessage());
+            
+            downloadLink.setStatus(DownloadLink.STATUS_ERROR_SECURITY);
         } catch (IOException e) {
 
             logger.severe("error occurred while writing to file. " + e.getLocalizedMessage());
+            downloadLink.setStatus(DownloadLink.STATUS_ERROR_SECURITY);
         } catch (InterruptedException e) {
             logger.severe("interrupted. " + e.getLocalizedMessage());
             e.printStackTrace();

@@ -266,4 +266,10 @@ public class FileFactory extends PluginForHost {
         // TODO Auto-generated method stub
 
     }
+
+    @Override
+    public String getAGBLink() {
+        // TODO Auto-generated method stub
+        return "http://www.filefactory.com/info/terms.php";
+    }
 }

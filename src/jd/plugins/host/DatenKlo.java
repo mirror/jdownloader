@@ -216,4 +216,9 @@ public class DatenKlo extends PluginForHost {
     public void resetPluginGlobals() {
     // TODO Automatisch erstellter Methoden-Stub
     }
+    @Override
+    public String getAGBLink() {
+        
+        return "http://www.datenklo.net/agb";
+    }
 }

@@ -326,4 +326,9 @@ public class Megauploadcom extends PluginForHost {
         // TODO Auto-generated method stub
         
     }
+    @Override
+    public String getAGBLink() {
+        // TODO Auto-generated method stub
+        return "http://www.megaupload.com/terms/";
+    }
 }

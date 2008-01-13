@@ -389,7 +389,7 @@ public class JDUtilities {
             Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
             int width = screenSize.width; 
             int height = screenSize.height;
-            center = new Point(width / 2, height / 2);
+            center = new Point(width / 2, height / 2); 
         }
         else {
             center = parent.getLocationOnScreen();

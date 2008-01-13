@@ -271,19 +271,19 @@ public class Rapidshare extends PluginForHost {
 
     private void setConfigElements() {
         ConfigEntry cfg;
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_SEPERATOR));
+        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_LABEL, "Bevorzugte Server (*1)"));
 
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, getProperties(), PROPERTY_SELECTED_SERVER, new String[] { "Cogent", "Cogent #2", "GlobalCrossing", "GlobalCrossing #2", "TeliaSonera", "TeliaSonera #2", "Teleglobe", "Level(3)", "Level(3) #2", "Level(3) #3", "Level(3) #4", "zufällig" }, "#1"));
         cfg.setDefaultValue("Level(3)");
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_SEPERATOR));
+        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, getProperties(), PROPERTY_SELECTED_SERVER2, new String[] { "Cogent", "TeliaSonera", "Level(3)", "GlobalCrossing", "zufällig" }, "#2"));
         cfg.setDefaultValue("TeliaSonera");
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getProperties(), PROPERTY_USE_TELEKOMSERVER, "Telekom Server verwenden falls verfügbar*"));
         cfg.setDefaultValue(false);
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getProperties(), PROPERTY_USE_PRESELECTED, "Vorauswahl übernehmen (*2)"));
         cfg.setDefaultValue(true);
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_SEPERATOR));
+        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_LABEL, "Premium Accounts"));
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getProperties(), PROPERTY_PREMIUM_USER, "Premium User"));
         cfg.setDefaultValue("Kundennummer");
@@ -307,6 +307,7 @@ public class Rapidshare extends PluginForHost {
     // }
     public PluginStep doStep(PluginStep step, DownloadLink downloadLink) {
         // RequestInfo requestInfo;
+        
         if (step == null) {
             logger.info("Plugin Ende erreicht.");
             return null;
@@ -785,7 +786,18 @@ public class Rapidshare extends PluginForHost {
                                 step.setStatus(PluginStep.STATUS_TODO);
                                 return step;
                             }
+                            try{
                             requestInfo = readFromURL(requestInfo.getConnection());
+                            }catch(Exception e){
+                            logger.info("LL"+requestInfo.getResponseCode());
+                            if(requestInfo.getResponseCode()==403){
+                                logger.severe("Premium Account overload");
+                                downloadLink.setStatus(DownloadLink.STATUS_ERROR_PLUGIN_SPECIFIC);
+                                step.setParameter("Premium overload>25GB");
+                                step.setStatus(PluginStep.STATUS_ERROR);
+                                return step;
+                            }
+                            }
                             // <a
                             // href="http://rs214cg.rapidshare.com/files/50231143/dl/Discovery.rar">Download
                             // via Cogent</a><br>
@@ -1079,5 +1091,11 @@ public class Rapidshare extends PluginForHost {
     public void resetPluginGlobals() {
         END_OF_DOWNLOAD_LIMIT = 0;
 
+    }
+
+    @Override
+    public String getAGBLink() {
+      
+        return "http://rapidshare.com/de/faq.html";
     }
 }

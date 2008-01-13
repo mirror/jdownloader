@@ -193,6 +193,13 @@ public class EgoshareCom extends PluginForHost {
     public void resetPluginGlobals() {
         // TODO Auto-generated method stub
         
+    }
+
+
+    @Override
+    public String getAGBLink() {
+      
+        return "http://www.egoshare.com/faq.php";
     }  
     
 }

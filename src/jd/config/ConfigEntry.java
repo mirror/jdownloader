@@ -57,7 +57,19 @@ public class ConfigEntry implements Serializable {
         this.label = label;
         enabled=true;
     }
+    /**
+     * Konstruktor für z.B. einen Link (label& url
+     * 
 
+    public ConfigEntry(int type, String label, String link) {
+     */
+    
+    public ConfigEntry(int type,String label, String link) {
+        this.type = type;
+        this.propertyName = link;     
+        this.label = label;
+        enabled=true;
+    }
     /**
      * Konstruktor für z.B. ein Textfeld (label& ein eingabefeld
      * 

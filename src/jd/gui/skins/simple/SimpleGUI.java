@@ -269,7 +269,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         frame.pack();
 
         frame.setName("MAINFRAME");
-        frame.setSize(getLastDimension(frame, null));
+        if(SimpleGUI.getLastDimension(frame, null)!=null)frame.setSize(getLastDimension(frame, null));
         // frame.setLocation(JDUtilities.getCenterOfComponent(null, frame));
 
         frame.setLocation(getLastLocation(null, null, frame));
@@ -325,7 +325,8 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         if (loc != null && loc instanceof Dimension) {
             return (Dimension) loc;
         }
-        return child.getPreferredSize();
+       
+        return null;
     }
 
     public static void saveLastDimension(Component child, String key) {
@@ -1158,7 +1159,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         }
         if (linkGrabber == null) {
             linkGrabber = new LinkGrabber(this, linkList);
-            linkGrabber.setVisible(true);
+           
         }
         else {
             linkGrabber.addLinks(linkList);

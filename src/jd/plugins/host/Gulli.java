@@ -295,4 +295,10 @@ public class Gulli extends PluginForHost {
         // TODO Auto-generated method stub
         
     }
+
+    @Override
+    public String getAGBLink() {
+        // TODO Auto-generated method stub
+        return "http://share.gulli.com/faq";
+    }
 }

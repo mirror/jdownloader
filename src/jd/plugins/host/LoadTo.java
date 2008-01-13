@@ -229,4 +229,10 @@ public class LoadTo extends PluginForHost {
         
     }
 
+    @Override
+    public String getAGBLink() {
+        // TODO Auto-generated method stub
+        return "http://www.load.to/terms.php";
+    }
+
 }

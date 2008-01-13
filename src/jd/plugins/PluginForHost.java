@@ -15,6 +15,7 @@ import jd.utils.JDUtilities;
  * @author astaldo
  */
 public abstract class PluginForHost extends Plugin {
+    private static final String CONFIGNAME = "pluginsForHost";
     // public abstract URLConnection getURLConnection();
 
     private String data;
@@ -47,12 +48,19 @@ public abstract class PluginForHost extends Plugin {
      * @return der nächste Schritt oder null, falls alle abgearbeitet wurden
      */
     public PluginStep doNextStep(Object parameter) {
+      
         currentStep = nextStep(currentStep);
         if (currentStep == null) {
             logger.info(this + " Pluginende erreicht!");
             return null;
         }
         logger.info("Current Step:  " + currentStep);
+        if(!this.isAGBChecked()){
+            currentStep.setStatus(PluginStep.STATUS_ERROR);
+            logger.severe("AGBS not signed : "+this.getPluginID());
+            ((DownloadLink)parameter).setStatus(DownloadLink.STATUS_ERROR_AGBS_NOT_SIGNED);
+            return currentStep;
+        }
         PluginStep ret = doStep(currentStep, parameter);
 
         return ret;
@@ -151,7 +159,15 @@ public abstract class PluginForHost extends Plugin {
     public abstract PluginStep doStep(PluginStep step, DownloadLink parameter) throws Exception;
 
     public abstract int getMaxSimultanDownloadNum();
-
+    public abstract String getAGBLink();
+    public boolean isAGBChecked(){
+        return JDUtilities.getSubConfig(CONFIGNAME).getBooleanProperty("AGBS_CHECKED_"+this.getPluginID(), false);
+    }
+    public void setAGBChecked(boolean value){
+        JDUtilities.getSubConfig(CONFIGNAME).setProperty("AGBS_CHECKED_"+this.getPluginID(), value);
+        JDUtilities.getSubConfig(CONFIGNAME).save();
+           
+    }
     /**
      * Delegiert den doStep Call mit einem Downloadlink als Parameter weiter an
      * die Plugins. Und fängt übrige Exceptions ab.

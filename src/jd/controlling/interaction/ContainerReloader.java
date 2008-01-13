@@ -102,7 +102,7 @@ public class ContainerReloader extends Interaction implements Serializable {
     public void initConfig() {
         ConfigEntry cfg;
         //int type, Property propertyInstance, String propertyName, Object[] list, String label
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_SEPERATOR));
+        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         
     }
 
