@@ -1036,7 +1036,6 @@ public abstract class Plugin {
                 // coalado: nix schlafen.. ich will speed! Die Events werden
                 // jetzt von der GUI kontrolliert
                 int bytes = source.read(buffer);
-                Thread.sleep(0);
                 if (bytes == -1)
                     break;
                 // Buffer flippen und in File schreiben:
@@ -1091,10 +1090,7 @@ public abstract class Plugin {
 
             logger.severe("error occurred while writing to file. " + e.getLocalizedMessage());
             downloadLink.setStatus(DownloadLink.STATUS_ERROR_SECURITY);
-        } catch (InterruptedException e) {
-            logger.severe("interrupted. " + e.getLocalizedMessage());
-            e.printStackTrace();
-        } catch (Exception e) {
+        }  catch (Exception e) {
 
             e.printStackTrace();
         }
@@ -1152,7 +1148,7 @@ public abstract class Plugin {
                 // coalado: nix schlafen.. ich will speed! Die Events werden
                 // jetzt von der GUI kontrolliert
                 int bytes = source.read(buffer);
-                Thread.sleep(0);
+                //Thread.sleep(0);
                 if (bytes == -1)
                     break;
                 // Buffer flippen und in File schreiben:
@@ -1212,9 +1208,6 @@ public abstract class Plugin {
         } catch (IOException e) {
 
             logger.severe("error occurred while writing to file. " + e.getLocalizedMessage());
-        } catch (InterruptedException e) {
-            logger.severe("interrupted. " + e.getLocalizedMessage());
-            e.printStackTrace();
         } catch (Exception e) {
 
             e.printStackTrace();
