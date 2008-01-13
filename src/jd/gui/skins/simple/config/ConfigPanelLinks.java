@@ -72,7 +72,11 @@ if(guiConfig!=null)
          addGUIConfigEntry(ce);
          ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL,  JDLocale.L("gui.config.links.lblTools", "Zusätzliche Tools")));
           addGUIConfigEntry(ce);
+        ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL,  JDLocale.L("gui.config.links.unrar.info", "Achtung unrar/rar muss in version 3.7 oder höher installiert sein")));
+        addGUIConfigEntry(ce);
         ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_LINK,  JDLocale.L("gui.config.general.link.unrar", "Unrar"),"http://www.rarlab.com/rar_add.htm"));
+        addGUIConfigEntry(ce);
+        ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_LINK,  JDLocale.L("gui.config.general.link.rar", "RaR"),"http://www.rarlab.com/download.htm"));
         addGUIConfigEntry(ce);
         ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_LINK,  JDLocale.L("gui.config.general.link.winne", "Wine HQ(Linux)"),"http://winehq.org/"));
         

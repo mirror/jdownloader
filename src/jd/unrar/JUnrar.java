@@ -42,7 +42,7 @@ public class JUnrar {
     private static Object[][] filesignatures = {{"avi", new Integer[][]{{82, 73, 70, 70}}}, {"mpg", new Integer[][]{{0, 0, 1, 186, -1, 0}}}, {"mpeg", new Integer[][]{{0, 0, 1, 186, -1, 0}}}, {"rar", new Integer[][]{{82, 97, 114, 33, 26, 7}}}, {"wmv", new Integer[][]{{48, 38, -1, 117, -1, 102}}}, {"mp3", new Integer[][]{{73,68,51,4,0},{73, 68, 51, 3, 0}, {255, 251, 104, -1, 0, -1,}, {255, 251, 64, -1, 0, -1}}}, {"exe", new Integer[][]{{77, 90, 144, 0, 3, 0}}}, {"bz2", new Integer[][]{{66, 90, 104, 54, 49, 65}}}, {"gz", new Integer[][]{{31, 139, 8, 0}}}, {"doc", new Integer[][]{{208, 207, 17, 224, 161, 177}}}, {"pdf", new Integer[][]{{37, 80, 68, 70, 45, 49}}}, {"wma", new Integer[][]{{48, 38, 178, 117, 142, 102}}}, {"jpg", new Integer[][]{{255, 216, 255, 224, 0, 16}, {255, 216, 255, 225, 39, 222}}}, {"m4a", new Integer[][]{{0, 0, 0, 32, 102, 116}}}, {"mdf", new Integer[][]{{0, 255, 255, 255, 255, 255}}}, {"xcf", new Integer[][]{{103, 105, 109, 112, 32, 120}}}};
     private Integer[][] typicalFilesignatures = {{80, 75, 3, 4, -1, 0,}, {82, 73, 70, 70}, {0, 255, 255, 255, 255, 255}, {48, 38, 178, 117, 142, 102}, {208, 207, 17, 224, 161, 177}};
     public HashMap<String, Integer> passwordlist;
-
+    private static String unrarErrortext = "Please load the English version of unrar/rar 3.7 or higher from http://www.rarlab.com/rar_add.htm or http://www.rarlab.com/download.htm for your OS";
     public String standardPassword = null;
 
     private static final String allOk = "(?s).*[\\s]+All OK[\\s].*";
@@ -319,7 +319,7 @@ public class JUnrar {
             unrar = autoGetUnrarCommand();
             if (unrar == null) {
                 logger.severe("Can't find unrar command");
-                logger.severe("Please load the English version of unrar from http://www.rarlab.com/rar_add.htm for your OS");
+                logger.severe(unrarErrortext);
             }
             return unrar;
         } else {
@@ -349,11 +349,16 @@ public class JUnrar {
         } else {
             try {
                 String[] charset = System.getenv("PATH").split(":");
-                String Programmname = "unrar";
                 for (int i = 0; i < charset.length; i++) {
-                    File fi = new File(charset[i], Programmname);
+                    File fi = new File(charset[i], "unrar");
+                    File fi2 = new File(charset[i], "rar");
                     if (fi.isFile()) {
                         programm = fi.getAbsolutePath();
+                        break;
+                    }
+                    else if(fi2.isFile())
+                    {
+                        programm = fi2.getAbsolutePath();
                         break;
                     }
                 }
@@ -1083,7 +1088,7 @@ public class JUnrar {
                 } else {
                     logger.severe("unknown error");
                     logger.severe(str);
-                    logger.severe("Please load the English version of unrar from http://www.rarlab.com/rar_add.htm for your OS");
+                    logger.severe(unrarErrortext);
                     return 3;
                 }
 

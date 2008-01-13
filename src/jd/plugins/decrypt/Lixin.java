@@ -16,7 +16,7 @@ public class Lixin extends PluginForDecrypt {
 
     private String              version          = "1.0.0.0";
     //lix.in/cc1d28
-    static private final Pattern patternSupported = Pattern.compile("http://.{0,5}lix\\.in/[a-zA-Z0-9]{6}", Pattern.CASE_INSENSITIVE);
+    static private final Pattern patternSupported = Pattern.compile("http://.{0,5}lix\\.in/[a-zA-Z0-9]{6,10}", Pattern.CASE_INSENSITIVE);
 
     public Lixin() {
         super();

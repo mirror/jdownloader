@@ -82,7 +82,11 @@ public class ConfigPanelUnrar extends ConfigPanel implements ActionListener {
         {
 
             try {
-                JLinkButton bb = new JLinkButton(JDLocale.L("gui.config.unrar.download", "Bitte laden sie Unrar herunter"), new URL("http://www.rarlab.com/rar_add.htm"));
+            	JLinkButton bb;
+            	if(System.getProperty("os.name").toLowerCase().indexOf("mac") > -1)
+            		bb = new JLinkButton(JDLocale.L("gui.config.unrar.download.osx", "Bitte laden sie Unrar/RaR 3.7 oder hoeher herunter"), new URL("http://www.rarlab.com/download.htm"));
+            	else
+            		bb = new JLinkButton(JDLocale.L("gui.config.unrar.download", "Bitte laden sie Unrar/RaR 3.7 oder hoeher herunter"), new URL("http://www.rarlab.com/rar_add.htm"));
                 JDUtilities.addToGridBag(panel, bb, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 0, 0, null, GridBagConstraints.NONE, GridBagConstraints.NORTHWEST);
             } catch (MalformedURLException e) {
                 // TODO Auto-generated catch block
