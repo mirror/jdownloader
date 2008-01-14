@@ -60,7 +60,7 @@ public class SpeedMeter {
 				while (entries.size()>0)
 				{
 					try {
-						Thread.sleep(1000);
+						Thread.sleep(50);
 					} catch (InterruptedException e) {
 						// TODO Automatisch erstellter Catch-Block
 						e.printStackTrace();
