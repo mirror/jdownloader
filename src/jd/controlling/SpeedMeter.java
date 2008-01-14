@@ -13,7 +13,7 @@ public class SpeedMeter {
 	private long averageOver = 5000;
 
 	boolean isRunning = false;
-
+	boolean isListManagerRunning = false;
 	private LinkedList<Object[]> entries = new LinkedList<Object[]>();
 
 	/**
@@ -51,6 +51,27 @@ public class SpeedMeter {
 		}
 		isRunning = false;
 	}
+	private void listManager() {
+		if(!isListManagerRunning)
+		{ 
+		new Thread(new Runnable() {
+			public void run() {
+				isListManagerRunning=true;
+				while (entries.size()>0)
+				{
+					try {
+						Thread.sleep(1000);
+					} catch (InterruptedException e) {
+						// TODO Automatisch erstellter Catch-Block
+						e.printStackTrace();
+					}
+					clearList();
+				}
+				isListManagerRunning=false;
+			}
+		}).start();
+		}
+	}
 	/**
 	 * Fügt einen weiteren wert hinzu
 	 * 
@@ -61,7 +82,6 @@ public class SpeedMeter {
 			new Thread(new Runnable() {
 				public void run() {
 					int c = 0;
-					clearList();
 					while (isRunning || c == 1000)
 					{
 						c++;
@@ -80,6 +100,7 @@ public class SpeedMeter {
 					}
 				}
 			}).start();
+			listManager();
 	}
 
 	/**
