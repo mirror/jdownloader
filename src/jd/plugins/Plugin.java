@@ -1126,8 +1126,8 @@ public abstract class Plugin {
 				// Laufende Variablen updaten:
 				downloadedBytes += bytes;
 				downloadLink.addBytes(bytes);
-				firePluginEvent(new PluginEvent(this,
-						PluginEvent.PLUGIN_DOWNLOAD_BYTES, bytes));
+				//firePluginEvent(new PluginEvent(this,
+						//PluginEvent.PLUGIN_DOWNLOAD_BYTES, bytes));
 				firePluginEvent(new PluginEvent(this,
 						PluginEvent.PLUGIN_DATA_CHANGED, downloadLink));
 				downloadLink.setDownloadCurrent(downloadedBytes);
@@ -1253,8 +1253,8 @@ public abstract class Plugin {
 				// Laufende Variablen updaten:
 				downloadedBytes += bytes;
 				downloadLink.addBytes(bytes);
-				firePluginEvent(new PluginEvent(this,
-						PluginEvent.PLUGIN_DOWNLOAD_BYTES, bytes));
+				//firePluginEvent(new PluginEvent(this,
+						//PluginEvent.PLUGIN_DOWNLOAD_BYTES, bytes));
 				firePluginEvent(new PluginEvent(this,
 						PluginEvent.PLUGIN_DATA_CHANGED, downloadLink));
 				downloadLink.setDownloadCurrent(downloadedBytes);

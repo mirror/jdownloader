@@ -17,7 +17,7 @@ public class PluginEvent extends AWTEvent {
     /**
      * Neue Bytes wurden geladen bytes anzahl als parameter
      */
-    public static final int   PLUGIN_DOWNLOAD_BYTES        = 0;
+    //public static final int   PLUGIN_DOWNLOAD_BYTES        = 0;
     /**
      * Maximaler Wert für die Fortschrittsanzeige
      */

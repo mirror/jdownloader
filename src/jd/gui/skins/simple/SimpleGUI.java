@@ -384,7 +384,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
      */
     private void interval() {
         if (JDUtilities.getController() != null) {
-            statusBar.setSpeed(JDUtilities.getController().getSpeedMeter().getSpeed());
+            statusBar.setSpeed(JDUtilities.getController().getSpeedMeter());
         }
         if (hostPluginDataChanged != null) {
             tabDownloadTable.pluginEvent(hostPluginDataChanged);

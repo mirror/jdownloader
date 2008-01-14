@@ -85,8 +85,6 @@ public class JDController implements PluginListener, ControlListener, UIListener
 
     private File                              lastCaptchaLoaded;
 
-    private SpeedMeter                        speedMeter;
-
     private DownloadLink                      lastDownloadFinished;
 
     private ClipboardHandler                  clipboard;
@@ -104,7 +102,6 @@ public class JDController implements PluginListener, ControlListener, UIListener
 
     public JDController() {
         downloadLinks = new Vector<DownloadLink>();
-        speedMeter = new SpeedMeter(10000);
         clipboard = new ClipboardHandler();
         downloadStatus = DOWNLOAD_NOT_RUNNING;
 
@@ -166,10 +163,6 @@ public class JDController implements PluginListener, ControlListener, UIListener
     public void pluginEvent(PluginEvent event) {
         uiInterface.delegatedPluginEvent(event);
         switch (event.getEventID()) {
-            case PluginEvent.PLUGIN_DOWNLOAD_BYTES:
-                speedMeter.addValue((Integer) event.getParameter1());
-                break;
-
         }
     }
 
@@ -806,8 +799,17 @@ logger.info("Call re: "+ri.getHtmlCode());
     /**
      * @return gibt das globale speedmeter zurück
      */
-    public SpeedMeter getSpeedMeter() {
-        return speedMeter;
+    public int getSpeedMeter() {
+    	Iterator<DownloadLink> iter = getDownloadLinks().iterator();
+    	int ret=0;
+    	while (iter.hasNext()) {
+			DownloadLink element = (DownloadLink) iter.next();
+			if(element.isInProgress())
+			{
+			ret+=element.getDownloadSpeed();
+			}
+		}
+        return (int) ret;
     }
 
     /**
