@@ -14,7 +14,12 @@ import jd.utils.JDUtilities;
 
 public class ContextMenu extends JPopupMenu {
 
-    protected Logger          logger = JDUtilities.getLogger();
+    /**
+	 * 
+	 */
+	private static final long serialVersionUID = 8890840310244673205L;
+
+	protected Logger          logger = JDUtilities.getLogger();
 
     // public void mousePressed(MouseEvent e) {
     // logger.info("PRESSED");
@@ -29,7 +34,7 @@ public class ContextMenu extends JPopupMenu {
 
     private Vector<JMenuItem> menus;
 
-    private int[]             indeces;
+  //  private int[]             indeces;
 
     private Point point;
 

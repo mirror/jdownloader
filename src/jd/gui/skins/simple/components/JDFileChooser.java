@@ -14,7 +14,11 @@ import jd.utils.JDUtilities;
  * EinWrapper um JFileChooser
  */
 public class JDFileChooser extends JFileChooser {
-    private Logger logger;
+    /**
+	 * 
+	 */
+	private static final long serialVersionUID = 3315263822025280362L;
+	private Logger logger;
     private String fcID;
 
     public JDFileChooser() {

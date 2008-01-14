@@ -9,10 +9,8 @@ import java.util.logging.Logger;
 import javax.swing.JButton;
 import javax.swing.JDialog;
 import javax.swing.JFrame;
-import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
-import javax.swing.JTextArea;
 import javax.swing.JTextPane;
 
 import jd.utils.JDLocale;
@@ -25,6 +23,11 @@ import jd.utils.JDUtilities;
  */
 public class HTMLDialog extends JDialog implements ActionListener {
     /**
+	 * 
+	 */
+	private static final long serialVersionUID = -7741748123426268439L;
+
+	/**
      * 
      */
 
@@ -38,11 +41,11 @@ public class HTMLDialog extends JDialog implements ActionListener {
 
     private JTextPane   htmlArea;
 
-    private JLabel      lblText;
+   // private JLabel      lblText;
 
     private JScrollPane scrollPane;
 
-    private String text=null;
+   // private String text=null;
 
     private boolean success=false;
 

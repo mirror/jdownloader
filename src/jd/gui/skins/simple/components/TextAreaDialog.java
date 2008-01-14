@@ -24,6 +24,11 @@ import jd.utils.JDUtilities;
  */
 public class TextAreaDialog extends JDialog implements ActionListener {
     /**
+	 * 
+	 */
+	private static final long serialVersionUID = -655039113948925165L;
+
+	/**
      * 
      */
 
@@ -37,7 +42,7 @@ public class TextAreaDialog extends JDialog implements ActionListener {
 
     private JTextArea   textArea;
 
-    private JLabel      lblText;
+   // private JLabel      lblText;
 
     private JScrollPane scrollPane;
 

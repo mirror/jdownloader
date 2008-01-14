@@ -2,7 +2,6 @@ package jd.gui.skins.simple.components;
 
 import java.awt.Component;
 import java.awt.Dimension;
-import java.awt.Point;
 import java.awt.datatransfer.Clipboard;
 import java.awt.datatransfer.ClipboardOwner;
 import java.awt.datatransfer.DataFlavor;
@@ -21,7 +20,6 @@ import javax.swing.JSeparator;
 import javax.swing.JTextArea;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
-import javax.swing.text.BadLocationException;
 import javax.swing.text.PlainDocument;
 
 import jd.utils.JDLocale;
@@ -29,7 +27,12 @@ import jd.utils.JDUtilities;
 
 public class TextArea extends JScrollPane implements MouseListener,ClipboardOwner {
 
-    private static JTextArea txt;
+    /**
+	 * 
+	 */
+	private static final long serialVersionUID = -3642394448923083114L;
+
+	private static JTextArea txt;
 
     private int              maxHeight;
     protected Logger logger=JDUtilities.getLogger();
@@ -68,7 +71,8 @@ public class TextArea extends JScrollPane implements MouseListener,ClipboardOwne
 
     }
 
-    public void setText(String text) {
+    @SuppressWarnings("static-access")
+	public void setText(String text) {
         this.txt.setText(text);
         onChanged();
     }
@@ -137,7 +141,7 @@ public class TextArea extends JScrollPane implements MouseListener,ClipboardOwne
     public void mousePressed(MouseEvent e) {
 logger.info("PRESSED");
         if (e.isPopupTrigger() || e.getButton() == MouseEvent.BUTTON3) {
-            Point point = e.getPoint();
+           // Point point = e.getPoint();
             int x = e.getX();
             int y = e.getY();
             new InternalPopup(this, x, y);
@@ -157,7 +161,12 @@ logger.info("PRESSED");
 
     private class InternalPopup extends JPopupMenu implements ActionListener {
 
-        private JMenuItem  copy;
+        /**
+		 * 
+		 */
+		private static final long serialVersionUID = 7718129427883204876L;
+
+		private JMenuItem  copy;
 
         private JMenuItem  paste;
 
@@ -165,7 +174,7 @@ logger.info("PRESSED");
 
         private JMenuItem  delete;
 
-        private int[]      indeces;
+      //  private int[]      indeces;
 
         public InternalPopup(Component parent, int x, int y) {
             popup = new JPopupMenu();
