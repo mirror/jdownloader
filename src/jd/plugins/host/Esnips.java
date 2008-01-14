@@ -198,4 +198,9 @@ public class Esnips extends PluginForHost {
         // TODO Auto-generated method stub
         
     }
+	@Override
+	public String getAGBLink() {
+		// TODO Automatisch erstellter Methoden-Stub
+		return "http://esnips.com";
+	}
 }

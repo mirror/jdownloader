@@ -225,4 +225,10 @@ public class RadioBlogClub extends PluginForHost {
     // TODO Auto-generated method stub
 
     }
+
+	@Override
+	public String getAGBLink() {
+		// TODO Automatisch erstellter Methoden-Stub
+		return "http://radioblogclub.com";
+	}
 }
