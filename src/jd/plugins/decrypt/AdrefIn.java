@@ -3,8 +3,6 @@ package jd.plugins.decrypt;  import jd.plugins.DownloadLink;
 import java.io.File;
 import java.util.Vector;
 import java.util.regex.Pattern;
-
-import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginStep;
 

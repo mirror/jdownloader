@@ -2,12 +2,9 @@ package jd.gui.skins.simple.config;
 
 import java.awt.BorderLayout;
 
-import javax.swing.JLabel;
-
 import jd.config.Configuration;
 import jd.controlling.interaction.InfoFileWriter;
 import jd.gui.UIInterface;
-import jd.gui.skins.simple.components.BrowseFile;
 import jd.utils.JDLocale;
 
 public class ConfigPanelInfoFileWriter extends ConfigPanel {
@@ -15,13 +12,13 @@ public class ConfigPanelInfoFileWriter extends ConfigPanel {
      * serialVersionUID
      */
     private static final long serialVersionUID = 3383448498625377495L;
-    private JLabel            lblHomeDir;
-    private BrowseFile        brsHomeDir;
-    private Configuration     configuration;
+   // private JLabel            lblHomeDir;
+   // private BrowseFile        brsHomeDir;
+   // private Configuration     configuration;
     private InfoFileWriter fileWriter;
     public ConfigPanelInfoFileWriter(Configuration configuration, UIInterface uiinterface) {
         super(uiinterface);
-        this.configuration = configuration;
+       // this.configuration = configuration;
         fileWriter= InfoFileWriter.getInstance();
         initPanel();
         load();

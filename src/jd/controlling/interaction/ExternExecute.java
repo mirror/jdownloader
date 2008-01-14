@@ -74,25 +74,25 @@ public class ExternExecute extends Interaction implements Serializable,ActionLis
     @Override
     public void initConfig() {
         
-        ConfigEntry cfg;
+       // ConfigEntry cfg;
         //(int type, ActionListener listener, String label)
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_BUTTON, this, JDLocale.L("interaction.externExecute.test","Programm aufrufen")));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_BUTTON, this, JDLocale.L("interaction.externExecute.test","Programm aufrufen")));
         
         String[] keys=new  String[Replacer.KEYS.length];
         for( int i=0; i<Replacer.KEYS.length;i++){
             keys[i]="%"+Replacer.KEYS[i][0]+"%"+"   ("+Replacer.KEYS[i][1]+")";
         }
         
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, this, "VARS", keys, JDLocale.L("interaction.externExecute.variables","Available variables")));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, this, "VARS", keys, JDLocale.L("interaction.externExecute.variables","Available variables")));
         
         
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this, PROPERTY_DISABLED, JDLocale.L("interaction.externExecute.disable","Event deaktiviert")).setDefaultValue(false));
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_BROWSEFILE, this, PROPERTY_COMMAND, JDLocale.L("interaction.externExecute.cmd","Befehl (absolute Pfade verwenden)")));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this, PROPERTY_DISABLED, JDLocale.L("interaction.externExecute.disable","Event deaktiviert")).setDefaultValue(false));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_BROWSEFILE, this, PROPERTY_COMMAND, JDLocale.L("interaction.externExecute.cmd","Befehl (absolute Pfade verwenden)")));
         
-       config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_TEXTAREA, this, PROPERTY_PARAMETER, JDLocale.L("interaction.externExecute.parameter","Parameter (1 Parameter pro Zeile)")));
+       config.addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTAREA, this, PROPERTY_PARAMETER, JDLocale.L("interaction.externExecute.parameter","Parameter (1 Parameter pro Zeile)")));
 
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_BROWSEFOLDER, this, PROPERTY_EXECUTE_FOLDER, JDLocale.L("interaction.externExecute.executeIn","Ausführen in (Ordner der Anwendung)")));
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_SPINNER, this, PROPERTY_WAIT_FOR_RETURN, JDLocale.L("interaction.externExecute.waitForTermination","Warten x Sekunden bis Befehl beendet ist[sek](-1 für unendlich)"),-1,1800).setDefaultValue(0));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_BROWSEFOLDER, this, PROPERTY_EXECUTE_FOLDER, JDLocale.L("interaction.externExecute.executeIn","Ausführen in (Ordner der Anwendung)")));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, this, PROPERTY_WAIT_FOR_RETURN, JDLocale.L("interaction.externExecute.waitForTermination","Warten x Sekunden bis Befehl beendet ist[sek](-1 für unendlich)"),-1,1800).setDefaultValue(0));
         
       
     }

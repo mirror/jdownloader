@@ -8,7 +8,6 @@ import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.io.File;
 import java.lang.reflect.Constructor;
 import java.util.Vector;
 
@@ -31,7 +30,6 @@ import jd.config.SubConfiguration;
 import jd.gui.UIInterface;
 import jd.gui.skins.simple.LocationListener;
 import jd.gui.skins.simple.SimpleGUI;
-import jd.plugins.event.PluginEvent;
 import jd.utils.JDLocale;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
@@ -160,7 +158,8 @@ public class ConfigurationDialog extends JDialog implements ActionListener, Chan
 
     }
 
-    public ConfigPanel initSubPanel(Class class1) {
+    @SuppressWarnings("unchecked")
+	public ConfigPanel initSubPanel(Class class1) {
         try {
 
             Class[] classes = new Class[] { Configuration.class, UIInterface.class };

@@ -10,7 +10,6 @@ import java.util.logging.Logger;
 
 import javax.swing.JPanel;
 
-import jd.config.Configuration;
 import jd.gui.UIInterface;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.utils.JDUtilities;

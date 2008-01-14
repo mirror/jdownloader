@@ -179,7 +179,8 @@ public class JDController implements PluginListener, ControlListener, UIListener
      * @param event
      */
 
-    public void controlEvent(ControlEvent event) {
+    @SuppressWarnings("unchecked")
+	public void controlEvent(ControlEvent event) {
         switch (event.getID()) {
             case ControlEvent.CONTROL_SINGLE_DOWNLOAD_FINISHED:
                 lastDownloadFinished = (DownloadLink) event.getParameter();
@@ -217,7 +218,7 @@ public class JDController implements PluginListener, ControlListener, UIListener
                 }
                 break;
             case ControlEvent.CONTROL_PLUGIN_INTERACTION_INACTIVE:
-                Interaction interaction = (Interaction) event.getParameter();
+          //      Interaction interaction = (Interaction) event.getParameter();
          
               
 
@@ -269,7 +270,8 @@ public class JDController implements PluginListener, ControlListener, UIListener
      * 
      * @param uiEvent UIEent
      */
-    public void uiEvent(UIEvent uiEvent) {
+    @SuppressWarnings("unchecked")
+	public void uiEvent(UIEvent uiEvent) {
         Vector<DownloadLink> newLinks;
 
         switch (uiEvent.getActionID()) {
@@ -507,7 +509,8 @@ logger.info("Call re: "+ri.getHtmlCode());
      * @param file Die Datei, aus der die Links gelesen werden
      * @return Ein neuer Vector mit den DownloadLinks
      */
-    private Vector<DownloadLink> loadDownloadLinks(File file) {
+    @SuppressWarnings("unchecked")
+	private Vector<DownloadLink> loadDownloadLinks(File file) {
         try {
             if (file.exists()) {
                 Object obj = JDUtilities.loadObject(null, file, Configuration.saveAsXML);

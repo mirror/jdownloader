@@ -37,7 +37,8 @@ public abstract class PluginForSearch extends Plugin {
      * @return Aller Ergebnisse die in den suchplugins für die gewählte
      *         Kategorie und den gewählten suchstring gef7unden wurden
      */
-    private Vector<DownloadLink> parseContent(String pattern) {
+    @SuppressWarnings("unchecked")
+	private Vector<DownloadLink> parseContent(String pattern) {
         String[] s = pattern.split("\\:\\:\\:");
         if (s.length < 2) return new Vector<DownloadLink>();
 

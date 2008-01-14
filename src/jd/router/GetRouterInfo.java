@@ -12,8 +12,6 @@ import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import javax.swing.JProgressBar;
-
 import jd.config.Configuration;
 import jd.controlling.interaction.HTTPLiveHeader;
 import jd.gui.skins.simple.ProgressDialog;

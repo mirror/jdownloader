@@ -1,4 +1,4 @@
-package jd.plugins.decrypt;  import jd.plugins.DownloadLink;
+package jd.plugins.decrypt;  
 
 import java.io.File;
 import java.util.Collection;

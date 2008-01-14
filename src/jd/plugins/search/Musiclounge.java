@@ -89,9 +89,9 @@ logger.info("Search "+parameter);
         switch (step.getStep()) {
             case PluginStep.STEP_SEARCH:
                 Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
-                int page = 1;
+            //    int page = 1;
                 // Zählen aller verfügbaren Treffer
-                String address;
+              //  String address;
                 int results = 0;
                 try {
                    
@@ -103,7 +103,7 @@ logger.info("Search "+parameter);
                      
                       
                        Vector<Vector<String>> matches = getAllSimpleMatches(requestInfo.getHtmlCode(), "<a href=\"°\" target=\"_blank\">°</a> |");
-                        String link;
+                        //String link;
                        progress.setRange( matches.size());
                         for (int i = 0; i < matches.size(); i++) {
                             // link = getLinkDetails(matches.get(i).get(0));

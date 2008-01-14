@@ -68,9 +68,8 @@ public class ResetLink extends Interaction implements Serializable {
     }
     @Override
     public void initConfig() {
-        ConfigEntry cfg;
         //int type, Property propertyInstance, String propertyName, Object[] list, String label
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, this, PARAM_LAST_OR_ALL, OPTIONS,JDLocale.L("interaction.resetLink.whichLink","Welcher Link soll zurückgesetzt werden?")).setDefaultValue(OPTIONS[1]));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, this, PARAM_LAST_OR_ALL, OPTIONS,JDLocale.L("interaction.resetLink.whichLink","Welcher Link soll zurückgesetzt werden?")).setDefaultValue(OPTIONS[1]));
         
         
     }

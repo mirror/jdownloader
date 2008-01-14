@@ -29,6 +29,11 @@ public class ConfigPanelCaptcha extends ConfigPanel implements MouseListener{
 
 
     /**
+	 * 
+	 */
+	private static final long serialVersionUID = 1592765387324291781L;
+
+	/**
      * 
      */
   
@@ -139,24 +144,24 @@ table.addMouseListener(this);
         add(panel, BorderLayout.CENTER);
 
     }
-
+/*
     private int getSelectedIndex() {
         return table.getSelectedRow();
     }
-
+*/
     @Override
     public String getName() {
 
         return JDLocale.L("gui.config.jac.name","jAntiCaptcha");
     }
 
-
+/*
     private File getSelectedMethod() {
         int index = getSelectedIndex();
         if (index < 0) return null;
         return this.methods[index];
     }
-
+*/
 
 
 

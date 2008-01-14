@@ -5,7 +5,6 @@ import java.awt.Image;
 import java.util.Vector;
 import java.util.logging.Logger;
 
-import javax.swing.JFrame;
 import javax.swing.JWindow;
 
 import jd.captcha.JACController;
@@ -16,8 +15,6 @@ import jd.controlling.interaction.Interaction;
 import jd.controlling.interaction.JDExit;
 import jd.controlling.interaction.ResetLink;
 import jd.event.UIEvent;
-import jd.gui.UIInterface;
-import jd.gui.skins.simple.components.HTMLDialog;
 import jd.utils.JDLocale;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
@@ -101,7 +98,7 @@ public class Main {
 
         logger.info("OS: " + System.getProperty("os.name") + ", " + System.getProperty("os.arch") + ", " + System.getProperty("os.version"));
         logger.info("Registriere Plugins");
-        final Configuration configuration = init.loadConfiguration();
+       init.loadConfiguration();
 
         final JDController controller = init.initController();
         if (init.installerWasVisible()) {
@@ -109,7 +106,7 @@ public class Main {
 
         }
         else {
-            final UIInterface uiInterface = init.initGUI(controller);
+            init.initGUI(controller);
 
             JDUtilities.initFileLogger();
 

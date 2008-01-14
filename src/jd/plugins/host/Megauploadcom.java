@@ -51,7 +51,7 @@ public class Megauploadcom extends PluginForHost {
     static private final long       PENDING_WAITTIME                    = 45000;
 
     // /Simplepattern
-    private String                  finalURL;
+  //  private String                  finalURL;
 
     private String                  captchaURL;
 
@@ -67,10 +67,7 @@ public class Megauploadcom extends PluginForHost {
         setConfigElements();
     }
     private void setConfigElements() {
-        ConfigEntry cfg;
-       
-
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, getProperties(), "COUNTRY_ID", new String[] { "-","en", "de", "fr", "es", "pt", "nl", "it", "cn", "ct", "jp", "kr", "ru", "fi", "se", "dk", "tr", "sa", "vn" , "pl" }, "LänderID").setDefaultValue("-"));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, getProperties(), "COUNTRY_ID", new String[] { "-","en", "de", "fr", "es", "pt", "nl", "it", "cn", "ct", "jp", "kr", "ru", "fi", "se", "dk", "tr", "sa", "vn" , "pl" }, "LänderID").setDefaultValue("-"));
       
     }
     @Override
@@ -270,7 +267,7 @@ public class Megauploadcom extends PluginForHost {
 
     @Override
     public void reset() {
-        this.finalURL = null;
+      //  this.finalURL = null;
         this.captchaPost = null;
         this.captchaURL = null;
         this.fields = null;

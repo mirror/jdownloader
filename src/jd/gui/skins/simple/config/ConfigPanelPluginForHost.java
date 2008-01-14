@@ -17,9 +17,7 @@ import java.awt.event.MouseListener;
 import java.util.EventObject;
 import java.util.Vector;
 
-import javax.swing.AbstractCellEditor;
 import javax.swing.JButton;
-import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
@@ -55,7 +53,7 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
 
     private Vector<PluginForHost> pluginsForHost;
 
-    private PluginForHost         currentPlugin;
+   // private PluginForHost         currentPlugin;
 
     private PluginForHost         draggedPlugin;
 
@@ -181,7 +179,7 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
         // InteractionTrigger[] triggers = InteractionTrigger.getAllTrigger();
 
         PluginForHost plugin = this.getSelectedPlugin();
-        currentPlugin = plugin;
+       // currentPlugin = plugin;
         if (plugin == null) return;
 
         JPanel topPanel = new JPanel();
@@ -335,7 +333,12 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
     }
 
     private class MarkRenderer extends DefaultTableCellRenderer {
-        public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
+        /**
+		 * 
+		 */
+		private static final long serialVersionUID = -448800592517509052L;
+
+		public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
             Component c = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
             if (!isSelected) {
 

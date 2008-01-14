@@ -5,25 +5,24 @@ import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.io.File;
 import java.util.logging.Logger;
 
-import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JDialog;
 import javax.swing.JLabel;
 import javax.swing.JProgressBar;
-import javax.swing.JTextField;
 
-import jd.captcha.JAntiCaptcha;
-import jd.config.Configuration;
-import jd.plugins.Plugin;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
 public class ProgressDialog extends JDialog implements ActionListener {
 
-    @SuppressWarnings("unused")
+    /**
+	 * 
+	 */
+	private static final long serialVersionUID = -1749561448228487759L;
+
+	@SuppressWarnings("unused")
     private static Logger logger = JDUtilities.getLogger();
 
     private JButton       btnOK;

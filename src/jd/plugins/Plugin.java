@@ -1226,7 +1226,7 @@ public abstract class Plugin {
 			String[] dat = Plugin.getSimpleMatches(range, "[bytes °-°/°]");
 			int contentLen = Integer.parseInt(dat[2]);
 			int startAt = Integer.parseInt(dat[0]);
-			int rest = Integer.parseInt(dat[1]);
+			//int rest = Integer.parseInt(dat[1]);
 			downloadedBytes = startAt;
 			downloadLink.setDownloadMax(contentLen);
 			downloadLink.setDownloadCurrent(startAt);

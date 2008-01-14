@@ -169,7 +169,8 @@ public class JDClassLoader extends java.lang.ClassLoader {
      * Dazu wird zuerst überprüft, ob die Klasse durch einen System-Classloader geladen werden kann.
      * Erst zum Schluß wird versucht, diese Klasse selbst zu laden.
      */
-    protected Class loadClass(String name, boolean resolve) throws ClassNotFoundException {
+    @SuppressWarnings("unchecked")
+	protected Class loadClass(String name, boolean resolve) throws ClassNotFoundException {
         Class c = findLoadedClass(name);
         if (c == null) {
             try {

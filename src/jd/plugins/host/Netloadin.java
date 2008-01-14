@@ -43,7 +43,7 @@ public class Netloadin extends PluginForHost {
     static private final String  DOWNLOAD_LIMIT   = "download_limit.tpl";
     static private final String  DOWNLOAD_CAPTCHA = "download_captcha.tpl";
     static private final String  DOWNLOAD_START   = "download_load.tpl";
-    static private final String  DOWNLOAD_WAIT    = "download_wait.tpl";
+    //static private final String  DOWNLOAD_WAIT    = "download_wait.tpl";
 
     private String               finalURL;
     private String               captchaURL;
@@ -91,7 +91,7 @@ public class Netloadin extends PluginForHost {
     // }
     public PluginStep doStep(PluginStep step, DownloadLink parameter) throws MalformedURLException, IOException {
         DownloadLink downloadLink = (DownloadLink) parameter;
-        RequestInfo requestInfo;
+        //RequestInfo requestInfo;
         if (step == null) {
             logger.info("Plugin Ende erreicht.");
             return null;
@@ -107,7 +107,8 @@ public class Netloadin extends PluginForHost {
         
         
     }
-    private PluginStep doFreeStep(PluginStep step, DownloadLink downloadLink) {
+    @SuppressWarnings("static-access")
+	private PluginStep doFreeStep(PluginStep step, DownloadLink downloadLink) {
 
         try {
             

@@ -49,16 +49,21 @@ public class HTTPLiveHeader extends Interaction {
 
 
     /**
+	 * 
+	 */
+	private static final long serialVersionUID = 5388179522151088255L;
+
+	/**
      * serialVersionUID
      */
     private static final String      NAME        = JDLocale.L("interaction.liveHeader.name","HTTP Live Header");
 
-    private static final String      SEPARATOR   = System.getProperty("line.separator");
+   // private static final String      SEPARATOR   = System.getProperty("line.separator");
 
     /**
      * Maximal 10 versuche
      */
-    private static final int         MAX_RETRIES = 10;
+   // private static final int         MAX_RETRIES = 10;
 
     private int
 
@@ -179,7 +184,7 @@ public class HTTPLiveHeader extends Interaction {
                 progress.setStatusText(JDLocale.L("interaction.liveHeader.progress.3_step","(STEP)HTTPLiveHeader :") + step);
                 progress.increase(1);
                 Node current = steps.item(step);
-                short type = current.getNodeType();
+               // short type = current.getNodeType();
 
                 if (current.getNodeType() == 3) {
                     // logger.finer("Skipped: " + current.getNodeName());
@@ -343,7 +348,7 @@ public class HTTPLiveHeader extends Interaction {
         logger.info("Rec fail: "+afterIP);
         return false;
     }
-
+/*
     private void getDatabase() {
         Vector<String[]> db = new Vector<String[]>();
         String[] cScript = null;
@@ -395,10 +400,9 @@ public class HTTPLiveHeader extends Interaction {
         ch.clear();
         JDUtilities.saveObject(new JFrame(), db, JDUtilities.getResourceFile("lhdb.xml"), "lhdb", ".xml", true);
     }
-
     private String[] getParameter(String code) {
         logger.info("st " + code);
-        boolean qOpen = false;
+        //boolean qOpen = false;
         Vector<String> ret = new Vector<String>();
         int c = 0;
         int last = 0;
@@ -520,7 +524,7 @@ public class HTTPLiveHeader extends Interaction {
         ret += "[[[/HSRC]]]" + SEPARATOR;
         return ret;
     }
-
+*/
     private void getVariables(String patStr, String[] keys, RequestInfo requestInfo) {
         if (requestInfo == null) return;
 

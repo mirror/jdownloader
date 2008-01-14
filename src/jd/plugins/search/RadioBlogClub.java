@@ -9,8 +9,6 @@ import java.net.URLEncoder;
 import java.util.Vector;
 import java.util.regex.Pattern;
 
-import jd.config.ConfigContainer;
-import jd.config.ConfigEntry;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForSearch;
 import jd.plugins.PluginStep;
@@ -97,7 +95,7 @@ private static final String ENTRY_PATTERN="onClick=\"BlogThisTrack.start('°');\
                 int siteNum = 0;
                 // Zählen aller verfügbaren Treffer
                 String address;
-                int results = 0;
+               // int results = 0;
                 try {
                     while (true) {
                         address = String.format(SEARCH_URL, new Object[] { siteNum+"", URLEncoder.encode(searchPattern, "UTF-8") });

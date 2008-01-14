@@ -25,7 +25,6 @@ import javax.swing.JOptionPane;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 
-import jd.config.Configuration;
 import jd.gui.skins.simple.components.TextAreaDialog;
 import jd.plugins.LogFormatter;
 import jd.plugins.Plugin;

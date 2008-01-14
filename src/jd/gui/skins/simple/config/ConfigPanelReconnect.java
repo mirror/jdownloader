@@ -9,16 +9,13 @@ import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
-import javax.swing.JProgressBar;
 import javax.swing.JSeparator;
-import javax.swing.JTabbedPane;
 
 import jd.config.Configuration;
 import jd.controlling.interaction.ExternReconnect;
 import jd.controlling.interaction.HTTPLiveHeader;
 import jd.controlling.interaction.Interaction;
 import jd.gui.UIInterface;
-import jd.gui.skins.simple.components.BrowseFile;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
@@ -28,13 +25,7 @@ public class ConfigPanelReconnect extends ConfigPanel implements ActionListener 
      */
     private static final long           serialVersionUID = 3383448498625377495L;
 
-    private JLabel                      lblHomeDir;
-
-    private BrowseFile                  brsHomeDir;
-
     private Configuration               configuration;
-
-    private JTabbedPane                 tabbedPane;
 
     private JComboBox                   box;
 

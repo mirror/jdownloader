@@ -140,7 +140,7 @@ private static String[] CATEGORIES =new String[]{"Audio"};
                            progress.setRange( results);
                         }
                         Vector<Vector<String>> matches = getAllSimpleMatches(requestInfo.getHtmlCode(), COMMAND_URL);
-                        String link;
+                      //  String link;
 
                         for (int i = 0; i < matches.size(); i++) {
                             // link = getLinkDetails(matches.get(i).get(0));

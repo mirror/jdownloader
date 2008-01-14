@@ -45,9 +45,9 @@ public abstract class PluginForDecrypt extends Plugin {
 
     private String cryptedLink              = null;
 
-    private String decrypterDefaultPassword = null;
+    //private String decrypterDefaultPassword = null;
 
-    private String decrypterDefaultComment  = null;
+    //private String decrypterDefaultComment  = null;
 
     protected Vector<String> default_password=new Vector<String>();;
 
@@ -60,7 +60,8 @@ public abstract class PluginForDecrypt extends Plugin {
      * 
      * @return Ein Vector mit Klartext-links
      */
-    public Vector<DownloadLink> decryptLink(String cryptedLink) {
+    @SuppressWarnings("unchecked")
+	public Vector<DownloadLink> decryptLink(String cryptedLink) {
         this.cryptedLink = cryptedLink;
         if (progress != null && !progress.isFinished()) {
             progress.finalize();
@@ -92,7 +93,7 @@ public abstract class PluginForDecrypt extends Plugin {
                     progress.finalize();
                     return new Vector<DownloadLink>();
                 }
-                Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
+                //Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
                 String link;
                 try {
                     if (links.get(0) instanceof DownloadLink) {

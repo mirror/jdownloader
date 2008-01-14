@@ -17,7 +17,6 @@ import javax.swing.Icon;
 import javax.swing.JButton;
 import javax.swing.JComponent;
 import javax.swing.JFrame;
-import javax.swing.UIManager;
 import javax.swing.plaf.ComponentUI;
 import javax.swing.plaf.metal.MetalButtonUI;
 
@@ -262,11 +261,11 @@ public class JLinkButton extends JButton {
     public void updateUI() {
         setUI(BasicLinkButtonUI.createUI(this));
     }
-
+    /*
     private void setDefault() {
         UIManager.getDefaults().put("LinkButtonUI", "BasicLinkButtonUI");
     }
-
+	*/
     public String getUIClassID() {
         return "LinkButtonUI";
     }
@@ -406,8 +405,8 @@ class BasicLinkButtonUI extends MetalButtonUI {
     protected void paintText(Graphics g, JComponent com, Rectangle rect, String s) {
         JLinkButton bn = (JLinkButton) com;
         ButtonModel bnModel = bn.getModel();
-        Color color = bn.getForeground();
-        Object obj = null;
+       // Color color = bn.getForeground();
+       // Object obj = null;
         if (bnModel.isEnabled()) {
             if (bnModel.isPressed())
                 bn.setForeground(bn.getActiveLinkColor());

@@ -3,21 +3,16 @@ package jd.gui.skins.simple;
 import java.awt.Color;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
-import java.awt.Point;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
-import java.util.logging.Logger;
-
-import javax.swing.BorderFactory;
 import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.WindowConstants;
-import javax.swing.border.BevelBorder;
 
 import jd.event.UIListener;
 import jd.gui.skins.simple.components.DragNDrop;
@@ -38,9 +33,9 @@ public class Dropper extends JDialog implements MouseListener, MouseMotionListen
     
     private DragNDrop target;
     private JLabel label;
-    private Logger logger;
+  //  private Logger logger;
 
-    private Point point;
+  //  private Point point;
     /**
      * @param owner  Owner ist der Parent Frame
      */
@@ -53,7 +48,7 @@ public class Dropper extends JDialog implements MouseListener, MouseMotionListen
         p.addMouseMotionListener(this);
         this.addWindowListener(this);
         target = new DragNDrop();
-        logger= JDUtilities.getLogger();
+       // logger= JDUtilities.getLogger();
         label= new JLabel(JDLocale.L("gui.droptarget.label","Ziehe Links auf mich!"));
         JDUtilities.addToGridBag(p, target, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 1, 1, null, GridBagConstraints.NONE, GridBagConstraints.NORTH);
         JDUtilities.addToGridBag(p, label, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 0, 0, null, GridBagConstraints.NONE, GridBagConstraints.SOUTH);
@@ -107,7 +102,7 @@ public void mouseExited(MouseEvent e) {
     
 }
 public void mousePressed(MouseEvent e) {
-    this.point=e.getPoint();
+  //  this.point=e.getPoint();
     
 }
 public void mouseReleased(MouseEvent e) {

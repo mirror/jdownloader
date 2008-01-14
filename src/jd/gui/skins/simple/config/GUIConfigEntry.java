@@ -30,7 +30,6 @@ import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.gui.skins.simple.Link.JLinkButton;
 import jd.gui.skins.simple.components.BrowseFile;
-import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
 /**
@@ -58,7 +57,7 @@ public class GUIConfigEntry extends JPanel {
 
     private JComponent[]      input;
 
-    private Insets            insets           = new Insets(1, 5, 1, 5);
+  //  private Insets            insets           = new Insets(1, 5, 1, 5);
 
     private ConfigEntry       configEntry;
 

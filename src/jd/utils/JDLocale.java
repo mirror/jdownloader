@@ -9,7 +9,6 @@ import java.util.Map.Entry;
 import java.util.logging.Logger;
 
 import jd.JDFileFilter;
-import jd.config.Configuration;
 import jd.gui.skins.simple.SimpleGUI;
 
 /**

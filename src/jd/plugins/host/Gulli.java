@@ -58,7 +58,7 @@ public class Gulli extends PluginForHost {
 
     private HttpURLConnection    finalDownloadConnection;
 
-    private boolean              serverIPChecked;
+    //private boolean              serverIPChecked;
 
     public Gulli() {
         steps.add(new PluginStep(PluginStep.STEP_GET_CAPTCHA_FILE, null));
@@ -265,7 +265,7 @@ public class Gulli extends PluginForHost {
         cookie = null;
         finalDownloadURL = null;
         finalDownloadConnection = null;
-        serverIPChecked = false;
+        //serverIPChecked = false;
     }
 
     @Override

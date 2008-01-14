@@ -1,12 +1,8 @@
 package jd.gui.skins.simple.config;
 
 import java.awt.BorderLayout;
-import java.awt.GridBagConstraints;
 import java.util.List;
 import java.util.Locale;
-import java.util.Vector;
-
-import javax.swing.JFileChooser;
 import javax.swing.UIManager;
 
 import jd.config.ConfigContainer;
@@ -15,7 +11,6 @@ import jd.config.Configuration;
 import jd.config.SubConfiguration;
 import jd.gui.UIInterface;
 import jd.gui.skins.simple.SimpleGUI;
-import jd.gui.skins.simple.components.BrowseFile;
 import jd.utils.JDLocale;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
@@ -24,9 +19,13 @@ import edu.stanford.ejalbert.exception.BrowserLaunchingInitializingException;
 import edu.stanford.ejalbert.exception.UnsupportedOperatingSystemException;
 
 public class ConfigPanelGUI extends ConfigPanel {
-    private Configuration configuration;
+  /**
+	 * 
+	 */
+	private static final long serialVersionUID = 5474787504978441198L;
+//  private Configuration configuration;
     private SubConfiguration guiConfig;
-    private Vector<String> changer;
+  //  private Vector<String> changer;
     /**
      * serialVersionUID
      */
@@ -34,7 +33,7 @@ public class ConfigPanelGUI extends ConfigPanel {
   
     public ConfigPanelGUI(Configuration configuration, UIInterface uiinterface) {
         super(uiinterface);
-        this.configuration = configuration;
+        //this.configuration = configuration;
         this.guiConfig=JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME);
         initPanel();
         load();

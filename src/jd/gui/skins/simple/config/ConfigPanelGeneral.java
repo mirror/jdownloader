@@ -2,14 +2,10 @@ package jd.gui.skins.simple.config;
 
 import java.awt.BorderLayout;
 import java.awt.GridBagConstraints;
-import java.net.URL;
-import java.util.List;
-import java.util.Locale;
 import java.util.logging.Level;
 
 import javax.swing.JFileChooser;
 import javax.swing.JLabel;
-import javax.swing.UIManager;
 
 
 
@@ -17,10 +13,8 @@ import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.Configuration;
 import jd.gui.UIInterface;
-import jd.gui.skins.simple.Link.JLinkButton;
 import jd.gui.skins.simple.components.BrowseFile;
 import jd.utils.JDLocale;
-import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 
 public class ConfigPanelGeneral extends ConfigPanel {

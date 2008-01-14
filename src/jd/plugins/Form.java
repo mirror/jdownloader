@@ -7,7 +7,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
 import java.net.URLEncoder;
-import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Matcher;
@@ -121,7 +121,7 @@ public class Form {
      * den Text der zwischen der Form steht. Dafür gibt es die formProperties
      */
     public static Form[] getForms(RequestInfo requestInfo, String matcher) {
-        ArrayList<Form> forms = new ArrayList<Form>();
+        LinkedList<Form> forms = new LinkedList<Form>();
         Pattern pattern = Pattern.compile(
                 "<[\\s]*form(.*?)>(.*?)<[\\s]*/[\\s]*form[\\s]*>",
                 Pattern.CASE_INSENSITIVE | Pattern.DOTALL);

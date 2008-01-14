@@ -100,9 +100,9 @@ public class ContainerReloader extends Interaction implements Serializable {
 
     @Override
     public void initConfig() {
-        ConfigEntry cfg;
+       // ConfigEntry cfg;
         //int type, Property propertyInstance, String propertyName, Object[] list, String label
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         
     }
 

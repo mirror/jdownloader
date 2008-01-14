@@ -1,7 +1,6 @@
 package jd.controlling;
 
 import java.net.URLDecoder;
-import java.util.Collection;
 import java.util.Iterator;
 import java.util.Vector;
 import java.util.logging.Logger;

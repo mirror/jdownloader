@@ -2,7 +2,6 @@ package jd.plugins.host;
 
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
@@ -74,10 +73,10 @@ public class Esnips extends PluginForHost {
                         url = new URL(downloadLink.getUrlDownloadDecrypted());
                         requestInfo = getRequest(url, null, null, true);
                         fileUrl = getSimpleMatch(requestInfo.getHtmlCode(), SWF_PLAYER_TO_FILE, 0);
-                        String fileName = getSimpleMatch(requestInfo.getHtmlCode(), SWF_PLAYER_TO_FILE, 1);
+                      //  String fileName = getSimpleMatch(requestInfo.getHtmlCode(), SWF_PLAYER_TO_FILE, 1);
                         if (fileUrl == null) {
                             fileUrl = "http://" + host + getSimpleMatch(requestInfo.getHtmlCode(), WMP_PLAYER_TO_FILE, 0);
-                            fileName = getSimpleMatch(requestInfo.getHtmlCode(), WMP_PLAYER_TO_FILE, 1);
+                           // fileName = getSimpleMatch(requestInfo.getHtmlCode(), WMP_PLAYER_TO_FILE, 1);
                         }
                     }
                     catch (MalformedURLException e) {
@@ -135,6 +134,7 @@ public class Esnips extends PluginForHost {
         }
         return step;
     }
+    /*
     private String getLinkDetails(String string) {
         URL url;
         try {
@@ -155,6 +155,7 @@ public class Esnips extends PluginForHost {
         catch (IOException e)           { }
         return null;
     }
+    */
     @Override
     public boolean doBotCheck(File file) {
         return false;
@@ -172,10 +173,10 @@ public class Esnips extends PluginForHost {
             URL url = new URL(downloadLink.getUrlDownloadDecrypted());
             requestInfo = getRequest(url, null, null, true);
             String fileUrl = getSimpleMatch(requestInfo.getHtmlCode(), SWF_PLAYER_TO_FILE, 0);
-            String fileName = getSimpleMatch(requestInfo.getHtmlCode(), SWF_PLAYER_TO_FILE, 1);
+            //String fileName = getSimpleMatch(requestInfo.getHtmlCode(), SWF_PLAYER_TO_FILE, 1);
             if (fileUrl == null) {
                 fileUrl = "http://" + host + getSimpleMatch(requestInfo.getHtmlCode(), WMP_PLAYER_TO_FILE, 0);
-                fileName = getSimpleMatch(requestInfo.getHtmlCode(), WMP_PLAYER_TO_FILE, 1);
+                //fileName = getSimpleMatch(requestInfo.getHtmlCode(), WMP_PLAYER_TO_FILE, 1);
             }
             requestInfo = getRequestWithoutHtmlCode(new URL(fileUrl), requestInfo.getCookie(), null, true);
             int length = requestInfo.getConnection().getContentLength();

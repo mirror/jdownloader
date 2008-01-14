@@ -9,7 +9,6 @@ import java.awt.event.ActionListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 import java.io.File;
-import java.util.logging.Logger;
 
 import javax.swing.JButton;
 import javax.swing.JDialog;
@@ -36,7 +35,7 @@ public class Installer extends JDialog implements ActionListener, WindowListener
      */
     private static final long serialVersionUID = 8764525546298642601L;
 
-    private Logger            logger           = JDUtilities.getLogger();
+    //private Logger            logger           = JDUtilities.getLogger();
 
     private JPanel            panel;
 

@@ -100,18 +100,17 @@ public class InfoFileWriter extends Interaction implements Serializable {
 
     @Override
     public void initConfig() {
-        ConfigEntry cfg;
         String[] keys = new String[Replacer.KEYS.length];
         for (int i = 0; i < Replacer.KEYS.length; i++) {
             keys[i] = "%" + Replacer.KEYS[i][0] + "%" + "   (" + Replacer.KEYS[i][1] + ")";
         }
 
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, JDUtilities.getConfiguration(), "VARS", keys, JDLocale.L("interaction.infoFileWriter.variables","Available variables")));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, JDUtilities.getConfiguration(), "VARS", keys, JDLocale.L("interaction.infoFileWriter.variables","Available variables")));
        // config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_RADIOFIELD, JDUtilities.getConfiguration(), "VARS", keys, JDLocale.L("interaction.infoFileWriter.variables","Available variables")));
 
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, JDUtilities.getConfiguration(), PARAM_FILENAME, JDLocale.L("interaction.infoFileWriter.filename","Filename:")).setDefaultValue(FILENAME_DEFAULT));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, JDUtilities.getConfiguration(), PARAM_FILENAME, JDLocale.L("interaction.infoFileWriter.filename","Filename:")).setDefaultValue(FILENAME_DEFAULT));
 
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_TEXTAREA, JDUtilities.getConfiguration(), PARAM_INFO_STRING, JDLocale.L("interaction.infoFileWriter.content","Content:")).setDefaultValue(INFO_STRING_DEFAULT));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTAREA, JDUtilities.getConfiguration(), PARAM_INFO_STRING, JDLocale.L("interaction.infoFileWriter.content","Content:")).setDefaultValue(INFO_STRING_DEFAULT));
 
     }
 

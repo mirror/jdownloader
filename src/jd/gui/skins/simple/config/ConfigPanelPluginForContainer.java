@@ -31,6 +31,10 @@ import jd.utils.JDUtilities;
 public class ConfigPanelPluginForContainer extends ConfigPanel implements ActionListener, MouseListener {
 
     /**
+	 * 
+	 */
+	private static final long serialVersionUID = -169660462836773855L;
+	/**
      * 
      */
 
@@ -237,7 +241,12 @@ public class ConfigPanelPluginForContainer extends ConfigPanel implements Action
     private class InternalTableCellRenderer extends DefaultTableCellRenderer {
   
 
-        public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
+        /**
+		 * 
+		 */
+		private static final long serialVersionUID = 7180320457655489087L;
+
+		public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
             if (value instanceof JProgressBar) return (JProgressBar) value;
 
             Component c = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);

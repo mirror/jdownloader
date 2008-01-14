@@ -40,14 +40,14 @@ public class ExternReconnect extends Interaction implements Serializable {
      */
     private static final String      NAME                               = JDLocale.L("interaction.externreconnect.name","Extern Reconnect");
 
-    private transient String         lastIP;
+  //  private transient String         lastIP;
 
     /**
      * Maximale Reconnectanzahl
      */
-    private static final int         MAX_RETRIES                        = 10;
+  //  private static final int         MAX_RETRIES                        = 10;
 
-    private static final String      PROPERTY_EXTERN_RECONNECT_DISABLED = "EXTERN_RECONNECT_DISABLED";
+   // private static final String      PROPERTY_EXTERN_RECONNECT_DISABLED = "EXTERN_RECONNECT_DISABLED";
 
     private static final String      PROPERTY_RECONNECT_EXECUTE_FOLDER  = "RECONNECT_EXECUTE_FOLDER";
 
@@ -145,18 +145,17 @@ public class ExternReconnect extends Interaction implements Serializable {
 
     @Override
     public void initConfig() {
-        ConfigEntry cfg;
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_BROWSEFILE, JDUtilities.getConfiguration(), PROPERTY_RECONNECT_COMMAND, JDLocale.L("interaction.externreconnect.command","Befehl (absolute Pfade verwenden)")));
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_TEXTAREA, JDUtilities.getConfiguration(), PROPERTY_RECONNECT_PARAMETER, JDLocale.L("interaction.externreconnect.parameter","Parameter (1 Parameter/Zeile)")).setExpertEntry(true));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_BROWSEFILE, JDUtilities.getConfiguration(), PROPERTY_RECONNECT_COMMAND, JDLocale.L("interaction.externreconnect.command","Befehl (absolute Pfade verwenden)")));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTAREA, JDUtilities.getConfiguration(), PROPERTY_RECONNECT_PARAMETER, JDLocale.L("interaction.externreconnect.parameter","Parameter (1 Parameter/Zeile)")).setExpertEntry(true));
 
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_BROWSEFOLDER, JDUtilities.getConfiguration(), PROPERTY_RECONNECT_EXECUTE_FOLDER, JDLocale.L("interaction.externreconnect.executeIn","Ausführen in (Ordner der Anwendung)")));
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_SPINNER, JDUtilities.getConfiguration(), PARAM_IPCHECKWAITTIME, JDLocale.L("interaction.externreconnect.waitTimeToFirstIPCheck","Wartezeit bis zum ersten IP-Check[sek]"), 0, 600).setDefaultValue(5).setExpertEntry(true));
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_SPINNER, JDUtilities.getConfiguration(), PARAM_RETRIES, JDLocale.L("interaction.externreconnect.retries","Max. Wiederholungen (-1 = unendlich)"), -1, 20).setDefaultValue(5).setExpertEntry(true));
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_SPINNER, JDUtilities.getConfiguration(), PARAM_WAITFORIPCHANGE, JDLocale.L("interaction.externreconnect.waitForIp","Auf neue IP warten [sek]"), 0, 600).setDefaultValue(20).setExpertEntry(true));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_BROWSEFOLDER, JDUtilities.getConfiguration(), PROPERTY_RECONNECT_EXECUTE_FOLDER, JDLocale.L("interaction.externreconnect.executeIn","Ausführen in (Ordner der Anwendung)")));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, JDUtilities.getConfiguration(), PARAM_IPCHECKWAITTIME, JDLocale.L("interaction.externreconnect.waitTimeToFirstIPCheck","Wartezeit bis zum ersten IP-Check[sek]"), 0, 600).setDefaultValue(5).setExpertEntry(true));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, JDUtilities.getConfiguration(), PARAM_RETRIES, JDLocale.L("interaction.externreconnect.retries","Max. Wiederholungen (-1 = unendlich)"), -1, 20).setDefaultValue(5).setExpertEntry(true));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, JDUtilities.getConfiguration(), PARAM_WAITFORIPCHANGE, JDLocale.L("interaction.externreconnect.waitForIp","Auf neue IP warten [sek]"), 0, 600).setDefaultValue(20).setExpertEntry(true));
 
         
         
-       config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_SPINNER, JDUtilities.getConfiguration(), PROPERTY_IP_WAIT_FOR_RETURN, JDLocale.L("interaction.externreconnect.waitForTermination","Warten x Sekunden bis Befehl beendet ist[sek]"),0,600).setDefaultValue(0).setExpertEntry(true));
+       config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, JDUtilities.getConfiguration(), PROPERTY_IP_WAIT_FOR_RETURN, JDLocale.L("interaction.externreconnect.waitForTermination","Warten x Sekunden bis Befehl beendet ist[sek]"),0,600).setDefaultValue(0).setExpertEntry(true));
   
      
     }

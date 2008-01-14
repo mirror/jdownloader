@@ -73,7 +73,12 @@ import jd.utils.JDUtilities;
  */
 public class LinkGrabber extends JFrame implements ActionListener, DropTargetListener, MouseListener, KeyListener, ChangeListener {
 
-    private static final String  PROPERTY_AUTOPACKAGE = "PROPERTY_AUTOPACKAGE";
+    /**
+	 * 
+	 */
+	private static final long serialVersionUID = 4974425479842618402L;
+
+	private static final String  PROPERTY_AUTOPACKAGE = "PROPERTY_AUTOPACKAGE";
 
     private JTabbedPane          tabbedPane;
 
@@ -166,7 +171,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
         
         this.setName("LINKGRABBER");
         this.setPreferredSize(new Dimension(600, 400));
-        http://serienfreaks.tv/?id=6523
+       // http://serienfreaks.tv/?id=6523
             pack();
         this.setVisible(true);
        if(SimpleGUI.getLastDimension(this, null)!=null){
@@ -605,7 +610,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
         }
         else if (e.getActionCommand().equals(JDLocale.L("gui.linkgrabber.tabs.context.newPackage"))) {
 
-            PackageTab tab = addTab();
+            addTab();
         }
   
         
@@ -619,7 +624,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
 
         for (int b = 0; b < pfh.size(); b++) {
             PluginForHost plugin = pfh.get(b);
-            boolean ch = false;
+          //  boolean ch = false;
             for (int c = 0; c < mirrors.size(); c++) {
                 DownloadLink mirror = mirrors.get(c);
                 if (mirrors.get(c).getHost().equalsIgnoreCase(plugin.getHost())) {
@@ -809,8 +814,8 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
     public void mousePressed(MouseEvent e) {
         if (e.isPopupTrigger() || e.getButton() == MouseEvent.BUTTON3) {
             Point point = e.getPoint();
-            int x = e.getX();
-            int y = e.getY();
+          //  int x = e.getX();
+          //  int y = e.getY();
             new ContextMenu(tabbedPane, point, new String[] { JDLocale.L("gui.linkgrabber.tabs.context.delete", "Entfernen"), JDLocale.L("gui.linkgrabber.tabs.context.newPackage", "Neues Package") }, this);
         }
 
@@ -835,7 +840,12 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
      */
     class PackageTab extends JPanel implements ActionListener, MouseListener, KeyListener {
 
-        private JTextField           txtName;
+        /**
+		 * 
+		 */
+		private static final long serialVersionUID = -7394319645950106241L;
+
+		private JTextField           txtName;
 
         private JTextField           txtPassword;
 
@@ -1128,7 +1138,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
             }
 
             if (e.getActionCommand().equals(JDLocale.L("gui.linkgrabber.packagetab.table.context.newpackage", "Neues Package"))) {
-                PackageTab tab = addTab();
+               addTab();
 
             }
             
@@ -1174,7 +1184,12 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
 
         private class InternalTableModel extends AbstractTableModel {
 
-            public int getColumnCount() {
+            /**
+			 * 
+			 */
+			private static final long serialVersionUID = -7475394342173736030L;
+
+			public int getColumnCount() {
                 return 5;
             }
 
@@ -1240,8 +1255,8 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
 
             if (e.isPopupTrigger() || e.getButton() == MouseEvent.BUTTON3) {
                 Point point = e.getPoint();
-                int x = e.getX();
-                int y = e.getY();
+             //   int x = e.getX();
+             //   int y = e.getY();
                 new ContextMenu(table, point, new String[] { JDLocale.L("gui.linkgrabber.packagetab.table.context.delete", "Entfernen"),JDLocale.L("gui.linkgrabber.tabs.context.deleteOthers", "Alle anderen Entfernen"),JDLocale.L("gui.linkgrabber.tabs.context.acceptSelection", "Auswahl übernehmen"), JDLocale.L("gui.linkgrabber.packagetab.table.context.newpackage", "Neues Package") }, this);
             }
 
@@ -1293,6 +1308,11 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
          */
         private class InternalTableCellRenderer extends DefaultTableCellRenderer {
             /**
+			 * 
+			 */
+			private static final long serialVersionUID = -7858580590383167251L;
+
+			/**
              * serialVersionUID
              */
             private final Color COLOR_DONE          = new Color(0, 255, 0, 20);

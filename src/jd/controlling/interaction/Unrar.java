@@ -13,7 +13,7 @@ import jd.utils.JDUtilities;
 
 /**
  * Diese Klasse fürs automatische Entpacken
- * 
+ *  
  * @author DwD
  */
 public class Unrar extends Interaction implements Serializable {

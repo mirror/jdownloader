@@ -141,11 +141,12 @@ public class ConvertRouterData {
 
         }
         Utilities.saveObject(list, file, true);
-    }
+    }    /*
     private static String replace(String arg)
     {
         return arg.replaceAll("&amp;nbsp;", " ").replaceAll("&#13;", "\n");
     }
+
     private static void formateNames(File file, File fileout)
     {
         ConvertRouterData conv = new ConvertRouterData();
@@ -159,6 +160,7 @@ public class ConvertRouterData {
         }
         conv.saveTolist(routersv, fileout);
     }
+    */
     private static void ConvertXml(File file, File out)
     {
         ConvertRouterData conv = new ConvertRouterData();

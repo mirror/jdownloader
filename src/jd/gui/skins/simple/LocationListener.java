@@ -2,25 +2,16 @@ package jd.gui.skins.simple;
 
 import java.awt.event.ComponentEvent;
 import java.awt.event.ComponentListener;
-import java.awt.event.WindowEvent;
-import java.awt.event.WindowListener;
-import java.util.logging.Logger;
-
-import jd.config.SubConfiguration;
-import jd.event.UIEvent;
-import jd.utils.JDLocale;
-import jd.utils.JDUtilities;
-
 public class LocationListener implements ComponentListener {
 
 
-    private SubConfiguration guiConfig;
-    private Logger logger;
+    //private SubConfiguration guiConfig;
+    //private Logger logger;
 
     public LocationListener() {
        
-        this.guiConfig=JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME);
-        this.logger=JDUtilities.getLogger();
+        //this.guiConfig=JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME);
+       // this.logger=JDUtilities.getLogger();
     }
 
     public void componentHidden(ComponentEvent e) {

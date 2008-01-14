@@ -12,7 +12,6 @@ import java.awt.event.MouseListener;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Vector;
-import java.util.jar.JarFile;
 
 import javax.swing.JButton;
 import javax.swing.JLabel;
@@ -58,7 +57,7 @@ public class ConfigPanelPluginsOptional extends ConfigPanel implements ActionLis
 
 
 
-    private JarFile[] availablePluginJarFiles;
+    //private JarFile[] availablePluginJarFiles;
 
     private Vector<PluginOptional> plugins;
 
@@ -169,7 +168,7 @@ public class ConfigPanelPluginsOptional extends ConfigPanel implements ActionLis
         return JDLocale.L("gui.config.plugin.optional.name","Optional Plugins");
     }
 
-    private void openPopupPanel(ConfigPanel config) {
+  //  private void openPopupPanel(ConfigPanel config) {
     // JPanel panel = new JPanel(new BorderLayout());
     //
     // // InteractionTrigger[] triggers = InteractionTrigger.getAllTrigger();
@@ -186,7 +185,7 @@ public class ConfigPanelPluginsOptional extends ConfigPanel implements ActionLis
     // uiinterface, configuration);
     // pop.setLocation(JDUtilities.getCenterOfComponent(this, pop));
     // pop.setVisible(true);
-    }
+  //  }
 
     public void fireTableChanged() {
         int rowIndex = table.getSelectedRow();

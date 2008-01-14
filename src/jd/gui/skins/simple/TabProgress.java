@@ -4,7 +4,6 @@ import java.awt.BorderLayout;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.util.Vector;
-import java.util.logging.Logger;
 
 import javax.swing.JPanel;
 import javax.swing.JProgressBar;
@@ -17,7 +16,6 @@ import javax.swing.table.TableColumn;
 
 import jd.controlling.ProgressController;
 import jd.utils.JDLocale;
-import jd.utils.JDUtilities;
 
 /**
  * Diese Klasse zeigt alle Fortschritte von momenten aktiven Plugins an.
@@ -43,7 +41,7 @@ public class TabProgress extends JPanel {
 
     private Vector<JProgressBar>       bars;
 
-    private Logger                     logger           = JDUtilities.getLogger();
+    //private Logger                     logger           = JDUtilities.getLogger();
 
     public TabProgress() {
         controllers = new Vector<ProgressController>();

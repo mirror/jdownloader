@@ -26,7 +26,7 @@ public class UploadedTo {
 
     private static final int    MAXAREA                 = 1200;
 
-    private static final int    LETTERNUM               = 4;
+   // private static final int    LETTERNUM               = 4;
 
     private static final double FILLEDMAX               = 0.9;
 
@@ -82,12 +82,12 @@ public class UploadedTo {
 
               
     public static Vector<PixelObject> getObjects(Captcha captcha) {
-        int splitter;
-        int splitNum;
-        int found = 0;
+       // int splitter;
+       // int splitNum;
+       // int found = 0;
 
-        int minWidth = Integer.MAX_VALUE;
-        int maxWidth;
+       // int minWidth = Integer.MAX_VALUE;
+       // int maxWidth;
         // Alle Objekte aus dem captcha holen. Sie sind nach der Größe Sortiert
      
         Vector<PixelObject> objects = captcha.getObjects(OBJECTCOLORCONTRAST, OBJECTDETECTIONCONTRAST);

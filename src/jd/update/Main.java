@@ -1,6 +1,4 @@
 package jd.update;
-
-import java.awt.BorderLayout;
 import java.awt.Component;
 import java.awt.Container;
 import java.awt.GridBagConstraints;
@@ -107,7 +105,7 @@ public static Insets INSETS=new Insets(5,5,5,5);
        
         Vector<Vector<String>> files = updater.getAvailableFiles();
         
-        boolean success = false;
+       // boolean success = false;
         if (files != null) {
             // int totalFiles = files.size();
          
