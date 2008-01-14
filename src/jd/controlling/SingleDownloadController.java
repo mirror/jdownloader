@@ -264,7 +264,7 @@ public class SingleDownloadController extends ControlMulticaster {
             fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_PLUGIN_HOST_INACTIVE, plugin));
             fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SINGLE_DOWNLOAD_FINISHED, downloadLink));
             Interaction.handleInteraction((Interaction.INTERACTION_SINGLE_DOWNLOAD_FINISHED), downloadLink);
-            if ( JDUtilities.getConfiguration().getBooleanProperty(Unrar.PROPERTY_ENABLED, true));
+            if ( JDUtilities.getConfiguration().getBooleanProperty(Unrar.PROPERTY_ENABLED, true))
                 controller.getUnrarModule().interact(downloadLink);
             
         }

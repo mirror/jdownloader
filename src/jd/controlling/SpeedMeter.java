@@ -16,6 +16,8 @@ public class SpeedMeter {
 
 	private LinkedList<Object[]> entries = new LinkedList<Object[]>();
 
+	private long cash = 0;
+
 	/**
 	 * KOnstruktor dem die Zeit übergeben werden kann über die der durchschnitt
 	 * eführt wird
@@ -32,8 +34,9 @@ public class SpeedMeter {
 	 * @param value
 	 */
 	public void addValue(final int value) {
-		final long cur = System.currentTimeMillis();
-		if (isRunning) {
+		cash += value;
+		if (cash > 100000) {
+			final long cur = System.currentTimeMillis();
 			new Thread(new Runnable() {
 				public void run() {
 					while (isRunning)
@@ -44,15 +47,11 @@ public class SpeedMeter {
 							e.printStackTrace();
 						}
 					isRunning = true;
-					entries.add(new Object[] { cur,
-							value });
+					entries.add(new Object[] { cur, (int) (cash / 100) });
+					cash = 0;
 					isRunning = false;
 				}
 			}).start();
-		} else {
-			isRunning = true;
-			entries.add(new Object[] { cur, value });
-			isRunning = false;
 		}
 	}
 
@@ -94,7 +93,7 @@ public class SpeedMeter {
 		isRunning = false;
 		if (dif == 0)
 			return 0;
-		return (int) ((bytes * 1000) / dif);
+		return (int) ((bytes * 100000) / dif);
 	}
 
 }
