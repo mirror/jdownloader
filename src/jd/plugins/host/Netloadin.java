@@ -44,13 +44,17 @@ public class Netloadin extends PluginForHost {
     static private final String  DOWNLOAD_CAPTCHA = "download_captcha.tpl";
     static private final String  DOWNLOAD_START   = "download_load.tpl";
     //static private final String  DOWNLOAD_WAIT    = "download_wait.tpl";
-
+    static private final Pattern DOWNLOAD_WAIT_TIME = Pattern.compile("countdown\\(([0-9]*),'change", Pattern.CASE_INSENSITIVE);
+    
     private String               finalURL;
+
     private String               captchaURL;
     private String               fileID;
     private String               postURL;
     private String               sessionID;
-    private String userCookie;
+    private String 				 userCookie;
+    private Long     			 waitTime;
+    
     public Netloadin() {
         setConfigElements();
         steps.add(new PluginStep(PluginStep.STEP_WAIT_TIME, null));
@@ -91,7 +95,7 @@ public class Netloadin extends PluginForHost {
     // }
     public PluginStep doStep(PluginStep step, DownloadLink parameter) throws MalformedURLException, IOException {
         DownloadLink downloadLink = (DownloadLink) parameter;
-        //RequestInfo requestInfo;
+     //   RequestInfo requestInfo;
         if (step == null) {
             logger.info("Plugin Ende erreicht.");
             return null;
@@ -158,8 +162,9 @@ public class Netloadin extends PluginForHost {
                         if (requestInfo.getHtmlCode().indexOf(LIMIT_REACHED) >= 0 || requestInfo.containsHTML(DOWNLOAD_LIMIT)) {
                             step.setStatus(PluginStep.STATUS_ERROR);
                             downloadLink.setStatus(DownloadLink.STATUS_ERROR_DOWNLOAD_LIMIT);
-                            // TODO: Richtige Wartezeit bestimmen
-                            step.setParameter(60 * 60 * 1000l);
+                            waitTime = Long.parseLong(getFirstMatch(requestInfo.getHtmlCode(), DOWNLOAD_WAIT_TIME, 1));
+                            waitTime = waitTime*10L;
+                            step.setParameter(waitTime);
                             return step;
                         }
                         if (requestInfo.getHtmlCode().indexOf(CAPTCHA_WRONG) >= 0) {
