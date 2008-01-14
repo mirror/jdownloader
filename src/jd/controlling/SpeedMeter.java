@@ -25,7 +25,32 @@ public class SpeedMeter {
 	public SpeedMeter(int average) {
 		averageOver = average;
 	}
+	private void clearList()
+	{
+		int c = 0;
+		while (isRunning || c == 1000)
+		{
+			c++;
+			try {
+				Thread.sleep(0);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+		}
+		isRunning = true;
+		long current = System.currentTimeMillis();
+		Iterator<Object[]> iter = entries.iterator();
+		while (iter.hasNext()) {
+			Object[] element = (Object[]) iter.next();
+			if ((current - (Long) element[0]) > averageOver) {
+				iter.remove();
+			} else {
+				break;
+			}
 
+		}
+		isRunning = false;
+	}
 	/**
 	 * Fügt einen weiteren wert hinzu
 	 * 
@@ -36,6 +61,7 @@ public class SpeedMeter {
 			new Thread(new Runnable() {
 				public void run() {
 					int c = 0;
+					clearList();
 					while (isRunning || c == 1000)
 					{
 						c++;
@@ -81,7 +107,7 @@ public class SpeedMeter {
 		long bytes = 0;
 		long start = -1;
 
-		long current = (Long) entries.get(size - 1)[0];
+		long current = System.currentTimeMillis();
 		Iterator<Object[]> iter = entries.iterator();
 		while (iter.hasNext()) {
 			Object[] element = (Object[]) iter.next();
