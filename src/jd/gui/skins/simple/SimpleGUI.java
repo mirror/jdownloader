@@ -1,11 +1,14 @@
 package jd.gui.skins.simple;
 
+import java.awt.AWTException;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.awt.Point;
+import java.awt.Rectangle;
+import java.awt.Robot;
 import java.awt.Toolkit;
 import java.awt.datatransfer.Clipboard;
 import java.awt.datatransfer.DataFlavor;
@@ -15,6 +18,7 @@ import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
+import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.util.Iterator;
@@ -78,7 +82,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
 
     public static final String      PARAM_THEME                   = "THEME";
 
-    public static final String      PARAM_CENSOR_FIELD            = "CENSOR_FIELD";
+
 
     public static final String      PARAM_JAC_LOG                 = "JAC_DOLOG";
 
@@ -259,6 +263,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         toolBar = new JToolBar();
         this.locationListener = new LocationListener();
         frame.addWindowListener(this);
+        
         frame.setIconImage(JDUtilities.getImage(JDTheme.I("gui.images.jd_logo")));
         frame.setTitle(JDUtilities.getJDTitle());
         frame.setDefaultCloseOperation(WindowConstants.DO_NOTHING_ON_CLOSE);
@@ -278,6 +283,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         dragNDrop = new Dropper(new JFrame());
         dragNDrop.addUIListener(this);
         frame.addComponentListener(locationListener);
+        frame.addWindowListener(locationListener);
         // Ruft jede sekunde ein UpdateEvent auf
         new Thread("GUI Interval") {
             public void run() {
@@ -310,9 +316,10 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
 
     public static void saveLastLocation(Component parent, String key) {
         if (key == null) key = parent.getName();
+  
         if (parent.isShowing()) {
             guiConfig.setProperty("LOCATION_OF_" + key, parent.getLocationOnScreen());
-            guiConfig.save();
+            
         }
 
     }
@@ -332,7 +339,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         if (key == null) key = child.getName();
         guiConfig.setProperty("DIMENSION_OF_" + key, child.getSize());
         //JDUtilities.getLogger().info("DIMEN VOR: " + "DIMENSION_OF_" + key + " : " + child.getSize());
-        guiConfig.save();
+      
 
     }
 

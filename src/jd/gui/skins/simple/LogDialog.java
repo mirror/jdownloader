@@ -25,6 +25,7 @@ import javax.swing.JOptionPane;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 
+import jd.gui.skins.simple.Link.JLinkButton;
 import jd.gui.skins.simple.components.TextAreaDialog;
 import jd.plugins.LogFormatter;
 import jd.plugins.Plugin;
@@ -58,7 +59,7 @@ public class LogDialog extends JDialog implements ActionListener {
 
     private JButton           btnSave;
 
-    private JButton           btnCensor;
+   // private JButton           btnCensor;
 
     private JFrame            owner;
 
@@ -86,8 +87,8 @@ public class LogDialog extends JDialog implements ActionListener {
         btnSave = new JButton(JDLocale.L("gui.btn_saveToFile","Save to file"));
         btnSave.addActionListener(this);
 
-        btnCensor = new JButton(JDLocale.L("gui.logDialog.btn_censor","Censor Log"));
-        btnCensor.addActionListener(this);
+//        btnCensor = new JButton(JDLocale.L("gui.logDialog.btn_censor","Censor Log"));
+//        btnCensor.addActionListener(this);
 
         btnUpload = new JButton(JDLocale.L("gui.logDialog.btn_uploadLog","Upload Log"));
         btnUpload.addActionListener(this);
@@ -102,8 +103,8 @@ public class LogDialog extends JDialog implements ActionListener {
         JDUtilities.addToGridBag(this, btnOK, 0, 1, 1, 1, 1, 0, null, GridBagConstraints.NONE, GridBagConstraints.WEST);
         JDUtilities.addToGridBag(this, btnSave, 1, 1, 1, 1, 1, 0, null, GridBagConstraints.NONE, GridBagConstraints.EAST);
 
-        JDUtilities.addToGridBag(this, btnCensor, 2, 1, 1, 1, 1, 0, null, GridBagConstraints.NONE, GridBagConstraints.EAST);
-        JDUtilities.addToGridBag(this, btnUpload, 3, 1, 1, 1, 1, 0, null, GridBagConstraints.NONE, GridBagConstraints.EAST);
+//        JDUtilities.addToGridBag(this, btnCensor, 2, 1, 1, 1, 1, 0, null, GridBagConstraints.NONE, GridBagConstraints.EAST);
+        JDUtilities.addToGridBag(this, btnUpload, 2, 1, 1, 1, 1, 0, null, GridBagConstraints.NONE, GridBagConstraints.EAST);
         pack();
         setLocation(JDUtilities.getCenterOfComponent(null, this));
     }
@@ -118,61 +119,49 @@ public class LogDialog extends JDialog implements ActionListener {
             dispose();
         }
 
-        if (e.getSource() == btnCensor) {
-            String txt;
-            String[] censor = JDUtilities.splitByNewline(txt = TextAreaDialog.showDialog(owner, JDLocale.L("gui.logDialog.censordialog.title","Censor Log!"), JDLocale.L("gui.logDialog.censorDialog.text","Add Elements to censor. Use 'replaceme==replacement' or just 'deleteme' in a line. Regexes ar possible!"), JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).getStringProperty(SimpleGUI.PARAM_CENSOR_FIELD, "" + System.getProperty("line.separator") + "")));
-
-            if (censor.length > 0) {
-                JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).setProperty(SimpleGUI.PARAM_CENSOR_FIELD, txt);
-               JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).save();
-                String content = logField.getSelectedText();
-                if (content == null || content.length() == 0) {
-                    content = logField.getText();
-                }
-                for (int i = 0; i < censor.length; i++) {
-                    content = content.replace(censor[i], "[********]");
-                    content = content.replaceAll(censor[i], "[********]");
-                    String[] tmp = content.split("\\=\\=");
-                    if (tmp.length == 2) {
-                        content = content.replaceAll(tmp[0], tmp[1]);
-                        content = content.replace(tmp[0], tmp[1]);
-                    }
-                }
-                logField.setText(content);
-             
-
-            }
-        }
+//        if (e.getSource() == btnCensor) {
+//            String txt;
+//            String[] censor = JDUtilities.splitByNewline(txt = TextAreaDialog.showDialog(owner, JDLocale.L("gui.logDialog.censordialog.title","Censor Log!"), JDLocale.L("gui.logDialog.censorDialog.text","Add Elements to censor. Use 'replaceme==replacement' or just 'deleteme' in a line. Regexes ar possible!"), JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).getStringProperty(SimpleGUI.PARAM_CENSOR_FIELD, "" + System.getProperty("line.separator") + "")));
+//
+//            if (censor.length > 0) {
+//                JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).setProperty(SimpleGUI.PARAM_CENSOR_FIELD, txt);
+//               JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).save();
+//                String content = logField.getSelectedText();
+//                if (content == null || content.length() == 0) {
+//                    content = logField.getText();
+//                }
+//                for (int i = 0; i < censor.length; i++) {
+//                    content = content.replace(censor[i], "[********]");
+//                    content = content.replaceAll(censor[i], "[********]");
+//                    String[] tmp = content.split("\\=\\=");
+//                    if (tmp.length == 2) {
+//                        content = content.replaceAll(tmp[0], tmp[1]);
+//                        content = content.replace(tmp[0], tmp[1]);
+//                    }
+//                }
+//                logField.setText(content);
+//             
+//
+//            }
+//        }
         if (e.getSource() == btnUpload) {
             String txt;
-            String[] censor = JDUtilities.splitByNewline(txt = TextAreaDialog.showDialog(owner, JDLocale.L("gui.logDialog.censordialog.title","Censor Log!"), JDLocale.L("gui.logDialog.censorDialog.text","Add Elements to censor. Use 'replaceme==replacement' or just 'deleteme' in a line. Regexes ar possible!"), JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).getStringProperty(SimpleGUI.PARAM_CENSOR_FIELD, "" + System.getProperty("line.separator") + "")));
-
-            if (censor.length > 0) {
-                JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).setProperty(SimpleGUI.PARAM_CENSOR_FIELD, txt);
-                JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).save();
+          
+           
+          
                 String content = logField.getSelectedText();
                 if (content == null || content.length() == 0) {
-                    content = logField.getText();
+                    content =JDUtilities.UTF8Encode( logField.getText());
                 }
-                for (int i = 0; i < censor.length; i++) {
-                    content = content.replace(censor[i], "[********]");
-                    content = content.replaceAll(censor[i], "[********]");
-                    String[] tmp = content.split("\\=\\=");
-                    if (tmp.length == 2) {
-                        content = content.replaceAll(tmp[0], tmp[1]);
-                        content = content.replace(tmp[0], tmp[1]);
-                    }
-                }
-                logField.setText(content);
+            content=TextAreaDialog.showDialog(owner, "Log", JDLocale.L("gui.logdialog.yourlog","Hochgeladener Log: Editieren möglich!"), content);
+                
+           
              
-
-            }
+if(content==null||content.length()==0)return;
+          
           String name=JDUtilities.getController().getUiInterface().showUserInputDialog(JDLocale.L("gui.askName","Your name?"));
           if(name!=null){
-              String content = logField.getSelectedText();
-              if (content == null || content.length() == 0) {
-                  content = logField.getText();
-              }
+            
               RequestInfo requestInfo=null;
               try {
                 requestInfo = Plugin.postRequestWithoutHtmlCode(new URL("http://jd_"+JDUtilities.getMD5(content)+".pastebin.com/pastebin.php"), null, null, "parent_pid=&format=text&code2="+URLEncoder.encode(content,"UTF-8")+"&poster="+URLEncoder.encode(name,"UTF-8")+"&paste=Send&expiry=m&email=", false);
@@ -186,7 +175,15 @@ public class LogDialog extends JDialog implements ActionListener {
                 e1.printStackTrace();
             }
             if(requestInfo!=null &&requestInfo.isOK()){
-            JOptionPane.showInputDialog(this, JDLocale.L("gui.logDialog.logLink","Log-Link"), requestInfo.getLocation());
+                try {
+                    JLinkButton.OpenURL(requestInfo.getLocation());
+                }
+                catch (MalformedURLException e1) {
+                    JOptionPane.showInputDialog(this, JDLocale.L("gui.logDialog.logLink","Log-Link"), requestInfo.getLocation());
+                    
+                }
+           
+
             }else{
                 JOptionPane.showMessageDialog(this, JDLocale.L("gui.logDialog.warning.uploadFailed","Upload failed"));
             }
@@ -219,7 +216,7 @@ public class LogDialog extends JDialog implements ActionListener {
         @Override
         public void write(int b) throws IOException {
             // den character an das text control anhaengen
-            logField.append(String.valueOf((char) b));
+            logField.append((String.valueOf((char) b)));
         }
 
     }

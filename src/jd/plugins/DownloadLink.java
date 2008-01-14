@@ -407,6 +407,8 @@ public class DownloadLink implements Serializable,Comparable<DownloadLink> {
     public void setEnabled(boolean isEnabled) {
         if (!isEnabled) {
             this.setAborted(true);
+        }else{
+            this.setAborted(false);
         }
         if(isEnabled == true){
             if(host != null && plugin==null){

@@ -1,43 +1,99 @@
 package jd.gui.skins.simple;
 
+import java.awt.Component;
 import java.awt.event.ComponentEvent;
 import java.awt.event.ComponentListener;
-public class LocationListener implements ComponentListener {
+import java.awt.event.WindowEvent;
+import java.awt.event.WindowListener;
+import java.util.logging.Logger;
 
+import jd.utils.JDUtilities;
 
-    //private SubConfiguration guiConfig;
-    //private Logger logger;
+public class LocationListener implements ComponentListener, WindowListener {
+
+    // private SubConfiguration guiConfig;
+    private Logger    logger;
+
+    private Component src;
 
     public LocationListener() {
-       
-        //this.guiConfig=JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME);
-       // this.logger=JDUtilities.getLogger();
+
+        // this.guiConfig=JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME);
+        this.logger = JDUtilities.getLogger();
     }
 
     public void componentHidden(ComponentEvent e) {
-    // TODO Auto-generated method stub
 
+        src = e.getComponent();
     }
 
     public void componentMoved(ComponentEvent e) {
 
-        
-
-     SimpleGUI.saveLastLocation(e.getComponent(), null);
-          
-     
-     
+        src = e.getComponent();
 
     }
 
     public void componentResized(ComponentEvent e) {
-          SimpleGUI.saveLastDimension(e.getComponent(), null);
+
+        src = e.getComponent();
     }
 
     public void componentShown(ComponentEvent e) {
-    // TODO Auto-generated method stub
+
+        src = e.getComponent();
 
     }
 
+    public void windowActivated(WindowEvent e) {
+
+        src = e.getComponent();
+
+    }
+
+    public void windowClosed(WindowEvent e) {
+
+        src = e.getComponent();
+        saveAll();
+
+    }
+
+    public void saveAll() {
+        if (src != null) {
+
+            SimpleGUI.saveLastLocation(src, null);
+            SimpleGUI.saveLastDimension(src, null);
+            JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).save();
+        }
+    }
+
+    public void windowClosing(WindowEvent e) {
+
+        src = e.getComponent();
+        saveAll();
+    }
+
+    public void windowDeactivated(WindowEvent e) {
+
+        src = e.getComponent();
+        saveAll();
+    }
+
+    public void windowDeiconified(WindowEvent e) {
+
+        src = e.getComponent();
+
+    }
+
+    public void windowIconified(WindowEvent e) {
+
+        src = e.getComponent();
+
+    }
+
+    public void windowOpened(WindowEvent e) {
+
+        src = e.getComponent();
+
+    }
 
 }

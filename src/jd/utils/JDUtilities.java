@@ -16,6 +16,7 @@ import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -60,6 +61,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.zip.Deflater;
 
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
@@ -406,7 +408,7 @@ public class JDUtilities {
         if (arg == null) return new String[] {};
         return arg.split("[\r|\n|\r\n]{1,2}");
     }
-
+   
     /**
      * Liefert eine Zeichenkette aus dem aktuellen ResourceBundle zurück
      * 
@@ -878,15 +880,20 @@ public class JDUtilities {
                 e.printStackTrace();
             }
             String hashPost = getLocalHash(fileOutput);
+            if(fileOutput.exists()){
+                //logger.info(fileOutput.delete()+"");
+            }
+            //logger.info(""+objectToSave);
             if (hashPost == null) {
-                logger.severe("Schreibfehler: " + fileOutput + " Datei wurde nicht erstellt");
+               logger.severe("Schreibfehler: " + fileOutput + " Datei wurde nicht erstellt");
             }
             else if (hashPost.equals(hashPre)) {
-                logger.warning("Schreibvorgang: " + fileOutput + " Datei wurde nicht überschrieben");
+               // logger.warning("Schreibvorgang: " + fileOutput + " Datei wurde nicht überschrieben "+hashPost+" - "+hashPre);
             }
             else {
-                logger.finer("Schreibvorgang: " + fileOutput + " erfolgreich: " + hashPost);
+               // logger.finer("Schreibvorgang: " + fileOutput + " erfolgreich: " + hashPost);
             }
+           // logger.info(" -->"+JDUtilities.loadObject(null, fileOutput, false));
         }
         else {
             logger.severe("Schreibfehler: Fileoutput: null");
@@ -1262,7 +1269,7 @@ public class JDUtilities {
                     return RUNTYPE_LOCAL_ENV;
                 }
             }
-            logger.info("Dev.: Local splitted");
+            //logger.info("Dev.: Local splitted");
             return RUNTYPE_LOCAL;
         }
         catch (Exception e) {

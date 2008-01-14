@@ -74,17 +74,7 @@ class SubPanelLiveHeaderReconnect extends ConfigPanel implements ActionListener 
         pass = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_PASSWORDFIELD, JDUtilities.getConfiguration(), Configuration.PARAM_HTTPSEND_PASS, JDLocale.L("gui.config.liveHeader.password", "Login Passwort (->%%%pass%%%)")));
         addGUIConfigEntry(pass);
         String routerip = JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_HTTPSEND_IP, null);
-        if (routerip == null || routerip.trim().length() == 0) {
-            new Thread() {
-                public void run() {
-                    GetRouterInfo rinfo = new GetRouterInfo(null);
-                    ip.setData(rinfo.getAdress());
-                    JDUtilities.getConfiguration().setProperty(Configuration.PARAM_HTTPSEND_IP, rinfo.getAdress());
-                    JDUtilities.saveConfig();
-                }
-            }.start();
-        }
-
+     
         ip = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, JDUtilities.getConfiguration(), Configuration.PARAM_HTTPSEND_IP, JDLocale.L("gui.config.liveHeader.routerIP", "RouterIP (->%%%routerip%%%)")).setDefaultValue(routerip));
         addGUIConfigEntry(ip);
         ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, JDUtilities.getConfiguration(), Configuration.PARAM_HTTPSEND_IPCHECKWAITTIME, JDLocale.L("gui.config.liveHeader.waitTimeForIPCheck", "Wartezeit bis zum ersten IP-Check[sek]"), 0, 600).setDefaultValue(5).setExpertEntry(true));
@@ -98,6 +88,19 @@ class SubPanelLiveHeaderReconnect extends ConfigPanel implements ActionListener 
         addGUIConfigEntry(routerScript);
 
         add(panel);
+        if (routerip == null || routerip.trim().length() == 0) {
+            new Thread() {
+                public void run() {
+                    ip.setData(JDLocale.L("gui.config.liveaHeader.featchIP","Suche nach RouterIP..."));
+                    GetRouterInfo rinfo = new GetRouterInfo(null);
+                   if(ip!=null) ip.setData(rinfo.getAdress());
+                  
+                    JDUtilities.getConfiguration().setProperty(Configuration.PARAM_HTTPSEND_IP, rinfo.getAdress());
+                    JDUtilities.saveConfig();
+                }
+            }.start();
+        }
+
 
     }
 

@@ -74,14 +74,18 @@ public class HTMLDialog extends JDialog implements ActionListener {
         this.add(p,BorderLayout.SOUTH);
         
        pack();
-        this.setVisible(true);
-        this.setLocation(JDUtilities.getCenterOfComponent(frame, this));
-        setModal(true);
+        
+      
         //setLocation(JDUtilities.getCenterOfComponent(null, this));
         getRootPane().setDefaultButton(btnOk);
         setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
        // this.setLocationRelativeTo(null);
-
+        this.setVisible(true);
+        this.setLocation(JDUtilities.getCenterOfComponent(frame, this));
+        this.setVisible(false);
+        setModal(true);
+        this.setVisible(true);
+      
     }
     public static boolean showDialog(JFrame frame, String title, String question){
         HTMLDialog  tda= new HTMLDialog( frame,  title,  question);

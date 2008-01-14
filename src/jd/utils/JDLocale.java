@@ -40,7 +40,7 @@ public class JDLocale {
             logger.severe("Use setLocale() first!");
             return key;
         }
-        logger.info(key);
+       
         if (def == null) def = key;
         if (data.containsKey(key)) return JDUtilities.UTF8Decode(data.get(key)).replace("\\r", "\r").replace("\\n", "\n");
         logger.info("Key not found: " + key);

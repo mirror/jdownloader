@@ -2,8 +2,11 @@ package jd;
 
 import java.awt.Graphics;
 import java.awt.Image;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.util.Vector;
 import java.util.logging.Logger;
+import java.util.zip.Deflater;
 
 import javax.swing.JWindow;
 
@@ -60,6 +63,7 @@ public class Main {
             }
             
         }
+ 
         logger.info(System.getProperty("java.class.path"));
         // rausgenommen verlängert nur den startvorgang
         // if (SingleInstanceController.isApplicationRunning()) {
@@ -78,7 +82,7 @@ public class Main {
         main.go();
         }
     }
-
+  
     private void go() {
      
 

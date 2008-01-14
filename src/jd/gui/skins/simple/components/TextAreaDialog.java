@@ -1,7 +1,9 @@
 package jd.gui.skins.simple.components;
 
 import java.awt.BorderLayout;
+import java.awt.Dimension;
 import java.awt.Insets;
+import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.logging.Logger;
@@ -12,7 +14,7 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
-import javax.swing.JTextArea;
+import javax.swing.JTextPane;
 
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
@@ -40,7 +42,7 @@ public class TextAreaDialog extends JDialog implements ActionListener {
 
     private JButton     btnCancel;
 
-    private JTextArea   textArea;
+    private JTextPane   textArea;
 
    // private JLabel      lblText;
 
@@ -50,7 +52,7 @@ public class TextAreaDialog extends JDialog implements ActionListener {
 
     private TextAreaDialog(JFrame frame, String title, String question, String def) {
         super(frame);
-        setModal(true);
+    
         setLayout(new BorderLayout());
 
         btnCancel = new JButton(JDLocale.L("gui.btn_cancel","Cancel"));
@@ -58,8 +60,17 @@ public class TextAreaDialog extends JDialog implements ActionListener {
         btnOk = new JButton(JDLocale.L("gui.btn_ok","OK"));
         btnOk.addActionListener(this);
         setTitle(title);
-        textArea = new JTextArea(10, 60);
+        textArea = new JTextPane();
         scrollPane = new JScrollPane(textArea);
+        Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
+       
+      
+       
+        int width = screenSize.width; 
+        int height = screenSize.height;
+        
+        this.setPreferredSize(new Dimension((int)(width*0.9),(int)(height*0.9)));
+        
         textArea.setEditable(true);
         textArea.requestFocusInWindow();
         if (question != null) {
@@ -72,14 +83,21 @@ public class TextAreaDialog extends JDialog implements ActionListener {
         JPanel p= new JPanel();
         p.add(btnOk);
         p.add(btnCancel);
-        this.add(p,BorderLayout.SOUTH);
-       pack();
         this.setVisible(true);
-        
-        //setLocation(JDUtilities.getCenterOfComponent(null, this));
+        pack();
+        setLocation(JDUtilities.getCenterOfComponent(frame, this));
         getRootPane().setDefaultButton(btnOk);
         setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
-        this.setLocationRelativeTo(null);
+        this.add(p,BorderLayout.SOUTH);
+     
+        this.setVisible(false);
+        setModal(true);
+        this.setVisible(true);
+       
+        
+       
+     
+     
 
     }
     public static String showDialog(JFrame frame, String title, String question, String def){

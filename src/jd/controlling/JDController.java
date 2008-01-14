@@ -474,7 +474,8 @@ logger.info("Call re: "+ri.getHtmlCode());
                         return;
                     }
                     //logger.info("DLC KEy: " + dlcKey);
-                    JDUtilities.writeLocalFile(file, xml + dlcKey);
+                    
+                
                    if(this.getUiInterface().showConfirmDialog(JDLocale.L("sys.dlc.success", "DLC encryption successfull. Run Testdecrypt now?"))){
                        loadContainerFile(file);
                    }

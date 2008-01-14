@@ -179,12 +179,17 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
           
            pack();
        }
-  
+       if(SimpleGUI.getLastLocation(parentFrame.getFrame(), null,this)!=null){
+           this.setLocation(SimpleGUI.getLastLocation(parentFrame.getFrame(), null,this));
+          
+          
+       }
 
- 
-        LocationListener list = new LocationListener();
-      this.addComponentListener(list);
-     
+
+       
+       LocationListener list = new LocationListener();
+     this.addComponentListener(list);
+     this.addWindowListener(list);
         
         
        

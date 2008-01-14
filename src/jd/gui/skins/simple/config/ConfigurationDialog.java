@@ -141,6 +141,7 @@ public class ConfigurationDialog extends JDialog implements ActionListener, Chan
       LocationListener list = new LocationListener();
      if(SimpleGUI.getLastDimension(this, null)!=null) this.setSize(SimpleGUI.getLastDimension(this, null));
       this.addComponentListener(list);
+      this.addWindowListener(list);
         this.setVisible(true);
     }
 
