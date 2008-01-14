@@ -139,6 +139,8 @@ public class SpeedMeter {
 			}
 
 		}
+		if(entries.size()==0)
+			return 0;
 		start = (Long) entries.get(0)[0];
 		long dif = current - start;
 		isRunning = false;
