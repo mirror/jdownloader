@@ -429,7 +429,7 @@ public class JDInit {
                         logger.info("New Updates Available! " + files);
                         JDUtilities.download(JDUtilities.getResourceFile("webupdater.jar"), "http://jdownloader.ath.cx/autoUpdate2/webupdater.jar");
                         JDUtilities.download(JDUtilities.getResourceFile("changeLog.txt"), "http://www.syncom.org/projects/jdownloader/log/?format=changelog");
-
+                        
                         if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_WEBUPDATE_AUTO_RESTART, false)) {
 
                             JDUtilities.writeLocalFile(JDUtilities.getResourceFile("webcheck.tmp"), new Date().toString() + "\r\n(Revision" + JDUtilities.getRevision() + ")");
@@ -456,8 +456,12 @@ public class JDInit {
     }
 
     public void checkUpdate() {
-        // TODO Auto-generated method stub
-
+        File updater = JDUtilities.getResourceFile("webupdater.jar");
+if(updater.exists()){
+    if(!updater.delete()){
+        logger.severe("Webupdater.jar could not be deleted. PLease remove JDHOME/webupdater.jar to ensure a proper update");
+    }
+}
         if (JDUtilities.getResourceFile("webcheck.tmp").exists() && JDUtilities.getLocalFile(JDUtilities.getResourceFile("webcheck.tmp")).indexOf("(Revision" + JDUtilities.getRevision() + ")") > 0) {
             JDUtilities.getController().getUiInterface().showTextAreaDialog("Error", "Failed Update detected!", "It seems that the previous webupdate failed.\r\nPlease ensure that your java-version is equal- or above 1.5.\r\nMore infos at http://www.syncom.org/projects/jdownloader/wiki/FAQ.\r\n\r\nErrorcode: \r\n" + JDUtilities.getLocalFile(JDUtilities.getResourceFile("webcheck.tmp")));
             JDUtilities.getResourceFile("webcheck.tmp").delete();

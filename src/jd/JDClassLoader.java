@@ -48,10 +48,12 @@ public class JDClassLoader extends java.lang.ClassLoader {
             //jars = new JarFile[files.length];
             for(int i=0;i<files.length;i++){
                 try {
+                    if(!files[i].getAbsolutePath().endsWith("webupdater.jar")){
                     logger.finer("Jar file loaded: "+files[i].getAbsolutePath());
                     //jars[i] = new JarFile(files[i]);
                     
                     jarFiles.add(new JarFile(files[i]));
+                    }
                 }
                 catch (IOException e) {
                     e.printStackTrace();
@@ -64,9 +66,11 @@ public class JDClassLoader extends java.lang.ClassLoader {
            // jars = new JarFile[files.length];
             for(int i=0;i<files.length;i++){
                 try {
+                    if(!files[i].getAbsolutePath().endsWith("webupdater.jar")){
                     logger.finer("Jar file loaded: "+files[i].getAbsolutePath());
                   
                     jarFiles.add(new JarFile(files[i]));
+                    }
                   
                 }
                 catch (IOException e) {

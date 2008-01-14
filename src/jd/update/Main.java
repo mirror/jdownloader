@@ -41,6 +41,10 @@ public static Insets INSETS=new Insets(5,5,5,5);
         }
         catch (UnsupportedLookAndFeelException e) {
         }
+       File file = new File("webupdater.jar");
+       if(file.exists()){
+           file.deleteOnExit();
+       }
         JFrame frame = new JFrame();
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setTitle("JD Update");
