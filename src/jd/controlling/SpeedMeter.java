@@ -1,7 +1,7 @@
 package jd.controlling;
 
 import java.util.Iterator;
-import java.util.LinkedList;
+import java.util.Vector;
 
 /**
  * Diese Klasse kann einen Laufenden durschschnitt erstellen
@@ -14,7 +14,7 @@ public class SpeedMeter {
 
 	boolean isRunning = false;
 	boolean isListManagerRunning = false;
-	private LinkedList<Object[]> entries = new LinkedList<Object[]>();
+	private Vector<Object[]> entries = new Vector<Object[]>(300);
 
 	/**
 	 * KOnstruktor dem die Zeit übergeben werden kann über die der durchschnitt
