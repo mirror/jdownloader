@@ -14,7 +14,7 @@ import jd.utils.JDUtilities;
  *
 
  * 
- * @author coalado
+ * @author JD-Team
  */
 public class JACTrain {
     private Logger logger = UTILITIES.getLogger();

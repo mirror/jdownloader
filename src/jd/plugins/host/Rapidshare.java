@@ -198,7 +198,7 @@ public class Rapidshare extends PluginForHost {
 
     @Override
     public String getCoder() {
-        return "astaldo/coalado";
+        return "astaldo/JD-Team";
     }
 
     @Override

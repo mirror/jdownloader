@@ -20,7 +20,7 @@ import jd.utils.JDUtilities;
  * 
  * 
  * 
- * @author coalado
+ * @author JD-Team
  * 
  */
 public class Musiclounge extends PluginForSearch {

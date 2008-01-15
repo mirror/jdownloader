@@ -33,7 +33,7 @@ import jd.utils.JDUtilities;
 import sun.misc.Service;
 
 /**
- * @author coalado
+ * @author JD-Team
  */
 
 public class JDInit {

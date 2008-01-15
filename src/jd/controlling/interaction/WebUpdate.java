@@ -13,7 +13,7 @@ import jd.utils.JDUtilities;
 /**
  * Diese Klasse führt ein Webupdate durch
  * 
- * @author coalado
+ * @author JD-Team
  */
 public class WebUpdate extends Interaction implements Serializable {
     /**

@@ -28,7 +28,7 @@ public class Megauploadcom extends PluginForHost {
 
     static private final String     PLUGIN_ID                           = PLUGIN_NAME + "-" + VERSION;
 
-    static private final String     CODER                               = "coalado";
+    static private final String     CODER                               = "JD-Team";
 
     static private final String     SIMPLEPATTERN_CAPTCHA_URl           = " <img src=\"/capgen.php?°\">";
 

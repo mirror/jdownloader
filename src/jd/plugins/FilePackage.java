@@ -11,7 +11,7 @@ import jd.utils.JDUtilities;
 /**
  * Diese Klasse verwaltet Pakete
  * 
- * @author coalado
+ * @author JD-Team
  */
 public class FilePackage extends Property implements Serializable {
     /**

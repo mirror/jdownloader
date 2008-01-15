@@ -31,7 +31,7 @@ import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
 /**
- * @author coalado
+ * @author JD-Team
  * 
  */
 public class ConfigPanelPluginsOptional extends ConfigPanel implements ActionListener, MouseListener {

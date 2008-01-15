@@ -26,7 +26,7 @@ import jd.utils.JDUtilities;
 /**
  * Diese Komponente ist ein Droptarget. und nimmt gedroppte STrings auf
  * 
- * @author coalado
+ * @author JD-Team
  */
 public class DragNDrop extends JComponent implements DropTargetListener {
     /**

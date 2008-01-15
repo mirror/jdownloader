@@ -9,7 +9,7 @@ import jd.utils.JDUtilities;
 /**
  * Dies ist die Oberklasse für alle Plugins, die Containerdateien nutzen können
  * 
- * @author astaldo/coalado
+ * @author astaldo/JD-Team
  */
 
 public abstract class PluginForContainer extends PluginForDecrypt {

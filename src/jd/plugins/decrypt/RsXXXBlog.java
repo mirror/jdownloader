@@ -18,7 +18,7 @@ import jd.utils.JDUtilities;
  * http://rs.hoerbuch.in/com-UmY3YGNiRjN/PP-Grun.rar
  * 
  * 
- * @author coalado
+ * @author JD-Team
  * 
  */
 public class RsXXXBlog extends PluginForDecrypt {
@@ -39,7 +39,7 @@ public class RsXXXBlog extends PluginForDecrypt {
 
     @Override
     public String getCoder() {
-        return "coalado";
+        return "JD-Team";
     }
 
     @Override

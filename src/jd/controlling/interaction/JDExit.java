@@ -7,7 +7,7 @@ import jd.utils.JDLocale;
 /**
  * Diese Klasse führt eine Test Interaction durch
  * 
- * @author coalado
+ * @author JD-Team
  */
 public class JDExit extends Interaction implements Serializable {
 

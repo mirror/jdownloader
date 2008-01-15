@@ -1264,7 +1264,7 @@ public class JUnrar {
 	 */
 	public LinkedList<String> unrar() {
 		unrar = getUnrarCommand();
-		logger.info("Starting Unrar (DwD|Coalado)");
+		logger.info("Starting Unrar (DwD|JD-Team)");
 		logger.info("Config->unrar: " + unrar);
 		logger.info("Config->extractFolder: " + extractFolder);
 		logger.info("Config->useToextractlist: " + useToextractlist);

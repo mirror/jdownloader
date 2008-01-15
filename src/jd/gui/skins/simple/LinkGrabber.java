@@ -69,7 +69,7 @@ import jd.utils.JDUtilities;
  * Diese Klasse sammelt die Links, bündelt sie zu Paketen und führt einen
  * verfügbarkeitscheck durch
  * 
- * @author coalado
+ * @author JD-Team
  */
 public class LinkGrabber extends JFrame implements ActionListener, DropTargetListener, MouseListener, KeyListener, ChangeListener {
 
@@ -833,7 +833,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
 
     /**
      * 
-     * @author coalado
+     * @author JD-Team
      * 
      */
     class PackageTab extends JPanel implements ActionListener, MouseListener, KeyListener {
@@ -1257,7 +1257,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
 
         /**
          * 
-         * @author coalado
+         * @author JD-Team
          * 
          */
         private class InternalTable extends JTable {
@@ -1279,7 +1279,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
         /**
          * Celllistrenderer Für die Linklisten
          * 
-         * @author coalado
+         * @author JD-Team
          * 
          */
         private class InternalTableCellRenderer extends DefaultTableCellRenderer {

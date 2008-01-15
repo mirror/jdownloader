@@ -19,7 +19,7 @@ import jd.utils.JDUtilities;
  * die Steuerung eines einzelnen Downloads zuständig ist, ist DownloadWatchdog
  * für die Verwaltung und steuerung der ganzen Download Liste zuständig
  * 
- * @author coalado
+ * @author JD-Team
  * 
  */
 public class DownloadWatchDog extends Thread implements PluginListener, ControlListener {

@@ -13,7 +13,7 @@ import jd.captcha.utils.UTILITIES;
  * die getter kann nach dem ausführen von run(). Abgerufen werden welche
  * UNterschiede sich ergeben haben.
  * 
- * @author coalado
+ * @author JD-Team
  */
 public class LetterComperator {
     // Ids die Auskunft über die Art der ERkennung geben

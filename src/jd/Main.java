@@ -20,7 +20,7 @@ import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 
 /**
- * @author astaldo/coalado
+ * @author astaldo/JD-Team
  */
 
 public class Main {
@@ -36,7 +36,7 @@ public class Main {
             if(string.equals("--help") || string.equals("-h"))
             {
                 String [][] help = new String[][] {
-                        {JDUtilities.getJDTitle(), "Coalado::Astaldo::DwD::Botzi GPL"},
+                        {JDUtilities.getJDTitle(), "JD-Team::Astaldo::DwD::Botzi GPL"},
                         {"http://jdownloader.ath.cx/","http://www.the-lounge.org/viewforum.php?f=217"+System.getProperty("line.separator")},
                         {"-h, --help","Print help for jDownloader"},
                         {"-s --show", "Open a menu to show a JAC prepared captcha"},

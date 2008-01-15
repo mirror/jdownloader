@@ -16,7 +16,7 @@ import jd.utils.JDUtilities;
  * Diese Klasse kann die ConfigContainer instanz einer Interaction verwenden um
  * den gewünschten Config Dialog anzuzeigen
  * 
- * @author coalado
+ * @author JD-Team
  * 
  */
 public class ConfigPanelInteraction extends ConfigPanel implements ActionListener {

@@ -15,7 +15,7 @@ import jd.utils.JDUtilities;
 /**
  * In dieser Klasse wird der Download parallel zum Hauptthread gestartet
  * 
- * @author astaldo/coalado
+ * @author astaldo/JD-Team
  */
 public class SingleDownloadController extends ControlMulticaster {
     /**

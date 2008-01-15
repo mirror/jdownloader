@@ -8,7 +8,7 @@ import jd.utils.JDUtilities;
  * anzuzeigen. Sie bildet dabei die schnittstelle zwischen Interactionen,
  * plugins etc und der GUI
  * 
- * @author coalado
+ * @author JD-Team
  * 
  */
 public class ProgressController {

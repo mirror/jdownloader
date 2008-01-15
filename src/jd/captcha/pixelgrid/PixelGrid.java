@@ -26,7 +26,7 @@ import com.sun.image.codec.jpeg.JPEGImageEncoder;
  * Diese Klasse behinhaltet alle wichtigen Methoden um das Image-Pixelgrid zu
  * bearbeiten
  * 
- * @author coalado
+ * @author JD-Team
  */
 
 public class PixelGrid {

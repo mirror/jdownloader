@@ -12,7 +12,7 @@ import jd.utils.JDUtilities;
  * Diese Klasse ruft ein Externes Programm auf. Anschließend wird auf eine Neue
  * IP geprüft
  * 
- * @author coalado
+ * @author JD-Team
  */
 public class ExternReconnect extends Interaction implements Serializable {
     /**

@@ -8,7 +8,7 @@ import jd.utils.JDUtilities;
  * Diese Klasse speichert die GUI-Dialog Informationen. Jede GUI kann diese
  * Infos Abfragen und Entsprechend verarbeiten
  * 
- * @author coalado
+ * @author JD-Team
  * 
  */
 public class ConfigContainer implements Serializable {

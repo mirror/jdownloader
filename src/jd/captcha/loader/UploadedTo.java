@@ -15,7 +15,7 @@ import jd.utils.JDUtilities;
  * Diese Klasse lädt uploade.to Captchas
  * 
  * 
- * @author coalado
+ * @author JD-Team
  */
 public class UploadedTo {
     /**

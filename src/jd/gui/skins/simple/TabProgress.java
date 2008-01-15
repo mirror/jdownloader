@@ -20,7 +20,7 @@ import jd.utils.JDLocale;
 /**
  * Diese Klasse zeigt alle Fortschritte von momenten aktiven Plugins an.
  * 
- * @author coalado
+ * @author JD-Team
  */
 public class TabProgress extends JPanel {
     /**

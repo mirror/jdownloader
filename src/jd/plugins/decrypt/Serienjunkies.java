@@ -44,7 +44,7 @@ public class Serienjunkies extends PluginForDecrypt {
     @Override
     public String getCoder() {
         // von coa gefixed
-        return "G4E";
+        return "JD-Team";
     }
 
     @Override

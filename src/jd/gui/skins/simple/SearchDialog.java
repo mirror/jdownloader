@@ -19,7 +19,7 @@ import jd.utils.JDUtilities;
 /**
  * Diese Klasse zeigt den Suchdialog für die Search Plugins
  * 
- * @author coalado
+ * @author JD-Team
  */
 public class SearchDialog extends JDialog implements ActionListener {
 

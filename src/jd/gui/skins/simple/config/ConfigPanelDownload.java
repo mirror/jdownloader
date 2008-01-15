@@ -9,7 +9,7 @@ import jd.gui.UIInterface;
 import jd.utils.JDLocale;
 
 /**
- * @author coalado
+ * @author JD-Team
  *
  */
 public class ConfigPanelDownload extends ConfigPanel{

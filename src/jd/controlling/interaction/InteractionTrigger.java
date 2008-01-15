@@ -9,7 +9,7 @@ import jd.utils.JDUtilities;
 /**
  * Diese Klasse stellt einen Trigger für den Eventmanager dar
  * 
- * @author coalado
+ * @author JD-Team
  */
 public class InteractionTrigger implements Serializable {
     /**

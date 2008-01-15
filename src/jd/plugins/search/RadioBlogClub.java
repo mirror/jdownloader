@@ -19,7 +19,7 @@ import jd.utils.JDUtilities;
  * 
  * 
  * 
- * @author coalado
+ * @author JD-Team
  * 
  */
 public class RadioBlogClub extends PluginForSearch {

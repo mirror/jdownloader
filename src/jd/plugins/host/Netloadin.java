@@ -28,7 +28,7 @@ public class Netloadin extends PluginForHost {
     static private final String  PLUGIN_NAME      = HOST;
     static private final String  PLUGIN_VERSION   = "1.0.0";
     static private final String  PLUGIN_ID        = PLUGIN_NAME + "-" + PLUGIN_VERSION;
-    static private final String  CODER            = "coalado";
+    static private final String  CODER            = "JD-Team";
     // /Simplepattern
     static private final String  DOWNLOAD_URL     = "<div class=\"Free_dl\"><a href=\"°\">";
     // <img src="share/includes/captcha.php?t=1189894445" alt="Sicherheitsbild"

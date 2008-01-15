@@ -17,7 +17,7 @@ import jd.utils.JDUtilities;
 /**
  * versucht alle geladenen Links als container zu öffnen
  * 
- * @author coalado
+ * @author JD-Team
  * 
  */
 public class ContainerReloader extends Interaction implements Serializable {

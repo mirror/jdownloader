@@ -6,7 +6,7 @@ import java.util.Vector;
 /**
  * Diese Klasse kann einen Laufenden durschschnitt erstellen
  * 
- * @author coalado
+ * @author JD-Team
  * 
  */
 public class SpeedMeter {

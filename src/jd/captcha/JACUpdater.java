@@ -17,7 +17,7 @@ import jd.update.WebUpdater;
  * JAC Updater
 
  * 
- * @author coalado
+ * @author JD-Team
  */
 public class JACUpdater {
     private Logger logger = UTILITIES.getLogger();

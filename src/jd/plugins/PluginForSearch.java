@@ -9,7 +9,7 @@ import jd.utils.JDUtilities;
  * Dies ist die Oberklasse für alle Plugins, die nach Links suchen sollen. z.B.
  * mp3 search plugins
  * 
- * @author coalado
+ * @author JD-Team
  */
 public abstract class PluginForSearch extends Plugin {
 

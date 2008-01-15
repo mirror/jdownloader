@@ -21,7 +21,7 @@ import jd.utils.JDUtilities;
  * 
  * 
  * 
- * @author coalado
+ * @author JD-Team
  * 
  */
 public class Esnips extends PluginForSearch {
@@ -50,7 +50,7 @@ private static String[] CATEGORIES =new String[]{"Audio"};
 
     @Override
     public String getCoder() {
-        return "Coalado";
+        return "JD-Team";
     }
 
     @Override

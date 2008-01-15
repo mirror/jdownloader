@@ -348,7 +348,7 @@ public abstract class Plugin {
 	}
 
 	/**
-	 * @author coalado Setzt den Pluginfortschritt zurück. Wird Gebraucht um
+	 * @author JD-Team Setzt den Pluginfortschritt zurück. Wird Gebraucht um
 	 *         einen Download nochmals zu starten, z.B. nach dem reconnect
 	 */
 	public void resetSteps() {
@@ -414,7 +414,7 @@ public abstract class Plugin {
 	}
 
 	/**
-	 * @author coalado Gibt den kompletten Cookiestring zurück, auch wenn die
+	 * @author JD-Team Gibt den kompletten Cookiestring zurück, auch wenn die
 	 *         Cookies über mehrere Header verteilt sind
 	 * @param con
 	 * @return cookiestring
@@ -424,7 +424,7 @@ public abstract class Plugin {
 	}
 
 	/**
-	 * @author coalado
+	 * @author JD-Team
 	 * @return Gibt den aktuellen Schritt oder null zurück
 	 */
 	public PluginStep getCurrentStep() {
@@ -1115,7 +1115,7 @@ public abstract class Plugin {
 			while (!aborted && !downloadLink.isAborted()) {
 				// Thread kurz schlafen lassen, um zu häufiges Event-fire zu
 				// verhindern:
-				// coalado: nix schlafen.. ich will speed! Die Events werden
+				// JD-Team: nix schlafen.. ich will speed! Die Events werden
 				// jetzt von der GUI kontrolliert
 				int bytes = source.read(buffer);
 				if (bytes == -1)
@@ -1241,7 +1241,7 @@ public abstract class Plugin {
 			while (!aborted && !downloadLink.isAborted()) {
 				// Thread kurz schlafen lassen, um zu häufiges Event-fire zu
 				// verhindern:
-				// coalado: nix schlafen.. ich will speed! Die Events werden
+				// JD-Team: nix schlafen.. ich will speed! Die Events werden
 				// jetzt von der GUI kontrolliert
 				int bytes = source.read(buffer);
 				// Thread.sleep(0);

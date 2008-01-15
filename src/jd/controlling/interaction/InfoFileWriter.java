@@ -14,7 +14,7 @@ import jd.utils.Replacer;
 /**
  * Diese Klasse kann eine Benutzerdefinierte Info file schreiben.
  * 
- * @author coalado
+ * @author JD-Team
  */
 public class InfoFileWriter extends Interaction implements Serializable {
     private static  InfoFileWriter INSTANCE = null;

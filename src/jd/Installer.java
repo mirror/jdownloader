@@ -26,7 +26,7 @@ import jd.utils.JDUtilities;
  * beim neuinstallieren der webstartversion der User kann Basiceinstellungen
  * festlegen
  * 
- * @author Coalado
+ * @author JD-Team
  */
 public class Installer extends JDialog implements ActionListener, WindowListener {
 

@@ -51,7 +51,7 @@ import org.w3c.dom.NodeList;
  * Sie verküpft Letter und captcha Klassen. Gleichzeitig dient sie als
  * Parameter-Dump.
  * 
- * @author coalado
+ * @author JD-Team
  */
 public class JAntiCaptcha {
 

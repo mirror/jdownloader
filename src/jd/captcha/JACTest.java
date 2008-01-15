@@ -13,7 +13,7 @@ import jd.utils.JDUtilities;
  * JAC Tester
 
  * 
- * @author coalado
+ * @author JD-Team
  */
 public class JACTest {
     /**

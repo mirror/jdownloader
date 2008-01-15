@@ -18,7 +18,7 @@ import jd.utils.JDUtilities;
 
 /**
  * Parentklasse für ein 2. Popupfenster. Wird momentan zur Konfiguration der Interactions verwendet
- * @author coalado
+ * @author JD-Team
  *
  */
 public class ConfigurationPopup extends JDialog implements ActionListener {

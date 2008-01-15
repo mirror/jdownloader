@@ -311,7 +311,7 @@ public class DownloadLink implements Serializable,Comparable<DownloadLink> {
         return available;
     }
     /**
-     * @author coalado
+     * @author JD-Team
      * @return Die verschlüsselte URL
      */
     public String getEncryptedUrlDownload() {

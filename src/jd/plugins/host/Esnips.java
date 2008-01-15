@@ -24,7 +24,7 @@ public class Esnips extends PluginForHost {
     private static final String WMP_PLAYER_TO_FILE = "<param name=\"URL\" value=\"°\" ref=\"\">";
     @Override
     public String getCoder() {
-        return "Coalado";
+        return "JD-Team";
     }
     @Override
     public String getHost() {

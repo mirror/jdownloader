@@ -13,7 +13,7 @@ import jd.utils.JDUtilities;
 /**
  * Diese Klasse ist dafür da, zeitverzögert die Zwischenablage zu untersuchen
  * 
- * @author astaldo/coalado
+ * @author astaldo/JD-Team
  */
 public class ClipboardHandler extends Thread {
     /**

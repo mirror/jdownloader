@@ -15,7 +15,7 @@ import jd.utils.JDUtilities;
 /**
  * Diese Klasse parsed das JAC Script
  * 
- * @author coalado
+ * @author JD-Team
  */
 public class JACScript {
     /**

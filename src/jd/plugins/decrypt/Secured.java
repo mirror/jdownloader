@@ -39,7 +39,7 @@ public class Secured extends PluginForDecrypt {
 
     static private final String  PLUGIN_ID        = PLUGIN_NAME + "-" + VERSION;
 
-    static private final String  CODER            = "olimex|coalado|G4E";
+    static private final String  CODER            = "olimex|JD-Team|JD-Team";
 
     static private final String  JS_URL           = "http://secured.in/scripts/main_final.js";
 

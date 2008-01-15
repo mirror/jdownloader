@@ -55,7 +55,7 @@ import org.xml.sax.SAXException;
 /**
  * Diese Klasse beinhaltet mehrere Hilfsfunktionen
  * 
- * @author coalado
+ * @author JD-Team
  */
 
 public class UTILITIES {

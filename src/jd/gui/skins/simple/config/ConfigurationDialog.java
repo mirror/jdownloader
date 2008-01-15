@@ -38,7 +38,7 @@ import jd.utils.JDUtilities;
  * Diese Klasse ist das Hauptfemster der Konfiguration. Sie verwaltet die
  * Tabpane.
  * 
- * @author coalado/astaldo
+ * @author JD-Team/astaldo
  * 
  */
 public class ConfigurationDialog extends JDialog implements ActionListener, ChangeListener {
@@ -176,7 +176,7 @@ public class ConfigurationDialog extends JDialog implements ActionListener, Chan
     }
 
     /**
-     * @author coalado Fügt einen neuen ConfigTab hinzu
+     * @author JD-Team Fügt einen neuen ConfigTab hinzu
      * @param configPanel
      */
     private void addConfigPanel(Class configPanelClass, String img, String title) {

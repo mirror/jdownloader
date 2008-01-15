@@ -12,7 +12,7 @@ import jd.utils.JDUtilities;
  * Dialogelemente zu erstellen. Ein Automatisiertes speichern/laden wird dadurch
  * möglich
  * 
- * @author coalado
+ * @author JD-Team
  * 
  */
 public class Property implements Serializable {

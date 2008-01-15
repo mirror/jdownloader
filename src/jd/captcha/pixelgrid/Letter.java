@@ -10,7 +10,7 @@ import jd.captcha.utils.UTILITIES;
 /**
  * Diese Klasse beinhaltet alle Methoden für einzellne Letter.
  * 
- * @author coalado
+ * @author JD-Team
  */
 public class Letter extends PixelGrid {
 

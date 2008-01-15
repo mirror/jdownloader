@@ -87,7 +87,7 @@ import sun.misc.BASE64Decoder;
 import sun.misc.BASE64Encoder;
 
 /**
- * @author astaldo/coalado
+ * @author astaldo/JD-Team
  */
 public class JDUtilities {
     /**
@@ -1085,7 +1085,7 @@ public class JDUtilities {
     /**
      * Diese Funktion gibt den Pfad zum JAC-Methodenverzeichniss zurück
      * 
-     * @author coalado
+     * @author JD-Team
      * @return gibt den Pfad zu den JAC Methoden zurück
      */
     public static String getJACMethodsDirectory() {
@@ -1096,7 +1096,7 @@ public class JDUtilities {
     /**
      * Gibt ein FileOebject zu einem Resourcstring zurück
      * 
-     * @author coalado
+     * @author JD-Team
      * @param resource Ressource, die geladen werden soll
      * @return File zu arg
      */
@@ -1122,7 +1122,7 @@ public class JDUtilities {
      * public static String getLocalHash(File f) Gibt einen MD% Hash der file
      * zurück
      * 
-     * @author coalado
+     * @author JD-Team
      * @param f
      * @return Hashstring Md5
      */
@@ -1153,7 +1153,7 @@ public class JDUtilities {
     }
 
     /**
-     * @author coalado Macht ein urlRawEncode und spart dabei die angegebenen
+     * @author JD-Team Macht ein urlRawEncode und spart dabei die angegebenen
      *         Zeichen aus
      * @param str
      * @return str URLCodiert
@@ -1366,7 +1366,7 @@ public class JDUtilities {
     }
 
     /**
-     * @author coalado
+     * @author JD-Team
      * @param str
      * @return str als UTF8Decodiert
      */
@@ -1381,7 +1381,7 @@ public class JDUtilities {
     }
 
     /**
-     * @author coalado
+     * @author JD-Team
      * @param str
      * @return str als UTF8 Kodiert
      */
@@ -1480,7 +1480,7 @@ public class JDUtilities {
      * TODO: Serverpfad in de Config aufnehmen Gleicht das homedir mit dem
      * server ab. Der Serverpfad steht noch in WebUpdater.java
      * 
-     * @author coalado
+     * @author JD-Team
      * @return Anzahl der aktualisierten Files
      */
     public static int doWebupdate() {

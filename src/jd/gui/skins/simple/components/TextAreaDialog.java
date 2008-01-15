@@ -22,7 +22,7 @@ import jd.utils.JDUtilities;
 /**
  * Diese Klasse ist wie die Optionspane mit textfeld nur mit textarea
  * 
- * @author coalado
+ * @author JD-Team
  */
 public class TextAreaDialog extends JDialog implements ActionListener {
     /**

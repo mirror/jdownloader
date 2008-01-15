@@ -15,7 +15,7 @@ import jd.captcha.utils.UTILITIES;
  * um Pbjekte abzulegen um diese dann zu drehen doer zu transformieren. Für die
  * Objektsuche eignet sich diese Klasse wegen des internen vectors besser
  * 
- * @author coalado
+ * @author JD-Team
  * 
  */
 @SuppressWarnings("unchecked")

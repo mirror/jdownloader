@@ -20,7 +20,7 @@ import jd.captcha.utils.UTILITIES;
 /**
  * Die Klasse dient als Window Basis Klasse.
  * 
- * @author coalado
+ * @author JD-Team
  */
 public class BasicWindow extends JFrame {
     /**

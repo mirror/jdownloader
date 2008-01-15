@@ -29,7 +29,7 @@ import jd.utils.HTMLEntities;
 
 
 /**
- * @author coalado Webupdater lädt pfad und hash infos von einem server und
+ * @author JD-Team Webupdater lädt pfad und hash infos von einem server und
  *         vergleicht sie mit den lokalen versionen
  */
 public class WebUpdater implements Serializable {
@@ -328,7 +328,7 @@ public class WebUpdater implements Serializable {
     }
 
     /**
-     * @author coalado
+     * @author JD-Team
      * @param str
      * @return str als UTF8Decodiert
      */
@@ -445,7 +445,7 @@ public class WebUpdater implements Serializable {
     }
 
     /**
-     * @author coalado Macht ein urlRawEncode und spart dabei die angegebenen
+     * @author JD-Team Macht ein urlRawEncode und spart dabei die angegebenen
      *         Zeichen aus
      * @param str
      * @return str URLCodiert

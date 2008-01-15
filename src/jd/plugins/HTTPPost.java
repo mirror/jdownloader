@@ -17,7 +17,7 @@ import jd.utils.JDUtilities;
 /**
  * Diese Klasse unterstützt bei Http Post requests
  * 
- * @author coalado
+ * @author JD-Team
  */
 @SuppressWarnings("serial")
 public class HTTPPost {

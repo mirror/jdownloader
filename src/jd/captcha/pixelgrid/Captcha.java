@@ -28,7 +28,7 @@ import com.sun.image.codec.jpeg.JPEGImageEncoder;
  * Diese Klasse behinhaltet Methoden zum verarbeiten von Captchas. Also Grafiken
  * die Mehr als ein Element enthalten
  * 
- * @author coalado
+ * @author JD-Team
  */
 public class Captcha extends PixelGrid {
 
@@ -71,7 +71,7 @@ public class Captcha extends PixelGrid {
      * zur verfügung dieses Grid zu bearbeiten Um Grunde sind hier alle Methoden
      * zu finden um ein captcha als ganzes zu bearbeiten
      * 
-     * @author coalado
+     * @author JD-Team
      * @param width
      * @param height
      */

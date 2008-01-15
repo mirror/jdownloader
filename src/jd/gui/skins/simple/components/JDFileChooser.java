@@ -9,7 +9,7 @@ import jd.utils.JDUtilities;
 
 /**
  * 
- * @author coalado
+ * @author JD-Team
  * 
  * EinWrapper um JFileChooser
  */

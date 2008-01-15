@@ -14,7 +14,7 @@ import javax.swing.SwingUtilities;
 /**
  * Die Klasse dient als WIndow mit Scrollpane.
  * 
- * @author coalado
+ * @author JD-Team
  */
 @SuppressWarnings("serial")
 public class ScrollPaneWindow extends BasicWindow {

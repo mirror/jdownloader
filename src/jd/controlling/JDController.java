@@ -36,7 +36,7 @@ import jd.utils.JDUtilities;
 /**
  * Im Controller wird das ganze App gesteuert. Evebnts werden deligiert.
  * 
- * @author coalado/astaldo
+ * @author JD-Team/astaldo
  * 
  */
 public class JDController implements PluginListener, ControlListener, UIListener {
