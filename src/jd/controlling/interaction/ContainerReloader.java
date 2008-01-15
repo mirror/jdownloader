@@ -3,9 +3,10 @@ package jd.controlling.interaction;
 import java.io.File;
 import java.io.Serializable;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Vector;
-
+import java.util.LinkedList;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.Configuration;
@@ -22,8 +23,8 @@ import jd.utils.JDUtilities;
 public class ContainerReloader extends Interaction implements Serializable {
 
     /**
-     * 
-     */
+	 * 
+	 */
     private static final long serialVersionUID = -9071890385850062424L;
 
     private static final String NAME = "ContainerLoader";
@@ -47,17 +48,19 @@ public class ContainerReloader extends Interaction implements Serializable {
         }else{
        finishedLinks = JDUtilities.getController().getFinishedLinks();
         }
-        Vector<String> folders = new Vector<String>();
-        for (int i = 0; i < finishedLinks.size(); i++) {
-           
-            File folder = new File(finishedLinks.get(i).getFileOutput()).getParentFile();
-           
-            if (folder.exists()) {
-                if (folders.indexOf(folder.getAbsolutePath()) == -1) {                
-                    folders.add(folder.getAbsolutePath());
-                }
-            }
-        }
+        LinkedList<String> folders = new LinkedList<String>();
+        Iterator<DownloadLink> iter = finishedLinks.iterator();
+        while (iter.hasNext()) {
+        	DownloadLink element = (DownloadLink) iter.next();
+			  File folder = new File(element.getFileOutput()).getParentFile();
+	           
+	            if (folder.exists()) {
+	                if (folders.indexOf(folder.getAbsolutePath()) == -1) {                
+	                    folders.add(folder.getAbsolutePath());
+	                }
+	            }
+			
+		}
         folders.add(JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_DOWNLOAD_DIRECTORY));
         unrar.setFolders(folders);
         Vector<String> newFiles = new Vector<String>();
@@ -85,8 +88,8 @@ public class ContainerReloader extends Interaction implements Serializable {
     }
 
     /**
-     * Nichts zu tun. WebUpdate ist ein Beispiel für eine ThreadInteraction
-     */
+	 * Nichts zu tun. WebUpdate ist ein Beispiel für eine ThreadInteraction
+	 */
     public void run() {}
 
     public String toString() {
@@ -101,7 +104,8 @@ public class ContainerReloader extends Interaction implements Serializable {
     @Override
     public void initConfig() {
        // ConfigEntry cfg;
-        //int type, Property propertyInstance, String propertyName, Object[] list, String label
+        // int type, Property propertyInstance, String propertyName, Object[]
+		// list, String label
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         
     }

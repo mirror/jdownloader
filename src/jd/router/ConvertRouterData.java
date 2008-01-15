@@ -9,7 +9,7 @@ import java.util.Map;
 import java.util.Vector;
 
 import jd.controlling.interaction.HTTPLiveHeader;
-import jd.unrar.Utilities;
+import jd.gui.skins.simple.SimpleGUI;
 import jd.utils.JDUtilities;
 
 public class ConvertRouterData {
@@ -121,7 +121,7 @@ public class ConvertRouterData {
     }
     private void saveTolist(Vector<String[]> list, File file) {
         if (file.exists()) {
-            list.addAll((Collection<? extends String[]>) Utilities.loadObject(file, true));
+            list.addAll((Collection<? extends String[]>) JDUtilities.loadObject(((SimpleGUI) JDUtilities.getGUI()).getFrame(), file, true));
             Collections.sort(list, new Comparator<Object>() {
                 public int compare(Object a, Object b) {
                     String[] aa = (String[]) a;
@@ -140,7 +140,7 @@ public class ConvertRouterData {
             });
 
         }
-        Utilities.saveObject(list, file, true);
+        JDUtilities.saveObject(((SimpleGUI) JDUtilities.getGUI()).getFrame(), list, file, null, null, true);
     }    /*
     private static String replace(String arg)
     {

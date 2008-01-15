@@ -657,7 +657,8 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
             fp.setName(tab.getPackageName());
             fp.setComment(tab.getComment());
             fp.setPassword(tab.getPassword());
-
+            JUnrar unrar = new JUnrar(false);
+            unrar.addToPasswordlist(tab.getPassword());
             if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_PACKETNAME_AS_SUBFOLDER, false)) {
                 File file = new File(new File(tab.getDownloadDirectory()), tab.getPackageName());
                 if (!file.exists()) {
@@ -700,7 +701,8 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
         fp.setName(tab.getPackageName());
         fp.setComment(tab.getComment());
         fp.setPassword(tab.getPassword());
-
+        JUnrar unrar = new JUnrar(false);
+        unrar.addToPasswordlist(tab.getPassword());
         if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_PACKETNAME_AS_SUBFOLDER, false)) {
             File file = new File(new File(tab.getDownloadDirectory()), tab.getPackageName());
             if (!file.exists()) {
@@ -739,15 +741,6 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
     public void dragOver(DropTargetDragEvent dtde) {
         int id = tabbedPane.getUI().tabForCoordinate(tabbedPane, (int) dtde.getLocation().getX(), (int) dtde.getLocation().getY());
         if (id >= 0) tabbedPane.setSelectedIndex(id);
-    }
-
-    protected String[] getPasswordArray(String password) {
-        if (password == null) return new String[] {};
-        if (password.matches("[\\s]*\\{[\\s]*\".*\"[\\s]*\\}[\\s]*$")) {
-            password = password.replaceFirst("[\\s]*\\{[\\s]*\"", "").replaceFirst("\"[\\s]*\\}[\\s]*$", "");
-            return password.split("\"[\\s]*\\,[\\s]*\"");
-        }
-        return new String[] { password };
     }
 
     public void drop(DropTargetDropEvent e) {
@@ -965,7 +958,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
             String password = getPassword();
             String comment = getComment();
 
-            String[] pws = getPasswordArray(password);
+            String[] pws = JUnrar.getPasswordArray(password);
             Vector<String> pwList = new Vector<String>();
             for (int i = 0; i < pws.length; i++) {
                 pwList.add(pws[i]);
@@ -976,7 +969,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
                 linkList.add(list[i]);
                 String pass = list[i].getSourcePluginPassword();
 
-                pws = getPasswordArray(pass);
+                pws = JUnrar.getPasswordArray(pass);
 
                 for (int i2 = 0; i2 < pws.length; i2++) {
                     if (pwList.indexOf(pws[i2]) < 0) {
@@ -992,36 +985,14 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
 
             if (comment.startsWith("|")) comment = comment.substring(1);
 
-            String pw = vectorToPasswordList(pwList);
+            String pw = JUnrar.passwordArrayToString(pwList.toArray(new String[pwList.size()]));
 
             if(!txtComment.hasFocus())   txtComment.setText(comment);
             if(!txtPassword.hasFocus())  txtPassword.setText(pw);
-            JUnrar unrar = new JUnrar(false);
-            unrar.addToPasswordlist(password);
             refreshTable();
 
         }
 
-        private String vectorToPasswordList(Vector<String> pwList) {
-            String pw = "";
-            int c=0;
-            for (int i = 0; i < pwList.size(); i++) {
-                if (pwList.get(i).trim().length() > 0) {
-                    pw += "\"" + pwList.get(i) + "\"";
-                    if ((i + 1) < pwList.size()) pw += ", ";
-                    c++;
-                }
-
-            }
-            if (pwList.size() > 0 && pw.trim().length() > 0){
-                if(c>1){
-                pw = "{" + pw + "}";
-                }else{
-                    pw=pw.substring(1,pw.length()-2);
-                }
-            }
-            return pw;
-        }
 
         private void refreshTable() {
 

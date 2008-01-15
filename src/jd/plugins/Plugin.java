@@ -42,6 +42,7 @@ import jd.config.Configuration;
 import jd.config.Property;
 import jd.plugins.event.PluginEvent;
 import jd.plugins.event.PluginListener;
+import jd.unrar.JUnrar;
 import jd.utils.JDUtilities;
 
 /**
@@ -1963,22 +1964,7 @@ public abstract class Plugin {
 
 	public static String findPassword(String data) {
 		Vector<String> passwords = findPasswords(data);
-		Vector<String> unique = new Vector<String>();
-		String pw = "";
-		if (passwords.size() == 1)
-			return passwords.get(0);
-		else if (passwords.size() > 0) {
-			pw = "{\"" + passwords.get(0) + "\"";
-			unique.add(passwords.get(0));
-			for (int i = 1; i < passwords.size(); i++) {
-				if (!unique.contains(passwords.get(i))) {
-					pw += ",\"" + passwords.get(i) + "\"";
-					unique.add(passwords.get(i));
-				}
-			}
-			pw += "}";
-		}
-		return pw;
+		return JUnrar.passwordArrayToString(passwords.toArray(new String[passwords.size()]));
 	}
 
 }

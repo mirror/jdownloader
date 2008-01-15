@@ -3,7 +3,7 @@ package jd.controlling.interaction;
 import java.io.File;
 import java.io.Serializable;
 import java.util.Iterator;
-import java.util.Vector;
+import java.util.LinkedList;
 
 import jd.config.Configuration;
 import jd.plugins.DownloadLink;
@@ -13,7 +13,7 @@ import jd.utils.JDUtilities;
 
 /**
  * Diese Klasse fürs automatische Entpacken
- *  
+ * 
  * @author DwD
  */
 public class Unrar extends Interaction implements Serializable {
@@ -108,8 +108,6 @@ public class Unrar extends Interaction implements Serializable {
 			}
 			unrar = new JUnrar(new File(lastFinishedDownload.getFileOutput()),
 					password);
-			if (password != null)
-				unrar.addToPasswordlist(password);
 			unrar.useToextractlist = true;
 		} else {
 			unrar = new JUnrar();
@@ -151,18 +149,19 @@ public class Unrar extends Interaction implements Serializable {
 		IS_RUNNING = true;
 		JUnrar unrar = getUnrar();
 		if (lastFinishedDownload == null) {
-			Vector<String> folders = new Vector<String>();
+			LinkedList<String> folders = new LinkedList<String>();
 			// wird nur befoetigt wenn PARAM_USE_PACKETNAME_AS_SUBFOLDER
 			// auch
 			// true ist
 			if (JDUtilities.getConfiguration().getBooleanProperty(
 					Configuration.PARAM_USE_PACKETNAME_AS_SUBFOLDER, false)) {
-				Vector<DownloadLink> finishedLinks = JDUtilities
-						.getController().getFinishedLinks();
-				for (int i = 0; i < finishedLinks.size(); i++) {
+				Iterator<DownloadLink> iter = JDUtilities.getController()
+				.getFinishedLinks().iterator();
+				while (iter.hasNext()) {
+					DownloadLink element = (DownloadLink) iter.next();
 					logger.info("finished File: "
-							+ finishedLinks.get(i).getFileOutput());
-					File folder = new File(finishedLinks.get(i).getFileOutput())
+							+ element.getFileOutput());
+					File folder = new File(element.getFileOutput())
 							.getParentFile();
 					logger.info("Folder: " + folder);
 					if (folder.exists()) {
@@ -190,7 +189,7 @@ public class Unrar extends Interaction implements Serializable {
 			 * unrar.setFolders(newFolderList); newFolderList = unrar.unrar(); }
 			 */
 		}
-		Vector<String> followingFiles = new Vector<String>();
+		LinkedList<String> followingFiles = new LinkedList<String>();
 		Iterator<DownloadLink> ff = JDUtilities.getController()
 				.getDownloadLinks().iterator();
 		while (ff.hasNext()) {
