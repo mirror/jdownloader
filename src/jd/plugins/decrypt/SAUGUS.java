@@ -30,7 +30,7 @@ public class SAUGUS extends PluginForDecrypt {
 
 	@Override
 	public String getCoder() {
-		return "Osama";
+		return "scr4ve";
 	}
 
 	@Override

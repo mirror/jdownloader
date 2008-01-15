@@ -46,7 +46,7 @@ public class Divxvid extends PluginForDecrypt {
      */
     @Override
     public String getCoder() {
-        return "DwD aka James";
+        return "G4E";
     }
 
     @Override

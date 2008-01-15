@@ -24,7 +24,7 @@ public class Filer extends PluginForHost {
     static private final String PLUGIN_NAME = HOST;
     static private final String PLUGIN_VERSION = "0.1";
     static private final String PLUGIN_ID = PLUGIN_NAME + "-" + PLUGIN_VERSION;
-    static private final String CODER = "DwD";
+    static private final String CODER = "G4E";
     static private final String FILE_NOT_FOUND = "Konnte Download nicht finden";
     static private final String FILE_NOT_FOUND2 = "Oops! We couldn't find this page for you.";
     static private final String FREE_USER_LIMIT="Momentan sind die Limits f&uuml;r Free-Downloads erreicht";

@@ -30,7 +30,7 @@ public class DatenKlo extends PluginForHost {
     } // kein BotCheck
     @Override
     public String getCoder() {
-        return "Anonymous";
+        return "G4E";
     }
     @Override
     public String getPluginName() {

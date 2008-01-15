@@ -27,7 +27,7 @@ public class Filer extends PluginForDecrypt {
 
     @Override
     public String getCoder() {
-        return "DwD";
+        return "G4E";
     }
 
     @Override

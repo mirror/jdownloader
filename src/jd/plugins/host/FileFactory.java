@@ -50,7 +50,7 @@ public class FileFactory extends PluginForHost {
 
     @Override
     public String getCoder() {
-        return "DwD/Coalado";
+        return "G4E/Coalado";
     }
 
     @Override
