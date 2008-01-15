@@ -74,7 +74,7 @@ public class ConfigurationDialog extends JDialog implements ActionListener, Chan
 
     private SubConfiguration          guiConfig;
 
-    private JButton btnRestart;
+    private JButton                   btnRestart;
 
     private ConfigurationDialog(JFrame parent, UIInterface uiinterface) {
         super(parent);
@@ -83,12 +83,9 @@ public class ConfigurationDialog extends JDialog implements ActionListener, Chan
         PARENTFRAME = parent;
         this.uiinterface = uiinterface;
         setTitle(JDLocale.L("gui.config.title", "Konfiguration"));
-        setModal(true);
-        setLayout(new GridBagLayout());
-        this.setName("CONFIGDIALOG");
       
 
-
+        this.setName("CONFIGDIALOG");
 
         configuration = JDUtilities.getConfiguration();
         tabbedPane = new JTabbedPane();
@@ -96,25 +93,23 @@ public class ConfigurationDialog extends JDialog implements ActionListener, Chan
         tabbedPane.setTabLayoutPolicy(JTabbedPane.SCROLL_TAB_LAYOUT);
         tabbedPane.setTabPlacement(JTabbedPane.LEFT);
         tabbedPane.addChangeListener(this);
-        tabbedPane.setPreferredSize(new Dimension(800, 500));
-        this.addConfigPanel(ConfigPanelGeneral.class, JDTheme.I("gui.images.config.home"), JDLocale.L("gui.config.tabLables.general", "General settings"));
 
+        this.addConfigPanel(ConfigPanelGeneral.class, JDTheme.I("gui.images.config.home"), JDLocale.L("gui.config.tabLables.general", "General settings"));
         this.addConfigPanel(ConfigPanelDownload.class, JDTheme.I("gui.images.config.network_local"), JDLocale.L("gui.config.tabLables.download", "Download/Network settings"));
         this.addConfigPanel(ConfigPanelGUI.class, JDTheme.I("gui.images.config.home"), JDLocale.L("gui.config.tabLables.gui", "Benutzeroberfläche"));
-
         this.addConfigPanel(ConfigPanelReconnect.class, JDTheme.I("gui.images.config.reboot"), JDLocale.L("gui.config.tabLables.reconnect", "Reconnect settings"));
-        if (guiConfig.getBooleanProperty(SimpleGUI.PARAM_USE_EXPERT_VIEW, false)) this.addConfigPanel(ConfigPanelCaptcha.class, JDTheme.I("gui.images.config.ocr", "ocr"), JDLocale.L("gui.config.tabLables.jac", "OCR Captcha settings"));
         this.addConfigPanel(ConfigPanelUnrar.class, JDTheme.I("gui.images.config.package"), JDLocale.L("gui.config.tabLables.unrar", "Archiv extract settings"));
-        if (guiConfig.getBooleanProperty(SimpleGUI.PARAM_USE_EXPERT_VIEW, false)) this.addConfigPanel(ConfigPanelInfoFileWriter.class, JDTheme.I("gui.images.config.load", "load"), JDLocale.L("gui.config.tabLables.infoFileWriter", "'Info File Writer' settings"));
-        if (guiConfig.getBooleanProperty(SimpleGUI.PARAM_USE_EXPERT_VIEW, false)) this.addConfigPanel(ConfigPanelEventmanager.class, JDTheme.I("gui.images.config.switch", "switch"), JDLocale.L("gui.config.tabLables.eventManager", "Eventmanager"));
-
         this.addConfigPanel(ConfigPanelPluginForHost.class, JDTheme.I("gui.images.config.star"), JDLocale.L("gui.config.tabLables.hostPlugin", "Host Plugin settings"));
         this.addConfigPanel(ConfigPanelPluginForDecrypt.class, JDTheme.I("gui.images.config.tip"), JDLocale.L("gui.config.tabLables.decryptPlugin", "Decrypter Plugin settings"));
-//        if (guiConfig.getBooleanProperty(SimpleGUI.PARAM_USE_EXPERT_VIEW, false)) this.addConfigPanel(ConfigPanelPluginForSearch.class, JDTheme.I("gui.images.config.find"), JDLocale.L("gui.config.tabLables.searchPlugin", "Search Plugin settings"));
-        if (guiConfig.getBooleanProperty(SimpleGUI.PARAM_USE_EXPERT_VIEW, false)) this.addConfigPanel(ConfigPanelPluginsOptional.class, JDTheme.I("gui.images.config.edit_redo"), JDLocale.L("gui.config.tabLables.optionalPlugin", "Optional Plugin settings"));
-        if (guiConfig.getBooleanProperty(SimpleGUI.PARAM_USE_EXPERT_VIEW, false)) this.addConfigPanel(ConfigPanelPluginForContainer.class, JDTheme.I("gui.images.config.database"), JDLocale.L("gui.config.tabLables.containerPlugin", "Link-Container settings"));
-     this.addConfigPanel(ConfigPanelLinks.class, JDTheme.I("gui.images.config.tip"), JDLocale.L("gui.config.tabLables.links", "Wichtige Links"));
+        this.addConfigPanel(ConfigPanelLinks.class, JDTheme.I("gui.images.config.tip"), JDLocale.L("gui.config.tabLables.links", "Wichtige Links"));
 
+        if (guiConfig.getBooleanProperty(SimpleGUI.PARAM_USE_EXPERT_VIEW, false)) {
+            this.addConfigPanel(ConfigPanelCaptcha.class, JDTheme.I("gui.images.config.ocr", "ocr"), JDLocale.L("gui.config.tabLables.jac", "OCR Captcha settings"));
+            this.addConfigPanel(ConfigPanelInfoFileWriter.class, JDTheme.I("gui.images.config.load", "load"), JDLocale.L("gui.config.tabLables.infoFileWriter", "'Info File Writer' settings"));
+            this.addConfigPanel(ConfigPanelEventmanager.class, JDTheme.I("gui.images.config.switch", "switch"), JDLocale.L("gui.config.tabLables.eventManager", "Eventmanager"));
+            this.addConfigPanel(ConfigPanelPluginsOptional.class, JDTheme.I("gui.images.config.edit_redo"), JDLocale.L("gui.config.tabLables.optionalPlugin", "Optional Plugin settings"));
+            this.addConfigPanel(ConfigPanelPluginForContainer.class, JDTheme.I("gui.images.config.database"), JDLocale.L("gui.config.tabLables.containerPlugin", "Link-Container settings"));
+        }
         btnSave = new JButton(JDLocale.L("gui.config.btn_save", "Speichern"));
         btnSave.addActionListener(this);
         btnCancel = new JButton(JDLocale.L("gui.config.btn_cancel", "Abbrechen"));
@@ -124,24 +119,30 @@ public class ConfigurationDialog extends JDialog implements ActionListener, Chan
         chbExpert = new JCheckBox(JDLocale.L("gui.config.cbo_expert", "Experten Ansicht"));
         chbExpert.setSelected(guiConfig.getBooleanProperty(SimpleGUI.PARAM_USE_EXPERT_VIEW, false));
         chbExpert.addActionListener(this);
-        Insets insets = new Insets(5, 5, 5, 5);
+       
+        setLayout(new GridBagLayout());
+        JDUtilities.addToGridBag(this, tabbedPane, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 1, 1, null, GridBagConstraints.BOTH, GridBagConstraints.NORTHWEST);
+        JPanel btPanel=new JPanel();
+        btPanel.add(btnRestart);
+        btPanel.add(btnSave);
+        btPanel.add(btnCancel);
+        JDUtilities.addToGridBag(this, chbExpert, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, 1, 0, 0, null, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+        JDUtilities.addToGridBag(this, btPanel, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 0, 0, null, GridBagConstraints.NONE, GridBagConstraints.EAST);
 
-        JDUtilities.addToGridBag(this, tabbedPane, 0, 0, 3, 3, 1, 1, null, GridBagConstraints.BOTH, GridBagConstraints.NORTHWEST);
-        JDUtilities.addToGridBag(this, chbExpert, 0, 4, 1, 1, 1, -1, insets, GridBagConstraints.HORIZONTAL, GridBagConstraints.SOUTHEAST);
-        JDUtilities.addToGridBag(this, btnRestart, 1, 4, 1, 1, 0, -1, insets, GridBagConstraints.NONE, GridBagConstraints.SOUTHEAST);
-        
-        JDUtilities.addToGridBag(this, btnSave, 2, 4, 1, 1, 0, -1, insets, GridBagConstraints.NONE, GridBagConstraints.SOUTHEAST);
-        JDUtilities.addToGridBag(this, btnCancel, 3, 4, 1, 1, 0, -1, insets, GridBagConstraints.NONE, GridBagConstraints.SOUTHEAST);
-
+//        JDUtilities.addToGridBag(this, btnSave, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, 1, 1, 0, null, GridBagConstraints.NONE, GridBagConstraints.EAST);
+//        JDUtilities.addToGridBag(this, btnCancel, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 0, 0, null, GridBagConstraints.NONE, GridBagConstraints.EAST);
+      
         paintPanel(0);
         pack();
-        
-          JDUtilities.getLogger().info("GETLOCATION");
-      this.setLocation(SimpleGUI.getLastLocation(parent, null, this));
-      LocationListener list = new LocationListener();
-     if(SimpleGUI.getLastDimension(this, null)!=null) this.setSize(SimpleGUI.getLastDimension(this, null));
-      this.addComponentListener(list);
-      this.addWindowListener(list);
+
+        this.setVisible(true);
+        this.setLocation(SimpleGUI.getLastLocation(parent, null, this));
+        LocationListener list = new LocationListener();
+        if (SimpleGUI.getLastDimension(this, null) != null) this.setSize(SimpleGUI.getLastDimension(this, null));
+        this.addComponentListener(list);
+        this.addWindowListener(list);
+        this.setVisible(false);
+        setModal(true);
         this.setVisible(true);
     }
 
@@ -160,7 +161,7 @@ public class ConfigurationDialog extends JDialog implements ActionListener, Chan
     }
 
     @SuppressWarnings("unchecked")
-	public ConfigPanel initSubPanel(Class class1) {
+    public ConfigPanel initSubPanel(Class class1) {
         try {
 
             Class[] classes = new Class[] { Configuration.class, UIInterface.class };
@@ -217,10 +218,9 @@ public class ConfigurationDialog extends JDialog implements ActionListener, Chan
             JDUtilities.setConfiguration(configuration);
             JDUtilities.saveConfig();
             JDUtilities.restartJD();
-    
 
         }
-        
+
         if (e.getSource() == btnSave) {
             for (int i = 0; i < configPanels.size(); i++) {
                 if (configPanels.elementAt(i) != null) configPanels.elementAt(i).save();
@@ -250,7 +250,7 @@ public class ConfigurationDialog extends JDialog implements ActionListener, Chan
         int index = tabbedPane.getSelectedIndex();
         paintPanel(index);
         validate();
-        pack();
+        // pack();
 
     }
 

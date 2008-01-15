@@ -68,8 +68,7 @@ public class ConfigPanelGeneral extends ConfigPanel {
         // }
         // addGUIConfigEntry(ce);
 
-        ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, configuration, Configuration.PARAM_START_DOWNLOADS_AFTER_START, JDLocale.L("gui.config.general.startDownloadsOnStartUp", "Download beim Programmstart beginnen")).setDefaultValue(false));
-        addGUIConfigEntry(ce);
+      
 
         ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, configuration, Configuration.PARAM_USE_PACKETNAME_AS_SUBFOLDER, JDLocale.L("gui.config.general.createSubFolders", "Wenn möglich Unterordner mit Paketname erstellen")).setDefaultValue(false));
         addGUIConfigEntry(ce);

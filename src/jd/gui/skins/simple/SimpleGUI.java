@@ -91,6 +91,8 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
 
     public static final String      PARAM_BROWSER                 = "BROWSER";
 
+    public static final String      PARAM_START_DOWNLOADS_AFTER_START  = "START_DOWNLOADS_AFTER_START";
+
     public static final String      GUICONFIGNAME                 = "simpleGUI";
 
     /**
@@ -1229,6 +1231,15 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
     public boolean showHTMLDialog(String title, String htmlQuestion) {
        return HTMLDialog.showDialog(getFrame(), title, htmlQuestion);
       
+    }
+
+    public void onJDInitComplete() {
+        if (guiConfig.getBooleanProperty(SimpleGUI.PARAM_START_DOWNLOADS_AFTER_START, false)) {
+            btnStartStop.setSelected(true);
+            this.startStopDownloads();
+         }
+
+        
     }
 
 }

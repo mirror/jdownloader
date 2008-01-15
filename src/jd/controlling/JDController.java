@@ -46,6 +46,8 @@ public class JDController implements PluginListener, ControlListener, UIListener
 
     public static final int                   DOWNLOAD_NOT_RUNNING             = 3;
 
+    public static final int INIT_STATUS_COMPLETE = 0;
+
     /**
      * Mit diesem Thread wird eingegebener Text auf Links untersucht
      */
@@ -99,6 +101,8 @@ public class JDController implements PluginListener, ControlListener, UIListener
     private Unrar                             unrarModule;
 
     private InfoFileWriter                    infoFileWriterModule;
+
+    private int initStatus=-1;
 
     public JDController() {
         downloadLinks = new Vector<DownloadLink>();
@@ -958,6 +962,14 @@ logger.info("Call re: "+ri.getHtmlCode());
 
     public void setClipboard(ClipboardHandler clipboard) {
         this.clipboard = clipboard;
+    }
+
+    public void setInitStatus(int initStatus) {
+        this.initStatus= initStatus;
+    }
+
+    public int getInitStatus() {
+        return initStatus;
     }
 
 }

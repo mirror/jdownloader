@@ -98,4 +98,8 @@ public interface UIInterface {
      * @param string
      */
     public boolean showHTMLDialog(String title,String htmlQuestion);
+    /**
+     * Wird aufgeruifen sobald die Initialisierung aller Module komplett ist
+     */
+    public void onJDInitComplete();
 }

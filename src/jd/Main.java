@@ -120,7 +120,7 @@ if(JDUtilities.getRunType()==JDUtilities.RUNTYPE_LOCAL_JARED){
             init.doWebupdate();
 }
         }
-     
+        controller.setInitStatus(JDController.INIT_STATUS_COMPLETE);
        
         /*
          * Das ist ein kurzeitiger Übergangsfix. der teil löscht Interactionen
@@ -141,15 +141,10 @@ if(JDUtilities.getRunType()==JDUtilities.RUNTYPE_LOCAL_JARED){
             JDUtilities.getConfiguration().setInteractions(interactions);
             JDUtilities.saveConfig();
         }
-        /*
-         * Ende des Interactionfixes
-         */
-        if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_START_DOWNLOADS_AFTER_START, false)) {
-            controller.getUiInterface().fireUIEvent(new UIEvent(controller.getUiInterface(), UIEvent.UI_START_DOWNLOADS));
-        }
-
+    
+     
         window.dispose();
-
+        controller.getUiInterface().onJDInitComplete();
     }
 
 }
