@@ -75,7 +75,6 @@ public class XliceNet extends PluginForDecrypt {
                 URL url = new URL(parameter);
                 RequestInfo reqinfo = getRequest(url, null, null, true);
                 String cookie = reqinfo.getCookie();
-                System.out.println(reqinfo.getHtmlCode());
                 String[] links = new Regexp(reqinfo.getHtmlCode(),
                         "<a href=\"(/file/go/.*?)\" target\\=\".blank\"><img src\\=\"/img/.*?_1.gif")
                         .getMatches(1);
