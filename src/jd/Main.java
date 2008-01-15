@@ -103,7 +103,7 @@ public class Main {
 
         final JDController controller = init.initController();
         if (init.installerWasVisible()) {
-            init.doWebupdate();
+            init.doWebupdate(JDUtilities.getConfiguration().getIntegerProperty(Configuration.CID, -1));
 
         }
         else {
@@ -117,7 +117,7 @@ public class Main {
             init.checkUpdate();
 if(JDUtilities.getRunType()==JDUtilities.RUNTYPE_LOCAL_JARED){
    
-            init.doWebupdate();
+            init.doWebupdate(JDUtilities.getConfiguration().getIntegerProperty(Configuration.CID, -1));
 }
         }
         controller.setInitStatus(JDController.INIT_STATUS_COMPLETE);
@@ -145,6 +145,9 @@ if(JDUtilities.getRunType()==JDUtilities.RUNTYPE_LOCAL_JARED){
      
         window.dispose();
         controller.getUiInterface().onJDInitComplete();
+    
+       
+        
     }
 
 }

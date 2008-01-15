@@ -27,7 +27,6 @@ import javax.swing.JProgressBar;
 
 import jd.utils.HTMLEntities;
 
-
 /**
  * @author JD-Team Webupdater lädt pfad und hash infos von einem server und
  *         vergleicht sie mit den lokalen versionen
@@ -60,11 +59,13 @@ public class WebUpdater implements Serializable {
 
     private StringBuffer      logger;
 
-    private boolean           allOs;
+ 
 
-    private JProgressBar progresslist=null;
+    private JProgressBar      progresslist     = null;
 
-    private JProgressBar progressload=null;
+    private JProgressBar      progressload     = null;
+
+    private int cid=-1;
 
     /**
      * @param path (Dir Pfad zum Updateserver)
@@ -131,7 +132,7 @@ public class WebUpdater implements Serializable {
      */
     public void updateFiles(Vector<Vector<String>> files) {
         String akt;
-        if(progressload!=null)this.progressload.setMaximum(files.size());
+        if (progressload != null) this.progressload.setMaximum(files.size());
         updatedFiles = 0;
         for (int i = files.size() - 1; i >= 0; i--) {
 
@@ -150,9 +151,9 @@ public class WebUpdater implements Serializable {
                 }
                 log("Webupdater: ready");
             }
-            if(progressload!=null)   progressload.setValue(files.size()-i);
+            if (progressload != null) progressload.setValue(files.size() - i);
         }
-       if(progressload!=null) progressload.setValue(100);
+        if (progressload != null) progressload.setValue(100);
     }
 
     /**
@@ -179,7 +180,7 @@ public class WebUpdater implements Serializable {
                 log("UPDATE AV. " + files.elementAt(i) + " - " + hash);
                 continue;
             }
-            //log("OLD:  " + files.elementAt(i) + " - " + hash);
+            // log("OLD: " + files.elementAt(i) + " - " + hash);
             files.removeElementAt(i);
         }
 
@@ -189,26 +190,27 @@ public class WebUpdater implements Serializable {
         log(files.toString());
         String akt;
         String hash;
-        try{
-        for (int i = files.size() - 1; i >= 0; i--) {
-            String[] tmp = files.elementAt(i).elementAt(0).split("\\?");
+        try {
+            for (int i = files.size() - 1; i >= 0; i--) {
+                String[] tmp = files.elementAt(i).elementAt(0).split("\\?");
 
-            akt = new File(dir, tmp[0]).getAbsolutePath();
+                akt = new File(dir, tmp[0]).getAbsolutePath();
 
-            if (!new File(akt).exists()) {
-                log("New file. " + files.elementAt(i) + " - " + akt);
-                continue;
+                if (!new File(akt).exists()) {
+                    log("New file. " + files.elementAt(i) + " - " + akt);
+                    continue;
+                }
+                hash = getLocalHash(new File(akt));
+
+                if (!hash.equalsIgnoreCase(files.elementAt(i).elementAt(1))) {
+                    log("UPDATE AV. " + files.elementAt(i) + " - " + hash);
+                    continue;
+                }
+                // log("OLD: " + files.elementAt(i) + " - " + hash);
+                files.removeElementAt(i);
             }
-            hash = getLocalHash(new File(akt));
-
-            if (!hash.equalsIgnoreCase(files.elementAt(i).elementAt(1))) {
-                log("UPDATE AV. " + files.elementAt(i) + " - " + hash);
-                continue;
-            }
-           // log("OLD:  " + files.elementAt(i) + " - " + hash);
-            files.removeElementAt(i);
         }
-        }catch(Exception e){
+        catch (Exception e) {
             log(e.getLocalizedMessage());
         }
 
@@ -248,12 +250,28 @@ public class WebUpdater implements Serializable {
      */
     public Vector<Vector<String>> getAvailableFiles() {
         String source;
-       if(progresslist!=null) this.progresslist.setMaximum(100);
+        if (progresslist != null) this.progresslist.setMaximum(100);
         Vector<Vector<String>> ret = new Vector<Vector<String>>();
         try {
-            if(progresslist!=null)progresslist.setValue(20);
+            if (progresslist != null) progresslist.setValue(20);
+            
+            if(this.cid>=0){
+                source = getRequest(new URL(listPath+"?cid="+cid)); 
+            }else{
+                
+          
             source = getRequest(new URL(listPath));
-            if(progresslist!=null) progresslist.setValue(80);
+            }
+            if (this.cid<0 &&source != null && source.indexOf("<br>") > 0) {
+                String cid = source.substring(0, source.indexOf("<br>")).trim();
+                if (cid != null){
+                    this.cid=Integer.parseInt(cid);
+                }
+               
+
+            }
+         
+            if (progresslist != null) progresslist.setValue(80);
             String pattern = "\\$(.*?)\\=\\\"(.*?)\\\"\\;(.*?)";
 
             if (source == null) {
@@ -295,10 +313,10 @@ public class WebUpdater implements Serializable {
 
             }
         }
-        catch (MalformedURLException e) {          
+        catch (MalformedURLException e) {
             e.printStackTrace();
         }
-        if(progresslist!=null)progresslist.setValue(100);
+        if (progresslist != null) progresslist.setValue(100);
         return ret;
     }
 
@@ -379,9 +397,7 @@ public class WebUpdater implements Serializable {
         return null;
     }
 
-    public void setAllOS(boolean all) {
-        this.allOs = all;
-    }
+
 
     /**
      * Lädt fileurl nach filepath herunter
@@ -506,13 +522,21 @@ public class WebUpdater implements Serializable {
     }
 
     public void setListProgress(JProgressBar progresslist) {
-        this.progresslist=progresslist;
-        
+        this.progresslist = progresslist;
+
     }
 
     public void setDownloadProgress(JProgressBar progresslist) {
-        this.progressload=progresslist;
-        
+        this.progressload = progresslist;
+
+    }
+
+    public int getCid() {
+        return cid;
+    }
+
+    public void setCid(int cid) {
+        this.cid = cid;
     }
 
 }

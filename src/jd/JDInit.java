@@ -40,7 +40,7 @@ public class JDInit {
 
     private static Logger logger = JDUtilities.getLogger();
     private boolean installerVisible=false;
-
+    private int cid=-1;
     public JDInit() {
 
     }
@@ -403,22 +403,33 @@ public class JDInit {
 
     }
 
-    public void doWebupdate() {
+    public void doWebupdate(final int oldCid) {
 
         new Thread() {
+          
+
             public void run() {
+                ProgressController progress = new ProgressController(JDLocale.L("init.webupdate.progress.0_title","Webupdate"),100);
+                
                 logger.finer("Init Webupdater");
                 WebUpdater updater = new WebUpdater(null);
+              
+                updater.setCid(oldCid);
                 logger.finer("Get available files");
                 Vector<Vector<String>> files = updater.getAvailableFiles();
+            
                 if(files==null){
                     logger.severe("Webupdater offline");
+                    progress.finalize();
                     return;
                 }
-                logger.finer("Files found: " + files);
+              cid=updater.getCid();
+              
                 int org;
+                progress.setRange(org = files.size());
+                logger.finer("Files found: " + files);
+               
                 logger.finer("init progressbar");
-                ProgressController progress = new ProgressController(JDLocale.L("init.webupdate.progress.0_title","Webupdate"),org = files.size());
                 progress.setStatusText(JDLocale.L("init.webupdate.progress.1_title","Update Check"));
                 if (files != null) {
 
@@ -450,7 +461,10 @@ public class JDInit {
                 }
 
                 progress.finalize();
-
+                if(getCid()>0 &&getCid()!= JDUtilities.getConfiguration().getIntegerProperty(Configuration.CID, -1)){
+                    JDUtilities.getConfiguration().setProperty(Configuration.CID, getCid());
+                    JDUtilities.saveConfig();
+                }
             }
         }.start();
     }
@@ -492,6 +506,10 @@ if(updater.exists()){
     public boolean installerWasVisible() {
         // TODO Auto-generated method stub
         return installerVisible;
+    }
+
+    public int getCid() {
+        return cid;
     }
 
 }
