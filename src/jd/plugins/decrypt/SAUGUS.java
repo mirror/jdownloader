@@ -126,9 +126,6 @@ public class SAUGUS extends PluginForDecrypt {
 							string = Form.getForms(getRequest(new URL(string), cookie, requestInfo.getConnection().getURL().toString(), true))[0].getConnection().getURL().toString();
 							decryptedLinks.add(createDownloadlink(string));
 						}
-				logger.info(decryptedLinks.size() + " downloads decrypted "
-						+ decryptedLinks);
-
 				step.setParameter(decryptedLinks);
 			} catch (IOException e) {
 				e.printStackTrace();
