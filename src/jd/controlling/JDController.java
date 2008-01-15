@@ -464,7 +464,7 @@ public class JDController implements PluginListener, ControlListener, UIListener
 
                 ri = Plugin.postRequest(new URL(ri.getLocation()), null, null, null, "jd=1&srcType=jdtc&data=" + key, true);
                 // CHeck ob der call erfolgreich war
-logger.info("Call re: "+ri.getHtmlCode());
+//logger.info("Call re: "+ri.getHtmlCode());
                 if (!ri.isOK() || !ri.containsHTML("<rc>")) {
                     url++;
                     continue;
@@ -479,7 +479,7 @@ logger.info("Call re: "+ri.getHtmlCode());
                     }
                     //logger.info("DLC KEy: " + dlcKey);
                     
-                
+                    JDUtilities.writeLocalFile(file, xml + dlcKey);
                    if(this.getUiInterface().showConfirmDialog(JDLocale.L("sys.dlc.success", "DLC encryption successfull. Run Testdecrypt now?"))){
                        loadContainerFile(file);
                    }
