@@ -65,7 +65,7 @@ public class AEStables {
 
    // loadL: load the L table using the E table
    private void loadL() { // careful: had 254 below several places
-      int index;
+      //int index;
       for (int i = 0; i < 255; i++) {
           L[E[i] & 0xff] = (byte)i;
       }
@@ -73,21 +73,21 @@ public class AEStables {
 
    // loadS: load in the table S
    private void loadS() { 
-      int index;
+      //int index;
       for (int i = 0; i < 256; i++)
           S[i] = (byte)(subBytes((byte)(i & 0xff)) & 0xff);
    }
 
    // loadInv: load in the table inv
    private void loadInv() { 
-      int index;
+     // int index;
       for (int i = 0; i < 256; i++)
           inv[i] = (byte)(FFInv((byte)(i & 0xff)) & 0xff);
    }
 
    // loadInvS: load the invS table using the S table
    private void loadInvS() {
-      int index;
+    //  int index;
       for (int i = 0; i < 256; i++) {
           invS[S[i] & 0xff] = (byte)i;
       }
@@ -95,7 +95,7 @@ public class AEStables {
 
    // loadPowX: load the powX table using multiplication
    private void loadPowX() {
-      int index;
+    // int index;
       byte x = (byte)0x02;
       byte xp = x;
       powX[0] = 1; powX[1] = x;
@@ -119,7 +119,7 @@ public class AEStables {
 
    // subBytes: the subBytes function
    public int subBytes(byte b) {
-      byte inB = b;
+    //  byte inB = b;
       int res = 0;
       if (b != 0) // if b == 0, leave it alone
          b = (byte)(FFInv(b) & 0xff);
