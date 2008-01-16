@@ -1,6 +1,9 @@
 package jd.utils;
 
 import java.io.File;
+import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -10,6 +13,7 @@ import java.util.logging.Logger;
 
 import jd.JDFileFilter;
 import jd.gui.skins.simple.SimpleGUI;
+import jd.plugins.Plugin;
 
 /**
  * Diese Klasse stellt Methoden zur Verfügung um in einen String mitPlatzhaltern
@@ -40,16 +44,49 @@ public class JDLocale {
             logger.severe("Use setLocale() first!");
             return key;
         }
-       
+
         if (def == null) def = key;
         if (data.containsKey(key)) return JDUtilities.UTF8Decode(data.get(key)).replace("\\r", "\r").replace("\\n", "\n");
         logger.info("Key not found: " + key);
         data.put(key, JDUtilities.UTF8Encode(def));
-        
-        if(JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).getBooleanProperty(SimpleGUI.PARAM_LANG_EDITMODE))saveData();
-    
+        postMissingKey(key, JDUtilities.UTF8Encode(def));
+        if (JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).getBooleanProperty(SimpleGUI.PARAM_LANG_EDITMODE)) saveData();
+
         return def;
 
+    }
+
+    private static Vector<String[]> send = new Vector<String[]>();
+    private static Vector<String> sent = new Vector<String>();
+    private static Thread           sender;
+
+    private static String           lID;
+
+    private static void postMissingKey(String key, String encode) {
+        if(sent.indexOf(key)>=0)return;
+        send.add(new String[] { key, encode });
+        sent.add(key);
+        if (sender == null || !sender.isAlive()) {
+            sender = new Thread() {
+                public void run() {
+                    String[] entry;
+                    while (send.size() > 0) {
+                        entry = send.remove(0);
+
+                        try {
+                            Plugin.getRequest(new URL("http://web146.donau.serverway.de/jdownloader/update/lang.php?lang=" + lID + "&key=" + JDUtilities.urlEncode(entry[0]) + "&default=" + JDUtilities.urlEncode(entry[1])));
+                            
+                        }
+                        catch (MalformedURLException e) {
+                        }
+                        catch (IOException e) {
+                        }
+                    }
+                }
+            };
+
+            sender.start();
+        }
     }
 
     public static String L(String key) {
@@ -82,6 +119,7 @@ public class JDLocale {
     public static void setLocale(String localeID) {
         File file = JDUtilities.getResourceFile(LANGUAGES_DIR + localeID + ".lng");
         localeFile = file;
+        lID = localeID;
         if (!file.exists()) {
             logger.severe("Lanuage " + localeID + " not installed");
             return;
@@ -91,7 +129,7 @@ public class JDLocale {
         String[] lines = JDUtilities.splitByNewline(str);
         for (int i = 0; i < lines.length; i++) {
             int split = lines[i].indexOf("=");
-            if (split <= 0||lines[i].startsWith("#")) continue;
+            if (split <= 0 || lines[i].startsWith("#")) continue;
             String key = lines[i].substring(0, split).trim();
             String value = lines[i].substring(split + 1).trim();
             if (data.containsKey(key)) {

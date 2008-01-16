@@ -336,7 +336,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
     }
 
     private void attachLinkToPackage(DownloadLink link) {
-        if (!config.getBooleanProperty(PROPERTY_AUTOPACKAGE, false)) {
+        if (!config.getBooleanProperty(PROPERTY_AUTOPACKAGE, true)) {
 
             int lastIndex = tabList.size() - 1;
             if (lastIndex < 0) {
@@ -361,7 +361,8 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
                     bestIndex = i;
                 }
             }
-            if (bestSim < 90) {
+           //logger.info("Best sym: "+bestSim);
+            if (bestSim < 98) {
                 logger.info("New Tab");
                 addLinkstoTab(new DownloadLink[] { link }, tabList.size());
                 tabList.get(tabList.size() - 1).setPackageName(removeExtension(link.getName()));

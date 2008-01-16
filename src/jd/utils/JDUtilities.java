@@ -811,16 +811,17 @@ public class JDUtilities {
                 return objectLoaded;
             }
             catch (ClassNotFoundException e) {
-                e.printStackTrace();
+                logger.severe(e.getMessage());
+               // e.printStackTrace();
             }
             catch (FileNotFoundException e) {
-                e.printStackTrace();
+                logger.severe(e.getMessage());
             }
             catch (IOException e) {
-                e.printStackTrace();
+                logger.severe(e.getMessage());
             }
             catch (Exception e) {
-                e.printStackTrace();
+                logger.severe(e.getMessage());
             }
         }
         return null;
@@ -1159,8 +1160,10 @@ public class JDUtilities {
      * @return str URLCodiert
      */
     public static String urlEncode(String str) {
-        try {
+     
+            try{
             str = URLDecoder.decode(str, "UTF-8");
+            }catch(Exception e){}
             String allowed = "1234567890QWERTZUIOPASDFGHJKLYXCVBNMqwertzuiopasdfghjklyxcvbnm-_.?/\\:&=;";
             String ret = "";
             int i;
@@ -1174,11 +1177,9 @@ public class JDUtilities {
                 }
             }
             return ret;
-        }
-        catch (UnsupportedEncodingException e) {
-            e.printStackTrace();
-        }
-        return str;
+        
+        
+    
     }
 
     /**
