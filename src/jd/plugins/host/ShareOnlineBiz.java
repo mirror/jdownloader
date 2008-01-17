@@ -16,7 +16,7 @@ import jd.plugins.Regexp;
 import jd.utils.JDUtilities;
 
 public class ShareOnlineBiz extends PluginForHost {
-	private static final String CODER = "JD-Team";
+	private static final String CODER = "GforE";
 
 	private static final String HOST = "share-online.biz";
 

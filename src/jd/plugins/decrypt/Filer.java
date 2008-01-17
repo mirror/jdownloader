@@ -27,7 +27,7 @@ public class Filer extends PluginForDecrypt {
 
     @Override
     public String getCoder() {
-        return "JD-Team";
+        return "GforE";
     }
 
     @Override

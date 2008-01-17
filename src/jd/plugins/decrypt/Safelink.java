@@ -27,7 +27,7 @@ public class Safelink extends PluginForDecrypt {
      */
     @Override
     public String getCoder() {
-        return "JD-Team";
+        return "GforE";
     }
 
     @Override

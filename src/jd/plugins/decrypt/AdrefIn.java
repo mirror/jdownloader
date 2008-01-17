@@ -22,7 +22,7 @@ public class AdrefIn extends PluginForDecrypt {
 
     @Override
     public String getCoder() {
-        return "Botzi|JD-Team v2";
+        return "Botzi|GforE v2";
     }
 
     @Override

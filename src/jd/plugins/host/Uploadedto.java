@@ -30,7 +30,7 @@ public class Uploadedto extends PluginForHost {
 
     static private final String     PLUGIN_ID                    = PLUGIN_NAME + "-" + PLUGIN_VERSION;
 
-    static private final String     CODER                        = "JD-Team/JD-Team CAPTCHA fix";
+    static private final String     CODER                        = "JD-Team/GforE CAPTCHA fix";
 
     // /Simplepattern
 static private final String DOWNLOAD_LIMIT_REACHED="Free-Traffic ist aufgebraucht";

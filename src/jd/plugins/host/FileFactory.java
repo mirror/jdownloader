@@ -50,7 +50,7 @@ public class FileFactory extends PluginForHost {
 
     @Override
     public String getCoder() {
-        return "JD-Team/JD-Team";
+        return "GforE/JD-Team";
     }
 
     @Override

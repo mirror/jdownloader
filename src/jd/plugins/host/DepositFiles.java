@@ -19,7 +19,7 @@ public class DepositFiles extends PluginForHost {
     static private final String PLUGIN_NAME = HOST;
     static private final String PLUGIN_VERSION = "0.1";
     static private final String PLUGIN_ID = PLUGIN_NAME + "-" + PLUGIN_VERSION;
-    static private final String CODER = "JD-Team";
+    static private final String CODER = "GforE";
     // /Simplepattern
     //      
     //private Pattern DOWNLOAD_URL = Pattern.compile("<form action=\"(.*?)\" method=\"POST\" id=\"gateway_form\" >", Pattern.CASE_INSENSITIVE);
