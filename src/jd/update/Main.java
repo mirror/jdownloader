@@ -126,7 +126,7 @@ public static Insets INSETS=new Insets(5,5,5,5);
             log.append("Local: " + new File("").getAbsolutePath());
             if (runtype == 2) {
                 log.append("Start java -jar JDownloader.jar in " + new File("").getAbsolutePath());
-                runCommand("java", new String[] { "-jar", "jDownloader.jar" }, new File("").getAbsolutePath(), 0);
+                runCommand("java", new String[] { "-jar", "JDownloader.jar" }, new File("").getAbsolutePath(), 0);
             }
             else if (runtype == 1 && new File("jd/Main.class").exists()) {
                 log.append("java Main.class in " + new File("jd/").getAbsolutePath());

@@ -102,4 +102,6 @@ public interface UIInterface {
      * Wird aufgeruifen sobald die Initialisierung aller Module komplett ist
      */
     public void onJDInitComplete();
+    
+    public String askForLocalisation(String key, String def);
 }

@@ -3,6 +3,7 @@ package jd.gui.skins.simple.config;
 import java.awt.BorderLayout;
 import java.util.List;
 import java.util.Locale;
+
 import javax.swing.UIManager;
 
 import jd.config.ConfigContainer;
@@ -10,6 +11,7 @@ import jd.config.ConfigEntry;
 import jd.config.Configuration;
 import jd.config.SubConfiguration;
 import jd.gui.UIInterface;
+import jd.gui.skins.simple.LinkGrabber;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.utils.JDLocale;
 import jd.utils.JDTheme;
@@ -99,6 +101,13 @@ public class ConfigPanelGUI extends ConfigPanel {
 
         ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, guiConfig, SimpleGUI.PARAM_BROWSER, BrowserArray, JDLocale.L("gui.config.gui.Browser", "Browser")).setDefaultValue(BrowserArray[0]).setExpertEntry(true));
         addGUIConfigEntry(ce);
+        
+        ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, guiConfig, SimpleGUI.PARAM_LOCAL_HELP, JDLocale.L("gui.config.gui.localeHelp", "Ja ich will helfen die LOkalisierung von jD zu verbessern!")).setDefaultValue(true));
+        addGUIConfigEntry(ce);
+        ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, guiConfig, LinkGrabber.PROPERTY_AUTOPACKAGE_LIMIT, JDLocale.L("gui.config.gui.autoPackageLimit", "Schwelle der Auto. Paketverwaltung."),0,100).setDefaultValue(98).setExpertEntry(true));
+        addGUIConfigEntry(ce);
+        
+        
         add(panel, BorderLayout.NORTH);
     }
     @Override

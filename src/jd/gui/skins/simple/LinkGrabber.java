@@ -23,6 +23,7 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.io.File;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Vector;
 import java.util.logging.Logger;
 
@@ -54,6 +55,7 @@ import javax.swing.table.TableColumn;
 import javax.swing.text.PlainDocument;
 
 import jd.config.Configuration;
+import jd.config.SubConfiguration;
 import jd.event.UIEvent;
 import jd.gui.skins.simple.components.BrowseFile;
 import jd.gui.skins.simple.components.ContextMenu;
@@ -74,21 +76,23 @@ import jd.utils.JDUtilities;
 public class LinkGrabber extends JFrame implements ActionListener, DropTargetListener, MouseListener, KeyListener, ChangeListener {
 
     /**
-	 * 
-	 */
-	private static final long serialVersionUID = 4974425479842618402L;
+     * 
+     */
+    private static final long    serialVersionUID           = 4974425479842618402L;
 
-	private static final String  PROPERTY_AUTOPACKAGE = "PROPERTY_AUTOPACKAGE";
+    private static final String  PROPERTY_AUTOPACKAGE       = "PROPERTY_AUTOPACKAGE";
+
+    public static final String   PROPERTY_AUTOPACKAGE_LIMIT = "AUTOPACKAGE_LIMIT";
 
     private JTabbedPane          tabbedPane;
 
-    protected static int         REL                  = GridBagConstraints.RELATIVE;
+    protected static int         REL                        = GridBagConstraints.RELATIVE;
 
-    protected static int         REM                  = GridBagConstraints.REMAINDER;
+    protected static int         REM                        = GridBagConstraints.REMAINDER;
 
     private JButton              acceptAll;
 
-    protected Logger             logger               = JDUtilities.getLogger();
+    protected Logger             logger                     = JDUtilities.getLogger();
 
     private JButton              accept;
 
@@ -114,9 +118,15 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
 
     private JMenuItem            mRemoveOffline;
 
-    private int                  currentTab           = -1;
+    private int                  currentTab                 = -1;
 
     private Configuration        config;
+
+    private SubConfiguration     guiConfig;
+
+    private JMenuItem            mMerge;
+
+    private JMenuItem mRemoveOfflineAll;
 
     /**
      * @param parent GUI
@@ -125,6 +135,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
     public LinkGrabber(SimpleGUI parent, final DownloadLink[] linkList) {
         super();
         config = JDUtilities.getConfiguration();
+        guiConfig = JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME);
         this.parentFrame = parent;
         tabList = new Vector<PackageTab>();
         this.waitingLinkList = new Vector<DownloadLink>();
@@ -167,32 +178,25 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
         JDUtilities.addToGridBag(this, acceptAll, REL, REL, REL, 1, 1, 0, null, GridBagConstraints.NONE, GridBagConstraints.SOUTHEAST);
         JDUtilities.addToGridBag(this, accept, REL, REL, REM, 1, 0, 0, null, GridBagConstraints.NONE, GridBagConstraints.SOUTHEAST);
 
-      
-        
         this.setName("LINKGRABBER");
         this.setPreferredSize(new Dimension(600, 400));
-       // http://serienfreaks.tv/?id=6523
-            pack();
+        // http://serienfreaks.tv/?id=6523
+        pack();
         this.setVisible(true);
-       if(SimpleGUI.getLastDimension(this, null)!=null){
-           this.setPreferredSize(SimpleGUI.getLastDimension(this, null));
-          
-           pack();
-       }
-       if(SimpleGUI.getLastLocation(parentFrame.getFrame(), null,this)!=null){
-           this.setLocation(SimpleGUI.getLastLocation(parentFrame.getFrame(), null,this));
-          
-          
-       }
+        if (SimpleGUI.getLastDimension(this, null) != null) {
+            this.setPreferredSize(SimpleGUI.getLastDimension(this, null));
 
+            pack();
+        }
+        if (SimpleGUI.getLastLocation(parentFrame.getFrame(), null, this) != null) {
+            this.setLocation(SimpleGUI.getLastLocation(parentFrame.getFrame(), null, this));
 
-       
-       LocationListener list = new LocationListener();
-     this.addComponentListener(list);
-     this.addWindowListener(list);
-        
-        
-       
+        }
+
+        LocationListener list = new LocationListener();
+        this.addComponentListener(list);
+        this.addWindowListener(list);
+
     }
 
     // private void refreshTabbedPane() {
@@ -221,7 +225,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
         mAutoPackage = new JCheckBoxMenuItem(JDLocale.L("gui.linkgrabber.menu.extras.autopackage", "Auto. Pakete"));
 
         menu.add(mAutoPackage);
-        mAutoPackage.setSelected(config.getBooleanProperty(PROPERTY_AUTOPACKAGE, true));
+        mAutoPackage.setSelected(guiConfig.getBooleanProperty(PROPERTY_AUTOPACKAGE, true));
 
         mAutoPackage.addActionListener(this);
         // removePackageAt
@@ -230,9 +234,16 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
         menu = new JMenu(JDLocale.L("gui.linkgrabber.menu.edit", "Bearbeiten"));
         menuBar.add(menu);
 
-        mRemoveOffline = new JMenuItem(JDLocale.L("gui.linkgrabber.menu.edit.removeOffline", "Fehlerhafte Link entfernen"));
+        mMerge = new JMenuItem(JDLocale.L("gui.linkgrabber.menu.edit.merge", "zu einem Paket zusammenwerfen"));
+        mMerge.addActionListener(this);
+        menu.add(mMerge);
+        menu.addSeparator();
+        mRemoveOffline = new JMenuItem(JDLocale.L("gui.linkgrabber.menu.edit.removeOffline", "Fehlerhafte Link entfernen(Paket)"));
         mRemoveOffline.addActionListener(this);
         menu.add(mRemoveOffline);
+        mRemoveOfflineAll = new JMenuItem(JDLocale.L("gui.linkgrabber.menu.edit.removeOfflineAll", "Fehlerhafte Link entfernen(Alle)"));
+        mRemoveOfflineAll.addActionListener(this);
+        menu.add(mRemoveOfflineAll);
         menu.addSeparator();
         mRemovePackage = new JMenuItem(JDLocale.L("gui.linkgrabber.menu.edit.removePackage", "Paket verwerfen"));
         mRemovePackage.addActionListener(this);
@@ -295,13 +306,12 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
 
                     link = waitingLinkList.remove(0);
 
-                 
-                    if(   link.isAvailable()||((PluginForHost)link.getPlugin()).isListOffline()){
+                    if (link.isAvailable() || ((PluginForHost) link.getPlugin()).isListOffline()) {
 
-                    attachLinkToPackage(link);
+                        attachLinkToPackage(link);
                     }
                     progress.setValue(waitingLinkList.size());
-                   
+
                 }
                 progress.setString(JDLocale.L("gui.linkgrabber.bar.title", "Infosammler"));
 
@@ -336,40 +346,42 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
     }
 
     private void attachLinkToPackage(DownloadLink link) {
-        if (!config.getBooleanProperty(PROPERTY_AUTOPACKAGE, true)) {
 
+        if (!guiConfig.getBooleanProperty(PROPERTY_AUTOPACKAGE, true)) {
+            logger.finer("No Auto package");
             int lastIndex = tabList.size() - 1;
             if (lastIndex < 0) {
                 addTab().setPackageName(this.removeExtension(link.getName()));
             }
             lastIndex = tabList.size() - 1;
             addLinkstoTab(new DownloadLink[] { link }, lastIndex);
-            String newPackageName = getSimString(tabList.get(lastIndex).getPackageName(), link.getName());
+            String newPackageName = getSimString(tabList.get(lastIndex).getPackageName(), removeExtension(link.getName()));
             tabList.get(lastIndex).setPackageName(newPackageName);
             onPackageNameChanged(tabList.get(lastIndex));
 
         }
         else {
+            logger.finer("Auto package");
             int bestSim = 0;
             int bestIndex = -1;
             logger.info("link: " + link.getName());
             for (int i = 0; i < tabList.size(); i++) {
 
-                int sim = comparePackages(tabList.get(i).getPackageName(), link.getName());
+                int sim = comparePackages(tabList.get(i).getPackageName(), removeExtension(link.getName()));
                 if (sim > bestSim) {
                     bestSim = sim;
                     bestIndex = i;
                 }
             }
-           //logger.info("Best sym: "+bestSim);
-            if (bestSim < 98) {
+            // logger.info("Best sym: "+bestSim);
+            if (bestSim < guiConfig.getIntegerProperty(PROPERTY_AUTOPACKAGE_LIMIT, 98)) {
                 logger.info("New Tab");
                 addLinkstoTab(new DownloadLink[] { link }, tabList.size());
                 tabList.get(tabList.size() - 1).setPackageName(removeExtension(link.getName()));
             }
             else {
                 logger.info("Found Package " + tabList.get(bestIndex).getPackageName());
-                String newPackageName = getSimString(tabList.get(bestIndex).getPackageName(), link.getName());
+                String newPackageName = getSimString(tabList.get(bestIndex).getPackageName(), removeExtension(link.getName()));
                 tabList.get(bestIndex).setPackageName(newPackageName);
                 onPackageNameChanged(tabList.get(bestIndex));
                 addLinkstoTab(new DownloadLink[] { link }, bestIndex);
@@ -381,38 +393,40 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
     }
 
     private String removeExtension(String a) {
-
-        a = a.replaceAll("\\.part([0-9])", "");
+        logger.finer("file " + a);
+        a = a.replaceAll("\\.part([0-9]+)", "");
+        a = a.replaceAll("\\.html", "");
+        a = a.replaceAll("\\.htm", "");
         int i = a.lastIndexOf(".");
+        logger.info("FOund . " + i);
         String ret;
-        if (i <= 0 || (a.length() - i) > 5) {
+        if (i <= 1 || (a.length() - i) > 5) {
             ret = a.toLowerCase().trim();
         }
         else {
+            logger.info("Remove ext");
             ret = a.substring(0, i).toLowerCase().trim();
         }
 
-       
         if (a.equals(ret)) return ret;
-        return removeExtension(ret);
+        return (ret);
 
     }
 
     private int comparePackages(String a, String b) {
-        a = removeExtension(a);
-        b = removeExtension(b);
-       // logger.info("comp: " + a + " <<->> " + b);
+
         int c = 0;
         for (int i = 0; i < Math.min(a.length(), b.length()); i++) {
             if (a.charAt(i) == b.charAt(i)) c++;
         }
+      
         if (Math.min(a.length(), b.length()) == 0) return 0;
+        logger.info("comp: " + a + " <<->> " + b + "(" + (c * 100) / (b.length()) + ")");
         return (c * 100) / (b.length());
     }
 
     private String getSimString(String a, String b) {
-        a = removeExtension(a);
-        b = removeExtension(b);
+
         String ret = "";
         for (int i = 0; i < Math.min(a.length(), b.length()); i++) {
             if (a.charAt(i) == b.charAt(i)) {
@@ -438,8 +452,8 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
         logger.finer("add " + linkList.length + " links at " + id);
 
         tab.addLinks(linkList);
-       
-        //validate();
+
+        // validate();
         onPackageNameChanged(tab);
     }
 
@@ -447,7 +461,11 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
         tabList.remove(i);
         tabbedPane.removeTabAt(i);
     }
-
+    protected void removePackage(PackageTab tab) {
+        tabbedPane.removeTabAt(tabList.indexOf(tab));
+        tabList.remove(tab);
+       
+    }
     protected PackageTab getSelectedTab() {
         return tabList.get(this.tabbedPane.getSelectedIndex());
     }
@@ -473,7 +491,6 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
         }
         this.setTitle(JDLocale.L("gui.linkgrabber.title", "Linksammler") + " " + getTotalLinkCount() + " " + JDLocale.L("gui.linkgrabber.title_1", " Link(s) in") + " " + tabList.size() + " " + JDLocale.L("gui.linkgrabber.title_2", "Paket(en)"));
 
-
     }
 
     private PackageTab addTab() {
@@ -493,7 +510,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
 
     public void actionPerformed(ActionEvent e) {
         if (e.getSource() == this.mAutoPackage) {
-            config.setProperty(PROPERTY_AUTOPACKAGE, mAutoPackage.isSelected());
+            guiConfig.setProperty(PROPERTY_AUTOPACKAGE, mAutoPackage.isSelected());
             JDUtilities.saveConfig();
             return;
         }
@@ -605,6 +622,45 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
             }
             this.onPackageNameChanged(tab);
         }
+
+        else if (e.getSource() == this.mMerge) {
+            PackageTab tab = tabList.get(tabbedPane.getSelectedIndex());
+            String name = tab.getPackageName();
+            Iterator<PackageTab> iterator = tabList.iterator();
+            Vector<DownloadLink> newList = new Vector<DownloadLink>();
+            while (iterator.hasNext()) {
+                tab=iterator.next();
+                Vector<DownloadLink> list = tab.getLinkList();
+                newList.addAll(list);
+              
+            }
+            while(tabList.size()>1){
+                this.removePackageAt(0);
+            }
+           if( tabList.size()>0){
+              tabList.get(0).setLinkList(newList);
+              tabList.get(0).setPackageName(name);
+             onPackageNameChanged( tabList.get(0));
+           }
+          
+        }
+        else if (e.getSource() == this.mRemoveOfflineAll) {
+            PackageTab tab;
+            Iterator<PackageTab> iterator = tabList.iterator();
+            Vector<DownloadLink> newList = new Vector<DownloadLink>();
+            while (iterator.hasNext()) {
+                tab=iterator.next();
+                Vector<DownloadLink> list = tab.getLinkList();             
+                for (int i = list.size() - 1; i >= 0; i--) {
+                    if (!list.get(i).isAvailable()) {
+                        tab.removeLinkAt(i);
+                    }
+                }
+                this.onPackageNameChanged(tab);
+                
+            }
+  
+        }
         else if (e.getActionCommand().equals(JDLocale.L("gui.linkgrabber.tabs.context.delete"))) {
             Point loc = ((ContextMenu) ((JMenuItem) e.getSource()).getParent()).getPoint();
             int destID = tabbedPane.getUI().tabForCoordinate(tabbedPane, (int) loc.x, (int) loc.getY());
@@ -618,10 +674,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
 
             addTab();
         }
-  
-        
-        
-   
+
     }
 
     private DownloadLink getPriorityLink(Vector<DownloadLink> mirrors) {
@@ -630,7 +683,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
 
         for (int b = 0; b < pfh.size(); b++) {
             PluginForHost plugin = pfh.get(b);
-          //  boolean ch = false;
+            // boolean ch = false;
             for (int c = 0; c < mirrors.size(); c++) {
                 DownloadLink mirror = mirrors.get(c);
                 if (mirrors.get(c).getHost().equalsIgnoreCase(plugin.getHost())) {
@@ -813,8 +866,8 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
     public void mousePressed(MouseEvent e) {
         if (e.isPopupTrigger() || e.getButton() == MouseEvent.BUTTON3) {
             Point point = e.getPoint();
-          //  int x = e.getX();
-          //  int y = e.getY();
+            // int x = e.getX();
+            // int y = e.getY();
             new ContextMenu(tabbedPane, point, new String[] { JDLocale.L("gui.linkgrabber.tabs.context.delete", "Entfernen"), JDLocale.L("gui.linkgrabber.tabs.context.newPackage", "Neues Package") }, this);
         }
 
@@ -840,11 +893,11 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
     class PackageTab extends JPanel implements ActionListener, MouseListener, KeyListener {
 
         /**
-		 * 
-		 */
-		private static final long serialVersionUID = -7394319645950106241L;
+         * 
+         */
+        private static final long    serialVersionUID = -7394319645950106241L;
 
-		private JTextField           txtName;
+        private JTextField           txtName;
 
         private JTextField           txtPassword;
 
@@ -988,12 +1041,11 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
 
             String pw = JUnrar.passwordArrayToString(pwList.toArray(new String[pwList.size()]));
 
-            if(!txtComment.hasFocus())   txtComment.setText(comment);
-            if(!txtPassword.hasFocus())  txtPassword.setText(pw);
+            if (!txtComment.hasFocus()) txtComment.setText(comment);
+            if (!txtPassword.hasFocus()) txtPassword.setText(pw);
             refreshTable();
 
         }
-
 
         private void refreshTable() {
 
@@ -1016,8 +1068,8 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
             brwSaveto.setEditable(true);
             brwSaveto.setFileSelectionMode(JDFileChooser.DIRECTORIES_ONLY);
             brwSaveto.setText(JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_DOWNLOAD_DIRECTORY));
-          //  bfSubFolder.setText(JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_DOWNLOAD_DIRECTORY));
-            
+            // bfSubFolder.setText(JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_DOWNLOAD_DIRECTORY));
+
             txtName.setPreferredSize(new Dimension(450, 20));
             txtPassword.setPreferredSize(new Dimension(450, 20));
             txtComment.setPreferredSize(new Dimension(450, 20));
@@ -1047,8 +1099,8 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
             InternalTableModel internalTableModel = new InternalTableModel();
             table.addKeyListener(this);
             table.setModel(internalTableModel);
-            //table.setAutoCreateRowSorter(true);
-            //table.setUpdateSelectionOnSort(true);
+            // table.setAutoCreateRowSorter(true);
+            // table.setUpdateSelectionOnSort(true);
             table.setGridColor(Color.BLUE);
             table.setAutoCreateColumnsFromModel(true);
             table.setModel(internalTableModel);
@@ -1105,7 +1157,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
 
                 int[] rows = table.getSelectedRows();
                 for (int i = rows.length - 1; i >= 0; i--) {
-                    int id = rows[i];//table.convertRowIndexToModel(rows[i]);
+                    int id = rows[i];// table.convertRowIndexToModel(rows[i]);
                     logger.info("remove  " + id);
                     linkList.remove(id);
 
@@ -1115,46 +1167,45 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
             }
 
             if (e.getActionCommand().equals(JDLocale.L("gui.linkgrabber.packagetab.table.context.newpackage", "Neues Package"))) {
-               addTab();
+                addTab();
 
             }
-            
-            
+
             else if (e.getActionCommand().equals(JDLocale.L("gui.linkgrabber.tabs.context.deleteOthers"))) {
 
                 int[] rows = table.getSelectedRows();
-             
-                Vector<Integer> ret= new  Vector<Integer> ();
+
+                Vector<Integer> ret = new Vector<Integer>();
                 Vector<DownloadLink> list = new Vector<DownloadLink>();
-                for( int i=0; i<rows.length;i++){
-                    
-                    ret.add(rows[i]);//table.convertRowIndexToModel(rows[i]));
-                    list.add(linkList.get(rows[i]));//table.convertRowIndexToModel(rows[i])));
-                    
+                for (int i = 0; i < rows.length; i++) {
+
+                    ret.add(rows[i]);// table.convertRowIndexToModel(rows[i]));
+                    list.add(linkList.get(rows[i]));// table.convertRowIndexToModel(rows[i])));
+
                 }
-            
-                linkList=list;
+
+                linkList = list;
                 this.refreshTable();
             }
             else if (e.getActionCommand().equals(JDLocale.L("gui.linkgrabber.tabs.context.acceptSelection"))) {
                 int[] rows = table.getSelectedRows();
-                
-                Vector<Integer> ret= new  Vector<Integer> ();
+
+                Vector<Integer> ret = new Vector<Integer>();
                 Vector<DownloadLink> list = new Vector<DownloadLink>();
-                for( int i=0; i<rows.length;i++){
-                    
-                    ret.add(rows[i]);//table.convertRowIndexToModel(rows[i]));
-                    list.add(linkList.get(rows[i]));//table.convertRowIndexToModel(rows[i])));
-                    
+                for (int i = 0; i < rows.length; i++) {
+
+                    ret.add(rows[i]);// table.convertRowIndexToModel(rows[i]));
+                    list.add(linkList.get(rows[i]));// table.convertRowIndexToModel(rows[i])));
+
                 }
-            
-                linkList=list;
-              confirmCurrentPackage();
-              removePackageAt(tabbedPane.getSelectedIndex());
-              if (tabList.size() == 0) {
-                  this.setVisible(false);
-                  dispose();
-              }
+
+                linkList = list;
+                confirmCurrentPackage();
+                removePackageAt(tabbedPane.getSelectedIndex());
+                if (tabList.size() == 0) {
+                    this.setVisible(false);
+                    dispose();
+                }
             }
 
         }
@@ -1162,11 +1213,11 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
         private class InternalTableModel extends AbstractTableModel {
 
             /**
-			 * 
-			 */
-			private static final long serialVersionUID = -7475394342173736030L;
+             * 
+             */
+            private static final long serialVersionUID = -7475394342173736030L;
 
-			public int getColumnCount() {
+            public int getColumnCount() {
                 return 5;
             }
 
@@ -1232,9 +1283,9 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
 
             if (e.isPopupTrigger() || e.getButton() == MouseEvent.BUTTON3) {
                 Point point = e.getPoint();
-             //   int x = e.getX();
-             //   int y = e.getY();
-                new ContextMenu(table, point, new String[] { JDLocale.L("gui.linkgrabber.packagetab.table.context.delete", "Entfernen"),JDLocale.L("gui.linkgrabber.tabs.context.deleteOthers", "Alle anderen Entfernen"),JDLocale.L("gui.linkgrabber.tabs.context.acceptSelection", "Auswahl übernehmen"), JDLocale.L("gui.linkgrabber.packagetab.table.context.newpackage", "Neues Package") }, this);
+                // int x = e.getX();
+                // int y = e.getY();
+                new ContextMenu(table, point, new String[] { JDLocale.L("gui.linkgrabber.packagetab.table.context.delete", "Entfernen"), JDLocale.L("gui.linkgrabber.tabs.context.deleteOthers", "Alle anderen Entfernen"), JDLocale.L("gui.linkgrabber.tabs.context.acceptSelection", "Auswahl übernehmen"), JDLocale.L("gui.linkgrabber.packagetab.table.context.newpackage", "Neues Package") }, this);
             }
 
         }
@@ -1247,7 +1298,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
             if (e.getKeyCode() == KeyEvent.VK_DELETE) {
                 int[] rows = table.getSelectedRows();
                 for (int i = rows.length - 1; i >= 0; i--) {
-                    int id = rows[i];//table.convertRowIndexToModel(rows[i]);
+                    int id = rows[i];// table.convertRowIndexToModel(rows[i]);
                     this.linkList.remove(id);
                 }
                 this.refreshTable();
@@ -1285,22 +1336,22 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
          */
         private class InternalTableCellRenderer extends DefaultTableCellRenderer {
             /**
-			 * 
-			 */
-			private static final long serialVersionUID = -7858580590383167251L;
+             * 
+             */
+            private static final long serialVersionUID    = -7858580590383167251L;
 
-			/**
+            /**
              * serialVersionUID
              */
-            private final Color COLOR_DONE          = new Color(0, 255, 0, 20);
+            private final Color       COLOR_DONE          = new Color(0, 255, 0, 20);
 
-            private final Color COLOR_ERROR_OFFLINE = new Color(255, 0, 0, 60);
+            private final Color       COLOR_ERROR_OFFLINE = new Color(255, 0, 0, 60);
 
             public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
 
                 Component c = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
-               // int id = table.convertRowIndexToModel(row);
-                int id=row;
+                // int id = table.convertRowIndexToModel(row);
+                int id = row;
                 DownloadLink dLink = linkList.get(id);
 
                 if (isSelected) {

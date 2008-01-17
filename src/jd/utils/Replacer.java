@@ -42,7 +42,7 @@ public class Replacer {
         for (int i = 0; i < KEYS.length; i++) {
        
             if(str.indexOf("%" + KEYS[i][0] + "%")>=0){
-                JDUtilities.getLogger().finer("%" + KEYS[i][0] + "%"+" --> "+getReplacement(KEYS[i][0]));
+                JDUtilities.getLogger().finer("%" + KEYS[i][0] + "%"+" --> *****");
             str = replace(str,"%" + KEYS[i][0] + "%", getReplacement(KEYS[i][0]));
             }
         }

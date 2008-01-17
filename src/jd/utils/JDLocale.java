@@ -64,7 +64,7 @@ public class JDLocale {
 
     private static void postMissingKey(String key, String encode) {
         if(sent.indexOf(key)>=0)return;
-        send.add(new String[] { key, encode });
+        send.add(new String[] { JDUtilities.UTF8Decode(key), JDUtilities.UTF8Decode(encode )});
         sent.add(key);
         if (sender == null || !sender.isAlive()) {
             sender = new Thread() {
@@ -72,7 +72,8 @@ public class JDLocale {
                     String[] entry;
                     while (send.size() > 0) {
                         entry = send.remove(0);
-
+                        String user=JDUtilities.getGUI().askForLocalisation(entry[0], entry[1]);
+                        if(user!=null)entry[1]=user;
                         try {
                             Plugin.getRequest(new URL("http://web146.donau.serverway.de/jdownloader/update/lang.php?lang=" + lID + "&key=" + JDUtilities.urlEncode(entry[0]) + "&default=" + JDUtilities.urlEncode(entry[1])));
                             
@@ -134,13 +135,19 @@ public class JDLocale {
             String value = lines[i].substring(split + 1).trim();
             if (data.containsKey(key)) {
                 logger.severe("Dupe found: " + key);
+                data.put(key, value);
             }
             else {
                 data.put(key, value);
             }
 
         }
+        if (JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).getBooleanProperty(SimpleGUI.PARAM_LANG_EDITMODE)) saveData();
 
+    }
+
+    public static String getLocale() {
+       return lID;
     }
 
 }

@@ -1,6 +1,5 @@
 package jd.gui.skins.simple;
 
-
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.GridBagConstraints;
@@ -54,6 +53,7 @@ import jd.gui.skins.simple.Link.JLinkButton;
 import jd.gui.skins.simple.components.HTMLDialog;
 import jd.gui.skins.simple.components.JDFileChooser;
 import jd.gui.skins.simple.components.TextAreaDialog;
+import jd.gui.skins.simple.components.TextAreaDialogWithHtmlMsg;
 import jd.gui.skins.simple.config.ConfigurationDialog;
 import jd.gui.skins.simple.config.jdUnrarPasswordListDialog;
 import jd.plugins.DownloadLink;
@@ -73,27 +73,25 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
     /**
      * serialVersionUID
      */
-    private static final long       serialVersionUID              = 3966433144683787356L;
+    private static final long       serialVersionUID                  = 3966433144683787356L;
 
-    public static final String      PARAM_LOCALE                  = "LOCALE";
+    public static final String      PARAM_LOCALE                      = "LOCALE";
 
-    public static final String      PARAM_THEME                   = "THEME";
+    public static final String      PARAM_THEME                       = "THEME";
 
+    public static final String      PARAM_JAC_LOG                     = "JAC_DOLOG";
 
+    public static final String      PARAM_USE_EXPERT_VIEW             = "USE_EXPERT_VIEW";
 
-    public static final String      PARAM_JAC_LOG                 = "JAC_DOLOG";
+    public static final String      PARAM_LANG_EDITMODE               = "LANG_EDITMODE";
 
-    public static final String      PARAM_USE_EXPERT_VIEW         = "USE_EXPERT_VIEW";
+    public static final String      PARAM_BROWSER_VARS                = "BROWSER_VARS";
 
-    public static final String      PARAM_LANG_EDITMODE           = "LANG_EDITMODE";
+    public static final String      PARAM_BROWSER                     = "BROWSER";
 
-    public static final String      PARAM_BROWSER_VARS            = "BROWSER_VARS";
+    public static final String      PARAM_START_DOWNLOADS_AFTER_START = "START_DOWNLOADS_AFTER_START";
 
-    public static final String      PARAM_BROWSER                 = "BROWSER";
-
-    public static final String      PARAM_START_DOWNLOADS_AFTER_START  = "START_DOWNLOADS_AFTER_START";
-
-    public static final String      GUICONFIGNAME                 = "simpleGUI";
+    public static final String      GUICONFIGNAME                     = "simpleGUI";
 
     /**
      * Das Hauptfenster
@@ -113,7 +111,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
     /**
      * Komponente, die alle Downloads anzeigt
      */
-    private TabDownloadLinks        tabDownloadTable;                                                        ;
+    private TabDownloadLinks        tabDownloadTable;                                                            ;
 
     /**
      * Komponente, die den Fortschritt aller Plugins anzeigt
@@ -134,7 +132,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
      * Listener werden benachrichtigt, wenn mittels
      * {@link #fireUIEvent(UIEvent)} ein Event losgeschickt wird.
      */
-    public Vector<UIListener>       uiListener                    = null;
+    public Vector<UIListener>       uiListener                        = null;
 
     /**
      * Ein Togglebutton zum Starten / Stoppen der Downloads
@@ -171,17 +169,17 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
 
     private LogDialog               logDialog;
 
-    private Logger                  logger                        = JDUtilities.getLogger();
+    private Logger                  logger                            = JDUtilities.getLogger();
 
     Dropper                         dragNDrop;
 
-    private JCheckBoxMenuItem       menViewLog                    = null;
+    private JCheckBoxMenuItem       menViewLog                        = null;
 
     private JSplitPane              splitpane;
 
-    private PluginEvent             hostPluginDataChanged         = null;
+    private PluginEvent             hostPluginDataChanged             = null;
 
-    private PluginEvent             decryptPluginDataChanged      = null;
+    private PluginEvent             decryptPluginDataChanged          = null;
 
     private LinkGrabber             linkGrabber;
 
@@ -213,11 +211,13 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
 
     private LocationListener        locationListener;
 
-    public static final String      PARAM_DISABLE_CONFIRM_DIALOGS = "DISABLE_CONFIRM_DIALOGS";
+    public static final String      PARAM_DISABLE_CONFIRM_DIALOGS     = "DISABLE_CONFIRM_DIALOGS";
 
-    private static SubConfiguration guiConfig                     = JDUtilities.getSubConfig(GUICONFIGNAME);
+    private static SubConfiguration guiConfig                         = JDUtilities.getSubConfig(GUICONFIGNAME);
 
-    public static final String      PARAM_PLAF                    = "PLAF";
+    public static final String      PARAM_PLAF                        = "PLAF";
+
+    public static final String      PARAM_LOCAL_HELP                  = "LOCAL_HELP";
 
     /**
      * Das Hauptfenster wird erstellt
@@ -262,7 +262,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         toolBar = new JToolBar();
         this.locationListener = new LocationListener();
         frame.addWindowListener(this);
-        
+
         frame.setIconImage(JDUtilities.getImage(JDTheme.I("gui.images.jd_logo")));
         frame.setTitle(JDUtilities.getJDTitle());
         frame.setDefaultCloseOperation(WindowConstants.DO_NOTHING_ON_CLOSE);
@@ -272,7 +272,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         frame.pack();
 
         frame.setName("MAINFRAME");
-        if(SimpleGUI.getLastDimension(frame, null)!=null)frame.setSize(getLastDimension(frame, null));
+        if (SimpleGUI.getLastDimension(frame, null) != null) frame.setSize(getLastDimension(frame, null));
         // frame.setLocation(JDUtilities.getCenterOfComponent(null, frame));
 
         frame.setLocation(getLastLocation(null, null, frame));
@@ -303,7 +303,8 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
     public static Point getLastLocation(Component parent, String key, Component child) {
         if (key == null) key = child.getName();
         Object loc = guiConfig.getProperty("LOCATION_OF_" + key);
-        //JDUtilities.getLogger().info("Get dim of " + "LOCATION_OF_" + key + " : " + loc);
+        // JDUtilities.getLogger().info("Get dim of " + "LOCATION_OF_" + key + "
+        // : " + loc);
         Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
         int width = screenSize.width;
         int height = screenSize.height;
@@ -315,10 +316,10 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
 
     public static void saveLastLocation(Component parent, String key) {
         if (key == null) key = parent.getName();
-  
+
         if (parent.isShowing()) {
             guiConfig.setProperty("LOCATION_OF_" + key, parent.getLocationOnScreen());
-            
+
         }
 
     }
@@ -330,15 +331,15 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         if (loc != null && loc instanceof Dimension) {
             return (Dimension) loc;
         }
-       
+
         return null;
     }
 
     public static void saveLastDimension(Component child, String key) {
         if (key == null) key = child.getName();
         guiConfig.setProperty("DIMENSION_OF_" + key, child.getSize());
-        //JDUtilities.getLogger().info("DIMEN VOR: " + "DIMENSION_OF_" + key + " : " + child.getSize());
-      
+        // JDUtilities.getLogger().info("DIMEN VOR: " + "DIMENSION_OF_" + key +
+        // " : " + child.getSize());
 
     }
 
@@ -1074,10 +1075,10 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         public void setSpeed(Integer speed) {
             if (speed < 0) return;
             if (speed > 1024) {
-                lblSpeed.setText((speed / 1024) + "kbytes/sec");
+                lblSpeed.setText((speed / 1024) + JDLocale.L("gui.download.kbps", "kbytes/sek"));
             }
             else {
-                lblSpeed.setText(speed + "bytes/sec");
+                lblSpeed.setText(speed + JDLocale.L("gui.download.kbps", "bytes/sek"));
             }
         }
 
@@ -1164,7 +1165,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         }
         if (linkGrabber == null) {
             linkGrabber = new LinkGrabber(this, linkList);
-           
+
         }
         else {
             linkGrabber.addLinks(linkList);
@@ -1229,17 +1230,28 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
     }
 
     public boolean showHTMLDialog(String title, String htmlQuestion) {
-       return HTMLDialog.showDialog(getFrame(), title, htmlQuestion);
-      
+        return HTMLDialog.showDialog(getFrame(), title, htmlQuestion);
+
     }
 
     public void onJDInitComplete() {
         if (guiConfig.getBooleanProperty(SimpleGUI.PARAM_START_DOWNLOADS_AFTER_START, false)) {
             btnStartStop.setSelected(true);
             this.startStopDownloads();
-         }
+        }
 
-        
+    }
+
+    public String askForLocalisation(String key, String def) {
+        if (guiConfig.getBooleanProperty(PARAM_LOCAL_HELP, true)) {
+            String msg = TextAreaDialogWithHtmlMsg.showDialog(getFrame(),JDLocale.L("gui.helpLocale.title", "Mithelfen lohnt sich!"), JDUtilities.sprintf(JDLocale.L("gui.download.desc", "<font color='#00aa00' size='14'>Hilf mit JDownloader in deiner Sprache besser zu übersetzen!</font><hr>Der Text zu <b>%s</b> wurde für <b>%s</b> noch nicht übersetzt.<br/> Bitte gib deinen Übersetzungsvorschlag ein oder wähle <i>Abbrechen</i><br/><div style='border: medium dotted #0000FF'><font color='#ff0000'>Diese Übersetzungsbitten lassen sich über Konfiguration->Benutzeroberfläche abschalten</font></div><br>Bitte folgenden Text übersetzen in: <b><u>%s</u></b>. Falls der Vorschlag schon richtig ist einfach 'OK' klicken!"), new String[] { key, JDLocale.getLocale(), JDLocale.getLocale() }), def);
+            if (msg != null && msg.trim().length() > 1) {
+                return msg;
+            }
+            return null;
+
+        }
+        return null;
     }
 
 }
