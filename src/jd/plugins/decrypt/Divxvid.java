@@ -33,12 +33,12 @@ public class Divxvid extends PluginForDecrypt {
         super();
         steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
         currentStep = steps.firstElement();
+        default_password.add("dxd-tivi");    
         default_password.add("dxp.divxvid.org");
         default_password.add("dxp");
         default_password.add("dxp-tivi");
         default_password.add("DivXviD");
         default_password.add("dxd.dl.am");
-        
     }
 
     /*
