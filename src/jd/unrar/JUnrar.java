@@ -52,7 +52,6 @@ public class JUnrar {
 
 	private LinkedList<Long> volumess = new LinkedList<Long>();
 
-	private boolean isStandardpassword = false;
 
 	private static Object[][] filesignatures = {
 			{ "avi", new Integer[][] { { 82, 73, 70, 70 } } },
@@ -643,13 +642,12 @@ public class JUnrar {
 		logger.info("Extracting " + file.getName());
 		progress.setStatusText("Extract: " + file);
 
-		if (password != null) {
+		if (password != null && !password.matches("[\\s]*")) {
 			String[] passwords = getPasswordArray(password);
-			isStandardpassword = true;
-			passwordlist = new LinkedList<String>();
 			for (int i = 0; i < passwords.length; i++) {
-				passwordlist.add(passwords[i]);
+				passwordlist.addFirst(passwords[i]);
 			}
+			
 		}
 
 		String[] z = getProtectedFiles(file, null);
@@ -752,32 +750,9 @@ public class JUnrar {
 				}
 				return false;
 			}
-			if (isStandardpassword) {
-				if (passwordlist.size() == 1 && z != PASSWORD_PROTECTEDARCHIV) {
-					logger.info("Using Password: " + password);
-					String prePassword = preparePassword(password);
-					String str = execprozess(file, prePassword);
-					if (str.matches(allOk)) {
-						logger.finest("All OK");
-						removeFromToExtractList(file);
-						loadPasswordlist();
-						return true;
-					} else {
-						addToToExtractList(file, null);
-						logger.warning("Can't extract " + file.getName());
-						logger.finer(str);
-					}
-				} else {
-					isStandardpassword = false;
-					loadPasswordlist();
-					return extractFile(file, null);
-				}
-			}
-			logger.severe("Can't extract " + file.getName()
-					+ "  (it seems like the password isn't in the list?)");
-
 		}
-
+		logger.severe("Can't extract " + file.getName()
+				+ "  (it seems like the password isn't in the list?)");
 		return false;
 	}
 
