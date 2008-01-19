@@ -38,7 +38,7 @@ public class Netloadin extends PluginForHost {
     static private final String  POST_URL         = "<form method=\"post\" action=\"°\">";
     static private final String  LIMIT_REACHED    = "share/images/download_limit_go_on.gif";
     static private final String  CAPTCHA_WRONG    = "Sicherheitsnummer nicht eingegeben";
-    static private final String  NEW_HOST_URL     = "<a class=\"Orange_Link\" href=\"°\" >Hier geht es zum Download</a>";
+    static private final String  NEW_HOST_URL     = "<a class=\"Orange_Link\" href=\"°\" >Alternativ klicke hier.</a>";
     static private final String  FILE_NOT_FOUND   = "Datei nicht vorhanden";
     static private final String  DOWNLOAD_LIMIT   = "download_limit.tpl";
     static private final String  DOWNLOAD_CAPTCHA = "download_captcha.tpl";
@@ -122,6 +122,7 @@ public class Netloadin extends PluginForHost {
                         logger.info(downloadLink.getUrlDownloadDecrypted());
                         requestInfo = getRequest(new URL(downloadLink.getUrlDownloadDecrypted()), null, null, true);
                         this.sessionID = requestInfo.getCookie();
+                        System.out.println(requestInfo.getHtmlCode());
                         String url = "http://" + HOST + "/" + getSimpleMatch(requestInfo.getHtmlCode(), DOWNLOAD_URL, 0);
                         url = url.replaceAll("\\&amp\\;", "&");
                         if (!requestInfo.containsHTML(DOWNLOAD_START)) {
