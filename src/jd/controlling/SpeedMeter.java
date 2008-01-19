@@ -14,7 +14,7 @@ public class SpeedMeter {
 
 	boolean isRunning = false;
 	boolean isListManagerRunning = false;
-	private Vector<Object[]> entries = new Vector<Object[]>(300);
+	private Vector<Object[]> entries = new Vector<Object[]>(200);
 
 	/**
 	 * KOnstruktor dem die Zeit übergeben werden kann über die der durchschnitt
@@ -28,7 +28,7 @@ public class SpeedMeter {
 	private void clearList()
 	{
 		int c = 0;
-		while (isRunning || c == 1000)
+		while (isRunning || c != 1000)
 		{
 			c++;
 			try {
@@ -60,7 +60,7 @@ public class SpeedMeter {
 				while (entries.size()>0)
 				{
 					try {
-						Thread.sleep(50);
+						Thread.sleep(500);
 					} catch (InterruptedException e) {
 						// TODO Automatisch erstellter Catch-Block
 						e.printStackTrace();
@@ -79,10 +79,12 @@ public class SpeedMeter {
 	 */
 	public void addValue(final int value) {
 			final long cur = System.currentTimeMillis();
+			if(isRunning)
+			{
 			new Thread(new Runnable() {
 				public void run() {
 					int c = 0;
-					while (isRunning || c == 1000)
+					while (isRunning || c != 1000)
 					{
 						c++;
 						try {
@@ -100,6 +102,13 @@ public class SpeedMeter {
 					}
 				}
 			}).start();
+			}
+			else
+			{
+				isRunning = true;
+				entries.add(new Object[] { cur, value });
+				isRunning = false;
+			}
 			listManager();
 	}
 
@@ -114,7 +123,7 @@ public class SpeedMeter {
 		if (size < 2)
 			return 0;
 		int c = 0;
-		while (isRunning || c == 1000)
+		while (isRunning || c != 1000)
 		{
 			c++;
 			try {
