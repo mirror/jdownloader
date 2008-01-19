@@ -28,15 +28,17 @@ public class SpeedMeter {
 	private void clearList()
 	{
 		int c = 0;
-		while (isRunning || c != 1000)
+		while (isRunning && c != 1000)
 		{
 			c++;
 			try {
-				Thread.sleep(0);
+				Thread.sleep(5);
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}
 		}
+		if(isRunning)
+		return;
 		isRunning = true;
 		long current = System.currentTimeMillis();
 		Iterator<Object[]> iter = entries.iterator();
@@ -84,11 +86,11 @@ public class SpeedMeter {
 			new Thread(new Runnable() {
 				public void run() {
 					int c = 0;
-					while (isRunning || c != 1000)
+					while (isRunning && c != 1000)
 					{
 						c++;
 						try {
-							Thread.sleep(0);
+							Thread.sleep(5);
 						} catch (InterruptedException e) {
 							// TODO Automatisch erstellter Catch-Block
 							e.printStackTrace();
@@ -123,11 +125,11 @@ public class SpeedMeter {
 		if (size < 2)
 			return 0;
 		int c = 0;
-		while (isRunning || c != 1000)
+		while (isRunning && c != 1000)
 		{
 			c++;
 			try {
-				Thread.sleep(0);
+				Thread.sleep(5);
 			} catch (InterruptedException e) {
 				// TODO Automatisch erstellter Catch-Block
 				e.printStackTrace();
