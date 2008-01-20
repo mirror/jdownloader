@@ -1080,7 +1080,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
                 lblSpeed.setText((speed / 1024) + JDLocale.L("gui.download.kbps", "kbytes/sek"));
             }
             else {
-                lblSpeed.setText(speed + JDLocale.L("gui.download.kbps", "bytes/sek"));
+                lblSpeed.setText(speed + JDLocale.L("gui.download.bps", "bytes/sek"));
             }
         }
 
