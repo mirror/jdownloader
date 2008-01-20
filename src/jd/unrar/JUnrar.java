@@ -52,7 +52,6 @@ public class JUnrar {
 
 	private LinkedList<Long> volumess = new LinkedList<Long>();
 
-
 	private static Object[][] filesignatures = {
 			{ "avi", new Integer[][] { { 82, 73, 70, 70 } } },
 			{ "mpg", new Integer[][] { { 0, 0, 1, 186, -1, 0 } } },
@@ -363,38 +362,38 @@ public class JUnrar {
 	}
 
 	public void editPasswordlist(String[] passwords) {
-		passwordlist=new LinkedList<String>();
+		passwordlist = new LinkedList<String>();
 		for (int i = 0; i < passwords.length; i++) {
-				passwordlist.add(passwords[i]);
+			passwordlist.add(passwords[i]);
 		}
 		savePasswordList();
 	}
-	public static String passwordArrayToString(String[] passwords)
-	{
+
+	public static String passwordArrayToString(String[] passwords) {
 		LinkedList<String> pws = new LinkedList<String>();
 		for (int i = 0; i < passwords.length; i++) {
-			if(!passwords[i].matches("[\\s]*")  && !pws.contains(passwords[i]))
+			if (!passwords[i].matches("[\\s]*") && !pws.contains(passwords[i]))
 				pws.add(passwords[i]);
 		}
-		passwords=pws.toArray(new String[pws.size()]);
-		if(passwords.length==0)
+		passwords = pws.toArray(new String[pws.size()]);
+		if (passwords.length == 0)
 			return "";
-		if(passwords.length==1)
+		if (passwords.length == 1)
 			return passwords[0];
 
-		int l = passwords.length -1;
-
+		int l = passwords.length - 1;
 
 		String ret = "{\"";
 		for (int i = 0; i < passwords.length; i++) {
-			if(!passwords[i].matches("[\\s]*"))
-			ret +=passwords[i]+((i==l)? "\"}":"\",\"");
+			if (!passwords[i].matches("[\\s]*"))
+				ret += passwords[i] + ((i == l) ? "\"}" : "\",\"");
 		}
 		return ret;
-		
+
 	}
+
 	public static String[] getPasswordArray(String password) {
-		if(password==null || password.matches("[\\s]*"))
+		if (password == null || password.matches("[\\s]*"))
 			return new String[] {};
 		if (password.matches("[\\s]*\\{[\\s]*\".*\"[\\s]*\\}[\\s]*$")) {
 			password = password.replaceFirst("[\\s]*\\{[\\s]*\"", "")
@@ -563,15 +562,20 @@ public class JUnrar {
 				String name = matchervolumes.group(1);
 				if (name.matches("\\*.*")) {
 					name = name.replaceFirst(".", "");
-					if (!name.equals(namen))
-						protectedFiles.put(name, Long.parseLong(matchervolumes
-								.group(2)));
-
-				} else
+					long size = Long.parseLong(matchervolumes.group(2));
+					if (!name.equals(namen) )
+					{
+						namen = name;
+						volumess.add(size);
+						if(size > 0)
+						protectedFiles.put(name, size);
+					}
+				} else {
 					name = name.replaceFirst(".", "");
-				if (!name.equals(namen)) {
-					namen = name;
-					volumess.add(Long.parseLong(matchervolumes.group(2)));
+					if (!name.equals(namen)) {
+						namen = name;
+						volumess.add(Long.parseLong(matchervolumes.group(2)));
+					}
 				}
 			}
 			if (volumess.size() == 0) {
@@ -635,26 +639,27 @@ public class JUnrar {
 	 * @return
 	 */
 
-	private boolean extractFile(File file, String password) {
+	private boolean extractFile(File file, String pass) {
 		progress.addToMax(100);
 		progress.setStatus(0);
 		progress.setRange(100);
 		logger.info("Extracting " + file.getName());
 		progress.setStatusText("Extract: " + file);
 
-		if (password != null && !password.matches("[\\s]*")) {
-			String[] passwords = getPasswordArray(password);
+		if (pass != null && !pass.matches("[\\s]*")) {
+			String[] passwords = getPasswordArray(pass);
 			for (int i = 0; i < passwords.length; i++) {
 				passwordlist.addFirst(passwords[i]);
 			}
-			
+
 		}
 
 		String[] z = getProtectedFiles(file, null);
 		if (z == FILE_ERROR) {
-			addToToExtractList(file, password);
+			addToToExtractList(file, pass);
 			return false;
 		}
+		String password;
 		if (z == NO_PROTECTEDFILE) {
 			String str = execprozess(file, "");
 
@@ -664,7 +669,7 @@ public class JUnrar {
 				return true;
 			} else {
 				logger.warning("Can't extract " + file.getName());
-				addToToExtractList(file, password);
+				addToToExtractList(file, pass);
 				logger.finer(str);
 			}
 			return false;
@@ -692,7 +697,7 @@ public class JUnrar {
 						return true;
 					} else {
 						logger.warning("Can't extract " + file.getName());
-						addToToExtractList(file, password);
+						addToToExtractList(file, pass);
 						logger.finer(str);
 					}
 					return false;
@@ -711,7 +716,7 @@ public class JUnrar {
 				if (ch == 4)
 					unsafe = password;
 				if (ch == 3) {
-					addToToExtractList(file, password);
+					addToToExtractList(file, pass);
 					return false;
 				}
 				if (ch == 1) {
@@ -726,7 +731,7 @@ public class JUnrar {
 						return true;
 					} else {
 						logger.warning("Can't extract " + file.getName());
-						addToToExtractList(file, password);
+						addToToExtractList(file, pass);
 						logger.finer(str);
 					}
 					return false;
@@ -745,7 +750,7 @@ public class JUnrar {
 					return true;
 				} else {
 					logger.warning("Can't extract " + file.getName());
-					addToToExtractList(file, password);
+					addToToExtractList(file, pass);
 					logger.finer(str);
 				}
 				return false;
@@ -1214,18 +1219,11 @@ public class JUnrar {
 	 */
 	private boolean isFollowing(String filename) {
 		if (followingFiles != null && followingFiles.length > 0) {
-			filename = filename.replaceFirst("\\.part[0-9]+\\.rar$", "")
-					.replaceFirst("\\.rar$", "").toLowerCase();
+			filename = filename.toLowerCase().replaceFirst("(\\.part[0-9]+\\.rar|\\.rar)$", "");
 			for (int i = 0; i < followingFiles.length; i++) {
-				if (followingFiles[i]
-						.replaceFirst(
-								"\\.part[0-9]+(\\.rar|\\.rar\\.html|\\.rar\\.htm)$",
-								"")
-						.replaceFirst("(\\.rar|\\.rar\\.html|\\.rar\\.htm)$",
-								"")
-						.replaceFirst(
-								"(\\.r[0-9]+|\\.r[0-9]+\\.html|\\.r[0-9]+\\.htm)$",
-								"").toLowerCase().equals(filename)) {
+				if (followingFiles[i].toLowerCase().replaceFirst(
+								"(\\.part[0-9]+\\.rar|\\.part[0-9]+\\.rar\\.html|\\.part[0-9]+\\.rar\\.htm|\\.rar|\\.rar\\.html|\\.rar\\.htm|\\.r[0-9]+|\\.r[0-9]+\\.html|\\.r[0-9]+\\.htm)$",
+								"").equals(filename)) {
 					return true;
 				}
 			}
