@@ -295,7 +295,8 @@ public class HTMLEntities {
     /**
      * Initialize HTML entities table.
      */
-    private static void initializeEntitiesTables() {
+    @SuppressWarnings("unchecked")
+	private static void initializeEntitiesTables() {
         // initialize html translation maps
         for (int i = 0; i < html_entities_table.length; ++i) {
             htmlentities_map.put(html_entities_table[i][1],

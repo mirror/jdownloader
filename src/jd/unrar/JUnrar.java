@@ -41,7 +41,7 @@ public class JUnrar {
 
 	public File extractFolder = null;
 
-	SubConfiguration configPasswords = JDUtilities
+	private static SubConfiguration configPasswords = JDUtilities
 			.getSubConfig("unrarPasswords");
 
 	SubConfiguration config = JDUtilities.getSubConfig("unrar");
@@ -82,7 +82,7 @@ public class JUnrar {
 			{ 82, 73, 70, 70 }, { 0, 255, 255, 255, 255, 255 },
 			{ 48, 38, 178, 117, 142, 102 }, { 208, 207, 17, 224, 161, 177 } };
 
-	public LinkedList<String> passwordlist;
+	private static LinkedList<String> passwordlist;
 
 	private static String unrarErrortext = "Please load the English version of unrar/rar 3.7 or higher from http://www.rarlab.com/rar_add.htm or http://www.rarlab.com/download.htm for your OS";
 
@@ -113,7 +113,7 @@ public class JUnrar {
 
 	private boolean extendPasswordSearch = false;
 
-	public static Logger logger = JDUtilities.getLogger();
+	private static Logger logger = JDUtilities.getLogger();
 
 	LinkedList<String> ret = new LinkedList<String>();
 
@@ -337,31 +337,37 @@ public class JUnrar {
 		}
 	}
 
-	@SuppressWarnings("unchecked")
-	private void loadPasswordlist() {
-		// private int maxFilesize = 500000;
-		// public boolean overwriteFiles = false, autoDelete = true;
+	public static LinkedList<String> getPasswordList() {
+		loadPasswordlist();
+		return passwordlist;
 
-		this.passwordlist = (LinkedList<String>) configPasswords.getProperty(
-				PROPERTY_PASSWORDLIST, null);
-		if (passwordlist == null)
-			this.passwordlist = new LinkedList<String>();
 	}
 
-	private void savePasswordList() {
+	@SuppressWarnings("unchecked")
+	private static void loadPasswordlist() {
+		// private int maxFilesize = 500000;
+		// public boolean overwriteFiles = false, autoDelete = true;
+		if (passwordlist != null)
+			return;
+		passwordlist = (LinkedList<String>) configPasswords.getProperty(
+				PROPERTY_PASSWORDLIST, null);
+		if (passwordlist == null)
+			passwordlist = new LinkedList<String>();
+	}
+
+	private static void savePasswordList() {
 		if (passwordlist != null) {
 			configPasswords.setProperty(PROPERTY_PASSWORDLIST, passwordlist);
 			configPasswords.save();
 		}
 	}
 
-	public String[] returnPasswords() {
-		if (passwordlist == null || passwordlist.size() < 1)
-			loadPasswordlist();
+	public static String[] returnPasswords() {
+		loadPasswordlist();
 		return passwordlist.toArray(new String[passwordlist.size()]);
 	}
 
-	public void editPasswordlist(String[] passwords) {
+	public static void editPasswordlist(String[] passwords) {
 		passwordlist = new LinkedList<String>();
 		for (int i = 0; i < passwords.length; i++) {
 			passwordlist.add(passwords[i]);
@@ -404,7 +410,7 @@ public class JUnrar {
 	}
 
 	public void addToPasswordlist(String password) {
-		if (passwordlist.size() > 0 && passwordlist != null)
+		if (passwordlist == null || passwordlist.size() < 1)
 			loadPasswordlist();
 		String[] passwords = getPasswordArray(password);
 		for (int i = 0; i < passwords.length; i++) {
@@ -563,12 +569,11 @@ public class JUnrar {
 				if (name.matches("\\*.*")) {
 					name = name.replaceFirst(".", "");
 					long size = Long.parseLong(matchervolumes.group(2));
-					if (!name.equals(namen) )
-					{
+					if (!name.equals(namen)) {
 						namen = name;
 						volumess.add(size);
-						if(size > 0)
-						protectedFiles.put(name, size);
+						if (size > 0)
+							protectedFiles.put(name, size);
 					}
 				} else {
 					name = name.replaceFirst(".", "");
@@ -649,6 +654,8 @@ public class JUnrar {
 		if (pass != null && !pass.matches("[\\s]*")) {
 			String[] passwords = getPasswordArray(pass);
 			for (int i = 0; i < passwords.length; i++) {
+				if (passwordlist.contains(passwords[i]))
+					passwordlist.remove(passwords[i]);
 				passwordlist.addFirst(passwords[i]);
 			}
 
@@ -1219,9 +1226,12 @@ public class JUnrar {
 	 */
 	private boolean isFollowing(String filename) {
 		if (followingFiles != null && followingFiles.length > 0) {
-			filename = filename.toLowerCase().replaceFirst("(\\.part[0-9]+\\.rar|\\.rar)$", "");
+			filename = filename.toLowerCase().replaceFirst(
+					"(\\.part[0-9]+\\.rar|\\.rar)$", "");
 			for (int i = 0; i < followingFiles.length; i++) {
-				if (followingFiles[i].toLowerCase().replaceFirst(
+				if (followingFiles[i]
+						.toLowerCase()
+						.replaceFirst(
 								"(\\.part[0-9]+\\.rar|\\.part[0-9]+\\.rar\\.html|\\.part[0-9]+\\.rar\\.htm|\\.rar|\\.rar\\.html|\\.rar\\.htm|\\.r[0-9]+|\\.r[0-9]+\\.html|\\.r[0-9]+\\.htm)$",
 								"").equals(filename)) {
 					return true;

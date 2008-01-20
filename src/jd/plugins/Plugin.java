@@ -1902,6 +1902,13 @@ public abstract class Plugin {
 	public static Vector<String> findPasswords(String data) {
 		if (data == null)
 			return new Vector<String>();
+		Iterator<String> iter = JUnrar.getPasswordList().iterator();
+		Vector<String> ret = new Vector<String>();
+		while (iter.hasNext()) {
+			String pass = (String) iter.next();
+			if(data.contains(pass))
+				ret.add(pass);
+		}
 		data = data
 				.replaceAll("(?s)<!-- .*? -->", "")
 				.replaceAll("(?s)<script .*?>.*?</script>", "")
@@ -1913,17 +1920,18 @@ public abstract class Plugin {
 				.replaceAll(
 						"(pw|passwort|password|pass).{0,12}(nicht|falsch|wrong)",
 						"");
-		Vector<String> ret = new Vector<String>();
+
 		Pattern pattern = Pattern
 				.compile(
 						"(pw|passwort|password|pass)[\\s][\\s]*?[\"']([[^\\:\"'\\s]][^\"'\\s]*)[\"']?",
 						Pattern.CASE_INSENSITIVE);
 		Matcher matcher = pattern.matcher(data);
 		while (matcher.find()) {
-			if (matcher.group(2).length() > 5
-					&& !matcher.group(2).matches(
-							".*(rar|zip|jpg|gif|png|html|php|avi|mpg)$"))
-				ret.add(matcher.group(2));
+			String pass = matcher.group(2);
+			if (pass.length() > 2
+					&& !pass.matches(
+							".*(rar|zip|jpg|gif|png|html|php|avi|mpg)$") && !ret.contains(pass))
+				ret.add(pass);
 		}
 		pattern = Pattern
 				.compile(
@@ -1931,10 +1939,11 @@ public abstract class Plugin {
 						Pattern.CASE_INSENSITIVE);
 		matcher = pattern.matcher(data);
 		while (matcher.find()) {
-			if (matcher.group(2).length() > 5
-					&& !matcher.group(2).matches(
-							".*(rar|zip|jpg|gif|png|html|php|avi|mpg)$"))
-				ret.add(matcher.group(2));
+			String pass = matcher.group(2);
+			if (pass.length() > 4
+					&& !pass.matches(
+							".*(rar|zip|jpg|gif|png|html|php|avi|mpg)$") && !ret.contains(pass))
+				ret.add(pass);
 		}
 		pattern = Pattern
 				.compile(
@@ -1942,10 +1951,11 @@ public abstract class Plugin {
 						Pattern.CASE_INSENSITIVE);
 		matcher = pattern.matcher(data);
 		while (matcher.find()) {
-			if (matcher.group(2).length() > 3
-					&& !matcher.group(2).matches(
-							".*(rar|zip|jpg|gif|png|html|php|avi|mpg)$"))
-				ret.add(matcher.group(2));
+			String pass = matcher.group(2);
+			if (pass.length() > 2
+					&& !pass.matches(
+							".*(rar|zip|jpg|gif|png|html|php|avi|mpg)$") && !ret.contains(pass))
+				ret.add(pass);
 		}
 		pattern = Pattern
 				.compile(
@@ -1953,10 +1963,11 @@ public abstract class Plugin {
 						Pattern.CASE_INSENSITIVE);
 		matcher = pattern.matcher(data);
 		while (matcher.find()) {
-			if (matcher.group(2).length() > 3
-					&& !matcher.group(2).matches(
-							".*(rar|zip|jpg|gif|png|html|php|avi|mpg)$"))
-				ret.add(matcher.group(2));
+			String pass = matcher.group(2);
+			if (pass.length() > 2
+					&& !pass.matches(
+							".*(rar|zip|jpg|gif|png|html|php|avi|mpg)$") && !ret.contains(pass))
+				ret.add(pass);
 		}
 
 		return ret;

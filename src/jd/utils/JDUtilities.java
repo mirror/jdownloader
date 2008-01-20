@@ -16,7 +16,6 @@ import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -45,7 +44,6 @@ import java.net.URLDecoder;
 import java.nio.channels.FileChannel;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Locale;
@@ -61,7 +59,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.zip.Deflater;
 
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
@@ -79,7 +76,6 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginForContainer;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
-import jd.plugins.PluginForSearch;
 import jd.plugins.PluginOptional;
 import jd.plugins.RequestInfo;
 import jd.update.WebUpdater;
@@ -120,7 +116,7 @@ public class JDUtilities {
 
     public static final int                        RUNTYPE_LOCAL_ENV   = 3;
 
-    private static Vector<PluginForSearch>         pluginsForSearch    = null;
+ //   private static Vector<PluginForSearch>         pluginsForSearch    = null;
 
     private static Vector<PluginForContainer>      pluginsForContainer = null;
 
@@ -199,7 +195,7 @@ public class JDUtilities {
         String lastDir = JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_CURRENT_BROWSE_PATH + id, null);
 
         File dlDirectory;
-        File lastDirectory;
+       // File lastDirectory;
         if (dlDir == null) {
             dlDirectory = new File("");
         }
@@ -536,7 +532,8 @@ public class JDUtilities {
      * @param arguments
      * @return
      */
-    public static Object getHomeDirInstance(String classPath, Object[] arguments) {
+    @SuppressWarnings("unchecked")
+	public static Object getHomeDirInstance(String classPath, Object[] arguments) {
         classPath = classPath.replaceAll("\\.class", "");
         classPath = classPath.replaceAll("\\/", ".");
         classPath = classPath.replaceAll("\\\\", ".");
@@ -655,7 +652,7 @@ public class JDUtilities {
     public static JDClassLoader getJDClassLoader() {
         if (jdClassLoader == null) {
             File homeDir = getJDHomeDirectoryFromEnvironment();
-            String url = null;
+        //    String url = null;
             // Url Encode des pfads für den Classloader
             logger.info("Create Classloader: for: " + homeDir.getAbsolutePath());
             jdClassLoader = new JDClassLoader(homeDir.getAbsolutePath(), Thread.currentThread().getContextClassLoader());
@@ -792,7 +789,7 @@ public class JDUtilities {
             }
         }
         if (fileInput != null) {
-            String hash = getLocalHash(fileInput);
+           // String hash = getLocalHash(fileInput);
             try {
                 FileInputStream fis = new FileInputStream(fileInput);
                 if (asXML) {
@@ -942,14 +939,6 @@ public class JDUtilities {
         return pluginsForDecrypt;
     }
 
-    /**
-     * Liefert alle geladenen Plugins zum Suchen zurück
-     * 
-     * @return Plugins zum Suchen
-     */
-    public static Vector<PluginForSearch> getPluginsForSearch() {
-        return pluginsForSearch;
-    }
 
     /**
      * Liefert alle geladenen Plugins zum Laden von Containerdateien zurück
@@ -959,31 +948,22 @@ public class JDUtilities {
     public static Vector<PluginForContainer> getPluginsForContainer() {
         return pluginsForContainer;
     }
-
     /**
-     * Gibt alle Ketegorien zurück für die Suchplugins exestieren. Die
-     * Kategorien werden in den Plugins selbst als String definiert
-     * 
-     * @return Alle Search kategorien
+     * Liefert alle Plugins zum Downloaden von einem Anbieter zurück.
+     * @return
      */
-    public static Vector<String> getPluginsForSearchCategories() {
-        Vector<String> ret = new Vector<String>();
-        for (int i = 0; i < pluginsForSearch.size(); i++) {
-            for (int b = 0; b < pluginsForSearch.get(i).getCategories().length; b++) {
-                if (ret.indexOf(pluginsForSearch.get(i).getCategories()[b]) < 0) ret.add(pluginsForSearch.get(i).getCategories()[b]);
-            }
-        }
-        Collections.sort(ret);
-        return ret;
+    public static Vector<PluginForHost> getUnsortedPluginsForHost()
+    {
+    	return pluginsForHost;
     }
-
     /**
      * Liefert alle Plugins zum Downloaden von einem Anbieter zurück. Die liste
      * wird dabei sortiert zurückgegeben
      * 
      * @return Plugins zum Downloaden von einem Anbieter
      */
-    public static Vector<PluginForHost> getPluginsForHost() {
+    @SuppressWarnings("unchecked")
+	public static Vector<PluginForHost> getPluginsForHost() {
         // return pluginsForHost;
 
         Vector<PluginForHost> plgs = new Vector<PluginForHost>();
@@ -1826,7 +1806,7 @@ public class JDUtilities {
             logger.setLevel(Level.ALL);
             logger.finer("Init Logger:" + LOGGER_NAME);
             // Leitet System.out zum Logger um.
-            final PrintStream err = System.err;
+           // final PrintStream err = System.err;
             OutputStream os = new OutputStream() {
                 private StringBuffer buffer = new StringBuffer();
 
@@ -1925,11 +1905,6 @@ public class JDUtilities {
 
     public static void setPluginForHostList(Vector<PluginForHost> loadPlugins) {
         pluginsForHost = loadPlugins;
-
-    }
-
-    public static void setPluginForSearchList(Vector<PluginForSearch> loadPlugins) {
-        pluginsForSearch = loadPlugins;
 
     }
 

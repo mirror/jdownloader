@@ -10,7 +10,6 @@ import jd.plugins.DownloadLink;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
-import jd.plugins.PluginForSearch;
 import jd.utils.JDUtilities;
 
 /**
@@ -34,18 +33,6 @@ public class DistributeData extends ControlMulticaster {
     private Vector<DownloadLink>     linkData;
 
     /**
-     * Plugins der Anbieter
-     */
-    private Vector<PluginForHost>    pluginsForHost;
-
-    /**
-     * Plugins zum Entschlüsseln
-     */
-    private Vector<PluginForDecrypt> pluginsForDecrypt;
-
-    private Vector<PluginForSearch>  pluginsForSearch;
-
-    /**
      * Erstellt einen neuen Thread mit dem Text, der verteilt werden soll. Die
      * übergebenen Daten werden durch einen URLDecoder geschickt.
      * 
@@ -54,9 +41,6 @@ public class DistributeData extends ControlMulticaster {
     public DistributeData(String data) {
         super("JD-DistributeData");
         this.data = data;
-        this.pluginsForHost = JDUtilities.getPluginsForHost();
-        this.pluginsForDecrypt = JDUtilities.getPluginsForDecrypt();
-        this.pluginsForSearch = JDUtilities.getPluginsForSearch();
         try {
             // this.data = URLDecoder.decode(this.data, "UTF-8");
         }
@@ -80,115 +64,17 @@ public class DistributeData extends ControlMulticaster {
     public Vector<DownloadLink> findLinks() {
 
         Vector<DownloadLink> links = new Vector<DownloadLink>();
+        if (JDUtilities.getPluginsForHost() == null) return new Vector<DownloadLink>();
+        Vector<String> foundpassword = Plugin.findPasswords(data);
 
-        Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
-        if (pluginsForHost == null) return decryptedLinks;
-        String foundpassword = Plugin.findPassword(data);
-
-        PluginForHost pHost;
 
         // Zuerst wird data durch die Such Plugins geschickt.
-        decryptedLinks.addAll(handleSearchPlugins());
+       // decryptedLinks.addAll(handleSearchPlugins());
 
         reformDataString();
 
-        decryptedLinks.addAll(handleDecryptPlugins());
 
-        // decrypted Links werden solange an einen neuen Distributor geschickt
-        // bis keine links mehr decrypted werden.
-
-        // Die entschlüsselten Links werden nochmal durch alle DecryptPlugins
-        // geschickt.
-        // Könnte sein, daß einige zweifach oder mehr verschlüsselt sind
-        // cryptedLinks = new Vector<String>();
-        // boolean moreToDo;
-        // do {
-        // moreToDo = false;
-        // logger.info("Size: " + pluginsForDecrypt.size());
-        // for (int i = 0; i < pluginsForDecrypt.size(); i++) {
-        // pDecrypt = pluginsForDecrypt.get(i);
-        // Iterator<String[]> iterator = decryptedLinks.iterator();
-        // while (iterator.hasNext()) {
-        // String[] data = iterator.next();
-        // String localData = Plugin.getHttpLinkList(data[0]);
-        //
-        // try {
-        // localData = URLDecoder.decode(localData, "UTF-8");
-        // }
-        // catch (Exception e) {
-        // logger.warning("text not url decodeable");
-        // }
-        //
-        // if (pDecrypt.canHandle(localData)) {
-        // logger.info("dec2 link"+i+" : "+data[0]+" - "+localData);
-        // moreToDo = true;
-        //
-        // fireControlEvent(new ControlEvent(this,
-        // ControlEvent.CONTROL_PLUGIN_DECRYPT_ACTIVE, pDecrypt));
-        // // logger.info("decryptedLink removed
-        // // "+data+">>"+pDecrypt.getHost());
-        // // Schleift die Passwörter und COmments durch den
-        // // Nächsten Decrypter. (bypass)
-        // iterator.remove();
-        //
-        // cryptedLinks.addAll(pDecrypt.getDecryptableLinks(localData));
-        // localData = pDecrypt.cutMatches(localData);
-        // logger.info("send 2:"+cryptedLinks);
-        // Vector<String[]> tmpLinks = pDecrypt.decryptLinks(cryptedLinks);
-        // String password = data[1] == null ? "" : data[1];
-        // String comment = data[2] == null ? "" : data[2];
-        // logger.info("p " + password+" links: "+tmpLinks);
-        // for (int ii = 0; ii < tmpLinks.size(); ii++) {
-        //
-        // if (tmpLinks.get(ii)[1] != null) {
-        // tmpLinks.get(ii)[1] = password + "|" + tmpLinks.get(ii)[1];
-        // while (tmpLinks.get(ii)[1].startsWith("|"))
-        // tmpLinks.get(ii)[1] = tmpLinks.get(ii)[1].substring(1);
-        // }
-        // else {
-        // tmpLinks.get(ii)[1] = password;
-        // }
-        // if (tmpLinks.get(ii)[2] != null) {
-        // tmpLinks.get(ii)[2] = comment + "|" + tmpLinks.get(ii)[2];
-        // while (tmpLinks.get(ii)[2].startsWith("|"))
-        // tmpLinks.get(ii)[2] = tmpLinks.get(ii)[2].substring(1);
-        // }
-        // else {
-        // tmpLinks.get(ii)[2] = comment;
-        // }
-        // }
-        //
-        // decryptedLinks.addAll(tmpLinks);
-        //
-        // iterator = decryptedLinks.iterator();
-        // fireControlEvent(new ControlEvent(this,
-        // ControlEvent.CONTROL_PLUGIN_DECRYPT_INACTIVE, pDecrypt));
-        // }
-        // }
-        // }
-        // }
-        // while (moreToDo);
-
-        // Danach wird der (noch verbleibende) Inhalt der Zwischenablage an die
-        // Plugins der Hoster geschickt.
-        for (int i = 0; i < pluginsForHost.size(); i++) {
-            pHost = pluginsForHost.get(i);
-            if (pHost.canHandle(data)) {
-                Vector<DownloadLink> dl = pHost.getDownloadLinks(data);
-                if (!foundpassword.matches("[\\s]*")) {
-                    for (int j = 0; j < dl.size(); j++) {
-                        DownloadLink da = dl.get(j);
-                        da.addSourcePluginPassword(foundpassword);
-                        // TODO:Das erneute setzen sollte unnötig sein
-                        dl.set(j, da);
-                    }
-                }
-                links.addAll(dl);
-                data = pHost.cutMatches(data);
-            }
-        }
-
-        // Als letztes werden die entschlüsselten Links (soweit überhaupt
+        // es werden die entschlüsselten Links (soweit überhaupt
         // vorhanden)
         // an die HostPlugins geschickt, damit diese einen Downloadlink
         // erstellen können
@@ -196,46 +82,63 @@ public class DistributeData extends ControlMulticaster {
         // Edit Coa:
         // Hier werden auch die SourcePLugins in die Downloadlinks gesetzt
 
-        Iterator<DownloadLink> iterator = decryptedLinks.iterator();
-
+        Iterator<DownloadLink> iterator = handleDecryptPlugins().iterator();
+       
         while (iterator.hasNext()) {
             DownloadLink decrypted = iterator.next();
+            Iterator<PluginForHost> iteratorHost = JDUtilities.getPluginsForHost().iterator();
+            while (iteratorHost.hasNext()) {
 
-            // logger.info("link: " + decrypted);
-            for (int i = 0; i < pluginsForHost.size(); i++) {
                 try {
-                    pHost = pluginsForHost.get(i);
+    				PluginForHost pHost = (PluginForHost) iteratorHost.next();
                     if (pHost.canHandle(decrypted.getUrlDownloadDecrypted())) {
                         Vector<DownloadLink> dLinks = pHost.getDownloadLinks(decrypted.getUrlDownloadDecrypted());
                         //logger.info(decrypted.getUrlDownloadDecrypted()+" "+pHost.getDownloadLinks(decrypted.getUrlDownloadDecrypted()));
                         for (int c = 0; c < dLinks.size(); c++) {
 
-                            dLinks.get(c).addSourcePluginPassword(foundpassword);
+                            dLinks.get(c).addSourcePluginPasswords(foundpassword);
                             dLinks.get(c).addSourcePluginPasswords(decrypted.getSourcePluginPasswords());
                             dLinks.get(c).setSourcePluginComment(decrypted.getSourcePluginComment());
 
                         }
 
                         links.addAll(dLinks);
-                        iterator.remove();
                     }
                 }
                 catch (Exception e) {
                     logger.severe("Decrypter/Search Fehler: " + e.getMessage());
                 }
-            }
+				
+			}
         }
-        // logger.info("--> " + links);
+        // Danach wird der (noch verbleibende) Inhalt der Zwischenablage an die
+        // Plugins der Hoster geschickt
+        Iterator<PluginForHost> iteratorHost = JDUtilities.getPluginsForHost().iterator();
+        while (iteratorHost.hasNext()) {
+			PluginForHost pHost = (PluginForHost) iteratorHost.next();
+            if (pHost.canHandle(data)) {
+                Vector<DownloadLink> dl = pHost.getDownloadLinks(data);
+                if (foundpassword.size()>0) {
+                	Iterator<DownloadLink> iter = dl.iterator();
+                	while (iter.hasNext()) {
+						((DownloadLink) iter.next()).addSourcePluginPasswords(foundpassword);
+					}
+                }
+                links.addAll(dl);
+                data = pHost.cutMatches(data);
+            }
+		}
 
         return links;
     }
 
     private Vector<DownloadLink> handleDecryptPlugins() {
-        PluginForDecrypt pDecrypt;
+        
         Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
-        if (pluginsForDecrypt == null) return decryptedLinks;
-        for (int i = 0; i < pluginsForDecrypt.size(); i++) {
-            pDecrypt = pluginsForDecrypt.get(i);
+        if ( JDUtilities.getPluginsForDecrypt() == null) return decryptedLinks;
+        Iterator<PluginForDecrypt> iteratorDecrypt = JDUtilities.getPluginsForDecrypt().iterator();
+        while (iteratorDecrypt.hasNext()) {
+			PluginForDecrypt pDecrypt = (PluginForDecrypt) iteratorDecrypt.next();
             if (pDecrypt.canHandle(data)) {
 
                 try {
@@ -254,7 +157,7 @@ public class DistributeData extends ControlMulticaster {
                     e.printStackTrace();
                 }
             }
-        }
+		}
         int i = 1;
         while (deepDecrypt(decryptedLinks)) {
             i++;
@@ -287,12 +190,11 @@ public class DistributeData extends ControlMulticaster {
                     logger.warning("text not url decodeable");
                 }
             }
-            PluginForDecrypt pDecrypt;
 
             boolean canDecrypt = false;
-
-            for (int d = 0; d < pluginsForDecrypt.size(); d++) {
-                pDecrypt = pluginsForDecrypt.get(d);
+            Iterator<PluginForDecrypt> iteratorDecrypt = JDUtilities.getPluginsForDecrypt().iterator();
+            while (iteratorDecrypt.hasNext()) {
+				PluginForDecrypt pDecrypt = (PluginForDecrypt) iteratorDecrypt.next();
                 if (pDecrypt.canHandle(url)) {
                     try {
                         pDecrypt = pDecrypt.getClass().newInstance();
@@ -312,14 +214,14 @@ public class DistributeData extends ControlMulticaster {
 
                         fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_PLUGIN_DECRYPT_INACTIVE, pDecrypt));
                         canDecrypt = true;
+                        break;
                     }
                     catch (Exception e) {
 
                         e.printStackTrace();
                     }
                 }
-
-            }
+			}
             if (canDecrypt) {
                 decryptedLinks.remove(i);
                 hasDecryptedLinks = true;
@@ -345,33 +247,6 @@ public class DistributeData extends ControlMulticaster {
         }
     }
 
-    /**
-     * Suceht im datastring nach Suchpatterns und schreibt gibt die treffer
-     * zurück
-     * 
-     * @param decryptedLinks
-     */
-    private Vector<DownloadLink> handleSearchPlugins() {
-        if (pluginsForSearch == null) return new Vector<DownloadLink>();
-        Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
-        if (data != null) {
-            PluginForSearch pSearch;
-            for (int i = 0; i < pluginsForSearch.size(); i++) {
-                pSearch = pluginsForSearch.get(i);
-                logger.info("engine:" + pSearch.getPluginName());
-                if (pSearch.canHandle(data)) {
-                    fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_PLUGIN_SEARCH_ACTIVE, pSearch));
-Vector<DownloadLink> links = pSearch.findLinks(data);
-logger.info(links+"");
-                    decryptedLinks.addAll(links);
-
-                    // data = pSearch.cutMatches(data);
-                    fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_PLUGIN_SEARCH_INACTIVE, pSearch));
-                }
-            }
-        }
-        return decryptedLinks;
-    }
 
     public Vector<DownloadLink> getLinkData() {
         return linkData;

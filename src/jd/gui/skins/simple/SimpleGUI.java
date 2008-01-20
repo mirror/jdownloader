@@ -60,7 +60,6 @@ import jd.plugins.DownloadLink;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
-import jd.plugins.PluginForSearch;
 import jd.plugins.PluginOptional;
 import jd.plugins.event.PluginEvent;
 import jd.utils.JDLocale;
@@ -141,7 +140,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
 
     private JDAction                actionStartStopDownload;
 
-    private JDAction                removeFinished;
+  //  private JDAction                removeFinished;
 
     private JDAction                actionExit;
 
@@ -808,15 +807,11 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
             this.decryptPluginDataChanged = event;
             return;
         }
-        if (event.getSource() instanceof PluginForSearch && event.getEventID() == PluginEvent.PLUGIN_DATA_CHANGED) {
-            this.decryptPluginDataChanged = event;
-            return;
-        }
         if (event.getSource() instanceof PluginForHost) {
             tabDownloadTable.pluginEvent(event);
             return;
         }
-        if (event.getSource() instanceof PluginForDecrypt || event.getSource() instanceof PluginForSearch) {
+        if (event.getSource() instanceof PluginForDecrypt) {
             // progressBar.pluginEvent(event);
             splitpane.setDividerLocation(0.8);
             return;

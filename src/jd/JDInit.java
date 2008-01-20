@@ -24,7 +24,6 @@ import jd.gui.skins.simple.SimpleGUI;
 import jd.plugins.PluginForContainer;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
-import jd.plugins.PluginForSearch;
 import jd.plugins.PluginOptional;
 import jd.update.WebUpdater;
 import jd.utils.JDLocale;
@@ -263,27 +262,6 @@ public class JDInit {
      
      
  }
-    public Vector<PluginForSearch> loadPluginForSearch() {
-        Vector<PluginForSearch> plugins = new Vector<PluginForSearch>();
-        try {
-            JDClassLoader jdClassLoader = JDUtilities.getJDClassLoader();
-            Iterator iterator;
-            logger.finer("Load PLugins");
-            iterator = Service.providers(PluginForSearch.class, jdClassLoader);
-            while (iterator.hasNext()) {
-                Object next = iterator.next();
-                logger.info(next+"");
-                PluginForSearch p = (PluginForSearch) next;
-
-                plugins.add(p);
-            }
-            return plugins;
-        }
-        catch (Exception e) {
-            e.printStackTrace();
-            return plugins;
-        }
-    }
 
     public Vector<PluginForContainer> loadPluginForContainer() {
         Vector<PluginForContainer> plugins = new Vector<PluginForContainer>();
@@ -350,7 +328,6 @@ public class JDInit {
         JDController controller = JDUtilities.getController();
         JDUtilities.setPluginForDecryptList(this.loadPluginForDecrypt());
         JDUtilities.setPluginForHostList(this.loadPluginForHost());
-        JDUtilities.setPluginForSearchList(this.loadPluginForSearch());
         JDUtilities.setPluginForContainerList(this.loadPluginForContainer());
         try {
             JDUtilities.setPluginOptionalList(this.loadPluginOptional());
@@ -365,10 +342,6 @@ public class JDInit {
         Iterator<PluginForDecrypt> iteratorDecrypt = JDUtilities.getPluginsForDecrypt().iterator();
         while (iteratorDecrypt.hasNext()) {
             iteratorDecrypt.next().addPluginListener(controller);
-        }
-        Iterator<PluginForSearch> iteratorSearch = JDUtilities.getPluginsForSearch().iterator();
-        while (iteratorSearch.hasNext()) {
-            iteratorSearch.next().addPluginListener(controller);
         }
         Iterator<PluginForContainer> iteratorContainer = JDUtilities.getPluginsForContainer().iterator();
         while (iteratorContainer.hasNext()) {
