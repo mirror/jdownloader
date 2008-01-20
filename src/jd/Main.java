@@ -4,7 +4,6 @@ import java.awt.Graphics;
 import java.awt.Image;
 import java.util.Iterator;
 import java.util.Properties;
-import java.util.Set;
 import java.util.TreeSet;
 import java.util.Vector;
 import java.util.logging.Logger;
@@ -18,6 +17,7 @@ import jd.controlling.interaction.ExternExecute;
 import jd.controlling.interaction.Interaction;
 import jd.controlling.interaction.JDExit;
 import jd.controlling.interaction.ResetLink;
+import jd.gui.skins.simple.SimpleGUI;
 import jd.utils.JDLocale;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
@@ -37,7 +37,7 @@ public class Main {
         for (int i = 0; i < args.length; i++) {
             String string = args[i];
             if (string.equals("--help") || string.equals("-h")) {
-                String[][] help = new String[][] { { JDUtilities.getJDTitle(), "JD-Team::Astaldo::DwD::Botzi GPL" }, { "http://jdownloader.ath.cx/", "http://www.the-lounge.org/viewforum.php?f=217" + System.getProperty("line.separator") }, { "-h, --help", "Print help for jDownloader" }, { "-s --show", "Open a menu to show a JAC prepared captcha" }, { "-t --train", "Open a menu to train a JAC method" } };
+                String[][] help = new String[][] { { JDUtilities.getJDTitle(), "Coalado::Astaldo::DwD::Botzi GPL" }, { "http://jdownloader.ath.cx/", "http://www.the-lounge.org/viewforum.php?f=217" + System.getProperty("line.separator") }, { "-h, --help", "Print help for jDownloader" }, { "-s --show", "Open a menu to show a JAC prepared captcha" }, { "-t --train", "Open a menu to train a JAC method" } };
                 for (int j = 0; j < help.length; j++) {
                     System.out.println(help[j][0] + "\t" + help[j][1]);
                 }
@@ -89,7 +89,9 @@ public class Main {
 
         window.setSize(450, 100);
         window.setLocationRelativeTo(null);
+        if(JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).getBooleanProperty(SimpleGUI.PARAM_SHOW_SPLASH, true)){
         window.setVisible(true);
+        }
 
         logger.info("OS: " + System.getProperty("os.name") + ", " + System.getProperty("os.arch") + ", " + System.getProperty("os.version"));
         logger.info("Registriere Plugins");

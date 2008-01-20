@@ -1756,7 +1756,7 @@ public class JDUtilities {
     }
 
     public static String getJDTitle() {
-        return JDUtilities.JD_TITLE + " " + JDUtilities.JD_VERSION + JDUtilities.getRevision() + " (" + JDUtilities.getLastChangeDate() + " " + JDUtilities.getLastChangeTime() + ")";
+        return JDUtilities.JD_TITLE + " " + JDUtilities.JD_VERSION + JDUtilities.getRevision() + " (" + JDUtilities.getLastChangeDate() + " " + JDUtilities.getLastChangeTime() + ") - "+JDUtilities.getConfiguration().getIntegerProperty(Configuration.CID, -1);
     }
 
     /**

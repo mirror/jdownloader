@@ -348,7 +348,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
     private void attachLinkToPackage(DownloadLink link) {
 
         if (!guiConfig.getBooleanProperty(PROPERTY_AUTOPACKAGE, true)) {
-            logger.finer("No Auto package");
+           // logger.finer("No Auto package");
             int lastIndex = tabList.size() - 1;
             if (lastIndex < 0) {
                 addTab().setPackageName(this.removeExtension(link.getName()));
@@ -361,10 +361,10 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
 
         }
         else {
-            logger.finer("Auto package");
+           // logger.finer("Auto package");
             int bestSim = 0;
             int bestIndex = -1;
-            logger.info("link: " + link.getName());
+            //logger.info("link: " + link.getName());
             for (int i = 0; i < tabList.size(); i++) {
 
                 int sim = comparePackages(tabList.get(i).getPackageName(), removeExtension(link.getName()));
@@ -380,7 +380,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
                 tabList.get(tabList.size() - 1).setPackageName(removeExtension(link.getName()));
             }
             else {
-                logger.info("Found Package " + tabList.get(bestIndex).getPackageName());
+               // logger.info("Found Package " + tabList.get(bestIndex).getPackageName());
                 String newPackageName = getSimString(tabList.get(bestIndex).getPackageName(), removeExtension(link.getName()));
                 tabList.get(bestIndex).setPackageName(newPackageName);
                 onPackageNameChanged(tabList.get(bestIndex));
@@ -393,18 +393,18 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
     }
 
     private String removeExtension(String a) {
-        logger.finer("file " + a);
+       // logger.finer("file " + a);
         a = a.replaceAll("\\.part([0-9]+)", "");
         a = a.replaceAll("\\.html", "");
         a = a.replaceAll("\\.htm", "");
         int i = a.lastIndexOf(".");
-        logger.info("FOund . " + i);
+       // logger.info("FOund . " + i);
         String ret;
         if (i <= 1 || (a.length() - i) > 5) {
             ret = a.toLowerCase().trim();
         }
         else {
-            logger.info("Remove ext");
+            //logger.info("Remove ext");
             ret = a.substring(0, i).toLowerCase().trim();
         }
 
@@ -421,7 +421,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
         }
       
         if (Math.min(a.length(), b.length()) == 0) return 0;
-        logger.info("comp: " + a + " <<->> " + b + "(" + (c * 100) / (b.length()) + ")");
+        //logger.info("comp: " + a + " <<->> " + b + "(" + (c * 100) / (b.length()) + ")");
         return (c * 100) / (b.length());
     }
 
@@ -442,14 +442,14 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
     public void addLinkstoTab(DownloadLink[] linkList, int id) {
 
         PackageTab tab;
-        logger.info(id + " - " + tabList.size());
+      //  logger.info(id + " - " + tabList.size());
         if (id >= tabList.size()) {
             tab = addTab();
         }
         else {
             tab = tabList.get(id);
         }
-        logger.finer("add " + linkList.length + " links at " + id);
+        //logger.finer("add " + linkList.length + " links at " + id);
 
         tab.addLinks(linkList);
 
@@ -704,7 +704,10 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
 
                 return;
             }
-            Color c = new Color((int) (Math.random() * 0xffffff));
+            
+            int rand=(int) (Math.random() * 0xffffff);
+            Color c=new Color(rand);
+           // c = c.brighter();
             c = c.brighter();
             FilePackage fp = new FilePackage();
             fp.setProperty("color", c);
@@ -832,7 +835,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
                         // DownloadLink link = source.removeLinkAt(id);
                         move.add(source.getLinkAt(id));
 
-                        logger.info("Move line " + id);
+                        //logger.info("Move line " + id);
 
                     }
 
@@ -1158,7 +1161,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
                 int[] rows = table.getSelectedRows();
                 for (int i = rows.length - 1; i >= 0; i--) {
                     int id = rows[i];// table.convertRowIndexToModel(rows[i]);
-                    logger.info("remove  " + id);
+                   // logger.info("remove  " + id);
                     linkList.remove(id);
 
                 }

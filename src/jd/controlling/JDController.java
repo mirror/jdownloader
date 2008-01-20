@@ -11,6 +11,7 @@ import java.util.logging.Logger;
 import jd.JDInit;
 
 import jd.config.Configuration;
+import jd.config.SubConfiguration;
 import jd.controlling.interaction.ExternReconnect;
 import jd.controlling.interaction.HTTPLiveHeader;
 
@@ -395,7 +396,7 @@ public class JDController implements PluginListener, ControlListener, UIListener
     public void saveDLC(File file) {
         // JDUtilities.saveObject(null, downloadLinks.toArray(new
         // DownloadLink[]{}), file, "links", "dat", true);
-
+SubConfiguration cfg = JDUtilities.getSubConfig("DLCCONFIG");
         String xml = "";
         xml += "<header>";
         xml += "<generator>";
@@ -404,10 +405,28 @@ public class JDController implements PluginListener, ControlListener, UIListener
         xml += "<url>http://jdownloader.ath.cx</url>";
         xml += "</generator>";
         xml += "<tribute>";
-        xml += "<name>" + JDUtilities.Base64Encode(this.getUiInterface().showUserInputDialog("Uploader Name")) + "</name>";
+        if(cfg.getBooleanProperty("ASK_ADD_INFOS", false)){
+            if((cfg.getStringProperty("UPLOADERNAME", null)==null||cfg.getStringProperty("UPLOADERNAME", null).trim().length()==0)){
+                
+            }else{           xml += "<name>" +JDUtilities.Base64Encode(this.getUiInterface().showUserInputDialog("Uploader Name")) + "</name>";
+                xml += "<name>" +cfg.getStringProperty("UPLOADERNAME", null) + "</name>";
+                    
+            }
+        }else{
+            xml += "<name>"+"unknown" + "</name>";
+              
+        }
+        
         xml += "</tribute>";
+        if(cfg.getBooleanProperty("ASK_ADD_INFOS", false)){
         xml += "<comment>" + JDUtilities.Base64Encode((this.getUiInterface().showUserInputDialog("Comment"))) + "</comment>";
+        }
+        if(cfg.getBooleanProperty("ASK_ADD_INFOS", false)){
         xml += "<category>" + JDUtilities.Base64Encode((this.getUiInterface().showUserInputDialog("Category"))) + "</category>";
+        }else{
+            xml += "<category>various</category>";
+                
+        }
         xml += "</header>";
         xml += "<content>";
         Vector<FilePackage> packages = new Vector<FilePackage>();
@@ -436,12 +455,13 @@ public class JDController implements PluginListener, ControlListener, UIListener
         }
 
         xml += "</content>";
+        logger.info(xml);
        // logger.info(xml);
         String[] encrypt = JDUtilities.encrypt(xml, "DLC Parser");
 
        // logger.info(encrypt[1] + " - ");
         if (encrypt == null) {
-            logger.severe("DLC Encryption failed.");
+            logger.severe("Container Encryption failed.");
             this.getUiInterface().showMessageDialog("JDTC Encryption failed.");
             return;
 
@@ -450,7 +470,7 @@ public class JDController implements PluginListener, ControlListener, UIListener
         xml = encrypt[0];
 
         try {
-            URL[] services = new URL[] { new URL("http://recrypt1.ath.cx/service.php"), new URL("http://recrypt2.ath.cx/service.php"), new URL("http://recrypt3.ath.cx/service.php") };
+            URL[] services = new URL[] { new URL("http://dlcrypt.ath.cx/service.php"), new URL("http://recrypt1.ath.cx/service.php") };
             int url = 0;
             while (url < services.length) {
                 // Get redirect url
@@ -460,11 +480,13 @@ public class JDController implements PluginListener, ControlListener, UIListener
                     url++;
                     continue;
                 }
+                
+                http://web146.donau.serverway.de/jdownloader/recrypt/service.php?jd=1&srcType=jdtc&data=
                 logger.finer("Call Redirect: " + ri.getLocation() + " - " + "jd=1&srcType=jdtc&data=" + key);
 
                 ri = Plugin.postRequest(new URL(ri.getLocation()), null, null, null, "jd=1&srcType=jdtc&data=" + key, true);
                 // CHeck ob der call erfolgreich war
-//logger.info("Call re: "+ri.getHtmlCode());
+logger.info("Call re: "+ri.getHtmlCode());
                 if (!ri.isOK() || !ri.containsHTML("<rc>")) {
                     url++;
                     continue;
@@ -497,8 +519,8 @@ public class JDController implements PluginListener, ControlListener, UIListener
             // TODO Auto-generated catch block
             e.printStackTrace();
         }
-        logger.severe("DLC creation failed");
-        this.getUiInterface().showMessageDialog("DLC encryption failed");
+        logger.severe("Container creation failed");
+        this.getUiInterface().showMessageDialog("Container encryption failed");
     }
 
     /**
@@ -610,7 +632,7 @@ public class JDController implements PluginListener, ControlListener, UIListener
                     pContainer.initContainer(file.getAbsolutePath());
                     Vector<DownloadLink> links = pContainer.getContainedDownloadlinks();
                     if(links==null||links.size()==0){
-                        logger.severe("DLC Decryption failed"); 
+                        logger.severe("Container Decryption failed"); 
                     }else{
                     downloadLinks.addAll(links);
                     }

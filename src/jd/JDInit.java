@@ -438,7 +438,7 @@ public class JDInit {
                     logger.finer("FIles to update: " + files);
                     if (files.size() > 0) {
                         logger.info("New Updates Available! " + files);
-                        JDUtilities.download(JDUtilities.getResourceFile("webupdater.jar"), "http://jdownloader.ath.cx/autoUpdate2/webupdater.jar");
+                        JDUtilities.download(JDUtilities.getResourceFile("webupdater.jar"), "http://web146.donau.serverway.de/jdownloader/update/webupdater.jar");
                         JDUtilities.download(JDUtilities.getResourceFile("changeLog.txt"), "http://www.syncom.org/projects/jdownloader/log/?format=changelog");
                         
                         if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_WEBUPDATE_AUTO_RESTART, false)) {

@@ -71,6 +71,8 @@ public class ConfigPanelGUI extends ConfigPanel {
         addGUIConfigEntry(ce);
         ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, guiConfig, SimpleGUI.PARAM_DISABLE_CONFIRM_DIALOGS, JDLocale.L("gui.config.gui.disabledialogs", "Bestätigungsdialoge abschalten")).setDefaultValue(false).setExpertEntry(true));
         addGUIConfigEntry(ce);
+        ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, guiConfig, SimpleGUI.PARAM_SHOW_SPLASH, JDLocale.L("gui.config.gui.showSplash", "Splashscreen beim starten zeigen")).setDefaultValue(true));
+        addGUIConfigEntry(ce);
 
         Object[] BrowserArray = (Object[]) guiConfig.getProperty(SimpleGUI.PARAM_BROWSER_VARS, null);
 
@@ -102,7 +104,7 @@ public class ConfigPanelGUI extends ConfigPanel {
         ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, guiConfig, SimpleGUI.PARAM_BROWSER, BrowserArray, JDLocale.L("gui.config.gui.Browser", "Browser")).setDefaultValue(BrowserArray[0]).setExpertEntry(true));
         addGUIConfigEntry(ce);
         
-        ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, guiConfig, SimpleGUI.PARAM_LOCAL_HELP, JDLocale.L("gui.config.gui.localeHelp", "Ja ich will helfen die LOkalisierung von jD zu verbessern!")).setDefaultValue(true));
+        ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, guiConfig, SimpleGUI.PARAM_LOCAL_HELP, JDLocale.L("gui.config.gui.localeHelp", "Ja ich will helfen die LOkalisierung von jD zu verbessern!")).setDefaultValue(false));
         addGUIConfigEntry(ce);
         ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, guiConfig, LinkGrabber.PROPERTY_AUTOPACKAGE_LIMIT, JDLocale.L("gui.config.gui.autoPackageLimit", "Schwelle der Auto. Paketverwaltung."),0,100).setDefaultValue(98).setExpertEntry(true));
         addGUIConfigEntry(ce);
