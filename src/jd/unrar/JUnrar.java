@@ -408,7 +408,18 @@ public class JUnrar {
 		}
 		return new String[] { password };
 	}
-
+	public void makePasswordListUnique()
+	{
+		LinkedList<String> pwList = new LinkedList<String>();
+		Iterator<String> iter = passwordlist.iterator();
+		while (iter.hasNext()) {
+			String string = (String) iter.next();
+			if(!pwList.contains(string))
+				pwList.add(string);
+			else
+				iter.remove();
+		}
+	}
 	public void addToPasswordlist(String password) {
 		if (passwordlist == null || passwordlist.size() < 1)
 			loadPasswordlist();
@@ -420,6 +431,7 @@ public class JUnrar {
 					&& !passwordlist.contains(passwords[i]))
 				passwordlist.add(passwords[i]);
 		}
+		makePasswordListUnique();
 		savePasswordList();
 	}
 
@@ -532,6 +544,7 @@ public class JUnrar {
 	 * @param file
 	 * @return HashMap
 	 */
+	@SuppressWarnings("unchecked")
 	public String[] getProtectedFiles(File file, String pass) {
 
 		String[] params = new String[5];
@@ -654,11 +667,9 @@ public class JUnrar {
 		if (pass != null && !pass.matches("[\\s]*")) {
 			String[] passwords = getPasswordArray(pass);
 			for (int i = 0; i < passwords.length; i++) {
-				if (passwordlist.contains(passwords[i]))
-					passwordlist.remove(passwords[i]);
 				passwordlist.addFirst(passwords[i]);
 			}
-
+			makePasswordListUnique();
 		}
 
 		String[] z = getProtectedFiles(file, null);
@@ -1164,7 +1175,6 @@ public class JUnrar {
 			String str = startInputListener(p, parent);
 
 			if (str.matches(allOk)) {
-				addToPasswordlist(password);
 				Pattern pattern = Pattern.compile("Extracting from (.*)");
 				Matcher matcher = pattern.matcher(str);
 				if (autoDelete) {
