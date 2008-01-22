@@ -24,7 +24,7 @@ public class AirfreshSteelhosterCom extends PluginForDecrypt {
 
     @Override
     public String getCoder() {
-        return "Botzi";
+        return "JD-Team";
     }
 
     @Override

@@ -33,7 +33,7 @@ public class XliceNet extends PluginForDecrypt {
     }
     @Override
     public String getCoder() {
-        return "Botzi";
+        return "JD-Team";
     }
     @Override
     public String getHost() {

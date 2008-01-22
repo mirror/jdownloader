@@ -1,8 +1,10 @@
-package jd.plugins.decrypt;  import jd.plugins.DownloadLink;
+package jd.plugins.decrypt;
 
 import java.io.File;
 import java.util.Vector;
 import java.util.regex.Pattern;
+
+import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginStep;
 
@@ -22,7 +24,7 @@ public class AdrefIn extends PluginForDecrypt {
 
     @Override
     public String getCoder() {
-        return "Botzi|GforE v2";
+        return "JD-Team|GforE v2";
     }
 
     @Override

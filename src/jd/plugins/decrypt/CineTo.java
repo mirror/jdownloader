@@ -29,7 +29,7 @@ public class CineTo extends PluginForDecrypt {
 
     @Override
     public String getCoder() {
-        return "Botzi";
+        return "JD-Team";
     }
 
     @Override

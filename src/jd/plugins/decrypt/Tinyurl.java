@@ -28,7 +28,7 @@ public class Tinyurl extends PluginForDecrypt {
 
     @Override
     public String getCoder() {
-        return "Botzi|GforE v2";
+        return "JD-Team|GforE v2";
     }
 
     @Override

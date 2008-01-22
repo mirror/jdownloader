@@ -22,12 +22,11 @@ public class SceneloadTo extends PluginForDecrypt {
     public SceneloadTo() {
         super();
         steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
-
     }
 
     @Override
     public String getCoder() {
-        return "Botzi";
+        return "JD-Team";
     }
 
     @Override

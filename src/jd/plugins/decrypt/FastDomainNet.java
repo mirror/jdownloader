@@ -1,4 +1,4 @@
-package jd.plugins.decrypt;  import jd.plugins.DownloadLink;
+package jd.plugins.decrypt;
 
 import java.io.File;
 import java.io.IOException;
@@ -6,19 +6,20 @@ import java.net.URL;
 import java.util.Vector;
 import java.util.regex.Pattern;
 
+import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
 
-public class RelinkUs extends PluginForDecrypt {
+public class FastDomainNet extends PluginForDecrypt {
 
-    final static String host             = "relink.us";
+    final static String host             = "fast-domain.net";
 
-    private String      version          = "1.0.0.0";
+    private String      version          = "0.1.0";
 
-    private Pattern     patternSupported = getSupportPattern("http://[*]relink\\.us/go\\.php\\?id=[\\d]{5}");
+    private Pattern     patternSupported = getSupportPattern("http://fast-domain\\.net/link.php\\?stack=[a-zA-Z0-9]+");
 
-    public RelinkUs() {
+    public FastDomainNet() {
         super();
         steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
         currentStep = steps.firstElement();
@@ -26,7 +27,7 @@ public class RelinkUs extends PluginForDecrypt {
 
     @Override
     public String getCoder() {
-        return "JD-Team";
+        return "eXecuTe";
     }
 
     @Override
@@ -36,7 +37,7 @@ public class RelinkUs extends PluginForDecrypt {
 
     @Override
     public String getPluginID() {
-        return "Relink.us-1.0.0.";
+        return host+"-"+version;
     }
 
     @Override
@@ -57,24 +58,19 @@ public class RelinkUs extends PluginForDecrypt {
     @Override public PluginStep doStep(PluginStep step, String parameter) {
     	if(step.getStep() == PluginStep.STEP_DECRYPT) {
             Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
+            
     		try {
+
     			URL url = new URL(parameter);
     			RequestInfo reqinfo = getRequest(url);
+    			progress.setRange(1);
     			
-    			Vector<Vector<String>> links = getAllSimpleMatches(reqinfo.getHtmlCode(), "form action=\'°\' method=\'post\'");
-    			progress.setRange( links.size());
+    			decryptedLinks.add(this.createDownloadlink(getBetween(reqinfo.getHtmlCode(),
+    				"<iframe src=\"", "\" ")));
     			
-    			for(int i=0; i<links.size(); i++) {
-    				reqinfo = postRequest(new URL("http://relink.us/" + links.get(i).get(0)), "submit=Open");
-    				decryptedLinks.add(this.createDownloadlink(getBetween(reqinfo.getHtmlCode(), "iframe name=\"pagetext\" height=\"100%\" frameborder=\"no\" width=\"100%\" src=\"", "\"")));
     			progress.increase(1);
-    			}
-    			
-    			// Decrypt abschliessen
-    			
     			step.setParameter(decryptedLinks);
-    		}
-    		catch(IOException e) {
+    		} catch(IOException e) {
     			 e.printStackTrace();
     		}
     	}
