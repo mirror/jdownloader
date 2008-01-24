@@ -124,7 +124,7 @@ public class JDInit {
                 if (obj instanceof Configuration) {
                     Configuration configuration = (Configuration) obj;
                     JDUtilities.setConfiguration(configuration);
-                    JDUtilities.getLogger().setLevel((Level) configuration.getProperty(Configuration.PARAM_LOGGER_LEVEL, Level.FINER));
+                    JDUtilities.getLogger().setLevel((Level) configuration.getProperty(Configuration.PARAM_LOGGER_LEVEL, Level.WARNING));
                     JDLocale.setLocale(JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).getStringProperty(SimpleGUI.PARAM_LOCALE,"german"));
                     JDTheme.setTheme(JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).getStringProperty(SimpleGUI.PARAM_THEME,"default"));
                 }
@@ -376,7 +376,7 @@ public class JDInit {
 
     }
 
-    public void doWebupdate(final int oldCid) {
+    public void doWebupdate(final int oldCid,final boolean guiCall) {
 
         new Thread() {
           
@@ -391,6 +391,12 @@ public class JDInit {
                 logger.finer("Get available files");
                 Vector<Vector<String>> files = updater.getAvailableFiles();
             
+                if(!guiCall &&JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_WEBUPDATE_DISABLE, false)){
+                    logger.severe("Webupdater disabled");
+                    progress.finalize();
+                    return;  
+                }
+                
                 if(files==null){
                     logger.severe("Webupdater offline");
                     progress.finalize();
@@ -409,7 +415,8 @@ public class JDInit {
                     updater.filterAvailableUpdates(files, JDUtilities.getResourceFile("."));
                     progress.setStatus(org - files.size());
                     logger.finer("FIles to update: " + files);
-                    if (files.size() > 0) {
+                    if (files.size() > 0 ) {
+                        
                         logger.info("New Updates Available! " + files);
                         JDUtilities.download(JDUtilities.getResourceFile("webupdater.jar"), "http://web146.donau.serverway.de/jdownloader/update/webupdater.jar");
                         JDUtilities.download(JDUtilities.getResourceFile("changeLog.txt"), "http://www.syncom.org/projects/jdownloader/log/?format=changelog");

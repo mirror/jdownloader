@@ -967,7 +967,7 @@ public class JDUtilities {
         // return pluginsForHost;
 
         Vector<PluginForHost> plgs = new Vector<PluginForHost>();
-        plgs.addAll(pluginsForHost);
+       if(pluginsForHost!=null) plgs.addAll(pluginsForHost);
         Vector<PluginForHost> pfh = new Vector<PluginForHost>();
         Vector<String> priority = (Vector<String>) configuration.getProperty(Configuration.PARAM_HOST_PRIORITY, new Vector<String>());
         for (int i = 0; i < priority.size(); i++) {

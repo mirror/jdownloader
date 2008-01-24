@@ -56,9 +56,9 @@ public class Main {
 
         }
 
-        logger.info(System.getProperty("java.class.path"));
+logger.info(System.getProperty("java.class.path"));
         // rausgenommen verlängert nur den startvorgang
-        // if (SingleInstanceController.isApplicationRunning()) {
+        // if (SingleInstance<Controller.isApplicationRunning()) {
         // JOptionPane.showMessageDialog(null,
         // JDLocale.L("sys.warning.multiple_instance"),
         // JDLocale.L("sys.header.jdownloader","JDownloader runs already"),
@@ -78,6 +78,15 @@ public class Main {
     private void go() {
 
         JDInit init = new JDInit();
+        String a=JDUtilities.getLocalHash(JDUtilities.getResourceFile("JDownloaderContainer.jar")).substring(0,6);
+        String b=JDUtilities.getLocalHash(JDUtilities.getResourceFile("JDownloaderPlugins.jar")).substring(0,6);      
+        String c=JDUtilities.getLocalHash(JDUtilities.getResourceFile("JDownloader.jar")).substring(0,6);  
+//server: 83ed29ee3e1ed7074d
+        //lokal: 83ed29 ee3e1e d7074d
+        
+        logger.info(a+" hallo - "+b+" - "+c); 
+        logger.info("OS: " + System.getProperty("os.name") + ", " + System.getProperty("os.arch") + ", " + System.getProperty("os.version"));
+        logger.info("Registriere Plugins");
         init.init();
         init.loadImages();
         JWindow window = new JWindow() {
@@ -92,14 +101,12 @@ public class Main {
         if(JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).getBooleanProperty(SimpleGUI.PARAM_SHOW_SPLASH, true)){
         window.setVisible(true);
         }
-
-        logger.info("OS: " + System.getProperty("os.name") + ", " + System.getProperty("os.arch") + ", " + System.getProperty("os.version"));
-        logger.info("Registriere Plugins");
+     
         init.loadConfiguration();
 
         final JDController controller = init.initController();
         if (init.installerWasVisible()) {
-            init.doWebupdate(JDUtilities.getConfiguration().getIntegerProperty(Configuration.CID, -1));
+            init.doWebupdate(JDUtilities.getConfiguration().getIntegerProperty(Configuration.CID, -1),true);
 
         }
         else {
@@ -113,7 +120,7 @@ public class Main {
             init.checkUpdate();
             if (JDUtilities.getRunType() == JDUtilities.RUNTYPE_LOCAL_JARED) {
 
-                init.doWebupdate(JDUtilities.getConfiguration().getIntegerProperty(Configuration.CID, -1));
+                init.doWebupdate(JDUtilities.getConfiguration().getIntegerProperty(Configuration.CID, -1),false);
             }
         }
         controller.setInitStatus(JDController.INIT_STATUS_COMPLETE);
@@ -150,10 +157,10 @@ public class Main {
         logger.info("jd.run="+JDUtilities.getRunType());
         logger.info("jd.lastAuthor="+JDUtilities.getLastChangeAuthor());   
         logger.info("jd.appDir="+JDUtilities.getCurrentWorkingDirectory(null));
-        
+    
     }
     
 
- 
+   
 
 }

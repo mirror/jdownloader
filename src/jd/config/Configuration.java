@@ -163,6 +163,8 @@ public class Configuration extends Property implements Serializable {
     public static final String PARAM_CAPTCHA_INPUT_SHOWTIME = "CAPTCHA_INPUT_SHOWTIME";
 
     public static final String CID = "CID";
+
+    public static final String PARAM_WEBUPDATE_DISABLE = "WEBUPDATE_DISABLE";
     /**
      * Die unterschiedlichen Interaktionen. (ZB Reconnect nach einem Download)
      */

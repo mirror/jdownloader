@@ -109,6 +109,8 @@ public class ConfigurationDialog extends JDialog implements ActionListener, Chan
             this.addConfigPanel(ConfigPanelEventmanager.class, JDTheme.I("gui.images.config.switch", "switch"), JDLocale.L("gui.config.tabLables.eventManager", "Eventmanager"));
             this.addConfigPanel(ConfigPanelPluginsOptional.class, JDTheme.I("gui.images.config.edit_redo"), JDLocale.L("gui.config.tabLables.optionalPlugin", "Optional Plugin settings"));
             this.addConfigPanel(ConfigPanelPluginForContainer.class, JDTheme.I("gui.images.config.database"), JDLocale.L("gui.config.tabLables.containerPlugin", "Link-Container settings"));
+            this.addConfigPanel(ConfigPanelUpdater.class, JDTheme.I("gui.images.config.updater"), JDLocale.L("gui.config.tabLables.updater", "Update"));
+            
         }
         btnSave = new JButton(JDLocale.L("gui.config.btn_save", "Speichern"));
         btnSave.addActionListener(this);

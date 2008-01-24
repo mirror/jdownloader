@@ -350,7 +350,7 @@ public class JDController implements PluginListener, ControlListener, UIListener
                 uiInterface.setDownloadLinks(downloadLinks);
                 break;
             case UIEvent.UI_INTERACT_UPDATE:
-                new JDInit().doWebupdate(JDUtilities.getConfiguration().getIntegerProperty(Configuration.CID, -1));
+                new JDInit().doWebupdate(JDUtilities.getConfiguration().getIntegerProperty(Configuration.CID, -1),true);
                 break;
         }
     }
