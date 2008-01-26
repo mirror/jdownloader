@@ -1244,7 +1244,9 @@ public abstract class Plugin {
 				// JD-Team: nix schlafen.. ich will speed! Die Events werden
 				// jetzt von der GUI kontrolliert
 				int bytes = source.read(buffer);
-				// Thread.sleep(0);
+				if(JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_TWEAK_DOWNLOAD_CPU,false)){
+				    Thread.sleep(25);
+				}
 				if (bytes == -1)
 					break;
 				// Buffer flippen und in File schreiben:

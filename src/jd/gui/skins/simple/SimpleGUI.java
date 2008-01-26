@@ -290,7 +290,10 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
                 while (true) {
                     interval();
                     try {
-                        Thread.sleep(1000);
+                        Thread.sleep(10000);
+                        if(JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_TWEAK_GUI_INTERVAL,false)){
+                            Thread.sleep(2000);
+                        }
                     }
                     catch (InterruptedException e) {
                     }

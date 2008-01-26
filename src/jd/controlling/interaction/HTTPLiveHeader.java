@@ -213,7 +213,7 @@ public class HTTPLiveHeader extends Interaction {
                                     logger.finer("Variables: " + this.variables);
                                     logger.finer("Headerproperties: " + this.headerProperties);
                                     for (int i = 0; i <= tmp.length; i++) {
-                                        logger.finer("Replace variable: " + getModifiedVariable(params.get(i - 1)) + "(" + params.get(i - 1) + ")");
+                                        logger.finer("Replace variable: ********(" + params.get(i - 1) + ")");
 
                                         req += getModifiedVariable(params.get(i - 1));
                                         if (i < tmp.length) {
@@ -227,7 +227,7 @@ public class HTTPLiveHeader extends Interaction {
                                     logger.finer("Headerproperties: " + this.headerProperties);
                                     for (int i = 1; i <= tmp.length; i++) {
                                         if (i > params.size()) continue;
-                                        logger.finer("Replace variable: " + getModifiedVariable(params.get(i - 1)) + "(" + params.get(i - 1) + ")");
+                                        logger.finer("Replace variable: *********(" + params.get(i - 1) + ")");
 
                                         req += getModifiedVariable(params.get(i - 1));
                                         if (i < tmp.length) {
@@ -694,6 +694,7 @@ public class HTTPLiveHeader extends Interaction {
         catch (IOException e) {
 
             logger.severe("IO Error: " + e.getLocalizedMessage());
+            e.printStackTrace();
             return null;
         }
 

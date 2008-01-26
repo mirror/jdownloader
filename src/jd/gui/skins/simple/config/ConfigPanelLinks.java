@@ -39,9 +39,14 @@ if(guiConfig!=null)
         GUIConfigEntry ce;
         ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL,  JDLocale.L("gui.config.links.message", "Hier finden Sie einige wichtige Links bezogen auf jDownloader")));
         addGUIConfigEntry(ce);
+        ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_LINK,  JDLocale.L("gui.config.general.link.home", "Heimat von JDownloader"),"http://jdownloader.ath.cx"));
+        addGUIConfigEntry(ce);
         ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         addGUIConfigEntry(ce);
         ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL,  JDLocale.L("gui.config.links.lblSupport", "Support")));
+        ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_LINK,  JDLocale.L("gui.config.general.link.dlccreate", "Online DLContainer erstellen"),"http://jdownloader.ath.cx/dlc.php"));
+        addGUIConfigEntry(ce);
+
         ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_LINK,  JDLocale.L("gui.config.general.link.support", "Supportforum"),"http://jdownloadersupport.ath.cx"));
         addGUIConfigEntry(ce);
         ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_LINK,  JDLocale.L("gui.config.general.link.email", "Email an jDownloader"),"mailto:jdownloader@freenet.de"));
@@ -50,7 +55,7 @@ if(guiConfig!=null)
         addGUIConfigEntry(ce);
         ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_LINK,  JDLocale.L("gui.config.general.link.jddownload", "Download: jDownloader"),"http://jdownloaderinstall.ath.cx"));
         addGUIConfigEntry(ce);
-        ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_LINK,  JDLocale.L("gui.config.general.link.jdtutotial", "'Erste Schritte' Tutorial"),"http://www.sb-innovation.de/f66/jd-java-downloader-tutorial-1911/"));
+        ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_LINK,  JDLocale.L("gui.config.general.link.jdtutorial", "Ausführliches -Erste Schritte- Tutorial"),"http://www.sb-innovation.de/f66/jd-java-downloader-tutorial-1911/"));
         addGUIConfigEntry(ce);
         
         ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));

@@ -165,6 +165,12 @@ public class Configuration extends Property implements Serializable {
     public static final String CID = "CID";
 
     public static final String PARAM_WEBUPDATE_DISABLE = "WEBUPDATE_DISABLE";
+
+    public static final String PARAM_TWEAK_DOWNLOAD_CPU = "TWEAK_DOWNLOAD_CPU";
+
+    public static final String PARAM_TWEAK_GUI_INTERVAL = "TWEAK_GUI_INTERVAL";
+
+    public static final String PARAM_TWEAK_LOG = "TWEAK_LOG";
     /**
      * Die unterschiedlichen Interaktionen. (ZB Reconnect nach einem Download)
      */

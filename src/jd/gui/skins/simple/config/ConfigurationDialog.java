@@ -102,6 +102,7 @@ public class ConfigurationDialog extends JDialog implements ActionListener, Chan
         this.addConfigPanel(ConfigPanelPluginForHost.class, JDTheme.I("gui.images.config.star"), JDLocale.L("gui.config.tabLables.hostPlugin", "Host Plugin settings"));
         this.addConfigPanel(ConfigPanelPluginForDecrypt.class, JDTheme.I("gui.images.config.tip"), JDLocale.L("gui.config.tabLables.decryptPlugin", "Decrypter Plugin settings"));
         this.addConfigPanel(ConfigPanelLinks.class, JDTheme.I("gui.images.config.tip"), JDLocale.L("gui.config.tabLables.links", "Wichtige Links"));
+        this.addConfigPanel(ConfigPanelTweak.class, JDTheme.I("gui.images.config.tip"), JDLocale.L("gui.config.tabLables.tweak", "Leistung optimieren"));
 
         if (guiConfig.getBooleanProperty(SimpleGUI.PARAM_USE_EXPERT_VIEW, false)) {
             this.addConfigPanel(ConfigPanelCaptcha.class, JDTheme.I("gui.images.config.ocr", "ocr"), JDLocale.L("gui.config.tabLables.jac", "OCR Captcha settings"));

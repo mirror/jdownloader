@@ -17,6 +17,7 @@ import java.util.logging.Logger;
 
 import jd.captcha.JAntiCaptcha;
 import jd.captcha.LetterComperator;
+import jd.captcha.gui.BasicWindow;
 import jd.captcha.pixelobject.PixelObject;
 import jd.captcha.utils.UTILITIES;
 
@@ -260,7 +261,7 @@ public class Captcha extends PixelGrid {
      */
     public void cleanWithMask(Captcha mask, int width, int height) {
         int[][] newgrid = new int[getWidth()][getHeight()];
-
+//logger.info(mask.getWidth()+"/"+mask.getHeight()+" - "+getWidth()+" - "+getHeight());
         if (mask.getWidth() != getWidth() || mask.getHeight() != getHeight()) {
             if(JAntiCaptcha.isLoggerActive())logger.info("ERROR Maske und Bild passen nicht zusammmen");
             return;
@@ -279,7 +280,7 @@ public class Captcha extends PixelGrid {
             }
         }
         grid = newgrid;
-
+BasicWindow.showImage(this.getImage());
     }
 
     /**

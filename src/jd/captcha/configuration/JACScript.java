@@ -595,6 +595,7 @@ public class JACScript {
 
                 } else if (cmd[0].equals("function") && (params = cmd[2].split("\\,")).length == 3) {
                     if (cmd[1].equalsIgnoreCase("cleanWithMask")) {
+                        logger.info(""+owner.getResourceFile(params[0].trim()));
                         captcha.cleanWithMask(owner.createCaptcha(UTILITIES.loadImage(owner.getResourceFile(params[0].trim()))), Integer.parseInt(params[1].trim()), Integer.parseInt(params[2].trim()));
                         continue;
                     } else if (cmd[1].equalsIgnoreCase("removeSmallObjects")) {

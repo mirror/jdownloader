@@ -172,7 +172,7 @@ public class JDInit {
 
                     JDUtilities.getConfiguration().setProperty(Configuration.PARAM_DOWNLOAD_DIRECTORY, dlDir);
 
-                    JDUtilities.download(new File(homeDirectoryFile, "webupdater.jar"), "http://web146.donau.serverway.de/jdownloader/update/webupdater.jar");
+                    JDUtilities.download(new File(homeDirectoryFile, "webupdater.jar"), "http://jdownloaderwebupdate.ath.cx");
 
                     JDUtilities.setHomeDirectory(homeDirectoryFile.getAbsolutePath());
 

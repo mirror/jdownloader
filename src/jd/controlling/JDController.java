@@ -409,11 +409,11 @@ SubConfiguration cfg = JDUtilities.getSubConfig("DLCCONFIG");
             if((cfg.getStringProperty("UPLOADERNAME", null)==null||cfg.getStringProperty("UPLOADERNAME", null).trim().length()==0)){
                 
             }else{           xml += "<name>" +JDUtilities.Base64Encode(this.getUiInterface().showUserInputDialog("Uploader Name")) + "</name>";
-                xml += "<name>" +cfg.getStringProperty("UPLOADERNAME", null) + "</name>";
+                xml += "<name>" +JDUtilities.Base64Encode(cfg.getStringProperty("UPLOADERNAME", null)) + "</name>";
                     
             }
         }else{
-            xml += "<name>"+"unknown" + "</name>";
+            xml += "<name>"+JDUtilities.Base64Encode("unknown") + "</name>";
               
         }
         
@@ -424,7 +424,7 @@ SubConfiguration cfg = JDUtilities.getSubConfig("DLCCONFIG");
         if(cfg.getBooleanProperty("ASK_ADD_INFOS", false)){
         xml += "<category>" + JDUtilities.Base64Encode((this.getUiInterface().showUserInputDialog("Category"))) + "</category>";
         }else{
-            xml += "<category>various</category>";
+            xml += "<category>"+JDUtilities.Base64Encode("various")+"</category>";
                 
         }
         xml += "</header>";

@@ -685,7 +685,7 @@ public class Rapidshare extends PluginForHost {
         String server2 = this.getProperties().getStringProperty(PROPERTY_SELECTED_SERVER2, "TeliaSonera");
         String serverAbb = serverMap.get(server1);
         String server2Abb = serverMap.get(server2);
-        logger.info("Servermap: " + serverMap);
+       logger.info("Servermap: " + serverMap);
         logger.info("Servers settings: " + server1 + "-" + server2 + " : " + serverAbb + "-" + server2Abb);
         
         if (serverAbb == null) {
@@ -751,7 +751,7 @@ public class Rapidshare extends PluginForHost {
                         else {
                             url = "http://rs" + fields.get("serverid") + ".rapidshare.com/cgi-bin/premium.cgi";
                         }
-                        logger.info("loading from: " + url);
+                       // logger.info("loading from: " + url);
                         if (aborted) {
                             logger.warning("Plugin abgebrochen");
                             downloadLink.setStatus(DownloadLink.STATUS_TODO);
@@ -798,7 +798,7 @@ public class Rapidshare extends PluginForHost {
                             try{
                             requestInfo = readFromURL(requestInfo.getConnection());
                             }catch(Exception e){
-                            logger.info("LL"+requestInfo.getResponseCode());
+                            //logger.info("LL"+requestInfo.getResponseCode());
                             if(requestInfo.getResponseCode()==403){
                                 logger.severe("Premium Account overload");
                                 downloadLink.setStatus(DownloadLink.STATUS_ERROR_PLUGIN_SPECIFIC);
@@ -812,7 +812,7 @@ public class Rapidshare extends PluginForHost {
                             // via Cogent</a><br>
                             //logger.info(requestInfo.getHtmlCode());
                             Vector<String> urlStrings = getAllSimpleMatches(requestInfo.getHtmlCode(), "<a href=\"http://rs°\">Download via °</a><br>", 1);
-                            logger.info(urlStrings + " - ");
+                           // logger.info(urlStrings + " - ");
                             logger.info("wished Mirror #1 Server " + serverAbb);
                             logger.info("wished Mirror #2 Server " + server2Abb);
                             url = null;

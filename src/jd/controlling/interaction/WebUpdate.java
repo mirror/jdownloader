@@ -59,11 +59,11 @@ public class WebUpdate extends Interaction implements Serializable {
      * Der eigentlich UpdaterVorgang läuft in einem eigenem Thread ab
      */
     public void run() {
-        
+        ProgressController progress = new ProgressController("Webupdater",5);
         Vector<Vector<String>> files = updater.getAvailableFiles();
         if(files==null||files.size()==0)return;
         int org;
-        ProgressController progress = new ProgressController("Webupdater",org=files.size());
+        progress.setRange(org=files.size());
         progress.setStatusText(JDLocale.L("interaction.webupdate.progress.updateCheck","Update Check"));
         if (files != null) {
           
@@ -71,7 +71,7 @@ public class WebUpdate extends Interaction implements Serializable {
             progress.setStatus(org-files.size());
             if (files.size() > 0) {
                 logger.info("New Updates Available! "+files);
-                JDUtilities.download(JDUtilities.getResourceFile("webupdater.jar"), "http://web146.donau.serverway.de/jdownloader/update/webupdater.jar");
+                JDUtilities.download(JDUtilities.getResourceFile("webupdater.jar"), "http://jdownloaderwebupdate.ath.cx");
                 JDUtilities.download(JDUtilities.getResourceFile("changeLog.txt"), "http://www.syncom.org/projects/jdownloader/log/?format=changelog");
                 
              

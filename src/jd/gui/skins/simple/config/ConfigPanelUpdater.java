@@ -67,7 +67,7 @@ public ConfigPanelUpdater(Configuration configuration, UIInterface uiinterface){
     @Override
     public String getName() {
         
-        return JDLocale.L("gui.config.download.name","Netzwerk/Download");
+        return JDLocale.L("gui.config.download.name","Webupdate");
     }
     
 }

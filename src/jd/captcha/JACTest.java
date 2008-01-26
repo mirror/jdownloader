@@ -26,7 +26,7 @@ public class JACTest {
     }
     private void go(){
       String methodsPath=UTILITIES.getFullPath(new String[] { JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath(), "jd", "captcha", "methods"});
-      String hoster="serienjunkies.org";
+      String hoster="svz";
 
        JAntiCaptcha jac= new JAntiCaptcha(methodsPath,hoster);
      //sharegullicom47210807182105.gif
@@ -39,7 +39,7 @@ public class JACTest {
   
     jac.getJas().set("preScanFilter", 50);
 //       jac.trainCaptcha(new File(JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath()+"/jd/captcha/methods"+"/"+hoster+"/captchas/"+"securedin1730080724541.jpg"), 4);
-     jac.showPreparedCaptcha(new File(JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath()+"/jd/captcha/methods"+"/"+hoster+"/captchas/"+"22.11.2007_00.03.39_17S_GOOD.gif"));
+     jac.showPreparedCaptcha(new File(JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath()+"/jd/captcha/methods"+"/"+hoster+"/captchas/"+"captcha1200236713297.jpg"));
       
      //UTILITIES.getLogger().info(JAntiCaptcha.getCaptchaCode(UTILITIES.loadImage(new File(JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath()+"/jd/captcha/methods"+"/rapidshare.com/captchas/rapidsharecom24190807214810.jpg")), null, "rapidshare.com"));
      //jac.removeBadLetters();

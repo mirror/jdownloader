@@ -146,7 +146,7 @@ public class JAntiCaptcha {
 
     /**
      * @param methodsPath
-     * @param methodName
+debug
      */
 
     public JAntiCaptcha(String methodsPath, String methodName) {
@@ -278,6 +278,7 @@ logger.info(methodsPath);
 
         int successFull = 0;
         int total = 0;
+        logger.info("TRain "+path);
         File[] images = getImages(path);
         if (images == null) return;
         int newLetters;
@@ -301,8 +302,9 @@ logger.info(methodsPath);
      */
     private void loadMTHFile() {
         File f=JDUtilities.getResourceFile("jd/captcha/methods/" + this.methodDirName + "/" + "letters.mth");
-        
-        Document mth = UTILITIES.parseXmlString(JDUtilities.getLocalFile(f), false);
+        String str="<jDownloader/>";
+        if(f.exists())str=JDUtilities.getLocalFile(f);
+        Document mth = UTILITIES.parseXmlString(str, false);
        logger.info("Get file: " + f);
         if (mth == null) {
             if (JAntiCaptcha.isLoggerActive()) logger.severe("MTH FILE NOT AVAILABLE.");
@@ -867,6 +869,7 @@ logger.info(methodsPath);
             if (JAntiCaptcha.isLoggerActive()) logger.severe("Image Dimensionen zu klein. Image hat keinen Inahlt. Pfad/Url prüfen!");
             return null;
         }
+
         Captcha ret = Captcha.getCaptcha(captchaImage, this);
         if (ret == null) return null;
         ret.setOwner(this);
@@ -1344,10 +1347,10 @@ logger.info(methodsPath);
             if (JAntiCaptcha.isLoggerActive()) logger.severe("Image dir nicht gefunden " + path);
 
         }
-
+logger.info(dir+"");
         File[] entries = dir.listFiles(new FileFilter() {
             public boolean accept(File pathname) {
-                // if(JAntiCaptcha.isLoggerActive())logger.info(pathname.getName());
+                 if(JAntiCaptcha.isLoggerActive())logger.info(pathname.getName());
                 if (pathname.getName().endsWith(".jpg") || pathname.getName().endsWith(".png") || pathname.getName().endsWith(".gif")) {
 
                     return true;
@@ -1712,7 +1715,7 @@ logger.info(methodsPath);
     }
 
     public static boolean isLoggerActive() {
-        return false;
+        return true;
         // return
         // JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_JAC_LOG,
         // false);
