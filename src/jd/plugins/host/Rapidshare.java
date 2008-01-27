@@ -742,7 +742,7 @@ public class Rapidshare extends PluginForHost {
                         // Part sollte mal drin bleiben. Der gehört zum
                         // normalen USer request dazu. lässt sich aber
                         // umgehen
-                        String post = joinMap(fields, "=", "&") + "&accountid=" + user + "&password=" + pass;
+                        String post = joinMap(fields, "=", "&") + "&accountid=" + JDUtilities.urlEncode(user) + "&password=" + JDUtilities.urlEncode(pass);
                         // Login
                         String url;
                         if (fields.get("serverid") == null) {
@@ -751,7 +751,7 @@ public class Rapidshare extends PluginForHost {
                         else {
                             url = "http://rs" + fields.get("serverid") + ".rapidshare.com/cgi-bin/premium.cgi";
                         }
-                       // logger.info("loading from: " + url);
+                      
                         if (aborted) {
                             logger.warning("Plugin abgebrochen");
                             downloadLink.setStatus(DownloadLink.STATUS_TODO);

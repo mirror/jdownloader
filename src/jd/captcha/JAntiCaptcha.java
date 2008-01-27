@@ -1715,7 +1715,7 @@ logger.info(dir+"");
     }
 
     public static boolean isLoggerActive() {
-        return true;
+        return false;
         // return
         // JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_JAC_LOG,
         // false);

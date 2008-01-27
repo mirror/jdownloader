@@ -136,7 +136,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
     /**
      * Ein Togglebutton zum Starten / Stoppen der Downloads
      */
-    public JToggleButton            btnStartStop;
+    public JButton            btnStartStop;
 
     private JDAction                actionStartStopDownload;
 
@@ -186,7 +186,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
 
     private JDAction                actionPause;
 
-    private JToggleButton           btnPause;
+    private JButton           btnPause;
 
     private JDAction                actionLoadDLC;
 
@@ -202,7 +202,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
 
     private JDAction                doReconnect;
 
-    private JToggleButton           btnToggleReconnect;
+    private JButton           btnToggleReconnect;
 
     private JButton                 btnClipBoard;
 
@@ -503,18 +503,18 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         // tmp);
         // tabbedPane.addTab(JDLocale.L("gui.tab.plugin_activity"),
         // tabPluginActivity);
-        btnStartStop = new JToggleButton(actionStartStopDownload);
+        btnStartStop = new JButton(actionStartStopDownload);
         if (JDUtilities.getImage(JDTheme.I("gui.images.stop")) != null) btnStartStop.setSelectedIcon(new ImageIcon(JDUtilities.getImage(JDTheme.I("gui.images.stop"))));
         btnStartStop.setFocusPainted(false);
         btnStartStop.setBorderPainted(false);
         btnStartStop.setText(null);
-        btnPause = new JToggleButton(actionPause);
+        btnPause = new JButton(actionPause);
         if (JDUtilities.getImage(JDTheme.I("gui.images.stop_after_active")) != null) btnPause.setSelectedIcon(new ImageIcon(JDUtilities.getImage(JDTheme.I("gui.images.stop_after_active"))));
         btnPause.setFocusPainted(false);
         btnPause.setBorderPainted(false);
         btnPause.setText(null);
         btnPause.setEnabled(false);
-        btnToggleReconnect = new JToggleButton(doReconnect);
+        btnToggleReconnect = new JButton(doReconnect);
         if (JDUtilities.getImage(JDTheme.I("gui.images.reconnect_bad")) != null) btnToggleReconnect.setSelectedIcon(new ImageIcon(JDUtilities.getImage(JDTheme.I("gui.images.reconnect_bad"))));
         btnToggleReconnect.setFocusPainted(false);
         btnToggleReconnect.setBorderPainted(false);
@@ -609,7 +609,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
      */
     public void actionPerformed(ActionEvent e) {
         if (e.getSource() == btnToggleReconnect) {
-
+            btnToggleReconnect.setSelected(!btnToggleReconnect.isSelected());
             JDUtilities.getConfiguration().setProperty(Configuration.PARAM_DISABLE_RECONNECT, btnToggleReconnect.isSelected());
 
             fireUIEvent(new UIEvent(this, UIEvent.UI_SAVE_CONFIG));
@@ -624,6 +624,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
                 tabDownloadTable.moveSelectedItems(e.getID());
                 break;
             case JDAction.APP_PAUSE_DOWNLOADS:
+                this.btnPause.setSelected(!btnPause.isSelected());
                 fireUIEvent(new UIEvent(this, UIEvent.UI_PAUSE_DOWNLOADS, btnPause.isSelected()));
                 break;
             case JDAction.APP_TESTER:
@@ -643,7 +644,9 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
                 new jdUnrarPasswordListDialog(((SimpleGUI) JDUtilities.getController().getUiInterface()).getFrame()).setVisible(true);
                 break;
             case JDAction.APP_START_STOP_DOWNLOADS:
+                btnStartStop.setSelected(!btnStartStop.isSelected());
                 this.startStopDownloads();
+                
                 break;
             case JDAction.APP_SAVE_DLC:
                 JDFileChooser fc = new JDFileChooser("_LOADSAVEDLC");
@@ -775,8 +778,10 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
     }
 
     public void startStopDownloads() {
+       
         if (btnStartStop.isSelected() && JDUtilities.getController().getDownloadStatus() == JDController.DOWNLOAD_NOT_RUNNING) {
             btnPause.setEnabled(true);
+            
             fireUIEvent(new UIEvent(this, UIEvent.UI_START_DOWNLOADS));
         }
         else if (!btnStartStop.isSelected() && JDUtilities.getController().getDownloadStatus() == JDController.DOWNLOAD_RUNNING) {

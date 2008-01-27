@@ -1141,9 +1141,9 @@ public class JDUtilities {
      */
     public static String urlEncode(String str) {
      
-            try{
-            str = URLDecoder.decode(str, "UTF-8");
-            }catch(Exception e){}
+//            try{
+//            str = URLDecoder.decode(str, "UTF-8");
+//            }catch(Exception e){}
             String allowed = "1234567890QWERTZUIOPASDFGHJKLYXCVBNMqwertzuiopasdfghjklyxcvbnm-_.?/\\:&=;";
             String ret = "";
             int i;
