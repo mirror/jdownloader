@@ -209,7 +209,7 @@ public class DownloadLink implements Serializable,Comparable<DownloadLink> {
    
     private Vector<String> sourcePluginPasswords=null;
     private String sourcePluginComment=null;
-	private int maximalspeed = 20; //20 mb/s
+	private int maximalspeed = 1310720; //10 mb/s
     /**
      * Erzeugt einen neuen DownloadLink
      * 
