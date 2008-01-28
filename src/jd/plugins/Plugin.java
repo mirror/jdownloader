@@ -63,10 +63,6 @@ public abstract class Plugin {
 	 * man sich den Captchacode als String holen getCaptchaFilePath(); //
 	 * getCaptchaFile();
 	 */
-	/**
-	 * Puffer für Lesevorgänge
-	 */
-	public final int READ_BUFFER = 128 * 1024;
 
 	protected static final String END_OF_LINK = "[^\"]*";
 
@@ -1086,7 +1082,8 @@ public abstract class Plugin {
 		long downloadedBytes = 0;
 		long start, end, time;
 		try {
-			ByteBuffer buffer = ByteBuffer.allocateDirect(READ_BUFFER);
+			ByteBuffer buffer = ByteBuffer.allocateDirect(downloadLink
+					.getMaximalspeed());
 			// Falls keine urlConnection übergeben wurde
 			if (urlConnection == null)
 				urlConnection = new URL(downloadLink.getUrlDownloadDecrypted())
@@ -1112,11 +1109,18 @@ public abstract class Plugin {
 			// long bytesLastSpeedCheck = 0;
 			// long t1 = System.currentTimeMillis();
 			// long t3 = t1;
+			long bytesPerSecond = 0;
+			long deltaTime = 0L;
+			long timer = -System.currentTimeMillis();
 			while (!aborted && !downloadLink.isAborted()) {
 				// Thread kurz schlafen lassen, um zu häufiges Event-fire zu
 				// verhindern:
 				// JD-Team: nix schlafen.. ich will speed! Die Events werden
 				// jetzt von der GUI kontrolliert
+				buffer = ByteBuffer.allocateDirect(downloadLink
+						.getMaximalspeed());
+				buffer.clear();
+				Thread.sleep(125);
 				int bytes = source.read(buffer);
 				if (bytes == -1)
 					break;
@@ -1126,9 +1130,16 @@ public abstract class Plugin {
 				buffer.compact();
 				// Laufende Variablen updaten:
 				downloadedBytes += bytes;
-				downloadLink.addBytes(bytes);
-				//firePluginEvent(new PluginEvent(this,
-						//PluginEvent.PLUGIN_DOWNLOAD_BYTES, bytes));
+				bytesPerSecond += bytes;
+				deltaTime = timer + System.currentTimeMillis();
+				if (deltaTime > 1000) {
+					downloadLink.addBytes(bytesPerSecond, deltaTime);
+					bytesPerSecond = 0;
+					deltaTime = 0L;
+					timer = -System.currentTimeMillis();
+				}
+				// firePluginEvent(new PluginEvent(this,
+				// PluginEvent.PLUGIN_DOWNLOAD_BYTES, bytes));
 				firePluginEvent(new PluginEvent(this,
 						PluginEvent.PLUGIN_DATA_CHANGED, downloadLink));
 				downloadLink.setDownloadCurrent(downloadedBytes);
@@ -1204,7 +1215,8 @@ public abstract class Plugin {
 		long downloadedBytes = 0;
 		long start, end, time;
 		try {
-			ByteBuffer buffer = ByteBuffer.allocateDirect(READ_BUFFER);
+			ByteBuffer buffer = ByteBuffer.allocateDirect(downloadLink
+					.getMaximalspeed());
 
 			FileOutputStream fos = new FileOutputStream(fileOutput, true);
 			// NIO Channels setzen:
@@ -1227,7 +1239,7 @@ public abstract class Plugin {
 			String[] dat = Plugin.getSimpleMatches(range, "[bytes °-°/°]");
 			int contentLen = Integer.parseInt(dat[2]);
 			int startAt = Integer.parseInt(dat[0]);
-			//int rest = Integer.parseInt(dat[1]);
+			// int rest = Integer.parseInt(dat[1]);
 			downloadedBytes = startAt;
 			downloadLink.setDownloadMax(contentLen);
 			downloadLink.setDownloadCurrent(startAt);
@@ -1238,15 +1250,20 @@ public abstract class Plugin {
 			// long bytesLastSpeedCheck = 0;
 			// long t1 = System.currentTimeMillis();
 			// long t3 = t1;
+			long bytesPerSecond = 0;
+			long deltaTime = 0L;
+			long timer = -System.currentTimeMillis();
 			while (!aborted && !downloadLink.isAborted()) {
 				// Thread kurz schlafen lassen, um zu häufiges Event-fire zu
 				// verhindern:
 				// JD-Team: nix schlafen.. ich will speed! Die Events werden
 				// jetzt von der GUI kontrolliert
+				buffer = ByteBuffer.allocateDirect(downloadLink
+						.getMaximalspeed());
+				buffer.clear();
 				int bytes = source.read(buffer);
-				if(JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_TWEAK_DOWNLOAD_CPU,false)){
-				    Thread.sleep(25);
-				}
+
+				Thread.sleep(125);
 				if (bytes == -1)
 					break;
 				// Buffer flippen und in File schreiben:
@@ -1255,9 +1272,16 @@ public abstract class Plugin {
 				buffer.compact();
 				// Laufende Variablen updaten:
 				downloadedBytes += bytes;
-				downloadLink.addBytes(bytes);
-				//firePluginEvent(new PluginEvent(this,
-						//PluginEvent.PLUGIN_DOWNLOAD_BYTES, bytes));
+				bytesPerSecond += bytes;
+				deltaTime = timer + System.currentTimeMillis();
+				if (deltaTime > 1000) {
+					downloadLink.addBytes(bytesPerSecond, deltaTime);
+					bytesPerSecond = 0;
+					deltaTime = 0L;
+					timer = -System.currentTimeMillis();
+				}
+				// firePluginEvent(new PluginEvent(this,
+				// PluginEvent.PLUGIN_DOWNLOAD_BYTES, bytes));
 				firePluginEvent(new PluginEvent(this,
 						PluginEvent.PLUGIN_DATA_CHANGED, downloadLink));
 				downloadLink.setDownloadCurrent(downloadedBytes);
@@ -1908,7 +1932,7 @@ public abstract class Plugin {
 		Vector<String> ret = new Vector<String>();
 		while (iter.hasNext()) {
 			String pass = (String) iter.next();
-			if(data.contains(pass))
+			if (data.contains(pass))
 				ret.add(pass);
 		}
 		data = data
@@ -1931,8 +1955,9 @@ public abstract class Plugin {
 		while (matcher.find()) {
 			String pass = matcher.group(2);
 			if (pass.length() > 2
-					&& !pass.matches(
-							".*(rar|zip|jpg|gif|png|html|php|avi|mpg)$") && !ret.contains(pass))
+					&& !pass
+							.matches(".*(rar|zip|jpg|gif|png|html|php|avi|mpg)$")
+					&& !ret.contains(pass))
 				ret.add(pass);
 		}
 		pattern = Pattern
@@ -1943,8 +1968,9 @@ public abstract class Plugin {
 		while (matcher.find()) {
 			String pass = matcher.group(2);
 			if (pass.length() > 4
-					&& !pass.matches(
-							".*(rar|zip|jpg|gif|png|html|php|avi|mpg)$") && !ret.contains(pass))
+					&& !pass
+							.matches(".*(rar|zip|jpg|gif|png|html|php|avi|mpg)$")
+					&& !ret.contains(pass))
 				ret.add(pass);
 		}
 		pattern = Pattern
@@ -1955,8 +1981,9 @@ public abstract class Plugin {
 		while (matcher.find()) {
 			String pass = matcher.group(2);
 			if (pass.length() > 2
-					&& !pass.matches(
-							".*(rar|zip|jpg|gif|png|html|php|avi|mpg)$") && !ret.contains(pass))
+					&& !pass
+							.matches(".*(rar|zip|jpg|gif|png|html|php|avi|mpg)$")
+					&& !ret.contains(pass))
 				ret.add(pass);
 		}
 		pattern = Pattern
@@ -1967,8 +1994,9 @@ public abstract class Plugin {
 		while (matcher.find()) {
 			String pass = matcher.group(2);
 			if (pass.length() > 2
-					&& !pass.matches(
-							".*(rar|zip|jpg|gif|png|html|php|avi|mpg)$") && !ret.contains(pass))
+					&& !pass
+							.matches(".*(rar|zip|jpg|gif|png|html|php|avi|mpg)$")
+					&& !ret.contains(pass))
 				ret.add(pass);
 		}
 
@@ -1977,7 +2005,8 @@ public abstract class Plugin {
 
 	public static String findPassword(String data) {
 		Vector<String> passwords = findPasswords(data);
-		return JUnrar.passwordArrayToString(passwords.toArray(new String[passwords.size()]));
+		return JUnrar.passwordArrayToString(passwords
+				.toArray(new String[passwords.size()]));
 	}
 
 }

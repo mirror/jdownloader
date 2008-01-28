@@ -51,6 +51,8 @@ public ConfigPanelDownload(Configuration configuration, UIInterface uiinterface)
         ce= new GUIConfigEntry( new ConfigEntry(ConfigContainer.TYPE_SPINNER, configuration, Configuration.PARAM_DOWNLOAD_CONNECT_TIMEOUT, JDLocale.L("gui.config.download.timeout.connect","Timeout beim Verbinden(Request) [ms]"),0,60000).setDefaultValue(10000).setStep(500).setExpertEntry(true));
     
         addGUIConfigEntry(ce);
+        ce= new GUIConfigEntry( new ConfigEntry(ConfigContainer.TYPE_SPINNER, configuration, Configuration.PARAM_DOWNLOAD_MAX_SPEED, JDLocale.L("gui.config.download.maxspeed","Maximale Downlaodgeschwindigkeit in kb/s (0 = unendlich)"),0,1000000).setDefaultValue(0).setStep(1));
+        addGUIConfigEntry(ce);
         ce= new GUIConfigEntry( new ConfigEntry(ConfigContainer.TYPE_SPINNER, configuration, Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN, JDLocale.L("gui.config.download.simultan_downloads","Maximale gleichzeitige Downloads"),1,20).setDefaultValue(3).setStep(1));
         addGUIConfigEntry(ce);
 //        ce= new GUIConfigEntry( new ConfigEntry(ConfigContainer.TYPE_SPINNER, configuration, Configuration.PARAM_MIN_FREE_SPACE, "Downloads stoppen wenn der freie Speicherplatz weniger ist als [MB]",0,10000).setDefaultValue(100).setStep(10));

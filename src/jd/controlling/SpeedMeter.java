@@ -1,7 +1,5 @@
 package jd.controlling;
 
-import java.util.Iterator;
-import java.util.Vector;
 
 /**
  * Diese Klasse kann einen Laufenden durschschnitt erstellen
@@ -10,108 +8,27 @@ import java.util.Vector;
  * 
  */
 public class SpeedMeter {
-	private long averageOver = 5000;
-
-	boolean isRunning = false;
-	boolean isListManagerRunning = false;
-	private Vector<Object[]> entries = new Vector<Object[]>(200);
-
+	private int lastSpeed = 0;
+	private long lastAccess = 0;
+	private int c=0;
+	private long[] speed = new long[10];
 	/**
 	 * KOnstruktor dem die Zeit übergeben werden kann über die der durchschnitt
 	 * eführt wird
 	 * 
 	 * @param average
 	 */
-	public SpeedMeter(int average) {
-		averageOver = average;
-	}
-	private void clearList()
-	{
-		int c = 0;
-		while (isRunning && c != 1000)
-		{
-			c++;
-			try {
-				Thread.sleep(5);
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-			}
-		}
-		if(isRunning)
-		return;
-		isRunning = true;
-		long current = System.currentTimeMillis();
-		Iterator<Object[]> iter = entries.iterator();
-		while (iter.hasNext()) {
-			Object[] element = (Object[]) iter.next();
-			if ((current - (Long) element[0]) > averageOver) {
-				iter.remove();
-			} else {
-				break;
-			}
-
-		}
-		isRunning = false;
-	}
-	private void listManager() {
-		if(!isListManagerRunning)
-		{ 
-		new Thread(new Runnable() {
-			public void run() {
-				isListManagerRunning=true;
-				while (entries.size()>0)
-				{
-					try {
-						Thread.sleep(500);
-					} catch (InterruptedException e) {
-						// TODO Automatisch erstellter Catch-Block
-						e.printStackTrace();
-					}
-					clearList();
-				}
-				isListManagerRunning=false;
-			}
-		}).start();
-		}
+	public SpeedMeter() {
 	}
 	/**
 	 * Fügt einen weiteren wert hinzu
 	 * 
 	 * @param value
 	 */
-	public void addValue(final int value) {
-			final long cur = System.currentTimeMillis();
-			if(isRunning)
-			{
-			new Thread(new Runnable() {
-				public void run() {
-					int c = 0;
-					while (isRunning && c != 1000)
-					{
-						c++;
-						try {
-							Thread.sleep(5);
-						} catch (InterruptedException e) {
-							// TODO Automatisch erstellter Catch-Block
-							e.printStackTrace();
-						}
-					}
-					if(!isRunning)
-					{
-					isRunning = true;
-					entries.add(new Object[] { cur, value });
-					isRunning = false;
-					}
-				}
-			}).start();
-			}
-			else
-			{
-				isRunning = true;
-				entries.add(new Object[] { cur, value });
-				isRunning = false;
-			}
-			listManager();
+	public void addValue(long value, long difftime) {
+		if(c==10)
+			c=0;
+		speed[c]=value*1000/difftime;
 	}
 
 	/**
@@ -121,43 +38,21 @@ public class SpeedMeter {
 	 */
 
 	public int getSpeed() {
-		int size = entries.size();
-		if (size < 2)
-			return 0;
-		int c = 0;
-		while (isRunning && c != 1000)
-		{
-			c++;
-			try {
-				Thread.sleep(5);
-			} catch (InterruptedException e) {
-				// TODO Automatisch erstellter Catch-Block
-				e.printStackTrace();
-			}
+		//doppelzugriffe sind unnötig
+		if(lastSpeed!=0 && lastAccess+System.currentTimeMillis()<100)
+			return lastSpeed;
+			
+		lastAccess=-System.currentTimeMillis();
+		lastSpeed=0;
+		int i = 0;
+		for (i=0; i < speed.length; i++) {
+			if(speed[i]==0)break;
+			lastSpeed+=speed[i];
 		}
-		isRunning = true;
-		long bytes = 0;
-		long start = -1;
-
-		long current = System.currentTimeMillis();
-		Iterator<Object[]> iter = entries.iterator();
-		while (iter.hasNext()) {
-			Object[] element = (Object[]) iter.next();
-			if ((current - (Long) element[0]) > averageOver) {
-				iter.remove();
-			} else {
-				bytes += (Integer) element[1];
-			}
-
-		}
-		if(entries.size()==0)
-			return 0;
-		start = (Long) entries.get(0)[0];
-		long dif = current - start;
-		isRunning = false;
-		if (dif == 0)
-			return 0;
-		return (int) ((bytes * 1000) / dif);
+		if(i!=0)
+		lastSpeed/=i;
+		return lastSpeed;
+		
 	}
 
 }

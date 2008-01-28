@@ -40,6 +40,12 @@ public class Configuration extends Property implements Serializable {
      * soll
      */
     public static final String      PARAM_DOWNLOAD_MAX_SIMULTAN        = "DOWNLOAD_MAX_SIMULTAN";
+    
+    /**
+     * Parameter für den key unter dem der zugehöroge Wert abgespeichert werden
+     * soll
+     */
+    public static final String      PARAM_DOWNLOAD_MAX_SPEED        = "DOWNLOAD_MAX_SPEED";
 
     /**
      * Parameter für den key unter dem der zugehöroge Wert abgespeichert werden

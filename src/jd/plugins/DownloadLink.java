@@ -180,7 +180,7 @@ public class DownloadLink implements Serializable,Comparable<DownloadLink> {
     /**
      * Hierhin soll die Datei gespeichert werden.
      */
-    private String            fileOutput;
+    //private String            fileOutput;
     /**
      * Logger für Meldungen
      */
@@ -209,6 +209,7 @@ public class DownloadLink implements Serializable,Comparable<DownloadLink> {
    
     private Vector<String> sourcePluginPasswords=null;
     private String sourcePluginComment=null;
+	private int maximalspeed = 20; //20 mb/s
     /**
      * Erzeugt einen neuen DownloadLink
      * 
@@ -227,7 +228,7 @@ public class DownloadLink implements Serializable,Comparable<DownloadLink> {
         downloadMax=0;
         this.host = host;
         this.isEnabled = isEnabled;
-        speedMeter = new SpeedMeter(5000);
+        speedMeter = new SpeedMeter();
         if(urlDownload!=null)
             this.urlDownload = JDCrypt.encrypt(urlDownload);
         else
@@ -429,9 +430,9 @@ public class DownloadLink implements Serializable,Comparable<DownloadLink> {
      * @param fileOutput Die Datei, in der dieser Download gespeichert werden
      *            soll
      */
-    public void setFileOutput(String fileOutput) {
+    /*public void setFileOutput(String fileOutput) {
         this.fileOutput = fileOutput;
-    }
+    }*/
 
     /**
      * Setzt die URL, von der heruntergeladen werden soll (Ist schon
@@ -471,6 +472,8 @@ public class DownloadLink implements Serializable,Comparable<DownloadLink> {
      */
     public void setStatus(int status) {
         this.status = status;
+        if(status!=STATUS_DOWNLOAD_IN_PROGRESS)
+        	speedMeter=null; //wird von gc erfasst
 
     }
 
@@ -664,9 +667,9 @@ public class DownloadLink implements Serializable,Comparable<DownloadLink> {
      * 
      * @param bytes
      */
-    public void addBytes(int bytes) {
+    public void addBytes(long bytes, long difftime) {
 
-        this.getSpeedMeter().addValue(bytes);
+        this.getSpeedMeter().addValue(bytes, difftime);
 
     }
 
@@ -677,7 +680,7 @@ public class DownloadLink implements Serializable,Comparable<DownloadLink> {
      */
     public SpeedMeter getSpeedMeter() {
         if (speedMeter == null) {
-            speedMeter = new SpeedMeter(5000);
+            speedMeter = new SpeedMeter();
         }
         return speedMeter;
     }
@@ -858,5 +861,13 @@ public boolean isMirror() {
 
 public void setMirror(boolean isMirror) {
     this.isMirror = isMirror;
+}
+
+public int getMaximalspeed() {
+	return maximalspeed;
+}
+
+public void setMaximalspeed(int maximalspeed) {
+	this.maximalspeed = maximalspeed/8;
 }
 }
