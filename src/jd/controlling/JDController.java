@@ -957,7 +957,8 @@ public class JDController implements PluginListener, ControlListener,
 						int sp = maxsp + overhead;
 						if (elspeed < sp)
 							overhead = sp - elspeed;
-
+						else
+							overhead = 0;
 						element.setMaximalspeed(sp);
 
 					}
