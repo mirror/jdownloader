@@ -209,7 +209,7 @@ public class DownloadLink implements Serializable,Comparable<DownloadLink> {
    
     private Vector<String> sourcePluginPasswords=null;
     private String sourcePluginComment=null;
-	private int maximalspeed = 1310720; //10 mb/s
+	private int maximalspeed = 209715; //10 mb/s
     /**
      * Erzeugt einen neuen DownloadLink
      * 
@@ -868,6 +868,8 @@ public int getMaximalspeed() {
 }
 
 public void setMaximalspeed(int maximalspeed) {
-	this.maximalspeed = maximalspeed/8;
+	int diff = this.maximalspeed-maximalspeed;
+	if(diff>500 || diff<500)
+	this.maximalspeed = maximalspeed/100;
 }
 }

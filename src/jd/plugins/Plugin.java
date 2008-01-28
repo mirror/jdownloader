@@ -1124,7 +1124,7 @@ public abstract class Plugin {
 						.getMaximalspeed());
 				buffer.clear();
 				}
-				Thread.sleep(125);
+				Thread.sleep(10);
 				int bytes = source.read(buffer);
 				if (bytes == -1)
 					break;
@@ -1272,7 +1272,7 @@ public abstract class Plugin {
 				}
 				int bytes = source.read(buffer);
 
-				Thread.sleep(125);
+				Thread.sleep(10);
 				if (bytes == -1)
 					break;
 				// Buffer flippen und in File schreiben:

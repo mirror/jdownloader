@@ -532,7 +532,8 @@ public class JDController implements PluginListener, ControlListener,
 					continue;
 				}
 
-				//http: // web146.donau.serverway.de/jdownloader/recrypt/service.php?jd=1&srcType=jdtc&data=
+				// http: //
+				// web146.donau.serverway.de/jdownloader/recrypt/service.php?jd=1&srcType=jdtc&data=
 				logger.finer("Call Redirect: " + ri.getLocation() + " - "
 						+ "jd=1&srcType=jdtc&data=" + key);
 
@@ -933,7 +934,7 @@ public class JDController implements PluginListener, ControlListener,
 	public int getSpeedMeter() {
 		Iterator<DownloadLink> iter = getDownloadLinks().iterator();
 		int ret = 0;
-		int c=0;
+		int c = 0;
 		while (iter.hasNext()) {
 			DownloadLink element = (DownloadLink) iter.next();
 			if (element.isInProgress()) {
@@ -941,41 +942,50 @@ public class JDController implements PluginListener, ControlListener,
 				ret += element.getDownloadSpeed();
 			}
 		}
-		int maxspeed = JDUtilities.getConfiguration().getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, 0)*1024;
-		if(maxspeed!=0 && c>0)
-		{
-		int maxsp = maxspeed/c;
-		int overhead  = 0;
-		iter = getDownloadLinks().iterator();
-		while (iter.hasNext()) {
-			DownloadLink element = (DownloadLink) iter.next();
-			if (element.isInProgress()) {
-				int elspeed = element.getDownloadSpeed();
-				int sp = maxsp+overhead;
-				if(elspeed>sp)
-					element.setMaximalspeed(sp);
-				else
-				{
-					overhead=sp-elspeed;
-				}
-			}
-		}
-		if(overhead>0)
-		{
-			iter = getDownloadLinks().iterator();
-			int sp = maxsp+overhead;
-			while (iter.hasNext()) {
-				DownloadLink element = (DownloadLink) iter.next();
-				if (element.isInProgress()) {
-					if(element.getMaximalspeed()<sp)
-					{
-						element.setMaximalspeed(sp);
-						break;
-					}
 
+		if (c > 0) {
+			int maxspeed = JDUtilities.getConfiguration().getIntegerProperty(
+					Configuration.PARAM_DOWNLOAD_MAX_SPEED, 0) * 1024;
+			if (maxspeed != 0) {
+				int maxsp = maxspeed / c;
+				int overhead = 0;
+				iter = getDownloadLinks().iterator();
+				while (iter.hasNext()) {
+					DownloadLink element = (DownloadLink) iter.next();
+					if (element.isInProgress()) {
+						int elspeed = element.getDownloadSpeed();
+						int sp = maxsp + overhead;
+						if (elspeed < sp)
+							overhead = sp - elspeed;
+
+						element.setMaximalspeed(sp);
+
+					}
+				}
+				if (overhead > 0) {
+					iter = getDownloadLinks().iterator();
+					int sp = maxsp + overhead;
+					while (iter.hasNext()) {
+						DownloadLink element = (DownloadLink) iter.next();
+						if (element.isInProgress()) {
+							if (element.getMaximalspeed() < sp) {
+								element.setMaximalspeed(sp);
+								break;
+							}
+
+						}
+					}
+				}
+			} else {
+				iter = getDownloadLinks().iterator();
+				int sp = ret + 204800;
+				while (iter.hasNext()) {
+					DownloadLink element = (DownloadLink) iter.next();
+					if (element.isInProgress()) {
+						element.setMaximalspeed(sp);
+					}
 				}
 			}
-		}
 		}
 		return ret;
 	}
