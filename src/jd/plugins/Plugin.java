@@ -1082,8 +1082,9 @@ public abstract class Plugin {
 		long downloadedBytes = 0;
 		long start, end, time;
 		try {
-			ByteBuffer buffer = ByteBuffer.allocateDirect(downloadLink
-					.getMaximalspeed());
+			int maxspeed = downloadLink
+			.getMaximalspeed();
+			ByteBuffer buffer = ByteBuffer.allocateDirect(maxspeed);
 			// Falls keine urlConnection übergeben wurde
 			if (urlConnection == null)
 				urlConnection = new URL(downloadLink.getUrlDownloadDecrypted())
@@ -1117,9 +1118,12 @@ public abstract class Plugin {
 				// verhindern:
 				// JD-Team: nix schlafen.. ich will speed! Die Events werden
 				// jetzt von der GUI kontrolliert
+				if(maxspeed!=(maxspeed=downloadLink.getMaximalspeed()))
+				{
 				buffer = ByteBuffer.allocateDirect(downloadLink
 						.getMaximalspeed());
 				buffer.clear();
+				}
 				Thread.sleep(125);
 				int bytes = source.read(buffer);
 				if (bytes == -1)
@@ -1215,8 +1219,9 @@ public abstract class Plugin {
 		long downloadedBytes = 0;
 		long start, end, time;
 		try {
-			ByteBuffer buffer = ByteBuffer.allocateDirect(downloadLink
-					.getMaximalspeed());
+			int maxspeed = downloadLink
+			.getMaximalspeed();
+			ByteBuffer buffer = ByteBuffer.allocateDirect(maxspeed);
 
 			FileOutputStream fos = new FileOutputStream(fileOutput, true);
 			// NIO Channels setzen:
@@ -1250,6 +1255,7 @@ public abstract class Plugin {
 			// long bytesLastSpeedCheck = 0;
 			// long t1 = System.currentTimeMillis();
 			// long t3 = t1;
+
 			long bytesPerSecond = 0;
 			long deltaTime = 0L;
 			long timer = -System.currentTimeMillis();
@@ -1258,9 +1264,12 @@ public abstract class Plugin {
 				// verhindern:
 				// JD-Team: nix schlafen.. ich will speed! Die Events werden
 				// jetzt von der GUI kontrolliert
+				if(maxspeed!=(maxspeed=downloadLink.getMaximalspeed()))
+				{
 				buffer = ByteBuffer.allocateDirect(downloadLink
 						.getMaximalspeed());
 				buffer.clear();
+				}
 				int bytes = source.read(buffer);
 
 				Thread.sleep(125);
