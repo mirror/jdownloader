@@ -16,8 +16,12 @@ public class GetExplorer {
 		String OS = System.getProperty("os.name").toLowerCase();
 		if ((OS.indexOf("nt") > -1) || (OS.indexOf("windows") > -1)) {
 			return new Object[] {"Explorer","explorer",new String[] {}};
-		} else {
-			Object[][] programms = new Object[][] {{"nautilus", new String[] {"--browser", "--no-desktop"}},{"konqueror",new String[] {}},{"finder",new String[] {}}};
+		} 
+		else if (OS.indexOf("mac") >= 0) {
+			return new Object[] {"Open","open",new String[] {}};
+		}
+		else {
+			Object[][] programms = new Object[][] {{"nautilus", new String[] {"--browser", "--no-desktop"}},{"konqueror",new String[] {}}};
 			try {
 				String[] charset = System.getenv("PATH").split(":");
 				for (int i = 0; i < charset.length; i++) {
