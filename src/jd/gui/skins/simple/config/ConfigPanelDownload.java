@@ -68,8 +68,9 @@ public ConfigPanelDownload(Configuration configuration, UIInterface uiinterface)
         addGUIConfigEntry(ce);
         ce= new GUIConfigEntry( new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, configuration, Configuration.PARAM_GLOBAL_IP_DISABLE, JDLocale.L("gui.config.download.ipcheck.disable","IP Überprüfung deaktivieren")).setDefaultValue(false).setExpertEntry(true));
         addGUIConfigEntry(ce);
-        ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME), SimpleGUI.PARAM_START_DOWNLOADS_AFTER_START, JDLocale.L("gui.config.general.startDownloadsOnStartUp", "Download beim Programmstart beginnen")).setDefaultValue(false));
+        ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME), SimpleGUI.PARAM_START_DOWNLOADS_AFTER_START, JDLocale.L("gui.config.download.startDownloadsOnStartUp", "Download beim Programmstart beginnen")).setDefaultValue(false));
         addGUIConfigEntry(ce);
+ 
         
         add(panel, BorderLayout.NORTH);
     }

@@ -91,8 +91,8 @@ public class DistributeData extends ControlMulticaster {
 
                 try {
     				PluginForHost pHost = (PluginForHost) iteratorHost.next();
-                    if (pHost.canHandle(decrypted.getUrlDownloadDecrypted())) {
-                        Vector<DownloadLink> dLinks = pHost.getDownloadLinks(decrypted.getUrlDownloadDecrypted());
+                    if (pHost.canHandle(decrypted.getDownloadURL())) {
+                        Vector<DownloadLink> dLinks = pHost.getDownloadLinks(decrypted.getDownloadURL());
                         //logger.info(decrypted.getUrlDownloadDecrypted()+" "+pHost.getDownloadLinks(decrypted.getUrlDownloadDecrypted()));
                         for (int c = 0; c < dLinks.size(); c++) {
 
@@ -178,7 +178,7 @@ public class DistributeData extends ControlMulticaster {
         boolean hasDecryptedLinks = false;
         for (int i = decryptedLinks.size() - 1; i >= 0; i--) {
             DownloadLink link = decryptedLinks.get(i);
-            String url = link.getUrlDownloadDecrypted();
+            String url = link.getDownloadURL();
 
             if (url != null) {
                 url = Plugin.getHttpLinkList(url);

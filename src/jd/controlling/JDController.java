@@ -487,7 +487,7 @@ public class JDController implements PluginListener, ControlListener,
 				xml += "<file>";
 				xml += "<url>"
 						+ JDUtilities.Base64Encode(tmpLinks.get(x)
-								.getUrlDownloadDecrypted()) + "</url>";
+								.getDownloadURL()) + "</url>";
 				xml += "<password>"
 						+ JDUtilities.Base64Encode(packages.get(i)
 								.getPassword()) + "</password>";
@@ -715,7 +715,7 @@ public class JDController implements PluginListener, ControlListener,
 					Vector<DownloadLink> links = pContainer
 							.getContainedDownloadlinks();
 					if (links == null || links.size() == 0) {
-						logger.severe("Container Decryption failed");
+						logger.severe("Container Decryption failed (1)");
 					} else {
 						downloadLinks.addAll(links);
 					}

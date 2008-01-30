@@ -177,6 +177,8 @@ public class Configuration extends Property implements Serializable {
     public static final String PARAM_TWEAK_GUI_INTERVAL = "TWEAK_GUI_INTERVAL";
 
     public static final String PARAM_TWEAK_LOG = "TWEAK_LOG";
+
+  
     /**
      * Die unterschiedlichen Interaktionen. (ZB Reconnect nach einem Download)
      */

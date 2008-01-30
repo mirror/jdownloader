@@ -5,7 +5,7 @@ import java.io.Serializable;
 import java.util.Vector;
 import java.util.logging.Logger;
 
-import jd.JDCrypt;
+
 import jd.config.Configuration;
 import jd.controlling.SpeedMeter;
 import jd.utils.JDUtilities;
@@ -64,10 +64,7 @@ public class DownloadLink implements Serializable,Comparable<DownloadLink> {
      * weil Die Ip gerade gesperrt ist, oder eine Session id abgelaufen ist
      */
     public final static int   STATUS_ERROR_STATIC_WAITTIME         = 10;
-    /**
-     * Zeigt an dass die Logins beim premiumlogin nicht richtig waren
-     */
-    public static final int   STATUS_ERROR_PREMIUM_LOGIN           = 11;
+  
     /**
      * zeigt einen Premiumspezifischen fehler an
      */
@@ -112,6 +109,8 @@ public class DownloadLink implements Serializable,Comparable<DownloadLink> {
     private static final long serialVersionUID                     = 1981079856214268373L;
     public static final int STATUS_ERROR_AGB_NOT_SIGNED = 21;
     public static final int STATUS_ERROR_SECURITY = 22;
+    public static final int LINKTYPE_NORMAL = 0;
+    public static final int LINKTYPE_CONTAINER = 1;
   
     /**
      * Statustext der von der GUI abgefragt werden kann
@@ -210,6 +209,8 @@ public class DownloadLink implements Serializable,Comparable<DownloadLink> {
     private Vector<String> sourcePluginPasswords=null;
     private String sourcePluginComment=null;
 	private int maximalspeed = 209715;
+    private int linkType=LINKTYPE_NORMAL;
+    private transient String tempUrlDownload;
     /**
      * Erzeugt einen neuen DownloadLink
      * 
@@ -230,7 +231,7 @@ public class DownloadLink implements Serializable,Comparable<DownloadLink> {
         this.isEnabled = isEnabled;
         speedMeter = new SpeedMeter();
         if(urlDownload!=null)
-            this.urlDownload = JDCrypt.encrypt(urlDownload);
+            this.urlDownload = urlDownload;
         else
             urlDownload=null;
         if(name==null)this.name=this.extractFileNameFromURL();
@@ -280,7 +281,7 @@ public class DownloadLink implements Serializable,Comparable<DownloadLink> {
             if(downloadPath!=null){
             return new File(new File(downloadPath), getName()).getAbsolutePath();
             }else{
-                return this.getUrlDownloadDecrypted();
+                return this.getDownloadURL();
             }
 
         }
@@ -311,38 +312,24 @@ public class DownloadLink implements Serializable,Comparable<DownloadLink> {
         available = ((PluginForHost) getPlugin()).getFileInformation(this);
         return available;
     }
-    /**
-     * @author JD-Team
-     * @return Die verschlüsselte URL
-     */
-    public String getEncryptedUrlDownload() {
-        return urlDownload;
-    }
 
-    /**
-     * Liefert die URL zurück, unter der dieser Download stattfinden soll (Ist
-     * verschlüsselt)
-     * 
-     * @return Die Download URL
-     */
-    public String getUrlDownload() {
-        return urlDownload;
-    }
+
+ 
 
     /**
      * Liefert die URL zurück, unter der dieser Download stattfinden soll
-     * (Entschlüsselt)
      * 
      * @return Die Download URL
      */
-    public String getUrlDownloadDecrypted() {
-        if (urlDownload == null)
+    public String getDownloadURL() {
+        if (linkType==LINKTYPE_CONTAINER){
+            if(this.tempUrlDownload!=null)return tempUrlDownload;
             if(pluginForContainer!=null)
-                return pluginForContainer.getUrlDownloadDecrypted(this);
+                return pluginForContainer.extractDownloadURL(this);
             else
                 return null;
-        //logger.info("link:" +urlDownload);
-        return JDCrypt.decrypt(urlDownload);
+        }
+        return urlDownload;
     }
 
     /**
@@ -424,35 +411,21 @@ public class DownloadLink implements Serializable,Comparable<DownloadLink> {
         this.isEnabled = isEnabled;
     }
 
-    /**
-     * Setzt die Ausgabedatei
-     * 
-     * @param fileOutput Die Datei, in der dieser Download gespeichert werden
-     *            soll
-     */
-    /*public void setFileOutput(String fileOutput) {
-        this.fileOutput = fileOutput;
-    }*/
+
+
 
     /**
-     * Setzt die URL, von der heruntergeladen werden soll (Ist schon
-     * verschlüsselt)
-     * 
-     * @param urlDownload Die URL von der heruntergeladen werden soll
-     */
-    public void setEncryptedUrlDownload(String urlDownload) {
-        this.urlDownload = urlDownload;
-    }
-
-    /**
-     * Setzt die URL, von der heruntergeladen werden soll (Ist NICHt
-     * verschlüsselt)
+     * Setzt die URL, von der heruntergeladen werden soll 
      * 
      * @param urlDownload Die URL von der heruntergeladen werden soll
      */
     public void setUrlDownload(String urlDownload) {
-        
-        this.urlDownload = JDCrypt.encrypt(urlDownload);
+        if(this.linkType==LINKTYPE_CONTAINER){
+            this.tempUrlDownload=urlDownload;
+            this.urlDownload=null;
+            return;
+        }
+        this.urlDownload = urlDownload;
     }
 
     /**
@@ -504,8 +477,8 @@ public class DownloadLink implements Serializable,Comparable<DownloadLink> {
      */
     @Override
     public boolean equals(Object obj) {
-        if (obj instanceof DownloadLink && this.urlDownload!=null && ((DownloadLink) obj).urlDownload != null)
-            return this.urlDownload.equals(((DownloadLink) obj).urlDownload);
+        if (obj instanceof DownloadLink && this.getDownloadURL()!=null && ((DownloadLink) obj).getDownloadURL() != null)
+            return this.getDownloadURL().equals(((DownloadLink) obj).getDownloadURL());
         else
             return super.equals(obj);
     }
@@ -597,8 +570,8 @@ public class DownloadLink implements Serializable,Comparable<DownloadLink> {
      * @return Datename des Downloads.
      */
     public String extractFileNameFromURL() {
-        int index = Math.max(this.getUrlDownloadDecrypted().lastIndexOf("/"), this.getUrlDownloadDecrypted().lastIndexOf("\\"));
-        return this.getUrlDownloadDecrypted().substring(index + 1);
+        int index = Math.max(this.getDownloadURL().lastIndexOf("/"), this.getDownloadURL().lastIndexOf("\\"));
+        return this.getDownloadURL().substring(index + 1);
     }
 
     /**
@@ -871,5 +844,18 @@ public void setMaximalspeed(int maximalspeed) {
 	int diff = this.maximalspeed-maximalspeed;
 	if(diff>500 || diff<500)
 	this.maximalspeed = maximalspeed/40;
+}
+
+public void setLinkType(int linktypeContainer) {
+    if(linkType==LINKTYPE_CONTAINER){
+        logger.severe("You are not allowd to Change the Linktype of "+this);
+        return;
+    }
+    if(linktypeContainer==LINKTYPE_CONTAINER&&this.urlDownload!=null){
+        logger.severe("This link already has a value for urlDownload");
+        urlDownload=null;
+    }
+    this.linkType=linktypeContainer;
+    
 }
 }

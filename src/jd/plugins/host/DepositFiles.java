@@ -79,7 +79,7 @@ public class DepositFiles extends PluginForHost {
             DownloadLink downloadLink = (DownloadLink) parameter;
             switch (step.getStep()) {
                 case PluginStep.STEP_WAIT_TIME :
-                    finalURL=downloadLink.getUrlDownloadDecrypted().replace("depositfiles.com.*?files", "depositfiles.com/de/files");
+                    finalURL=downloadLink.getDownloadURL().replace("depositfiles.com.*?files", "depositfiles.com/de/files");
                     logger.info(finalURL);
                     requestInfo = getRequest(new URL(finalURL));
                     // Datei geloescht?
@@ -182,7 +182,7 @@ public class DepositFiles extends PluginForHost {
     public boolean getFileInformation(DownloadLink downloadLink) {
         RequestInfo requestInfo;
         try {
-            requestInfo = getRequestWithoutHtmlCode(new URL(downloadLink.getUrlDownloadDecrypted()), null, null, false);
+            requestInfo = getRequestWithoutHtmlCode(new URL(downloadLink.getDownloadURL()), null, null, false);
             if (requestInfo.getConnection().getHeaderField("Location") != null && requestInfo.getConnection().getHeaderField("Location").indexOf("error") > 0) {
                 return false;
             } else {

@@ -120,7 +120,7 @@ static private final String DOWNLOAD_LIMIT_REACHED="Free-Traffic ist aufgebrauch
             switch (step.getStep()) {
                 case PluginStep.STEP_WAIT_TIME:
 
-                    requestInfo = getRequest(new URL(downloadLink.getUrlDownloadDecrypted()), "lang=de", null, true);
+                    requestInfo = getRequest(new URL(downloadLink.getDownloadURL()), "lang=de", null, true);
 ///?view=error_traffic_exceeded_free
                     if(requestInfo.containsHTML(DOWNLOAD_LIMIT_REACHED)||(requestInfo.getLocation()!=null &&requestInfo.getLocation().indexOf("traffic_exceeded")>=0)){
                         
@@ -146,13 +146,13 @@ static private final String DOWNLOAD_LIMIT_REACHED="Free-Traffic ist aufgebrauch
                         if (lastPassword != null) {
                             logger.info("Try last pw: " + lastPassword);
                             pass = lastPassword;
-                            requestInfo = postRequest(new URL(downloadLink.getUrlDownloadDecrypted()), "lang=de", null, null, "lang=de&file_key=" + pass, false);
+                            requestInfo = postRequest(new URL(downloadLink.getDownloadURL()), "lang=de", null, null, "lang=de&file_key=" + pass, false);
 
                         }
                         else {
                             pass = JDUtilities.getController().getUiInterface().showUserInputDialog("Password?");
                             logger.info("Password: " + pass);
-                            requestInfo = postRequest(new URL(downloadLink.getUrlDownloadDecrypted()), "lang=de", null, null, "lang=de&file_key=" + pass, false);
+                            requestInfo = postRequest(new URL(downloadLink.getDownloadURL()), "lang=de", null, null, "lang=de&file_key=" + pass, false);
                         }
 
                     }
@@ -160,14 +160,14 @@ static private final String DOWNLOAD_LIMIT_REACHED="Free-Traffic ist aufgebrauch
                         logger.info("File is Password protected2");
                         pass = JDUtilities.getController().getUiInterface().showUserInputDialog("Password?");
                         logger.info("Password: " + pass);
-                        requestInfo = postRequest(new URL(downloadLink.getUrlDownloadDecrypted()), "lang=de", null, null, "lang=de&file_key=" + pass, false);
+                        requestInfo = postRequest(new URL(downloadLink.getDownloadURL()), "lang=de", null, null, "lang=de&file_key=" + pass, false);
 
                     }
                     if (requestInfo.containsHTML("file_key")) {
                         logger.info("File is Password protected3");
                         pass = JDUtilities.getController().getUiInterface().showUserInputDialog("Password?");
                         logger.info("Password: " + pass);
-                        requestInfo = postRequest(new URL(downloadLink.getUrlDownloadDecrypted()), "lang=de", null, null, "lang=de&file_key=" + pass, false);
+                        requestInfo = postRequest(new URL(downloadLink.getDownloadURL()), "lang=de", null, null, "lang=de&file_key=" + pass, false);
 
                     }
                     if (requestInfo.containsHTML("file_key")) {
@@ -397,7 +397,9 @@ static private final String DOWNLOAD_LIMIT_REACHED="Free-Traffic ist aufgebrauch
 
             step.setStatus(PluginStep.STATUS_ERROR);
             logger.severe("Premiumfehler Logins are incorrect");
-            parameter.setStatus(DownloadLink.STATUS_ERROR_PREMIUM_LOGIN);
+            parameter.setStatus(DownloadLink.STATUS_ERROR_PLUGIN_SPECIFIC);
+            step.setParameter("Login Error: "+user);
+            getProperties().setProperty(PROPERTY_USE_PREMIUM, false);
             return step;
 
         }
@@ -411,8 +413,9 @@ static private final String DOWNLOAD_LIMIT_REACHED="Free-Traffic ist aufgebrauch
                     
                     if (requestInfo.getCookie().indexOf("auth") < 0) {
                         step.setStatus(PluginStep.STATUS_ERROR);
-                        logger.severe("Premiumfehler Login");
-                        downloadLink.setStatus(DownloadLink.STATUS_ERROR_PREMIUM_LOGIN);
+                        parameter.setStatus(DownloadLink.STATUS_ERROR_PLUGIN_SPECIFIC);
+                        step.setParameter("Login Error: "+user);
+                        getProperties().setProperty(PROPERTY_USE_PREMIUM, false);
                         return step;
                     }
                     cookie = requestInfo.getCookie();
@@ -425,7 +428,7 @@ static private final String DOWNLOAD_LIMIT_REACHED="Free-Traffic ist aufgebrauch
                     return step;
                 case PluginStep.STEP_DOWNLOAD:
 
-                    requestInfo = getRequest(new URL(downloadLink.getUrlDownloadDecrypted()), cookie, null, false);
+                    requestInfo = getRequest(new URL(downloadLink.getDownloadURL()), cookie, null, false);
                     // Datei geloescht?
                     if (requestInfo.getHtmlCode().contains(FILE_NOT_FOUND)) {
                         logger.severe("download not found");
@@ -441,13 +444,13 @@ static private final String DOWNLOAD_LIMIT_REACHED="Free-Traffic ist aufgebrauch
                         if (lastPassword != null) {
                             logger.info("Try last pw: " + lastPassword);
                             filepass = lastPassword;
-                            requestInfo = postRequest(new URL(downloadLink.getUrlDownloadDecrypted()), cookie, null, null, "lang=de&file_key=" + filepass, false);
+                            requestInfo = postRequest(new URL(downloadLink.getDownloadURL()), cookie, null, null, "lang=de&file_key=" + filepass, false);
 
                         }
                         else {
                             filepass = JDUtilities.getController().getUiInterface().showUserInputDialog("Password?");
                             logger.info("Password: " + pass);
-                            requestInfo = postRequest(new URL(downloadLink.getUrlDownloadDecrypted()), cookie, null, null, "lang=de&file_key=" + filepass, false);
+                            requestInfo = postRequest(new URL(downloadLink.getDownloadURL()), cookie, null, null, "lang=de&file_key=" + filepass, false);
                         }
 
                     }
@@ -455,14 +458,14 @@ static private final String DOWNLOAD_LIMIT_REACHED="Free-Traffic ist aufgebrauch
                         logger.info("File is Password protected2");
                         filepass = JDUtilities.getController().getUiInterface().showUserInputDialog("Password?");
                         logger.info("Password: " + pass);
-                        requestInfo = postRequest(new URL(downloadLink.getUrlDownloadDecrypted()), cookie, null, null, "lang=de&file_key=" + filepass, false);
+                        requestInfo = postRequest(new URL(downloadLink.getDownloadURL()), cookie, null, null, "lang=de&file_key=" + filepass, false);
 
                     }
                     if (requestInfo.containsHTML("file_key")) {
                         logger.info("File is Password protected3");
                         filepass = JDUtilities.getController().getUiInterface().showUserInputDialog("Password?");
                         logger.info("Password: " + pass);
-                        requestInfo = postRequest(new URL(downloadLink.getUrlDownloadDecrypted()), cookie, null, null, "lang=de&file_key=" + filepass, false);
+                        requestInfo = postRequest(new URL(downloadLink.getDownloadURL()), cookie, null, null, "lang=de&file_key=" + filepass, false);
 
                     }
                     if (requestInfo.containsHTML("file_key")) {
@@ -554,7 +557,7 @@ static private final String DOWNLOAD_LIMIT_REACHED="Free-Traffic ist aufgebrauch
      * @param parameter
      */
     private void correctURL(DownloadLink parameter) {
-        String link = parameter.getUrlDownloadDecrypted();
+        String link = parameter.getDownloadURL();
         link = link.replace("/?id=", "/file/");
         link = link.replace("?id=", "file/");
         String[] parts = link.split("\\/");
@@ -586,7 +589,7 @@ static private final String DOWNLOAD_LIMIT_REACHED="Free-Traffic ist aufgebrauch
         RequestInfo requestInfo;
         correctURL(downloadLink);
         try {
-            requestInfo = getRequestWithoutHtmlCode(new URL(downloadLink.getUrlDownloadDecrypted()), null, null, false);
+            requestInfo = getRequestWithoutHtmlCode(new URL(downloadLink.getDownloadURL()), null, null, false);
             if (requestInfo.getConnection().getHeaderField("Location") != null && requestInfo.getConnection().getHeaderField("Location").indexOf("error") > 0) {
                 this.setStatusText("Error");
                 return false;

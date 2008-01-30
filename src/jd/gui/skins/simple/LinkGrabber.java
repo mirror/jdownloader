@@ -505,7 +505,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
     }
 
     protected String getInfoString(DownloadLink link) {
-        return link.getStatusText().length() == 0 ? "[online]" + link.getFileInfomationString() : link.getStatusText();
+        return link.getStatusText().length() == 0 ? "[online]" + link.getFileInfomationString() : link.getFileInfomationString()+" "+link.getStatusText();
     }
 
     public void actionPerformed(ActionEvent e) {

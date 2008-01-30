@@ -61,7 +61,7 @@ public class ShareBaseDe extends PluginForHost {
     
     @Override public boolean getFileInformation(DownloadLink downloadLink) {
         try {
-            RequestInfo requestInfo = getRequest(new URL(downloadLink.getUrlDownloadDecrypted()));
+            RequestInfo requestInfo = getRequest(new URL(downloadLink.getDownloadURL()));
 
             String fileName = JDUtilities.htmlDecode(getSimpleMatch(requestInfo.getHtmlCode(), FILENAME, 1));
             String fileSize = JDUtilities.htmlDecode(getSimpleMatch(requestInfo.getHtmlCode(), FILESIZE, 1));
@@ -103,7 +103,7 @@ public class ShareBaseDe extends PluginForHost {
     public PluginStep doStep(PluginStep step, DownloadLink downloadLink) {
         try {
             RequestInfo requestInfo;
-            URL downloadUrl = new URL(downloadLink.getUrlDownloadDecrypted());
+            URL downloadUrl = new URL(downloadLink.getDownloadURL());
             String finishURL = null;
             
             switch (step.getStep()) {
@@ -151,7 +151,7 @@ public class ShareBaseDe extends PluginForHost {
                 case PluginStep.STEP_DOWNLOAD:
                     try {
                         //Formular abschicken und Weiterleitungs-Adresse auslesen (= DL)
-                        requestInfo = postRequest(downloadUrl, this.cookies, downloadLink.getUrlDownloadDecrypted(), null, "machma=Download+starten", false);
+                        requestInfo = postRequest(downloadUrl, this.cookies, downloadLink.getDownloadURL(), null, "machma=Download+starten", false);
                         finishURL = JDUtilities.urlEncode(requestInfo.getConnection().getHeaderField("Location"));
                         
                         // finishURL nicht gefunden? --> Fehler

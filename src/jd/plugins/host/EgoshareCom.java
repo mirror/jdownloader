@@ -63,7 +63,7 @@ public class EgoshareCom extends PluginForHost {
     
     @Override public boolean getFileInformation(DownloadLink downloadLink) {
         try {
-            RequestInfo requestInfo = getRequest(new URL(downloadLink.getUrlDownloadDecrypted()));
+            RequestInfo requestInfo = getRequest(new URL(downloadLink.getDownloadURL()));
 
             String fileName = JDUtilities.htmlDecode(getSimpleMatch(requestInfo.getHtmlCode(), DOWNLOAD_INFO, 0));
             String fileSize = JDUtilities.htmlDecode(getSimpleMatch(requestInfo.getHtmlCode(), DOWNLOAD_INFO, 4));
@@ -94,7 +94,7 @@ public class EgoshareCom extends PluginForHost {
     public PluginStep doStep(PluginStep step, DownloadLink downloadLink) {
         try {
             RequestInfo requestInfo;
-            URL downloadUrl = new URL(downloadLink.getUrlDownloadDecrypted());
+            URL downloadUrl = new URL(downloadLink.getDownloadURL());
             String finishURL = null;
             
             switch (step.getStep()) {
@@ -130,7 +130,7 @@ public class EgoshareCom extends PluginForHost {
                 case PluginStep.STEP_DOWNLOAD:
                     try {
                         //Formular abschicken und Weiterleitungs-Adresse auslesen (= DL)
-                        requestInfo = postRequest(downloadUrl, null, downloadLink.getUrlDownloadDecrypted(), null, "PHPSESSID="+this.sessionID+"&submitname=DOWNLOAD", false);
+                        requestInfo = postRequest(downloadUrl, null, downloadLink.getDownloadURL(), null, "PHPSESSID="+this.sessionID+"&submitname=DOWNLOAD", false);
                         finishURL = JDUtilities.urlEncode(requestInfo.getConnection().getHeaderField("Location"));
                         
                         // finishURL nicht gefunden? --> Fehler

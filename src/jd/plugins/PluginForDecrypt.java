@@ -102,7 +102,7 @@ public abstract class PluginForDecrypt extends Plugin {
 
                         for (int i = links.size() - 1; i >= 0; i--) {
                             DownloadLink dl = (DownloadLink) links.get(i);
-                            link = JDUtilities.htmlDecode(dl.getUrlDownloadDecrypted());
+                            link = JDUtilities.htmlDecode(dl.getDownloadURL());
                             dl.setUrlDownload(link);
                             logger.info("DEF: "+this.getDefaultPassswords());
                             if(dl.getSourcePluginPasswords()==null||dl.getSourcePluginPasswords().size()==0){

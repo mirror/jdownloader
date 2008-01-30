@@ -1087,7 +1087,7 @@ public abstract class Plugin {
 			ByteBuffer buffer = ByteBuffer.allocateDirect(maxspeed);
 			// Falls keine urlConnection übergeben wurde
 			if (urlConnection == null)
-				urlConnection = new URL(downloadLink.getUrlDownloadDecrypted())
+				urlConnection = new URL(downloadLink.getDownloadURL())
 						.openConnection();
 			FileOutputStream fos = new FileOutputStream(fileOutput);
 			// NIO Channels setzen:

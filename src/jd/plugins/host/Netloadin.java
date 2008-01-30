@@ -119,8 +119,8 @@ public class Netloadin extends PluginForHost {
             switch (step.getStep()) {
                 case PluginStep.STEP_WAIT_TIME:
                     if (captchaURL == null) {
-                        logger.info(downloadLink.getUrlDownloadDecrypted());
-                        requestInfo = getRequest(new URL(downloadLink.getUrlDownloadDecrypted()), null, null, true);
+                        logger.info(downloadLink.getDownloadURL());
+                        requestInfo = getRequest(new URL(downloadLink.getDownloadURL()), null, null, true);
                         this.sessionID = requestInfo.getCookie();
                         System.out.println(requestInfo.getHtmlCode());
                         String url = "http://" + HOST + "/" + getSimpleMatch(requestInfo.getHtmlCode(), DOWNLOAD_URL, 0);
@@ -247,7 +247,7 @@ public class Netloadin extends PluginForHost {
                 if(finalURL==null){
                 
                  //SessionID holen
-                    requestInfo = getRequest(new URL(downloadLink.getUrlDownloadDecrypted()), null, null, true);
+                    requestInfo = getRequest(new URL(downloadLink.getDownloadURL()), null, null, true);
                     this.sessionID = requestInfo.getCookie();
                     logger.finer("sessionID: "+sessionID);
                     if (requestInfo.getHtmlCode().indexOf(FILE_NOT_FOUND) > 0) {
@@ -257,7 +257,7 @@ public class Netloadin extends PluginForHost {
                     }
                     
                    //Login Cookie abholen
-                    requestInfo= postRequest(new URL("http://" + HOST + "/index.php"),sessionID,downloadLink.getUrlDownloadDecrypted(),null,"txtuser="+user+"&txtpass="+pass+"&txtcheck=login&txtlogin=", false);
+                    requestInfo= postRequest(new URL("http://" + HOST + "/index.php"),sessionID,downloadLink.getDownloadURL(),null,"txtuser="+user+"&txtpass="+pass+"&txtcheck=login&txtlogin=", false);
                     this.userCookie= requestInfo.getCookie();
                     logger.finer("Usercookie: "+userCookie+" ->"+requestInfo.getLocation());
                     
@@ -343,7 +343,7 @@ public class Netloadin extends PluginForHost {
     public boolean getFileInformation(DownloadLink downloadLink) {
         RequestInfo requestInfo;
         try {
-            requestInfo = getRequest(new URL(downloadLink.getUrlDownloadDecrypted()), null, null, false);
+            requestInfo = getRequest(new URL(downloadLink.getDownloadURL()), null, null, false);
             String name = downloadLink.getName();
             if (name.toLowerCase().matches(".*\\..{1,5}\\.htm$")) name = name.replaceFirst("\\.htm$", "");
             downloadLink.setName(name);

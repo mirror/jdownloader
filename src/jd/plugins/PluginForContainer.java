@@ -2,6 +2,7 @@ package jd.plugins;
 
 import java.io.File;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Vector;
 
 import jd.utils.JDUtilities;
@@ -30,7 +31,7 @@ public abstract class PluginForContainer extends PluginForDecrypt {
      * @return Die URL als String
      */
 
-    public String getUrlDownloadDecrypted(DownloadLink downloadLink) {
+    public String extractDownloadURL(DownloadLink downloadLink) {
         return downloadLinksURL.get(downloadLink.getContainerIndex());
     }
 
@@ -83,6 +84,12 @@ public void initContainer(String filename){
     if(containedLinks==null||containedLinks.size()==0){
         doStep(new PluginStep(PluginStep.STEP_OPEN_CONTAINER, null), filename);
         logger.info(filename+" Parse");
+       if(containedLinks!=null){
+          Iterator<DownloadLink> it = containedLinks.iterator();
+          while(it.hasNext()){
+              it.next().setLinkType(DownloadLink.LINKTYPE_CONTAINER);
+          }
+       }
     }
 }
     /**

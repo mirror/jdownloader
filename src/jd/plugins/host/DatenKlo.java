@@ -63,7 +63,7 @@ public class DatenKlo extends PluginForHost {
         switch (step.getStep()) {
         case PluginStep.STEP_GET_CAPTCHA_FILE:
 
-            String dlurl = downloadLink.getUrlDownloadDecrypted();
+            String dlurl = downloadLink.getDownloadURL();
             String password = new Regexp(dlurl, "\\&down_passwort\\=(.*)")
                     .getFirstMatch();
             if (password != null)
@@ -158,7 +158,7 @@ public class DatenKlo extends PluginForHost {
     public boolean getFileInformation(DownloadLink downloadLink) {
         try {
             RequestInfo requestInfo = getRequest(new URL(downloadLink
-                    .getUrlDownloadDecrypted()));
+                    .getDownloadURL()));
             String fileName = new Regexp(requestInfo.getHtmlCode(),
                     "<td>Datei: </td>.*?<td>(.*?)</td>").getFirstMatch();
             String[][] fileSize = new Regexp(requestInfo.getHtmlCode(),
@@ -174,8 +174,8 @@ public class DatenKlo extends PluginForHost {
             // Wurden DownloadInfos gefunden? --> Datei ist vorhanden/online
             if (fileName != null && fileSize != null) {
                 downloadLink.setName(fileName);
-                downloadLink.setEncryptedUrlDownload(downloadLink
-                        .getUrlDownloadDecrypted()
+                downloadLink.setUrlDownload(downloadLink
+                        .getDownloadURL()
                         + password);
                 try {
                     double length = Double.parseDouble(fileSize[0][0].trim());

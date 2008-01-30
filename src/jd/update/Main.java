@@ -126,8 +126,13 @@ public static Insets INSETS=new Insets(5,5,5,5);
             log.append("Local: " + new File("").getAbsolutePath());
             if (runtype == 2) {
                 log.append("Start java -jar JDownloader.jar in " + new File("").getAbsolutePath());
+                if(SubConfiguration.getSubConfig("OS").getStringProperty("RESTART_COMMAND", null)!=null &&SubConfiguration.getSubConfig("OS").getProperty("RESTART_PARAMETER", null)!=null&&SubConfiguration.getSubConfig("OS").getStringProperty("RESTART_DIRECTORY", null)!=null){
+                    runCommand(SubConfiguration.getSubConfig("OS").getStringProperty("RESTART_COMMAND", null), (String[])SubConfiguration.getSubConfig("OS").getProperty("RESTART_PARAMETER", null), SubConfiguration.getSubConfig("OS").getStringProperty("RESTART_DIRECTORY", null), 0);
+                      
+                }else{
                 runCommand("java", new String[] { "-jar", "JDownloader.jar" }, new File("").getAbsolutePath(), 0);
-            }
+                }
+                }
             else if (runtype == 1 && new File("jd/Main.class").exists()) {
                 log.append("java Main.class in " + new File("jd/").getAbsolutePath());
                 runCommand("java", new String[] { "Main.class" }, new File("jd/").getAbsolutePath(), 0);

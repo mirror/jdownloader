@@ -102,7 +102,7 @@ public class FileFactory extends PluginForHost {
             downloadLink = (DownloadLink) parameter;
             switch (step.getStep()) {
                 case PluginStep.STEP_WAIT_TIME :
-                    requestInfo = getRequest(new URL(downloadLink.getUrlDownloadDecrypted()), null, null, true);
+                    requestInfo = getRequest(new URL(downloadLink.getDownloadURL()), null, null, true);
                     if (requestInfo.getHtmlCode().indexOf("this file is no longer available") >= 0) {
                         step.setStatus(PluginStep.STATUS_ERROR);
                         downloadLink.setStatus(DownloadLink.STATUS_ERROR_FILE_ABUSED);
@@ -231,7 +231,7 @@ public class FileFactory extends PluginForHost {
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) {
         try {
-            requestInfo = getRequest(new URL(downloadLink.getUrlDownloadDecrypted()), null, null, true);
+            requestInfo = getRequest(new URL(downloadLink.getDownloadURL()), null, null, true);
             if (requestInfo.getHtmlCode().indexOf("this file is no longer available") >= 0) {
                 return false;
             } else {

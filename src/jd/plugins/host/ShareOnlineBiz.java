@@ -132,8 +132,8 @@ public class ShareOnlineBiz extends PluginForHost {
 	public boolean getFileInformation(DownloadLink downloadLink) {
 		try {
 			requestInfo = getRequest(new URL(downloadLink
-					.getUrlDownloadDecrypted()));
-			if (downloadLink.getUrlDownloadDecrypted().matches(
+					.getDownloadURL()));
+			if (downloadLink.getDownloadURL().matches(
 					"http://.*?share-online\\.biz/dl/[\\d]/[a-zA-Z0-9]{9}"))
 				requestInfo = getRequest(new URL(getFirstMatch(requestInfo
 						.getHtmlCode(), firstIFrame, 1)));
@@ -150,8 +150,8 @@ public class ShareOnlineBiz extends PluginForHost {
 						+ JDUtilities.getController().getUiInterface()
 								.showUserInputDialog(
 										"Please enter the password!");
-				downloadLink.setEncryptedUrlDownload(downloadLink
-						.getUrlDownloadDecrypted()
+				downloadLink.setUrlDownload(downloadLink
+						.getDownloadURL()
 						+ password);
 			}
 			String[] names = getFirstMatch(requestInfo.getHtmlCode(), filename,
@@ -216,7 +216,7 @@ public class ShareOnlineBiz extends PluginForHost {
 
 			switch (step.getStep()) {
 			case PluginStep.STEP_PAGE:
-				String link = downloadLink.getUrlDownloadDecrypted();
+				String link = downloadLink.getDownloadURL();
 				String password = new Regexp(link, ".downloadpw\\=(.*)")
 						.getFirstMatch();
 				if (password != null)
@@ -324,7 +324,7 @@ public class ShareOnlineBiz extends PluginForHost {
 			case PluginStep.STEP_DOWNLOAD:
 				url = new URL(dlink);
 
-				if (!downloadLink.getUrlDownloadDecrypted()
+				if (!downloadLink.getDownloadURL()
 						.matches("http://.*?share-online\\.biz/\\?d\\=[a-zA-Z0-9]{9}.*")) {
 					requestInfo = getRequest(url);
 				dlink = "http://" + url.getHost()+"/"

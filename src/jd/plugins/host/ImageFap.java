@@ -60,7 +60,7 @@ public class ImageFap extends PluginForHost {
         RequestInfo requestInfo;
         try {
             if (step.getStep() == PluginStep.STEP_DOWNLOAD) {
-                requestInfo = getRequest(new URL(parameter.getUrlDownloadDecrypted()));
+                requestInfo = getRequest(new URL(parameter.getDownloadURL()));
                 Vector<String> Images = new Vector<String>();
                 Vector<Vector<String>> matches = getAllSimpleMatches(requestInfo.getHtmlCode(), LINKS);
                 Vector<Vector<String>> pagematches = getAllSimpleMatches(requestInfo.getHtmlCode(), PAGES);
@@ -122,7 +122,7 @@ public class ImageFap extends PluginForHost {
         RequestInfo requestInfo;
         try {
 
-            requestInfo = getRequest(new URL(downloadLink.getUrlDownloadDecrypted()));
+            requestInfo = getRequest(new URL(downloadLink.getDownloadURL()));
             String name = getFirstMatch(requestInfo.getHtmlCode(), NAME, 1);
             downloadLink.setName(name);
             /*

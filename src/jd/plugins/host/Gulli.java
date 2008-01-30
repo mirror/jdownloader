@@ -106,11 +106,14 @@ public class Gulli extends PluginForHost {
         String dlUrl=null;
         try {
             DownloadLink downloadLink = (DownloadLink) parameter;
+            String name = downloadLink.getName();
+            if (name.toLowerCase().matches(".*\\..{1,5}\\.html$")) name = name.replaceFirst("\\.html$", "");
+            downloadLink.setName(name);
             switch (step.getStep()) {
                 case PluginStep.STEP_GET_CAPTCHA_FILE:
                     // con.setRequestProperty("Cookie",
                     // Plugin.joinMap(cookieMap,"=","; "));
-                    requestInfo = getRequest(new URL(downloadLink.getUrlDownloadDecrypted()));
+                    requestInfo = getRequest(new URL(downloadLink.getDownloadURL()));
                     fileId = getFirstMatch(requestInfo.getHtmlCode(), PAT_FILE_ID, 1);
                     String captchaLocalUrl = getFirstMatch(requestInfo.getHtmlCode(), PAT_CAPTCHA, 1);
                     dlUrl = getFirstMatch(requestInfo.getHtmlCode(), PAT_DOWNLOAD_URL, 1);
@@ -271,8 +274,11 @@ public class Gulli extends PluginForHost {
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) {
         RequestInfo requestInfo;
+        String name = downloadLink.getName();
+        if (name.toLowerCase().matches(".*\\..{1,5}\\.html$")) name = name.replaceFirst("\\.html$", "");
+        downloadLink.setName(name);
         try {
-            requestInfo = getRequestWithoutHtmlCode(new URL(downloadLink.getUrlDownloadDecrypted()), null, null, false);
+            requestInfo = getRequestWithoutHtmlCode(new URL(downloadLink.getDownloadURL()), null, null, false);
             if (requestInfo.getConnection().getHeaderField("Location") != null && requestInfo.getConnection().getHeaderField("Location").indexOf("error") > 0) {
                 return false;
             }

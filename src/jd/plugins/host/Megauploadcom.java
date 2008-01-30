@@ -59,6 +59,8 @@ public class Megauploadcom extends PluginForHost {
 
     private String                  captchaPost;
 
+    private boolean tempUnavailable=false;
+
     public Megauploadcom() {
         steps.add(new PluginStep(PluginStep.STEP_WAIT_TIME, null));
         steps.add(new PluginStep(PluginStep.STEP_GET_CAPTCHA_FILE, null));
@@ -107,7 +109,7 @@ public class Megauploadcom extends PluginForHost {
     // }
     public PluginStep doStep(PluginStep step, DownloadLink parameter) {
         DownloadLink downloadLink = (DownloadLink) parameter;
-        String link=downloadLink.getUrlDownloadDecrypted().replaceAll("/de", "");
+        String link=downloadLink.getDownloadURL().replaceAll("/de", "");
    
         String countryID=getProperties().getStringProperty("COUNTRY_ID", "-");
         if(!countryID.equals("-")){
@@ -128,6 +130,7 @@ public class Megauploadcom extends PluginForHost {
                     if (requestInfo.containsHTML(ERROR_TEMP_NOT_AVAILABLE)) {
                         step.setStatus(PluginStep.STATUS_ERROR);
                         downloadLink.setStatus(DownloadLink.STATUS_ERROR_TEMPORARILY_UNAVAILABLE);
+                        this.tempUnavailable=true;
                         step.setParameter(60 * 30l);
                         return step;
                     }
@@ -274,18 +277,21 @@ public class Megauploadcom extends PluginForHost {
     }
 
     public String getFileInformationString(DownloadLink downloadLink) {
-        return downloadLink.getName() + " (" + JDUtilities.formatBytesToMB(downloadLink.getDownloadMax()) + ")";
+        logger.info("JJJJJJ");
+        return (tempUnavailable?"<Temp. unavailable> ":"")+downloadLink.getName() + " (" + JDUtilities.formatBytesToMB(downloadLink.getDownloadMax()) + ")";
     }
 
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) {
         RequestInfo requestInfo;
       
-        downloadLink.setUrlDownload(downloadLink.getUrlDownloadDecrypted().replaceAll("/de", ""));
+        downloadLink.setUrlDownload(downloadLink.getDownloadURL().replaceAll("/de", ""));
         try {
-            requestInfo = getRequest(new URL(downloadLink.getUrlDownloadDecrypted()), "l=de; v=1; ve_view=1", null, true);
-            if (requestInfo.containsHTML(ERROR_TEMP_NOT_AVAILABLE) || requestInfo.containsHTML(ERROR_FILENOTFOUND)) {
+            requestInfo = getRequest(new URL(downloadLink.getDownloadURL()), "l=de; v=1; ve_view=1", null, true);
+            if (requestInfo.containsHTML(ERROR_TEMP_NOT_AVAILABLE)) {
                 this.setStatusText("Temp. not available");
+                logger.info("Temp. unavailable");
+                this.tempUnavailable=true;
                 return false;
             }
             if ( requestInfo.containsHTML(ERROR_FILENOTFOUND)) {

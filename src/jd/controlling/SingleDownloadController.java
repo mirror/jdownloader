@@ -236,9 +236,7 @@ public class SingleDownloadController extends ControlMulticaster {
                 case DownloadLink.STATUS_ERROR_PREMIUM :
                     this.onErrorPremium(downloadLink, plugin, step);
                     break;
-                case DownloadLink.STATUS_ERROR_PREMIUM_LOGIN :
-                    this.onErrorPremiumLogin(downloadLink, plugin, step);
-                    break;
+          
                 case DownloadLink.STATUS_ERROR_NO_FREE_SPACE :
                     this.onErrorNoFreeSpace(downloadLink, plugin, step);
                     break;
@@ -338,23 +336,7 @@ public class SingleDownloadController extends ControlMulticaster {
         fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SINGLE_DOWNLOAD_CHANGED, downloadLink));
     }
 
-    /**
-     * Wird aufgerufen wenn ein Loginfehler bei premiumaccounts auftritt. Die
-     * premiumnutzung beim Plugin wird deaktiviert und der Link wird nochmals
-     * versucht
-     * 
-     * @param downloadLink
-     * @param plugin
-     * @param step
-     */
-    private void onErrorPremiumLogin(DownloadLink downloadLink, PluginForHost plugin, PluginStep step) {
-        // premium abschalten.
-        logger.info("deaktivier PREMIUM für: " + plugin + " Grund: Logins falsch");
-        plugin.getProperties().setProperty(Plugin.PROPERTY_USE_PREMIUM, false);
-
-        downloadLink.setStatus(DownloadLink.STATUS_TODO);
-        downloadLink.setEndOfWaittime(0);
-    }
+  
 
     /**
      * Fehlerfunktion für einen UNbekannten premiumfehler.

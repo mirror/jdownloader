@@ -107,7 +107,7 @@ public class LoadTo extends PluginForHost {
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) {
         try {
-            RequestInfo requestInfo = getRequest(new URL(downloadLink.getUrlDownloadDecrypted()));
+            RequestInfo requestInfo = getRequest(new URL(downloadLink.getDownloadURL()));
 
             String fileName = JDUtilities.htmlDecode(getSimpleMatch(requestInfo.getHtmlCode(), DOWNLOAD_INFO, 0));
             String fileSize = JDUtilities.htmlDecode(getSimpleMatch(requestInfo.getHtmlCode(), DOWNLOAD_INFO, 1));
@@ -142,7 +142,7 @@ public class LoadTo extends PluginForHost {
     public PluginStep doStep(PluginStep step, DownloadLink downloadLink) {
         try {
 
-            URL downloadUrl = new URL(downloadLink.getUrlDownloadDecrypted());
+            URL downloadUrl = new URL(downloadLink.getDownloadURL());
 
             switch (step.getStep()) {
                 case PluginStep.STEP_PAGE:

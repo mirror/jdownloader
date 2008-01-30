@@ -394,6 +394,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
      * verwendet werden die GUI zu aktuelisieren
      */
     private void interval() {
+        
         if (JDUtilities.getController() != null) {
             statusBar.setSpeed(JDUtilities.getController().getSpeedMeter());
         }

@@ -2,13 +2,19 @@ package jd;
 
 import java.awt.Graphics;
 import java.awt.Image;
+import java.io.IOException;
 import java.util.Iterator;
 import java.util.Properties;
 import java.util.TreeSet;
 import java.util.Vector;
 import java.util.logging.Logger;
 
+import javax.crypto.Cipher;
+import javax.crypto.spec.SecretKeySpec;
 import javax.swing.JWindow;
+
+import sun.misc.BASE64Decoder;
+import sun.misc.BASE64Encoder;
 
 import jd.captcha.JACController;
 import jd.config.Configuration;
@@ -71,6 +77,8 @@ logger.info(System.getProperty("java.class.path"));
         if (!stop) {
             Main main = new Main();
             main.go();
+         
+         
         }
     }
 

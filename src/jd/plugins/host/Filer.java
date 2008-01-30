@@ -76,11 +76,11 @@ public class Filer extends PluginForHost {
             DownloadLink downloadLink = (DownloadLink) parameter;
             switch (step.getStep()) {
                 case PluginStep.STEP_WAIT_TIME :
-                    String strId = getFirstMatch(downloadLink.getUrlDownloadDecrypted(), GETID, 1);
+                    String strId = getFirstMatch(downloadLink.getDownloadURL(), GETID, 1);
                     if(strId!=null)
                     {
                         int id=Integer.parseInt(strId);
-                        url=downloadLink.getUrlDownloadDecrypted().replaceFirst("filer.net\\/file[0-9]+\\/", "filer.net/folder/");
+                        url=downloadLink.getDownloadURL().replaceFirst("filer.net\\/file[0-9]+\\/", "filer.net/folder/");
                         url=url.replaceFirst("\\/filename\\/.*","");
                         requestInfo = getRequest(new URL(url));
                             // Datei geloescht?
@@ -97,7 +97,7 @@ public class Filer extends PluginForHost {
                         cookie = requestInfo.getCookie();  
                     }
                     else
-                        url=downloadLink.getUrlDownloadDecrypted();
+                        url=downloadLink.getDownloadURL();
                     logger.info(url);
                 case PluginStep.STEP_GET_CAPTCHA_FILE :
                     File file = this.getLocalCaptchaFile(this);
@@ -212,11 +212,11 @@ public class Filer extends PluginForHost {
     public boolean getFileInformation(DownloadLink downloadLink) {
         RequestInfo requestInfo;
         try {
-            String strId = getFirstMatch(downloadLink.getUrlDownloadDecrypted(), GETID, 1);
+            String strId = getFirstMatch(downloadLink.getDownloadURL(), GETID, 1);
             if(strId==null)
                 return true;
             int id=Integer.parseInt(strId);
-            url=downloadLink.getUrlDownloadDecrypted().replaceFirst("filer.net\\/file[0-9]+\\/", "filer.net/folder/");
+            url=downloadLink.getDownloadURL().replaceFirst("filer.net\\/file[0-9]+\\/", "filer.net/folder/");
             url=url.replaceFirst("\\/filename\\/.*","");
             requestInfo = getRequest(new URL(url));
                 // Datei geloescht?
