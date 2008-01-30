@@ -15,13 +15,13 @@ public class GetExplorer {
 	private static Object[] autoGetExplorerCommand() {
 		String OS = System.getProperty("os.name").toLowerCase();
 		if ((OS.indexOf("nt") > -1) || (OS.indexOf("windows") > -1)) {
-			return new Object[] {"Explorer","explorer",new String[] {}};
+			return new Object[] {"Explorer","explorer",new String[] {"%%path%%"}};
 		} 
 		else if (OS.indexOf("mac") >= 0) {
-			return new Object[] {"Open","open",new String[] {}};
+			return new Object[] {"Open","open",new String[] {"'%%path%%'"}};
 		}
 		else {
-			Object[][] programms = new Object[][] {{"nautilus", new String[] {"--browser", "--no-desktop"}},{"konqueror",new String[] {}}};
+			Object[][] programms = new Object[][] {{"nautilus", new String[] {"--browser", "--no-desktop", "%%path%%"}},{"konqueror",new String[] {"%%path%%"}}};
 			try {
 				String[] charset = System.getenv("PATH").split(":");
 				for (int i = 0; i < charset.length; i++) {
@@ -57,6 +57,21 @@ public class GetExplorer {
 			return explorer;
 		}
 
+	}
+	public boolean openExplorer(File path)
+	{
+		getExplorerCommand();
+		if(path.isDirectory() && explorer!=null)
+		{
+			String spath=path.getAbsolutePath();
+        	String[] paramsArray = ((String[]) explorer[2]);
+        	for (int i = 0; i < paramsArray.length; i++) {
+				paramsArray[i]=paramsArray[i].replaceAll("\\%\\%path\\%\\%", spath);
+			}
+            JDUtilities.runCommand((String) explorer[1], paramsArray, null, 0);
+            return true;
+		}
+		return false;
 	}
 
 
