@@ -12,6 +12,7 @@ import java.awt.event.MouseListener;
 import java.io.File;
 import java.util.Collections;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.Vector;
 import java.util.logging.Logger;
 
@@ -32,6 +33,7 @@ import javax.swing.table.TableColumn;
 import jd.event.ControlEvent;
 import jd.event.ControlListener;
 import jd.event.UIEvent;
+import jd.gui.skins.simple.config.GetExplorer;
 import jd.plugins.DownloadLink;
 import jd.plugins.event.PluginEvent;
 import jd.plugins.event.PluginListener;
@@ -413,8 +415,17 @@ public class TabDownloadLinks extends JPanel implements PluginListener, ControlL
         public void actionPerformed(ActionEvent e) {
             if (e.getSource() == openHome) {
                 try {
-                    logger.info("TODO: Win only");
-                    JDUtilities.runCommand("explorer", new String[] { new File(downloadLinks.elementAt(0).getFileOutput()).getParent() }, null, 0);
+                	Object[] explorer = new GetExplorer().getExplorerCommand();
+                	if(explorer!=null)
+                	{
+                	LinkedList<String> params = new LinkedList<String>();
+                	String[] paramsArray = ((String[]) explorer[2]);
+                	for (int i = 0; i < paramsArray.length; i++) {
+						params.add(paramsArray[i]);
+					}
+                	params.add(new File(downloadLinks.elementAt(0).getFileOutput()).getParent());
+                    JDUtilities.runCommand((String) explorer[1], params.toArray(new String[params.size()]), null, 0);
+                	}
                 }
                 catch (Exception ec) {
                 }
