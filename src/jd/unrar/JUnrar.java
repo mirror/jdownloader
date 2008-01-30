@@ -51,18 +51,46 @@ public class JUnrar {
 	private LinkedList<File> unpackedlist;
 
 	private LinkedList<Long> volumess = new LinkedList<Long>();
-
+//	07 - Dope Fiend Blues.mp3 
+//	{73,68,51,3,0,0}
+//	01 - Love Me Tonight.mp3 
+//	{73,68,51,3,0,0}
+//	06 - Do It Again.mp3 
+//	{65533,65533,68,65533,87,0}
+//	02 - Crown of Thorns.mp3 
+//	{73,68,51,3,0,0}
+//	09 - Can't Hide.mp3 
+//	{65533,65533,68,117,65533,0}
+//	11 - Don't Keep Me Hanging On.mp3 
+//	{65533,65533,64,24,93,0}
+//	05 - Got Nothin' Coming.mp3 
+//	{73,68,51,3,0,0}
+//	08 - I'm In Love With My Car.mp3 
+//	{65533,65533,68,117,65533,0}
+//	03 - Like You've Never Done Before.mp3 
+//	{73,68,51,3,0,0}
+//	04 - Lost & Found.mp3 
+//	{65533,65533,68,117,65533,0}
+//	10 - Don't Drag Me Down.mp3 
+//	{65533,65533,68,45,117,0}
 	private static Object[][] filesignatures = {
 			{ "avi", new Integer[][] { { 82, 73, 70, 70 } } },
-			{ "mpg", new Integer[][] { { 0, 0, 1, 186, -1, 0 } } },
-			{ "mpeg", new Integer[][] { { 0, 0, 1, 186, -1, 0 } } },
+			{ "divx", new Integer[][] { { 82, 73, 70, 70 } } },
+			{
+					"mpg",
+					new Integer[][] { { 0, 0, 1, 186, -1, 0 },
+							{ 0, 0, 1, 0, 33, 0 } } },
+			{
+					"mpeg",
+					new Integer[][] { { 0, 0, 1, 186, -1, 0 },
+							{ 0, 0, 1, 0, 33, 0 } } },
 			{ "rar", new Integer[][] { { 82, 97, 114, 33, 26, 7 } } },
 			{ "wmv", new Integer[][] { { 48, 38, -1, 117, -1, 102 } } },
 			{
 					"mp3",
-					new Integer[][] { { 73, 68, 51, 4, 0 },
-							{ 73, 68, 51, 3, 0 },
-							{ 255, 251, 104, -1, 0, -1, },
+					new Integer[][] { { 73, 68, 51, 4, 0 },{ 0, 0, 64, -1, -1, 0 },
+							{ 0, 0, 68, -1, -1, 0 }, { 73, 68, 51, 3, 0, -1 },
+							{ 255, 251, 104, -1, 0, -1 },
 							{ 255, 251, 64, -1, 0, -1 } } },
 			{ "exe", new Integer[][] { { 77, 90, 144, 0, 3, 0 } } },
 			{ "bz2", new Integer[][] { { 66, 90, 104, 54, 49, 65 } } },
@@ -408,18 +436,19 @@ public class JUnrar {
 		}
 		return new String[] { password };
 	}
-	public void makePasswordListUnique()
-	{
+
+	public void makePasswordListUnique() {
 		LinkedList<String> pwList = new LinkedList<String>();
 		Iterator<String> iter = passwordlist.iterator();
 		while (iter.hasNext()) {
 			String string = (String) iter.next();
-			if(!pwList.contains(string))
+			if (!pwList.contains(string))
 				pwList.add(string);
 			else
 				iter.remove();
 		}
 	}
+
 	public void addToPasswordlist(String password) {
 		if (passwordlist == null || passwordlist.size() < 1)
 			loadPasswordlist();
@@ -547,16 +576,17 @@ public class JUnrar {
 	@SuppressWarnings("unchecked")
 	public String[] getProtectedFiles(File file, String pass) {
 
-		String[] params = new String[5];
+		String[] params = new String[6];
 		if (pass == null || pass == "")
 			params[0] = "-p-";
 		else
 			params[0] = "-p" + pass;
 
 		params[1] = "-v";
-		params[2] = "-ierr";
-		params[3] = "v";
-		params[4] = file.getName();
+		params[2] = "-c-";
+		params[3] = "-ierr";
+		params[4] = "v";
+		params[5] = file.getName();
 		Process p = createProcess(unrar, params, file.getParentFile());
 		String str = startInputListenerwithoutprogress(p);
 		if (str.indexOf("Cannot find volume") != -1) {
@@ -726,11 +756,12 @@ public class JUnrar {
 			long time = -System.currentTimeMillis();
 			String unsafe = null;
 			Iterator<String> interator = passwordlist.iterator();
+			String name = z[0].replaceAll("[^0-9a-zA-Z\\\\/\\.]", "?");
 			while (interator.hasNext()) {
-
 				password = (String) interator.next();
 				String prePassword = preparePassword(password);
-				int ch = checkarchiv(file, prePassword, z);
+
+				int ch = checkarchiv(file, prePassword, name);
 				if (ch == 4)
 					unsafe = password;
 				if (ch == 3) {
@@ -742,7 +773,6 @@ public class JUnrar {
 							+ (time + System.currentTimeMillis()) / 1000
 							+ " sec");
 					String str = execprozess(file, prePassword);
-
 					if (str.matches(allOk)) {
 						logger.finest("All OK");
 						removeFromToExtractList(file);
@@ -1075,31 +1105,29 @@ public class JUnrar {
 	 * @param protection
 	 * @return
 	 */
-	private int checkarchiv(File file, String password, String[] protection) {
+	private int checkarchiv(File file, String password, String name) {
 		if (extendPasswordSearch) {
 			// Wenn die Passwortgeschützten Dateien zu groß sind dann wird
 			// versucht anhand von erkennungsmerkmalen
 			// in den Ersten 6 Zeichen der Passwortgeschützten Dateien das
 			// Passwort zu knacken
 			boolean bool = false;
-			for (int g = 0; g < protection.length; g++) {
-				logger.finer("Check Archiv: " + file);
-				Process p = createProcess(unrar, new String[] {
-						"-n" + protection[g], "-p" + password, "-ierr", "p",
-						file.getName() }, file.getParentFile());
-				int st = startExtendetInputListener(p);
-				/*
-				 * siehe startExtendetInputListener wenn der Wert von
-				 * startExtendetInputListener 3 ist wird das Passwort erstmal
-				 * als unsicher eingestuft es wird geschaut ob eine andere
-				 * passwortgeschützte Datei im Archiv mit dem Passwort auch 3
-				 * annimmt wenn ja wird das Passwort als sicher eingestuft
-				 */
-				if (st > 3 || (st == 3 && bool)) {
-					return 1;
-				} else if (st == 3) {
-					bool = true;
-				}
+			logger.finer("Check Archiv: " + file);
+			Process p = createProcess(unrar, new String[] { "-n" + name,
+					"-p" + password, "-c-", "-ierr", "p", file.getName() },
+					file.getParentFile());
+			int st = startExtendetInputListener(p);
+			/*
+			 * siehe startExtendetInputListener wenn der Wert von
+			 * startExtendetInputListener 3 ist wird das Passwort erstmal als
+			 * unsicher eingestuft es wird geschaut ob eine andere
+			 * passwortgeschützte Datei im Archiv mit dem Passwort auch 3
+			 * annimmt wenn ja wird das Passwort als sicher eingestuft
+			 */
+			if (st > 3 || (st == 3 && bool)) {
+				return 1;
+			} else if (st == 3) {
+				bool = true;
 			}
 			if (bool)
 				return 4;
@@ -1115,7 +1143,7 @@ public class JUnrar {
 			try {
 				logger.finer("Check Archiv: " + file);
 				Process p = createProcess(unrar, new String[] {
-						"-p" + password, "-n" + protection[0], "-ierr", "t",
+						"-p" + password, "-n" + name, "-c-", "-ierr", "t",
 						file.getName() }, file.getParentFile());
 				String str = startInputListenerwithoutprogress(p);
 				if (str.indexOf(" (password incorrect ?)") != -1) {
@@ -1156,6 +1184,8 @@ public class JUnrar {
 			} else {
 				params.add("-o-");
 			}
+			params.add("-c-");
+
 			params.add("-ierr");
 
 			params.add("x");
