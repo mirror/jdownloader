@@ -173,7 +173,7 @@ public class RadioBlogClub extends PluginForHost {
 
     private URL prepare(DownloadLink downloadLink) throws MalformedURLException {
 
-        return new URL(downloadLink.getUrlDownloadDecrypted() + "&k=657ecb3231ac0b275497d4d6f00b61a1");
+        return new URL(downloadLink.getDownloadURL() + "&k=657ecb3231ac0b275497d4d6f00b61a1");
 
     }
 

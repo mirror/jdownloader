@@ -70,7 +70,7 @@ public class Esnips extends PluginForHost {
                     URL url;
                     String fileUrl = null;
                     try {
-                        url = new URL(downloadLink.getUrlDownloadDecrypted());
+                        url = new URL(downloadLink.getDownloadURL());
                         requestInfo = getRequest(url, null, null, true);
                         fileUrl = getSimpleMatch(requestInfo.getHtmlCode(), SWF_PLAYER_TO_FILE, 0);
                       //  String fileName = getSimpleMatch(requestInfo.getHtmlCode(), SWF_PLAYER_TO_FILE, 1);
@@ -170,7 +170,7 @@ public class Esnips extends PluginForHost {
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) {
         try {
-            URL url = new URL(downloadLink.getUrlDownloadDecrypted());
+            URL url = new URL(downloadLink.getDownloadURL());
             requestInfo = getRequest(url, null, null, true);
             String fileUrl = getSimpleMatch(requestInfo.getHtmlCode(), SWF_PLAYER_TO_FILE, 0);
             //String fileName = getSimpleMatch(requestInfo.getHtmlCode(), SWF_PLAYER_TO_FILE, 1);
