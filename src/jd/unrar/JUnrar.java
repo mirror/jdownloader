@@ -51,28 +51,6 @@ public class JUnrar {
 	private LinkedList<File> unpackedlist;
 
 	private LinkedList<Long> volumess = new LinkedList<Long>();
-//	07 - Dope Fiend Blues.mp3 
-//	{73,68,51,3,0,0}
-//	01 - Love Me Tonight.mp3 
-//	{73,68,51,3,0,0}
-//	06 - Do It Again.mp3 
-//	{65533,65533,68,65533,87,0}
-//	02 - Crown of Thorns.mp3 
-//	{73,68,51,3,0,0}
-//	09 - Can't Hide.mp3 
-//	{65533,65533,68,117,65533,0}
-//	11 - Don't Keep Me Hanging On.mp3 
-//	{65533,65533,64,24,93,0}
-//	05 - Got Nothin' Coming.mp3 
-//	{73,68,51,3,0,0}
-//	08 - I'm In Love With My Car.mp3 
-//	{65533,65533,68,117,65533,0}
-//	03 - Like You've Never Done Before.mp3 
-//	{73,68,51,3,0,0}
-//	04 - Lost & Found.mp3 
-//	{65533,65533,68,117,65533,0}
-//	10 - Don't Drag Me Down.mp3 
-//	{65533,65533,68,45,117,0}
 	private static Object[][] filesignatures = {
 			{ "avi", new Integer[][] { { 82, 73, 70, 70 } } },
 			{ "divx", new Integer[][] { { 82, 73, 70, 70 } } },
