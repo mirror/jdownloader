@@ -52,4 +52,5 @@ jd.plugins.decrypt.RsLayerCom
 jd.plugins.decrypt.FastDomainNet
 jd.plugins.decrypt.GappingOrg
 jd.plugins.decrypt.DDLMusicOrg
+jd.plugins.decrypt.URLCash
 #jd.plugins.decrypt.RapidsafeDe
