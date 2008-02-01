@@ -70,7 +70,7 @@ public ConfigPanelDownload(Configuration configuration, UIInterface uiinterface)
         addGUIConfigEntry(ce);
         ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME), SimpleGUI.PARAM_START_DOWNLOADS_AFTER_START, JDLocale.L("gui.config.download.startDownloadsOnStartUp", "Download beim Programmstart beginnen")).setDefaultValue(false));
         addGUIConfigEntry(ce);
- 
+  
         
         add(panel, BorderLayout.NORTH);
     }

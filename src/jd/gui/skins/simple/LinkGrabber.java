@@ -84,6 +84,8 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
 
     public static final String   PROPERTY_AUTOPACKAGE_LIMIT = "AUTOPACKAGE_LIMIT";
 
+    public static final String PROPERTY_ONLINE_CHECK = "ONLINE_CHECK";
+
     private JTabbedPane          tabbedPane;
 
     protected static int         REL                        = GridBagConstraints.RELATIVE;
@@ -305,11 +307,18 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
                 while (waitingLinkList.size() > 0) {
 
                     link = waitingLinkList.remove(0);
-
+if(!guiConfig.getBooleanProperty(PROPERTY_ONLINE_CHECK, false)){
+    attachLinkToPackage(link);
+    try {
+        Thread.sleep(50);
+    }
+    catch (InterruptedException e) { }
+}else{
                     if (link.isAvailable() || ((PluginForHost) link.getPlugin()).isListOffline()) {
 
                         attachLinkToPackage(link);
                     }
+}
                     progress.setValue(waitingLinkList.size());
 
                 }
@@ -505,7 +514,11 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
     }
 
     protected String getInfoString(DownloadLink link) {
-        return link.getStatusText().length() == 0 ? "[online]" + link.getFileInfomationString() : link.getFileInfomationString()+" "+link.getStatusText();
+        if(!link.isAvailabilityChecked()){
+            return link.getStatusText().length() == 0 ? JDLocale.L("gui.linkgrabber.lbl.notonlinechecked", "[Verf. nicht überprüft] ") + link.getFileInfomationString() : link.getFileInfomationString()+" "+link.getStatusText();
+              
+        }
+        return link.getStatusText().length() == 0 ? JDLocale.L("gui.linkgrabber.lbl.isonline", "[online] ") + link.getFileInfomationString() : link.getFileInfomationString()+" "+link.getStatusText();
     }
 
     public void actionPerformed(ActionEvent e) {
@@ -1248,7 +1261,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
                     case 2:
                         return linkList.get(rowIndex).getName();
                     case 3:
-                        return JDUtilities.formatBytesToMB(linkList.get(rowIndex).getDownloadMax());
+                        return linkList.get(rowIndex).isAvailabilityChecked()?JDUtilities.formatBytesToMB(linkList.get(rowIndex).getDownloadMax()):"*";
                     case 4:
                         return getInfoString(linkList.get(rowIndex));
 
@@ -1362,7 +1375,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
                     if (dLink.isAvailabilityChecked() && !dLink.isAvailable()) {
                         c.setBackground(COLOR_ERROR_OFFLINE.darker());
                     }
-                    else {
+                    else if(dLink.isAvailabilityChecked()){
                         c.setBackground(COLOR_DONE.darker());
                     }
                     c.setForeground(Color.WHITE);
@@ -1373,7 +1386,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
                     if (dLink.isAvailabilityChecked() && !dLink.isAvailable()) {
                         c.setBackground(COLOR_ERROR_OFFLINE);
                     }
-                    else {
+                    else if(dLink.isAvailabilityChecked()){
                         c.setBackground(COLOR_DONE);
                     }
                     c.setForeground(Color.BLACK);

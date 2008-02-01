@@ -1158,13 +1158,17 @@ public abstract class Plugin {
 				downloadLink.setStatus(DownloadLink.STATUS_DOWNLOAD_INCOMPLETE);
 				firePluginEvent(new PluginEvent(this,
 						PluginEvent.PLUGIN_PROGRESS_FINISH, downloadLink));
+			    source.close();
+	            dest.close();
+	            fos.close();
 				return false;
 			}
+			 source.close();
+	            dest.close();
+	            fos.close();
 			end = System.currentTimeMillis();
 			time = end - start;
-			source.close();
-			dest.close();
-			fos.close();
+		
 			if (new File(downloadLink.getFileOutput()).exists()) {
 				new File(downloadLink.getFileOutput()).delete();
 			}
