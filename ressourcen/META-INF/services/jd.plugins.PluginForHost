@@ -12,4 +12,5 @@ jd.plugins.host.Filer
 jd.plugins.host.ImageFap
 jd.plugins.host.ShareOnlineBiz
 jd.plugins.host.DatenKlo
+jd.plugins.host.YourFilesBiz
 #jd.plugins.host.RadioBlogClub
