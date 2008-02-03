@@ -27,6 +27,7 @@ import java.util.Calendar;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
@@ -715,7 +716,7 @@ public abstract class Plugin {
 		HttpURLConnection httpConnection = (HttpURLConnection) link
 				.openConnection();
 		httpConnection.setReadTimeout(getReadTimeoutFromConfiguration());
-		httpConnection.setReadTimeout(getConnectTimeoutFromConfiguration());
+		httpConnection.setConnectTimeout(getConnectTimeoutFromConfiguration());
 		httpConnection.setInstanceFollowRedirects(redirect);
 		// wenn referrer nicht gesetzt wurde nimmt er den host als referer
 		if (referrer != null)
@@ -758,7 +759,7 @@ public abstract class Plugin {
 		HttpURLConnection httpConnection = (HttpURLConnection) link
 				.openConnection();
 		httpConnection.setReadTimeout(getReadTimeoutFromConfiguration());
-		httpConnection.setReadTimeout(getConnectTimeoutFromConfiguration());
+		httpConnection.setConnectTimeout(getConnectTimeoutFromConfiguration());
 		httpConnection.setInstanceFollowRedirects(redirect);
 		// wenn referrer nicht gesetzt wurde nimmt er den host als referer
 		if (referrer != null)
@@ -811,7 +812,7 @@ public abstract class Plugin {
 		HttpURLConnection httpConnection = (HttpURLConnection) link
 				.openConnection();
 		httpConnection.setReadTimeout(getReadTimeoutFromConfiguration());
-		httpConnection.setReadTimeout(getConnectTimeoutFromConfiguration());
+		httpConnection.setConnectTimeout(getConnectTimeoutFromConfiguration());
 		httpConnection.setInstanceFollowRedirects(redirect);
 		// wenn referrer nicht gesetzt wurde nimmt er den host als referer
 		if (referrer != null)
@@ -896,7 +897,7 @@ public abstract class Plugin {
 		HttpURLConnection httpConnection = (HttpURLConnection) string
 				.openConnection();
 		httpConnection.setReadTimeout(getReadTimeoutFromConfiguration());
-		httpConnection.setReadTimeout(getConnectTimeoutFromConfiguration());
+		httpConnection.setConnectTimeout(getConnectTimeoutFromConfiguration());
 		httpConnection.setInstanceFollowRedirects(redirect);
 		if (referrer != null)
 			httpConnection.setRequestProperty("Referer", referrer);
@@ -964,7 +965,7 @@ public abstract class Plugin {
 		HttpURLConnection httpConnection = (HttpURLConnection) link
 				.openConnection();
 		httpConnection.setReadTimeout(getReadTimeoutFromConfiguration());
-		httpConnection.setReadTimeout(getConnectTimeoutFromConfiguration());
+		httpConnection.setConnectTimeout(getConnectTimeoutFromConfiguration());
 		httpConnection.setInstanceFollowRedirects(redirect);
 		if (referrer != null)
 			httpConnection.setRequestProperty("Referer", referrer);
@@ -1092,7 +1093,7 @@ public abstract class Plugin {
 			FileOutputStream fos = new FileOutputStream(fileOutput);
 			// NIO Channels setzen:
 			urlConnection.setReadTimeout(getReadTimeoutFromConfiguration());
-			urlConnection.setReadTimeout(getConnectTimeoutFromConfiguration());
+			urlConnection.setConnectTimeout(getConnectTimeoutFromConfiguration());
 			ReadableByteChannel source = Channels.newChannel(urlConnection
 					.getInputStream());
 			WritableByteChannel dest = fos.getChannel();
@@ -1230,7 +1231,7 @@ public abstract class Plugin {
 			FileOutputStream fos = new FileOutputStream(fileOutput, true);
 			// NIO Channels setzen:
 			urlConnection.setReadTimeout(getReadTimeoutFromConfiguration());
-			urlConnection.setReadTimeout(getConnectTimeoutFromConfiguration());
+			urlConnection.setConnectTimeout(getConnectTimeoutFromConfiguration());
 			ReadableByteChannel source = Channels.newChannel(urlConnection
 					.getInputStream());
 			WritableByteChannel dest = fos.getChannel();
@@ -1778,13 +1779,19 @@ public abstract class Plugin {
 	 * System.out.println(dd[i]); }
 	 */
 	public static String[] getHttpLinks(String data, String url) {
+		String[] protocols = new String[] {"h.{2,3}","https","ccf", "dlc", "ftp" };
+		String protocolPattern = "("; 
+		for (int i = 0; i < protocols.length; i++) {
+			protocolPattern+=protocols[i]+((i+1==protocols.length)? ")":"|");
+		}
+
 		String[] patternStr = { "(?s)<[ ]?base[^>]*?href=['\"]([^>]*?)['\"]",
 				"(?s)<[ ]?base[^>]*?href=([^'\"][^\\s]*)",
 				"(?s)<[ ]?a[^>]*?href=['\"]([^>]*?)['\"]",
 				"(?s)<[ ]?a[^>]*?href=([^'\"][^\\s]*)",
 				"(?s)<[ ]?form[^>]*?action=['\"]([^>]*?)['\"]",
 				"(?s)<[ ]?form[^>]*?action=([^'\"][^\\s]*)",
-				"www[^\\s>'\"\\)]*", "h.{2,3}://[^\\s>'\"\\)]*" };
+				"www[^\\s>'\"\\)]*", protocolPattern+"://[^\\s>'\"\\)]*" };
 		url = url == null ? "" : url;
 		Matcher m;
 		String link;
@@ -1795,7 +1802,7 @@ public abstract class Plugin {
 		}
 		String basename = "";
 		String host = "";
-		ArrayList<String> set = new ArrayList<String>();
+		LinkedList<String> set = new LinkedList<String>();
 		for (int i = 0; i < 2; i++) {
 			m = pattern[i].matcher(data);
 			if (m.find()) {
@@ -1822,10 +1829,14 @@ public abstract class Plugin {
 			m = pattern[i].matcher(data);
 			while (m.find()) {
 				link = JDUtilities.htmlDecode(m.group(1));
-				link = link.replaceAll("http://.*http://", "http://");
+				link = link.replaceAll(protocols[0]+"://", "http://");
+				link = link.replaceAll("https?://.*http://", "http://");
+				for (int j = 1; j < protocols.length; j++) {
+					link = link.replaceAll("https?://.*"+protocols[j]+"://", protocols[j]+"://");
+				}
+
 				if ((link.length() > 6)
-						&& (link.substring(0, 7).equals("http://")))
-					;
+						&& (link.substring(0, 7).equals("http://")));
 				else if (link.length() > 0) {
 					if (link.length() > 2 && link.substring(0, 3).equals("www")) {
 						link = "http://" + link;
@@ -1847,8 +1858,12 @@ public abstract class Plugin {
 		m = pattern[6].matcher(data);
 		while (m.find()) {
 			link = "http://" + m.group();
-			link = JDUtilities.htmlDecode(link).replaceFirst(
-					"^www\\..*http://", "http://");
+			link = JDUtilities.htmlDecode(link);
+			link = link.replaceAll(protocols[0]+"://", "http://");
+			link = link.replaceFirst("^www\\..*"+protocols[0]+"://", "http://");
+			for (int j = 1; j < protocols.length; j++) {
+				link = link.replaceFirst("^www\\..*"+protocols[j]+"://", protocols[j]+"://");
+			}
 			if (!set.contains(link)) {
 				set.add(link);
 			}
@@ -1856,8 +1871,14 @@ public abstract class Plugin {
 		m = pattern[7].matcher(data);
 		while (m.find()) {
 			link = m.group();
-			link = JDUtilities.htmlDecode(link).replaceFirst("h.*?://",
-					"http://").replaceFirst("http://.*http://", "http://");
+			link = JDUtilities.htmlDecode(link);
+			link = link.replaceAll(protocols[0]+"://", "http://");
+			link = link.replaceAll("https?://.*http://", "http://");
+			for (int j = 1; j < protocols.length; j++) {
+				link = link.replaceAll("https?://.*"+protocols[j]+"://", protocols[j]+"://");
+			}
+			//.replaceFirst("h.*?://",
+			//		"http://").replaceFirst("http://.*http://", "http://");
 			if (!set.contains(link)) {
 				set.add(link);
 			}

@@ -55,3 +55,4 @@ jd.plugins.decrypt.DDLMusicOrg
 jd.plugins.decrypt.URLCash
 #jd.plugins.decrypt.RapidsafeDe
 jd.plugins.decrypt.DatenschleuderCc
+jd.plugins.decrypt.signed
