@@ -537,7 +537,7 @@ public class DownloadLink implements Serializable,Comparable<DownloadLink> {
             long remainingBytes = this.getDownloadMax() - this.getDownloadCurrent();
             long eta = remainingBytes / speed;
 
-            return "ETA " + JDUtilities.formatSeconds((int) eta) + " @ " + (speed / 1000) + "kb/s.";
+            return "ETA " + JDUtilities.formatSeconds((int) eta) + " @ " + (speed / 1024) + "kb/s.";
         }
 
         if (!this.isEnabled()) {

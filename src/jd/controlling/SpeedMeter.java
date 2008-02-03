@@ -11,7 +11,8 @@ public class SpeedMeter {
 	private int lastSpeed = 0;
 	private long lastAccess = 0;
 	private int c=0;
-	private long[] speed = new long[10];
+	private static final int capacity = 10;
+	private long[] speed = new long[capacity];
 	/**
 	 * KOnstruktor dem die Zeit übergeben werden kann über die der durchschnitt
 	 * eführt wird
@@ -19,6 +20,9 @@ public class SpeedMeter {
 	 * @param average
 	 */
 	public SpeedMeter() {
+		for (int i = 0; i < capacity; i++) {
+			speed[i]=-1;
+		}
 	}
 	/**
 	 * Fügt einen weiteren wert hinzu
@@ -26,9 +30,9 @@ public class SpeedMeter {
 	 * @param value
 	 */
 	public void addValue(long value, long difftime) {
-		if(c==10)
+		if(c==capacity)
 			c=0;
-		speed[c]=value*1000/difftime;
+		speed[c++]=value*1000/difftime;
 	}
 
 	/**
@@ -39,15 +43,16 @@ public class SpeedMeter {
 
 	public int getSpeed() {
 		//doppelzugriffe sind unnötig
-		if(lastSpeed!=0 && lastAccess+System.currentTimeMillis()<100)
+		if(lastAccess+System.currentTimeMillis()<100)
 			return lastSpeed;
-			
+	
 		lastAccess=-System.currentTimeMillis();
 		lastSpeed=0;
 		int i = 0;
-		for (i=0; i < speed.length; i++) {
-			if(speed[i]==0)break;
-			lastSpeed+=speed[i];
+		while(i<capacity)
+		{
+			if(speed[i]==-1)break;
+			lastSpeed+=speed[i++];
 		}
 		if(i!=0)
 		lastSpeed/=i;
