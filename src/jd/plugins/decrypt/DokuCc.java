@@ -2,12 +2,12 @@ package jd.plugins.decrypt; import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.util.Vector;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginStep;
+import jd.plugins.Regexp;
 import jd.plugins.RequestInfo;
 
 public class DokuCc extends PluginForDecrypt {
@@ -31,31 +31,15 @@ public class DokuCc extends PluginForDecrypt {
 	    		try {
 	                URL url = new URL(parameter);
 	                RequestInfo reqinfo = getRequest(url);
-	                String html = reqinfo.getHtmlCode();
-	                
-	                //the patterns that are needed to find the links
-	    			Pattern patternDownload = Pattern.compile(".*<strong>Download.*");
-	    			Pattern patternMirror = Pattern.compile(".*<strong>Mirror.*");
-	    			Pattern patternLink = Pattern.compile( "http://.{0,5}lix\\.in/[a-zA-Z0-9]{6,10}", Pattern.CASE_INSENSITIVE );
-	    			
-	    			//split the html into single lines and process them
-	                String [] lines = html.split("\\n");
-		        	Lixin lixin = new Lixin();
-		        	
-	                for (String line : lines) {
-	    				Matcher matcherDownload = patternDownload.matcher(line);
-	    				Matcher matcherMirror = patternMirror.matcher(line);
-	    				
-	    				
-	    				if(matcherDownload.matches() || matcherMirror.matches()){
-	    	    			Vector<String> encryptedLinks = new Vector<String>();
-	    	    			
-	    					for( Matcher m = patternLink.matcher(line); m.find(); ){
-	    						encryptedLinks.add(m.group());
-	    					}
-	    		        	decryptedLinks.addAll( lixin.decryptLinks(encryptedLinks) );
-	    				}
-	    			}
+	    			String[] links = new Regexp(reqinfo.getHtmlCode(), "<p><strong>Download(.*?)</p>").getMatches(1);
+	    			for (int i = 0; i < links.length; i++) {
+	    				String[] dls = getHttpLinks(links[i], parameter);
+	    				for (int j = 0; j < dls.length; j++) {
+							decryptedLinks.add(createDownloadlink(dls[j]));
+						}
+
+					}
+		 
 	                step.setParameter(decryptedLinks);
 	            }
 	            catch (IOException e) {
