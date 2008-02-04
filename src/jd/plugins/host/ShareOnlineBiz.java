@@ -311,10 +311,12 @@ public class ShareOnlineBiz extends PluginForHost {
 					ctime = Integer.parseInt(getFirstMatch(requestInfo
 							.getHtmlCode(), countDown, 1));
 				}
-				dlink = getFirstMatch(requestInfo.getHtmlCode(), downloadl, 1);
+				System.out.println(requestInfo.getHtmlCode());
+				/*dlink = getFirstMatch(requestInfo.getHtmlCode(), downloadl, 1);
 				if(!dlink.matches("http://.*"))
-					dlink = "http://" + url.getHost() + "/"+dlink;
-				logger.info(dlink);
+					dlink = "http://" + url.getHost() + "/"+dlink;*/
+				dlink = getBetween(requestInfo.getHtmlCode(), "document.location=\"", "\"");
+				//logger.info(dlink);
 				return step;
 
 			case PluginStep.STEP_PENDING:
