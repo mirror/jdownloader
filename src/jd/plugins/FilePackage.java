@@ -116,6 +116,7 @@ public class FilePackage extends Property implements Serializable {
         return comment != null && comment.length() > 0;
     }
     public String getName() {
+        if(name==null)return "";
         return name;
     }
     public void setName(String name) {

@@ -3,6 +3,7 @@ package jd.controlling;
 import java.io.File;
 import java.util.logging.Logger;
 
+import jd.config.Configuration;
 import jd.controlling.interaction.Interaction;
 import jd.controlling.interaction.Unrar;
 import jd.event.ControlEvent;
@@ -263,6 +264,10 @@ public class SingleDownloadController extends ControlMulticaster {
             fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_PLUGIN_HOST_INACTIVE, plugin));
             fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SINGLE_DOWNLOAD_FINISHED, downloadLink));
             Interaction.handleInteraction((Interaction.INTERACTION_SINGLE_DOWNLOAD_FINISHED), downloadLink);
+            if(JDUtilities.getController().isContainerFile(new File(downloadLink.getFileOutput()))){
+                Interaction.handleInteraction((Interaction.INTERACTION_CONTAINER_DOWNLOAD), downloadLink);  
+                if(JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_RELOADCONTAINER, true))controller.loadContainerFile(new File(downloadLink.getFileOutput()));
+            }
             if ( JDUtilities.getConfiguration().getBooleanProperty(Unrar.PROPERTY_ENABLED, true))
                 controller.getUnrarModule().interact(downloadLink);
             

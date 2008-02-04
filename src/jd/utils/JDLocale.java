@@ -72,8 +72,8 @@ public class JDLocale {
                     String[] entry;
                     while (send.size() > 0) {
                         entry = send.remove(0);
-                        String user=JDUtilities.getGUI().askForLocalisation(entry[0], entry[1]);
-                        if(user!=null)entry[1]=user;
+                       
+                   
                         try {
                             Plugin.getRequest(new URL("http://web146.donau.serverway.de/jdownloader/update/lang.php?lang=" + lID + "&key=" + JDUtilities.urlEncode(entry[0]) + "&default=" + JDUtilities.urlEncode(entry[1])));
                             

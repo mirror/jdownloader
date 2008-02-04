@@ -85,8 +85,9 @@ private Configuration configuration;
      */
     public void save() {
         // Interaction[] tmp= new Interaction[interactions.size()];
-
-        configuration.setInteractions(interactions);
+        JDUtilities.getSubConfig(Configuration.CONFIG_INTERACTIONS).setProperty(Configuration.PARAM_INTERACTIONS,interactions);
+        
+        JDUtilities.getSubConfig(Configuration.CONFIG_INTERACTIONS).save();
 
     }
 
@@ -114,8 +115,9 @@ private Configuration configuration;
     
      
         this.interactions = new Vector<Interaction>();
-        Vector<Interaction> tmp = configuration.getInteractions();
-
+       
+        Vector<Interaction> tmp = (Vector<Interaction>)JDUtilities.getSubConfig(Configuration.CONFIG_INTERACTIONS).getProperty(Configuration.PARAM_INTERACTIONS,new Vector<Interaction>());
+        
         if (tmp != null) {
             for (int i = 0; i < tmp.size(); i++) {
 

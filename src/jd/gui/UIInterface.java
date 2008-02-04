@@ -103,5 +103,5 @@ public interface UIInterface {
      */
     public void onJDInitComplete();
     
-    public String askForLocalisation(String key, String def);
+  
 }

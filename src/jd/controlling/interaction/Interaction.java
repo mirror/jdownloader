@@ -6,6 +6,7 @@ import java.util.Vector;
 import java.util.logging.Logger;
 
 import jd.config.ConfigContainer;
+import jd.config.Configuration;
 import jd.config.Property;
 import jd.controlling.JDController;
 import jd.event.ControlEvent;
@@ -103,7 +104,8 @@ public abstract class Interaction extends Property implements Serializable {
      * Letztes Package file geladen
      */
     public static final InteractionTrigger    INTERACTION_DOWNLOAD_PACKAGE_FINISHED = new InteractionTrigger(12, JDLocale.L("interaction.trigger.package_finished","Paket fertig"), JDLocale.L("interaction.trigger.package_finished.desc","Wird aufgerufen wenn ein Paket fertig geladen wurde"));
-    public static final InteractionTrigger INTERACTION_BEFORE_DOWNLOAD = new InteractionTrigger(13, JDLocale.L("interaction.trigger.before_download","Vor einem Download"), JDLocale.L("interaction.trigger.before_download.desc","Wird aufgerufen bevor ein neuer Download gestartet wird"));;                            ;
+    public static final InteractionTrigger INTERACTION_BEFORE_DOWNLOAD = new InteractionTrigger(13, JDLocale.L("interaction.trigger.before_download","Vor einem Download"), JDLocale.L("interaction.trigger.before_download.desc","Wird aufgerufen bevor ein neuer Download gestartet wird"));
+   
     /**
      * Zeigt den Programmstart an
      */
@@ -120,7 +122,7 @@ public abstract class Interaction extends Property implements Serializable {
     
     public static InteractionTrigger          INTERACTION_AFTER_DOWNLOAD_AND_INTERACTIONS     = new InteractionTrigger(15, JDLocale.L("interaction.trigger.downloads_and_interactions_finished","Downloads & Interactionen abgeschlossen"), JDLocale.L("interaction.trigger.downloads_and_interactions_finished.desc","Wird aufgerufen wenn alle Downloads und alle Interactionen beendet sind."));
     
-
+    public static final InteractionTrigger INTERACTION_CONTAINER_DOWNLOAD = new InteractionTrigger(16, JDLocale.L("interaction.trigger.container_download","Linkcontainer geladen"), JDLocale.L("interaction.trigger.download_download.desc","Wird aufgerufen wenn ein LinkContainer(DLC,RSDF,CCF,...) geladen wurde"));
 
     // /**
 // * Nach einem IP wechsel
@@ -289,7 +291,7 @@ public abstract class Interaction extends Property implements Serializable {
     public static boolean handleInteraction(InteractionTrigger interactionevent, Object param) {
         boolean ret = true;
         logger.finer("Interaction start: Trigger: "+interactionevent.getName());
-        Vector<Interaction> interactions = JDUtilities.getConfiguration().getInteractions();
+        Vector<Interaction> interactions = (Vector<Interaction>)JDUtilities.getSubConfig(Configuration.CONFIG_INTERACTIONS).getProperty(Configuration.PARAM_INTERACTIONS,new Vector<Interaction>());
         int interacts = 0;
         for (int i = 0; i < interactions.size(); i++) {
             Interaction interaction = interactions.get(i);
@@ -328,7 +330,8 @@ public abstract class Interaction extends Property implements Serializable {
      *         falsch
      */
     public static boolean handleInteraction(InteractionTrigger interactionEvent, Object param, int id) {
-        Vector<Interaction> interactions = JDUtilities.getConfiguration().getInteractions();
+        Vector<Interaction> interactions = (Vector<Interaction>)JDUtilities.getSubConfig(Configuration.CONFIG_INTERACTIONS).getProperty(Configuration.PARAM_INTERACTIONS,new Vector<Interaction>());
+        
         for (int i = 0; i < interactions.size(); i++) {
             Interaction interaction = interactions.get(i);
             if (interaction == null || interaction.getTrigger() == null || interactionEvent == null) continue;
@@ -356,7 +359,9 @@ public abstract class Interaction extends Property implements Serializable {
      * @return Alle Interactionen zum Trigger zurück
      */
     public static Interaction[] getInteractions(InteractionTrigger trigger) {
-        Vector<Interaction> interactions = JDUtilities.getConfiguration().getInteractions();
+  
+        Vector<Interaction> interactions = (Vector<Interaction>)JDUtilities.getSubConfig(Configuration.CONFIG_INTERACTIONS).getProperty(Configuration.PARAM_INTERACTIONS,new Vector<Interaction>());
+        
         Vector<Interaction> ret = new Vector<Interaction>();
         for (int i = 0; i < interactions.size(); i++) {
             if (interactions.get(i).getTrigger().getID() == trigger.getID()) {
@@ -396,7 +401,7 @@ public abstract class Interaction extends Property implements Serializable {
      * @return Liste mit allen Interactionen
      */
     public static Interaction[] getInteractionList() {
-        return new Interaction[] { new ExternExecute(), new JDExit(), new ResetLink()};
+        return new Interaction[] { new ExternExecute(), new JDExit(), new ResetLink(), new DLCConverter()};
     }
     /**
      * Da die Knfigurationswünsche nicht gespeichert werden, muss der

@@ -14,8 +14,11 @@ import jd.utils.JDUtilities;
  */
 
 public abstract class PluginForContainer extends PluginForDecrypt {
+    private static final int STATUS_NOTEXTRACTED = 0;
+    private static final int STATUS_ERROR_EXTRACTING =1;
+    private static final int STATUS_SUCCESS = 2;
     protected String               md5;
-
+    private int status=STATUS_NOTEXTRACTED;
     protected Vector<String>       downloadLinksURL;
     private static HashMap<String,PluginForContainer> plugins= new HashMap<String,PluginForContainer>();
     protected Vector<DownloadLink> containedLinks = new Vector<DownloadLink>();
@@ -32,6 +35,7 @@ public abstract class PluginForContainer extends PluginForDecrypt {
      */
 
     public String extractDownloadURL(DownloadLink downloadLink) {
+        if(downloadLinksURL==null || downloadLinksURL.size()<=downloadLink.getContainerIndex())return null;
         return downloadLinksURL.get(downloadLink.getContainerIndex());
     }
 
@@ -54,6 +58,10 @@ public abstract class PluginForContainer extends PluginForDecrypt {
      */
     public PluginStep doStep(PluginStep step, String parameter) {
         String file = (String) parameter;
+        if(status==this.STATUS_ERROR_EXTRACTING){
+            logger.severe("Expired JD Version. Could not extract links");
+            return step;
+        }
        if(file==null){
            logger.severe("Containerfile == null");
            return step;

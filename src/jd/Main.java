@@ -102,11 +102,19 @@ logger.info(System.getProperty("java.class.path"));
         window.setSize(450, 100);
         window.setLocationRelativeTo(null);
         if(JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).getBooleanProperty(SimpleGUI.PARAM_SHOW_SPLASH, true)){
-        window.setVisible(true);
+       window.setVisible(true);
         }
      
         init.loadConfiguration();
-
+        /*
+         * Übergangsfix. Die Interactiosn wurden in eine subconfig verlegt. dieser teil kopiert bestehende events in die neue configfile       
+         */
+  
+        if(JDUtilities.getConfiguration().getInteractions().size()>0&& JDUtilities.getSubConfig(Configuration.CONFIG_INTERACTIONS).getProperty(Configuration.PARAM_INTERACTIONS,null)==null){
+            JDUtilities.getSubConfig(Configuration.CONFIG_INTERACTIONS).setProperty(Configuration.PARAM_INTERACTIONS,JDUtilities.getConfiguration().getInteractions());
+            JDUtilities.getConfiguration().setInteractions(new Vector<Interaction>());
+            JDUtilities.saveConfig();
+        }
         final JDController controller = init.initController();
         if (init.installerWasVisible()) {
             init.doWebupdate(JDUtilities.getConfiguration().getIntegerProperty(Configuration.CID, -1),true);
@@ -128,25 +136,10 @@ logger.info(System.getProperty("java.class.path"));
         }
         controller.setInitStatus(JDController.INIT_STATUS_COMPLETE);
 
-        /*
-         * Das ist ein kurzeitiger Übergangsfix. der teil löscht Interactionen
-         * aus der confog die nicht emhr benötigt werden
-         */
-        Vector<Interaction> interactions = JDUtilities.getConfiguration().getInteractions();
+       
 
-        int s = interactions.size();
-        for (int i = interactions.size() - 1; i >= 0; i--) {
-            if (interactions.get(i) instanceof ResetLink || interactions.get(i) instanceof JDExit || interactions.get(i) instanceof ExternExecute) {
-
-            }
-            else {
-                interactions.remove(i);
-            }
-        }
-        if (interactions.size() < s) {
-            JDUtilities.getConfiguration().setInteractions(interactions);
-            JDUtilities.saveConfig();
-        }
+             
+      
 
         window.dispose();
         controller.getUiInterface().onJDInitComplete();

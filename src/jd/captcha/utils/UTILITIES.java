@@ -1484,47 +1484,8 @@ public class UTILITIES {
 
     }
 
-    /**
-     * @return the rEAD_TIMEOUT
-     */
-    public static int getREAD_TIMEOUT() {
-        return READ_TIMEOUT;
-    }
 
-    /**
-     * @param read_timeout the rEAD_TIMEOUT to set
-     */
-    public static void setREAD_TIMEOUT(int read_timeout) {
-        READ_TIMEOUT = read_timeout;
-    }
 
-    /**
-     * @return the rEQUEST_TIMEOUT
-     */
-    public static int getREQUEST_TIMEOUT() {
-        return REQUEST_TIMEOUT;
-    }
-
-    /**
-     * @param request_timeout the rEQUEST_TIMEOUT to set
-     */
-    public static void setREQUEST_TIMEOUT(int request_timeout) {
-        REQUEST_TIMEOUT = request_timeout;
-    }
-
-    /**
-     * @return the uSER_AGENT
-     */
-    public static String getUSER_AGENT() {
-        return USER_AGENT;
-    }
-
-    /**
-     * @param user_agent the uSER_AGENT to set
-     */
-    public static void setUSER_AGENT(String user_agent) {
-        USER_AGENT = user_agent;
-    }
 
     public static int getPercent(int a, int b) {
         return (a * 100) / b;

@@ -216,7 +216,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
 
     public static final String      PARAM_PLAF                        = "PLAF";
 
-    public static final String      PARAM_LOCAL_HELP                  = "LOCAL_HELP";
+
 
     public static final String PARAM_SHOW_SPLASH = "SHOW_SPLASH";
 
@@ -1248,16 +1248,6 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
 
     }
 
-    public String askForLocalisation(String key, String def) {
-        if (guiConfig.getBooleanProperty(PARAM_LOCAL_HELP, false)) {
-            String msg = TextAreaDialogWithHtmlMsg.showDialog(getFrame(),JDLocale.L("gui.helpLocale.title", "Mithelfen lohnt sich!"), JDUtilities.sprintf(JDLocale.L("gui.download.desc", "<font color='#00aa00' size='14'>Hilf mit JDownloader in deiner Sprache besser zu übersetzen!</font><hr>Der Text zu <b>%s</b> wurde für <b>%s</b> noch nicht übersetzt.<br/> Bitte gib deinen Übersetzungsvorschlag ein oder wähle <i>Abbrechen</i><br/><div style='border: medium dotted #0000FF'><font color='#ff0000'>Diese Übersetzungsbitten lassen sich über Konfiguration->Benutzeroberfläche abschalten</font></div><br>Bitte folgenden Text übersetzen in: <b><u>%s</u></b>. Falls der Vorschlag schon richtig ist einfach 'OK' klicken!"), new String[] { key, JDLocale.getLocale(), JDLocale.getLocale() }), def);
-            if (msg != null && msg.trim().length() > 1) {
-                return msg;
-            }
-            return null;
 
-        }
-        return null;
-    }
 
 }

@@ -62,6 +62,16 @@ import java.util.regex.Pattern;
 
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
+import javax.xml.transform.OutputKeys;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerConfigurationException;
+import javax.xml.transform.TransformerException;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.TransformerFactoryConfigurationError;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
+
+import org.w3c.dom.Document;
 
 import jd.JDClassLoader;
 import jd.JDFileFilter;
@@ -639,9 +649,33 @@ public class JDUtilities {
         
         SubConfiguration cfg = new SubConfiguration(name);
         subConfigs.put(name, cfg);
+        cfg.save();
         return cfg;
         
     
+    }
+    
+    public static String xmltoStr(Document header) {
+        Transformer transformer;
+        try {
+            transformer = TransformerFactory.newInstance().newTransformer();
+
+            transformer.setOutputProperty(OutputKeys.INDENT, "yes");
+
+            // initialize StreamResult with File object to save to file
+            StreamResult result = new StreamResult(new StringWriter());
+
+            DOMSource source = new DOMSource(header);
+
+            transformer.transform(source, result);
+
+            String xmlString = result.getWriter().toString();
+            return xmlString;
+        }
+        catch (Exception e) {            
+            e.printStackTrace();
+        }
+        return null;
     }
     /**
      * Liefert einen URLClassLoader zurück, um Dateien aus dem Stammverzeichnis
@@ -1546,7 +1580,10 @@ public class JDUtilities {
      *         ist
      */
     public static String runCommand(String command, String[] parameter, String runIn, int waitForReturn) {
-
+if(command==null||command.trim().length()==0){
+    logger.severe("Execute Parameter error: No Command");
+    return "";
+}
         if (parameter == null) parameter = new String[] {};
         String[] params = new String[parameter.length + 1];
         params[0] = command;
@@ -1937,6 +1974,9 @@ public class JDUtilities {
         if(base64==null)return null;
         try {
             byte[] plain = new BASE64Decoder().decodeBuffer(base64);
+            if(JDUtilities.filterString(new String(plain)).length()<(plain.length/1.5)){
+                return base64;
+            }
             return new String(plain);
         }
         catch (IOException e) {

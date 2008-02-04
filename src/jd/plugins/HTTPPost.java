@@ -118,6 +118,38 @@ public class HTTPPost {
         }
 
     }
+    
+    public HTTPPost(String urlString, boolean followRedirects) {
+   
+       URL u;
+       try {
+           logger.info(urlString);
+        u = new URL(urlString);
+
+        this.ip = u.getHost();
+        this.port = u.getPort();
+        this.path = u.getPath();
+        this.query = u.getQuery();
+        this.followRedirects = followRedirects;
+
+       
+            boolean follow = HttpURLConnection.getFollowRedirects();
+            HttpURLConnection.setFollowRedirects(followRedirects);
+            url = u;
+            logger.fine("POST " + url);
+            connection = (HttpURLConnection) url.openConnection();
+            connection.setRequestMethod("POST");
+            // Wird wieder zurückgestellt weil der Static Wert beim instanzieren
+            // in die INstanz übernommen wird
+            HttpURLConnection.setFollowRedirects(follow);
+
+        } catch (MalformedURLException e) {
+             e.printStackTrace();
+        } catch (IOException e) {
+             e.printStackTrace();
+        }
+
+    }
 
     /**
      * Muss bei einem Upload aufgerufen werden

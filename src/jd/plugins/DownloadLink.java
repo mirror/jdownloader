@@ -101,6 +101,7 @@ public class DownloadLink implements Serializable,Comparable<DownloadLink> {
      * Die angefordete Datei wurde noch nicht fertig upgeloaded
      */
     public static final int STATUS_ERROR_FILE_NOT_UPLOADED = 20;
+
     
     /**
      * serialVersionUID
@@ -322,12 +323,23 @@ public class DownloadLink implements Serializable,Comparable<DownloadLink> {
      * @return Die Download URL
      */
     public String getDownloadURL() {
+   
         if (linkType==LINKTYPE_CONTAINER){
             if(this.tempUrlDownload!=null)return tempUrlDownload;
-            if(pluginForContainer!=null)
-                return pluginForContainer.extractDownloadURL(this);
-            else
+            String ret;
+            if(pluginForContainer!=null){
+                ret=pluginForContainer.extractDownloadURL(this);
+                if(ret==null){
+                    logger.severe(this+" is a containerlink. Container could not be extracted. Is your JD Version up2date?");  
+                }
+                return ret;
+            }
+            else{
+                logger.severe(this+" is a containerlink, but no plugin could be found");
                 return null;
+                
+            }
+               
         }
         return urlDownload;
     }
@@ -691,6 +703,7 @@ public class DownloadLink implements Serializable,Comparable<DownloadLink> {
      * @return Filepackage
      */
     public FilePackage getFilePackage() {
+  
         return filePackage;
     }
 

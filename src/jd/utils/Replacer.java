@@ -39,6 +39,7 @@ public class Replacer {
                                   };
 
     public static String insertVariables(String str) {
+        if(str==null)return "";
         for (int i = 0; i < KEYS.length; i++) {
        
             if(str.indexOf("%" + KEYS[i][0] + "%")>=0){

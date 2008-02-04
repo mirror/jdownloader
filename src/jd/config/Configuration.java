@@ -178,6 +178,12 @@ public class Configuration extends Property implements Serializable {
 
     public static final String PARAM_TWEAK_LOG = "TWEAK_LOG";
 
+    public static final String CONFIG_INTERACTIONS = "EVENTS";
+
+    public static final String PARAM_INTERACTIONS = "INTERACTIONS";
+
+    public static final String PARAM_RELOADCONTAINER = "RELOADCONTAINER";
+
   
     /**
      * Die unterschiedlichen Interaktionen. (ZB Reconnect nach einem Download)
@@ -301,53 +307,54 @@ public class Configuration extends Property implements Serializable {
         this.waitForIPCheck = waitForIPCheck;
     }
 
-    /**
-     * Gibt die Interactionen zurück. Alle eingestellten Interactionen werden
-     * hier in einem vector zurückgegeben
-     * 
-     * @return Vector<Interaction>
-     */
+// 
+//    /**
+//     * Gibt die Interactionen zurück. Alle eingestellten Interactionen werden
+//     * hier in einem vector zurückgegeben
+//     * 
+//     * @return Vector<Interaction>
+//     */
     public Vector<Interaction> getInteractions() {
         return interactions;
     }
-
-    /**
-     * Setzt die Interactionen
-     * 
-     * @param interactions
-     */
+//
+//    /**
+//     * Setzt die Interactionen
+//     * 
+//     * @param interactions
+//     */
     public void setInteractions(Vector<Interaction> interactions) {
         this.interactions = interactions;
     }
-
-    /**
-     * Gibt alle Interactionen zurück bei denen die TRigger übereinstimmen. z.B.
-     * alle reconnect Aktionen
-     * 
-     * @param it
-     * @return Alle interactionen mit dem TRigger it
-     */
-    public Vector<Interaction> getInteractions(InteractionTrigger it) {
-        Vector<Interaction> ret = new Vector<Interaction>();
-        for (int i = 0; i < interactions.size(); i++) {
-            if (interactions.elementAt(i).getTrigger().getID() == it.getID()) ret.add(interactions.elementAt(i));
-        }
-        return ret;
-    }
-
-    /**
-     * Gibt alle Interactionen zurück bei der die AKtion inter gleicht
-     * 
-     * @param inter
-     * @return Alle interactionen mit dem Selben interaction-Event wie inter
-     */
-    public Vector<Interaction> getInteractions(Interaction inter) {
-        Vector<Interaction> ret = new Vector<Interaction>();
-        for (int i = 0; i < interactions.size(); i++) {
-            if (inter.getInteractionName().equals(interactions.elementAt(i).getInteractionName())) ret.add(interactions.elementAt(i));
-        }
-        return ret;
-    }
+//
+//    /**
+//     * Gibt alle Interactionen zurück bei denen die TRigger übereinstimmen. z.B.
+//     * alle reconnect Aktionen
+//     * 
+//     * @param it
+//     * @return Alle interactionen mit dem TRigger it
+//     */
+//    public Vector<Interaction> getInteractions(InteractionTrigger it) {
+//        Vector<Interaction> ret = new Vector<Interaction>();
+//        for (int i = 0; i < interactions.size(); i++) {
+//            if (interactions.elementAt(i).getTrigger().getID() == it.getID()) ret.add(interactions.elementAt(i));
+//        }
+//        return ret;
+//    }
+//
+//    /**
+//     * Gibt alle Interactionen zurück bei der die AKtion inter gleicht
+//     * 
+//     * @param inter
+//     * @return Alle interactionen mit dem Selben interaction-Event wie inter
+//     */
+//    public Vector<Interaction> getInteractions(Interaction inter) {
+//        Vector<Interaction> ret = new Vector<Interaction>();
+//        for (int i = 0; i < interactions.size(); i++) {
+//            if (inter.getInteractionName().equals(interactions.elementAt(i).getInteractionName())) ret.add(interactions.elementAt(i));
+//        }
+//        return ret;
+//    }
 
     /**
      * Setzt die Version der Configfile
