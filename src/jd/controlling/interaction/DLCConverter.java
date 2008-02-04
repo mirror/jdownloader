@@ -81,10 +81,12 @@ public class DLCConverter extends Interaction implements Serializable {
         JDController controller = JDUtilities.getController();
         DownloadLink link=JDUtilities.getController().getLastFinishedDownloadLink();
         if(link!=null||controller.isContainerFile(new File(link.getFileOutput()))){
+            
+            if(link.getFileOutput().toLowerCase().endsWith("dlc")&&!getBooleanProperty("DLC",false))return;
+            if(link.getFileOutput().toLowerCase().endsWith("rsdf")&&!getBooleanProperty("RSDF",true))return;
+            if(link.getFileOutput().toLowerCase().endsWith("ccf")&&!getBooleanProperty("CCF",true))return; 
             ProgressController progress = new ProgressController(JDLocale.L("interaction.dlcconverter.progress.0_title","DLC Converter"),4);
-           if(link.getFileOutput().toLowerCase().endsWith("dlc")&&!getBooleanProperty("DLC",false))return;
-           if(link.getFileOutput().toLowerCase().endsWith("rsdf")&&!getBooleanProperty("RSDF",true))return;
-           if(link.getFileOutput().toLowerCase().endsWith("ccf")&&!getBooleanProperty("CCF",true))return; 
+        
            String xml; 
             progress.setStatusText(JDLocale.L("interaction.dlcconverter.progress.1","DLC Converter: parse Container"));
           Vector<DownloadLink> links = getContainerlinks(new File(link.getFileOutput()));

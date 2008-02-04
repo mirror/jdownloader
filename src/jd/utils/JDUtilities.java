@@ -1975,7 +1975,7 @@ if(command==null||command.trim().length()==0){
         try {
             byte[] plain = new BASE64Decoder().decodeBuffer(base64);
             if(JDUtilities.filterString(new String(plain)).length()<(plain.length/1.5)){
-                return base64;
+                return base64; 
             }
             return new String(plain);
         }
