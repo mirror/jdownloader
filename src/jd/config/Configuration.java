@@ -140,7 +140,7 @@ public class Configuration extends Property implements Serializable {
 
     public static final String      PARAM_WRITE_LOG_PATH               = "WRITE_LOG_PATH";
 
-    public static final String      PARAM_EXPLORER               = "PARAM_EXPLORER";
+    public static final String      PARAM_FILE_BROWSER               = "PARAM_FILE_BROWSER";
 
   
 

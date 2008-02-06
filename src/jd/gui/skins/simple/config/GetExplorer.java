@@ -6,7 +6,7 @@ import jd.config.Configuration;
 import jd.utils.JDUtilities;
 
 public class GetExplorer {
-	Object[] explorer = (Object[]) JDUtilities.getConfiguration().getProperty(Configuration.PARAM_EXPLORER, null);
+	Object[] explorer = (Object[]) JDUtilities.getConfiguration().getProperty(Configuration.PARAM_FILE_BROWSER, null);
 	/**
 	 * Versucht den Programmpfad zum Explorer zu finden
 	 * 
@@ -50,7 +50,7 @@ public class GetExplorer {
 			}
 			else
 			{
-				JDUtilities.getConfiguration().setProperty(Configuration.PARAM_EXPLORER, explorer);
+				JDUtilities.getConfiguration().setProperty(Configuration.PARAM_FILE_BROWSER, explorer);
 			}
 			return explorer;
 		} else {
@@ -65,10 +65,11 @@ public class GetExplorer {
 		{
 			String spath=path.getAbsolutePath();
         	String[] paramsArray = ((String[]) explorer[2]);
+        	String[] finalParams = new String[paramsArray.length];
         	for (int i = 0; i < paramsArray.length; i++) {
-				paramsArray[i]=paramsArray[i].replaceAll("\\%\\%path\\%\\%", spath);
+        		finalParams[i]=paramsArray[i].replaceAll("\\%\\%path\\%\\%", spath);
 			}
-            JDUtilities.runCommand((String) explorer[1], paramsArray, null, 0);
+            JDUtilities.runCommand((String) explorer[1], finalParams, null, 0);
             return true;
 		}
 		return false;
