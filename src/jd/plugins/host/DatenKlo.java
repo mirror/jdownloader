@@ -6,6 +6,9 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
 import java.util.regex.Pattern;
+
+import jd.config.ConfigContainer;
+import jd.config.ConfigEntry;
 import jd.plugins.DownloadLink;
 import jd.plugins.Form;
 import jd.plugins.Plugin;
@@ -13,6 +16,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.PluginStep;
 import jd.plugins.Regexp;
 import jd.plugins.RequestInfo;
+import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
 public class DatenKlo extends PluginForHost {
@@ -56,9 +60,98 @@ public class DatenKlo extends PluginForHost {
         super();
         steps.add(new PluginStep(PluginStep.STEP_GET_CAPTCHA_FILE, null));
         steps.add(new PluginStep(PluginStep.STEP_DOWNLOAD, null));
-        // steps.add(new PluginStep(PluginStep.STEP_DOWNLOAD, null));
+        setConfigElements();
     }
-    public PluginStep doStep(PluginStep step, DownloadLink downloadLink)
+    private void setConfigElements() {
+        ConfigEntry cfg;
+        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getProperties(), "PROPERTY_DK_PREMIUM_USER", JDLocale.L("plugins.hoster.datenklo.net.premiumUser", "Premium User")));
+        cfg.setDefaultValue("Kundennummer");
+        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_PASSWORDFIELD, getProperties(), "PROPERTY_DK_PREMIUM_PASS", JDLocale.L("plugins.hoster.datenklo.net.premiumPass", "Premium Pass")));
+        cfg.setDefaultValue("Passwort");
+        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getProperties(), "PROPERTY_DK_USE_PREMIUM", JDLocale.L("plugins.hoster.datenklo.net.usePremium", "Premium Account verwenden")));
+        cfg.setDefaultValue(false);
+
+    }
+    public PluginStep doStep(PluginStep step, DownloadLink downloadLink) {
+
+        if (step == null) {
+            logger.info("Plugin Ende erreicht.");
+            return null;
+        }
+
+        logger.info("get Next Step " + step);
+
+        if (this.getProperties().getBooleanProperty("PROPERTY_DK_USE_PREMIUM", false) ) {
+            try {
+				return this.doPremiumStep(step, downloadLink);
+			} catch (Exception e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+        }
+        else {
+            try {
+				return this.doFreeStep(step, downloadLink);
+			} catch (Exception e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+        }
+		return null;
+    }
+    public PluginStep doPremiumStep(PluginStep step, DownloadLink downloadLink) throws Exception
+    {
+    	
+        switch (step.getStep()) {
+        	case PluginStep.STEP_GET_CAPTCHA_FILE:
+        		String loginURL = "http://www.datenklo.net/index.php?inc=login";
+                requestInfo = getRequest(new URL(loginURL));
+                String cookie = requestInfo.getCookie();
+                Form[] forms = Form.getForms(requestInfo);
+                if (forms == null || forms.length == 0 || forms[0] == null) {
+                    step.setStatus(PluginStep.STATUS_ERROR);
+                    logger.severe("login fehlgeschlagen");
+                    downloadLink
+                            .setStatus(DownloadLink.STATUS_ERROR_FILE_NOT_FOUND);
+                    return null;
+                }
+                forms[0].put("login_passwort", this.getProperties().getStringProperty("PROPERTY_DK_PREMIUM_PASS"));
+                forms[0].put("login_nickname", this.getProperties().getStringProperty("PROPERTY_DK_PREMIUM_USER"));
+                forms[0].withHtmlCode=false;
+                requestInfo=forms[0].getRequestInfo();
+                cookie=cookie+";"+requestInfo.getCookie();
+                String dlurl = downloadLink.getDownloadURL();
+                String password = new Regexp(dlurl, "\\&down_passwort\\=(.*)")
+                        .getFirstMatch();
+                if (password != null)
+                    dlurl = dlurl.replaceFirst("\\&down_passwort.*", "");
+                requestInfo = getRequest(new URL(dlurl), cookie,requestInfo.getConnection().getURL().toString(),true);
+                forms = Form.getForms(requestInfo);
+                if (forms == null || forms.length == 0 || forms[0] == null) {
+                    step.setStatus(PluginStep.STATUS_ERROR);
+                    logger.severe("konnte den Download nicht finden");
+                    downloadLink
+                            .setStatus(DownloadLink.STATUS_ERROR_FILE_NOT_FOUND);
+                    return null;
+                }
+                form = forms[0];
+                form.withHtmlCode = false;
+                if (requestInfo.getHtmlCode().contains(
+                        "type=\"text\" name=\"down_passwort\"")) {
+                    if (password != null)
+                        form.put("down_passwort", password);
+                    else form.put("down_passwort", JDUtilities.getController()
+                            .getUiInterface().showUserInputDialog(
+                                    "Please enter the password!"));
+                }
+                step = nextStep(step);
+            case PluginStep.STEP_DOWNLOAD:
+            	return doFreeStep(step, downloadLink);
+        }
+		return step;
+    	
+    }
+    public PluginStep doFreeStep(PluginStep step, DownloadLink downloadLink)
             throws Exception {
         switch (step.getStep()) {
         case PluginStep.STEP_GET_CAPTCHA_FILE:
