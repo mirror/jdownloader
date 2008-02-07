@@ -123,7 +123,6 @@ public class Netloadin extends PluginForHost {
                         logger.info(downloadLink.getDownloadURL());
                         requestInfo = getRequest(new URL(downloadLink.getDownloadURL()), null, null, true);
                         this.sessionID = requestInfo.getCookie();
-                        System.out.println(requestInfo.getHtmlCode());
                         String url = "http://" + HOST + "/" + getSimpleMatch(requestInfo.getHtmlCode(), DOWNLOAD_URL, 0);
                         url = url.replaceAll("\\&amp\\;", "&");
                         if(requestInfo.containsHTML(FILE_DAMAGED)) {
@@ -167,6 +166,12 @@ public class Netloadin extends PluginForHost {
                     }
                     else {
                         requestInfo = postRequest(new URL(postURL), sessionID, requestInfo.getLocation(), null, "file_id=" + fileID + "&captcha_check=" + (String) steps.get(1).getParameter() + "&start=", false);
+                        if(requestInfo.containsHTML(FILE_DAMAGED)) {
+                        	logger.warning("ERROR: File on a damaged server");
+                        	step.setStatus(PluginStep.STATUS_ERROR);
+                        	downloadLink.setStatus(DownloadLink.STATUS_ERROR_TEMPORARILY_UNAVAILABLE);
+                        	return step;
+                        }
                         if (requestInfo.getHtmlCode().indexOf(LIMIT_REACHED) >= 0 || requestInfo.containsHTML(DOWNLOAD_LIMIT)) {
                             step.setStatus(PluginStep.STATUS_ERROR);
                             downloadLink.setStatus(DownloadLink.STATUS_ERROR_DOWNLOAD_LIMIT);
