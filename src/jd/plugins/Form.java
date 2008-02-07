@@ -1,5 +1,9 @@
 package jd.plugins;
 
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.net.HttpURLConnection;
@@ -18,11 +22,13 @@ public class Form {
 	public static final int METHOD_POST = 0;
 	public static final int METHOD_GET = 1;
 	public static final int METHOD_PUT = 2;
+	public static final int METHOD_FILEPOST = 3;
 	public static final int METHOD_UNKNOWN = 99;
 	public boolean withHtmlCode = true;
 	/**
 	 * Methode der Form POST = 0, GET = 1 ( PUT = 2 wird jedoch bei
-	 * getRequestInfo nicht unterstützt )
+	 * getRequestInfo nicht unterstützt ), FILEPOST = 3 (Ist eigentlich ein Post
+	 * da aber dateien Gesendet werden hab ich Filepost draus gemacht)
 	 */
 	public int method;
 	/**
@@ -40,13 +46,21 @@ public class Form {
 	 */
 	public HashMap<String, String> vars = new HashMap<String, String>();
 	/**
+	 * Fals es eine Uploadform ist, kann man hier die Dateien setzen die
+	 * hochgeladen werden sollen
+	 */
+	public File fileToPost = null;
+	private String filetoPostName = null;
+	/**
 	 * Wird bei der Benutzung von getForms automatisch gesetzt
 	 */
 	private RequestInfo baseRequest;
-	
+	/**
+	 * zusätzliche request Poperties die gesetzt werden sollen z.B. Range
+	 */
 	private HashMap<String, String> requestPoperties = new HashMap<String, String>();
 
-	private static String[] getNameValue(String data) {
+	private String[] getNameValue(String data) {
 		Matcher matcher = Pattern.compile("name=['\"]([^'\"]*?)['\"]",
 				Pattern.CASE_INSENSITIVE).matcher(data);
 		String key, value;
@@ -59,8 +73,16 @@ public class Form {
 			if (matcher.find())
 				key = matcher.group(1).replaceAll(" [^\\s]+\\=.*", "").trim();
 		}
-		if (key == null)
+		if (key == null) {
+
+			if (data.toLowerCase().matches(".*type=[\"']?file.*")) {
+				this.method = METHOD_FILEPOST;
+				this.filetoPostName = "";
+				return null;
+			}
 			return null;
+		}
+
 		matcher = Pattern.compile("value=['\"]([^'\"]*?)['\"]",
 				Pattern.CASE_INSENSITIVE).matcher(data);
 		if (matcher.find())
@@ -73,13 +95,19 @@ public class Form {
 		}
 		if (value != null && value.matches("[\\s]*"))
 			value = null;
+		if (value == null && data.toLowerCase().matches(".*type=[\"']?file.*")) {
+			this.method = METHOD_FILEPOST;
+			this.filetoPostName = key;
+			return null;
+		}
+
 		return new String[] { key, value };
 	}
 
 	/**
 	 * Gibt alle Input fields zurück Object[0]=vars Object[1]=varsWithoutValue
 	 */
-	private static HashMap<String, String> getInputFields(String data) {
+	private HashMap<String, String> getInputFields(String data) {
 		HashMap<String, String> ret = new HashMap<String, String>();
 		Matcher matcher = Pattern.compile(
 				"(?s)<[\\s]*(input|textarea|select)(.*?)>",
@@ -185,7 +213,7 @@ public class Form {
 				if (form.action == null)
 					form.action = requestInfo.getConnection().getURL()
 							.toString();
-				form.vars.putAll(getInputFields(inForm));
+				form.vars.putAll(form.getInputFields(inForm));
 				forms.add(form);
 			}
 		}
@@ -198,7 +226,7 @@ public class Form {
 			JDUtilities.getLogger().severe("Unknown method");
 			return null;
 		} else if (method == METHOD_PUT) {
-			JDUtilities.getLogger().severe("PUT is not supported");
+			JDUtilities.getLogger().severe("PUT is not Supported");
 			return null;
 		}
 		if (baseRequest == null)
@@ -213,7 +241,7 @@ public class Form {
 				return null;
 			if (action.charAt(0) == '/')
 				action = "http://" + baseurl.getHost() + action;
-			else if (action.charAt(0) == '?' || action.charAt(0) == '&' ) {
+			else if (action.charAt(0) == '?' || action.charAt(0) == '&') {
 				String base = baseurl.toString();
 				if (base.matches("http://.*/.*"))
 					action = base + action;
@@ -228,18 +256,18 @@ public class Form {
 					action = base + "/" + action;
 			}
 		}
-		StringBuffer buffer = new StringBuffer();
+		StringBuffer stbuffer = new StringBuffer();
 		boolean first = true;
 		for (Map.Entry<String, String> entry : vars.entrySet()) {
 			if (first)
 				first = false;
 			else
-				buffer.append("&");
-			buffer.append(entry.getKey());
-			buffer.append("=");
-			buffer.append(URLEncoder.encode(entry.getValue()));
+				stbuffer.append("&");
+			stbuffer.append(entry.getKey());
+			stbuffer.append("=");
+			stbuffer.append(URLEncoder.encode(entry.getValue()));
 		}
-		String varString = buffer.toString();
+		String varString = stbuffer.toString();
 		if (method == METHOD_GET) {
 			if (varString != null && !varString.matches("[\\s]*")) {
 				if (action.matches(".*\\?.+"))
@@ -258,8 +286,10 @@ public class Form {
 								"Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1; SV1; .NET CLR 1.1.4322; .NET CLR 2.0.50727)");
 				urlConnection.setRequestProperty("Cookie", baseRequest
 						.getCookie());
-				for (Map.Entry<String, String> entry : requestPoperties.entrySet()) {
-					urlConnection.setRequestProperty(entry.getKey(), entry.getValue());
+				for (Map.Entry<String, String> entry : requestPoperties
+						.entrySet()) {
+					urlConnection.setRequestProperty(entry.getKey(), entry
+							.getValue());
 				}
 				urlConnection.setRequestProperty("Referer", baseurl.toString());
 				return urlConnection;
@@ -281,8 +311,10 @@ public class Form {
 								"Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1; SV1; .NET CLR 1.1.4322; .NET CLR 2.0.50727)");
 				urlConnection.setRequestProperty("Cookie", baseRequest
 						.getCookie());
-				for (Map.Entry<String, String> entry : requestPoperties.entrySet()) {
-					urlConnection.setRequestProperty(entry.getKey(), entry.getValue());
+				for (Map.Entry<String, String> entry : requestPoperties
+						.entrySet()) {
+					urlConnection.setRequestProperty(entry.getKey(), entry
+							.getValue());
 				}
 				urlConnection.setRequestProperty("Referer", baseurl.toString());
 				urlConnection.setDoOutput(true);
@@ -299,6 +331,87 @@ public class Form {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
+		} else if (method == METHOD_FILEPOST) {
+
+			// JOptionPane.showMessageDialog(null,
+			// "Dateiname:"+exsistingFileName );
+
+			HttpURLConnection conn = null;
+			DataOutputStream dos = null;
+
+			String lineEnd = "\r\n";
+			String twoHyphens = "--";
+			String boundary = "*****";
+
+			int bytesRead, bytesAvailable, bufferSize;
+
+			byte[] buffer;
+
+			int maxBufferSize = 1 * 1024 * 1024;
+			try {
+				// Datei laden
+				FileInputStream fileInputStream = new FileInputStream(
+						fileToPost);
+
+				// Neue URL zum PHP-Script erstellen
+				conn = (HttpURLConnection) new URL(action).openConnection();
+				// Input senden
+				conn.setDoInput(true);
+
+				// Output empfangen
+				conn.setDoOutput(true);
+				conn.setUseCaches(false);
+				conn.setRequestMethod("POST");
+				conn.setRequestProperty("Accept-Language",
+						Plugin.ACCEPT_LANGUAGE);
+				conn
+						.setRequestProperty(
+								"User-Agent",
+								"Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1; SV1; .NET CLR 1.1.4322; .NET CLR 2.0.50727)");
+				conn.setRequestProperty("Cookie", baseRequest.getCookie());
+				for (Map.Entry<String, String> entry : requestPoperties
+						.entrySet()) {
+					conn.setRequestProperty(entry.getKey(), entry.getValue());
+				}
+				conn.setRequestProperty("Referer", baseurl.toString());
+
+				conn.setRequestProperty("Content-Type",
+						"multipart/form-data;boundary=" + boundary);
+
+				dos = new DataOutputStream(conn.getOutputStream());
+				dos.writeBytes(twoHyphens + boundary + lineEnd);
+				dos.writeBytes("Content-Disposition: form-data; name=\""
+						+ filetoPostName + "\";" + " filename=\""
+						+ fileToPost.getName() + "\"" + lineEnd);
+				dos.writeBytes(lineEnd);
+
+				// Buffer mit maximaler Größe erstellen
+				bytesAvailable = fileInputStream.available();
+				bufferSize = Math.min(bytesAvailable, maxBufferSize);
+				buffer = new byte[bufferSize];
+
+				// Datei aufrufen und in Stream schreiben
+				bytesRead = fileInputStream.read(buffer, 0, bufferSize);
+
+				while (bytesRead > 0) {
+					dos.write(buffer, 0, bufferSize);
+					bytesAvailable = fileInputStream.available();
+					bufferSize = Math.min(bytesAvailable, maxBufferSize);
+					bytesRead = fileInputStream.read(buffer, 0, bufferSize);
+				}
+				// send multipart form data necesssary after file data...
+				dos.writeBytes(lineEnd);
+				dos.writeBytes(twoHyphens + boundary + twoHyphens + lineEnd);
+
+				// Stream schliessen
+				fileInputStream.close();
+				dos.flush();
+				dos.close();
+
+			} catch (MalformedURLException ex) {
+			} catch (IOException ioe) {
+			}
+			return conn;
 		}
 		return null;
 	}
@@ -310,6 +423,7 @@ public class Form {
 		return getRequestInfo(true);
 	}
 
+	@SuppressWarnings("deprecation")
 	public RequestInfo getRequestInfo(boolean redirect) {
 		HttpURLConnection connection = (HttpURLConnection) getConnection();
 		if (connection == null)
@@ -322,11 +436,36 @@ public class Form {
 		} catch (IOException e) {
 		}
 		if (withHtmlCode) {
-			try {
-				ri = Plugin.readFromURL(connection);
-			} catch (IOException e) {
-				// TODO Automatisch erstellter Catch-Block
-				e.printStackTrace();
+			if (method == METHOD_FILEPOST) {
+				// Serverantwort empfangen
+				try {
+					DataInputStream inStream = new DataInputStream(connection
+							.getInputStream());
+
+					String str;
+					String output = "";
+
+					while ((str = inStream.readLine()) != null) {
+						output = output + str;
+					}
+					if (output != "") {
+						// JOptionPane.showMessageDialog(null, output );
+					}
+					inStream.close();
+					ri = new RequestInfo(output, connection
+							.getHeaderField("Location"), Plugin
+							.getCookieString(connection), connection
+							.getHeaderFields(), responseCode);
+				} catch (IOException ioex) {
+				}
+
+			} else {
+				try {
+					ri = Plugin.readFromURL(connection);
+				} catch (IOException e) {
+					// TODO Automatisch erstellter Catch-Block
+					e.printStackTrace();
+				}
 			}
 		} else
 			ri = new RequestInfo("", connection.getHeaderField("Location"),
@@ -348,7 +487,11 @@ public class Form {
 			ret += "Method: GET\n";
 		else if (method == METHOD_PUT)
 			ret += "Method: PUT is not supported\n";
-		else if (method == METHOD_UNKNOWN)
+		else if (method == METHOD_FILEPOST) {
+			ret += "Method: FILEPOST\n";
+			if (fileToPost == null)
+				ret += "Warning: you have to set the fileToPost\n";
+		} else if (method == METHOD_UNKNOWN)
 			ret += "Method: Unknown\n";
 		for (Map.Entry<String, String> entry : vars.entrySet()) {
 			ret += "var: " + entry.getKey() + "=" + entry.getValue() + "\n";
@@ -358,7 +501,8 @@ public class Form {
 					+ "\n";
 		}
 		for (Map.Entry<String, String> entry : requestPoperties.entrySet()) {
-			ret += "requestPopertie: " + entry.getKey() + "=" + entry.getValue() + "\n";
+			ret += "requestPopertie: " + entry.getKey() + "="
+					+ entry.getValue() + "\n";
 		}
 		return ret;
 	}
@@ -370,8 +514,8 @@ public class Form {
 	public void remove(String key) {
 		vars.remove(key);
 	}
-	public void setRequestPopertie(String key, String value)
-	{
+
+	public void setRequestPopertie(String key, String value) {
 		requestPoperties.put(key, value);
 	}
 }
