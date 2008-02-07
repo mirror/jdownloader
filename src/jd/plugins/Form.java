@@ -43,6 +43,8 @@ public class Form {
 	 * Wird bei der Benutzung von getForms automatisch gesetzt
 	 */
 	private RequestInfo baseRequest;
+	
+	private HashMap<String, String> requestPoperties = new HashMap<String, String>();
 
 	private static String[] getNameValue(String data) {
 		Matcher matcher = Pattern.compile("name=['\"]([^'\"]*?)['\"]",
@@ -256,6 +258,9 @@ public class Form {
 								"Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1; SV1; .NET CLR 1.1.4322; .NET CLR 2.0.50727)");
 				urlConnection.setRequestProperty("Cookie", baseRequest
 						.getCookie());
+				for (Map.Entry<String, String> entry : requestPoperties.entrySet()) {
+					urlConnection.setRequestProperty(entry.getKey(), entry.getValue());
+				}
 				urlConnection.setRequestProperty("Referer", baseurl.toString());
 				return urlConnection;
 			} catch (MalformedURLException e) {
@@ -276,6 +281,9 @@ public class Form {
 								"Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1; SV1; .NET CLR 1.1.4322; .NET CLR 2.0.50727)");
 				urlConnection.setRequestProperty("Cookie", baseRequest
 						.getCookie());
+				for (Map.Entry<String, String> entry : requestPoperties.entrySet()) {
+					urlConnection.setRequestProperty(entry.getKey(), entry.getValue());
+				}
 				urlConnection.setRequestProperty("Referer", baseurl.toString());
 				urlConnection.setDoOutput(true);
 				OutputStreamWriter wr = new OutputStreamWriter(urlConnection
@@ -349,6 +357,9 @@ public class Form {
 			ret += "formProperty: " + entry.getKey() + "=" + entry.getValue()
 					+ "\n";
 		}
+		for (Map.Entry<String, String> entry : requestPoperties.entrySet()) {
+			ret += "requestPopertie: " + entry.getKey() + "=" + entry.getValue() + "\n";
+		}
 		return ret;
 	}
 
@@ -358,5 +369,9 @@ public class Form {
 
 	public void remove(String key) {
 		vars.remove(key);
+	}
+	public void setRequestPopertie(String key, String value)
+	{
+		requestPoperties.put(key, value);
 	}
 }

@@ -212,6 +212,7 @@ public class DownloadLink implements Serializable,Comparable<DownloadLink> {
 	private int maximalspeed = 209715;
     private int linkType=LINKTYPE_NORMAL;
     private transient String tempUrlDownload;
+    public boolean isLimited=(JDUtilities.getConfiguration().getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, 0)!=0);
     /**
      * Erzeugt einen neuen DownloadLink
      * 

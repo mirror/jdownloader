@@ -1119,12 +1119,7 @@ public abstract class Plugin {
 				// verhindern:
 				// JD-Team: nix schlafen.. ich will speed! Die Events werden
 				// jetzt von der GUI kontrolliert
-				if(maxspeed!=(maxspeed=downloadLink.getMaximalspeed()))
-				{
-				buffer = ByteBuffer.allocateDirect(downloadLink
-						.getMaximalspeed());
-				buffer.clear();
-				}
+				if(downloadLink.isLimited)
 				Thread.sleep(25);
 				int bytes = source.read(buffer);
 				if (bytes == -1)
@@ -1142,6 +1137,12 @@ public abstract class Plugin {
 					bytesPerSecond = 0;
 					deltaTime = 0L;
 					timer = -System.currentTimeMillis();
+					if(maxspeed!=(maxspeed=downloadLink.getMaximalspeed()))
+					{
+					buffer = ByteBuffer.allocateDirect(downloadLink
+							.getMaximalspeed());
+					buffer.clear();
+					}
 				}
 				// firePluginEvent(new PluginEvent(this,
 				// PluginEvent.PLUGIN_DOWNLOAD_BYTES, bytes));
@@ -1269,14 +1270,8 @@ public abstract class Plugin {
 				// verhindern:
 				// JD-Team: nix schlafen.. ich will speed! Die Events werden
 				// jetzt von der GUI kontrolliert
-				if(maxspeed!=(maxspeed=downloadLink.getMaximalspeed()))
-				{
-				buffer = ByteBuffer.allocateDirect(downloadLink
-						.getMaximalspeed());
-				buffer.clear();
-				}
 				int bytes = source.read(buffer);
-
+				if(downloadLink.isLimited)
 				Thread.sleep(25);
 				if (bytes == -1)
 					break;
@@ -1293,6 +1288,12 @@ public abstract class Plugin {
 					bytesPerSecond = 0;
 					deltaTime = 0L;
 					timer = -System.currentTimeMillis();
+					if(maxspeed!=(maxspeed=downloadLink.getMaximalspeed()))
+					{
+					buffer = ByteBuffer.allocateDirect(downloadLink
+							.getMaximalspeed());
+					buffer.clear();
+					}
 				}
 				// firePluginEvent(new PluginEvent(this,
 				// PluginEvent.PLUGIN_DOWNLOAD_BYTES, bytes));

@@ -230,7 +230,7 @@ public class DatenKlo extends PluginForHost {
                 downloadLink.setStatus(DownloadLink.STATUS_ERROR_NO_FREE_SPACE);
                 step.setStatus(PluginStep.STATUS_ERROR);
                 return step;
-            }
+            }         
             if (download(downloadLink, urlConnection)) {
                 step.setStatus(PluginStep.STATUS_DONE);
                 downloadLink.setStatus(DownloadLink.STATUS_DONE);
