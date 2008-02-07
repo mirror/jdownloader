@@ -248,7 +248,7 @@ public class RapidShareDe extends PluginForHost {
 				step.setStatus(PluginStep.STATUS_ERROR);
 			}
 		}
-		return null;
+		return step;
 	}
 
 	@Override
