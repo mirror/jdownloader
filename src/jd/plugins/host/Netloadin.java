@@ -40,6 +40,7 @@ public class Netloadin extends PluginForHost {
     static private final String  CAPTCHA_WRONG    = "Sicherheitsnummer nicht eingegeben";
     static private final String  NEW_HOST_URL     = "<a class=\"Orange_Link\" href=\"°\" >Alternativ klicke hier.</a>";
     static private final String  FILE_NOT_FOUND   = "Datei nicht vorhanden";
+    static private final String  FILE_DAMAGED	  = "Diese Datei liegt auf einem Server mit einem technischen Defekt. Wir konnten diese Datei leider nicht wieder herstellen.";
     static private final String  DOWNLOAD_LIMIT   = "download_limit.tpl";
     static private final String  DOWNLOAD_CAPTCHA = "download_captcha.tpl";
     static private final String  DOWNLOAD_START   = "download_load.tpl";
@@ -125,6 +126,12 @@ public class Netloadin extends PluginForHost {
                         System.out.println(requestInfo.getHtmlCode());
                         String url = "http://" + HOST + "/" + getSimpleMatch(requestInfo.getHtmlCode(), DOWNLOAD_URL, 0);
                         url = url.replaceAll("\\&amp\\;", "&");
+                        if(requestInfo.containsHTML(FILE_DAMAGED)) {
+                        	logger.warning("ERROR: File on a damaged server");
+                        	step.setStatus(PluginStep.STATUS_ERROR);
+                        	downloadLink.setStatus(DownloadLink.STATUS_ERROR_TEMPORARILY_UNAVAILABLE);
+                        	return step;
+                        }
                         if (!requestInfo.containsHTML(DOWNLOAD_START)) {
                             logger.warning("ERROR: NO " + DOWNLOAD_START);
                             step.setStatus(PluginStep.STATUS_ERROR);
@@ -344,6 +351,7 @@ public class Netloadin extends PluginForHost {
         RequestInfo requestInfo;
         try {
             requestInfo = getRequest(new URL(downloadLink.getDownloadURL()), null, null, false);
+            
             String name = downloadLink.getName();
             if (name.toLowerCase().matches(".*\\..{1,5}\\.htm$")) name = name.replaceFirst("\\.htm$", "");
             downloadLink.setName(name);
@@ -351,11 +359,10 @@ public class Netloadin extends PluginForHost {
                 this.setStatusText("File Not Found");
                 return false;
             }
-            
-      
-            
-           
-           
+            if (requestInfo.getHtmlCode().indexOf(FILE_DAMAGED) > 0) {
+                this.setStatusText("File on a damaged server");
+                return false;
+            }
             return true;
         }
         catch (MalformedURLException e) {

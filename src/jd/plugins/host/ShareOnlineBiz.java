@@ -131,14 +131,14 @@ public class ShareOnlineBiz extends PluginForHost {
 	@Override
 	public boolean getFileInformation(DownloadLink downloadLink) {
 		try {
-			requestInfo = getRequest(new URL(downloadLink
-					.getDownloadURL()));
+			requestInfo = getRequest(new URL(downloadLink.getDownloadURL()));
+			
 			if (downloadLink.getDownloadURL().matches(
 					"http://.*?share-online\\.biz/dl/[\\d]/[a-zA-Z0-9]{9}"))
 				requestInfo = getRequest(new URL(getFirstMatch(requestInfo
 						.getHtmlCode(), firstIFrame, 1)));
 
-			if (requestInfo.containsHTML(ERROR_DOWNLOAD_NOT_FOUND)) {
+			if (requestInfo.containsHTML(ERROR_DOWNLOAD_NOT_FOUND) || requestInfo.getHtmlCode().equals("")) {
 				logger.severe("download not found");
 				downloadLink
 						.setStatus(DownloadLink.STATUS_ERROR_FILE_NOT_FOUND);
