@@ -16,7 +16,7 @@ public class URLCash extends PluginForDecrypt {
     static private String host = "urlcash.net";
 
     private String version = "1.0.0.0";
-    private Pattern patternSupported = Pattern.compile("http://[a-zA-Z0-9\\-]{5,16}\\.urlcash\\.net", Pattern.CASE_INSENSITIVE);
+    private Pattern patternSupported = Pattern.compile("http://[a-zA-Z0-9\\-]{5,16}\\.(urlcash\\.net|urlcash\\.org|clb1\\.com|urlgalleries\\.com|celebclk\\.com|smilinglinks\\.com|peekatmygirlfriend\\.com|looble\\.net)", Pattern.CASE_INSENSITIVE);
 
     public URLCash() {
         super();
