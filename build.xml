@@ -16,6 +16,7 @@
         <manifest file="Manifest.MF">
             <attribute name="Created-By" value="astaldo/coalado" />
             <attribute name="Main-Class" value="jd.Main" />
+        	<attribute name="Class-Path" value="./BrowserLauncher2.jar" />
         </manifest>
         <jar jarfile="${dist}/JDownloader.jar" manifest="Manifest.MF">
             <fileset dir="${cls}">
