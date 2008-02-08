@@ -15,7 +15,7 @@ public class RsLayerCom extends PluginForDecrypt {
 
     final static String host             = "rs-layer.com";
 
-    private String      version          = "0.1.0";
+    private String      version          = "0.1.1";
 
     private Pattern     patternSupported = getSupportPattern("http://[*]rs-layer\\.com/[+]\\.html");
 
@@ -106,7 +106,7 @@ public class RsLayerCom extends PluginForDecrypt {
     
     // Zeichencode-Entities (&#124 etc.) in normale Zeichen umwandeln
     private String decryptEntities(String str) {
-    	Vector<Vector<String>> codes = getAllSimpleMatches(str,"&#Â°;");
+    	Vector<Vector<String>> codes = getAllSimpleMatches(str,"&#°;");
     	String decodedString = "";
     	
     	for( int i=0; i<codes.size(); i++ ) {
