@@ -504,6 +504,7 @@ public class JDController implements PluginListener, ControlListener, UIListener
     }
 
     public String encryptDLC(String xml) {
+       // if(true)return xml;
         String[] encrypt = JDUtilities.encrypt(xml, "DLC Parser");
 
         // logger.info(encrypt[1] + " - ");
@@ -517,7 +518,7 @@ public class JDController implements PluginListener, ControlListener, UIListener
         xml = encrypt[0];
 
         try {
-            URL[] services = new URL[] { new URL("http://dlcrypt.ath.cx/service.php"), new URL("http://recrypt1.ath.cx/service.php") };
+            URL[] services = new URL[] { new URL("http://dlcrypt3.ath.cx/service.php") };
             int url = 0;
             while (url < services.length) {
                 // Get redirect url
@@ -529,7 +530,7 @@ public class JDController implements PluginListener, ControlListener, UIListener
                 }
 
                 // http: //
-                // web146.donau.serverway.de/jdownloader/recrypt/service.php?jd=1&srcType=jdtc&data=
+            
                 logger.finer("Call Redirect: " + ri.getLocation() + " - " + "jd=1&srcType=jdtc&data=" + key);
 
                 ri = Plugin.postRequest(new URL(ri.getLocation()), null, null, null, "jd=1&srcType=jdtc&data=" + key, true);
@@ -625,10 +626,10 @@ public class JDController implements PluginListener, ControlListener, UIListener
                             if (localLink.getContainer() != null) {
                                 pluginForContainer = JDUtilities.getPluginForContainer(localLink.getContainer());
                                 if (pluginForContainer != null) {
-                                    pluginForContainer = pluginForContainer.getPlugin(localLink.getContainerFile());
+                                    //pluginForContainer = pluginForContainer.getPlugin(localLink.getContainerFile());
                                     // pluginForContainer.
-                                    pluginForContainer.initContainer(localLink.getContainerFile());
-                                    pluginForContainer.getContainedDownloadlinks();
+                                    //pluginForContainer.initContainer(localLink.getContainerFile());
+                                    //pluginForContainer.getContainedDownloadlinks();
                                 }
                                 else
                                     localLink.setEnabled(false);

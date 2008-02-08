@@ -79,6 +79,19 @@ public class SingleDownloadController extends ControlMulticaster {
         logger.info("working on " + downloadLink.getName());
         currentPlugin = plugin = (PluginForHost) downloadLink.getPlugin();
         plugin.resetPlugin();
+        
+        if(downloadLink.getDownloadURL()==null){
+            
+            downloadLink.setStatusText(JDLocale.L("controller.status.containererror","Container Fehler"));
+            fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SINGLE_DOWNLOAD_CHANGED, downloadLink));
+            downloadLink.setStatus(DownloadLink.STATUS_ERROR_SECURITY);
+            downloadLink.setInProgress(false);
+            Interaction.handleInteraction(Interaction.INTERACTION_DOWNLOAD_FAILED, this);
+            fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SINGLE_DOWNLOAD_FINISHED, downloadLink));
+
+           return;
+            
+        }
         downloadLink.setStatusText(JDLocale.L("controller.status.active","aktiv"));
         downloadLink.setInProgress(true);
         fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SINGLE_DOWNLOAD_CHANGED, downloadLink));

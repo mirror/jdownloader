@@ -74,14 +74,14 @@ public class JDLocale {
                         entry = send.remove(0);
                        
                    
-                        try {
-                            Plugin.getRequest(new URL("http://web146.donau.serverway.de/jdownloader/update/lang.php?lang=" + lID + "&key=" + JDUtilities.urlEncode(entry[0]) + "&default=" + JDUtilities.urlEncode(entry[1])));
-                            
-                        }
-                        catch (MalformedURLException e) {
-                        }
-                        catch (IOException e) {
-                        }
+//                        try {
+//                            Plugin.getRequest(new URL("http://web146.donau.serverway.de/jdownloader/update/lang.php?lang=" + lID + "&key=" + JDUtilities.urlEncode(entry[0]) + "&default=" + JDUtilities.urlEncode(entry[1])));
+//                            
+//                        }
+//                        catch (MalformedURLException e) {
+//                        }
+//                        catch (IOException e) {
+//                        }
                     }
                 }
             };

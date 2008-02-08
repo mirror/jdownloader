@@ -21,6 +21,10 @@ public class DLCConverter extends Interaction implements Serializable {
     private static final String UPLOADEDTO = "UPLOADEDTO";
     private static final String PASTEBINCOM = "PASTEBINCOM";
     private static final String FORMAT = "[url=%URL%][b]%CONTAINERNAME% @ %HOSTER%(%LINKNUM% urls)[/b][/URL]";
+    private static final String RAPIDSHARECOM = "RAPIDSHARECOM";
+    private static final String RAMZAL = "RAMZAL";
+    private static final String UPLOADEDTOUSER = null;
+    private static final String UPLOADEDTOPASS = null;
 
     public DLCConverter() {}
 
@@ -85,7 +89,7 @@ public class DLCConverter extends Interaction implements Serializable {
             if(link.getFileOutput().toLowerCase().endsWith("dlc")&&!getBooleanProperty("DLC",false))return;
             if(link.getFileOutput().toLowerCase().endsWith("rsdf")&&!getBooleanProperty("RSDF",true))return;
             if(link.getFileOutput().toLowerCase().endsWith("ccf")&&!getBooleanProperty("CCF",true))return; 
-            ProgressController progress = new ProgressController(JDLocale.L("interaction.dlcconverter.progress.0_title","DLC Converter"),4);
+            ProgressController progress = new ProgressController(JDLocale.L("interaction.dlcconverter.progress.0_title","DLC Converter"),7);
         
            String xml; 
             progress.setStatusText(JDLocale.L("interaction.dlcconverter.progress.1","DLC Converter: parse Container"));
@@ -95,27 +99,77 @@ public class DLCConverter extends Interaction implements Serializable {
           String format;
           int ind=link.getName().lastIndexOf(".");
           String name=link.getName().substring(0,ind);
-            for(int i=0; i<this.getIntegerProperty("UPLOADEDTO", 2);i++){
+            for(int i=0; i<this.getIntegerProperty(UPLOADEDTO, 2);i++){
                 progress.setStatusText(JDLocale.L("interaction.dlcconverter.progress.2_uploaded","DLC Converter: Upload, uploaded.to ")+(i+1));
-               
                 xml = controller.createDLCString(links);
                 xml=controller.encryptDLC(xml);
+                if(this.getStringProperty(UPLOADEDTOUSER, "").length()>0 &&this.getStringProperty(UPLOADEDTOPASS, "").length()>0){
+                    format=getStringProperty("FORMAT",FORMAT);
+                    File dest = JDUtilities.getResourceFile(link.getName().substring(0,ind)+".dlc");
+                    JDUtilities.writeLocalFile(dest, xml);
+                    format= format.replace("%URL%", Upload.toUploadedToPremium(dest, getStringProperty(UPLOADEDTOUSER, ""), getStringProperty(UPLOADEDTOPASS, "")));
+                    dest.delete();
+                    format= format.replace("%CONTAINERNAME%", name);
+                    format=format.replace("%LINKNUM%", ""+links.size());
+                    format= format.replace("%HOSTER%", "uploaded.to");
+                    
+                }else{
+             
                 
                 format=getStringProperty("FORMAT",FORMAT);
                 format= format.replace("%URL%", Upload.toUploadedTo(xml,link.getName().substring(0,ind)+".dlc"));
                 format= format.replace("%CONTAINERNAME%", name);
                 format=format.replace("%LINKNUM%", ""+links.size());
                 format= format.replace("%HOSTER%", "uploaded.to");
+              
+                
+                }
+                
                 ret+=format+"\r\n";
             }
             progress.increase(1);
-            for(int i=0; i<this.getIntegerProperty("PASTEBINCOM", 1);i++){
+            for(int i=0; i<this.getIntegerProperty(PASTEBINCOM, 1);i++){
                 progress.setStatusText(JDLocale.L("interaction.dlcconverter.progress.3_pastebin","DLC Converter: Upload, pastebin.com ")+(i+1));
                 
                 xml = controller.createDLCString(links);
                 xml=controller.encryptDLC(xml);
                 format=getStringProperty("FORMAT",FORMAT);
                 format=format.replace("%URL%", Upload.toPastebinCom("dlc://"+xml,link.getName().substring(0,ind)+".dlc"));
+                format= format.replace("%CONTAINERNAME%", name);
+                format=format.replace("%LINKNUM%", ""+links.size());
+                format= format.replace("%HOSTER%", "pastebin.com");
+                ret+=format+"\r\n";
+        
+            }
+            progress.increase(1);
+            for(int i=0; i<this.getIntegerProperty(RAPIDSHARECOM, 2);i++){
+                progress.setStatusText(JDLocale.L("interaction.dlcconverter.progress.2_pastebin","DLC Converter: Upload, Rapidshare.com ")+(i+1));
+                
+                xml = controller.createDLCString(links);
+                xml=controller.encryptDLC(xml);
+               
+                File dest = JDUtilities.getResourceFile(link.getName().substring(0,ind)+".dlc");
+                JDUtilities.writeLocalFile(dest, xml);
+                format=getStringProperty("FORMAT",FORMAT);
+                format=format.replace("%URL%", Upload.toRapidshareCom(dest));
+                dest.delete();
+                format= format.replace("%CONTAINERNAME%", name);
+                format=format.replace("%LINKNUM%", ""+links.size());
+                format= format.replace("%HOSTER%", "pastebin.com");
+                ret+=format+"\r\n";
+        
+            }
+            progress.increase(1);
+            for(int i=0; i<this.getIntegerProperty(RAMZAL, 2);i++){
+                progress.setStatusText(JDLocale.L("interaction.dlcconverter.progress.4_pastebin","DLC Converter: Upload, ramzal.com ")+(i+1));
+                
+                xml = controller.createDLCString(links);
+                xml=controller.encryptDLC(xml);
+                File dest = JDUtilities.getResourceFile(link.getName().substring(0,ind)+".dlc");
+                JDUtilities.writeLocalFile(dest, xml);
+                format=getStringProperty("FORMAT",FORMAT);
+                format=format.replace("%URL%", Upload.toRamzahlCom(dest));
+                dest.delete();
                 format= format.replace("%CONTAINERNAME%", name);
                 format=format.replace("%LINKNUM%", ""+links.size());
                 format= format.replace("%HOSTER%", "pastebin.com");
@@ -169,7 +223,13 @@ public class DLCConverter extends Interaction implements Serializable {
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX,this,"DLC",  JDLocale.L("interaction.dlcconverter.dlc","*.DLC:")).setDefaultValue(false));
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL,  JDLocale.L("interaction.dlcconverter.mirrors","Anzahl de Mirrors:")));
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, this, UPLOADEDTO, JDLocale.L("interaction.dlcconverter.uploadedto","Uploaded.to:"),0,20).setDefaultValue(2));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD,this,UPLOADEDTOUSER,  JDLocale.L("interaction.dlcconverter.uploadedto.user","Premium Benutzer:")));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD,this,UPLOADEDTOPASS,  JDLocale.L("interaction.dlcconverter.uploadedto.pass","Premium Passwort:")));
+        
+        
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, this, PASTEBINCOM, JDLocale.L("interaction.dlcconverter.pastebincom","pastebin.com:"),0,20).setDefaultValue(1));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, this, RAPIDSHARECOM, JDLocale.L("interaction.dlcconverter.rapidshare","rapidshare.com:"),0,20).setDefaultValue(2));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, this, RAMZAL, JDLocale.L("interaction.dlcconverter.ramzal","ramzal.com:"),0,20).setDefaultValue(2));
         
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL,  JDLocale.L("interaction.dlcconverter.output","Ausgabe der Links:")));
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_BROWSEFILE,this,"TOFILE",  JDLocale.L("interaction.dlcconverter.inFile","In Datei speichern:")));

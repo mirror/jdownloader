@@ -76,9 +76,10 @@ public class WebUpdater implements Serializable {
             this.setListPath(path);
         }
         else {
-            this.setListPath("http://web146.donau.serverway.de/jdownloader/update");
+            this.setListPath("http://jdupdatescript.ath.cx");
 
         }
+        
 
     }
 
@@ -265,7 +266,11 @@ public class WebUpdater implements Serializable {
             if (this.cid<0 &&source != null && source.indexOf("<br>") > 0) {
                 String cid = source.substring(0, source.indexOf("<br>")).trim();
                 if (cid != null){
+                    try{
                     this.cid=Integer.parseInt(cid);
+                    }catch(Exception e){
+                        this.cid=0;
+                    }
                 }
                
 

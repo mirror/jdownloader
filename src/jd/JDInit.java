@@ -21,6 +21,8 @@ import jd.controlling.interaction.Interaction;
 import jd.controlling.interaction.Unrar;
 import jd.gui.UIInterface;
 import jd.gui.skins.simple.SimpleGUI;
+import jd.plugins.BackupLink;
+import jd.plugins.DownloadLink;
 import jd.plugins.PluginForContainer;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
@@ -375,7 +377,25 @@ public class JDInit {
     public void checkWebstartFile() {
 
     }
-
+    protected void createQueueBackup() {
+        Vector<DownloadLink> links = JDUtilities.getController().getDownloadLinks();
+        Iterator<DownloadLink> it = links.iterator();
+        Vector<BackupLink> ret= new Vector<BackupLink>();
+        while(it.hasNext()){
+            DownloadLink next = it.next();
+            if(next.getLinkType()==DownloadLink.LINKTYPE_CONTAINER){
+                ret.add(new BackupLink(new File(next.getContainerFile()), next.getContainerIndex(), next.getContainer()));
+            }else{
+                ret.add(new BackupLink(next.getDownloadURL()));  
+            }          
+            
+        }
+    
+        JDUtilities.getResourceFile("links.linkbackup").delete();
+        
+        JDUtilities.saveObject(null, ret, JDUtilities.getResourceFile("links.linkbackup"), "links.linkbackup", "linkbackup", false);
+        logger.info("hallo "+JDUtilities.getResourceFile("links.linkbackup"));
+    }
     public void doWebupdate(final int oldCid,final boolean guiCall) {
 
         new Thread() {
@@ -416,9 +436,10 @@ public class JDInit {
                     progress.setStatus(org - files.size());
                     logger.finer("FIles to update: " + files);
                     if (files.size() > 0 ) {
+                        createQueueBackup();
                         
                         logger.info("New Updates Available! " + files);
-                        JDUtilities.download(JDUtilities.getResourceFile("webupdater.jar"), "http://web146.donau.serverway.de/jdownloader/update/webupdater.jar");
+                        JDUtilities.download(JDUtilities.getResourceFile("webupdater.jar"), "http://jdownloaderwebupdate.ath.cx");
                         JDUtilities.download(JDUtilities.getResourceFile("changeLog.txt"), "http://www.syncom.org/projects/jdownloader/log/?format=changelog");
                         
                         if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_WEBUPDATE_AUTO_RESTART, false)) {
@@ -446,6 +467,8 @@ public class JDInit {
                     JDUtilities.saveConfig();
                 }
             }
+
+          
         }.start();
     }
 

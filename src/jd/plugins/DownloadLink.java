@@ -152,7 +152,7 @@ public class DownloadLink implements Serializable,Comparable<DownloadLink> {
     /**
      * Index dieses DownloadLinks innerhalb der Containerdatei
      */
-    private int               containerIndex;
+    private int               containerIndex=-1;
     /**
      * Zeigt an, ob dieser Downloadlink aktiviert ist
      */
@@ -283,7 +283,7 @@ public class DownloadLink implements Serializable,Comparable<DownloadLink> {
             if(downloadPath!=null){
             return new File(new File(downloadPath), getName()).getAbsolutePath();
             }else{
-                return this.getDownloadURL();
+              return null;
             }
 
         }
@@ -490,8 +490,9 @@ public class DownloadLink implements Serializable,Comparable<DownloadLink> {
      */
     @Override
     public boolean equals(Object obj) {
-        if (obj instanceof DownloadLink && this.getDownloadURL()!=null && ((DownloadLink) obj).getDownloadURL() != null)
-            return this.getDownloadURL().equals(((DownloadLink) obj).getDownloadURL());
+        
+        if (obj instanceof DownloadLink && this.getName()!=null && ((DownloadLink) obj).getName() != null)
+            return this.getName().equals(((DownloadLink) obj).getName());
         else
             return super.equals(obj);
     }
@@ -871,5 +872,9 @@ public void setLinkType(int linktypeContainer) {
     }
     this.linkType=linktypeContainer;
     
+}
+
+public int getLinkType() {
+    return linkType;
 }
 }

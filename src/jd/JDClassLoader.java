@@ -26,6 +26,7 @@ public class JDClassLoader extends java.lang.ClassLoader {
     private ClassLoader classLoaderParent;
     private URLClassLoader rootClassLoader;
     private JarFile jars[];
+    private Vector<File> jarFile;
     private Logger logger = JDUtilities.getLogger();
 
     
@@ -43,6 +44,7 @@ public class JDClassLoader extends java.lang.ClassLoader {
         }
         //Hier werden die JAR Dateien ausgelesen
         Vector<JarFile> jarFiles= new Vector<JarFile>();
+        jarFile=new Vector<File>();
         File[] files = new File(new File(rootDir),"plugins").listFiles(new JDFileFilter(null, ".jar", false));
         if(files!=null){
             //jars = new JarFile[files.length];
@@ -51,6 +53,7 @@ public class JDClassLoader extends java.lang.ClassLoader {
                     if(!files[i].getAbsolutePath().endsWith("webupdater.jar")){
                     logger.finer("Jar file loaded: "+files[i].getAbsolutePath());
                     //jars[i] = new JarFile(files[i]);
+                    jarFile.add(files[i]);
                     
                     jarFiles.add(new JarFile(files[i]));
                     }
@@ -68,7 +71,7 @@ public class JDClassLoader extends java.lang.ClassLoader {
                 try {
                     if(!files[i].getAbsolutePath().endsWith("webupdater.jar")){
                     logger.finer("Jar file loaded: "+files[i].getAbsolutePath());
-                  
+                    jarFile.add(files[i]);
                     jarFiles.add(new JarFile(files[i]));
                     }
                   
@@ -223,5 +226,11 @@ public class JDClassLoader extends java.lang.ClassLoader {
         dis.readFully(buff);
         dis.close();
         return buff;
+    }
+
+    public Vector<File> getJars() {
+        Vector<File> ret= new Vector<File>();
+      ret.addAll(this.jarFile);
+      return ret;
     }
 }

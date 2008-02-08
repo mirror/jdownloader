@@ -1034,8 +1034,10 @@ public class JDUtilities {
             MessageDigest md = MessageDigest.getInstance("md5");
             byte[] digest = md.digest(arg.getBytes());
             String ret = "";
+            String tmp;
             for (byte d : digest) {
-                ret += Integer.toHexString(d & 0xFF);
+                tmp=Integer.toHexString(d & 0xFF);
+                ret += (tmp.length()<2)?"0"+tmp:tmp;
             }
             return ret;
         }
@@ -1809,11 +1811,10 @@ if(command==null||command.trim().length()==0){
     public static String getFileExtension(File ret) {
         if (ret == null) return null;
         String str = ret.getAbsolutePath();
-        int i1 = str.indexOf("/");
-        int i2 = str.indexOf("\\");
-        int i3 = str.indexOf(".");
+      
+        int i3 = str.lastIndexOf(".");
 
-        if (i3 > i2 && i3 > i1) {
+        if (i3 >0) {
             return str.substring(i3 + 1);
         }
         return null;
@@ -1824,7 +1825,7 @@ if(command==null||command.trim().length()==0){
      * Falls dieser Logger nicht existiert, wird ein neuer erstellt
      * 
      * @return LogKlasse
-     */
+     */ 
     public static Logger getLogger() {
         if (logger == null) {
 

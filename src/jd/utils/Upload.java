@@ -11,6 +11,7 @@ import java.util.logging.Logger;
 import jd.plugins.Form;
 import jd.plugins.HTTPPost;
 import jd.plugins.Plugin;
+import jd.plugins.Regexp;
 import jd.plugins.RequestInfo;
 
 
@@ -38,6 +39,54 @@ public class Upload {
      }else{
          return null;
      }
+   }
+   
+   public static String toRamzahlCom(File file) {
+       try {
+           Form form= Form.getForms("http://ramzal.com/upload")[0];
+           form.fileToPost=file;
+           System.out.println(form.getRequestInfo().getHtmlCode());
+           System.out.println(form.toString());
+       } catch (Exception e) {
+           // TODO: handle exception
+       }
+return "";
+   }
+   public static String toRapidshareCom(File file) {
+       try {
+           Form form= Form.getForms("http://rapidshare.com/")[0];
+           form.fileToPost=new File("/home/dwd/wallpaper-1280x1024-007.jpg");
+           System.out.println(form.getRequestInfo().getHtmlCode());
+           System.out.println(form.toString());
+       } catch (Exception e) {
+           // TODO: handle exception
+       }
+return "";
+   }
+   
+   
+   public static String toUploadedToPremium(File file,String username,String password) {
+       try {
+     
+          
+           Form form= Form.getForms("http://uploaded.to/login")[0];
+           form.put("email", username);
+           form.put("password", password);
+           form.withHtmlCode=false;
+           String cookie = form.getRequestInfo(false).getCookie();
+           RequestInfo reqestinfo = Plugin.getRequest(new URL("http://uploaded.to/home"), cookie, null, true);
+           form = Form.getForms(reqestinfo)[0];
+           form.fileToPost=file;
+           form.setRequestPopertie("Cookie", cookie);
+           form.action=new Regexp(reqestinfo.getHtmlCode(), "document..*?.action = \"(http://.*?.uploaded.to/up\\?upload_id=)\";").getFirstMatch()+Math.round(10000*Math.random())+"0"+Math.round(10000*Math.random());
+           reqestinfo = form.getRequestInfo();
+           String link = new Regexp(Plugin.getRequest(new URL("http://uploaded.to/home"), cookie, null, true).getHtmlCode(), "http://uploaded.to/\\?id=[A-Za-z0-9]+").getFirstMatch();
+           System.out.println(link);
+       } catch (Exception e) {
+           e.printStackTrace();
+       }
+       return "";
+
    }
     public static String toUploadedTo(String str,String name){
         try {

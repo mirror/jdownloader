@@ -176,6 +176,7 @@ public class DistributeData extends ControlMulticaster {
     private boolean deepDecrypt(Vector<DownloadLink> decryptedLinks) {
         if (decryptedLinks.size() == 0) return false;
         boolean hasDecryptedLinks = false;
+        logger.info("Deep decrypt");
         for (int i = decryptedLinks.size() - 1; i >= 0; i--) {
             DownloadLink link = decryptedLinks.get(i);
             String url = link.getDownloadURL();

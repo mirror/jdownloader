@@ -84,7 +84,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
 
     public static final String   PROPERTY_AUTOPACKAGE_LIMIT = "AUTOPACKAGE_LIMIT";
 
-    public static final String PROPERTY_ONLINE_CHECK = "ONLINE_CHECK";
+    public static final String   PROPERTY_ONLINE_CHECK      = "ONLINE_CHECK";
 
     private JTabbedPane          tabbedPane;
 
@@ -128,7 +128,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
 
     private JMenuItem            mMerge;
 
-    private JMenuItem mRemoveOfflineAll;
+    private JMenuItem            mRemoveOfflineAll;
 
     /**
      * @param parent GUI
@@ -307,18 +307,20 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
                 while (waitingLinkList.size() > 0) {
 
                     link = waitingLinkList.remove(0);
-if(!guiConfig.getBooleanProperty(PROPERTY_ONLINE_CHECK, false)){
-    attachLinkToPackage(link);
-    try {
-        Thread.sleep(50);
-    }
-    catch (InterruptedException e) { }
-}else{
-                    if (link.isAvailable() || ((PluginForHost) link.getPlugin()).isListOffline()) {
-
+                    if (!guiConfig.getBooleanProperty(PROPERTY_ONLINE_CHECK, false)||link.getLinkType()==DownloadLink.LINKTYPE_CONTAINER) {
                         attachLinkToPackage(link);
+                        try {
+                            Thread.sleep(50);
+                        }
+                        catch (InterruptedException e) {
+                        }
                     }
-}
+                    else {
+                        if (link.isAvailable() || ((PluginForHost) link.getPlugin()).isListOffline()) {
+
+                            attachLinkToPackage(link);
+                        }
+                    }
                     progress.setValue(waitingLinkList.size());
 
                 }
@@ -357,7 +359,7 @@ if(!guiConfig.getBooleanProperty(PROPERTY_ONLINE_CHECK, false)){
     private void attachLinkToPackage(DownloadLink link) {
 
         if (!guiConfig.getBooleanProperty(PROPERTY_AUTOPACKAGE, true)) {
-           // logger.finer("No Auto package");
+            // logger.finer("No Auto package");
             int lastIndex = tabList.size() - 1;
             if (lastIndex < 0) {
                 addTab().setPackageName(this.removeExtension(link.getName()));
@@ -370,10 +372,10 @@ if(!guiConfig.getBooleanProperty(PROPERTY_ONLINE_CHECK, false)){
 
         }
         else {
-           // logger.finer("Auto package");
+            // logger.finer("Auto package");
             int bestSim = 0;
             int bestIndex = -1;
-            //logger.info("link: " + link.getName());
+            // logger.info("link: " + link.getName());
             for (int i = 0; i < tabList.size(); i++) {
 
                 int sim = comparePackages(tabList.get(i).getPackageName(), removeExtension(link.getName()));
@@ -389,7 +391,8 @@ if(!guiConfig.getBooleanProperty(PROPERTY_ONLINE_CHECK, false)){
                 tabList.get(tabList.size() - 1).setPackageName(removeExtension(link.getName()));
             }
             else {
-               // logger.info("Found Package " + tabList.get(bestIndex).getPackageName());
+                // logger.info("Found Package " +
+                // tabList.get(bestIndex).getPackageName());
                 String newPackageName = getSimString(tabList.get(bestIndex).getPackageName(), removeExtension(link.getName()));
                 tabList.get(bestIndex).setPackageName(newPackageName);
                 onPackageNameChanged(tabList.get(bestIndex));
@@ -402,18 +405,18 @@ if(!guiConfig.getBooleanProperty(PROPERTY_ONLINE_CHECK, false)){
     }
 
     private String removeExtension(String a) {
-       // logger.finer("file " + a);
+        // logger.finer("file " + a);
         a = a.replaceAll("\\.part([0-9]+)", "");
         a = a.replaceAll("\\.html", "");
         a = a.replaceAll("\\.htm", "");
         int i = a.lastIndexOf(".");
-       // logger.info("FOund . " + i);
+        // logger.info("FOund . " + i);
         String ret;
         if (i <= 1 || (a.length() - i) > 5) {
             ret = a.toLowerCase().trim();
         }
         else {
-            //logger.info("Remove ext");
+            // logger.info("Remove ext");
             ret = a.substring(0, i).toLowerCase().trim();
         }
 
@@ -428,9 +431,10 @@ if(!guiConfig.getBooleanProperty(PROPERTY_ONLINE_CHECK, false)){
         for (int i = 0; i < Math.min(a.length(), b.length()); i++) {
             if (a.charAt(i) == b.charAt(i)) c++;
         }
-      
+
         if (Math.min(a.length(), b.length()) == 0) return 0;
-        //logger.info("comp: " + a + " <<->> " + b + "(" + (c * 100) / (b.length()) + ")");
+        // logger.info("comp: " + a + " <<->> " + b + "(" + (c * 100) /
+        // (b.length()) + ")");
         return (c * 100) / (b.length());
     }
 
@@ -451,14 +455,14 @@ if(!guiConfig.getBooleanProperty(PROPERTY_ONLINE_CHECK, false)){
     public void addLinkstoTab(DownloadLink[] linkList, int id) {
 
         PackageTab tab;
-      //  logger.info(id + " - " + tabList.size());
+        // logger.info(id + " - " + tabList.size());
         if (id >= tabList.size()) {
             tab = addTab();
         }
         else {
             tab = tabList.get(id);
         }
-        //logger.finer("add " + linkList.length + " links at " + id);
+        // logger.finer("add " + linkList.length + " links at " + id);
 
         tab.addLinks(linkList);
 
@@ -470,11 +474,13 @@ if(!guiConfig.getBooleanProperty(PROPERTY_ONLINE_CHECK, false)){
         tabList.remove(i);
         tabbedPane.removeTabAt(i);
     }
+
     protected void removePackage(PackageTab tab) {
         tabbedPane.removeTabAt(tabList.indexOf(tab));
         tabList.remove(tab);
-       
+
     }
+
     protected PackageTab getSelectedTab() {
         return tabList.get(this.tabbedPane.getSelectedIndex());
     }
@@ -514,11 +520,11 @@ if(!guiConfig.getBooleanProperty(PROPERTY_ONLINE_CHECK, false)){
     }
 
     protected String getInfoString(DownloadLink link) {
-        if(!link.isAvailabilityChecked()){
-            return link.getStatusText().length() == 0 ? JDLocale.L("gui.linkgrabber.lbl.notonlinechecked", "[Verf. nicht überprüft] ") + link.getFileInfomationString() : link.getFileInfomationString()+" "+link.getStatusText();
-              
+        if (!link.isAvailabilityChecked()) {
+            return link.getStatusText().length() == 0 ? JDLocale.L("gui.linkgrabber.lbl.notonlinechecked", "[Verf. nicht überprüft] ") + link.getFileInfomationString() : link.getFileInfomationString() + " " + link.getStatusText();
+
         }
-        return link.getStatusText().length() == 0 ? JDLocale.L("gui.linkgrabber.lbl.isonline", "[online] ") + link.getFileInfomationString() : link.getFileInfomationString()+" "+link.getStatusText();
+        return link.getStatusText().length() == 0 ? JDLocale.L("gui.linkgrabber.lbl.isonline", "[online] ") + link.getFileInfomationString() : link.getFileInfomationString() + " " + link.getStatusText();
     }
 
     public void actionPerformed(ActionEvent e) {
@@ -642,37 +648,37 @@ if(!guiConfig.getBooleanProperty(PROPERTY_ONLINE_CHECK, false)){
             Iterator<PackageTab> iterator = tabList.iterator();
             Vector<DownloadLink> newList = new Vector<DownloadLink>();
             while (iterator.hasNext()) {
-                tab=iterator.next();
+                tab = iterator.next();
                 Vector<DownloadLink> list = tab.getLinkList();
                 newList.addAll(list);
-              
+
             }
-            while(tabList.size()>1){
+            while (tabList.size() > 1) {
                 this.removePackageAt(0);
             }
-           if( tabList.size()>0){
-              tabList.get(0).setLinkList(newList);
-              tabList.get(0).setPackageName(name);
-             onPackageNameChanged( tabList.get(0));
-           }
-          
+            if (tabList.size() > 0) {
+                tabList.get(0).setLinkList(newList);
+                tabList.get(0).setPackageName(name);
+                onPackageNameChanged(tabList.get(0));
+            }
+
         }
         else if (e.getSource() == this.mRemoveOfflineAll) {
             PackageTab tab;
             Iterator<PackageTab> iterator = tabList.iterator();
             Vector<DownloadLink> newList = new Vector<DownloadLink>();
             while (iterator.hasNext()) {
-                tab=iterator.next();
-                Vector<DownloadLink> list = tab.getLinkList();             
+                tab = iterator.next();
+                Vector<DownloadLink> list = tab.getLinkList();
                 for (int i = list.size() - 1; i >= 0; i--) {
                     if (!list.get(i).isAvailable()) {
                         tab.removeLinkAt(i);
                     }
                 }
                 this.onPackageNameChanged(tab);
-                
+
             }
-  
+
         }
         else if (e.getActionCommand().equals(JDLocale.L("gui.linkgrabber.tabs.context.delete"))) {
             Point loc = ((ContextMenu) ((JMenuItem) e.getSource()).getParent()).getPoint();
@@ -717,10 +723,10 @@ if(!guiConfig.getBooleanProperty(PROPERTY_ONLINE_CHECK, false)){
 
                 return;
             }
-            
-            int rand=(int) (Math.random() * 0xffffff);
-            Color c=new Color(rand);
-           // c = c.brighter();
+
+            int rand = (int) (Math.random() * 0xffffff);
+            Color c = new Color(rand);
+            // c = c.brighter();
             c = c.brighter();
             FilePackage fp = new FilePackage();
             fp.setProperty("color", c);
@@ -848,7 +854,7 @@ if(!guiConfig.getBooleanProperty(PROPERTY_ONLINE_CHECK, false)){
                         // DownloadLink link = source.removeLinkAt(id);
                         move.add(source.getLinkAt(id));
 
-                        //logger.info("Move line " + id);
+                        // logger.info("Move line " + id);
 
                     }
 
@@ -1174,7 +1180,7 @@ if(!guiConfig.getBooleanProperty(PROPERTY_ONLINE_CHECK, false)){
                 int[] rows = table.getSelectedRows();
                 for (int i = rows.length - 1; i >= 0; i--) {
                     int id = rows[i];// table.convertRowIndexToModel(rows[i]);
-                   // logger.info("remove  " + id);
+                    // logger.info("remove " + id);
                     linkList.remove(id);
 
                 }
@@ -1261,7 +1267,7 @@ if(!guiConfig.getBooleanProperty(PROPERTY_ONLINE_CHECK, false)){
                     case 2:
                         return linkList.get(rowIndex).getName();
                     case 3:
-                        return linkList.get(rowIndex).isAvailabilityChecked()?JDUtilities.formatBytesToMB(linkList.get(rowIndex).getDownloadMax()):"*";
+                        return linkList.get(rowIndex).isAvailabilityChecked() ? JDUtilities.formatBytesToMB(linkList.get(rowIndex).getDownloadMax()) : "*";
                     case 4:
                         return getInfoString(linkList.get(rowIndex));
 
@@ -1375,7 +1381,7 @@ if(!guiConfig.getBooleanProperty(PROPERTY_ONLINE_CHECK, false)){
                     if (dLink.isAvailabilityChecked() && !dLink.isAvailable()) {
                         c.setBackground(COLOR_ERROR_OFFLINE.darker());
                     }
-                    else if(dLink.isAvailabilityChecked()){
+                    else if (dLink.isAvailabilityChecked()) {
                         c.setBackground(COLOR_DONE.darker());
                     }
                     c.setForeground(Color.WHITE);
@@ -1386,7 +1392,7 @@ if(!guiConfig.getBooleanProperty(PROPERTY_ONLINE_CHECK, false)){
                     if (dLink.isAvailabilityChecked() && !dLink.isAvailable()) {
                         c.setBackground(COLOR_ERROR_OFFLINE);
                     }
-                    else if(dLink.isAvailabilityChecked()){
+                    else if (dLink.isAvailabilityChecked()) {
                         c.setBackground(COLOR_DONE);
                     }
                     c.setForeground(Color.BLACK);

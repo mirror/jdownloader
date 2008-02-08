@@ -75,7 +75,7 @@ public class InfoFileWriter extends Interaction implements Serializable {
                 return false;
             }
         }
-        catch (IOException e) {
+        catch (Exception e) {
 
             e.printStackTrace();
             logger.severe("Can not write2 to: " + dest.getAbsolutePath());

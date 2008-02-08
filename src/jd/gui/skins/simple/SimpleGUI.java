@@ -663,7 +663,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
                 break;
             case JDAction.APP_LOAD_DLC:
                 fc = new JDFileChooser("_LOADSAVEDLC");
-                fc.setFileFilter(new JDFileFilter(null, ".dlc|.rsdf|.ccf", true));
+                fc.setFileFilter(new JDFileFilter(null, ".dlc|.rsdf|.ccf|.linkbackup", true));
                 fc.showOpenDialog(frame);
                 ret = fc.getSelectedFile();
                 if (ret != null) {

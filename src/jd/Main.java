@@ -92,6 +92,7 @@ logger.info(System.getProperty("java.class.path"));
 
         window.setSize(450, 100);
         window.setLocationRelativeTo(null);
+        
         if(JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).getBooleanProperty(SimpleGUI.PARAM_SHOW_SPLASH, true)){
        window.setVisible(true);
         }
@@ -130,7 +131,7 @@ logger.info(System.getProperty("java.class.path"));
        
 
              
-      
+      init.createQueueBackup();
 
         window.dispose();
         controller.getUiInterface().onJDInitComplete();
