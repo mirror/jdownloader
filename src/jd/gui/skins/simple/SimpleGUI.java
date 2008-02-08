@@ -705,16 +705,15 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
                 this.toggleDnD();
                 break;
             case JDAction.ITEMS_ADD:
-                Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
+            	Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
                 String cb = "";
                 try {
                     cb = (String) clipboard.getData(DataFlavor.stringFlavor);
+                } catch (UnsupportedFlavorException e1) {
+                } catch (IOException e1) {
                 }
-                catch (UnsupportedFlavorException e1) {
-                }
-                catch (IOException e1) {
-                }
-                String data = JOptionPane.showInputDialog(frame, "Bitte Link eingeben:", cb);
+                LinkInputDialog inputDialog = new LinkInputDialog(frame, cb);
+                String data = inputDialog.getLinksString();
                 if (data != null) {
                     fireUIEvent(new UIEvent(this, UIEvent.UI_LINKS_TO_PROCESS, data));
                 }
