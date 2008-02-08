@@ -9,13 +9,13 @@ import java.util.regex.Pattern;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginStep;
+import jd.plugins.Regexp;
 
-public class RamZal extends PluginForHost {
-	private static final String HOST = "ramzal.com";
+public class UploadStube extends PluginForHost {
+	private static final String HOST = "uploadstube.de";
 	private static final String VERSION = "1.0.0.0";
-	// http://ramzal.com//upload_files/1280838337_wallpaper-1280x1024-007.jpg
 	static private final Pattern patternSupported = Pattern.compile(
-			"http://.*?ramzal\\.com//?upload_files/.*",
+			"http://.*?uploadstube\\.de/download.php\\?file=.*",
 			Pattern.CASE_INSENSITIVE);
 
 	//
@@ -54,7 +54,7 @@ public class RamZal extends PluginForHost {
 		return patternSupported;
 	}
 
-	public RamZal() {
+	public UploadStube() {
 		super();
 		steps.add(new PluginStep(PluginStep.STEP_DOWNLOAD, null));
 	}
@@ -67,9 +67,20 @@ public class RamZal extends PluginForHost {
 			return step;
 		}
 		try {
-			requestInfo = getRequestWithoutHtmlCode(new URL(downloadLink
-					.getDownloadURL()), null, null, true);
-
+			
+			requestInfo = getRequest(new URL(downloadLink
+					.getDownloadURL()));
+			String dlurl = new Regexp(requestInfo.getHtmlCode(), "onClick=\"window.location=..(http://www.uploadstube.de/.*?)..\">.;").getFirstMatch();
+			if(dlurl==null)
+			{
+				logger.severe("Datei nicht gefunden");
+				downloadLink
+						.setStatus(DownloadLink.STATUS_ERROR_FILE_NOT_FOUND);
+				step.setStatus(PluginStep.STATUS_ERROR);
+				return step;
+			}
+			requestInfo=getRequestWithoutHtmlCode(new URL(dlurl), requestInfo.getCookie(), downloadLink
+					.getDownloadURL(), true);
 			URLConnection urlConnection = requestInfo.getConnection();
 			downloadLink.setName(getFileNameFormHeader(urlConnection));
 			downloadLink.setDownloadMax(urlConnection.getContentLength());
@@ -106,11 +117,27 @@ public class RamZal extends PluginForHost {
 	@Override
 	public boolean getFileInformation(DownloadLink downloadLink) {
 		try {
-			requestInfo = getRequestWithoutHtmlCode(new URL(downloadLink
-					.getDownloadURL()), null, null, true);
-			URLConnection urlConnection = requestInfo.getConnection();
-			downloadLink.setName(getFileNameFormHeader(urlConnection));
-			downloadLink.setDownloadMax(urlConnection.getContentLength());
+			requestInfo = getRequest(new URL(downloadLink
+					.getDownloadURL()));
+			downloadLink.setName(new Regexp(requestInfo.getHtmlCode(), "<b>Dateiname: </b>(.*?) <br>").getFirstMatch());
+
+
+				try {
+					String[] fileSize = new Regexp(requestInfo.getHtmlCode(), "<b>Dateigr..e:</b> ([0-9\\.]*) (.*?)<br>").getMatches()[0];
+					double length = Double.parseDouble(fileSize[0]
+							.trim());
+					int bytes;
+					String type = fileSize[1].toLowerCase();
+					if (type.equalsIgnoreCase("kb")) {
+						bytes = (int) (length * 1024);
+					} else if (type.equalsIgnoreCase("mb")) {
+						bytes = (int) (length * 1024 * 1024);
+					} else {
+						bytes = (int) length;
+					}
+					downloadLink.setDownloadMax(bytes);
+				} catch (Exception e) {
+				}
 			return true;
 		} catch (Exception e) {
 			// TODO: handle exception
@@ -136,6 +163,6 @@ public class RamZal extends PluginForHost {
 	@Override
 	public String getAGBLink() {
 
-		return "http://ramzal.com/";
+		return "http://www.uploadstube.de/regeln.php";
 	}
 }
