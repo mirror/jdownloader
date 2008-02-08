@@ -1,22 +1,13 @@
 package jd.utils;
 
-import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLEncoder;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Vector;
 import java.util.Map.Entry;
 import java.util.logging.Logger;
-
-import javax.swing.JOptionPane;
-
-import jd.JDFileFilter;
-import jd.gui.skins.simple.SimpleGUI;
-import jd.gui.skins.simple.Link.JLinkButton;
 import jd.plugins.Form;
 import jd.plugins.HTTPPost;
 import jd.plugins.Plugin;

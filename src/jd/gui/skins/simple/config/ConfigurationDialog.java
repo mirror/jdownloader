@@ -1,11 +1,9 @@
 package jd.gui.skins.simple.config;
 
 import java.awt.ComponentOrientation;
-import java.awt.Dimension;
 import java.awt.Frame;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
-import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.lang.reflect.Constructor;

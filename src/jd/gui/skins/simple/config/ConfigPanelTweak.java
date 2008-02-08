@@ -7,9 +7,7 @@ import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.Configuration;
 import jd.gui.UIInterface;
-import jd.gui.skins.simple.SimpleGUI;
 import jd.utils.JDLocale;
-import jd.utils.JDUtilities;
 
 /**
  * @author JD-Team

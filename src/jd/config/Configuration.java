@@ -4,7 +4,6 @@ import java.io.Serializable;
 import java.util.Vector;
 
 import jd.controlling.interaction.Interaction;
-import jd.controlling.interaction.InteractionTrigger;
 import jd.router.RouterData;
 
 /**

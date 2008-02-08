@@ -10,7 +10,6 @@ import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginStep;
-import jd.plugins.Regexp;
 import jd.plugins.RequestInfo;
 
 public class DatenschleuderCc extends PluginForDecrypt {
