@@ -84,7 +84,6 @@ public class ArchivTo extends PluginForHost {
 			//workaround
 			new Thread(new Runnable() {
 
-				@Override
 				public void run() {
 					try {
 						Thread.sleep(100);
