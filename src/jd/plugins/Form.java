@@ -1,9 +1,7 @@
 package jd.plugins;
 
 import java.io.DataInputStream;
-import java.io.DataOutputStream;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.net.HttpURLConnection;
@@ -332,86 +330,45 @@ public class Form {
 				e.printStackTrace();
 			}
 		} else if (method == METHOD_FILEPOST) {
-
-			// JOptionPane.showMessageDialog(null,
-			// "Dateiname:"+exsistingFileName );
-
-			HttpURLConnection conn = null;
-			DataOutputStream dos = null;
-
-			String lineEnd = "\r\n";
-			String twoHyphens = "--";
-			String boundary = "*****";
-
-			int bytesRead, bytesAvailable, bufferSize;
-
-			byte[] buffer;
-
-			int maxBufferSize = 1 * 1024 * 1024;
 			try {
-				// Datei laden
-				FileInputStream fileInputStream = new FileInputStream(
-						fileToPost);
-
-				// Neue URL zum PHP-Script erstellen
-				conn = (HttpURLConnection) new URL(action).openConnection();
-				// Input senden
-				conn.setDoInput(true);
-
-				// Output empfangen
-				conn.setDoOutput(true);
-				conn.setUseCaches(false);
-				conn.setRequestMethod("POST");
-				conn.setRequestProperty("Accept-Language",
+				// JOptionPane.showMessageDialog(null,
+				// "Dateiname:"+exsistingFileName );
+				String boundary = MultiPartFormOutputStream.createBoundary();
+				URLConnection urlConn = MultiPartFormOutputStream
+						.createConnection(new URL(action));
+				urlConn.setRequestProperty("Accept", "*/*");
+				urlConn.setRequestProperty("Accept-Language",
 						Plugin.ACCEPT_LANGUAGE);
-				conn
+				urlConn
 						.setRequestProperty(
 								"User-Agent",
 								"Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1; SV1; .NET CLR 1.1.4322; .NET CLR 2.0.50727)");
-				conn.setRequestProperty("Cookie", baseRequest.getCookie());
+				urlConn.setRequestProperty("Cookie", baseRequest.getCookie());
 				for (Map.Entry<String, String> entry : requestPoperties
 						.entrySet()) {
-					conn.setRequestProperty(entry.getKey(), entry.getValue());
+					urlConn
+							.setRequestProperty(entry.getKey(), entry
+									.getValue());
 				}
-				conn.setRequestProperty("Referer", baseurl.toString());
-
-				conn.setRequestProperty("Content-Type",
-						"multipart/form-data;boundary=" + boundary);
-
-				dos = new DataOutputStream(conn.getOutputStream());
-				dos.writeBytes(twoHyphens + boundary + lineEnd);
-				dos.writeBytes("Content-Disposition: form-data; name=\""
-						+ filetoPostName + "\";" + " filename=\""
-						+ fileToPost.getName() + "\"" + lineEnd);
-				dos.writeBytes(lineEnd);
-
-				// Buffer mit maximaler Größe erstellen
-				bytesAvailable = fileInputStream.available();
-				bufferSize = Math.min(bytesAvailable, maxBufferSize);
-				buffer = new byte[bufferSize];
-
-				// Datei aufrufen und in Stream schreiben
-				bytesRead = fileInputStream.read(buffer, 0, bufferSize);
-
-				while (bytesRead > 0) {
-					dos.write(buffer, 0, bufferSize);
-					bytesAvailable = fileInputStream.available();
-					bufferSize = Math.min(bytesAvailable, maxBufferSize);
-					bytesRead = fileInputStream.read(buffer, 0, bufferSize);
+				urlConn.setRequestProperty("Referer", baseurl.toString());
+				urlConn.setRequestProperty("Content-Type",
+						MultiPartFormOutputStream.getContentType(boundary));
+				urlConn.setRequestProperty("Connection", "Keep-Alive");
+				urlConn.setRequestProperty("Cache-Control", "no-cache");
+				MultiPartFormOutputStream out = new MultiPartFormOutputStream(
+						urlConn.getOutputStream(), boundary);
+				for (Map.Entry<String, String> entry : vars.entrySet()) {
+					out.writeField(entry.getKey(), URLEncoder.encode(entry
+							.getValue()));
 				}
-				// send multipart form data necesssary after file data...
-				dos.writeBytes(lineEnd);
-				dos.writeBytes(twoHyphens + boundary + twoHyphens + lineEnd);
-
-				// Stream schliessen
-				fileInputStream.close();
-				dos.flush();
-				dos.close();
-
-			} catch (MalformedURLException ex) {
-			} catch (IOException ioe) {
+				out.writeFile(filetoPostName, null, fileToPost);
+				out.close();
+				return urlConn;
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
 			}
-			return conn;
+
 		}
 		return null;
 	}
@@ -489,6 +446,7 @@ public class Form {
 			ret += "Method: PUT is not supported\n";
 		else if (method == METHOD_FILEPOST) {
 			ret += "Method: FILEPOST\n";
+			ret += "filetoPostName:" + filetoPostName + "\n";
 			if (fileToPost == null)
 				ret += "Warning: you have to set the fileToPost\n";
 		} else if (method == METHOD_UNKNOWN)
