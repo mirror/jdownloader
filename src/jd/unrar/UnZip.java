@@ -36,7 +36,7 @@ public class UnZip {
 	}
 
 	/**
-	 * Konstruktor mit einem bestimmten ziehl
+	 * Konstruktor mit einem bestimmten Ziel
 	 * 
 	 * @param zipFile
 	 * @param targetPath
