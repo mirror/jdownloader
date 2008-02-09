@@ -1,5 +1,6 @@
 package jd.utils;
 
+import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -55,7 +56,7 @@ return "";
    public static String toRapidshareCom(File file) {
        try {
            Form form= Form.getForms("http://rapidshare.com/")[0];
-           form.fileToPost=new File("/home/dwd/wallpaper-1280x1024-007.jpg");
+           form.fileToPost=file;
            System.out.println(form.getRequestInfo().getHtmlCode());
            System.out.println(form.toString());
        } catch (Exception e) {
