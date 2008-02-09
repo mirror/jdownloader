@@ -40,7 +40,7 @@ public class JUnrar {
 	public String[] followingFiles = null;
 
 	public File extractFolder = null;
-
+	private LinkedList<File> unpackedFiles = new LinkedList<File>();
 	private static SubConfiguration configPasswords = JDUtilities
 			.getSubConfig("unrarPasswords");
 
@@ -123,8 +123,6 @@ public class JUnrar {
 	private boolean extendPasswordSearch = false;
 
 	private static Logger logger = JDUtilities.getLogger();
-
-	LinkedList<String> ret = new LinkedList<String>();
 
 	/**
 	 * Konstruktor Hinzufügen von Passwoertern
@@ -1220,7 +1218,9 @@ public class JUnrar {
 				matcher = pattern.matcher(str);
 				HashMap<File, String> nfiles = new HashMap<File, String>();
 				while (matcher.find()) {
-					nfiles.put(new File(parent, matcher.group(1)), null);
+					File f = new File(parent, matcher.group(1));
+					nfiles.put(f, null);
+					unpackedFiles.add(f);
 				}
 				JUnrar un = new JUnrar();
 				un.files = nfiles;
@@ -1229,7 +1229,12 @@ public class JUnrar {
 				un.unrar = unrar;
 				un.useToextractlist = false;
 				un.overwriteFiles = overwriteFiles;
-				ret.addAll(un.unrar());
+				unpackedFiles.addAll(un.unpackedFiles);
+				Iterator<File> iter = unpackedFiles.iterator();
+				while (iter.hasNext()) {
+					File file2 = (File) iter.next();
+					if(!file2.exists()) iter.remove();
+				}
 			}
 			return str;
 
@@ -1266,7 +1271,7 @@ public class JUnrar {
 	/**
 	 * Startet den Entpackungsprozess. Es werden alle Zielordner zurückgegeben
 	 */
-	public LinkedList<String> unrar() {
+	public LinkedList<File> unrar() {
 		unrar = getUnrarCommand();
 		logger.info("Starting Unrar (DwD|JD-Team)");
 		logger.info("Config->unrar: " + unrar);
@@ -1276,7 +1281,7 @@ public class JUnrar {
 		logger.info("Config->overwriteFiles: " + overwriteFiles);
 		logger.info("Config->autoDelete: " + autoDelete);
 		if (unrar == null) {
-			return null;
+			return unpackedFiles;
 		}
 		loadUnpackedList();
 		if (useToextractlist) {
@@ -1304,10 +1309,7 @@ public class JUnrar {
 						if (pw == null && standardPassword != null)
 							pw = standardPassword;
 						logger.info("Password: " + pw);
-						if (extractFile(entry.getKey(), pw)) {
-							ret.add(entry.getKey().getParentFile()
-									.getAbsolutePath());
-						}
+						extractFile(entry.getKey(), pw);
 					}
 
 				} else if (!name.matches(".*part[0-9]+.rar$")
@@ -1327,10 +1329,7 @@ public class JUnrar {
 						if (pw == null && standardPassword != null)
 							pw = standardPassword;
 						logger.info("Password: " + pw);
-						if (extractFile(entry.getKey(), pw)) {
-							ret.add(entry.getKey().getParentFile()
-									.getAbsolutePath());
-						}
+						extractFile(entry.getKey(), pw);
 					}
 				} else {
 					// logger.finer("Not an archive: " + entry.getKey());
@@ -1341,6 +1340,6 @@ public class JUnrar {
 		}
 		logger.info("finalize");
 		progress.finalize();
-		return ret;
+		return unpackedFiles;
 	}
 }
