@@ -8,7 +8,6 @@ import java.net.URLEncoder;
 import java.util.Iterator;
 import java.util.Vector;
 import java.util.Map.Entry;
-import java.util.logging.Logger;
 import jd.plugins.Form;
 import jd.plugins.HTTPPost;
 import jd.plugins.Plugin;
@@ -17,7 +16,7 @@ import jd.plugins.RequestInfo;
 
 
 public class Upload {
-   private static Logger logger= JDUtilities.getLogger();
+   //private static Logger logger= JDUtilities.getLogger();
    public static String toPastebinCom(String str,String name){
        RequestInfo requestInfo=null;
        try {
@@ -46,8 +45,8 @@ public class Upload {
        try {
            Form form= Form.getForms("http://ramzal.com/upload")[0];
            form.fileToPost=file;
-           System.out.println(form.getRequestInfo().getHtmlCode());
-           System.out.println(form.toString());
+           return new Regexp(form.getRequestInfo(), "URL:</b> <a href=(http://ramzal.com//?upload_files/.*?)>http://ramzal.com//?upload_files/.*?</a></font>").getFirstMatch();
+           //
        } catch (Exception e) {
            // TODO: handle exception
        }
@@ -57,8 +56,7 @@ return "";
        try {
            Form form= Form.getForms("http://rapidshare.com/")[0];
            form.fileToPost=file;
-           System.out.println(form.getRequestInfo().getHtmlCode());
-           System.out.println(form.toString());
+           return new Regexp(form.getRequestInfo(), ":</td><td><a href=\"(http://rapidshare.com/files/.*?)\" target=\"_blank\">http://rapidshare.com/files/").getFirstMatch();
        } catch (Exception e) {
            // TODO: handle exception
        }
@@ -81,8 +79,7 @@ return "";
            form.setRequestPopertie("Cookie", cookie);
            form.action=new Regexp(reqestinfo.getHtmlCode(), "document..*?.action = \"(http://.*?.uploaded.to/up\\?upload_id=)\";").getFirstMatch()+Math.round(10000*Math.random())+"0"+Math.round(10000*Math.random());
            reqestinfo = form.getRequestInfo();
-           String link = new Regexp(Plugin.getRequest(new URL("http://uploaded.to/home"), cookie, null, true).getHtmlCode(), "http://uploaded.to/\\?id=[A-Za-z0-9]+").getFirstMatch();
-           System.out.println(link);
+           return new Regexp(Plugin.getRequest(new URL("http://uploaded.to/home"), cookie, null, true).getHtmlCode(), "http://uploaded.to/\\?id=[A-Za-z0-9]+").getFirstMatch();
        } catch (Exception e) {
            e.printStackTrace();
        }

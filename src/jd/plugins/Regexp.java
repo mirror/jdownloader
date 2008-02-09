@@ -10,9 +10,18 @@ public class Regexp {
         if (matcher == null) return;
         this.matcher = matcher;
     }
+    public Regexp(Object data, Pattern pattern) {
+        this(data.toString(), pattern);
+    }
     public Regexp(String data, Pattern pattern) {
         if (data == null || pattern == null) return;
         this.matcher = pattern.matcher(data);
+    }
+    public Regexp(Object data, String pattern) {
+        this(data.toString(), pattern);
+    }
+    public Regexp(Object data, String pattern, int flags) {
+        this(data.toString(), pattern, flags);
     }
     public Regexp(String data, String pattern) {
         if (data == null || pattern == null) return;

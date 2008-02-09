@@ -72,4 +72,5 @@ public class RequestInfo {
     public void setConnection(HttpURLConnection connection) {
         this.connection = connection;
     }
+    public String toString()	{ return getHtmlCode(); }
 }
