@@ -23,8 +23,8 @@ public class DLCConverter extends Interaction implements Serializable {
     private static final String FORMAT = "[url=%URL%][b]%CONTAINERNAME% @ %HOSTER%(%LINKNUM% urls)[/b][/URL]";
     private static final String RAPIDSHARECOM = "RAPIDSHARECOM";
     private static final String RAMZAL = "RAMZAL";
-    private static final String UPLOADEDTOUSER = null;
-    private static final String UPLOADEDTOPASS = null;
+    private static final String UPLOADEDTOUSER = "UPLOADEDTOUSER";
+    private static final String UPLOADEDTOPASS = "UPLOADEDTOPASS";
 
     public DLCConverter() {}
 
@@ -155,7 +155,7 @@ public class DLCConverter extends Interaction implements Serializable {
                 dest.delete();
                 format= format.replace("%CONTAINERNAME%", name);
                 format=format.replace("%LINKNUM%", ""+links.size());
-                format= format.replace("%HOSTER%", "pastebin.com");
+                format= format.replace("%HOSTER%", "rapidshare.com");
                 ret+=format+"\r\n";
         
             }
@@ -172,7 +172,7 @@ public class DLCConverter extends Interaction implements Serializable {
                 dest.delete();
                 format= format.replace("%CONTAINERNAME%", name);
                 format=format.replace("%LINKNUM%", ""+links.size());
-                format= format.replace("%HOSTER%", "pastebin.com");
+                format= format.replace("%HOSTER%", "ramzal.com");
                 ret+=format+"\r\n";
         
             }
@@ -219,7 +219,7 @@ public class DLCConverter extends Interaction implements Serializable {
     public void initConfig() {
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL,  JDLocale.L("interaction.dlcconverter.container","Diese Container werden eingelesen:")));
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX,this,"RSDF",  JDLocale.L("interaction.dlcconverter.rsdf","*.RSDF:")).setDefaultValue(true));
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX,this,"CCF",  JDLocale.L("interaction.dlcconverter.rsdf","*.CCF:")).setDefaultValue(true));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX,this,"CCF",  JDLocale.L("interaction.dlcconverter.ccf","*.CCF:")).setDefaultValue(true));
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX,this,"DLC",  JDLocale.L("interaction.dlcconverter.dlc","*.DLC:")).setDefaultValue(false));
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL,  JDLocale.L("interaction.dlcconverter.mirrors","Anzahl de Mirrors:")));
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, this, UPLOADEDTO, JDLocale.L("interaction.dlcconverter.uploadedto","Uploaded.to:"),0,20).setDefaultValue(2));

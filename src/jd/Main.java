@@ -115,7 +115,7 @@ logger.info(System.getProperty("java.class.path"));
         else {
             init.initGUI(controller);
 
-            JDUtilities.initFileLogger();
+         
 
             init.initPlugins();
             init.loadDownloadQueue();
@@ -131,7 +131,7 @@ logger.info(System.getProperty("java.class.path"));
        
 
              
-      init.createQueueBackup();
+      //init.createQueueBackup();
 
         window.dispose();
         controller.getUiInterface().onJDInitComplete();

@@ -1868,23 +1868,23 @@ if(command==null||command.trim().length()==0){
         return logger;
     }
 
-    public static boolean initFileLogger() {
-        try {
-            if (getConfiguration().getBooleanProperty(Configuration.PARAM_WRITE_LOG, true)) {
-                Handler file_handler = new FileHandler(getConfiguration().getStringProperty(Configuration.PARAM_WRITE_LOG_PATH, getResourceFile("jd_log.txt").getAbsolutePath()));
-                logger.addHandler(file_handler);
-                logger.info("File Logger active: " + getConfiguration().getStringProperty(Configuration.PARAM_WRITE_LOG_PATH, getResourceFile("jd_log.txt").getAbsolutePath()));
-                return true;
-            }
-        }
-        catch (SecurityException e) {
-            e.printStackTrace();
-        }
-        catch (IOException e) {
-            e.printStackTrace();
-        }
-        return false;
-    }
+//    public static boolean initFileLogger() {
+//        try {
+//            if (getConfiguration().getBooleanProperty(Configuration.PARAM_WRITE_LOG, true)) {
+//                Handler file_handler = new FileHandler(getConfiguration().getStringProperty(Configuration.PARAM_WRITE_LOG_PATH, getResourceFile("jd_log.txt").getAbsolutePath()));
+//                logger.addHandler(file_handler);
+//                logger.info("File Logger active: " + getConfiguration().getStringProperty(Configuration.PARAM_WRITE_LOG_PATH, getResourceFile("jd_log.txt").getAbsolutePath()));
+//                return true;
+//            }
+//        }
+//        catch (SecurityException e) {
+//            e.printStackTrace();
+//        }
+//        catch (IOException e) {
+//            e.printStackTrace();
+//        }
+//        return false;
+//    }
 
     /**
      * Fügt dem Log eine Exception hinzu

@@ -504,7 +504,7 @@ public class JDController implements PluginListener, ControlListener, UIListener
     }
 
     public String encryptDLC(String xml) {
-       // if(true)return xml;
+       //if(true)return xml;
         String[] encrypt = JDUtilities.encrypt(xml, "DLC Parser");
 
         // logger.info(encrypt[1] + " - ");
@@ -517,11 +517,12 @@ public class JDController implements PluginListener, ControlListener, UIListener
         String key = encrypt[1];
         xml = encrypt[0];
 
-        try {
+        
             URL[] services = new URL[] { new URL("http://dlcrypt3.ath.cx/service.php") };
             int url = 0;
             while (url < services.length) {
                 // Get redirect url
+                try {
                 logger.finer("Call " + services[url]);
                 RequestInfo ri = Plugin.getRequestWithoutHtmlCode(services[url], null, null, false);
                 if (!ri.isOK() || ri.getLocation() == null) {
@@ -552,14 +553,14 @@ public class JDController implements PluginListener, ControlListener, UIListener
                     return xml + dlcKey;
                 }
 
+            } catch (MalformedURLException e) {
+                e.printStackTrace();
+            }
+            catch (IOException e) {
+                e.printStackTrace();
             }
         }
-        catch (MalformedURLException e) {
-            e.printStackTrace();
-        }
-        catch (IOException e) {
-            e.printStackTrace();
-        }
+       
         return null;
 
     }
