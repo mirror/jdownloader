@@ -68,6 +68,7 @@ logger.info(System.getProperty("java.class.path"));
         if (!stop) {
             Main main = new Main();
             main.go();
+  
          
          
         }
@@ -145,7 +146,6 @@ logger.info(System.getProperty("java.class.path"));
         logger.info("jd.run="+JDUtilities.getRunType());
         logger.info("jd.lastAuthor="+JDUtilities.getLastChangeAuthor());   
         logger.info("jd.appDir="+JDUtilities.getCurrentWorkingDirectory(null));
-    
     }
     
 

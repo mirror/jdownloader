@@ -69,6 +69,7 @@ public class GetExplorer {
         	for (int i = 0; i < paramsArray.length; i++) {
         		finalParams[i]=paramsArray[i].replaceAll("\\%\\%path\\%\\%", spath);
 			}
+        	
             JDUtilities.runCommand((String) explorer[1], finalParams, null, 0);
             return true;
 		}
