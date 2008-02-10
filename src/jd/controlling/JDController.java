@@ -112,6 +112,8 @@ public class JDController implements PluginListener, ControlListener, UIListener
 
     private int                               initStatus                       = -1;
 
+    private Vector<Vector<String>> waitingUpdates;
+
     public JDController() {
         downloadLinks = new Vector<DownloadLink>();
         clipboard = new ClipboardHandler();
@@ -1156,6 +1158,15 @@ public class JDController implements PluginListener, ControlListener, UIListener
 
     public int getInitStatus() {
         return initStatus;
+    }
+
+    public void setWaitingUpdates(Vector<Vector<String>> files) {
+        this.waitingUpdates=files;
+        
+    }
+    public Vector<Vector<String>> getWaitingUpdates() {
+        return this.waitingUpdates;
+        
     }
 
 }

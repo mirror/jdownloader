@@ -402,6 +402,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         this.progressBar.updateController(null);
         decryptPluginDataChanged = null;
         hostPluginDataChanged = null;
+        this.frame.setTitle(JDUtilities.getJDTitle());
     }
 
     /**
@@ -685,6 +686,8 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
                 break;
             case JDAction.APP_UPDATE:
                 fireUIEvent(new UIEvent(this, UIEvent.UI_INTERACT_UPDATE));
+              
+                
                 break;
             case JDAction.ITEMS_REMOVE:
                 if (!guiConfig.getBooleanProperty(PARAM_DISABLE_CONFIRM_DIALOGS, false)) {
@@ -1242,6 +1245,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
             btnStartStop.setSelected(true);
             this.startStopDownloads();
         }
+        this.frame.setTitle(JDUtilities.getJDTitle());
 
     }
 

@@ -96,99 +96,101 @@ public class JDUtilities {
     /**
      * Parametername für den Konfigpath
      */
-    public static final String                     CONFIG_PATH         = "jDownloader.config";
-    private static HashMap<String,SubConfiguration> subConfigs=new HashMap<String,SubConfiguration>();
+    public static final String                       CONFIG_PATH         = "jDownloader.config";
+
+    private static HashMap<String, SubConfiguration> subConfigs          = new HashMap<String, SubConfiguration>();
+
     /**
      * Name des Loggers
      */
-    public static String                           LOGGER_NAME         = "java_downloader";
+    public static String                             LOGGER_NAME         = "java_downloader";
 
     /**
      * Titel der Applikation
      */
-    public static final String                     JD_VERSION          = "0.0.";
+    public static final String                       JD_VERSION          = "0.0.";
 
-    public static final String                     JD_REVISION         = "$Id$";
+    public static final String                       JD_REVISION         = "$Id$";
 
     /**
      * Versionsstring der Applikation
      */
-    public static final String                     JD_TITLE            = "jDownloader";
+    public static final String                       JD_TITLE            = "jDownloader";
 
-    private static final int                       RUNTYPE_WEBSTART    = 0;
+    private static final int                         RUNTYPE_WEBSTART    = 0;
 
-    private static final int                       RUNTYPE_LOCAL       = 1;
+    private static final int                         RUNTYPE_LOCAL       = 1;
 
-    public static final int                        RUNTYPE_LOCAL_JARED = 2;
+    public static final int                          RUNTYPE_LOCAL_JARED = 2;
 
-    public static final int                        RUNTYPE_LOCAL_ENV   = 3;
+    public static final int                          RUNTYPE_LOCAL_ENV   = 3;
 
- //   private static Vector<PluginForSearch>         pluginsForSearch    = null;
+    // private static Vector<PluginForSearch> pluginsForSearch = null;
 
-    private static Vector<PluginForContainer>      pluginsForContainer = null;
+    private static Vector<PluginForContainer>        pluginsForContainer = null;
 
-    private static Vector<PluginForHost>           pluginsForHost      = null;
+    private static Vector<PluginForHost>             pluginsForHost      = null;
 
-    private static HashMap<String, PluginOptional> pluginsOptional     = null;
+    private static HashMap<String, PluginOptional>   pluginsOptional     = null;
 
-    private static Vector<PluginForDecrypt>        pluginsForDecrypt;
+    private static Vector<PluginForDecrypt>          pluginsForDecrypt;
 
     /**
      * Ein URLClassLoader, um Dateien aus dem HomeVerzeichnis zu holen
      */
-    private static JDClassLoader                   jdClassLoader       = null;
+    private static JDClassLoader                     jdClassLoader       = null;
 
     /**
      * Das JD-Home Verzeichnis. Dieses wird nur gesetzt, wenn es aus dem
      * WebStart Cookie gelesen wurde. Diese Variable kann nämlich im
      * KonfigDialog geändert werden
      */
-    private static String                          homeDirectory       = null;
+    private static String                            homeDirectory       = null;
 
     /**
      * Das ist das File Objekt, daß das HomeDirectory darstellt
      */
-    private static File                            homeDirectoryFile   = null;
+    private static File                              homeDirectoryFile   = null;
 
     /**
      * Der DownloadController
      */
-    private static JDController                    controller          = null;
+    private static JDController                      controller          = null;
 
     /**
      * RessourceBundle für Texte
      */
-    private static ResourceBundle                  resourceBundle      = null;
+    private static ResourceBundle                    resourceBundle      = null;
 
     /**
      * Angaben über Spracheinstellungen
      */
-    private static Locale                          locale              = null;
+    private static Locale                            locale              = null;
 
     /**
      * Alle verfügbaren Bilder werden hier gespeichert
      */
-    private static HashMap<String, Image>          images              = new HashMap<String, Image>();
+    private static HashMap<String, Image>            images              = new HashMap<String, Image>();
 
     /**
      * Der Logger für Meldungen
      */
-    private static Logger                          logger              = JDUtilities.getLogger();
+    private static Logger                            logger              = JDUtilities.getLogger();
 
     /**
      * Damit werden die JARs rausgesucht
      */
-    public static JDFileFilter                     filterJar           = new JDFileFilter(null, ".jar", false);
+    public static JDFileFilter                       filterJar           = new JDFileFilter(null, ".jar", false);
 
     /**
      * Das aktuelle Verzeichnis (Laden/Speichern)
      */
-    private static File                            currentDirectory;
+    private static File                              currentDirectory;
 
     /**
      * Die Konfiguration
      */
-    private static Configuration                   configuration       = new Configuration();
+    private static Configuration                     configuration       = new Configuration();
 
     /**
      * Gibt das aktuelle Working Directory zurück. Beim FilebRowser etc wird da
@@ -202,7 +204,7 @@ public class JDUtilities {
         String lastDir = JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_CURRENT_BROWSE_PATH + id, null);
 
         File dlDirectory;
-       // File lastDirectory;
+        // File lastDirectory;
         if (dlDir == null) {
             dlDirectory = new File("");
         }
@@ -376,8 +378,8 @@ public class JDUtilities {
 
         }
 
-        return pattern; 
-    } 
+        return pattern;
+    }
 
     /**
      * Liefert einen Punkt zurück, mit dem eine Komponente auf eine andere
@@ -392,9 +394,9 @@ public class JDUtilities {
         Point center;
         if (parent == null || !parent.isShowing()) {
             Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
-            int width = screenSize.width; 
+            int width = screenSize.width;
             int height = screenSize.height;
-            center = new Point(width / 2, height / 2); 
+            center = new Point(width / 2, height / 2);
         }
         else {
             center = parent.getLocationOnScreen();
@@ -411,7 +413,7 @@ public class JDUtilities {
         if (arg == null) return new String[] {};
         return arg.split("[\r|\n|\r\n]{1,2}");
     }
-   
+
     /**
      * Liefert eine Zeichenkette aus dem aktuellen ResourceBundle zurück
      * 
@@ -458,7 +460,7 @@ public class JDUtilities {
      *         kann
      */
     public static Image getImage(String imageName) {
-        
+
         if (images.get(imageName) == null) {
             ClassLoader cl = JDUtilities.getJDClassLoader();
             Toolkit toolkit = Toolkit.getDefaultToolkit();
@@ -508,15 +510,15 @@ public class JDUtilities {
         switch (getRunType()) {
             case RUNTYPE_LOCAL_JARED:
                 envDir = currentDir.getAbsolutePath();
-               // logger.info("JD_HOME from current Path :" + envDir);
+                // logger.info("JD_HOME from current Path :" + envDir);
                 break;
             case RUNTYPE_LOCAL_ENV:
                 envDir = System.getenv("JD_HOME");
-                //logger.info("JD_HOME from environment:" + envDir);
+                // logger.info("JD_HOME from environment:" + envDir);
                 break;
             default:
                 envDir = System.getProperty("user.home") + System.getProperty("file.separator") + ".jd_home/";
-                //logger.info("JD_HOME from user.home :" + envDir);
+                // logger.info("JD_HOME from user.home :" + envDir);
 
         }
 
@@ -540,7 +542,7 @@ public class JDUtilities {
      * @return
      */
     @SuppressWarnings("unchecked")
-	public static Object getHomeDirInstance(String classPath, Object[] arguments) {
+    public static Object getHomeDirInstance(String classPath, Object[] arguments) {
         classPath = classPath.replaceAll("\\.class", "");
         classPath = classPath.replaceAll("\\/", ".");
         classPath = classPath.replaceAll("\\\\", ".");
@@ -640,18 +642,17 @@ public class JDUtilities {
             e.printStackTrace();
         }
     }
-    
-    public static SubConfiguration getSubConfig(String name){
-        if(subConfigs.containsKey(name))return subConfigs.get(name);
-        
+
+    public static SubConfiguration getSubConfig(String name) {
+        if (subConfigs.containsKey(name)) return subConfigs.get(name);
+
         SubConfiguration cfg = new SubConfiguration(name);
         subConfigs.put(name, cfg);
         cfg.save();
         return cfg;
-        
-    
+
     }
-    
+
     public static String xmltoStr(Document header) {
         Transformer transformer;
         try {
@@ -669,11 +670,12 @@ public class JDUtilities {
             String xmlString = result.getWriter().toString();
             return xmlString;
         }
-        catch (Exception e) {            
+        catch (Exception e) {
             e.printStackTrace();
         }
         return null;
     }
+
     /**
      * Liefert einen URLClassLoader zurück, um Dateien aus dem Stammverzeichnis
      * zu laden
@@ -683,11 +685,11 @@ public class JDUtilities {
     public static JDClassLoader getJDClassLoader() {
         if (jdClassLoader == null) {
             File homeDir = getJDHomeDirectoryFromEnvironment();
-        //    String url = null;
+            // String url = null;
             // Url Encode des pfads für den Classloader
             logger.info("Create Classloader: for: " + homeDir.getAbsolutePath());
             jdClassLoader = new JDClassLoader(homeDir.getAbsolutePath(), Thread.currentThread().getContextClassLoader());
-          
+
         }
         return jdClassLoader;
     }
@@ -706,7 +708,7 @@ public class JDUtilities {
         String host;
         if (method == null) {
             host = plugin.getHost();
-        } 
+        }
         else {
             host = method;
         }
@@ -820,7 +822,7 @@ public class JDUtilities {
             }
         }
         if (fileInput != null) {
-           // String hash = getLocalHash(fileInput);
+            // String hash = getLocalHash(fileInput);
             try {
                 FileInputStream fis = new FileInputStream(fileInput);
                 if (asXML) {
@@ -840,7 +842,7 @@ public class JDUtilities {
             }
             catch (ClassNotFoundException e) {
                 logger.severe(e.getMessage());
-               // e.printStackTrace();
+                // e.printStackTrace();
             }
             catch (FileNotFoundException e) {
                 logger.severe(e.getMessage());
@@ -909,20 +911,23 @@ public class JDUtilities {
                 e.printStackTrace();
             }
             String hashPost = getLocalHash(fileOutput);
-            if(fileOutput.exists()){
-                //logger.info(fileOutput.delete()+"");
+            if (fileOutput.exists()) {
+                // logger.info(fileOutput.delete()+"");
             }
-            //logger.info(""+objectToSave);
+            // logger.info(""+objectToSave);
             if (hashPost == null) {
-               logger.severe("Schreibfehler: " + fileOutput + " Datei wurde nicht erstellt");
+                logger.severe("Schreibfehler: " + fileOutput + " Datei wurde nicht erstellt");
             }
             else if (hashPost.equals(hashPre)) {
-               // logger.warning("Schreibvorgang: " + fileOutput + " Datei wurde nicht überschrieben "+hashPost+" - "+hashPre);
+                // logger.warning("Schreibvorgang: " + fileOutput + " Datei
+                // wurde nicht überschrieben "+hashPost+" - "+hashPre);
             }
             else {
-               // logger.finer("Schreibvorgang: " + fileOutput + " erfolgreich: " + hashPost);
+                // logger.finer("Schreibvorgang: " + fileOutput + " erfolgreich:
+                // " + hashPost);
             }
-           // logger.info(" -->"+JDUtilities.loadObject(null, fileOutput, false));
+            // logger.info(" -->"+JDUtilities.loadObject(null, fileOutput,
+            // false));
         }
         else {
             logger.severe("Schreibfehler: Fileoutput: null");
@@ -970,7 +975,6 @@ public class JDUtilities {
         return pluginsForDecrypt;
     }
 
-
     /**
      * Liefert alle geladenen Plugins zum Laden von Containerdateien zurück
      * 
@@ -979,14 +983,16 @@ public class JDUtilities {
     public static Vector<PluginForContainer> getPluginsForContainer() {
         return pluginsForContainer;
     }
+
     /**
      * Liefert alle Plugins zum Downloaden von einem Anbieter zurück.
+     * 
      * @return
      */
-    public static Vector<PluginForHost> getUnsortedPluginsForHost()
-    {
-    	return pluginsForHost;
+    public static Vector<PluginForHost> getUnsortedPluginsForHost() {
+        return pluginsForHost;
     }
+
     /**
      * Liefert alle Plugins zum Downloaden von einem Anbieter zurück. Die liste
      * wird dabei sortiert zurückgegeben
@@ -994,11 +1000,11 @@ public class JDUtilities {
      * @return Plugins zum Downloaden von einem Anbieter
      */
     @SuppressWarnings("unchecked")
-	public static Vector<PluginForHost> getPluginsForHost() {
+    public static Vector<PluginForHost> getPluginsForHost() {
         // return pluginsForHost;
 
         Vector<PluginForHost> plgs = new Vector<PluginForHost>();
-       if(pluginsForHost!=null) plgs.addAll(pluginsForHost);
+        if (pluginsForHost != null) plgs.addAll(pluginsForHost);
         Vector<PluginForHost> pfh = new Vector<PluginForHost>();
         Vector<String> priority = (Vector<String>) configuration.getProperty(Configuration.PARAM_HOST_PRIORITY, new Vector<String>());
         for (int i = 0; i < priority.size(); i++) {
@@ -1036,8 +1042,8 @@ public class JDUtilities {
             String ret = "";
             String tmp;
             for (byte d : digest) {
-                tmp=Integer.toHexString(d & 0xFF);
-                ret += (tmp.length()<2)?"0"+tmp:tmp;
+                tmp = Integer.toHexString(d & 0xFF);
+                ret += (tmp.length() < 2) ? "0" + tmp : tmp;
             }
             return ret;
         }
@@ -1173,26 +1179,24 @@ public class JDUtilities {
      * @return str URLCodiert
      */
     public static String urlEncode(String str) {
-     
-//            try{
-//            str = URLDecoder.decode(str, "UTF-8");
-//            }catch(Exception e){}
-            String allowed = "1234567890QWERTZUIOPASDFGHJKLYXCVBNMqwertzuiopasdfghjklyxcvbnm-_.?/\\:&=;";
-            String ret = "";
-            int i;
-            for (i = 0; i < str.length(); i++) {
-                char letter = str.charAt(i);
-                if (allowed.indexOf(letter) >= 0) {
-                    ret += letter;
-                }
-                else {
-                    ret += "%" + Integer.toString(letter, 16);
-                }
+
+        // try{
+        // str = URLDecoder.decode(str, "UTF-8");
+        // }catch(Exception e){}
+        String allowed = "1234567890QWERTZUIOPASDFGHJKLYXCVBNMqwertzuiopasdfghjklyxcvbnm-_.?/\\:&=;";
+        String ret = "";
+        int i;
+        for (i = 0; i < str.length(); i++) {
+            char letter = str.charAt(i);
+            if (allowed.indexOf(letter) >= 0) {
+                ret += letter;
             }
-            return ret;
-        
-        
-    
+            else {
+                ret += "%" + Integer.toString(letter, 16);
+            }
+        }
+        return ret;
+
     }
 
     /**
@@ -1273,7 +1277,7 @@ public class JDUtilities {
                     return RUNTYPE_WEBSTART;
                 }
                 if (root.indexOf("jar") >= 0) {
-                   // logger.info("Default: Local jared");
+                    // logger.info("Default: Local jared");
                     return RUNTYPE_LOCAL_JARED;
                 }
             }
@@ -1283,7 +1287,7 @@ public class JDUtilities {
                     return RUNTYPE_LOCAL_ENV;
                 }
             }
-            //logger.info("Dev.: Local splitted");
+            // logger.info("Dev.: Local splitted");
             return RUNTYPE_LOCAL;
         }
         catch (Exception e) {
@@ -1579,10 +1583,10 @@ public class JDUtilities {
      *         ist
      */
     public static String runCommand(String command, String[] parameter, String runIn, int waitForReturn) {
-if(command==null||command.trim().length()==0){
-    logger.severe("Execute Parameter error: No Command");
-    return "";
-}
+        if (command == null || command.trim().length() == 0) {
+            logger.severe("Execute Parameter error: No Command");
+            return "";
+        }
         if (parameter == null) parameter = new String[] {};
         String[] params = new String[parameter.length + 1];
         params[0] = command;
@@ -1594,8 +1598,9 @@ if(command==null||command.trim().length()==0){
                 par += params[i] + " ";
                 tmp.add(params[i].trim());
             }
-        }
+        } 
         params = tmp.toArray(new String[] {});
+        logger.info("RUN: " + tmp);
         ProcessBuilder pb = new ProcessBuilder(params);
         if (runIn != null && runIn.length() > 0) {
             if (new File(runIn).exists()) {
@@ -1605,13 +1610,13 @@ if(command==null||command.trim().length()==0){
                 logger.severe("Working drectory " + runIn + " does not exist!");
             }
         }
-       
+
         Process process;
 
         try {
             logger.finer("Start " + par + " in " + runIn + " wait " + waitForReturn);
             process = pb.start();
-            if (waitForReturn > 0 ||waitForReturn<0) {
+            if (waitForReturn > 0 || waitForReturn < 0) {
                 long t = System.currentTimeMillis();
                 while (true) {
                     try {
@@ -1619,17 +1624,18 @@ if(command==null||command.trim().length()==0){
                         break;
                     }
                     catch (Exception e) {
-                        if (waitForReturn>0&&System.currentTimeMillis() - t > waitForReturn * 1000) {
+                        if (waitForReturn > 0 && System.currentTimeMillis() - t > waitForReturn * 1000) {
                             logger.severe(command + ": Prozess ist nach " + waitForReturn + " Sekunden nicht beendet worden. Breche ab.");
                             process.destroy();
                         }
                     }
                 }
-                Scanner s = new Scanner(process.getInputStream()).useDelimiter("\\Z");
-                String ret = "";
-                while (s.hasNext())
-                    ret += s.next();
-                return ret;
+                // Scanner s = new
+                // Scanner(process.getInputStream()).useDelimiter("\\Z");
+                // String ret = "";
+                // while (s.hasNext())
+                // ret += s.next();
+                return "Auslesen der Rückgaben zu Testzwecken deaktiviert";
             }
             return null;
         }
@@ -1772,7 +1778,12 @@ if(command==null||command.trim().length()==0){
     }
 
     public static String getJDTitle() {
-        return JDUtilities.JD_TITLE + " " + JDUtilities.JD_VERSION + JDUtilities.getRevision() + " (" + JDUtilities.getLastChangeDate() + " " + JDUtilities.getLastChangeTime() + ") - "+JDUtilities.getConfiguration().getIntegerProperty(Configuration.CID, -1);
+        String ret = JDUtilities.JD_TITLE + " " + JDUtilities.JD_VERSION + JDUtilities.getRevision() + " (" + JDUtilities.getLastChangeDate() + " " + JDUtilities.getLastChangeTime() + ") - " + JDUtilities.getConfiguration().getIntegerProperty(Configuration.CID, -1);
+        if (JDUtilities.getController() != null && JDUtilities.getController().getWaitingUpdates() != null && JDUtilities.getController().getWaitingUpdates().size() > 0) {
+            ret += "  " + JDLocale.L("gui.mainframe.title.updatemessage", "-->UPDATES VERFÜGBAR: ") + JDUtilities.getController().getWaitingUpdates().size();
+
+        }
+        return ret;
     }
 
     /**
@@ -1811,10 +1822,10 @@ if(command==null||command.trim().length()==0){
     public static String getFileExtension(File ret) {
         if (ret == null) return null;
         String str = ret.getAbsolutePath();
-      
+
         int i3 = str.lastIndexOf(".");
 
-        if (i3 >0) {
+        if (i3 > 0) {
             return str.substring(i3 + 1);
         }
         return null;
@@ -1825,7 +1836,7 @@ if(command==null||command.trim().length()==0){
      * Falls dieser Logger nicht existiert, wird ein neuer erstellt
      * 
      * @return LogKlasse
-     */ 
+     */
     public static Logger getLogger() {
         if (logger == null) {
 
@@ -1841,7 +1852,7 @@ if(command==null||command.trim().length()==0){
             logger.setLevel(Level.ALL);
             logger.finer("Init Logger:" + LOGGER_NAME);
             // Leitet System.out zum Logger um.
-           // final PrintStream err = System.err;
+            // final PrintStream err = System.err;
             OutputStream os = new OutputStream() {
                 private StringBuffer buffer = new StringBuffer();
 
@@ -1868,23 +1879,28 @@ if(command==null||command.trim().length()==0){
         return logger;
     }
 
-//    public static boolean initFileLogger() {
-//        try {
-//            if (getConfiguration().getBooleanProperty(Configuration.PARAM_WRITE_LOG, true)) {
-//                Handler file_handler = new FileHandler(getConfiguration().getStringProperty(Configuration.PARAM_WRITE_LOG_PATH, getResourceFile("jd_log.txt").getAbsolutePath()));
-//                logger.addHandler(file_handler);
-//                logger.info("File Logger active: " + getConfiguration().getStringProperty(Configuration.PARAM_WRITE_LOG_PATH, getResourceFile("jd_log.txt").getAbsolutePath()));
-//                return true;
-//            }
-//        }
-//        catch (SecurityException e) {
-//            e.printStackTrace();
-//        }
-//        catch (IOException e) {
-//            e.printStackTrace();
-//        }
-//        return false;
-//    }
+    // public static boolean initFileLogger() {
+    // try {
+    // if (getConfiguration().getBooleanProperty(Configuration.PARAM_WRITE_LOG,
+    // true)) {
+    // Handler file_handler = new
+    // FileHandler(getConfiguration().getStringProperty(Configuration.PARAM_WRITE_LOG_PATH,
+    // getResourceFile("jd_log.txt").getAbsolutePath()));
+    // logger.addHandler(file_handler);
+    // logger.info("File Logger active: " +
+    // getConfiguration().getStringProperty(Configuration.PARAM_WRITE_LOG_PATH,
+    // getResourceFile("jd_log.txt").getAbsolutePath()));
+    // return true;
+    // }
+    // }
+    // catch (SecurityException e) {
+    // e.printStackTrace();
+    // }
+    // catch (IOException e) {
+    // e.printStackTrace();
+    // }
+    // return false;
+    // }
 
     /**
      * Fügt dem Log eine Exception hinzu
@@ -1969,11 +1985,11 @@ if(command==null||command.trim().length()==0){
     }
 
     public static String Base64Decode(String base64) {
-        if(base64==null)return null;
+        if (base64 == null) return null;
         try {
             byte[] plain = new BASE64Decoder().decodeBuffer(base64);
-            if(JDUtilities.filterString(new String(plain)).length()<(plain.length/1.5)){
-                return base64; 
+            if (JDUtilities.filterString(new String(plain)).length() < (plain.length / 1.5)) {
+                return base64;
             }
             return new String(plain);
         }
@@ -1983,14 +1999,10 @@ if(command==null||command.trim().length()==0){
     }
 
     public static String Base64Encode(String plain) {
-        if(plain==null)return null;
+        if (plain == null) return null;
         String base64 = new BASE64Encoder().encode(plain.getBytes());
 
         return base64;
     }
-
- 
-
-
 
 }
