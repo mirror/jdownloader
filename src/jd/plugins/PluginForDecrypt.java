@@ -13,7 +13,7 @@ import jd.utils.JDUtilities;
  * 
  * @author astaldo
  */
-public abstract class PluginForDecrypt extends Plugin {
+public abstract class PluginForDecrypt extends Plugin implements Comparable {
     protected ProgressController progress;
 
     /**
@@ -207,5 +207,14 @@ public abstract class PluginForDecrypt extends Plugin {
             return "";
         }
     }
+    
+    /**
+     * vergleicht Decryptplugins anhand des Hostnamens
+     * wird zur Sortierung benötigt
+     */
+    public int compareTo(Object o)
+	{
+		return getHost().toLowerCase().compareTo(((PluginForDecrypt)o).getHost().toLowerCase());
+	}
 
 }

@@ -9,6 +9,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
+import java.util.Collections;
 import java.util.Vector;
 
 import javax.swing.JButton;
@@ -42,8 +43,9 @@ public class ConfigPanelPluginForDecrypt extends ConfigPanel implements ActionLi
         super(uiinterface);
         this.configuration=configuration;
         this.pluginsForDecrypt = JDUtilities.getPluginsForDecrypt();
+        Collections.sort(this.pluginsForDecrypt);
+        
         initPanel();
-
         load();
 
     }

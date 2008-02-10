@@ -712,7 +712,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
                 } catch (UnsupportedFlavorException e1) {
                 } catch (IOException e1) {
                 }
-                LinkInputDialog inputDialog = new LinkInputDialog(frame, cb);
+                LinkInputDialog inputDialog = new LinkInputDialog(frame, cb.trim());
                 String data = inputDialog.getLinksString();
                 if (data != null) {
                     fireUIEvent(new UIEvent(this, UIEvent.UI_LINKS_TO_PROCESS, data));
