@@ -231,7 +231,7 @@ public class DatenKlo extends PluginForHost {
                 step.setStatus(PluginStep.STATUS_ERROR);
                 return step;
             }         
-            if (download(downloadLink, urlConnection)) {
+            if (download(downloadLink, urlConnection)!=DOWNLOAD_SUCCESS) {
                 step.setStatus(PluginStep.STATUS_DONE);
                 downloadLink.setStatus(DownloadLink.STATUS_DONE);
                 return null;

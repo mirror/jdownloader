@@ -158,12 +158,12 @@ public class EgoshareCom extends PluginForHost {
                             return step;
                         }
                         //Download starten
-                        boolean downloadSuccess = download(downloadLink, urlConnection);
+                        int downloadSuccess = download(downloadLink, urlConnection);
                         
                         // Download erfolgreich oder fehlerhaft?
-                        if (downloadSuccess == false) {
+                        if (downloadSuccess !=DOWNLOAD_SUCCESS) {
                             step.setStatus(PluginStep.STATUS_ERROR);
-                            downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN);
+                          
                             
                         } else {
                             step.setStatus(PluginStep.STATUS_DONE);

@@ -18,22 +18,7 @@ public class PluginEvent extends AWTEvent {
      * Neue Bytes wurden geladen bytes anzahl als parameter
      */
     //public static final int   PLUGIN_DOWNLOAD_BYTES        = 0;
-    /**
-     * Maximaler Wert für die Fortschrittsanzeige
-     */
-    public static final int   PLUGIN_PROGRESS_MAX          = 1;
-    /**
-     * Der Wert der Fortschrittsanzeige soll um eins erhöht werden
-     */
-    public static final int   PLUGIN_PROGRESS_INCREASE     = 2;
-    /**
-     * Der Wert der Fortschrittsanzeige soll auf diesen Wert gesetzt werden
-     */
-    public static final int   PLUGIN_PROGRESS_VALUE        = 3;
-    /**
-     * Die Vorgang ist beendet
-     */
-    public static final int   PLUGIN_PROGRESS_FINISH       = 4;
+   
     /**
      * Links wurden entschlüsselt
      */

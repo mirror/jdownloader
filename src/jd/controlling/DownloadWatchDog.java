@@ -375,14 +375,15 @@ progress.setStatusText("Stopping all downloads");
                 nextDownloadLink.setStatus(DownloadLink.STATUS_TODO);
             }
 
-          //   logger.info(nextDownloadLink+""+!this.isDownloadLinkActive(nextDownloadLink)+"_"+!nextDownloadLink.isInProgress()+"_"+nextDownloadLink.isEnabled()+"- "+(nextDownloadLink.getStatus() == DownloadLink.STATUS_TODO)+" - "+(nextDownloadLink.getRemainingWaittime() == 0)+" -   "+(getDownloadNumByHost((PluginForHost)nextDownloadLink.getPlugin()) < ((PluginForHost)nextDownloadLink.getPlugin()).getMaxSimultanDownloadNum())+" :"+nextDownloadLink.getStatus());
+          //logger.info(nextDownloadLink+""+!this.isDownloadLinkActive(nextDownloadLink)+"_"+!nextDownloadLink.isInProgress()+"_"+nextDownloadLink.isEnabled()+"- "+(nextDownloadLink.getStatus() == DownloadLink.STATUS_TODO)+" - "+(nextDownloadLink.getRemainingWaittime() == 0)+" -   "+(getDownloadNumByHost((PluginForHost)nextDownloadLink.getPlugin()) < ((PluginForHost)nextDownloadLink.getPlugin()).getMaxSimultanDownloadNum())+" :"+nextDownloadLink.getStatus());
             if (!this.isDownloadLinkActive(nextDownloadLink)) {
                 if (!nextDownloadLink.isInProgress()) {
                     if (nextDownloadLink.isEnabled()) {
                         if (nextDownloadLink.getStatus() == DownloadLink.STATUS_TODO) {
                             if (nextDownloadLink.getRemainingWaittime() == 0) {
                                 if (getDownloadNumByHost((PluginForHost) nextDownloadLink.getPlugin()) < ((PluginForHost) nextDownloadLink.getPlugin()).getMaxSimultanDownloadNum()) {
-                                    return nextDownloadLink;
+
+ return nextDownloadLink;
                                 }
                             }
                         }

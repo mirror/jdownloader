@@ -101,7 +101,7 @@ public class DownloadLink implements Serializable,Comparable<DownloadLink> {
      * Die angefordete Datei wurde noch nicht fertig upgeloaded
      */
     public static final int STATUS_ERROR_FILE_NOT_UPLOADED = 20;
-
+    public static final int STATUS_ERROR_ALREADYEXISTS = 23;
     
     /**
      * serialVersionUID
@@ -112,6 +112,7 @@ public class DownloadLink implements Serializable,Comparable<DownloadLink> {
     public static final int STATUS_ERROR_SECURITY = 22;
     public static final int LINKTYPE_NORMAL = 0;
     public static final int LINKTYPE_CONTAINER = 1;
+  
   
     /**
      * Statustext der von der GUI abgefragt werden kann

@@ -232,7 +232,8 @@ public class RapidShareDe extends PluginForHost {
 				step.setStatus(PluginStep.STATUS_ERROR);
 				return step;
 			}
-			if (download(downloadLink, urlConnection)) {
+			int errorid;
+                if ((errorid=download(downloadLink, urlConnection))==DOWNLOAD_SUCCESS) {
 				step.setStatus(PluginStep.STATUS_DONE);
 				downloadLink.setStatus(DownloadLink.STATUS_DONE);
                 JDUtilities.appendInfoToFilename(captchaFile, "_" + code, true);
@@ -242,9 +243,12 @@ public class RapidShareDe extends PluginForHost {
 				downloadLink.setStatus(DownloadLink.STATUS_TODO);
 				step.setStatus(PluginStep.STATUS_TODO);
 			} else {
+			    if (errorid != DOWNLOAD_ERROR_DOWNLOAD_INCOMPLETE && errorid != DOWNLOAD_ERROR_INVALID_OUTPUTFILE && errorid != DOWNLOAD_ERROR_OUTPUTFILE_ALREADYEXISTS && errorid != DOWNLOAD_ERROR_RENAME_FAILED && errorid != DOWNLOAD_ERROR_SECURITY) {
+                    
 				logger.severe("captcha wrong");
 				downloadLink.setStatus(DownloadLink.STATUS_ERROR_CAPTCHA_WRONG);
                 JDUtilities.appendInfoToFilename(captchaFile, "_" + code, false);
+			    }
 				step.setStatus(PluginStep.STATUS_ERROR);
 			}
 		}

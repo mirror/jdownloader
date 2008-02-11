@@ -171,12 +171,11 @@ public class FileFactory extends PluginForHost {
                             step.setStatus(PluginStep.STATUS_ERROR);
                             return step;
                         }
-                        if (download(downloadLink, urlConnection)) {
+                        if (download(downloadLink, urlConnection)!=DOWNLOAD_SUCCESS) {
                             step.setStatus(PluginStep.STATUS_DONE);
                             downloadLink.setStatus(DownloadLink.STATUS_DONE);
                             return null;
-                        } else {
-                            logger.severe("captcha wrong");
+                        } else {                        
                             downloadLink.setStatus(DownloadLink.STATUS_ERROR_CAPTCHA_WRONG);
                             step.setStatus(PluginStep.STATUS_ERROR);
                         }

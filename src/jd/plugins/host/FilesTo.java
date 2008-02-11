@@ -176,15 +176,17 @@ public class FilesTo extends PluginForHost {
                     }
                     
                     // Download starten
-                    boolean downloadSuccess = download(parameter, urlConnection);
+             if(download(parameter, urlConnection)!=DOWNLOAD_SUCCESS) {
+                 step.setStatus(PluginStep.STATUS_ERROR);
+                 
+             }
+             else {
+                 step.setStatus(PluginStep.STATUS_DONE);
+                 parameter.setStatus(DownloadLink.STATUS_DONE);
+          
+             }
                     
-                    if (downloadSuccess == false) {
-                        step.setStatus(PluginStep.STATUS_ERROR);
-                        parameter.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN);
-                    } else {
-                        step.setStatus(PluginStep.STATUS_DONE);
-                        parameter.setStatus(DownloadLink.STATUS_DONE);
-                    }
+              
                     
                     return step;
                     

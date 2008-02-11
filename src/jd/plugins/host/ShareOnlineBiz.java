@@ -344,16 +344,15 @@ public class ShareOnlineBiz extends PluginForHost {
 					step.setStatus(PluginStep.STATUS_ERROR);
 					return step;
 				}
-				boolean downloadSuccess = download(downloadLink, urlConnection);
-
-				if (downloadSuccess == false) {
-					step.setStatus(PluginStep.STATUS_ERROR);
-					downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN);
-
-				} else {
-					step.setStatus(PluginStep.STATUS_DONE);
-					downloadLink.setStatus(DownloadLink.STATUS_DONE);
-				}
+				if(download(downloadLink, urlConnection)!=DOWNLOAD_SUCCESS) {
+                    step.setStatus(PluginStep.STATUS_ERROR);
+                    
+                }
+                else {
+                    step.setStatus(PluginStep.STATUS_DONE);
+                    downloadLink.setStatus(DownloadLink.STATUS_DONE);
+             
+                }
 
 				return step;
 

@@ -207,11 +207,11 @@ public abstract class PluginForHost extends Plugin {
             int length = requestInfo.getConnection().getContentLength();
             downloadLink.setDownloadMax(length);
             logger.info("Filename: " + getFileNameFormHeader(requestInfo.getConnection()));
-
+           
             downloadLink.setName(getFileNameFormHeader(requestInfo.getConnection()));
-            if (!download(downloadLink, (URLConnection) requestInfo.getConnection())) {
+            if (download(downloadLink, (URLConnection) requestInfo.getConnection())!=Plugin.DOWNLOAD_SUCCESS) {
                 step.setStatus(PluginStep.STATUS_ERROR);
-                downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN);
+              
             }
             else {
                 step.setStatus(PluginStep.STATUS_DONE);

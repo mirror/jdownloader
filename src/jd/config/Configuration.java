@@ -183,6 +183,8 @@ public class Configuration extends Property implements Serializable {
 
     public static final String PARAM_RELOADCONTAINER = "RELOADCONTAINER";
 
+    public static final String PARAM_FILE_EXISTS = "FILE_EXISTS";
+
   
     /**
      * Die unterschiedlichen Interaktionen. (ZB Reconnect nach einem Download)

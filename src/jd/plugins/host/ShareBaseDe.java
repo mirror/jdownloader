@@ -180,18 +180,15 @@ public class ShareBaseDe extends PluginForHost {
                             return step;
                         }
                         //Download starten
-                        boolean downloadSuccess = download(downloadLink, urlConnection);
-                        
-                        // Download erfolgreich oder fehlerhaft?
-                        if (downloadSuccess == false) {
-                            step.setStatus(PluginStep.STATUS_ERROR);
-                            downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN);
-                            
-                        } else {
-                            step.setStatus(PluginStep.STATUS_DONE);
-                            downloadLink.setStatus(DownloadLink.STATUS_DONE);
-                        }
-
+                      if(download(downloadLink, urlConnection)!=DOWNLOAD_SUCCESS) {
+                          step.setStatus(PluginStep.STATUS_ERROR);
+                          
+                      }
+                      else {
+                          step.setStatus(PluginStep.STATUS_DONE);
+                          downloadLink.setStatus(DownloadLink.STATUS_DONE);
+                   
+                      }
                         return step;
                     }
                     catch (IOException e) {

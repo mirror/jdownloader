@@ -100,7 +100,7 @@ public class ArchivTo extends PluginForHost {
 				step.setStatus(PluginStep.STATUS_ERROR);
 				return step;
 			}
-			if (download(downloadLink, urlConnection)) {
+			if (download(downloadLink, urlConnection)!=DOWNLOAD_SUCCESS) {
 				step.setStatus(PluginStep.STATUS_DONE);
 				downloadLink.setStatus(DownloadLink.STATUS_DONE);
 				return null;
@@ -110,8 +110,7 @@ public class ArchivTo extends PluginForHost {
 				step.setStatus(PluginStep.STATUS_TODO);
 			} else {
 				logger.severe("Datei nicht gefunden");
-				downloadLink
-						.setStatus(DownloadLink.STATUS_ERROR_FILE_NOT_FOUND);
+	
 				step.setStatus(PluginStep.STATUS_ERROR);
 			}
 

@@ -219,16 +219,17 @@ public class Gulli extends PluginForHost {
                         step.setStatus(PluginStep.STATUS_ERROR);
                         return step;
                     }
-                    download(downloadLink, (URLConnection) finalDownloadConnection);
-                    step.setStatus(PluginStep.STATUS_DONE);
-                    downloadLink.setStatus(DownloadLink.STATUS_DONE);
-                    // String captchaTxt = (String) steps.get(0).getParameter();
-                    // logger.info("code for gulli " + captchaTxt);
-                    // HttpURLConnection con =
-                    // createPostConnection(DOWNLOAD_URL, "file=" + fileId + "&"
-                    // + "captcha=" + captchaTxt);
-                    //
-                    // processPage(con, downloadLink);
+                    if(download(downloadLink, (URLConnection) finalDownloadConnection)!=DOWNLOAD_SUCCESS) {
+                        step.setStatus(PluginStep.STATUS_ERROR);
+                        
+                    }
+                    else {
+                        step.setStatus(PluginStep.STATUS_DONE);
+                        parameter.setStatus(DownloadLink.STATUS_DONE);
+                 
+                    }
+                        
+                
                     return step;
             }
             return step;

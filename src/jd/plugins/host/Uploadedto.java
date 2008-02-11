@@ -314,10 +314,15 @@ static private final String DOWNLOAD_LIMIT_REACHED="Free-Traffic ist aufgebrauch
                             step.setStatus(PluginStep.STATUS_ERROR);
                             return step;
                         }
-                        download(downloadLink, (URLConnection) requestInfo.getConnection());
-                        step.setStatus(PluginStep.STATUS_DONE);
-                        downloadLink.setStatus(DownloadLink.STATUS_DONE);
-                        return step;
+                        if(download(downloadLink, (URLConnection) requestInfo.getConnection())!=DOWNLOAD_SUCCESS) {
+                            step.setStatus(PluginStep.STATUS_ERROR);
+                            
+                        }
+                        else {
+                            step.setStatus(PluginStep.STATUS_DONE);
+                            downloadLink.setStatus(DownloadLink.STATUS_DONE);
+                     
+                        }return step;
                     }
                     else {
                         this.finalURL = finalURL + "";
@@ -368,9 +373,16 @@ static private final String DOWNLOAD_LIMIT_REACHED="Free-Traffic ist aufgebrauch
                             step.setStatus(PluginStep.STATUS_ERROR);
                             return step;
                         }
-                        download(downloadLink, (URLConnection) requestInfo.getConnection());
-                        step.setStatus(PluginStep.STATUS_DONE);
-                        downloadLink.setStatus(DownloadLink.STATUS_DONE);
+                        if(download(downloadLink, (URLConnection) requestInfo.getConnection())!=DOWNLOAD_SUCCESS) {
+                            step.setStatus(PluginStep.STATUS_ERROR);
+                            
+                        }
+                        else {
+                            step.setStatus(PluginStep.STATUS_DONE);
+                            downloadLink.setStatus(DownloadLink.STATUS_DONE);
+                     
+                        }
+                
                         return step;
                     }
             }

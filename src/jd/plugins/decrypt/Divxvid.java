@@ -110,14 +110,13 @@ public class Divxvid extends PluginForDecrypt {
                     progress.setRange(countHits);
                     for (int i = 0; i < countHits; i++) {
                         requestInfo = postRequestWithoutHtmlCode((new URL(getFirstMatch(getRequest((new URL("http://dxp.divxvid.org" + outl + "," + i + ",1," + hash + ".rs")), cookie, cryptedLink, true).getHtmlCode(), premiumdownloadlocation, 1))), null, null, null, false);
-                        if (requestInfo != null) {
-                            firePluginEvent(new PluginEvent(this, PluginEvent.PLUGIN_PROGRESS_INCREASE, null));
+                        if (requestInfo != null) {progress.increase(1);
                             decryptedLinks.add(this.createDownloadlink(requestInfo.getLocation()));
                         }
 
                     }
                     logger.info(decryptedLinks.size() + " downloads decrypted");
-                    firePluginEvent(new PluginEvent(this, PluginEvent.PLUGIN_PROGRESS_FINISH, null));
+                    progress.finalize();
                     currentStep = null;
                 }
                 catch (MalformedURLException e) {

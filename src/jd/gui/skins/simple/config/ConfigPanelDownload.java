@@ -1,6 +1,7 @@
 package jd.gui.skins.simple.config;
 
 import java.awt.BorderLayout;
+import java.util.logging.Level;
 
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -70,7 +71,8 @@ public ConfigPanelDownload(Configuration configuration, UIInterface uiinterface)
         addGUIConfigEntry(ce);
         ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME), SimpleGUI.PARAM_START_DOWNLOADS_AFTER_START, JDLocale.L("gui.config.download.startDownloadsOnStartUp", "Download beim Programmstart beginnen")).setDefaultValue(false));
         addGUIConfigEntry(ce);
-  
+        ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, configuration, Configuration.PARAM_FILE_EXISTS, new String[]{JDLocale.L("system.download.triggerfileexists.overwrite","Datei überschreiben"),JDLocale.L("system.download.triggerfileexists.skip","Link überspringen")}, JDLocale.L("system.download.triggerfileexists", "Wenn eine Datei schon vorhanden ist:")).setDefaultValue(JDLocale.L("system.download.triggerfileexists.skip","Link überspringen")).setExpertEntry(false));
+        addGUIConfigEntry(ce);
         
         add(panel, BorderLayout.NORTH);
     }

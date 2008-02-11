@@ -189,16 +189,17 @@ public class YourFilesBiz extends PluginForHost {
                 case PluginStep.STEP_DOWNLOAD:
                 	
                     // Download starten
-                    boolean downloadSuccess = download(downloadLink, urlConnection);
+                   if(download(downloadLink, urlConnection)!=DOWNLOAD_SUCCESS) {
+                       step.setStatus(PluginStep.STATUS_ERROR);
+                       
+                   }
+                   else {
+                       step.setStatus(PluginStep.STATUS_DONE);
+                       downloadLink.setStatus(DownloadLink.STATUS_DONE);
+                
+                   }
                     
-                    if (downloadSuccess == false) {
-                        step.setStatus(PluginStep.STATUS_ERROR);
-                        downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN);
-                    } else {
-                        step.setStatus(PluginStep.STATUS_DONE);
-                        downloadLink.setStatus(DownloadLink.STATUS_DONE);
-                    }
-
+              
                     return step;
                     
             }

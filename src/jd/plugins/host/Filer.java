@@ -9,6 +9,7 @@ import java.util.Vector;
 import java.util.regex.Pattern;
 
 import jd.plugins.DownloadLink;
+import jd.plugins.Plugin;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
@@ -186,9 +187,16 @@ public class Filer extends PluginForHost {
                         step.setStatus(PluginStep.STATUS_ERROR);
                         return step;
                     }
-                    download(downloadLink, (URLConnection) requestInfo.getConnection());
-                    step.setStatus(PluginStep.STATUS_DONE);
-                    downloadLink.setStatus(DownloadLink.STATUS_DONE);
+                    if(download(downloadLink, (URLConnection) requestInfo.getConnection())!=DOWNLOAD_SUCCESS) {
+                        step.setStatus(PluginStep.STATUS_ERROR);
+                        
+                    }
+                    else {
+                        step.setStatus(PluginStep.STATUS_DONE);
+                        downloadLink.setStatus(DownloadLink.STATUS_DONE);
+                 
+                    }
+              
                     return step;
             }
             return step;

@@ -89,28 +89,27 @@ public class UploadStube extends PluginForHost {
 				step.setStatus(PluginStep.STATUS_ERROR);
 				return step;
 			}
-			if (download(downloadLink, urlConnection)) {
-				step.setStatus(PluginStep.STATUS_DONE);
-				downloadLink.setStatus(DownloadLink.STATUS_DONE);
-				return null;
-			} else if (aborted) {
-				logger.warning("Plugin abgebrochen");
-				downloadLink.setStatus(DownloadLink.STATUS_TODO);
-				step.setStatus(PluginStep.STATUS_TODO);
-			} else {
-				logger.severe("Datei nicht gefunden");
-				downloadLink
-						.setStatus(DownloadLink.STATUS_ERROR_FILE_NOT_FOUND);
-				step.setStatus(PluginStep.STATUS_ERROR);
-			}
+			if (download(downloadLink, urlConnection)!=DOWNLOAD_SUCCESS) {
+                step.setStatus(PluginStep.STATUS_ERROR);
+                
+            }
+            else {
+                step.setStatus(PluginStep.STATUS_DONE);
+                downloadLink.setStatus(DownloadLink.STATUS_DONE);
+         
+            }
+			        
+			    
+			        
+		return step;
 
 		} catch (MalformedURLException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+		 step.setStatus(PluginStep.STATUS_ERROR);
+		 downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN);
 		return step;
 	}
 
