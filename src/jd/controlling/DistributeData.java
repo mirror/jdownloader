@@ -1,6 +1,7 @@
 package jd.controlling;
 
 import java.net.URLDecoder;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.Vector;
 import java.util.logging.Logger;
@@ -51,7 +52,7 @@ public class DistributeData extends ControlMulticaster {
 
     public void run() {
         Vector<DownloadLink> links = findLinks();
-
+        Collections.sort(links);
         fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_DISTRIBUTE_FINISHED, links));
     }
 

@@ -495,7 +495,8 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
                 else {
                     String title = tab.getPackageName();
                     if (title.length() > 20) {
-                        title = title.substring(0, 6) + "(...)" + title.substring(title.length() - 6);
+                    	tabbedPane.setToolTipTextAt(i,title);
+                    	title = title.substring(0, 6) + "(...)" + title.substring(title.length() - 6);
                     }
                     tabbedPane.setTitleAt(i, title + " (" + tab.getLinkList().size() + ")");
                     return;
@@ -716,7 +717,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
     }
 
     private void confirmAll() {
-        for (int tt = tabList.size() - 1; tt >= 0; tt--) {
+    	for ( int tt=0; tt<tabList.size(); tt++ ) {
             PackageTab tab = tabList.get(tt);
             Vector<DownloadLink> linkList = tab.getLinkList();
             if (linkList.size() == 0) {
