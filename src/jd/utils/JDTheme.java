@@ -53,9 +53,7 @@ public class JDTheme {
         if (def == null) def = key;
             data.put(key, def);
   
-
-        if (JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).getBooleanProperty(SimpleGUI.PARAM_LANG_EDITMODE)) saveData();
-        return def;
+return def;
 
     }
 

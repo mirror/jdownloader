@@ -1598,7 +1598,7 @@ public class JDUtilities {
                 par += params[i] + " ";
                 tmp.add(params[i].trim());
             }
-        } 
+        }
         params = tmp.toArray(new String[] {});
         logger.info("RUN: " + tmp);
         ProcessBuilder pb = new ProcessBuilder(params);
@@ -1630,12 +1630,77 @@ public class JDUtilities {
                         }
                     }
                 }
-                // Scanner s = new
-                // Scanner(process.getInputStream()).useDelimiter("\\Z");
-                // String ret = "";
-                // while (s.hasNext())
-                // ret += s.next();
-                return "Auslesen der Rückgaben zu Testzwecken deaktiviert";
+                Scanner s = new Scanner(process.getInputStream()).useDelimiter("\\Z");
+                String ret = "";
+                while (s.hasNext())
+                    ret += s.next();
+                return ret;
+            }
+            return null;
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+            logger.severe("Error executing " + command + ": " + e.getLocalizedMessage());
+            return null;
+        }
+    }
+
+    public static String runTestCommand(String command, String[] parameter, String runIn, int waitForReturn, boolean returnValue) {
+        if (command == null || command.trim().length() == 0) {
+            logger.severe("Execute Parameter error: No Command");
+            return "";
+        }
+        if (parameter == null) parameter = new String[] {};
+        String[] params = new String[parameter.length + 1];
+        params[0] = command;
+        System.arraycopy(parameter, 0, params, 1, parameter.length);
+        Vector<String> tmp = new Vector<String>();
+        String par = "";
+        for (int i = 0; i < params.length; i++) {
+            if (params[i] != null && params[i].trim().length() > 0) {
+                par += params[i] + " ";
+                tmp.add(params[i].trim());
+            }
+        }
+        params = tmp.toArray(new String[] {});
+        logger.info("RUN: " + tmp);
+        ProcessBuilder pb = new ProcessBuilder(params);
+        if (runIn != null && runIn.length() > 0) {
+            if (new File(runIn).exists()) {
+                pb.directory(new File(runIn));
+            }
+            else {
+                logger.severe("Working drectory " + runIn + " does not exist!");
+            }
+        }
+
+        Process process;
+
+        try {
+            logger.finer("Start " + par + " in " + runIn + " wait " + waitForReturn+" trace: "+returnValue);
+            process = pb.start();
+            if (waitForReturn > 0 || waitForReturn < 0) {
+                long t = System.currentTimeMillis();
+                while (true) {
+                    try {
+                        process.exitValue();
+                        break;
+                    }
+                    catch (Exception e) {
+                        if (waitForReturn > 0 && System.currentTimeMillis() - t > waitForReturn * 1000) {
+                            logger.severe(command + ": Prozess ist nach " + waitForReturn + " Sekunden nicht beendet worden. Breche ab.");
+                            process.destroy();
+                        }
+                    }
+                }
+                String ret = "";
+                if (returnValue) {
+                    Scanner s = new Scanner(process.getInputStream()).useDelimiter("\\Z");
+
+                    while (s.hasNext())
+                        ret += s.next();
+                }
+                return ret;
             }
             return null;
         }

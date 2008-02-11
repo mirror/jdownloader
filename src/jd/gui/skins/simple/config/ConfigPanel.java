@@ -10,6 +10,7 @@ import java.util.logging.Logger;
 
 import javax.swing.JPanel;
 
+import jd.config.SubConfiguration;
 import jd.gui.UIInterface;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.utils.JDUtilities;
@@ -48,14 +49,20 @@ public abstract class ConfigPanel extends JPanel {
 
     public void saveConfigEntries() {
         Iterator<GUIConfigEntry> it = entries.iterator();
-
+        Vector<SubConfiguration> subs= new   Vector<SubConfiguration>();
         while (it.hasNext()) {
             GUIConfigEntry akt = it.next();
+            if(akt.getConfigEntry().getPropertyInstance() instanceof SubConfiguration && subs.indexOf(akt.getConfigEntry().getPropertyInstance())<0){
+                subs.add((SubConfiguration)akt.getConfigEntry().getPropertyInstance());
+                
+            }
             // logger.info("entries: "+entries.size()+" :
             // "+akt.getConfigEntry().getPropertyInstance());
             if (akt.getConfigEntry().getPropertyInstance() != null && akt.getConfigEntry().getPropertyName() != null) akt.getConfigEntry().getPropertyInstance().setProperty(akt.getConfigEntry().getPropertyName(), akt.getText());
 
         }
+        Iterator<SubConfiguration> it2 = subs.iterator();
+        while(it2.hasNext())it2.next().save();
     }
 
     public void loadConfigEntries() {

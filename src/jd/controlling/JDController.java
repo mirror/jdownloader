@@ -15,6 +15,7 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import jd.JDInit;
 import jd.config.Configuration;
 import jd.config.SubConfiguration;
+import jd.controlling.interaction.BatchReconnect;
 import jd.controlling.interaction.ExternReconnect;
 import jd.controlling.interaction.HTTPLiveHeader;
 import jd.controlling.interaction.InfoFileWriter;
@@ -1111,8 +1112,10 @@ public class JDController implements PluginListener, ControlListener, UIListener
             return false;
         }
         boolean ret = false;
-        if (type.equals("Extern")) {
+        if (type.equals(JDLocale.L("modules.reconnect.types.extern", "Extern"))) {
             ret = new ExternReconnect().interact(null);
+        }else  if (type.equals(JDLocale.L("modules.reconnect.types.batch", "Batch"))) {
+            ret = new BatchReconnect().interact(null);
         }
         else {
             ret = new HTTPLiveHeader().interact(null);

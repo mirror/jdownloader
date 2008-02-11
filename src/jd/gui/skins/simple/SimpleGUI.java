@@ -80,7 +80,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
 
     public static final String      PARAM_USE_EXPERT_VIEW             = "USE_EXPERT_VIEW";
 
-    public static final String      PARAM_LANG_EDITMODE               = "LANG_EDITMODE";
+
 
     public static final String      PARAM_BROWSER_VARS                = "BROWSER_VARS";
 
@@ -764,6 +764,8 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         // dragNDrop.setText("Reconnect....");
         // frame.setTitle(JDUtilities.JD_TITLE+" |Aktion:
         // HTTPReconnect");
+        boolean tmp=JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_DISABLE_RECONNECT, true);
+        JDUtilities.getConfiguration().setProperty(Configuration.PARAM_DISABLE_RECONNECT, false);
         if (!guiConfig.getBooleanProperty(PARAM_DISABLE_CONFIRM_DIALOGS, false)) {
             int confirm = JOptionPane.showConfirmDialog(frame, "Wollen Sie sicher eine neue Verbindung aufbauen?");
             if (confirm == JOptionPane.OK_OPTION) {
@@ -773,6 +775,8 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         else {
             fireUIEvent(new UIEvent(this, UIEvent.UI_INTERACT_RECONNECT));
         }
+        JDUtilities.getConfiguration().setProperty(Configuration.PARAM_DISABLE_RECONNECT, tmp);
+        
         // statusBar.setText(null);
         // frame.setTitle(JDUtilities.JD_TITLE);
         // dragNDrop.setText("");

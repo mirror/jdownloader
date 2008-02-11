@@ -215,7 +215,7 @@ if(content==null||content.length()==0)return;
 
         @Override
         public void write(int b) throws IOException {
-            // den character an das text control anhaengen
+            if(logField!=null)
             logField.append((String.valueOf((char) b)));
         }
 
