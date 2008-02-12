@@ -1665,7 +1665,7 @@ public class JDUtilities {
         params = tmp.toArray(new String[] {});
         logger.info("RUN: " + tmp);
         ProcessBuilder pb = new ProcessBuilder(params);
-        if (runIn != null && runIn.length() > 0) {
+        if (runIn != null && runIn.length() > 0) { 
             if (new File(runIn).exists()) {
                 pb.directory(new File(runIn));
             }
