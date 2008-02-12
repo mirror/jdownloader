@@ -140,7 +140,7 @@ public class RadioBlogClub extends PluginForHost {
                 return step;
 
             }
-            if (!download(downloadLink, (URLConnection) requestInfo.getConnection())) {
+            if (download(downloadLink, (URLConnection) requestInfo.getConnection()) != DOWNLOAD_SUCCESS) {
                 step.setStatus(PluginStep.STATUS_ERROR);
                 downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN);
             }
