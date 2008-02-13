@@ -310,7 +310,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
                 while (waitingLinkList.size() > 0) {
 
                     link = waitingLinkList.remove(0);
-                    if (!guiConfig.getBooleanProperty(PROPERTY_ONLINE_CHECK, false)||link.getLinkType()==DownloadLink.LINKTYPE_CONTAINER) {
+                    if (!guiConfig.getBooleanProperty(PROPERTY_ONLINE_CHECK, false) || link.getLinkType() == DownloadLink.LINKTYPE_CONTAINER) {
                         attachLinkToPackage(link);
                         try {
                             Thread.sleep(50);
@@ -389,7 +389,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
             }
             // logger.info("Best sym: "+bestSim);
             if (bestSim < guiConfig.getIntegerProperty(PROPERTY_AUTOPACKAGE_LIMIT, 98)) {
-               
+
                 logger.info("New Tab");
                 addLinkstoTab(new DownloadLink[] { link }, tabList.size());
                 tabList.get(tabList.size() - 1).setPackageName(removeExtension(link.getName()));
@@ -407,8 +407,6 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
         }
 
     }
-
-
 
     private String removeExtension(String a) {
         // logger.finer("file " + a);
@@ -501,8 +499,8 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
                 else {
                     String title = tab.getPackageName();
                     if (title.length() > 20) {
-                    	tabbedPane.setToolTipTextAt(i,title);
-                    	title = title.substring(0, 6) + "(...)" + title.substring(title.length() - 6);
+                        tabbedPane.setToolTipTextAt(i, title);
+                        title = title.substring(0, 6) + "(...)" + title.substring(title.length() - 6);
                     }
                     tabbedPane.setTitleAt(i, title + " (" + tab.getLinkList().size() + ")");
                     return;
@@ -723,7 +721,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
     }
 
     private void confirmAll() {
-    	for ( int tt=0; tt<tabList.size(); tt++ ) {
+        for (int tt = 0; tt < tabList.size(); tt++) {
             PackageTab tab = tabList.get(tt);
             Vector<DownloadLink> linkList = tab.getLinkList();
             if (linkList.size() == 0) {
@@ -926,13 +924,13 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
          */
         private static final long    serialVersionUID = -7394319645950106241L;
 
-        public static final int HOSTER = 1;
+        public static final int      HOSTER           = 1;
 
-        public static final int NAME = 2;
+        public static final int      NAME             = 2;
 
-        public static final int SIZE = 3;
+        public static final int      SIZE             = 3;
 
-        public static final int INFO = 4;
+        public static final int      INFO             = 4;
 
         private JTextField           txtName;
 
@@ -948,7 +946,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
 
         protected PackageTab         _this;
 
-        private int sortedOn=1;
+        private int                  sortedOn         = 1;
 
         public PackageTab() {
             linkList = new Vector<DownloadLink>();
@@ -1046,33 +1044,33 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
         public void setPassword(String pw) {
             txtPassword.setText(pw);
         }
-        public void sortOn(){
-            switch (Math.abs(sortedOn)){
+
+        public void sortOn() {
+            switch (Math.abs(sortedOn)) {
                 case HOSTER:
                     Collections.sort(linkList, new Comparator<DownloadLink>() {
                         public int compare(DownloadLink a, DownloadLink b) {
-                           return sortedOn>0?a.getHost().compareToIgnoreCase(b.getHost()):b.getHost().compareToIgnoreCase(a.getHost());
+                            return sortedOn > 0 ? a.getHost().compareToIgnoreCase(b.getHost()) : b.getHost().compareToIgnoreCase(a.getHost());
                         }
 
                     });
-                    
-                    
+
                     break;
                 case NAME:
                     Collections.sort(linkList, new Comparator<DownloadLink>() {
                         public int compare(DownloadLink a, DownloadLink b) {
-                            return sortedOn>0?a.getName().compareToIgnoreCase(b.getName()):b.getName().compareToIgnoreCase(a.getName());
-                            
+                            return sortedOn > 0 ? a.getName().compareToIgnoreCase(b.getName()) : b.getName().compareToIgnoreCase(a.getName());
+
                         }
 
                     });
-                    
+
                     break;
                 case SIZE:
                     Collections.sort(linkList, new Comparator<DownloadLink>() {
                         public int compare(DownloadLink a, DownloadLink b) {
-                           if( a.getDownloadMax()==b.getDownloadMax())return 0;
-                           return sortedOn>0?a.getDownloadMax()>b.getDownloadMax()?1:-1:a.getDownloadMax()<b.getDownloadMax()?1:-1;
+                            if (a.getDownloadMax() == b.getDownloadMax()) return 0;
+                            return sortedOn > 0 ? a.getDownloadMax() > b.getDownloadMax() ? 1 : -1 : a.getDownloadMax() < b.getDownloadMax() ? 1 : -1;
                         }
 
                     });
@@ -1080,15 +1078,16 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
                 case INFO:
                     Collections.sort(linkList, new Comparator<DownloadLink>() {
                         public int compare(DownloadLink a, DownloadLink b) {
-                            return sortedOn>0?getInfoString(a).compareToIgnoreCase(getInfoString(b)):getInfoString(b).compareToIgnoreCase(getInfoString(a));
-                              }
+                            return sortedOn > 0 ? getInfoString(a).compareToIgnoreCase(getInfoString(b)) : getInfoString(b).compareToIgnoreCase(getInfoString(a));
+                        }
 
                     });
-                    break;   
-                    
+                    break;
+
             }
             refreshTable();
         }
+
         public void addLinks(DownloadLink[] list) {
             String password = getPassword();
             String comment = getComment();
@@ -1117,7 +1116,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
                 }
 
             }
-         
+
             if (comment.startsWith("|")) comment = comment.substring(1);
 
             String pw = JUnrar.passwordArrayToString(pwList.toArray(new String[pwList.size()]));
@@ -1363,17 +1362,19 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
         public void mouseExited(MouseEvent e) {}
 
         public void mousePressed(MouseEvent e) {
-            if(e.getSource() instanceof JTableHeader){
-            JTableHeader header = (JTableHeader) e.getSource();
-            int column = header.columnAtPoint(e.getPoint());
-            if(sortedOn==column){
-                sortedOn*=-1;
-            }else{
-                this.sortedOn=column; 
+            if (e.getSource() instanceof JTableHeader) {
+                JTableHeader header = (JTableHeader) e.getSource();
+                int column = header.columnAtPoint(e.getPoint());
+                if (sortedOn == column) {
+                    sortedOn *= -1;
+                }
+                else {
+                    this.sortedOn = column;
+                }
+
+                this.sortOn();
             }
-     
-            this.sortOn();
-            }else         if (e.isPopupTrigger() || e.getButton() == MouseEvent.BUTTON3) {
+            else if (e.isPopupTrigger() || e.getButton() == MouseEvent.BUTTON3) {
                 Point point = e.getPoint();
                 // int x = e.getX();
                 // int y = e.getY();
@@ -1432,14 +1433,14 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
              */
             private static final long serialVersionUID    = -7858580590383167251L;
 
-            private  final Color COLOR_SORT_MARK = new Color(157, 255, 157, 100);
-
             /**
              * serialVersionUID
              */
-            private final Color       COLOR_DONE          = new Color(215, 255, 215, 100);
+            private final Color       COLOR_DONE          = new Color(0, 255, 0, 20);
 
-            private final Color       COLOR_ERROR_OFFLINE = new Color(255, 202, 202, 100);
+            private final Color       COLOR_ERROR_OFFLINE = new Color(255, 0, 0, 60);
+
+            private final Color       COLOR_SORT_MARK     = new Color(40, 225, 40, 40);
 
             public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
 
@@ -1449,30 +1450,35 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
                 DownloadLink dLink = linkList.get(id);
 
                 if (isSelected) {
-
+                    c.setBackground(Color.DARK_GRAY);
                     if (dLink.isAvailabilityChecked() && !dLink.isAvailable()) {
                         c.setBackground(COLOR_ERROR_OFFLINE.darker());
-                     
+
                     }
                     else if (dLink.isAvailabilityChecked()) {
                         c.setBackground(COLOR_DONE.darker());
-                      
+                    
+               
+
                     }
-                    if(Math.abs(sortedOn)==column){
+                    if (Math.abs(sortedOn) == column) {
                         c.setBackground(COLOR_SORT_MARK.darker());
                     }
+
                     c.setForeground(Color.WHITE);
 
                 }
                 else {
-
+                    c.setBackground(Color.WHITE);
                     if (dLink.isAvailabilityChecked() && !dLink.isAvailable()) {
                         c.setBackground(COLOR_ERROR_OFFLINE);
                     }
                     else if (dLink.isAvailabilityChecked()) {
                         c.setBackground(COLOR_DONE);
+                      
                     }
-                    if(Math.abs(sortedOn)==column){
+                   
+                    if (Math.abs(sortedOn) == column) {
                         c.setBackground(COLOR_SORT_MARK);
                     }
                     c.setForeground(Color.BLACK);

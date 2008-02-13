@@ -99,8 +99,7 @@ public class ConfigurationDialog extends JDialog implements ActionListener, Chan
         this.addConfigPanel(ConfigPanelUnrar.class, JDTheme.I("gui.images.config.package"), JDLocale.L("gui.config.tabLables.unrar", "Archiv extract settings"));
         this.addConfigPanel(ConfigPanelPluginForHost.class, JDTheme.I("gui.images.config.star"), JDLocale.L("gui.config.tabLables.hostPlugin", "Host Plugin settings"));
         this.addConfigPanel(ConfigPanelPluginForDecrypt.class, JDTheme.I("gui.images.config.tip"), JDLocale.L("gui.config.tabLables.decryptPlugin", "Decrypter Plugin settings"));
-        this.addConfigPanel(ConfigPanelLinks.class, JDTheme.I("gui.images.config.tip"), JDLocale.L("gui.config.tabLables.links", "Wichtige Links"));
-        this.addConfigPanel(ConfigPanelTweak.class, JDTheme.I("gui.images.config.tip"), JDLocale.L("gui.config.tabLables.tweak", "Leistung optimieren"));
+       this.addConfigPanel(ConfigPanelTweak.class, JDTheme.I("gui.images.config.tip"), JDLocale.L("gui.config.tabLables.tweak", "Leistung optimieren"));
 
         if (guiConfig.getBooleanProperty(SimpleGUI.PARAM_USE_EXPERT_VIEW, false)) {
             this.addConfigPanel(ConfigPanelCaptcha.class, JDTheme.I("gui.images.config.ocr", "ocr"), JDLocale.L("gui.config.tabLables.jac", "OCR Captcha settings"));
@@ -111,6 +110,8 @@ public class ConfigurationDialog extends JDialog implements ActionListener, Chan
             this.addConfigPanel(ConfigPanelUpdater.class, JDTheme.I("gui.images.config.updater"), JDLocale.L("gui.config.tabLables.updater", "Update"));
             
         }
+        this.addConfigPanel(ConfigPanelLinks.class, JDTheme.I("gui.images.config.tip"), JDLocale.L("gui.config.tabLables.links", "Wichtige Links"));
+        
         btnSave = new JButton(JDLocale.L("gui.config.btn_save", "Speichern"));
         btnSave.addActionListener(this);
         btnCancel = new JButton(JDLocale.L("gui.config.btn_cancel", "Abbrechen"));

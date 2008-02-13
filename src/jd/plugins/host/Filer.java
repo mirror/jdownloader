@@ -73,6 +73,7 @@ public class Filer extends PluginForHost {
     }
     public PluginStep doStep(PluginStep step, DownloadLink parameter) {
         RequestInfo requestInfo;
+        logger.info("Step: "+step);
         try {
             DownloadLink downloadLink = (DownloadLink) parameter;
             switch (step.getStep()) {
@@ -99,10 +100,12 @@ public class Filer extends PluginForHost {
                     }
                     else
                         url=downloadLink.getDownloadURL();
-                    logger.info(url);
+                 
+                    break;
                 case PluginStep.STEP_GET_CAPTCHA_FILE :
                     File file = this.getLocalCaptchaFile(this);
                     requestInfo = getRequestWithoutHtmlCode(new URL(CAPTCHAADRESS), cookie, url, false);
+                    cookie=requestInfo.getConnection().getHeaderField("Set-Cookie");
                     if (!JDUtilities.download(file, requestInfo.getConnection()) || !file.exists()) {
                         logger.severe("Captcha Download fehlgeschlagen: " + CAPTCHAADRESS);
                         step.setParameter(null);
@@ -155,8 +158,9 @@ public class Filer extends PluginForHost {
                     dlink = "http://www.filer.net" +dlink;
                     if(requestInfo.getHtmlCode().contains(WRONG_CAPTCHACODE))
                     {
+                        logger.severe("Wrog captcah code retry");
                         step.setStatus(PluginStep.STATUS_ERROR);
-                        downloadLink.setStatus(DownloadLink.STATUS_ERROR_CAPTCHA_WRONG);
+                        downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN_RETRY);
                         return step;
                     }
                     //auf 61 sec gesetzt weil der server sonst zickt

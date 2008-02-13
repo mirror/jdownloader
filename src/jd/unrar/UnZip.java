@@ -76,6 +76,7 @@ public class UnZip {
 		dirsMade = new TreeSet();
 		try {
 			zipF = new ZipFile(zipFile);
+	
 			Enumeration all = zipF.entries();
 			LinkedList<File> ret = new LinkedList<File>();
 			while (all.hasMoreElements()) {

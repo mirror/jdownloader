@@ -1543,12 +1543,12 @@ public class JDUtilities {
             logger.severe("url not found. " + e1.toString());
 
         }
-        // http://jdown.cwsurf.de/getip.php
+        
 
         try {
-            site = "http://jdownloader.ath.cx/getip.php";
+            site = "http://jdownloaderipcheck.ath.cx";
 
-            logger.finer("IP Check via http://jdownloader.ath.cx");
+            logger.finer("IP Check via jdownloaderipcheck.ath.cx");
             RequestInfo ri;
 
             ri = Plugin.getRequest(new URL(site), null, null, true);

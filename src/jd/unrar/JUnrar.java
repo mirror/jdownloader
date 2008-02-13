@@ -129,8 +129,7 @@ public class JUnrar {
 	 * 
 	 */
 	public JUnrar() {
-		progress = new ProgressController("Default Unrar", 100);
-		progress.setStatusText("Unrar-process");
+		
 		loadPasswordlist();
 	}
 
@@ -141,6 +140,7 @@ public class JUnrar {
 	 */
 	@SuppressWarnings("unchecked")
 	public void setFolders(LinkedList<String> folders) {
+	  
 		loadUnpackedList();
 		files = new HashMap<File, String>();
 		if (progress != null)
@@ -217,8 +217,8 @@ public class JUnrar {
 		this.files = new HashMap<File, String>();
 		this.files.put(file, Password);
 		loadPasswordlist();
-		progress = new ProgressController("Default Unrar", 100);
-		progress.setStatusText("Unrar-process");
+		//progress = new ProgressController("Default Unrar", 100);
+		//progress.setStatusText("Unrar-process");
 	}
 
 	/**
@@ -232,8 +232,8 @@ public class JUnrar {
 	public JUnrar(HashMap<File, String> files) {
 		this.files = files;
 		loadPasswordlist();
-		progress = new ProgressController("Default Unrar", 100);
-		progress.setStatusText("Unrar-process");
+		//progress = new ProgressController("Default Unrar", 100);
+		//progress.setStatusText("Unrar-process");
 	}
 
 	/**
@@ -811,7 +811,7 @@ public class JUnrar {
 	 * @param p
 	 * @return int
 	 */
-	private int startExtendetInputListener(Process p) {
+	private int startExtendedInputListener(Process p) {
 		// Print file geht in stdout auch wenn alle Nachrichten nach stderr
 		// umgeleitet werden
 		InputStreamReader ipsr = new InputStreamReader(p.getInputStream());
@@ -1095,7 +1095,7 @@ public class JUnrar {
 			Process p = createProcess(unrar, new String[] { "-n" + name,
 					"-p" + password, "-c-", "-ierr", "p", file.getName() },
 					file.getParentFile());
-			int st = startExtendetInputListener(p);
+			int st = startExtendedInputListener(p);
 			/*
 			 * siehe startExtendetInputListener wenn der Wert von
 			 * startExtendetInputListener 3 ist wird das Passwort erstmal als
@@ -1272,6 +1272,8 @@ public class JUnrar {
 	 * Startet den Entpackungsprozess. Es werden alle Zielordner zurückgegeben
 	 */
 	public LinkedList<File> unrar() {
+	    progress = new ProgressController("Default Unrar", 100);
+        progress.setStatusText("Unrar-process");
 		unrar = getUnrarCommand();
 		logger.info("Starting Unrar (DwD|JD-Team)");
 		logger.info("Config->unrar: " + unrar);
