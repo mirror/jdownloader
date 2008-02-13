@@ -15,16 +15,14 @@ public class CineTo extends PluginForDecrypt {
 
     final static String host             = "cine.to";
 
-    private String      version          = "1.0.0.0";
+    private String      version          = "1.2.0";
 
-    private Pattern     patternSupported = getSupportPattern("http://[*]cine.to/protect.php\\?id=[+]");
-
-      
+    private Pattern     patternSupported = getSupportPattern("http://[*]cine.to/index.php\\?do=(protect|show_download)\\&id=[a-zA-Z0-9]+");
+    
     public CineTo() {
         super();
         steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
         currentStep = steps.firstElement();
-        default_password.add("cine.to");
     }
 
     @Override
@@ -39,7 +37,7 @@ public class CineTo extends PluginForDecrypt {
 
     @Override
     public String getPluginID() {
-        return "Cine.to-1.0.0.";
+        return host+"-"+version;
     }
 
     @Override
@@ -58,40 +56,87 @@ public class CineTo extends PluginForDecrypt {
     }
 
     @Override public PluginStep doStep(PluginStep step, String parameter) {
+    	
     	if(step.getStep() == PluginStep.STEP_DECRYPT) {
+    		
             Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
-    		try {
-    			URL url = new URL(parameter);
-    			RequestInfo reqinfo = getRequest(url);
-    			
-    			Vector<Vector<String>> captcha = getAllSimpleMatches(reqinfo.getHtmlCode(), "span class=\"°\"");
-    			
-    			String capText = "";
-    			if(captcha.size() == 80) {
-    				for(int i=1; i<5; i++) {
-    					capText = capText + extractCaptcha(captcha, i);
+            Vector<Vector<String>> mirrors = new Vector<Vector<String>>();
+        	
+        	try {
+        		
+        		RequestInfo reqinfo = getRequest(new URL(parameter));
+        		boolean direct = false;
+        		
+        		if ( parameter.contains("do=show_download") ) {
+        			
+        			mirrors = getAllSimpleMatches(reqinfo.getHtmlCode(),"href=\"index.php?do=protect&id=°\"");
+        			
+        			if ( reqinfo.getHtmlCode().contains("<strong>Passwort:</strong>") ) {
+        				
+        				String password = getBetween(reqinfo.getHtmlCode(),
+        						"<td><strong>Passwort:</strong></td>\n                        <td style=\"color: red\">","</td>");
+        				default_password.add(password);
+                        
+        			} else {
+        				default_password.add("cine.to");
+        			}
+        			
+        			
+        		} else {
+        			
+        			Vector<String> temp = new Vector<String>();
+        			temp.add(parameter);
+            		mirrors.add(temp);
+            		direct = true;
+            		
+        		}
+        		
+        		if (!direct) progress.setRange(mirrors.size());
+        		
+        		for ( int i=0; i<mirrors.size(); i++ ) {
+        			
+        			reqinfo = getRequest(new URL("http://cine.to/index.php?do=protect&id="+mirrors.get(i).get(0)));
+    				logger.info(reqinfo.getLocation());
+        			Vector<Vector<String>> captcha = getAllSimpleMatches(reqinfo.getHtmlCode(),"span class=\"°\"");
+    				
+    				String capText = "";
+    				if ( captcha.size() == 80 ) {
+    					
+    					for ( int j=1; j<5; j++ ) {
+    						capText = capText + extractCaptcha(captcha, j);
+    					}
+    					
     				}
-    			}
-    			reqinfo = postRequest(url, reqinfo.getCookie(), parameter, null, "captcha=" + capText + "&submit=Senden", true);
-                
-    			Vector<Vector<String>> links = getAllSimpleMatches(reqinfo.getHtmlCode(), "window.open(\'°\'");
-    			progress.setRange(links.size());
-    			for(int i=0; i<links.size(); i++) {
-    				decryptedLinks.add(this.createDownloadlink(links.get(i).get(0)));
-    				progress.increase(1);
-    			}
-    			
-    			// Decrypt abschliessen
-    			step.setParameter(decryptedLinks);
-    		}
-    		catch(IOException e) {
-    			 e.printStackTrace();
-    		}
+    				
+    				reqinfo = postRequest(new URL("http://cine.to/index.php?do=protect&id="+mirrors.get(i).get(0)), reqinfo.getCookie(), parameter, null,
+    						"captcha=" + capText + "&submit=Senden", true);
+                	
+    				Vector<Vector<String>> links = getAllSimpleMatches(reqinfo.getHtmlCode(), "window.open(\'°\'");
+    				if (direct) progress.setRange(links.size());
+    				
+    				for ( int j=0; j<links.size(); j++ ) {
+    					decryptedLinks.add(this.createDownloadlink(links.get(i).get(0)));
+    					if (direct) progress.increase(1);
+    				}
+            		
+    				if (!direct) progress.increase(1);
+    				
+        		}
+        		
+				step.setParameter(decryptedLinks);
+        		
+			} catch(IOException e) {
+				e.printStackTrace();
+			}
+            
     	}
+    	
     	return null;
+    	
     }
     
     private String extractCaptcha(Vector<Vector<String>> source, int captchanumber) {
+    	
     	String[] erg = new String[15];
     	
     	erg[0] = source.get((captchanumber*4)-4).get(0);
@@ -161,4 +206,5 @@ public class CineTo extends PluginForDecrypt {
     public boolean doBotCheck(File file) {
         return false;
     }
+    
 }
