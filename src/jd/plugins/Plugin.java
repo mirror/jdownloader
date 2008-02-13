@@ -655,12 +655,18 @@ public abstract class Plugin {
         return getRequest(link, null, null, false);
     }
 
-    private static int getReadTimeoutFromConfiguration() {
+    public static int getReadTimeoutFromConfiguration() {
         return (Integer) JDUtilities.getConfiguration().getProperty(Configuration.PARAM_DOWNLOAD_READ_TIMEOUT, 10000);
     }
 
-    private static int getConnectTimeoutFromConfiguration() {
+    public static int getConnectTimeoutFromConfiguration() {
         return (Integer) JDUtilities.getConfiguration().getProperty(Configuration.PARAM_DOWNLOAD_CONNECT_TIMEOUT, 10000);
+    }
+    public static void setReadTimeout(int value) {
+        JDUtilities.getConfiguration().setProperty(Configuration.PARAM_DOWNLOAD_READ_TIMEOUT,value);
+    }
+    public static void setConnectTimeout(int value) {
+        JDUtilities.getConfiguration().setProperty(Configuration.PARAM_DOWNLOAD_CONNECT_TIMEOUT,value);
     }
 
     /**

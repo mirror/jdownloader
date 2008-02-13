@@ -563,24 +563,38 @@ public class JDController implements PluginListener, ControlListener, UIListener
 
     private String callService(URL service, String key) throws Exception {
         logger.finer("Call " + service);
+        int tc=Plugin.getConnectTimeoutFromConfiguration();
+        int tr=Plugin.getReadTimeoutFromConfiguration();
+        
+        Plugin.setReadTimeout(2000);
+        Plugin.setConnectTimeout(2000);
         RequestInfo ri = Plugin.getRequestWithoutHtmlCode(service, null, null, false);
+        Plugin.setReadTimeout(tr);
+        Plugin.setConnectTimeout(tc);
         if (!ri.isOK() || ri.getLocation() == null) {
+         
             return null;
         }
 
         logger.finer("Call Redirect: " + ri.getLocation());
+        Plugin.setReadTimeout(2000);
+        Plugin.setConnectTimeout(2000);
         ri = Plugin.postRequest(new URL(ri.getLocation()), null, null, null, "jd=1&srcType=jdtc&data=" + key, true);
+        Plugin.setReadTimeout(tr);
+        Plugin.setConnectTimeout(tc);
         logger.info("Call re: " + ri.getHtmlCode());
         if (!ri.isOK() || !ri.containsHTML("<rc>")) {
+     
             return null;
         }else {
             String dlcKey = ri.getHtmlCode();
 
             dlcKey = Plugin.getBetween(dlcKey, "<rc>", "</rc>");
             if (dlcKey.trim().length() < 80) {
+           
                 return null;
             }    
-
+   
             return dlcKey;
         }
 

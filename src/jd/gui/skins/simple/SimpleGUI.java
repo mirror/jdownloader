@@ -223,9 +223,9 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
      */
     public SimpleGUI() {
         super();
-
+       
         UIManager.LookAndFeelInfo[] info = UIManager.getInstalledLookAndFeels();
-
+        
         boolean plafisSet = false;
         for (int i = 0; i < info.length; i++) {
             if (info[i].getName().equals(guiConfig.getStringProperty(PARAM_PLAF))) {
@@ -253,7 +253,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
             catch (UnsupportedLookAndFeelException e) {
             }
         }
-
+     
         uiListener = new Vector<UIListener>();
         frame = new JFrame();
         // tabbedPane = new JTabbedPane();
