@@ -9,6 +9,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
+import java.util.Iterator;
 import java.util.Vector;
 
 import javax.swing.JButton;
@@ -29,237 +30,287 @@ import jd.utils.JDUtilities;
 
 import java.util.Collections;
 
-public class ConfigPanelPluginForDecrypt extends ConfigPanel implements ActionListener, MouseListener {
+public class ConfigPanelPluginForDecrypt extends ConfigPanel implements
+		ActionListener, MouseListener {
 
-    /**
-     * 
-     */
-    private static final long serialVersionUID = -5308908915544580923L;
-    private JButton                  btnEdit;
-    private JTable                   table;
-    private Vector<PluginForDecrypt> pluginsForDecrypt;
-    private Configuration configuration;
-//  private PluginForDecrypt         currentPlugin;
-    @SuppressWarnings("unchecked")
-	public ConfigPanelPluginForDecrypt(Configuration configuration, UIInterface uiinterface) {
-        
-    	super(uiinterface);
-        this.configuration=configuration;
-        this.pluginsForDecrypt = JDUtilities.getPluginsForDecrypt();
-        Collections.sort(this.pluginsForDecrypt);
-        
-        initPanel();
-        load();
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = -5308908915544580923L;
+	private JButton btnEdit;
+	private JTable table;
+	private Vector<PluginForDecrypt> pluginsForDecrypt;
+	private Configuration configuration;
 
-    }
+	// private PluginForDecrypt currentPlugin;
+	@SuppressWarnings("unchecked")
+	public ConfigPanelPluginForDecrypt(Configuration configuration,
+			UIInterface uiinterface) {
 
-    /**
-     * Lädt alle Informationen
-     */
-    public void load() {
+		super(uiinterface);
+		this.configuration = configuration;
+		this.pluginsForDecrypt = JDUtilities.getPluginsForDecrypt();
+		Collections.sort(this.pluginsForDecrypt);
+		Iterator<PluginForDecrypt> iter = pluginsForDecrypt.iterator();
+		Vector<PluginForDecrypt> pltmp = new Vector<PluginForDecrypt>();
+		Vector<PluginForDecrypt> pltmp2 = new Vector<PluginForDecrypt>();
+		while (iter.hasNext()) {
+			PluginForDecrypt pluginForDecrypt = (PluginForDecrypt) iter.next();
+			if (pluginForDecrypt.getConfig().getEntries().size() != 0) {
+				pltmp.add(pluginForDecrypt);
+			}
+			else
+			{
+				pltmp2.add(pluginForDecrypt);
+			}
 
-    }
+		}
+		pltmp.addAll(pltmp2);
+		pluginsForDecrypt=pltmp;
+		initPanel();
+		load();
 
-    /**
-     * Speichert alle Änderungen auf der Maske
-     * TODO: PluginsForDecrypt haben noch keinen properties laoder. 
-     */
-    public void save() {
-        // Interaction[] tmp= new Interaction[interactions.size()];
-        PluginForDecrypt plg;
-        for (int i = 0; i < pluginsForDecrypt.size(); i++) {
-            plg = pluginsForDecrypt.elementAt(i);
-            if (plg.getProperties() != null) configuration.setProperty("PluginConfig_" + plg.getPluginName(), plg.getProperties());
-        }
+	}
 
-    }
+	/**
+	 * Lädt alle Informationen
+	 */
+	public void load() {
 
-    @Override
-    public void initPanel() {
-        setLayout(new BorderLayout());
-        table = new InternalTable();
-        InternalTableModel internalTableModel = new InternalTableModel();
-        table.setModel(new InternalTableModel());
-        this.setPreferredSize(new Dimension(550, 350));
+	}
 
-        TableColumn column = null;
-        for (int c = 0; c < internalTableModel.getColumnCount(); c++) {
-            column = table.getColumnModel().getColumn(c);
-            switch (c) {
+	/**
+	 * Speichert alle Änderungen auf der Maske TODO: PluginsForDecrypt haben
+	 * noch keinen properties laoder.
+	 */
+	public void save() {
+		// Interaction[] tmp= new Interaction[interactions.size()];
+		Iterator<PluginForDecrypt> iter = pluginsForDecrypt.iterator();
+		while (iter.hasNext()) {
+			PluginForDecrypt plg = (PluginForDecrypt) iter.next();
+			if (plg.getProperties() != null)
+				configuration.setProperty(
+						"PluginConfig_" + plg.getPluginName(), plg
+								.getProperties());
+		}
 
-                case 0:
-                    column.setPreferredWidth(200);
-                    break;
-                case 1:
-                    column.setPreferredWidth(60);
-                    column.setMinWidth(60);
-                    break;
-                case 2:
-                    column.setPreferredWidth(290);
-                    break;
+	}
 
-            }
-        }
+	@Override
+	public void initPanel() {
+		setLayout(new BorderLayout());
+		table = new InternalTable();
+		InternalTableModel internalTableModel = new InternalTableModel();
+		table.setModel(new InternalTableModel());
+		this.setPreferredSize(new Dimension(550, 350));
 
-        // add(scrollPane);
-        // list = new JList();
-        table.addMouseListener(this);
-        JScrollPane scrollpane = new JScrollPane(table);
-        scrollpane.setPreferredSize(new Dimension(400, 200));
+		TableColumn column = null;
+		for (int c = 0; c < internalTableModel.getColumnCount(); c++) {
+			column = table.getColumnModel().getColumn(c);
+			switch (c) {
 
-        btnEdit = new JButton(JDLocale.L("gui.config.plugin.decrypt.btn_settings","Einstellungen"));
+			case 0:
+				column.setPreferredWidth(200);
+				break;
+			case 1:
+				column.setPreferredWidth(60);
+				column.setMinWidth(60);
+				break;
+			case 2:
+				column.setPreferredWidth(290);
+				break;
 
-        btnEdit.addActionListener(this);
-        JDUtilities.addToGridBag(panel, scrollpane, 0, 0, 3, 1, 1, 1, insets, GridBagConstraints.BOTH, GridBagConstraints.CENTER);
+			}
+		}
 
-        JDUtilities.addToGridBag(panel, btnEdit, 0, 1, 1, 1, 0, 1, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
+		// add(scrollPane);
+		// list = new JList();
+		table.addMouseListener(this);
+		JScrollPane scrollpane = new JScrollPane(table);
+		scrollpane.setPreferredSize(new Dimension(400, 200));
 
-        // JDUtilities.addToGridBag(this, panel,0, 0, 1, 1, 1, 1, insets,
-        // GridBagConstraints.BOTH, GridBagConstraints.WEST);
-        add(panel, BorderLayout.CENTER);
+		btnEdit = new JButton(JDLocale.L(
+				"gui.config.plugin.decrypt.btn_settings", "Einstellungen"));
 
-    }
+		btnEdit.addActionListener(this);
+		JDUtilities.addToGridBag(panel, scrollpane, 0, 0, 3, 1, 1, 1, insets,
+				GridBagConstraints.BOTH, GridBagConstraints.CENTER);
 
-    private int getSelectedInteractionIndex() {
-        return table.getSelectedRow();
-    }
+		JDUtilities.addToGridBag(panel, btnEdit, 0, 1, 1, 1, 0, 1, insets,
+				GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-    @Override
-    public String getName() {
-        return JDLocale.L("gui.config.plugin.decrypt.name","Decrypt Plugins");
-    }
+		// JDUtilities.addToGridBag(this, panel,0, 0, 1, 1, 1, 1, insets,
+		// GridBagConstraints.BOTH, GridBagConstraints.WEST);
+		add(panel, BorderLayout.CENTER);
 
-    private void openPopupPanel(ConfigPanel config) {
-        JPanel panel = new JPanel(new BorderLayout());
+	}
 
-//      InteractionTrigger[] triggers = InteractionTrigger.getAllTrigger();
+	private int getSelectedInteractionIndex() {
+		return table.getSelectedRow();
+	}
 
-        PluginForDecrypt plugin = this.getSelectedPlugin();
-//      currentPlugin = plugin;
-        if (plugin == null) return;
+	@Override
+	public String getName() {
+		return JDLocale.L("gui.config.plugin.decrypt.name", "Decrypt Plugins");
+	}
 
-        JPanel topPanel = new JPanel();
-        panel.add(topPanel, BorderLayout.NORTH);
-        panel.add(config, BorderLayout.CENTER);
-        ConfigurationPopup pop = new ConfigurationPopup(JDUtilities.getParentFrame(this), config, panel, uiinterface, configuration);
-        pop.setLocation(JDUtilities.getCenterOfComponent(this, pop));
-        pop.setVisible(true);
-    }
+	private void openPopupPanel(ConfigPanel config) {
+		JPanel panel = new JPanel(new BorderLayout());
 
-    private PluginForDecrypt getSelectedPlugin() {
-        int index = getSelectedInteractionIndex();
-        if (index < 0) return null;
-        return this.pluginsForDecrypt.elementAt(index);
-    }
+		// InteractionTrigger[] triggers = InteractionTrigger.getAllTrigger();
 
-    public void actionPerformed(ActionEvent e) {
-        if (e.getSource() == btnEdit) {
-            editEntry();
-        }
-    }
-    private void editEntry() {
-        PluginForDecrypt plugin = getSelectedPlugin();
-        if (plugin != null && plugin.getConfig().getEntries().size() > 0) {
-            openPopupPanel(new ConfigPanelPlugin(configuration, uiinterface, plugin));
-        }
-    }
-    public void mouseClicked(MouseEvent e) {
-        if (e.getClickCount() > 1) {
-            editEntry();
-        }
-    }
-    public void mouseEntered(MouseEvent e)  { }
-    public void mouseExited(MouseEvent e)   { }
-    public void mousePressed(MouseEvent e)  { }
-    public void mouseReleased(MouseEvent e) { }
-    private class InternalTableModel extends AbstractTableModel {
-        /**
-         * 
-         */
-        private static final long serialVersionUID = 1155282457354673850L;
+		PluginForDecrypt plugin = this.getSelectedPlugin();
+		// currentPlugin = plugin;
+		if (plugin == null)
+			return;
 
-        public Class<?> getColumnClass(int columnIndex) {
-            switch (columnIndex) {
-                case 0:
-                    return String.class;
-                case 1:
-                    return String.class;
-                case 2:
-                    return String.class;
+		JPanel topPanel = new JPanel();
+		panel.add(topPanel, BorderLayout.NORTH);
+		panel.add(config, BorderLayout.CENTER);
+		ConfigurationPopup pop = new ConfigurationPopup(JDUtilities
+				.getParentFrame(this), config, panel, uiinterface,
+				configuration);
+		pop.setLocation(JDUtilities.getCenterOfComponent(this, pop));
+		pop.setVisible(true);
+	}
 
-            }
-            return String.class;
-        }
+	private PluginForDecrypt getSelectedPlugin() {
+		int index = getSelectedInteractionIndex();
+		if (index < 0)
+			return null;
+		return this.pluginsForDecrypt.elementAt(index);
+	}
 
-        public int getColumnCount() {
-            return 3;
-        }
+	public void actionPerformed(ActionEvent e) {
+		if (e.getSource() == btnEdit) {
+			editEntry();
+		}
+	}
 
-        public int getRowCount() {
-            return pluginsForDecrypt.size();
-        }
+	private void editEntry() {
+		PluginForDecrypt plugin = getSelectedPlugin();
+		if (plugin != null && plugin.getConfig().getEntries().size() > 0) {
+			openPopupPanel(new ConfigPanelPlugin(configuration, uiinterface,
+					plugin));
+		}
+	}
 
-        public Object getValueAt(int rowIndex, int columnIndex) {
+	public void mouseClicked(MouseEvent e) {
+		if (e.getClickCount() > 1) {
+			editEntry();
+		}
+	}
 
-            switch (columnIndex) {
-                case 0:
-                    return pluginsForDecrypt.elementAt(rowIndex).getPluginName();
-                case 1:
-                    return pluginsForDecrypt.elementAt(rowIndex).getVersion();
-                case 2:
-                    return pluginsForDecrypt.elementAt(rowIndex).getCoder();
+	public void mouseEntered(MouseEvent e) {
+	}
 
-            }
-            return null;
-        }
+	public void mouseExited(MouseEvent e) {
+	}
 
-        public String getColumnName(int column) {
-            switch (column) {
-                case 0:
-                    return JDLocale.L("gui.config.plugin.container.column_host","Host");
-                case 1:
-                    return JDLocale.L("gui.config.plugin.container.column_version","Version");
-                case 2:
-                    return JDLocale.L("gui.config.plugin.container.column_author","Ersteller");
+	public void mousePressed(MouseEvent e) {
+	}
 
-            }
-            return super.getColumnName(column);
-        }
-    }
-    private class InternalTable extends JTable {
-        /**
-         * serialVersionUID
-         */
-        private static final long         serialVersionUID          = 4424930948374806098L;
+	public void mouseReleased(MouseEvent e) {
+	}
 
-        private InternalTableCellRenderer internalTableCellRenderer = new InternalTableCellRenderer();
-        @Override
-        public TableCellRenderer getCellRenderer(int arg0, int arg1) {
-            return internalTableCellRenderer;
-        }
-    }
-    private class InternalTableCellRenderer extends DefaultTableCellRenderer {
-        /**
-         * serialVersionUID
-         */
-        private static final long serialVersionUID = -3912572910439565199L;
+	private class InternalTableModel extends AbstractTableModel {
+		/**
+		 * 
+		 */
+		private static final long serialVersionUID = 1155282457354673850L;
 
-        public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
-            if (value instanceof JProgressBar) return (JProgressBar) value;
+		public Class<?> getColumnClass(int columnIndex) {
+			switch (columnIndex) {
+			case 0:
+				return String.class;
+			case 1:
+				return String.class;
+			case 2:
+				return String.class;
 
-            Component c = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
-            if (!isSelected) {
-                PluginForDecrypt plugin = pluginsForDecrypt.get(row);
-                if (plugin.getConfig().getEntries().size()==0) {
-                    c.setBackground(new Color(0,0,0,10));
-                    c.setForeground(new Color(0,0,0,70));
-                }else{
-                    c.setBackground(Color.WHITE);
-                    c.setForeground(Color.BLACK);
-                }
+			}
+			return String.class;
+		}
 
-            }
-            return c;
-        }
-    }
+		public int getColumnCount() {
+			return 3;
+		}
+
+		public int getRowCount() {
+			return pluginsForDecrypt.size();
+		}
+
+		public Object getValueAt(int rowIndex, int columnIndex) {
+
+			switch (columnIndex) {
+			case 0:
+				return pluginsForDecrypt.elementAt(rowIndex).getPluginName();
+			case 1:
+				return pluginsForDecrypt.elementAt(rowIndex).getVersion();
+			case 2:
+				return pluginsForDecrypt.elementAt(rowIndex).getCoder();
+
+			}
+			return null;
+		}
+
+		public String getColumnName(int column) {
+			switch (column) {
+			case 0:
+				return JDLocale.L("gui.config.plugin.container.column_host",
+						"Host");
+			case 1:
+				return JDLocale.L("gui.config.plugin.container.column_version",
+						"Version");
+			case 2:
+				return JDLocale.L("gui.config.plugin.container.column_author",
+						"Ersteller");
+
+			}
+			return super.getColumnName(column);
+		}
+	}
+
+	private class InternalTable extends JTable {
+		/**
+		 * serialVersionUID
+		 */
+		private static final long serialVersionUID = 4424930948374806098L;
+
+		private InternalTableCellRenderer internalTableCellRenderer = new InternalTableCellRenderer();
+
+		@Override
+		public TableCellRenderer getCellRenderer(int arg0, int arg1) {
+			return internalTableCellRenderer;
+		}
+	}
+
+	private class InternalTableCellRenderer extends DefaultTableCellRenderer {
+		/**
+		 * serialVersionUID
+		 */
+		private static final long serialVersionUID = -3912572910439565199L;
+
+		public Component getTableCellRendererComponent(JTable table,
+				Object value, boolean isSelected, boolean hasFocus, int row,
+				int column) {
+			if (value instanceof JProgressBar)
+				return (JProgressBar) value;
+
+			Component c = super.getTableCellRendererComponent(table, value,
+					isSelected, hasFocus, row, column);
+			if (!isSelected) {
+				PluginForDecrypt plugin = pluginsForDecrypt.get(row);
+				if (plugin.getConfig().getEntries().size() == 0) {
+					c.setBackground(new Color(0, 0, 0, 10));
+					c.setForeground(new Color(0, 0, 0, 70));
+				} else {
+					c.setBackground(Color.WHITE);
+					c.setForeground(Color.BLACK);
+				}
+
+			}
+			return c;
+		}
+	}
 }
