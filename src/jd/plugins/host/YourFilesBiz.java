@@ -22,13 +22,12 @@ public class YourFilesBiz extends PluginForHost {
     private static final String  PLUGIN_ID                = PLUGIN_NAME + "-" + PLUGIN_VERSION;
     
     static private final Pattern PAT_SUPPORTED 			  = Pattern.compile("http://.*?yourfiles\\.biz/\\?d\\=[a-zA-Z0-9]+");
-    private static final int	 MAX_SIMULTAN_DOWNLOADS   = 999; // unbegrenzt
+    private static final int	 MAX_SIMULTAN_DOWNLOADS   = Integer.MAX_VALUE;
 
     private String               downloadURL              = "";
     private URLConnection        urlConnection;
     
     // Suchmasken
-    //private static final String  ERROR_DOWNLOAD_NOT_FOUND = "Die angefragte Datei wurde nicht gefunden";
     private static final String  DOWNLOAD_SIZE            = "<td align=left><b>Dateigröße:</b></td>\n       <td align=left>°</td>";
     private static final String  DOWNLOAD_NAME            = "<td align=left width=20%><b>Dateiname:</b></td>\n       <td align=left width=80%>°</td>";
     private static final String  DOWNLOAD_LINK            = "value='http://°'>";
@@ -45,7 +44,7 @@ public class YourFilesBiz extends PluginForHost {
 
     @Override
     public boolean doBotCheck(File file) {
-        return false; // kein BotCheck
+        return false;
     }
 
     @Override
@@ -120,11 +119,9 @@ public class YourFilesBiz extends PluginForHost {
                 
             }
 
-        }
-        catch (MalformedURLException e) {
+        } catch (MalformedURLException e) {
              e.printStackTrace();
-        }
-        catch (IOException e) {
+        } catch (IOException e) {
              e.printStackTrace();
         }
 
@@ -198,10 +195,9 @@ public class YourFilesBiz extends PluginForHost {
                        downloadLink.setStatus(DownloadLink.STATUS_DONE);
                 
                    }
-                    
-              
-                    return step;
-                    
+                   
+                   return step;
+                   
             }
             
             return step;
@@ -226,16 +222,20 @@ public class YourFilesBiz extends PluginForHost {
 
     private int getFileSize(String source) {
     	
-    	String sizeString = JDUtilities.htmlDecode(getSimpleMatch(source, DOWNLOAD_SIZE, 0));
     	int size = 0;
+    	String sizeString = JDUtilities.htmlDecode(getSimpleMatch(source, DOWNLOAD_SIZE, 0));
+		if ( sizeString == null ) sizeString = "";
     	
-    	if ( sizeString.contains("KB") ) {
-    		sizeString = getSimpleMatch(sizeString, "° KB", 0);
-    		size = (int) Math.round(Double.parseDouble(sizeString)*1024);
-    	} else if ( sizeString.contains("MB") ) {
-    		sizeString = getSimpleMatch(sizeString, "° MB", 0);
-    		size = (int) Math.round(Double.parseDouble(sizeString)*1024*1024);
-    	}
+		if ( sizeString.contains("MB") ) {
+			sizeString = getSimpleMatch(sizeString, "° MB", 0);
+			size = (int) Math.round(Double.parseDouble(sizeString)*1024*1024);
+		} else if ( sizeString.contains("KB") ) {
+			sizeString = getSimpleMatch(sizeString, "° KB", 0);
+			size = (int) Math.round(Double.parseDouble(sizeString)*1024);
+		} else if ( sizeString.contains("Byte") ) {
+			sizeString = getSimpleMatch(sizeString, "° Byte", 0);
+			size = (int) Math.round(Double.parseDouble(sizeString));
+		}
     	
     	return size;
     	
