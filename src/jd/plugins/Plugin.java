@@ -28,6 +28,8 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
+import java.util.List;
+import java.util.ListIterator;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
@@ -415,7 +417,19 @@ public abstract class Plugin {
      * @return cookiestring
      */
     public static String getCookieString(HttpURLConnection con) {
-        return joinMap(collectCookies(con), "=", "; ");
+        String cookie = "";
+        try {
+        	List<String> list = con.getHeaderFields().get("Set-Cookie");
+        	ListIterator<String> iter = list.listIterator(list.size());
+        	boolean last = false;
+        	while (iter.hasPrevious()) {
+        		cookie += (last? "; ":"") + iter.previous().replaceFirst("; expires=.*", "");
+        		last = true;
+			}
+		} catch (Exception e) {
+			// TODO: handle exception
+		}
+		return cookie;
     }
 
     /**
@@ -969,7 +983,6 @@ public abstract class Plugin {
         return download(downloadLink, urlConnection, -1);
 
     }
-
     public int download(DownloadLink downloadLink, URLConnection urlConnection, int bytesToLoad) {
         File fileOutput = new File(downloadLink.getFileOutput() + ".jdd");
         if (fileOutput == null || fileOutput.getParentFile() == null) return Plugin.DOWNLOAD_ERROR_INVALID_OUTPUTFILE;
@@ -994,18 +1007,27 @@ public abstract class Plugin {
             // Falls keine urlConnection übergeben wurde
             if (urlConnection == null) urlConnection = new URL(downloadLink.getDownloadURL()).openConnection();
             FileOutputStream fos = new FileOutputStream(fileOutput);
+            // Länge aus HTTP-Header speichern:
+            int contentLen = urlConnection.getContentLength();
+            if(contentLen>0)
+            {
+            downloadLink.setDownloadMax(contentLen);
+            }
+            else
+            	contentLen = (int) downloadLink.getDownloadMax();
+
+            if (bytesToLoad > 0) {
+                contentLen = bytesToLoad;
+                logger.info("Load only the first " + bytesToLoad + " kb");
+            }
+
+            	
             // NIO Channels setzen:
             urlConnection.setReadTimeout(getReadTimeoutFromConfiguration());
             urlConnection.setConnectTimeout(getConnectTimeoutFromConfiguration());
             ReadableByteChannel source = Channels.newChannel(urlConnection.getInputStream());
             WritableByteChannel dest = fos.getChannel();
-            // Länge aus HTTP-Header speichern:
-            int contentLen = urlConnection.getContentLength();
-            if (bytesToLoad > 0) {
-                contentLen = bytesToLoad;
-                logger.info("Load only the first " + bytesToLoad + " kb");
-            }
-            downloadLink.setDownloadMax(contentLen);
+
             logger.info("starting download");
             start = System.currentTimeMillis();
             // Buffer, laufende Variablen resetten:
@@ -1843,7 +1865,11 @@ public abstract class Plugin {
 
         return ret;
     }
-
+    /**
+     * Gibt die Passwörter als String aus bsp. {"Passwort1","Passwort2"}
+     * @param data
+     * @return
+     */
     public static String findPassword(String data) {
         Vector<String> passwords = findPasswords(data);
         return JUnrar.passwordArrayToString(passwords.toArray(new String[passwords.size()]));

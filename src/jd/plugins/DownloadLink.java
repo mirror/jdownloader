@@ -2,6 +2,7 @@ package jd.plugins;
 
 import java.io.File;
 import java.io.Serializable;
+import java.util.LinkedList;
 import java.util.Vector;
 import java.util.logging.Logger;
 
@@ -207,6 +208,7 @@ public class DownloadLink implements Serializable,Comparable<DownloadLink> {
      */
     private transient SpeedMeter speedMeter;
     private transient Boolean    available         = null;
+    public LinkedList<Object> saveObjects = new LinkedList<Object>();
    
     private Vector<String> sourcePluginPasswords=null;
     private String sourcePluginComment=null;

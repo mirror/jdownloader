@@ -20,3 +20,4 @@ jd.plugins.host.ArchivTo
 jd.plugins.host.UploadStube
 jd.plugins.host.FilesTo
 jd.plugins.host.DepositFiles
+jd.plugins.host.BadOngo

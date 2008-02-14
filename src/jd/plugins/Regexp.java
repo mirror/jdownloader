@@ -10,6 +10,11 @@ public class Regexp {
         if (matcher == null) return;
         this.matcher = matcher;
     }
+    /**
+     * Regexp auf ein Objekt (Beim Objekt wird toString aufgerufen)
+     * @param data
+     * @param pattern
+     */
     public Regexp(Object data, Pattern pattern) {
         this(data.toString(), pattern);
     }
@@ -17,9 +22,20 @@ public class Regexp {
         if (data == null || pattern == null) return;
         this.matcher = pattern.matcher(data);
     }
+    /**
+     * Regexp auf ein Objekt (Beim Objekt wird toString aufgerufen)
+     * @param data
+     * @param pattern
+     */
     public Regexp(Object data, String pattern) {
         this(data.toString(), pattern);
     }
+    /**
+     * Regexp auf ein Objekt (Beim Objekt wird toString aufgerufen)
+     * @param data
+     * @param pattern
+     * @param flags flags für den Pattern z.B. Pattern.CASE_INSENSITIVE
+     */
     public Regexp(Object data, String pattern, int flags) {
         this(data.toString(), pattern, flags);
     }
@@ -48,7 +64,8 @@ public class Regexp {
      */
     public String getFirstMatch(int group) {
         if (matcher == null) return null;
-        if (matcher.find()) return matcher.group(group);
+        Matcher matchertmp = matcher;
+        if (matchertmp.find()) return matchertmp.group(group);
         return null;
     }
     /**
@@ -57,8 +74,9 @@ public class Regexp {
     public String[][] getMatches() {
         if(matcher==null)
             return null;
+        Matcher matchertmp = matcher;
         ArrayList<String[]> ar = new ArrayList<String[]>();
-        int c = matcher.groupCount();
+        int c = matchertmp.groupCount();
         int d = 1;
         String[] group;
         if (c == 0) {
@@ -68,9 +86,9 @@ public class Regexp {
         else
             group = new String[c];
 
-        while (matcher.find()) {
+        while (matchertmp.find()) {
             for (int i = d; i <= c; i++) {
-                group[i - d] = matcher.group(i);
+                group[i - d] = matchertmp.group(i);
             }
             ar.add(group);
         }
@@ -82,9 +100,10 @@ public class Regexp {
     public String[] getMatches(int group) {
         if(matcher==null)
             return null;
+        Matcher matchertmp = matcher;
         ArrayList<String> ar = new ArrayList<String>();
-        while (matcher.find()) {
-            ar.add(matcher.group(group));
+        while (matchertmp.find()) {
+            ar.add(matchertmp.group(group));
         }
         return ar.toArray(new String[ar.size()]);
     }
@@ -94,7 +113,8 @@ public class Regexp {
     public int count() {
         if (matcher == null) return 0;
         int c = 0;
-        while (matcher.find())
+        Matcher matchertmp = matcher;
+        while (matchertmp.find())
             c++;
         return c;
     }
@@ -109,5 +129,15 @@ public class Regexp {
      */
     public void setMatcher(Matcher matcher) {
         this.matcher = matcher;
+    }
+    public String toString() {
+    	String ret = "";
+    	String[][] match = getMatches();
+    	for (int i = 0; i < match.length; i++) {
+			for (int j = 0; j < match.length; j++) {
+				ret+="match["+i+"]["+j+"]="+match[i][j]+System.getProperty("line.separator");
+			}
+		}
+    	return ret;
     }
 }

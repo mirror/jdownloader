@@ -73,4 +73,30 @@ public class RequestInfo {
         this.connection = connection;
     }
     public String toString()	{ return getHtmlCode(); }
+    /**
+     * Macht einen Regexp auf die requestInfo
+     * @param pattern
+     * @return
+     */
+    public Regexp getRegexp(String pattern)
+    {
+    	return new Regexp(this, pattern);
+    }
+    /**
+     * gibt die Forms der requestInfo aus
+     * @param pattern
+     * @return
+     */
+    public Form[] getForms()
+    {
+    	return Form.getForms(this);
+    }
+    /**
+     * gibt die erste Form der requestInfo aus
+     * @return
+     */
+    public Form getForm()
+    {
+    	return getForms()[0];
+    }
 }
