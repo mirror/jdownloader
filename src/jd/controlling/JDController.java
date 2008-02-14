@@ -14,6 +14,7 @@ import javax.xml.parsers.DocumentBuilderFactory;
 
 import jd.JDInit;
 import jd.config.Configuration;
+import jd.config.Property;
 import jd.config.SubConfiguration;
 import jd.controlling.interaction.BatchReconnect;
 import jd.controlling.interaction.ExternReconnect;
@@ -110,7 +111,7 @@ public class JDController implements PluginListener, ControlListener, UIListener
     private Unrar                             unrarModule;
 
     private InfoFileWriter                    infoFileWriterModule;
-
+    public static Property FLAGS= new Property();
     private int                               initStatus                       = -1;
 
     private Vector<Vector<String>> waitingUpdates;
@@ -691,7 +692,8 @@ public class JDController implements PluginListener, ControlListener, UIListener
                     return links;
                 }
             }
-            return null;
+          
+           return null;
         }
         catch (Exception e) {
             e.printStackTrace();

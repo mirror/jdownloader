@@ -98,6 +98,12 @@ public interface UIInterface {
      * @param string
      */
     public boolean showHTMLDialog(String title,String htmlQuestion);
+    
+    /**
+     * Zeigt einen HTML dialog an
+     * @param string
+     */
+    public int showHelpMessage(String title,String message, String url);
     /**
      * Wird aufgeruifen sobald die Initialisierung aller Module komplett ist
      */

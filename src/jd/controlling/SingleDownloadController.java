@@ -327,7 +327,14 @@ public class SingleDownloadController extends ControlMulticaster {
 
     private void onErrorAGBNotSigned(DownloadLink downloadLink2, PluginForHost plugin, PluginStep step) {
         downloadLink.setStatusText(JDLocale.L("controller.status.agb_tos", "AGB/TOS not signed"));
-
+        if(JDController.FLAGS.getIntegerProperty("AGBMESSAGESIGNED_"+plugin.getHost(), 0)==0){
+            JDController.FLAGS.setProperty("AGBMESSAGESIGNED_"+plugin.getHost(), 1);
+            String title=JDLocale.L("gui.dialogs.agb_tos_warning_title", "Allgemeinen Geschäftsbedingungen nicht aktzeptiert");
+            String message=JDLocale.L("gui.dialogs.agb_tos_warning_text", "<p><font size=\"3\"><strong><font size=\2\" face=\"Verdana, Arial, Helvetica, sans-serif\">Die Allgemeinen Geschäftsbedingungen (AGB)</font></strong><font size=\"2\" face=\"Verdana, Arial, Helvetica, sans-serif\"><br/>  wurden  nicht gelesen und akzeptiert.</font></font></p><p><font size=\"2\" face=\"Verdana, Arial, Helvetica, sans-serif\"><br/> Anbieter: </font></p>")+plugin.getHost();
+            String url="http://www.the-lounge.org/viewtopic.php?f=222&t=8842";
+            JDUtilities.getGUI().showHelpMessage(title, message, url);
+            
+        }
         fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SINGLE_DOWNLOAD_CHANGED, downloadLink));
 
     }

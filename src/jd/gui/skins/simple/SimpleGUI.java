@@ -17,6 +17,8 @@ import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 import java.io.File;
 import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.Iterator;
 import java.util.Vector;
 import java.util.logging.Logger;
@@ -51,6 +53,7 @@ import jd.gui.UIInterface;
 import jd.gui.skins.simple.Link.JLinkButton;
 import jd.gui.skins.simple.components.HTMLDialog;
 import jd.gui.skins.simple.components.JDFileChooser;
+import jd.gui.skins.simple.components.JHelpDialog;
 import jd.gui.skins.simple.components.TextAreaDialog;
 import jd.gui.skins.simple.config.ConfigurationDialog;
 import jd.gui.skins.simple.config.jdUnrarPasswordListDialog;
@@ -1251,6 +1254,17 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         }
         this.frame.setTitle(JDUtilities.getJDTitle());
 
+    }
+
+    public int showHelpMessage(String title, String message, String url) {
+        
+        try {
+            return JHelpDialog.showHelpMessage(frame, title, message, new URL(url));
+        }
+        catch (MalformedURLException e) {
+            e.printStackTrace();
+        }
+        return -1;
     }
 
 
