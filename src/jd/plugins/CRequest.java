@@ -21,12 +21,25 @@ public class CRequest {
 	 */
 	public boolean withHtmlCode = true;
 	/**
+	 * ob automatischen weiterleitungen gefolgt werden soll
+	 */
+	public boolean redirect = true;
+	/**
 	 * Interner Cookie bestehend aus host, CookieString
 	 */
 	private HashMap<String, HashMap<String, String>> cookie = new HashMap<String, HashMap<String, String>>();
 
 	public RequestInfo getRequestInfo() {
 		return requestInfo;
+	}
+	public CRequest setRequestInfo(Form form)
+	{
+		try {
+			return setRequestInfo(form.getRequestInfo());
+		} catch (Exception e) {
+			// TODO: handle exception
+		}
+		return null;
 	}
 	/**
 	 * hier kann man die RequestInfo z.B. cRequest.setRequestInfo(cRequest.getForm().getForm().getRequestInfo())
@@ -69,16 +82,6 @@ public class CRequest {
 	 * @return
 	 */
 	public CRequest getRequest(String url) {
-		return getRequest(url, true);
-	}
-	/**
-	 * getRequest gibt sich selbst aus
-	 * Cookie und Referrer werden automatisch gesetzt
-	 * @param url
-	 * @param redirect
-	 * @return
-	 */
-	public CRequest getRequest(String url, boolean redirect) {
 
 		try {
 			URL mURL = new URL(url);
@@ -105,17 +108,6 @@ public class CRequest {
 	 * @return
 	 */
 	public CRequest postRequest(String url, String parameter) {
-		return postRequest(url, parameter, true);
-	}
-	/**
-	 * postRequest gibt sich selbst aus
-	 * Cookie und Referrer werden automatisch gesetzt
-	 * @param url
-	 * @param parameter
-	 * @param redirect
-	 * @return
-	 */
-	public CRequest postRequest(String url, String parameter, boolean redirect) {
 
 		try {
 			URL mURL = new URL(url);

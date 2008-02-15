@@ -131,9 +131,10 @@ public class Serienjunkies extends PluginForDecrypt {
 				URL url = new URL(parameter);
 				if (parameter.matches(".*\\?cat\\=[\\d]+")) {
 					request.withHtmlCode=false;
-					request.getRequest("http://serienjunkies.org/", false);
+					request.redirect=false;
+					request.getRequest("http://serienjunkies.org/");
 					request.withHtmlCode=true;
-					request.getRequest("http://serienjunkies.org/", false);
+					request.getRequest("http://serienjunkies.org/");
 
 					int cat = Integer.parseInt(parameter.replaceFirst(
 							".*cat\\=", "").replaceFirst("[^\\d].*", ""));
@@ -152,7 +153,7 @@ public class Serienjunkies extends PluginForDecrypt {
 					}
 					if (name == null)
 						return null;
-					request.getRequest(parameter, false);
+					request.getRequest(parameter);
 					name += " ";
 					String bet = null;
 					while (bet == null) {
