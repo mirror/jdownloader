@@ -199,6 +199,15 @@ public class CRequest {
 		}
 		return null;
 	}
+	public String getLocation()
+	{
+		try {
+			return requestInfo.getLocation();
+		} catch (Exception e) {
+			// TODO: handle exception
+		}
+		return null;
+	}
     /**
      * @return URL.toString();
      */
