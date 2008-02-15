@@ -45,11 +45,6 @@ public class ShareOnlineBiz extends PluginForHost {
 			.compile(
 					"<iframe name=.download..*?src=.(dl_button.php\\?file=.*?). marginwidth\\=",
 					Pattern.CASE_INSENSITIVE);
-
-	private static Pattern downloadl = Pattern
-			.compile("location=\\\\?['\"](.*?download.*?)\\\\?['\"]",
-					Pattern.CASE_INSENSITIVE);
-
 	private static Pattern countDown = Pattern.compile(
 			"<script language=\"Javascript\">[\n\r]+.*?\\=([0-9]+)",
 			Pattern.CASE_INSENSITIVE);

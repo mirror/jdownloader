@@ -3,8 +3,6 @@ package jd.plugins.host;
 import java.io.File;
 import java.net.URLConnection;
 import java.util.regex.Pattern;
-
-import jd.plugins.CRequest;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginStep;
