@@ -190,6 +190,15 @@ public class CRequest {
 		}
 		return null;
 	}
+	public String getHost()
+	{
+		try {
+			return getURL().getHost();
+		} catch (Exception e) {
+			// TODO: handle exception
+		}
+		return null;
+	}
     /**
      * @return URL.toString();
      */

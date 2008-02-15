@@ -2,11 +2,8 @@ package jd.plugins.decrypt;
 
 import jd.plugins.DownloadLink;
 import java.io.File;
-import java.io.IOException;
-import java.net.URL;
 import java.util.Vector;
 import java.util.regex.Pattern;
-import jd.plugins.Form;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginStep;
 import jd.plugins.Regexp;
@@ -19,7 +16,7 @@ public class SAUGUS extends PluginForDecrypt {
 
 	// http://s2.saug.us/folder-m304wzg6qreym6d8xvtpt3gmyfqzjh0.html
 	private Pattern patternSupported = Pattern.compile(
-			"http://.*?saug.us/folder-[a-zA-Z0-9]{30,34}\\.html",
+			"http://.*?saug.us/folder-[a-zA-Z0-9\\-]{30,50}\\.html",
 			Pattern.CASE_INSENSITIVE);
 
 	public SAUGUS() {
@@ -99,11 +96,15 @@ public class SAUGUS extends PluginForDecrypt {
 		if (step.getStep() == PluginStep.STEP_DECRYPT) {
 			Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
 			try {
-				URL url = new URL(parameter);
-				String hst = "http://" + url.getHost()+"/";
-				requestInfo = getRequest(url);
-				String cookie = requestInfo.getCookie();
-				String[] crypt = new Regexp(requestInfo.getHtmlCode(),
+
+				
+				request.getRequest(parameter);
+				if(request.toString().contains("<span style=\"font-size:9pt;\">Dateien offline!"))
+				{
+					return null;
+				}
+				String hst = "http://" + request.getHost()+"/";
+				String[] crypt = new Regexp(request.getHtmlCode(),
 						"document.write\\(deca.*?\\(\'(.*?)\'\\)\\)\\;").getMatches(1);
 				progress.setRange(crypt.length);
 						for (int i = 0; i < crypt.length; i++) {
@@ -113,21 +114,20 @@ public class SAUGUS extends PluginForDecrypt {
 									"document.write\\(dec.*?\\(\'(.*?)\'\\)\\)\\;")
 									.getFirstMatch();
 							string = deca1(string);
+							string = hst+HTMLEntities.unhtmlentities(new Regexp(string,
+							"javascript\\:page\\(\'(.*?)\'\\)\\;").getFirstMatch());
+							string = HTMLEntities.unhtmlentities(new Regexp(request.getRequest(string).toString().replaceAll("<!--.*?-->", ""), "<iframe src=\"(.*?)\"").getFirstMatch()).trim().replaceAll("^[\\s]*", "");
+							if(!string.toLowerCase().matches("http\\:\\/\\/.*"))
+								decryptedLinks.add(createDownloadlink(request.getRequest(hst+string).getform().action));
+							else
+								decryptedLinks.add(createDownloadlink(string));
+
+							
+
 							progress.increase(1);
-							requestInfo = getRequest(new URL(hst+new Regexp(string,
-							"javascript\\:page\\(\'(go.php.*?)\'\\)\\;")
-							.getFirstMatch()), cookie, parameter, true);
-							string = requestInfo.getHtmlCode().replaceAll("<!--.*?-->", "");
-							string = new Regexp(string, "<iframe src=\"(.*?)\"").getFirstMatch();
-							string = HTMLEntities.unhtmlentities(string);
-							string = getRequest(new URL(hst+string), cookie, requestInfo.getConnection().getURL().toString(), true).getHtmlCode();
-							string = new Regexp(string, "<iframe src=\"(.*?)\"").getFirstMatch();
-							if(string.matches(".*weiterleitung.*"))
-							string = Form.getForms(getRequest(new URL(string), cookie, requestInfo.getConnection().getURL().toString(), true))[0].getConnection().getURL().toString();
-							decryptedLinks.add(createDownloadlink(string));
 						}
 				step.setParameter(decryptedLinks);
-			} catch (IOException e) {
+			} catch (Exception e) {
 				e.printStackTrace();
 			}
 		}
