@@ -102,10 +102,8 @@ public class zShare extends PluginForHost {
 		try {
 			CRequest request = new CRequest();
 			String[] fileInfo = request.getRequest(downloadLink.getDownloadURL().replaceFirst("zshare.net/(download|video|audio|flash)", "zshare.net/image")).getRegexp("File Name: .*?<font color=\".666666\">(.*?)</font>.*?Image Size: <font color=\".666666\">([0-9\\.\\,]*)(.*?)</font></td>").getMatches()[0];
-			System.out.println(request);
             downloadLink.setName(fileInfo[0]);
 			try {
-				System.out.println(fileInfo[1].replaceAll("\\,", ""));
                 double length = Double.parseDouble(fileInfo[1].replaceAll("\\,", "").trim());
                 int bytes;
                 String type = fileInfo[2].toLowerCase();
