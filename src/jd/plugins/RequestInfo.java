@@ -65,7 +65,14 @@ public class RequestInfo {
     public HttpURLConnection getConnection() {
         return connection;
     }
-
+    /**
+     * Setzt den htmlCode kann z.B. bei der Form zum Einsatz kommen wenn ein JavaScript die Form verändert
+     * @param htmlCode
+     */
+    public void setHtmlCode(String htmlCode)
+    {
+    	this.htmlCode=htmlCode;
+    }
     public boolean containsHTML(String pattern){
         return getHtmlCode().indexOf(pattern)>=0;
     }

@@ -1,21 +1,19 @@
 package jd.plugins.host;
 
 import java.io.File;
-import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.net.URLConnection;
 import java.util.regex.Pattern;
+
+import jd.plugins.CRequest;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginStep;
 
-public class RamZal extends PluginForHost {
-	private static final String HOST = "ramzal.com";
+public class zShare extends PluginForHost {
+	private static final String HOST = "zshare.net";
 	private static final String VERSION = "1.0.0.0";
-	// http://ramzal.com//upload_files/1280838337_wallpaper-1280x1024-007.jpg
 	static private final Pattern patternSupported = Pattern.compile(
-			"http://.*?ramzal\\.com//?upload_files/.*",
+			"http://.*?zshare\\.net/(download|video|image|audio|flash)/.*",
 			Pattern.CASE_INSENSITIVE);
 
 	//
@@ -54,7 +52,7 @@ public class RamZal extends PluginForHost {
 		return patternSupported;
 	}
 
-	public RamZal() {
+	public zShare() {
 		super();
 		steps.add(new PluginStep(PluginStep.STEP_DOWNLOAD, null));
 	}
@@ -67,10 +65,10 @@ public class RamZal extends PluginForHost {
 			return step;
 		}
 		try {
-			requestInfo = getRequestWithoutHtmlCode(new URL(downloadLink
-					.getDownloadURL()), null, null, true);
-
-			URLConnection urlConnection = requestInfo.getConnection();
+			CRequest request = new CRequest();
+			String url = request.getRequest(downloadLink.getDownloadURL().replaceFirst("zshare.net/(download|video|audio|flash)", "zshare.net/image")).getRegexp("<img src=\"(http://[^\"]*?zshare.net/download.*?)\"").getFirstMatch();
+			request.withHtmlCode=false;
+			URLConnection urlConnection = request.getRequest(url).getConnection();
 			downloadLink.setName(getFileNameFormHeader(urlConnection));
 			downloadLink.setDownloadMax(urlConnection.getContentLength());
 			if (!hasEnoughHDSpace(downloadLink)) {
@@ -92,28 +90,37 @@ public class RamZal extends PluginForHost {
 				step.setStatus(PluginStep.STATUS_ERROR);
 			}
 			return step;
-
-		} catch (MalformedURLException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+		} catch (Exception e) {
+			step.setStatus(PluginStep.STATUS_ERROR);
+			downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN);
+			return step;
 		}
-		step.setStatus(PluginStep.STATUS_ERROR);
-		downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN);
-		return step;
 	}
 
 	@Override
 	public boolean getFileInformation(DownloadLink downloadLink) {
 		try {
-			requestInfo = getRequestWithoutHtmlCode(new URL(downloadLink
-					.getDownloadURL()), null, null, true);
-			URLConnection urlConnection = requestInfo.getConnection();
-			downloadLink.setName(getFileNameFormHeader(urlConnection));
-			downloadLink.setDownloadMax(urlConnection.getContentLength());
-			return true;
+			CRequest request = new CRequest();
+			String[] fileInfo = request.getRequest(downloadLink.getDownloadURL().replaceFirst("zshare.net/(download|video|audio|flash)", "zshare.net/image")).getRegexp("File Name: .*?<font color=\".666666\">(.*?)</font>.*?Image Size: <font color=\".666666\">([0-9\\.\\,]*)(.*?)</font></td>").getMatches()[0];
+			System.out.println(request);
+            downloadLink.setName(fileInfo[0]);
+			try {
+				System.out.println(fileInfo[1].replaceAll("\\,", ""));
+                double length = Double.parseDouble(fileInfo[1].replaceAll("\\,", "").trim());
+                int bytes;
+                String type = fileInfo[2].toLowerCase();
+                if (type.equalsIgnoreCase("kb")) {
+                    bytes = (int) (length * 1024);
+                } else if (type.equalsIgnoreCase("mb")) {
+                    bytes = (int) (length * 1024 * 1024);
+                } else {
+                    bytes = (int) length;
+                }
+                downloadLink.setDownloadMax(bytes);
+            }
+            catch (Exception e) {}
+            // Datei ist noch verfuegbar
+            return true;
 		} catch (Exception e) {
 			// TODO: handle exception
 		}
@@ -138,6 +145,6 @@ public class RamZal extends PluginForHost {
 	@Override
 	public String getAGBLink() {
 
-		return "http://ramzal.com/";
+		return "http://www.zshare.net/TOS.html";
 	}
 }
