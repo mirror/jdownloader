@@ -5,6 +5,8 @@ import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.ListIterator;
 
 /**
  * CRequest verwaltet Cookies und Referrer automatisch
@@ -22,7 +24,7 @@ public class CRequest {
 	/**
 	 * Interner Cookie bestehend aus host, CookieString
 	 */
-	private HashMap<String, String> cookie = new HashMap<String, String>();
+	private HashMap<String, LinkedList<String>> cookie = new HashMap<String, LinkedList<String>>();
 
 	public RequestInfo getRequestInfo() {
 		return requestInfo;
@@ -33,13 +35,23 @@ public class CRequest {
 	 */
 	public void setRequestInfo(RequestInfo requestInfo) {
 		this.requestInfo = requestInfo;
-		String bCookie = getCookie();
-		if (bCookie != null && !bCookie.matches("[\\s]*")) {
-			bCookie += "; " + requestInfo.getCookie();
-		} else {
-			bCookie = requestInfo.getCookie();
+		LinkedList<String> clist = new LinkedList<String>();
+		String host = getURL().getHost().replaceFirst("^www\\.", "");
+		try {
+			clist.addAll(cookie.get(host));
+		} catch (Exception e) {
+			// TODO: handle exception
 		}
-		this.cookie.put(getURL().getHost().replaceFirst("^www\\.", ""), bCookie);
+		try {
+			String[] bCookie = requestInfo.getCookie().split("; ");
+			for (int i = 0; i < bCookie.length; i++) {
+				if(!clist.contains(bCookie[i])) clist.add(bCookie[i]);
+			}
+		} catch (Exception e) {
+			// TODO: handle exception
+		}
+		if(this.cookie.containsKey(host))this.cookie.remove(host);
+		this.cookie.put(host, clist);
 
 	}
 	/**
@@ -203,24 +215,33 @@ public class CRequest {
 	 */
 	public String getCookie(String host) {
 		try {
-			String c = null;
+			LinkedList<String> c = new LinkedList<String>();
 			try {
-				c = cookie.get(host);
+				c.addAll(cookie.get(host));
 			} catch (Exception e) {
 				// TODO: handle exception
 			}
 			try {
 				if (host.matches(".*?\\..*?\\..*?")) {
 					host = host.replaceFirst(".*?\\.", "");
-
-					if (c != null && !c.matches("[\\s]*"))
-						c += "; " + requestInfo.getCookie();
-					else
-						c = requestInfo.getCookie();
+					c.addAll(cookie.get(host));
 				}
 			} catch (Exception e) {
 			}
-			return c;
+        	ListIterator<String> iter = c.listIterator();
+        	LinkedList<String> baklist = new LinkedList<String>();
+        	String cookie = "";
+        	boolean last = false;
+        	while (iter.hasNext()) {
+        		String string = iter.next();
+        		if(!baklist.contains(string))
+        		{
+        			baklist.add(string);
+        		cookie += (last? "; ":"") + iter.next();
+        		last = true;
+        		}
+			}
+			return cookie;
 		} catch (Exception e) {
 		}
 		return null;
