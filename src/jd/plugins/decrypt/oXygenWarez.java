@@ -8,6 +8,7 @@ import java.util.regex.Pattern;
 
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
+import jd.plugins.Form;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
@@ -23,8 +24,6 @@ public class oXygenWarez extends PluginForDecrypt {
     private Pattern             patternSupported   = Pattern.compile("http://.*?oxygen-warez\\.com/(category.*|\\?id\\=[\\d]+)", Pattern.CASE_INSENSITIVE);
 
     private Pattern             PASSWORT           = Pattern.compile("<P><B>Passwort:</B> <A HREF=\"\" onClick=\"CopyToClipboard\\(this\\); return\\(false\\);\">(.+?)</A></P>");
-
-    private static final String DL_LINK            = "<FORM ACTION=\"°\" METHOD=\"POST\" STYLE=\"display: inline;\" TARGET=\"_blank\">";
 
     private static final String ERROR_CAPTCHA      = "Der Sichheitscode wurde falsch eingeben!";
 
@@ -169,14 +168,13 @@ public class oXygenWarez extends PluginForDecrypt {
                         }
                         break;
                     }
-                    Vector<Vector<String>> links = getAllSimpleMatches(reqinfo.getHtmlCode(), DL_LINK);
-                    progress.setRange(links.size());
+                    Form[] forms = reqinfo.getForms();
+                    progress.setRange(forms.length);
 
-                    for (int i = 0; i < links.size(); i++) {
-                        String link = JDUtilities.urlEncode(links.get(i).get(0));
+                    for (int i = 0; i < forms.length; i++) {
+                        String link = JDUtilities.urlEncode(JDUtilities.htmlDecode(forms[i].action));
                         link = link.replaceAll("http://.*http://", "http://");
                         decryptedLinks.add(this.createDownloadlink(link).addSourcePluginPassword(pw));
-
                         progress.increase(1);
                     }
 
