@@ -86,7 +86,7 @@ public abstract class Plugin {
     public ConfigContainer        config;
 
     protected RequestInfo         requestInfo;
-
+    protected CRequest         request = new CRequest();
     protected boolean             aborted         = false;
 
     /**

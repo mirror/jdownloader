@@ -65,7 +65,6 @@ public class zShare extends PluginForHost {
 			return step;
 		}
 		try {
-			CRequest request = new CRequest();
 			String url = request.getRequest(downloadLink.getDownloadURL().replaceFirst("zshare.net/(download|video|audio|flash)", "zshare.net/image")).getRegexp("<img src=\"(http://[^\"]*?zshare.net/download.*?)\"").getFirstMatch();
 			request.withHtmlCode=false;
 			URLConnection urlConnection = request.getRequest(url).getConnection();
@@ -100,7 +99,6 @@ public class zShare extends PluginForHost {
 	@Override
 	public boolean getFileInformation(DownloadLink downloadLink) {
 		try {
-			CRequest request = new CRequest();
 			String[] fileInfo = request.getRequest(downloadLink.getDownloadURL().replaceFirst("zshare.net/(download|video|audio|flash)", "zshare.net/image")).getRegexp("File Name: .*?<font color=\".666666\">(.*?)</font>.*?Image Size: <font color=\".666666\">([0-9\\.\\,]*)(.*?)</font></td>").getMatches()[0];
             downloadLink.setName(fileInfo[0]);
 			try {
