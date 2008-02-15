@@ -5,8 +5,7 @@ import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.ListIterator;
+import java.util.Map;
 
 /**
  * CRequest verwaltet Cookies und Referrer automatisch
@@ -24,7 +23,7 @@ public class CRequest {
 	/**
 	 * Interner Cookie bestehend aus host, CookieString
 	 */
-	private HashMap<String, LinkedList<String>> cookie = new HashMap<String, LinkedList<String>>();
+	private HashMap<String, HashMap<String, String>> cookie = new HashMap<String, HashMap<String, String>>();
 
 	public RequestInfo getRequestInfo() {
 		return requestInfo;
@@ -33,26 +32,35 @@ public class CRequest {
 	 * hier kann man die RequestInfo z.B. cRequest.setRequestInfo(cRequest.getForm().getForm().getRequestInfo())
 	 * @param requestInfo
 	 */
-	public void setRequestInfo(RequestInfo requestInfo) {
+	public CRequest setRequestInfo(RequestInfo requestInfo) {
 		this.requestInfo = requestInfo;
-		LinkedList<String> clist = new LinkedList<String>();
 		String host = getURL().getHost().replaceFirst("^www\\.", "");
+		HashMap<String, String> clist = new HashMap<String, String>();
 		try {
-			clist.addAll(cookie.get(host));
+			clist.putAll(cookie.get(host));
 		} catch (Exception e) {
 			// TODO: handle exception
 		}
+
 		try {
 			String[] bCookie = requestInfo.getCookie().split("; ");
 			for (int i = 0; i < bCookie.length; i++) {
-				if(!clist.contains(bCookie[i])) clist.add(bCookie[i]);
+				if(!bCookie[i].matches("[\\s]*"))
+				{
+				try {
+					String[] vals = new Regexp(bCookie[i],"(.*?\\=)(.*)").getMatches()[0];
+					clist.put(vals[0], vals[1]);
+				} catch (Exception e) {
+					clist.put(bCookie[i], "");
+				}
+				}
+				
 			}
 		} catch (Exception e) {
 			// TODO: handle exception
 		}
-		if(this.cookie.containsKey(host))this.cookie.remove(host);
 		this.cookie.put(host, clist);
-
+		return this;
 	}
 	/**
 	 * getRequest gibt sich selbst aus
@@ -215,32 +223,24 @@ public class CRequest {
 	 */
 	public String getCookie(String host) {
 		try {
-			LinkedList<String> c = new LinkedList<String>();
-			try {
-				c.addAll(cookie.get(host));
-			} catch (Exception e) {
-				// TODO: handle exception
-			}
+			HashMap<String, String> c = new HashMap<String, String>();
 			try {
 				if (host.matches(".*?\\..*?\\..*?")) {
-					host = host.replaceFirst(".*?\\.", "");
-					c.addAll(cookie.get(host));
+					c.putAll(cookie.get(host.replaceFirst(".*?\\.", "")));
 				}
 			} catch (Exception e) {
 			}
-        	ListIterator<String> iter = c.listIterator();
-        	LinkedList<String> baklist = new LinkedList<String>();
+			try {
+				c.putAll(cookie.get(host));
+			} catch (Exception e) {
+				// TODO: handle exception
+			}
         	String cookie = "";
         	boolean last = false;
-        	while (iter.hasNext()) {
-        		String string = iter.next();
-        		if(!baklist.contains(string))
-        		{
-        			baklist.add(string);
-        		cookie += (last? "; ":"") + iter.next();
+            for (Map.Entry<String, String> entry : c.entrySet()) {
+        		cookie += (last? "; ":"") + entry.getKey()+entry.getValue();
         		last = true;
-        		}
-			}
+            }
 			return cookie;
 		} catch (Exception e) {
 		}
