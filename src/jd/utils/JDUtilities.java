@@ -1787,7 +1787,7 @@ public class JDUtilities {
      * @return
      */
     public static String filterString(String str) {
-        String allowed = "QWERTZUIOPÜASDFGHJKLÖÄYXCVBNMqwertzuiopasdfghjklyxcvbnm;:,._-&%(){}#~+ 1234567890";
+        String allowed = "QWERTZUIOPÜASDFGHJKLÖÄYXCVBNMqwertzuiopasdfghjklyxcvbnm;:,._-&%(){}#~+ 1234567890<>='\"/";
         return filterString(str, allowed);
     }
 

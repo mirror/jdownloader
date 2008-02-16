@@ -1259,7 +1259,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
     public int showHelpMessage(String title, String message, String url) {
         
         try {
-            return JHelpDialog.showHelpMessage(frame, title, message, new URL(url));
+            return JHelpDialog.showHelpMessage(frame, title,"<font size=\"2\" face=\"Verdana, Arial, Helvetica, sans-serif\">"+message+"</font>", new URL(url));
         }
         catch (MalformedURLException e) {
             e.printStackTrace();
