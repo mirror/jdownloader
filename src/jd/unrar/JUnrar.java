@@ -1229,7 +1229,7 @@ public class JUnrar {
 				un.unrar = unrar;
 				un.useToextractlist = false;
 				un.overwriteFiles = overwriteFiles;
-				unpackedFiles.addAll(un.unpackedFiles);
+				unpackedFiles.addAll(un.unrar());
 				Iterator<File> iter = unpackedFiles.iterator();
 				while (iter.hasNext()) {
 					File file2 = (File) iter.next();
