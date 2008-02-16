@@ -244,7 +244,9 @@ public class JDInit {
             logger.finer("Load PLugins");
             iterator = Service.providers(PluginForHost.class, jdClassLoader);
             while (iterator.hasNext()) {
-                PluginForHost p = (PluginForHost) iterator.next();
+                PluginForHost next = (PluginForHost) iterator.next();
+                logger.finer("Load PLugins"+next);
+                PluginForHost p = next;
 
                 plugins.add(p);
             }

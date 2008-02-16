@@ -255,23 +255,28 @@ public class Rapidshare extends PluginForHost {
         steps.add(new PluginStep(PluginStep.STEP_GET_CAPTCHA_FILE, null));
         // Downloads
         steps.add(new PluginStep(PluginStep.STEP_DOWNLOAD, null));
-        this.setConfigElements();
+       
 
-        serverMap.put("TeliaSonera", "tl");
-        serverMap.put("TeliaSonera #2", "tl2");
-        serverMap.put("GlobalCrossing", "gc");
-        serverMap.put("GlobalCrossing #2", "gc2");
-        serverMap.put("Cogent", "cg");
-        serverMap.put("Cogent #2", "cg2");
-        serverMap.put("Teleglobe", "tg");
-        serverMap.put("Level(3)", "l3");
-        serverMap.put("Level(3) #2", "l32");
-        serverMap.put("Level(3) #3", "l33");
-        serverMap.put("Level(3) #4", "l34");
-        serverMap.put("TeliaSonera", "tl");
+ 
+        serverMap.put("TeliaSonera #2", "tl2");//<td><input name="mirror" value="tl2" type="radio">TeliaSonera #2</td>
+        serverMap.put("TeliaSonera #3", "tl3");//<td><input name="mirror2" value="tl3" type="radio">TeliaSonera #3</td>
+        
+        
+        serverMap.put("GlobalCrossing", "gc"); //<td><input name="mirror" value="gc" type="radio">GlobalCrossing #1</td>
+        serverMap.put("GlobalCrossing #2", "gc2"); //<td><input name="mirror" value="gc2" type="radio">GlobalCrossing #2</td>
+        serverMap.put("Cogent", "cg"); //td><input name="mirror" value="cg" type="radio">Cogent #1</td>
+        serverMap.put("Cogent #2", "cg2");//<td><input name="mirror" value="cg2" type="radio">Cogent #2</td>
+        serverMap.put("Teleglobe", "tg"); //<td><input name="mirror" value="tg" type="radio">Teleglobe #1</td>
+        serverMap.put("Level(3)", "l3");//<td><input name="mirror" value="l3" type="radio">Level(3) #1</td>
+        serverMap.put("Level(3) #2", "l32");//<td><input name="mirror" value="l32" type="radio">Level(3) #2</td>
+        serverMap.put("Level(3) #3", "l33");//   <td><input name="mirror" value="l33" type="radio">Level(3) #3</td>
+     
+        serverMap.put("Level(3) #4", "l34");//<td><input name="mirror" value="l34" type="radio">Level(3) #4</td>
+        serverMap.put("TeliaSonera", "tl");//<td><input name="mirror" value="tl" type="radio">TeliaSonera #1</td>
         serverMap.put("Deutsche Telekom", "dt");
         serverList1 = new String[] { "tl", "tl2", "gc", "gc2", "cg", "cg2", "tg", "l3", "l32", "l33", "l34", "tl", "dt" };
-        serverList2 = new String[] { "tl", "gc" };
+        serverList2 = new String[] { "tl","tl2","tl3", "gc", "gc2","l32","tg" ,"l3","cg"};
+        this.setConfigElements();
     }
 
     private String getServerFromAbbreviation(String abb) {
@@ -283,16 +288,30 @@ public class Rapidshare extends PluginForHost {
         }
         return null;
     }
-
+    private String getServerName(String id){
+        Iterator<Entry<String, String>> it = serverMap.entrySet().iterator();
+        while(it.hasNext()){
+            Entry<String, String> next = it.next();
+            if(next.getValue().equalsIgnoreCase(id))return next.getKey();
+        }
+        return null;
+    }
     private void setConfigElements() {
+        
+        Vector<String> m1= new Vector<String>();
+        Vector<String> m2= new Vector<String>();
+        for( int i=0; i<serverList1.length;i++)m1.add(getServerName(serverList1[i]));
+        for( int i=0; i<serverList2.length;i++)m2.add(getServerName(serverList2[i]));
+        m1.add("zufällig");
+        m2.add("zufällig");
         ConfigEntry cfg;
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_LABEL, JDLocale.L("plugins.hoster.rapidshare.com.prefferedServer", "Bevorzugte Server (*1)")));
 
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, getProperties(), PROPERTY_SELECTED_SERVER, new String[] { "Cogent", "Cogent #2", "GlobalCrossing", "GlobalCrossing #2", "TeliaSonera", "TeliaSonera #2", "Teleglobe", "Level(3)", "Level(3) #2", "Level(3) #3", "Level(3) #4", "zufällig" }, "#1"));
+        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, getProperties(), PROPERTY_SELECTED_SERVER, m1.toArray(new String[]{}), "#1"));
         cfg.setDefaultValue("Level(3)");
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, getProperties(), PROPERTY_SELECTED_SERVER2, new String[] { "Cogent", "TeliaSonera", "Level(3)", "GlobalCrossing", "zufällig" }, "#2"));
+        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, getProperties(), PROPERTY_SELECTED_SERVER2, m2.toArray(new String[]{}), "#2"));
         cfg.setDefaultValue("TeliaSonera");
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getProperties(), PROPERTY_USE_TELEKOMSERVER, JDLocale.L("plugins.hoster.rapidshare.com.telekom", "Telekom Server verwenden falls verfügbar*")));
         cfg.setDefaultValue(false);

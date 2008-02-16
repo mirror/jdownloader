@@ -2,16 +2,16 @@ package jd;
 
 import java.awt.Graphics;
 import java.awt.Image;
+import java.io.IOException;
 import java.util.Iterator;
 import java.util.Properties;
 import java.util.TreeSet;
 import java.util.Vector;
 import java.util.logging.Logger;
 
-import javax.crypto.Cipher;
-import javax.crypto.spec.IvParameterSpec;
-import javax.crypto.spec.SecretKeySpec;
 import javax.swing.JWindow;
+
+import sun.misc.BASE64Decoder;
 
 import jd.captcha.JACController;
 import jd.config.Configuration;
@@ -21,7 +21,6 @@ import jd.gui.skins.simple.SimpleGUI;
 import jd.utils.JDLocale;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
-import sun.misc.BASE64Decoder;
 
 /**
  * @author astaldo/JD-Team
@@ -65,7 +64,7 @@ public class Main {
                 stop = true;
                 break;
             }
-
+           
         }
 
 logger.info(System.getProperty("java.class.path"));
@@ -83,7 +82,7 @@ logger.info(System.getProperty("java.class.path"));
         if (!stop) {
             Main main = new Main();
             main.go();
-  
+         
           
         }
     }
