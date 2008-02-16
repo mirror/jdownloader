@@ -603,8 +603,8 @@ public class JDController implements PluginListener, ControlListener, UIListener
 
     public void saveDLC(File file) {
 
-        String xml = createDLCString(this.getDownloadLinks());
-
+        String xml = JDUtilities.createContainerString(this.getDownloadLinks(),"DLC Parser");
+        String[] encrypt = JDUtilities.encrypt(xml, "DLC Parser");
         String cipher = encryptDLC(xml);
         if (cipher != null) {
 
@@ -829,7 +829,7 @@ public class JDController implements PluginListener, ControlListener, UIListener
         return ret;
     }
 
-    public Vector<DownloadLink> getPackageFiles(FilePackage filepackage, Vector<DownloadLink> links) {
+    public static Vector<DownloadLink> getPackageFiles(FilePackage filepackage, Vector<DownloadLink> links) {
         Vector<DownloadLink> ret = new Vector<DownloadLink>();
         // ret.add(downloadLink);
 

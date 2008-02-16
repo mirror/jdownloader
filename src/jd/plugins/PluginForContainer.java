@@ -67,6 +67,9 @@ public abstract class PluginForContainer extends PluginForDecrypt {
     public abstract PluginStep doStep(PluginStep step, File container);
 
     public abstract String[] encrypt(String plain);
+    public  String createContainerString(Vector<DownloadLink> downloadLinks){
+        return null;
+    }
 
     /**
      * Erstellt eine Kopie des Containers im Homedir.

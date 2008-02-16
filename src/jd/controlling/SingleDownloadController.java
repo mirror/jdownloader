@@ -264,6 +264,9 @@ public class SingleDownloadController extends ControlMulticaster {
                 case DownloadLink.STATUS_ERROR_BOT_DETECTED:
                     this.onErrorBotdetection(downloadLink, plugin, step);
                     break;
+                case DownloadLink.STATUS_DOWNLOAD_INCOMPLETE:
+                    this.onErrorIncomplete(downloadLink, plugin, step);
+                    break;
                 case DownloadLink.STATUS_ERROR_ALREADYEXISTS:
                     this.onErrorFileExists(downloadLink, plugin, step);
                     break;
@@ -293,6 +296,13 @@ public class SingleDownloadController extends ControlMulticaster {
 
         }
 
+    }
+
+    private void onErrorIncomplete(DownloadLink downloadLink2, PluginForHost plugin, PluginStep step) {
+        downloadLink.setInProgress(false);
+        downloadLink.setStatus(DownloadLink.STATUS_TODO);
+        downloadLink.setEndOfWaittime(0);
+      
     }
 
     private void onErrorFileExists(DownloadLink downloadLink2, PluginForHost plugin, PluginStep step) {

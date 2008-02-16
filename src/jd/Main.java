@@ -8,6 +8,9 @@ import java.util.TreeSet;
 import java.util.Vector;
 import java.util.logging.Logger;
 
+import javax.crypto.Cipher;
+import javax.crypto.spec.IvParameterSpec;
+import javax.crypto.spec.SecretKeySpec;
 import javax.swing.JWindow;
 
 import jd.captcha.JACController;
@@ -18,6 +21,7 @@ import jd.gui.skins.simple.SimpleGUI;
 import jd.utils.JDLocale;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
+import sun.misc.BASE64Decoder;
 
 /**
  * @author astaldo/JD-Team
@@ -80,11 +84,10 @@ logger.info(System.getProperty("java.class.path"));
             Main main = new Main();
             main.go();
   
-         
-         
+          
         }
     }
-
+  
     @SuppressWarnings("unchecked")
     private void go() {
 

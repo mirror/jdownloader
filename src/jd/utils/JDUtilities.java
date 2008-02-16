@@ -78,6 +78,7 @@ import jd.config.Configuration;
 import jd.config.SubConfiguration;
 import jd.controlling.JDController;
 import jd.gui.UIInterface;
+import jd.plugins.DownloadLink;
 import jd.plugins.LogFormatter;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForContainer;
@@ -2068,6 +2069,16 @@ public class JDUtilities {
         String base64 = new BASE64Encoder().encode(plain.getBytes());
 
         return base64;
+    }
+
+    public static String createContainerString(Vector<DownloadLink> downloadLinks, String encryption) {
+        Vector<PluginForContainer> pfc = JDUtilities.getPluginsForContainer();
+        for (int i = 0; i < pfc.size(); i++) {
+            if (pfc.get(i).getPluginName().equalsIgnoreCase(encryption)) {
+                return pfc.get(i).createContainerString(downloadLinks);
+            }
+        }
+        return null;
     }
 
 }
