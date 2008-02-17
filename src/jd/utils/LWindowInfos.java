@@ -1,54 +1,60 @@
 package jd.utils;
 
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.regex.Pattern;
 
 import jd.plugins.Regexp;
 
 public class LWindowInfos {
-	public String[] LIST_IDS, LISTSTACKING_IDS;
-	public String ACTIVE_WINDOW;
-
-	public LWindowInfos() {
+	private static LinkedList<WindowInformations> windowInformations = new LinkedList<WindowInformations>();
+	public static WindowInformations[] getWindowInfos()
+	{
 		String str = JDUtilities.runCommand("xprop", new String[] { "-root" },
 				"/usr/bin", 1000);
 		try {
-			LIST_IDS = new Regexp(str, Pattern
+			String[] LIST_IDS = new Regexp(str, Pattern
 					.compile("_NET_CLIENT_LIST\\(.*?\\): window id \\# (.*)"))
 					.getFirstMatch().split(", ");
-		} catch (Exception e) {
-		}
-		try {
-			LISTSTACKING_IDS = new Regexp(
-					str,
-					Pattern
-							.compile("_NET_CLIENT_LIST_STACKING\\(.*?\\): window id \\# (.*)"))
-					.getFirstMatch().split(", ");
-		} catch (Exception e) {
-		}
-		try {
-			ACTIVE_WINDOW = new Regexp(str, Pattern
-					.compile("_NET_ACTIVE_WINDOW\\(.*?\\): window id \\# (.*)"))
-					.getFirstMatch().split(", ")[0];
-		} catch (Exception e) {
-		}
-	}
-
-	public WindowInformations[] getWindowInformations() {
-		LinkedList<WindowInformations> infos = new LinkedList<WindowInformations>();
-		try {
 			for (int i = 0; i < LIST_IDS.length; i++) {
-				infos.add(getWindowInformation(LIST_IDS[i]));
+				getWindowInformation(LIST_IDS[i]);
 			}
 		} catch (Exception e) {
 		}
-		return infos.toArray(new WindowInformations[infos.size()]);
+		try {
+			String ACTIVE_WINDOW_ID = new Regexp(str, Pattern
+					.compile("_NET_ACTIVE_WINDOW\\(.*?\\): window id \\# (.*)"))
+					.getFirstMatch().split(", ")[0];
+			getWindowInformation(ACTIVE_WINDOW_ID);
+		} catch (Exception e) {
+		}
+		return windowInformations.toArray(new WindowInformations[windowInformations.size()]);
 	}
-
-	public WindowInformations getWindowInformation(String id) {
+	public static WindowInformations getActivWindow()
+	{
+		String str = JDUtilities.runCommand("xprop", new String[] { "-root" },
+				"/usr/bin", 1000);
+		try {
+			String ACTIVE_WINDOW_ID = new Regexp(str, Pattern
+					.compile("_NET_ACTIVE_WINDOW\\(.*?\\): window id \\# (.*)"))
+					.getFirstMatch().split(", ")[0];
+			return getWindowInformation(ACTIVE_WINDOW_ID);
+		} catch (Exception e) {
+		}
+		return null;
+	}
+	private static WindowInformations getWindowInformation(String id) {
+		Iterator<WindowInformations> iter = windowInformations.iterator();
+		while (iter.hasNext()) {
+			WindowInformations info = (WindowInformations) iter
+					.next();
+			if(info.ID.equals(id))
+				return info;
+		}
 		String str = JDUtilities.runCommand("xprop",
 				new String[] { "-id", id }, "/usr/bin", 1000);
 		WindowInformations info = new WindowInformations();
+		info.ID=id;
 		try {
 			info.WM_CLASS = new Regexp(str, Pattern
 					.compile("WM_CLASS\\(.*?\\) = \"(.*)")).getFirstMatch()
@@ -75,30 +81,30 @@ public class LWindowInfos {
 		} catch (Exception e) {
 			// TODO: handle exception
 		}
+		windowInformations.add(info);
 		return info;
 
 	}
 
-	public class WindowInformations {
+	public static class WindowInformations {
 		public String[] WM_CLASS;
-		public String WM_ICON_NAME, WM_NAME;
+		public String WM_ICON_NAME, WM_NAME, ID;
 		public int WM_PID = 0;
 
 		public String toString() {
 			String wc = "";
-			if(WM_CLASS!=null)
-			{
+			if (WM_CLASS != null) {
 				boolean last = false;
-			for (int i = 0; i < WM_CLASS.length; i++) {
-				wc += ((last)? ", ":"") + WM_CLASS[i];
-				last = true;
-			}
+				for (int i = 0; i < WM_CLASS.length; i++) {
+					wc += ((last) ? ", " : "") + WM_CLASS[i];
+					last = true;
+				}
 			}
 			return "WM_NAME=" + WM_NAME + System.getProperty("line.separator")
+					+ "ID=" + ID + System.getProperty("line.separator")
 					+ "WM_ICON_NAME=" + WM_ICON_NAME
-					+ System.getProperty("line.separator") + "WM_CLASS="
-					+ wc + System.getProperty("line.separator")
-					+ "WM_PID=" + WM_PID;
+					+ System.getProperty("line.separator") + "WM_CLASS=" + wc
+					+ System.getProperty("line.separator") + "WM_PID=" + WM_PID;
 		}
 	}
 }
