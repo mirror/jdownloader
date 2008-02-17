@@ -25,7 +25,7 @@ public class LWindowInfos {
 		}
 		return windowInformations.toArray(new WindowInformations[windowInformations.size()]);
 	}
-	public static WindowInformations getActivWindow()
+	public static WindowInformations getActiveWindow()
 	{
 		String str = JDUtilities.runCommand("xprop", new String[] { "-root" },
 				"/usr/bin", 1000);
