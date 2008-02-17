@@ -16,9 +16,11 @@ public class LWindowInfos {
 			String[] LIST_IDS = new Regexp(str, Pattern
 					.compile("_NET_CLIENT_LIST\\(.*?\\): window id \\# (.*)"))
 					.getFirstMatch().split(", ");
+			LinkedList<WindowInformations> windowInformations2 = new LinkedList<WindowInformations>();
 			for (int i = 0; i < LIST_IDS.length; i++) {
-				getWindowInformation(LIST_IDS[i]);
+				windowInformations2.add(getWindowInformation(LIST_IDS[i]));
 			}
+			windowInformations=windowInformations2;
 		} catch (Exception e) {
 		}
 		return windowInformations.toArray(new WindowInformations[windowInformations.size()]);
@@ -74,7 +76,6 @@ public class LWindowInfos {
 		} catch (Exception e) {
 			// TODO: handle exception
 		}
-		windowInformations.add(info);
 		return info;
 
 	}
