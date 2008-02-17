@@ -21,13 +21,6 @@ public class LWindowInfos {
 			}
 		} catch (Exception e) {
 		}
-		try {
-			String ACTIVE_WINDOW_ID = new Regexp(str, Pattern
-					.compile("_NET_ACTIVE_WINDOW\\(.*?\\): window id \\# (.*)"))
-					.getFirstMatch().split(", ")[0];
-			getWindowInformation(ACTIVE_WINDOW_ID);
-		} catch (Exception e) {
-		}
 		return windowInformations.toArray(new WindowInformations[windowInformations.size()]);
 	}
 	public static WindowInformations getActivWindow()
