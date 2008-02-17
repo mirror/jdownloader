@@ -3,6 +3,7 @@ package jd.plugins.host;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginStep;
+import jd.plugins.Regexp;
 import jd.plugins.RequestInfo;
 import jd.utils.JDUtilities;
 
@@ -15,10 +16,11 @@ import java.net.URLDecoder;
 import java.util.regex.Pattern;
 
 public class ShareBaseDe extends PluginForHost {
+	
     private static final String CODER           = "Bo0nZ";
     private static final String HOST            = "sharebase.de";
     private static final String PLUGIN_NAME     = HOST;
-    private static final String PLUGIN_VERSION  = "1.0.0.0";
+    private static final String PLUGIN_VERSION  = "1.0.1";
     private static final String PLUGIN_ID       = PLUGIN_NAME + "-" + PLUGIN_VERSION;
     static private final Pattern PAT_SUPPORTED = Pattern.compile("http://.*?sharebase\\.de/files/[a-zA-Z0-9]{10}\\.html", Pattern.CASE_INSENSITIVE);
                                                                     
@@ -27,7 +29,7 @@ public class ShareBaseDe extends PluginForHost {
     /*
      * Suchmasken
      */
-    private static final String FILENAME = "Filename:</td>°<td><strong>°</strong>";
+    private static final String FILENAME = "<title>(.*?)</title>";
     private static final String FILESIZE = "Filesize:</td>°<td>°</td>";
     private static final String DL_LIMIT = "Das Downloaden ohne Downloadlimit ist nur mit einem Premium-Account";
     private static final String WAIT = "Du musst noch °:°:° warten!";
@@ -36,10 +38,11 @@ public class ShareBaseDe extends PluginForHost {
      * Konstruktor 
      */
     public ShareBaseDe() {
+    	
         super();
-
         steps.add(new PluginStep(PluginStep.STEP_PAGE, null));
         steps.add(new PluginStep(PluginStep.STEP_DOWNLOAD, null));
+        
     }
     
 
@@ -60,19 +63,22 @@ public class ShareBaseDe extends PluginForHost {
     }
     
     @Override public boolean getFileInformation(DownloadLink downloadLink) {
-        try {
+        
+    	try {
+        	
             RequestInfo requestInfo = getRequest(new URL(downloadLink.getDownloadURL()));
-
-            String fileName = JDUtilities.htmlDecode(getSimpleMatch(requestInfo.getHtmlCode(), FILENAME, 1));
+            String fileName = JDUtilities.htmlDecode(new Regexp(requestInfo.getHtmlCode(), FILENAME).getFirstMatch());
             String fileSize = JDUtilities.htmlDecode(getSimpleMatch(requestInfo.getHtmlCode(), FILESIZE, 1));
-
+            
             //Wurden DownloadInfos gefunden? --> Datei ist vorhanden/online
             if (fileName != null && fileSize != null) {
-                fileName = fileName.trim();
+                
+            	fileName = fileName.trim();
                 fileSize = fileSize.trim();
                 downloadLink.setName(fileName);
             
                 try {
+                	
                 	String[] fileSizeData = fileSize.split(" ");
 
                     double length = Double.parseDouble(fileSizeData[0].trim());
@@ -84,7 +90,9 @@ public class ShareBaseDe extends PluginForHost {
                 	}
                 	
                     downloadLink.setDownloadMax((int)length);
+                    
                 }
+                
                 catch (Exception e) { }
                 
                 //Datei ist noch verfuegbar
@@ -97,30 +105,37 @@ public class ShareBaseDe extends PluginForHost {
         
         //Datei scheinbar nicht mehr verfuegbar, Fehler?
         return false;
+        
     }
-
     
     public PluginStep doStep(PluginStep step, DownloadLink downloadLink) {
+    	
         try {
+        	
             RequestInfo requestInfo;
             URL downloadUrl = new URL(downloadLink.getDownloadURL());
             String finishURL = null;
             
             switch (step.getStep()) {
+            
                 case PluginStep.STEP_PAGE:
+                	
                     requestInfo = getRequest(downloadUrl);
                     
                     String fileName = JDUtilities.htmlDecode(getSimpleMatch(requestInfo.getHtmlCode(), FILENAME, 1));
 
                     // Download-Limit erreicht
                     if (requestInfo.getHtmlCode().contains(DL_LIMIT)) {
+                    	
                         String hours = getSimpleMatch(requestInfo.getHtmlCode(), WAIT, 0);
                         String minutes = getSimpleMatch(requestInfo.getHtmlCode(), WAIT, 1);
                         String seconds = getSimpleMatch(requestInfo.getHtmlCode(), WAIT, 2);
-                        
                     	int waittime = 0;
+                    	
                         if (hours != null && minutes != null && seconds != null) {
+                        	
                         	try {
+                        		
                         		waittime += Integer.parseInt(seconds);
                         		waittime += Integer.parseInt(minutes)*60;
                         		waittime += Integer.parseInt(hours)*3600;
@@ -128,10 +143,12 @@ public class ShareBaseDe extends PluginForHost {
                         	} catch (Exception Exc) {}
                         	
                         }
+                        
                         step.setStatus(PluginStep.STATUS_ERROR);
                         downloadLink.setStatus(DownloadLink.STATUS_ERROR_DOWNLOAD_LIMIT);
                         step.setParameter((long)(waittime * 1000));
                         return step;
+                        
                     }
 
                     //DownloadInfos nicht gefunden? --> Datei nicht vorhanden
@@ -149,7 +166,9 @@ public class ShareBaseDe extends PluginForHost {
                     return step;
                     
                 case PluginStep.STEP_DOWNLOAD:
+                	
                     try {
+                    	
                         //Formular abschicken und Weiterleitungs-Adresse auslesen (= DL)
                         requestInfo = postRequest(downloadUrl, this.cookies, downloadLink.getDownloadURL(), null, "machma=Download+starten", false);
                         finishURL = JDUtilities.urlEncode(requestInfo.getConnection().getHeaderField("Location"));
@@ -160,14 +179,15 @@ public class ShareBaseDe extends PluginForHost {
                             step.setStatus(PluginStep.STATUS_ERROR);
                             return step;
                         }
-                    }
-                    catch (Exception e) {
+                        
+                    } catch (Exception e) {
                         downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN);
                         step.setStatus(PluginStep.STATUS_ERROR);
                          e.printStackTrace();
                     }
                     
                     try {
+                    	
                         //Download vorbereiten
                         URLConnection urlConnection = new URL(finishURL).openConnection();
                         int length = urlConnection.getContentLength();
@@ -179,19 +199,20 @@ public class ShareBaseDe extends PluginForHost {
                             step.setStatus(PluginStep.STATUS_ERROR);
                             return step;
                         }
+                      
                         //Download starten
-                      if(download(downloadLink, urlConnection)!=DOWNLOAD_SUCCESS) {
-                          step.setStatus(PluginStep.STATUS_ERROR);
+                        if(download(downloadLink, urlConnection)!=DOWNLOAD_SUCCESS) {
+                          	step.setStatus(PluginStep.STATUS_ERROR);
                           
-                      }
-                      else {
-                          step.setStatus(PluginStep.STATUS_DONE);
-                          downloadLink.setStatus(DownloadLink.STATUS_DONE);
+                      	} else {
+                          	step.setStatus(PluginStep.STATUS_DONE);
+                          	downloadLink.setStatus(DownloadLink.STATUS_DONE);
                    
-                      }
-                        return step;
-                    }
-                    catch (IOException e) {
+                      	}
+                      
+                      	return step;
+                      
+                    } catch (IOException e) {
                         step.setStatus(PluginStep.STATUS_ERROR);
                         downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN);
                         logger.severe("URL could not be opened. " + e.toString());
@@ -199,22 +220,22 @@ public class ShareBaseDe extends PluginForHost {
                     
                     break;
             }
-            return step;            
-        }
-        catch (IOException e) {
+            
+            return step;    
+            
+        } catch (IOException e) {
              e.printStackTrace();
             return null;
         }
+        
     }
-
-
+    
     @Override
     public void resetPluginGlobals() {
         // TODO Auto-generated method stub
         
     }
-
-
+    
     @Override
     public String getAGBLink() {
         // TODO Auto-generated method stub
