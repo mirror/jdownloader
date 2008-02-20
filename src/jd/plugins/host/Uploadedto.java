@@ -20,7 +20,7 @@ import jd.utils.JDUtilities;
 public class Uploadedto extends PluginForHost {
     //uploaded.to/file/40gtfe 
     //uploaded.to/?id=5tr1m8
-    static private final Pattern PAT_SUPPORTED = Pattern.compile("http://.*?uploaded\\.to/(file/|\\?id\\=)[a-zA-Z0-9]{6}", Pattern.CASE_INSENSITIVE);
+    static private final Pattern PAT_SUPPORTED = Pattern.compile("http://.*?uploaded\\.to/(file/|\\?id\\=)[a-zA-Z0-9]{6}.*", Pattern.CASE_INSENSITIVE);
 
     static private final String     HOST                         = "uploaded.to";
 
