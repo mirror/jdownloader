@@ -327,17 +327,17 @@ public class Serienjunkies extends PluginForDecrypt {
 			url = "http://" + url;
 		try {
 			RequestInfo reqinfo = getRequest(new URL(url));
-			reqinfo.setHtmlCode(reqinfo.getHtmlCode().replaceAll("(?s)<!--.*?-->", "").replaceAll("(?i)(?s)<div style=\"display: none;\">.*?</div>", ""));
+
 			String cookie = reqinfo.getCookie();
 			File captchaFile = null;
 			String capTxt = null;
 			while (true) { // for() läuft bis kein Captcha mehr abgefragt
+				reqinfo.setHtmlCode(reqinfo.getHtmlCode().replaceAll("(?s)<!--.*?-->", "").replaceAll("(?i)(?s)<div style=\"display: none;\">.*?</div>", ""));
 				Matcher matcher = patternCaptcha.matcher(reqinfo.getHtmlCode());
 				if (matcher.find()) {
 					if (captchaFile != null && capTxt != null) {
 						JDUtilities.appendInfoToFilename(captchaFile, capTxt,
 								false);
-							reqinfo.setHtmlCode(reqinfo.getHtmlCode().replaceAll("(?s)<!--.*?-->", "").replaceAll("(?i)(?s)<div style=\"display: none;\">.*?</div>", ""));
 					}
 					Vector<Vector<String>> gifs = getAllSimpleMatches(reqinfo
 							.getHtmlCode(), patternCaptcha);
@@ -363,7 +363,6 @@ public class Serienjunkies extends PluginForDecrypt {
 						try {
 							Thread.sleep(1000);
 							reqinfo = getRequest(new URL(url));
-							reqinfo.setHtmlCode(reqinfo.getHtmlCode().replaceAll("(?s)<!--.*?-->", "").replaceAll("(?i)(?s)<div style=\"display: none;\">.*?</div>", ""));
 							cookie = reqinfo.getCookie();
 						} catch (InterruptedException e) {
 						}
@@ -412,20 +411,20 @@ public class Serienjunkies extends PluginForDecrypt {
 			url = url.replaceAll("safe/rc", "safe/frc");
 			url = url.replaceAll("save/rc", "save/frc");
 			RequestInfo reqinfo = getRequest(new URL(url));
-			reqinfo.setHtmlCode(reqinfo.getHtmlCode().replaceAll("(?s)<!--.*?-->", "").replaceAll("(?i)(?s)<div style=\"display: none;\">.*?</div>", ""));
 			String cookie = reqinfo.getCookie();
 			File captchaFile = null;
 			String capTxt = null;
 			while (true) { // for() läuft bis kein Captcha mehr abgefragt
+				reqinfo.setHtmlCode(reqinfo.getHtmlCode().replaceAll("(?s)<!--.*?-->", "").replaceAll("(?i)(?s)<div style=\"display: none;\">.*?</div>", ""));
 				Matcher matcher = patternCaptcha.matcher(reqinfo.getHtmlCode());
 				if (matcher.find()) {
 					if (captchaFile != null && capTxt != null) {
 						JDUtilities.appendInfoToFilename(captchaFile, capTxt,
 								false);
-							reqinfo.setHtmlCode(reqinfo.getHtmlCode().replaceAll("(?s)<!--.*?-->", "").replaceAll("(?i)(?s)<div style=\"display: none;\">.*?</div>", ""));
 					}
 					String captchaAdress = "http://serienjunki.es"
 							+ matcher.group(2);
+					System.out.println(captchaAdress);
 					captchaFile = getLocalCaptchaFile(this, ".gif");
 					fileDownloaded = JDUtilities.download(captchaFile,
 							getRequestWithoutHtmlCode(new URL(captchaAdress),
@@ -437,7 +436,6 @@ public class Serienjunkies extends PluginForDecrypt {
 						try {
 							Thread.sleep(1000);
 							reqinfo = getRequest(new URL(url));
-							reqinfo.setHtmlCode(reqinfo.getHtmlCode().replaceAll("(?s)<!--.*?-->", "").replaceAll("(?i)(?s)<div style=\"display: none;\">.*?</div>", ""));
 							cookie = reqinfo.getCookie();
 						} catch (InterruptedException e) {
 						}
