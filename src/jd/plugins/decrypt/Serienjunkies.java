@@ -337,13 +337,7 @@ public class Serienjunkies extends PluginForDecrypt {
 					if (captchaFile != null && capTxt != null) {
 						JDUtilities.appendInfoToFilename(captchaFile, capTxt,
 								false);
-						try {
-							Thread.sleep(1000);
-							reqinfo = getRequest(new URL(url));
 							reqinfo.setHtmlCode(reqinfo.getHtmlCode().replaceAll("(?s)<!--.*?-->", "").replaceAll("(?i)(?s)<div style=\"display: none;\">.*?</div>", ""));
-							cookie = reqinfo.getCookie();
-						} catch (InterruptedException e) {
-						}
 					}
 					Vector<Vector<String>> gifs = getAllSimpleMatches(reqinfo
 							.getHtmlCode(), patternCaptcha);
@@ -428,13 +422,7 @@ public class Serienjunkies extends PluginForDecrypt {
 					if (captchaFile != null && capTxt != null) {
 						JDUtilities.appendInfoToFilename(captchaFile, capTxt,
 								false);
-						try {
-							Thread.sleep(1000);
-							reqinfo = getRequest(new URL(url));
 							reqinfo.setHtmlCode(reqinfo.getHtmlCode().replaceAll("(?s)<!--.*?-->", "").replaceAll("(?i)(?s)<div style=\"display: none;\">.*?</div>", ""));
-							cookie = reqinfo.getCookie();
-						} catch (InterruptedException e) {
-						}
 					}
 					String captchaAdress = "http://serienjunki.es"
 							+ matcher.group(2);
