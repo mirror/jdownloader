@@ -24,7 +24,7 @@ import jd.utils.JDUtilities;
 public class FileFactory extends PluginForHost {
 	
     static private final String host = "filefactory.com";
-    private String version = "1.4.0";
+    private String version = "1.5.0";
     static private final Pattern patternSupported = Pattern.compile("http://.*?filefactory\\.com/file/.{6}/?", Pattern.CASE_INSENSITIVE);
     
     private static Pattern frameForCaptcha = Pattern.compile("<iframe src=\"/(check[^\"]*)\" frameborder=\"0\"");
@@ -37,11 +37,15 @@ public class FileFactory extends PluginForHost {
     private static final String FILENAME = "<tr valign='top' style='color:green;'><td>(.*?)</td>";
     private static final String FILESIZE = "<td style=\"text-align:right;\">(.*?) (B|KB|MB)</td>";
     private static final String PREMIUM_LINK = "<p style=\"margin:30px 0 20px\"><a href=\"(http://[a-z0-9]+\\.filefactory\\.com/dlp/[a-z0-9]+/)\"";
+    private static final String WAIT_TIME = "wait ([0-9]+) (minutes|seconds)";
+    private static final String DOWNLOAD_LIMIT = "exceeded the download limit";
     
     private String captchaAddress;
     private String postTarget;
     private String actionString;
     private RequestInfo requestInfo;
+    private int wait;
+    private int circle = 0; // durchläufe (wegen wartezeit)
 
     @Override
     public String getCoder() {
@@ -121,7 +125,7 @@ public class FileFactory extends PluginForHost {
 			
         }
         
-		return null;
+		return step;
 		
     }
     
@@ -134,7 +138,13 @@ public class FileFactory extends PluginForHost {
             downloadLink = (DownloadLink) parameter;
             
             switch (step.getStep()) {
-            
+            	
+            	case PluginStep.STEP_PENDING :
+            		
+                    step.setParameter((long) wait);
+                    wait = 0;
+                    return step;
+            		
                 case PluginStep.STEP_WAIT_TIME :
                 	
                     requestInfo = getRequest(new URL(downloadLink.getDownloadURL()), null, null, true);
@@ -202,7 +212,7 @@ public class FileFactory extends PluginForHost {
                 	
                     try {
                     	
-                        requestInfo = postRequest((new URL(actionString)), requestInfo.getCookie(), actionString, null, postTarget + "&captcha=" + (String) steps.get(1).getParameter(), true);
+                        requestInfo = postRequest((new URL(actionString)), requestInfo.getCookie(), actionString, null, postTarget + "&captcha=" + (String) steps.get(1+circle*4).getParameter(), true);
                         postTarget = getFirstMatch(requestInfo.getHtmlCode(), patternForDownloadlink, 1);
                         postTarget = postTarget.replaceAll("&amp;", "&");
                         
@@ -213,14 +223,60 @@ public class FileFactory extends PluginForHost {
                         e.printStackTrace();
                         
                     }
-
+                    
                     try {
-                    	
-                        URLConnection urlConnection = new URL(postTarget).openConnection();
+
+                    	requestInfo = postRequestWithoutHtmlCode((new URL(postTarget)), requestInfo.getCookie(), actionString, "", false);
+                    	URLConnection urlConnection = requestInfo.getConnection();
+                        
+                    	// downloadlimit reached
+                    	if ( urlConnection.getHeaderField("Location") != null ) {
+                    		
+                    		//filefactory.com/info/premium.php/w/
+                    		requestInfo = getRequest(new URL(urlConnection.getHeaderField("Location")), null, null, true);
+                    		
+                    		if ( requestInfo.getHtmlCode().contains(DOWNLOAD_LIMIT) ) {
+
+                    			logger.info(JDLocale.L("plugins.host.general.downloadLimitReached", "Downloadlimit als Free User erreicht"));
+                    			
+                    			String waitTime = new Regexp(requestInfo.getHtmlCode(), WAIT_TIME).getFirstMatch(1);
+                    			String unit = new Regexp(requestInfo.getHtmlCode(), WAIT_TIME).getFirstMatch(2);
+                    			wait = 0;
+                    			
+                    			if ( unit.equals("minutes") ) {
+                    				wait = Integer.parseInt(waitTime);
+                    				logger.info(JDLocale.L("plugins.host.filefactory.wait", "warte") + " " + String.valueOf(wait+1)
+                    						+ " " + JDLocale.L("plugins.host.filefactory.minutes", "Minuten") );
+                    				wait = wait * 60000 + 60000;
+                    			} else if ( unit.equals("seconds") ) {
+                    				wait = Integer.parseInt(waitTime);
+                    				logger.info(JDLocale.L("plugins.host.filefactory.wait", "warte") + " " + String.valueOf(wait+5)
+                    						+ " " + JDLocale.L("plugins.host.filefactory.seconds", "Sekunden") );
+                    				wait = wait * 1000 + 5000;
+                    			}
+                    			
+                    			
+                    			// restart
+                    			circle++;
+                                steps.add(new PluginStep(PluginStep.STEP_PENDING, null));
+                                steps.add(new PluginStep(PluginStep.STEP_WAIT_TIME, null));
+                                steps.add(new PluginStep(PluginStep.STEP_GET_CAPTCHA_FILE, null));
+                                steps.add(new PluginStep(PluginStep.STEP_DOWNLOAD, null));
+                                return step;
+                    			
+                    		} else {
+                    			
+                    			requestInfo = postRequestWithoutHtmlCode((new URL(postTarget)), requestInfo.getCookie(), actionString, "", false);
+                            	urlConnection = requestInfo.getConnection();
+                    			
+                    		}
+                    		
+                    	}
+                        
                         int length = urlConnection.getContentLength();
                         downloadLink.setDownloadMax(length);
                         downloadLink.setName(this.getFileNameFormHeader(urlConnection));
-
+                        
                         if (!hasEnoughHDSpace(downloadLink)) {
                         	
                             downloadLink.setStatus(DownloadLink.STATUS_ERROR_NO_FREE_SPACE);
@@ -233,7 +289,7 @@ public class FileFactory extends PluginForHost {
                         	
                             step.setStatus(PluginStep.STATUS_DONE);
                             downloadLink.setStatus(DownloadLink.STATUS_DONE);
-                            return null;
+                            return step;
                             
                         } else {       
                         	
@@ -342,7 +398,7 @@ public class FileFactory extends PluginForHost {
                         	
                             step.setStatus(PluginStep.STATUS_DONE);
                             downloadLink.setStatus(DownloadLink.STATUS_DONE);
-                            return null;
+                            return step;
                             
                         } else {       
                         	
@@ -390,6 +446,8 @@ public class FileFactory extends PluginForHost {
         postTarget = null;
         actionString = null;
         requestInfo = null;
+        wait = 0;
+        circle = 0;
         
     }
 
