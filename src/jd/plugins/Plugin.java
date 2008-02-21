@@ -79,7 +79,7 @@ public abstract class Plugin {
      * Versionsinformationen
      */
     public static final String    VERSION         = "jDownloader_20070830_0";
-
+    
     /**
      * Zeigt an, ob das Plugin abgebrochen werden soll
      */
@@ -727,12 +727,15 @@ public abstract class Plugin {
      * @return requestinfos mit headerfields. HTML text wird nicht!! geladen
      * @throws IOException
      */
-
     public static RequestInfo getRequestWithoutHtmlCode(URL link, String cookie, String referrer, boolean redirect) throws IOException {
+        return getRequestWithoutHtmlCode(link, cookie, referrer,  redirect,getReadTimeoutFromConfiguration(),getConnectTimeoutFromConfiguration()) ;
+   
+    }
+        public static RequestInfo getRequestWithoutHtmlCode(URL link, String cookie, String referrer, boolean redirect,int readTimeout,int requestTimeout) throws IOException {
         // logger.finer("get: "+link);
         HttpURLConnection httpConnection = (HttpURLConnection) link.openConnection();
-        httpConnection.setReadTimeout(getReadTimeoutFromConfiguration());
-        httpConnection.setConnectTimeout(getConnectTimeoutFromConfiguration());
+        httpConnection.setReadTimeout(readTimeout);
+        httpConnection.setConnectTimeout(requestTimeout);
         httpConnection.setInstanceFollowRedirects(redirect);
         // wenn referrer nicht gesetzt wurde nimmt er den host als referer
         if (referrer != null)
@@ -842,11 +845,17 @@ public abstract class Plugin {
      * @throws IOException
      */
     public static RequestInfo postRequest(URL string, String cookie, String referrer, HashMap<String, String> requestProperties, String parameter, boolean redirect) throws IOException {
+     return  postRequest( string,  cookie,  referrer, requestProperties,  parameter,  redirect,getReadTimeoutFromConfiguration(),getConnectTimeoutFromConfiguration());
+            
+    }
+    
+    
+    public static RequestInfo postRequest(URL string, String cookie, String referrer, HashMap<String, String> requestProperties, String parameter, boolean redirect,int readTimeout,int requestTimeout) throws IOException {
         // logger.finer("post: "+link+"(cookie:"+cookie+" parameter:
         // "+parameter+")");
         HttpURLConnection httpConnection = (HttpURLConnection) string.openConnection();
-        httpConnection.setReadTimeout(getReadTimeoutFromConfiguration());
-        httpConnection.setConnectTimeout(getConnectTimeoutFromConfiguration());
+        httpConnection.setReadTimeout(readTimeout);
+        httpConnection.setConnectTimeout(requestTimeout);
         httpConnection.setInstanceFollowRedirects(redirect);
         if (referrer != null)
             httpConnection.setRequestProperty("Referer", referrer);
@@ -984,6 +993,12 @@ public abstract class Plugin {
 
     }
     public int download(DownloadLink downloadLink, URLConnection urlConnection, int bytesToLoad) {
+        if(JDUtilities.getController().isLocalFileInProgress(downloadLink)){
+            logger.severe("File already is in progress. " + downloadLink.getFileOutput());
+            downloadLink.setStatus(DownloadLink.STATUS_ERROR_ALREADYEXISTS);
+            return Plugin.DOWNLOAD_ERROR_OUTPUTFILE_ALREADYEXISTS;
+            
+        }
         File fileOutput = new File(downloadLink.getFileOutput() + ".jdd");
         if (fileOutput == null || fileOutput.getParentFile() == null) return Plugin.DOWNLOAD_ERROR_INVALID_OUTPUTFILE;
         if (!fileOutput.getParentFile().exists()) {
@@ -995,7 +1010,7 @@ public abstract class Plugin {
             downloadLink.setStatus(DownloadLink.STATUS_ERROR_ALREADYEXISTS);
             return Plugin.DOWNLOAD_ERROR_OUTPUTFILE_ALREADYEXISTS;
         }
-        
+        logger.info("Create Tmp file "+fileOutput+" for "+downloadLink.getFileOutput());
        
         
         downloadLink.setStatus(DownloadLink.STATUS_DOWNLOAD_IN_PROGRESS);
@@ -1125,17 +1140,24 @@ public abstract class Plugin {
     }
 
     public int download(DownloadLink downloadLink, URLConnection urlConnection, int bytesToLoad, int resumeAt) {
+        if(JDUtilities.getController().isLocalFileInProgress(downloadLink)){
+            logger.severe("File already is in progress. " + downloadLink.getFileOutput());
+            downloadLink.setStatus(DownloadLink.STATUS_ERROR_ALREADYEXISTS);
+            return Plugin.DOWNLOAD_ERROR_OUTPUTFILE_ALREADYEXISTS;
+            
+        }
         File fileOutput = new File(downloadLink.getFileOutput() + ".jdd");
         if (fileOutput == null || fileOutput.getParentFile() == null) return Plugin.DOWNLOAD_ERROR_INVALID_OUTPUTFILE;
         if (!fileOutput.getParentFile().exists()) {
             fileOutput.getParentFile().mkdirs();
         }
+        
         if(new File(downloadLink.getFileOutput()).exists()){
             logger.severe("File already exists. " + downloadLink.getFileOutput());
             downloadLink.setStatus(DownloadLink.STATUS_ERROR_ALREADYEXISTS);
             return Plugin.DOWNLOAD_ERROR_OUTPUTFILE_ALREADYEXISTS;
         }
-        
+        logger.info("Create Tmp file "+fileOutput+" for "+downloadLink.getFileOutput());
         downloadLink.setStatus(DownloadLink.STATUS_DOWNLOAD_IN_PROGRESS);
         long downloadedBytes = 0;
         long start, end, time;

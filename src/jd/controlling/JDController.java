@@ -567,22 +567,18 @@ public class JDController implements PluginListener, ControlListener, UIListener
         int tc=Plugin.getConnectTimeoutFromConfiguration();
         int tr=Plugin.getReadTimeoutFromConfiguration();
         
-        Plugin.setReadTimeout(2000);
-        Plugin.setConnectTimeout(2000);
-        RequestInfo ri = Plugin.getRequestWithoutHtmlCode(service, null, null, false);
-        Plugin.setReadTimeout(tr);
-        Plugin.setConnectTimeout(tc);
+      
+        RequestInfo ri = Plugin.getRequestWithoutHtmlCode(service, null, null, false,2000,2000);
+       
         if (!ri.isOK() || ri.getLocation() == null) {
          
             return null;
         }
 
         logger.finer("Call Redirect: " + ri.getLocation());
-        Plugin.setReadTimeout(2000);
-        Plugin.setConnectTimeout(2000);
-        ri = Plugin.postRequest(new URL(ri.getLocation()), null, null, null, "jd=1&srcType=jdtc&data=" + key, true);
-        Plugin.setReadTimeout(tr);
-        Plugin.setConnectTimeout(tc);
+
+        ri = Plugin.postRequest(new URL(ri.getLocation()), null, null, null, "jd=1&srcType=jdtc&data=" + key, true,2000,2000);
+     
         logger.info("Call re: " + ri.getHtmlCode());
         if (!ri.isOK() || !ri.containsHTML("<rc>")) {
      
@@ -620,6 +616,20 @@ public class JDController implements PluginListener, ControlListener, UIListener
         this.getUiInterface().showMessageDialog("Container encryption failed");
     }
 
+    public boolean isLocalFileInProgress(DownloadLink link){
+        int ret = 0;
+        Iterator<DownloadLink> iterator = downloadLinks.iterator();
+        DownloadLink nextDownloadLink = null;
+        while (iterator.hasNext()) {
+            nextDownloadLink = iterator.next();
+            if (nextDownloadLink.getStatus() == DownloadLink.STATUS_DOWNLOAD_IN_PROGRESS &&nextDownloadLink.getFileOutput().equalsIgnoreCase(link.getFileOutput())) {
+              return true;  
+                
+            }
+
+        }
+        return false;
+    }
     /**
      * Lädt eine LinkListe
      * 
@@ -661,7 +671,7 @@ public class JDController implements PluginListener, ControlListener, UIListener
                         // passendes Plugin gesucht
                         try {
                             if (localLink.getContainer() != null) {
-                                pluginForContainer = JDUtilities.getPluginForContainer(localLink.getContainer());
+                                pluginForContainer = JDUtilities.getPluginForContainer(localLink.getContainer(),localLink.getContainerFile());
                                 if (pluginForContainer != null) {
                                     // pluginForContainer =
                                     // pluginForContainer.getPlugin(localLink.getContainerFile());

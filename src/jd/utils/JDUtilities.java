@@ -172,7 +172,7 @@ public class JDUtilities {
      * Alle verfügbaren Bilder werden hier gespeichert
      */
     private static HashMap<String, Image>            images              = new HashMap<String, Image>();
-
+    private static HashMap<String, PluginForContainer>            containerPlugins              = new HashMap<String, PluginForContainer>();
     /**
      * Der Logger für Meldungen
      */
@@ -1070,11 +1070,26 @@ public class JDUtilities {
      * Sucht ein passendes Plugin für ein Containerfile
      * 
      * @param container Der Host, von dem das Plugin runterladen kann
+     * @param containerPath 
      * @return Ein passendes Plugin oder null
      */
-    public static PluginForContainer getPluginForContainer(String container) {
+    public static PluginForContainer getPluginForContainer(String container, String containerPath) {
+       if(containerPath!=null&&containerPlugins.containsKey(containerPath))return containerPlugins.get(containerPath);
+       PluginForContainer ret=null;
         for (int i = 0; i < pluginsForContainer.size(); i++) {
-            if (pluginsForContainer.get(i).getHost().equals(container)) return pluginsForContainer.get(i);
+            if (pluginsForContainer.get(i).getHost().equals(container)){
+                try {
+                    ret= pluginsForContainer.get(i).getClass().newInstance();
+                    if(containerPath!=null)containerPlugins.put(containerPath, ret);
+                    return ret;
+                }
+                catch (InstantiationException e) {
+                    e.printStackTrace();
+                }
+                catch (IllegalAccessException e) {
+                    e.printStackTrace();
+                }
+            }
         }
         return null;
     }
@@ -1800,16 +1815,24 @@ public class JDUtilities {
      */
     public static String filterString(String str, String filter) {
         if (str == null || filter == null) return "";
-        String allowed = filter;
-        String ret = "";
+        
+        
+        byte[] org=str.getBytes();
+        byte[] mask=filter.getBytes();
+        byte[] ret= new byte[org.length];
+        int count=0;      
         int i;
-        for (i = 0; i < str.length(); i++) {
-            char letter = str.charAt(i);
-            if (allowed.indexOf(letter) >= 0) {
-                ret += letter;
-            }
+        for (i = 0; i < org.length; i++) {
+            byte letter = org[i];     
+            for( int t=0; t<mask.length;t++){
+                if(letter==mask[t]){
+                    ret[count]=letter;
+                    count++;              
+                    continue;
+                }
+            }          
         }
-        return ret;
+        return new String(ret).trim();
     }
 
     /**
@@ -2065,6 +2088,7 @@ public class JDUtilities {
     }
 
     public static String Base64Encode(String plain) {
+     
         if (plain == null) return null;
         String base64 = new BASE64Encoder().encode(plain.getBytes());
 

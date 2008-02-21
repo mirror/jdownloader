@@ -793,7 +793,8 @@ public class DownloadLink implements Serializable,Comparable<DownloadLink> {
     }
 
     public int compareTo(DownloadLink o) {
-        return extractFileNameFromURL().compareTo(o.extractFileNameFromURL());
+        return this.getDownloadURL().compareTo(o.getDownloadURL());
+       // return extractFileNameFromURL().compareTo(o.extractFileNameFromURL());
     }
 
 

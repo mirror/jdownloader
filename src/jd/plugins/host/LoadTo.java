@@ -35,9 +35,9 @@ public class LoadTo extends PluginForHost {
      */
     private static final String  ERROR_DOWNLOAD_NOT_FOUND = "Can't find file. Please check URL.";
 
-    private static final String  DOWNLOAD_INFO            = "<tr><td width=\"80\">Filename:</td><td valign=\"top\"><b>°</b></td></tr><tr><td width=\"80\">Size:</td><td>° Bytes</td></tr>";
+    private static final String  DOWNLOAD_INFO            = "You are going to download<br>°<a href=\"http://www.load.to/?d=°\" style=\"font-size:16px; color:#960000; text-decoration:none; cursor:default;\"><b>°</b></a><br>Size: ° Bytes &nbsp;<font";
 
-    private static final String  DOWNLOAD_LINK            = "action=\"°\" method=\"post\"><input type=\"submit\" value=\"Download the file\"";
+    private static final String  DOWNLOAD_LINK            = "<form action=\"°\" method=\"post\" name=\"";
 
     /*
      * Konstruktor
@@ -109,8 +109,9 @@ public class LoadTo extends PluginForHost {
         try {
             RequestInfo requestInfo = getRequest(new URL(downloadLink.getDownloadURL()));
 
-            String fileName = JDUtilities.htmlDecode(getSimpleMatch(requestInfo.getHtmlCode(), DOWNLOAD_INFO, 0));
-            String fileSize = JDUtilities.htmlDecode(getSimpleMatch(requestInfo.getHtmlCode(), DOWNLOAD_INFO, 1));
+String fileName = JDUtilities.htmlDecode(getSimpleMatch(requestInfo.getHtmlCode(), DOWNLOAD_INFO, 2));
+String fileSize = JDUtilities.htmlDecode(getSimpleMatch(requestInfo.getHtmlCode(), DOWNLOAD_INFO, 3));
+
 
             // Wurden DownloadInfos gefunden? --> Datei ist vorhanden/online
             if (fileName != null && fileSize != null) {
@@ -155,8 +156,9 @@ public class LoadTo extends PluginForHost {
                         step.setStatus(PluginStep.STATUS_ERROR);
                         return step;
                     }
-                    String fileName = JDUtilities.htmlDecode(getSimpleMatch(requestInfo.getHtmlCode(), DOWNLOAD_INFO, 0));
-                    String fileSize = JDUtilities.htmlDecode(getSimpleMatch(requestInfo.getHtmlCode(), DOWNLOAD_INFO, 1));
+                    String fileName = JDUtilities.htmlDecode(getSimpleMatch(requestInfo.getHtmlCode(), DOWNLOAD_INFO, 2));
+                    String fileSize = JDUtilities.htmlDecode(getSimpleMatch(requestInfo.getHtmlCode(), DOWNLOAD_INFO, 3));
+                   
                     try {
                         int length = Integer.parseInt(fileSize.trim());
                         downloadLink.setDownloadMax(length);
@@ -169,6 +171,7 @@ public class LoadTo extends PluginForHost {
                     }
                     downloadLink.setName(fileName);
                     // downloadLink auslesen
+                    logger.info(requestInfo.getHtmlCode());
                     this.downloadURL = JDUtilities.htmlDecode(getSimpleMatch(requestInfo.getHtmlCode(), DOWNLOAD_LINK, 0));
 
                     return step;
@@ -215,7 +218,10 @@ public class LoadTo extends PluginForHost {
         }
         catch (IOException e) {
              e.printStackTrace();
-            return null;
+             downloadLink.setStatus(DownloadLink.STATUS_ERROR_PLUGIN_SPECIFIC);
+             downloadLink.setStatusText(e.getMessage());
+             step.setStatus(PluginStep.STATUS_ERROR);
+             return step;
         }
     }
 

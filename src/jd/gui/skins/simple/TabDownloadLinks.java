@@ -169,10 +169,9 @@ public class TabDownloadLinks extends JPanel implements PluginListener, ControlL
      */
     public void addLinks(DownloadLink links[]) {
         for (int i = 0; i < links.length; i++) {
-            if (allLinks.indexOf(links[i]) == -1)
+           
                 allLinks.add(links[i]);
-            else
-                logger.info("download-URL already in Queue");
+           
         }
         checkColumnSize();
         fireTableChanged();
