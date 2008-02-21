@@ -20,7 +20,7 @@ public class XliceNet extends PluginForDecrypt {
             "share.gulli.com", "load.to", "netload.in", "sharebase.de",
             "share-online.biz", "simpleupload.net", "uploaded.to",
             "uploadstube.de" };
-    private String version = "2.0.0.0";
+    private String version = "2.0.1";
     // xlice.net/folder/13a3169edf4cfd3a438a40c2397724fe/
     // xlice.net/file/e46b767e51b8dbdf3afb6d3ea3852c4e/
     // xlice.net/file/ff139aafdf5c299c33b218b9750b3d17/%5BSanex%5D%20-
@@ -84,8 +84,12 @@ public class XliceNet extends PluginForDecrypt {
                             cookie, parameter, true);
                     String location = reqinfo.getConnection().getURL().toString();
     				progress.increase(1);
-                    if(getUseConfig(location))
+                    if(getUseConfig(location)) {
+                    	if (location.contains("netload.in")) {
+                    		location = location.replace(" ", "_");
+                    	}
                         decryptedLinks.add(createDownloadlink(location));
+                    }
                 }
                 logger.info(decryptedLinks.size() + " downloads decrypted "
                         + decryptedLinks);
