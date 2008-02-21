@@ -113,6 +113,7 @@ public class ShareBaseDe extends PluginForHost {
         try {
         	
             RequestInfo requestInfo;
+
             URL downloadUrl = new URL(downloadLink.getDownloadURL());
             String finishURL = null;
             
@@ -121,9 +122,8 @@ public class ShareBaseDe extends PluginForHost {
                 case PluginStep.STEP_PAGE:
                 	
                     requestInfo = getRequest(downloadUrl);
-                    
-                    String fileName = JDUtilities.htmlDecode(getSimpleMatch(requestInfo.getHtmlCode(), FILENAME, 1));
-
+               
+                    String fileName = JDUtilities.htmlDecode(new Regexp(requestInfo.getHtmlCode(), FILENAME).getFirstMatch());
                     // Download-Limit erreicht
                     if (requestInfo.getHtmlCode().contains(DL_LIMIT)) {
                     	
