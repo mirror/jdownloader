@@ -75,6 +75,7 @@ import java.util.regex.Pattern;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.plugins.DownloadLink;
+import jd.plugins.Plugin;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
@@ -496,16 +497,27 @@ public class Rapidshare extends PluginForHost {
                         downloadLink.setStatus(DownloadLink.STATUS_ERROR_TO_MANY_USERS);
                         return step;
                     }
+                    
+                    if(JDUtilities.getController().isLocalFileInProgress(downloadLink)){
+                        logger.severe("File already is in progress. " + downloadLink.getFileOutput());
+                        downloadLink.setStatus(DownloadLink.STATUS_ERROR_OUTPUTFILE_INPROGRESS);
+                        step.setStatus(PluginStep.STATUS_ERROR);     
+                        return step;
+                    }            
+                    
+                    if(new File(downloadLink.getFileOutput()).exists()){
+                        logger.severe("File already exists. " + downloadLink.getFileOutput());
+                        downloadLink.setStatus(DownloadLink.STATUS_ERROR_ALREADYEXISTS);
+                        step.setStatus(PluginStep.STATUS_ERROR);  
+                        return step;
+                    }
+                    
+                    
                     String strWaitTime = getFirstMatch(requestInfo.getHtmlCode(), patternErrorDownloadLimitReached, 1);
                     if (strWaitTime != null) {
 
                         logger.severe("wait " + strWaitTime + " minutes");
                         waitTime = (int) (Double.parseDouble(strWaitTime) * 60 * 1000);
-
-                        if (getProperties().getIntegerProperty(PROPERTY_INCREASE_TICKET, 0) > 0) {
-                            logger.warning("Waittime increased by JD: " + waitTime + " --> " + (waitTime + (getProperties().getIntegerProperty(PROPERTY_INCREASE_TICKET, 0) * waitTime) / 100));
-                        }
-                        waitTime = (waitTime + (getProperties().getIntegerProperty(PROPERTY_INCREASE_TICKET, 0) * waitTime) / 100);
                         downloadLink.setStatus(DownloadLink.STATUS_ERROR_DOWNLOAD_LIMIT);
                         END_OF_DOWNLOAD_LIMIT = System.currentTimeMillis() + waitTime;
                         logger.info("Wait until: " + System.currentTimeMillis() + "+ " + waitTime + " = " + END_OF_DOWNLOAD_LIMIT);
@@ -539,6 +551,12 @@ public class Rapidshare extends PluginForHost {
 
                     if (wait != null) {
                         long pendingTime = Long.parseLong(wait);
+                        
+                       if (getProperties().getIntegerProperty(PROPERTY_INCREASE_TICKET, 0) > 0) {
+                            logger.warning("Waittime increased by JD: " + waitTime + " --> " + (pendingTime + (getProperties().getIntegerProperty(PROPERTY_INCREASE_TICKET, 0) * pendingTime) / 100));
+                        }
+                       pendingTime = (pendingTime + (getProperties().getIntegerProperty(PROPERTY_INCREASE_TICKET, 0) * pendingTime) / 100);
+                        
                         logger.info("Ticket: wait " + pendingTime + " seconds");
                         ticketCode = JDUtilities.htmlDecode(getSimpleMatch(requestInfo.getHtmlCode(), ticketCodePattern, 0));
                         step.setParameter(pendingTime * 1000);

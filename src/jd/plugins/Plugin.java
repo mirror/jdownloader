@@ -46,6 +46,7 @@ import jd.config.Property;
 import jd.plugins.event.PluginEvent;
 import jd.plugins.event.PluginListener;
 import jd.unrar.JUnrar;
+import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
 /**
@@ -225,6 +226,9 @@ public abstract class Plugin {
     public static final int DOWNLOAD_ERROR_SECURITY = 7;
 
     public static final int DOWNLOAD_ERROR_UNKNOWN = 8;
+    public static final int DOWNLOAD_ERROR_OUTPUTFILE_IN_PROGRESS = 9;
+
+    private static final int DOWNLOAD_ERROR_0_BYTE_TOLOAD = 10;
 
     /**
      * Führt den aktuellen Schritt aus
@@ -959,14 +963,9 @@ public abstract class Plugin {
         }
         String line;
         StringBuffer htmlCode = new StringBuffer();
-        while ((line = rd.readLine()) != null) {
-            // so bleibt der html-syntax erhalten
+        while ((line = rd.readLine()) != null) {        
             htmlCode.append(line + "\n");
         }
-        // wenn du nur informationen ueber den header oder cookies braust benutz
-        // bitte postRequestWithoutHtmlCode
-        // ich hab hir mal Location gross und aus cookie Set-Cookie gemacht weil
-        // der Server Set-Cookie versendet
         String location = urlInput.getHeaderField("Location");
         String cookie = getCookieString(urlInput);
         int responseCode = HttpURLConnection.HTTP_NOT_IMPLEMENTED;
@@ -992,11 +991,19 @@ public abstract class Plugin {
         return download(downloadLink, urlConnection, -1);
 
     }
+
     public int download(DownloadLink downloadLink, URLConnection urlConnection, int bytesToLoad) {
+        if(bytesToLoad==0){
+            downloadLink.setStatus(DownloadLink.STATUS_ERROR_PLUGIN_SPECIFIC);
+            downloadLink.setStatusText(JDLocale.L("plugins.download.error.0byte","Fehlerhafter Upload"));
+            return Plugin.DOWNLOAD_ERROR_0_BYTE_TOLOAD; 
+            
+        }
+        
         if(JDUtilities.getController().isLocalFileInProgress(downloadLink)){
             logger.severe("File already is in progress. " + downloadLink.getFileOutput());
-            downloadLink.setStatus(DownloadLink.STATUS_ERROR_ALREADYEXISTS);
-            return Plugin.DOWNLOAD_ERROR_OUTPUTFILE_ALREADYEXISTS;
+            downloadLink.setStatus(DownloadLink.STATUS_ERROR_OUTPUTFILE_INPROGRESS);
+            return Plugin.DOWNLOAD_ERROR_OUTPUTFILE_IN_PROGRESS;
             
         }
         File fileOutput = new File(downloadLink.getFileOutput() + ".jdd");
@@ -1138,12 +1145,20 @@ public abstract class Plugin {
         downloadLink.setStatus(DownloadLink.STATUS_DOWNLOAD_INCOMPLETE);
         return Plugin.DOWNLOAD_ERROR_UNKNOWN;
     }
-
+   
     public int download(DownloadLink downloadLink, URLConnection urlConnection, int bytesToLoad, int resumeAt) {
+        if(bytesToLoad==0){
+            downloadLink.setStatus(DownloadLink.STATUS_ERROR_PLUGIN_SPECIFIC);
+            downloadLink.setStatusText(JDLocale.L("plugins.download.error.0byte","Fehlerhafter Upload"));
+            return Plugin.DOWNLOAD_ERROR_0_BYTE_TOLOAD; 
+            
+        }
+        
+        
         if(JDUtilities.getController().isLocalFileInProgress(downloadLink)){
             logger.severe("File already is in progress. " + downloadLink.getFileOutput());
-            downloadLink.setStatus(DownloadLink.STATUS_ERROR_ALREADYEXISTS);
-            return Plugin.DOWNLOAD_ERROR_OUTPUTFILE_ALREADYEXISTS;
+            downloadLink.setStatus(DownloadLink.STATUS_ERROR_OUTPUTFILE_INPROGRESS);
+            return Plugin.DOWNLOAD_ERROR_OUTPUTFILE_IN_PROGRESS;
             
         }
         File fileOutput = new File(downloadLink.getFileOutput() + ".jdd");
@@ -1250,11 +1265,8 @@ public abstract class Plugin {
             if (new File(downloadLink.getFileOutput()).exists()) {
                 new File(downloadLink.getFileOutput()).delete();
             }
-            logger.info(new File(downloadLink.getFileOutput()).exists() + "");
-            logger.info(new File(downloadLink.getFileOutput()).canWrite() + "");
-
-            logger.info(fileOutput.exists() + "");
-            logger.info(fileOutput.canWrite() + "");
+         
+       
             if (!fileOutput.renameTo(new File(downloadLink.getFileOutput()))) {
                 logger.severe("Could not rename file " + fileOutput + " to " + downloadLink.getFileOutput());
                 downloadLink.setStatus(DownloadLink.STATUS_DOWNLOAD_INCOMPLETE);

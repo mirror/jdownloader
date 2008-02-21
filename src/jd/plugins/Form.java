@@ -263,7 +263,7 @@ public class Form {
 				stbuffer.append("&");
 			stbuffer.append(entry.getKey());
 			stbuffer.append("=");
-			stbuffer.append(URLEncoder.encode(entry.getValue()));
+			stbuffer.append(JDUtilities.urlEncode(entry.getValue()));
 		}
 		String varString = stbuffer.toString();
 		if (method == METHOD_GET) {

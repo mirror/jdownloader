@@ -178,7 +178,12 @@ public abstract class PluginForHost extends Plugin {
     public PluginStep doStep(PluginStep step, Object parameter) {
 
         try {
-            return doStep(step, (DownloadLink) parameter);
+           PluginStep ret = doStep(step, (DownloadLink) parameter);
+           if(ret==null){
+               return step;
+           }else{
+               return ret;
+           }
         }
         catch (Exception e) {
              e.printStackTrace();

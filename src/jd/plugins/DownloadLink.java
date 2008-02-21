@@ -113,6 +113,7 @@ public class DownloadLink implements Serializable,Comparable<DownloadLink> {
     public static final int STATUS_ERROR_SECURITY = 22;
     public static final int LINKTYPE_NORMAL = 0;
     public static final int LINKTYPE_CONTAINER = 1;
+    public static final int STATUS_ERROR_OUTPUTFILE_INPROGRESS = 24;
   
   
     /**
@@ -528,6 +529,7 @@ public class DownloadLink implements Serializable,Comparable<DownloadLink> {
      * @param text
      */
     public void setStatusText(String text) {
+        logger.info(this+" - "+text);
         statusText = text;
     }
 
@@ -539,14 +541,9 @@ public class DownloadLink implements Serializable,Comparable<DownloadLink> {
      */
 
     public String getStatusText() {
-
-        int speed;
-        if (statusText == null){
-            if (this.isAvailabilityChecked()) {
-                return this.isAvailable()?"":"[OFFLINE]";
-            }
-            return "";
-        }
+        String ret="";
+        int speed;       
+      
         if (getRemainingWaittime() > 0) {
             return this.statusText + "Warten: (" + JDUtilities.formatSeconds((int) (getRemainingWaittime() / 1000)) + "sek)";
         }
@@ -558,13 +555,13 @@ public class DownloadLink implements Serializable,Comparable<DownloadLink> {
         }
 
         if (!this.isEnabled()) {
-            return "deaktiviert";
+            ret+="[deaktiviert] ";
         }
         
-        if (this.isAvailabilityChecked()) {
-            return this.isAvailable()?statusText:"[OFFLINE] "+statusText;
+        if (this.isAvailabilityChecked()&&!this.isAvailable()) {
+            ret+= "[OFFLINE] ";
         }
-        return this.statusText;
+        return statusText==null?ret:ret+statusText;
 
     }
 

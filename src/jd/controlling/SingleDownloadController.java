@@ -270,7 +270,9 @@ public class SingleDownloadController extends ControlMulticaster {
                 case DownloadLink.STATUS_ERROR_ALREADYEXISTS:
                     this.onErrorFileExists(downloadLink, plugin, step);
                     break;
-
+                case DownloadLink.STATUS_ERROR_OUTPUTFILE_INPROGRESS:
+                    this.onErrorFileInProgress(downloadLink, plugin, step);
+                    break;
                 default:
                     logger.info("Uknown error id: " + downloadLink.getStatus());
                     this.onErrorUnknown(downloadLink, plugin, step);
@@ -296,6 +298,16 @@ public class SingleDownloadController extends ControlMulticaster {
 
         }
 
+    }
+
+    private void onErrorFileInProgress(DownloadLink downloadLink2, PluginForHost plugin, PluginStep step) {
+        downloadLink.setEnabled(false);
+        downloadLink.setStatusText(JDLocale.L("controller.status.fileinprogress", "Datei wird schon geladen"));
+        downloadLink.setInProgress(false);
+        downloadLink.setStatus(DownloadLink.STATUS_TODO);
+        fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SINGLE_DOWNLOAD_CHANGED, downloadLink));
+    
+        
     }
 
     private void onErrorIncomplete(DownloadLink downloadLink2, PluginForHost plugin, PluginStep step) {
