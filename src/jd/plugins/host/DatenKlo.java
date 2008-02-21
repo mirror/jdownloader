@@ -34,7 +34,7 @@ public class DatenKlo extends PluginForHost {
     } // kein BotCheck
     @Override
     public String getCoder() {
-        return "GforE";
+        return "JD-Team";
     }
     @Override
     public String getPluginName() {
@@ -162,6 +162,13 @@ public class DatenKlo extends PluginForHost {
             if (password != null)
                 dlurl = dlurl.replaceFirst("\\&down_passwort.*", "");
             requestInfo = getRequest(new URL(dlurl));
+            if(requestInfo.getHtmlCode().contains(">Offline</span>"))
+            {
+            	logger.info("Server is offline");
+            	downloadLink.setStatus(DownloadLink.STATUS_ERROR_TEMPORARILY_UNAVAILABLE);
+                step.setStatus(PluginStep.STATUS_ERROR);
+            	return null;
+            }
             Form[] forms = Form.getForms(requestInfo);
             if (forms == null || forms.length == 0 || forms[0] == null) {
                 step.setStatus(PluginStep.STATUS_ERROR);
@@ -284,6 +291,12 @@ public class DatenKlo extends PluginForHost {
                     downloadLink.setDownloadMax(bytes);
                 }
                 catch (Exception e) {}
+                if(requestInfo.getHtmlCode().contains(">Offline</span>"))
+                {
+                	logger.info("Server is offline");
+                	downloadLink.setStatus(DownloadLink.STATUS_ERROR_TEMPORARILY_UNAVAILABLE);
+                	return false;
+                }
                 // Datei ist noch verfuegbar
                 return true;
             }
