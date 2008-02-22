@@ -22,3 +22,4 @@ jd.plugins.host.FilesTo
 jd.plugins.host.DepositFiles
 jd.plugins.host.BadOngo
 jd.plugins.host.zShare
+jd.plugins.host.FastLoadNet
