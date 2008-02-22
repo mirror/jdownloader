@@ -216,7 +216,8 @@ public class RapidShareDe extends PluginForHost {
 				return step;
 			}
 			form.put("captcha", code);
-			step = nextStep(step);
+			step.setStatus(PluginStep.STATUS_SKIP);
+			return step;
 		case PluginStep.STEP_DOWNLOAD:
 			if (aborted) {
 				logger.warning("Plugin abgebrochen");
@@ -235,6 +236,7 @@ public class RapidShareDe extends PluginForHost {
 			int errorid;
                 if ((errorid=download(downloadLink, urlConnection))==DOWNLOAD_SUCCESS) {
 				step.setStatus(PluginStep.STATUS_DONE);
+				
 				downloadLink.setStatus(DownloadLink.STATUS_DONE);
                 JDUtilities.appendInfoToFilename(captchaFile, "_" + code, true);
 				return null;
