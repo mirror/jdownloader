@@ -24,7 +24,7 @@ import jd.utils.JDUtilities;
 public class FileFactory extends PluginForHost {
 	
     static private final String host = "filefactory.com";
-    private String version = "1.5.0";
+    private String version = "1.5.1";
     static private final Pattern patternSupported = Pattern.compile("http://.*?filefactory\\.com/file/.{6}/?", Pattern.CASE_INSENSITIVE);
     
     private static Pattern frameForCaptcha = Pattern.compile("<iframe src=\"/(check[^\"]*)\" frameborder=\"0\"");
@@ -245,13 +245,13 @@ public class FileFactory extends PluginForHost {
                     			
                     			if ( unit.equals("minutes") ) {
                     				wait = Integer.parseInt(waitTime);
-                    				logger.info(JDLocale.L("plugins.host.filefactory.wait", "warte") + " " + String.valueOf(wait+1)
-                    						+ " " + JDLocale.L("plugins.host.filefactory.minutes", "Minuten") );
+                    				logger.info(JDLocale.L("plugins.host.general.wait", "warte") + " " + String.valueOf(wait+1)
+                    						+ " " + JDLocale.L("plugins.host.general.minutes", "Minuten") );
                     				wait = wait * 60000 + 60000;
                     			} else if ( unit.equals("seconds") ) {
                     				wait = Integer.parseInt(waitTime);
-                    				logger.info(JDLocale.L("plugins.host.filefactory.wait", "warte") + " " + String.valueOf(wait+5)
-                    						+ " " + JDLocale.L("plugins.host.filefactory.seconds", "Sekunden") );
+                    				logger.info(JDLocale.L("plugins.host.general.wait", "warte") + " " + String.valueOf(wait+5)
+                    						+ " " + JDLocale.L("plugins.host.general.seconds", "Sekunden") );
                     				wait = wait * 1000 + 5000;
                     			}
                     			
@@ -272,7 +272,7 @@ public class FileFactory extends PluginForHost {
                     		}
                     		
                     	}
-                        
+                    	
                         int length = urlConnection.getContentLength();
                         downloadLink.setDownloadMax(length);
                         downloadLink.setName(this.getFileNameFormHeader(urlConnection));
@@ -285,7 +285,7 @@ public class FileFactory extends PluginForHost {
                             
                         }
                         
-                        if (download(downloadLink, urlConnection)!=DOWNLOAD_SUCCESS) {
+                        if ( download(downloadLink, urlConnection) == DOWNLOAD_SUCCESS ) {
                         	
                             step.setStatus(PluginStep.STATUS_DONE);
                             downloadLink.setStatus(DownloadLink.STATUS_DONE);
@@ -448,6 +448,11 @@ public class FileFactory extends PluginForHost {
         requestInfo = null;
         wait = 0;
         circle = 0;
+        
+        steps.removeAllElements();
+        steps.add(new PluginStep(PluginStep.STEP_WAIT_TIME, null));
+        steps.add(new PluginStep(PluginStep.STEP_GET_CAPTCHA_FILE, null));
+        steps.add(new PluginStep(PluginStep.STEP_DOWNLOAD, null));
         
     }
 

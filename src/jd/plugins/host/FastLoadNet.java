@@ -20,11 +20,11 @@ public class FastLoadNet extends PluginForHost {
     private static final String  CODER                    = "eXecuTe";
     private static final String  HOST                     = "fast-load.net";
     private static final String  PLUGIN_NAME              = HOST;
-    private static final String  PLUGIN_VERSION           = "0.1.0";
+    private static final String  PLUGIN_VERSION           = "0.1.1";
     private static final String  PLUGIN_ID                = PLUGIN_NAME + "-" + PLUGIN_VERSION;
     
-    static private final Pattern PAT_SUPPORTED 			  = Pattern.compile("http://.*?fast-load\\.net/index\\.php\\?pid=[a-zA-Z0-9]+");
-    private static final int	 MAX_SIMULTAN_DOWNLOADS   = Integer.MAX_VALUE;
+    static private final Pattern PAT_SUPPORTED 			  = Pattern.compile("http://.*?fast-load\\.net(/|//)index\\.php\\?pid=[a-zA-Z0-9]+");
+    private static final int	 MAX_SIMULTAN_DOWNLOADS   = 3;
     
     private String               downloadURL              = "";
     
@@ -179,8 +179,8 @@ public class FastLoadNet extends PluginForHost {
                     
                     if ( Math.abs(length - downloadLink.getDownloadMax()) > 1024*1024 ) {
                         
-                    	logger.warning(JDLocale.L("plugins.host.general.filesizeError", "Dateigrößenfehler -> Neustart"));
-                        downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN_RETRY);
+                    	logger.warning(JDLocale.L("plugins.host.general.filesizeError", "Dateigrößenfehler"));
+                        downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN);
                         step.setStatus(PluginStep.STATUS_ERROR);
                         return step;
                         
@@ -222,7 +222,7 @@ public class FastLoadNet extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://yourfiles.biz/rules.php";
+        return "http://www.fast-load.net/infos.php";
     }
 
 }
