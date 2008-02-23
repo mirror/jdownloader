@@ -239,13 +239,23 @@ public class Form {
 				return null;
 			if (action.charAt(0) == '/')
 				action = "http://" + baseurl.getHost() + action;
-			else if (action.charAt(0) == '?' || action.charAt(0) == '&') {
+			else if (action.charAt(0) == '&') {
 				String base = baseurl.toString();
 				if (base.matches("http://.*/.*"))
 					action = base + action;
 				else
 					action = base + "/" + action;
-			} else {
+			}
+			else if(action.charAt(0) == '?')
+			{
+				String base = baseurl.toString();
+				if (base.matches("http://.*/.*")){
+					action = base.replaceFirst("\\?.*", "") + action;
+				}
+				else
+					action = base + "/" + action;
+			}
+			else {
 				String base = baseurl.toString();
 				if (base.matches("http://.*/.*"))
 					action = base.substring(0, base.lastIndexOf("/")) + "/"

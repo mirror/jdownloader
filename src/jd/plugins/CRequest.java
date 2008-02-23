@@ -1,11 +1,14 @@
 package jd.plugins;
 
+import java.io.File;
 import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
+
+import jd.utils.JDUtilities;
 
 /**
  * CRequest verwaltet Cookies und Referrer automatisch
@@ -32,8 +35,8 @@ public class CRequest {
 	public RequestInfo getRequestInfo() {
 		return requestInfo;
 	}
-	public CRequest setRequestInfo(Form form)
-	{
+
+	public CRequest setRequestInfo(Form form) {
 		try {
 			return setRequestInfo(form.getRequestInfo());
 		} catch (Exception e) {
@@ -41,8 +44,11 @@ public class CRequest {
 		}
 		return null;
 	}
+
 	/**
-	 * hier kann man die RequestInfo z.B. cRequest.setRequestInfo(cRequest.getForm().getForm().getRequestInfo())
+	 * hier kann man die RequestInfo z.B.
+	 * cRequest.setRequestInfo(cRequest.getForm().getForm().getRequestInfo())
+	 * 
 	 * @param requestInfo
 	 */
 	public CRequest setRequestInfo(RequestInfo requestInfo) {
@@ -58,16 +64,16 @@ public class CRequest {
 		try {
 			String[] bCookie = requestInfo.getCookie().split("; ");
 			for (int i = 0; i < bCookie.length; i++) {
-				if(!bCookie[i].matches("[\\s]*"))
-				{
-				try {
-					String[] vals = new Regexp(bCookie[i],"(.*?\\=)(.*)").getMatches()[0];
-					clist.put(vals[0], vals[1]);
-				} catch (Exception e) {
-					clist.put(bCookie[i], "");
+				if (!bCookie[i].matches("[\\s]*")) {
+					try {
+						String[] vals = new Regexp(bCookie[i], "(.*?\\=)(.*)")
+								.getMatches()[0];
+						clist.put(vals[0], vals[1]);
+					} catch (Exception e) {
+						clist.put(bCookie[i], "");
+					}
 				}
-				}
-				
+
 			}
 		} catch (Exception e) {
 			// TODO: handle exception
@@ -75,9 +81,11 @@ public class CRequest {
 		this.cookie.put(host, clist);
 		return this;
 	}
+
 	/**
-	 * getRequest gibt sich selbst aus
-	 * Cookie und Referrer werden automatisch gesetzt
+	 * getRequest gibt sich selbst aus Cookie und Referrer werden automatisch
+	 * gesetzt
+	 * 
 	 * @param url
 	 * @return
 	 */
@@ -100,9 +108,11 @@ public class CRequest {
 		}
 		return this;
 	}
+
 	/**
-	 * postRequest gibt sich selbst aus
-	 * Cookie und Referrer werden automatisch gesetzt
+	 * postRequest gibt sich selbst aus Cookie und Referrer werden automatisch
+	 * gesetzt
+	 * 
 	 * @param url
 	 * @param parameter
 	 * @return
@@ -127,11 +137,13 @@ public class CRequest {
 		}
 		return this;
 	}
-    /**
-     * gibt die Forms der requestInfo aus
-     * @param pattern
-     * @return
-     */
+
+	/**
+	 * gibt die Forms der requestInfo aus
+	 * 
+	 * @param pattern
+	 * @return
+	 */
 	public Form[] getforms() {
 		try {
 			return requestInfo.getForms();
@@ -140,10 +152,12 @@ public class CRequest {
 		}
 		return null;
 	}
-    /**
-     * gibt die erste Form der requestInfo aus
-     * @return
-     */
+
+	/**
+	 * gibt die erste Form der requestInfo aus
+	 * 
+	 * @return
+	 */
 	public Form getform() {
 		try {
 			return requestInfo.getForm();
@@ -152,11 +166,13 @@ public class CRequest {
 		}
 		return null;
 	}
-    /**
-     * Macht einen Regexp auf die requestInfo
-     * @param pattern
-     * @return
-     */
+
+	/**
+	 * Macht einen Regexp auf die requestInfo
+	 * 
+	 * @param pattern
+	 * @return
+	 */
 	public Regexp getRegexp(String pattern) {
 		try {
 			return requestInfo.getRegexp(pattern);
@@ -165,15 +181,17 @@ public class CRequest {
 		}
 		return null;
 	}
-    /**
-     * @return the connection
-     */
+
+	/**
+	 * @return the connection
+	 */
 	public HttpURLConnection getConnection() {
 		return requestInfo.getConnection();
 	}
-    /**
-     * @return the URL
-     */
+
+	/**
+	 * @return the URL
+	 */
 	public URL getURL() {
 		try {
 			return getConnection().getURL();
@@ -182,8 +200,8 @@ public class CRequest {
 		}
 		return null;
 	}
-	public String getHost()
-	{
+
+	public String getHost() {
 		try {
 			return getURL().getHost();
 		} catch (Exception e) {
@@ -191,8 +209,8 @@ public class CRequest {
 		}
 		return null;
 	}
-	public String getLocation()
-	{
+
+	public String getLocation() {
 		try {
 			return requestInfo.getLocation();
 		} catch (Exception e) {
@@ -200,9 +218,10 @@ public class CRequest {
 		}
 		return null;
 	}
-    /**
-     * @return URL.toString();
-     */
+
+	/**
+	 * @return URL.toString();
+	 */
 	public String urlToString() {
 		try {
 			return getURL().toString();
@@ -211,8 +230,10 @@ public class CRequest {
 		}
 		return null;
 	}
+
 	/**
 	 * gibt den Cookie aus
+	 * 
 	 * @return
 	 */
 	public String getCookie() {
@@ -226,8 +247,10 @@ public class CRequest {
 		}
 		return null;
 	}
+
 	/**
 	 * gibt den Cookie für einen bestimmten Host aus
+	 * 
 	 * @param host
 	 * @return
 	 */
@@ -245,12 +268,13 @@ public class CRequest {
 			} catch (Exception e) {
 				// TODO: handle exception
 			}
-        	String cookie = "";
-        	boolean last = false;
-            for (Map.Entry<String, String> entry : c.entrySet()) {
-        		cookie += (last? "; ":"") + entry.getKey()+entry.getValue();
-        		last = true;
-            }
+			String cookie = "";
+			boolean last = false;
+			for (Map.Entry<String, String> entry : c.entrySet()) {
+				cookie += (last ? "; " : "") + entry.getKey()
+						+ entry.getValue();
+				last = true;
+			}
 			return cookie;
 		} catch (Exception e) {
 		}
@@ -267,5 +291,63 @@ public class CRequest {
 		} catch (Exception ec) {
 		}
 		return null;
+	}
+
+	/**
+	 * sieht den aktuellen Request als CaptchaAdresse an, läd das CaptchaFile herunter und gibt es mit CaptchaCode zurück
+	 *  
+	 * @param plugin
+	 * @return
+	 */
+	public CaptchaInfo<File, String> getCaptchaCode(Plugin plugin) {
+		File captchaFile = plugin.getLocalCaptchaFile(plugin);
+		boolean withHtmlCodeBak = withHtmlCode=false;
+		JDUtilities.download(captchaFile, getConnection());
+		withHtmlCode=withHtmlCodeBak;
+		return new CaptchaInfo<File, String>(captchaFile, Plugin
+				.getCaptchaCode(captchaFile, plugin));
+	}
+	/**
+	 * läd zur CaptchaAdress das CaptchaFile herunter und gibt es mit CaptchaCode zurück
+	 *  
+	 * @param plugin
+	 * @return
+	 */
+	public CaptchaInfo<File, String> getCaptchaCode(Plugin plugin,
+			String captchaAdress) {
+		CRequest re = clone();
+		re.withHtmlCode=false;
+		re.getRequest(captchaAdress);
+		return re.getCaptchaCode(plugin);
+
+	}
+	public CRequest clone()
+	{
+		CRequest request = new CRequest();
+		request.cookie=cookie;
+		request.requestInfo=requestInfo;
+		request.redirect=redirect;
+		request.withHtmlCode=withHtmlCode;
+		return request;
+	}
+	/**
+	 * CaptchaInfo besteht aus dem captchaFile und captchaCode
+	 * @author dwd
+	 *
+	 * @param <captchaFile>
+	 * @param <captchaCode>
+	 */
+	public class CaptchaInfo<captchaFile, captchaCode> {
+		public captchaFile captchaFile;
+		public captchaCode captchaCode;
+
+		public CaptchaInfo(captchaFile captchaFile, captchaCode captchaCode) {
+			this.captchaFile = captchaFile;
+			this.captchaCode = captchaCode;
+		}
+		public String toString() {
+			// TODO Auto-generated method stub
+			return captchaCode.toString();
+		}
 	}
 }
