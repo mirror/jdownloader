@@ -26,7 +26,7 @@ public class RamZal extends PluginForHost {
 
 	@Override
 	public String getCoder() {
-		return "GforE";
+		return "JD-Team";
 	}
 
 	@Override

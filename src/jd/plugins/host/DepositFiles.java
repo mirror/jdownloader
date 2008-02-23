@@ -21,7 +21,7 @@ public class DepositFiles extends PluginForHost {
     static private final String PLUGIN_NAME = HOST;
     static private final String PLUGIN_VERSION = "0.1";
     static private final String PLUGIN_ID = PLUGIN_NAME + "-" + PLUGIN_VERSION;
-    static private final String CODER = "GforE";
+    static private final String CODER = "JD-Team";
     
     private Pattern HIDDENPARAM = Pattern.compile("<input type=\"hidden\" name=\"gateway_result\" value=\"([\\d]+)\">", Pattern.CASE_INSENSITIVE);
     private Pattern FILE_INFO_NAME = Pattern.compile("(?s)Dateiname: <b title=\"(.*?)\">.*?</b>", Pattern.CASE_INSENSITIVE);

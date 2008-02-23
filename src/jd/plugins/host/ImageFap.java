@@ -20,7 +20,7 @@ public class ImageFap extends PluginForHost {
     static private final String PLUGIN_NAME = HOST;
     static private final String PLUGIN_VERSION = "0.1";
     static private final String PLUGIN_ID = PLUGIN_NAME + "-" + PLUGIN_VERSION;
-    static private final String CODER = "GforE";
+    static private final String CODER = "JD-Team";
     static private final Pattern LINKS = Pattern.compile("(?s)<a href=\"image.php\\?id=([0-9]+).*?\"><img border=0 src='http://images.imagefap.com/images/thumb/[0-9\\/]+\\.jpg\\'><\\/a>", Pattern.CASE_INSENSITIVE);
 
     static private final Pattern PAGES = Pattern.compile("<a class=link[0-9]+ href=\"gallery.php(.*?)\">[0-9]+</a>", Pattern.CASE_INSENSITIVE);

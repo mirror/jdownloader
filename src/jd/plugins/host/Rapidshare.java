@@ -210,6 +210,7 @@ public class Rapidshare extends PluginForHost {
     private static final String            PROPERTY_PREMIUM_PASS_3          = "PREMIUM_PASS_3";
 
     private static final String            PROPERTY_USE_PREMIUM_3           = "USE_PREMIUM_3";
+    private static  int            ERRORS           = 0;
 
     @Override
     public String getCoder() {
@@ -373,13 +374,25 @@ public class Rapidshare extends PluginForHost {
 
         logger.info("get Next Step " + step);
         // premium
-
+        PluginStep st;
         if (this.getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM, false) || this.getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM_2, false) || this.getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM_3, false)) {
-            return this.doPremiumStep(step, downloadLink);
+           st = this.doPremiumStep(step, downloadLink);
+           
         }
         else {
-            return this.doFreeStep(step, downloadLink);
+            st=this.doFreeStep(step, downloadLink);
         }
+        if(st!=null && st.getStatus()==PluginStep.STATUS_ERROR){
+            ERRORS++;
+        }else{
+            ERRORS--;
+            if(ERRORS<0)ERRORS=0;
+        }
+        if(ERRORS>5){
+            JDUtilities.getGUI().showMessageDialog(JDLocale.L("plugins.hoster.rapidshare.com.offline", "Keine Internetverbindung vermutet. "));
+            System.exit(1);
+        }
+        return st;
     }
 
     private PluginStep doFreeStep(PluginStep step, DownloadLink downloadLink) {

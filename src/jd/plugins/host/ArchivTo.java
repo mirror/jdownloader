@@ -26,7 +26,7 @@ public class ArchivTo extends PluginForHost {
 
 	@Override
 	public String getCoder() {
-		return "GforE";
+		return "JD-Team";
 	}
 
 	@Override

@@ -33,7 +33,7 @@ public class BadOngo extends PluginForHost {
     } // kein BotCheck
     @Override
     public String getCoder() {
-        return "GforE";
+        return "JD-Team";
     }
     @Override
     public String getPluginName() {
