@@ -94,7 +94,7 @@ public class Stealth extends PluginForDecrypt {
                         logger.finest("Captcha Protected");
                         String captchaAdress = "http://stealth.to/captcha_img.php?PHPSESSID=" + sessid;
                         captchaInfo = request.getCaptchaCode(this, captchaAdress);
-                        Form form = request.getform();
+                        Form form = request.getForm();
                         form.put("txtCode", captchaInfo.captchaCode);
                         request.setRequestInfo(form);
                     }

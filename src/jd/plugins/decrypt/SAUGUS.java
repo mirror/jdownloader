@@ -118,7 +118,7 @@ public class SAUGUS extends PluginForDecrypt {
 							"javascript\\:page\\(\'(.*?)\'\\)\\;").getFirstMatch());
 							string = HTMLEntities.unhtmlentities(new Regexp(request.getRequest(string).toString().replaceAll("<!--.*?-->", ""), "<iframe src=\"(.*?)\"").getFirstMatch()).trim().replaceAll("^[\\s]*", "");
 							if(!string.toLowerCase().matches("http\\:\\/\\/.*"))
-								decryptedLinks.add(createDownloadlink(request.getRequest(hst+string).getform().action));
+								decryptedLinks.add(createDownloadlink(request.getRequest(hst+string).getForm().action));
 							else
 								decryptedLinks.add(createDownloadlink(string));
 

@@ -7,7 +7,7 @@ public class testCRequest {
 	 */
 	public static void main(String[] args) {
 		CRequest request = new CRequest().getRequest("http://www.google.de");
-		Form form = request.getform();
+		Form form = request.getForm();
 		form.put("q", "jDownloader");
 		form.remove("btnI");
 		RequestInfo requestInfo = form.getRequestInfo();

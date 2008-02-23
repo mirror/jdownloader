@@ -144,7 +144,7 @@ public class CRequest {
 	 * @param pattern
 	 * @return
 	 */
-	public Form[] getforms() {
+	public Form[] getForms() {
 		try {
 			return requestInfo.getForms();
 		} catch (Exception e) {
@@ -158,7 +158,7 @@ public class CRequest {
 	 * 
 	 * @return
 	 */
-	public Form getform() {
+	public Form getForm() {
 		try {
 			return requestInfo.getForm();
 		} catch (Exception e) {
