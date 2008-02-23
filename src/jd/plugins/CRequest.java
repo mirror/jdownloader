@@ -300,9 +300,20 @@ public class CRequest {
 	 * @return
 	 */
 	public CaptchaInfo<File, String> getCaptchaCode(Plugin plugin) {
-		File captchaFile = plugin.getLocalCaptchaFile(plugin);
 		boolean withHtmlCodeBak = withHtmlCode=false;
-		JDUtilities.download(captchaFile, getConnection());
+		HttpURLConnection con = getConnection();
+		String ct = con.getContentType().toLowerCase();
+		if(ct!=null && ct.contains("image/"))
+		{
+			ct=ct.replaceFirst("image/", "");
+			if(ct.equals("jpeg")) ct = "jpg";
+		}
+		else
+		{
+			ct="jpg";
+		}
+		File captchaFile = plugin.getLocalCaptchaFile(plugin,"."+ct);
+		JDUtilities.download(captchaFile, con);
 		withHtmlCode=withHtmlCodeBak;
 		return new CaptchaInfo<File, String>(captchaFile, Plugin
 				.getCaptchaCode(captchaFile, plugin));
