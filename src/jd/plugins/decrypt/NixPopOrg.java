@@ -13,11 +13,11 @@ import jd.plugins.DownloadLink;
 
 public class NixPopOrg extends PluginForDecrypt {
 
-    static private String host             = "nixpop.org";
-
-    private String        version          = "1.0.0.0";
- 
-    static private final Pattern patternSupported = getSupportPattern("http://np.nforce.name/html/main/show[+]");
+    static private String host             = "nix-pop.org";
+    
+    static private String        version          = "1.0.1";
+    
+    static private final Pattern patternSupported = getSupportPattern("http://[*]nix-pop\\.org/html/main/(show|showvid|showspec)\\.php\\?id=[0-9]+");
 
     public NixPopOrg() {
         super();
@@ -37,7 +37,7 @@ public class NixPopOrg extends PluginForDecrypt {
 
     @Override
     public String getPluginID() {
-        return "NixPop.org-1.0.0.";
+        return host+"-"+version;
     }
 
     @Override
@@ -87,4 +87,5 @@ public class NixPopOrg extends PluginForDecrypt {
     public boolean doBotCheck(File file) {
         return false;
     }
+    
 }
