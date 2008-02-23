@@ -416,6 +416,11 @@ public class JDInit {
                 if(files!=null ){
                     JDUtilities.getController().setWaitingUpdates(files);
                 }
+                cid=updater.getCid();
+                if(getCid()>0 &&getCid()!= JDUtilities.getConfiguration().getIntegerProperty(Configuration.CID, -1)){
+                    JDUtilities.getConfiguration().setProperty(Configuration.CID, getCid());
+                    JDUtilities.saveConfig();
+                }
                 if(!guiCall &&JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_WEBUPDATE_DISABLE, false)){
                     logger.severe("Webupdater disabled");
                     progress.finalize();
@@ -427,8 +432,7 @@ public class JDInit {
                     progress.finalize();
                     return;
                 }
-              cid=updater.getCid();
-              
+          
                 int org;
                 progress.setRange(org = files.size());
                 logger.finer("Files found: " + files);

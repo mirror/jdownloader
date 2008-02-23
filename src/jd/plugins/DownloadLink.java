@@ -529,7 +529,7 @@ public class DownloadLink implements Serializable,Comparable<DownloadLink> {
      * @param text
      */
     public void setStatusText(String text) {
-        logger.info(this+" - "+text);
+       
         statusText = text;
     }
 

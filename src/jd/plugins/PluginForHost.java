@@ -179,11 +179,12 @@ public abstract class PluginForHost extends Plugin {
 
         try {
            PluginStep ret = doStep(step, (DownloadLink) parameter);
-           if(ret==null){
-               return step;
-           }else{
-               return ret;
-           }
+           return ret;
+//           if(ret==null){
+//               return step;
+//           }else{
+//               return ret;
+//           }
         }
         catch (Exception e) {
              e.printStackTrace();

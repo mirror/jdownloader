@@ -993,13 +993,8 @@ public abstract class Plugin {
     }
 
     public int download(DownloadLink downloadLink, URLConnection urlConnection, int bytesToLoad) {
-        if(bytesToLoad==0){
-            downloadLink.setStatus(DownloadLink.STATUS_ERROR_PLUGIN_SPECIFIC);
-            downloadLink.setStatusText(JDLocale.L("plugins.download.error.0byte","Fehlerhafter Upload"));
-            return Plugin.DOWNLOAD_ERROR_0_BYTE_TOLOAD; 
-            
-        }
-        
+        logger.info("Download try: "+downloadLink+" from "+downloadLink.getHost()+" Bytes: "+bytesToLoad);
+   
         if(JDUtilities.getController().isLocalFileInProgress(downloadLink)){
             logger.severe("File already is in progress. " + downloadLink.getFileOutput());
             downloadLink.setStatus(DownloadLink.STATUS_ERROR_OUTPUTFILE_INPROGRESS);
@@ -1042,7 +1037,13 @@ public abstract class Plugin {
                 contentLen = bytesToLoad;
                 logger.info("Load only the first " + bytesToLoad + " kb");
             }
-
+            if(contentLen<=0){
+                downloadLink.setStatus(DownloadLink.STATUS_ERROR_PLUGIN_SPECIFIC);
+                downloadLink.setStatusText(JDLocale.L("plugins.download.error.0byte","Fehlerhafter Upload"));
+                return Plugin.DOWNLOAD_ERROR_0_BYTE_TOLOAD; 
+                
+            }
+            
             	
             // NIO Channels setzen:
             urlConnection.setReadTimeout(getReadTimeoutFromConfiguration());
@@ -1051,28 +1052,22 @@ public abstract class Plugin {
             WritableByteChannel dest = fos.getChannel();
 
             logger.info("starting download");
-            start = System.currentTimeMillis();
-            // Buffer, laufende Variablen resetten:
+            start = System.currentTimeMillis();    
             buffer.clear();
-            // long bytesLastSpeedCheck = 0;
-            // long t1 = System.currentTimeMillis();
-            // long t3 = t1;
+   
             long bytesPerSecond = 0;
             long deltaTime = 0L;
             long timer = -System.currentTimeMillis();
             while (!aborted && !downloadLink.isAborted()) {
-                // Thread kurz schlafen lassen, um zu häufiges Event-fire zu
-                // verhindern:
-                // JD-Team: nix schlafen.. ich will speed! Die Events werden
-                // jetzt von der GUI kontrolliert
+          
                 if (downloadLink.isLimited) Thread.sleep(25);
                 int bytes = source.read(buffer);
                 if (bytes == -1) break;
-                // Buffer flippen und in File schreiben:
+    
                 buffer.flip();
                 dest.write(buffer);
                 buffer.compact();
-                // Laufende Variablen updaten:
+            
                 downloadedBytes += bytes;
                 bytesPerSecond += bytes;
                 deltaTime = timer + System.currentTimeMillis();
@@ -1086,8 +1081,7 @@ public abstract class Plugin {
                         buffer.clear();
                     }
                 }
-                // firePluginEvent(new PluginEvent(this,
-                // PluginEvent.PLUGIN_DOWNLOAD_BYTES, bytes));
+              
                 firePluginEvent(new PluginEvent(this, PluginEvent.PLUGIN_DATA_CHANGED, downloadLink));
                 downloadLink.setDownloadCurrent(downloadedBytes);
                 if (bytesToLoad > 0 && downloadedBytes >= bytesToLoad) break;
@@ -1147,12 +1141,12 @@ public abstract class Plugin {
     }
    
     public int download(DownloadLink downloadLink, URLConnection urlConnection, int bytesToLoad, int resumeAt) {
-        if(bytesToLoad==0){
-            downloadLink.setStatus(DownloadLink.STATUS_ERROR_PLUGIN_SPECIFIC);
-            downloadLink.setStatusText(JDLocale.L("plugins.download.error.0byte","Fehlerhafter Upload"));
-            return Plugin.DOWNLOAD_ERROR_0_BYTE_TOLOAD; 
-            
-        }
+//        if(bytesToLoad==0){
+//            downloadLink.setStatus(DownloadLink.STATUS_ERROR_PLUGIN_SPECIFIC);
+//            downloadLink.setStatusText(JDLocale.L("plugins.download.error.0byte","Fehlerhafter Upload"));
+//            return Plugin.DOWNLOAD_ERROR_0_BYTE_TOLOAD; 
+//            
+//        }
         
         
         if(JDUtilities.getController().isLocalFileInProgress(downloadLink)){

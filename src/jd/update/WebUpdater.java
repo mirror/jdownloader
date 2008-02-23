@@ -256,7 +256,7 @@ public class WebUpdater implements Serializable {
         try {
             if (progresslist != null) progresslist.setValue(20);
             
-            if(this.cid>=0){
+            if(this.cid>0){
                 source = getRequest(new URL(listPath+"?cid="+cid)); 
             }else{
                 
@@ -267,13 +267,17 @@ public class WebUpdater implements Serializable {
                 String cid = source.substring(0, source.indexOf("<br>")).trim();
                 if (cid != null){
                     try{
+                  log("New CID: "+cid);
                     this.cid=Integer.parseInt(cid);
                     }catch(Exception e){
+                        log("CID Error: "+cid);
                         this.cid=0;
                     }
                 }
                
 
+            }else{
+                log("NO CID: ");
             }
          
             if (progresslist != null) progresslist.setValue(80);

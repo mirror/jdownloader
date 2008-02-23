@@ -519,7 +519,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
         tab.setPackageName(JDLocale.L("gui.linkgrabber.lbl.newpackage", "neues Package"));
         this.tabList.add(tab);
         tabbedPane.addTab(tab.getPackageName(), tab);
-        logger.finer("ADD new Tab ");
+        //logger.finer("ADD new Tab ");
         // refreshTabbedPane();
         return tab;
     }

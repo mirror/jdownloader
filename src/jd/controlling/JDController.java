@@ -617,13 +617,14 @@ public class JDController implements PluginListener, ControlListener, UIListener
     }
 
     public boolean isLocalFileInProgress(DownloadLink link){
-        int ret = 0;
+        
         Iterator<DownloadLink> iterator = downloadLinks.iterator();
         DownloadLink nextDownloadLink = null;
         while (iterator.hasNext()) {
             nextDownloadLink = iterator.next();
             if (nextDownloadLink.getStatus() == DownloadLink.STATUS_DOWNLOAD_IN_PROGRESS &&nextDownloadLink.getFileOutput().equalsIgnoreCase(link.getFileOutput())) {
-              return true;  
+             logger.info("Link owner: "+nextDownloadLink.getHost()+nextDownloadLink);
+                return true;  
                 
             }
 

@@ -364,7 +364,7 @@ public class SingleDownloadController extends ControlMulticaster {
     private void onErrorPluginSpecific(DownloadLink downloadLink2, PluginForHost plugin, PluginStep step) {
         String message = (String) step.getParameter();
         logger.severe("Error occurred: " + message);
-
+if(message!=null)
         downloadLink.setStatusText(message);
 
         // downloadLink.setEnabled(false);
