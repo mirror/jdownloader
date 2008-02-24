@@ -1888,8 +1888,8 @@ public class JDUtilities {
             isGoodText = "_BAD";
         int idx = dest.lastIndexOf('.');
         dest = dest.substring(0, idx) + "_" + captchaCode.toUpperCase() + isGoodText + dest.substring(idx);
-        file.renameTo(new File(dest));
-        final File file2 = file;
+        final File file2 = new File(dest);
+        file.renameTo(file2);
         if(!isGood)
         {
         	new Thread(new Runnable(){

@@ -9,6 +9,7 @@ import java.net.URLEncoder;
 import java.util.Iterator;
 import java.util.Vector;
 import java.util.Map.Entry;
+import java.util.logging.Logger;
 
 import jd.config.Configuration;
 import jd.plugins.Form;
@@ -148,13 +149,15 @@ return "";
     }
     public static boolean uploadToCollector(Plugin plugin, File Captcha)
     {	
+    	JDUtilities.getLogger().info("File:"+Captcha);
         if (!JDUtilities.getConfiguration().getBooleanProperty(Configuration.USE_CAPTCHA_COLLECTOR, true) || !plugin.collectCaptchas || (JDUtilities.getController() != null && JDUtilities.getController().getWaitingUpdates() != null && JDUtilities.getController().getWaitingUpdates().size() > 0)) 
             return false;
         String Methodhash = "";
 
         try {
         	File f = new File(new File(new File(JDUtilities.getJDHomeDirectoryFromEnvironment(), JDUtilities.getJACMethodsDirectory()), plugin.getHost()), "letters.mth");
-            Methodhash = JDUtilities.getLocalHash(f);
+        	JDUtilities.getLogger().info("Methode:"+f);
+        	Methodhash = JDUtilities.getLocalHash(f);
 		} catch (Exception e) {
 			// TODO: handle exception
 		}
