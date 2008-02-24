@@ -151,7 +151,7 @@ public class oXygenWarez extends PluginForDecrypt {
                         reqinfo = postRequest(new URL(formURL), inpHidden);
                         if (reqinfo.getHtmlCode().contains(ERROR_CAPTCHA)) {
                             if (file != null && plainCaptcha != null) {
-                                JDUtilities.appendInfoToFilename(file, plainCaptcha, false);
+                                JDUtilities.appendInfoToFilename(this, file, plainCaptcha, false);
                             }
                             logger.severe("falscher Captcha-Code");
                             continue; // retry
@@ -164,7 +164,7 @@ public class oXygenWarez extends PluginForDecrypt {
 
                         // Captcha erkannt
                         if (file != null && plainCaptcha != null) {
-                            JDUtilities.appendInfoToFilename(file, plainCaptcha, true);
+                            JDUtilities.appendInfoToFilename(this, file, plainCaptcha, true);
                         }
                         break;
                     }

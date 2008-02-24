@@ -128,7 +128,7 @@ public class BadOngo extends PluginForHost {
 							.setStatus(DownloadLink.STATUS_ERROR_CAPTCHA_WRONG);
 					downloadLink.saveObjects.addFirst(downloadLink.getDownloadURL());
 					step.setStatus(PluginStep.STATUS_ERROR);
-		            JDUtilities.appendInfoToFilename(captchaFile, "_NULL", false);
+		            JDUtilities.appendInfoToFilename(this, captchaFile, "_NULL", false);
 		            cookie=null;
 					return step;
 				}
@@ -143,7 +143,7 @@ public class BadOngo extends PluginForHost {
 							.setStatus(DownloadLink.STATUS_ERROR_CAPTCHA_WRONG);
 					downloadLink.saveObjects.addFirst(downloadLink.getDownloadURL());
 					step.setStatus(PluginStep.STATUS_ERROR);
-		            JDUtilities.appendInfoToFilename(captchaFile, "_"+code, false);
+		            JDUtilities.appendInfoToFilename(this, captchaFile, "_"+code, false);
 		            cookie=null;
 					return step;
 				}
@@ -221,7 +221,7 @@ public class BadOngo extends PluginForHost {
                 if ((errorid=download(downloadLink, urlConnection))==DOWNLOAD_SUCCESS) {
 				step.setStatus(PluginStep.STATUS_DONE);
 				downloadLink.setStatus(DownloadLink.STATUS_DONE);
-                JDUtilities.appendInfoToFilename(captchaFile, "_" + code, true);
+                JDUtilities.appendInfoToFilename(this, captchaFile, "_" + code, true);
                 if(downloadLink.saveObjects.size()>0)
 				return step;
                 else
@@ -237,7 +237,7 @@ public class BadOngo extends PluginForHost {
 				logger.severe("captcha wrong");
 				downloadLink.setStatus(DownloadLink.STATUS_ERROR_CAPTCHA_WRONG);
 				downloadLink.saveObjects.addFirst(downloadLink.getDownloadURL());
-                JDUtilities.appendInfoToFilename(captchaFile, "_" + code, false);
+                JDUtilities.appendInfoToFilename(this, captchaFile, "_" + code, false);
 			    }
 				step.setStatus(PluginStep.STATUS_ERROR);
 			}

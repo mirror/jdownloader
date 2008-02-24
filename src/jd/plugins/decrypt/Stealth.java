@@ -81,7 +81,7 @@ public class Stealth extends PluginForDecrypt {
                     // wird
                     if (request.toString().contains("captcha_img.php")) {
                         if(captchaInfo!=null && captchaInfo.captchaFile!=null && captchaInfo.captchaCode != null){
-                            JDUtilities.appendInfoToFilename(captchaInfo.captchaFile,captchaInfo.captchaCode, false);
+                            JDUtilities.appendInfoToFilename(this, captchaInfo.captchaFile,captchaInfo.captchaCode, false);
                         }
                         String sessid = new Regexp(request.getCookie(), "PHPSESSID=([a-zA-Z0-9]*)").getFirstMatch();
                         if(sessid==null){
@@ -100,7 +100,7 @@ public class Stealth extends PluginForDecrypt {
                     }
                     else {
                         if(captchaInfo!=null && captchaInfo.captchaFile!=null && captchaInfo.captchaCode != null){
-                            JDUtilities.appendInfoToFilename(captchaInfo.captchaFile,captchaInfo.captchaCode, true);
+                            JDUtilities.appendInfoToFilename(this, captchaInfo.captchaFile,captchaInfo.captchaCode, true);
                         }
                         break;
                     }

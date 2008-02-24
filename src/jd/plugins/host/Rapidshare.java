@@ -730,7 +730,7 @@ public class Rapidshare extends PluginForHost {
                         if ((errorid = download(downloadLink, urlConnection, 1024 * getProperties().getIntegerProperty(PROPERTY_BYTES_TO_LOAD, -1))) == DOWNLOAD_SUCCESS) {
                             step.setStatus(PluginStep.STATUS_DONE);
                             downloadLink.setStatus(DownloadLink.STATUS_DONE);
-                            JDUtilities.appendInfoToFilename(captchaFile, actionString + "_" + captchaTxt, true);
+                            JDUtilities.appendInfoToFilename(this, captchaFile, actionString + "_" + captchaTxt, true);
                             return null;
                         }
                         else if (aborted) {
@@ -740,7 +740,7 @@ public class Rapidshare extends PluginForHost {
                         }
                         else {
                             if (errorid != DOWNLOAD_ERROR_DOWNLOAD_INCOMPLETE && errorid != DOWNLOAD_ERROR_INVALID_OUTPUTFILE && errorid != DOWNLOAD_ERROR_OUTPUTFILE_ALREADYEXISTS && errorid != DOWNLOAD_ERROR_RENAME_FAILED && errorid != DOWNLOAD_ERROR_SECURITY) {
-                                JDUtilities.appendInfoToFilename(captchaFile, actionString + "_" + captchaTxt, false);
+                                JDUtilities.appendInfoToFilename(this, captchaFile, actionString + "_" + captchaTxt, false);
                                 downloadLink.setStatus(DownloadLink.STATUS_ERROR_CAPTCHA_WRONG);
                             }
                             step.setStatus(PluginStep.STATUS_ERROR);

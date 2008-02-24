@@ -29,7 +29,7 @@ public class Serienjunkies extends PluginForDecrypt {
 	private boolean next = false;
 
 	private String dynamicCaptcha = "<FORM ACTION=\".*?\" METHOD=\"post\"(?s).*?(?-s)<INPUT TYPE=\"HIDDEN\" NAME=\"s\" VALUE=\"([\\w]*)\">(?s).*?(?-s)<IMG SRC=\"([^\"]*)\"";
-
+    public boolean collectCaptchas =false;
 	public Serienjunkies() {
 		super();
 		steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
@@ -336,7 +336,7 @@ public class Serienjunkies extends PluginForDecrypt {
 				Matcher matcher = patternCaptcha.matcher(reqinfo.getHtmlCode());
 				if (matcher.find()) {
 					if (captchaFile != null && capTxt != null) {
-						JDUtilities.appendInfoToFilename(captchaFile, capTxt,
+						JDUtilities.appendInfoToFilename(this, captchaFile, capTxt,
 								false);
 					}
 					Vector<Vector<String>> gifs = getAllSimpleMatches(reqinfo
@@ -374,7 +374,7 @@ public class Serienjunkies extends PluginForDecrypt {
 
 				} else {
 					if (captchaFile != null && capTxt != null) {
-						JDUtilities.appendInfoToFilename(captchaFile, capTxt,
+						JDUtilities.appendInfoToFilename(this, captchaFile, capTxt,
 								true);
 					}
 					break;
@@ -419,7 +419,7 @@ public class Serienjunkies extends PluginForDecrypt {
 				Matcher matcher = patternCaptcha.matcher(reqinfo.getHtmlCode());
 				if (matcher.find()) {
 					if (captchaFile != null && capTxt != null) {
-						JDUtilities.appendInfoToFilename(captchaFile, capTxt,
+						JDUtilities.appendInfoToFilename(this, captchaFile, capTxt,
 								false);
 					}
 					String captchaAdress = "http://serienjunki.es"
@@ -448,7 +448,7 @@ public class Serienjunkies extends PluginForDecrypt {
 							+ "&c=" + capTxt + "&dl.start=Download");
 				} else {
 					if (captchaFile != null && capTxt != null) {
-						JDUtilities.appendInfoToFilename(captchaFile, capTxt,
+						JDUtilities.appendInfoToFilename(this, captchaFile, capTxt,
 								true);
 					}
 					break;

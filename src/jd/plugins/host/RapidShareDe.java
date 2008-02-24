@@ -212,7 +212,7 @@ public class RapidShareDe extends PluginForHost {
 				downloadLink
 						.setStatus(DownloadLink.STATUS_ERROR_BOT_DETECTED);
 				step.setStatus(PluginStep.STATUS_ERROR);
-	            JDUtilities.appendInfoToFilename(captchaFile, "_NULL", false);
+	            JDUtilities.appendInfoToFilename(this, captchaFile, "_NULL", false);
 				return step;
 			}
 			form.put("captcha", code);
@@ -238,7 +238,7 @@ public class RapidShareDe extends PluginForHost {
 				step.setStatus(PluginStep.STATUS_DONE);
 				
 				downloadLink.setStatus(DownloadLink.STATUS_DONE);
-                JDUtilities.appendInfoToFilename(captchaFile, "_" + code, true);
+                JDUtilities.appendInfoToFilename(this, captchaFile, "_" + code, true);
 				return null;
 			} else if (aborted) {
 				logger.warning("Plugin abgebrochen");
@@ -249,7 +249,7 @@ public class RapidShareDe extends PluginForHost {
                     
 				logger.severe("captcha wrong");
 				downloadLink.setStatus(DownloadLink.STATUS_ERROR_CAPTCHA_WRONG);
-                JDUtilities.appendInfoToFilename(captchaFile, "_" + code, false);
+                JDUtilities.appendInfoToFilename(this, captchaFile, "_" + code, false);
 			    }
 				step.setStatus(PluginStep.STATUS_ERROR);
 			}

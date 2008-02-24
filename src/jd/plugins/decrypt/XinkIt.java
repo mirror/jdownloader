@@ -84,7 +84,7 @@ public class XinkIt extends PluginForDecrypt {
                         logger.info("Captcha Protected");
                         
                 		if(captchaFile!=null && capTxt != null){
-                			JDUtilities.appendInfoToFilename(captchaFile,capTxt, false);
+                			JDUtilities.appendInfoToFilename(this, captchaFile,capTxt, false);
                 		}
                 		
                 		String captchaAdress = "http://xink.it/captcha-" +
@@ -111,7 +111,7 @@ public class XinkIt extends PluginForDecrypt {
     				} else {
     					
     					if (captchaFile!=null && capTxt != null) {
-    						JDUtilities.appendInfoToFilename(captchaFile,capTxt, true);
+    						JDUtilities.appendInfoToFilename(this, captchaFile,capTxt, true);
     					}
     					
     					break;

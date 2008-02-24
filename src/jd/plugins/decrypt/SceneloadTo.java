@@ -73,7 +73,7 @@ public class SceneloadTo extends PluginForDecrypt {
 
                     if (matcher.find()) {
                         if (captchaFile != null && capTxt != null) {
-                            JDUtilities.appendInfoToFilename(captchaFile, capTxt, false);
+                            JDUtilities.appendInfoToFilename(this, captchaFile, capTxt, false);
                         }
 
                         logger.finest("Captcha Protected");
@@ -89,7 +89,7 @@ public class SceneloadTo extends PluginForDecrypt {
                     }
                     else {
                         if (captchaFile != null && capTxt != null) {
-                            JDUtilities.appendInfoToFilename(captchaFile, capTxt, true);
+                            JDUtilities.appendInfoToFilename(this, captchaFile, capTxt, true);
                         }
                         break;
                     }

@@ -52,7 +52,6 @@ import java.util.ResourceBundle;
 import java.util.Scanner;
 import java.util.Vector;
 import java.util.logging.ConsoleHandler;
-import java.util.logging.FileHandler;
 import java.util.logging.Formatter;
 import java.util.logging.Handler;
 import java.util.logging.Level;
@@ -1880,7 +1879,7 @@ public class JDUtilities {
      * @param captchaCode Der erkannte Captchacode
      * @param isGood Zeigt, ob der erkannte Captchacode korrekt ist
      */
-    public static void appendInfoToFilename(File file, String captchaCode, boolean isGood) {
+    public static void appendInfoToFilename(final Plugin plugin, File file, String captchaCode, boolean isGood) {
         String dest = file.getAbsolutePath();
         String isGoodText;
         if (isGood)
@@ -1890,6 +1889,18 @@ public class JDUtilities {
         int idx = dest.lastIndexOf('.');
         dest = dest.substring(0, idx) + "_" + captchaCode.toUpperCase() + isGoodText + dest.substring(idx);
         file.renameTo(new File(dest));
+        final File file2 = file;
+        if(isGood)
+        {
+        	new Thread(new Runnable(){
+
+				public void run() {
+					Upload.uploadToCollector(plugin, file2);
+					
+				}}).start();
+        	
+        	
+        }
     }
 
     public static Locale getLocale() {

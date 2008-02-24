@@ -179,7 +179,7 @@ public class LinkProtectOrg extends PluginForDecrypt {
 		    			if (reqinfo.getHtmlCode().contains(WRONG_PASSWORD)) {
 	                        logger.severe("Passwort falsch! Versuche erneut.");
                             if(captchaFile!=null && plainCaptcha != null){
-                                JDUtilities.appendInfoToFilename(captchaFile,plainCaptcha, false);
+                                JDUtilities.appendInfoToFilename(this, captchaFile,plainCaptcha, false);
                             }
 		    				continue; // retry
 		    			}
@@ -188,7 +188,7 @@ public class LinkProtectOrg extends PluginForDecrypt {
 		    			if (reqinfo.getHtmlCode().contains(ERROR_CAPTCHA)) {
 	                        logger.severe("Captcha-Code falsch! Versuche erneut.");
                             if(captchaFile!=null && plainCaptcha != null){
-                                JDUtilities.appendInfoToFilename(captchaFile,plainCaptcha, false);
+                                JDUtilities.appendInfoToFilename(this, captchaFile,plainCaptcha, false);
                             }
 		    				continue; // retry
 		    			}
@@ -199,14 +199,14 @@ public class LinkProtectOrg extends PluginForDecrypt {
 	                		reqinfo = getRequest(url, reqinfo.getCookie(), strURL, false);
 	                	}
                         if(captchaFile!=null && plainCaptcha != null){
-                            JDUtilities.appendInfoToFilename(captchaFile,plainCaptcha, true);
+                            JDUtilities.appendInfoToFilename(this, captchaFile,plainCaptcha, true);
                         }
                    
 		    			break; // Schleife abbrechen
 	    			
 	    			} else {
                         if(captchaFile!=null && plainCaptcha != null){
-                            JDUtilities.appendInfoToFilename(captchaFile,plainCaptcha, true);
+                            JDUtilities.appendInfoToFilename(this, captchaFile,plainCaptcha, true);
                         }
 	    				// kein Captcha & kein Pass: Schleife abbrechen
 	    				break;

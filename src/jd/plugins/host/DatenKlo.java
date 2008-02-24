@@ -29,7 +29,7 @@ public class DatenKlo extends PluginForHost {
     private Form                 form;
 
     private File                 captchaFile;
-
+    public boolean collectCaptchas =false;
     //
     @Override
     public boolean doBotCheck(File file) {
@@ -219,7 +219,7 @@ public class DatenKlo extends PluginForHost {
                     }
                     else if (size == 160) {
                         logger.severe("captcha wrong");
-                        JDUtilities.appendInfoToFilename(captchaFile, "_" + form.vars.get("down_captcha"), false);
+                        JDUtilities.appendInfoToFilename(this, captchaFile, "_" + form.vars.get("down_captcha"), false);
                         downloadLink.setStatus(DownloadLink.STATUS_ERROR_CAPTCHA_WRONG);
                         step.setStatus(PluginStep.STATUS_ERROR);
                         return step;
