@@ -24,7 +24,7 @@ import jd.utils.JDUtilities;
 public class FileFactory extends PluginForHost {
 	
     static private final String host = "filefactory.com";
-    private String version = "1.5.3";
+    private String version = "1.5.4";
     static private final Pattern patternSupported = Pattern.compile("http://.*?filefactory\\.com/file/.{6}/?", Pattern.CASE_INSENSITIVE);
     
     private static Pattern frameForCaptcha = Pattern.compile("<iframe src=\"/(check[^\"]*)\" frameborder=\"0\"");
@@ -315,6 +315,7 @@ public class FileFactory extends PluginForHost {
                         	
                             downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN);
                             step.setStatus(PluginStep.STATUS_ERROR);
+                            return step;
                             
                         }
                         
@@ -326,8 +327,6 @@ public class FileFactory extends PluginForHost {
                         return step;
                         
                     }
-                    
-                    break;
                     
             }
             
@@ -414,16 +413,25 @@ public class FileFactory extends PluginForHost {
                             
                         }
                         
-                        if ( download(downloadLink, urlConnection) == DOWNLOAD_SUCCESS ) {
+                        int errorid;
+                        
+                        if ( (errorid = download(downloadLink, urlConnection)) == DOWNLOAD_SUCCESS ) {
                         	
                             step.setStatus(PluginStep.STATUS_DONE);
                             downloadLink.setStatus(DownloadLink.STATUS_DONE);
                             return step;
                             
+                        } else if ( errorid == DOWNLOAD_ERROR_OUTPUTFILE_ALREADYEXISTS ) {
+                        	
+                            downloadLink.setStatus(DownloadLink.STATUS_ERROR_ALREADYEXISTS);
+                            step.setStatus(PluginStep.STATUS_ERROR);  
+                            return step;
+                        	
                         } else {       
                         	
                             downloadLink.setStatus(DownloadLink.STATUS_ERROR_PREMIUM);
                             step.setStatus(PluginStep.STATUS_ERROR);
+                            return step;
                             
                         }
                         
@@ -436,8 +444,6 @@ public class FileFactory extends PluginForHost {
                         return step;
                         
                     }
-                    
-                    break;
                     
             }
             

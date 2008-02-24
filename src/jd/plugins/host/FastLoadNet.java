@@ -20,13 +20,14 @@ public class FastLoadNet extends PluginForHost {
     private static final String  CODER                    = "eXecuTe";
     private static final String  HOST                     = "fast-load.net";
     private static final String  PLUGIN_NAME              = HOST;
-    private static final String  PLUGIN_VERSION           = "0.1.1";
+    private static final String  PLUGIN_VERSION           = "0.1.2";
     private static final String  PLUGIN_ID                = PLUGIN_NAME + "-" + PLUGIN_VERSION;
     
     static private final Pattern PAT_SUPPORTED 			  = Pattern.compile("http://.*?fast-load\\.net(/|//)index\\.php\\?pid=[a-zA-Z0-9]+");
-    private static final int	 MAX_SIMULTAN_DOWNLOADS   = 3;
+    private static final int	 MAX_SIMULTAN_DOWNLOADS   = Integer.MAX_VALUE;
     
     private String               downloadURL              = "";
+    private int               	 retries             	  = 0;
     
     // Suchmasken
     private static final String  DOWNLOAD_SIZE            = "<div id=\"dlpan_size\" style=\".*?\">(.*?) MB</div>";
@@ -37,7 +38,6 @@ public class FastLoadNet extends PluginForHost {
     public FastLoadNet() {
         
     	super();
-
         steps.add(new PluginStep(PluginStep.STEP_PAGE, null));
         steps.add(new PluginStep(PluginStep.STEP_DOWNLOAD, null));
         
@@ -80,9 +80,7 @@ public class FastLoadNet extends PluginForHost {
 
     @Override
     public void reset() {
-    	
         this.downloadURL = "";
-        
     }
 
     @Override
@@ -137,7 +135,7 @@ public class FastLoadNet extends PluginForHost {
 
             URL downloadUrl = new URL(downloadLink.getDownloadURL());
 
-            switch (step.getStep()) {
+            switch ( step.getStep() ) {
             	
                 case PluginStep.STEP_PAGE:
                 	
@@ -180,28 +178,38 @@ public class FastLoadNet extends PluginForHost {
                     if ( Math.abs(length - downloadLink.getDownloadMax()) > 1024*1024 ) {
                         
                     	logger.warning(JDLocale.L("plugins.host.general.filesizeError", "Dateigrößenfehler"));
-                        downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN);
-                        step.setStatus(PluginStep.STATUS_ERROR);
-                        return step;
+                    	downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN_RETRY);
+                    	step.setStatus(PluginStep.STATUS_ERROR);
+                    	retries++;
+                    	return step;
                         
                     }
                     
                     downloadLink.setDownloadMax(length);
-                	
+                    int errorid;
+
                     // Download starten
-                   if ( download(downloadLink, urlConnection) != DOWNLOAD_SUCCESS ) {
-                	   
-                       step.setStatus(PluginStep.STATUS_ERROR);
-                       
-                   } else {
-                	   
-                       step.setStatus(PluginStep.STATUS_DONE);
-                       downloadLink.setStatus(DownloadLink.STATUS_DONE);
-                
-                   }
-                   
-                   return step;
-                   
+                    if ( (errorid = download(downloadLink, urlConnection)) == DOWNLOAD_SUCCESS ) {
+                    	
+                    	step.setStatus(PluginStep.STATUS_DONE);
+                    	downloadLink.setStatus(DownloadLink.STATUS_DONE);
+                    	return step;
+                    	
+                    } else if ( errorid == DOWNLOAD_ERROR_OUTPUTFILE_ALREADYEXISTS ) {
+                    	
+                    	downloadLink.setStatus(DownloadLink.STATUS_ERROR_ALREADYEXISTS);
+                    	step.setStatus(PluginStep.STATUS_ERROR);  
+                    	return step;
+                   		
+                    } else {       
+                    	
+                    	downloadLink.setStatus(DownloadLink.STATUS_ERROR_PREMIUM);
+                    	step.setStatus(PluginStep.STATUS_ERROR);
+                    	
+                    }
+                    
+                    return step;
+                    
             }
             
             return step;
