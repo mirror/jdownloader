@@ -20,14 +20,13 @@ public class FastLoadNet extends PluginForHost {
     private static final String  CODER                    = "eXecuTe";
     private static final String  HOST                     = "fast-load.net";
     private static final String  PLUGIN_NAME              = HOST;
-    private static final String  PLUGIN_VERSION           = "0.1.2";
+    private static final String  PLUGIN_VERSION           = "0.1.3";
     private static final String  PLUGIN_ID                = PLUGIN_NAME + "-" + PLUGIN_VERSION;
     
     static private final Pattern PAT_SUPPORTED 			  = Pattern.compile("http://.*?fast-load\\.net(/|//)index\\.php\\?pid=[a-zA-Z0-9]+");
     private static final int	 MAX_SIMULTAN_DOWNLOADS   = Integer.MAX_VALUE;
     
     private String               downloadURL              = "";
-    private int               	 retries             	  = 0;
     
     // Suchmasken
     private static final String  DOWNLOAD_SIZE            = "<div id=\"dlpan_size\" style=\".*?\">(.*?) MB</div>";
@@ -180,7 +179,6 @@ public class FastLoadNet extends PluginForHost {
                     	logger.warning(JDLocale.L("plugins.host.general.filesizeError", "Dateigrößenfehler"));
                     	downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN_RETRY);
                     	step.setStatus(PluginStep.STATUS_ERROR);
-                    	retries++;
                     	return step;
                         
                     }

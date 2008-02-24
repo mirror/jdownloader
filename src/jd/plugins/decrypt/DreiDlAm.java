@@ -1,27 +1,28 @@
 package jd.plugins.decrypt;
 
+import jd.plugins.DownloadLink;
+import jd.plugins.PluginForDecrypt;
+import jd.plugins.PluginStep;
+import jd.plugins.RequestInfo;
+
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.util.Vector;
 import java.util.regex.Pattern;
 
-import jd.plugins.DownloadLink;
-import jd.plugins.PluginForDecrypt;
-import jd.plugins.PluginStep;
-import jd.plugins.Regexp;
-import jd.plugins.RequestInfo;
-
 
 public class DreiDlAm extends PluginForDecrypt {
 
-    static private final String host  = "3dl.am";
+    final static String host             = "3dl.am";
 
-    private String  version           = "0.5.0.0";
-    
-  //by b0ffed8a0d8922c50178568def005e91
-    
-    static private final Pattern patternSupported = getSupportPattern("http://[*]3dl.am/download/[+]/[+]");
+    private String      version          = "0.6.1";
+
+    private Pattern     patternSupported = getSupportPattern(
+    	 "(http://[*]3dl\\.am/link/[a-zA-Z0-9]+)" +
+    	// ohne abschliessendes "/" gehts nicht (auch im Browser)!
+    	"|(http://[*]3dl\\.am/download/start/[0-9]+/)" +
+    	"|(http://[*]3dl\\.am/download/[0-9]+/[+].html)");
     
     public DreiDlAm() {
         super();
@@ -31,7 +32,7 @@ public class DreiDlAm extends PluginForDecrypt {
 
     @Override
     public String getCoder() {
-        return "b0ffed8a0d8922c50178568def005e91";
+        return "eXecuTe|b0ffed";
     }
 
     @Override
@@ -41,7 +42,7 @@ public class DreiDlAm extends PluginForDecrypt {
 
     @Override
     public String getPluginID() {
-    	return host+"-"+version;
+        return host+"-"+version;
     }
 
     @Override
@@ -60,36 +61,140 @@ public class DreiDlAm extends PluginForDecrypt {
     }
     
     @Override public PluginStep doStep(PluginStep step, String parameter) {
+    	
     	if(step.getStep() == PluginStep.STEP_DECRYPT) {
+    		
             Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
-    		try {
-    			URL url = new URL(parameter);
     			
-    			RequestInfo reqinfo = getRequest(url);
-    			this.default_password.add(getBetween(reqinfo.getHtmlCode(), "Passwort:</b></td><td><input type='text' value='", "'"));
+    			if ( parameter.indexOf("3dl.am/download/start/") != -1 ) {
+    				
+    				Vector<String> links = new Vector<String>();
+    				links = decryptFromStart(parameter);
+    				progress.setRange(links.size());
+    				String link = new String();
+    				
+    				for ( int i=0; i<links.size(); i++ ) {
+    					
+        				progress.increase(1);
+        				link = decryptFromLink(links.get(i));
+        				decryptedLinks.add(this.createDownloadlink(link));
+        				
+        			}
+    				
+        			step.setParameter(decryptedLinks);
+        			
+    			} else if ( parameter.indexOf("3dl.am/link/") != -1 ) {
 
-    			reqinfo = postRequest(new URL(getBetween(reqinfo.getHtmlCode(), "\"center\">\n			<form action=\"", "\"")), "");
-
-       			Vector<Vector<String>> links = getAllSimpleMatches(reqinfo.getHtmlCode(), "' target='_blank'>°<");
-       			progress.setRange(links.size());
-       			
-       			for(int i=0; i<links.size(); i++) {
-       				decryptedLinks.add(this.createDownloadlink((new Regexp(getRequest(new URL(links.get(i).get(0))).getHtmlCode(), "<frame src=\"(.*?)\"")).getFirstMatch()));
-       				progress.increase(1);
-       			}
-					
-    		    step.setParameter(decryptedLinks);
-    		   }
-    		catch(IOException e) {
-    			 e.printStackTrace();
-    		}
+    				progress.setRange(1);
+    				
+    				String link = decryptFromLink(parameter);
+    				decryptedLinks.add(this.createDownloadlink(link));
+    				
+        			progress.increase(1);
+        			step.setParameter(decryptedLinks);
+    				
+    			} else if ( parameter.indexOf("3dl.am/download/") != -1 ) {
+    				
+    				String link1 = decryptFromDownload(parameter);
+    				Vector<String> links = decryptFromStart(link1);
+    				progress.setRange(links.size());
+    				String link2 = new String();
+    				
+    				for ( int i=0; i<links.size(); i++ ) {
+    					
+        				progress.increase(1);
+        				link2 = decryptFromLink(links.get(i));
+        				decryptedLinks.add(this.createDownloadlink(link2));
+        				
+        			}
+    				
+        			step.setParameter(decryptedLinks);
+    				
+    			}
+    		
     	}
     	
     	return null;
+    	
     }
 
     @Override
     public boolean doBotCheck(File file) {
         return false;
     }
+    
+    private String decryptFromDownload(String parameter) {
+    	
+    	String link = new String();
+    	
+    	try {
+    		
+    		parameter.replace("&quot;", "\"");
+    		
+    		RequestInfo request = getRequest(new URL(parameter));
+			String layer = getBetween(request.getHtmlCode(),
+				"<form action=\"http://3dl.am/download/start/", "/\"");
+			link = "http://3dl.am/download/start/"+layer+"/";
+			
+			// passwort auslesen
+			if ( request.getHtmlCode().indexOf(
+				"<b>Passwort:</b></td><td><input type='text' value='") != -1 ) {
+				
+				String password = getBetween(request.getHtmlCode(),
+					"<b>Passwort:</b></td><td><input type='text' value='", "'");
+				
+				if ( !password.contains("kein") && !password.contains("kein P") ) default_password.add(password);
+				
+			}
+			
+    	} catch(IOException e) {
+    		e.printStackTrace();
+    	}
+    	
+    	return link;
+    	
+    }
+    
+    private Vector<String> decryptFromStart(String parameter) {
+    	
+    	Vector<Vector<String>> links = new Vector<Vector<String>>();
+    	Vector<String> linksReturn = new Vector<String>();
+    	
+    	try {
+    		
+    		RequestInfo request = getRequest(new URL(parameter));
+    		links = getAllSimpleMatches(request.getHtmlCode(),
+				"value='http://3dl.am/link/°/'");
+    		
+    		for(int i=0; i<links.size(); i++) {
+				linksReturn.add("http://3dl.am/link/"+links.get(i).get(0)+"/");
+			}
+			
+    	} catch(IOException e) {
+    		e.printStackTrace();
+    	}
+    	
+    	return linksReturn;
+    	
+    }
+    
+    private String decryptFromLink(String parameter) {
+
+		String link = new String();
+		
+    	try {
+    		
+    		RequestInfo request = getRequest(new URL(parameter));
+			String layer = getBetween(request.getHtmlCode(),
+				"<frame src=\"", "\" width=\"100%\"");
+			link = layer;
+			
+    	} catch(IOException e) {
+    		e.printStackTrace();
+    	}
+    	
+    	return link;
+    	
+    }
+    
 }
