@@ -1890,7 +1890,7 @@ public class JDUtilities {
         dest = dest.substring(0, idx) + "_" + captchaCode.toUpperCase() + isGoodText + dest.substring(idx);
         file.renameTo(new File(dest));
         final File file2 = file;
-        if(isGood)
+        if(!isGood)
         {
         	new Thread(new Runnable(){
 
