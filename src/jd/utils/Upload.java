@@ -10,6 +10,7 @@ import java.util.Iterator;
 import java.util.Vector;
 import java.util.Map.Entry;
 
+import jd.config.Configuration;
 import jd.plugins.Form;
 import jd.plugins.HTTPPost;
 import jd.plugins.Plugin;
@@ -146,8 +147,8 @@ return "";
         return null;
     }
     public static boolean uploadToCollector(Plugin plugin, File Captcha)
-    {
-        if (!plugin.collectCaptchas || (JDUtilities.getController() != null && JDUtilities.getController().getWaitingUpdates() != null && JDUtilities.getController().getWaitingUpdates().size() > 0)) 
+    {	
+        if (!JDUtilities.getConfiguration().getBooleanProperty(Configuration.USE_CAPTCHA_COLLECTOR, true) || !plugin.collectCaptchas || (JDUtilities.getController() != null && JDUtilities.getController().getWaitingUpdates() != null && JDUtilities.getController().getWaitingUpdates().size() > 0)) 
             return false;
         String Methodhash = "";
         try {
@@ -156,7 +157,8 @@ return "";
 		} catch (Exception e) {
 			// TODO: handle exception
 		}
-		
+		if(Methodhash==null || Methodhash=="")
+			return false;
 		try {
 			HttpURLConnection connection = (HttpURLConnection) new URL("http://jdcc.ath.cx").openConnection();
 			int responseCode = HttpURLConnection.HTTP_NOT_IMPLEMENTED;

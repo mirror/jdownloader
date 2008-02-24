@@ -98,7 +98,7 @@ public class ConfigPanelCaptcha extends ConfigPanel implements MouseListener{
         ce= new GUIConfigEntry( new ConfigEntry(ConfigContainer.TYPE_SPINNER, configuration, Configuration.PARAM_CAPTCHA_INPUT_SHOWTIME, JDLocale.L("gui.config.captcha.show_input_dialog","Zeige den Eingabedialog"),0,180).setDefaultValue(0));
         addGUIConfigEntry(ce);
        
-        ce= new GUIConfigEntry( new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, configuration, Configuration.PARAM_CAPTCHA_JAC_DISABLE, JDLocale.L("gui.config.captcha.jac_disable","Automatische Bilderkennung abschalten")).setDefaultValue(false));
+        ce= new GUIConfigEntry( new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, configuration, Configuration.USE_CAPTCHA_COLLECTOR, JDLocale.L("gui.config.captcha.use_collector","nicht erkannte Captchas Online sammeln lassen")).setDefaultValue(true).setExpertEntry(true));
         addGUIConfigEntry(ce);
         
         ce= new GUIConfigEntry( new ConfigEntry(ConfigContainer.TYPE_LABEL, JDLocale.L("gui.config.captcha.jac_methods","Automatische Bilderkennung verwenden für:")));
