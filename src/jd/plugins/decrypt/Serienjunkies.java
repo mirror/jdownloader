@@ -22,7 +22,7 @@ import jd.utils.JDUtilities;
 public class Serienjunkies extends PluginForDecrypt {
 	private static final String host = "Serienjunkies.org";
 
-	private String version = "4.4.0.0";
+	private String version = "4.5.0.0";
 
 	private Pattern patternCaptcha = null;
 
@@ -413,6 +413,8 @@ public class Serienjunkies extends PluginForDecrypt {
 		try {
 			url = url.replaceAll("safe/rc", "safe/frc");
 			url = url.replaceAll("save/rc", "save/frc");
+			url = url.replaceAll("save/rs", "save/frs");
+			url = url.replaceAll("safe/rs", "safe/frs");
 			RequestInfo reqinfo = getRequest(new URL(url));
 			String cookie = reqinfo.getCookie();
 			File captchaFile = null;
@@ -427,7 +429,6 @@ public class Serienjunkies extends PluginForDecrypt {
 					}
 					String captchaAdress = "http://serienjunki.es"
 							+ matcher.group(2);
-					System.out.println(captchaAdress);
 					captchaFile = getLocalCaptchaFile(this, ".gif");
 					fileDownloaded = JDUtilities.download(captchaFile,
 							getRequestWithoutHtmlCode(new URL(captchaAdress),
