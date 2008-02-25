@@ -6,6 +6,7 @@ import java.util.logging.Logger;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.Configuration;
+import jd.controlling.interaction.CaptchaMethodLoader;
 import jd.controlling.interaction.Interaction;
 import jd.controlling.interaction.Unrar;
 import jd.event.ControlEvent;
@@ -139,6 +140,7 @@ public class SingleDownloadController extends ControlMulticaster {
                         else {
                             fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_CAPTCHA_LOADED, captcha));
                             downloadLink.setLatestCaptchaFile(captcha);
+                            
                             if (plugin.doBotCheck(captcha)) {
                                 downloadLink.setStatus(DownloadLink.STATUS_ERROR_BOT_DETECTED);
                                 step.setStatus(PluginStep.STATUS_ERROR);
@@ -150,7 +152,8 @@ public class SingleDownloadController extends ControlMulticaster {
                             // if
                             // (!Interaction.handleInteraction((Interaction.INTERACTION_DOWNLOAD_CAPTCHA),
                             // downloadLink, 0)) {
-                            String captchaText = JDUtilities.getCaptcha(plugin, null, captcha, false);
+                           
+                            String captchaText =  Plugin.getCaptchaCode(captcha, plugin);
                             logger.info("CaptchaCode: " + captchaText);
                             downloadLink.setStatusText(JDLocale.L("controller.status.captchacode", "Code: ") + captchaText);
                             fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SINGLE_DOWNLOAD_CHANGED, downloadLink));
@@ -580,7 +583,7 @@ if(message!=null)
 
         downloadLink.setStatusText(JDLocale.L("controller.status.botDetected", "Bot erkannt/Reconnect"));
         fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SINGLE_DOWNLOAD_CHANGED, downloadLink));
-
+        new CaptchaMethodLoader().interact(plugin.getHost());
         if (plugin.getBotWaittime() < 0 && controller.reconnect()) {
             downloadLink.setStatus(DownloadLink.STATUS_TODO);
             downloadLink.setEndOfWaittime(0);

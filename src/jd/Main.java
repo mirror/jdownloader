@@ -2,7 +2,6 @@ package jd;
 
 import java.awt.Graphics;
 import java.awt.Image;
-import java.io.IOException;
 import java.util.Iterator;
 import java.util.Properties;
 import java.util.TreeSet;
@@ -11,11 +10,10 @@ import java.util.logging.Logger;
 
 import javax.swing.JWindow;
 
-import sun.misc.BASE64Decoder;
-
 import jd.captcha.JACController;
 import jd.config.Configuration;
 import jd.controlling.JDController;
+import jd.controlling.interaction.CaptchaMethodLoader;
 import jd.controlling.interaction.Interaction;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.utils.JDLocale;
@@ -159,6 +157,8 @@ logger.info(System.getProperty("java.class.path"));
         logger.info("jd.run="+JDUtilities.getRunType());
         logger.info("jd.lastAuthor="+JDUtilities.getLastChangeAuthor());   
         logger.info("jd.appDir="+JDUtilities.getCurrentWorkingDirectory(null));
+        
+       
    
     }
     

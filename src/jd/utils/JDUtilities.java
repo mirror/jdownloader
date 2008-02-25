@@ -72,6 +72,7 @@ import org.w3c.dom.Document;
 import jd.JDClassLoader;
 import jd.JDFileFilter;
 import jd.captcha.JAntiCaptcha;
+import jd.captcha.LetterComperator;
 import jd.captcha.pixelgrid.Captcha;
 import jd.config.Configuration;
 import jd.config.SubConfiguration;
@@ -734,11 +735,30 @@ public class JDUtilities {
             Captcha captcha = jac.createCaptcha(captchaImage);
             String captchaCode = jac.checkCaptcha(captcha);
             logger.info("Code: " + captchaCode);
-            return captchaCode;
+            logger.info("Vality: "+captcha.getValityPercent());
+            plugin.setLastCaptcha(captcha);
+            String code=null;
+            plugin.setCaptchaDetectID(Plugin.CAPTCHA_JAC);
+            LetterComperator[] lcs = captcha.getLetterComperators();
+            double vp=0.0;
+            for( int i=0; i<lcs.length;i++){
+                vp=Math.max(vp,lcs[i].getValityPercent());
+            }
+            logger.info("worst letter: "+vp);
+            if(captcha.getValityPercent()>18.0){
+                plugin.setCaptchaDetectID(Plugin.CAPTCHA_USER_INPUT);
+                code=getController().getCaptchaCodeFromUser(plugin, file,captchaCode);
+            }else{
+                return captchaCode;
+            }
+            
+            if(code.equals(captchaCode))return captchaCode;
+           
+            return code;
         }
 
         else {
-            return getController().getCaptchaCodeFromUser(plugin, file);
+            return getController().getCaptchaCodeFromUser(plugin, file,null);
         }
     }
 
@@ -1462,7 +1482,59 @@ public class JDUtilities {
         }
         return false;
     }
+    public static boolean downloadBinary(String filepath, String fileurl) {
 
+        try {
+            fileurl = urlEncode(fileurl.replaceAll("\\\\", "/"));
+            File file = new File(filepath);
+            if (file.isFile()) {
+                if (!file.delete()) {
+                    logger.info("Konnte Datei nicht löschen " + file);
+                    return false;
+                }
+
+            }
+
+            if (file.getParentFile() != null && !file.getParentFile().exists()) {
+                file.getParentFile().mkdirs();
+            }
+            file.createNewFile();
+
+            BufferedOutputStream output = new BufferedOutputStream(new FileOutputStream(file, true));
+            fileurl = URLDecoder.decode(fileurl, "UTF-8");
+
+            URL url = new URL(fileurl);
+            URLConnection con = url.openConnection();
+
+            BufferedInputStream input = new BufferedInputStream(con.getInputStream());
+
+            byte[] b = new byte[1024];
+            int len;
+            while ((len = input.read(b)) != -1) {
+                output.write(b, 0, len);
+            }
+            output.close();
+            input.close();
+
+            return true;
+        }
+        catch (FileNotFoundException e) {
+            e.printStackTrace();
+            return false;
+
+        }
+        catch (MalformedURLException e) {
+            e.printStackTrace();
+            return false;
+
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+            return false;
+
+        }
+
+    }
     /**
      * Lädt über eine URLConnection eine datei ehrunter. Zieldatei ist file.
      * 

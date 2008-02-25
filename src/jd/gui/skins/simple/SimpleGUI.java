@@ -982,10 +982,12 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         }
     }
 
-    public String getCaptchaCodeFromUser(Plugin plugin, File captchaAddress) {
-        CaptchaDialog captchaDialog = new CaptchaDialog(frame, plugin, captchaAddress);
+    public String getCaptchaCodeFromUser(Plugin plugin, File captchaAddress,String def) {
+        CaptchaDialog captchaDialog = new CaptchaDialog(frame, plugin, captchaAddress,def);
         // frame.toFront();
+      
         captchaDialog.setVisible(true);
+        logger.info("Returned: "+captchaDialog.getCaptchaText());
         return captchaDialog.getCaptchaText();
     }
 

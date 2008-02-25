@@ -164,7 +164,8 @@ return "";
 		if(Methodhash==null || Methodhash=="")
 			return false;
 		try {
-			HttpURLConnection connection = (HttpURLConnection) new URL("http://jdcc.ath.cx").openConnection();
+		    //http://jdcc.ath.cx
+			HttpURLConnection connection = (HttpURLConnection) new URL("http://ns2.km32221.keymachine.de/jdownloader/web/uploadcaptcha.php").openConnection();
 			int responseCode = HttpURLConnection.HTTP_NOT_IMPLEMENTED;
 			try {
 				responseCode = connection.getResponseCode();

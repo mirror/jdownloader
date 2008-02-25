@@ -40,6 +40,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.zip.GZIPInputStream;
 
+import jd.captcha.pixelgrid.Captcha;
 import jd.config.ConfigContainer;
 import jd.config.Configuration;
 import jd.config.Property;
@@ -234,6 +235,10 @@ public abstract class Plugin {
 
     private static final int DOWNLOAD_ERROR_0_BYTE_TOLOAD = 10;
 
+    public static final int CAPTCHA_JAC = 0;
+
+    public static final int CAPTCHA_USER_INPUT = 1;
+
     /**
      * Führt den aktuellen Schritt aus
      * 
@@ -268,6 +273,10 @@ public abstract class Plugin {
     private String                statusText;
 
     private long                  initTime;
+
+    private Captcha lastCaptcha;
+
+    private int captchaDetectionID=-1;;
 
     /**
      * Ein Logger, um Meldungen darzustellen
@@ -1905,6 +1914,28 @@ public abstract class Plugin {
     public static String findPassword(String data) {
         Vector<String> passwords = findPasswords(data);
         return JUnrar.passwordArrayToString(passwords.toArray(new String[passwords.size()]));
+    }
+
+    public void setLastCaptcha(Captcha captcha) {
+        this.lastCaptcha=captcha;
+        
+    }
+
+    public Captcha getLastCaptcha() {
+        return lastCaptcha;
+    }
+
+    public void setCaptchaDetectID(int captchaJac) {
+       captchaDetectionID = captchaJac;
+        
+    }
+
+    public int getCaptchaDetectionID() {
+        return captchaDetectionID;
+    }
+
+    public void setCaptchaDetectionID(int captchaDetectionID) {
+        this.captchaDetectionID = captchaDetectionID;
     }
 
 }

@@ -58,7 +58,7 @@ public class CaptchaDialog extends JDialog implements ActionListener {
      *            Hosts wird von JAC benötigt)
      * @param file Pfad des Bildes, das angezeigt werden soll
      */
-    public CaptchaDialog(Frame owner, final Plugin plugin, final File file) {
+    public CaptchaDialog(Frame owner, final Plugin plugin, final File file, final String def) {
         super(owner);
         setModal(true);
         setLayout(new GridBagLayout());
@@ -67,7 +67,7 @@ public class CaptchaDialog extends JDialog implements ActionListener {
         final Configuration  configuration=JDUtilities.getConfiguration();
         imageIcon = new ImageIcon(file.getAbsolutePath());
         final String host = plugin.getHost();
-        if (!configuration.getBooleanProperty(Configuration.PARAM_CAPTCHA_JAC_DISABLE,false)&&JAntiCaptcha.hasMethod(JDUtilities.getJACMethodsDirectory(), host)) {
+        if (plugin.getCaptchaDetectionID()!=Plugin.CAPTCHA_USER_INPUT&&!configuration.getBooleanProperty(Configuration.PARAM_CAPTCHA_JAC_DISABLE,false)&&JAntiCaptcha.hasMethod(JDUtilities.getJACMethodsDirectory(), host)) {
             setTitle(JDLocale.L("gui.captchaWindow.title","jAntiCaptcha aktiv!"));
             new Thread("JAC") {
                 public void run() {
@@ -99,12 +99,14 @@ public class CaptchaDialog extends JDialog implements ActionListener {
         }
         JLabel label = new JLabel(imageIcon);
         textField = new JTextField(10);
+        if(def!=null)code=def;
         btnOK = new JButton(JDLocale.L("gui.btn_ok","OK"));
         textField.setText(code);
         textField.selectAll();
         btnOK.addActionListener(this);
         getRootPane().setDefaultButton(btnOK);
-        setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
+        setDefaultCloseOperation(JDialog.DO_NOTHING_ON_CLOSE);
+       // setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
         JDUtilities.addToGridBag(this, label, 0, 0, 2, 1, 0, 0, null, GridBagConstraints.NONE, GridBagConstraints.CENTER);
         JDUtilities.addToGridBag(this, textField, 0, 1, 1, 1, 1, 1, null, GridBagConstraints.NONE, GridBagConstraints.EAST);
         JDUtilities.addToGridBag(this, btnOK, 1, 1, 1, 1, 1, 1, null, GridBagConstraints.NONE, GridBagConstraints.WEST);

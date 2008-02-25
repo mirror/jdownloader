@@ -915,9 +915,9 @@ public class JDController implements PluginListener, ControlListener, UIListener
      * @param captchaAddress Adresse des anzuzeigenden Bildes
      * @return Text des Captchas
      */
-    public String getCaptchaCodeFromUser(Plugin plugin, File captchaAddress) {
-        String captchaCode = uiInterface.getCaptchaCodeFromUser(plugin, captchaAddress);
-        return captchaCode;
+    public String getCaptchaCodeFromUser(Plugin plugin, File captchaAddress,String def) {
+        String captchaCode = uiInterface.getCaptchaCodeFromUser(plugin, captchaAddress,def);
+        return captchaCode; 
     }
 
     /**

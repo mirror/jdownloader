@@ -548,4 +548,8 @@ public class WebUpdater implements Serializable {
         this.cid = cid;
     }
 
+    public String getOnlinePath() {
+        return onlinePath;
+    }
+
 }

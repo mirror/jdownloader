@@ -997,7 +997,7 @@ logger.info(methodsPath);
 
         if (letters == null) {
             captcha.setValityPercent(100.0);
-            if (JAntiCaptcha.isLoggerActive()) logger.severe("Captcha konnte nicht erkannt werden!1");
+            if (JAntiCaptcha.isLoggerActive()) logger.severe("Captcha konnte nicht erkannt werden!");
             return null;
         }
         // if (letters.length != this.getLetterNum()) {

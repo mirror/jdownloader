@@ -28,7 +28,7 @@ public interface UIInterface {
      * @param captchaAddress Die Adresse des Captchas
      * @return Der erkannte Text
      */
-    public String getCaptchaCodeFromUser(Plugin plugin, File captchaAddress);
+    public String getCaptchaCodeFromUser(Plugin plugin, File captchaAddress,String def);
     /**
      * Legt alle DownloadLinks fest
      * 

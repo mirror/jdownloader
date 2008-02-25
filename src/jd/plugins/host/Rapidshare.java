@@ -72,8 +72,10 @@ import java.util.Vector;
 import java.util.Map.Entry;
 import java.util.regex.Pattern;
 
+import jd.captcha.LetterComperator;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
+import jd.controlling.interaction.CaptchaMethodLoader;
 import jd.plugins.DownloadLink;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForHost;
@@ -388,10 +390,10 @@ public class Rapidshare extends PluginForHost {
             ERRORS--;
             if(ERRORS<0)ERRORS=0;
         }
-        if(ERRORS>5){
-            JDUtilities.getGUI().showMessageDialog(JDLocale.L("plugins.hoster.rapidshare.com.offline", "Keine Internetverbindung vermutet. "));
-            System.exit(1);
-        }
+//        if(ERRORS>5){
+//            JDUtilities.getGUI().showMessageDialog(JDLocale.L("plugins.hoster.rapidshare.com.offline", "Keine Internetverbindung vermutet. "));
+//            System.exit(1);
+//        }
         return st;
     }
 
@@ -682,6 +684,8 @@ public class Rapidshare extends PluginForHost {
             case PluginStep.STEP_DOWNLOAD:
                 if (steps.get(2).getParameter() == null) {
                     // Bot Erkannt }
+                    logger.info("BOT detected. Update captchafile");
+                    new CaptchaMethodLoader().interact("rapidshare.com");
                     logger.severe("Fehler. Bot erkennung fehlerhaft");
                 }
                 else {
@@ -731,6 +735,21 @@ public class Rapidshare extends PluginForHost {
                             step.setStatus(PluginStep.STATUS_DONE);
                             downloadLink.setStatus(DownloadLink.STATUS_DONE);
                             JDUtilities.appendInfoToFilename(this, captchaFile, actionString + "_" + captchaTxt, true);
+                            if(this.getCaptchaDetectionID()==Plugin.CAPTCHA_USER_INPUT&&this.getLastCaptcha()!=null&& this.getLastCaptcha().getLetterComperators()!=null){
+                              LetterComperator[] lcs = this.getLastCaptcha().getLetterComperators();
+                              if(lcs.length==captchaTxt.trim().length()){
+                                for( int i=0; i<captchaTxt.length();i++){
+                               
+                                   if(captchaTxt.substring(i,i+1).equalsIgnoreCase(lcs[i].getDecodedValue())){
+                                       logger.severe("OK letter: "+i+": JAC:"+lcs[i].getDecodedValue()+"("+lcs[i].getValityPercent()+") USER: "+captchaTxt.substring(i,i+1));
+                                       
+                                   }else{
+                                       logger.severe("Unknown letter: "+i+": JAC:"+lcs[i].getDecodedValue()+"("+lcs[i].getValityPercent()+") USER: "+captchaTxt.substring(i,i+1));
+                                   }
+                               }
+                              }
+                                
+                            }
                             return null;
                         }
                         else if (aborted) {
@@ -742,6 +761,8 @@ public class Rapidshare extends PluginForHost {
                             if (errorid != DOWNLOAD_ERROR_DOWNLOAD_INCOMPLETE && errorid != DOWNLOAD_ERROR_INVALID_OUTPUTFILE && errorid != DOWNLOAD_ERROR_OUTPUTFILE_ALREADYEXISTS && errorid != DOWNLOAD_ERROR_RENAME_FAILED && errorid != DOWNLOAD_ERROR_SECURITY) {
                                 JDUtilities.appendInfoToFilename(this, captchaFile, actionString + "_" + captchaTxt, false);
                                 downloadLink.setStatus(DownloadLink.STATUS_ERROR_CAPTCHA_WRONG);
+                                logger.info("Error detected. Update captchafile");
+                                new CaptchaMethodLoader().interact("rapidshare.com");
                             }
                             step.setStatus(PluginStep.STATUS_ERROR);
                         }
@@ -1071,7 +1092,7 @@ public class Rapidshare extends PluginForHost {
                             step.setStatus(PluginStep.STATUS_TODO);
                         }
                         else {
-                         
+                          
                             step.setStatus(PluginStep.STATUS_ERROR);
                         }
                     }
