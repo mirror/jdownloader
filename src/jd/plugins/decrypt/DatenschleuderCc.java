@@ -11,15 +11,16 @@ import jd.config.ConfigEntry;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
+import jd.utils.JDLocale;
 
 public class DatenschleuderCc extends PluginForDecrypt {
 	
     final static String host = "datenschleuder.cc";
-    private String version = "0.1.0";
+    private String version = "0.2.0";
     private Pattern patternSupported = getSupportPattern("http://[*]datenschleuder\\.cc/dl/(id|dir)/[0-9]+/[a-zA-Z0-9]+/[+]");
     
     private static final String[] USEARRAY = new String[] {
-		"Rapidshare.com", "Netload.in", "Uploaded.to", "Datenklo.net",
+		"Rapidshare.com", "Netload.in", "Uploaded.to", "Datenklo.net", "Share.Gulli.com",
 		"Archiv.to", "Bluehost.to", "Share-Online.biz", "Speedshare.org" };
     
     public DatenschleuderCc() {
@@ -95,12 +96,15 @@ public class DatenschleuderCc extends PluginForDecrypt {
                 	
                 	reqinfo = getRequest(new URL("http://www.datenschleuder.cc/redir.php?id="+links.get(i).get(0)));
                 	String link = getBetween(reqinfo.getHtmlCode(), "<frame src=\"", "\" name=\"dl\">");
-    				progress.increase(1);
+    				link = link.replace("http://anonym.to?", "");
+                	progress.increase(1);
     				
                     if ( getUseConfig(link) ) decryptedLinks.add(createDownloadlink(link));
                     
                 }
                 
+                logger.info(decryptedLinks.size() + " "
+                		+ JDLocale.L("plugins.decrypt.general.downloadsDecrypted", "Downloads entschlüsselt"));
                 step.setParameter(decryptedLinks);
                 
             } catch (IOException e) {
@@ -117,7 +121,8 @@ public class DatenschleuderCc extends PluginForDecrypt {
     	
         ConfigEntry cfg;
         
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_LABEL,"Hoster Auswahl"));
+        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_LABEL,
+        		JDLocale.L("plugins.decrypt.general.hosterSelection", "Hoster Auswahl")));
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         
         for ( int i = 0; i < USEARRAY.length; i++ ) {

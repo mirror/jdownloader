@@ -12,15 +12,16 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginStep;
 import jd.plugins.Regexp;
 import jd.plugins.RequestInfo;
+import jd.utils.JDLocale;
 
 public class XliceNet extends PluginForDecrypt {
     final static String host = "xlice.net";
-    private static final String[] USEARRAY = new String[] { "rapidshare.com",
-            "bluehost.to", "datenklo.net", "fastshare.org", "files.to",
-            "share.gulli.com", "load.to", "netload.in", "sharebase.de",
-            "share-online.biz", "simpleupload.net", "uploaded.to",
-            "uploadstube.de" };
-    private String version = "2.0.1";
+    private static final String[] USEARRAY = new String[] { "Rapidshare.com",
+            "Bluehost.to", "Datenklo.net", "Fastshare.org", "Files.to",
+            "Share.Gulli.com", "Load.to", "Netload.in", "Sharebase.de",
+            "Share-Online.biz", "Simpleupload.net", "Uploaded.to",
+            "Uploadstube.de", "Fast-Load.net" };
+    private String version = "2.1.0";
     // xlice.net/folder/13a3169edf4cfd3a438a40c2397724fe/
     // xlice.net/file/e46b767e51b8dbdf3afb6d3ea3852c4e/
     // xlice.net/file/ff139aafdf5c299c33b218b9750b3d17/%5BSanex%5D%20-
@@ -60,7 +61,7 @@ public class XliceNet extends PluginForDecrypt {
             return false;
         link=link.toLowerCase();
         for (int i = 0; i < USEARRAY.length; i++) {
-            if (link.matches(".*" + USEARRAY[i] + ".*")) {
+            if (link.matches(".*" + USEARRAY[i].toLowerCase() + ".*")) {
                 return getProperties()
                 .getBooleanProperty(USEARRAY[i], true);
             }
@@ -91,8 +92,8 @@ public class XliceNet extends PluginForDecrypt {
                         decryptedLinks.add(createDownloadlink(location));
                     }
                 }
-                logger.info(decryptedLinks.size() + " downloads decrypted "
-                        + decryptedLinks);
+                logger.info(decryptedLinks.size() + " "
+                		+ JDLocale.L("plugins.decrypt.general.downloadsDecrypted", "Downloads entschlüsselt"));
                 
                 step.setParameter(decryptedLinks);
             }
@@ -105,7 +106,7 @@ public class XliceNet extends PluginForDecrypt {
     private void setConfigEelements() {
         ConfigEntry cfg;
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_LABEL,
-                "Hoster Auswahl"));
+                JDLocale.L("plugins.decrypt.general.hosterSelection", "Hoster Auswahl")));
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         for (int i = 0; i < USEARRAY.length; i++) {
             config.addEntry(cfg = new ConfigEntry(
