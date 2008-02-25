@@ -745,7 +745,7 @@ public class JDUtilities {
                 vp=Math.max(vp,lcs[i].getValityPercent());
             }
             logger.info("worst letter: "+vp);
-            if(captcha.getValityPercent()>14.0){
+            if(vp>14.0){
                 plugin.setCaptchaDetectID(Plugin.CAPTCHA_USER_INPUT);
                 code=getController().getCaptchaCodeFromUser(plugin, file,captchaCode);
             }else{
