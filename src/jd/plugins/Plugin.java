@@ -89,7 +89,10 @@ public abstract class Plugin {
     protected RequestInfo         requestInfo;
     protected CRequest         request = new CRequest();
     protected boolean             aborted         = false;
-    public boolean collectCaptchas = true;
+    public boolean collectCaptchas()
+    {
+    	return true;
+    }
 
     /**
      * Liefert den Namen des Plugins zurück

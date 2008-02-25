@@ -29,7 +29,10 @@ public class DatenKlo extends PluginForHost {
     private Form                 form;
 
     private File                 captchaFile;
-    public boolean collectCaptchas =false;
+    public boolean collectCaptchas()
+    {
+    	return false;
+    }
     //
     @Override
     public boolean doBotCheck(File file) {

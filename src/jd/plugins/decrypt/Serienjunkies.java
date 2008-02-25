@@ -29,7 +29,10 @@ public class Serienjunkies extends PluginForDecrypt {
 	private boolean next = false;
 
 	private String dynamicCaptcha = "<FORM ACTION=\".*?\" METHOD=\"post\"(?s).*?(?-s)<INPUT TYPE=\"HIDDEN\" NAME=\"s\" VALUE=\"([\\w]*)\">(?s).*?(?-s)<IMG SRC=\"([^\"]*)\"";
-    public boolean collectCaptchas =false;
+    public boolean collectCaptchas()
+    {
+    	return false;
+    }
 	public Serienjunkies() {
 		super();
 		steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
