@@ -745,6 +745,8 @@ public class Rapidshare extends PluginForHost {
                                        
                                    }else{
                                        logger.severe("Unknown letter: "+i+": JAC:"+lcs[i].getDecodedValue()+"("+lcs[i].getValityPercent()+") USER: "+captchaTxt.substring(i,i+1));
+                                       //Pixelstring.   getB() ist immer der neue letter
+                                       logger.severe(lcs[i].getB().getPixelString());
                                    }
                                }
                               }
