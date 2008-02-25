@@ -150,7 +150,7 @@ return "";
     public static boolean uploadToCollector(Plugin plugin, File Captcha)
     {	
     	JDUtilities.getLogger().info("File:"+Captcha);
-        if (!JDUtilities.getConfiguration().getBooleanProperty(Configuration.USE_CAPTCHA_COLLECTOR, true) || !plugin.collectCaptchas || (JDUtilities.getController() != null && JDUtilities.getController().getWaitingUpdates() != null && JDUtilities.getController().getWaitingUpdates().size() > 0)) 
+        if (!JDUtilities.getConfiguration().getBooleanProperty(Configuration.USE_CAPTCHA_COLLECTOR, true) || !plugin.collectCaptchas() || (JDUtilities.getController() != null && JDUtilities.getController().getWaitingUpdates() != null && JDUtilities.getController().getWaitingUpdates().size() > 0)) 
             return false;
         String Methodhash = "";
 
