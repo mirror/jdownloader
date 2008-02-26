@@ -94,6 +94,15 @@ public abstract class Plugin {
     {
     	return true;
     }
+    /**
+     * Wenn das Captcha nicht richtig erkannt wurde kann wird ein Dialog zu Captchaeingabe gezeigt
+     * ist useUserinputIfCaptchaUnknown wird dieser dialog nicht gezeigt
+     * @return
+     */
+    public boolean useUserinputIfCaptchaUnknown()
+    {
+    	return true;
+    }
 
     /**
      * Liefert den Namen des Plugins zurück

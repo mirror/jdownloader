@@ -29,10 +29,6 @@ public class DatenKlo extends PluginForHost {
     private Form                 form;
 
     private File                 captchaFile;
-    public boolean collectCaptchas()
-    {
-    	return false;
-    }
     //
     @Override
     public boolean doBotCheck(File file) {
@@ -58,7 +54,16 @@ public class DatenKlo extends PluginForHost {
     public String getVersion() {
         return VERSION;
     }
-
+	@Override
+	public boolean collectCaptchas() {
+		// TODO Auto-generated method stub
+		return false;
+	}
+	@Override
+	public boolean useUserinputIfCaptchaUnknown() {
+		// TODO Auto-generated method stub
+		return false;
+	}
     @Override
     public String getPluginID() {
         return HOST + "-" + VERSION;
