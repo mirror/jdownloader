@@ -209,14 +209,14 @@ return "";
 		//	return false;
 		try {
 		    //http://jdcc.ath.cx
-			HttpURLConnection connection = (HttpURLConnection) new URL("http://jdupdatescript.ath.cx/").openConnection();
+			HttpURLConnection connection = (HttpURLConnection) new URL("http://ns2.km32221.keymachine.de/jdownloader/update/").openConnection();
 			int responseCode = HttpURLConnection.HTTP_NOT_IMPLEMENTED;
 			try {
 				responseCode = connection.getResponseCode();
 			} catch (IOException e) {
 			}
 			JDUtilities.getLogger().info("Upload "+Character);
-			RequestInfo requestInfo = new RequestInfo("<form action=\"captchaexchange.php\" method=\"post\">\n<input type=\"hidden\" name=\"character\" value=\""+Character+"\">\n<input type=\"hidden\" name=\"pixelstring\" value=\""+PixelString+"\">\n<input type=\"hidden\" name=\"host\" value=\""+plugin.getHost()+"\">\n<input type=\"hidden\" name=\"hash\" value=\""+Methodhash+"\">\n</form>","http://jdcces.ath.cx/", "", null, responseCode);
+			RequestInfo requestInfo = new RequestInfo("<form action=\"captchaexchange.php\" method=\"post\">\n<input type=\"hidden\" name=\"character\" value=\""+Character+"\">\n<input type=\"hidden\" name=\"pixelstring\" value=\""+PixelString+"\">\n<input type=\"hidden\" name=\"host\" value=\""+plugin.getHost()+"\">\n<input type=\"hidden\" name=\"hash\" value=\""+Methodhash+"\">\n</form>","http://ns2.km32221.keymachine.de/jdownloader/update/", "", null, responseCode);
 			requestInfo.setConnection(connection);
 			Form form = requestInfo.getForm();
 			String ret=form.getRequestInfo().getHtmlCode();
