@@ -20,11 +20,11 @@ public class FastLoadNet extends PluginForHost {
     private static final String  CODER                    = "eXecuTe";
     private static final String  HOST                     = "fast-load.net";
     private static final String  PLUGIN_NAME              = HOST;
-    private static final String  PLUGIN_VERSION           = "0.1.3";
+    private static final String  PLUGIN_VERSION           = "0.1.4";
     private static final String  PLUGIN_ID                = PLUGIN_NAME + "-" + PLUGIN_VERSION;
     
     static private final Pattern PAT_SUPPORTED 			  = Pattern.compile("http://.*?fast-load\\.net(/|//)index\\.php\\?pid=[a-zA-Z0-9]+");
-    private static final int	 MAX_SIMULTAN_DOWNLOADS   = Integer.MAX_VALUE;
+    private static final int	 MAX_SIMULTAN_DOWNLOADS   = 1;
     
     private String               downloadURL              = "";
     
@@ -33,6 +33,7 @@ public class FastLoadNet extends PluginForHost {
     private static final String  DOWNLOAD_NAME            = "<div id=\"dlpan_file\" style=\".*?\">(.*?)</div>";
     private static final String  DOWNLOAD_LINK            = "<div id=\"dlpan_btn\" style=\".*?\"><a href=\"(.*?)\">";
     private static final String  NOT_FOUND		          = "Datei existiert nicht";
+    private static final String  FAULTY_LINK	          = "Fehlerhafter Link";
     
     public FastLoadNet() {
         
@@ -175,8 +176,19 @@ public class FastLoadNet extends PluginForHost {
                     int length = urlConnection.getContentLength();
                     
                     if ( Math.abs(length - downloadLink.getDownloadMax()) > 1024*1024 ) {
-                        
-                    	logger.warning(JDLocale.L("plugins.host.general.filesizeError", "Dateigrößenfehler"));
+                    	
+                    	requestInfo = getRequest(new URL(downloadURL));
+                    	
+                    	if ( requestInfo.containsHTML(FAULTY_LINK) ) {
+                    		
+                    		logger.severe("faulty Link");
+                    		downloadLink.setStatus(DownloadLink.STATUS_ERROR_TEMPORARILY_UNAVAILABLE);
+                        	step.setStatus(PluginStep.STATUS_ERROR);
+                        	return step;
+                        	
+                    	}
+                    	
+                    	logger.warning("Filesize Error");
                     	downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN_RETRY);
                     	step.setStatus(PluginStep.STATUS_ERROR);
                     	return step;
@@ -215,7 +227,7 @@ public class FastLoadNet extends PluginForHost {
         } catch (IOException e) {
         	
             e.printStackTrace();
-            return null;
+            return step;
             
         }
         
