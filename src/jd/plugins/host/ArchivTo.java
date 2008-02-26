@@ -1,5 +1,4 @@
 package jd.plugins.host;
-
 import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
@@ -11,12 +10,18 @@ import jd.plugins.PluginForHost;
 import jd.plugins.PluginStep;
 import jd.plugins.Regexp;
 
+//http://archiv.to/Get/?System=Download&Hash=FILE4799F3EC23328
+// http://archiv.to/?Module=Details&HashID=FILE4799F3EC23328
+
 public class ArchivTo extends PluginForHost {
+	
 	private static final String HOST = "archiv.to";
-	private static final String VERSION = "1.0.0.0";
+	private static final String VERSION = "1.1.0";
 	static private final Pattern patternSupported = Pattern.compile(
 			"http://.*?archiv\\.to/\\?Module\\=Details\\&HashID\\=.*",
 			Pattern.CASE_INSENSITIVE);
+	static private final String FILESIZE = "Dateigr..e</td>\n	<td width=\".*\">: ([0-9]+) Byte";
+	static private final String FILENAME = "<td width=\".*\">Original-Dateiname</td>\n	<td width=\".*\">: <a href=\".*\" style=\".*\">(.*?)</a></td>";
 
 	//
 	@Override
@@ -61,7 +66,7 @@ public class ArchivTo extends PluginForHost {
 
 	public PluginStep doStep(PluginStep step, final DownloadLink downloadLink) {
 		if (aborted) {
-			logger.warning("Plugin abgebrochen");
+			logger.warning("Plugin aborted");
 			downloadLink.setStatus(DownloadLink.STATUS_TODO);
 			step.setStatus(PluginStep.STATUS_TODO);
 			return step;
@@ -73,9 +78,7 @@ public class ArchivTo extends PluginForHost {
 
 			URLConnection urlConnection = requestInfo.getConnection();
 			if(!getFileInformation(downloadLink)) {
-				logger.severe("Datei nicht gefunden");
-				downloadLink
-						.setStatus(DownloadLink.STATUS_ERROR_FILE_NOT_FOUND);
+				downloadLink.setStatus(DownloadLink.STATUS_ERROR_FILE_NOT_FOUND);
 				step.setStatus(PluginStep.STATUS_ERROR);
 				return step;
 			}
@@ -88,7 +91,6 @@ public class ArchivTo extends PluginForHost {
 					try {
 						Thread.sleep(100);
 					} catch (InterruptedException e) {
-						// TODO Auto-generated catch block
 						e.printStackTrace();
 					}
 					downloadLink.setDownloadMax((int) length);
@@ -100,41 +102,52 @@ public class ArchivTo extends PluginForHost {
 				step.setStatus(PluginStep.STATUS_ERROR);
 				return step;
 			}
-			if (download(downloadLink, urlConnection)!=DOWNLOAD_SUCCESS) {
+			
+			int errorid;
+			
+			if ( (errorid = download(downloadLink, urlConnection)) == DOWNLOAD_SUCCESS ) {
+				
 				step.setStatus(PluginStep.STATUS_DONE);
 				downloadLink.setStatus(DownloadLink.STATUS_DONE);
 				return null;
-			} else if (aborted) {
-				logger.warning("Plugin abgebrochen");
+				
+			} else if ( errorid == DOWNLOAD_ERROR_OUTPUTFILE_ALREADYEXISTS ) {
+            	
+                downloadLink.setStatus(DownloadLink.STATUS_ERROR_ALREADYEXISTS);
+                step.setStatus(PluginStep.STATUS_ERROR);  
+                return step;
+            	
+            } else if (aborted) {
+				logger.warning("Plugin aborted");
 				downloadLink.setStatus(DownloadLink.STATUS_TODO);
 				step.setStatus(PluginStep.STATUS_TODO);
+                return step;
 			} else {
-				logger.severe("Datei nicht gefunden");
-	
+				downloadLink.setStatus(DownloadLink.STATUS_ERROR_TEMPORARILY_UNAVAILABLE);
 				step.setStatus(PluginStep.STATUS_ERROR);
+                return step;
 			}
 
 		} catch (MalformedURLException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		return step;
 	}
-	// http://archiv.to/Get/?System=Download&Hash=FILE4799F3EC23328
-	// http://archiv.to/?Module=Details&HashID=FILE4799F3EC23328
+	
 	@Override
 	public boolean getFileInformation(DownloadLink downloadLink) {
 		try {
 			String url = downloadLink.getDownloadURL();
 			requestInfo = getRequest(new URL(url));
-			downloadLink.setName(new Regexp(requestInfo.getHtmlCode(), "<td class=\"DetailsRowValue\">: <a href=\"./Get/\\?System\\=Download.*?\">(.*?)</a>").getFirstMatch());
-			downloadLink.setDownloadMax(Integer.parseInt(new Regexp(requestInfo.getHtmlCode(), "<td class=\"DetailsRowValue\">: ([\\d]*) Bytes").getFirstMatch()));
+			downloadLink.setName(new Regexp(requestInfo.getHtmlCode(), FILENAME).getFirstMatch());
+			if ( !requestInfo.getHtmlCode().contains(":  Bytes (~ 0 MB)") ) {
+				downloadLink.setDownloadMax(Integer.parseInt(new Regexp(requestInfo.getHtmlCode(), FILESIZE).getFirstMatch()));
+			} else return false;
 			return true;
 		} catch (Exception e) {
-			// TODO: handle exception
+			e.printStackTrace();
 		}
 		return false;
 	}
@@ -146,17 +159,14 @@ public class ArchivTo extends PluginForHost {
 
 	@Override
 	public void reset() {
-		// TODO Automatisch erstellter Methoden-Stub
 	}
 
 	@Override
 	public void resetPluginGlobals() {
-		// TODO Automatisch erstellter Methoden-Stub
 	}
 
 	@Override
 	public String getAGBLink() {
-
 		return "http://archiv.to/?Module=Policy";
 	}
 }
