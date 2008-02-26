@@ -799,7 +799,7 @@ public class Rapidshare extends PluginForHost {
 												public void run() {
 		                                            Upload.sendToCaptchaExchangeServer(plg, pixelString, character);
 													
-												}});
+												}}).start();
 
                                         }
                                     }
