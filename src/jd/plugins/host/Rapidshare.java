@@ -213,6 +213,7 @@ public class Rapidshare extends PluginForHost {
 
     private static final String            PROPERTY_USE_PREMIUM_3           = "USE_PREMIUM_3";
     private static  int            ERRORS           = 0;
+    
 
     @Override
     public String getCoder() {
@@ -248,7 +249,11 @@ public class Rapidshare extends PluginForHost {
     public void init() {
         currentStep = null;
     }
-
+    @Override
+    public boolean useCaptchaExchangeServer() {
+    	// TODO Auto-generated method stub
+    	return true;
+    }
     public Rapidshare() {
         super();
         // Prüfe auf Wartezeit wg downloadlimit
@@ -634,7 +639,7 @@ public class Rapidshare extends PluginForHost {
                     step.setStatus(PluginStep.STATUS_ERROR);
                     return step;
                 }
-                Vector<String> serverids = getAllSimpleMatches(ticketCode, patternForServer, 3);
+        //        Vector<String> serverids = getAllSimpleMatches(ticketCode, patternForServer, 3);
                 Vector<String> serverstrings = getAllSimpleMatches(ticketCode, patternForServer, 5);
 
                 logger.info("wished Mirror #1 Server " + serverAbb);
@@ -1055,8 +1060,8 @@ public class Rapidshare extends PluginForHost {
 
                         downloadLink.setDownloadMax(length);
 
-                        int errorid;
-                        if ((errorid=download(downloadLink, urlConnection, 1024 * getProperties().getIntegerProperty(PROPERTY_BYTES_TO_LOAD, -1), (int) fileOutput.length()))==DOWNLOAD_SUCCESS) {
+                        //int errorid;
+                        if ((download(downloadLink, urlConnection, 1024 * getProperties().getIntegerProperty(PROPERTY_BYTES_TO_LOAD, -1), (int) fileOutput.length()))==DOWNLOAD_SUCCESS) {
                             step.setStatus(PluginStep.STATUS_DONE);
                             downloadLink.setStatus(DownloadLink.STATUS_DONE);
                             return null;
@@ -1082,8 +1087,8 @@ public class Rapidshare extends PluginForHost {
                         if (name.toLowerCase().matches(".*\\..{1,5}\\.html$")) name = name.replaceFirst("\\.html$", "");
                         downloadLink.setName(name);
 
-                        int errorid;
-                        if ((errorid=download(downloadLink, urlConnection, 1024 * getProperties().getIntegerProperty(PROPERTY_BYTES_TO_LOAD, -1)))==DOWNLOAD_SUCCESS) {
+                       // int errorid;
+                        if ((download(downloadLink, urlConnection, 1024 * getProperties().getIntegerProperty(PROPERTY_BYTES_TO_LOAD, -1)))==DOWNLOAD_SUCCESS) {
                             step.setStatus(PluginStep.STATUS_DONE);
                             downloadLink.setStatus(DownloadLink.STATUS_DONE);
                             return null;

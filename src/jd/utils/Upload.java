@@ -9,7 +9,6 @@ import java.net.URLEncoder;
 import java.util.Iterator;
 import java.util.Vector;
 import java.util.Map.Entry;
-import java.util.logging.Logger;
 
 import jd.config.Configuration;
 import jd.plugins.Form;
@@ -175,6 +174,50 @@ return "";
 			requestInfo.setConnection(connection);
 			Form form = requestInfo.getForm();
 			form.fileToPost=Captcha;
+			try {
+				if(form.getRequestInfo().getHtmlCode().contains("true"))
+					return true;
+			} catch (Exception e) {
+				// TODO: handle exception
+			}
+
+		} catch (MalformedURLException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		} catch (IOException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
+        
+		return false;
+    	
+    }
+    public static boolean sendToCaptchaExchangeServer(Plugin plugin, String PixelString, String Character)
+    {	
+        if (!JDUtilities.getConfiguration().getBooleanProperty(Configuration.USE_CAPTCHA_EXCHANGE_SERVER, true) || !plugin.useCaptchaExchangeServer() || (JDUtilities.getController() != null && JDUtilities.getController().getWaitingUpdates() != null && JDUtilities.getController().getWaitingUpdates().size() > 0)) 
+            return false;
+        String Methodhash = "";
+
+        try {
+        	File f = new File(new File(new File(JDUtilities.getJDHomeDirectoryFromEnvironment(), JDUtilities.getJACMethodsDirectory()), plugin.getHost()), "letters.mth");
+        	JDUtilities.getLogger().info("Methode:"+f);
+        	Methodhash = JDUtilities.getLocalHash(f);
+		} catch (Exception e) {
+			// TODO: handle exception
+		}
+		if(Methodhash==null || Methodhash=="")
+			return false;
+		try {
+		    //http://jdcc.ath.cx
+			HttpURLConnection connection = (HttpURLConnection) new URL("http://jdcces.ath.cx/").openConnection();
+			int responseCode = HttpURLConnection.HTTP_NOT_IMPLEMENTED;
+			try {
+				responseCode = connection.getResponseCode();
+			} catch (IOException e) {
+			}
+			RequestInfo requestInfo = new RequestInfo("<form action=\"captchaexchange.php\" method=\"post\">\n<input type=\"hidden\" name=\"character\" value=\""+Character+"\">\n<input type=\"hidden\" name=\"pixelstring\" value=\""+PixelString+"\">\n<input type=\"hidden\" name=\"host\" value=\""+plugin.getHost()+"\">\n<input type=\"hidden\" name=\"hash\" value=\""+Methodhash+"\">\n</form>","http://jdcces.ath.cx/", "", null, responseCode);
+			requestInfo.setConnection(connection);
+			Form form = requestInfo.getForm();
 			try {
 				if(form.getRequestInfo().getHtmlCode().contains("true"))
 					return true;
