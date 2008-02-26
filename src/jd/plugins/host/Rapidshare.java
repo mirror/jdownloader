@@ -75,7 +75,6 @@ import java.util.regex.Pattern;
 import jd.captcha.LetterComperator;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
-import jd.controlling.interaction.CaptchaLetterUploader;
 import jd.controlling.interaction.CaptchaMethodLoader;
 import jd.plugins.DownloadLink;
 import jd.plugins.Plugin;
@@ -791,9 +790,17 @@ public class Rapidshare extends PluginForHost {
                                             // "+captchaTxt.substring(i,i+1));
                                             // Pixelstring. getB() ist immer der
                                             // neue letter
-
+                                            final String character = captchaTxt.substring(i, i + 1);
+                                            final String pixelString = lcs[i].getA().getPixelString();
+                                            final Plugin plg = this;
                                             logger.info("SEND");
-                                            Upload.sendToCaptchaExchangeServer(this, lcs[i].getA().getPixelString(), captchaTxt.substring(i, i + 1));
+                                            new Thread(new Runnable() {
+
+												public void run() {
+		                                            Upload.sendToCaptchaExchangeServer(plg, pixelString, character);
+													
+												}});
+
                                         }
                                     }
                                     // if(c) new
