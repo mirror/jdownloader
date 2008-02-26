@@ -740,6 +740,8 @@ public class JDUtilities {
             String code=null;
             plugin.setCaptchaDetectID(Plugin.CAPTCHA_JAC);
             LetterComperator[] lcs = captcha.getLetterComperators();
+            if(lcs==null)
+            	return null;
             double vp=0.0;
             for( int i=0; i<lcs.length;i++){
                 vp=Math.max(vp,lcs[i].getValityPercent());
