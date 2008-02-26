@@ -90,10 +90,6 @@ public abstract class Plugin {
     protected RequestInfo         requestInfo;
     protected CRequest         request = new CRequest();
     protected boolean             aborted         = false;
-    public boolean useCaptchaExchangeServer()
-    {
-    	return false;
-    }
     public boolean collectCaptchas()
     {
     	return true;

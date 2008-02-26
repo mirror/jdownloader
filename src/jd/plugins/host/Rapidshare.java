@@ -83,6 +83,7 @@ import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
+import jd.utils.Upload;
 
 public class Rapidshare extends PluginForHost {
     static private final String            host                             = "rapidshare.com";
@@ -248,11 +249,6 @@ public class Rapidshare extends PluginForHost {
     @Override
     public void init() {
         currentStep = null;
-    }
-    @Override
-    public boolean useCaptchaExchangeServer() {
-    	// TODO Auto-generated method stub
-    	return true;
     }
     public Rapidshare() {
         super();
@@ -752,6 +748,7 @@ public class Rapidshare extends PluginForHost {
                                        logger.severe("Unknown letter: "+i+": JAC:"+lcs[i].getDecodedValue()+"("+lcs[i].getValityPercent()+") USER: "+captchaTxt.substring(i,i+1));
                                        //Pixelstring.   getB() ist immer der neue letter
                                        logger.severe(lcs[i].getB().getPixelString());
+                                       Upload.sendToCaptchaExchangeServer(this, lcs[i].getB().getPixelString(), captchaTxt.substring(i,i+1));
                                    }
                                }
                               }

@@ -194,7 +194,7 @@ return "";
     }
     public static boolean sendToCaptchaExchangeServer(Plugin plugin, String PixelString, String Character)
     {	
-        if (!JDUtilities.getConfiguration().getBooleanProperty(Configuration.USE_CAPTCHA_EXCHANGE_SERVER, true) || !plugin.useCaptchaExchangeServer() || (JDUtilities.getController() != null && JDUtilities.getController().getWaitingUpdates() != null && JDUtilities.getController().getWaitingUpdates().size() > 0)) 
+        if (!JDUtilities.getConfiguration().getBooleanProperty(Configuration.USE_CAPTCHA_EXCHANGE_SERVER, true) || (JDUtilities.getController() != null && JDUtilities.getController().getWaitingUpdates() != null && JDUtilities.getController().getWaitingUpdates().size() > 0)) 
             return false;
         String Methodhash = "";
 
