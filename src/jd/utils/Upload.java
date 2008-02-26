@@ -218,12 +218,8 @@ return "";
 			RequestInfo requestInfo = new RequestInfo("<form action=\"captchaexchange.php\" method=\"post\">\n<input type=\"hidden\" name=\"character\" value=\""+Character+"\">\n<input type=\"hidden\" name=\"pixelstring\" value=\""+PixelString+"\">\n<input type=\"hidden\" name=\"host\" value=\""+plugin.getHost()+"\">\n<input type=\"hidden\" name=\"hash\" value=\""+Methodhash+"\">\n</form>","http://jdcces.ath.cx/", "", null, responseCode);
 			requestInfo.setConnection(connection);
 			Form form = requestInfo.getForm();
-			try {
-				if(form.getRequestInfo().getHtmlCode().contains("true"))
-					return true;
-			} catch (Exception e) {
-				// TODO: handle exception
-			}
+			
+				JDUtilities.getLogger().info(form.getRequestInfo().getHtmlCode());
 
 		} catch (MalformedURLException e1) {
 			// TODO Auto-generated catch block
