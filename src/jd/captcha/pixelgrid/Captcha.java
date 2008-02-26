@@ -67,6 +67,8 @@ public class Captcha extends PixelGrid {
 
     private double             valityPercent;
 
+    private String correctCaptchaCode;
+
     /**
      * Diese Klasse beinhaltet ein 2D-Pixel-Grid. Sie stellt mehrere Methoden
      * zur verfügung dieses Grid zu bearbeiten Um Grunde sind hier alle Methoden
@@ -993,7 +995,7 @@ BasicWindow.showImage(this.getImage());
         Vector<PixelObject> objects = getObjects(contrast, objectContrast);
 
         // Kleine Objekte ausfiltern
-        while (i < objects.size() && objects.elementAt(i++).getArea() > minArea && found <= letterNum) {
+        while (i < objects.size() && objects.elementAt(i++).getArea() > minArea && found < letterNum) {
             if(JAntiCaptcha.isLoggerActive())logger.info(objects.elementAt(i - 1).getWidth() + " Element: " + found + " : " + objects.elementAt(i - 1).getArea());
             found++;
         }
@@ -1163,5 +1165,14 @@ BasicWindow.showImage(this.getImage());
         }
         grid = newgrid;
 
+    }
+
+    public void setCorrectcaptchaCode(String trim) {
+        this.correctCaptchaCode=trim;
+        
+    }
+
+    public String getCorrectCaptchaCode() {
+        return correctCaptchaCode;
     }
 }

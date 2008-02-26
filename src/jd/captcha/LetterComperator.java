@@ -530,6 +530,7 @@ public class LetterComperator {
      * @return Gibt den decoed value von b zurück
      */
     public String getDecodedValue() {
+        if(b==null)return null;
         return this.b.getDecodedValue();
     }
 

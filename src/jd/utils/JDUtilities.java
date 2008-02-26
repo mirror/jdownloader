@@ -67,12 +67,11 @@ import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 
-import org.w3c.dom.Document;
-
 import jd.JDClassLoader;
 import jd.JDFileFilter;
 import jd.captcha.JAntiCaptcha;
 import jd.captcha.LetterComperator;
+import jd.captcha.gui.ScrollPaneWindow;
 import jd.captcha.pixelgrid.Captcha;
 import jd.config.Configuration;
 import jd.config.SubConfiguration;
@@ -87,6 +86,9 @@ import jd.plugins.PluginForHost;
 import jd.plugins.PluginOptional;
 import jd.plugins.RequestInfo;
 import jd.update.WebUpdater;
+
+import org.w3c.dom.Document;
+
 import sun.misc.BASE64Decoder;
 import sun.misc.BASE64Encoder;
 
@@ -736,6 +738,8 @@ public class JDUtilities {
             String captchaCode = jac.checkCaptcha(captcha);
             logger.info("Code: " + captchaCode);
             logger.info("Vality: "+captcha.getValityPercent());
+           //ScrollPaneWindow window = new ScrollPaneWindow("Captcha");
+      
             plugin.setLastCaptcha(captcha);
             String code=null;
             plugin.setCaptchaDetectID(Plugin.CAPTCHA_JAC);
@@ -744,8 +748,18 @@ public class JDUtilities {
             	return null;
             double vp=0.0;
             for( int i=0; i<lcs.length;i++){
+                //window.setImage(i, 0, lcs[i].getB().getImage(3));
+               // window.setImage(i, 1, lcs[i].getA().getImage(3));
+                if(lcs[i]==null){
+                    vp=100.0;
+                    break;
+                }
                 vp=Math.max(vp,lcs[i].getValityPercent());
+               // window.setText(i, 2, lcs[i].getValityPercent());
+               // window.setText(i, 3, lcs[i].getDecodedValue());
+               // window.setText(i, 4, lcs[i].getB().getPixelString());
             }
+            //window.pack();
             logger.info("worst letter: "+vp);
             if(plugin.useUserinputIfCaptchaUnknown() && vp>14.0){
                 plugin.setCaptchaDetectID(Plugin.CAPTCHA_USER_INPUT);

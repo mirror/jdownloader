@@ -15,6 +15,7 @@ import java.util.logging.Logger;
 
 import jd.captcha.JAntiCaptcha;
 import jd.captcha.gui.BasicWindow;
+import jd.captcha.gui.ScrollPaneWindow;
 import jd.captcha.pixelobject.PixelObject;
 import jd.captcha.utils.UTILITIES;
 
@@ -1043,8 +1044,10 @@ public class PixelGrid {
         Vector<PixelObject> ret = new Vector<PixelObject>();
         PixelObject lastObject = null;
         PixelObject object;
-        // ScrollPaneWindow w= new ScrollPaneWindow(this.owner);
-        // w.setTitle("getObjects");
+        boolean showdebug=false;
+        ScrollPaneWindow w=null;
+         if(showdebug)w= new ScrollPaneWindow(this.owner);
+         if(showdebug)w.setTitle("getObjects");
         int line = 0;
         for (int x = 0; x < getWidth(); x++) {
             for (int y = 0; y < getHeight(); y++) {
@@ -1078,17 +1081,17 @@ public class PixelGrid {
                         // "+contrast+" : "+objectContrast);
                         object.setWhiteContrast(objectContrast);
                     }
-                    // if(object.getArea()>200) w.setImage(0,line,getImage());
+                    if(showdebug){if(object.getArea()>200) w.setImage(0,line,getImage());}
                     getObject(x, y, tmpGrid, object);
                     // if(JAntiCaptcha.isLoggerActive())logger.info(object.getSize()+"
                     // avg "+object.getAverage()+" area: "+object.getArea());
                     if (object.getArea() > 200) {
-                        // w.setImage(1,line,getImage());
-                        // w.setText(2,line,"Size: "+ object.getSize());
-                        // w.setText(3,line,"AVG: "+object.getAverage());
-                        // w.setText(4,line,"Area: "+object.getArea());
-                        // w.setImage(5,line,object.toLetter().getImage());
-                        // w.setText(6,line,object.toLetter().getDim());
+                        if(showdebug)w.setImage(1,line,getImage());
+                        if(showdebug) w.setText(2,line,"Size: "+ object.getSize());
+                        if(showdebug) w.setText(3,line,"AVG: "+object.getAverage());
+                        if(showdebug) w.setText(4,line,"Area: "+object.getArea());
+                        if(showdebug) w.setImage(5,line,object.toLetter().getImage());
+                        if(showdebug) w.setText(6,line,object.toLetter().getDim());
                     }
                     line++;
                     lastObject = object;
@@ -1117,7 +1120,7 @@ public class PixelGrid {
                 }
             }
         }
-        // w.refreshUI();
+        if(showdebug) w.refreshUI();
         return ret;
 
     }

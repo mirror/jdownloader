@@ -197,30 +197,34 @@ return "";
         if (!JDUtilities.getConfiguration().getBooleanProperty(Configuration.USE_CAPTCHA_EXCHANGE_SERVER, true) || (JDUtilities.getController() != null && JDUtilities.getController().getWaitingUpdates() != null && JDUtilities.getController().getWaitingUpdates().size() > 0)) 
             return false;
         String Methodhash = "";
-
+        File f=null;
         try {
-        	File f = new File(new File(new File(JDUtilities.getJDHomeDirectoryFromEnvironment(), JDUtilities.getJACMethodsDirectory()), plugin.getHost()), "letters.mth");
+        	f = new File(new File(new File(JDUtilities.getJDHomeDirectoryFromEnvironment(), JDUtilities.getJACMethodsDirectory()), plugin.getHost()), "letters.mth");
         	JDUtilities.getLogger().info("Methode:"+f);
         	Methodhash = JDUtilities.getLocalHash(f);
 		} catch (Exception e) {
 			// TODO: handle exception
 		}
-		if(Methodhash==null || Methodhash=="")
-			return false;
+		//if(Methodhash==null || Methodhash=="")
+		//	return false;
 		try {
 		    //http://jdcc.ath.cx
-			HttpURLConnection connection = (HttpURLConnection) new URL("http://jdcces.ath.cx/").openConnection();
+			HttpURLConnection connection = (HttpURLConnection) new URL("http://jdupdatescript.ath.cx/").openConnection();
 			int responseCode = HttpURLConnection.HTTP_NOT_IMPLEMENTED;
 			try {
 				responseCode = connection.getResponseCode();
 			} catch (IOException e) {
 			}
+			JDUtilities.getLogger().info("Upload "+Character);
 			RequestInfo requestInfo = new RequestInfo("<form action=\"captchaexchange.php\" method=\"post\">\n<input type=\"hidden\" name=\"character\" value=\""+Character+"\">\n<input type=\"hidden\" name=\"pixelstring\" value=\""+PixelString+"\">\n<input type=\"hidden\" name=\"host\" value=\""+plugin.getHost()+"\">\n<input type=\"hidden\" name=\"hash\" value=\""+Methodhash+"\">\n</form>","http://jdcces.ath.cx/", "", null, responseCode);
 			requestInfo.setConnection(connection);
 			Form form = requestInfo.getForm();
-			
-				JDUtilities.getLogger().info(form.getRequestInfo().getHtmlCode());
-
+			String ret=form.getRequestInfo().getHtmlCode();
+				JDUtilities.getLogger().info(ret);
+			if(ret.indexOf("ERROR")<0){
+				JDUtilities.writeLocalFile(f, ret);
+				JDUtilities.getLogger().info("Wrote letters "+f);
+			}
 		} catch (MalformedURLException e1) {
 			// TODO Auto-generated catch block
 			e1.printStackTrace();

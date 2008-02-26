@@ -25,6 +25,7 @@ public class CaptchaMethodLoader extends Interaction implements Serializable {
 
     @Override
     public boolean doInteraction(Object arg) {
+        if(JDUtilities.getConfiguration().getBooleanProperty(Configuration.USE_CAPTCHA_EXCHANGE_SERVER, true))return false;
         String method = (String) arg;
         WebUpdater updater = new WebUpdater(null);
 

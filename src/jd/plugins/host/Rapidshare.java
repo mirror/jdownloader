@@ -75,6 +75,7 @@ import java.util.regex.Pattern;
 import jd.captcha.LetterComperator;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
+import jd.controlling.interaction.CaptchaLetterUploader;
 import jd.controlling.interaction.CaptchaMethodLoader;
 import jd.plugins.DownloadLink;
 import jd.plugins.Plugin;
@@ -213,8 +214,8 @@ public class Rapidshare extends PluginForHost {
     private static final String            PROPERTY_PREMIUM_PASS_3          = "PREMIUM_PASS_3";
 
     private static final String            PROPERTY_USE_PREMIUM_3           = "USE_PREMIUM_3";
-    private static  int            ERRORS           = 0;
-    
+
+    private static int                     ERRORS                           = 0;
 
     @Override
     public String getCoder() {
@@ -250,6 +251,7 @@ public class Rapidshare extends PluginForHost {
     public void init() {
         currentStep = null;
     }
+
     public Rapidshare() {
         super();
         // Prüfe auf Wartezeit wg downloadlimit
@@ -260,27 +262,50 @@ public class Rapidshare extends PluginForHost {
         steps.add(new PluginStep(PluginStep.STEP_GET_CAPTCHA_FILE, null));
         // Downloads
         steps.add(new PluginStep(PluginStep.STEP_DOWNLOAD, null));
-       
 
- 
-        serverMap.put("TeliaSonera #2", "tl2");//<td><input name="mirror" value="tl2" type="radio">TeliaSonera #2</td>
-        serverMap.put("TeliaSonera #3", "tl3");//<td><input name="mirror2" value="tl3" type="radio">TeliaSonera #3</td>
-        
-        
-        serverMap.put("GlobalCrossing", "gc"); //<td><input name="mirror" value="gc" type="radio">GlobalCrossing #1</td>
-        serverMap.put("GlobalCrossing #2", "gc2"); //<td><input name="mirror" value="gc2" type="radio">GlobalCrossing #2</td>
-        serverMap.put("Cogent", "cg"); //td><input name="mirror" value="cg" type="radio">Cogent #1</td>
-        serverMap.put("Cogent #2", "cg2");//<td><input name="mirror" value="cg2" type="radio">Cogent #2</td>
-        serverMap.put("Teleglobe", "tg"); //<td><input name="mirror" value="tg" type="radio">Teleglobe #1</td>
-        serverMap.put("Level(3)", "l3");//<td><input name="mirror" value="l3" type="radio">Level(3) #1</td>
-        serverMap.put("Level(3) #2", "l32");//<td><input name="mirror" value="l32" type="radio">Level(3) #2</td>
-        serverMap.put("Level(3) #3", "l33");//   <td><input name="mirror" value="l33" type="radio">Level(3) #3</td>
-     
-        serverMap.put("Level(3) #4", "l34");//<td><input name="mirror" value="l34" type="radio">Level(3) #4</td>
-        serverMap.put("TeliaSonera", "tl");//<td><input name="mirror" value="tl" type="radio">TeliaSonera #1</td>
+        serverMap.put("TeliaSonera #2", "tl2");// <td><input name="mirror"
+                                                // value="tl2"
+                                                // type="radio">TeliaSonera
+                                                // #2</td>
+        serverMap.put("TeliaSonera #3", "tl3");// <td><input name="mirror2"
+                                                // value="tl3"
+                                                // type="radio">TeliaSonera
+                                                // #3</td>
+
+        serverMap.put("GlobalCrossing", "gc"); // <td><input name="mirror"
+                                                // value="gc"
+                                                // type="radio">GlobalCrossing
+                                                // #1</td>
+        serverMap.put("GlobalCrossing #2", "gc2"); // <td><input name="mirror"
+                                                    // value="gc2"
+                                                    // type="radio">GlobalCrossing
+                                                    // #2</td>
+        serverMap.put("Cogent", "cg"); // td><input name="mirror" value="cg"
+                                        // type="radio">Cogent #1</td>
+        serverMap.put("Cogent #2", "cg2");// <td><input name="mirror"
+                                            // value="cg2" type="radio">Cogent
+                                            // #2</td>
+        serverMap.put("Teleglobe", "tg"); // <td><input name="mirror"
+                                            // value="tg" type="radio">Teleglobe
+                                            // #1</td>
+        serverMap.put("Level(3)", "l3");// <td><input name="mirror" value="l3"
+                                        // type="radio">Level(3) #1</td>
+        serverMap.put("Level(3) #2", "l32");// <td><input name="mirror"
+                                            // value="l32" type="radio">Level(3)
+                                            // #2</td>
+        serverMap.put("Level(3) #3", "l33");// <td><input name="mirror"
+                                            // value="l33" type="radio">Level(3)
+                                            // #3</td>
+
+        serverMap.put("Level(3) #4", "l34");// <td><input name="mirror"
+                                            // value="l34" type="radio">Level(3)
+                                            // #4</td>
+        serverMap.put("TeliaSonera", "tl");// <td><input name="mirror"
+                                            // value="tl"
+                                            // type="radio">TeliaSonera #1</td>
         serverMap.put("Deutsche Telekom", "dt");
         serverList1 = new String[] { "tl", "tl2", "gc", "gc2", "cg", "cg2", "tg", "l3", "l32", "l33", "l34", "tl", "dt" };
-        serverList2 = new String[] { "tl","tl2","tl3", "gc", "gc2","l32","tg" ,"l3","cg"};
+        serverList2 = new String[] { "tl", "tl2", "tl3", "gc", "gc2", "l32", "tg", "l3", "cg" };
         this.setConfigElements();
     }
 
@@ -293,30 +318,34 @@ public class Rapidshare extends PluginForHost {
         }
         return null;
     }
-    private String getServerName(String id){
+
+    private String getServerName(String id) {
         Iterator<Entry<String, String>> it = serverMap.entrySet().iterator();
-        while(it.hasNext()){
+        while (it.hasNext()) {
             Entry<String, String> next = it.next();
-            if(next.getValue().equalsIgnoreCase(id))return next.getKey();
+            if (next.getValue().equalsIgnoreCase(id)) return next.getKey();
         }
         return null;
     }
+
     private void setConfigElements() {
-        
-        Vector<String> m1= new Vector<String>();
-        Vector<String> m2= new Vector<String>();
-        for( int i=0; i<serverList1.length;i++)m1.add(getServerName(serverList1[i]));
-        for( int i=0; i<serverList2.length;i++)m2.add(getServerName(serverList2[i]));
+
+        Vector<String> m1 = new Vector<String>();
+        Vector<String> m2 = new Vector<String>();
+        for (int i = 0; i < serverList1.length; i++)
+            m1.add(getServerName(serverList1[i]));
+        for (int i = 0; i < serverList2.length; i++)
+            m2.add(getServerName(serverList2[i]));
         m1.add("zufällig");
         m2.add("zufällig");
         ConfigEntry cfg;
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_LABEL, JDLocale.L("plugins.hoster.rapidshare.com.prefferedServer", "Bevorzugte Server (*1)")));
 
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, getProperties(), PROPERTY_SELECTED_SERVER, m1.toArray(new String[]{}), "#1"));
+        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, getProperties(), PROPERTY_SELECTED_SERVER, m1.toArray(new String[] {}), "#1"));
         cfg.setDefaultValue("Level(3)");
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, getProperties(), PROPERTY_SELECTED_SERVER2, m2.toArray(new String[]{}), "#2"));
+        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, getProperties(), PROPERTY_SELECTED_SERVER2, m2.toArray(new String[] {}), "#2"));
         cfg.setDefaultValue("TeliaSonera");
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getProperties(), PROPERTY_USE_TELEKOMSERVER, JDLocale.L("plugins.hoster.rapidshare.com.telekom", "Telekom Server verwenden falls verfügbar*")));
         cfg.setDefaultValue(false);
@@ -379,22 +408,24 @@ public class Rapidshare extends PluginForHost {
         // premium
         PluginStep st;
         if (this.getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM, false) || this.getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM_2, false) || this.getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM_3, false)) {
-           st = this.doPremiumStep(step, downloadLink);
-           
+            st = this.doPremiumStep(step, downloadLink);
+
         }
         else {
-            st=this.doFreeStep(step, downloadLink);
+            st = this.doFreeStep(step, downloadLink);
         }
-        if(st!=null && st.getStatus()==PluginStep.STATUS_ERROR){
+        if (st != null && st.getStatus() == PluginStep.STATUS_ERROR) {
             ERRORS++;
-        }else{
-            ERRORS--;
-            if(ERRORS<0)ERRORS=0;
         }
-//        if(ERRORS>5){
-//            JDUtilities.getGUI().showMessageDialog(JDLocale.L("plugins.hoster.rapidshare.com.offline", "Keine Internetverbindung vermutet. "));
-//            System.exit(1);
-//        }
+        else {
+            ERRORS--;
+            if (ERRORS < 0) ERRORS = 0;
+        }
+        // if(ERRORS>5){
+        // JDUtilities.getGUI().showMessageDialog(JDLocale.L("plugins.hoster.rapidshare.com.offline",
+        // "Keine Internetverbindung vermutet. "));
+        // System.exit(1);
+        // }
         return st;
     }
 
@@ -513,22 +544,21 @@ public class Rapidshare extends PluginForHost {
                         downloadLink.setStatus(DownloadLink.STATUS_ERROR_TO_MANY_USERS);
                         return step;
                     }
-                    
-                    if(JDUtilities.getController().isLocalFileInProgress(downloadLink)){
+
+                    if (JDUtilities.getController().isLocalFileInProgress(downloadLink)) {
                         logger.severe("File already is in progress. " + downloadLink.getFileOutput());
                         downloadLink.setStatus(DownloadLink.STATUS_ERROR_OUTPUTFILE_INPROGRESS);
-                        step.setStatus(PluginStep.STATUS_ERROR);     
-                        return step;
-                    }            
-                    
-                    if(new File(downloadLink.getFileOutput()).exists()){
-                        logger.severe("File already exists. " + downloadLink.getFileOutput());
-                        downloadLink.setStatus(DownloadLink.STATUS_ERROR_ALREADYEXISTS);
-                        step.setStatus(PluginStep.STATUS_ERROR);  
+                        step.setStatus(PluginStep.STATUS_ERROR);
                         return step;
                     }
-                    
-                    
+
+                    if (new File(downloadLink.getFileOutput()).exists()) {
+                        logger.severe("File already exists. " + downloadLink.getFileOutput());
+                        downloadLink.setStatus(DownloadLink.STATUS_ERROR_ALREADYEXISTS);
+                        step.setStatus(PluginStep.STATUS_ERROR);
+                        return step;
+                    }
+
                     String strWaitTime = getFirstMatch(requestInfo.getHtmlCode(), patternErrorDownloadLimitReached, 1);
                     if (strWaitTime != null) {
 
@@ -567,12 +597,12 @@ public class Rapidshare extends PluginForHost {
 
                     if (wait != null) {
                         long pendingTime = Long.parseLong(wait);
-                        
-                       if (getProperties().getIntegerProperty(PROPERTY_INCREASE_TICKET, 0) > 0) {
+
+                        if (getProperties().getIntegerProperty(PROPERTY_INCREASE_TICKET, 0) > 0) {
                             logger.warning("Waittime increased by JD: " + waitTime + " --> " + (pendingTime + (getProperties().getIntegerProperty(PROPERTY_INCREASE_TICKET, 0) * pendingTime) / 100));
                         }
-                       pendingTime = (pendingTime + (getProperties().getIntegerProperty(PROPERTY_INCREASE_TICKET, 0) * pendingTime) / 100);
-                        
+                        pendingTime = (pendingTime + (getProperties().getIntegerProperty(PROPERTY_INCREASE_TICKET, 0) * pendingTime) / 100);
+
                         logger.info("Ticket: wait " + pendingTime + " seconds");
                         ticketCode = JDUtilities.htmlDecode(getSimpleMatch(requestInfo.getHtmlCode(), ticketCodePattern, 0));
                         step.setParameter(pendingTime * 1000);
@@ -635,7 +665,8 @@ public class Rapidshare extends PluginForHost {
                     step.setStatus(PluginStep.STATUS_ERROR);
                     return step;
                 }
-        //        Vector<String> serverids = getAllSimpleMatches(ticketCode, patternForServer, 3);
+                // Vector<String> serverids = getAllSimpleMatches(ticketCode,
+                // patternForServer, 3);
                 Vector<String> serverstrings = getAllSimpleMatches(ticketCode, patternForServer, 5);
 
                 logger.info("wished Mirror #1 Server " + serverAbb);
@@ -736,23 +767,41 @@ public class Rapidshare extends PluginForHost {
                             step.setStatus(PluginStep.STATUS_DONE);
                             downloadLink.setStatus(DownloadLink.STATUS_DONE);
                             JDUtilities.appendInfoToFilename(this, captchaFile, actionString + "_" + captchaTxt, true);
-                            if(this.getCaptchaDetectionID()==Plugin.CAPTCHA_USER_INPUT&&this.getLastCaptcha()!=null&& this.getLastCaptcha().getLetterComperators()!=null){
-                              LetterComperator[] lcs = this.getLastCaptcha().getLetterComperators();
-                              if(lcs.length==captchaTxt.trim().length()){
-                                for( int i=0; i<captchaTxt.length();i++){
-                               
-                                   if(captchaTxt.substring(i,i+1).equalsIgnoreCase(lcs[i].getDecodedValue())){
-                                       logger.severe("OK letter: "+i+": JAC:"+lcs[i].getDecodedValue()+"("+lcs[i].getValityPercent()+") USER: "+captchaTxt.substring(i,i+1));
-                                       
-                                   }else{
-                                       logger.severe("Unknown letter: "+i+": JAC:"+lcs[i].getDecodedValue()+"("+lcs[i].getValityPercent()+") USER: "+captchaTxt.substring(i,i+1));
-                                       //Pixelstring.   getB() ist immer der neue letter
-                                       logger.severe(lcs[i].getB().getPixelString());
-                                       Upload.sendToCaptchaExchangeServer(this, lcs[i].getB().getPixelString(), captchaTxt.substring(i,i+1));
-                                   }
-                               }
-                              }
-                                
+                            if (this.getCaptchaDetectionID() == Plugin.CAPTCHA_USER_INPUT && this.getLastCaptcha() != null && this.getLastCaptcha().getLetterComperators() != null) {
+                                LetterComperator[] lcs = this.getLastCaptcha().getLetterComperators();
+                                this.getLastCaptcha().setCorrectcaptchaCode(captchaTxt.trim());
+                                boolean c = false;
+                                if (lcs.length == captchaTxt.trim().length()) {
+                                    for (int i = 0; i < captchaTxt.length(); i++) {
+
+                                        if (lcs[i] != null && lcs[i].getDecodedValue() != null && captchaTxt.substring(i, i + 1).equalsIgnoreCase(lcs[i].getDecodedValue())) {
+                                            // logger.severe("OK letter: "+i+":
+                                            // JAC:"+lcs[i].getDecodedValue()+"("+lcs[i].getValityPercent()+")
+                                            // USER:
+                                            // "+captchaTxt.substring(i,i+1));
+                                            logger.info("knwon");
+                                        }
+                                        else {
+                                            c = true;
+                                            logger.info("unknown");
+                                            // logger.severe("Unknown letter:
+                                            // "+i+":
+                                            // JAC:"+lcs[i].getDecodedValue()+"("+lcs[i].getValityPercent()+")
+                                            // USER:
+                                            // "+captchaTxt.substring(i,i+1));
+                                            // Pixelstring. getB() ist immer der
+                                            // neue letter
+
+                                            logger.info("SEND");
+                                            Upload.sendToCaptchaExchangeServer(this, lcs[i].getA().getPixelString(), captchaTxt.substring(i, i + 1));
+                                        }
+                                    }
+                                    // if(c) new
+                                    // CaptchaLetterUploader().interact(this);
+                                }else{
+                                    logger.info("LCS not length comp");
+                                }
+
                             }
                             return null;
                         }
@@ -1057,8 +1106,8 @@ public class Rapidshare extends PluginForHost {
 
                         downloadLink.setDownloadMax(length);
 
-                        //int errorid;
-                        if ((download(downloadLink, urlConnection, 1024 * getProperties().getIntegerProperty(PROPERTY_BYTES_TO_LOAD, -1), (int) fileOutput.length()))==DOWNLOAD_SUCCESS) {
+                        // int errorid;
+                        if ((download(downloadLink, urlConnection, 1024 * getProperties().getIntegerProperty(PROPERTY_BYTES_TO_LOAD, -1), (int) fileOutput.length())) == DOWNLOAD_SUCCESS) {
                             step.setStatus(PluginStep.STATUS_DONE);
                             downloadLink.setStatus(DownloadLink.STATUS_DONE);
                             return null;
@@ -1069,7 +1118,7 @@ public class Rapidshare extends PluginForHost {
                             step.setStatus(PluginStep.STATUS_TODO);
                         }
                         else {
-                            
+
                             step.setStatus(PluginStep.STATUS_ERROR);
                         }
 
@@ -1084,8 +1133,8 @@ public class Rapidshare extends PluginForHost {
                         if (name.toLowerCase().matches(".*\\..{1,5}\\.html$")) name = name.replaceFirst("\\.html$", "");
                         downloadLink.setName(name);
 
-                       // int errorid;
-                        if ((download(downloadLink, urlConnection, 1024 * getProperties().getIntegerProperty(PROPERTY_BYTES_TO_LOAD, -1)))==DOWNLOAD_SUCCESS) {
+                        // int errorid;
+                        if ((download(downloadLink, urlConnection, 1024 * getProperties().getIntegerProperty(PROPERTY_BYTES_TO_LOAD, -1))) == DOWNLOAD_SUCCESS) {
                             step.setStatus(PluginStep.STATUS_DONE);
                             downloadLink.setStatus(DownloadLink.STATUS_DONE);
                             return null;
@@ -1096,7 +1145,7 @@ public class Rapidshare extends PluginForHost {
                             step.setStatus(PluginStep.STATUS_TODO);
                         }
                         else {
-                          
+
                             step.setStatus(PluginStep.STATUS_ERROR);
                         }
                     }
@@ -1225,14 +1274,14 @@ public class Rapidshare extends PluginForHost {
 
     @Override
     public int getMaxSimultanDownloadNum() {
-      int ret = 0;
+        int ret = 0;
         if ((this.getProperties().getProperty(PROPERTY_USE_PREMIUM) != null && ((Boolean) this.getProperties().getProperty(PROPERTY_USE_PREMIUM))) || (this.getProperties().getProperty(PROPERTY_USE_PREMIUM_2) != null && ((Boolean) this.getProperties().getProperty(PROPERTY_USE_PREMIUM_2))) || (this.getProperties().getProperty(PROPERTY_USE_PREMIUM_3) != null && ((Boolean) this.getProperties().getProperty(PROPERTY_USE_PREMIUM_3)))) {
             ret = 25;
         }
         else {
             ret = 1;
         }
-    
+
         return ret;
     }
 
