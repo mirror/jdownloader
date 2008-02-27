@@ -25,7 +25,7 @@ public class utils {
                 return objectLoaded;
             }
            catch (Exception e) {
-                e.printStackTrace();
+               // e.printStackTrace();
             }
         }
         return null;

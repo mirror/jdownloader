@@ -412,7 +412,17 @@ public class JDInit {
                 updater.setCid(oldCid);
                 logger.finer("Get available files");
                 Vector<Vector<String>> files = updater.getAvailableFiles();
+                logger.info(files+"");
                 updater.filterAvailableUpdates(files, JDUtilities.getResourceFile("."));
+                if(JDUtilities.getSubConfig("JAC").getBooleanProperty(Configuration.USE_CAPTCHA_EXCHANGE_SERVER, false)){
+                for (int i = files.size() - 1; i >= 0; i--) {
+                  
+                    if (files.get(i).get(0).startsWith("jd/captcha/methods/")) {
+                        logger.info("Autotrain active. ignore "+files.get(i).get(0));
+                        files.remove(i);
+                    }
+                }
+                }
                 if(files!=null ){
                     JDUtilities.getController().setWaitingUpdates(files);
                 }

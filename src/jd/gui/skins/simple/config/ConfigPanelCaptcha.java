@@ -93,7 +93,12 @@ public class ConfigPanelCaptcha extends ConfigPanel implements MouseListener{
     @Override
     public void initPanel() {
         setLayout(new BorderLayout());
+        
+        
         GUIConfigEntry ce;
+        
+        ce= new GUIConfigEntry( new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, JDUtilities.getSubConfig("JAC"), Configuration.USE_CAPTCHA_EXCHANGE_SERVER, JDLocale.L("gui.config.captcha.autotrain","Autotrain aktivieren")).setDefaultValue(false));
+        addGUIConfigEntry(ce);
         
         ce= new GUIConfigEntry( new ConfigEntry(ConfigContainer.TYPE_SPINNER, configuration, Configuration.PARAM_CAPTCHA_INPUT_SHOWTIME, JDLocale.L("gui.config.captcha.show_input_dialog","Zeige den Eingabedialog"),0,180).setDefaultValue(0));
         addGUIConfigEntry(ce);

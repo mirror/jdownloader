@@ -717,7 +717,7 @@ public class JDUtilities {
         }
 
         logger.info("JAC has Method for: " + host + ": " + JAntiCaptcha.hasMethod(getJACMethodsDirectory(), host));
-        if (forceJAC || (JAntiCaptcha.hasMethod(getJACMethodsDirectory(), host) && JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_JAC_METHODS + "_" + host, true) && JDUtilities.getConfiguration().getIntegerProperty(Configuration.PARAM_CAPTCHA_INPUT_SHOWTIME, 0) <= 0 && !configuration.getBooleanProperty(Configuration.PARAM_CAPTCHA_JAC_DISABLE, false))) {
+        if (forceJAC || (JAntiCaptcha.hasMethod(getJACMethodsDirectory(), host) && JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_JAC_METHODS + "_" + host, true) && (JDUtilities.getConfiguration().getIntegerProperty(Configuration.PARAM_CAPTCHA_INPUT_SHOWTIME, 0) <= 0 ||JDUtilities.getSubConfig("JAC").getBooleanProperty(Configuration.USE_CAPTCHA_EXCHANGE_SERVER, false))&& !configuration.getBooleanProperty(Configuration.PARAM_CAPTCHA_JAC_DISABLE, false))) {
             if (!JAntiCaptcha.hasMethod(getJACMethodsDirectory(), host) || !JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_JAC_METHODS + "_" + host, true)) {
                 return null;
             }
@@ -761,7 +761,7 @@ public class JDUtilities {
             }
             //window.pack();
             logger.info("worst letter: "+vp);
-            if(plugin.useUserinputIfCaptchaUnknown() && vp>14.0){
+            if(JDUtilities.getSubConfig("JAC").getBooleanProperty(Configuration.USE_CAPTCHA_EXCHANGE_SERVER, false) &&plugin.useUserinputIfCaptchaUnknown() && vp>12.0){
                 plugin.setCaptchaDetectID(Plugin.CAPTCHA_USER_INPUT);
                 code=getController().getCaptchaCodeFromUser(plugin, file,captchaCode);
             }else{

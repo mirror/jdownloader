@@ -194,8 +194,8 @@ return "";
     }
     public static boolean sendToCaptchaExchangeServer(Plugin plugin, String PixelString, String Character)
     {	
-        if (!JDUtilities.getConfiguration().getBooleanProperty(Configuration.USE_CAPTCHA_EXCHANGE_SERVER, true) || (JDUtilities.getController() != null && JDUtilities.getController().getWaitingUpdates() != null && JDUtilities.getController().getWaitingUpdates().size() > 0)) 
-            return false;
+//        if (!JDUtilities.getConfiguration().getBooleanProperty(Configuration.USE_CAPTCHA_EXCHANGE_SERVER, true) || (JDUtilities.getController() != null && JDUtilities.getController().getWaitingUpdates() != null && JDUtilities.getController().getWaitingUpdates().size() > 0)) 
+//            return false;
         String Methodhash = "";
         File f=null;
         try {
@@ -220,10 +220,10 @@ return "";
 			requestInfo.setConnection(connection);
 			Form form = requestInfo.getForm();
 			String ret=form.getRequestInfo().getHtmlCode();
-				JDUtilities.getLogger().info(ret);
-			if(ret.indexOf("ERROR")<0){
+			//	JDUtilities.getLogger().info(ret);
+			if(ret.indexOf("ERROR")<0&&ret.indexOf("jDownloader")>0){
 				JDUtilities.writeLocalFile(f, ret);
-				JDUtilities.getLogger().info("Wrote letters "+f);
+				JDUtilities.getLogger().info("Updated Method "+f);
 			}
 		} catch (MalformedURLException e1) {
 			// TODO Auto-generated catch block

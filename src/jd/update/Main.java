@@ -63,7 +63,7 @@ public static Insets INSETS=new Insets(5,5,5,5);
        addToGridBag(frame, progresslist, REL, REL, REM, 1, 1, 0, INSETS, BOTHRESIZE, NORTHWEST);
        addToGridBag(frame, new JLabel("Download: "), REL, REL, REL, 1, 0, 0, INSETS, NORESIZE, NORTHWEST);
        addToGridBag(frame, progressload, REL, REL, REM, 1, 1, 0, INSETS, BOTHRESIZE, NORTHWEST);
-       log.append("Starting...");
+       log(log,"Starting...");
         logWindow.setText(log.toString());
         addToGridBag(frame, scrollPane, REL, REL, REM, 1, 1, 1, INSETS, BOTHRESIZE, NORTHWEST);
         
@@ -82,7 +82,7 @@ public static Insets INSETS=new Insets(5,5,5,5);
             if (args[i].trim().equalsIgnoreCase("/rt0")) runtype = 0;
             if (args[i].trim().equalsIgnoreCase("/rt1")) runtype = 1;
             if (args[i].trim().equalsIgnoreCase("/rt2")) runtype = 2;
-            log.append("Parameter " + i + " " + args[i] + " " + System.getProperty("line.separator"));
+            log(log,"Parameter " + i + " " + args[i] + " " + System.getProperty("line.separator"));
             logWindow.setText(log.toString());
         }
         new Thread() {
@@ -123,9 +123,9 @@ public static Insets INSETS=new Insets(5,5,5,5);
             if (new File("webcheck.tmp").exists()) {
                 new File("webcheck.tmp").delete();
             }
-            log.append("Local: " + new File("").getAbsolutePath());
+            log(log,"Local: " + new File("").getAbsolutePath());
             if (runtype == 2) {
-                log.append("Start java -jar JDownloader.jar in " + new File("").getAbsolutePath());
+                log(log,"Start java -jar JDownloader.jar in " + new File("").getAbsolutePath());
 //                if(SubConfiguration.getSubConfig("OS").getStringProperty("RESTART_COMMAND", null)!=null &&SubConfiguration.getSubConfig("OS").getProperty("RESTART_PARAMETER", null)!=null&&SubConfiguration.getSubConfig("OS").getStringProperty("RESTART_DIRECTORY", null)!=null){
 //                    runCommand(SubConfiguration.getSubConfig("OS").getStringProperty("RESTART_COMMAND", null), (String[])SubConfiguration.getSubConfig("OS").getProperty("RESTART_PARAMETER", null), SubConfiguration.getSubConfig("OS").getStringProperty("RESTART_DIRECTORY", null), 0);
 //                      
@@ -134,11 +134,11 @@ public static Insets INSETS=new Insets(5,5,5,5);
 //                }
                 }
             else if (runtype == 1 && new File("jd/Main.class").exists()) {
-                log.append("java Main.class in " + new File("jd/").getAbsolutePath());
+                log(log,"java Main.class in " + new File("jd/").getAbsolutePath());
                 runCommand("java", new String[] { "Main.class" }, new File("jd/").getAbsolutePath(), 0);
             }
             else {
-                log.append("Start jDownloader.jnlp in " + new File("").getAbsolutePath());
+                log(log,"Start jDownloader.jnlp in " + new File("").getAbsolutePath());
                 runCommand("javaws", new String[] { "jDownloader.jnlp" }, new File("").getAbsolutePath(), 0);
 
             }
@@ -152,6 +152,12 @@ public static Insets INSETS=new Insets(5,5,5,5);
         catch (InterruptedException e) {
         }
         System.exit(0);
+    }
+
+    private static void log(StringBuffer log, String string) {
+        log.append(string);
+        System.out.println(string);
+        
     }
 
     public static void trace(Object arg) {

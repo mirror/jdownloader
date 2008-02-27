@@ -26,6 +26,7 @@ import java.util.zip.GZIPInputStream;
 import javax.swing.JProgressBar;
 
 import jd.utils.HTMLEntities;
+import jd.utils.JDUtilities;
 
 /**
  * @author JD-Team Webupdater lädt pfad und hash infos von einem server und
@@ -41,7 +42,7 @@ public class WebUpdater implements Serializable {
      * Pfad zur lis.php auf dem updateserver
      */
     public String             listPath;
-
+    public static final String USE_CAPTCHA_EXCHANGE_SERVER = "USE_CAPTCHA_EXCHANGE_SERVER";
     /**
      * Pfad zum Online-Bin verzeichniss
      */
@@ -89,6 +90,7 @@ public class WebUpdater implements Serializable {
     }
 
     public void log(String buf) {
+        System.out.println(buf);
         if (logger != null) logger.append(new Date() + ":" + buf + System.getProperty("line.separator"));
     }
 
@@ -166,6 +168,7 @@ public class WebUpdater implements Serializable {
         log(files.toString());
         String akt;
         String hash;
+     
         for (int i = files.size() - 1; i >= 0; i--) {
             akt = new File(files.elementAt(i).elementAt(0)).getAbsolutePath();
             String[] tmp = files.elementAt(i).elementAt(0).split("\\?");
@@ -180,6 +183,12 @@ public class WebUpdater implements Serializable {
             if (!hash.equalsIgnoreCase(files.elementAt(i).elementAt(1))) {
                 log("UPDATE AV. " + files.elementAt(i) + " - " + hash);
                 continue;
+            }
+            if(SubConfiguration.getSubConfig("JAC").getBooleanProperty(USE_CAPTCHA_EXCHANGE_SERVER, false)){
+               if(tmp[0].startsWith("jd/captcha/methods/")){ 
+                   log("Autotrain filter: "+tmp[0]);
+                continue;
+               }
             }
             // log("OLD: " + files.elementAt(i) + " - " + hash);
             files.removeElementAt(i);
@@ -202,12 +211,19 @@ public class WebUpdater implements Serializable {
                     continue;
                 }
                 hash = getLocalHash(new File(akt));
-
+                log(new File(akt)+"");
                 if (!hash.equalsIgnoreCase(files.elementAt(i).elementAt(1))) {
                     log("UPDATE AV. " + files.elementAt(i) + " - " + hash);
                     continue;
                 }
-                // log("OLD: " + files.elementAt(i) + " - " + hash);
+                if(SubConfiguration.getSubConfig("JAC").getBooleanProperty(USE_CAPTCHA_EXCHANGE_SERVER, false)){
+                    if(tmp[0].startsWith("jd/captcha/methods/")){ 
+                        log("Autotrain filter: "+tmp[0]);
+                     continue;
+                    }
+                 }
+                 log("OLD: " + files.elementAt(i) + " - " + hash);
+               
                 files.removeElementAt(i);
             }
         }

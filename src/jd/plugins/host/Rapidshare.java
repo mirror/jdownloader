@@ -75,6 +75,7 @@ import java.util.regex.Pattern;
 import jd.captcha.LetterComperator;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
+import jd.config.Configuration;
 import jd.controlling.interaction.CaptchaMethodLoader;
 import jd.plugins.DownloadLink;
 import jd.plugins.Plugin;
@@ -766,23 +767,23 @@ public class Rapidshare extends PluginForHost {
                             step.setStatus(PluginStep.STATUS_DONE);
                             downloadLink.setStatus(DownloadLink.STATUS_DONE);
                             JDUtilities.appendInfoToFilename(this, captchaFile, actionString + "_" + captchaTxt, true);
-                            if (this.getCaptchaDetectionID() == Plugin.CAPTCHA_USER_INPUT && this.getLastCaptcha() != null && this.getLastCaptcha().getLetterComperators() != null) {
+                            if (JDUtilities.getSubConfig("JAC").getBooleanProperty(Configuration.USE_CAPTCHA_EXCHANGE_SERVER, false)&&this.getCaptchaDetectionID() == Plugin.CAPTCHA_USER_INPUT && this.getLastCaptcha() != null && this.getLastCaptcha().getLetterComperators() != null) {
                                 LetterComperator[] lcs = this.getLastCaptcha().getLetterComperators();
                                 this.getLastCaptcha().setCorrectcaptchaCode(captchaTxt.trim());
-                                boolean c = false;
+                                
                                 if (lcs.length == captchaTxt.trim().length()) {
                                     for (int i = 0; i < captchaTxt.length(); i++) {
 
-                                        if (lcs[i] != null && lcs[i].getDecodedValue() != null && captchaTxt.substring(i, i + 1).equalsIgnoreCase(lcs[i].getDecodedValue())) {
+                                        if (lcs[i] != null && lcs[i].getDecodedValue() != null && captchaTxt.substring(i, i + 1).equalsIgnoreCase(lcs[i].getDecodedValue())&&lcs[i].getValityPercent()<30.0) {
                                             // logger.severe("OK letter: "+i+":
                                             // JAC:"+lcs[i].getDecodedValue()+"("+lcs[i].getValityPercent()+")
                                             // USER:
                                             // "+captchaTxt.substring(i,i+1));
-                                            logger.info("knwon");
+                                          
                                         }
                                         else {
-                                            c = true;
-                                            logger.info("unknown");
+                                         
+                                           
                                             // logger.severe("Unknown letter:
                                             // "+i+":
                                             // JAC:"+lcs[i].getDecodedValue()+"("+lcs[i].getValityPercent()+")
@@ -803,8 +804,7 @@ public class Rapidshare extends PluginForHost {
 
                                         }
                                     }
-                                    // if(c) new
-                                    // CaptchaLetterUploader().interact(this);
+                                  
                                 }else{
                                     logger.info("LCS not length comp");
                                 }
