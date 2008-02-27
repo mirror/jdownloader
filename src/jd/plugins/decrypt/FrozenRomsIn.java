@@ -1,4 +1,6 @@
-package jd.plugins.decrypt;  import jd.plugins.DownloadLink;
+package jd.plugins.decrypt;  import jd.config.ConfigContainer;
+import jd.config.ConfigEntry;
+import jd.plugins.DownloadLink;
 
 import java.io.File;
 import java.io.IOException;
@@ -9,20 +11,28 @@ import java.util.regex.Pattern;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
+import jd.utils.JDLocale;
 
 public class FrozenRomsIn extends PluginForDecrypt {
 
     final static String host             = "frozen-roms.in";
 
-    private String      version          = "0.1.0";
+    private String      version          = "0.2.0";
     
     private Pattern     patternSupported = getSupportPattern(
     		"http://[*]frozen-roms\\.in/(details_[0-9]+|get_[0-9]+_[0-9]+).html");
+    
+    private static final String[] HOSTERS = new String[] {
+    	"FileFactory.com", "Netload.in", "Rapidshare.com"
+		};
 
     public FrozenRomsIn() {
+    	
         super();
         steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
         currentStep = steps.firstElement();
+        this.setConfigElements();
+        
     }
 
     @Override
@@ -56,7 +66,30 @@ public class FrozenRomsIn extends PluginForDecrypt {
     }
 
     @Override
+    public boolean doBotCheck(File file) {
+        return false;
+    }
+    
+    private boolean getHosterUsed(String link) {
+    	
+        if ( link == null ) return false;
+        link = link.toLowerCase();
+        
+        for ( int i = 0; i < HOSTERS.length; i++ ) {
+        	
+            if ( link.contains(HOSTERS[i].toLowerCase()) ) {
+                return getProperties().getBooleanProperty(HOSTERS[i], true);
+            }
+            
+        }
+        
+        return false;
+        
+    }
+
+    @Override
     public PluginStep doStep(PluginStep step, String parameter) {
+    	
     	if(step.getStep() == PluginStep.STEP_DECRYPT) {
     		
             Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
@@ -85,8 +118,8 @@ public class FrozenRomsIn extends PluginForDecrypt {
     				
     				reqinfo = getRequest(new URL(
     						"http://frozen-roms.in/get_"+getLinks.get(i).get(0)+".html"));
-    				decryptedLinks.add(this.createDownloadlink(
-    						reqinfo.getConnection().getHeaderField("Location")));
+    				String link = reqinfo.getConnection().getHeaderField("Location");
+    				if ( getHosterUsed(link) ) decryptedLinks.add(this.createDownloadlink(link));
     				progress.increase(1);
     				
     			}
@@ -102,10 +135,23 @@ public class FrozenRomsIn extends PluginForDecrypt {
     	return null;
     	
     }
-
-    @Override
-    public boolean doBotCheck(File file) {
-        return false;
+    
+    private void setConfigElements() {
+    	
+        ConfigEntry cfg;
+        
+        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_LABEL,
+        		JDLocale.L("plugins.decrypt.general.hosterSelection", "Hoster Auswahl")));
+        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
+        
+        for ( int i = 0; i < HOSTERS.length; i++ ) {
+        	
+            config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX,
+            		getProperties(), HOSTERS[i], HOSTERS[i]));
+            cfg.setDefaultValue(true);
+            
+        }
+        
     }
     
 }
