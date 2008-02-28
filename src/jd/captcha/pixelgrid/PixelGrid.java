@@ -1008,8 +1008,10 @@ public class PixelGrid {
      * @param objectContrast
      */
     public void removeSmallObjects(double contrast, double objectContrast) {
+        double tmp= owner.getJas().getDouble("objectDetectionMergeSeperatedPartsDistance");
+        owner.getJas().set("objectDetectionMergeSeperatedPartsDistance",-1.0);
         Vector<PixelObject> ret = getObjects(contrast, objectContrast);
-
+        owner.getJas().set("objectDetectionMergeSeperatedPartsDistance",tmp);
         for (int i = 1; i < ret.size(); i++) {
 
             this.removeObjectFromGrid(ret.elementAt(i));
@@ -1023,9 +1025,12 @@ public class PixelGrid {
      * @param maxSize
      */
     public void removeSmallObjects(double contrast, double objectContrast, int maxSize) {
+        double tmp= owner.getJas().getDouble("objectDetectionMergeSeperatedPartsDistance");
+        owner.getJas().set("objectDetectionMergeSeperatedPartsDistance",-1.0);
         Vector<PixelObject> ret = getObjects(contrast, objectContrast);
+        owner.getJas().set("objectDetectionMergeSeperatedPartsDistance",tmp);
 
-        for (int i = 0; i < ret.size(); i++) {
+        for (int i = 1; i < ret.size(); i++) {
             if (ret.elementAt(i).getSize() < maxSize) this.removeObjectFromGrid(ret.elementAt(i));
 
         }
@@ -1044,10 +1049,10 @@ public class PixelGrid {
         Vector<PixelObject> ret = new Vector<PixelObject>();
         PixelObject lastObject = null;
         PixelObject object;
-        boolean showdebug=false;
-        ScrollPaneWindow w=null;
-         if(showdebug)w= new ScrollPaneWindow(this.owner);
-         if(showdebug)w.setTitle("getObjects");
+        boolean showdebug = false;
+        ScrollPaneWindow w = null;
+        if (showdebug) w = new ScrollPaneWindow(this.owner);
+        if (showdebug) w.setTitle("getObjects2");
         int line = 0;
         for (int x = 0; x < getWidth(); x++) {
             for (int y = 0; y < getHeight(); y++) {
@@ -1074,6 +1079,29 @@ public class PixelGrid {
                         if (JAntiCaptcha.isLoggerActive()) logger.finer("Verfolge weiter Letztes Object: area:" + lastObject.getArea() + " dist: " + dist);
 
                     }
+                    else if (owner.getJas().getDouble("objectDetectionMergeSeperatedPartsDistance")>0.0 &&lastObject != null && x >= lastObject.getXMin() && x <= (lastObject.getXMin() + lastObject.getWidth())) {
+                        double xDist = Math.abs(x - (lastObject.getXMin() + lastObject.getWidth() / 2));
+                        double perc = 100.0 * (xDist / (double) (lastObject.getWidth() / 2));
+                      
+                        if (perc < owner.getJas().getDouble("objectDetectionMergeSeperatedPartsDistance")) {
+
+                            object = lastObject;
+                            for (int i = 0; i < ret.size(); i++) {
+                                if (ret.elementAt(i) == object) {
+                                    ret.remove(i);
+                                    break;
+                                }
+                            }
+                            if (JAntiCaptcha.isLoggerActive()) logger.finer(perc+" Neues Objekt liegt im alten.... weiter gehts");
+                        }
+                        else {
+                            object = new PixelObject(this);
+                            object.setContrast(contrast);
+                            // if(JAntiCaptcha.isLoggerActive())logger.info("Kontrast:
+                            // "+contrast+" : "+objectContrast);
+                            object.setWhiteContrast(objectContrast);
+                        }
+                    }
                     else {
                         object = new PixelObject(this);
                         object.setContrast(contrast);
@@ -1081,17 +1109,19 @@ public class PixelGrid {
                         // "+contrast+" : "+objectContrast);
                         object.setWhiteContrast(objectContrast);
                     }
-                    if(showdebug){if(object.getArea()>200) w.setImage(0,line,getImage());}
+                    if (showdebug) {
+                        if (object.getArea() > 20) w.setImage(0, line, getImage());
+                    }
                     getObject(x, y, tmpGrid, object);
                     // if(JAntiCaptcha.isLoggerActive())logger.info(object.getSize()+"
                     // avg "+object.getAverage()+" area: "+object.getArea());
-                    if (object.getArea() > 200) {
-                        if(showdebug)w.setImage(1,line,getImage());
-                        if(showdebug) w.setText(2,line,"Size: "+ object.getSize());
-                        if(showdebug) w.setText(3,line,"AVG: "+object.getAverage());
-                        if(showdebug) w.setText(4,line,"Area: "+object.getArea());
-                        if(showdebug) w.setImage(5,line,object.toLetter().getImage());
-                        if(showdebug) w.setText(6,line,object.toLetter().getDim());
+                    if (object.getArea() > 20) {
+                        if (showdebug) w.setImage(1, line, getImage());
+                        if (showdebug) w.setText(2, line, "Size: " + object.getSize());
+                        if (showdebug) w.setText(3, line, "AVG: " + object.getAverage());
+                        if (showdebug) w.setText(4, line, "Area: " + object.getArea());
+                        if (showdebug) w.setImage(5, line, object.toLetter().getImage());
+                        if (showdebug) w.setText(6, line, object.toLetter().getDim());
                     }
                     line++;
                     lastObject = object;
@@ -1120,7 +1150,7 @@ public class PixelGrid {
                 }
             }
         }
-        if(showdebug) w.refreshUI();
+        if (showdebug) w.refreshUI();
         return ret;
 
     }

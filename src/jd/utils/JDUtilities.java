@@ -761,7 +761,7 @@ public class JDUtilities {
             }
             //window.pack();
             logger.info("worst letter: "+vp);
-            if(JDUtilities.getSubConfig("JAC").getBooleanProperty(Configuration.USE_CAPTCHA_EXCHANGE_SERVER, false) &&plugin.useUserinputIfCaptchaUnknown() && vp>12.0){
+            if(JDUtilities.getSubConfig("JAC").getBooleanProperty(Configuration.USE_CAPTCHA_EXCHANGE_SERVER, false) &&plugin.useUserinputIfCaptchaUnknown() && vp>(double)JDUtilities.getSubConfig("JAC").getIntegerProperty(Configuration.AUTOTRAIN_ERROR_LEVEL, 18)){
                 plugin.setCaptchaDetectID(Plugin.CAPTCHA_USER_INPUT);
                 code=getController().getCaptchaCodeFromUser(plugin, file,captchaCode);
             }else{

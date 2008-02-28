@@ -187,6 +187,10 @@ public class Configuration extends Property implements Serializable {
 
     public static final String PARAM_FILE_EXISTS = "FILE_EXISTS";
 
+    public static final String AUTOTRAIN_ERROR_LEVEL = "AUTOTRAIN_ERROR_LEVEL";
+
+    public static final String AUTOTRAIN_SHOW_TIMEOUT = "AUTOTRAIN_SHOW_TIMEOUT";
+
   
     /**
      * Die unterschiedlichen Interaktionen. (ZB Reconnect nach einem Download)

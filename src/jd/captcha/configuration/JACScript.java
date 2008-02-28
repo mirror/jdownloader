@@ -318,8 +318,13 @@ public class JACScript {
          */
         set("scanVarianceX", 0);
         set("scanVarianceY", 0);
-        
 
+        /**
+         * BestehenBuchstaben aus  mehreren getrennten parts, werdens ie durch die object detection getrennt.
+         * Dieser wert gibt für ein neues objekt an wie weit es sich vom mittelpunkt des letzten  objekts entfernt aufhalten darf ohne zum letzten gezählt zu werden.
+         * beispiel: 7.0: der innere kreis von einer 0 wird  zum äußeren gezählt wenn sich der innere nicht weiter als 7 % vom mittelunkte des äußeren befindet.
+         */
+        set("objectDetectionMergeSeperatedPartsDistance", -1.0);
 
     }
 

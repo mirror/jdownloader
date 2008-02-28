@@ -282,7 +282,7 @@ public class Captcha extends PixelGrid {
             }
         }
         grid = newgrid;
-BasicWindow.showImage(this.getImage());
+//BasicWindow.showImage(this.getImage());
     }
 
     /**
@@ -346,7 +346,7 @@ BasicWindow.showImage(this.getImage());
             PixelObject obj = letters.elementAt(i);
 
             Letter l = obj.toLetter();
-            l.removeSmallObjects(owner.getJas().getDouble("ObjectColorContrast"), owner.getJas().getDouble("ObjectDetectionContrast"));
+           // l.removeSmallObjects(owner.getJas().getDouble("ObjectColorContrast"), owner.getJas().getDouble("ObjectDetectionContrast"));
             owner.getJas().executeLetterPrepareCommands(l);
             // if(owner.getJas().getInteger("leftAngle")!=0 ||
             // owner.getJas().getInteger("rightAngle")!=0) l =

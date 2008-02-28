@@ -157,7 +157,7 @@ public class LetterComperator {
         int tmpIntersectionWidth;
         int tmpIntersectionHeight;
 
-//       logger.info("Scan from " + scanXFrom + "/" + scanXTo + " - " +     scanYFrom + "/" + scanYTo + " Var: " + vx + "/" + vy);
+    // if(b.id==1371) logger.info(" Scan from " + scanXFrom + "/" + scanXTo + " - " +     scanYFrom + "/" + scanYTo + " Var: " + vx + "/" + vy);
 //schleife verschieb a und b gegeneinander. Dabei wird um den jeweiligen Mittelpunkt herumgesprungen. Die Warscheinlichsten Fälle in der Nullage werden zuerst geprüft
         for (int xx = UTILITIES.getJumperStart(scanXFrom, scanXTo); UTILITIES.checkJumper(xx, scanXFrom, scanXTo); xx = UTILITIES.nextJump(xx, scanXFrom, scanXTo, 1)) {
             for (int yy = UTILITIES.getJumperStart(scanYFrom, scanYTo); UTILITIES.checkJumper(yy, scanYFrom, scanYTo); yy = UTILITIES.nextJump(yy, scanYFrom, scanYTo, 1)) {
@@ -271,8 +271,8 @@ public class LetterComperator {
             tmpHeightFaktor = Math.pow(1.0 - localHeightPercent, 2);
             tmpWidthFaktor = Math.pow(1.0 - localWidthPercent, 2);
             tmpError = tmpErrorTotal;
-            tmpError += Math.min(1.0, tmpHeightFaktor* intersectionDimensionWeight);
-            tmpError += Math.min(1.0, tmpWidthFaktor* intersectionDimensionWeight);
+            tmpError += Math.min(1.0, tmpHeightFaktor)* intersectionDimensionWeight;
+            tmpError += Math.min(1.0, tmpWidthFaktor)* intersectionDimensionWeight;
             tmpError /= 4.0;
             tmpError *= 1.2;
             tmpError = Math.min(1.0, tmpError);
@@ -355,10 +355,10 @@ public class LetterComperator {
 //            logger.info(tmpIntersectionWidth+ "/"+a.getWidth()+" = "+localWidthPercent+" --> "+tmpWidthFaktor);
             
             tmpError = tmpErrorTotal;
-            tmpError += Math.min(1.0, tmpCoverageFaktorA * coverageFaktorAWeight);
-            tmpError += Math.min(1.0, tmpCoverageFaktorB* coverageFaktorBWeight);
-            tmpError += Math.min(1.0, tmpHeightFaktor* intersectionDimensionWeight);
-            tmpError += Math.min(1.0, tmpWidthFaktor* intersectionDimensionWeight);
+            tmpError += Math.min(1.0, tmpCoverageFaktorA) * coverageFaktorAWeight;
+            tmpError += Math.min(1.0, tmpCoverageFaktorB)* coverageFaktorBWeight;
+            tmpError += Math.min(1.0, tmpHeightFaktor)* intersectionDimensionWeight;
+            tmpError += Math.min(1.0, tmpWidthFaktor)* intersectionDimensionWeight;
             tmpError += (bothElements.size() - 1) * cleftFaktor;
             tmpError /= 6.0;
             tmpError = Math.min(1.0, tmpError);
@@ -530,7 +530,7 @@ public class LetterComperator {
      * @return Gibt den decoed value von b zurück
      */
     public String getDecodedValue() {
-        if(b==null)return null;
+        if(b==null||b.getDecodedValue().length()!=1)return "-";
         return this.b.getDecodedValue();
     }
 
@@ -736,10 +736,10 @@ public class LetterComperator {
         hs.put("preCompare", this.getPreValityPercent());
         
         double tmpError = this.getTotalPixelError();
-        tmpError += Math.min(1.0, this.getCoverageFaktorA() * coverageFaktorAWeight);
-        tmpError += Math.min(1.0, this.getCoverageFaktorB()* coverageFaktorBWeight);
-        tmpError += Math.min(1.0, this.getHeightFaktor()* intersectionDimensionWeight);
-        tmpError += Math.min(1.0, this.getWidthFaktor()* intersectionDimensionWeight);
+        tmpError += Math.min(1.0, this.getCoverageFaktorA()) * coverageFaktorAWeight;
+        tmpError += Math.min(1.0, this.getCoverageFaktorB())* coverageFaktorBWeight;
+        tmpError += Math.min(1.0, this.getHeightFaktor())* intersectionDimensionWeight;
+        tmpError += Math.min(1.0, this.getWidthFaktor())* intersectionDimensionWeight;
         tmpError += (getBothElementsNum() - 1) * cleftFaktor;
         tmpError /= 6.0;
         tmpError = Math.min(1.0, tmpError);

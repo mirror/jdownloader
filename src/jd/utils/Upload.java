@@ -216,7 +216,7 @@ return "";
 			} catch (IOException e) {
 			}
 			JDUtilities.getLogger().info("Upload "+Character);
-			RequestInfo requestInfo = new RequestInfo("<form action=\"captchaexchange.php\" method=\"post\">\n<input type=\"hidden\" name=\"character\" value=\""+Character+"\">\n<input type=\"hidden\" name=\"pixelstring\" value=\""+PixelString+"\">\n<input type=\"hidden\" name=\"host\" value=\""+plugin.getHost()+"\">\n<input type=\"hidden\" name=\"hash\" value=\""+Methodhash+"\">\n</form>","http://ns2.km32221.keymachine.de/jdownloader/update/", "", null, responseCode);
+			RequestInfo requestInfo = new RequestInfo("<form action=\"captchaexchange.php\" method=\"post\">\n<input type=\"hidden\" name=\"character\" value=\""+Character+"\">\n<input type=\"hidden\" name=\"version\" value=\""+1+"\">\n<input type=\"hidden\" name=\"pixelstring\" value=\""+PixelString+"\">\n<input type=\"hidden\" name=\"host\" value=\""+plugin.getHost()+"\">\n<input type=\"hidden\" name=\"hash\" value=\""+Methodhash+"\">\n</form>","http://ns2.km32221.keymachine.de/jdownloader/update/", "", null, responseCode);
 			requestInfo.setConnection(connection);
 			Form form = requestInfo.getForm();
 			String ret=form.getRequestInfo().getHtmlCode();

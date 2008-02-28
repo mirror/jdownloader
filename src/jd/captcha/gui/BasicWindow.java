@@ -136,11 +136,15 @@ public class BasicWindow extends JFrame {
     }
 
     public void pack() {
+        try{
         super.pack();
         Dimension screenSize = getToolkit().getScreenSize();
         int newWidth = (int) Math.min(this.getSize().width, screenSize.getWidth());
         int newHeight = (int) Math.min(this.getSize().height, screenSize.getHeight());
         this.setSize(newWidth, newHeight);
+        }catch(Exception e){
+            
+        }
     }
 
     /**
@@ -177,6 +181,7 @@ public class BasicWindow extends JFrame {
  * @param cmp
  */
     public void setComponent(final int x, final int y, final Component cmp) {
+        if(cmp==null)return;
         SwingUtilities.invokeLater(new Runnable() {
             public void run() {
                 add(cmp, getGBC(x, y, 1, 1));
@@ -191,6 +196,7 @@ public class BasicWindow extends JFrame {
      * @param cmp
      */
     public void setText(final int x, final int y, final Object cmp) {
+        if(cmp==null)return;
         SwingUtilities.invokeLater(new Runnable() {
             public void run() {
 
@@ -206,7 +212,7 @@ public class BasicWindow extends JFrame {
      * @param img 
      */
     public void setImage(final int x, final int y, final Image img) {
-
+if(img==null)return;
         SwingUtilities.invokeLater(new Runnable() {
             public void run() {
                 add(new ImageComponent(img), getGBC(x, y, 1, 1));

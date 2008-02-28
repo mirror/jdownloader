@@ -47,6 +47,7 @@ public class ScrollPaneWindow extends BasicWindow {
      * @param cmp
      */
     public void setComponent(final int x, final int y, final Component cmp) {
+        if(cmp==null)return;
         SwingUtilities.invokeLater(new Runnable() {
             public void run() {
                 panel.add(cmp, getGBC(x, y, 1, 1));
@@ -61,7 +62,7 @@ public class ScrollPaneWindow extends BasicWindow {
      * @param cmp
      */
     public void setText(final int x, final int y, final Object cmp) {
-
+        if(cmp==null)return;
         // final ScrollPaneWindow _this=this;
 
         SwingUtilities.invokeLater(new Runnable() {
@@ -81,6 +82,7 @@ public class ScrollPaneWindow extends BasicWindow {
      * @param img 
      */
     public void setImage(final int x, final int y, final Image img) {
+        if(img==null)return;
         SwingUtilities.invokeLater(new Runnable() {
             public void run() {
                 panel.add(new ImageComponent(img), getGBC(x, y, 1, 1));
