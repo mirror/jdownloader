@@ -67,8 +67,7 @@ public class binCode {
 	public static String codeToString(String code)
 	{
 		try {
-			String[] sts = code.split("\\|");
-			String[] binArray = codeArrayToBinArray(sts);
+			String[] binArray = codeToStringArray(code);
 			StringBuffer ret = new StringBuffer();
 			boolean last = false;
 			for (int i = 0; i < binArray.length; i++) {
@@ -80,6 +79,10 @@ public class binCode {
 			e.printStackTrace();
 		}
 		return null;
+	}
+	public static String[] codeToStringArray(String code)
+	{
+		return codeArrayToBinArray(code.split("\\|"));
 	}
 
 }
