@@ -22,9 +22,9 @@ import jd.utils.JDLocale;
 public class MirrorItDe extends PluginForDecrypt {
 	
     final 	static 			String	host                = "mirrorit.de";
-    private 				String	version             = "1.1.0";
+    private 				String	version             = "1.1.1";
     static 	private final 	Pattern	patternSupported	= Pattern.compile("http://.*?mirrorit\\.de/\\?id\\=[a-zA-Z0-9]{16}", Pattern.CASE_INSENSITIVE);
-    static 	private final 	String 	CRYPTLINK			= "class=\"five-stars\" onclick=\"rate(\'°\', 5)°launchDownloadURL(\'°\', \'°\'";
+    static 	private final 	String 	CRYPTLINK			= "launchDownloadURL(\'°\', \'°\')";
     
     public MirrorItDe() {
     	
@@ -101,11 +101,15 @@ public class MirrorItDe extends PluginForDecrypt {
     			
     			for ( int i=0; i<links.size(); i++ ) {
     				
-    				if ( getHosterUsed(links.get(i).get(0)) ) {
-    					
-	    				reqinfo = getRequest(new URL("http://www.mirrorit.de/Out?id=" + URLDecoder.decode(links.get(i).get(2), "UTF-8") + "&num=" + links.get(i).get(3)));
-	    				reqinfo = getRequest(new URL(reqinfo.getLocation()));
-	    				decryptedLinks.add(this.createDownloadlink(reqinfo.getLocation()));
+	    			reqinfo = getRequest(new URL("http://www.mirrorit.de/Out?id="
+	    					+ URLDecoder.decode(links.get(i).get(0), "UTF-8") + "&num=" + links.get(i).get(1)));
+	    			String link = reqinfo.getLocation();
+	    			reqinfo = getRequest(new URL(link));
+	    			link = reqinfo.getLocation();
+	    			
+	    			if ( getHosterUsed(link) ) {
+	    				
+	    				decryptedLinks.add(this.createDownloadlink(link));
 	    				progress.increase(1);
 	    				
     				}
