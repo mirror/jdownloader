@@ -102,6 +102,7 @@ public class FileFactory extends PluginForHost {
         }
         
         downloadLink.setUrlDownload(downloadLink.getDownloadURL().replaceAll(".com//", ".com/"));
+    	downloadLink.setUrlDownload(downloadLink.getDownloadURL().replaceAll("http://filefactory", "http://www.filefactory"));
 
         if ( getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM, false) ) {
         	
@@ -213,9 +214,9 @@ public class FileFactory extends PluginForHost {
                         step.setParameter(file);
                         step.setStatus(PluginStep.STATUS_USER_INPUT);
                         
+                        break;
+                        
                     }
-                    
-                    break;
                     
                 case PluginStep.STEP_DOWNLOAD :
                 	
@@ -527,6 +528,7 @@ public class FileFactory extends PluginForHost {
     public boolean getFileInformation(DownloadLink downloadLink) {
         
     	downloadLink.setUrlDownload(downloadLink.getDownloadURL().replaceAll(".com//", ".com/"));
+    	downloadLink.setUrlDownload(downloadLink.getDownloadURL().replaceAll("http://filefactory", "http://www.filefactory"));
     	
     	try {
         	
