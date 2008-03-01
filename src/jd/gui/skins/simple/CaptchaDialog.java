@@ -50,7 +50,7 @@ public class CaptchaDialog extends JDialog implements ActionListener {
      */
     private String            captchaText      = null;
 
-    private JButton btnBAD;
+    private JButton           btnBAD;
 
     @SuppressWarnings("unused")
     private static Logger     logger           = JDUtilities.getLogger();
@@ -148,7 +148,7 @@ public class CaptchaDialog extends JDialog implements ActionListener {
         textField.selectAll();
         btnOK.addActionListener(this);
         btnBAD.addActionListener(this);
-        
+
         getRootPane().setDefaultButton(btnOK);
         setDefaultCloseOperation(JDialog.DO_NOTHING_ON_CLOSE);
 
@@ -157,29 +157,31 @@ public class CaptchaDialog extends JDialog implements ActionListener {
         JDUtilities.addToGridBag(this, textField, 0, 1, 1, 1, 1, 1, null, GridBagConstraints.NONE, GridBagConstraints.EAST);
         JDUtilities.addToGridBag(this, btnOK, 1, 1, 1, 1, 1, 1, null, GridBagConstraints.NONE, GridBagConstraints.WEST);
         JDUtilities.addToGridBag(this, btnBAD, 2, 1, 1, 1, 1, 1, null, GridBagConstraints.NONE, GridBagConstraints.WEST);
-        
+
         if (plugin.getLastCaptcha() != null && plugin.getLastCaptcha().getLetterComperators() != null) {
             JPanel p = new JPanel();
             p.add(new JLabel("Current Captcha: "));
-            JPanel p2 = new JPanel();
-            p2.add(new JLabel("Detection: "));
-
-            JPanel p3 = new JPanel();
-            p3.add(new JLabel("Uncertainty: "));
-            LetterComperator[] lcs = plugin.getLastCaptcha().getLetterComperators();
-            for (int i = 0; i < lcs.length; i++) {
-                Letter a = lcs[i].getA();
-                Letter b = lcs[i].getB();
-                if (a != null) p.add(new JLabel(new ImageIcon(a.getImage(2))));
-                if (b != null) p2.add(new JLabel(new ImageIcon(b.getImage(2))));
-                p3.add(new JLabel("" + Math.round(lcs[i].getValityPercent())));
-            }
-           
-
             JDUtilities.addToGridBag(this, p, 0, 2, 2, 1, 0, 0, null, GridBagConstraints.NONE, GridBagConstraints.CENTER);
-            JDUtilities.addToGridBag(this, p2, 0, 3, 2, 1, 0, 0, null, GridBagConstraints.NONE, GridBagConstraints.CENTER);
-            JDUtilities.addToGridBag(this, p3, 0, 4, 2, 1, 0, 0, null, GridBagConstraints.NONE, GridBagConstraints.CENTER);
 
+            if (JDUtilities.getSubConfig("JAC").getBooleanProperty("SHOW_EXTENDED_CAPTCHA", true)) {
+
+                JPanel p2 = new JPanel();
+                p2.add(new JLabel("Detection: "));
+
+                JPanel p3 = new JPanel();
+                p3.add(new JLabel("Uncertainty: "));
+                LetterComperator[] lcs = plugin.getLastCaptcha().getLetterComperators();
+                for (int i = 0; i < lcs.length; i++) {
+                    Letter a = lcs[i].getA();
+                    Letter b = lcs[i].getB();
+                    if (a != null) p.add(new JLabel(new ImageIcon(a.getImage(2))));
+                    if (b != null) p2.add(new JLabel(new ImageIcon(b.getImage(2))));
+                    p3.add(new JLabel("" + Math.round(lcs[i].getValityPercent())));
+                }
+
+                JDUtilities.addToGridBag(this, p2, 0, 3, 2, 1, 0, 0, null, GridBagConstraints.NONE, GridBagConstraints.CENTER);
+                JDUtilities.addToGridBag(this, p3, 0, 4, 2, 1, 0, 0, null, GridBagConstraints.NONE, GridBagConstraints.CENTER);
+            }
         }
         pack();
         setLocation(JDUtilities.getCenterOfComponent(null, this));

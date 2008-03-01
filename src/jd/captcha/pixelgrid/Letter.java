@@ -57,40 +57,36 @@ public class Letter extends PixelGrid {
      * @param faktor
      * @return Vereinfachter Buchstabe
      */
-    public Letter getSimplified(int faktor) {
-        if (faktor == 1) return this;
-        int newWidth = (int) Math.ceil(getWidth() / faktor);
-        int newHeight = (int) Math.ceil(getHeight() / faktor);
+    public Letter getSimplified(double faktor) {
+        if (faktor == 1.0||faktor==0.0) return this;
+       
+        int newWidth = (int) Math.ceil((double)getWidth() / faktor);
+        int newHeight = (int) Math.ceil((double)getHeight() / faktor);
         Letter ret = new Letter();
         ;
         ret.setOwner(this.owner);
         int avg = getAverage();
-        int value;
+   
+        logger.info(newWidth+" - "+newHeight);
         int[][] newGrid = new int[newWidth][newHeight];
-        elementPixel = 0;
+        
         for (int x = 0; x < newWidth; x++) {
             for (int y = 0; y < newHeight; y++) {
+                setPixelValue(x, y, newGrid, getMaxPixelValue(), this.owner);
+                
+            }
+            }
+        elementPixel = 0;
+        for (int x = 0; x < getWidth(); x++) {
+            for (int y = 0; y < getHeight(); y++) {
 
-                value = 0;
-                for (int gx = 0; gx < faktor; gx++) {
-                    for (int gy = 0; gy < faktor; gy++) {
-                        int newX = x * faktor + gx;
-                        int newY = y * faktor + gy;
-                        if (newX > getWidth() || newY > getHeight()) {
-                            continue;
-                        }
-                        //                       
-                        if (isElement(getPixelValue(newX, newY), avg)) {
-                            value++;
-                        }
-                    }
-
+                if(isElement(getPixelValue(x, y), avg)){
+                   int newX= (int)Math.floor((double)x/faktor);
+                   int newY=(int)Math.floor((double)y/faktor);
+                   setPixelValue(newX, newY, newGrid, 0, this.owner);
+                   
                 }
 
-                // setPixelValue(x, y, newGrid, getPixelValue(x* faktor, y*
-                // faktor), this.owner);
-                setPixelValue(x, y, newGrid, ((value * 100) / (faktor * faktor)) > 50 ? 0 : getMaxPixelValue(), this.owner);
-                if (newGrid[x][y] == 0) elementPixel++;
             }
         }
 
@@ -99,6 +95,47 @@ public class Letter extends PixelGrid {
         ret.clean();
 
         return ret;
+//        if (faktor == 1.0) return this;
+//        int newWidth = (int) Math.ceil(getWidth() / faktor);
+//        int newHeight = (int) Math.ceil(getHeight() / faktor);
+//        Letter ret = new Letter();
+//        ;
+//        ret.setOwner(this.owner);
+//        int avg = getAverage();
+//        int value;
+//        int[][] newGrid = new int[newWidth][newHeight];
+//        elementPixel = 0;
+//        for (int x = 0; x < newWidth; x++) {
+//            for (int y = 0; y < newHeight; y++) {
+//
+//                value = 0;
+//                for (int gx = 0; gx < faktor; gx++) {
+//                    for (int gy = 0; gy < faktor; gy++) {
+//                        int newX = x * faktor + gx;
+//                        int newY = y * faktor + gy;
+//                        if (newX > getWidth() || newY > getHeight()) {
+//                            continue;
+//                        }
+//                        //                       
+//                        if (isElement(getPixelValue(newX, newY), avg)) {
+//                            value++;
+//                        }
+//                    }
+//
+//                }
+//
+//                // setPixelValue(x, y, newGrid, getPixelValue(x* faktor, y*
+//                // faktor), this.owner);
+//                setPixelValue(x, y, newGrid, ((value * 100) / (faktor * faktor)) > 50 ? 0 : getMaxPixelValue(), this.owner);
+//                if (newGrid[x][y] == 0) elementPixel++;
+//            }
+//        }
+//
+//        ret.setGrid(newGrid);
+//
+//        ret.clean();
+//
+//        return ret;
     }
 
     /**

@@ -85,7 +85,7 @@ public class PixelObject implements Comparable {
 
     private double        whiteContrast = 1;
 
-    private int letterColor=0;
+    private int           letterColor   = 0;
 
     /**
      * @param owner
@@ -107,7 +107,8 @@ public class PixelObject implements Comparable {
         int[] tmp = { x, y, color };
         int tmpAvg = avg;
         avg = UTILITIES.mixColors(avg, color, getSize(), 1);
-        // if(JAntiCaptcha.isLoggerActive())logger.info(" AVG "+avg+" ("+color+")");
+        // if(JAntiCaptcha.isLoggerActive())logger.info(" AVG "+avg+"
+        // ("+color+")");
         if (Math.abs(avg - tmpAvg) < (owner.getMaxPixelValue() * this.contrast)) {
             noAvgChanges++;
             if (avgIsSaveNum <= noAvgChanges && saveAvg == 0) {
@@ -171,12 +172,13 @@ public class PixelObject implements Comparable {
      */
     public boolean doesColorAverageFit(int color) {
         if (getSize() > 50000) {
-            if(JAntiCaptcha.isLoggerActive())logger.severe("Objekt scheint sehr groß zu werden. objectColorContrast zu hoch?");
+            if (JAntiCaptcha.isLoggerActive()) logger.severe("Objekt scheint sehr groß zu werden. objectColorContrast zu hoch?");
             return false;
         }
 
         int tavg = saveAvg == 0 ? avg : saveAvg;
-        // if(JAntiCaptcha.isLoggerActive())logger.info(tavg+"-"+color+" : "+(int)Math.abs(tavg -
+        // if(JAntiCaptcha.isLoggerActive())logger.info(tavg+"-"+color+" :
+        // "+(int)Math.abs(tavg -
         // color)+"<"+(int)(owner.getMaxPixelValue() * this.contrast)+" =
         // "+(((int)Math.abs(tavg - color) < (int)(owner.getMaxPixelValue() *
         // this.contrast))));
@@ -405,61 +407,75 @@ public class PixelObject implements Comparable {
     public String toString() {
         return super.toString() + " " + this.getLocation()[0];
     }
-/**
- * Gibt den Pixelmassenwert in x und y zurück. Dieser Wert zeigt die Pixelkonzentration an diesem Punkt an.
- * @param x
- * @param y
- * @return
- */
+
+    /**
+     * Gibt den Pixelmassenwert in x und y zurück. Dieser Wert zeigt die
+     * Pixelkonzentration an diesem Punkt an.
+     * 
+     * @param x
+     * @param y
+     * @return
+     */
     public long getMassValue(int x, int y) {
         long ret = 0;
         for (int i = 0; i < getSize(); i++) {
             int[] akt = elementAt(i);
-            if(x==akt[0]&&y==akt[1]){
-                ret += owner.getMaxPixelValue()*2;
-            }else{
-            int col=owner.getMaxPixelValue()-akt[2];
-            double dist = Math.sqrt(Math.abs(akt[0] - x) * Math.abs(akt[0] - x) + Math.abs(akt[1] - y) * Math.abs(akt[1] - y))/0.5;
-           
-            ret += col / (dist + 1);
+            if (x == akt[0] && y == akt[1]) {
+                ret += owner.getMaxPixelValue() * 2;
+            }
+            else {
+                int col = owner.getMaxPixelValue() - akt[2];
+                double dist = Math.sqrt(Math.abs(akt[0] - x) * Math.abs(akt[0] - x) + Math.abs(akt[1] - y) * Math.abs(akt[1] - y)) / 0.5;
+
+                ret += col / (dist + 1);
             }
         }
         return ret;
     }
-/**
- * Diese Funktion erstellt einen Vector<[x,y,color]> der nur Randelemente des Buchstabens enthält.
- * @param letter
- * @return
- */
+
+    /**
+     * Diese Funktion erstellt einen Vector<[x,y,color]> der nur Randelemente
+     * des Buchstabens enthält.
+     * 
+     * @param letter
+     * @return
+     */
     public Vector<int[]> getBorderVector(Letter letter) {
-       Vector<int[]> ret = new Vector<int[]>();
-       if(letter==null)letter=this.toLetter();
-       int[][] grid = letter.getGrid();
-       
-       for (int i = 0; i < getSize(); i++) {
-           int[] akt = elementAt(i);
-           int x=akt[0];
-           int y=akt[1];
-       
-           int[][] map = letter.getLocalMap(grid, x, y);
-           boolean c=false;
-           for (int xx = 0; xx < 3; xx++) {
-               for (int yy = 0; yy <3; yy++) {
-                   if(map[xx][yy]!=0){
-                       c=true;
-                       break;
-                   }
-               }
-           }
-          if(c) ret.add(akt);
-       }
-       
-       return ret;
-       
+        Vector<int[]> ret = new Vector<int[]>();
+        if (letter == null) letter = this.toLetter();
+        int[][] grid = letter.getGrid();
+
+        for (int i = 0; i < getSize(); i++) {
+            int[] akt = elementAt(i);
+            int x = akt[0];
+            int y = akt[1];
+
+            int[][] map = letter.getLocalMap(grid, x, y);
+            boolean c = false;
+            for (int xx = 0; xx < 3; xx++) {
+                for (int yy = 0; yy < 3; yy++) {
+                    if (map[xx][yy] != 0) {
+                        c = true;
+                        break;
+                    }
+                }
+            }
+            if (c) ret.add(akt);
+        }
+
+        return ret;
+
     }
 
-public void setColor(int pixelValue) {
-    this.letterColor=pixelValue;
-    
-}
+    public void setColor(int pixelValue) {
+        this.letterColor = pixelValue;
+
+    }
+
+    public void add(PixelObject current) {
+        for (int i = 0; i < current.object.size(); i++) {
+            add(current.object.get(i)[0], current.object.get(i)[1], current.object.get(i)[2]);
+        }
+
+    }
 }

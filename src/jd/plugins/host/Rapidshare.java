@@ -767,6 +767,7 @@ public class Rapidshare extends PluginForHost {
                             step.setStatus(PluginStep.STATUS_DONE);
                             downloadLink.setStatus(DownloadLink.STATUS_DONE);
                             JDUtilities.appendInfoToFilename(this, captchaFile, actionString + "_" + captchaTxt, true);
+                            /*
                             if (JDUtilities.getSubConfig("JAC").getBooleanProperty(Configuration.USE_CAPTCHA_EXCHANGE_SERVER, false)&&this.getCaptchaDetectionID() == Plugin.CAPTCHA_USER_INPUT && this.getLastCaptcha() != null && this.getLastCaptcha().getLetterComperators() != null) {
                                 LetterComperator[] lcs = this.getLastCaptcha().getLetterComperators();
                                 this.getLastCaptcha().setCorrectcaptchaCode(captchaTxt.trim());
@@ -810,6 +811,7 @@ public class Rapidshare extends PluginForHost {
                                 }
 
                             }
+                            */
                             return null;
                         }
                         else if (aborted) {

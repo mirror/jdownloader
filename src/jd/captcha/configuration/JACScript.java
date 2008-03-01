@@ -215,7 +215,7 @@ public class JACScript {
          * dieser Wert verändert wird, wrd die MTH File unbrauchbar und muss neu
          * trainiert werden
          */
-        set("simplifyFaktor", 1);
+        set("simplifyFaktor", 1.0);
 /*
  * A: captchabild  | B:  datenbankbild 
  */
@@ -324,7 +324,7 @@ public class JACScript {
          * Dieser wert gibt für ein neues objekt an wie weit es sich vom mittelpunkt des letzten  objekts entfernt aufhalten darf ohne zum letzten gezählt zu werden.
          * beispiel: 7.0: der innere kreis von einer 0 wird  zum äußeren gezählt wenn sich der innere nicht weiter als 7 % vom mittelunkte des äußeren befindet.
          */
-        set("objectDetectionMergeSeperatedPartsDistance", -1.0);
+        set("multiplePartMergeMinSize", 0);
 
     }
 
@@ -334,13 +334,18 @@ public class JACScript {
      * @param value
      */
     public void set(String key, Object value) {
+        try{
         key=key.toLowerCase();
         if(get(key)==null){
 //            if(JAntiCaptcha.isLoggerActive())logger.finer("INIT Parameter: "+key+" = "+value+"("+value.getClass().getName()+")"); 
         }else{
 //        if(JAntiCaptcha.isLoggerActive())logger.finer("Update Parameter: "+key+" = "+value+"("+value.getClass().getName()+")");
         }
+   
         parameter.put(key, value);
+        }catch(Exception e){
+            
+        }
     }
 
     /**

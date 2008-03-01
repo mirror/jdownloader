@@ -250,14 +250,14 @@ public class JAntiCaptcha {
                     }
                 }
                 letter.setGrid(newGrid);
-                letter = letter.align(-40, +40);
+               // letter = letter.align(-40, +40);
                 letter.setSourcehash(UTILITIES.getLocalHash(images[i]));
                 letter.setDecodedValue(images[i].getName().split("\\_")[1].split("\\.")[0]);
                 letter.clean();
 
                 letterDB.add(letter);
 
-                letter.resizetoHeight(25);
+                //letter.resizetoHeight(25);
 
             }
             else {
@@ -583,7 +583,7 @@ public class JAntiCaptcha {
         // BasicWindow.showImage(test.getImage(10));
         for (int i = 0; i < letters.length; i++) {
 
-            bw2.add(new ImageComponent(letters[i].getImage(jas.getInteger("simplifyFaktor"))), UTILITIES.getGBC(i * 2 + 2, 0, 2, 2));
+            bw2.add(new ImageComponent(letters[i].getImage((int)Math.ceil(jas.getDouble("simplifyFaktor")))), UTILITIES.getGBC(i * 2 + 2, 0, 2, 2));
 
         }
         bw2.setVisible(true);
@@ -598,7 +598,7 @@ public class JAntiCaptcha {
             if (lcs[i] == null) continue;
             bw2.add(new JLabel("Aus Datenbank:"), UTILITIES.getGBC(0, 6, 2, 2));
             if(lcs[i].getB()!=null){
-                bw2.add(new ImageComponent(lcs[i].getB().getImage(jas.getInteger("simplifyFaktor"))), UTILITIES.getGBC(i * 2 + 2, 6, 2, 2));
+                bw2.add(new ImageComponent(lcs[i].getB().getImage((int)Math.ceil(jas.getDouble("simplifyFaktor")))), UTILITIES.getGBC(i * 2 + 2, 6, 2, 2));
             }else{
                 bw2.add(new JLabel("B unknown"), UTILITIES.getGBC(i * 2 + 2, 6, 2, 2));
                    
@@ -693,7 +693,7 @@ public class JAntiCaptcha {
 
         bw3.setText(0, 2, "Freigestellt:");
         for (int i = 0; i < letters.length; i++) {
-            bw3.setImage(i + 1, 2, letters[i].getImage(jas.getInteger("simplifyFaktor")));
+            bw3.setImage(i + 1, 2, letters[i].getImage((int)Math.ceil(jas.getDouble("simplifyFaktor"))));
         }
         bw3.repack();
         // Decoden. checkCaptcha verwendet dabei die gecachte Erkennung der
@@ -705,7 +705,7 @@ public class JAntiCaptcha {
             bw3.setText(0, 4, "Decoded:");
             bw3.setText(0, 5, "UNSicherheit:");
             for (int i = 0; i < lcs.length; i++) {
-                if (lcs[i] != null && lcs[i].getB() != null) bw3.setImage(i + 1, 3, lcs[i].getB().getImage(jas.getInteger("simplifyFaktor")));
+                if (lcs[i] != null && lcs[i].getB() != null) bw3.setImage(i + 1, 3, lcs[i].getB().getImage((int)Math.ceil(jas.getDouble("simplifyFaktor"))));
                 if (lcs[i] != null && lcs[i].getB() != null) bw3.setText(i + 1, 4, lcs[i].getDecodedValue());
                 if (lcs[i] != null && lcs[i].getB() != null) bw3.setText(i + 1, 5, (double) Math.round(10 * lcs[i].getValityPercent()) / 10.0);
 
@@ -799,7 +799,7 @@ public class JAntiCaptcha {
                 }
                 else {
                     if (JAntiCaptcha.isLoggerActive()) logger.info(letterDB + " - ");
-                    if (lcs != null && lcs[i] != null && letterDB.size() > 30) {
+                    if (lcs != null && lcs[i] != null && letterDB.size() > 30&&lcs[i]!=null&& lcs[i].getB()!=null) {
                         lcs[i].getB().markBad();
                     }
                     letters[i].setOwner(this);
@@ -1317,22 +1317,23 @@ public class JAntiCaptcha {
      */
     public void displayLibrary() {
         Letter tmp;
+        if(letterDB==null || letterDB.size()==0)return;
         //final BasicWindow w = BasicWindow.getWindow("Library: " + letterDB.size() + " Datensätze", 400, 300);
         final ScrollPaneWindow w = new ScrollPaneWindow(this);
         w.setTitle("Library: " + letterDB.size() + " Datensätze");
         w.resizeWindow(100);
-//sortLetterDB();
+sortLetterDB();
         w.setLocationByScreenPercent(5, 5);
         final JAntiCaptcha jac = this;
         int x = 0;
-        int y = 0;
+        int y = 0; 
         int i = 0;
         ListIterator<Letter> iter = letterDB.listIterator(letterDB.size() - 1);
         while (iter.hasPrevious()) {
             tmp = (Letter) iter.previous();
 
             w.setText(x, y, tmp.getId() + ": " + tmp.getDecodedValue() + "(" + tmp.getGoodDetections() + "/" + tmp.getBadDetections() + ")");
-            w.setImage(x + 1, y, tmp.getImage(jas.getInteger("simplifyFaktor")));
+            w.setImage(x + 1, y, tmp.getImage((int)Math.ceil(jas.getDouble("simplifyFaktor"))));
             w.setComponent(x + 3, y, new JButton(new AbstractAction("-" + i++) {
                 private static final long serialVersionUID = -2348057068938986789L;
 
@@ -1349,10 +1350,10 @@ public class JAntiCaptcha {
             }));
 
             y++;
-//            if (y > 20) {
-//                y = 0;
-//                x += 6;
-//            }
+           if (y > 20) {
+               y = 0;
+                x += 6;
+            }
         }
         w.refreshUI();
     }

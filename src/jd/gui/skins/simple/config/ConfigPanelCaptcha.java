@@ -97,11 +97,14 @@ public class ConfigPanelCaptcha extends ConfigPanel implements MouseListener{
         
         GUIConfigEntry ce;
         
-        ce= new GUIConfigEntry( new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, JDUtilities.getSubConfig("JAC"), Configuration.USE_CAPTCHA_EXCHANGE_SERVER, JDLocale.L("gui.config.captcha.autotrain","Autotrain aktivieren")).setDefaultValue(false));
+//        ce= new GUIConfigEntry( new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, JDUtilities.getSubConfig("JAC"), Configuration.USE_CAPTCHA_EXCHANGE_SERVER, JDLocale.L("gui.config.captcha.autotrain","Autotrain aktivieren")).setDefaultValue(false));
+//        addGUIConfigEntry(ce);
+        ce= new GUIConfigEntry( new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, JDUtilities.getSubConfig("JAC"), "SHOW_EXTENDED_CAPTCHA", JDLocale.L("gui.config.captcha.extendedCaptcha","Captchaverarbeitung anzeigen")).setDefaultValue(true));
+     addGUIConfigEntry(ce);
+        
+        ce= new GUIConfigEntry( new ConfigEntry(ConfigContainer.TYPE_SPINNER, JDUtilities.getSubConfig("JAC"), Configuration.AUTOTRAIN_ERROR_LEVEL, JDLocale.L("gui.config.captcha.train.level","Trainierschwelle"),5,80).setDefaultValue(18).setExpertEntry(true));
         addGUIConfigEntry(ce);
-        ce= new GUIConfigEntry( new ConfigEntry(ConfigContainer.TYPE_SPINNER, JDUtilities.getSubConfig("JAC"), Configuration.AUTOTRAIN_ERROR_LEVEL, JDLocale.L("gui.config.captcha.autotrain.level","Autotrainschwelle"),5,80).setDefaultValue(18).setExpertEntry(true));
-        addGUIConfigEntry(ce);
-        ce= new GUIConfigEntry( new ConfigEntry(ConfigContainer.TYPE_SPINNER, JDUtilities.getSubConfig("JAC"), Configuration.AUTOTRAIN_SHOW_TIMEOUT, JDLocale.L("gui.config.captcha.autotrain.show_timeout","Countdown für das Autotrain Eingabefenster"),0,600).setDefaultValue(20).setExpertEntry(true));
+        ce= new GUIConfigEntry( new ConfigEntry(ConfigContainer.TYPE_SPINNER, JDUtilities.getSubConfig("JAC"), Configuration.AUTOTRAIN_SHOW_TIMEOUT, JDLocale.L("gui.config.captcha.train.show_timeout","Countdown für das Training Eingabefenster"),0,600).setDefaultValue(20).setExpertEntry(true));
         addGUIConfigEntry(ce);
         
         ce= new GUIConfigEntry( new ConfigEntry(ConfigContainer.TYPE_SPINNER, configuration, Configuration.PARAM_CAPTCHA_INPUT_SHOWTIME, JDLocale.L("gui.config.captcha.show_input_dialog","Zeige den Eingabedialog"),0,180).setDefaultValue(0));

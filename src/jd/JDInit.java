@@ -417,10 +417,10 @@ public class JDInit {
                 if(JDUtilities.getSubConfig("JAC").getBooleanProperty(Configuration.USE_CAPTCHA_EXCHANGE_SERVER, false)){
                 for (int i = files.size() - 1; i >= 0; i--) {
                   
-                    if (files.get(i).get(0).startsWith("jd/captcha/methods/")) {
-                        logger.info("Autotrain active. ignore "+files.get(i).get(0));
-                        files.remove(i);
-                    }
+//                    if (files.get(i).get(0).startsWith("jd/captcha/methods/")&&files.get(i).get(0).endsWith("mth")) {
+//                        logger.info("Autotrain active. ignore "+files.get(i).get(0));
+//                        files.remove(i);
+//                    }
                 }
                 }
                 if(files!=null ){

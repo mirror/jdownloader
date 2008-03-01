@@ -69,7 +69,7 @@ public class UploadedTo {
             // l.reduceWhiteNoise(2);
             // l.toBlackAndWhite(0.6);
 
-            ret[i] = l.getSimplified(captcha.owner.getJas().getInteger("simplifyFaktor"));
+            ret[i] = l.getSimplified(captcha.owner.getJas().getDouble("simplifyFaktor"));
 
         }
         return ret;

@@ -738,6 +738,7 @@ public class JDUtilities {
             String captchaCode = jac.checkCaptcha(captcha);
             logger.info("Code: " + captchaCode);
             logger.info("Vality: "+captcha.getValityPercent());
+            logger.info("Object Detection: "+captcha.isPerfectObjectDetection());
            //ScrollPaneWindow window = new ScrollPaneWindow("Captcha");
       
             plugin.setLastCaptcha(captcha);
@@ -761,7 +762,7 @@ public class JDUtilities {
             }
             //window.pack();
             logger.info("worst letter: "+vp);
-            if(JDUtilities.getSubConfig("JAC").getBooleanProperty(Configuration.USE_CAPTCHA_EXCHANGE_SERVER, false) &&plugin.useUserinputIfCaptchaUnknown() && vp>(double)JDUtilities.getSubConfig("JAC").getIntegerProperty(Configuration.AUTOTRAIN_ERROR_LEVEL, 18)){
+            if(captcha.isPerfectObjectDetection()&&JDUtilities.getSubConfig("JAC").getBooleanProperty(Configuration.USE_CAPTCHA_EXCHANGE_SERVER, false) &&plugin.useUserinputIfCaptchaUnknown() && vp>(double)JDUtilities.getSubConfig("JAC").getIntegerProperty(Configuration.AUTOTRAIN_ERROR_LEVEL, 18)){
                 plugin.setCaptchaDetectID(Plugin.CAPTCHA_USER_INPUT);
                 code=getController().getCaptchaCodeFromUser(plugin, file,captchaCode);
             }else{

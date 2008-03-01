@@ -31,15 +31,16 @@ public class JACTest {
        JAntiCaptcha jac= new JAntiCaptcha(methodsPath,hoster);
      //sharegullicom47210807182105.gif
       jac.setShowDebugGui(true);
-//  jac.exportDB();
+//jac.exportDB();
       UTILITIES.getLogger().info("has method: "+JAntiCaptcha.hasMethod(methodsPath, hoster));
-// jac.importDB();
+ //jac.importDB();
 LetterComperator.CREATEINTERSECTIONLETTER=true;
-      //jac.displayLibrary();
+    jac.displayLibrary();
   
-    jac.getJas().set("preScanFilter", 60);
+    //jac.getJas().set("preScanFilter", 100);
 //       jac.trainCaptcha(new File(JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath()+"/jd/captcha/methods"+"/"+hoster+"/captchas/"+"securedin1730080724541.jpg"), 4);
-     jac.showPreparedCaptcha(new File(JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath()+"/captchas"+"/"+hoster+"/"+"27.02.2008_23.33.46_DOWNLOAD+VIA+GLOBALCROSSING+#2_90_BAD.jpg"));
+     jac.showPreparedCaptcha(new File(JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath()+"/captchas"+"/"+hoster+"/"+
+             "1204391541414_01.03.2008_17.09.05_DOWNLOAD+VIA+GLOBALCROSSING_LWKW_GOOD.jpg"));
       
      //UTILITIES.getLogger().info(JAntiCaptcha.getCaptchaCode(UTILITIES.loadImage(new File(JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath()+"/jd/captcha/methods"+"/rapidshare.com/captchas/rapidsharecom24190807214810.jpg")), null, "rapidshare.com"));
      //jac.removeBadLetters();
