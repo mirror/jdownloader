@@ -243,7 +243,8 @@ public class PixelObject implements Comparable {
      * @return PixelObjectvector
      */
     public Vector<PixelObject> split(int splitNum, int overlap) {
-        Vector<PixelObject> ret = new Vector<PixelObject>();
+
+    	Vector<PixelObject> ret = new Vector<PixelObject>();
         for (int t = 0; t < splitNum; t++) {
             ret.add(new PixelObject(owner));
         }

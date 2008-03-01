@@ -556,13 +556,14 @@ public class JACScript {
                     } else if (cmd[1].equalsIgnoreCase("reduceWhiteNoise")) {
                         captcha.reduceWhiteNoise(Integer.parseInt(params[0].trim()));
                         continue;
-                    } else if (cmd[1].equalsIgnoreCase("normalize")) {
+                    }  else if (cmd[1].equalsIgnoreCase("normalize")) {
                         captcha.normalize(Double.parseDouble(params[0].trim()));
                         continue;
                     } else if (cmd[1].equalsIgnoreCase("convertPixel")) {
                         captcha.convertPixel(params[0].trim());
                         continue;
-                    } else if (cmd[1].equalsIgnoreCase("reduceBlackNoise")) {
+                    }
+                    else if (cmd[1].equalsIgnoreCase("reduceBlackNoise")) {
                         captcha.reduceBlackNoise(Integer.parseInt(params[0].trim()));
                         continue;
                     } else if (cmd[1].equalsIgnoreCase("blurIt")) {
@@ -591,7 +592,12 @@ public class JACScript {
                     } else if (cmd[1].equalsIgnoreCase("reduceBlackNoise")) {
                         captcha.reduceBlackNoise(Integer.parseInt(params[0].trim()), Double.parseDouble(params[1].trim()));
                         continue;
-                    }  else if (cmd[1].equalsIgnoreCase("cleanWithDetailMask")) {
+                    }  
+                    else if (cmd[1].equalsIgnoreCase("removeBridges")) {
+                        captcha.removeBridges(Integer.parseInt(params[0].trim()),Double.parseDouble(params[1].trim()));
+                        continue;
+                    } 
+                    else if (cmd[1].equalsIgnoreCase("cleanWithDetailMask")) {
                         captcha.cleanWithDetailMask(owner.createCaptcha(UTILITIES.loadImage(owner.getResourceFile(params[0].trim()))),Integer.parseInt(params[1].trim()));
                         continue;
                     }else {
@@ -734,7 +740,15 @@ public class JACScript {
                         letter.grid=tmp.grid;
                         continue;
                    
-                    } else {
+                    }
+                    else if (cmd[1].equalsIgnoreCase("betterAlign")) {
+                        Letter tmp=letter.betterAlign(Integer.parseInt(params[0].trim()), Integer.parseInt(params[1].trim()));   
+                        if(tmp!=null && tmp.grid!=null)
+                        letter.grid=tmp.grid;
+                        continue;
+                   
+                    }
+                    else {
                         if(JAntiCaptcha.isLoggerActive())logger.severe("Error in " + method + "/+script.jas : Function not valid: " + cmd[1] + "(" + cmd[2] + ")");
                     }
                 } else if (cmd[0].equals("function") && (params = cmd[2].split("\\,")).length == 3) {

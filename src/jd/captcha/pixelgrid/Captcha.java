@@ -993,7 +993,6 @@ public class Captcha extends PixelGrid {
         int maxWidth;
         // Alle Objekte aus dem captcha holen. Sie sind nach der Größe Sortiert
         Vector<PixelObject> objects = getObjects(contrast, objectContrast);
-
         // Kleine Objekte ausfiltern
         while (i < objects.size() && objects.elementAt(i++).getArea() > minArea && found < letterNum) {
             if(JAntiCaptcha.isLoggerActive())logger.info(objects.elementAt(i - 1).getWidth() + " Element: " + found + " : " + objects.elementAt(i - 1).getArea());

@@ -301,6 +301,60 @@ public class Letter extends PixelGrid {
 
     }
 
+    private int getFirstAndLastLinePixels()
+    {
+    	int c=0;
+        int avg = getAverage();
+        for (int y = 0; y < getHeight(); y++) {
+            for (int x = 0; x < getWidth(); x++) {
+            	if(isElement(getPixelValue(x, y), avg))
+            	c++;
+            }
+            if(c>0)
+            	break;
+        }
+        int c2=0;
+        for (int y = getHeight()-1; y > 0; y--) {
+            for (int x = 0; x < getWidth(); x++) {
+            	if(isElement(getPixelValue(x, y), avg))
+            	c2++;
+            }
+            if(c2>0)
+            	break;
+        }
+    	return c+c2;
+    }
+    
+    /**
+	 * Richtet sich an den Pixelzahlen der oberen und unteren Zeile und gibt unter umständen ein besseres Ergebnis aus
+     * 
+     * @param angleA
+     * @param angleB
+     * @return Gedrehter buchstabe
+     */
+    public Letter betterAlign(int angleA, int angleB) {
+        if (angleB < angleA) {
+            int tmp = angleB;
+            angleB = angleA;
+            angleA = tmp;
+        }
+        int accuracy = owner.getJas().getInteger("AlignAngleSteps");
+        int bestPix = getFirstAndLastLinePixels();
+        Letter res = null;
+        Letter tmp = this;
+        for (int angle = angleA; angle < angleB; angle += accuracy) {
+
+            tmp = turn(angle < 0 ? 360 + angle : angle);
+            int pix = tmp.getFirstAndLastLinePixels();
+            if (pix>bestPix) {
+            	bestPix = pix;
+                res = tmp;
+            }
+        }
+
+        return res;
+
+    }
     /**
      * Autoasurichtung. Diese Funktion geht nicht den Umweg über ein
      * Pixelobject. Braucht etwas mehr zeit und liefrt dafür deutlich bessere
