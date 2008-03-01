@@ -24,7 +24,7 @@ import jd.utils.JDUtilities;
 public class FileFactory extends PluginForHost {
 	
     static private final String host = "filefactory.com";
-    private String version = "1.5.4";
+    private String version = "1.5.5";
     static private final Pattern patternSupported = Pattern.compile("http://.*?filefactory\\.com/file/.{6}/?", Pattern.CASE_INSENSITIVE);
     
     private static Pattern frameForCaptcha = Pattern.compile("<iframe src=\"/(check[^\"]*)\" frameborder=\"0\"");
@@ -33,6 +33,7 @@ public class FileFactory extends PluginForHost {
     private static Pattern patternForDownloadlink = Pattern.compile("<a target=\"_top\" href=\"([^\"]*)\"><img src");
     
     private static final String NOT_AVAILABLE = "this file is no longer available";
+    private static final String SERVER_DOWN = "server hosting the file you are requesting is currently down";
     private static final String NO_SLOT = "no free download slots";
     private static final String FILENAME = "<tr valign='top' style='color:green;'><td>(.*?)</td>";
     private static final String FILESIZE = "<td style=\"text-align:right;\">(.*?) (B|KB|MB)</td>";
@@ -103,7 +104,7 @@ public class FileFactory extends PluginForHost {
         if ( getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM, false) ) {
         	
             if ( step.getStep() == 1 ) {
-            	logger.info(JDLocale.L("plugins.host.general.premium", "Premium"));
+            	logger.info("Premium");
             }
             
         	try {
@@ -115,7 +116,7 @@ public class FileFactory extends PluginForHost {
         } else {
             
             if ( step.getStep() == 1 ) {
-            	logger.info(JDLocale.L("plugins.host.general.free", "Free"));
+            	logger.info("Free");
             }
         	
             try {
@@ -150,15 +151,19 @@ public class FileFactory extends PluginForHost {
                 	
                     requestInfo = getRequest(new URL(downloadLink.getDownloadURL()), null, null, true);
                     
-                    if ( requestInfo.getHtmlCode().indexOf(NOT_AVAILABLE) >= 0 ) {
+                    if ( requestInfo.containsHTML(NOT_AVAILABLE) ) {
                     	
                         step.setStatus(PluginStep.STATUS_ERROR);
                         downloadLink.setStatus(DownloadLink.STATUS_ERROR_FILE_ABUSED);
                         return step;
                         
-                    }
-                    
-                    if ( requestInfo.containsHTML(NO_SLOT) ) {
+                    } else if ( requestInfo.containsHTML(SERVER_DOWN) ) {
+                        
+                      	step.setStatus(PluginStep.STATUS_ERROR);
+                       	downloadLink.setStatus(DownloadLink.STATUS_ERROR_TEMPORARILY_UNAVAILABLE);
+                    	return step;
+                        
+                    } else if ( requestInfo.containsHTML(NO_SLOT) ) {
                     	
                         step.setStatus(PluginStep.STATUS_ERROR);
                         downloadLink.setStatus(DownloadLink.STATUS_ERROR_TEMPORARILY_UNAVAILABLE);
@@ -194,7 +199,7 @@ public class FileFactory extends PluginForHost {
 
                     if (!JDUtilities.download(file, captchaAddress) || !file.exists()) {
                     	
-                        logger.severe(JDLocale.L("plugins.hoster.general.captchaDownloadError", "Captcha Download fehlgeschlagen") + ": " + captchaAddress);
+                        logger.severe("Captcha Download failed: " + captchaAddress);
                         step.setParameter(null);
                         step.setStatus(PluginStep.STATUS_ERROR);
                         downloadLink.setStatus(DownloadLink.STATUS_ERROR_CAPTCHA_IMAGEERROR);
@@ -249,7 +254,7 @@ public class FileFactory extends PluginForHost {
                     		
                     		if ( requestInfo.getHtmlCode().contains(DOWNLOAD_LIMIT) ) {
 
-                    			logger.info(JDLocale.L("plugins.host.general.downloadLimitReached", "Downloadlimit als Free User erreicht"));
+                    			logger.severe("Download limit reached as free user");
                     			
                     			String waitTime = new Regexp(requestInfo.getHtmlCode(), WAIT_TIME).getFirstMatch(1);
                     			String unit = new Regexp(requestInfo.getHtmlCode(), WAIT_TIME).getFirstMatch(2);
@@ -257,13 +262,13 @@ public class FileFactory extends PluginForHost {
                     			
                     			if ( unit.equals("minutes") ) {
                     				wait = Integer.parseInt(waitTime);
-                    				logger.info(JDLocale.L("plugins.host.general.wait", "warte") + " " + String.valueOf(wait+1)
-                    						+ " " + JDLocale.L("plugins.host.general.minutes", "Minuten") );
+                    				logger.info("wait" + " " + String.valueOf(wait+1)
+                    						+ " minutes" );
                     				wait = wait * 60000 + 60000;
                     			} else if ( unit.equals("seconds") ) {
                     				wait = Integer.parseInt(waitTime);
-                    				logger.info(JDLocale.L("plugins.host.general.wait", "warte") + " " + String.valueOf(wait+5)
-                    						+ " " + JDLocale.L("plugins.host.general.seconds", "Sekunden") );
+                    				logger.info("wait" + " " + String.valueOf(wait+5)
+                    						+ " seconds" );
                     				wait = wait * 1000 + 5000;
                     			}
                     			
@@ -321,7 +326,7 @@ public class FileFactory extends PluginForHost {
                         
                     } catch (IOException e) {
                     	
-                        logger.severe(JDLocale.L("plugins.hoster.general.urlError", "URL konnte nicht geöffnet werden") + e.toString());
+                        logger.severe("URL could not be opened" + e.toString());
                         downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN);
                         step.setStatus(PluginStep.STATUS_ERROR);
                         return step;
@@ -353,7 +358,7 @@ public class FileFactory extends PluginForHost {
         if ( user == null || pass == null ) {
 
             step.setStatus(PluginStep.STATUS_ERROR);
-            logger.severe(JDLocale.L("plugins.host.premium.noLoginData", "Bitte Logindaten eingeben"));
+            logger.severe("Please enter premium data");
             parameter.setStatus(DownloadLink.STATUS_ERROR_PLUGIN_SPECIFIC);
             step.setParameter(JDLocale.L("plugins.host.premium.loginError", "Loginfehler"));
             getProperties().setProperty(PROPERTY_USE_PREMIUM, false);
@@ -374,10 +379,16 @@ public class FileFactory extends PluginForHost {
                     
                     String premCookie = requestInfo.getCookie();
                   	
-                  	if ( requestInfo.getHtmlCode().contains("NOT_AVAILABLE") ) {
+                  	if ( requestInfo.containsHTML(NOT_AVAILABLE) ) {
                         
                       	step.setStatus(PluginStep.STATUS_ERROR);
                        	downloadLink.setStatus(DownloadLink.STATUS_ERROR_FILE_ABUSED);
+                    	return step;
+                        
+                    } else if ( requestInfo.containsHTML(SERVER_DOWN) ) {
+                        
+                      	step.setStatus(PluginStep.STATUS_ERROR);
+                       	downloadLink.setStatus(DownloadLink.STATUS_ERROR_TEMPORARILY_UNAVAILABLE);
                     	return step;
                         
                     } else {
@@ -437,7 +448,7 @@ public class FileFactory extends PluginForHost {
                         
                     } catch (Exception e) {
                     	
-                    	logger.severe(JDLocale.L("plugins.hoster.general.urlError", "URL konnte nicht geöffnet werden") + e.toString());
+                    	logger.severe(JDLocale.L("URL could not be opened") + e.toString());
                         downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN);
                         step.setStatus(PluginStep.STATUS_ERROR);
                         e.printStackTrace();
@@ -518,6 +529,8 @@ public class FileFactory extends PluginForHost {
             requestInfo = getRequest(new URL(downloadLink.getDownloadURL()), null, null, true);
             
             if ( requestInfo.containsHTML(NOT_AVAILABLE) ) {
+                return false;
+            } else if ( requestInfo.containsHTML(SERVER_DOWN) ) {
                 return false;
             } else {
             	
