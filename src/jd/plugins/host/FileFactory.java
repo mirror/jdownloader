@@ -24,8 +24,8 @@ import jd.utils.JDUtilities;
 public class FileFactory extends PluginForHost {
 	
     static private final String host = "filefactory.com";
-    private String version = "1.5.5";
-    static private final Pattern patternSupported = Pattern.compile("http://.*?filefactory\\.com/file/.{6}/?", Pattern.CASE_INSENSITIVE);
+    private String version = "1.5.6";
+    static private final Pattern patternSupported = Pattern.compile("http://.*?filefactory\\.com(/|//)file/.{6}/?", Pattern.CASE_INSENSITIVE);
     
     private static Pattern frameForCaptcha = Pattern.compile("<iframe src=\"/(check[^\"]*)\" frameborder=\"0\"");
     private static Pattern patternForCaptcha = Pattern.compile("src=\"(/captcha2/captcha.php\\?[^\"]*)\" alt=");
@@ -100,6 +100,8 @@ public class FileFactory extends PluginForHost {
         if (step == null) {
             return null;
         }
+        
+        downloadLink.setUrlDownload(downloadLink.getDownloadURL().replaceAll(".com//", ".com/"));
 
         if ( getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM, false) ) {
         	
@@ -524,6 +526,8 @@ public class FileFactory extends PluginForHost {
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) {
         
+    	downloadLink.setUrlDownload(downloadLink.getDownloadURL().replaceAll(".com//", ".com/"));
+    	
     	try {
         	
             requestInfo = getRequest(new URL(downloadLink.getDownloadURL()), null, null, true);
