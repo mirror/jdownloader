@@ -84,6 +84,7 @@ import jd.plugins.PluginForContainer;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginOptional;
+import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
 import jd.update.WebUpdater;
 
@@ -122,7 +123,7 @@ public class JDUtilities {
 
     private static final int                         RUNTYPE_WEBSTART    = 0;
 
-    private static final int                         RUNTYPE_LOCAL       = 1;
+    public static final int                         RUNTYPE_LOCAL       = 1;
 
     public static final int                          RUNTYPE_LOCAL_JARED = 2;
 
@@ -715,6 +716,8 @@ public class JDUtilities {
         else {
             host = method;
         }
+        
+    
 
         logger.info("JAC has Method for: " + host + ": " + JAntiCaptcha.hasMethod(getJACMethodsDirectory(), host));
         if (forceJAC || (JAntiCaptcha.hasMethod(getJACMethodsDirectory(), host) && JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_JAC_METHODS + "_" + host, true) && (JDUtilities.getConfiguration().getIntegerProperty(Configuration.PARAM_CAPTCHA_INPUT_SHOWTIME, 0) <= 0 ||JDUtilities.getSubConfig("JAC").getBooleanProperty(Configuration.USE_CAPTCHA_EXCHANGE_SERVER, false))&& !configuration.getBooleanProperty(Configuration.PARAM_CAPTCHA_JAC_DISABLE, false))) {
@@ -762,14 +765,14 @@ public class JDUtilities {
             }
             //window.pack();
             logger.info("worst letter: "+vp);
-            if(captcha.isPerfectObjectDetection()&&JDUtilities.getSubConfig("JAC").getBooleanProperty(Configuration.USE_CAPTCHA_EXCHANGE_SERVER, false) &&plugin.useUserinputIfCaptchaUnknown() && vp>(double)JDUtilities.getSubConfig("JAC").getIntegerProperty(Configuration.AUTOTRAIN_ERROR_LEVEL, 18)){
+            if(plugin.useUserinputIfCaptchaUnknown() && vp>(double)JDUtilities.getSubConfig("JAC").getIntegerProperty(Configuration.AUTOTRAIN_ERROR_LEVEL, 18)){
                 plugin.setCaptchaDetectID(Plugin.CAPTCHA_USER_INPUT);
                 code=getController().getCaptchaCodeFromUser(plugin, file,captchaCode);
             }else{
                 return captchaCode;
             }
             
-            if(code.equals(captchaCode))return captchaCode;
+            if(code!=null&&code.equals(captchaCode))return captchaCode;
            
             return code;
         }

@@ -550,6 +550,7 @@ public class FileFactory extends PluginForHost {
 				requestInfo = postRequest(new URL("http://www.filefactory.com/tools/link_checker.php"), null,
 						null, null, "link_text="+fileFactoryUrlEncode(downloadLink.getDownloadURL()), true);
 				fileName = new Regexp(requestInfo.getHtmlCode(), FILENAME).getFirstMatch();
+				if(fileName==null)return false;
 				fileName = fileName.replaceAll(" <br/>", "").trim();
 				
 				Double fileSize = Double.parseDouble(new Regexp(requestInfo.getHtmlCode(), FILESIZE).getFirstMatch(1));

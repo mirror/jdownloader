@@ -184,12 +184,12 @@ public class WebUpdater implements Serializable {
                 log("UPDATE AV. " + files.elementAt(i) + " - " + hash);
                 continue;
             }
-            if(SubConfiguration.getSubConfig("JAC").getBooleanProperty(USE_CAPTCHA_EXCHANGE_SERVER, false)){
-               if(tmp[0].startsWith("jd/captcha/methods/")&&tmp[0].endsWith("mth")){ 
-                   log("Autotrain filter: "+tmp[0]);
-                continue;
-               }
-            }
+//            if(SubConfiguration.getSubConfig("JAC").getBooleanProperty(USE_CAPTCHA_EXCHANGE_SERVER, false)){
+//               if(tmp[0].startsWith("jd/captcha/methods/")&&tmp[0].endsWith("mth")){ 
+//                   log("Autotrain filter: "+tmp[0]);
+//                continue;
+//               }
+//            }
             // log("OLD: " + files.elementAt(i) + " - " + hash);
             files.removeElementAt(i);
         }
@@ -216,12 +216,12 @@ public class WebUpdater implements Serializable {
                     log("UPDATE AV. " + files.elementAt(i) + " - " + hash);
                     continue;
                 }
-                if(SubConfiguration.getSubConfig("JAC").getBooleanProperty(USE_CAPTCHA_EXCHANGE_SERVER, false)){
-                    if(tmp[0].startsWith("jd/captcha/methods/")&& tmp[0].endsWith("mth")){ 
-                        log("Autotrain filter: "+tmp[0]);
-                     continue;
-                    }
-                 }
+//                if(SubConfiguration.getSubConfig("JAC").getBooleanProperty(USE_CAPTCHA_EXCHANGE_SERVER, false)){
+//                    if(tmp[0].startsWith("jd/captcha/methods/")&& tmp[0].endsWith("mth")){ 
+//                        log("Autotrain filter: "+tmp[0]);
+//                     continue;
+//                    }
+//                 }
                  log("OLD: " + files.elementAt(i) + " - " + hash);
                
                 files.removeElementAt(i);

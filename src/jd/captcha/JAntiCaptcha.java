@@ -842,23 +842,15 @@ public class JAntiCaptcha {
 
         LinkedList<Letter> ret = new LinkedList<Letter>();
         Iterator<Letter> iter = letterDB.iterator();
-        while (iter.hasNext()) {
-            Letter akt = (Letter) iter.next();
-            int x = 0;
-            Iterator<Letter> iter2 = ret.iterator();
-            while (iter2.hasNext()) {
-                x++;
-                if (akt.getDecodedValue().compareToIgnoreCase(((Letter) iter2.next()).getDecodedValue()) > 0) {
-                    ret.add(x, akt);
-                    akt = null;
-                    break;
-                }
+        
+        Collections.sort(letterDB,new Comparator<Letter>() {
+            public int compare(Letter a, Letter b) {
+                return a.getDecodedValue().compareToIgnoreCase(b.getDecodedValue())*-1;
+
             }
-            if (akt != null) ret.add(akt);
 
-        }
-
-        letterDB = ret;
+        });
+        
 
     }
 
@@ -1325,41 +1317,41 @@ public class JAntiCaptcha {
 sortLetterDB();
         w.setLocationByScreenPercent(5, 5);
         final JAntiCaptcha jac = this;
+        final Letter[] list= new Letter[letterDB.size()];
         int x = 0;
         int y = 0; 
         int i = 0;
-        ListIterator<Letter> iter = letterDB.listIterator(letterDB.size() - 1);
+        ListIterator<Letter> iter = letterDB.listIterator(letterDB.size());
         while (iter.hasPrevious()) {
             tmp = (Letter) iter.previous();
-
+            list[i]=tmp;
             w.setText(x, y, tmp.getId() + ": " + tmp.getDecodedValue() + "(" + tmp.getGoodDetections() + "/" + tmp.getBadDetections() + ")");
             w.setImage(x + 1, y, tmp.getImage((int)Math.ceil(jas.getDouble("simplifyFaktor"))));
-            w.setComponent(x + 3, y, new JButton(new AbstractAction("-" + i++) {
-                private static final long serialVersionUID = -2348057068938986789L;
-
-                /**
-                 * 
-                 */
+            w.setComponent(x + 3, y, new JButton(new AbstractAction("remove " + i++) {
+              
 
                 public void actionPerformed(ActionEvent evt) {
-                    jac.removeLetterFromLibrary(Integer.parseInt(((JButton) evt.getSource()).getText().substring(1)));
+                    jac.removeLetterFromLibrary(list[Integer.parseInt(((JButton) evt.getSource()).getText().substring(7))]);
+                   
                     w.destroy();
-                    jac.displayLibrary();
+                    
                     jac.saveMTHFile();
+                    jac.displayLibrary();
                 }
             }));
 
             y++;
-           if (y > 20) {
-               y = 0;
-                x += 6;
-            }
+//           if (y > 20) {
+//               y = 0;
+//                x += 6;
+//            }
         }
         w.refreshUI();
     }
 
-    protected void removeLetterFromLibrary(int i) {
-        letterDB.remove(i);
+    protected void removeLetterFromLibrary(Letter letter) {
+     
+        logger.info("Remove" +letter+" : "+letterDB.remove(letter));
 
     }
 
@@ -1565,7 +1557,7 @@ sortLetterDB();
     public void removeBadLetters() {
         Letter tmp;
         if (JAntiCaptcha.isLoggerActive()) logger.info("aktuelle DB Size: " + letterDB.size());
-        ListIterator<Letter> iter = letterDB.listIterator(letterDB.size() - 1);
+        ListIterator<Letter> iter = letterDB.listIterator(letterDB.size());
         while (iter.hasPrevious()) {
             tmp = (Letter) iter.previous();
             if ((tmp.getGoodDetections() == 0 && tmp.getBadDetections() > 0) || ((double) tmp.getBadDetections() / (double) tmp.getGoodDetections()) >= jas.getDouble("findBadLettersRatio")) {
@@ -1745,7 +1737,7 @@ sortLetterDB();
     }
 
     public static boolean isLoggerActive() {
-        return false;
+        return JDUtilities.getRunType()==JDUtilities.RUNTYPE_LOCAL;
         // return
         // JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_JAC_LOG,
         // false);

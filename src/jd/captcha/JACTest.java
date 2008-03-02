@@ -37,10 +37,10 @@ public class JACTest {
 LetterComperator.CREATEINTERSECTIONLETTER=true;
     jac.displayLibrary();
   
-    //jac.getJas().set("preScanFilter", 100);
+  //jac.getJas().set("preScanFilter", 100);
 //       jac.trainCaptcha(new File(JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath()+"/jd/captcha/methods"+"/"+hoster+"/captchas/"+"securedin1730080724541.jpg"), 4);
      jac.showPreparedCaptcha(new File(JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath()+"/captchas"+"/"+hoster+"/"+
-             "1204391541414_01.03.2008_17.09.05_DOWNLOAD+VIA+GLOBALCROSSING_LWKW_GOOD.jpg"));
+             "01032008225906downloadvot5.jpg"));
       
      //UTILITIES.getLogger().info(JAntiCaptcha.getCaptchaCode(UTILITIES.loadImage(new File(JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath()+"/jd/captcha/methods"+"/rapidshare.com/captchas/rapidsharecom24190807214810.jpg")), null, "rapidshare.com"));
      //jac.removeBadLetters();

@@ -139,8 +139,9 @@ public class BasicWindow extends JFrame {
         try{
         super.pack();
         Dimension screenSize = getToolkit().getScreenSize();
-        int newWidth = (int) Math.min(this.getSize().width, screenSize.getWidth());
-        int newHeight = (int) Math.min(this.getSize().height, screenSize.getHeight());
+        
+        int newWidth = (int) Math.min(Math.max(this.getSize().width,300), screenSize.getWidth());
+        int newHeight = (int) Math.min(Math.max(this.getSize().height,300), screenSize.getHeight());
         this.setSize(newWidth, newHeight);
         }catch(Exception e){
             

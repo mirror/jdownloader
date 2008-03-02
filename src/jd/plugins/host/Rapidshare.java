@@ -72,10 +72,8 @@ import java.util.Vector;
 import java.util.Map.Entry;
 import java.util.regex.Pattern;
 
-import jd.captcha.LetterComperator;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
-import jd.config.Configuration;
 import jd.controlling.interaction.CaptchaMethodLoader;
 import jd.plugins.DownloadLink;
 import jd.plugins.Plugin;
@@ -84,7 +82,6 @@ import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
-import jd.utils.Upload;
 
 public class Rapidshare extends PluginForHost {
     static private final String            host                             = "rapidshare.com";
@@ -185,6 +182,10 @@ public class Rapidshare extends PluginForHost {
 
     private String                         newURL;
 
+    private String                         captchaCode;
+
+    private File captchaFile;
+
     private static long                    LAST_FILE_CHECK                  = 0;
 
     private static final String            PROPERTY_BYTES_TO_LOAD           = "BYTES_TO_LOAD";
@@ -259,50 +260,50 @@ public class Rapidshare extends PluginForHost {
         // Prüfe Ticket
         steps.add(new PluginStep(PluginStep.STEP_PENDING, null));
         // Serverauswahl und captchalden
-        steps.add(new PluginStep(PluginStep.STEP_GET_CAPTCHA_FILE, null));
+        steps.add(new PluginStep(PluginStep.STEP_PAGE, null));
         // Downloads
         steps.add(new PluginStep(PluginStep.STEP_DOWNLOAD, null));
 
         serverMap.put("TeliaSonera #2", "tl2");// <td><input name="mirror"
-                                                // value="tl2"
-                                                // type="radio">TeliaSonera
-                                                // #2</td>
+        // value="tl2"
+        // type="radio">TeliaSonera
+        // #2</td>
         serverMap.put("TeliaSonera #3", "tl3");// <td><input name="mirror2"
-                                                // value="tl3"
-                                                // type="radio">TeliaSonera
-                                                // #3</td>
+        // value="tl3"
+        // type="radio">TeliaSonera
+        // #3</td>
 
         serverMap.put("GlobalCrossing", "gc"); // <td><input name="mirror"
-                                                // value="gc"
-                                                // type="radio">GlobalCrossing
-                                                // #1</td>
+        // value="gc"
+        // type="radio">GlobalCrossing
+        // #1</td>
         serverMap.put("GlobalCrossing #2", "gc2"); // <td><input name="mirror"
-                                                    // value="gc2"
-                                                    // type="radio">GlobalCrossing
-                                                    // #2</td>
+        // value="gc2"
+        // type="radio">GlobalCrossing
+        // #2</td>
         serverMap.put("Cogent", "cg"); // td><input name="mirror" value="cg"
-                                        // type="radio">Cogent #1</td>
+        // type="radio">Cogent #1</td>
         serverMap.put("Cogent #2", "cg2");// <td><input name="mirror"
-                                            // value="cg2" type="radio">Cogent
-                                            // #2</td>
+        // value="cg2" type="radio">Cogent
+        // #2</td>
         serverMap.put("Teleglobe", "tg"); // <td><input name="mirror"
-                                            // value="tg" type="radio">Teleglobe
-                                            // #1</td>
+        // value="tg" type="radio">Teleglobe
+        // #1</td>
         serverMap.put("Level(3)", "l3");// <td><input name="mirror" value="l3"
-                                        // type="radio">Level(3) #1</td>
+        // type="radio">Level(3) #1</td>
         serverMap.put("Level(3) #2", "l32");// <td><input name="mirror"
-                                            // value="l32" type="radio">Level(3)
-                                            // #2</td>
+        // value="l32" type="radio">Level(3)
+        // #2</td>
         serverMap.put("Level(3) #3", "l33");// <td><input name="mirror"
-                                            // value="l33" type="radio">Level(3)
-                                            // #3</td>
+        // value="l33" type="radio">Level(3)
+        // #3</td>
 
         serverMap.put("Level(3) #4", "l34");// <td><input name="mirror"
-                                            // value="l34" type="radio">Level(3)
-                                            // #4</td>
+        // value="l34" type="radio">Level(3)
+        // #4</td>
         serverMap.put("TeliaSonera", "tl");// <td><input name="mirror"
-                                            // value="tl"
-                                            // type="radio">TeliaSonera #1</td>
+        // value="tl"
+        // type="radio">TeliaSonera #1</td>
         serverMap.put("Deutsche Telekom", "dt");
         serverList1 = new String[] { "tl", "tl2", "gc", "gc2", "cg", "cg2", "tg", "l3", "l32", "l33", "l34", "tl", "dt" };
         serverList2 = new String[] { "tl", "tl2", "tl3", "gc", "gc2", "l32", "tg", "l3", "cg" };
@@ -594,6 +595,35 @@ public class Rapidshare extends PluginForHost {
                         return step;
                     }
                     String wait = getSimpleMatch(requestInfo.getHtmlCode(), ticketWaitTimepattern, 0);
+                    ticketCode = JDUtilities.htmlDecode(getSimpleMatch(requestInfo.getHtmlCode(), ticketCodePattern, 0));
+                    ticketCode = requestInfo.getHtmlCode() + " " + ticketCode;
+                    captchaAddress = getFirstMatch(ticketCode, patternForCaptcha, 1);
+                    if (captchaAddress == null) {
+                        logger.severe("Captcha Address not found");
+                        downloadLink.setStatus(DownloadLink.STATUS_ERROR_CAPTCHA_IMAGEERROR);
+                        step.setStatus(PluginStep.STATUS_ERROR);
+                        return step;
+                    }
+                  this.captchaFile = this.getLocalCaptchaFile(this);
+                    if (!JDUtilities.download(captchaFile, captchaAddress) || !captchaFile.exists()) {
+                        logger.severe("Captcha Download fehlgeschlagen: " + captchaAddress);
+                        step.setParameter(null);
+                        step.setStatus(PluginStep.STATUS_ERROR);
+                        downloadLink.setStatus(DownloadLink.STATUS_ERROR_CAPTCHA_IMAGEERROR);
+                        return step;
+                    }
+                    long timer = System.currentTimeMillis();
+
+                    if (doBotCheck(captchaFile)) {
+
+                        downloadLink.setStatus(DownloadLink.STATUS_ERROR_BOT_DETECTED);
+                        step.setStatus(PluginStep.STATUS_ERROR);
+                        step.setParameter(null);
+                        break;
+                    }
+                    this.captchaCode = Plugin.getCaptchaCode(captchaFile, this);
+                    timer = System.currentTimeMillis() - timer;
+                    logger.info("captcha detection: " + timer + " ms");
 
                     if (wait != null) {
                         long pendingTime = Long.parseLong(wait);
@@ -604,14 +634,15 @@ public class Rapidshare extends PluginForHost {
                         pendingTime = (pendingTime + (getProperties().getIntegerProperty(PROPERTY_INCREASE_TICKET, 0) * pendingTime) / 100);
 
                         logger.info("Ticket: wait " + pendingTime + " seconds");
-                        ticketCode = JDUtilities.htmlDecode(getSimpleMatch(requestInfo.getHtmlCode(), ticketCodePattern, 0));
-                        step.setParameter(pendingTime * 1000);
+
+                        step.setParameter(pendingTime * 1000 - timer);
                         return step;
+
                     }
                     else {
                         // TODO: Gibt es file sbei denen es kein Ticket gibt?
                         logger.finer("Kein Ticket gefunden. fahre fort");
-                        ticketCode = "";
+                        ticketCode = requestInfo.getHtmlCode();
                         step.setParameter(10l);
                         return step;
                     }
@@ -623,7 +654,7 @@ public class Rapidshare extends PluginForHost {
                 step.setStatus(PluginStep.STATUS_ERROR);
                 logger.warning("could not get downloadInfo 2");
                 return step;
-            case PluginStep.STEP_GET_CAPTCHA_FILE:
+            case PluginStep.STEP_PAGE:
                 String server1 = this.getProperties().getStringProperty(PROPERTY_SELECTED_SERVER, "Level(3)");
                 String server2 = this.getProperties().getStringProperty(PROPERTY_SELECTED_SERVER2, "TeliaSonera");
                 String serverAbb = serverMap.get(server1);
@@ -641,18 +672,11 @@ public class Rapidshare extends PluginForHost {
                 // String endServerAbb = "";
                 Boolean telekom = !(this.getProperties().getProperty(PROPERTY_USE_TELEKOMSERVER) == null || !(Boolean) this.getProperties().getProperty(PROPERTY_USE_TELEKOMSERVER));
                 boolean preselected = this.getProperties().getBooleanProperty(PROPERTY_USE_PRESELECTED, true);
-                ticketCode = requestInfo.getHtmlCode() + " " + ticketCode;
 
-                captchaAddress = getFirstMatch(ticketCode, patternForCaptcha, 1);
                 // post daten lesen
                 postTarget = getFirstMatch(ticketCode, patternForFormData, 1);
                 actionString = getFirstMatch(ticketCode, patternForFormData, 2);
-                if (captchaAddress == null) {
-                    logger.severe("Captcha Address not found");
-                    downloadLink.setStatus(DownloadLink.STATUS_ERROR_CAPTCHA_IMAGEERROR);
-                    step.setStatus(PluginStep.STATUS_ERROR);
-                    return step;
-                }
+
                 if (postTarget == null) {
                     logger.severe("postTarget not found");
                     downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN);
@@ -700,142 +724,120 @@ public class Rapidshare extends PluginForHost {
                     return null;
                 }
                 downloadLink.setStatusText(actionString);
-                File file = this.getLocalCaptchaFile(this);
-                if (!JDUtilities.download(file, captchaAddress) || !file.exists()) {
-                    logger.severe("Captcha Download fehlgeschlagen: " + captchaAddress);
-                    step.setParameter(null);
-                    step.setStatus(PluginStep.STATUS_ERROR);
-                    downloadLink.setStatus(DownloadLink.STATUS_ERROR_CAPTCHA_IMAGEERROR);
-                    break;
-                }
-                else {
-                    step.setParameter(file);
-                    step.setStatus(PluginStep.STATUS_USER_INPUT);
-                }
+
                 break;
             case PluginStep.STEP_DOWNLOAD:
-                if (steps.get(2).getParameter() == null) {
-                    // Bot Erkannt }
-                    logger.info("BOT detected. Update captchafile");
-                    new CaptchaMethodLoader().interact("rapidshare.com");
-                    logger.severe("Fehler. Bot erkennung fehlerhaft");
-                }
-                else {
-                    String captchaTxt = (String) steps.get(2).getParameter();
-                    File captchaFile = downloadLink.getLatestCaptchaFile();
-                    actionString = actionString.replace(' ', '+');
-                    postParameter.put("mirror", "on");
-                    postParameter.put("accesscode", captchaTxt);
-                    postParameter.put("actionstring", actionString);
-                    try {
 
-                        URLConnection urlConnection = new URL(postTarget).openConnection();
-                        urlConnection.setDoOutput(true);
-                        // Post Parameter vorbereiten
-                        String postParams = createPostParameterFromHashMap(postParameter);
-                        OutputStreamWriter wr = new OutputStreamWriter(urlConnection.getOutputStream());
-                        wr.write(postParams);
-                        wr.flush();
-                        // content-disposition: Attachment;
-                        // filename=a_mc_cs3_g_cd.rsdf
-                        String name = getFileNameFormHeader(urlConnection);
-                        if (name.toLowerCase().matches(".*\\..{1,5}\\.html$")) name = name.replaceFirst("\\.html$", "");
-                        downloadLink.setName(name);
-                        int length = urlConnection.getContentLength();
-                        downloadLink.setDownloadMax(length);
-                        if (!hasEnoughHDSpace(downloadLink)) {
-                            downloadLink.setStatus(DownloadLink.STATUS_ERROR_NO_FREE_SPACE);
-                            step.setStatus(PluginStep.STATUS_ERROR);
-                            return step;
-                        }
+               
+                
+                actionString = actionString.replace(' ', '+');
+                postParameter.put("mirror", "on");
+                postParameter.put("accesscode", this.captchaCode);
+                postParameter.put("actionstring", actionString);
+                try {
 
-                        Set<Entry<String, String>> entries = serverMap.entrySet();
-                        logger.info("link: " + postTarget.substring(0, 30) + " " + actionString);
-                        Iterator<Entry<String, String>> it = entries.iterator();
-                        while (it.hasNext()) {
-                            Entry<String, String> entry = it.next();
-                            int i;
-                            if ((i = postTarget.indexOf(entry.getValue())) < 20 && i > 0) {
-                                logger.info(JDUtilities.htmlDecode(actionString.split("via")[1].trim()).trim());
-                                postTarget = postTarget.substring(0, i) + serverMap.get(JDUtilities.htmlDecode(actionString.split("via")[1].trim()).trim()) + postTarget.substring(i + entry.getValue().length());
-                                break;
-                            }
-                        }
-                        logger.info("link: " + postTarget.substring(0, 30) + " " + actionString);
-                        int errorid;
-                        if ((errorid = download(downloadLink, urlConnection, 1024 * getProperties().getIntegerProperty(PROPERTY_BYTES_TO_LOAD, -1))) == DOWNLOAD_SUCCESS) {
-                            step.setStatus(PluginStep.STATUS_DONE);
-                            downloadLink.setStatus(DownloadLink.STATUS_DONE);
-                            JDUtilities.appendInfoToFilename(this, captchaFile, actionString + "_" + captchaTxt, true);
-                            /*
-                            if (JDUtilities.getSubConfig("JAC").getBooleanProperty(Configuration.USE_CAPTCHA_EXCHANGE_SERVER, false)&&this.getCaptchaDetectionID() == Plugin.CAPTCHA_USER_INPUT && this.getLastCaptcha() != null && this.getLastCaptcha().getLetterComperators() != null) {
-                                LetterComperator[] lcs = this.getLastCaptcha().getLetterComperators();
-                                this.getLastCaptcha().setCorrectcaptchaCode(captchaTxt.trim());
-                                
-                                if (lcs.length == captchaTxt.trim().length()) {
-                                    for (int i = 0; i < captchaTxt.length(); i++) {
-
-                                        if (lcs[i] != null && lcs[i].getDecodedValue() != null && captchaTxt.substring(i, i + 1).equalsIgnoreCase(lcs[i].getDecodedValue())&&lcs[i].getValityPercent()<30.0) {
-                                            // logger.severe("OK letter: "+i+":
-                                            // JAC:"+lcs[i].getDecodedValue()+"("+lcs[i].getValityPercent()+")
-                                            // USER:
-                                            // "+captchaTxt.substring(i,i+1));
-                                          
-                                        }
-                                        else {
-                                         
-                                           
-                                            // logger.severe("Unknown letter:
-                                            // "+i+":
-                                            // JAC:"+lcs[i].getDecodedValue()+"("+lcs[i].getValityPercent()+")
-                                            // USER:
-                                            // "+captchaTxt.substring(i,i+1));
-                                            // Pixelstring. getB() ist immer der
-                                            // neue letter
-                                            final String character = captchaTxt.substring(i, i + 1);
-                                            final String pixelString = lcs[i].getA().getPixelString();
-                                            final Plugin plg = this;
-                                            logger.info("SEND");
-                                            new Thread(new Runnable() {
-
-												public void run() {
-		                                            Upload.sendToCaptchaExchangeServer(plg, pixelString, character);
-													
-												}}).start();
-
-                                        }
-                                    }
-                                  
-                                }else{
-                                    logger.info("LCS not length comp");
-                                }
-
-                            }
-                            */
-                            return null;
-                        }
-                        else if (aborted) {
-                            logger.warning("Plugin abgebrochen");
-                            downloadLink.setStatus(DownloadLink.STATUS_TODO);
-                            step.setStatus(PluginStep.STATUS_TODO);
-                        }
-                        else {
-                            if (errorid != DOWNLOAD_ERROR_DOWNLOAD_INCOMPLETE && errorid != DOWNLOAD_ERROR_INVALID_OUTPUTFILE && errorid != DOWNLOAD_ERROR_OUTPUTFILE_ALREADYEXISTS && errorid != DOWNLOAD_ERROR_RENAME_FAILED && errorid != DOWNLOAD_ERROR_SECURITY) {
-                                JDUtilities.appendInfoToFilename(this, captchaFile, actionString + "_" + captchaTxt, false);
-                                downloadLink.setStatus(DownloadLink.STATUS_ERROR_CAPTCHA_WRONG);
-                                logger.info("Error detected. Update captchafile");
-                                new CaptchaMethodLoader().interact("rapidshare.com");
-                            }
-                            step.setStatus(PluginStep.STATUS_ERROR);
-                        }
-                    }
-                    catch (IOException e) {
-                        logger.severe("URL could not be opened. " + e.toString());
-                        downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN);
+                    URLConnection urlConnection = new URL(postTarget).openConnection();
+                    urlConnection.setDoOutput(true);
+                    // Post Parameter vorbereiten
+                    String postParams = createPostParameterFromHashMap(postParameter);
+                    OutputStreamWriter wr = new OutputStreamWriter(urlConnection.getOutputStream());
+                    wr.write(postParams);
+                    wr.flush();
+                    // content-disposition: Attachment;
+                    // filename=a_mc_cs3_g_cd.rsdf
+                    String name = getFileNameFormHeader(urlConnection);
+                    if (name.toLowerCase().matches(".*\\..{1,5}\\.html$")) name = name.replaceFirst("\\.html$", "");
+                    downloadLink.setName(name);
+                    int length = urlConnection.getContentLength();
+                    downloadLink.setDownloadMax(length);
+                    if (!hasEnoughHDSpace(downloadLink)) {
+                        downloadLink.setStatus(DownloadLink.STATUS_ERROR_NO_FREE_SPACE);
                         step.setStatus(PluginStep.STATUS_ERROR);
                         return step;
                     }
+
+                    Set<Entry<String, String>> entries = serverMap.entrySet();
+                    logger.info("link: " + postTarget.substring(0, 30) + " " + actionString);
+                    Iterator<Entry<String, String>> it = entries.iterator();
+                    while (it.hasNext()) {
+                        Entry<String, String> entry = it.next();
+                        int i;
+                        if ((i = postTarget.indexOf(entry.getValue())) < 20 && i > 0) {
+                            logger.info(JDUtilities.htmlDecode(actionString.split("via")[1].trim()).trim());
+                            postTarget = postTarget.substring(0, i) + serverMap.get(JDUtilities.htmlDecode(actionString.split("via")[1].trim()).trim()) + postTarget.substring(i + entry.getValue().length());
+                            break;
+                        }
+                    }
+                    logger.info("link: " + postTarget.substring(0, 30) + " " + actionString);
+                    int errorid;
+                    if ((errorid = download(downloadLink, urlConnection, 1024 * getProperties().getIntegerProperty(PROPERTY_BYTES_TO_LOAD, -1))) == DOWNLOAD_SUCCESS) {
+                        step.setStatus(PluginStep.STATUS_DONE);
+                        downloadLink.setStatus(DownloadLink.STATUS_DONE);
+                        JDUtilities.appendInfoToFilename(this, captchaFile, actionString + "_" + captchaCode, true);
+                        /*
+                         * if
+                         * (JDUtilities.getSubConfig("JAC").getBooleanProperty(Configuration.USE_CAPTCHA_EXCHANGE_SERVER,
+                         * false)&&this.getCaptchaDetectionID() ==
+                         * Plugin.CAPTCHA_USER_INPUT && this.getLastCaptcha() !=
+                         * null && this.getLastCaptcha().getLetterComperators() !=
+                         * null) { LetterComperator[] lcs =
+                         * this.getLastCaptcha().getLetterComperators();
+                         * this.getLastCaptcha().setCorrectcaptchaCode(captchaTxt.trim());
+                         * 
+                         * if (lcs.length == captchaTxt.trim().length()) { for
+                         * (int i = 0; i < captchaTxt.length(); i++) {
+                         * 
+                         * if (lcs[i] != null && lcs[i].getDecodedValue() !=
+                         * null && captchaTxt.substring(i, i +
+                         * 1).equalsIgnoreCase(lcs[i].getDecodedValue())&&lcs[i].getValityPercent()<30.0) { //
+                         * logger.severe("OK letter: "+i+": //
+                         * JAC:"+lcs[i].getDecodedValue()+"("+lcs[i].getValityPercent()+") //
+                         * USER: // "+captchaTxt.substring(i,i+1));
+                         *  } else {
+                         * 
+                         *  // logger.severe("Unknown letter: // "+i+": //
+                         * JAC:"+lcs[i].getDecodedValue()+"("+lcs[i].getValityPercent()+") //
+                         * USER: // "+captchaTxt.substring(i,i+1)); //
+                         * Pixelstring. getB() ist immer der // neue letter
+                         * final String character = captchaTxt.substring(i, i +
+                         * 1); final String pixelString =
+                         * lcs[i].getA().getPixelString(); final Plugin plg =
+                         * this; logger.info("SEND"); new Thread(new Runnable() {
+                         * 
+                         * public void run() {
+                         * Upload.sendToCaptchaExchangeServer(plg, pixelString,
+                         * character);
+                         * 
+                         * }}).start();
+                         *  } }
+                         * 
+                         * }else{ logger.info("LCS not length comp"); }
+                         *  }
+                         */
+                        return null;
+                    }
+                    else if (aborted) {
+                        logger.warning("Plugin abgebrochen");
+                        downloadLink.setStatus(DownloadLink.STATUS_TODO);
+                        step.setStatus(PluginStep.STATUS_TODO);
+                    }
+                    else {
+                        if (errorid != DOWNLOAD_ERROR_DOWNLOAD_INCOMPLETE && errorid != DOWNLOAD_ERROR_INVALID_OUTPUTFILE && errorid != DOWNLOAD_ERROR_OUTPUTFILE_ALREADYEXISTS && errorid != DOWNLOAD_ERROR_RENAME_FAILED && errorid != DOWNLOAD_ERROR_SECURITY) {
+                            JDUtilities.appendInfoToFilename(this, captchaFile, actionString + "_" + captchaCode, false);
+                            downloadLink.setStatus(DownloadLink.STATUS_ERROR_CAPTCHA_WRONG);
+                            logger.info("Error detected. Update captchafile");
+                            new CaptchaMethodLoader().interact("rapidshare.com");
+                        }
+                        step.setStatus(PluginStep.STATUS_ERROR);
+                    }
                 }
+                catch (IOException e) {
+                    logger.severe("URL could not be opened. " + e.toString());
+                    downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN);
+                    step.setStatus(PluginStep.STATUS_ERROR);
+                    return step;
+                }
+
                 break;
         }
         return step;
@@ -1177,6 +1179,7 @@ public class Rapidshare extends PluginForHost {
     @Override
     public boolean doBotCheck(File file) {
         try {
+            logger.info(md5sum(file));
             return md5sum(file).equals(botHash);
         }
         catch (NoSuchAlgorithmException e) {
