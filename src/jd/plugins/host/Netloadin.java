@@ -26,7 +26,7 @@ public class Netloadin extends PluginForHost {
     static private final Pattern PAT_SUPPORTED = Pattern.compile("http://.*?netload\\.in/.{20}.*", Pattern.CASE_INSENSITIVE);
     static private final String  HOST             = "netload.in";
     static private final String  PLUGIN_NAME      = HOST;
-    static private final String  PLUGIN_VERSION   = "1.0.0";
+    static private final String  PLUGIN_VERSION   = "1.0.1";
     static private final String  PLUGIN_ID        = PLUGIN_NAME + "-" + PLUGIN_VERSION;
     static private final String  CODER            = "JD-Team";
     // /Simplepattern
@@ -100,6 +100,13 @@ public class Netloadin extends PluginForHost {
         if (step == null) {
             logger.info("Plugin Ende erreicht.");
             return null;
+        }
+        if (aborted) {
+            // häufige Abbruchstellen sorgen für einen zügigen Downloadstop
+            logger.warning("Plugin aborted");
+            downloadLink.setStatus(DownloadLink.STATUS_TODO);
+            step.setStatus(PluginStep.STATUS_TODO);
+            return step;
         }
         logger.info("get Next Step " + step);
         // premium
@@ -383,7 +390,7 @@ public class Netloadin extends PluginForHost {
         if (this.getProperties().getBooleanProperty("USE_PREMIUM", false)) {
             return 20;
         }else{
-        return 1;
+        return 2;
         }
     }
     private void setConfigElements() {
