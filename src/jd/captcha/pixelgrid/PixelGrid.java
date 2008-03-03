@@ -1433,8 +1433,6 @@ public class PixelGrid {
 			}
 		}
 		// int total = getWidth() * getHeight();
-		System.out.println(map.size());
-
 		Iterator<Integer[]> iter = map.keySet().iterator();
 		int c = map.size();
 		while (c > letterNum) {
@@ -1494,11 +1492,9 @@ public class PixelGrid {
 		Vector<PixelObject> ret = new Vector<PixelObject>();
 		while (iterator2.hasNext()) {
 			PixelObject it = map.get((Integer[]) iterator2.next());
-			System.out.println(it.toLetter().getString());
 			ret.add(it);
 
 		}
-		System.out.println(ret.size());
 		return ret;
 	}
 

@@ -12,6 +12,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.lang.reflect.Method;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.Vector;
 import java.util.logging.Logger;
 
@@ -477,8 +478,15 @@ public class Captcha extends PixelGrid {
     }
 
     private Letter[] getColoredLetters(int letterNum) {
-        getColorObjects(letterNum);
-        return null;
+        Vector<PixelObject> objects = getColorObjects(letterNum);
+        Letter[] letters = new Letter[objects.size()];
+        Iterator<PixelObject> iter = objects.iterator();
+        int i = 0;
+        while (iter.hasNext()) {
+			PixelObject pixelObject = (PixelObject) iter.next();
+			letters[i++]=pixelObject.toLetter();
+		}
+        return letters;
     }
 
     /**
