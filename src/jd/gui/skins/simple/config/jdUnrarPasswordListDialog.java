@@ -52,7 +52,8 @@ public class jdUnrarPasswordListDialog extends JDialog implements ActionListener
      * @param owner
      *            The owning Frame
      */
-    public jdUnrarPasswordListDialog(JFrame owner) {
+    @SuppressWarnings("static-access")
+	public jdUnrarPasswordListDialog(JFrame owner) {
         super(owner);
         setModal(true);
         setLayout(new GridBagLayout());
@@ -91,7 +92,8 @@ public class jdUnrarPasswordListDialog extends JDialog implements ActionListener
      * 
      * @see java.awt.event.ActionListener#actionPerformed(java.awt.event.ActionEvent)
      */
-    public void actionPerformed(ActionEvent e) {
+    @SuppressWarnings("static-access")
+	public void actionPerformed(ActionEvent e) {
         if (e.getSource() == btnSave) {
             JUnrar unrar = new JUnrar(false);
             unrar.editPasswordlist(JDUtilities.splitByNewline(pwField.getText()));

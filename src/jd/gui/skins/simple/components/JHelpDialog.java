@@ -16,7 +16,6 @@ import javax.swing.JButton;
 import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
-import javax.swing.JOptionPane;
 import javax.swing.JTextPane;
 
 import jd.gui.skins.simple.Link.JLinkButton;
@@ -97,9 +96,9 @@ public class JHelpDialog extends JDialog implements ActionListener {
     public static int showHelpMessage(JFrame parent, String title, String message,final URL url) {
 
         title = title == null ? JDLocale.L("gui.dialogs.helpDialog.defaultTitle", "jDownloader Soforthilfe") : title;
-        int buttons = JOptionPane.YES_NO_OPTION;
-        int messageType = JOptionPane.INFORMATION_MESSAGE;
-        String[] options = { JDLocale.L("gui.dialogs.helpDialog.btn.ok", "OK"), JDLocale.L("gui.dialogs.helpDialog.btn.help", "Hilfe anzeigen") };
+//        int buttons = JOptionPane.YES_NO_OPTION;
+//        int messageType = JOptionPane.INFORMATION_MESSAGE;
+//        String[] options = { JDLocale.L("gui.dialogs.helpDialog.btn.ok", "OK"), JDLocale.L("gui.dialogs.helpDialog.btn.help", "Hilfe anzeigen") };
         JHelpDialog d = new JHelpDialog(parent, title, message);
         d.btn3.setVisible(false);
         d.btn1.setText(JDLocale.L("gui.dialogs.helpDialog.btn.help", "Hilfe anzeigen"));

@@ -119,7 +119,8 @@ public class ConvertRouterData {
         }
         return null;
     }
-    private void saveTolist(Vector<String[]> list, File file) {
+    @SuppressWarnings("unchecked")
+	private void saveTolist(Vector<String[]> list, File file) {
         if (file.exists()) {
             list.addAll((Collection<? extends String[]>) JDUtilities.loadObject(((SimpleGUI) JDUtilities.getGUI()).getFrame(), file, true));
             Collections.sort(list, new Comparator<Object>() {

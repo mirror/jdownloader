@@ -39,7 +39,6 @@ import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.JPanel;
 import javax.swing.JProgressBar;
-import javax.swing.JRadioButtonMenuItem;
 import javax.swing.JScrollPane;
 import javax.swing.JSeparator;
 import javax.swing.JTabbedPane;
@@ -125,7 +124,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
 
     private int                  currentTab                 = -1;
 
-    private Configuration        config;
+  //  private Configuration        config;
 
     private SubConfiguration     guiConfig;
 
@@ -139,7 +138,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
      */
     public LinkGrabber(SimpleGUI parent, final DownloadLink[] linkList) {
         super();
-        config = JDUtilities.getConfiguration();
+      //  config = JDUtilities.getConfiguration();
         guiConfig = JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME);
         this.parentFrame = parent;
         tabList = new Vector<PackageTab>();
@@ -214,10 +213,10 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
     private void buildMenu() {
         // Where the GUI is created:
         JMenuBar menuBar;
-        JMenu menu, submenu;
-        JMenuItem menuItem;
-        JRadioButtonMenuItem rbMenuItem;
-        JCheckBoxMenuItem cbMenuItem;
+        JMenu menu; //submenu;
+        //JMenuItem menuItem;
+       // JRadioButtonMenuItem rbMenuItem;
+       // JCheckBoxMenuItem cbMenuItem;
 
         // Create the menu bar.
         menuBar = new JMenuBar();
@@ -671,7 +670,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
         else if (e.getSource() == this.mRemoveOfflineAll) {
             PackageTab tab;
             Iterator<PackageTab> iterator = tabList.iterator();
-            Vector<DownloadLink> newList = new Vector<DownloadLink>();
+        //    Vector<DownloadLink> newList = new Vector<DownloadLink>();
             while (iterator.hasNext()) {
                 tab = iterator.next();
                 Vector<DownloadLink> list = tab.getLinkList();

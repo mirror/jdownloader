@@ -91,7 +91,8 @@ private Configuration configuration;
 
     }
 
-    @Override
+    @SuppressWarnings("unchecked")
+	@Override
     public void initPanel() {
         setLayout(new BorderLayout());
         table = new JTable();

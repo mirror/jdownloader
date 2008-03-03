@@ -288,7 +288,8 @@ public abstract class Interaction extends Property implements Serializable {
      * @return wahr, wenn die Interaction abgearbeitet werden konnte, ansonsten
      *         falsch
      */
-    public static boolean handleInteraction(InteractionTrigger interactionevent, Object param) {
+    @SuppressWarnings("unchecked")
+	public static boolean handleInteraction(InteractionTrigger interactionevent, Object param) {
         boolean ret = true;
         logger.finer("Interaction start: Trigger: "+interactionevent.getName());
         Vector<Interaction> interactions = (Vector<Interaction>)JDUtilities.getSubConfig(Configuration.CONFIG_INTERACTIONS).getProperty(Configuration.PARAM_INTERACTIONS,new Vector<Interaction>());
@@ -329,7 +330,8 @@ public abstract class Interaction extends Property implements Serializable {
      * @return wahr, wenn die Interaction abgearbeitet werden konnte, ansonsten
      *         falsch
      */
-    public static boolean handleInteraction(InteractionTrigger interactionEvent, Object param, int id) {
+    @SuppressWarnings("unchecked")
+	public static boolean handleInteraction(InteractionTrigger interactionEvent, Object param, int id) {
         Vector<Interaction> interactions = (Vector<Interaction>)JDUtilities.getSubConfig(Configuration.CONFIG_INTERACTIONS).getProperty(Configuration.PARAM_INTERACTIONS,new Vector<Interaction>());
         
         for (int i = 0; i < interactions.size(); i++) {
@@ -358,7 +360,8 @@ public abstract class Interaction extends Property implements Serializable {
      * @param trigger
      * @return Alle Interactionen zum Trigger zurück
      */
-    public static Interaction[] getInteractions(InteractionTrigger trigger) {
+    @SuppressWarnings("unchecked")
+	public static Interaction[] getInteractions(InteractionTrigger trigger) {
   
         Vector<Interaction> interactions = (Vector<Interaction>)JDUtilities.getSubConfig(Configuration.CONFIG_INTERACTIONS).getProperty(Configuration.PARAM_INTERACTIONS,new Vector<Interaction>());
         

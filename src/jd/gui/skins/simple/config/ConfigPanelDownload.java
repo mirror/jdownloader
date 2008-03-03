@@ -1,7 +1,6 @@
 package jd.gui.skins.simple.config;
 
 import java.awt.BorderLayout;
-import java.util.logging.Level;
 
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;

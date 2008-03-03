@@ -2,14 +2,6 @@ package jd.plugins;
 
 import java.io.File;
 import java.io.Serializable;
-import java.util.Vector;
-import java.util.logging.Logger;
-
-
-import jd.config.Configuration;
-import jd.controlling.SpeedMeter;
-import jd.utils.JDUtilities;
-
 
 public class BackupLink implements Serializable {
   

@@ -1,16 +1,11 @@
 package jd.plugins.decrypt;
   import jd.plugins.DownloadLink;
 
-import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.IOException;
-import java.net.HttpURLConnection;
 import java.net.URL;
-import java.net.URLConnection;
-import java.net.URLDecoder;
 import java.util.HashMap;
 import java.util.Vector;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import jd.plugins.PluginForDecrypt;

@@ -207,7 +207,8 @@ public class TabDownloadLinks extends JPanel implements PluginListener, ControlL
         return linksSelected;
     }
 
-    public int[] getIndexes(Vector<DownloadLink> selectedLinks) {
+    @SuppressWarnings("unchecked")
+	public int[] getIndexes(Vector<DownloadLink> selectedLinks) {
         int rows[] = new int[selectedLinks.size()];
         Vector<Integer> indexes = new Vector<Integer>();
         Iterator iterator = selectedLinks.iterator();

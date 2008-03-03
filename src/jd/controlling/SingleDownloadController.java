@@ -2,16 +2,12 @@ package jd.controlling;
 
 import java.io.File;
 import java.util.logging.Logger;
-
-import jd.config.ConfigContainer;
-import jd.config.ConfigEntry;
 import jd.config.Configuration;
 import jd.controlling.interaction.CaptchaMethodLoader;
 import jd.controlling.interaction.Interaction;
 import jd.controlling.interaction.Unrar;
 import jd.event.ControlEvent;
 import jd.gui.skins.simple.AgbDialog;
-import jd.gui.skins.simple.config.GUIConfigEntry;
 import jd.plugins.DownloadLink;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForHost;

@@ -2,15 +2,8 @@ package jd.controlling.interaction;
 
 import java.io.File;
 import java.io.Serializable;
-import java.util.Iterator;
 import java.util.Vector;
-
-import jd.config.ConfigContainer;
-import jd.config.ConfigEntry;
 import jd.config.Configuration;
-import jd.controlling.JDController;
-import jd.event.ControlEvent;
-import jd.plugins.DownloadLink;
 import jd.update.WebUpdater;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;

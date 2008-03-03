@@ -50,7 +50,7 @@ public class DownloadWatchDog extends Thread implements PluginListener, ControlL
     }
 
     public void run() {
-        int started;
+     //   int started;
         Vector<DownloadLink> links;
         DownloadLink link;
         boolean hasWaittimeLinks;
@@ -63,7 +63,7 @@ public class DownloadWatchDog extends Thread implements PluginListener, ControlL
            
             if (Interaction.getInteractionsRunning() == 0) {
                 if (activeLinks.size() < getSimultanDownloadNum()&&!pause) {
-                    started = setDownloadActive();
+                    setDownloadActive();
                     // logger.info("Started " + started + "Downloads");
                 }
 

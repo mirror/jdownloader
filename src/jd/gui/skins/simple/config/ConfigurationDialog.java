@@ -66,7 +66,8 @@ public class ConfigurationDialog extends JDialog implements ActionListener, Chan
 
     private JCheckBox                 chbExpert;
 
-    private Vector<Class>             configClasses    = new Vector<Class>();
+    @SuppressWarnings("unchecked")
+	private Vector<Class>             configClasses    = new Vector<Class>();
 
     private Vector<JPanel>            containerPanels  = new Vector<JPanel>();
 
@@ -148,7 +149,8 @@ public class ConfigurationDialog extends JDialog implements ActionListener, Chan
         this.setVisible(true);
     }
 
-    private void paintPanel(int i) {
+    @SuppressWarnings("unchecked")
+	private void paintPanel(int i) {
 
         if (i < configPanels.size() && configPanels.get(i) != null) {
             return;
@@ -182,7 +184,8 @@ public class ConfigurationDialog extends JDialog implements ActionListener, Chan
      * @author JD-Team Fügt einen neuen ConfigTab hinzu
      * @param configPanel
      */
-    private void addConfigPanel(Class configPanelClass, String img, String title) {
+    @SuppressWarnings("unchecked")
+	private void addConfigPanel(Class configPanelClass, String img, String title) {
 
         this.configClasses.add(configPanelClass);
 

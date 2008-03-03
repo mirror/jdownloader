@@ -840,8 +840,8 @@ public class JAntiCaptcha {
      */
     private void sortLetterDB() {
 
-        LinkedList<Letter> ret = new LinkedList<Letter>();
-        Iterator<Letter> iter = letterDB.iterator();
+      //  LinkedList<Letter> ret = new LinkedList<Letter>();
+        //Iterator<Letter> iter = letterDB.iterator();
         
         Collections.sort(letterDB,new Comparator<Letter>() {
             public int compare(Letter a, Letter b) {

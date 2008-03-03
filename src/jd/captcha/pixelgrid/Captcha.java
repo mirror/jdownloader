@@ -12,13 +12,11 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.lang.reflect.Method;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.Vector;
 import java.util.logging.Logger;
 
 import jd.captcha.JAntiCaptcha;
 import jd.captcha.LetterComperator;
-import jd.captcha.gui.BasicWindow;
 import jd.captcha.pixelobject.PixelObject;
 import jd.captcha.utils.UTILITIES;
 
@@ -377,7 +375,8 @@ public class Captcha extends PixelGrid {
      * @param letterNum Anzahl der vermuteten Buchstaben
      * @return Array mit den gefundenen Lettern
      */
-    public Letter[] getLetters(int letterNum) {
+    @SuppressWarnings("unchecked")
+	public Letter[] getLetters(int letterNum) {
 
         if (seperatedLetters != null) return seperatedLetters;
 
@@ -478,7 +477,7 @@ public class Captcha extends PixelGrid {
     }
 
     private Letter[] getColoredLetters(int letterNum) {
-        Vector<PixelObject> letters = getColorObjects();
+        getColorObjects();
         return null;
     }
 

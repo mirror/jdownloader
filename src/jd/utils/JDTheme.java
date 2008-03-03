@@ -1,15 +1,11 @@
 package jd.utils;
 
 import java.io.File;
-import java.util.Collections;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Vector;
-import java.util.Map.Entry;
 import java.util.logging.Logger;
 
 import jd.JDFileFilter;
-import jd.gui.skins.simple.SimpleGUI;
 
 /**
  * Diese Klasse stellt Methoden zur Verfügung um in einen String mitPlatzhaltern
@@ -24,7 +20,7 @@ public class JDTheme {
 
     private static HashMap<String, String> defaultData;
 
-    private static File                    themeFile;                                 ;
+//    private static File                    themeFile;                                 ;
 
     public static Vector<String> getThemeIDs() {
         File dir = JDUtilities.getResourceFile(THEME_DIR);
@@ -64,7 +60,7 @@ return def;
     public static String I(String key, String def) {
         return getIcon(key, def);
     }
-
+/*
     private static void saveData() {
         Iterator<Entry<String, String>> iterator;
         if (data == null) return;
@@ -83,10 +79,10 @@ return def;
         JDUtilities.writeLocalFile(themeFile, str);
 
     }
-
+*/
     public static void setTheme(String themeID) {
         File file = JDUtilities.getResourceFile(THEME_DIR + themeID + ".thm");
-        themeFile = file;
+//        themeFile = file;
         if (!file.exists()) {
             logger.severe("Theme " + themeID + " not installed");
             return;

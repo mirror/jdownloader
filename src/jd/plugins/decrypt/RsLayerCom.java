@@ -4,7 +4,6 @@ import java.io.File;
 import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.net.HttpURLConnection;
 import java.util.Vector;
 import java.util.regex.Pattern;
 

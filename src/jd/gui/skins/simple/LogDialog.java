@@ -145,7 +145,7 @@ public class LogDialog extends JDialog implements ActionListener {
 //            }
 //        }
         if (e.getSource() == btnUpload) {
-            String txt;
+      //     String txt;
           
            
           

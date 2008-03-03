@@ -13,6 +13,7 @@ import jd.utils.JDUtilities;
  * 
  * @author astaldo
  */
+@SuppressWarnings("unchecked")
 public abstract class PluginForDecrypt extends Plugin implements Comparable {
     protected ProgressController progress;
 

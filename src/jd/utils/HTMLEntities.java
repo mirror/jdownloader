@@ -274,12 +274,14 @@ public class HTMLEntities {
     /**
      * Map to convert extended characters in html entities.
      */
-    private static final Hashtable htmlentities_map = new Hashtable();
+    @SuppressWarnings("unchecked")
+	private static final Hashtable htmlentities_map = new Hashtable();
     
     /**
      * Map to convert html entities in exteden characters.
      */
-    private static final Hashtable unhtmlentities_map = new Hashtable();
+    @SuppressWarnings("unchecked")
+	private static final Hashtable unhtmlentities_map = new Hashtable();
     
     //==============================================================================
     // METHODS

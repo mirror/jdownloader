@@ -45,7 +45,8 @@ public class ConfigPanelGUI extends ConfigPanel {
 
         guiConfig.save();
     }
-    @Override
+    @SuppressWarnings("unchecked")
+	@Override
     public void initPanel() {
         GUIConfigEntry ce;
 

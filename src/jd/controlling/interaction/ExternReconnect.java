@@ -4,7 +4,6 @@ import java.io.Serializable;
 
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
-import jd.config.SubConfiguration;
 import jd.controlling.ProgressController;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
@@ -66,12 +65,12 @@ public class ExternReconnect extends Interaction implements Serializable {
         ProgressController progress = new ProgressController(JDLocale.L("interaction.externreconnect.progress.0_title", "ExternReconnect"), 10);
 
         progress.setStatusText(JDLocale.L("interaction.externreconnect.progress.1_retries", "ExternReconnect #") + retries);
-
+/*
         int waitForReturn = JDUtilities.getConfiguration().getIntegerProperty(PROPERTY_IP_WAIT_FOR_RETURN, 0);
         String executeIn = JDUtilities.getConfiguration().getStringProperty(PROPERTY_RECONNECT_EXECUTE_FOLDER);
         String command = JDUtilities.getConfiguration().getStringProperty(PROPERTY_RECONNECT_COMMAND);
         String parameter = JDUtilities.getConfiguration().getStringProperty(PROPERTY_RECONNECT_PARAMETER);
-
+*/
         int waittime = JDUtilities.getConfiguration().getIntegerProperty(PARAM_IPCHECKWAITTIME, 0);
         int maxretries = JDUtilities.getConfiguration().getIntegerProperty(PARAM_RETRIES, 0);
         int waitForIp = JDUtilities.getConfiguration().getIntegerProperty(PARAM_WAITFORIPCHANGE, 10);

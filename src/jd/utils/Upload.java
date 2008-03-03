@@ -10,7 +10,6 @@ import java.util.Iterator;
 import java.util.Vector;
 import java.util.Map.Entry;
 
-import jd.config.Configuration;
 import jd.plugins.Form;
 import jd.plugins.HTTPPost;
 import jd.plugins.Plugin;

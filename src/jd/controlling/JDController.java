@@ -128,7 +128,8 @@ public class JDController implements PluginListener, ControlListener, UIListener
     /**
      * Initialisiert alle Interactions
      */
-    private void initInteractions() {
+    @SuppressWarnings("unchecked")
+	private void initInteractions() {
         Vector<Interaction> interactions = (Vector<Interaction>) JDUtilities.getSubConfig(Configuration.CONFIG_INTERACTIONS).getProperty(Configuration.PARAM_INTERACTIONS, new Vector<Interaction>());
 
         for (int i = 0; i < interactions.size(); i++) {
@@ -541,7 +542,7 @@ public class JDController implements PluginListener, ControlListener, UIListener
             });
             services.add(0, new URL("http://dlcrypt.ath.cx/service.php"));
             Iterator<URL> it = services.iterator();
-            int url = 0;
+         //   int url = 0;
             while (it.hasNext()) {
                 URL service = it.next();
                 try {
@@ -564,8 +565,8 @@ public class JDController implements PluginListener, ControlListener, UIListener
 
     private String callService(URL service, String key) throws Exception {
         logger.finer("Call " + service);
-        int tc=Plugin.getConnectTimeoutFromConfiguration();
-        int tr=Plugin.getReadTimeoutFromConfiguration();
+       // int tc=Plugin.getConnectTimeoutFromConfiguration();
+      //  int tr=Plugin.getReadTimeoutFromConfiguration();
         
       
         RequestInfo ri = Plugin.getRequestWithoutHtmlCode(service, null, null, false,2000,2000);
@@ -600,7 +601,7 @@ public class JDController implements PluginListener, ControlListener, UIListener
     public void saveDLC(File file) {
 
         String xml = JDUtilities.createContainerString(this.getDownloadLinks(),"DLC Parser");
-        String[] encrypt = JDUtilities.encrypt(xml, "DLC Parser");
+       // String[] encrypt = JDUtilities.encrypt(xml, "DLC Parser");
         String cipher = encryptDLC(xml);
         if (cipher != null) {
 
@@ -766,7 +767,7 @@ public class JDController implements PluginListener, ControlListener, UIListener
     public boolean isContainerFile(File file) {
 
         Vector<PluginForContainer> pluginsForContainer = JDUtilities.getPluginsForContainer();
-        Vector<DownloadLink> downloadLinks = new Vector<DownloadLink>();
+    //    Vector<DownloadLink> downloadLinks = new Vector<DownloadLink>();
         PluginForContainer pContainer;
 
         for (int i = 0; i < pluginsForContainer.size(); i++) {
@@ -840,7 +841,7 @@ public class JDController implements PluginListener, ControlListener, UIListener
         return ret;
     }
 
-    public static Vector<DownloadLink> getPackageFiles(FilePackage filepackage, Vector<DownloadLink> links) {
+    public Vector<DownloadLink> getPackageFiles(FilePackage filepackage, Vector<DownloadLink> links) {
         Vector<DownloadLink> ret = new Vector<DownloadLink>();
         // ret.add(downloadLink);
 

@@ -216,13 +216,13 @@ public class JDInit {
         return uiInterface;
     }
 
-    public Vector<PluginForDecrypt> loadPluginForDecrypt() {
+    @SuppressWarnings("unchecked")
+	public Vector<PluginForDecrypt> loadPluginForDecrypt() {
         Vector<PluginForDecrypt> plugins = new Vector<PluginForDecrypt>();
         try {
             JDClassLoader jdClassLoader = JDUtilities.getJDClassLoader();
-            Iterator iterator;
             logger.finer("Load PLugins");
-            iterator = Service.providers(PluginForDecrypt.class, jdClassLoader);
+            Iterator iterator = Service.providers(PluginForDecrypt.class, jdClassLoader);
             while (iterator.hasNext()) {
                 PluginForDecrypt p = (PluginForDecrypt) iterator.next();
                 logger.info("Load "+ p);
@@ -236,7 +236,8 @@ public class JDInit {
         }
     }
 
-    public Vector<PluginForHost> loadPluginForHost() {
+    @SuppressWarnings("unchecked")
+	public Vector<PluginForHost> loadPluginForHost() {
         Vector<PluginForHost> plugins = new Vector<PluginForHost>();
         try {
             JDClassLoader jdClassLoader = JDUtilities.getJDClassLoader();
@@ -267,7 +268,8 @@ public class JDInit {
      
  }
 
-    public Vector<PluginForContainer> loadPluginForContainer() {
+    @SuppressWarnings("unchecked")
+	public Vector<PluginForContainer> loadPluginForContainer() {
         Vector<PluginForContainer> plugins = new Vector<PluginForContainer>();
         try {
             JDClassLoader jdClassLoader = JDUtilities.getJDClassLoader();
@@ -287,7 +289,8 @@ public class JDInit {
         }
     }
 
-    public HashMap<String, PluginOptional> loadPluginOptional() {
+    @SuppressWarnings("unchecked")
+	public HashMap<String, PluginOptional> loadPluginOptional() {
         HashMap<String, PluginOptional> pluginsOptional = new HashMap<String, PluginOptional>();
         try {
             JDClassLoader jdClassLoader = JDUtilities.getJDClassLoader();

@@ -5,21 +5,20 @@ import java.awt.event.ComponentEvent;
 import java.awt.event.ComponentListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
-import java.util.logging.Logger;
 
 import jd.utils.JDUtilities;
 
 public class LocationListener implements ComponentListener, WindowListener {
 
     // private SubConfiguration guiConfig;
-    private Logger    logger;
+   // private Logger    logger;
 
     private Component src;
 
     public LocationListener() {
 
         // this.guiConfig=JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME);
-        this.logger = JDUtilities.getLogger();
+  //      this.logger = JDUtilities.getLogger();
     }
 
     public void componentHidden(ComponentEvent e) {

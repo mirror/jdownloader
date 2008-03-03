@@ -599,7 +599,7 @@ public class Letter extends PixelGrid {
             }
         }
 
-        long akt;
+       // long akt;
         int x = 0;
         int y = 0;
         int[][] map = new int[3][3];
@@ -809,7 +809,7 @@ int firstChange=0;
         return ret;
 
     }
-
+/*
     private int[] getPartnerPixel(int x, int y, Vector<int[]> border) {
 
         int radius = 1;
@@ -856,5 +856,5 @@ int firstChange=0;
         }
         return angle;
     }
-
+*/
 }

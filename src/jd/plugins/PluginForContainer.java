@@ -18,7 +18,7 @@ public abstract class PluginForContainer extends PluginForDecrypt {
 
     private static final int                             STATUS_ERROR_EXTRACTING = 1;
 
-    private static final int                             STATUS_SUCCESS          = 2;
+//    private static final int                             STATUS_SUCCESS          = 2;
 
     protected String                                     md5;
 

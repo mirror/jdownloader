@@ -86,7 +86,8 @@ public class ClipboardHandler extends Thread {
             JDUtilities.getController().setClipboard(new ClipboardHandler());
     }
 
-    public void run() {
+    @SuppressWarnings("unchecked")
+	public void run() {
         enabled = isEnabled();
         while (enabled) {
             try {

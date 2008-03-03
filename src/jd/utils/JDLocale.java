@@ -1,9 +1,6 @@
 package jd.utils;
 
 import java.io.File;
-import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -12,9 +9,6 @@ import java.util.Map.Entry;
 import java.util.logging.Logger;
 
 import jd.JDFileFilter;
-import jd.gui.skins.simple.SimpleGUI;
-import jd.plugins.Plugin;
-
 /**
  * Diese Klasse stellt Methoden zur Verfügung um in einen String mitPlatzhaltern
  * werte einzusetzen
@@ -64,11 +58,11 @@ public class JDLocale {
         return def;
 
     }
-
+/*
     private static Vector<String[]> send = new Vector<String[]>();
     private static Vector<String> sent = new Vector<String>();
     private static Thread           sender;
-
+*/
     private static String           lID;
 
 

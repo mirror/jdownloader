@@ -1,5 +1,5 @@
 package jd;
-
+/*
 import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
 import javax.crypto.SecretKeyFactory;
@@ -8,21 +8,23 @@ import javax.crypto.spec.PBEParameterSpec;
 
 import sun.misc.BASE64Decoder;
 import sun.misc.BASE64Encoder;
-
+*/
 /**
  * EInfache verschlüsselung für die Linklisten
  * @author astaldo
  *
  */
 public class JDCrypt {
+	/*
     private final static transient String password   = "jDownloader";
     private final static transient byte[] salt = { (byte) 0xc9,(byte) 0xc9, (byte) 0xc9, (byte) 0xc9, (byte) 0xc9, (byte) 0xc9,(byte) 0xc9, (byte) 0xc9};
     private static Cipher                 encryptCipher;
     private static Cipher                 decryptCipher;
-    private static BASE64Encoder encoder = new sun.misc.BASE64Encoder();
+   private static BASE64Encoder encoder = new sun.misc.BASE64Encoder();
     private static BASE64Decoder decoder = new sun.misc.BASE64Decoder();
-    /** Verwendete Zeichendecodierung */
+    /** Verwendete Zeichendecodierung 
     private static String                 charset = "UTF16";
+    */
 
     /**
      * Initialisiert den Verschlüsselungsmechanismus
@@ -32,6 +34,7 @@ public class JDCrypt {
      * @param iterations int
      * @throws SecurityException
      */
+    /*
     private static void init()
             throws SecurityException {
         try {
@@ -48,6 +51,7 @@ public class JDCrypt {
                     + e.getMessage());
         }
     }
+    */
 
     /**
      * Verschlüsselt eine Zeichenkette

@@ -13,7 +13,6 @@ import javax.swing.JWindow;
 import jd.captcha.JACController;
 import jd.config.Configuration;
 import jd.controlling.JDController;
-import jd.controlling.interaction.CaptchaMethodLoader;
 import jd.controlling.interaction.Interaction;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.utils.JDLocale;

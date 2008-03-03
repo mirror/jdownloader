@@ -106,7 +106,8 @@ public class DragNDrop extends JComponent implements DropTargetListener {
      * Wird aufgerufen sobald etwas gedropt wurde. Die Funktion liest den Inhalt
      * des Drops aus und benachrichtigt die Listener
      */
-    public void drop(DropTargetDropEvent e) {
+    @SuppressWarnings("unchecked")
+	public void drop(DropTargetDropEvent e) {
         logger.info("Drag: DROP " + e.getDropAction() + " : " + e.getSourceActions() + " - " + e.getSource() + " - ");
         filled = true;
         try {

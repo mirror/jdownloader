@@ -1217,10 +1217,8 @@ public class PixelGrid {
 
     protected Vector<PixelObject> getColorObjects() {
 
-        int percent = owner.getJas().getInteger("colorObjectDetectionPercent");
-        int running = owner.getJas().getInteger("colorObjectDetectionRunningAverage");
-        percent = 5;
-        running = 1000;
+       // int percent = owner.getJas().getInteger("colorObjectDetectionPercent");
+      //  int running = owner.getJas().getInteger("colorObjectDetectionRunningAverage");
         logger.info("Max pixel value: " + this.getMaxPixelValue());
         // Erstelle Farbverteilungsmap
         HashMap<Integer, PixelObject> map = new HashMap<Integer, PixelObject>();
@@ -1271,7 +1269,7 @@ public class PixelGrid {
                 }
             }
         }
-        int total = getWidth() * getHeight();
+       // int total = getWidth() * getHeight();
 
         Iterator<Integer> iterator = map.keySet().iterator();
 

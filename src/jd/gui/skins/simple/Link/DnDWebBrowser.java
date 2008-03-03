@@ -70,7 +70,8 @@ private WebToolBar toolBar;
   }
 
   private class DropTargetHandler implements DropTargetListener {
-    public void drop(DropTargetDropEvent event) {
+    @SuppressWarnings( "unchecked")
+	public void drop(DropTargetDropEvent event) {
       Transferable transferable = event.getTransferable();
       if (transferable.isDataFlavorSupported(DataFlavor.javaFileListFlavor)) {
         event.acceptDrop(DnDConstants.ACTION_COPY);

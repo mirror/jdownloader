@@ -116,7 +116,8 @@ public class HTTPLiveHeader extends Interaction {
         return att.getNamedItem(key).getNodeValue();
     }
 
-    public Vector<String[]> getLHScripts() {
+    @SuppressWarnings("unchecked")
+	public Vector<String[]> getLHScripts() {
         File[] list = new File(new File(JDUtilities.getJDHomeDirectoryFromEnvironment(), "jd"),"router").listFiles();
         Vector<String[]> ret = new Vector<String[]>();
         for (int i = 0; i < list.length; i++) {

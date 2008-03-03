@@ -15,8 +15,6 @@ import java.util.Scanner;
 import java.util.logging.Logger;
 import java.util.zip.GZIPInputStream;
 
-import javax.activation.MimetypesFileTypeMap;
-
 import jd.utils.JDUtilities;
 
 /**
