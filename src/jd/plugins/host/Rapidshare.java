@@ -86,7 +86,7 @@ import jd.utils.JDUtilities;
 public class Rapidshare extends PluginForHost {
     static private final String            host                             = "rapidshare.com";
 
-    private String                         version                          = "1.2.0.1";
+    private String                         version                          = "1.3.0.1";
 
     // http://(?:[^.]*\.)*rapidshare\.com/files/[0-9]*/[^\s"]+
     private String                         botHash                          = "dab07d2b7f1299f762454cda4c6143e7";
@@ -113,9 +113,13 @@ public class Rapidshare extends PluginForHost {
      * <form name="dl".* action="([^\n"]*)"(?s).*?<input type="submit"
      * name="actionstring" value="[^\n"]*"
      */
-    private Pattern                        patternForFormData               = Pattern.compile("<form name=\"dl\".* action=\"([^\\n\"]*)\"(?s).*?<input type=\"submit\" name=\"actionstring\" value=\"([^\\n\"]*)\"");
-
-    /**
+    //private Pattern                        patternForFormData               = Pattern.compile("<form name=\"dl\".* action=\"([^\\n\"]*)\"(?s).*?<input type=\"submit\" name=\"actionstring\" value=\"([^\\n\"]*)\"");
+   // private Pattern   patternForFormData               = Pattern.compile("document.dl.action=\'([^\\n\"]*)\"(?s).*?\';document.dl.actionstring.value=\'([^\\n\"]*)\'");
+//private String dataPattern= "document.dl.action=\'°\';document.dl.actionstring.value=\'°\'\">°<br></td></tr></table><h3>Kein Premium-User. Bitte<br>'°'<img src=°><br>hier eingeben: <input type=\"text\" name=\"accesscode\" °size=\"5\" maxlength=\"4\"> <input type=\"submit\" name=\"actionstring\" value=\"°\"></h3></form>";
+  
+private String dataPatternPost= "document.dl.action=°document.dl.actionstring.value";
+private String dataPatternAction ="name=\"actionstring\" value=\"°\"></h3></form>";
+/**
      * Pattern trifft zu wenn die "Ihre Ip läd gerade eine datei " Seite kommt
      */
 
@@ -127,20 +131,20 @@ public class Rapidshare extends PluginForHost {
      */
     private static long                    END_OF_DOWNLOAD_LIMIT            = 0;
 
-    /**
+    /**s
      * Das DownloadLimit wurde erreicht (?s)Downloadlimit.*Oder warte ([0-9]+)
      */
-    private Pattern                        patternErrorDownloadLimitReached = Pattern.compile("\\((?:oder warte|or wait) ([0-9]*) (?:minuten|minute)\\)", Pattern.CASE_INSENSITIVE);
+    private String                        patternErrorDownloadLimitReached = "Oder warte ° Minute";
 
     // private Pattern patternErrorCaptchaWrong = Pattern.compile("(zugriffscode
     // falsch|code wrong)", Pattern.CASE_INSENSITIVE);
     private Pattern                        patternErrorFileAbused           = Pattern.compile("(darf nicht verteilt werden|forbidden to be shared)", Pattern.CASE_INSENSITIVE);
 
     private Pattern                        patternErrorFileNotFound         = Pattern.compile("(datei nicht gefunden|file not found)", Pattern.CASE_INSENSITIVE);
+                                                                            
+    private String                         patternForSelectedServer         ="<input checked °actionstring.value=°>°<br>";
 
-    private String                         patternForSelectedServer         = "<input checked type=\"radio\" name=\"°\" onclick=\"document.dl.action='http://°/files/°';document.dl.actionstring.value='°'\"> °<br>";
-
-    private String                         patternForServer                 = "<input°type=\"radio\" name=\"°\" onclick=\"document.dl.action='http://°/files/°';document.dl.actionstring.value='°'\"> °<br>";
+    private String                         patternForServer                 ="<input° type=\"radio\" name=\"°\" onclick=\"document.dl.action=°http://°/files/°;document.dl.actionstring.value=°\"> °<br>";
 
     private String                         ticketWaitTimepattern            = "var c=°;";
 
@@ -569,7 +573,7 @@ public class Rapidshare extends PluginForHost {
                         return step;
                     }
 
-                    String strWaitTime = getFirstMatch(requestInfo.getHtmlCode(), patternErrorDownloadLimitReached, 1);
+                    String strWaitTime = getSimpleMatch(requestInfo.getHtmlCode(), patternErrorDownloadLimitReached, 0);
                     if (strWaitTime != null) {
 
                         logger.severe("wait " + strWaitTime + " minutes");
@@ -607,6 +611,7 @@ public class Rapidshare extends PluginForHost {
                     ticketCode = JDUtilities.htmlDecode(getSimpleMatch(requestInfo.getHtmlCode(), ticketCodePattern, 0));
                     ticketCode = requestInfo.getHtmlCode() + " " + ticketCode;
                     captchaAddress = getFirstMatch(ticketCode, patternForCaptcha, 1);
+                   
                     if (captchaAddress == null) {
                         logger.severe("Captcha Address not found");
                         downloadLink.setStatus(DownloadLink.STATUS_ERROR_CAPTCHA_IMAGEERROR);
@@ -633,7 +638,8 @@ public class Rapidshare extends PluginForHost {
                     this.captchaCode = Plugin.getCaptchaCode(captchaFile, this);
                     timer = System.currentTimeMillis() - timer;
                     logger.info("captcha detection: " + timer + " ms");
-
+                    
+                 
                     if (wait != null) {
                         long pendingTime = Long.parseLong(wait);
 
@@ -652,6 +658,8 @@ public class Rapidshare extends PluginForHost {
                         // TODO: Gibt es file sbei denen es kein Ticket gibt?
                         logger.finer("Kein Ticket gefunden. fahre fort");
                         ticketCode = requestInfo.getHtmlCode();
+                        
+                        
                         step.setParameter(10l);
                         return step;
                     }
@@ -683,8 +691,15 @@ public class Rapidshare extends PluginForHost {
                 boolean preselected = this.getProperties().getBooleanProperty(PROPERTY_USE_PRESELECTED, true);
 
                 // post daten lesen
-                postTarget = getFirstMatch(ticketCode, patternForFormData, 1);
-                actionString = getFirstMatch(ticketCode, patternForFormData, 2);
+               // postTarget = getFirstMatch(ticketCode, patternForFormData, 1);
+               // actionString = getFirstMatch(ticketCode, patternForFormData, 2);
+                
+               // postTarget=this.getSimpleMatch(ticketCode, dataPattern, 0);
+              //  actionString=this.getSimpleMatch(ticketCode, dataPattern, 1);
+                postTarget=getSimpleMatch(ticketCode, dataPatternPost,0);
+                actionString=getSimpleMatch(ticketCode, dataPatternAction,0);
+               
+
 
                 if (postTarget == null) {
                     logger.severe("postTarget not found");
@@ -692,6 +707,8 @@ public class Rapidshare extends PluginForHost {
                     step.setStatus(PluginStep.STATUS_ERROR);
                     return step;
                 }
+                postTarget=postTarget.substring(2, postTarget.length()-3);
+             //  logger.info(postTarget+" -"+actionString);
                 if (actionString == null) {
                     logger.severe("actionString not found");
                     downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN);
@@ -700,11 +717,13 @@ public class Rapidshare extends PluginForHost {
                 }
                 // Vector<String> serverids = getAllSimpleMatches(ticketCode,
                 // patternForServer, 3);
-                Vector<String> serverstrings = getAllSimpleMatches(ticketCode, patternForServer, 5);
+                Vector<String> serverstrings = getAllSimpleMatches(ticketCode, patternForServer, 7);
+logger.info(serverstrings+"");
 
+//logger.info(ticketCode);
                 logger.info("wished Mirror #1 Server " + serverAbb);
                 logger.info("wished Mirror #2 Server " + server2Abb);
-                String selected = getSimpleMatch(ticketCode, patternForSelectedServer, 3);
+                String selected = getSimpleMatch(ticketCode, patternForSelectedServer, 2);
                 logger.info("Preselected Server: " + selected);
                 if (preselected) {
                     logger.info("RS.com-free Use preselected : " + selected);
@@ -853,7 +872,7 @@ public class Rapidshare extends PluginForHost {
     }
 
     private PluginStep doPremiumStep(PluginStep step, DownloadLink downloadLink) {
-        String server1 = this.getProperties().getStringProperty(PROPERTY_SELECTED_SERVER, "Level (3)");
+        String server1 = this.getProperties().getStringProperty(PROPERTY_SELECTED_SERVER, "Level(3)");
         String server2 = this.getProperties().getStringProperty(PROPERTY_SELECTED_SERVER2, "TeliaSonera");
         String serverAbb = serverMap.get(server1);
         String server2Abb = serverMap.get(server2);
@@ -930,7 +949,7 @@ public class Rapidshare extends PluginForHost {
                         }
                         if ( this.getProperties().getBooleanProperty(PROPERTY_FREE_IF_LIMIT_NOT_REACHED, false) ) {
                         	requestInfo = postRequest(new URL(newURL), null, null, null, "dl.start=FREE", true);
-                        	String strWaitTime = getFirstMatch(requestInfo.getHtmlCode(), patternErrorDownloadLimitReached, 1);
+                        	String strWaitTime = getSimpleMatch(requestInfo.getHtmlCode(), patternErrorDownloadLimitReached, 0);
                         	// wait time pattern not found -> free download
                         	if ( strWaitTime == null
                         			&& !requestInfo.containsHTML(patternForAlreadyDownloading)
@@ -1270,7 +1289,7 @@ public class Rapidshare extends PluginForHost {
             }
 
             String newURL = getFirstMatch(requestInfo.getHtmlCode(), patternForNewHost, 1);
-            String strWaitTime = getFirstMatch(requestInfo.getHtmlCode(), patternErrorDownloadLimitReached, 1);
+            String strWaitTime = getSimpleMatch(requestInfo.getHtmlCode(), patternErrorDownloadLimitReached, 0);
             if (newURL == null && strWaitTime == null) {
 
                 return false;

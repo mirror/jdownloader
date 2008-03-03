@@ -279,8 +279,9 @@ public class ConfigEntry implements Serializable {
         return expertEntry;
     }
 
-    public void setInstantHelp(String l) {
+    public ConfigEntry setInstantHelp(String l) {
         this.instantHelp=l;
+        return this;
         
     }
 

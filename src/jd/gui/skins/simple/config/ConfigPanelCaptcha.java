@@ -94,11 +94,15 @@ public class ConfigPanelCaptcha extends ConfigPanel implements MouseListener {
         // addGUIConfigEntry(ce);
         ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, JDUtilities.getSubConfig("JAC"), "SHOW_EXTENDED_CAPTCHA", JDLocale.L("gui.config.captcha.extendedCaptcha", "Captchaverarbeitung anzeigen"));
         ce.setDefaultValue(true);
-        ce.setInstantHelp(JDLocale.L("gui.config.captcha.extendedCaptcha.instanthelp", "http://www.google.de"));
+        ce.setInstantHelp(JDLocale.L("gui.config.captcha.extendedCaptcha.instanthelp", "jAntiCaptcha - Captchaverarbeitung anzeigen"));
         gce = new GUIConfigEntry(ce);
         addGUIConfigEntry(gce);
-
-        gce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, JDUtilities.getSubConfig("JAC"), Configuration.AUTOTRAIN_ERROR_LEVEL, JDLocale.L("gui.config.captcha.train.level", "Anzeigeschwelle"), 0, 100).setDefaultValue(80).setExpertEntry(true));
+        ce=new ConfigEntry(ConfigContainer.TYPE_SPINNER, JDUtilities.getSubConfig("JAC"), Configuration.AUTOTRAIN_ERROR_LEVEL, JDLocale.L("gui.config.captcha.train.level", "Anzeigeschwelle"), 0, 100).setDefaultValue(80).setExpertEntry(true);
+        ce.setInstantHelp(JDLocale.L("gui.config.captcha.train.level.instanthelp", "jAntiCaptcha - Anzeigeschwelle"));
+       
+        gce = new GUIConfigEntry(ce);
+        
+        
         addGUIConfigEntry(gce);
         gce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, JDUtilities.getSubConfig("JAC"), Configuration.AUTOTRAIN_SHOW_TIMEOUT, JDLocale.L("gui.config.captcha.train.show_timeout", "Countdown für das Eingabefenster"), 0, 600).setDefaultValue(20).setExpertEntry(true));
         addGUIConfigEntry(gce);

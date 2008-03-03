@@ -9,7 +9,6 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.logging.Logger;
 
-import javax.swing.BorderFactory;
 import javax.swing.ButtonGroup;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
@@ -18,6 +17,7 @@ import javax.swing.JComboBox;
 import javax.swing.JComponent;
 import javax.swing.JFileChooser;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JPasswordField;
 import javax.swing.JRadioButton;
@@ -33,6 +33,7 @@ import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.gui.skins.simple.Link.JLinkButton;
 import jd.gui.skins.simple.components.BrowseFile;
+import jd.utils.JDLocale;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 
@@ -79,7 +80,7 @@ public class GUIConfigEntry extends JPanel {
         this.configEntry = cfg;
 
         this.setLayout(new GridBagLayout());
-        this.setBorder(BorderFactory.createEtchedBorder());
+        //this.setBorder(BorderFactory.createEtchedBorder());
         input = new JComponent[1];
         JComponent left = null;
         JComponent right = null;
@@ -99,7 +100,7 @@ public class GUIConfigEntry extends JPanel {
                 this.addInstantHelpLink();
                 input[0].setEnabled(configEntry.isEnabled());
                
-                JDUtilities.addToGridBag(this, left = input[0], GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, 1, 1, 0, insets, GridBagConstraints.HORIZONTAL, GridBagConstraints.EAST);
+                JDUtilities.addToGridBag(this, left = input[0], 0, 0, 2, 1, 1, 0, insets, GridBagConstraints.HORIZONTAL, GridBagConstraints.EAST);
 
                 break;
 
@@ -255,13 +256,12 @@ public class GUIConfigEntry extends JPanel {
        // JDUtilities.addToGridBag(this,  new JLabel("HELP"), 1, 0, 1, 1, 1, 0, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
       if(configEntry.getInstantHelp()!=null){
           try {
-              
-              JLinkButton link = new JLinkButton("",new ImageIcon(JDUtilities.getImage(JDTheme.I("gui.images.help")).getScaledInstance(20, 20, Image.SCALE_FAST)), new URL(configEntry.getInstantHelp()));
+              String url="http://jdownloader.ath.cx/wikipage.php?lng="+JDLocale.getLocale()+"&page="+configEntry.getInstantHelp();
+              JLinkButton link = new JLinkButton("",new ImageIcon(JDUtilities.getImage(JDTheme.I("gui.images.help")).getScaledInstance(20, 20, Image.SCALE_FAST)), new URL(url));
               JDUtilities.addToGridBag(this,  link, 1, 0, 1, 1, 1, 0, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
               
           }
           catch (MalformedURLException e) {
-             JDUtilities.addToGridBag(this,  new JLabel("[?:"+configEntry.getInstantHelp()+"]"), 1, 0, 1, 1, 1, 0, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
               
           }
       }else{
