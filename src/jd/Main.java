@@ -40,7 +40,7 @@ public class Main {
             System.setProperty("apple.laf.useScreenMenuBar", "true");
         }
         
-        JDLocale.setLocale("german");
+        JDLocale.setLocale("english");
         JDTheme.setTheme("default");
         boolean stop = false;
         for (int i = 0; i < args.length; i++) {

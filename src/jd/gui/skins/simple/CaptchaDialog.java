@@ -89,18 +89,18 @@ public class CaptchaDialog extends JDialog implements ActionListener {
                     }
                     if (textField.getText().length() == 0 || code.toLowerCase().startsWith(textField.getText().toLowerCase())) {
                         textField.setText(code);
-                        int wait = configuration.getIntegerProperty(Configuration.PARAM_CAPTCHA_INPUT_SHOWTIME, 10);
-                        logger.finer("jAntiCaptcha fertig. Warte " + JDUtilities.formatSeconds(wait));
-                        while (wait > 0) {
-
-                            setTitle(JDUtilities.formatSeconds(wait) + " " + JDLocale.L("gui.captchaWindow.title_wait", "jAntiCaptcha fertig."));
-                            try {
-                                Thread.sleep(1000);
-                            }
-                            catch (InterruptedException e) {
-                            }
-                            wait--;
-                        }
+//                        int wait = configuration.getIntegerProperty(Configuration.PARAM_CAPTCHA_INPUT_SHOWTIME, 10);
+//                        logger.finer("jAntiCaptcha fertig. Warte " + JDUtilities.formatSeconds(wait));
+//                        while (wait > 0) {
+//
+//                            setTitle(JDUtilities.formatSeconds(wait) + " " + JDLocale.L("gui.captchaWindow.title_wait", "jAntiCaptcha fertig."));
+//                            try {
+//                                Thread.sleep(1000);
+//                            }
+//                            catch (InterruptedException e) {
+//                            }
+//                            wait--;
+//                        }
                         if (isVisible() && textField.getText().equalsIgnoreCase(code) && textField.getText().length() > 0) {
                             captchaText = textField.getText();
                             dispose();

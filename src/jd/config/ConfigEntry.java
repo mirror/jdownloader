@@ -31,6 +31,8 @@ public class ConfigEntry implements Serializable {
 
     private boolean expertEntry =false;
 
+    private String instantHelp;
+
     /**
      * Konstruktor für z.B. Buttons (Label+ Actionlistener)
      * 
@@ -275,6 +277,15 @@ public class ConfigEntry implements Serializable {
 
     public boolean isExpertEntry() {
         return expertEntry;
+    }
+
+    public void setInstantHelp(String l) {
+        this.instantHelp=l;
+        
+    }
+
+    public String getInstantHelp() {
+        return instantHelp;
     }
 
 }

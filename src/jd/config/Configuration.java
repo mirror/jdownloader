@@ -165,9 +165,9 @@ public class Configuration extends Property implements Serializable {
 
     public static final String PARAM_HOST_PRIORITY = "HOST_PRIORITY";
     public static final String PARAM_CAPTCHA_JAC_DISABLE = "CAPTCHA_JAC_DISBALE";
-    public static final String USE_CAPTCHA_COLLECTOR = "USE_CAPTCHA_COLLECTOR";
-    public static final String USE_CAPTCHA_EXCHANGE_SERVER = "USE_CAPTCHA_EXCHANGE_SERVER";
-    public static final String PARAM_CAPTCHA_INPUT_SHOWTIME = "CAPTCHA_INPUT_SHOWTIME";
+   // public static final String USE_CAPTCHA_COLLECTOR = "USE_CAPTCHA_COLLECTOR";
+  //  public static final String USE_CAPTCHA_EXCHANGE_SERVER = "USE_CAPTCHA_EXCHANGE_SERVER";
+   
 
     public static final String CID = "CID";
 

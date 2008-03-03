@@ -21,42 +21,30 @@ import jd.gui.UIInterface;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
-public class ConfigPanelCaptcha extends ConfigPanel implements MouseListener{
-
-
-
-
-
+public class ConfigPanelCaptcha extends ConfigPanel implements MouseListener {
 
     /**
-	 * 
-	 */
-	private static final long serialVersionUID = 1592765387324291781L;
-
-	/**
      * 
      */
-  
+    private static final long serialVersionUID = 1592765387324291781L;
 
+    /**
+     * 
+     */
 
+    private JTable            table;
 
-    private JTable                   table;
+    private Configuration     configuration;
 
-    private Configuration configuration;
-
-    private File[] methods;
-
-
+    private File[]            methods;
 
     public ConfigPanelCaptcha(Configuration configuration, UIInterface uiinterface) {
         super(uiinterface);
-        this.configuration=configuration;
-       methods = JAntiCaptcha.getMethods("jd/captcha/methods/");
-       logger.info(methods.length+"");
-  
- 
-       
-        initPanel(); 
+        this.configuration = configuration;
+        methods = JAntiCaptcha.getMethods("jd/captcha/methods/");
+        logger.info(methods.length + "");
+
+        initPanel();
 
         load();
 
@@ -73,57 +61,73 @@ public class ConfigPanelCaptcha extends ConfigPanel implements MouseListener{
      * Speichert alle Änderungen auf der Maske
      */
     public void save() {
-    // Interaction[] tmp= new Interaction[interactions.size()];
-//        PluginForSearch plg;
-//        for (int i = 0; i < pluginsForSearch.size(); i++) {
-//            plg = pluginsForSearch.elementAt(i);
-//            if (plg.getProperties() != null) configuration.setProperty("PluginConfig_" + plg.getPluginName(), plg.getProperties());
-//        }
+        // Interaction[] tmp= new Interaction[interactions.size()];
+        // PluginForSearch plg;
+        // for (int i = 0; i < pluginsForSearch.size(); i++) {
+        // plg = pluginsForSearch.elementAt(i);
+        // if (plg.getProperties() != null)
+        // configuration.setProperty("PluginConfig_" + plg.getPluginName(),
+        // plg.getProperties());
+        // }
         this.saveConfigEntries();
 
     }
+
     public void mouseClicked(MouseEvent e) {
-        
-            
-        
-        
-        configuration.setProperty(Configuration.PARAM_JAC_METHODS+"_"+methods[table.getSelectedRow()].getName(),!configuration.getBooleanProperty(Configuration.PARAM_JAC_METHODS+"_"+methods[table.getSelectedRow()].getName(),true));
+
+        configuration.setProperty(Configuration.PARAM_JAC_METHODS + "_" + methods[table.getSelectedRow()].getName(), !configuration.getBooleanProperty(Configuration.PARAM_JAC_METHODS + "_" + methods[table.getSelectedRow()].getName(), true));
         table.tableChanged(new TableModelEvent(table.getModel()));
     }
+
     @Override
     public void initPanel() {
         setLayout(new BorderLayout());
-        
-        
-        GUIConfigEntry ce;
-        
-//        ce= new GUIConfigEntry( new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, JDUtilities.getSubConfig("JAC"), Configuration.USE_CAPTCHA_EXCHANGE_SERVER, JDLocale.L("gui.config.captcha.autotrain","Autotrain aktivieren")).setDefaultValue(false));
-//        addGUIConfigEntry(ce);
-        ce= new GUIConfigEntry( new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, JDUtilities.getSubConfig("JAC"), "SHOW_EXTENDED_CAPTCHA", JDLocale.L("gui.config.captcha.extendedCaptcha","Captchaverarbeitung anzeigen")).setDefaultValue(true));
-     addGUIConfigEntry(ce);
-        
-        ce= new GUIConfigEntry( new ConfigEntry(ConfigContainer.TYPE_SPINNER, JDUtilities.getSubConfig("JAC"), Configuration.AUTOTRAIN_ERROR_LEVEL, JDLocale.L("gui.config.captcha.train.level","Trainierschwelle"),0,100).setDefaultValue(18).setExpertEntry(true));
-        addGUIConfigEntry(ce);
-        ce= new GUIConfigEntry( new ConfigEntry(ConfigContainer.TYPE_SPINNER, JDUtilities.getSubConfig("JAC"), Configuration.AUTOTRAIN_SHOW_TIMEOUT, JDLocale.L("gui.config.captcha.train.show_timeout","Countdown für das Training Eingabefenster"),0,600).setDefaultValue(20).setExpertEntry(true));
-        addGUIConfigEntry(ce);
-        
-        ce= new GUIConfigEntry( new ConfigEntry(ConfigContainer.TYPE_SPINNER, configuration, Configuration.PARAM_CAPTCHA_INPUT_SHOWTIME, JDLocale.L("gui.config.captcha.show_input_dialog","Zeige den Eingabedialog"),0,180).setDefaultValue(0));
-        addGUIConfigEntry(ce);
-       
-        ce= new GUIConfigEntry( new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, configuration, Configuration.PARAM_CAPTCHA_JAC_DISABLE, JDLocale.L("gui.config.captcha.jac_disable","Automatische Bilderkennung abschalten")).setDefaultValue(false));
-        addGUIConfigEntry(ce);
-        
-        ce= new GUIConfigEntry( new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, configuration, Configuration.USE_CAPTCHA_COLLECTOR, JDLocale.L("gui.config.captcha.use_collector","nicht erkannte Captchas Online sammeln lassen")).setDefaultValue(true).setExpertEntry(true));
-        addGUIConfigEntry(ce);
-        
-        ce= new GUIConfigEntry( new ConfigEntry(ConfigContainer.TYPE_LABEL, JDLocale.L("gui.config.captcha.jac_methods","Automatische Bilderkennung verwenden für:")));
-        addGUIConfigEntry(ce);
+
+        GUIConfigEntry gce;
+        ConfigEntry ce;
+        // ce= new GUIConfigEntry( new
+        // ConfigEntry(ConfigContainer.TYPE_CHECKBOX,
+        // JDUtilities.getSubConfig("JAC"),
+        // Configuration.USE_CAPTCHA_EXCHANGE_SERVER,
+        // JDLocale.L("gui.config.captcha.autotrain","Autotrain
+        // aktivieren")).setDefaultValue(false));
+        // addGUIConfigEntry(ce);
+        ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, JDUtilities.getSubConfig("JAC"), "SHOW_EXTENDED_CAPTCHA", JDLocale.L("gui.config.captcha.extendedCaptcha", "Captchaverarbeitung anzeigen"));
+        ce.setDefaultValue(true);
+        ce.setInstantHelp(JDLocale.L("gui.config.captcha.extendedCaptcha.instanthelp", "http://www.google.de"));
+        gce = new GUIConfigEntry(ce);
+        addGUIConfigEntry(gce);
+
+        gce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, JDUtilities.getSubConfig("JAC"), Configuration.AUTOTRAIN_ERROR_LEVEL, JDLocale.L("gui.config.captcha.train.level", "Anzeigeschwelle"), 0, 100).setDefaultValue(80).setExpertEntry(true));
+        addGUIConfigEntry(gce);
+        gce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, JDUtilities.getSubConfig("JAC"), Configuration.AUTOTRAIN_SHOW_TIMEOUT, JDLocale.L("gui.config.captcha.train.show_timeout", "Countdown für das Eingabefenster"), 0, 600).setDefaultValue(20).setExpertEntry(true));
+        addGUIConfigEntry(gce);
+
+        // ce= new GUIConfigEntry( new ConfigEntry(ConfigContainer.TYPE_SPINNER,
+        // configuration, Configuration.PARAM_CAPTCHA_INPUT_SHOWTIME,
+        // JDLocale.L("gui.config.captcha.show_input_dialog","Zeige den
+        // Eingabedialog"),0,180).setDefaultValue(0));
+        // addGUIConfigEntry(ce);
+
+        gce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, configuration, Configuration.PARAM_CAPTCHA_JAC_DISABLE, JDLocale.L("gui.config.captcha.jac_disable", "Automatische Bilderkennung abschalten")).setDefaultValue(false));
+        addGUIConfigEntry(gce);
+
+        // ce= new GUIConfigEntry( new
+        // ConfigEntry(ConfigContainer.TYPE_CHECKBOX, configuration,
+        // Configuration.USE_CAPTCHA_COLLECTOR,
+        // JDLocale.L("gui.config.captcha.use_collector","nicht erkannte
+        // Captchas Online sammeln
+        // lassen")).setDefaultValue(true).setExpertEntry(true));
+        // addGUIConfigEntry(ce);
+
+        gce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, JDLocale.L("gui.config.captcha.jac_methods", "Automatische Bilderkennung verwenden für:")));
+        addGUIConfigEntry(gce);
         table = new JTable();
-        table.getTableHeader().setPreferredSize(new Dimension(-1,25));
+        table.getTableHeader().setPreferredSize(new Dimension(-1, 25));
         InternalTableModel internalTableModel = new InternalTableModel();
         table.setModel(internalTableModel);
-      table.setEditingRow(0);
-table.addMouseListener(this);
+        table.setEditingRow(0);
+        table.addMouseListener(this);
         this.setPreferredSize(new Dimension(700, 350));
 
         TableColumn column = null;
@@ -137,49 +141,37 @@ table.addMouseListener(this);
                 case 1:
                     column.setPreferredWidth(600);
                     break;
-         
 
             }
         }
-        
+
         // add(scrollPane);
         // list = new JList();
-    
+
         JScrollPane scrollpane = new JScrollPane(table);
         scrollpane.setPreferredSize(new Dimension(400, 200));
 
-      
-
-    
         JDUtilities.addToGridBag(panel, scrollpane, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 1, 1, insets, GridBagConstraints.BOTH, GridBagConstraints.CENTER);
 
-        
         // JDUtilities.addToGridBag(this, panel,0, 0, 1, 1, 1, 1, insets,
         // GridBagConstraints.BOTH, GridBagConstraints.WEST);
         add(panel, BorderLayout.CENTER);
 
     }
-/*
-    private int getSelectedIndex() {
-        return table.getSelectedRow();
-    }
-*/
+
+    /*
+     * private int getSelectedIndex() { return table.getSelectedRow(); }
+     */
     @Override
     public String getName() {
 
-        return JDLocale.L("gui.config.jac.name","jAntiCaptcha");
+        return JDLocale.L("gui.config.jac.name", "jAntiCaptcha");
     }
 
-/*
-    private File getSelectedMethod() {
-        int index = getSelectedIndex();
-        if (index < 0) return null;
-        return this.methods[index];
-    }
-*/
-
-
-
+    /*
+     * private File getSelectedMethod() { int index = getSelectedIndex(); if
+     * (index < 0) return null; return this.methods[index]; }
+     */
 
     private class InternalTableModel extends AbstractTableModel {
 
@@ -194,7 +186,6 @@ table.addMouseListener(this);
                     return Boolean.class;
                 case 1:
                     return String.class;
-           
 
             }
             return String.class;
@@ -211,11 +202,10 @@ table.addMouseListener(this);
         public Object getValueAt(int rowIndex, int columnIndex) {
 
             switch (columnIndex) {
-                case 0:                  
-                    return configuration.getBooleanProperty(Configuration.PARAM_JAC_METHODS+"_"+methods[rowIndex].getName(),true);
+                case 0:
+                    return configuration.getBooleanProperty(Configuration.PARAM_JAC_METHODS + "_" + methods[rowIndex].getName(), true);
                 case 1:
-                    return methods[rowIndex].getName()+" : "+(configuration.getBooleanProperty(Configuration.PARAM_JAC_METHODS+"_"+methods[rowIndex].getName(),true)?JDLocale.L("gui.config.jac.status.auto","Automatische Erkennung"):JDLocale.L("gui.config.jac.status.noauto","Manuelle Eingabe"));
-            
+                    return methods[rowIndex].getName() + " : " + (configuration.getBooleanProperty(Configuration.PARAM_JAC_METHODS + "_" + methods[rowIndex].getName(), true) ? JDLocale.L("gui.config.jac.status.auto", "Automatische Erkennung") : JDLocale.L("gui.config.jac.status.noauto", "Manuelle Eingabe"));
 
             }
             return null;
@@ -224,44 +214,33 @@ table.addMouseListener(this);
         public String getColumnName(int column) {
             switch (column) {
                 case 0:
-                    return JDLocale.L("gui.config.jac.column.use","Verwenden");
+                    return JDLocale.L("gui.config.jac.column.use", "Verwenden");
                 case 1:
-                    return JDLocale.L("gui.config.jac.column.method","Methode");
-           
+                    return JDLocale.L("gui.config.jac.column.method", "Methode");
 
             }
             return super.getColumnName(column);
         }
     }
 
-
-
-
-
     public void mouseEntered(MouseEvent e) {
-        // TODO Auto-generated method stub
-        
+    // TODO Auto-generated method stub
+
     }
 
     public void mouseExited(MouseEvent e) {
-        // TODO Auto-generated method stub
-        
+    // TODO Auto-generated method stub
+
     }
 
     public void mousePressed(MouseEvent e) {
-        // TODO Auto-generated method stub
-        
+    // TODO Auto-generated method stub
+
     }
 
     public void mouseReleased(MouseEvent e) {
-        // TODO Auto-generated method stub
-        
+    // TODO Auto-generated method stub
+
     }
-    
-
-    
-    
-
-    
 
 }
