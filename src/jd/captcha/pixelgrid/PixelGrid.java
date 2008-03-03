@@ -1357,7 +1357,7 @@ public class PixelGrid {
 				+ UTILITIES.getColorDifference(new int[] { 255, 255, 255 },
 						new int[] { 0, 0, 0 }));
 		int avg = getAverage(0, 0, 2, 2);
-		int h = getWidth() / letterNum / 2;
+		int h = getWidth() / letterNum;
 		Integer[] last = null;
 		int d = 0;
 		for (int x = 0; x < getWidth(); x++) {
@@ -1373,7 +1373,7 @@ public class PixelGrid {
 							if (last != null
 									&& UTILITIES.getHsbColorDifference(bv,
 											UTILITIES.hexToRgb(map.get(last)
-													.getAverage())) < 12) {
+													.getAverage())) < 6) {
 								map.get(last).add(x, y, key);
 								found = true;
 							} else {
@@ -1403,7 +1403,7 @@ public class PixelGrid {
 									}
 
 								}
-								if (bestValue < 12) {
+								if (bestValue < 14) {
 									map.get(bestKey).add(x, y, key);
 									found = true;
 								}
@@ -1438,11 +1438,14 @@ public class PixelGrid {
 		while (c > letterNum) {
 			if (!iter.hasNext()) {
 				iter = map.keySet().iterator();
+				h++;
 			}
 			Integer[] thisel = (Integer[]) iter.next();
+			PixelObject el = map.get(thisel);
+			if(el.getWidth()<(h/2))
+			{
 			Iterator<Integer[]> iterator = map.keySet().iterator();
 			Integer[] bestKey = null;
-			Integer[] bestKey2 = null;
 			double bestValue = Double.MAX_VALUE;
 			double dif = Double.MAX_VALUE;
 			while (iterator.hasNext()) {
@@ -1451,7 +1454,6 @@ public class PixelGrid {
 				if (key2 != thisel) {
 					dif = (Math.abs((double) (key2[1] - thisel[1])));
 					if (dif < bestValue) {
-						bestKey2 = bestKey;
 						bestKey = key2;
 						bestValue = dif;
 						// map.get(key2).add(x, y, getPixelValue(x, y));
@@ -1461,22 +1463,10 @@ public class PixelGrid {
 
 			}
 			if (bestKey != null) {
-				dif = UTILITIES.getHsbColorDifference(UTILITIES.hexToRgb(map
-						.get(bestKey).getAverage()), UTILITIES.hexToRgb(map
-						.get(thisel).getAverage()));
-				double dif2 = 255;
-				if (bestKey2 != null) {
-					dif2 = UTILITIES.getHsbColorDifference(UTILITIES
-							.hexToRgb(map.get(bestKey2).getAverage()),
-							UTILITIES.hexToRgb(map.get(thisel).getAverage()));
-				}
-				if (dif2 < dif) {
-					map.get(bestKey2).add(map.get(thisel));
-				} else {
-					map.get(bestKey).add(map.get(thisel));
-				}
+				map.get(bestKey).add(map.get(thisel));
 				iter.remove();
 				c--;
+			}
 			}
 		}
 		ArrayList<Integer[]> ar = new ArrayList<Integer[]>();
@@ -1493,7 +1483,6 @@ public class PixelGrid {
 		while (iterator2.hasNext()) {
 			PixelObject it = map.get((Integer[]) iterator2.next());
 			ret.add(it);
-
 		}
 		return ret;
 	}
