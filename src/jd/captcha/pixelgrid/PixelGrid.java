@@ -16,7 +16,6 @@ import java.util.Iterator;
 import java.util.Vector;
 import java.util.logging.Logger;
 
-
 import jd.captcha.JAntiCaptcha;
 import jd.captcha.gui.ScrollPaneWindow;
 import jd.captcha.pixelobject.PixelObject;
@@ -1432,18 +1431,34 @@ public class PixelGrid {
 				}
 			}
 		}
+
 		// int total = getWidth() * getHeight();
-		Iterator<Integer[]> iter = map.keySet().iterator();
+		ArrayList<Object[]> els = new ArrayList<Object[]>();
+		Iterator<PixelObject> vals = map.values().iterator();
+		Iterator<Integer[]> keys = map.keySet().iterator();
+		while (keys.hasNext() && vals.hasNext()) {
+			Integer[] integers = (Integer[]) keys.next();
+			PixelObject pixelObject = (PixelObject) vals.next();
+			els.add(new Object[] { integers, pixelObject });
+		}
+		Collections.sort(els, new Comparator<Object[]>() {
+
+			public int compare(Object[] o1, Object[] o2) {
+				if (((PixelObject) o1[1]).getWidth() > ((PixelObject) o2[1])
+						.getWidth())
+					return 1;
+				else
+					return 0;
+			}
+		});
+		Iterator<Object[]> iter = els.iterator();
 		int c = map.size();
 		while (c > letterNum) {
 			if (!iter.hasNext()) {
-				iter = map.keySet().iterator();
-				h++;
+				iter = els.iterator();
 			}
-			Integer[] thisel = (Integer[]) iter.next();
-			PixelObject el = map.get(thisel);
-			if(el.getWidth()<(h/2))
-			{
+			Object[] thisel = (Object[]) iter.next();
+			Integer[] integers = (Integer[]) thisel[0];
 			Iterator<Integer[]> iterator = map.keySet().iterator();
 			Integer[] bestKey = null;
 			double bestValue = Double.MAX_VALUE;
@@ -1451,8 +1466,8 @@ public class PixelGrid {
 			while (iterator.hasNext()) {
 				Integer[] key2 = iterator.next();
 
-				if (key2 != thisel) {
-					dif = (Math.abs((double) (key2[1] - thisel[1])));
+				if (key2 != integers) {
+					dif = (Math.abs((double) (key2[1] - integers[1])));
 					if (dif < bestValue) {
 						bestKey = key2;
 						bestValue = dif;
@@ -1463,12 +1478,13 @@ public class PixelGrid {
 
 			}
 			if (bestKey != null) {
-				map.get(bestKey).add(map.get(thisel));
+				map.get(bestKey).add(map.get(integers));
+				map.remove(integers);
 				iter.remove();
 				c--;
 			}
-			}
 		}
+
 		ArrayList<Integer[]> ar = new ArrayList<Integer[]>();
 		ar.addAll(map.keySet());
 		Collections.sort(ar, new Comparator<Integer[]>() {
