@@ -477,7 +477,7 @@ public class Captcha extends PixelGrid {
     }
 
     private Letter[] getColoredLetters(int letterNum) {
-        getColorObjects();
+        getColorObjects(letterNum);
         return null;
     }
 

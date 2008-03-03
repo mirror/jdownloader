@@ -29,6 +29,7 @@ import java.net.URLConnection;
 import java.net.URLDecoder;
 import java.security.MessageDigest;
 import java.util.Calendar;
+import java.util.Iterator;
 import java.util.Properties;
 import java.util.Scanner;
 import java.util.Vector;
@@ -912,6 +913,54 @@ public class UTILITIES {
         float[] hsbvals = new float[3];
         Color.RGBtoHSB(r, g, b, hsbvals);
         return hsbvals;
+    }
+    public static double getHsbColorDifference(int[] rgbA, int[] rgbB)
+    {
+    	float hsbA = rgb2hsb(rgbA[0], rgbA[1], rgbA[2])[0]*100;
+    	float hsbB = rgb2hsb(rgbB[0], rgbB[1], rgbB[2])[0]*100;
+    	if(hsbA>1  && hsbB>1)
+    	{
+    	if(hsbA>55 && hsbA<280 && Math.abs((double) (hsbA-hsbB))>100)
+    	{
+    		return 255;
+    	}
+    	Integer[][][] breaks  = new Integer[][][] {{{0,55}, {320, 360}}, {{45, 75}}, {{65, 180}}, {{160, 200}}, {{190, 290}}, {{280, 330}}};
+    	Vector<Integer[][]> color = new Vector<Integer[][]>();
+    	for (int i = 0; i < breaks.length; i++) {
+			for (int j = 0; j < breaks[i].length; j++) {
+				if(hsbA>breaks[i][j][0] && hsbA<breaks[i][j][1])
+				{
+					color.add(breaks[i]);
+					break;
+				}
+			}
+		}
+    	if(color.size()>0)
+    	{
+        	Iterator<Integer[][]> iter = color.iterator();
+        	boolean isColor = false;
+        	while (iter.hasNext()) {
+				Integer[][] integers = (Integer[][]) iter.next();
+				for (int j = 0; j < integers.length; j++) {
+					if(hsbB>integers[j][0] && hsbB<integers[j][1])
+					{
+						isColor=true;
+						break;
+					}
+				}
+				if(isColor)
+					break;
+			}
+        	if(!isColor)
+        		return 255;
+        	else
+        	{
+        		double dif = Math.abs((double) (hsbA-hsbB));
+        				return dif;
+        	}
+    	}
+    	}
+    	return 0;
     }
     public static double getColorDifference(int[] rgbA, int[] rgbB){
         int[] labA=rgb2lab(rgbA[0],rgbA[1],rgbA[2]);
