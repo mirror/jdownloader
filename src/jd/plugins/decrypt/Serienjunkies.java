@@ -10,6 +10,9 @@ import java.util.Vector;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import jd.captcha.LetterComperator;
+import jd.captcha.pixelgrid.Letter;
+import jd.captcha.utils.UTILITIES;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.plugins.Plugin;
@@ -29,7 +32,7 @@ public class Serienjunkies extends PluginForDecrypt {
 	private boolean next = false;
 
 	private String dynamicCaptcha = "<FORM ACTION=\".*?\" METHOD=\"post\"(?s).*?(?-s)<INPUT TYPE=\"HIDDEN\" NAME=\"s\" VALUE=\"([\\w]*)\">(?s).*?(?-s)<IMG SRC=\"([^\"]*)\"";
-    
+
 	public Serienjunkies() {
 		super();
 		steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
@@ -73,20 +76,24 @@ public class Serienjunkies extends PluginForDecrypt {
 		return "";
 
 	}
+
 	@Override
 	public boolean collectCaptchas() {
 		// TODO Auto-generated method stub
 		return false;
 	}
+
 	@Override
 	public boolean useUserinputIfCaptchaUnknown() {
 		// TODO Auto-generated method stub
 		return false;
 	}
+
 	@Override
 	public Pattern getSupportedLinks() {
 		return null;
 	}
+
 	@Override
 	public synchronized boolean canHandle(String data) {
 		boolean rscom = (Boolean) this.getProperties().getProperty(
@@ -117,37 +124,51 @@ public class Serienjunkies extends PluginForDecrypt {
 		} else {
 			hosterStr += "not";
 		}
-		//http://download.serienjunkies.org/f-3bd58945ab43eae0/Episode%2006.html
-        Matcher matcher = Pattern.compile("http://(download\\.serienjunkies\\.org|"
+		// http://download.serienjunkies.org/f-3bd58945ab43eae0/Episode%2006.html
+		Matcher matcher = Pattern
+				.compile(
+						"http://(download\\.serienjunkies\\.org|"
 								+ (cat ? "serienjunkies.org|" : "")
 								+ "serienjunkies\\.org/s|85\\.17\\.177\\.195/s|serienjunki\\.es/s).*"
-								+ hosterStr + ".*",Pattern.CASE_INSENSITIVE).matcher(data);
-        if (matcher.find()) {
-            return true;
-        }
-		else
-			{
-			String[] links = new Regexp(data, "http://download.serienjunkies.org/.*", Pattern.CASE_INSENSITIVE).getMatches(0);
+								+ hosterStr + ".*", Pattern.CASE_INSENSITIVE)
+				.matcher(data);
+		if (matcher.find()) {
+			return true;
+		} else {
+			String[] links = new Regexp(data,
+					"http://download.serienjunkies.org/.*",
+					Pattern.CASE_INSENSITIVE).getMatches(0);
 			for (int i = 0; i < links.length; i++) {
-				if(!links[i].matches("(?i).*http://download.serienjunkies.org/.*(rc[\\_\\-]|rs[\\_\\-]|nl[\\_\\-]|ut[\\_\\-]|cat\\=[\\d]+).*"))return true;
+				if (!links[i]
+						.matches("(?i).*http://download.serienjunkies.org/.*(rc[\\_\\-]|rs[\\_\\-]|nl[\\_\\-]|ut[\\_\\-]|cat\\=[\\d]+).*"))
+					return true;
 			}
-			}
-        return false;
+		}
+		return false;
 	}
+
 	@Override
 	public Vector<String> getDecryptableLinks(String data) {
-		String[] links = new Regexp(data,"http://.*?(serienjunkies\\.org|85\\.17\\.177\\.195|serienjunki\\.es)[^\"]*", Pattern.CASE_INSENSITIVE).getMatches(0);
+		String[] links = new Regexp(
+				data,
+				"http://.*?(serienjunkies\\.org|85\\.17\\.177\\.195|serienjunki\\.es)[^\"]*",
+				Pattern.CASE_INSENSITIVE).getMatches(0);
 		Vector<String> ret = new Vector<String>();
 		for (int i = 0; i < links.length; i++) {
-			if(canHandle(links[i]))
+			if (canHandle(links[i]))
 				ret.add(links[i]);
 		}
 		return ret;
 	}
+
 	@Override
 	public String cutMatches(String data) {
-        return data.replaceAll("(?i)http://.*?(serienjunkies\\.org|85\\.17\\.177\\.195|serienjunki\\.es).*", "--CUT--");
+		return data
+				.replaceAll(
+						"(?i)http://.*?(serienjunkies\\.org|85\\.17\\.177\\.195|serienjunki\\.es).*",
+						"--CUT--");
 	}
+
 	@Override
 	public String getVersion() {
 		return version;
@@ -167,10 +188,10 @@ public class Serienjunkies extends PluginForDecrypt {
 			try {
 				URL url = new URL(parameter);
 				if (parameter.matches(".*\\?cat\\=[\\d]+")) {
-					request.withHtmlCode=false;
-					request.redirect=false;
+					request.withHtmlCode = false;
+					request.redirect = false;
 					request.getRequest("http://serienjunkies.org/");
-					request.withHtmlCode=true;
+					request.withHtmlCode = true;
 					request.getRequest("http://serienjunkies.org/");
 
 					int cat = Integer.parseInt(parameter.replaceFirst(
@@ -214,14 +235,16 @@ public class Serienjunkies extends PluginForDecrypt {
 				modifiedURL = modifiedURL.replaceAll("save/rc", "save/frc");
 				modifiedURL = modifiedURL.substring(modifiedURL
 						.lastIndexOf("/"));
-				
+
 				patternCaptcha = Pattern.compile(dynamicCaptcha);
 				logger.fine("using patternCaptcha:" + patternCaptcha);
 				RequestInfo reqinfo = getRequest(url, null, null, true);
 				if (reqinfo.getLocation() != null)
 					reqinfo = getRequest(url, null, null, true);
 				String furl = getSimpleMatch(reqinfo.getHtmlCode(),
-						"<FRAME SRC=\"°" + modifiedURL.replaceAll("[^0-1a-zA-Z]", ".") + "\"", 0);
+						"<FRAME SRC=\"°"
+								+ modifiedURL.replaceAll("[^0-1a-zA-Z]", ".")
+								+ "\"", 0);
 				if (furl != null) {
 					url = new URL(furl + modifiedURL);
 					logger
@@ -341,12 +364,14 @@ public class Serienjunkies extends PluginForDecrypt {
 			File captchaFile = null;
 			String capTxt = null;
 			while (true) { // for() läuft bis kein Captcha mehr abgefragt
-				reqinfo.setHtmlCode(reqinfo.getHtmlCode().replaceAll("(?s)<!--.*?-->", "").replaceAll("(?i)(?s)<div style=\"display: none;\">.*?</div>", ""));
+				reqinfo.setHtmlCode(reqinfo.getHtmlCode().replaceAll(
+						"(?s)<!--.*?-->", "").replaceAll(
+						"(?i)(?s)<div style=\"display: none;\">.*?</div>", ""));
 				Matcher matcher = patternCaptcha.matcher(reqinfo.getHtmlCode());
 				if (matcher.find()) {
 					if (captchaFile != null && capTxt != null) {
-						JDUtilities.appendInfoToFilename(this, captchaFile, capTxt,
-								false);
+						JDUtilities.appendInfoToFilename(this, captchaFile,
+								capTxt, false);
 					}
 					Vector<Vector<String>> gifs = getAllSimpleMatches(reqinfo
 							.getHtmlCode(), patternCaptcha);
@@ -383,8 +408,67 @@ public class Serienjunkies extends PluginForDecrypt {
 
 				} else {
 					if (captchaFile != null && capTxt != null) {
-						JDUtilities.appendInfoToFilename(this, captchaFile, capTxt,
-								true);
+						JDUtilities.appendInfoToFilename(this, captchaFile,
+								capTxt, true);
+
+						if (useUserinputIfCaptchaUnknown() && this.getCaptchaDetectionID() == Plugin.CAPTCHA_USER_INPUT
+								&& this.getLastCaptcha() != null
+								&& this.getLastCaptcha().getLetterComperators() != null) {
+							LetterComperator[] lcs = this.getLastCaptcha()
+									.getLetterComperators();
+							this.getLastCaptcha().setCorrectcaptchaCode(
+									capTxt.trim());
+
+							if (lcs.length == capTxt.trim().length()) {
+								for (int i = 0; i < capTxt.length(); i++) {
+
+									if (lcs[i] != null
+											&& lcs[i].getDecodedValue() != null
+											&& capTxt
+													.substring(i, i + 1)
+													.equalsIgnoreCase(
+															lcs[i]
+																	.getDecodedValue())
+											&& lcs[i].getValityPercent() < 30.0) { //
+										logger.severe("OK letter: " + i
+												+ ": JAC:"
+												+ lcs[i].getDecodedValue()
+												+ "("
+												+ lcs[i].getValityPercent()
+												+ ") USER: "
+												+ capTxt.substring(i, i + 1));
+									} else {
+
+										logger.severe("Unknown letter: // " + i
+												+ ":  JAC:"
+												+ lcs[i].getDecodedValue()
+												+ "("
+												+ lcs[i].getValityPercent()
+												+ ") USER:  "
+												+ capTxt.substring(i, i + 1)); // Pixelstring.
+										// getB()
+										// ist
+										// immer
+										// der
+										// neue
+										// letter
+										final String character = capTxt
+												.substring(i, i + 1);
+										logger.info("SEND");
+										Letter letter = lcs[i].getA();
+									      String captchaHash = UTILITIES.getLocalHash(captchaFile);
+										letter.setSourcehash(captchaHash);
+										letter.setOwner(this.getLastCaptcha().owner);
+										letter.setDecodedValue(character);
+										this.getLastCaptcha().owner.letterDB.add(letter);
+										this.getLastCaptcha().owner.saveMTHFile();
+									}
+								}
+
+							} else {
+								logger.info("LCS not length comp");
+							}
+						}
 					}
 					break;
 				}
@@ -426,12 +510,14 @@ public class Serienjunkies extends PluginForDecrypt {
 			File captchaFile = null;
 			String capTxt = null;
 			while (true) { // for() läuft bis kein Captcha mehr abgefragt
-				reqinfo.setHtmlCode(reqinfo.getHtmlCode().replaceAll("(?s)<!--.*?-->", "").replaceAll("(?i)(?s)<div style=\"display: none;\">.*?</div>", ""));
+				reqinfo.setHtmlCode(reqinfo.getHtmlCode().replaceAll(
+						"(?s)<!--.*?-->", "").replaceAll(
+						"(?i)(?s)<div style=\"display: none;\">.*?</div>", ""));
 				Matcher matcher = patternCaptcha.matcher(reqinfo.getHtmlCode());
 				if (matcher.find()) {
 					if (captchaFile != null && capTxt != null) {
-						JDUtilities.appendInfoToFilename(this, captchaFile, capTxt,
-								false);
+						JDUtilities.appendInfoToFilename(this, captchaFile,
+								capTxt, false);
 					}
 					String captchaAdress = "http://serienjunki.es"
 							+ matcher.group(2);
@@ -458,8 +544,8 @@ public class Serienjunkies extends PluginForDecrypt {
 							+ "&c=" + capTxt + "&dl.start=Download");
 				} else {
 					if (captchaFile != null && capTxt != null) {
-						JDUtilities.appendInfoToFilename(this, captchaFile, capTxt,
-								true);
+						JDUtilities.appendInfoToFilename(this, captchaFile,
+								capTxt, true);
 					}
 					break;
 				}

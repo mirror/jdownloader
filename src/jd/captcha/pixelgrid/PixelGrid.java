@@ -1014,7 +1014,6 @@ public class PixelGrid {
 
 		for (int x = 0; x < getWidth(); x++) {
 			boolean rowIsClear = true;
-			;
 			for (int y = 0; y < getHeight(); y++) {
 
 				if (isElement(getPixelValue(x, y), avg)) {
@@ -1029,7 +1028,6 @@ public class PixelGrid {
 
 		for (int x = getWidth() - 1; x >= 0; x--) {
 			boolean rowIsClear = true;
-			;
 			for (int y = 0; y < getHeight(); y++) {
 
 				if (isElement(getPixelValue(x, y), avg)) {
@@ -1053,7 +1051,6 @@ public class PixelGrid {
 		}
 		for (int y = 0; y < getHeight(); y++) {
 			boolean lineIsClear = true;
-			;
 			for (int x = leftLines; x < getWidth() - rightLines; x++) {
 				if (isElement(getPixelValue(x, y), avg)) {
 					lineIsClear = false;
@@ -1067,7 +1064,6 @@ public class PixelGrid {
 
 		for (int y = getHeight() - 1; y >= 0; y--) {
 			boolean lineIsClear = true;
-			;
 			for (int x = leftLines; x < getWidth() - rightLines; x++) {
 				if (isElement(getPixelValue(x, y), avg)) {
 					lineIsClear = false;
@@ -1336,6 +1332,18 @@ public class PixelGrid {
 
 	}
 
+	public String toHsbColorString() {
+		String ret = "";
+		for (int x = 0; x < getWidth(); x++) {
+			for (int y = 0; y < getHeight(); y++) {
+				int[] rgb = UTILITIES.hexToRgb(getPixelValue(x, y));
+				float[] hsb = UTILITIES.rgb2hsb(rgb[0], rgb[1], rgb[3]);
+				ret += "y(" + y + ")x(" + x + ")=" + hsb[0] * 100 + "\n";
+			}
+		}
+		return ret;
+	}
+
 	protected Vector<PixelObject> getColorObjects(int letterNum) {
 
 		// int percent =
@@ -1356,7 +1364,8 @@ public class PixelGrid {
 				+ UTILITIES.getColorDifference(new int[] { 255, 255, 255 },
 						new int[] { 0, 0, 0 }));
 		final int avg = getAverage();
-		int h = getWidth() / letterNum;
+		int intensivity = 8;
+		int h = getWidth() / letterNum / 4;
 		Integer[] last = null;
 		int d = 0;
 		for (int x = 0; x < getWidth(); x++) {
@@ -1364,8 +1373,9 @@ public class PixelGrid {
 
 				Integer key = getPixelValue(x, y);
 				int[] rgbA = UTILITIES.hexToRgb(key);
-				
-				if (isElement(key, avg)|| UTILITIES.rgb2hsb(rgbA[0], rgbA[1], rgbA[2])[0]*100 > 0) {
+
+				if (isElement(key, avg)
+						|| UTILITIES.rgb2hsb(rgbA[0], rgbA[1], rgbA[2])[0] * 100 > 0) {
 					if (map.get(key) == null) {
 						if (d++ < getHeight() * 2) {
 							d = 0;
@@ -1374,24 +1384,26 @@ public class PixelGrid {
 							if (last != null
 									&& UTILITIES.getHsbColorDifference(bv,
 											UTILITIES.hexToRgb(map.get(last)
-													.getAverage())) <15) {
+													.getAverage())) < intensivity) {
 								map.get(last).add(x, y, key);
 								found = true;
 							} else {
 								Iterator<Integer[]> iterator = map.keySet()
 										.iterator();
-
+								Iterator<PixelObject> valsiter = map.values()
+										.iterator();
 								Integer[] bestKey = new Integer[] { -1, -1 };
 								double bestValue = 255;
 								double dif = 255;
-								while (iterator.hasNext()) {
+								while (iterator.hasNext() && valsiter.hasNext()) {
 									Integer[] key2 = iterator.next();
-									if (Math.abs((double) (x - key2[1])) < h) {
+									PixelObject object = valsiter.next();
+									if (Math.abs((double) (x - key2[1] - object
+											.getWidth())) < h) {
 										dif = UTILITIES.getHsbColorDifference(
 												bv, UTILITIES
 
-												.hexToRgb(map.get(key2)
-														.getAverage()));
+												.hexToRgb(object.getAverage()));
 
 										if (dif < bestValue) {
 											bestKey = key2;
@@ -1404,7 +1416,7 @@ public class PixelGrid {
 									}
 
 								}
-								if (bestValue < 15) {
+								if (bestValue < intensivity) {
 									map.get(bestKey).add(x, y, key);
 									found = true;
 								}
@@ -1440,9 +1452,9 @@ public class PixelGrid {
 		Iterator<PixelObject> vals = map.values().iterator();
 		Iterator<Integer[]> keys = map.keySet().iterator();
 		while (keys.hasNext() && vals.hasNext()) {
-			Integer[] integers = (Integer[]) keys.next();
-			PixelObject pixelObject = (PixelObject) vals.next();
-			els.add(new Object[] { integers, pixelObject });
+			PixelObject ob = (PixelObject) vals.next();
+			els.add(new Object[] { (Integer[]) keys.next(), ob });
+
 		}
 		Collections.sort(els, new Comparator<Object[]>() {
 
@@ -1455,54 +1467,71 @@ public class PixelGrid {
 					return 0;
 			}
 		});
-		Iterator<Object[]> iter = els.iterator();
+
 		int c = map.size();
-		double addd=6;
-		while (c > letterNum) {
-			if (!iter.hasNext()) {
-				iter = els.iterator();
-				addd++;
-			}
-			Object[] thisel = (Object[]) iter.next();
-			Integer[] integers = (Integer[]) thisel[0];
-			Iterator<Integer[]> iterator = map.keySet().iterator();
-			Integer[] bestKey = null;
-			double bestValue = Double.MAX_VALUE;
-			double dif = Double.MAX_VALUE;
-			while (iterator.hasNext()) {
-				Integer[] key2 = iterator.next();
+		if (c > letterNum) {
+			Iterator<Object[]> iter = els.iterator();
 
-				if (key2 != integers) {
-					dif = (Math.abs((double) (key2[1] - integers[1])));
-					if (dif < bestValue) {
-						bestKey = key2;
-						bestValue = dif;
-						// map.get(key2).add(x, y, getPixelValue(x, y));
-
-					}
-				}
-
-			}
-			if (bestKey != null) {
-				dif = UTILITIES.getHsbColorDifference(
-						UTILITIES
-
-						.hexToRgb(map.get(bestKey)
-								.getAverage()), UTILITIES
-
-						.hexToRgb(map.get(integers)
-								.getAverage()));
-				if(dif<addd)
-				{
-				map.get(bestKey).add(map.get(integers));
-				map.remove(integers);
-				iter.remove();
-				c--;
-				}
-				else
-				{
+			double addd = intensivity / 2;
+			while (c > letterNum) {
+				if (!iter.hasNext()) {
 					iter = els.iterator();
 					addd++;
+				}
+				Object[] thisel = (Object[]) iter.next();
+				Integer[] integers = (Integer[]) thisel[0];
+				PixelObject object = (PixelObject) thisel[1];
+				Iterator<Object[]> iterator = els.iterator();
+				Integer[] bestKey = null;
+				PixelObject bestobj = null;
+				double bestValue = Double.MAX_VALUE;
+				double dif = Double.MAX_VALUE;
+				double dif2 = Double.MAX_VALUE;
+				while (iterator.hasNext()) {
+					Object[] it = iterator.next();
+					PixelObject obj = (PixelObject) it[1];
+					Integer[] key2 = (Integer[]) it[0];
+					if (key2 != integers) {
+						dif = (double) (key2[1] - integers[1]);
+						dif2 = (Math
+								.abs((double) ((key2[1] + obj.getWidth()) - (integers[1] + object
+										.getWidth()))));
+
+						if (dif == 0 || dif2 == 0
+								|| (dif < 0 && (dif + obj.getWidth()) > 0)) {
+							map.get(key2).add(object);
+							map.remove(integers);
+							iter.remove();
+							c--;
+							bestKey = null;
+							break;
+						}
+						if (Math.abs(dif) < bestValue) {
+							bestKey = key2;
+							bestobj = obj;
+							bestValue = Math.abs(dif);
+							// map.get(key2).add(x, y, getPixelValue(x, y));
+						}
+						if (dif2 < bestValue) {
+							bestKey = key2;
+							bestobj = obj;
+							bestValue = dif2;
+						}
+					}
+
+				}
+				if (bestKey != null) {
+					dif = UTILITIES.getHsbColorDifference(UTILITIES
+
+					.hexToRgb(bestobj.getAverage()), UTILITIES
+
+					.hexToRgb(object.getAverage()));
+					if (dif < addd) {
+						map.get(bestKey).add(object);
+						map.remove(integers);
+						iter.remove();
+						c--;
+					}
 				}
 			}
 		}

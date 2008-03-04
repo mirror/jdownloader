@@ -100,7 +100,7 @@ public class JAntiCaptcha {
     /**
      * Vector mit den Buchstaben aus der MTHO File
      */
-    private LinkedList<Letter>       letterDB;
+    public LinkedList<Letter>       letterDB;
 
     /**
      * Static counter. Falls zu debug zecen mal global ein counter gebraucht
