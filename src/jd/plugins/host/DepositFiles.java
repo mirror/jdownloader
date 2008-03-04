@@ -7,6 +7,7 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.util.regex.Pattern;
 
+import jd.controlling.interaction.CaptchaMethodLoader;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginStep;
@@ -16,10 +17,10 @@ import jd.utils.JDUtilities;
 
 public class DepositFiles extends PluginForHost {
 	
-    static private final Pattern PAT_SUPPORTED = Pattern.compile("http://depositfiles\\.com/de/files/[0-9]+", Pattern.CASE_INSENSITIVE);
+    static private final Pattern PAT_SUPPORTED = Pattern.compile("http://.*?depositfiles\\.com/(en|de|ru)/files/[0-9]+", Pattern.CASE_INSENSITIVE);
     static private final String HOST = "depositfiles.com";
     static private final String PLUGIN_NAME = HOST;
-    static private final String PLUGIN_VERSION = "0.1";
+    static private final String PLUGIN_VERSION = "0.1.1";
     static private final String PLUGIN_ID = PLUGIN_NAME + "-" + PLUGIN_VERSION;
     static private final String CODER = "JD-Team";
     
@@ -85,12 +86,15 @@ public class DepositFiles extends PluginForHost {
         try {
         	
             DownloadLink downloadLink = (DownloadLink) parameter;
+            String link = downloadLink.getDownloadURL().replace("/en/files/", "/de/files/");
+            link = link.replace("/ru/files/", "/de/files/");
+            downloadLink.setUrlDownload(link);
             
             switch (step.getStep()) {
             
                 case PluginStep.STEP_WAIT_TIME :
                 	
-                	finalURL=downloadLink.getDownloadURL().replace("depositfiles.com.*?files", "depositfiles.com/de/files");
+                	finalURL = link;
                     logger.info(finalURL);
                     requestInfo = getRequest(new URL(finalURL));
                     
@@ -212,18 +216,27 @@ public class DepositFiles extends PluginForHost {
                     downloadLink.setStatus(DownloadLink.STATUS_DONE);
                     
                     //Download starten
-                    if ( download(downloadLink, (URLConnection) requestInfo.getConnection()) != DOWNLOAD_SUCCESS ) {
+                    int errorid;
+                   
+                   if ( (errorid = download(downloadLink, (URLConnection) requestInfo.getConnection())) == DOWNLOAD_SUCCESS ) {
                         
-                    	step.setStatus(PluginStep.STATUS_ERROR);
-                        
-                    } else {
-                    	
                         step.setStatus(PluginStep.STATUS_DONE);
-                        parameter.setStatus(DownloadLink.STATUS_DONE);
-                 
+                        downloadLink.setStatus(DownloadLink.STATUS_DONE);
+                        return step;
+                         
+                    } else if ( errorid == DOWNLOAD_ERROR_OUTPUTFILE_ALREADYEXISTS ) {
+                        
+                        downloadLink.setStatus(DownloadLink.STATUS_ERROR_ALREADYEXISTS);
+                        step.setStatus(PluginStep.STATUS_ERROR);  
+                        return step;
+                        
+                    } else {       
+                        
+                        downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN);
+                        step.setStatus(PluginStep.STATUS_ERROR);
+                        return step;
+                        
                     }
-                    
-                    return step;
                     
             }
             
@@ -256,10 +269,12 @@ public class DepositFiles extends PluginForHost {
     public boolean getFileInformation(DownloadLink downloadLink) {
     	
         RequestInfo requestInfo;
+        String link = downloadLink.getDownloadURL().replace("/en/files/", "/de/files/");
+        link = link.replace("/ru/files/", "/de/files/");
         
         try {
         	
-            requestInfo = getRequestWithoutHtmlCode(new URL(downloadLink.getDownloadURL()), null, null, false);
+            requestInfo = getRequestWithoutHtmlCode(new URL(link), null, null, false);
             
             if (requestInfo.getConnection().getHeaderField("Location") != null && requestInfo.getConnection().getHeaderField("Location").indexOf("error") > 0) {
                 return false;
