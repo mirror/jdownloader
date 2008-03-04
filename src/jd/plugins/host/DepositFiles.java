@@ -17,10 +17,10 @@ import jd.utils.JDUtilities;
 
 public class DepositFiles extends PluginForHost {
 	
-    static private final Pattern PAT_SUPPORTED = Pattern.compile("http://.*?depositfiles\\.com/(en|de|ru)/files/[0-9]+", Pattern.CASE_INSENSITIVE);
+    static private final Pattern PAT_SUPPORTED = Pattern.compile("http://.*?depositfiles\\.com(/en/|/de/|/ru/|/)files/[0-9]+", Pattern.CASE_INSENSITIVE);
     static private final String HOST = "depositfiles.com";
     static private final String PLUGIN_NAME = HOST;
-    static private final String PLUGIN_VERSION = "0.1.1";
+    static private final String PLUGIN_VERSION = "0.1.2";
     static private final String PLUGIN_ID = PLUGIN_NAME + "-" + PLUGIN_VERSION;
     static private final String CODER = "JD-Team";
     
@@ -86,22 +86,38 @@ public class DepositFiles extends PluginForHost {
         try {
         	
             DownloadLink downloadLink = (DownloadLink) parameter;
-            String link = downloadLink.getDownloadURL().replace("/en/files/", "/de/files/");
-            link = link.replace("/ru/files/", "/de/files/");
-            downloadLink.setUrlDownload(link);
+            
             
             switch (step.getStep()) {
             
                 case PluginStep.STEP_WAIT_TIME :
                 	
+                	String link = downloadLink.getDownloadURL().replace("/en/files/", "/de/files/");
+                    link = link.replace("/ru/files/", "/de/files/");
+                    downloadLink.setUrlDownload(link);
+                    
                 	finalURL = link;
                     logger.info(finalURL);
                     requestInfo = getRequest(new URL(finalURL));
                     
+                    if (JDUtilities.getController().isLocalFileInProgress(downloadLink)) {
+                        logger.severe("File already is in progress. " + downloadLink.getFileOutput());
+                        downloadLink.setStatus(DownloadLink.STATUS_ERROR_OUTPUTFILE_INPROGRESS);
+                        step.setStatus(PluginStep.STATUS_ERROR);
+                        return step;
+                    }
+
+                    if (new File(downloadLink.getFileOutput()).exists()) {
+                        logger.severe("File already exists. " + downloadLink.getFileOutput());
+                        downloadLink.setStatus(DownloadLink.STATUS_ERROR_ALREADYEXISTS);
+                        step.setStatus(PluginStep.STATUS_ERROR);
+                        return step;
+                    }
+                    
                     // Datei geloescht?
                     if (requestInfo.containsHTML(FILE_NOT_FOUND)) {
                     	
-                        logger.severe(JDLocale.L("plugins.hoster.general.downloadNotFound", "Download nicht gefunden"));
+                        logger.severe("Download not found");
                         downloadLink.setStatus(DownloadLink.STATUS_ERROR_FILE_NOT_FOUND);
                         step.setStatus(PluginStep.STATUS_ERROR);
                         return step;
@@ -111,7 +127,7 @@ public class DepositFiles extends PluginForHost {
                     if ( requestInfo.containsHTML(DOWNLOAD_NOTALLOWED) ) {
                     	
                         step.setStatus(PluginStep.STATUS_ERROR);
-                        logger.severe(JDLocale.L("plugins.hoster.general.downloadNotAllowed", "Download momentan nicht möglich"));
+                        logger.severe("Download not possible now");
                         downloadLink.setStatus(DownloadLink.STATUS_ERROR_TO_MANY_USERS);
                         step.setParameter(60000l);
                         return step;
@@ -130,7 +146,7 @@ public class DepositFiles extends PluginForHost {
                     
                     if ( requestInfo.getConnection().getHeaderField("Location") != null && requestInfo.getConnection().getHeaderField("Location").indexOf("error") > 0 ) {
                         
-                    	logger.severe(JDLocale.L("plugins.hoster.general.unknownErrorRetry20", "Unbekannter fehler.. neuer Versuch in 20 sekunden"));
+                    	logger.severe("Unknown error. Retry in 20 seconds");
                         step.setStatus(PluginStep.STATUS_ERROR);
                         downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN_RETRY);
                         step.setParameter(20000l);
@@ -153,7 +169,7 @@ public class DepositFiles extends PluginForHost {
                     
                     if ( !JDUtilities.download(file, captchaAddress) || !file.exists() ) {
                     	
-                        logger.severe(JDLocale.L("plugins.hoster.general.captchaDownloadError", "Captcha Download fehlgeschlagen") + ": " + captchaAddress);
+                        logger.severe("Captcha donwload failed: " + captchaAddress);
                         step.setParameter(null);
                         step.setStatus(PluginStep.STATUS_ERROR);
                         downloadLink.setStatus(DownloadLink.STATUS_ERROR_CAPTCHA_IMAGEERROR);
@@ -190,7 +206,7 @@ public class DepositFiles extends PluginForHost {
                     
                     int length = requestInfo.getConnection().getContentLength();
                     downloadLink.setDownloadMax(length);
-                    logger.info(JDLocale.L("plugins.hoster.general.filename","Dateiname") + ": " + getFileNameFormHeader(requestInfo.getConnection()));
+                    logger.info("Filename: " + getFileNameFormHeader(requestInfo.getConnection()));
                     
                     if ( getFileNameFormHeader(requestInfo.getConnection()) == null || getFileNameFormHeader(requestInfo.getConnection()).indexOf("?") >= 0 ) {
                         
