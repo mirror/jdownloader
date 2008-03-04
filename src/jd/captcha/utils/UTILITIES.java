@@ -960,7 +960,7 @@ public class UTILITIES {
         	}
     	}
     	}
-    	return 0;
+    	return 255;
     }
     public static double getColorDifference(int[] rgbA, int[] rgbB){
         int[] labA=rgb2lab(rgbA[0],rgbA[1],rgbA[2]);

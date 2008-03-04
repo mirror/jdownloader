@@ -563,7 +563,6 @@ public class Letter extends PixelGrid {
         }
         return elementPixel;
     }
-
     /**
      * @param elementPixel the elementPixel to set
      */

@@ -1355,7 +1355,7 @@ public class PixelGrid {
 		logger.info(""
 				+ UTILITIES.getColorDifference(new int[] { 255, 255, 255 },
 						new int[] { 0, 0, 0 }));
-		int avg = getAverage(0, 0, 2, 2);
+		final int avg = getAverage();
 		int h = getWidth() / letterNum;
 		Integer[] last = null;
 		int d = 0;
@@ -1363,7 +1363,9 @@ public class PixelGrid {
 			for (int y = 0; y < getHeight(); y++) {
 
 				Integer key = getPixelValue(x, y);
-				if (isElement(key, avg)) {
+				int[] rgbA = UTILITIES.hexToRgb(key);
+				
+				if (isElement(key, avg)|| UTILITIES.rgb2hsb(rgbA[0], rgbA[1], rgbA[2])[0]*100 > 10) {
 					if (map.get(key) == null) {
 						if (d++ < getHeight() * 2) {
 							d = 0;
@@ -1372,7 +1374,7 @@ public class PixelGrid {
 							if (last != null
 									&& UTILITIES.getHsbColorDifference(bv,
 											UTILITIES.hexToRgb(map.get(last)
-													.getAverage())) < 6) {
+													.getAverage())) < 9) {
 								map.get(last).add(x, y, key);
 								found = true;
 							} else {
@@ -1402,7 +1404,7 @@ public class PixelGrid {
 									}
 
 								}
-								if (bestValue < 14) {
+								if (bestValue < 9) {
 									map.get(bestKey).add(x, y, key);
 									found = true;
 								}
@@ -1434,6 +1436,7 @@ public class PixelGrid {
 
 		// int total = getWidth() * getHeight();
 		ArrayList<Object[]> els = new ArrayList<Object[]>();
+
 		Iterator<PixelObject> vals = map.values().iterator();
 		Iterator<Integer[]> keys = map.keySet().iterator();
 		while (keys.hasNext() && vals.hasNext()) {
@@ -1444,8 +1447,8 @@ public class PixelGrid {
 		Collections.sort(els, new Comparator<Object[]>() {
 
 			public int compare(Object[] o1, Object[] o2) {
-				if (((PixelObject) o1[1]).getWidth() > ((PixelObject) o2[1])
-						.getWidth())
+				if (((PixelObject) o1[1]).toLetter().getElementPixel() > ((PixelObject) o2[1])
+						.toLetter().getElementPixel())
 					return 1;
 				else
 					return 0;
@@ -1453,9 +1456,11 @@ public class PixelGrid {
 		});
 		Iterator<Object[]> iter = els.iterator();
 		int c = map.size();
+		d=4;
 		while (c > letterNum) {
 			if (!iter.hasNext()) {
 				iter = els.iterator();
+				d++;
 			}
 			Object[] thisel = (Object[]) iter.next();
 			Integer[] integers = (Integer[]) thisel[0];
@@ -1478,10 +1483,21 @@ public class PixelGrid {
 
 			}
 			if (bestKey != null) {
+				dif = UTILITIES.getHsbColorDifference(
+						UTILITIES
+
+						.hexToRgb(map.get(bestKey)
+								.getAverage()), UTILITIES
+
+						.hexToRgb(map.get(integers)
+								.getAverage()));
+				if(dif<d)
+				{
 				map.get(bestKey).add(map.get(integers));
 				map.remove(integers);
 				iter.remove();
 				c--;
+				}
 			}
 		}
 

@@ -86,7 +86,7 @@ public class PixelObject implements Comparable {
     private double        whiteContrast = 1;
 
     private int           letterColor   = 0;
-
+    public int colorpixel = 0;
     /**
      * @param owner
      */
