@@ -2,6 +2,15 @@ package jd.plugins.decrypt;
 
 import jd.plugins.DownloadLink;
 
+import java.awt.BorderLayout;
+import java.awt.Dialog;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import java.awt.Insets;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.WindowEvent;
+import java.awt.event.WindowListener;
 import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
@@ -10,16 +19,24 @@ import java.util.Vector;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import javax.swing.JButton;
+import javax.swing.JCheckBox;
+import javax.swing.JComboBox;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+
 import jd.captcha.LetterComperator;
 import jd.captcha.pixelgrid.Letter;
 import jd.captcha.utils.UTILITIES;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
+import jd.gui.skins.simple.SimpleGUI;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginStep;
 import jd.plugins.Regexp;
 import jd.plugins.RequestInfo;
+import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
 public class Serienjunkies extends PluginForDecrypt {
@@ -30,7 +47,14 @@ public class Serienjunkies extends PluginForDecrypt {
 	private Pattern patternCaptcha = null;
 
 	private boolean next = false;
-
+	private static final int saveScat = 1;
+	private static final int sCatNoThing = 0;
+	private static final int sCatNewestDownload = 1;
+	private static final int sCatGrabb = 2;
+	private static int[] useScat = new int[] {0 ,0};
+	private boolean scatChecked = false;
+    private JComboBox methods;
+    private JCheckBox checkScat;
 	private String dynamicCaptcha = "<FORM ACTION=\".*?\" METHOD=\"post\"(?s).*?(?-s)<INPUT TYPE=\"HIDDEN\" NAME=\"s\" VALUE=\"([\\w]*)\">(?s).*?(?-s)<IMG SRC=\"([^\"]*)\"";
 
 	public Serienjunkies() {
@@ -67,7 +91,121 @@ public class Serienjunkies extends PluginForDecrypt {
 	public String getPluginName() {
 		return host;
 	}
+	private void sCatDialog()
+	{
+		if(scatChecked||useScat[1]==saveScat)
+			return;
+	       new Dialog(((SimpleGUI) JDUtilities.getGUI()).getFrame()) {
+	    	   
+			/**
+			 * 
+			 */
+			private static final long serialVersionUID = -5144850223169000644L;
 
+			void init()
+	    	{
+	        setLayout(new BorderLayout());
+	        setModal(true);
+	        setTitle(JDLocale.L("Plugins.SerienJunkies.CatDialog.title",
+	                "SerienJunkies ::CAT::"));
+	        setAlwaysOnTop(true);
+	        setLocation(20, 20);
+	        JPanel panel = new JPanel(new GridBagLayout());
+	       final class meth {
+	        	public int var;
+	        	public String name;
+	        	public meth(String name, int var) {
+	        		this.name=name;
+	        		this.var=var;
+				}
+	        	@Override
+	        	public String toString() {
+	        		// TODO Auto-generated method stub
+	        		return name;
+	        	}
+	        };
+	        addWindowListener(new WindowListener() {
+
+				public void windowActivated(WindowEvent e) {
+					// TODO Auto-generated method stub
+					
+				}
+
+				public void windowClosed(WindowEvent e) {
+					// TODO Auto-generated method stub
+					
+				}
+
+				public void windowClosing(WindowEvent e) {
+                    useScat=new int[] {((meth) methods.getSelectedItem()).var, 0};   
+					dispose();
+					
+				}
+
+				public void windowDeactivated(WindowEvent e) {
+					// TODO Auto-generated method stub
+					
+				}
+
+				public void windowDeiconified(WindowEvent e) {
+					// TODO Auto-generated method stub
+					
+				}
+
+				public void windowIconified(WindowEvent e) {
+					// TODO Auto-generated method stub
+					
+				}
+
+				public void windowOpened(WindowEvent e) {
+					// TODO Auto-generated method stub
+					
+				}});
+	        meth[] meths = new meth[3];
+	        meths[0]=new meth("Kategorie nicht hinzufügen", sCatNoThing);
+	        meths[1]=new meth("Alle Serien in dieser Kategorie hinzufügen", sCatGrabb);
+	        meths[2]=new meth("Den neusten Download dieser Kategorie hinzufügen", sCatNewestDownload);
+	        methods = new JComboBox(meths);
+	        checkScat=new JCheckBox("Einstellungen für diese Sitzung beibehalten?", true);
+	        Insets insets = new Insets(0, 0, 0, 0);
+	        JDUtilities.addToGridBag(panel, new JLabel(JDLocale.L(
+	                "Plugins.SerienJunkies.CatDialog.action", "Wählen sie eine Aktion aus:")), GridBagConstraints.RELATIVE,
+	                GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, 1,
+	                0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
+	        JDUtilities.addToGridBag(panel, methods, GridBagConstraints.RELATIVE,
+	                GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1,
+	                0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
+	        JDUtilities.addToGridBag(panel, checkScat,
+	                GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE,
+	                GridBagConstraints.REMAINDER, 1, 0, 0, insets,
+	                GridBagConstraints.NONE, GridBagConstraints.WEST);
+	        JButton btnOK = new JButton(JDLocale.L("gui.btn_continue",
+	                "OK"));
+	        btnOK.addActionListener(new ActionListener() {
+
+	            public void actionPerformed(ActionEvent e) {
+	                        useScat=new int[] {((meth) methods.getSelectedItem()).var, checkScat.isSelected()? saveScat:0};            
+	                        dispose();
+	            }
+	            
+	        });
+	        JDUtilities.addToGridBag(panel, btnOK, GridBagConstraints.RELATIVE,
+	                GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1,
+	                0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
+	        add(panel, BorderLayout.CENTER);
+	        pack();
+	        setVisible(true);
+	       }
+
+			}.init();
+	}
+	private int getSerienJunkiesCat()
+	{
+
+			sCatDialog();
+			return useScat[0];
+		
+	}
 	private String isNext() {
 		if (next)
 			return "|";
@@ -96,6 +234,12 @@ public class Serienjunkies extends PluginForDecrypt {
 
 	@Override
 	public synchronized boolean canHandle(String data) {
+		boolean cat = false;
+		//http://serienjunkies.org/?cat=3217
+		if(data.contains("serienjunkies.org") && data.contains("cat="))
+		{
+		cat = (getSerienJunkiesCat()!=sCatNoThing);
+		}
 		boolean rscom = (Boolean) this.getProperties().getProperty(
 				"USE_RAPIDSHARE", true);
 		boolean rsde = (Boolean) this.getProperties().getProperty(
@@ -104,8 +248,6 @@ public class Serienjunkies extends PluginForDecrypt {
 				false);
 		boolean uploaded = (Boolean) this.getProperties().getProperty(
 				"USE_UPLOADED", false);
-		boolean cat = (Boolean) this.getProperties().getProperty("USE_CAT",
-				true);
 		next = false;
 		String hosterStr = "";
 		if (rscom || rsde || net || uploaded) {
@@ -154,6 +296,7 @@ public class Serienjunkies extends PluginForDecrypt {
 				"http://.*?(serienjunkies\\.org|85\\.17\\.177\\.195|serienjunki\\.es)[^\"]*",
 				Pattern.CASE_INSENSITIVE).getMatches(0);
 		Vector<String> ret = new Vector<String>();
+		scatChecked=true;
 		for (int i = 0; i < links.length; i++) {
 			if (canHandle(links[i]))
 				ret.add(links[i]);
@@ -187,7 +330,11 @@ public class Serienjunkies extends PluginForDecrypt {
 			Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
 			try {
 				URL url = new URL(parameter);
-				if (parameter.matches(".*\\?cat\\=[\\d]+")) {
+				if (parameter.matches(".*\\?cat\\=[\\d]+.*")) {
+					int catst = getSerienJunkiesCat();
+					scatChecked=false;
+					if( sCatNewestDownload==catst)
+					{
 					request.withHtmlCode = false;
 					request.redirect = false;
 					request.getRequest("http://serienjunkies.org/");
@@ -230,6 +377,25 @@ public class Serienjunkies extends PluginForDecrypt {
 					step.setParameter(decryptedLinks);
 					return null;
 				}
+					else if(catst==sCatGrabb)
+					{
+						request.getRequest(parameter);
+						String[] links = request.getRegexp("<p><strong>.*?</strong>(.*?)</p>").getMatches(1);
+						
+						for (int i = 0; i < links.length; i++) {
+							String[] links2 = getHttpLinks(links[i], parameter);
+							for (int j = 0; j < links2.length; j++) {
+								decryptedLinks.add(this.createDownloadlink(links2[j]));
+							}
+						}
+						step.setParameter(decryptedLinks);
+						return null;
+					}
+					else
+					{
+						return null;
+					}
+				}	
 				String modifiedURL = JDUtilities.htmlDecode(url.toString());
 				modifiedURL = modifiedURL.replaceAll("safe/rc", "safe/frc");
 				modifiedURL = modifiedURL.replaceAll("save/rc", "save/frc");
@@ -309,8 +475,6 @@ public class Serienjunkies extends PluginForDecrypt {
 						} else {
 							decryptedLinks.add(this.createDownloadlink(links
 									.get(i).get(0)));
-							decryptedLinks.add(this.createDownloadlink(links
-									.get(i).get(0)));
 						}
 					}
 				}
@@ -328,10 +492,6 @@ public class Serienjunkies extends PluginForDecrypt {
 
 	private void setConfigElements() {
 		ConfigEntry cfg;
-		config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX,
-				getProperties(), "USE_CAT",
-				"Bei Kategorien den neusten Download verwenden"));
-		cfg.setDefaultValue(true);
 		config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_LABEL,
 				"Hoster Auswahl"));
 		config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
