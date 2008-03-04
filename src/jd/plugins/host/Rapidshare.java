@@ -389,7 +389,7 @@ private String dataPatternAction ="name=\"actionstring\" value=\"°\"></h3></for
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_SPINNER, getProperties(), PROPERTY_WAIT_WHEN_BOT_DETECTED, JDLocale.L("plugins.hoster.rapidshare.com.waitTimeOnBotDetection", "Wartezeit [ms] wenn Bot erkannt wird.(-1 für Reconnect)"), -1, 600000).setDefaultValue(-1).setStep(1000));
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_SPINNER, getProperties(), PROPERTY_INCREASE_TICKET, JDLocale.L("plugins.hoster.rapidshare.com.increaseTicketTime", "Ticketwartezeit verlängern (0%-500%)"), 0, 500).setDefaultValue(0).setExpertEntry(true).setStep(1));
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_SPINNER, getProperties(), PROPERTY_BYTES_TO_LOAD, JDLocale.L("plugins.hoster.rapidshare.com.loadFirstBytes", "Nur die ersten * KiloBytes jeder Datei laden[-1 to disable]"), -1, 100000).setDefaultValue(-1).setStep(500));
-        cfg.setDefaultValue(true);
+       // cfg.setDefaultValue(true);
         
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_LABEL, JDLocale.L("plugins.hoster.rapidshare.com.important", "WICHTIG! ")));
