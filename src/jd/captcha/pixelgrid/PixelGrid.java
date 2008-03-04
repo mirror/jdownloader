@@ -1365,7 +1365,7 @@ public class PixelGrid {
 				Integer key = getPixelValue(x, y);
 				int[] rgbA = UTILITIES.hexToRgb(key);
 				
-				if (isElement(key, avg)|| UTILITIES.rgb2hsb(rgbA[0], rgbA[1], rgbA[2])[0]*100 > 10) {
+				if (isElement(key, avg)|| UTILITIES.rgb2hsb(rgbA[0], rgbA[1], rgbA[2])[0]*100 > 0) {
 					if (map.get(key) == null) {
 						if (d++ < getHeight() * 2) {
 							d = 0;
@@ -1374,7 +1374,7 @@ public class PixelGrid {
 							if (last != null
 									&& UTILITIES.getHsbColorDifference(bv,
 											UTILITIES.hexToRgb(map.get(last)
-													.getAverage())) < 9) {
+													.getAverage())) <15) {
 								map.get(last).add(x, y, key);
 								found = true;
 							} else {
@@ -1404,7 +1404,7 @@ public class PixelGrid {
 									}
 
 								}
-								if (bestValue < 9) {
+								if (bestValue < 15) {
 									map.get(bestKey).add(x, y, key);
 									found = true;
 								}
@@ -1447,8 +1447,9 @@ public class PixelGrid {
 		Collections.sort(els, new Comparator<Object[]>() {
 
 			public int compare(Object[] o1, Object[] o2) {
-				if (((PixelObject) o1[1]).toLetter().getElementPixel() > ((PixelObject) o2[1])
-						.toLetter().getElementPixel())
+				Letter letter1 = ((PixelObject) o1[1]).toLetter();
+				Letter letter2 = ((PixelObject) o2[1]).toLetter();
+				if (letter1.getElementPixel() > letter2.getElementPixel())
 					return 1;
 				else
 					return 0;
@@ -1456,11 +1457,11 @@ public class PixelGrid {
 		});
 		Iterator<Object[]> iter = els.iterator();
 		int c = map.size();
-		d=4;
+		double addd=6;
 		while (c > letterNum) {
 			if (!iter.hasNext()) {
 				iter = els.iterator();
-				d++;
+				addd++;
 			}
 			Object[] thisel = (Object[]) iter.next();
 			Integer[] integers = (Integer[]) thisel[0];
@@ -1491,12 +1492,17 @@ public class PixelGrid {
 
 						.hexToRgb(map.get(integers)
 								.getAverage()));
-				if(dif<d)
+				if(dif<addd)
 				{
 				map.get(bestKey).add(map.get(integers));
 				map.remove(integers);
 				iter.remove();
 				c--;
+				}
+				else
+				{
+					iter = els.iterator();
+					addd++;
 				}
 			}
 		}

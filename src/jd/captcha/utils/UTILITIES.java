@@ -918,13 +918,11 @@ public class UTILITIES {
     {
     	float hsbA = rgb2hsb(rgbA[0], rgbA[1], rgbA[2])[0]*100;
     	float hsbB = rgb2hsb(rgbB[0], rgbB[1], rgbB[2])[0]*100;
-    	if(hsbA>1  && hsbB>1)
-    	{
-    	if(hsbA>55 && hsbA<280 && Math.abs((double) (hsbA-hsbB))>100)
+    	if(hsbA>20 && hsbA<100 && Math.abs((double) (hsbA-hsbB))>40)
     	{
     		return 255;
     	}
-    	Integer[][][] breaks  = new Integer[][][] {{{0,55}, {320, 360}}, {{45, 75}}, {{65, 180}}, {{160, 200}}, {{190, 290}}, {{280, 330}}};
+    	Integer[][][] breaks  = new Integer[][][] {{{0,20}, {85, 100}}, {{15, 25}}, {{22, 60}}, {{50, 70}}, {{65, 80}}, {{75, 90}}};
     	Vector<Integer[][]> color = new Vector<Integer[][]>();
     	for (int i = 0; i < breaks.length; i++) {
 			for (int j = 0; j < breaks[i].length; j++) {
@@ -958,7 +956,6 @@ public class UTILITIES {
         		double dif = Math.abs((double) (hsbA-hsbB));
         				return dif;
         	}
-    	}
     	}
     	return 255;
     }

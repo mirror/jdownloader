@@ -484,7 +484,12 @@ public class Captcha extends PixelGrid {
         int i = 0;
         while (iter.hasNext()) {
 			PixelObject pixelObject = (PixelObject) iter.next();
-			letters[i++]=pixelObject.toLetter();
+
+			letters[i]=pixelObject.toLetter();
+			letters[i].toBlackAndWhite();
+			letters[i].removeSmallObjects(0.6, 0.5, 3);
+			letters[i].clean();
+			i++;
 		}
         return letters;
     }
