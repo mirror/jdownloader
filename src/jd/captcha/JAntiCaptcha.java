@@ -1108,9 +1108,10 @@ public class JAntiCaptcha {
             int tt=0;
             while (iter.hasNext()) {
                 tmp = (Letter) iter.next();
-                if (Math.abs(tmp.getHeight() - letter.getHeight()) > bvX || Math.abs(tmp.getWidth() - letter.getWidth()) > bvY) {
+             if (Math.abs(tmp.getHeight() - letter.getHeight()) > bvY || Math.abs(tmp.getWidth() - letter.getWidth()) > bvX) {
                      continue;
                 }
+                
                 lc = new LetterComperator(letter, tmp);
                 lc.setScanVariance(0, 0);
                 lc.setOwner(this);
@@ -1218,15 +1219,16 @@ public class JAntiCaptcha {
                 w.setTitle(" Letter " + letter.id);
             }
             int line = 0;
+            lc = new LetterComperator(letter, null);
+            lc.setOwner(this);
+          res=lc;
             for (angle = UTILITIES.getJumperStart(leftAngle, rightAngle); UTILITIES.checkJumper(angle, leftAngle, rightAngle); angle = UTILITIES.nextJump(angle, leftAngle, rightAngle, steps)) {
 
                 letter = orgLetter.turn(angle);
                 // if(JAntiCaptcha.isLoggerActive())logger.finer(" Angle " +
                 // angle + " : " + letter.getDim());
                 
-                lc = new LetterComperator(letter, null);
-                lc.setOwner(this);
-              res=lc;
+             
                 Iterator<Letter> iter = letterDB.iterator();
                 int tt=0;
                 while (iter.hasNext()) {

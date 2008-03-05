@@ -89,7 +89,7 @@ public class Rapidshare extends PluginForHost {
     private String                         version                          = "1.3.0.1";
 
     // http://(?:[^.]*\.)*rapidshare\.com/files/[0-9]*/[^\s"]+
-    private String                         botHash                          = "dab07d2b7f1299f762454cda4c6143e7";
+    private String                         botHash                          = "63d572beae06a841c23b0d824ac1bfe2";//"dab07d2b7f1299f762454cda4c6143e7";
 
     /**
      * Vereinfachte Patternerstellung: [*] optionaler Platzhalter [+] musthav
@@ -130,7 +130,7 @@ private String dataPatternAction ="name=\"actionstring\" value=\"°\"></h3></for
      * gerade wartezeit hat. Überflüssige
      */
     private static long                    END_OF_DOWNLOAD_LIMIT            = 0;
-
+    private static final String   captchaWrong="Access code wrong";
     /**s
      * Das DownloadLimit wurde erreicht (?s)Downloadlimit.*Oder warte ([0-9]+)
      */
@@ -160,6 +160,7 @@ private String dataPatternAction ="name=\"actionstring\" value=\"°\"></h3></for
 
     private static final String            PATTERN_ACCOUNT_EXPIRED          = "Dieser Account lief am";
 
+    private static final String             PATTERN_ERROR_BOT ="Too many wrong codes";
     private int                            waitTime                         = 500;
 
     private String                         captchaAddress;
@@ -223,6 +224,8 @@ private String dataPatternAction ="name=\"actionstring\" value=\"°\"></h3></for
     private static final String            PROPERTY_USE_PREMIUM_3           = "USE_PREMIUM_3";
     
     private static final String            PROPERTY_FREE_IF_LIMIT_NOT_REACHED = "FREE_IF_LIMIT_NOT_REACHED";
+
+    private static final String PATTERN_DOWNLOAD_ERRORPAGE = "RapidShare: 1-Click Webhosting";
 
     private static int                     ERRORS                           = 0;
 
@@ -760,7 +763,7 @@ logger.info(serverstrings+"");
                 
                 actionString = actionString.replace(' ', '+');
                 postParameter.put("mirror", "on");
-                postParameter.put("accesscode", this.captchaCode);
+                postParameter.put("accesscode", "I"+this.captchaCode);
                 postParameter.put("actionstring", actionString);
                 try {
 
@@ -773,6 +776,7 @@ logger.info(serverstrings+"");
                     wr.flush();
                     // content-disposition: Attachment;
                     // filename=a_mc_cs3_g_cd.rsdf
+                   
                     String name = getFileNameFormHeader(urlConnection);
                     if (name.toLowerCase().matches(".*\\..{1,5}\\.html$")) name = name.replaceFirst("\\.html$", "");
                     downloadLink.setName(name);
@@ -799,6 +803,37 @@ logger.info(serverstrings+"");
                     logger.info("link: " + postTarget.substring(0, 30) + " " + actionString);
                     int errorid;
                     if ((errorid = download(downloadLink, urlConnection, 1024 * getProperties().getIntegerProperty(PROPERTY_BYTES_TO_LOAD, -1))) == DOWNLOAD_SUCCESS) {
+                        if(new File(downloadLink.getFileOutput()).length()<4000&&JDUtilities.getLocalFile(new File(downloadLink.getFileOutput())).indexOf(captchaWrong)>0){
+                            new File(downloadLink.getFileOutput()).delete();
+                            JDUtilities.appendInfoToFilename(this, captchaFile, actionString + "_" + captchaCode, false);
+                            downloadLink.setStatus(DownloadLink.STATUS_ERROR_CAPTCHA_WRONG);
+                            logger.info("Error detected. Update captchafile");
+                            new CaptchaMethodLoader().interact("rapidshare.com");
+                            step.setStatus(PluginStep.STATUS_ERROR);
+                            return step;
+                        }
+                        if(new File(downloadLink.getFileOutput()).length()<4000&&JDUtilities.getLocalFile(new File(downloadLink.getFileOutput())).indexOf(PATTERN_ERROR_BOT)>0){
+                            new File(downloadLink.getFileOutput()).delete();
+                           
+                            downloadLink.setStatus(DownloadLink.STATUS_ERROR_BOT_DETECTED);
+                            logger.info("Error detected. Bot detected");
+                           
+                            step.setStatus(PluginStep.STATUS_ERROR);
+                            return step;
+                        } 
+                        if(new File(downloadLink.getFileOutput()).length()<4000&&JDUtilities.getLocalFile(new File(downloadLink.getFileOutput())).indexOf(PATTERN_DOWNLOAD_ERRORPAGE)>0){
+                            new File(downloadLink.getFileOutput()).delete();
+                           
+                            downloadLink.setStatus(DownloadLink.STATUS_ERROR_PLUGIN_SPECIFIC);
+                            downloadLink.setStatusText("Download error(>log)");
+                            
+                            logger.severe("Error detected. "+JDUtilities.getLocalFile(new File(downloadLink.getFileOutput())));
+                           
+                            step.setStatus(PluginStep.STATUS_ERROR);
+                            return step;
+                        } 
+                       
+                        
                         step.setStatus(PluginStep.STATUS_DONE);
                         downloadLink.setStatus(DownloadLink.STATUS_DONE);
                         JDUtilities.appendInfoToFilename(this, captchaFile, actionString + "_" + captchaCode, true);
@@ -856,6 +891,9 @@ logger.info(serverstrings+"");
                             logger.info("Error detected. Update captchafile");
                             new CaptchaMethodLoader().interact("rapidshare.com");
                         }
+                        
+                        
+                        
                         step.setStatus(PluginStep.STATUS_ERROR);
                     }
                 }
@@ -1160,6 +1198,19 @@ logger.info(serverstrings+"");
 
                         // int errorid;
                         if ((download(downloadLink, urlConnection, 1024 * getProperties().getIntegerProperty(PROPERTY_BYTES_TO_LOAD, -1), (int) fileOutput.length())) == DOWNLOAD_SUCCESS) {
+                            if(new File(downloadLink.getFileOutput()).length()<4000&&JDUtilities.getLocalFile(new File(downloadLink.getFileOutput())).indexOf(PATTERN_DOWNLOAD_ERRORPAGE)>0){
+                                new File(downloadLink.getFileOutput()).delete();
+                               
+                                downloadLink.setStatus(DownloadLink.STATUS_ERROR_PLUGIN_SPECIFIC);
+                                downloadLink.setStatusText("Download error(>log)");
+                                
+                                logger.severe("Error detected. "+JDUtilities.getLocalFile(new File(downloadLink.getFileOutput())));
+                               
+                                step.setStatus(PluginStep.STATUS_ERROR);
+                                return step;
+                            } 
+                            
+                            
                             step.setStatus(PluginStep.STATUS_DONE);
                             downloadLink.setStatus(DownloadLink.STATUS_DONE);
                             return null;
@@ -1187,6 +1238,18 @@ logger.info(serverstrings+"");
 
                         // int errorid;
                         if ((download(downloadLink, urlConnection, 1024 * getProperties().getIntegerProperty(PROPERTY_BYTES_TO_LOAD, -1))) == DOWNLOAD_SUCCESS) {
+                            if(new File(downloadLink.getFileOutput()).length()<4000&&JDUtilities.getLocalFile(new File(downloadLink.getFileOutput())).indexOf(PATTERN_DOWNLOAD_ERRORPAGE)>0){
+                                new File(downloadLink.getFileOutput()).delete();
+                               
+                                downloadLink.setStatus(DownloadLink.STATUS_ERROR_PLUGIN_SPECIFIC);
+                                downloadLink.setStatusText("Download error(>log)");
+                                
+                                logger.severe("Error detected. "+JDUtilities.getLocalFile(new File(downloadLink.getFileOutput())));
+                               
+                                step.setStatus(PluginStep.STATUS_ERROR);
+                                return step;
+                            } 
+                            
                             step.setStatus(PluginStep.STATUS_DONE);
                             downloadLink.setStatus(DownloadLink.STATUS_DONE);
                             return null;
@@ -1220,7 +1283,7 @@ logger.info(serverstrings+"");
     @Override
     public boolean doBotCheck(File file) {
         try {
-            logger.info(md5sum(file));
+            logger.info(md5sum(file)+" - "+botHash);
             return md5sum(file).equals(botHash);
         }
         catch (NoSuchAlgorithmException e) {

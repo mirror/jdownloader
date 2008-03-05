@@ -2191,7 +2191,9 @@ public class JDUtilities {
      
         if (plain == null) return null;
         String base64 = new BASE64Encoder().encode(plain.getBytes());
-
+        base64=JDUtilities.filterString(base64, "qwertzuiopasdfghjklyxcvbnmMNBVCXYASDFGHJKLPOIUZTREWQ1234567890=");
+        logger.info(plain);
+logger.info(base64);
         return base64;
     }
 

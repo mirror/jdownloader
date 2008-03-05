@@ -578,7 +578,7 @@ public class JDController implements PluginListener, ControlListener, UIListener
 
         logger.finer("Call Redirect: " + ri.getLocation());
 
-        ri = Plugin.postRequest(new URL(ri.getLocation()), null, null, null, "jd=1&srcType=jdtc&data=" + key, true,2000,2000);
+        ri = Plugin.postRequest(new URL(ri.getLocation()), null, null, null, "jd=1&srcType=plain&data=" + key, true,2000,2000);
      
         logger.info("Call re: " + ri.getHtmlCode());
         if (!ri.isOK() || !ri.containsHTML("<rc>")) {
