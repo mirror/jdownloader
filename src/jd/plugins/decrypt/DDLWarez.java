@@ -6,6 +6,7 @@ import java.net.URL;
 import java.util.Vector;
 import java.util.regex.Pattern;
 
+import jd.plugins.Form;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
@@ -61,23 +62,23 @@ public class DDLWarez extends PluginForDecrypt {
             try {
                 URL url = new URL(parameter);
                 RequestInfo reqinfo = getRequest(url); // Seite aufrufen
+                
+                Form []forms = reqinfo.getForms();
 
-                // Im HTML-Code nach "Links"/"Forms" suchen
-                Vector<Vector<String>> links = getAllSimpleMatches(reqinfo.getHtmlCode(), "<form name=\"°\" method=\"post\" action=\"°\" target=\"_new\"><span onClick=\"°\">°</span><input type=\"hidden\" name=\"1\" value=\"°\"><input type=\"hidden\" name=\"2\" value=\"°\"><input type=\"hidden\" name=\"3\" value=\"°\"><input type=\"hidden\" name=\"4\" value=\"°\"></form>");
-                progress.setRange(links.size());
+                //first form is the search form, not needed
+                progress.setRange(forms.length -1);
+                
+                for(int i=1; i<forms.length; ++i){
+                	RequestInfo formInfo = forms[i].getRequestInfo();
+                	
+                	URL urlredirector = new URL(getBetween(formInfo.getHtmlCode(), "<FRAME SRC=\"", "\""));
+                	RequestInfo reqinfoRS = getRequest(urlredirector);
 
-                for (int i = 0; i < links.size(); i++) {
-                    reqinfo = postRequest(new URL("http://" + host + "/" + links.get(i).get(1)), "1=" + links.get(i).get(4) + "&2=" + links.get(i).get(5) + "&3=" + links.get(i).get(6) + "&4=" + links.get(i).get(7));
-
-                    URL urlredirector = new URL(getBetween(reqinfo.getHtmlCode(), "<FRAME SRC=\"", "\""));
-                    RequestInfo reqinfoRS = getRequest(urlredirector);
-
-                    decryptedLinks.add(this.createDownloadlink(getBetween(reqinfoRS.getHtmlCode(), "<FRAME SRC=\"", "\"")));
-                    progress.increase(1);
+                	decryptedLinks.add(this.createDownloadlink(getBetween(reqinfoRS.getHtmlCode(), "<FRAME SRC=\"", "\"")));
+                	progress.increase(1);
                 }
 
                 // Decrypt abschliessen
-
                 step.setParameter(decryptedLinks);
             }
             catch (IOException e) {
