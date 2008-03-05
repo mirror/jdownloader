@@ -20,7 +20,7 @@ public class DepositFiles extends PluginForHost {
     static private final Pattern PAT_SUPPORTED = Pattern.compile("http://.*?depositfiles\\.com(/en/|/de/|/ru/|/)files/[0-9]+", Pattern.CASE_INSENSITIVE);
     static private final String HOST = "depositfiles.com";
     static private final String PLUGIN_NAME = HOST;
-    static private final String PLUGIN_VERSION = "0.1.2";
+    static private final String PLUGIN_VERSION = "0.1.3";
     static private final String PLUGIN_ID = PLUGIN_NAME + "-" + PLUGIN_VERSION;
     static private final String CODER = "JD-Team";
     
@@ -92,26 +92,30 @@ public class DepositFiles extends PluginForHost {
             
                 case PluginStep.STEP_WAIT_TIME :
                 	
-                	String link = downloadLink.getDownloadURL().replace("/en/files/", "/de/files/");
-                    link = link.replace("/ru/files/", "/de/files/");
+                	String link = downloadLink.getDownloadURL().replace("com/en/files/", "com/de/files/");
+                    link = link.replace("com/ru/files/", "com/de/files/");
+                    link = link.replace("com/files/", "com/de/files/");
                     downloadLink.setUrlDownload(link);
                     
                 	finalURL = link;
-                    logger.info(finalURL);
                     requestInfo = getRequest(new URL(finalURL));
                     
                     if (JDUtilities.getController().isLocalFileInProgress(downloadLink)) {
+                    	
                         logger.severe("File already is in progress. " + downloadLink.getFileOutput());
                         downloadLink.setStatus(DownloadLink.STATUS_ERROR_OUTPUTFILE_INPROGRESS);
                         step.setStatus(PluginStep.STATUS_ERROR);
                         return step;
+                        
                     }
 
                     if (new File(downloadLink.getFileOutput()).exists()) {
+                    	
                         logger.severe("File already exists. " + downloadLink.getFileOutput());
                         downloadLink.setStatus(DownloadLink.STATUS_ERROR_ALREADYEXISTS);
                         step.setStatus(PluginStep.STATUS_ERROR);
                         return step;
+                        
                     }
                     
                     // Datei geloescht?
@@ -155,9 +159,17 @@ public class DepositFiles extends PluginForHost {
                     } else {
                     	
                     	icid = getFirstMatch(requestInfo.getHtmlCode(), ICID, 1);
-                    	logger.info(icid);
+                    	
+                    	if ( icid == null ) {
+                    		
+                        	logger.severe("Session error");
+                            step.setStatus(PluginStep.STATUS_ERROR);
+                            downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN);
+                            return step;
+                            
+                        }
+                    	
                     	captchaAddress = "http://depositfiles.com/get_download_img_code.php?icid=" + icid;
-                        logger.info(captchaAddress);
                         cookie = requestInfo.getCookie();
                         return step;
                         
@@ -191,8 +203,25 @@ public class DepositFiles extends PluginForHost {
                     
                 case PluginStep.STEP_DOWNLOAD :
                 	
-                    logger.info("dl " + finalURL);
                     String code = (String) steps.get(1).getParameter();
+                    
+                    if ( code == null || code.length() != 4 ) {
+                    	
+                    	logger.severe("Captcha donwload failed: " + captchaAddress);
+                        step.setStatus(PluginStep.STATUS_ERROR);
+                        downloadLink.setStatus(DownloadLink.STATUS_ERROR_CAPTCHA_IMAGEERROR);
+                        return step;
+                        
+                    }
+                    
+                    if ( code.length() != 4 ) {
+                    	
+                        step.setStatus(PluginStep.STATUS_ERROR);
+                        downloadLink.setStatus(DownloadLink.STATUS_ERROR_CAPTCHA_WRONG);
+                        return step;
+                        
+                    }
+                    
                     requestInfo = postRequestWithoutHtmlCode(new URL(finalURL+"#"), cookie, finalURL, "img_code="+code+"&icid="+icid+"&file_password&gateway_result=1&go=1", true);
                     
                     if ( requestInfo.getConnection().getHeaderField("Location") != null && requestInfo.getConnection().getHeaderField("Location").indexOf("error") > 0 ) {

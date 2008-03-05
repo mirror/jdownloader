@@ -161,13 +161,15 @@ public abstract class PluginForHost extends Plugin {
     public abstract int getMaxSimultanDownloadNum();
     public abstract String getAGBLink();
     public boolean isAGBChecked(){
-        //Schreibfehler ist bekannt, allerdings müssten die user alles nochmal einstellenw enn man diesen Key hier ändert.
-        return JDUtilities.getSubConfig(CONFIGNAME).getBooleanProperty("AGBS_CHECKED_"+this.getPluginID(), false);
+        // benutze getHost() damit man nach Update nicht neu akzeptieren muss
+    	// getPluginID() nur für Abwärtskompatibilität
+    	return JDUtilities.getSubConfig(CONFIGNAME).getBooleanProperty("AGBS_CHECKED_"+this.getPluginID(), false)
+    		|| JDUtilities.getSubConfig(CONFIGNAME).getBooleanProperty("AGB_CHECKED_"+this.getHost(), false);
     }
     public void setAGBChecked(boolean value){
+        JDUtilities.getSubConfig(CONFIGNAME).setProperty("AGB_CHECKED_"+this.getHost(), value);
         JDUtilities.getSubConfig(CONFIGNAME).setProperty("AGBS_CHECKED_"+this.getPluginID(), value);
         JDUtilities.getSubConfig(CONFIGNAME).save();
-           
     }
     /**
      * Delegiert den doStep Call mit einem Downloadlink als Parameter weiter an
