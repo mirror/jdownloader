@@ -31,7 +31,8 @@ public class DokuCc extends PluginForDecrypt {
 	    		try {
 	                URL url = new URL(parameter);
 	                RequestInfo reqinfo = getRequest(url);
-	    			String[] links = new Regexp(reqinfo.getHtmlCode(), "<p><strong>Download(.*?)</p>").getMatches(1);
+
+	                String[] links = new Regexp(reqinfo.getHtmlCode(), "<p><strong>[^<]+(</strong><a href.*?)</p>").getMatches(1);
 	    			for (int i = 0; i < links.length; i++) {
 	    				String[] dls = getHttpLinks(links[i], parameter);
 	    				for (int j = 0; j < dls.length; j++) {

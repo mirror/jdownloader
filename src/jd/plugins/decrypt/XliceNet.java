@@ -35,8 +35,10 @@ public class XliceNet extends PluginForDecrypt {
     //<a href="#" id="contentlink_0" rev="/links/76b5bb4380524456c61c1afb1638fbe7/" rel="linklayer"><img src="/img/download.jpg" alt="Download" width="24" height="24" border="0"></a>
     static Pattern patternLink = Pattern.compile("<a href=\"#\".*rev=\"([^\"].+)\" rel=\"linklayer\">", Pattern.CASE_INSENSITIVE );
 
-//    <br /><a href="#" onclick="createWnd('/gateway/278450/5/', '', 1000, 600);" id="dlok">share.gulli.com</a>
-    static Pattern patternMirrorLink = Pattern.compile("<a href=\"#\" onclick=\"createWnd\\('([^']*)[^>]*>([^<]+)</a>");
+//    <br /><a href="/" onclick="createWnd('/gateway/278450/5/', '', 1000, 600);" id="dlok">share.gulli.com</a>
+    static Pattern patternMirrorLink = Pattern.compile("<a href=\"[^\"]*\" onclick=\"createWnd\\('([^']*)[^>]*>([^<]+)</a>");
+    
+    
     
     static Pattern patternJSDESFile = Pattern.compile("<script type=\"text/javascript\" src=\"/([^\"]+)\">");
     static Pattern patternJsScript = Pattern.compile("<script type=\"text/javascript\">(.*)var ciphertext = (des \\(substro, message, 0\\));", Pattern.DOTALL);
@@ -108,9 +110,7 @@ public class XliceNet extends PluginForDecrypt {
                     
                     Vector<Vector<String>> groups = getAllSimpleMatches(mirrorInfo.getHtmlCode(), patternMirrorLink);                   
 
-                    //for( int i=0; i<mirrorLinks.length; ++i){
                     for( Vector<String> pair : groups ){
-
                         //check if user does not want the links from this hoster
                         //if( !getUseConfig(mirrorHoster.get(i))){
                         if( !getUseConfig(pair.get(1))){                            
@@ -148,6 +148,9 @@ public class XliceNet extends PluginForDecrypt {
                         //fetch the result of the  javascript interpreter and finally find the link :)
                         String iframe = Context.toString(result);
                         String hosterURL = new Regexp(iframe, patternHosterIframe).getFirstMatch();
+                        
+                        //System.out.println(hosterURL);
+                        
                         decryptedLinks.add(createDownloadlink(hosterURL));
 
                     }
