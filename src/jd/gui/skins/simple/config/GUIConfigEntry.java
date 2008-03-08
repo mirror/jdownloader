@@ -256,13 +256,14 @@ public class GUIConfigEntry extends JPanel {
        // JDUtilities.addToGridBag(this,  new JLabel("HELP"), 1, 0, 1, 1, 1, 0, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
       if(configEntry.getInstantHelp()!=null){
           try {
-              String url="http://jdownloader.ath.cx/wikipage.php?lng="+JDLocale.getLocale()+"&page="+configEntry.getInstantHelp();
+              String url=configEntry.getInstantHelp();
               JLinkButton link = new JLinkButton("",new ImageIcon(JDUtilities.getImage(JDTheme.I("gui.images.help")).getScaledInstance(20, 20, Image.SCALE_FAST)), new URL(url));
               JDUtilities.addToGridBag(this,  link, 1, 0, 1, 1, 1, 0, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
               
           }
           catch (MalformedURLException e) {
-              
+              JDUtilities.addToGridBag(this,  new JLabel(configEntry.getInstantHelp()), 1, 0, 1, 1, 1, 0, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
+               
           }
       }else{
           JDUtilities.addToGridBag(this,  new JLabel(""), 1, 0, 1, 1, 1, 0, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);

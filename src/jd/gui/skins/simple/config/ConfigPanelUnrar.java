@@ -76,7 +76,7 @@ public class ConfigPanelUnrar extends ConfigPanel implements ActionListener {
         // Unrar.ENABLED_TYPE_ALWAYS,Unrar.ENABLED_TYPE_LINKGRABBER,Unrar.ENABLED_TYPE_NEVER
         // },"Unrar
         // aktivieren:").setDefaultValue(Unrar.ENABLED_TYPE_LINKGRABBER));
-        ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, configuration, Unrar.PROPERTY_ENABLED, JDLocale.L("gui.config.unrar.enabled", "automatisches entpacken aktivieren")).setDefaultValue(true).setInstantHelp(JDLocale.L("modules.unrar.enabled.instanthelp","Module - Entpacker - Einrichten")));
+        ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, configuration, Unrar.PROPERTY_ENABLED, JDLocale.L("gui.config.unrar.enabled", "automatisches entpacken aktivieren")).setDefaultValue(true).setInstantHelp(JDLocale.L("modules.unrar.enabled.instanthelp","http://ns2.km32221.keymachine.de/jdownloader/web/page.php?id=17")));
         addGUIConfigEntry(ce);
         if(unrarcmd==null)
         {

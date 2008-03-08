@@ -117,7 +117,8 @@ public class Rapidshare extends PluginForHost {
    // private Pattern   patternForFormData               = Pattern.compile("document.dl.action=\'([^\\n\"]*)\"(?s).*?\';document.dl.actionstring.value=\'([^\\n\"]*)\'");
 //private String dataPattern= "document.dl.action=\'°\';document.dl.actionstring.value=\'°\'\">°<br></td></tr></table><h3>Kein Premium-User. Bitte<br>'°'<img src=°><br>hier eingeben: <input type=\"text\" name=\"accesscode\" °size=\"5\" maxlength=\"4\"> <input type=\"submit\" name=\"actionstring\" value=\"°\"></h3></form>";
   
-private String dataPatternPost= "document.dl.action=°document.dl.actionstring.value";
+private String dataPatternPost= "<form name=\"dl\" ' +°'action=\"°\" method=\"post\">'";//"document.dl.action=°document.dl.actionstring.value";
+
 private String dataPatternAction ="name=\"actionstring\" value=\"°\"></h3></form>";
 /**
      * Pattern trifft zu wenn die "Ihre Ip läd gerade eine datei " Seite kommt
@@ -550,6 +551,7 @@ private String dataPatternAction ="name=\"actionstring\" value=\"°\"></h3></for
                     // Auswahl ob free oder prem
 
                     requestInfo = postRequest(new URL(newURL), null, null, null, "dl.start=free", true);
+                
                     // Falls der check erst nach der free auswahl sein muss,
                     // dann
                     // wäre hier der richtige Platz
@@ -699,7 +701,7 @@ private String dataPatternAction ="name=\"actionstring\" value=\"°\"></h3></for
                 
                // postTarget=this.getSimpleMatch(ticketCode, dataPattern, 0);
               //  actionString=this.getSimpleMatch(ticketCode, dataPattern, 1);
-                postTarget=getSimpleMatch(ticketCode, dataPatternPost,0);
+                postTarget=getSimpleMatch(ticketCode, dataPatternPost,1);
                 actionString=getSimpleMatch(ticketCode, dataPatternAction,0);
                
 
@@ -710,7 +712,7 @@ private String dataPatternAction ="name=\"actionstring\" value=\"°\"></h3></for
                     step.setStatus(PluginStep.STATUS_ERROR);
                     return step;
                 }
-                postTarget=postTarget.substring(2, postTarget.length()-3);
+               // postTarget=postTarget.substring(2, postTarget.length()-3);
              //  logger.info(postTarget+" -"+actionString);
                 if (actionString == null) {
                     logger.severe("actionString not found");
@@ -763,14 +765,17 @@ logger.info(serverstrings+"");
                 
                 actionString = actionString.replace(' ', '+');
                 postParameter.put("mirror", "on");
-                postParameter.put("accesscode", "I"+this.captchaCode);
+                postParameter.put("accesscode", this.captchaCode);
                 postParameter.put("actionstring", actionString);
                 try {
-
+                    
                     URLConnection urlConnection = new URL(postTarget).openConnection();
                     urlConnection.setDoOutput(true);
                     // Post Parameter vorbereiten
                     String postParams = createPostParameterFromHashMap(postParameter);
+                    
+                    postParams="mirror=on&accesscode="+captchaCode+"&actionstring="+actionString;
+                 
                     OutputStreamWriter wr = new OutputStreamWriter(urlConnection.getOutputStream());
                     wr.write(postParams);
                     wr.flush();
@@ -822,13 +827,13 @@ logger.info(serverstrings+"");
                             return step;
                         } 
                         if(new File(downloadLink.getFileOutput()).length()<4000&&JDUtilities.getLocalFile(new File(downloadLink.getFileOutput())).indexOf(PATTERN_DOWNLOAD_ERRORPAGE)>0){
-                            new File(downloadLink.getFileOutput()).delete();
+                            
                            
                             downloadLink.setStatus(DownloadLink.STATUS_ERROR_PLUGIN_SPECIFIC);
                             downloadLink.setStatusText("Download error(>log)");
                             
                             logger.severe("Error detected. "+JDUtilities.getLocalFile(new File(downloadLink.getFileOutput())));
-                           
+                            new File(downloadLink.getFileOutput()).delete();
                             step.setStatus(PluginStep.STATUS_ERROR);
                             return step;
                         } 
@@ -1283,7 +1288,7 @@ logger.info(serverstrings+"");
     @Override
     public boolean doBotCheck(File file) {
         try {
-            logger.info(md5sum(file)+" - "+botHash);
+     
             return md5sum(file).equals(botHash);
         }
         catch (NoSuchAlgorithmException e) {
