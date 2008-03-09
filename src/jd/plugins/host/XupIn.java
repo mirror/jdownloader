@@ -12,15 +12,16 @@ import jd.plugins.PluginForHost;
 import jd.plugins.PluginStep;
 import jd.plugins.Regexp;
 import jd.plugins.RequestInfo;
+import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
 // http://www.xup.in/dl,43227676/YourFilesBiz.java/
 
 public class XupIn extends PluginForHost {
 	
-    private static final String  CODER                    = "eXecuTe";
+    private static final String  CODER                    = "jD-Team";
     private static final String  HOST                     = "xup.in";
-    private static final String  PLUGIN_VERSION           = "0.1.0";
+    private static final String  PLUGIN_VERSION           = "0.1.1";
     private static final String  AGB_LINK                 = "http://www.xup.in/terms/";
     
     static private final Pattern PATTERN_SUPPORTED 		  = getSupportPattern("http://[*]xup\\.in/dl,[0-9]+/?[+]?");
@@ -28,6 +29,7 @@ public class XupIn extends PluginForHost {
     
     private String               vid              	  	  = "";
     private String               vtime              	  = "";
+    private String               vpass              	  = "";
     
     private static final String  DOWNLOAD_SIZE            = "<li class=\"iclist\">File Size: (.*?) Mbyte</li>";
     private static final String  DOWNLOAD_NAME            = "<legend> <b>Download: (.*?)</b> </legend>";
@@ -35,6 +37,7 @@ public class XupIn extends PluginForHost {
     private static final String  VID	                  = "value=\"(.*?)\" name=\"vid\"";
     private static final String  VTIME	                  = "value=\"([0-9]+)\" name=\"vtime\"";
     private static final String  NOT_FOUND	              = "File does not exist";
+    private static final String  PASSWORD_PROTECTED	      = "Bitte Passwort eingeben";
     
     public XupIn() {
         
@@ -81,8 +84,11 @@ public class XupIn extends PluginForHost {
 
     @Override
     public void reset() {
+    	
     	vid = "";
         vtime = "";
+        vpass = "";
+        
     }
 
     @Override
@@ -164,6 +170,13 @@ public class XupIn extends PluginForHost {
         				
         			}
                     
+                    if ( requestInfo.containsHTML(PASSWORD_PROTECTED) ) {
+                    	
+                    	vpass = JDUtilities.getController().getUiInterface().showUserInputDialog(
+                    			JDLocale.L("plugins.hoster.general.passwordProtectedInput", "Die Links sind mit einem Passwort gesch\u00fctzt. Bitte geben Sie das Passwort ein:"));
+                    	
+                    }
+                    
                     String fileName = JDUtilities.htmlDecode(new Regexp(requestInfo.getHtmlCode(), DOWNLOAD_NAME).getFirstMatch()).trim();
                     downloadLink.setName(fileName);
                     
@@ -213,9 +226,23 @@ public class XupIn extends PluginForHost {
 
                 case PluginStep.STEP_DOWNLOAD:
                 	
-                	requestInfo = postRequestWithoutHtmlCode(downloadUrl, null, null, "vid="+vid+"&vtime="+vtime, true);
+                	if ( vpass != "") {
+                		requestInfo = postRequestWithoutHtmlCode(downloadUrl, null, null, "vid="+vid+"&vtime="+vtime+"&vpass="+vpass, true);
+                	} else {
+                		requestInfo = postRequestWithoutHtmlCode(downloadUrl, null, null, "vid="+vid+"&vtime="+vtime, true);
+                	}
+                	
                 	URLConnection urlConnection = requestInfo.getConnection();
                     int length = urlConnection.getContentLength();
+                    
+                    if ( urlConnection.getContentType().contains("text/html") ) {
+                    	
+                    	logger.severe("Wrong password");
+                    	downloadLink.setStatus(DownloadLink.STATUS_ERROR_PLUGIN_SPECIFIC);
+                    	step.setStatus(PluginStep.STATUS_ERROR);
+                    	return step;
+                    	
+                    }
                     
                     if ( Math.abs(length - downloadLink.getDownloadMax()) > 1024*1024 ) {
                     	
