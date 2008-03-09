@@ -128,7 +128,7 @@ public class RsLayerCom extends PluginForDecrypt {
                     	
                     	captchaForm.put("captcha_input", captchaCode);
                     	
-                    	reqinfo = readFromURL((HttpURLConnection)captchaForm.getConnection());
+                    	reqinfo = readFromURL(captchaForm.getConnection());
                     	
                     	if( reqinfo.containsHTML("Sicherheitscode<br />war nicht korrekt")){
                     		logger.info(JDLocale.L("plugins.decrypt.general.captchaCodeWrong", "Captcha Code falsch"));

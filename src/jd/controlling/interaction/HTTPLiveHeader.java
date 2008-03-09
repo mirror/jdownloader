@@ -5,7 +5,6 @@ import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.StringReader;
 import java.net.Authenticator;
-import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.PasswordAuthentication;
 import java.net.URL;
@@ -26,6 +25,7 @@ import javax.xml.parsers.ParserConfigurationException;
 
 import jd.config.Configuration;
 import jd.controlling.ProgressController;
+import jd.plugins.HTTPConnection;
 import jd.plugins.Plugin;
 import jd.plugins.RequestInfo;
 import jd.utils.JDLocale;
@@ -637,7 +637,7 @@ public class HTTPLiveHeader extends Interaction {
         try {
             if (requestType.equalsIgnoreCase("GET")) {
                 logger.finer("GET " + "http://" + host + path);
-                HttpURLConnection httpConnection = (HttpURLConnection) new URL("http://" + host + path).openConnection();
+                HTTPConnection httpConnection = new HTTPConnection(new URL("http://" + host + path).openConnection());
                 if (requestProperties != null) {
                     Set<String> keys = requestProperties.keySet();
                     Iterator<String> iterator = keys.iterator();
@@ -657,7 +657,7 @@ public class HTTPLiveHeader extends Interaction {
             else {
                 post = post.trim();
                 logger.finer("POST " + "http://" + host + path + " " + post);
-                HttpURLConnection httpConnection = (HttpURLConnection) new URL("http://" + host + path).openConnection();
+                HTTPConnection httpConnection = new HTTPConnection(new URL("http://" + host + path).openConnection());
                 httpConnection.setInstanceFollowRedirects(false);
                 httpConnection.setConnectTimeout(5000);
                 httpConnection.setReadTimeout(5000);

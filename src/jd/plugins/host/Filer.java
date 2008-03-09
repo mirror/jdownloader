@@ -190,7 +190,7 @@ public class Filer extends PluginForHost {
                         step.setStatus(PluginStep.STATUS_ERROR);
                         return step;
                     }
-                    if(download(downloadLink, (URLConnection) requestInfo.getConnection())!=DOWNLOAD_SUCCESS) {
+                    if(download(downloadLink, requestInfo.getConnection())!=DOWNLOAD_SUCCESS) {
                         step.setStatus(PluginStep.STATUS_ERROR);
                         
                     }

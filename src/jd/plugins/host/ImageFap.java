@@ -4,7 +4,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.net.URLConnection;
+
 import java.util.Vector;
 import java.util.regex.Pattern;
 
@@ -92,7 +92,7 @@ public class ImageFap extends PluginForHost {
                 for (int i = 1; i < Images.size(); i++) {
                     requestInfo = postRequestWithoutHtmlCode(new URL("http://85.17.40.49/full/getimg.php?img=" + Images.get(i)), null, null, null, true);
                     parameter.setName(Images.get(i));
-                    download(parameter, (URLConnection) requestInfo.getConnection());
+                    download(parameter,  requestInfo.getConnection());
                     new File(parameter.getFileOutput()).renameTo(new File(file, Images.get(i)));
                 }
                 step.setStatus(PluginStep.STATUS_DONE);

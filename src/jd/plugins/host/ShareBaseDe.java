@@ -1,6 +1,7 @@
 package jd.plugins.host;
 
 import jd.plugins.DownloadLink;
+import jd.plugins.HTTPConnection;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginStep;
 import jd.plugins.Regexp;
@@ -11,7 +12,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.net.URLConnection;
+
 import java.net.URLDecoder;
 import java.util.regex.Pattern;
 
@@ -189,7 +190,7 @@ public class ShareBaseDe extends PluginForHost {
                     try {
                     	
                         //Download vorbereiten
-                        URLConnection urlConnection = new URL(finishURL).openConnection();
+                        HTTPConnection urlConnection = new HTTPConnection(new URL(finishURL).openConnection());
                         int length = urlConnection.getContentLength();
                         downloadLink.setDownloadMax(length);
                         String filename = URLDecoder.decode(this.getFileNameFormHeader(urlConnection),"UTF-8");

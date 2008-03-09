@@ -63,7 +63,7 @@ import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.net.URLConnection;
+
 import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -75,7 +75,9 @@ import java.util.regex.Pattern;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.controlling.interaction.CaptchaMethodLoader;
+import jd.plugins.Download;
 import jd.plugins.DownloadLink;
+import jd.plugins.HTTPConnection;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginStep;
@@ -84,85 +86,95 @@ import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
 public class Rapidshare extends PluginForHost {
-    static private final String            host                             = "rapidshare.com";
+    static private final String            host                               = "rapidshare.com";
 
-    private String                         version                          = "1.3.0.1";
+    private String                         version                            = "1.3.0.1";
 
     // http://(?:[^.]*\.)*rapidshare\.com/files/[0-9]*/[^\s"]+
-    private String                         botHash                          = "63d572beae06a841c23b0d824ac1bfe2";//"dab07d2b7f1299f762454cda4c6143e7";
+    private String                         botHash                            = "63d572beae06a841c23b0d824ac1bfe2";                                                                                          // "dab07d2b7f1299f762454cda4c6143e7";
 
     /**
      * Vereinfachte Patternerstellung: [*] optionaler Platzhalter [+] musthav
      * platzhalter
      */
     // http://rapidshare.com/files/62495619/toca3.lst
-    static private final Pattern           patternSupported                 = Pattern.compile("http://.*?rapidshare\\.com/files/[\\d]{3,9}/.*", Pattern.CASE_INSENSITIVE);
+    static private final Pattern           patternSupported                   = Pattern.compile("http://.*?rapidshare\\.com/files/[\\d]{3,9}/.*", Pattern.CASE_INSENSITIVE);
 
     /**
      * Das findet die Ziel URL für den Post
      */
-    private Pattern                        patternForNewHost                = Pattern.compile("<form *action *= *\"([^\\n\"]*)\"");
+    private Pattern                        patternForNewHost                  = Pattern.compile("<form *action *= *\"([^\\n\"]*)\"");
 
     /**
      * Das findet die Captcha URL <form *name *= *"dl" (?s).*<img *src *=
      * *"([^\n"]*)">
      */
-    private Pattern                        patternForCaptcha                = Pattern.compile("<form *name *= *\"dl\" (?s).*<img *src *= *\"([^\\n\"]*)\">");
+    private Pattern                        patternForCaptcha                  = Pattern.compile("<form *name *= *\"dl\" (?s).*<img *src *= *\"([^\\n\"]*)\">");
 
     /**
      * <form name="dl".* action="([^\n"]*)"(?s).*?<input type="submit"
      * name="actionstring" value="[^\n"]*"
      */
-    //private Pattern                        patternForFormData               = Pattern.compile("<form name=\"dl\".* action=\"([^\\n\"]*)\"(?s).*?<input type=\"submit\" name=\"actionstring\" value=\"([^\\n\"]*)\"");
-   // private Pattern   patternForFormData               = Pattern.compile("document.dl.action=\'([^\\n\"]*)\"(?s).*?\';document.dl.actionstring.value=\'([^\\n\"]*)\'");
-//private String dataPattern= "document.dl.action=\'°\';document.dl.actionstring.value=\'°\'\">°<br></td></tr></table><h3>Kein Premium-User. Bitte<br>'°'<img src=°><br>hier eingeben: <input type=\"text\" name=\"accesscode\" °size=\"5\" maxlength=\"4\"> <input type=\"submit\" name=\"actionstring\" value=\"°\"></h3></form>";
-  
-private String dataPatternPost= "<form name=\"dl\" ' +°'action=\"°\" method=\"post\">'";//"document.dl.action=°document.dl.actionstring.value";
+    // private Pattern patternForFormData = Pattern.compile("<form name=\"dl\".*
+    // action=\"([^\\n\"]*)\"(?s).*?<input type=\"submit\" name=\"actionstring\"
+    // value=\"([^\\n\"]*)\"");
+    // private Pattern patternForFormData =
+    // Pattern.compile("document.dl.action=\'([^\\n\"]*)\"(?s).*?\';document.dl.actionstring.value=\'([^\\n\"]*)\'");
+    // private String dataPattern=
+    // "document.dl.action=\'°\';document.dl.actionstring.value=\'°\'\">°<br></td></tr></table><h3>Kein
+    // Premium-User. Bitte<br>'°'<img src=°><br>hier eingeben: <input
+    // type=\"text\" name=\"accesscode\" °size=\"5\" maxlength=\"4\"> <input
+    // type=\"submit\" name=\"actionstring\" value=\"°\"></h3></form>";
+    private String                         dataPatternPost                    = "<form name=\"dl\" ' +°'action=\"°\" method=\"post\">'";                                                                     // "document.dl.action=°document.dl.actionstring.value";
 
-private String dataPatternAction ="name=\"actionstring\" value=\"°\"></h3></form>";
-/**
+    private String                         dataPatternAction                  = "name=\"actionstring\" value=\"°\"></h3></form>";
+
+    /**
      * Pattern trifft zu wenn die "Ihre Ip läd gerade eine datei " Seite kommt
      */
 
-    private String                         patternForAlreadyDownloading     = "bereits eine Datei runter";
+    private String                         patternForAlreadyDownloading       = "bereits eine Datei runter";
 
     /**
      * Muss static bleiben!!!. Das Rapidshare Plugin merkt sich so, dass es
      * gerade wartezeit hat. Überflüssige
      */
-    private static long                    END_OF_DOWNLOAD_LIMIT            = 0;
-    private static final String   captchaWrong="Access code wrong";
-    /**s
-     * Das DownloadLimit wurde erreicht (?s)Downloadlimit.*Oder warte ([0-9]+)
+    private static long                    END_OF_DOWNLOAD_LIMIT              = 0;
+
+    private static final String            captchaWrong                       = "Access code wrong";
+
+    /**
+     * s Das DownloadLimit wurde erreicht (?s)Downloadlimit.*Oder warte ([0-9]+)
      */
-    private String                        patternErrorDownloadLimitReached = "Oder warte ° Minute";
+    private String                         patternErrorDownloadLimitReached   = "Oder warte ° Minute";
 
     // private Pattern patternErrorCaptchaWrong = Pattern.compile("(zugriffscode
     // falsch|code wrong)", Pattern.CASE_INSENSITIVE);
-    private Pattern                        patternErrorFileAbused           = Pattern.compile("(darf nicht verteilt werden|forbidden to be shared)", Pattern.CASE_INSENSITIVE);
+    private Pattern                        patternErrorFileAbused             = Pattern.compile("(darf nicht verteilt werden|forbidden to be shared)", Pattern.CASE_INSENSITIVE);
 
-    private Pattern                        patternErrorFileNotFound         = Pattern.compile("(datei nicht gefunden|file not found)", Pattern.CASE_INSENSITIVE);
-                                                                            
-    private String                         patternForSelectedServer         ="<input checked °actionstring.value=°>°<br>";
+    private Pattern                        patternErrorFileNotFound           = Pattern.compile("(datei nicht gefunden|file not found)", Pattern.CASE_INSENSITIVE);
 
-    private String                         patternForServer                 ="<input° type=\"radio\" name=\"°\" onclick=\"document.dl.action=°http://°/files/°;document.dl.actionstring.value=°\"> °<br>";
+    private String                         patternForSelectedServer           = "<input checked °actionstring.value=°>°<br>";
 
-    private String                         ticketWaitTimepattern            = "var c=°;";
+    private String                         patternForServer                   = "<input° type=\"radio\" name=\"°\" onclick=\"document.dl.action=°http://°/files/°;document.dl.actionstring.value=°\"> °<br>";
 
-    private String                         ticketCodePattern                = "unescape('°')}";
+    private String                         ticketWaitTimepattern              = "var c=°;";
 
-    private String                         hardwareDefektString             = "wegen Hardwaredefekt nicht";
+    private String                         ticketCodePattern                  = "unescape('°')}";
 
-    private String                         deletedByUploaderString          = "Grund: Vom Uploader";
+    private String                         hardwareDefektString               = "wegen Hardwaredefekt nicht";
 
-    private String                         toManyUser                       = "Zu viele Benutzer";
+    private String                         deletedByUploaderString            = "Grund: Vom Uploader";
 
-    private String                         notUploaded                      = "Diese Datei ist noch nicht vollst";
+    private String                         toManyUser                         = "Zu viele Benutzer";
 
-    private static final String            PATTERN_ACCOUNT_EXPIRED          = "Dieser Account lief am";
+    private String                         notUploaded                        = "Diese Datei ist noch nicht vollst";
 
-    private static final String             PATTERN_ERROR_BOT ="Too many wrong codes";
-    private int                            waitTime                         = 500;
+    private static final String            PATTERN_ACCOUNT_EXPIRED            = "Dieser Account lief am";
+
+    private static final String            PATTERN_ERROR_BOT                  = "Too many wrong codes";
+
+    private int                            waitTime                           = 500;
 
     private String                         captchaAddress;
 
@@ -170,11 +182,11 @@ private String dataPatternAction ="name=\"actionstring\" value=\"°\"></h3></for
 
     private String                         actionString;
 
-    private HashMap<String, String>        postParameter                    = new HashMap<String, String>();
+    private HashMap<String, String>        postParameter                      = new HashMap<String, String>();
 
     private String                         finalURL;
 
-    private static HashMap<String, String> serverMap                        = new HashMap<String, String>();
+    private static HashMap<String, String> serverMap                          = new HashMap<String, String>();
 
     private static String[]                serverList1;
 
@@ -182,7 +194,7 @@ private String dataPatternAction ="name=\"actionstring\" value=\"°\"></h3></for
 
     private String[]                       serverList2;
 
-    private boolean                        hardewareError                   = false;
+    private boolean                        hardewareError                     = false;
 
     private String                         ticketCode;
 
@@ -190,45 +202,47 @@ private String dataPatternAction ="name=\"actionstring\" value=\"°\"></h3></for
 
     private String                         captchaCode;
 
-    private File 						   captchaFile;
-    
-    private Boolean 					   noLimitFreeInsteadPremium 		= false;
+    private File                           captchaFile;
 
-    private static long                    LAST_FILE_CHECK                  = 0;
+    private Boolean                        noLimitFreeInsteadPremium          = false;
 
-    private static final String            PROPERTY_BYTES_TO_LOAD           = "BYTES_TO_LOAD";
+    private static long                    LAST_FILE_CHECK                    = 0;
 
-    private static final String            PROPERTY_SELECTED_SERVER         = "SELECTED_SERVER";
+    private static final String            PROPERTY_BYTES_TO_LOAD             = "BYTES_TO_LOAD";
 
-    private static final String            PROPERTY_SELECTED_SERVER2        = "SELECTED_SERVER#2";
+    private static final String            PROPERTY_SELECTED_SERVER           = "SELECTED_SERVER";
 
-    private static final String            PROPERTY_USE_TELEKOMSERVER       = "USE_TELEKOMSERVER";
+    private static final String            PROPERTY_SELECTED_SERVER2          = "SELECTED_SERVER#2";
 
-    private static final String            PROPERTY_USE_PRESELECTED         = "USE_PRESELECTED";
+    private static final String            PROPERTY_USE_TELEKOMSERVER         = "USE_TELEKOMSERVER";
 
-    private static final String            PROPERTY_USE_SSL                 = "USE_SSL";
+    private static final String            PROPERTY_USE_PRESELECTED           = "USE_PRESELECTED";
 
-    private static final String            PROPERTY_WAIT_WHEN_BOT_DETECTED  = "WAIT_WHEN_BOT_DETECTED";
+    private static final String            PROPERTY_USE_SSL                   = "USE_SSL";
 
-    private static final String            PROPERTY_INCREASE_TICKET         = "INCREASE_TICKET";
+    private static final String            PROPERTY_WAIT_WHEN_BOT_DETECTED    = "WAIT_WHEN_BOT_DETECTED";
 
-    private static final String            PROPERTY_PREMIUM_USER_2          = "PREMIUM_USER_2";
+    private static final String            PROPERTY_INCREASE_TICKET           = "INCREASE_TICKET";
 
-    private static final String            PROPERTY_PREMIUM_PASS_2          = "PREMIUM_PASS_2";
+    private static final String            PROPERTY_PREMIUM_USER_2            = "PREMIUM_USER_2";
 
-    private static final String            PROPERTY_USE_PREMIUM_2           = "USE_PREMIUM_2";
+    private static final String            PROPERTY_PREMIUM_PASS_2            = "PREMIUM_PASS_2";
 
-    private static final String            PROPERTY_PREMIUM_USER_3          = "PREMIUM_USER_3";
+    private static final String            PROPERTY_USE_PREMIUM_2             = "USE_PREMIUM_2";
 
-    private static final String            PROPERTY_PREMIUM_PASS_3          = "PREMIUM_PASS_3";
+    private static final String            PROPERTY_PREMIUM_USER_3            = "PREMIUM_USER_3";
 
-    private static final String            PROPERTY_USE_PREMIUM_3           = "USE_PREMIUM_3";
-    
+    private static final String            PROPERTY_PREMIUM_PASS_3            = "PREMIUM_PASS_3";
+
+    private static final String            PROPERTY_USE_PREMIUM_3             = "USE_PREMIUM_3";
+
     private static final String            PROPERTY_FREE_IF_LIMIT_NOT_REACHED = "FREE_IF_LIMIT_NOT_REACHED";
 
-    private static final String PATTERN_DOWNLOAD_ERRORPAGE = "RapidShare: 1-Click Webhosting";
+    private static final String            PATTERN_DOWNLOAD_ERRORPAGE         = "RapidShare: 1-Click Webhosting";
 
-    private static int                     ERRORS                           = 0;
+    private static final String            PATTERN_ACCOUNT_OVERLOAD           = "runtergeladen und damit das Limit";
+
+    private static int                     ERRORS                             = 0;
 
     @Override
     public String getCoder() {
@@ -361,7 +375,7 @@ private String dataPatternAction ="name=\"actionstring\" value=\"°\"></h3></for
         cfg.setDefaultValue(false);
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getProperties(), PROPERTY_USE_PRESELECTED, JDLocale.L("plugins.hoster.rapidshare.com.preSelection", "Vorauswahl übernehmen (*2)")));
         cfg.setDefaultValue(true);
-        
+
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_LABEL, "1. " + JDLocale.L("plugins.hoster.rapidshare.com.premiumAccount", "Premium Account")));
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getProperties(), PROPERTY_PREMIUM_USER, JDLocale.L("plugins.hoster.rapidshare.com.premiumUser", "Premium User")));
@@ -384,7 +398,7 @@ private String dataPatternAction ="name=\"actionstring\" value=\"°\"></h3></for
         cfg.setDefaultValue("Passwort");
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getProperties(), PROPERTY_USE_PREMIUM_3, JDLocale.L("plugins.hoster.rapidshare.com.usePremium3", "3. Premium Account verwenden")));
         cfg.setDefaultValue(false);
-        
+
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getProperties(), PROPERTY_USE_SSL, JDLocale.L("plugins.hoster.rapidshare.com.useSSL", "SSL Downloadlink verwenden")));
         cfg.setDefaultValue(false);
@@ -393,8 +407,8 @@ private String dataPatternAction ="name=\"actionstring\" value=\"°\"></h3></for
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_SPINNER, getProperties(), PROPERTY_WAIT_WHEN_BOT_DETECTED, JDLocale.L("plugins.hoster.rapidshare.com.waitTimeOnBotDetection", "Wartezeit [ms] wenn Bot erkannt wird.(-1 für Reconnect)"), -1, 600000).setDefaultValue(-1).setStep(1000));
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_SPINNER, getProperties(), PROPERTY_INCREASE_TICKET, JDLocale.L("plugins.hoster.rapidshare.com.increaseTicketTime", "Ticketwartezeit verlängern (0%-500%)"), 0, 500).setDefaultValue(0).setExpertEntry(true).setStep(1));
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_SPINNER, getProperties(), PROPERTY_BYTES_TO_LOAD, JDLocale.L("plugins.hoster.rapidshare.com.loadFirstBytes", "Nur die ersten * KiloBytes jeder Datei laden[-1 to disable]"), -1, 100000).setDefaultValue(-1).setStep(500));
-       // cfg.setDefaultValue(true);
-        
+        // cfg.setDefaultValue(true);
+
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_LABEL, JDLocale.L("plugins.hoster.rapidshare.com.important", "WICHTIG! ")));
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_LABEL, JDLocale.L("plugins.hoster.rapidshare.com.concernsPremiumUser", "(*1)Premiumuser müssen die Bevorzugten Server in den Rapidshare-Online-Optionen (rs.com Premiumbereich) einstellen falls sie Direktlinks aktiviert haben!")));
@@ -423,10 +437,7 @@ private String dataPatternAction ="name=\"actionstring\" value=\"°\"></h3></for
         logger.info("get Next Step " + step);
         // premium
         PluginStep st;
-        if ((this.getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM, false)
-        		|| this.getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM_2, false)
-        		|| this.getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM_3, false))
-        		&& !noLimitFreeInsteadPremium) {
+        if ((this.getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM, false) || this.getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM_2, false) || this.getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM_3, false)) && !noLimitFreeInsteadPremium) {
             st = this.doPremiumStep(step, downloadLink);
         }
         else {
@@ -551,7 +562,7 @@ private String dataPatternAction ="name=\"actionstring\" value=\"°\"></h3></for
                     // Auswahl ob free oder prem
 
                     requestInfo = postRequest(new URL(newURL), null, null, null, "dl.start=free", true);
-                
+
                     // Falls der check erst nach der free auswahl sein muss,
                     // dann
                     // wäre hier der richtige Platz
@@ -566,7 +577,7 @@ private String dataPatternAction ="name=\"actionstring\" value=\"°\"></h3></for
 
                     if (JDUtilities.getController().isLocalFileInProgress(downloadLink)) {
                         logger.severe("File already is in progress. " + downloadLink.getFileOutput());
-                        downloadLink.setStatus(DownloadLink.STATUS_ERROR_OUTPUTFILE_INPROGRESS);
+                        downloadLink.setStatus(DownloadLink.STATUS_ERROR_OUTPUTFILE_OWNED_BY_ANOTHER_LINK);
                         step.setStatus(PluginStep.STATUS_ERROR);
                         return step;
                     }
@@ -616,14 +627,14 @@ private String dataPatternAction ="name=\"actionstring\" value=\"°\"></h3></for
                     ticketCode = JDUtilities.htmlDecode(getSimpleMatch(requestInfo.getHtmlCode(), ticketCodePattern, 0));
                     ticketCode = requestInfo.getHtmlCode() + " " + ticketCode;
                     captchaAddress = getFirstMatch(ticketCode, patternForCaptcha, 1);
-                   
+
                     if (captchaAddress == null) {
                         logger.severe("Captcha Address not found");
                         downloadLink.setStatus(DownloadLink.STATUS_ERROR_CAPTCHA_IMAGEERROR);
                         step.setStatus(PluginStep.STATUS_ERROR);
                         return step;
                     }
-                  this.captchaFile = this.getLocalCaptchaFile(this);
+                    this.captchaFile = this.getLocalCaptchaFile(this);
                     if (!JDUtilities.download(captchaFile, captchaAddress) || !captchaFile.exists()) {
                         logger.severe("Captcha Download fehlgeschlagen: " + captchaAddress);
                         step.setParameter(null);
@@ -643,8 +654,7 @@ private String dataPatternAction ="name=\"actionstring\" value=\"°\"></h3></for
                     this.captchaCode = Plugin.getCaptchaCode(captchaFile, this);
                     timer = System.currentTimeMillis() - timer;
                     logger.info("captcha detection: " + timer + " ms");
-                    
-                 
+
                     if (wait != null) {
                         long pendingTime = Long.parseLong(wait);
 
@@ -663,8 +673,7 @@ private String dataPatternAction ="name=\"actionstring\" value=\"°\"></h3></for
                         // TODO: Gibt es file sbei denen es kein Ticket gibt?
                         logger.finer("Kein Ticket gefunden. fahre fort");
                         ticketCode = requestInfo.getHtmlCode();
-                        
-                        
+
                         step.setParameter(10l);
                         return step;
                     }
@@ -696,15 +705,15 @@ private String dataPatternAction ="name=\"actionstring\" value=\"°\"></h3></for
                 boolean preselected = this.getProperties().getBooleanProperty(PROPERTY_USE_PRESELECTED, true);
 
                 // post daten lesen
-               // postTarget = getFirstMatch(ticketCode, patternForFormData, 1);
-               // actionString = getFirstMatch(ticketCode, patternForFormData, 2);
-                
-               // postTarget=this.getSimpleMatch(ticketCode, dataPattern, 0);
-              //  actionString=this.getSimpleMatch(ticketCode, dataPattern, 1);
-                postTarget=getSimpleMatch(ticketCode, dataPatternPost,1);
-                actionString=getSimpleMatch(ticketCode, dataPatternAction,0);
-               
+                // postTarget = getFirstMatch(ticketCode, patternForFormData,
+                // 1);
+                // actionString = getFirstMatch(ticketCode, patternForFormData,
+                // 2);
 
+                // postTarget=this.getSimpleMatch(ticketCode, dataPattern, 0);
+                // actionString=this.getSimpleMatch(ticketCode, dataPattern, 1);
+                postTarget = getSimpleMatch(ticketCode, dataPatternPost, 1);
+                actionString = getSimpleMatch(ticketCode, dataPatternAction, 0);
 
                 if (postTarget == null) {
                     logger.severe("postTarget not found");
@@ -712,8 +721,8 @@ private String dataPatternAction ="name=\"actionstring\" value=\"°\"></h3></for
                     step.setStatus(PluginStep.STATUS_ERROR);
                     return step;
                 }
-               // postTarget=postTarget.substring(2, postTarget.length()-3);
-             //  logger.info(postTarget+" -"+actionString);
+                // postTarget=postTarget.substring(2, postTarget.length()-3);
+                // logger.info(postTarget+" -"+actionString);
                 if (actionString == null) {
                     logger.severe("actionString not found");
                     downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN);
@@ -723,9 +732,9 @@ private String dataPatternAction ="name=\"actionstring\" value=\"°\"></h3></for
                 // Vector<String> serverids = getAllSimpleMatches(ticketCode,
                 // patternForServer, 3);
                 Vector<String> serverstrings = getAllSimpleMatches(ticketCode, patternForServer, 7);
-logger.info(serverstrings+"");
+                logger.info(serverstrings + "");
 
-//logger.info(ticketCode);
+                // logger.info(ticketCode);
                 logger.info("wished Mirror #1 Server " + serverAbb);
                 logger.info("wished Mirror #2 Server " + server2Abb);
                 String selected = getSimpleMatch(ticketCode, patternForSelectedServer, 2);
@@ -761,27 +770,25 @@ logger.info(serverstrings+"");
                 break;
             case PluginStep.STEP_DOWNLOAD:
 
-               
-                
                 actionString = actionString.replace(' ', '+');
                 postParameter.put("mirror", "on");
                 postParameter.put("accesscode", this.captchaCode);
                 postParameter.put("actionstring", actionString);
                 try {
-                    
-                    URLConnection urlConnection = new URL(postTarget).openConnection();
+
+                    HTTPConnection urlConnection = new HTTPConnection(new URL(postTarget).openConnection());
                     urlConnection.setDoOutput(true);
                     // Post Parameter vorbereiten
                     String postParams = createPostParameterFromHashMap(postParameter);
-                    
-                    postParams="mirror=on&accesscode="+captchaCode+"&actionstring="+actionString;
-                 
+
+                    postParams = "mirror=on&accesscode=" + captchaCode + "&actionstring=" + actionString;
+
                     OutputStreamWriter wr = new OutputStreamWriter(urlConnection.getOutputStream());
                     wr.write(postParams);
                     wr.flush();
                     // content-disposition: Attachment;
                     // filename=a_mc_cs3_g_cd.rsdf
-                   
+
                     String name = getFileNameFormHeader(urlConnection);
                     if (name.toLowerCase().matches(".*\\..{1,5}\\.html$")) name = name.replaceFirst("\\.html$", "");
                     downloadLink.setName(name);
@@ -808,7 +815,7 @@ logger.info(serverstrings+"");
                     logger.info("link: " + postTarget.substring(0, 30) + " " + actionString);
                     int errorid;
                     if ((errorid = download(downloadLink, urlConnection, 1024 * getProperties().getIntegerProperty(PROPERTY_BYTES_TO_LOAD, -1))) == DOWNLOAD_SUCCESS) {
-                        if(new File(downloadLink.getFileOutput()).length()<4000&&JDUtilities.getLocalFile(new File(downloadLink.getFileOutput())).indexOf(captchaWrong)>0){
+                        if (new File(downloadLink.getFileOutput()).length() < 4000 && JDUtilities.getLocalFile(new File(downloadLink.getFileOutput())).indexOf(captchaWrong) > 0) {
                             new File(downloadLink.getFileOutput()).delete();
                             JDUtilities.appendInfoToFilename(this, captchaFile, actionString + "_" + captchaCode, false);
                             downloadLink.setStatus(DownloadLink.STATUS_ERROR_CAPTCHA_WRONG);
@@ -817,28 +824,26 @@ logger.info(serverstrings+"");
                             step.setStatus(PluginStep.STATUS_ERROR);
                             return step;
                         }
-                        if(new File(downloadLink.getFileOutput()).length()<4000&&JDUtilities.getLocalFile(new File(downloadLink.getFileOutput())).indexOf(PATTERN_ERROR_BOT)>0){
+                        if (new File(downloadLink.getFileOutput()).length() < 4000 && JDUtilities.getLocalFile(new File(downloadLink.getFileOutput())).indexOf(PATTERN_ERROR_BOT) > 0) {
                             new File(downloadLink.getFileOutput()).delete();
-                           
+
                             downloadLink.setStatus(DownloadLink.STATUS_ERROR_BOT_DETECTED);
                             logger.info("Error detected. Bot detected");
-                           
+
                             step.setStatus(PluginStep.STATUS_ERROR);
                             return step;
-                        } 
-                        if(new File(downloadLink.getFileOutput()).length()<4000&&JDUtilities.getLocalFile(new File(downloadLink.getFileOutput())).indexOf(PATTERN_DOWNLOAD_ERRORPAGE)>0){
-                            
-                           
+                        }
+                        if (new File(downloadLink.getFileOutput()).length() < 4000 && JDUtilities.getLocalFile(new File(downloadLink.getFileOutput())).indexOf(PATTERN_DOWNLOAD_ERRORPAGE) > 0) {
+
                             downloadLink.setStatus(DownloadLink.STATUS_ERROR_PLUGIN_SPECIFIC);
                             downloadLink.setStatusText("Download error(>log)");
-                            
-                            logger.severe("Error detected. "+JDUtilities.getLocalFile(new File(downloadLink.getFileOutput())));
+
+                            logger.severe("Error detected. " + JDUtilities.getLocalFile(new File(downloadLink.getFileOutput())));
                             new File(downloadLink.getFileOutput()).delete();
                             step.setStatus(PluginStep.STATUS_ERROR);
                             return step;
-                        } 
-                       
-                        
+                        }
+
                         step.setStatus(PluginStep.STATUS_DONE);
                         downloadLink.setStatus(DownloadLink.STATUS_DONE);
                         JDUtilities.appendInfoToFilename(this, captchaFile, actionString + "_" + captchaCode, true);
@@ -860,10 +865,8 @@ logger.info(serverstrings+"");
                          * 1).equalsIgnoreCase(lcs[i].getDecodedValue())&&lcs[i].getValityPercent()<30.0) { //
                          * logger.severe("OK letter: "+i+": //
                          * JAC:"+lcs[i].getDecodedValue()+"("+lcs[i].getValityPercent()+") //
-                         * USER: // "+captchaTxt.substring(i,i+1));
-                         *  } else {
-                         * 
-                         *  // logger.severe("Unknown letter: // "+i+": //
+                         * USER: // "+captchaTxt.substring(i,i+1)); } else { //
+                         * logger.severe("Unknown letter: // "+i+": //
                          * JAC:"+lcs[i].getDecodedValue()+"("+lcs[i].getValityPercent()+") //
                          * USER: // "+captchaTxt.substring(i,i+1)); //
                          * Pixelstring. getB() ist immer der // neue letter
@@ -876,11 +879,9 @@ logger.info(serverstrings+"");
                          * Upload.sendToCaptchaExchangeServer(plg, pixelString,
                          * character);
                          * 
-                         * }}).start();
-                         *  } }
+                         * }}).start(); } }
                          * 
-                         * }else{ logger.info("LCS not length comp"); }
-                         *  }
+                         * }else{ logger.info("LCS not length comp"); } }
                          */
                         return null;
                     }
@@ -896,9 +897,7 @@ logger.info(serverstrings+"");
                             logger.info("Error detected. Update captchafile");
                             new CaptchaMethodLoader().interact("rapidshare.com");
                         }
-                        
-                        
-                        
+
                         step.setStatus(PluginStep.STATUS_ERROR);
                     }
                 }
@@ -990,18 +989,18 @@ logger.info(serverstrings+"");
                             step.setStatus(PluginStep.STATUS_TODO);
                             return step;
                         }
-                        if ( this.getProperties().getBooleanProperty(PROPERTY_FREE_IF_LIMIT_NOT_REACHED, false) ) {
-                        	requestInfo = postRequest(new URL(newURL), null, null, null, "dl.start=FREE", true);
-                        	String strWaitTime = getSimpleMatch(requestInfo.getHtmlCode(), patternErrorDownloadLimitReached, 0);
-                        	// wait time pattern not found -> free download
-                        	if ( strWaitTime == null
-                        			&& !requestInfo.containsHTML(patternForAlreadyDownloading)
-                        			&& !requestInfo.containsHTML(toManyUser) ) {
-                        		logger.info("Download limit not reached yet -> free download");
-                        		currentStep = steps.firstElement();
-                        		noLimitFreeInsteadPremium = true;
-                        		return doFreeStep(step, downloadLink);
-                        	} else logger.info("Download limit reached or free download not possible -> premium download");
+                        if (this.getProperties().getBooleanProperty(PROPERTY_FREE_IF_LIMIT_NOT_REACHED, false)) {
+                            requestInfo = postRequest(new URL(newURL), null, null, null, "dl.start=FREE", true);
+                            String strWaitTime = getSimpleMatch(requestInfo.getHtmlCode(), patternErrorDownloadLimitReached, 0);
+                            // wait time pattern not found -> free download
+                            if (strWaitTime == null && !requestInfo.containsHTML(patternForAlreadyDownloading) && !requestInfo.containsHTML(toManyUser)) {
+                                logger.info("Download limit not reached yet -> free download");
+                                currentStep = steps.firstElement();
+                                noLimitFreeInsteadPremium = true;
+                                return doFreeStep(step, downloadLink);
+                            }
+                            else
+                                logger.info("Download limit reached or free download not possible -> premium download");
                         }
                         // Auswahl ob free oder prem
                         requestInfo = postRequest(new URL(newURL), null, null, null, "dl.start=PREMIUM", true);
@@ -1072,16 +1071,15 @@ logger.info(serverstrings+"");
                             }
                             catch (Exception e) {
 
-                                if (requestInfo.getResponseCode() == 403) {
-                                    logger.severe("Premium Account overload");
-                                    downloadLink.setStatus(DownloadLink.STATUS_ERROR_PLUGIN_SPECIFIC);
-                                    step.setParameter("Premium overload>25GB");
-                                    step.setStatus(PluginStep.STATUS_ERROR);
-                                    getProperties().setProperty(premium, false);
-                                    return step;
-                                }
                             }
-
+                            if (requestInfo.containsHTML(PATTERN_ACCOUNT_OVERLOAD)) {
+                                logger.severe("Premium Account overload");
+                                downloadLink.setStatus(DownloadLink.STATUS_ERROR_PLUGIN_SPECIFIC);
+                                step.setParameter("Premium overload>25GB");
+                                step.setStatus(PluginStep.STATUS_ERROR);
+                                getProperties().setProperty(premium, false);
+                                return step;
+                            }
                             // logger.info(requestInfo.getHeaders() + " - " +
                             // requestInfo.getHtmlCode());
                             if (requestInfo.containsHTML(PATTERN_ACCOUNT_EXPIRED)) {
@@ -1096,9 +1094,9 @@ logger.info(serverstrings+"");
                             // <a
                             // href="http://rs214cg.rapidshare.com/files/50231143/dl/Discovery.rar">Download
                             // via Cogent</a><br>
-                            // logger.info(requestInfo.getHtmlCode());
+
                             Vector<String> urlStrings = getAllSimpleMatches(requestInfo.getHtmlCode(), "<a href=\"http://rs°\">Download via °</a><br>", 1);
-                            // logger.info(urlStrings + " - ");
+
                             logger.info("wished Mirror #1 Server " + serverAbb);
                             logger.info("wished Mirror #2 Server " + server2Abb);
                             url = null;
@@ -1191,7 +1189,7 @@ logger.info(serverstrings+"");
                     }
                     logger.info("Loading from: " + finalURL.substring(0, 30));
                     HashMap<String, String> ranger = new HashMap<String, String>();
-                    URLConnection urlConnection;
+                    HTTPConnection urlConnection;
                     File fileOutput = new File(downloadLink.getFileOutput() + ".jdd");
                     if (fileOutput.exists()) {
                         ranger.put("Range", "bytes=" + fileOutput.length() + "-");
@@ -1203,19 +1201,18 @@ logger.info(serverstrings+"");
 
                         // int errorid;
                         if ((download(downloadLink, urlConnection, 1024 * getProperties().getIntegerProperty(PROPERTY_BYTES_TO_LOAD, -1), (int) fileOutput.length())) == DOWNLOAD_SUCCESS) {
-                            if(new File(downloadLink.getFileOutput()).length()<4000&&JDUtilities.getLocalFile(new File(downloadLink.getFileOutput())).indexOf(PATTERN_DOWNLOAD_ERRORPAGE)>0){
+                            if (new File(downloadLink.getFileOutput()).length() < 4000 && JDUtilities.getLocalFile(new File(downloadLink.getFileOutput())).indexOf(PATTERN_DOWNLOAD_ERRORPAGE) > 0) {
                                 new File(downloadLink.getFileOutput()).delete();
-                               
+
                                 downloadLink.setStatus(DownloadLink.STATUS_ERROR_PLUGIN_SPECIFIC);
                                 downloadLink.setStatusText("Download error(>log)");
-                                
-                                logger.severe("Error detected. "+JDUtilities.getLocalFile(new File(downloadLink.getFileOutput())));
-                               
+
+                                logger.severe("Error detected. " + JDUtilities.getLocalFile(new File(downloadLink.getFileOutput())));
+
                                 step.setStatus(PluginStep.STATUS_ERROR);
                                 return step;
-                            } 
-                            
-                            
+                            }
+
                             step.setStatus(PluginStep.STATUS_DONE);
                             downloadLink.setStatus(DownloadLink.STATUS_DONE);
                             return null;
@@ -1240,34 +1237,29 @@ logger.info(serverstrings+"");
                         String name = getFileNameFormHeader(urlConnection);
                         if (name.toLowerCase().matches(".*\\..{1,5}\\.html$")) name = name.replaceFirst("\\.html$", "");
                         downloadLink.setName(name);
-
-                        // int errorid;
-                        if ((download(downloadLink, urlConnection, 1024 * getProperties().getIntegerProperty(PROPERTY_BYTES_TO_LOAD, -1))) == DOWNLOAD_SUCCESS) {
-                            if(new File(downloadLink.getFileOutput()).length()<4000&&JDUtilities.getLocalFile(new File(downloadLink.getFileOutput())).indexOf(PATTERN_DOWNLOAD_ERRORPAGE)>0){
+                        Download dl = new Download(this, downloadLink, urlConnection);
+                        dl.setChunks(3);
+                        dl.startDownload();
+                        if (dl.getErrors().size() == 0) {
+                            if (new File(downloadLink.getFileOutput()).length() < 4000 && JDUtilities.getLocalFile(new File(downloadLink.getFileOutput())).indexOf(PATTERN_DOWNLOAD_ERRORPAGE) > 0) {
                                 new File(downloadLink.getFileOutput()).delete();
-                               
+
                                 downloadLink.setStatus(DownloadLink.STATUS_ERROR_PLUGIN_SPECIFIC);
                                 downloadLink.setStatusText("Download error(>log)");
-                                
-                                logger.severe("Error detected. "+JDUtilities.getLocalFile(new File(downloadLink.getFileOutput())));
-                               
+
+                                logger.severe("Error detected.  " + JDUtilities.getLocalFile(new File(downloadLink.getFileOutput())));
+
                                 step.setStatus(PluginStep.STATUS_ERROR);
-                                return step;
-                            } 
-                            
+                                return null;
+                            }
+
                             step.setStatus(PluginStep.STATUS_DONE);
                             downloadLink.setStatus(DownloadLink.STATUS_DONE);
                             return null;
-                        }
-                        else if (aborted) {
-                            logger.warning("Plugin abgebrochen");
-                            downloadLink.setStatus(DownloadLink.STATUS_TODO);
-                            step.setStatus(PluginStep.STATUS_TODO);
-                        }
-                        else {
+                        }                      
 
-                            step.setStatus(PluginStep.STATUS_ERROR);
-                        }
+                  
+                      return null;
                     }
 
                 }
@@ -1288,7 +1280,7 @@ logger.info(serverstrings+"");
     @Override
     public boolean doBotCheck(File file) {
         try {
-     
+
             return md5sum(file).equals(botHash);
         }
         catch (NoSuchAlgorithmException e) {

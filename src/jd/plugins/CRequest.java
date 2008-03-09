@@ -2,9 +2,9 @@ package jd.plugins;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.net.URLConnection;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -185,7 +185,7 @@ public class CRequest {
 	/**
 	 * @return the connection
 	 */
-	public HttpURLConnection getConnection() {
+	public HTTPConnection getConnection() {
 		return requestInfo.getConnection();
 	}
 
@@ -301,7 +301,7 @@ public class CRequest {
 	 */
 	public CaptchaInfo<File, String> getCaptchaCode(Plugin plugin) {
 		boolean withHtmlCodeBak = withHtmlCode=false;
-		HttpURLConnection con = getConnection();
+		HTTPConnection con = getConnection();
 		String ct = con.getContentType().toLowerCase();
 		if(ct!=null && ct.contains("image/"))
 		{

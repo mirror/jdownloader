@@ -4,9 +4,11 @@ import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.net.URLConnection;
+
 import java.util.regex.Pattern;
+
 import jd.plugins.DownloadLink;
+import jd.plugins.HTTPConnection;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginStep;
 
@@ -70,7 +72,7 @@ public class RamZal extends PluginForHost {
 			requestInfo = getRequestWithoutHtmlCode(new URL(downloadLink
 					.getDownloadURL()), null, null, true);
 
-			URLConnection urlConnection = requestInfo.getConnection();
+			HTTPConnection urlConnection = requestInfo.getConnection();
 			downloadLink.setName(getFileNameFormHeader(urlConnection));
 			downloadLink.setDownloadMax(urlConnection.getContentLength());
 			if (!hasEnoughHDSpace(downloadLink)) {
@@ -110,7 +112,7 @@ public class RamZal extends PluginForHost {
 		try {
 			requestInfo = getRequestWithoutHtmlCode(new URL(downloadLink
 					.getDownloadURL()), null, null, true);
-			URLConnection urlConnection = requestInfo.getConnection();
+HTTPConnection urlConnection = requestInfo.getConnection();
 			downloadLink.setName(getFileNameFormHeader(urlConnection));
 			downloadLink.setDownloadMax(urlConnection.getContentLength());
 			return true;

@@ -178,7 +178,8 @@ if(content==null||content.length()==0)return;
                 try {
                     JLinkButton.OpenURL(requestInfo.getLocation());
                 }
-                catch (MalformedURLException e1) {
+                catch (MalformedURLException e1){
+                    
                     JOptionPane.showInputDialog(this, JDLocale.L("gui.logDialog.logLink","Log-Link"), requestInfo.getLocation());
                     
                 }

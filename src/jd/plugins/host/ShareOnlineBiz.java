@@ -4,11 +4,11 @@ import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.net.URLConnection;
 import java.util.regex.Pattern;
 
 import jd.plugins.DownloadLink;
 import jd.plugins.Form;
+import jd.plugins.HTTPConnection;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginStep;
@@ -288,7 +288,7 @@ public class ShareOnlineBiz extends PluginForHost {
                         dlink = "http://" + url.getHost() + "/" + getFirstMatch(requestInfo.getHtmlCode(), dloc, 1);
                     }
                     requestInfo = getRequestWithoutHtmlCode(new URL(dlink), null, null, false);
-                    URLConnection urlConnection = requestInfo.getConnection();
+                    HTTPConnection urlConnection = requestInfo.getConnection();
                     int length = urlConnection.getContentLength();
                     downloadLink.setDownloadMax(length);
                     String filename = getFileNameFormHeader(urlConnection);

@@ -5,7 +5,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.net.URLConnection;
+
 import java.util.regex.Pattern;
 
 import jd.config.ConfigContainer;
@@ -230,7 +230,7 @@ public class Netloadin extends PluginForHost {
                         step.setStatus(PluginStep.STATUS_ERROR);
                         return step;
                     }
-                    if (download(downloadLink, (URLConnection) requestInfo.getConnection())!=DOWNLOAD_SUCCESS) {
+                    if (download(downloadLink,  requestInfo.getConnection())!=DOWNLOAD_SUCCESS) {
                         step.setStatus(PluginStep.STATUS_ERROR);
                         
                     }
@@ -319,7 +319,7 @@ public class Netloadin extends PluginForHost {
                     step.setStatus(PluginStep.STATUS_ERROR);
                     return step;
                 }
-                if (download(downloadLink, (URLConnection) requestInfo.getConnection())!=DOWNLOAD_SUCCESS) {
+                if (download(downloadLink,  requestInfo.getConnection())!=DOWNLOAD_SUCCESS) {
                     step.setStatus(PluginStep.STATUS_ERROR);
                     
                 }

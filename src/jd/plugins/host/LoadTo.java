@@ -8,6 +8,7 @@ import java.net.URLConnection;
 import java.util.regex.Pattern;
 
 import jd.plugins.DownloadLink;
+import jd.plugins.HTTPConnection;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
@@ -28,7 +29,7 @@ public class LoadTo extends PluginForHost {
 
     private String               downloadURL              = "";
 
-    private URLConnection        urlConnection;
+    private HTTPConnection        urlConnection;
 
     /*
      * Suchmasken (z.B. Fehler)
@@ -184,7 +185,7 @@ String fileSize = JDUtilities.htmlDecode(getSimpleMatch(requestInfo.getHtmlCode(
                 case PluginStep.STEP_WAIT_TIME:
                     // Download vorbereiten
                     downloadLink.setStatusText("Verbindung aufbauen(0-20s)");
-                    urlConnection = new URL(this.downloadURL).openConnection();
+                    urlConnection = new HTTPConnection(new URL(this.downloadURL).openConnection());
                     int length = urlConnection.getContentLength();
                     if (Math.abs(length - downloadLink.getDownloadMax()) > 1024) {
                         logger.warning("Filesize Check fehler. Neustart");

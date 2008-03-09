@@ -1,6 +1,6 @@
 package jd.plugins;
 
-import java.net.HttpURLConnection;
+
 import java.util.List;
 import java.util.Map;
 
@@ -26,7 +26,7 @@ public class RequestInfo {
      * Der zurückgelieferte Code
      */
     private int responseCode;
-    private HttpURLConnection connection;
+    private HTTPConnection connection;
     /**
      * Cookie
      */
@@ -62,7 +62,7 @@ public class RequestInfo {
     /**
      * @return the connection
      */
-    public HttpURLConnection getConnection() {
+    public HTTPConnection getConnection() {
         return connection;
     }
     /**
@@ -76,7 +76,7 @@ public class RequestInfo {
     public boolean containsHTML(String pattern){
         return getHtmlCode().indexOf(pattern)>=0;
     }
-    public void setConnection(HttpURLConnection connection) {
+    public void setConnection(HTTPConnection connection) {
         this.connection = connection;
     }
     public String toString()	{ return getHtmlCode(); }

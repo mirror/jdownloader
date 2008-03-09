@@ -11,9 +11,8 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
-import java.net.HttpURLConnection;
+
 import java.net.URL;
-import java.net.URLConnection;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.nio.ByteBuffer;
@@ -419,7 +418,7 @@ public abstract class Plugin {
      * @param con Connection
      * @return HashMap mit allen cookies
      */
-    public static HashMap<String, String> collectCookies(HttpURLConnection con) {
+    public static HashMap<String, String> collectCookies(HTTPConnection con) {
         Collection<String> cookieHeaders = con.getHeaderFields().get("Set-Cookie");
         HashMap<String, String> cookieMap = new HashMap<String, String>();
         if (cookieHeaders == null) return cookieMap;
@@ -442,7 +441,7 @@ public abstract class Plugin {
      * @param con
      * @return cookiestring
      */
-    public static String getCookieString(HttpURLConnection con) {
+    public static String getCookieString(HTTPConnection con) {
         String cookie = "";
         try {
         	List<String> list = con.getHeaderFields().get("Set-Cookie");
@@ -721,7 +720,7 @@ public abstract class Plugin {
      */
     public static RequestInfo getRequest(URL link, String cookie, String referrer, boolean redirect) throws IOException {
         // logger.finer("get: "+link+"(cookie: "+cookie+")");
-        HttpURLConnection httpConnection = (HttpURLConnection) link.openConnection();
+        HTTPConnection httpConnection = new HTTPConnection( link.openConnection());
         httpConnection.setReadTimeout(getReadTimeoutFromConfiguration());
         httpConnection.setConnectTimeout(getConnectTimeoutFromConfiguration());
         httpConnection.setInstanceFollowRedirects(redirect);
@@ -759,7 +758,7 @@ public abstract class Plugin {
     }
         public static RequestInfo getRequestWithoutHtmlCode(URL link, String cookie, String referrer, boolean redirect,int readTimeout,int requestTimeout) throws IOException {
         // logger.finer("get: "+link);
-        HttpURLConnection httpConnection = (HttpURLConnection) link.openConnection();
+            HTTPConnection httpConnection = new HTTPConnection( link.openConnection());
         httpConnection.setReadTimeout(readTimeout);
         httpConnection.setConnectTimeout(requestTimeout);
         httpConnection.setInstanceFollowRedirects(redirect);
@@ -779,7 +778,7 @@ public abstract class Plugin {
         httpConnection.setRequestProperty("User-Agent", "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1; SV1; .NET CLR 1.1.4322; .NET CLR 2.0.50727)");
         String location = httpConnection.getHeaderField("Location");
         String setcookie = getCookieString(httpConnection);
-        int responseCode = HttpURLConnection.HTTP_NOT_IMPLEMENTED;
+        int responseCode = 0;
         try {
             responseCode = httpConnection.getResponseCode();
         }
@@ -804,7 +803,7 @@ public abstract class Plugin {
      */
     public static RequestInfo getRequestWithoutHtmlCode(URL link, String cookie, String referrer, HashMap<String, String> requestProperties, boolean redirect) throws IOException {
         // logger.finer("get: "+link);
-        HttpURLConnection httpConnection = (HttpURLConnection) link.openConnection();
+        HTTPConnection httpConnection = new HTTPConnection( link.openConnection());
         httpConnection.setReadTimeout(getReadTimeoutFromConfiguration());
         httpConnection.setConnectTimeout(getConnectTimeoutFromConfiguration());
         httpConnection.setInstanceFollowRedirects(redirect);
@@ -829,16 +828,16 @@ public abstract class Plugin {
                 httpConnection.setRequestProperty(key, requestProperties.get(key));
             }
         }
-
+        httpConnection.connect();
         String location = httpConnection.getHeaderField("Location");
         String setcookie = getCookieString(httpConnection);
-        int responseCode = HttpURLConnection.HTTP_NOT_IMPLEMENTED;
+        int responseCode = 0;
         try {
             responseCode = httpConnection.getResponseCode();
         }
         catch (IOException e) {
         }
-        httpConnection.connect();
+        
         RequestInfo ri = new RequestInfo("", location, setcookie, httpConnection.getHeaderFields(), responseCode);
         ri.setConnection(httpConnection);
         return ri;
@@ -879,7 +878,7 @@ public abstract class Plugin {
     public static RequestInfo postRequest(URL string, String cookie, String referrer, HashMap<String, String> requestProperties, String parameter, boolean redirect,int readTimeout,int requestTimeout) throws IOException {
         // logger.finer("post: "+link+"(cookie:"+cookie+" parameter:
         // "+parameter+")");
-        HttpURLConnection httpConnection = (HttpURLConnection) string.openConnection();
+        HTTPConnection httpConnection = new HTTPConnection( string.openConnection());
         httpConnection.setReadTimeout(readTimeout);
         httpConnection.setConnectTimeout(requestTimeout);
         httpConnection.setInstanceFollowRedirects(redirect);
@@ -906,11 +905,11 @@ public abstract class Plugin {
         }
         httpConnection.setDoOutput(true);
         httpConnection.connect();
-        OutputStreamWriter wr = new OutputStreamWriter(httpConnection.getOutputStream());
-        if (parameter != null) wr.write(parameter);
-        wr.flush();
+        
+        httpConnection.post(parameter);
+    
         RequestInfo requestInfo = readFromURL(httpConnection);
-        wr.close();
+      
         requestInfo.setConnection(httpConnection);
         return requestInfo;
     }
@@ -929,7 +928,7 @@ public abstract class Plugin {
      */
     public static RequestInfo postRequestWithoutHtmlCode(URL link, String cookie, String referrer, String parameter, boolean redirect) throws IOException {
         // logger.finer("post: "+link);
-        HttpURLConnection httpConnection = (HttpURLConnection) link.openConnection();
+        HTTPConnection httpConnection = new HTTPConnection( link.openConnection());
         httpConnection.setReadTimeout(getReadTimeoutFromConfiguration());
         httpConnection.setConnectTimeout(getConnectTimeoutFromConfiguration());
         httpConnection.setInstanceFollowRedirects(redirect);
@@ -955,7 +954,7 @@ public abstract class Plugin {
         }
         String location = httpConnection.getHeaderField("Location");
         String setcookie = getCookieString(httpConnection);
-        int responseCode = HttpURLConnection.HTTP_NOT_IMPLEMENTED;
+        int responseCode = 0;
         try {
             responseCode = httpConnection.getResponseCode();
         }
@@ -974,7 +973,7 @@ public abstract class Plugin {
      * @return Ein Objekt, daß alle Informationen der Zieladresse beinhält
      * @throws IOException
      */
-    public static RequestInfo readFromURL(HttpURLConnection urlInput) throws IOException {
+    public static RequestInfo readFromURL(HTTPConnection urlInput) throws IOException {
         // Content-Encoding: gzip
         BufferedReader rd;
         if (urlInput.getHeaderField("Content-Encoding") != null && urlInput.getHeaderField("Content-Encoding").equalsIgnoreCase("gzip")) {
@@ -990,7 +989,7 @@ public abstract class Plugin {
         }
         String location = urlInput.getHeaderField("Location");
         String cookie = getCookieString(urlInput);
-        int responseCode = HttpURLConnection.HTTP_NOT_IMPLEMENTED;
+        int responseCode = 0;
         responseCode = urlInput.getResponseCode();
         RequestInfo requestInfo = new RequestInfo(htmlCode.toString(), location, cookie, urlInput.getHeaderFields(), responseCode);
         rd.close();
@@ -1008,18 +1007,19 @@ public abstract class Plugin {
      *            URL, die im DownloadLink hinterlegt ist
      * @return wahr, wenn alle Daten ausgelesen und gespeichert wurden
      */
-    public int download(DownloadLink downloadLink, URLConnection urlConnection) {
+    public int download(DownloadLink downloadLink, HTTPConnection urlConnection) {
 
         return download(downloadLink, urlConnection, -1);
 
     }
 
-    public int download(DownloadLink downloadLink, URLConnection urlConnection, int bytesToLoad) {
+    public int download(DownloadLink downloadLink, HTTPConnection urlConnection, int bytesToLoad) {
+        
         logger.info("Download try: "+downloadLink+" from "+downloadLink.getHost()+" Bytes: "+bytesToLoad);
    
         if(JDUtilities.getController().isLocalFileInProgress(downloadLink)){
             logger.severe("File already is in progress. " + downloadLink.getFileOutput());
-            downloadLink.setStatus(DownloadLink.STATUS_ERROR_OUTPUTFILE_INPROGRESS);
+            downloadLink.setStatus(DownloadLink.STATUS_ERROR_OUTPUTFILE_OWNED_BY_ANOTHER_LINK);
             return Plugin.DOWNLOAD_ERROR_OUTPUTFILE_IN_PROGRESS;
             
         }
@@ -1044,7 +1044,7 @@ public abstract class Plugin {
             int maxspeed = downloadLink.getMaximalspeed();
             ByteBuffer buffer = ByteBuffer.allocateDirect(maxspeed);
             // Falls keine urlConnection übergeben wurde
-            if (urlConnection == null) urlConnection = new URL(downloadLink.getDownloadURL()).openConnection();
+            if (urlConnection == null) urlConnection = new HTTPConnection(new URL(downloadLink.getDownloadURL()).openConnection());
             FileOutputStream fos = new FileOutputStream(fileOutput);
             // Länge aus HTTP-Header speichern:
             int contentLen = urlConnection.getContentLength();
@@ -1162,7 +1162,7 @@ public abstract class Plugin {
         return Plugin.DOWNLOAD_ERROR_UNKNOWN;
     }
    
-    public int download(DownloadLink downloadLink, URLConnection urlConnection, int bytesToLoad, int resumeAt) {
+    public int download(DownloadLink downloadLink, HTTPConnection urlConnection, int bytesToLoad, int resumeAt) {
 //        if(bytesToLoad==0){
 //            downloadLink.setStatus(DownloadLink.STATUS_ERROR_PLUGIN_SPECIFIC);
 //            downloadLink.setStatusText(JDLocale.L("plugins.download.error.0byte","Fehlerhafter Upload"));
@@ -1173,7 +1173,7 @@ public abstract class Plugin {
         
         if(JDUtilities.getController().isLocalFileInProgress(downloadLink)){
             logger.severe("File already is in progress. " + downloadLink.getFileOutput());
-            downloadLink.setStatus(DownloadLink.STATUS_ERROR_OUTPUTFILE_INPROGRESS);
+            downloadLink.setStatus(DownloadLink.STATUS_ERROR_OUTPUTFILE_OWNED_BY_ANOTHER_LINK);
             return Plugin.DOWNLOAD_ERROR_OUTPUTFILE_IN_PROGRESS;
             
         }
@@ -1323,7 +1323,7 @@ public abstract class Plugin {
      * @param urlConnection
      * @return Filename aus dem header (content disposition) extrahiert
      */
-    public String getFileNameFormHeader(URLConnection urlConnection) {
+    public String getFileNameFormHeader(HTTPConnection urlConnection) {
         // old: String ret =
         // getFirstMatch(urlConnection.getHeaderField("content-disposition"),
         // Pattern.compile("filename=['\"](.*?)['\"]",

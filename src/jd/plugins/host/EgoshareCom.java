@@ -1,18 +1,18 @@
 package jd.plugins.host;
 
-import jd.plugins.DownloadLink;
-import jd.plugins.PluginForHost;
-import jd.plugins.PluginStep;
-import jd.plugins.RequestInfo;
-import jd.utils.JDUtilities;
-
 import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.net.URLConnection;
 import java.net.URLDecoder;
 import java.util.regex.Pattern;
+
+import jd.plugins.DownloadLink;
+import jd.plugins.HTTPConnection;
+import jd.plugins.PluginForHost;
+import jd.plugins.PluginStep;
+import jd.plugins.RequestInfo;
+import jd.utils.JDUtilities;
 
 public class EgoshareCom extends PluginForHost {
     private static final String CODER           = "Bo0nZ";
@@ -148,7 +148,7 @@ public class EgoshareCom extends PluginForHost {
                     
                     try {
                         //Download vorbereiten
-                        URLConnection urlConnection = new URL(finishURL).openConnection();
+                        HTTPConnection urlConnection = new HTTPConnection(new URL(finishURL).openConnection());
                         int length = urlConnection.getContentLength();
                         downloadLink.setDownloadMax(length);
                         downloadLink.setName(URLDecoder.decode(this.getFileNameFormHeader(urlConnection),"UTF-8"));

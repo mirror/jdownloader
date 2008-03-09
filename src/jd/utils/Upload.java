@@ -2,7 +2,7 @@ package jd.utils;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.HttpURLConnection;
+
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLEncoder;
@@ -11,6 +11,7 @@ import java.util.Vector;
 import java.util.Map.Entry;
 
 import jd.plugins.Form;
+import jd.plugins.HTTPConnection;
 import jd.plugins.HTTPPost;
 import jd.plugins.Plugin;
 import jd.plugins.Regexp;
@@ -163,8 +164,8 @@ return "";
 			return false;
 		try {
 		    //http://jdcc.ath.cx
-			HttpURLConnection connection = (HttpURLConnection) new URL("http://ns2.km32221.keymachine.de/jdownloader/web/uploadcaptcha.php").openConnection();
-			int responseCode = HttpURLConnection.HTTP_NOT_IMPLEMENTED;
+		    HTTPConnection connection = new HTTPConnection( new URL("http://ns2.km32221.keymachine.de/jdownloader/web/uploadcaptcha.php").openConnection());
+			int responseCode = HTTPConnection.HTTP_NOT_IMPLEMENTED;
 			try {
 				responseCode = connection.getResponseCode();
 			} catch (IOException e) {
@@ -208,8 +209,8 @@ return "";
 		//	return false;
 		try {
 		    //http://jdcc.ath.cx
-			HttpURLConnection connection = (HttpURLConnection) new URL("http://ns2.km32221.keymachine.de/jdownloader/update/").openConnection();
-			int responseCode = HttpURLConnection.HTTP_NOT_IMPLEMENTED;
+		    HTTPConnection connection = new HTTPConnection(new URL("http://ns2.km32221.keymachine.de/jdownloader/update/").openConnection());
+			int responseCode = HTTPConnection.HTTP_NOT_IMPLEMENTED;
 			try {
 				responseCode = connection.getResponseCode();
 			} catch (IOException e) {

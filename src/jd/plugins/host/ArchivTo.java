@@ -3,9 +3,10 @@ import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.net.URLConnection;
 import java.util.regex.Pattern;
+
 import jd.plugins.DownloadLink;
+import jd.plugins.HTTPConnection;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginStep;
 import jd.plugins.Regexp;
@@ -76,7 +77,7 @@ public class ArchivTo extends PluginForHost {
 
 			requestInfo = getRequestWithoutHtmlCode(new URL("http://archiv.to/Get/?System=Download&Hash="+new Regexp(url, ".*HashID=(.*)").getFirstMatch()), null, url, true);
 
-			URLConnection urlConnection = requestInfo.getConnection();
+			HTTPConnection urlConnection = requestInfo.getConnection();
 			if(!getFileInformation(downloadLink)) {
 				downloadLink.setStatus(DownloadLink.STATUS_ERROR_FILE_NOT_FOUND);
 				step.setStatus(PluginStep.STATUS_ERROR);

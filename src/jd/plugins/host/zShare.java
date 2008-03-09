@@ -1,9 +1,10 @@
 package jd.plugins.host;
 
 import java.io.File;
-import java.net.URLConnection;
 import java.util.regex.Pattern;
+
 import jd.plugins.DownloadLink;
+import jd.plugins.HTTPConnection;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginStep;
 
@@ -65,7 +66,7 @@ public class zShare extends PluginForHost {
 		try {
 			String url = request.getRequest(downloadLink.getDownloadURL().replaceFirst("zshare.net/(download|video|audio|flash)", "zshare.net/image")).getRegexp("<img src=\"(http://[^\"]*?zshare.net/download.*?)\"").getFirstMatch();
 			request.withHtmlCode=false;
-			URLConnection urlConnection = request.getRequest(url).getConnection();
+			HTTPConnection urlConnection = request.getRequest(url).getConnection();
 			downloadLink.setName(getFileNameFormHeader(urlConnection));
 			downloadLink.setDownloadMax(urlConnection.getContentLength());
 			if (!hasEnoughHDSpace(downloadLink)) {

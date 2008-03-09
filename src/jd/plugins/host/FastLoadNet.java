@@ -4,10 +4,10 @@ import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.net.URLConnection;
 import java.util.regex.Pattern;
 
 import jd.plugins.DownloadLink;
+import jd.plugins.HTTPConnection;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginStep;
 import jd.plugins.Regexp;
@@ -171,7 +171,7 @@ public class FastLoadNet extends PluginForHost {
                 case PluginStep.STEP_DOWNLOAD:
                 	
                     // Download vorbereiten
-                    URLConnection urlConnection = new URL(downloadURL).openConnection();
+                    HTTPConnection urlConnection = new HTTPConnection(new URL(downloadURL).openConnection());
                     int length = urlConnection.getContentLength();
                     
                     if ( Math.abs(length - downloadLink.getDownloadMax()) > 1024*1024 ) {

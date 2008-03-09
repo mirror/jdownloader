@@ -4,7 +4,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.net.URLConnection;
+
 import java.util.HashMap;
 import java.util.regex.Pattern;
 
@@ -314,7 +314,7 @@ static private final String DOWNLOAD_LIMIT_REACHED="Free-Traffic ist aufgebrauch
                             step.setStatus(PluginStep.STATUS_ERROR);
                             return step;
                         }
-                        if(download(downloadLink, (URLConnection) requestInfo.getConnection())!=DOWNLOAD_SUCCESS) {
+                        if(download(downloadLink, requestInfo.getConnection())!=DOWNLOAD_SUCCESS) {
                             step.setStatus(PluginStep.STATUS_ERROR);
                             
                         }
@@ -373,7 +373,7 @@ static private final String DOWNLOAD_LIMIT_REACHED="Free-Traffic ist aufgebrauch
                             step.setStatus(PluginStep.STATUS_ERROR);
                             return step;
                         }
-                        if(download(downloadLink, (URLConnection) requestInfo.getConnection())!=DOWNLOAD_SUCCESS) {
+                        if(download(downloadLink, requestInfo.getConnection())!=DOWNLOAD_SUCCESS) {
                             step.setStatus(PluginStep.STATUS_ERROR);
                             
                         }
@@ -546,7 +546,7 @@ static private final String DOWNLOAD_LIMIT_REACHED="Free-Traffic ist aufgebrauch
                         step.setStatus(PluginStep.STATUS_ERROR);
                         return step;
                     }
-                    download(downloadLink, (URLConnection) requestInfo.getConnection());
+                    download(downloadLink,  requestInfo.getConnection());
                     step.setStatus(PluginStep.STATUS_DONE);
                     downloadLink.setStatus(DownloadLink.STATUS_DONE);
                     return step;

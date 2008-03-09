@@ -2,13 +2,13 @@ package jd.plugins.host;
 
 import java.io.File;
 import java.net.URL;
-import java.net.URLConnection;
 import java.util.regex.Pattern;
 
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.plugins.DownloadLink;
 import jd.plugins.Form;
+import jd.plugins.HTTPConnection;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginStep;
@@ -225,7 +225,7 @@ public class RapidShareDe extends PluginForHost {
 				step.setStatus(PluginStep.STATUS_TODO);
 				return step;
 			}
-			URLConnection urlConnection = form.getConnection();
+			HTTPConnection urlConnection = form.getConnection();
 			downloadLink.setName(getFileNameFormHeader(urlConnection));
 			downloadLink.setDownloadMax(urlConnection.getContentLength());
 			if (!hasEnoughHDSpace(downloadLink)) {

@@ -217,7 +217,7 @@ public abstract class PluginForHost extends Plugin {
             logger.info("Filename: " + getFileNameFormHeader(requestInfo.getConnection()));
            
             downloadLink.setName(getFileNameFormHeader(requestInfo.getConnection()));
-            if (download(downloadLink, (URLConnection) requestInfo.getConnection())!=Plugin.DOWNLOAD_SUCCESS) {
+            if (download(downloadLink, requestInfo.getConnection())!=Plugin.DOWNLOAD_SUCCESS) {
                 step.setStatus(PluginStep.STATUS_ERROR);
               
             }

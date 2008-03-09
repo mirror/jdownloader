@@ -4,9 +4,10 @@ import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.net.URLConnection;
 import java.util.regex.Pattern;
+
 import jd.plugins.DownloadLink;
+import jd.plugins.HTTPConnection;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginStep;
 import jd.plugins.Regexp;
@@ -81,7 +82,7 @@ public class UploadStube extends PluginForHost {
 			}
 			requestInfo=getRequestWithoutHtmlCode(new URL(dlurl), requestInfo.getCookie(), downloadLink
 					.getDownloadURL(), true);
-			URLConnection urlConnection = requestInfo.getConnection();
+			HTTPConnection urlConnection = requestInfo.getConnection();
 			downloadLink.setName(getFileNameFormHeader(urlConnection));
 			downloadLink.setDownloadMax(urlConnection.getContentLength());
 			if (!hasEnoughHDSpace(downloadLink)) {

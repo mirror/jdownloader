@@ -3,13 +3,14 @@ package jd.plugins.host;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.net.HttpURLConnection;
+
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.net.URLConnection;
+
 import java.util.regex.Pattern;
 
 import jd.plugins.DownloadLink;
+import jd.plugins.HTTPConnection;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
@@ -56,7 +57,7 @@ public class Gulli extends PluginForHost {
 
     private String               finalDownloadURL;
 
-    private HttpURLConnection    finalDownloadConnection;
+    private HTTPConnection    finalDownloadConnection;
 
     //private boolean              serverIPChecked;
 
@@ -219,7 +220,7 @@ public class Gulli extends PluginForHost {
                         step.setStatus(PluginStep.STATUS_ERROR);
                         return step;
                     }
-                    if(download(downloadLink, (URLConnection) finalDownloadConnection)!=DOWNLOAD_SUCCESS) {
+                    if(download(downloadLink, finalDownloadConnection)!=DOWNLOAD_SUCCESS) {
                         step.setStatus(PluginStep.STATUS_ERROR);
                         
                     }
@@ -240,23 +241,7 @@ public class Gulli extends PluginForHost {
         }
     }
 
-    /**
-     * Liest Content von Connection und gibt diesen als String zurück TODO:
-     * auslagern
-     * 
-     * @param con Connection
-     * @return Content
-     * @throws IOException
-     */
-    public static String contentToString(HttpURLConnection con) throws IOException {
-        InputStreamReader in = new InputStreamReader(con.getInputStream());
-        StringBuffer sb = new StringBuffer();
-        int chr;
-        while ((chr = in.read()) != -1) {
-            sb.append((char) chr);
-        }
-        return sb.toString();
-    }
+
 
     @Override
     public boolean doBotCheck(File file) {

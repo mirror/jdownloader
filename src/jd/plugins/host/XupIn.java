@@ -4,10 +4,10 @@ import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.net.URLConnection;
 import java.util.regex.Pattern;
 
 import jd.plugins.DownloadLink;
+import jd.plugins.HTTPConnection;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginStep;
 import jd.plugins.Regexp;
@@ -196,7 +196,7 @@ public class XupIn extends PluginForHost {
                     if (JDUtilities.getController().isLocalFileInProgress(downloadLink)) {
                 		
                         logger.severe("File already is in progress: " + downloadLink.getFileOutput());
-                        downloadLink.setStatus(DownloadLink.STATUS_ERROR_OUTPUTFILE_INPROGRESS);
+                        downloadLink.setStatus(DownloadLink.STATUS_ERROR_OUTPUTFILE_OWNED_BY_ANOTHER_LINK);
                         step.setStatus(PluginStep.STATUS_ERROR);
                         return step;
                         
@@ -232,7 +232,7 @@ public class XupIn extends PluginForHost {
                 		requestInfo = postRequestWithoutHtmlCode(downloadUrl, null, null, "vid="+vid+"&vtime="+vtime, true);
                 	}
                 	
-                	URLConnection urlConnection = requestInfo.getConnection();
+                	HTTPConnection urlConnection = requestInfo.getConnection();
                     int length = urlConnection.getContentLength();
                     
                     if ( urlConnection.getContentType().contains("text/html") ) {
@@ -270,7 +270,7 @@ public class XupIn extends PluginForHost {
                    		
                     } else if ( errorid == DOWNLOAD_ERROR_OUTPUTFILE_IN_PROGRESS ) {
                     	
-                    	downloadLink.setStatus(DownloadLink.STATUS_ERROR_OUTPUTFILE_INPROGRESS);
+                    	downloadLink.setStatus(DownloadLink.STATUS_ERROR_OUTPUTFILE_OWNED_BY_ANOTHER_LINK);
                     	step.setStatus(PluginStep.STATUS_ERROR);  
                     	return step;
                    		

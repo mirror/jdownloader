@@ -270,7 +270,7 @@ public class SingleDownloadController extends ControlMulticaster {
                 case DownloadLink.STATUS_ERROR_ALREADYEXISTS:
                     this.onErrorFileExists(downloadLink, plugin, step);
                     break;
-                case DownloadLink.STATUS_ERROR_OUTPUTFILE_INPROGRESS:
+                case DownloadLink.STATUS_ERROR_OUTPUTFILE_OWNED_BY_ANOTHER_LINK:
                     this.onErrorFileInProgress(downloadLink, plugin, step);
                     break;
                 default:

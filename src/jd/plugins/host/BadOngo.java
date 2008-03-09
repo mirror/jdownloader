@@ -4,11 +4,11 @@ import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.net.URLConnection;
 import java.util.regex.Pattern;
 
 import jd.plugins.DownloadLink;
 import jd.plugins.Form;
+import jd.plugins.HTTPConnection;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginStep;
@@ -199,7 +199,7 @@ public class BadOngo extends PluginForHost {
             form.put("Datei runterladen", "");
             form.setRequestPopertie("Cookie", cookie);
             logger.info(form.toString());
-			URLConnection urlConnection = form.getConnection();
+            HTTPConnection urlConnection = form.getConnection();
 	        int c=1;
 			if(downloadLink.saveObjects.size()>0)
 				downloadLink.setName(downloadLink.getName().replaceFirst("\\.[\\d]+$", "")+"."+c++);

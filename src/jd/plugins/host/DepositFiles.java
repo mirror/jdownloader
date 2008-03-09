@@ -4,7 +4,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.net.URLConnection;
+
 import java.util.regex.Pattern;
 
 import jd.controlling.interaction.CaptchaMethodLoader;
@@ -103,7 +103,7 @@ public class DepositFiles extends PluginForHost {
                     if (JDUtilities.getController().isLocalFileInProgress(downloadLink)) {
                     	
                         logger.severe("File already is in progress. " + downloadLink.getFileOutput());
-                        downloadLink.setStatus(DownloadLink.STATUS_ERROR_OUTPUTFILE_INPROGRESS);
+                        downloadLink.setStatus(DownloadLink.STATUS_ERROR_OUTPUTFILE_OWNED_BY_ANOTHER_LINK);
                         step.setStatus(PluginStep.STATUS_ERROR);
                         return step;
                         
@@ -256,14 +256,14 @@ public class DepositFiles extends PluginForHost {
                         
                     }
                     
-                    download(downloadLink, (URLConnection) requestInfo.getConnection());
+                    download(downloadLink,  requestInfo.getConnection());
                     step.setStatus(PluginStep.STATUS_DONE);
                     downloadLink.setStatus(DownloadLink.STATUS_DONE);
                     
                     //Download starten
                     int errorid;
                    
-                   if ( (errorid = download(downloadLink, (URLConnection) requestInfo.getConnection())) == DOWNLOAD_SUCCESS ) {
+                   if ( (errorid = download(downloadLink,  requestInfo.getConnection())) == DOWNLOAD_SUCCESS ) {
                         
                         step.setStatus(PluginStep.STATUS_DONE);
                         downloadLink.setStatus(DownloadLink.STATUS_DONE);

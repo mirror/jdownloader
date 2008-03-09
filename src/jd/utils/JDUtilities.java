@@ -39,7 +39,6 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLClassLoader;
-import java.net.URLConnection;
 import java.net.URLDecoder;
 import java.nio.channels.FileChannel;
 import java.security.MessageDigest;
@@ -77,6 +76,7 @@ import jd.config.SubConfiguration;
 import jd.controlling.JDController;
 import jd.gui.UIInterface;
 import jd.plugins.DownloadLink;
+import jd.plugins.HTTPConnection;
 import jd.plugins.LogFormatter;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForContainer;
@@ -1487,7 +1487,7 @@ public class JDUtilities {
         try {
             urlString = URLDecoder.decode(urlString, "UTF-8");
             URL url = new URL(urlString);
-            URLConnection con = url.openConnection();
+            HTTPConnection con = new HTTPConnection(url.openConnection());
             return download(file, con);
         }
         catch (UnsupportedEncodingException e) {
@@ -1523,7 +1523,7 @@ public class JDUtilities {
             fileurl = URLDecoder.decode(fileurl, "UTF-8");
 
             URL url = new URL(fileurl);
-            URLConnection con = url.openConnection();
+            HTTPConnection con = new HTTPConnection(url.openConnection());
 
             BufferedInputStream input = new BufferedInputStream(con.getInputStream());
 
@@ -1561,7 +1561,7 @@ public class JDUtilities {
      * @param con
      * @return Erfolg true/false
      */
-    public static boolean download(File file, URLConnection con) {
+    public static boolean download(File file, HTTPConnection con) {
         try {
             if (file.isFile()) {
                 if (!file.delete()) {

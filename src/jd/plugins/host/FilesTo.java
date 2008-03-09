@@ -9,6 +9,7 @@ import java.util.HashMap;
 import java.util.regex.Pattern;
 
 import jd.plugins.DownloadLink;
+import jd.plugins.HTTPConnection;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginStep;
 import jd.plugins.Regexp;
@@ -35,7 +36,7 @@ public class FilesTo extends PluginForHost {
     private String captchaAddress;
     private String finalURL;
     private String session;
-    private URLConnection        urlConnection;
+    private HTTPConnection        urlConnection;
 
     public FilesTo() {
         super();
@@ -163,7 +164,7 @@ public class FilesTo extends PluginForHost {
                     
                     // Download vorbereiten
                     parameter.setStatusText("Verbindung aufbauen");
-                    urlConnection = new URL(finalURL).openConnection();
+                    urlConnection = new HTTPConnection(new URL(finalURL).openConnection());
                     int fileSize = urlConnection.getContentLength();
                     parameter.setDownloadMax(fileSize);
                     String fileName = JDUtilities.htmlDecode(getFirstMatch(requestInfo.getHtmlCode(), FILE_INFO_NAME, 1));

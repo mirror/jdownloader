@@ -10,6 +10,7 @@ import java.util.regex.Pattern;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.plugins.DownloadLink;
+import jd.plugins.HTTPConnection;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginStep;
 import jd.plugins.Regexp;
@@ -246,7 +247,7 @@ public class FileFactory extends PluginForHost {
                     try {
 
                     	requestInfo = postRequestWithoutHtmlCode((new URL(postTarget)), requestInfo.getCookie(), actionString, "", false);
-                    	URLConnection urlConnection = requestInfo.getConnection();
+                    	HTTPConnection urlConnection = requestInfo.getConnection();
                         
                     	// downloadlimit reached
                     	if ( urlConnection.getHeaderField("Location") != null ) {
@@ -413,7 +414,7 @@ public class FileFactory extends PluginForHost {
                 	
                     try {
                     	
-                        URLConnection urlConnection = requestInfo.getConnection();
+                        HTTPConnection urlConnection = requestInfo.getConnection();
                         int length = urlConnection.getContentLength();
                         downloadLink.setDownloadMax(length);
                         downloadLink.setName(this.getFileNameFormHeader(urlConnection));

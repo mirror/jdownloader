@@ -4,10 +4,10 @@ import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.net.URLConnection;
 import java.util.regex.Pattern;
 
 import jd.plugins.DownloadLink;
+import jd.plugins.HTTPConnection;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
@@ -25,7 +25,7 @@ public class YourFilesBiz extends PluginForHost {
     private static final int	 MAX_SIMULTAN_DOWNLOADS   = Integer.MAX_VALUE;
 
     private String               downloadURL              = "";
-    private URLConnection        urlConnection;
+    private HTTPConnection        urlConnection;
     
     // Suchmasken
     private static final String  DOWNLOAD_SIZE            = "<td align=left><b>Dateigröße:</b></td>\n       <td align=left>°</td>";
@@ -170,7 +170,7 @@ public class YourFilesBiz extends PluginForHost {
                 	
                     // Download vorbereiten
                     downloadLink.setStatusText("Verbindung aufbauen");
-                    urlConnection = new URL(this.downloadURL).openConnection();
+                    urlConnection = new HTTPConnection(new URL(this.downloadURL).openConnection());
                     int length = urlConnection.getContentLength();
                     
                     if ( Math.abs(length - downloadLink.getDownloadMax()) > 1024*1024 ) {

@@ -5,13 +5,14 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.net.URLConnection;
+
 import java.util.Vector;
 import java.util.regex.Pattern;
 
 import jd.config.Configuration;
 import jd.controlling.JDController;
 import jd.plugins.DownloadLink;
+import jd.plugins.HTTPConnection;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginStep;
 import jd.utils.JDLocale;
@@ -80,7 +81,7 @@ public class CryptItCom extends PluginForDecrypt {
     		try {
     			
     			requestInfo = postRequestWithoutHtmlCode(new URL(parameter), null, null, "", true);
-    			URLConnection urlConnection = requestInfo.getConnection();
+    			HTTPConnection urlConnection = requestInfo.getConnection();
     			
     			String folder = JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_DOWNLOAD_DIRECTORY);
     			String name = this.getFileNameFormHeader(urlConnection);
