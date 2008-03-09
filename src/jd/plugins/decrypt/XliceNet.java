@@ -3,6 +3,7 @@ package jd.plugins.decrypt;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
+import java.util.MissingResourceException;
 import java.util.Vector;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -162,7 +163,13 @@ public class XliceNet extends PluginForDecrypt {
                 
                 step.setParameter(decryptedLinks);
             }
+            catch(MissingResourceException e){
+            	step.setStatus(PluginStep.STATUS_ERROR);
+            	logger.severe("MissingResourceException className: "+e.getClassName() + " key: "+e.getKey());
+            	e.printStackTrace();
+            }
             catch (IOException e) {
+            	step.setStatus(PluginStep.STATUS_ERROR);
                 e.printStackTrace();
             }
             finally {
