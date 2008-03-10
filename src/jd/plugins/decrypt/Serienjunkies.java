@@ -666,7 +666,6 @@ public class Serienjunkies extends PluginForDecrypt {
 			url = url.replaceAll("save/rs", "save/frs");
 			url = url.replaceAll("safe/rs", "safe/frs");
 			RequestInfo reqinfo = getRequest(new URL(url));
-			String cookie = reqinfo.getCookie();
 			File captchaFile = null;
 			String capTxt = null;
 			while (true) { // for() läuft bis kein Captcha mehr abgefragt
@@ -682,9 +681,7 @@ public class Serienjunkies extends PluginForDecrypt {
 					String captchaAdress = "http://serienjunki.es"
 							+ matcher.group(2);
 					captchaFile = getLocalCaptchaFile(this, ".gif");
-					fileDownloaded = JDUtilities.download(captchaFile,
-							getRequestWithoutHtmlCode(new URL(captchaAdress),
-									cookie, null, true).getConnection());
+					fileDownloaded = JDUtilities.download(captchaFile,captchaAdress);
 					if (!fileDownloaded || !captchaFile.exists()
 							|| captchaFile.length() == 0) {
 						logger
@@ -692,7 +689,6 @@ public class Serienjunkies extends PluginForDecrypt {
 						try {
 							Thread.sleep(1000);
 							reqinfo = getRequest(new URL(url));
-							cookie = reqinfo.getCookie();
 						} catch (InterruptedException e) {
 						}
 						continue;
