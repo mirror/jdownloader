@@ -15,7 +15,6 @@ import jd.plugins.DownloadLink;
 import jd.plugins.HTTPConnection;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginStep;
-import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
 // http://crypt-it.com/s/BXYMBR
