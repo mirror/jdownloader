@@ -46,14 +46,13 @@ jd.plugins.decrypt.RapidAdsAthCx
 jd.plugins.decrypt.NixPopOrg
 jd.plugins.decrypt.SAUGUS
 jd.plugins.decrypt.SceneloadTo
-#jd.plugins.decrypt.UCMS
+jd.plugins.decrypt.UCMS
 jd.plugins.decrypt.DreiDlAm
 jd.plugins.decrypt.RsLayerCom
 jd.plugins.decrypt.FastDomainNet
 jd.plugins.decrypt.GappingOrg
 jd.plugins.decrypt.DDLMusicOrg
 jd.plugins.decrypt.URLCash
-#jd.plugins.decrypt.RapidsafeDe
 jd.plugins.decrypt.DatenschleuderCc
 jd.plugins.decrypt.DokuCc
 jd.plugins.decrypt.LeecherWs
