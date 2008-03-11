@@ -784,7 +784,7 @@ public abstract class Plugin {
         }
         catch (IOException e) {
         }
-        httpConnection.connect();
+        
         RequestInfo ri = new RequestInfo("", location, setcookie, httpConnection.getHeaderFields(), responseCode);
         ri.setConnection(httpConnection);
         return ri;

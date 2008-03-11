@@ -217,6 +217,7 @@ public class DownloadLink implements Serializable,Comparable<DownloadLink> {
     private int linkType=LINKTYPE_NORMAL;
     private transient String tempUrlDownload;
     public boolean isLimited=(JDUtilities.getConfiguration().getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, 0)!=0);
+    private transient Download downloadInstance;
     /**
      * Erzeugt einen neuen DownloadLink
      * 
@@ -462,8 +463,11 @@ public class DownloadLink implements Serializable,Comparable<DownloadLink> {
      */
     public void setStatus(int status) {
         this.status = status;
-        if(status!=STATUS_DOWNLOAD_IN_PROGRESS)
+        if(status!=STATUS_DOWNLOAD_IN_PROGRESS){
         	speedMeter=null; //wird von gc erfasst
+        	
+        System.gc();	
+        }
 
     }
 
@@ -550,8 +554,11 @@ public class DownloadLink implements Serializable,Comparable<DownloadLink> {
         if (this.isInProgress() && (speed = getDownloadSpeed()) > 0) {
             long remainingBytes = this.getDownloadMax() - this.getDownloadCurrent();
             long eta = remainingBytes / speed;
-
+if(this.downloadInstance!=null&&downloadInstance.getChunks()>0){
+    return "ETA " + JDUtilities.formatSeconds((int) eta) + " @ " + (speed / 1024) + "kb/s."+"("+downloadInstance.getChunksDownloading()+"/"+downloadInstance.getChunks()+")";
+}else{
             return "ETA " + JDUtilities.formatSeconds((int) eta) + " @ " + (speed / 1024) + "kb/s.";
+}
         }
 
         if (!this.isEnabled()) {
@@ -851,9 +858,18 @@ public boolean isMirror() {
 public void setMirror(boolean isMirror) {
     this.isMirror = isMirror;
 }
-
+public void setDownloadInstance(Download dl){
+    this.downloadInstance=dl;
+    
+}
 public int getMaximalspeed() {
-	return maximalspeed;
+    //return 5000000/40;
+    int maxspeed = JDUtilities.getConfiguration().getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, 0) * 1024;
+    if(maxspeed==0)maxspeed=Integer.MAX_VALUE;
+    maxspeed=Math.max(1,maxspeed/(Math.max(1,JDUtilities.getController().getRunningDownloadNum())));
+  
+    return maxspeed/40;
+	//return maximalspeed;
 }
 
 public void setMaximalspeed(int maximalspeed) {
@@ -877,5 +893,9 @@ public void setLinkType(int linktypeContainer) {
 
 public int getLinkType() {
     return linkType;
+}
+
+public Download getDownloadInstance() {
+    return downloadInstance;
 }
 }

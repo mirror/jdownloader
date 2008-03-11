@@ -191,6 +191,8 @@ public class Configuration extends Property implements Serializable {
 
     public static final String AUTOTRAIN_SHOW_TIMEOUT = "AUTOTRAIN_SHOW_TIMEOUT";
 
+    public static final String PARAM_DOWNLOAD_MAX_CHUNKS = "DOWNLOAD_MAX_CHUNKS";
+
   
     /**
      * Die unterschiedlichen Interaktionen. (ZB Reconnect nach einem Download)

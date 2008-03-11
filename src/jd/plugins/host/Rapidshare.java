@@ -63,7 +63,6 @@ import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.net.MalformedURLException;
 import java.net.URL;
-
 import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -74,6 +73,7 @@ import java.util.regex.Pattern;
 
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
+import jd.config.Configuration;
 import jd.controlling.interaction.CaptchaMethodLoader;
 import jd.plugins.Download;
 import jd.plugins.DownloadLink;
@@ -813,8 +813,14 @@ public class Rapidshare extends PluginForHost {
                         }
                     }
                     logger.info("link: " + postTarget.substring(0, 30) + " " + actionString);
-                    int errorid;
-                    if ((errorid = download(downloadLink, urlConnection, 1024 * getProperties().getIntegerProperty(PROPERTY_BYTES_TO_LOAD, -1))) == DOWNLOAD_SUCCESS) {
+
+                    Download dl = new Download(this, downloadLink, urlConnection);
+                    if (getProperties().getIntegerProperty(PROPERTY_BYTES_TO_LOAD, -1) > 0) {
+                        dl.setMaxBytesToLoad(1024 * getProperties().getIntegerProperty(PROPERTY_BYTES_TO_LOAD, -1));
+                    }
+                    ;
+
+                    if (dl.startDownload()) {
                         if (new File(downloadLink.getFileOutput()).length() < 4000 && JDUtilities.getLocalFile(new File(downloadLink.getFileOutput())).indexOf(captchaWrong) > 0) {
                             new File(downloadLink.getFileOutput()).delete();
                             JDUtilities.appendInfoToFilename(this, captchaFile, actionString + "_" + captchaCode, false);
@@ -844,62 +850,11 @@ public class Rapidshare extends PluginForHost {
                             return step;
                         }
 
-                        step.setStatus(PluginStep.STATUS_DONE);
-                        downloadLink.setStatus(DownloadLink.STATUS_DONE);
                         JDUtilities.appendInfoToFilename(this, captchaFile, actionString + "_" + captchaCode, true);
-                        /*
-                         * if
-                         * (JDUtilities.getSubConfig("JAC").getBooleanProperty(Configuration.USE_CAPTCHA_EXCHANGE_SERVER,
-                         * false)&&this.getCaptchaDetectionID() ==
-                         * Plugin.CAPTCHA_USER_INPUT && this.getLastCaptcha() !=
-                         * null && this.getLastCaptcha().getLetterComperators() !=
-                         * null) { LetterComperator[] lcs =
-                         * this.getLastCaptcha().getLetterComperators();
-                         * this.getLastCaptcha().setCorrectcaptchaCode(captchaTxt.trim());
-                         * 
-                         * if (lcs.length == captchaTxt.trim().length()) { for
-                         * (int i = 0; i < captchaTxt.length(); i++) {
-                         * 
-                         * if (lcs[i] != null && lcs[i].getDecodedValue() !=
-                         * null && captchaTxt.substring(i, i +
-                         * 1).equalsIgnoreCase(lcs[i].getDecodedValue())&&lcs[i].getValityPercent()<30.0) { //
-                         * logger.severe("OK letter: "+i+": //
-                         * JAC:"+lcs[i].getDecodedValue()+"("+lcs[i].getValityPercent()+") //
-                         * USER: // "+captchaTxt.substring(i,i+1)); } else { //
-                         * logger.severe("Unknown letter: // "+i+": //
-                         * JAC:"+lcs[i].getDecodedValue()+"("+lcs[i].getValityPercent()+") //
-                         * USER: // "+captchaTxt.substring(i,i+1)); //
-                         * Pixelstring. getB() ist immer der // neue letter
-                         * final String character = captchaTxt.substring(i, i +
-                         * 1); final String pixelString =
-                         * lcs[i].getA().getPixelString(); final Plugin plg =
-                         * this; logger.info("SEND"); new Thread(new Runnable() {
-                         * 
-                         * public void run() {
-                         * Upload.sendToCaptchaExchangeServer(plg, pixelString,
-                         * character);
-                         * 
-                         * }}).start(); } }
-                         * 
-                         * }else{ logger.info("LCS not length comp"); } }
-                         */
+
                         return null;
                     }
-                    else if (aborted) {
-                        logger.warning("Plugin abgebrochen");
-                        downloadLink.setStatus(DownloadLink.STATUS_TODO);
-                        step.setStatus(PluginStep.STATUS_TODO);
-                    }
-                    else {
-                        if (errorid != DOWNLOAD_ERROR_DOWNLOAD_INCOMPLETE && errorid != DOWNLOAD_ERROR_INVALID_OUTPUTFILE && errorid != DOWNLOAD_ERROR_OUTPUTFILE_ALREADYEXISTS && errorid != DOWNLOAD_ERROR_RENAME_FAILED && errorid != DOWNLOAD_ERROR_SECURITY) {
-                            JDUtilities.appendInfoToFilename(this, captchaFile, actionString + "_" + captchaCode, false);
-                            downloadLink.setStatus(DownloadLink.STATUS_ERROR_CAPTCHA_WRONG);
-                            logger.info("Error detected. Update captchafile");
-                            new CaptchaMethodLoader().interact("rapidshare.com");
-                        }
 
-                        step.setStatus(PluginStep.STATUS_ERROR);
-                    }
                 }
                 catch (IOException e) {
                     logger.severe("URL could not be opened. " + e.toString());
@@ -1190,79 +1145,39 @@ public class Rapidshare extends PluginForHost {
                     logger.info("Loading from: " + finalURL.substring(0, 30));
                     HashMap<String, String> ranger = new HashMap<String, String>();
                     HTTPConnection urlConnection;
-                    File fileOutput = new File(downloadLink.getFileOutput() + ".jdd");
-                    if (fileOutput.exists()) {
-                        ranger.put("Range", "bytes=" + fileOutput.length() + "-");
-                        requestInfo = getRequestWithoutHtmlCode(new URL(finalURL), finalCookie, finalURL, ranger, true);
-                        urlConnection = requestInfo.getConnection();
-                        int length = urlConnection.getContentLength() + (int) fileOutput.length();
 
-                        downloadLink.setDownloadMax(length);
+                    requestInfo = getRequestWithoutHtmlCode(new URL(finalURL), finalCookie, finalURL, ranger, true);
+                    urlConnection = requestInfo.getConnection();
+                    int length = urlConnection.getContentLength();
 
-                        // int errorid;
-                        if ((download(downloadLink, urlConnection, 1024 * getProperties().getIntegerProperty(PROPERTY_BYTES_TO_LOAD, -1), (int) fileOutput.length())) == DOWNLOAD_SUCCESS) {
-                            if (new File(downloadLink.getFileOutput()).length() < 4000 && JDUtilities.getLocalFile(new File(downloadLink.getFileOutput())).indexOf(PATTERN_DOWNLOAD_ERRORPAGE) > 0) {
-                                new File(downloadLink.getFileOutput()).delete();
+                    downloadLink.setDownloadMax(length);
+                    String name = getFileNameFormHeader(urlConnection);
+                    if (name.toLowerCase().matches(".*\\..{1,5}\\.html$")) name = name.replaceFirst("\\.html$", "");
+                    downloadLink.setName(name);
+                    Download dl = new Download(this, downloadLink, urlConnection);
+                    dl.setChunks(JDUtilities.getConfiguration().getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS));
+                    dl.startDownload();
+                    if (dl.getErrors().size() == 0) {
+                        if (new File(downloadLink.getFileOutput()).length() < 4000 && JDUtilities.getLocalFile(new File(downloadLink.getFileOutput())).indexOf(PATTERN_DOWNLOAD_ERRORPAGE) > 0) {
+                            new File(downloadLink.getFileOutput()).delete();
 
-                                downloadLink.setStatus(DownloadLink.STATUS_ERROR_PLUGIN_SPECIFIC);
-                                downloadLink.setStatusText("Download error(>log)");
+                            downloadLink.setStatus(DownloadLink.STATUS_ERROR_PLUGIN_SPECIFIC);
+                            downloadLink.setStatusText("Download error(>log)");
 
-                                logger.severe("Error detected. " + JDUtilities.getLocalFile(new File(downloadLink.getFileOutput())));
-
-                                step.setStatus(PluginStep.STATUS_ERROR);
-                                return step;
-                            }
-
-                            step.setStatus(PluginStep.STATUS_DONE);
-                            downloadLink.setStatus(DownloadLink.STATUS_DONE);
-                            return null;
-                        }
-                        else if (aborted) {
-                            logger.warning("Plugin abgebrochen");
-                            downloadLink.setStatus(DownloadLink.STATUS_TODO);
-                            step.setStatus(PluginStep.STATUS_TODO);
-                        }
-                        else {
+                            logger.severe("Error detected.  " + JDUtilities.getLocalFile(new File(downloadLink.getFileOutput())));
 
                             step.setStatus(PluginStep.STATUS_ERROR);
+                            return null;
                         }
 
-                    }
-                    else {
-                        requestInfo = getRequestWithoutHtmlCode(new URL(finalURL), finalCookie, finalURL, ranger, true);
-                        urlConnection = requestInfo.getConnection();
-                        int length = urlConnection.getContentLength();
-
-                        downloadLink.setDownloadMax(length);
-                        String name = getFileNameFormHeader(urlConnection);
-                        if (name.toLowerCase().matches(".*\\..{1,5}\\.html$")) name = name.replaceFirst("\\.html$", "");
-                        downloadLink.setName(name);
-                        Download dl = new Download(this, downloadLink, urlConnection);
-                        dl.setChunks(3);
-                        dl.startDownload();
-                        if (dl.getErrors().size() == 0) {
-                            if (new File(downloadLink.getFileOutput()).length() < 4000 && JDUtilities.getLocalFile(new File(downloadLink.getFileOutput())).indexOf(PATTERN_DOWNLOAD_ERRORPAGE) > 0) {
-                                new File(downloadLink.getFileOutput()).delete();
-
-                                downloadLink.setStatus(DownloadLink.STATUS_ERROR_PLUGIN_SPECIFIC);
-                                downloadLink.setStatusText("Download error(>log)");
-
-                                logger.severe("Error detected.  " + JDUtilities.getLocalFile(new File(downloadLink.getFileOutput())));
-
-                                step.setStatus(PluginStep.STATUS_ERROR);
-                                return null;
-                            }
-
-                            step.setStatus(PluginStep.STATUS_DONE);
-                            downloadLink.setStatus(DownloadLink.STATUS_DONE);
-                            return null;
-                        }                      
-
-                  
-                      return null;
+                        step.setStatus(PluginStep.STATUS_DONE);
+                        downloadLink.setStatus(DownloadLink.STATUS_DONE);
+                        return null;
                     }
 
+                    return null;
                 }
+
                 catch (IOException e) {
                     logger.severe("URL could not be opened. " + e.toString());
                 }
