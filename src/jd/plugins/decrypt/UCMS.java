@@ -16,7 +16,7 @@ import jd.utils.JDUtilities;
 public class UCMS extends PluginForDecrypt {
     static private final String host = "Underground CMS";
     private String version = "1.0.0.0";
-//http://mov-world.net/category/Group/...ine_13763.html
+
     private Pattern patternSupported = getSupportPattern("(http://[*]lesestunde.info/\\?id=[+])"
     		+ "|(http://[*]filefox.in/\\?id=[+])"
     		+ "|(http://[*]alphawarez.us/\\?id=[+])"
@@ -26,11 +26,20 @@ public class UCMS extends PluginForDecrypt {
     		+ "|(http://[*]fettrap.com/\\?id=[+])"
     		+ "|(http://[*]hardcoremetal.biz/\\?id=[+])"
     		+ "|(http://[*]hms.x2.to/\\?id=[+])"
+    		+ "|(http://[*]serienfreaks.tv/category/[+]/[+])"
+    		+ "|(http://[*]serienfreaks.tv/\\?id=[+])"
+    		+ "|(http://[*]flashload.org/\\?id=[+])"
+    		+ "|(http://[*]found-station.net/\\?id=[+])"
+    		+ "|(http://[*]twin-warez.com/\\?id=[+])"
+    		+ "|(http://[*]oneload.org/\\?id=[+])"
+    		+ "|(http://[*]warez-load.com/\\?id=[+])"
+    		+ "|(http://[*]steelwarez.com/\\?id=[+])"
     		//+ "|(http://[*]warezbase.us/\\?id=[+])"
     		+ "|(http://[*]lesestunde.info/\\?id=[+])"
     		+ "|(http://[*]oxygen-warez.com/\\?id=[+])"
     		+ "|(http://[*]oxygen-warez.com/category/[+]/[+])"
     		+ "|(http://[*]mov-world.net/category/[+]/[+])"
+    		+ "|(http://[*]your-load.com/category/[+]/[+])"
     		+ "|(http://[*]isos.at/[+]/[+])"
     		+ "|(http://[*]sceneload.to/\\?id=[+])");
     
