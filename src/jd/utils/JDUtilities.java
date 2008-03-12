@@ -1617,13 +1617,13 @@ public class JDUtilities {
      * @return ip oder /offline
      */
     public static String getIPAddress() {
-        if (getConfiguration().getBooleanProperty(Configuration.PARAM_GLOBAL_IP_DISABLE, false)) {
+        if (getSubConfig("DOWNLOAD").getBooleanProperty(Configuration.PARAM_GLOBAL_IP_DISABLE, false)) {
             logger.finer("IP Check is disabled. return current Milliseconds");
             return System.currentTimeMillis() + "";
         }
 
-        String site = getConfiguration().getStringProperty(Configuration.PARAM_GLOBAL_IP_CHECK_SITE, "http://checkip.dyndns.org");
-        String patt = getConfiguration().getStringProperty(Configuration.PARAM_GLOBAL_IP_PATTERN, "Address\\: ([0-9.]*)\\<\\/body\\>");
+        String site = getSubConfig("DOWNLOAD").getStringProperty(Configuration.PARAM_GLOBAL_IP_CHECK_SITE, "http://checkip.dyndns.org");
+        String patt = getSubConfig("DOWNLOAD").getStringProperty(Configuration.PARAM_GLOBAL_IP_PATTERN, "Address\\: ([0-9.]*)\\<\\/body\\>");
 
         try {
             logger.finer("IP Check via " + site);

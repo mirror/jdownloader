@@ -8,6 +8,7 @@ import java.net.URLConnection;
 import java.util.HashMap;
 import java.util.regex.Pattern;
 
+import jd.plugins.Download;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTPConnection;
 import jd.plugins.PluginForHost;
@@ -71,13 +72,13 @@ public class FilesTo extends PluginForHost {
         return PLUGIN_ID;
     }
     
-    public PluginStep doStep(PluginStep step, DownloadLink parameter) {
+    public PluginStep doStep(PluginStep step, DownloadLink downloadLink) {
     	
         RequestInfo requestInfo;
         
         try {
         	
-            String parameterString = parameter.getDownloadURL().toString();
+            String parameterString = downloadLink.getDownloadURL().toString();
             
             switch (step.getStep()) {
             
@@ -89,7 +90,7 @@ public class FilesTo extends PluginForHost {
                     if ( requestInfo.getHtmlCode().contains(FILE_NOT_FOUND) ) {
                     	
                         logger.severe("download not found");
-                        parameter.setStatus(DownloadLink.STATUS_ERROR_FILE_NOT_FOUND);
+                        downloadLink.setStatus(DownloadLink.STATUS_ERROR_FILE_NOT_FOUND);
                         step.setStatus(PluginStep.STATUS_ERROR);
                         return step;
                         
@@ -105,7 +106,7 @@ public class FilesTo extends PluginForHost {
                     	
                         logger.severe("Unbekannter fehler.. retry in 20 sekunden");
                         step.setStatus(PluginStep.STATUS_ERROR);
-                        parameter.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN_RETRY);
+                        downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN_RETRY);
                         step.setParameter(20000l);
                         return step;
                         
@@ -120,7 +121,7 @@ public class FilesTo extends PluginForHost {
                         logger.severe("Captcha Download fehlgeschlagen: " + captchaAddress);
                         step.setParameter(null);
                         step.setStatus(PluginStep.STATUS_ERROR);
-                        parameter.setStatus(DownloadLink.STATUS_ERROR_CAPTCHA_IMAGEERROR);
+                        downloadLink.setStatus(DownloadLink.STATUS_ERROR_CAPTCHA_IMAGEERROR);
                         System.out.println("asdf");
                         return step;
                         
@@ -154,7 +155,7 @@ public class FilesTo extends PluginForHost {
                     
                     if ( requestInfo.getHtmlCode() == null ) {
                         step.setStatus(PluginStep.STATUS_ERROR);
-                        parameter.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN_RETRY);
+                        downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN_RETRY);
                         step.setParameter(20000l);
                         return step;
                     }
@@ -163,29 +164,22 @@ public class FilesTo extends PluginForHost {
                     logger.info(finalURL);
                     
                     // Download vorbereiten
-                    parameter.setStatusText("Verbindung aufbauen");
+                    downloadLink.setStatusText("Verbindung aufbauen");
                     urlConnection = new HTTPConnection(new URL(finalURL).openConnection());
                     int fileSize = urlConnection.getContentLength();
-                    parameter.setDownloadMax(fileSize);
+                    downloadLink.setDownloadMax(fileSize);
                     String fileName = JDUtilities.htmlDecode(getFirstMatch(requestInfo.getHtmlCode(), FILE_INFO_NAME, 1));
-                    parameter.setName(fileName);
+                    downloadLink.setName(fileName);
                     
-                    if ( !hasEnoughHDSpace(parameter) ) {
-                    	parameter.setStatus(DownloadLink.STATUS_ERROR_NO_FREE_SPACE);
+                    if ( !hasEnoughHDSpace(downloadLink) ) {
+                    	downloadLink.setStatus(DownloadLink.STATUS_ERROR_NO_FREE_SPACE);
                         step.setStatus(PluginStep.STATUS_ERROR);
                         return step;
                     }
                     
                     // Download starten
-             if(download(parameter, urlConnection)!=DOWNLOAD_SUCCESS) {
-                 step.setStatus(PluginStep.STATUS_ERROR);
-                 
-             }
-             else {
-                 step.setStatus(PluginStep.STATUS_DONE);
-                 parameter.setStatus(DownloadLink.STATUS_DONE);
-          
-             }
+                    Download dl = new Download(this, downloadLink, urlConnection);
+                    dl.startDownload();
                     
               
                     

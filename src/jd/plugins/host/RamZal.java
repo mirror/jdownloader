@@ -7,6 +7,7 @@ import java.net.URL;
 
 import java.util.regex.Pattern;
 
+import jd.plugins.Download;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTPConnection;
 import jd.plugins.PluginForHost;
@@ -80,16 +81,10 @@ public class RamZal extends PluginForHost {
 				step.setStatus(PluginStep.STATUS_ERROR);
 				return step;
 			}
-			if (download(downloadLink, urlConnection)==DOWNLOAD_SUCCESS) {
-				step.setStatus(PluginStep.STATUS_DONE);
-				downloadLink.setStatus(DownloadLink.STATUS_DONE);
-				return step;
-			} else if (aborted) {
-				logger.warning("Plugin abgebrochen");
-				downloadLink.setStatus(DownloadLink.STATUS_TODO);
-				step.setStatus(PluginStep.STATUS_TODO);
-			} else {
-		
+		    Download dl = new Download(this, downloadLink, urlConnection);
+
+            if (!dl.startDownload() && step.getStatus() != PluginStep.STATUS_ERROR && step.getStatus() != PluginStep.STATUS_TODO) {
+                downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN);
 			
 				step.setStatus(PluginStep.STATUS_ERROR);
 			}

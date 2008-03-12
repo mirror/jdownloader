@@ -124,66 +124,40 @@ public class SingleDownloadController extends ControlMulticaster {
                         downloadLink.setStatusText(JDLocale.L("controller.status.captcha", "Captcha"));
                         fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SINGLE_DOWNLOAD_CHANGED, downloadLink));
                         File captcha = null;
+                        logger.severe("GOGO JAC!");
                         if (step.getParameter() != null && step.getParameter() instanceof File) {
                             captcha = (File) step.getParameter();
                         }
                         if (captcha == null) {
-                            logger.severe("Captchaadresse = null");
-                            step.setParameter("");
-                            step.setStatus(PluginStep.STATUS_ERROR);
-                            downloadLink.setStatus(DownloadLink.STATUS_ERROR_CAPTCHA_IMAGEERROR);
+                            step.setStatus(PluginStep.STATUS_DONE);
+                            logger.info("Captcha == null");
                             break;
                         }
                         else {
                             fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_CAPTCHA_LOADED, captcha));
                             downloadLink.setLatestCaptchaFile(captcha);
-                            
+
                             if (plugin.doBotCheck(captcha)) {
                                 downloadLink.setStatus(DownloadLink.STATUS_ERROR_BOT_DETECTED);
                                 step.setStatus(PluginStep.STATUS_ERROR);
                                 step.setParameter(null);
                                 break;
                             }
-                            // führt die erste Interaction zum Captcha
-                            // decoden aus.
-                            // if
-                            // (!Interaction.handleInteraction((Interaction.INTERACTION_DOWNLOAD_CAPTCHA),
-                            // downloadLink, 0)) {
-                           
-                            String captchaText =  Plugin.getCaptchaCode(captcha, plugin);
-                            logger.info("CaptchaCode: " + captchaText);
+
+                            String captchaText = Plugin.getCaptchaCode(captcha, plugin);
+                            logger.info("CaptchaCode: " + captchaText+" set in "+step);
                             downloadLink.setStatusText(JDLocale.L("controller.status.captchacode", "Code: ") + captchaText);
                             fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SINGLE_DOWNLOAD_CHANGED, downloadLink));
                             step.setParameter(captchaText);
                             step.setStatus(PluginStep.STATUS_DONE);
-                            // }
-                            // else {
-                            // Interaction[] interacts =
-                            // Interaction.getInteractions(Interaction.INTERACTION_DOWNLOAD_CAPTCHA);
-                            // if (interacts.length > 0) {
-                            // String captchaText = (String)
-                            // interacts[0].getProperty("captchaCode");
-                            // if (captchaText == null) {
-                            // // im NOtfall doch JAC nutzen
-                            // captchaText = JDUtilities.getCaptcha(controller,
-                            // plugin, captcha);
-                            // }
-                            // logger.info("CaptchaCode: " + captchaText);
-                            // downloadLink.setStatusText("Code: " +
-                            // captchaText);
-                            // fireControlEvent(new ControlEvent(this,
-                            // ControlEvent.CONTROL_SINGLE_DOWNLOAD_CHANGED,
-                            // downloadLink));
-                            // step.setParameter(captchaText);
-                            // step.setStatus(PluginStep.STATUS_DONE);
-                            // }
-                            // }
+
                         }
                         break;
                 }
-                if (aborted) {
-                    break;
-                }
+              
+            }
+            if (aborted) {
+                break;
             }
             if (step != null && downloadLink != null && plugin != null && plugin.nextStep(step) != null) {
                 downloadLink.setStatusText(plugin.nextStep(step).toString());
@@ -191,6 +165,7 @@ public class SingleDownloadController extends ControlMulticaster {
             }
             // Bricht ab wenn es Fehler gab
             if (step.getStatus() == PluginStep.STATUS_ERROR) {
+                logger.severe("Error detected");
                 break;
             }
 
@@ -285,7 +260,10 @@ public class SingleDownloadController extends ControlMulticaster {
         else {
             downloadLink.setStatusText(JDLocale.L("controller.status.finished", "Fertig"));
             downloadLink.setInProgress(false);
-
+           if(downloadLink.getStatus()!=DownloadLink.STATUS_DONE){
+               logger.severe("Pluginerror: Step returned null and Downloadlink status != STATUS_DONE");
+               downloadLink.setStatus(DownloadLink.STATUS_DONE);
+           }
             fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SINGLE_DOWNLOAD_CHANGED, downloadLink));
             fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_PLUGIN_HOST_INACTIVE, plugin));
             fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SINGLE_DOWNLOAD_FINISHED, downloadLink));
@@ -306,20 +284,19 @@ public class SingleDownloadController extends ControlMulticaster {
         downloadLink.setInProgress(false);
         downloadLink.setStatus(DownloadLink.STATUS_TODO);
         fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SINGLE_DOWNLOAD_CHANGED, downloadLink));
-    
-        
+
     }
 
     private void onErrorIncomplete(DownloadLink downloadLink2, PluginForHost plugin, PluginStep step) {
         downloadLink.setInProgress(false);
         downloadLink.setStatus(DownloadLink.STATUS_TODO);
         downloadLink.setEndOfWaittime(0);
-      
+
     }
 
     private void onErrorFileExists(DownloadLink downloadLink2, PluginForHost plugin, PluginStep step) {
 
-        String todo = JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_FILE_EXISTS, JDLocale.L("system.download.triggerfileexists.skip", "Link überspringen"));
+        String todo = JDUtilities.getSubConfig("DOWNLOAD").getStringProperty(Configuration.PARAM_FILE_EXISTS, JDLocale.L("system.download.triggerfileexists.skip", "Link überspringen"));
 
         if (todo.equals(JDLocale.L("system.download.triggerfileexists.skip", "Link überspringen"))) {
             downloadLink.setEnabled(false);
@@ -335,32 +312,38 @@ public class SingleDownloadController extends ControlMulticaster {
                 downloadLink.setEndOfWaittime(0);
             }
             else {
-                downloadLink.setStatusText(JDLocale.L("controller.status.fileexists.overwritefailed", "Fehlerbeim Überschreiben"));
+                downloadLink.setStatusText(JDLocale.L("controller.status.fileexists.overwritefailed", "Überschreiben fehlgeschlagen ") + downloadLink.getFileOutput());
 
             }
 
         }
-
-       
 
         fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SINGLE_DOWNLOAD_CHANGED, downloadLink));
 
     }
 
     private void onErrorAGBNotSigned(DownloadLink downloadLink2, PluginForHost plugin, PluginStep step) {
-        
-    	downloadLink.setStatusText(JDLocale.L("controller.status.agb_tos", "AGB nicht akzeptiert"));
-    	new AgbDialog(downloadLink2);
-    	
-        /*if(JDController.FLAGS.getIntegerProperty("AGBMESSAGESIGNED_"+plugin.getHost(), 0)==0){
-            JDController.FLAGS.setProperty("AGBMESSAGESIGNED_"+plugin.getHost(), 1);
-            String title=JDLocale.L("gui.dialogs.agb_tos_warning_title", "Allgemeinen Geschäftsbedingungen nicht aktzeptiert");
-            String message=JDLocale.L("gui.dialogs.agb_tos_warning_text", "<p><font size=\"3\"><strong><font size=\2\" face=\"Verdana, Arial, Helvetica, sans-serif\">Die Allgemeinen Geschäftsbedingungen (AGB)</font></strong><font size=\"2\" face=\"Verdana, Arial, Helvetica, sans-serif\"><br/>  wurden  nicht gelesen und akzeptiert.</font></font></p><p><font size=\"2\" face=\"Verdana, Arial, Helvetica, sans-serif\"><br/> Anbieter: </font></p>")+plugin.getHost();
-            String url="http://www.the-lounge.org/viewtopic.php?f=222&t=8842";
-            JDUtilities.getGUI().showHelpMessage(title, message, url);
-            
-        }*/
-        
+
+        downloadLink.setStatusText(JDLocale.L("controller.status.agb_tos", "AGB nicht akzeptiert"));
+        new AgbDialog(downloadLink2);
+
+        /*
+         * if(JDController.FLAGS.getIntegerProperty("AGBMESSAGESIGNED_"+plugin.getHost(),
+         * 0)==0){
+         * JDController.FLAGS.setProperty("AGBMESSAGESIGNED_"+plugin.getHost(),
+         * 1); String title=JDLocale.L("gui.dialogs.agb_tos_warning_title",
+         * "Allgemeinen Geschäftsbedingungen nicht aktzeptiert"); String
+         * message=JDLocale.L("gui.dialogs.agb_tos_warning_text", "<p><font
+         * size=\"3\"><strong><font size=\2\" face=\"Verdana, Arial,
+         * Helvetica, sans-serif\">Die Allgemeinen Geschäftsbedingungen (AGB)</font></strong><font
+         * size=\"2\" face=\"Verdana, Arial, Helvetica, sans-serif\"><br/>
+         * wurden nicht gelesen und akzeptiert.</font></font></p><p><font
+         * size=\"2\" face=\"Verdana, Arial, Helvetica, sans-serif\"><br/>
+         * Anbieter: </font></p>")+plugin.getHost(); String
+         * url="http://www.the-lounge.org/viewtopic.php?f=222&t=8842";
+         * JDUtilities.getGUI().showHelpMessage(title, message, url); }
+         */
+
         fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SINGLE_DOWNLOAD_CHANGED, downloadLink));
 
     }
@@ -368,8 +351,7 @@ public class SingleDownloadController extends ControlMulticaster {
     private void onErrorPluginSpecific(DownloadLink downloadLink2, PluginForHost plugin, PluginStep step) {
         String message = (String) step.getParameter();
         logger.severe("Error occurred: " + message);
-if(message!=null)
-        downloadLink.setStatusText(message);
+        if (message != null) downloadLink.setStatusText(message);
 
         // downloadLink.setEnabled(false);
         fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SINGLE_DOWNLOAD_CHANGED, downloadLink));

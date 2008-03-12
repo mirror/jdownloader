@@ -7,6 +7,7 @@ import java.net.URL;
 import java.net.URLDecoder;
 import java.util.regex.Pattern;
 
+import jd.plugins.Download;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTPConnection;
 import jd.plugins.PluginForHost;
@@ -158,17 +159,8 @@ public class EgoshareCom extends PluginForHost {
                             return step;
                         }
                         //Download starten
-                        int downloadSuccess = download(downloadLink, urlConnection);
-                        
-                        // Download erfolgreich oder fehlerhaft?
-                        if (downloadSuccess !=DOWNLOAD_SUCCESS) {
-                            step.setStatus(PluginStep.STATUS_ERROR);
-                          
-                            
-                        } else {
-                            step.setStatus(PluginStep.STATUS_DONE);
-                            downloadLink.setStatus(DownloadLink.STATUS_DONE);
-                        }
+                        Download dl = new Download(this, downloadLink, urlConnection);
+                        dl.startDownload();
 
                         return step;
                     }

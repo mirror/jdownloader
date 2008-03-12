@@ -54,7 +54,7 @@ public abstract class PluginForHost extends Plugin {
             logger.info(this + " Pluginende erreicht!");
             return null;
         }
-        logger.info("Current Step:  " + currentStep);
+        logger.info("Current Step:  " + currentStep+"/"+steps);
         if(!this.isAGBChecked()){
             currentStep.setStatus(PluginStep.STATUS_ERROR);
             logger.severe("AGB not signed : "+this.getPluginID());
@@ -217,13 +217,13 @@ public abstract class PluginForHost extends Plugin {
             logger.info("Filename: " + getFileNameFormHeader(requestInfo.getConnection()));
            
             downloadLink.setName(getFileNameFormHeader(requestInfo.getConnection()));
-            if (download(downloadLink, requestInfo.getConnection())!=Plugin.DOWNLOAD_SUCCESS) {
+            Download dl = new Download(this, downloadLink, requestInfo.getConnection());
+            if (!dl.startDownload() && step.getStatus() != PluginStep.STATUS_ERROR && step.getStatus() != PluginStep.STATUS_TODO) {
+                downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN);
+                
                 step.setStatus(PluginStep.STATUS_ERROR);
-              
-            }
-            else {
-                step.setStatus(PluginStep.STATUS_DONE);
-                downloadLink.setStatus(DownloadLink.STATUS_DONE);
+                
+                
             }
             return true;
         }

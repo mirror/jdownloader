@@ -6,6 +6,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.regex.Pattern;
 
+import jd.plugins.Download;
 import jd.plugins.DownloadLink;
 import jd.plugins.Form;
 import jd.plugins.HTTPConnection;
@@ -299,15 +300,9 @@ public class ShareOnlineBiz extends PluginForHost {
                         step.setStatus(PluginStep.STATUS_ERROR);
                         return step;
                     }
-                    if (download(downloadLink, urlConnection) != DOWNLOAD_SUCCESS) {
-                        step.setStatus(PluginStep.STATUS_ERROR);
+                    Download dl = new Download(this, downloadLink, urlConnection);
 
-                    }
-                    else {
-                        step.setStatus(PluginStep.STATUS_DONE);
-                        downloadLink.setStatus(DownloadLink.STATUS_DONE);
-
-                    }
+                    dl.startDownload();
 
                     return step;
 

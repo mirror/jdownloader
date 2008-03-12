@@ -8,6 +8,7 @@ import java.net.URL;
 import java.util.Vector;
 import java.util.regex.Pattern;
 
+import jd.plugins.Download;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginStep;
@@ -56,11 +57,11 @@ public class ImageFap extends PluginForHost {
     public String getPluginID() {
         return PLUGIN_ID;
     }
-    public PluginStep doStep(PluginStep step, DownloadLink parameter) {
+    public PluginStep doStep(PluginStep step, DownloadLink downloadLink) {
         RequestInfo requestInfo;
         try {
             if (step.getStep() == PluginStep.STEP_DOWNLOAD) {
-                requestInfo = getRequest(new URL(parameter.getDownloadURL()));
+                requestInfo = getRequest(new URL(downloadLink.getDownloadURL()));
                 Vector<String> Images = new Vector<String>();
                 Vector<Vector<String>> matches = getAllSimpleMatches(requestInfo.getHtmlCode(), LINKS);
                 Vector<Vector<String>> pagematches = getAllSimpleMatches(requestInfo.getHtmlCode(), PAGES);
@@ -91,12 +92,13 @@ public class ImageFap extends PluginForHost {
                 file.mkdir();
                 for (int i = 1; i < Images.size(); i++) {
                     requestInfo = postRequestWithoutHtmlCode(new URL("http://85.17.40.49/full/getimg.php?img=" + Images.get(i)), null, null, null, true);
-                    parameter.setName(Images.get(i));
-                    download(parameter,  requestInfo.getConnection());
-                    new File(parameter.getFileOutput()).renameTo(new File(file, Images.get(i)));
+                    downloadLink.setName(Images.get(i));
+                    Download dl = new Download(this, downloadLink,  requestInfo.getConnection());
+                    dl.startDownload();
+                    new File(downloadLink.getFileOutput()).renameTo(new File(file, Images.get(i)));
                 }
                 step.setStatus(PluginStep.STATUS_DONE);
-                parameter.setStatus(DownloadLink.STATUS_DONE);
+                downloadLink.setStatus(DownloadLink.STATUS_DONE);
                 return step;
 
             }

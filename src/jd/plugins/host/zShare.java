@@ -3,6 +3,7 @@ package jd.plugins.host;
 import java.io.File;
 import java.util.regex.Pattern;
 
+import jd.plugins.Download;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTPConnection;
 import jd.plugins.PluginForHost;
@@ -74,19 +75,8 @@ public class zShare extends PluginForHost {
 				step.setStatus(PluginStep.STATUS_ERROR);
 				return step;
 			}
-			if (download(downloadLink, urlConnection)==DOWNLOAD_SUCCESS) {
-				step.setStatus(PluginStep.STATUS_DONE);
-				downloadLink.setStatus(DownloadLink.STATUS_DONE);
-				return step;
-			} else if (aborted) {
-				logger.warning("Plugin abgebrochen");
-				downloadLink.setStatus(DownloadLink.STATUS_TODO);
-				step.setStatus(PluginStep.STATUS_TODO);
-			} else {
-		
-			
-				step.setStatus(PluginStep.STATUS_ERROR);
-			}
+			  Download dl = new Download(this, downloadLink, urlConnection);
+			  dl.startDownload();
 			return step;
 		} catch (Exception e) {
 			step.setStatus(PluginStep.STATUS_ERROR);

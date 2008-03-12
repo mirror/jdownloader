@@ -24,6 +24,7 @@ import java.util.Map.Entry;
 import java.util.logging.Logger;
 
 import jd.config.Configuration;
+import jd.event.ControlEvent;
 import jd.plugins.event.PluginEvent;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
@@ -60,9 +61,9 @@ public class Download {
 
     private int                       chunkNum                               = 1;
 
-    private int                       readTimeout                            = JDUtilities.getConfiguration().getIntegerProperty(Configuration.PARAM_DOWNLOAD_READ_TIMEOUT, 10000);
+    private int                       readTimeout                            = JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_READ_TIMEOUT, 10000);
 
-    private int                       requestTimeout                         = JDUtilities.getConfiguration().getIntegerProperty(Configuration.PARAM_DOWNLOAD_CONNECT_TIMEOUT, 10000);
+    private int                       requestTimeout                         = JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_CONNECT_TIMEOUT, 10000);
 
     private int                       chunksInProgress                       = 0;
 
@@ -87,6 +88,8 @@ public class Download {
     private long                      lastChunkSpeedCheck;
 
     private int                       lastMaxChunkSpeed;
+
+    private long fileSize=-1;
 
     public static Logger              logger                                 = JDUtilities.getLogger();
 
@@ -149,12 +152,12 @@ public class Download {
             logger.severe("File already is in progress. " + downloadLink.getFileOutput());
             downloadLink.setStatus(DownloadLink.STATUS_ERROR_OUTPUTFILE_OWNED_BY_ANOTHER_LINK);
             error(ERROR_OUTPUTFILE_OWNED_BY_ANOTHER_LINK);
-            return false;
+            if (!handleErrors()) return false;
         }
         File fileOutput = new File(downloadLink.getFileOutput());
         if (fileOutput == null || fileOutput.getParentFile() == null) {
             error(ERROR_OUTPUTFILE_INVALID);
-            return false;
+            if (!handleErrors()) return false;
         }
         if (!fileOutput.getParentFile().exists()) {
             fileOutput.getParentFile().mkdirs();
@@ -162,9 +165,20 @@ public class Download {
 
         if (fileOutput.exists()) {
             logger.severe("File already exists. " + fileOutput);
-            downloadLink.setStatus(DownloadLink.STATUS_ERROR_ALREADYEXISTS);
-            error(ERROR_OUTPUTFILE_ALREADYEXISTS);
-            return false;
+            String todo = JDUtilities.getSubConfig("DOWNLOAD").getStringProperty(Configuration.PARAM_FILE_EXISTS, JDLocale.L("system.download.triggerfileexists.skip", "Link überspringen"));
+
+            if (!todo.equals(JDLocale.L("system.download.triggerfileexists.skip", "Link überspringen"))) {
+
+                if (new File(downloadLink.getFileOutput()).delete()) {
+                }
+                else {
+                    downloadLink.setStatus(DownloadLink.STATUS_ERROR_ALREADYEXISTS);
+                    error(ERROR_OUTPUTFILE_ALREADYEXISTS);
+                    if (!handleErrors()) return false;
+                }
+
+            }
+
         }
 
         File part = new File(downloadLink.getFileOutput() + ".part");
@@ -173,11 +187,18 @@ public class Download {
             // outputFile.setLength(connection.getContentLength());
             outputChannel = outputFile.getChannel();
             downloadLink.setStatus(DownloadLink.STATUS_DOWNLOAD_IN_PROGRESS);
-            long parts = connection.getContentLength() / chunkNum;
+            long fileSize=getFileSize();
+            
+            long parts = fileSize>0?fileSize / chunkNum:-1;
+            if(parts==-1){
+                logger.warning("Could not get Filesize.... reset chunks to 1");
+                chunkNum=1;
+            }
             logger.finer("Start Download in " + chunkNum + " chunks. Chunksize: " + parts);
+            downloadLink.setDownloadMax((int)fileSize);
             for (int i = 0; i < chunkNum; i++) {
                 if (i == (chunkNum - 1)) {
-                    addChunk(new Chunk(i * parts, connection.getContentLength(), connection));
+                    addChunk(new Chunk(i * parts, fileSize, connection));
                 }
                 else {
                     addChunk(new Chunk(i * parts, (i + 1) * parts, connection));
@@ -207,6 +228,13 @@ public class Download {
         }
         return false;
 
+    }
+
+    private long getFileSize() {
+        if(connection.getContentLength()>0)return connection.getContentLength();        
+        if(fileSize>0)return fileSize;
+        if(downloadLink.getDownloadMax()>0)return downloadLink.getDownloadMax();
+        return -1;
     }
 
     public boolean handleErrors() {
@@ -288,8 +316,9 @@ public class Download {
     }
 
     private int getMaximalChunkSpeed() {
-       // if (System.currentTimeMillis() < (lastChunkSpeedCheck + 1000)) return lastMaxChunkSpeed;
-       // this.lastChunkSpeedCheck = System.currentTimeMillis();
+        // if (System.currentTimeMillis() < (lastChunkSpeedCheck + 1000)) return
+        // lastMaxChunkSpeed;
+        // this.lastChunkSpeedCheck = System.currentTimeMillis();
         int allowedLinkSpeed = downloadLink.getMaximalspeed() * 40;
 
         int chunkSpeed = allowedLinkSpeed / getRunningChunks();
@@ -310,7 +339,7 @@ public class Download {
         // logger.info("Max Chunkspeed:
         // "+(chunkSpeed+(allowedLinkSpeed-currentTotalspeed)/this.getRunningChunks()));
         this.lastMaxChunkSpeed = chunkSpeed + (allowedLinkSpeed - currentTotalspeed) / this.getRunningChunks();
-       //logger.info("Chunk" +lastMaxChunkSpeed);
+        // logger.info("Chunk" +lastMaxChunkSpeed);
         return lastMaxChunkSpeed;
 
     }
@@ -341,7 +370,7 @@ public class Download {
 
         private long             endByte;
 
-        private File             fileOutput;
+       
 
         private HTTPConnection   connection;
 
@@ -357,7 +386,7 @@ public class Download {
             this.connection = connection;
 
             currentBytePosition = startByte;
-            if (startByte >= endByte) {
+            if (startByte >= endByte && endByte>0) {
                 logger.severe("Startbyte has to be less than endByte");
             }
         }
@@ -381,11 +410,11 @@ public class Download {
                     httpConnection.setRequestProperty(next.getKey(), value.substring(1, value.length() - 1));
                 }
 
-                // if(chunkNum>1){
+                if(chunkNum>1){
                 httpConnection.setRequestProperty("Range", "bytes=" + startByte + "-" + endByte);
 
                 logger.info(chunks.indexOf(this) + " - " + httpConnection.getRequestProperties() + "");
-                // }
+                 }
                 if (connection.getHTTPURLConnection().getDoOutput()) {
                     httpConnection.setDoOutput(true);
                     httpConnection.connect();
@@ -406,8 +435,8 @@ public class Download {
         }
 
         public void run() {
-            fileOutput = new File(downloadLink.getFileOutput() + ".part" + startByte);
-            logger.finer("Start Chunk " + startByte + " - " + endByte + ": " + fileOutput);
+           
+            logger.finer("Start Chunk " + startByte + " - " + endByte);
             if (chunkNum > 1) this.connection = copyConnection(connection);
             logger.info("Start Chunk " + chunks.indexOf(this));
             chunksDownloading++;
@@ -417,7 +446,7 @@ public class Download {
             if (plugin.aborted || downloadLink.isAborted()) {
                 error(ERROR_ABORTED_BY_USER);
             }
-            logger.finer("Chunk finished: " + fileOutput);
+            logger.finer("Chunk finished " +getBytesLoaded());
             chunksInProgress--;
         }
 
@@ -454,7 +483,7 @@ public class Download {
 
                     timer = System.currentTimeMillis();
                     while (buffer.hasRemaining() && !plugin.aborted && !downloadLink.isAborted() && (System.currentTimeMillis() - timer) < getTimeInterval()) {
-                        //if(bytes>0)Thread.sleep(100);
+                        // if(bytes>0)Thread.sleep(100);
                         block = source.read(buffer);
                         if (block == -1) {
                             break;
@@ -469,11 +498,13 @@ public class Download {
                     currentBytePosition += bytes;
 
                     if (block == -1) break;
-                    try{
-                    Thread.sleep(getTimeInterval()-(System.currentTimeMillis() - timer));
-                    }catch(Exception e){}
+                    try {
+                        Thread.sleep(getTimeInterval() - (System.currentTimeMillis() - timer));
+                    }
+                    catch (Exception e) {
+                    }
                     deltaTime = System.currentTimeMillis() - timer;
-                    
+
                     this.bytesPerSecond = (1000 * bytes) / deltaTime;
                     // logger.info("loaded "+bytes+" b in "+(deltaTime)+" ms:
                     // "+bytesPerSecond);
@@ -484,7 +515,7 @@ public class Download {
                     }
 
                 }
-                if (currentBytePosition != endByte) {
+                if (currentBytePosition != endByte && endByte>0) {
 
                     inputStream.close();
                     source.close();
@@ -541,9 +572,7 @@ public class Download {
             return bufferSize;
         }
 
-        public File getFileOutput() {
-            return fileOutput;
-        }
+   
 
         public long getBytesPerSecond() {
             return bytesPerSecond;
@@ -583,6 +612,15 @@ public class Download {
     public void setMaxBytesToLoad(int integerProperty) {
         this.maxBytes = integerProperty;
 
+    }
+
+    public int getBytesLoaded() {
+        return bytesLoaded;
+    }
+
+    public void setFilesize(long length) {
+       this.fileSize=length;
+        
     }
 
 }

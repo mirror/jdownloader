@@ -1,5 +1,6 @@
 package jd.plugins.host;
 
+import jd.plugins.Download;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTPConnection;
 import jd.plugins.PluginForHost;
@@ -202,15 +203,9 @@ public class ShareBaseDe extends PluginForHost {
                         }
                       
                         //Download starten
-                        if(download(downloadLink, urlConnection)!=DOWNLOAD_SUCCESS) {
-                          	step.setStatus(PluginStep.STATUS_ERROR);
-                          
-                      	} else {
-                          	step.setStatus(PluginStep.STATUS_DONE);
-                          	downloadLink.setStatus(DownloadLink.STATUS_DONE);
-                   
-                      	}
-                      
+                        Download dl = new Download(this, downloadLink, urlConnection);
+
+                        dl.startDownload();
                       	return step;
                       
                     } catch (IOException e) {

@@ -695,17 +695,17 @@ public abstract class Plugin {
     }
 
     public static int getReadTimeoutFromConfiguration() {
-        return (Integer) JDUtilities.getConfiguration().getProperty(Configuration.PARAM_DOWNLOAD_READ_TIMEOUT, 10000);
+        return JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_READ_TIMEOUT, 10000);
     }
 
     public static int getConnectTimeoutFromConfiguration() {
-        return (Integer) JDUtilities.getConfiguration().getProperty(Configuration.PARAM_DOWNLOAD_CONNECT_TIMEOUT, 10000);
+        return JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_CONNECT_TIMEOUT, 10000);
     }
     public static void setReadTimeout(int value) {
-        JDUtilities.getConfiguration().setProperty(Configuration.PARAM_DOWNLOAD_READ_TIMEOUT,value);
+        JDUtilities.getSubConfig("DOWNLOAD").setProperty(Configuration.PARAM_DOWNLOAD_READ_TIMEOUT,value);
     }
     public static void setConnectTimeout(int value) {
-        JDUtilities.getConfiguration().setProperty(Configuration.PARAM_DOWNLOAD_CONNECT_TIMEOUT,value);
+        JDUtilities.getSubConfig("DOWNLOAD").setProperty(Configuration.PARAM_DOWNLOAD_CONNECT_TIMEOUT,value);
     }
 
     /**
@@ -1006,315 +1006,315 @@ public abstract class Plugin {
      *            benutzt. Ansonsten erfolgt ein normaler GET Download von der
      *            URL, die im DownloadLink hinterlegt ist
      * @return wahr, wenn alle Daten ausgelesen und gespeichert wurden
-     */
-    public int download(DownloadLink downloadLink, HTTPConnection urlConnection) {
-
-        return download(downloadLink, urlConnection, -1);
-
-    }
-
-    public int download(DownloadLink downloadLink, HTTPConnection urlConnection, int bytesToLoad) {
-        
-        logger.info("Download try: "+downloadLink+" from "+downloadLink.getHost()+" Bytes: "+bytesToLoad);
-   
-        if(JDUtilities.getController().isLocalFileInProgress(downloadLink)){
-            logger.severe("File already is in progress. " + downloadLink.getFileOutput());
-            downloadLink.setStatus(DownloadLink.STATUS_ERROR_OUTPUTFILE_OWNED_BY_ANOTHER_LINK);
-            return Plugin.DOWNLOAD_ERROR_OUTPUTFILE_IN_PROGRESS;
-            
-        }
-        File fileOutput = new File(downloadLink.getFileOutput() + ".jdd");
-        if (fileOutput == null || fileOutput.getParentFile() == null) return Plugin.DOWNLOAD_ERROR_INVALID_OUTPUTFILE;
-        if (!fileOutput.getParentFile().exists()) {
-            fileOutput.getParentFile().mkdirs();
-        }
-        
-        if(new File(downloadLink.getFileOutput()).exists()){
-            logger.severe("File already exists. " + downloadLink.getFileOutput());
-            downloadLink.setStatus(DownloadLink.STATUS_ERROR_ALREADYEXISTS);
-            return Plugin.DOWNLOAD_ERROR_OUTPUTFILE_ALREADYEXISTS;
-        }
-        logger.info("Create Tmp file "+fileOutput+" for "+downloadLink.getFileOutput());
-       
-        
-        downloadLink.setStatus(DownloadLink.STATUS_DOWNLOAD_IN_PROGRESS);
-        long downloadedBytes = 0;
-        long start, end, time;
-        try {
-            int maxspeed = downloadLink.getMaximalspeed();
-            ByteBuffer buffer = ByteBuffer.allocateDirect(maxspeed);
-            // Falls keine urlConnection übergeben wurde
-            if (urlConnection == null) urlConnection = new HTTPConnection(new URL(downloadLink.getDownloadURL()).openConnection());
-            FileOutputStream fos = new FileOutputStream(fileOutput);
-            // Länge aus HTTP-Header speichern:
-            int contentLen = urlConnection.getContentLength();
-            if(contentLen>0)
-            {
-            downloadLink.setDownloadMax(contentLen);
-            }
-            else
-            	contentLen = (int) downloadLink.getDownloadMax();
-
-            if (bytesToLoad > 0) {
-                contentLen = bytesToLoad;
-                logger.info("Load only the first " + bytesToLoad + " kb");
-            }
-            if(contentLen<=0){
-                downloadLink.setStatus(DownloadLink.STATUS_ERROR_PLUGIN_SPECIFIC);
-                downloadLink.setStatusText(JDLocale.L("plugins.download.error.0byte","Fehlerhafter Upload"));
-                return Plugin.DOWNLOAD_ERROR_0_BYTE_TOLOAD; 
-                
-            }
-            
-            	
-            // NIO Channels setzen:
-            urlConnection.setReadTimeout(getReadTimeoutFromConfiguration());
-            urlConnection.setConnectTimeout(getConnectTimeoutFromConfiguration());
-            ReadableByteChannel source = Channels.newChannel(urlConnection.getInputStream());
-            WritableByteChannel dest = fos.getChannel();
-
-            logger.info("starting download");
-            start = System.currentTimeMillis();    
-            buffer.clear();
-   
-            long bytesPerSecond = 0;
-            long deltaTime = 0L;
-            long timer = -System.currentTimeMillis();
-            while (!aborted && !downloadLink.isAborted()) {
-          
-                if (downloadLink.isLimited) Thread.sleep(25);
-                int bytes = source.read(buffer);
-                if (bytes == -1) break;
-    
-                buffer.flip();
-                dest.write(buffer);
-                buffer.compact();
-            
-                downloadedBytes += bytes;
-                bytesPerSecond += bytes;
-                deltaTime = timer + System.currentTimeMillis();
-                if (deltaTime > 1000) {
-                    downloadLink.addBytes(bytesPerSecond, deltaTime);
-                    bytesPerSecond = 0;
-                    deltaTime = 0L;
-                    timer = -System.currentTimeMillis();
-                    if (maxspeed != (maxspeed = downloadLink.getMaximalspeed())) {
-                        buffer = ByteBuffer.allocateDirect(downloadLink.getMaximalspeed());
-                        buffer.clear();
-                    }
-                }
-              
-                firePluginEvent(new PluginEvent(this, PluginEvent.PLUGIN_DATA_CHANGED, downloadLink));
-                downloadLink.setDownloadCurrent(downloadedBytes);
-                if (bytesToLoad > 0 && downloadedBytes >= bytesToLoad) break;
-            }
-            if (bytesToLoad <= 0 && contentLen != -1 && downloadedBytes < contentLen) {
-                logger.info(aborted + " - " + downloadLink.isAborted() + " incomplete download: bytes loaded: " + downloadedBytes + "/" + contentLen);
-                downloadLink.setStatus(DownloadLink.STATUS_DOWNLOAD_INCOMPLETE);
-               source.close();
-                dest.close();
-                fos.close();
-                return Plugin.DOWNLOAD_ERROR_DOWNLOAD_INCOMPLETE;
-            }
-            source.close();
-            dest.close();
-            fos.close();
-            end = System.currentTimeMillis();
-            time = end - start;
-
-            if (new File(downloadLink.getFileOutput()).exists()) {
-                new File(downloadLink.getFileOutput()).delete();
-            }
-            if (!fileOutput.renameTo(new File(downloadLink.getFileOutput()))) {
-                logger.severe("Could not rename file to " + downloadLink.getFileOutput());
-                downloadLink.setStatus(DownloadLink.STATUS_DOWNLOAD_INCOMPLETE);
-                return Plugin.DOWNLOAD_ERROR_RENAME_FAILED;
-            }
-            downloadLink.setStatus(DownloadLink.STATUS_DOWNLOAD_FINISHED);
-           logger.info("download finished:" + fileOutput.getAbsolutePath());
-            logger.info(downloadedBytes + " bytes in " + time + " ms");
-            return Plugin.DOWNLOAD_SUCCESS;
-        }
-        catch (FileNotFoundException e) {
-
-            logger.severe("file not found. " + e.getLocalizedMessage());
-            downloadLink.setStatus(DownloadLink.STATUS_ERROR_FILE_NOT_FOUND);
-            return Plugin.DOWNLOAD_ERROR_FILENOTFOUND;
-        }
-        catch (SecurityException e) {
-
-            logger.severe("not enough rights to write the file. " + e.getLocalizedMessage());
-
-            downloadLink.setStatus(DownloadLink.STATUS_ERROR_SECURITY);
-            return Plugin.DOWNLOAD_ERROR_SECURITY;
-        }
-        catch (IOException e) {
-
-            logger.severe("error occurred while writing to file. " + e.getLocalizedMessage());
-            downloadLink.setStatus(DownloadLink.STATUS_ERROR_SECURITY);
-            return Plugin.DOWNLOAD_ERROR_SECURITY;
-        }
-        catch (Exception e) {
-
-            e.printStackTrace();
-        }
-        downloadLink.setStatus(DownloadLink.STATUS_DOWNLOAD_INCOMPLETE);
-        return Plugin.DOWNLOAD_ERROR_UNKNOWN;
-    }
-   
-    public int download(DownloadLink downloadLink, HTTPConnection urlConnection, int bytesToLoad, int resumeAt) {
-//        if(bytesToLoad==0){
-//            downloadLink.setStatus(DownloadLink.STATUS_ERROR_PLUGIN_SPECIFIC);
-//            downloadLink.setStatusText(JDLocale.L("plugins.download.error.0byte","Fehlerhafter Upload"));
-//            return Plugin.DOWNLOAD_ERROR_0_BYTE_TOLOAD; 
+//     */
+//    public int download(DownloadLink downloadLink, HTTPConnection urlConnection) {
+//
+//        return download(downloadLink, urlConnection, -1);
+//
+//    }
+//
+//    public int download(DownloadLink downloadLink, HTTPConnection urlConnection, int bytesToLoad) {
+//        
+//        logger.info("Download try: "+downloadLink+" from "+downloadLink.getHost()+" Bytes: "+bytesToLoad);
+//   
+//        if(JDUtilities.getController().isLocalFileInProgress(downloadLink)){
+//            logger.severe("File already is in progress. " + downloadLink.getFileOutput());
+//            downloadLink.setStatus(DownloadLink.STATUS_ERROR_OUTPUTFILE_OWNED_BY_ANOTHER_LINK);
+//            return Plugin.DOWNLOAD_ERROR_OUTPUTFILE_IN_PROGRESS;
 //            
 //        }
-        
-        
-        if(JDUtilities.getController().isLocalFileInProgress(downloadLink)){
-            logger.severe("File already is in progress. " + downloadLink.getFileOutput());
-            downloadLink.setStatus(DownloadLink.STATUS_ERROR_OUTPUTFILE_OWNED_BY_ANOTHER_LINK);
-            return Plugin.DOWNLOAD_ERROR_OUTPUTFILE_IN_PROGRESS;
-            
-        }
-        File fileOutput = new File(downloadLink.getFileOutput() + ".jdd");
-        if (fileOutput == null || fileOutput.getParentFile() == null) return Plugin.DOWNLOAD_ERROR_INVALID_OUTPUTFILE;
-        if (!fileOutput.getParentFile().exists()) {
-            fileOutput.getParentFile().mkdirs();
-        }
-        
-        if(new File(downloadLink.getFileOutput()).exists()){
-            logger.severe("File already exists. " + downloadLink.getFileOutput());
-            downloadLink.setStatus(DownloadLink.STATUS_ERROR_ALREADYEXISTS);
-            return Plugin.DOWNLOAD_ERROR_OUTPUTFILE_ALREADYEXISTS;
-        }
-        logger.info("Create Tmp file "+fileOutput+" for "+downloadLink.getFileOutput());
-        downloadLink.setStatus(DownloadLink.STATUS_DOWNLOAD_IN_PROGRESS);
-        long downloadedBytes = 0;
-        long start, end, time;
-        try {
-            int maxspeed = downloadLink.getMaximalspeed();
-            ByteBuffer buffer = ByteBuffer.allocateDirect(maxspeed);
-
-            FileOutputStream fos = new FileOutputStream(fileOutput, true);
-            // NIO Channels setzen:
-            urlConnection.setReadTimeout(getReadTimeoutFromConfiguration());
-            urlConnection.setConnectTimeout(getConnectTimeoutFromConfiguration());
-            ReadableByteChannel source = Channels.newChannel(urlConnection.getInputStream());
-            WritableByteChannel dest = fos.getChannel();
-            // Länge aus HTTP-Header speichern:
-            String range = urlConnection.getHeaderField("Content-Range");
-            if (range == null || bytesToLoad > 0) {
-                logger.severe("No Content-Range Header. Retry file");
-                source.close();
-                dest.close();
-                fos.close();
-                return download(downloadLink, urlConnection, bytesToLoad);
-            }
-            range = "[" + range + "]";
-            logger.info(range);
-            String[] dat = Plugin.getSimpleMatches(range, "[bytes °-°/°]");
-            int contentLen = Integer.parseInt(dat[2]);
-            int startAt = Integer.parseInt(dat[0]);
-            // int rest = Integer.parseInt(dat[1]);
-            downloadedBytes = startAt;
-            downloadLink.setDownloadMax(contentLen);
-            downloadLink.setDownloadCurrent(startAt);
-            logger.info("starting download");
-            start = System.currentTimeMillis();
-            // Buffer, laufende Variablen resetten:
-            buffer.clear();
-            // long bytesLastSpeedCheck = 0;
-            // long t1 = System.currentTimeMillis();
-            // long t3 = t1;
-
-            long bytesPerSecond = 0;
-            long deltaTime = 0L;
-            long timer = -System.currentTimeMillis();
-            while (!aborted && !downloadLink.isAborted()) {
-                // Thread kurz schlafen lassen, um zu häufiges Event-fire zu
-                // verhindern:
-                // JD-Team: nix schlafen.. ich will speed! Die Events werden
-                // jetzt von der GUI kontrolliert
-                int bytes = source.read(buffer);
-                if (downloadLink.isLimited) Thread.sleep(25);
-                if (bytes == -1) break;
-                // Buffer flippen und in File schreiben:
-                buffer.flip();
-                dest.write(buffer);
-                buffer.compact();
-                // Laufende Variablen updaten:
-                downloadedBytes += bytes;
-                bytesPerSecond += bytes;
-                deltaTime = timer + System.currentTimeMillis();
-                if (deltaTime > 1000) {
-                    downloadLink.addBytes(bytesPerSecond, deltaTime);
-                    bytesPerSecond = 0;
-                    deltaTime = 0L;
-                    timer = -System.currentTimeMillis();
-                    if (maxspeed != (maxspeed = downloadLink.getMaximalspeed())) {
-                        buffer = ByteBuffer.allocateDirect(downloadLink.getMaximalspeed());
-                        buffer.clear();
-                    }
-                }
-                // firePluginEvent(new PluginEvent(this,
-                // PluginEvent.PLUGIN_DOWNLOAD_BYTES, bytes));
-                firePluginEvent(new PluginEvent(this, PluginEvent.PLUGIN_DATA_CHANGED, downloadLink));
-                downloadLink.setDownloadCurrent(downloadedBytes);
-
-                if (bytesToLoad > 0 && downloadedBytes >= bytesToLoad) break;
-            }
-            if (downloadedBytes < contentLen) {
-                logger.info(aborted + " - " + downloadLink.isAborted() + " incomplete download: bytes loaded: " + downloadedBytes + "/" + contentLen);
-                downloadLink.setStatus(DownloadLink.STATUS_DOWNLOAD_INCOMPLETE);
-                
-                source.close();
-                dest.close();
-                fos.close();
-                return Plugin.DOWNLOAD_ERROR_DOWNLOAD_INCOMPLETE;
-            }
-            end = System.currentTimeMillis();
-            time = end - start;
-            source.close();
-            dest.close();
-            fos.close();
-            if (new File(downloadLink.getFileOutput()).exists()) {
-                new File(downloadLink.getFileOutput()).delete();
-            }
-         
-       
-            if (!fileOutput.renameTo(new File(downloadLink.getFileOutput()))) {
-                logger.severe("Could not rename file " + fileOutput + " to " + downloadLink.getFileOutput());
-                downloadLink.setStatus(DownloadLink.STATUS_DOWNLOAD_INCOMPLETE);
-               return Plugin.DOWNLOAD_ERROR_RENAME_FAILED;
-            }
-            downloadLink.setStatus(DownloadLink.STATUS_DOWNLOAD_FINISHED);
-            logger.info("download finished:" + fileOutput.getAbsolutePath());
-            logger.info(downloadedBytes + " bytes in " + time + " ms");
-            return Plugin.DOWNLOAD_SUCCESS;
-        }
-        catch (FileNotFoundException e) {
-
-            logger.severe("file not found. " + e.getLocalizedMessage());
-            return Plugin.DOWNLOAD_ERROR_FILENOTFOUND;
-        }
-        catch (SecurityException e) {
-
-            logger.severe("not enough rights to write the file. " + e.getLocalizedMessage());
-            return Plugin.DOWNLOAD_ERROR_SECURITY;
-        }
-        catch (IOException e) {
-
-            logger.severe("error occurred while writing to file. " + e.getLocalizedMessage());
-            return Plugin.DOWNLOAD_ERROR_SECURITY;
-        }
-        catch (Exception e) {
-
-            e.printStackTrace();
-        }
-       downloadLink.setStatus(DownloadLink.STATUS_DOWNLOAD_INCOMPLETE);
-        return Plugin.DOWNLOAD_ERROR_UNKNOWN;
-    }
+//        File fileOutput = new File(downloadLink.getFileOutput() + ".jdd");
+//        if (fileOutput == null || fileOutput.getParentFile() == null) return Plugin.DOWNLOAD_ERROR_INVALID_OUTPUTFILE;
+//        if (!fileOutput.getParentFile().exists()) {
+//            fileOutput.getParentFile().mkdirs();
+//        }
+//        
+//        if(new File(downloadLink.getFileOutput()).exists()){
+//            logger.severe("File already exists. " + downloadLink.getFileOutput());
+//            downloadLink.setStatus(DownloadLink.STATUS_ERROR_ALREADYEXISTS);
+//            return Plugin.DOWNLOAD_ERROR_OUTPUTFILE_ALREADYEXISTS;
+//        }
+//        logger.info("Create Tmp file "+fileOutput+" for "+downloadLink.getFileOutput());
+//       
+//        
+//        downloadLink.setStatus(DownloadLink.STATUS_DOWNLOAD_IN_PROGRESS);
+//        long downloadedBytes = 0;
+//        long start, end, time;
+//        try {
+//            int maxspeed = downloadLink.getMaximalspeed();
+//            ByteBuffer buffer = ByteBuffer.allocateDirect(maxspeed);
+//            // Falls keine urlConnection übergeben wurde
+//            if (urlConnection == null) urlConnection = new HTTPConnection(new URL(downloadLink.getDownloadURL()).openConnection());
+//            FileOutputStream fos = new FileOutputStream(fileOutput);
+//            // Länge aus HTTP-Header speichern:
+//            int contentLen = urlConnection.getContentLength();
+//            if(contentLen>0)
+//            {
+//            downloadLink.setDownloadMax(contentLen);
+//            }
+//            else
+//            	contentLen = (int) downloadLink.getDownloadMax();
+//
+//            if (bytesToLoad > 0) {
+//                contentLen = bytesToLoad;
+//                logger.info("Load only the first " + bytesToLoad + " kb");
+//            }
+//            if(contentLen<=0){
+//                downloadLink.setStatus(DownloadLink.STATUS_ERROR_PLUGIN_SPECIFIC);
+//                downloadLink.setStatusText(JDLocale.L("plugins.download.error.0byte","Fehlerhafter Upload"));
+//                return Plugin.DOWNLOAD_ERROR_0_BYTE_TOLOAD; 
+//                
+//            }
+//            
+//            	
+//            // NIO Channels setzen:
+//            urlConnection.setReadTimeout(getReadTimeoutFromConfiguration());
+//            urlConnection.setConnectTimeout(getConnectTimeoutFromConfiguration());
+//            ReadableByteChannel source = Channels.newChannel(urlConnection.getInputStream());
+//            WritableByteChannel dest = fos.getChannel();
+//
+//            logger.info("starting download");
+//            start = System.currentTimeMillis();    
+//            buffer.clear();
+//   
+//            long bytesPerSecond = 0;
+//            long deltaTime = 0L;
+//            long timer = -System.currentTimeMillis();
+//            while (!aborted && !downloadLink.isAborted()) {
+//          
+//                if (downloadLink.isLimited) Thread.sleep(25);
+//                int bytes = source.read(buffer);
+//                if (bytes == -1) break;
+//    
+//                buffer.flip();
+//                dest.write(buffer);
+//                buffer.compact();
+//            
+//                downloadedBytes += bytes;
+//                bytesPerSecond += bytes;
+//                deltaTime = timer + System.currentTimeMillis();
+//                if (deltaTime > 1000) {
+//                    downloadLink.addBytes(bytesPerSecond, deltaTime);
+//                    bytesPerSecond = 0;
+//                    deltaTime = 0L;
+//                    timer = -System.currentTimeMillis();
+//                    if (maxspeed != (maxspeed = downloadLink.getMaximalspeed())) {
+//                        buffer = ByteBuffer.allocateDirect(downloadLink.getMaximalspeed());
+//                        buffer.clear();
+//                    }
+//                }
+//              
+//                firePluginEvent(new PluginEvent(this, PluginEvent.PLUGIN_DATA_CHANGED, downloadLink));
+//                downloadLink.setDownloadCurrent(downloadedBytes);
+//                if (bytesToLoad > 0 && downloadedBytes >= bytesToLoad) break;
+//            }
+//            if (bytesToLoad <= 0 && contentLen != -1 && downloadedBytes < contentLen) {
+//                logger.info(aborted + " - " + downloadLink.isAborted() + " incomplete download: bytes loaded: " + downloadedBytes + "/" + contentLen);
+//                downloadLink.setStatus(DownloadLink.STATUS_DOWNLOAD_INCOMPLETE);
+//               source.close();
+//                dest.close();
+//                fos.close();
+//                return Plugin.DOWNLOAD_ERROR_DOWNLOAD_INCOMPLETE;
+//            }
+//            source.close();
+//            dest.close();
+//            fos.close();
+//            end = System.currentTimeMillis();
+//            time = end - start;
+//
+//            if (new File(downloadLink.getFileOutput()).exists()) {
+//                new File(downloadLink.getFileOutput()).delete();
+//            }
+//            if (!fileOutput.renameTo(new File(downloadLink.getFileOutput()))) {
+//                logger.severe("Could not rename file to " + downloadLink.getFileOutput());
+//                downloadLink.setStatus(DownloadLink.STATUS_DOWNLOAD_INCOMPLETE);
+//                return Plugin.DOWNLOAD_ERROR_RENAME_FAILED;
+//            }
+//            downloadLink.setStatus(DownloadLink.STATUS_DOWNLOAD_FINISHED);
+//           logger.info("download finished:" + fileOutput.getAbsolutePath());
+//            logger.info(downloadedBytes + " bytes in " + time + " ms");
+//            return Plugin.DOWNLOAD_SUCCESS;
+//        }
+//        catch (FileNotFoundException e) {
+//
+//            logger.severe("file not found. " + e.getLocalizedMessage());
+//            downloadLink.setStatus(DownloadLink.STATUS_ERROR_FILE_NOT_FOUND);
+//            return Plugin.DOWNLOAD_ERROR_FILENOTFOUND;
+//        }
+//        catch (SecurityException e) {
+//
+//            logger.severe("not enough rights to write the file. " + e.getLocalizedMessage());
+//
+//            downloadLink.setStatus(DownloadLink.STATUS_ERROR_SECURITY);
+//            return Plugin.DOWNLOAD_ERROR_SECURITY;
+//        }
+//        catch (IOException e) {
+//
+//            logger.severe("error occurred while writing to file. " + e.getLocalizedMessage());
+//            downloadLink.setStatus(DownloadLink.STATUS_ERROR_SECURITY);
+//            return Plugin.DOWNLOAD_ERROR_SECURITY;
+//        }
+//        catch (Exception e) {
+//
+//            e.printStackTrace();
+//        }
+//        downloadLink.setStatus(DownloadLink.STATUS_DOWNLOAD_INCOMPLETE);
+//        return Plugin.DOWNLOAD_ERROR_UNKNOWN;
+//    }
+//   
+//    public int download(DownloadLink downloadLink, HTTPConnection urlConnection, int bytesToLoad, int resumeAt) {
+////        if(bytesToLoad==0){
+////            downloadLink.setStatus(DownloadLink.STATUS_ERROR_PLUGIN_SPECIFIC);
+////            downloadLink.setStatusText(JDLocale.L("plugins.download.error.0byte","Fehlerhafter Upload"));
+////            return Plugin.DOWNLOAD_ERROR_0_BYTE_TOLOAD; 
+////            
+////        }
+//        
+//        
+//        if(JDUtilities.getController().isLocalFileInProgress(downloadLink)){
+//            logger.severe("File already is in progress. " + downloadLink.getFileOutput());
+//            downloadLink.setStatus(DownloadLink.STATUS_ERROR_OUTPUTFILE_OWNED_BY_ANOTHER_LINK);
+//            return Plugin.DOWNLOAD_ERROR_OUTPUTFILE_IN_PROGRESS;
+//            
+//        }
+//        File fileOutput = new File(downloadLink.getFileOutput() + ".jdd");
+//        if (fileOutput == null || fileOutput.getParentFile() == null) return Plugin.DOWNLOAD_ERROR_INVALID_OUTPUTFILE;
+//        if (!fileOutput.getParentFile().exists()) {
+//            fileOutput.getParentFile().mkdirs();
+//        }
+//        
+//        if(new File(downloadLink.getFileOutput()).exists()){
+//            logger.severe("File already exists. " + downloadLink.getFileOutput());
+//            downloadLink.setStatus(DownloadLink.STATUS_ERROR_ALREADYEXISTS);
+//            return Plugin.DOWNLOAD_ERROR_OUTPUTFILE_ALREADYEXISTS;
+//        }
+//        logger.info("Create Tmp file "+fileOutput+" for "+downloadLink.getFileOutput());
+//        downloadLink.setStatus(DownloadLink.STATUS_DOWNLOAD_IN_PROGRESS);
+//        long downloadedBytes = 0;
+//        long start, end, time;
+//        try {
+//            int maxspeed = downloadLink.getMaximalspeed();
+//            ByteBuffer buffer = ByteBuffer.allocateDirect(maxspeed);
+//
+//            FileOutputStream fos = new FileOutputStream(fileOutput, true);
+//            // NIO Channels setzen:
+//            urlConnection.setReadTimeout(getReadTimeoutFromConfiguration());
+//            urlConnection.setConnectTimeout(getConnectTimeoutFromConfiguration());
+//            ReadableByteChannel source = Channels.newChannel(urlConnection.getInputStream());
+//            WritableByteChannel dest = fos.getChannel();
+//            // Länge aus HTTP-Header speichern:
+//            String range = urlConnection.getHeaderField("Content-Range");
+//            if (range == null || bytesToLoad > 0) {
+//                logger.severe("No Content-Range Header. Retry file");
+//                source.close();
+//                dest.close();
+//                fos.close();
+//                return download(downloadLink, urlConnection, bytesToLoad);
+//            }
+//            range = "[" + range + "]";
+//            logger.info(range);
+//            String[] dat = Plugin.getSimpleMatches(range, "[bytes °-°/°]");
+//            int contentLen = Integer.parseInt(dat[2]);
+//            int startAt = Integer.parseInt(dat[0]);
+//            // int rest = Integer.parseInt(dat[1]);
+//            downloadedBytes = startAt;
+//            downloadLink.setDownloadMax(contentLen);
+//            downloadLink.setDownloadCurrent(startAt);
+//            logger.info("starting download");
+//            start = System.currentTimeMillis();
+//            // Buffer, laufende Variablen resetten:
+//            buffer.clear();
+//            // long bytesLastSpeedCheck = 0;
+//            // long t1 = System.currentTimeMillis();
+//            // long t3 = t1;
+//
+//            long bytesPerSecond = 0;
+//            long deltaTime = 0L;
+//            long timer = -System.currentTimeMillis();
+//            while (!aborted && !downloadLink.isAborted()) {
+//                // Thread kurz schlafen lassen, um zu häufiges Event-fire zu
+//                // verhindern:
+//                // JD-Team: nix schlafen.. ich will speed! Die Events werden
+//                // jetzt von der GUI kontrolliert
+//                int bytes = source.read(buffer);
+//                if (downloadLink.isLimited) Thread.sleep(25);
+//                if (bytes == -1) break;
+//                // Buffer flippen und in File schreiben:
+//                buffer.flip();
+//                dest.write(buffer);
+//                buffer.compact();
+//                // Laufende Variablen updaten:
+//                downloadedBytes += bytes;
+//                bytesPerSecond += bytes;
+//                deltaTime = timer + System.currentTimeMillis();
+//                if (deltaTime > 1000) {
+//                    downloadLink.addBytes(bytesPerSecond, deltaTime);
+//                    bytesPerSecond = 0;
+//                    deltaTime = 0L;
+//                    timer = -System.currentTimeMillis();
+//                    if (maxspeed != (maxspeed = downloadLink.getMaximalspeed())) {
+//                        buffer = ByteBuffer.allocateDirect(downloadLink.getMaximalspeed());
+//                        buffer.clear();
+//                    }
+//                }
+//                // firePluginEvent(new PluginEvent(this,
+//                // PluginEvent.PLUGIN_DOWNLOAD_BYTES, bytes));
+//                firePluginEvent(new PluginEvent(this, PluginEvent.PLUGIN_DATA_CHANGED, downloadLink));
+//                downloadLink.setDownloadCurrent(downloadedBytes);
+//
+//                if (bytesToLoad > 0 && downloadedBytes >= bytesToLoad) break;
+//            }
+//            if (downloadedBytes < contentLen) {
+//                logger.info(aborted + " - " + downloadLink.isAborted() + " incomplete download: bytes loaded: " + downloadedBytes + "/" + contentLen);
+//                downloadLink.setStatus(DownloadLink.STATUS_DOWNLOAD_INCOMPLETE);
+//                
+//                source.close();
+//                dest.close();
+//                fos.close();
+//                return Plugin.DOWNLOAD_ERROR_DOWNLOAD_INCOMPLETE;
+//            }
+//            end = System.currentTimeMillis();
+//            time = end - start;
+//            source.close();
+//            dest.close();
+//            fos.close();
+//            if (new File(downloadLink.getFileOutput()).exists()) {
+//                new File(downloadLink.getFileOutput()).delete();
+//            }
+//         
+//       
+//            if (!fileOutput.renameTo(new File(downloadLink.getFileOutput()))) {
+//                logger.severe("Could not rename file " + fileOutput + " to " + downloadLink.getFileOutput());
+//                downloadLink.setStatus(DownloadLink.STATUS_DOWNLOAD_INCOMPLETE);
+//               return Plugin.DOWNLOAD_ERROR_RENAME_FAILED;
+//            }
+//            downloadLink.setStatus(DownloadLink.STATUS_DOWNLOAD_FINISHED);
+//            logger.info("download finished:" + fileOutput.getAbsolutePath());
+//            logger.info(downloadedBytes + " bytes in " + time + " ms");
+//            return Plugin.DOWNLOAD_SUCCESS;
+//        }
+//        catch (FileNotFoundException e) {
+//
+//            logger.severe("file not found. " + e.getLocalizedMessage());
+//            return Plugin.DOWNLOAD_ERROR_FILENOTFOUND;
+//        }
+//        catch (SecurityException e) {
+//
+//            logger.severe("not enough rights to write the file. " + e.getLocalizedMessage());
+//            return Plugin.DOWNLOAD_ERROR_SECURITY;
+//        }
+//        catch (IOException e) {
+//
+//            logger.severe("error occurred while writing to file. " + e.getLocalizedMessage());
+//            return Plugin.DOWNLOAD_ERROR_SECURITY;
+//        }
+//        catch (Exception e) {
+//
+//            e.printStackTrace();
+//        }
+//       downloadLink.setStatus(DownloadLink.STATUS_DOWNLOAD_INCOMPLETE);
+//        return Plugin.DOWNLOAD_ERROR_UNKNOWN;
+//    }
 
     /**
      * Holt den Dateinamen aus einem Content-Disposition header. wird dieser

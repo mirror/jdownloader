@@ -104,8 +104,8 @@ public class TabDownloadLinks extends JPanel implements PluginListener, ControlL
         this.parent = parent;
         // Set the component to show the popup menu
         table = new InternalTable();
-        table.getTableHeader().setPreferredSize(new Dimension(-1,25));
-        //table.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
+        table.getTableHeader().setPreferredSize(new Dimension(-1, 25));
+        // table.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
         table.addMouseListener(this);
         table.setModel(internalTableModel);
         // table.getColumn(table.getColumnName(COL_PROGRESS)).setCellRenderer(int);
@@ -169,9 +169,9 @@ public class TabDownloadLinks extends JPanel implements PluginListener, ControlL
      */
     public void addLinks(DownloadLink links[]) {
         for (int i = 0; i < links.length; i++) {
-           
-                allLinks.add(links[i]);
-           
+
+            allLinks.add(links[i]);
+
         }
         checkColumnSize();
         fireTableChanged();
@@ -182,13 +182,25 @@ public class TabDownloadLinks extends JPanel implements PluginListener, ControlL
      */
     public void removeSelectedLinks() {
         Vector<DownloadLink> linksToDelete = getSelectedObjects();
-       
-        allLinks.removeAll(linksToDelete);
-     
+        logger.info("Remove Selected Links " + linksToDelete + "/" + allLinks);
+        // allLinks.removeAll(linksToDelete);
+        for (int x = 0; x < linksToDelete.size(); x++) {
+
+            for (int i = allLinks.size() - 1; i >= 0; i--) {
+                if (allLinks.get(i) == linksToDelete.get(x)) {
+                    logger.info("Removed by gui: " + allLinks.remove(i));
+
+                    break;
+
+                }
+            }
+
+        }
+        logger.info("iiii" + allLinks);
         table.getSelectionModel().clearSelection();
-        
+
         fireTableChanged();
-    
+
     }
 
     /**
@@ -201,14 +213,13 @@ public class TabDownloadLinks extends JPanel implements PluginListener, ControlL
         Vector<DownloadLink> linksSelected = new Vector<DownloadLink>();
         int als = allLinks.size();
         for (int i = 0; i < rows.length; i++) {
-            if(rows[i]<als)
-            linksSelected.add(allLinks.get(rows[i]));
+            if (rows[i] < als) linksSelected.add(allLinks.get(rows[i]));
         }
         return linksSelected;
     }
 
     @SuppressWarnings("unchecked")
-	public int[] getIndexes(Vector<DownloadLink> selectedLinks) {
+    public int[] getIndexes(Vector<DownloadLink> selectedLinks) {
         int rows[] = new int[selectedLinks.size()];
         Vector<Integer> indexes = new Vector<Integer>();
         Iterator iterator = selectedLinks.iterator();
@@ -378,14 +389,14 @@ public class TabDownloadLinks extends JPanel implements PluginListener, ControlL
             popup = new JPopupMenu();
             this.downloadLinks = downloadLink;
             // Create and add a menu item
-            reset = new JMenuItem(JDLocale.L("gui.downloadTab.popup.restStatus","Status zurücksetzen"));
-            delete = new JMenuItem(JDLocale.L("gui.downloadTab.popup.delete","löschen"));
-            enable = new JMenuItem(downloadLink.elementAt(0).isEnabled() ? JDLocale.L("gui.downloadTab.popup.disable","deaktivieren") : JDLocale.L("gui.downloadTab.popup.enable","aktivieren"));
-            info = new JMenuItem(JDLocale.L("gui.downloadTab.popup.showInfos","Info anzeigen"));
-            loadinfo = new JMenuItem(JDLocale.L("gui.downloadTab.popup.checkAvailability","Infos laden(Verfügbarkeit)"));
-            top = new JMenuItem(JDLocale.L("gui.downloadTab.popup.up","Nach oben"));
-            bottom = new JMenuItem(JDLocale.L("gui.downloadTab.popup.down","Nach unten"));
-            openHome = new JMenuItem(JDLocale.L("gui.downloadTab.popup.openDestinationDirectory","Zielverzeichnis öffen"));
+            reset = new JMenuItem(JDLocale.L("gui.downloadTab.popup.restStatus", "Status zurücksetzen"));
+            delete = new JMenuItem(JDLocale.L("gui.downloadTab.popup.delete", "löschen"));
+            enable = new JMenuItem(downloadLink.elementAt(0).isEnabled() ? JDLocale.L("gui.downloadTab.popup.disable", "deaktivieren") : JDLocale.L("gui.downloadTab.popup.enable", "aktivieren"));
+            info = new JMenuItem(JDLocale.L("gui.downloadTab.popup.showInfos", "Info anzeigen"));
+            loadinfo = new JMenuItem(JDLocale.L("gui.downloadTab.popup.checkAvailability", "Infos laden(Verfügbarkeit)"));
+            top = new JMenuItem(JDLocale.L("gui.downloadTab.popup.up", "Nach oben"));
+            bottom = new JMenuItem(JDLocale.L("gui.downloadTab.popup.down", "Nach unten"));
+            openHome = new JMenuItem(JDLocale.L("gui.downloadTab.popup.openDestinationDirectory", "Zielverzeichnis öffen"));
             delete.addActionListener(this);
             reset.addActionListener(this);
             enable.addActionListener(this);
@@ -414,7 +425,7 @@ public class TabDownloadLinks extends JPanel implements PluginListener, ControlL
         public void actionPerformed(ActionEvent e) {
             if (e.getSource() == openHome) {
                 try {
-                	new GetExplorer().openExplorer(new File(downloadLinks.elementAt(0).getFileOutput()).getParentFile());
+                    new GetExplorer().openExplorer(new File(downloadLinks.elementAt(0).getFileOutput()).getParentFile());
                 }
                 catch (Exception ec) {
                 }
@@ -565,12 +576,23 @@ public class TabDownloadLinks extends JPanel implements PluginListener, ControlL
                             progressBars.add(rowIndex, p);
                         }
                         JProgressBar p = progressBars.elementAt(rowIndex);
-                        if (downloadLink.isInProgress() && downloadLink.getRemainingWaittime() == 0 && (int) downloadLink.getDownloadCurrent() > 0 && (int) downloadLink.getDownloadCurrent() <= (int) downloadLink.getDownloadMax()) {
-                            p.setMaximum((int) downloadLink.getDownloadMax());
-                            p.setStringPainted(true);
-                            p.setBackground(Color.WHITE);
-                            p.setValue((int) downloadLink.getDownloadCurrent());
-                            p.setString((int) (100 * p.getPercentComplete()) + "% (" + JDUtilities.formatBytesToMB(p.getValue()) + "/" + JDUtilities.formatBytesToMB(p.getMaximum()) + ")");
+                        if (downloadLink.isInProgress() && downloadLink.getRemainingWaittime() == 0 && (int) downloadLink.getDownloadCurrent() > 0 && ((int) downloadLink.getDownloadCurrent() <= (int) downloadLink.getDownloadMax()||downloadLink.getDownloadMax()<0)) {
+                           
+                            if ((int) downloadLink.getDownloadMax() < 0) {
+                                p.setMaximum(1);
+                                p.setValue(1);
+                                p.setStringPainted(true);
+                                p.setBackground(Color.WHITE);
+                                p.setString(JDUtilities.formatBytesToMB((int) downloadLink.getDownloadCurrent()));
+
+                            }
+                            else {
+                                p.setMaximum((int) downloadLink.getDownloadMax());
+                                p.setStringPainted(true);
+                                p.setBackground(Color.WHITE);
+                                p.setValue((int) downloadLink.getDownloadCurrent());
+                                p.setString((int) (100 * p.getPercentComplete()) + "% (" + JDUtilities.formatBytesToMB(p.getValue()) + "/" + JDUtilities.formatBytesToMB(p.getMaximum()) + ")");
+                            }
                             return p;
                         }
                         else if (downloadLink.getRemainingWaittime() > 0 && downloadLink.getWaitTime() >= downloadLink.getRemainingWaittime()) {
@@ -602,7 +624,7 @@ public class TabDownloadLinks extends JPanel implements PluginListener, ControlL
         public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
             if (value instanceof JProgressBar) return (JProgressBar) value;
             Component c = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
-            if (!isSelected ) {
+            if (!isSelected) {
                 DownloadLink dLink = allLinks.get(row);
                 if (!dLink.isEnabled()) {
                     c.setBackground(COLOR_DISABLED);

@@ -9,6 +9,7 @@ import java.net.URL;
 
 import java.util.regex.Pattern;
 
+import jd.plugins.Download;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTPConnection;
 import jd.plugins.PluginForHost;
@@ -220,15 +221,11 @@ public class Gulli extends PluginForHost {
                         step.setStatus(PluginStep.STATUS_ERROR);
                         return step;
                     }
-                    if(download(downloadLink, finalDownloadConnection)!=DOWNLOAD_SUCCESS) {
-                        step.setStatus(PluginStep.STATUS_ERROR);
-                        
-                    }
-                    else {
-                        step.setStatus(PluginStep.STATUS_DONE);
-                        parameter.setStatus(DownloadLink.STATUS_DONE);
-                 
-                    }
+                    
+                    Download dl = new Download(this, downloadLink, finalDownloadConnection);
+                    dl.startDownload();
+                    
+               
                         
                 
                     return step;

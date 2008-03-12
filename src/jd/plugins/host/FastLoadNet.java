@@ -6,6 +6,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.regex.Pattern;
 
+import jd.plugins.Download;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTPConnection;
 import jd.plugins.PluginForHost;
@@ -15,31 +16,40 @@ import jd.plugins.RequestInfo;
 import jd.utils.JDUtilities;
 
 public class FastLoadNet extends PluginForHost {
-	
-    private static final String  CODER                    = "eXecuTe";
-    private static final String  HOST                     = "fast-load.net";
-    private static final String  PLUGIN_NAME              = HOST;
-    private static final String  PLUGIN_VERSION           = "0.1.4";
-    private static final String  PLUGIN_ID                = PLUGIN_NAME + "-" + PLUGIN_VERSION;
-    
-    static private final Pattern PAT_SUPPORTED 			  = Pattern.compile("http://.*?fast-load\\.net(/|//)index\\.php\\?pid=[a-zA-Z0-9]+");
-    private static final int	 MAX_SIMULTAN_DOWNLOADS   = 1;
-    
-    private String               downloadURL              = "";
-    
+
+    private static final String  CODER                  = "eXecuTe";
+
+    private static final String  HOST                   = "fast-load.net";
+
+    private static final String  PLUGIN_NAME            = HOST;
+
+    private static final String  PLUGIN_VERSION         = "0.1.4";
+
+    private static final String  PLUGIN_ID              = PLUGIN_NAME + "-" + PLUGIN_VERSION;
+
+    static private final Pattern PAT_SUPPORTED          = Pattern.compile("http://.*?fast-load\\.net(/|//)index\\.php\\?pid=[a-zA-Z0-9]+");
+
+    private static final int     MAX_SIMULTAN_DOWNLOADS = 1;
+
+    private String               downloadURL            = "";
+
     // Suchmasken
-    private static final String  DOWNLOAD_SIZE            = "<div id=\"dlpan_size\" style=\".*?\">(.*?) MB</div>";
-    private static final String  DOWNLOAD_NAME            = "<div id=\"dlpan_file\" style=\".*?\">(.*?)</div>";
-    private static final String  DOWNLOAD_LINK            = "<div id=\"dlpan_btn\" style=\".*?\"><a href=\"(.*?)\">";
-    private static final String  NOT_FOUND		          = "Datei existiert nicht";
-    private static final String  FAULTY_LINK	          = "Fehlerhafter Link";
-    
+    private static final String  DOWNLOAD_SIZE          = "<div id=\"dlpan_size\" style=\".*?\">(.*?) MB</div>";
+
+    private static final String  DOWNLOAD_NAME          = "<div id=\"dlpan_file\" style=\".*?\">(.*?)</div>";
+
+    private static final String  DOWNLOAD_LINK          = "<div id=\"dlpan_btn\" style=\".*?\"><a href=\"(.*?)\">";
+
+    private static final String  NOT_FOUND              = "Datei existiert nicht";
+
+    private static final String  FAULTY_LINK            = "Fehlerhafter Link";
+
     public FastLoadNet() {
-        
-    	super();
+
+        super();
         steps.add(new PluginStep(PluginStep.STEP_PAGE, null));
         steps.add(new PluginStep(PluginStep.STEP_DOWNLOAD, null));
-        
+
     }
 
     @Override
@@ -84,157 +94,149 @@ public class FastLoadNet extends PluginForHost {
 
     @Override
     public int getMaxSimultanDownloadNum() {
-        return MAX_SIMULTAN_DOWNLOADS; 
+        return MAX_SIMULTAN_DOWNLOADS;
     }
 
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) {
-    	
+
         try {
-        	
+
             RequestInfo requestInfo = getRequest(new URL(downloadLink.getDownloadURL()));
-            
-            if ( requestInfo.getHtmlCode().contains(NOT_FOUND) ) {
-            	
-				downloadLink.setStatus(DownloadLink.STATUS_ERROR_FILE_NOT_FOUND);
-				return false;
-				
-			}
-            
+
+            if (requestInfo.getHtmlCode().contains(NOT_FOUND)) {
+
+                downloadLink.setStatus(DownloadLink.STATUS_ERROR_FILE_NOT_FOUND);
+                return false;
+
+            }
+
             String fileName = JDUtilities.htmlDecode(new Regexp(requestInfo.getHtmlCode(), DOWNLOAD_NAME).getFirstMatch()).trim();
-            Integer length = (int) Math.round(Double.parseDouble(new Regexp(requestInfo.getHtmlCode(), DOWNLOAD_SIZE).getFirstMatch().trim())*1024*1024);
-            
+            Integer length = (int) Math.round(Double.parseDouble(new Regexp(requestInfo.getHtmlCode(), DOWNLOAD_SIZE).getFirstMatch().trim()) * 1024 * 1024);
+
             // downloadinfos gefunden? -> download verfügbar
             if (fileName != null && length != null) {
-            	
+
                 downloadLink.setName(fileName);
 
                 try {
                     downloadLink.setDownloadMax(length);
-                } catch (Exception e) { }
-                
+                }
+                catch (Exception e) {
+                }
+
                 return true;
-                
+
             }
 
-        } catch (MalformedURLException e) {
-             e.printStackTrace();
-        } catch (IOException e) {
-             e.printStackTrace();
+        }
+        catch (MalformedURLException e) {
+            e.printStackTrace();
+        }
+        catch (IOException e) {
+            e.printStackTrace();
         }
 
         // unbekannter fehler
         return false;
-        
+
     }
-    
+
     public PluginStep doStep(PluginStep step, DownloadLink downloadLink) {
-    	
+
         try {
 
             URL downloadUrl = new URL(downloadLink.getDownloadURL());
 
-            switch ( step.getStep() ) {
-            	
+            switch (step.getStep()) {
+
                 case PluginStep.STEP_PAGE:
-                	
+
                     requestInfo = getRequest(downloadUrl);
-                    
-                    if ( requestInfo.getHtmlCode().contains(NOT_FOUND) ) {
-                    	
+
+                    if (requestInfo.getHtmlCode().contains(NOT_FOUND)) {
+
                         downloadLink.setStatus(DownloadLink.STATUS_ERROR_FILE_NOT_FOUND);
                         step.setStatus(PluginStep.STATUS_ERROR);
                         return step;
-                        
+
                     }
-                    
+
                     String fileName = JDUtilities.htmlDecode(new Regexp(requestInfo.getHtmlCode(), DOWNLOAD_NAME).getFirstMatch()).trim();
                     downloadLink.setName(fileName);
-                    
+
                     try {
-                    	
-                    	int length = (int) Math.round(Double.parseDouble(new Regexp(requestInfo.getHtmlCode(), DOWNLOAD_SIZE).getFirstMatch().trim())*1024*1024);
+
+                        int length = (int) Math.round(Double.parseDouble(new Regexp(requestInfo.getHtmlCode(), DOWNLOAD_SIZE).getFirstMatch().trim()) * 1024 * 1024);
                         downloadLink.setDownloadMax(length);
-                        
-                    } catch (Exception e) {
-                    	
+
+                    }
+                    catch (Exception e) {
+
                         downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN_RETRY);
                         step.setStatus(PluginStep.STATUS_ERROR);
                         return step;
-                        
+
                     }
-                    
+
                     // downloadLink auslesen
                     downloadURL = new Regexp(requestInfo.getHtmlCode(), DOWNLOAD_LINK).getFirstMatch();
                     return step;
 
                 case PluginStep.STEP_DOWNLOAD:
-                	
+
                     // Download vorbereiten
                     HTTPConnection urlConnection = new HTTPConnection(new URL(downloadURL).openConnection());
                     int length = urlConnection.getContentLength();
-                    
-                    if ( Math.abs(length - downloadLink.getDownloadMax()) > 1024*1024 ) {
-                    	
-                    	requestInfo = getRequest(new URL(downloadURL));
-                    	
-                    	if ( requestInfo.containsHTML(FAULTY_LINK) ) {
-                    		
-                    		logger.severe("faulty Link");
-                    		downloadLink.setStatus(DownloadLink.STATUS_ERROR_TEMPORARILY_UNAVAILABLE);
-                        	step.setStatus(PluginStep.STATUS_ERROR);
-                        	return step;
-                        	
-                    	}
-                    	
-                    	logger.warning("Filesize Error");
-                    	downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN_RETRY);
-                    	step.setStatus(PluginStep.STATUS_ERROR);
-                    	return step;
-                        
+
+                    if (Math.abs(length - downloadLink.getDownloadMax()) > 1024 * 1024) {
+
+                        requestInfo = getRequest(new URL(downloadURL));
+
+                        if (requestInfo.containsHTML(FAULTY_LINK)) {
+
+                            logger.severe("faulty Link");
+                            downloadLink.setStatus(DownloadLink.STATUS_ERROR_TEMPORARILY_UNAVAILABLE);
+                            step.setStatus(PluginStep.STATUS_ERROR);
+                            return step;
+
+                        }
+
+                        logger.warning("Filesize Error");
+                        downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN_RETRY);
+                        step.setStatus(PluginStep.STATUS_ERROR);
+                        return step;
+
                     }
-                    
+
                     downloadLink.setDownloadMax(length);
                     int errorid;
 
                     // Download starten
-                    if ( (errorid = download(downloadLink, urlConnection)) == DOWNLOAD_SUCCESS ) {
-                    	
-                    	step.setStatus(PluginStep.STATUS_DONE);
-                    	downloadLink.setStatus(DownloadLink.STATUS_DONE);
-                    	return step;
-                    	
-                    } else if ( errorid == DOWNLOAD_ERROR_OUTPUTFILE_ALREADYEXISTS ) {
-                    	
-                    	downloadLink.setStatus(DownloadLink.STATUS_ERROR_ALREADYEXISTS);
-                    	step.setStatus(PluginStep.STATUS_ERROR);  
-                    	return step;
-                   		
-                    } else {       
-                    	
-                    	downloadLink.setStatus(DownloadLink.STATUS_ERROR_PREMIUM);
-                    	step.setStatus(PluginStep.STATUS_ERROR);
-                    	
-                    }
-                    
+                    Download dl = new Download(this, downloadLink, requestInfo.getConnection());
+                    dl.startDownload();
+
                     return step;
-                    
+
             }
-            
+
             return step;
-            
-        } catch (IOException e) {
-        	
-            e.printStackTrace();
-            return step;
-            
+
         }
-        
+        catch (IOException e) {
+
+            e.printStackTrace();
+            downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN);
+            step.setStatus(PluginStep.STATUS_ERROR);
+
+        }
+        return step;
+
     }
 
     @Override
     public void resetPluginGlobals() {
-    	this.downloadURL = null;
+        this.downloadURL = null;
     }
 
     @Override

@@ -8,6 +8,7 @@ import java.util.regex.Pattern;
 
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
+import jd.plugins.Download;
 import jd.plugins.DownloadLink;
 import jd.plugins.Form;
 import jd.plugins.HTTPConnection;
@@ -240,23 +241,19 @@ public class DatenKlo extends PluginForHost {
                     step.setStatus(PluginStep.STATUS_ERROR);
                     return step;
                 }
-                if (download(downloadLink, urlConnection) != DOWNLOAD_SUCCESS) {
-                    step.setStatus(PluginStep.STATUS_DONE);
-                    downloadLink.setStatus(DownloadLink.STATUS_DONE);
-                    return null;
-                }
-                else if (aborted) {
-                    logger.warning("Plugin abgebrochen");
-                    downloadLink.setStatus(DownloadLink.STATUS_TODO);
-                    step.setStatus(PluginStep.STATUS_TODO);
-                }
-                else {
+                Download dl = new Download(this, downloadLink, urlConnection);
+
+                if (!dl.startDownload() && step.getStatus() != PluginStep.STATUS_ERROR && step.getStatus() != PluginStep.STATUS_TODO) {
+
                     logger.severe("unknown error");
                     downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN_RETRY);
                     step.setStatus(PluginStep.STATUS_ERROR);
                 }
+                return step;
         }
-        return null;
+        step.setStatus(PluginStep.STATUS_ERROR);
+        downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN);
+        return step;
     }
 
     @Override

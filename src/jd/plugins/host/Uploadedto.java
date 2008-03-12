@@ -10,6 +10,8 @@ import java.util.regex.Pattern;
 
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
+import jd.config.Configuration;
+import jd.plugins.Download;
 import jd.plugins.DownloadLink;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForHost;
@@ -314,15 +316,10 @@ static private final String DOWNLOAD_LIMIT_REACHED="Free-Traffic ist aufgebrauch
                             step.setStatus(PluginStep.STATUS_ERROR);
                             return step;
                         }
-                        if(download(downloadLink, requestInfo.getConnection())!=DOWNLOAD_SUCCESS) {
-                            step.setStatus(PluginStep.STATUS_ERROR);
-                            
-                        }
-                        else {
-                            step.setStatus(PluginStep.STATUS_DONE);
-                            downloadLink.setStatus(DownloadLink.STATUS_DONE);
-                     
-                        }return step;
+                        Download dl = new Download(this, downloadLink, requestInfo.getConnection());
+
+                        dl.startDownload();
+                        return step;
                     }
                     else {
                         this.finalURL = finalURL + "";
@@ -373,15 +370,9 @@ static private final String DOWNLOAD_LIMIT_REACHED="Free-Traffic ist aufgebrauch
                             step.setStatus(PluginStep.STATUS_ERROR);
                             return step;
                         }
-                        if(download(downloadLink, requestInfo.getConnection())!=DOWNLOAD_SUCCESS) {
-                            step.setStatus(PluginStep.STATUS_ERROR);
-                            
-                        }
-                        else {
-                            step.setStatus(PluginStep.STATUS_DONE);
-                            downloadLink.setStatus(DownloadLink.STATUS_DONE);
-                     
-                        }
+                        Download dl = new Download(this, downloadLink, requestInfo.getConnection());
+
+                        dl.startDownload();
                 
                         return step;
                     }
@@ -546,9 +537,10 @@ static private final String DOWNLOAD_LIMIT_REACHED="Free-Traffic ist aufgebrauch
                         step.setStatus(PluginStep.STATUS_ERROR);
                         return step;
                     }
-                    download(downloadLink,  requestInfo.getConnection());
-                    step.setStatus(PluginStep.STATUS_DONE);
-                    downloadLink.setStatus(DownloadLink.STATUS_DONE);
+                    Download dl = new Download(this, downloadLink, requestInfo.getConnection());
+                    dl.setChunks(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS));
+                    
+                    dl.startDownload();
                     return step;
             }
             return step;

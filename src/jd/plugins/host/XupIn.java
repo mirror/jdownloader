@@ -6,6 +6,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.regex.Pattern;
 
+import jd.plugins.Download;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTPConnection;
 import jd.plugins.PluginForHost;
@@ -256,25 +257,10 @@ public class XupIn extends PluginForHost {
                     int errorid;
 
                     // Download starten
-                    if ( (errorid = download(downloadLink, urlConnection)) == DOWNLOAD_SUCCESS ) {
-                    	
-                    	step.setStatus(PluginStep.STATUS_DONE);
-                    	downloadLink.setStatus(DownloadLink.STATUS_DONE);
-                    	return step;
-                    	
-                    } else if ( errorid == DOWNLOAD_ERROR_OUTPUTFILE_ALREADYEXISTS ) {
-                    	
-                    	downloadLink.setStatus(DownloadLink.STATUS_ERROR_ALREADYEXISTS);
-                    	step.setStatus(PluginStep.STATUS_ERROR);  
-                    	return step;
-                   		
-                    } else if ( errorid == DOWNLOAD_ERROR_OUTPUTFILE_IN_PROGRESS ) {
-                    	
-                    	downloadLink.setStatus(DownloadLink.STATUS_ERROR_OUTPUTFILE_OWNED_BY_ANOTHER_LINK);
-                    	step.setStatus(PluginStep.STATUS_ERROR);  
-                    	return step;
-                   		
-                    } else {       
+                    Download dl = new Download(this, downloadLink, urlConnection);
+
+                    if (!dl.startDownload() && step.getStatus() != PluginStep.STATUS_ERROR && step.getStatus() != PluginStep.STATUS_TODO) {
+     
                     	
                     	downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN);
                     	step.setStatus(PluginStep.STATUS_ERROR);

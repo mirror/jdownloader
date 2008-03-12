@@ -10,6 +10,7 @@ import java.util.regex.Pattern;
 
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
+import jd.plugins.Download;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginStep;
@@ -230,15 +231,8 @@ public class Netloadin extends PluginForHost {
                         step.setStatus(PluginStep.STATUS_ERROR);
                         return step;
                     }
-                    if (download(downloadLink,  requestInfo.getConnection())!=DOWNLOAD_SUCCESS) {
-                        step.setStatus(PluginStep.STATUS_ERROR);
-                        
-                    }
-                    else {
-                        step.setStatus(PluginStep.STATUS_DONE);
-                        downloadLink.setStatus(DownloadLink.STATUS_DONE);
-                 
-                    }
+                    Download dl = new Download(this, downloadLink,  requestInfo.getConnection());
+                    dl.startDownload();
                     return step;
             }
             return step;
@@ -319,15 +313,8 @@ public class Netloadin extends PluginForHost {
                     step.setStatus(PluginStep.STATUS_ERROR);
                     return step;
                 }
-                if (download(downloadLink,  requestInfo.getConnection())!=DOWNLOAD_SUCCESS) {
-                    step.setStatus(PluginStep.STATUS_ERROR);
-                    
-                }
-                else {
-                    step.setStatus(PluginStep.STATUS_DONE);
-                    downloadLink.setStatus(DownloadLink.STATUS_DONE);
-             
-                }
+                Download dl = new Download(this, downloadLink,  requestInfo.getConnection());
+                dl.startDownload();
                 return step;
         }
         return step;

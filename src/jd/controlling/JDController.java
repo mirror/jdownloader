@@ -976,7 +976,7 @@ public class JDController implements PluginListener, ControlListener, UIListener
         Iterator<DownloadLink> iter = getDownloadLinks().iterator();
         int ret = 0;
         int c = 0;
-        int maxspeed = JDUtilities.getConfiguration().getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, 0) * 1024;
+        int maxspeed = JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, 0) * 1024;
         boolean isLimited = (maxspeed != 0);
         while (iter.hasNext()) {
             DownloadLink element = (DownloadLink) iter.next();
