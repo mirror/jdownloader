@@ -3,9 +3,7 @@ jd.plugins.host.Rapidshare
 jd.plugins.host.Uploadedto
 jd.plugins.host.FileFactory
 jd.plugins.host.Netloadin
-#jd.plugins.host.Esnips
 jd.plugins.host.Megauploadcom
-jd.plugins.host.EgoshareCom
 jd.plugins.host.LoadTo
 jd.plugins.host.ShareBaseDe
 jd.plugins.host.Filer
@@ -13,7 +11,6 @@ jd.plugins.host.ImageFap
 jd.plugins.host.ShareOnlineBiz
 jd.plugins.host.DatenKlo
 jd.plugins.host.YourFilesBiz
-#jd.plugins.host.RadioBlogClub
 jd.plugins.host.RapidShareDe
 jd.plugins.host.RamZal
 jd.plugins.host.ArchivTo
