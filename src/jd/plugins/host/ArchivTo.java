@@ -22,7 +22,7 @@ public class ArchivTo extends PluginForHost {
 
     private static final String  HOST             = "archiv.to";
 
-    private static final String  VERSION          = "1.1.0";
+    private static final String  VERSION          = "1.2.0";
 
     static private final Pattern patternSupported = Pattern.compile("http://.*?archiv\\.to/\\?Module\\=Details\\&HashID\\=.*", Pattern.CASE_INSENSITIVE);
 
@@ -91,30 +91,10 @@ public class ArchivTo extends PluginForHost {
             }
             final long length = downloadLink.getDownloadMax();
             downloadLink.setName(getFileNameFormHeader(urlConnection));
-            // workaround
-//            new Thread(new Runnable() {
-//
-//                public void run() {
-//                    try {
-//                        Thread.sleep(100);
-//                    }
-//                    catch (InterruptedException e) {
-//                        e.printStackTrace();
-//                    }
-//                    downloadLink.setDownloadMax((int) length);
-//
-//                }
-//            }).start();
-
-            if (!hasEnoughHDSpace(downloadLink)) {
-                downloadLink.setStatus(DownloadLink.STATUS_ERROR_NO_FREE_SPACE);
-                step.setStatus(PluginStep.STATUS_ERROR);
-                return step;
-            }
 
             Download dl = new Download(this, downloadLink, urlConnection);
-dl.setFilesize(length);
-            if (!dl.startDownload() && step.getStatus() != PluginStep.STATUS_ERROR&& step.getStatus() != PluginStep.STATUS_TODO) {
+            dl.setFilesize(length);
+            if (!dl.startDownload() && step.getStatus() != PluginStep.STATUS_ERROR && step.getStatus() != PluginStep.STATUS_TODO) {
 
                 downloadLink.setStatus(DownloadLink.STATUS_ERROR_TEMPORARILY_UNAVAILABLE);
                 step.setStatus(PluginStep.STATUS_ERROR);

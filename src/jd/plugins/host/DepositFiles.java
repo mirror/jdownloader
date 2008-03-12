@@ -205,15 +205,15 @@ public class DepositFiles extends PluginForHost {
 
                         step.setParameter(file);
                         step.setStatus(PluginStep.STATUS_USER_INPUT);
-
+                        return step;
                     }
 
-                    break;
+                
 
                 case PluginStep.STEP_PENDING:
 
                     step.setParameter(60000l);
-                    break;
+                    return step;
 
                 case PluginStep.STEP_DOWNLOAD:
 
