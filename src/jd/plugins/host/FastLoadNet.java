@@ -6,6 +6,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.regex.Pattern;
 
+import jd.config.Configuration;
 import jd.plugins.Download;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTPConnection;
@@ -151,7 +152,7 @@ public class FastLoadNet extends PluginForHost {
             switch (step.getStep()) {
 
                 case PluginStep.STEP_PAGE:
-
+logger.info(downloadUrl+"");
                     requestInfo = getRequest(downloadUrl);
 
                     if (requestInfo.getHtmlCode().contains(NOT_FOUND)) {
@@ -181,9 +182,19 @@ public class FastLoadNet extends PluginForHost {
 
                     // downloadLink auslesen
                     downloadURL = new Regexp(requestInfo.getHtmlCode(), DOWNLOAD_LINK).getFirstMatch();
+
                     return step;
 
                 case PluginStep.STEP_DOWNLOAD:
+                    String host = new URL(downloadURL).getHost();
+                    String finalURL = getRequest(new URL(downloadURL)).getConnection().getHeaderField("Location");
+
+                    if (finalURL == null) {
+                        downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN);
+                        step.setStatus(PluginStep.STATUS_ERROR);
+                        return step;
+                    }
+                    downloadURL = "http://" + host + finalURL;
 
                     // Download vorbereiten
                     HTTPConnection urlConnection = new HTTPConnection(new URL(downloadURL).openConnection());
@@ -210,10 +221,11 @@ public class FastLoadNet extends PluginForHost {
                     }
 
                     downloadLink.setDownloadMax(length);
-                    int errorid;
 
                     // Download starten
-                    Download dl = new Download(this, downloadLink, requestInfo.getConnection());
+                    Download dl = new Download(this, downloadLink, urlConnection);
+                    dl.setChunks(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS));
+
                     dl.startDownload();
 
                     return step;

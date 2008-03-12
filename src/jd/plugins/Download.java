@@ -89,7 +89,7 @@ public class Download {
 
     private int                       lastMaxChunkSpeed;
 
-    private long fileSize=-1;
+    private long                      fileSize                               = -1;
 
     public static Logger              logger                                 = JDUtilities.getLogger();
 
@@ -187,15 +187,15 @@ public class Download {
             // outputFile.setLength(connection.getContentLength());
             outputChannel = outputFile.getChannel();
             downloadLink.setStatus(DownloadLink.STATUS_DOWNLOAD_IN_PROGRESS);
-            long fileSize=getFileSize();
-            
-            long parts = fileSize>0?fileSize / chunkNum:-1;
-            if(parts==-1){
+            long fileSize = getFileSize();
+            logger.info("Filsize: " + fileSize);
+            long parts = fileSize > 0 ? fileSize / chunkNum : -1;
+            if (parts == -1) {
                 logger.warning("Could not get Filesize.... reset chunks to 1");
-                chunkNum=1;
+                chunkNum = 1;
             }
             logger.finer("Start Download in " + chunkNum + " chunks. Chunksize: " + parts);
-            downloadLink.setDownloadMax((int)fileSize);
+            downloadLink.setDownloadMax((int) fileSize);
             for (int i = 0; i < chunkNum; i++) {
                 if (i == (chunkNum - 1)) {
                     addChunk(new Chunk(i * parts, fileSize, connection));
@@ -231,9 +231,21 @@ public class Download {
     }
 
     private long getFileSize() {
-        if(connection.getContentLength()>0)return connection.getContentLength();        
-        if(fileSize>0)return fileSize;
-        if(downloadLink.getDownloadMax()>0)return downloadLink.getDownloadMax();
+        if (connection.getContentLength() > 0) {
+            logger.info("1 "+connection.getHeaderFields());
+        
+            return connection.getContentLength();
+        }
+        if (fileSize > 0){
+            logger.info("2");
+            return fileSize;
+        }
+        if (downloadLink.getDownloadMax() > 0) 
+            {
+            logger.info("3");
+            return downloadLink.getDownloadMax();
+            
+            }
         return -1;
     }
 
@@ -370,8 +382,6 @@ public class Download {
 
         private long             endByte;
 
-       
-
         private HTTPConnection   connection;
 
         private long             currentBytePosition;
@@ -386,7 +396,7 @@ public class Download {
             this.connection = connection;
 
             currentBytePosition = startByte;
-            if (startByte >= endByte && endByte>0) {
+            if (startByte >= endByte && endByte > 0) {
                 logger.severe("Startbyte has to be less than endByte");
             }
         }
@@ -398,8 +408,9 @@ public class Download {
                 HTTPConnection httpConnection = new HTTPConnection(link.openConnection());
                 httpConnection.setReadTimeout(getReadTimeout());
                 httpConnection.setConnectTimeout(getRequestTimeout());
-                httpConnection.setInstanceFollowRedirects(true);
+                httpConnection.setInstanceFollowRedirects(false);
                 Map<String, List<String>> request = connection.getRequestProperties();
+                if(request!=null){
                 Set<Entry<String, List<String>>> requestEntries = request.entrySet();
                 Iterator<Entry<String, List<String>>> it = requestEntries.iterator();
                 String value;
@@ -409,12 +420,13 @@ public class Download {
                     value = next.getValue().toString();
                     httpConnection.setRequestProperty(next.getKey(), value.substring(1, value.length() - 1));
                 }
+                }
 
-                if(chunkNum>1){
-                httpConnection.setRequestProperty("Range", "bytes=" + startByte + "-" + endByte);
+                if (chunkNum > 1) {
+                    httpConnection.setRequestProperty("Range", "bytes=" + startByte + "-" + endByte);
 
-                logger.info(chunks.indexOf(this) + " - " + httpConnection.getRequestProperties() + "");
-                 }
+                    logger.info(chunks.indexOf(this) + " - " + httpConnection.getRequestProperties() + "");
+                }
                 if (connection.getHTTPURLConnection().getDoOutput()) {
                     httpConnection.setDoOutput(true);
                     httpConnection.connect();
@@ -435,7 +447,7 @@ public class Download {
         }
 
         public void run() {
-           
+
             logger.finer("Start Chunk " + startByte + " - " + endByte);
             if (chunkNum > 1) this.connection = copyConnection(connection);
             logger.info("Start Chunk " + chunks.indexOf(this));
@@ -446,7 +458,7 @@ public class Download {
             if (plugin.aborted || downloadLink.isAborted()) {
                 error(ERROR_ABORTED_BY_USER);
             }
-            logger.finer("Chunk finished " +getBytesLoaded());
+            logger.finer("Chunk finished " + getBytesLoaded());
             chunksInProgress--;
         }
 
@@ -515,7 +527,7 @@ public class Download {
                     }
 
                 }
-                if (currentBytePosition != endByte && endByte>0) {
+                if (currentBytePosition != endByte && endByte > 0) {
 
                     inputStream.close();
                     source.close();
@@ -572,8 +584,6 @@ public class Download {
             return bufferSize;
         }
 
-   
-
         public long getBytesPerSecond() {
             return bytesPerSecond;
         }
@@ -619,8 +629,8 @@ public class Download {
     }
 
     public void setFilesize(long length) {
-       this.fileSize=length;
-        
+        this.fileSize = length;
+
     }
 
 }
