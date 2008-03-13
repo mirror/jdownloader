@@ -315,6 +315,7 @@ public class Netloadin extends PluginForHost {
                     return step;
                 }
                 Download dl = new Download(this, downloadLink,  requestInfo.getConnection());
+             
                 dl.startDownload();
                 return step;
         }
@@ -375,12 +376,14 @@ public class Netloadin extends PluginForHost {
     }
     @Override
     public int getMaxSimultanDownloadNum() {
-        logger.info("JJJJ");
+        //logger.info("JJJJ");
         if (this.getProperties().getBooleanProperty("USE_PREMIUM", false)) {
             return 20;
         }else{
-            if((System.currentTimeMillis()-LAST_FILE_STARTED)>5000){
-                return 10;
+            if((System.currentTimeMillis()-LAST_FILE_STARTED)>20000){
+                //20 sekunden nach dem 1 downloadstart  wird hier versucht erneut eine datei zu laden.
+                //dazu muss man die 1 nur höher stellen. allerdings klappt das ganze nicht
+                return 1;
             }else{
                 return 1;
             }

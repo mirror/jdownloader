@@ -224,7 +224,7 @@ logger.info(downloadUrl+"");
 
                     // Download starten
                     Download dl = new Download(this, downloadLink, urlConnection);
-                    dl.setChunks(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS));
+                    dl.setChunks(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS,3));
 
                     dl.startDownload();
 

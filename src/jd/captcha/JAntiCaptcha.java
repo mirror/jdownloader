@@ -1164,6 +1164,7 @@ public class JAntiCaptcha {
             res.setReliability(lastPercent - res.getValityPercent());
             if (res.getReliability() >= jas.getDouble("quickScanReliabilityLimit") && res.getValityPercent() < jas.getDouble("quickScanValityLimit")) {
                 res.setDetectionType(LetterComperator.QUICKSCANMATCH);
+                logger.info("Qickscan found "+res.getValityPercent()+"<"+jas.getDouble("quickScanValityLimit"));
                 return res;
             }
             else {

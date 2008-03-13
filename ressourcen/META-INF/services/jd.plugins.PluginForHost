@@ -12,12 +12,12 @@ jd.plugins.host.ShareOnlineBiz
 jd.plugins.host.DatenKlo
 jd.plugins.host.YourFilesBiz
 jd.plugins.host.RapidShareDe
-jd.plugins.host.RamZal
+#jd.plugins.host.RamZal
 jd.plugins.host.ArchivTo
 jd.plugins.host.UploadStube
 jd.plugins.host.FilesTo
 jd.plugins.host.DepositFiles
-jd.plugins.host.BadOngo
+#jd.plugins.host.BadOngo
 jd.plugins.host.zShare
 jd.plugins.host.FastLoadNet
 jd.plugins.host.BluehostTo

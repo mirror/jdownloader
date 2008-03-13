@@ -417,7 +417,7 @@ public class FileFactory extends PluginForHost {
                         }
                         
                         Download dl = new Download(this, downloadLink, urlConnection);
-                        dl.setChunks(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS));
+                        dl.setChunks(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS,3));
                         if (!dl.startDownload() && step.getStatus() != PluginStep.STATUS_ERROR&& step.getStatus() != PluginStep.STATUS_TODO) {
                         	
                             downloadLink.setStatus(DownloadLink.STATUS_ERROR_PREMIUM);

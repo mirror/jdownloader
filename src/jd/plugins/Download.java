@@ -45,6 +45,7 @@ public class Download {
     public static final int           ERROR_ABORTED_BY_USER                  = 102;
 
     public static final int           ERROR_TOO_MUCH_BUFFERMEMORY            = 103;
+    public static final int           STATUS_ERROR_CHUNKLOAD_FAILED     = DownloadLink.STATUS_ERROR_CHUNKLOAD_FAILED;
 
     private DownloadLink              downloadLink;
 
@@ -274,6 +275,12 @@ public class Download {
             downloadLink.setStatus(DownloadLink.STATUS_ERROR_CHUNKLOAD_FAILED);
             return false;
         }
+        if (errors.contains(STATUS_ERROR_CHUNKLOAD_FAILED)) {
+            plugin.getCurrentStep().setStatus(PluginStep.STATUS_ERROR);
+            downloadLink.setStatus(DownloadLink.STATUS_ERROR_CHUNKLOAD_FAILED);
+            return false;
+        }
+        
         if (errors.contains(ERROR_COULD_NOT_RENAME)) {
             plugin.getCurrentStep().setStatus(PluginStep.STATUS_RETRY);
             downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN_RETRY);
@@ -442,7 +449,7 @@ public class Download {
                 if (chunkNum > 1) {
                     httpConnection.setRequestProperty("Range", "bytes=" + startByte + "-" + endByte);
 
-                    logger.info(chunks.indexOf(this) + " - " + httpConnection.getRequestProperties() + "");
+                    //logger.info(chunks.indexOf(this) + " - " + httpConnection.getRequestProperties() + "");
                 }
                 if (connection.getHTTPURLConnection().getDoOutput()) {
                     httpConnection.setDoOutput(true);
@@ -454,6 +461,7 @@ public class Download {
                 else {
                     httpConnection.connect();
                 }
+                logger.info("HEaders: "+httpConnection.getHeaderFields());
                 return httpConnection;
 
             }
@@ -499,7 +507,12 @@ public class Download {
                 error(ERROR_TOO_MUCH_BUFFERMEMORY);
                 return;
             }
-
+                       
+if(chunkNum>1&&(connection.getHeaderField("Content-Range")==null ||connection.getHeaderField("Content-Range").length()==0)){
+    error(STATUS_ERROR_CHUNKLOAD_FAILED);
+    return;
+    
+}
             InputStream inputStream = null;
             ReadableByteChannel source = null;
 

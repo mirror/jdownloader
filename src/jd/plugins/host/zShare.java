@@ -76,6 +76,7 @@ public class zShare extends PluginForHost {
 				return step;
 			}
 			  Download dl = new Download(this, downloadLink, urlConnection);
+			  dl.setChunks(20);
 			  dl.startDownload();
 			return step;
 		} catch (Exception e) {

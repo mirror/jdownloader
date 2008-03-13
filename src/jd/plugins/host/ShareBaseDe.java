@@ -204,7 +204,7 @@ public class ShareBaseDe extends PluginForHost {
                       
                         //Download starten
                         Download dl = new Download(this, downloadLink, urlConnection);
-
+                    
                         dl.startDownload();
                       	return step;
                       

@@ -249,8 +249,7 @@ public class BluehostTo extends PluginForHost {
                     		getFileNameFormHeader(urlConnection).length()-2));
                     
                     Download dl = new Download(this, downloadLink, urlConnection);
-                    dl.setFilesize(length);
-                    
+
                     if (!dl.startDownload() && step.getStatus() != PluginStep.STATUS_ERROR && step.getStatus() != PluginStep.STATUS_TODO) {
 
                         downloadLink.setStatus(DownloadLink.STATUS_ERROR_TEMPORARILY_UNAVAILABLE);
