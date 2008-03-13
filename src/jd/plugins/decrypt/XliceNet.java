@@ -39,6 +39,9 @@ public class XliceNet extends PluginForDecrypt {
 	private String version = "2.1.1";
 
 	private Pattern patternSupported = getSupportPattern("http://[*]xlice.net/(.*/)?(file|folder)/[a-zA-Z0-9]{32}[*]");
+	
+	private final static Pattern patternTableRowLink = Pattern.compile("<tr[^>]*>(.*?)</tr>", Pattern.DOTALL|Pattern.CASE_INSENSITIVE);
+	private final static Pattern patternFileName = Pattern.compile("<div align=\"left\">(.*?) \\(.*\\) <br />");
 
 	// <a href="#" id="contentlink_0"
 	// rev="/links/76b5bb4380524456c61c1afb1638fbe7/" rel="linklayer"><img
@@ -56,12 +59,9 @@ public class XliceNet extends PluginForDecrypt {
 	static Pattern patternJSDESFile = Pattern
 			.compile("<script type=\"text/javascript\" src=\"/([^\"]+)\">");
 
-	static Pattern patternJsScript = Pattern
-			.compile(
-					"<script type=\"text/javascript\">(.*)var ciphertext = (des \\(substro, message, 0\\));",
-					Pattern.DOTALL);
+	static Pattern patternJsScript = Pattern.compile("<script[^>].*>(.*)\\n[^\\n]*=\\s*(des.*).\\n[^\\n]*document.write\\(.*?</script>", Pattern.DOTALL);
 
-	static Pattern patternHosterIframe = Pattern.compile("src=\"([^\"]+)\"");
+	static Pattern patternHosterIframe = Pattern.compile("src\\s*=\\s*\"([^\"]+)\"");
 
 	public XliceNet() {
 		super();
@@ -127,11 +127,25 @@ public class XliceNet extends PluginForDecrypt {
 				URL url = new URL(parameter);
 				RequestInfo reqinfo = getRequest(url, null, null, true);
 
-				String[] links = new Regexp(reqinfo.getHtmlCode(), patternLink)
+				//just to fetch the link count
+				String[] links = new Regexp(reqinfo.getHtmlCode(), patternLink )
 						.getMatches(1);
 				progress.setRange(links.length);
+				
+				String[] rowCandidates = new Regexp(reqinfo.getHtmlCode(), patternTableRowLink).getMatches(1);
+				
+				for (String rowCandiate : rowCandidates) {
+					
+					//check if there is a link in rowCandidate
+					String link = new Regexp(rowCandiate, patternLink).getFirstMatch(1);
 
-				for (String link : links) {
+					if(null == link){
+						continue;
+					}
+					
+					//check if there is a filename in row Candidate
+					String fileName = new Regexp(rowCandiate, patternFileName).getFirstMatch();
+					
 					URL mirrorUrl = new URL("http://" + (getHost() + link));
 					RequestInfo mirrorInfo = getRequest(mirrorUrl, null, null,
 							true);
@@ -144,11 +158,14 @@ public class XliceNet extends PluginForDecrypt {
 						// hoster
 						// if( !getUseConfig(mirrorHoster.get(i))){
 						if (!getUseConfig(pair.get(1))) {
+							logger.info(pair.get(1)+" is ignored due to user config");
 							continue;
 						}
 
 						URL fileURL = new URL("http://" + getHost()
 								+ pair.get(0));
+						
+						//System.out.println(fileURL);
 						RequestInfo fileInfo = getRequest(fileURL, null, null,
 								true);
 
@@ -174,10 +191,10 @@ public class XliceNet extends PluginForDecrypt {
 
 						// get the script that contains the link and the
 						// decipher recipe
-						Matcher matcher = patternJsScript.matcher(fileInfo
-								.getHtmlCode());
+						Matcher matcher = patternJsScript.matcher(fileInfo.getHtmlCode());
 
 						if (!matcher.find()) {
+							logger.severe("unable to find decypher recipe, step to next link ...");
 							continue;
 						}
 
@@ -192,11 +209,16 @@ public class XliceNet extends PluginForDecrypt {
 						String iframe = Context.toString(result);
 						String hosterURL = new Regexp(iframe,
 								patternHosterIframe).getFirstMatch();
+						
+						if( null == hosterURL ){
+							logger.severe("unable to determin hosterURL -> adapt patternHosterIframe");
+							continue;
+						}
 
-						// System.out.println(hosterURL);
+						DownloadLink downloadLink = createDownloadlink(hosterURL);
+						downloadLink.setName(fileName);
 
-						decryptedLinks.add(createDownloadlink(hosterURL));
-
+						decryptedLinks.add(downloadLink);
 					}
 					progress.increase(1);
 				}
