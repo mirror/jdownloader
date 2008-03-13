@@ -22,7 +22,7 @@ public class XupIn extends PluginForHost {
 	
     private static final String  CODER                    = "jD-Team";
     private static final String  HOST                     = "xup.in";
-    private static final String  PLUGIN_VERSION           = "0.1.1";
+    private static final String  PLUGIN_VERSION           = "0.2.0";
     private static final String  AGB_LINK                 = "http://www.xup.in/terms/";
     
     static private final Pattern PATTERN_SUPPORTED 		  = getSupportPattern("http://[*]xup\\.in/dl,[0-9]+/?[+]?");
@@ -31,6 +31,8 @@ public class XupIn extends PluginForHost {
     private String               vid              	  	  = "";
     private String               vtime              	  = "";
     private String               vpass              	  = "";
+    private String               captchaAddress           = "";
+    private String               cookie                   = "";
     
     private static final String  DOWNLOAD_SIZE            = "<li class=\"iclist\">File Size: (.*?) Mbyte</li>";
     private static final String  DOWNLOAD_NAME            = "<legend> <b>Download: (.*?)</b> </legend>";
@@ -44,6 +46,7 @@ public class XupIn extends PluginForHost {
         
     	super();
         steps.add(new PluginStep(PluginStep.STEP_PAGE, null));
+        steps.add(new PluginStep(PluginStep.STEP_GET_CAPTCHA_FILE, null));
         steps.add(new PluginStep(PluginStep.STEP_DOWNLOAD, null));
         
     }
@@ -89,12 +92,23 @@ public class XupIn extends PluginForHost {
     	vid = "";
         vtime = "";
         vpass = "";
+        captchaAddress = "";
+        cookie = "";
         
     }
 
     @Override
     public int getMaxSimultanDownloadNum() {
         return MAX_SIMULTAN_DOWNLOADS; 
+    }
+
+    @Override
+    public void resetPluginGlobals() {
+    }
+
+    @Override
+    public String getAGBLink() {
+        return AGB_LINK;
     }
 
     @Override
@@ -194,6 +208,8 @@ public class XupIn extends PluginForHost {
                         
                     }
                     
+                    cookie = requestInfo.getCookie();
+                    
                     if (JDUtilities.getController().isLocalFileInProgress(downloadLink)) {
                 		
                         logger.severe("File already is in progress: " + downloadLink.getFileOutput());
@@ -222,15 +238,43 @@ public class XupIn extends PluginForHost {
                     
                     vid = new Regexp(requestInfo.getHtmlCode(), VID).getFirstMatch();
                     vtime = new Regexp(requestInfo.getHtmlCode(), VTIME).getFirstMatch();
-                    
+                    captchaAddress = new Regexp(requestInfo.getHtmlCode(), VTIME).getFirstMatch();
+                    logger.info("0");
                 	return step;
+                    
+                case PluginStep.STEP_GET_CAPTCHA_FILE :
+                	
+                    File file = this.getLocalCaptchaFile(this);
+                    
+                    requestInfo = getRequestWithoutHtmlCode(new URL("http://www.xup.in/captcha.php"),
+                			cookie, downloadLink.getDownloadURL(), true);
+                    
+                    if ( !JDUtilities.download(file, requestInfo.getConnection()) || !file.exists() ) {
+                    	
+                        logger.severe("Captcha Download fehlgeschlagen: " + captchaAddress);
+                        step.setParameter(null);
+                        step.setStatus(PluginStep.STATUS_ERROR);
+                        downloadLink.setStatus(DownloadLink.STATUS_ERROR_CAPTCHA_IMAGEERROR);
+                        System.out.println("asdf");
+                        return step;
+                        
+                    } else {
+                    	
+                        step.setParameter(file);
+                        step.setStatus(PluginStep.STATUS_USER_INPUT);
+                        
+                    }
+                    
+                    break;
 
                 case PluginStep.STEP_DOWNLOAD:
                 	
+                	String vchep = (String) steps.get(1).getParameter();
+                	
                 	if ( vpass != "") {
-                		requestInfo = postRequestWithoutHtmlCode(downloadUrl, null, null, "vid="+vid+"&vtime="+vtime+"&vpass="+vpass, true);
+                		requestInfo = postRequestWithoutHtmlCode(downloadUrl, cookie, downloadLink.getDownloadURL(), "vid="+vid+"&vtime="+vtime+"&vpass="+vpass+"&vchep="+vchep, true);
                 	} else {
-                		requestInfo = postRequestWithoutHtmlCode(downloadUrl, null, null, "vid="+vid+"&vtime="+vtime, true);
+                		requestInfo = postRequestWithoutHtmlCode(downloadUrl, cookie, downloadLink.getDownloadURL(), "vid="+vid+"&vtime="+vtime+"&vchep="+vchep, true);
                 	}
                 	
                 	HTTPConnection urlConnection = requestInfo.getConnection();
@@ -238,8 +282,8 @@ public class XupIn extends PluginForHost {
                     
                     if ( urlConnection.getContentType().contains("text/html") ) {
                     	
-                    	logger.severe("Wrong password");
-                    	downloadLink.setStatus(DownloadLink.STATUS_ERROR_PLUGIN_SPECIFIC);
+                    	logger.severe("Captcha code or password wrong");
+                    	downloadLink.setStatus(DownloadLink.STATUS_ERROR_CAPTCHA_WRONG);
                     	step.setStatus(PluginStep.STATUS_ERROR);
                     	return step;
                     	
@@ -253,14 +297,11 @@ public class XupIn extends PluginForHost {
                     	return step;
                         
                     }
-                    
-                    int errorid;
 
                     // Download starten
                     Download dl = new Download(this, downloadLink, urlConnection);
 
                     if (!dl.startDownload() && step.getStatus() != PluginStep.STATUS_ERROR && step.getStatus() != PluginStep.STATUS_TODO) {
-     
                     	
                     	downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN);
                     	step.setStatus(PluginStep.STATUS_ERROR);
@@ -280,15 +321,6 @@ public class XupIn extends PluginForHost {
             
         }
         
-    }
-
-    @Override
-    public void resetPluginGlobals() {
-    }
-
-    @Override
-    public String getAGBLink() {
-        return AGB_LINK;
     }
 
 }
