@@ -26,20 +26,23 @@ import org.mozilla.javascript.Scriptable;
 //http://youmirror.biz/adfree/file/erikxrrc0zdowhx
 
 public class YoumirrorBiz extends PluginForDecrypt {
-	final static String host = "youmirror.biz";
+	
+	final static String HOST 				= "youmirror.biz";
+	private String 		VERSION 			= "4.0.2";
+	private String 		CODER 				= "JD-Team";
+	private Pattern 	patternSupported 	= getSupportPattern("http://[*]youmirror.biz/(.*/)?(file|folder)/[+]");
 
 	private static final String[] USEARRAY = new String[] { "Rapidshare.com",
 			"Uploaded.to", "FileFactory.com", "Fast-Load.net",
 			"MegaUpload.com", "Netload.in", "Gulli.com", "Filer.net",
 			"Load.to", "Sharebase.de", "zShare.net", "Share-Online.biz",
-			/* no plugin yet >> */"BinLoad.to", "Simpleupload.net",
+			"Bluehost.to", /* no plugin yet >> */ "BinLoad.to", "Simpleupload.net",
 			"UltimateLoad.in", "MeinUpload.com", "Qshare.com", /* old >> */
-			"Fastshare.org", "Uploadstube.de", "Files.to", "Datenklo.net",
-			"Bluehost.to" };
-
-	private String version = "4.0.1";
-
-	private Pattern patternSupported = getSupportPattern("http://[*]youmirror.biz/(.*/)?(file|folder)/[+]");
+			"Fastshare.org", "Uploadstube.de", "Files.to", "Datenklo.net"
+			 };
+	
+	private final static Pattern patternTableRowLink = Pattern.compile("<tr[^>]*>(.*?)</tr>", Pattern.DOTALL|Pattern.CASE_INSENSITIVE);
+	private final static Pattern patternFileName = Pattern.compile("<div align=\"left\">(.*?) \\(.*\\) <br />");
 
 	// <a href="#" id="contentlink_0"
 	// rev="/links/76b5bb4380524456c61c1afb1638fbe7/" rel="linklayer"><img
@@ -49,20 +52,17 @@ public class YoumirrorBiz extends PluginForDecrypt {
 			"<a href=\"#\".*rev=\"([^\"].+)\" rel=\"linklayer\">",
 			Pattern.CASE_INSENSITIVE);
 
-	// <br /><a href="#" onclick="createWnd('/gateway/278450/5/', '', 1000,
+	// <br /><a href="/" onclick="createWnd('/gateway/278450/5/', '', 1000,
 	// 600);" id="dlok">share.gulli.com</a>
 	static Pattern patternMirrorLink = Pattern
-			.compile("<a href=\"#\" onclick=\"createWnd\\('([^']*)[^>]*>([^<]+)</a>");
+			.compile("<a href=\"[^\"]*\" onclick=\"createWnd\\('([^']*)[^>]*>([^<]+)</a>");
 
 	static Pattern patternJSDESFile = Pattern
 			.compile("<script type=\"text/javascript\" src=\"/([^\"]+)\">");
 
-	static Pattern patternJsScript = Pattern
-			.compile(
-					"<script type=\"text/javascript\">(.*)var ciphertext = (des \\(substro, message, 0\\));",
-					Pattern.DOTALL);
+	static Pattern patternJsScript = Pattern.compile("<script[^>].*>(.*)\\n[^\\n]*=\\s*(des.*).\\n[^\\n]*document.write\\(.*?</script>", Pattern.DOTALL);
 
-	static Pattern patternHosterIframe = Pattern.compile("src=\"([^\"]+)\"");
+	static Pattern patternHosterIframe = Pattern.compile("src\\s*=\\s*\"([^\"]+)\"");
 
 	public YoumirrorBiz() {
 		super();
@@ -73,22 +73,22 @@ public class YoumirrorBiz extends PluginForDecrypt {
 
 	@Override
 	public String getCoder() {
-		return "JD-Team";
+		return CODER;
 	}
 
 	@Override
 	public String getHost() {
-		return host;
+		return HOST;
 	}
 
 	@Override
 	public String getPluginID() {
-		return host + "-" + VERSION;
+		return HOST + "-" + VERSION;
 	}
 
 	@Override
 	public String getPluginName() {
-		return host;
+		return HOST;
 	}
 
 	@Override
@@ -98,7 +98,7 @@ public class YoumirrorBiz extends PluginForDecrypt {
 
 	@Override
 	public String getVersion() {
-		return version;
+		return VERSION;
 	}
 
 	private boolean getUseConfig(String link) {
@@ -128,11 +128,25 @@ public class YoumirrorBiz extends PluginForDecrypt {
 				URL url = new URL(parameter);
 				RequestInfo reqinfo = getRequest(url, null, null, true);
 
-				String[] links = new Regexp(reqinfo.getHtmlCode(), patternLink)
+				//just to fetch the link count
+				String[] links = new Regexp(reqinfo.getHtmlCode(), patternLink )
 						.getMatches(1);
 				progress.setRange(links.length);
+				
+				String[] rowCandidates = new Regexp(reqinfo.getHtmlCode(), patternTableRowLink).getMatches(1);
+				
+				for (String rowCandiate : rowCandidates) {
+					
+					//check if there is a link in rowCandidate
+					String link = new Regexp(rowCandiate, patternLink).getFirstMatch(1);
 
-				for (String link : links) {
+					if(null == link){
+						continue;
+					}
+					
+					//check if there is a filename in row Candidate
+					String fileName = new Regexp(rowCandiate, patternFileName).getFirstMatch();
+					
 					URL mirrorUrl = new URL("http://" + (getHost() + link));
 					RequestInfo mirrorInfo = getRequest(mirrorUrl, null, null,
 							true);
@@ -140,18 +154,19 @@ public class YoumirrorBiz extends PluginForDecrypt {
 					Vector<Vector<String>> groups = getAllSimpleMatches(
 							mirrorInfo.getHtmlCode(), patternMirrorLink);
 
-					// for( int i=0; i<mirrorLinks.length; ++i){
 					for (Vector<String> pair : groups) {
-
 						// check if user does not want the links from this
 						// hoster
 						// if( !getUseConfig(mirrorHoster.get(i))){
 						if (!getUseConfig(pair.get(1))) {
+							logger.info(pair.get(1)+" is ignored due to user config");
 							continue;
 						}
 
 						URL fileURL = new URL("http://" + getHost()
 								+ pair.get(0));
+						
+						//System.out.println(fileURL);
 						RequestInfo fileInfo = getRequest(fileURL, null, null,
 								true);
 
@@ -177,10 +192,10 @@ public class YoumirrorBiz extends PluginForDecrypt {
 
 						// get the script that contains the link and the
 						// decipher recipe
-						Matcher matcher = patternJsScript.matcher(fileInfo
-								.getHtmlCode());
+						Matcher matcher = patternJsScript.matcher(fileInfo.getHtmlCode());
 
 						if (!matcher.find()) {
+							logger.severe("Unable to find decypher recipe - step to next link");
 							continue;
 						}
 
@@ -195,8 +210,16 @@ public class YoumirrorBiz extends PluginForDecrypt {
 						String iframe = Context.toString(result);
 						String hosterURL = new Regexp(iframe,
 								patternHosterIframe).getFirstMatch();
-						decryptedLinks.add(createDownloadlink(hosterURL));
+						
+						if( null == hosterURL ){
+							logger.severe("Unable to determin hosterURL - adapt patternHosterIframe");
+							continue;
+						}
 
+						DownloadLink downloadLink = createDownloadlink(hosterURL);
+						downloadLink.setName(fileName);
+
+						decryptedLinks.add(downloadLink);
 					}
 					progress.increase(1);
 				}
@@ -206,10 +229,11 @@ public class YoumirrorBiz extends PluginForDecrypt {
 				step.setParameter(decryptedLinks);
 			} catch (MissingResourceException e) {
 				step.setStatus(PluginStep.STATUS_ERROR);
-				logger.severe("MissingResourceException className: "
+				logger.severe("MissingResourceException class name: "
 						+ e.getClassName() + " key: " + e.getKey());
 				e.printStackTrace();
 			} catch (IOException e) {
+				step.setStatus(PluginStep.STATUS_ERROR);
 				e.printStackTrace();
 			} finally {
 				// Exit from the context.

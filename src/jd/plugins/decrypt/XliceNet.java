@@ -25,21 +25,21 @@ import org.mozilla.javascript.Scriptable;
 // xlice.net/file/ff139aafdf5c299c33b218b9750b3d17/%5BSanex%5D%20-
 
 public class XliceNet extends PluginForDecrypt {
-	final static String host = "xlice.net";
-
+	
+	final static String HOST 				= "xlice.net";
+	private String 		VERSION 			= "2.1.2";
+	private String 		CODER 				= "JD-Team";
+	private Pattern 	patternSupported 	= getSupportPattern("http://[*]xlice.net/(.*/)?(file|folder)/[a-zA-Z0-9]{32}[*]");
+	
 	private static final String[] USEARRAY = new String[] { "Rapidshare.com",
 			"Uploaded.to", "FileFactory.com", "Fast-Load.net",
 			"MegaUpload.com", "Netload.in", "Gulli.com", "Filer.net",
 			"Load.to", "Sharebase.de", "zShare.net", "Share-Online.biz",
-			/* no plugin yet >> */"BinLoad.to", "Simpleupload.net",
+			"Bluehost.to", /* no plugin yet >> */ "BinLoad.to", "Simpleupload.net",
 			"UltimateLoad.in", "MeinUpload.com", "Qshare.com", /* old >> */
-			"Fastshare.org", "Uploadstube.de", "Files.to", "Datenklo.net",
-			"Bluehost.to" };
+			"Fastshare.org", "Uploadstube.de", "Files.to", "Datenklo.net"
+			 };
 
-	private String version = "2.1.1";
-
-	private Pattern patternSupported = getSupportPattern("http://[*]xlice.net/(.*/)?(file|folder)/[a-zA-Z0-9]{32}[*]");
-	
 	private final static Pattern patternTableRowLink = Pattern.compile("<tr[^>]*>(.*?)</tr>", Pattern.DOTALL|Pattern.CASE_INSENSITIVE);
 	private final static Pattern patternFileName = Pattern.compile("<div align=\"left\">(.*?) \\(.*\\) <br />");
 
@@ -72,22 +72,22 @@ public class XliceNet extends PluginForDecrypt {
 
 	@Override
 	public String getCoder() {
-		return "JD-Team";
+		return CODER;
 	}
 
 	@Override
 	public String getHost() {
-		return host;
+		return HOST;
 	}
 
 	@Override
 	public String getPluginID() {
-		return host + "-" + VERSION;
+		return HOST + "-" + VERSION;
 	}
 
 	@Override
 	public String getPluginName() {
-		return host;
+		return HOST;
 	}
 
 	@Override
@@ -97,7 +97,7 @@ public class XliceNet extends PluginForDecrypt {
 
 	@Override
 	public String getVersion() {
-		return version;
+		return VERSION;
 	}
 
 	private boolean getUseConfig(String link) {
@@ -194,7 +194,7 @@ public class XliceNet extends PluginForDecrypt {
 						Matcher matcher = patternJsScript.matcher(fileInfo.getHtmlCode());
 
 						if (!matcher.find()) {
-							logger.severe("unable to find decypher recipe, step to next link ...");
+							logger.severe("Unable to find decypher recipe - step to next link");
 							continue;
 						}
 
@@ -211,7 +211,7 @@ public class XliceNet extends PluginForDecrypt {
 								patternHosterIframe).getFirstMatch();
 						
 						if( null == hosterURL ){
-							logger.severe("unable to determin hosterURL -> adapt patternHosterIframe");
+							logger.severe("Unable to determin hosterURL - adapt patternHosterIframe");
 							continue;
 						}
 
@@ -223,16 +223,12 @@ public class XliceNet extends PluginForDecrypt {
 					progress.increase(1);
 				}
 
-				logger.info(decryptedLinks.size()
-						+ " "
-						+ JDLocale.L(
-								"plugins.decrypt.general.downloadsDecrypted",
-								"Downloads entschlüsselt"));
+				logger.info(decryptedLinks.size() + " downloads decrypted");
 
 				step.setParameter(decryptedLinks);
 			} catch (MissingResourceException e) {
 				step.setStatus(PluginStep.STATUS_ERROR);
-				logger.severe("MissingResourceException className: "
+				logger.severe("MissingResourceException class name: "
 						+ e.getClassName() + " key: " + e.getKey());
 				e.printStackTrace();
 			} catch (IOException e) {
