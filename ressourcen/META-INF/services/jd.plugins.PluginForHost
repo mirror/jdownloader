@@ -20,5 +20,5 @@ jd.plugins.host.DepositFiles
 jd.plugins.host.BadOngo
 jd.plugins.host.zShare
 jd.plugins.host.FastLoadNet
-#jd.plugins.host.BluehostTo
+jd.plugins.host.BluehostTo
 jd.plugins.host.XupIn

@@ -47,7 +47,7 @@ public class Netloadin extends PluginForHost {
     static private final String  DOWNLOAD_START   = "download_load.tpl";
     //static private final String  DOWNLOAD_WAIT    = "download_wait.tpl";
     static private final Pattern DOWNLOAD_WAIT_TIME = Pattern.compile("countdown\\(([0-9]*),'change", Pattern.CASE_INSENSITIVE);
-    
+    static private long LAST_FILE_STARTED=0;
     private String               finalURL;
 
     private String               captchaURL;
@@ -127,6 +127,7 @@ public class Netloadin extends PluginForHost {
             
             switch (step.getStep()) {
                 case PluginStep.STEP_WAIT_TIME:
+                    LAST_FILE_STARTED=System.currentTimeMillis();
                     if (captchaURL == null) {
                         logger.info(downloadLink.getDownloadURL());
                         requestInfo = getRequest(new URL(downloadLink.getDownloadURL()), null, null, true);
@@ -374,10 +375,16 @@ public class Netloadin extends PluginForHost {
     }
     @Override
     public int getMaxSimultanDownloadNum() {
+        logger.info("JJJJ");
         if (this.getProperties().getBooleanProperty("USE_PREMIUM", false)) {
             return 20;
         }else{
-        return 2;
+            if((System.currentTimeMillis()-LAST_FILE_STARTED)>5000){
+                return 10;
+            }else{
+                return 1;
+            }
+   
         }
     }
     private void setConfigElements() {

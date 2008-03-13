@@ -30,6 +30,10 @@ public class Gulli extends PluginForHost {
     static private final Pattern PAT_FILE_ID        = Pattern.compile("<input type=\"hidden\" name=\"file\" value=\"([^\"]*)");
 
     static private final Pattern PAT_DOWNLOAD_URL   = Pattern.compile("<form action=\"/(download[^\"]*)");
+    static private final String PAT_DOWNLOAD_SIZE_MB = "div id=\"share_download\">°<h1>° (° MB)</h1>";
+    private static final String PAT_DOWNLOAD_SIZE_B = "div id=\"share_download\">°<h1>° (° B)</h1>";
+
+    private static final String PAT_DOWNLOAD_SIZE_KB = "div id=\"share_download\">°<h1>° (° KB)</h1>";
 
     static private final Pattern PAT_DOWNLOAD_LIMIT = Pattern.compile("timeLeft=([^\"]*)&");
 
@@ -47,7 +51,9 @@ public class Gulli extends PluginForHost {
 
     static private final String  PLUGIN_ID          = PLUGIN_NAME + "-" + PLUGIN_VERSION;
 
-    static private final String  CODER              = "olimex/JD-Team";
+    static private final String  CODER              = "JD-Team";
+
+
 
     /**
      * ID des Files bei gulli
@@ -265,6 +271,28 @@ public class Gulli extends PluginForHost {
             if (requestInfo.getConnection().getHeaderField("Location") != null && requestInfo.getConnection().getHeaderField("Location").indexOf("error") > 0) {
                 return false;
             }
+            requestInfo=readFromURL(requestInfo.getConnection());
+          
+            int filesize=0;
+            String size;
+            size=getSimpleMatch(requestInfo.getHtmlCode(), PAT_DOWNLOAD_SIZE_B, 2);  
+            
+            if(size!=null)filesize=(int)(Double.parseDouble(size));
+           
+            if(size==null){
+               
+                size=getSimpleMatch(requestInfo.getHtmlCode(), PAT_DOWNLOAD_SIZE_KB, 2); 
+               
+                if(size!=null)filesize=(int)(Double.parseDouble(size.replaceAll(",", "."))*1024);
+            }
+            if(size==null){
+                size=getSimpleMatch(requestInfo.getHtmlCode(), PAT_DOWNLOAD_SIZE_MB, 2);
+            
+                if(size!=null)filesize=(int)(Double.parseDouble(size.replaceAll(",", "."))*1024*1024);
+              
+            }
+          if(filesize>0)downloadLink.setDownloadMax(filesize);
+               
             return true;
         }
         catch (MalformedURLException e) {

@@ -173,7 +173,7 @@ String fileSize = JDUtilities.htmlDecode(getSimpleMatch(requestInfo.getHtmlCode(
                     }
                     downloadLink.setName(fileName);
                     // downloadLink auslesen
-                    logger.info(requestInfo.getHtmlCode());
+                 
                     this.downloadURL = JDUtilities.htmlDecode(getSimpleMatch(requestInfo.getHtmlCode(), DOWNLOAD_LINK, 0));
 
                     return step;
@@ -206,6 +206,7 @@ String fileSize = JDUtilities.htmlDecode(getSimpleMatch(requestInfo.getHtmlCode(
       
                    
                    Download dl = new Download(this, downloadLink,  urlConnection);
+              
                    dl.startDownload();
                     return step;
 

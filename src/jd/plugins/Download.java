@@ -2,19 +2,14 @@ package jd.plugins;
 
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStreamWriter;
 import java.io.RandomAccessFile;
-import java.net.HttpURLConnection;
 import java.net.URL;
-import java.net.URLConnection;
 import java.nio.ByteBuffer;
 import java.nio.channels.Channels;
 import java.nio.channels.FileChannel;
 import java.nio.channels.ReadableByteChannel;
-import java.nio.channels.WritableByteChannel;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -24,8 +19,6 @@ import java.util.Map.Entry;
 import java.util.logging.Logger;
 
 import jd.config.Configuration;
-import jd.event.ControlEvent;
-import jd.plugins.event.PluginEvent;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
@@ -50,6 +43,8 @@ public class Download {
     public static final int           ERROR_COULD_NOT_RENAME                 = 101;
 
     public static final int           ERROR_ABORTED_BY_USER                  = 102;
+
+    public static final int           ERROR_TOO_MUCH_BUFFERMEMORY            = 103;
 
     private DownloadLink              downloadLink;
 
@@ -90,6 +85,8 @@ public class Download {
     private int                       lastMaxChunkSpeed;
 
     private long                      fileSize                               = -1;
+
+    private boolean abortByError=false;
 
     public static Logger              logger                                 = JDUtilities.getLogger();
 
@@ -144,7 +141,23 @@ public class Download {
     }
 
     private void error(int id) {
+        logger.severe("Error occured: "+id);
         if (errors.indexOf(id) < 0) errors.add(id);
+        if(id==ERROR_TOO_MUCH_BUFFERMEMORY){
+            terminate(id);
+            
+        }
+        if(id==ERROR_UNKNOWN){
+            terminate(id);
+            
+        }
+    }
+
+    private void terminate(int id) {
+        
+        logger.severe("A critical Downlaoderror occured. Terminate...");
+      this.abortByError=true;
+        
     }
 
     public boolean startDownload() {
@@ -232,20 +245,19 @@ public class Download {
 
     private long getFileSize() {
         if (connection.getContentLength() > 0) {
-            logger.info("1 "+connection.getHeaderFields());
-        
+            logger.info("1 " + connection.getHeaderFields());
+
             return connection.getContentLength();
         }
-        if (fileSize > 0){
+        if (fileSize > 0) {
             logger.info("2");
             return fileSize;
         }
-        if (downloadLink.getDownloadMax() > 0) 
-            {
+        if (downloadLink.getDownloadMax() > 0) {
             logger.info("3");
             return downloadLink.getDownloadMax();
-            
-            }
+
+        }
         return -1;
     }
 
@@ -257,7 +269,11 @@ public class Download {
             downloadLink.setStatus(DownloadLink.STATUS_TODO);
             return false;
         }
-
+        if (errors.contains(ERROR_TOO_MUCH_BUFFERMEMORY)) {
+            plugin.getCurrentStep().setStatus(PluginStep.STATUS_ERROR);
+            downloadLink.setStatus(DownloadLink.STATUS_ERROR_CHUNKLOAD_FAILED);
+            return false;
+        }
         if (errors.contains(ERROR_COULD_NOT_RENAME)) {
             plugin.getCurrentStep().setStatus(PluginStep.STATUS_RETRY);
             downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN_RETRY);
@@ -291,6 +307,7 @@ public class Download {
             downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN);
             return false;
         }
+
         plugin.getCurrentStep().setStatus(PluginStep.STATUS_DONE);
         downloadLink.setStatus(DownloadLink.STATUS_DONE);
         return true;
@@ -376,7 +393,7 @@ public class Download {
 
         private static final int MAX_BUFFERSIZE = 2 * 1024 * 1024;
 
-        private static final int MIN_BUFFERSIZE = 128 * 1024;
+        private static final int MIN_BUFFERSIZE = 10 * 128 * 1024;
 
         private long             startByte;
 
@@ -410,16 +427,16 @@ public class Download {
                 httpConnection.setConnectTimeout(getRequestTimeout());
                 httpConnection.setInstanceFollowRedirects(false);
                 Map<String, List<String>> request = connection.getRequestProperties();
-                if(request!=null){
-                Set<Entry<String, List<String>>> requestEntries = request.entrySet();
-                Iterator<Entry<String, List<String>>> it = requestEntries.iterator();
-                String value;
-                while (it.hasNext()) {
-                    Entry<String, List<String>> next = it.next();
+                if (request != null) {
+                    Set<Entry<String, List<String>>> requestEntries = request.entrySet();
+                    Iterator<Entry<String, List<String>>> it = requestEntries.iterator();
+                    String value;
+                    while (it.hasNext()) {
+                        Entry<String, List<String>> next = it.next();
 
-                    value = next.getValue().toString();
-                    httpConnection.setRequestProperty(next.getKey(), value.substring(1, value.length() - 1));
-                }
+                        value = next.getValue().toString();
+                        httpConnection.setRequestProperty(next.getKey(), value.substring(1, value.length() - 1));
+                    }
                 }
 
                 if (chunkNum > 1) {
@@ -469,9 +486,19 @@ public class Download {
         }
 
         private void download() {
+            ByteBuffer buffer = null;
+            int bufferSize=1;
+            try {
+            bufferSize = getBufferSize(getMaximalChunkSpeed());
+           
+            
+                buffer = ByteBuffer.allocateDirect(bufferSize);
 
-            int bufferSize = getBufferSize(getMaximalChunkSpeed());
-            ByteBuffer buffer = ByteBuffer.allocateDirect(bufferSize);
+            }
+            catch (OutOfMemoryError e) {
+                error(ERROR_TOO_MUCH_BUFFERMEMORY);
+                return;
+            }
 
             InputStream inputStream = null;
             ReadableByteChannel source = null;
@@ -490,11 +517,11 @@ public class Download {
 
                 int bytes;
                 int block = 0;
-                while (!plugin.aborted && !downloadLink.isAborted()) {
+                while (!plugin.aborted && !downloadLink.isAborted()&&!abortByError) {
                     bytes = 0;
 
                     timer = System.currentTimeMillis();
-                    while (buffer.hasRemaining() && !plugin.aborted && !downloadLink.isAborted() && (System.currentTimeMillis() - timer) < getTimeInterval()) {
+                    while (buffer.hasRemaining() && !plugin.aborted &&!abortByError&& !downloadLink.isAborted() && (System.currentTimeMillis() - timer) < getTimeInterval()) {
                         // if(bytes>0)Thread.sleep(100);
                         block = source.read(buffer);
                         if (block == -1) {
@@ -509,7 +536,7 @@ public class Download {
                     buffer.clear();
                     currentBytePosition += bytes;
 
-                    if (block == -1) break;
+                    if (block == -1||abortByError||plugin.aborted||downloadLink.isAborted()) break;
                     try {
                         Thread.sleep(getTimeInterval() - (System.currentTimeMillis() - timer));
                     }
@@ -522,7 +549,17 @@ public class Download {
                     // "+bytesPerSecond);
                     // bufferSize=getBufferSize(getMaximalChunkSpeed());
                     if (bufferSize != (bufferSize = getBufferSize(getMaximalChunkSpeed()))) {
-                        buffer = ByteBuffer.allocateDirect(Math.max(1, bufferSize));
+                       
+                        
+                        try {
+                            buffer = ByteBuffer.allocateDirect(Math.max(1, bufferSize));
+
+                        }
+                        catch (Exception e) {
+                            error(ERROR_TOO_MUCH_BUFFERMEMORY);
+                            return;
+                        }
+                        
                         buffer.clear();
                     }
 

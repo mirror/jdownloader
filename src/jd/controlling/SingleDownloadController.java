@@ -248,6 +248,10 @@ public class SingleDownloadController extends ControlMulticaster {
                 case DownloadLink.STATUS_ERROR_OUTPUTFILE_OWNED_BY_ANOTHER_LINK:
                     this.onErrorFileInProgress(downloadLink, plugin, step);
                     break;
+                case DownloadLink.STATUS_ERROR_CHUNKLOAD_FAILED:
+                    this.onErrorChunkloadFailed(downloadLink, plugin, step);
+                    break;   
+                    
                 default:
                     logger.info("Uknown error id: " + downloadLink.getStatus());
                     this.onErrorUnknown(downloadLink, plugin, step);
@@ -276,6 +280,16 @@ public class SingleDownloadController extends ControlMulticaster {
 
         }
 
+    }
+
+    private void onErrorChunkloadFailed(DownloadLink downloadLink, PluginForHost plugin, PluginStep step) {
+       
+        logger.severe("Chunkload failed: ");
+       downloadLink.setStatusText(JDLocale.L("controller.status.chunkloadfailed", "Multidownload fehlgeschlagen"));
+
+        // downloadLink.setEnabled(false);
+        fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SINGLE_DOWNLOAD_CHANGED, downloadLink));
+        
     }
 
     private void onErrorFileInProgress(DownloadLink downloadLink2, PluginForHost plugin, PluginStep step) {

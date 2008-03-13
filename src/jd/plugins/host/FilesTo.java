@@ -8,6 +8,7 @@ import java.net.URLConnection;
 import java.util.HashMap;
 import java.util.regex.Pattern;
 
+import jd.config.Configuration;
 import jd.plugins.Download;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTPConnection;
@@ -179,6 +180,8 @@ public class FilesTo extends PluginForHost {
                     
                     // Download starten
                     Download dl = new Download(this, downloadLink, urlConnection);
+                    dl.setChunks(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS));
+
                     dl.startDownload();
                     
               

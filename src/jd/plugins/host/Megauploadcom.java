@@ -47,7 +47,7 @@ public class Megauploadcom extends PluginForHost {
 
     static private final String     ERROR_TEMP_NOT_AVAILABLE            = "Zugriff auf die Datei ist vor";
 
-    static private final String     ERROR_FILENOTFOUND                  = "Dieser Link ist leider nicht";
+    static private final String     ERROR_FILENOTFOUND                  = "Die Datei konnte leider nicht gefunden werden";
 
     static private final long       PENDING_WAITTIME                    = 45000;
 
@@ -231,6 +231,7 @@ public class Megauploadcom extends PluginForHost {
                             return step;
                         }
                         Download dl = new Download(this, downloadLink,  requestInfo.getConnection());
+                        
                         dl.startDownload();
                         return step;
                     }

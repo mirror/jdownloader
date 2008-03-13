@@ -196,9 +196,9 @@ public class BluehostTo extends PluginForHost {
                 case PluginStep.STEP_DOWNLOAD:
                 	
                     // Download vorbereiten
-                	requestInfo = postRequestWithoutHtmlCode(new URL(DOWNLOAD_URL+session), null, null, "UPLOADSCRIPT_LOGSESSION="+session+"&dateidownload=erlaubt&"+code1+"="+code2+"&downloadhash="+hash, true);
+                	requestInfo = postRequestWithoutHtmlCode(new URL(DOWNLOAD_URL+session), "UPLOADSCRIPT_LOGSESSION="+session+"; fd_upload_bluehost_bl=aus;", null, "dateidownload=erlaubt&"+code1+"="+code2+"&downloadhash="+hash, true);
                 	HTTPConnection urlConnection = requestInfo.getConnection();
-                    
+                   // logger.info(this.readFromURL(requestInfo.getConnection()).getHtmlCode());
                     /*if ( Math.abs(length - downloadLink.getDownloadMax()) > 1024*1024 ) {
                     	
                     	logger.warning("Filesize Error");
