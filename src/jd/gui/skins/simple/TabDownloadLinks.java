@@ -321,7 +321,13 @@ public class TabDownloadLinks extends JPanel implements PluginListener, ControlL
         }
     }
 
-    public void mouseClicked(MouseEvent e) {}
+    public void mouseClicked(MouseEvent e) {
+    	if( e.getButton() == MouseEvent.BUTTON1 && 2 == e.getClickCount() ){
+    		Point point = e.getPoint();
+    		int row = table.rowAtPoint(point);    		
+    		new DownloadInfo(parent.getFrame(), allLinks.get(row));
+    	}
+    }
 
     public void mouseEntered(MouseEvent e) {}
 
@@ -335,6 +341,7 @@ public class TabDownloadLinks extends JPanel implements PluginListener, ControlL
         if (e.isPopupTrigger() || e.getButton() == MouseEvent.BUTTON3) {
             Point point = e.getPoint();
             int row = table.rowAtPoint(point);
+            
             if (this.getSelectedObjects().indexOf(allLinks.elementAt(row)) >= 0) {
             }
             else {
