@@ -121,6 +121,8 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
     private JMenuItem            mPriorityMirror;
 
     private JMenuItem            mRemoveOffline;
+    
+    private JMenuItem			 mRemoveEmptyPackages;
 
     private int                  currentTab                 = -1;
 
@@ -252,6 +254,9 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
         mRemovePackage = new JMenuItem(JDLocale.L("gui.linkgrabber.menu.edit.removePackage", "Paket verwerfen"));
         mRemovePackage.addActionListener(this);
         menu.add(mRemovePackage);
+        mRemoveEmptyPackages = new JMenuItem(JDLocale.L("gui.linkgrabber.menu.edit.removeEmptyPackages", "Leere Pakete verwerfen"));
+        mRemoveEmptyPackages.addActionListener(this);
+        menu.add(mRemoveEmptyPackages);
 
         // mMovePackage = new
         // JCheckBoxMenuItem(JDLocale.L("gui.linkgrabber.menu.edit.movePackage",
@@ -478,10 +483,8 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
         tabbedPane.removeTabAt(i);
     }
 
-    protected void removePackage(PackageTab tab) {
-        tabbedPane.removeTabAt(tabList.indexOf(tab));
-        tabList.remove(tab);
-
+    protected void removePackage(PackageTab tab) {    	
+    	removePackageAt(tabList.indexOf(tab));
     }
 
     protected PackageTab getSelectedTab() {
@@ -491,11 +494,6 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
     protected void onPackageNameChanged(PackageTab tab) {
         for (int i = 0; i < tabList.size(); i++) {
             if (tabList.get(i) == tab) {
-                if (tab.getLinkList().size() == 0) {
-
-                    return;
-                }
-                else {
                     String title = tab.getPackageName();
                     if (title.length() > 20) {
                         tabbedPane.setToolTipTextAt(i, title);
@@ -503,8 +501,6 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
                     }
                     tabbedPane.setTitleAt(i, title + " (" + tab.getLinkList().size() + ")");
                     return;
-                }
-
             }
 
         }
@@ -617,10 +613,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
         }
         else if (e.getSource() == this.mRemovePackage) {
             this.removePackageAt(this.tabbedPane.getSelectedIndex());
-            if (this.tabList.size() == 0) {
-                this.setVisible(false);
-                this.dispose();
-            }
+            this.emptyCheck();
         }
         else if (e.getSource() == this.accept) {
             confirmCurrentPackage();
@@ -635,17 +628,6 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
             this.setVisible(false);
             this.dispose();
         }
-        else if (e.getSource() == this.mRemoveOffline) {
-            PackageTab tab = tabList.get(tabbedPane.getSelectedIndex());
-            Vector<DownloadLink> list = tab.getLinkList();
-            for (int i = list.size() - 1; i >= 0; i--) {
-                if (!list.get(i).isAvailable()) {
-                    tab.removeLinkAt(i);
-                }
-            }
-            this.onPackageNameChanged(tab);
-        }
-
         else if (e.getSource() == this.mMerge) {
             PackageTab tab = tabList.get(tabbedPane.getSelectedIndex());
             String name = tab.getPackageName();
@@ -680,24 +662,50 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
                     }
                 }
                 this.onPackageNameChanged(tab);
-
             }
-
+        }
+        else if (e.getSource() == this.mRemoveOffline) {
+            PackageTab tab = tabList.get(tabbedPane.getSelectedIndex());
+            Vector<DownloadLink> list = tab.getLinkList();
+            for (int i = list.size() - 1; i >= 0; --i) {
+                if (!list.get(i).isAvailable()) {
+                    tab.removeLinkAt(i);
+                }
+            }
+            this.onPackageNameChanged(tab);
+        }
+        else if (e.getSource() == this.mRemoveEmptyPackages){
+        	for(int i=tabList.size() -1 ; i>=0; --i){
+        		PackageTab tab = tabList.get(i);
+        		if( tab.isEmpty() ){
+        			this.removePackage(tab);
+        		}
+        	}        	
+			this.emptyCheck();
         }
         else if (e.getActionCommand().equals(JDLocale.L("gui.linkgrabber.tabs.context.delete"))) {
             Point loc = ((ContextMenu) ((JMenuItem) e.getSource()).getParent()).getPoint();
             int destID = tabbedPane.getUI().tabForCoordinate(tabbedPane, (int) loc.x, (int) loc.getY());
             this.removePackageAt(destID);
-            if (this.tabList.size() == 0) {
-                this.setVisible(false);
-                this.dispose();
-            }
+            
+            this.emptyCheck();
         }
         else if (e.getActionCommand().equals(JDLocale.L("gui.linkgrabber.tabs.context.newPackage"))) {
 
             addTab();
         }
-
+    }
+    
+    /**
+     * checks the LinkGrabber if there are any Packages left
+     * If not, the Linkgrabber will be closed and disposed. If there are packages left
+     * nothing happens
+     */
+    private void emptyCheck(){
+        if (this.tabList.size() == 0) {
+            this.setVisible(false);
+            this.dispose();
+        }
     }
 
     private DownloadLink getPriorityLink(Vector<DownloadLink> mirrors) {
@@ -957,6 +965,14 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
             linkList = new Vector<DownloadLink>();
             linkList.addAll(finalList);
             refreshTable();
+        }
+        
+        /**
+         * Checks if a PackageTab is empty
+         * @return false if there are links within this package, true otherwise
+         */
+        public boolean isEmpty(){
+        	return linkList.size() == 0;
         }
 
         public Vector<Vector<DownloadLink>> getMirrors() {
