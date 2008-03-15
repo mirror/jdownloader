@@ -898,16 +898,16 @@ public class JDController implements PluginListener, ControlListener, UIListener
      * @return Anzahld er laufenden Downloadsl
      */
     public int getRunningDownloadNum() {
-        int ret = 0;
-        Iterator<DownloadLink> iterator = downloadLinks.iterator();
+        int ret = 0;    
         DownloadLink nextDownloadLink = null;
-        while (iterator.hasNext()) {
-            nextDownloadLink = iterator.next();
-            if (nextDownloadLink.getStatus() == DownloadLink.STATUS_DOWNLOAD_IN_PROGRESS) ret++;
-
+        for(int i=0;i<downloadLinks.size();i++) {
+            if(downloadLinks.size()<=i)continue;
+            nextDownloadLink = downloadLinks.get(i);
+            if (nextDownloadLink.getStatus() == DownloadLink.STATUS_DOWNLOAD_IN_PROGRESS) ret++;       
         }
-        return ret;
-    }
+    return ret;
+}
+    
 
     /**
      * Der Benuter soll den Captcha Code erkennen

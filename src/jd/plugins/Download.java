@@ -398,9 +398,9 @@ public class Download {
 
     class Chunk extends Thread {
 
-        private static final int MAX_BUFFERSIZE = 2 * 1024 * 1024;
+        private static final int MAX_BUFFERSIZE = 4 * 1024 * 1024;
 
-        private static final int MIN_BUFFERSIZE = 10 * 128 * 1024;
+        private static final int MIN_BUFFERSIZE = 1 * 1024 * 1024;
 
         private long             startByte;
 
@@ -488,7 +488,8 @@ public class Download {
         }
 
         private int getTimeInterval() {
-            // logger.info("Timeinterval: "+(int)(1000*this.bufferTimeFaktor));
+            if(!downloadLink.isLimited)return 1000;
+            
             return (int) (1000 * this.bufferTimeFaktor);
 
         }
@@ -499,7 +500,7 @@ public class Download {
             try {
             bufferSize = getBufferSize(getMaximalChunkSpeed());
            
-            
+           // logger.info(bufferSize+" - "+this.getTimeInterval());
                 buffer = ByteBuffer.allocateDirect(bufferSize);
 
             }
@@ -530,9 +531,10 @@ if(chunkNum>1&&(connection.getHeaderField("Content-Range")==null ||connection.ge
 
                 int bytes;
                 int block = 0;
+                int tempBuff=0;
                 while (!plugin.aborted && !downloadLink.isAborted()&&!abortByError) {
                     bytes = 0;
-
+                  
                     timer = System.currentTimeMillis();
                     while (buffer.hasRemaining() && !plugin.aborted &&!abortByError&& !downloadLink.isAborted() && (System.currentTimeMillis() - timer) < getTimeInterval()) {
                         // if(bytes>0)Thread.sleep(100);
@@ -560,9 +562,9 @@ if(chunkNum>1&&(connection.getHeaderField("Content-Range")==null ||connection.ge
                     this.bytesPerSecond = (1000 * bytes) / deltaTime;
                     // logger.info("loaded "+bytes+" b in "+(deltaTime)+" ms:
                     // "+bytesPerSecond);
-                    // bufferSize=getBufferSize(getMaximalChunkSpeed());
-                    if (bufferSize != (bufferSize = getBufferSize(getMaximalChunkSpeed()))) {
-                       
+                    tempBuff=getBufferSize(getMaximalChunkSpeed());
+                    if (Math.abs(bufferSize-tempBuff)>1000) {
+                       bufferSize=tempBuff;
                         
                         try {
                             buffer = ByteBuffer.allocateDirect(Math.max(1, bufferSize));
@@ -626,12 +628,10 @@ if(chunkNum>1&&(connection.getHeaderField("Content-Range")==null ||connection.ge
         }
 
         private int getBufferSize(int maxspeed) {
+            if(!downloadLink.isLimited)return MAX_BUFFERSIZE;
             int bufferSize = Math.min(MAX_BUFFERSIZE, Math.max(MIN_BUFFERSIZE, maxspeed));
             this.bufferTimeFaktor = Math.max(0.1, (double) bufferSize / maxspeed);
-            // logger.info("Buffersize: "+bufferSize+" at
-            // "+this.getTimeInterval()+" ms.
-            // chunkspeed:"+maxspeed+"("+(downloadLink.getMaximalspeed()*40)+")");
-            return bufferSize;
+           return bufferSize;
         }
 
         public long getBytesPerSecond() {

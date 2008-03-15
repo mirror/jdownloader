@@ -75,6 +75,7 @@ import jd.config.Configuration;
 import jd.config.SubConfiguration;
 import jd.controlling.JDController;
 import jd.gui.UIInterface;
+import jd.gui.skins.simple.SimpleGUI;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTPConnection;
 import jd.plugins.LogFormatter;
@@ -2051,12 +2052,23 @@ public class JDUtilities {
                     if ((b == 13 || b == 10)) {
                         if (buffer.length() > 0) {
                             JDUtilities.getLogger().severe(buffer.toString());
+                            if(buffer.indexOf("OutOfMemoryError")>=0){
+                                logger.finer("Restart");
+                                JDUtilities.getSubConfig("simpleGUI").setProperty(SimpleGUI.PARAM_START_DOWNLOADS_AFTER_START, true);
+                                JDUtilities.restartJD();
+                            }
+                           
                         }
                         buffer = new StringBuffer();
+                   
 
                     }
                     else {
                         buffer.append((char) b);
+                        
+                       
+                            
+                       
                     }
 
                 }

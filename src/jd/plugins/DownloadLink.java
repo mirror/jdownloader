@@ -947,7 +947,8 @@ public class DownloadLink implements Serializable, Comparable<DownloadLink> {
 
     public int getMaximalspeed() {
         // return 5000000/40;
-        int maxspeed = JDUtilities.getConfiguration().getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, 0) * 1024;
+        int maxspeed = JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, 0) * 1024;
+
         if (maxspeed == 0) maxspeed = Integer.MAX_VALUE;
         maxspeed = Math.max(1, maxspeed / (Math.max(1, JDUtilities.getController().getRunningDownloadNum())));
 

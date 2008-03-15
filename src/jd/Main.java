@@ -2,6 +2,7 @@ package jd;
 
 import java.awt.Graphics;
 import java.awt.Image;
+import java.nio.ByteBuffer;
 import java.util.Iterator;
 import java.util.Properties;
 import java.util.TreeSet;
@@ -156,8 +157,8 @@ logger.info(System.getProperty("java.class.path"));
         logger.info("jd.run="+JDUtilities.getRunType());
         logger.info("jd.lastAuthor="+JDUtilities.getLastChangeAuthor());   
         logger.info("jd.appDir="+JDUtilities.getCurrentWorkingDirectory(null));
-        
-       
+
+   
    
     }
     
