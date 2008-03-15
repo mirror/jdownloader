@@ -411,7 +411,11 @@ public class JDInit {
                 
                 logger.finer("Init Webupdater");
                 WebUpdater updater = new WebUpdater(null);
-              
+                if(JDUtilities.getSubConfig("WEBUPDATE").getBooleanProperty("WEBUPDATE_BETA",false)){
+                    logger.info("BETA");
+                    updater.setListPath("http://ns2.km32221.keymachine.de/jdownloader/betaupdate/");  
+                    
+                }
                 updater.setCid(oldCid);
                 logger.finer("Get available files");
                 Vector<Vector<String>> files = updater.getAvailableFiles();

@@ -1961,6 +1961,9 @@ public class JDUtilities {
             ret += "  " + JDLocale.L("gui.mainframe.title.updatemessage", "-->UPDATES VERFÜGBAR: ") + JDUtilities.getController().getWaitingUpdates().size();
 
         }
+        if(getSubConfig("WEBUPDATE").getBooleanProperty("WEBUPDATE_BETA",false)){
+            return "[BETA!] "+ret;
+        }
         return ret;
     }
 

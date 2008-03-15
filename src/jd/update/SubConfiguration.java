@@ -31,6 +31,7 @@ public class SubConfiguration extends Property implements Serializable {
         this.name=name;
         File file;
         Object props = utils.loadObject(file=new File("config/"+name+".cfg"));
+       System.out.println("Config file: "+file.getAbsolutePath());
        file.getParentFile().mkdirs();
         if(props!=null){
             this.setProperties((HashMap<String, Object>)props);

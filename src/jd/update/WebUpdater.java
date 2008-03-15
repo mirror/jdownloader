@@ -26,6 +26,7 @@ import java.util.zip.GZIPInputStream;
 import javax.swing.JProgressBar;
 
 import jd.utils.HTMLEntities;
+import jd.utils.JDUtilities;
 
 /**
  * @author JD-Team Webupdater lädt pfad und hash infos von einem server und
@@ -76,7 +77,13 @@ public class WebUpdater implements Serializable {
             this.setListPath(path);
         }
         else {
+            if(SubConfiguration.getSubConfig("WEBUPDATE").getBooleanProperty("WEBUPDATE_BETA",false)){
+                log("BETA");
+                this.setListPath("http://ns2.km32221.keymachine.de/jdownloader/betaupdate/");  
+            }else{
+                log("STABLE");
             this.setListPath("http://jdupdatescript.ath.cx");
+            }
 
         }
         
@@ -526,6 +533,7 @@ public class WebUpdater implements Serializable {
     public void setListPath(String listPath) {
         this.listPath = listPath + "/list.php";
         this.onlinePath = listPath + "/bin";
+        this.log("Update from "+listPath);
 
     }
 
