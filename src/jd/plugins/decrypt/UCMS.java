@@ -16,7 +16,7 @@ import jd.utils.JDUtilities;
 public class UCMS extends PluginForDecrypt {
     static private final String host = "Underground CMS";
     private String version = "1.0.0.0";
-
+//http://game-freaks.net/PS2_ISOS/Van_Helsing_PAL-MULTi_13840.html
     private Pattern patternSupported = getSupportPattern("(http://[*]lesestunde.info/\\?id=[+])"
     		+ "|(http://[*]filefox.in/\\?id=[+])"
     		+ "|(http://[*]alphawarez.us/\\?id=[+])"
@@ -36,11 +36,17 @@ public class UCMS extends PluginForDecrypt {
     		+ "|(http://[*]steelwarez.com/\\?id=[+])"
     		//+ "|(http://[*]warezbase.us/\\?id=[+])"
     		+ "|(http://[*]lesestunde.info/\\?id=[+])"
+    		+ "|(http://[*]fullstreams.info/\\?id=[+])"
+    		//+ "|(http://[*]toxic.to/\\?id=[+])"
+    		//+ "|(http://[*]lionwarez.com/\\?id=[+])"
+    		//+ "|(http://[*]1dl.in/\\?id=[+])"
     		+ "|(http://[*]oxygen-warez.com/\\?id=[+])"
     		+ "|(http://[*]oxygen-warez.com/category/[+]/[+])"
     		+ "|(http://[*]mov-world.net/category/[+]/[+])"
     		+ "|(http://[*]your-load.com/category/[+]/[+])"
     		+ "|(http://[*]isos.at/[+]/[+])"
+    		+ "|(http://[*]game-freaks.net/[+]/[+].html)"
+    		+ "|(http://[*]chili-warez.net/[+]/[+].html)"
     		+ "|(http://[*]sceneload.to/\\?id=[+])");
     
     private Pattern	PAT_CAPTCHA = Pattern.compile("<TD><IMG SRC=\"/gfx/secure/index.php");
@@ -95,11 +101,11 @@ public class UCMS extends PluginForDecrypt {
     			if(!host.startsWith("http"))
     				host = "http://" + host;
     			
-    			String pass = getBetween(getMatches(reqinfo.getHtmlCode(), Pattern.compile("Passwort(.*?)\">(.*?)<")).get(0), "\">", "<");
+    			String pass = getBetween(getMatches(reqinfo.getHtmlCode(), Pattern.compile("(Passwort(.*?)\">(.*?)<)|(Password(.*?)\">(.*?)<)")).get(0), "\">", "<");
     			if(!pass.equals("n/a"))
     				this.default_password.add(pass);
     			
-    			Vector<Vector<String>> forms = getAllSimpleMatches(reqinfo.getHtmlCode(), "<FORM ACTION=\"°\" ENCTYPE°</FORM>");
+	 			Vector<Vector<String>> forms = getAllSimpleMatches(reqinfo.getHtmlCode(), "<FORM ACTION=\"°\" ENCTYPE°</FORM>");
     			
     			for(int i=0; i<forms.size(); i++) {
     				if(forms.get(i).get(0).contains("mirror")) {
@@ -155,8 +161,10 @@ public class UCMS extends PluginForDecrypt {
 		    				links = getAllSimpleMatches(reqinfo.getHtmlCode(), "ACTION=\"°\"");
 		    			}
 	        			
-	        			for(int j=0; j<links.size(); j++)
+	        			for(int j=0; j<links.size(); j++){
+	        				//System.out.println(links.get(j).get(0));
 	        				decryptedLinks.add(this.createDownloadlink(links.get(j).get(0)));
+	        			}
     				}
     			}
     		
