@@ -64,3 +64,4 @@ jd.plugins.decrypt.ShareProtect
 jd.plugins.decrypt.FileFactoryFolder
 jd.plugins.decrypt.SeCurNet
 jd.plugins.decrypt.CryptItCom
+jd.plugins.decrypt.XupInFolder
