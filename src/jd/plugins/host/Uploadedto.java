@@ -538,7 +538,7 @@ static private final String DOWNLOAD_LIMIT_REACHED="Free-Traffic ist aufgebrauch
                         return step;
                     }
                     Download dl = new Download(this, downloadLink, requestInfo.getConnection());
-                    dl.setChunks(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS,3));
+                   // dl.setChunks(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS,3));
                     
                     dl.startDownload();
                     return step;
