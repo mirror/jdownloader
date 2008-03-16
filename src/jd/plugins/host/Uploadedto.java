@@ -276,7 +276,7 @@ static private final String DOWNLOAD_LIMIT_REACHED="Free-Traffic ist aufgebrauch
                       ///?view=error_traffic_exceeded_free
                         if(requestInfo.containsHTML(DOWNLOAD_LIMIT_REACHED)||(requestInfo.getLocation()!=null &&requestInfo.getLocation().indexOf("traffic_exceeded")>=0)){
                             
-                            int waitTime = 60 * 60 * 1000;
+                            int waitTime = 10 * 60 * 1000;
                             downloadLink.setStatus(DownloadLink.STATUS_ERROR_DOWNLOAD_LIMIT);
                             step.setStatus(PluginStep.STATUS_ERROR);
                             logger.info("Traffic Limit reached....");

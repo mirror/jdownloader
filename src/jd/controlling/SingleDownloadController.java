@@ -202,7 +202,7 @@ public class SingleDownloadController extends ControlMulticaster {
                     this.onErrorTemporarilyUnavailable(downloadLink, plugin, step);
                     break;
                 case DownloadLink.STATUS_ERROR_TO_MANY_USERS:
-                    this.onErrorToManyUsers(downloadLink, plugin, step);
+                    this.onErrorTooManyUsers(downloadLink, plugin, step);
                     break;
                 case DownloadLink.STATUS_ERROR_CAPTCHA_IMAGEERROR:
                     this.onErrorCaptchaImage(downloadLink, plugin, step);
@@ -411,13 +411,17 @@ public class SingleDownloadController extends ControlMulticaster {
      * @param plugin
      * @param step
      */
-    private void onErrorToManyUsers(DownloadLink downloadLink, PluginForHost plugin, PluginStep step) {
+    private void onErrorTooManyUsers(DownloadLink downloadLink, PluginForHost plugin, PluginStep step) {
         logger.severe("Error occurred: Temporarily to many users");
-        long milliSeconds = (Long) step.getParameter();
+        long milliSeconds=20*60*1000;
+        try{
+        milliSeconds= (Long) step.getParameter();
+        }catch(Exception e){}
+        
         downloadLink.setEndOfWaittime(System.currentTimeMillis() + milliSeconds);
-        downloadLink.setStatusText(JDLocale.L("controller.status.toManyUser", "ausgelastet"));
+        downloadLink.setStatusText(JDLocale.L("controller.status.toManyUser", "ausgelastet")+" ");
 
-        downloadLink.setEnabled(false);
+        //downloadLink.setEnabled(false);
         fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SINGLE_DOWNLOAD_CHANGED, downloadLink));
     }
 

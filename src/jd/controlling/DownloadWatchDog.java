@@ -24,8 +24,6 @@ import jd.utils.JDUtilities;
  */
 public class DownloadWatchDog extends Thread implements PluginListener, ControlListener {
 
- 
-
     /**
      * Der Logger
      */
@@ -40,9 +38,7 @@ public class DownloadWatchDog extends Thread implements PluginListener, ControlL
 
     private JDController                     controller;
 
-  
-
-    private boolean pause=false;
+    private boolean                          pause       = false;
 
     public DownloadWatchDog(JDController controller) {
 
@@ -50,19 +46,19 @@ public class DownloadWatchDog extends Thread implements PluginListener, ControlL
     }
 
     public void run() {
-     //   int started;
+        // int started;
         Vector<DownloadLink> links;
         DownloadLink link;
         boolean hasWaittimeLinks;
         boolean hasInProgressLinks;
         aborted = false;
-    
+
         deligateFireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_ALL_DOWNLOAD_START, this));
 
         while (aborted != true) {
-           
+
             if (Interaction.getInteractionsRunning() == 0) {
-                if (activeLinks.size() < getSimultanDownloadNum()&&!pause) {
+                if (activeLinks.size() < getSimultanDownloadNum() && !pause) {
                     setDownloadActive();
                     // logger.info("Started " + started + "Downloads");
                 }
@@ -74,33 +70,35 @@ public class DownloadWatchDog extends Thread implements PluginListener, ControlL
 
                 links = getDownloadLinks();
 
-                for (int i = 0; i < links.size(); i++) {
-                    link = links.elementAt(i);
-                    if (!link.isEnabled()) continue;
-                    // Link mit Wartezeit in der queue
-                    if (link.getStatus() == DownloadLink.STATUS_ERROR_DOWNLOAD_LIMIT || link.getStatus() == DownloadLink.STATUS_ERROR_STATIC_WAITTIME) {
-                        if (link.getRemainingWaittime() == 0) {
-                            // reaktiviere Downloadlink
-                            link.setStatus(DownloadLink.STATUS_TODO);
-                            link.setEndOfWaittime(0);
+                synchronized (links) {
+                    for (int i = 0; i < links.size(); i++) {
+                        link = links.elementAt(i);
+                        if (!link.isEnabled()) continue;
+                        // Link mit Wartezeit in der queue
+                        if (link.getStatus() == DownloadLink.STATUS_ERROR_DOWNLOAD_LIMIT || link.getStatus() == DownloadLink.STATUS_ERROR_STATIC_WAITTIME) {
+                            if (link.getRemainingWaittime() == 0) {
+                                // reaktiviere Downloadlink
+                                link.setStatus(DownloadLink.STATUS_TODO);
+                                link.setEndOfWaittime(0);
+
+                            }
+                            hasWaittimeLinks = true;
+                        }
+                        if (link.isInProgress()) {
+                            // logger.info("ip: "+link);
+                            hasInProgressLinks = true;
 
                         }
-                        hasWaittimeLinks = true;
-                    }
-                    if (link.isInProgress()) {
-                        // logger.info("ip: "+link);
-                        hasInProgressLinks = true;
 
                     }
-
                 }
-
-                if ((pause &&!hasInProgressLinks) ||(!hasInProgressLinks && !hasWaittimeLinks && this.getNextDownloadLink() == null && activeLinks != null && activeLinks.size() == 0)) {
+                if ((pause && !hasInProgressLinks) || (!hasInProgressLinks && !hasWaittimeLinks && this.getNextDownloadLink() == null && activeLinks != null && activeLinks.size() == 0)) {
 
                     logger.info("Alle Downloads beendet");
                     // fireControlEvent(new ControlEvent(this,
                     // ControlEvent.CONTROL_ALL_DOWNLOADS_FINISHED, this));
-//                    Interaction.handleInteraction((Interaction.INTERACTION_ALL_DOWNLOADS_FINISHED), this);
+                    // Interaction.handleInteraction((Interaction.INTERACTION_ALL_DOWNLOADS_FINISHED),
+                    // this);
                     break;
 
                 }
@@ -167,11 +165,13 @@ public class DownloadWatchDog extends Thread implements PluginListener, ControlL
      */
     private int getDownloadNumByHost(PluginForHost plugin) {
         int num = 0;
-        for (int i = 0; i < this.activeLinks.size(); i++) {
-            if (this.activeLinks.get(i).getDownloadLink().getPlugin().getPluginID().equals(plugin.getPluginID())) {
-                num++;
-            }
+        synchronized (activeLinks) {
+            for (int i = 0; i < this.activeLinks.size(); i++) {
+                if (this.activeLinks.get(i).getDownloadLink().getPlugin().getPluginID().equals(plugin.getPluginID())) {
+                    num++;
+                }
 
+            }
         }
         return num;
     }
@@ -200,49 +200,53 @@ public class DownloadWatchDog extends Thread implements PluginListener, ControlL
     // }
 
     private void startDownloadThread(DownloadLink dlink) {
-        
-        Interaction.handleInteraction(Interaction.INTERACTION_BEFORE_DOWNLOAD, dlink);
-        SingleDownloadController download = new SingleDownloadController(controller, dlink);
-        logger.info("start download: " + dlink);
-        dlink.setInProgress(true);
-        download.addControlListener(this);
-        download.addControlListener(this.controller);
-        download.start();
-        activeLinks.add(download);
+        synchronized (activeLinks) {
+            Interaction.handleInteraction(Interaction.INTERACTION_BEFORE_DOWNLOAD, dlink);
+            SingleDownloadController download = new SingleDownloadController(controller, dlink);
+            logger.info("start download: " + dlink);
+            dlink.setInProgress(true);
+            download.addControlListener(this);
+            download.addControlListener(this.controller);
+            download.start();
+            activeLinks.add(download);
+        }
     }
+
     /**
      * Bricht den Watchdog ab. Alle laufenden downloads werden beendet und die
      * downloadliste zurückgesetzt. Diese Funktion blockiert bis alle Downloads
      * erfolgreich abgeborhcen wurden.
      */
     void abort() {
-logger.finer("Breche alle actove links ab");
-ProgressController progress = new ProgressController("Termination",activeLinks.size());
-progress.setStatusText("Stopping all downloads");
-        for (int i = 0; i < this.activeLinks.size(); i++) {
-            activeLinks.get(i).abortDownload();
-
-        }
-        
-        deligateFireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SINGLE_DOWNLOAD_CHANGED, null));
-        boolean check = true;
-        //Warteschleife bis alle activelinks abgebrochen wurden
-        logger.finer("Warten bis alle activeLinks abgebrochen wurden.");
-    
-        while (true) {
-            progress.increase(1);
-            check = true;
+        logger.finer("Breche alle actove links ab");
+        ProgressController progress = new ProgressController("Termination", activeLinks.size());
+        progress.setStatusText("Stopping all downloads");
+        synchronized (activeLinks) {
             for (int i = 0; i < this.activeLinks.size(); i++) {
-                if (activeLinks.get(i).isAlive()) {
-                    check = false;
-                    break;
+                activeLinks.get(i).abortDownload();
+
+            }
+
+            deligateFireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SINGLE_DOWNLOAD_CHANGED, null));
+            boolean check = true;
+            // Warteschleife bis alle activelinks abgebrochen wurden
+            logger.finer("Warten bis alle activeLinks abgebrochen wurden.");
+
+            while (true) {
+                progress.increase(1);
+                check = true;
+                for (int i = 0; i < this.activeLinks.size(); i++) {
+                    if (activeLinks.get(i).isAlive()) {
+                        check = false;
+                        break;
+                    }
                 }
-            }
-            if (check) break;
-            try {
-                Thread.sleep(500);
-            }
-            catch (InterruptedException e) {
+                if (check) break;
+                try {
+                    Thread.sleep(500);
+                }
+                catch (InterruptedException e) {
+                }
             }
         }
         progress.finalize();
@@ -260,14 +264,17 @@ progress.setStatusText("Stopping all downloads");
         activeLinks.removeAllElements();
         logger.finer("Clear");
         links = getDownloadLinks();
-        for (int i = 0; i < links.size(); i++) {
-            if (links.elementAt(i).getStatus() != DownloadLink.STATUS_DONE) {
-                links.elementAt(i).setInProgress(false);
-                links.elementAt(i).setStatusText("");
-                links.elementAt(i).setStatus(DownloadLink.STATUS_TODO);
-                links.elementAt(i).setEndOfWaittime(0);
-            }
 
+        synchronized (links) {
+            for (int i = 0; i < links.size(); i++) {
+                if (links.elementAt(i).getStatus() != DownloadLink.STATUS_DONE) {
+                    links.elementAt(i).setInProgress(false);
+                    links.elementAt(i).setStatusText("");
+                    links.elementAt(i).setStatus(DownloadLink.STATUS_TODO);
+                    links.elementAt(i).setEndOfWaittime(0);
+                }
+
+            }
         }
         deligateFireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SINGLE_DOWNLOAD_CHANGED, null));
 
@@ -304,15 +311,18 @@ progress.setStatusText("Stopping all downloads");
                 // blockiert den Aufruf wenn es noch weitere Downloads gibt die
                 // gerade laufen
                 links = getDownloadLinks();
-                for (int i = 0; i < links.size(); i++) {
-                    if (links.get(i).waitsForReconnect()) {
-                 
-                        controller.reconnect();
-                      
-                        break;
+
+                synchronized (links) {
+                    for (int i = 0; i < links.size(); i++) {
+                        if (links.get(i).waitsForReconnect()) {
+
+                            controller.reconnect();
+
+                            break;
+
+                        }
 
                     }
-
                 }
 
                 break;
@@ -325,10 +335,9 @@ progress.setStatusText("Stopping all downloads");
             case ControlEvent.CONTROL_DISTRIBUTE_FINISHED:
                 break;
             case ControlEvent.CONTROL_PLUGIN_INTERACTION_INACTIVE:
-             
 
             case ControlEvent.CONTROL_PLUGIN_INTERACTION_RETURNED:
-          
+
             default:
 
                 break;
@@ -337,16 +346,16 @@ progress.setStatusText("Stopping all downloads");
     }
 
     private boolean removeDownloadLinkFromActiveList(DownloadLink parameter) {
+        synchronized (activeLinks) {
+            for (int i = activeLinks.size() - 1; i >= 0; i--) {
 
-        for (int i = activeLinks.size() - 1; i >= 0; i--) {
+                if (activeLinks.get(i).getDownloadLink() == parameter) {
+                    activeLinks.remove(i);
+                    return true;
+                }
 
-            if (activeLinks.get(i).getDownloadLink() == parameter) {
-                activeLinks.remove(i);
-                return true;
             }
-
         }
-
         return false;
 
     }
@@ -366,24 +375,34 @@ progress.setStatusText("Stopping all downloads");
      * @return Der nächste DownloadLink oder null
      */
     public DownloadLink getNextDownloadLink() {
-        Iterator<DownloadLink> iterator = getDownloadLinks().iterator();
-        DownloadLink nextDownloadLink = null;
-        while (iterator.hasNext()) {
-            nextDownloadLink = iterator.next();
-            if (!nextDownloadLink.isInProgress() && nextDownloadLink.getStatus() == DownloadLink.STATUS_DOWNLOAD_IN_PROGRESS) {
-                nextDownloadLink.reset();
-                nextDownloadLink.setStatus(DownloadLink.STATUS_TODO);
-            }
+        Vector<DownloadLink> links = getDownloadLinks();
+        synchronized (links) {
+            Iterator<DownloadLink> iterator = links.iterator();
+            DownloadLink nextDownloadLink = null;
+            while (iterator.hasNext()) {
+                nextDownloadLink = iterator.next();
+                if (!nextDownloadLink.isInProgress() && nextDownloadLink.getStatus() == DownloadLink.STATUS_DOWNLOAD_IN_PROGRESS) {
+                    nextDownloadLink.reset();
+                    nextDownloadLink.setStatus(DownloadLink.STATUS_TODO);
+                }
 
-         //logger.info(nextDownloadLink+""+!this.isDownloadLinkActive(nextDownloadLink)+"_"+!nextDownloadLink.isInProgress()+"_"+nextDownloadLink.isEnabled()+"- "+(nextDownloadLink.getStatus() == DownloadLink.STATUS_TODO)+" - "+(nextDownloadLink.getRemainingWaittime() == 0)+" -   "+(getDownloadNumByHost((PluginForHost)nextDownloadLink.getPlugin()) < ((PluginForHost)nextDownloadLink.getPlugin()).getMaxSimultanDownloadNum())+" :"+nextDownloadLink.getStatus());
-            if (!this.isDownloadLinkActive(nextDownloadLink)) {
-                if (!nextDownloadLink.isInProgress()) {
-                    if (nextDownloadLink.isEnabled()) {
-                        if (nextDownloadLink.getStatus() == DownloadLink.STATUS_TODO) {
-                            if (nextDownloadLink.getRemainingWaittime() == 0) {
-                                if (getDownloadNumByHost((PluginForHost) nextDownloadLink.getPlugin()) < ((PluginForHost) nextDownloadLink.getPlugin()).getMaxSimultanDownloadNum()) {
+                // logger.info(nextDownloadLink+""+!this.isDownloadLinkActive(nextDownloadLink)+"_"+!nextDownloadLink.isInProgress()+"_"+nextDownloadLink.isEnabled()+"-
+                // "+(nextDownloadLink.getStatus() ==
+                // DownloadLink.STATUS_TODO)+" -
+                // "+(nextDownloadLink.getRemainingWaittime() == 0)+" -
+                // "+(getDownloadNumByHost((PluginForHost)nextDownloadLink.getPlugin())
+                // <
+                // ((PluginForHost)nextDownloadLink.getPlugin()).getMaxSimultanDownloadNum())+"
+                // :"+nextDownloadLink.getStatus());
+                if (!this.isDownloadLinkActive(nextDownloadLink)) {
+                    if (!nextDownloadLink.isInProgress()) {
+                        if (nextDownloadLink.isEnabled()) {
+                            if (nextDownloadLink.getStatus() == DownloadLink.STATUS_TODO) {
+                                if (nextDownloadLink.getRemainingWaittime() == 0) {
+                                    if (getDownloadNumByHost((PluginForHost) nextDownloadLink.getPlugin()) < ((PluginForHost) nextDownloadLink.getPlugin()).getMaxSimultanDownloadNum()) {
 
- return nextDownloadLink;
+                                        return nextDownloadLink;
+                                    }
                                 }
                             }
                         }
@@ -395,11 +414,13 @@ progress.setStatusText("Stopping all downloads");
     }
 
     boolean isDownloadLinkActive(DownloadLink nextDownloadLink) {
-        for (int i = 0; i < this.activeLinks.size(); i++) {
-            if (this.activeLinks.get(i).getDownloadLink() == nextDownloadLink) {
-                return true;
-            }
+        synchronized (activeLinks) {
+            for (int i = 0; i < this.activeLinks.size(); i++) {
+                if (this.activeLinks.get(i).getDownloadLink() == nextDownloadLink) {
+                    return true;
+                }
 
+            }
         }
         return false;
     }
@@ -411,11 +432,13 @@ progress.setStatusText("Stopping all downloads");
      * @return
      */
     private SingleDownloadController getDownloadThread(DownloadLink link) {
-        for (int i = 0; i < activeLinks.size(); i++) {
-            if (activeLinks.get(i).getDownloadLink() == link) {
-                return activeLinks.get(i);
-            }
+        synchronized (activeLinks) {
+            for (int i = 0; i < activeLinks.size(); i++) {
+                if (activeLinks.get(i).getDownloadLink() == link) {
+                    return activeLinks.get(i);
+                }
 
+            }
         }
         return null;
     }
@@ -424,16 +447,20 @@ progress.setStatusText("Stopping all downloads");
      * Liefert die Anzahl der gerade laufenden Downloads. (nur downloads die
      * sich wirklich in der downloadpahse befinden
      * 
-     * @return Anzahld er laufenden Downloadsl
+     * @return Anzahld er laufenden Downloadsl Sollte eventl mal umgeschrieben
+     *         werden. ohne iteration
      */
     public int getRunningDownloadNum() {
         int ret = 0;
-        Iterator<DownloadLink> iterator = getDownloadLinks().iterator();
-        DownloadLink nextDownloadLink = null;
-        while (iterator.hasNext()) {
-            nextDownloadLink = iterator.next();
-            if (nextDownloadLink.getStatus() == DownloadLink.STATUS_DOWNLOAD_IN_PROGRESS) ret++;
+        Vector<DownloadLink> links = getDownloadLinks();
+        synchronized (links) {
+            Iterator<DownloadLink> iterator = links.iterator();
+            DownloadLink nextDownloadLink = null;
+            while (iterator.hasNext()) {
+                nextDownloadLink = iterator.next();
+                if (nextDownloadLink.getStatus() == DownloadLink.STATUS_DOWNLOAD_IN_PROGRESS) ret++;
 
+            }
         }
         return ret;
     }
@@ -445,10 +472,11 @@ progress.setStatusText("Stopping all downloads");
      */
     public void abortDownloadLink(DownloadLink link) {
         SingleDownloadController dlThread = getDownloadThread(link);
-        if (dlThread != null){ 
+        if (dlThread != null) {
             dlThread.abortDownload();
-            removeDownloadLinkFromActiveList(link);   
-        };
+            removeDownloadLinkFromActiveList(link);
+        }
+        ;
 
     }
 
@@ -457,9 +485,9 @@ progress.setStatusText("Stopping all downloads");
     }
 
     public void pause(boolean value) {
-        this.pause=value;
-        logger.info("KKK "+value);
-        
+        this.pause = value;
+        logger.info("KKK " + value);
+
     }
 
 }

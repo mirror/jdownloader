@@ -2174,7 +2174,7 @@ public class JDUtilities {
     }
 
     public static void restartJD() {
-        logger.info(JDUtilities.runCommand("java", new String[] { "-jar", "JDownloader.jar", }, JDUtilities.getResourceFile(".").getAbsolutePath(), 0));
+        logger.info(JDUtilities.runCommand("java", new String[] { "-jar", "-Xmx512m","JDownloader.jar", }, JDUtilities.getResourceFile(".").getAbsolutePath(), 0));
         System.exit(0);
 
     }

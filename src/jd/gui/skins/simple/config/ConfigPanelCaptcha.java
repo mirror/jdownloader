@@ -3,6 +3,8 @@ package jd.gui.skins.simple.config;
 import java.awt.BorderLayout;
 import java.awt.Dimension;
 import java.awt.GridBagConstraints;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.io.File;
@@ -21,7 +23,7 @@ import jd.gui.UIInterface;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
-public class ConfigPanelCaptcha extends ConfigPanel implements MouseListener {
+public class ConfigPanelCaptcha extends ConfigPanel implements MouseListener, ActionListener {
 
     /**
      * 
@@ -116,6 +118,12 @@ public class ConfigPanelCaptcha extends ConfigPanel implements MouseListener {
         gce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, configuration, Configuration.PARAM_CAPTCHA_JAC_DISABLE, JDLocale.L("gui.config.captcha.jac_disable", "Automatische Bilderkennung abschalten")).setDefaultValue(false));
         addGUIConfigEntry(gce);
 
+        
+        
+        gce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_BUTTON,  this, JDLocale.L("gui.config.captcha.btn_train", "Captcha Training starten")));
+        addGUIConfigEntry(gce);
+        gce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_BUTTON,  this, JDLocale.L("gui.config.captcha.btn_show", "Testbild auswerten")));
+        addGUIConfigEntry(gce);
         // ce= new GUIConfigEntry( new
         // ConfigEntry(ConfigContainer.TYPE_CHECKBOX, configuration,
         // Configuration.USE_CAPTCHA_COLLECTOR,
@@ -245,6 +253,20 @@ public class ConfigPanelCaptcha extends ConfigPanel implements MouseListener {
     public void mouseReleased(MouseEvent e) {
     // TODO Auto-generated method stub
 
+    }
+
+    public void actionPerformed(ActionEvent e) {
+        logger.info(e.getActionCommand());
+        if(e.getActionCommand().equalsIgnoreCase(JDLocale.L("gui.config.captcha.btn_train", "Captcha Training starten"))){
+          JDUtilities.runCommand("java", new String[] { "-jar", "-Xmx512m","JDownloader.jar","-t" }, JDUtilities.getResourceFile(".").getAbsolutePath(), 0);
+            
+            
+        }else{
+            
+            JDUtilities.runCommand("java", new String[] { "-jar", "-Xmx512m","JDownloader.jar","-s" }, JDUtilities.getResourceFile(".").getAbsolutePath(), 0);
+                
+        }
+        
     }
 
 }

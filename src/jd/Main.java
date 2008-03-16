@@ -30,6 +30,14 @@ public class Main {
 
     public static void main(String args[]) {
         
+        //
+     
+        if(Runtime.getRuntime().maxMemory()<100000000){
+            JDUtilities.restartJD();
+        }
+
+        
+        
         if( System.getProperty("os.name").toLowerCase().indexOf("mac")>=0){
             logger.info("apple.laf.useScreenMenuBar=true");
             logger.info("com.apple.mrj.application.growbox.intrudes=false");
