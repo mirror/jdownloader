@@ -523,9 +523,9 @@ public class DownloadLink implements Serializable, Comparable<DownloadLink> {
     public void setStatus(int status) {
         this.status = status;
         if (status != STATUS_DOWNLOAD_IN_PROGRESS) {
-            speedMeter = null; // wird von gc erfasst
+            speedMeter = null; 
 
-            System.gc();
+          
         }
 
     }

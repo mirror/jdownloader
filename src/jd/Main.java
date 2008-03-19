@@ -2,7 +2,6 @@ package jd;
 
 import java.awt.Graphics;
 import java.awt.Image;
-import java.nio.ByteBuffer;
 import java.util.Iterator;
 import java.util.Properties;
 import java.util.TreeSet;
@@ -19,6 +18,7 @@ import jd.gui.skins.simple.SimpleGUI;
 import jd.utils.JDLocale;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
+import jd.utils.Upload;
 
 /**
  * @author astaldo/JD-Team
@@ -47,7 +47,7 @@ public class Main {
             System.setProperty("com.apple.mrj.application.growbox.intrudes","false");
             System.setProperty("apple.laf.useScreenMenuBar", "true");
         }
-        
+      
         JDLocale.setLocale("english");
         JDTheme.setTheme("default");
         boolean stop = false;
@@ -166,7 +166,7 @@ logger.info(System.getProperty("java.class.path"));
         logger.info("jd.lastAuthor="+JDUtilities.getLastChangeAuthor());   
         logger.info("jd.appDir="+JDUtilities.getCurrentWorkingDirectory(null));
 
-   
+     
    
     }
     

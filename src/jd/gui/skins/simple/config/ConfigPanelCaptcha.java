@@ -100,7 +100,7 @@ public class ConfigPanelCaptcha extends ConfigPanel implements MouseListener, Ac
         gce = new GUIConfigEntry(ce);
         addGUIConfigEntry(gce);
         ce=new ConfigEntry(ConfigContainer.TYPE_SPINNER, JDUtilities.getSubConfig("JAC"), Configuration.AUTOTRAIN_ERROR_LEVEL, JDLocale.L("gui.config.captcha.train.level", "Anzeigeschwelle"), 0, 100).setDefaultValue(80).setExpertEntry(true);
-        ce.setInstantHelp(JDLocale.L("gui.config.captcha.train.level.instanthelp", "http://ns2.km32221.keymachine.de/jdownloader/web/page.php?id=3"));
+        ce.setInstantHelp(JDLocale.L("gui.config.captcha.train.level.instanthelp", "http://jdownloader.ath.cx/page.php?id=3"));
        
         gce = new GUIConfigEntry(ce);
         

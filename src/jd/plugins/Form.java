@@ -12,6 +12,7 @@ import java.net.URLEncoder;
 import java.util.LinkedList;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import jd.utils.JDUtilities;
@@ -302,12 +303,14 @@ public class Form {
         }
         else if (method == METHOD_POST) {
             try {
+                Logger logger = JDUtilities.getLogger();
                 HTTPConnection connection = new HTTPConnection(new URL(action).openConnection());
                 connection.setRequestProperty("Accept-Language", Plugin.ACCEPT_LANGUAGE);
                 connection.setRequestProperty("User-Agent", "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1; SV1; .NET CLR 1.1.4322; .NET CLR 2.0.50727)");
                 connection.setRequestProperty("Cookie", baseRequest.getCookie());
                 for (Map.Entry<String, String> entry : requestPoperties.entrySet()) {
                     connection.setRequestProperty(entry.getKey(), entry.getValue());
+                    logger.info(entry.getKey()+" : "+entry.getValue());
                 }
                 connection.setRequestProperty("Referer", baseurl.toString());
                 connection.setDoOutput(true);

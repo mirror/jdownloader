@@ -1238,6 +1238,7 @@ public class JDUtilities {
         if(str==null)return str;
         String allowed = "1234567890QWERTZUIOPASDFGHJKLYXCVBNMqwertzuiopasdfghjklyxcvbnm-_.?/\\:&=;";
         String ret = "";
+        String l;
         int i;
         for (i = 0; i < str.length(); i++) {
             char letter = str.charAt(i);
@@ -1245,7 +1246,8 @@ public class JDUtilities {
                 ret += letter;
             }
             else {
-                ret += "%" + Integer.toString(letter, 16);
+                l=Integer.toString(letter, 16);
+                ret += "%" + (l.length()==1?"0"+l:l);
             }
         }
         return ret;
@@ -1363,7 +1365,7 @@ public class JDUtilities {
         BufferedReader f;
         try {
             f = new BufferedReader(new FileReader(file));
-            System.gc();
+            
             String line;
             StringBuffer ret = new StringBuffer();
             String sep = System.getProperty("line.separator");
@@ -1985,6 +1987,7 @@ public class JDUtilities {
         dest = dest.substring(0, idx) + "_" + captchaCode.toUpperCase() + isGoodText + dest.substring(idx);
         final File file2 = new File(dest);
         file.renameTo(file2);
+        /*
         if(!isGood)
         {
         	new Thread(new Runnable(){
@@ -1996,6 +1999,7 @@ public class JDUtilities {
         	
         	
         }
+        */
     }
 
     public static Locale getLocale() {

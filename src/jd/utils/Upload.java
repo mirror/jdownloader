@@ -2,16 +2,15 @@ package jd.utils;
 
 import java.io.File;
 import java.io.IOException;
-
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.util.Iterator;
 import java.util.Vector;
 import java.util.Map.Entry;
+import java.util.logging.Logger;
 
 import jd.plugins.Form;
-import jd.plugins.HTTPConnection;
 import jd.plugins.HTTPPost;
 import jd.plugins.Plugin;
 import jd.plugins.Regexp;
@@ -42,6 +41,45 @@ public class Upload {
      }else{
          return null;
      }
+   }
+   
+   public static String toPastebinCa(String str,String name,String desc,String pw){
+       try {
+           //Logger logger = JDUtilities.getLogger();
+           //RequestInfo ri = Plugin.getRequest(new URL("http://uploaded.to"));
+           Form[] forms = Form.getForms("http://pastebin.ca/index.php");
+           Form form=null;
+           for( int i=0; i<forms.length;i++){
+              
+               if(forms[i].vars.containsKey("content")){
+                   form=forms[i];
+                   break;
+               }
+           }
+           if(form==null)return null;
+           //logger.info("iiiii"+form);
+           
+           form.vars.put("content", str);
+           form.vars.put("description", desc);
+           form.vars.put("name", name);
+           form.vars.put("type", "1");
+           form.vars.put("encryptpw", pw);
+           if(pw==null){
+               form.vars.remove("encrypt");
+           }
+           form.action="http://pastebin.ca/index.php";
+           RequestInfo ri = form.getRequestInfo();
+           //
+           if(!ri.containsHTML("Ihr Paste wurde angenommen"))return null;
+           
+           String ret=Plugin.getSimpleMatch(ri.getHtmlCode(), "Die URL lautet:</p><p><a href=\"/°\">http://pastebin", 0);
+     
+      return "http://pastebin.ca/"+ret;
+       }catch(Exception e){
+           
+       }
+       
+       return null;
    }
    
    public static String toRamzahlCom(File file) {
@@ -89,6 +127,15 @@ return "";
        return "";
 
    }
+   /*
+    * 
+    * 
+    * 
+    * 
+    */
+   
+   
+   
     public static String toUploadedTo(String str,String name){
         try {
             //RequestInfo ri = Plugin.getRequest(new URL("http://uploaded.to"));
@@ -146,6 +193,7 @@ return "";
         
         return null;
     }
+    /*
     public static boolean uploadToCollector(Plugin plugin, File Captcha)
     {	
     	JDUtilities.getLogger().info("File:"+Captcha);
@@ -236,4 +284,5 @@ return "";
 		return false;
     	
     }
+    */
 }
