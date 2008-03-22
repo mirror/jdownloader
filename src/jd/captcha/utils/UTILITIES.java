@@ -485,7 +485,7 @@ public class UTILITIES {
 	 * @param myClass
 	 * @return Gibt den Pfad zur Klasse zurück
 	 */
-	public static String getpackagePath(Object myClass) {
+	public static String getPackagePath(Object myClass) {
 		String packagePath = myClass.getClass().getPackage().getName().replace(
 				".", System.getProperty("file.separator"));
 		return myClass.getClass().getClassLoader().getResource(packagePath)

@@ -120,7 +120,7 @@ public class ConfigPanelGUI extends ConfigPanel {
         ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, guiConfig, SimpleGUI.PARAM_BROWSER, BrowserArray, JDLocale.L("gui.config.gui.Browser", "Browser")).setDefaultValue(BrowserArray[0]).setExpertEntry(true));
         addGUIConfigEntry(ce);
 
-        ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, guiConfig, LinkGrabber.PROPERTY_AUTOpackage_LIMIT, JDLocale.L("gui.config.gui.autopackageLimit", "Schwelle der Auto. Paketverwaltung."),0,100).setDefaultValue(98).setExpertEntry(true));
+        ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, guiConfig, LinkGrabber.PROPERTY_AUTOPACKAGE_LIMIT, JDLocale.L("gui.config.gui.autopackageLimit", "Schwelle der Auto. Paketverwaltung."),0,100).setDefaultValue(98).setExpertEntry(true));
         addGUIConfigEntry(ce);
         ce= new GUIConfigEntry( new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, guiConfig, LinkGrabber.PROPERTY_ONLINE_CHECK, JDLocale.L("gui.config.gui.linkgrabber.onlinecheck","Linkgrabber:Linkstatus überprüfen(Verfügbarkeit)")).setDefaultValue(false));
         addGUIConfigEntry(ce);

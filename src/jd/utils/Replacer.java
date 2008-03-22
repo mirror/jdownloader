@@ -30,13 +30,13 @@ import jd.plugins.DownloadLink;
 public class Replacer {
 
     public static String[][] KEYS = new String[][] { 
-                new String[] { "LAST_FINISHED_package.PASSWORD", "Last finished package: Password" }, 
-                new String[] { "LAST_FINISHED_package.FILELIST", "Last finished package: Filelist" }, 
+                new String[] { "LAST_FINISHED_PACKAGE.PASSWORD", "Last finished package: Password" }, 
+                new String[] { "LAST_FINISHED_PACKAGE.FILELIST", "Last finished package: Filelist" }, 
                 new String[] { "SYSTEM.DATE", "Current Date" },
                 new String[] { "SYSTEM.TIME", "Current Time" }, 
-                new String[] { "LAST_FINISHED_package.packageNAME",       "Last finished package: packagename" },
-                new String[] { "LAST_FINISHED_package.COMMENT", "Last finished package: Comment" },
-                new String[] { "LAST_FINISHED_package.DOWNLOAD_DIRECTORY", "Last finished package: Download Directory" },
+                new String[] { "LAST_FINISHED_PACKAGE.PACKAGENAME",       "Last finished package: packagename" },
+                new String[] { "LAST_FINISHED_PACKAGE.COMMENT", "Last finished package: Comment" },
+                new String[] { "LAST_FINISHED_PACKAGE.DOWNLOAD_DIRECTORY", "Last finished package: Download Directory" },
                 new String[] { "LAST_FINISHED_FILE.DOWNLOAD_PATH", "Last finished File: Filepath" }, 
                 new String[] { "LAST_FINISHED_FILE.INFOSTRING", "Last finished File: Plugin given informationstring" },
                 new String[] { "LAST_FINISHED_FILE.HOST", "Last finished File: Hoster" },
@@ -70,27 +70,27 @@ public class Replacer {
     private static String getReplacement(String key) {
         JDController controller = JDUtilities.getController();
         DownloadLink dLink = controller.getLastFinishedDownloadLink();
-        if(key.equalsIgnoreCase("LAST_FINISHED_package.PASSWORD")){
+        if(key.equalsIgnoreCase("LAST_FINISHED_PACKAGE.PASSWORD")){
             return dLink.getFilePackage().getPassword();
             
         }
-        if(key.equalsIgnoreCase("LAST_FINISHED_package.FILELIST")){
-            Vector<DownloadLink> files = controller.getpackageFiles(dLink);
+        if(key.equalsIgnoreCase("LAST_FINISHED_PACKAGE.FILELIST")){
+            Vector<DownloadLink> files = controller.getPackageFiles(dLink);
             return files.toString();
             
         }
-        if(key.equalsIgnoreCase("LAST_FINISHED_package.packageNAME")){
+        if(key.equalsIgnoreCase("LAST_FINISHED_PACKAGE.PACKAGENAME")){
             if(dLink.getFilePackage().getName()==null||dLink.getFilePackage().getName().length()==0)return  dLink.getName();
             return dLink.getFilePackage().getName();
             
         }
         
-        if(key.equalsIgnoreCase("LAST_FINISHED_package.COMMENT")){
+        if(key.equalsIgnoreCase("LAST_FINISHED_PACKAGE.COMMENT")){
             return dLink.getFilePackage().getComment();
             
         }
         
-        if(key.equalsIgnoreCase("LAST_FINISHED_package.DOWNLOAD_DIRECTORY")){
+        if(key.equalsIgnoreCase("LAST_FINISHED_PACKAGE.DOWNLOAD_DIRECTORY")){
             return dLink.getFilePackage().getDownloadDirectory();
             
         }
