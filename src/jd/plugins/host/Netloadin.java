@@ -27,6 +27,7 @@ import java.util.regex.Pattern;
 
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
+import jd.config.Configuration;
 import jd.plugins.Download;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForHost;
@@ -291,7 +292,7 @@ public class Netloadin extends PluginForHost {
             case PluginStep.STEP_WAIT_TIME:
             	//Login
                 if(finalURL==null){
-                
+                logger.info("USER: "+user+" : "+pass);
                 //SessionID holen
                 requestInfo = getRequest(new URL(downloadLink.getDownloadURL()), null, null, true);
                 this.sessionID = requestInfo.getCookie();
@@ -321,10 +322,17 @@ public class Netloadin extends PluginForHost {
                     requestInfo= postRequest(new URL("http://" + HOST + "/index.php"),sessionID,downloadLink.getDownloadURL(),null,"txtuser="+user+"&txtpass="+pass+"&txtcheck=login&txtlogin=", false);
                     this.userCookie= requestInfo.getCookie();
                     logger.finer("Usercookie: "+userCookie+" ->"+requestInfo.getLocation());
-                    
+                   
                     //Vorbereitungsseite laden
                     requestInfo=getRequest(new URL("http://" + HOST + "/"+requestInfo.getLocation()), sessionID+" "+userCookie, null, false);
+                    
+                    if(requestInfo.getLocation()!=null){
+                        //Direktdownload
+                        logger.info("Directdownload aktiviert");
+                        finalURL=requestInfo.getLocation();
+                    }else{
                     this.finalURL = getSimpleMatch(requestInfo.getHtmlCode(), NEW_HOST_URL, 0);
+                    }
                     if(finalURL==null){ 
                         logger.severe("Could not get final URL");
                         downloadLink.setStatus(DownloadLink.STATUS_ERROR_PREMIUM);
@@ -348,7 +356,8 @@ public class Netloadin extends PluginForHost {
                 downloadLink.setStatusText("Premiumdownload");
                 return step;
             case PluginStep.STEP_DOWNLOAD:
-                logger.info("Download " + finalURL);
+                //logger.info("Download " + finalURL);
+           
                 requestInfo = getRequestWithoutHtmlCode(new URL(finalURL), sessionID, null, false);
                 int length = requestInfo.getConnection().getContentLength();
                 downloadLink.setDownloadMax(length);
@@ -362,6 +371,9 @@ public class Netloadin extends PluginForHost {
                 }
                 
                 Download dl = new Download(this, downloadLink,  requestInfo.getConnection());
+                dl.setChunks(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS,3));
+                
+                dl.setLoadPreBytes(1);
                 dl.startDownload();
                 
                 return step;

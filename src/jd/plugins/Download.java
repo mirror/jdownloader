@@ -63,7 +63,7 @@ public class Download {
 
     public static final int           ERROR_TOO_MUCH_BUFFERMEMORY            = 103;
 
-    public static final int           STATUS_ERROR_CHUNKLOAD_FAILED          = DownloadLink.STATUS_ERROR_CHUNKLOAD_FAILED;
+    public static final int           ERROR_CHUNKLOAD_FAILED          = DownloadLink.STATUS_ERROR_CHUNKLOAD_FAILED;
 
     public static final int           ERROR_NO_CONNECTION                    = 104;
 
@@ -113,6 +113,8 @@ public class Download {
 
     private boolean                   abortByError                           = false;
 
+    private int preBytes=0;
+
     public static Logger              logger                                 = JDUtilities.getLogger();
 
     public Download(Plugin plugin, DownloadLink downloadLink, HTTPConnection urlConnection) {
@@ -144,7 +146,7 @@ public class Download {
             this.outputFile.seek(currentBytePosition);
 
             int length = buffer.limit() - buffer.position();
-            byte[] tmp = new byte[length];
+            //byte[] tmp = new byte[length];
             // logger.info("wrote " + length + " at " + currentBytePosition);
             // buffer.get(tmp, buffer.position(), length);
             outputChannel.write(buffer);
@@ -157,6 +159,9 @@ public class Download {
         }
 
     }
+    
+
+    
 
     public void setResume(boolean value) {
         this.resume = value;
@@ -310,7 +315,7 @@ public class Download {
             downloadLink.setStatus(DownloadLink.STATUS_ERROR_CHUNKLOAD_FAILED);
             return false;
         }
-        if (errors.contains(STATUS_ERROR_CHUNKLOAD_FAILED)) {
+        if (errors.contains(ERROR_CHUNKLOAD_FAILED)) {
             plugin.getCurrentStep().setStatus(PluginStep.STATUS_ERROR);
             downloadLink.setStatus(DownloadLink.STATUS_ERROR_CHUNKLOAD_FAILED);
             return false;
@@ -453,11 +458,44 @@ public class Download {
             this.startByte = startByte;
             this.endByte = endByte;
             this.connection = connection;
-
-            currentBytePosition = startByte;
+            if(this.startByte==0&&preBytes>0){
+                this.startByte=preBytes;
+                this.loadStartBytes(preBytes);
+            }
+            currentBytePosition =  this.startByte;
             if (startByte >= endByte && endByte > 0) {
                 logger.severe("Startbyte has to be less than endByte");
             }
+        }
+
+        private void loadStartBytes(int preBytes) {
+       
+            try {
+                ByteBuffer buffer = ByteBuffer.allocateDirect(preBytes);
+                byte[] b = new byte[preBytes];
+                InputStream inputStream = connection.getInputStream();
+                int i=0;
+                while(preBytes>0){
+                    int tmp=inputStream.read(b, i, preBytes);
+                    i+=tmp;
+                    preBytes-=tmp;
+                    logger.info("Preloaded "+i+" bytes "+new String(b));
+                    
+                }
+                logger.info("Preloading produced "+inputStream.available()+" bytes overhead");
+                inputStream.close();
+                connection.getHTTPURLConnection().disconnect();               
+                buffer.put(b);
+                buffer.flip();               
+                addBytes(buffer, 0);
+                addBytes(i);
+               
+            }
+            catch (IOException e) {
+                error(ERROR_CHUNKLOAD_FAILED);
+                e.printStackTrace();
+            }
+            
         }
 
         private HTTPConnection copyConnection(HTTPConnection connection) {
@@ -546,7 +584,7 @@ public class Download {
             }
 
             if (chunkNum > 1 && (connection.getHeaderField("Content-Range") == null || connection.getHeaderField("Content-Range").length() == 0)) {
-                error(STATUS_ERROR_CHUNKLOAD_FAILED);
+                error(ERROR_CHUNKLOAD_FAILED);
                 return;
 
             }
@@ -724,6 +762,7 @@ public class Download {
         return speedLimited && downloadLink.isLimited;
     }
 
+
     public void setSpeedLimited(boolean speedLimited) {
         this.speedLimited = speedLimited;
     }
@@ -761,6 +800,15 @@ public class Download {
     public void setFilesize(long length) {
         this.fileSize = length;
 
+    }
+/**
+ * Machne Hoster wollen das resumen erlauben, aber chunkload verbieten. Deshalb akzeptieren sie keine range:0-**
+ * Um Trotzdem Chunkload nutzen zu können werden die ersten bytes normal geladen. Und der rest normal über chunks.
+ * @param i
+ */
+    public void setLoadPreBytes(int i) {
+        this.preBytes=i;
+        
     }
 
 }
