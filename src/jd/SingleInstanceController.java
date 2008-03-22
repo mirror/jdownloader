@@ -1,4 +1,5 @@
-package
+package jd;
+
 
 import java.net.MalformedURLException;
 import java.rmi.AccessException;

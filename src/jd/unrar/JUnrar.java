@@ -46,7 +46,7 @@ public class JUnrar {
 
 	private static final String PROPERTY_PASSWORDLIST = "PASSWORDLIST";
 
-	public boolean overwriteFiles = false, autoDelete = true;
+	public boolean overwriteFiles = false, autoDelete = true, deleteInfoFile = false;
 
 	public boolean useToextractlist = true;
 
@@ -1203,6 +1203,13 @@ public class JUnrar {
 			if (str.matches(allOk)) {
 				Pattern pattern = Pattern.compile("Extracting from (.*)");
 				Matcher matcher = pattern.matcher(str);
+				if(deleteInfoFile)
+				{
+					File infoFiles = new File(file.getParentFile(), file.getName().replaceFirst(
+							"(?i)(\\.part[0-9]+\\.rar|\\.rar)$", "")+".info");
+					if(infoFiles.exists() && infoFiles.delete())
+						logger.info(infoFiles.getName()+" removed");
+				}
 				if (autoDelete) {
 					while (matcher.find()) {
 						File delfile;
@@ -1248,10 +1255,12 @@ public class JUnrar {
 				un.overwriteFiles = overwriteFiles;
 				unpackedFiles.addAll(un.unrar());
 				Iterator<File> iter = unpackedFiles.iterator();
+				
 				while (iter.hasNext()) {
 					File file2 = (File) iter.next();
 					if(!file2.exists()) iter.remove();
 				}
+
 			}
 			return str;
 

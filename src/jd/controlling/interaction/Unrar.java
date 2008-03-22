@@ -85,6 +85,8 @@ public class Unrar extends Interaction implements Serializable {
 	public static final String PROPERTY_ENABLE_EXTRACTFOLDER = "UNRAR_PROPERTY_ENABLE_EXTRACTFOLDER";
 
 	public static final String PROPERTY_EXTRACTFOLDER = "UNRAR_PROPERTY_EXTRACTFOLDER";
+	
+	public static final String PROPERTY_DELETE_INFOFILE = "PROPERTY_DELETE_INFOFILE";
 
 	@Override
 	public boolean doInteraction(Object arg) {
@@ -141,6 +143,8 @@ public class Unrar extends Interaction implements Serializable {
 
 		unrar.overwriteFiles = JDUtilities.getConfiguration()
 				.getBooleanProperty(Unrar.PROPERTY_OVERWRITE_FILES, false);
+		unrar.deleteInfoFile = JDUtilities.getConfiguration()
+		.getBooleanProperty(Unrar.PROPERTY_DELETE_INFOFILE, true);
 		unrar.autoDelete = JDUtilities.getConfiguration().getBooleanProperty(
 				Unrar.PROPERTY_AUTODELETE, true);
 		unrar.unrar = JDUtilities.getConfiguration().getStringProperty(
