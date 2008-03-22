@@ -1,3 +1,20 @@
+//    jDownloader - Downloadmanager
+//    Copyright (C) 2008  JD-Team jdownloader@freenet.de
+//
+//    This program is free software: you can redistribute it and/or modify
+//    it under the terms of the GNU General Public License as published by
+//    the Free Software Foundation, either version 3 of the License, or
+//    (at your option) any later version.
+//
+//    This program  is distributed in the hope that it will be useful,
+//    but WITHOUT ANY WARRANTY; without even the implied warranty of
+//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSSee the
+//    GNU General Public License for more details.
+//
+//    You should have received a copy of the GNU General Public License
+//    along with this program.  If not, see <http://wnu.org/licenses/>.
+
+
 package jd.utils;
 
 import java.awt.Component;
@@ -76,6 +93,7 @@ import jd.config.SubConfiguration;
 import jd.controlling.JDController;
 import jd.gui.UIInterface;
 import jd.gui.skins.simple.SimpleGUI;
+
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTPConnection;
 import jd.plugins.LogFormatter;
@@ -1907,7 +1925,7 @@ public class JDUtilities {
     public static String filterString(String str, String filter) {
         if (str == null || filter == null) return "";
         
-        
+       
         byte[] org=str.getBytes();
         byte[] mask=filter.getBytes();
         byte[] ret= new byte[org.length];
@@ -1919,7 +1937,7 @@ public class JDUtilities {
                 if(letter==mask[t]){
                     ret[count]=letter;
                     count++;              
-                    continue;
+                    break;
                 }
             }          
         }

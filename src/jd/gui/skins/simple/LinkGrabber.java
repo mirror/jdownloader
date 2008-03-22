@@ -1,3 +1,20 @@
+//    jDownloader - Downloadmanager
+//    Copyright (C) 2008  JD-Team jdownloader@freenet.de
+//
+//    This program is free software: you can redistribute it and/or modify
+//    it under the terms of the GNU General Public License as published by
+//    the Free Software Foundation, either version 3 of the License, or
+//    (at your option) any later version.
+//
+//    This program  is distributed in the hope that it will be useful,
+//    but WITHOUT ANY WARRANTY; without even the implied warranty of
+//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSSee the
+//    GNU General Public License for more details.
+//
+//    You should have received a copy of the GNU General Public License
+//    along with this program.  If not, see <http://wnu.org/licenses/>.
+
+
 package jd.gui.skins.simple;
 
 import java.awt.Color;
@@ -82,9 +99,9 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
      */
     private static final long    serialVersionUID           = 4974425479842618402L;
 
-    private static final String  PROPERTY_AUTOPACKAGE       = "PROPERTY_AUTOPACKAGE";
+    private static final String  PROPERTY_AUTOpackage       = "PROPERTY_AUTOpackage";
 
-    public static final String   PROPERTY_AUTOPACKAGE_LIMIT = "AUTOPACKAGE_LIMIT";
+    public static final String   PROPERTY_AUTOpackage_LIMIT = "AUTOpackage_LIMIT";
 
     public static final String   PROPERTY_ONLINE_CHECK      = "ONLINE_CHECK";
 
@@ -102,7 +119,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
 
     private SimpleGUI            parentFrame;
 
-    private Vector<PackageTab>   tabList;
+    private Vector<packageTab>   tabList;
 
     private JProgressBar         progress;
 
@@ -110,9 +127,9 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
 
     private Thread               gatherer;
 
-    private JCheckBoxMenuItem    mAutoPackage;
+    private JCheckBoxMenuItem    mAutopackage;
 
-    private JMenuItem            mRemovePackage;
+    private JMenuItem            mRemovepackage;
 
     private JMenuItem            mPremiumMirror;
 
@@ -122,7 +139,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
 
     private JMenuItem            mRemoveOffline;
     
-    private JMenuItem			 mRemoveEmptyPackages;
+    private JMenuItem			 mRemoveEmptypackages;
 
     private int                  currentTab                 = -1;
 
@@ -143,7 +160,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
       //  config = JDUtilities.getConfiguration();
         guiConfig = JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME);
         this.parentFrame = parent;
-        tabList = new Vector<PackageTab>();
+        tabList = new Vector<packageTab>();
         this.waitingLinkList = new Vector<DownloadLink>();
         initGUI();
 
@@ -156,7 +173,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
         this.tabbedPane = new JTabbedPane();
 
         this.acceptAll = new JButton(JDLocale.L("gui.linkgrabber.btn.acceptAll", "Alle übernehmen"));
-        this.accept = new JButton(JDLocale.L("gui.linkgrabber.btn.accept", "Package übernehmen"));
+        this.accept = new JButton(JDLocale.L("gui.linkgrabber.btn.accept", "package übernehmen"));
         this.progress = new JProgressBar();
         progress.setBorder(BorderFactory.createEtchedBorder());
         progress.setString(JDLocale.L("gui.linkgrabber.bar.title", "Infosammler"));
@@ -208,7 +225,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
     // private void refreshTabbedPane() {
     // tabbedPane.removeAll();
     // for (int i = 0; i < tabList.size(); i++)
-    // tabbedPane.addTab(tabList.get(i).getPackageName(), tabList.get(i));
+    // tabbedPane.addTab(tabList.get(i).getpackageName(), tabList.get(i));
     //
     // }
 
@@ -228,13 +245,13 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
         menuBar.add(menu);
 
         // extras Menü
-        mAutoPackage = new JCheckBoxMenuItem(JDLocale.L("gui.linkgrabber.menu.extras.autopackage", "Auto. Pakete"));
+        mAutopackage = new JCheckBoxMenuItem(JDLocale.L("gui.linkgrabber.menu.extras.autopackage", "Auto. Pakete"));
 
-        menu.add(mAutoPackage);
-        mAutoPackage.setSelected(guiConfig.getBooleanProperty(PROPERTY_AUTOPACKAGE, true));
+        menu.add(mAutopackage);
+        mAutopackage.setSelected(guiConfig.getBooleanProperty(PROPERTY_AUTOpackage, true));
 
-        mAutoPackage.addActionListener(this);
-        // removePackageAt
+        mAutopackage.addActionListener(this);
+        // removepackageAt
 
         // Edit Menü
         menu = new JMenu(JDLocale.L("gui.linkgrabber.menu.edit", "Bearbeiten"));
@@ -251,18 +268,18 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
         mRemoveOfflineAll.addActionListener(this);
         menu.add(mRemoveOfflineAll);
         menu.addSeparator();
-        mRemovePackage = new JMenuItem(JDLocale.L("gui.linkgrabber.menu.edit.removePackage", "Paket verwerfen"));
-        mRemovePackage.addActionListener(this);
-        menu.add(mRemovePackage);
-        mRemoveEmptyPackages = new JMenuItem(JDLocale.L("gui.linkgrabber.menu.edit.removeEmptyPackages", "Leere Pakete verwerfen"));
-        mRemoveEmptyPackages.addActionListener(this);
-        menu.add(mRemoveEmptyPackages);
+        mRemovepackage = new JMenuItem(JDLocale.L("gui.linkgrabber.menu.edit.removepackage", "Paket verwerfen"));
+        mRemovepackage.addActionListener(this);
+        menu.add(mRemovepackage);
+        mRemoveEmptypackages = new JMenuItem(JDLocale.L("gui.linkgrabber.menu.edit.removeEmptypackages", "Leere Pakete verwerfen"));
+        mRemoveEmptypackages.addActionListener(this);
+        menu.add(mRemoveEmptypackages);
 
-        // mMovePackage = new
-        // JCheckBoxMenuItem(JDLocale.L("gui.linkgrabber.menu.edit.movePackage",
+        // mMovepackage = new
+        // JCheckBoxMenuItem(JDLocale.L("gui.linkgrabber.menu.edit.movepackage",
         // "Paket verschieben"));
         //
-        // menu.add(mMovePackage);
+        // menu.add(mMovepackage);
         //
         menu = new JMenu(JDLocale.L("gui.linkgrabber.menu.selection", "Auswahl"));
         menuBar.add(menu);
@@ -293,7 +310,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
 
         for (int i = 0; i < linkList.length; i++) {
             if (linkList[i].isAvailabilityChecked()) {
-                attachLinkToPackage(linkList[i]);
+                attachLinkTopackage(linkList[i]);
             }
             else {
                 waitingLinkList.add(linkList[i]);
@@ -315,7 +332,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
 
                     link = waitingLinkList.remove(0);
                     if (!guiConfig.getBooleanProperty(PROPERTY_ONLINE_CHECK, false) || link.getLinkType() == DownloadLink.LINKTYPE_CONTAINER) {
-                        attachLinkToPackage(link);
+                        attachLinkTopackage(link);
                         try {
                             Thread.sleep(50);
                         }
@@ -325,7 +342,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
                     else {
                         if (link.isAvailable() || ((PluginForHost) link.getPlugin()).isListOffline()) {
 
-                            attachLinkToPackage(link);
+                            attachLinkTopackage(link);
                         }
                     }
                     progress.setValue(waitingLinkList.size());
@@ -350,7 +367,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
         // link = waitingLinkList.remove(0);
         //          
         // link.isAvailable();
-        // attachLinkToPackage(link);
+        // attachLinkTopackage(link);
         // progress.setValue(waitingLinkList.size());
         // try {
         // Thread.sleep(50);
@@ -363,19 +380,19 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
 
     }
 
-    private void attachLinkToPackage(DownloadLink link) {
+    private void attachLinkTopackage(DownloadLink link) {
 
-        if (!guiConfig.getBooleanProperty(PROPERTY_AUTOPACKAGE, true)) {
+        if (!guiConfig.getBooleanProperty(PROPERTY_AUTOpackage, true)) {
             // logger.finer("No Auto package");
             int lastIndex = tabList.size() - 1;
             if (lastIndex < 0) {
-                addTab().setPackageName(this.removeExtension(link.getName()));
+                addTab().setpackageName(this.removeExtension(link.getName()));
             }
             lastIndex = tabList.size() - 1;
             addLinkstoTab(new DownloadLink[] { link }, lastIndex);
-            String newPackageName = getSimString(tabList.get(lastIndex).getPackageName(), removeExtension(link.getName()));
-            tabList.get(lastIndex).setPackageName(newPackageName);
-            onPackageNameChanged(tabList.get(lastIndex));
+            String newpackageName = getSimString(tabList.get(lastIndex).getpackageName(), removeExtension(link.getName()));
+            tabList.get(lastIndex).setpackageName(newpackageName);
+            onpackageNameChanged(tabList.get(lastIndex));
 
         }
         else {
@@ -385,25 +402,25 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
             // logger.info("link: " + link.getName());
             for (int i = 0; i < tabList.size(); i++) {
 
-                int sim = comparePackages(tabList.get(i).getPackageName(), removeExtension(link.getName()));
+                int sim = comparepackages(tabList.get(i).getpackageName(), removeExtension(link.getName()));
                 if (sim > bestSim) {
                     bestSim = sim;
                     bestIndex = i;
                 }
             }
             // logger.info("Best sym: "+bestSim);
-            if (bestSim < guiConfig.getIntegerProperty(PROPERTY_AUTOPACKAGE_LIMIT, 98)) {
+            if (bestSim < guiConfig.getIntegerProperty(PROPERTY_AUTOpackage_LIMIT, 98)) {
 
                 logger.info("New Tab");
                 addLinkstoTab(new DownloadLink[] { link }, tabList.size());
-                tabList.get(tabList.size() - 1).setPackageName(removeExtension(link.getName()));
+                tabList.get(tabList.size() - 1).setpackageName(removeExtension(link.getName()));
             }
             else {
-                // logger.info("Found Package " +
-                // tabList.get(bestIndex).getPackageName());
-                String newPackageName = getSimString(tabList.get(bestIndex).getPackageName(), removeExtension(link.getName()));
-                tabList.get(bestIndex).setPackageName(newPackageName);
-                onPackageNameChanged(tabList.get(bestIndex));
+                // logger.info("Found package " +
+                // tabList.get(bestIndex).getpackageName());
+                String newpackageName = getSimString(tabList.get(bestIndex).getpackageName(), removeExtension(link.getName()));
+                tabList.get(bestIndex).setpackageName(newpackageName);
+                onpackageNameChanged(tabList.get(bestIndex));
                 addLinkstoTab(new DownloadLink[] { link }, bestIndex);
 
             }
@@ -433,7 +450,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
 
     }
 
-    private int comparePackages(String a, String b) {
+    private int comparepackages(String a, String b) {
 
         int c = 0;
         for (int i = 0; i < Math.min(a.length(), b.length()); i++) {
@@ -462,7 +479,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
 
     public void addLinkstoTab(DownloadLink[] linkList, int id) {
 
-        PackageTab tab;
+        packageTab tab;
         // logger.info(id + " - " + tabList.size());
         if (id >= tabList.size()) {
             tab = addTab();
@@ -475,26 +492,26 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
         tab.addLinks(linkList);
 
         // validate();
-        onPackageNameChanged(tab);
+        onpackageNameChanged(tab);
     }
 
-    protected void removePackageAt(int i) {
+    protected void removepackageAt(int i) {
         tabList.remove(i);
         tabbedPane.removeTabAt(i);
     }
 
-    protected void removePackage(PackageTab tab) {    	
-    	removePackageAt(tabList.indexOf(tab));
+    protected void removepackage(packageTab tab) {    	
+    	removepackageAt(tabList.indexOf(tab));
     }
 
-    protected PackageTab getSelectedTab() {
+    protected packageTab getSelectedTab() {
         return tabList.get(this.tabbedPane.getSelectedIndex());
     }
 
-    protected void onPackageNameChanged(PackageTab tab) {
+    protected void onpackageNameChanged(packageTab tab) {
         for (int i = 0; i < tabList.size(); i++) {
             if (tabList.get(i) == tab) {
-                    String title = tab.getPackageName();
+                    String title = tab.getpackageName();
                     if (title.length() > 20) {
                         tabbedPane.setToolTipTextAt(i, title);
                         title = title.substring(0, 6) + "(...)" + title.substring(title.length() - 6);
@@ -508,12 +525,12 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
 
     }
 
-    private PackageTab addTab() {
-        PackageTab tab;
-        tab = new PackageTab();
-        tab.setPackageName(JDLocale.L("gui.linkgrabber.lbl.newpackage", "neues Package"));
+    private packageTab addTab() {
+        packageTab tab;
+        tab = new packageTab();
+        tab.setpackageName(JDLocale.L("gui.linkgrabber.lbl.newpackage", "neues package"));
         this.tabList.add(tab);
-        tabbedPane.addTab(tab.getPackageName(), tab);
+        tabbedPane.addTab(tab.getpackageName(), tab);
         //logger.finer("ADD new Tab ");
         // refreshTabbedPane();
         return tab;
@@ -528,8 +545,8 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
     }
 
     public void actionPerformed(ActionEvent e) {
-        if (e.getSource() == this.mAutoPackage) {
-            guiConfig.setProperty(PROPERTY_AUTOPACKAGE, mAutoPackage.isSelected());
+        if (e.getSource() == this.mAutopackage) {
+            guiConfig.setProperty(PROPERTY_AUTOpackage, mAutopackage.isSelected());
             JDUtilities.saveConfig();
             return;
         }
@@ -611,13 +628,13 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
             getSelectedTab().setLinkList(finalList);
 
         }
-        else if (e.getSource() == this.mRemovePackage) {
-            this.removePackageAt(this.tabbedPane.getSelectedIndex());
+        else if (e.getSource() == this.mRemovepackage) {
+            this.removepackageAt(this.tabbedPane.getSelectedIndex());
             this.emptyCheck();
         }
         else if (e.getSource() == this.accept) {
-            confirmCurrentPackage();
-            this.removePackageAt(this.tabbedPane.getSelectedIndex());
+            confirmCurrentpackage();
+            this.removepackageAt(this.tabbedPane.getSelectedIndex());
             if (this.tabList.size() == 0) {
                 this.setVisible(false);
                 this.dispose();
@@ -629,9 +646,9 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
             this.dispose();
         }
         else if (e.getSource() == this.mMerge) {
-            PackageTab tab = tabList.get(tabbedPane.getSelectedIndex());
-            String name = tab.getPackageName();
-            Iterator<PackageTab> iterator = tabList.iterator();
+            packageTab tab = tabList.get(tabbedPane.getSelectedIndex());
+            String name = tab.getpackageName();
+            Iterator<packageTab> iterator = tabList.iterator();
             Vector<DownloadLink> newList = new Vector<DownloadLink>();
             while (iterator.hasNext()) {
                 tab = iterator.next();
@@ -640,18 +657,18 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
 
             }
             while (tabList.size() > 1) {
-                this.removePackageAt(0);
+                this.removepackageAt(0);
             }
             if (tabList.size() > 0) {
                 tabList.get(0).setLinkList(newList);
-                tabList.get(0).setPackageName(name);
-                onPackageNameChanged(tabList.get(0));
+                tabList.get(0).setpackageName(name);
+                onpackageNameChanged(tabList.get(0));
             }
 
         }
         else if (e.getSource() == this.mRemoveOfflineAll) {
-            PackageTab tab;
-            Iterator<PackageTab> iterator = tabList.iterator();
+            packageTab tab;
+            Iterator<packageTab> iterator = tabList.iterator();
         //    Vector<DownloadLink> newList = new Vector<DownloadLink>();
             while (iterator.hasNext()) {
                 tab = iterator.next();
@@ -661,24 +678,24 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
                         tab.removeLinkAt(i);
                     }
                 }
-                this.onPackageNameChanged(tab);
+                this.onpackageNameChanged(tab);
             }
         }
         else if (e.getSource() == this.mRemoveOffline) {
-            PackageTab tab = tabList.get(tabbedPane.getSelectedIndex());
+            packageTab tab = tabList.get(tabbedPane.getSelectedIndex());
             Vector<DownloadLink> list = tab.getLinkList();
             for (int i = list.size() - 1; i >= 0; --i) {
                 if (!list.get(i).isAvailable()) {
                     tab.removeLinkAt(i);
                 }
             }
-            this.onPackageNameChanged(tab);
+            this.onpackageNameChanged(tab);
         }
-        else if (e.getSource() == this.mRemoveEmptyPackages){
+        else if (e.getSource() == this.mRemoveEmptypackages){
         	for(int i=tabList.size() -1 ; i>=0; --i){
-        		PackageTab tab = tabList.get(i);
+        		packageTab tab = tabList.get(i);
         		if( tab.isEmpty() ){
-        			this.removePackage(tab);
+        			this.removepackage(tab);
         		}
         	}        	
 			this.emptyCheck();
@@ -686,18 +703,18 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
         else if (e.getActionCommand().equals(JDLocale.L("gui.linkgrabber.tabs.context.delete"))) {
             Point loc = ((ContextMenu) ((JMenuItem) e.getSource()).getParent()).getPoint();
             int destID = tabbedPane.getUI().tabForCoordinate(tabbedPane, (int) loc.x, (int) loc.getY());
-            this.removePackageAt(destID);
+            this.removepackageAt(destID);
             
             this.emptyCheck();
         }
-        else if (e.getActionCommand().equals(JDLocale.L("gui.linkgrabber.tabs.context.newPackage"))) {
+        else if (e.getActionCommand().equals(JDLocale.L("gui.linkgrabber.tabs.context.newpackage"))) {
 
             addTab();
         }
     }
     
     /**
-     * checks the LinkGrabber if there are any Packages left
+     * checks the LinkGrabber if there are any packages left
      * If not, the Linkgrabber will be closed and disposed. If there are packages left
      * nothing happens
      */
@@ -729,7 +746,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
 
     private void confirmAll() {
         for (int tt = 0; tt < tabList.size(); tt++) {
-            PackageTab tab = tabList.get(tt);
+            packageTab tab = tabList.get(tt);
             Vector<DownloadLink> linkList = tab.getLinkList();
             if (linkList.size() == 0) {
 
@@ -742,13 +759,13 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
             c = c.brighter();
             FilePackage fp = new FilePackage();
             fp.setProperty("color", c);
-            fp.setName(tab.getPackageName());
+            fp.setName(tab.getpackageName());
             fp.setComment(tab.getComment());
             fp.setPassword(tab.getPassword());
             JUnrar unrar = new JUnrar(false);
             unrar.addToPasswordlist(tab.getPassword());
             if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_PACKETNAME_AS_SUBFOLDER, false)) {
-                File file = new File(new File(tab.getDownloadDirectory()), tab.getPackageName());
+                File file = new File(new File(tab.getDownloadDirectory()), tab.getpackageName());
                 if (!file.exists()) {
                     file.mkdirs();
                 }
@@ -775,8 +792,8 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
 
     }
 
-    private void confirmCurrentPackage() {
-        PackageTab tab = tabList.get(tabbedPane.getSelectedIndex());
+    private void confirmCurrentpackage() {
+        packageTab tab = tabList.get(tabbedPane.getSelectedIndex());
         Vector<DownloadLink> linkList = tab.getLinkList();
         if (linkList.size() == 0) {
 
@@ -786,13 +803,13 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
         c = c.brighter();
         FilePackage fp = new FilePackage();
         fp.setProperty("color", c);
-        fp.setName(tab.getPackageName());
+        fp.setName(tab.getpackageName());
         fp.setComment(tab.getComment());
         fp.setPassword(tab.getPassword());
         JUnrar unrar = new JUnrar(false);
         unrar.addToPasswordlist(tab.getPassword());
         if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_PACKETNAME_AS_SUBFOLDER, false)) {
-            File file = new File(new File(tab.getDownloadDirectory()), tab.getPackageName());
+            File file = new File(new File(tab.getDownloadDirectory()), tab.getpackageName());
             if (!file.exists()) {
                 file.mkdirs();
             }
@@ -835,11 +852,11 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
         // TODO Auto-generated method stub
 
         int destID = tabbedPane.getUI().tabForCoordinate(tabbedPane, (int) e.getLocation().getX(), (int) e.getLocation().getY());
-        PackageTab dest;
-        PackageTab source = tabList.get(currentTab);
+        packageTab dest;
+        packageTab source = tabList.get(currentTab);
         if (destID < 0) {
             dest = addTab();
-            dest.setPackageName(source.getPackageName() + "(2)");
+            dest.setpackageName(source.getpackageName() + "(2)");
             dest.setDownloadDirectory(source.getDownloadDirectory());
             dest.setPassword(source.getPassword());
         }
@@ -883,8 +900,8 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
         source.removeLinks(move);
         dest.addLinks(move.toArray(new DownloadLink[] {}));
 
-        onPackageNameChanged(dest);
-        onPackageNameChanged(source);
+        onpackageNameChanged(dest);
+        onpackageNameChanged(source);
         currentTab = -1;
 
     }
@@ -902,7 +919,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
             Point point = e.getPoint();
             // int x = e.getX();
             // int y = e.getY();
-            new ContextMenu(tabbedPane, point, new String[] { JDLocale.L("gui.linkgrabber.tabs.context.delete", "Entfernen"), JDLocale.L("gui.linkgrabber.tabs.context.newPackage", "Neues Package") }, this);
+            new ContextMenu(tabbedPane, point, new String[] { JDLocale.L("gui.linkgrabber.tabs.context.delete", "Entfernen"), JDLocale.L("gui.linkgrabber.tabs.context.newpackage", "Neues package") }, this);
         }
 
     }
@@ -924,7 +941,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
      * @author JD-Team
      * 
      */
-    class PackageTab extends JPanel implements ActionListener, MouseListener, KeyListener {
+    class packageTab extends JPanel implements ActionListener, MouseListener, KeyListener {
 
         /**
          * 
@@ -951,11 +968,11 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
 
         private Vector<DownloadLink> linkList;
 
-        protected PackageTab         _this;
+        protected packageTab         _this;
 
         private int                  sortedOn         = 1;
 
-        public PackageTab() {
+        public packageTab() {
             linkList = new Vector<DownloadLink>();
             _this = this;
             buildGui();
@@ -968,7 +985,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
         }
         
         /**
-         * Checks if a PackageTab is empty
+         * Checks if a packageTab is empty
          * @return false if there are links within this package, true otherwise
          */
         public boolean isEmpty(){
@@ -1024,12 +1041,12 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
             return ret;
         }
 
-        public String getPackageName() {
+        public String getpackageName() {
 
             return txtName.getText().trim();
         }
 
-        public void setPackageName(String name) {
+        public void setpackageName(String name) {
             txtName.setText(name);
         }
 
@@ -1146,12 +1163,12 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
         private void refreshTable() {
 
             table.tableChanged(new TableModelEvent(table.getModel()));
-            onPackageNameChanged(this);
+            onpackageNameChanged(this);
         }
 
         private void buildGui() {
             setLayout(new GridBagLayout());
-            JLabel lblName = new JLabel(JDLocale.L("gui.linkgrabber.packagetab.lbl.name", "Packagename"));
+            JLabel lblName = new JLabel(JDLocale.L("gui.linkgrabber.packagetab.lbl.name", "packagename"));
             JLabel lblSaveto = new JLabel(JDLocale.L("gui.linkgrabber.packagetab.lbl.saveto", "Speichern unter"));
             JLabel lblPassword = new JLabel(JDLocale.L("gui.linkgrabber.packagetab.lbl.password", "Archivpasswort"));
             JLabel lblComment = new JLabel(JDLocale.L("gui.linkgrabber.packagetab.lbl.comment", "Kommentar"));
@@ -1178,17 +1195,17 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
             PlainDocument doc = (PlainDocument) txtName.getDocument();
             doc.addDocumentListener(new DocumentListener() {
                 public void changedUpdate(DocumentEvent e) {
-                    onPackageNameChanged(_this);
+                    onpackageNameChanged(_this);
                 }
 
                 public void insertUpdate(DocumentEvent e) {
 
-                    onPackageNameChanged(_this);
+                    onpackageNameChanged(_this);
                 }
 
                 public void removeUpdate(DocumentEvent e) {
 
-                    onPackageNameChanged(_this);
+                    onpackageNameChanged(_this);
                 }
             });
             this.table = new InternalTable();
@@ -1263,7 +1280,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
 
             }
 
-            if (e.getActionCommand().equals(JDLocale.L("gui.linkgrabber.packagetab.table.context.newpackage", "Neues Package"))) {
+            if (e.getActionCommand().equals(JDLocale.L("gui.linkgrabber.packagetab.table.context.newpackage", "Neues package"))) {
                 addTab();
 
             }
@@ -1297,8 +1314,8 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
                 }
 
                 linkList = list;
-                confirmCurrentPackage();
-                removePackageAt(tabbedPane.getSelectedIndex());
+                confirmCurrentpackage();
+                removepackageAt(tabbedPane.getSelectedIndex());
                 if (tabList.size() == 0) {
                     this.setVisible(false);
                     dispose();
@@ -1393,7 +1410,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
                 Point point = e.getPoint();
                 // int x = e.getX();
                 // int y = e.getY();
-                new ContextMenu(table, point, new String[] { JDLocale.L("gui.linkgrabber.packagetab.table.context.delete", "Entfernen"), JDLocale.L("gui.linkgrabber.tabs.context.deleteOthers", "Alle anderen Entfernen"), JDLocale.L("gui.linkgrabber.tabs.context.acceptSelection", "Auswahl übernehmen"), JDLocale.L("gui.linkgrabber.packagetab.table.context.newpackage", "Neues Package") }, this);
+                new ContextMenu(table, point, new String[] { JDLocale.L("gui.linkgrabber.packagetab.table.context.delete", "Entfernen"), JDLocale.L("gui.linkgrabber.tabs.context.deleteOthers", "Alle anderen Entfernen"), JDLocale.L("gui.linkgrabber.tabs.context.acceptSelection", "Auswahl übernehmen"), JDLocale.L("gui.linkgrabber.packagetab.table.context.newpackage", "Neues package") }, this);
             }
 
         }

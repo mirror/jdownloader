@@ -1,3 +1,20 @@
+//    jDownloader - Downloadmanager
+//    Copyright (C) 2008  JD-Team jdownloader@freenet.de
+//
+//    This program is free software: you can redistribute it and/or modify
+//    it under the terms of the GNU General Public License as published by
+//    the Free Software Foundation, either version 3 of the License, or
+//    (at your option) any later version.
+//
+//    This program  is distributed in the hope that it will be useful,
+//    but WITHOUT ANY WARRANTY; without even the implied warranty of
+//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSSee the
+//    GNU General Public License for more details.
+//
+//    You should have received a copy of the GNU General Public License
+//    along with this program.  If not, see <http://wnu.org/licenses/>.
+
+
 package jd.controlling.interaction;
 
 import java.io.Serializable;
@@ -101,9 +118,9 @@ public abstract class Interaction extends Property implements Serializable {
     // InteractionTrigger(6, "Captcha Erkennung", "Ein Captcha-Bild muss
     // verarbeitet werden");
     /**
-     * Letztes Package file geladen
+     * Letztes package file geladen
      */
-    public static final InteractionTrigger    INTERACTION_DOWNLOAD_PACKAGE_FINISHED = new InteractionTrigger(12, JDLocale.L("interaction.trigger.package_finished","Paket fertig"), JDLocale.L("interaction.trigger.package_finished.desc","Wird aufgerufen wenn ein Paket fertig geladen wurde"));
+    public static final InteractionTrigger    INTERACTION_DOWNLOAD_package_FINISHED = new InteractionTrigger(12, JDLocale.L("interaction.trigger.package_finished","Paket fertig"), JDLocale.L("interaction.trigger.package_finished.desc","Wird aufgerufen wenn ein Paket fertig geladen wurde"));
     public static final InteractionTrigger INTERACTION_BEFORE_DOWNLOAD = new InteractionTrigger(13, JDLocale.L("interaction.trigger.before_download","Vor einem Download"), JDLocale.L("interaction.trigger.before_download.desc","Wird aufgerufen bevor ein neuer Download gestartet wird"));
    
     /**

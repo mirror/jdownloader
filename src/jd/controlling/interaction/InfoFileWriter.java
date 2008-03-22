@@ -1,3 +1,20 @@
+//    jDownloader - Downloadmanager
+//    Copyright (C) 2008  JD-Team jdownloader@freenet.de
+//
+//    This program is free software: you can redistribute it and/or modify
+//    it under the terms of the GNU General Public License as published by
+//    the Free Software Foundation, either version 3 of the License, or
+//    (at your option) any later version.
+//
+//    This program  is distributed in the hope that it will be useful,
+//    but WITHOUT ANY WARRANTY; without even the implied warranty of
+//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSSee the
+//    GNU General Public License for more details.
+//
+//    You should have received a copy of the GNU General Public License
+//    along with this program.  If not, see <http://wnu.org/licenses/>.
+
+
 package jd.controlling.interaction;
 
 import java.io.File;
@@ -47,9 +64,9 @@ public class InfoFileWriter extends Interaction implements Serializable {
 
     private static final String PARAM_FILENAME      = "FILENAME";
 
-    private static final String INFO_STRING_DEFAULT = "Passwort: %LAST_FINISHED_PACKAGE.PASSWORD%\r\n%LAST_FINISHED_PACKAGE.FILELIST%\r\nFertig gestellt am %SYSTEM.DATE% um %SYSTEM.TIME% Uhr";
+    private static final String INFO_STRING_DEFAULT = "Passwort: %LAST_FINISHED_package.PASSWORD%\r\n%LAST_FINISHED_package.FILELIST%\r\nFertig gestellt am %SYSTEM.DATE% um %SYSTEM.TIME% Uhr";
 
-    private static final String FILENAME_DEFAULT    = "%LAST_FINISHED_PACKAGE.DOWNLOAD_DIRECTORY%/%LAST_FINISHED_PACKAGE.PACKAGENAME%.info";
+    private static final String FILENAME_DEFAULT    = "%LAST_FINISHED_package.DOWNLOAD_DIRECTORY%/%LAST_FINISHED_package.packageNAME%.info";
 
 
 

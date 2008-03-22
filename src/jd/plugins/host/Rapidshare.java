@@ -1,3 +1,20 @@
+//    jDownloader - Downloadmanager
+//    Copyright (C) 2008  JD-Team jdownloader@freenet.de
+//
+//    This program is free software: you can redistribute it and/or modify
+//    it under the terms of the GNU General Public License as published by
+//    the Free Software Foundation, either version 3 of the License, or
+//    (at your option) any later version.
+//
+//    This program  is distributed in the hope that it will be useful,
+//    but WITHOUT ANY WARRANTY; without even the implied warranty of
+//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSSee the
+//    GNU General Public License for more details.
+//
+//    You should have received a copy of the GNU General Public License
+//    along with this program.  If not, see <http://wnu.org/licenses/>.
+
+
 package jd.plugins.host;
 
 //requests RMEIUM:
@@ -62,6 +79,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.net.MalformedURLException;
+import java.net.SocketTimeoutException;
 import java.net.URL;
 import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
@@ -543,6 +561,10 @@ public class Rapidshare extends PluginForHost {
                         return step;
                     }
                     return step;
+                }catch(SocketTimeoutException e1){
+                    downloadLink.setStatus(DownloadLink.STATUS_ERROR_PLUGIN_SPECIFIC);
+                    step.setParameter(JDLocale.L("gui.status.timeoutdetected","Timeout"));
+                    step.setStatus(PluginStep.STATUS_ERROR);
                 }
                 catch (Exception e) {
                     e.printStackTrace();
@@ -677,7 +699,12 @@ public class Rapidshare extends PluginForHost {
                         step.setParameter(10l);
                         return step;
                     }
-                }
+                
+        }catch(SocketTimeoutException e1){
+            downloadLink.setStatus(DownloadLink.STATUS_ERROR_PLUGIN_SPECIFIC);
+            step.setParameter(JDLocale.L("gui.status.timeoutdetected","Timeout"));
+            step.setStatus(PluginStep.STATUS_ERROR);
+        }
                 catch (Exception e) {
                     e.printStackTrace();
                 }
@@ -854,8 +881,12 @@ public class Rapidshare extends PluginForHost {
 
                         return null;
                     }
-
+                }catch(SocketTimeoutException e1){
+                    downloadLink.setStatus(DownloadLink.STATUS_ERROR_PLUGIN_SPECIFIC);
+                    step.setParameter(JDLocale.L("gui.status.timeoutdetected","Timeout"));
+                    step.setStatus(PluginStep.STATUS_ERROR);
                 }
+              
                 catch (IOException e) {
                     logger.severe("URL could not be opened. " + e.toString());
                     downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN);
@@ -1116,8 +1147,11 @@ public class Rapidshare extends PluginForHost {
                         logger.warning("could not get downloadInfo ");
                         return step;
                     }
-                }
-                catch (Exception e) {
+                }catch(SocketTimeoutException e1){
+                    downloadLink.setStatus(DownloadLink.STATUS_ERROR_PLUGIN_SPECIFIC);
+                    step.setParameter(JDLocale.L("gui.status.timeoutdetected","Timeout"));
+                    step.setStatus(PluginStep.STATUS_ERROR);
+                }catch (Exception e) {
                     e.printStackTrace();
                     step.setStatus(PluginStep.STATUS_ERROR);
                     downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN);

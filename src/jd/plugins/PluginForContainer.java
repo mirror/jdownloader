@@ -1,3 +1,20 @@
+//    jDownloader - Downloadmanager
+//    Copyright (C) 2008  JD-Team jdownloader@freenet.de
+//
+//    This program is free software: you can redistribute it and/or modify
+//    it under the terms of the GNU General Public License as published by
+//    the Free Software Foundation, either version 3 of the License, or
+//    (at your option) any later version.
+//
+//    This program  is distributed in the hope that it will be useful,
+//    but WITHOUT ANY WARRANTY; without even the implied warranty of
+//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSSee the
+//    GNU General Public License for more details.
+//
+//    You should have received a copy of the GNU General Public License
+//    along with this program.  If not, see <http://wnu.org/licenses/>.
+
+
 package jd.plugins;
 
 import java.io.File;
@@ -44,7 +61,7 @@ public abstract class PluginForContainer extends PluginForDecrypt {
      */
 
     public String extractDownloadURL(DownloadLink downloadLink) {
-        logger.info("EXTRACCT " + downloadLink);
+        logger.info("EXTRACT " + downloadLink);
         if (downloadLinksURL == null) initContainer(downloadLink.getContainerFile());
         if (downloadLinksURL == null || downloadLinksURL.size() <= downloadLink.getContainerIndex()) return null;
         return downloadLinksURL.get(downloadLink.getContainerIndex());
@@ -109,7 +126,7 @@ public abstract class PluginForContainer extends PluginForDecrypt {
 
     public void initContainer(String filename) {
         if (filename == null) return;
-        if (CONTAINER.containsKey(filename)) {
+        if (CONTAINER.containsKey(filename)&&CONTAINER.get(filename).size()>0) {
             logger.info("Cached " + filename);
             containedLinks = CONTAINER.get(filename);
             if (containedLinks != null) {

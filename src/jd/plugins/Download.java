@@ -1,3 +1,20 @@
+//    jDownloader - Downloadmanager
+//    Copyright (C) 2008  JD-Team jdownloader@freenet.de
+//
+//    This program is free software: you can redistribute it and/or modify
+//    it under the terms of the GNU General Public License as published by
+//    the Free Software Foundation, either version 3 of the License, or
+//    (at your option) any later version.
+//
+//    This program  is distributed in the hope that it will be useful,
+//    but WITHOUT ANY WARRANTY; without even the implied warranty of
+//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSSee the
+//    GNU General Public License for more details.
+//
+//    You should have received a copy of the GNU General Public License
+//    along with this program.  If not, see <http://wnu.org/licenses/>.
+
+
 package jd.plugins;
 
 import java.io.File;
@@ -45,7 +62,14 @@ public class Download {
     public static final int           ERROR_ABORTED_BY_USER                  = 102;
 
     public static final int           ERROR_TOO_MUCH_BUFFERMEMORY            = 103;
-    public static final int           STATUS_ERROR_CHUNKLOAD_FAILED     = DownloadLink.STATUS_ERROR_CHUNKLOAD_FAILED;
+
+    public static final int           STATUS_ERROR_CHUNKLOAD_FAILED          = DownloadLink.STATUS_ERROR_CHUNKLOAD_FAILED;
+
+    public static final int           ERROR_NO_CONNECTION                    = 104;
+
+    public static final int           ERROR_TIMEOUT_REACHED                  = 105;
+
+    private static final int ERROR_LOCAL_IO = 106;
 
     private DownloadLink              downloadLink;
 
@@ -87,7 +111,7 @@ public class Download {
 
     private long                      fileSize                               = -1;
 
-    private boolean abortByError=false;
+    private boolean                   abortByError                           = false;
 
     public static Logger              logger                                 = JDUtilities.getLogger();
 
@@ -126,9 +150,10 @@ public class Download {
             outputChannel.write(buffer);
             // this.outputFile.write(tmp);
         }
-        catch (IOException e) {
+        catch (Exception e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
+            error(ERROR_LOCAL_IO);
         }
 
     }
@@ -142,23 +167,33 @@ public class Download {
     }
 
     private void error(int id) {
-        logger.severe("Error occured: "+id);
+        logger.severe("Error occured: " + id);
         if (errors.indexOf(id) < 0) errors.add(id);
-        if(id==ERROR_TOO_MUCH_BUFFERMEMORY){
+        if (id == ERROR_TOO_MUCH_BUFFERMEMORY) {
             terminate(id);
-            
+
         }
-        if(id==ERROR_UNKNOWN){
-            terminate(id);
-            
+        switch (id){
+            case ERROR_UNKNOWN:
+            case ERROR_TIMEOUT_REACHED:
+            case ERROR_FILE_NOT_FOUND:
+            case ERROR_TOO_MUCH_BUFFERMEMORY:
+            case ERROR_LOCAL_IO:
+            case ERROR_NO_CONNECTION:
+            case ERROR_SECURITY:
+                terminate(id);
+                
+                
+                
         }
+       
     }
 
     private void terminate(int id) {
-        
-        logger.severe("A critical Downlaoderror occured. Terminate...");
-      this.abortByError=true;
-        
+
+        logger.severe("A critical Downloaderror occured. Terminate...");
+        this.abortByError = true;
+
     }
 
     public boolean startDownload() {
@@ -280,7 +315,7 @@ public class Download {
             downloadLink.setStatus(DownloadLink.STATUS_ERROR_CHUNKLOAD_FAILED);
             return false;
         }
-        
+
         if (errors.contains(ERROR_COULD_NOT_RENAME)) {
             plugin.getCurrentStep().setStatus(PluginStep.STATUS_RETRY);
             downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN_RETRY);
@@ -449,7 +484,8 @@ public class Download {
                 if (chunkNum > 1) {
                     httpConnection.setRequestProperty("Range", "bytes=" + startByte + "-" + endByte);
 
-                    //logger.info(chunks.indexOf(this) + " - " + httpConnection.getRequestProperties() + "");
+                    // logger.info(chunks.indexOf(this) + " - " +
+                    // httpConnection.getRequestProperties() + "");
                 }
                 if (connection.getHTTPURLConnection().getDoOutput()) {
                     httpConnection.setDoOutput(true);
@@ -461,7 +497,7 @@ public class Download {
                 else {
                     httpConnection.connect();
                 }
-                logger.info("HEaders: "+httpConnection.getHeaderFields());
+                logger.info("HEaders: " + httpConnection.getHeaderFields());
                 return httpConnection;
 
             }
@@ -488,19 +524,19 @@ public class Download {
         }
 
         private int getTimeInterval() {
-            if(!downloadLink.isLimited)return 1000;
-            
+            if (!downloadLink.isLimited) return 1000;
+
             return (int) (1000 * this.bufferTimeFaktor);
 
         }
 
         private void download() {
             ByteBuffer buffer = null;
-            int bufferSize=1;
+            int bufferSize = 1;
             try {
-            bufferSize = getBufferSize(getMaximalChunkSpeed());
-           
-           // logger.info(bufferSize+" - "+this.getTimeInterval());
+                bufferSize = getBufferSize(getMaximalChunkSpeed());
+
+                // logger.info(bufferSize+" - "+this.getTimeInterval());
                 buffer = ByteBuffer.allocateDirect(bufferSize);
 
             }
@@ -508,12 +544,12 @@ public class Download {
                 error(ERROR_TOO_MUCH_BUFFERMEMORY);
                 return;
             }
-                       
-if(chunkNum>1&&(connection.getHeaderField("Content-Range")==null ||connection.getHeaderField("Content-Range").length()==0)){
-    error(STATUS_ERROR_CHUNKLOAD_FAILED);
-    return;
-    
-}
+
+            if (chunkNum > 1 && (connection.getHeaderField("Content-Range") == null || connection.getHeaderField("Content-Range").length() == 0)) {
+                error(STATUS_ERROR_CHUNKLOAD_FAILED);
+                return;
+
+            }
             InputStream inputStream = null;
             ReadableByteChannel source = null;
 
@@ -521,6 +557,7 @@ if(chunkNum>1&&(connection.getHeaderField("Content-Range")==null ||connection.ge
 
                 connection.setReadTimeout(getReadTimeout());
                 connection.setConnectTimeout(getRequestTimeout());
+               
                 inputStream = connection.getInputStream();
                 source = Channels.newChannel(inputStream);
 
@@ -531,27 +568,66 @@ if(chunkNum>1&&(connection.getHeaderField("Content-Range")==null ||connection.ge
 
                 int bytes;
                 int block = 0;
-                int tempBuff=0;
-                while (!plugin.aborted && !downloadLink.isAborted()&&!abortByError) {
+                int tempBuff = 0;
+              
+                byte b[]= new byte[1];
+                int read=0;
+                while (!plugin.aborted && !downloadLink.isAborted() && !abortByError) {
                     bytes = 0;
-                  
+
                     timer = System.currentTimeMillis();
-                    while (buffer.hasRemaining() && !plugin.aborted &&!abortByError&& !downloadLink.isAborted() && (System.currentTimeMillis() - timer) < getTimeInterval()) {
+                   
+                    
+                    while (buffer.hasRemaining() && !plugin.aborted && !abortByError && !downloadLink.isAborted() && (System.currentTimeMillis() - timer) < getTimeInterval()) {
                         // if(bytes>0)Thread.sleep(100);
-                        block = source.read(buffer);
+                        block = 0;
+                   
+                        if (source.isOpen()) {
+                           
+                           //Prüft ob bytes zum Lesen anliegen.
+                            if (inputStream.available() > 0) {
+                                //kann den connectiontimeout nicht auswerten
+                                block = source.read(buffer);
+                            }else{   
+                                
+                                //logger.info(""+inputStream.getClass());
+                             
+                                //wertet den Timeout der connection aus (HTTPInputStream)
+                                read=inputStream.read(b, 0, 1);                             
+                                if(read>0){
+                                    buffer.put(b);
+                                    block=1;   
+                                    //Pause falls das Ende nicht erreicht worden ist. Die Schelife läuft zu schnell
+                                    Thread.sleep(100);
+                                }else if (read<0){
+                                    block=-1;
+                                    break;
+                                }
+                            }
+                        }
+                        else {
+                            logger.severe("Channel has been closed");
+                            error(ERROR_NO_CONNECTION);
+                            inputStream.close();
+                            source.close();
+                            return;
+                        }                   
+
                         if (block == -1) {
                             break;
                         }
                         bytes += block;
                     }
+                 
                     if (block == -1 && bytes == 0) break;
                     buffer.flip();
+               
                     addBytes(buffer, currentBytePosition);
                     addBytes(bytes);
                     buffer.clear();
                     currentBytePosition += bytes;
 
-                    if (block == -1||abortByError||plugin.aborted||downloadLink.isAborted()) break;
+                    if (block == -1 || abortByError || plugin.aborted || downloadLink.isAborted()) break;
                     try {
                         Thread.sleep(getTimeInterval() - (System.currentTimeMillis() - timer));
                     }
@@ -562,10 +638,10 @@ if(chunkNum>1&&(connection.getHeaderField("Content-Range")==null ||connection.ge
                     this.bytesPerSecond = (1000 * bytes) / deltaTime;
                     // logger.info("loaded "+bytes+" b in "+(deltaTime)+" ms:
                     // "+bytesPerSecond);
-                    tempBuff=getBufferSize(getMaximalChunkSpeed());
-                    if (Math.abs(bufferSize-tempBuff)>1000) {
-                       bufferSize=tempBuff;
-                        
+                    tempBuff = getBufferSize(getMaximalChunkSpeed());
+                    if (Math.abs(bufferSize - tempBuff) > 1000) {
+                        bufferSize = tempBuff;
+
                         try {
                             buffer = ByteBuffer.allocateDirect(Math.max(1, bufferSize));
 
@@ -574,7 +650,7 @@ if(chunkNum>1&&(connection.getHeaderField("Content-Range")==null ||connection.ge
                             error(ERROR_TOO_MUCH_BUFFERMEMORY);
                             return;
                         }
-                        
+
                         buffer.clear();
                     }
 
@@ -602,9 +678,13 @@ if(chunkNum>1&&(connection.getHeaderField("Content-Range")==null ||connection.ge
 
             }
             catch (IOException e) {
-
-                logger.severe("error occurred while writing to file. " + e.getLocalizedMessage());
-                error(ERROR_SECURITY);
+                   if(e.getMessage().indexOf("timed out")>=0){
+                       error(ERROR_TIMEOUT_REACHED);;
+                       
+                   }else{
+                       logger.severe("error occurred while writing to file. " + e.getLocalizedMessage());
+                       error(ERROR_SECURITY);
+                   }
             }
             catch (Exception e) {
 
@@ -628,10 +708,10 @@ if(chunkNum>1&&(connection.getHeaderField("Content-Range")==null ||connection.ge
         }
 
         private int getBufferSize(int maxspeed) {
-            if(!downloadLink.isLimited)return MAX_BUFFERSIZE;
+            if (!downloadLink.isLimited) return MAX_BUFFERSIZE;
             int bufferSize = Math.min(MAX_BUFFERSIZE, Math.max(MIN_BUFFERSIZE, maxspeed));
             this.bufferTimeFaktor = Math.max(0.1, (double) bufferSize / maxspeed);
-           return bufferSize;
+            return bufferSize;
         }
 
         public long getBytesPerSecond() {

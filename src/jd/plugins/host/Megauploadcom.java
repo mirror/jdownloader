@@ -1,3 +1,20 @@
+//    jDownloader - Downloadmanager
+//    Copyright (C) 2008  JD-Team jdownloader@freenet.de
+//
+//    This program is free software: you can redistribute it and/or modify
+//    it under the terms of the GNU General Public License as published by
+//    the Free Software Foundation, either version 3 of the License, or
+//    (at your option) any later version.
+//
+//    This program  is distributed in the hope that it will be useful,
+//    but WITHOUT ANY WARRANTY; without even the implied warranty of
+//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSSee the
+//    GNU General Public License for more details.
+//
+//    You should have received a copy of the GNU General Public License
+//    along with this program.  If not, see <http://wnu.org/licenses/>.
+
+
 package jd.plugins.host;
 
 import java.io.File;
@@ -50,6 +67,8 @@ public class Megauploadcom extends PluginForHost {
     static private final String     ERROR_FILENOTFOUND                  = "Die Datei konnte leider nicht gefunden werden";
 
     static private final long       PENDING_WAITTIME                    = 45000;
+
+    private static final String PATTERN_PASSWORD_WRONG = "Wrong password! Please try again";
 
     // /Simplepattern
   //  private String                  finalURL;
@@ -191,13 +210,20 @@ public class Megauploadcom extends PluginForHost {
                           requestInfo = postRequest(new URL("http://"+new URL(link).getHost()+"/"+countryID+"/"), COOKIE, null, null, pwdata + "&pass=" + pass, true);
                              
                       }
-                      
+                      if(requestInfo.containsHTML(PATTERN_PASSWORD_WRONG)){
+                          step.setStatus(PluginStep.STATUS_ERROR);
+                          downloadLink.setStatus(DownloadLink.STATUS_ERROR_PLUGIN_SPECIFIC);
+                          step.setParameter("wrong Password");
+                          return step;
+                      }
+                     
                    }
                    
                  
                     step.setParameter(PENDING_WAITTIME);
                     return step;
                 case PluginStep.STEP_DOWNLOAD:
+                    
                     Character l = (char) Math.abs(Integer.parseInt(getSimpleMatch(requestInfo.getHtmlCode(), SIMPLEPATTERN_GEN_DOWNLOADLINK, 1).trim()));
                     String i = getSimpleMatch(requestInfo.getHtmlCode(), SIMPLEPATTERN_GEN_DOWNLOADLINK, 4) + (char) Math.sqrt(Integer.parseInt(getSimpleMatch(requestInfo.getHtmlCode(), SIMPLEPATTERN_GEN_DOWNLOADLINK, 5).trim()));
                     String url = (JDUtilities.htmlDecode(getSimpleMatch(requestInfo.getHtmlCode(), SIMPLEPATTERN_GEN_DOWNLOADLINK_LINK, 0) + i + l + getSimpleMatch(requestInfo.getHtmlCode(), SIMPLEPATTERN_GEN_DOWNLOADLINK_LINK, 2)));

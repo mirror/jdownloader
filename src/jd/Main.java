@@ -1,7 +1,30 @@
 package jd;
 
+//    jDownloader - Downloadmanager
+//    Copyright (C) 2008  JD-Team jdownloader@freenet.de
+//
+//    This program is free software: you can redistribute it and/or modify
+//    it under the terms of the GNU General Public License as published by
+//    the Free Software Foundation, either version 3 of the License, or
+//    (at your option) any later version.
+//
+//    This program  is distributed in the hope that it will be useful,
+//    but WITHOUT ANY WARRANTY; without even the implied warranty of
+//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSSee the
+//    GNU General Public License for more details.
+//
+//    You should have received a copy of the GNU General Public License
+//    along with this program.  If not, see <http://wnu.org/licenses/>.
+
+
+
+
+
+
+
 import java.awt.Graphics;
 import java.awt.Image;
+import java.io.File;
 import java.util.Iterator;
 import java.util.Properties;
 import java.util.TreeSet;
@@ -18,7 +41,6 @@ import jd.gui.skins.simple.SimpleGUI;
 import jd.utils.JDLocale;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
-import jd.utils.Upload;
 
 /**
  * @author astaldo/JD-Team
@@ -53,6 +75,7 @@ public class Main {
         boolean stop = false;
         for (int i = 0; i < args.length; i++) {
             String string = args[i];
+            logger.info(string);
             if (string.equals("--help") || string.equals("-h")) {
                 String[][] help = new String[][] { { JDUtilities.getJDTitle(), "Coalado::Astaldo::DwD::Botzi GPL" }, { "http://jdownloader.ath.cx/", "http://www.the-lounge.org/viewforum.php?f=217" + System.getProperty("line.separator") }, { "-h, --help", "Print help for jDownloader" }, { "-s --show", "Open a menu to show a JAC prepared captcha" }, { "-t --train", "Open a menu to train a JAC method" } };
                 for (int j = 0; j < help.length; j++) {
@@ -90,6 +113,13 @@ logger.info(System.getProperty("java.class.path"));
             main.go();
          
           
+        }
+        for (int i = 0; i < args.length; i++) {
+            String string = args[i];
+            if(new File(string).exists()){
+                JDUtilities.getController().loadContainerFile(new File(string));
+            }
+            //logger.info(string);
         }
     }
   

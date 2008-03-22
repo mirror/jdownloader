@@ -1,3 +1,20 @@
+//    jDownloader - Downloadmanager
+//    Copyright (C) 2008  JD-Team jdownloader@freenet.de
+//
+//    This program is free software: you can redistribute it and/or modify
+//    it under the terms of the GNU General Public License as published by
+//    the Free Software Foundation, either version 3 of the License, or
+//    (at your option) any later version.
+//
+//    This program  is distributed in the hope that it will be useful,
+//    but WITHOUT ANY WARRANTY; without even the implied warranty of
+//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSSee the
+//    GNU General Public License for more details.
+//
+//    You should have received a copy of the GNU General Public License
+//    along with this program.  If not, see <http://wnu.org/licenses/>.
+
+
 package jd.controlling;
 
 import java.io.File;
@@ -197,8 +214,8 @@ public class JDController implements PluginListener, ControlListener, UIListener
                 saveDownloadLinks(JDUtilities.getResourceFile("links.dat"));
 
                 this.addToFinished(lastDownloadFinished);
-                if (this.getMissingPackageFiles(lastDownloadFinished) == 0) {
-                    Interaction.handleInteraction(Interaction.INTERACTION_DOWNLOAD_PACKAGE_FINISHED, this);
+                if (this.getMissingpackageFiles(lastDownloadFinished) == 0) {
+                    Interaction.handleInteraction(Interaction.INTERACTION_DOWNLOAD_package_FINISHED, this);
 
                     this.getInfoFileWriterModule().interact(lastDownloadFinished);
 
@@ -466,21 +483,21 @@ public class JDController implements PluginListener, ControlListener, UIListener
             }
 
             for (int i = 0; i < packages.size(); i++) {
-                Element filePackage = content.createElement("package");
+                Element FilePackage = content.createElement("package");
                 if (packages.get(i) == null) {
-                    filePackage.setAttribute("name", JDUtilities.Base64Encode("various"));
+                    FilePackage.setAttribute("name", JDUtilities.Base64Encode("various"));
                 }
                 else {
-                    filePackage.setAttribute("name", JDUtilities.Base64Encode(packages.get(i).getName()));
+                    FilePackage.setAttribute("name", JDUtilities.Base64Encode(packages.get(i).getName()));
                 }
 
-                content.getFirstChild().appendChild(filePackage);
+                content.getFirstChild().appendChild(FilePackage);
 
-                Vector<DownloadLink> tmpLinks = this.getPackageFiles(packages.get(i), links);
+                Vector<DownloadLink> tmpLinks = this.getpackageFiles(packages.get(i), links);
 
                 for (int x = 0; x < tmpLinks.size(); x++) {
                     Element file = content.createElement("file");
-                    filePackage.appendChild(file);
+                    FilePackage.appendChild(file);
                     Element url = content.createElement("url");
                     Element pw = content.createElement("password");
                     Element comment = content.createElement("comment");
@@ -488,10 +505,10 @@ public class JDController implements PluginListener, ControlListener, UIListener
                     if (packages.get(i) != null) {
                         pw.appendChild(content.createTextNode(JDUtilities.Base64Encode(packages.get(i).getPassword())));
                         comment.appendChild(content.createTextNode(JDUtilities.Base64Encode(packages.get(i).getComment())));
-                        filePackage.getLastChild().appendChild(pw);
-                        filePackage.getLastChild().appendChild(comment);
+                        FilePackage.getLastChild().appendChild(pw);
+                        FilePackage.getLastChild().appendChild(comment);
                     }
-                    filePackage.getLastChild().appendChild(url);
+                    FilePackage.getLastChild().appendChild(url);
 
                 }
 
@@ -528,11 +545,11 @@ public class JDController implements PluginListener, ControlListener, UIListener
         Vector<URL> services;
         try {
             services = new Vector<URL>();
-            services.add(new URL("http://dlcrypt1.ath.cx/service.php"));
-            services.add(new URL("http://dlcrypt2.ath.cx/service.php"));
-            services.add(new URL("http://dlcrypt3.ath.cx/service.php"));
+            //services.add(new URL("http://dlcrypt1.ath.cx/service.php"));
+            //services.add(new URL("http://dlcrypt2.ath.cx/service.php"));
+            //services.add(new URL("http://dlcrypt3.ath.cx/service.php"));
             services.add(new URL("http://dlcrypt4.ath.cx/service.php"));
-            services.add(new URL("http://dlcrypt5.ath.cx/service.php"));
+            //services.add(new URL("http://dlcrypt5.ath.cx/service.php"));
             Collections.sort(services,new Comparator<Object>() {
                 public int compare(Object a, Object b) {
                     return (int)((Math.random()*4.0)-2.0);
@@ -810,12 +827,12 @@ public class JDController implements PluginListener, ControlListener, UIListener
     }
 
     /**
-     * Gibt ale links zurück die im selben Package sind wie downloadLink
+     * Gibt ale links zurück die im selben package sind wie downloadLink
      * 
      * @param downloadLink
-     * @return Alle DownloadLinks die zum selben Package gehören
+     * @return Alle DownloadLinks die zum selben package gehören
      */
-    public Vector<DownloadLink> getPackageFiles(DownloadLink downloadLink) {
+    public Vector<DownloadLink> getpackageFiles(DownloadLink downloadLink) {
         Vector<DownloadLink> ret = new Vector<DownloadLink>();
         // ret.add(downloadLink);
         Iterator<DownloadLink> iterator = downloadLinks.iterator();
@@ -827,7 +844,7 @@ public class JDController implements PluginListener, ControlListener, UIListener
         return ret;
     }
 
-    public Vector<DownloadLink> getPackageFiles(FilePackage filepackage) {
+    public Vector<DownloadLink> getpackageFiles(FilePackage FilePackage) {
         Vector<DownloadLink> ret = new Vector<DownloadLink>();
         // ret.add(downloadLink);
 
@@ -836,12 +853,12 @@ public class JDController implements PluginListener, ControlListener, UIListener
         while (iterator.hasNext()) {
             nextDownloadLink = iterator.next();
 
-            if (filepackage == nextDownloadLink.getFilePackage()) ret.add(nextDownloadLink);
+            if (FilePackage == nextDownloadLink.getFilePackage()) ret.add(nextDownloadLink);
         }
         return ret;
     }
 
-    public Vector<DownloadLink> getPackageFiles(FilePackage filepackage, Vector<DownloadLink> links) {
+    public Vector<DownloadLink> getpackageFiles(FilePackage FilePackage, Vector<DownloadLink> links) {
         Vector<DownloadLink> ret = new Vector<DownloadLink>();
         // ret.add(downloadLink);
 
@@ -850,7 +867,7 @@ public class JDController implements PluginListener, ControlListener, UIListener
         while (iterator.hasNext()) {
             nextDownloadLink = iterator.next();
 
-            if (filepackage == nextDownloadLink.getFilePackage()) ret.add(nextDownloadLink);
+            if (FilePackage == nextDownloadLink.getFilePackage()) ret.add(nextDownloadLink);
         }
         return ret;
     }
@@ -861,7 +878,7 @@ public class JDController implements PluginListener, ControlListener, UIListener
      * @param downloadLink
      * @return Anzahl der fertigen Files in diesem paket
      */
-    public int getPackageReadyNum(DownloadLink downloadLink) {
+    public int getpackageReadyNum(DownloadLink downloadLink) {
         int i = 0;
         if (downloadLink.getStatus() == DownloadLink.STATUS_DONE) i++;
         Iterator<DownloadLink> iterator = downloadLinks.iterator();
@@ -879,7 +896,7 @@ public class JDController implements PluginListener, ControlListener, UIListener
      * @param downloadLink
      * @return Anzahl der fehlenden Files in diesem Paket
      */
-    public int getMissingPackageFiles(DownloadLink downloadLink) {
+    public int getMissingpackageFiles(DownloadLink downloadLink) {
         int i = 0;
         if (downloadLink.getStatus() != DownloadLink.STATUS_DONE) i++;
         Iterator<DownloadLink> iterator = downloadLinks.iterator();

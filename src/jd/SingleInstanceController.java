@@ -1,4 +1,4 @@
-package jd;
+package
 
 import java.net.MalformedURLException;
 import java.rmi.AccessException;
@@ -48,6 +48,7 @@ public class SingleInstanceController extends RemoteObject {
         Properties p = System.getProperties();
         p.setProperty("sun.rmi.transport.tcp.handshakeTimeout", "1000");
         Remote app = SingleInstanceController.getRMIObject(SingleInstanceController.RMI_PORT, SingleInstanceController.RMI_NAME);
+       
         if (app == null)
             return false;
         else
