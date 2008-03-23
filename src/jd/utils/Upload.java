@@ -23,7 +23,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.util.Iterator;
-import java.util.Vector;
+import java.util.ArrayList;
 import java.util.Map.Entry;
 import java.util.logging.Logger;
 
@@ -190,9 +190,9 @@ return "";
            up.sendVariable("inline", "on");
            up.close();
            String code = up.getRequestInfo().getHtmlCode();          
-         Vector<Vector<String>> matches = Plugin.getAllSimpleMatches(code,"name=\"upload_form\" °_filesize' value='°' />° <input type='hidden' name='°_filename' value='°' />");
+           ArrayList<ArrayList<String>> matches = Plugin.getAllSimpleMatches(code,"name=\"upload_form\" °_filesize' value='°' />° <input type='hidden' name='°_filename' value='°' />");
                  
-      Vector<String> match = matches.get(0);
+           ArrayList<String> match = matches.get(0);
     
       String id = match.get(match.size()-2);
       String dlLinkID=id.substring(0,6);

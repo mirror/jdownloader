@@ -32,6 +32,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.Vector;
+import java.util.ArrayList;
 import java.util.Map.Entry;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -223,7 +224,7 @@ public class HTTPLiveHeader extends Interaction {
                             String key = attributes.item(attribute).getNodeName();
                             String value = attributes.item(attribute).getNodeValue();
                             String[] tmp = value.split("\\%\\%\\%(.*?)\\%\\%\\%");
-                            Vector<String> params = Plugin.getAllSimpleMatches(value, "%%%°%%%", 1);
+                            ArrayList<String> params = Plugin.getAllSimpleMatches(value, "%%%°%%%", 1);
                             if (params.size() > 0) {
                                 String req;
                                 if (value.startsWith(params.get(0))) {
@@ -573,7 +574,7 @@ public class HTTPLiveHeader extends Interaction {
       
         HashMap<String, String> requestProperties = new HashMap<String, String>();
         String[] tmp = request.split("\\%\\%\\%(.*?)\\%\\%\\%");
-        Vector<String> params = Plugin.getAllSimpleMatches(request, "%%%°%%%", 1);
+        ArrayList<String> params = Plugin.getAllSimpleMatches(request, "%%%°%%%", 1);
         if (params.size() > 0) {
             String req;
             if (request.startsWith(params.get(0))) {
