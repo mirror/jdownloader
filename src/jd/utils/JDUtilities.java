@@ -129,7 +129,7 @@ public class JDUtilities {
     /**
      * Titel der Applikation
      */
-    public static final String                       JD_VERSION          = "0.0.";
+    public static final String                       JD_VERSION          = "0.";
 
     public static final String                       JD_REVISION         = "$Id$";
 
@@ -273,7 +273,11 @@ public class JDUtilities {
      */
     public static String getRevision() {
         String[] data = JD_REVISION.split(" ");
-        if (data.length > 2) return data[2];
+        if (data.length > 2){
+            int rev=JDUtilities.filterInt(data[2]);
+            double r=(double)rev/1000.0;
+            return r+"";
+        }
         return null;
     }
 
