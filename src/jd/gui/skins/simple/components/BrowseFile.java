@@ -86,11 +86,34 @@ public class BrowseFile extends JPanel implements ActionListener {
     public void setButtonText(String text) {
         btnBrowse.setText(text);
     }
+    
+    /**
+     * 
+     * @return null or a File object pointing to a directory
+     */
+    private File getDirectoryFromTxtInput(){
+    	File directory = null;
+    	String stringPath = txtInput.getText();
+    	
+    	if( null != stringPath){
+    		directory = new File(txtInput.getText());
+    		if( directory.exists()){
+    			if(directory.isFile()){
+    				directory = directory.getParentFile();
+    			}
+    		}else{
+    			directory = null;
+    		}
+    	}
+    	
+    	return directory;
+    }
 
     private File getPath() {
         JDFileChooser fc = new JDFileChooser();
         fc.setApproveButtonText(approveButtonText);      
         fc.setFileSelectionMode(fileSelectionMode);
+        fc.setCurrentDirectory(getDirectoryFromTxtInput());
         fc.showOpenDialog(this);
         File ret = fc.getSelectedFile();   
         return ret;
@@ -104,8 +127,7 @@ public class BrowseFile extends JPanel implements ActionListener {
             newPath = new File(txtInput.getText());
             setCurrentPath(newPath);
             this.dispatchEvent(event);
-        }
-        if (e.getSource() == btnBrowse) {
+        }else if (e.getSource() == btnBrowse) {
             newPath = getPath();
             setCurrentPath(newPath);
             this.dispatchEvent(event);
