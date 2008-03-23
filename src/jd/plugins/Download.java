@@ -354,7 +354,11 @@ public class Download {
             downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN);
             return false;
         }
-
+        if (errors.contains(ERROR_TIMEOUT_REACHED)) {
+            plugin.getCurrentStep().setStatus(PluginStep.STATUS_ERROR);
+            downloadLink.setStatus(DownloadLink.STATUS_ERROR_NOCONNECTION);
+            return false;
+        }
         plugin.getCurrentStep().setStatus(PluginStep.STATUS_DONE);
         downloadLink.setStatus(DownloadLink.STATUS_DONE);
         return true;
@@ -395,10 +399,10 @@ public class Download {
         // if (System.currentTimeMillis() < (lastChunkSpeedCheck + 1000)) return
         // lastMaxChunkSpeed;
         // this.lastChunkSpeedCheck = System.currentTimeMillis();
-        int allowedLinkSpeed = downloadLink.getMaximalspeed() * 40;
-
+        int allowedLinkSpeed = downloadLink.getMaximalspeed();
+        //allowedLinkSpeed=800000;
         int chunkSpeed = allowedLinkSpeed / getRunningChunks();
-        // logger.info("Allowedperchunk "+chunkSpeed+"/"+allowedLinkSpeed);
+        //logger.info("Allowedperchunk "+chunkSpeed+"/"+allowedLinkSpeed);
         Iterator<Chunk> it = chunks.iterator();
         Chunk next;
 
@@ -562,7 +566,7 @@ public class Download {
         }
 
         private int getTimeInterval() {
-            if (!downloadLink.isLimited) return 1000;
+            if (!downloadLink.isLimited()) return 1000;
 
             return (int) (1000 * this.bufferTimeFaktor);
 
@@ -607,7 +611,7 @@ public class Download {
                 int bytes;
                 int block = 0;
                 int tempBuff = 0;
-              
+                long addWait;
                 byte b[]= new byte[1];
                 int read=0;
                 while (!plugin.aborted && !downloadLink.isAborted() && !abortByError) {
@@ -636,7 +640,8 @@ public class Download {
                                     buffer.put(b);
                                     block=1;   
                                     //Pause falls das Ende nicht erreicht worden ist. Die Schelife läuft zu schnell
-                                    Thread.sleep(100);
+                                    //logger.info("Pause");
+                                    //Thread.sleep(25);
                                 }else if (read<0){
                                     block=-1;
                                     break;
@@ -667,7 +672,10 @@ public class Download {
 
                     if (block == -1 || abortByError || plugin.aborted || downloadLink.isAborted()) break;
                     try {
-                        Thread.sleep(getTimeInterval() - (System.currentTimeMillis() - timer));
+                        
+                        addWait=getTimeInterval() - (System.currentTimeMillis() - timer);
+                        //logger.info(getTimeInterval()+" - "+addWait+" = "+((100*addWait)/getTimeInterval())+"");
+                        if(addWait>0)Thread.sleep(addWait);
                     }
                     catch (Exception e) {
                     }
@@ -746,7 +754,7 @@ public class Download {
         }
 
         private int getBufferSize(int maxspeed) {
-            if (!downloadLink.isLimited) return MAX_BUFFERSIZE;
+            if (!downloadLink.isLimited()) return MAX_BUFFERSIZE;
             int bufferSize = Math.min(MAX_BUFFERSIZE, Math.max(MIN_BUFFERSIZE, maxspeed));
             this.bufferTimeFaktor = Math.max(0.1, (double) bufferSize / maxspeed);
             return bufferSize;
@@ -759,7 +767,7 @@ public class Download {
     }
 
     public boolean isSpeedLimited() {
-        return speedLimited && downloadLink.isLimited;
+        return speedLimited && downloadLink.isLimited();
     }
 
 

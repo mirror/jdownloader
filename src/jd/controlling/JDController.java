@@ -14,7 +14,6 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://wnu.org/licenses/>.
 
-
 package jd.controlling;
 
 import java.io.File;
@@ -128,10 +127,12 @@ public class JDController implements PluginListener, ControlListener, UIListener
     private Unrar                             unrarModule;
 
     private InfoFileWriter                    infoFileWriterModule;
-    public static Property FLAGS= new Property();
+
+    public static Property                    FLAGS                            = new Property();
+
     private int                               initStatus                       = -1;
 
-    private Vector<Vector<String>> waitingUpdates;
+    private Vector<Vector<String>>            waitingUpdates;
 
     public JDController() {
         downloadLinks = new Vector<DownloadLink>();
@@ -146,7 +147,7 @@ public class JDController implements PluginListener, ControlListener, UIListener
      * Initialisiert alle Interactions
      */
     @SuppressWarnings("unchecked")
-	private void initInteractions() {
+    private void initInteractions() {
         Vector<Interaction> interactions = (Vector<Interaction>) JDUtilities.getSubConfig(Configuration.CONFIG_INTERACTIONS).getProperty(Configuration.PARAM_INTERACTIONS, new Vector<Interaction>());
 
         for (int i = 0; i < interactions.size(); i++) {
@@ -526,10 +527,8 @@ public class JDController implements PluginListener, ControlListener, UIListener
         return null;
     }
 
-  
-
     public String encryptDLC(String xml) {
-         //if(true)return xml;
+        // if(true)return xml;
         String[] encrypt = JDUtilities.encrypt(xml, "DLC Parser");
 
         // logger.info(encrypt[1] + " - ");
@@ -545,30 +544,30 @@ public class JDController implements PluginListener, ControlListener, UIListener
         Vector<URL> services;
         try {
             services = new Vector<URL>();
-            //services.add(new URL("http://dlcrypt1.ath.cx/service.php"));
-            //services.add(new URL("http://dlcrypt2.ath.cx/service.php"));
-            //services.add(new URL("http://dlcrypt3.ath.cx/service.php"));
+            // services.add(new URL("http://dlcrypt1.ath.cx/service.php"));
+            // services.add(new URL("http://dlcrypt2.ath.cx/service.php"));
+            // services.add(new URL("http://dlcrypt3.ath.cx/service.php"));
             services.add(new URL("http://dlcrypt4.ath.cx/service.php"));
-            //services.add(new URL("http://dlcrypt5.ath.cx/service.php"));
-            Collections.sort(services,new Comparator<Object>() {
+            // services.add(new URL("http://dlcrypt5.ath.cx/service.php"));
+            Collections.sort(services, new Comparator<Object>() {
                 public int compare(Object a, Object b) {
-                    return (int)((Math.random()*4.0)-2.0);
+                    return (int) ((Math.random() * 4.0) - 2.0);
 
                 }
 
             });
             services.add(0, new URL("http://dlcrypt.ath.cx/service.php"));
             Iterator<URL> it = services.iterator();
-         //   int url = 0;
+            // int url = 0;
             while (it.hasNext()) {
                 URL service = it.next();
                 try {
                     String dlcKey = callService(service, key);
-                    if(dlcKey==null){
+                    if (dlcKey == null) {
                         continue;
                     }
-                    return xml+dlcKey;
-                }            
+                    return xml + dlcKey;
+                }
                 catch (Exception e) {
                     e.printStackTrace();
                 }
@@ -582,34 +581,34 @@ public class JDController implements PluginListener, ControlListener, UIListener
 
     private String callService(URL service, String key) throws Exception {
         logger.finer("Call " + service);
-       // int tc=Plugin.getConnectTimeoutFromConfiguration();
-      //  int tr=Plugin.getReadTimeoutFromConfiguration();
-        
-      
-        RequestInfo ri = Plugin.getRequestWithoutHtmlCode(service, null, null, false,2000,2000);
-       
+        // int tc=Plugin.getConnectTimeoutFromConfiguration();
+        // int tr=Plugin.getReadTimeoutFromConfiguration();
+
+        RequestInfo ri = Plugin.getRequestWithoutHtmlCode(service, null, null, false, 2000, 2000);
+
         if (!ri.isOK() || ri.getLocation() == null) {
-         
+
             return null;
         }
 
         logger.finer("Call Redirect: " + ri.getLocation());
 
-        ri = Plugin.postRequest(new URL(ri.getLocation()), null, null, null, "jd=1&srcType=plain&data=" + key, true,2000,2000);
-     
+        ri = Plugin.postRequest(new URL(ri.getLocation()), null, null, null, "jd=1&srcType=plain&data=" + key, true, 2000, 2000);
+
         logger.info("Call re: " + ri.getHtmlCode());
         if (!ri.isOK() || !ri.containsHTML("<rc>")) {
-     
+
             return null;
-        }else {
+        }
+        else {
             String dlcKey = ri.getHtmlCode();
 
             dlcKey = Plugin.getBetween(dlcKey, "<rc>", "</rc>");
             if (dlcKey.trim().length() < 80) {
-           
+
                 return null;
-            }    
-   
+            }
+
             return dlcKey;
         }
 
@@ -617,8 +616,8 @@ public class JDController implements PluginListener, ControlListener, UIListener
 
     public void saveDLC(File file) {
 
-        String xml = JDUtilities.createContainerString(this.getDownloadLinks(),"DLC Parser");
-       // String[] encrypt = JDUtilities.encrypt(xml, "DLC Parser");
+        String xml = JDUtilities.createContainerString(this.getDownloadLinks(), "DLC Parser");
+        // String[] encrypt = JDUtilities.encrypt(xml, "DLC Parser");
         String cipher = encryptDLC(xml);
         if (cipher != null) {
 
@@ -634,21 +633,22 @@ public class JDController implements PluginListener, ControlListener, UIListener
         this.getUiInterface().showMessageDialog("Container encryption failed");
     }
 
-    public boolean isLocalFileInProgress(DownloadLink link){
-        
+    public boolean isLocalFileInProgress(DownloadLink link) {
+
         Iterator<DownloadLink> iterator = downloadLinks.iterator();
         DownloadLink nextDownloadLink = null;
         while (iterator.hasNext()) {
             nextDownloadLink = iterator.next();
-            if (nextDownloadLink.getStatus() == DownloadLink.STATUS_DOWNLOAD_IN_PROGRESS &&nextDownloadLink.getFileOutput().equalsIgnoreCase(link.getFileOutput())) {
-             logger.info("Link owner: "+nextDownloadLink.getHost()+nextDownloadLink);
-                return true;  
-                
+            if (nextDownloadLink.getStatus() == DownloadLink.STATUS_DOWNLOAD_IN_PROGRESS && nextDownloadLink.getFileOutput().equalsIgnoreCase(link.getFileOutput())) {
+                logger.info("Link owner: " + nextDownloadLink.getHost() + nextDownloadLink);
+                return true;
+
             }
 
         }
         return false;
     }
+
     /**
      * Lädt eine LinkListe
      * 
@@ -690,7 +690,7 @@ public class JDController implements PluginListener, ControlListener, UIListener
                         // passendes Plugin gesucht
                         try {
                             if (localLink.getContainer() != null) {
-                                pluginForContainer = JDUtilities.getPluginForContainer(localLink.getContainer(),localLink.getContainerFile());
+                                pluginForContainer = JDUtilities.getPluginForContainer(localLink.getContainer(), localLink.getContainerFile());
                                 if (pluginForContainer != null) {
                                     // pluginForContainer =
                                     // pluginForContainer.getPlugin(localLink.getContainerFile());
@@ -721,8 +721,8 @@ public class JDController implements PluginListener, ControlListener, UIListener
                     return links;
                 }
             }
-          
-           return null;
+
+            return null;
         }
         catch (Exception e) {
             e.printStackTrace();
@@ -784,7 +784,7 @@ public class JDController implements PluginListener, ControlListener, UIListener
     public boolean isContainerFile(File file) {
 
         Vector<PluginForContainer> pluginsForContainer = JDUtilities.getPluginsForContainer();
-    //    Vector<DownloadLink> downloadLinks = new Vector<DownloadLink>();
+        // Vector<DownloadLink> downloadLinks = new Vector<DownloadLink>();
         PluginForContainer pContainer;
 
         for (int i = 0; i < pluginsForContainer.size(); i++) {
@@ -915,16 +915,15 @@ public class JDController implements PluginListener, ControlListener, UIListener
      * @return Anzahld er laufenden Downloadsl
      */
     public int getRunningDownloadNum() {
-        int ret = 0;    
+        int ret = 0;
         DownloadLink nextDownloadLink = null;
-        for(int i=0;i<downloadLinks.size();i++) {
-            if(downloadLinks.size()<=i)continue;
+        for (int i = 0; i < downloadLinks.size(); i++) {
+            if (downloadLinks.size() <= i) continue;
             nextDownloadLink = downloadLinks.get(i);
-            if (nextDownloadLink.getStatus() == DownloadLink.STATUS_DOWNLOAD_IN_PROGRESS) ret++;       
+            if (nextDownloadLink.getStatus() == DownloadLink.STATUS_DOWNLOAD_IN_PROGRESS) ret++;
         }
-    return ret;
-}
-    
+        return ret;
+    }
 
     /**
      * Der Benuter soll den Captcha Code erkennen
@@ -933,9 +932,9 @@ public class JDController implements PluginListener, ControlListener, UIListener
      * @param captchaAddress Adresse des anzuzeigenden Bildes
      * @return Text des Captchas
      */
-    public String getCaptchaCodeFromUser(Plugin plugin, File captchaAddress,String def) {
-        String captchaCode = uiInterface.getCaptchaCodeFromUser(plugin, captchaAddress,def);
-        return captchaCode; 
+    public String getCaptchaCodeFromUser(Plugin plugin, File captchaAddress, String def) {
+        String captchaCode = uiInterface.getCaptchaCodeFromUser(plugin, captchaAddress, def);
+        return captchaCode;
     }
 
     /**
@@ -991,65 +990,23 @@ public class JDController implements PluginListener, ControlListener, UIListener
      */
     public int getSpeedMeter() {
         Iterator<DownloadLink> iter = getDownloadLinks().iterator();
-        int ret = 0;
-        int c = 0;
+        int totalCurrentSpeed = 0;
+        int downloadsInProgress = 0;
+        int speedDif = 0;
+        
         int maxspeed = JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, 0) * 1024;
         boolean isLimited = (maxspeed != 0);
         while (iter.hasNext()) {
             DownloadLink element = (DownloadLink) iter.next();
             if (element.isInProgress()) {
-                c++;
-                ret += element.getDownloadSpeed();
-                element.isLimited = isLimited;
+                downloadsInProgress++;
+                totalCurrentSpeed += element.getDownloadSpeed();
+                
+                element.setLimited(isLimited);
             }
         }
-
-        if (c > 0) {
-
-            if (maxspeed != 0) {
-                int maxsp = maxspeed / c;
-                int overhead = 0;
-                iter = getDownloadLinks().iterator();
-                while (iter.hasNext()) {
-                    DownloadLink element = (DownloadLink) iter.next();
-                    if (element.isInProgress()) {
-                        int elspeed = element.getDownloadSpeed();
-                        int sp = maxsp + overhead;
-                        if (elspeed < sp)
-                            overhead = sp - elspeed;
-                        else
-                            overhead = 0;
-                        element.setMaximalspeed(sp);
-
-                    }
-                }
-                if (overhead > 0) {
-                    iter = getDownloadLinks().iterator();
-                    int sp = maxsp + overhead;
-                    while (iter.hasNext()) {
-                        DownloadLink element = (DownloadLink) iter.next();
-                        if (element.isInProgress()) {
-                            if (element.getMaximalspeed() < sp) {
-                                element.setMaximalspeed(sp);
-                                break;
-                            }
-
-                        }
-                    }
-                }
-            }
-            else {
-                iter = getDownloadLinks().iterator();
-                int sp = ret + 204800;
-                while (iter.hasNext()) {
-                    DownloadLink element = (DownloadLink) iter.next();
-                    if (element.isInProgress()) {
-                        element.setMaximalspeed(sp);
-                    }
-                }
-            }
-        }
-        return ret;
+       
+        return totalCurrentSpeed;
     }
 
     /**
@@ -1161,7 +1118,8 @@ public class JDController implements PluginListener, ControlListener, UIListener
         boolean ret = false;
         if (type.equals(JDLocale.L("modules.reconnect.types.extern", "Extern"))) {
             ret = new ExternReconnect().interact(null);
-        }else  if (type.equals(JDLocale.L("modules.reconnect.types.batch", "Batch"))) {
+        }
+        else if (type.equals(JDLocale.L("modules.reconnect.types.batch", "Batch"))) {
             ret = new BatchReconnect().interact(null);
         }
         else {
@@ -1211,12 +1169,13 @@ public class JDController implements PluginListener, ControlListener, UIListener
     }
 
     public void setWaitingUpdates(Vector<Vector<String>> files) {
-        this.waitingUpdates=files;
-        
+        this.waitingUpdates = files;
+
     }
+
     public Vector<Vector<String>> getWaitingUpdates() {
         return this.waitingUpdates;
-        
+
     }
 
 }

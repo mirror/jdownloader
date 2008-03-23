@@ -267,7 +267,10 @@ public class SingleDownloadController extends ControlMulticaster {
                     break;
                 case DownloadLink.STATUS_ERROR_CHUNKLOAD_FAILED:
                     this.onErrorChunkloadFailed(downloadLink, plugin, step);
-                    break;   
+                    break;  
+                case DownloadLink.STATUS_ERROR_NOCONNECTION:
+                    this.onErrorNoConnection(downloadLink, plugin, step);
+                    break; 
                     
                 default:
                     logger.info("Uknown error id: " + downloadLink.getStatus());
@@ -297,6 +300,21 @@ public class SingleDownloadController extends ControlMulticaster {
 
         }
 
+    }
+
+    private void onErrorNoConnection(DownloadLink downloadLink2, PluginForHost plugin, PluginStep step) {
+        logger.severe("Error occurred: No Serverconnection");
+        long milliSeconds=10*60*1000;
+        try{
+        milliSeconds= (Long) step.getParameter();
+        }catch(Exception e){}
+        
+        downloadLink.setEndOfWaittime(System.currentTimeMillis() + milliSeconds);
+        downloadLink.setStatusText(JDLocale.L("controller.status.noConnaction", "Keine Verbindung")+" ");
+
+        //downloadLink.setEnabled(false);
+        fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SINGLE_DOWNLOAD_CHANGED, downloadLink));
+        
     }
 
     private void onErrorChunkloadFailed(DownloadLink downloadLink, PluginForHost plugin, PluginStep step) {
@@ -430,7 +448,7 @@ public class SingleDownloadController extends ControlMulticaster {
      */
     private void onErrorTooManyUsers(DownloadLink downloadLink, PluginForHost plugin, PluginStep step) {
         logger.severe("Error occurred: Temporarily to many users");
-        long milliSeconds=20*60*1000;
+        long milliSeconds=2*60*1000;
         try{
         milliSeconds= (Long) step.getParameter();
         }catch(Exception e){}

@@ -145,7 +145,7 @@ public class DownloadLink implements Serializable, Comparable<DownloadLink> {
     /**
      * serialVersionUID
      */
-    private FilePackage                  FilePackage;
+    private FilePackage                  filePackage;
 
     private static final long            serialVersionUID                              = 1981079856214268373L;
 
@@ -160,6 +160,8 @@ public class DownloadLink implements Serializable, Comparable<DownloadLink> {
     public static final int              STATUS_ERROR_OUTPUTFILE_OWNED_BY_ANOTHER_LINK = 24;
 
     public static final int STATUS_ERROR_CHUNKLOAD_FAILED = 25;
+
+    public static final int STATUS_ERROR_NOCONNECTION = 26;
 
     /**
      * Statustext der von der GUI abgefragt werden kann
@@ -290,7 +292,7 @@ public class DownloadLink implements Serializable, Comparable<DownloadLink> {
 
     private transient String             tempUrlDownload;
 
-    public boolean                       isLimited                                     = (JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, 0) != 0);
+    private boolean                       limited                                     = (JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, 0) != 0);
 
     private transient Download           downloadInstance;
 
@@ -308,7 +310,7 @@ public class DownloadLink implements Serializable, Comparable<DownloadLink> {
         this.plugin = plugin;
         this.name = name;
         sourcePluginPasswords = new Vector<String>();
-
+        inProgress=false;
         downloadMax = 0;
         this.host = host;
         this.isEnabled = isEnabled;
@@ -801,8 +803,10 @@ public class DownloadLink implements Serializable, Comparable<DownloadLink> {
      * @return FilePackage
      */
     public FilePackage getFilePackage() {
-
-        return FilePackage;
+        if(filePackage==null){
+            filePackage=new FilePackage();
+        }
+        return filePackage;
     }
 
     /**
@@ -811,7 +815,7 @@ public class DownloadLink implements Serializable, Comparable<DownloadLink> {
      * @param FilePackage
      */
     public void setFilePackage(FilePackage FilePackage) {
-        this.FilePackage = FilePackage;
+        this.filePackage = FilePackage;
     }
 
     /**
@@ -964,18 +968,20 @@ public class DownloadLink implements Serializable, Comparable<DownloadLink> {
 
     public int getMaximalspeed() {
         // return 5000000/40;
+     
         int maxspeed = JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, 0) * 1024;
-
+     
         if (maxspeed == 0) maxspeed = Integer.MAX_VALUE;
         maxspeed = Math.max(1, maxspeed / (Math.max(1, JDUtilities.getController().getRunningDownloadNum())));
 
-        return maxspeed / 40;
+        return maxspeed;
+       
         // return maximalspeed;
     }
 
     public void setMaximalspeed(int maximalspeed) {
         int diff = this.maximalspeed - maximalspeed;
-        if (diff > 500 || diff < 500) this.maximalspeed = maximalspeed / 40;
+        if (diff > 500 || diff < 500) this.maximalspeed = maximalspeed ;
     }
 
     public void setLinkType(int linktypeContainer) {
@@ -997,5 +1003,13 @@ public class DownloadLink implements Serializable, Comparable<DownloadLink> {
 
     public Download getDownloadInstance() {
         return downloadInstance;
+    }
+
+    public boolean isLimited() {
+        return limited;
+    }
+
+    public void setLimited(boolean limited) {
+        this.limited = limited;
     }
 }
