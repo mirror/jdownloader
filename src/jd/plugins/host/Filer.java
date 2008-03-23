@@ -23,6 +23,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
 import java.util.Vector;
+import java.util.ArrayList;
 import java.util.regex.Pattern;
 
 import jd.plugins.Download;
@@ -106,10 +107,10 @@ public class Filer extends PluginForHost {
                             if (requestInfo.getHtmlCode().contains(FILE_NOT_FOUND2)) {
                                 return step;
                             }
-                            Vector<Vector<String>> matches = getAllSimpleMatches(requestInfo.getHtmlCode(), INFO);
+                            ArrayList<ArrayList<String>> matches = getAllSimpleMatches(requestInfo.getHtmlCode(), INFO);
                             if(matches.size()<id)
                                 return step;
-                            Vector<String> link = matches.get(id);
+                            ArrayList<String> link = matches.get(id);
                         url="http://www.filer.net"+link.get(0);
 
                         requestInfo = getRequest(new URL(url));
@@ -245,7 +246,7 @@ public class Filer extends PluginForHost {
                 if (requestInfo.getHtmlCode().contains(FILE_NOT_FOUND2)) {
                     return false;
                 }
-                Vector<Vector<String>> matches = getAllSimpleMatches(requestInfo.getHtmlCode(), INFO);
+                ArrayList<ArrayList<String>> matches = getAllSimpleMatches(requestInfo.getHtmlCode(), INFO);
                 if(matches.size()<id)
                     return false;
                 Vector<String> link = matches.get(id);

@@ -23,6 +23,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 
 import java.util.Vector;
+import java.util.ArrayList;
 import java.util.regex.Pattern;
 
 import jd.plugins.Download;
@@ -80,9 +81,9 @@ public class ImageFap extends PluginForHost {
             if (step.getStep() == PluginStep.STEP_DOWNLOAD) {
                 requestInfo = getRequest(new URL(downloadLink.getDownloadURL()));
                 Vector<String> Images = new Vector<String>();
-                Vector<Vector<String>> matches = getAllSimpleMatches(requestInfo.getHtmlCode(), LINKS);
-                Vector<Vector<String>> pagematches = getAllSimpleMatches(requestInfo.getHtmlCode(), PAGES);
-                Vector<Vector<String>> pagematches2 = getAllSimpleMatches(requestInfo.getHtmlCode(), PAGES2);
+                ArrayList<ArrayList<String>> matches = getAllSimpleMatches(requestInfo.getHtmlCode(), LINKS);
+                ArrayList<ArrayList<String>> pagematches = getAllSimpleMatches(requestInfo.getHtmlCode(), PAGES);
+                ArrayList<ArrayList<String>> pagematches2 = getAllSimpleMatches(requestInfo.getHtmlCode(), PAGES2);
                 String name = getFirstMatch(requestInfo.getHtmlCode(), NAME, 1);
                 for (int i = 0; i < matches.size(); i++) {
                     Images.add(matches.get(i).get(0) + ".jpg");

@@ -86,6 +86,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Set;
 import java.util.Vector;
+import java.util.ArrayList;
 import java.util.Map.Entry;
 import java.util.regex.Pattern;
 
@@ -758,7 +759,7 @@ public class Rapidshare extends PluginForHost {
                 }
                 // Vector<String> serverids = getAllSimpleMatches(ticketCode,
                 // patternForServer, 3);
-                Vector<String> serverstrings = getAllSimpleMatches(ticketCode, patternForServer, 7);
+                ArrayList<String> serverstrings = getAllSimpleMatches(ticketCode, patternForServer, 7);
                 logger.info(serverstrings + "");
 
                 // logger.info(ticketCode);
@@ -1081,7 +1082,7 @@ public class Rapidshare extends PluginForHost {
                             // href="http://rs214cg.rapidshare.com/files/50231143/dl/Discovery.rar">Download
                             // via Cogent</a><br>
 
-                            Vector<String> urlStrings = getAllSimpleMatches(requestInfo.getHtmlCode(), "<a href=\"http://rs°\">Download via °</a><br>", 1);
+                            ArrayList<String> urlStrings = getAllSimpleMatches(requestInfo.getHtmlCode(), "<a href=\"http://rs°\">Download via °</a><br>", 1);
 
                             logger.info("wished Mirror #1 Server " + serverAbb);
                             logger.info("wished Mirror #2 Server " + server2Abb);
