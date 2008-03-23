@@ -249,7 +249,7 @@ public class Filer extends PluginForHost {
                 ArrayList<ArrayList<String>> matches = getAllSimpleMatches(requestInfo.getHtmlCode(), INFO);
                 if(matches.size()<id)
                     return false;
-                Vector<String> link = matches.get(id);
+                ArrayList<String> link = matches.get(id);
                 downloadLink.setName(link.get(1));
                 if (link != null) {
                     try {
