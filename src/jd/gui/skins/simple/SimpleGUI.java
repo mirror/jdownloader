@@ -18,9 +18,11 @@
 package jd.gui.skins.simple;
 
 import java.awt.Component;
+import java.awt.Cursor;
 import java.awt.Dimension;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
+import java.awt.Image;
 import java.awt.Insets;
 import java.awt.Point;
 import java.awt.Toolkit;
@@ -51,11 +53,16 @@ import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JSeparator;
+import javax.swing.JSpinner;
 import javax.swing.JSplitPane;
+import javax.swing.JTextField;
 import javax.swing.JToolBar;
+import javax.swing.SpinnerNumberModel;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
 import javax.swing.WindowConstants;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 
 import jd.JDFileFilter;
 import jd.config.Configuration;
@@ -414,7 +421,9 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
     private void interval() {
         
         if (JDUtilities.getController() != null) {
+          
             statusBar.setSpeed(JDUtilities.getController().getSpeedMeter());
+            
         }
         if (hostPluginDataChanged != null) {
             tabDownloadTable.pluginEvent(hostPluginDataChanged);
@@ -1060,7 +1069,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
      * 
      * @author astaldo
      */
-    private class StatusBar extends JPanel {
+    private class StatusBar extends JPanel implements ChangeListener {
         /**
          * serialVersionUID
          */
@@ -1078,20 +1087,34 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
 
         private ImageIcon         imgInactive;
 
+        private JSpinner spMax;
+
+        private JButton btnConfirm;
+
         public StatusBar() {
             if (JDUtilities.getImage(JDTheme.I("gui.images.led_green")) != null) imgActive = new ImageIcon(JDUtilities.getImage(JDTheme.I("gui.images.led_green")));
             if (JDUtilities.getImage(JDTheme.I("gui.images.led_empty")) != null) imgInactive = new ImageIcon(JDUtilities.getImage(JDTheme.I("gui.images.led_empty")));
             setLayout(new GridBagLayout());
             lblMessage = new JLabel(JDLocale.L("sys.message.welcome"));
             lblSpeed = new JLabel();
-            lblPluginHostActive = new JLabel(imgInactive);
+            int maxspeed = JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, 0);
+            
+             spMax = new JSpinner();
+             spMax.setModel(new SpinnerNumberModel(maxspeed, 0, Integer.MAX_VALUE, 50));
+             spMax.setPreferredSize(new Dimension(60,20));
+             spMax.setToolTipText(JDLocale.L("gui.tooltip.statusbar.speedlimiter","Geschwindigkeitsbegrenzung festlegen(kb/s) [0:unendlich]"));
+             spMax.addChangeListener(this);
+    
+             lblPluginHostActive = new JLabel(imgInactive);
             lblPluginDecryptActive = new JLabel(imgInactive);
             lblPluginDecryptActive.setToolTipText(JDLocale.L("gui.tooltip.plugin_decrypt"));
             lblPluginHostActive.setToolTipText(JDLocale.L("gui.tooltip.plugin_host"));
             JDUtilities.addToGridBag(this, lblMessage, 0, 0, 1, 1, 1, 1, new Insets(0, 5, 0, 0), GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-            JDUtilities.addToGridBag(this, lblSpeed, 1, 0, 1, 1, 0, 0, new Insets(0, 5, 0, 5), GridBagConstraints.NONE, GridBagConstraints.WEST);
-            JDUtilities.addToGridBag(this, lblPluginHostActive, 2, 0, 1, 1, 0, 0, new Insets(0, 5, 0, 0), GridBagConstraints.NONE, GridBagConstraints.EAST);
-            JDUtilities.addToGridBag(this, lblPluginDecryptActive, 3, 0, 1, 1, 0, 0, new Insets(0, 5, 0, 5), GridBagConstraints.NONE, GridBagConstraints.EAST);
+            JDUtilities.addToGridBag(this, lblSpeed, 1, 0, 1, 1, 0, 0, new Insets(0, 0, 0, 0), GridBagConstraints.NONE, GridBagConstraints.WEST);
+            JDUtilities.addToGridBag(this, spMax, 2, 0, 1, 1, 0, 0, new Insets(0, 0, 0, 0), GridBagConstraints.NONE, GridBagConstraints.WEST);
+            
+            JDUtilities.addToGridBag(this, lblPluginHostActive, 3, 0, 1, 1, 0, 0, new Insets(0, 5, 0, 0), GridBagConstraints.NONE, GridBagConstraints.EAST);
+            JDUtilities.addToGridBag(this, lblPluginDecryptActive, 4, 0, 1, 1, 0, 0, new Insets(0, 0, 0, 0), GridBagConstraints.NONE, GridBagConstraints.EAST);
         }
 
         public void setText(String text) {
@@ -1105,12 +1128,16 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
          * @param speed bytes pro sekunde
          */
         public void setSpeed(Integer speed) {
-            if (speed < 0) return;
+            if (speed <= 0) {
+                lblSpeed.setText("");
+                return;
+            }
+            
             if (speed > 1024) {
-                lblSpeed.setText((speed / 1024) + JDLocale.L("gui.download.kbps", "kbytes/sek"));
+                lblSpeed.setText((speed / 1024)+  JDLocale.L("gui.download.kbps", "kb/s"));
             }
             else {
-                lblSpeed.setText(speed + JDLocale.L("gui.download.bps", "bytes/sek"));
+                lblSpeed.setText(speed + JDLocale.L("gui.download.bps", "bytes/s"));
             }
         }
 
@@ -1143,6 +1170,23 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
                 lbl.setIcon(imgActive);
             else
                 lbl.setIcon(imgInactive);
+        }
+
+        public void stateChanged(ChangeEvent e) {
+            int max = JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, 0);
+            
+            if(e.getSource()==spMax){
+                int value=(Integer)spMax.getValue();
+               
+                if(max!=value){                    
+                    JDUtilities.getSubConfig("DOWNLOAD").setProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, value);
+                    JDUtilities.getSubConfig("DOWNLOAD").save();
+                }
+                
+            }
+            
+           
+            
         }
     }
 

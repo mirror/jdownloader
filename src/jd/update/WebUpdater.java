@@ -94,9 +94,11 @@ public class WebUpdater implements Serializable {
             this.setListPath(path);
         }
         else {
+
+
             if(SubConfiguration.getSubConfig("WEBUPDATE").getBooleanProperty("WEBUPDATE_BETA",false)){
                 log("BETA");
-                this.setListPath("http://ns2.km32221.keymachine.de/jdownloader/betaupdate/");  
+                this.setListPath("http://jdbetaupdate.ath.cx");  
             }else{
                 log("STABLE");
             this.setListPath("http://jdupdatescript.ath.cx");

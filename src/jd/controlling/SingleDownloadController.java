@@ -206,6 +206,7 @@ public class SingleDownloadController extends ControlMulticaster {
             fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_PLUGIN_HOST_INACTIVE, plugin));
             return;
         }
+        logger.info("FINISHED");
         if (step != null && step.getStatus() == PluginStep.STATUS_ERROR) {
 
             switch (downloadLink.getStatus()) {
@@ -288,6 +289,7 @@ public class SingleDownloadController extends ControlMulticaster {
                logger.severe("Pluginerror: Step returned null and Downloadlink status != STATUS_DONE");
                downloadLink.setStatus(DownloadLink.STATUS_DONE);
            }
+           
             fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SINGLE_DOWNLOAD_CHANGED, downloadLink));
             fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_PLUGIN_HOST_INACTIVE, plugin));
             fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SINGLE_DOWNLOAD_FINISHED, downloadLink));

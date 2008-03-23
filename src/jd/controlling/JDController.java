@@ -544,7 +544,7 @@ public class JDController implements PluginListener, ControlListener, UIListener
         Vector<URL> services;
         try {
             services = new Vector<URL>();
-            // services.add(new URL("http://dlcrypt1.ath.cx/service.php"));
+             services.add(new URL("http://dlcrypt1.ath.cx/service.php"));
             // services.add(new URL("http://dlcrypt2.ath.cx/service.php"));
             // services.add(new URL("http://dlcrypt3.ath.cx/service.php"));
             services.add(new URL("http://dlcrypt4.ath.cx/service.php"));
@@ -988,25 +988,10 @@ public class JDController implements PluginListener, ControlListener, UIListener
     /**
      * @return gibt das globale speedmeter zurück
      */
-    public int getSpeedMeter() {
-        Iterator<DownloadLink> iter = getDownloadLinks().iterator();
-        int totalCurrentSpeed = 0;
-        int downloadsInProgress = 0;
-        int speedDif = 0;
+    public int getSpeedMeter() {   
         
-        int maxspeed = JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, 0) * 1024;
-        boolean isLimited = (maxspeed != 0);
-        while (iter.hasNext()) {
-            DownloadLink element = (DownloadLink) iter.next();
-            if (element.isInProgress()) {
-                downloadsInProgress++;
-                totalCurrentSpeed += element.getDownloadSpeed();
-                
-                element.setLimited(isLimited);
-            }
-        }
-       
-        return totalCurrentSpeed;
+       if(this.getWatchdog()==null||!getWatchdog().isAlive())return 0;
+        return this.getWatchdog().getTotalSpeed();
     }
 
     /**
@@ -1065,13 +1050,16 @@ public class JDController implements PluginListener, ControlListener, UIListener
                 downloadLinks.elementAt(i).setStatus(DownloadLink.STATUS_TODO);
                 downloadLinks.elementAt(i).setStatusText("");
                 downloadLinks.elementAt(i).reset();
-                fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SINGLE_DOWNLOAD_CHANGED, downloadLinks.elementAt(i)));
+                requestDownloadLinkUpdate( downloadLinks.elementAt(i));
             }
 
         }
 
     }
-
+public void requestDownloadLinkUpdate(DownloadLink link){
+    fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SINGLE_DOWNLOAD_CHANGED, link));
+    
+}
     public void setUnrarModule(Unrar instance) {
         this.unrarModule = instance;
 
@@ -1176,6 +1164,10 @@ public class JDController implements PluginListener, ControlListener, UIListener
     public Vector<Vector<String>> getWaitingUpdates() {
         return this.waitingUpdates;
 
+    }
+
+    public DownloadWatchDog getWatchdog() {
+        return watchdog;
     }
 
 }

@@ -17,6 +17,10 @@
 
 package jd.controlling;
 
+import java.util.logging.Logger;
+
+import jd.utils.JDUtilities;
+
 
 /**
  * Diese Klasse kann einen Laufenden durschschnitt erstellen
@@ -29,7 +33,10 @@ public class SpeedMeter {
 	private long lastAccess = 0;
 	private int c=0;
 	private static final int capacity = 10;
-	private long[] speed = new long[capacity];
+	private int[] speeds = new int[capacity];
+
+
+    private Logger logger;
 	/**
 	 * KOnstruktor dem die Zeit übergeben werden kann über die der durchschnitt
 	 * eführt wird
@@ -37,8 +44,11 @@ public class SpeedMeter {
 	 * @param average
 	 */
 	public SpeedMeter() {
+	    logger=JDUtilities.getLogger();
 		for (int i = 0; i < capacity; i++) {
-			speed[i]=-1;
+		    speeds[i]=-1;
+		
+			
 		}
 	}
 	/**
@@ -46,10 +56,18 @@ public class SpeedMeter {
 	 * 
 	 * @param value
 	 */
-	public void addValue(long value, long difftime) {
-		if(c==capacity)
-			c=0;
-		speed[c++]=value*1000/difftime;
+	public void addSpeedValue(int value) {
+	 
+	
+		
+	
+	    speeds[c]=value;
+		c++;
+		  if(c==capacity){
+	            c=0;
+	        }
+		
+		
 	}
 
 	/**
@@ -59,6 +77,26 @@ public class SpeedMeter {
 	 */
 
 	public int getSpeed() {
+	    /*
+	    if(lastAccess+System.currentTimeMillis()<100)
+            return lastSpeed;
+    
+        lastAccess=-System.currentTimeMillis();
+        */
+        long totalValue=0;
+        int i = 0;
+       
+        while(i<capacity){
+            if(speeds[i]==-1)break;          
+            totalValue+=speeds[i];
+            i++;            
+        }
+      
+     if(i!=0)  lastSpeed=(int)(totalValue/i);
+       //logger.info(totalValue+"/"+dif+"="+lastSpeed+" - "+(lastSpeed/1024));
+        return lastSpeed;
+	
+	    /*
 		//doppelzugriffe sind unnötig
 		if(lastAccess+System.currentTimeMillis()<100)
 			return lastSpeed;
@@ -74,6 +112,7 @@ public class SpeedMeter {
 		if(i!=0)
 		lastSpeed/=i;
 		return lastSpeed;
+		*/
 		
 	}
 

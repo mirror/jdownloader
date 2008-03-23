@@ -14,7 +14,6 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://wnu.org/licenses/>.
 
-
 package jd.controlling;
 
 import java.util.Iterator;
@@ -57,6 +56,8 @@ public class DownloadWatchDog extends Thread implements PluginListener, ControlL
 
     private boolean                          pause       = false;
 
+    private int                              totalSpeed  = 0;
+
     public DownloadWatchDog(JDController controller) {
 
         this.controller = controller;
@@ -74,39 +75,62 @@ public class DownloadWatchDog extends Thread implements PluginListener, ControlL
 
         while (aborted != true) {
 
-            if (Interaction.getInteractionsRunning() == 0) {
-                if (activeLinks.size() < getSimultanDownloadNum() && !pause) {
-                    setDownloadActive();
-                    // logger.info("Started " + started + "Downloads");
+            hasWaittimeLinks = false;
+            hasInProgressLinks = false;
+
+            deligateFireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SINGLE_DOWNLOAD_CHANGED, null));
+
+            links = getDownloadLinks();
+            int currentTotalSpeed = 0;
+            int inProgress = 0;
+            synchronized (links) {
+                for (int i = 0; i < links.size(); i++) {
+                    link = links.elementAt(i);
+                    if (!link.isEnabled()) continue;
+                    // Link mit Wartezeit in der queue
+                    if (link.getStatus() == DownloadLink.STATUS_ERROR_DOWNLOAD_LIMIT || link.getStatus() == DownloadLink.STATUS_ERROR_STATIC_WAITTIME) {
+                        if (link.getRemainingWaittime() == 0) {
+                            // reaktiviere Downloadlink
+                            link.setStatus(DownloadLink.STATUS_TODO);
+                            link.setEndOfWaittime(0);
+
+                        }
+                        hasWaittimeLinks = true;
+                    }
+                    if (link.isInProgress()) {
+                        // logger.info("ip: "+link);
+                        hasInProgressLinks = true;
+
+                    }
+                    if (link.getStatus() == DownloadLink.STATUS_DOWNLOAD_IN_PROGRESS) {
+                        inProgress++;
+                        currentTotalSpeed += link.getDownloadSpeed();
+                    }
+
                 }
 
-                hasWaittimeLinks = false;
-                hasInProgressLinks = false;
+                Iterator<DownloadLink> iter = getDownloadLinks().iterator();
+                int maxspeed = JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, 0) * 1024;
+                if (maxspeed == 0) maxspeed = Integer.MAX_VALUE;
+                int overhead = maxspeed - currentTotalSpeed; 
+                //logger.info("cu speed= " + currentTotalSpeed + " overhead :;" + overhead);
+                this.totalSpeed = currentTotalSpeed;
+                boolean isLimited = (maxspeed != 0);
+                DownloadLink element;
+                while (iter.hasNext()) {
+                    element = (DownloadLink) iter.next();
 
-                deligateFireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SINGLE_DOWNLOAD_CHANGED, null));
+                    if (element.getStatus() == DownloadLink.STATUS_DOWNLOAD_IN_PROGRESS) {
+                        element.setLimited(isLimited);
 
-                links = getDownloadLinks();
+                        element.setMaximalSpeed(element.getDownloadSpeed() + overhead / inProgress);
 
-                synchronized (links) {
-                    for (int i = 0; i < links.size(); i++) {
-                        link = links.elementAt(i);
-                        if (!link.isEnabled()) continue;
-                        // Link mit Wartezeit in der queue
-                        if (link.getStatus() == DownloadLink.STATUS_ERROR_DOWNLOAD_LIMIT || link.getStatus() == DownloadLink.STATUS_ERROR_STATIC_WAITTIME) {
-                            if (link.getRemainingWaittime() == 0) {
-                                // reaktiviere Downloadlink
-                                link.setStatus(DownloadLink.STATUS_TODO);
-                                link.setEndOfWaittime(0);
-
-                            }
-                            hasWaittimeLinks = true;
-                        }
-                        if (link.isInProgress()) {
-                            // logger.info("ip: "+link);
-                            hasInProgressLinks = true;
-
-                        }
-
+                    }
+                }
+                if (Interaction.getInteractionsRunning() == 0) {
+                    if (activeLinks.size() < getSimultanDownloadNum() && !pause) {
+                        setDownloadActive();
+                        // logger.info("Started " + started + "Downloads");
                     }
                 }
                 if ((pause && !hasInProgressLinks) || (!hasInProgressLinks && !hasWaittimeLinks && this.getNextDownloadLink() == null && activeLinks != null && activeLinks.size() == 0)) {
@@ -505,6 +529,20 @@ public class DownloadWatchDog extends Thread implements PluginListener, ControlL
         this.pause = value;
         logger.info("KKK " + value);
 
+    }
+
+    /**
+     * @param totalSpeed the totalSpeed to set
+     */
+    public void setTotalSpeed(int totalSpeed) {
+        this.totalSpeed = totalSpeed;
+    }
+
+    /**
+     * @return the totalSpeed
+     */
+    public int getTotalSpeed() {
+        return totalSpeed;
     }
 
 }

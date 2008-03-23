@@ -14,7 +14,6 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://wnu.org/licenses/>.
 
-
 package jd.plugins;
 
 import java.io.File;
@@ -159,9 +158,9 @@ public class DownloadLink implements Serializable, Comparable<DownloadLink> {
 
     public static final int              STATUS_ERROR_OUTPUTFILE_OWNED_BY_ANOTHER_LINK = 24;
 
-    public static final int STATUS_ERROR_CHUNKLOAD_FAILED = 25;
+    public static final int              STATUS_ERROR_CHUNKLOAD_FAILED                 = 25;
 
-    public static final int STATUS_ERROR_NOCONNECTION = 26;
+    public static final int              STATUS_ERROR_NOCONNECTION                     = 26;
 
     /**
      * Statustext der von der GUI abgefragt werden kann
@@ -292,7 +291,7 @@ public class DownloadLink implements Serializable, Comparable<DownloadLink> {
 
     private transient String             tempUrlDownload;
 
-    private boolean                       limited                                     = (JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, 0) != 0);
+    private boolean                      limited                                       = (JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, 0) != 0);
 
     private transient Download           downloadInstance;
 
@@ -310,7 +309,7 @@ public class DownloadLink implements Serializable, Comparable<DownloadLink> {
         this.plugin = plugin;
         this.name = name;
         sourcePluginPasswords = new Vector<String>();
-        inProgress=false;
+        inProgress = false;
         downloadMax = 0;
         this.host = host;
         this.isEnabled = isEnabled;
@@ -526,7 +525,7 @@ public class DownloadLink implements Serializable, Comparable<DownloadLink> {
 
     /**
      * Kennzeichnet den Download als in Bearbeitung oder nicht
-     * 
+     * Im gegensatz zu link.setStatus(inPROGRESS) zeigt dieser wert an ob der link in bearbeitung ist.  über getStatus kann nur abgerufen werden ob der download gerade läuft
      * @param inProgress wahr, wenn die Datei als in Bearbeitung gekennzeichnet
      *            werden soll
      */
@@ -542,9 +541,8 @@ public class DownloadLink implements Serializable, Comparable<DownloadLink> {
     public void setStatus(int status) {
         this.status = status;
         if (status != STATUS_DOWNLOAD_IN_PROGRESS) {
-            speedMeter = null; 
+            speedMeter = null;
 
-          
         }
 
     }
@@ -566,7 +564,7 @@ public class DownloadLink implements Serializable, Comparable<DownloadLink> {
      * @param downloadMax Die Größe der Datei
      */
     public void setDownloadMax(int downloadMax) {
-        logger.info("SET DLM : "+downloadMax);
+        logger.info("SET DLM : " + downloadMax);
         this.downloadMax = downloadMax;
     }
 
@@ -633,19 +631,30 @@ public class DownloadLink implements Serializable, Comparable<DownloadLink> {
         if (getRemainingWaittime() > 0) {
             return this.statusText + "Warten: (" + JDUtilities.formatSeconds((int) (getRemainingWaittime() / 1000)) + "sek)";
         }
-        if (this.isInProgress() && (speed = getDownloadSpeed()) > 0) {
+        if (this.isInProgress() && (speed = getDownloadSpeed()) > -1) {
             if (getDownloadMax() < 0) {
-                return (speed / 1024) + " kb/s. "+JDLocale.L("gui.download.filesize_unknown","(Dateigröße unbekannt)");
+                return (speed / 1024) + " kb/s. " + JDLocale.L("gui.download.filesize_unknown", "(Dateigröße unbekannt)");
             }
             else {
-
-                long remainingBytes = this.getDownloadMax() - this.getDownloadCurrent();
-                long eta = remainingBytes / speed;
-                if (this.downloadInstance != null && downloadInstance.getChunks() > 1) {
-                    return "ETA " + JDUtilities.formatSeconds((int) eta) + " @ " + (speed / 1024) + " kb/s." + "(" + downloadInstance.getChunksDownloading() + "/" + downloadInstance.getChunks() + ")";
+                if (getDownloadSpeed() == 0) {
+                   
+                    if (this.downloadInstance != null && downloadInstance.getChunks() > 1) {
+                        return (speed / 1024) + " kb/s." + "(" + downloadInstance.getChunksDownloading() + "/" + downloadInstance.getChunks() + ")";
+                    }
+                    else {
+                        return (speed / 1024) + " kb/s.";
+                    }
                 }
                 else {
-                    return "ETA " + JDUtilities.formatSeconds((int) eta) + " @ " + (speed / 1024) + " kb/s.";
+                    long remainingBytes = this.getDownloadMax() - this.getDownloadCurrent();
+                    long eta = remainingBytes / speed;
+                    if (this.downloadInstance != null && downloadInstance.getChunks() > 1) {
+                       // logger.info("ETA " + JDUtilities.formatSeconds((int) eta) + " @ " + (speed / 1024) + " kb/s." + "(" + downloadInstance.getChunksDownloading() + "/" + downloadInstance.getChunks() + ")");
+                        return "ETA " + JDUtilities.formatSeconds((int) eta) + " @ " + (speed / 1024) + " kb/s." + "(" + downloadInstance.getChunksDownloading() + "/" + downloadInstance.getChunks() + ")";
+                    }
+                    else {
+                        return "ETA " + JDUtilities.formatSeconds((int) eta) + " @ " + (speed / 1024) + " kb/s.";
+                    }
                 }
             }
         }
@@ -657,6 +666,8 @@ public class DownloadLink implements Serializable, Comparable<DownloadLink> {
         if (this.isAvailabilityChecked() && !this.isAvailable()) {
             ret += "[OFFLINE] ";
         }
+        
+        //logger.info(statusText == null ? ret : ret + statusText);
         return statusText == null ? ret : ret + statusText;
 
     }
@@ -752,10 +763,13 @@ public class DownloadLink implements Serializable, Comparable<DownloadLink> {
      * 
      * @param bytes
      */
-    public void addBytes(long bytes, long difftime) {
+    public void addBytes(int bytes, int difftime) {
 
-        this.getSpeedMeter().addValue(bytes, difftime);
+        this.getSpeedMeter().addSpeedValue(bytes/difftime);
 
+    }
+    public void addSpeedValue(int speed){
+        this.getSpeedMeter().addSpeedValue(speed);
     }
 
     /**
@@ -776,7 +790,7 @@ public class DownloadLink implements Serializable, Comparable<DownloadLink> {
      * @return Downloadgeschwindigkeit in bytes/sekunde
      */
     public int getDownloadSpeed() {
-        if (getStatus() != DownloadLink.STATUS_DOWNLOAD_IN_PROGRESS) return 0;
+        if (getStatus() != DownloadLink.STATUS_DOWNLOAD_IN_PROGRESS) return -1;
         return getSpeedMeter().getSpeed();
     }
 
@@ -803,8 +817,8 @@ public class DownloadLink implements Serializable, Comparable<DownloadLink> {
      * @return FilePackage
      */
     public FilePackage getFilePackage() {
-        if(filePackage==null){
-            filePackage=new FilePackage();
+        if (filePackage == null) {
+            filePackage = new FilePackage();
         }
         return filePackage;
     }
@@ -897,7 +911,7 @@ public class DownloadLink implements Serializable, Comparable<DownloadLink> {
     }
 
     public int compareTo(DownloadLink o) {
-  
+
         return this.getDownloadURL().compareTo(o.getDownloadURL());
         // return
         // extractFileNameFromURL().compareTo(o.extractFileNameFromURL());
@@ -968,20 +982,22 @@ public class DownloadLink implements Serializable, Comparable<DownloadLink> {
 
     public int getMaximalspeed() {
         // return 5000000/40;
-     
-        int maxspeed = JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, 0) * 1024;
-     
-        if (maxspeed == 0) maxspeed = Integer.MAX_VALUE;
-        maxspeed = Math.max(1, maxspeed / (Math.max(1, JDUtilities.getController().getRunningDownloadNum())));
 
-        return maxspeed;
-       
-        // return maximalspeed;
+//        int maxspeed = JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, 0) * 1024;
+//
+//        if (maxspeed == 0) maxspeed = Integer.MAX_VALUE;
+//        maxspeed = Math.max(1, maxspeed / (Math.max(1, JDUtilities.getController().getRunningDownloadNum())));
+
+       // return  800 * 1024;
+
+         return maximalspeed;
     }
 
-    public void setMaximalspeed(int maximalspeed) {
+    public void setMaximalSpeed(int maximalspeed) {
+        maximalspeed=Math.max(20, maximalspeed);
+        //logger.info(this+ " LINKSPEED: "+maximalspeed);
         int diff = this.maximalspeed - maximalspeed;
-        if (diff > 500 || diff < 500) this.maximalspeed = maximalspeed ;
+        if (diff > 500 || diff < 500) this.maximalspeed = maximalspeed;
     }
 
     public void setLinkType(int linktypeContainer) {
