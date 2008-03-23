@@ -21,6 +21,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.util.Vector;
+import java.util.ArrayList;
 import java.util.regex.Pattern;
 
 import jd.plugins.DownloadLink;
@@ -30,12 +31,10 @@ import jd.plugins.RequestInfo;
 import jd.utils.JDUtilities;
 
 public class SeCurNet extends PluginForDecrypt {
-
     final 	static	String	HOST             	= "se-cur.net";
     private 		String	VERSION          	= "0.1.0";
     private 		String	CODER            	= "eXecuTe";
     private 		Pattern	SUPPORT_PATTERN		= getSupportPattern("http://[*]se-cur\\.net/q\\.php\\?d=[+]");
-    
     private 		String  LINK_OUT_PATTERN	= "href=\"http://se-cur.net/out.php?d=°\"";
     private 		String  LINK_OUT_TEMPLATE	= "http://se-cur.net/out.php?d=";
     private 		String  FRAME	= "src=\"°\"";
@@ -86,7 +85,7 @@ public class SeCurNet extends PluginForDecrypt {
 
     			URL url = new URL(parameter);
     			RequestInfo requestInfo = getRequest(url);
-    			Vector<Vector<String>> layerLinks = getAllSimpleMatches(requestInfo.getHtmlCode(), LINK_OUT_PATTERN);
+    			ArrayList<ArrayList<String>> layerLinks = getAllSimpleMatches(requestInfo.getHtmlCode(), LINK_OUT_PATTERN);
     			progress.setRange(layerLinks.size());
     			
     			for ( int i = 0; i < layerLinks.size(); i++ ) {

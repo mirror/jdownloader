@@ -15,17 +15,19 @@
 //    along with this program.  If not, see <http://wnu.org/licenses/>.
 
 
-package jd.plugins.decrypt;  import jd.plugins.DownloadLink;
+package jd.plugins.decrypt;
 
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.util.Vector;
+import java.util.ArrayList;
 import java.util.regex.Pattern;
 
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
+import jd.plugins.DownloadLink;
 
 public class LeecherWs extends PluginForDecrypt {
 
@@ -79,13 +81,12 @@ public class LeecherWs extends PluginForDecrypt {
     		
             Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
             RequestInfo reqinfo;
-            Vector<Vector<String>> outLinks = new Vector<Vector<String>>();
+            ArrayList<ArrayList<String>> outLinks = new ArrayList<ArrayList<String>>();
             
     		try {
     			
     			if ( parameter.indexOf("out") != -1 ) {
-    				
-    				Vector<String> tempVector = new Vector<String>();
+    				ArrayList<String> tempVector = new ArrayList<String>();
     				tempVector.add(parameter.substring(parameter.lastIndexOf("leecher.ws/out/")+15));
     				outLinks.add(tempVector);
     				
@@ -128,7 +129,7 @@ public class LeecherWs extends PluginForDecrypt {
     
     // Zeichencode-Entities (&#124 etc.) in normale Zeichen umwandeln
     private String decryptAsciiEntities(String str) {
-    	Vector<Vector<String>> codes = getAllSimpleMatches(str,"&#°;");
+    	ArrayList<ArrayList<String>> codes = getAllSimpleMatches(str,"&#°;");
     	String decodedString = "";
     	
     	for( int i=0; i<codes.size(); i++ ) {

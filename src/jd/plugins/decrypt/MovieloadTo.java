@@ -15,23 +15,22 @@
 //    along with this program.  If not, see <http://wnu.org/licenses/>.
 
 
-package jd.plugins.decrypt;  import jd.plugins.DownloadLink;
+package jd.plugins.decrypt;
 
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.util.Vector;
+import java.util.ArrayList;
 import java.util.regex.Pattern;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
+import jd.plugins.DownloadLink;
 
 public class MovieloadTo extends PluginForDecrypt {
-
     final static String host             = "movieload.to";
-
     private String      version          = "1.0.0.0";
-
     private Pattern     patternSupported = getSupportPattern("http://[*]movieload.to/v2/index.php\\?do=protect\\&i=[+]");
 
     public MovieloadTo() {
@@ -78,7 +77,7 @@ public class MovieloadTo extends PluginForDecrypt {
     			URL url = new URL(parameter);
     			RequestInfo reqinfo = getRequest(url);
     			
-    			Vector<Vector<String>> links = getAllSimpleMatches(reqinfo.getHtmlCode(), "; popup_dl(°)\" ");
+    			ArrayList<ArrayList<String>> links = getAllSimpleMatches(reqinfo.getHtmlCode(), "; popup_dl(°)\" ");
     			progress.setRange(links.size());
     			for(int i=0; i<links.size(); i++) {
     				progress.increase(1);

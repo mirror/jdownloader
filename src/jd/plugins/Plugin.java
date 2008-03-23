@@ -14,14 +14,12 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://wnu.org/licenses/>.
 
-
 package jd.plugins;
 
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -32,10 +30,6 @@ import java.math.BigInteger;
 import java.net.URL;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
-import java.nio.ByteBuffer;
-import java.nio.channels.Channels;
-import java.nio.channels.ReadableByteChannel;
-import java.nio.channels.WritableByteChannel;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
@@ -63,7 +57,6 @@ import jd.config.Property;
 import jd.plugins.event.PluginEvent;
 import jd.plugins.event.PluginListener;
 import jd.unrar.JUnrar;
-import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
 /**
@@ -104,8 +97,9 @@ public abstract class Plugin {
     public ConfigContainer        config;
 
     protected RequestInfo         requestInfo;
-    protected CRequest         request = new CRequest();
+    protected CRequest            request         = new CRequest();
     protected boolean             aborted         = false;
+    
     public boolean collectCaptchas()
     {
     	return true;
@@ -115,8 +109,7 @@ public abstract class Plugin {
      * ist useUserinputIfCaptchaUnknown wird dieser dialog nicht gezeigt
      * @return
      */
-    public boolean useUserinputIfCaptchaUnknown()
-    {
+    public boolean useUserinputIfCaptchaUnknown() {
     	return true;
     }
 
@@ -1573,7 +1566,7 @@ public abstract class Plugin {
      *            verwendet.
      * @return Treffer
      */
-    public static Vector<Vector<String>> getAllSimpleMatches(String source, String pattern) {
+    public static ArrayList<ArrayList<String>> getAllSimpleMatches(String source, String pattern) {
         return getAllSimpleMatches(source, Pattern.compile(getPattern(pattern), Pattern.DOTALL));
     }
 
@@ -1585,12 +1578,12 @@ public abstract class Plugin {
      * @param pattern Ein RegEx Pattern
      * @return Treffer
      */
-    public static Vector<Vector<String>> getAllSimpleMatches(String source, Pattern pattern) {
-        Vector<Vector<String>> ret = new Vector<Vector<String>>();
-        Vector<String> entry;
+    public static ArrayList<ArrayList<String>> getAllSimpleMatches(String source, Pattern pattern) {
+    	ArrayList<ArrayList<String>> ret = new ArrayList<ArrayList<String>>();
+    	ArrayList<String> entry;
         String tmp;
         for (Matcher r = pattern.matcher(source); r.find();) {
-            entry = new Vector<String>();
+            entry = new ArrayList<String>();
             for (int x = 1; x <= r.groupCount(); x++) {
                 tmp = r.group(x).trim();
                 entry.add(JDUtilities.UTF8Decode(tmp));
@@ -1609,18 +1602,18 @@ public abstract class Plugin {
      * @param id
      * @return Matchlist
      */
-    public static Vector<String> getAllSimpleMatches(String source, String pattern, int id) {
+    public static ArrayList<String> getAllSimpleMatches(String source, String pattern, int id) {
         pattern = getPattern(pattern);
-        Vector<String> ret = new Vector<String>();
+        ArrayList<String> ret = new ArrayList<String>();
         for (Matcher r = Pattern.compile(pattern, Pattern.DOTALL).matcher(source); r.find();) {
             if (id <= r.groupCount()) ret.add(r.group(id).trim());
         }
         return ret;
     }
 
-    public static Vector<String> getAllSimpleMatches(String source, Pattern pattern, int id) {
+    public static ArrayList<String> getAllSimpleMatches(String source, Pattern pattern, int id) {
 
-        Vector<String> ret = new Vector<String>();
+    	ArrayList<String> ret = new ArrayList<String>();
         for (Matcher r = pattern.matcher(source); r.find();) {
             if (id <= r.groupCount()) ret.add(r.group(id).trim());
         }
@@ -1638,9 +1631,9 @@ public abstract class Plugin {
      * @return treffer an der stelle x/y im 2d treffer array
      */
     public static String getSimpleMatch(String source, String pattern, int x, int y) {
-        Vector<Vector<String>> ret = getAllSimpleMatches(source, pattern);
-        if (ret.elementAt(x) != null && ret.elementAt(x).elementAt(y) != null) {
-            return ret.elementAt(x).elementAt(y);
+    	ArrayList<ArrayList<String>> ret = getAllSimpleMatches(source, pattern);
+        if (ret.get(x) != null && ret.get(x).get(y) != null) {
+            return ret.get(x).get(y);
         }
         return null;
     }
@@ -1653,11 +1646,8 @@ public abstract class Plugin {
      * @return captchacode
      */
     public static String getCaptchaCode(File file, Plugin plugin) {
-
         String captchaText = null;
-
         captchaText = JDUtilities.getCaptcha(plugin, null, file, false);
-
         return captchaText;
     }
 

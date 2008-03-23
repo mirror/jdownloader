@@ -26,6 +26,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.util.Vector;
+import java.util.ArrayList;
 import java.util.regex.Pattern;
 
 
@@ -84,18 +85,14 @@ public class DreiDlAm extends PluginForDecrypt {
             Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
     			
     			if ( parameter.indexOf("3dl.am/download/start/") != -1 ) {
-    				
-    				Vector<String> links = new Vector<String>();
-    				links = decryptFromStart(parameter);
+    				ArrayList<String> links = decryptFromStart(parameter);
     				progress.setRange(links.size());
     				String link = new String();
     				
     				for ( int i=0; i<links.size(); i++ ) {
-    					
         				progress.increase(1);
         				link = decryptFromLink(links.get(i));
         				decryptedLinks.add(this.createDownloadlink(link));
-        				
         			}
     				
         			step.setParameter(decryptedLinks);
@@ -113,26 +110,20 @@ public class DreiDlAm extends PluginForDecrypt {
     			} else if ( parameter.indexOf("3dl.am/download/") != -1 ) {
     				
     				String link1 = decryptFromDownload(parameter);
-    				Vector<String> links = decryptFromStart(link1);
+    				ArrayList<String> links = decryptFromStart(link1);
     				progress.setRange(links.size());
     				String link2 = new String();
     				
     				for ( int i=0; i<links.size(); i++ ) {
-    					
         				progress.increase(1);
         				link2 = decryptFromLink(links.get(i));
         				decryptedLinks.add(this.createDownloadlink(link2));
-        				
         			}
     				
         			step.setParameter(decryptedLinks);
-    				
     			}
-    		
     	}
-    	
     	return null;
-    	
     }
 
     @Override
@@ -141,11 +132,9 @@ public class DreiDlAm extends PluginForDecrypt {
     }
     
     private String decryptFromDownload(String parameter) {
-    	
     	String link = new String();
     	
     	try {
-    		
     		parameter.replace("&quot;", "\"");
     		
     		RequestInfo request = getRequest(new URL(parameter));
@@ -163,7 +152,6 @@ public class DreiDlAm extends PluginForDecrypt {
 				if ( !password.contains("kein") && !password.contains("kein P") ) default_password.add(password);
 				
 			}
-			
     	} catch(IOException e) {
     		e.printStackTrace();
     	}
@@ -172,13 +160,11 @@ public class DreiDlAm extends PluginForDecrypt {
     	
     }
     
-    private Vector<String> decryptFromStart(String parameter) {
-    	
-    	Vector<Vector<String>> links = new Vector<Vector<String>>();
-    	Vector<String> linksReturn = new Vector<String>();
+    private ArrayList<String> decryptFromStart(String parameter) {
+    	ArrayList<ArrayList<String>> links = new ArrayList<ArrayList<String>>();
+    	ArrayList<String> linksReturn = new ArrayList<String>();
     	
     	try {
-    		
     		RequestInfo request = getRequest(new URL(parameter));
     		links = getAllSimpleMatches(request.getHtmlCode(),
 				"value='http://3dl.am/link/°/'");
@@ -192,15 +178,12 @@ public class DreiDlAm extends PluginForDecrypt {
     	}
     	
     	return linksReturn;
-    	
     }
     
     private String decryptFromLink(String parameter) {
-
 		String link = new String();
 		
     	try {
-    		
     		RequestInfo request = getRequest(new URL(parameter));
 			String layer = getBetween(request.getHtmlCode(),
 				"<frame src=\"", "\" width=\"100%\"");
@@ -209,9 +192,6 @@ public class DreiDlAm extends PluginForDecrypt {
     	} catch(IOException e) {
     		e.printStackTrace();
     	}
-    	
     	return link;
-    	
     }
-    
 }

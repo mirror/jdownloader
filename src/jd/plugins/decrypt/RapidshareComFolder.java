@@ -15,31 +15,28 @@
 //    along with this program.  If not, see <http://wnu.org/licenses/>.
 
 
-package jd.plugins.decrypt;  import jd.plugins.DownloadLink;
+package jd.plugins.decrypt;
 
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.util.Vector;
+import java.util.ArrayList;
 import java.util.regex.Pattern;
 
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
 import jd.utils.JDUtilities;
+import jd.plugins.DownloadLink;
 
 public class RapidshareComFolder extends PluginForDecrypt {
-
     static private final String host             = "rapidshare.com folder";
-
     private String              version          = "1.0.0.0";
     //rapidshare.com/users/AM0F5G
     static private final Pattern patternSupported = Pattern.compile("http://.*?rapidshare\\.com/users/[a-zA-Z0-9]{6}", Pattern.CASE_INSENSITIVE);
-
     private String              password         = "";
-
     private Vector<DownloadLink>      decryptedLinks   = new Vector<DownloadLink>();
-
     private URL                 url;
 
     public RapidshareComFolder() {
@@ -130,7 +127,7 @@ public class RapidshareComFolder extends PluginForDecrypt {
     // Rekursion zum auslesen der
     private void getLinks(String source) {
         RequestInfo reqhelp;
-        Vector<Vector<String>> ordner = getAllSimpleMatches(source, "fileicon.gif\"> <input type=\"submit\" name=\"browse\" value=\"°\"");
+        ArrayList<ArrayList<String>> ordner = getAllSimpleMatches(source, "fileicon.gif\"> <input type=\"submit\" name=\"browse\" value=\"°\"");
 
         for (int i = 0; i < ordner.size(); i++) {
             try {
@@ -145,7 +142,7 @@ public class RapidshareComFolder extends PluginForDecrypt {
             }
         }
 
-        Vector<Vector<String>> links = getAllSimpleMatches(source, "<center> <a href=\"°\" target=\"_blank\"");
+        ArrayList<ArrayList<String>> links = getAllSimpleMatches(source, "<center> <a href=\"°\" target=\"_blank\"");
         for (int i = 0; i < links.size(); i++) {
             decryptedLinks.add(this.createDownloadlink(links.get(i).get(0)));
         }

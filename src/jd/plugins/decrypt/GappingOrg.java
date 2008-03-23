@@ -16,24 +16,22 @@
 
 
 package jd.plugins.decrypt;
-  import jd.plugins.DownloadLink;
 
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.util.Vector;
+import java.util.ArrayList;
 import java.util.regex.Pattern;
 
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
+import jd.plugins.DownloadLink;
 
 public class GappingOrg extends PluginForDecrypt {
-
     final static String host             = "gapping.org";
-
     private String      version          = "0.1.0";
-
     private Pattern     patternSupported = getSupportPattern(
     	 "(http://gapping\\.org/index\\.php\\?folderid=[0-9]+)"+
     	 "|(http://gapping\\.org/file\\.php\\?id=[+])");
@@ -85,7 +83,7 @@ public class GappingOrg extends PluginForDecrypt {
     			if ( parameter.indexOf("index.php") != -1 ) {
     			
     				RequestInfo request = getRequest(new URL(parameter));
-    				Vector<Vector<String>> ids = getAllSimpleMatches(
+    				ArrayList<ArrayList<String>> ids = getAllSimpleMatches(
     						request.getHtmlCode(), "href=\"http://gapping.org/file.php?id=°\" >");
     				
     				progress.setRange(ids.size());

@@ -15,12 +15,13 @@
 //    along with this program.  If not, see <http://wnu.org/licenses/>.
 
 
-package jd.plugins.decrypt;  import jd.plugins.DownloadLink;
+package jd.plugins.decrypt;
 
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.util.Vector;
+import java.util.ArrayList;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -28,6 +29,7 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
 import jd.utils.JDUtilities;
+import jd.plugins.DownloadLink;
 
 public class SceneloadTo extends PluginForDecrypt {
 
@@ -112,7 +114,7 @@ public class SceneloadTo extends PluginForDecrypt {
                     }
                 }
     		
-    			Vector<Vector<String>> links = getAllSimpleMatches(reqinfo.getHtmlCode(), "ACTION=\"°\"");
+    			ArrayList<ArrayList<String>> links = getAllSimpleMatches(reqinfo.getHtmlCode(), "ACTION=\"°\"");
     			
     			for(int i=0; i<links.size(); i++)
     				decryptedLinks.add(this.createDownloadlink(links.get(i).get(0)));

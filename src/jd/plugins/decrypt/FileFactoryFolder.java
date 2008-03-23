@@ -16,17 +16,18 @@
 
 
 package jd.plugins.decrypt;
-import jd.plugins.DownloadLink;
 
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.util.Vector;
+import java.util.ArrayList;
 import java.util.regex.Pattern;
 
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
+import jd.plugins.DownloadLink;
 
 // http://www.filefactory.com//f/ef45b5179409a229/
 
@@ -40,11 +41,9 @@ public class FileFactoryFolder extends PluginForDecrypt {
     		"http://[*]filefactory\\.com(/|//)f/[a-zA-Z0-9]+");
     
     public FileFactoryFolder() {
-    	
         super();
         steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
         currentStep = steps.firstElement();
-        
     }
 
     @Override
@@ -87,7 +86,7 @@ public class FileFactoryFolder extends PluginForDecrypt {
     			
     			RequestInfo reqinfo = getRequest(new URL(parameter));
     			
-    			Vector<Vector<String>> ids = getAllSimpleMatches(reqinfo.getHtmlCode(), "href=\"http://www.filefactory.com/file/°\"");
+    			ArrayList<ArrayList<String>> ids = getAllSimpleMatches(reqinfo.getHtmlCode(), "href=\"http://www.filefactory.com/file/°\"");
     			progress.setRange(ids.size());
     			
     			for ( int i=0; i<ids.size(); i++ ) {

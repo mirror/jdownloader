@@ -33,6 +33,7 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Vector;
+import java.util.ArrayList;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -440,9 +441,8 @@ public class Serienjunkies extends PluginForDecrypt {
 
 				// logger.info(reqinfo.getHtmlCode());
 
-				Vector<Vector<String>> links;
-				links = getAllSimpleMatches(reqinfo.getHtmlCode(),
-						" <a href=\"http://°\"");
+				
+				ArrayList<ArrayList<String>> links = getAllSimpleMatches(reqinfo.getHtmlCode()," <a href=\"http://°\"");
 				Vector<String> helpvector = new Vector<String>();
 				String helpstring = "";
 				// Einzellink
@@ -550,10 +550,9 @@ public class Serienjunkies extends PluginForDecrypt {
 						JDUtilities.appendInfoToFilename(this, captchaFile,
 								capTxt, false);
 					}
-					Vector<Vector<String>> gifs = getAllSimpleMatches(reqinfo
-							.getHtmlCode(), patternCaptcha);
+					ArrayList<ArrayList<String>> gifs = getAllSimpleMatches(reqinfo.getHtmlCode(), patternCaptcha);
 					String captchaAdress = "http://download.serienjunkies.org"
-							+ gifs.firstElement().get(1);
+							+ gifs.get(0).get(1);
 					// for (int i = 0; i < gifs.size(); i++) {
 					// if (gifs.get(i).get(0).indexOf("secure") >= 0 &&
 					// JDUtilities.filterInt(gifs.get(i).get(2)) > 0 &&

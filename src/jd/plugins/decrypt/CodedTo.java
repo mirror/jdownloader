@@ -15,27 +15,25 @@
 //    along with this program.  If not, see <http://wnu.org/licenses/>.
 
 
-package jd.plugins.decrypt;  import jd.plugins.DownloadLink;
+package jd.plugins.decrypt;
 
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.util.Vector;
+import java.util.ArrayList;
 import java.util.regex.Pattern;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
 import jd.utils.JDUtilities;
+import jd.plugins.DownloadLink;
 
 public class CodedTo extends PluginForDecrypt {
     private static final String  CODER          = "Bo0nZ";
-
     private static final String  HOST           = "coded.to";
-
     private static final String  PLUGIN_NAME    = HOST;
-
     private static final String  PLUGIN_VERSION = "1.0.0.0";
-
     private static final String  PLUGIN_ID      = PLUGIN_NAME + "-" + PLUGIN_VERSION;
     //http://www.coded.to/?jump=6f4920ea25403ec77bee9efce43ea25e
     static private final Pattern PAT_SUPPORTED = Pattern.compile("http://.*?coded\\.to/.*?\\?jump\\=[a-zA-Z0-9]{32}", Pattern.CASE_INSENSITIVE);
@@ -44,9 +42,7 @@ public class CodedTo extends PluginForDecrypt {
      * Suchmasken
      */
     private static final String  FILES          = "<a target=\"_blank\" href=\"down.php?id=°\">";
-
     private static final String  LINK           = "<iframe src=\"°\" height=\"100%\" width=\"100%\"";
-
     private static final String  PASSWORD       = "Bitte gib das erforderliche Passwort ein";
 
     public CodedTo() {
@@ -92,7 +88,7 @@ public class CodedTo extends PluginForDecrypt {
     public PluginStep doStep(PluginStep step, String parameter) {
         if (step.getStep() == PluginStep.STEP_DECRYPT) {
             Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
-            Vector<Vector<String>> files;
+            ArrayList<ArrayList<String>> files;
             try {
                 String strURL = parameter;
                 URL url = new URL(strURL);

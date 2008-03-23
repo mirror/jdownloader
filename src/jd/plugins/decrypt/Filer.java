@@ -15,25 +15,23 @@
 //    along with this program.  If not, see <http://wnu.org/licenses/>.
 
 
-package jd.plugins.decrypt;  import jd.plugins.DownloadLink;
+package jd.plugins.decrypt;
 
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.util.Vector;
+import java.util.ArrayList;
 import java.util.regex.Pattern;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
+import jd.plugins.DownloadLink;
 
 public class Filer extends PluginForDecrypt {
-
     static private String        host             = "filer.net";
-
     private String               version          = "0.1";
-
     static private final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?filer.net/folder/(.*)", Pattern.CASE_INSENSITIVE);
-
     static private final Pattern INFO             = Pattern.compile("(?s)<td><a href=\"\\/get\\/.*?.html\">(.*?)</a></td>", Pattern.CASE_INSENSITIVE);
 
     public Filer() {
@@ -80,7 +78,7 @@ public class Filer extends PluginForDecrypt {
 
                 URL url = new URL(parameter);
                 RequestInfo reqinfo = getRequest(url);
-                Vector<Vector<String>> matches = getAllSimpleMatches(reqinfo.getHtmlCode(), INFO);
+                ArrayList<ArrayList<String>> matches = getAllSimpleMatches(reqinfo.getHtmlCode(), INFO);
                 progress.setRange(matches.size());
                 String link = getFirstMatch(parameter, patternSupported, 1);
                 for (int i = 0; i < matches.size(); i++) {

@@ -15,23 +15,23 @@
 //    along with this program.  If not, see <http://wnu.org/licenses/>.
 
 
-package jd.plugins.decrypt;  import jd.plugins.DownloadLink;
+package jd.plugins.decrypt;
 
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.util.Vector;
+import java.util.ArrayList;
 import java.util.regex.Pattern;
 
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
 import jd.utils.JDUtilities;
+import jd.plugins.DownloadLink;
 
 public class NetfolderIn extends PluginForDecrypt {
-
     static private String host             = "netfolder.in";
-
     private String        version          = "1.0.0.0";
     //netfolder.in/folder.php?folder_id=b8b3b0b 
     static private final Pattern patternSupported = Pattern.compile("http://.*?netfolder\\.in/folder\\.php\\?folder_id\\=[a-zA-Z0-9]{7}", Pattern.CASE_INSENSITIVE);
@@ -97,7 +97,7 @@ public class NetfolderIn extends PluginForDecrypt {
                  	}
      			}
     			
-    			Vector<Vector<String>> links = getAllSimpleMatches(reqinfo.getHtmlCode(), "href=\"http://netload.in/°\"");
+    			ArrayList<ArrayList<String>> links = getAllSimpleMatches(reqinfo.getHtmlCode(), "href=\"http://netload.in/°\"");
     			
     			progress.setRange( links.size());
     			

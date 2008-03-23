@@ -21,6 +21,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.util.Vector;
+import java.util.ArrayList;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -123,7 +124,7 @@ public class UCMS extends PluginForDecrypt {
     			if(!pass.equals("n/a"))
     				this.default_password.add(pass);
     			
-	 			Vector<Vector<String>> forms = getAllSimpleMatches(reqinfo.getHtmlCode(), "<FORM ACTION=\"°\" ENCTYPE°</FORM>");
+    			ArrayList<ArrayList<String>> forms = getAllSimpleMatches(reqinfo.getHtmlCode(), "<FORM ACTION=\"°\" ENCTYPE°</FORM>");
     			
     			for(int i=0; i<forms.size(); i++) {
     				if(forms.get(i).get(0).contains("mirror")) {
@@ -170,7 +171,7 @@ public class UCMS extends PluginForDecrypt {
 		                    if(reqinfo.getConnection().getURL().toString().equals(host + forms.get(i).get(0)))
 		                    	break;
 		                }
-		    			Vector<Vector<String>> links = null;
+		    			ArrayList<ArrayList<String>> links = null;
 		    			
 		    			if(reqinfo.containsHTML("unescape")) {
 		    				links = getAllSimpleMatches(java.net.URLDecoder.decode(java.net.URLDecoder.decode(java.net.URLDecoder.decode(getBetween(reqinfo.getHtmlCode(), "unescape\\(unescape\\(\"", "\"")))), "ACTION=\"°\"");

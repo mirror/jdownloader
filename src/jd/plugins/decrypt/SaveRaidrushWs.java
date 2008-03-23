@@ -15,17 +15,19 @@
 //    along with this program.  If not, see <http://wnu.org/licenses/>.
 
 
-package jd.plugins.decrypt;  import jd.plugins.DownloadLink;
+package jd.plugins.decrypt;
 
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.util.Vector;
+import java.util.ArrayList;
 import java.util.regex.Pattern;
 
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
+import jd.plugins.DownloadLink;
 
 //http://save.raidrush.ws/?id=8b891e864bc42ffa7bfcdaf72503f2a0
 //http://save.raidrush.ws/?id=e7ccb3ee67daff310402e5e629ab8a91
@@ -85,11 +87,11 @@ public class SaveRaidrushWs extends PluginForDecrypt {
     			RequestInfo reqinfo = getRequest(new URL(parameter));
 
     			progress.setRange( countOccurences(reqinfo.getHtmlCode(), patternCount));
-    			Vector<Vector<String>> links = getAllSimpleMatches(reqinfo.getHtmlCode(), "get('°','FREE','°');");
+    			ArrayList<ArrayList<String>> links = getAllSimpleMatches(reqinfo.getHtmlCode(), "get('°','FREE','°');");
     			
     			for(int i=0; i<links.size(); i++) {
     				
-    				Vector<String> help = links.get(i);
+    				ArrayList<String> help = links.get(i);
     				reqinfo = getRequest(new URL("http://save.raidrush.ws/404.php.php?id=" + help.get(0) + "&key=" + help.get(1)));
     				progress.increase(1);
     				decryptedLinks.add(this.createDownloadlink("http://"+reqinfo.getHtmlCode().trim()));

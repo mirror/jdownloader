@@ -21,6 +21,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.util.Vector;
+import java.util.ArrayList;
 import java.util.regex.Pattern;
 
 import jd.plugins.PluginForDecrypt;
@@ -29,11 +30,8 @@ import jd.plugins.RequestInfo;
 import jd.plugins.DownloadLink;
 
 public class RockHouseIn extends PluginForDecrypt {
-
     final static String host             = "rock-house.in";
-
     private String      version          = "1.0.0.0";
-
     private Pattern     patternSupported = getSupportPattern("http://[*]rock-house.in/warez/warez\\_download.php\\?id=[+]");
 
     public RockHouseIn() {
@@ -79,7 +77,7 @@ public class RockHouseIn extends PluginForDecrypt {
     			URL url = new URL(parameter);
     			RequestInfo reqinfo = getRequest(url);
     			
-    			Vector<Vector<String>> links = getAllSimpleMatches(reqinfo.getHtmlCode(), "<td><a href=\'°\' target=\'_blank\'>");
+    			ArrayList<ArrayList<String>> links = getAllSimpleMatches(reqinfo.getHtmlCode(), "<td><a href=\'°\' target=\'_blank\'>");
 
     			default_password.add(jd.utils.JDUtilities.htmlDecode(getBetween(reqinfo.getHtmlCode(), "<td class=\'button\'>Passwort:</td><td class=\'button\'>", "<")));
     			for(int i=0; i<links.size(); i++) {

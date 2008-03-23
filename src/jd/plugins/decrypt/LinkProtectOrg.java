@@ -15,13 +15,14 @@
 //    along with this program.  If not, see <http://wnu.org/licenses/>.
 
 
-package jd.plugins.decrypt;  import jd.plugins.DownloadLink;
+package jd.plugins.decrypt;
 
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.net.URLDecoder;
 import java.util.Vector;
+import java.util.ArrayList;
 import java.util.regex.Pattern;
 
 import jd.plugins.Plugin;
@@ -29,55 +30,35 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
 import jd.utils.JDUtilities;
+import jd.plugins.DownloadLink;
 
 public class LinkProtectOrg extends PluginForDecrypt {
     private static final String  CODER             = "Bo0nZ";
-
     private static final String  HOST              = "linkprotect.org";
-
     private static final String  PLUGIN_NAME       = HOST;
-
     private static final String  PLUGIN_VERSION    = "1.0.0.0";
-
     private static final String  PLUGIN_ID         = PLUGIN_NAME + "-" + PLUGIN_VERSION;
-
     private static final Pattern PAT_SUPPORTED     = getSupportPattern("http://[*]linkprotect.org/[+]");
 
     /*
      * Suchmasken (z.B. Fehler)
      */
     private static final String  FILE_URL          = "[°]°</td>°<td align=\"center\" width=\"60\">°<a href=\"°\" target=\"new\"><img src=\"img/downloadbutton.png\" border=\"0\"></a>";
-
     private static final String  FRAME_URL         = "<frame scrolling=\"auto\" noresize src=\"°\">";
-
     private static final String  ENCRYPTED_STRING  = "document.write(°('°'));";
-
     private static final String  REDIRECT_URL1     = "URL=°\"";
-
     private static final String  REDIRECT_URL2     = "document.location.replace('°');";
-
     private static final String  REDIRECT_URL3     = "src=\"°\"";
-
     private static final String  ENCRYPTED_STRING2 = ");}var °=°(°(\"°\"))";
-
     private static final String  ENCRYPTED_STRING3 = "));var °=°(°,\"°\")";
-
     private static final String  RS_LINK           = "<form action=\"http:\\/\\/°\" method=\"post\">you want to download the file <b>°</b>";
-
     private static final String  CAPTCHA           = "<img id=\"captcha\" src=\"°\" ° />";
-
     private static final String  FORM_ID           = "<input type=\"hidden\" name=\"id\" value=\"°\">";
-
     private static final String  FORM_HASH         = "<input type=\"hidden\" name=\"hash\" value=\"°\">";
-
     private static final String  FORM_SUBMIT       = "<input id=\"search-submit\" type=\"submit\" name=\"login\" value=\"°\">";
-
     private static final String  ERROR_CAPTCHA     = "Captcha-code wrong. Please retry.";
-
     private static final String  PAGES             = "<a href=\"?s=°#down\">°</a>";
-
     private static final String  PASSWORD          = "Visitorpassword:";
-
     private static final String  WRONG_PASSWORD    = "The visitorpassword you have entered is wrong.";
 
     /*
@@ -238,7 +219,7 @@ public class LinkProtectOrg extends PluginForDecrypt {
     			if (strURL.contains("?s=")==false) {
     				
  	    			// teilen sich Links auf mehrere Seiten auf?
-	    			Vector<Vector<String>> pages = getAllSimpleMatches(reqinfo.getHtmlCode(), PAGES);
+    				ArrayList<ArrayList<String>> pages = getAllSimpleMatches(reqinfo.getHtmlCode(), PAGES);
 	    			// abzueglich der ersten Seiten, Notiz: Links kommen immer 2
                     // mal vor (oben und unten)
 	    			countSubPages = (pages.size() / 2) -1;
@@ -250,7 +231,7 @@ public class LinkProtectOrg extends PluginForDecrypt {
     			}
     				
     			// Im HTML-Code nach Datei-Links suchen
-    			Vector<Vector<String>> links = getAllSimpleMatches(reqinfo.getHtmlCode(), FILE_URL);
+    			ArrayList<ArrayList<String>> links = getAllSimpleMatches(reqinfo.getHtmlCode(), FILE_URL);
     			countLinks += links.size();
     			progress.setRange( countLinks);
     			

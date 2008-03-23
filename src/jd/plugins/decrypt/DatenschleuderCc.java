@@ -22,6 +22,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.util.Vector;
+import java.util.ArrayList;
 import java.util.regex.Pattern;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -104,7 +105,7 @@ public class DatenschleuderCc extends PluginForDecrypt {
             try {
             	
                 RequestInfo reqinfo = getRequest(new URL(parameter), null, null, true);
-                Vector<Vector<String>> links = getAllSimpleMatches(reqinfo.getHtmlCode(),
+                ArrayList<ArrayList<String>> links = getAllSimpleMatches(reqinfo.getHtmlCode(),
                 		"<a href=\"http://www.datenschleuder.cc/redir.php?id=°\"");
     			
                 progress.setRange( links.size() );

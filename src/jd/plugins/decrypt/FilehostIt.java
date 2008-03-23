@@ -14,25 +14,24 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://wnu.org/licenses/>.
 
-
-package jd.plugins.decrypt;  import jd.plugins.DownloadLink;
+package jd.plugins.decrypt;
 
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.util.Vector;
+import java.util.ArrayList;
 import java.util.regex.Pattern;
 
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
+import jd.plugins.DownloadLink;
 
 public class FilehostIt extends PluginForDecrypt {
 
     final static String host             = "filehost.it";
-
     private String      version          = "1.0.0.0";
-//www.filehost.it/multilink/checklinks.php?links=4249 
     private Pattern     patternSupported = getSupportPattern("http://[*]filehost\\.it/(multi|live)link/checklinks.php\\?links=[\\d]+");
 
     public FilehostIt() {
@@ -77,18 +76,14 @@ public class FilehostIt extends PluginForDecrypt {
     		try {
     			URL url = new URL(parameter);
     			RequestInfo reqinfo = getRequest(url);
-    			Vector<Vector<String>> links = new Vector<Vector<String>>();
-
     			
-    			links = getAllSimpleMatches(reqinfo.getHtmlCode(), "<td>\n								<div align=\"center\"><a href=\"°\">");
+    			ArrayList<ArrayList<String>> links = getAllSimpleMatches(reqinfo.getHtmlCode(), "<td>\n								<div align=\"center\"><a href=\"°\">");
     			progress.setRange( links.size());
     			
 				for(int i=0; i<links.size(); i++) {
 					decryptedLinks.add(this.createDownloadlink(links.get(i).get(0)));
 				progress.increase(1);
 				}
-    			
-    			// Decrypt abschliessen
     			
     			step.setParameter(decryptedLinks);
     		}

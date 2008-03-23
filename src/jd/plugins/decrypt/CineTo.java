@@ -15,25 +15,24 @@
 //    along with this program.  If not, see <http://wnu.org/licenses/>.
 
 
-package jd.plugins.decrypt;  import jd.plugins.DownloadLink;
+package jd.plugins.decrypt;
 
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.util.Vector;
+import java.util.ArrayList;
 import java.util.regex.Pattern;
 import java.util.Arrays;
 
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
+import jd.plugins.DownloadLink;
 
 public class CineTo extends PluginForDecrypt {
-
     final static String host             = "cine.to";
-
     private String      version          = "1.2.0";
-
     private Pattern     patternSupported = getSupportPattern("http://[*]cine.to/index.php\\?do=(protect|show_download)\\&id=[a-zA-Z0-9]+");
     
     public CineTo() {
@@ -77,7 +76,7 @@ public class CineTo extends PluginForDecrypt {
     	if(step.getStep() == PluginStep.STEP_DECRYPT) {
     		
             Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
-            Vector<Vector<String>> mirrors = new Vector<Vector<String>>();
+            ArrayList<ArrayList<String>> mirrors = new ArrayList<ArrayList<String>>();
         	
         	try {
         		
@@ -101,7 +100,7 @@ public class CineTo extends PluginForDecrypt {
         			
         		} else {
         			
-        			Vector<String> temp = new Vector<String>();
+        			ArrayList<String> temp = new ArrayList<String>();
         			temp.add(parameter);
             		mirrors.add(temp);
             		direct = true;
@@ -114,7 +113,7 @@ public class CineTo extends PluginForDecrypt {
         			
         			reqinfo = getRequest(new URL("http://cine.to/index.php?do=protect&id="+mirrors.get(i).get(0)));
     				logger.info(reqinfo.getLocation());
-        			Vector<Vector<String>> captcha = getAllSimpleMatches(reqinfo.getHtmlCode(),"span class=\"°\"");
+    				ArrayList<ArrayList<String>> captcha = getAllSimpleMatches(reqinfo.getHtmlCode(),"span class=\"°\"");
     				
     				String capText = "";
     				if ( captcha.size() == 80 ) {
@@ -128,7 +127,7 @@ public class CineTo extends PluginForDecrypt {
     				reqinfo = postRequest(new URL("http://cine.to/index.php?do=protect&id="+mirrors.get(i).get(0)), reqinfo.getCookie(), parameter, null,
     						"captcha=" + capText + "&submit=Senden", true);
                 	
-    				Vector<Vector<String>> links = getAllSimpleMatches(reqinfo.getHtmlCode(), "window.open(\'°\'");
+    				ArrayList<ArrayList<String>> links = getAllSimpleMatches(reqinfo.getHtmlCode(), "window.open(\'°\'");
     				if (direct) progress.setRange(links.size());
     				
     				for ( int j=0; j<links.size(); j++ ) {
@@ -152,7 +151,7 @@ public class CineTo extends PluginForDecrypt {
     	
     }
     
-    private String extractCaptcha(Vector<Vector<String>> source, int captchanumber) {
+    private String extractCaptcha(ArrayList<ArrayList<String>> source, int captchanumber) {
     	
     	String[] erg = new String[15];
     	

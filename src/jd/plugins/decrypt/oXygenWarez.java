@@ -15,12 +15,13 @@
 //    along with this program.  If not, see <http://wnu.org/licenses/>.
 
 
-package jd.plugins.decrypt;  import jd.plugins.DownloadLink;
+package jd.plugins.decrypt;
 
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.util.Vector;
+import java.util.ArrayList;
 import java.util.regex.Pattern;
 
 import jd.config.ConfigContainer;
@@ -30,26 +31,18 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
 import jd.utils.JDUtilities;
+import jd.plugins.DownloadLink;
 
 public class oXygenWarez extends PluginForDecrypt {
     static private final String host               = "oxygen-warez.com";
-
     private String              version            = "1.0.0.2";
-
     private static final String DEFAULT_PASSWORD   = "www.oxygen-warez.com";
-
     private Pattern             patternSupported   = Pattern.compile("http://.*?oxygen-warez\\.com/(category.*|\\?id\\=[\\d]+)", Pattern.CASE_INSENSITIVE);
-
     private Pattern             PASSWORT           = Pattern.compile("<P><B>Passwort:</B> <A HREF=\"\" onClick=\"CopyToClipboard\\(this\\); return\\(false\\);\">(.+?)</A></P>");
-
     private static final String ERROR_CAPTCHA      = "Der Sichheitscode wurde falsch eingeben!";
-
     private static final String ERROR_CAPTCHA_TIME = "Der Sichheitscode ist abgelaufen!";
-
     private String              pw                 = "";
-
     String                      strFavorites       = this.getProperties().getStringProperty("FAVORITES", "rapidshare.com;uploaded.to;xirror.to");
-
     String[]                    favorites          = strFavorites.split(";");
 
     public oXygenWarez() {
@@ -106,7 +99,7 @@ public class oXygenWarez extends PluginForDecrypt {
                 RequestInfo reqinfo;
                 try {
                     while (true) {
-                        Vector<Vector<String>> results = null;
+                    	ArrayList<ArrayList<String>> results = null;
                         reqinfo = getRequest(new URL(parameter));
                         // Schleife für Anzahl an Favoriten +1 (Default-Hoster)
                         // durchlaufen:

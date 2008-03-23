@@ -16,13 +16,13 @@
 
 
 package jd.plugins.decrypt;
-  import jd.plugins.DownloadLink;
 
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.util.HashMap;
 import java.util.Vector;
+import java.util.ArrayList;
 import java.util.regex.Pattern;
 
 import jd.plugins.PluginForDecrypt;
@@ -30,13 +30,11 @@ import jd.plugins.PluginStep;
 import jd.plugins.Regexp;
 import jd.plugins.RequestInfo;
 import jd.utils.JDUtilities;
+import jd.plugins.DownloadLink;
 
 public class XinkIt extends PluginForDecrypt {
-
     final static String host             = "xink.it";
-
     private String      version          = "0.1.0";
-
     private Pattern     patternSupported = getSupportPattern("http://[*]xink\\.it/f-[a-zA-Z0-9]+");
     
     public XinkIt() {
@@ -132,7 +130,7 @@ public class XinkIt extends PluginForDecrypt {
                 		
                 }
     			
-    			Vector<Vector<String>> ids = getAllSimpleMatches(
+                ArrayList<ArrayList<String>> ids = getAllSimpleMatches(
     					reqinfo.getHtmlCode(), "startDownload('°');");
     			
     			progress.setRange(ids.size());

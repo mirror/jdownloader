@@ -15,12 +15,13 @@
 //    along with this program.  If not, see <http://wnu.org/licenses/>.
 
 
-package jd.plugins.decrypt;  import jd.plugins.DownloadLink;
+package jd.plugins.decrypt;
 
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.util.Vector;
+import java.util.ArrayList;
 import java.util.regex.Pattern;
 
 import jd.plugins.Form;
@@ -30,6 +31,7 @@ import jd.plugins.Regexp;
 import jd.plugins.RequestInfo;
 import jd.plugins.CRequest.CaptchaInfo;
 import jd.utils.JDUtilities;
+import jd.plugins.DownloadLink;
 
 /**
  * http://stealth.to/?id=13wz0z8lds3nun4dihetpsqgzte4t2
@@ -123,7 +125,7 @@ public class Stealth extends PluginForDecrypt {
                     }
                 }
     			RequestInfo reqhelp = postRequest(new URL("http://stealth.to/ajax.php"), null, parameter, null, "id=" + getBetween(request.getHtmlCode(), "<div align=\"center\"><a id=\"", "\" href=\"") + "&typ=hit", true);
-    			Vector<Vector<String>> links = getAllSimpleMatches(request.getHtmlCode(), "dl = window.open(\"°\"");
+    			ArrayList<ArrayList<String>> links = getAllSimpleMatches(request.getHtmlCode(), "dl = window.open(\"°\"");
     			progress.setRange( links.size());
 				
 				for(int j=0; j<links.size(); j++) {

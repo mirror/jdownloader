@@ -15,13 +15,14 @@
 //    along with this program.  If not, see <http://wnu.org/licenses/>.
 
 
-package jd.plugins.decrypt;  import jd.plugins.DownloadLink;
+package jd.plugins.decrypt;
 
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.net.URLDecoder;
 import java.util.Vector;
+import java.util.ArrayList;
 import java.util.regex.Pattern;
 
 import jd.config.ConfigContainer;
@@ -30,6 +31,7 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
 import jd.utils.JDLocale;
+import jd.plugins.DownloadLink;
 
 //http://www.mirrorit.de/?id=1f430272cb94fd0e
 //http://www.mirrorit.de/?id=6fb1b96f995b09
@@ -105,19 +107,15 @@ public class MirrorItDe extends PluginForDecrypt {
     }
     
     @Override public PluginStep doStep(PluginStep step, String parameter) {
-    	
     	if(step.getStep() == PluginStep.STEP_DECRYPT) {
-            
     		Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
     		
     		try {
-    			
     			RequestInfo reqinfo = getRequest(new URL(parameter));
-    			Vector<Vector<String>> links = getAllSimpleMatches(reqinfo.getHtmlCode(), CRYPTLINK);
+    			ArrayList<ArrayList<String>> links = getAllSimpleMatches(reqinfo.getHtmlCode(), CRYPTLINK);
     			progress.setRange(links.size());
     			
     			for ( int i=0; i<links.size(); i++ ) {
-    				
 	    			reqinfo = getRequest(new URL("http://www.mirrorit.de/Out?id="
 	    					+ URLDecoder.decode(links.get(i).get(0), "UTF-8") + "&num=" + links.get(i).get(1)));
 	    			String link = reqinfo.getLocation();
@@ -125,24 +123,17 @@ public class MirrorItDe extends PluginForDecrypt {
 	    			link = reqinfo.getLocation();
 	    			
 	    			if ( getHosterUsed(link) ) {
-	    				
 	    				decryptedLinks.add(this.createDownloadlink(link));
 	    				progress.increase(1);
-	    				
     				}
-    				
     			}
-    			
     			step.setParameter(decryptedLinks);
-    			
     		} catch(IOException e) {
     			 e.printStackTrace();
     		}
     		
     	}
-    	
     	return null;
-    	
     }
 
     private void setConfigEelements() {

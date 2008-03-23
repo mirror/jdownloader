@@ -15,12 +15,13 @@
 //    along with this program.  If not, see <http://wnu.org/licenses/>.
 
 
-package jd.plugins.decrypt;  import jd.plugins.DownloadLink;
+package jd.plugins.decrypt;
 
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.util.Vector;
+import java.util.ArrayList;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -29,15 +30,12 @@ import jd.config.ConfigEntry;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
+import jd.plugins.DownloadLink;
 
 public class ShareOnAll extends PluginForDecrypt {
-
     final static String host             = "shareonall.com";
-
     private String      version          = "1.0.0.0";
-
     private Pattern     patternSupported = getSupportPattern("http://[*]shareonall\\.com/[+]");
-
     private String[][]  conf             = new String[][] { { "USE_RAPIDSHARE", "Rapidshare.com" }, { "USE_FILEFACTORY", "Filefactory.com" }, { "USE_MEGAUPLOAD", "Megaupload.com" }, { "USE_DEPOSITFILES", "DepositFiles.com" }, { "USE_DIVSHARE", "DivShare.com" }, { "USE_ZSHARE", "ZShare.net" } };
 
     public ShareOnAll() {
@@ -100,7 +98,7 @@ public class ShareOnAll extends PluginForDecrypt {
                 RequestInfo reqinfo = getRequest(url);
 
                 // Links herausfiltern
-                Vector<Vector<String>> links = getAllSimpleMatches(reqinfo.getHtmlCode(), "<a href=\'°\' target='_blank'>");
+                ArrayList<ArrayList<String>> links = getAllSimpleMatches(reqinfo.getHtmlCode(), "<a href=\'°\' target='_blank'>");
                 progress.setRange(links.size());
                 for (int i = 0; i < links.size(); i++) {
                     if (checkLink(links.get(i).get(0))) decryptedLinks.add(this.createDownloadlink(links.get(i).get(0)));

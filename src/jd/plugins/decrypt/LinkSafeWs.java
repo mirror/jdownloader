@@ -15,36 +15,32 @@
 //    along with this program.  If not, see <http://wnu.org/licenses/>.
 
 
-package jd.plugins.decrypt;  import jd.plugins.DownloadLink;
+package jd.plugins.decrypt;
 
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.util.Vector;
+import java.util.ArrayList;
 import java.util.regex.Pattern;
 
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
+import jd.plugins.DownloadLink;
 
 public class LinkSafeWs extends PluginForDecrypt {
     private static final String  CODER          = "Bo0nZ";
-
     private static final String  HOST           = "linksafe.ws";
-
     private static final String  PLUGIN_NAME    = HOST;
-
     private static final String  PLUGIN_VERSION = "1.0.0.0";
-
     private static final String  PLUGIN_ID      = PLUGIN_NAME + "-" + PLUGIN_VERSION;
-    //www.linksafe.ws/files/tsud-19659-1/
     private static final Pattern PAT_SUPPORTED  = Pattern.compile("http://.*?linksafe\\.ws/files/[a-zA-Z0-9]{4}-[\\d]{5}-[\\d]", Pattern.CASE_INSENSITIVE);
 
     /*
      * Suchmasken
      */
     private static final String  FILES          = "<input type='hidden' name='id' value='°' />°<input type='hidden' name='f' value='°' />";
-
     private static final String  LINK           = "<iframe frameborder=\"0\" height=\"100%\" width=\"100%\" src=\"http://anonym.us.to/?°\">";
 
     public LinkSafeWs() {
@@ -96,7 +92,7 @@ public class LinkSafeWs extends PluginForDecrypt {
                 RequestInfo reqinfo = getRequest(url); // Seite aufrufen
 
                 // Im HTML-Code nach "files"/"Forms" suchen
-                Vector<Vector<String>> files = getAllSimpleMatches(reqinfo.getHtmlCode(), FILES);
+                ArrayList<ArrayList<String>> files = getAllSimpleMatches(reqinfo.getHtmlCode(), FILES);
                 progress.setRange(files.size());
 
                 for (int i = 0; i < files.size(); i++) {

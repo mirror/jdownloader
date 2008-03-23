@@ -15,16 +15,18 @@
 //    along with this program.  If not, see <http://wnu.org/licenses/>.
 
 
-package jd.plugins.decrypt;  import jd.plugins.DownloadLink;
+package jd.plugins.decrypt;
 
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.util.Vector;
+import java.util.ArrayList;
 import java.util.regex.Pattern;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
+import jd.plugins.DownloadLink;
 
 public class AnimeANet extends PluginForDecrypt {
 
@@ -79,13 +81,13 @@ public class AnimeANet extends PluginForDecrypt {
     			URL url = new URL(parameter);
     			RequestInfo reqinfo = getRequest(url);
 
-    			Vector<Vector<String>> links = getAllSimpleMatches(reqinfo.getHtmlCode(), "href=javascript:reqLink(\'°\')>");
+    			ArrayList<ArrayList<String>> links = getAllSimpleMatches(reqinfo.getHtmlCode(), "href=javascript:reqLink(\'°\')>");
     			progress.setRange( links.size());
     			
     			for(int i=0; i<links.size(); i++) {
     				reqinfo = postRequest(new URL("http://www.animea.net/download_link.php?e_id=" + links.get(i).get(0)), "submit=Open");
     				decryptedLinks.add(this.createDownloadlink(getBetween(reqinfo.getHtmlCode(), "width=\"12\" height=\"11\" /><a href=\"", "\" target=\"_blank\">Download")));
-    			progress.increase(1);
+    				progress.increase(1);
     			}
     			
     			// Decrypt abschliessen

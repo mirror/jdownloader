@@ -17,26 +17,21 @@
 
 package jd.plugins.decrypt;
 
-
-
-import jd.plugins.DownloadLink;
-
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.util.Vector;
+import java.util.ArrayList;
 import java.util.regex.Pattern;
 
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
+import jd.plugins.DownloadLink;
 
 public class DDLMusicOrg extends PluginForDecrypt {
-
     final static String host             = "ddl-music.org";
-
     private String      version          = "0.1.0";
-
     private Pattern     patternSupported = getSupportPattern("(http://ddl-music\\.org/music_crypth\\.php\\?[+])" + "|(http://ddl-music\\.org/index\\.php\\?site=view_download[+])");
 
     public DDLMusicOrg() {
@@ -108,7 +103,7 @@ public class DDLMusicOrg extends PluginForDecrypt {
 
                     }
 
-                    Vector<Vector<String>> ids = getAllSimpleMatches(reqinfo.getHtmlCode(), "href=\"/music_crypth.php°\" target=\"_blank\"");
+                    ArrayList<ArrayList<String>> ids = getAllSimpleMatches(reqinfo.getHtmlCode(), "href=\"/music_crypth.php°\" target=\"_blank\"");
                     progress.setRange(ids.size());
 
                     int j = 0;

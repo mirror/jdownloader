@@ -15,12 +15,13 @@
 //    along with this program.  If not, see <http://wnu.org/licenses/>.
 
 
-package jd.plugins.decrypt;  import jd.plugins.DownloadLink;
+package jd.plugins.decrypt;
 
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.util.Vector;
+import java.util.ArrayList;
 import java.util.regex.Pattern;
 
 import jd.config.ConfigContainer;
@@ -28,6 +29,7 @@ import jd.config.ConfigEntry;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
+import jd.plugins.DownloadLink;
 
 public class SharebeeCom extends PluginForDecrypt {
 
@@ -98,7 +100,7 @@ public class SharebeeCom extends PluginForDecrypt {
     			progress.setRange( count);
     			
     			// Links auslesen und umdrehen
-    			Vector<Vector<String>> g = getAllSimpleMatches(reqinfo.getHtmlCode(), "u=°\');return false;\">°</a>");
+    			ArrayList<ArrayList<String>> g = getAllSimpleMatches(reqinfo.getHtmlCode(), "u=°\');return false;\">°</a>");
     			
     			if((Boolean) this.getProperties().getProperty("USE_RAPIDSHARE",true)) {
     			progress.increase(1);

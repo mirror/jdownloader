@@ -19,9 +19,9 @@ package jd.plugins.decrypt;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.Vector;
+import java.util.ArrayList;
 import java.util.regex.Pattern;
 
 import jd.plugins.DownloadLink;
@@ -35,20 +35,16 @@ import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
 public class RsLayerCom extends PluginForDecrypt {
-
     final static String host             = "rs-layer.com";
     private String      version          = "0.3";
     private Pattern     patternSupported = getSupportPattern("http://[*]rs-layer\\.com/[+]\\.html");
-    
     private static String 	strCaptchaPattern 	= "<img src=\"(captcha-[^\"]*\\.png)\" ";
     private static Pattern 	linkPattern			= Pattern.compile("onclick=\"getFile\\('([^;]*)'\\)");
 
     public RsLayerCom() {
-    	
         super();
         steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
         currentStep = steps.firstElement();
-        
     }
 
     @Override
@@ -163,7 +159,7 @@ public class RsLayerCom extends PluginForDecrypt {
                     
                     }
                     
-                    Vector<String> layerLinks = getAllSimpleMatches(reqinfo.getHtmlCode(), linkPattern, 1);
+                    ArrayList<String> layerLinks = getAllSimpleMatches(reqinfo.getHtmlCode(), linkPattern, 1);
                     progress.setRange(layerLinks.size());
                     
                     for(String fileId : layerLinks){
@@ -200,7 +196,7 @@ public class RsLayerCom extends PluginForDecrypt {
     // Zeichencode-Entities (&#124 etc.) in normale Zeichen umwandeln
     private String decryptEntities(String str) {
     	
-        Vector<Vector<String>> codes = getAllSimpleMatches(str,"&#°;");
+    	ArrayList<ArrayList<String>> codes = getAllSimpleMatches(str,"&#°;");
         String decodedString = "";
         
         for( int i=0; i<codes.size(); i++ ) {

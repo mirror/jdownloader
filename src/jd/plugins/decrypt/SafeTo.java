@@ -15,39 +15,34 @@
 //    along with this program.  If not, see <http://wnu.org/licenses/>.
 
 
-package jd.plugins.decrypt;  import jd.plugins.DownloadLink;
+package jd.plugins.decrypt;
 
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.util.Vector;
+import java.util.ArrayList;
 import java.util.regex.Pattern;
 
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
 import jd.utils.JDUtilities;
+import jd.plugins.DownloadLink;
 
 public class SafeTo extends PluginForDecrypt {
     private static final String  CODER          = "Bo0nZ";
-
     private static final String  HOST           = "safe.to";
-
     private static final String  PLUGIN_NAME    = HOST;
-
     private static final String  PLUGIN_VERSION = "1.0.0.0";
-
     private static final String  PLUGIN_ID      = PLUGIN_NAME + "-" + PLUGIN_VERSION;
-
     private static final Pattern PAT_SUPPORTED  = getSupportPattern("http://[*]safe\\.to/get\\.php\\?i=[a-zA-Z0-9]+");
 
     /*
      * Suchmasken
      */
     private static final String  FRAME_URL      = "<frame src=\"°\" scrolling=\"auto\" name=\"FrameRedirect\" noresize>";
-
     private static final String  FILE_ID        = "<input type=\"submit\" name=\"dl\" value=\"Download\" onClick=\"popup_dl(°)\">";
-
     private static final String  PASSWORD       = "<input type=\"password\" name=\"pw\" class=\"txt\">";
 
     public SafeTo() {
@@ -98,7 +93,7 @@ public class SafeTo extends PluginForDecrypt {
     public PluginStep doStep(PluginStep step, String parameter) {
         if (step.getStep() == PluginStep.STEP_DECRYPT) {
             Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
-            Vector<Vector<String>> fileIDs = null;
+            ArrayList<ArrayList<String>> fileIDs = null;
             try {
                 String strURL = parameter;
                 URL url = new URL(strURL);

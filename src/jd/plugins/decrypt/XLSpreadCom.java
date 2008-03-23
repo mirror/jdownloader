@@ -21,6 +21,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.util.Vector;
+import java.util.ArrayList;
 import java.util.regex.Pattern;
 
 import jd.config.ConfigContainer;
@@ -31,9 +32,7 @@ import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
 
 public class XLSpreadCom extends PluginForDecrypt {
-
     final static String host             = "xlspread.com";
-
     private String      version          = "1.0.0.0";
     //http://www.xlspread.com/download.html?id=b0b18a2f966cc247660845508e1111b4
     //http://www.xlspread.com/download.html?id=61a7912765cb3d04fb98ce2e7dcbb4a4
@@ -85,7 +84,7 @@ public class XLSpreadCom extends PluginForDecrypt {
     			URL url = new URL(parameter);
     			RequestInfo reqinfo = getRequest(url);
     			int count = 0;
-    			Vector<Vector<String>> links = getAllSimpleMatches(reqinfo.getHtmlCode(), "</td></tr><tr><td><b>°</b>°downlink.php?id=°&amp;hoster");
+    			ArrayList<ArrayList<String>> links = getAllSimpleMatches(reqinfo.getHtmlCode(), "</td></tr><tr><td><b>°</b>°downlink.php?id=°&amp;hoster");
     			System.out.println(links.size());
     			// Anzahl der Links zählen
     			for(int i=0; i<links.size(); i++) {

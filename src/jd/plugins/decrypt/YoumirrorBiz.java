@@ -22,6 +22,7 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.MissingResourceException;
 import java.util.Vector;
+import java.util.ArrayList;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -168,10 +169,10 @@ public class YoumirrorBiz extends PluginForDecrypt {
 					RequestInfo mirrorInfo = getRequest(mirrorUrl, null, null,
 							true);
 
-					Vector<Vector<String>> groups = getAllSimpleMatches(
+					ArrayList<ArrayList<String>> groups = getAllSimpleMatches(
 							mirrorInfo.getHtmlCode(), patternMirrorLink);
 
-					for (Vector<String> pair : groups) {
+					for (ArrayList<String> pair : groups) {
 						// check if user does not want the links from this
 						// hoster
 						// if( !getUseConfig(mirrorHoster.get(i))){

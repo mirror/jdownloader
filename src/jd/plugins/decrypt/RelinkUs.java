@@ -15,17 +15,19 @@
 //    along with this program.  If not, see <http://wnu.org/licenses/>.
 
 
-package jd.plugins.decrypt;  import jd.plugins.DownloadLink;
+package jd.plugins.decrypt;
 
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.util.Vector;
+import java.util.ArrayList;
 import java.util.regex.Pattern;
 
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
+import jd.plugins.DownloadLink;
 
 public class RelinkUs extends PluginForDecrypt {
 
@@ -78,7 +80,7 @@ public class RelinkUs extends PluginForDecrypt {
     			URL url = new URL(parameter);
     			RequestInfo reqinfo = getRequest(url);
     			
-    			Vector<Vector<String>> links = getAllSimpleMatches(reqinfo.getHtmlCode(), "form action=\'°\' method=\'post\'");
+    			ArrayList<ArrayList<String>> links = getAllSimpleMatches(reqinfo.getHtmlCode(), "form action=\'°\' method=\'post\'");
     			progress.setRange( links.size());
     			
     			for(int i=0; i<links.size(); i++) {

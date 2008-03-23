@@ -16,19 +16,20 @@
 
 
 package jd.plugins.decrypt;
-  import jd.plugins.DownloadLink;
 
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.util.HashMap;
 import java.util.Vector;
+import java.util.ArrayList;
 import java.util.regex.Pattern;
 
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginStep;
 import jd.plugins.Regexp;
 import jd.plugins.RequestInfo;
+import jd.plugins.DownloadLink;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
@@ -36,11 +37,8 @@ public class YourFilesBizFolder extends PluginForDecrypt {
 
     final static String host             = "yourfiles.biz";
     final static String name             = "yourfiles.biz Folder";
-
     private String      version          = "0.1.0";
-
-    private Pattern     patternSupported = getSupportPattern(
-    		"http://[*]yourfiles\\.biz/[*]/folders/[0-9]+/[+].html");
+    private Pattern     patternSupported = getSupportPattern("http://[*]yourfiles\\.biz/[*]/folders/[0-9]+/[+].html");
     
     public YourFilesBizFolder() {
         super();
@@ -105,7 +103,7 @@ public class YourFilesBizFolder extends PluginForDecrypt {
     				
     			}
     			
-    			Vector<Vector<String>> ids = getAllSimpleMatches(reqinfo.getHtmlCode(), "href='http://yourfiles.biz/?d=°'");
+    			ArrayList<ArrayList<String>> ids = getAllSimpleMatches(reqinfo.getHtmlCode(), "href='http://yourfiles.biz/?d=°'");
     			progress.setRange(ids.size());
     			
     			for ( int i=0; i<ids.size(); i++ ) {
