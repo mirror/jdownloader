@@ -295,7 +295,7 @@ public class JDUtilities {
         }
         return null;
     }
-
+ 
     /**
      * parsed den JD_REVISION String auf
      * 

@@ -98,7 +98,7 @@ public class Download {
 
     private int                       bytesLoaded                            = 0;
 
-    private volatile RandomAccessFile outputFile;
+    private volatile Braf outputFile;
 
     private FileChannel               outputChannel;
 
@@ -142,7 +142,7 @@ public class Download {
 
     private synchronized void addBytes(ByteBuffer buffer, long currentBytePosition) {
         try {
-            //currentBytePosition=-1;
+            // currentBytePosition=-1;
             this.outputFile.seek(currentBytePosition);
 
             int length = buffer.limit() - buffer.position();
@@ -214,8 +214,7 @@ public class Download {
         }
 
         if (fileOutput.exists()) {
-          
-            
+
             logger.severe("File already exists. " + fileOutput);
             String todo = JDUtilities.getSubConfig("DOWNLOAD").getStringProperty(Configuration.PARAM_FILE_EXISTS, JDLocale.L("system.download.triggerfileexists.skip", "Link überspringen"));
 
@@ -233,29 +232,29 @@ public class Download {
 
         }
         boolean correctChunks = JDUtilities.getSubConfig("DOWNLOAD").getBooleanProperty("PARAM_DOWNLOAD_AUTO_CORRECTSPPEDCHUNKS", true);
-        // int
-        // maxSpeed=JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED,
-        // 0);
         if (correctChunks) {
-            int allowedLinkSpeed = downloadLink.getMaximalspeed();
-            //logger.info("Linkspeed: " + allowedLinkSpeed);
+            int maxSpeed = JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, 0);
+            if (maxSpeed == 0) maxSpeed = Integer.MAX_VALUE;
+            int allowedLinkSpeed = maxSpeed / Math.max(1, JDUtilities.getController().getRunningDownloadNum());
+            // logger.finer("Linkspeed: " + allowedLinkSpeed);
             int tmp = Math.min(Math.max(1, allowedLinkSpeed / Chunk.MIN_CHUNKSPEED), chunkNum);
-            if(tmp!=chunkNum){
-            
-           
-            logger.finer("Corrected Chunknum: " + chunkNum+" -->"+tmp);
-            chunkNum=tmp;
+            if (tmp != chunkNum) {
+
+                logger.finer("Corrected Chunknum: " + chunkNum + " -->" + tmp);
+                chunkNum = tmp;
             }
         }
         File part = new File(downloadLink.getFileOutput() + ".part");
-    
+
         try {
-            this.outputFile = new RandomAccessFile(part, "rwd");
+           // this.outputFile = new RandomAccessFile(part, "rwd");
+            this.outputFile= new Braf(downloadLink.getFileOutput() + ".part", "rwd", 1024*1024*10);
             // outputFile.setLength(connection.getContentLength());
             outputChannel = outputFile.getChannel();
+
             downloadLink.setStatus(DownloadLink.STATUS_DOWNLOAD_IN_PROGRESS);
             long fileSize = getFileSize();
-            //logger.info("Filsize: " + fileSize);
+            // logger.info("Filsize: " + fileSize);
             long parts = fileSize > 0 ? fileSize / chunkNum : -1;
             if (parts == -1) {
                 logger.warning("Could not get Filesize.... reset chunks to 1");
@@ -276,18 +275,18 @@ public class Download {
             logger.info("Errors: " + this.errors);
             outputFile.close();
             outputChannel.close();
-           
+
             if (!part.renameTo(new File(downloadLink.getFileOutput()))) {
                 logger.severe("Could not rename file " + fileOutput + " to " + downloadLink.getFileOutput());
                 error(ERROR_COULD_NOT_RENAME);
-               
+
                 return false;
             }
- if (!handleErrors()){
-                
+            if (!handleErrors()) {
+
                 return false;
             }
-        
+
             return true;
         }
         catch (FileNotFoundException e) {
@@ -304,22 +303,21 @@ public class Download {
     }
 
     private void getMissingRanges(File part) {
-    
-        
+
     }
 
     private long getFileSize() {
         if (connection.getContentLength() > 0) {
-            //logger.info("1 " + connection.getHeaderFields());
+            // logger.info("1 " + connection.getHeaderFields());
 
             return connection.getContentLength();
         }
         if (fileSize > 0) {
-            //logger.info("2");
+            // logger.info("2");
             return fileSize;
         }
         if (downloadLink.getDownloadMax() > 0) {
-            //logger.info("3");
+            // logger.info("3");
             return downloadLink.getDownloadMax();
 
         }
@@ -342,7 +340,7 @@ public class Download {
         if (errors.contains(ERROR_CHUNKLOAD_FAILED)) {
             plugin.getCurrentStep().setStatus(PluginStep.STATUS_ERROR);
             downloadLink.setStatus(DownloadLink.STATUS_ERROR_CHUNKLOAD_FAILED);
-          
+
             return false;
         }
 
@@ -383,12 +381,12 @@ public class Download {
             downloadLink.setStatus(DownloadLink.STATUS_ERROR_NOCONNECTION);
             return false;
         }
-        if(abortByError){
+        if (abortByError) {
             plugin.getCurrentStep().setStatus(PluginStep.STATUS_ERROR);
             downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN);
         }
         plugin.getCurrentStep().setStatus(PluginStep.STATUS_DONE);
-        //downloadLink.setStatus(DownloadLink.STATUS_DONE);
+        // downloadLink.setStatus(DownloadLink.STATUS_DONE);
         downloadLink.setStatus(DownloadLink.STATUS_DOWNLOAD_FINISHED);
         return true;
     }
@@ -405,9 +403,9 @@ public class Download {
 
             downloadLink.setDownloadCurrent(this.bytesLoaded);
             JDUtilities.getController().requestDownloadLinkUpdate(downloadLink);
-            //logger.info("UüdatebytesLoaded   " + bytesLoaded);
+            // logger.info("UüdatebytesLoaded " + bytesLoaded);
             assignChunkSpeeds();
-         
+
         }
 
     }
@@ -415,6 +413,7 @@ public class Download {
     private void assignChunkSpeeds() {
         int MAX_ALLOWED_OVERHEAD = 10 * 1024;
         int allowedLinkSpeed = downloadLink.getMaximalspeed();
+        int mChunk = (int) ((allowedLinkSpeed / chunkNum) * 0.4);
         int currentSpeed = 0;
         Chunk next;
         synchronized (chunks) {
@@ -433,7 +432,7 @@ public class Download {
             while (it.hasNext()) {
                 next = it.next();
                 if (next.isAlive()) {
-                    next.setMaximalSpeed((int) next.bytesPerSecond + overhead / getRunningChunks());
+                    next.setMaximalSpeed(Math.max(mChunk, (int) next.bytesPerSecond + overhead / getRunningChunks()));
                 }
             }
         }
@@ -450,7 +449,6 @@ public class Download {
         else {
             chunk.start();
         }
-        logger.info("STARTET");
 
     }
 
@@ -514,9 +512,9 @@ public class Download {
         // Das führt zu verstärkt intervalartigem laden und ist ungewünscht
         public static final int  MIN_CHUNKSPEED = 120 * 1024;
 
-        private static final int MAX_BUFFERSIZE = 4 * 1024 * 1024;
+        private static final int MAX_BUFFERSIZE = 6 * 1024 * 1024;
 
-        private static final int MIN_BUFFERSIZE = 16 * 1024;
+        private static final int MIN_BUFFERSIZE = 1024;
 
         private long             startByte;
 
@@ -556,8 +554,8 @@ public class Download {
 
         public int getMaximalSpeed() {
             if (this.maxSpeed <= 0) this.maxSpeed = downloadLink.getMaximalspeed() / getRunningChunks();
-           
-            return Math.min(maxSpeed,(int)(this.desiredBps*1.5));
+
+            return Math.min(maxSpeed, (int) (this.desiredBps * 1.5));
         }
 
         private void loadStartBytes(int preBytes) {
@@ -628,7 +626,7 @@ public class Download {
                     httpConnection.connect();
                 }
                 logger.info("ChunkHeaders: " + httpConnection.getHeaderFields());
-          
+
                 return httpConnection;
 
             }
@@ -639,9 +637,16 @@ public class Download {
         }
 
         public void run() {
-            
+
             logger.finer("Start Chunk " + startByte + " - " + endByte);
             if (chunkNum > 1) this.connection = copyConnection(connection);
+            if (connection == null) {
+                error(ERROR_CHUNKLOAD_FAILED);
+                logger.severe("ERROR Chunk (connection copy failed) " + chunks.indexOf(this));
+                chunksInProgress--;
+                return;
+            }
+
             if (chunkNum > 1 && (connection.getHeaderField("Content-Range") == null || connection.getHeaderField("Content-Range").length() == 0)) {
                 error(ERROR_CHUNKLOAD_FAILED);
                 logger.severe("ERROR Chunk " + chunks.indexOf(this));
@@ -650,39 +655,43 @@ public class Download {
 
             }
             // Content-Range=[133333332-199999999/200000000]}
-            
-            String[] range = Plugin.getSimpleMatches("["+connection.getHeaderField("Content-Range")+"]", "[°-°/°]");
-            logger.info("Range Header "+connection.getHeaderField("Content-Range"));
-            if(range==null&&chunkNum>1){
+
+            String[] range = Plugin.getSimpleMatches("[" + connection.getHeaderField("Content-Range") + "]", "[°-°/°]");
+            logger.info("Range Header " + connection.getHeaderField("Content-Range"));
+            if (range == null && chunkNum > 1) {
                 error(ERROR_CHUNKLOAD_FAILED);
                 logger.severe("ERROR Chunk " + chunks.indexOf(this));
                 chunksInProgress--;
                 return;
-          
-            }else if(range!=null){
-            this.startByte=Integer.parseInt(range[0]);
-            this.endByte=Integer.parseInt(range[1]);
-        
-            logger.finer("Resulting Range" + startByte + " - " + endByte);
+
+            }
+            else if (range != null) {
+
+                this.startByte = JDUtilities.filterInt(range[0]);
+                this.endByte = JDUtilities.filterInt(range[1]);
+
+                logger.finer("Resulting Range" + startByte + " - " + endByte);
             }
             logger.finer("Start Chunk " + chunks.indexOf(this));
             chunksDownloading++;
             download();
+            this.bytesPerSecond = 0;
+            this.desiredBps = 0;
             chunksDownloading--;
             logger.finer("END Chunk " + chunks.indexOf(this));
-          
+
             if (plugin.aborted || downloadLink.isAborted()) {
                 error(ERROR_ABORTED_BY_USER);
             }
             logger.finer("Chunk finished " + getBytesLoaded());
             chunksInProgress--;
-         
+
         }
 
         private int getTimeInterval() {
-            if (!downloadLink.isLimited()) return 1000;
+            if (!downloadLink.isLimited()) return 2000;
 
-            return (int) (1000 * this.bufferTimeFaktor);
+            return Math.min(5000, (int) (2000 * this.bufferTimeFaktor));
 
         }
 
@@ -711,7 +720,6 @@ public class Download {
                 return;
             }
 
-         
             InputStream inputStream = null;
             ReadableByteChannel source = null;
 
@@ -734,13 +742,12 @@ public class Download {
                 long addWait;
                 byte b[] = new byte[1];
                 int read = 0;
-                
+
                 while (!isExternalyAborted()) {
                     bytes = 0;
 
                     timer = System.currentTimeMillis();
-                  
-                    
+
                     while (buffer.hasRemaining() && !isExternalyAborted() && (System.currentTimeMillis() - timer) < getTimeInterval()) {
                         block = 0;
 
@@ -812,7 +819,7 @@ public class Download {
                         // ein paar wenige bytes/sekunde in der speederfassung
                         // aus.
                         addWait = (long) (0.995 * (getTimeInterval() - (System.currentTimeMillis() - timer)));
-                        //logger.info("Wait " + addWait);
+                        // logger.info("Wait " + addWait);
                         if (addWait > 0) Thread.sleep(addWait);
                     }
                     catch (Exception e) {
@@ -822,10 +829,12 @@ public class Download {
                     this.bytesPerSecond = (1000 * bytes) / deltaTime;
                     updateSpeed();
 
-                    //logger.info(downloadLink.getSpeedMeter().getSpeed() + "loaded" + bytes + " b in " + (deltaTime) + " ms:// " + bytesPerSecond + "(" + desiredBps + ") ");
+                    // logger.info(downloadLink.getSpeedMeter().getSpeed() +
+                    // "loaded" + bytes + " b in " + (deltaTime) + " ms:// " +
+                    // bytesPerSecond + "(" + desiredBps + ") ");
 
                 }
-                if (currentBytePosition != endByte && endByte > 0) {
+                if (currentBytePosition < endByte && endByte > 0) {
 
                     inputStream.close();
                     source.close();
@@ -887,9 +896,12 @@ public class Download {
          */
         private int getBufferSize(int maxspeed) {
             if (!downloadLink.isLimited()) return MAX_BUFFERSIZE;
-            int bufferSize = Math.min(MAX_BUFFERSIZE, Math.max(MIN_BUFFERSIZE, maxspeed));
+            int max = Math.max(MIN_BUFFERSIZE, maxspeed);
+            int bufferSize = Math.min(MAX_BUFFERSIZE, max);
+            // logger.info(MIN_BUFFERSIZE+"<>"+maxspeed+"-"+MAX_BUFFERSIZE+"><"+max);
             this.bufferTimeFaktor = Math.max(0.1, (double) bufferSize / maxspeed);
-           //logger.info("Maxspeed= " + maxspeed + " buffer=" + bufferSize + "time: " + getTimeInterval());
+            // logger.info("Maxspeed= " + maxspeed + " buffer=" + bufferSize +
+            // "time: " + getTimeInterval());
             return bufferSize;
         }
 
@@ -909,9 +921,9 @@ public class Download {
 
     }
 
-//    public boolean isSpeedLimited() {
-//        return speedLimited && downloadLink.isLimited();
-//    }
+    // public boolean isSpeedLimited() {
+    // return speedLimited && downloadLink.isLimited();
+    // }
 
     public void updateSpeed() {
         int speed = 0;
@@ -925,9 +937,9 @@ public class Download {
 
     }
 
-//    public void setSpeedLimited(boolean speedLimited) {
-//        this.speedLimited = speedLimited;
-//    }
+    // public void setSpeedLimited(boolean speedLimited) {
+    // this.speedLimited = speedLimited;
+    // }
 
     public Vector<Integer> getErrors() {
         return errors;
@@ -945,7 +957,6 @@ public class Download {
     public int getChunksDownloading() {
         return chunksDownloading;
     }
-
 
     public void setMaxBytesToLoad(int integerProperty) {
         this.maxBytes = integerProperty;
@@ -972,6 +983,123 @@ public class Download {
     public void setLoadPreBytes(int i) {
         this.preBytes = i;
 
+    }
+
+    public class Braf extends RandomAccessFile {
+        byte        buffer[];
+
+        int         buf_end  = 0;
+
+        int         buf_pos  = 0;
+
+        long        real_pos = 0;
+
+        private int BUF_SIZE = 1024 * 1024 * 6;
+
+        public Braf(String filename, String mode, int bufsize) throws IOException {
+            super(filename, mode);
+            invalidate();
+            BUF_SIZE = bufsize;
+            buffer = new byte[BUF_SIZE];
+        }
+
+        public final int read() throws IOException {
+            if (buf_pos >= buf_end) {
+                if (fillBuffer() < 0) return -1;
+            }
+            if (buf_end == 0) {
+                return -1;
+            }
+            else {
+                return buffer[buf_pos++];
+            }
+        }
+
+        private int fillBuffer() throws IOException {
+            int n = super.read(buffer, 0, BUF_SIZE);
+            if (n >= 0) {
+                real_pos += n;
+                buf_end = n;
+                buf_pos = 0;
+            }
+            return n;
+        }
+
+        private void invalidate() throws IOException {
+            buf_end = 0;
+            buf_pos = 0;
+            real_pos = super.getFilePointer();
+        }
+
+        public int read(byte b[], int off, int len) throws IOException {
+            int leftover = buf_end - buf_pos;
+            if (len <= leftover) {
+                System.arraycopy(buffer, buf_pos, b, off, len);
+                buf_pos += len;
+                return len;
+            }
+            for (int i = 0; i < len; i++) {
+                int c = this.read();
+                if (c != -1)
+                    b[off + i] = (byte) c;
+                else {
+                    return i;
+                }
+            }
+            return len;
+        }
+
+        public long getFilePointer() throws IOException {
+            long l = real_pos;
+            return (l - buf_end + buf_pos);
+        }
+
+        public void seek(long pos) throws IOException {
+            int n = (int) (real_pos - pos);
+            if (n >= 0 && n <= buf_end) {
+                buf_pos = buf_end - n;
+            }
+            else {
+                super.seek(pos);
+                invalidate();
+            }
+        }
+
+        /**
+         * return a next line in String
+         */
+        public final String getNextLine() throws IOException {
+            String str = null;
+            if (buf_end - buf_pos <= 0) {
+                if (fillBuffer() < 0) {
+                    throw new IOException("error in filling buffer!");
+                }
+            }
+            int lineend = -1;
+            for (int i = buf_pos; i < buf_end; i++) {
+                if (buffer[i] == '\n') {
+                    lineend = i;
+                    break;
+                }
+            }
+            if (lineend < 0) {
+                StringBuffer input = new StringBuffer(256);
+                int c;
+                while (((c = read()) != -1) && (c != '\n')) {
+                    input.append((char) c);
+                }
+                if ((c == -1) && (input.length() == 0)) {
+                    return null;
+                }
+                return input.toString();
+            }
+            if (lineend > 0 && buffer[lineend - 1] == '\r')
+                str = new String(buffer, 0, buf_pos, lineend - buf_pos - 1);
+            else
+                str = new String(buffer, 0, buf_pos, lineend - buf_pos);
+            buf_pos = lineend + 1;
+            return str;
+        }
     }
 
 }

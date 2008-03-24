@@ -285,7 +285,7 @@ public class DownloadLink implements Serializable, Comparable<DownloadLink> {
 
     private String                       sourcePluginComment                           = null;
 
-    private int                          maximalspeed                                  = 209715;
+    private int                          maximalspeed                                  = -1;
 
     private int                          linkType                                      = LINKTYPE_NORMAL;
 
@@ -989,7 +989,9 @@ public class DownloadLink implements Serializable, Comparable<DownloadLink> {
 //        maxspeed = Math.max(1, maxspeed / (Math.max(1, JDUtilities.getController().getRunningDownloadNum())));
 
        // return  800 * 1024;
-
+if(maximalspeed<=0){
+    maximalspeed=Integer.MAX_VALUE;
+}
          return maximalspeed;
     }
 

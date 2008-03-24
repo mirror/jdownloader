@@ -30,7 +30,7 @@ import jd.utils.JDUtilities;
  */
 public class SpeedMeter {
 	private int lastSpeed = 0;
-	private long lastAccess = 0;
+	
 	private int c=0;
 	private static final int capacity = 10;
 	private int[] speeds = new int[capacity];
