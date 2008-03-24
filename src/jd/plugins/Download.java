@@ -142,6 +142,7 @@ public class Download {
 
     private synchronized void addBytes(ByteBuffer buffer, long currentBytePosition) {
         try {
+            //currentBytePosition=-1;
             this.outputFile.seek(currentBytePosition);
 
             int length = buffer.limit() - buffer.position();
@@ -213,6 +214,8 @@ public class Download {
         }
 
         if (fileOutput.exists()) {
+          
+            
             logger.severe("File already exists. " + fileOutput);
             String todo = JDUtilities.getSubConfig("DOWNLOAD").getStringProperty(Configuration.PARAM_FILE_EXISTS, JDLocale.L("system.download.triggerfileexists.skip", "Link überspringen"));
 
@@ -236,10 +239,16 @@ public class Download {
         if (correctChunks) {
             int allowedLinkSpeed = downloadLink.getMaximalspeed();
             //logger.info("Linkspeed: " + allowedLinkSpeed);
-            chunkNum = Math.min(Math.max(1, allowedLinkSpeed / Chunk.MIN_CHUNKSPEED), chunkNum);
-            logger.finer("Corrected Chunknum: " + chunkNum);
+            int tmp = Math.min(Math.max(1, allowedLinkSpeed / Chunk.MIN_CHUNKSPEED), chunkNum);
+            if(tmp!=chunkNum){
+            
+           
+            logger.finer("Corrected Chunknum: " + chunkNum+" -->"+tmp);
+            chunkNum=tmp;
+            }
         }
         File part = new File(downloadLink.getFileOutput() + ".part");
+    
         try {
             this.outputFile = new RandomAccessFile(part, "rwd");
             // outputFile.setLength(connection.getContentLength());
@@ -292,6 +301,11 @@ public class Download {
         downloadLink.setStatus(DownloadLink.STATUS_DOWNLOAD_FINISHED);
         return false;
 
+    }
+
+    private void getMissingRanges(File part) {
+    
+        
     }
 
     private long getFileSize() {
@@ -393,6 +407,7 @@ public class Download {
             JDUtilities.getController().requestDownloadLinkUpdate(downloadLink);
             //logger.info("UüdatebytesLoaded   " + bytesLoaded);
             assignChunkSpeeds();
+         
         }
 
     }
@@ -427,7 +442,7 @@ public class Download {
 
     private void addChunk(Chunk chunk) {
         this.chunks.add(chunk);
-        
+        chunksInProgress++;
 
         if (chunkNum == 1) {
             chunk.start();
@@ -435,7 +450,7 @@ public class Download {
         else {
             chunk.start();
         }
-        
+        logger.info("STARTET");
 
     }
 
@@ -541,7 +556,8 @@ public class Download {
 
         public int getMaximalSpeed() {
             if (this.maxSpeed <= 0) this.maxSpeed = downloadLink.getMaximalspeed() / getRunningChunks();
-            return maxSpeed;
+           
+            return Math.min(maxSpeed,(int)(this.desiredBps*1.5));
         }
 
         private void loadStartBytes(int preBytes) {
@@ -623,7 +639,7 @@ public class Download {
         }
 
         public void run() {
-            chunksInProgress++;
+            
             logger.finer("Start Chunk " + startByte + " - " + endByte);
             if (chunkNum > 1) this.connection = copyConnection(connection);
             if (chunkNum > 1 && (connection.getHeaderField("Content-Range") == null || connection.getHeaderField("Content-Range").length() == 0)) {
@@ -636,17 +652,19 @@ public class Download {
             // Content-Range=[133333332-199999999/200000000]}
             
             String[] range = Plugin.getSimpleMatches("["+connection.getHeaderField("Content-Range")+"]", "[°-°/°]");
-            logger.info(connection.getHeaderField("Content-Range"));
-            if(range==null){
+            logger.info("Range Header "+connection.getHeaderField("Content-Range"));
+            if(range==null&&chunkNum>1){
                 error(ERROR_CHUNKLOAD_FAILED);
                 logger.severe("ERROR Chunk " + chunks.indexOf(this));
                 chunksInProgress--;
                 return;
           
-            }
+            }else if(range!=null){
             this.startByte=Integer.parseInt(range[0]);
             this.endByte=Integer.parseInt(range[1]);
+        
             logger.finer("Resulting Range" + startByte + " - " + endByte);
+            }
             logger.finer("Start Chunk " + chunks.indexOf(this));
             chunksDownloading++;
             download();
@@ -716,12 +734,12 @@ public class Download {
                 long addWait;
                 byte b[] = new byte[1];
                 int read = 0;
-                long updateTimer = 0;
+                
                 while (!isExternalyAborted()) {
                     bytes = 0;
 
                     timer = System.currentTimeMillis();
-                    updateTimer = System.currentTimeMillis();
+                  
                     
                     while (buffer.hasRemaining() && !isExternalyAborted() && (System.currentTimeMillis() - timer) < getTimeInterval()) {
                         block = 0;
@@ -804,7 +822,7 @@ public class Download {
                     this.bytesPerSecond = (1000 * bytes) / deltaTime;
                     updateSpeed();
 
-                   // logger.info(downloadLink.getSpeedMeter().getSpeed() + "loaded" + bytes + " b in " + (deltaTime) + " ms:// " + bytesPerSecond + "(" + desiredBps + ") ");
+                    //logger.info(downloadLink.getSpeedMeter().getSpeed() + "loaded" + bytes + " b in " + (deltaTime) + " ms:// " + bytesPerSecond + "(" + desiredBps + ") ");
 
                 }
                 if (currentBytePosition != endByte && endByte > 0) {
@@ -871,7 +889,7 @@ public class Download {
             if (!downloadLink.isLimited()) return MAX_BUFFERSIZE;
             int bufferSize = Math.min(MAX_BUFFERSIZE, Math.max(MIN_BUFFERSIZE, maxspeed));
             this.bufferTimeFaktor = Math.max(0.1, (double) bufferSize / maxspeed);
-            //logger.info("Maxspeed= " + maxspeed + " buffer=" + bufferSize + "time: " + getTimeInterval());
+           //logger.info("Maxspeed= " + maxspeed + " buffer=" + bufferSize + "time: " + getTimeInterval());
             return bufferSize;
         }
 
@@ -891,9 +909,9 @@ public class Download {
 
     }
 
-    public boolean isSpeedLimited() {
-        return speedLimited && downloadLink.isLimited();
-    }
+//    public boolean isSpeedLimited() {
+//        return speedLimited && downloadLink.isLimited();
+//    }
 
     public void updateSpeed() {
         int speed = 0;
@@ -907,9 +925,9 @@ public class Download {
 
     }
 
-    public void setSpeedLimited(boolean speedLimited) {
-        this.speedLimited = speedLimited;
-    }
+//    public void setSpeedLimited(boolean speedLimited) {
+//        this.speedLimited = speedLimited;
+//    }
 
     public Vector<Integer> getErrors() {
         return errors;
