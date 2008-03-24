@@ -119,7 +119,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
 
     private SimpleGUI            parentFrame;
 
-    private Vector<packageTab>   tabList;
+    private Vector<PackageTab>   tabList;
 
     private JProgressBar         progress;
 
@@ -160,7 +160,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
       //  config = JDUtilities.getConfiguration();
         guiConfig = JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME);
         this.parentFrame = parent;
-        tabList = new Vector<packageTab>();
+        tabList = new Vector<PackageTab>();
         this.waitingLinkList = new Vector<DownloadLink>();
         initGUI();
 
@@ -479,7 +479,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
 
     public void addLinkstoTab(DownloadLink[] linkList, int id) {
 
-        packageTab tab;
+        PackageTab tab;
         // logger.info(id + " - " + tabList.size());
         if (id >= tabList.size()) {
             tab = addTab();
@@ -500,15 +500,15 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
         tabbedPane.removeTabAt(i);
     }
 
-    protected void removePackage(packageTab tab) {    	
+    protected void removePackage(PackageTab tab) {    	
     	removePackageAt(tabList.indexOf(tab));
     }
 
-    protected packageTab getSelectedTab() {
+    protected PackageTab getSelectedTab() {
         return tabList.get(this.tabbedPane.getSelectedIndex());
     }
 
-    protected void onPackageNameChanged(packageTab tab) {
+    protected void onPackageNameChanged(PackageTab tab) {
         for (int i = 0; i < tabList.size(); i++) {
             if (tabList.get(i) == tab) {
                     String title = tab.getPackageName();
@@ -525,9 +525,9 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
 
     }
 
-    private packageTab addTab() {
-        packageTab tab;
-        tab = new packageTab();
+    private PackageTab addTab() {
+        PackageTab tab;
+        tab = new PackageTab();
         tab.setPackageName(JDLocale.L("gui.linkgrabber.lbl.newpackage", "neues package"));
         this.tabList.add(tab);
         tabbedPane.addTab(tab.getPackageName(), tab);
@@ -646,9 +646,9 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
             this.dispose();
         }
         else if (e.getSource() == this.mMerge) {
-            packageTab tab = tabList.get(tabbedPane.getSelectedIndex());
+            PackageTab tab = tabList.get(tabbedPane.getSelectedIndex());
             String name = tab.getPackageName();
-            Iterator<packageTab> iterator = tabList.iterator();
+            Iterator<PackageTab> iterator = tabList.iterator();
             Vector<DownloadLink> newList = new Vector<DownloadLink>();
             while (iterator.hasNext()) {
                 tab = iterator.next();
@@ -667,8 +667,8 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
 
         }
         else if (e.getSource() == this.mRemoveOfflineAll) {
-            packageTab tab;
-            Iterator<packageTab> iterator = tabList.iterator();
+            PackageTab tab;
+            Iterator<PackageTab> iterator = tabList.iterator();
         //    Vector<DownloadLink> newList = new Vector<DownloadLink>();
             while (iterator.hasNext()) {
                 tab = iterator.next();
@@ -682,7 +682,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
             }
         }
         else if (e.getSource() == this.mRemoveOffline) {
-            packageTab tab = tabList.get(tabbedPane.getSelectedIndex());
+            PackageTab tab = tabList.get(tabbedPane.getSelectedIndex());
             Vector<DownloadLink> list = tab.getLinkList();
             for (int i = list.size() - 1; i >= 0; --i) {
                 if (!list.get(i).isAvailable()) {
@@ -693,7 +693,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
         }
         else if (e.getSource() == this.mRemoveEmptyPackages){
         	for(int i=tabList.size() -1 ; i>=0; --i){
-        		packageTab tab = tabList.get(i);
+        		PackageTab tab = tabList.get(i);
         		if( tab.isEmpty() ){
         			this.removePackage(tab);
         		}
@@ -746,7 +746,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
 
     private void confirmAll() {
         for (int tt = 0; tt < tabList.size(); tt++) {
-            packageTab tab = tabList.get(tt);
+            PackageTab tab = tabList.get(tt);
             Vector<DownloadLink> linkList = tab.getLinkList();
             if (linkList.size() == 0) {
 
@@ -793,7 +793,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
     }
 
     private void confirmCurrentPackage() {
-        packageTab tab = tabList.get(tabbedPane.getSelectedIndex());
+        PackageTab tab = tabList.get(tabbedPane.getSelectedIndex());
         Vector<DownloadLink> linkList = tab.getLinkList();
         if (linkList.size() == 0) {
 
@@ -852,8 +852,8 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
         // TODO Auto-generated method stub
 
         int destID = tabbedPane.getUI().tabForCoordinate(tabbedPane, (int) e.getLocation().getX(), (int) e.getLocation().getY());
-        packageTab dest;
-        packageTab source = tabList.get(currentTab);
+        PackageTab dest;
+        PackageTab source = tabList.get(currentTab);
         if (destID < 0) {
             dest = addTab();
             dest.setPackageName(source.getPackageName() + "(2)");
@@ -941,7 +941,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
      * @author JD-Team
      * 
      */
-    class packageTab extends JPanel implements ActionListener, MouseListener, KeyListener {
+    class PackageTab extends JPanel implements ActionListener, MouseListener, KeyListener {
 
         /**
          * 
@@ -968,11 +968,11 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
 
         private Vector<DownloadLink> linkList;
 
-        protected packageTab         _this;
+        protected PackageTab         _this;
 
         private int                  sortedOn         = 1;
 
-        public packageTab() {
+        public PackageTab() {
             linkList = new Vector<DownloadLink>();
             _this = this;
             buildGui();
@@ -1281,7 +1281,23 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
             }
 
             if (e.getActionCommand().equals(JDLocale.L("gui.linkgrabber.packagetab.table.context.newpackage", "Neues package"))) {
-                addTab();
+                PackageTab newTab = addTab();
+
+                int[] rows = table.getSelectedRows();
+                               
+                if( 0 < rows.length){
+                	DownloadLink linksToTransfer[] = new DownloadLink[rows.length];
+                	int targetIndex = 0;
+                	
+                	for( int currentRow =rows.length -1 ; currentRow>=0; --currentRow){
+                		linksToTransfer[targetIndex++] = this.getLinkAt(currentRow);
+                		linkList.remove(currentRow);
+                	}
+                	
+                	newTab.addLinks(linksToTransfer);
+                	this.refreshTable();
+                }
+                
 
             }
 
