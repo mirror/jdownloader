@@ -61,7 +61,7 @@ public class UCMS extends PluginForDecrypt {
     		+ "|(http://[*]oxygen-warez.com/\\?id=[+])"
     		+ "|(http://[*]oxygen-warez.com/category/[+]/[+])"
     		+ "|(http://[*]mov-world.net/category/[+]/[+])"
-    		
+    		+ "|(http://[*]serienking.in/\\?id=[+])"
     		+ "|(http://[*]your-load.com/category/[+]/[+])"
     		+ "|(http://[*]isos.at/[+]/[+])"
     		+ "|(http://[*]game-freaks.net/[+]/[+].html)"
