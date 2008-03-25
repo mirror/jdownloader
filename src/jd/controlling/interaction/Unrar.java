@@ -215,7 +215,7 @@ public class Unrar extends Interaction implements Serializable {
 				.getDownloadLinks().iterator();
 		while (ff.hasNext()) {
 			DownloadLink dl = ff.next();
-			if (dl.getStatus() != DownloadLink.STATUS_DOWNLOAD_FINISHED
+			if (dl.getStatus() != DownloadLink.STATUS_DONE
 					&& dl.getStatus() != DownloadLink.STATUS_DONE) {
 				followingFiles.add(dl.getName());
 			}

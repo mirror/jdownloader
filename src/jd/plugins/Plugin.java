@@ -90,27 +90,31 @@ public abstract class Plugin {
      * Versionsinformationen
      */
     public static final String    VERSION         = "jDownloader_20070830_0";
-    
+
     /**
      * Zeigt an, ob das Plugin abgebrochen werden soll
      */
     public ConfigContainer        config;
 
     protected RequestInfo         requestInfo;
+
     protected CRequest            request         = new CRequest();
+
     protected boolean             aborted         = false;
-    
-    public boolean collectCaptchas()
-    {
-    	return true;
+
+    public boolean collectCaptchas() {
+        return true;
     }
+
     /**
-     * Wenn das Captcha nicht richtig erkannt wurde kann wird ein Dialog zu Captchaeingabe gezeigt
-     * ist useUserinputIfCaptchaUnknown wird dieser dialog nicht gezeigt
+     * Wenn das Captcha nicht richtig erkannt wurde kann wird ein Dialog zu
+     * Captchaeingabe gezeigt ist useUserinputIfCaptchaUnknown wird dieser
+     * dialog nicht gezeigt
+     * 
      * @return
      */
     public boolean useUserinputIfCaptchaUnknown() {
-    	return true;
+        return true;
     }
 
     /**
@@ -216,7 +220,7 @@ public abstract class Plugin {
      * Beispielsweise kann so der JDController die Premiumnutzung abschalten
      * wenn er fehler feststellt
      */
-    public static final String PROPERTY_USE_PREMIUM  = "USE_PREMIUM";
+    public static final String PROPERTY_USE_PREMIUM                    = "USE_PREMIUM";
 
     /**
      * Property name für die Config. Diese sollten möglichst einheitlich sein.
@@ -224,7 +228,7 @@ public abstract class Plugin {
      * Beispielsweise kann so der JDController die Premiumnutzung abschalten
      * wenn er fehler feststellt
      */
-    public static final String PROPERTY_PREMIUM_PASS = "PREMIUM_PASS";
+    public static final String PROPERTY_PREMIUM_PASS                   = "PREMIUM_PASS";
 
     /**
      * Property name für die Config. Diese sollten möglichst einheitlich sein.
@@ -232,30 +236,31 @@ public abstract class Plugin {
      * Beispielsweise kann so der JDController die Premiumnutzung abschalten
      * wenn er fehler feststellt
      */
-    public static final String PROPERTY_PREMIUM_USER = "PREMIUM_USER";
+    public static final String PROPERTY_PREMIUM_USER                   = "PREMIUM_USER";
 
-    public static final int DOWNLOAD_ERROR_INVALID_OUTPUTFILE = 0;
+    public static final int    DOWNLOAD_ERROR_INVALID_OUTPUTFILE       = 0;
 
-    public static final int DOWNLOAD_ERROR_OUTPUTFILE_ALREADYEXISTS = 2;
+    public static final int    DOWNLOAD_ERROR_OUTPUTFILE_ALREADYEXISTS = 2;
 
-    public static final int DOWNLOAD_ERROR_DOWNLOAD_INCOMPLETE = 3;
+    public static final int    DOWNLOAD_ERROR_DOWNLOAD_INCOMPLETE      = 3;
 
-    public static final int DOWNLOAD_ERROR_RENAME_FAILED = 4;
+    public static final int    DOWNLOAD_ERROR_RENAME_FAILED            = 4;
 
-    public static final int DOWNLOAD_SUCCESS = 5;
+    public static final int    DOWNLOAD_SUCCESS                        = 5;
 
-    public static final int DOWNLOAD_ERROR_FILENOTFOUND = 6;
+    public static final int    DOWNLOAD_ERROR_FILENOTFOUND             = 6;
 
-    public static final int DOWNLOAD_ERROR_SECURITY = 7;
+    public static final int    DOWNLOAD_ERROR_SECURITY                 = 7;
 
-    public static final int DOWNLOAD_ERROR_UNKNOWN = 8;
-    public static final int DOWNLOAD_ERROR_OUTPUTFILE_IN_PROGRESS = 9;
+    public static final int    DOWNLOAD_ERROR_UNKNOWN                  = 8;
 
-    private static final int DOWNLOAD_ERROR_0_BYTE_TOLOAD = 10;
+    public static final int    DOWNLOAD_ERROR_OUTPUTFILE_IN_PROGRESS   = 9;
 
-    public static final int CAPTCHA_JAC = 0;
+    private static final int   DOWNLOAD_ERROR_0_BYTE_TOLOAD            = 10;
 
-    public static final int CAPTCHA_USER_INPUT = 1;
+    public static final int    CAPTCHA_JAC                             = 0;
+
+    public static final int    CAPTCHA_USER_INPUT                      = 1;
 
     /**
      * Führt den aktuellen Schritt aus
@@ -271,7 +276,7 @@ public abstract class Plugin {
      * Listener werden benachrichtigt, wenn mittels
      * {@link #firePluginEvent(PluginEvent)} ein Event losgeschickt wird.
      */
-    public Vector<PluginListener> pluginListener = null;
+    public Vector<PluginListener> pluginListener     = null;
 
     /**
      * Hier werden alle notwendigen Schritte des Plugins hinterlegt
@@ -281,7 +286,7 @@ public abstract class Plugin {
     /**
      * Enthält den aktuellen Schritt des Plugins
      */
-    protected PluginStep          currentStep    = null;
+    protected PluginStep          currentStep        = null;
 
     /**
      * Properties zum abspeichern der einstellungen
@@ -292,14 +297,14 @@ public abstract class Plugin {
 
     private long                  initTime;
 
-    private Captcha lastCaptcha;
+    private Captcha               lastCaptcha;
 
-    private int captchaDetectionID=-1;;
+    private int                   captchaDetectionID = -1;                      ;
 
     /**
      * Ein Logger, um Meldungen darzustellen
      */
-    public static Logger          logger         = JDUtilities.getLogger();
+    public static Logger          logger             = JDUtilities.getLogger();
 
     protected Plugin() {
         pluginListener = new Vector<PluginListener>();
@@ -351,18 +356,29 @@ public abstract class Plugin {
      * @return nächster step
      */
     public PluginStep nextStep(PluginStep currentStep) {
-        if (steps == null || steps.size() == 0) return null;
-        if (currentStep == null) {
-            currentStep = steps.firstElement();
-            return steps.firstElement();
+        
+        if (steps != null && steps.size() > 0) {       
+
+            if (currentStep == null) {
+                currentStep = steps.firstElement();
+
+            }
+            else {
+                int index = steps.indexOf(currentStep) + 1;
+                if (steps.size() > index) {
+                    currentStep = steps.elementAt(index);
+
+                }else{
+                    currentStep = null;
+                }
+            }
+        }else{
+            currentStep = null;
         }
-        int index = steps.indexOf(currentStep) + 1;
-        if (steps.size() > index) {
-            currentStep = steps.elementAt(index);
-            return steps.elementAt(index);
-        }
-        currentStep = null;
-        return null;
+
+        logger.info("next: " + this.currentStep + "->" + currentStep);
+        return (this.currentStep = currentStep);
+
     }
 
     /**
@@ -372,18 +388,28 @@ public abstract class Plugin {
      * @return Gibt den vorherigen step relativ zu currentstep zurück
      */
     public PluginStep previousStep(PluginStep currentStep) {
-        if (steps == null || steps.size() == 0) return null;
-        if (currentStep == null) {
-            currentStep = steps.firstElement();
-            return steps.firstElement();
+        
+        if (steps != null || steps.size() > 0) {            
+      
+            if (currentStep == null) {
+                currentStep = steps.lastElement();
+
+            }
+            else {
+                int index = steps.indexOf(currentStep) - 1;
+                if (index >= 0) {
+                    currentStep = steps.elementAt(index);
+
+                }else{
+                    currentStep = null;
+                }
+            }
+        }else{
+            currentStep = null;
         }
-        int index = steps.indexOf(currentStep) - 1;
-        if (index >= 0) {
-            currentStep = steps.elementAt(index);
-            return steps.elementAt(index);
-        }
-        currentStep = null;
-        return null;
+        
+        logger.info("previous: " + currentStep + "<-" + this.currentStep);
+        return (this.currentStep = currentStep);
     }
 
     /**
@@ -454,17 +480,18 @@ public abstract class Plugin {
     public static String getCookieString(HTTPConnection con) {
         String cookie = "";
         try {
-        	List<String> list = con.getHeaderFields().get("Set-Cookie");
-        	ListIterator<String> iter = list.listIterator(list.size());
-        	boolean last = false;
-        	while (iter.hasPrevious()) {
-        		cookie += (last? "; ":"") + iter.previous().replaceFirst("; expires=.*", "");
-        		last = true;
-			}
-		} catch (Exception e) {
-			// TODO: handle exception
-		}
-		return cookie;
+            List<String> list = con.getHeaderFields().get("Set-Cookie");
+            ListIterator<String> iter = list.listIterator(list.size());
+            boolean last = false;
+            while (iter.hasPrevious()) {
+                cookie += (last ? "; " : "") + iter.previous().replaceFirst("; expires=.*", "");
+                last = true;
+            }
+        }
+        catch (Exception e) {
+            // TODO: handle exception
+        }
+        return cookie;
     }
 
     /**
@@ -711,11 +738,13 @@ public abstract class Plugin {
     public static int getConnectTimeoutFromConfiguration() {
         return JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_CONNECT_TIMEOUT, 10000);
     }
+
     public static void setReadTimeout(int value) {
-        JDUtilities.getSubConfig("DOWNLOAD").setProperty(Configuration.PARAM_DOWNLOAD_READ_TIMEOUT,value);
+        JDUtilities.getSubConfig("DOWNLOAD").setProperty(Configuration.PARAM_DOWNLOAD_READ_TIMEOUT, value);
     }
+
     public static void setConnectTimeout(int value) {
-        JDUtilities.getSubConfig("DOWNLOAD").setProperty(Configuration.PARAM_DOWNLOAD_CONNECT_TIMEOUT,value);
+        JDUtilities.getSubConfig("DOWNLOAD").setProperty(Configuration.PARAM_DOWNLOAD_CONNECT_TIMEOUT, value);
     }
 
     /**
@@ -730,7 +759,8 @@ public abstract class Plugin {
      */
     public static RequestInfo getRequest(URL link, String cookie, String referrer, boolean redirect) throws IOException {
         // logger.finer("get: "+link+"(cookie: "+cookie+")");
-        HTTPConnection httpConnection = new HTTPConnection( link.openConnection());
+        long timer = System.currentTimeMillis();
+        HTTPConnection httpConnection = new HTTPConnection(link.openConnection());
         httpConnection.setReadTimeout(getReadTimeoutFromConfiguration());
         httpConnection.setConnectTimeout(getConnectTimeoutFromConfiguration());
         httpConnection.setInstanceFollowRedirects(redirect);
@@ -748,6 +778,29 @@ public abstract class Plugin {
         httpConnection.setRequestProperty("User-Agent", "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1; SV1; .NET CLR 1.1.4322; .NET CLR 2.0.50727)");
         RequestInfo requestInfo = readFromURL(httpConnection);
         requestInfo.setConnection(httpConnection);
+        logger.finer("getRequest " + link + ": " + (System.currentTimeMillis() - timer) + " ms");
+        return requestInfo;
+    }
+
+    public static RequestInfo headRequest(URL link, String cookie, String referrer, boolean redirect) throws IOException {
+        // logger.finer("get: "+link+"(cookie: "+cookie+")");
+        long timer = System.currentTimeMillis();
+        HTTPConnection httpConnection = new HTTPConnection(link.openConnection());
+        httpConnection.setReadTimeout(getReadTimeoutFromConfiguration());
+        httpConnection.setConnectTimeout(getConnectTimeoutFromConfiguration());
+        httpConnection.setRequestMethod("HEAD");
+        httpConnection.setInstanceFollowRedirects(redirect);
+        // wenn referrer nicht gesetzt wurde nimmt er den host als referer
+        if (referrer != null) httpConnection.setRequestProperty("Referer", referrer);
+
+        // httpConnection.setRequestProperty("Referer", "http://" +
+        // link.getHost());
+        if (cookie != null) httpConnection.setRequestProperty("Cookie", cookie);
+        httpConnection.setRequestProperty("Accept-Language", ACCEPT_LANGUAGE);
+        httpConnection.setRequestProperty("User-Agent", "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1; SV1; .NET CLR 1.1.4322; .NET CLR 2.0.50727)");
+        RequestInfo requestInfo = readFromURL(httpConnection);
+        requestInfo.setConnection(httpConnection);
+        logger.finer("headRequest " + link + ": " + (System.currentTimeMillis() - timer) + " ms");
         return requestInfo;
     }
 
@@ -763,12 +816,14 @@ public abstract class Plugin {
      * @throws IOException
      */
     public static RequestInfo getRequestWithoutHtmlCode(URL link, String cookie, String referrer, boolean redirect) throws IOException {
-        return getRequestWithoutHtmlCode(link, cookie, referrer,  redirect,getReadTimeoutFromConfiguration(),getConnectTimeoutFromConfiguration()) ;
-   
+        return getRequestWithoutHtmlCode(link, cookie, referrer, redirect, getReadTimeoutFromConfiguration(), getConnectTimeoutFromConfiguration());
+
     }
-        public static RequestInfo getRequestWithoutHtmlCode(URL link, String cookie, String referrer, boolean redirect,int readTimeout,int requestTimeout) throws IOException {
+
+    public static RequestInfo getRequestWithoutHtmlCode(URL link, String cookie, String referrer, boolean redirect, int readTimeout, int requestTimeout) throws IOException {
         // logger.finer("get: "+link);
-            HTTPConnection httpConnection = new HTTPConnection( link.openConnection());
+        long timer = System.currentTimeMillis();
+        HTTPConnection httpConnection = new HTTPConnection(link.openConnection());
         httpConnection.setReadTimeout(readTimeout);
         httpConnection.setConnectTimeout(requestTimeout);
         httpConnection.setInstanceFollowRedirects(redirect);
@@ -794,9 +849,10 @@ public abstract class Plugin {
         }
         catch (IOException e) {
         }
-        
+
         RequestInfo ri = new RequestInfo("", location, setcookie, httpConnection.getHeaderFields(), responseCode);
         ri.setConnection(httpConnection);
+        logger.finer("getReuqest wo " + link + ": " + (System.currentTimeMillis() - timer) + " ms");
         return ri;
     }
 
@@ -813,7 +869,8 @@ public abstract class Plugin {
      */
     public static RequestInfo getRequestWithoutHtmlCode(URL link, String cookie, String referrer, HashMap<String, String> requestProperties, boolean redirect) throws IOException {
         // logger.finer("get: "+link);
-        HTTPConnection httpConnection = new HTTPConnection( link.openConnection());
+        long timer = System.currentTimeMillis();
+        HTTPConnection httpConnection = new HTTPConnection(link.openConnection());
         httpConnection.setReadTimeout(getReadTimeoutFromConfiguration());
         httpConnection.setConnectTimeout(getConnectTimeoutFromConfiguration());
         httpConnection.setInstanceFollowRedirects(redirect);
@@ -835,9 +892,11 @@ public abstract class Plugin {
             String key;
             while (iterator.hasNext()) {
                 key = iterator.next();
+
                 httpConnection.setRequestProperty(key, requestProperties.get(key));
             }
         }
+
         httpConnection.connect();
         String location = httpConnection.getHeaderField("Location");
         String setcookie = getCookieString(httpConnection);
@@ -847,9 +906,10 @@ public abstract class Plugin {
         }
         catch (IOException e) {
         }
-        
+
         RequestInfo ri = new RequestInfo("", location, setcookie, httpConnection.getHeaderFields(), responseCode);
         ri.setConnection(httpConnection);
+        logger.finer("getRequest wo2 " + link + ": " + (System.currentTimeMillis() - timer) + " ms");
         return ri;
     }
 
@@ -880,22 +940,22 @@ public abstract class Plugin {
      * @throws IOException
      */
     public static RequestInfo postRequest(URL string, String cookie, String referrer, HashMap<String, String> requestProperties, String parameter, boolean redirect) throws IOException {
-     return  postRequest( string,  cookie,  referrer, requestProperties,  parameter,  redirect,getReadTimeoutFromConfiguration(),getConnectTimeoutFromConfiguration());
-            
+        return postRequest(string, cookie, referrer, requestProperties, parameter, redirect, getReadTimeoutFromConfiguration(), getConnectTimeoutFromConfiguration());
+
     }
-    
-    
-    public static RequestInfo postRequest(URL string, String cookie, String referrer, HashMap<String, String> requestProperties, String parameter, boolean redirect,int readTimeout,int requestTimeout) throws IOException {
+
+    public static RequestInfo postRequest(URL url, String cookie, String referrer, HashMap<String, String> requestProperties, String parameter, boolean redirect, int readTimeout, int requestTimeout) throws IOException {
         // logger.finer("post: "+link+"(cookie:"+cookie+" parameter:
         // "+parameter+")");
-        HTTPConnection httpConnection = new HTTPConnection( string.openConnection());
+        long timer = System.currentTimeMillis();
+        HTTPConnection httpConnection = new HTTPConnection(url.openConnection());
         httpConnection.setReadTimeout(readTimeout);
         httpConnection.setConnectTimeout(requestTimeout);
         httpConnection.setInstanceFollowRedirects(redirect);
         if (referrer != null)
             httpConnection.setRequestProperty("Referer", referrer);
         else
-            httpConnection.setRequestProperty("Referer", "http://" + string.getHost());
+            httpConnection.setRequestProperty("Referer", "http://" + url.getHost());
         if (cookie != null) httpConnection.setRequestProperty("Cookie", cookie);
         // TODO das gleiche wie bei getRequest
         httpConnection.setRequestProperty("Accept-Language", ACCEPT_LANGUAGE);
@@ -915,12 +975,13 @@ public abstract class Plugin {
         }
         httpConnection.setDoOutput(true);
         httpConnection.connect();
-        
+
         httpConnection.post(parameter);
-    
+
         RequestInfo requestInfo = readFromURL(httpConnection);
-      
+
         requestInfo.setConnection(httpConnection);
+        logger.finer("postRequest " + url + ": " + (System.currentTimeMillis() - timer) + " ms");
         return requestInfo;
     }
 
@@ -938,7 +999,8 @@ public abstract class Plugin {
      */
     public static RequestInfo postRequestWithoutHtmlCode(URL link, String cookie, String referrer, String parameter, boolean redirect) throws IOException {
         // logger.finer("post: "+link);
-        HTTPConnection httpConnection = new HTTPConnection( link.openConnection());
+        long timer = System.currentTimeMillis();
+        HTTPConnection httpConnection = new HTTPConnection(link.openConnection());
         httpConnection.setReadTimeout(getReadTimeoutFromConfiguration());
         httpConnection.setConnectTimeout(getConnectTimeoutFromConfiguration());
         httpConnection.setInstanceFollowRedirects(redirect);
@@ -972,6 +1034,7 @@ public abstract class Plugin {
         }
         RequestInfo ri = new RequestInfo("", location, setcookie, httpConnection.getHeaderFields(), responseCode);
         ri.setConnection(httpConnection);
+        logger.finer("postRequest wo" + link + ": " + (System.currentTimeMillis() - timer) + " ms");
         return ri;
     }
 
@@ -994,7 +1057,7 @@ public abstract class Plugin {
         }
         String line;
         StringBuffer htmlCode = new StringBuffer();
-        while ((line = rd.readLine()) != null) {        
+        while ((line = rd.readLine()) != null) {
             htmlCode.append(line + "\n");
         }
         String location = urlInput.getHeaderField("Location");
@@ -1015,317 +1078,343 @@ public abstract class Plugin {
      *            URLConnection vorhanden ist, wird diese hier übergeben und
      *            benutzt. Ansonsten erfolgt ein normaler GET Download von der
      *            URL, die im DownloadLink hinterlegt ist
-     * @return wahr, wenn alle Daten ausgelesen und gespeichert wurden
-//     */
-//    public int download(DownloadLink downloadLink, HTTPConnection urlConnection) {
-//
-//        return download(downloadLink, urlConnection, -1);
-//
-//    }
-//
-//    public int download(DownloadLink downloadLink, HTTPConnection urlConnection, int bytesToLoad) {
-//        
-//        logger.info("Download try: "+downloadLink+" from "+downloadLink.getHost()+" Bytes: "+bytesToLoad);
-//   
-//        if(JDUtilities.getController().isLocalFileInProgress(downloadLink)){
-//            logger.severe("File already is in progress. " + downloadLink.getFileOutput());
-//            downloadLink.setStatus(DownloadLink.STATUS_ERROR_OUTPUTFILE_OWNED_BY_ANOTHER_LINK);
-//            return Plugin.DOWNLOAD_ERROR_OUTPUTFILE_IN_PROGRESS;
-//            
-//        }
-//        File fileOutput = new File(downloadLink.getFileOutput() + ".jdd");
-//        if (fileOutput == null || fileOutput.getParentFile() == null) return Plugin.DOWNLOAD_ERROR_INVALID_OUTPUTFILE;
-//        if (!fileOutput.getParentFile().exists()) {
-//            fileOutput.getParentFile().mkdirs();
-//        }
-//        
-//        if(new File(downloadLink.getFileOutput()).exists()){
-//            logger.severe("File already exists. " + downloadLink.getFileOutput());
-//            downloadLink.setStatus(DownloadLink.STATUS_ERROR_ALREADYEXISTS);
-//            return Plugin.DOWNLOAD_ERROR_OUTPUTFILE_ALREADYEXISTS;
-//        }
-//        logger.info("Create Tmp file "+fileOutput+" for "+downloadLink.getFileOutput());
-//       
-//        
-//        downloadLink.setStatus(DownloadLink.STATUS_DOWNLOAD_IN_PROGRESS);
-//        long downloadedBytes = 0;
-//        long start, end, time;
-//        try {
-//            int maxspeed = downloadLink.getMaximalspeed();
-//            ByteBuffer buffer = ByteBuffer.allocateDirect(maxspeed);
-//            // Falls keine urlConnection übergeben wurde
-//            if (urlConnection == null) urlConnection = new HTTPConnection(new URL(downloadLink.getDownloadURL()).openConnection());
-//            FileOutputStream fos = new FileOutputStream(fileOutput);
-//            // Länge aus HTTP-Header speichern:
-//            int contentLen = urlConnection.getContentLength();
-//            if(contentLen>0)
-//            {
-//            downloadLink.setDownloadMax(contentLen);
-//            }
-//            else
-//            	contentLen = (int) downloadLink.getDownloadMax();
-//
-//            if (bytesToLoad > 0) {
-//                contentLen = bytesToLoad;
-//                logger.info("Load only the first " + bytesToLoad + " kb");
-//            }
-//            if(contentLen<=0){
-//                downloadLink.setStatus(DownloadLink.STATUS_ERROR_PLUGIN_SPECIFIC);
-//                downloadLink.setStatusText(JDLocale.L("plugins.download.error.0byte","Fehlerhafter Upload"));
-//                return Plugin.DOWNLOAD_ERROR_0_BYTE_TOLOAD; 
-//                
-//            }
-//            
-//            	
-//            // NIO Channels setzen:
-//            urlConnection.setReadTimeout(getReadTimeoutFromConfiguration());
-//            urlConnection.setConnectTimeout(getConnectTimeoutFromConfiguration());
-//            ReadableByteChannel source = Channels.newChannel(urlConnection.getInputStream());
-//            WritableByteChannel dest = fos.getChannel();
-//
-//            logger.info("starting download");
-//            start = System.currentTimeMillis();    
-//            buffer.clear();
-//   
-//            long bytesPerSecond = 0;
-//            long deltaTime = 0L;
-//            long timer = -System.currentTimeMillis();
-//            while (!aborted && !downloadLink.isAborted()) {
-//          
-//                if (downloadLink.isLimited) Thread.sleep(25);
-//                int bytes = source.read(buffer);
-//                if (bytes == -1) break;
-//    
-//                buffer.flip();
-//                dest.write(buffer);
-//                buffer.compact();
-//            
-//                downloadedBytes += bytes;
-//                bytesPerSecond += bytes;
-//                deltaTime = timer + System.currentTimeMillis();
-//                if (deltaTime > 1000) {
-//                    downloadLink.addBytes(bytesPerSecond, deltaTime);
-//                    bytesPerSecond = 0;
-//                    deltaTime = 0L;
-//                    timer = -System.currentTimeMillis();
-//                    if (maxspeed != (maxspeed = downloadLink.getMaximalspeed())) {
-//                        buffer = ByteBuffer.allocateDirect(downloadLink.getMaximalspeed());
-//                        buffer.clear();
-//                    }
-//                }
-//              
-//                firePluginEvent(new PluginEvent(this, PluginEvent.PLUGIN_DATA_CHANGED, downloadLink));
-//                downloadLink.setDownloadCurrent(downloadedBytes);
-//                if (bytesToLoad > 0 && downloadedBytes >= bytesToLoad) break;
-//            }
-//            if (bytesToLoad <= 0 && contentLen != -1 && downloadedBytes < contentLen) {
-//                logger.info(aborted + " - " + downloadLink.isAborted() + " incomplete download: bytes loaded: " + downloadedBytes + "/" + contentLen);
-//                downloadLink.setStatus(DownloadLink.STATUS_DOWNLOAD_INCOMPLETE);
-//               source.close();
-//                dest.close();
-//                fos.close();
-//                return Plugin.DOWNLOAD_ERROR_DOWNLOAD_INCOMPLETE;
-//            }
-//            source.close();
-//            dest.close();
-//            fos.close();
-//            end = System.currentTimeMillis();
-//            time = end - start;
-//
-//            if (new File(downloadLink.getFileOutput()).exists()) {
-//                new File(downloadLink.getFileOutput()).delete();
-//            }
-//            if (!fileOutput.renameTo(new File(downloadLink.getFileOutput()))) {
-//                logger.severe("Could not rename file to " + downloadLink.getFileOutput());
-//                downloadLink.setStatus(DownloadLink.STATUS_DOWNLOAD_INCOMPLETE);
-//                return Plugin.DOWNLOAD_ERROR_RENAME_FAILED;
-//            }
-//            downloadLink.setStatus(DownloadLink.STATUS_DOWNLOAD_FINISHED);
-//           logger.info("download finished:" + fileOutput.getAbsolutePath());
-//            logger.info(downloadedBytes + " bytes in " + time + " ms");
-//            return Plugin.DOWNLOAD_SUCCESS;
-//        }
-//        catch (FileNotFoundException e) {
-//
-//            logger.severe("file not found. " + e.getLocalizedMessage());
-//            downloadLink.setStatus(DownloadLink.STATUS_ERROR_FILE_NOT_FOUND);
-//            return Plugin.DOWNLOAD_ERROR_FILENOTFOUND;
-//        }
-//        catch (SecurityException e) {
-//
-//            logger.severe("not enough rights to write the file. " + e.getLocalizedMessage());
-//
-//            downloadLink.setStatus(DownloadLink.STATUS_ERROR_SECURITY);
-//            return Plugin.DOWNLOAD_ERROR_SECURITY;
-//        }
-//        catch (IOException e) {
-//
-//            logger.severe("error occurred while writing to file. " + e.getLocalizedMessage());
-//            downloadLink.setStatus(DownloadLink.STATUS_ERROR_SECURITY);
-//            return Plugin.DOWNLOAD_ERROR_SECURITY;
-//        }
-//        catch (Exception e) {
-//
-//            e.printStackTrace();
-//        }
-//        downloadLink.setStatus(DownloadLink.STATUS_DOWNLOAD_INCOMPLETE);
-//        return Plugin.DOWNLOAD_ERROR_UNKNOWN;
-//    }
-//   
-//    public int download(DownloadLink downloadLink, HTTPConnection urlConnection, int bytesToLoad, int resumeAt) {
-////        if(bytesToLoad==0){
-////            downloadLink.setStatus(DownloadLink.STATUS_ERROR_PLUGIN_SPECIFIC);
-////            downloadLink.setStatusText(JDLocale.L("plugins.download.error.0byte","Fehlerhafter Upload"));
-////            return Plugin.DOWNLOAD_ERROR_0_BYTE_TOLOAD; 
-////            
-////        }
-//        
-//        
-//        if(JDUtilities.getController().isLocalFileInProgress(downloadLink)){
-//            logger.severe("File already is in progress. " + downloadLink.getFileOutput());
-//            downloadLink.setStatus(DownloadLink.STATUS_ERROR_OUTPUTFILE_OWNED_BY_ANOTHER_LINK);
-//            return Plugin.DOWNLOAD_ERROR_OUTPUTFILE_IN_PROGRESS;
-//            
-//        }
-//        File fileOutput = new File(downloadLink.getFileOutput() + ".jdd");
-//        if (fileOutput == null || fileOutput.getParentFile() == null) return Plugin.DOWNLOAD_ERROR_INVALID_OUTPUTFILE;
-//        if (!fileOutput.getParentFile().exists()) {
-//            fileOutput.getParentFile().mkdirs();
-//        }
-//        
-//        if(new File(downloadLink.getFileOutput()).exists()){
-//            logger.severe("File already exists. " + downloadLink.getFileOutput());
-//            downloadLink.setStatus(DownloadLink.STATUS_ERROR_ALREADYEXISTS);
-//            return Plugin.DOWNLOAD_ERROR_OUTPUTFILE_ALREADYEXISTS;
-//        }
-//        logger.info("Create Tmp file "+fileOutput+" for "+downloadLink.getFileOutput());
-//        downloadLink.setStatus(DownloadLink.STATUS_DOWNLOAD_IN_PROGRESS);
-//        long downloadedBytes = 0;
-//        long start, end, time;
-//        try {
-//            int maxspeed = downloadLink.getMaximalspeed();
-//            ByteBuffer buffer = ByteBuffer.allocateDirect(maxspeed);
-//
-//            FileOutputStream fos = new FileOutputStream(fileOutput, true);
-//            // NIO Channels setzen:
-//            urlConnection.setReadTimeout(getReadTimeoutFromConfiguration());
-//            urlConnection.setConnectTimeout(getConnectTimeoutFromConfiguration());
-//            ReadableByteChannel source = Channels.newChannel(urlConnection.getInputStream());
-//            WritableByteChannel dest = fos.getChannel();
-//            // Länge aus HTTP-Header speichern:
-//            String range = urlConnection.getHeaderField("Content-Range");
-//            if (range == null || bytesToLoad > 0) {
-//                logger.severe("No Content-Range Header. Retry file");
-//                source.close();
-//                dest.close();
-//                fos.close();
-//                return download(downloadLink, urlConnection, bytesToLoad);
-//            }
-//            range = "[" + range + "]";
-//            logger.info(range);
-//            String[] dat = Plugin.getSimpleMatches(range, "[bytes °-°/°]");
-//            int contentLen = Integer.parseInt(dat[2]);
-//            int startAt = Integer.parseInt(dat[0]);
-//            // int rest = Integer.parseInt(dat[1]);
-//            downloadedBytes = startAt;
-//            downloadLink.setDownloadMax(contentLen);
-//            downloadLink.setDownloadCurrent(startAt);
-//            logger.info("starting download");
-//            start = System.currentTimeMillis();
-//            // Buffer, laufende Variablen resetten:
-//            buffer.clear();
-//            // long bytesLastSpeedCheck = 0;
-//            // long t1 = System.currentTimeMillis();
-//            // long t3 = t1;
-//
-//            long bytesPerSecond = 0;
-//            long deltaTime = 0L;
-//            long timer = -System.currentTimeMillis();
-//            while (!aborted && !downloadLink.isAborted()) {
-//                // Thread kurz schlafen lassen, um zu häufiges Event-fire zu
-//                // verhindern:
-//                // JD-Team: nix schlafen.. ich will speed! Die Events werden
-//                // jetzt von der GUI kontrolliert
-//                int bytes = source.read(buffer);
-//                if (downloadLink.isLimited) Thread.sleep(25);
-//                if (bytes == -1) break;
-//                // Buffer flippen und in File schreiben:
-//                buffer.flip();
-//                dest.write(buffer);
-//                buffer.compact();
-//                // Laufende Variablen updaten:
-//                downloadedBytes += bytes;
-//                bytesPerSecond += bytes;
-//                deltaTime = timer + System.currentTimeMillis();
-//                if (deltaTime > 1000) {
-//                    downloadLink.addBytes(bytesPerSecond, deltaTime);
-//                    bytesPerSecond = 0;
-//                    deltaTime = 0L;
-//                    timer = -System.currentTimeMillis();
-//                    if (maxspeed != (maxspeed = downloadLink.getMaximalspeed())) {
-//                        buffer = ByteBuffer.allocateDirect(downloadLink.getMaximalspeed());
-//                        buffer.clear();
-//                    }
-//                }
-//                // firePluginEvent(new PluginEvent(this,
-//                // PluginEvent.PLUGIN_DOWNLOAD_BYTES, bytes));
-//                firePluginEvent(new PluginEvent(this, PluginEvent.PLUGIN_DATA_CHANGED, downloadLink));
-//                downloadLink.setDownloadCurrent(downloadedBytes);
-//
-//                if (bytesToLoad > 0 && downloadedBytes >= bytesToLoad) break;
-//            }
-//            if (downloadedBytes < contentLen) {
-//                logger.info(aborted + " - " + downloadLink.isAborted() + " incomplete download: bytes loaded: " + downloadedBytes + "/" + contentLen);
-//                downloadLink.setStatus(DownloadLink.STATUS_DOWNLOAD_INCOMPLETE);
-//                
-//                source.close();
-//                dest.close();
-//                fos.close();
-//                return Plugin.DOWNLOAD_ERROR_DOWNLOAD_INCOMPLETE;
-//            }
-//            end = System.currentTimeMillis();
-//            time = end - start;
-//            source.close();
-//            dest.close();
-//            fos.close();
-//            if (new File(downloadLink.getFileOutput()).exists()) {
-//                new File(downloadLink.getFileOutput()).delete();
-//            }
-//         
-//       
-//            if (!fileOutput.renameTo(new File(downloadLink.getFileOutput()))) {
-//                logger.severe("Could not rename file " + fileOutput + " to " + downloadLink.getFileOutput());
-//                downloadLink.setStatus(DownloadLink.STATUS_DOWNLOAD_INCOMPLETE);
-//               return Plugin.DOWNLOAD_ERROR_RENAME_FAILED;
-//            }
-//            downloadLink.setStatus(DownloadLink.STATUS_DOWNLOAD_FINISHED);
-//            logger.info("download finished:" + fileOutput.getAbsolutePath());
-//            logger.info(downloadedBytes + " bytes in " + time + " ms");
-//            return Plugin.DOWNLOAD_SUCCESS;
-//        }
-//        catch (FileNotFoundException e) {
-//
-//            logger.severe("file not found. " + e.getLocalizedMessage());
-//            return Plugin.DOWNLOAD_ERROR_FILENOTFOUND;
-//        }
-//        catch (SecurityException e) {
-//
-//            logger.severe("not enough rights to write the file. " + e.getLocalizedMessage());
-//            return Plugin.DOWNLOAD_ERROR_SECURITY;
-//        }
-//        catch (IOException e) {
-//
-//            logger.severe("error occurred while writing to file. " + e.getLocalizedMessage());
-//            return Plugin.DOWNLOAD_ERROR_SECURITY;
-//        }
-//        catch (Exception e) {
-//
-//            e.printStackTrace();
-//        }
-//       downloadLink.setStatus(DownloadLink.STATUS_DOWNLOAD_INCOMPLETE);
-//        return Plugin.DOWNLOAD_ERROR_UNKNOWN;
-//    }
-
+     * @return wahr, wenn alle Daten ausgelesen und gespeichert wurden //
+     */
+    // public int download(DownloadLink downloadLink, HTTPConnection
+    // urlConnection) {
+    //
+    // return download(downloadLink, urlConnection, -1);
+    //
+    // }
+    //
+    // public int download(DownloadLink downloadLink, HTTPConnection
+    // urlConnection, int bytesToLoad) {
+    //        
+    // logger.info("Download try: "+downloadLink+" from
+    // "+downloadLink.getHost()+" Bytes: "+bytesToLoad);
+    //   
+    // if(JDUtilities.getController().isLocalFileInProgress(downloadLink)){
+    // logger.severe("File already is in progress. " +
+    // downloadLink.getFileOutput());
+    // downloadLink.setStatus(DownloadLink.STATUS_ERROR_OUTPUTFILE_OWNED_BY_ANOTHER_LINK);
+    // return Plugin.DOWNLOAD_ERROR_OUTPUTFILE_IN_PROGRESS;
+    //            
+    // }
+    // File fileOutput = new File(downloadLink.getFileOutput() + ".jdd");
+    // if (fileOutput == null || fileOutput.getParentFile() == null) return
+    // Plugin.DOWNLOAD_ERROR_INVALID_OUTPUTFILE;
+    // if (!fileOutput.getParentFile().exists()) {
+    // fileOutput.getParentFile().mkdirs();
+    // }
+    //        
+    // if(new File(downloadLink.getFileOutput()).exists()){
+    // logger.severe("File already exists. " + downloadLink.getFileOutput());
+    // downloadLink.setStatus(DownloadLink.STATUS_ERROR_ALREADYEXISTS);
+    // return Plugin.DOWNLOAD_ERROR_OUTPUTFILE_ALREADYEXISTS;
+    // }
+    // logger.info("Create Tmp file "+fileOutput+" for
+    // "+downloadLink.getFileOutput());
+    //       
+    //        
+    // downloadLink.setStatus(DownloadLink.STATUS_DOWNLOAD_IN_PROGRESS);
+    // long downloadedBytes = 0;
+    // long start, end, time;
+    // try {
+    // int maxspeed = downloadLink.getMaximalspeed();
+    // ByteBuffer buffer = ByteBuffer.allocateDirect(maxspeed);
+    // // Falls keine urlConnection übergeben wurde
+    // if (urlConnection == null) urlConnection = new HTTPConnection(new
+    // URL(downloadLink.getDownloadURL()).openConnection());
+    // FileOutputStream fos = new FileOutputStream(fileOutput);
+    // // Länge aus HTTP-Header speichern:
+    // int contentLen = urlConnection.getContentLength();
+    // if(contentLen>0)
+    // {
+    // downloadLink.setDownloadMax(contentLen);
+    // }
+    // else
+    // contentLen = (int) downloadLink.getDownloadMax();
+    //
+    // if (bytesToLoad > 0) {
+    // contentLen = bytesToLoad;
+    // logger.info("Load only the first " + bytesToLoad + " kb");
+    // }
+    // if(contentLen<=0){
+    // downloadLink.setStatus(DownloadLink.STATUS_ERROR_PLUGIN_SPECIFIC);
+    // downloadLink.setStatusText(JDLocale.L("plugins.download.error.0byte","Fehlerhafter
+    // Upload"));
+    // return Plugin.DOWNLOAD_ERROR_0_BYTE_TOLOAD;
+    //                
+    // }
+    //            
+    //            	
+    // // NIO Channels setzen:
+    // urlConnection.setReadTimeout(getReadTimeoutFromConfiguration());
+    // urlConnection.setConnectTimeout(getConnectTimeoutFromConfiguration());
+    // ReadableByteChannel source =
+    // Channels.newChannel(urlConnection.getInputStream());
+    // WritableByteChannel dest = fos.getChannel();
+    //
+    // logger.info("starting download");
+    // start = System.currentTimeMillis();
+    // buffer.clear();
+    //   
+    // long bytesPerSecond = 0;
+    // long deltaTime = 0L;
+    // long timer = -System.currentTimeMillis();
+    // while (!aborted && !downloadLink.isAborted()) {
+    //          
+    // if (downloadLink.isLimited) Thread.sleep(25);
+    // int bytes = source.read(buffer);
+    // if (bytes == -1) break;
+    //    
+    // buffer.flip();
+    // dest.write(buffer);
+    // buffer.compact();
+    //            
+    // downloadedBytes += bytes;
+    // bytesPerSecond += bytes;
+    // deltaTime = timer + System.currentTimeMillis();
+    // if (deltaTime > 1000) {
+    // downloadLink.addBytes(bytesPerSecond, deltaTime);
+    // bytesPerSecond = 0;
+    // deltaTime = 0L;
+    // timer = -System.currentTimeMillis();
+    // if (maxspeed != (maxspeed = downloadLink.getMaximalspeed())) {
+    // buffer = ByteBuffer.allocateDirect(downloadLink.getMaximalspeed());
+    // buffer.clear();
+    // }
+    // }
+    //              
+    // firePluginEvent(new PluginEvent(this, PluginEvent.PLUGIN_DATA_CHANGED,
+    // downloadLink));
+    // downloadLink.setDownloadCurrent(downloadedBytes);
+    // if (bytesToLoad > 0 && downloadedBytes >= bytesToLoad) break;
+    // }
+    // if (bytesToLoad <= 0 && contentLen != -1 && downloadedBytes < contentLen)
+    // {
+    // logger.info(aborted + " - " + downloadLink.isAborted() + " incomplete
+    // download: bytes loaded: " + downloadedBytes + "/" + contentLen);
+    // downloadLink.setStatus(DownloadLink.STATUS_DOWNLOAD_INCOMPLETE);
+    // source.close();
+    // dest.close();
+    // fos.close();
+    // return Plugin.DOWNLOAD_ERROR_DOWNLOAD_INCOMPLETE;
+    // }
+    // source.close();
+    // dest.close();
+    // fos.close();
+    // end = System.currentTimeMillis();
+    // time = end - start;
+    //
+    // if (new File(downloadLink.getFileOutput()).exists()) {
+    // new File(downloadLink.getFileOutput()).delete();
+    // }
+    // if (!fileOutput.renameTo(new File(downloadLink.getFileOutput()))) {
+    // logger.severe("Could not rename file to " +
+    // downloadLink.getFileOutput());
+    // downloadLink.setStatus(DownloadLink.STATUS_DOWNLOAD_INCOMPLETE);
+    // return Plugin.DOWNLOAD_ERROR_RENAME_FAILED;
+    // }
+    // downloadLink.setStatus(DownloadLink.STATUS_DONE);
+    // logger.info("download finished:" + fileOutput.getAbsolutePath());
+    // logger.info(downloadedBytes + " bytes in " + time + " ms");
+    // return Plugin.DOWNLOAD_SUCCESS;
+    // }
+    // catch (FileNotFoundException e) {
+    //
+    // logger.severe("file not found. " + e.getLocalizedMessage());
+    // downloadLink.setStatus(DownloadLink.STATUS_ERROR_FILE_NOT_FOUND);
+    // return Plugin.DOWNLOAD_ERROR_FILENOTFOUND;
+    // }
+    // catch (SecurityException e) {
+    //
+    // logger.severe("not enough rights to write the file. " +
+    // e.getLocalizedMessage());
+    //
+    // downloadLink.setStatus(DownloadLink.STATUS_ERROR_SECURITY);
+    // return Plugin.DOWNLOAD_ERROR_SECURITY;
+    // }
+    // catch (IOException e) {
+    //
+    // logger.severe("error occurred while writing to file. " +
+    // e.getLocalizedMessage());
+    // downloadLink.setStatus(DownloadLink.STATUS_ERROR_SECURITY);
+    // return Plugin.DOWNLOAD_ERROR_SECURITY;
+    // }
+    // catch (Exception e) {
+    //
+    // e.printStackTrace();
+    // }
+    // downloadLink.setStatus(DownloadLink.STATUS_DOWNLOAD_INCOMPLETE);
+    // return Plugin.DOWNLOAD_ERROR_UNKNOWN;
+    // }
+    //   
+    // public int download(DownloadLink downloadLink, HTTPConnection
+    // urlConnection, int bytesToLoad, int resumeAt) {
+    // // if(bytesToLoad==0){
+    // // downloadLink.setStatus(DownloadLink.STATUS_ERROR_PLUGIN_SPECIFIC);
+    // //
+    // downloadLink.setStatusText(JDLocale.L("plugins.download.error.0byte","Fehlerhafter
+    // Upload"));
+    // // return Plugin.DOWNLOAD_ERROR_0_BYTE_TOLOAD;
+    // //
+    // // }
+    //        
+    //        
+    // if(JDUtilities.getController().isLocalFileInProgress(downloadLink)){
+    // logger.severe("File already is in progress. " +
+    // downloadLink.getFileOutput());
+    // downloadLink.setStatus(DownloadLink.STATUS_ERROR_OUTPUTFILE_OWNED_BY_ANOTHER_LINK);
+    // return Plugin.DOWNLOAD_ERROR_OUTPUTFILE_IN_PROGRESS;
+    //            
+    // }
+    // File fileOutput = new File(downloadLink.getFileOutput() + ".jdd");
+    // if (fileOutput == null || fileOutput.getParentFile() == null) return
+    // Plugin.DOWNLOAD_ERROR_INVALID_OUTPUTFILE;
+    // if (!fileOutput.getParentFile().exists()) {
+    // fileOutput.getParentFile().mkdirs();
+    // }
+    //        
+    // if(new File(downloadLink.getFileOutput()).exists()){
+    // logger.severe("File already exists. " + downloadLink.getFileOutput());
+    // downloadLink.setStatus(DownloadLink.STATUS_ERROR_ALREADYEXISTS);
+    // return Plugin.DOWNLOAD_ERROR_OUTPUTFILE_ALREADYEXISTS;
+    // }
+    // logger.info("Create Tmp file "+fileOutput+" for
+    // "+downloadLink.getFileOutput());
+    // downloadLink.setStatus(DownloadLink.STATUS_DOWNLOAD_IN_PROGRESS);
+    // long downloadedBytes = 0;
+    // long start, end, time;
+    // try {
+    // int maxspeed = downloadLink.getMaximalspeed();
+    // ByteBuffer buffer = ByteBuffer.allocateDirect(maxspeed);
+    //
+    // FileOutputStream fos = new FileOutputStream(fileOutput, true);
+    // // NIO Channels setzen:
+    // urlConnection.setReadTimeout(getReadTimeoutFromConfiguration());
+    // urlConnection.setConnectTimeout(getConnectTimeoutFromConfiguration());
+    // ReadableByteChannel source =
+    // Channels.newChannel(urlConnection.getInputStream());
+    // WritableByteChannel dest = fos.getChannel();
+    // // Länge aus HTTP-Header speichern:
+    // String range = urlConnection.getHeaderField("Content-Range");
+    // if (range == null || bytesToLoad > 0) {
+    // logger.severe("No Content-Range Header. Retry file");
+    // source.close();
+    // dest.close();
+    // fos.close();
+    // return download(downloadLink, urlConnection, bytesToLoad);
+    // }
+    // range = "[" + range + "]";
+    // logger.info(range);
+    // String[] dat = Plugin.getSimpleMatches(range, "[bytes °-°/°]");
+    // int contentLen = Integer.parseInt(dat[2]);
+    // int startAt = Integer.parseInt(dat[0]);
+    // // int rest = Integer.parseInt(dat[1]);
+    // downloadedBytes = startAt;
+    // downloadLink.setDownloadMax(contentLen);
+    // downloadLink.setDownloadCurrent(startAt);
+    // logger.info("starting download");
+    // start = System.currentTimeMillis();
+    // // Buffer, laufende Variablen resetten:
+    // buffer.clear();
+    // // long bytesLastSpeedCheck = 0;
+    // // long t1 = System.currentTimeMillis();
+    // // long t3 = t1;
+    //
+    // long bytesPerSecond = 0;
+    // long deltaTime = 0L;
+    // long timer = -System.currentTimeMillis();
+    // while (!aborted && !downloadLink.isAborted()) {
+    // // Thread kurz schlafen lassen, um zu häufiges Event-fire zu
+    // // verhindern:
+    // // JD-Team: nix schlafen.. ich will speed! Die Events werden
+    // // jetzt von der GUI kontrolliert
+    // int bytes = source.read(buffer);
+    // if (downloadLink.isLimited) Thread.sleep(25);
+    // if (bytes == -1) break;
+    // // Buffer flippen und in File schreiben:
+    // buffer.flip();
+    // dest.write(buffer);
+    // buffer.compact();
+    // // Laufende Variablen updaten:
+    // downloadedBytes += bytes;
+    // bytesPerSecond += bytes;
+    // deltaTime = timer + System.currentTimeMillis();
+    // if (deltaTime > 1000) {
+    // downloadLink.addBytes(bytesPerSecond, deltaTime);
+    // bytesPerSecond = 0;
+    // deltaTime = 0L;
+    // timer = -System.currentTimeMillis();
+    // if (maxspeed != (maxspeed = downloadLink.getMaximalspeed())) {
+    // buffer = ByteBuffer.allocateDirect(downloadLink.getMaximalspeed());
+    // buffer.clear();
+    // }
+    // }
+    // // firePluginEvent(new PluginEvent(this,
+    // // PluginEvent.PLUGIN_DOWNLOAD_BYTES, bytes));
+    // firePluginEvent(new PluginEvent(this, PluginEvent.PLUGIN_DATA_CHANGED,
+    // downloadLink));
+    // downloadLink.setDownloadCurrent(downloadedBytes);
+    //
+    // if (bytesToLoad > 0 && downloadedBytes >= bytesToLoad) break;
+    // }
+    // if (downloadedBytes < contentLen) {
+    // logger.info(aborted + " - " + downloadLink.isAborted() + " incomplete
+    // download: bytes loaded: " + downloadedBytes + "/" + contentLen);
+    // downloadLink.setStatus(DownloadLink.STATUS_DOWNLOAD_INCOMPLETE);
+    //                
+    // source.close();
+    // dest.close();
+    // fos.close();
+    // return Plugin.DOWNLOAD_ERROR_DOWNLOAD_INCOMPLETE;
+    // }
+    // end = System.currentTimeMillis();
+    // time = end - start;
+    // source.close();
+    // dest.close();
+    // fos.close();
+    // if (new File(downloadLink.getFileOutput()).exists()) {
+    // new File(downloadLink.getFileOutput()).delete();
+    // }
+    //         
+    //       
+    // if (!fileOutput.renameTo(new File(downloadLink.getFileOutput()))) {
+    // logger.severe("Could not rename file " + fileOutput + " to " +
+    // downloadLink.getFileOutput());
+    // downloadLink.setStatus(DownloadLink.STATUS_DOWNLOAD_INCOMPLETE);
+    // return Plugin.DOWNLOAD_ERROR_RENAME_FAILED;
+    // }
+    // downloadLink.setStatus(DownloadLink.STATUS_DONE);
+    // logger.info("download finished:" + fileOutput.getAbsolutePath());
+    // logger.info(downloadedBytes + " bytes in " + time + " ms");
+    // return Plugin.DOWNLOAD_SUCCESS;
+    // }
+    // catch (FileNotFoundException e) {
+    //
+    // logger.severe("file not found. " + e.getLocalizedMessage());
+    // return Plugin.DOWNLOAD_ERROR_FILENOTFOUND;
+    // }
+    // catch (SecurityException e) {
+    //
+    // logger.severe("not enough rights to write the file. " +
+    // e.getLocalizedMessage());
+    // return Plugin.DOWNLOAD_ERROR_SECURITY;
+    // }
+    // catch (IOException e) {
+    //
+    // logger.severe("error occurred while writing to file. " +
+    // e.getLocalizedMessage());
+    // return Plugin.DOWNLOAD_ERROR_SECURITY;
+    // }
+    // catch (Exception e) {
+    //
+    // e.printStackTrace();
+    // }
+    // downloadLink.setStatus(DownloadLink.STATUS_DOWNLOAD_INCOMPLETE);
+    // return Plugin.DOWNLOAD_ERROR_UNKNOWN;
+    // }
     /**
      * Holt den Dateinamen aus einem Content-Disposition header. wird dieser
      * nicht gefunden, wird der dateiname aus der url ermittelt
@@ -1579,8 +1668,8 @@ public abstract class Plugin {
      * @return Treffer
      */
     public static ArrayList<ArrayList<String>> getAllSimpleMatches(String source, Pattern pattern) {
-    	ArrayList<ArrayList<String>> ret = new ArrayList<ArrayList<String>>();
-    	ArrayList<String> entry;
+        ArrayList<ArrayList<String>> ret = new ArrayList<ArrayList<String>>();
+        ArrayList<String> entry;
         String tmp;
         for (Matcher r = pattern.matcher(source); r.find();) {
             entry = new ArrayList<String>();
@@ -1613,7 +1702,7 @@ public abstract class Plugin {
 
     public static ArrayList<String> getAllSimpleMatches(String source, Pattern pattern, int id) {
 
-    	ArrayList<String> ret = new ArrayList<String>();
+        ArrayList<String> ret = new ArrayList<String>();
         for (Matcher r = pattern.matcher(source); r.find();) {
             if (id <= r.groupCount()) ret.add(r.group(id).trim());
         }
@@ -1631,7 +1720,7 @@ public abstract class Plugin {
      * @return treffer an der stelle x/y im 2d treffer array
      */
     public static String getSimpleMatch(String source, String pattern, int x, int y) {
-    	ArrayList<ArrayList<String>> ret = getAllSimpleMatches(source, pattern);
+        ArrayList<ArrayList<String>> ret = getAllSimpleMatches(source, pattern);
         if (ret.get(x) != null && ret.get(x).get(y) != null) {
             return ret.get(x).get(y);
         }
@@ -1922,8 +2011,10 @@ public abstract class Plugin {
 
         return ret;
     }
+
     /**
      * Gibt die Passwörter als String aus bsp. {"Passwort1","Passwort2"}
+     * 
      * @param data
      * @return
      */
@@ -1933,8 +2024,8 @@ public abstract class Plugin {
     }
 
     public void setLastCaptcha(Captcha captcha) {
-        this.lastCaptcha=captcha;
-        
+        this.lastCaptcha = captcha;
+
     }
 
     public Captcha getLastCaptcha() {
@@ -1942,8 +2033,8 @@ public abstract class Plugin {
     }
 
     public void setCaptchaDetectID(int captchaJac) {
-       captchaDetectionID = captchaJac;
-        
+        captchaDetectionID = captchaJac;
+
     }
 
     public int getCaptchaDetectionID() {

@@ -23,6 +23,7 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.util.Vector;
 
+import jd.event.ControlEvent;
 import jd.utils.JDUtilities;
 
 /**
@@ -65,8 +66,11 @@ public abstract class PluginForHost extends Plugin {
      * @return der nächste Schritt oder null, falls alle abgearbeitet wurden
      */
     public PluginStep doNextStep(Object parameter) {
-      
-        currentStep = nextStep(currentStep);
+     
+        nextStep(currentStep);
+        
+        
+       
         if (currentStep == null) {
             logger.info(this + " Pluginende erreicht!");
             return null;
@@ -78,9 +82,9 @@ public abstract class PluginForHost extends Plugin {
             ((DownloadLink)parameter).setStatus(DownloadLink.STATUS_ERROR_AGB_NOT_SIGNED);
             return currentStep;
         }
-        PluginStep ret = doStep(currentStep, parameter);
+        currentStep = doStep(currentStep, parameter);
 
-        return ret;
+        return currentStep;
     }
     public boolean isListOffline(){
         return true;

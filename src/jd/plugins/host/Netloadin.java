@@ -294,6 +294,7 @@ public class Netloadin extends PluginForHost {
                 if(finalURL==null){
                 logger.info("USER: "+user+" : "+pass);
                 //SessionID holen
+                
                 requestInfo = getRequest(new URL(downloadLink.getDownloadURL()), null, null, true);
                 this.sessionID = requestInfo.getCookie();
                 logger.finer("sessionID: "+sessionID);
@@ -364,15 +365,10 @@ public class Netloadin extends PluginForHost {
                 logger.info("Filename: " + getFileNameFormHeader(requestInfo.getConnection()));
                 downloadLink.setName(getFileNameFormHeader(requestInfo.getConnection()));
             
-                if (!hasEnoughHDSpace(downloadLink)) {
-                    downloadLink.setStatus(DownloadLink.STATUS_ERROR_NO_FREE_SPACE);
-                    step.setStatus(PluginStep.STATUS_ERROR);
-                    return step;
-                }
-                
+            
                 Download dl = new Download(this, downloadLink,  requestInfo.getConnection());
                 dl.setChunks(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS,3));
-                
+                //dl.setMaxBytesToLoad(2*1024*1024);
                 dl.setLoadPreBytes(1);
                 dl.startDownload();
                 

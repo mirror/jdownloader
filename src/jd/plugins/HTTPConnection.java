@@ -22,22 +22,37 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.net.HttpURLConnection;
+import java.net.ProtocolException;
 import java.net.URL;
 import java.net.URLConnection;
-
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.Vector;
+import java.util.Map.Entry;
 
 public class HTTPConnection {
 
     public static final int HTTP_NOT_IMPLEMENTED = HttpURLConnection.HTTP_NOT_IMPLEMENTED;
     private HttpURLConnection connection;
-    private Map<String, List<String>> requestProperties;
-    private boolean connected;
+    private HashMap<String, List<String>> requestProperties=null;
+ 
     private String postData;
 
     public HTTPConnection(URLConnection openConnection) {
         this.connection=(HttpURLConnection)openConnection;
+        requestProperties=new HashMap<String, List<String>>();
+        
+        Map<String, List<String>> tmp = connection.getRequestProperties();
+        Iterator<Entry<String, List<String>>> set = tmp.entrySet().iterator();
+        while(set.hasNext()){
+            Entry<String, List<String>> next = set.next();
+            requestProperties.put(next.getKey(), next.getValue());
+        }
+        
     }
 
     public void setReadTimeout(int timeout) {
@@ -56,10 +71,14 @@ public class HTTPConnection {
     }
 
     public void setRequestProperty(String key, String value) {
-        connection.setRequestProperty(key,value);
-        
-    }
+        LinkedList<String> l = new LinkedList<String>();
 
+        l.add(value);
+        requestProperties.put(key, l);
+        connection.setRequestProperty(key,value);
+       
+    }
+    
     public String getHeaderField(String string) {
         return connection.getHeaderField(string);
     }
@@ -74,9 +93,9 @@ public class HTTPConnection {
     }
 
     public void connect() throws IOException {
-        this.requestProperties=connection.getRequestProperties();
+        
         connection.connect();
-        this.connected=true;
+        
     }
 
     public OutputStream getOutputStream() throws IOException {       
@@ -109,11 +128,7 @@ public class HTTPConnection {
     }
 
     public Map<String, List<String>> getRequestProperties() {
-       try{
-           return connection.getRequestProperties();
-       }catch(Exception e){
-           return this.requestProperties;
-       }
+       return requestProperties;
      
     }
 
@@ -132,6 +147,14 @@ public class HTTPConnection {
 
     public String getPostData() {
         return postData;
+    }
+
+    public void setRequestMethod(String string) throws ProtocolException {
+        connection.setRequestMethod(string);
+        
+    }
+    public String getRequestMethod(){
+        return connection.getRequestMethod();
     }
 
 }

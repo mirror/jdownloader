@@ -673,7 +673,9 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
                 new jdUnrarPasswordListDialog(((SimpleGUI) JDUtilities.getController().getUiInterface()).getFrame()).setVisible(true);
                 break;
             case JDAction.APP_START_STOP_DOWNLOADS:
+                logger.info("START_STOP");
                 btnStartStop.setSelected(!btnStartStop.isSelected());
+                if(!btnStartStop.isSelected())btnStartStop.setEnabled(false);
                 this.startStopDownloads();
                 
                 break;
@@ -812,7 +814,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
     }
 
     public void startStopDownloads() {
-       
+       logger.info("start_stop_itr");
         if (btnStartStop.isSelected() && JDUtilities.getController().getDownloadStatus() == JDController.DOWNLOAD_NOT_RUNNING) {
             btnPause.setEnabled(true);
             
@@ -917,7 +919,9 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
                 break;
             case ControlEvent.CONTROL_ALL_DOWNLOADS_FINISHED:
                 // showTrayTip("Downloads", "All downloads finished");
+                logger.info("ALL FINISHED");
                 btnStartStop.setSelected(false);
+                btnStartStop.setEnabled(true);
                 btnPause.setEnabled(false);
                 btnPause.setSelected(false);
                 break;

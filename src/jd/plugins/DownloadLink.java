@@ -42,7 +42,7 @@ public class DownloadLink implements Serializable, Comparable<DownloadLink> {
     /**
      * Link wurde erfolgreich heruntergeladen
      */
-    public final static int              STATUS_DONE                                   = 1;
+    public final static int              STATUS_DONE                                    = 1;
 
     /**
      * Ein unbekannter Fehler ist aufgetreten
@@ -97,10 +97,10 @@ public class DownloadLink implements Serializable, Comparable<DownloadLink> {
      */
     public static final int              STATUS_ERROR_PREMIUM                          = 12;
 
-    /**
-     * Zeigt an dass der Link fertig geladen wurde
-     */
-    public static final int              STATUS_DOWNLOAD_FINISHED                      = 13;
+//    /**
+//     * Zeigt an dass der Link fertig geladen wurde
+//     */
+//    public static final int              STATUS_DONE                      = 13;
 
     /**
      * Zeigt an dass der Link nicht vollständig geladen wurde
@@ -294,6 +294,8 @@ public class DownloadLink implements Serializable, Comparable<DownloadLink> {
     private boolean                      limited                                       = (JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, 0) != 0);
 
     private transient Download           downloadInstance;
+
+    private int[] chunksProgress=null;
 
     /**
      * Erzeugt einen neuen DownloadLink
@@ -631,15 +633,15 @@ public class DownloadLink implements Serializable, Comparable<DownloadLink> {
         if (getRemainingWaittime() > 0) {
             return this.statusText + "Warten: (" + JDUtilities.formatSeconds((int) (getRemainingWaittime() / 1000)) + "sek)";
         }
-        if (this.isInProgress() && (speed = getDownloadSpeed()) > -1) {
+        if (this.isInProgress() && (speed = getDownloadSpeed()) > 0) {
             if (getDownloadMax() < 0) {
                 return (speed / 1024) + " kb/s. " + JDLocale.L("gui.download.filesize_unknown", "(Dateigröße unbekannt)");
             }
             else {
                 if (getDownloadSpeed() == 0) {
                    
-                    if (this.downloadInstance != null && downloadInstance.getChunks() > 1) {
-                        return (speed / 1024) + " kb/s." + "(" + downloadInstance.getChunksDownloading() + "/" + downloadInstance.getChunks() + ")";
+                    if (this.downloadInstance != null && downloadInstance.getChunkNum() > 1) {
+                        return (speed / 1024) + " kb/s." + "(" + downloadInstance.getChunksDownloading() + "/" + downloadInstance.getChunkNum() + ")";
                     }
                     else {
                         return (speed / 1024) + " kb/s.";
@@ -648,9 +650,9 @@ public class DownloadLink implements Serializable, Comparable<DownloadLink> {
                 else {
                     long remainingBytes = this.getDownloadMax() - this.getDownloadCurrent();
                     long eta = remainingBytes / speed;
-                    if (this.downloadInstance != null && downloadInstance.getChunks() > 1) {
+                    if (this.downloadInstance != null && downloadInstance.getChunkNum() > 1) {
                        // logger.info("ETA " + JDUtilities.formatSeconds((int) eta) + " @ " + (speed / 1024) + " kb/s." + "(" + downloadInstance.getChunksDownloading() + "/" + downloadInstance.getChunks() + ")");
-                        return "ETA " + JDUtilities.formatSeconds((int) eta) + " @ " + (speed / 1024) + " kb/s." + "(" + downloadInstance.getChunksDownloading() + "/" + downloadInstance.getChunks() + ")";
+                        return "ETA " + JDUtilities.formatSeconds((int) eta) + " @ " + (speed / 1024) + " kb/s." + "(" + downloadInstance.getChunksDownloading() + "/" + downloadInstance.getChunkNum() + ")";
                     }
                     else {
                         return "ETA " + JDUtilities.formatSeconds((int) eta) + " @ " + (speed / 1024) + " kb/s.";
@@ -678,7 +680,7 @@ public class DownloadLink implements Serializable, Comparable<DownloadLink> {
     public void reset() {
 
         downloadMax = 0;
-
+this.chunksProgress=null;
         downloadCurrent = 0;
         aborted = false;
     }
@@ -1029,5 +1031,17 @@ if(maximalspeed<=0){
 
     public void setLimited(boolean limited) {
         this.limited = limited;
+    }
+/**
+ * Die Downloadklasse kann hier ein array mit den Fortschritten der chunks ablegen. Damit können downloads resumed werden
+ * @param is
+ */
+    public void setChunksProgress(int[] is) {
+       this.chunksProgress=is;
+       
+            }
+
+    public int[] getChunksProgress() {
+        return chunksProgress;
     }
 }

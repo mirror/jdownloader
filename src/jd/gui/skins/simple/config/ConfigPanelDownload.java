@@ -72,10 +72,6 @@ public class ConfigPanelDownload extends ConfigPanel {
         ce.setExpertEntry(true);
 
         addGUIConfigEntry(new GUIConfigEntry(ce));
-        ce = new ConfigEntry(ConfigContainer.TYPE_SPINNER, config, Configuration.PARAM_DOWNLOAD_MAX_SPEED, JDLocale.L("gui.config.download.maxspeed", "Maximale Downlaodgeschwindigkeit in kb/s (0 = unendlich)"), 0, 1000000);
-        ce.setDefaultValue(0);
-        ce.setStep(1);
-        addGUIConfigEntry(new GUIConfigEntry(ce));
         ce = new ConfigEntry(ConfigContainer.TYPE_SPINNER, config, Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN, JDLocale.L("gui.config.download.simultan_downloads", "Maximale gleichzeitige Downloads"), 1, 20);
         ce.setDefaultValue(3);
         ce.setStep(1);
@@ -86,7 +82,7 @@ public class ConfigPanelDownload extends ConfigPanel {
         ce.setStep(1);
         addGUIConfigEntry(new GUIConfigEntry(ce));
 
-        ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, config, "PARAM_DOWNLOAD_AUTO_CORRECTSPPEDCHUNKS", JDLocale.L("gui.config.download.autochunks", "Chunks an Geschwindigkeitslimit anpassen."));
+        ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, config, "PARAM_DOWNLOAD_AUTO_CORRECTCHUNKS", JDLocale.L("gui.config.download.autochunks", "Chunks an Dateigröße anpassen."));
         ce.setDefaultValue(true);
         ce.setExpertEntry(true);
         addGUIConfigEntry(new GUIConfigEntry(ce));
@@ -94,8 +90,8 @@ public class ConfigPanelDownload extends ConfigPanel {
         // configuration, Configuration.PARAM_MIN_FREE_SPACE, "Downloads stoppen
         // wenn
         // der freie Speicherplatz weniger ist als [MB]",0,10000);
-        ce.setDefaultValue(100);
-        ce.setStep(10);
+//        ce.setDefaultValue(100);
+//        ce.setStep(10);
         // addGUIConfigEntry(ce);
 
         ce = new ConfigEntry(ConfigContainer.TYPE_SEPARATOR);

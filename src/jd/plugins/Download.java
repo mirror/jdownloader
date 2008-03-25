@@ -22,7 +22,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.RandomAccessFile;
 import java.net.URL;
+import java.nio.Buffer;
 import java.nio.ByteBuffer;
+import java.nio.MappedByteBuffer;
 import java.nio.channels.Channels;
 import java.nio.channels.FileChannel;
 import java.nio.channels.ReadableByteChannel;
@@ -98,21 +100,27 @@ public class Download {
 
     private int                       bytesLoaded                            = 0;
 
-    private volatile Braf outputFile;
+    private volatile RandomAccessFile outputFile;
 
     private FileChannel               outputChannel;
 
-    private int                       maxBytes;
-
-    private long                      lastChunkSpeedCheck;
-
-    private int                       lastMaxChunkSpeed;
+    private int                       maxBytes                               = -1;
 
     private long                      fileSize                               = -1;
 
     private boolean                   abortByError                           = false;
 
     private int                       preBytes                               = 0;
+
+    private long                      writeTimer                             = System.currentTimeMillis();
+
+    private long                      writeCount                             = 0;
+
+    private long                      hdWritesPerSecond;
+
+    private MappedByteBuffer          wrBuf;
+
+    private long                      debugtimer;
 
     public static Logger              logger                                 = JDUtilities.getLogger();
 
@@ -123,6 +131,12 @@ public class Download {
         this.plugin = plugin;
     }
 
+    /**
+     * Gibt die Anzahl der Chunks an die dieser Download verwenden soll. Chu8nks
+     * können nur vor dem Downloadstart gesetzt werden!
+     * 
+     * @param num
+     */
     public void setChunks(int num) {
         if (status != STATUS_INITIALIZED) {
             logger.severe("CHunks musst be set before starting download");
@@ -135,39 +149,88 @@ public class Download {
         this.chunkNum = num;
     }
 
-    private void addBytes(int bytes) {
-        this.bytesLoaded += bytes;
-
-    }
-
-    private synchronized void addBytes(ByteBuffer buffer, long currentBytePosition) {
+    /**
+     * Schreibt den puffer eines chunks in die zugehörige Datei
+     * 
+     * @param buffer
+     * @param currentBytePosition
+     */
+    // private synchronized void addBytes(Chunk chunk, int s) {
+    // try {
+    // if ((System.currentTimeMillis() - writeTimer) >= 1000) {
+    // this.hdWritesPerSecond = writeCount / 1;
+    // writeTimer = System.currentTimeMillis();
+    // writeCount = 0;
+    // logger.info("HD ZUgriffe: " + hdWritesPerSecond);
+    // }
+    // this.writeCount++;
+    // // currentBytePosition=-1;
+    // this.outputFile.seek(chunk.currentBytePosition);
+    //
+    // int length = chunk.buffer.limit() - chunk.buffer.position();
+    // // byte[] tmp = new byte[length];
+    // // logger.info("wrote " + length + " at " + currentBytePosition);
+    // // buffer.get(tmp, buffer.position(), length);
+    // outputChannel.write(chunk.buffer);
+    // // this.outputFile.write(tmp);
+    // }
+    // catch (Exception e) {
+    // // TODO Auto-generated catch block
+    // e.printStackTrace();
+    // error(ERROR_LOCAL_IO);
+    // }
+    //
+    // }
+    private synchronized void addBytes(Chunk chunk) {
         try {
-            // currentBytePosition=-1;
-            this.outputFile.seek(currentBytePosition);
+            if ((System.currentTimeMillis() - writeTimer) >= 1000) {
+                this.hdWritesPerSecond = writeCount / 1;
+                writeTimer = System.currentTimeMillis();
+                writeCount = 0;
+                logger.info("HD ZUgriffe: " + hdWritesPerSecond);
+            }
+            this.writeCount++;
 
-            int length = buffer.limit() - buffer.position();
-            // byte[] tmp = new byte[length];
-            // logger.info("wrote " + length + " at " + currentBytePosition);
-            // buffer.get(tmp, buffer.position(), length);
-            outputChannel.write(buffer);
-            // this.outputFile.write(tmp);
+            wrBuf.position((int) chunk.currentBytePosition);
+            wrBuf.put(chunk.buffer);
+            if (maxBytes > 0 && (chunk.currentBytePosition + chunk.buffer.capacity()) > maxBytes) {
+                // error(ERROR_NIBBLE_LIMIT_REACHED);
+            }
+            if (chunk.getID() >= 0) downloadLink.getChunksProgress()[chunk.getID()] = (int) chunk.currentBytePosition + chunk.buffer.capacity();
+
         }
         catch (Exception e) {
-            // TODO Auto-generated catch block
+
             e.printStackTrace();
             error(ERROR_LOCAL_IO);
         }
 
     }
 
+    /**
+     * File soll resumed werden
+     * 
+     * @param value
+     */
     public void setResume(boolean value) {
         this.resume = value;
     }
 
+    /**
+     * Ist resume aktiv?
+     * 
+     * @return
+     */
     public boolean isResume() {
         return resume;
     }
 
+    /**
+     * über error() kann ein fehler gemeldet werden. DIe Methode entscheided
+     * dann ob dieser fehler zu einem Abbruch führen muss
+     * 
+     * @param id
+     */
     private void error(int id) {
         logger.severe("Error occured: " + id);
         if (errors.indexOf(id) < 0) errors.add(id);
@@ -190,6 +253,11 @@ public class Download {
 
     }
 
+    /**
+     * Bricht den Download komplett ab.
+     * 
+     * @param id
+     */
     private void terminate(int id) {
 
         logger.severe("A critical Downloaderror occured. Terminate...");
@@ -197,7 +265,14 @@ public class Download {
 
     }
 
+    /**
+     * Startet den Download. Nach dem Aufruf dieser Funktion können keine
+     * Downlaodparameter mehr gesetzt werden bzw bleiben wirkungslos.
+     * 
+     * @return
+     */
     public boolean startDownload() {
+        debugtimer = System.currentTimeMillis();
         if (JDUtilities.getController().isLocalFileInProgress(downloadLink)) {
             logger.severe("File already is in progress. " + downloadLink.getFileOutput());
             downloadLink.setStatus(DownloadLink.STATUS_ERROR_OUTPUTFILE_OWNED_BY_ANOTHER_LINK);
@@ -221,6 +296,7 @@ public class Download {
             if (!todo.equals(JDLocale.L("system.download.triggerfileexists.skip", "Link überspringen"))) {
 
                 if (new File(downloadLink.getFileOutput()).delete()) {
+                    logger.severe("--->Overwritten");
                 }
                 else {
                     downloadLink.setStatus(DownloadLink.STATUS_ERROR_ALREADYEXISTS);
@@ -231,51 +307,207 @@ public class Download {
             }
 
         }
-        boolean correctChunks = JDUtilities.getSubConfig("DOWNLOAD").getBooleanProperty("PARAM_DOWNLOAD_AUTO_CORRECTSPPEDCHUNKS", true);
-        if (correctChunks) {
-            int maxSpeed = JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, 0);
-            if (maxSpeed == 0) maxSpeed = Integer.MAX_VALUE;
-            int allowedLinkSpeed = maxSpeed / Math.max(1, JDUtilities.getController().getRunningDownloadNum());
-            // logger.finer("Linkspeed: " + allowedLinkSpeed);
-            int tmp = Math.min(Math.max(1, allowedLinkSpeed / Chunk.MIN_CHUNKSPEED), chunkNum);
-            if (tmp != chunkNum) {
 
-                logger.finer("Corrected Chunknum: " + chunkNum + " -->" + tmp);
-                chunkNum = tmp;
-            }
-        }
         File part = new File(downloadLink.getFileOutput() + ".part");
-
+        if (part.exists()) {
+            logger.info("PART file exists...overwrite or resume...");
+        }
+        if (this.maxBytes > 0) {
+            logger.info("Nibble feature active: " + maxBytes + " rest chunks to 1");
+            chunkNum = 1;
+        }
         try {
-           // this.outputFile = new RandomAccessFile(part, "rwd");
-            this.outputFile= new Braf(downloadLink.getFileOutput() + ".part", "rwd", 1024*1024*10);
+            // this.outputFile = new RandomAccessFile(part, "rwd");
+            this.outputFile = new RandomAccessFile(downloadLink.getFileOutput() + ".part", "rw");
             // outputFile.setLength(connection.getContentLength());
             outputChannel = outputFile.getChannel();
-
-            downloadLink.setStatus(DownloadLink.STATUS_DOWNLOAD_IN_PROGRESS);
             long fileSize = getFileSize();
-            // logger.info("Filsize: " + fileSize);
-            long parts = fileSize > 0 ? fileSize / chunkNum : -1;
-            if (parts == -1) {
-                logger.warning("Could not get Filesize.... reset chunks to 1");
-                chunkNum = 1;
-            }
-            logger.finer("Start Download in " + chunkNum + " chunks. Chunksize: " + parts);
-            downloadLink.setDownloadMax((int) fileSize);
-            for (int i = 0; i < chunkNum; i++) {
-                if (i == (chunkNum - 1)) {
-                    addChunk(new Chunk(i * parts, fileSize, connection));
+            wrBuf = outputChannel.map(FileChannel.MapMode.READ_WRITE, 0, (int) fileSize);
+            outputChannel.close();
+            outputFile.close();
+            downloadLink.setStatus(DownloadLink.STATUS_DOWNLOAD_IN_PROGRESS);
+
+            boolean correctChunks = JDUtilities.getSubConfig("DOWNLOAD").getBooleanProperty("PARAM_DOWNLOAD_AUTO_CORRECTCHUNKS", true);
+            if (correctChunks) {
+
+                // logger.finer("Linkspeed: " + allowedLinkSpeed);
+                int tmp = Math.min(Math.max(1, (int) (fileSize / Chunk.MIN_CHUNKSIZE)), chunkNum);
+                if (tmp != chunkNum) {
+
+                    logger.finer("Corrected Chunknum: " + chunkNum + " -->" + tmp);
+                    // chunkNum = tmp;
                 }
-                else {
-                    addChunk(new Chunk(i * parts, (i + 1) * parts, connection));
+            }
+
+            int[] chunksProgress = downloadLink.getChunksProgress();
+            boolean isProgressStatusValid = false;
+            int[][] loadedRanges = null;
+            if (chunksProgress != null&&(chunkNum>0||this.isResume())) {
+                try {
+                    logger.info("Try to resume download");
+                    wrBuf.load();
+                    logger.info("Old Chunknum: " + chunksProgress.length);
+
+                    int bc;
+                    boolean ch;
+                    int bytesLoaded = 0;
+                    isProgressStatusValid = true;
+                    int supposedParts = (int) (fileSize / chunksProgress.length);
+                    int[] startBytes = new int[chunksProgress.length];
+                    loadedRanges = new int[chunksProgress.length][2];
+                    for (int i = 0; i < chunksProgress.length; i++) {
+                        if (i > 0 && chunksProgress[i] <= chunksProgress[i - 1]) {
+                            isProgressStatusValid = false;
+                            logger.info("Resumeerror: chunksorder error at chunk " + i);
+                            break;
+                        }
+                        bc = 0;
+                        ch = false;
+                        startBytes[i] = i * supposedParts;
+                        logger.info("Check Startposition " + i + " :" + i * supposedParts);
+                        wrBuf.position(i * supposedParts + bc);
+                        while (true) {
+
+                            // logger.info(wrBuf.position()+"->"+wrBuf.limit()+"("+wrBuf.capacity()+")");
+                            byte b = wrBuf.get();
+                            if (b != 0) {
+                                ch = true;
+                                loadedRanges[i][0] = i * supposedParts + bc;
+                                logger.info("ok at " + (i * supposedParts + bc));
+                                break;
+                            }
+                            bc++;
+                            if (i * supposedParts + bc >= chunksProgress[i]) break;
+                        }
+                        if (!ch) {
+                            isProgressStatusValid = false;
+                            logger.info("Chunk check failed (forwardsearch)" + i);
+                            break;
+                        }
+
+                    }
+
+                    if (isProgressStatusValid) {
+                        for (int i = 0; i < chunksProgress.length; i++) {
+                            bc = 1;
+
+                            if (i > 0 && chunksProgress[i] <= chunksProgress[i - 1]) {
+                                isProgressStatusValid = false;
+                                break;
+                            }
+                            if (chunksProgress[i] == 0) continue;
+                            ch = false;
+
+                            while (true) {
+                                wrBuf.position(chunksProgress[i] - bc);
+
+                                bc++;
+                                byte b = wrBuf.get();
+                                if (b != 0) {
+                                    ch = true;
+                                    logger.info("Chunk " + i + " OK. " + "Found data at " + (chunksProgress[i] - bc) + " : " + b);
+                                    loadedRanges[i][1] = chunksProgress[i] - bc;
+                                    logger.info("Verified Range " + loadedRanges[i][0] + "- " + loadedRanges[i][1] + " as correctly loaded");
+
+                                    bytesLoaded += Math.max(0, loadedRanges[i][1] - loadedRanges[i][0]);
+
+                                    break;
+                                }
+                                if ((chunksProgress[i] - bc) < 0 || (i > 0 && (chunksProgress[i] - bc) <= chunksProgress[i - 1])) break;
+                            }
+
+                            if (!ch) {
+                                isProgressStatusValid = false;
+                                logger.info("Chunk check failed " + i);
+                                break;
+                            }
+
+                        }
+
+                    }
+                    if (isProgressStatusValid) {
+                        this.bytesLoaded = bytesLoaded;
+                        logger.info("Cached Chunkprogress is valid. Resuming...");
+                        chunkNum = chunksProgress.length;
+                    }
+                    else {
+                        logger.info("Cached Chunkprogress is invalid. Overwriting...");
+                    }
+                }
+                catch (Exception e) {
+                    e.printStackTrace();
                 }
 
+            }
+            if (isProgressStatusValid) {
+
+                logger.finer("Start Download in " + chunkNum + " chunks. Resume Ranges");
+                downloadLink.setDownloadMax((int) fileSize);
+
+                for (int i = 0; i < chunkNum; i++) {
+                    if (i == (chunkNum - 1)) {
+                        addChunk(new Chunk(loadedRanges[i][1], fileSize, connection));
+                    }
+                    else {
+                        addChunk(new Chunk(loadedRanges[i][1], loadedRanges[i + 1][0], connection));
+                    }
+
+                }
+            }
+            else {
+
+                // logger.info("Filsize: " + fileSize);
+                long parts = fileSize > 0 ? fileSize / chunkNum : -1;
+                if (parts == -1) {
+                    logger.warning("Could not get Filesize.... reset chunks to 1");
+                    chunkNum = 1;
+                }
+                logger.finer("Start Download in " + chunkNum + " chunks. Chunksize: " + parts);
+                downloadLink.setDownloadMax((int) fileSize);
+                downloadLink.setChunksProgress(new int[chunkNum]);
+                for (int i = 0; i < chunkNum; i++) {
+                    if (i == (chunkNum - 1)) {
+                        addChunk(new Chunk(i * parts, fileSize, connection));
+                    }
+                    else {
+                        addChunk(new Chunk(i * parts, (i + 1) * parts, connection));
+                    }
+
+                }
             }
             waitForChunks();
             logger.info("Errors: " + this.errors);
-            outputFile.close();
-            outputChannel.close();
+            int bugCount = 0;
+            //workaround für einen bug in der map implementation von java.
+            while (true) {
+                try {
+                    this.wrBuf.force();
+                    wrBuf = null;
+                    System.gc();
+                    break;
+                }
+                catch (Exception e) {
+                    e.printStackTrace();
+                    bugCount++;
+                    if (bugCount > 100) {
 
+                        // error(ERROR_LOCAL_IO);
+
+                    }
+                    Thread.sleep(100);
+
+                }
+
+            }
+
+            // gc muss hier aufgerufe werden weil jd sonst die Datei hinter
+            // wrBuf nicht freigibt.
+
+            // System.runFinalization();
+            if (!handleErrors()) {
+
+                return false;
+            }
             if (!part.renameTo(new File(downloadLink.getFileOutput()))) {
                 logger.severe("Could not rename file " + fileOutput + " to " + downloadLink.getFileOutput());
                 error(ERROR_COULD_NOT_RENAME);
@@ -289,23 +521,28 @@ public class Download {
 
             return true;
         }
-        catch (FileNotFoundException e) {
-            // TODO Auto-generated catch block
+
+        catch (Exception e) {
+
             e.printStackTrace();
+            downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN);
+            plugin.getCurrentStep().setParameter(e.getLocalizedMessage());
+            plugin.getCurrentStep().setStatus(PluginStep.STATUS_ERROR);
+            wrBuf = null;
+            // gc muss hier aufgerufe werden weil jd sonst die Datei hinter
+            // wrBuf nicht freigibt.
+            System.gc();
+            System.runFinalization();
+            return false;
         }
-        catch (IOException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }
-        downloadLink.setStatus(DownloadLink.STATUS_DOWNLOAD_FINISHED);
-        return false;
 
     }
 
-    private void getMissingRanges(File part) {
-
-    }
-
+    /**
+     * Gibt eine bestmögliche abschätzung der Dateigröße zurück
+     * 
+     * @return
+     */
     private long getFileSize() {
         if (connection.getContentLength() > 0) {
             // logger.info("1 " + connection.getHeaderFields());
@@ -324,8 +561,13 @@ public class Download {
         return -1;
     }
 
+    /**
+     * Setzt im Downloadlink und PLugin die entsprechende Fehlerids
+     * 
+     * @return
+     */
     public boolean handleErrors() {
-        downloadLink.setStatus(DownloadLink.STATUS_DOWNLOAD_FINISHED);
+        downloadLink.setStatus(DownloadLink.STATUS_DONE);
 
         if (errors.contains(ERROR_ABORTED_BY_USER)) {
             plugin.getCurrentStep().setStatus(PluginStep.STATUS_TODO);
@@ -357,6 +599,8 @@ public class Download {
         if (errors.contains(ERROR_OUTPUTFILE_ALREADYEXISTS)) {
             plugin.getCurrentStep().setStatus(PluginStep.STATUS_ERROR);
             downloadLink.setStatus(DownloadLink.STATUS_ERROR_ALREADYEXISTS);
+
+            logger.info(plugin.getCurrentStep() + " : " + plugin.getCurrentStep().getStatus());
             return false;
         }
 
@@ -387,15 +631,19 @@ public class Download {
         }
         plugin.getCurrentStep().setStatus(PluginStep.STATUS_DONE);
         // downloadLink.setStatus(DownloadLink.STATUS_DONE);
-        downloadLink.setStatus(DownloadLink.STATUS_DOWNLOAD_FINISHED);
+        downloadLink.setStatus(DownloadLink.STATUS_DONE);
         return true;
     }
 
+    /**
+     * Wartet bis alle Chunks fertig sind, aktuelisiert den downloadlink
+     * regelmäsig und fordert beim Controller eine aktualisierung des links an
+     */
     private void waitForChunks() {
 
         while (chunksInProgress > 0) {
             try {
-                Thread.sleep(1000);
+                Thread.sleep(200);
 
             }
             catch (InterruptedException e) {
@@ -410,6 +658,9 @@ public class Download {
 
     }
 
+    /**
+     * Verteilt den verfügbraen downloadspeed auf die Chunks
+     */
     private void assignChunkSpeeds() {
         int MAX_ALLOWED_OVERHEAD = 10 * 1024;
         int allowedLinkSpeed = downloadLink.getMaximalspeed();
@@ -432,17 +683,21 @@ public class Download {
             while (it.hasNext()) {
                 next = it.next();
                 if (next.isAlive()) {
-                    next.setMaximalSpeed(Math.max(mChunk, (int) next.bytesPerSecond + overhead / getRunningChunks()));
+                    next.setMaximalSpeed(Math.max(mChunk, (int) next.bytesPerSecond + overhead / Math.max(1, getRunningChunks())));
                 }
             }
         }
 
     }
 
+    /**
+     * Fügt einen Chunk hinzu und startet diesen
+     * 
+     * @param chunk
+     */
     private void addChunk(Chunk chunk) {
         this.chunks.add(chunk);
         chunksInProgress++;
-
         if (chunkNum == 1) {
             chunk.start();
         }
@@ -452,69 +707,158 @@ public class Download {
 
     }
 
-    //
-    // private int getMaximalChunkSpeed() {
-    // // if (System.currentTimeMillis() < (lastChunkSpeedCheck + 1000)) return
-    // // lastMaxChunkSpeed;
-    // // this.lastChunkSpeedCheck = System.currentTimeMillis();
-    // int allowedLinkSpeed = downloadLink.getMaximalspeed();
-    //        
-    // int chunkSpeed = allowedLinkSpeed / getRunningChunks();
-    // // logger.info("Allowedperchunk "+chunkSpeed+"/"+allowedLinkSpeed);
-    // synchronized (chunks) {
-    // Iterator<Chunk> it = chunks.iterator();
-    // Chunk next;
-    //
-    // int currentTotalspeed = 0;
-    // while (it.hasNext()) {
-    // next = it.next();
-    // if (next.isAlive()) {
-    //
-    // currentTotalspeed += next.getBytesPerSecond() < 0 ? chunkSpeed :
-    // next.getBytesPerSecond();
-    //
-    // }
-    // }
-    //
-    // // logger.info("Total speed= "+currentTotalspeed);
-    // // logger.info("Max Chunkspeed:
-    // //
-    // "+(chunkSpeed+(allowedLinkSpeed-currentTotalspeed)/this.getRunningChunks()));
-    // this.lastMaxChunkSpeed = chunkSpeed + (allowedLinkSpeed -
-    // currentTotalspeed) / this.getRunningChunks();
-    // // logger.info("Chunk" +lastMaxChunkSpeed);
-    // }
-    // return lastMaxChunkSpeed;
-    //
-    // }
-
+    /**
+     * Gibt den aktuellen readtimeout zurück
+     * 
+     * @return
+     */
     public int getReadTimeout() {
         return readTimeout;
     }
 
+    /**
+     * Setzt den aktuellen readtimeout(nur vor dem dl start)
+     * 
+     * @param readTimeout
+     */
     public void setReadTimeout(int readTimeout) {
         this.readTimeout = readTimeout;
     }
 
+    /**
+     * Gibt den requesttimeout zurück
+     * 
+     * @return
+     */
     public int getRequestTimeout() {
         return requestTimeout;
     }
 
+    /**
+     * Setzt vor ! dem download dden requesttimeout. Sollte nicht zu niedrig
+     * sein weil sonst das automatische kopieren der Connections fehl schlägt.,
+     * 
+     * @param requestTimeout
+     */
     public void setRequestTimeout(int requestTimeout) {
         this.requestTimeout = requestTimeout;
     }
 
+    /**
+     * Addiert alle chunkspeeds und giubt diese an den downloadlink weiter
+     */
+    public void updateSpeed() {
+        int speed = 0;
+        synchronized (chunks) {
+            Iterator<Chunk> it = chunks.iterator();
+            while (it.hasNext())
+                speed += it.next().bytesPerSecond;
+        }
+
+        downloadLink.addSpeedValue(speed);
+
+    }
+
+    /**
+     * Gibt die aufgetretenen Fehler zurück
+     * 
+     * @return
+     */
+
+    public Vector<Integer> getErrors() {
+        return errors;
+    }
+
+    /**
+     * Gibt die Anzahl der verwendeten Chunks zurück
+     * 
+     * @return
+     */
+    public int getChunkNum() {
+
+        return chunkNum;
+    }
+
+    /**
+     * Gibt zurück wieviele Chunks gerade am arbeiten sind
+     * 
+     * @return
+     */
+    public int getRunningChunks() {
+        return this.chunksInProgress;
+    }
+
+    /**
+     * Gibt zurüc wieviele Chunks tatsächlich in der Downloadphase sind
+     * 
+     * @return
+     */
+    public int getChunksDownloading() {
+        return chunksDownloading;
+    }
+
+    /**
+     * Wird hier ein wert >0 Angegeben läd die instanz nur bis zu dieser
+     * byteanzahl
+     * 
+     * @param integerProperty
+     */
+    public void setMaxBytesToLoad(int integerProperty) {
+        this.maxBytes = integerProperty;
+
+    }
+
+    /**
+     * Gibt zurück wieviele bytes schon geladen wurden
+     * 
+     * @return
+     */
+    public int getBytesLoaded() {
+        return bytesLoaded;
+    }
+
+    /**
+     * Setzt die filesize.
+     * 
+     * @param length
+     */
+    public void setFilesize(long length) {
+        this.fileSize = length;
+
+    }
+
+    /**
+     * Machne Hoster wollen das resumen erlauben, aber chunkload verbieten.
+     * Deshalb akzeptieren sie keine range:0-** Um Trotzdem Chunkload nutzen zu
+     * können werden die ersten bytes normal geladen. Und der rest normal über
+     * chunks.
+     * 
+     * @param i
+     */
+    public void setLoadPreBytes(int i) {
+        this.preBytes = i;
+
+    }
+
+    /**
+     * Chunk Klasse verwaltet eine einzellne Downloadverbindung.
+     * 
+     * @author coalado
+     * 
+     */
     class Chunk extends Thread {
         // Wird durch die speedbegrenzung ein chunk uter diesen wert geregelt,
         // so wird er weggelassen.
         // sehr niedrig geregelte chunks haben einen kleinen buffer und eine
         // sehr hohe intervalzeit.
         // Das führt zu verstärkt intervalartigem laden und ist ungewünscht
-        public static final int  MIN_CHUNKSPEED = 120 * 1024;
+        public static final int  MIN_CHUNKSIZE  = 5 * 1024 * 1024;
 
         private static final int MAX_BUFFERSIZE = 6 * 1024 * 1024;
 
         private static final int MIN_BUFFERSIZE = 1024;
+
+        private static final int TIME_BASE      = 2000;
 
         private long             startByte;
 
@@ -532,36 +876,82 @@ public class Download {
 
         private int              maxSpeed;
 
+        private ByteBuffer       buffer;
+
+        private int              id             = -1;
+
+        /**
+         * die connection wird entsprechend der start und endbytes neu
+         * aufgebaut.
+         * 
+         * @param startByte
+         * @param endByte
+         * @param connection
+         */
         public Chunk(long startByte, long endByte, HTTPConnection connection) {
             this.startByte = startByte;
             this.endByte = endByte;
             this.connection = connection;
+
             if (this.startByte == 0 && preBytes > 0 && chunkNum > 1) {
                 this.startByte = preBytes;
                 this.loadStartBytes(preBytes);
             }
+            // maxSpeed=Integer.MAX_VALUE;
             currentBytePosition = this.startByte;
             if (startByte >= endByte && endByte > 0) {
                 logger.severe("Startbyte has to be less than endByte");
             }
         }
 
+        public int getID() {
+            if (id < 0) {
+                logger.info("INIT " + chunks.indexOf(this));
+                id = chunks.indexOf(this);
+            }
+            return id;
+        }
+
+        /**
+         * Gibt dem Chunk sein speedlimit vor. der chunk versucht sich an dieser
+         * Grenze einzuregeln
+         * 
+         * @param i
+         */
         public void setMaximalSpeed(int i) {
             maxSpeed = i;
-            // logger.info(chunks.indexOf(this)+" chunkspeed: "+i);
+            // logger.info(chunks.indexOf(this) + " chunkspeed: " + i);
 
         }
 
+        /**
+         * Gibt die Speedgrenze an.
+         * 
+         * @return
+         */
         public int getMaximalSpeed() {
-            if (this.maxSpeed <= 0) this.maxSpeed = downloadLink.getMaximalspeed() / getRunningChunks();
+            if (this.maxSpeed <= 0) {
+                this.maxSpeed = downloadLink.getMaximalspeed() / getRunningChunks();
+                logger.info("Def speed: " + downloadLink.getMaximalspeed() + "/" + getRunningChunks() + "=" + maxSpeed);
 
+            }
+            logger.info("return speed: min " + maxSpeed + " - " + (this.desiredBps * 1.5));
+            if (desiredBps < 1024) return maxSpeed;
             return Math.min(maxSpeed, (int) (this.desiredBps * 1.5));
         }
 
+        /**
+         * Einige Anbieter erlauben das resumen von files, aber nicht
+         * multistreamloading. Dazu verbieten sie die range 0-xxx. Um das zu
+         * umgehen werden die ersten bytes via preloading geladen und der erste
+         * chunk fängt bei 1-xxx an
+         * 
+         * @param preBytes
+         */
         private void loadStartBytes(int preBytes) {
 
             try {
-                ByteBuffer buffer = ByteBuffer.allocateDirect(preBytes);
+                buffer = ByteBuffer.allocateDirect(preBytes);
                 byte[] b = new byte[preBytes];
                 InputStream inputStream = connection.getInputStream();
                 int i = 0;
@@ -577,8 +967,8 @@ public class Download {
                 connection.getHTTPURLConnection().disconnect();
                 buffer.put(b);
                 buffer.flip();
-                addBytes(buffer, 0);
-                addBytes(i);
+                addBytes(this);
+                bytesLoaded += i;
 
             }
             catch (IOException e) {
@@ -588,6 +978,13 @@ public class Download {
 
         }
 
+        /**
+         * Kopiert die verbindung. Es wird bis auf die Range und timeouts exakt
+         * die selbe verbindung nochmals aufgebaut
+         * 
+         * @param connection
+         * @return
+         */
         private HTTPConnection copyConnection(HTTPConnection connection) {
 
             try {
@@ -597,6 +994,7 @@ public class Download {
                 httpConnection.setConnectTimeout(getRequestTimeout());
                 httpConnection.setInstanceFollowRedirects(false);
                 Map<String, List<String>> request = connection.getRequestProperties();
+                logger.info("" + request);
                 if (request != null) {
                     Set<Entry<String, List<String>>> requestEntries = request.entrySet();
                     Iterator<Entry<String, List<String>>> it = requestEntries.iterator();
@@ -636,8 +1034,14 @@ public class Download {
             return null;
         }
 
+        /**
+         * Thread runner
+         */
         public void run() {
-
+            if (startByte >= endByte) {
+                chunksInProgress--;
+                return;
+            }
             logger.finer("Start Chunk " + startByte + " - " + endByte);
             if (chunkNum > 1) this.connection = copyConnection(connection);
             if (connection == null) {
@@ -673,6 +1077,13 @@ public class Download {
                 logger.finer("Resulting Range" + startByte + " - " + endByte);
             }
             logger.finer("Start Chunk " + chunks.indexOf(this));
+            // try {
+            // Thread.sleep(chunks.indexOf(this)*TIME_BASE);
+            // }
+            // catch (InterruptedException e) {
+            // // TODO Auto-generated catch block
+            // e.printStackTrace();
+            // }
             chunksDownloading++;
             download();
             this.bytesPerSecond = 0;
@@ -688,10 +1099,19 @@ public class Download {
 
         }
 
+        /**
+         * Über buffersize und timeinterval wird die dwonloadgeschwindigkeit
+         * eingestellt. Eine zu hohe INtervalzeit sorgt für stark
+         * intervalartiges laden und unregelmäsige gui aktualisierungen. Der
+         * Download "ruckelt". Zu kleine INtervalzeiten belasten die Festplatte
+         * sehr
+         * 
+         * @return
+         */
         private int getTimeInterval() {
-            if (!downloadLink.isLimited()) return 2000;
+            if (!downloadLink.isLimited()) return TIME_BASE;
 
-            return Math.min(5000, (int) (2000 * this.bufferTimeFaktor));
+            return Math.min(TIME_BASE * 5, (int) (TIME_BASE * this.bufferTimeFaktor));
 
         }
 
@@ -705,8 +1125,10 @@ public class Download {
             return plugin.aborted || abortByError || downloadLink.isAborted();
         }
 
+        /**
+         * Die eigentliche downloadfunktion
+         */
         private void download() {
-            ByteBuffer buffer = null;
             int bufferSize = 1;
             try {
                 bufferSize = getBufferSize(getMaximalSpeed());
@@ -724,7 +1146,6 @@ public class Download {
             ReadableByteChannel source = null;
 
             try {
-
                 connection.setReadTimeout(getReadTimeout());
                 connection.setConnectTimeout(getRequestTimeout());
 
@@ -742,13 +1163,13 @@ public class Download {
                 long addWait;
                 byte b[] = new byte[1];
                 int read = 0;
-
+                int ti = 0;
                 while (!isExternalyAborted()) {
                     bytes = 0;
-
+                    ti = getTimeInterval();
                     timer = System.currentTimeMillis();
-
-                    while (buffer.hasRemaining() && !isExternalyAborted() && (System.currentTimeMillis() - timer) < getTimeInterval()) {
+                    logger.info("load Block buffer: " + buffer.hasRemaining() + "/" + buffer.capacity() + " interval: " + ti);
+                    while (buffer.hasRemaining() && !isExternalyAborted() && (System.currentTimeMillis() - timer) < ti) {
                         block = 0;
 
                         // Prüft ob bytes zum Lesen anliegen.
@@ -773,21 +1194,22 @@ public class Download {
                             }
                             else if (read < 0) {
                                 block = -1;
+                                logger.info("Break2");
                                 break;
                             }
                         }
 
                         if (block == -1) {
+                            logger.info("Break1");
                             break;
                         }
-                        addBytes(block);
+                        bytesLoaded += block;
 
                         bytes += block;
                     }
-
                     if (block == -1 && bytes == 0) break;
                     buffer.flip();
-                    addBytes(buffer, currentBytePosition);
+                    addBytes(this);
 
                     buffer.clear();
                     currentBytePosition += bytes;
@@ -798,7 +1220,8 @@ public class Download {
                      * pause eingelegt
                      */
                     deltaTime = Math.max(System.currentTimeMillis() - timer, 1);
-                    desiredBps = (1000 * bytes) / deltaTime;
+                    desiredBps = (1000 * (long) bytes) / deltaTime;
+                    logger.info("des " + desiredBps + " - loaded: " + (System.currentTimeMillis() - timer) + " - " + bytes);
                     tempBuff = getBufferSize(getMaximalSpeed());
                     if (Math.abs(bufferSize - tempBuff) > 1000) {
                         bufferSize = tempBuff;
@@ -818,20 +1241,18 @@ public class Download {
                         // unerfasste Schleife noch frisst. das macht am ende
                         // ein paar wenige bytes/sekunde in der speederfassung
                         // aus.
-                        addWait = (long) (0.995 * (getTimeInterval() - (System.currentTimeMillis() - timer)));
-                        // logger.info("Wait " + addWait);
+                        addWait = (long) (0.995 * (ti - (System.currentTimeMillis() - timer)));
+                        logger.info("Wait " + addWait);
                         if (addWait > 0) Thread.sleep(addWait);
                     }
                     catch (Exception e) {
                     }
                     deltaTime = System.currentTimeMillis() - timer;
 
-                    this.bytesPerSecond = (1000 * bytes) / deltaTime;
+                    this.bytesPerSecond = (1000 * (long) bytes) / deltaTime;
                     updateSpeed();
 
-                    // logger.info(downloadLink.getSpeedMeter().getSpeed() +
-                    // "loaded" + bytes + " b in " + (deltaTime) + " ms:// " +
-                    // bytesPerSecond + "(" + desiredBps + ") ");
+                    logger.info(downloadLink.getSpeedMeter().getSpeed() + " loaded" + bytes + " b in " + (deltaTime) + " ms: " + bytesPerSecond + "(" + desiredBps + ") ");
 
                 }
                 if (currentBytePosition < endByte && endByte > 0) {
@@ -895,16 +1316,22 @@ public class Download {
          * @return
          */
         private int getBufferSize(int maxspeed) {
+            logger.info("speed " + maxspeed);
             if (!downloadLink.isLimited()) return MAX_BUFFERSIZE;
+            maxspeed *= (TIME_BASE / 1000);
             int max = Math.max(MIN_BUFFERSIZE, maxspeed);
             int bufferSize = Math.min(MAX_BUFFERSIZE, max);
             // logger.info(MIN_BUFFERSIZE+"<>"+maxspeed+"-"+MAX_BUFFERSIZE+"><"+max);
             this.bufferTimeFaktor = Math.max(0.1, (double) bufferSize / maxspeed);
-            // logger.info("Maxspeed= " + maxspeed + " buffer=" + bufferSize +
-            // "time: " + getTimeInterval());
+            logger.info("Maxspeed= " + maxspeed + " buffer=" + bufferSize + "time: " + getTimeInterval());
             return bufferSize;
         }
 
+        /**
+         * Gibt die aktuelle downloadgeschwindigkeit des chunks zurück
+         * 
+         * @return
+         */
         public long getBytesPerSecond() {
             return bytesPerSecond;
         }
@@ -919,187 +1346,6 @@ public class Download {
             return desiredBps;
         }
 
-    }
-
-    // public boolean isSpeedLimited() {
-    // return speedLimited && downloadLink.isLimited();
-    // }
-
-    public void updateSpeed() {
-        int speed = 0;
-        synchronized (chunks) {
-            Iterator<Chunk> it = chunks.iterator();
-            while (it.hasNext())
-                speed += it.next().bytesPerSecond;
-        }
-
-        downloadLink.addSpeedValue(speed);
-
-    }
-
-    // public void setSpeedLimited(boolean speedLimited) {
-    // this.speedLimited = speedLimited;
-    // }
-
-    public Vector<Integer> getErrors() {
-        return errors;
-    }
-
-    public int getChunks() {
-
-        return chunkNum;
-    }
-
-    public int getRunningChunks() {
-        return this.chunksInProgress;
-    }
-
-    public int getChunksDownloading() {
-        return chunksDownloading;
-    }
-
-    public void setMaxBytesToLoad(int integerProperty) {
-        this.maxBytes = integerProperty;
-
-    }
-
-    public int getBytesLoaded() {
-        return bytesLoaded;
-    }
-
-    public void setFilesize(long length) {
-        this.fileSize = length;
-
-    }
-
-    /**
-     * Machne Hoster wollen das resumen erlauben, aber chunkload verbieten.
-     * Deshalb akzeptieren sie keine range:0-** Um Trotzdem Chunkload nutzen zu
-     * können werden die ersten bytes normal geladen. Und der rest normal über
-     * chunks.
-     * 
-     * @param i
-     */
-    public void setLoadPreBytes(int i) {
-        this.preBytes = i;
-
-    }
-
-    public class Braf extends RandomAccessFile {
-        byte        buffer[];
-
-        int         buf_end  = 0;
-
-        int         buf_pos  = 0;
-
-        long        real_pos = 0;
-
-        private int BUF_SIZE = 1024 * 1024 * 6;
-
-        public Braf(String filename, String mode, int bufsize) throws IOException {
-            super(filename, mode);
-            invalidate();
-            BUF_SIZE = bufsize;
-            buffer = new byte[BUF_SIZE];
-        }
-
-        public final int read() throws IOException {
-            if (buf_pos >= buf_end) {
-                if (fillBuffer() < 0) return -1;
-            }
-            if (buf_end == 0) {
-                return -1;
-            }
-            else {
-                return buffer[buf_pos++];
-            }
-        }
-
-        private int fillBuffer() throws IOException {
-            int n = super.read(buffer, 0, BUF_SIZE);
-            if (n >= 0) {
-                real_pos += n;
-                buf_end = n;
-                buf_pos = 0;
-            }
-            return n;
-        }
-
-        private void invalidate() throws IOException {
-            buf_end = 0;
-            buf_pos = 0;
-            real_pos = super.getFilePointer();
-        }
-
-        public int read(byte b[], int off, int len) throws IOException {
-            int leftover = buf_end - buf_pos;
-            if (len <= leftover) {
-                System.arraycopy(buffer, buf_pos, b, off, len);
-                buf_pos += len;
-                return len;
-            }
-            for (int i = 0; i < len; i++) {
-                int c = this.read();
-                if (c != -1)
-                    b[off + i] = (byte) c;
-                else {
-                    return i;
-                }
-            }
-            return len;
-        }
-
-        public long getFilePointer() throws IOException {
-            long l = real_pos;
-            return (l - buf_end + buf_pos);
-        }
-
-        public void seek(long pos) throws IOException {
-            int n = (int) (real_pos - pos);
-            if (n >= 0 && n <= buf_end) {
-                buf_pos = buf_end - n;
-            }
-            else {
-                super.seek(pos);
-                invalidate();
-            }
-        }
-
-        /**
-         * return a next line in String
-         */
-        public final String getNextLine() throws IOException {
-            String str = null;
-            if (buf_end - buf_pos <= 0) {
-                if (fillBuffer() < 0) {
-                    throw new IOException("error in filling buffer!");
-                }
-            }
-            int lineend = -1;
-            for (int i = buf_pos; i < buf_end; i++) {
-                if (buffer[i] == '\n') {
-                    lineend = i;
-                    break;
-                }
-            }
-            if (lineend < 0) {
-                StringBuffer input = new StringBuffer(256);
-                int c;
-                while (((c = read()) != -1) && (c != '\n')) {
-                    input.append((char) c);
-                }
-                if ((c == -1) && (input.length() == 0)) {
-                    return null;
-                }
-                return input.toString();
-            }
-            if (lineend > 0 && buffer[lineend - 1] == '\r')
-                str = new String(buffer, 0, buf_pos, lineend - buf_pos - 1);
-            else
-                str = new String(buffer, 0, buf_pos, lineend - buf_pos);
-            buf_pos = lineend + 1;
-            return str;
-        }
     }
 
 }

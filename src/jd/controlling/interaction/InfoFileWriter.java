@@ -72,6 +72,12 @@ public class InfoFileWriter extends Interaction implements Serializable {
 
     @Override
     protected boolean doInteraction(Object arg) {
+        
+       if(! JDUtilities.getConfiguration().getBooleanProperty("INFOFILEWRITER_ENABLED", false)){
+           return false;
+       }
+
+        
         String content = JDUtilities.getConfiguration().getStringProperty(PARAM_INFO_STRING, INFO_STRING_DEFAULT);
         String filename = JDUtilities.getConfiguration().getStringProperty(PARAM_FILENAME, FILENAME_DEFAULT);
 
@@ -120,7 +126,8 @@ public class InfoFileWriter extends Interaction implements Serializable {
         for (int i = 0; i < Replacer.KEYS.length; i++) {
             keys[i] = "%" + Replacer.KEYS[i][0] + "%" + "   (" + Replacer.KEYS[i][1] + ")";
         }
-
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, JDUtilities.getConfiguration(), "INFOFILEWRITER_ENABLED", JDLocale.L("interaction.infoFileWriter.disable","Infofilewriter aktivieren")).setDefaultValue(false));
+        
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, JDUtilities.getConfiguration(), "VARS", keys, JDLocale.L("interaction.infoFileWriter.variables","Available variables")));
        // config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_RADIOFIELD, JDUtilities.getConfiguration(), "VARS", keys, JDLocale.L("interaction.infoFileWriter.variables","Available variables")));
 

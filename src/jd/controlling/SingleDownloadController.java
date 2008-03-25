@@ -176,9 +176,15 @@ public class SingleDownloadController extends ControlMulticaster {
             if (aborted) {
                 break;
             }
-            if (step != null && downloadLink != null && plugin != null && plugin.nextStep(step) != null) {
-                downloadLink.setStatusText(plugin.nextStep(step).toString());
+           
+            if (step != null && downloadLink != null && plugin != null) {
+                //Achtung. nextStep setzt den internen stepcounter weiter. Das ist hier nicht beabsichtigt. deshalb muss der step mit previuosstep wieder zurückgesetzt werden
+                PluginStep nextStep = plugin.nextStep(step);
+                if(plugin.getCurrentStep()!=null){
+                downloadLink.setStatusText(plugin.getCurrentStep().toString());
                 fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SINGLE_DOWNLOAD_CHANGED, downloadLink));
+                }
+                plugin.previousStep(nextStep);
             }
             // Bricht ab wenn es Fehler gab
             if (step.getStatus() == PluginStep.STATUS_ERROR) {
@@ -191,7 +197,7 @@ public class SingleDownloadController extends ControlMulticaster {
         // Der Download ist an dieser Stelle entweder Beendet oder
         // Abgebrochen. Mögliche Ursachen können nun untersucht werden um
         // den download eventl neu zu starten
-        if (aborted) {
+        if (aborted||downloadLink.isAborted()) {
             downloadLink.setStatusText(JDLocale.L("controller.status.aborted", "Abgebrochen"));
             plugin.abort();
             logger.warning("Thread aborted");
@@ -472,8 +478,12 @@ public class SingleDownloadController extends ControlMulticaster {
      */
     private void onErrorPremium(DownloadLink downloadLink, PluginForHost plugin, PluginStep step) {
         logger.info("deaktivier PREMIUM für: " + plugin + " Grund: Unbekannt");
+        String str=(String)step.getParameter();
+        if(str==null){
         plugin.getProperties().setProperty(Plugin.PROPERTY_USE_PREMIUM, false);
-
+        }else{
+            downloadLink.setStatusText(str);
+        }
         downloadLink.setStatus(DownloadLink.STATUS_TODO);
         downloadLink.setEndOfWaittime(0);
     }

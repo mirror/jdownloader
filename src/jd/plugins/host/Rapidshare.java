@@ -14,7 +14,6 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://wnu.org/licenses/>.
 
-
 package jd.plugins.host;
 
 //requests RMEIUM:
@@ -225,6 +224,8 @@ public class Rapidshare extends PluginForHost {
 
     private Boolean                        noLimitFreeInsteadPremium          = false;
 
+    private long headLength;
+
     private static long                    LAST_FILE_CHECK                    = 0;
 
     private static final String            PROPERTY_BYTES_TO_LOAD             = "BYTES_TO_LOAD";
@@ -260,6 +261,8 @@ public class Rapidshare extends PluginForHost {
     private static final String            PATTERN_DOWNLOAD_ERRORPAGE         = "RapidShare: 1-Click Webhosting";
 
     private static final String            PATTERN_ACCOUNT_OVERLOAD           = "runtergeladen und damit das Limit";
+
+    private static final String PATTERN_ERROR_OCCURED = "<center><h2>Ein Fehler ist aufgetreten:</h2><p><font color=\"°\"><b><!-- ° -->°</b></font></p><p";
 
     private static int                     ERRORS                             = 0;
 
@@ -421,8 +424,8 @@ public class Rapidshare extends PluginForHost {
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getProperties(), PROPERTY_USE_SSL, JDLocale.L("plugins.hoster.rapidshare.com.useSSL", "SSL Downloadlink verwenden")));
         cfg.setDefaultValue(false);
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getProperties(), PROPERTY_FREE_IF_LIMIT_NOT_REACHED, JDLocale.L("plugins.hoster.rapidshare.com.freeDownloadIfLimitNotReached", "Free Download wenn Downloadlimit noch nicht erreicht wurde")));
-        cfg.setDefaultValue(false);
+//        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getProperties(), PROPERTY_FREE_IF_LIMIT_NOT_REACHED, JDLocale.L("plugins.hoster.rapidshare.com.freeDownloadIfLimitNotReached", "Free Download wenn Downloadlimit noch nicht erreicht wurde")));
+//        cfg.setDefaultValue(false);
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_SPINNER, getProperties(), PROPERTY_WAIT_WHEN_BOT_DETECTED, JDLocale.L("plugins.hoster.rapidshare.com.waitTimeOnBotDetection", "Wartezeit [ms] wenn Bot erkannt wird.(-1 für Reconnect)"), -1, 600000).setDefaultValue(-1).setStep(1000));
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_SPINNER, getProperties(), PROPERTY_INCREASE_TICKET, JDLocale.L("plugins.hoster.rapidshare.com.increaseTicketTime", "Ticketwartezeit verlängern (0%-500%)"), 0, 500).setDefaultValue(0).setExpertEntry(true).setStep(1));
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_SPINNER, getProperties(), PROPERTY_BYTES_TO_LOAD, JDLocale.L("plugins.hoster.rapidshare.com.loadFirstBytes", "Nur die ersten * KiloBytes jeder Datei laden[-1 to disable]"), -1, 100000).setDefaultValue(-1).setStep(500));
@@ -453,7 +456,7 @@ public class Rapidshare extends PluginForHost {
             downloadLink.setUrlDownload(link);
         }
 
-        logger.info("get Next Step " + step);
+      
         // premium
         PluginStep st;
         if ((this.getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM, false) || this.getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM_2, false) || this.getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM_3, false)) && !noLimitFreeInsteadPremium) {
@@ -562,9 +565,10 @@ public class Rapidshare extends PluginForHost {
                         return step;
                     }
                     return step;
-                }catch(SocketTimeoutException e1){
+                }
+                catch (SocketTimeoutException e1) {
                     downloadLink.setStatus(DownloadLink.STATUS_ERROR_PLUGIN_SPECIFIC);
-                    step.setParameter(JDLocale.L("gui.status.timeoutdetected","Timeout"));
+                    step.setParameter(JDLocale.L("gui.status.timeoutdetected", "Timeout"));
                     step.setStatus(PluginStep.STATUS_ERROR);
                 }
                 catch (Exception e) {
@@ -700,12 +704,13 @@ public class Rapidshare extends PluginForHost {
                         step.setParameter(10l);
                         return step;
                     }
-                
-        }catch(SocketTimeoutException e1){
-            downloadLink.setStatus(DownloadLink.STATUS_ERROR_PLUGIN_SPECIFIC);
-            step.setParameter(JDLocale.L("gui.status.timeoutdetected","Timeout"));
-            step.setStatus(PluginStep.STATUS_ERROR);
-        }
+
+                }
+                catch (SocketTimeoutException e1) {
+                    downloadLink.setStatus(DownloadLink.STATUS_ERROR_PLUGIN_SPECIFIC);
+                    step.setParameter(JDLocale.L("gui.status.timeoutdetected", "Timeout"));
+                    step.setStatus(PluginStep.STATUS_ERROR);
+                }
                 catch (Exception e) {
                     e.printStackTrace();
                 }
@@ -882,12 +887,13 @@ public class Rapidshare extends PluginForHost {
 
                         return null;
                     }
-                }catch(SocketTimeoutException e1){
+                }
+                catch (SocketTimeoutException e1) {
                     downloadLink.setStatus(DownloadLink.STATUS_ERROR_PLUGIN_SPECIFIC);
-                    step.setParameter(JDLocale.L("gui.status.timeoutdetected","Timeout"));
+                    step.setParameter(JDLocale.L("gui.status.timeoutdetected", "Timeout"));
                     step.setStatus(PluginStep.STATUS_ERROR);
                 }
-              
+
                 catch (IOException e) {
                     logger.severe("URL could not be opened. " + e.toString());
                     downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN);
@@ -951,6 +957,209 @@ public class Rapidshare extends PluginForHost {
                     // IOException {
                     String link = downloadLink.getDownloadURL();
                     if (this.getProperties().getBooleanProperty(PROPERTY_USE_SSL, true)) link = link.replaceFirst("http://", "http://ssl.");
+
+                    requestInfo = headRequest(new URL(link), null, "", false);
+                    headLength=Long.parseLong(requestInfo.getConnection().getHeaderField("Content-Length"));
+                    if (requestInfo.getConnection().getHeaderField("Content-Length") == null || Long.parseLong(requestInfo.getConnection().getHeaderField("Content-Length")) <= 1024 * 100) {
+                        requestInfo = getRequest(new URL(link), null, "", false);                   
+                        if (requestInfo.getHtmlCode().indexOf(hardwareDefektString) > 0) {                           
+                            step.setStatus(PluginStep.STATUS_ERROR);
+                            logger.severe("Rs.com hardwaredefekt");
+                            step.setParameter(60 * 10);
+                            downloadLink.setStatus(DownloadLink.STATUS_ERROR_TEMPORARILY_UNAVAILABLE);
+                            return step;
+                        }
+                    
+                        String error=null;
+                        
+                        if((error=getSimpleMatch(requestInfo.getHtmlCode(), PATTERN_ERROR_OCCURED, 2))!=null){
+                            step.setStatus(PluginStep.STATUS_ERROR);
+                            logger.severe("Fehler: "+error);
+                            step.setParameter(JDUtilities.htmlDecode(error).replaceAll("<[^>]*>", ""));
+                            downloadLink.setStatus(DownloadLink.STATUS_ERROR_PLUGIN_SPECIFIC);
+                            return step;
+                        }
+                        step.setStatus(PluginStep.STATUS_ERROR);
+
+                        downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN);
+                        return step;
+
+                    }
+                    
+                    finalURL=link;
+                    return step;
+                    
+                }
+                catch (SocketTimeoutException e1) {
+                    downloadLink.setStatus(DownloadLink.STATUS_ERROR_PLUGIN_SPECIFIC);
+                    step.setParameter(JDLocale.L("gui.status.timeoutdetected", "Timeout"));
+                    step.setStatus(PluginStep.STATUS_ERROR);
+                }
+                catch (Exception e) {
+                    e.printStackTrace();
+                    step.setStatus(PluginStep.STATUS_ERROR);
+                    downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN);
+                }
+                return step;
+                
+            case PluginStep.STEP_PENDING:
+                step.setStatus(PluginStep.STATUS_SKIP);
+                downloadLink.setStatusText("Premiumdownload");
+                step = nextStep(step);
+             
+            case PluginStep.STEP_PAGE:
+                // schritt überspringen
+                step.setStatus(PluginStep.STATUS_SKIP);
+                downloadLink.setStatusText("Premiumdownload");
+                step = nextStep(step);
+               
+            case PluginStep.STEP_DOWNLOAD:
+             
+                try {
+                    if (aborted) {
+                        // Häufige abbruchstellen sorgen für einen Zügigen
+                        // Downloadstop
+                        logger.warning("Plugin abgebrochen");
+                        downloadLink.setStatus(DownloadLink.STATUS_TODO);
+                        step.setStatus(PluginStep.STATUS_TODO);
+                        return step;
+                    }
+                    logger.info("Loading from: " + finalURL.substring(0, 30));
+                    HashMap<String, String> ranger = new HashMap<String, String>();
+                    ranger.put("Authorization","Basic "+JDUtilities.Base64Encode(user+":"+pass));
+                    HTTPConnection urlConnection;
+
+                    requestInfo = getRequestWithoutHtmlCode(new URL(finalURL), finalCookie, finalURL, ranger, true);
+                  
+                    if(requestInfo.getConnection().getHeaderField("content-disposition")==null|Long.parseLong(requestInfo.getConnection().getHeaderField("Content-Length"))!=headLength){
+                        String error;
+                        requestInfo= readFromURL(requestInfo.getConnection());
+                        if (requestInfo.containsHTML(PATTERN_ACCOUNT_OVERLOAD)) {
+                            logger.severe("Premium Account overload");
+                            downloadLink.setStatus(DownloadLink.STATUS_ERROR_PREMIUM);
+                            step.setParameter("Premium overload>25GB");
+                            step.setStatus(PluginStep.STATUS_ERROR);
+                            getProperties().setProperty(premium, false);
+                            return step;
+                        }
+                        // logger.info(requestInfo.getHeaders() + " - " +
+                        // requestInfo.getHtmlCode());
+                        if (requestInfo.containsHTML(PATTERN_ACCOUNT_EXPIRED)) {
+                            logger.severe("Premium Account abgelaufen");
+                            downloadLink.setStatus(DownloadLink.STATUS_ERROR_PLUGIN_SPECIFIC);
+                            step.setParameter("Premium Acc. expired");
+                            step.setStatus(PluginStep.STATUS_ERROR);
+                            getProperties().setProperty(premium, false);
+                            return step;
+
+                        }
+                        
+                        if((error=getSimpleMatch(requestInfo.getHtmlCode(), PATTERN_ERROR_OCCURED, 2))!=null){
+                            step.setStatus(PluginStep.STATUS_ERROR);
+                            logger.severe("Fehler: "+error);
+                            step.setParameter(error);
+                            downloadLink.setStatus(DownloadLink.STATUS_ERROR_PLUGIN_SPECIFIC);
+                            return step;
+                        }
+                    
+                    }
+                    urlConnection = requestInfo.getConnection();
+                    int length = urlConnection.getContentLength();
+                   
+                    downloadLink.setDownloadMax(length);
+                    String name = getFileNameFormHeader(urlConnection);
+                    if (name.toLowerCase().matches(".*\\..{1,5}\\.html$")) name = name.replaceFirst("\\.html$", "");
+                    downloadLink.setName(name);
+                    Download dl = new Download(this, downloadLink, urlConnection);
+                  
+                    dl.setChunks(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 3));
+                    dl.setResume(true);
+                    dl.startDownload();
+                 
+                    if (dl.getErrors().size() == 0) {
+                        if (new File(downloadLink.getFileOutput()).length() < 4000 && JDUtilities.getLocalFile(new File(downloadLink.getFileOutput())).indexOf(PATTERN_DOWNLOAD_ERRORPAGE) > 0) {
+                            new File(downloadLink.getFileOutput()).delete();
+
+                            downloadLink.setStatus(DownloadLink.STATUS_ERROR_PLUGIN_SPECIFIC);
+                            downloadLink.setStatusText("Download error(>log)");
+
+                            logger.severe("Error detected.  " + JDUtilities.getLocalFile(new File(downloadLink.getFileOutput())));
+
+                            step.setStatus(PluginStep.STATUS_ERROR);
+                            return step;
+                        }
+                      
+                        step.setStatus(PluginStep.STATUS_DONE);
+                        downloadLink.setStatus(DownloadLink.STATUS_DONE);
+                    
+                        return step;
+                    }
+                
+
+                    return step;
+                }
+
+                catch (IOException e) {
+                    logger.severe("URL could not be opened. " + e.toString());
+                }
+        }
+        return step;
+    }
+
+    private PluginStep doPremiumStepOLD(PluginStep step, DownloadLink downloadLink) {
+        String server1 = this.getProperties().getStringProperty(PROPERTY_SELECTED_SERVER, "Level(3)");
+        String server2 = this.getProperties().getStringProperty(PROPERTY_SELECTED_SERVER2, "TeliaSonera");
+        String serverAbb = serverMap.get(server1);
+        String server2Abb = serverMap.get(server2);
+
+        logger.info("Servermap: " + serverMap);
+        logger.info("Servers settings: " + server1 + "-" + server2 + " : " + serverAbb + "-" + server2Abb);
+
+        if (serverAbb == null) {
+            serverAbb = serverList1[(int) (Math.random() * (serverList1.length - 1))];
+            logger.finer(" Use Random #1 server " + serverAbb);
+        }
+        if (server2Abb == null) {
+            server2Abb = serverList2[(int) (Math.random() * (serverList2.length - 1))];
+            logger.finer("Use Random #2 server " + server2Abb);
+        }
+        // String endServerAbb = "";
+        Boolean telekom = !(this.getProperties().getProperty(PROPERTY_USE_TELEKOMSERVER) == null || !(Boolean) this.getProperties().getProperty(PROPERTY_USE_TELEKOMSERVER));
+
+        String user = null;
+        String pass = null;
+        String premium = null;
+        if (this.getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM, false)) {
+            premium = PROPERTY_USE_PREMIUM;
+            user = (String) this.getProperties().getProperty(PROPERTY_PREMIUM_USER);
+            pass = (String) this.getProperties().getProperty(PROPERTY_PREMIUM_PASS);
+        }
+        else if (this.getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM_2, false)) {
+            user = (String) this.getProperties().getProperty(PROPERTY_PREMIUM_USER_2);
+            pass = (String) this.getProperties().getProperty(PROPERTY_PREMIUM_PASS_2);
+            premium = PROPERTY_USE_PREMIUM_2;
+        }
+        else if (this.getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM_3, false)) {
+            user = (String) this.getProperties().getProperty(PROPERTY_PREMIUM_USER_3);
+            pass = (String) this.getProperties().getProperty(PROPERTY_PREMIUM_PASS_3);
+            premium = PROPERTY_USE_PREMIUM_3;
+        }
+        else {
+            return doFreeStep(step, downloadLink);
+        }
+        // String encodePass = rawUrlEncode(pass);
+        switch (step.getStep()) {
+            case PluginStep.STEP_WAIT_TIME:
+                try {
+                    // get Startseite
+                    // public static RequestInfo getRequest(URL link, String
+                    // cookie, String referrer, boolean redirect) throws
+                    // IOException {
+                    String link = downloadLink.getDownloadURL();
+                    if (this.getProperties().getBooleanProperty(PROPERTY_USE_SSL, true)) link = link.replaceFirst("http://", "http://ssl.");
+
+                    logger.info(requestInfo.getHeaders() + "");
+                    logger.info(requestInfo.getHtmlCode() + "");
                     requestInfo = getRequest(new URL(link), null, "", false);
                     if (requestInfo.getHtmlCode().indexOf(hardwareDefektString) > 0) {
                         // hardewaredefeklt bei rs.com
@@ -1061,7 +1270,7 @@ public class Rapidshare extends PluginForHost {
                             }
                             if (requestInfo.containsHTML(PATTERN_ACCOUNT_OVERLOAD)) {
                                 logger.severe("Premium Account overload");
-                                downloadLink.setStatus(DownloadLink.STATUS_ERROR_PLUGIN_SPECIFIC);
+                                downloadLink.setStatus(DownloadLink.STATUS_ERROR_PREMIUM);
                                 step.setParameter("Premium overload>25GB");
                                 step.setStatus(PluginStep.STATUS_ERROR);
                                 getProperties().setProperty(premium, false);
@@ -1148,11 +1357,13 @@ public class Rapidshare extends PluginForHost {
                         logger.warning("could not get downloadInfo ");
                         return step;
                     }
-                }catch(SocketTimeoutException e1){
+                }
+                catch (SocketTimeoutException e1) {
                     downloadLink.setStatus(DownloadLink.STATUS_ERROR_PLUGIN_SPECIFIC);
-                    step.setParameter(JDLocale.L("gui.status.timeoutdetected","Timeout"));
+                    step.setParameter(JDLocale.L("gui.status.timeoutdetected", "Timeout"));
                     step.setStatus(PluginStep.STATUS_ERROR);
-                }catch (Exception e) {
+                }
+                catch (Exception e) {
                     e.printStackTrace();
                     step.setStatus(PluginStep.STATUS_ERROR);
                     downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN);
@@ -1190,9 +1401,9 @@ public class Rapidshare extends PluginForHost {
                     if (name.toLowerCase().matches(".*\\..{1,5}\\.html$")) name = name.replaceFirst("\\.html$", "");
                     downloadLink.setName(name);
                     Download dl = new Download(this, downloadLink, urlConnection);
-                    dl.setChunks(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS,3));
+                    dl.setChunks(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 3));
                     dl.startDownload();
-                    if (dl.getErrors().size() == 0) { 
+                    if (dl.getErrors().size() == 0) {
                         if (new File(downloadLink.getFileOutput()).length() < 4000 && JDUtilities.getLocalFile(new File(downloadLink.getFileOutput())).indexOf(PATTERN_DOWNLOAD_ERRORPAGE) > 0) {
                             new File(downloadLink.getFileOutput()).delete();
 
