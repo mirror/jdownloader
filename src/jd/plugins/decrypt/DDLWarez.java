@@ -18,6 +18,7 @@
 package jd.plugins.decrypt;  import jd.plugins.DownloadLink;
 
 import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.net.URL;
 import java.util.Vector;
@@ -27,6 +28,7 @@ import jd.plugins.Form;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
+import jd.utils.JDUtilities;
 
 public class DDLWarez extends PluginForDecrypt {
     final static String host             = "ddl-warez.org";
@@ -75,6 +77,7 @@ public class DDLWarez extends PluginForDecrypt {
     @Override
     public PluginStep doStep(PluginStep step, String parameter) {
         if (step.getStep() == PluginStep.STEP_DECRYPT) {
+        	System.out.println("running");
             Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
             try {
                 URL url = new URL(parameter);
@@ -85,13 +88,21 @@ public class DDLWarez extends PluginForDecrypt {
                 //first form is the search form, not needed
                 progress.setRange(forms.length -1);
                 
+                File target = new File("/home/heilbro/Desktop/ddl.txt");
+                if( !target.exists()){
+                	target.createNewFile();
+                }
+                
                 for(int i=1; i<forms.length; ++i){
                 	RequestInfo formInfo = forms[i].getRequestInfo();
                 	
-                	URL urlredirector = new URL(getBetween(formInfo.getHtmlCode(), "<FRAME SRC=\"", "\""));
-                	RequestInfo reqinfoRS = getRequest(urlredirector);
+                	//signed: the 2nd redirection layer was removed
+//                	URL urlredirector = new URL(getBetween(formInfo.getHtmlCode(), "<FRAME SRC=\"", "\""));
+//                	RequestInfo reqinfoRS = getRequest(urlredirector);
+                	
+                	String found= getBetween(formInfo.getHtmlCode(), "<FRAME SRC=\"", "\"");
 
-                	decryptedLinks.add(this.createDownloadlink(getBetween(reqinfoRS.getHtmlCode(), "<FRAME SRC=\"", "\"")));
+                	decryptedLinks.add(this.createDownloadlink(found));
                 	progress.increase(1);
                 }
 
