@@ -25,6 +25,8 @@ package jd;
 import java.awt.Graphics;
 import java.awt.Image;
 import java.io.File;
+import java.net.URL;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Properties;
 import java.util.TreeSet;
@@ -38,6 +40,7 @@ import jd.config.Configuration;
 import jd.controlling.JDController;
 import jd.controlling.interaction.Interaction;
 import jd.gui.skins.simple.SimpleGUI;
+import jd.plugins.Plugin;
 import jd.utils.JDLocale;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
@@ -95,6 +98,11 @@ public class Main {
             }
            
         }
+
+        
+        
+      
+
 
 logger.info(System.getProperty("java.class.path"));
         // rausgenommen verlängert nur den startvorgang
@@ -195,8 +203,13 @@ logger.info(System.getProperty("java.class.path"));
         logger.info("jd.run="+JDUtilities.getRunType());
         logger.info("jd.lastAuthor="+JDUtilities.getLastChangeAuthor());   
         logger.info("jd.appDir="+JDUtilities.getCurrentWorkingDirectory(null));
-
-     
+//try{
+//    Plugin.postGzippedRequest(new URL("https://ssl.rapidshare.com/cgi-bin/checkfiles.cgi"), "urls=http://rapidshare.com/files/101171749/ssbxdvd5.part01.rar");
+//
+//}catch(Exception e){
+//    e.printStackTrace();
+//}
+//     
    
     }
     

@@ -2045,4 +2045,6 @@ public abstract class Plugin {
         this.captchaDetectionID = captchaDetectionID;
     }
 
+   
+
 }

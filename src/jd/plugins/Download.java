@@ -483,6 +483,7 @@ public class Download {
                 try {
                     this.wrBuf.force();
                     wrBuf = null;
+                    chunks=null;
                     System.gc();
                     break;
                 }
@@ -903,7 +904,9 @@ public class Download {
                 logger.severe("Startbyte has to be less than endByte");
             }
         }
-
+public void finalize(){
+    logger.info("Finalized: "+downloadLink+" : "+this.getID());
+}
         public int getID() {
             if (id < 0) {
                 logger.info("INIT " + chunks.indexOf(this));

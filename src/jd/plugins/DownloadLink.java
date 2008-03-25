@@ -800,6 +800,7 @@ this.chunksProgress=null;
      * @return true falls der download abgebrochen wurde
      */
     public boolean isAborted() {
+        
         return aborted;
     }
 

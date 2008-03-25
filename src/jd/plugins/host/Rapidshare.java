@@ -1495,48 +1495,34 @@ public class Rapidshare extends PluginForHost {
             String name = downloadLink.getName();
             if (name.toLowerCase().matches(".*\\..{1,5}\\.html$")) name = name.replaceFirst("\\.html$", "");
             downloadLink.setName(name);
-            if (this.getProperties().getBooleanProperty(PROPERTY_USE_SSL, false)) link = link.replaceFirst("http://", "http://ssl.");
-            requestInfo = getRequest(new URL(link));
-
-            if (requestInfo.getHtmlCode().indexOf(hardwareDefektString) > 0) {
-                this.hardewareError = true;
-                this.setStatusText("Hareware Error");
-                downloadLink.setStatusText("Hareware Error");
-                return false;
+            
+            
+            
+           ;
+            requestInfo = headRequest( new URL( link.replaceAll("http://", "https://ssl.")),null,null,false);
+            headLength=Long.parseLong(requestInfo.getConnection().getHeaderField("Content-Length"));
+            if (requestInfo.getConnection().getHeaderField("Content-Length") == null || Long.parseLong(requestInfo.getConnection().getHeaderField("Content-Length")) <= 1024 * 100) {
+                requestInfo = getRequest(new URL(link.replaceAll("http://", "https://ssl.")), null, "", false);                   
+                if (requestInfo.getHtmlCode().indexOf(hardwareDefektString) > 0) {   
+                    this.hardewareError = true;
+                    this.setStatusText("Hareware Error");
+                   
+                    return false;
+                }
+            
+                String error=null;
+                
+                if((error=getSimpleMatch(requestInfo.getHtmlCode(), PATTERN_ERROR_OCCURED, 2))!=null){
+                
+                    logger.severe("Fehler: "+error);
+                    this.setStatusText(JDUtilities.htmlDecode(error).replaceAll("<[^>]*>", ""));
+                  
+                    return false;
+                }
             }
-            if (requestInfo.getConnection().getHeaderField("Location") != null) {
 
-                return true;
-            }
-
-            String newURL = getFirstMatch(requestInfo.getHtmlCode(), patternForNewHost, 1);
-            String strWaitTime = getSimpleMatch(requestInfo.getHtmlCode(), patternErrorDownloadLimitReached, 0);
-            if (newURL == null && strWaitTime == null) {
-
-                return false;
-            }
-
-            requestInfo = postRequest(new URL(newURL), null, null, null, "dl.start=free", true);
-            LAST_FILE_CHECK = System.currentTimeMillis();
-            String size = getSimpleMatch(requestInfo.getHtmlCode(), "</font> (<b>°</b> °) angefordert.", 0);
-            String type = getSimpleMatch(requestInfo.getHtmlCode(), "</font> (<b>°</b> °) angefordert.", 1);
-
-            if (size == null || type == null) {
-                return false;
-            }
-            int bytes;
-            if (type.equalsIgnoreCase("kb")) {
-                bytes = Integer.parseInt(size) * 1024;
-
-            }
-            else if (type.equalsIgnoreCase("mb")) {
-                bytes = Integer.parseInt(size) * 1024 * 1024;
-
-            }
-            else {
-                bytes = Integer.parseInt(size);
-            }
-            downloadLink.setDownloadMax(bytes);
+            downloadLink.setDownloadMax(requestInfo.getConnection().getContentLength());
+            downloadLink.setName(this.getFileNameFormHeader(requestInfo.getConnection()));
             return true;
         }
         catch (MalformedURLException e) {

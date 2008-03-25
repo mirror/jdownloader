@@ -33,6 +33,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.Vector;
 import java.util.Map.Entry;
+import java.util.zip.GZIPOutputStream;
 
 public class HTTPConnection {
 
@@ -144,7 +145,16 @@ public class HTTPConnection {
         wr.close();
         
     }
-
+    public void postGzip(String parameter) throws IOException {
+        
+ 
+        OutputStreamWriter wr = new OutputStreamWriter(connection.getOutputStream());
+        if (parameter != null) wr.write(parameter);
+        this.postData=parameter;
+        wr.flush();
+        wr.close();
+        
+    }
     public String getPostData() {
         return postData;
     }
