@@ -34,6 +34,7 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
+import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
 public class Uploadedto extends PluginForHost {
@@ -45,14 +46,18 @@ public class Uploadedto extends PluginForHost {
 
     static private final String     PLUGIN_NAME                  = HOST;
 
-    static private final String     PLUGIN_VERSION               = "0.1";
+    static private final String     PLUGIN_VERSION               = "0.1.1";
 
     static private final String     PLUGIN_ID                    = PLUGIN_NAME + "-" + PLUGIN_VERSION;
 
-    static private final String     CODER                        = "JD-Team/JD-Team CAPTCHA fix";
+    static private final String     CODER                        = "JD-Team";
 
-    // /Simplepattern
-static private final String DOWNLOAD_LIMIT_REACHED="Free-Traffic ist aufgebraucht";
+    static private final String     AGB_LINK                     = "http://uploaded.to/agb";
+
+    // Simplepattern
+    
+    static private final String 	DOWNLOAD_LIMIT_REACHED		 = "Free-Traffic ist aufgebraucht";
+    
     static private final String     DOWNLOAD_URL                 = "<form name=\"download_form\" onsubmit=\"startDownload();\" method=\"post\" action=\"°\">";
 
     static private final String     DOWNLOAD_URL_WITHOUT_CAPTCHA = "<form name=\"download_form\" method=\"post\" action=\"°\">";
@@ -62,6 +67,8 @@ static private final String DOWNLOAD_LIMIT_REACHED="Free-Traffic ist aufgebrauch
     private static final String     FILE_INFO                    = "Dateiname:°</td><td><b>°</b></td></tr>°<tr><td style=\"padding-left:4px;\">Dateityp:°</td><td>°</td></tr>°<tr><td style=\"padding-left:4px;\">Dateig°</td><td>°</td>";
 
     static private final String     FILE_NOT_FOUND               = "Datei existiert nicht";
+
+    static private final String     TRAFFIC_EXCEEDED             = "Ihr Premium-Traffic ist aufgebraucht";
 
     private static final Pattern    CAPTCHA_FLE                  = Pattern.compile("<img name=\"img_captcha\" src=\"(.*?)\" border=0 />");
 
@@ -161,7 +168,7 @@ static private final String DOWNLOAD_LIMIT_REACHED="Free-Traffic ist aufgebrauch
                     // 3 Versuche
                     String pass = null;
                     if (requestInfo.containsHTML("file_key")) {
-                        logger.info("File is Password protected1");
+                        logger.info("File is Password protected (1)");
                         if (lastPassword != null) {
                             logger.info("Try last pw: " + lastPassword);
                             pass = lastPassword;
@@ -176,14 +183,14 @@ static private final String DOWNLOAD_LIMIT_REACHED="Free-Traffic ist aufgebrauch
 
                     }
                     if (requestInfo.containsHTML("file_key")) {
-                        logger.info("File is Password protected2");
+                        logger.info("File is Password protected (2)");
                         pass = JDUtilities.getController().getUiInterface().showUserInputDialog("Password?");
                         logger.info("Password: " + pass);
                         requestInfo = postRequest(new URL(downloadLink.getDownloadURL()), "lang=de", null, null, "lang=de&file_key=" + pass, false);
 
                     }
                     if (requestInfo.containsHTML("file_key")) {
-                        logger.info("File is Password protected3");
+                        logger.info("File is Password protected (3)");
                         pass = JDUtilities.getController().getUiInterface().showUserInputDialog("Password?");
                         logger.info("Password: " + pass);
                         requestInfo = postRequest(new URL(downloadLink.getDownloadURL()), "lang=de", null, null, "lang=de&file_key=" + pass, false);
@@ -418,7 +425,7 @@ static private final String DOWNLOAD_LIMIT_REACHED="Free-Traffic ist aufgebrauch
             step.setStatus(PluginStep.STATUS_ERROR);
             logger.severe("Premiumfehler Logins are incorrect");
             parameter.setStatus(DownloadLink.STATUS_ERROR_PLUGIN_SPECIFIC);
-            step.setParameter("Login Error: "+user);
+            step.setParameter(JDLocale.L("plugins.host.premium.loginError", "Login Fehler") + ": "+user);
             getProperties().setProperty(PROPERTY_USE_PREMIUM, false);
             return step;
 
@@ -456,6 +463,15 @@ static private final String DOWNLOAD_LIMIT_REACHED="Free-Traffic ist aufgebrauch
                         step.setStatus(PluginStep.STATUS_ERROR);
                         return step;
                     }
+                    // Traffic aufgebraucht?
+                    if (requestInfo.getHtmlCode().contains(TRAFFIC_EXCEEDED)) {
+                        logger.warning("Premium traffic exceeded (> 50 GiB in the last 10 days)");
+                        downloadLink.setStatus(DownloadLink.STATUS_ERROR_PREMIUM);
+                        step.setParameter("Premium overload (> 50 GiB)");
+                        step.setStatus(PluginStep.STATUS_ERROR);
+                        getProperties().setProperty(PROPERTY_USE_PREMIUM, false);
+                        return step;
+                    }
 
                     // 3 Versuche
                     String filepass = null;
@@ -475,14 +491,14 @@ static private final String DOWNLOAD_LIMIT_REACHED="Free-Traffic ist aufgebrauch
 
                     }
                     if (requestInfo.containsHTML("file_key")) {
-                        logger.info("File is Password protected2");
+                        logger.info("File is Password protected (2)");
                         filepass = JDUtilities.getController().getUiInterface().showUserInputDialog("Password?");
                         logger.info("Password: " + pass);
                         requestInfo = postRequest(new URL(downloadLink.getDownloadURL()), cookie, null, null, "lang=de&file_key=" + filepass, false);
 
                     }
                     if (requestInfo.containsHTML("file_key")) {
-                        logger.info("File is Password protected3");
+                        logger.info("File is Password protected (3)");
                         filepass = JDUtilities.getController().getUiInterface().showUserInputDialog("Password?");
                         logger.info("Password: " + pass);
                         requestInfo = postRequest(new URL(downloadLink.getDownloadURL()), cookie, null, null, "lang=de&file_key=" + filepass, false);
@@ -660,12 +676,12 @@ static private final String DOWNLOAD_LIMIT_REACHED="Free-Traffic ist aufgebrauch
 
     private void setConfigElements() {
         ConfigEntry cfg;
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_LABEL, "Premium Account"));
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getProperties(), PROPERTY_PREMIUM_USER, "Premium User"));
+        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_LABEL, JDLocale.L("plugins.host.premium.account", "Premium Account")));
+        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getProperties(), PROPERTY_PREMIUM_USER, JDLocale.L("plugins.host.premium.user", "Benutzer")));
         cfg.setDefaultValue("Kundennummer");
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_PASSWORDFIELD, getProperties(), PROPERTY_PREMIUM_PASS, "Premium Pass"));
+        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_PASSWORDFIELD, getProperties(), PROPERTY_PREMIUM_PASS, JDLocale.L("plugins.host.premium.password", "Passwort")));
         cfg.setDefaultValue("Passwort");
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getProperties(), PROPERTY_USE_PREMIUM, "Premium Account verwenden"));
+        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getProperties(), PROPERTY_USE_PREMIUM, JDLocale.L("plugins.host.premium.useAccount", "Premium Account verwenden")));
         cfg.setDefaultValue(false);
 
     }
@@ -681,13 +697,10 @@ static private final String DOWNLOAD_LIMIT_REACHED="Free-Traffic ist aufgebrauch
 
     @Override
     public void resetPluginGlobals() {
-        // TODO Auto-generated method stub
-        
     }
 
     @Override
     public String getAGBLink() {
-        
-        return "http://uploaded.to/agb";
+        return AGB_LINK;
     }
 }

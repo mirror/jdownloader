@@ -14,7 +14,6 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://wnu.org/licenses/>.
 
-
 package jd.plugins.host;
 
 import java.io.File;
@@ -37,33 +36,32 @@ import jd.utils.JDUtilities;
 
 public class FilesTo extends PluginForHost {
 	
-    static private final Pattern PAT_SUPPORTED = Pattern.compile("http://www\\.files\\.to/get/[0-9]+/[a-zA-Z0-9]+");
-    static private final String HOST = "files.to";
-    static private final String PLUGIN_NAME = HOST;
-    static private final String PLUGIN_VERSION = "0.1.0";
-    static private final String PLUGIN_ID = PLUGIN_NAME + "-" + PLUGIN_VERSION;
-    static private final String CODER = "eXecuTe";
+    static private final Pattern PAT_SUPPORTED 	= Pattern.compile("http://www\\.files\\.to/get/[0-9]+/[a-zA-Z0-9]+");
+    static private final String  HOST 			= "files.to";
+    static private final String  PLUGIN_VERSION = "0.1.1";
+    static private final String  CODER 			= "jD-Team";
+    static private final String  AGB_LINK 		= "http://www.files.to/content/aup";
     
-    private Pattern FILE_INFO_NAME = Pattern.compile("<p>Name: (.*?)</p>");
+    private Pattern FILE_INFO_NAME = Pattern.compile("<p id=\"downloadname\">Name: (.*?)</p>");
     private Pattern FILE_INFO_SIZE = Pattern.compile("<p>Gr&ouml;&szlig;e: (.*? (KB|MB)<)/p>");
-    private Pattern CAPTCHA_FLE = Pattern.compile("<img src=\"(http://www.files\\.to/captcha_[0-9]+\\.jpg)");
-    private Pattern DOWNLOAD_URL = Pattern.compile("action\\=\"(http://.*?files\\.to/dl/.*?)\">");
-    private Pattern SESSION = Pattern.compile("action\\=\"\\?(PHPSESSID\\=.*?)\"");
+    private Pattern CAPTCHA_FLE    = Pattern.compile("<img src=\"(http://www.files\\.to/captcha_[0-9]+\\.jpg)");
+    private Pattern DOWNLOAD_URL   = Pattern.compile("action\\=\"(http://.*?files\\.to/dl/.*?)\">");
+    private Pattern SESSION 	   = Pattern.compile("action\\=\"\\?(PHPSESSID\\=.*?)\"");
     
     static private final String FILE_NOT_FOUND = "Die angeforderte Datei konnte nicht gefunden werden";
 
-    private String captchaAddress;
-    private String finalURL;
-    private String session;
-    private HTTPConnection        urlConnection;
+    private String 		   captchaAddress;
+    private String 		   finalURL;
+    private String 		   session;
+    private HTTPConnection urlConnection;
 
     public FilesTo() {
         super();
         steps.add(new PluginStep(PluginStep.STEP_WAIT_TIME, null));
-        steps.add(new PluginStep(PluginStep.STEP_PENDING, null));
         steps.add(new PluginStep(PluginStep.STEP_GET_CAPTCHA_FILE, null));
         steps.add(new PluginStep(PluginStep.STEP_DOWNLOAD, null));
     }
+    
     @Override
     public String getCoder() {
         return CODER;
@@ -87,7 +85,7 @@ public class FilesTo extends PluginForHost {
     }
     @Override
     public String getPluginID() {
-        return PLUGIN_ID;
+        return HOST + "-" + PLUGIN_VERSION;
     }
     
     public PluginStep doStep(PluginStep step, DownloadLink downloadLink) {
@@ -122,7 +120,7 @@ public class FilesTo extends PluginForHost {
                         
                     } else {
                     	
-                        logger.severe("Unbekannter fehler.. retry in 20 sekunden");
+                        logger.severe("Unknown error.. retry in 20 sekunden");
                         step.setStatus(PluginStep.STATUS_ERROR);
                         downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN_RETRY);
                         step.setParameter(20000l);
@@ -136,7 +134,7 @@ public class FilesTo extends PluginForHost {
                     
                     if (!JDUtilities.download(file, captchaAddress) || !file.exists()) {
                     	
-                        logger.severe("Captcha Download fehlgeschlagen: " + captchaAddress);
+                        logger.severe("Captcha download failed: " + captchaAddress);
                         step.setParameter(null);
                         step.setStatus(PluginStep.STATUS_ERROR);
                         downloadLink.setStatus(DownloadLink.STATUS_ERROR_CAPTCHA_IMAGEERROR);
@@ -152,14 +150,9 @@ public class FilesTo extends PluginForHost {
                     
                     break;
                     
-                case PluginStep.STEP_PENDING :
-                	
-                    step.setParameter(0l);
-                    break;
-                    
                 case PluginStep.STEP_DOWNLOAD :
                 	
-                    String code = (String) steps.get(2).getParameter();
+                    String code = (String) steps.get(1).getParameter();
                     
                     HashMap<String,String> requestHeaders = new HashMap<String,String>();
             		requestHeaders.put("Content-Type", "application/x-www-form-urlencoded");
@@ -182,7 +175,6 @@ public class FilesTo extends PluginForHost {
                     logger.info(finalURL);
                     
                     // Download vorbereiten
-                    downloadLink.setStatusText("Verbindung aufbauen");
                     urlConnection = new HTTPConnection(new URL(finalURL).openConnection());
                     int fileSize = urlConnection.getContentLength();
                     downloadLink.setDownloadMax(fileSize);
@@ -198,10 +190,7 @@ public class FilesTo extends PluginForHost {
                     // Download starten
                     Download dl = new Download(this, downloadLink, urlConnection);
                     dl.setChunks(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS,3));
-
                     dl.startDownload();
-                    
-              
                     
                     return step;
                     
@@ -272,17 +261,17 @@ public class FilesTo extends PluginForHost {
         return false;
         
     }
+    
     @Override
     public int getMaxSimultanDownloadNum() {
         return 1;
     }
     @Override
     public void resetPluginGlobals() {
-        // TODO Auto-generated method stub
     }
     @Override
     public String getAGBLink() {
-        return "http://www.files.to/content/aup";
+        return AGB_LINK;
     }
 
     private int getFileSize(String source) {
