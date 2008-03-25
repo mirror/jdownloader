@@ -25,6 +25,7 @@ import java.util.LinkedList;
 import jd.config.Configuration;
 import jd.plugins.DownloadLink;
 import jd.unrar.JUnrar;
+import jd.unrar.Merge;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
@@ -87,6 +88,10 @@ public class Unrar extends Interaction implements Serializable {
 	public static final String PROPERTY_EXTRACTFOLDER = "UNRAR_PROPERTY_EXTRACTFOLDER";
 	
 	public static final String PROPERTY_DELETE_INFOFILE = "PROPERTY_DELETE_INFOFILE";
+	
+	public static final String PROPERTY_USE_HJMERGE = "PROPERTY_USE_HJMERGE";
+	
+	public static final String PROPERTY_DELETE_MERGEDFILES = "PROPERTY_DELETE_MERGEDFILES";
 
 	@Override
 	public boolean doInteraction(Object arg) {
@@ -222,7 +227,13 @@ public class Unrar extends Interaction implements Serializable {
 		}
 		unrar.followingFiles = followingFiles.toArray(new String[followingFiles
 				.size()]);
+
 		unrar.unrar();
+		if (lastFinishedDownload != null && JDUtilities.getConfiguration()
+				.getBooleanProperty(Unrar.PROPERTY_USE_HJMERGE, true)) {
+			Merge.mergeIt(new File(lastFinishedDownload.getFileOutput()), unrar.followingFiles, JDUtilities.getConfiguration()
+					.getBooleanProperty(Unrar.PROPERTY_DELETE_MERGEDFILES, true));
+		}
 		IS_RUNNING = false;
 		this.setCallCode(Interaction.INTERACTION_CALL_SUCCESS);
 		Interaction

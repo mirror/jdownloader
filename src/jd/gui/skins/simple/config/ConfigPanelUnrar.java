@@ -127,7 +127,11 @@ public class ConfigPanelUnrar extends ConfigPanel implements ActionListener {
         addGUIConfigEntry(ce);
         ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_BUTTON, this, JDLocale.L("gui.menu.action.passwordlist.name")));
         addGUIConfigEntry(ce);
-
+        addGUIConfigEntry(new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR)));
+        ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, configuration, Unrar.PROPERTY_USE_HJMERGE, JDLocale.L("gui.config.unrar.usehjmerge", "HJSplit Dateien automatisch zusammenfügen")).setDefaultValue(true));
+        addGUIConfigEntry(ce);
+        ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, configuration, Unrar.PROPERTY_DELETE_MERGEDFILES, JDLocale.L("gui.config.unrar.deletemergedfiles", "Dateiteile nach dem zusammenfügen löschen")).setDefaultValue(true));
+        addGUIConfigEntry(ce);
         add(panel, BorderLayout.NORTH);
 
     }
