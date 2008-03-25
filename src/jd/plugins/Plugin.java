@@ -778,7 +778,7 @@ public abstract class Plugin {
         httpConnection.setRequestProperty("User-Agent", "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1; SV1; .NET CLR 1.1.4322; .NET CLR 2.0.50727)");
         RequestInfo requestInfo = readFromURL(httpConnection);
         requestInfo.setConnection(httpConnection);
-        logger.finer("getRequest " + link + ": " + (System.currentTimeMillis() - timer) + " ms");
+        //logger.finer("getRequest " + link + ": " + (System.currentTimeMillis() - timer) + " ms");
         return requestInfo;
     }
 
@@ -800,7 +800,7 @@ public abstract class Plugin {
         httpConnection.setRequestProperty("User-Agent", "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1; SV1; .NET CLR 1.1.4322; .NET CLR 2.0.50727)");
         RequestInfo requestInfo = readFromURL(httpConnection);
         requestInfo.setConnection(httpConnection);
-        logger.finer("headRequest " + link + ": " + (System.currentTimeMillis() - timer) + " ms");
+       //logger.finer("headRequest " + link + ": " + (System.currentTimeMillis() - timer) + " ms");
         return requestInfo;
     }
 
@@ -852,7 +852,7 @@ public abstract class Plugin {
 
         RequestInfo ri = new RequestInfo("", location, setcookie, httpConnection.getHeaderFields(), responseCode);
         ri.setConnection(httpConnection);
-        logger.finer("getReuqest wo " + link + ": " + (System.currentTimeMillis() - timer) + " ms");
+      //  logger.finer("getReuqest wo " + link + ": " + (System.currentTimeMillis() - timer) + " ms");
         return ri;
     }
 
@@ -909,7 +909,7 @@ public abstract class Plugin {
 
         RequestInfo ri = new RequestInfo("", location, setcookie, httpConnection.getHeaderFields(), responseCode);
         ri.setConnection(httpConnection);
-        logger.finer("getRequest wo2 " + link + ": " + (System.currentTimeMillis() - timer) + " ms");
+       // logger.finer("getRequest wo2 " + link + ": " + (System.currentTimeMillis() - timer) + " ms");
         return ri;
     }
 
@@ -981,7 +981,7 @@ public abstract class Plugin {
         RequestInfo requestInfo = readFromURL(httpConnection);
 
         requestInfo.setConnection(httpConnection);
-        logger.finer("postRequest " + url + ": " + (System.currentTimeMillis() - timer) + " ms");
+        //logger.finer("postRequest " + url + ": " + (System.currentTimeMillis() - timer) + " ms");
         return requestInfo;
     }
 
@@ -1034,7 +1034,7 @@ public abstract class Plugin {
         }
         RequestInfo ri = new RequestInfo("", location, setcookie, httpConnection.getHeaderFields(), responseCode);
         ri.setConnection(httpConnection);
-        logger.finer("postRequest wo" + link + ": " + (System.currentTimeMillis() - timer) + " ms");
+        //logger.finer("postRequest wo" + link + ": " + (System.currentTimeMillis() - timer) + " ms");
         return ri;
     }
 

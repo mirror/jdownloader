@@ -342,7 +342,7 @@ public class Download {
             int[] chunksProgress = downloadLink.getChunksProgress();
             boolean isProgressStatusValid = false;
             int[][] loadedRanges = null;
-            if (chunksProgress != null&&(chunkNum>0||this.isResume())) {
+            if (chunksProgress != null&&this.isResume()) {
                 try {
                     logger.info("Try to resume download");
                     wrBuf.load();
