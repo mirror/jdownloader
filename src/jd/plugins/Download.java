@@ -451,7 +451,7 @@ public class Download {
 
                 for (int i = 0; i < chunkNum; i++) {
                     if (i == (chunkNum - 1)) {
-                        addChunk(new Chunk(loadedRanges[i][1], fileSize, connection));
+                        addChunk(new Chunk(loadedRanges[i][1], fileSize-1, connection));
                     }
                     else {
                         addChunk(new Chunk(loadedRanges[i][1], loadedRanges[i + 1][0], connection));
@@ -472,7 +472,7 @@ public class Download {
                 downloadLink.setChunksProgress(new int[chunkNum]);
                 for (int i = 0; i < chunkNum; i++) {
                     if (i == (chunkNum - 1)) {
-                        addChunk(new Chunk(i * parts, fileSize, connection));
+                        addChunk(new Chunk(i * parts, fileSize-1, connection));
                     }
                     else {
                         addChunk(new Chunk(i * parts, (i + 1) * parts, connection));

@@ -30,6 +30,8 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextPane;
 
+import jd.gui.skins.simple.LocationListener;
+import jd.gui.skins.simple.SimpleGUI;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
@@ -70,7 +72,7 @@ public class HTMLDialog extends JDialog implements ActionListener {
         super(frame);
         
         setLayout(new BorderLayout());
-
+this.setName(title);
         btnCancel = new JButton(JDLocale.L("gui.btn_cancel","Cancel"));
         btnCancel.addActionListener(this);
         btnOk = new JButton(JDLocale.L("gui.btn_ok","OK"));
@@ -98,7 +100,12 @@ public class HTMLDialog extends JDialog implements ActionListener {
         setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
        // this.setLocationRelativeTo(null);
         this.setVisible(true);
-        this.setLocation(JDUtilities.getCenterOfComponent(frame, this));
+        LocationListener list = new LocationListener();
+        this.addComponentListener(list);
+         this.addWindowListener(list);
+       
+     
+        SimpleGUI.restoreWindow(null, null, this);
         this.setVisible(false);
         setModal(true);
         this.setVisible(true);

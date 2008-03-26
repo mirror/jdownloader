@@ -27,11 +27,14 @@ import java.util.regex.Pattern;
 
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
+import jd.config.Configuration;
 import jd.plugins.Download;
 import jd.plugins.DownloadLink;
+import jd.plugins.HTTPConnection;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
+import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
 public class Megauploadcom extends PluginForHost {
@@ -60,7 +63,8 @@ public class Megauploadcom extends PluginForHost {
 
     static private final String     SIMPLEPATTERN_GEN_DOWNLOADLINK      = "var ° = String.fromCharCode(Math.abs(°));°var ° = '°' + String.fromCharCode(Math.sqrt(°));";
 
-    static private final String     SIMPLEPATTERN_GEN_DOWNLOADLINK_LINK = "document.getElementById(\"dlbutton\").innerHTML = '<a href=\"°' ° '°\" onclick=\"loadingdownload();\">";
+    static private final String     SIMPLEPATTERN_GEN_DOWNLOADLINK_LINK =   "Math.sqrt(°));°document.getElementById(\"°\").innerHTML = '<a href=\"°' ° '°\"°onclick=\"loadingdownload()";
+                                                                            
 
     static private final String     ERROR_TEMP_NOT_AVAILABLE            = "Zugriff auf die Datei ist vor";
 
@@ -81,6 +85,8 @@ public class Megauploadcom extends PluginForHost {
 
     private boolean tempUnavailable=false;
 
+    private String finalurl;
+
     public Megauploadcom() {
         steps.add(new PluginStep(PluginStep.STEP_WAIT_TIME, null));
         steps.add(new PluginStep(PluginStep.STEP_GET_CAPTCHA_FILE, null));
@@ -89,6 +95,19 @@ public class Megauploadcom extends PluginForHost {
         setConfigElements();
     }
     private void setConfigElements() {
+     
+            ConfigEntry cfg;
+            config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_LABEL, JDLocale.L("plugins.host.premium.account", "Premium Account")));
+            config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getProperties(), PROPERTY_PREMIUM_USER, JDLocale.L("plugins.host.premium.user", "Benutzer")));
+            cfg.setDefaultValue("Kundennummer");
+            config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_PASSWORDFIELD, getProperties(), PROPERTY_PREMIUM_PASS, JDLocale.L("plugins.host.premium.password", "Passwort")));
+            cfg.setDefaultValue("Passwort");
+            config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getProperties(), PROPERTY_USE_PREMIUM, JDLocale.L("plugins.host.premium.useAccount", "Premium Account verwenden")));
+            cfg.setDefaultValue(false);
+
+       
+        
+        
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, getProperties(), "COUNTRY_ID", new String[] { "-","en", "de", "fr", "es", "pt", "nl", "it", "cn", "ct", "jp", "kr", "ru", "fi", "se", "dk", "tr", "sa", "vn" , "pl" }, "LänderID").setDefaultValue("-"));
       
     }
@@ -128,6 +147,12 @@ public class Megauploadcom extends PluginForHost {
     // return null;
     // }
     public PluginStep doStep(PluginStep step, DownloadLink parameter) {
+        
+        if (getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM, false)) {
+
+            return doPremiumStep(step, parameter);
+        }
+        
         DownloadLink downloadLink = (DownloadLink) parameter;
         String link=downloadLink.getDownloadURL().replaceAll("/de", "");
    
@@ -226,9 +251,9 @@ public class Megauploadcom extends PluginForHost {
                     
                     Character l = (char) Math.abs(Integer.parseInt(getSimpleMatch(requestInfo.getHtmlCode(), SIMPLEPATTERN_GEN_DOWNLOADLINK, 1).trim()));
                     String i = getSimpleMatch(requestInfo.getHtmlCode(), SIMPLEPATTERN_GEN_DOWNLOADLINK, 4) + (char) Math.sqrt(Integer.parseInt(getSimpleMatch(requestInfo.getHtmlCode(), SIMPLEPATTERN_GEN_DOWNLOADLINK, 5).trim()));
-                    String url = (JDUtilities.htmlDecode(getSimpleMatch(requestInfo.getHtmlCode(), SIMPLEPATTERN_GEN_DOWNLOADLINK_LINK, 0) + i + l + getSimpleMatch(requestInfo.getHtmlCode(), SIMPLEPATTERN_GEN_DOWNLOADLINK_LINK, 2)));
+                    String url = (JDUtilities.htmlDecode(getSimpleMatch(requestInfo.getHtmlCode(), SIMPLEPATTERN_GEN_DOWNLOADLINK_LINK, 3) + i + l + getSimpleMatch(requestInfo.getHtmlCode(), SIMPLEPATTERN_GEN_DOWNLOADLINK_LINK, 5)));
                     logger.info(".." + url);
-
+                    logger.info(requestInfo.getHtmlCode());
                     try {
                         requestInfo = getRequestWithoutHtmlCode(new URL(url), COOKIE, null, true);
                         if (!requestInfo.isOK()) {
@@ -251,13 +276,9 @@ public class Megauploadcom extends PluginForHost {
                         logger.info("Filename: " + getFileNameFormHeader(requestInfo.getConnection()));
 
                         downloadLink.setName(getFileNameFormHeader(requestInfo.getConnection()));
-                        if (!hasEnoughHDSpace(downloadLink)) {
-                            downloadLink.setStatus(DownloadLink.STATUS_ERROR_NO_FREE_SPACE);
-                            step.setStatus(PluginStep.STATUS_ERROR);
-                            return step;
-                        }
+                   
                         Download dl = new Download(this, downloadLink,  requestInfo.getConnection());
-                        
+                      
                         dl.startDownload();
                         return step;
                     }
@@ -283,6 +304,65 @@ public class Megauploadcom extends PluginForHost {
         }
     }
 
+    private PluginStep doPremiumStep(PluginStep step, DownloadLink parameter) {
+        DownloadLink downloadLink = (DownloadLink) parameter;
+        String link=downloadLink.getDownloadURL().replaceAll("/de", "");
+        String user = getProperties().getStringProperty(PROPERTY_PREMIUM_USER);
+        String pass = getProperties().getStringProperty(PROPERTY_PREMIUM_PASS);
+        String countryID=getProperties().getStringProperty("COUNTRY_ID", "-");
+        logger.info("PREMOIM");
+        if(!countryID.equals("-")){
+            logger.info("Use Country trick");
+          // http://www.megaupload.com/HIER_STEHT_DER_2_STELLIGE_LÄNDERKÜRZEL/?d=EMXRGYTM
+        
+                link= link.replace(".com/", ".com/"+countryID+"/");
+            
+                logger.info("New link: "+link);
+            
+        }
+        
+        try {
+            downloadLink.setStatusText("Login");
+            requestInfo=postRequest(new URL(link), "login="+user+"&password="+pass);
+          
+            if(requestInfo.getCookie().indexOf("user=")<0){
+                step.setStatus(PluginStep.STATUS_ERROR);
+                downloadLink.setStatus(DownloadLink.STATUS_ERROR_PREMIUM);                
+            
+            }
+            String cookie=requestInfo.getCookie();
+            
+                requestInfo=getRequest(new URL("http://"+requestInfo.getConnection().getURL().getHost()+"/"+requestInfo.getLocation()), cookie, link, false);
+                    
+                    
+                   // this.postRequest(string, cookie, referrer, requestProperties, parameter, redirect)(, "login="+user+"&password="+pass);  
+                Character l = (char) Math.abs(Integer.parseInt(getSimpleMatch(requestInfo.getHtmlCode(), SIMPLEPATTERN_GEN_DOWNLOADLINK, 1).trim()));
+                String i = getSimpleMatch(requestInfo.getHtmlCode(), SIMPLEPATTERN_GEN_DOWNLOADLINK, 4) + (char) Math.sqrt(Integer.parseInt(getSimpleMatch(requestInfo.getHtmlCode(), SIMPLEPATTERN_GEN_DOWNLOADLINK, 5).trim()));
+                finalurl= (JDUtilities.htmlDecode(getSimpleMatch(requestInfo.getHtmlCode(), SIMPLEPATTERN_GEN_DOWNLOADLINK_LINK, 3) + i + l + getSimpleMatch(requestInfo.getHtmlCode(), SIMPLEPATTERN_GEN_DOWNLOADLINK_LINK, 5)));
+                
+                HTTPConnection urlConnection;
+downloadLink.setStatusText("Premium");
+                requestInfo = getRequestWithoutHtmlCode(new URL(finalurl), cookie, link, false);
+                urlConnection = requestInfo.getConnection();        
+                String name = getFileNameFormHeader(urlConnection);
+                downloadLink.setName(name);
+                Download dl = new Download(this, downloadLink, urlConnection);
+                dl.setChunks(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 3));
+                dl.setResume(true);
+                dl.startDownload();
+               return step;
+           
+        }
+        catch (MalformedURLException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+        catch (IOException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+        return null;
+    }
     // Retry-After
 
     @Override

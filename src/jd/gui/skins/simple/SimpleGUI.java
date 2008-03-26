@@ -1204,6 +1204,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
      * Zeigt einen Messagedialog an
      */
     public void showMessageDialog(String string) {
+        logger.info("messagedialog");
         JOptionPane.showMessageDialog(frame, string);
     }
 
@@ -1213,6 +1214,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
      * @param string
      */
     public boolean showConfirmDialog(String string) {
+        logger.info("confirmdialog");
         return JOptionPane.showConfirmDialog(frame, string) == JOptionPane.OK_OPTION;
     }
 
@@ -1260,10 +1262,12 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
     }
 
     public String showUserInputDialog(String string) {
+        logger.info("userinputdialog");
         return JOptionPane.showInputDialog(frame, string);
     }
 
     public String showTextAreaDialog(String title, String question, String def) {
+        logger.info("Textareadialog");
         return TextAreaDialog.showDialog(this.getFrame(), title, question, def);
 
     }
@@ -1316,6 +1320,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
     }
 
     public boolean showHTMLDialog(String title, String htmlQuestion) {
+        logger.info("HTMLDIALOG");
         return HTMLDialog.showDialog(getFrame(), title, htmlQuestion);
 
     }
@@ -1330,7 +1335,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
     }
 
     public int showHelpMessage(String title, String message, String url) {
-        
+        logger.info("helpmessagedialog");
         try {
             return JHelpDialog.showHelpMessage(frame, title,"<font size=\"2\" face=\"Verdana, Arial, Helvetica, sans-serif\">"+message+"</font>", new URL(url));
         }
@@ -1340,16 +1345,25 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         return -1;
     }
 
-    public static void restoreWindow(JFrame parent, Object object, Component configurationDialog) {
+    public static void restoreWindow(JFrame parent, Object object, Component component) {
         if(parent==null)parent=CURRENTGUI.getFrame();
-        configurationDialog.setLocation(SimpleGUI.getLastLocation(parent, null, configurationDialog));
-        if (SimpleGUI.getLastDimension(configurationDialog, null) != null){
-            configurationDialog.setSize(SimpleGUI.getLastDimension(configurationDialog, null));
+        JDUtilities.getLogger().info("Restore Position of "+component);
+        Point point = SimpleGUI.getLastLocation(parent, null, component);
+        if(point.y<0)point.y=0;
+        if(point.x<0)point.x=0;
+        component.setLocation(point);
+        if (SimpleGUI.getLastDimension(component, null) != null){
+            Dimension dim = SimpleGUI.getLastDimension(component, null);
+            Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
+          
+            dim.width=Math.min(dim.width, screenSize.width);
+            dim.height=Math.min(dim.height, screenSize.height);
+            component.setSize(dim);
             
-            JDUtilities.getLogger().info("Default size: "+SimpleGUI.getLastDimension(configurationDialog, null));
+            JDUtilities.getLogger().info("Default size: "+SimpleGUI.getLastDimension(component, null));
         }else{
             JDUtilities.getLogger().info("Default dim");
-            configurationDialog.validate();
+            component.validate();
         }
         
         

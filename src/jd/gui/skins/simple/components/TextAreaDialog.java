@@ -33,6 +33,8 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextPane;
 
+import jd.gui.skins.simple.LocationListener;
+import jd.gui.skins.simple.SimpleGUI;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
@@ -69,9 +71,10 @@ public class TextAreaDialog extends JDialog implements ActionListener {
 
     private TextAreaDialog(JFrame frame, String title, String question, String def) {
         super(frame);
-    
+      
+        setModal(false);
         setLayout(new BorderLayout());
-
+        this.setName(title);
         btnCancel = new JButton(JDLocale.L("gui.btn_cancel","Cancel"));
         btnCancel.addActionListener(this);
         btnOk = new JButton(JDLocale.L("gui.btn_ok","OK"));
@@ -79,15 +82,15 @@ public class TextAreaDialog extends JDialog implements ActionListener {
         setTitle(title);
         textArea = new JTextPane();
         scrollPane = new JScrollPane(textArea);
-        Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
+        //Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
        
       
-       
-        int width = screenSize.width; 
-        int height = screenSize.height;
+       this.setResizable(true);
+       // int width = screenSize.width; 
+        //int height = screenSize.height;
         
-        this.setPreferredSize(new Dimension((int)(width*0.9),(int)(height*0.9)));
-        
+        //this.setPreferredSize(new Dimension((int)(width*0.9),(int)(height*0.9)));
+      
         textArea.setEditable(true);
         textArea.requestFocusInWindow();
         if (question != null) {
@@ -100,19 +103,24 @@ public class TextAreaDialog extends JDialog implements ActionListener {
         JPanel p= new JPanel();
         p.add(btnOk);
         p.add(btnCancel);
-        this.setVisible(true);
+        //this.setVisible(true);
         pack();
-        setLocation(JDUtilities.getCenterOfComponent(frame, this));
+    
         getRootPane().setDefaultButton(btnOk);
         setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
         this.add(p,BorderLayout.SOUTH);
-     
+        LocationListener list = new LocationListener();
+        this.addComponentListener(list);
+         this.addWindowListener(list);
+       
+         this.setVisible(true);
+        SimpleGUI.restoreWindow(null, null, this);
         this.setVisible(false);
         setModal(true);
         this.setVisible(true);
        
         
-       
+  
      
      
 
