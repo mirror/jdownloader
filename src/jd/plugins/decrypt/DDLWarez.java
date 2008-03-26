@@ -88,11 +88,6 @@ public class DDLWarez extends PluginForDecrypt {
                 //first form is the search form, not needed
                 progress.setRange(forms.length -1);
                 
-                File target = new File("/home/heilbro/Desktop/ddl.txt");
-                if( !target.exists()){
-                	target.createNewFile();
-                }
-                
                 for(int i=1; i<forms.length; ++i){
                 	RequestInfo formInfo = forms[i].getRequestInfo();
                 	
