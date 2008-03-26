@@ -19,6 +19,8 @@ package jd.config;
 
 import java.io.Serializable;
 import java.util.Vector;
+
+import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
 /**
@@ -94,6 +96,7 @@ public class ConfigContainer implements Serializable {
      */
     public static final int TYPE_PASSWORDFIELD = 11;
     public static final int TYPE_LINK = 12;
+    public static final int TYPE_CONTAINER = 13;
     
 
     private Property propertyInstance;
@@ -102,9 +105,16 @@ public class ConfigContainer implements Serializable {
     private Object              instance;
 
     private Vector<ConfigEntry> content         = new Vector<ConfigEntry>();
-
+    private int containers=0;
+    private String title;
     public ConfigContainer(Object instance) {
         this.instance = instance;
+        this.title=JDLocale.L("config.container.defaultname","Allgemein");
+        propertyInstance=JDUtilities.getConfiguration();
+    }
+    public ConfigContainer(Object instance, String title) {
+        this.instance = instance;
+        this.title=title;
         propertyInstance=JDUtilities.getConfiguration();
     }
     /**
@@ -112,6 +122,7 @@ public class ConfigContainer implements Serializable {
      * @param entry Der Eintrag, der hinzugefügt werden soll
      */
     public void addEntry(ConfigEntry entry) {
+        if(entry.getContainer()!=null)this.containers++;
         if(entry.getPropertyInstance()==null){
             entry.setPropertyInstance(this.propertyInstance);
         }
@@ -147,6 +158,15 @@ public class ConfigContainer implements Serializable {
      */
     public void setPropertyInstance(Property propertInstance) {
         this.propertyInstance = propertInstance;
+    }
+    public int getContainerNum() {
+        return containers;
+    }
+    public String getTitle() {
+        return title;
+    }
+    public void setTitle(String title) {
+        this.title = title;
     }
 
 }

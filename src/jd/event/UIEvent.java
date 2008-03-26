@@ -58,7 +58,7 @@ public class UIEvent extends AWTEvent{
     /**
      * Die Konfiguration soll gespeichtert werden
      */
-    public static final int UI_SAVE_CONFIG        = 7;
+    //public static final int UI_SAVE_CONFIG        = 7;
     /**
      * Ein Update soll durchgeführt werden
      */

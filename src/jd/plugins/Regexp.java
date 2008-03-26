@@ -93,6 +93,7 @@ public class Regexp {
             return null;
         Matcher matchertmp = matcher;
         ArrayList<String[]> ar = new ArrayList<String[]>();
+        while (matchertmp.find()) {
         int c = matchertmp.groupCount();
         int d = 1;
         String[] group;
@@ -103,13 +104,13 @@ public class Regexp {
         else
             group = new String[c];
 
-        while (matchertmp.find()) {
+       
             for (int i = d; i <= c; i++) {
                 group[i - d] = matchertmp.group(i);
             }
             ar.add(group);
         }
-        return ar.toArray(new String[ar.size()][group.length]);
+        return ar.toArray(new String[][]{});
     }
     /**
      * gibt alle Treffer in einer group als Array aus

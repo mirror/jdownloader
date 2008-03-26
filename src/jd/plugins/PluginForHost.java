@@ -37,6 +37,8 @@ public abstract class PluginForHost extends Plugin {
     // public abstract URLConnection getURLConnection();
 
     private String data;
+    private int maxConnections=50;
+    private int currentConnections=0;
 
     /**
      * Stellt das Plugin in den Ausgangszustand zurück (variablen intialisieren
@@ -89,7 +91,11 @@ public abstract class PluginForHost extends Plugin {
     public boolean isListOffline(){
         return true;
     }
-
+ 
+    public boolean[] checkLinks(String[] urls){
+        return null;
+        
+    }
     /**
      * Hier werden Treffer für Downloadlinks dieses Anbieters in diesem Text
      * gesucht. Gefundene Links werden dann in einem Vector zurückgeliefert
@@ -279,5 +285,26 @@ public abstract class PluginForHost extends Plugin {
        
         return -1;
     }
+
+public int getMaxConnections() {
+    return maxConnections;
+}
+
+public void setMaxConnections(int maxConnections) {
+    this.maxConnections = maxConnections;
+}
+
+public int getCurrentConnections() {
+    return currentConnections;
+}
+
+public void setCurrentConnections(int currentConnections) {
+    this.currentConnections = currentConnections;
+}
+
+public int getFreeConnections(){
+    return Math.max(1, maxConnections-currentConnections);
+}
+
 
 }

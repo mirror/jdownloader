@@ -125,10 +125,11 @@ public class GUIConfigEntry extends JPanel {
 
                 JDUtilities.addToGridBag(this, left = new JLabel(configEntry.getLabel()), 0, 0, 1, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
                 this.addInstantHelpLink();
-                input[0] = new JPasswordField(50);
+                input[0] = new JPasswordField();
+               // input[0].setMaximumSize(new Dimension(160,20));
                 input[0].setEnabled(configEntry.isEnabled());
-                
-                JDUtilities.addToGridBag(this, right = input[0], 2, 0, 1, 1, 0, 0,insets, GridBagConstraints.HORIZONTAL, GridBagConstraints.EAST);
+               ((JPasswordField) input[0]).setHorizontalAlignment(JTextField.RIGHT);
+                JDUtilities.addToGridBag(this, right = input[0], 2, 0, 1, 1, 1, 1,insets, GridBagConstraints.HORIZONTAL, GridBagConstraints.EAST);
 
                 break;
 
@@ -136,10 +137,10 @@ public class GUIConfigEntry extends JPanel {
 
                 JDUtilities.addToGridBag(this, left = new JLabel(configEntry.getLabel()), 0, 0, 1, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
                 this.addInstantHelpLink();
-                input[0] = new JTextField(50);
+                input[0] = new JTextField();
                 input[0].setEnabled(configEntry.isEnabled());
-                
-                JDUtilities.addToGridBag(this, right = input[0], 2, 0, 1, 1, 0, 0, insets, GridBagConstraints.BOTH, GridBagConstraints.EAST);
+                ((JTextField) input[0]).setHorizontalAlignment(JTextField.RIGHT);
+                JDUtilities.addToGridBag(this, right = input[0], 2, 0, 1, 1, 1, 1, insets, GridBagConstraints.BOTH, GridBagConstraints.EAST);
 
                 break;
             case ConfigContainer.TYPE_TEXTAREA:

@@ -1045,4 +1045,8 @@ if(maximalspeed<=0){
     public int[] getChunksProgress() {
         return chunksProgress;
     }
+
+    public void setAvailable(Boolean available) {
+        this.available = available;
+    }
 }

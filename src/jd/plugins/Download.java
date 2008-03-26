@@ -72,6 +72,8 @@ public class Download {
 
     private static final int          ERROR_LOCAL_IO                         = 106;
 
+    private static final int ERROR_NIBBLE_LIMIT_REACHED = 107;
+
     private DownloadLink              downloadLink;
 
     private HTTPConnection            connection;
@@ -96,7 +98,7 @@ public class Download {
 
     private boolean                   speedLimited                           = true;
 
-    private Plugin                    plugin;
+    private PluginForHost                    plugin;
 
     private int                       bytesLoaded                            = 0;
 
@@ -121,10 +123,10 @@ public class Download {
     private MappedByteBuffer          wrBuf;
 
     private long                      debugtimer;
-
+    private boolean speedDebug=true;
     public static Logger              logger                                 = JDUtilities.getLogger();
 
-    public Download(Plugin plugin, DownloadLink downloadLink, HTTPConnection urlConnection) {
+    public Download(PluginForHost plugin, DownloadLink downloadLink, HTTPConnection urlConnection) {
         this.downloadLink = downloadLink;
         downloadLink.setDownloadInstance(this);
         this.connection = urlConnection;
@@ -183,6 +185,7 @@ public class Download {
     // }
     private synchronized void addBytes(Chunk chunk) {
         try {
+            if(speedDebug){
             if ((System.currentTimeMillis() - writeTimer) >= 1000) {
                 this.hdWritesPerSecond = writeCount / 1;
                 writeTimer = System.currentTimeMillis();
@@ -190,11 +193,11 @@ public class Download {
                 logger.info("HD ZUgriffe: " + hdWritesPerSecond);
             }
             this.writeCount++;
-
+            }
             wrBuf.position((int) chunk.currentBytePosition);
             wrBuf.put(chunk.buffer);
             if (maxBytes > 0 && (chunk.currentBytePosition + chunk.buffer.capacity()) > maxBytes) {
-                // error(ERROR_NIBBLE_LIMIT_REACHED);
+                error(ERROR_NIBBLE_LIMIT_REACHED);
             }
             if (chunk.getID() >= 0) downloadLink.getChunksProgress()[chunk.getID()] = (int) chunk.currentBytePosition + chunk.buffer.capacity();
 
@@ -247,6 +250,7 @@ public class Download {
             case ERROR_NO_CONNECTION:
             case ERROR_SECURITY:
             case ERROR_CHUNKLOAD_FAILED:
+            case ERROR_NIBBLE_LIMIT_REACHED:
                 terminate(id);
 
         }
@@ -342,7 +346,8 @@ public class Download {
             int[] chunksProgress = downloadLink.getChunksProgress();
             boolean isProgressStatusValid = false;
             int[][] loadedRanges = null;
-            if (chunksProgress != null&&this.isResume()) {
+           
+                if (chunksProgress != null&&this.isResume()&&plugin.getFreeConnections()>=chunkNum) {
                 try {
                     logger.info("Try to resume download");
                     wrBuf.load();
@@ -358,13 +363,13 @@ public class Download {
                     for (int i = 0; i < chunksProgress.length; i++) {
                         if (i > 0 && chunksProgress[i] <= chunksProgress[i - 1]) {
                             isProgressStatusValid = false;
-                            logger.info("Resumeerror: chunksorder error at chunk " + i);
+                            if(speedDebug)logger.info("Resumeerror: chunksorder error at chunk " + i);
                             break;
                         }
                         bc = 0;
                         ch = false;
                         startBytes[i] = i * supposedParts;
-                        logger.info("Check Startposition " + i + " :" + i * supposedParts);
+                        if(speedDebug)logger.info("Check Startposition " + i + " :" + i * supposedParts);
                         wrBuf.position(i * supposedParts + bc);
                         while (true) {
 
@@ -373,7 +378,7 @@ public class Download {
                             if (b != 0) {
                                 ch = true;
                                 loadedRanges[i][0] = i * supposedParts + bc;
-                                logger.info("ok at " + (i * supposedParts + bc));
+                                if(speedDebug)logger.info("ok at " + (i * supposedParts + bc));
                                 break;
                             }
                             bc++;
@@ -381,7 +386,7 @@ public class Download {
                         }
                         if (!ch) {
                             isProgressStatusValid = false;
-                            logger.info("Chunk check failed (forwardsearch)" + i);
+                            if(speedDebug)logger.info("Chunk check failed (forwardsearch)" + i);
                             break;
                         }
 
@@ -405,9 +410,9 @@ public class Download {
                                 byte b = wrBuf.get();
                                 if (b != 0) {
                                     ch = true;
-                                    logger.info("Chunk " + i + " OK. " + "Found data at " + (chunksProgress[i] - bc) + " : " + b);
+                                    if(speedDebug)logger.info("Chunk " + i + " OK. " + "Found data at " + (chunksProgress[i] - bc) + " : " + b);
                                     loadedRanges[i][1] = chunksProgress[i] - bc;
-                                    logger.info("Verified Range " + loadedRanges[i][0] + "- " + loadedRanges[i][1] + " as correctly loaded");
+                                    if(speedDebug)logger.info("Verified Range " + loadedRanges[i][0] + "- " + loadedRanges[i][1] + " as correctly loaded");
 
                                     bytesLoaded += Math.max(0, loadedRanges[i][1] - loadedRanges[i][0]);
 
@@ -418,7 +423,7 @@ public class Download {
 
                             if (!ch) {
                                 isProgressStatusValid = false;
-                                logger.info("Chunk check failed " + i);
+                                if(speedDebug)logger.info("Chunk check failed " + i);
                                 break;
                             }
 
@@ -455,7 +460,7 @@ public class Download {
                 }
             }
             else {
-
+                chunkNum=Math.min(chunkNum, plugin.getFreeConnections());
                 // logger.info("Filsize: " + fileSize);
                 long parts = fileSize > 0 ? fileSize / chunkNum : -1;
                 if (parts == -1) {
@@ -601,7 +606,7 @@ public class Download {
             plugin.getCurrentStep().setStatus(PluginStep.STATUS_ERROR);
             downloadLink.setStatus(DownloadLink.STATUS_ERROR_ALREADYEXISTS);
 
-            logger.info(plugin.getCurrentStep() + " : " + plugin.getCurrentStep().getStatus());
+        
             return false;
         }
 
@@ -626,6 +631,14 @@ public class Download {
             downloadLink.setStatus(DownloadLink.STATUS_ERROR_NOCONNECTION);
             return false;
         }
+        
+        if (errors.contains(ERROR_NIBBLE_LIMIT_REACHED)) {
+            plugin.getCurrentStep().setStatus(PluginStep.STATUS_ERROR);
+            downloadLink.setStatus(DownloadLink.STATUS_ERROR_PLUGIN_SPECIFIC);
+            downloadLink.setStatusText("Nibbling aborted after "+this.maxBytes+" bytes");
+            return false;
+        }
+        
         if (abortByError) {
             plugin.getCurrentStep().setStatus(PluginStep.STATUS_ERROR);
             downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN);
@@ -905,11 +918,11 @@ public class Download {
             }
         }
 public void finalize(){
-    logger.info("Finalized: "+downloadLink+" : "+this.getID());
+    if(speedDebug)logger.info("Finalized: "+downloadLink+" : "+this.getID());
 }
         public int getID() {
             if (id < 0) {
-                logger.info("INIT " + chunks.indexOf(this));
+                if(speedDebug)logger.info("INIT " + chunks.indexOf(this));
                 id = chunks.indexOf(this);
             }
             return id;
@@ -935,10 +948,10 @@ public void finalize(){
         public int getMaximalSpeed() {
             if (this.maxSpeed <= 0) {
                 this.maxSpeed = downloadLink.getMaximalspeed() / getRunningChunks();
-                logger.info("Def speed: " + downloadLink.getMaximalspeed() + "/" + getRunningChunks() + "=" + maxSpeed);
+                if(speedDebug)logger.info("Def speed: " + downloadLink.getMaximalspeed() + "/" + getRunningChunks() + "=" + maxSpeed);
 
             }
-            logger.info("return speed: min " + maxSpeed + " - " + (this.desiredBps * 1.5));
+            if(speedDebug)logger.info("return speed: min " + maxSpeed + " - " + (this.desiredBps * 1.5));
             if (desiredBps < 1024) return maxSpeed;
             return Math.min(maxSpeed, (int) (this.desiredBps * 1.5));
         }
@@ -997,7 +1010,7 @@ public void finalize(){
                 httpConnection.setConnectTimeout(getRequestTimeout());
                 httpConnection.setInstanceFollowRedirects(false);
                 Map<String, List<String>> request = connection.getRequestProperties();
-                logger.info("" + request);
+                if(speedDebug)logger.info("" + request);
                 if (request != null) {
                     Set<Entry<String, List<String>>> requestEntries = request.entrySet();
                     Iterator<Entry<String, List<String>>> it = requestEntries.iterator();
@@ -1026,7 +1039,7 @@ public void finalize(){
                 else {
                     httpConnection.connect();
                 }
-                logger.info("ChunkHeaders: " + httpConnection.getHeaderFields());
+                if(speedDebug)logger.info("ChunkHeaders: " + httpConnection.getHeaderFields());
 
                 return httpConnection;
 
@@ -1045,12 +1058,14 @@ public void finalize(){
                 chunksInProgress--;
                 return;
             }
+            plugin.setCurrentConnections(plugin.getCurrentConnections()+1);
             logger.finer("Start Chunk " + startByte + " - " + endByte);
             if (chunkNum > 1) this.connection = copyConnection(connection);
             if (connection == null) {
                 error(ERROR_CHUNKLOAD_FAILED);
                 logger.severe("ERROR Chunk (connection copy failed) " + chunks.indexOf(this));
                 chunksInProgress--;
+                plugin.setCurrentConnections(plugin.getCurrentConnections()-1);
                 return;
             }
 
@@ -1058,17 +1073,22 @@ public void finalize(){
                 error(ERROR_CHUNKLOAD_FAILED);
                 logger.severe("ERROR Chunk " + chunks.indexOf(this));
                 chunksInProgress--;
+                plugin.setCurrentConnections(plugin.getCurrentConnections()-1);
                 return;
 
             }
             // Content-Range=[133333332-199999999/200000000]}
 
             String[] range = Plugin.getSimpleMatches("[" + connection.getHeaderField("Content-Range") + "]", "[°-°/°]");
-            logger.info("Range Header " + connection.getHeaderField("Content-Range"));
+            if(speedDebug)logger.info("Range Header " + connection.getHeaderField("Content-Range"));
+            
+            
+            
             if (range == null && chunkNum > 1) {
                 error(ERROR_CHUNKLOAD_FAILED);
                 logger.severe("ERROR Chunk " + chunks.indexOf(this));
                 chunksInProgress--;
+                plugin.setCurrentConnections(plugin.getCurrentConnections()-1);
                 return;
 
             }
@@ -1077,7 +1097,7 @@ public void finalize(){
                 this.startByte = JDUtilities.filterInt(range[0]);
                 this.endByte = JDUtilities.filterInt(range[1]);
 
-                logger.finer("Resulting Range" + startByte + " - " + endByte);
+                if(speedDebug)logger.finer("Resulting Range" + startByte + " - " + endByte);
             }
             logger.finer("Start Chunk " + chunks.indexOf(this));
             // try {
@@ -1099,6 +1119,7 @@ public void finalize(){
             }
             logger.finer("Chunk finished " + getBytesLoaded());
             chunksInProgress--;
+            plugin.setCurrentConnections(plugin.getCurrentConnections()-1);
 
         }
 
@@ -1171,7 +1192,7 @@ public void finalize(){
                     bytes = 0;
                     ti = getTimeInterval();
                     timer = System.currentTimeMillis();
-                    logger.info("load Block buffer: " + buffer.hasRemaining() + "/" + buffer.capacity() + " interval: " + ti);
+                    if(speedDebug)logger.info("load Block buffer: " + buffer.hasRemaining() + "/" + buffer.capacity() + " interval: " + ti);
                     while (buffer.hasRemaining() && !isExternalyAborted() && (System.currentTimeMillis() - timer) < ti) {
                         block = 0;
 
@@ -1197,13 +1218,13 @@ public void finalize(){
                             }
                             else if (read < 0) {
                                 block = -1;
-                                logger.info("Break2");
+                               
                                 break;
                             }
                         }
 
                         if (block == -1) {
-                            logger.info("Break1");
+                         
                             break;
                         }
                         bytesLoaded += block;
@@ -1224,7 +1245,7 @@ public void finalize(){
                      */
                     deltaTime = Math.max(System.currentTimeMillis() - timer, 1);
                     desiredBps = (1000 * (long) bytes) / deltaTime;
-                    logger.info("des " + desiredBps + " - loaded: " + (System.currentTimeMillis() - timer) + " - " + bytes);
+                    if(speedDebug)logger.info("des " + desiredBps + " - loaded: " + (System.currentTimeMillis() - timer) + " - " + bytes);
                     tempBuff = getBufferSize(getMaximalSpeed());
                     if (Math.abs(bufferSize - tempBuff) > 1000) {
                         bufferSize = tempBuff;
@@ -1245,7 +1266,7 @@ public void finalize(){
                         // ein paar wenige bytes/sekunde in der speederfassung
                         // aus.
                         addWait = (long) (0.995 * (ti - (System.currentTimeMillis() - timer)));
-                        logger.info("Wait " + addWait);
+                        if(speedDebug)logger.info("Wait " + addWait);
                         if (addWait > 0) Thread.sleep(addWait);
                     }
                     catch (Exception e) {
@@ -1255,7 +1276,7 @@ public void finalize(){
                     this.bytesPerSecond = (1000 * (long) bytes) / deltaTime;
                     updateSpeed();
 
-                    logger.info(downloadLink.getSpeedMeter().getSpeed() + " loaded" + bytes + " b in " + (deltaTime) + " ms: " + bytesPerSecond + "(" + desiredBps + ") ");
+                    if(speedDebug)logger.info(downloadLink.getSpeedMeter().getSpeed() + " loaded" + bytes + " b in " + (deltaTime) + " ms: " + bytesPerSecond + "(" + desiredBps + ") ");
 
                 }
                 if (currentBytePosition < endByte && endByte > 0) {
@@ -1319,14 +1340,14 @@ public void finalize(){
          * @return
          */
         private int getBufferSize(int maxspeed) {
-            logger.info("speed " + maxspeed);
+            if(speedDebug)logger.info("speed " + maxspeed);
             if (!downloadLink.isLimited()) return MAX_BUFFERSIZE;
             maxspeed *= (TIME_BASE / 1000);
             int max = Math.max(MIN_BUFFERSIZE, maxspeed);
             int bufferSize = Math.min(MAX_BUFFERSIZE, max);
             // logger.info(MIN_BUFFERSIZE+"<>"+maxspeed+"-"+MAX_BUFFERSIZE+"><"+max);
             this.bufferTimeFaktor = Math.max(0.1, (double) bufferSize / maxspeed);
-            logger.info("Maxspeed= " + maxspeed + " buffer=" + bufferSize + "time: " + getTimeInterval());
+            if(speedDebug)logger.info("Maxspeed= " + maxspeed + " buffer=" + bufferSize + "time: " + getTimeInterval());
             return bufferSize;
         }
 

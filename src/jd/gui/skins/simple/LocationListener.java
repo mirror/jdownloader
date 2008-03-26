@@ -75,7 +75,7 @@ public class LocationListener implements ComponentListener, WindowListener {
 
     public void saveAll() {
         if (src != null) {
-
+            JDUtilities.getLogger().info("Loc listener");
             SimpleGUI.saveLastLocation(src, null);
             SimpleGUI.saveLastDimension(src, null);
             JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).save();

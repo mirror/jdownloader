@@ -121,7 +121,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
      * Das Hauptfenster
      */
     private JFrame                  frame;
-
+    private static SimpleGUI CURRENTGUI=null;
     /**
      * Die Menüleiste
      */
@@ -332,12 +332,13 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
     public static Point getLastLocation(Component parent, String key, Component child) {
         if (key == null) key = child.getName();
         Object loc = guiConfig.getProperty("LOCATION_OF_" + key);
-        // JDUtilities.getLogger().info("Get dim of " + "LOCATION_OF_" + key + "
-        // : " + loc);
+         JDUtilities.getLogger().info("Get dim of " + "LOCATION_OF_" + key + " : " + loc);
         Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
         int width = screenSize.width;
         int height = screenSize.height;
-        if (loc != null && loc instanceof Point && ((Point) loc).getX() > 0 && ((Point) loc).getX() < width && ((Point) loc).getY() > 0 && ((Point) loc).getY() < height) {
+        if (loc != null && loc instanceof Point  && ((Point) loc).getX() < width  && ((Point) loc).getY() < height) {
+            if(((Point) loc).getX() <0)((Point) loc).x=0;
+            if(((Point) loc).getY() <0)((Point) loc).y=0;
             return (Point) loc;
         }
         return JDUtilities.getCenterOfComponent(parent, child);
@@ -348,6 +349,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
 
         if (parent.isShowing()) {
             guiConfig.setProperty("LOCATION_OF_" + key, parent.getLocationOnScreen());
+            JDUtilities.getLogger().info("LOCATION_OF_ VOR: " + "LOCATION_OF_" + key + " : " + parent.getLocationOnScreen());
 
         }
 
@@ -355,9 +357,13 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
 
     public static Dimension getLastDimension(Component child, String key) {
         if (key == null) key = child.getName();
-
+        Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
+        int width = screenSize.width;
+        int height = screenSize.height;
         Object loc = guiConfig.getProperty("DIMENSION_OF_" + key);
         if (loc != null && loc instanceof Dimension) {
+            if(((Dimension) loc).width>width)((Dimension) loc).width=width;
+            if(((Dimension) loc).height>height)((Dimension) loc).height=height;
             return (Dimension) loc;
         }
 
@@ -367,8 +373,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
     public static void saveLastDimension(Component child, String key) {
         if (key == null) key = child.getName();
         guiConfig.setProperty("DIMENSION_OF_" + key, child.getSize());
-        // JDUtilities.getLogger().info("DIMEN VOR: " + "DIMENSION_OF_" + key +
-        // " : " + child.getSize());
+        JDUtilities.getLogger().info("DIMEN VOR: " + "DIMENSION_OF_" + key + " : " + child.getSize());
 
     }
 
@@ -518,6 +523,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
      */
     private void buildUI() {
         // tabbedPane = new JTabbedPane();
+        CURRENTGUI = this;
         tabDownloadTable = new TabDownloadLinks(this);
         progressBar = new TabProgress();
         statusBar = new StatusBar();
@@ -640,8 +646,8 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         if (e.getSource() == btnToggleReconnect) {
             btnToggleReconnect.setSelected(!btnToggleReconnect.isSelected());
             JDUtilities.getConfiguration().setProperty(Configuration.PARAM_DISABLE_RECONNECT, btnToggleReconnect.isSelected());
-
-            fireUIEvent(new UIEvent(this, UIEvent.UI_SAVE_CONFIG));
+            JDUtilities.saveConfig();
+            
             if (btnToggleReconnect.isSelected()) this.showMessageDialog("Reconnect is now disabled! Do not forget to reactivate this feature!");
             return;
         }
@@ -774,8 +780,8 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
 
                 break;
             case JDAction.APP_CONFIGURATION:
-                boolean configChanged = ConfigurationDialog.showConfig(frame, this);
-                if (configChanged) fireUIEvent(new UIEvent(this, UIEvent.UI_SAVE_CONFIG));
+                ConfigurationDialog.showConfig(frame, this);
+             
                 break;
         }
     }
@@ -1332,6 +1338,21 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
             e.printStackTrace();
         }
         return -1;
+    }
+
+    public static void restoreWindow(JFrame parent, Object object, Component configurationDialog) {
+        if(parent==null)parent=CURRENTGUI.getFrame();
+        configurationDialog.setLocation(SimpleGUI.getLastLocation(parent, null, configurationDialog));
+        if (SimpleGUI.getLastDimension(configurationDialog, null) != null){
+            configurationDialog.setSize(SimpleGUI.getLastDimension(configurationDialog, null));
+            
+            JDUtilities.getLogger().info("Default size: "+SimpleGUI.getLastDimension(configurationDialog, null));
+        }else{
+            JDUtilities.getLogger().info("Default dim");
+            configurationDialog.validate();
+        }
+        
+        
     }
 
 

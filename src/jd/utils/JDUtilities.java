@@ -353,6 +353,7 @@ public class JDUtilities {
         cons.gridy = y;
         cons.gridwidth = width;
         cons.gridheight = height;
+       
         cons.weightx = weightX;
         cons.weighty = weightY;
         cons.fill = fill;
@@ -2083,8 +2084,17 @@ public class JDUtilities {
                             JDUtilities.getLogger().severe(buffer.toString());
                             if(buffer.indexOf("OutOfMemoryError")>=0){
                                 logger.finer("Restart");
-                                JDUtilities.getSubConfig("simpleGUI").setProperty(SimpleGUI.PARAM_START_DOWNLOADS_AFTER_START, true);
-                                JDUtilities.restartJD();
+                                boolean res;
+                                if(!JDUtilities.getSubConfig("simpleGUI").getBooleanProperty(SimpleGUI.PARAM_START_DOWNLOADS_AFTER_START, false)){
+                                res = getGUI().showConfirmDialog(JDLocale.L("gui.messages.outofmemoryerror","An error ocured!\r\nJDownloader is out of memory. Restart recommended.\r\nPlease report this bug!"));
+                                }else{
+                                    res=true;
+                                }
+                                if(res){
+                                    JDUtilities.getSubConfig("simpleGUI").setProperty(SimpleGUI.PARAM_START_DOWNLOADS_AFTER_START, true);
+                                    JDUtilities.getSubConfig("simpleGUI").save();
+                                    JDUtilities.restartJD();
+                                }
                             }
                            
                         }
@@ -2233,8 +2243,7 @@ public class JDUtilities {
         if (plain == null) return null;
         String base64 = new BASE64Encoder().encode(plain.getBytes());
         base64=JDUtilities.filterString(base64, "qwertzuiopasdfghjklyxcvbnmMNBVCXYASDFGHJKLPOIUZTREWQ1234567890=");
-        logger.info(plain);
-logger.info(base64);
+
         return base64;
     }
 

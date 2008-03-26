@@ -44,6 +44,7 @@ import jd.gui.skins.simple.Link.JLinkButton;
 import jd.gui.skins.simple.components.TextAreaDialog;
 import jd.plugins.LogFormatter;
 import jd.utils.JDLocale;
+import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 import jd.utils.Upload;
 
@@ -52,7 +53,7 @@ import jd.utils.Upload;
  * 
  * @author Tom
  */
-public class LogDialog extends JDialog implements ActionListener {
+public class LogDialog extends JFrame implements ActionListener {
 
     private static final long serialVersionUID = -5753733398829409112L;
 
@@ -86,11 +87,11 @@ public class LogDialog extends JDialog implements ActionListener {
      * @param logger The connected Logger
      */
     public LogDialog(JFrame owner, Logger logger) {
-        super(owner);
+      
         this.owner = owner;
-        setModal(false);
+        setIconImage(JDUtilities.getImage(JDTheme.I("gui.images.terminal")));
         setLayout(new GridBagLayout());
-
+        this.setName("LOFDIALOG");
         Handler streamHandler = new LogStreamHandler(new PrintStream(new LogStream()));
         streamHandler.setLevel(Level.ALL);
         streamHandler.setFormatter(new LogFormatter());
@@ -121,8 +122,13 @@ public class LogDialog extends JDialog implements ActionListener {
         // JDUtilities.addToGridBag(this, btnCensor, 2, 1, 1, 1, 1, 0, null,
         // GridBagConstraints.NONE, GridBagConstraints.EAST);
         JDUtilities.addToGridBag(this, btnUpload, 2, 1, 1, 1, 1, 0, null, GridBagConstraints.NONE, GridBagConstraints.EAST);
+        LocationListener list = new LocationListener();
+        this.addComponentListener(list);
+         this.addWindowListener(list);
+       
         pack();
-        setLocation(JDUtilities.getCenterOfComponent(null, this));
+        SimpleGUI.restoreWindow(null, null, this);
+       
     }
 
     /*

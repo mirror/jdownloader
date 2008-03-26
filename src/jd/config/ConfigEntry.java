@@ -50,6 +50,8 @@ public class ConfigEntry implements Serializable {
 
     private String instantHelp;
 
+    private ConfigContainer container;
+
     /**
      * Konstruktor für z.B. Buttons (Label+ Actionlistener)
      * 
@@ -74,6 +76,13 @@ public class ConfigEntry implements Serializable {
     public ConfigEntry(int type, String label) {
         this.type = type;
         this.label = label;
+        enabled=true;
+    }
+    
+    
+    public ConfigEntry(int type, ConfigContainer premiumConfig) {
+        this.type=type;
+        this.container=premiumConfig;
         enabled=true;
     }
     /**
@@ -165,6 +174,8 @@ public class ConfigEntry implements Serializable {
     public ConfigEntry(int type) {
         this.type = type;
     }
+
+
 
     /**
      * Gibt den Typ zurück
@@ -304,6 +315,14 @@ public class ConfigEntry implements Serializable {
 
     public String getInstantHelp() {
         return instantHelp;
+    }
+
+    public ConfigContainer getContainer() {
+        return container;
+    }
+
+    public void setContainer(ConfigContainer container) {
+        this.container = container;
     }
 
 }

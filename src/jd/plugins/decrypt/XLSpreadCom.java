@@ -14,7 +14,6 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://wnu.org/licenses/>.
 
-
 package jd.plugins.decrypt;
 
 import java.io.File;
@@ -30,12 +29,15 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
+import jd.utils.JDLocale;
 
 public class XLSpreadCom extends PluginForDecrypt {
     final static String host             = "xlspread.com";
+
     private String      version          = "1.0.0.0";
-    //http://www.xlspread.com/download.html?id=b0b18a2f966cc247660845508e1111b4
-    //http://www.xlspread.com/download.html?id=61a7912765cb3d04fb98ce2e7dcbb4a4
+
+    // http://www.xlspread.com/download.html?id=b0b18a2f966cc247660845508e1111b4
+    // http://www.xlspread.com/download.html?id=61a7912765cb3d04fb98ce2e7dcbb4a4
     private Pattern     patternSupported = getSupportPattern("http://[*]xlspread.com/download.html\\?id=[a-zA-Z0-9]{32}");
 
     public XLSpreadCom() {
@@ -75,177 +77,165 @@ public class XLSpreadCom extends PluginForDecrypt {
         return version;
     }
 
-    @Override public PluginStep doStep(PluginStep step, String parameter) {
-    	if(step.getStep() == PluginStep.STEP_DECRYPT) {
+    @Override
+    public PluginStep doStep(PluginStep step, String parameter) {
+        if (step.getStep() == PluginStep.STEP_DECRYPT) {
             Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
-    		try {
-    		    
-    		    
-    			URL url = new URL(parameter);
-    			RequestInfo reqinfo = getRequest(url);
-    			int count = 0;
-    			ArrayList<ArrayList<String>> links = getAllSimpleMatches(reqinfo.getHtmlCode(), "</td></tr><tr><td><b>°</b>°downlink.php?id=°&amp;hoster");
-    			System.out.println(links.size());
-    			// Anzahl der Links zählen
-    			for(int i=0; i<links.size(); i++) {
-	    			if((Boolean) this.getProperties().getProperty("USE_RAPIDSHARE",true) && links.get(i).get(0).equals("Rapidshare")) {
-	    				count++;
-	    			}
-	    			if((Boolean) this.getProperties().getProperty("USE_UPLOADED",true) && links.get(i).get(0).equals("Uploaded")) {
-	    				count++;
-	    			}
-	    			if((Boolean) this.getProperties().getProperty("USE_NETLOAD",true) && links.get(i).get(0).equals("Netload")) {
-	    				count++;
-	    			}
-	    			if((Boolean) this.getProperties().getProperty("USE_MEINUPLOAD",true) && links.get(i).get(0).equals("MeinUpload")) {
-	    				count++;
-	    			}
-	    			if((Boolean) this.getProperties().getProperty("USE_SHAREONLINE",true) && links.get(i).get(0).equals("Share-Online")) {
-	    				count++;
-	    			}
-	    			if((Boolean) this.getProperties().getProperty("USE_SIMPLEUPLOAD",true) && links.get(i).get(0).equals("Simpleupload")) {
-	    				count++;
-	    			}
-	    			if((Boolean) this.getProperties().getProperty("USE_BLUEHOST",true) && links.get(i).get(0).equals("Bluehost")) {
-	    				count++;
-	    			}
-	    			if((Boolean) this.getProperties().getProperty("USE_FASTLOAD",true) && links.get(i).get(0).equals("Fastload")) {
-	    				count++;
-	    			}
-	    			if((Boolean) this.getProperties().getProperty("USE_DATENKLO",true) && links.get(i).get(0).equals("Datenklo")) {
-	    				count++;
-	    			}
-	    			if((Boolean) this.getProperties().getProperty("USE_SHAREBASE",true) && links.get(i).get(0).equals("ShareBase")) {
-	    				count++;
-	    			}
-    			}
-    			progress.setRange(count);
-    			
-    			if((Boolean) this.getProperties().getProperty("USE_RAPIDSHARE",true)) {
-    				for( int i=0; i<links.size();i++){
-    				    if(links.get(i).get(0).equalsIgnoreCase("Rapidshare"))
-    				    {
-    				        decryptedLinks.add(createDownloadlink(getBetween(getRequest(new URL("http://www.xlspread.com/downlink.php?id="+links.get(i).get(2)+"&hoster=rapidshare")).getHtmlCode(), "<iframe src=\"", "\"")));
-    				        progress.increase(1);
-    				    }
-    				}
-    			}
-    			if((Boolean) this.getProperties().getProperty("USE_UPLOADED",true)) {
-    				for( int i=0; i<links.size();i++){
-    				    if(links.get(i).get(0).equalsIgnoreCase("Uploaded"))
-    				    {
-                            decryptedLinks.add(createDownloadlink(getBetween(getRequest(new URL("http://www.xlspread.com/downlink.php?id="+links.get(i).get(2)+"&hoster=uploaded")).getHtmlCode(), "<iframe src=\"", "\"")));
-    				        progress.increase(1);
-    				    }
-    				}
-    			}
-    			if((Boolean) this.getProperties().getProperty("USE_NETLOAD",true)) {
-    				for( int i=0; i<links.size();i++){
-    				    if(links.get(i).get(0).equalsIgnoreCase("Netload"))
-    				    {
-    				        decryptedLinks.add(createDownloadlink(getBetween(getRequest(new URL("http://www.xlspread.com/downlink.php?id="+links.get(i).get(2)+"&hoster=netload")).getHtmlCode(), "<iframe src=\"", "\"")));
-    				        progress.increase(1);
-    				    }
-    				}
-    			}
-    			if((Boolean) this.getProperties().getProperty("USE_MEINUPLOAD",true)) {
-    				for( int i=0; i<links.size();i++){
-    				    if(links.get(i).get(0).equalsIgnoreCase("MeinUpload"))
-    				    {
-    				        decryptedLinks.add(createDownloadlink(getBetween(getRequest(new URL("http://www.xlspread.com/downlink.php?id="+links.get(i).get(2)+"&hoster=meinupload")).getHtmlCode(), "<iframe src=\"", "\"")));
-    				        progress.increase(1);
-    				    }
-    				}
-    			}
-    			if((Boolean) this.getProperties().getProperty("USE_SHAREONLINE",true)) {
-    				for( int i=0; i<links.size();i++){
-    				    if(links.get(i).get(0).equalsIgnoreCase("Share-Online"))
-    				    {
-    				        decryptedLinks.add(createDownloadlink(getBetween(getRequest(new URL("http://www.xlspread.com/downlink.php?id="+links.get(i).get(2)+"&hoster=share-online")).getHtmlCode(), "<iframe src=\"", "\"")));
-    				        progress.increase(1);
-    				    }
-    				}
-    			}
-    			if((Boolean) this.getProperties().getProperty("USE_BLUEHOST",true)) {
-    				for( int i=0; i<links.size();i++){
-    				    if(links.get(i).get(0).equalsIgnoreCase("Bluehost"))
-    				    {
-    				        decryptedLinks.add(createDownloadlink(getBetween(getRequest(new URL("http://www.xlspread.com/downlink.php?id="+links.get(i).get(2)+"&hoster=bluehost")).getHtmlCode(), "<iframe src=\"", "\"")));
-    				        progress.increase(1);
-    				    }
-    				}
-    			}
-    			if((Boolean) this.getProperties().getProperty("USE_SIMPLEUPLOAD",true)) {
-    				for( int i=0; i<links.size();i++){
-    				    if(links.get(i).get(0).equalsIgnoreCase("Simpleupload"))
-    				    {
-    				        decryptedLinks.add(createDownloadlink(getBetween(getRequest(new URL("http://www.xlspread.com/downlink.php?id="+links.get(i).get(2)+"&hoster=simpleupload")).getHtmlCode(), "<iframe src=\"", "\"")));
-    				        progress.increase(1);
-    				    }
-    				}
-    			}
-    			if((Boolean) this.getProperties().getProperty("USE_FASTLOAD",true)) {
-    				for( int i=0; i<links.size();i++){
-    				    if(links.get(i).get(0).equalsIgnoreCase("Fastload"))
-    				    {
-    				        decryptedLinks.add(createDownloadlink(getBetween(getRequest(new URL("http://www.xlspread.com/downlink.php?id="+links.get(i).get(2)+"&hoster=fastload")).getHtmlCode(), "<iframe src=\"", "\"")));
-    				        progress.increase(1);
-    				    }
-    				}
-    			}
-    			if((Boolean) this.getProperties().getProperty("USE_DATENKLO",true)) {
-    				for( int i=0; i<links.size();i++){
-    				    if(links.get(i).get(0).equalsIgnoreCase("Datenklo"))
-    				    {
-    				        decryptedLinks.add(createDownloadlink(getBetween(getRequest(new URL("http://www.xlspread.com/downlink.php?id="+links.get(i).get(2)+"&hoster=datenklo")).getHtmlCode(), "<iframe src=\"", "\"")));
-    				        progress.increase(1);
-    				    }
-    				}
-    			}
-    			if((Boolean) this.getProperties().getProperty("USE_SHAREBASE",true)) {
-    				for( int i=0; i<links.size();i++){
-    				    if(links.get(i).get(0).equalsIgnoreCase("ShareBase"))
-    				    {
-    				        decryptedLinks.add(createDownloadlink(getBetween(getRequest(new URL("http://www.xlspread.com/downlink.php?id="+links.get(i).get(2)+"&hoster=sharebase")).getHtmlCode(), "<iframe src=\"", "\"")));
-    				        progress.increase(1);
-    				    }
-    				}
-    			}
-    			
-    			// Decrypt abschliessen
-    			step.setParameter(decryptedLinks);
-    		}
-    		catch(IOException e) {
-    			 e.printStackTrace();
-    		}
-    	}
-    	return null;
+            try {
+
+                URL url = new URL(parameter);
+                RequestInfo reqinfo = getRequest(url);
+                int count = 0;
+                ArrayList<ArrayList<String>> links = getAllSimpleMatches(reqinfo.getHtmlCode(), "</td></tr><tr><td><b>°</b>°downlink.php?id=°&amp;hoster");
+                System.out.println(links.size());
+                // Anzahl der Links zählen
+                for (int i = 0; i < links.size(); i++) {
+                    if ((Boolean) this.getProperties().getProperty("USE_RAPIDSHARE", true) && links.get(i).get(0).equals("Rapidshare")) {
+                        count++;
+                    }
+                    if ((Boolean) this.getProperties().getProperty("USE_UPLOADED", true) && links.get(i).get(0).equals("Uploaded")) {
+                        count++;
+                    }
+                    if ((Boolean) this.getProperties().getProperty("USE_NETLOAD", true) && links.get(i).get(0).equals("Netload")) {
+                        count++;
+                    }
+                    if ((Boolean) this.getProperties().getProperty("USE_MEINUPLOAD", true) && links.get(i).get(0).equals("MeinUpload")) {
+                        count++;
+                    }
+                    if ((Boolean) this.getProperties().getProperty("USE_SHAREONLINE", true) && links.get(i).get(0).equals("Share-Online")) {
+                        count++;
+                    }
+                    if ((Boolean) this.getProperties().getProperty("USE_SIMPLEUPLOAD", true) && links.get(i).get(0).equals("Simpleupload")) {
+                        count++;
+                    }
+                    if ((Boolean) this.getProperties().getProperty("USE_BLUEHOST", true) && links.get(i).get(0).equals("Bluehost")) {
+                        count++;
+                    }
+                    if ((Boolean) this.getProperties().getProperty("USE_FASTLOAD", true) && links.get(i).get(0).equals("Fastload")) {
+                        count++;
+                    }
+                    if ((Boolean) this.getProperties().getProperty("USE_DATENKLO", true) && links.get(i).get(0).equals("Datenklo")) {
+                        count++;
+                    }
+                    if ((Boolean) this.getProperties().getProperty("USE_SHAREBASE", true) && links.get(i).get(0).equals("ShareBase")) {
+                        count++;
+                    }
+                }
+                progress.setRange(count);
+
+                if ((Boolean) this.getProperties().getProperty("USE_RAPIDSHARE", true)) {
+                    for (int i = 0; i < links.size(); i++) {
+                        if (links.get(i).get(0).equalsIgnoreCase("Rapidshare")) {
+                            decryptedLinks.add(createDownloadlink(getBetween(getRequest(new URL("http://www.xlspread.com/downlink.php?id=" + links.get(i).get(2) + "&hoster=rapidshare")).getHtmlCode(), "<iframe src=\"", "\"")));
+                            progress.increase(1);
+                        }
+                    }
+                }
+                if ((Boolean) this.getProperties().getProperty("USE_UPLOADED", true)) {
+                    for (int i = 0; i < links.size(); i++) {
+                        if (links.get(i).get(0).equalsIgnoreCase("Uploaded")) {
+                            decryptedLinks.add(createDownloadlink(getBetween(getRequest(new URL("http://www.xlspread.com/downlink.php?id=" + links.get(i).get(2) + "&hoster=uploaded")).getHtmlCode(), "<iframe src=\"", "\"")));
+                            progress.increase(1);
+                        }
+                    }
+                }
+                if ((Boolean) this.getProperties().getProperty("USE_NETLOAD", true)) {
+                    for (int i = 0; i < links.size(); i++) {
+                        if (links.get(i).get(0).equalsIgnoreCase("Netload")) {
+                            decryptedLinks.add(createDownloadlink(getBetween(getRequest(new URL("http://www.xlspread.com/downlink.php?id=" + links.get(i).get(2) + "&hoster=netload")).getHtmlCode(), "<iframe src=\"", "\"")));
+                            progress.increase(1);
+                        }
+                    }
+                }
+                if ((Boolean) this.getProperties().getProperty("USE_MEINUPLOAD", true)) {
+                    for (int i = 0; i < links.size(); i++) {
+                        if (links.get(i).get(0).equalsIgnoreCase("MeinUpload")) {
+                            decryptedLinks.add(createDownloadlink(getBetween(getRequest(new URL("http://www.xlspread.com/downlink.php?id=" + links.get(i).get(2) + "&hoster=meinupload")).getHtmlCode(), "<iframe src=\"", "\"")));
+                            progress.increase(1);
+                        }
+                    }
+                }
+                if ((Boolean) this.getProperties().getProperty("USE_SHAREONLINE", true)) {
+                    for (int i = 0; i < links.size(); i++) {
+                        if (links.get(i).get(0).equalsIgnoreCase("Share-Online")) {
+                            decryptedLinks.add(createDownloadlink(getBetween(getRequest(new URL("http://www.xlspread.com/downlink.php?id=" + links.get(i).get(2) + "&hoster=share-online")).getHtmlCode(), "<iframe src=\"", "\"")));
+                            progress.increase(1);
+                        }
+                    }
+                }
+                if ((Boolean) this.getProperties().getProperty("USE_BLUEHOST", true)) {
+                    for (int i = 0; i < links.size(); i++) {
+                        if (links.get(i).get(0).equalsIgnoreCase("Bluehost")) {
+                            decryptedLinks.add(createDownloadlink(getBetween(getRequest(new URL("http://www.xlspread.com/downlink.php?id=" + links.get(i).get(2) + "&hoster=bluehost")).getHtmlCode(), "<iframe src=\"", "\"")));
+                            progress.increase(1);
+                        }
+                    }
+                }
+                if ((Boolean) this.getProperties().getProperty("USE_SIMPLEUPLOAD", true)) {
+                    for (int i = 0; i < links.size(); i++) {
+                        if (links.get(i).get(0).equalsIgnoreCase("Simpleupload")) {
+                            decryptedLinks.add(createDownloadlink(getBetween(getRequest(new URL("http://www.xlspread.com/downlink.php?id=" + links.get(i).get(2) + "&hoster=simpleupload")).getHtmlCode(), "<iframe src=\"", "\"")));
+                            progress.increase(1);
+                        }
+                    }
+                }
+                if ((Boolean) this.getProperties().getProperty("USE_FASTLOAD", true)) {
+                    for (int i = 0; i < links.size(); i++) {
+                        if (links.get(i).get(0).equalsIgnoreCase("Fastload")) {
+                            decryptedLinks.add(createDownloadlink(getBetween(getRequest(new URL("http://www.xlspread.com/downlink.php?id=" + links.get(i).get(2) + "&hoster=fastload")).getHtmlCode(), "<iframe src=\"", "\"")));
+                            progress.increase(1);
+                        }
+                    }
+                }
+                if ((Boolean) this.getProperties().getProperty("USE_DATENKLO", true)) {
+                    for (int i = 0; i < links.size(); i++) {
+                        if (links.get(i).get(0).equalsIgnoreCase("Datenklo")) {
+                            decryptedLinks.add(createDownloadlink(getBetween(getRequest(new URL("http://www.xlspread.com/downlink.php?id=" + links.get(i).get(2) + "&hoster=datenklo")).getHtmlCode(), "<iframe src=\"", "\"")));
+                            progress.increase(1);
+                        }
+                    }
+                }
+                if ((Boolean) this.getProperties().getProperty("USE_SHAREBASE", true)) {
+                    for (int i = 0; i < links.size(); i++) {
+                        if (links.get(i).get(0).equalsIgnoreCase("ShareBase")) {
+                            decryptedLinks.add(createDownloadlink(getBetween(getRequest(new URL("http://www.xlspread.com/downlink.php?id=" + links.get(i).get(2) + "&hoster=sharebase")).getHtmlCode(), "<iframe src=\"", "\"")));
+                            progress.increase(1);
+                        }
+                    }
+                }
+
+                // Decrypt abschliessen
+                step.setParameter(decryptedLinks);
+            }
+            catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+        return null;
     }
 
     private void setConfigEelements() {
+
+        String[] USEARRAY = new String[] { "Rapidshare.com", "Uploaded.to", "Netload.in", "MeinUpload.com", "Share-Online.biz", "SimpleUpload.net", "BlueHost.to", "Fast-load.net", "Datenklo.net", "ShareBase.de" };
+        String[] USEARRAYPROPERTY = new String[] { "USE_RAPIDSHARE", "USE_UPLOADED", "USE_NETLOAD", "USE_MEINUPLOAD", "USE_SHAREONLINE", "USE_SIMPLEUPLOAD", "USE_BLUEHOST", "USE_FASTLOAD", "USE_DATENKLO", "USE_SHAREBASE" };
+
         ConfigEntry cfg;
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_LABEL, "Hoster Auswahl"));
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getProperties(), "USE_RAPIDSHARE", "Rapidshare.com"));
-        cfg.setDefaultValue(true);
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getProperties(), "USE_UPLOADED", "Uploaded.to"));
-        cfg.setDefaultValue(false);
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getProperties(), "USE_NETLOAD", "Netload.in"));
-        cfg.setDefaultValue(false);
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getProperties(), "USE_MEINUPLOAD", "MeinUpload.com"));
-        cfg.setDefaultValue(false);
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getProperties(), "USE_SHAREONLINE", "Share-Online.biz"));
-        cfg.setDefaultValue(false);
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getProperties(), "USE_SIMPLEUPLOAD", "SimpleUpload.net"));
-        cfg.setDefaultValue(false);
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getProperties(), "USE_BLUEHOST", "BlueHost.to"));
-        cfg.setDefaultValue(false);
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getProperties(), "USE_FASTLOAD", "Fast-load.net"));
-        cfg.setDefaultValue(false);
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getProperties(), "USE_DATENKLO", "Datenklo.net"));
-        cfg.setDefaultValue(false);
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getProperties(), "USE_SHAREBASE", "ShareBase.de"));
-        cfg.setDefaultValue(false);
+        ConfigContainer hoster = null;
+
+        int c = 0;
+        int max = 6;
+        for (int i = 0; i < USEARRAY.length; i++) {
+
+            if (c == 0) {
+                hoster = new ConfigContainer(this, JDLocale.L("plugins.decrypt.general.hosterSelection", "Hoster Auswahl") + " " + (i + 1) + "-" + Math.min(USEARRAY.length, (i + max)));
+                config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CONTAINER, hoster));
+            }
+
+            hoster.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getProperties(), USEARRAYPROPERTY[i], USEARRAY[i]));
+            cfg.setDefaultValue(true);
+            c++;
+            if (c == max) c = 0;
+        }
     }
 
     @Override

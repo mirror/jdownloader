@@ -83,6 +83,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForHost;
 import jd.unrar.JUnrar;
 import jd.utils.JDLocale;
+import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 
 /**
@@ -102,7 +103,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
 
     public static final String   PROPERTY_AUTOPACKAGE_LIMIT = "AUTOPACKAGE_LIMIT";
 
-    public static final String   PROPERTY_ONLINE_CHECK      = "ONLINE_CHECK";
+    public static final String   PROPERTY_ONLINE_CHECK      = "DO_ONLINE_CHECK";
 
     private JTabbedPane          tabbedPane;
 
@@ -158,12 +159,20 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
         super();
         // config = JDUtilities.getConfiguration();
         guiConfig = JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME);
+        setIconImage(JDUtilities.getImage(JDTheme.I("gui.images.add")));
         this.parentFrame = parent;
         tabList = new Vector<PackageTab>();
         this.waitingLinkList = new Vector<DownloadLink>();
         initGUI();
 
         addLinks(linkList);
+        LocationListener list = new LocationListener();
+        this.addComponentListener(list);
+         this.addWindowListener(list);
+         pack();
+      
+         this.setVisible(true);
+         SimpleGUI.restoreWindow(null, null, this);
     }
 
     private void initGUI() {
@@ -327,6 +336,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
         this.gatherer = new Thread() {
             public synchronized void run() {
                 DownloadLink link;
+                DownloadLink next;
                 while (waitingLinkList.size() > 0) {
 
                     link = waitingLinkList.remove(0);
@@ -339,15 +349,32 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
                         }
                     }
                     else {
+                        if (!link.isAvailabilityChecked()) {
+                            Iterator<DownloadLink> it = waitingLinkList.iterator();
+                            Vector<String> links = new Vector<String>();
+                            Vector<DownloadLink> dlLinks = new Vector<DownloadLink>();
+                            links.add(link.getDownloadURL());
+                            dlLinks.add(link);
+                            while (it.hasNext()) {
+                                next = it.next();
+                                if (next.getPlugin().getClass() == link.getPlugin().getClass()) {
+                                    dlLinks.add(next);
+                                    links.add(next.getDownloadURL());
+                                }
+                            }
+                            if (links.size() > 1) {
+                                boolean[] ret = ((PluginForHost) link.getPlugin()).checkLinks(links.toArray(new String[] {}));
+                                if (ret != null) {
+                                    for (int i = 0; i < links.size(); i++) {
+                                        dlLinks.get(i).setAvailable(ret[i]);
+                                    }
+                                }
+                            }
+                        }
                         if (link.isAvailable() || ((PluginForHost) link.getPlugin()).isListOffline()) {
 
                             attachLinkTopackage(link);
-                            
-                            try {
-                                Thread.sleep(20);
-                            }
-                            catch (InterruptedException e) {
-                            }
+
                         }
                     }
                     progress.setValue(waitingLinkList.size());
@@ -416,7 +443,6 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
             // logger.info("Best sym: "+bestSim);
             if (bestSim < guiConfig.getIntegerProperty(PROPERTY_AUTOPACKAGE_LIMIT, 98)) {
 
-                logger.info("New Tab");
                 addLinkstoTab(new DownloadLink[] { link }, tabList.size());
                 tabList.get(tabList.size() - 1).setPackageName(removeExtension(link.getName()));
             }

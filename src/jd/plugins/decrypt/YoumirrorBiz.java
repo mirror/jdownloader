@@ -263,19 +263,26 @@ public class YoumirrorBiz extends PluginForDecrypt {
 		return null;
 	}
 
-	private void setConfigEelements() {
-		ConfigEntry cfg;
-		config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_LABEL,
-				JDLocale.L("plugins.decrypt.general.hosterSelection",
-						"Hoster Auswahl")));
-		config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
-		for (int i = 0; i < USEARRAY.length; i++) {
-			config.addEntry(cfg = new ConfigEntry(
-					ConfigContainer.TYPE_CHECKBOX, getProperties(),
-					USEARRAY[i], USEARRAY[i]));
-			cfg.setDefaultValue(true);
-		}
-	}
+    private void setConfigEelements() {
+        ConfigEntry cfg;
+        ConfigContainer hoster=null;
+
+        int c = 0;
+        int max = 6;
+        for (int i = 0; i < USEARRAY.length; i++) {
+            
+            if (c == 0) {
+                hoster = new ConfigContainer(this, JDLocale.L("plugins.decrypt.general.hosterSelection", "Hoster Auswahl") + " " + (i + 1) + "-" + Math.min(USEARRAY.length,(i + max)));
+                config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CONTAINER, hoster));
+            }
+           
+            hoster.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getProperties(), USEARRAY[i], USEARRAY[i]));
+            cfg.setDefaultValue(true);
+            c++;
+            if(c==max)c=0;
+        }
+    }
+
 
 	@Override
 	public boolean doBotCheck(File file) {

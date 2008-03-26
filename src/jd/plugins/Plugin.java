@@ -95,7 +95,7 @@ public abstract class Plugin {
      * Zeigt an, ob das Plugin abgebrochen werden soll
      */
     public ConfigContainer        config;
-
+   
     protected RequestInfo         requestInfo;
 
     protected CRequest            request         = new CRequest();

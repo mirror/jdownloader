@@ -14,7 +14,6 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://wnu.org/licenses/>.
 
-
 package jd.gui.skins.simple.config;
 
 import java.awt.ComponentOrientation;
@@ -29,7 +28,6 @@ import java.util.Vector;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
-import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
@@ -42,6 +40,7 @@ import javax.swing.event.ChangeListener;
 
 import jd.config.Configuration;
 import jd.config.SubConfiguration;
+import jd.event.UIEvent;
 import jd.gui.UIInterface;
 import jd.gui.skins.simple.LocationListener;
 import jd.gui.skins.simple.SimpleGUI;
@@ -56,51 +55,52 @@ import jd.utils.JDUtilities;
  * @author JD-Team/astaldo
  * 
  */
-public class ConfigurationDialog extends JDialog implements ActionListener, ChangeListener {
+public class ConfigurationDialog extends JFrame implements ActionListener, ChangeListener {
     /**
      * serialVersionUID
      */
-    private static final long         serialVersionUID = 4046836223202290819L;
+    private static final long          serialVersionUID = 4046836223202290819L;
 
-    private Configuration             configuration;
+    private Configuration              configuration;
 
-    private JTabbedPane               tabbedPane;
+    private JTabbedPane                tabbedPane;
 
-    private JButton                   btnSave;
+    private static ConfigurationDialog CURRENTDIALOG    = null;
 
-    private JButton                   btnCancel;
+    private JButton                    btnSave;
 
-    private boolean                   configChanged    = false;
+    private JButton                    btnCancel;
+
+    private boolean                    configChanged    = false;
 
     @SuppressWarnings("unused")
-    private UIInterface               uiinterface;
+    private UIInterface                uiinterface;
 
-    private Vector<ConfigPanel>       configPanels     = new Vector<ConfigPanel>();
+    private Vector<ConfigPanel>        configPanels     = new Vector<ConfigPanel>();
 
-    public static ConfigurationDialog DIALOG;
+    public static ConfigurationDialog  DIALOG;
 
-    public static Frame               PARENTFRAME      = null;
+    public static Frame                PARENTFRAME      = null;
 
-    private JCheckBox                 chbExpert;
+    private JCheckBox                  chbExpert;
 
     @SuppressWarnings("unchecked")
-	private Vector<Class>             configClasses    = new Vector<Class>();
+    private Vector<Class>              configClasses    = new Vector<Class>();
 
-    private Vector<JPanel>            containerPanels  = new Vector<JPanel>();
+    private Vector<JPanel>             containerPanels  = new Vector<JPanel>();
 
-    private SubConfiguration          guiConfig;
+    private SubConfiguration           guiConfig;
 
-    private JButton                   btnRestart;
+    private JButton                    btnRestart;
 
     private ConfigurationDialog(JFrame parent, UIInterface uiinterface) {
-        super(parent);
+        // super(parent);
         DIALOG = this;
         this.guiConfig = JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME);
         PARENTFRAME = parent;
         this.uiinterface = uiinterface;
         setTitle(JDLocale.L("gui.config.title", "Konfiguration"));
-      
-
+        setIconImage(JDUtilities.getImage(JDTheme.I("gui.images.configuration")));
         this.setName("CONFIGDIALOG");
 
         configuration = JDUtilities.getConfiguration();
@@ -117,7 +117,9 @@ public class ConfigurationDialog extends JDialog implements ActionListener, Chan
         this.addConfigPanel(ConfigPanelUnrar.class, JDTheme.I("gui.images.config.package"), JDLocale.L("gui.config.tabLables.unrar", "Archiv extract settings"));
         this.addConfigPanel(ConfigPanelPluginForHost.class, JDTheme.I("gui.images.config.star"), JDLocale.L("gui.config.tabLables.hostPlugin", "Host Plugin settings"));
         this.addConfigPanel(ConfigPanelPluginForDecrypt.class, JDTheme.I("gui.images.config.tip"), JDLocale.L("gui.config.tabLables.decryptPlugin", "Decrypter Plugin settings"));
-       //this.addConfigPanel(ConfigPanelTweak.class, JDTheme.I("gui.images.config.tip"), JDLocale.L("gui.config.tabLables.tweak", "Leistung optimieren"));
+        // this.addConfigPanel(ConfigPanelTweak.class,
+        // JDTheme.I("gui.images.config.tip"),
+        // JDLocale.L("gui.config.tabLables.tweak", "Leistung optimieren"));
 
         if (guiConfig.getBooleanProperty(SimpleGUI.PARAM_USE_EXPERT_VIEW, false)) {
             this.addConfigPanel(ConfigPanelCaptcha.class, JDTheme.I("gui.images.config.ocr", "ocr"), JDLocale.L("gui.config.tabLables.jac", "OCR Captcha settings"));
@@ -126,12 +128,12 @@ public class ConfigurationDialog extends JDialog implements ActionListener, Chan
             this.addConfigPanel(ConfigPanelPluginsOptional.class, JDTheme.I("gui.images.config.edit_redo"), JDLocale.L("gui.config.tabLables.optionalPlugin", "Optional Plugin settings"));
             this.addConfigPanel(ConfigPanelPluginForContainer.class, JDTheme.I("gui.images.config.database"), JDLocale.L("gui.config.tabLables.containerPlugin", "Link-Container settings"));
             this.addConfigPanel(ConfigPanelUpdater.class, JDTheme.I("gui.images.config.updater"), JDLocale.L("gui.config.tabLables.updater", "Update"));
-            
+
         }
         this.addConfigPanel(ConfigPanelRessources.class, JDTheme.I("gui.images.config.tip"), JDLocale.L("gui.config.tabLables.ressources", "Paketmanager"));
-        
+
         this.addConfigPanel(ConfigPanelLinks.class, JDTheme.I("gui.images.config.tip"), JDLocale.L("gui.config.tabLables.links", "Wichtige Links"));
-        
+
         btnSave = new JButton(JDLocale.L("gui.config.btn_save", "Speichern"));
         btnSave.addActionListener(this);
         btnCancel = new JButton(JDLocale.L("gui.config.btn_cancel", "Abbrechen"));
@@ -141,35 +143,42 @@ public class ConfigurationDialog extends JDialog implements ActionListener, Chan
         chbExpert = new JCheckBox(JDLocale.L("gui.config.cbo_expert", "Experten Ansicht"));
         chbExpert.setSelected(guiConfig.getBooleanProperty(SimpleGUI.PARAM_USE_EXPERT_VIEW, false));
         chbExpert.addActionListener(this);
-       
+
         setLayout(new GridBagLayout());
         JDUtilities.addToGridBag(this, tabbedPane, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 1, 1, null, GridBagConstraints.BOTH, GridBagConstraints.NORTHWEST);
-        JPanel btPanel=new JPanel();
+        JPanel btPanel = new JPanel();
         btPanel.add(btnRestart);
         btPanel.add(btnSave);
         btPanel.add(btnCancel);
         JDUtilities.addToGridBag(this, chbExpert, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, 1, 0, 0, null, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
         JDUtilities.addToGridBag(this, btPanel, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 0, 0, null, GridBagConstraints.NONE, GridBagConstraints.EAST);
 
-//        JDUtilities.addToGridBag(this, btnSave, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, 1, 1, 0, null, GridBagConstraints.NONE, GridBagConstraints.EAST);
-//        JDUtilities.addToGridBag(this, btnCancel, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 0, 0, null, GridBagConstraints.NONE, GridBagConstraints.EAST);
-      
+        // JDUtilities.addToGridBag(this, btnSave, GridBagConstraints.RELATIVE,
+        // GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, 1, 1, 0,
+        // null, GridBagConstraints.NONE, GridBagConstraints.EAST);
+        // JDUtilities.addToGridBag(this, btnCancel,
+        // GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE,
+        // GridBagConstraints.REMAINDER, 1, 0, 0, null, GridBagConstraints.NONE,
+        // GridBagConstraints.EAST);
+
         paintPanel(0);
         pack();
 
-        this.setVisible(true);
-        this.setLocation(SimpleGUI.getLastLocation(parent, null, this));
+        
+        
         LocationListener list = new LocationListener();
-        if (SimpleGUI.getLastDimension(this, null) != null) this.setSize(SimpleGUI.getLastDimension(this, null));
-        this.addComponentListener(list);
+       this.addComponentListener(list);
         this.addWindowListener(list);
-        this.setVisible(false);
-        setModal(true);
+        pack();
+        this.validate();
         this.setVisible(true);
+        SimpleGUI.restoreWindow(parent, null, this);
+        
+    
     }
 
     @SuppressWarnings("unchecked")
-	private void paintPanel(int i) {
+    private void paintPanel(int i) {
 
         if (i < configPanels.size() && configPanels.get(i) != null) {
             return;
@@ -204,7 +213,7 @@ public class ConfigurationDialog extends JDialog implements ActionListener, Chan
      * @param configPanel
      */
     @SuppressWarnings("unchecked")
-	private void addConfigPanel(Class configPanelClass, String img, String title) {
+    private void addConfigPanel(Class configPanelClass, String img, String title) {
 
         this.configClasses.add(configPanelClass);
 
@@ -225,12 +234,14 @@ public class ConfigurationDialog extends JDialog implements ActionListener, Chan
      * @param uiinterface
      * @return
      */
-    public static boolean showConfig(JFrame frame, UIInterface uiinterface) {
-        ConfigurationDialog c = new ConfigurationDialog(frame, uiinterface);
-        JDUtilities.getLogger().info("END");
-        c.setVisible(false);
-        c.dispose();
-        return c.configChanged;
+    public static boolean showConfig(final JFrame frame, final UIInterface uiinterface) {
+        if (CURRENTDIALOG != null &&CURRENTDIALOG.isVisible()) return false;
+
+
+        CURRENTDIALOG = new ConfigurationDialog(frame, uiinterface);
+
+        
+        return true;
     }
 
     public void actionPerformed(ActionEvent e) {
@@ -250,20 +261,16 @@ public class ConfigurationDialog extends JDialog implements ActionListener, Chan
                 if (configPanels.elementAt(i) != null) configPanels.elementAt(i).save();
             }
             configChanged = true;
-            JDUtilities.setConfiguration(configuration);
-
-            // Entgültig gespeichert wird über ein fireUIEvent(new UIEvent(this,
-            // UIEvent.UI_SAVE_CONFIG)); event in simpleGui
+            JDUtilities.setConfiguration(configuration);         
+            JDUtilities.saveConfig();
 
         }
         if (e.getSource() == this.chbExpert) {
             guiConfig.setProperty(SimpleGUI.PARAM_USE_EXPERT_VIEW, chbExpert.isSelected());
             JDUtilities.saveConfig();
-            this.setVisible(false);
-            this.dispose();
-
-            return;
+          
         }
+
         this.dispose();
 
         setVisible(false);

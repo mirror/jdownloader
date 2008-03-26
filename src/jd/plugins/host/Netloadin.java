@@ -292,7 +292,7 @@ public class Netloadin extends PluginForHost {
             case PluginStep.STEP_WAIT_TIME:
             	//Login
                 if(finalURL==null){
-                logger.info("USER: "+user+" : "+pass);
+               
                 //SessionID holen
                 
                 requestInfo = getRequest(new URL(downloadLink.getDownloadURL()), null, null, true);
@@ -322,8 +322,7 @@ public class Netloadin extends PluginForHost {
                    //Login Cookie abholen
                     requestInfo= postRequest(new URL("http://" + HOST + "/index.php"),sessionID,downloadLink.getDownloadURL(),null,"txtuser="+user+"&txtpass="+pass+"&txtcheck=login&txtlogin=", false);
                     this.userCookie= requestInfo.getCookie();
-                    logger.finer("Usercookie: "+userCookie+" ->"+requestInfo.getLocation());
-                   
+                    
                     //Vorbereitungsseite laden
                     requestInfo=getRequest(new URL("http://" + HOST + "/"+requestInfo.getLocation()), sessionID+" "+userCookie, null, false);
                     
@@ -368,7 +367,7 @@ public class Netloadin extends PluginForHost {
             
                 Download dl = new Download(this, downloadLink,  requestInfo.getConnection());
                 dl.setChunks(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS,3));
-                //dl.setMaxBytesToLoad(2*1024*1024);
+            
                 dl.setLoadPreBytes(1);
                 dl.startDownload();
                 
