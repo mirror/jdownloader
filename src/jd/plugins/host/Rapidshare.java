@@ -430,11 +430,11 @@ public class Rapidshare extends PluginForHost {
         
         extended.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getProperties(), PROPERTY_USE_SSL, JDLocale.L("plugins.hoster.rapidshare.com.useSSL", "SSL Downloadlink verwenden")));
         cfg.setDefaultValue(false);
-        // config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX,
-        // getProperties(), PROPERTY_FREE_IF_LIMIT_NOT_REACHED,
-        // JDLocale.L("plugins.hoster.rapidshare.com.freeDownloadIfLimitNotReached",
-        // "Free Download wenn Downloadlimit noch nicht erreicht wurde")));
-        // cfg.setDefaultValue(false);
+        extended.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX,
+        		getProperties(), PROPERTY_FREE_IF_LIMIT_NOT_REACHED,
+        		JDLocale.L("plugins.hoster.rapidshare.com.freeDownloadIfLimitNotReached",
+        				"Premium: Free Download wenn Limit noch nicht erreicht wurde")));
+        cfg.setDefaultValue(false);
         extended.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_SPINNER, getProperties(), PROPERTY_WAIT_WHEN_BOT_DETECTED, JDLocale.L("plugins.hoster.rapidshare.com.waitTimeOnBotDetection", "Wartezeit [ms] wenn Bot erkannt wird.(-1 für Reconnect)"), -1, 600000).setDefaultValue(-1).setStep(1000));
         extended.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_SPINNER, getProperties(), PROPERTY_INCREASE_TICKET, JDLocale.L("plugins.hoster.rapidshare.com.increaseTicketTime", "Ticketwartezeit verlängern (0%-500%)"), 0, 500).setDefaultValue(0).setExpertEntry(true).setStep(1));
         extended.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_SPINNER, getProperties(), PROPERTY_BYTES_TO_LOAD, JDLocale.L("plugins.hoster.rapidshare.com.loadFirstBytes", "Nur die ersten * KiloBytes jeder Datei laden[-1 to disable]"), -1, 100000).setDefaultValue(-1).setStep(500));
@@ -990,7 +990,22 @@ public class Rapidshare extends PluginForHost {
                         return step;
 
                     }
-
+                    
+                    if (this.getProperties().getBooleanProperty(PROPERTY_FREE_IF_LIMIT_NOT_REACHED, false)) {
+                        requestInfo = getRequest(new URL(link), null, "", false);
+                        String newURL = getFirstMatch(requestInfo.getHtmlCode(), patternForNewHost, 1);
+                        requestInfo = postRequest(new URL(newURL), null, null, null, "dl.start=FREE", true);
+                        String strWaitTime = getSimpleMatch(requestInfo.getHtmlCode(), patternErrorDownloadLimitReached, 0);
+                        // wait time pattern not found -> free download
+                        if (strWaitTime == null && !requestInfo.containsHTML(patternForAlreadyDownloading) && !requestInfo.containsHTML(toManyUser)) {
+                            logger.info("Download limit not reached yet -> free download (see RS.com options)");
+                            currentStep = steps.firstElement();
+                            noLimitFreeInsteadPremium = true;
+                            return doFreeStep(step, downloadLink);
+                        } else
+                        	logger.info("Download limit reached or free download not possible -> premium download");
+                    }
+                    
                     finalURL = link;
                     return step;
 

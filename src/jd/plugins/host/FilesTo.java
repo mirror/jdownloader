@@ -36,19 +36,20 @@ import jd.utils.JDUtilities;
 
 public class FilesTo extends PluginForHost {
 	
-    static private final Pattern PAT_SUPPORTED 	= Pattern.compile("http://www\\.files\\.to/get/[0-9]+/[a-zA-Z0-9]+");
+    static private final Pattern PAT_SUPPORTED 	= Pattern.compile("http://(www\\.)?files\\.to/get/[0-9]+/[a-zA-Z0-9]+");
     static private final String  HOST 			= "files.to";
-    static private final String  PLUGIN_VERSION = "0.1.1";
+    static private final String  PLUGIN_VERSION = "0.1.2";
     static private final String  CODER 			= "jD-Team";
     static private final String  AGB_LINK 		= "http://www.files.to/content/aup";
     
-    private Pattern FILE_INFO_NAME = Pattern.compile("<p id=\"downloadname\">Name: (.*?)</p>");
+    private Pattern FILE_INFO_NAME = Pattern.compile("<p>Name: <span id=\"downloadname\">(.*?)</span></p>");
     private Pattern FILE_INFO_SIZE = Pattern.compile("<p>Gr&ouml;&szlig;e: (.*? (KB|MB)<)/p>");
     private Pattern CAPTCHA_FLE    = Pattern.compile("<img src=\"(http://www.files\\.to/captcha_[0-9]+\\.jpg)");
     private Pattern DOWNLOAD_URL   = Pattern.compile("action\\=\"(http://.*?files\\.to/dl/.*?)\">");
     private Pattern SESSION 	   = Pattern.compile("action\\=\"\\?(PHPSESSID\\=.*?)\"");
     
     static private final String FILE_NOT_FOUND = "Die angeforderte Datei konnte nicht gefunden werden";
+    static private final String CAPTCHA_WRONG  = "Der eingegebene code ist falsch";
 
     private String 		   captchaAddress;
     private String 		   finalURL;
@@ -89,6 +90,16 @@ public class FilesTo extends PluginForHost {
     }
     
     public PluginStep doStep(PluginStep step, DownloadLink downloadLink) {
+    	
+    	if ( aborted ) {
+    		
+            // häufige Abbruchstellen sorgen für einen zügigen Downloadstop
+            logger.warning("Plugin abgebrochen");
+            downloadLink.setStatus(DownloadLink.STATUS_TODO);
+            step.setStatus(PluginStep.STATUS_TODO);
+            return step;
+            
+        }
     	
         RequestInfo requestInfo;
         
@@ -138,7 +149,6 @@ public class FilesTo extends PluginForHost {
                         step.setParameter(null);
                         step.setStatus(PluginStep.STATUS_ERROR);
                         downloadLink.setStatus(DownloadLink.STATUS_ERROR_CAPTCHA_IMAGEERROR);
-                        System.out.println("asdf");
                         return step;
                         
                     } else {
@@ -165,10 +175,18 @@ public class FilesTo extends PluginForHost {
                     			true);
                     
                     if ( requestInfo.getHtmlCode() == null ) {
+                    	
                         step.setStatus(PluginStep.STATUS_ERROR);
                         downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN_RETRY);
                         step.setParameter(20000l);
                         return step;
+                        
+                    } else if ( requestInfo.containsHTML(CAPTCHA_WRONG) ) {
+                    	
+                    	step.setStatus(PluginStep.STATUS_ERROR);
+                        downloadLink.setStatus(DownloadLink.STATUS_ERROR_CAPTCHA_WRONG);
+                        return step;
+                        
                     }
                     
                     finalURL = new Regexp(requestInfo.getHtmlCode(), DOWNLOAD_URL).getFirstMatch();
