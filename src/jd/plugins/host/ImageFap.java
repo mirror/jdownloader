@@ -26,11 +26,11 @@ import java.util.Vector;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
-import jd.plugins.Download;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
+import jd.plugins.download.ChunkFileDownload;
 import jd.utils.JDUtilities;
 
 public class ImageFap extends PluginForHost {
@@ -111,7 +111,7 @@ public class ImageFap extends PluginForHost {
                 for (int i = 1; i < Images.size(); i++) {
                     requestInfo = postRequestWithoutHtmlCode(new URL("http://85.17.40.49/full/getimg.php?img=" + Images.get(i)), null, null, null, true);
                     downloadLink.setName(Images.get(i));
-                    Download dl = new Download(this, downloadLink,  requestInfo.getConnection());
+                    ChunkFileDownload dl = new ChunkFileDownload(this, downloadLink,  requestInfo.getConnection());
                     dl.startDownload();
                     new File(downloadLink.getFileOutput()).renameTo(new File(file, Images.get(i)));
                 }

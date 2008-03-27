@@ -26,12 +26,12 @@ import java.net.URL;
 
 import java.util.regex.Pattern;
 
-import jd.plugins.Download;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTPConnection;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
+import jd.plugins.download.ChunkFileDownload;
 import jd.utils.JDUtilities;
 
 /**
@@ -245,7 +245,7 @@ public class Gulli extends PluginForHost {
                         return step;
                     }
                     
-                    Download dl = new Download(this, downloadLink, finalDownloadConnection);
+                    ChunkFileDownload dl = new ChunkFileDownload(this, downloadLink, finalDownloadConnection);
                     dl.startDownload();
                     
                

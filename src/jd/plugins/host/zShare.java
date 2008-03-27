@@ -20,11 +20,11 @@ package jd.plugins.host;
 import java.io.File;
 import java.util.regex.Pattern;
 
-import jd.plugins.Download;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTPConnection;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginStep;
+import jd.plugins.download.ChunkFileDownload;
 
 public class zShare extends PluginForHost {
 	private static final String HOST = "zshare.net";
@@ -92,8 +92,8 @@ public class zShare extends PluginForHost {
 				step.setStatus(PluginStep.STATUS_ERROR);
 				return step;
 			}
-			  Download dl = new Download(this, downloadLink, urlConnection);
-			  dl.setChunks(20);
+			  ChunkFileDownload dl = new ChunkFileDownload(this, downloadLink, urlConnection);
+			  dl.setChunkNum(20);
 			  dl.startDownload();
 			return step;
 		} catch (Exception e) {

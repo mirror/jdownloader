@@ -24,6 +24,7 @@ import java.util.logging.Logger;
 
 import jd.config.Configuration;
 import jd.controlling.SpeedMeter;
+import jd.plugins.download.DownloadInterface;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
@@ -293,7 +294,7 @@ public class DownloadLink implements Serializable, Comparable<DownloadLink> {
 
     private boolean                      limited                                       = (JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, 0) != 0);
 
-    private transient Download           downloadInstance;
+    private transient DownloadInterface           downloadInstance;
 
     private int[] chunksProgress=null;
 
@@ -978,8 +979,8 @@ this.chunksProgress=null;
         this.isMirror = isMirror;
     }
 
-    public void setDownloadInstance(Download dl) {
-        this.downloadInstance = dl;
+    public void setDownloadInstance(DownloadInterface downloadInterface) {
+        this.downloadInstance = downloadInterface;
 
     }
 
@@ -1022,7 +1023,7 @@ if(maximalspeed<=0){
         return linkType;
     }
 
-    public Download getDownloadInstance() {
+    public DownloadInterface getDownloadInstance() {
         return downloadInstance;
     }
 

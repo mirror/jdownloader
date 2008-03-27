@@ -27,13 +27,13 @@ import java.util.regex.Pattern;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.Configuration;
-import jd.plugins.Download;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTPConnection;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginStep;
 import jd.plugins.Regexp;
 import jd.plugins.RequestInfo;
+import jd.plugins.download.ChunkFileDownload;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
@@ -322,7 +322,7 @@ public class FileFactory extends PluginForHost {
                            step.setStatus(PluginStep.STATUS_ERROR);
                            return step;
                        }
-                        Download dl = new Download(this, downloadLink, requestInfo.getConnection());
+                        ChunkFileDownload dl = new ChunkFileDownload(this, downloadLink, requestInfo.getConnection());
 
                         if (!dl.startDownload() && step.getStatus() != PluginStep.STATUS_ERROR && step.getStatus() != PluginStep.STATUS_TODO) {
       
@@ -433,8 +433,8 @@ public class FileFactory extends PluginForHost {
                             
                         }
                         
-                        Download dl = new Download(this, downloadLink, urlConnection);
-                        dl.setChunks(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS,3));
+                        ChunkFileDownload dl = new ChunkFileDownload(this, downloadLink, urlConnection);
+                        dl.setChunkNum(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS,3));
                         if (!dl.startDownload() && step.getStatus() != PluginStep.STATUS_ERROR&& step.getStatus() != PluginStep.STATUS_TODO) {
                         	
                             downloadLink.setStatus(DownloadLink.STATUS_ERROR_PREMIUM);

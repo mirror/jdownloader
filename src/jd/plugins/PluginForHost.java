@@ -24,6 +24,7 @@ import java.net.URLConnection;
 import java.util.Vector;
 
 import jd.event.ControlEvent;
+import jd.plugins.download.ChunkFileDownload;
 import jd.utils.JDUtilities;
 
 /**
@@ -244,7 +245,7 @@ public abstract class PluginForHost extends Plugin {
             logger.info("Filename: " + getFileNameFormHeader(requestInfo.getConnection()));
            
             downloadLink.setName(getFileNameFormHeader(requestInfo.getConnection()));
-            Download dl = new Download(this, downloadLink, requestInfo.getConnection());
+            ChunkFileDownload dl = new ChunkFileDownload(this, downloadLink, requestInfo.getConnection());
             if (!dl.startDownload() && step.getStatus() != PluginStep.STATUS_ERROR && step.getStatus() != PluginStep.STATUS_TODO) {
                 downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN);
                 

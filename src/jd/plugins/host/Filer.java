@@ -26,11 +26,11 @@ import java.util.Vector;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
-import jd.plugins.Download;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
+import jd.plugins.download.ChunkFileDownload;
 import jd.utils.JDUtilities;
 
 public class Filer extends PluginForHost {
@@ -209,7 +209,7 @@ public class Filer extends PluginForHost {
                         step.setStatus(PluginStep.STATUS_ERROR);
                         return step;
                     }
-                    Download dl = new Download(this, downloadLink, requestInfo.getConnection());
+                    ChunkFileDownload dl = new ChunkFileDownload(this, downloadLink, requestInfo.getConnection());
                     dl.startDownload();
               
                     return step;

@@ -1247,7 +1247,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
 
     public void addLinksToGrabber(Vector<DownloadLink> links) {
         DownloadLink[] linkList = links.toArray(new DownloadLink[] {});
-        if (linkGrabber != null && !linkGrabber.isVisible()) {
+        if (linkGrabber != null && !linkGrabber.isDisplayable()) {
             linkGrabber.dispose();
             linkGrabber = null;
         }

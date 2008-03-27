@@ -23,7 +23,6 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.regex.Pattern;
 
-import jd.plugins.Download;
 import jd.plugins.DownloadLink;
 import jd.plugins.Form;
 import jd.plugins.HTTPConnection;
@@ -31,6 +30,7 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginStep;
 import jd.plugins.Regexp;
+import jd.plugins.download.ChunkFileDownload;
 import jd.utils.JDUtilities;
 
 public class BadOngo extends PluginForHost {
@@ -228,7 +228,7 @@ public class BadOngo extends PluginForHost {
                     step.setStatus(PluginStep.STATUS_ERROR);
                     return step;
                 }
-                Download dl = new Download(this, downloadLink, urlConnection);
+                ChunkFileDownload dl = new ChunkFileDownload(this, downloadLink, urlConnection);
 
                 if (!dl.startDownload() && step.getStatus() != PluginStep.STATUS_ERROR && step.getStatus() != PluginStep.STATUS_TODO) {
 

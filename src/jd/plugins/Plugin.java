@@ -100,7 +100,7 @@ public abstract class Plugin {
 
     protected CRequest            request         = new CRequest();
 
-    protected boolean             aborted         = false;
+    public boolean             aborted         = false;
 
     public boolean collectCaptchas() {
         return true;

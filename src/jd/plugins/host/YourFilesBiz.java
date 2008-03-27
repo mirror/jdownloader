@@ -23,12 +23,12 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.regex.Pattern;
 
-import jd.plugins.Download;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTPConnection;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
+import jd.plugins.download.ChunkFileDownload;
 import jd.utils.JDUtilities;
 
 public class YourFilesBiz extends PluginForHost {
@@ -204,7 +204,7 @@ public class YourFilesBiz extends PluginForHost {
                 case PluginStep.STEP_DOWNLOAD:
                 	
                     // Download starten
-                    Download dl = new Download(this, downloadLink, urlConnection);
+                    ChunkFileDownload dl = new ChunkFileDownload(this, downloadLink, urlConnection);
                    
                   dl.startDownload();
                    

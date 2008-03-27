@@ -24,11 +24,11 @@ import java.net.URL;
 
 import java.util.regex.Pattern;
 
-import jd.plugins.Download;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTPConnection;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginStep;
+import jd.plugins.download.ChunkFileDownload;
 
 public class RamZal extends PluginForHost {
 	private static final String HOST = "ramzal.com";
@@ -98,7 +98,7 @@ public class RamZal extends PluginForHost {
 				step.setStatus(PluginStep.STATUS_ERROR);
 				return step;
 			}
-		    Download dl = new Download(this, downloadLink, urlConnection);
+		    ChunkFileDownload dl = new ChunkFileDownload(this, downloadLink, urlConnection);
 
             if (!dl.startDownload() && step.getStatus() != PluginStep.STATUS_ERROR && step.getStatus() != PluginStep.STATUS_TODO) {
                 downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN);

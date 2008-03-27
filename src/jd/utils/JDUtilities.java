@@ -2085,14 +2085,10 @@ public class JDUtilities {
                             if(buffer.indexOf("OutOfMemoryError")>=0){
                                 logger.finer("Restart");
                                 boolean res;
-                                if(!JDUtilities.getSubConfig("simpleGUI").getBooleanProperty(SimpleGUI.PARAM_START_DOWNLOADS_AFTER_START, false)){
                                 res = getGUI().showConfirmDialog(JDLocale.L("gui.messages.outofmemoryerror","An error ocured!\r\nJDownloader is out of memory. Restart recommended.\r\nPlease report this bug!"));
-                                }else{
-                                    res=true;
-                                }
+                               
                                 if(res){
-                                    JDUtilities.getSubConfig("simpleGUI").setProperty(SimpleGUI.PARAM_START_DOWNLOADS_AFTER_START, true);
-                                    JDUtilities.getSubConfig("simpleGUI").save();
+                              
                                     JDUtilities.restartJD();
                                 }
                             }

@@ -93,7 +93,6 @@ import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.Configuration;
 import jd.controlling.interaction.CaptchaMethodLoader;
-import jd.plugins.Download;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTPConnection;
 import jd.plugins.Plugin;
@@ -101,6 +100,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.PluginStep;
 import jd.plugins.Regexp;
 import jd.plugins.RequestInfo;
+import jd.plugins.download.ChunkFileDownload;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
@@ -852,7 +852,7 @@ public class Rapidshare extends PluginForHost {
                     }
                     logger.info("link: " + postTarget.substring(0, 30) + " " + actionString);
 
-                    Download dl = new Download(this, downloadLink, urlConnection);
+                    ChunkFileDownload dl = new ChunkFileDownload(this, downloadLink, urlConnection);
                     if (getProperties().getIntegerProperty(PROPERTY_BYTES_TO_LOAD, -1) > 0) {
                         dl.setMaxBytesToLoad(1024 * getProperties().getIntegerProperty(PROPERTY_BYTES_TO_LOAD, -1));
                     }
@@ -1090,9 +1090,9 @@ public class Rapidshare extends PluginForHost {
                     String name = getFileNameFormHeader(urlConnection);
                     if (name.toLowerCase().matches(".*\\..{1,5}\\.html$")) name = name.replaceFirst("\\.html$", "");
                     downloadLink.setName(name);
-                    Download dl = new Download(this, downloadLink, urlConnection);
+                    ChunkFileDownload dl = new ChunkFileDownload(this, downloadLink, urlConnection);
 
-                    dl.setChunks(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 3));
+                    dl.setChunkNum(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 3));
                     dl.setResume(true);
                     dl.startDownload();
 
@@ -1419,8 +1419,8 @@ public class Rapidshare extends PluginForHost {
                     String name = getFileNameFormHeader(urlConnection);
                     if (name.toLowerCase().matches(".*\\..{1,5}\\.html$")) name = name.replaceFirst("\\.html$", "");
                     downloadLink.setName(name);
-                    Download dl = new Download(this, downloadLink, urlConnection);
-                    dl.setChunks(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 3));
+                    ChunkFileDownload dl = new ChunkFileDownload(this, downloadLink, urlConnection);
+                    dl.setChunkNum(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 3));
                     dl.startDownload();
                     if (dl.getErrors().size() == 0) {
                         if (new File(downloadLink.getFileOutput()).length() < 4000 && JDUtilities.getLocalFile(new File(downloadLink.getFileOutput())).indexOf(PATTERN_DOWNLOAD_ERRORPAGE) > 0) {
