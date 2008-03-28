@@ -239,7 +239,7 @@ public class GetRouterInfo {
             }
             JDUtilities.getConfiguration().setProperty(Configuration.PARAM_HTTPSEND_REQUESTS, data[2]);
             JDUtilities.saveConfig();
-            if (JDUtilities.getController().reconnect()) {
+            if (JDUtilities.getController().requestReconnect()) {
                 JDUtilities.getConfiguration().setProperty(Configuration.PARAM_HTTPSEND_RETRIES, retries);
                 JDUtilities.getConfiguration().setProperty(Configuration.PARAM_HTTPSEND_WAITFORIPCHANGE, wipchange);
                 JDUtilities.saveConfig();

@@ -160,8 +160,7 @@ public class CaptchaDialog extends JDialog implements ActionListener {
             this.countdownThread.start();
 
         }
-        logger.info(plugin.getLastCaptcha() + "");
-
+       
         JLabel label = new JLabel(imageIcon);
 
         textField = new JTextField(10);

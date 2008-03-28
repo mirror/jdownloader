@@ -380,6 +380,7 @@ public abstract class Plugin {
         return (this.currentStep = currentStep);
 
     }
+    
 
     /**
      * Gibt ausgehend von übergebenem Schritt den vorherigen zurück

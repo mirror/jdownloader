@@ -516,7 +516,7 @@ public class SingleDownloadController extends ControlMulticaster {
         // this);
         // Interaction.handleInteraction((Interaction.INTERACTION_DOWNLOAD_WAITTIME),
         // this);
-        if (controller.reconnect()) {
+        if (controller.requestReconnect()) {
             downloadLink.setStatus(DownloadLink.STATUS_TODO);
             downloadLink.setEndOfWaittime(0);
         }
@@ -632,7 +632,7 @@ public class SingleDownloadController extends ControlMulticaster {
         downloadLink.setStatusText(JDLocale.L("controller.status.botDetected", "Bot erkannt/Reconnect"));
         fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SINGLE_DOWNLOAD_CHANGED, downloadLink));
         new CaptchaMethodLoader().interact(plugin.getHost());
-        if (plugin.getBotWaittime() < 0 && controller.reconnect()) {
+        if (plugin.getBotWaittime() < 0 && controller.requestReconnect()) {
             downloadLink.setStatus(DownloadLink.STATUS_TODO);
             downloadLink.setEndOfWaittime(0);
         }
@@ -686,7 +686,7 @@ public class SingleDownloadController extends ControlMulticaster {
         // Download Zeit. Versuch durch eine Interaction einen reconnect
         // zu machen. wenn das klappt nochmal versuchen
 
-        if (controller.reconnect()) {
+        if (controller.requestReconnect()) {
             downloadLink.setStatus(DownloadLink.STATUS_TODO);
             downloadLink.setEndOfWaittime(0);
         }

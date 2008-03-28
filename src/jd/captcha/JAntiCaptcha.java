@@ -1073,7 +1073,11 @@ public class JAntiCaptcha {
             // if(JAntiCaptcha.isLoggerActive())logger.finer("Validty: " +
             // correct);
         }
-
+if(letters.length==0){
+    captcha.setValityPercent(100.0);
+  
+    return null;
+}
         captcha.setLetterComperators(newLettersVector.toArray(new LetterComperator[] {}));
 
         if (JAntiCaptcha.isLoggerActive()) logger.finer("Vality: " + ((int) (correct / letters.length)));

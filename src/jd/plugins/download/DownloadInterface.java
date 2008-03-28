@@ -119,7 +119,7 @@ abstract public class DownloadInterface {
 
   
 
-    protected boolean                   speedDebug                             = true;
+    protected boolean                   speedDebug                             = false;
 
 
 
@@ -847,7 +847,7 @@ abstract public class DownloadInterface {
                 return;
             }
             logger.info(this.getID() + " : " + preBytes);
-            if (preBytes > 0 && this.getID() == 0) loadStartBytes(preBytes);
+            if (preBytes > 0 && this.getID() == 0&&startByte==0) loadStartBytes(preBytes);
             plugin.setCurrentConnections(plugin.getCurrentConnections() + 1);
             logger.finer("Start Chunk " + startByte + " - " + endByte);
             if (chunkNum > 1) this.connection = copyConnection(connection);

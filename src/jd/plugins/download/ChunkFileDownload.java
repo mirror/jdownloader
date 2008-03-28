@@ -51,15 +51,17 @@ public class ChunkFileDownload extends DownloadInterface {
 
     }
 
-    protected long writeTimer = System.currentTimeMillis();
+    protected long          writeTimer = System.currentTimeMillis();
 
-    protected long writeCount = 0;
+    protected long          writeCount = 0;
 
-    protected long hdWritesPerSecond;
-    protected FileChannel[]     channels;
+    protected long          hdWritesPerSecond;
 
-    protected File[]                    partFiles;
-    private long   debugtimer;
+    protected FileChannel[] channels;
+
+    protected File[]        partFiles;
+
+    private long            debugtimer;
 
     protected void addBytes(Chunk chunk) {
         try {
@@ -91,8 +93,6 @@ public class ChunkFileDownload extends DownloadInterface {
 
     }
 
-
-
     @Override
     protected void setupChunks() throws DownloadFailedException {
         try {
@@ -110,8 +110,41 @@ public class ChunkFileDownload extends DownloadInterface {
             String fileName = downloadLink.getName();
 
             downloadLink.setStatus(DownloadLink.STATUS_DOWNLOAD_IN_PROGRESS);
-
+            downloadLink.setDownloadMax((int) fileSize);
             setChunkNum(Math.min(getChunkNum(), plugin.getFreeConnections()));
+            if(checkResumabled()){
+                // logger.info("Filsize: " + fileSize);
+               long parts = fileSize/getChunkNum();
+//                if (parts == -1) {
+//                    logger.warning("Could not get Filesize.... reset chunks to 1");
+//                    setChunkNum(1);
+//                }
+//                logger.finer("Start Download in " + getChunkNum() + " chunks. Chunksize: " + parts);
+                
+                // downloadLink.setChunksProgress(new int[chunkNum]);
+                Chunk chunk;
+
+                channels = new FileChannel[getChunkNum()];
+                partFiles = new File[getChunkNum()];
+                for (int i = 0; i < getChunkNum(); i++) {
+                    partFiles[i] = new File(getPartFileName(i, (int) fileSize));
+                    //partFiles[i].delete();
+                    logger.info("resume partfile " + i + " - " + partFiles[i].getAbsolutePath()+" at "+partFiles[i].length()+"/"+parts);
+                    if (i == (getChunkNum() - 1)) {
+                        chunk = new Chunk(i * parts+partFiles[i].length(), -1, connection);
+                    }
+                    else {
+                        chunk = new Chunk(i * parts+partFiles[i].length(), (i + 1) * parts, connection);
+                    }
+                   
+
+                    channels[i] = new FileOutputStream(partFiles[i], true).getChannel();
+
+                    addChunk(chunk);
+                }  
+                
+                
+            }else{
             // logger.info("Filsize: " + fileSize);
             long parts = fileSize > 0 ? fileSize / getChunkNum() : -1;
             if (parts == -1) {
@@ -119,15 +152,14 @@ public class ChunkFileDownload extends DownloadInterface {
                 setChunkNum(1);
             }
             logger.finer("Start Download in " + getChunkNum() + " chunks. Chunksize: " + parts);
-            downloadLink.setDownloadMax((int) fileSize);
+           
             // downloadLink.setChunksProgress(new int[chunkNum]);
             Chunk chunk;
 
-          
             channels = new FileChannel[getChunkNum()];
             partFiles = new File[getChunkNum()];
             for (int i = 0; i < getChunkNum(); i++) {
-                partFiles[i] = new File(downloadLink.getFileOutput() + ".part_" + i + "_" + fileSize);
+                partFiles[i] = new File(getPartFileName(i, (int) fileSize));
                 partFiles[i].delete();
                 logger.info("create partfile " + i + " - " + partFiles[i].getAbsolutePath());
                 if (i == (getChunkNum() - 1)) {
@@ -139,9 +171,10 @@ public class ChunkFileDownload extends DownloadInterface {
 
                 if (!partFiles[i].exists()) partFiles[i].createNewFile();
 
-                channels[i] = new FileOutputStream(partFiles[i], true).getChannel();
-               
+                channels[i] = new FileOutputStream(partFiles[i]).getChannel();
+
                 addChunk(chunk);
+            }
             }
 
         }
@@ -152,11 +185,46 @@ public class ChunkFileDownload extends DownloadInterface {
 
     }
 
+    private String getPartFileName(int num, int fileSize) {
+        return downloadLink.getFileOutput() + ".part_" + num + "_" + fileSize;
+    }
+
+    private boolean checkResumabled() {
+        int chunkCount = 0;
+        File part;
+        int loaded = 0;
+        int fileSize = (int) getFileSize();
+        while ((part = new File(getPartFileName(chunkCount, (int) fileSize))).exists()) {
+            loaded += part.length();
+            chunkCount++;
+        }
+        if (chunkCount > 0) {
+
+            this.setChunkNum(chunkCount);
+            logger.info("Resume with " + chunkCount + " chunks");
+            this.bytesLoaded=loaded;
+            downloadLink.setDownloadCurrent(bytesLoaded);
+            return true;
+        }
+        return false;
+
+    }
+
     @Override
     protected void onChunksReady() throws DownloadFailedException {
 
         if (!handleErrors()) {
-
+            for (int i = 0; i < getChunkNum(); i++) {
+                try {
+                    channels[i].force(true);
+          
+                channels[i].close();
+                }
+                catch (IOException e) {
+                    // TODO Auto-generated catch block
+                    e.printStackTrace();
+                }
+            }
             throw new DownloadFailedException("Download failed after chunks were ready");
         }
 
@@ -172,20 +240,19 @@ public class ChunkFileDownload extends DownloadInterface {
                 coppied = 0;
                 in = new FileInputStream(partFiles[i].getAbsolutePath()).getChannel();
 
-                while (true){
+                while (true) {
                     coppied += in.transferTo(coppied, partFiles[i].length(), out);
-                    if(coppied==partFiles[i].length())break;
+                    if (coppied == partFiles[i].length()) break;
                 }
-                    ;
-                
+                ;
+
                 logger.info("Coopied " + partFiles[i].getAbsolutePath() + " to " + downloadLink.getFileOutput());
-                partFiles[i].delete();
-                partFiles[i] = null;
+               
                 in.force(true);
                 out.force(true);
                 in.close();
-                
-
+                logger.info("Deleted "+partFiles[i].delete());
+                partFiles[i] = null;
             }
             out.close();
             return;

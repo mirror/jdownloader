@@ -103,6 +103,13 @@ public class Captcha extends PixelGrid {
         rgbGrid = new int[width][height];
 
     }
+    /**
+     * Diese Methode gibt alle internen Datenresourcen wie pixeldaten wieder frei.
+     * 
+     */
+    public void destroyInternalData(){
+        
+    }
 
     /**
      * Gibt die Breite des internen captchagrids zurück

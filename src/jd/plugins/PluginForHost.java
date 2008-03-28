@@ -219,8 +219,8 @@ public abstract class PluginForHost extends Plugin {
         catch (Exception e) {
              e.printStackTrace();
             step.setStatus(PluginStep.STATUS_ERROR);
-            ((DownloadLink) parameter).setStatus(DownloadLink.STATUS_ERROR_UNKNOWN);
-
+            ((DownloadLink) parameter).setStatus(DownloadLink.STATUS_ERROR_PLUGIN_SPECIFIC);
+          step.setParameter(e.getLocalizedMessage());
             return step;
         }
     }

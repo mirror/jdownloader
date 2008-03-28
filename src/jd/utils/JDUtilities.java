@@ -1599,6 +1599,7 @@ public class JDUtilities {
                 file.getParentFile().mkdirs();
             }
             file.createNewFile();
+            logger.info(" file"+file+" - "+con.getContentLength());
             BufferedOutputStream output = new BufferedOutputStream(new FileOutputStream(file, true));
             BufferedInputStream input = new BufferedInputStream(con.getInputStream());
             byte[] b = new byte[1024];

@@ -121,7 +121,7 @@ public class MBBDownload extends DownloadInterface {
             if (chunksProgress != null && this.isResume() && plugin.getFreeConnections() >= getChunkNum()) {
                 try {
                     logger.info("Try to resume download");
-                    wrBuf.load();
+               
                     logger.info("Old Chunknum: " + chunksProgress.length);
 
                     int bc;

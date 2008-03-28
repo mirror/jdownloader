@@ -687,6 +687,11 @@ public class Rapidshare extends PluginForHost {
                     timer = System.currentTimeMillis() - timer;
                     logger.info("captcha detection: " + timer + " ms");
 
+                    downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN_RETRY);
+                    step.setParameter(1000l);
+                    step.setStatus(PluginStep.STATUS_ERROR);
+                    
+                    if(true)return step;
                     if (wait != null) {
                         long pendingTime = Long.parseLong(wait);
 
@@ -863,8 +868,8 @@ public class Rapidshare extends PluginForHost {
                             new File(downloadLink.getFileOutput()).delete();
                             JDUtilities.appendInfoToFilename(this, captchaFile, actionString + "_" + captchaCode, false);
                             downloadLink.setStatus(DownloadLink.STATUS_ERROR_CAPTCHA_WRONG);
-                            logger.info("Error detected. Update captchafile");
-                            new CaptchaMethodLoader().interact("rapidshare.com");
+                            //logger.info("Error detected. Update captchafile");
+                           //new CaptchaMethodLoader().interact("rapidshare.com");
                             step.setStatus(PluginStep.STATUS_ERROR);
                             return step;
                         }

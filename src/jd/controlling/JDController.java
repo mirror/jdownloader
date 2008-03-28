@@ -134,6 +134,10 @@ public class JDController implements PluginListener, ControlListener, UIListener
 
     private Vector<Vector<String>>            waitingUpdates;
 
+    private boolean isReconnecting;
+
+    private boolean lastReconnectSuccess;
+
     public JDController() {
         downloadLinks = new Vector<DownloadLink>();
         clipboard = new ClipboardHandler();
@@ -366,7 +370,7 @@ public class JDController implements PluginListener, ControlListener, UIListener
 
                 // Interaction.handleInteraction(Interaction.INTERACTION_NEED_RECONNECT,
                 // this);
-                if (reconnect()) {
+                if (requestReconnect()) {
                     uiInterface.showMessageDialog("Reconnect erfolgreich");
 
                 }
@@ -1085,12 +1089,25 @@ public void requestDownloadLinkUpdate(DownloadLink link){
      * @return
      */
 
-    public boolean reconnect() {
+    public boolean requestReconnect() {
+       int wait=0;
+        while(isReconnecting){
+            try {
+                Thread.sleep(500);
+            }
+            catch (InterruptedException e) {}
+            wait+=500;
+            
+            
+        }
+        if(wait>0&&lastReconnectSuccess)return true;
+        
         Interaction.handleInteraction(Interaction.INTERACTION_BEFORE_RECONNECT, this);
 
         logger.info("Reconnect: " + JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_DISABLE_RECONNECT, true));
         if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_DISABLE_RECONNECT, false)) {
             logger.finer("Reconnect is disabled. Enable the CheckBox in the Toolbar to reactivate it");
+         
             return false;
         }
         if (this.getRunningDownloadNum() > 0) {
@@ -1103,6 +1120,7 @@ public void requestDownloadLinkUpdate(DownloadLink link){
             logger.severe("Reconnect is not configured. Config->Reconnect!");
             return false;
         }
+      isReconnecting=true;
         boolean ret = false;
         if (type.equals(JDLocale.L("modules.reconnect.types.extern", "Extern"))) {
             ret = new ExternReconnect().interact(null);
@@ -1113,7 +1131,8 @@ public void requestDownloadLinkUpdate(DownloadLink link){
         else {
             ret = new HTTPLiveHeader().interact(null);
         }
-
+        isReconnecting=false;
+        lastReconnectSuccess=ret;
         logger.info("Reconnect success: " + ret);
         if (ret) {
             Iterator<DownloadLink> iterator = downloadLinks.iterator();

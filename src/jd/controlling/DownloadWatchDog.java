@@ -360,7 +360,7 @@ public class DownloadWatchDog extends Thread implements PluginListener, ControlL
                     for (int i = 0; i < links.size(); i++) {
                         if (links.get(i).waitsForReconnect()) {
 
-                            controller.reconnect();
+                            controller.requestReconnect();
 
                             break;
 
