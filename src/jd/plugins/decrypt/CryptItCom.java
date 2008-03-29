@@ -32,18 +32,21 @@ import jd.plugins.DownloadLink;
 import jd.plugins.HTTPConnection;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginStep;
+import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
 // http://crypt-it.com/s/BXYMBR
+// http://crypt-it.com/s/B44Z4A
 
 public class CryptItCom extends PluginForDecrypt {
 
-    static private final String HOST             = "crypt-it.com";
-    private String              VERSION          = "0.1.0";
-    private String              CODER            = "jD-Team";
+    static private final String		HOST             	= "crypt-it.com";
+    private String              	VERSION          	= "0.2.0";
+    private String              	CODER            	= "jD-Team";
     
-    static private final Pattern patternSupported = getSupportPattern("(http|ccf)://[*]crypt-it.com/(s|e|d)/[a-zA-Z0-9]+");
-
+    static private final Pattern 	patternSupported	= getSupportPattern("(http|ccf)://[*]crypt-it.com/(s|e|d)/[a-zA-Z0-9]+");
+    private String       			PASSWORD_PROTECTED	= "Passworteingabe erforderlich";
+    
     public CryptItCom() {
     	
         super();
@@ -96,8 +99,48 @@ public class CryptItCom extends PluginForDecrypt {
     		
     		try {
     			
-    			requestInfo = postRequestWithoutHtmlCode(new URL(parameter), null, null, "", true);
+    			requestInfo = getRequestWithoutHtmlCode(new URL(parameter), null, null, null, true);
     			HTTPConnection urlConnection = requestInfo.getConnection();
+    			
+    			if ( urlConnection.getContentLength() == 0 ) {
+    				
+    				requestInfo = getRequest(new URL(parameter.replace("/d/", "/s/")));
+    				String cookie = "";
+    				
+    				if ( requestInfo.containsHTML(PASSWORD_PROTECTED) ) {
+    					
+    					logger.info("Password protected");
+    					String pass = JDUtilities.getController().getUiInterface().showUserInputDialog(
+                    			JDLocale.L("plugins.hoster.general.passwordProtectedInput",
+                    					"Die Links sind mit einem Passwort gesch\u00fctzt. Bitte geben Sie das Passwort ein:"));
+    					String postData = "a=pw&pw="+JDUtilities.urlEncode(pass);
+    					
+    					requestInfo = postRequest(new URL(parameter.replace("/d/", "/s/")), postData);
+    					
+    					if ( requestInfo.containsHTML(PASSWORD_PROTECTED) ) {
+    						
+    						logger.warning("Password wrong");
+    						JDUtilities.getController().getUiInterface().showMessageDialog(
+    								JDLocale.L("plugins.decrypt.general.passwordWrong", "Passwort falsch"));
+                    		step.setStatus(PluginStep.STATUS_ERROR);
+                    		return null;
+    						
+    					}
+    					
+    					cookie = requestInfo.getCookie();
+    					
+    	    			requestInfo = getRequestWithoutHtmlCode(new URL(parameter), cookie, null, null, true);
+    	    			urlConnection = requestInfo.getConnection();
+    					
+    				} else {
+    					
+    					logger.warning("Unknown error page");
+                		step.setStatus(PluginStep.STATUS_ERROR);
+                		return null;
+                		
+    				}
+    				
+    			}
     			
     			String folder = JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_DOWNLOAD_DIRECTORY);
     			String name = this.getFileNameFormHeader(urlConnection);

@@ -256,7 +256,6 @@ public class XupIn extends PluginForHost {
                     vid = new Regexp(requestInfo.getHtmlCode(), VID).getFirstMatch();
                     vtime = new Regexp(requestInfo.getHtmlCode(), VTIME).getFirstMatch();
                     captchaAddress = new Regexp(requestInfo.getHtmlCode(), VTIME).getFirstMatch();
-                    logger.info("0");
                 	return step;
                     
                 case PluginStep.STEP_GET_CAPTCHA_FILE :
@@ -272,7 +271,6 @@ public class XupIn extends PluginForHost {
                         step.setParameter(null);
                         step.setStatus(PluginStep.STATUS_ERROR);
                         downloadLink.setStatus(DownloadLink.STATUS_ERROR_CAPTCHA_IMAGEERROR);
-                        System.out.println("asdf");
                         return step;
                         
                     } else {
