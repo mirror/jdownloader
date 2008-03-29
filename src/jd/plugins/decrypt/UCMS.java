@@ -53,7 +53,6 @@ public class UCMS extends PluginForDecrypt {
     		+ "|(http://[*]warez-load.com/\\?id=[+])"
     		+ "|(http://[*]steelwarez.com/\\?id=[+])"
     		//+ "|(http://[*]warezbase.us/\\?id=[+])"
-    		+ "|(http://[*]lesestunde.info/\\?id=[+])"
     		+ "|(http://[*]fullstreams.info/\\?id=[+])"
     		//+ "|(http://[*]toxic.to/\\?id=[+])"
     		//+ "|(http://[*]lionwarez.com/\\?id=[+])"
@@ -66,6 +65,22 @@ public class UCMS extends PluginForDecrypt {
     		+ "|(http://[*]isos.at/[+]/[+])"
     		+ "|(http://[*]game-freaks.net/[+]/[+].html)"
     		+ "|(http://[*]chili-warez.net/[+]/[+].html)"
+    		
+    		+ "|(http://[*]chrome-database.com/\\?id=[+])"
+    		//+ "|(http://[*]mp3z.to/\\?id=[+])"
+    		+ "|(http://[*]oneload.org/\\?id=[+])"
+    		+ "|(http://[*]youwarez.biz/\\?id=[+])"
+    		+ "|(http://[*]saugking.net/\\?id=[+])"
+    		+ "|(http://[*]leetpornz.com/\\?id=[+])"
+    		//+ "|(http://[*]freefiles4u.com/\\?id=[+])"
+    		+ "|(http://[*]xxx-reactor.net/category/[+]/[+])"
+    		//+ "|(http://[*]xxx-4-free.net/category/[+]/[+])"
+    		+ "|(http://[*]sextradump.com/category/[+]/[+])"
+    		+ "|(http://[*]porn-freaks.net/category/[+]/[+])"
+    		+ "|(http://[*]serien24.com/category/[+]/[+])"
+    		+ "|(http://[*]babeviz.com/category/[+]/[+])"
+    		+ "|(http://[*]porn-traffic.net/category/[+]/[+])"
+    		
     		+ "|(http://[*]sceneload.to/\\?id=[+])");
     
     private Pattern	PAT_CAPTCHA = Pattern.compile("<TD><IMG SRC=\"/gfx/secure/index.php");
@@ -179,7 +194,7 @@ public class UCMS extends PluginForDecrypt {
 		    			else {
 		    				links = getAllSimpleMatches(reqinfo.getHtmlCode(), "ACTION=\"°\"");
 		    			}
-	        			
+	        			System.out.println(links.size());
 	        			for(int j=0; j<links.size(); j++){
 	        				//System.out.println(links.get(j).get(0));
 	        				decryptedLinks.add(this.createDownloadlink(links.get(j).get(0)));
