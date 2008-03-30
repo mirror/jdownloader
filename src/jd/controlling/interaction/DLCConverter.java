@@ -200,7 +200,7 @@ public class DLCConverter extends Interaction implements Serializable {
                 
             }
             if(getBooleanProperty("WINDOW",true)){
-               JDUtilities.getGUI().showHTMLDialog("Mirrors: "+link, "", ret);
+               JDUtilities.getGUI().showHTMLDialog("Mirrors: "+link, ret);
                 
             }
             if(getStringProperty("TOFILE",null)!=null&&!new File(getStringProperty("TOFILE",null)).isDirectory()){
