@@ -89,9 +89,9 @@ public class UnZip {
 	}
 
 	@SuppressWarnings("unchecked")
-	public File[] extract() {
+	public File[] extract() throws Exception{
 		dirsMade = new TreeSet();
-		try {
+	
 			zipF = new ZipFile(zipFile);
 	
 			Enumeration all = zipF.entries();
@@ -102,10 +102,8 @@ public class UnZip {
 			}
 			if(autoDelete)zipFile.delete();
 			return ret.toArray(new File[ret.size()]);
-		} catch (IOException err) {
-			err.printStackTrace();
-		}
-		return null;
+
+	
 	}
 
 	protected boolean warnedMkDir = false;

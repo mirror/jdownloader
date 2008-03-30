@@ -22,10 +22,19 @@ import java.io.File;
 public class testUnzip {
 	public static void main(String[] argv) {
 	    
-		UnZip u = new UnZip(new File("D:/jdtest2/upd/danishRoyalty.zip.new.zip"));
-		File[] files = u.extract();
+		UnZip u = new UnZip(new File("D:/jd_theme_tango.jdu"), new File("d:/extract/"));
+		File[] files;
+        try {
+            files = u.extract();
+     
 		for (int i = 0; i < files.length; i++) {
 			System.out.println(files[i].getAbsolutePath());
 		}
-	}
+		
+        }
+        catch (Exception e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+        }
 }

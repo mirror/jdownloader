@@ -18,11 +18,9 @@
 package jd.gui.skins.simple.config;
 
 import java.awt.BorderLayout;
-import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.GridBagConstraints;
-import java.awt.dnd.DropTarget;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
@@ -39,7 +37,6 @@ import javax.swing.ListSelectionModel;
 import javax.swing.event.CellEditorListener;
 import javax.swing.event.TableModelEvent;
 import javax.swing.table.AbstractTableModel;
-import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.TableCellEditor;
 import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableColumn;
@@ -49,11 +46,10 @@ import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.Configuration;
 import jd.config.SubConfiguration;
+import jd.controlling.interaction.PackageManager;
 import jd.gui.UIInterface;
 import jd.gui.skins.simple.Link.JLinkButton;
-
 import jd.plugins.Plugin;
-import jd.plugins.PluginForHost;
 import jd.plugins.RequestInfo;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
@@ -79,7 +75,7 @@ public class ConfigPanelRessources extends ConfigPanel implements MouseListener 
 
     private InternalTable                   table;
 
-    private Vector<HashMap<String, String>> packageData;
+    private Vector<HashMap<String, String>> packageData= new Vector<HashMap<String, String>>();
 
     public ConfigPanelRessources(Configuration configuration, UIInterface uiinterface) {
         super(uiinterface);
@@ -94,56 +90,21 @@ public class ConfigPanelRessources extends ConfigPanel implements MouseListener 
         // logger.info("save");
         this.saveConfigEntries();
         config.save();
+        new PackageManager().interact(this);
     }
 
-    public Vector<HashMap<String, String>> getpackageData() {
-
-        RequestInfo ri = null;
-        try {
-            ri = Plugin.getRequest(new URL("http://jdpackagelist.ath.cx"), null, null, true);
-
-            // logger.info(ri.getHtmlCode());
-            String xml = "<packages>" + Plugin.getSimpleMatch(ri.getHtmlCode(), "<packages>°</packages>", 0) + "</packages>";
-            DocumentBuilderFactory factory;
-            InputSource inSource;
-            Document doc;
-
-            factory = DocumentBuilderFactory.newInstance();
-            factory.setValidating(false);
-            inSource = new InputSource(new StringReader(xml));
-            doc = factory.newDocumentBuilder().parse(inSource);
-            NodeList packages = doc.getFirstChild().getChildNodes();
-            HashMap<String, String> tmp;
-
-            Vector<HashMap<String, String>> data = new Vector<HashMap<String, String>>();
-            for (int i = 0; i < packages.getLength(); i++) {
-                Node entry = packages.item(i);
-
-                tmp = new HashMap<String, String>();
-                NodeList values = entry.getChildNodes();
-                for (int t = 0; t < values.getLength(); t++) {
-                    tmp.put(values.item(t).getNodeName(), values.item(t).getTextContent());
-                }
-                if (values.getLength() > 2) data.add(tmp);
-            }
-            return data;
-        }
-        catch (Exception e) {
-            return null;
-        }
-    }
-
+  
     public void initPanel() {
 
-        config = JDUtilities.getSubConfig("packageMANAGER");
-        packageData = getpackageData();
+        config = JDUtilities.getSubConfig("PACKAGEMANAGER");
+        packageData = new PackageManager().getPackageData();
         logger.info(packageData + "");
 
         ConfigEntry ce;
-        ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, config, "packageMANAGER_AUTOUPDATE", JDLocale.L("gui.config.packagemanager.doautoupdate", "Ausgewählte Pakete automatisch aktuell halten"));
+        ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, config, "PACKAGEMANAGER_AUTOUPDATE", JDLocale.L("gui.config.packagemanager.doautoupdate", "Ausgewählte Pakete automatisch aktuell halten"));
         ce.setDefaultValue(true);
         addGUIConfigEntry(new GUIConfigEntry(ce));
-        ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, config, "packageMANAGER_EXTRACT_AFTERDOWNLOAD", JDLocale.L("gui.config.packagemanager.doautoupdateafterdownloads", "Geladene Pakete sofort nach dem Download installieren (sonst nach dem Beenden)"));
+        ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, config, "PACKAGEMANAGER_EXTRACT_AFTERDOWNLOAD", JDLocale.L("gui.config.packagemanager.doautoupdateafterdownloads", "Geladene Pakete sofort nach dem Download installieren (sonst nach dem Beenden)"));
         ce.setDefaultValue(false);
         addGUIConfigEntry(new GUIConfigEntry(ce));
 
@@ -269,7 +230,7 @@ public class ConfigPanelRessources extends ConfigPanel implements MouseListener 
                     return getInstalledVersion(element);
 
                 case 6:
-                    return isSelectedByUser(element);
+                    return element.get("selected")!=null;
 
             }
             return null;
@@ -292,6 +253,13 @@ public class ConfigPanelRessources extends ConfigPanel implements MouseListener 
             // else {
             // pluginsForHost.elementAt(row).setAGBChecked((Boolean) value);
             // }
+            
+            HashMap<String, String> element = packageData.elementAt(row);
+            boolean v=!(element.get("selected")!=null);
+            config.setProperty("PACKAGE_SELECTED_"+element.get("id"),v);
+           
+            element.put("selected",v?"true":null);
+          
             logger.info("" + value);
         }
 
@@ -411,9 +379,9 @@ public class ConfigPanelRessources extends ConfigPanel implements MouseListener 
 
     }
 
-    public int getInstalledVersion(HashMap<String, String> elementAt) {
-
-        return 1;
+    public int getInstalledVersion(HashMap<String, String> element) {
+        return config.getIntegerProperty("PACKAGE_INSTALLED_VERSION_"+element.get("id"), 0);
+      
     }
 
     public boolean isSelectedByUser(HashMap<String, String> elementAt) {

@@ -19,9 +19,11 @@ package jd.controlling;
 
 import java.io.File;
 import java.util.logging.Logger;
+
 import jd.config.Configuration;
 import jd.controlling.interaction.CaptchaMethodLoader;
 import jd.controlling.interaction.Interaction;
+import jd.controlling.interaction.PackageManager;
 import jd.controlling.interaction.Unrar;
 import jd.event.ControlEvent;
 import jd.gui.skins.simple.AgbDialog;
@@ -302,7 +304,9 @@ public class SingleDownloadController extends ControlMulticaster {
                logger.severe("Pluginerror: Step returned null and Downloadlink status != STATUS_DONE");
                downloadLink.setStatus(DownloadLink.STATUS_DONE);
            }
-           
+           if(downloadLink.getLinkType()==DownloadLink.LINKTYPE_JDU){
+               new PackageManager().onDownloadedPackage(downloadLink);
+           }
             fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SINGLE_DOWNLOAD_CHANGED, downloadLink));
             fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_PLUGIN_HOST_INACTIVE, currentPlugin));
             fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SINGLE_DOWNLOAD_FINISHED, downloadLink));

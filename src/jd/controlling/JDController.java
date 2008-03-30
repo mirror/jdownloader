@@ -184,6 +184,7 @@ public class JDController implements PluginListener, ControlListener, UIListener
             watchdog.start();
         }
     }
+    
 
     /**
      * Beendet das Programm
@@ -244,12 +245,15 @@ public class JDController implements PluginListener, ControlListener, UIListener
                 saveDownloadLinks(JDUtilities.getResourceFile("links.dat"));
                 break;
             case ControlEvent.CONTROL_DISTRIBUTE_FINISHED:
-                Object links = event.getParameter();
+               
                 //logger.info("rvc event" + links);
-                if (links != null && links instanceof Vector && ((Vector) links).size() > 0) {
-                    // schickt die Links zuerst mal zum Linkgrabber
-                    uiInterface.addLinksToGrabber((Vector<DownloadLink>) links);
+           
+                if (event.getParameter() != null && event.getParameter() instanceof Vector && ((Vector) event.getParameter()).size() > 0) {
+                    Vector links = (Vector) event.getParameter();
+                                       uiInterface.addLinksToGrabber((Vector<DownloadLink>) links);
+                   
                 }
+                
                 break;
             case ControlEvent.CONTROL_PLUGIN_INTERACTION_INACTIVE:
                 // Interaction interaction = (Interaction) event.getParameter();
@@ -930,6 +934,17 @@ public class JDController implements PluginListener, ControlListener, UIListener
         return ret;
     }
 
+    public boolean hasDownloadLinkURL(String url){
+ 
+  
+        for (int i = 0; i < downloadLinks.size(); i++) {
+            if (downloadLinks.size() <= i) continue;
+         
+          if(downloadLinks.get(i).getDownloadURL().equalsIgnoreCase(url))return true;
+        }
+        return false;
+        
+    }
     /**
      * Der Benuter soll den Captcha Code erkennen
      * 

@@ -273,6 +273,10 @@ abstract public class DownloadInterface {
                     if (!handleErrors()) return false;
                 }
 
+            }else{
+                downloadLink.setStatus(DownloadLink.STATUS_ERROR_ALREADYEXISTS);
+                error(ERROR_OUTPUTFILE_ALREADYEXISTS);
+                if (!handleErrors()) return false;
             }
 
         }
@@ -1080,6 +1084,7 @@ if(exceptions!=null){
                     if (speedDebug) logger.info(downloadLink.getSpeedMeter().getSpeed() + " loaded" + bytes + " b in " + (deltaTime) + " ms: " + bytesPerSecond + "(" + desiredBps + ") ");
 
                 }
+                buffer=null;
                 if (currentBytePosition < endByte && endByte > 0) {
 
                     inputStream.close();

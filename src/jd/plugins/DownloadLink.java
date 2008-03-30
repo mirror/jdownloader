@@ -156,6 +156,7 @@ public class DownloadLink implements Serializable, Comparable<DownloadLink> {
     public static final int              LINKTYPE_NORMAL                               = 0;
 
     public static final int              LINKTYPE_CONTAINER                            = 1;
+    public static final int              LINKTYPE_JDU                          = 2;
 
     public static final int              STATUS_ERROR_OUTPUTFILE_OWNED_BY_ANOTHER_LINK = 24;
 

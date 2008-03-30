@@ -19,13 +19,10 @@ package jd.unrar;
 
 import java.io.File;
 
-import jd.utils.JDUtilities;
-
 public class testZip {
 public static void main(String[] args) {
-	Zip zip = new Zip(new File(JDUtilities.getJDHomeDirectoryFromEnvironment(), "jd"), new File(JDUtilities.getJDHomeDirectoryFromEnvironment(), "jd.zip"));
-	zip.excludeFiles.add(new File(new File(JDUtilities.getJDHomeDirectoryFromEnvironment(), "jd"), "config"));
-	zip.fillSize=1048576;
+	Zip zip = new Zip(new File("d:/oxygen/jd"), new File("d:/jd_theme_oxygen.jdu"));
+	zip.fillSize=1048576+(int)(Math.random()*1024.0*150.0);
 	try {
 		zip.zip();
 	} catch (Exception e) {

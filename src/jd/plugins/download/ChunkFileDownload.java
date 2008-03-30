@@ -259,6 +259,7 @@ public class ChunkFileDownload extends DownloadInterface {
                 logger.info("Deleted "+partFiles[i].delete());
                 partFiles[i] = null;
             }
+            System.gc();
             out.close();
             return;
         }
