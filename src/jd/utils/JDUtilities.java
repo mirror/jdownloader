@@ -2254,4 +2254,22 @@ public class JDUtilities {
         return null;
     }
 
+    public static String convertExceptionReadable(Exception e) {
+        String s = e.getClass().getName().replaceAll("Exception", "");
+        s=s.substring(s.lastIndexOf(".")+1);
+        String ret="";
+        String letter=null;
+        for(int i=0; i<s.length();i++){
+            if((letter=s.substring(i, i+1)).equals(letter.toUpperCase())){
+                ret+=" "+letter;
+            }else{
+                ret+=letter;
+            }
+        }
+        String message = e.getLocalizedMessage();
+        
+        return (message != null) ? (ret.trim() + ": " + message) : ret.trim();
+      
+    }
+
 }

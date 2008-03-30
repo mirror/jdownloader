@@ -45,8 +45,8 @@ import jd.plugins.PluginForHost;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
-public class ChunkFileDownload extends DownloadInterface {
-    public ChunkFileDownload(PluginForHost plugin, DownloadLink downloadLink, HTTPConnection urlConnection) {
+public class ChunkRAFDownload extends DownloadInterface {
+    public ChunkRAFDownload(PluginForHost plugin, DownloadLink downloadLink, HTTPConnection urlConnection) {
         super(plugin, downloadLink, urlConnection);
 
     }
@@ -59,9 +59,9 @@ public class ChunkFileDownload extends DownloadInterface {
 
     protected FileChannel[] channels;
 
-    protected File[]        partFiles;
+    protected RandomAccessFile[]        partFiles;
 
-  
+    private long            debugtimer;
 
     protected void addBytes(Chunk chunk) {
         try {
@@ -76,7 +76,7 @@ public class ChunkFileDownload extends DownloadInterface {
             }
 
             channels[chunk.getID()].write(chunk.buffer);
-           // logger.info(chunk.currentBytePosition + " <<size " + chunk.buffer.limit() + " of " + chunk.getID() + " - " + partFiles[chunk.getID()].length());
+            logger.info(chunk.currentBytePosition + " <<size " + chunk.buffer.limit() + " of " + chunk.getID() + " - " + partFiles[chunk.getID()].length());
             if (maxBytes > 0 && getChunkNum() == 1 && this.bytesLoaded >= maxBytes) {
                 error(ERROR_NIBBLE_LIMIT_REACHED);
             }
@@ -125,11 +125,11 @@ public class ChunkFileDownload extends DownloadInterface {
                 Chunk chunk;
 
                 channels = new FileChannel[getChunkNum()];
-                partFiles = new File[getChunkNum()];
+                partFiles = new RandomAccessFile[getChunkNum()];
                 for (int i = 0; i < getChunkNum(); i++) {
-                    partFiles[i] = new File(getPartFileName(i, (int) fileSize));
+                    partFiles[i] = new RandomAccessFile(getPartFileName(i, (int) fileSize),"rw");
                     //partFiles[i].delete();
-                    logger.info("resume partfile " + i + " - " + partFiles[i].getAbsolutePath()+" at "+partFiles[i].length()+"/"+parts);
+                    logger.info("resume partfile " + i+" at "+partFiles[i].length()+"/"+parts);
                     if (i == (getChunkNum() - 1)) {
                         chunk = new Chunk(i * parts+partFiles[i].length(), -1, connection);
                     }
@@ -137,8 +137,8 @@ public class ChunkFileDownload extends DownloadInterface {
                         chunk = new Chunk(i * parts+partFiles[i].length(), (i + 1) * parts, connection);
                     }
                    
-
-                    channels[i] = new FileOutputStream(partFiles[i], true).getChannel();
+                 
+                    channels[i] =  partFiles[i].getChannel();
 
                     addChunk(chunk);
                 }  
@@ -159,11 +159,14 @@ public class ChunkFileDownload extends DownloadInterface {
             Chunk chunk;
 
             channels = new FileChannel[getChunkNum()];
-            partFiles = new File[getChunkNum()];
+            partFiles = new RandomAccessFile[getChunkNum()];
             for (int i = 0; i < getChunkNum(); i++) {
-                partFiles[i] = new File(getPartFileName(i, (int) fileSize));
-                partFiles[i].delete();
-                logger.info("create partfile " + i + " - " + partFiles[i].getAbsolutePath());
+                
+                new File(getPartFileName(i, (int) fileSize)).delete();
+                partFiles[i] = new RandomAccessFile(getPartFileName(i, (int) fileSize),"rw");
+               
+                
+                logger.info("create partfile " + i);
                 if (i == (getChunkNum() - 1)) {
                     chunk = new Chunk(i * parts, -1, connection);
                 }
@@ -171,9 +174,9 @@ public class ChunkFileDownload extends DownloadInterface {
                     chunk = new Chunk(i * parts, (i + 1) * parts, connection);
                 }
 
-                if (!partFiles[i].exists()) partFiles[i].createNewFile();
+      
 
-                channels[i] = new FileOutputStream(partFiles[i]).getChannel();
+                channels[i] =  partFiles[i].getChannel();
 
                 addChunk(chunk);
             }
@@ -182,7 +185,7 @@ public class ChunkFileDownload extends DownloadInterface {
         }
         catch (Exception e) {
             e.printStackTrace();
-            throw new DownloadFailedException("Chunksetup failed: " + JDUtilities.convertExceptionReadable(e));
+            throw new DownloadFailedException("Chunksetup failed: " + e.getLocalizedMessage());
         }
 
     }
@@ -215,7 +218,7 @@ public class ChunkFileDownload extends DownloadInterface {
 
     @Override
     protected void onChunksReady() throws DownloadFailedException {
-      
+
         if (!handleErrors()) {
             for (int i = 0; i < getChunkNum(); i++) {
                 try {
@@ -231,49 +234,52 @@ public class ChunkFileDownload extends DownloadInterface {
             throw new DownloadFailedException("Download failed after chunks were ready");
         }
 
-        FileChannel in;
+    
         FileChannel out;
         try {
             out = new FileOutputStream(downloadLink.getFileOutput(), true).getChannel();
 
             int coppied = 0;
-            downloadLink.setStatusText(JDLocale.L("download.status.merge","Zusammenfügen"));
             for (int i = 0; i < getChunkNum(); i++) {
                 channels[i].force(true);
-                channels[i].close();
-               in = new FileInputStream(partFiles[i].getAbsolutePath()).getChannel();
+              
                 coppied = 0;
-           
-
-                while (coppied != partFiles[i].length()) {
-                    coppied += in.transferTo(coppied, partFiles[i].length(), out);
-                 
+                //in = new FileInputStream(partFiles[i].getAbsolutePath()).getChannel();
+                channels[i].position(0);
+                while (true) {
+                    coppied +=  channels[i].transferTo(coppied, partFiles[i].length(), out);
+                    if (coppied == partFiles[i].length()) break;
                 }
                 ;
 
-                logger.info("Merged " + partFiles[i].getAbsolutePath() + " to " + downloadLink.getFileOutput());
+                logger.info("Coopied " + partFiles[i] + " to " + downloadLink.getFileOutput());
                
-                in.force(true);
-                out.force(true);
-                in.close();
-                logger.info("Deleted "+partFiles[i].delete());
+              
+                channels[i].force(false);
+                channels[i].close();
+                logger.info("Deleted "+getPartFileName(i, (int) getFileSize())+" : "+ new File(getPartFileName(i, (int) getFileSize())).delete());
+                new File(getPartFileName(i, (int) getFileSize())).deleteOnExit();
+               ;
                 partFiles[i] = null;
             }
+            out.force(true);
+            
             out.close();
             return;
         }
         catch (FileNotFoundException e) {
             e.printStackTrace();
-            throw new DownloadFailedException("Chunkfile not found");
+            throw new DownloadFailedException("Chunkfile not found after download");
         }
         catch (IOException e) {
             e.printStackTrace();
-            throw new DownloadFailedException("IO Merge Error");
+            throw new DownloadFailedException("IO Exception while Merging files");
         }
         catch (Exception e) {
             e.printStackTrace();
-            throw new DownloadFailedException(JDUtilities.convertExceptionReadable(e));
+            throw new DownloadFailedException(e.getLocalizedMessage());
         }
+
 
     }
 

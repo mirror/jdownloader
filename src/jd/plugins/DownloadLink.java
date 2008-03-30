@@ -567,7 +567,7 @@ public class DownloadLink implements Serializable, Comparable<DownloadLink> {
      * @param downloadMax Die Größe der Datei
      */
     public void setDownloadMax(int downloadMax) {
-        logger.info("SET DLM : " + downloadMax);
+       
         this.downloadMax = downloadMax;
     }
 

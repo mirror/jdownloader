@@ -332,7 +332,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
     public static Point getLastLocation(Component parent, String key, Component child) {
         if (key == null) key = child.getName();
         Object loc = guiConfig.getProperty("LOCATION_OF_" + key);
-         JDUtilities.getLogger().info("Get dim of " + "LOCATION_OF_" + key + " : " + loc);
+        // JDUtilities.getLogger().info("Get dim of " + "LOCATION_OF_" + key + " : " + loc);
         Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
         int width = screenSize.width;
         int height = screenSize.height;
@@ -349,7 +349,8 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
 
         if (parent.isShowing()) {
             guiConfig.setProperty("LOCATION_OF_" + key, parent.getLocationOnScreen());
-            JDUtilities.getLogger().info("LOCATION_OF_ VOR: " + "LOCATION_OF_" + key + " : " + parent.getLocationOnScreen());
+            guiConfig.save();
+           // JDUtilities.getLogger().info("LOCATION_OF_ VOR: " + "LOCATION_OF_" + key + " : " + parent.getLocationOnScreen());
 
         }
 
@@ -373,7 +374,8 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
     public static void saveLastDimension(Component child, String key) {
         if (key == null) key = child.getName();
         guiConfig.setProperty("DIMENSION_OF_" + key, child.getSize());
-        JDUtilities.getLogger().info("DIMEN VOR: " + "DIMENSION_OF_" + key + " : " + child.getSize());
+        guiConfig.save();
+      //  JDUtilities.getLogger().info("DIMEN VOR: " + "DIMENSION_OF_" + key + " : " + child.getSize());
 
     }
 
@@ -679,7 +681,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
                 new jdUnrarPasswordListDialog(((SimpleGUI) JDUtilities.getController().getUiInterface()).getFrame()).setVisible(true);
                 break;
             case JDAction.APP_START_STOP_DOWNLOADS:
-                logger.info("START_STOP");
+                
                 btnStartStop.setSelected(!btnStartStop.isSelected());
                 if(!btnStartStop.isSelected())btnStartStop.setEnabled(false);
                 this.startStopDownloads();
@@ -820,7 +822,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
     }
 
     public void startStopDownloads() {
-       logger.info("start_stop_itr");
+      
         if (btnStartStop.isSelected() && JDUtilities.getController().getDownloadStatus() == JDController.DOWNLOAD_NOT_RUNNING) {
             btnPause.setEnabled(true);
             
@@ -1245,10 +1247,10 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         return frame;
     }
 
-    public void addLinksToGrabber(Vector<DownloadLink> links) {
+    public synchronized void addLinksToGrabber(Vector<DownloadLink> links) {
         logger.info("GRAB");
         DownloadLink[] linkList = links.toArray(new DownloadLink[] {});
-        if (linkGrabber != null || !linkGrabber.isDisplayable() ) {
+        if (linkGrabber != null && (!linkGrabber.isDisplayable()||!linkGrabber.isVisible()) ) {
             logger.info("Linkgrabber should be disposed");
             linkGrabber.dispose();
             linkGrabber = null;
@@ -1351,7 +1353,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
 
     public static void restoreWindow(JFrame parent, Object object, Component component) {
         if(parent==null)parent=CURRENTGUI.getFrame();
-        JDUtilities.getLogger().info("Restore Position of "+component);
+       // JDUtilities.getLogger().info("Restore Position of "+component);
         Point point = SimpleGUI.getLastLocation(parent, null, component);
         if(point.y<0)point.y=0;
         if(point.x<0)point.x=0;
@@ -1364,9 +1366,9 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
             dim.height=Math.min(dim.height, screenSize.height);
             component.setSize(dim);
             
-            JDUtilities.getLogger().info("Default size: "+SimpleGUI.getLastDimension(component, null));
+           // JDUtilities.getLogger().info("Default size: "+SimpleGUI.getLastDimension(component, null));
         }else{
-            JDUtilities.getLogger().info("Default dim");
+           // JDUtilities.getLogger().info("Default dim");
             component.validate();
         }
         

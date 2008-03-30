@@ -87,6 +87,7 @@ public class SingleDownloadController extends ControlMulticaster {
      * @see java.lang.Thread#run()
      */
     public void run() {
+        
         /**
          * Das Plugin, das den aktuellen Download steuert
          */
@@ -94,6 +95,12 @@ public class SingleDownloadController extends ControlMulticaster {
         logger.info("working on " + downloadLink.getName());
         currentPlugin = plugin = (PluginForHost) downloadLink.getPlugin();
         plugin.resetPlugin();
+        this.handlePlugin();
+        plugin.clean();
+
+    }
+
+    private void handlePlugin() {
 
         if (downloadLink.getDownloadURL() == null) {
 
@@ -110,13 +117,13 @@ public class SingleDownloadController extends ControlMulticaster {
         downloadLink.setStatusText(JDLocale.L("controller.status.active", "aktiv"));
         downloadLink.setInProgress(true);
         fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SINGLE_DOWNLOAD_CHANGED, downloadLink));
-        plugin.init();
+        currentPlugin.init();
 
-        PluginStep step = plugin.doNextStep(downloadLink);
+        PluginStep step = currentPlugin.doNextStep(downloadLink);
 
         // Hier werden alle einzelnen Schritte des Plugins durchgegangen,
         // bis entweder null zurückgegeben wird oder ein Fehler auftritt
-        fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_PLUGIN_HOST_ACTIVE, plugin));
+        fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_PLUGIN_HOST_ACTIVE, currentPlugin));
         fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SINGLE_DOWNLOAD_STARTS, downloadLink));
         while (!aborted && step != null && step.getStatus() != PluginStep.STATUS_ERROR) {
 
@@ -154,14 +161,14 @@ public class SingleDownloadController extends ControlMulticaster {
                             fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_CAPTCHA_LOADED, captcha));
                             downloadLink.setLatestCaptchaFile(captcha);
 
-                            if (plugin.doBotCheck(captcha)) {
+                            if (currentPlugin.doBotCheck(captcha)) {
                                 downloadLink.setStatus(DownloadLink.STATUS_ERROR_BOT_DETECTED);
                                 step.setStatus(PluginStep.STATUS_ERROR);
                                 step.setParameter(null);
                                 break;
                             }
 
-                            String captchaText = Plugin.getCaptchaCode(captcha, plugin);
+                            String captchaText = Plugin.getCaptchaCode(captcha, currentPlugin);
                             logger.info("CaptchaCode: " + captchaText+" set in "+step);
                             downloadLink.setStatusText(JDLocale.L("controller.status.captchacode", "Code: ") + captchaText);
                             fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SINGLE_DOWNLOAD_CHANGED, downloadLink));
@@ -177,14 +184,14 @@ public class SingleDownloadController extends ControlMulticaster {
                 break;
             }
            
-            if (step != null && downloadLink != null && plugin != null) {
+            if (step != null && downloadLink != null && currentPlugin != null) {
                 //Achtung. nextStep setzt den internen stepcounter weiter. Das ist hier nicht beabsichtigt. deshalb muss der step mit previuosstep wieder zurückgesetzt werden
-                PluginStep nextStep = plugin.nextStep(step);
-                if(plugin.getCurrentStep()!=null){
-                downloadLink.setStatusText(plugin.getCurrentStep().toString());
+                PluginStep nextStep = currentPlugin.nextStep(step);
+                if(currentPlugin.getCurrentStep()!=null){
+                downloadLink.setStatusText(currentPlugin.getCurrentStep().toString());
                 fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SINGLE_DOWNLOAD_CHANGED, downloadLink));
                 }
-                plugin.previousStep(nextStep);
+                currentPlugin.previousStep(nextStep);
             }
             // Bricht ab wenn es Fehler gab
             if (step.getStatus() == PluginStep.STATUS_ERROR) {
@@ -192,14 +199,14 @@ public class SingleDownloadController extends ControlMulticaster {
                 break;
             }
 
-            step = plugin.doNextStep(downloadLink);
+            step = currentPlugin.doNextStep(downloadLink);
         }
         // Der Download ist an dieser Stelle entweder Beendet oder
         // Abgebrochen. Mögliche Ursachen können nun untersucht werden um
         // den download eventl neu zu starten
         if (aborted||downloadLink.isAborted()) {
             downloadLink.setStatusText(JDLocale.L("controller.status.aborted", "Abgebrochen"));
-            plugin.abort();
+            currentPlugin.abort();
             logger.warning("Thread aborted");
             downloadLink.setStatus(DownloadLink.STATUS_TODO);
             fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SINGLE_DOWNLOAD_CHANGED, downloadLink));
@@ -209,7 +216,7 @@ public class SingleDownloadController extends ControlMulticaster {
             catch (InterruptedException e) {
             }
             downloadLink.setInProgress(false);
-            fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_PLUGIN_HOST_INACTIVE, plugin));
+            fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_PLUGIN_HOST_INACTIVE, currentPlugin));
             return;
         }
         logger.info("FINISHED");
@@ -217,74 +224,74 @@ public class SingleDownloadController extends ControlMulticaster {
 
             switch (downloadLink.getStatus()) {
                 case DownloadLink.STATUS_ERROR_DOWNLOAD_LIMIT:
-                    this.onErrorWaittime(downloadLink, plugin, step);
+                    this.onErrorWaittime(downloadLink, currentPlugin, step);
                     break;
                 case DownloadLink.STATUS_ERROR_STATIC_WAITTIME:
-                    this.onErrorStaticWaittime(downloadLink, plugin, step);
+                    this.onErrorStaticWaittime(downloadLink, currentPlugin, step);
                     break;
                 case DownloadLink.STATUS_ERROR_TEMPORARILY_UNAVAILABLE:
-                    this.onErrorTemporarilyUnavailable(downloadLink, plugin, step);
+                    this.onErrorTemporarilyUnavailable(downloadLink, currentPlugin, step);
                     break;
                 case DownloadLink.STATUS_ERROR_TO_MANY_USERS:
-                    this.onErrorTooManyUsers(downloadLink, plugin, step);
+                    this.onErrorTooManyUsers(downloadLink, currentPlugin, step);
                     break;
                 case DownloadLink.STATUS_ERROR_CAPTCHA_IMAGEERROR:
-                    this.onErrorCaptchaImage(downloadLink, plugin, step);
+                    this.onErrorCaptchaImage(downloadLink, currentPlugin, step);
                     break;
                 case DownloadLink.STATUS_ERROR_FILE_ABUSED:
-                    this.onErrorAbused(downloadLink, plugin, step);
+                    this.onErrorAbused(downloadLink, currentPlugin, step);
                     break;
                 case DownloadLink.STATUS_ERROR_FILE_NOT_UPLOADED:
-                    this.onErrorNotUploaded(downloadLink, plugin, step);
+                    this.onErrorNotUploaded(downloadLink, currentPlugin, step);
                     break;
                 case DownloadLink.STATUS_ERROR_AGB_NOT_SIGNED:
-                    this.onErrorAGBNotSigned(downloadLink, plugin, step);
+                    this.onErrorAGBNotSigned(downloadLink, currentPlugin, step);
                     break;
                 case DownloadLink.STATUS_ERROR_UNKNOWN_RETRY:
-                    this.onErrorRetry(downloadLink, plugin, step);
+                    this.onErrorRetry(downloadLink, currentPlugin, step);
                     break;
                 case DownloadLink.STATUS_ERROR_FILE_NOT_FOUND:
-                    this.onErrorFileNotFound(downloadLink, plugin, step);
+                    this.onErrorFileNotFound(downloadLink, currentPlugin, step);
                     break;
                 case DownloadLink.STATUS_ERROR_CAPTCHA_WRONG:
-                    this.onErrorCaptcha(downloadLink, plugin, step);
+                    this.onErrorCaptcha(downloadLink, currentPlugin, step);
                     break;
                 case DownloadLink.STATUS_ERROR_PREMIUM:
-                    this.onErrorPremium(downloadLink, plugin, step);
+                    this.onErrorPremium(downloadLink, currentPlugin, step);
                     break;
 
                 case DownloadLink.STATUS_ERROR_NO_FREE_SPACE:
-                    this.onErrorNoFreeSpace(downloadLink, plugin, step);
+                    this.onErrorNoFreeSpace(downloadLink, currentPlugin, step);
                     break;
 
                 case DownloadLink.STATUS_ERROR_PLUGIN_SPECIFIC:
-                    this.onErrorPluginSpecific(downloadLink, plugin, step);
+                    this.onErrorPluginSpecific(downloadLink, currentPlugin, step);
                     break;
                 case DownloadLink.STATUS_ERROR_BOT_DETECTED:
-                    this.onErrorBotdetection(downloadLink, plugin, step);
+                    this.onErrorBotdetection(downloadLink, currentPlugin, step);
                     break;
                 case DownloadLink.STATUS_DOWNLOAD_INCOMPLETE:
-                    this.onErrorIncomplete(downloadLink, plugin, step);
+                    this.onErrorIncomplete(downloadLink, currentPlugin, step);
                     break;
                 case DownloadLink.STATUS_ERROR_ALREADYEXISTS:
-                    this.onErrorFileExists(downloadLink, plugin, step);
+                    this.onErrorFileExists(downloadLink, currentPlugin, step);
                     break;
                 case DownloadLink.STATUS_ERROR_OUTPUTFILE_OWNED_BY_ANOTHER_LINK:
-                    this.onErrorFileInProgress(downloadLink, plugin, step);
+                    this.onErrorFileInProgress(downloadLink, currentPlugin, step);
                     break;
                 case DownloadLink.STATUS_ERROR_CHUNKLOAD_FAILED:
-                    this.onErrorChunkloadFailed(downloadLink, plugin, step);
+                    this.onErrorChunkloadFailed(downloadLink, currentPlugin, step);
                     break;  
                 case DownloadLink.STATUS_ERROR_NOCONNECTION:
-                    this.onErrorNoConnection(downloadLink, plugin, step);
+                    this.onErrorNoConnection(downloadLink, currentPlugin, step);
                     break; 
                     
                 default:
                     logger.info("Uknown error id: " + downloadLink.getStatus());
-                    this.onErrorUnknown(downloadLink, plugin, step);
+                    this.onErrorUnknown(downloadLink, currentPlugin, step);
             }
             downloadLink.setInProgress(false);
-            fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_PLUGIN_HOST_INACTIVE, plugin));
+            fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_PLUGIN_HOST_INACTIVE, currentPlugin));
             fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SINGLE_DOWNLOAD_FINISHED, downloadLink));
 
         }
@@ -297,7 +304,7 @@ public class SingleDownloadController extends ControlMulticaster {
            }
            
             fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SINGLE_DOWNLOAD_CHANGED, downloadLink));
-            fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_PLUGIN_HOST_INACTIVE, plugin));
+            fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_PLUGIN_HOST_INACTIVE, currentPlugin));
             fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SINGLE_DOWNLOAD_FINISHED, downloadLink));
             Interaction.handleInteraction((Interaction.INTERACTION_SINGLE_DOWNLOAD_FINISHED), downloadLink);
             if (JDUtilities.getController().isContainerFile(new File(downloadLink.getFileOutput()))) {
@@ -307,7 +314,7 @@ public class SingleDownloadController extends ControlMulticaster {
             if (JDUtilities.getConfiguration().getBooleanProperty(Unrar.PROPERTY_ENABLED, true)) controller.getUnrarModule().interact(downloadLink);
 
         }
-
+        
     }
 
     private void onErrorNoConnection(DownloadLink downloadLink2, PluginForHost plugin, PluginStep step) {

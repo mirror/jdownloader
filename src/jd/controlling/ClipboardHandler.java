@@ -140,8 +140,8 @@ public class ClipboardHandler extends Thread {
                         data = data.trim();
                         if (!data.equals(olddata)) {
                             olddata = data;
-                            logger.info(data.length() + " - " + olddata.length());
-                            logger.info("|" + data + "|" + " - " + "|" + olddata + "|");
+                           // logger.info(data.length() + " - " + olddata.length());
+                           // logger.info("|" + data + "|" + " - " + "|" + olddata + "|");
                             distributeData = new DistributeData(data);
                             distributeData.addControlListener(JDUtilities.getController());
                             distributeData.start();

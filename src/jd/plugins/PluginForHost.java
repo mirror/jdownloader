@@ -23,6 +23,7 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.util.Vector;
 
+import jd.config.Configuration;
 import jd.event.ControlEvent;
 import jd.plugins.download.ChunkFileDownload;
 import jd.utils.JDUtilities;
@@ -37,7 +38,7 @@ public abstract class PluginForHost extends Plugin {
     private static final String CONFIGNAME = "pluginsForHost";
     // public abstract URLConnection getURLConnection();
 
-    private String data;
+   
     private int maxConnections=50;
     private int currentConnections=0;
 
@@ -105,7 +106,7 @@ public abstract class PluginForHost extends Plugin {
      * @return Ein Vector mit den gefundenen Downloadlinks
      */
     public Vector<DownloadLink> getDownloadLinks(String data) {
-        this.data = data;
+      
         Vector<DownloadLink> links = null;
 
         Vector<String> hits = getMatches(data, getSupportedLinks());
@@ -276,7 +277,7 @@ public abstract class PluginForHost extends Plugin {
     @Override
     public String getLinkName() {
 
-        return data;
+        return null;
     }
 /**
  * Gibt zurück wie lange nach einem erkanntem Bot gewartet werden muss. Bei -1 wird ein reconnect durchgeführt
@@ -286,7 +287,11 @@ public abstract class PluginForHost extends Plugin {
        
         return -1;
     }
-
+public void clean(){
+   this.requestInfo=null;
+   this.request=null;
+      super.clean();
+}
 public int getMaxConnections() {
     return maxConnections;
 }
@@ -302,7 +307,9 @@ public int getCurrentConnections() {
 public void setCurrentConnections(int currentConnections) {
     this.currentConnections = currentConnections;
 }
-
+public int getChunksPerFile(){
+    return JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 3);
+}
 public int getFreeConnections(){
     return Math.max(1, maxConnections-currentConnections);
 }

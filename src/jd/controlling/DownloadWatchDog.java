@@ -128,6 +128,8 @@ public class DownloadWatchDog extends Thread implements PluginListener, ControlL
 
                         }
                     }
+                }else{
+                    this.totalSpeed=0;
                 }
                 if (Interaction.getInteractionsRunning() == 0) {
                     if (activeLinks.size() < getSimultanDownloadNum() && !pause) {
@@ -137,7 +139,7 @@ public class DownloadWatchDog extends Thread implements PluginListener, ControlL
                 }
 
                 if ((pause && !hasInProgressLinks) || (!hasInProgressLinks && !hasWaittimeLinks && this.getNextDownloadLink() == null && activeLinks != null && activeLinks.size() == 0)) {
-
+                    this.totalSpeed=0;
                     logger.info("Alle Downloads beendet");
                     // fireControlEvent(new ControlEvent(this,
                     // ControlEvent.CONTROL_ALL_DOWNLOADS_FINISHED, this));
@@ -347,7 +349,7 @@ public class DownloadWatchDog extends Thread implements PluginListener, ControlL
             case ControlEvent.CONTROL_SINGLE_DOWNLOAD_FINISHED:
                 if (removeDownloadLinkFromActiveList((DownloadLink) event.getParameter())) {
 
-                    logger.info("removed aktive download. left: " + this.activeLinks.size());
+                  //  logger.info("removed aktive download. left: " + this.activeLinks.size());
                 }
                 // Wenn ein Download beendet wurde wird überprüft ob gerade ein
                 // Download in der Warteschleife steckt. Wenn ja wird ein

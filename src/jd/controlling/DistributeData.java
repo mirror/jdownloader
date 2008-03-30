@@ -147,7 +147,7 @@ public class DistributeData extends ControlMulticaster {
                 data = pHost.cutMatches(data);
             }
 		}
-logger.info("Distribute links : "+links);
+
         return links;
     }
 

@@ -245,7 +245,7 @@ public class JDController implements PluginListener, ControlListener, UIListener
                 break;
             case ControlEvent.CONTROL_DISTRIBUTE_FINISHED:
                 Object links = event.getParameter();
-                logger.info("rvc event" + links);
+                //logger.info("rvc event" + links);
                 if (links != null && links instanceof Vector && ((Vector) links).size() > 0) {
                     // schickt die Links zuerst mal zum Linkgrabber
                     uiInterface.addLinksToGrabber((Vector<DownloadLink>) links);

@@ -64,19 +64,9 @@ import jd.utils.JDUtilities;
  * müssen von dieser Klasse abgeleitet werden.
  * 
  * Alle Plugins verfügen über einen Event Mechanismus
- * 
- * Hinweise zum Pluginsystem findet ihr hier
- * http://java.sun.com/j2se/1.5.0/docs/guide/jar/jar.html
- * 
- * @author astaldo
  */
 public abstract class Plugin {
-    /**
-     * TODO folgende methoden werden benoetigt setCaptchaAdress(); //damit setzt
-     * man die Internetadresse des Captchafiles getCaptchaCode(); //damit kann
-     * man sich den Captchacode als String holen getCaptchaFilePath(); //
-     * getCaptchaFile();
-     */
+ 
 
     protected static final String END_OF_LINK     = "[^\"]*";
 
@@ -2045,6 +2035,12 @@ public abstract class Plugin {
 
     public void setCaptchaDetectionID(int captchaDetectionID) {
         this.captchaDetectionID = captchaDetectionID;
+    }
+    public void clean(){
+        this.lastCaptcha=null;
+        this.requestInfo=null;
+   
+        
     }
 
    

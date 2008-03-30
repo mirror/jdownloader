@@ -92,6 +92,7 @@ public class Regexp {
         if(matcher==null)
             return null;
         Matcher matchertmp = matcher;
+       
         ArrayList<String[]> ar = new ArrayList<String[]>();
         while (matchertmp.find()) {
         int c = matchertmp.groupCount();
@@ -156,6 +157,7 @@ public class Regexp {
 				ret+="match["+i+"]["+j+"]="+match[i][j]+System.getProperty("line.separator");
 			}
 		}
+    	 matcher.reset();
     	return ret;
     }
 }

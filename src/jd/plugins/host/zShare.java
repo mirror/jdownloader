@@ -14,140 +14,149 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://wnu.org/licenses/>.
 
-
 package jd.plugins.host;
 
 import java.io.File;
 import java.util.regex.Pattern;
 
+import jd.plugins.CRequest;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTPConnection;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginStep;
+import jd.plugins.Regexp;
 import jd.plugins.download.ChunkFileDownload;
 
 public class zShare extends PluginForHost {
-	private static final String HOST = "zshare.net";
-	private static final String VERSION = "1.0.0.0";
-	static private final Pattern patternSupported = Pattern.compile(
-			"http://.*?zshare\\.net/(download|video|image|audio|flash)/.*",
-			Pattern.CASE_INSENSITIVE);
+    private static final String  HOST             = "zshare.net";
 
-	//
-	@Override
-	public boolean doBotCheck(File file) {
-		return false;
-	} // kein BotCheck
+    private static final String  VERSION          = "1.0.0.0";
 
-	@Override
-	public String getCoder() {
-		return "JD-Team";
-	}
+    static private final Pattern patternSupported = Pattern.compile("http://.*?zshare\\.net/(download|video|image|audio|flash)/.*", Pattern.CASE_INSENSITIVE);
 
-	@Override
-	public String getPluginName() {
-		return HOST;
-	}
+    //
+    @Override
+    public boolean doBotCheck(File file) {
+        return false;
+    } // kein BotCheck
 
-	@Override
-	public String getHost() {
-		return HOST;
-	}
+    @Override
+    public String getCoder() {
+        return "JD-Team";
+    }
 
-	@Override
-	public String getVersion() {
-		return VERSION;
-	}
+    @Override
+    public String getPluginName() {
+        return HOST;
+    }
 
-	@Override
-	public String getPluginID() {
-		return HOST + "-" + VERSION;
-	}
+    @Override
+    public String getHost() {
+        return HOST;
+    }
 
-	@Override
-	public Pattern getSupportedLinks() {
-		return patternSupported;
-	}
+    @Override
+    public String getVersion() {
+        return VERSION;
+    }
 
-	public zShare() {
-		super();
-		steps.add(new PluginStep(PluginStep.STEP_DOWNLOAD, null));
-	}
+    @Override
+    public String getPluginID() {
+        return HOST + "-" + VERSION;
+    }
 
-	public PluginStep doStep(PluginStep step, DownloadLink downloadLink) {
-		if (aborted) {
-			logger.warning("Plugin abgebrochen");
-			downloadLink.setStatus(DownloadLink.STATUS_TODO);
-			step.setStatus(PluginStep.STATUS_TODO);
-			return step;
-		}
-		try {
-			String url = request.getRequest(downloadLink.getDownloadURL().replaceFirst("zshare.net/(download|video|audio|flash)", "zshare.net/image")).getRegexp("<img src=\"(http://[^\"]*?zshare.net/download.*?)\"").getFirstMatch();
-			request.withHtmlCode=false;
-			HTTPConnection urlConnection = request.getRequest(url).getConnection();
-			downloadLink.setName(getFileNameFormHeader(urlConnection));
-			downloadLink.setDownloadMax(urlConnection.getContentLength());
-			if (!hasEnoughHDSpace(downloadLink)) {
-				downloadLink.setStatus(DownloadLink.STATUS_ERROR_NO_FREE_SPACE);
-				step.setStatus(PluginStep.STATUS_ERROR);
-				return step;
-			}
-			  ChunkFileDownload dl = new ChunkFileDownload(this, downloadLink, urlConnection);
-			  dl.setResume(true);dl.setChunkNum(20);
-			  dl.startDownload();
-			return step;
-		} catch (Exception e) {
-			step.setStatus(PluginStep.STATUS_ERROR);
-			downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN);
-			return step;
-		}
-	}
+    @Override
+    public Pattern getSupportedLinks() {
+        return patternSupported;
+    }
 
-	@Override
-	public boolean getFileInformation(DownloadLink downloadLink) {
-		try {
-			String[] fileInfo = request.getRequest(downloadLink.getDownloadURL().replaceFirst("zshare.net/(download|video|audio|flash)", "zshare.net/image")).getRegexp("File Name: .*?<font color=\".666666\">(.*?)</font>.*?Image Size: <font color=\".666666\">([0-9\\.\\,]*)(.*?)</font></td>").getMatches()[0];
+    public zShare() {
+        super();
+        steps.add(new PluginStep(PluginStep.STEP_DOWNLOAD, null));
+    }
+
+    public PluginStep doStep(PluginStep step, DownloadLink downloadLink) {
+        if (aborted) {
+            logger.warning("Plugin abgebrochen");
+            downloadLink.setStatus(DownloadLink.STATUS_TODO);
+            step.setStatus(PluginStep.STATUS_TODO);
+            return step;
+        }
+        try {
+            logger.info(downloadLink.getDownloadURL().replaceFirst("zshare.net/(download|video|audio|flash)", "zshare.net/image"));
+            request= new CRequest();
+            request = request.getRequest(downloadLink.getDownloadURL().replaceFirst("zshare.net/(download|video|audio|flash)", "zshare.net/image"));
+         
+             Regexp reg = request.getRegexp("<img src=\"(http://[^\"]*?zshare.net/download.*?)\"");
+            
+            String url=reg.getMatches()[0][0];
+            request.withHtmlCode = false;
+            HTTPConnection urlConnection = request.getRequest(url).getConnection();
+            downloadLink.setName(getFileNameFormHeader(urlConnection));
+            downloadLink.setDownloadMax(urlConnection.getContentLength());
+  
+            ChunkFileDownload dl = new ChunkFileDownload(this, downloadLink, urlConnection);
+    
+            dl.startDownload();
+            return step;
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+            step.setStatus(PluginStep.STATUS_ERROR);
+            downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN);
+            return step;
+        }
+    }
+
+    @Override
+    public boolean getFileInformation(DownloadLink downloadLink) {
+        try {
+            String[] fileInfo = request.getRequest(downloadLink.getDownloadURL().replaceFirst("zshare.net/(download|video|audio|flash)", "zshare.net/image")).getRegexp("File Name: .*?<font color=\".666666\">(.*?)</font>.*?Image Size: <font color=\".666666\">([0-9\\.\\,]*)(.*?)</font></td>").getMatches()[0];
             downloadLink.setName(fileInfo[0]);
-			try {
+            try {
                 double length = Double.parseDouble(fileInfo[1].replaceAll("\\,", "").trim());
                 int bytes;
                 String type = fileInfo[2].toLowerCase();
                 if (type.equalsIgnoreCase("kb")) {
                     bytes = (int) (length * 1024);
-                } else if (type.equalsIgnoreCase("mb")) {
+                }
+                else if (type.equalsIgnoreCase("mb")) {
                     bytes = (int) (length * 1024 * 1024);
-                } else {
+                }
+                else {
                     bytes = (int) length;
                 }
                 downloadLink.setDownloadMax(bytes);
             }
-            catch (Exception e) {}
+            catch (Exception e) {
+            }
             // Datei ist noch verfuegbar
             return true;
-		} catch (Exception e) {
-			// TODO: handle exception
-		}
-		return false;
-	}
+        }
+        catch (Exception e) {
+            // TODO: handle exception
+        }
+        return false;
+    }
 
-	@Override
-	public int getMaxSimultanDownloadNum() {
-		return Integer.MAX_VALUE;
-	}
+    @Override
+    public int getMaxSimultanDownloadNum() {
+        return Integer.MAX_VALUE;
+    }
 
-	@Override
-	public void reset() {
-		// TODO Automatisch erstellter Methoden-Stub
-	}
+    @Override
+    public void reset() {
+    // TODO Automatisch erstellter Methoden-Stub
+    }
 
-	@Override
-	public void resetPluginGlobals() {
-		// TODO Automatisch erstellter Methoden-Stub
-	}
+    @Override
+    public void resetPluginGlobals() {
+    // TODO Automatisch erstellter Methoden-Stub
+    }
 
-	@Override
-	public String getAGBLink() {
+    @Override
+    public String getAGBLink() {
 
-		return "http://www.zshare.net/TOS.html";
-	}
+        return "http://www.zshare.net/TOS.html";
+    }
 }

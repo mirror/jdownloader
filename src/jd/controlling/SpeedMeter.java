@@ -32,7 +32,7 @@ public class SpeedMeter {
 	private int lastSpeed = 0;
 	
 	private int c=0;
-	private static final int capacity = 2;
+	private static final int capacity = 5;
 	private int[] speeds = new int[capacity];
 
 
