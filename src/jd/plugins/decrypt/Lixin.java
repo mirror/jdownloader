@@ -21,11 +21,15 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.util.Vector;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import jd.plugins.Form;
+import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
+import jd.utils.JDUtilities;
 
 public class Lixin extends PluginForDecrypt {
 
@@ -34,6 +38,10 @@ public class Lixin extends PluginForDecrypt {
     private String              version          = "1.0.0.0";
     //lix.in/cc1d28
     static private final Pattern patternSupported = Pattern.compile("http://.{0,5}lix\\.in/[a-zA-Z0-9]{6,10}", Pattern.CASE_INSENSITIVE);
+    static private final Pattern patternCaptcha = Pattern.compile("<img\\s+src=\"(.*?)\"");
+    static private final Pattern patternIframe = Pattern.compile("<iframe.*src=\"(.+?)\"");
+    static private final Pattern patternCaptchaWrong = Pattern.compile("<title>Lix.in - Linkprotection</title>");
+    
 
     public Lixin() {
         super();
@@ -76,20 +84,60 @@ public class Lixin extends PluginForDecrypt {
             Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
     		try {
     			URL url = new URL(parameter);
-    			
     			progress.setRange(1);
     			
-    			// Letzten Teil der URL herausfiltern und postrequest
-                // durchführen
-    			String[] result = parameter.split("/");
-    			RequestInfo reqinfo = postRequest(url, "tiny=" + result[result.length-1] + "&submit=continue");
+    			RequestInfo reqInfo = getRequest(url);
+    		    Form form = reqInfo.getForm();
+                form.method = Form.METHOD_POST;
+                
+                //check if this link is captcha protected
+                //funny thing is, even the same link can have a captcha if you open
+                //it the first time, and the second time there is no captcha, therefore
+                //we have to check
+    			Matcher matcher = patternCaptcha.matcher(reqInfo.getHtmlCode());
+
+    			if( matcher.find()){
+    				logger.info("has captcha");
+    				String captchaAddress  = "http://"+getHost() + "/" + matcher.group(1);
+    				
+    				File captchaFile = this.getLocalCaptchaFile(this);
+                    if (!JDUtilities.download(captchaFile, captchaAddress) || !captchaFile.exists()) {
+                        logger.severe("Captcha Download fehlgeschlagen: " + captchaAddress);
+                        step.setParameter(null);
+                        step.setStatus(PluginStep.STATUS_ERROR);
+                        return step;
+                    }
+                    String captchaCode = Plugin.getCaptchaCode(captchaFile, this);
+                    form.put("capt", captchaCode);
+    			}else{
+    				logger.info("no captcha");
+    			}
     			
-    			// Link herausfiltern
-    			progress.increase(1);
-    			decryptedLinks.add(this.createDownloadlink((getBetween(reqinfo.getHtmlCode(), "name=\"ifram\" src=\"", "\" marginwidth"))));
-    			
+                RequestInfo reqInfoForm = form.getRequestInfo();
+                
+        		// Link herausfiltern
+                matcher = patternIframe.matcher(reqInfoForm.getHtmlCode());
+                if(!matcher.find()){
+                	
+                	step.setStatus(PluginStep.STATUS_ERROR);
+                	
+                	matcher = patternCaptchaWrong.matcher(reqInfoForm.getHtmlCode());
+                	
+                	if(matcher.find()){
+                		logger.info("entered captcha code seems to be wrong");
+                	}else{
+                    	logger.severe("unable to detect Link in iframe (see next INFO log line");
+                    	logger.info(reqInfoForm.getHtmlCode());
+                	}
+                	
+                	return null;
+                }
+                
+                String link = matcher.group(1);
+        		decryptedLinks.add(this.createDownloadlink((link)));
+        		progress.increase(1);
+
     			// Decrypten abschliessen
-    			
     			step.setParameter(decryptedLinks);
     		}
     		catch(IOException e) {
