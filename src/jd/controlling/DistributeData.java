@@ -104,14 +104,15 @@ public class DistributeData extends ControlMulticaster {
        
         while (iterator.hasNext()) {
             DownloadLink decrypted = iterator.next();
+            logger.info("hanlde "+decrypted);
             Iterator<PluginForHost> iteratorHost = JDUtilities.getPluginsForHost().iterator();
             while (iteratorHost.hasNext()) {
 
                 try {
     				PluginForHost pHost = (PluginForHost) iteratorHost.next();
-                    if (pHost.canHandle(decrypted.getDownloadURL())) {
+    				if (pHost.canHandle(decrypted.getDownloadURL())) {
                         Vector<DownloadLink> dLinks = pHost.getDownloadLinks(decrypted.getDownloadURL());
-                        //logger.info(decrypted.getUrlDownloadDecrypted()+" "+pHost.getDownloadLinks(decrypted.getUrlDownloadDecrypted()));
+                      
                         for (int c = 0; c < dLinks.size(); c++) {
 
                             dLinks.get(c).addSourcePluginPasswords(foundpassword);
@@ -146,7 +147,7 @@ public class DistributeData extends ControlMulticaster {
                 data = pHost.cutMatches(data);
             }
 		}
-
+logger.info("Distribute links : "+links);
         return links;
     }
 

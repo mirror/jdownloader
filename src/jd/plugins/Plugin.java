@@ -1613,6 +1613,7 @@ public abstract class Plugin {
      * @return String Match
      */
     public static String getSimpleMatch(String source, String pattern, int id) {
+    
         String[] res = getSimpleMatches(source, pattern);
         if (res != null && res.length > id) {
             return res[id];

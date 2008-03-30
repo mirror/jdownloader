@@ -82,8 +82,7 @@ public class FastDomainNet extends PluginForDecrypt {
     			RequestInfo reqinfo = getRequest(url);
     			progress.setRange(1);
     			
-    			decryptedLinks.add(this.createDownloadlink(getBetween(reqinfo.getHtmlCode(),
-    				"<iframe src=\"", "\" ")));
+    			decryptedLinks.add(this.createDownloadlink(getBetween(reqinfo.getHtmlCode(), "<iframe src=\"", "\" ")));
     			
     			progress.increase(1);
     			step.setParameter(decryptedLinks);

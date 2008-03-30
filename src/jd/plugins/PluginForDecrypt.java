@@ -58,6 +58,7 @@ public abstract class PluginForDecrypt extends Plugin implements Comparable {
 
             decryptedLinks.addAll(decryptLink(link));
         }
+        logger.info("RET: "+decryptedLinks);
         return decryptedLinks;
     }
 
@@ -95,19 +96,19 @@ public abstract class PluginForDecrypt extends Plugin implements Comparable {
             doStep(step, cryptedLink);
 
             if (nextStep(step) == null) {
+                logger.info("decrypting finished");
                 Object tmpLinks = step.getParameter();
 
                 if (tmpLinks == null || !(tmpLinks instanceof Vector)) {
                     logger.severe("ACHTUNG1 Decrypt Plugins müssen im letzten schritt einen  Vector<DownloadLink>");
-                    // logger.info("FINA7: Decrypter:
-                    // "+cryptedLink+"-"+progress);
+                     logger.info("FINA7: Decrypter:        "+cryptedLink+"-"+progress);
                     progress.finalize();
                     return new Vector<DownloadLink>();
                 }
                 Vector links = (Vector) tmpLinks;
 
                 if (links.size() == 0) {
-                    // logger.info("FINA6: Decrypter: "+cryptedLink);
+                     logger.info("FINA6: Decrypter: "+cryptedLink);
                     progress.finalize();
                     return new Vector<DownloadLink>();
                 }
@@ -115,14 +116,13 @@ public abstract class PluginForDecrypt extends Plugin implements Comparable {
                 String link;
                 try {
                     if (links.get(0) instanceof DownloadLink) {
-                        // logger.info("Got " + links.size() + " links2
-                        // "+links);
+                         logger.info("Got " + links.size() + " links2 "+links);
 
                         for (int i = links.size() - 1; i >= 0; i--) {
                             DownloadLink dl = (DownloadLink) links.get(i);
                             link = JDUtilities.htmlDecode(dl.getDownloadURL());
                             dl.setUrlDownload(link);
-                            logger.info("DEF: "+this.getDefaultPassswords());
+                           
                             if(dl.getSourcePluginPasswords()==null||dl.getSourcePluginPasswords().size()==0){
                                 dl.setSourcePluginPasswords(this.getDefaultPassswords());
                             }
@@ -131,11 +131,11 @@ public abstract class PluginForDecrypt extends Plugin implements Comparable {
                             }
                             else {
 
-                               // logger.info("found link: " + link);
+                               logger.info("found link: " + link);
                             }
 
                         }
-                        // logger.info("FINA4: Decrypter: "+cryptedLink);
+                       logger.info("FINA4: Decrypter: "+cryptedLink+" : "+links);
                         progress.finalize();
 
                         return (Vector<DownloadLink>) links;
@@ -158,7 +158,7 @@ public abstract class PluginForDecrypt extends Plugin implements Comparable {
 
             }
         }
-        // logger.info("FINA1: Decrypter: "+this.getLinkName());
+       logger.info("FINA1: Decrypter: "+this.getLinkName());
         progress.finalize();
         return new Vector<DownloadLink>();
 

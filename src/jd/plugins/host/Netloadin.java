@@ -41,8 +41,8 @@ import jd.utils.JDUtilities;
 //  http://netload.in/mindestens20zeichen
 
 public class Netloadin extends PluginForHost {
-	
-    static private final Pattern PAT_SUPPORTED = Pattern.compile("http://.*?netload\\.in/.{20}.*", Pattern.CASE_INSENSITIVE);
+	//http://netload.in/datei47f13cf27d3f9104b19553abf57eba8e/Svyatie.iz.bundoka.by.Shevlyakov.part02.rar.htm
+    static private final Pattern PAT_SUPPORTED = Pattern.compile("(http://.*?netload\\.in/.{20}.*|http://.*?netload\\.in/.{20}.*/.*)", Pattern.CASE_INSENSITIVE);
     static private final String  HOST             = "netload.in";
     static private final String  PLUGIN_NAME      = HOST;
     static private final String  PLUGIN_VERSION   = "1.1.0";
@@ -366,7 +366,7 @@ public class Netloadin extends PluginForHost {
             
             
                 ChunkFileDownload dl = new ChunkFileDownload(this, downloadLink,  requestInfo.getConnection());
-                dl.setChunkNum(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS,3));
+                dl.setResume(true);dl.setChunkNum(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS,3));
             
                 dl.setLoadPreBytes(1);
                 dl.startDownload();

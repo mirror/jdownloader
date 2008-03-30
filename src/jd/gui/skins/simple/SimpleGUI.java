@@ -1246,16 +1246,20 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
     }
 
     public void addLinksToGrabber(Vector<DownloadLink> links) {
+        logger.info("GRAB");
         DownloadLink[] linkList = links.toArray(new DownloadLink[] {});
-        if (linkGrabber != null && !linkGrabber.isDisplayable()) {
+        if (linkGrabber != null || !linkGrabber.isDisplayable() ) {
+            logger.info("Linkgrabber should be disposed");
             linkGrabber.dispose();
             linkGrabber = null;
         }
         if (linkGrabber == null) {
+            logger.info("new linkgrabber");
             linkGrabber = new LinkGrabber(this, linkList);
 
         }
         else {
+            logger.info("add to grabber");
             linkGrabber.addLinks(linkList);
         }
         dragNDrop.setText("Grabbed: " + linkList.length + " (+" + ((Vector) links).size() + ")");

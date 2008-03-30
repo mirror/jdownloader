@@ -241,7 +241,7 @@ logger.info(downloadUrl+"");
 
                     // Download starten
                     ChunkFileDownload dl = new ChunkFileDownload(this, downloadLink, urlConnection);
-                    dl.setChunkNum(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS,3));
+                    dl.setResume(true);dl.setChunkNum(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS,3));
 
                     dl.startDownload();
 

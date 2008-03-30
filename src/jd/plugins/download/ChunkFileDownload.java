@@ -190,6 +190,7 @@ public class ChunkFileDownload extends DownloadInterface {
     }
 
     private boolean checkResumabled() {
+        if(!isResume())return false;
         int chunkCount = 0;
         File part;
         int loaded = 0;

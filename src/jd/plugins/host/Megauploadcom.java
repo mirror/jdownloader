@@ -347,7 +347,7 @@ downloadLink.setStatusText("Premium");
                 String name = getFileNameFormHeader(urlConnection);
                 downloadLink.setName(name);
                 ChunkFileDownload dl = new ChunkFileDownload(this, downloadLink, urlConnection);
-                dl.setChunkNum(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 3));
+                dl.setResume(true);dl.setChunkNum(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 3));
                 dl.setResume(true);
                 dl.startDownload();
                 step=nextStep(step);

@@ -434,7 +434,7 @@ public class FileFactory extends PluginForHost {
                         }
                         
                         ChunkFileDownload dl = new ChunkFileDownload(this, downloadLink, urlConnection);
-                        dl.setChunkNum(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS,3));
+                        dl.setResume(true);dl.setChunkNum(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS,3));
                         if (!dl.startDownload() && step.getStatus() != PluginStep.STATUS_ERROR&& step.getStatus() != PluginStep.STATUS_TODO) {
                         	
                             downloadLink.setStatus(DownloadLink.STATUS_ERROR_PREMIUM);

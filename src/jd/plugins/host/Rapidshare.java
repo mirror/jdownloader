@@ -687,11 +687,11 @@ public class Rapidshare extends PluginForHost {
                     timer = System.currentTimeMillis() - timer;
                     logger.info("captcha detection: " + timer + " ms");
 
-                    downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN_RETRY);
-                    step.setParameter(1000l);
-                    step.setStatus(PluginStep.STATUS_ERROR);
+//                    downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN_RETRY);
+//                    step.setParameter(1000l);
+//                    step.setStatus(PluginStep.STATUS_ERROR);
                     
-                    if(true)return step;
+                  //  if(true)return step;
                     if (wait != null) {
                         long pendingTime = Long.parseLong(wait);
 
@@ -1097,7 +1097,7 @@ public class Rapidshare extends PluginForHost {
                     downloadLink.setName(name);
                     ChunkFileDownload dl = new ChunkFileDownload(this, downloadLink, urlConnection);
 
-                    dl.setChunkNum(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 3));
+                    dl.setResume(true);dl.setChunkNum(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 3));
                     dl.setResume(true);
                     dl.startDownload();
 
@@ -1425,7 +1425,7 @@ public class Rapidshare extends PluginForHost {
                     if (name.toLowerCase().matches(".*\\..{1,5}\\.html$")) name = name.replaceFirst("\\.html$", "");
                     downloadLink.setName(name);
                     ChunkFileDownload dl = new ChunkFileDownload(this, downloadLink, urlConnection);
-                    dl.setChunkNum(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 3));
+                    dl.setResume(true);dl.setChunkNum(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 3));
                     dl.startDownload();
                     if (dl.getErrors().size() == 0) {
                         if (new File(downloadLink.getFileOutput()).length() < 4000 && JDUtilities.getLocalFile(new File(downloadLink.getFileOutput())).indexOf(PATTERN_DOWNLOAD_ERRORPAGE) > 0) {

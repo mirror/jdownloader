@@ -43,87 +43,76 @@ import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
 abstract public class DownloadInterface {
-    public static final int           STATUS_INITIALIZED                     = 0;
+    public static final int  STATUS_INITIALIZED                     = 0;
 
     // Errorids unter 100 sind für DownloadLink reserviert
-    public static final int           ERROR_OUTPUTFILE_OWNED_BY_ANOTHER_LINK = DownloadLink.STATUS_ERROR_OUTPUTFILE_OWNED_BY_ANOTHER_LINK;
+    public static final int  ERROR_OUTPUTFILE_OWNED_BY_ANOTHER_LINK = DownloadLink.STATUS_ERROR_OUTPUTFILE_OWNED_BY_ANOTHER_LINK;
 
-    public static final int           ERROR_OUTPUTFILE_INVALID               = 100;
+    public static final int  ERROR_OUTPUTFILE_INVALID               = 100;
 
-    public static final int           ERROR_OUTPUTFILE_ALREADYEXISTS         = DownloadLink.STATUS_ERROR_ALREADYEXISTS;
+    public static final int  ERROR_OUTPUTFILE_ALREADYEXISTS         = DownloadLink.STATUS_ERROR_ALREADYEXISTS;
 
-    public static final int           ERROR_CHUNK_INCOMPLETE                 = DownloadLink.STATUS_DOWNLOAD_INCOMPLETE;
+    public static final int  ERROR_CHUNK_INCOMPLETE                 = DownloadLink.STATUS_DOWNLOAD_INCOMPLETE;
 
-    public static final int           ERROR_FILE_NOT_FOUND                   = DownloadLink.STATUS_ERROR_FILE_NOT_FOUND;
+    public static final int  ERROR_FILE_NOT_FOUND                   = DownloadLink.STATUS_ERROR_FILE_NOT_FOUND;
 
-    public static final int           ERROR_SECURITY                         = DownloadLink.STATUS_ERROR_SECURITY;
+    public static final int  ERROR_SECURITY                         = DownloadLink.STATUS_ERROR_SECURITY;
 
-    public static final int           ERROR_UNKNOWN                          = DownloadLink.STATUS_ERROR_UNKNOWN;
+    public static final int  ERROR_UNKNOWN                          = DownloadLink.STATUS_ERROR_UNKNOWN;
 
-    public static final int           ERROR_COULD_NOT_RENAME                 = 101;
+    public static final int  ERROR_COULD_NOT_RENAME                 = 101;
 
-    public static final int           ERROR_ABORTED_BY_USER                  = 102;
+    public static final int  ERROR_ABORTED_BY_USER                  = 102;
 
-    public static final int           ERROR_TOO_MUCH_BUFFERMEMORY            = 103;
+    public static final int  ERROR_TOO_MUCH_BUFFERMEMORY            = 103;
 
-    public static final int           ERROR_CHUNKLOAD_FAILED                 = DownloadLink.STATUS_ERROR_CHUNKLOAD_FAILED;
+    public static final int  ERROR_CHUNKLOAD_FAILED                 = DownloadLink.STATUS_ERROR_CHUNKLOAD_FAILED;
 
-    public static final int           ERROR_NO_CONNECTION                    = 104;
+    public static final int  ERROR_NO_CONNECTION                    = 104;
 
-    public static final int           ERROR_TIMEOUT_REACHED                  = 105;
+    public static final int  ERROR_TIMEOUT_REACHED                  = 105;
 
-    public static final int          ERROR_LOCAL_IO                         = 106;
+    public static final int  ERROR_LOCAL_IO                         = 106;
 
-    public static final int          ERROR_NIBBLE_LIMIT_REACHED             = 107;
+    public static final int  ERROR_NIBBLE_LIMIT_REACHED             = 107;
 
-    protected DownloadLink              downloadLink;
+    protected DownloadLink   downloadLink;
 
-    protected HTTPConnection            connection;
+    protected HTTPConnection connection;
 
-    private int                       status                                 = STATUS_INITIALIZED;
+    private int              status                                 = STATUS_INITIALIZED;
 
-    private int                       chunksDownloading                      = 0;
+    private int              chunksDownloading                      = 0;
 
-    protected int                       chunkNum                               = 1;
+    protected int            chunkNum                               = 1;
 
-    private int                       readTimeout                            = JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_READ_TIMEOUT, 10000);
+    private int              readTimeout                            = JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_READ_TIMEOUT, 10000);
 
-    private int                       requestTimeout                         = JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_CONNECT_TIMEOUT, 10000);
+    private int              requestTimeout                         = JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_CONNECT_TIMEOUT, 10000);
 
-    private int                       chunksInProgress                       = 0;
+    private int              chunksInProgress                       = 0;
 
-    private Vector<Integer>           errors                                 = new Vector<Integer>();
+    private Vector<Integer>  errors                                 = new Vector<Integer>();
 
-    private Vector<Chunk>             chunks                                 = new Vector<Chunk>();
+    private Vector<Chunk>    chunks                                 = new Vector<Chunk>();
 
-    private boolean                   resume                                 = false;
+    private boolean          resume                                 = false;
 
-    
+    protected PluginForHost  plugin;
 
-    protected PluginForHost             plugin;
+    protected int            bytesLoaded                            = 0;
 
-    protected int                       bytesLoaded                            = 0;
+    protected int            maxBytes                               = -1;
 
- 
+    protected long           fileSize                               = -1;
 
-  
+    private boolean          abortByError                           = false;
 
-    protected int                       maxBytes                               = -1;
+    private int              preBytes                               = 0;
 
-    protected long                      fileSize                               = -1;
+    protected boolean        speedDebug                             = false;
 
-    private boolean                   abortByError                           = false;
-
-    private int                       preBytes                               = 0;
-
-
-  
-
-    protected boolean                   speedDebug                             = false;
-
-
-
-    public static Logger              logger                                 = JDUtilities.getLogger();
+    public static Logger     logger                                 = JDUtilities.getLogger();
 
     public DownloadInterface(PluginForHost plugin, DownloadLink downloadLink, HTTPConnection urlConnection) {
         this.downloadLink = downloadLink;
@@ -182,7 +171,7 @@ abstract public class DownloadInterface {
     // }
     //
     // }
-   abstract protected void addBytes(Chunk chunk);
+    abstract protected void addBytes(Chunk chunk);
 
     /**
      * File soll resumed werden
@@ -250,7 +239,7 @@ abstract public class DownloadInterface {
      * @return
      */
     public boolean startDownload() {
-      
+
         if (JDUtilities.getController().isLocalFileInProgress(downloadLink)) {
             logger.severe("File already is in progress. " + downloadLink.getFileOutput());
             downloadLink.setStatus(DownloadLink.STATUS_ERROR_OUTPUTFILE_OWNED_BY_ANOTHER_LINK);
@@ -290,40 +279,47 @@ abstract public class DownloadInterface {
             logger.info("Nibble feature active: " + maxBytes + " rest chunks to 1");
             chunkNum = 1;
         }
-        try{
+        try {
             this.setupChunks();
             waitForChunks();
-            
-            
-            this.onChunksReady();         
-          
+
+            this.onChunksReady();
+
             if (!handleErrors()) {
 
                 return false;
-            }else{
+            }
+            else {
 
-            return true;
+                return true;
             }
         }
 
         catch (Exception e) {
-
-            e.printStackTrace();
-            downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN);
-            plugin.getCurrentStep().setParameter(e.getLocalizedMessage());
-            plugin.getCurrentStep().setStatus(PluginStep.STATUS_ERROR);
-         
+            handleErrors();
+//            if (plugin.getCurrentStep().getStatus() != PluginStep.STATUS_ERROR) {
+//                e.printStackTrace();
+//                downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN);
+//                plugin.getCurrentStep().setParameter(e.getLocalizedMessage());
+//                plugin.getCurrentStep().setStatus(PluginStep.STATUS_ERROR);
+//
+//            }
             return false;
         }
 
     }
-/**
- * Wird aufgerufen sobald alle Chunks fertig geladen sind
- * @throws DownloadFailedException 
- */
+
+    /**
+     * Wird aufgerufen sobald alle Chunks fertig geladen sind
+     * 
+     * @throws DownloadFailedException
+     */
     abstract protected void onChunksReady() throws DownloadFailedException;
-    /**Wird aufgerufen um die Chunks zu initialisieren
-     * @throws IOException 
+
+    /**
+     * Wird aufgerufen um die Chunks zu initialisieren
+     * 
+     * @throws IOException
      * 
      */
     abstract protected void setupChunks() throws DownloadFailedException;
@@ -663,7 +659,7 @@ abstract public class DownloadInterface {
 
         private HTTPConnection   connection;
 
-        long             currentBytePosition;
+        long                     currentBytePosition;
 
         private long             bytesPerSecond = -1;
 
@@ -673,7 +669,7 @@ abstract public class DownloadInterface {
 
         private int              maxSpeed;
 
-        ByteBuffer       buffer;
+        ByteBuffer               buffer;
 
         private int              id             = -1;
 
@@ -807,8 +803,8 @@ abstract public class DownloadInterface {
                 }
 
                 if (chunkNum > 1) {
-                   
-                    httpConnection.setRequestProperty("Range", "bytes=" + startByte + "-" + (endByte>0?endByte:""));
+
+                    httpConnection.setRequestProperty("Range", "bytes=" + startByte + "-" + (endByte > 0 ? endByte : ""));
 
                     // logger.info(chunks.indexOf(this) + " - " +
                     // httpConnection.getRequestProperties() + "");
@@ -842,12 +838,12 @@ abstract public class DownloadInterface {
          * Thread runner
          */
         public void run() {
-            if (startByte >= endByte && endByte>0) {
+            if (startByte >= endByte && endByte > 0) {
                 chunksInProgress--;
                 return;
             }
             logger.info(this.getID() + " : " + preBytes);
-            if (preBytes > 0 && this.getID() == 0&&startByte==0) loadStartBytes(preBytes);
+            if (preBytes > 0 && this.getID() == 0 && startByte == 0) loadStartBytes(preBytes);
             plugin.setCurrentConnections(plugin.getCurrentConnections() + 1);
             logger.finer("Start Chunk " + startByte + " - " + endByte);
             if (chunkNum > 1) this.connection = copyConnection(connection);
@@ -963,7 +959,7 @@ abstract public class DownloadInterface {
 
                 inputStream = connection.getInputStream();
                 source = Channels.newChannel(inputStream);
-               
+
                 buffer.clear();
 
                 long deltaTime;
@@ -988,7 +984,7 @@ abstract public class DownloadInterface {
                         if (inputStream.available() > 0) {
                             // kann den connectiontimeout nicht auswerten
                             block = source.read(buffer);
-                            
+
                         }
                         else {
 
@@ -1160,14 +1156,16 @@ abstract public class DownloadInterface {
         }
 
     }
-    protected class DownloadFailedException extends Exception{
+
+    protected class DownloadFailedException extends Exception {
 
         /**
          * 
          */
         private static final long serialVersionUID = -1727333740786982474L;
-        public DownloadFailedException(String message){
-            super(message);          
+
+        public DownloadFailedException(String message) {
+            super(message);
         }
     }
 

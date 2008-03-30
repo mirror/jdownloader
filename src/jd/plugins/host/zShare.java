@@ -93,7 +93,7 @@ public class zShare extends PluginForHost {
 				return step;
 			}
 			  ChunkFileDownload dl = new ChunkFileDownload(this, downloadLink, urlConnection);
-			  dl.setChunkNum(20);
+			  dl.setResume(true);dl.setChunkNum(20);
 			  dl.startDownload();
 			return step;
 		} catch (Exception e) {
