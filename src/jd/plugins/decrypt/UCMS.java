@@ -34,7 +34,7 @@ import jd.utils.JDUtilities;
 public class UCMS extends PluginForDecrypt {
     static private final String host = "Underground CMS";
     private String version = "1.0.0.0";
-//http://game-freaks.net/PS2_ISOS/Van_Helsing_PAL-MULTi_13840.html
+
     private Pattern patternSupported = getSupportPattern("(http://[*]lesestunde.info/\\?id=[+])"
     		+ "|(http://[*]filefox.in/\\?id=[+])"
     		+ "|(http://[*]alphawarez.us/\\?id=[+])"
@@ -52,11 +52,11 @@ public class UCMS extends PluginForDecrypt {
     		+ "|(http://[*]oneload.org/\\?id=[+])"
     		+ "|(http://[*]warez-load.com/\\?id=[+])"
     		+ "|(http://[*]steelwarez.com/\\?id=[+])"
-    		//+ "|(http://[*]warezbase.us/\\?id=[+])"
+    		+ "|(http://[*]warezbase.us/\\?id=[+])"
     		+ "|(http://[*]fullstreams.info/\\?id=[+])"
     		//+ "|(http://[*]toxic.to/\\?id=[+])"
-    		//+ "|(http://[*]lionwarez.com/\\?id=[+])"
-    		//+ "|(http://[*]1dl.in/\\?id=[+])"
+    		+ "|(http://[*]lionwarez.com/\\?id=[+])"
+    		+ "|(http://[*]1dl.in/\\?id=[+])"
     		+ "|(http://[*]oxygen-warez.com/\\?id=[+])"
     		+ "|(http://[*]oxygen-warez.com/category/[+]/[+])"
     		+ "|(http://[*]mov-world.net/category/[+]/[+])"
@@ -67,12 +67,12 @@ public class UCMS extends PluginForDecrypt {
     		+ "|(http://[*]chili-warez.net/[+]/[+].html)"
     		
     		+ "|(http://[*]chrome-database.com/\\?id=[+])"
-    		//+ "|(http://[*]mp3z.to/\\?id=[+])"
+    		+ "|(http://[*]mp3z.to/\\?id=[+])"
     		+ "|(http://[*]oneload.org/\\?id=[+])"
     		+ "|(http://[*]youwarez.biz/\\?id=[+])"
     		+ "|(http://[*]saugking.net/\\?id=[+])"
     		+ "|(http://[*]leetpornz.com/\\?id=[+])"
-    		//+ "|(http://[*]freefiles4u.com/\\?id=[+])"
+    		+ "|(http://[*]freefiles4u.com/\\?id=[+])"
     		+ "|(http://[*]xxx-reactor.net/category/[+]/[+])"
     		//+ "|(http://[*]xxx-4-free.net/category/[+]/[+])"
     		+ "|(http://[*]sextradump.com/category/[+]/[+])"
@@ -84,7 +84,7 @@ public class UCMS extends PluginForDecrypt {
     		+ "|(http://[*]sceneload.to/\\?id=[+])");
     
     private Pattern	PAT_CAPTCHA = Pattern.compile("<TD><IMG SRC=\"/gfx/secure/index.php");
-    private Pattern PAT_NO_CAPTCHA = Pattern.compile("<INPUT TYPE=\"SUBMIT\" CLASS=\"BUTTON\" VALUE=\"Zum Download\" onClick=\"if");
+    private Pattern PAT_NO_CAPTCHA = Pattern.compile("(<INPUT TYPE=\"SUBMIT\" CLASS=\"BUTTON\" VALUE=\"Zum Download\" onClick=\"if)|(<INPUT TYPE=\"SUBMIT\" CLASS=\"BUTTON\" VALUE=\"Download\" onClick=\"if)");
 
     public UCMS() {
         super();
@@ -139,13 +139,12 @@ public class UCMS extends PluginForDecrypt {
     			if(!pass.equals("n/a"))
     				this.default_password.add(pass);
     			
-    			ArrayList<ArrayList<String>> forms = getAllSimpleMatches(reqinfo.getHtmlCode(), "<FORM ACTION=\"°\" ENCTYPE°</FORM>");
+    			ArrayList<ArrayList<String>> forms = getAllSimpleMatches(reqinfo.getHtmlCode(), "<FORM ACTION=\"°\" ENCTYPE°NAME=\"°\"°</FORM>");
     			
     			for(int i=0; i<forms.size(); i++) {
-    				if(forms.get(i).get(0).contains("mirror")) {
-    					//System.out.println(forms.get(i).get(1));
+    				if(forms.get(i).get(2).contains("download") || forms.get(i).get(2).contains("mirror")) {
 		    			for (;;) {
-		                    Matcher matcher = PAT_CAPTCHA.matcher(forms.get(i).get(1));
+		                    Matcher matcher = PAT_CAPTCHA.matcher(forms.get(i).get(3));
 		
 		                    if (matcher.find()) {
 		                        if (captchaFile != null && capTxt != null) {
@@ -153,15 +152,19 @@ public class UCMS extends PluginForDecrypt {
 		                        }
 		
 		                        logger.finest("Captcha Protected");
-		                        String captchaAdress = host + getBetween(forms.get(i).get(1), "<TD><IMG SRC=\"", "\"");
+		                        String captchaAdress = host + getBetween(forms.get(i).get(3), "<TD><IMG SRC=\"", "\"");
 		                        captchaFile = getLocalCaptchaFile(this);
 		                        JDUtilities.download(captchaFile, captchaAdress);
 		
 		                        capTxt = JDUtilities.getCaptcha(this, "hardcoremetal.biz", captchaFile, false);
 		                        
-		                        String posthelp = getFormInputHidden(forms.get(i).get(1));
-		                        reqinfo = postRequest(new URL(host + forms.get(i).get(0)), posthelp + "&code=" + capTxt);
-		                        //System.out.println(reqinfo.getHtmlCode());
+		                        String posthelp = getFormInputHidden(forms.get(i).get(3));
+		                        if(forms.get(i).get(0).startsWith("http")) {
+		                        	reqinfo = postRequest(new URL(forms.get(i).get(0)), posthelp + "&code=" + capTxt);
+		                        }
+		                        else {
+		                        	reqinfo = postRequest(new URL(host + forms.get(i).get(0)), posthelp + "&code=" + capTxt);
+		                        }
 		                    }
 		                    else {
 		                        if (captchaFile != null && capTxt != null) {
@@ -171,8 +174,15 @@ public class UCMS extends PluginForDecrypt {
 		                       	Matcher matcher_no = PAT_NO_CAPTCHA.matcher(reqinfo.getHtmlCode());
 		                        
 		                       	if(matcher_no.find()) {
-		                       		String posthelp = getFormInputHidden(forms.get(i).get(1));
-		                       		reqinfo = postRequest(new URL(host + forms.get(i).get(0)), posthelp);
+		                       		String posthelp = getFormInputHidden(forms.get(i).get(3));
+		                       		
+		                       		if(forms.get(i).get(0).startsWith("http")) {
+		                       			reqinfo = postRequest(new URL(forms.get(i).get(0)), posthelp);
+		                       		}
+		                       		else {
+		                       			reqinfo = postRequest(new URL(host + forms.get(i).get(0)), posthelp);
+		                       		}
+		                       		
 		                       		break;
 		                       	}
 		                        if(!reqinfo.containsHTML("Der Sichheitscode wurde falsch eingeben")) {
