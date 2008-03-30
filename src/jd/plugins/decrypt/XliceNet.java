@@ -60,7 +60,7 @@ public class XliceNet extends PluginForDecrypt {
 
     private final static Pattern  patternTableRowLink = Pattern.compile("<tr[^>]*>(.*?)</tr>", Pattern.DOTALL | Pattern.CASE_INSENSITIVE);
 
-    private final static Pattern  patternFileName     = Pattern.compile("<div align=\"left\">(.*?) \\(.*\\) <br />");
+    private final static Pattern  patternFileName     = Pattern.compile("<div align=\"left\">(.*?)\\s*\\(");
 
     // <a href="#" id="contentlink_0"
     // rev="/links/76b5bb4380524456c61c1afb1638fbe7/" rel="linklayer"><img
@@ -76,6 +76,7 @@ public class XliceNet extends PluginForDecrypt {
 
     static Pattern                patternJsScript     = Pattern.compile("<script[^>].*>(.*)\\n[^\\n]*=\\s*(des.*).\\n[^\\n]*document.write\\(.*?</script>", Pattern.DOTALL);
 
+    static Pattern				  patternRemoveComments = Pattern.compile("<!--.*?-->", Pattern.DOTALL);
     static Pattern                patternHosterIframe = Pattern.compile("src\\s*=\\s*\"([^\"]+)\"");
 
     public XliceNet() {
@@ -147,18 +148,26 @@ public class XliceNet extends PluginForDecrypt {
                 progress.setRange(links.length);
 
                 String[] rowCandidates = new Regexp(reqinfo.getHtmlCode(), patternTableRowLink).getMatches(1);
+                if(0 == rowCandidates.length){
+                	logger.severe("unable to find row candidates - adapt patternTableRowLink (see next INFO log line");
+                	logger.info("reqinfo.getHtmlCode(): " + reqinfo.getHtmlCode() );
+                }
 
                 for (String rowCandiate : rowCandidates) {
 
                     // check if there is a link in rowCandidate
                     String link = new Regexp(rowCandiate, patternLink).getFirstMatch(1);
-
                     if (null == link) {
                         continue;
                     }
 
                     // check if there is a filename in row Candidate
                     String fileName = new Regexp(rowCandiate, patternFileName).getFirstMatch();
+                    
+                    if( null == fileName){
+                    	logger.warning("filename could not be determined - fix patternFileName (see next INFO log line");
+                    	logger.info("rowCandidate: "+ rowCandiate);
+                    }
 
                     URL mirrorUrl = new URL("http://" + (getHost() + link));
                     RequestInfo mirrorInfo = getRequest(mirrorUrl, null, null, true);
@@ -168,19 +177,16 @@ public class XliceNet extends PluginForDecrypt {
                     for (ArrayList<String> pair : groups) {
                         // check if user does not want the links from this
                         // hoster
-                        // if( !getUseConfig(mirrorHoster.get(i))){
                         if (!getUseConfig(pair.get(1))) {
                             logger.info(pair.get(1) + " is ignored due to user config");
                             continue;
                         }
 
                         URL fileURL = new URL("http://" + getHost() + pair.get(0));
-
-                        // System.out.println(fileURL);
                         RequestInfo fileInfo = getRequest(fileURL, null, null, true);
 
                         if (null == cx) {
-                            // setup the JavaScrip interpreter context
+                            // setup the JavaScript interpreter context
                             cx = Context.enter();
                             scope = cx.initStandardObjects();
 
@@ -211,15 +217,21 @@ public class XliceNet extends PluginForDecrypt {
                         // fetch the result of the javascript interpreter and
                         // finally find the link :)
                         String iframe = Context.toString(result);
-                        String hosterURL = new Regexp(iframe, patternHosterIframe).getFirstMatch();
 
+                        //remove all comments
+                        Matcher clearComments = patternRemoveComments.matcher(iframe);
+                        iframe = clearComments.replaceAll("");
+                        
+                        String hosterURL = new Regexp(iframe, patternHosterIframe).getFirstMatch();
                         if (null == hosterURL) {
                             logger.severe("Unable to determin hosterURL - adapt patternHosterIframe");
                             continue;
                         }
 
                         DownloadLink downloadLink = createDownloadlink(hosterURL);
-                        downloadLink.setName(fileName);
+                        if( null != fileName){
+                        	downloadLink.setName(fileName);
+                        }
 
                         decryptedLinks.add(downloadLink);
                     }
