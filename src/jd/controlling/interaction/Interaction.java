@@ -121,7 +121,7 @@ public abstract class Interaction extends Property implements Serializable {
      * Letztes package file geladen
      */
     public static final InteractionTrigger    INTERACTION_DOWNLOAD_PACKAGE_FINISHED = new InteractionTrigger(12, JDLocale.L("interaction.trigger.package_finished","Paket fertig"), JDLocale.L("interaction.trigger.package_finished.desc","Wird aufgerufen wenn ein Paket fertig geladen wurde"));
-    public static final InteractionTrigger INTERACTION_BEFORE_DOWNLOAD = new InteractionTrigger(13, JDLocale.L("interaction.trigger.before_download","Vor einem Download"), JDLocale.L("interaction.trigger.before_download.desc","Wird aufgerufen bevor ein neuer Download gestartet wird"));
+    public static final InteractionTrigger INTERACTION_BEFORE_DOWNLOAD = new InteractionTrigger(17, JDLocale.L("interaction.trigger.before_download","Vor einem Download"), JDLocale.L("interaction.trigger.before_download.desc","Wird aufgerufen bevor ein neuer Download gestartet wird"));
    
     /**
      * Zeigt den Programmstart an

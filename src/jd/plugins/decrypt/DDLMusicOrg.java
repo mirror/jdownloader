@@ -42,7 +42,7 @@ public class DDLMusicOrg extends PluginForDecrypt {
 
     @Override
     public String getCoder() {
-        return "eXecuTe";
+        return "jD-Team";
     }
 
     @Override

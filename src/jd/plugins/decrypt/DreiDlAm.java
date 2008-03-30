@@ -50,7 +50,7 @@ public class DreiDlAm extends PluginForDecrypt {
 
     @Override
     public String getCoder() {
-        return "eXecuTe|b0ffed";
+        return "jD-Team|b0ffed";
     }
 
     @Override

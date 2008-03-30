@@ -33,7 +33,7 @@ import jd.utils.JDUtilities;
 public class SeCurNet extends PluginForDecrypt {
     final 	static	String	HOST             	= "se-cur.net";
     private 		String	VERSION          	= "0.1.0";
-    private 		String	CODER            	= "eXecuTe";
+    private 		String	CODER            	= "jD-Team";
     private 		Pattern	SUPPORT_PATTERN		= getSupportPattern("http://[*]se-cur\\.net/q\\.php\\?d=[+]");
     private 		String  LINK_OUT_PATTERN	= "href=\"http://se-cur.net/out.php?d=°\"";
     private 		String  LINK_OUT_TEMPLATE	= "http://se-cur.net/out.php?d=";
