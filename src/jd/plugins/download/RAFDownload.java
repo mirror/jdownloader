@@ -42,6 +42,7 @@ import jd.config.Configuration;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTPConnection;
 import jd.plugins.PluginForHost;
+import jd.plugins.download.DownloadInterface.DownloadFailedException;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
@@ -67,18 +68,14 @@ public class RAFDownload extends DownloadInterface {
 
     protected void addBytes(Chunk chunk) {
         try {
-            int limit = chunk.buffer.limit();
-            outputChannel.position((int) chunk.currentBytePosition);
-            outputChannel.write(chunk.buffer);
-            // logger.info(chunk.currentBytePosition + " <<size " +
-            // chunk.buffer.limit() + " of " + chunk.getID() + " - " +
-            // partFiles[chunk.getID()].length());
+            int limit = chunk.buffer.limit()-chunk.buffer.position();
+            synchronized(outputChannel){           
+                outputFile.seek( chunk.currentBytePosition);
+                outputChannel.write(chunk.buffer);
+            }   
             if (maxBytes > 0 && getChunkNum() == 1 && this.bytesLoaded >= maxBytes) {
                 error(ERROR_NIBBLE_LIMIT_REACHED);
-            }
-            // if (chunk.getID() >= 0)
-            // downloadLink.getChunksProgress()[chunk.getID()] = (int)
-            // chunk.currentBytePosition + chunk.buffer.capacity();
+            }    
             if (chunk.getID() >= 0) downloadLink.getChunksProgress()[chunk.getID()] = (int) chunk.currentBytePosition + limit - 1;
 
         }
@@ -93,6 +90,7 @@ public class RAFDownload extends DownloadInterface {
     @Override
     protected void setupChunks() throws DownloadFailedException {
         try {
+  
             boolean correctChunks = JDUtilities.getSubConfig("DOWNLOAD").getBooleanProperty("PARAM_DOWNLOAD_AUTO_CORRECTCHUNKS", true);
             long fileSize = getFileSize();
             if (correctChunks) {
@@ -104,7 +102,7 @@ public class RAFDownload extends DownloadInterface {
                 }
             }
 
-            String fileName = downloadLink.getName();
+           
 
             downloadLink.setStatus(DownloadLink.STATUS_DOWNLOAD_IN_PROGRESS);
             downloadLink.setDownloadMax((int) fileSize);
@@ -222,7 +220,13 @@ public class RAFDownload extends DownloadInterface {
 
                 throw new DownloadFailedException("Download failed after chunks were ready");
             }
-            new File(downloadLink.getFileOutput() + ".part").renameTo(new File(downloadLink.getFileOutput()));
+          if(!  new File(downloadLink.getFileOutput() + ".part").renameTo(new File(downloadLink.getFileOutput()))){
+              
+              logger.severe("Could not rename file " + new File(downloadLink.getFileOutput() + ".part") + " to " + downloadLink.getFileOutput());
+              error(ERROR_COULD_NOT_RENAME);
+
+              throw new DownloadFailedException("Rename error");
+          }
 
         }
         catch (FileNotFoundException e) {

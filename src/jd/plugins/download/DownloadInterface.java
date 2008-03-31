@@ -775,7 +775,7 @@ if(exceptions!=null){
                 buffer.put(b);
                 buffer.flip();
                 addBytes(this);
-                bytesLoaded += i;
+                bytesLoaded += this.startByte;
 
                 currentBytePosition = this.startByte;
 
