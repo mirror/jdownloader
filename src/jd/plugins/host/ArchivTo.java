@@ -29,7 +29,7 @@ import jd.plugins.HTTPConnection;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginStep;
 import jd.plugins.Regexp;
-import jd.plugins.download.ChunkFileDownload;
+import jd.plugins.download.RAFDownload;
 import jd.utils.JDUtilities;
 
 //http://archiv.to/Get/?System=Download&Hash=FILE4799F3EC23328
@@ -109,7 +109,7 @@ public class ArchivTo extends PluginForHost {
             final long length = downloadLink.getDownloadMax();
             downloadLink.setName(getFileNameFormHeader(urlConnection));
 
-            ChunkFileDownload dl = new ChunkFileDownload(this, downloadLink, urlConnection);
+            RAFDownload dl = new RAFDownload(this, downloadLink, urlConnection);
             dl.setFilesize(length);
             if (!dl.startDownload() && step.getStatus() != PluginStep.STATUS_ERROR && step.getStatus() != PluginStep.STATUS_TODO) {
 

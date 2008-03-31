@@ -30,7 +30,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
-import jd.plugins.download.ChunkFileDownload;
+import jd.plugins.download.RAFDownload;
 import jd.utils.JDUtilities;
 
 public class Filer extends PluginForHost {
@@ -209,7 +209,7 @@ public class Filer extends PluginForHost {
                         step.setStatus(PluginStep.STATUS_ERROR);
                         return step;
                     }
-                    ChunkFileDownload dl = new ChunkFileDownload(this, downloadLink, requestInfo.getConnection());
+                    RAFDownload dl = new RAFDownload(this, downloadLink, requestInfo.getConnection());
                     dl.startDownload();
               
                     return step;

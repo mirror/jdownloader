@@ -32,7 +32,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
-import jd.plugins.download.ChunkFileDownload;
+import jd.plugins.download.RAFDownload;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
@@ -264,7 +264,7 @@ public class Netloadin extends PluginForHost {
                         step.setStatus(PluginStep.STATUS_ERROR);
                         return step;
                     }
-                    ChunkFileDownload dl = new ChunkFileDownload(this, downloadLink,  requestInfo.getConnection());
+                    RAFDownload dl = new RAFDownload(this, downloadLink,  requestInfo.getConnection());
                     dl.startDownload();
                     return step;
             }
@@ -365,7 +365,7 @@ public class Netloadin extends PluginForHost {
                 downloadLink.setName(getFileNameFormHeader(requestInfo.getConnection()));
             
             
-                ChunkFileDownload dl = new ChunkFileDownload(this, downloadLink,  requestInfo.getConnection());
+                RAFDownload dl = new RAFDownload(this, downloadLink,  requestInfo.getConnection());
                 dl.setResume(true);dl.setChunkNum(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS,3));
             
                 dl.setLoadPreBytes(1);

@@ -33,7 +33,7 @@ import jd.plugins.HTTPConnection;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
-import jd.plugins.download.ChunkFileDownload;
+import jd.plugins.download.RAFDownload;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
@@ -277,7 +277,7 @@ public class Megauploadcom extends PluginForHost {
 
                         downloadLink.setName(getFileNameFormHeader(requestInfo.getConnection()));
                    
-                        ChunkFileDownload dl = new ChunkFileDownload(this, downloadLink,  requestInfo.getConnection());
+                        RAFDownload dl = new RAFDownload(this, downloadLink,  requestInfo.getConnection());
                       
                         dl.startDownload();
                         return step;
@@ -346,7 +346,7 @@ downloadLink.setStatusText("Premium");
                 urlConnection = requestInfo.getConnection();        
                 String name = getFileNameFormHeader(urlConnection);
                 downloadLink.setName(name);
-                ChunkFileDownload dl = new ChunkFileDownload(this, downloadLink, urlConnection);
+                RAFDownload dl = new RAFDownload(this, downloadLink, urlConnection);
                 dl.setResume(true);dl.setChunkNum(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 3));
                 dl.setResume(true);
                 dl.startDownload();

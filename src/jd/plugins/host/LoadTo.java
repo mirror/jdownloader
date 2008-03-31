@@ -29,7 +29,7 @@ import jd.plugins.HTTPConnection;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
-import jd.plugins.download.ChunkFileDownload;
+import jd.plugins.download.RAFDownload;
 import jd.utils.JDUtilities;
 
 public class LoadTo extends PluginForHost {
@@ -222,7 +222,7 @@ String fileSize = JDUtilities.htmlDecode(getSimpleMatch(requestInfo.getHtmlCode(
                     }
       
                    
-                   ChunkFileDownload dl = new ChunkFileDownload(this, downloadLink,  urlConnection);
+                   RAFDownload dl = new RAFDownload(this, downloadLink,  urlConnection);
               
                    dl.startDownload();
                     return step;

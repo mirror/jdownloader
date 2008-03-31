@@ -30,7 +30,7 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginStep;
 import jd.plugins.Regexp;
-import jd.plugins.download.ChunkFileDownload;
+import jd.plugins.download.RAFDownload;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
@@ -317,7 +317,7 @@ public class ShareOnlineBiz extends PluginForHost {
                         step.setStatus(PluginStep.STATUS_ERROR);
                         return step;
                     }
-                    ChunkFileDownload dl = new ChunkFileDownload(this, downloadLink, urlConnection);
+                    RAFDownload dl = new RAFDownload(this, downloadLink, urlConnection);
 
                     dl.startDownload();
 

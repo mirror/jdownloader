@@ -100,7 +100,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.PluginStep;
 import jd.plugins.Regexp;
 import jd.plugins.RequestInfo;
-import jd.plugins.download.ChunkFileDownload;
+import jd.plugins.download.RAFDownload;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
@@ -850,7 +850,7 @@ public class Rapidshare extends PluginForHost {
                     }
                     logger.info("link: " + postTarget.substring(0, 30) + " " + actionString);
 
-                    ChunkFileDownload dl = new ChunkFileDownload(this, downloadLink, urlConnection);
+                    RAFDownload dl = new RAFDownload(this, downloadLink, urlConnection);
                     if (getProperties().getIntegerProperty(PROPERTY_BYTES_TO_LOAD, -1) > 0) {
                         dl.setMaxBytesToLoad(1024 * getProperties().getIntegerProperty(PROPERTY_BYTES_TO_LOAD, -1));
                     }
@@ -1092,7 +1092,7 @@ public class Rapidshare extends PluginForHost {
                     String name = getFileNameFormHeader(urlConnection);
                     if (name.toLowerCase().matches(".*\\..{1,5}\\.html$")) name = name.replaceFirst("\\.html$", "");
                     downloadLink.setName(name);
-                    ChunkFileDownload dl = new ChunkFileDownload(this, downloadLink, urlConnection);
+                    RAFDownload dl = new RAFDownload(this, downloadLink, urlConnection);
 
                     dl.setResume(true);
                     dl.setChunkNum(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 3));
@@ -1422,7 +1422,7 @@ public class Rapidshare extends PluginForHost {
                     String name = getFileNameFormHeader(urlConnection);
                     if (name.toLowerCase().matches(".*\\..{1,5}\\.html$")) name = name.replaceFirst("\\.html$", "");
                     downloadLink.setName(name);
-                    ChunkFileDownload dl = new ChunkFileDownload(this, downloadLink, urlConnection);
+                    RAFDownload dl = new RAFDownload(this, downloadLink, urlConnection);
                     dl.setResume(true);
                     dl.setChunkNum(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 3));
                     dl.startDownload();

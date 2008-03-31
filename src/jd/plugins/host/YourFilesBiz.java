@@ -28,7 +28,7 @@ import jd.plugins.HTTPConnection;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
-import jd.plugins.download.ChunkFileDownload;
+import jd.plugins.download.RAFDownload;
 import jd.utils.JDUtilities;
 
 public class YourFilesBiz extends PluginForHost {
@@ -204,7 +204,7 @@ public class YourFilesBiz extends PluginForHost {
                 case PluginStep.STEP_DOWNLOAD:
                 	
                     // Download starten
-                    ChunkFileDownload dl = new ChunkFileDownload(this, downloadLink, urlConnection);
+                    RAFDownload dl = new RAFDownload(this, downloadLink, urlConnection);
                    
                   dl.startDownload();
                    

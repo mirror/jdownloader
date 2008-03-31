@@ -25,7 +25,7 @@ import jd.plugins.HTTPConnection;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginStep;
 import jd.plugins.Regexp;
-import jd.plugins.download.ChunkFileDownload;
+import jd.plugins.download.RAFDownload;
 
 public class zShare extends PluginForHost {
     private static final String  HOST             = "zshare.net";
@@ -95,7 +95,7 @@ public class zShare extends PluginForHost {
             downloadLink.setName(getFileNameFormHeader(urlConnection));
             downloadLink.setDownloadMax(urlConnection.getContentLength());
   
-            ChunkFileDownload dl = new ChunkFileDownload(this, downloadLink, urlConnection);
+            RAFDownload dl = new RAFDownload(this, downloadLink, urlConnection);
     
             dl.startDownload();
             return step;

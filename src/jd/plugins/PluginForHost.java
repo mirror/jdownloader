@@ -25,7 +25,7 @@ import java.util.Vector;
 
 import jd.config.Configuration;
 import jd.event.ControlEvent;
-import jd.plugins.download.ChunkFileDownload;
+import jd.plugins.download.RAFDownload;
 import jd.utils.JDUtilities;
 
 /**
@@ -246,7 +246,7 @@ public abstract class PluginForHost extends Plugin {
             logger.info("Filename: " + getFileNameFormHeader(requestInfo.getConnection()));
            
             downloadLink.setName(getFileNameFormHeader(requestInfo.getConnection()));
-            ChunkFileDownload dl = new ChunkFileDownload(this, downloadLink, requestInfo.getConnection());
+            RAFDownload dl = new RAFDownload(this, downloadLink, requestInfo.getConnection());
             if (!dl.startDownload() && step.getStatus() != PluginStep.STATUS_ERROR && step.getStatus() != PluginStep.STATUS_TODO) {
                 downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN);
                 

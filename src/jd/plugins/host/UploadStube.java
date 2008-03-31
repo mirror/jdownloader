@@ -28,7 +28,7 @@ import jd.plugins.HTTPConnection;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginStep;
 import jd.plugins.Regexp;
-import jd.plugins.download.ChunkFileDownload;
+import jd.plugins.download.RAFDownload;
 
 public class UploadStube extends PluginForHost {
 	private static final String HOST = "uploadstube.de";
@@ -108,7 +108,7 @@ public class UploadStube extends PluginForHost {
 				step.setStatus(PluginStep.STATUS_ERROR);
 				return step;
 			}
-		    ChunkFileDownload dl = new ChunkFileDownload(this, downloadLink, urlConnection);
+		    RAFDownload dl = new RAFDownload(this, downloadLink, urlConnection);
 		  
             dl.startDownload();
 			        

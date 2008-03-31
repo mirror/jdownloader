@@ -31,7 +31,7 @@ import jd.plugins.HTTPConnection;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
-import jd.plugins.download.ChunkFileDownload;
+import jd.plugins.download.RAFDownload;
 import jd.utils.JDUtilities;
 
 /**
@@ -245,7 +245,7 @@ public class Gulli extends PluginForHost {
                         return step;
                     }
                     
-                    ChunkFileDownload dl = new ChunkFileDownload(this, downloadLink, finalDownloadConnection);
+                    RAFDownload dl = new RAFDownload(this, downloadLink, finalDownloadConnection);
                     dl.startDownload();
                     
                

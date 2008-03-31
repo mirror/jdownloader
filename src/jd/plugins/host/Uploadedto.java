@@ -33,7 +33,7 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
-import jd.plugins.download.ChunkFileDownload;
+import jd.plugins.download.RAFDownload;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
@@ -340,7 +340,7 @@ public class Uploadedto extends PluginForHost {
                             step.setStatus(PluginStep.STATUS_ERROR);
                             return step;
                         }
-                        ChunkFileDownload dl = new ChunkFileDownload(this, downloadLink, requestInfo.getConnection());
+                        RAFDownload dl = new RAFDownload(this, downloadLink, requestInfo.getConnection());
 
                         dl.startDownload();
                         return step;
@@ -394,7 +394,7 @@ public class Uploadedto extends PluginForHost {
                             step.setStatus(PluginStep.STATUS_ERROR);
                             return step;
                         }
-                        ChunkFileDownload dl = new ChunkFileDownload(this, downloadLink, requestInfo.getConnection());
+                        RAFDownload dl = new RAFDownload(this, downloadLink, requestInfo.getConnection());
 
                         dl.startDownload();
                 
@@ -570,7 +570,7 @@ public class Uploadedto extends PluginForHost {
                         step.setStatus(PluginStep.STATUS_ERROR);
                         return step;
                     }
-                    ChunkFileDownload dl = new ChunkFileDownload(this, downloadLink, requestInfo.getConnection());
+                    RAFDownload dl = new RAFDownload(this, downloadLink, requestInfo.getConnection());
                    // dl.setChunks(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS,3));
                     
                     dl.startDownload();

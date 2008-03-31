@@ -31,7 +31,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.PluginStep;
 import jd.plugins.Regexp;
 import jd.plugins.RequestInfo;
-import jd.plugins.download.ChunkFileDownload;
+import jd.plugins.download.RAFDownload;
 import jd.utils.JDUtilities;
 
 public class FilesTo extends PluginForHost {
@@ -206,7 +206,7 @@ public class FilesTo extends PluginForHost {
                     }
                     
                     // Download starten
-                    ChunkFileDownload dl = new ChunkFileDownload(this, downloadLink, urlConnection);
+                    RAFDownload dl = new RAFDownload(this, downloadLink, urlConnection);
                     dl.setResume(true);dl.setChunkNum(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS,3));
                     dl.startDownload();
                     

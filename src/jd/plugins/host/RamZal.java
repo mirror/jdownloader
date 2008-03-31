@@ -28,7 +28,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.HTTPConnection;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginStep;
-import jd.plugins.download.ChunkFileDownload;
+import jd.plugins.download.RAFDownload;
 
 public class RamZal extends PluginForHost {
 	private static final String HOST = "ramzal.com";
@@ -98,7 +98,7 @@ public class RamZal extends PluginForHost {
 				step.setStatus(PluginStep.STATUS_ERROR);
 				return step;
 			}
-		    ChunkFileDownload dl = new ChunkFileDownload(this, downloadLink, urlConnection);
+		    RAFDownload dl = new RAFDownload(this, downloadLink, urlConnection);
 
             if (!dl.startDownload() && step.getStatus() != PluginStep.STATUS_ERROR && step.getStatus() != PluginStep.STATUS_TODO) {
                 downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN);
