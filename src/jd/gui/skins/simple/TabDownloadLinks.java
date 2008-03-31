@@ -672,11 +672,11 @@ public class TabDownloadLinks extends JPanel implements PluginListener, ControlL
                 else {
                     c.setBackground(Color.WHITE);
                 }
-                DownloadLink downloadLink = allLinks.get(row);
-                if(downloadLink.getLinkType()==DownloadLink.LINKTYPE_JDU){
-                    c.setBackground(Color.BLUE);
-                    //c.setForeground(Color.WHITE);
-                }
+//                DownloadLink downloadLink = allLinks.get(row);
+//                if(downloadLink.getLinkType()==DownloadLink.LINKTYPE_JDU){
+//                    c.setBackground(Color.BLUE);
+//                    //c.setForeground(Color.WHITE);
+//                }
                 if (column == 0) {
                     c.setBackground((Color) dLink.getFilePackage().getProperty("color"));
                 }
