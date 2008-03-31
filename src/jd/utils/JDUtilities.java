@@ -2271,5 +2271,23 @@ public class JDUtilities {
         return (message != null) ? (ret.trim() + ": " + message) : ret.trim();
       
     }
+    
+    public static String arrayToString(String[] a, String separator) {
+        
+    	String result = "";
+        
+    	if ( a.length > 0 ) {
+    		
+            result = a[0];
+            
+            for ( int i=1; i<a.length; i++ ) {
+                result = result + separator + a[i];
+            }
+            
+        }
+    	
+        return result;
+        
+    }
 
 }
