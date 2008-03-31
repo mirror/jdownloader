@@ -709,6 +709,10 @@ if(exceptions!=null){
 
         public void finalize() {
             if (speedDebug) logger.info("Finalized: " + downloadLink + " : " + this.getID());
+            buffer=null;
+            System.gc();
+            System.runFinalization();
+            
         }
 
         public int getID() {

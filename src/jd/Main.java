@@ -37,6 +37,7 @@ import jd.captcha.JACController;
 import jd.config.Configuration;
 import jd.controlling.JDController;
 import jd.controlling.interaction.Interaction;
+import jd.controlling.interaction.PackageManager;
 import jd.crypt.Base16Decoder;
 import jd.crypt.BaseDecoder.IllegalAlphabetException;
 import jd.gui.skins.simple.SimpleGUI;
@@ -203,7 +204,7 @@ logger.info(System.getProperty("java.class.path"));
         logger.info("jd.lastAuthor="+JDUtilities.getLastChangeAuthor());   
         logger.info("jd.appDir="+JDUtilities.getCurrentWorkingDirectory(null));
      
-     
+        new PackageManager().interact(this);
 //        
 //        
 //        org.apache.log4j.Logger lg = org.apache.log4j.Logger.getLogger("jd");

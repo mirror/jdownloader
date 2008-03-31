@@ -63,7 +63,7 @@ import org.xml.sax.InputSource;
  * @author JD-Team
  * 
  */
-public class ConfigPanelRessources extends ConfigPanel implements MouseListener {
+public class ConfigPanelRessources extends ConfigPanel implements MouseListener, ActionListener {
 
     /**
      * 
@@ -98,16 +98,17 @@ public class ConfigPanelRessources extends ConfigPanel implements MouseListener 
 
         config = JDUtilities.getSubConfig("PACKAGEMANAGER");
         packageData = new PackageManager().getPackageData();
-        logger.info(packageData + "");
+       
 
         ConfigEntry ce;
-        ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, config, "PACKAGEMANAGER_AUTOUPDATE", JDLocale.L("gui.config.packagemanager.doautoupdate", "Ausgewählte Pakete automatisch aktuell halten"));
-        ce.setDefaultValue(true);
+       // ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, config, "PACKAGEMANAGER_AUTOUPDATE", JDLocale.L("gui.config.packagemanager.doautoupdate", "Ausgewählte Pakete automatisch aktuell halten"));
+       // ce.setDefaultValue(true);
+       // addGUIConfigEntry(new GUIConfigEntry(ce));
+        //ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, config, "PACKAGEMANAGER_EXTRACT_AFTERDOWNLOAD", JDLocale.L("gui.config.packagemanager.doautoupdateafterdownloads", "Geladene Pakete sofort nach dem Download installieren (sonst nach dem Beenden)"));
+       // ce.setDefaultValue(false);
+       // addGUIConfigEntry(new GUIConfigEntry(ce));
+        ce = new ConfigEntry(ConfigContainer.TYPE_BUTTON,  this, JDLocale.L("gui.config.packagemanager.reset", "Versionsinformationen zurücksetzen"));
         addGUIConfigEntry(new GUIConfigEntry(ce));
-        ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, config, "PACKAGEMANAGER_EXTRACT_AFTERDOWNLOAD", JDLocale.L("gui.config.packagemanager.doautoupdateafterdownloads", "Geladene Pakete sofort nach dem Download installieren (sonst nach dem Beenden)"));
-        ce.setDefaultValue(false);
-        addGUIConfigEntry(new GUIConfigEntry(ce));
-
         table = new InternalTable();
         table.getTableHeader().setPreferredSize(new Dimension(-1, 25));
         // table.setDragEnabled(true);
@@ -193,7 +194,7 @@ public class ConfigPanelRessources extends ConfigPanel implements MouseListener 
     private class InternalTableModel extends AbstractTableModel {
 
         public Class<?> getColumnClass(int columnIndex) {
-            logger.info(columnIndex + " " + getValueAt(0, columnIndex).getClass());
+            
             return getValueAt(0, columnIndex).getClass();
 
         }
@@ -260,7 +261,7 @@ public class ConfigPanelRessources extends ConfigPanel implements MouseListener 
            
             element.put("selected",v?"true":null);
           
-            logger.info("" + value);
+          
         }
 
         public String getColumnName(int column) {
@@ -412,6 +413,16 @@ public class ConfigPanelRessources extends ConfigPanel implements MouseListener 
     public void mouseReleased(MouseEvent e) {
     // TODO Auto-generated method stub
 
+    }
+
+    public void actionPerformed(ActionEvent e) {
+        for(int i=0; i<this.packageData.size();i++){
+            
+            config.setProperty("PACKAGE_INSTALLED_VERSION_"+packageData.get(i).get("id"), 0);
+        }
+        table.tableChanged(new TableModelEvent(table.getModel()));
+        
+        
     }
 
     // private class InternalTableCellRenderer extends DefaultTableCellRenderer

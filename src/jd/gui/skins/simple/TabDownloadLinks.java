@@ -586,6 +586,9 @@ public class TabDownloadLinks extends JPanel implements PluginListener, ControlL
                     case COL_INDEX:
                         return rowIndex;
                     case COL_NAME:
+                        if(downloadLink.getLinkType()==DownloadLink.LINKTYPE_JDU){
+                            return "Update : "+downloadLink.getName().substring(0, downloadLink.getName().lastIndexOf("."))+" v. "+downloadLink.getSourcePluginComment().split("_")[1];
+                        }
                         if (downloadLink.getFilePackage() == null) {
                             return downloadLink.getName();
                         }
@@ -668,6 +671,11 @@ public class TabDownloadLinks extends JPanel implements PluginListener, ControlL
                 }
                 else {
                     c.setBackground(Color.WHITE);
+                }
+                DownloadLink downloadLink = allLinks.get(row);
+                if(downloadLink.getLinkType()==DownloadLink.LINKTYPE_JDU){
+                    c.setBackground(Color.BLUE);
+                    //c.setForeground(Color.WHITE);
                 }
                 if (column == 0) {
                     c.setBackground((Color) dLink.getFilePackage().getProperty("color"));

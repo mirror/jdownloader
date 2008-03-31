@@ -44,6 +44,7 @@ jd.plugins.decrypt.RockHouseIn
 jd.plugins.decrypt.RapidAdsAthCx
 #jd.plugins.decrypt.NixPopOrg
 jd.plugins.decrypt.SAUGUS
+jd.plugins.decrypt.RapidRace
 jd.plugins.decrypt.SceneloadTo
 jd.plugins.decrypt.UCMS
 jd.plugins.decrypt.DreiDlAm

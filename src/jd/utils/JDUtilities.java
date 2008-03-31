@@ -1313,7 +1313,7 @@ public class JDUtilities {
      * Schreibt content in eine Lokale textdatei
      * 
      * @param file
-     * @param content
+     * @param content 
      * @return true/False je nach Erfolg des Schreibvorgangs
      */
     public static boolean writeLocalFile(File file, String content) {
