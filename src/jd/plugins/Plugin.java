@@ -1428,7 +1428,7 @@ public abstract class Plugin {
         }
 
         String cd = urlConnection.getHeaderField("content-disposition").toLowerCase();
-        ret = cd.substring(cd.indexOf("filename=") + 9);
+        ret = urlConnection.getHeaderField("content-disposition").substring(cd.indexOf("filename=") + 9);
         while (ret.startsWith("\"") || ret.startsWith("'"))
             ret = ret.substring(1);
         while (ret.endsWith("\"") || ret.endsWith("'"))

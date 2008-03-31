@@ -452,7 +452,7 @@ public class Uploadedto extends PluginForHost {
                     step.setStatus(PluginStep.STATUS_SKIP);
                     downloadLink.setStatusText("Premiumdownload");
                     step = nextStep(step);
-                    return step;
+                  
                 case PluginStep.STEP_DOWNLOAD:
 
                     requestInfo = getRequest(new URL(downloadLink.getDownloadURL()), cookie, null, false);
@@ -519,7 +519,7 @@ public class Uploadedto extends PluginForHost {
                     String newURL = null;
                     if (requestInfo.getConnection().getHeaderField("Location") == null || requestInfo.getConnection().getHeaderField("Location").length() < 10) {
                         newURL = getSimpleMatch(requestInfo.getHtmlCode(), DOWNLOAD_URL_PREMIUM, 0);
-                        logger.info(requestInfo.getHtmlCode());
+                      
                         if (newURL == null) {
                             logger.severe("Indirekter Link konnte nicht gefunden werden");
 
