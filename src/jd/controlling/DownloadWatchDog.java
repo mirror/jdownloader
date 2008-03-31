@@ -265,6 +265,7 @@ public class DownloadWatchDog extends Thread implements PluginListener, ControlL
      */
     void abort() {
         logger.finer("Breche alle actove links ab");
+        this.aborted = true;
         ProgressController progress = new ProgressController("Termination", activeLinks.size());
         progress.setStatusText("Stopping all downloads");
         synchronized (activeLinks) {
@@ -289,7 +290,7 @@ public class DownloadWatchDog extends Thread implements PluginListener, ControlL
                 }
                 if (check) break;
                 try {
-                    Thread.sleep(500);
+                    Thread.sleep(1000);
                 }
                 catch (InterruptedException e) {
                 }
@@ -297,7 +298,7 @@ public class DownloadWatchDog extends Thread implements PluginListener, ControlL
         }
         progress.finalize();
         logger.finer("Abbruch komplett");
-        this.aborted = true;
+
         this.clearDownloadListStatus();
 
     }

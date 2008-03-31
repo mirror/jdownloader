@@ -92,7 +92,7 @@ public class MBBDownload extends DownloadInterface {
         try {
 
             RandomAccessFile outputFile = new RandomAccessFile(downloadLink.getFileOutput() + ".part", "rw");
-
+         
             FileChannel outputChannel = outputFile.getChannel();
             long fileSize = getFileSize();
             wrBuf = outputChannel.map(FileChannel.MapMode.READ_WRITE, 0, (int) fileSize);

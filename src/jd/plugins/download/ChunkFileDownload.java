@@ -238,28 +238,30 @@ public class ChunkFileDownload extends DownloadInterface {
 
             int coppied = 0;
             downloadLink.setStatusText(JDLocale.L("download.status.merge","Zusammenfügen"));
+            long length=0;
             for (int i = 0; i < getChunkNum(); i++) {
                 channels[i].force(true);
                 channels[i].close();
                in = new FileInputStream(partFiles[i].getAbsolutePath()).getChannel();
                 coppied = 0;
-           
+           length=partFiles[i].length();
 
-                while (coppied != partFiles[i].length()) {
-                    coppied += in.transferTo(coppied, partFiles[i].length(), out);
-                 
+                while (coppied != length) {
+                    coppied += in.transferTo(coppied, length, out);
+                 logger.info("Partmerge: "+coppied);
                 }
                 ;
 
                 logger.info("Merged " + partFiles[i].getAbsolutePath() + " to " + downloadLink.getFileOutput());
                
-                in.force(true);
-                out.force(true);
+                //in.force(true);
+               
                 in.close();
                 logger.info("Deleted "+partFiles[i].delete());
                 partFiles[i] = null;
             }
             System.gc();
+            out.force(true);
             out.close();
             return;
         }
