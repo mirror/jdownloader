@@ -39,7 +39,7 @@ public class Lixin extends PluginForDecrypt {
     //lix.in/cc1d28
     static private final Pattern patternSupported = Pattern.compile("http://.{0,5}lix\\.in/[a-zA-Z0-9]{6,10}", Pattern.CASE_INSENSITIVE);
     static private final Pattern patternCaptcha = Pattern.compile("<img\\s+src=\"(.*?)\"");
-    static private final Pattern patternIframe = Pattern.compile("<iframe.*src=\"(.+?)\"");
+    static private final Pattern patternIframe = Pattern.compile("<iframe.*src=\"(.+?)\"", Pattern.DOTALL);
     static private final Pattern patternCaptchaWrong = Pattern.compile("<title>Lix.in - Linkprotection</title>");
     
 
@@ -126,7 +126,7 @@ public class Lixin extends PluginForDecrypt {
                 	if(matcher.find()){
                 		logger.info("entered captcha code seems to be wrong");
                 	}else{
-                    	logger.severe("unable to detect Link in iframe (see next INFO log line");
+                    	logger.severe("unable to detect Link in iframe (see next INFO log line) - adapt patternIframe");
                     	logger.info(reqInfoForm.getHtmlCode());
                 	}
                 	
