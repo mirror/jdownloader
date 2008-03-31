@@ -32,6 +32,7 @@ import java.util.Vector;
 
 import javax.swing.JButton;
 import javax.swing.JLabel;
+import javax.swing.JPanel;
 import javax.swing.JProgressBar;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
@@ -43,6 +44,7 @@ import javax.swing.table.TableColumn;
 
 import jd.config.Configuration;
 import jd.gui.UIInterface;
+import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginOptional;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
@@ -226,18 +228,39 @@ public class ConfigPanelPluginsOptional extends ConfigPanel implements ActionLis
         }
 
     }
+    
+    private int getSelectedIndex() {
+        return table.getSelectedRow();
+    }
+    private PluginOptional getSelectedPlugin() {
+        int index = getSelectedIndex();
+        if (index < 0) return null;
+        return this.plugins.elementAt(index);
+    }
 
     private void editEntry() {
-    // PluginForSearch plugin = getSelectedPlugin();
-    //
-    // if (plugin != null && plugin.getConfig().getEntries().size() > 0) {
-    //
-    // openPopupPanel(new ConfigPanelPlugin(configuration, uiinterface,
-    // plugin));
-    //
-    // }
-
+        PluginOptional plugin = getSelectedPlugin();
+        if (plugin != null && plugin.getConfig().getEntries().size() > 0) {
+            openPopupPanel(new ConfigPanelPlugin(configuration, uiinterface, plugin));
+        }
     }
+    private void openPopupPanel(ConfigPanel config) {
+        JPanel panel = new JPanel(new BorderLayout());
+
+//      InteractionTrigger[] triggers = InteractionTrigger.getAllTrigger();
+
+        PluginOptional plugin = this.getSelectedPlugin();
+//      currentPlugin = plugin;
+        if (plugin == null) return;
+
+        JPanel topPanel = new JPanel();
+        panel.add(topPanel, BorderLayout.NORTH);
+        panel.add(config, BorderLayout.CENTER);
+        ConfigurationPopup pop = new ConfigurationPopup(JDUtilities.getParentFrame(this), config, panel, uiinterface, configuration);
+        pop.setLocation(JDUtilities.getCenterOfComponent(this, pop));
+        pop.setVisible(true);
+    }
+
 
     public void mouseClicked(MouseEvent e) {
         if (e.getClickCount() > 1) {

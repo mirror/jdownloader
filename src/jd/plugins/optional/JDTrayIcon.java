@@ -26,6 +26,9 @@ import java.awt.TrayIcon;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
+import jd.config.ConfigContainer;
+import jd.config.ConfigEntry;
+import jd.config.SubConfiguration;
 import jd.plugins.PluginOptional;
 import jd.plugins.event.PluginEvent;
 import jd.utils.JDLocale;
@@ -71,6 +74,12 @@ public class JDTrayIcon extends PluginOptional implements ActionListener {
 
     @Override
     public void enable(boolean enable) throws Exception {
+        logger.info("HUHU");
+        
+        SubConfiguration subConfig = JDUtilities.getSubConfig("WEBINTERFACE");
+        ConfigEntry cfg;
+        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, subConfig, "PORT", "Webinterface Port"));
+        cfg.setDefaultValue("80");
         if(JDUtilities.getJavaVersion()>=1.6){
         if (enable) {
             logger.info("Systemtray ok: java "+JDUtilities.getJavaVersion());
