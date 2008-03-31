@@ -13,11 +13,11 @@ import jd.utils.JDUtilities;
 
 public class RapidRace extends PluginForDecrypt {
     // http://www.rapidrace.org/rel.php?ID=1332
-    static private final String  host             = "rapidrace.org";
+    static private final String  HOST             = "rapidrace.org";
 
-    static private final String  coder            = "TheBlindProphet";
+    static private final String  CODER            = "TheBlindProphet";
 
-    static private final String  version          = "1.0.1";
+    static private final String  VERSION          = "1.2";
 
     private Pattern              patternSupported = getSupportPattern("http://(www.)?rapidrace\\.org/rel\\.php\\?ID=[+]");
 
@@ -30,19 +30,19 @@ public class RapidRace extends PluginForDecrypt {
     }
 
     public String getCoder() {
-        return coder;
+        return CODER;
     }
 
     public String getHost() {
-        return host;
+        return HOST;
     }
 
     public String getPluginID() {
-        return host + " " + version;
+        return HOST + " " + VERSION;
     }
 
     public String getPluginName() {
-        return host;
+        return HOST;
     }
 
     public Pattern getSupportedLinks() {
@@ -50,31 +50,31 @@ public class RapidRace extends PluginForDecrypt {
     }
 
     public String getVersion() {
-        return version;
+        return VERSION;
     }
 
     public PluginStep doStep(PluginStep step, String parameter) {
         if (step.getStep() == PluginStep.STEP_DECRYPT) {
             try {
                 URL url = new URL(parameter);
-                String final_url = "";
-                String Quellcode = "";
+                String finalUrl = "";
+                String quellcode = "";
                 progress.setRange(1);
                 RequestInfo reqinfo = getRequest(url, null, null, false);
-                Quellcode = reqinfo.getHtmlCode();
-                while (Quellcode.indexOf("http://www.rapidrace.org/load.php?ID") != -1) {
-                    final_url = "";
-                    Quellcode = Quellcode.substring(Quellcode.indexOf("http://www.rapidrace.org/load.php?ID"));
-                    String tmp = Quellcode.substring(0, Quellcode.indexOf("\""));
+                quellcode = reqinfo.getHtmlCode();
+                while (quellcode.indexOf("http://www.rapidrace.org/load.php?ID") != -1) {
+                    finalUrl = "";
+                    quellcode = quellcode.substring(quellcode.indexOf("http://www.rapidrace.org/load.php?ID"));
+                    String tmp = quellcode.substring(0, quellcode.indexOf("\""));
                     progress.increase(1);
                     reqinfo = getRequest(new URL(tmp), null, null, true);
                     tmp = reqinfo.getHtmlCode().substring(reqinfo.getHtmlCode().indexOf("document.write(fu('") + 19);
                     tmp = tmp.substring(0, tmp.indexOf("'"));
                     for (int i = 0; i < tmp.length(); i += 2) {
-                        final_url = final_url + (char) (Integer.parseInt(tmp.substring(i, i + 2), 16) ^ (i / 2));
+                        finalUrl = finalUrl + (char) (Integer.parseInt(tmp.substring(i, i + 2), 16) ^ (i / 2));
                     }
-                    decryptedLinks.add(this.createDownloadlink(final_url));
-                    Quellcode = Quellcode.substring(20);
+                    decryptedLinks.add(this.createDownloadlink(finalUrl));
+                    quellcode = quellcode.substring(20);
                 }
                 step.setParameter(decryptedLinks);
 
