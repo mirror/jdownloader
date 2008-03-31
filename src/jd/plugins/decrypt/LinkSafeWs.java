@@ -20,14 +20,16 @@ package jd.plugins.decrypt;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
-import java.util.Vector;
 import java.util.ArrayList;
+import java.util.Vector;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
-import jd.plugins.DownloadLink;
+import jd.utils.JDUtilities;
 
 public class LinkSafeWs extends PluginForDecrypt {
     private static final String  CODER          = "Bo0nZ";
@@ -41,7 +43,7 @@ public class LinkSafeWs extends PluginForDecrypt {
      * Suchmasken
      */
     private static final String  FILES          = "<input type='hidden' name='id' value='°' />°<input type='hidden' name='f' value='°' />";
-    private static final String  LINK           = "<iframe frameborder=\"0\" height=\"100%\" width=\"100%\" src=\"http://anonym.us.to/?°\">";
+    private static final String  LINK           = "<iframe frameborder=\"0\" height=\"100%\" width=\"100%\" src=\"°\">";
 
     public LinkSafeWs() {
         super();
@@ -99,6 +101,12 @@ public class LinkSafeWs extends PluginForDecrypt {
                     reqinfo = postRequest(new URL("http://www.linksafe.ws/go/"), reqinfo.getCookie(), strURL, null, "id=" + files.get(i).get(0) + "&f=" + files.get(i).get(2) + "&Download.x=5&Download.y=10&Download=Download", true);
 
                     String newLink = getSimpleMatch(reqinfo.getHtmlCode(), LINK, 0);
+                    
+                    String pattern = "\\&\\#[0-9]{1,3}";
+                    for (Matcher r = Pattern.compile(pattern, Pattern.DOTALL).matcher(newLink); r.find();) {                     
+                            char c = (char) JDUtilities.filterInt(r.group(0));
+                            newLink = newLink.replaceFirst("\\&\\#[0-9]{1,3}", c + "");                   
+                    }
 
                     decryptedLinks.add(this.createDownloadlink(newLink));
                     progress.increase(1);

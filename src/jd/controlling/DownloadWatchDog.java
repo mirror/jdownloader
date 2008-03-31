@@ -111,18 +111,19 @@ public class DownloadWatchDog extends Thread implements PluginListener, ControlL
                 if (inProgress > 0) {
                     Iterator<DownloadLink> iter = getDownloadLinks().iterator();
                     int maxspeed = JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, 0) * 1024;
+                    boolean isLimited = (maxspeed != 0);
                     if (maxspeed == 0) maxspeed = Integer.MAX_VALUE;
                     int overhead = maxspeed - currentTotalSpeed;
                     // logger.info("cu speed= " + currentTotalSpeed + " overhead
                     // :;" + overhead);
                     this.totalSpeed = currentTotalSpeed;
-                    boolean isLimited = (maxspeed != 0);
+                  
                     DownloadLink element;
                     while (iter.hasNext()) {
                         element = (DownloadLink) iter.next();
-
+                        element.setLimited(isLimited);
                         if (element.getStatus() == DownloadLink.STATUS_DOWNLOAD_IN_PROGRESS) {
-                            element.setLimited(isLimited);
+                           
 
                             element.setMaximalSpeed(element.getDownloadSpeed() + overhead / inProgress);
 

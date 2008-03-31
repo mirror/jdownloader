@@ -90,8 +90,9 @@ public class LogDialog extends JFrame implements ActionListener {
       
         this.owner = owner;
         setIconImage(JDUtilities.getImage(JDTheme.I("gui.images.terminal")));
+        this.setTitle(JDLocale.L("gui.logDialog.title", "jDownloader Logausgabe"));
         setLayout(new GridBagLayout());
-        this.setName("LOFDIALOG");
+        this.setName("LOGDIALOG");
         Handler streamHandler = new LogStreamHandler(new PrintStream(new LogStream()));
         streamHandler.setLevel(Level.ALL);
         streamHandler.setFormatter(new LogFormatter());
@@ -116,12 +117,12 @@ public class LogDialog extends JFrame implements ActionListener {
         logField.setEditable(true);
 
         JDUtilities.addToGridBag(this, logScrollPane, 0, 0, 5, 1, 1, 1, null, GridBagConstraints.BOTH, GridBagConstraints.EAST);
-        JDUtilities.addToGridBag(this, btnOK, 0, 1, 1, 1, 1, 0, null, GridBagConstraints.NONE, GridBagConstraints.WEST);
-        JDUtilities.addToGridBag(this, btnSave, 1, 1, 1, 1, 1, 0, null, GridBagConstraints.NONE, GridBagConstraints.EAST);
+        JDUtilities.addToGridBag(this, btnOK, 0, 1, 1, 1, 1, 0, null, GridBagConstraints.NONE, GridBagConstraints.EAST);
+        JDUtilities.addToGridBag(this, btnSave, 1, 1, 1, 1, 0, 0, null, GridBagConstraints.NONE, GridBagConstraints.EAST);
 
         // JDUtilities.addToGridBag(this, btnCensor, 2, 1, 1, 1, 1, 0, null,
         // GridBagConstraints.NONE, GridBagConstraints.EAST);
-        JDUtilities.addToGridBag(this, btnUpload, 2, 1, 1, 1, 1, 0, null, GridBagConstraints.NONE, GridBagConstraints.EAST);
+        JDUtilities.addToGridBag(this, btnUpload, 2, 1, 1, 1, 0, 0, null, GridBagConstraints.NONE, GridBagConstraints.EAST);
         LocationListener list = new LocationListener();
         this.addComponentListener(list);
          this.addWindowListener(list);

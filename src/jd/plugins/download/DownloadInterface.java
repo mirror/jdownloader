@@ -661,9 +661,9 @@ if(exceptions!=null){
         // Das führt zu verstärkt intervalartigem laden und ist ungewünscht
         public static final int  MIN_CHUNKSIZE  = 1 * 1024 * 1024;
 
-        private static final int MAX_BUFFERSIZE = 6 * 1024 * 1024;
+        private static final long MAX_BUFFERSIZE = 6 * 1024 * 1024;
 
-        private static final int MIN_BUFFERSIZE = 1024;
+        private static final long MIN_BUFFERSIZE = 1024;
 
         private static final int TIME_BASE      = 2000;
 
@@ -863,7 +863,7 @@ if(exceptions!=null){
                 return;
             }
            // logger.info(this.getID() + " : " + preBytes);
-            if (preBytes > 0 && this.getID() == 0 && startByte == 0) loadStartBytes(preBytes);
+            if (chunkNum > 1 &&preBytes > 0 && this.getID() == 0 && startByte == 0) loadStartBytes(preBytes);
             plugin.setCurrentConnections(plugin.getCurrentConnections() + 1);
           
             if (chunkNum > 1) this.connection = copyConnection(connection);
@@ -1148,12 +1148,12 @@ if(exceptions!=null){
          * @param maxspeed
          * @return
          */
-        private int getBufferSize(int maxspeed) {
+        private int getBufferSize(long maxspeed) {
             if (speedDebug) logger.info("speed " + maxspeed);
-            if (!downloadLink.isLimited()) return MAX_BUFFERSIZE;
-            maxspeed *= (TIME_BASE / 1000);
-            int max = Math.max(MIN_BUFFERSIZE, maxspeed);
-            int bufferSize = Math.min(MAX_BUFFERSIZE, max);
+            if (!downloadLink.isLimited()) return (int)MAX_BUFFERSIZE;
+            maxspeed*= (TIME_BASE / 1000);            
+            long max = Math.max(MIN_BUFFERSIZE, maxspeed);
+            int bufferSize = (int)Math.min(MAX_BUFFERSIZE, max);
             // logger.info(MIN_BUFFERSIZE+"<>"+maxspeed+"-"+MAX_BUFFERSIZE+"><"+max);
             this.bufferTimeFaktor = Math.max(0.1, (double) bufferSize / maxspeed);
             if (speedDebug) logger.info("Maxspeed= " + maxspeed + " buffer=" + bufferSize + "time: " + getTimeInterval());

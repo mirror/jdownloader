@@ -322,7 +322,7 @@ public class DownloadLink implements Serializable, Comparable<DownloadLink> {
             this.urlDownload = urlDownload;
         else
             urlDownload = null;
-        if (name == null) this.name = this.extractFileNameFromURL();
+        if (name == null&&urlDownload != null) this.name = this.extractFileNameFromURL();
     }
 
     /**
