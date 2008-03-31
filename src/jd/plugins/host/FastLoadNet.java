@@ -41,7 +41,7 @@ public class FastLoadNet extends PluginForHost {
 
     private static final String  PLUGIN_NAME            = HOST;
 
-    private static final String  PLUGIN_VERSION         = "0.1.4";
+    private static final String  PLUGIN_VERSION         = "0.1.5";
 
     private static final String  PLUGIN_ID              = PLUGIN_NAME + "-" + PLUGIN_VERSION;
 
@@ -52,11 +52,11 @@ public class FastLoadNet extends PluginForHost {
     private String               downloadURL            = "";
 
     // Suchmasken
-    private static final String  DOWNLOAD_SIZE          = "<div id=\"dlpan_size\" style=\".*?\">(.*?) MB</div>";
+    private static final String  DOWNLOAD_SIZE          = "<b>Size:</b> (.*?) MB<br/>";
 
-    private static final String  DOWNLOAD_NAME          = "<div id=\"dlpan_file\" style=\".*?\">(.*?)</div>";
+    private static final String  DOWNLOAD_NAME          = "<b>File:</b> <font size=\".*?\">(.*?)</font>";
 
-    private static final String  DOWNLOAD_LINK          = "<div id=\"dlpan_btn\" style=\".*?\"><a href=\"(.*?)\">";
+    private static final String  DOWNLOAD_LINK          = "value=\"Download file\" onclick=\"location='(.*?)'\">";
 
     private static final String  NOT_FOUND              = "Datei existiert nicht";
 

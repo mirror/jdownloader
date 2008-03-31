@@ -54,10 +54,6 @@ public class Main {
     private static Logger logger = JDUtilities.getLogger();
 
     public static void main(String args[]) {
-
-        if ( Runtime.getRuntime().maxMemory()<100000000 ){
-            JDUtilities.restartJD(args);
-        }
         
     	// listen for command line arguments from new jD instances
     	if ( tryConnectSocketClient(JDUtilities.arrayToString(args,";")) ) {
@@ -72,7 +68,13 @@ public class Main {
     		System.exit(0);
     		
     	} else {
+
+            if ( Runtime.getRuntime().maxMemory()<100000000 ){
+                JDUtilities.restartJD(args);
+            }
+            
         	startSocketServer();
+        	
     	}
         
         if( System.getProperty("os.name").toLowerCase().indexOf("mac")>=0){
