@@ -54,6 +54,10 @@ public class Main {
     private static Logger logger = JDUtilities.getLogger();
 
     public static void main(String args[]) {
+
+        if ( Runtime.getRuntime().maxMemory()<100000000 ){
+            JDUtilities.restartJD(args);
+        }
         
     	// listen for command line arguments from new jD instances
     	if ( tryConnectSocketClient(JDUtilities.arrayToString(args,";")) ) {
@@ -88,6 +92,7 @@ public class Main {
         
         // pre start parameters
         for ( String currentArg : args ) {
+        	
         	if ( currentArg.equals("--help") || currentArg.equals("-h") ) {
         		showCmdHelp();
         		System.exit(0);
@@ -98,6 +103,7 @@ public class Main {
         		JACController.showDialog(false);
         		stop = true;
         	}
+        	
         }
         
         if ( !stop ) {
@@ -107,10 +113,6 @@ public class Main {
         	
             // post start parameters
             processParameters(args, true);
-
-            /*if ( Runtime.getRuntime().maxMemory()<100000000 ){
-                JDUtilities.restartJD();
-            }*/
             
         }
         

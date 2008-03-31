@@ -2212,6 +2212,17 @@ public class JDUtilities {
 
     }
 
+    public static void restartJD(String[] jdArgs) {
+    	
+    	String[] javaArgs = new String[] { "-jar", "-Xmx512m","JDownloader.jar" };
+    	String[] finalArgs = new String[jdArgs.length + javaArgs.length];
+    	System.arraycopy(javaArgs, 0, finalArgs, 0, javaArgs.length);
+    	System.arraycopy(jdArgs, 0, finalArgs, javaArgs.length, jdArgs.length);
+    	
+        logger.info(JDUtilities.runCommand("java", finalArgs, JDUtilities.getResourceFile(".").getAbsolutePath(), 0));
+        System.exit(0);
+    }
+
     public static void saveConfig() {
         JDUtilities.saveObject(null, JDUtilities.getConfiguration(), JDUtilities.getJDHomeDirectoryFromEnvironment(), JDUtilities.CONFIG_PATH.split("\\.")[0], "." + JDUtilities.CONFIG_PATH.split("\\.")[1], Configuration.saveAsXML);
 
