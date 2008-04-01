@@ -60,6 +60,7 @@ import javax.swing.JSeparator;
 import javax.swing.JTabbedPane;
 import javax.swing.JTable;
 import javax.swing.JTextField;
+import javax.swing.SwingUtilities;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import javax.swing.event.DocumentEvent;
@@ -151,6 +152,8 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
 
     private JMenuItem            mRemoveOfflineAll;
 
+    private JButton sortPackages;
+
     /**
      * @param parent GUI
      * @param linkList neue links
@@ -179,7 +182,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
         setLayout(new GridBagLayout());
         buildMenu();
         this.tabbedPane = new JTabbedPane();
-
+        this.sortPackages = new JButton(JDLocale.L("gui.linkgrabber.btn.sortPackages", "Pakete sortieren"));
         this.acceptAll = new JButton(JDLocale.L("gui.linkgrabber.btn.acceptAll", "Alle übernehmen"));
         this.accept = new JButton(JDLocale.L("gui.linkgrabber.btn.accept", "package übernehmen"));
         this.progress = new JProgressBar();
@@ -188,6 +191,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
         progress.setStringPainted(true);
         acceptAll.addActionListener(this);
         accept.addActionListener(this);
+        sortPackages.addActionListener(this);
         tabbedPane.addChangeListener(this);
 
         tabbedPane.setComponentOrientation(ComponentOrientation.LEFT_TO_RIGHT);
@@ -203,11 +207,13 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
         // th.exportAsDrag(c, e, TransferHandler.COPY);
         // }
         // });
-        JDUtilities.addToGridBag(this, tabbedPane, REL, REL, REM, 1, 1, 1, null, GridBagConstraints.BOTH, GridBagConstraints.NORTHWEST);
-        JDUtilities.addToGridBag(this, progress, REL, REL, REM, 1, 0, 0, null, GridBagConstraints.HORIZONTAL, GridBagConstraints.NORTHWEST);
-
-        JDUtilities.addToGridBag(this, acceptAll, REL, REL, REL, 1, 1, 0, null, GridBagConstraints.NONE, GridBagConstraints.SOUTHEAST);
-        JDUtilities.addToGridBag(this, accept, REL, REL, REM, 1, 0, 0, null, GridBagConstraints.NONE, GridBagConstraints.SOUTHEAST);
+        JDUtilities.addToGridBag(this, tabbedPane, 0, 0, 4, 1, 1, 1, null, GridBagConstraints.BOTH, GridBagConstraints.NORTHWEST);
+        JDUtilities.addToGridBag(this, progress, 0, 1, 4, 1, 1, 0, null, GridBagConstraints.HORIZONTAL, GridBagConstraints.NORTHWEST);
+        
+        JDUtilities.addToGridBag(this, sortPackages, 0, 2, 1, 1, 0, 0, null, GridBagConstraints.NONE, GridBagConstraints.SOUTHWEST);
+        JDUtilities.addToGridBag(this, acceptAll, 2, 2, 1, 1, 1, 0, null, GridBagConstraints.NONE, GridBagConstraints.SOUTHEAST);
+        
+        JDUtilities.addToGridBag(this, accept, 3, 2, 1, 1, 0, 0, null, GridBagConstraints.NONE, GridBagConstraints.SOUTHEAST);
 
         this.setName("LINKGRABBER");
         this.setPreferredSize(new Dimension(600, 400));
@@ -412,6 +418,36 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
 
     }
 
+    private void reprintTabbedPane() {
+        SwingUtilities.invokeLater(new Runnable() {
+            public void run() {
+
+                Collections.sort(tabList, new Comparator<PackageTab>() {
+                    public int compare(PackageTab a, PackageTab b) {
+                        return a.getPackageName().compareTo(b.getPackageName());
+                    }
+                });
+                synchronized (tabbedPane) {
+                    tabbedPane.removeAll();
+                    PackageTab tab;
+                    for (int i = 0; i < tabList.size(); i++) {
+                        tab = tabList.get(i);
+                        String title = tab.getPackageName();
+                        if (title.length() > 20) {
+                            // tabbedPane.setToolTipTextAt(i, title);
+                            title = title.substring(0, 6) + "(...)" + title.substring(title.length() - 6);
+                        }
+
+                        tabbedPane.add(title + "(" + tab.getLinkList().size() + ")", tab);
+
+                    }
+
+                    setTitle(JDLocale.L("gui.linkgrabber.title", "Linksammler") + " " + getTotalLinkCount() + " " + JDLocale.L("gui.linkgrabber.title_1", " Link(s) in") + " " + tabList.size() + " " + JDLocale.L("gui.linkgrabber.title_2", "Paket(en)"));
+                }
+
+            }
+        });
+    }
     private void attachLinkTopackage(DownloadLink link) {
 
         if (!guiConfig.getBooleanProperty(PROPERTY_AUTOPACKAGE, true)) {
@@ -675,6 +711,9 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
             confirmAll();
             this.setVisible(false);
             this.dispose();
+        }else if(e.getSource()==sortPackages){
+            
+            this.reprintTabbedPane();
         }
         else if (e.getSource() == this.mMerge) {
             PackageTab tab = tabList.get(tabbedPane.getSelectedIndex());

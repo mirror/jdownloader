@@ -110,7 +110,7 @@ abstract public class DownloadInterface {
 
     private int              preBytes                               = 0;
 
-    protected boolean        speedDebug                             = false;
+    protected boolean        speedDebug                             = true;
 
     private Vector<Exception> exceptions=null;
 
@@ -147,32 +147,7 @@ abstract public class DownloadInterface {
      * @param buffer
      * @param currentBytePosition
      */
-    // private synchronized void addBytes(Chunk chunk, int s) {
-    // try {
-    // if ((System.currentTimeMillis() - writeTimer) >= 1000) {
-    // this.hdWritesPerSecond = writeCount / 1;
-    // writeTimer = System.currentTimeMillis();
-    // writeCount = 0;
-    // logger.info("HD ZUgriffe: " + hdWritesPerSecond);
-    // }
-    // this.writeCount++;
-    // // currentBytePosition=-1;
-    // this.outputFile.seek(chunk.currentBytePosition);
-    //
-    // int length = chunk.buffer.limit() - chunk.buffer.position();
-    // // byte[] tmp = new byte[length];
-    // // logger.info("wrote " + length + " at " + currentBytePosition);
-    // // buffer.get(tmp, buffer.position(), length);
-    // outputChannel.write(chunk.buffer);
-    // // this.outputFile.write(tmp);
-    // }
-    // catch (Exception e) {
-    // // TODO Auto-generated catch block
-    // e.printStackTrace();
-    // error(ERROR_LOCAL_IO);
-    // }
-    //
-    // }
+   
     abstract protected void addBytes(Chunk chunk);
 
     /**
@@ -282,7 +257,7 @@ abstract public class DownloadInterface {
         }
 
         if (this.maxBytes > 0) {
-            logger.info("Nibble feature active: " + maxBytes + " rest chunks to 1");
+            logger.finer("Nibble feature active: " + maxBytes + " rest chunks to 1");
             chunkNum = 1;
         }
         try {
@@ -338,16 +313,16 @@ abstract public class DownloadInterface {
      */
     protected long getFileSize() {
         if (connection.getContentLength() > 0) {
-            // logger.info("1 " + connection.getHeaderFields());
+           
 
             return connection.getContentLength();
         }
         if (fileSize > 0) {
-            // logger.info("2");
+            
             return fileSize;
         }
         if (downloadLink.getDownloadMax() > 0) {
-            // logger.info("3");
+          
             return downloadLink.getDownloadMax();
 
         }
@@ -455,7 +430,7 @@ if(exceptions!=null){
 
             downloadLink.setDownloadCurrent(this.bytesLoaded);
             JDUtilities.getController().requestDownloadLinkUpdate(downloadLink);
-            // logger.info("UüdatebytesLoaded " + bytesLoaded);
+          
             assignChunkSpeeds();
 
         }
@@ -482,7 +457,7 @@ if(exceptions!=null){
             }
             int overhead = allowedLinkSpeed - currentSpeed;
             if (Math.abs(overhead) < MAX_ALLOWED_OVERHEAD) return;
-            // logger.info("Speed: "+currentSpeed+" overhead_: "+overhead);
+          
             it = chunks.iterator();
             while (it.hasNext()) {
                 next = it.next();
@@ -708,7 +683,7 @@ if(exceptions!=null){
         }
 
         public void finalize() {
-            if (speedDebug) logger.info("Finalized: " + downloadLink + " : " + this.getID());
+            if (speedDebug) logger.finer("Finalized: " + downloadLink + " : " + this.getID());
             buffer=null;
             System.gc();
             System.runFinalization();
@@ -717,7 +692,7 @@ if(exceptions!=null){
 
         public int getID() {
             if (id < 0) {
-                if (speedDebug) logger.info("INIT " + chunks.indexOf(this));
+                if (speedDebug) logger.finer("INIT " + chunks.indexOf(this));
                 id = chunks.indexOf(this);
             }
             return id;
@@ -731,7 +706,7 @@ if(exceptions!=null){
          */
         public void setMaximalSpeed(int i) {
             maxSpeed = i;
-            // logger.info(chunks.indexOf(this) + " chunkspeed: " + i);
+
 
         }
 
@@ -743,10 +718,10 @@ if(exceptions!=null){
         public int getMaximalSpeed() {
             if (this.maxSpeed <= 0) {
                 this.maxSpeed = downloadLink.getMaximalspeed() / getRunningChunks();
-                if (speedDebug) logger.info("Def speed: " + downloadLink.getMaximalspeed() + "/" + getRunningChunks() + "=" + maxSpeed);
+                if (speedDebug) logger.finer("Def speed: " + downloadLink.getMaximalspeed() + "/" + getRunningChunks() + "=" + maxSpeed);
 
             }
-            if (speedDebug) logger.info("return speed: min " + maxSpeed + " - " + (this.desiredBps * 1.5));
+            if (speedDebug) logger.finer("return speed: min " + maxSpeed + " - " + (this.desiredBps * 1.5));
             if (desiredBps < 1024) return maxSpeed;
             return Math.min(maxSpeed, (int) (this.desiredBps * 1.5));
         }
@@ -770,10 +745,10 @@ if(exceptions!=null){
                     int tmp = inputStream.read(b, i, preBytes);
                     i += tmp;
                     preBytes -= tmp;
-                    logger.info("Preloaded " + i + " bytes " + new String(b));
+                    logger.finer("Preloaded " + i + " bytes " + new String(b));
 
                 }
-                logger.info("Preloading produced " + inputStream.available() + " bytes overhead");
+                logger.finer("Preloading produced " + inputStream.available() + " bytes overhead");
                 inputStream.close();
                 connection.getHTTPURLConnection().disconnect();
                 buffer.put(b);
@@ -827,8 +802,7 @@ if(exceptions!=null){
 
                     httpConnection.setRequestProperty("Range", "bytes=" + startByte + "-" + (endByte > 0 ? endByte : ""));
 
-                    // logger.info(chunks.indexOf(this) + " - " +
-                    // httpConnection.getRequestProperties() + "");
+                  
                 }
                 if (connection.getHTTPURLConnection().getDoOutput()) {
                     httpConnection.setDoOutput(true);
@@ -841,9 +815,9 @@ if(exceptions!=null){
                     httpConnection.connect();
                 }
                 if (speedDebug) {
-                    logger.info("Org request headers " + this.getID() + ":" + request);
-                    logger.info("Coppied request headers " + this.getID() + ":" + httpConnection.getRequestProperties());
-                    logger.info("Server chunk Headers: " + this.getID() + ":" + httpConnection.getHeaderFields());
+                    //logger.finer("Org request headers " + this.getID() + ":" + request);
+                    //logger.finer("Coppied request headers " + this.getID() + ":" + httpConnection.getRequestProperties());
+                    //logger.finer("Server chunk Headers: " + this.getID() + ":" + httpConnection.getHeaderFields());
                 }
 
                 return httpConnection;
@@ -866,7 +840,7 @@ if(exceptions!=null){
                 chunksInProgress--;
                 return;
             }
-           // logger.info(this.getID() + " : " + preBytes);
+          
             if (chunkNum > 1 &&preBytes > 0 && this.getID() == 0 && startByte == 0) loadStartBytes(preBytes);
             plugin.setCurrentConnections(plugin.getCurrentConnections() + 1);
           
@@ -890,7 +864,7 @@ if(exceptions!=null){
             // Content-Range=[133333332-199999999/200000000]}
 
             String[] range = Plugin.getSimpleMatches("[" + connection.getHeaderField("Content-Range") + "]", "[°-°/°]");
-            if (speedDebug) logger.info("Range Header " + connection.getHeaderField("Content-Range"));
+            if (speedDebug) logger.finer("Range Header " + connection.getHeaderField("Content-Range"));
 
             if (range == null && chunkNum > 1) {
                 error(ERROR_CHUNKLOAD_FAILED);
@@ -965,7 +939,7 @@ if(exceptions!=null){
             try {
                 bufferSize = getBufferSize(getMaximalSpeed());
 
-                // logger.info(bufferSize+" - "+this.getTimeInterval());
+                // logger.finer(bufferSize+" - "+this.getTimeInterval());
                 buffer = ByteBuffer.allocateDirect(bufferSize);
 
             }
@@ -1000,7 +974,7 @@ if(exceptions!=null){
                     bytes = 0;
                     ti = getTimeInterval();
                     timer = System.currentTimeMillis();
-                    if (speedDebug) logger.info("load Block buffer: " + buffer.hasRemaining() + "/" + buffer.capacity() + " interval: " + ti);
+                    if (speedDebug) logger.finer("load Block buffer: " + buffer.hasRemaining() + "/" + buffer.capacity() + " interval: " + ti);
                     while (buffer.hasRemaining() && !isExternalyAborted() && (System.currentTimeMillis() - timer) < ti) {
                         block = 0;
 
@@ -1012,7 +986,7 @@ if(exceptions!=null){
                         }
                         else {
 
-                            // logger.info(""+inputStream.getClass());
+                            // logger.finer(""+inputStream.getClass());
 
                             // wertet den Timeout der connection aus
                             // (HTTPInputStream)
@@ -1022,7 +996,7 @@ if(exceptions!=null){
                                 block = 1;
                                 // Pause falls das Ende nicht erreicht worden
                                 // ist. Die Schelife läuft zu schnell
-                                // logger.info("Pause");
+                                // logger.finer("Pause");
                                 // Thread.sleep(25);
                             }
                             else if (read < 0) {
@@ -1054,7 +1028,7 @@ if(exceptions!=null){
                      */
                     deltaTime = Math.max(System.currentTimeMillis() - timer, 1);
                     desiredBps = (1000 * (long) bytes) / deltaTime;
-                    if (speedDebug) logger.info("des " + desiredBps + " - loaded: " + (System.currentTimeMillis() - timer) + " - " + bytes);
+                    if (speedDebug) logger.finer("desired: " + desiredBps + " - loaded: " + (System.currentTimeMillis() - timer) + " - " + bytes);
                     tempBuff = getBufferSize(getMaximalSpeed());
                     if (Math.abs(bufferSize - tempBuff) > 1000) {
                         bufferSize = tempBuff;
@@ -1075,7 +1049,7 @@ if(exceptions!=null){
                         // ein paar wenige bytes/sekunde in der speederfassung
                         // aus.
                         addWait = (long) (0.995 * (ti - (System.currentTimeMillis() - timer)));
-                        if (speedDebug) logger.info("Wait " + addWait);
+                        if (speedDebug) logger.finer("Wait " + addWait);
                         if (addWait > 0) Thread.sleep(addWait);
                     }
                     catch (Exception e) {
@@ -1085,7 +1059,7 @@ if(exceptions!=null){
                     this.bytesPerSecond = (1000 * (long) bytes) / deltaTime;
                     updateSpeed();
 
-                    if (speedDebug) logger.info(downloadLink.getSpeedMeter().getSpeed() + " loaded" + bytes + " b in " + (deltaTime) + " ms: " + bytesPerSecond + "(" + desiredBps + ") ");
+                    if (speedDebug) logger.finer(downloadLink.getSpeedMeter().getSpeed() + " loaded" + bytes + " b in " + (deltaTime) + " ms: " + bytesPerSecond + "(" + desiredBps + ") ");
 
                 }
                 buffer=null;
@@ -1094,7 +1068,7 @@ if(exceptions!=null){
                     inputStream.close();
                     source.close();
 
-                    logger.info(" incomplete download: bytes loaded: " + currentBytePosition + "/" + endByte);
+                    logger.finer(" incomplete download: bytes loaded: " + currentBytePosition + "/" + endByte);
                     error(ERROR_CHUNK_INCOMPLETE);
                 }
 
@@ -1153,14 +1127,14 @@ if(exceptions!=null){
          * @return
          */
         private int getBufferSize(long maxspeed) {
-            if (speedDebug) logger.info("speed " + maxspeed);
+            if (speedDebug) logger.finer("speed " + maxspeed);
             if (!downloadLink.isLimited()) return (int)MAX_BUFFERSIZE;
             maxspeed*= (TIME_BASE / 1000);            
             long max = Math.max(MIN_BUFFERSIZE, maxspeed);
             int bufferSize = (int)Math.min(MAX_BUFFERSIZE, max);
-            // logger.info(MIN_BUFFERSIZE+"<>"+maxspeed+"-"+MAX_BUFFERSIZE+"><"+max);
+            // logger.finer(MIN_BUFFERSIZE+"<>"+maxspeed+"-"+MAX_BUFFERSIZE+"><"+max);
             this.bufferTimeFaktor = Math.max(0.1, (double) bufferSize / maxspeed);
-            if (speedDebug) logger.info("Maxspeed= " + maxspeed + " buffer=" + bufferSize + "time: " + getTimeInterval());
+            if (speedDebug) logger.finer("Maxspeed= " + maxspeed + " buffer=" + bufferSize + "time: " + getTimeInterval());
             return bufferSize;
         }
 

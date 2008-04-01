@@ -52,13 +52,13 @@ public abstract class PluginForDecrypt extends Plugin implements Comparable {
     public Vector<DownloadLink> decryptLinks(Vector<String> cryptedLinks) {
         Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
         Iterator<String> iterator = cryptedLinks.iterator();
-        logger.info("links to decrypt: " + cryptedLinks);
+       
         while (iterator.hasNext()) {
             String link = iterator.next();
 
             decryptedLinks.addAll(decryptLink(link));
         }
-        logger.info("RET: "+decryptedLinks);
+    
         return decryptedLinks;
     }
 
@@ -86,11 +86,11 @@ public abstract class PluginForDecrypt extends Plugin implements Comparable {
             progress.finalize();
             logger.warning(" Progress ist besetzt von " + progress);
         }
-        logger.info("Decrypt " + cryptedLink);
+       
         progress = new ProgressController("Decrypter: " + this.getLinkName());
         progress.setStatusText("decrypt-" + getPluginName() + ": " + cryptedLink);
         PluginStep step = null;
-        // logger.info("LOS: Decrypter: "+getPluginName()+": "+cryptedLink);
+        
 
         while ((step = nextStep(step)) != null) {
             doStep(step, cryptedLink);
@@ -101,14 +101,14 @@ public abstract class PluginForDecrypt extends Plugin implements Comparable {
 
                 if (tmpLinks == null || !(tmpLinks instanceof Vector)) {
                     logger.severe("ACHTUNG1 Decrypt Plugins müssen im letzten schritt einen  Vector<DownloadLink>");
-                     logger.info("FINA7: Decrypter:        "+cryptedLink+"-"+progress);
+                   
                     progress.finalize();
                     return new Vector<DownloadLink>();
                 }
                 Vector links = (Vector) tmpLinks;
 
                 if (links.size() == 0) {
-                     logger.info("FINA6: Decrypter: "+cryptedLink);
+                   
                     progress.finalize();
                     return new Vector<DownloadLink>();
                 }
@@ -116,7 +116,7 @@ public abstract class PluginForDecrypt extends Plugin implements Comparable {
                 String link;
                 try {
                     if (links.get(0) instanceof DownloadLink) {
-                         logger.info("Got " + links.size() + " links2 "+links);
+                        
 
                         for (int i = links.size() - 1; i >= 0; i--) {
                             DownloadLink dl = (DownloadLink) links.get(i);
@@ -131,11 +131,11 @@ public abstract class PluginForDecrypt extends Plugin implements Comparable {
                             }
                             else {
 
-                               logger.info("found link: " + link);
+                            
                             }
 
                         }
-                       logger.info("FINA4: Decrypter: "+cryptedLink+" : "+links);
+                     
                         progress.finalize();
 
                         return (Vector<DownloadLink>) links;
@@ -158,7 +158,7 @@ public abstract class PluginForDecrypt extends Plugin implements Comparable {
 
             }
         }
-       logger.info("FINA1: Decrypter: "+this.getLinkName());
+      
         progress.finalize();
         return new Vector<DownloadLink>();
 

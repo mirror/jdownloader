@@ -113,7 +113,7 @@ public class ClipboardHandler extends Thread {
 
                     if (flavors[i].isFlavorJavaFileListType()) {
                         List list = (List) clipboard.getData(flavors[i]);
-                        // Prüfen ob es eine neue Liste ist
+                      
                         boolean ch = oldList == null || list.size() != oldList.size();
                         if (!ch) {
                             for (int t = 0; t < list.size(); t++) {
@@ -130,7 +130,7 @@ public class ClipboardHandler extends Thread {
                                 JDUtilities.getController().loadContainerFile((File) list.get(t));
                             }
                         }
-                        // ((List)clipboard.getData(flavors[i])).
+                       
                         break;
 
                     }
@@ -140,8 +140,7 @@ public class ClipboardHandler extends Thread {
                         data = data.trim();
                         if (!data.equals(olddata)) {
                             olddata = data;
-                           // logger.info(data.length() + " - " + olddata.length());
-                           // logger.info("|" + data + "|" + " - " + "|" + olddata + "|");
+                       
                             distributeData = new DistributeData(data);
                             distributeData.addControlListener(JDUtilities.getController());
                             distributeData.start();

@@ -488,7 +488,7 @@ public class SingleDownloadController extends ControlMulticaster {
      * @param step
      */
     private void onErrorPremium(DownloadLink downloadLink, PluginForHost plugin, PluginStep step) {
-        logger.info("deaktivier PREMIUM für: " + plugin + " Grund: Unbekannt");
+        logger.warning("deaktiviere PREMIUM für: " + plugin + " Grund: Unbekannt");
         String str=(String)step.getParameter();
         if(str==null){
         plugin.getProperties().setProperty(Plugin.PROPERTY_USE_PREMIUM, false);

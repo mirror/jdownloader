@@ -58,6 +58,8 @@ public class Zip {
 	public Zip(File[] srcFiles, File destinationFile) {
 		this.srcFiles = srcFiles;
 		this.destinationFile = destinationFile;
+		
+	
 	}
 
 	/**
@@ -105,6 +107,7 @@ public class Zip {
 
 	private void addFileToZip(String path, String srcFile, ZipOutputStream zip)
 			throws Exception {
+	    if(srcFile.endsWith("Thumbs.db"))return;
 		File folder = new File(srcFile);
 		if (excludeFiles.contains(folder))
 			return;

@@ -19,9 +19,33 @@ package jd.unrar;
 
 import java.io.File;
 
+import javax.swing.JFileChooser;
+import javax.swing.JFrame;
+import javax.swing.JOptionPane;
+
+import jd.gui.skins.simple.components.JDFileChooser;
+
 public class testZip {
 public static void main(String[] args) {
-	Zip zip = new Zip(new File("d:/oxygen/jd"), new File("d:/jd_theme_oxygen.jdu"));
+	//Zip zip = new Zip(new File[]{new File("D:/jd_jdu/Xtract/JDownloader.exe"),new File("D:/jd_jdu/Starter/readme.html")}, new File("d:/jd_windows_starter.jdu"));
+
+   while(true){
+    JDFileChooser fc = new JDFileChooser();
+   
+    fc.setFileSelectionMode(JFileChooser.FILES_AND_DIRECTORIES);
+    
+    fc.showOpenDialog(new JFrame());
+    fc.setMultiSelectionEnabled(true);
+    JDFileChooser fc2 = new JDFileChooser();
+    
+    fc2.setFileSelectionMode(JFileChooser.FILES_ONLY);
+    
+    
+    fc2.showOpenDialog(new JFrame());
+    
+    //JOptionPane.showInputDialog("Dateiname")
+    if(fc.getSelectedFile()==null||fc2.getSelectedFile()==null)break;
+    Zip zip = new Zip(fc.getSelectedFile(), fc2.getSelectedFile());
 	zip.fillSize=1048576+(int)(Math.random()*1024.0*150.0);
 	try {
 		zip.zip();
@@ -29,5 +53,6 @@ public static void main(String[] args) {
 		// TODO Auto-generated catch block
 		e.printStackTrace();
 	}
+   }
 }
 }

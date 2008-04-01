@@ -79,7 +79,7 @@ public abstract class PluginForHost extends Plugin {
             logger.info(this + " Pluginende erreicht!");
             return null;
         }
-        logger.info("Current Step:  " + currentStep+"/"+steps);
+        logger.finer("Current Step:  " + currentStep+"/"+steps);
         if(!this.isAGBChecked()){
             currentStep.setStatus(PluginStep.STATUS_ERROR);
             logger.severe("AGB not signed : "+this.getPluginID());
@@ -114,7 +114,7 @@ public abstract class PluginForHost extends Plugin {
             links = new Vector<DownloadLink>();
             for (int i = 0; i < hits.size(); i++) {
                 String file = hits.get(i);
-              //( logger.info("File" +file);
+            
                 while (file.charAt(0) == '"')
                     file = file.substring(1);
                 while (file.charAt(file.length() - 1) == '"')
@@ -243,7 +243,7 @@ public abstract class PluginForHost extends Plugin {
 
             int length = requestInfo.getConnection().getContentLength();
             downloadLink.setDownloadMax(length);
-            logger.info("Filename: " + getFileNameFormHeader(requestInfo.getConnection()));
+            logger.finer("Filename: " + getFileNameFormHeader(requestInfo.getConnection()));
            
             downloadLink.setName(getFileNameFormHeader(requestInfo.getConnection()));
             RAFDownload dl = new RAFDownload(this, downloadLink, requestInfo.getConnection());

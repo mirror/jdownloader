@@ -183,7 +183,7 @@ public class RAFDownload extends DownloadInterface {
     }
 
     private boolean checkResumabled() {
-        logger.info("prog " + downloadLink.getChunksProgress());
+ 
         if (!isResume() || downloadLink.getChunksProgress() == null) return false;
 
         int loaded = 0;
@@ -209,7 +209,8 @@ public class RAFDownload extends DownloadInterface {
     @Override
     protected void onChunksReady() throws DownloadFailedException {
 
-       
+       System.gc();
+       System.runFinalization();
         //
         try {
 

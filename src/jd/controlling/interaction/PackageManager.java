@@ -97,7 +97,7 @@ if(PACKAGE_DATA!=null)return PACKAGE_DATA;
             // ri = Plugin.getRequest(new URL("http://jdpackagelist.ath.cx"),
             // null, null, true);
             ri = Plugin.getRequest(new URL("http://jdservice.ath.cx/update/packages/list.php"), null, null, true);
-            logger.info(ri.getHtmlCode());
+          
             String xml = "<packages>" + Plugin.getSimpleMatch(ri.getHtmlCode(), "<packages>°</packages>", 0) + "</packages>";
             DocumentBuilderFactory factory;
             InputSource inSource;

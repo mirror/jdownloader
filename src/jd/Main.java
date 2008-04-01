@@ -23,8 +23,11 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
+import java.net.InetSocketAddress;
+import java.net.MalformedURLException;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.URL;
 import java.util.Iterator;
 import java.util.Properties;
 import java.util.TreeSet;
@@ -40,6 +43,7 @@ import jd.controlling.interaction.Interaction;
 import jd.controlling.interaction.PackageManager;
 import jd.event.UIEvent;
 import jd.gui.skins.simple.SimpleGUI;
+import jd.plugins.Plugin;
 import jd.unrar.JUnrar;
 import jd.utils.JDLocale;
 import jd.utils.JDTheme;
@@ -124,7 +128,7 @@ public class Main {
     private void go() {
 
         JDInit init = new JDInit();
-        
+   
         logger.info("Registriere Plugins");
         init.init();
         init.loadImages();
@@ -187,6 +191,20 @@ public class Main {
         logger.info("jd.appDir="+JDUtilities.getCurrentWorkingDirectory(null));
      
         new PackageManager().interact(this);
+       try {
+        logger.info( Plugin.headRequest(new URL("http://share.gulli.com/files/989404514/Indi.part11.rar.html"), null, null, false).getHtmlCode());
+    }
+    catch (MalformedURLException e) {
+        // TODO Auto-generated catch block
+        e.printStackTrace();
+    }
+    catch (IOException e) {
+        // TODO Auto-generated catch block
+        e.printStackTrace();
+    };
+    
+    
+
         
 //        org.apache.log4j.Logger lg = org.apache.log4j.Logger.getLogger("jd");
 //        BasicConfigurator.configure();
@@ -205,12 +223,15 @@ public class Main {
     	int port = 9000;
     	short tries = 0;
     	Boolean success = false;
-    	
+    	long timer = System.currentTimeMillis();
     	while ( success == false && tries < 10 ) {
     		
     		try {
     			
-    			socket = new Socket("localhost", port);
+    			socket = new Socket();
+    			socket.bind(null);
+    			socket.connect(new InetSocketAddress("localhost", port), 50 ); 
+    		
     			logger.info("Found running jD server");
     			success = true;
     			
@@ -218,12 +239,14 @@ public class Main {
                 in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
                 
     		} catch (Exception e) {
+    		    
     	    	port++;
     	    	tries++;
     	    }
     		
     	}
     	
+    	logger.info("Socket search lasts "+(System.currentTimeMillis()-timer)+" ms");
     	if ( success == false ) {
     		logger.warning("No running jD server found");
     		return false;
@@ -263,7 +286,9 @@ public class Main {
             	while ( success == false && tries < 10 ) {
             		
             		try {
-            			serverSocket = new ServerSocket(port);
+            			serverSocket = new ServerSocket();
+            			serverSocket.bind(new InetSocketAddress("localhost", port));
+            		
             			logger.info("Listen for parameters on port "+port);
             			success = true;
             		} catch (IOException e) {
@@ -288,6 +313,14 @@ public class Main {
             			
             			try {
             				clientSocket = serverSocket.accept();
+            				
+            				logger.info(clientSocket.getLocalAddress()+" - "+clientSocket.getInetAddress());
+                            if(!clientSocket.getLocalAddress().equals(clientSocket.getInetAddress())){
+                                clientSocket.close();
+                                break;
+                                
+                            }
+            				
             			} catch (IOException e) {
             				logger.severe("Accept failed");
             				acceptSuccess = false;

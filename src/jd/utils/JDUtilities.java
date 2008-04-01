@@ -2213,7 +2213,7 @@ public class JDUtilities {
     }
 
     public static void restartJD(String[] jdArgs) {
-    	
+    	 
     	String[] javaArgs = new String[] { "-jar", "-Xmx512m","JDownloader.jar" };
     	String[] finalArgs = new String[jdArgs.length + javaArgs.length];
     	System.arraycopy(javaArgs, 0, finalArgs, 0, javaArgs.length);
