@@ -65,7 +65,6 @@ public class UCMS extends PluginForDecrypt {
     		+ "|(http://[*]isos.at/[+]/[+])"
     		+ "|(http://[*]game-freaks.net/[+]/[+].html)"
     		+ "|(http://[*]chili-warez.net/[+]/[+].html)"
-    		
     		+ "|(http://[*]chrome-database.com/\\?id=[+])"
     		+ "|(http://[*]mp3z.to/\\?id=[+])"
     		+ "|(http://[*]oneload.org/\\?id=[+])"
@@ -74,16 +73,20 @@ public class UCMS extends PluginForDecrypt {
     		+ "|(http://[*]leetpornz.com/\\?id=[+])"
     		+ "|(http://[*]freefiles4u.com/\\?id=[+])"
     		+ "|(http://[*]xxx-reactor.net/category/[+]/[+])"
-    		//+ "|(http://[*]xxx-4-free.net/category/[+]/[+])"
+    		+ "|(http://[*]xxx-4-free.net/category/[+]/[+])"
     		+ "|(http://[*]sextradump.com/category/[+]/[+])"
     		+ "|(http://[*]porn-freaks.net/category/[+]/[+])"
     		+ "|(http://[*]serien24.com/category/[+]/[+])"
     		+ "|(http://[*]babeviz.com/category/[+]/[+])"
     		+ "|(http://[*]porn-traffic.net/category/[+]/[+])"
+    		+ "|(http://[*]join-music.net/\\?id=[+])"
+    		+ "|(http://[*]mixe-downloaden.info/\\?id=[+])"
+    		+ "|(http://[*]relfreaks.com/category/[+]/[+])"
+    		+ "|(http://[*]romc.extra.hu/\\?id=[+])"
     		
     		+ "|(http://[*]sceneload.to/\\?id=[+])");
     
-    private Pattern	PAT_CAPTCHA = Pattern.compile("<TD><IMG SRC=\"/gfx/secure/index.php");
+    private Pattern	PAT_CAPTCHA = Pattern.compile("<TD><IMG SRC=\"/gfx/secure/");
     private Pattern PAT_NO_CAPTCHA = Pattern.compile("(<INPUT TYPE=\"SUBMIT\" CLASS=\"BUTTON\" VALUE=\"Zum Download\" onClick=\"if)|(<INPUT TYPE=\"SUBMIT\" CLASS=\"BUTTON\" VALUE=\"Download\" onClick=\"if)");
 
     public UCMS() {
@@ -174,6 +177,7 @@ public class UCMS extends PluginForDecrypt {
 		                       	Matcher matcher_no = PAT_NO_CAPTCHA.matcher(reqinfo.getHtmlCode());
 		                        
 		                       	if(matcher_no.find()) {
+		                       		logger.finest("Not Captcha protected");
 		                       		String posthelp = getFormInputHidden(forms.get(i).get(3));
 		                       		
 		                       		if(forms.get(i).get(0).startsWith("http")) {
@@ -204,7 +208,6 @@ public class UCMS extends PluginForDecrypt {
 		    			else {
 		    				links = getAllSimpleMatches(reqinfo.getHtmlCode(), "ACTION=\"°\"");
 		    			}
-	        			System.out.println(links.size());
 	        			for(int j=0; j<links.size(); j++){
 	        				//System.out.println(links.get(j).get(0));
 	        				decryptedLinks.add(this.createDownloadlink(links.get(j).get(0)));
