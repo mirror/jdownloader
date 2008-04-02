@@ -125,5 +125,13 @@ public interface UIInterface {
      * Wird aufgeruifen sobald die Initialisierung aller Module komplett ist
      */
     public void onJDInitComplete();
+    /**
+     * Setzt den Status des Start/Stop Buttons
+     */
+    public void setStartStopButtonState(Boolean state);
+    /**
+     * Setzt den Status des Frames (minimiert/maximiert/etc)
+     */
+    public void setMinimized(Boolean state);
  
 }

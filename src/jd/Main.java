@@ -59,8 +59,27 @@ public class Main {
 
     public static void main(String args[]) {
         
+    	Boolean newInstance = false;
+    	
+    	for ( String currentArg : args ) {
+    		
+    		// useful for developer version
+    		if ( currentArg.equals("--new-instance") || currentArg.equals("-n") ) {
+    			
+    			if ( Runtime.getRuntime().maxMemory()<100000000 ){
+                    JDUtilities.restartJD(args);
+                }
+                
+    			newInstance = true;
+            	startSocketServer();
+            	break;
+            	
+    		}
+    		
+    	}
+    	
     	// listen for command line arguments from new jD instances
-    	if ( tryConnectSocketClient(JDUtilities.arrayToString(args,";")) ) {
+    	if ( !newInstance && tryConnectSocketClient(JDUtilities.arrayToString(args,";")) ) {
 
     		// show help also in new instance before exit
     		if ( JDUtilities.arrayToString(args,";").contains("--help") ||
@@ -71,7 +90,7 @@ public class Main {
     		logger.info("Send parameters to existing jD instance and exit");
     		System.exit(0);
     		
-    	} else {
+    	} else if ( !newInstance ) {
 
             if ( Runtime.getRuntime().maxMemory()<100000000 ){
                 JDUtilities.restartJD(args);
@@ -363,12 +382,10 @@ public class Main {
      * TODO
      * 
      * - beim adden im hintergrund bleiben
-     * - --hide
-     * - --start-download
      * 
      */
     
-    public static void processParameters(String[] input, Boolean isServer) {
+public static void processParameters(String[] input, Boolean isServer) {
         
     	Boolean addLinksSwitch = false;
     	Boolean addContainersSwitch = false;
@@ -387,22 +404,6 @@ public class Main {
                 
     			showCmdHelp();
     			
-            } else if ( currentArg.equals("--show") || currentArg.equals("-s") ) {
-    			
-            	addLinksSwitch = false;
-                addContainersSwitch = false;
-            	addPasswordsSwitch = false;
-                
-            	JACController.showDialog(false);
-            	
-            } else if ( currentArg.equals("--train") || currentArg.equals("-t") ) {
-    			
-            	addLinksSwitch = false;
-                addContainersSwitch = false;
-            	addPasswordsSwitch = false;
-                
-            	JACController.showDialog(true);
-            	
             } else if ( currentArg.equals("--add-links") || currentArg.equals("--add-link")
             		|| currentArg.equals("-a") ) {
             	
@@ -427,6 +428,51 @@ public class Main {
             	addPasswordsSwitch = true;
             	logger.info(currentArg + " parameter");
             	
+            } else if ( currentArg.equals("--start-download") || currentArg.equals("-d") ) {
+    			
+            	addLinksSwitch = false;
+                addContainersSwitch = false;
+            	addPasswordsSwitch = false;
+                
+            	logger.info(currentArg + " parameter");
+            	JDUtilities.getGUI().setStartStopButtonState(true);
+            	JDUtilities.getController().startDownloads();
+    			
+            } else if ( currentArg.equals("--stop-download") || currentArg.equals("-D") ) {
+    			
+            	addLinksSwitch = false;
+                addContainersSwitch = false;
+            	addPasswordsSwitch = false;
+                
+            	logger.info(currentArg + " parameter");
+            	JDUtilities.getGUI().setStartStopButtonState(false);
+            	JDUtilities.getController().stopDownloads();
+    			
+            } else if ( currentArg.equals("--show") || currentArg.equals("-s") ) {
+    			
+            	addLinksSwitch = false;
+                addContainersSwitch = false;
+            	addPasswordsSwitch = false;
+                
+            	JACController.showDialog(false);
+            	
+            } else if ( currentArg.equals("--train") || currentArg.equals("-t") ) {
+    			
+            	addLinksSwitch = false;
+                addContainersSwitch = false;
+            	addPasswordsSwitch = false;
+                
+            	JACController.showDialog(true);
+            	
+            } else if ( currentArg.equals("--minimize") || currentArg.equals("-m") ) {
+    			
+            	addLinksSwitch = false;
+                addContainersSwitch = false;
+            	addPasswordsSwitch = false;
+                
+            	JDUtilities.getGUI().setMinimized(true);
+            	logger.info(currentArg + " parameter");
+    			
             } else if ( addLinksSwitch && currentArg.charAt(0) != '-' ) {
             	
     			linksToAdd.add(currentArg);
@@ -498,8 +544,12 @@ public class Main {
 				{ "-a --add-link(s)", "Add links" },
 				{ "-c --add-container(s)", "Add containers" },
 				{ "-p --add-password(s)", "Add passwords" },
+				{ "-d --start-download", "Start download" },
+				{ "-D --stop-download", "Stop download" },
+				{ "-m --minimize\t", "Minimize download window" },
 				{ "-s --show\t", "Show JAC prepared captchas" },
-				{ "-t --train\t", "Train a JAC method" }
+				{ "-t --train\t", "Train a JAC method" },
+				{ "-n --new-instance", "Force new instance if another jD is running" }
 				};
         
 		for ( String helpLine[] : help) {
