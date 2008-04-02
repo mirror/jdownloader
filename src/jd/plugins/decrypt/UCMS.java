@@ -83,6 +83,8 @@ public class UCMS extends PluginForDecrypt {
     		+ "|(http://[*]mixe-downloaden.info/\\?id=[+])"
     		+ "|(http://[*]relfreaks.com/category/[+]/[+])"
     		+ "|(http://[*]romc.extra.hu/\\?id=[+])"
+    		+ "|(http://[*]dark-load.net/\\?id=[+])"
+    		+ "|(http://[*]sexload.to/\\?id=[+])"
     		
     		+ "|(http://[*]sceneload.to/\\?id=[+])");
     
