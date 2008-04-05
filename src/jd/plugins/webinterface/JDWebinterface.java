@@ -28,7 +28,12 @@ public class JDWebinterface extends PluginOptional  {
 	
 	
     static final String PROPERTY_PORT = "PARAM_PORT";
-
+    static final String PROPERTY_USER = "PARAM_USER";
+    static final String PROPERTY_PASS = "PARAM_PASS";
+    static final String PROPERTY_HTTPS = "PARAM_HTTPS";
+    static final String PROPERTY_LOGIN = "PARAM_LOGIN";
+    static final String PROPERTY_CONNECTIONS = "PARAM_CONNECTIONS";
+    
 	@Override
     public String getCoder() {
         return "jiaz";
@@ -58,12 +63,7 @@ public class JDWebinterface extends PluginOptional  {
         }
         }        
     }
-
-    @Override
-    public String getRequirements() {
-        return "JRE 1.6+";
-    }
-
+    
     @Override
     public boolean isExecutable() {
         return false;
@@ -77,9 +77,25 @@ public class JDWebinterface extends PluginOptional  {
     {
     	SubConfiguration subConfig = JDUtilities.getSubConfig("WEBINTERFACE");
     	ConfigEntry cfg;
-    	config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_SPINNER, subConfig, PROPERTY_PORT, JDLocale.L("plugins.hoster.rapidshare.com.waitTimeOnBotDetect", "Port"), 1024, 65000));
-    	cfg.setStep(1);
-    	cfg.setInstantHelp("http://www.google.de");
-    	cfg.setDefaultValue(1024);
+    	config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_SPINNER, subConfig, PROPERTY_PORT, JDLocale.L("plugins.optional.webinterface.port", "Port"), 1024, 65000));
+    	cfg.setStep(1);    	
+    	cfg.setDefaultValue(8765);
+    	config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_SPINNER, subConfig, PROPERTY_CONNECTIONS, JDLocale.L("plugins.optional.webinterface.connections", "Max. Connections"), 1, 20));
+    	cfg.setStep(1);    	
+    	cfg.setDefaultValue(10);    
+    	config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, PROPERTY_LOGIN, JDLocale.L("plugins.optional.webinterface.needlogin", "Need User Authentication")));
+        cfg.setDefaultValue(true);
+        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, PROPERTY_HTTPS, JDLocale.L("plugins.optional.webinterface.https", "Use HTTPS")));
+        cfg.setDefaultValue(false);
+    	config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, subConfig, PROPERTY_USER, JDLocale.L("plugins.optional.webinterface.loginname", "Login Name")));
+        cfg.setDefaultValue("JD");
+        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_PASSWORDFIELD, subConfig, PROPERTY_PASS, JDLocale.L("plugins.optional.webinterface.loginpass", "Login Pass")));
+        cfg.setDefaultValue("JD");
+    }
+
+    @Override
+    public String getRequirements() {
+        // TODO Auto-generated method stub
+        return null;
     }    
 }
