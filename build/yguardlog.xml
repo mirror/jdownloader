@@ -3,14 +3,14 @@
 <!--
   yGuard Bytecode Obfuscator, v2.2.0, a Product of yWorks GmbH - http://www.yworks.com
 
-  Logfile created on Sat Apr 05 13:36:26 CEST 2008
+  Logfile created on Sat Apr 05 16:12:18 CEST 2008
 
   Jar file to be obfuscated:           JDownloaderContainer.jar
   Target Jar file for obfuscated code: JDownloaderContainer_obfuscated.jar
 
 -->
 <!--
-  Memory in use after class data structure built: 2181024 bytes
+  Memory in use after class data structure built: 2322984 bytes
   Total memory available                        : 5177344 bytes
 -->
 <!-- WARNING: Unresolved external dependency: jd.plugins.HTTPConnection not found! -->
@@ -179,7 +179,229 @@
 <!-- WARNING: Unresolved external dependency: jd.plugins.PluginStep not found! -->
 <!-- WARNING: Unresolved external dependency: jd.plugins.DownloadLink not found! -->
 <!-- WARNING: Unresolved external dependency: jd.utils.JDUtilities not found! -->
+<!-- WARNING: Unresolved external dependency: jd.plugins.PluginStep not found! -->
+<!-- WARNING: Unresolved external dependency: jd.plugins.PluginStep not found! -->
+<!-- WARNING: No mapping found: jd.utils.JDUtilities -->
+<!-- WARNING: No mapping found: jd.plugins.BackupLink -->
+<!-- WARNING: No mapping found: jd.plugins.BackupLink -->
+<!-- WARNING: No mapping found: jd.plugins.BackupLink -->
+<!-- WARNING: No mapping found: jd.utils.JDUtilities -->
+<!-- WARNING: Unresolved external dependency: jd.controlling.JDController not found! -->
+<!-- WARNING: No mapping found: jd.controlling.JDController -->
+<!-- WARNING: No mapping found: jd.controlling.DistributeData -->
+<!-- WARNING: No mapping found: jd.controlling.DistributeData -->
+<!-- WARNING: Unresolved external dependency: jd.event.ControlListener not found! -->
+<!-- WARNING: No mapping found: jd.controlling.DistributeData -->
+<!-- WARNING: Unresolved external dependency: jd.utils.JDUtilities not found! -->
+<!-- WARNING: Unresolved external dependency: jd.plugins.BackupLink not found! -->
+<!-- WARNING: Unresolved external dependency: jd.controlling.JDController not found! -->
+<!-- WARNING: Unresolved external dependency: jd.controlling.DistributeData not found! -->
+<!-- WARNING: Unresolved external dependency: jd.plugins.PluginStep not found! -->
+<!-- WARNING: Unresolved external dependency: jd.plugins.PluginStep not found! -->
+<!-- WARNING: Unresolved external dependency: jd.plugins.DownloadLink not found! -->
+<!-- WARNING: Unresolved external dependency: jd.plugins.PluginStep not found! -->
+<!-- WARNING: Unresolved external dependency: jd.plugins.PluginStep not found! -->
+<!-- WARNING: Unresolved external dependency: jd.plugins.DownloadLink not found! -->
+<!-- WARNING: Unresolved external dependency: jd.config.ConfigContainer not found! -->
+<!-- WARNING: Unresolved external dependency: jd.config.Property not found! -->
+<!-- WARNING: No mapping found: jd.utils.JDLocale -->
+<!-- WARNING: No mapping found: jd.config.ConfigEntry -->
+<!-- WARNING: Unresolved external dependency: jd.config.Property not found! -->
+<!-- WARNING: No mapping found: jd.config.ConfigContainer -->
+<!-- WARNING: Unresolved external dependency: jd.config.ConfigEntry not found! -->
+<!-- WARNING: No mapping found: jd.config.ConfigEntry -->
+<!-- WARNING: Unresolved external dependency: jd.config.ConfigEntry not found! -->
+<!-- WARNING: No mapping found: jd.utils.JDUtilities -->
+<!-- WARNING: No mapping found: jd.config.Property -->
+<!-- WARNING: Unresolved external dependency: jd.plugins.RequestInfo not found! -->
+<!-- WARNING: No mapping found: jd.plugins.RequestInfo -->
+<!-- WARNING: No mapping found: jd.plugins.RequestInfo -->
+<!-- WARNING: No mapping found: jd.plugins.HTTPPost -->
+<!-- WARNING: No mapping found: jd.plugins.HTTPPost -->
+<!-- WARNING: No mapping found: jd.plugins.HTTPPost -->
+<!-- WARNING: No mapping found: jd.plugins.HTTPPost -->
+<!-- WARNING: No mapping found: jd.plugins.HTTPPost -->
+<!-- WARNING: No mapping found: jd.plugins.HTTPPost -->
+<!-- WARNING: No mapping found: jd.plugins.HTTPPost -->
+<!-- WARNING: No mapping found: jd.plugins.HTTPPost -->
+<!-- WARNING: Unresolved external dependency: jd.plugins.RequestInfo not found! -->
+<!-- WARNING: Unresolved external dependency: jd.plugins.RequestInfo not found! -->
+<!-- WARNING: No mapping found: jd.plugins.HTTPPost -->
+<!-- WARNING: No mapping found: jd.plugins.RequestInfo -->
+<!-- WARNING: No mapping found: jd.plugins.RequestInfo -->
+<!-- WARNING: No mapping found: jd.utils.JDUtilities -->
+<!-- WARNING: No mapping found: jd.utils.JDUtilities -->
+<!-- WARNING: Unresolved external dependency: jd.controlling.JDController not found! -->
+<!-- WARNING: No mapping found: jd.controlling.JDController -->
+<!-- WARNING: No mapping found: jd.config.Property -->
+<!-- WARNING: No mapping found: jd.utils.JDUtilities -->
+<!-- WARNING: No mapping found: jd.utils.JDUtilities -->
+<!-- WARNING: No mapping found: jd.plugins.DownloadLink -->
+<!-- WARNING: Unresolved external dependency: jd.plugins.DownloadLink not found! -->
+<!-- WARNING: No mapping found: jd.plugins.DownloadLink -->
+<!-- WARNING: Unresolved external dependency: jd.plugins.DownloadLink not found! -->
+<!-- WARNING: Unresolved external dependency: jd.plugins.DownloadLink not found! -->
+<!-- WARNING: No mapping found: jd.plugins.PluginStep -->
+<!-- WARNING: Unresolved external dependency: jd.plugins.PluginStep not found! -->
+<!-- WARNING: Unresolved external dependency: jd.plugins.PluginStep not found! -->
+<!-- WARNING: Unresolved external dependency: jd.config.ConfigEntry not found! -->
+<!-- WARNING: Unresolved external dependency: jd.utils.JDLocale not found! -->
+<!-- WARNING: Unresolved external dependency: jd.config.ConfigContainer not found! -->
+<!-- WARNING: Unresolved external dependency: jd.utils.JDUtilities not found! -->
+<!-- WARNING: Unresolved external dependency: jd.config.Property not found! -->
+<!-- WARNING: Unresolved external dependency: jd.plugins.RequestInfo not found! -->
+<!-- WARNING: Unresolved external dependency: jd.plugins.HTTPPost not found! -->
+<!-- WARNING: Unresolved external dependency: jd.controlling.JDController not found! -->
+<!-- WARNING: Unresolved external dependency: jd.plugins.DownloadLink not found! -->
+<!-- WARNING: Unresolved external dependency: jd.plugins.PluginStep not found! -->
+<!-- WARNING: Unresolved external dependency: jd.plugins.PluginStep not found! -->
+<!-- WARNING: Unresolved external dependency: jd.plugins.PluginStep not found! -->
+<!-- WARNING: Unresolved external dependency: jd.plugins.DownloadLink not found! -->
+<!-- WARNING: Unresolved external dependency: jd.plugins.PluginStep not found! -->
+<!-- WARNING: Unresolved external dependency: jd.plugins.PluginStep not found! -->
+<!-- WARNING: Unresolved external dependency: jd.config.ConfigContainer not found! -->
+<!-- WARNING: No mapping found: jd.utils.JDUtilities -->
+<!-- WARNING: Unresolved external dependency: jd.config.SubConfiguration not found! -->
+<!-- WARNING: No mapping found: jd.utils.JDLocale -->
+<!-- WARNING: No mapping found: jd.config.ConfigEntry -->
+<!-- WARNING: Unresolved external dependency: jd.config.Property not found! -->
+<!-- WARNING: No mapping found: jd.config.ConfigContainer -->
+<!-- WARNING: Unresolved external dependency: jd.config.ConfigEntry not found! -->
+<!-- WARNING: No mapping found: jd.config.ConfigEntry -->
+<!-- WARNING: Unresolved external dependency: jd.config.ConfigEntry not found! -->
+<!-- WARNING: No mapping found: jd.utils.JDUtilities -->
+<!-- WARNING: No mapping found: jd.utils.JDUtilities -->
+<!-- WARNING: No mapping found: jd.utils.JDUtilities -->
+<!-- WARNING: Unresolved external dependency: jd.gui.UIInterface not found! -->
+<!-- WARNING: No mapping found: jd.utils.JDUtilities -->
+<!-- WARNING: Unresolved external dependency: jd.controlling.JDController not found! -->
+<!-- WARNING: No mapping found: jd.controlling.JDController -->
+<!-- WARNING: No mapping found: jd.gui.UIInterface -->
+<!-- WARNING: No mapping found: jd.utils.JDUtilities -->
+<!-- WARNING: Unresolved external dependency: jd.plugins.PluginForHost not found! -->
+<!-- WARNING: No mapping found: jd.plugins.PluginForHost -->
+<!-- WARNING: No mapping found: jd.plugins.DownloadLink -->
+<!-- WARNING: No mapping found: jd.plugins.DownloadLink -->
+<!-- WARNING: No mapping found: jd.plugins.DownloadLink -->
+<!-- WARNING: No mapping found: jd.plugins.DownloadLink -->
+<!-- WARNING: No mapping found: jd.plugins.DownloadLink -->
+<!-- WARNING: Unresolved external dependency: jd.plugins.DownloadLink not found! -->
+<!-- WARNING: No mapping found: jd.plugins.DownloadLink -->
+<!-- WARNING: Unresolved external dependency: jd.plugins.DownloadLink not found! -->
+<!-- WARNING: No mapping found: jd.plugins.DownloadLink -->
+<!-- WARNING: No mapping found: jd.utils.JDUtilities -->
+<!-- WARNING: No mapping found: jd.plugins.DownloadLink -->
+<!-- WARNING: No mapping found: jd.gui.UIInterface -->
+<!-- WARNING: Unresolved external dependency: jd.plugins.RequestInfo not found! -->
+<!-- WARNING: No mapping found: jd.plugins.RequestInfo -->
+<!-- WARNING: No mapping found: jd.plugins.RequestInfo -->
+<!-- WARNING: Unresolved external dependency: jd.plugins.RequestInfo not found! -->
+<!-- WARNING: No mapping found: jd.plugins.RequestInfo -->
+<!-- WARNING: No mapping found: jd.plugins.RequestInfo -->
+<!-- WARNING: No mapping found: jd.utils.JDUtilities -->
+<!-- WARNING: No mapping found: jd.utils.JDUtilities -->
+<!-- WARNING: Unresolved external dependency: jd.JDClassLoader not found! -->
+<!-- WARNING: No mapping found: jd.JDClassLoader -->
+<!-- WARNING: No mapping found: jd.utils.JDUtilities -->
+<!-- WARNING: No mapping found: jd.utils.JDUtilities -->
+<!-- WARNING: No mapping found: jd.config.SubConfiguration -->
+<!-- WARNING: No mapping found: jd.gui.UIInterface -->
+<!-- WARNING: No mapping found: jd.config.SubConfiguration -->
+<!-- WARNING: No mapping found: jd.plugins.DownloadLink -->
+<!-- WARNING: Unresolved external dependency: jd.plugins.FilePackage not found! -->
+<!-- WARNING: No mapping found: jd.plugins.FilePackage -->
+<!-- WARNING: No mapping found: jd.plugins.FilePackage -->
+<!-- WARNING: No mapping found: jd.plugins.FilePackage -->
+<!-- WARNING: No mapping found: jd.controlling.JDController -->
+<!-- WARNING: Unresolved external dependency: jd.plugins.FilePackage not found! -->
+<!-- WARNING: No mapping found: jd.plugins.DownloadLink -->
+<!-- WARNING: No mapping found: jd.plugins.DownloadLink -->
+<!-- WARNING: No mapping found: jd.plugins.DownloadLink -->
+<!-- WARNING: No mapping found: jd.utils.JDUtilities -->
+<!-- WARNING: Unresolved external dependency: jd.config.ConfigEntry not found! -->
+<!-- WARNING: Unresolved external dependency: jd.utils.JDUtilities not found! -->
+<!-- WARNING: Unresolved external dependency: jd.utils.JDLocale not found! -->
+<!-- WARNING: Unresolved external dependency: jd.config.ConfigContainer not found! -->
+<!-- WARNING: Unresolved external dependency: jd.controlling.JDController not found! -->
+<!-- WARNING: Unresolved external dependency: jd.gui.UIInterface not found! -->
+<!-- WARNING: Unresolved external dependency: jd.plugins.DownloadLink not found! -->
+<!-- WARNING: Unresolved external dependency: jd.plugins.PluginForHost not found! -->
+<!-- WARNING: Unresolved external dependency: jd.plugins.RequestInfo not found! -->
+<!-- WARNING: Unresolved external dependency: jd.JDClassLoader not found! -->
+<!-- WARNING: Unresolved external dependency: jd.config.SubConfiguration not found! -->
+<!-- WARNING: Unresolved external dependency: jd.plugins.FilePackage not found! -->
+<!-- WARNING: Unresolved external dependency: jd.crypt.BaseDecoder$IllegalAlphabetException not found! -->
+<!-- WARNING: Unresolved external dependency: jd.plugins.PluginStep not found! -->
+<!-- WARNING: Unresolved external dependency: jd.plugins.PluginStep not found! -->
+<!-- WARNING: Unresolved external dependency: jd.plugins.PluginForHost not found! -->
+<!-- WARNING: No mapping found: jd.plugins.PluginForHost -->
+<!-- WARNING: No mapping found: jd.plugins.DownloadLink -->
+<!-- WARNING: No mapping found: jd.plugins.DownloadLink -->
+<!-- WARNING: No mapping found: jd.plugins.DownloadLink -->
+<!-- WARNING: No mapping found: jd.plugins.DownloadLink -->
+<!-- WARNING: No mapping found: jd.crypt.Base16Decoder -->
+<!-- WARNING: No mapping found: jd.crypt.Base16Decoder -->
+<!-- WARNING: No mapping found: jd.crypt.Enc -->
+<!-- WARNING: No mapping found: jd.crypt.Enc -->
+<!-- WARNING: No mapping found: jd.crypt.BaseDecoder$IllegalAlphabetException -->
+<!-- WARNING: Unresolved external dependency: jd.plugins.DownloadLink not found! -->
+<!-- WARNING: Unresolved external dependency: jd.plugins.PluginForHost not found! -->
+<!-- WARNING: Unresolved external dependency: jd.crypt.BaseDecoder$IllegalAlphabetException not found! -->
+<!-- WARNING: Unresolved external dependency: jd.crypt.Base16Decoder not found! -->
+<!-- WARNING: Unresolved external dependency: jd.crypt.Enc not found! -->
+<!-- WARNING: Unresolved external dependency: jd.crypt.BaseDecoder not found! -->
 <expose>
+  <class name="jd.plugins.container.ContainerUtilites"/>
+  <class name="jd.plugins.container.ContainerBackup"/>
+  <method class="jd.plugins.container.ContainerBackup" name="java.lang.String getPluginID()"/>
+  <method class="jd.plugins.container.ContainerBackup" name="java.lang.String getVersion()"/>
+  <method class="jd.plugins.container.ContainerBackup" name="java.util.regex.Pattern getSupportedLinks()"/>
+  <method class="jd.plugins.container.ContainerBackup" name="java.lang.String getCoder()"/>
+  <method class="jd.plugins.container.ContainerBackup" name="jd.plugins.PluginStep doStep(jd.plugins.PluginStep, java.io.File)"/>
+  <method class="jd.plugins.container.ContainerBackup" name="java.lang.String[] encrypt(java.lang.String)"/>
+  <method class="jd.plugins.container.ContainerBackup" name="java.lang.String getHost()"/>
+  <method class="jd.plugins.container.ContainerBackup" name="java.lang.String getPluginName()"/>
+  <method class="jd.plugins.container.ContainerBackup" name="boolean doBotCheck(java.io.File)"/>
+  <class name="jd.plugins.container.ContainerDLC"/>
+  <method class="jd.plugins.container.ContainerDLC" name="java.lang.String createContainerString(java.util.Vector)"/>
+  <method class="jd.plugins.container.ContainerDLC" name="java.lang.String getCoder()"/>
+  <method class="jd.plugins.container.ContainerDLC" name="java.lang.String getHost()"/>
+  <method class="jd.plugins.container.ContainerDLC" name="java.lang.String getVersion()"/>
+  <method class="jd.plugins.container.ContainerDLC" name="java.lang.String getPluginID()"/>
+  <method class="jd.plugins.container.ContainerDLC" name="jd.plugins.PluginStep doStep(jd.plugins.PluginStep, java.io.File)"/>
+  <method class="jd.plugins.container.ContainerDLC" name="java.lang.String jdtcEncrypt(java.lang.String)"/>
+  <method class="jd.plugins.container.ContainerDLC" name="java.lang.String getPluginName()"/>
+  <method class="jd.plugins.container.ContainerDLC" name="java.lang.String[] encrypt(java.lang.String)"/>
+  <method class="jd.plugins.container.ContainerDLC" name="java.lang.String asHex(byte[])"/>
+  <method class="jd.plugins.container.ContainerDLC" name="void main(java.lang.String[])"/>
+  <method class="jd.plugins.container.ContainerDLC" name="boolean doBotCheck(java.io.File)"/>
+  <method class="jd.plugins.container.ContainerDLC" name="java.util.regex.Pattern getSupportedLinks()"/>
+  <method class="jd.plugins.container.ContainerDLC" name="java.lang.String decrypt(java.lang.String, java.lang.String)"/>
+  <class name="jd.plugins.container.ContainerRSDF"/>
+  <method class="jd.plugins.container.ContainerRSDF" name="java.lang.String getPluginID()"/>
+  <method class="jd.plugins.container.ContainerRSDF" name="java.lang.String getVersion()"/>
+  <method class="jd.plugins.container.ContainerRSDF" name="java.util.regex.Pattern getSupportedLinks()"/>
+  <method class="jd.plugins.container.ContainerRSDF" name="java.lang.String asHex(byte[])"/>
+  <method class="jd.plugins.container.ContainerRSDF" name="java.lang.String getCoder()"/>
+  <method class="jd.plugins.container.ContainerRSDF" name="jd.plugins.PluginStep doStep(jd.plugins.PluginStep, java.io.File)"/>
+  <method class="jd.plugins.container.ContainerRSDF" name="java.lang.String[] encrypt(java.lang.String)"/>
+  <method class="jd.plugins.container.ContainerRSDF" name="java.lang.String getHost()"/>
+  <method class="jd.plugins.container.ContainerRSDF" name="java.lang.String getPluginName()"/>
+  <method class="jd.plugins.container.ContainerRSDF" name="boolean doBotCheck(java.io.File)"/>
+  <class name="jd.plugins.container.ContainerCCF"/>
+  <method class="jd.plugins.container.ContainerCCF" name="java.lang.String getPluginID()"/>
+  <method class="jd.plugins.container.ContainerCCF" name="java.util.Vector getContainedDownloadlinks()"/>
+  <method class="jd.plugins.container.ContainerCCF" name="java.lang.String getVersion()"/>
+  <method class="jd.plugins.container.ContainerCCF" name="java.util.regex.Pattern getSupportedLinks()"/>
+  <method class="jd.plugins.container.ContainerCCF" name="byte[] getBytesFromFile(java.io.File)"/>
+  <method class="jd.plugins.container.ContainerCCF" name="java.lang.String extractDownloadURL(jd.plugins.DownloadLink)"/>
+  <method class="jd.plugins.container.ContainerCCF" name="java.lang.String getCoder()"/>
+  <method class="jd.plugins.container.ContainerCCF" name="void initContainer(java.lang.String)"/>
+  <method class="jd.plugins.container.ContainerCCF" name="jd.plugins.PluginStep doStep(jd.plugins.PluginStep, java.io.File)"/>
+  <method class="jd.plugins.container.ContainerCCF" name="java.lang.String[] encrypt(java.lang.String)"/>
+  <method class="jd.plugins.container.ContainerCCF" name="java.lang.String getHost()"/>
+  <method class="jd.plugins.container.ContainerCCF" name="java.lang.String getPluginName()"/>
+  <method class="jd.plugins.container.ContainerCCF" name="boolean doBotCheck(java.io.File)"/>
   <class name="jd.plugins.PluginForDecrypt"/>
   <field class="jd.plugins.PluginForDecrypt" name="default_password"/>
   <field class="jd.plugins.PluginForDecrypt" name="progress"/>
@@ -304,8 +526,10 @@
   <field class="jd.plugins.PluginForContainer" name="downloadLinksURL"/>
   <field class="jd.plugins.PluginForContainer" name="containedLinks"/>
   <field class="jd.plugins.PluginForContainer" name="md5"/>
+  <field class="jd.plugins.PluginForContainer" name="EXTENSIONS"/>
   <method class="jd.plugins.PluginForContainer" name="jd.plugins.PluginStep doDecryptStep(jd.plugins.PluginStep, java.lang.String)"/>
   <method class="jd.plugins.PluginForContainer" name="java.util.Vector getContainedDownloadlinks()"/>
+  <method class="jd.plugins.PluginForContainer" name="boolean canHandle(java.lang.String)"/>
   <method class="jd.plugins.PluginForContainer" name="java.lang.String createContainerString(java.util.Vector)"/>
   <method class="jd.plugins.PluginForContainer" name="jd.plugins.PluginForHost findHostPlugin(java.lang.String)"/>
   <method class="jd.plugins.PluginForContainer" name="java.lang.String extractDownloadURL(jd.plugins.DownloadLink)"/>
@@ -314,8 +538,49 @@
   <method class="jd.plugins.PluginForContainer" name="void initContainer(java.lang.String)"/>
   <method class="jd.plugins.PluginForContainer" name="jd.plugins.PluginStep doStep(jd.plugins.PluginStep, java.io.File)"/>
   <method class="jd.plugins.PluginForContainer" name="java.lang.String[] encrypt(java.lang.String)"/>
+  <method class="jd.plugins.PluginForContainer" name="java.util.Vector getExtensions()"/>
 </expose>
 <map>
+  <field class="jd.plugins.container.ContainerUtilites" name="b64Encoder" map="A"/>
+  <method class="jd.plugins.container.ContainerUtilites" name="boolean checkJarEntry(java.lang.String, java.lang.String)" map="A"/>
+  <method class="jd.plugins.container.ContainerUtilites" name="boolean jarValid(java.lang.String)" map="A"/>
+  <method class="jd.plugins.container.ContainerUtilites" name="boolean checkDigest(java.io.InputStream, java.lang.String)" map="A"/>
+  <field class="jd.plugins.container.ContainerBackup" name="patternSupported" map="U"/>
+  <class name="jd.plugins.container.ContainerDLC$1" map="1"/>
+  <field class="jd.plugins.container.ContainerDLC$1" name="this$0" map="A"/>
+  <method class="jd.plugins.container.ContainerDLC$1" name="int compare(java.lang.Object, java.lang.Object)" map="compare"/>
+  <field class="jd.plugins.container.ContainerDLC" name="CONFIGNAME" map="N"/>
+  <field class="jd.plugins.container.ContainerDLC" name="patternSupported" map="O"/>
+  <field class="jd.plugins.container.ContainerDLC" name="header" map="P"/>
+  <method class="jd.plugins.container.ContainerDLC" name="void initConfig()" map="A"/>
+  <method class="jd.plugins.container.ContainerDLC" name="java.lang.String getMD5(java.lang.String)" map="A"/>
+  <method class="jd.plugins.container.ContainerDLC" name="java.lang.String getLocalFile(java.io.File)" map="A"/>
+  <method class="jd.plugins.container.ContainerDLC" name="void parseDLCXML1(org.w3c.dom.Node, java.io.File)" map="A"/>
+  <method class="jd.plugins.container.ContainerDLC" name="java.lang.String getHeaderField(java.lang.String)" map="B"/>
+  <method class="jd.plugins.container.ContainerDLC" name="byte[] readJarSig()" map="B"/>
+  <method class="jd.plugins.container.ContainerDLC" name="java.lang.String decryptServerKey(java.lang.String)" map="C"/>
+  <method class="jd.plugins.container.ContainerDLC" name="void parseDLCXML2(org.w3c.dom.Node, java.io.File)" map="B"/>
+  <method class="jd.plugins.container.ContainerDLC" name="byte[] getJDTCKey()" map="C"/>
+  <method class="jd.plugins.container.ContainerDLC" name="void parseXMLString(java.lang.String, java.io.File)" map="A"/>
+  <method class="jd.plugins.container.ContainerDLC" name="void parseDLCXML3(org.w3c.dom.Node, java.io.File)" map="C"/>
+  <method class="jd.plugins.container.ContainerDLC" name="java.lang.String callService(java.net.URL, java.lang.String)" map="A"/>
+  <method class="jd.plugins.container.ContainerDLC" name="java.lang.String getLocalHash(java.io.File)" map="B"/>
+  <method class="jd.plugins.container.ContainerDLC" name="byte[] getKey()" map="D"/>
+  <field class="jd.plugins.container.ContainerRSDF" name="patternSupported" map="Q"/>
+  <method class="jd.plugins.container.ContainerRSDF" name="java.lang.String[] loadFileContent(java.lang.String)" map="D"/>
+  <method class="jd.plugins.container.ContainerRSDF" name="java.lang.String[] decrypt(java.lang.String)" map="E"/>
+  <method class="jd.plugins.container.ContainerRSDF" name="java.lang.String getLocalFile(java.io.File)" map="C"/>
+  <method class="jd.plugins.container.ContainerRSDF" name="byte[] getKey()" map="E"/>
+  <method class="jd.plugins.container.ContainerRSDF" name="java.lang.String filterRSDF(java.lang.String)" map="F"/>
+  <method class="jd.plugins.container.ContainerRSDF" name="byte[] readJarSig()" map="F"/>
+  <method class="jd.plugins.container.ContainerRSDF" name="void getEKey(byte[])" map="A"/>
+  <class name="jd.plugins.container.ContainerCCF$1" map="1"/>
+  <field class="jd.plugins.container.ContainerCCF$1" name="this$0" map="A"/>
+  <method class="jd.plugins.container.ContainerCCF$1" name="int compare(java.lang.Object, java.lang.Object)" map="compare"/>
+  <field class="jd.plugins.container.ContainerCCF" name="rsdfLink" map="R"/>
+  <field class="jd.plugins.container.ContainerCCF" name="patternSupported" map="S"/>
+  <field class="jd.plugins.container.ContainerCCF" name="rsdf" map="T"/>
+  <method class="jd.plugins.container.ContainerCCF" name="void initConfig()" map="G"/>
   <field class="jd.plugins.PluginForDecrypt" name="cryptedLink" map="G"/>
   <field class="jd.plugins.Plugin" name="lastCaptcha" map="A"/>
   <field class="jd.plugins.Plugin" name="DOWNLOAD_ERROR_0_BYTE_TOLOAD" map="B"/>

@@ -21,6 +21,8 @@ import java.io.File;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Vector;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import jd.utils.JDUtilities;
 
@@ -50,6 +52,8 @@ public abstract class PluginForContainer extends PluginForDecrypt {
     private static HashMap<String, PluginForContainer>   PLUGINS                 = new HashMap<String, PluginForContainer>();
 
     protected Vector<DownloadLink>                       containedLinks          = new Vector<DownloadLink>();
+
+    protected Vector<String> EXTENSIONS=new Vector<String>();
 
     /**
      * Diese Methode liefert eine URL zurück, von der aus der Download gestartet
@@ -122,6 +126,20 @@ public abstract class PluginForContainer extends PluginForDecrypt {
 
         }
         return null;
+    }
+    public Vector<String> getExtensions(){
+        return this.EXTENSIONS;
+    }
+    public synchronized boolean canHandle(String data) {
+        
+        
+      
+     
+        if (data == null) return false;
+        if(this.getExtensions().contains(JDUtilities.getFileExtension(new File(data.toLowerCase()))))return true;
+        
+       
+        return false;
     }
 
     public void initContainer(String filename) {

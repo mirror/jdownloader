@@ -4,7 +4,7 @@
     <property name="cls" value="bin" />
     <property name="dist" value="dist" />
     <property name="res" value="ressourcen" />
-	<property name="keystore" value="jDownloader.keystore" />
+	<property name="keystore" value="G:\jdworkspace\jDownloader.keystore" />
 	<property name="class-path" value="./BrowserLauncher2.jar ./js.jar" />
     <target name="compile">
         <javac srcdir="${src}" destdir="${cls}" encoding="UTF-8" source="1.5" />
@@ -61,6 +61,10 @@
 		
 	<target name="jarTrayIcon">	
 		<!-- Optional Plugins -->	
+		<manifest file="Manifest.MF">
+			<attribute name="Created-By" value="coalado" />
+			<attribute name="Main-Class" value="jd.update.Main" />
+	    </manifest>
         <jar jarfile="${dist}/JDTrayIcon.jar" manifest="Manifest.MF">
             <fileset dir="${cls}">
                 <include name="jd/plugins/optional/JDTrayIcon.class" />        
