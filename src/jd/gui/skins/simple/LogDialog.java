@@ -93,7 +93,7 @@ public class LogDialog extends JFrame implements ActionListener {
         this.setTitle(JDLocale.L("gui.logDialog.title", "jDownloader Logausgabe"));
         setLayout(new GridBagLayout());
         this.setName("LOGDIALOG");
-        this.setAlwaysOnTop(true);
+   
         Handler streamHandler = new LogStreamHandler(new PrintStream(new LogStream()));
         streamHandler.setLevel(Level.ALL);
         streamHandler.setFormatter(new LogFormatter());
