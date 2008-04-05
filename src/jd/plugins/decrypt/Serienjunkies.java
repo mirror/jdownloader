@@ -48,6 +48,7 @@ import jd.captcha.utils.UTILITIES;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.gui.skins.simple.SimpleGUI;
+import jd.plugins.Form;
 import jd.plugins.HTTPConnection;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
@@ -599,14 +600,21 @@ public class Serienjunkies extends PluginForDecrypt {
             if (reqinfo.getLocation() != null) {
                 links.add(reqinfo.getLocation());
             }
-            Pattern pattern = Pattern.compile("FORM ACTION=\"(.*?)\"[^>]*?>[^>]*?VALUE=\"Download\"", Pattern.CASE_INSENSITIVE);
-            Matcher matcher = pattern.matcher(reqinfo.getHtmlCode());
-            while (matcher.find()) {
-                reqinfo = getRequest(new URL(matcher.group(1)));
-                reqinfo = getRequest(new URL(getBetween(reqinfo.getHtmlCode(), "SRC=\"", "\"")));
-                String loc = reqinfo.getLocation();
-                if (loc != null) links.add(loc);
-            }
+            Form[] forms = reqinfo.getForms();
+            for (int i = 0; i < forms.length; i++) {
+				if(!forms[i].action.contains("firstload"))
+				{
+					try {
+						reqinfo = getRequest(new URL(forms[i].action));
+		                reqinfo = getRequest(new URL(getBetween(reqinfo.getHtmlCode(), "SRC=\"", "\"")), null,null, false);
+		                String loc = reqinfo.getLocation();
+		                if (loc != null) links.add(loc);
+					} catch (Exception e) {
+						// TODO: handle exception
+					}
+
+				}
+			}
         }
         catch (IOException e) {
             e.printStackTrace();
