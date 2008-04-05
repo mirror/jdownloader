@@ -1,0 +1,333 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<yguard version="1.5">
+<!--
+  yGuard Bytecode Obfuscator, v2.2.0, a Product of yWorks GmbH - http://www.yworks.com
+
+  Logfile created on Sat Apr 05 13:36:26 CEST 2008
+
+  Jar file to be obfuscated:           JDownloaderContainer.jar
+  Target Jar file for obfuscated code: JDownloaderContainer_obfuscated.jar
+
+-->
+<!--
+  Memory in use after class data structure built: 2181024 bytes
+  Total memory available                        : 5177344 bytes
+-->
+<!-- WARNING: Unresolved external dependency: jd.plugins.HTTPConnection not found! -->
+<!-- WARNING: Unresolved external dependency: jd.plugins.RequestInfo not found! -->
+<!-- WARNING: Unresolved external dependency: jd.plugins.RequestInfo not found! -->
+<!-- WARNING: Unresolved external dependency: jd.plugins.RequestInfo not found! -->
+<!-- WARNING: Unresolved external dependency: jd.config.ConfigContainer not found! -->
+<!-- WARNING: Unresolved external dependency: jd.plugins.RequestInfo not found! -->
+<!-- WARNING: Unresolved external dependency: jd.plugins.CRequest not found! -->
+<!-- WARNING: Unresolved external dependency: jd.plugins.event.PluginListener not found! -->
+<!-- WARNING: Unresolved external dependency: jd.plugins.PluginStep not found! -->
+<!-- WARNING: Unresolved external dependency: jd.plugins.PluginStep not found! -->
+<!-- WARNING: Unresolved external dependency: jd.config.Property not found! -->
+<!-- WARNING: Unresolved external dependency: jd.captcha.pixelgrid.Captcha not found! -->
+<!-- WARNING: Unresolved external dependency: jd.plugins.PluginStep not found! -->
+<!-- WARNING: Unresolved external dependency: jd.plugins.PluginStep not found! -->
+<!-- WARNING: Unresolved external dependency: jd.config.ConfigContainer not found! -->
+<!-- WARNING: Unresolved external dependency: jd.plugins.PluginStep not found! -->
+<!-- WARNING: Unresolved external dependency: jd.plugins.PluginStep not found! -->
+<!-- WARNING: Unresolved external dependency: jd.plugins.PluginStep not found! -->
+<!-- WARNING: Unresolved external dependency: jd.plugins.PluginStep not found! -->
+<!-- WARNING: Unresolved external dependency: jd.plugins.HTTPConnection not found! -->
+<!-- WARNING: Unresolved external dependency: jd.plugins.HTTPConnection not found! -->
+<!-- WARNING: Unresolved external dependency: jd.plugins.PluginStep not found! -->
+<!-- WARNING: Unresolved external dependency: jd.plugins.RequestInfo not found! -->
+<!-- WARNING: Unresolved external dependency: jd.plugins.RequestInfo not found! -->
+<!-- WARNING: Unresolved external dependency: jd.plugins.RequestInfo not found! -->
+<!-- WARNING: Unresolved external dependency: jd.plugins.RequestInfo not found! -->
+<!-- WARNING: Unresolved external dependency: jd.plugins.RequestInfo not found! -->
+<!-- WARNING: Unresolved external dependency: jd.plugins.RequestInfo not found! -->
+<!-- WARNING: Unresolved external dependency: jd.plugins.RequestInfo not found! -->
+<!-- WARNING: Unresolved external dependency: jd.plugins.RequestInfo not found! -->
+<!-- WARNING: Unresolved external dependency: jd.plugins.RequestInfo not found! -->
+<!-- WARNING: Unresolved external dependency: jd.plugins.RequestInfo not found! -->
+<!-- WARNING: Unresolved external dependency: jd.plugins.HTTPConnection not found! -->
+<!-- WARNING: Unresolved external dependency: jd.plugins.RequestInfo not found! -->
+<!-- WARNING: Unresolved external dependency: jd.plugins.HTTPConnection not found! -->
+<!-- WARNING: Unresolved external dependency: jd.plugins.event.PluginListener not found! -->
+<!-- WARNING: Unresolved external dependency: jd.plugins.event.PluginListener not found! -->
+<!-- WARNING: Unresolved external dependency: jd.plugins.event.PluginEvent not found! -->
+<!-- WARNING: Unresolved external dependency: jd.config.Property not found! -->
+<!-- WARNING: Unresolved external dependency: jd.config.Property not found! -->
+<!-- WARNING: Unresolved external dependency: jd.captcha.pixelgrid.Captcha not found! -->
+<!-- WARNING: Unresolved external dependency: jd.captcha.pixelgrid.Captcha not found! -->
+<!-- WARNING: No mapping found: jd.utils.JDUtilities -->
+<!-- WARNING: No mapping found: jd.utils.JDUtilities -->
+<!-- WARNING: No mapping found: jd.plugins.CRequest -->
+<!-- WARNING: Unresolved external dependency: jd.plugins.CRequest not found! -->
+<!-- WARNING: Unresolved external dependency: jd.plugins.PluginStep not found! -->
+<!-- WARNING: No mapping found: jd.config.ConfigContainer -->
+<!-- WARNING: Unresolved external dependency: jd.config.ConfigContainer not found! -->
+<!-- WARNING: No mapping found: jd.utils.JDUtilities -->
+<!-- WARNING: Unresolved external dependency: jd.config.Configuration not found! -->
+<!-- WARNING: No mapping found: jd.config.Configuration -->
+<!-- WARNING: Unresolved external dependency: jd.config.Property not found! -->
+<!-- WARNING: No mapping found: jd.config.Property -->
+<!-- WARNING: No mapping found: jd.plugins.PluginStep -->
+<!-- WARNING: No mapping found: jd.plugins.event.PluginEvent -->
+<!-- WARNING: Unresolved external dependency: jd.plugins.event.PluginEvent not found! -->
+<!-- WARNING: No mapping found: jd.plugins.HTTPConnection -->
+<!-- WARNING: Unresolved external dependency: jd.plugins.RequestInfo not found! -->
+<!-- WARNING: No mapping found: jd.utils.JDUtilities -->
+<!-- WARNING: Unresolved external dependency: jd.config.SubConfiguration not found! -->
+<!-- WARNING: No mapping found: jd.config.SubConfiguration -->
+<!-- WARNING: No mapping found: jd.config.SubConfiguration -->
+<!-- WARNING: No mapping found: jd.plugins.HTTPConnection -->
+<!-- WARNING: No mapping found: jd.plugins.HTTPConnection -->
+<!-- WARNING: No mapping found: jd.plugins.HTTPConnection -->
+<!-- WARNING: No mapping found: jd.plugins.HTTPConnection -->
+<!-- WARNING: No mapping found: jd.plugins.HTTPConnection -->
+<!-- WARNING: Unresolved external dependency: jd.plugins.HTTPConnection not found! -->
+<!-- WARNING: Unresolved external dependency: jd.plugins.RequestInfo not found! -->
+<!-- WARNING: No mapping found: jd.plugins.RequestInfo -->
+<!-- WARNING: Unresolved external dependency: jd.plugins.HTTPConnection not found! -->
+<!-- WARNING: No mapping found: jd.plugins.HTTPConnection -->
+<!-- WARNING: Unresolved external dependency: jd.plugins.RequestInfo not found! -->
+<!-- WARNING: No mapping found: jd.plugins.HTTPConnection -->
+<!-- WARNING: Unresolved external dependency: jd.plugins.HTTPConnection not found! -->
+<!-- WARNING: No mapping found: jd.plugins.HTTPConnection -->
+<!-- WARNING: No mapping found: jd.plugins.RequestInfo -->
+<!-- WARNING: No mapping found: jd.plugins.HTTPConnection -->
+<!-- WARNING: Unresolved external dependency: jd.plugins.RequestInfo not found! -->
+<!-- WARNING: Unresolved external dependency: jd.plugins.RequestInfo not found! -->
+<!-- WARNING: No mapping found: jd.plugins.HTTPConnection -->
+<!-- WARNING: No mapping found: jd.plugins.HTTPConnection -->
+<!-- WARNING: No mapping found: jd.plugins.HTTPConnection -->
+<!-- WARNING: No mapping found: jd.plugins.HTTPConnection -->
+<!-- WARNING: No mapping found: jd.plugins.HTTPConnection -->
+<!-- WARNING: No mapping found: jd.plugins.event.PluginListener -->
+<!-- WARNING: Unresolved external dependency: jd.plugins.event.PluginEvent not found! -->
+<!-- WARNING: No mapping found: jd.utils.JDUtilities -->
+<!-- WARNING: No mapping found: jd.utils.JDUtilities -->
+<!-- WARNING: No mapping found: jd.utils.JDUtilities -->
+<!-- WARNING: No mapping found: jd.unrar.JUnrar -->
+<!-- WARNING: No mapping found: jd.unrar.JUnrar -->
+<!-- WARNING: Unresolved external dependency: jd.captcha.pixelgrid.Captcha not found! -->
+<!-- WARNING: Unresolved external dependency: jd.plugins.RequestInfo not found! -->
+<!-- WARNING: Unresolved external dependency: jd.utils.JDUtilities not found! -->
+<!-- WARNING: Unresolved external dependency: jd.plugins.CRequest not found! -->
+<!-- WARNING: Unresolved external dependency: jd.config.ConfigContainer not found! -->
+<!-- WARNING: Unresolved external dependency: jd.config.Configuration not found! -->
+<!-- WARNING: Unresolved external dependency: jd.config.Property not found! -->
+<!-- WARNING: Unresolved external dependency: jd.plugins.PluginStep not found! -->
+<!-- WARNING: Unresolved external dependency: jd.plugins.event.PluginEvent not found! -->
+<!-- WARNING: Unresolved external dependency: jd.plugins.HTTPConnection not found! -->
+<!-- WARNING: Unresolved external dependency: jd.config.SubConfiguration not found! -->
+<!-- WARNING: Unresolved external dependency: jd.plugins.RequestInfo not found! -->
+<!-- WARNING: Unresolved external dependency: jd.plugins.event.PluginListener not found! -->
+<!-- WARNING: Unresolved external dependency: jd.unrar.JUnrar not found! -->
+<!-- WARNING: Unresolved external dependency: jd.plugins.DownloadLink not found! -->
+<!-- WARNING: Unresolved external dependency: jd.plugins.DownloadLink not found! -->
+<!-- WARNING: Unresolved external dependency: jd.plugins.DownloadLink not found! -->
+<!-- WARNING: Unresolved external dependency: jd.plugins.DownloadLink not found! -->
+<!-- WARNING: Unresolved external dependency: jd.plugins.DownloadLink not found! -->
+<!-- WARNING: Unresolved external dependency: jd.plugins.PluginStep not found! -->
+<!-- WARNING: Unresolved external dependency: jd.plugins.PluginStep not found! -->
+<!-- WARNING: Unresolved external dependency: jd.plugins.PluginStep not found! -->
+<!-- WARNING: Unresolved external dependency: jd.plugins.PluginStep not found! -->
+<!-- WARNING: Unresolved external dependency: jd.plugins.PluginStep not found! -->
+<!-- WARNING: Unresolved external dependency: jd.plugins.PluginStep not found! -->
+<!-- WARNING: Unresolved external dependency: jd.plugins.PluginForHost not found! -->
+<!-- WARNING: No mapping found: jd.plugins.DownloadLink -->
+<!-- WARNING: No mapping found: jd.plugins.DownloadLink -->
+<!-- WARNING: No mapping found: jd.utils.JDUtilities -->
+<!-- WARNING: No mapping found: jd.utils.JDUtilities -->
+<!-- WARNING: No mapping found: jd.utils.JDUtilities -->
+<!-- WARNING: No mapping found: jd.utils.JDUtilities -->
+<!-- WARNING: Unresolved external dependency: jd.plugins.PluginStep not found! -->
+<!-- WARNING: Unresolved external dependency: jd.plugins.PluginStep not found! -->
+<!-- WARNING: No mapping found: jd.plugins.DownloadLink -->
+<!-- WARNING: No mapping found: jd.plugins.PluginStep -->
+<!-- WARNING: Unresolved external dependency: jd.plugins.PluginStep not found! -->
+<!-- WARNING: Unresolved external dependency: jd.plugins.PluginStep not found! -->
+<!-- WARNING: No mapping found: jd.utils.JDUtilities -->
+<!-- WARNING: No mapping found: jd.plugins.PluginForHost -->
+<!-- WARNING: Unresolved external dependency: jd.plugins.DownloadLink not found! -->
+<!-- WARNING: Unresolved external dependency: jd.utils.JDUtilities not found! -->
+<!-- WARNING: Unresolved external dependency: jd.plugins.PluginStep not found! -->
+<!-- WARNING: Unresolved external dependency: jd.plugins.PluginForHost not found! -->
+<!-- WARNING: Unresolved external dependency: jd.plugins.DownloadLink not found! -->
+<!-- WARNING: Unresolved external dependency: jd.plugins.DownloadLink not found! -->
+<!-- WARNING: Unresolved external dependency: jd.controlling.ProgressController not found! -->
+<!-- WARNING: Unresolved external dependency: jd.plugins.DownloadLink not found! -->
+<!-- WARNING: Unresolved external dependency: jd.plugins.PluginStep not found! -->
+<!-- WARNING: Unresolved external dependency: jd.plugins.PluginStep not found! -->
+<!-- WARNING: Unresolved external dependency: jd.plugins.PluginStep not found! -->
+<!-- WARNING: Unresolved external dependency: jd.plugins.PluginStep not found! -->
+<!-- WARNING: Unresolved external dependency: jd.controlling.ProgressController not found! -->
+<!-- WARNING: No mapping found: jd.controlling.ProgressController -->
+<!-- WARNING: No mapping found: jd.controlling.ProgressController -->
+<!-- WARNING: No mapping found: jd.controlling.ProgressController -->
+<!-- WARNING: No mapping found: jd.controlling.ProgressController -->
+<!-- WARNING: Unresolved external dependency: jd.plugins.PluginStep not found! -->
+<!-- WARNING: Unresolved external dependency: jd.plugins.PluginStep not found! -->
+<!-- WARNING: Unresolved external dependency: jd.plugins.PluginStep not found! -->
+<!-- WARNING: Unresolved external dependency: jd.plugins.PluginStep not found! -->
+<!-- WARNING: No mapping found: jd.plugins.PluginStep -->
+<!-- WARNING: No mapping found: jd.plugins.DownloadLink -->
+<!-- WARNING: No mapping found: jd.utils.JDUtilities -->
+<!-- WARNING: No mapping found: jd.plugins.DownloadLink -->
+<!-- WARNING: No mapping found: jd.plugins.DownloadLink -->
+<!-- WARNING: No mapping found: jd.plugins.DownloadLink -->
+<!-- WARNING: Unresolved external dependency: jd.plugins.DownloadLink not found! -->
+<!-- WARNING: No mapping found: jd.plugins.DownloadLink -->
+<!-- WARNING: Unresolved external dependency: jd.controlling.ProgressController not found! -->
+<!-- WARNING: Unresolved external dependency: jd.plugins.PluginStep not found! -->
+<!-- WARNING: Unresolved external dependency: jd.plugins.DownloadLink not found! -->
+<!-- WARNING: Unresolved external dependency: jd.utils.JDUtilities not found! -->
+<expose>
+  <class name="jd.plugins.PluginForDecrypt"/>
+  <field class="jd.plugins.PluginForDecrypt" name="default_password"/>
+  <field class="jd.plugins.PluginForDecrypt" name="progress"/>
+  <method class="jd.plugins.PluginForDecrypt" name="java.util.Vector getDecryptableLinks(java.lang.String)"/>
+  <method class="jd.plugins.PluginForDecrypt" name="java.lang.String getLinkName()"/>
+  <method class="jd.plugins.PluginForDecrypt" name="java.util.Vector decryptLink(java.lang.String)"/>
+  <method class="jd.plugins.PluginForDecrypt" name="java.util.Vector decryptLinks(java.util.Vector)"/>
+  <method class="jd.plugins.PluginForDecrypt" name="jd.plugins.PluginStep doStep(jd.plugins.PluginStep, java.lang.String)"/>
+  <method class="jd.plugins.PluginForDecrypt" name="jd.plugins.PluginStep doStep(jd.plugins.PluginStep, java.lang.Object)"/>
+  <method class="jd.plugins.PluginForDecrypt" name="java.util.Vector getDefaultPassswords()"/>
+  <method class="jd.plugins.PluginForDecrypt" name="int compareTo(java.lang.Object)"/>
+  <method class="jd.plugins.PluginForDecrypt" name="jd.plugins.DownloadLink createDownloadlink(java.lang.String)"/>
+  <class name="jd.plugins.Plugin"/>
+  <field class="jd.plugins.Plugin" name="DOWNLOAD_ERROR_DOWNLOAD_INCOMPLETE"/>
+  <field class="jd.plugins.Plugin" name="DOWNLOAD_ERROR_OUTPUTFILE_IN_PROGRESS"/>
+  <field class="jd.plugins.Plugin" name="request"/>
+  <field class="jd.plugins.Plugin" name="DOWNLOAD_ERROR_RENAME_FAILED"/>
+  <field class="jd.plugins.Plugin" name="PROPERTY_PREMIUM_USER"/>
+  <field class="jd.plugins.Plugin" name="PROPERTY_PREMIUM_PASS"/>
+  <field class="jd.plugins.Plugin" name="pluginListener"/>
+  <field class="jd.plugins.Plugin" name="DOWNLOAD_ERROR_UNKNOWN"/>
+  <field class="jd.plugins.Plugin" name="DOWNLOAD_ERROR_INVALID_OUTPUTFILE"/>
+  <field class="jd.plugins.Plugin" name="DOWNLOAD_SUCCESS"/>
+  <field class="jd.plugins.Plugin" name="DOWNLOAD_ERROR_SECURITY"/>
+  <field class="jd.plugins.Plugin" name="aborted"/>
+  <field class="jd.plugins.Plugin" name="requestInfo"/>
+  <field class="jd.plugins.Plugin" name="END_OF_LINK"/>
+  <field class="jd.plugins.Plugin" name="currentStep"/>
+  <field class="jd.plugins.Plugin" name="steps"/>
+  <field class="jd.plugins.Plugin" name="VERSION"/>
+  <field class="jd.plugins.Plugin" name="PROPERTY_USE_PREMIUM"/>
+  <field class="jd.plugins.Plugin" name="ACCEPT_LANGUAGE"/>
+  <field class="jd.plugins.Plugin" name="CAPTCHA_USER_INPUT"/>
+  <field class="jd.plugins.Plugin" name="config"/>
+  <field class="jd.plugins.Plugin" name="logger"/>
+  <field class="jd.plugins.Plugin" name="CAPTCHA_JAC"/>
+  <field class="jd.plugins.Plugin" name="DOWNLOAD_ERROR_FILENOTFOUND"/>
+  <field class="jd.plugins.Plugin" name="DOWNLOAD_ERROR_OUTPUTFILE_ALREADYEXISTS"/>
+  <method class="jd.plugins.Plugin" name="void setConnectTimeout(int)"/>
+  <method class="jd.plugins.Plugin" name="jd.plugins.RequestInfo postRequest(java.net.URL, java.lang.String)"/>
+  <method class="jd.plugins.Plugin" name="boolean collectCaptchas()"/>
+  <method class="jd.plugins.Plugin" name="void setProperties(jd.config.Property)"/>
+  <method class="jd.plugins.Plugin" name="java.util.Vector getMatches(java.lang.String, java.util.regex.Pattern)"/>
+  <method class="jd.plugins.Plugin" name="java.util.ArrayList getAllSimpleMatches(java.lang.String, java.util.regex.Pattern)"/>
+  <method class="jd.plugins.Plugin" name="java.lang.String md5sum(java.lang.String)"/>
+  <method class="jd.plugins.Plugin" name="jd.plugins.RequestInfo readFromURL(jd.plugins.HTTPConnection)"/>
+  <method class="jd.plugins.Plugin" name="void addPluginListener(jd.plugins.event.PluginListener)"/>
+  <method class="jd.plugins.Plugin" name="boolean canHandle(java.lang.String)"/>
+  <method class="jd.plugins.Plugin" name="jd.config.ConfigContainer getConfig()"/>
+  <method class="jd.plugins.Plugin" name="jd.plugins.RequestInfo getRequestWithoutHtmlCode(java.net.URL, java.lang.String, java.lang.String, boolean)"/>
+  <method class="jd.plugins.Plugin" name="java.lang.String getHttpLinkList(java.lang.String)"/>
+  <method class="jd.plugins.Plugin" name="int getCaptchaDetectionID()"/>
+  <method class="jd.plugins.Plugin" name="jd.plugins.PluginStep getCurrentStep()"/>
+  <method class="jd.plugins.Plugin" name="java.lang.String[] getSimpleMatches(java.lang.String, java.lang.String)"/>
+  <method class="jd.plugins.Plugin" name="int countOccurences(java.lang.String, java.util.regex.Pattern)"/>
+  <method class="jd.plugins.Plugin" name="java.util.HashMap getInputHiddenFields(java.lang.String)"/>
+  <method class="jd.plugins.Plugin" name="java.lang.String getFirstMatch(java.lang.String, java.util.regex.Pattern, int)"/>
+  <method class="jd.plugins.Plugin" name="java.lang.String[] getHttpLinks(java.lang.String, java.lang.String)"/>
+  <method class="jd.plugins.Plugin" name="java.util.regex.Pattern getSupportedLinks()"/>
+  <method class="jd.plugins.Plugin" name="jd.plugins.RequestInfo getRequestWithoutHtmlCode(java.net.URL, java.lang.String, java.lang.String, java.util.HashMap, boolean)"/>
+  <method class="jd.plugins.Plugin" name="void firePluginEvent(jd.plugins.event.PluginEvent)"/>
+  <method class="jd.plugins.Plugin" name="java.lang.String createPostParameterFromHashMap(java.util.HashMap)"/>
+  <method class="jd.plugins.Plugin" name="void setLastCaptcha(jd.captcha.pixelgrid.Captcha)"/>
+  <method class="jd.plugins.Plugin" name="void abort()"/>
+  <method class="jd.plugins.Plugin" name="void init()"/>
+  <method class="jd.plugins.Plugin" name="java.lang.String cutMatches(java.lang.String)"/>
+  <method class="jd.plugins.Plugin" name="java.io.File getLocalCaptchaFile(jd.plugins.Plugin, java.lang.String)"/>
+  <method class="jd.plugins.Plugin" name="jd.plugins.RequestInfo postRequest(java.net.URL, java.lang.String, java.lang.String, java.util.HashMap, java.lang.String, boolean, int, int)"/>
+  <method class="jd.plugins.Plugin" name="java.lang.String getStatusText()"/>
+  <method class="jd.plugins.Plugin" name="int getConnectTimeoutFromConfiguration()"/>
+  <method class="jd.plugins.Plugin" name="java.lang.String getSimpleMatch(java.lang.String, java.lang.String, int)"/>
+  <method class="jd.plugins.Plugin" name="java.lang.String getLinkName()"/>
+  <method class="jd.plugins.Plugin" name="void setCaptchaDetectID(int)"/>
+  <method class="jd.plugins.Plugin" name="jd.captcha.pixelgrid.Captcha getLastCaptcha()"/>
+  <method class="jd.plugins.Plugin" name="java.util.regex.Pattern getSupportPattern(java.lang.String)"/>
+  <method class="jd.plugins.Plugin" name="jd.plugins.RequestInfo postRequestWithoutHtmlCode(java.net.URL, java.lang.String, java.lang.String, java.lang.String, boolean)"/>
+  <method class="jd.plugins.Plugin" name="java.lang.String getInitID()"/>
+  <method class="jd.plugins.Plugin" name="java.util.HashMap getInputHiddenFields(java.lang.String, java.lang.String, java.lang.String)"/>
+  <method class="jd.plugins.Plugin" name="java.lang.String parseMozillaCookie(java.net.URL, java.io.File)"/>
+  <method class="jd.plugins.Plugin" name="void setStatusText(java.lang.String)"/>
+  <method class="jd.plugins.Plugin" name="java.io.File getLocalCaptchaFile(jd.plugins.Plugin)"/>
+  <method class="jd.plugins.Plugin" name="java.util.HashMap collectCookies(jd.plugins.HTTPConnection)"/>
+  <method class="jd.plugins.Plugin" name="java.lang.String getFileNameFormHeader(jd.plugins.HTTPConnection)"/>
+  <method class="jd.plugins.Plugin" name="java.lang.String getVersion()"/>
+  <method class="jd.plugins.Plugin" name="jd.plugins.RequestInfo postRequest(java.net.URL, java.lang.String, java.lang.String, java.util.HashMap, java.lang.String, boolean)"/>
+  <method class="jd.plugins.Plugin" name="java.lang.String getSimpleMatch(java.lang.String, java.lang.String, int, int)"/>
+  <method class="jd.plugins.Plugin" name="jd.plugins.RequestInfo getRequest(java.net.URL, java.lang.String, java.lang.String, boolean)"/>
+  <method class="jd.plugins.Plugin" name="boolean useUserinputIfCaptchaUnknown()"/>
+  <method class="jd.plugins.Plugin" name="jd.plugins.RequestInfo headRequest(java.net.URL, java.lang.String, java.lang.String, boolean)"/>
+  <method class="jd.plugins.Plugin" name="jd.plugins.RequestInfo getRequestWithoutHtmlCode(java.net.URL, java.lang.String, java.lang.String, boolean, int, int)"/>
+  <method class="jd.plugins.Plugin" name="java.lang.String getBetween(java.lang.String, java.lang.String, java.lang.String)"/>
+  <method class="jd.plugins.Plugin" name="java.lang.String[] getUniqueMatches(java.lang.String, java.util.regex.Pattern)"/>
+  <method class="jd.plugins.Plugin" name="java.lang.String getPluginName()"/>
+  <method class="jd.plugins.Plugin" name="void removePluginListener(jd.plugins.event.PluginListener)"/>
+  <method class="jd.plugins.Plugin" name="void setReadTimeout(int)"/>
+  <method class="jd.plugins.Plugin" name="java.lang.String getPattern(java.lang.String)"/>
+  <method class="jd.plugins.Plugin" name="java.lang.String getCoder()"/>
+  <method class="jd.plugins.Plugin" name="java.lang.String getCaptchaCode(java.io.File, jd.plugins.Plugin)"/>
+  <method class="jd.plugins.Plugin" name="java.util.ArrayList getAllSimpleMatches(java.lang.String, java.lang.String, int)"/>
+  <method class="jd.plugins.Plugin" name="jd.config.Property getProperties()"/>
+  <method class="jd.plugins.Plugin" name="java.lang.String getHost()"/>
+  <method class="jd.plugins.Plugin" name="java.lang.String getPluginID()"/>
+  <method class="jd.plugins.Plugin" name="void resetSteps()"/>
+  <method class="jd.plugins.Plugin" name="jd.plugins.RequestInfo getRequest(java.net.URL)"/>
+  <method class="jd.plugins.Plugin" name="int getReadTimeoutFromConfiguration()"/>
+  <method class="jd.plugins.Plugin" name="java.lang.String getFormInputHidden(java.lang.String, java.lang.String, java.lang.String)"/>
+  <method class="jd.plugins.Plugin" name="java.util.ArrayList getAllSimpleMatches(java.lang.String, java.lang.String)"/>
+  <method class="jd.plugins.Plugin" name="java.lang.String joinMap(java.util.Map, java.lang.String, java.lang.String)"/>
+  <method class="jd.plugins.Plugin" name="java.util.Vector findPasswords(java.lang.String)"/>
+  <method class="jd.plugins.Plugin" name="java.lang.String getFormInputHidden(java.lang.String)"/>
+  <method class="jd.plugins.Plugin" name="void clean()"/>
+  <method class="jd.plugins.Plugin" name="void setCaptchaDetectionID(int)"/>
+  <method class="jd.plugins.Plugin" name="java.lang.String getCookieString(jd.plugins.HTTPConnection)"/>
+  <method class="jd.plugins.Plugin" name="java.lang.String findPassword(java.lang.String)"/>
+  <method class="jd.plugins.Plugin" name="boolean doBotCheck(java.io.File)"/>
+  <method class="jd.plugins.Plugin" name="java.util.ArrayList getAllSimpleMatches(java.lang.String, java.util.regex.Pattern, int)"/>
+  <method class="jd.plugins.Plugin" name="jd.plugins.PluginStep doStep(jd.plugins.PluginStep, java.lang.Object)"/>
+  <method class="jd.plugins.Plugin" name="jd.plugins.PluginStep nextStep(jd.plugins.PluginStep)"/>
+  <method class="jd.plugins.Plugin" name="java.lang.String md5sum(java.io.File)"/>
+  <method class="jd.plugins.Plugin" name="jd.plugins.PluginStep previousStep(jd.plugins.PluginStep)"/>
+  <class name="jd.plugins.PluginForContainer"/>
+  <field class="jd.plugins.PluginForContainer" name="downloadLinksURL"/>
+  <field class="jd.plugins.PluginForContainer" name="containedLinks"/>
+  <field class="jd.plugins.PluginForContainer" name="md5"/>
+  <method class="jd.plugins.PluginForContainer" name="jd.plugins.PluginStep doDecryptStep(jd.plugins.PluginStep, java.lang.String)"/>
+  <method class="jd.plugins.PluginForContainer" name="java.util.Vector getContainedDownloadlinks()"/>
+  <method class="jd.plugins.PluginForContainer" name="java.lang.String createContainerString(java.util.Vector)"/>
+  <method class="jd.plugins.PluginForContainer" name="jd.plugins.PluginForHost findHostPlugin(java.lang.String)"/>
+  <method class="jd.plugins.PluginForContainer" name="java.lang.String extractDownloadURL(jd.plugins.DownloadLink)"/>
+  <method class="jd.plugins.PluginForContainer" name="jd.plugins.PluginStep doStep(jd.plugins.PluginStep, java.lang.String)"/>
+  <method class="jd.plugins.PluginForContainer" name="jd.plugins.PluginForContainer getPlugin(java.lang.String)"/>
+  <method class="jd.plugins.PluginForContainer" name="void initContainer(java.lang.String)"/>
+  <method class="jd.plugins.PluginForContainer" name="jd.plugins.PluginStep doStep(jd.plugins.PluginStep, java.io.File)"/>
+  <method class="jd.plugins.PluginForContainer" name="java.lang.String[] encrypt(java.lang.String)"/>
+</expose>
+<map>
+  <field class="jd.plugins.PluginForDecrypt" name="cryptedLink" map="G"/>
+  <field class="jd.plugins.Plugin" name="lastCaptcha" map="A"/>
+  <field class="jd.plugins.Plugin" name="DOWNLOAD_ERROR_0_BYTE_TOLOAD" map="B"/>
+  <field class="jd.plugins.Plugin" name="initTime" map="C"/>
+  <field class="jd.plugins.Plugin" name="properties" map="D"/>
+  <field class="jd.plugins.Plugin" name="captchaDetectionID" map="E"/>
+  <field class="jd.plugins.Plugin" name="statusText" map="F"/>
+  <field class="jd.plugins.PluginForContainer" name="STATUS_NOTEXTRACTED" map="H"/>
+  <field class="jd.plugins.PluginForContainer" name="status" map="I"/>
+  <field class="jd.plugins.PluginForContainer" name="CONTAINER" map="J"/>
+  <field class="jd.plugins.PluginForContainer" name="CONTAINERLINKS" map="K"/>
+  <field class="jd.plugins.PluginForContainer" name="STATUS_ERROR_EXTRACTING" map="L"/>
+  <field class="jd.plugins.PluginForContainer" name="PLUGINS" map="M"/>
+</map>
+</yguard>

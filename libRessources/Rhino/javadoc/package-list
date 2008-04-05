@@ -1,0 +1,4 @@
+org.mozilla.javascript
+org.mozilla.javascript.debug
+org.mozilla.javascript.optimizer
+org.mozilla.javascript.serialize

@@ -1,0 +1,23 @@
+<launch4jConfig>
+  <dontWrapJar>true</dontWrapJar>
+  <headerType>gui</headerType>
+  <jar>JDownloader.jar</jar>
+  <outfile>D:\Projekte - Java\workspace\jDownloader\dist\JDownloader.exe</outfile>
+  <errTitle>Wrong Java Version installed</errTitle>
+  <cmdLine>-Xmx512m</cmdLine>
+  <chdir></chdir>
+  <priority>normal</priority>
+  <downloadUrl>http://java.com/download</downloadUrl>
+  <supportUrl>http://jdownloader.ath.cx</supportUrl>
+  <customProcName>true</customProcName>
+  <stayAlive>false</stayAlive>
+  <icon>D:\Projekte - Java\workspace\jDownloader\dist\jd\img\jd_icon.ico</icon>
+  <jre>
+    <path></path>
+    <minVersion>1.5.0</minVersion>
+    <maxVersion></maxVersion>
+    <dontUsePrivateJres>false</dontUsePrivateJres>
+    <initialHeapSize>0</initialHeapSize>
+    <maxHeapSize>512</maxHeapSize>
+  </jre>
+</launch4jConfig>

@@ -1375,6 +1375,16 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         
     }
 
+    public void setMinimized(Boolean state) {
+        // TODO Auto-generated method stub
+        
+    }
+
+    public void setStartStopButtonState(Boolean state) {
+        // TODO Auto-generated method stub
+        
+    }
+
 
 
 }
