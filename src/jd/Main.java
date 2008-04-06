@@ -633,7 +633,7 @@ public class Main {
 						"Extracts files with the jDownloader settings (without path to the current directory)" },
 				{
 						"Example:",
-						"java -jar JDownloader.jar -e /home/user/jDownloader -r 600\t extract every minutes the files to /home/user/jDownloader" },
+						"java -jar JDownloader.jar -e /home/user/jDownloader -r 600\t extract every 10 minutes the files to /home/user/jDownloader" },
 				{ "-n --new-instance",
 						"Force new instance if another jD is running" } };
 
