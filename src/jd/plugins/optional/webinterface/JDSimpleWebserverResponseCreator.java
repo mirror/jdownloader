@@ -1,10 +1,10 @@
-package jd.plugins.webinterface;
+package jd.plugins.optional.webinterface;
 
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
 
-public class JDSimpleWebserverResponse {
+public class JDSimpleWebserverResponseCreator {
         /**
          * The headers
          */
@@ -26,10 +26,10 @@ public class JDSimpleWebserverResponse {
         /**
          * Create new response
          */
-        public JDSimpleWebserverResponse() {
+        public JDSimpleWebserverResponseCreator() {
             this.headers = new StringBuilder();
             this.body = new StringBuilder();
-            this.contentType = "text/html; charset=utf-8";
+            this.contentType = "text/html";
         }
 
         /**
@@ -52,27 +52,28 @@ public class JDSimpleWebserverResponse {
         public void addContent(String content) {
             this.body.append(content);
         }
-
+//leg die lib ins home_dir gibt ja noch keine lib, nur java und class f
         /**
          * Mark the response as 200 OK. This also sets the content length, so
          * the method should not be called until all content has been appended
          */
         public void setOk() {
-            headers.append("HTTP/1.1 200 OK\n");
-            headers.append("Content-Type: ");
+            headers.append("HTTP/1.1 200 OK\r\n");
+            headers.append("Connection: close\r\n");
+            headers.append("Content-Type: ");            
             headers.append(this.contentType);
-            headers.append("\n");
-            try {
+            headers.append("\r\n");
+          try{
                 headers.append("Content-Length: ");
                 if (this.bytes != null) {
                     headers.append(bytes.length);
                 } else {
-                    headers.append(body.toString().getBytes("utf-8").length);
+                    headers.append(body.toString().getBytes("iso-8859-1").length);
                 }
-                headers.append("\n");
-            } catch (UnsupportedEncodingException e) {
-                /* logger.error("failed to encode", e); */
-            }
+                headers.append("\r\n");
+          }catch(Exception e){}
+          
+            
         }
 
         /**
@@ -84,7 +85,7 @@ public class JDSimpleWebserverResponse {
          *             on error
          */
         public void writeToStream(OutputStream outputStream) throws IOException {
-            headers.append("\n");
+            headers.append("\r\n");
             outputStream.write(headers.toString().getBytes("iso-8859-1"));
             if (this.bytes != null) {
                 outputStream.write(this.bytes);
@@ -102,7 +103,7 @@ public class JDSimpleWebserverResponse {
         public void setError(Exception e) {
             headers.append("HTTP/1.1 500 ");
             headers.append(e.getMessage());
-            headers.append("\n");
+            headers.append("\r\n");
             body.append("<html><body><h1><p>500 Internal server error</p></h1>");
             body.append(e.getMessage());
             body.append("</body></html>");
@@ -115,21 +116,20 @@ public class JDSimpleWebserverResponse {
          *            url
          */
         public void setNotFound(String url) {
-            headers.append("HTTP/1.1 403 Resource not found\n");
+            headers.append("HTTP/1.1 403 Resource not found\r\n");
             body.append("<html><body><h1><p>404 Resource not found</p></h1>");
             body.append(url);
             body.append("</body></html>");
         }
 
         public void setAuth_needed() {
-            headers.append("HTTP/1.1 401 Unauthorized\n");
-            headers.append("WWW-Authenticate: Basic realm=\"JDownloader\"");
+            headers.append("HTTP/1.1 401 Unauthorized\r\n");
+            headers.append("WWW-Authenticate: Basic realm=\"JDownloader\"\r\n");
         }
         
         
         public void setAuth_failed() {
-            headers.append("HTTP/1.1 403 Forbidden\n");
-           /* headers.append("WWW-Authenticate: Basic realm=\"JDownloader\"");*/
+            headers.append("HTTP/1.1 403 Forbidden\r\n");           
             body.append("<html><body><h1><p>403 Forbidden</p></h1></body></html>");
         }
         /**

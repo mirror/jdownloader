@@ -1,4 +1,4 @@
-package jd.plugins.webinterface;
+package jd.plugins.optional.webinterface;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -40,7 +40,7 @@ public class JDSimpleWebserver extends Thread {
         AuthUser = "Basic "+JDUtilities.Base64Encode(subConfig.getStringProperty(JDWebinterface.PROPERTY_USER, "JD") + ":" + subConfig.getStringProperty(JDWebinterface.PROPERTY_PASS, "JD"));
         NeedAuth=subConfig.getBooleanProperty(JDWebinterface.PROPERTY_LOGIN, true);
         try {
-            Server_Socket = new ServerSocket(subConfig.getIntegerProperty(JDWebinterface.PROPERTY_PORT, 1024), max_clientCounter);
+            Server_Socket = new ServerSocket(subConfig.getIntegerProperty(JDWebinterface.PROPERTY_PORT, 1024));
             logger.info("Webinterface: Server started");
             start();
         } catch (IOException e) {
@@ -53,12 +53,12 @@ public class JDSimpleWebserver extends Thread {
             try {
                 while (current_clientCounter >= max_clientCounter) {
                     try {
+                        logger.info("warte");
                         Thread.sleep(500);
                     } catch (InterruptedException e) {
                     }
                     ;
-                }
-                ;
+                };
                 Socket Client_Socket = Server_Socket.accept();
                 logger.info("WebInterface: Client[" + current_clientCounter + "/" + max_clientCounter + "] connecting from " + Client_Socket.getInetAddress());
                 current_clientCounter++;
@@ -129,8 +129,8 @@ public class JDSimpleWebserver extends Thread {
 
 //                logger.info(headers+"");
                 };
-                JDSimpleWebserverResponse response = new JDSimpleWebserverResponse();
-                JDSimpleStatusPage StatusPage = new JDSimpleStatusPage(response);
+                JDSimpleWebserverResponseCreator response = new JDSimpleWebserverResponseCreator();
+                JDSimpleWebserverRequestHandler request= new JDSimpleWebserverRequestHandler(headers,response);
                 OutputStream outputStream = Current_Socket.getOutputStream();
                 if ( NeedAuth == true)
                 {/*need authorization*/
@@ -139,7 +139,7 @@ public class JDSimpleWebserver extends Thread {
                         if (JDSimpleWebserver.AuthUser.equals(headers.get("authorization")))
                         {   /*send authorization granted*/
                             logger.info("pass stimmt");
-                            StatusPage.status();
+                            request.handle();
                             
                         }else
                         {   /*send authorization failed*/
@@ -151,7 +151,7 @@ public class JDSimpleWebserver extends Thread {
                 }
                 }else
                 {   /*no autorization needed*/
-                    StatusPage.status();
+                    request.handle();
                 };     
                 
                 response.writeToStream(outputStream);

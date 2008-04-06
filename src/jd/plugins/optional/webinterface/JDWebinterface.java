@@ -15,7 +15,7 @@
 //    along with this program.  If not, see <http://wnu.org/licenses/>.
 
 
-package jd.plugins.webinterface;
+package jd.plugins.optional.webinterface;
 
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
