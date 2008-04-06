@@ -41,7 +41,7 @@ public class FastLoadNet extends PluginForHost {
 
     private static final String  PLUGIN_NAME            = HOST;
 
-    private static final String  PLUGIN_VERSION         = "0.1.5";
+    private static final String  PLUGIN_VERSION         = "0.2.0";
 
     private static final String  PLUGIN_ID              = PLUGIN_NAME + "-" + PLUGIN_VERSION;
 
@@ -49,23 +49,18 @@ public class FastLoadNet extends PluginForHost {
 
     private static final int     MAX_SIMULTAN_DOWNLOADS = 1;
 
-    private String               downloadURL            = "";
+    private String               cookie            		= "";
 
     // Suchmasken
-    private static final String  DOWNLOAD_SIZE          = "<b>Size:</b> (.*?) MB<br/>";
-
-    private static final String  DOWNLOAD_NAME          = "<b>File:</b> <font size=\".*?\">(.*?)</font>";
-
-    private static final String  DOWNLOAD_LINK          = "value=\"Download file\" onclick=\"location='(.*?)'\">";
+    private static final String  DOWNLOAD_INFO          = "<th.*?><b>File</b></th>\\s*?<th.*?><b>Size</b></th>\\s*?</tr>\\s*?<tr>\\s*?<td.*?><font.*?>(.*)</font></td>\\s*?<td.*?><font.*?>(.*) MB</font></td>";
 
     private static final String  NOT_FOUND              = "Datei existiert nicht";
-
-    private static final String  FAULTY_LINK            = "Fehlerhafter Link";
 
     public FastLoadNet() {
 
         super();
         steps.add(new PluginStep(PluginStep.STEP_PAGE, null));
+        steps.add(new PluginStep(PluginStep.STEP_GET_CAPTCHA_FILE, null));
         steps.add(new PluginStep(PluginStep.STEP_DOWNLOAD, null));
 
     }
@@ -107,7 +102,7 @@ public class FastLoadNet extends PluginForHost {
 
     @Override
     public void reset() {
-        this.downloadURL = "";
+        this.cookie = "";
     }
 
     @Override
@@ -125,13 +120,14 @@ public class FastLoadNet extends PluginForHost {
             if (requestInfo.getHtmlCode().contains(NOT_FOUND)) {
 
                 downloadLink.setStatus(DownloadLink.STATUS_ERROR_FILE_NOT_FOUND);
+                downloadLink.setName(downloadLink.getDownloadURL().substring(downloadLink.getDownloadURL().indexOf("pid=")+4));
                 return false;
 
             }
-
-            String fileName = JDUtilities.htmlDecode(new Regexp(requestInfo.getHtmlCode(), DOWNLOAD_NAME).getFirstMatch()).trim();
-            Integer length = (int) Math.round(Double.parseDouble(new Regexp(requestInfo.getHtmlCode(), DOWNLOAD_SIZE).getFirstMatch().trim()) * 1024 * 1024);
-
+            
+            String fileName = JDUtilities.htmlDecode(new Regexp(requestInfo.getHtmlCode(), DOWNLOAD_INFO).getFirstMatch(1)).trim();
+            Integer length = (int) Math.round(Double.parseDouble(new Regexp(requestInfo.getHtmlCode(), DOWNLOAD_INFO).getFirstMatch(2).trim()) * 1024 * 1024);
+            
             // downloadinfos gefunden? -> download verfügbar
             if (fileName != null && length != null) {
 
@@ -145,6 +141,8 @@ public class FastLoadNet extends PluginForHost {
 
                 return true;
 
+            } else {
+            	downloadLink.setName(downloadLink.getDownloadURL().substring(downloadLink.getDownloadURL().indexOf("pid=")+4));
             }
 
         }
@@ -161,7 +159,16 @@ public class FastLoadNet extends PluginForHost {
     }
 
     public PluginStep doStep(PluginStep step, DownloadLink downloadLink) {
-
+    	
+    	if (aborted) {
+    		
+            logger.warning("Plugin aborted");
+            downloadLink.setStatus(DownloadLink.STATUS_TODO);
+            step.setStatus(PluginStep.STATUS_TODO);
+            return step;
+            
+        }
+    	
         try {
 
             URL downloadUrl = new URL(downloadLink.getDownloadURL());
@@ -169,8 +176,9 @@ public class FastLoadNet extends PluginForHost {
             switch (step.getStep()) {
 
                 case PluginStep.STEP_PAGE:
-logger.info(downloadUrl+"");
+                	
                     requestInfo = getRequest(downloadUrl);
+                    cookie = requestInfo.getCookie();
 
                     if (requestInfo.getHtmlCode().contains(NOT_FOUND)) {
 
@@ -180,69 +188,93 @@ logger.info(downloadUrl+"");
 
                     }
 
-                    String fileName = JDUtilities.htmlDecode(new Regexp(requestInfo.getHtmlCode(), DOWNLOAD_NAME).getFirstMatch()).trim();
+                    String fileName = JDUtilities.htmlDecode(new Regexp(requestInfo.getHtmlCode(), DOWNLOAD_INFO).getFirstMatch(1)).trim();
                     downloadLink.setName(fileName);
 
                     try {
 
-                        int length = (int) Math.round(Double.parseDouble(new Regexp(requestInfo.getHtmlCode(), DOWNLOAD_SIZE).getFirstMatch().trim()) * 1024 * 1024);
+                        int length = (int) Math.round(Double.parseDouble(new Regexp(requestInfo.getHtmlCode(), DOWNLOAD_INFO).getFirstMatch(2).trim()) * 1024 * 1024);
                         downloadLink.setDownloadMax(length);
 
                     }
                     catch (Exception e) {
 
-                        downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN_RETRY);
-                        step.setStatus(PluginStep.STATUS_ERROR);
-                        return step;
-
-                    }
-
-                    // downloadLink auslesen
-                    downloadURL = new Regexp(requestInfo.getHtmlCode(), DOWNLOAD_LINK).getFirstMatch();
-
-                    return step;
-
-                case PluginStep.STEP_DOWNLOAD:
-                    String host = new URL(downloadURL).getHost();
-                    String finalURL = getRequest(new URL(downloadURL)).getConnection().getHeaderField("Location");
-
-                    if (finalURL == null) {
                         downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN);
                         step.setStatus(PluginStep.STATUS_ERROR);
                         return step;
+
                     }
-                    downloadURL = "http://" + host + finalURL;
+
+                    return step;
+
+                case PluginStep.STEP_GET_CAPTCHA_FILE:
+                	
+                	File file = this.getLocalCaptchaFile(this);
+                	
+                	requestInfo = getRequestWithoutHtmlCode(new URL("http://fast-load.net/includes/captcha.php"),
+                			cookie, downloadLink.getDownloadURL(), true);
+                	
+                	
+                    if (!JDUtilities.download(file, requestInfo.getConnection()) || !file.exists()) {
+                    	
+                        logger.severe("Captcha download failed: http://fast-load.net/includes/captcha.php");
+                        step.setParameter(null);
+                        step.setStatus(PluginStep.STATUS_ERROR);
+                        downloadLink.setStatus(DownloadLink.STATUS_ERROR_CAPTCHA_IMAGEERROR);
+                        return step;
+                        
+                    } else {
+                    	
+                        step.setParameter(file);
+                        step.setStatus(PluginStep.STATUS_USER_INPUT);
+                        return step;
+                        
+                    }
+
+                case PluginStep.STEP_DOWNLOAD:
+                	
+                	String code = (String) steps.get(1).getParameter();
+                    String pid = downloadLink.getDownloadURL().substring(downloadLink.getDownloadURL().indexOf("pid=")+4);
+                    requestInfo = postRequestWithoutHtmlCode(new URL("http://fast-load.net/download.php"),
+                			cookie, downloadLink.getDownloadURL(), "fid="+pid+"&captcha_code="+code, true);
 
                     // Download vorbereiten
-                    HTTPConnection urlConnection = new HTTPConnection(new URL(downloadURL).openConnection());
+                    HTTPConnection urlConnection = requestInfo.getConnection();
                     int length = urlConnection.getContentLength();
-
-                    if (Math.abs(length - downloadLink.getDownloadMax()) > 1024 * 1024) {
-
-                        requestInfo = getRequest(new URL(downloadURL));
-
-                        if (requestInfo.containsHTML(FAULTY_LINK)) {
-
-                            logger.severe("faulty Link");
-                            downloadLink.setStatus(DownloadLink.STATUS_ERROR_TEMPORARILY_UNAVAILABLE);
+                    
+                    if ( urlConnection.getContentType().contains("text/html") ) {
+                    	
+                    	if ( length == 13 ) {
+                    		
+                    		downloadLink.setStatus(DownloadLink.STATUS_ERROR_CAPTCHA_WRONG);
+                        	step.setStatus(PluginStep.STATUS_ERROR);
+                        	return step;
+                    		
+                    	} else if ( length == 184 ) {
+                    		
+                    		logger.info("System overload: Retry in 20 seconds");
+                    		downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN_RETRY);
+                            step.setStatus(PluginStep.STATUS_ERROR);
+                            step.setParameter(20000l);
+                            return step;
+                    		
+                    	} else {
+                    		
+                    		logger.severe("Unknown error page - [Length: "+length+"]");
+                    		downloadLink.setStatus(DownloadLink.STATUS_ERROR_TEMPORARILY_UNAVAILABLE);
                             step.setStatus(PluginStep.STATUS_ERROR);
                             return step;
-
-                        }
-
-                        logger.warning("Filesize Error");
-                        downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN_RETRY);
-                        step.setStatus(PluginStep.STATUS_ERROR);
-                        return step;
-
+                    		
+                    	}
+                    	
                     }
 
                     downloadLink.setDownloadMax(length);
 
                     // Download starten
                     RAFDownload dl = new RAFDownload(this, downloadLink, urlConnection);
-                    dl.setResume(true);dl.setChunkNum(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS,3));
-
+                    dl.setResume(true);
+                    dl.setChunkNum(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS,3));
                     dl.startDownload();
 
                     return step;
@@ -265,7 +297,6 @@ logger.info(downloadUrl+"");
 
     @Override
     public void resetPluginGlobals() {
-        this.downloadURL = null;
     }
 
     @Override
