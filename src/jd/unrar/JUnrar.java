@@ -47,7 +47,7 @@ public class JUnrar {
 
     public boolean                    overwriteFiles           = false, autoDelete = true, deleteInfoFile = false;
 
-    public boolean                    useToextractlist         = true;
+    public boolean                    useToextractlist         = true, progressInTerminal = false;
 
     public HashMap<File, String>      files;
 
@@ -99,8 +99,8 @@ public class JUnrar {
      * Passwort nicht zugänglich
      */
     private static final String[]     PASSWORD_PROTECTEDARCHIV = null;
-
-    private ProgressController        progress;
+    
+    private ProgressC        progress;
 
     private boolean                   extendPasswordSearch     = false;
 
@@ -618,7 +618,7 @@ public class JUnrar {
 
     private boolean extractFile(File file, String pass) {
         progress.addToMax(100);
-        progress.setStatus(0);
+        progress.setStatusText(0);
         progress.setRange(100);
         logger.info("Extracting " + file.getName());
         progress.setStatusText("Extract: " + file);
@@ -648,7 +648,7 @@ public class JUnrar {
             else {
                 logger.warning("Can't extract " + file.getName());
                 addToToExtractList(file, pass);
-                logger.finer(str);
+                logger.warning(str);
             }
             return false;
         }
@@ -677,7 +677,7 @@ public class JUnrar {
                     else {
                         logger.warning("Can't extract " + file.getName());
                         addToToExtractList(file, pass);
-                        logger.finer(str);
+                        logger.warning(str);
                     }
                     return false;
                 }
@@ -710,7 +710,7 @@ public class JUnrar {
                     else {
                         logger.warning("Can't extract " + file.getName());
                         addToToExtractList(file, pass);
-                        logger.finer(str);
+                        logger.warning(str);
                     }
                     return false;
                 }
@@ -729,7 +729,7 @@ public class JUnrar {
                 else {
                     logger.warning("Can't extract " + file.getName());
                     addToToExtractList(file, pass);
-                    logger.finer(str);
+                    logger.warning(str);
                 }
                 return false;
             }
@@ -869,7 +869,7 @@ public class JUnrar {
      */
     private String startInputListener(Process p, File parent) {
         progress.addToMax(100);
-        progress.setStatus(0);
+        progress.setStatusText(0);
         progress.setRange(100);
         InputStreamReader ipsr = new InputStreamReader(p.getErrorStream());
         StringBuffer buff = new StringBuffer();
@@ -921,7 +921,7 @@ public class JUnrar {
                                 steps = (int) (state * 100 / max);
                                 if (steps > 0) {
                                     state = 0;
-                                    progress.setStatus(perc);
+                                    progress.setStatusText(perc);
                                     prozent = "";
                                     inc = 0;
                                     perc += steps;
@@ -1179,6 +1179,7 @@ public class JUnrar {
                 un.unrar = unrar;
                 un.useToextractlist = false;
                 un.overwriteFiles = overwriteFiles;
+                un.progressInTerminal=progressInTerminal;
                 unpackedFiles.addAll(un.unrar());
                 Iterator<File> iter = unpackedFiles.iterator();
 
@@ -1220,7 +1221,7 @@ public class JUnrar {
      * Startet den Entpackungsprozess. Es werden alle Zielordner zurückgegeben
      */
     public LinkedList<File> unrar() {
-        progress = new ProgressController("Default Unrar", 100);
+        progress = new ProgressC("Default Unrar", 100, progressInTerminal);
         progress.setStatusText("Unrar-process");
         unrar = getUnrarCommand();
         logger.info("Starting Unrar (DwD|JD-Team)");
@@ -1289,5 +1290,74 @@ public class JUnrar {
         logger.info("finalize");
         progress.finalize();
         return unpackedFiles;
+    }
+    private class ProgressC 
+    {
+    	ProgressController progress = null;
+    	int pos=0;
+		public ProgressC(String string, int i, boolean progressInTerminal) {
+			System.out.println(progressInTerminal);
+			if(progressInTerminal)
+			{
+				System.out.println(string);
+			}
+			else
+			{
+				progress = new ProgressController(string, i);
+			}
+		}
+
+		public void setStatusText(String string) {
+			if(progress!=null)
+				progress.setStatusText(string);
+			else
+				System.out.println(string);
+
+		}
+
+		public void setStatusText(int i) {
+			if(progress!=null)
+				progress.setStatus(i);
+			else
+			{
+				System.out.println(i + " %");
+				pos= i;
+			}
+		}
+
+		public void setRange(int i) {
+			if(progress!=null)
+				progress.setRange(i);
+			
+		}
+
+		public void addToMax(int i) {
+			if(progress!=null)
+				progress.addToMax(i);
+			
+		}
+
+		public void increase(int i) {
+			if(progress!=null)
+				progress.increase(i);
+			else
+			{
+				pos+=i;
+				System.out.println(pos + " %");
+
+			}
+			
+		}
+    	public void finalize()
+    	{
+			if(progress!=null)
+				progress.finalize();
+			else
+			{
+				pos=100;
+				System.out.println(100 + " %");
+
+			}
+    	}
     }
 }
