@@ -242,34 +242,46 @@ public class FastLoadNet extends PluginForHost {
                     HTTPConnection urlConnection = requestInfo.getConnection();
                     int length = urlConnection.getContentLength();
                     
-                    if ( urlConnection.getContentType().contains("text/html") ) {
+                    if ( urlConnection.getContentType() != null ) {
+	                    
+	                    if ( urlConnection.getContentType().contains("text/html") ) {
+	                    	
+	                    	if ( length == 13 ) {
+	                    		
+	                    		downloadLink.setStatus(DownloadLink.STATUS_ERROR_CAPTCHA_WRONG);
+	                        	step.setStatus(PluginStep.STATUS_ERROR);
+	                        	return step;
+	                    		
+	                    	} else if ( length == 184 ) {
+	                    		
+	                    		logger.info("System overload: Retry in 20 seconds");
+	                    		downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN_RETRY);
+	                            step.setStatus(PluginStep.STATUS_ERROR);
+	                            step.setParameter(20000l);
+	                            return step;
+	                    		
+	                    	} else {
+	                    		
+	                    		logger.severe("Unknown error page - [Length: "+length+"]");
+	                    		downloadLink.setStatus(DownloadLink.STATUS_ERROR_TEMPORARILY_UNAVAILABLE);
+	                            step.setStatus(PluginStep.STATUS_ERROR);
+	                            return step;
+	                    		
+	                    	}
+	                    	
+	                    }
+	                    
+                    } else {
                     	
-                    	if ( length == 13 ) {
-                    		
-                    		downloadLink.setStatus(DownloadLink.STATUS_ERROR_CAPTCHA_WRONG);
-                        	step.setStatus(PluginStep.STATUS_ERROR);
-                        	return step;
-                    		
-                    	} else if ( length == 184 ) {
-                    		
-                    		logger.info("System overload: Retry in 20 seconds");
-                    		downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN_RETRY);
-                            step.setStatus(PluginStep.STATUS_ERROR);
-                            step.setParameter(20000l);
-                            return step;
-                    		
-                    	} else {
-                    		
-                    		logger.severe("Unknown error page - [Length: "+length+"]");
-                    		downloadLink.setStatus(DownloadLink.STATUS_ERROR_TEMPORARILY_UNAVAILABLE);
-                            step.setStatus(PluginStep.STATUS_ERROR);
-                            return step;
-                    		
-                    	}
+                    	logger.severe("Couldn't get HTTP connection");
+                    	downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN_RETRY);
+                        step.setStatus(PluginStep.STATUS_ERROR);
+                        return step;
                     	
                     }
 
                     downloadLink.setDownloadMax(length);
+                    downloadLink.setName(this.getFileNameFormHeader(urlConnection));
 
                     // Download starten
                     RAFDownload dl = new RAFDownload(this, downloadLink, urlConnection);
