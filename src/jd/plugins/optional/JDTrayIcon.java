@@ -28,6 +28,7 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseMotionListener;
 import java.awt.event.MouseEvent;
 import java.awt.Color;
+import java.awt.Graphics;
 
 import javax.swing.JPopupMenu;
 import javax.swing.JWindow;
@@ -193,11 +194,11 @@ public class JDTrayIcon extends PluginOptional implements ActionListener {
         toollabel.setBounds(0, 0, toolparent.getWidth(), toolparent.getHeight());
         toollabel.setVisible(true);
         toollabel.setOpaque(true);
-        toollabel.setBackground(new Color(0xffffdd));
-                
+        toollabel.setBackground(new Color(0xb9cee9));
+        
         toolparent.setLayout(null);
         toolparent.add(toollabel);
-                
+        
         setTrayPopUp(popupMenu);
 
         SystemTray systemTray = SystemTray.getSystemTray();
@@ -324,10 +325,8 @@ public class JDTrayIcon extends PluginOptional implements ActionListener {
                 
                 counter = 2;
          
-                i = new info();
+                i = new info(e.getPoint());
                 i.start();
-               
-                showTooltip(e.getPoint());
             }
             
             public void mouseDragged(MouseEvent e){}
@@ -368,7 +367,7 @@ public class JDTrayIcon extends PluginOptional implements ActionListener {
 		
 	    SwingUtilities.invokeLater(new Runnable() {
 	    	public void run() {
-	    		toolparent.setLocation(p.x - toolparent.getWidth(), p.y - toolparent.getHeight());
+	    		toolparent.setLocation(p.x - toolparent.getWidth() - 5, p.y - toolparent.getHeight() - 5);
 	    	};
 		});
 	}
@@ -410,10 +409,28 @@ public class JDTrayIcon extends PluginOptional implements ActionListener {
     }
     
     private class info extends Thread {
+        private Point p;
+        
+        public info(Point p) {
+            this.p = p;
+        }
+        
     	public void run() {
+    	    try {
+                Thread.sleep(1000);
+            }
+            catch(InterruptedException e) {
+                interrupt();
+            }
+            
+            if(popupMenu.isVisible())
+                return;
+
     		String displaytext = "";
     		int speed = 0;
     		int downloads = 0;
+    		
+    		showTooltip(p);
     		
             while(counter > 0) {
     			displaytext = "<html><center><b>jDownloader</b></center><br><br>";
