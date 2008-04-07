@@ -646,11 +646,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
      */
     public void actionPerformed(ActionEvent e) {
         if (e.getSource() == btnToggleReconnect) {
-            btnToggleReconnect.setSelected(!btnToggleReconnect.isSelected());
-            JDUtilities.getConfiguration().setProperty(Configuration.PARAM_DISABLE_RECONNECT, btnToggleReconnect.isSelected());
-            JDUtilities.saveConfig();
-            
-            if (btnToggleReconnect.isSelected()) this.showMessageDialog("Reconnect is now disabled! Do not forget to reactivate this feature!");
+            this.toggleReconnect(true);
             return;
         }
         switch (e.getID()) {
@@ -796,6 +792,14 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
             dragNDrop.setVisible(true);
             dragNDrop.setText("Ziehe Links auf mich!");
         }
+    }
+    
+    public void toggleReconnect(boolean message) {
+        btnToggleReconnect.setSelected(!btnToggleReconnect.isSelected());
+        JDUtilities.getConfiguration().setProperty(Configuration.PARAM_DISABLE_RECONNECT, btnToggleReconnect.isSelected());
+        JDUtilities.saveConfig();
+        
+        if (btnToggleReconnect.isSelected() && message) this.showMessageDialog("Reconnect is now disabled! Do not forget to reactivate this feature!");
     }
 
     public void doReconnect() {
@@ -1075,6 +1079,15 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
             if (menViewLog != null) menViewLog.setSelected(false);
         }
     }
+    
+    /**
+     * Setzt die Geschwindigkeit in der Statusbar
+     * 
+     * @param speed
+     */
+    public void setSpeedStatusBar(Integer speed) {
+        statusBar.setSpinnerSpeed(speed);
+    }
 
     /**
      * Diese Klasse realisiert eine StatusBar
@@ -1182,6 +1195,10 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
                 lbl.setIcon(imgActive);
             else
                 lbl.setIcon(imgInactive);
+        }
+        
+        public void setSpinnerSpeed(Integer speed) {
+            spMax.setValue(speed);
         }
 
         public void stateChanged(ChangeEvent e) {
