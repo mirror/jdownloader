@@ -165,6 +165,16 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
 				JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SET_MINIMIZED, true));
 				logger.info(currentArg + " parameter");
 
+			} else if (currentArg.equals("--foreground")
+					|| currentArg.equals("-f")) {
+
+				addLinksSwitch = false;
+				addContainersSwitch = false;
+				addPasswordsSwitch = false;
+				extractSwitch = false;
+				JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SET_MINIMIZED, false));
+				logger.info(currentArg + " parameter");
+
 			} else if (addLinksSwitch && currentArg.charAt(0) != '-') {
 
 				linksToAdd.add(currentArg);

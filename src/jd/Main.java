@@ -112,117 +112,113 @@ public class Main {
 		Vector<String> paths = new Vector<String>();
 		long extractTime = 0;
 		
-		if ( !newInstance ) {
+		if ( !newInstance && tryConnectToServer(args) ) {
 			
-			if ( tryConnectToServer(args) ) {
+			if ( args.length > 0 ) {
 				
-				if ( args.length > 0 ) {
+				logger.info("Send parameters to existing jD instance and exit");
+				System.exit(0);
+				
+			} else {
+				
+				logger.info("There is already a running jD instance");
+				tryConnectToServer(new String[]{"--foreground"});
+				System.exit(0);
+				
+			}
+
+		} else {
+			
+			for (String currentArg : args) {
+				
+				if (currentArg.equals("--show") || currentArg.equals("-s")) {
 					
-					logger.info("Send parameters to existing jD instance and exit");
-					System.exit(0);
+					JACController.showDialog(false);
+					extractSwitch = false;
+					stop = true;
+					
+				} else if (currentArg.equals("--train") || currentArg.equals("-t")) {
+					
+					JACController.showDialog(false);
+					extractSwitch = false;
+					stop = true;
+					
+				} else if (currentArg.equals("--extract") || currentArg.equals("-e")) {
+					
+					extractSwitch = true;
+					stop = true;
+					
+				} else if (extractSwitch) {
+					
+					if (currentArg.equals("--rotate") || currentArg.equals("-r")) {
+						
+						extractTime = -1;
+						
+					} else if (extractTime == -1) {
+						
+						if (currentArg.matches("[\\d]+")) {
+							extractTime = (int) Integer.parseInt(currentArg);
+						} else extractTime = 0;
+						
+					} else if (!currentArg.matches("[\\s]*")) {
+						
+						paths.add(currentArg);
+						
+					}
 					
 				} else {
 					
-					logger.info("There is already a running jD instance");
-					tryConnectToServer(new String[]{"--minimized"});
-					System.exit(0);
-					
-				}
-	
-			} else {
-				
-				for (String currentArg : args) {
-					
-					if (currentArg.equals("--show") || currentArg.equals("-s")) {
-						
-						JACController.showDialog(false);
-						extractSwitch = false;
-						stop = true;
-						
-					} else if (currentArg.equals("--train") || currentArg.equals("-t")) {
-						
-						JACController.showDialog(false);
-						extractSwitch = false;
-						stop = true;
-						
-					} else if (currentArg.equals("--extract") || currentArg.equals("-e")) {
-						
-						extractSwitch = true;
-						stop = true;
-						
-					} else if (extractSwitch) {
-						
-						if (currentArg.equals("--rotate") || currentArg.equals("-r")) {
-							
-							extractTime = -1;
-							
-						} else if (extractTime == -1) {
-							
-							if (currentArg.matches("[\\d]+")) {
-								extractTime = (int) Integer.parseInt(currentArg);
-							} else extractTime = 0;
-							
-						} else if (!currentArg.matches("[\\s]*")) {
-							
-							paths.add(currentArg);
-							
-						}
-						
-					} else {
-						
-						extractSwitch = false;
-						
-					}
-					
-				}
-				
-				if (extractSwitch) {
-					
-					logger.info("Extract: ["+paths.toString()+" | "+extractTime+"]");
-					Server.extract(paths, extractTime, true);
-					
-				}
-				
-				if ( !stop && Runtime.getRuntime().maxMemory() < 100000000 ) {
-					JDUtilities.restartJD(args);
-				}
-				
-				try {
-	
-					// listen for command line arguments from new jD instances //
-					Server server = new Server();
-					server.go();
-	
-					if (!stop) {
-	
-						Main main = new Main();
-						main.go();
-	
-						// post start parameters //
-						server.processParameters(args);
-	
-					}
-					
-				} catch (RemoteException e) {
-					
-					logger.severe("Server could not be started - ignore parameters");
-					e.printStackTrace();
-	
-					if (!stop) {
-	
-						Main main = new Main();
-						main.go();
-	
-					}
+					extractSwitch = false;
 					
 				}
 				
 			}
 			
+			if (extractSwitch) {
+				
+				logger.info("Extract: ["+paths.toString()+" | "+extractTime+"]");
+				Server.extract(paths, extractTime, true);
+				
+			}
+			
+			if ( !stop && Runtime.getRuntime().maxMemory() < 100000000 ) {
+				JDUtilities.restartJD(args);
+			}
+			
+			try {
+
+				// listen for command line arguments from new jD instances //						
+				Server server = new Server();
+				server.go();
+
+				if (!stop) {
+
+					Main main = new Main();
+					main.go();
+
+					// post start parameters //
+					server.processParameters(args);
+
+				}
+				
+			} catch (RemoteException e) {
+				
+				logger.severe("Server could not be started - ignore parameters");
+				e.printStackTrace();
+
+				if (!stop) {
+
+					Main main = new Main();
+					main.go();
+
+				}
+				
+			}
+			
 		}
-
+		
 	}
-
+	
 	@SuppressWarnings("unchecked")
 	private void go() {
 

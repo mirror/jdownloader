@@ -1425,8 +1425,15 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
             case ControlEvent.CONTROL_SET_MINIMIZED:
                 Boolean state2 = (Boolean) event.getParameter();
                 if ( state2 == null ) break;
-                if (state2) frame.setState(JFrame.ICONIFIED);
-                	else frame.setState(JFrame.NORMAL);
+                if (state2) {
+                	frame.setState(JFrame.ICONIFIED);
+        		} else {
+                	frame.setState(JFrame.NORMAL);
+                	frame.setFocusableWindowState(false);
+                	frame.setVisible(true);
+                	frame.toFront();
+                	frame.setFocusableWindowState(true);
+                }
                 break;
         }
         
