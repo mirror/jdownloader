@@ -18,48 +18,71 @@
 package jd.plugins.optional;
 
 import java.awt.AWTException;
-import java.awt.Image;
-import java.awt.MenuItem;
-import java.awt.PopupMenu;
 import java.awt.SystemTray;
 import java.awt.TrayIcon;
+import java.awt.Dimension;
+import java.awt.Point;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseMotionListener;
+import java.awt.event.MouseEvent;
+import java.awt.Color;
+
+import javax.swing.JPopupMenu;
+import javax.swing.JWindow;
+import javax.swing.JMenuItem;
+import javax.swing.JMenu;
+import javax.swing.JCheckBoxMenuItem;
+import javax.swing.JLabel;
+import javax.swing.SwingUtilities;
+import javax.swing.event.PopupMenuEvent;
+import javax.swing.event.PopupMenuListener;
 
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
-import jd.config.SubConfiguration;
+import jd.config.Configuration;
+import jd.gui.skins.simple.JDAction;
 import jd.plugins.PluginOptional;
 import jd.plugins.event.PluginEvent;
 import jd.utils.JDLocale;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
+import jd.gui.skins.simple.SimpleGUI;
 
 public class JDTrayIcon extends PluginOptional implements ActionListener {
+	private SimpleGUI simplegui = (SimpleGUI)JDUtilities.getGUI();
+    private JPopupMenu popupMenu;
+    private JWindow trayParent;
     private TrayIcon trayIcon;
-
-    private MenuItem showHide;
-
-    private MenuItem configuration;
-
-    private MenuItem startStop;
-
-    private MenuItem clipboard;
-
-    private MenuItem reconnect;
-
-    private MenuItem exit;
-
-    private boolean  uiVisible = true;
-
+    private JMenuItem exit;
+    private JMenuItem showhide;
+    private JMenuItem startstop;
+    private JMenuItem stopafter;
+    private JMenuItem update;
+    private JMenuItem configuration;
+    private JCheckBoxMenuItem reconnect;
+    private JCheckBoxMenuItem clipboard;
+    private JMenuItem dnd;
+    private JWindow toolparent;
+    private JLabel toollabel;
+    private info i;
+    private JMenu speeds;
+    private JMenuItem speed1;
+    private JMenuItem speed2;
+    private JMenuItem speed3;
+    private JMenuItem speed4;
+    private JMenuItem speed5;
+    private int counter = 0;
+    
     @Override
     public String getCoder() {
-        return "astaldo";
+        return "jD-Team";
     }
 
     @Override
     public String getPluginID() {
-        return "0.0.0.1";
+        return "0.0.0.2";
     }
 
     @Override
@@ -69,20 +92,14 @@ public class JDTrayIcon extends PluginOptional implements ActionListener {
 
     @Override
     public String getVersion() {
-        return "0.0.0.1";
+        return "0.0.0.2";
     }
 
     @Override
     public void enable(boolean enable) throws Exception {
-        logger.info("HUHU");
-        
-        SubConfiguration subConfig = JDUtilities.getSubConfig("WEBINTERFACE");
-        ConfigEntry cfg;
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, subConfig, "PORT", "Webinterface Port"));
-        cfg.setDefaultValue("80");
         if(JDUtilities.getJavaVersion()>=1.6){
         if (enable) {
-            logger.info("Systemtray ok: java "+JDUtilities.getJavaVersion());
+            logger.info("Systemtray OK");
             initGUI();
         }
         else {
@@ -94,76 +111,291 @@ public class JDTrayIcon extends PluginOptional implements ActionListener {
     }
 
     private void initGUI() {
+        ConfigEntry cfg;
+        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_SPINNER, getProperties(), "SPEED1", JDLocale.L("plugins.optional.trayIcon.speed1","Speed 1:"), 1, 100000).setDefaultValue(100));
+        cfg.setDefaultValue("100");
+        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_SPINNER, getProperties(), "SPEED2", JDLocale.L("plugins.optional.trayIcon.speed2","Speed 2:"), 1, 100000).setDefaultValue(200));
+        cfg.setDefaultValue("200");
+        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_SPINNER, getProperties(), "SPEED3", JDLocale.L("plugins.optional.trayIcon.speed3","Speed 3:"), 1, 100000).setDefaultValue(300));
+        cfg.setDefaultValue("300");
+        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_SPINNER, getProperties(), "SPEED4", JDLocale.L("plugins.optional.trayIcon.speed4","Speed 4:"), 1, 100000).setDefaultValue(400));
+        cfg.setDefaultValue("400");
+        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_SPINNER, getProperties(), "SPEED5", JDLocale.L("plugins.optional.trayIcon.speed5","Speed 5:"), 1, 100000).setDefaultValue(500));
+        cfg.setDefaultValue("500");
+        
+        popupMenu = new JPopupMenu();
+        showhide = createMenuItem(JDLocale.L("plugins.optional.trayIcon.hide","Hide"));
+        popupMenu.addSeparator();
+        update = createMenuItem(JDLocale.L("plugins.optional.trayIcon.update","Update"));
+        configuration = createMenuItem(JDLocale.L("plugins.optional.trayIcon.configuration","Configuration"));
+        popupMenu.addSeparator();
+        startstop = createMenuItem(JDLocale.L("plugins.optional.trayIcon.startorstop","Start/Stop"));
+        stopafter = createMenuItem(JDLocale.L("plugins.optional.trayIcon.stopafter","Stop after this Download"));
+        
+        speeds = new JMenu(JDLocale.L("plugins.optional.trayIcon.setspeeds","Speeds"));
+        popupMenu.add(speeds);
+        
+        speed1 = new JMenuItem(this.getProperties().getStringProperty("SPEED1", "100") + " kb/s");
+        speed1.addActionListener(this);
+        speed1.setIcon(null);
+        speeds.add(speed1);
+        
+        speed2 = new JMenuItem(this.getProperties().getStringProperty("SPEED2", "200") + " kb/s");
+        speed2.addActionListener(this);
+        speed2.setIcon(null);
+        speeds.add(speed2);
+        
+        speed3 = new JMenuItem(this.getProperties().getStringProperty("SPEED3", "300") + " kb/s");
+        speed3.addActionListener(this);
+        speed3.setIcon(null);
+        speeds.add(speed3);
+        
+        speed4 = new JMenuItem(this.getProperties().getStringProperty("SPEED4", "400") + " kb/s");
+        speed4.addActionListener(this);
+        speed4.setIcon(null);
+        speeds.add(speed4);
+        
+        speed5 = new JMenuItem(this.getProperties().getStringProperty("SPEED5", "500") + " kb/s");
+        speed5.addActionListener(this);
+        speed5.setIcon(null);
+        speeds.add(speed5);
+        
+        popupMenu.addSeparator();
+        
+        dnd = createMenuItem(JDLocale.L("plugins.optional.trayIcon.dnd","Drag'n Drop"));
+        
+        clipboard = new JCheckBoxMenuItem(JDLocale.L("plugins.optional.trayIcon.clipboard","Clipboard"), false);
+        popupMenu.add(clipboard);
+        clipboard.addActionListener(this);
+        
+        reconnect = new JCheckBoxMenuItem(JDLocale.L("plugins.optional.trayIcon.reconnect","Reconnect"), false);
+        popupMenu.add(reconnect);
+        reconnect.addActionListener(this);
+        
+        popupMenu.add(reconnect);
+        popupMenu.addSeparator();
+        exit = createMenuItem(JDLocale.L("plugins.optional.trayIcon.exit","Exit"));
+        
+        trayIcon = new TrayIcon(JDUtilities.getImage(JDTheme.I("gui.images.jd_logo")));
+        trayIcon.setImageAutoSize(true);
 
+        trayParent = new JWindow();
+        trayParent.setSize(0, 0);
+        trayParent.setAlwaysOnTop(true);
+        trayParent.setVisible(false);
+        
+        toolparent = new JWindow();
+        toolparent.setSize(200, 100);
+        toolparent.setAlwaysOnTop(true);
+        toolparent.setVisible(false);
+        
+        toollabel = new JLabel("jDownloader");
+        toollabel.setBounds(0, 0, toolparent.getWidth(), toolparent.getHeight());
+        toollabel.setVisible(true);
+        toollabel.setOpaque(true);
+        toollabel.setBackground(new Color(0xffffdd));
+                
+        toolparent.setLayout(null);
+        toolparent.add(toollabel);
+                
+        setTrayPopUp(popupMenu);
+
+        SystemTray systemTray = SystemTray.getSystemTray();
         try {
-            SystemTray tray = SystemTray.getSystemTray();
-
-           // Service s;
-            Image image = JDUtilities.getImage(JDTheme.I("gui.images.jd_logo"));
-            logger.info("Image : "+image);
-            
-            PopupMenu popup = new PopupMenu();
-            trayIcon = new TrayIcon(image, JDUtilities.getJDTitle(), popup);
-
-            trayIcon.setImageAutoSize(true);
-            trayIcon.addActionListener(this);
-            try {
-                tray.add(trayIcon);
-            }
-            catch (AWTException e) {
-                logger.severe("TrayIcon could not be added.");
-            }
-            showHide = new MenuItem(JDLocale.L("plugins.optional.trayIcon.showorhide","Show/Hide"));
-            configuration = new MenuItem(JDLocale.L("plugins.optional.trayIcon.configuration","Configuration"));
-            startStop = new MenuItem(JDLocale.L("plugins.optional.trayIcon.startorstop","Start/Stop"));
-            clipboard = new MenuItem(JDLocale.L("plugins.optional.trayIcon.clipboard","Clipboard"));
-            reconnect = new MenuItem(JDLocale.L("plugins.optional.trayIcon.reconnect","Reconnect"));
-            exit = new MenuItem(JDLocale.L("plugins.optional.trayIcon.exit","Exit"));
-
-            showHide.addActionListener(this);
-            configuration.addActionListener(this);
-            startStop.addActionListener(this);
-            clipboard.addActionListener(this);
-            reconnect.addActionListener(this);
-            exit.addActionListener(this);
-
-            popup.add(showHide);
-            popup.addSeparator();
-            popup.add(startStop);
-            popup.addSeparator();
-            popup.add(clipboard);
-            popup.add(configuration);
-            popup.add(reconnect);
-            popup.addSeparator();
-            popup.add(exit);
-        }
-        catch (Exception e) {
-            logger.severe("Error initializing SystemTray " + e.getMessage());
-            return;
-        }
+                systemTray.add(trayIcon);
+        } catch (AWTException e) {
+                e.printStackTrace();
+        } 
+    }
+    
+    private JMenuItem createMenuItem(String name) {
+        JMenuItem menuItem = new JMenuItem(name);
+        menuItem.setIcon(null);
+        menuItem.addActionListener(this);
+        popupMenu.add(menuItem);
+        return menuItem;
     }
 
     public void actionPerformed(ActionEvent e) {
-        if (e.getSource() == exit) {
-            firePluginEvent(new PluginEvent(this, PluginEvent.PLUGIN_CONTROL_EXIT, null));
+    	if(e.getSource() == showhide) {
+    		toggleshowhide();
+    	}
+    	else if(e.getSource() == exit) {
+    		firePluginEvent(new PluginEvent(this, PluginEvent.PLUGIN_CONTROL_EXIT, null));
+    	}
+    	else if(e.getSource() == startstop) {
+    		firePluginEvent(new PluginEvent(this, PluginEvent.PLUGIN_CONTROL_START_STOP, null));
+    	}
+    	else if(e.getSource() == clipboard) {
+    		simplegui.actionPerformed(new ActionEvent(JDAction.APP_CLIPBOARD, JDAction.APP_CLIPBOARD, null));
+    	}
+    	else if(e.getSource() == dnd) {
+    		firePluginEvent(new PluginEvent(this, PluginEvent.PLUGIN_CONTROL_DND, null));
+    	}
+    	else if(e.getSource() == stopafter) {
+    		simplegui.actionPerformed(new ActionEvent(JDAction.APP_PAUSE_DOWNLOADS, JDAction.APP_PAUSE_DOWNLOADS, null));
+    	}
+    	else if(e.getSource() == update) {
+    		simplegui.actionPerformed(new ActionEvent(JDAction.APP_UPDATE, JDAction.APP_UPDATE, null));
+    	}
+    	else if(e.getSource() == configuration) {
+    		simplegui.actionPerformed(new ActionEvent(JDAction.APP_CONFIGURATION, JDAction.APP_CONFIGURATION, null));
+    	}
+    	else if(e.getSource() == reconnect) {
+    		simplegui.toggleReconnect(false);
+    	}
+    	else if(e.getSource() == speed1) {
+    	    int speed = this.getProperties().getIntegerProperty("SPEED1", 100);
+    	    JDUtilities.getSubConfig("DOWNLOAD").setProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, speed);
+            JDUtilities.getSubConfig("DOWNLOAD").save();
+            simplegui.setSpeedStatusBar(speed);
+    	}
+    	else if(e.getSource() == speed2) {
+    	    int speed = this.getProperties().getIntegerProperty("SPEED2", 200);
+            JDUtilities.getSubConfig("DOWNLOAD").setProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, speed);
+            JDUtilities.getSubConfig("DOWNLOAD").save();
+            simplegui.setSpeedStatusBar(speed);
         }
-        else if (e.getSource() == reconnect) {
-            firePluginEvent(new PluginEvent(this, PluginEvent.PLUGIN_CONTROL_RECONNECT, null));
+    	else if(e.getSource() == speed3) {
+    	    int speed = this.getProperties().getIntegerProperty("SPEED3", 300);
+            JDUtilities.getSubConfig("DOWNLOAD").setProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, speed);
+            JDUtilities.getSubConfig("DOWNLOAD").save();
+            simplegui.setSpeedStatusBar(speed);
         }
-        else if (e.getSource() == clipboard) {
-            firePluginEvent(new PluginEvent(this, PluginEvent.PLUGIN_CONTROL_DND, null));
+    	else if(e.getSource() == speed4) {
+    	    int speed = this.getProperties().getIntegerProperty("SPEED4", 400);
+            JDUtilities.getSubConfig("DOWNLOAD").setProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, speed);
+            JDUtilities.getSubConfig("DOWNLOAD").save();
+            simplegui.setSpeedStatusBar(speed);
         }
-        else if (e.getSource() == startStop) {
-            firePluginEvent(new PluginEvent(this, PluginEvent.PLUGIN_CONTROL_START_STOP, null));
-        }
-        else if (e.getSource() == configuration) {
-            firePluginEvent(new PluginEvent(this, PluginEvent.PLUGIN_CONTROL_SHOW_CONFIG, null));
-        }
-        else {
-            uiVisible = !uiVisible;
-            firePluginEvent(new PluginEvent(this, PluginEvent.PLUGIN_CONTROL_SHOW_UI, uiVisible));
+    	else if(e.getSource() == speed5) {
+    	    int speed = this.getProperties().getIntegerProperty("SPEED5", 500);
+            JDUtilities.getSubConfig("DOWNLOAD").setProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, speed);
+            JDUtilities.getSubConfig("DOWNLOAD").save();
+            simplegui.setSpeedStatusBar(speed);
         }
     }
+    
+    private void setTrayPopUp(JPopupMenu trayMenu) {
+        popupMenu = trayMenu;
+
+        popupMenu.addPopupMenuListener(new PopupMenuListener() {
+                @Override
+                public void popupMenuWillBecomeVisible(PopupMenuEvent e) {
+                }
+
+                @Override
+                public void popupMenuWillBecomeInvisible(PopupMenuEvent e) {
+                        trayParent.setVisible(false);
+                }
+
+                @Override
+                public void popupMenuCanceled(PopupMenuEvent e) {
+                }
+        });
+        popupMenu.setVisible(true);
+        popupMenu.setVisible(false);
+
+        trayIcon.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                    if (SwingUtilities.isLeftMouseButton(e)) {
+                    	
+                    	if(toolparent.isVisible()) {
+                    		hideTooltip();
+                    	}
+                    	
+                    	if(e.getClickCount() == 2) {
+                    		toggleshowhide();
+                    	}
+                    }
+                    if (SwingUtilities.isRightMouseButton(e)) {
+                    	showPopup(e.getPoint());
+                    }
+            }
+        });
+        
+        trayIcon.addMouseMotionListener(new MouseMotionListener(){
+            public void mouseMoved(MouseEvent e){
+                if(popupMenu.isVisible()) {
+                    return;
+                }
+                if(counter > 0) {
+                    counter = 2;
+                    return;
+                }
+                
+                counter = 2;
+                i = new info();
+                i.start();
+                showTooltip(e.getPoint());
+            }
+            
+            public void mouseDragged(MouseEvent e){}
+        });
+    }
+
+	private void showPopup(final Point p) {
+		trayParent.setVisible(true);
+	    trayParent.toFront();
+	    hideTooltip();
+	    
+	    clipboard.setSelected(JDUtilities.getController().getClipboard().isEnabled());
+	    reconnect.setSelected(!JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_DISABLE_RECONNECT, false));
+	    
+	    speed1.setText(this.getProperties().getStringProperty("SPEED1", "100") + " kb/s");
+	    speed2.setText(this.getProperties().getStringProperty("SPEED2", "200") + " kb/s");
+	    speed3.setText(this.getProperties().getStringProperty("SPEED3", "300") + " kb/s");
+	    speed4.setText(this.getProperties().getStringProperty("SPEED4", "400") + " kb/s");
+	    speed5.setText(this.getProperties().getStringProperty("SPEED5", "500") + " kb/s");
+	    
+	    SwingUtilities.invokeLater(new Runnable() {
+	    	@Override
+		    public void run() {
+	    		Point p2 = computeDisplayPoint(p.x, p.y, popupMenu.getPreferredSize());
+		        popupMenu.show(trayParent, p2.x - trayParent.getLocation().x, p2.y - trayParent.getLocation().y);
+		    };
+		});
+	}
+	
+	private void hideTooltip() {
+		toolparent.setVisible(false);
+		counter = 0;
+	}
+	
+	private void showTooltip(final Point p) {
+		toolparent.setVisible(true);
+		toolparent.toFront();
+		
+	    SwingUtilities.invokeLater(new Runnable() {
+	    	@Override
+		    public void run() {
+	    		toolparent.setLocation(p.x - toolparent.getWidth(), p.y - toolparent.getHeight());
+	    	};
+		});
+	}
+		
+	/**
+	* Compute the proper position for a popup
+	*/
+	private Point computeDisplayPoint(int x, int y, Dimension dim) {
+	    if (x - dim.width > 0)
+	        x -= dim.width;
+	    if (y - dim.height > 0)
+	        y -= dim.height;
+	   return new Point(x, y);
+	}
+
+	private void toggleshowhide() {
+		if(showhide.getText().equals(JDLocale.L("plugins.optional.trayIcon.hide","Hide"))) {
+			firePluginEvent(new PluginEvent(this, PluginEvent.PLUGIN_CONTROL_SHOW_UI, false));
+			showhide.setText(JDLocale.L("plugins.optional.trayIcon.show","Show"));
+		}
+		else if(showhide.getText().equals(JDLocale.L("plugins.optional.trayIcon.show","Show"))) {
+			firePluginEvent(new PluginEvent(this, PluginEvent.PLUGIN_CONTROL_SHOW_UI, true));
+			showhide.setText(JDLocale.L("plugins.optional.trayIcon.hide","Hide"));
+		}
+	}
 
     @Override
     public String getRequirements() {
@@ -177,5 +409,40 @@ public class JDTrayIcon extends PluginOptional implements ActionListener {
     @Override
     public boolean execute() {
         return false;
+    }
+    
+    private class info extends Thread {
+    	public void run() {
+    		String displaytext = "";
+    		int speed = 0;
+    		int downloads = 0;
+    		
+            while(counter > 0) {
+    			displaytext = "<html><center>jDownloader</center><br><br>";
+    			downloads = JDUtilities.getController().getRunningDownloadNum();
+    			
+    			if(downloads == 0)
+    				displaytext += JDLocale.L("plugins.optional.trayIcon.nodownload","No Download in progress") + "<br>";
+    			else
+    				displaytext += "<i>" + JDLocale.L("plugins.optional.trayIcon.downloads","Downloads:") + "</i> " + downloads + "<br>";
+    			
+    			speed = JDUtilities.getController().getSpeedMeter() / 1000;
+
+    			displaytext += "<br><i>" + JDLocale.L("plugins.optional.trayIcon.speed","Speed:") + "</i> " + speed + "kb/s";
+    			
+    			displaytext += "</html>";
+    			toollabel.setText(displaytext);
+    			
+    			counter--;
+                try {
+                	Thread.sleep(1000);
+                }
+                catch(InterruptedException e) {
+                	interrupt();
+                }
+    		}
+            
+            hideTooltip();
+    	}
     }
 }
