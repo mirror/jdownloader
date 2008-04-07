@@ -35,6 +35,7 @@ import jd.JDFileFilter;
 import jd.config.Configuration;
 import jd.config.SubConfiguration;
 import jd.controlling.DistributeData;
+import jd.event.ControlEvent;
 import jd.plugins.DownloadLink;
 import jd.plugins.Plugin;
 import jd.plugins.RequestInfo;
@@ -79,9 +80,10 @@ public class PackageManager extends Interaction implements Serializable {
 
                 // Decryptersystem wird verwendet, allerdings wird der weg über
                 // den linkgrabber vermieden
-                JDUtilities.getController().getDownloadLinks().addAll(0, (Vector<DownloadLink>) links);
-                JDUtilities.getController().saveDownloadLinks(JDUtilities.getResourceFile("links.dat"));
-                JDUtilities.getGUI().setDownloadLinks(JDUtilities.getController().getDownloadLinks());
+                JDUtilities.getController().addAllLinks(0, (Vector<DownloadLink>) links);
+                JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_LINKLIST_CHANGED, null));
+
+             
 
             }
         }

@@ -127,7 +127,8 @@ public class ConfigPanelGUI extends ConfigPanel {
         ce= new GUIConfigEntry( new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, JDUtilities.getConfiguration(), Configuration.PARAM_RELOADCONTAINER, JDLocale.L("gui.config.reloadContainer","Heruntergeladene Container einlesen")).setDefaultValue(true));
         addGUIConfigEntry(ce);
         
-   
+        ce= new GUIConfigEntry( new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, guiConfig, JDLocale.LOCALE_EDIT_MODE, JDLocale.L("gui.config.localeditmode","'Missing-Language-Entries' Datei anlegen")).setDefaultValue(true));
+        addGUIConfigEntry(ce);
  
         
         add(panel, BorderLayout.NORTH);

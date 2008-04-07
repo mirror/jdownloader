@@ -52,6 +52,15 @@ public class Property implements Serializable {
         logger = JDUtilities.getLogger();
     }
 
+    public Property(Object obj) {
+        this();
+        setProperty(null,obj);
+    }
+    public Property(String value,Object obj) {
+        this();
+        setProperty(value,obj);
+    }
+
     /**
      * Speichert einen Wert ab.
      * 

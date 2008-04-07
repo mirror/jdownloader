@@ -203,7 +203,7 @@ public class JDInit {
 				logger.info("INSTALL abgebrochen");
 				JOptionPane.showMessageDialog(new JFrame(), JDLocale.L(
 						"installer.error.noWriteRights",
-						"Fehler. Bitte w√§hle Pfade mit Schreibrechten!"));
+						"Fehler. Bitte w‰hle Pfade mit Schreibrechten!"));
 
 				System.exit(1);
 				inst.dispose();
@@ -230,10 +230,11 @@ public class JDInit {
 
 	public UIInterface initGUI(JDController controller) {
 
-		UIInterface uiInterface = new SimpleGUI();
-		controller.setUiInterface(uiInterface);
-		return uiInterface;
-	}
+        UIInterface uiInterface = new SimpleGUI();
+        controller.setUiInterface(uiInterface);
+        controller.addControlListener(uiInterface);
+        return uiInterface;
+    }
 
 	@SuppressWarnings("unchecked")
 	public Vector<PluginForDecrypt> loadPluginForDecrypt() {

@@ -26,12 +26,15 @@ import java.util.Map.Entry;
 import java.util.logging.Logger;
 
 import jd.JDFileFilter;
+import jd.gui.skins.simple.SimpleGUI;
 /**
  * Diese Klasse stellt Methoden zur Verfügung um in einen String mitPlatzhaltern
  * werte einzusetzen
  */
 public class JDLocale {
-    private static final String DEFAULTLANGUAGE = "german";
+    private static final String DEFAULTLANGUAGE = "english";
+
+    public static final String LOCALE_EDIT_MODE = "LOCALE_EDIT_MODE";
 
     private static String                  LANGUAGES_DIR = "jd/languages/";
 
@@ -95,6 +98,7 @@ public class JDLocale {
     private static void saveData(File lc,HashMap<String, String> dat) {
         if(lc==null)lc=localeFile;
         if(dat==null)dat=data;
+        if(!JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).getBooleanProperty(JDLocale.LOCALE_EDIT_MODE, false))return;
         Iterator<Entry<String, String>> iterator;
         if (dat == null) return;
         iterator = dat.entrySet().iterator();

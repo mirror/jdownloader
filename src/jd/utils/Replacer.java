@@ -71,6 +71,7 @@ public class Replacer {
         JDController controller = JDUtilities.getController();
         DownloadLink dLink = controller.getLastFinishedDownloadLink();
         if(key.equalsIgnoreCase("LAST_FINISHED_PACKAGE.PASSWORD")){
+            if(dLink==null)return "";
             return dLink.getFilePackage().getPassword();
             
         }
@@ -80,46 +81,56 @@ public class Replacer {
             
         }
         if(key.equalsIgnoreCase("LAST_FINISHED_PACKAGE.PACKAGENAME")){
+            if(dLink==null)return "";
             if(dLink.getFilePackage().getName()==null||dLink.getFilePackage().getName().length()==0)return  dLink.getName();
+            
             return dLink.getFilePackage().getName();
             
         }
         
         if(key.equalsIgnoreCase("LAST_FINISHED_PACKAGE.COMMENT")){
+            if(dLink==null)return "";
             return dLink.getFilePackage().getComment();
             
         }
         
         if(key.equalsIgnoreCase("LAST_FINISHED_PACKAGE.DOWNLOAD_DIRECTORY")){
+            if(dLink==null)return "";
             return dLink.getFilePackage().getDownloadDirectory();
             
         }
         
         if(key.equalsIgnoreCase("LAST_FINISHED_FILE.DOWNLOAD_PATH")){
+            if(dLink==null)return "";
             return dLink.getFileOutput();
             
         }
         if(key.equalsIgnoreCase("LAST_FINISHED_FILE.INFOSTRING")){
+            if(dLink==null)return "";
             return dLink.getFileInfomationString();
             
         }
         
         if(key.equalsIgnoreCase("LAST_FINISHED_FILE.HOST")){
+            if(dLink==null)return "";
             return dLink.getHost();
             
         }
         
         if(key.equalsIgnoreCase("LAST_FINISHED_FILE.NAME")){
+            if(dLink==null)return "";
             return dLink.getName();
             
         }
         
         if(key.equalsIgnoreCase("LAST_FINISHED_FILE.FILESIZE")){
+            if(dLink==null)return "";
             return dLink.getDownloadMax()+"";
             
         }
         
         if(key.equalsIgnoreCase("LAST_FINISHED_FILE.AVAILABLE")){
+            if(dLink==null)return "";
             return dLink.isAvailable()?"YES":"NO";
             
         }

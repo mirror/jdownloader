@@ -13,6 +13,7 @@ import java.util.logging.Logger;
 import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
 
+import jd.controlling.JDController;
 import jd.event.ControlEvent;
 import jd.event.ControlListener;
 import jd.plugins.DownloadLink;
@@ -25,7 +26,8 @@ public abstract class DownloadLinksView extends JPanel implements PluginListener
 	
     protected SimpleGUI            parent;
     protected JPopupMenu           popup;
-    
+    public final static  int REFRESH_DATA_AND_STRUCTURE_CHANGED=0;
+    public final static  int REFRESH_ONLY_DATA_CHANGED=1;
     /**
      * Dieser Vector enthält alle Downloadlinks
      */
@@ -46,134 +48,101 @@ public abstract class DownloadLinksView extends JPanel implements PluginListener
 	protected DownloadLinksView(SimpleGUI parent, LayoutManager layout){
 		super(layout);
         this.parent = parent;
+        JDUtilities.getController().addControlListener(this);
 	}
 	
     public void pluginEvent(PluginEvent event) {
+    
         switch (event.getID()) {
             case PluginEvent.PLUGIN_DATA_CHANGED:
-                fireTableChanged();
+                fireTableChanged(REFRESH_ONLY_DATA_CHANGED);
+                //fireTableChanged(REFRESH_ID_COMPLETE_REPAINT);
                 break;
         }
     }
     
     
     public void controlEvent(ControlEvent event) {
+      
         switch (event.getID()) {
             case ControlEvent.CONTROL_SINGLE_DOWNLOAD_CHANGED:
-                fireTableChanged();
+                fireTableChanged(REFRESH_ONLY_DATA_CHANGED);
+                //fireTableChanged(REFRESH_ID_COMPLETE_REPAINT);
                 break;
+            case ControlEvent.CONTROL_LINKLIST_CHANGED:
+                if(event.getSource().getClass()==JDController.class){
+                    this.setPackages(JDUtilities.getController().getPackages());
+                }  
+                fireTableChanged(REFRESH_DATA_AND_STRUCTURE_CHANGED);
+                
+             
         }
     }
     
     
     
-    public void setDownloadLinks(DownloadLink links[]) {
-    	
-    	if( !allLinks.isEmpty()){
-    		logger.warning("set new DownloadLinks, although there are already "+ allLinks.size()+" links available, those will be flushed");
-    	}
-    	
-        allLinks.clear();
-        packages.clear();
-        addLinks(links);
+    private void setPackages(Vector<FilePackage> packages) {
+        this.packages=packages;//new Vector<FilePackage>(packages);
+      
+        
     }
+
     
     
-    public void doReconnectMinimizationSort(){
-    	logger.info("start sorting");
-    	if(allLinks.isEmpty()){
-    		return;
-    	}
-    	
-		HashMap<String, List<DownloadLink>> sortedDownloadLinks = new HashMap<String, List<DownloadLink>>();
-    	
-    	for(DownloadLink link : allLinks){
-    		String pluginId = link.getPlugin().getPluginID();
-    		
-    		List<DownloadLink> linksForHoster = sortedDownloadLinks.get(pluginId);
-    		if( null == linksForHoster){
-    			logger.info("insert List for: "+ pluginId);
-    			linksForHoster = new LinkedList<DownloadLink>();
-    			sortedDownloadLinks.put(pluginId, linksForHoster);
-    		}
-    		
-    		linksForHoster.add(link);
-    	}
-    	
-    	logger.info("all sorting done");
-    	
-    	//now create a download list, to minimize the reconnects
-    	List<String>pluginIds =  new ArrayList<String>(sortedDownloadLinks.keySet());    	
+//    /**
+//     * Hier werden Links zu dieser Tabelle hinzugefügt.
+//     * 
+//     * @param links Ein Vector mit Downloadlinks, die alle hinzugefügt werden
+//     *            sollen
+//     */
+//    public void addLinks(DownloadLink links[]) {
+//    	int countAdded = 0;
+//    	logger.info("SET LINKS: "+links.length);
+//    	for( DownloadLink link : links){
+//    		if(null == link) continue;
+//    		
+//    		FilePackage filePackage = link.getFilePackage();
+//    		
+//    		if(filePackage!=null ){
+//    			
+//    			if(! packages.contains(filePackage)){
+//    				packages.add(filePackage); 
+//    				filePackage.setDownloadLinks(new Vector<DownloadLink>());
+//    				filePackage.getDownloadLinks().add(link);
+//    			}else{
+//    				//TODO signed: perfomre some checks...
+//    			    filePackage.getDownloadLinks().add(link);
+//    			}
+//    		}else{
+//    			logger.severe("DownloadLink has not FilePackage set");
+//    		}
+//    		allLinks.add( link);
+//    		++countAdded;
+//    	}
+//    	
+//    	if( countAdded>0){
+//    		logger.info("added " + countAdded + " links");
+//    	}
+//
+//        //checkColumnSize();
+//    	int[] ePackages = getExpandedPackeges();
+//    	int[] sLinks = this.getSelectedLinks();
+//        fireTableChanged(REFRESH_ID_COMPLETE_REPAINT);
+//        this.setExpandedPackages(ePackages);
+//        this.setSelectedLinks(sLinks);
+//        
+//    }
+    
+    //abstract protected void checkColumnSize();
+    
 
-    	if( 1 >= pluginIds.size()){
-    		//all Downloadlinks are from the some Hoster, no optimization possible
-    		logger.info("only on downloadlinks from one hoster - no optimisation possible");
-    		return;
-    	}
-    	
-    	int insertPosition = 0;
-    	DownloadLink sortedLinks[] = new DownloadLink[allLinks.size()];
-    	
-    	do{
-    		for( int i=pluginIds.size()-1; i>=0; --i ){
-    			String pluginId = pluginIds.get(i);
-    			
-    			List<DownloadLink> current = sortedDownloadLinks.get(pluginId);
-    			sortedLinks[insertPosition++] = current.remove(0);
+    abstract public void fireTableChanged(int id);
+    //abstract public void moveSelectedItems(int direction);
+    //abstract public void removeSelectedLinks();
 
-    			if(current.isEmpty()){
-    				logger.info("no links left for Plugin "+ pluginId);
-    				pluginIds.remove(i);
-    				sortedDownloadLinks.remove(pluginId);
-    			}
-    		}
-    	}while(!sortedDownloadLinks.isEmpty());
-    	
-    	setDownloadLinks(sortedLinks);
+    public Vector<FilePackage> getPackages() {
+        return packages;
     }
-    
-    /**
-     * Hier werden Links zu dieser Tabelle hinzugefügt.
-     * 
-     * @param links Ein Vector mit Downloadlinks, die alle hinzugefügt werden
-     *            sollen
-     */
-    public void addLinks(DownloadLink links[]) {
-    	int countAdded = 0;
-    	for( DownloadLink link : links){
-    		if(null == link) continue;
-    		
-    		FilePackage filePackage = link.getFilePackage();
-    		
-    		if( null != filePackage ){
-    			int index  = packages.indexOf(filePackage);
-    			if( -1 == index){
-    				packages.add(filePackage);    				
-    			}else{
-    				//TODO signed: perfomre some checks...
-    			}
-    		}else{
-    			logger.severe("DownloadLink has not FilePackage set");
-    		}
-    		allLinks.add( link);
-    		++countAdded;
-    	}
-    	
-    	if( 0 != countAdded){
-    		logger.info("added " + countAdded + " links");
-    	}
-
-        checkColumnSize();
-        fireTableChanged();
-    }
-    
-    abstract protected void checkColumnSize();
-    
-    abstract public void fireTableChanged();
-    
-    abstract public void moveSelectedItems(int direction);
-    abstract public void removeSelectedLinks();
-    abstract public Vector<DownloadLink> getLinks();
     
 
 }

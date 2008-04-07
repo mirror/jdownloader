@@ -106,8 +106,12 @@ public class ConfigurationDialog extends JFrame implements ActionListener, Chang
         configuration = JDUtilities.getConfiguration();
         tabbedPane = new JTabbedPane();
         tabbedPane.setComponentOrientation(ComponentOrientation.LEFT_TO_RIGHT);
+   
         tabbedPane.setTabLayoutPolicy(JTabbedPane.SCROLL_TAB_LAYOUT);
         tabbedPane.setTabPlacement(JTabbedPane.LEFT);
+     if( System.getProperty("os.name").toLowerCase().indexOf("mac")>=0){
+         tabbedPane.setTabPlacement(JTabbedPane.TOP);
+        }
         tabbedPane.addChangeListener(this);
 
         this.addConfigPanel(ConfigPanelGeneral.class, JDTheme.I("gui.images.config.home"), JDLocale.L("gui.config.tabLables.general", "General settings"));

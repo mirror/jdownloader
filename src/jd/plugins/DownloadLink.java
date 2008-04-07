@@ -23,6 +23,7 @@ import java.util.Vector;
 import java.util.logging.Logger;
 
 import jd.config.Configuration;
+import jd.config.Property;
 import jd.controlling.SpeedMeter;
 import jd.plugins.download.DownloadInterface;
 import jd.utils.JDLocale;
@@ -34,7 +35,7 @@ import jd.utils.JDUtilities;
  * 
  * @author astaldo
  */
-public class DownloadLink implements Serializable, Comparable<DownloadLink> {
+public class DownloadLink extends Property implements Serializable, Comparable<DownloadLink> {
     /**
      * Link muß noch bearbeitet werden
      */
@@ -833,8 +834,15 @@ this.chunksProgress=null;
      * 
      * @param FilePackage
      */
-    public void setFilePackage(FilePackage FilePackage) {
-        this.filePackage = FilePackage;
+    public void setFilePackage(FilePackage filePackage) {
+        if(filePackage==this.filePackage){
+            if(!filePackage.contains(this))filePackage.add(this);
+            return;
+        }
+        if(this.filePackage!=null)this.filePackage.remove(this);
+        this.filePackage = filePackage;
+        
+        if(filePackage!=null &&!filePackage.contains(this))filePackage.add(this);
     }
 
     /**
@@ -1050,5 +1058,23 @@ if(maximalspeed<=0){
 
     public void setAvailable(Boolean available) {
         this.available = available;
+    }
+
+    public int getPartByName() {
+        String name= this.getName();
+        String ext;
+        int index;
+        while(name.length()>0){
+            index=name.lastIndexOf(".");
+            if(index<=0)index=name.length()-1;
+            ext=name.substring(index+1);            
+            name=name.substring(0,index);
+            try{
+            return Integer.parseInt(JDUtilities.filterString(ext, "1234567890"));
+            
+            }catch(Exception e){ }
+         
+        }
+        return -1;
     }
 }

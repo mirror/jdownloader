@@ -280,16 +280,13 @@ public class JDTrayIcon extends PluginOptional implements ActionListener {
         popupMenu = trayMenu;
 
         popupMenu.addPopupMenuListener(new PopupMenuListener() {
-                @Override
                 public void popupMenuWillBecomeVisible(PopupMenuEvent e) {
                 }
 
-                @Override
                 public void popupMenuWillBecomeInvisible(PopupMenuEvent e) {
                         trayParent.setVisible(false);
                 }
 
-                @Override
                 public void popupMenuCanceled(PopupMenuEvent e) {
                 }
         });
@@ -326,8 +323,10 @@ public class JDTrayIcon extends PluginOptional implements ActionListener {
                 }
                 
                 counter = 2;
+         
                 i = new info();
                 i.start();
+               
                 showTooltip(e.getPoint());
             }
             
@@ -350,8 +349,7 @@ public class JDTrayIcon extends PluginOptional implements ActionListener {
 	    speed5.setText(this.getProperties().getStringProperty("SPEED5", "500") + " kb/s");
 	    
 	    SwingUtilities.invokeLater(new Runnable() {
-	    	@Override
-		    public void run() {
+	    	public void run() {
 	    		Point p2 = computeDisplayPoint(p.x, p.y, popupMenu.getPreferredSize());
 		        popupMenu.show(trayParent, p2.x - trayParent.getLocation().x, p2.y - trayParent.getLocation().y);
 		    };
@@ -364,12 +362,12 @@ public class JDTrayIcon extends PluginOptional implements ActionListener {
 	}
 	
 	private void showTooltip(final Point p) {
+	   
 		toolparent.setVisible(true);
 		toolparent.toFront();
 		
 	    SwingUtilities.invokeLater(new Runnable() {
-	    	@Override
-		    public void run() {
+	    	public void run() {
 	    		toolparent.setLocation(p.x - toolparent.getWidth(), p.y - toolparent.getHeight());
 	    	};
 		});
@@ -418,7 +416,7 @@ public class JDTrayIcon extends PluginOptional implements ActionListener {
     		int downloads = 0;
     		
             while(counter > 0) {
-    			displaytext = "<html><center>jDownloader</center><br><br>";
+    			displaytext = "<html><center><b>jDownloader</b></center><br><br>";
     			downloads = JDUtilities.getController().getRunningDownloadNum();
     			
     			if(downloads == 0)

@@ -60,6 +60,7 @@ import java.net.URLDecoder;
 import java.nio.channels.FileChannel;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.text.DecimalFormat;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Locale;
@@ -92,8 +93,6 @@ import jd.config.Configuration;
 import jd.config.SubConfiguration;
 import jd.controlling.JDController;
 import jd.gui.UIInterface;
-import jd.gui.skins.simple.SimpleGUI;
-
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTPConnection;
 import jd.plugins.LogFormatter;
@@ -1891,7 +1890,8 @@ public class JDUtilities {
      * @return MegaByte Formatierter String
      */
     public static String formatBytesToMB(long downloadMax) {
-        return Math.round(downloadMax / (1024 * 10.24)) / 100.0 + " MB";
+        DecimalFormat c= new DecimalFormat("0.00"); 
+        return c.format(downloadMax / (1024.0 * 1024.0)) + " MB";
     }
 
     /**

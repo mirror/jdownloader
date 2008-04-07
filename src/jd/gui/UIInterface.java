@@ -21,6 +21,7 @@ import java.io.File;
 import java.util.Vector;
 
 import jd.event.ControlEvent;
+import jd.event.ControlListener;
 import jd.event.UIEvent;
 import jd.event.UIListener;
 import jd.plugins.DownloadLink;
@@ -32,12 +33,8 @@ import jd.plugins.event.PluginEvent;
  * @author astaldo
  *
  */
-public interface UIInterface {
-    /**
-     * Liefert alle DownloadLinks zurück
-     * @return Alle DownloadLinks
-     */
-    public Vector<DownloadLink> getDownloadLinks();
+public interface UIInterface extends ControlListener {
+  
     /**
      * Der Benutzer soll den Captcha Code eintippen
      * 
@@ -46,24 +43,19 @@ public interface UIInterface {
      * @return Der erkannte Text
      */
     public String getCaptchaCodeFromUser(Plugin plugin, File captchaAddress,String def);
-    /**
-     * Legt alle DownloadLinks fest
-     * 
-     * @param downloadLinks Alle DownloadLinks
-     */
-    public void setDownloadLinks(Vector<DownloadLink> downloadLinks);
+//    /**
+//     * Legt alle DownloadLinks fest
+//     * 
+//     * @param downloadLinks Alle DownloadLinks
+//     */
+//    public void setDownloadLinks(Vector<DownloadLink> downloadLinks);
     /**
      * Leitet ein PluginEvent weiter
      * 
      * @param event Ein PluginEvent
      */
     public void delegatedPluginEvent(PluginEvent event);
-    /**
-     * Leitet ein ControlEvent weiter
-     * 
-     * @param event ein ControlEvent
-     */
-    public void delegatedControlEvent(ControlEvent event);
+
     /**
      * Fügt einen UIListener hinzu
      * 

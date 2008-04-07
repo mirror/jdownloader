@@ -148,7 +148,7 @@ public class Megauploadcom extends PluginForHost {
     // }
     public PluginStep doStep(PluginStep step, DownloadLink parameter) {
         
-        if (getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM, false)) {
+        if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true)&&getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM, false)) {
 
             return doPremiumStep(step, parameter);
         }

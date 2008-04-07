@@ -34,7 +34,7 @@ public class UIEvent extends AWTEvent{
     /**
      * Die DownloadLinks wurden verändert (zB in der Reihenfolge)
      */
-    public static final int UI_LINKS_CHANGED      = 1;
+    public static final int UI_UPDATED_LINKLIST      = 1;
     /**
      * Der Download sol gestartet werden
      */
@@ -79,7 +79,7 @@ public class UIEvent extends AWTEvent{
     /**
      * Der Linkgrabber hat Links zurückgegeben
      */
-    public static final int UI_LINKS_GRABBED      = 14;
+    public static final int UI_PACKAGE_GRABBED      = 14;
     /**
      * Eine Containerdatei soll geladen werden
      */

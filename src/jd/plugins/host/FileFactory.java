@@ -127,7 +127,7 @@ public class FileFactory extends PluginForHost {
         downloadLink.setUrlDownload(downloadLink.getDownloadURL().replaceAll(".com//", ".com/"));
     	downloadLink.setUrlDownload(downloadLink.getDownloadURL().replaceAll("http://filefactory", "http://www.filefactory"));
 
-        if ( getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM, false) ) {
+        if ( JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true)&&getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM, false) ) {
         	
             if ( step.getStep() == 1 ) {
             	logger.info("Premium");

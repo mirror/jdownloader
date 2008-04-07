@@ -210,6 +210,10 @@ public class Configuration extends Property implements Serializable {
 
     public static final String PARAM_DOWNLOAD_MAX_CHUNKS = "DOWNLOAD_MAX_CHUNKS";
 
+    public static final String PARAM_USE_GLOBAL_PREMIUM = "USE_PREMIUM";
+
+   
+
   
     /**
      * Die unterschiedlichen Interaktionen. (ZB Reconnect nach einem Download)

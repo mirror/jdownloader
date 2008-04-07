@@ -133,7 +133,7 @@ public class Netloadin extends PluginForHost {
         }
         logger.info("get Next Step " + step);
         // premium
-        if (this.getProperties().getProperty("USE_PREMIUM") != null && this.getProperties().getBooleanProperty("USE_PREMIUM", false)) {
+        if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true)&& this.getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM, false)) {
             return this.doPremiumStep(step, downloadLink);
         }
         else {

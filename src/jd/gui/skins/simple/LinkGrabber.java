@@ -152,7 +152,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
 
     private JMenuItem            mRemoveOfflineAll;
 
-    private JButton sortPackages;
+    private JButton              sortPackages;
 
     /**
      * @param parent GUI
@@ -171,11 +171,11 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
         addLinks(linkList);
         LocationListener list = new LocationListener();
         this.addComponentListener(list);
-         this.addWindowListener(list);
-         pack();
-      
-         this.setVisible(true);
-         SimpleGUI.restoreWindow(null, null, this);
+        this.addWindowListener(list);
+        pack();
+
+        this.setVisible(true);
+        SimpleGUI.restoreWindow(null, null, this);
     }
 
     private void initGUI() {
@@ -197,6 +197,10 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
         tabbedPane.setComponentOrientation(ComponentOrientation.LEFT_TO_RIGHT);
         tabbedPane.setTabLayoutPolicy(JTabbedPane.SCROLL_TAB_LAYOUT);
         tabbedPane.setTabPlacement(JTabbedPane.LEFT);
+        if (System.getProperty("os.name").toLowerCase().indexOf("mac") >= 0) {
+            logger.finer("OS: " + System.getProperty("os.name") + " SET TABS ON TOP");
+            tabbedPane.setTabPlacement(JTabbedPane.TOP);
+        }
         tabbedPane.addMouseListener(this);
         new DropTarget(tabbedPane, this);
         // tabbedPane.setTransferHandler(new TransferHandler("text"));
@@ -209,10 +213,10 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
         // });
         JDUtilities.addToGridBag(this, tabbedPane, 0, 0, 4, 1, 1, 1, null, GridBagConstraints.BOTH, GridBagConstraints.NORTHWEST);
         JDUtilities.addToGridBag(this, progress, 0, 1, 4, 1, 1, 0, null, GridBagConstraints.HORIZONTAL, GridBagConstraints.NORTHWEST);
-        
+
         JDUtilities.addToGridBag(this, sortPackages, 0, 2, 1, 1, 0, 0, null, GridBagConstraints.NONE, GridBagConstraints.SOUTHWEST);
         JDUtilities.addToGridBag(this, acceptAll, 2, 2, 1, 1, 1, 0, null, GridBagConstraints.NONE, GridBagConstraints.SOUTHEAST);
-        
+
         JDUtilities.addToGridBag(this, accept, 3, 2, 1, 1, 0, 0, null, GridBagConstraints.NONE, GridBagConstraints.SOUTHEAST);
 
         this.setName("LINKGRABBER");
@@ -448,6 +452,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
             }
         });
     }
+
     private void attachLinkTopackage(DownloadLink link) {
 
         if (!guiConfig.getBooleanProperty(PROPERTY_AUTOPACKAGE, true)) {
@@ -711,8 +716,9 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
             confirmAll();
             this.setVisible(false);
             this.dispose();
-        }else if(e.getSource()==sortPackages){
-            
+        }
+        else if (e.getSource() == sortPackages) {
+
             this.reprintTabbedPane();
         }
         else if (e.getSource() == this.mMerge) {
@@ -818,6 +824,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
         for (int tt = 0; tt < tabList.size(); tt++) {
             PackageTab tab = tabList.get(tt);
             Vector<DownloadLink> linkList = tab.getLinkList();
+
             if (linkList.size() == 0) {
 
                 return;
@@ -855,8 +862,14 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
                 linkList.elementAt(i).setFilePackage(fp);
             }
 
-            parentFrame.fireUIEvent(new UIEvent(this, UIEvent.UI_LINKS_GRABBED, linkList));
-
+            parentFrame.fireUIEvent(new UIEvent(this, UIEvent.UI_PACKAGE_GRABBED, fp));
+            try {
+                Thread.sleep(200);
+            }
+            catch (InterruptedException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            }
             parentFrame.setDropTargetText(JDLocale.L("gui.dropTarget.downloadsAdded", "Downloads hinzugefügt: ") + linkList.size());
         }
 
@@ -899,7 +912,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
             linkList.elementAt(i).setFilePackage(fp);
         }
 
-        parentFrame.fireUIEvent(new UIEvent(this, UIEvent.UI_LINKS_GRABBED, linkList));
+        parentFrame.fireUIEvent(new UIEvent(this, UIEvent.UI_PACKAGE_GRABBED, linkList));
 
         parentFrame.setDropTargetText(JDLocale.L("gui.dropTarget.downloadsAdded", "Downloads hinzugefügt: ") + linkList.size());
     }

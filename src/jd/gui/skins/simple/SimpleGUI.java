@@ -18,11 +18,9 @@
 package jd.gui.skins.simple;
 
 import java.awt.Component;
-import java.awt.Cursor;
 import java.awt.Dimension;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
-import java.awt.Image;
 import java.awt.Insets;
 import java.awt.Point;
 import java.awt.Toolkit;
@@ -44,6 +42,7 @@ import java.util.logging.Logger;
 
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
+import javax.swing.JCheckBox;
 import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -55,7 +54,6 @@ import javax.swing.JPanel;
 import javax.swing.JSeparator;
 import javax.swing.JSpinner;
 import javax.swing.JSplitPane;
-import javax.swing.JTextField;
 import javax.swing.JToolBar;
 import javax.swing.SpinnerNumberModel;
 import javax.swing.UIManager;
@@ -87,6 +85,7 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginOptional;
 import jd.plugins.event.PluginEvent;
+import jd.plugins.host.Rapidshare;
 import jd.utils.JDLocale;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
@@ -121,7 +120,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
      * Das Hauptfenster
      */
     private JFrame                  frame;
-    private static SimpleGUI CURRENTGUI=null;
+    public static SimpleGUI CURRENTGUI=null;
     /**
      * Die Menüleiste
      */
@@ -135,7 +134,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
     /**
      * Komponente, die alle Downloads anzeigt
      */
-    private TabDownloadLinks        tabDownloadTable;                                                            ;
+    private DownloadLinksTreeTablePanel        linkListPane;                                                            ;
 
     /**
      * Komponente, die den Fortschritt aller Plugins anzeigt
@@ -179,13 +178,13 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
 
     private JDAction                actionDnD;
 
-    private JDAction                actionItemsTop;
+    //private JDAction                actionItemsTop;
 
-    private JDAction                actionItemsUp;
+    //private JDAction                actionItemsUp;
 
-    private JDAction                actionItemsDown;
+    //private JDAction                actionItemsDown;
 
-    private JDAction                actionItemsBottom;
+    //private JDAction                actionItemsBottom;
 
     private JDAction                actionItemsAdd;
 
@@ -251,6 +250,8 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
     public SimpleGUI() {
         super();
        
+        
+        
         UIManager.LookAndFeelInfo[] info = UIManager.getInstalledLookAndFeels();
         
         boolean plafisSet = false;
@@ -281,11 +282,17 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
             }
         }
      
+      
+         
         uiListener = new Vector<UIListener>();
         frame = new JFrame();
         // tabbedPane = new JTabbedPane();
         menuBar = new JMenuBar();
         toolBar = new JToolBar();
+      
+        
+       
+     
         this.locationListener = new LocationListener();
         frame.addWindowListener(this);
 
@@ -310,15 +317,14 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         frame.addComponentListener(locationListener);
         frame.addWindowListener(locationListener);
         // Ruft jede sekunde ein UpdateEvent auf
+  
         new Thread("GUI Interval") {
             public void run() {
                 while (true) {
                     interval();
                     try {
                         Thread.sleep(1000);
-                        if(JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_TWEAK_GUI_INTERVAL,false)){
-                            Thread.sleep(2000);
-                        }
+                        
                     }
                     catch (InterruptedException e) {
                     }
@@ -411,10 +417,10 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         // actionSearch = new JDAction(this, JDTheme.I("gui.images.find"),
         // "action.search", JDAction.APP_SEARCH);
         actionItemsDelete = new JDAction(this, JDTheme.I("gui.images.delete"), "action.edit.items_remove", JDAction.ITEMS_REMOVE);
-        actionItemsTop = new JDAction(this, JDTheme.I("gui.images.top"), "action.edit.items_top", JDAction.ITEMS_MOVE_TOP);
-        actionItemsUp = new JDAction(this, JDTheme.I("gui.images.go_top"), "action.edit.items_up", JDAction.ITEMS_MOVE_UP);
-        actionItemsDown = new JDAction(this, JDTheme.I("gui.images.down"), "action.edit.items_down", JDAction.ITEMS_MOVE_DOWN);
-        actionItemsBottom = new JDAction(this, JDTheme.I("gui.images.go_bottom"), "action.edit.items_bottom", JDAction.ITEMS_MOVE_BOTTOM);
+//        actionItemsTop = new JDAction(this, JDTheme.I("gui.images.top"), "action.edit.items_top", JDAction.ITEMS_MOVE_TOP);
+//        actionItemsUp = new JDAction(this, JDTheme.I("gui.images.go_top"), "action.edit.items_up", JDAction.ITEMS_MOVE_UP);
+//        actionItemsDown = new JDAction(this, JDTheme.I("gui.images.down"), "action.edit.items_down", JDAction.ITEMS_MOVE_DOWN);
+//        actionItemsBottom = new JDAction(this, JDTheme.I("gui.images.go_bottom"), "action.edit.items_bottom", JDAction.ITEMS_MOVE_BOTTOM);
         doReconnect = new JDAction(this, JDTheme.I("gui.images.reconnect_ok"), "action.doReconnect", JDAction.ITEMS_MOVE_BOTTOM);
         actionHelp = new JDAction(this, JDTheme.I("gui.images.help"), "action.help", JDAction.HELP);
 
@@ -432,12 +438,16 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
             statusBar.setSpeed(JDUtilities.getController().getSpeedMeter());
             
         }
+    
+        linkListPane.pluginEvent(new PluginEvent(new Rapidshare(),PluginEvent.PLUGIN_DATA_CHANGED, null));
+        //linkListPane.refresh();
         if (hostPluginDataChanged != null) {
-            tabDownloadTable.pluginEvent(hostPluginDataChanged);
+            
         }
+     
         this.progressBar.updateController(null);
         decryptPluginDataChanged = null;
-        hostPluginDataChanged = null;
+        //hostPluginDataChanged = null;
         this.frame.setTitle(JDUtilities.getJDTitle());
     }
 
@@ -455,17 +465,17 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         // edit menu
         JMenu menEdit = new JMenu(JDLocale.L("gui.menu.edit"));
         menFile.setMnemonic(JDLocale.L("gui.menu.edit_mnem").charAt(0));
-        JMenuItem menEditItemTop = createMenuItem(actionItemsTop);
-        JMenuItem menEditItemUp = createMenuItem(actionItemsUp);
-        JMenuItem menEditItemDown = createMenuItem(actionItemsDown);
-        JMenuItem menEditItemBottom = createMenuItem(actionItemsBottom);
+//        JMenuItem menEditItemTop = createMenuItem(actionItemsTop);
+//        JMenuItem menEditItemUp = createMenuItem(actionItemsUp);
+//        JMenuItem menEditItemDown = createMenuItem(actionItemsDown);
+//        JMenuItem menEditItemBottom = createMenuItem(actionItemsBottom);
         JMenuItem menEditItemsDelete = createMenuItem(actionItemsDelete);
         menEdit.add(menEditItemsDelete);
         menEdit.addSeparator();
-        menEdit.add(menEditItemTop);
-        menEdit.add(menEditItemUp);
-        menEdit.add(menEditItemDown);
-        menEdit.add(menEditItemBottom);
+//        menEdit.add(menEditItemTop);
+//        menEdit.add(menEditItemUp);
+//        menEdit.add(menEditItemDown);
+//        menEdit.add(menEditItemBottom);
         // action menu
         JMenu menAction = new JMenu(JDLocale.L("gui.menu.action"));
         menAction.setMnemonic(JDLocale.L("gui.menu.action_mnem").charAt(0));
@@ -526,14 +536,13 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
     private void buildUI() {
         // tabbedPane = new JTabbedPane();
         CURRENTGUI = this;
-        tabDownloadTable = new TabDownloadLinks(this);
+        linkListPane = new DownloadLinksTreeTablePanel(this);
         progressBar = new TabProgress();
         statusBar = new StatusBar();
         splitpane = new JSplitPane();
         splitpane.setBottomComponent(progressBar);
         // JPanel tmp=new JPanel(new BorderLayout());
-        // tmp.add(tabPluginActivity,BorderLayout.NORTH);
-        splitpane.setTopComponent(tabDownloadTable);
+        splitpane.setTopComponent(linkListPane);
         splitpane.setOrientation(JSplitPane.VERTICAL_SPLIT);
         // tmp.add(tabDownloadTable,BorderLayout.CENTER);
         // tabbedPane.addTab(JDLocale.L("gui.tab.download"),
@@ -654,7 +663,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
             case JDAction.ITEMS_MOVE_DOWN:
             case JDAction.ITEMS_MOVE_TOP:
             case JDAction.ITEMS_MOVE_BOTTOM:
-                tabDownloadTable.moveSelectedItems(e.getID());
+                //linkListPane.moveSelectedItems(e.getID());
                 break;
             case JDAction.APP_PAUSE_DOWNLOADS:
                 this.btnPause.setSelected(!btnPause.isSelected());
@@ -728,15 +737,15 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
                 if (!guiConfig.getBooleanProperty(PARAM_DISABLE_CONFIRM_DIALOGS, false)) {
                     if (this.showConfirmDialog("Ausgewählte Links wirklich entfernen?")) {
 
-                        tabDownloadTable.removeSelectedLinks();
+                        linkListPane.removeSelectedLinks();
 
-                        fireUIEvent(new UIEvent(this, UIEvent.UI_LINKS_CHANGED, this.getDownloadLinks()));
+                        //fireUIEvent(new UIEvent(this, UIEvent.UI_UPDATED_LINKLIST, this.getDownloadLinks()));
 
                     }
                 }
                 else {
-                    tabDownloadTable.removeSelectedLinks();
-                    fireUIEvent(new UIEvent(this, UIEvent.UI_LINKS_CHANGED, this.getDownloadLinks()));
+                    linkListPane.removeSelectedLinks();
+                    //fireUIEvent(new UIEvent(this, UIEvent.UI_UPDATED_LINKLIST, this.getDownloadLinks()));
                 }
                 break;
             case JDAction.ITEMS_DND:
@@ -864,7 +873,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
             return;
         }
         if (event.getSource() instanceof PluginForHost) {
-            tabDownloadTable.pluginEvent(event);
+            //linkListPane.pluginEvent(event);
             return;
         }
         if (event.getSource() instanceof PluginForDecrypt) {
@@ -899,87 +908,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         }
     }
 
-    public void delegatedControlEvent(ControlEvent event) {
-        switch (event.getID()) {
-
-            case ControlEvent.CONTROL_PLUGIN_DECRYPT_ACTIVE:
-                logger.info("decrypt-active");
-                setPluginActive((PluginForDecrypt) event.getParameter(), true);
-                break;
-
-            case ControlEvent.CONTROL_PLUGIN_DECRYPT_INACTIVE:
-                logger.info("decrypt-inactive");
-                setPluginActive((PluginForDecrypt) event.getParameter(), false);
-                break;
-            case ControlEvent.CONTROL_ON_PROGRESS:
-
-                handleProgressController((ProgressController) event.getSource(), event.getParameter());
-
-                break;
-            case ControlEvent.CONTROL_PLUGIN_HOST_ACTIVE:
-                logger.info("host-active");
-                setPluginActive((PluginForHost) event.getParameter(), true);
-                break;
-            case ControlEvent.CONTROL_PLUGIN_HOST_INACTIVE:
-                logger.info("host-inactive");
-                setPluginActive((PluginForHost) event.getParameter(), false);
-                break;
-            case ControlEvent.CONTROL_SINGLE_DOWNLOAD_FINISHED:
-                // showTrayTip("Download", "" + ((DownloadLink)
-                // event.getParameter()).getStatusText() + ": " +
-                // event.getParameter());
-                break;
-            case ControlEvent.CONTROL_ALL_DOWNLOADS_FINISHED:
-                // showTrayTip("Downloads", "All downloads finished");
-                logger.info("ALL FINISHED");
-                btnStartStop.setSelected(false);
-                btnStartStop.setEnabled(true);
-                btnPause.setEnabled(false);
-                btnPause.setSelected(false);
-                break;
-            case ControlEvent.CONTROL_PLUGIN_INTERACTION_ACTIVE:
-                logger.info("Interaction start. ");
-                // showTrayTip("Interaction", ((Interaction)
-                // event.getParameter()).getInteractionName());
-                statusBar.setText("Interaction: " + ((Interaction) event.getParameter()).getInteractionName());
-                frame.setTitle(JDUtilities.JD_TITLE + " |Aktion: " + ((Interaction) event.getParameter()).getInteractionName());
-                break;
-            case ControlEvent.CONTROL_PLUGIN_INTERACTION_INACTIVE:
-                logger.info("Interaction zu ende. rest status");
-                // switch (((Interaction) event.getParameter()).getCallCode()) {
-                // case Interaction.INTERACTION_CALL_ERROR:
-                // showTrayTip("Interaction", "Finished (ERROR): " +
-                // ((Interaction) event.getParameter()).getInteractionName());
-                //
-                // break;
-                // case Interaction.INTERACTION_CALL_RUNNING:
-                // showTrayTip("Interaction", "Finished (RUNNING): " +
-                // ((Interaction) event.getParameter()).getInteractionName());
-                //
-                // break;
-                // case Interaction.INTERACTION_CALL_SUCCESS:
-                // showTrayTip("Interaction", "Finished (SUCESSFULL): " +
-                // ((Interaction) event.getParameter()).getInteractionName());
-                //
-                // break;
-                //
-                // }
-                statusBar.setText(null);
-                frame.setTitle(JDUtilities.getJDTitle());
-                break;
-            case ControlEvent.CONTROL_SINGLE_DOWNLOAD_CHANGED:
-
-                tabDownloadTable.fireTableChanged();
-            case ControlEvent.CONTROL_DISTRIBUTE_FINISHED:
-                break;
-            case ControlEvent.CONTROL_DOWNLOAD_TERMINATION_ACTIVE:
-                frame.setTitle(JDUtilities.getJDTitle() + " - Downloads werden abgebrochen");
-                break;
-            case ControlEvent.CONTROL_DOWNLOAD_TERMINATION_INACTIVE:
-                frame.setTitle(JDUtilities.getJDTitle());
-                break;
-        }
-    }
+ 
 
     private void handleProgressController(ProgressController source, Object parameter) {
 
@@ -1006,23 +935,23 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
     // if (tray == null) return;
     // this.tray.showTip(header, msg);
     // }
-    public Vector<DownloadLink> getDownloadLinks() {
-        if (tabDownloadTable != null) return tabDownloadTable.getLinks();
-        return null;
-    }
+//    public Vector<DownloadLink> getDownloadLinks() {
+//        if (linkListPane != null) return linkListPane.getLinks();
+//        return null;
+//    }
 
-    public void setDownloadLinks(Vector<DownloadLink> links) {
-        if (tabDownloadTable != null) {
-            tabDownloadTable.setDownloadLinks(links.toArray(new DownloadLink[] {}));
-        }
-    }
+//    public void setDownloadLinks(Vector<DownloadLink> links) {
+//        if (linkListPane != null) {
+//            linkListPane.setDownloadLinks(links.toArray(new DownloadLink[] {}));
+//        }
+//    }
 
-    public void addDownloadLinks(Vector<DownloadLink> links) {
-        DownloadLink[] linkList = links.toArray(new DownloadLink[] {});
-        if (tabDownloadTable != null) {
-            tabDownloadTable.setDownloadLinks(linkList);
-        }
-    }
+//    public void addDownloadLinks(Vector<DownloadLink> links) {
+//        DownloadLink[] linkList = links.toArray(new DownloadLink[] {});
+//        if (linkListPane != null) {
+//            linkListPane.setDownloadLinks(linkList);
+//        }
+//    }
 
     public String getCaptchaCodeFromUser(Plugin plugin, File captchaAddress,String def) {
         CaptchaDialog captchaDialog = new CaptchaDialog(frame, plugin, captchaAddress,def);
@@ -1116,11 +1045,17 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
 
         private JButton btnConfirm;
 
+        private JCheckBox chbPremium;
+
         public StatusBar() {
             if (JDUtilities.getImage(JDTheme.I("gui.images.led_green")) != null) imgActive = new ImageIcon(JDUtilities.getImage(JDTheme.I("gui.images.led_green")));
             if (JDUtilities.getImage(JDTheme.I("gui.images.led_empty")) != null) imgInactive = new ImageIcon(JDUtilities.getImage(JDTheme.I("gui.images.led_empty")));
             setLayout(new GridBagLayout());
             lblMessage = new JLabel(JDLocale.L("sys.message.welcome"));
+            chbPremium =  new JCheckBox(JDLocale.L("gui.statusbar.premium","Premium"));
+            chbPremium.setToolTipText(JDLocale.L("gui.tooltip.statusbar.premium","Aus/An schalten des Premiumdownloads"));
+            chbPremium.addChangeListener(this);
+            chbPremium.setSelected(JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true));
             lblSpeed = new JLabel();
             int maxspeed = JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, 0);
             
@@ -1135,11 +1070,14 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
             lblPluginDecryptActive.setToolTipText(JDLocale.L("gui.tooltip.plugin_decrypt"));
             lblPluginHostActive.setToolTipText(JDLocale.L("gui.tooltip.plugin_host"));
             JDUtilities.addToGridBag(this, lblMessage, 0, 0, 1, 1, 1, 1, new Insets(0, 5, 0, 0), GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-            JDUtilities.addToGridBag(this, lblSpeed, 1, 0, 1, 1, 0, 0, new Insets(0, 0, 0, 0), GridBagConstraints.NONE, GridBagConstraints.WEST);
-            JDUtilities.addToGridBag(this, spMax, 2, 0, 1, 1, 0, 0, new Insets(0, 0, 0, 0), GridBagConstraints.NONE, GridBagConstraints.WEST);
             
-            JDUtilities.addToGridBag(this, lblPluginHostActive, 3, 0, 1, 1, 0, 0, new Insets(0, 5, 0, 0), GridBagConstraints.NONE, GridBagConstraints.EAST);
-            JDUtilities.addToGridBag(this, lblPluginDecryptActive, 4, 0, 1, 1, 0, 0, new Insets(0, 0, 0, 0), GridBagConstraints.NONE, GridBagConstraints.EAST);
+            JDUtilities.addToGridBag(this, lblSpeed, 1, 0, 1, 1, 0, 0, new Insets(0, 0, 0, 0), GridBagConstraints.NONE, GridBagConstraints.WEST);
+            JDUtilities.addToGridBag(this, chbPremium, 3, 0, 1, 1, 0, 0, new Insets(0, 0, 0, 0), GridBagConstraints.NONE, GridBagConstraints.WEST);
+            
+            JDUtilities.addToGridBag(this, spMax, 4, 0, 1, 1, 0, 0, new Insets(0, 0, 0, 0), GridBagConstraints.NONE, GridBagConstraints.WEST);
+            
+            JDUtilities.addToGridBag(this, lblPluginHostActive, 5, 0, 1, 1, 0, 0, new Insets(0, 5, 0, 0), GridBagConstraints.NONE, GridBagConstraints.EAST);
+            JDUtilities.addToGridBag(this, lblPluginDecryptActive, 6, 0, 1, 1, 0, 0, new Insets(0, 0, 0, 0), GridBagConstraints.NONE, GridBagConstraints.EAST);
         }
 
         public void setText(String text) {
@@ -1212,6 +1150,10 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
                     JDUtilities.getSubConfig("DOWNLOAD").save();
                 }
                 
+            }
+            if(e.getSource()==chbPremium){
+                JDUtilities.getConfiguration().setProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, chbPremium.isSelected());
+                JDUtilities.saveConfig();
             }
             
            
@@ -1399,6 +1341,93 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
 
     public void setStartStopButtonState(Boolean state) {
         // TODO Auto-generated method stub
+        
+    }
+
+    public void controlEvent(ControlEvent event) {
+        switch (event.getID()) {
+
+            case ControlEvent.CONTROL_PLUGIN_DECRYPT_ACTIVE:
+                logger.info("decrypt-active");
+                setPluginActive((PluginForDecrypt) event.getParameter(), true);
+                break;
+
+            case ControlEvent.CONTROL_PLUGIN_DECRYPT_INACTIVE:
+                logger.info("decrypt-inactive");
+                setPluginActive((PluginForDecrypt) event.getParameter(), false);
+                break;
+            case ControlEvent.CONTROL_ON_PROGRESS:
+
+                handleProgressController((ProgressController) event.getSource(), event.getParameter());
+
+                break;
+            case ControlEvent.CONTROL_PLUGIN_HOST_ACTIVE:
+                logger.info("host-active");
+                setPluginActive((PluginForHost) event.getParameter(), true);
+                break;
+            case ControlEvent.CONTROL_PLUGIN_HOST_INACTIVE:
+                logger.info("host-inactive");
+                setPluginActive((PluginForHost) event.getParameter(), false);
+                break;
+            case ControlEvent.CONTROL_SINGLE_DOWNLOAD_FINISHED:
+                // showTrayTip("Download", "" + ((DownloadLink)
+                // event.getParameter()).getStatusText() + ": " +
+                // event.getParameter());
+                break;
+            case ControlEvent.CONTROL_ALL_DOWNLOADS_FINISHED:
+                // showTrayTip("Downloads", "All downloads finished");
+                logger.info("ALL FINISHED");
+                btnStartStop.setSelected(false);
+                btnStartStop.setEnabled(true);
+                btnPause.setEnabled(false);
+                btnPause.setSelected(false);
+                break;
+            case ControlEvent.CONTROL_PLUGIN_INTERACTION_ACTIVE:
+                logger.info("Interaction start. ");
+                // showTrayTip("Interaction", ((Interaction)
+                // event.getParameter()).getInteractionName());
+                statusBar.setText("Interaction: " + ((Interaction) event.getParameter()).getInteractionName());
+                frame.setTitle(JDUtilities.JD_TITLE + " |Aktion: " + ((Interaction) event.getParameter()).getInteractionName());
+                break;
+            case ControlEvent.CONTROL_PLUGIN_INTERACTION_INACTIVE:
+                logger.info("Interaction zu ende. rest status");
+                // switch (((Interaction) event.getParameter()).getCallCode()) {
+                // case Interaction.INTERACTION_CALL_ERROR:
+                // showTrayTip("Interaction", "Finished (ERROR): " +
+                // ((Interaction) event.getParameter()).getInteractionName());
+                //
+                // break;
+                // case Interaction.INTERACTION_CALL_RUNNING:
+                // showTrayTip("Interaction", "Finished (RUNNING): " +
+                // ((Interaction) event.getParameter()).getInteractionName());
+                //
+                // break;
+                // case Interaction.INTERACTION_CALL_SUCCESS:
+                // showTrayTip("Interaction", "Finished (SUCESSFULL): " +
+                // ((Interaction) event.getParameter()).getInteractionName());
+                //
+                // break;
+                //
+                // }
+                statusBar.setText(null);
+                frame.setTitle(JDUtilities.getJDTitle());
+                break;
+            case ControlEvent.CONTROL_SINGLE_DOWNLOAD_CHANGED:
+
+               // linkListPane.fireDataChanged();
+            case ControlEvent.CONTROL_DISTRIBUTE_FINISHED:
+                break;
+            case ControlEvent.CONTROL_DOWNLOAD_TERMINATION_ACTIVE:
+                frame.setTitle(JDUtilities.getJDTitle() + " - Downloads werden abgebrochen");
+                break;
+            case ControlEvent.CONTROL_DOWNLOAD_TERMINATION_INACTIVE:
+                frame.setTitle(JDUtilities.getJDTitle());
+                break;
+            case ControlEvent.CONTROL_LINKLIST_CHANGED:
+                if(event.getSource().getClass()==JDController.class){
+                
+                }
+        }
         
     }
 

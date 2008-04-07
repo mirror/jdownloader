@@ -264,7 +264,7 @@ public class Rapidshare extends PluginForHost {
     private static final String            PATTERN_ACCOUNT_OVERLOAD           = "runtergeladen und damit das Limit";
 
     private static final String            PATTERN_ERROR_OCCURED              = "<center><h2>Ein Fehler ist aufgetreten:</h2><p><font color=\"°\"><b><!-- ° -->°</b></font></p><p";
-
+private static final String  PATTERN_ERROR_2_OCCURED ="<script>alert(\"°\")</script>";
     private static int                     ERRORS                             = 0;
 
     @Override
@@ -457,7 +457,7 @@ public class Rapidshare extends PluginForHost {
 
         // premium
         PluginStep st;
-        if ((this.getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM, false) || this.getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM_2, false) || this.getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM_3, false)) && !noLimitFreeInsteadPremium) {
+        if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true)&&((this.getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM, false) || this.getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM_2, false) || this.getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM_3, false)) && !noLimitFreeInsteadPremium)) {
             st = this.doPremiumStep(step, downloadLink);
         }
         else {
@@ -953,6 +953,8 @@ public class Rapidshare extends PluginForHost {
         else {
             return doFreeStep(step, downloadLink);
         }
+        user=JDUtilities.urlEncode(user.trim());
+        pass=JDUtilities.urlEncode(pass.trim());
         // String encodePass = rawUrlEncode(pass);
         switch (step.getStep()) {
             case PluginStep.STEP_WAIT_TIME:
@@ -992,7 +994,7 @@ public class Rapidshare extends PluginForHost {
 
                     }
 
-                    if (this.getProperties().getBooleanProperty(PROPERTY_FREE_IF_LIMIT_NOT_REACHED, false)) {
+                    if (getMaxSimultanDownloadNum()==1&&this.getProperties().getBooleanProperty(PROPERTY_FREE_IF_LIMIT_NOT_REACHED, false)) {
                         requestInfo = getRequest(new URL(link), null, "", false);
                         String newURL = getFirstMatch(requestInfo.getHtmlCode(), patternForNewHost, 1);
                         requestInfo = postRequest(new URL(newURL), null, null, null, "dl.start=FREE", true);
@@ -1053,7 +1055,7 @@ public class Rapidshare extends PluginForHost {
 
                     requestInfo = getRequestWithoutHtmlCode(new URL(finalURL), finalCookie, finalURL, ranger, true);
 
-                    if (requestInfo.getConnection().getHeaderField("content-disposition") == null | Long.parseLong(requestInfo.getConnection().getHeaderField("Content-Length")) != headLength) {
+                    if (requestInfo.getConnection().getHeaderField("content-disposition") == null || Long.parseLong(requestInfo.getConnection().getHeaderField("Content-Length")) != headLength) {
                         String error;
                         requestInfo = readFromURL(requestInfo.getConnection());
                         if (requestInfo.containsHTML(PATTERN_ACCOUNT_OVERLOAD)) {
@@ -1083,6 +1085,24 @@ public class Rapidshare extends PluginForHost {
                             downloadLink.setStatus(DownloadLink.STATUS_ERROR_PLUGIN_SPECIFIC);
                             return step;
                         }
+                        
+                        if ((error = getSimpleMatch(requestInfo.getHtmlCode(), PATTERN_ERROR_2_OCCURED, 0)) != null) {
+                            error=error.substring(0,error.indexOf("<"));
+                            step.setStatus(PluginStep.STATUS_ERROR);
+                            logger.severe("Fehler: " + error);
+                            step.setParameter(error);
+                            downloadLink.setStatus(DownloadLink.STATUS_ERROR_PLUGIN_SPECIFIC);
+                            return step;
+                        }
+                        
+
+                        step.setStatus(PluginStep.STATUS_ERROR);
+                        logger.severe("Fehler: Unbekannt. Fehlerseite");
+                        step.setParameter("Unknown Errorpage");
+
+                        logger.severe(requestInfo.getHtmlCode());
+                        downloadLink.setStatus(DownloadLink.STATUS_ERROR_PLUGIN_SPECIFIC);
+                        return step;
 
                     }
                     urlConnection = requestInfo.getConnection();
@@ -1207,7 +1227,7 @@ public class Rapidshare extends PluginForHost {
                             step.setStatus(PluginStep.STATUS_TODO);
                             return step;
                         }
-                        if (this.getProperties().getBooleanProperty(PROPERTY_FREE_IF_LIMIT_NOT_REACHED, false)) {
+                        if (getMaxSimultanDownloadNum()==1&&this.getProperties().getBooleanProperty(PROPERTY_FREE_IF_LIMIT_NOT_REACHED, false)) {
                             requestInfo = postRequest(new URL(newURL), null, null, null, "dl.start=FREE", true);
                             String strWaitTime = getSimpleMatch(requestInfo.getHtmlCode(), patternErrorDownloadLimitReached, 0);
                             // wait time pattern not found -> free download
@@ -1557,7 +1577,7 @@ public class Rapidshare extends PluginForHost {
     public int getMaxSimultanDownloadNum() {
         int ret = 0;
         if ((this.getProperties().getProperty(PROPERTY_USE_PREMIUM) != null && ((Boolean) this.getProperties().getProperty(PROPERTY_USE_PREMIUM))) || (this.getProperties().getProperty(PROPERTY_USE_PREMIUM_2) != null && ((Boolean) this.getProperties().getProperty(PROPERTY_USE_PREMIUM_2))) || (this.getProperties().getProperty(PROPERTY_USE_PREMIUM_3) != null && ((Boolean) this.getProperties().getProperty(PROPERTY_USE_PREMIUM_3)))) {
-            ret = 30/getChunksPerFile();
+            ret = 30 / getChunksPerFile();
         }
         else {
             ret = 1;
