@@ -280,7 +280,7 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
 				{ "-t/--train\t", "Train a JAC method" },
 				{ "-e/--extract (<sourcePath1> (<sourcePath2...n> <targetPath>)) (-r/--rotate <seconds>)", "" },
 				{ "\t\t\tExtract (optional from given directory and optional to given directory) with jD settings (optional periodly)", "" },
-				{ "\t\t", "Example: java -jar JDownloader.jar -e /source/folder -r 600 [extract every minute from /source/folder to /source/folder" },
+				{ "\t\t", "Example: java -jar JDownloader.jar -e /source/folder -r 60 [extract every minute from /source/folder to /source/folder" },
 				{ "-n --new-instance", "Force new instance if another jD is running" } };
 
 		for (String helpLine[] : help) {
@@ -339,7 +339,13 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
 						unrar.extractFolder = new File(JDUtilities.getConfiguration().getStringProperty(
 								Unrar.PROPERTY_EXTRACTFOLDER));
 					} else {
-						unrar.extractFolder = new File(paths.get(0));
+						
+						if ( paths.size() == 1 ) {
+							unrar.extractFolder = new File(paths.get(0));
+						} else {
+							unrar.extractFolder = new File(downloadFolder);
+						}
+						
 					}
 					
 					
