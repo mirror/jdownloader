@@ -135,6 +135,10 @@ public class ControlEvent extends AWTEvent {
 
     public static final int   CONTROL_LINKLIST_CHANGED                            = 25;
 
+    public static final int   CONTROL_SET_STARTSTOP_BUTTON_STATE                  = 26;
+
+    public static final int   CONTROL_SET_MINIMIZED                           	  = 27;
+
     /**
      * Die ID des Ereignisses
      */

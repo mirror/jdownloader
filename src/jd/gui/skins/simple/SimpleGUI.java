@@ -1334,16 +1334,6 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         
     }
 
-    public void setMinimized(Boolean state) {
-        // TODO Auto-generated method stub
-        
-    }
-
-    public void setStartStopButtonState(Boolean state) {
-        // TODO Auto-generated method stub
-        
-    }
-
     public void controlEvent(ControlEvent event) {
         switch (event.getID()) {
 
@@ -1427,6 +1417,17 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
                 if(event.getSource().getClass()==JDController.class){
                 
                 }
+            case ControlEvent.CONTROL_SET_STARTSTOP_BUTTON_STATE:
+                Boolean state1 = (Boolean) event.getParameter();
+                if ( state1 == null ) break;
+                btnStartStop.setSelected(state1);
+                break;
+            case ControlEvent.CONTROL_SET_MINIMIZED:
+                Boolean state2 = (Boolean) event.getParameter();
+                if ( state2 == null ) break;
+                if (state2) frame.setState(JFrame.ICONIFIED);
+                	else frame.setState(JFrame.NORMAL);
+                break;
         }
         
     }
