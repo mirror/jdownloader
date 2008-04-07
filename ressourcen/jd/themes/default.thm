@@ -38,3 +38,6 @@ gui.images.terminal = default/terminal
 gui.images.top = default/top
 gui.images.update_manager = default/update_manager
 gui.images.help=default/help
+gui.images.package_opened = default/package_opened
+gui.images.package_closed = default/package_closed
+gui.images.link=default/link
