@@ -1070,7 +1070,7 @@ public class JDController implements PluginListener, ControlListener, UIListener
         DownloadLink nextDownloadLink = null;
         while (iterator.hasNext()) {
             nextDownloadLink = iterator.next();
-
+           
             if (filePackage == nextDownloadLink.getFilePackage()) ret.add(nextDownloadLink);
         }
         return ret;
