@@ -43,13 +43,13 @@ public class Property implements Serializable {
 
     private long                    saveCount        = 0;
 
-    private transient Logger        logger;
+    protected transient Logger        logger=JDUtilities.getLogger();
 
     /**
      * 
      */
     public Property() {
-        logger = JDUtilities.getLogger();
+       
     }
 
     public Property(Object obj) {

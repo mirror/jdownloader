@@ -84,7 +84,6 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginOptional;
-import jd.plugins.event.PluginEvent;
 import jd.plugins.host.Rapidshare;
 import jd.utils.JDLocale;
 import jd.utils.JDTheme;
@@ -199,10 +198,6 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
     private JCheckBoxMenuItem       menViewLog                        = null;
 
     private JSplitPane              splitpane;
-
-    private PluginEvent             hostPluginDataChanged             = null;
-
-    private PluginEvent             decryptPluginDataChanged          = null;
 
     private LinkGrabber             linkGrabber;
 
@@ -439,14 +434,12 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
             
         }
     
-        linkListPane.pluginEvent(new PluginEvent(new Rapidshare(),PluginEvent.PLUGIN_DATA_CHANGED, null));
+       // linkListPane.pluginEvent(new PluginEvent(new Rapidshare(),PluginEvent.PLUGIN_DATA_CHANGED, null));
         //linkListPane.refresh();
-        if (hostPluginDataChanged != null) {
-            
-        }
+     
      
         this.progressBar.updateController(null);
-        decryptPluginDataChanged = null;
+    
         //hostPluginDataChanged = null;
         this.frame.setTitle(JDUtilities.getJDTitle());
     }
@@ -858,55 +851,48 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
             }.start();
         }
     }
-
-    /**
-     * Delligiert die Pluginevents weiter an das host/decryptpanel.
-     * CHangedEvents werden abgefangen und im sekundeninterval weitergegeben.
-     */
-    public void delegatedPluginEvent(PluginEvent event) {
-        if (event.getSource() instanceof PluginForHost && event.getEventID() == PluginEvent.PLUGIN_DATA_CHANGED) {
-            this.hostPluginDataChanged = event;
-            return;
-        }
-        if (event.getSource() instanceof PluginForDecrypt && event.getEventID() == PluginEvent.PLUGIN_DATA_CHANGED) {
-            this.decryptPluginDataChanged = event;
-            return;
-        }
-        if (event.getSource() instanceof PluginForHost) {
-            //linkListPane.pluginEvent(event);
-            return;
-        }
-        if (event.getSource() instanceof PluginForDecrypt) {
-            // progressBar.pluginEvent(event);
-            splitpane.setDividerLocation(0.8);
-            return;
-        }
-        if (event.getSource() instanceof PluginOptional) {
-            JDAction actionToDo = null;
-            switch (event.getEventID()) {
-                case PluginEvent.PLUGIN_CONTROL_DND:
-                    actionToDo = actionDnD;
-                    break;
-                case PluginEvent.PLUGIN_CONTROL_EXIT:
-                    actionToDo = actionExit;
-                    break;
-                case PluginEvent.PLUGIN_CONTROL_RECONNECT:
-                    actionToDo = actionReconnect;
-                    break;
-                case PluginEvent.PLUGIN_CONTROL_SHOW_CONFIG:
-                    actionToDo = actionConfig;
-                    break;
-                case PluginEvent.PLUGIN_CONTROL_SHOW_UI:
-                    frame.setVisible((Boolean) event.getParameter1());
-                    break;
-                case PluginEvent.PLUGIN_CONTROL_START_STOP:
-                    actionToDo = actionStartStopDownload;
-                    break;
-            }
-            if (actionToDo != null) actionPerformed(new ActionEvent(this, actionToDo.getActionID(), ""));
-
-        }
-    }
+//
+//    /**
+//     * Delligiert die Pluginevents weiter an das host/decryptpanel.
+//     * CHangedEvents werden abgefangen und im sekundeninterval weitergegeben.
+//     */
+//    public void delegatedPluginEvent(PluginEvent event) {
+//     
+//        if (event.getSource() instanceof PluginForHost) {
+//            //linkListPane.pluginEvent(event);
+//            return;
+//        }
+//        if (event.getSource() instanceof PluginForDecrypt) {
+//            // progressBar.pluginEvent(event);
+//            splitpane.setDividerLocation(0.8);
+//            return;
+//        }
+//        if (event.getSource() instanceof PluginOptional) {
+//            JDAction actionToDo = null;
+//            switch (event.getEventID()) {
+//                case PluginEvent.PLUGIN_CONTROL_DND:
+//                    actionToDo = actionDnD;
+//                    break;
+//                case PluginEvent.PLUGIN_CONTROL_EXIT:
+//                    actionToDo = actionExit;
+//                    break;
+//                case PluginEvent.PLUGIN_CONTROL_RECONNECT:
+//                    actionToDo = actionReconnect;
+//                    break;
+//                case PluginEvent.PLUGIN_CONTROL_SHOW_CONFIG:
+//                    actionToDo = actionConfig;
+//                    break;
+//                case PluginEvent.PLUGIN_CONTROL_SHOW_UI:
+//                    frame.setVisible((Boolean) event.getParameter1());
+//                    break;
+//                case PluginEvent.PLUGIN_CONTROL_START_STOP:
+//                    actionToDo = actionStartStopDownload;
+//                    break;
+//            }
+//            if (actionToDo != null) actionPerformed(new ActionEvent(this, actionToDo.getActionID(), ""));
+//
+//        }
+//    }
 
  
 

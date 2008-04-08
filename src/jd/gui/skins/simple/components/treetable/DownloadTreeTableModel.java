@@ -180,7 +180,9 @@ public class DownloadTreeTableModel extends AbstractTreeTableModel {
                     value = "";
                     break;
                 case COL_STATUS:
-                    value = "";
+                    value="";
+                    if(filePackage.getTotalDownloadSpeed()>0)
+                    value = JDUtilities.formatSeconds(filePackage.getETA())+" @ "+(filePackage.getTotalDownloadSpeed()/1024)+" kb/s";
                     break;
                 
                 case COL_PROGRESS:

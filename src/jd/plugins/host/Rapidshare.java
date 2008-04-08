@@ -968,7 +968,7 @@ private static final String  PATTERN_ERROR_2_OCCURED ="<script>alert(\"°\")</sc
 
                     requestInfo = headRequest(new URL(link), null, "", false);
                     headLength = Long.parseLong(requestInfo.getConnection().getHeaderField("Content-Length"));
-                    if (requestInfo.getConnection().getHeaderField("Content-Length") == null || Long.parseLong(requestInfo.getConnection().getHeaderField("Content-Length")) <= 1024 * 100) {
+                    if (requestInfo.getConnection().getHeaderField("Content-Length") == null || requestInfo.getConnection().getHeaderField("Content-Disposition")==null) {
                         requestInfo = getRequest(new URL(link), null, "", false);
                         if (requestInfo.getHtmlCode().indexOf(hardwareDefektString) > 0) {
                             step.setStatus(PluginStep.STATUS_ERROR);

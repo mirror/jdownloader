@@ -133,25 +133,25 @@ public class DownloadTreeTable extends JXTreeTable implements TreeExpansionListe
             switch (c) {
 
                 case DownloadTreeTableModel.COL_PART:
-                    column.setPreferredWidth(140);
-                    column.setMinWidth(140);
+                    column.setPreferredWidth(110);
+                    column.setMinWidth(110);
                     // column.setMaxWidth(140);
                     break;
                 case DownloadTreeTableModel.COL_FILE:
-                    column.setPreferredWidth(200);
+                    column.setPreferredWidth(160);
                     // column.setMinWidth(180);
                     break;
                 case DownloadTreeTableModel.COL_HOSTER:
                     column.setPreferredWidth(100);
-                    column.setMaxWidth(120);
+                    column.setMaxWidth(100);
                     break;
                 case DownloadTreeTableModel.COL_STATUS:
-                    column.setPreferredWidth(140);
-                    column.setMaxWidth(140);
+                    column.setPreferredWidth(160);
+                    column.setMaxWidth(160);
                     break;
                 case DownloadTreeTableModel.COL_PROGRESS:
-                    column.setPreferredWidth(150);
-                    // column.setMaxWidth(200);
+                    column.setPreferredWidth(160);
+                     column.setMaxWidth(160);
                     break;
             }
         }

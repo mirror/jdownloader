@@ -69,8 +69,8 @@ public class PackageInfo extends JDialog {
        addEntry(null,null);
        addEntry("comment",fp.getComment());
        addEntry("dldirectory",fp.getDownloadDirectory());
-       addEntry("packagesize",JDUtilities.formatBytesToMB(fp.getEstimatedPackageSize()));
-       addEntry("loaded",JDUtilities.formatBytesToMB(fp.getTotalLoadedPackageBytes()));
+       addEntry("packagesize",JDUtilities.formatBytesToMB(fp.getTotalEstimatedPackageSize()));
+       addEntry("loaded",JDUtilities.formatBytesToMB(fp.getTotalBytesLoaded()));
        addEntry(null,null);
        addEntry("properties",fp.getProperties()+"");
     }

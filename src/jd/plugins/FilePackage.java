@@ -41,24 +41,44 @@ public class FilePackage extends Property implements Serializable {
     /**
      * Zählt die instanzierungen durch um eine ID zu erstellen
      */
-    private static int           counter          = 0;
+    private static int counter = 0;
 
     /**
      * Eindeutige PaketID
      */
-    private String               id;
+    private String id;
 
-    private static final long    serialVersionUID = -8859842964299890820L;
+    private static final long serialVersionUID = -8859842964299890820L;
 
-    private String               comment;
+    private static final long UPDATE_INTERVAL = 1000;
 
-    private String               password;
+    private static final long SIZE_LIMIT = (1024*1024*1024);
 
-    private String               name;
+    private String comment;
 
-    private String               downloadDirectory;
+    private String password;
+
+    private String name;
+
+    private String downloadDirectory;
 
     private Vector<DownloadLink> downloadLinks;
+
+    private int totalEstimatedPackageSize;
+
+    private int totalDownloadSpeed;
+
+    private int linksFinished;
+
+    private int linksInProgress;
+
+    private int linksFailed;
+
+    private int totalBytesLoaded;
+
+    private long updateTime;
+
+
 
     public FilePackage() {
         downloadDirectory = JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_DOWNLOAD_DIRECTORY);
@@ -144,6 +164,51 @@ public class FilePackage extends Property implements Serializable {
      */
     public boolean hasDownloadDirectory() {
         return downloadDirectory != null && downloadDirectory.length() > 0;
+    }
+
+    private void updateCollectives() {
+        this.updateTime = System.currentTimeMillis();
+       
+        this.totalEstimatedPackageSize = 0;
+        this.totalDownloadSpeed = 0;
+        this.linksFinished = 0;
+        this.linksInProgress = 0;
+        this.linksFailed = 0;
+        this.totalBytesLoaded = 0;
+        long avg = 0;
+        DownloadLink next;
+        int i = 0;
+        
+     
+        synchronized (downloadLinks) {
+            for (Iterator<DownloadLink> it = downloadLinks.iterator(); it.hasNext();) {
+                next = it.next();
+               
+                if (next.getDownloadMax() > 0) {
+                   
+                    totalEstimatedPackageSize += next.getDownloadMax()/1024;
+                
+                    avg = (i * avg + next.getDownloadMax()/1024) / (i + 1);
+                    i++;
+                } else {
+                    if (it.hasNext()) {
+                        totalEstimatedPackageSize += avg;
+                    } else {
+                        totalEstimatedPackageSize += avg / (2);
+                    }
+
+                }
+                totalDownloadSpeed += Math.max(0,next.getDownloadSpeed());
+                totalBytesLoaded += next.getDownloadCurrent()/1024;
+                linksInProgress += next.isInProgress() ? 1 : 0;
+                linksFinished += next.getStatus() == DownloadLink.STATUS_DONE ? 1 : 0;
+                if (next.getStatus() != DownloadLink.STATUS_DONE && next.getStatus() != DownloadLink.STATUS_DOWNLOAD_IN_PROGRESS && next.getStatus() != DownloadLink.STATUS_DOWNLOAD_INCOMPLETE && next.getStatus() != DownloadLink.STATUS_TODO) {
+                    linksFailed++;
+                }
+            }
+
+        }
+
     }
 
     /**
@@ -234,42 +299,96 @@ public class FilePackage extends Property implements Serializable {
         return downloadLinks.size();
     }
 
-    public long getEstimatedPackageSize() {
-        long total = 0;
-        int avg = 0;
-        int i = 0;
-        int current;
-        DownloadLink next;
-        for (Iterator<DownloadLink> it = downloadLinks.iterator(); it.hasNext();) {
-            next = it.next();
-            current = (int) next.getDownloadMax();
-            if (current <= 0) {
-                current = avg;
-            }
-            avg = avg * i + current / (i + 1);
-            total += current;
-        }
-        return total;
-    }
-
-    public long getTotalLoadedPackageBytes() {
-        long total = 0;
-        for (Iterator<DownloadLink> it = downloadLinks.iterator(); it.hasNext();) {
-            total += it.next().getDownloadCurrent();
-        }
-        return total;
-    }
-
     public void sort(String string) {
-        synchronized(downloadLinks){
-        Collections.sort(downloadLinks, new Comparator<DownloadLink>() {
+        synchronized (downloadLinks) {
+            Collections.sort(downloadLinks, new Comparator<DownloadLink>() {
 
-            public int compare(DownloadLink a, DownloadLink b) {
-                return a.getName().compareToIgnoreCase(b.getName());
-            }
-        });
+                public int compare(DownloadLink a, DownloadLink b) {
+                    return a.getName().compareToIgnoreCase(b.getName());
+                }
+            });
         }
-        
+
     }
+
+    /**
+     * Diese Werte werden durch itterieren durch die downloadListe ermittelt. Um
+     * dies nicht zu oft machen zu müssen geschiet das intervalartig
+     * 
+     * @return
+     */
+    /**
+     * Gibt den Fortschritt des pakets in prozent zurück
+     */
+    public double getPercent() {
+        if ((System.currentTimeMillis() - this.updateTime) > UPDATE_INTERVAL) this.updateCollectives();
+
+        return (100.0 * totalBytesLoaded) / Math.max(totalDownloadSpeed, totalEstimatedPackageSize);
+    }
+/**
+ * Gibt die vorraussichtlich verbleibende Downloadzeit für dieses paket zurück
+ * @return
+ */
+    public int getETA() {
+        if ((System.currentTimeMillis() - this.updateTime) > UPDATE_INTERVAL) this.updateCollectives();
+        if(totalDownloadSpeed==0)return -1;
+        return (Math.max(totalDownloadSpeed, totalEstimatedPackageSize) - totalBytesLoaded) / (totalDownloadSpeed/1024);
+
+    }
+/**
+ * Gibt die geschätzte Gesamtgröße des Pakets zurück
+ * @return
+ */
+    public int getTotalEstimatedPackageSize() {
+        if ((System.currentTimeMillis() - this.updateTime) > UPDATE_INTERVAL) this.updateCollectives();
+
+        return Math.max(totalDownloadSpeed, totalEstimatedPackageSize);
+    }
+/**
+ * Gibt die aktuelle Downloadgeschwinigkeit des pakets zurück
+ * @return
+ */
+    public int getTotalDownloadSpeed() {
+        if ((System.currentTimeMillis() - this.updateTime) > UPDATE_INTERVAL) this.updateCollectives();
+
+        return totalDownloadSpeed;
+    }
+/**
+ * Gibt die Anzahl der fertiggestellten Links zurück
+ * @return
+ */
+    public int getLinksFinished() {
+        if ((System.currentTimeMillis() - this.updateTime) > UPDATE_INTERVAL) this.updateCollectives();
+
+        return linksFinished;
+    }
+/**
+ * Gibt zurück wieviele Links gerade in Bearbeitung sind
+ * @return
+ */
+    public int getLinksInProgress() {
+        if ((System.currentTimeMillis() - this.updateTime) > UPDATE_INTERVAL) this.updateCollectives();
+
+        return linksInProgress;
+    }
+/**
+ * Gibt die Anzahl der fehlerhaften Links zurück
+ * @return
+ */
+    public int getLinksFailed() {
+        if ((System.currentTimeMillis() - this.updateTime) > UPDATE_INTERVAL) this.updateCollectives();
+
+        return linksFailed;
+    }
+/**
+ * Gibt zurück wieviele Bytes ingesamt schon in diesem Paket geladen wurden
+ * @return
+ */
+    public int getTotalBytesLoaded() {
+        if ((System.currentTimeMillis() - this.updateTime) > UPDATE_INTERVAL) this.updateCollectives();
+        return totalBytesLoaded;
+    }
+
+
 
 }

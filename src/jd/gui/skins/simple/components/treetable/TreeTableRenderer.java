@@ -20,24 +20,23 @@ public class TreeTableRenderer extends DefaultTableCellRenderer {
      */
     private static final long serialVersionUID = -3912572910439565199L;
 
-    private JLabel            label;
+    private JLabel label;
 
-    private JProgressBar      progress;
+    private JProgressBar progress;
 
-    private DownloadLink      dLink;
+    private DownloadLink dLink;
 
-    private FilePackage       fp;
+    private FilePackage fp;
 
-    private DecimalFormat   c= new DecimalFormat("0.00"); ;
-    
+    private DecimalFormat c = new DecimalFormat("0.00");;
+
     TreeTableRenderer() {
         this.label = new JLabel();
         this.label.setOpaque(false);
-     
-    
+
         this.progress = new JProgressBar();
         TreeProgressBarUI ui;
-        progress.setUI(ui=new TreeProgressBarUI());
+        progress.setUI(ui = new TreeProgressBarUI());
         ui.setSelectionBackground(Color.BLACK);
         ui.setSelectionForeground(Color.BLACK);
         progress.setBorderPainted(false);
@@ -46,67 +45,70 @@ public class TreeTableRenderer extends DefaultTableCellRenderer {
     }
 
     public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
-       // if (column == DownloadTreeTableModel.COL_PROGRESS) {
-            if (value instanceof DownloadLink) {
-                dLink = (DownloadLink) value;
-                if ( dLink.getRemainingWaittime() == 0 && (int) dLink.getDownloadCurrent() > 0 && ((int) dLink.getDownloadCurrent() <= (int) dLink.getDownloadMax() || dLink.getDownloadMax() < 0)) {
+        // if (column == DownloadTreeTableModel.COL_PROGRESS) {
+        if (value instanceof DownloadLink) {
+            dLink = (DownloadLink) value;
+            if (dLink.getRemainingWaittime() == 0 && (int) dLink.getDownloadCurrent() > 0 ) {
 
-                    if ((int) dLink.getDownloadMax() < 0) {
-                        progress.setMaximum(1);
-                        progress.setValue(1);
-                        progress.setStringPainted(true);
-                        progress.setBackground(Color.WHITE);
-                        progress.setString(JDUtilities.formatBytesToMB((int) dLink.getDownloadCurrent()));
+                if ((int) dLink.getDownloadMax() < 0) {
+                    progress.setMaximum(1);
+                    progress.setValue(1);
+                    progress.setStringPainted(true);
+                    progress.setBackground(Color.WHITE);
+                    progress.setString(JDUtilities.formatBytesToMB((int) dLink.getDownloadCurrent()));
 
-                    }
-                    else {
-                        if(!dLink.isInProgress()){
-                            progress.setMaximum((int) dLink.getDownloadMax());
-                            progress.setStringPainted(true);
+                } else {
+                    if (!dLink.isInProgress()) {
+                        progress.setString("");
+                        if (dLink.getStatus() == DownloadLink.STATUS_DONE) {
+                            progress.setForeground(new Color(0x94baff));
+                            progress.setString("- 100 % -");
+                        } else {
                             progress.setForeground(Color.GRAY);
-                            progress.setValue((int) dLink.getDownloadCurrent());
-                            progress.setString("");
-                        
-                        }else{
-                        progress.setMaximum((int) dLink.getDownloadMax());
+                        }
+                        progress.setMaximum(Math.max(1, (int) dLink.getDownloadMax()));
+                        progress.setStringPainted(true);
+
+                        progress.setValue((int) dLink.getDownloadCurrent());
+
+                    } else {
+                        progress.setMaximum(Math.max(1, (int) dLink.getDownloadMax()));
                         progress.setStringPainted(true);
                         progress.setForeground(new Color(0x94baff));
-                        //progress.setBackground(new Color(255, 0, 0, 80));
+                        // progress.setBackground(new Color(255, 0, 0, 80));
                         progress.setValue((int) dLink.getDownloadCurrent());
-                        progress.setString(c.format(10000 * progress.getPercentComplete()/100.0) + "% (" + JDUtilities.formatBytesToMB(progress.getValue()) + "/" + JDUtilities.formatBytesToMB(progress.getMaximum()) + ")");
-                   
-                        }}
-                    return progress;
-                }
-                else if (dLink.getRemainingWaittime() > 0 && dLink.getWaitTime() >= dLink.getRemainingWaittime()) {
-                    progress.setMaximum(dLink.getWaitTime());
-                    progress.setForeground(new Color(255, 0, 0, 80));
-                    progress.setStringPainted(true);
-                    progress.setValue((int) dLink.getRemainingWaittime());
-                    progress.setString(c.format(10000 * progress.getPercentComplete()/100.0) + "% (" + progress.getValue() / 1000 + "/" + progress.getMaximum() / 1000 + " sek)");
-                    return progress;
-                }
-                return new JLabel();
-            }
-            else if (value instanceof FilePackage) {
-                fp = (FilePackage) value;
-                progress.setMaximum(Math.max(1,(int) fp.getEstimatedPackageSize()));
-                progress.setStringPainted(true);
-                progress.setForeground(new Color(0x2f63ad));
-                
-                progress.setBackground(Color.BLACK);
-                progress.setValue((int) fp.getTotalLoadedPackageBytes());
-                progress.setString(c.format(10000 * progress.getPercentComplete()/100.0) + "% (" + JDUtilities.formatBytesToMB(progress.getValue()) + "/" + JDUtilities.formatBytesToMB(progress.getMaximum()) + ")");
+                        progress.setString(c.format(10000 * progress.getPercentComplete() / 100.0) + "% (" + JDUtilities.formatBytesToMB(progress.getValue()) + "/" + JDUtilities.formatBytesToMB(progress.getMaximum()) + ")");
 
+                    }
+                }
+                return progress;
+            } else if (dLink.getRemainingWaittime() > 0 && dLink.getWaitTime() >= dLink.getRemainingWaittime()) {
+                progress.setMaximum(dLink.getWaitTime());
+                progress.setForeground(new Color(255, 0, 0, 80));
+                progress.setStringPainted(true);
+                progress.setValue((int) dLink.getRemainingWaittime());
+                progress.setString(c.format(10000 * progress.getPercentComplete() / 100.0) + "% (" + progress.getValue() / 1000 + "/" + progress.getMaximum() / 1000 + " sek)");
                 return progress;
             }
+            label.setText("");
+            return label;
+        } else if (value instanceof FilePackage) {
+            fp = (FilePackage) value;
+            progress.setMaximum(Math.max(1, fp.getTotalEstimatedPackageSize()));
+            progress.setStringPainted(true);
+            progress.setForeground(new Color(0x2f63ad));
 
-       // }
-        
-      
-      
-       return super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+            progress.setBackground(Color.BLACK);
+            progress.setValue((int) fp.getTotalBytesLoaded());
+            progress.setString(c.format(10000 * progress.getPercentComplete() / 100.0) + "% (" + JDUtilities.formatKbReadable(progress.getValue()) + "/" + JDUtilities.formatKbReadable(progress.getMaximum()) + ")");
+
+            return progress;
+        }
+
+        // }
+
+        return super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
 
     }
-   
+
 }

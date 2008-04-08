@@ -26,7 +26,6 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
-
 import java.net.URL;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
@@ -54,8 +53,7 @@ import jd.captcha.pixelgrid.Captcha;
 import jd.config.ConfigContainer;
 import jd.config.Configuration;
 import jd.config.Property;
-import jd.plugins.event.PluginEvent;
-import jd.plugins.event.PluginListener;
+import jd.event.ControlEvent;
 import jd.unrar.JUnrar;
 import jd.utils.JDUtilities;
 
@@ -260,12 +258,7 @@ public abstract class Plugin {
      */
     public abstract PluginStep doStep(PluginStep step, Object parameter);
 
-    /**
-     * Hiermit wird der Eventmechanismus realisiert. Alle hier eingetragenen
-     * Listener werden benachrichtigt, wenn mittels
-     * {@link #firePluginEvent(PluginEvent)} ein Event losgeschickt wird.
-     */
-    public Vector<PluginListener> pluginListener     = null;
+
 
     /**
      * Hier werden alle notwendigen Schritte des Plugins hinterlegt
@@ -296,7 +289,7 @@ public abstract class Plugin {
     public static Logger          logger             = JDUtilities.getLogger();
 
     protected Plugin() {
-        pluginListener = new Vector<PluginListener>();
+      
         this.initTime = System.currentTimeMillis();
         steps = new Vector<PluginStep>();
         config = new ConfigContainer(this);
@@ -410,9 +403,11 @@ public abstract class Plugin {
         for (int i = 0; i < steps.size(); i++) {
             steps.elementAt(i).setStatus(0);
         }
-        firePluginEvent(new PluginEvent(this, PluginEvent.PLUGIN_DATA_CHANGED, null));
+        firePluginDataChanged();
     }
-
+    private void firePluginDataChanged(){
+        JDUtilities.getController().fireControlEvent(new ControlEvent(this,ControlEvent.PLUGIN_CONTROL_DATA_CHANGED));
+    }
     /**
      * @author olimex Fügt Map als String mit Trennzeichen zusammen TODO:
      *         auslagern
@@ -1118,31 +1113,6 @@ public abstract class Plugin {
         return parameterLine.toString();
     }
 
-    // /////////////////////////////////////////////////////
-    // Multicaster
-    public void addPluginListener(PluginListener listener) {
-        if (listener == null) return;
-        synchronized (pluginListener) {
-            pluginListener.add(listener);
-        }
-    }
-
-    public void removePluginListener(PluginListener listener) {
-        synchronized (pluginListener) {
-            pluginListener.remove(listener);
-        }
-    }
-
-    public void firePluginEvent(PluginEvent pluginEvent) {
-        synchronized (pluginListener) {
-            Iterator<PluginListener> recIt = pluginListener.iterator();
-
-            while (recIt.hasNext()) {
-               
-                ((PluginListener) recIt.next()).pluginEvent(pluginEvent);
-            }
-        }
-    }
 
     /**
      * Gibt den md5hash einer Datei als String aus

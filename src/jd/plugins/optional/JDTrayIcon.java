@@ -45,7 +45,7 @@ import jd.config.ConfigEntry;
 import jd.config.Configuration;
 import jd.gui.skins.simple.JDAction;
 import jd.plugins.PluginOptional;
-import jd.plugins.event.PluginEvent;
+
 import jd.utils.JDLocale;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
@@ -222,25 +222,28 @@ public class JDTrayIcon extends PluginOptional implements ActionListener {
     		toggleshowhide();
     	}
     	else if(e.getSource() == exit) {
-    		firePluginEvent(new PluginEvent(this, PluginEvent.PLUGIN_CONTROL_EXIT, null));
+    	    JDUtilities.getController().exit();
+    		
     	}
     	else if(e.getSource() == startstop) {
-    		firePluginEvent(new PluginEvent(this, PluginEvent.PLUGIN_CONTROL_START_STOP, null));
+    	    JDUtilities.getController().toggleStartStop();
+    		
     	}
     	else if(e.getSource() == clipboard) {
-    		simplegui.actionPerformed(new ActionEvent(JDAction.APP_CLIPBOARD, JDAction.APP_CLIPBOARD, null));
+    		simplegui.actionPerformed(new ActionEvent(this, JDAction.APP_CLIPBOARD, null));
     	}
-    	else if(e.getSource() == dnd) {
-    		firePluginEvent(new PluginEvent(this, PluginEvent.PLUGIN_CONTROL_DND, null));
+    	else if(e.getSource() == dnd) {    		
+    		  simplegui.actionPerformed(new ActionEvent(this, JDAction.ITEMS_DND, null));   	        
+    	
     	}
     	else if(e.getSource() == stopafter) {
-    		simplegui.actionPerformed(new ActionEvent(JDAction.APP_PAUSE_DOWNLOADS, JDAction.APP_PAUSE_DOWNLOADS, null));
+    		simplegui.actionPerformed(new ActionEvent(this, JDAction.APP_PAUSE_DOWNLOADS, null));
     	}
     	else if(e.getSource() == update) {
-    		simplegui.actionPerformed(new ActionEvent(JDAction.APP_UPDATE, JDAction.APP_UPDATE, null));
+    		simplegui.actionPerformed(new ActionEvent(this, JDAction.APP_UPDATE, null));
     	}
     	else if(e.getSource() == configuration) {
-    		simplegui.actionPerformed(new ActionEvent(JDAction.APP_CONFIGURATION, JDAction.APP_CONFIGURATION, null));
+    		simplegui.actionPerformed(new ActionEvent(this, JDAction.APP_CONFIGURATION, null));
     	}
     	else if(e.getSource() == reconnect) {
     		simplegui.toggleReconnect(false);
@@ -385,11 +388,13 @@ public class JDTrayIcon extends PluginOptional implements ActionListener {
 
 	private void toggleshowhide() {
 		if(showhide.getText().equals(JDLocale.L("plugins.optional.trayIcon.hide","Hide"))) {
-			firePluginEvent(new PluginEvent(this, PluginEvent.PLUGIN_CONTROL_SHOW_UI, false));
+		
+			this.simplegui.getFrame().setVisible(false);
 			showhide.setText(JDLocale.L("plugins.optional.trayIcon.show","Show"));
 		}
 		else if(showhide.getText().equals(JDLocale.L("plugins.optional.trayIcon.show","Show"))) {
-			firePluginEvent(new PluginEvent(this, PluginEvent.PLUGIN_CONTROL_SHOW_UI, true));
+			
+			this.simplegui.getFrame().setVisible(true);
 			showhide.setText(JDLocale.L("plugins.optional.trayIcon.hide","Hide"));
 		}
 	}

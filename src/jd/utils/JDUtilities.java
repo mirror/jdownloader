@@ -2301,4 +2301,12 @@ public class JDUtilities {
         
     }
 
+    public static String formatKbReadable(int value) {
+        DecimalFormat   c= new DecimalFormat("0.00"); ;
+        if(value>=(1024*1024))return c.format(value/(1024*1024.0))+" GB";
+        if(value>=(1024))return c.format(value/1024.0)+" MB";
+        return value+" KB";
+       
+    }
+
 }

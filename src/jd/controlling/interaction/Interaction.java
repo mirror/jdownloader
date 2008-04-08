@@ -28,7 +28,7 @@ import jd.config.Property;
 import jd.controlling.JDController;
 import jd.event.ControlEvent;
 import jd.event.ControlListener;
-import jd.plugins.event.PluginEvent;
+
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
@@ -54,7 +54,6 @@ public abstract class Interaction extends Property implements Serializable {
     /**
      * Hiermit wird der Eventmechanismus realisiert. Alle hier eingetragenen
      * Listener werden benachrichtigt, wenn mittels
-     * {@link #firePluginEvent(PluginEvent)} ein Event losgeschickt wird.
      */
     private transient Vector<ControlListener> controlListener                       = null;
     /**

@@ -26,7 +26,7 @@ import jd.event.UIEvent;
 import jd.event.UIListener;
 import jd.plugins.DownloadLink;
 import jd.plugins.Plugin;
-import jd.plugins.event.PluginEvent;
+
 
 /**
  * INterface für alle GUIS
@@ -49,12 +49,7 @@ public interface UIInterface extends ControlListener {
 //     * @param downloadLinks Alle DownloadLinks
 //     */
 //    public void setDownloadLinks(Vector<DownloadLink> downloadLinks);
-    /**
-     * Leitet ein PluginEvent weiter
-     * 
-     * @param event Ein PluginEvent
-     */
-    public void delegatedPluginEvent(PluginEvent event);
+ 
 
     /**
      * Fügt einen UIListener hinzu

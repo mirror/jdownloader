@@ -300,6 +300,8 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
 
     private int[] chunksProgress=null;
 
+    private int partID=-1;
+
     /**
      * Erzeugt einen neuen DownloadLink
      * 
@@ -605,11 +607,32 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
     public void setName(String name) {
         if (name != null && name.length() > 3) {
             this.name = name;
+            updatePartID();
+            
         }
         else {
             logger.severe("Set invalid filename: " + name);
         }
 
+    }
+    private void updatePartID(){
+        String name= this.getName();
+        String ext;
+        int index;
+        this.partID= -1;
+        while(name.length()>0){
+            index=name.lastIndexOf(".");
+            if(index<=0)index=name.length()-1;
+            ext=name.substring(index+1);            
+            name=name.substring(0,index);
+            try{
+            this.partID=Integer.parseInt(JDUtilities.filterString(ext, "1234567890"));
+            break;
+            }catch(Exception e){ }
+         
+        }
+       
+        
     }
 
     /**
@@ -886,6 +909,7 @@ this.chunksProgress=null;
      */
     public void setStaticFileName(String staticFileName) {
         this.staticFileName = staticFileName;
+        updatePartID();
     }
 
     /**
@@ -1061,20 +1085,10 @@ if(maximalspeed<=0){
     }
 
     public int getPartByName() {
-        String name= this.getName();
-        String ext;
-        int index;
-        while(name.length()>0){
-            index=name.lastIndexOf(".");
-            if(index<=0)index=name.length()-1;
-            ext=name.substring(index+1);            
-            name=name.substring(0,index);
-            try{
-            return Integer.parseInt(JDUtilities.filterString(ext, "1234567890"));
-            
-            }catch(Exception e){ }
-         
+        if(partID<0){
+            this.setName(this.extractFileNameFromURL());
         }
-        return -1;
+        return this.partID;
+      
     }
 }
