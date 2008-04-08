@@ -87,6 +87,10 @@ public class UIEvent extends AWTEvent{
 
     public static final int UI_PAUSE_DOWNLOADS = 16;
 
+    public static final int   UI_SET_STARTSTOP_BUTTON_STATE = 17;
+
+    public static final int   UI_SET_MINIMIZED              = 18;
+
     
     public UIEvent(UIInterface uiInterface, int actionID){
         this(uiInterface,actionID,null);

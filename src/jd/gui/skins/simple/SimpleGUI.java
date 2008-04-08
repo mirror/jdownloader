@@ -1184,6 +1184,24 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
                     fireUIEvent(new UIEvent(this, UIEvent.UI_LOAD_LINKS, uiEvent.getParameter()));
                 }
                 break;
+            case UIEvent.UI_SET_STARTSTOP_BUTTON_STATE:
+                Boolean state1 = (Boolean) uiEvent.getParameter();
+                if ( state1 == null ) break;
+                btnStartStop.setSelected(state1);
+                break;
+            case UIEvent.UI_SET_MINIMIZED:
+                Boolean state2 = (Boolean) uiEvent.getParameter();
+                if ( state2 == null ) break;
+                if (state2) {
+                	frame.setState(JFrame.ICONIFIED);
+        		} else {
+                	frame.setState(JFrame.NORMAL);
+                	frame.setFocusableWindowState(false);
+                	frame.setVisible(true);
+                	frame.toFront();
+                	frame.setFocusableWindowState(true);
+                }
+                break;
 
         }
     }
@@ -1403,24 +1421,6 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
                 if(event.getSource().getClass()==JDController.class){
                 
                 }
-            case ControlEvent.CONTROL_SET_STARTSTOP_BUTTON_STATE:
-                Boolean state1 = (Boolean) event.getParameter();
-                if ( state1 == null ) break;
-                btnStartStop.setSelected(state1);
-                break;
-            case ControlEvent.CONTROL_SET_MINIMIZED:
-                Boolean state2 = (Boolean) event.getParameter();
-                if ( state2 == null ) break;
-                if (state2) {
-                	frame.setState(JFrame.ICONIFIED);
-        		} else {
-                	frame.setState(JFrame.NORMAL);
-                	frame.setFocusableWindowState(false);
-                	frame.setVisible(true);
-                	frame.toFront();
-                	frame.setFocusableWindowState(true);
-                }
-                break;
         }
         
     }

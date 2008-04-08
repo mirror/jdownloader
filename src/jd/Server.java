@@ -122,7 +122,7 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
 				extractSwitch = false;
 
 				logger.info(currentArg + " parameter");
-				JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SET_STARTSTOP_BUTTON_STATE, true));
+				JDUtilities.getGUI().fireUIEvent(new UIEvent(this, UIEvent.UI_SET_STARTSTOP_BUTTON_STATE, true));
 				JDUtilities.getController().startDownloads();
 
 			} else if (currentArg.equals("--stop-download")
@@ -134,7 +134,7 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
 				extractSwitch = false;
 
 				logger.info(currentArg + " parameter");
-				JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SET_STARTSTOP_BUTTON_STATE, false));
+				JDUtilities.getGUI().fireUIEvent(new UIEvent(this, UIEvent.UI_SET_STARTSTOP_BUTTON_STATE, false));
 				JDUtilities.getController().stopDownloads();
 
 			} else if (currentArg.equals("--show") || currentArg.equals("-s")) {
@@ -162,17 +162,17 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
 				addContainersSwitch = false;
 				addPasswordsSwitch = false;
 				extractSwitch = false;
-				JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SET_MINIMIZED, true));
+				JDUtilities.getGUI().fireUIEvent(new UIEvent(this, UIEvent.UI_SET_MINIMIZED, true));
 				logger.info(currentArg + " parameter");
 
-			} else if (currentArg.equals("--foreground")
+			} else if (currentArg.equals("--focus")
 					|| currentArg.equals("-f")) {
 
 				addLinksSwitch = false;
 				addContainersSwitch = false;
 				addPasswordsSwitch = false;
 				extractSwitch = false;
-				JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SET_MINIMIZED, false));
+				JDUtilities.getGUI().fireUIEvent(new UIEvent(this, UIEvent.UI_SET_MINIMIZED, false));
 				logger.info(currentArg + " parameter");
 
 			} else if (addLinksSwitch && currentArg.charAt(0) != '-') {
@@ -286,6 +286,7 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
 				{ "-d/--start-download", "Start download" },
 				{ "-D/--stop-download", "Stop download" },
 				{ "-m/--minimize\t", "Minimize download window" },
+				{ "-f/--focus\t", "Get jD to foreground/focus" },
 				{ "-s/--show\t", "Show JAC prepared captchas" },
 				{ "-t/--train\t", "Train a JAC method" },
 				{ "-e/--extract (<sourcePath1> (<sourcePath2...n> <targetPath>)) (-r/--rotate <seconds>)", "" },

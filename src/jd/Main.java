@@ -122,7 +122,7 @@ public class Main {
 			} else {
 				
 				logger.info("There is already a running jD instance");
-				tryConnectToServer(new String[]{"--foreground"});
+				tryConnectToServer(new String[]{"--focus"});
 				System.exit(0);
 				
 			}
