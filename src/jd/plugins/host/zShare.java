@@ -95,7 +95,7 @@ public class zShare extends PluginForHost {
             downloadLink.setName(getFileNameFormHeader(urlConnection));
             downloadLink.setDownloadMax(urlConnection.getContentLength());
   
-            RAFDownload dl = new RAFDownload(this, downloadLink, urlConnection);
+           dl = new RAFDownload(this, downloadLink, urlConnection);
     
             dl.startDownload();
             return step;

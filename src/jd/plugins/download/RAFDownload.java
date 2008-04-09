@@ -42,7 +42,6 @@ import jd.config.Configuration;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTPConnection;
 import jd.plugins.PluginForHost;
-import jd.plugins.download.DownloadInterface.DownloadFailedException;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
@@ -76,23 +75,24 @@ public class RAFDownload extends DownloadInterface {
             if (maxBytes > 0 && getChunkNum() == 1 && this.bytesLoaded >= maxBytes) {
                 error(ERROR_NIBBLE_LIMIT_REACHED);
             }    
-            if (chunk.getID() >= 0) downloadLink.getChunksProgress()[chunk.getID()] = (int) chunk.currentBytePosition + limit - 1;
+            if (chunk.getID() >= 0) downloadLink.getChunksProgress()[chunk.getID()] = (int) chunk.currentBytePosition + limit;
 
         }
         catch (Exception e) {
 
             e.printStackTrace();
             error(ERROR_LOCAL_IO);
+            addException(e);
         }
 
     }
 
     @Override
-    protected void setupChunks() throws DownloadFailedException {
+    protected void setupChunks() {
         try {
   
             boolean correctChunks = JDUtilities.getSubConfig("DOWNLOAD").getBooleanProperty("PARAM_DOWNLOAD_AUTO_CORRECTCHUNKS", true);
-            long fileSize = getFileSize();
+            fileSize = getFileSize();
             if (correctChunks) {
 
                 int tmp = Math.min(Math.max(1, (int) (fileSize / Chunk.MIN_CHUNKSIZE)), getChunkNum());
@@ -110,26 +110,20 @@ public class RAFDownload extends DownloadInterface {
             if (checkResumabled() && plugin.getFreeConnections() >= getChunkNum()) {
                 logger.info("Resume: " + fileSize);
                 long parts = fileSize / getChunkNum();
-                // if (parts == -1) {
-                // logger.warning("Could not get Filesize.... reset chunks to
-                // 1");
-                // setChunkNum(1);
-                // }
-                // logger.finer("Start Download in " + getChunkNum() + " chunks.
-                // Chunksize: " + parts);
-
-                // downloadLink.setChunksProgress(new int[chunkNum]);
+           
                 Chunk chunk;
 
                 outputFile = new RandomAccessFile(downloadLink.getFileOutput() + ".part", "rw");
-
+               
                 outputChannel = outputFile.getChannel();
                 for (int i = 0; i < getChunkNum(); i++) {
                     if (i == (getChunkNum() - 1)) {
-                        chunk = new Chunk(downloadLink.getChunksProgress()[i], -1, connection);
-                    }
+                        chunk = new Chunk(downloadLink.getChunksProgress()[i]+1, -1, connection);
+                        chunk.setLoaded((int)(downloadLink.getChunksProgress()[i]-i * parts+1));
+                     }
                     else {
-                        chunk = new Chunk(downloadLink.getChunksProgress()[i], (i + 1) * parts, connection);
+                        chunk = new Chunk(downloadLink.getChunksProgress()[i]+1, (i + 1) * parts-1, connection);
+                        chunk.setLoaded((int)(downloadLink.getChunksProgress()[i]-i * parts+1));
                     }
 
                     addChunk(chunk);
@@ -153,17 +147,25 @@ public class RAFDownload extends DownloadInterface {
 
                 outputChannel = outputFile.getChannel();
                 downloadLink.setChunksProgress(new int[chunkNum]);
+                logger.info("Filesize = "+fileSize);
+                logger.info("Partsize = "+parts);
+                int total=0;
                 for (int i = 0; i < getChunkNum(); i++) {
 
                     if (i == (getChunkNum() - 1)) {
                         chunk = new Chunk(i * parts, -1, connection);
+                        total+=(fileSize-i * parts);
+                        logger.info("+part "+(fileSize-i * parts));
                     }
                     else {
-                        chunk = new Chunk(i * parts, (i + 1) * parts, connection);
+                        chunk = new Chunk(i * parts, (i + 1) * parts-1, connection);
+                        total+=((i + 1) * parts-i * parts);
+                        logger.info("+part "+((i + 1) * parts-i * parts));
                     }
 
                     addChunk(chunk);
                 }
+                logger.info("Total splitted size: "+total);
             }
 
         }
@@ -177,7 +179,7 @@ public class RAFDownload extends DownloadInterface {
             }
             catch (Exception e2) {
             }
-            throw new DownloadFailedException("Chunksetup failed: " + JDUtilities.convertExceptionReadable(e));
+            addException(e);
         }
 
     }
@@ -198,8 +200,8 @@ public class RAFDownload extends DownloadInterface {
 
             this.setChunkNum(chunks);
             logger.info("Resume with " + chunks + " chunks");
-            this.bytesLoaded = loaded;
-            downloadLink.setDownloadCurrent(bytesLoaded);
+           
+         
             return true;
         }
         return false;
@@ -207,7 +209,7 @@ public class RAFDownload extends DownloadInterface {
     }
 
     @Override
-    protected void onChunksReady() throws DownloadFailedException {
+    protected void onChunksReady() {
 
        System.gc();
        System.runFinalization();
@@ -219,29 +221,23 @@ public class RAFDownload extends DownloadInterface {
             outputChannel.close();
             if (!handleErrors()) {
 
-                throw new DownloadFailedException("Download failed after chunks were ready");
+                return;
             }
           if(!  new File(downloadLink.getFileOutput() + ".part").renameTo(new File(downloadLink.getFileOutput()))){
               
               logger.severe("Could not rename file " + new File(downloadLink.getFileOutput() + ".part") + " to " + downloadLink.getFileOutput());
               error(ERROR_COULD_NOT_RENAME);
-
-              throw new DownloadFailedException("Rename error");
+             
           }
+       
 
-        }
-        catch (FileNotFoundException e) {
-            e.printStackTrace();
-            throw new DownloadFailedException("Chunkfile not found");
-        }
-        catch (IOException e) {
-            e.printStackTrace();
-            throw new DownloadFailedException("IO Merge Error");
         }
         catch (Exception e) {
             e.printStackTrace();
-            throw new DownloadFailedException(JDUtilities.convertExceptionReadable(e));
+            addException(e);
         }
+      
+      
 
     }
 

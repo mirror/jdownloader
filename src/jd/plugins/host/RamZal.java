@@ -98,7 +98,7 @@ public class RamZal extends PluginForHost {
 				step.setStatus(PluginStep.STATUS_ERROR);
 				return step;
 			}
-		    RAFDownload dl = new RAFDownload(this, downloadLink, urlConnection);
+		   dl = new RAFDownload(this, downloadLink, urlConnection);
 
             if (!dl.startDownload() && step.getStatus() != PluginStep.STATUS_ERROR && step.getStatus() != PluginStep.STATUS_TODO) {
                 downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN);

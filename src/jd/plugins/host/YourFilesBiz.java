@@ -204,7 +204,7 @@ public class YourFilesBiz extends PluginForHost {
                 case PluginStep.STEP_DOWNLOAD:
                 	
                     // Download starten
-                    RAFDownload dl = new RAFDownload(this, downloadLink, urlConnection);
+                   dl = new RAFDownload(this, downloadLink, urlConnection);
                    
                   dl.startDownload();
                    

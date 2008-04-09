@@ -8,6 +8,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
+import java.awt.event.MouseMotionListener;
 import java.io.File;
 import java.util.Iterator;
 import java.util.Vector;
@@ -48,7 +49,7 @@ import edu.stanford.ejalbert.BrowserLauncher;
 import edu.stanford.ejalbert.exception.BrowserLaunchingInitializingException;
 import edu.stanford.ejalbert.exception.UnsupportedOperatingSystemException;
 
-public class DownloadTreeTable extends JXTreeTable implements TreeExpansionListener, TreeSelectionListener, MouseListener, ActionListener {
+public class DownloadTreeTable extends JXTreeTable implements TreeExpansionListener, TreeSelectionListener, MouseListener, ActionListener,MouseMotionListener {
     private Logger                 logger            = JDUtilities.getLogger();
 
     public static final String     PROPERTY_EXPANDED = "expanded";
@@ -59,6 +60,8 @@ public class DownloadTreeTable extends JXTreeTable implements TreeExpansionListe
 
     private TableCellRenderer      cellRenderer;
 
+    public int mouseOverRow=-1;
+
     public DownloadTreeTable(DownloadTreeTableModel treeModel) {
         super(treeModel);
 
@@ -67,6 +70,8 @@ public class DownloadTreeTable extends JXTreeTable implements TreeExpansionListe
         this.setUI(new TreeTablePaneUI());
         this.getTableHeader().setReorderingAllowed(false);
         this.getTableHeader().setResizingAllowed(false);
+        this.setExpandsSelectedPaths(true);
+        this.setToggleClickCount(1);
         this.setDropMode(DropMode.INSERT_ROWS);
         setAutoResizeMode(JTable.AUTO_RESIZE_LAST_COLUMN);
         setSelectionMode(ListSelectionModel.SINGLE_INTERVAL_SELECTION);
@@ -79,6 +84,7 @@ public class DownloadTreeTable extends JXTreeTable implements TreeExpansionListe
         addTreeExpansionListener(this);
         addTreeSelectionListener(this);
         addMouseListener(this);
+        this.addMouseMotionListener(this);
         this.setTransferHandler(new TreeTableTransferHandler(this));
 
     }
@@ -252,7 +258,10 @@ public class DownloadTreeTable extends JXTreeTable implements TreeExpansionListe
         }
     }
 
-    public void mouseEntered(MouseEvent e) {}
+    public void mouseEntered(MouseEvent e) {
+        logger.info("dsda");
+        
+    }
 
     public void mouseExited(MouseEvent e) {}
 
@@ -261,15 +270,22 @@ public class DownloadTreeTable extends JXTreeTable implements TreeExpansionListe
     public void mousePressed(MouseEvent e) {
         // TODO: isPopupTrigger() funktioniert nicht
         // logger.info("Press"+e.isPopupTrigger() );
+        Point point = e.getPoint();
+        int row = this.rowAtPoint(point);
+    
+        if(!this.isRowSelected(row)){
+            getTreeSelectionModel().clearSelection();
+            getTreeSelectionModel().addSelectionPath(getPathForRow(row));
+        }
         if (e.isPopupTrigger() || e.getButton() == MouseEvent.BUTTON3) {
-            Point point = e.getPoint();
-            int row = this.rowAtPoint(point);
-            int column = this.columnAtPoint(point);
+            
+            
+         
             if(getPathForRow(row)==null)return;
             Object obj = getPathForRow(row).getLastPathComponent();
 
             if (obj instanceof DownloadLink) {
-                TreeTableAction action;
+              
                 JPopupMenu popup = new JPopupMenu();
                 popup.add(new JMenuItem(new TreeTableAction(this, "info", TreeTableAction.DOWNLOAD_INFO, new Property("downloadlink", obj))));
                 popup.add(new JSeparator());
@@ -550,6 +566,17 @@ public class DownloadTreeTable extends JXTreeTable implements TreeExpansionListe
                 break;
         }
 
+    }
+
+    public void mouseDragged(MouseEvent e) {
+  
+        
+    }
+
+    public void mouseMoved(MouseEvent e) {
+       this.mouseOverRow=this.rowAtPoint(e.getPoint());
+    
+        
     }
 
 }

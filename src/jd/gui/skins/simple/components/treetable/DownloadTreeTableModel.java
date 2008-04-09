@@ -181,8 +181,12 @@ public class DownloadTreeTableModel extends AbstractTreeTableModel {
                     break;
                 case COL_STATUS:
                     value="";
+                    
+                    if(filePackage.getLinksInProgress()>0){
+                        value=filePackage.getLinksInProgress()+"/"+filePackage.size()+" "+JDLocale.L("gui.treetable.packagestatus.links_active","aktiv");
+                    }
                     if(filePackage.getTotalDownloadSpeed()>0)
-                    value = JDUtilities.formatSeconds(filePackage.getETA())+" @ "+(filePackage.getTotalDownloadSpeed()/1024)+" kb/s";
+                    value = "["+filePackage.getLinksInProgress()+"/"+filePackage.size()+"] "+"ETA "+JDUtilities.formatSeconds(filePackage.getETA())+" @ "+JDUtilities.formatKbReadable(filePackage.getTotalDownloadSpeed()/1024)+"/s";
                     break;
                 
                 case COL_PROGRESS:

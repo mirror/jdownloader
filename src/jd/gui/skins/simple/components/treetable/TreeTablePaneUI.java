@@ -23,29 +23,31 @@ import jd.plugins.FilePackage;
 
 public class TreeTablePaneUI extends BasicTableUI {
 
-    public static final Color  evenRowColor            = new Color(0xEDF3FE);
+    public static final Color evenRowColor = new Color(0xEDF3FE);
 
-    public static final Color  oddRowColor             = Color.WHITE;
+    public static final Color oddRowColor = Color.WHITE;
 
-    public static final Color  selectedRowColor        = Color.WHITE;
+    public static final Color selectedRowColor = Color.WHITE;
 
-    public static final Color  gridColor               = new Color(150, 150, 150);
+    public static final Color gridColor = new Color(150, 150, 150);
 
-    public static final Color  packageColor            = new Color(0x94baff);
+    public static final Color packageColor = new Color(0x94baff);
 
-    public static final Color  selectedFocusedColor    = new Color(0x3D80DF);
+    public static final Color selectedFocusedColor = new Color(0x3D80DF);
 
-    public static final Color  selectedNotFocusedColor = new Color(0x3D80DF);
+    public static final Color selectedNotFocusedColor = new Color(0x3D80DF);
 
-    private static final Color COLOR_DONE              = new Color(0, 255, 0, 20);
+    public static final Color selectedBorderColor = Color.BLACK;
 
-    private static final Color COLOR_ERROR             = new Color(255, 0, 0, 20);
+    private static final Color COLOR_DONE = new Color(0xacff9e).brighter();
 
-    private static final Color COLOR_DISABLED          = new Color(50, 50, 50, 50);
+    private static final Color COLOR_ERROR = new Color(255, 0, 0, 20);
 
-    private static final Color COLOR_WAIT              = new Color(0, 0, 100, 20);
+    private static final Color COLOR_DISABLED = new Color(50, 50, 50, 50);
 
-    private static final Color COLOR_ERROR_OFFLINE     = new Color(255, 0, 0, 60);
+    private static final Color COLOR_WAIT = new Color(0, 0, 100, 20);
+
+    private static final Color COLOR_ERROR_OFFLINE = new Color(255, 0, 0, 60);
 
     // ------------------------------------------------------------------------------------------------------------------
     // Custom installation methods
@@ -80,7 +82,7 @@ public class TreeTablePaneUI extends BasicTableUI {
     // ------------------------------------------------------------------------------------------------------------------
 
     public void paint(Graphics g, JComponent c) {
-        
+
         ((DownloadTreeTable) c).onRefresh();
         int vRowHeight = c.getFont().getSize() + 6;
 
@@ -105,17 +107,21 @@ public class TreeTablePaneUI extends BasicTableUI {
         while (y < y2) {
             path = ((DownloadTreeTable) c).getPathForRow(row);
             color = row % 2 == 0 ? evenRowColor : oddRowColor;
-            if (((JTable) c).isRowSelected(row)) {
-                if (c.hasFocus()) {
-                    color = selectedFocusedColor;
-                }
-                else {
-                    color = selectedNotFocusedColor;
+            // if (((JTable) c).isRowSelected(row)) {
+            // if (c.hasFocus()) {
+            // color = selectedFocusedColor;
+            // }
+            // else {
+            // color = selectedNotFocusedColor;
+            //
+            // }
+            // }
+            // else {
+            if (((DownloadTreeTable) c).isRowSelected(row)) {
 
-                }
-            }
-            else {
+                color = selectedFocusedColor;
 
+            } else {
                 if (path != null && path.getLastPathComponent() instanceof FilePackage) {
 
                     color = packageColor;
@@ -123,20 +129,16 @@ public class TreeTablePaneUI extends BasicTableUI {
                     // 1));
                     g.setColor(Color.BLACK);
                     g.drawLine(x, y, w, y);
-                }
-                else if (path != null && path.getLastPathComponent() instanceof DownloadLink) {
+                } else if (path != null && path.getLastPathComponent() instanceof DownloadLink) {
                     dLink = ((DownloadLink) path.getLastPathComponent());
 
                     if (!dLink.isEnabled()) {
                         color = (COLOR_DISABLED);
-                    }
-                    else if (dLink.getRemainingWaittime() > 0) {
+                    } else if (dLink.getRemainingWaittime() > 0) {
                         color = (COLOR_WAIT);
-                    }
-                    else if (dLink.getStatus() == DownloadLink.STATUS_DONE) {
+                    } else if (dLink.getStatus() == DownloadLink.STATUS_DONE) {
                         color = (COLOR_DONE);
-                    }
-                    else if (dLink.getStatus() != DownloadLink.STATUS_TODO && dLink.getStatus() != DownloadLink.STATUS_ERROR_DOWNLOAD_LIMIT && dLink.getStatus() != DownloadLink.STATUS_DOWNLOAD_IN_PROGRESS) {
+                    } else if (dLink.getStatus() != DownloadLink.STATUS_TODO && dLink.getStatus() != DownloadLink.STATUS_ERROR_DOWNLOAD_LIMIT && dLink.getStatus() != DownloadLink.STATUS_DOWNLOAD_IN_PROGRESS) {
                         color = (COLOR_ERROR);
                     }
 
@@ -145,12 +147,31 @@ public class TreeTablePaneUI extends BasicTableUI {
                     }
 
                 }
-
             }
+            // }
+            if (((DownloadTreeTable) c).mouseOverRow == row) {
 
-            g.setColor(color);
-            g.fillRect(x, y + 1, w, vRowHeight - 1);
+                if (((JTable) c).isRowSelected(row)) {
+                    g.setColor(color.darker());
+                    g.fillRect(x, y + 1, w, vRowHeight - 2);
+                    g.setColor(selectedBorderColor);
+                    g.draw3DRect(x, y, w, vRowHeight - 1, true);
+                } else {
+                    g.setColor(color.darker());
+                    g.fillRect(x, y + 1, w, vRowHeight - 1);
 
+                }
+            } else {
+                if (((JTable) c).isRowSelected(row)) {
+                    g.setColor(color);
+                    g.fillRect(x, y + 1, w, vRowHeight - 2);
+                    g.setColor(selectedBorderColor);
+                    g.draw3DRect(x, y, w, vRowHeight - 1, false);
+                } else {
+                    g.setColor(color);
+                    g.fillRect(x, y + 1, w, vRowHeight - 1);
+                }
+            }
             y += vRowHeight;
             row++;
         }

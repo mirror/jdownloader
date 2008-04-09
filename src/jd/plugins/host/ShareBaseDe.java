@@ -220,7 +220,7 @@ public class ShareBaseDe extends PluginForHost {
                         }
                       
                         //Download starten
-                        RAFDownload dl = new RAFDownload(this, downloadLink, urlConnection);
+                       dl = new RAFDownload(this, downloadLink, urlConnection);
                     
                         dl.startDownload();
                       	return step;

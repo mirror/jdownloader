@@ -661,16 +661,16 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
         }
         if (this.isInProgress() && (speed = getDownloadSpeed()) > 0) {
             if (getDownloadMax() < 0) {
-                return (speed / 1024) + " kb/s. " + JDLocale.L("gui.download.filesize_unknown", "(Dateigröße unbekannt)");
+                return JDUtilities.formatKbReadable(speed / 1024) + "/s " + JDLocale.L("gui.download.filesize_unknown", "(Dateigröße unbekannt)");
             }
             else {
                 if (getDownloadSpeed() == 0) {
                    
                     if (this.downloadInstance != null && downloadInstance.getChunkNum() > 1) {
-                        return (speed / 1024) + " kb/s." + "(" + downloadInstance.getChunksDownloading() + "/" + downloadInstance.getChunkNum() + ")";
+                        return JDUtilities.formatKbReadable(speed / 1024) + "/s " + "(" + downloadInstance.getChunksDownloading() + "/" + downloadInstance.getChunkNum() + ")";
                     }
                     else {
-                        return (speed / 1024) + " kb/s.";
+                        return JDUtilities.formatKbReadable(speed / 1024) + "/s ";
                     }
                 }
                 else {
@@ -678,10 +678,10 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
                     long eta = remainingBytes / speed;
                     if (this.downloadInstance != null && downloadInstance.getChunkNum() > 1) {
                        // logger.info("ETA " + JDUtilities.formatSeconds((int) eta) + " @ " + (speed / 1024) + " kb/s." + "(" + downloadInstance.getChunksDownloading() + "/" + downloadInstance.getChunks() + ")");
-                        return "ETA " + JDUtilities.formatSeconds((int) eta) + " @ " + (speed / 1024) + " kb/s." + "(" + downloadInstance.getChunksDownloading() + "/" + downloadInstance.getChunkNum() + ")";
+                        return "ETA " + JDUtilities.formatSeconds((int) eta) + " @ " + JDUtilities.formatKbReadable(speed / 1024) + "/s " + "(" + downloadInstance.getChunksDownloading() + "/" + downloadInstance.getChunkNum() + ")";
                     }
                     else {
-                        return "ETA " + JDUtilities.formatSeconds((int) eta) + " @ " + (speed / 1024) + " kb/s.";
+                        return "ETA " + JDUtilities.formatSeconds((int) eta) + " @ " + JDUtilities.formatKbReadable(speed / 1024) + "/s ";
                     }
                 }
             }
@@ -791,11 +791,11 @@ this.chunksProgress=null;
      * 
      * @param bytes
      */
-    public void addBytes(int bytes, int difftime) {
-
-        this.getSpeedMeter().addSpeedValue(bytes/difftime);
-
-    }
+//    public void addBytes(int bytes, int difftime) {
+//
+//        this.getSpeedMeter().addSpeedValue(bytes/difftime);
+//
+//    }
     public void addSpeedValue(int speed){
         this.getSpeedMeter().addSpeedValue(speed);
     }
@@ -1076,12 +1076,15 @@ if(maximalspeed<=0){
        this.chunksProgress=is;
        
             }
-
+/**
+ * Gibt ein arry mit den Chunkfortschritten zurück. Dieses Array wird von der downlaodinstanz zu resumezwecken verwendet
+ * @return
+ */
     public int[] getChunksProgress() {
         return chunksProgress;
     }
 
-    public void setAvailable(Boolean available) {
+    public void setAvailable(boolean available) {
         this.available = available;
     }
 

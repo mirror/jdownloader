@@ -264,7 +264,7 @@ public class Netloadin extends PluginForHost {
                         step.setStatus(PluginStep.STATUS_ERROR);
                         return step;
                     }
-                    RAFDownload dl = new RAFDownload(this, downloadLink,  requestInfo.getConnection());
+                   dl = new RAFDownload(this, downloadLink,  requestInfo.getConnection());
                     dl.startDownload();
                     return step;
             }
@@ -365,7 +365,7 @@ public class Netloadin extends PluginForHost {
                 downloadLink.setName(getFileNameFormHeader(requestInfo.getConnection()));
             
             
-                RAFDownload dl = new RAFDownload(this, downloadLink,  requestInfo.getConnection());
+               dl = new RAFDownload(this, downloadLink,  requestInfo.getConnection());
                 dl.setResume(true);dl.setChunkNum(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS,3));
             
                 dl.setLoadPreBytes(1);

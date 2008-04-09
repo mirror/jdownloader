@@ -66,7 +66,7 @@ public class TreeTableRenderer extends DefaultTableCellRenderer {
                     progress.setString(JDUtilities.formatBytesToMB((int) dLink.getDownloadCurrent()));
 
                 } else {
-                    if (!dLink.isInProgress()&&false) {
+                    if (!dLink.isInProgress()) {
                         progress.setString("");
                         if (dLink.getStatus() == DownloadLink.STATUS_DONE) {
                             progress.setForeground(DONE_COLOR);

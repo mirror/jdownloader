@@ -850,7 +850,7 @@ private static final String  PATTERN_ERROR_2_OCCURED ="<script>alert(\"°\")</sc
                     }
                     logger.info("link: " + postTarget.substring(0, 30) + " " + actionString);
 
-                    RAFDownload dl = new RAFDownload(this, downloadLink, urlConnection);
+                   dl = new RAFDownload(this, downloadLink, urlConnection);
                     if (getProperties().getIntegerProperty(PROPERTY_BYTES_TO_LOAD, -1) > 0) {
                         dl.setMaxBytesToLoad(1024 * getProperties().getIntegerProperty(PROPERTY_BYTES_TO_LOAD, -1));
                     }
@@ -1112,7 +1112,7 @@ private static final String  PATTERN_ERROR_2_OCCURED ="<script>alert(\"°\")</sc
                     String name = getFileNameFormHeader(urlConnection);
                     if (name.toLowerCase().matches(".*\\..{1,5}\\.html$")) name = name.replaceFirst("\\.html$", "");
                     downloadLink.setName(name);
-                    RAFDownload dl = new RAFDownload(this, downloadLink, urlConnection);
+                   dl = new RAFDownload(this, downloadLink, urlConnection);
 
                     dl.setResume(true);
                     dl.setChunkNum(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 3));
@@ -1442,7 +1442,7 @@ private static final String  PATTERN_ERROR_2_OCCURED ="<script>alert(\"°\")</sc
                     String name = getFileNameFormHeader(urlConnection);
                     if (name.toLowerCase().matches(".*\\..{1,5}\\.html$")) name = name.replaceFirst("\\.html$", "");
                     downloadLink.setName(name);
-                    RAFDownload dl = new RAFDownload(this, downloadLink, urlConnection);
+                   dl = new RAFDownload(this, downloadLink, urlConnection);
                     dl.setResume(true);
                     dl.setChunkNum(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 3));
                     dl.startDownload();

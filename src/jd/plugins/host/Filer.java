@@ -209,7 +209,7 @@ public class Filer extends PluginForHost {
                         step.setStatus(PluginStep.STATUS_ERROR);
                         return step;
                     }
-                    RAFDownload dl = new RAFDownload(this, downloadLink, requestInfo.getConnection());
+                   dl = new RAFDownload(this, downloadLink, requestInfo.getConnection());
                     dl.startDownload();
               
                     return step;

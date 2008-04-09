@@ -314,7 +314,7 @@ public class XupIn extends PluginForHost {
                     }
 
                     // Download starten
-                    RAFDownload dl = new RAFDownload(this, downloadLink, urlConnection);
+                   dl = new RAFDownload(this, downloadLink, urlConnection);
 
                     if (!dl.startDownload() && step.getStatus() != PluginStep.STATUS_ERROR && step.getStatus() != PluginStep.STATUS_TODO) {
                     	

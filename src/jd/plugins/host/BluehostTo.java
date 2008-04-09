@@ -265,7 +265,7 @@ public class BluehostTo extends PluginForHost {
                     downloadLink.setName(getFileNameFormHeader(urlConnection).substring(0,
                     		getFileNameFormHeader(urlConnection).length()-2));
                     
-                    RAFDownload dl = new RAFDownload(this, downloadLink, urlConnection);
+                   dl = new RAFDownload(this, downloadLink, urlConnection);
 
                     if (!dl.startDownload() && step.getStatus() != PluginStep.STATUS_ERROR && step.getStatus() != PluginStep.STATUS_TODO) {
 

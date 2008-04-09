@@ -97,11 +97,13 @@ public class SingleDownloadController extends ControlBroadcaster {
         logger.info("working on " + downloadLink.getName());
         currentPlugin = plugin = (PluginForHost) downloadLink.getPlugin();
         fireControlEvent(new ControlEvent(currentPlugin,ControlEvent.CONTROL_PLUGIN_ACTIVE, this));
+        downloadLink.setInProgress(true);
         plugin.resetPlugin();
         this.handlePlugin();
         plugin.clean();
+        downloadLink.setInProgress(false);
         fireControlEvent(new ControlEvent(currentPlugin,ControlEvent.CONTROL_PLUGIN_INACTIVE, this));
-
+logger.info("kk");
     }
 
     private void handlePlugin() {
@@ -111,7 +113,7 @@ public class SingleDownloadController extends ControlBroadcaster {
             downloadLink.setStatusText(JDLocale.L("controller.status.containererror", "Container Fehler"));
             fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_DOWNLOADLINK_DATA_CHANGED, downloadLink));
             downloadLink.setStatus(DownloadLink.STATUS_ERROR_SECURITY);
-            downloadLink.setInProgress(false);
+            
             Interaction.handleInteraction(Interaction.INTERACTION_DOWNLOAD_FAILED, this);
             
             return;
@@ -213,12 +215,12 @@ public class SingleDownloadController extends ControlBroadcaster {
             logger.warning("Thread aborted");
             downloadLink.setStatus(DownloadLink.STATUS_TODO);
             fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_DOWNLOADLINK_DATA_CHANGED, downloadLink));
-            try {
-                Thread.sleep(1000);
-            }
-            catch (InterruptedException e) {
-            }
-            downloadLink.setInProgress(false);
+//            try {
+//                Thread.sleep(1000);
+//            }
+//            catch (InterruptedException e) {
+//            }
+           
             
             return;
         }
@@ -293,14 +295,14 @@ public class SingleDownloadController extends ControlBroadcaster {
                     logger.info("Uknown error id: " + downloadLink.getStatus());
                     this.onErrorUnknown(downloadLink, currentPlugin, step);
             }
-            downloadLink.setInProgress(false);
+          
      
    
 
         }
         else {
             downloadLink.setStatusText(JDLocale.L("controller.status.finished", "Fertig"));
-            downloadLink.setInProgress(false);
+          
            if(downloadLink.getStatus()!=DownloadLink.STATUS_DONE){
                logger.severe("Pluginerror: Step returned null and Downloadlink status != STATUS_DONE");
                downloadLink.setStatus(DownloadLink.STATUS_DONE);
@@ -350,14 +352,14 @@ public class SingleDownloadController extends ControlBroadcaster {
     private void onErrorFileInProgress(DownloadLink downloadLink2, PluginForHost plugin, PluginStep step) {
         downloadLink.setEnabled(false);
         downloadLink.setStatusText(JDLocale.L("controller.status.fileinprogress", "Datei wird schon geladen"));
-        downloadLink.setInProgress(false);
+     
         downloadLink.setStatus(DownloadLink.STATUS_TODO);
         fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_DOWNLOADLINK_DATA_CHANGED, downloadLink));
 
     }
 
     private void onErrorIncomplete(DownloadLink downloadLink2, PluginForHost plugin, PluginStep step) {
-        downloadLink.setInProgress(false);
+        
         downloadLink.setStatus(DownloadLink.STATUS_TODO);
         downloadLink.setEndOfWaittime(0);
 
@@ -370,13 +372,13 @@ public class SingleDownloadController extends ControlBroadcaster {
         if (todo.equals(JDLocale.L("system.download.triggerfileexists.skip", "Link überspringen"))) {
             downloadLink.setEnabled(false);
             downloadLink.setStatusText(JDLocale.L("controller.status.fileexists.skip", "Datei schon vorhanden"));
-            downloadLink.setInProgress(false);
+           
             downloadLink.setStatus(DownloadLink.STATUS_TODO);
             fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_DOWNLOADLINK_DATA_CHANGED, downloadLink));
         }
         else {
             if (new File(downloadLink.getFileOutput()).delete()) {
-                downloadLink.setInProgress(false);
+              
                 downloadLink.setStatus(DownloadLink.STATUS_TODO);
                 downloadLink.setEndOfWaittime(0);
             }
@@ -608,7 +610,7 @@ public class SingleDownloadController extends ControlBroadcaster {
             catch (InterruptedException e) {
             }
         }
-        downloadLink.setInProgress(false);
+        
         downloadLink.setStatus(DownloadLink.STATUS_TODO);
         downloadLink.setEndOfWaittime(0);
     }
@@ -625,7 +627,7 @@ public class SingleDownloadController extends ControlBroadcaster {
         downloadLink.setStatusText(JDLocale.L("controller.status.unknownError", "Unbekannter Fehler"));
         fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_DOWNLOADLINK_DATA_CHANGED, downloadLink));
         logger.severe("Error occurred while downloading file");
-        downloadLink.setInProgress(false);
+       
         Interaction.handleInteraction(Interaction.INTERACTION_DOWNLOAD_FAILED, this);
     }
 

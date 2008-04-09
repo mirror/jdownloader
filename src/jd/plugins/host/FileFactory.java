@@ -322,7 +322,7 @@ public class FileFactory extends PluginForHost {
                            step.setStatus(PluginStep.STATUS_ERROR);
                            return step;
                        }
-                        RAFDownload dl = new RAFDownload(this, downloadLink, requestInfo.getConnection());
+                       dl = new RAFDownload(this, downloadLink, requestInfo.getConnection());
 
                         if (!dl.startDownload() && step.getStatus() != PluginStep.STATUS_ERROR && step.getStatus() != PluginStep.STATUS_TODO) {
       
@@ -433,7 +433,7 @@ public class FileFactory extends PluginForHost {
                             
                         }
                         
-                        RAFDownload dl = new RAFDownload(this, downloadLink, urlConnection);
+                       dl = new RAFDownload(this, downloadLink, urlConnection);
                         dl.setResume(true);dl.setChunkNum(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS,3));
                         if (!dl.startDownload() && step.getStatus() != PluginStep.STATUS_ERROR&& step.getStatus() != PluginStep.STATUS_TODO) {
                         	

@@ -245,7 +245,7 @@ public class Gulli extends PluginForHost {
                         return step;
                     }
                     
-                    RAFDownload dl = new RAFDownload(this, downloadLink, finalDownloadConnection);
+                   dl = new RAFDownload(this, downloadLink, finalDownloadConnection);
                     dl.startDownload();
                     
                

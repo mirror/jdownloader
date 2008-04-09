@@ -317,7 +317,7 @@ public class ShareOnlineBiz extends PluginForHost {
                         step.setStatus(PluginStep.STATUS_ERROR);
                         return step;
                     }
-                    RAFDownload dl = new RAFDownload(this, downloadLink, urlConnection);
+                   dl = new RAFDownload(this, downloadLink, urlConnection);
 
                     dl.startDownload();
 

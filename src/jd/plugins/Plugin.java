@@ -289,7 +289,9 @@ public abstract class Plugin {
 
     private Captcha lastCaptcha;
 
-    private int captchaDetectionID = -1;;
+    private int captchaDetectionID = -1;
+
+ 
 
     /**
      * Ein Logger, um Meldungen darzustellen
@@ -318,6 +320,7 @@ public abstract class Plugin {
      */
     public void abort() {
         aborted = true;
+        
     }
 
     /**
@@ -1690,6 +1693,8 @@ public abstract class Plugin {
     public void clean() {
         this.lastCaptcha = null;
         this.requestInfo = null;
+        System.gc();
+        System.runFinalization();
 
     }
 

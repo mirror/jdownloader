@@ -20,11 +20,10 @@ package jd.plugins;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.net.URLConnection;
 import java.util.Vector;
 
 import jd.config.Configuration;
-import jd.event.ControlEvent;
+import jd.plugins.download.DownloadInterface;
 import jd.plugins.download.RAFDownload;
 import jd.utils.JDUtilities;
 
@@ -41,6 +40,7 @@ public abstract class PluginForHost extends Plugin {
    
     private int maxConnections=50;
     private int currentConnections=0;
+    protected DownloadInterface dl=null;
 
     /**
      * Stellt das Plugin in den Ausgangszustand zurück (variablen intialisieren
@@ -200,6 +200,18 @@ public abstract class PluginForHost extends Plugin {
         JDUtilities.getSubConfig(CONFIGNAME).setProperty("AGBS_CHECKED_"+this.getPluginID(), value);
         JDUtilities.getSubConfig(CONFIGNAME).save();
     }
+    
+    public void abort(){
+        super.abort();
+        if(this.getDownloadInstance()!=null){
+            this.getDownloadInstance().abort(); 
+        }
+    }
+    private DownloadInterface getDownloadInstance() {
+        // TODO Auto-generated method stub
+        return this.dl;
+    }
+
     /**
      * Delegiert den doStep Call mit einem Downloadlink als Parameter weiter an
      * die Plugins. Und fängt übrige Exceptions ab.
@@ -246,7 +258,7 @@ public abstract class PluginForHost extends Plugin {
             logger.finer("Filename: " + getFileNameFormHeader(requestInfo.getConnection()));
            
             downloadLink.setName(getFileNameFormHeader(requestInfo.getConnection()));
-            RAFDownload dl = new RAFDownload(this, downloadLink, requestInfo.getConnection());
+           dl = new RAFDownload(this, downloadLink, requestInfo.getConnection());
             if (!dl.startDownload() && step.getStatus() != PluginStep.STATUS_ERROR && step.getStatus() != PluginStep.STATUS_TODO) {
                 downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN);
                 
@@ -290,6 +302,8 @@ public abstract class PluginForHost extends Plugin {
 public void clean(){
    this.requestInfo=null;
    this.request=null;
+   this.dl=null;
+   
       super.clean();
 }
 public int getMaxConnections() {

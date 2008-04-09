@@ -222,7 +222,7 @@ String fileSize = JDUtilities.htmlDecode(getSimpleMatch(requestInfo.getHtmlCode(
                     }
       
                    
-                   RAFDownload dl = new RAFDownload(this, downloadLink,  urlConnection);
+                  dl = new RAFDownload(this, downloadLink,  urlConnection);
               
                    dl.startDownload();
                     return step;

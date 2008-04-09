@@ -48,7 +48,7 @@ public class DownloadWatchDog extends Thread implements ControlListener {
     /**
      * Downloadlinks die gerade aktiv sind
      */
-    private Vector<SingleDownloadController> activeLinks = new Vector<SingleDownloadController>();
+    private Vector<SingleDownloadController> activeDownloadControllers = new Vector<SingleDownloadController>();
 
     private boolean aborted = false;
 
@@ -140,13 +140,13 @@ public class DownloadWatchDog extends Thread implements ControlListener {
                 this.totalSpeed = 0;
             }
             if (Interaction.getInteractionsRunning() == 0) {
-                if (activeLinks.size() < getSimultanDownloadNum() && !pause) {
+                if (activeDownloadControllers.size() < getSimultanDownloadNum() && !pause) {
                     setDownloadActive();
                     // logger.info("Started " + started + "Downloads");
                 }
             }
 
-            if ((pause && !hasInProgressLinks) || (!hasInProgressLinks && !hasWaittimeLinks && this.getNextDownloadLink() == null && activeLinks != null && activeLinks.size() == 0)) {
+            if ((pause && !hasInProgressLinks) || (!hasInProgressLinks && !hasWaittimeLinks && this.getNextDownloadLink() == null && activeDownloadControllers != null && activeDownloadControllers.size() == 0)) {
                 this.totalSpeed = 0;
                 logger.info("Alle Downloads beendet");
                 // fireControlEvent(new ControlEvent(this,
@@ -191,7 +191,7 @@ public class DownloadWatchDog extends Thread implements ControlListener {
         int ret = 0;
         // logger.info("Gleichzeitige Downloads erlaubt: " +
         // getSimultanDownloadNum() + " aktiv: " + activeLinks.size());
-        while (activeLinks.size() < getSimultanDownloadNum()) {
+        while (activeDownloadControllers.size() < getSimultanDownloadNum()) {
             dlink = this.getNextDownloadLink();
             if (dlink == null) break;
             this.startDownloadThread(dlink);
@@ -218,9 +218,9 @@ public class DownloadWatchDog extends Thread implements ControlListener {
      */
     private int getDownloadNumByHost(PluginForHost plugin) {
         int num = 0;
-        synchronized (activeLinks) {
-            for (int i = 0; i < this.activeLinks.size(); i++) {
-                if (this.activeLinks.get(i).getDownloadLink().getPlugin().getPluginID().equals(plugin.getPluginID())) {
+        synchronized (activeDownloadControllers) {
+            for (int i = 0; i < this.activeDownloadControllers.size(); i++) {
+                if (this.activeDownloadControllers.get(i).getDownloadLink().getPlugin().getPluginID().equals(plugin.getPluginID())) {
                     num++;
                 }
 
@@ -253,7 +253,7 @@ public class DownloadWatchDog extends Thread implements ControlListener {
     // }
 
     private void startDownloadThread(DownloadLink dlink) {
-        synchronized (activeLinks) {
+        synchronized (activeDownloadControllers) {
             Interaction.handleInteraction(Interaction.INTERACTION_BEFORE_DOWNLOAD, dlink);
             SingleDownloadController download = new SingleDownloadController(controller, dlink);
             logger.info("start download: " + dlink);
@@ -261,7 +261,7 @@ public class DownloadWatchDog extends Thread implements ControlListener {
             download.addControlListener(this);
             download.addControlListener(this.controller);
             download.start();
-            activeLinks.add(download);
+            activeDownloadControllers.add(download);
         }
     }
 
@@ -273,12 +273,12 @@ public class DownloadWatchDog extends Thread implements ControlListener {
     void abort() {
         logger.finer("Breche alle actove links ab");
         this.aborted = true;
-        ProgressController progress = new ProgressController("Termination", activeLinks.size());
-        progress.setStatusText("Stopping all downloads");
-        synchronized (activeLinks) {
-            for (int i = 0; i < this.activeLinks.size(); i++) {
-                activeLinks.get(i).abortDownload();
-
+        ProgressController progress = new ProgressController("Termination", activeDownloadControllers.size());
+        progress.setStatusText("Stopping all downloads "+activeDownloadControllers);
+        progress.setRange(100);
+        synchronized (activeDownloadControllers) {
+            for (Iterator<SingleDownloadController> it=activeDownloadControllers.iterator();it.hasNext();) {
+                it.next().abortDownload();
             }
 
             deligateFireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_DOWNLOADLINK_DATA_CHANGED, null));
@@ -289,19 +289,21 @@ public class DownloadWatchDog extends Thread implements ControlListener {
             while (true) {
                 progress.increase(1);
                 check = true;
-                for (int i = 0; i < this.activeLinks.size(); i++) {
-                    if (activeLinks.get(i).isAlive()) {
+                for (int i = 0; i < this.activeDownloadControllers.size(); i++) {
+                    if (activeDownloadControllers.get(i).getDownloadLink().isInProgress()) {
                         check = false;
                         break;
                     }
                 }
                 if (check) break;
-                try {
-                    Thread.sleep(1000);
-                } catch (InterruptedException e) {
-                }
+//                try {
+//                    Thread.sleep(1000);
+//                } catch (InterruptedException e) {
+//                }
             }
         }
+        deligateFireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_DOWNLOADLINK_DATA_CHANGED, null));
+        
         progress.finalize();
         logger.finer("Abbruch komplett");
 
@@ -314,7 +316,7 @@ public class DownloadWatchDog extends Thread implements ControlListener {
      */
     private void clearDownloadListStatus() {
 
-        activeLinks.removeAllElements();
+        activeDownloadControllers.removeAllElements();
         logger.finer("Clear");
         Vector<FilePackage> fps;
         Vector<DownloadLink> links;
@@ -344,8 +346,8 @@ public class DownloadWatchDog extends Thread implements ControlListener {
         switch (event.getID()) {
 
         case ControlEvent.CONTROL_PLUGIN_INACTIVE:
-            if(!(event.getSource() instanceof DownloadLink))return;
-            removeDownloadLinkFromActiveList((DownloadLink) event.getSource());
+            if(!(event.getSource() instanceof PluginForHost))return;
+            removeDownloadLinkFromActiveList(((SingleDownloadController) event.getParameter()).getDownloadLink());
             // Wenn ein Download beendet wurde wird überprüft ob gerade ein
             // Download in der Warteschleife steckt. Wenn ja wird ein
             // Reconnectversuch gemacht. Die handleInteraction - funktion
@@ -378,11 +380,11 @@ public class DownloadWatchDog extends Thread implements ControlListener {
     }
 
     private boolean removeDownloadLinkFromActiveList(DownloadLink parameter) {
-        synchronized (activeLinks) {
-            for (int i = activeLinks.size() - 1; i >= 0; i--) {
+        synchronized (activeDownloadControllers) {
+            for (int i = activeDownloadControllers.size() - 1; i >= 0; i--) {
 
-                if (activeLinks.get(i).getDownloadLink() == parameter) {
-                    activeLinks.remove(i);
+                if (activeDownloadControllers.get(i).getDownloadLink() == parameter) {
+                    activeDownloadControllers.remove(i);
                     return true;
                 }
 
@@ -428,9 +430,9 @@ public class DownloadWatchDog extends Thread implements ControlListener {
     }
 
     boolean isDownloadLinkActive(DownloadLink nextDownloadLink) {
-        synchronized (activeLinks) {
-            for (int i = 0; i < this.activeLinks.size(); i++) {
-                if (this.activeLinks.get(i).getDownloadLink() == nextDownloadLink) { return true; }
+        synchronized (activeDownloadControllers) {
+            for (int i = 0; i < this.activeDownloadControllers.size(); i++) {
+                if (this.activeDownloadControllers.get(i).getDownloadLink() == nextDownloadLink) { return true; }
 
             }
         }
@@ -444,9 +446,9 @@ public class DownloadWatchDog extends Thread implements ControlListener {
      * @return
      */
     private SingleDownloadController getDownloadThread(DownloadLink link) {
-        synchronized (activeLinks) {
-            for (int i = 0; i < activeLinks.size(); i++) {
-                if (activeLinks.get(i).getDownloadLink() == link) { return activeLinks.get(i); }
+        synchronized (activeDownloadControllers) {
+            for (int i = 0; i < activeDownloadControllers.size(); i++) {
+                if (activeDownloadControllers.get(i).getDownloadLink() == link) { return activeDownloadControllers.get(i); }
 
             }
         }

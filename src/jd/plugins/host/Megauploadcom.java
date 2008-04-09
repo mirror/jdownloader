@@ -277,7 +277,7 @@ public class Megauploadcom extends PluginForHost {
 
                         downloadLink.setName(getFileNameFormHeader(requestInfo.getConnection()));
                    
-                        RAFDownload dl = new RAFDownload(this, downloadLink,  requestInfo.getConnection());
+                       dl = new RAFDownload(this, downloadLink,  requestInfo.getConnection());
                       
                         dl.startDownload();
                         return step;
@@ -346,7 +346,7 @@ downloadLink.setStatusText("Premium");
                 urlConnection = requestInfo.getConnection();        
                 String name = getFileNameFormHeader(urlConnection);
                 downloadLink.setName(name);
-                RAFDownload dl = new RAFDownload(this, downloadLink, urlConnection);
+               dl = new RAFDownload(this, downloadLink, urlConnection);
                 dl.setResume(true);dl.setChunkNum(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 3));
                 dl.setResume(true);
                 dl.startDownload();

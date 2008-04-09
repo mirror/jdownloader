@@ -30,7 +30,6 @@ import javax.xml.parsers.DocumentBuilderFactory;
 
 import jd.JDInit;
 import jd.config.Configuration;
-import jd.config.Property;
 import jd.config.SubConfiguration;
 import jd.controlling.interaction.BatchReconnect;
 import jd.controlling.interaction.ExternReconnect;
@@ -49,7 +48,6 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginForContainer;
 import jd.plugins.PluginForHost;
 import jd.plugins.RequestInfo;
-
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
@@ -229,8 +227,8 @@ public class JDController implements ControlListener, UIListener {
         switch (event.getID()) {
         case ControlEvent.CONTROL_PLUGIN_INACTIVE:
             // Nur Hostpluginevents auswerten
-            if (!(event.getSource() instanceof DownloadLink)) return;
-            lastDownloadFinished = (DownloadLink) event.getSource();
+            if (!(event.getSource() instanceof PluginForHost)) return;
+            lastDownloadFinished = ((SingleDownloadController) event.getParameter()).getDownloadLink();
             this.addToFinished(lastDownloadFinished);
             // Prüfen ob das Paket fertig ist
             if (lastDownloadFinished.getFilePackage().getRemainingLinks() == 0) {
@@ -351,6 +349,7 @@ public class JDController implements ControlListener, UIListener {
 
             watchdog.abort();
             setDownloadStatus(DOWNLOAD_NOT_RUNNING);
+            logger.info("termination broadcast");
             fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_DOWNLOAD_TERMINATION_INACTIVE, this));
             fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_DOWNLOAD_STOP, this));
         }
