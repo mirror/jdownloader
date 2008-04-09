@@ -63,7 +63,7 @@ public class ChunkFileDownload extends DownloadInterface {
 
   
 
-    protected void addBytes(Chunk chunk) {
+    protected void writeChunkBytes(Chunk chunk) {
         try {
             if (speedDebug) {
                 if ((System.currentTimeMillis() - writeTimer) >= 1000) {

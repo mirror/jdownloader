@@ -66,7 +66,7 @@ public class RAFDownload extends DownloadInterface {
 
     private RandomAccessFile outputFile;
 
-    protected void addBytes(Chunk chunk) {
+    protected void writeChunkBytes(Chunk chunk) {
         try {
             int limit = chunk.buffer.limit()-chunk.buffer.position();
             synchronized(outputChannel){           

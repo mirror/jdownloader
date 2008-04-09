@@ -37,7 +37,7 @@ import jd.utils.JDUtilities;
  * 
  * @author astaldo
  */
-public class DistributeData extends ControlMulticaster {
+public class DistributeData extends ControlBroadcaster {
     /**
      * Der Logger
      */
@@ -163,13 +163,13 @@ public class DistributeData extends ControlMulticaster {
                 try {
                     pDecrypt = pDecrypt.getClass().newInstance();
 
-                    fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_PLUGIN_DECRYPT_ACTIVE, pDecrypt));
+                  
                     Vector<String> decryptableLinks = pDecrypt.getDecryptableLinks(data);
                     data = pDecrypt.cutMatches(data);
 
                     decryptedLinks.addAll(pDecrypt.decryptLinks(decryptableLinks));
 
-                    fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_PLUGIN_DECRYPT_INACTIVE, pDecrypt));
+               
                 }
                 catch (Exception e) {
 
@@ -219,7 +219,7 @@ public class DistributeData extends ControlMulticaster {
                     try {
                         pDecrypt = pDecrypt.getClass().newInstance();
 
-                        fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_PLUGIN_DECRYPT_ACTIVE, pDecrypt));
+                     
 
                         Vector<String> decryptableLinks = pDecrypt.getDecryptableLinks(url);
                         url = pDecrypt.cutMatches(url);
@@ -232,7 +232,7 @@ public class DistributeData extends ControlMulticaster {
                         }
                         decryptedLinks.addAll(links);
 
-                        fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_PLUGIN_DECRYPT_INACTIVE, pDecrypt));
+                        
                         canDecrypt = true;
                         break;
                     }

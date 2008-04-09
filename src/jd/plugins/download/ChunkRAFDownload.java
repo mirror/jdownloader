@@ -63,7 +63,7 @@ public class ChunkRAFDownload extends DownloadInterface {
 
     private long            debugtimer;
 
-    protected void addBytes(Chunk chunk) {
+    protected void writeChunkBytes(Chunk chunk) {
         try {
             if (speedDebug) {
                 if ((System.currentTimeMillis() - writeTimer) >= 1000) {

@@ -79,7 +79,7 @@ public class DownloadWatchDog extends Thread implements ControlListener {
             hasWaittimeLinks = false;
             hasInProgressLinks = false;
 
-            deligateFireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SINGLE_DOWNLOAD_CHANGED, null));
+            deligateFireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_DOWNLOADLINK_DATA_CHANGED, null));
             fps = controller.getPackages();
             currentTotalSpeed = 0;
             inProgress = 0;
@@ -281,7 +281,7 @@ public class DownloadWatchDog extends Thread implements ControlListener {
 
             }
 
-            deligateFireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SINGLE_DOWNLOAD_CHANGED, null));
+            deligateFireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_DOWNLOADLINK_DATA_CHANGED, null));
             boolean check = true;
             // Warteschleife bis alle activelinks abgebrochen wurden
             logger.finer("Warten bis alle activeLinks abgebrochen wurden.");
@@ -331,7 +331,7 @@ public class DownloadWatchDog extends Thread implements ControlListener {
 
             }
         }
-        deligateFireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SINGLE_DOWNLOAD_CHANGED, null));
+        deligateFireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_DOWNLOADLINK_DATA_CHANGED, null));
 
     }
 
@@ -343,12 +343,9 @@ public class DownloadWatchDog extends Thread implements ControlListener {
 
         switch (event.getID()) {
 
-        case ControlEvent.CONTROL_SINGLE_DOWNLOAD_FINISHED:
-            if (removeDownloadLinkFromActiveList((DownloadLink) event.getParameter())) {
-
-                // logger.info("removed aktive download. left: " +
-                // this.activeLinks.size());
-            }
+        case ControlEvent.CONTROL_PLUGIN_INACTIVE:
+            if(!(event.getSource() instanceof DownloadLink))return;
+            removeDownloadLinkFromActiveList((DownloadLink) event.getSource());
             // Wenn ein Download beendet wurde wird überprüft ob gerade ein
             // Download in der Warteschleife steckt. Wenn ja wird ein
             // Reconnectversuch gemacht. Die handleInteraction - funktion
@@ -369,21 +366,13 @@ public class DownloadWatchDog extends Thread implements ControlListener {
             }
 
             break;
-        case ControlEvent.CONTROL_CAPTCHA_LOADED:
-            break;
-
+     
         case ControlEvent.CONTROL_ALL_DOWNLOADS_FINISHED:
 
             break;
         case ControlEvent.CONTROL_DISTRIBUTE_FINISHED:
             break;
-        case ControlEvent.CONTROL_PLUGIN_INTERACTION_INACTIVE:
-
-        case ControlEvent.CONTROL_PLUGIN_INTERACTION_RETURNED:
-
-        default:
-
-            break;
+   
         }
 
     }

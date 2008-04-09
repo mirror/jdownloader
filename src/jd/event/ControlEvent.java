@@ -30,14 +30,14 @@ public class ControlEvent extends AWTEvent {
     private static final long serialVersionUID                                    = 1639354503246054870L;
 
     /**
-     * Alle Downloads wurden bearbeitet
+     * Alle Downloads wurden bearbeitet. Und der download wird angehalten
      */
     public final static int   CONTROL_ALL_DOWNLOADS_FINISHED                      = 1;
 
     /**
-     * Ein einzelner Download ist bearbeitet worden
+     * Die Daten von einem oder mehreren Downloadlinks wurden verändert. Dazu zählen auch Statusids,Fortschritt usw..
      */
-    public final static int   CONTROL_SINGLE_DOWNLOAD_CHANGED                     = 2;
+    public final static int   CONTROL_DOWNLOADLINK_DATA_CHANGED                     = 2;
 
     /**
      * Das Verteilen des Inhalts der Zwischenablage ist abgeschlossen Als
@@ -45,69 +45,42 @@ public class ControlEvent extends AWTEvent {
      * herausgearbeitet wurden
      */
     public final static int   CONTROL_DISTRIBUTE_FINISHED                         = 3;
-
     /**
-     * Ein Entschlüsselungs Plugin ist aktiv
+     * Ein PLugin wird beendet. 
+     * Source: ist jeweils das PLugin
+     * Parameter: Decrypter: decrypted Links Vector
+     * 
      */
-    public final static int   CONTROL_PLUGIN_DECRYPT_INACTIVE                     = 4;
+  
+    public final static int   CONTROL_PLUGIN_INACTIVE                     = 4;
 
     /**
-     * Ein Entschlüsselungs Plugin ist nicht mehr aktiv
+     * Ein Plugin fängt an zu arbeiten.
+     * Source ist das PLugin selbst
+     * Parameter: Decrypter: encryptedLinks
      */
-    public final static int   CONTROL_PLUGIN_DECRYPT_ACTIVE                       = 5;
-
+    public final static int   CONTROL_PLUGIN_ACTIVE                       = 5;
+    
     /**
-     * Ein Anbieter Plugin zum Downloaden ist aktiv
+     * Wird aufgerufen sobald der Downloadvorgang komplett gestoppt ist
      */
-    public final static int   CONTROL_PLUGIN_HOST_ACTIVE                          = 6;
+    public static final int CONTROL_DOWNLOAD_STOP = 6;
 
     /**
-     * Ein Anbieter Plugin zum Downloaden ist nicht mehr aktiv
-     */
-    public final static int   CONTROL_PLUGIN_HOST_INACTIVE                        = 7;
-
-    /**
-     * Interaction aktiv
-     */
-    public final static int   CONTROL_PLUGIN_INTERACTION_ACTIVE                   = 8;
-
-    /**
-     * Interaction inaktiv
-     */
-    public final static int   CONTROL_PLUGIN_INTERACTION_INACTIVE                 = 9;
-
-    /**
-     * . Dieses Event ist unabhängig von inaktiv. eine Interaction die in einem
-     * thread läuft kann Aktiv sein und trotzdem schon zurückgekehrt
-     */
-    public final static int   CONTROL_PLUGIN_INTERACTION_RETURNED                 = 10;
-
-    /**
-     * Zeigt an dass ein Einzelner Download beendet wurde. Der Status kann mit
-     * Downloadlink.getStatus() abgefragt werden (parameter) Der downloadlink
-     * wird per parameter übergeben
-     */
-    public static final int   CONTROL_SINGLE_DOWNLOAD_FINISHED                    = 11;
-
-    /**
-     * Gibt an dass ein captcha geladen wurde. der Fiel-Pfad zum captchw wir als
-     * parameter erwartet
+     * Gibt an dass ein captcha geladen wurde. der Fiel-Pfad zum captcha wir als
+     * parameter erwartet. Source ist das ausführende Plugin
      */
     public static final int   CONTROL_CAPTCHA_LOADED                              = 12;
 
     /**
      * Gibt an, dass der Downloadvorgang gestartet wurde
      */
-    public static final int   CONTROL_ALL_DOWNLOAD_START                          = 13;
+    public static final int   CONTROL_DOWNLOAD_START                          = 13;
+
+
 
     /**
-     * Gibt an dass ein neuer downlaod begonnen hat. der link wir dals parameter
-     * erwartet
-     */
-    public static final int   CONTROL_SINGLE_DOWNLOAD_STARTS                      = 14;
-
-    /**
-     * Gibt an dass das Abbrechen der Downloads eingeleutet wurde
+     * Gibt an dass das Abbrechen der Downloads eingeleitet wurde
      */
     public static final int   CONTROL_DOWNLOAD_TERMINATION_ACTIVE                 = 17;
 
@@ -115,16 +88,18 @@ public class ControlEvent extends AWTEvent {
      * Gibt an dass der Download nun komplett abgebrochen wurde.
      */
     public static final int   CONTROL_DOWNLOAD_TERMINATION_INACTIVE               = 18;
+    
+    
 
-    public static final int   CONTROL_SINGLE_DOWNLOAD_FINISHED_ERROR_SERVER_BUSY  = 19;
 
-    public static final int   CONTROL_SINGLE_DOWNLOAD_FINISHED_ERROR_FILENOTFOUND = 20;
 
-    public static final int   CONTROL_SINGLE_DOWNLOAD_FINISHED_ERROR_CAPTCHA      = 21;
 
-    public static final int   CONTROL_SINGLE_DOWNLOAD_FINISHED_ERROR_PREMIUM      = 22;
 
-    public static final int   CONTROL_SINGLE_DOWNLOAD_FINISHED_ERROR              = 23;
+
+
+  
+
+
 
     /**
      * Gibt an dass ein plugin, eine INteraction etc. einen Forschritt gemacht
@@ -132,12 +107,19 @@ public class ControlEvent extends AWTEvent {
      * ausgelöst
      */
     public static final int   CONTROL_ON_PROGRESS                                 = 24;
+/**
+ * Wird bei Strukturänderungen der Linkliste aufgerufen
+ */
+    public static final int   CONTROL_LINKLIST_STRUCTURE_CHANGED                            = 25;
 
-    public static final int   CONTROL_LINKLIST_CHANGED                            = 25;
-
+    /**
+     * Wird vom Controller vor dem beeenden des Programms aufgerufen
+     */
     public static final int CONTROL_SYSTEM_EXIT = 26;
 
-    public static final int PLUGIN_CONTROL_DATA_CHANGED = 27;
+
+
+    
 
     /**
      * Die ID des Ereignisses

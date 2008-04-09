@@ -572,7 +572,7 @@ public class Uploadedto extends PluginForHost {
                     }
                     RAFDownload dl = new RAFDownload(this, downloadLink, requestInfo.getConnection());
                    dl.setChunkNum(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS,3));
-                    
+                    dl.setResume(true);
                     dl.startDownload();
                     return step;
             }

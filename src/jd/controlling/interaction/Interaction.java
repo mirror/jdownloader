@@ -51,11 +51,7 @@ public abstract class Interaction extends Property implements Serializable {
      * Thread der für die Interaction verwendet werden kann
      */
     protected transient Thread                thread                                = null;
-    /**
-     * Hiermit wird der Eventmechanismus realisiert. Alle hier eingetragenen
-     * Listener werden benachrichtigt, wenn mittels
-     */
-    private transient Vector<ControlListener> controlListener                       = null;
+
     /**
      * Code der abgerufe werden kann um details über den Ablauf der Interaction
      * zu kriegen
@@ -149,7 +145,7 @@ public abstract class Interaction extends Property implements Serializable {
 // InteractionTrigger(10, "Nach einem Reconnect", "inaktiv");
     public Interaction() {
         config = null;
-        controlListener = new Vector<ControlListener>();
+      
         this.setTrigger(Interaction.INTERACTION_NO_EVENT);
     }
     protected abstract boolean doInteraction(Object arg);
@@ -169,7 +165,16 @@ public abstract class Interaction extends Property implements Serializable {
     public int getCallCode() {
         return lastCallCode;
     }
-    
+    /**
+     * Verwendet den JDcontroller um ein ControlEvent zu broadcasten
+     * 
+     * @param controlID
+     * @param param
+     */
+    public void fireControlEvent(int controlID, Object param) {
+
+        JDUtilities.getController().fireControlEvent(new ControlEvent(this, controlID, param));
+    }
     public boolean getWaitForTermination(){
         return true;
     }
@@ -183,14 +188,14 @@ public abstract class Interaction extends Property implements Serializable {
     public boolean interact(Object arg) {
         interactionsRunning++;
      logger.finer("Interactions(start) running: "+interactionsRunning+" - "+this);
-        fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_PLUGIN_INTERACTION_ACTIVE, this));
+         fireControlEvent(ControlEvent.CONTROL_PLUGIN_ACTIVE, arg);
         resetInteraction();
         this.setCallCode(Interaction.INTERACTION_CALL_RUNNING);
         boolean success = doInteraction(arg);
-        fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_PLUGIN_INTERACTION_RETURNED, this));
+       //fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_PLUGIN_INTERACTION_RETURNED, this));
         if (!this.isAlive()) {
-           
-            fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_PLUGIN_INTERACTION_INACTIVE, this));
+            fireControlEvent(ControlEvent.CONTROL_PLUGIN_INACTIVE, arg);
+         
             interactionsRunning--;
             logger.info("Interaction finished: "+interactionsRunning+" - "+this);
          
@@ -222,43 +227,13 @@ public abstract class Interaction extends Property implements Serializable {
     public void setCallCode(int callCode) {
         this.lastCallCode = callCode;
     }
-    /**
-     * Fügt einen Listener hinzu
-     * 
-     * @param listener Ein neuer Listener
-     */
-    public void addControlListener(ControlListener listener) {
-        if (controlListener == null) controlListener = new Vector<ControlListener>();
-        if (controlListener.indexOf(listener) == -1) {
-            controlListener.add(listener);
-        }
-    }
-    /**
-     * Emtfernt einen Listener
-     * 
-     * @param listener Der zu entfernende Listener
-     */
-    public void removeControlListener(ControlListener listener) {
-        controlListener.remove(listener);
-    }
-    /**
-     * Verteilt Ein Event an alle Listener
-     * 
-     * @param controlEvent ein abzuschickendes Event
-     */
-    public void fireControlEvent(ControlEvent controlEvent) {
-        if (controlListener == null) controlListener = new Vector<ControlListener>();
-        Iterator<ControlListener> iterator = controlListener.iterator();
-        while (iterator.hasNext()) {
-            ((ControlListener) iterator.next()).controlEvent(controlEvent);
-        }
-    }
+  
     /**
      * Wird vom neuen Thread aufgerufen, setzt die ThreadVariable
      */
     private void runThreadAction() {
         this.run();
-        fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_PLUGIN_INTERACTION_INACTIVE, this));
+        fireControlEvent(ControlEvent.CONTROL_PLUGIN_INACTIVE, null);
         if(getWaitForTermination()){interactionsRunning--;
         logger.finer("Interaction finaly finished: "+interactionsRunning+" - "+this);
         }
@@ -317,7 +292,7 @@ public abstract class Interaction extends Property implements Serializable {
             
         
             if (interaction.getTrigger().getID() == interactionevent.getID()) {
-                interaction.addControlListener(JDUtilities.getController());
+              
                 interacts++;
               
                 
@@ -355,7 +330,7 @@ public abstract class Interaction extends Property implements Serializable {
             if (interaction == null || interaction.getTrigger() == null || interactionEvent == null) continue;
             if (interaction.getTrigger().getID() == interactionEvent.getID()) {
                 if (id == 0) {
-                    interaction.addControlListener(JDUtilities.getController());
+                 
                     if (!interaction.interact(param)) {
                         logger.severe("interaction failed: " + interaction);
                         return false;

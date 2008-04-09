@@ -52,7 +52,6 @@ public class FilePackage extends Property implements Serializable {
 
     private static final long UPDATE_INTERVAL = 1000;
 
-    private static final long SIZE_LIMIT = (1024*1024*1024);
 
     private String comment;
 
@@ -77,6 +76,8 @@ public class FilePackage extends Property implements Serializable {
     private int totalBytesLoaded;
 
     private long updateTime;
+
+    private int toDo;
 
 
 
@@ -166,9 +167,9 @@ public class FilePackage extends Property implements Serializable {
         return downloadDirectory != null && downloadDirectory.length() > 0;
     }
 
-    private void updateCollectives() {
+    public void updateCollectives() {
         this.updateTime = System.currentTimeMillis();
-       
+    
         this.totalEstimatedPackageSize = 0;
         this.totalDownloadSpeed = 0;
         this.linksFinished = 0;
@@ -178,7 +179,7 @@ public class FilePackage extends Property implements Serializable {
         long avg = 0;
         DownloadLink next;
         int i = 0;
-        
+       
      
         synchronized (downloadLinks) {
             for (Iterator<DownloadLink> it = downloadLinks.iterator(); it.hasNext();) {
@@ -187,17 +188,23 @@ public class FilePackage extends Property implements Serializable {
                 if (next.getDownloadMax() > 0) {
                    
                     totalEstimatedPackageSize += next.getDownloadMax()/1024;
-                
+               
                     avg = (i * avg + next.getDownloadMax()/1024) / (i + 1);
+                   // logger.info(i+"+ "+next.getDownloadMax()/1024+" kb avg:"+avg+" = +"+totalEstimatedPackageSize);
                     i++;
                 } else {
                     if (it.hasNext()) {
                         totalEstimatedPackageSize += avg;
+                        
+                       // logger.info(i+"+avg "+avg+" kb =+"+totalEstimatedPackageSize);
+                        
                     } else {
                         totalEstimatedPackageSize += avg / (2);
+                       // logger.info(i+"+avg "+(avg/2)+" kb =+"+totalEstimatedPackageSize);
                     }
 
                 }
+               
                 totalDownloadSpeed += Math.max(0,next.getDownloadSpeed());
                 totalBytesLoaded += next.getDownloadCurrent()/1024;
                 linksInProgress += next.isInProgress() ? 1 : 0;
@@ -323,7 +330,7 @@ public class FilePackage extends Property implements Serializable {
     public double getPercent() {
         if ((System.currentTimeMillis() - this.updateTime) > UPDATE_INTERVAL) this.updateCollectives();
 
-        return (100.0 * totalBytesLoaded) / Math.max(totalDownloadSpeed, totalEstimatedPackageSize);
+        return (100.0 * totalBytesLoaded) / Math.max(1,Math.max(totalBytesLoaded, totalEstimatedPackageSize));
     }
 /**
  * Gibt die vorraussichtlich verbleibende Downloadzeit für dieses paket zurück
@@ -332,7 +339,7 @@ public class FilePackage extends Property implements Serializable {
     public int getETA() {
         if ((System.currentTimeMillis() - this.updateTime) > UPDATE_INTERVAL) this.updateCollectives();
         if(totalDownloadSpeed==0)return -1;
-        return (Math.max(totalDownloadSpeed, totalEstimatedPackageSize) - totalBytesLoaded) / (totalDownloadSpeed/1024);
+        return (Math.max(totalBytesLoaded, totalEstimatedPackageSize) - totalBytesLoaded) / (totalDownloadSpeed/1024);
 
     }
 /**
@@ -342,7 +349,7 @@ public class FilePackage extends Property implements Serializable {
     public int getTotalEstimatedPackageSize() {
         if ((System.currentTimeMillis() - this.updateTime) > UPDATE_INTERVAL) this.updateCollectives();
 
-        return Math.max(totalDownloadSpeed, totalEstimatedPackageSize);
+        return Math.max(totalBytesLoaded, totalEstimatedPackageSize);
     }
 /**
  * Gibt die aktuelle Downloadgeschwinigkeit des pakets zurück
@@ -384,10 +391,19 @@ public class FilePackage extends Property implements Serializable {
  * Gibt zurück wieviele Bytes ingesamt schon in diesem Paket geladen wurden
  * @return
  */
-    public int getTotalBytesLoaded() {
+    public int getTotalKBLoaded() {
         if ((System.currentTimeMillis() - this.updateTime) > UPDATE_INTERVAL) this.updateCollectives();
         return totalBytesLoaded;
     }
+/**
+ * Gibt die Anzahl der Verbleibenden Links zurück. Wurden alle Links bereits abgearbeitet gibt diese Methode 0 zurück
+ * Da die Methode alle Links durchläuft sollte sie aus Performancegründen mit bedacht eingesetzt werden
+ */
+public int getRemainingLinks() {
+   this.updateCollectives();
+   return this.size()-linksFinished;
+    
+}
 
 
 

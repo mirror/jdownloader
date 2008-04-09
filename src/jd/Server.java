@@ -1,8 +1,8 @@
 package jd;
-import java.rmi.Naming;
-import java.rmi.RemoteException;
 import java.io.File;
 import java.net.MalformedURLException;
+import java.rmi.Naming;
+import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
@@ -11,12 +11,12 @@ import java.util.Vector;
 import java.util.logging.Logger;
 
 import jd.captcha.JACController;
+import jd.config.Configuration;
 import jd.controlling.interaction.Unrar;
-import jd.event.ControlEvent;
 import jd.event.UIEvent;
+import jd.gui.UIInterface;
 import jd.unrar.JUnrar;
 import jd.utils.JDUtilities;
-import jd.config.Configuration;
 
 public class Server extends UnicastRemoteObject implements ServerInterface {
 	
@@ -122,7 +122,8 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
 				extractSwitch = false;
 
 				logger.info(currentArg + " parameter");
-				JDUtilities.getGUI().fireUIEvent(new UIEvent(this, UIEvent.UI_SET_STARTSTOP_BUTTON_STATE, true));
+				//JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SET_STARTSTOP_BUTTON_STATE, true));
+				//es ist aufgabe der startDownloadsFunktion das zu broadcasten
 				JDUtilities.getController().startDownloads();
 
 			} else if (currentArg.equals("--stop-download")
@@ -134,7 +135,8 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
 				extractSwitch = false;
 
 				logger.info(currentArg + " parameter");
-				JDUtilities.getGUI().fireUIEvent(new UIEvent(this, UIEvent.UI_SET_STARTSTOP_BUTTON_STATE, false));
+				//JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SET_STARTSTOP_BUTTON_STATE, false));
+				//es ist aufgabe der startDownloadsFunktion das zu broadcasten
 				JDUtilities.getController().stopDownloads();
 
 			} else if (currentArg.equals("--show") || currentArg.equals("-s")) {
@@ -162,7 +164,8 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
 				addContainersSwitch = false;
 				addPasswordsSwitch = false;
 				extractSwitch = false;
-				JDUtilities.getGUI().fireUIEvent(new UIEvent(this, UIEvent.UI_SET_MINIMIZED, true));
+				JDUtilities.getGUI().setGUIStatus(UIInterface.WINDOW_STATUS_MINIMIZED);
+				
 				logger.info(currentArg + " parameter");
 
 			} else if (currentArg.equals("--focus")
@@ -172,9 +175,8 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
 				addContainersSwitch = false;
 				addPasswordsSwitch = false;
 				extractSwitch = false;
-				JDUtilities.getGUI().fireUIEvent(new UIEvent(this, UIEvent.UI_SET_MINIMIZED, false));
 				logger.info(currentArg + " parameter");
-
+				JDUtilities.getGUI().setGUIStatus(UIInterface.WINDOW_STATUS_FOREGROUND);
 			} else if (addLinksSwitch && currentArg.charAt(0) != '-') {
 
 				linksToAdd.add(currentArg);

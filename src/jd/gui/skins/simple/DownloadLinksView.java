@@ -45,16 +45,13 @@ public abstract class DownloadLinksView extends JPanel implements ControlListene
     public void controlEvent(ControlEvent event) {
 
         switch (event.getID()) {
-        case ControlEvent.PLUGIN_CONTROL_DATA_CHANGED:
-            fireTableChanged(REFRESH_ONLY_DATA_CHANGED);
-            // fireTableChanged(REFRESH_ID_COMPLETE_REPAINT);
-            break;
+   
 
-        case ControlEvent.CONTROL_SINGLE_DOWNLOAD_CHANGED:
+        case ControlEvent.CONTROL_DOWNLOADLINK_DATA_CHANGED:
             fireTableChanged(REFRESH_ONLY_DATA_CHANGED);
             // fireTableChanged(REFRESH_ID_COMPLETE_REPAINT);
             break;
-        case ControlEvent.CONTROL_LINKLIST_CHANGED:
+        case ControlEvent.CONTROL_LINKLIST_STRUCTURE_CHANGED:
             if (event.getSource().getClass() == JDController.class) {
                 this.setPackages(JDUtilities.getController().getPackages());
             }

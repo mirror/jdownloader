@@ -34,7 +34,26 @@ import jd.plugins.Plugin;
  *
  */
 public interface UIInterface extends ControlListener {
-  
+    /**
+     * GUI minimieren
+     */
+  public static int WINDOW_STATUS_MINIMIZED=0;
+  /**
+   * GUI maximieren
+   */
+  public static int WINDOW_STATUS_MAXIMIZED=1;
+  /**
+   * GUI in den Tray legen
+   */
+  public static int WINDOW_STATUS_TRAYED=2;
+  /**
+   * GUI normal anzeigen (Defaulteinstellungen)
+   */
+public static int WINDOW_STATUS_NORMAL = 3;
+/**
+ * GUI normal, aber im Vordergrund anzeigen
+ */
+public static int WINDOW_STATUS_FOREGROUND = 4;
     /**
      * Der Benutzer soll den Captcha Code eintippen
      * 
@@ -112,5 +131,10 @@ public interface UIInterface extends ControlListener {
      * Wird aufgeruifen sobald die Initialisierung aller Module komplett ist
      */
     public void onJDInitComplete();
+
+/**
+ * Minimiert die GUI. als ID können die GUI_STATUS_IDS aus UIInterface,* verwendet werden
+ */
+    public void setGUIStatus(int id);
  
 }

@@ -1040,6 +1040,7 @@ if(maximalspeed<=0){
     }
 
     public void setLinkType(int linktypeContainer) {
+        if(linktypeContainer==linkType)return;
         if (linkType == LINKTYPE_CONTAINER) {
             logger.severe("You are not allowd to Change the Linktype of " + this);
             return;
@@ -1085,9 +1086,9 @@ if(maximalspeed<=0){
     }
 
     public int getPartByName() {
-        if(partID<0){
-            this.setName(this.extractFileNameFromURL());
-        }
+//        if(partID<0){
+//            this.setName(this.extractFileNameFromURL());
+//        }
         return this.partID;
       
     }

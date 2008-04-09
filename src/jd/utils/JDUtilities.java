@@ -92,6 +92,7 @@ import jd.captcha.pixelgrid.Captcha;
 import jd.config.Configuration;
 import jd.config.SubConfiguration;
 import jd.controlling.JDController;
+import jd.event.ControlEvent;
 import jd.gui.UIInterface;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTPConnection;
@@ -739,7 +740,8 @@ public class JDUtilities {
             host = method;
         }
         
-    
+        JDUtilities.getController().fireControlEvent(new ControlEvent(plugin, ControlEvent.CONTROL_CAPTCHA_LOADED, file));
+        
 
         logger.info("JAC has Method for: " + host + ": " + JAntiCaptcha.hasMethod(getJACMethodsDirectory(), host));
         if (forceJAC || (JAntiCaptcha.hasMethod(getJACMethodsDirectory(), host) && JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_JAC_METHODS + "_" + host, true)&& !configuration.getBooleanProperty(Configuration.PARAM_CAPTCHA_JAC_DISABLE, false))) {
@@ -2302,11 +2304,24 @@ public class JDUtilities {
     }
 
     public static String formatKbReadable(int value) {
+      
         DecimalFormat   c= new DecimalFormat("0.00"); ;
-        if(value>=(1024*1024))return c.format(value/(1024*1024.0))+" GB";
-        if(value>=(1024))return c.format(value/1024.0)+" MB";
+        if(value>=(1024*1024)){
+          
+            return c.format(value/(1024*1024.0))+" GB";
+        }
+        if(value>=(1024)){
+           
+            return c.format(value/1024.0)+" MB";
+        }
         return value+" KB";
        
+    }
+
+    public static String getPercent(long downloadCurrent, long downloadMax) {
+        DecimalFormat   c= new DecimalFormat("0.00"); ;
+        
+        return c.format(100.0*downloadCurrent/(double)downloadMax)+"%";
     }
 
 }

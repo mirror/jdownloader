@@ -68,7 +68,7 @@ public class MBBDownload extends DownloadInterface {
     // }
     //
     // }
-    protected void addBytes(Chunk chunk) {
+    protected void writeChunkBytes(Chunk chunk) {
         try {
             synchronized (wrBuf) {
                 wrBuf.position((int) chunk.currentBytePosition);

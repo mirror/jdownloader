@@ -23,6 +23,7 @@ import java.util.Iterator;
 import java.util.Vector;
 
 import jd.controlling.ProgressController;
+import jd.event.ControlEvent;
 import jd.utils.JDUtilities;
 
 /**
@@ -50,14 +51,12 @@ public abstract class PluginForDecrypt extends Plugin implements Comparable {
     }
 
     public Vector<DownloadLink> decryptLinks(Vector<String> cryptedLinks) {
-        Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
-        Iterator<String> iterator = cryptedLinks.iterator();
-       
-        while (iterator.hasNext()) {
-            String link = iterator.next();
-
-            decryptedLinks.addAll(decryptLink(link));
+        this.fireControlEvent(ControlEvent.CONTROL_PLUGIN_ACTIVE, cryptedLinks);
+        Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();      
+       for(  Iterator<String> iterator = cryptedLinks.iterator();iterator.hasNext();) {        
+            decryptedLinks.addAll(decryptLink(iterator.next()));
         }
+       this.fireControlEvent(ControlEvent.CONTROL_PLUGIN_INACTIVE, decryptedLinks);
     
         return decryptedLinks;
     }

@@ -150,8 +150,8 @@ public class DownloadTreeTable extends JXTreeTable implements TreeExpansionListe
                     column.setMaxWidth(160);
                     break;
                 case DownloadTreeTableModel.COL_PROGRESS:
-                    column.setPreferredWidth(160);
-                     column.setMaxWidth(160);
+                    column.setPreferredWidth(190);
+                     column.setMaxWidth(190);
                     break;
             }
         }
@@ -393,7 +393,7 @@ public class DownloadTreeTable extends JXTreeTable implements TreeExpansionListe
             case TreeTableAction.DOWNLOAD_DELETE:
                 links = (Vector<DownloadLink>) ((TreeTableAction) ((JMenuItem) e.getSource()).getAction()).getProperty().getProperty("downloadlinks");
                 JDUtilities.getController().removeDownloadLinks(links);
-                JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_LINKLIST_CHANGED, this));
+                JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_LINKLIST_STRUCTURE_CHANGED, this));
 
                 break;
             case TreeTableAction.DOWNLOAD_ENABLE:
@@ -402,7 +402,7 @@ public class DownloadTreeTable extends JXTreeTable implements TreeExpansionListe
                 for (int i = 0; i < links.size(); i++) {
                     links.elementAt(i).setEnabled(true);
                 }
-                JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SINGLE_DOWNLOAD_CHANGED, this));
+                JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_DOWNLOADLINK_DATA_CHANGED, this));
                 break;
             case TreeTableAction.DOWNLOAD_DISABLE:
                 links = (Vector<DownloadLink>) ((TreeTableAction) ((JMenuItem) e.getSource()).getAction()).getProperty().getProperty("downloadlinks");
@@ -410,7 +410,7 @@ public class DownloadTreeTable extends JXTreeTable implements TreeExpansionListe
                 for (int i = 0; i < links.size(); i++) {
                     links.elementAt(i).setEnabled(false);
                 }
-                JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SINGLE_DOWNLOAD_CHANGED, this));
+                JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_DOWNLOADLINK_DATA_CHANGED, this));
 
                 break;
             case TreeTableAction.DOWNLOAD_NEW_PACKAGE:
@@ -429,7 +429,7 @@ public class DownloadTreeTable extends JXTreeTable implements TreeExpansionListe
                     links.elementAt(i).setFilePackage(nfp);
                 }
                 JDUtilities.getController().addAllLinks(links);
-                JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_LINKLIST_CHANGED, this));
+                JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_LINKLIST_STRUCTURE_CHANGED, this));
 
                 break;
 
@@ -443,7 +443,7 @@ public class DownloadTreeTable extends JXTreeTable implements TreeExpansionListe
                         links.elementAt(i).reset();
                     }
                 }
-                JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SINGLE_DOWNLOAD_CHANGED, this));
+                JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_DOWNLOADLINK_DATA_CHANGED, this));
 
                 break;
             // case TreeTableAction.DOWNLOAD_FORCE:
@@ -466,7 +466,7 @@ public class DownloadTreeTable extends JXTreeTable implements TreeExpansionListe
                 File ret = fc.getSelectedFile();
 
                 if (ret != null) fp.setDownloadDirectory(ret.getAbsolutePath());
-                JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SINGLE_DOWNLOAD_CHANGED, this));
+                JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_DOWNLOADLINK_DATA_CHANGED, this));
 
                 break;
             case TreeTableAction.PACKAGE_EDIT_NAME:
@@ -474,7 +474,7 @@ public class DownloadTreeTable extends JXTreeTable implements TreeExpansionListe
 
                 name = JDUtilities.getGUI().showTextAreaDialog(JDLocale.L("gui.linklist.editpackagename.title", "Paketname ändern"), JDLocale.L("gui.linklist.editpackagename.message", "Neuer Paketname"), fp.getName());
                 if (name != null) fp.setName(name);
-                JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SINGLE_DOWNLOAD_CHANGED, this));
+                JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_DOWNLOADLINK_DATA_CHANGED, this));
 
                 break;
 
@@ -493,7 +493,7 @@ public class DownloadTreeTable extends JXTreeTable implements TreeExpansionListe
                     JDUtilities.getController().removeDownloadLinks(new Vector<DownloadLink>(it.next().getDownloadLinks()));
                 }
 
-                JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_LINKLIST_CHANGED, this));
+                JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_LINKLIST_STRUCTURE_CHANGED, this));
 
                 break;
             case TreeTableAction.PACKAGE_ENABLE:
@@ -506,7 +506,7 @@ public class DownloadTreeTable extends JXTreeTable implements TreeExpansionListe
                     }
 
                 }
-                JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SINGLE_DOWNLOAD_CHANGED, this));
+                JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_DOWNLOADLINK_DATA_CHANGED, this));
 
                 break;
             case TreeTableAction.PACKAGE_DISABLE:
@@ -520,7 +520,7 @@ public class DownloadTreeTable extends JXTreeTable implements TreeExpansionListe
                     }
 
                 }
-                JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SINGLE_DOWNLOAD_CHANGED, this));
+                JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_DOWNLOADLINK_DATA_CHANGED, this));
 
                 break;
 
@@ -539,13 +539,13 @@ public class DownloadTreeTable extends JXTreeTable implements TreeExpansionListe
                     }
 
                 }
-                JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SINGLE_DOWNLOAD_CHANGED, this));
+                JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_DOWNLOADLINK_DATA_CHANGED, this));
 
                 break;
             case TreeTableAction.PACKAGE_SORT:
                 fp = (FilePackage) ((TreeTableAction) ((JMenuItem) e.getSource()).getAction()).getProperty().getProperty("package");
                 fp.sort("ASC");
-                JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_LINKLIST_CHANGED, this));
+                JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_LINKLIST_STRUCTURE_CHANGED, this));
 
                 break;
         }

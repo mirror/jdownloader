@@ -24,6 +24,7 @@ import java.util.Vector;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import jd.event.ControlEvent;
 import jd.utils.JDUtilities;
 
 /**
@@ -162,6 +163,7 @@ public abstract class PluginForContainer extends PluginForDecrypt {
 
         if (containedLinks == null || containedLinks.size() == 0) {
             logger.info("Init Container");
+            fireControlEvent(ControlEvent.CONTROL_PLUGIN_ACTIVE, this);
             doDecryptStep(new PluginStep(PluginStep.STEP_OPEN_CONTAINER, null), filename);
             logger.info(filename + " Parse");
             if (containedLinks != null) {
@@ -181,6 +183,7 @@ public abstract class PluginForContainer extends PluginForDecrypt {
                 CONTAINER.put(filename, containedLinks);
                 CONTAINERLINKS.put(filename, downloadLinksURL);
             }
+            fireControlEvent(ControlEvent.CONTROL_PLUGIN_INACTIVE, this);
 
         }
     }

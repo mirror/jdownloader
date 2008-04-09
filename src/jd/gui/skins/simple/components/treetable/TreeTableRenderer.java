@@ -23,7 +23,15 @@ public class TreeTableRenderer extends DefaultTableCellRenderer {
     private JLabel label;
 
     private JProgressBar progress;
+    private static final Color PACKAGE_PROGRESS_COLOR=new Color(0xEDF3FE);
 
+    private static final Color ERROR_PROGRESS_COLOR = new Color(255, 0, 0, 80);
+
+    private static final Color DONE_COLOR = new Color(0x94baff);
+
+    private static final Color INACTIVE_PROGRESS_COLOR = Color.GRAY;
+
+    private static final Color ACTIVE_PROGRESS_COLOR = new Color(0x94baff);
     private DownloadLink dLink;
 
     private FilePackage fp;
@@ -54,17 +62,17 @@ public class TreeTableRenderer extends DefaultTableCellRenderer {
                     progress.setMaximum(1);
                     progress.setValue(1);
                     progress.setStringPainted(true);
-                    progress.setBackground(Color.WHITE);
+                    
                     progress.setString(JDUtilities.formatBytesToMB((int) dLink.getDownloadCurrent()));
 
                 } else {
-                    if (!dLink.isInProgress()) {
+                    if (!dLink.isInProgress()&&false) {
                         progress.setString("");
                         if (dLink.getStatus() == DownloadLink.STATUS_DONE) {
-                            progress.setForeground(new Color(0x94baff));
+                            progress.setForeground(DONE_COLOR);
                             progress.setString("- 100 % -");
                         } else {
-                            progress.setForeground(Color.GRAY);
+                            progress.setForeground(INACTIVE_PROGRESS_COLOR);
                         }
                         progress.setMaximum(Math.max(1, (int) dLink.getDownloadMax()));
                         progress.setStringPainted(true);
@@ -74,7 +82,7 @@ public class TreeTableRenderer extends DefaultTableCellRenderer {
                     } else {
                         progress.setMaximum(Math.max(1, (int) dLink.getDownloadMax()));
                         progress.setStringPainted(true);
-                        progress.setForeground(new Color(0x94baff));
+                        progress.setForeground(ACTIVE_PROGRESS_COLOR);
                         // progress.setBackground(new Color(255, 0, 0, 80));
                         progress.setValue((int) dLink.getDownloadCurrent());
                         progress.setString(c.format(10000 * progress.getPercentComplete() / 100.0) + "% (" + JDUtilities.formatBytesToMB(progress.getValue()) + "/" + JDUtilities.formatBytesToMB(progress.getMaximum()) + ")");
@@ -84,7 +92,7 @@ public class TreeTableRenderer extends DefaultTableCellRenderer {
                 return progress;
             } else if (dLink.getRemainingWaittime() > 0 && dLink.getWaitTime() >= dLink.getRemainingWaittime()) {
                 progress.setMaximum(dLink.getWaitTime());
-                progress.setForeground(new Color(255, 0, 0, 80));
+                progress.setForeground(ERROR_PROGRESS_COLOR);
                 progress.setStringPainted(true);
                 progress.setValue((int) dLink.getRemainingWaittime());
                 progress.setString(c.format(10000 * progress.getPercentComplete() / 100.0) + "% (" + progress.getValue() / 1000 + "/" + progress.getMaximum() / 1000 + " sek)");
@@ -96,11 +104,11 @@ public class TreeTableRenderer extends DefaultTableCellRenderer {
             fp = (FilePackage) value;
             progress.setMaximum(Math.max(1, fp.getTotalEstimatedPackageSize()));
             progress.setStringPainted(true);
-            progress.setForeground(new Color(0x2f63ad));
+            progress.setForeground(PACKAGE_PROGRESS_COLOR);
 
             progress.setBackground(Color.BLACK);
-            progress.setValue((int) fp.getTotalBytesLoaded());
-            progress.setString(c.format(10000 * progress.getPercentComplete() / 100.0) + "% (" + JDUtilities.formatKbReadable(progress.getValue()) + "/" + JDUtilities.formatKbReadable(progress.getMaximum()) + ")");
+            progress.setValue( fp.getTotalKBLoaded());
+            progress.setString(c.format(fp.getPercent()) + "% (" + JDUtilities.formatKbReadable(progress.getValue()) + "/" + JDUtilities.formatKbReadable(Math.max(1, fp.getTotalEstimatedPackageSize())) + ")");
 
             return progress;
         }

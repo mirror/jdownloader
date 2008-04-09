@@ -43,78 +43,80 @@ import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
 abstract public class DownloadInterface {
-    public static final int  STATUS_INITIALIZED                     = 0;
+    public static final int STATUS_INITIALIZED = 0;
 
     // Errorids unter 100 sind für DownloadLink reserviert
-    public static final int  ERROR_OUTPUTFILE_OWNED_BY_ANOTHER_LINK = DownloadLink.STATUS_ERROR_OUTPUTFILE_OWNED_BY_ANOTHER_LINK;
+    public static final int ERROR_OUTPUTFILE_OWNED_BY_ANOTHER_LINK = DownloadLink.STATUS_ERROR_OUTPUTFILE_OWNED_BY_ANOTHER_LINK;
 
-    public static final int  ERROR_OUTPUTFILE_INVALID               = 100;
+    public static final int ERROR_OUTPUTFILE_INVALID = 100;
 
-    public static final int  ERROR_OUTPUTFILE_ALREADYEXISTS         = DownloadLink.STATUS_ERROR_ALREADYEXISTS;
+    public static final int ERROR_OUTPUTFILE_ALREADYEXISTS = DownloadLink.STATUS_ERROR_ALREADYEXISTS;
 
-    public static final int  ERROR_CHUNK_INCOMPLETE                 = DownloadLink.STATUS_DOWNLOAD_INCOMPLETE;
+    public static final int ERROR_CHUNK_INCOMPLETE = DownloadLink.STATUS_DOWNLOAD_INCOMPLETE;
 
-    public static final int  ERROR_FILE_NOT_FOUND                   = DownloadLink.STATUS_ERROR_FILE_NOT_FOUND;
+    public static final int ERROR_FILE_NOT_FOUND = DownloadLink.STATUS_ERROR_FILE_NOT_FOUND;
 
-    public static final int  ERROR_SECURITY                         = DownloadLink.STATUS_ERROR_SECURITY;
+    public static final int ERROR_SECURITY = DownloadLink.STATUS_ERROR_SECURITY;
 
-    public static final int  ERROR_UNKNOWN                          = DownloadLink.STATUS_ERROR_UNKNOWN;
+    public static final int ERROR_UNKNOWN = DownloadLink.STATUS_ERROR_UNKNOWN;
 
-    public static final int  ERROR_COULD_NOT_RENAME                 = 101;
+    public static final int ERROR_COULD_NOT_RENAME = 101;
 
-    public static final int  ERROR_ABORTED_BY_USER                  = 102;
+    public static final int ERROR_ABORTED_BY_USER = 102;
 
-    public static final int  ERROR_TOO_MUCH_BUFFERMEMORY            = 103;
+    public static final int ERROR_TOO_MUCH_BUFFERMEMORY = 103;
 
-    public static final int  ERROR_CHUNKLOAD_FAILED                 = DownloadLink.STATUS_ERROR_CHUNKLOAD_FAILED;
+    public static final int ERROR_CHUNKLOAD_FAILED = DownloadLink.STATUS_ERROR_CHUNKLOAD_FAILED;
 
-    public static final int  ERROR_NO_CONNECTION                    = 104;
+    public static final int ERROR_NO_CONNECTION = 104;
 
-    public static final int  ERROR_TIMEOUT_REACHED                  = 105;
+    public static final int ERROR_TIMEOUT_REACHED = 105;
 
-    public static final int  ERROR_LOCAL_IO                         = 106;
+    public static final int ERROR_LOCAL_IO = 106;
 
-    public static final int  ERROR_NIBBLE_LIMIT_REACHED             = 107;
+    public static final int ERROR_NIBBLE_LIMIT_REACHED = 107;
 
-    protected DownloadLink   downloadLink;
+    protected DownloadLink downloadLink;
 
     protected HTTPConnection connection;
 
-    private int              status                                 = STATUS_INITIALIZED;
+    private int status = STATUS_INITIALIZED;
 
-    private int              chunksDownloading                      = 0;
+    private int chunksDownloading = 0;
 
-    protected int            chunkNum                               = 1;
+    protected int chunkNum = 1;
 
-    private int              readTimeout                            = JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_READ_TIMEOUT, 10000);
+    private int readTimeout = JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_READ_TIMEOUT, 10000);
 
-    private int              requestTimeout                         = JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_CONNECT_TIMEOUT, 10000);
+    private int requestTimeout = JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_CONNECT_TIMEOUT, 10000);
 
-    private int              chunksInProgress                       = 0;
+    private int chunksInProgress = 0;
 
-    private Vector<Integer>  errors                                 = new Vector<Integer>();
+    private Vector<Integer> errors = new Vector<Integer>();
 
-    private Vector<Chunk>    chunks                                 = new Vector<Chunk>();
+    private Vector<Chunk> chunks = new Vector<Chunk>();
 
-    private boolean          resume                                 = false;
+    private boolean resume = false;
 
-    protected PluginForHost  plugin;
+    protected PluginForHost plugin;
 
-    protected int            bytesLoaded                            = 0;
+    protected int bytesLoaded = 0;
 
-    protected int            maxBytes                               = -1;
+    protected int maxBytes = -1;
 
-    protected long           fileSize                               = -1;
+    protected long fileSize = -1;
 
-    private boolean          abortByError                           = false;
+    private boolean abortByError = false;
 
-    private int              preBytes                               = 0;
+    private int preBytes = 0;
 
-    protected boolean        speedDebug                             = true;
+    protected boolean speedDebug = true;
 
-    private Vector<Exception> exceptions=null;
+    private Vector<Exception> exceptions = null;
 
-    public static Logger     logger                                 = JDUtilities.getLogger();
+    private int totalLoadedBytes=0;
+
+    public static Logger logger = JDUtilities.getLogger();
 
     public DownloadInterface(PluginForHost plugin, DownloadLink downloadLink, HTTPConnection urlConnection) {
         this.downloadLink = downloadLink;
@@ -147,9 +149,14 @@ abstract public class DownloadInterface {
      * @param buffer
      * @param currentBytePosition
      */
-   
-    abstract protected void addBytes(Chunk chunk);
 
+    abstract protected void writeChunkBytes(Chunk chunk);
+    protected void addBytes(Chunk chunk){
+        writeChunkBytes(chunk);
+        this.totalLoadedBytes+=chunk.buffer.limit();
+        //152857135
+        logger.info("Bytes "+totalLoadedBytes);
+    }
     /**
      * File soll resumed werden
      * 
@@ -182,16 +189,16 @@ abstract public class DownloadInterface {
 
         }
         switch (id) {
-            case ERROR_UNKNOWN:
-            case ERROR_TIMEOUT_REACHED:
-            case ERROR_FILE_NOT_FOUND:
-            case ERROR_TOO_MUCH_BUFFERMEMORY:
-            case ERROR_LOCAL_IO:
-            case ERROR_NO_CONNECTION:
-            case ERROR_SECURITY:
-            case ERROR_CHUNKLOAD_FAILED:
-            case ERROR_NIBBLE_LIMIT_REACHED:
-                terminate(id);
+        case ERROR_UNKNOWN:
+        case ERROR_TIMEOUT_REACHED:
+        case ERROR_FILE_NOT_FOUND:
+        case ERROR_TOO_MUCH_BUFFERMEMORY:
+        case ERROR_LOCAL_IO:
+        case ERROR_NO_CONNECTION:
+        case ERROR_SECURITY:
+        case ERROR_CHUNKLOAD_FAILED:
+        case ERROR_NIBBLE_LIMIT_REACHED:
+            terminate(id);
 
         }
 
@@ -241,14 +248,13 @@ abstract public class DownloadInterface {
 
                 if (new File(downloadLink.getFileOutput()).delete()) {
                     logger.severe("--->Overwritten");
-                }
-                else {
+                } else {
                     downloadLink.setStatus(DownloadLink.STATUS_ERROR_ALREADYEXISTS);
                     error(ERROR_OUTPUTFILE_ALREADYEXISTS);
                     if (!handleErrors()) return false;
                 }
 
-            }else{
+            } else {
                 downloadLink.setStatus(DownloadLink.STATUS_ERROR_ALREADYEXISTS);
                 error(ERROR_OUTPUTFILE_ALREADYEXISTS);
                 if (!handleErrors()) return false;
@@ -269,8 +275,7 @@ abstract public class DownloadInterface {
             if (!handleErrors()) {
 
                 return false;
-            }
-            else {
+            } else {
 
                 return true;
             }
@@ -281,7 +286,7 @@ abstract public class DownloadInterface {
             if (plugin.getCurrentStep().getStatus() != PluginStep.STATUS_ERROR) {
                 e.printStackTrace();
                 downloadLink.setStatus(DownloadLink.STATUS_ERROR_PLUGIN_SPECIFIC);
-            
+
                 plugin.getCurrentStep().setParameter(e.getLocalizedMessage());
                 plugin.getCurrentStep().setStatus(PluginStep.STATUS_ERROR);
 
@@ -313,17 +318,14 @@ abstract public class DownloadInterface {
      */
     protected long getFileSize() {
         if (connection.getContentLength() > 0) {
-           
 
-            return connection.getContentLength();
-        }
+        return connection.getContentLength(); }
         if (fileSize > 0) {
-            
-            return fileSize;
-        }
+
+        return fileSize; }
         if (downloadLink.getDownloadMax() > 0) {
-          
-            return downloadLink.getDownloadMax();
+
+        return downloadLink.getDownloadMax();
 
         }
         return -1;
@@ -335,7 +337,6 @@ abstract public class DownloadInterface {
      * @return
      */
     public boolean handleErrors() {
-      
 
         if (errors.contains(ERROR_ABORTED_BY_USER)) {
             plugin.getCurrentStep().setStatus(PluginStep.STATUS_TODO);
@@ -399,11 +400,11 @@ abstract public class DownloadInterface {
             downloadLink.setStatusText("Nibbling aborted after " + this.maxBytes + " bytes");
             return false;
         }
-if(exceptions!=null){
-    plugin.getCurrentStep().setStatus(PluginStep.STATUS_ERROR);
-    downloadLink.setStatus(DownloadLink.STATUS_ERROR_PLUGIN_SPECIFIC);
-    downloadLink.setStatusText(JDUtilities.convertExceptionReadable(exceptions.get(0)));
-}
+        if (exceptions != null) {
+            plugin.getCurrentStep().setStatus(PluginStep.STATUS_ERROR);
+            downloadLink.setStatus(DownloadLink.STATUS_ERROR_PLUGIN_SPECIFIC);
+            downloadLink.setStatusText(JDUtilities.convertExceptionReadable(exceptions.get(0)));
+        }
         if (abortByError) {
             plugin.getCurrentStep().setStatus(PluginStep.STATUS_ERROR);
             downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN);
@@ -424,13 +425,12 @@ if(exceptions!=null){
             try {
                 Thread.sleep(200);
 
-            }
-            catch (InterruptedException e) {
+            } catch (InterruptedException e) {
             }
 
             downloadLink.setDownloadCurrent(this.bytesLoaded);
             JDUtilities.getController().requestDownloadLinkUpdate(downloadLink);
-          
+
             assignChunkSpeeds();
 
         }
@@ -457,7 +457,7 @@ if(exceptions!=null){
             }
             int overhead = allowedLinkSpeed - currentSpeed;
             if (Math.abs(overhead) < MAX_ALLOWED_OVERHEAD) return;
-          
+
             it = chunks.iterator();
             while (it.hasNext()) {
                 next = it.next();
@@ -479,8 +479,7 @@ if(exceptions!=null){
         chunksInProgress++;
         if (chunkNum == 1) {
             chunk.start();
-        }
-        else {
+        } else {
             chunk.start();
         }
 
@@ -493,11 +492,13 @@ if(exceptions!=null){
      */
     public int getReadTimeout() {
         return readTimeout;
-    }    
+    }
+
     private void addException(Exception e) {
-        if(exceptions==null)exceptions= new Vector<Exception>();
+        if (exceptions == null) exceptions = new Vector<Exception>();
         exceptions.add(e);
     }
+
     /**
      * Setzt den aktuellen readtimeout(nur vor dem dl start)
      * 
@@ -634,33 +635,33 @@ if(exceptions!=null){
         // sehr niedrig geregelte chunks haben einen kleinen buffer und eine
         // sehr hohe intervalzeit.
         // Das führt zu verstärkt intervalartigem laden und ist ungewünscht
-        public static final int  MIN_CHUNKSIZE  = 1 * 1024 * 1024;
+        public static final int MIN_CHUNKSIZE = 1 * 1024 * 1024;
 
         private static final long MAX_BUFFERSIZE = 6 * 1024 * 1024;
 
         private static final long MIN_BUFFERSIZE = 1024;
 
-        private static final int TIME_BASE      = 2000;
+        private static final int TIME_BASE = 2000;
 
-        private long             startByte;
+        private long startByte;
 
-        private long             endByte;
+        private long endByte;
 
-        private HTTPConnection   connection;
+        private HTTPConnection connection;
 
-        long                     currentBytePosition;
+        long currentBytePosition;
 
-        private long             bytesPerSecond = -1;
+        private long bytesPerSecond = -1;
 
-        private double           bufferTimeFaktor;
+        private double bufferTimeFaktor;
 
-        private long             desiredBps;
+        private long desiredBps;
 
-        private int              maxSpeed;
+        private int maxSpeed;
 
-        ByteBuffer               buffer;
+        ByteBuffer buffer;
 
-        private int              id             = -1;
+        private int id = -1;
 
         /**
          * die connection wird entsprechend der start und endbytes neu
@@ -677,17 +678,17 @@ if(exceptions!=null){
 
             // maxSpeed=Integer.MAX_VALUE;
             currentBytePosition = this.startByte;
-//            if (startByte >= endByte && endByte > 0) {
-//                logger.severe("Startbyte has to be less than endByte");
-//            }
+            // if (startByte >= endByte && endByte > 0) {
+            // logger.severe("Startbyte has to be less than endByte");
+            // }
         }
 
         public void finalize() {
             if (speedDebug) logger.finer("Finalized: " + downloadLink + " : " + this.getID());
-            buffer=null;
+            buffer = null;
             System.gc();
             System.runFinalization();
-            
+
         }
 
         public int getID() {
@@ -706,7 +707,6 @@ if(exceptions!=null){
          */
         public void setMaximalSpeed(int i) {
             maxSpeed = i;
-
 
         }
 
@@ -758,16 +758,13 @@ if(exceptions!=null){
 
                 currentBytePosition = this.startByte;
 
-            }
-            catch (Exception e) {
+            } catch (Exception e) {
                 error(ERROR_CHUNKLOAD_FAILED);
                 addException(e);
                 e.printStackTrace();
             }
 
         }
-
-    
 
         /**
          * Kopiert die verbindung. Es wird bis auf die Range und timeouts exakt
@@ -802,7 +799,6 @@ if(exceptions!=null){
 
                     httpConnection.setRequestProperty("Range", "bytes=" + startByte + "-" + (endByte > 0 ? endByte : ""));
 
-                  
                 }
                 if (connection.getHTTPURLConnection().getDoOutput()) {
                     httpConnection.setDoOutput(true);
@@ -810,20 +806,21 @@ if(exceptions!=null){
                     httpConnection.post(connection.getPostData());
                     httpConnection.getHTTPURLConnection();
 
-                }
-                else {
+                } else {
                     httpConnection.connect();
                 }
                 if (speedDebug) {
-                    //logger.finer("Org request headers " + this.getID() + ":" + request);
-                    //logger.finer("Coppied request headers " + this.getID() + ":" + httpConnection.getRequestProperties());
-                    //logger.finer("Server chunk Headers: " + this.getID() + ":" + httpConnection.getHeaderFields());
+                    // logger.finer("Org request headers " + this.getID() + ":"
+                    // + request);
+                    // logger.finer("Coppied request headers " + this.getID() +
+                    // ":" + httpConnection.getRequestProperties());
+                    // logger.finer("Server chunk Headers: " + this.getID() +
+                    // ":" + httpConnection.getHeaderFields());
                 }
 
                 return httpConnection;
 
-            }
-            catch (Exception e) {
+            } catch (Exception e) {
                 addException(e);
                 error(ERROR_CHUNKLOAD_FAILED);
                 e.printStackTrace();
@@ -835,15 +832,15 @@ if(exceptions!=null){
          * Thread runner
          */
         public void run() {
-            logger.finer("Start Chunk "+this.getID()+" : " + startByte + " - " + endByte);
-            if ((startByte >= endByte && endByte > 0)||startByte>=getFileSize()) {
+            logger.finer("Start Chunk " + this.getID() + " : " + startByte + " - " + endByte);
+            if ((startByte >= endByte && endByte > 0) || startByte >= getFileSize()) {
                 chunksInProgress--;
                 return;
             }
-          
-            if (chunkNum > 1 &&preBytes > 0 && this.getID() == 0 && startByte == 0) loadStartBytes(preBytes);
+
+            if (chunkNum > 1 && preBytes > 0 && this.getID() == 0 && startByte == 0) loadStartBytes(preBytes);
             plugin.setCurrentConnections(plugin.getCurrentConnections() + 1);
-          
+
             if (chunkNum > 1) this.connection = copyConnection(connection);
             if (connection == null) {
                 error(ERROR_CHUNKLOAD_FAILED);
@@ -873,15 +870,23 @@ if(exceptions!=null){
                 plugin.setCurrentConnections(plugin.getCurrentConnections() - 1);
                 return;
 
-            }
-            else if (range != null) {
+            } else if (range != null) {
 
+                if (JDUtilities.filterInt(range[0]) > startByte) logger.severe("Range Conflict " + range[0] + " - " + range[1] + " wished start: " + startByte);
                 this.startByte = JDUtilities.filterInt(range[0]);
-                this.endByte = JDUtilities.filterInt(range[1]);
+                if (endByte <= 0) {
+                    this.endByte = JDUtilities.filterInt(range[1]);
+                } else {
+                    if (JDUtilities.filterInt(range[1]) < endByte) logger.severe("Range Conflict " + range[0] + " - " + range[1] + " wishedend: " + endByte);
+                    this.endByte = Math.min(endByte + 1, JDUtilities.filterInt(range[1]));
+
+                }
 
                 if (speedDebug) logger.finer("Resulting Range" + startByte + " - " + endByte);
+            }else{
+                endByte=connection.getContentLength();
             }
-        
+
             // try {
             // Thread.sleep(chunks.indexOf(this)*TIME_BASE);
             // }
@@ -894,12 +899,11 @@ if(exceptions!=null){
             this.bytesPerSecond = 0;
             this.desiredBps = 0;
             chunksDownloading--;
-         
 
             if (plugin.aborted || downloadLink.isAborted()) {
                 error(ERROR_ABORTED_BY_USER);
             }
-            logger.finer("Chunk finished "+chunks.indexOf(this)+" " + getBytesLoaded()+" bytes");
+            logger.finer("Chunk finished " + chunks.indexOf(this) + " " + getBytesLoaded() + " bytes");
             chunksInProgress--;
             plugin.setCurrentConnections(plugin.getCurrentConnections() - 1);
 
@@ -942,8 +946,7 @@ if(exceptions!=null){
                 // logger.finer(bufferSize+" - "+this.getTimeInterval());
                 buffer = ByteBuffer.allocateDirect(bufferSize);
 
-            }
-            catch (OutOfMemoryError e) {
+            } catch (OutOfMemoryError e) {
                 error(ERROR_TOO_MUCH_BUFFERMEMORY);
                 return;
             }
@@ -983,8 +986,7 @@ if(exceptions!=null){
                             // kann den connectiontimeout nicht auswerten
                             block = source.read(buffer);
 
-                        }
-                        else {
+                        } else {
 
                             // logger.finer(""+inputStream.getClass());
 
@@ -993,13 +995,12 @@ if(exceptions!=null){
                             read = inputStream.read(b, 0, 1);
                             if (read > 0) {
                                 buffer.put(b);
-                                block = 1;
+                                block = read;
                                 // Pause falls das Ende nicht erreicht worden
                                 // ist. Die Schelife läuft zu schnell
                                 // logger.finer("Pause");
                                 // Thread.sleep(25);
-                            }
-                            else if (read < 0) {
+                            } else if (read < 0) {
                                 block = -1;
 
                                 break;
@@ -1021,7 +1022,16 @@ if(exceptions!=null){
                     buffer.clear();
                     currentBytePosition += bytes;
 
+                    logger.info(this.getID() + ": " + this.startByte + " --> " + currentBytePosition + " -->" + this.endByte + "/" + bytesLoaded + ":" + (100.0 * (currentBytePosition - startByte) / (double) (endByte - startByte)));
+
                     if (block == -1 || isExternalyAborted()) break;
+
+                    if (currentBytePosition >= this.endByte) {
+
+                        logger.severe(this.getID() + " OVERLOAD!!! " + (currentBytePosition - this.endByte));
+                        break;
+                    }
+
                     /*
                      * War der download des buffers zu schnell, wird heir eine
                      * pause eingelegt
@@ -1030,18 +1040,24 @@ if(exceptions!=null){
                     desiredBps = (1000 * (long) bytes) / deltaTime;
                     if (speedDebug) logger.finer("desired: " + desiredBps + " - loaded: " + (System.currentTimeMillis() - timer) + " - " + bytes);
                     tempBuff = getBufferSize(getMaximalSpeed());
+                    // Falls der Server bei den Ranges schlampt und als endByte
+                    // immer das dateiende angibt wird hier der buffer
+                    // korrigiert um overhead zu vermeiden
+                    if (tempBuff > endByte - currentBytePosition) {
+                        tempBuff = (int) (endByte - currentBytePosition) + 1;
+                    }
                     if (Math.abs(bufferSize - tempBuff) > 1000) {
                         bufferSize = tempBuff;
                         try {
                             buffer = ByteBuffer.allocateDirect(Math.max(1, bufferSize));
 
-                        }
-                        catch (Exception e) {
+                        } catch (Exception e) {
                             error(ERROR_TOO_MUCH_BUFFERMEMORY);
                             return;
                         }
 
                         buffer.clear();
+
                     }
                     try {
                         // 0.995 ist eine Anpassung an die Zeit, die die
@@ -1051,8 +1067,7 @@ if(exceptions!=null){
                         addWait = (long) (0.995 * (ti - (System.currentTimeMillis() - timer)));
                         if (speedDebug) logger.finer("Wait " + addWait);
                         if (addWait > 0) Thread.sleep(addWait);
-                    }
-                    catch (Exception e) {
+                    } catch (Exception e) {
                     }
                     deltaTime = System.currentTimeMillis() - timer;
 
@@ -1062,7 +1077,7 @@ if(exceptions!=null){
                     if (speedDebug) logger.finer(downloadLink.getSpeedMeter().getSpeed() + " loaded" + bytes + " b in " + (deltaTime) + " ms: " + bytesPerSecond + "(" + desiredBps + ") ");
 
                 }
-                buffer=null;
+                buffer = null;
                 if (currentBytePosition < endByte && endByte > 0) {
 
                     inputStream.close();
@@ -1075,46 +1090,38 @@ if(exceptions!=null){
                 inputStream.close();
                 source.close();
 
-            }
-            catch (FileNotFoundException e) {
+            } catch (FileNotFoundException e) {
                 logger.severe("file not found. " + e.getLocalizedMessage());
                 error(ERROR_FILE_NOT_FOUND);
-            }
-            catch (SecurityException e) {
+            } catch (SecurityException e) {
                 logger.severe("not enough rights to write the file. " + e.getLocalizedMessage());
                 error(ERROR_SECURITY);
 
-            }
-            catch (IOException e) {
+            } catch (IOException e) {
                 if (e.getMessage().indexOf("timed out") >= 0) {
                     error(ERROR_TIMEOUT_REACHED);
                     ;
 
-                }
-                else {
+                } else {
                     logger.severe("error occurred while writing to file. " + e.getLocalizedMessage());
                     error(ERROR_SECURITY);
                 }
-            }
-            catch (Exception e) {
+            } catch (Exception e) {
 
                 e.printStackTrace();
                 error(ERROR_UNKNOWN);
                 addException(e);
-              
-             
+
             }
 
             try {
                 if (inputStream != null) inputStream.close();
-            }
-            catch (IOException e) {
+            } catch (IOException e) {
                 e.printStackTrace();
             }
             try {
                 if (source != null) source.close();
-            }
-            catch (IOException e) {
+            } catch (IOException e) {
                 e.printStackTrace();
             }
 
@@ -1128,10 +1135,10 @@ if(exceptions!=null){
          */
         private int getBufferSize(long maxspeed) {
             if (speedDebug) logger.finer("speed " + maxspeed);
-            if (!downloadLink.isLimited()) return (int)MAX_BUFFERSIZE;
-            maxspeed*= (TIME_BASE / 1000);            
+            if (!downloadLink.isLimited()) return (int) MAX_BUFFERSIZE;
+            maxspeed *= (TIME_BASE / 1000);
             long max = Math.max(MIN_BUFFERSIZE, maxspeed);
-            int bufferSize = (int)Math.min(MAX_BUFFERSIZE, max);
+            int bufferSize = (int) Math.min(MAX_BUFFERSIZE, max);
             // logger.finer(MIN_BUFFERSIZE+"<>"+maxspeed+"-"+MAX_BUFFERSIZE+"><"+max);
             this.bufferTimeFaktor = Math.max(0.1, (double) bufferSize / maxspeed);
             if (speedDebug) logger.finer("Maxspeed= " + maxspeed + " buffer=" + bufferSize + "time: " + getTimeInterval());
@@ -1168,7 +1175,7 @@ if(exceptions!=null){
 
         public DownloadFailedException(String message) {
             super(message);
-            
+
         }
     }
 

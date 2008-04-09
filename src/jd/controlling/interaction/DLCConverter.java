@@ -72,7 +72,7 @@ public class DLCConverter extends Interaction implements Serializable {
                 try {
                     pContainer = pContainer.getClass().newInstance();
                     progress.setSource(pContainer);
-                    fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_PLUGIN_DECRYPT_ACTIVE, pContainer));
+                   
                     pContainer.initContainer(file.getAbsolutePath());
                     Vector<DownloadLink> links = pContainer.getContainedDownloadlinks();
                     if (links == null || links.size() == 0) {
@@ -81,7 +81,7 @@ public class DLCConverter extends Interaction implements Serializable {
                     else {
                         downloadLinks.addAll(links);
                     }
-                    fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_PLUGIN_DECRYPT_INACTIVE, pContainer));
+                  
                 }
                 catch (Exception e) {
                     e.printStackTrace();

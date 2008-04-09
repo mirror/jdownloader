@@ -21,6 +21,7 @@ import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
+import java.util.Iterator;
 import java.util.logging.Logger;
 
 import javax.swing.JDialog;
@@ -29,6 +30,7 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JSeparator;
 
+import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
@@ -69,10 +71,26 @@ public class PackageInfo extends JDialog {
        addEntry(null,null);
        addEntry("comment",fp.getComment());
        addEntry("dldirectory",fp.getDownloadDirectory());
-       addEntry("packagesize",JDUtilities.formatBytesToMB(fp.getTotalEstimatedPackageSize()));
-       addEntry("loaded",JDUtilities.formatBytesToMB(fp.getTotalBytesLoaded()));
-       addEntry(null,null);
-       addEntry("properties",fp.getProperties()+"");
+       addEntry("packagesize",JDUtilities.formatKbReadable(fp.getTotalEstimatedPackageSize())+" "+fp.getTotalEstimatedPackageSize()+" KB");
+       addEntry("loaded",JDUtilities.formatKbReadable(fp.getTotalKBLoaded())+" "+fp.getTotalKBLoaded()+" KB");
+       addEntry("links","");
+       DownloadLink next=null;
+       int i=1;
+       for(Iterator<DownloadLink> it = fp.getDownloadLinks().iterator();it.hasNext();i++){
+           next=it.next();
+           addEntry2(i+". "+next.getName(),"("+JDUtilities.getPercent(next.getDownloadCurrent(),next.getDownloadMax())+") "+next.getDownloadCurrent()+"/"+next.getDownloadMax()+" bytes");
+          
+       }
+       
+       //addEntry(null,null);
+      // addEntry("properties",fp.getProperties()+"");
+    }
+    
+    private void addEntry2(String label, String data) {
+     
+        JDUtilities.addToGridBag(panel, new JLabel(label), 0, i, 1, 1, 0, 1, null, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        JDUtilities.addToGridBag(panel, new JLabel(data), 1, i, 1, 1, 1, 0, null, GridBagConstraints.NONE, GridBagConstraints.EAST);
+        i++;
     }
     private void addEntry(String label, String data) {
         if (label == null && data == null) {

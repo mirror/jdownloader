@@ -81,7 +81,7 @@ public class PackageManager extends Interaction implements Serializable {
                 // Decryptersystem wird verwendet, allerdings wird der weg über
                 // den linkgrabber vermieden
                 JDUtilities.getController().addAllLinks(0, (Vector<DownloadLink>) links);
-                JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_LINKLIST_CHANGED, null));
+                JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_LINKLIST_STRUCTURE_CHANGED, null));
 
              
 

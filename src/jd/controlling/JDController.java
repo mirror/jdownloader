@@ -148,6 +148,7 @@ public class JDController implements ControlListener, UIListener {
     private boolean lastReconnectSuccess;
 
     public JDController() {
+
         packages = new Vector<FilePackage>();
         clipboard = new ClipboardHandler();
         downloadStatus = DOWNLOAD_NOT_RUNNING;
@@ -191,14 +192,15 @@ public class JDController implements ControlListener, UIListener {
             logger.info("StartDownloads");
             this.watchdog = new DownloadWatchDog(this);
             watchdog.start();
-            fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_ALL_DOWNLOAD_START, this));
+            fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_DOWNLOAD_START, this));
             return true;
         }
         return false;
     }
-/**
- * Startet den download wenn er angehalten ist und hält ihn an wenn er läuft
- */
+
+    /**
+     * Startet den download wenn er angehalten ist und hält ihn an wenn er läuft
+     */
     public void toggleStartStop() {
         if (!startDownloads()) {
             this.stopDownloads();
@@ -216,7 +218,6 @@ public class JDController implements ControlListener, UIListener {
         System.exit(0);
     }
 
-
     /**
      * Hier werden ControlEvent ausgewertet
      * 
@@ -226,22 +227,23 @@ public class JDController implements ControlListener, UIListener {
     @SuppressWarnings("unchecked")
     public void controlEvent(ControlEvent event) {
         switch (event.getID()) {
-        case ControlEvent.CONTROL_SINGLE_DOWNLOAD_FINISHED:
-            lastDownloadFinished = (DownloadLink) event.getParameter();
-
+        case ControlEvent.CONTROL_PLUGIN_INACTIVE:
+            // Nur Hostpluginevents auswerten
+            if (!(event.getSource() instanceof DownloadLink)) return;
+            lastDownloadFinished = (DownloadLink) event.getSource();
             this.addToFinished(lastDownloadFinished);
-            if (this.getMissingPackageFiles(lastDownloadFinished) == 0) {
+            // Prüfen ob das Paket fertig ist
+            if (lastDownloadFinished.getFilePackage().getRemainingLinks() == 0) {
                 Interaction.handleInteraction(Interaction.INTERACTION_DOWNLOAD_PACKAGE_FINISHED, this);
 
                 this.getInfoFileWriterModule().interact(lastDownloadFinished);
 
             }
-
+            // Prüfen obd er Link entfernt werden soll.
             if (lastDownloadFinished.getStatus() == DownloadLink.STATUS_DONE && Configuration.FINISHED_DOWNLOADS_REMOVE.equals(JDUtilities.getConfiguration().getProperty(Configuration.PARAM_FINISHED_DOWNLOADS_ACTION))) {
 
                 this.removeDownloadLink(lastDownloadFinished);
-
-                this.fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_LINKLIST_CHANGED, null));
+                this.fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_LINKLIST_STRUCTURE_CHANGED, null));
 
             } else {
                 saveDownloadLinks();
@@ -266,12 +268,8 @@ public class JDController implements ControlListener, UIListener {
             }
 
             break;
-        case ControlEvent.CONTROL_PLUGIN_INTERACTION_INACTIVE:
-            // Interaction interaction = (Interaction) event.getParameter();
 
-            break;
-
-        case ControlEvent.CONTROL_LINKLIST_CHANGED:
+        case ControlEvent.CONTROL_LINKLIST_STRUCTURE_CHANGED:
             // Interaction interaction = (Interaction) event.getParameter();
             this.saveDownloadLinks();
             break;
@@ -354,6 +352,7 @@ public class JDController implements ControlListener, UIListener {
             watchdog.abort();
             setDownloadStatus(DOWNLOAD_NOT_RUNNING);
             fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_DOWNLOAD_TERMINATION_INACTIVE, this));
+            fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_DOWNLOAD_STOP, this));
         }
     }
 
@@ -394,7 +393,7 @@ public class JDController implements ControlListener, UIListener {
             }
 
             this.addPackage(fp);
-            this.fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_LINKLIST_CHANGED, null));
+            this.fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_LINKLIST_STRUCTURE_CHANGED, null));
 
             break;
         case UIEvent.UI_SAVE_LINKS:
@@ -895,11 +894,11 @@ public class JDController implements ControlListener, UIListener {
                             }
                             if (pluginForHost != null) {
                                 localLink.setLoadedPlugin(pluginForHost);
-                                
+
                             }
                             if (pluginForContainer != null) {
                                 localLink.setLoadedPluginForContainer(pluginForContainer);
-                              
+
                             }
                             if (pluginForHost == null) {
                                 logger.severe("couldn't find plugin(" + localLink.getHost() + ") for this DownloadLink." + localLink.getName());
@@ -950,7 +949,7 @@ public class JDController implements ControlListener, UIListener {
                 try {
                     pContainer = pContainer.getClass().newInstance();
                     progress.setSource(pContainer);
-                    fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_PLUGIN_DECRYPT_ACTIVE, pContainer));
+
                     pContainer.initContainer(file.getAbsolutePath());
                     Vector<DownloadLink> links = pContainer.getContainedDownloadlinks();
                     if (links == null || links.size() == 0) {
@@ -958,7 +957,7 @@ public class JDController implements ControlListener, UIListener {
                     } else {
                         this.addAllLinks(links);
                     }
-                    fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_PLUGIN_DECRYPT_INACTIVE, pContainer));
+
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
@@ -1022,11 +1021,11 @@ public class JDController implements ControlListener, UIListener {
         packages = loadDownloadLinks(JDUtilities.getResourceFile("links.dat"));
         if (packages == null) {
             packages = new Vector<FilePackage>();
-            this.fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_LINKLIST_CHANGED, null));
+            this.fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_LINKLIST_STRUCTURE_CHANGED, null));
 
             return false;
         }
-        this.fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_LINKLIST_CHANGED, null));
+        this.fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_LINKLIST_STRUCTURE_CHANGED, null));
 
         return true;
 
@@ -1102,23 +1101,23 @@ public class JDController implements ControlListener, UIListener {
         return i;
     }
 
-    /**
-     * Gibt die Anzahl der fehlenden FIles zurück
-     * 
-     * @param downloadLink
-     * @return Anzahl der fehlenden Files in diesem Paket
-     */
-    public int getMissingPackageFiles(DownloadLink downloadLink) {
-        int i = 0;
-        Vector<DownloadLink> downloadLinks = getPackageFiles(downloadLink);
-        Iterator<DownloadLink> iterator = downloadLinks.iterator();
-        DownloadLink nextDownloadLink = null;
-        while (iterator.hasNext()) {
-            nextDownloadLink = iterator.next();
-            if (nextDownloadLink.getStatus() != DownloadLink.STATUS_DONE) i++;
-        }
-        return i;
-    }
+    // /**
+    // * Gibt die Anzahl der fehlenden FIles zurück
+    // *
+    // * @param downloadLink
+    // * @return Anzahl der fehlenden Files in diesem Paket
+    // */
+    // public int getMissingPackageFiles(DownloadLink downloadLink) {
+    // int i = 0;
+    // Vector<DownloadLink> downloadLinks = getPackageFiles(downloadLink);
+    // Iterator<DownloadLink> iterator = downloadLinks.iterator();
+    // DownloadLink nextDownloadLink = null;
+    // while (iterator.hasNext()) {
+    // nextDownloadLink = iterator.next();
+    // if (nextDownloadLink.getStatus() != DownloadLink.STATUS_DONE) i++;
+    // }
+    // return i;
+    // }
 
     /**
      * Liefert die Anzahl der gerade laufenden Downloads. (nur downloads die
@@ -1266,11 +1265,20 @@ public class JDController implements ControlListener, UIListener {
         // logger.info(controlEvent.getID()+" controllistener "+controlEvent);
         // if (uiInterface != null)
         // uiInterface.delegatedControlEvent(controlEvent);
+        this.controlEvent(controlEvent);
         if (controlListener == null) controlListener = new Vector<ControlListener>();
         Iterator<ControlListener> iterator = controlListener.iterator();
         while (iterator.hasNext()) {
 
             ((ControlListener) iterator.next()).controlEvent(controlEvent);
+        }
+    }
+
+    public void fireControlEvent(int controlID, Object param) {
+        ControlEvent c = new ControlEvent(this, controlID, param);
+        Iterator<ControlListener> iterator = controlListener.iterator();
+        while (iterator.hasNext()) {
+            ((ControlListener) iterator.next()).controlEvent(c);
         }
     }
 
@@ -1311,7 +1319,7 @@ public class JDController implements ControlListener, UIListener {
     }
 
     public void requestDownloadLinkUpdate(DownloadLink link) {
-        fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SINGLE_DOWNLOAD_CHANGED, link));
+        fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_DOWNLOADLINK_DATA_CHANGED, link));
 
     }
 
@@ -1475,7 +1483,7 @@ public class JDController implements ControlListener, UIListener {
 
         }
         // logger.info("II");
-        this.fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_LINKLIST_CHANGED, null));
+        this.fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_LINKLIST_STRUCTURE_CHANGED, null));
 
         return true;
     }
@@ -1494,7 +1502,7 @@ public class JDController implements ControlListener, UIListener {
                 packages.addAll(packages.indexOf(after), fps);
             }
         }
-        this.fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_LINKLIST_CHANGED, null));
+        this.fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_LINKLIST_STRUCTURE_CHANGED, null));
 
         return true;
     }

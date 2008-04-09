@@ -53,7 +53,7 @@ public class DownloadLinksTreeTablePanel extends DownloadLinksView {
         for (Iterator<FilePackage> it = fps.iterator(); it.hasNext();)
             links.addAll(it.next().getDownloadLinks());
         JDUtilities.getController().removeDownloadLinks(links);
-        JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_LINKLIST_CHANGED, this));
+        JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_LINKLIST_STRUCTURE_CHANGED, this));
 
     }
 
