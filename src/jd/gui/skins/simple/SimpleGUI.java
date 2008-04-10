@@ -274,7 +274,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         this.locationListener = new LocationListener();
         frame.addWindowListener(this);
 
-        frame.setIconImage(JDUtilities.getImage(JDTheme.I("gui.images.jd_logo")));
+        frame.setIconImage(JDUtilities.getImage(JDTheme.V("gui.images.jd_logo")));
         frame.setTitle(JDUtilities.getJDTitle());
         frame.setDefaultCloseOperation(WindowConstants.DO_NOTHING_ON_CLOSE);
         initActions();
@@ -367,9 +367,9 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
 
     private String getClipBoardImage() {
         if (JDUtilities.getController().getClipboard().isEnabled())
-            return JDTheme.I("gui.images.clipboardon");
+            return JDTheme.V("gui.images.clipboardon");
         else
-            return JDTheme.I("gui.images.clipboardoff");
+            return JDTheme.V("gui.images.clipboardoff");
 
     }
 
@@ -377,26 +377,26 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
      * Die Aktionen werden initialisiert
      */
     public void initActions() {
-        actionStartStopDownload = new JDAction(this, JDTheme.I("gui.images.next"), "action.start", JDAction.APP_START_STOP_DOWNLOADS);
-        actionPause = new JDAction(this, JDTheme.I("gui.images.stop_after"), "action.pause", JDAction.APP_PAUSE_DOWNLOADS);
-        actionItemsAdd = new JDAction(this, JDTheme.I("gui.images.add"), "action.add", JDAction.ITEMS_ADD);
-        actionDnD = new JDAction(this, JDTheme.I("gui.images.clipboard"), "action.dnd", JDAction.ITEMS_DND);
+        actionStartStopDownload = new JDAction(this, JDTheme.V("gui.images.next"), "action.start", JDAction.APP_START_STOP_DOWNLOADS);
+        actionPause = new JDAction(this, JDTheme.V("gui.images.stop_after"), "action.pause", JDAction.APP_PAUSE_DOWNLOADS);
+        actionItemsAdd = new JDAction(this, JDTheme.V("gui.images.add"), "action.add", JDAction.ITEMS_ADD);
+        actionDnD = new JDAction(this, JDTheme.V("gui.images.clipboard"), "action.dnd", JDAction.ITEMS_DND);
 
-        actionLoadDLC = new JDAction(this, JDTheme.I("gui.images.load"), "action.load", JDAction.APP_LOAD_DLC);
-        actionSaveDLC = new JDAction(this, JDTheme.I("gui.images.save"), "action.save", JDAction.APP_SAVE_DLC);
+        actionLoadDLC = new JDAction(this, JDTheme.V("gui.images.load"), "action.load", JDAction.APP_LOAD_DLC);
+        actionSaveDLC = new JDAction(this, JDTheme.V("gui.images.save"), "action.save", JDAction.APP_SAVE_DLC);
 
-        actionExit = new JDAction(this, JDTheme.I("gui.images.exit"), "action.exit", JDAction.APP_EXIT);
-        actionLog = new JDAction(this, JDTheme.I("gui.images.terminal"), "action.viewlog", JDAction.APP_LOG);
-        actionTester = new JDAction(this, JDTheme.I("gui.images.jd_logo"), "action.tester", JDAction.APP_TESTER);
-        actionUnrar = new JDAction(this, JDTheme.I("gui.images.jd_logo"), "action.unrar", JDAction.APP_UNRAR);
+        actionExit = new JDAction(this, JDTheme.V("gui.images.exit"), "action.exit", JDAction.APP_EXIT);
+        actionLog = new JDAction(this, JDTheme.V("gui.images.terminal"), "action.viewlog", JDAction.APP_LOG);
+        actionTester = new JDAction(this, JDTheme.V("gui.images.jd_logo"), "action.tester", JDAction.APP_TESTER);
+        actionUnrar = new JDAction(this, JDTheme.V("gui.images.jd_logo"), "action.unrar", JDAction.APP_UNRAR);
         actionClipBoard = new JDAction(this, getClipBoardImage(), "action.clipboard", JDAction.APP_CLIPBOARD);
-        actionPasswordlist = new JDAction(this, JDTheme.I("gui.images.jd_logo"), "action.passwordlist", JDAction.APP_PASSWORDLIST);
-        actionConfig = new JDAction(this, JDTheme.I("gui.images.configuration"), "action.configuration", JDAction.APP_CONFIGURATION);
-        actionReconnect = new JDAction(this, JDTheme.I("gui.images.reconnect"), "action.reconnect", JDAction.APP_RECONNECT);
-        actionUpdate = new JDAction(this, JDTheme.I("gui.images.update_manager"), "action.update", JDAction.APP_UPDATE);
+        actionPasswordlist = new JDAction(this, JDTheme.V("gui.images.jd_logo"), "action.passwordlist", JDAction.APP_PASSWORDLIST);
+        actionConfig = new JDAction(this, JDTheme.V("gui.images.configuration"), "action.configuration", JDAction.APP_CONFIGURATION);
+        actionReconnect = new JDAction(this, JDTheme.V("gui.images.reconnect"), "action.reconnect", JDAction.APP_RECONNECT);
+        actionUpdate = new JDAction(this, JDTheme.V("gui.images.update_manager"), "action.update", JDAction.APP_UPDATE);
         // actionSearch = new JDAction(this, JDTheme.I("gui.images.find"),
         // "action.search", JDAction.APP_SEARCH);
-        actionItemsDelete = new JDAction(this, JDTheme.I("gui.images.delete"), "action.edit.items_remove", JDAction.ITEMS_REMOVE);
+        actionItemsDelete = new JDAction(this, JDTheme.V("gui.images.delete"), "action.edit.items_remove", JDAction.ITEMS_REMOVE);
         // actionItemsTop = new JDAction(this, JDTheme.I("gui.images.top"),
         // "action.edit.items_top", JDAction.ITEMS_MOVE_TOP);
         // actionItemsUp = new JDAction(this, JDTheme.I("gui.images.go_top"),
@@ -406,8 +406,8 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         // actionItemsBottom = new JDAction(this,
         // JDTheme.I("gui.images.go_bottom"), "action.edit.items_bottom",
         // JDAction.ITEMS_MOVE_BOTTOM);
-        doReconnect = new JDAction(this, JDTheme.I("gui.images.reconnect_ok"), "action.doReconnect", JDAction.ITEMS_MOVE_BOTTOM);
-        actionHelp = new JDAction(this, JDTheme.I("gui.images.help"), "action.help", JDAction.HELP);
+        doReconnect = new JDAction(this, JDTheme.V("gui.images.reconnect_ok"), "action.doReconnect", JDAction.ITEMS_MOVE_BOTTOM);
+        actionHelp = new JDAction(this, JDTheme.V("gui.images.help"), "action.help", JDAction.HELP);
 
     }
 
@@ -534,18 +534,18 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         // tabbedPane.addTab(JDLocale.L("gui.tab.plugin_activity"),
         // tabPluginActivity);
         btnStartStop = new JButton(actionStartStopDownload);
-        if (JDUtilities.getImage(JDTheme.I("gui.images.stop")) != null) btnStartStop.setSelectedIcon(new ImageIcon(JDUtilities.getImage(JDTheme.I("gui.images.stop"))));
+        if (JDUtilities.getImage(JDTheme.V("gui.images.stop")) != null) btnStartStop.setSelectedIcon(new ImageIcon(JDUtilities.getImage(JDTheme.V("gui.images.stop"))));
         btnStartStop.setFocusPainted(false);
         btnStartStop.setBorderPainted(false);
         btnStartStop.setText(null);
         btnPause = new JButton(actionPause);
-        if (JDUtilities.getImage(JDTheme.I("gui.images.stop_after_active")) != null) btnPause.setSelectedIcon(new ImageIcon(JDUtilities.getImage(JDTheme.I("gui.images.stop_after_active"))));
+        if (JDUtilities.getImage(JDTheme.V("gui.images.stop_after_active")) != null) btnPause.setSelectedIcon(new ImageIcon(JDUtilities.getImage(JDTheme.V("gui.images.stop_after_active"))));
         btnPause.setFocusPainted(false);
         btnPause.setBorderPainted(false);
         btnPause.setText(null);
         btnPause.setEnabled(false);
         btnToggleReconnect = new JButton(doReconnect);
-        if (JDUtilities.getImage(JDTheme.I("gui.images.reconnect_bad")) != null) btnToggleReconnect.setSelectedIcon(new ImageIcon(JDUtilities.getImage(JDTheme.I("gui.images.reconnect_bad"))));
+        if (JDUtilities.getImage(JDTheme.V("gui.images.reconnect_bad")) != null) btnToggleReconnect.setSelectedIcon(new ImageIcon(JDUtilities.getImage(JDTheme.V("gui.images.reconnect_bad"))));
         btnToggleReconnect.setFocusPainted(false);
         btnToggleReconnect.setBorderPainted(false);
         btnToggleReconnect.setText(null);
@@ -1020,8 +1020,8 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         private JCheckBox chbPremium;
 
         public StatusBar() {
-            if (JDUtilities.getImage(JDTheme.I("gui.images.led_green")) != null) imgActive = new ImageIcon(JDUtilities.getImage(JDTheme.I("gui.images.led_green")));
-            if (JDUtilities.getImage(JDTheme.I("gui.images.led_empty")) != null) imgInactive = new ImageIcon(JDUtilities.getImage(JDTheme.I("gui.images.led_empty")));
+            if (JDUtilities.getImage(JDTheme.V("gui.images.led_green")) != null) imgActive = new ImageIcon(JDUtilities.getImage(JDTheme.V("gui.images.led_green")));
+            if (JDUtilities.getImage(JDTheme.V("gui.images.led_empty")) != null) imgInactive = new ImageIcon(JDUtilities.getImage(JDTheme.V("gui.images.led_empty")));
             setLayout(new GridBagLayout());
             lblMessage = new JLabel(JDLocale.L("sys.message.welcome"));
             chbPremium = new JCheckBox(JDLocale.L("gui.statusbar.premium", "Premium"));

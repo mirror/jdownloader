@@ -89,7 +89,7 @@ public class LogDialog extends JFrame implements ActionListener {
     public LogDialog(JFrame owner, Logger logger) {
       
         this.owner = owner;
-        setIconImage(JDUtilities.getImage(JDTheme.I("gui.images.terminal")));
+        setIconImage(JDUtilities.getImage(JDTheme.V("gui.images.terminal")));
         this.setTitle(JDLocale.L("gui.logDialog.title", "jDownloader Logausgabe"));
         setLayout(new GridBagLayout());
         this.setName("LOGDIALOG");

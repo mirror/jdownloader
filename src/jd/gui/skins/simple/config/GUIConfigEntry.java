@@ -275,7 +275,7 @@ public class GUIConfigEntry extends JPanel {
       if(configEntry.getInstantHelp()!=null){
           try {
               String url=configEntry.getInstantHelp();
-              JLinkButton link = new JLinkButton("",new ImageIcon(JDUtilities.getImage(JDTheme.I("gui.images.help")).getScaledInstance(20, 20, Image.SCALE_FAST)), new URL(url));
+              JLinkButton link = new JLinkButton("",new ImageIcon(JDUtilities.getImage(JDTheme.V("gui.images.help")).getScaledInstance(20, 20, Image.SCALE_FAST)), new URL(url));
               JDUtilities.addToGridBag(this,  link, 1, 0, 1, 1, 1, 0, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
               
           }

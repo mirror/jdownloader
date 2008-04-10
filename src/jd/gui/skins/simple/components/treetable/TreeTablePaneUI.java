@@ -20,44 +20,65 @@ import javax.swing.tree.TreePath;
 
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.utils.JDTheme;
 
 public class TreeTablePaneUI extends BasicTableUI {
 
-    public static final Color evenRowColor = new Color(0xEDF3FE);
+    public static Color EVEN_ROW_COLOR;
 
-    public static final Color oddRowColor = Color.WHITE;
+    public static Color ODD_ROW_COLOR;
 
-    public static final Color selectedRowColor = Color.WHITE;
+    public static Color SELECTED_ROW_COLOR;
 
-    public static final Color gridColor = new Color(150, 150, 150);
+    public static Color GRID_COLOR;
 
-    public static final Color packageColor = new Color(0x94baff);
+    public static Color PACKAGE_ROW_COLOR;
 
-    public static final Color selectedFocusedColor = new Color(0x3D80DF);
+    public static Color SELECTED_ROW_BORDER_COLOR;
 
-    public static final Color selectedNotFocusedColor = new Color(0x3D80DF);
+    private static Color COLOR_DONE;
 
-    public static final Color selectedBorderColor = Color.BLACK;
+    private static Color COLOR_ERROR ;
 
-    private static final Color COLOR_DONE = new Color(0xacff9e).brighter();
+    private static Color COLOR_DISABLED;
 
-    private static final Color COLOR_ERROR = new Color(255, 0, 0, 20);
+    private static Color COLOR_WAIT ;
 
-    private static final Color COLOR_DISABLED = new Color(50, 50, 50, 50);
 
-    private static final Color COLOR_WAIT = new Color(0, 0, 100, 20);
-
-    private static final Color COLOR_ERROR_OFFLINE = new Color(255, 0, 0, 60);
 
     // ------------------------------------------------------------------------------------------------------------------
     // Custom installation methods
     // ------------------------------------------------------------------------------------------------------------------
 
     protected void installDefaults() {
+
         super.installDefaults();
+
+        EVEN_ROW_COLOR = JDTheme.C("gui.color.downloadlist.row_a", "EDF3FE");
+
+        ODD_ROW_COLOR = JDTheme.C("gui.color.downloadlist.row_b", "FFFFFF");
+
+        SELECTED_ROW_COLOR = JDTheme.C("gui.color.downloadlist.row_selected", "3D80DF");
+
+        GRID_COLOR = JDTheme.C("gui.color.downloadlist.grid", "CCCCCC");
+
+        PACKAGE_ROW_COLOR = JDTheme.C("gui.color.downloadlist.row_package", "fffa7c");
+
+        SELECTED_ROW_BORDER_COLOR = JDTheme.C("gui.color.downloadlist.row_selected_border", "000000");
+
+        COLOR_DONE = JDTheme.C("gui.color.downloadlist.row_link_done", "c4ffd2");
+
+        COLOR_ERROR = JDTheme.C("gui.color.downloadlist.row_link_error", "ff0000");
+
+        COLOR_DISABLED = JDTheme.C("gui.color.downloadlist.row_link_disabled", "adadad");
+
+        COLOR_WAIT = JDTheme.C("gui.color.downloadlist.row_link_disabled", "4393d7");
+
+       
+
         table.setShowGrid(false);
         table.setRowHeight(table.getFont().getSize() + 6);
-        table.setGridColor(gridColor);
+        table.setGridColor(GRID_COLOR);
 
         table.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
             public void valueChanged(ListSelectionEvent e) {
@@ -106,7 +127,7 @@ public class TreeTablePaneUI extends BasicTableUI {
         DownloadLink dLink;
         while (y < y2) {
             path = ((DownloadTreeTable) c).getPathForRow(row);
-            color = row % 2 == 0 ? evenRowColor : oddRowColor;
+            color = row % 2 == 0 ? EVEN_ROW_COLOR : ODD_ROW_COLOR;
             // if (((JTable) c).isRowSelected(row)) {
             // if (c.hasFocus()) {
             // color = selectedFocusedColor;
@@ -119,12 +140,12 @@ public class TreeTablePaneUI extends BasicTableUI {
             // else {
             if (((DownloadTreeTable) c).isRowSelected(row)) {
 
-                color = selectedFocusedColor;
+                color = SELECTED_ROW_COLOR;
 
             } else {
                 if (path != null && path.getLastPathComponent() instanceof FilePackage) {
 
-                    color = packageColor;
+                    color = PACKAGE_ROW_COLOR;
                     // c.setBorder(BorderFactory.createLineBorder(Color.darkGray,
                     // 1));
                     g.setColor(Color.BLACK);
@@ -143,7 +164,7 @@ public class TreeTablePaneUI extends BasicTableUI {
                     }
 
                     else if (dLink.isAvailabilityChecked() && !dLink.isAvailable()) {
-                        color = (COLOR_ERROR_OFFLINE);
+                        color = (COLOR_ERROR);
                     }
 
                 }
@@ -154,7 +175,7 @@ public class TreeTablePaneUI extends BasicTableUI {
                 if (((JTable) c).isRowSelected(row)) {
                     g.setColor(color.darker());
                     g.fillRect(x, y + 1, w, vRowHeight - 2);
-                    g.setColor(selectedBorderColor);
+                    g.setColor(SELECTED_ROW_BORDER_COLOR);
                     g.draw3DRect(x, y, w, vRowHeight - 1, true);
                 } else {
                     g.setColor(color.darker());
@@ -165,7 +186,7 @@ public class TreeTablePaneUI extends BasicTableUI {
                 if (((JTable) c).isRowSelected(row)) {
                     g.setColor(color);
                     g.fillRect(x, y + 1, w, vRowHeight - 2);
-                    g.setColor(selectedBorderColor);
+                    g.setColor(SELECTED_ROW_BORDER_COLOR);
                     g.draw3DRect(x, y, w, vRowHeight - 1, false);
                 } else {
                     g.setColor(color);
@@ -179,7 +200,7 @@ public class TreeTablePaneUI extends BasicTableUI {
         super.paint(g, c);
 
         x = 0;
-        g.setColor(gridColor);
+        g.setColor(GRID_COLOR);
         TableColumnModel vModel = table.getColumnModel();
         for (int i = 0; i < vModel.getColumnCount(); i++) {
             TableColumn vColumn = vModel.getColumn(i);

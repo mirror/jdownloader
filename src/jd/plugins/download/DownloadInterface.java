@@ -158,7 +158,7 @@ abstract public class DownloadInterface {
         writeChunkBytes(chunk);
         this.totalLoadedBytes += chunk.buffer.limit();
         // 152857135
-        logger.info("Bytes " + totalLoadedBytes);
+       // logger.info("Bytes " + totalLoadedBytes);
     }
 
     /**
@@ -750,14 +750,14 @@ logger.info("wiat end");
 
             // maxSpeed=Integer.MAX_VALUE;
             currentBytePosition = this.startByte;
-         
+            
             // if (startByte >= endByte && endByte > 0) {
             // logger.severe("Startbyte has to be less than endByte");
             // }
         }
         public void startChunk() {
             
-            addToChunksInProgress(1);
+            
             this.start();
             
         
@@ -937,7 +937,10 @@ loaded+=preBytes;
         public void run0() {
             logger.finer("Start Chunk " + this.getID() + " : " + startByte + " - " + endByte);
             if ((startByte >= endByte && endByte > 0) || startByte >= getFileSize()) {
-               
+                
+                //Korrektur Byte
+                countBytesLoaded(-1);
+                
                 return;
             }
 
@@ -1045,13 +1048,13 @@ loaded+=preBytes;
             int bufferSize = 1;
           
            
-            countBytesLoaded(loaded);
+            
           
-            logger.severe("resume Chunk with " + loaded+"/"+this.getChunkSize()+" at "+currentBytePosition);
+            logger.finer("resume Chunk with " + loaded+"/"+this.getChunkSize()+" at "+currentBytePosition);
             try {
                 bufferSize = getBufferSize(getMaximalSpeed());
-                if (bufferSize > endByte - currentBytePosition) {
-                    bufferSize = (int) (endByte - currentBytePosition) + 1;
+                if (bufferSize > endByte - currentBytePosition+1) {
+                    bufferSize = (int) (endByte - currentBytePosition+1);
                 }
                 // logger.finer(bufferSize+" - "+this.getTimeInterval());
                 buffer = ByteBuffer.allocateDirect(bufferSize);
@@ -1133,13 +1136,13 @@ loaded+=preBytes;
                     buffer.clear();
                     currentBytePosition += bytes;
 
-                    logger.info(this.getID() + ": " + this.startByte + " --> " + currentBytePosition + " -->" + this.endByte + "/" + bytesLoaded + ":" + (100.0 * (currentBytePosition - startByte) / (double) (endByte - startByte)));
+                   // logger.info(this.getID() + ": " + this.startByte + " --> " + currentBytePosition + " -->" + this.endByte + "/" + bytesLoaded + ":" + (100.0 * (currentBytePosition - startByte) / (double) (endByte - startByte)));
 
                     if (block == -1 || isExternalyAborted()) break;
 
-                    if (currentBytePosition >= this.endByte) {
+                    if (currentBytePosition >this.endByte) {
 
-                        logger.severe(this.getID() + " OVERLOAD!!! " + (currentBytePosition - this.endByte));
+                        logger.severe(this.getID() + " OVERLOAD!!! " + (currentBytePosition - this.endByte-1));
                         break;
                     }
 
@@ -1154,8 +1157,8 @@ loaded+=preBytes;
                     // Falls der Server bei den Ranges schlampt und als endByte
                     // immer das dateiende angibt wird hier der buffer
                     // korrigiert um overhead zu vermeiden
-                    if (tempBuff > endByte - currentBytePosition) {
-                        tempBuff = (int) (endByte - currentBytePosition) + 1;
+                    if (tempBuff > endByte - currentBytePosition+1) {
+                        tempBuff = (int) (endByte - currentBytePosition)+1;
                     }
                     if (Math.abs(bufferSize - tempBuff) > 1000) {
                         bufferSize = tempBuff;
@@ -1285,6 +1288,7 @@ loaded+=preBytes;
 
         public void setLoaded(int loaded) {
             this.loaded = loaded;
+            countBytesLoaded(loaded);
         }
 
     }

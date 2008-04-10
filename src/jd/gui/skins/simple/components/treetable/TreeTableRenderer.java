@@ -9,9 +9,11 @@ import javax.swing.JProgressBar;
 import javax.swing.JTable;
 import javax.swing.plaf.basic.BasicProgressBarUI;
 import javax.swing.table.DefaultTableCellRenderer;
+import javax.swing.tree.TreePath;
 
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 
 public class TreeTableRenderer extends DefaultTableCellRenderer {
@@ -23,30 +25,118 @@ public class TreeTableRenderer extends DefaultTableCellRenderer {
     private JLabel label;
 
     private JProgressBar progress;
-    private static final Color PACKAGE_PROGRESS_COLOR=new Color(0xEDF3FE);
+    private static Color PACKAGE_PROGRESS_COLOR;
 
-    private static final Color ERROR_PROGRESS_COLOR = new Color(255, 0, 0, 80);
+    private static Color ERROR_PROGRESS_COLOR;
 
-    private static final Color DONE_COLOR = new Color(0x94baff);
+    private static Color DONE_COLOR;
 
-    private static final Color INACTIVE_PROGRESS_COLOR = Color.GRAY;
+    private static Color INACTIVE_PROGRESS_COLOR;
 
-    private static final Color ACTIVE_PROGRESS_COLOR = new Color(0x94baff);
+    private static Color ACTIVE_PROGRESS_COLOR;
+    private static Color PACKAGE_PROGRESS_COLOR_FONT_A;
+
+    private static Color ERROR_PROGRESS_COLOR_FONT_A;
+
+    private static Color DONE_COLOR_FONT_A;
+
+    private static Color INACTIVE_PROGRESS_COLOR_FONT_A;
+
+    private static Color ACTIVE_PROGRESS_COLOR_FONT_A;
+
+    private static Color PACKAGE_PROGRESS_COLOR_FONT_B;
+
+    private static Color ERROR_PROGRESS_COLOR_FONT_B;
+
+    private static Color DONE_COLOR_FONT_B;
+
+    private static Color INACTIVE_PROGRESS_COLOR_FONT_B;
+
+    private static Color ACTIVE_PROGRESS_COLOR_FONT_B;
+
+    private static Color FONT_COLOR;
+    private static Color FONT_COLOR_SELECTED;
+    // private static Color FONT_ODD_ROW_COLOR;
+    //
+    // private static Color FONT_SELECTED_ROW_COLOR;
+    //
+    // private static Color FONT_PACKAGE_ROW_COLOR;
+    //
+    // private static Color FONT_COLOR_DONE;
+    //
+    // private static Color FONT_COLOR_DISABLED;
+    // private static Color FONT_COLOR_ERROR;
+
     private DownloadLink dLink;
 
     private FilePackage fp;
+    private TreeProgressBarUI ui;
+    private DecimalFormat c = new DecimalFormat("0.00");
 
-    private DecimalFormat c = new DecimalFormat("0.00");;
+    private Component co;
 
-    TreeTableRenderer() {
+    private DownloadTreeTable treeTable;
+
+    private TreePath path;
+
+    private DownloadLink link;;
+
+    TreeTableRenderer(DownloadTreeTable downloadTreeTable) {
+
+        this.treeTable = downloadTreeTable;
+        FONT_COLOR = JDTheme.C("gui.color.downloadlist.font", "000000");
+        FONT_COLOR_SELECTED = JDTheme.C("gui.color.downloadlist.font_selected", "ffffff");
+        //
+        // FONT_ODD_ROW_COLOR = JDTheme.C("gui.color.downloadlist.font_row_b",
+        // "000000");
+        //
+        // FONT_SELECTED_ROW_COLOR =
+        // JDTheme.C("gui.color.downloadlist.font_row_selected", "ff");
+        //
+        // FONT_PACKAGE_ROW_COLOR =
+        // JDTheme.C("gui.color.downloadlist.font_row_package", "ffff");
+        //
+        // FONT_COLOR_DONE = JDTheme.C("gui.color.downloadlist.font_row_done",
+        // "000000");
+        //
+        // FONT_COLOR_ERROR = JDTheme.C("gui.color.downloadlist.font_row_error",
+        // "000000");
+        // FONT_COLOR_DISABLED=
+        // JDTheme.C("gui.color.downloadlist.font_row_disabled", "999999");
+        //   
+        //
+        // FONT_COLOR_WAIT = JDTheme.C("gui.color.downloadlist.font_row_wait",
+        // "000000");
+        //
+        //       
+
+        PACKAGE_PROGRESS_COLOR = JDTheme.C("gui.color.downloadlist.package_progress", "94baff");
+        ERROR_PROGRESS_COLOR = JDTheme.C("gui.color.downloadlist.progress_error", "FF0000");
+        DONE_COLOR = JDTheme.C("gui.color.downloadlist.progress_done", "94baff");
+        INACTIVE_PROGRESS_COLOR = JDTheme.C("gui.color.downloadlist.progress_inactive", "AAAAAA");
+        ACTIVE_PROGRESS_COLOR = JDTheme.C("gui.color.downloadlist.progress_active", "94baff");
+
+        PACKAGE_PROGRESS_COLOR_FONT_A = JDTheme.C("gui.color.downloadlist.package_progress_font_a", "000000");
+        ERROR_PROGRESS_COLOR_FONT_A = JDTheme.C("gui.color.downloadlist.progress_error_font_a", "000000");
+        DONE_COLOR_FONT_A = JDTheme.C("gui.color.downloadlist.progress_done_font_a", "000000");
+        INACTIVE_PROGRESS_COLOR_FONT_A = JDTheme.C("gui.color.downloadlist.progress_inactive_font_a", "000000");
+        ACTIVE_PROGRESS_COLOR_FONT_A = JDTheme.C("gui.color.downloadlist.progress_active_font_a", "000000");
+
+        PACKAGE_PROGRESS_COLOR_FONT_B = JDTheme.C("gui.color.downloadlist.package_progress_font_b", "555555");
+        ERROR_PROGRESS_COLOR_FONT_B = JDTheme.C("gui.color.downloadlist.progress_error_font_b", "555555");
+        DONE_COLOR_FONT_B = JDTheme.C("gui.color.downloadlist.progress_done_font_b", "555555");
+        INACTIVE_PROGRESS_COLOR_FONT_B = JDTheme.C("gui.color.downloadlist.progress_inactive_font_b", "555555");
+        ACTIVE_PROGRESS_COLOR_FONT_B = JDTheme.C("gui.color.downloadlist.progress_active_font_b", "555555");
+
         this.label = new JLabel();
         this.label.setOpaque(false);
 
         this.progress = new JProgressBar();
-        TreeProgressBarUI ui;
-        progress.setUI(ui = new TreeProgressBarUI());
-        ui.setSelectionBackground(Color.BLACK);
+
+        ui = new TreeProgressBarUI();
+        progress.setUI(ui);
         ui.setSelectionForeground(Color.BLACK);
+
         progress.setBorderPainted(false);
         progress.setOpaque(false);
 
@@ -56,43 +146,42 @@ public class TreeTableRenderer extends DefaultTableCellRenderer {
         // if (column == DownloadTreeTableModel.COL_PROGRESS) {
         if (value instanceof DownloadLink) {
             dLink = (DownloadLink) value;
-            if (dLink.getRemainingWaittime() == 0 && (int) dLink.getDownloadCurrent() > 0 ) {
+            if (dLink.getRemainingWaittime() == 0 && (int) dLink.getDownloadCurrent() > 0) {
 
-                if ((int) dLink.getDownloadMax() < 0) {
-                    progress.setMaximum(1);
-                    progress.setValue(1);
+                if (!dLink.isInProgress()) {
+                    progress.setString("");
+                    if (dLink.getStatus() == DownloadLink.STATUS_DONE) {
+                        progress.setForeground(DONE_COLOR);
+                        ui.setSelectionForeground(DONE_COLOR_FONT_A);
+                        ui.setSelectionBackground(DONE_COLOR_FONT_B);
+                        progress.setString("- 100 % -");
+                    } else {
+                        progress.setForeground(INACTIVE_PROGRESS_COLOR);
+                        ui.setSelectionForeground(INACTIVE_PROGRESS_COLOR_FONT_A);
+                        ui.setSelectionBackground(INACTIVE_PROGRESS_COLOR_FONT_B);
+                    }
+                    progress.setMaximum(Math.max(1, (int) dLink.getDownloadMax()));
                     progress.setStringPainted(true);
-                    
-                    progress.setString(JDUtilities.formatBytesToMB((int) dLink.getDownloadCurrent()));
+
+                    progress.setValue((int) dLink.getDownloadCurrent());
 
                 } else {
-                    if (!dLink.isInProgress()) {
-                        progress.setString("");
-                        if (dLink.getStatus() == DownloadLink.STATUS_DONE) {
-                            progress.setForeground(DONE_COLOR);
-                            progress.setString("- 100 % -");
-                        } else {
-                            progress.setForeground(INACTIVE_PROGRESS_COLOR);
-                        }
-                        progress.setMaximum(Math.max(1, (int) dLink.getDownloadMax()));
-                        progress.setStringPainted(true);
+                    progress.setMaximum(Math.max(1, (int) dLink.getDownloadMax()));
+                    progress.setStringPainted(true);
+                    progress.setForeground(ACTIVE_PROGRESS_COLOR);
+                    ui.setSelectionForeground(ACTIVE_PROGRESS_COLOR_FONT_A);
+                    ui.setSelectionBackground(ACTIVE_PROGRESS_COLOR_FONT_B);
+                    progress.setValue((int) dLink.getDownloadCurrent());
+                    progress.setString(c.format(10000 * progress.getPercentComplete() / 100.0) + "% (" + JDUtilities.formatBytesToMB(progress.getValue()) + "/" + JDUtilities.formatBytesToMB(progress.getMaximum()) + ")");
 
-                        progress.setValue((int) dLink.getDownloadCurrent());
-
-                    } else {
-                        progress.setMaximum(Math.max(1, (int) dLink.getDownloadMax()));
-                        progress.setStringPainted(true);
-                        progress.setForeground(ACTIVE_PROGRESS_COLOR);
-                        // progress.setBackground(new Color(255, 0, 0, 80));
-                        progress.setValue((int) dLink.getDownloadCurrent());
-                        progress.setString(c.format(10000 * progress.getPercentComplete() / 100.0) + "% (" + JDUtilities.formatBytesToMB(progress.getValue()) + "/" + JDUtilities.formatBytesToMB(progress.getMaximum()) + ")");
-
-                    }
                 }
+
                 return progress;
             } else if (dLink.getRemainingWaittime() > 0 && dLink.getWaitTime() >= dLink.getRemainingWaittime()) {
                 progress.setMaximum(dLink.getWaitTime());
                 progress.setForeground(ERROR_PROGRESS_COLOR);
+                ui.setSelectionForeground(ERROR_PROGRESS_COLOR_FONT_A);
+                ui.setSelectionBackground(ERROR_PROGRESS_COLOR_FONT_B);
                 progress.setStringPainted(true);
                 progress.setValue((int) dLink.getRemainingWaittime());
                 progress.setString(c.format(10000 * progress.getPercentComplete() / 100.0) + "% (" + progress.getValue() / 1000 + "/" + progress.getMaximum() / 1000 + " sek)");
@@ -105,17 +194,58 @@ public class TreeTableRenderer extends DefaultTableCellRenderer {
             progress.setMaximum(Math.max(1, fp.getTotalEstimatedPackageSize()));
             progress.setStringPainted(true);
             progress.setForeground(PACKAGE_PROGRESS_COLOR);
+            ui.setSelectionForeground(PACKAGE_PROGRESS_COLOR_FONT_A);
+            ui.setSelectionBackground(PACKAGE_PROGRESS_COLOR_FONT_B);
 
-            progress.setBackground(Color.BLACK);
-            progress.setValue( fp.getTotalKBLoaded());
+            progress.setValue(fp.getTotalKBLoaded());
             progress.setString(c.format(fp.getPercent()) + "% (" + JDUtilities.formatKbReadable(progress.getValue()) + "/" + JDUtilities.formatKbReadable(Math.max(1, fp.getTotalEstimatedPackageSize())) + ")");
 
             return progress;
         }
 
+        co = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+        if (treeTable.isRowSelected(row)) {
+            co.setForeground(FONT_COLOR_SELECTED);
+        } else {
+            co.setBackground(FONT_COLOR);
+        }
+
+        // if (treeTable.isRowSelected(row)) {
+        // co.setForeground(FONT_SELECTED_ROW_COLOR);
+        // return co;
+        // }
+        //
+        // path = treeTable.getPathForRow(row);
+        // if (path == null) return super.getTableCellRendererComponent(table,
+        // value, isSelected, hasFocus, row, column);
+        //
+        // if (path.getLastPathComponent() instanceof DownloadLink) {
+        // link = (DownloadLink) path.getLastPathComponent();
+        // if (link.getStatus() == DownloadLink.STATUS_DONE) {
+        // co.setForeground(FONT_COLOR_DONE);
+        //               
+        // } else if (link.getRemainingWaittime() > 0 && link.getWaitTime() >=
+        // link.getRemainingWaittime()) {
+        // co.setForeground(FONT_COLOR_WAIT);
+        //                
+        // } else if(link.isInProgress() ||
+        // link.getStatus()==DownloadLink.STATUS_TODO){
+        // if (row % 2 == 0)
+        // co.setForeground(FONT_EVEN_ROW_COLOR);
+        // else
+        // co.setForeground(FONT_ODD_ROW_COLOR);
+        // } else if(link.isEnabled()){
+        //                
+        // co.setForeground(FONT_COLOR_DISABLED);
+        // }else{
+        // co.setForeground(FONT_COLOR_ERROR);
+        // }
+        // JDUtilities.getLogger().info(link+" : "+co.getForeground()+"");
+        // } else if (path.getLastPathComponent() instanceof FilePackage) {
+        // co.setForeground(FONT_PACKAGE_ROW_COLOR);
         // }
 
-        return super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+        return co;
 
     }
 

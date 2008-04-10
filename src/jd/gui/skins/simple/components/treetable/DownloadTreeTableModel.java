@@ -128,7 +128,7 @@ public class DownloadTreeTableModel extends AbstractTreeTableModel {
         return JDUtilities.getController().moveLinks(links, after);
 
     }
-
+ 
     /**
      * What is shown in a cell column for a node.
      */

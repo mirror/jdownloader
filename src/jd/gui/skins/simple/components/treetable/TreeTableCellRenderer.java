@@ -1,5 +1,6 @@
 package jd.gui.skins.simple.components.treetable;
 
+import java.awt.Color;
 import java.awt.Component;
 
 import javax.swing.ImageIcon;
@@ -24,12 +25,19 @@ public class TreeTableCellRenderer extends DefaultTreeRenderer {
 
     private JLabel lbl_fp_opened;
 
+    private Color FONT_COLOR;
+
+    private Color FONT_COLOR_SELECTED;
+
     public TreeTableCellRenderer() {
         super();
-        this.lbl_link = new JLabel("", new ImageIcon(JDUtilities.getImage(JDTheme.I("gui.images.link"))), SwingConstants.LEFT);
-        this.lbl_fp_closed = new JLabel("", new ImageIcon(JDUtilities.getImage(JDTheme.I("gui.images.package_closed"))), SwingConstants.LEFT);
-        this.lbl_fp_opened = new JLabel("", new ImageIcon(JDUtilities.getImage(JDTheme.I("gui.images.package_opened"))), SwingConstants.LEFT);
-    
+
+        FONT_COLOR = JDTheme.C("gui.color.downloadlist.font", "ff0000");
+        FONT_COLOR_SELECTED = JDTheme.C("gui.color.downloadlist.font_selected", "ffffff");
+        this.lbl_link = new JLabel("", new ImageIcon(JDUtilities.getImage(JDTheme.V("gui.images.link"))), SwingConstants.LEFT);
+        this.lbl_fp_closed = new JLabel("", new ImageIcon(JDUtilities.getImage(JDTheme.V("gui.images.package_closed"))), SwingConstants.LEFT);
+        this.lbl_fp_opened = new JLabel("", new ImageIcon(JDUtilities.getImage(JDTheme.V("gui.images.package_opened"))), SwingConstants.LEFT);
+
         lbl_link.setOpaque(false);
         lbl_fp_closed.setOpaque(false);
         lbl_fp_opened.setOpaque(false);
@@ -44,21 +52,41 @@ public class TreeTableCellRenderer extends DefaultTreeRenderer {
             int id = ((DownloadLink) value).getPartByName();
 
             lbl_link.setText(JDLocale.L("gui.treetable.part.label", "Datei ") + (id < 0 ? "" : JDUtilities.fillInteger(id, 3, "0") + "    "));
+            
+            if (selected) {
+                lbl_link.setForeground(FONT_COLOR_SELECTED);
+            } else {
+                lbl_link.setForeground(FONT_COLOR);
+            }
             return lbl_link;
-        }
-        else if (value instanceof FilePackage) {
+        } else if (value instanceof FilePackage) {
 
             if (expanded) {
                 lbl_fp_opened.setText(((FilePackage) value).getName());
+                if (selected) {
+                    lbl_fp_opened.setForeground(FONT_COLOR_SELECTED);
+                } else {
+                    lbl_fp_opened.setForeground(FONT_COLOR);
+                }
                 return lbl_fp_opened;
-            }
-            else {
+            } else {
                 lbl_fp_closed.setText(((FilePackage) value).getName());
+                if (selected) {
+                    lbl_fp_closed.setForeground(FONT_COLOR_SELECTED);
+                } else {
+                    lbl_fp_closed.setForeground(FONT_COLOR);
+                }
                 return lbl_fp_closed;
             }
 
         }
 
+        if (selected) {
+            lbl_link.setBackground(FONT_COLOR_SELECTED);
+        } else {
+            lbl_link.setBackground(FONT_COLOR);
+        }
+        
         return lbl_link;
     }
 }

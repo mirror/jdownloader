@@ -177,7 +177,7 @@ public class JDTrayIcon extends PluginOptional implements ActionListener {
         popupMenu.addSeparator();
         exit = createMenuItem(JDLocale.L("plugins.optional.trayIcon.exit","Exit"));
         
-        trayIcon = new TrayIcon(JDUtilities.getImage(JDTheme.I("gui.images.jd_logo")));
+        trayIcon = new TrayIcon(JDUtilities.getImage(JDTheme.V("gui.images.jd_logo")));
         trayIcon.setImageAutoSize(true);
 
         trayParent = new JWindow();

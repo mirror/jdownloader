@@ -116,6 +116,7 @@ public class RAFDownload extends DownloadInterface {
                 outputFile = new RandomAccessFile(downloadLink.getFileOutput() + ".part", "rw");
                
                 outputChannel = outputFile.getChannel();
+                addToChunksInProgress(getChunkNum());
                 for (int i = 0; i < getChunkNum(); i++) {
                     if (i == (getChunkNum() - 1)) {
                         chunk = new Chunk(downloadLink.getChunksProgress()[i]+1, -1, connection);
@@ -150,6 +151,7 @@ public class RAFDownload extends DownloadInterface {
                 logger.info("Filesize = "+fileSize);
                 logger.info("Partsize = "+parts);
                 int total=0;
+                addToChunksInProgress(getChunkNum());
                 for (int i = 0; i < getChunkNum(); i++) {
 
                     if (i == (getChunkNum() - 1)) {

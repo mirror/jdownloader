@@ -90,7 +90,7 @@ public class JHelpDialog extends JDialog implements ActionListener {
         htmlArea.setOpaque(false);
         htmlArea.requestFocusInWindow();
         this.setComponentOrientation(ComponentOrientation.RIGHT_TO_LEFT);
-        Icon imageIcon = new ImageIcon(JDUtilities.getImage(JDTheme.I("gui.images.config.tip")));
+        Icon imageIcon = new ImageIcon(JDUtilities.getImage(JDTheme.V("gui.images.config.tip")));
 
         JDUtilities.addToGridBag(this, new JLabel(imageIcon), 0, 0, 1, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.NORTHWEST);
 

@@ -14,13 +14,15 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://wnu.org/licenses/>.
 
-
 package jd.utils;
 
+import java.awt.Color;
 import java.io.File;
 import java.util.HashMap;
 import java.util.Vector;
 import java.util.logging.Logger;
+
+import javax.swing.ImageIcon;
 
 import jd.JDFileFilter;
 
@@ -29,15 +31,15 @@ import jd.JDFileFilter;
  * werte einzusetzen
  */
 public class JDTheme {
-    private static String                  THEME_DIR = "jd/themes/";
+    private static String THEME_DIR = "jd/themes/";
 
-    private static Logger                  logger    = JDUtilities.getLogger();
+    private static Logger logger = JDUtilities.getLogger();
 
-    private static HashMap<String, String> data      = new HashMap<String, String>();
+    private static HashMap<String, String> data = new HashMap<String, String>();
 
     private static HashMap<String, String> defaultData;
 
-//    private static File                    themeFile;                                 ;
+    // private static File themeFile; ;
 
     public static Vector<String> getThemeIDs() {
         File dir = JDUtilities.getResourceFile(THEME_DIR);
@@ -50,56 +52,79 @@ public class JDTheme {
         return ret;
     }
 
-    public static String getIcon(String key, String def) {
+    public static String getThemeValue(String key, String def) {
         if (data == null) {
             logger.severe("Use setTheme() first!");
             return key;
         }
-        
+
         if (data.containsKey(key)) return JDUtilities.UTF8Decode(data.get(key));
-        logger.info("Key not found: " + key+" ("+def+")");
-        logger.info(defaultData+"");
-        if ((def == null||def.length()==0)&&defaultData.containsKey(key)) {
-        def=JDUtilities.UTF8Decode(defaultData.get(key));
-        logger.finer("Use default Icon: "+ def) ;
+        logger.info("Key not found: " + key + " (" + def + ")");
+
+        if ((def == null || def.length() == 0) && defaultData.containsKey(key)) {
+            def = JDUtilities.UTF8Decode(defaultData.get(key));
+            logger.finer("Use default Value: " + def);
         }
         if (def == null) def = key;
-            data.put(key, def);
-  
-return def;
+        data.put(key, def);
+
+        return def;
 
     }
 
-    public static String I(String key) {
-        return getIcon(key, null);
+    /**
+     * Gibt ein icon zum key zurück
+     * 
+     * @param key
+     * @return
+     */
+    public static ImageIcon I(String key) {
+        return new ImageIcon(JDUtilities.getImage(V(key)));
     }
 
-    public static String I(String key, String def) {
-        return getIcon(key, def);
+    /**
+     * Gibt eine Farbe zum key zurück
+     * 
+     * @param key
+     * @return
+     */
+    public static Color C(String key, String def) {
+        return new Color(Integer.parseInt(V(key, def), 16));
     }
-/*
-    private static void saveData() {
-        Iterator<Entry<String, String>> iterator;
-        if (data == null) return;
-        iterator = data.entrySet().iterator();
-        // stellt die Wartezeiten zurück
-        Entry<String, String> i;
-        String str = "";
-        Vector<String> ret = new Vector<String>();
-        while (iterator.hasNext()) {
-            i = iterator.next();
-            ret.add(i.getKey() + " = " + i.getValue());
-        }
-        Collections.sort(ret);
-        for (int x = 0; x < ret.size(); x++)
-            str += ret.get(x) + System.getProperty("line.separator");
-        JDUtilities.writeLocalFile(themeFile, str);
 
+    /**
+     * Gibt einen Theme String zum Key zurück
+     * 
+     * @param key
+     * @return
+     */
+    public static String V(String key) {
+        return getThemeValue(key, null);
     }
-*/
+
+    /**
+     * Gibt einen Theme String zum Key zurück
+     * 
+     * @param key
+     * @return
+     */
+    public static String V(String key, String def) {
+        return getThemeValue(key, def);
+    }
+
+    /*
+     * private static void saveData() { Iterator<Entry<String, String>>
+     * iterator; if (data == null) return; iterator =
+     * data.entrySet().iterator(); // stellt die Wartezeiten zurück Entry<String,
+     * String> i; String str = ""; Vector<String> ret = new Vector<String>();
+     * while (iterator.hasNext()) { i = iterator.next(); ret.add(i.getKey() + " = " +
+     * i.getValue()); } Collections.sort(ret); for (int x = 0; x < ret.size();
+     * x++) str += ret.get(x) + System.getProperty("line.separator");
+     * JDUtilities.writeLocalFile(themeFile, str); }
+     */
     public static void setTheme(String themeID) {
         File file = JDUtilities.getResourceFile(THEME_DIR + themeID + ".thm");
-//        themeFile = file;
+        // themeFile = file;
         if (!file.exists()) {
             logger.severe("Theme " + themeID + " not installed");
             return;
@@ -114,8 +139,7 @@ return def;
             String value = lines[i].substring(split + 1).trim();
             if (data.containsKey(key)) {
                 logger.severe("Dupe found: " + key);
-            }
-            else {
+            } else {
                 data.put(key, value);
             }
 
@@ -141,8 +165,7 @@ return def;
                 String value = lines[i].substring(split + 1).trim();
                 if (data.containsKey(key)) {
                     logger.severe("Dupe found: " + key);
-                }
-                else {
+                } else {
                     data.put(key, value);
                 }
 

@@ -162,7 +162,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
         super();
         // config = JDUtilities.getConfiguration();
         guiConfig = JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME);
-        setIconImage(JDUtilities.getImage(JDTheme.I("gui.images.add")));
+        setIconImage(JDUtilities.getImage(JDTheme.V("gui.images.add")));
         this.parentFrame = parent;
         tabList = new Vector<PackageTab>();
         this.waitingLinkList = new Vector<DownloadLink>();
