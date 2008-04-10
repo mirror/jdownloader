@@ -150,7 +150,7 @@ public class JLinkButton extends JButton {
         addActionListener(new ActionListener() {
 
             public void actionPerformed(ActionEvent e) {
-                OpenURL(getLinkURL());
+                openURL(getLinkURL());
             }
         });
 
@@ -162,12 +162,12 @@ public class JLinkButton extends JButton {
         this(null, icon, url);
     }
 
-    public static void OpenURL(String url) throws MalformedURLException {
-        OpenURL(new URL(url));
+    public static void openURL(String url) throws MalformedURLException {
+        openURL(new URL(url));
     }
 
     @SuppressWarnings("unchecked")
-	public static void OpenURL(URL url) {
+	public static void openURL(URL url) {
 
         if (url != null) {
             String Browser = JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).getStringProperty(SimpleGUI.PARAM_BROWSER, null);
@@ -269,7 +269,7 @@ public class JLinkButton extends JButton {
         addActionListener(new ActionListener() {
 
             public void actionPerformed(ActionEvent e) {
-                OpenURL(getLinkURL());
+                openURL(getLinkURL());
             }
         });
 

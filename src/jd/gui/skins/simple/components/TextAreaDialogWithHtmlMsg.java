@@ -31,7 +31,10 @@ import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextPane;
+import javax.swing.event.HyperlinkEvent;
+import javax.swing.event.HyperlinkListener;
 
+import jd.gui.skins.simple.Link.JLinkButton;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
@@ -40,7 +43,7 @@ import jd.utils.JDUtilities;
  * 
  * @author JD-Team
  */
-public class TextAreaDialogWithHtmlMsg extends JDialog implements ActionListener {
+public class TextAreaDialogWithHtmlMsg extends JDialog implements ActionListener, HyperlinkListener {
     /**
 	 * 
 	 */
@@ -94,7 +97,7 @@ public class TextAreaDialogWithHtmlMsg extends JDialog implements ActionListener
             msg.setEditable(false);
             msg.setContentType("text/html"); 
             msg.setText(question);
-           
+            msg.addHyperlinkListener(this);
             this.add(msg,BorderLayout.NORTH);
         }
         if (def != null) {
@@ -136,6 +139,14 @@ private String getText(){
         }else{
             dispose();
         }
+    }
+    public void hyperlinkUpdate(HyperlinkEvent e) {
+        if (e.getEventType() == HyperlinkEvent.EventType.ACTIVATED) {
+            
+            JLinkButton.openURL( e.getURL());
+            
+          }
+        
     }
 
 }

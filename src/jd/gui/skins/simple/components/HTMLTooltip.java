@@ -7,12 +7,16 @@ import java.awt.event.MouseListener;
 
 import javax.swing.JTextPane;
 import javax.swing.JWindow;
+import javax.swing.event.HyperlinkEvent;
+import javax.swing.event.HyperlinkListener;
+
+import jd.gui.skins.simple.Link.JLinkButton;
 
 
 
 
 
-public class HTMLTooltip extends JWindow implements MouseListener{
+public class HTMLTooltip extends JWindow implements MouseListener,HyperlinkListener{
     private String style="<style>h1{    font-family:Geneva, Arial, Helvetica, sans-serif; font-size:10px;font-weight:bold;text-align: left;vertical-align: top;display: block; margin: 0px;padding: 0px;}p{font-family:Geneva, Arial, Helvetica, sans-serif;font-size:9px; padding: 0px; margin: 1px;}div{width:300px;background-color:#8976F8;border: 1px solid #000000;}</style>";
     private JTextPane htmlArea;
     public HTMLTooltip(){
@@ -21,6 +25,7 @@ public class HTMLTooltip extends JWindow implements MouseListener{
         this.htmlArea = new JTextPane();
         htmlArea.addMouseListener(this);
         htmlArea.setEditable(false);
+        htmlArea.addHyperlinkListener(this);
         htmlArea.setContentType("text/html");
         
         getContentPane().add(htmlArea, BorderLayout.CENTER);
@@ -76,6 +81,13 @@ public class HTMLTooltip extends JWindow implements MouseListener{
         this.dispose();
         
     }
-   
+    public void hyperlinkUpdate(HyperlinkEvent e) {
+        if (e.getEventType() == HyperlinkEvent.EventType.ACTIVATED) {
+            
+            JLinkButton.openURL( e.getURL());
+            
+          }
+        
+    }
 
 }

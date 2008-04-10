@@ -764,7 +764,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         //                
         case JDAction.HELP:
             try {
-                JLinkButton.OpenURL("http://jdownloadersupport.ath.cx");
+                JLinkButton.openURL("http://jdownloadersupport.ath.cx");
             } catch (Exception e1) {
                 e1.printStackTrace();
             }

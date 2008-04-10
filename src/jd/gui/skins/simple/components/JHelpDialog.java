@@ -140,7 +140,7 @@ public class JHelpDialog extends JDialog implements ActionListener {
         d.getBtn2().setText(JDLocale.L("gui.dialogs.helpDialog.btn.ok", "OK"));      
         d.action1= d.new Action(){
             public boolean doAction(){               
-                        JLinkButton.OpenURL(url);
+                        JLinkButton.openURL(url);
                 return true;
             }
         };

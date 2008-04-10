@@ -89,9 +89,10 @@ fp.setDownloadDirectory(JDUtilities.getResourceFile("packages").getAbsolutePath(
 
             }
         }
+        if(fp.size()>0){
         JDUtilities.getController().addPackage(fp);
         JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_LINKLIST_STRUCTURE_CHANGED, null));
-
+        }
         return true;
     }
 

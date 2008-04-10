@@ -29,9 +29,12 @@ import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextPane;
+import javax.swing.event.HyperlinkEvent;
+import javax.swing.event.HyperlinkListener;
 
 import jd.gui.skins.simple.LocationListener;
 import jd.gui.skins.simple.SimpleGUI;
+import jd.gui.skins.simple.Link.JLinkButton;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
@@ -40,7 +43,7 @@ import jd.utils.JDUtilities;
  * 
  * @author JD-Team
  */
-public class HTMLDialog extends JDialog implements ActionListener {
+public class HTMLDialog extends JDialog implements ActionListener, HyperlinkListener  {
     /**
 	 * 
 	 */
@@ -84,7 +87,7 @@ this.setName(title);
         htmlArea.setContentType("text/html"); 
         htmlArea.setText(html);
         htmlArea.requestFocusInWindow();
-     
+        htmlArea.addHyperlinkListener(this);
        
         this.add(scrollPane,BorderLayout.CENTER);
         JPanel p= new JPanel();
@@ -124,6 +127,14 @@ this.setName(title);
         }else{
             dispose();
         }
+    }
+    public void hyperlinkUpdate(HyperlinkEvent e) {
+        if (e.getEventType() == HyperlinkEvent.EventType.ACTIVATED) {
+            
+            JLinkButton.openURL( e.getURL());
+            
+          }
+        
     }
 
 }
