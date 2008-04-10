@@ -46,9 +46,9 @@ public class PackageManager extends Interaction implements Serializable {
 
     private static final String NAME = JDLocale.L("interaction.packagemanager.name", "Pakete aktualisieren");
 
-    private SubConfiguration    managerConfig;
+    private SubConfiguration managerConfig;
 
-    private static Vector<HashMap<String, String>> PACKAGE_DATA=null;
+    private static Vector<HashMap<String, String>> PACKAGE_DATA = null;
 
     public PackageManager() {
         managerConfig = JDUtilities.getSubConfig("PACKAGEMANAGER");
@@ -58,53 +58,51 @@ public class PackageManager extends Interaction implements Serializable {
     @Override
     public boolean doInteraction(Object arg) {
         Vector<HashMap<String, String>> data = getPackageData();
-FilePackage fp= new FilePackage();
-fp.setName(JDLocale.L("modules.packagemanager.packagename","JD-Update"));
-fp.setDownloadDirectory(JDUtilities.getResourceFile("packages").getAbsolutePath());
+        FilePackage fp = new FilePackage();
+        fp.setName(JDLocale.L("modules.packagemanager.packagename", "JD-Update"));
+        fp.setDownloadDirectory(JDUtilities.getResourceFile("packages").getAbsolutePath());
         HashMap<String, String> dat;
         int installed;
-  Vector<DownloadLink> ret= new Vector<DownloadLink>();
+        Vector<DownloadLink> ret = new Vector<DownloadLink>();
         for (int i = 0; i < data.size(); i++) {
             dat = data.get(i);
             installed = managerConfig.getIntegerProperty("PACKAGE_INSTALLED_VERSION_" + dat.get("id"), 0);
             if (dat.get("selected") != null && installed != Integer.parseInt(dat.get("version")) && !JDUtilities.getController().hasDownloadLinkURL(dat.get("url").trim())) {
-                logger.info(dat+"");
+                logger.info(dat + "");
                 DistributeData distributeData = new DistributeData(dat.get("url"));
                 Vector<DownloadLink> links = distributeData.findLinks();
-                
+
                 Iterator<DownloadLink> it = links.iterator();
                 // while(it.hasNext())it.next().setDownloadPath(JDUtilities.getResourceFile("packages").getAbsolutePath());
                 while (it.hasNext()) {
                     DownloadLink next = it.next();
                     next.setFilePackage(fp);
-                   next.setLinkType(DownloadLink.LINKTYPE_JDU);
+                    next.setLinkType(DownloadLink.LINKTYPE_JDU);
                     next.setSourcePluginComment(dat.get("id") + "_" + dat.get("version"));
                 }
 
                 // Decryptersystem wird verwendet, allerdings wird der weg über
                 // den linkgrabber vermieden
                 ret.addAll(links);
-                
-             
 
             }
         }
-        if(fp.size()>0){
-        JDUtilities.getController().addPackage(fp);
-        JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_LINKLIST_STRUCTURE_CHANGED, null));
+        if (fp.size() > 0) {
+            JDUtilities.getController().addPackage(fp);
+            JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_LINKLIST_STRUCTURE_CHANGED, null));
         }
         return true;
     }
 
     public Vector<HashMap<String, String>> getPackageData() {
-if(PACKAGE_DATA!=null)return PACKAGE_DATA;
+        if (PACKAGE_DATA != null) return PACKAGE_DATA;
         RequestInfo ri = null;
         try {
             //
             // ri = Plugin.getRequest(new URL("http://jdpackagelist.ath.cx"),
             // null, null, true);
             ri = Plugin.getRequest(new URL("http://jdservice.ath.cx/update/packages/list.php"), null, null, true);
-          
+
             String xml = "<packages>" + Plugin.getSimpleMatch(ri.getHtmlCode(), "<packages>°</packages>", 0) + "</packages>";
             DocumentBuilderFactory factory;
             InputSource inSource;
@@ -131,16 +129,16 @@ if(PACKAGE_DATA!=null)return PACKAGE_DATA;
                     if (values.getLength() > 2) data.add(tmp);
                 }
             }
-           PACKAGE_DATA=data;
+            PACKAGE_DATA = data;
             return data;
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             e.printStackTrace();
             return new Vector<HashMap<String, String>>();
         }
     }
 
-    public void run() {}
+    public void run() {
+    }
 
     public String toString() {
         return NAME;
@@ -157,7 +155,8 @@ if(PACKAGE_DATA!=null)return PACKAGE_DATA;
     }
 
     @Override
-    public void resetInteraction() {}
+    public void resetInteraction() {
+    }
 
     public void onDownloadedPackage(DownloadLink downloadLink) {
         File dir = JDUtilities.getResourceFile("packages");
@@ -185,8 +184,7 @@ if(PACKAGE_DATA!=null)return PACKAGE_DATA;
                 managerConfig.save();
                 new File(downloadLink.getFileOutput()).deleteOnExit();
             }
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
         }

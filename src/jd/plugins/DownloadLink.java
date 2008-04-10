@@ -335,8 +335,10 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
      * @return Name des Downloads
      */
     public String getName() {
+      
         if (this.getStaticFileName() == null) return name;
         return this.getStaticFileName();
+        
     }
 
     /**
@@ -856,7 +858,8 @@ this.chunksProgress=null;
      * @param FilePackage
      */
     public void setFilePackage(FilePackage filePackage) {
-        if(filePackage==this.filePackage){
+        
+        if(filePackage==this.filePackage&&filePackage!=null){
             if(!filePackage.contains(this))filePackage.add(this);
             return;
         }

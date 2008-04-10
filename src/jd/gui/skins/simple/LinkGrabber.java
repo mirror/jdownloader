@@ -327,6 +327,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
     public synchronized void addLinks(DownloadLink[] linkList) {
 
         for (int i = 0; i < linkList.length; i++) {
+           
             if (linkList[i].isAvailabilityChecked()) {
                 attachLinkTopackage(linkList[i]);
             }

@@ -5,7 +5,6 @@ package jd.gui.skins.simple.components.treetable;
 
 import java.util.Vector;
 
-import javax.swing.JComponent;
 import javax.swing.tree.TreePath;
 
 import jd.gui.skins.simple.DownloadLinksTreeTablePanel;
@@ -20,21 +19,21 @@ import org.jdesktop.swingx.treetable.AbstractTreeTableModel;
 public class DownloadTreeTableModel extends AbstractTreeTableModel {
 
     /** table column names */
-    static protected String[]      COLUMN_NAMES = { JDLocale.L("gui.treetable.header_1.tree", "Pakete"), JDLocale.L("gui.treetable.header_2.files", "Dateien"), JDLocale.L("gui.treetable.header_3.hoster", "Anbieter"), JDLocale.L("gui.treetable.header_4.status", "Status"), JDLocale.L("gui.treetable.header_5.progress", "Fortschritt") };
+    static protected String[] COLUMN_NAMES = { JDLocale.L("gui.treetable.header_1.tree", "Pakete"), JDLocale.L("gui.treetable.header_2.files", "Dateien"), JDLocale.L("gui.treetable.header_3.hoster", "Anbieter"), JDLocale.L("gui.treetable.header_4.status", "Status"), JDLocale.L("gui.treetable.header_5.progress", "Fortschritt") };
 
     private DownloadLinksTreeTablePanel owner;
 
     /** index of tree column */
 
-    public static final int        COL_PART     = 0;
+    public static final int COL_PART = 0;
 
-    public static final int        COL_FILE     = 1;
+    public static final int COL_FILE = 1;
 
-    public static final int        COL_HOSTER   = 2;
+    public static final int COL_HOSTER = 2;
 
-    public static final int        COL_STATUS   = 3;
+    public static final int COL_STATUS = 3;
 
-    public static final int        COL_PROGRESS = 4;
+    public static final int COL_PROGRESS = 4;
 
     /**
      * Creates a {@link ProjectsTreeTableModel}
@@ -42,7 +41,8 @@ public class DownloadTreeTableModel extends AbstractTreeTableModel {
      * @param allLinks
      * @param downloadLinksTreeTable
      * 
-     * @param aList the ProjectList to start out with.
+     * @param aList
+     *            the ProjectList to start out with.
      */
     public DownloadTreeTableModel(DownloadLinksTreeTablePanel treeTable) {
         super("root");
@@ -64,20 +64,20 @@ public class DownloadTreeTableModel extends AbstractTreeTableModel {
 
     public Class<?> getColumnClass(int column) {
         switch (column) {
-            case COL_PART:
-                return String.class;
+        case COL_PART:
+            return String.class;
 
-            case COL_FILE:
-                return String.class;
+        case COL_FILE:
+            return String.class;
 
-            case COL_HOSTER:
-                return String.class;
+        case COL_HOSTER:
+            return String.class;
 
-            case COL_STATUS:
-                return String.class;
+        case COL_STATUS:
+            return String.class;
 
-            case COL_PROGRESS:
-                return Object.class;
+        case COL_PROGRESS:
+            return Object.class;
 
         }
         return Object.class;
@@ -100,9 +100,7 @@ public class DownloadTreeTableModel extends AbstractTreeTableModel {
     public boolean move(TreePath[] from, Object after) {
 
         if (from.length == 0) return false;
-        if (from[0].getLastPathComponent() instanceof DownloadLink) {
-            return moveDownloadLinks(from, after);
-        }
+        if (from[0].getLastPathComponent() instanceof DownloadLink) { return moveDownloadLinks(from, after); }
         return movePackages(from, after);
 
     }
@@ -128,7 +126,7 @@ public class DownloadTreeTableModel extends AbstractTreeTableModel {
         return JDUtilities.getController().moveLinks(links, after);
 
     }
- 
+
     /**
      * What is shown in a cell column for a node.
      */
@@ -138,65 +136,61 @@ public class DownloadTreeTableModel extends AbstractTreeTableModel {
         if (node instanceof DownloadLink) {
             DownloadLink downloadLink = (DownloadLink) node;
             switch (column) {
-                case COL_PART:
+            case COL_PART:
+                if (downloadLink.getLinkType() == DownloadLink.LINKTYPE_JDU) {
+                    value = JDLocale.L("gui.treetable.part.label_update", "Update ") + "->" + downloadLink.getSourcePluginComment().split("_")[1];
+                } else {
                     int id = downloadLink.getPartByName();
                     value = JDLocale.L("gui.treetable.part.label", "Datei ") + (id < 0 ? "" : JDUtilities.fillInteger(id, 3, "0")) + "  ";
-                    break;
-                case COL_FILE:
-                    if (downloadLink.getFilePackage() == null) {
-                        value = downloadLink.getName();
-                    }
-                    else {
+                }
+                break;
+            case COL_FILE:
 
-                        String str = downloadLink.getName();
-                        value = str;
-                    }
-                    break;
+                value = downloadLink.getName();
+                if (downloadLink.getLinkType() == DownloadLink.LINKTYPE_JDU) {
+                    value = value.substring(0, value.length() - 4);
+                }
+                break;
 
-                case COL_HOSTER:
-                    value = downloadLink.getHost();
-                    break;
-                case COL_STATUS:
-                    value = downloadLink.getStatusText();
-                    break;
-                case COL_PROGRESS:
-                    return downloadLink;
-                 
-               
+            case COL_HOSTER:
+                value = downloadLink.getHost();
+                break;
+            case COL_STATUS:
+                value = downloadLink.getStatusText();
+                break;
+            case COL_PROGRESS:
+                return downloadLink;
+
             }
-        }
-        else if (node instanceof FilePackage) {
+        } else if (node instanceof FilePackage) {
             FilePackage filePackage = (FilePackage) node;
             switch (column) {
-                case COL_PART:
-                    value = JDLocale.L("gui.treetable.part.label_package", "Paket ") + filePackage.getName();
-                    // value="";
-                    break;
-                case COL_FILE:
-                    value = filePackage.getDownloadLinks().size() + " " + JDLocale.L("gui.treetable.parts", "Teile");
-                    break;
+            case COL_PART:
+                value = JDLocale.L("gui.treetable.part.label_package", "Paket ") + filePackage.getName();
+                // value="";
+                break;
+            case COL_FILE:
+                value = filePackage.getDownloadLinks().size() + " " + JDLocale.L("gui.treetable.parts", "Teile");
+                break;
 
-                case COL_HOSTER:
-                    value = "";
-                    break;
-                case COL_STATUS:
-                    value="";
-                    
-                    if(filePackage.getLinksInProgress()>0){
-                        value=filePackage.getLinksInProgress()+"/"+filePackage.size()+" "+JDLocale.L("gui.treetable.packagestatus.links_active","aktiv");
-                    }
-                    if(filePackage.getTotalDownloadSpeed()>0)
-                    value = "["+filePackage.getLinksInProgress()+"/"+filePackage.size()+"] "+"ETA "+JDUtilities.formatSeconds(filePackage.getETA())+" @ "+JDUtilities.formatKbReadable(filePackage.getTotalDownloadSpeed()/1024)+"/s";
-                    break;
-                
-                case COL_PROGRESS:
-                    return filePackage;
+            case COL_HOSTER:
+                value = "";
+                break;
+            case COL_STATUS:
+                value = "";
+
+                if (filePackage.getLinksInProgress() > 0) {
+                    value = filePackage.getLinksInProgress() + "/" + filePackage.size() + " " + JDLocale.L("gui.treetable.packagestatus.links_active", "aktiv");
+                }
+                if (filePackage.getTotalDownloadSpeed() > 0) value = "[" + filePackage.getLinksInProgress() + "/" + filePackage.size() + "] " + "ETA " + JDUtilities.formatSeconds(filePackage.getETA()) + " @ " + JDUtilities.formatKbReadable(filePackage.getTotalDownloadSpeed() / 1024) + "/s";
+                break;
+
+            case COL_PROGRESS:
+                return filePackage;
             }
-        }
-        else if (node instanceof String) {
+        } else if (node instanceof String) {
             value = (0 == column) ? node.toString() : "";
-        }
-        else {
+        } else {
             System.out.println("node.class: " + node.getClass());
         }
 
@@ -211,7 +205,8 @@ public class DownloadTreeTableModel extends AbstractTreeTableModel {
      * <code>parent</code> (that is <code>index >= 0 &&
      * index < getChildCount(parent</code>)).
      * 
-     * @param parent a node in the tree, obtained from this data source
+     * @param parent
+     *            a node in the tree, obtained from this data source
      * @return the child of <code>parent</code> at index <code>index</code>
      * 
      * Have to implement this:
@@ -225,12 +220,10 @@ public class DownloadTreeTableModel extends AbstractTreeTableModel {
 
         if (parent instanceof String) {
             child = getPackages().get(index);
-        }
-        else if (parent instanceof FilePackage) {
+        } else if (parent instanceof FilePackage) {
             FilePackage pack = (FilePackage) parent;
             child = pack.getDownloadLinks().get(index);
-        }
-        else if (parent instanceof DownloadLink) {
+        } else if (parent instanceof DownloadLink) {
             // for now, DownloadLinks do not have Children
         }
 
@@ -242,7 +235,8 @@ public class DownloadTreeTableModel extends AbstractTreeTableModel {
      * the node is a leaf or if it has no children. <code>parent</code> must
      * be a node previously obtained from this data source.
      * 
-     * @param parent a node in the tree, obtained from this data source
+     * @param parent
+     *            a node in the tree, obtained from this data source
      * @return the number of children of the node <code>parent</code>
      */
     public int getChildCount(Object parent) {
@@ -250,12 +244,10 @@ public class DownloadTreeTableModel extends AbstractTreeTableModel {
 
         if (parent instanceof String) {
             count = getPackages().size();
-        }
-        else if (parent instanceof FilePackage) {
+        } else if (parent instanceof FilePackage) {
             FilePackage pack = (FilePackage) parent;
             count = pack.getDownloadLinks().size();
-        }
-        else if (parent instanceof DownloadLink) {
+        } else if (parent instanceof DownloadLink) {
             count = 0;
         }
 
@@ -266,11 +258,9 @@ public class DownloadTreeTableModel extends AbstractTreeTableModel {
         int index = -1;
         if (parent instanceof String) {
             index = getPackages().indexOf(child);
-        }
-        else if (parent instanceof FilePackage) {
+        } else if (parent instanceof FilePackage) {
             index = ((FilePackage) parent).getDownloadLinks().indexOf(child);
-        }
-        else if (parent instanceof DownloadLink) {
+        } else if (parent instanceof DownloadLink) {
             index = -1;
         }
 

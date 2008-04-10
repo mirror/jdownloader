@@ -14,7 +14,6 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://wnu.org/licenses/>.
 
-
 package jd.gui.skins.simple.config;
 
 import java.awt.BorderLayout;
@@ -25,8 +24,6 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
-import java.io.StringReader;
-import java.net.URL;
 import java.util.EventObject;
 import java.util.HashMap;
 import java.util.Vector;
@@ -40,7 +37,6 @@ import javax.swing.table.AbstractTableModel;
 import javax.swing.table.TableCellEditor;
 import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableColumn;
-import javax.xml.parsers.DocumentBuilderFactory;
 
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -49,15 +45,8 @@ import jd.config.SubConfiguration;
 import jd.controlling.interaction.PackageManager;
 import jd.gui.UIInterface;
 import jd.gui.skins.simple.Link.JLinkButton;
-import jd.plugins.Plugin;
-import jd.plugins.RequestInfo;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
-
-import org.w3c.dom.Document;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
-import org.xml.sax.InputSource;
 
 /**
  * @author JD-Team
@@ -69,13 +58,13 @@ public class ConfigPanelRessources extends ConfigPanel implements MouseListener,
      * 
      */
 
-    private Configuration                   configuration;
+    private Configuration configuration;
 
-    private SubConfiguration                config;
+    private SubConfiguration config;
 
-    private InternalTable                   table;
+    private InternalTable table;
 
-    private Vector<HashMap<String, String>> packageData= new Vector<HashMap<String, String>>();
+    private Vector<HashMap<String, String>> packageData = new Vector<HashMap<String, String>>();
 
     public ConfigPanelRessources(Configuration configuration, UIInterface uiinterface) {
         super(uiinterface);
@@ -93,21 +82,27 @@ public class ConfigPanelRessources extends ConfigPanel implements MouseListener,
         new PackageManager().interact(this);
     }
 
-  
     public void initPanel() {
 
         config = JDUtilities.getSubConfig("PACKAGEMANAGER");
         packageData = new PackageManager().getPackageData();
-       
 
+        JDUtilities.sortHashVectorOn(packageData, "category");
         ConfigEntry ce;
-       // ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, config, "PACKAGEMANAGER_AUTOUPDATE", JDLocale.L("gui.config.packagemanager.doautoupdate", "Ausgewählte Pakete automatisch aktuell halten"));
-       // ce.setDefaultValue(true);
-       // addGUIConfigEntry(new GUIConfigEntry(ce));
-        //ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, config, "PACKAGEMANAGER_EXTRACT_AFTERDOWNLOAD", JDLocale.L("gui.config.packagemanager.doautoupdateafterdownloads", "Geladene Pakete sofort nach dem Download installieren (sonst nach dem Beenden)"));
-       // ce.setDefaultValue(false);
-       // addGUIConfigEntry(new GUIConfigEntry(ce));
-        ce = new ConfigEntry(ConfigContainer.TYPE_BUTTON,  this, JDLocale.L("gui.config.packagemanager.reset", "Versionsinformationen zurücksetzen"));
+        // ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, config,
+        // "PACKAGEMANAGER_AUTOUPDATE",
+        // JDLocale.L("gui.config.packagemanager.doautoupdate", "Ausgewählte
+        // Pakete automatisch aktuell halten"));
+        // ce.setDefaultValue(true);
+        // addGUIConfigEntry(new GUIConfigEntry(ce));
+        // ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, config,
+        // "PACKAGEMANAGER_EXTRACT_AFTERDOWNLOAD",
+        // JDLocale.L("gui.config.packagemanager.doautoupdateafterdownloads",
+        // "Geladene Pakete sofort nach dem Download installieren (sonst nach
+        // dem Beenden)"));
+        // ce.setDefaultValue(false);
+        // addGUIConfigEntry(new GUIConfigEntry(ce));
+        ce = new ConfigEntry(ConfigContainer.TYPE_BUTTON, this, JDLocale.L("gui.config.packagemanager.reset", "Versionsinformationen zurücksetzen"));
         addGUIConfigEntry(new GUIConfigEntry(ce));
         table = new InternalTable();
         table.getTableHeader().setPreferredSize(new Dimension(-1, 25));
@@ -117,7 +112,7 @@ public class ConfigPanelRessources extends ConfigPanel implements MouseListener,
 
         InternalTableModel internalTableModel = new InternalTableModel();
         table.setModel(internalTableModel);
-        this.setPreferredSize(new Dimension(650, 350));
+        // this.setPreferredSize(new Dimension(650, 350));
         // table.getColumn(table.getColumnName(0)).setCellRenderer(new
         // MarkRenderer());
         // table.getColumn(table.getColumnName(1)).setCellRenderer(new
@@ -133,35 +128,35 @@ public class ConfigPanelRessources extends ConfigPanel implements MouseListener,
         for (int c = 0; c < internalTableModel.getColumnCount(); c++) {
             column = table.getColumnModel().getColumn(c);
             switch (c) {
-                case 0:
-                    column.setPreferredWidth(30);
-                    column.setMaxWidth(30);
-                    column.setMinWidth(30);
-                    break;
-                case 1:
-                    column.setPreferredWidth(250);
-                    break;
-                case 2:
-                    column.setPreferredWidth(60);
-                    column.setMinWidth(60);
-                    break;
-                case 3:
-                    column.setPreferredWidth(50);
-                    break;
-                case 4:
-                    column.setPreferredWidth(30);
+            case 0:
+                column.setPreferredWidth(30);
+                column.setMaxWidth(30);
+                column.setMinWidth(30);
+                break;
+            case 1:
+                column.setPreferredWidth(250);
+                break;
+            case 2:
+                column.setPreferredWidth(60);
+                column.setMinWidth(60);
+                break;
+            case 3:
+                column.setPreferredWidth(50);
+                break;
+            case 4:
+                column.setPreferredWidth(30);
 
-                    break;
-                case 5:
-                    column.setPreferredWidth(30);
+                break;
+            case 5:
+                column.setPreferredWidth(30);
 
-                    break;
-                case 6:
-                    column.setPreferredWidth(60);
-                    column.setMaxWidth(60);
-                    column.setMinWidth(60);
+                break;
+            case 6:
+                column.setPreferredWidth(60);
+                column.setMaxWidth(60);
+                column.setMinWidth(60);
 
-                    break;
+                break;
 
             }
 
@@ -171,7 +166,7 @@ public class ConfigPanelRessources extends ConfigPanel implements MouseListener,
         // list = new JList();
         table.addMouseListener(this);
         JScrollPane scrollpane = new JScrollPane(table);
-        scrollpane.setPreferredSize(new Dimension(400, 200));
+        // scrollpane.setPreferredSize(new Dimension(400, 200));
         JDUtilities.addToGridBag(panel, scrollpane, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 1, 1, insets, GridBagConstraints.BOTH, GridBagConstraints.CENTER);
         add(panel, BorderLayout.NORTH);
 
@@ -194,7 +189,7 @@ public class ConfigPanelRessources extends ConfigPanel implements MouseListener,
     private class InternalTableModel extends AbstractTableModel {
 
         public Class<?> getColumnClass(int columnIndex) {
-            
+
             return getValueAt(0, columnIndex).getClass();
 
         }
@@ -217,21 +212,21 @@ public class ConfigPanelRessources extends ConfigPanel implements MouseListener,
             HashMap<String, String> element = packageData.elementAt(rowIndex);
 
             switch (columnIndex) {
-                case 0:
-                    return rowIndex;
-                case 1:
-                    return element.get("name");
-                case 2:
-                    return element.get("category");
-                case 3:
-                    return new JLinkButton(JDLocale.L("gui.config.packagemanager.table.info", "Info"), element.get("infourl"));
-                case 4:
-                    return element.get("version");
-                case 5:
-                    return getInstalledVersion(element);
+            case 0:
+                return rowIndex;
+            case 1:
+                return element.get("name");
+            case 2:
+                return element.get("category");
+            case 3:
+                return new JLinkButton(JDLocale.L("gui.config.packagemanager.table.info", "Info"), element.get("infourl"));
+            case 4:
+                return element.get("version");
+            case 5:
+                return getInstalledVersion(element);
 
-                case 6:
-                    return element.get("selected")!=null;
+            case 6:
+                return element.get("selected") != null;
 
             }
             return null;
@@ -254,32 +249,31 @@ public class ConfigPanelRessources extends ConfigPanel implements MouseListener,
             // else {
             // pluginsForHost.elementAt(row).setAGBChecked((Boolean) value);
             // }
-            
+
             HashMap<String, String> element = packageData.elementAt(row);
-            boolean v=!(element.get("selected")!=null);
-            config.setProperty("PACKAGE_SELECTED_"+element.get("id"),v);
-           
-            element.put("selected",v?"true":null);
-          
-          
+            boolean v = !(element.get("selected") != null);
+            config.setProperty("PACKAGE_SELECTED_" + element.get("id"), v);
+
+            element.put("selected", v ? "true" : null);
+
         }
 
         public String getColumnName(int column) {
             switch (column) {
-                case 0:
-                    return JDLocale.L("gui.config.packagemanager.column_id", "ID");
-                case 1:
-                    return JDLocale.L("gui.config.packagemanager.column_name", "Paket");
-                case 2:
-                    return JDLocale.L("gui.config.packagemanager.column_category", "Kategorie");
-                case 3:
-                    return JDLocale.L("gui.config.packagemanager.column_info", "Info.");
-                case 4:
-                    return JDLocale.L("gui.config.packagemanager.column_latestVersion", "Akt. Version");
-                case 5:
-                    return JDLocale.L("gui.config.packagemanager.column_installedVersion", "Inst. Version");
-                case 6:
-                    return JDLocale.L("gui.config.packagemanager.column_select", "Auswählen");
+            case 0:
+                return JDLocale.L("gui.config.packagemanager.column_id", "ID");
+            case 1:
+                return JDLocale.L("gui.config.packagemanager.column_name", "Paket");
+            case 2:
+                return JDLocale.L("gui.config.packagemanager.column_category", "Kategorie");
+            case 3:
+                return JDLocale.L("gui.config.packagemanager.column_info", "Info.");
+            case 4:
+                return JDLocale.L("gui.config.packagemanager.column_latestVersion", "Akt. Version");
+            case 5:
+                return JDLocale.L("gui.config.packagemanager.column_installedVersion", "Inst. Version");
+            case 6:
+                return JDLocale.L("gui.config.packagemanager.column_select", "Auswählen");
 
             }
             return super.getColumnName(column);
@@ -330,7 +324,7 @@ public class ConfigPanelRessources extends ConfigPanel implements MouseListener,
 
         private JLinkButton btn;
 
-        private boolean     stop = false;
+        private boolean stop = false;
 
         public Component getTableCellEditorComponent(JTable table, Object value, boolean isSelected, int row, int column) {
 
@@ -381,8 +375,8 @@ public class ConfigPanelRessources extends ConfigPanel implements MouseListener,
     }
 
     public int getInstalledVersion(HashMap<String, String> element) {
-        return config.getIntegerProperty("PACKAGE_INSTALLED_VERSION_"+element.get("id"), 0);
-      
+        return config.getIntegerProperty("PACKAGE_INSTALLED_VERSION_" + element.get("id"), 0);
+
     }
 
     public boolean isSelectedByUser(HashMap<String, String> elementAt) {
@@ -391,38 +385,37 @@ public class ConfigPanelRessources extends ConfigPanel implements MouseListener,
     }
 
     public void mouseClicked(MouseEvent e) {
-    // TODO Auto-generated method stub
+        // TODO Auto-generated method stub
 
     }
 
     public void mouseEntered(MouseEvent e) {
-    // TODO Auto-generated method stub
+        // TODO Auto-generated method stub
 
     }
 
     public void mouseExited(MouseEvent e) {
-    // TODO Auto-generated method stub
+        // TODO Auto-generated method stub
 
     }
 
     public void mousePressed(MouseEvent e) {
-    // TODO Auto-generated method stub
+        // TODO Auto-generated method stub
 
     }
 
     public void mouseReleased(MouseEvent e) {
-    // TODO Auto-generated method stub
+        // TODO Auto-generated method stub
 
     }
 
     public void actionPerformed(ActionEvent e) {
-        for(int i=0; i<this.packageData.size();i++){
-            
-            config.setProperty("PACKAGE_INSTALLED_VERSION_"+packageData.get(i).get("id"), 0);
+        for (int i = 0; i < this.packageData.size(); i++) {
+
+            config.setProperty("PACKAGE_INSTALLED_VERSION_" + packageData.get(i).get("id"), 0);
         }
         table.tableChanged(new TableModelEvent(table.getModel()));
-        
-        
+
     }
 
     // private class InternalTableCellRenderer extends DefaultTableCellRenderer

@@ -1,44 +1,83 @@
 package jd.gui.skins.simple.components;
 
 import java.awt.BorderLayout;
+import java.awt.Color;
 import java.awt.Point;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map.Entry;
 
+import javax.swing.BorderFactory;
 import javax.swing.JTextPane;
 import javax.swing.JWindow;
 import javax.swing.event.HyperlinkEvent;
 import javax.swing.event.HyperlinkListener;
 
 import jd.gui.skins.simple.Link.JLinkButton;
+import jd.utils.JDTheme;
+import jd.utils.JDUtilities;
 
 
 
 
 
 public class HTMLTooltip extends JWindow implements MouseListener,HyperlinkListener{
-    private String style="<style>h1{    font-family:Geneva, Arial, Helvetica, sans-serif; font-size:10px;font-weight:bold;text-align: left;vertical-align: top;display: block; margin: 0px;padding: 0px;}p{font-family:Geneva, Arial, Helvetica, sans-serif;font-size:9px; padding: 0px; margin: 1px;}div{width:300px;background-color:#8976F8;border: 1px solid #000000;}</style>";
+   
+    private HashMap<String,HashMap<String,String>> styles=null;
     private JTextPane htmlArea;
+    private Color BORDER_COLOR;
     public HTMLTooltip(){
         this.setAlwaysOnTop(true);
-       
+       BORDER_COLOR=JDTheme.C("gui.color.htmlTooltip_border","000000");
         this.htmlArea = new JTextPane();
         htmlArea.addMouseListener(this);
         htmlArea.setEditable(false);
         htmlArea.addHyperlinkListener(this);
         htmlArea.setContentType("text/html");
-        
+        htmlArea.setBorder(BorderFactory.createLineBorder(BORDER_COLOR));
         getContentPane().add(htmlArea, BorderLayout.CENTER);
       pack();
     }
-    public String getStyle() {
-        return style;
-    }
-    public void setStyle(String style) {
-        this.style = style;
-    }
+    
+    
+   public void setStyleEntry(String key, HashMap<String,String> value){
+       if(styles==null){
+           styles= new HashMap<String,HashMap<String,String>>();
+       }
+       styles.put(key, value);
+   }
+   public HashMap<String,HashMap<String,String>> getStyles(){
+       return styles;
+   }
+   public String getCSSString(){
+       if(styles==null)return "";
+       StringBuffer sb= new StringBuffer();
+       sb.append("<style>");
+       sb.append("\r\n");
+     
+       Entry<String, HashMap<String, String>> next;
+       Entry<String, String> prop;
+       for(Iterator<Entry<String, HashMap<String, String>>> it = styles.entrySet().iterator();it.hasNext();){
+            next = it.next();
+            sb.append(next.getKey()+"{");
+            sb.append("\r\n");
+            for(Iterator<Entry<String, String>> it2 = next.getValue().entrySet().iterator();it2.hasNext();){
+                 prop = it2.next();
+                 sb.append(prop.getKey()+":"+prop.getValue()+";");
+                 sb.append("\r\n");
+            }
+            sb.append("}");
+            sb.append("\r\n");
+            
+       }
+       sb.append("</style>");
+       JDUtilities.getLogger().info(sb.toString());
+       return sb.toString();
+   }
     public void setText(String text){
-        String t=style+text;
+        String t=getCSSString()+text;
         htmlArea.setText(t); 
      
         htmlArea.invalidate();
@@ -46,14 +85,46 @@ public class HTMLTooltip extends JWindow implements MouseListener,HyperlinkListe
     }
     public static HTMLTooltip show(String htmlText,Point loc){
         HTMLTooltip ret=new HTMLTooltip();
+      
+        HashMap<String,String> props;
+       
+        
+        
+      
+        ret.setStyleEntry("h1", props=new  HashMap<String,String>());
+        props.put("font-family","Geneva, Arial, Helvetica, sans-serif");
+        props.put("font-size","10px");
+        props.put("font-weight","bold");
+        props.put("text-align","left");
+        props.put("vertical-align","top");
+        props.put("display","block");
+        props.put("margin","0px");
+        props.put("padding","0px");   
+        
+        
+        ret.setStyleEntry("p", props=new  HashMap<String,String>());
+        props.put("font-family","Geneva, Arial, Helvetica, sans-serif");
+        props.put("font-size","9px");  
+        props.put("margin","1px");
+        props.put("padding","0px");  
+        
+        ret.setStyleEntry("div", props=new  HashMap<String,String>());
+        props.put("width","100%");
+        props.put("padding","2px");
+        props.put("background-color","#"+JDTheme.V("gui.color.htmlTooltip_background","94baff"));  
+
         ret.setText(htmlText);
-        ret.setLocation(loc);
+       
         ret.setVisible(true);
         
-        
         ret.pack();
-        
+        ret.setLocation(loc);
         return ret;
+    }
+    public void setLocation(Point p){
+        p.x-=this.getWidth()/2;
+        p.y-=this.getHeight()+3;
+        super.setLocation(p);
     }
     public void mouseClicked(MouseEvent e) {
         // TODO Auto-generated method stub

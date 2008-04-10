@@ -50,13 +50,19 @@ public class TreeTableCellRenderer extends DefaultTreeRenderer {
         if (value instanceof DownloadLink) {
 
             int id = ((DownloadLink) value).getPartByName();
-
-            lbl_link.setText(JDLocale.L("gui.treetable.part.label", "Datei ") + (id < 0 ? "" : JDUtilities.fillInteger(id, 3, "0") + "    "));
-            
+            if (((DownloadLink) value).getLinkType() == DownloadLink.LINKTYPE_JDU) {
+                lbl_link.setText(JDLocale.L("gui.treetable.part.label_update", "Update ") + "-> v." + ((DownloadLink) value).getSourcePluginComment().split("_")[1]);
+            } else {
+              
+                lbl_link.setText(JDLocale.L("gui.treetable.part.label", "Datei ") + (id < 0 ? "" : JDUtilities.fillInteger(id, 3, "0")) + "  ");
+            }
+           
             if (selected) {
                 lbl_link.setForeground(FONT_COLOR_SELECTED);
+                lbl_link.setBackground(FONT_COLOR_SELECTED);
             } else {
                 lbl_link.setForeground(FONT_COLOR);
+                lbl_link.setBackground(FONT_COLOR);
             }
             return lbl_link;
         } else if (value instanceof FilePackage) {
@@ -65,28 +71,33 @@ public class TreeTableCellRenderer extends DefaultTreeRenderer {
                 lbl_fp_opened.setText(((FilePackage) value).getName());
                 if (selected) {
                     lbl_fp_opened.setForeground(FONT_COLOR_SELECTED);
+                    lbl_fp_opened.setBackground(FONT_COLOR_SELECTED);
                 } else {
                     lbl_fp_opened.setForeground(FONT_COLOR);
+                    lbl_fp_opened.setBackground(FONT_COLOR);
                 }
                 return lbl_fp_opened;
             } else {
                 lbl_fp_closed.setText(((FilePackage) value).getName());
                 if (selected) {
-                    lbl_fp_closed.setForeground(FONT_COLOR_SELECTED);
+                    lbl_fp_closed.setForeground(FONT_COLOR_SELECTED); 
+                    lbl_fp_closed.setBackground(FONT_COLOR_SELECTED);
                 } else {
                     lbl_fp_closed.setForeground(FONT_COLOR);
+                    lbl_fp_closed.setBackground(FONT_COLOR);
                 }
                 return lbl_fp_closed;
             }
 
         }
-
         if (selected) {
+            lbl_link.setForeground(FONT_COLOR_SELECTED);
             lbl_link.setBackground(FONT_COLOR_SELECTED);
         } else {
+            lbl_link.setForeground(FONT_COLOR);
             lbl_link.setBackground(FONT_COLOR);
         }
-        
+
         return lbl_link;
     }
 }

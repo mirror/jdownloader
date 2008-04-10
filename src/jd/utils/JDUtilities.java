@@ -61,6 +61,8 @@ import java.nio.channels.FileChannel;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.text.DecimalFormat;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Locale;
@@ -89,6 +91,8 @@ import jd.JDFileFilter;
 import jd.captcha.JAntiCaptcha;
 import jd.captcha.LetterComperator;
 import jd.captcha.pixelgrid.Captcha;
+import jd.captcha.pixelgrid.Letter;
+import jd.captcha.pixelobject.PixelObject;
 import jd.config.Configuration;
 import jd.config.SubConfiguration;
 import jd.controlling.JDController;
@@ -2322,6 +2326,21 @@ public class JDUtilities {
         DecimalFormat   c= new DecimalFormat("0.00"); ;
         
         return c.format(100.0*downloadCurrent/(double)downloadMax)+"%";
+    }
+/**
+ * Sortiert einen Vector<HashMap<String, Comparable>>
+ * @param packageData
+ * @param key
+ */
+    @SuppressWarnings("unchecked")
+    public static void sortHashVectorOn(Vector<HashMap<String, String>> packageData, final String key) {
+        if(packageData.size()==0||!packageData.get(0).containsKey(key))return;
+        Collections.sort(packageData, new Comparator<HashMap<String, String>>() {
+            public int compare(HashMap<String, String> a,HashMap<String, String> b) {
+                return a.get(key).compareTo(b.get(key));
+            }
+        });
+        
     }
 
 }

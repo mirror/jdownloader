@@ -3,7 +3,6 @@
  */
 package jd.gui.skins.simple.components.treetable;
 
-import java.awt.BorderLayout;
 import java.awt.Point;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -20,8 +19,6 @@ import javax.swing.JMenuItem;
 import javax.swing.JPopupMenu;
 import javax.swing.JSeparator;
 import javax.swing.JTable;
-import javax.swing.JTextPane;
-import javax.swing.JWindow;
 import javax.swing.ListSelectionModel;
 import javax.swing.event.TreeExpansionEvent;
 import javax.swing.event.TreeExpansionListener;
@@ -43,6 +40,9 @@ import jd.gui.skins.simple.components.JDFileChooser;
 import jd.gui.skins.simple.config.GetExplorer;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.PluginForHost;
+import jd.plugins.download.DownloadInterface;
+import jd.plugins.download.DownloadInterface.Chunk;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
@@ -635,7 +635,99 @@ public class DownloadTreeTable extends JXTreeTable implements TreeExpansionListe
             tooltip.destroy();
             tooltip = null;
         }
-        tooltip = HTMLTooltip.show("<div><h1>Hallo Welt</h1><p>"+this.getDownladTreeTableModel().getValueAt(this.getPathForRow(mouseOverRow).getLastPathComponent(), mouseOverColumn)+"</p></div>", this.mousePoint);
+        StringBuffer sb=new StringBuffer();
+        sb.append("<div>");
+        Object obj = this.getPathForRow(mouseOverRow).getLastPathComponent();
+        DownloadLink link;
+        FilePackage fp;
+      if(obj instanceof DownloadLink){
+          link=(DownloadLink)obj;
+          switch (mouseOverColumn){
+          case 0:
+              sb.append("<h1>"+link.getFileOutput()+"</h1>");
+              break;
+          case 1:
+              sb.append("<h1>"+link.getFileOutput()+"</h1><hr/>");
+            if(link.getLinkType()==DownloadLink.LINKTYPE_NORMAL) sb.append("<p>"+link.getDownloadURL()+"</p>");
+              
+              break;
+          case 2:
+              PluginForHost plg=(PluginForHost)link.getPlugin();
+              
+              sb.append("<h1>"+plg.getPluginID()+"</h1><hr/>");
+            sb.append("<p>");
+              sb.append(JDLocale.L("gui.downloadlist.tooltip.connections","Akt. Verbindungen: ")+""+plg.getCurrentConnections()+"/"+plg.getMaxConnections());
+              sb.append("<br/>");
+              sb.append(JDLocale.L("gui.downloadlist.tooltip.simultan_downloads","Max. gleichzeitige Downloads:")+" "+plg.getMaxSimultanDownloadNum());
+              sb.append("</p>");
+              break;
+          case 3:
+              sb.append("<p>"+link.getStatusText()+"</p>");
+              break;
+          case 4:
+              if(link.getDownloadInstance()==null)return;
+              DownloadInterface dl = link.getDownloadInstance();
+              String table="<p><table>";
+              for(Chunk chunk:dl.getChunks()){
+                  int loaded=chunk.getBytesLoaded();
+                  int total=chunk.getChunkSize();
+                  table+="<tr>";
+                  table+="<td> Verbindung "+chunk.getID()+"</td>";
+                  table+="<td>"+JDUtilities.formatKbReadable((int)chunk.getBytesPerSecond()/1024)+"/s"+"</td>";
+                  table+="<td>"+JDUtilities.formatKbReadable(loaded/1024)+"/"+JDUtilities.formatKbReadable(total/1024)+"</td>";
+                 
+                  int r=(loaded*100)/ total;
+                  int m=100-r;
+                 
+                  table+="<td>"+"<table width='100px' height='5px'  cellpadding='0' cellspacing='0' ><tr><td width='"+r+"%' bgcolor='#000000'/><td width='"+m+"%' bgcolor='#cccccc'/></tr> </table>"+"</td>";
+                  table+="</tr>";
+              }
+              table+="</table></p>";
+           
+              sb.append("<h1>"+link.getFileOutput()+"</h1><hr/>");
+              sb.append(table);
+              
+              
+              break;
+          }
+      }else{
+          fp=(FilePackage)obj;
+          switch (mouseOverColumn){
+          case 0:
+              
+              sb.append("<h1>"+fp.getName()+"</h1><hr/>");
+              if(fp.hasComment())sb.append("<p>"+fp.getComment()+"</p>");
+              if(fp.hasPassword())sb.append("<p>"+fp.getPassword()+"</p>");
+              if(fp.hasDownloadDirectory())sb.append("<p>"+fp.getDownloadDirectory()+"</p>");
+              break;
+          case 1:
+              sb.append("<h1>"+fp.getName()+"</h1><hr/>");
+              sb.append("<p>"+JDLocale.L("gui.downloadlist.tooltip.partnum","Teile: ")+fp.size()+"</p>");
+              sb.append("<p>"+JDLocale.L("gui.downloadlist.tooltip.partsfinished","Davon fertig: ")+fp.getLinksFinished()+"</p>");
+              sb.append("<p>"+JDLocale.L("gui.downloadlist.tooltip.partsfailed","Davon fehlerhaft: ")+fp.getLinksFailed()+"</p>");
+              sb.append("<p>"+JDLocale.L("gui.downloadlist.tooltip.partsactive","Gerade aktiv: ")+fp.getLinksInProgress()+"</p>");
+              
+              break;
+          case 2:
+              return;
+              
+          case 3:  
+              sb.append("<h1>"+fp.getName()+"</h1><hr/>");
+              sb.append("<p>"+this.getDownladTreeTableModel().getValueAt(obj, mouseOverColumn)+"</p>");
+              break;
+          case 4:
+              sb.append("<h1>"+fp.getName()+"</h1><hr/>");
+              sb.append("<p>"+this.getDownladTreeTableModel().getValueAt(obj, mouseOverColumn-1)+"</p>");
+              
+            
+              
+              break;
+          } 
+      }
+      
+      sb.append("</div>");
+      if(sb.length()<=12)return;
+        tooltip = HTMLTooltip.show(sb.toString(), this.mousePoint);
      
       
 

@@ -107,7 +107,7 @@ public class RAFDownload extends DownloadInterface {
             downloadLink.setStatus(DownloadLink.STATUS_DOWNLOAD_IN_PROGRESS);
             downloadLink.setDownloadMax((int) fileSize);
             setChunkNum(Math.min(getChunkNum(), plugin.getFreeConnections()));
-            if (checkResumabled() && plugin.getFreeConnections() >= getChunkNum()) {
+            if (checkResumabled() && plugin.getFreeConnections() >= getChunkNum()&&maxBytes<0) {
                 logger.info("Resume: " + fileSize);
                 long parts = fileSize / getChunkNum();
            
@@ -132,6 +132,7 @@ public class RAFDownload extends DownloadInterface {
 
             }
             else {
+                if(maxBytes>0)this.setChunkNum(1);
                 this.setChunkNum(Math.min(getChunkNum(), plugin.getFreeConnections()));
                 this.bytesLoaded = 0;
                 downloadLink.setDownloadCurrent(0);
@@ -150,24 +151,31 @@ public class RAFDownload extends DownloadInterface {
                 downloadLink.setChunksProgress(new int[chunkNum]);
                 logger.info("Filesize = "+fileSize);
                 logger.info("Partsize = "+parts);
-                int total=0;
+               // int total=0;
                 addToChunksInProgress(getChunkNum());
                 for (int i = 0; i < getChunkNum(); i++) {
 
                     if (i == (getChunkNum() - 1)) {
-                        chunk = new Chunk(i * parts, -1, connection);
-                        total+=(fileSize-i * parts);
-                        logger.info("+part "+(fileSize-i * parts));
+                        
+                        if(maxBytes>0){
+                            chunk = new Chunk(0, maxBytes, connection); 
+                            logger.info("NIBBELING: Just load the first "+(maxBytes+1)+"Bytes");
+                        }else{
+                            chunk = new Chunk(i * parts, -1, connection);  
+                           // total+=(fileSize-i * parts);
+                            logger.info("+part "+(fileSize-i * parts));
+                        }
+                      
                     }
                     else {
                         chunk = new Chunk(i * parts, (i + 1) * parts-1, connection);
-                        total+=((i + 1) * parts-i * parts);
+                        //total+=((i + 1) * parts-i * parts);
                         logger.info("+part "+((i + 1) * parts-i * parts));
                     }
 
                     addChunk(chunk);
                 }
-                logger.info("Total splitted size: "+total);
+               // logger.info("Total splitted size: "+total);
             }
 
         }

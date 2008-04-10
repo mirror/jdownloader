@@ -697,7 +697,7 @@ logger.info("wiat end");
      * @author coalado
      * 
      */
-    class Chunk extends Thread {
+    public class Chunk extends Thread {
         // Wird durch die speedbegrenzung ein chunk uter diesen wert geregelt,
         // so wird er weggelassen.
         // sehr niedrig geregelte chunks haben einen kleinen buffer und eine
@@ -764,9 +764,12 @@ logger.info("wiat end");
            
             
         }
-        
+        /**
+         * Gibt die Geladenen ChunkBytes zurück
+         * @return
+         */
         public int getBytesLoaded() {
-            return loaded;
+            return (int)(this.currentBytePosition-this.startByte);
         }
 
         public void finalize() {
@@ -935,6 +938,7 @@ loaded+=preBytes;
             addToChunksInProgress(-1);
         }
         public void run0() {
+            
             logger.finer("Start Chunk " + this.getID() + " : " + startByte + " - " + endByte);
             if ((startByte >= endByte && endByte > 0) || startByte >= getFileSize()) {
                 
@@ -1281,14 +1285,30 @@ loaded+=preBytes;
         public int getPreBytes() {
             return preBytes;
         }
-
+/**
+ * Gibt die geladenen Partbytes zurück. Das entsüricht bei resumen nicht den Chunkbytes!!!
+ * @return
+ */
         public int getLoaded() {
             return loaded;
         }
-
+/**
+ * Setzt die anzahl der schon geladenen partbytes. Ist für resume wichtig. 
+ * @param loaded
+ */
         public void setLoaded(int loaded) {
             this.loaded = loaded;
             countBytesLoaded(loaded);
+        }
+        public long getStartByte() {
+            return startByte;
+        }
+        public long getEndByte() {
+            return endByte;
+        }
+        public long getCurrentBytesPosition() {
+            
+            return this.currentBytePosition;
         }
 
     }
@@ -1319,6 +1339,11 @@ loaded+=preBytes;
     public void abort() {
        this.aborted=true;
         
+    }
+
+    public Vector<Chunk> getChunks() {
+        
+        return this.chunks;
     }
 
 }
