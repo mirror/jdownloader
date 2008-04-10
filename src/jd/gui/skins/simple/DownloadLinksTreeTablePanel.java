@@ -37,7 +37,7 @@ public class DownloadLinksTreeTablePanel extends DownloadLinksView {
         internalTreeTable.fireTableChanged(id);
         if (id == DownloadLinksView.REFRESH_DATA_AND_STRUCTURE_CHANGED && !this.isVisible()) {
             try {
-                Thread.sleep(500);
+                Thread.sleep(10);
             }
             catch (InterruptedException e) {
                 // TODO Auto-generated catch block

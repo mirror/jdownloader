@@ -26,23 +26,21 @@ import java.util.Vector;
 
 import javax.xml.parsers.DocumentBuilderFactory;
 
-import org.w3c.dom.Document;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
-import org.xml.sax.InputSource;
-
-import jd.JDFileFilter;
-import jd.config.Configuration;
 import jd.config.SubConfiguration;
 import jd.controlling.DistributeData;
 import jd.event.ControlEvent;
 import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
 import jd.plugins.Plugin;
 import jd.plugins.RequestInfo;
 import jd.unrar.UnZip;
-import jd.update.WebUpdater;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
+
+import org.w3c.dom.Document;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+import org.xml.sax.InputSource;
 
 public class PackageManager extends Interaction implements Serializable {
 
@@ -60,33 +58,39 @@ public class PackageManager extends Interaction implements Serializable {
     @Override
     public boolean doInteraction(Object arg) {
         Vector<HashMap<String, String>> data = getPackageData();
-
+FilePackage fp= new FilePackage();
+fp.setName(JDLocale.L("modules.packagemanager.packagename","JD-Update"));
+fp.setDownloadDirectory(JDUtilities.getResourceFile("packages").getAbsolutePath());
         HashMap<String, String> dat;
         int installed;
+  Vector<DownloadLink> ret= new Vector<DownloadLink>();
         for (int i = 0; i < data.size(); i++) {
             dat = data.get(i);
             installed = managerConfig.getIntegerProperty("PACKAGE_INSTALLED_VERSION_" + dat.get("id"), 0);
             if (dat.get("selected") != null && installed != Integer.parseInt(dat.get("version")) && !JDUtilities.getController().hasDownloadLinkURL(dat.get("url").trim())) {
+                logger.info(dat+"");
                 DistributeData distributeData = new DistributeData(dat.get("url"));
                 Vector<DownloadLink> links = distributeData.findLinks();
+                
                 Iterator<DownloadLink> it = links.iterator();
                 // while(it.hasNext())it.next().setDownloadPath(JDUtilities.getResourceFile("packages").getAbsolutePath());
                 while (it.hasNext()) {
                     DownloadLink next = it.next();
-                    next.getFilePackage().setDownloadDirectory(JDUtilities.getResourceFile("packages").getAbsolutePath());
-                    next.setLinkType(DownloadLink.LINKTYPE_JDU);
+                    next.setFilePackage(fp);
+                   next.setLinkType(DownloadLink.LINKTYPE_JDU);
                     next.setSourcePluginComment(dat.get("id") + "_" + dat.get("version"));
                 }
 
                 // Decryptersystem wird verwendet, allerdings wird der weg über
                 // den linkgrabber vermieden
-                JDUtilities.getController().addAllLinks(0, (Vector<DownloadLink>) links);
-                JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_LINKLIST_STRUCTURE_CHANGED, null));
-
+                ret.addAll(links);
+                
              
 
             }
         }
+        JDUtilities.getController().addPackage(fp);
+        JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_LINKLIST_STRUCTURE_CHANGED, null));
 
         return true;
     }

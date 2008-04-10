@@ -144,12 +144,15 @@ public class JDController implements ControlListener, UIListener {
     private boolean isReconnecting;
 
     private boolean lastReconnectSuccess;
+    private FilePackage fp;
 
     public JDController() {
 
         packages = new Vector<FilePackage>();
         clipboard = new ClipboardHandler();
         downloadStatus = DOWNLOAD_NOT_RUNNING;
+        fp = new FilePackage();
+        fp.setName(JDLocale.L("controller.packages.defaultname", "various"));
 
         JDUtilities.setController(this);
         initInteractions();
@@ -296,9 +299,8 @@ public class JDController implements ControlListener, UIListener {
     }
 
     public void removeDownloadLinks(Vector<DownloadLink> links) {
-
+        if (links == null || links.size() == 0) return;
         Iterator<DownloadLink> iterator = links.iterator();
-
         while (iterator.hasNext()) {
             this.removeDownloadLink(iterator.next());
         }
@@ -443,7 +445,7 @@ public class JDController implements ControlListener, UIListener {
         }
     }
 
-    private void addPackage(FilePackage fp) {
+    public void addPackage(FilePackage fp) {
         synchronized (packages) {
             packages.add(fp);
         }
@@ -452,6 +454,7 @@ public class JDController implements ControlListener, UIListener {
 
     public void addLink(DownloadLink link) {
         int index;
+        if (link.getFilePackage() == null) link.setFilePackage(fp);
         synchronized (packages) {
             if ((index = packages.indexOf(link.getFilePackage())) >= 0) {
 
@@ -465,23 +468,59 @@ public class JDController implements ControlListener, UIListener {
 
     }
 
-    public void addLinkAt(DownloadLink link, int i) {
-        int index;
-        Vector<DownloadLink> pfs = this.getPackageFiles(link);
-        this.removeDownloadLinks(pfs);
-        synchronized (packages) {
-            packages.add(0, link.getFilePackage());
+    public boolean movePackage(FilePackage fp, int index) {
+        if (index < 0) index = 0;
+        if (index > packages.size() - 1) index = packages.size() - 1;
+        int i=packages.indexOf(fp);
+        if (i ==index) {
+           return false;
+        }else if(i>index){
+            index--;
+            this.removePackage(fp);
+        }else{
+            this.removePackage(fp);
         }
-
+        this.addPackageAt(fp, index);
+        return true;
     }
 
-    public void addAllLinksAt(Vector<DownloadLink> links, int i) {
+    public boolean removePackage(FilePackage fp2) {
         synchronized (packages) {
-            for (int t = 0; t < links.size(); t++) {
-                Vector<DownloadLink> pfs = this.getPackageFiles(links.get(t));
-                this.removeDownloadLinks(pfs);
-                packages.add(0, links.get(t).getFilePackage());
-            }
+            return packages.remove(fp2);
+        }
+        
+    }
+
+    // Dies Funktion macht um package basiertem design wenig Sinn
+    // public void addLinkAt(DownloadLink link, int i) {
+    // if (link.getFilePackage() == null) link.setFilePackage(fp);
+    // if(packages.contains(link.getFilePackage())){
+    // if(link.getFilePackage().contains(link))
+    // }
+    // Vector<DownloadLink> pfs = this.getPackageFiles(link);
+    // if (pfs != null) this.removeDownloadLinks(new Vector<DownloadLink>(pfs));
+    // synchronized (packages) {
+    // packages.add(0, link.getFilePackage());
+    // }
+    //
+    // }
+
+    // public void addAllLinksAt(Vector<DownloadLink> links, int i) {
+    // synchronized (packages) {
+    // for (int t = 0; t < links.size(); t++) {
+    // Vector<DownloadLink> pfs = this.getPackageFiles(links.get(t));
+    // this.removeDownloadLinks(pfs);
+    // packages.add(0, links.get(t).getFilePackage());
+    // }
+    // }
+    //
+    // }
+
+    public void addPackageAt(FilePackage fp, int index) {
+        if (index < 0) index = 0;
+        if (index > packages.size() - 1) index = packages.size() - 1;
+        synchronized (packages) {
+            packages.add(index, fp);
         }
 
     }
@@ -493,12 +532,17 @@ public class JDController implements ControlListener, UIListener {
 
     }
 
-    public void addAllLinks(int i, Vector<DownloadLink> links) {
-        // TODO Auto-generated method stub
+    // Dies Funktion macht wenig sinn im package basierten Aufbau
+    // public void addAllLinks(int index, Vector<DownloadLink> links) {
+    // Iterator<DownloadLink> it = links.iterator();
+    // int i = 0;
+    // while (it.hasNext()) {
+    // this.addLinkAt(it.next(), i + index);
+    // i++;
+    // }
+    // }
 
-    }
-
-    private void pauseDownloads(boolean value) {
+    public void pauseDownloads(boolean value) {
         watchdog.pause(value);
 
     }
@@ -1474,7 +1518,9 @@ public class JDController implements ControlListener, UIListener {
             if (links.contains(pos)) return false;
             FilePackage dest = pos.getFilePackage();
             if (dest == null) {
-                logger.severe(after + " +does not belong to a filepackage");
+                logger.severe(after + " +does not belong to a filepackage. Set default");
+                pos.setFilePackage(fp);
+
                 return false;
             }
 
@@ -1504,6 +1550,10 @@ public class JDController implements ControlListener, UIListener {
         this.fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_LINKLIST_STRUCTURE_CHANGED, null));
 
         return true;
+    }
+
+    public FilePackage getDefaultFilePackage() {
+        return fp;
     }
 
 }

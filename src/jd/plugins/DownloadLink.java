@@ -314,7 +314,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
      */
     public DownloadLink(Plugin plugin, String name, String host, String urlDownload, boolean isEnabled) {
         this.plugin = plugin;
-        this.name = name;
+        this.setName(name);
         sourcePluginPasswords = new Vector<String>();
         inProgress = false;
         downloadMax = 0;
@@ -846,9 +846,7 @@ this.chunksProgress=null;
      * @return FilePackage
      */
     public FilePackage getFilePackage() {
-        if (filePackage == null) {
-            filePackage = new FilePackage();
-        }
+        if(filePackage==null)setFilePackage(JDUtilities.getController().getDefaultFilePackage());
         return filePackage;
     }
 
@@ -875,7 +873,7 @@ this.chunksProgress=null;
      * @return STring
      */
     public String toString() {
-        return this.getFileOutput();
+        return this.getName()+"-> "+this.getFileOutput();
     }
 
     /**
