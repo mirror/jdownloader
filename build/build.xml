@@ -5,7 +5,7 @@
     <property name="dist" value="dist" />
     <property name="res" value="ressourcen" />
 	<property name="keystore" value="G:\jdworkspace\jDownloader.keystore" />
-	<property name="class-path" value="./BrowserLauncher2.jar ./js.jar" />
+	<property name="class-path" value="./BrowserLauncher2.jar ./js.jar ./swingx.jar" />
     <target name="compile">
         <javac srcdir="${src}" destdir="${cls}" encoding="UTF-8" source="1.5" />
     </target>
@@ -74,6 +74,20 @@
             </fileset>
         </jar>
 		<delete file="Manifest.MF" failonerror="false" />
+		
+		<manifest file="Manifest.MF">
+				<attribute name="Created-By" value="jiaz" />
+				<attribute name="Main-Class" value="jd.update.Main" />
+		    </manifest>
+	        <jar jarfile="${dist}/JDWebinterface.jar" manifest="Manifest.MF">
+	            <fileset dir="${cls}">
+	                <include name="jd/plugins/optional/webinterface/*.class" />        
+	            </fileset>
+				     <fileset dir="${res}">
+	                <include name="META-INF/services/jd.plugins.PluginOptional" />
+	            </fileset>
+	        </jar>
+			<delete file="Manifest.MF" failonerror="false" />
     </target>
 	<target name="jarContainer">
 		<!-- Container -->

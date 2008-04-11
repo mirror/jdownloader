@@ -8,6 +8,7 @@ import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.LinkedList;
+import java.util.Properties;
 import java.util.Vector;
 import java.util.logging.Logger;
 
@@ -37,6 +38,8 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
         }
 
         try {
+            Properties p = System.getProperties();
+            p.setProperty("sun.rmi.transport.tcp.handshakeTimeout", "100");
             Naming.rebind("jDownloader", new Server());
         } catch (MalformedURLException ex) {
             System.out.println(ex.getMessage());

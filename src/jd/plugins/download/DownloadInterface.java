@@ -406,6 +406,7 @@ abstract public class DownloadInterface {
         if (errors.contains(ERROR_NIBBLE_LIMIT_REACHED)) {
             plugin.getCurrentStep().setStatus(PluginStep.STATUS_ERROR);
             downloadLink.setStatus(DownloadLink.STATUS_ERROR_PLUGIN_SPECIFIC);
+            downloadLink.setEnabled(false);
             downloadLink.setStatusText(String.format(JDLocale.L("download.error.message.nibble","Nibbling aborted after %s bytes"),""+this.maxBytes));
             return false;
         }
@@ -882,7 +883,7 @@ loaded+=preBytes;
                 httpConnection.setConnectTimeout(getRequestTimeout());
                 httpConnection.setInstanceFollowRedirects(false);
                 Map<String, List<String>> request = connection.getRequestProperties();
-
+                
                 if (request != null) {
                     Set<Entry<String, List<String>>> requestEntries = request.entrySet();
                     Iterator<Entry<String, List<String>>> it = requestEntries.iterator();
@@ -933,8 +934,9 @@ loaded+=preBytes;
          * Thread runner
          */
         public void run() {
-           
+            plugin.setCurrentConnections(plugin.getCurrentConnections() + 1);
             run0(); 
+            plugin.setCurrentConnections(plugin.getCurrentConnections() - 1);
             addToChunksInProgress(-1);
         }
         public void run0() {
@@ -949,14 +951,14 @@ loaded+=preBytes;
             }
 
             if (chunkNum > 1 && preBytes > 0 && this.getID() == 0 && startByte == 0) loadStartBytes(preBytes);
-            plugin.setCurrentConnections(plugin.getCurrentConnections() + 1);
+          
 
             if (chunkNum > 1) this.connection = copyConnection(connection);
             if (connection == null) {
                 error(ERROR_CHUNKLOAD_FAILED);
                 logger.severe("ERROR Chunk (connection copy failed) " + chunks.indexOf(this));
                 
-                plugin.setCurrentConnections(plugin.getCurrentConnections() - 1);
+               
                 return;
             }
 
@@ -964,7 +966,7 @@ loaded+=preBytes;
                 error(ERROR_CHUNKLOAD_FAILED);
                 logger.severe("ERROR Chunk " + chunks.indexOf(this));
            
-                plugin.setCurrentConnections(plugin.getCurrentConnections() - 1);
+              
                 return;
 
             }
@@ -977,7 +979,7 @@ loaded+=preBytes;
                 error(ERROR_CHUNKLOAD_FAILED);
                 logger.severe("ERROR Chunk " + chunks.indexOf(this));
               
-                plugin.setCurrentConnections(plugin.getCurrentConnections() - 1);
+            
                 return;
 
             } else if (range != null) {
@@ -993,7 +995,7 @@ loaded+=preBytes;
                 }
 
                 if (speedDebug) logger.finer("Resulting Range" + startByte + " - " + endByte);
-            } else {
+            } else if(maxBytes<0){
                 endByte = connection.getContentLength();
             }
 
@@ -1004,18 +1006,20 @@ loaded+=preBytes;
             // // TODO Auto-generated catch block
             // e.printStackTrace();
             // }
-            chunksDownloading++;
+            addChunksDownloading(+1);
+            
             download();
             this.bytesPerSecond = 0;
             this.desiredBps = 0;
-            chunksDownloading--;
+            addChunksDownloading(-1);
+    
 
             if (plugin.aborted || downloadLink.isAborted()) {
                 error(ERROR_ABORTED_BY_USER);
             }
             logger.finer("Chunk finished " + chunks.indexOf(this) + " " + getBytesLoaded() + " bytes");
            
-            plugin.setCurrentConnections(plugin.getCurrentConnections() - 1);
+      
 
         }
 
@@ -1326,9 +1330,15 @@ loaded+=preBytes;
 //        }
 //    }
 
-    private synchronized void countBytesLoaded(int block) {
+    protected synchronized void countBytesLoaded(int block) {
         bytesLoaded += block;
 
+    }
+
+    protected synchronized void addChunksDownloading(int i) {
+       
+        chunksDownloading+=i;
+        
     }
 
     public  synchronized void addToChunksInProgress(int i) {

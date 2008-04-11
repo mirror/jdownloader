@@ -68,10 +68,13 @@ public class RAFDownload extends DownloadInterface {
     protected void writeChunkBytes(Chunk chunk) {
         try {
             int limit = chunk.buffer.limit()-chunk.buffer.position();
+            if(maxBytes<0){
             synchronized(outputChannel){           
                 outputFile.seek( chunk.currentBytePosition);
                 outputChannel.write(chunk.buffer);
-            }   
+            }  } else{
+                chunk.buffer.clear();
+            }
             if (maxBytes > 0 && getChunkNum() == 1 && this.bytesLoaded >= maxBytes) {
                 error(ERROR_NIBBLE_LIMIT_REACHED);
             }    
@@ -113,7 +116,7 @@ public class RAFDownload extends DownloadInterface {
            
                 Chunk chunk;
 
-                outputFile = new RandomAccessFile(downloadLink.getFileOutput() + ".part", "rw");
+               outputFile = new RandomAccessFile(downloadLink.getFileOutput() + ".part", "rw");
                
                 outputChannel = outputFile.getChannel();
                 addToChunksInProgress(getChunkNum());
@@ -145,9 +148,9 @@ public class RAFDownload extends DownloadInterface {
 
                 // downloadLink.setChunksProgress(new int[chunkNum]);
                 Chunk chunk;
-                outputFile = new RandomAccessFile(downloadLink.getFileOutput() + ".part", "rw");
+                if(maxBytes<0)outputFile = new RandomAccessFile(downloadLink.getFileOutput() + ".part", "rw");
 
-                outputChannel = outputFile.getChannel();
+                if(maxBytes<0)outputChannel = outputFile.getChannel();
                 downloadLink.setChunksProgress(new int[chunkNum]);
                 logger.info("Filesize = "+fileSize);
                 logger.info("Partsize = "+parts);
@@ -226,9 +229,9 @@ public class RAFDownload extends DownloadInterface {
         //
         try {
 
-            this.outputChannel.force(false);
-            outputFile.close();
-            outputChannel.close();
+            if(maxBytes<0)   this.outputChannel.force(false);
+         if(maxBytes<0)  outputFile.close();
+         if(maxBytes<0)  outputChannel.close();
             if (!handleErrors()) {
 
                 return;
