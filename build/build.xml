@@ -5,7 +5,7 @@
     <property name="dist" value="dist" />
     <property name="res" value="ressourcen" />
 	<property name="keystore" value="G:\jdworkspace\jDownloader.keystore" />
-	<property name="class-path" value="./BrowserLauncher2.jar ./js.jar ./swingx.jar" />
+	<property name="class-path" value="libs/BrowserLauncher2.jar libs/js.jar libs/swingx.jar" />
     <target name="compile">
         <javac srcdir="${src}" destdir="${cls}" encoding="UTF-8" source="1.5" />
     </target>
@@ -32,7 +32,11 @@
         </jar>
     	<delete file="Manifest.MF" failonerror="false" />
         <!-- Plugins -->
-        <jar jarfile="${dist}/JDownloaderPlugins.jar">
+        <manifest file="Manifest.MF">
+              <attribute name="Created-By" value="coalado" />           
+  			<attribute name="Class-Path" value="${class-path}" />		
+          </manifest>
+        <jar jarfile="${dist}/JDownloaderPlugins.jar" manifest="Manifest.MF">
             <fileset dir="${cls}">
                 <include name="jd/plugins/decrypt/**" />
                 <include name="jd/plugins/host/**" />

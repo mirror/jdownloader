@@ -1353,4 +1353,8 @@ abstract public class DownloadInterface {
         return this.chunks;
     }
 
+    public Vector<Exception> getExceptions() {
+        return exceptions;
+    }
+
 }

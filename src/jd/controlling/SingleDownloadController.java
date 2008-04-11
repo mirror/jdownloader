@@ -101,10 +101,11 @@ public class SingleDownloadController extends ControlBroadcaster {
         downloadLink.setInProgress(true);
         plugin.resetPlugin();
         this.handlePlugin();
-        plugin.clean();
+        
         downloadLink.setInProgress(false);
+       
         fireControlEvent(new ControlEvent(currentPlugin,ControlEvent.CONTROL_PLUGIN_INACTIVE, this));
-
+        plugin.clean();
     }
 
     private void handlePlugin() {

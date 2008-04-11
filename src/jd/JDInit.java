@@ -208,42 +208,48 @@ public class JDInit {
     @SuppressWarnings("unchecked")
     public Vector<PluginForDecrypt> loadPluginForDecrypt() {
         Vector<PluginForDecrypt> plugins = new Vector<PluginForDecrypt>();
-        try {
-            JDClassLoader jdClassLoader = JDUtilities.getJDClassLoader();
-            logger.finer("Load PLugins");
-            Iterator iterator = Service.providers(PluginForDecrypt.class, jdClassLoader);
-            while (iterator.hasNext()) {
+
+        JDClassLoader jdClassLoader = JDUtilities.getJDClassLoader();
+        logger.finer("Load PLugins");
+        Iterator iterator = Service.providers(PluginForDecrypt.class, jdClassLoader);
+        while (iterator.hasNext()) {
+            try {
                 PluginForDecrypt p = (PluginForDecrypt) iterator.next();
                 logger.info("Load " + p);
                 plugins.add(p);
+            } catch (Exception e) {
+                logger.info("caught");
+                e.printStackTrace();
+
             }
-            return plugins;
-        } catch (Exception e) {
-            e.printStackTrace();
-            return plugins;
         }
+        return plugins;
+
     }
 
     @SuppressWarnings("unchecked")
     public Vector<PluginForHost> loadPluginForHost() {
         Vector<PluginForHost> plugins = new Vector<PluginForHost>();
-        try {
-            JDClassLoader jdClassLoader = JDUtilities.getJDClassLoader();
-            Iterator iterator;
-            logger.finer("Load PLugins");
-            iterator = Service.providers(PluginForHost.class, jdClassLoader);
-            while (iterator.hasNext()) {
+
+        JDClassLoader jdClassLoader = JDUtilities.getJDClassLoader();
+        Iterator iterator;
+        logger.finer("Load PLugins");
+        iterator = Service.providers(PluginForHost.class, jdClassLoader);
+        while (iterator.hasNext()) {
+            try {
                 PluginForHost next = (PluginForHost) iterator.next();
                 logger.finer("Load PLugins" + next);
                 PluginForHost p = next;
 
                 plugins.add(p);
+            } catch (Exception e) {
+                logger.info("caught");
+                e.printStackTrace();
+
             }
-            return plugins;
-        } catch (Exception e) {
-            e.printStackTrace();
-            return plugins;
         }
+        return plugins;
+
     }
 
     public void loadModules() {
@@ -257,47 +263,48 @@ public class JDInit {
     @SuppressWarnings("unchecked")
     public Vector<PluginForContainer> loadPluginForContainer() {
         Vector<PluginForContainer> plugins = new Vector<PluginForContainer>();
-        try {
-            JDClassLoader jdClassLoader = JDUtilities.getJDClassLoader();
-            Iterator iterator;
-            logger.finer("Load PLugins");
-            iterator = Service.providers(PluginForContainer.class, jdClassLoader);
-            while (iterator.hasNext()) {
+
+        JDClassLoader jdClassLoader = JDUtilities.getJDClassLoader();
+        Iterator iterator;
+        logger.finer("Load PLugins");
+        iterator = Service.providers(PluginForContainer.class, jdClassLoader);
+        while (iterator.hasNext()) {
+            try {
                 PluginForContainer p = (PluginForContainer) iterator.next();
 
                 plugins.add(p);
+            } catch (Exception e) {
+                e.printStackTrace();
+                logger.info("caught");
+
             }
-            return plugins;
-        } catch (Exception e) {
-            e.printStackTrace();
-            return plugins;
         }
+        return plugins;
+
     }
 
     @SuppressWarnings("unchecked")
     public HashMap<String, PluginOptional> loadPluginOptional() {
         HashMap<String, PluginOptional> pluginsOptional = new HashMap<String, PluginOptional>();
-        try {
-            JDClassLoader jdClassLoader = JDUtilities.getJDClassLoader();
-            Iterator iterator;
 
-            iterator = Service.providers(PluginOptional.class, jdClassLoader);
-            while (iterator.hasNext()) {
-                try {
+        JDClassLoader jdClassLoader = JDUtilities.getJDClassLoader();
+        Iterator iterator;
 
-                    PluginOptional p = (PluginOptional) iterator.next();
-                    pluginsOptional.put(p.getPluginName(), p);
-                    logger.info("Optionales-Plugin : " + p.getPluginName());
+        iterator = Service.providers(PluginOptional.class, jdClassLoader);
+        while (iterator.hasNext()) {
+            try {
 
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
+                PluginOptional p = (PluginOptional) iterator.next();
+                pluginsOptional.put(p.getPluginName(), p);
+                logger.info("Optionales-Plugin : " + p.getPluginName());
+
+            } catch (Exception e) {
+                logger.info("caught");
+                e.printStackTrace();
             }
-            return pluginsOptional;
-        } catch (Exception e) {
-            e.printStackTrace();
-            return pluginsOptional;
         }
+        return pluginsOptional;
+
     }
 
     public void loadDownloadQueue() {
@@ -325,22 +332,22 @@ public class JDInit {
         }
 
         Iterator<PluginForHost> iteratorHost = JDUtilities.getPluginsForHost().iterator();
-//        while (iteratorHost.hasNext()) {
-//            iteratorHost.next().addPluginListener(controller);
-//        }
+        // while (iteratorHost.hasNext()) {
+        // iteratorHost.next().addPluginListener(controller);
+        // }
         Iterator<PluginForDecrypt> iteratorDecrypt = JDUtilities.getPluginsForDecrypt().iterator();
-//        while (iteratorDecrypt.hasNext()) {
-//            iteratorDecrypt.next().addPluginListener(controller);
-//        }
+        // while (iteratorDecrypt.hasNext()) {
+        // iteratorDecrypt.next().addPluginListener(controller);
+        // }
         Iterator<PluginForContainer> iteratorContainer = JDUtilities.getPluginsForContainer().iterator();
-//        while (iteratorContainer.hasNext()) {
-//            iteratorContainer.next().addPluginListener(controller);
-//        }
+        // while (iteratorContainer.hasNext()) {
+        // iteratorContainer.next().addPluginListener(controller);
+        // }
 
         Iterator<String> iteratorOptional = JDUtilities.getPluginsOptional().keySet().iterator();
-//        while (iteratorOptional.hasNext()) {
-//            JDUtilities.getPluginsOptional().get(iteratorOptional.next()).addPluginListener(controller);
-//        }
+        // while (iteratorOptional.hasNext()) {
+        // JDUtilities.getPluginsOptional().get(iteratorOptional.next()).addPluginListener(controller);
+        // }
 
         HashMap<String, PluginOptional> pluginsOptional = JDUtilities.getPluginsOptional();
 

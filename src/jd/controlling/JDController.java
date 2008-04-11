@@ -234,6 +234,7 @@ public class JDController implements ControlListener, UIListener {
             if (!(event.getSource() instanceof PluginForHost)) return;
             lastDownloadFinished = ((SingleDownloadController) event.getParameter()).getDownloadLink();
             this.addToFinished(lastDownloadFinished);
+          
             // Prüfen ob das Paket fertig ist
             if (lastDownloadFinished.getFilePackage().getRemainingLinks() == 0) {
                 Interaction.handleInteraction(Interaction.INTERACTION_DOWNLOAD_PACKAGE_FINISHED, this);
