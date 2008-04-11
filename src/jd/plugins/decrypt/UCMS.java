@@ -44,8 +44,10 @@ public class UCMS extends PluginForDecrypt {
     		+ "|(http://[*]fettrap.com/\\?id=[+])"
     		+ "|(http://[*]hardcoremetal.biz/\\?id=[+])"
     		+ "|(http://[*]hms.x2.to/\\?id=[+])"
-    		+ "|(http://[*]serienfreaks.tv/category/[+]/[+])"
-    		+ "|(http://[*]serienfreaks.tv/\\?id=[+])"
+    		+ "|(http://[*]serienfreaks.to/category/[+]/[+])"
+    		+ "|(http://[*]serienfreaks.to/\\?id=[+])"
+    		+ "|(http://[*]serienfreaks.in/category/[+]/[+])"
+            + "|(http://[*]serienfreaks.in/\\?id=[+])"
     		+ "|(http://[*]flashload.org/\\?id=[+])"
     		+ "|(http://[*]found-station.net/\\?id=[+])"
     		+ "|(http://[*]twin-warez.com/\\?id=[+])"
@@ -82,9 +84,16 @@ public class UCMS extends PluginForDecrypt {
     		+ "|(http://[*]join-music.net/\\?id=[+])"
     		+ "|(http://[*]mixe-downloaden.info/\\?id=[+])"
     		+ "|(http://[*]relfreaks.com/category/[+]/[+])"
+    		+ "|(http://[*]spreaded.net/category/[+]/[+])"
     		+ "|(http://[*]romc.extra.hu/\\?id=[+])"
     		+ "|(http://[*]dark-load.net/\\?id=[+])"
     		+ "|(http://[*]sexload.to/\\?id=[+])"
+    		+ "|(http://[*]rsxxx.net/\\?id=[+])"
+    		+ "|(http://[*]wrzunlimited.1gb.in/\\?id=[+])"
+    		+ "|(http://[*]clips-share.net/\\?id=[+])"
+    		
+    		//+ "|(http://[*]myload.es/\\?id=[+])"
+    		
     		
     		+ "|(http://[*]sceneload.to/\\?id=[+])");
     
