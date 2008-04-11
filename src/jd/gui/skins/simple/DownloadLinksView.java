@@ -21,6 +21,7 @@ public abstract class DownloadLinksView extends JPanel implements ControlListene
     protected JPopupMenu popup;
     public final static int REFRESH_DATA_AND_STRUCTURE_CHANGED = 0;
     public final static int REFRESH_ONLY_DATA_CHANGED = 1;
+    public static final int REFRESH_SPECIFIED_LINKS = 2;
     /**
      * Dieser Vector enthält alle Downloadlinks
      */
@@ -45,17 +46,20 @@ public abstract class DownloadLinksView extends JPanel implements ControlListene
     public void controlEvent(ControlEvent event) {
 
         switch (event.getID()) {
-   
+        case ControlEvent.CONTROL_DOWNLOADLINKS_CHANGED:
+            fireTableChanged(REFRESH_SPECIFIED_LINKS,event.getParameter());
+            // fireTableChanged(REFRESH_ID_COMPLETE_REPAINT);
+            break;
 
         case ControlEvent.CONTROL_DOWNLOADLINK_DATA_CHANGED:
-            fireTableChanged(REFRESH_ONLY_DATA_CHANGED);
+            fireTableChanged(REFRESH_ONLY_DATA_CHANGED,null);
             // fireTableChanged(REFRESH_ID_COMPLETE_REPAINT);
             break;
         case ControlEvent.CONTROL_LINKLIST_STRUCTURE_CHANGED:
             if (event.getSource().getClass() == JDController.class) {
                 this.setPackages(JDUtilities.getController().getPackages());
             }
-            fireTableChanged(REFRESH_DATA_AND_STRUCTURE_CHANGED);
+            fireTableChanged(REFRESH_DATA_AND_STRUCTURE_CHANGED,null);
 
         }
     }
@@ -111,7 +115,7 @@ public abstract class DownloadLinksView extends JPanel implements ControlListene
 
     // abstract protected void checkColumnSize();
 
-    abstract public void fireTableChanged(int id);
+    abstract public void fireTableChanged(int id, Object object);
 
     // abstract public void moveSelectedItems(int direction);
     // abstract public void removeSelectedLinks();

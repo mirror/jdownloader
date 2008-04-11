@@ -16,6 +16,7 @@
 
 package jd.controlling;
 
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.Vector;
 import java.util.logging.Logger;
@@ -27,7 +28,6 @@ import jd.event.ControlListener;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForHost;
-
 import jd.utils.JDUtilities;
 
 /**
@@ -79,7 +79,7 @@ public class DownloadWatchDog extends Thread implements ControlListener {
             hasWaittimeLinks = false;
             hasInProgressLinks = false;
 
-            deligateFireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_DOWNLOADLINK_DATA_CHANGED, null));
+            //deligateFireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_DOWNLOADLINK_DATA_CHANGED, null));
             fps = controller.getPackages();
             currentTotalSpeed = 0;
             inProgress = 0;
@@ -276,12 +276,14 @@ public class DownloadWatchDog extends Thread implements ControlListener {
         ProgressController progress = new ProgressController("Termination", activeDownloadControllers.size());
         progress.setStatusText("Stopping all downloads "+activeDownloadControllers);
         progress.setRange(100);
+        ArrayList<DownloadLink> al= new ArrayList<DownloadLink>();
+        
         synchronized (activeDownloadControllers) {
             for (Iterator<SingleDownloadController> it=activeDownloadControllers.iterator();it.hasNext();) {
-                it.next().abortDownload();
+                al.add(it.next().abortDownload().getDownloadLink());
             }
 
-            deligateFireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_DOWNLOADLINK_DATA_CHANGED, null));
+            deligateFireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_DOWNLOADLINKS_CHANGED, al));
             boolean check = true;
             // Warteschleife bis alle activelinks abgebrochen wurden
             logger.finer("Warten bis alle activeLinks abgebrochen wurden.");
@@ -302,8 +304,10 @@ public class DownloadWatchDog extends Thread implements ControlListener {
 //                }
             }
         }
-        deligateFireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_DOWNLOADLINK_DATA_CHANGED, null));
         
+        deligateFireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_DOWNLOADLINKS_CHANGED, al));
+        
+       
         progress.finalize();
         logger.finer("Abbruch komplett");
 
@@ -317,7 +321,7 @@ public class DownloadWatchDog extends Thread implements ControlListener {
     private void clearDownloadListStatus() {
 
         activeDownloadControllers.removeAllElements();
-        logger.finer("Clear");
+        logger.finer("TODO!!! HIER WERDEN MEINE FEHLERHAFTEN LINKS ZURÜCKGESETZT!");
         Vector<FilePackage> fps;
         Vector<DownloadLink> links;
         fps = controller.getPackages();

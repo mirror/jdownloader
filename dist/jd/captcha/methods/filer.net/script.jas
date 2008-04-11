@@ -1,0 +1,13 @@
+#####-------------------------------------JAC-Script------------------------------------#####
+##### Dieses Script beinhaltet alle Parameter und Funktioenen die für die captcha #####
+##### erkennung nötig sind #####
+#####################################---serienfreakz.tv.in---####################################
+##############Set parameter
+param.simplifyFaktor = 1;
+param.trainOnlyUnknown=true;
+param.colorType = sss;
+ 
+captcha.prepare.invert();
+
+letter.prepare.toBlackAndWhite();
+letter.prepare.resizeToHeight(20);

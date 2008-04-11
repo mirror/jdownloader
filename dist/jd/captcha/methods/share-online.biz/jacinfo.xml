@@ -1,0 +1,5 @@
+<jDownloader>
+  <method name="JAntiCaptcha_filefactory" author="Coalado" />
+  <format type="png" letterNum="3"/>
+
+</jDownloader>

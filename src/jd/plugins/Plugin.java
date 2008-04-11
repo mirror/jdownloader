@@ -409,14 +409,14 @@ public abstract class Plugin {
     public void resetSteps() {
         currentStep = null;
         for (int i = 0; i < steps.size(); i++) {
-            steps.elementAt(i).setStatus(0);
+            steps.elementAt(i).setStatus(PluginStep.STATUS_TODO);
         }
-        firePluginDataChanged();
+        //firePluginDataChanged();
     }
 
-    private void firePluginDataChanged() {
-        JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_DOWNLOADLINK_DATA_CHANGED));
-    }
+//    private void firePluginDataChanged() {
+//        JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_DOWNLOADLINKS_CHANGED));
+//    }
 
     /**
      * @author olimex Fügt Map als String mit Trennzeichen zusammen TODO:

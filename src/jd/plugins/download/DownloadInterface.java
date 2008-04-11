@@ -34,6 +34,7 @@ import java.util.Map.Entry;
 import java.util.logging.Logger;
 
 import jd.config.Configuration;
+import jd.event.ControlEvent;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTPConnection;
 import jd.plugins.Plugin;
@@ -116,7 +117,7 @@ abstract public class DownloadInterface {
 
     private int totalLoadedBytes = 0;
 
-    private boolean aborted=false;
+    private boolean aborted = false;
 
     public static Logger logger = JDUtilities.getLogger();
 
@@ -158,7 +159,7 @@ abstract public class DownloadInterface {
         writeChunkBytes(chunk);
         this.totalLoadedBytes += chunk.buffer.limit();
         // 152857135
-       // logger.info("Bytes " + totalLoadedBytes);
+        // logger.info("Bytes " + totalLoadedBytes);
     }
 
     /**
@@ -276,7 +277,6 @@ abstract public class DownloadInterface {
 
             this.onChunksReady();
 
-       
             if (!handleErrors()) {
 
                 return false;
@@ -289,7 +289,7 @@ abstract public class DownloadInterface {
         catch (Exception e) {
             handleErrors();
             if (plugin.getCurrentStep().getStatus() != PluginStep.STATUS_ERROR) {
-              //  e.printStackTrace();
+                // e.printStackTrace();
                 downloadLink.setStatus(DownloadLink.STATUS_ERROR_PLUGIN_SPECIFIC);
 
                 plugin.getCurrentStep().setParameter(JDUtilities.convertExceptionReadable(e));
@@ -389,7 +389,6 @@ abstract public class DownloadInterface {
             return false;
         }
 
-
         if (errors.contains(ERROR_TIMEOUT_REACHED)) {
             plugin.getCurrentStep().setStatus(PluginStep.STATUS_ERROR);
             downloadLink.setStatus(DownloadLink.STATUS_ERROR_NOCONNECTION);
@@ -397,9 +396,8 @@ abstract public class DownloadInterface {
         }
         if (errors.contains(ERROR_LOCAL_IO)) {
             plugin.getCurrentStep().setStatus(PluginStep.STATUS_ERROR);
-            downloadLink.setStatusText(JDLocale.L("download.error.message.io","Schreibfehler"));
-            
-            
+            downloadLink.setStatusText(JDLocale.L("download.error.message.io", "Schreibfehler"));
+
             downloadLink.setStatus(DownloadLink.STATUS_ERROR_PLUGIN_SPECIFIC);
             return false;
         }
@@ -407,13 +405,13 @@ abstract public class DownloadInterface {
             plugin.getCurrentStep().setStatus(PluginStep.STATUS_ERROR);
             downloadLink.setStatus(DownloadLink.STATUS_ERROR_PLUGIN_SPECIFIC);
             downloadLink.setEnabled(false);
-            downloadLink.setStatusText(String.format(JDLocale.L("download.error.message.nibble","Nibbling aborted after %s bytes"),""+this.maxBytes));
+            downloadLink.setStatusText(String.format(JDLocale.L("download.error.message.nibble", "Nibbling aborted after %s bytes"), "" + this.maxBytes));
             return false;
         }
         if (exceptions != null) {
             plugin.getCurrentStep().setStatus(PluginStep.STATUS_ERROR);
             downloadLink.setStatus(DownloadLink.STATUS_ERROR_PLUGIN_SPECIFIC);
-            downloadLink.setStatusText(JDLocale.L("download.error.message.exception","Ausnahmefehler: ")+JDUtilities.convertExceptionReadable(exceptions.get(0)));
+            downloadLink.setStatusText(JDLocale.L("download.error.message.exception", "Ausnahmefehler: ") + JDUtilities.convertExceptionReadable(exceptions.get(0)));
             return false;
         }
         if (errors.contains(ERROR_UNKNOWN)) {
@@ -429,13 +427,13 @@ abstract public class DownloadInterface {
         if (errors.contains(ERROR_CHUNK_INCOMPLETE)) {
             plugin.getCurrentStep().setStatus(PluginStep.STATUS_ERROR);
             downloadLink.setStatus(DownloadLink.STATUS_ERROR_PLUGIN_SPECIFIC);
-            downloadLink.setStatusText(JDLocale.L("download.error.message.chunk_incomplete","Chunk(s) incomplete"));
+            downloadLink.setStatusText(JDLocale.L("download.error.message.chunk_incomplete", "Chunk(s) incomplete"));
             return false;
         }
-        if(this.bytesLoaded!=this.fileSize){
+        if (this.bytesLoaded != this.fileSize) {
             plugin.getCurrentStep().setStatus(PluginStep.STATUS_ERROR);
             downloadLink.setStatus(DownloadLink.STATUS_ERROR_PLUGIN_SPECIFIC);
-            downloadLink.setStatusText(JDLocale.L("download.error.message.incomplete","Download unvollständig"));
+            downloadLink.setStatusText(JDLocale.L("download.error.message.incomplete", "Download unvollständig"));
             return false;
         }
         plugin.getCurrentStep().setStatus(PluginStep.STATUS_DONE);
@@ -456,14 +454,14 @@ abstract public class DownloadInterface {
 
             } catch (InterruptedException e) {
             }
-            //checkChunkParts();
+            // checkChunkParts();
             downloadLink.setDownloadCurrent(this.bytesLoaded);
-            JDUtilities.getController().requestDownloadLinkUpdate(downloadLink);
+            JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_DOWNLOADLINKS_CHANGED, downloadLink));
 
             assignChunkSpeeds();
 
         }
-logger.info("wiat end");
+        logger.info("wiat end");
     }
 
     /**
@@ -505,7 +503,7 @@ logger.info("wiat end");
      */
     protected void addChunk(Chunk chunk) {
         this.chunks.add(chunk);
-       
+
         if (chunkNum == 1) {
             chunk.startChunk();
         } else {
@@ -667,8 +665,6 @@ logger.info("wiat end");
 
     }
 
-  
-
     /**
      * Setzt die filesize.
      * 
@@ -751,26 +747,25 @@ logger.info("wiat end");
 
             // maxSpeed=Integer.MAX_VALUE;
             currentBytePosition = this.startByte;
-            
+
             // if (startByte >= endByte && endByte > 0) {
             // logger.severe("Startbyte has to be less than endByte");
             // }
         }
+
         public void startChunk() {
-            
-            
+
             this.start();
-            
-        
-           
-            
+
         }
+
         /**
          * Gibt die Geladenen ChunkBytes zurück
+         * 
          * @return
          */
         public int getBytesLoaded() {
-            return (int)(this.currentBytePosition-this.startByte);
+            return (int) (this.currentBytePosition - this.startByte);
         }
 
         public void finalize() {
@@ -810,16 +805,16 @@ logger.info("wiat end");
          * @return
          */
         public int getMaximalSpeed() {
-            try{
-            if (this.maxSpeed <= 0) {
-                this.maxSpeed = downloadLink.getMaximalspeed() / getRunningChunks();
-                if (speedDebug) logger.finer("Def speed: " + downloadLink.getMaximalspeed() + "/" + getRunningChunks() + "=" + maxSpeed);
+            try {
+                if (this.maxSpeed <= 0) {
+                    this.maxSpeed = downloadLink.getMaximalspeed() / getRunningChunks();
+                    if (speedDebug) logger.finer("Def speed: " + downloadLink.getMaximalspeed() + "/" + getRunningChunks() + "=" + maxSpeed);
 
-            }
-            if (speedDebug) logger.finer("return speed: min " + maxSpeed + " - " + (this.desiredBps * 1.5));
-            if (desiredBps < 1024) return maxSpeed;
-            return Math.min(maxSpeed, (int) (this.desiredBps * 1.5));
-            }catch (Exception e){
+                }
+                if (speedDebug) logger.finer("return speed: min " + maxSpeed + " - " + (this.desiredBps * 1.5));
+                if (desiredBps < 1024) return maxSpeed;
+                return Math.min(maxSpeed, (int) (this.desiredBps * 1.5));
+            } catch (Exception e) {
                 addException(e);
                 error(ERROR_UNKNOWN);
             }
@@ -855,9 +850,8 @@ logger.info("wiat end");
                 buffer.put(b);
                 buffer.flip();
                 addBytes(this);
-loaded+=preBytes;
+                loaded += preBytes;
                 currentBytePosition = this.startByte;
-             
 
             } catch (Exception e) {
                 error(ERROR_CHUNKLOAD_FAILED);
@@ -883,7 +877,7 @@ loaded+=preBytes;
                 httpConnection.setConnectTimeout(getRequestTimeout());
                 httpConnection.setInstanceFollowRedirects(false);
                 Map<String, List<String>> request = connection.getRequestProperties();
-                
+
                 if (request != null) {
                     Set<Entry<String, List<String>>> requestEntries = request.entrySet();
                     Iterator<Entry<String, List<String>>> it = requestEntries.iterator();
@@ -926,7 +920,7 @@ loaded+=preBytes;
                 error(ERROR_CHUNKLOAD_FAILED);
                 e.printStackTrace();
             }
-           
+
             return null;
         }
 
@@ -935,38 +929,36 @@ loaded+=preBytes;
          */
         public void run() {
             plugin.setCurrentConnections(plugin.getCurrentConnections() + 1);
-            run0(); 
+            run0();
             plugin.setCurrentConnections(plugin.getCurrentConnections() - 1);
             addToChunksInProgress(-1);
         }
+
         public void run0() {
-            
+
             logger.finer("Start Chunk " + this.getID() + " : " + startByte + " - " + endByte);
             if ((startByte >= endByte && endByte > 0) || startByte >= getFileSize()) {
-                
-                //Korrektur Byte
+
+                // Korrektur Byte
                 countBytesLoaded(-1);
-                
+
                 return;
             }
 
             if (chunkNum > 1 && preBytes > 0 && this.getID() == 0 && startByte == 0) loadStartBytes(preBytes);
-          
 
             if (chunkNum > 1) this.connection = copyConnection(connection);
             if (connection == null) {
                 error(ERROR_CHUNKLOAD_FAILED);
                 logger.severe("ERROR Chunk (connection copy failed) " + chunks.indexOf(this));
-                
-               
+
                 return;
             }
 
             if (chunkNum > 1 && (connection.getHeaderField("Content-Range") == null || connection.getHeaderField("Content-Range").length() == 0)) {
                 error(ERROR_CHUNKLOAD_FAILED);
                 logger.severe("ERROR Chunk " + chunks.indexOf(this));
-           
-              
+
                 return;
 
             }
@@ -978,8 +970,7 @@ loaded+=preBytes;
             if (range == null && chunkNum > 1) {
                 error(ERROR_CHUNKLOAD_FAILED);
                 logger.severe("ERROR Chunk " + chunks.indexOf(this));
-              
-            
+
                 return;
 
             } else if (range != null) {
@@ -995,7 +986,7 @@ loaded+=preBytes;
                 }
 
                 if (speedDebug) logger.finer("Resulting Range" + startByte + " - " + endByte);
-            } else if(maxBytes<0){
+            } else if (maxBytes < 0) {
                 endByte = connection.getContentLength();
             }
 
@@ -1007,19 +998,16 @@ loaded+=preBytes;
             // e.printStackTrace();
             // }
             addChunksDownloading(+1);
-            
+
             download();
             this.bytesPerSecond = 0;
             this.desiredBps = 0;
             addChunksDownloading(-1);
-    
 
             if (plugin.aborted || downloadLink.isAborted()) {
                 error(ERROR_ABORTED_BY_USER);
             }
             logger.finer("Chunk finished " + chunks.indexOf(this) + " " + getBytesLoaded() + " bytes");
-           
-      
 
         }
 
@@ -1046,7 +1034,7 @@ loaded+=preBytes;
          * @return
          */
         private boolean isExternalyAborted() {
-            return aborted ||plugin.aborted || abortByError || downloadLink.isAborted();
+            return aborted || plugin.aborted || abortByError || downloadLink.isAborted();
         }
 
         /**
@@ -1054,15 +1042,12 @@ loaded+=preBytes;
          */
         private void download() {
             int bufferSize = 1;
-          
-           
-            
-          
-            logger.finer("resume Chunk with " + loaded+"/"+this.getChunkSize()+" at "+currentBytePosition);
+
+            logger.finer("resume Chunk with " + loaded + "/" + this.getChunkSize() + " at " + currentBytePosition);
             try {
                 bufferSize = getBufferSize(getMaximalSpeed());
-                if (bufferSize > endByte - currentBytePosition+1) {
-                    bufferSize = (int) (endByte - currentBytePosition+1);
+                if (bufferSize > endByte - currentBytePosition + 1) {
+                    bufferSize = (int) (endByte - currentBytePosition + 1);
                 }
                 // logger.finer(bufferSize+" - "+this.getTimeInterval());
                 buffer = ByteBuffer.allocateDirect(bufferSize);
@@ -1144,13 +1129,16 @@ loaded+=preBytes;
                     buffer.clear();
                     currentBytePosition += bytes;
 
-                   // logger.info(this.getID() + ": " + this.startByte + " --> " + currentBytePosition + " -->" + this.endByte + "/" + bytesLoaded + ":" + (100.0 * (currentBytePosition - startByte) / (double) (endByte - startByte)));
+                    // logger.info(this.getID() + ": " + this.startByte + " -->
+                    // " + currentBytePosition + " -->" + this.endByte + "/" +
+                    // bytesLoaded + ":" + (100.0 * (currentBytePosition -
+                    // startByte) / (double) (endByte - startByte)));
 
                     if (block == -1 || isExternalyAborted()) break;
 
-                    if (currentBytePosition >this.endByte) {
+                    if (currentBytePosition > this.endByte) {
 
-                        logger.severe(this.getID() + " OVERLOAD!!! " + (currentBytePosition - this.endByte-1));
+                        logger.severe(this.getID() + " OVERLOAD!!! " + (currentBytePosition - this.endByte - 1));
                         break;
                     }
 
@@ -1165,8 +1153,8 @@ loaded+=preBytes;
                     // Falls der Server bei den Ranges schlampt und als endByte
                     // immer das dateiende angibt wird hier der buffer
                     // korrigiert um overhead zu vermeiden
-                    if (tempBuff > endByte - currentBytePosition+1) {
-                        tempBuff = (int) (endByte - currentBytePosition)+1;
+                    if (tempBuff > endByte - currentBytePosition + 1) {
+                        tempBuff = (int) (endByte - currentBytePosition) + 1;
                     }
                     if (Math.abs(bufferSize - tempBuff) > 1000) {
                         bufferSize = tempBuff;
@@ -1289,46 +1277,55 @@ loaded+=preBytes;
         public int getPreBytes() {
             return preBytes;
         }
-/**
- * Gibt die geladenen Partbytes zurück. Das entsüricht bei resumen nicht den Chunkbytes!!!
- * @return
- */
+
+        /**
+         * Gibt die geladenen Partbytes zurück. Das entsüricht bei resumen nicht
+         * den Chunkbytes!!!
+         * 
+         * @return
+         */
         public int getLoaded() {
             return loaded;
         }
-/**
- * Setzt die anzahl der schon geladenen partbytes. Ist für resume wichtig. 
- * @param loaded
- */
+
+        /**
+         * Setzt die anzahl der schon geladenen partbytes. Ist für resume
+         * wichtig.
+         * 
+         * @param loaded
+         */
         public void setLoaded(int loaded) {
             this.loaded = loaded;
             countBytesLoaded(loaded);
         }
+
         public long getStartByte() {
             return startByte;
         }
+
         public long getEndByte() {
             return endByte;
         }
+
         public long getCurrentBytesPosition() {
-            
+
             return this.currentBytePosition;
         }
 
     }
 
-//    protected class DownloadFailedException extends Exception {
-//
-//        /**
-//         * 
-//         */
-//        private static final long serialVersionUID = -1727333740786982474L;
-//
-//        public DownloadFailedException(String message) {
-//            super(message);
-//
-//        }
-//    }
+    // protected class DownloadFailedException extends Exception {
+    //
+    // /**
+    // *
+    // */
+    // private static final long serialVersionUID = -1727333740786982474L;
+    //
+    // public DownloadFailedException(String message) {
+    // super(message);
+    //
+    // }
+    // }
 
     protected synchronized void countBytesLoaded(int block) {
         bytesLoaded += block;
@@ -1336,23 +1333,23 @@ loaded+=preBytes;
     }
 
     protected synchronized void addChunksDownloading(int i) {
-       
-        chunksDownloading+=i;
-        
+
+        chunksDownloading += i;
+
     }
 
-    public  synchronized void addToChunksInProgress(int i) {
-        chunksInProgress+=i;
-        
+    public synchronized void addToChunksInProgress(int i) {
+        chunksInProgress += i;
+
     }
 
     public void abort() {
-       this.aborted=true;
-        
+        this.aborted = true;
+
     }
 
     public Vector<Chunk> getChunks() {
-        
+
         return this.chunks;
     }
 

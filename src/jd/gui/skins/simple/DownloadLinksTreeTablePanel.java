@@ -32,9 +32,11 @@ public class DownloadLinksTreeTablePanel extends DownloadLinksView {
     }
 
     @Override
-    public void fireTableChanged(int id) {
+    public void fireTableChanged(int id, Object param) {
+        
+        
         if (id == DownloadLinksView.REFRESH_DATA_AND_STRUCTURE_CHANGED) this.setVisible(false);
-        internalTreeTable.fireTableChanged(id);
+        internalTreeTable.fireTableChanged(id,param);
         if (id == DownloadLinksView.REFRESH_DATA_AND_STRUCTURE_CHANGED && !this.isVisible()) {
             try {
                 Thread.sleep(10);

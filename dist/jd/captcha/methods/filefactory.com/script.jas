@@ -1,0 +1,55 @@
+#####-------------------------------------JAC-Script------------------------------------#####
+##### Dieses Script beinhaltet alle Parameter und Funktioenen die für die captcha #####
+##### erkennung nötig sind #####
+#####################################---Filefactory.com---####################################
+##############Set parameter
+param.simplifyFaktor = 1;
+param.borderVarianceX=20;
+param.borderVarianceY=20;
+param.scanVarianceX=6;
+param.scanVarianceY=6;
+param.trainOnlyUnknown=false;
+param.colorType = b;
+param.relativecontrast=0.90;
+param.gaps={33,59,88,120};
+param.usepeakgapdetection=false;
+param.useaveragegapdetection=false;
+param.LetterSearchLimitPerfectPercent=20;
+param.objectColorContrast = 0.6;
+param.objectDetectionContrast = 0.8;
+param.useObjectDetection = false;
+param.minimumObjectArea = 300;
+param.backgroundsamplecleancontrast=0.15;
+
+
+param.alignAngleSteps=2;
+param.intersectionDimensionWeight=0.2;
+param.minCleftSize=4;
+param.overlayNoiseSize=6;
+param.scanAngleLeft=0;
+param.scanAngleRight=0;
+param.scanAngleSteps=0;
+param.errorAWeight=2;
+param.errorBWeight=4;
+param.coverageFaktorAWeight=3;
+param.coverageFaktorBWeight=1.3;
+param.cleftFaktor=0.3;
+param.quickScanReliabilityLimit=3.0;
+param.quickScanValityLimit=13.0;
+
+param.preScanFilter=80;
+param.preScanFaktor=3;
+param.splitGapsOverlap=4;
+##################Prepare captcha
+captcha.prepare.crop(3,0,3,0);
+captcha.prepare.toBlackAndWhite(0.70);
+captcha.prepare.reduceWhiteNoise(4,1);
+captcha.prepare.toBlackAndWhite(0.9);
+
+
+
+
+##################Prepare letter
+#letter.prepare.removeSmallObjects(0.3,0.5,25);
+
+letter.prepare.removeSmallObjects(0.3,0.5,25);

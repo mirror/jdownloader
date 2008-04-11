@@ -20,6 +20,7 @@ import java.io.File;
 import java.io.StringReader;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Iterator;
@@ -1340,6 +1341,7 @@ public class JDController implements ControlListener, UIListener {
      */
     public void resetAllLinks() {
         synchronized (packages) {
+            ArrayList<DownloadLink> al = new ArrayList<DownloadLink>();
             Iterator<FilePackage> iterator = packages.iterator();
             FilePackage fp = null;
             DownloadLink nextDownloadLink;
@@ -1352,17 +1354,21 @@ public class JDController implements ControlListener, UIListener {
                         nextDownloadLink.setStatus(DownloadLink.STATUS_TODO);
                         nextDownloadLink.setStatusText("");
                         nextDownloadLink.reset();
-                        requestDownloadLinkUpdate(nextDownloadLink);
+                      
+                        al.add(nextDownloadLink);
                     }
 
                 }
             }
+            fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_DOWNLOADLINKS_CHANGED, al));
+
         }
 
     }
 
     public void requestDownloadLinkUpdate(DownloadLink link) {
-        fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_DOWNLOADLINK_DATA_CHANGED, link));
+       
+        fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_DOWNLOADLINKS_CHANGED, link));
 
     }
 

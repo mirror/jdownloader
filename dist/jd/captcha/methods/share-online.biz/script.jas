@@ -1,0 +1,52 @@
+#####-------------------------------------JAC-Script------------------------------------#####
+##### Dieses Script beinhaltet alle Parameter und Funktioenen die für die captcha #####
+##### erkennung nötig sind #####
+#####################################---Filefactory.com---####################################
+##############Set parameter
+param.simplifyFaktor = 1;
+param.borderVarianceX=6;
+param.borderVarianceY=6;
+param.scanVarianceX=6;
+param.scanVarianceY=6;
+param.trainOnlyUnknown=true;
+param.colorType = b;
+param.relativecontrast=0.90;
+param.objectDetectionContrast = 0.4;
+param.useObjectDetection = true;
+param.minimumObjectArea = 30;
+param.backgroundsamplecleancontrast=0.15;
+
+
+param.alignAngleSteps=2;
+param.intersectionDimensionWeight=0.2;
+param.minCleftSize=4;
+param.overlayNoiseSize=3;
+param.scanAngleLeft=0;
+param.scanAngleRight=0;
+param.scanAngleSteps=0;
+param.errorAWeight=2;
+param.errorBWeight=4;
+param.coverageFaktorAWeight=3;
+param.coverageFaktorBWeight=1.3;
+param.cleftFaktor=0.3;
+param.LetterSearchLimitPerfectPercent=6;
+param.quickScanReliabilityLimit=3.0;
+param.quickScanValityLimit=10.0;
+
+param.preScanFilter=80;
+param.preScanFaktor=3;
+##################Prepare captcha
+
+captcha.prepare.blurIt(3);
+captcha.prepare.toBlackAndWhite(0.8);
+#captcha.prepare.reduceWhiteNoise(3,1);
+#captcha.prepare.reduceWhiteNoise(5,1);
+#captcha.prepare.toBlackAndWhite(0.95);
+
+
+
+
+##################Prepare letter
+letter.prepare.resizeToHeight(20);
+letter.prepare.align(-25,25);
+#letter.prepare.removeSmallObjects(0.3,0.5,25);

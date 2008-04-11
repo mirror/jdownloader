@@ -65,7 +65,11 @@ public class ControlEvent extends AWTEvent {
      * Wird aufgerufen sobald der Downloadvorgang komplett gestoppt ist
      */
     public static final int CONTROL_DOWNLOAD_STOP = 6;
-
+    
+    /**
+     * Es wird eine ArrayList mit den veränderten DownloadLinks als parameter erwartet
+     */
+    public final static int   CONTROL_DOWNLOADLINKS_CHANGED                    = 7;
     /**
      * Gibt an dass ein captcha geladen wurde. der Fiel-Pfad zum captcha wir als
      * parameter erwartet. Source ist das ausführende Plugin

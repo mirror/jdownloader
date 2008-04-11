@@ -10,8 +10,11 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
 import java.io.File;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Vector;
+import java.util.Map.Entry;
 import java.util.logging.Logger;
 
 import javax.swing.DropMode;
@@ -60,7 +63,7 @@ public class DownloadTreeTable extends JXTreeTable implements TreeExpansionListe
 
     public static final String PROPERTY_SELECTED = "selected";
 
-    private static final long TOOLTIP_DELAY = 1000;
+    private static final long UPDATE_INTERVAL = 500;
 
     private DownloadTreeTableModel model;
 
@@ -68,17 +71,18 @@ public class DownloadTreeTable extends JXTreeTable implements TreeExpansionListe
 
     public int mouseOverRow = -1;
 
-    private int mouseOverColumn=-1;
-
-    
-
-
+    private int mouseOverColumn = -1;
 
     private TooltipTimer tooltipTimer;
 
     private Point mousePoint;
 
     private HTMLTooltip tooltip = null;
+
+    private HashMap<FilePackage, ArrayList<DownloadLink>> updatePackages;
+    private DownloadLink currentLink;
+
+    private long updateTimer = 0;
 
     public DownloadTreeTable(DownloadTreeTableModel treeModel) {
         super(treeModel);
@@ -104,7 +108,7 @@ public class DownloadTreeTable extends JXTreeTable implements TreeExpansionListe
         addMouseListener(this);
         this.addMouseMotionListener(this);
         this.setTransferHandler(new TreeTableTransferHandler(this));
-        this.tooltipTimer = new TooltipTimer(1000);
+        this.tooltipTimer = new TooltipTimer(2000);
         tooltipTimer.start();
     }
 
@@ -239,9 +243,83 @@ public class DownloadTreeTable extends JXTreeTable implements TreeExpansionListe
 
     }
 
-    public void fireTableChanged(int id) {
+    @SuppressWarnings("unchecked")
+    public synchronized void fireTableChanged(int id, Object param) {
         TreeModelSupport supporter = getDownladTreeTableModel().getModelSupporter();
+        if (updatePackages == null) updatePackages = new HashMap<FilePackage, ArrayList<DownloadLink>>();
         switch (id) {
+        /*
+         * Es werden nur die Übergebenen LinkPfade aktualisiert.
+         * REFRESH_SPECIFIED_LINKS kann als Parameter eine Arraylist oder einen
+         * einzellnen DownloadLink haben. ArrayLists werden nicht ausgewertet.
+         * in diesem Fall wird die komplette Tabelle neu gezeichnet.
+         */
+        case DownloadLinksView.REFRESH_SPECIFIED_LINKS:
+            // logger.info("REFRESH SPECS COMPLETE");
+            if (param instanceof DownloadLink) {
+                currentLink = ((DownloadLink) param);
+                // supporter.firePathChanged(new TreePath(new Object[] {
+                // model.getRoot(), ((DownloadLink) param).getFilePackage(),
+                // ((DownloadLink) param) }));
+                // logger.info("Updatesingle "+currentLink);
+                if (updatePackages.containsKey(currentLink.getFilePackage())) {
+                    if (!updatePackages.get(currentLink.getFilePackage()).contains(currentLink)) updatePackages.get(currentLink.getFilePackage()).add(currentLink);
+                } else {
+                    ArrayList<DownloadLink> ar = new ArrayList<DownloadLink>();
+                    updatePackages.put(currentLink.getFilePackage(), ar);
+                    ar.add(currentLink);
+                }
+
+            } else if (param instanceof ArrayList) {
+                for (Iterator<DownloadLink> it = ((ArrayList<DownloadLink>) param).iterator(); it.hasNext();) {
+                    currentLink = it.next();
+                    if (updatePackages.containsKey(currentLink.getFilePackage())) {
+                        if (!updatePackages.get(currentLink.getFilePackage()).contains(currentLink)) updatePackages.get(currentLink.getFilePackage()).add(currentLink);
+                    } else {
+                        ArrayList<DownloadLink> ar = new ArrayList<DownloadLink>();
+                        updatePackages.put(currentLink.getFilePackage(), ar);
+                        ar.add(currentLink);
+                    }
+                }
+            }
+            if ((System.currentTimeMillis() - updateTimer) > UPDATE_INTERVAL && updatePackages != null) {
+                Entry<FilePackage, ArrayList<DownloadLink>> next;
+                DownloadLink next3;
+
+                for (Iterator<Entry<FilePackage, ArrayList<DownloadLink>>> it2 = updatePackages.entrySet().iterator(); it2.hasNext();) {
+                    next = it2.next();
+                    logger.info("Refresh " + next.getKey() + " - " + next.getValue().size());
+                    supporter.firePathChanged(new TreePath(new Object[] { model.getRoot(), next.getKey() }));
+
+                    if (next.getKey().getBooleanProperty(PROPERTY_EXPANDED, false)) {
+
+                        int[] ind = new int[next.getValue().size()];
+                        Object[] objs = new Object[next.getValue().size()];
+                        int i = 0;
+                        for (Iterator<DownloadLink> it3 = next.getValue().iterator(); it3.hasNext(); i++) {
+                            next3 = it3.next();
+                            ind[i] = next.getKey().indexOf(next3);
+                            objs[i] = next3;
+                            logger.info(" children: " + next3 + " - " + ind[i]);
+                        }
+
+                        supporter.fireChildrenChanged(new TreePath(new Object[] { model.getRoot(), next.getKey() }), ind, objs);
+                    }
+
+                }
+                updatePackages = null;
+                updateTimer = System.currentTimeMillis();
+            }
+
+            break;
+        case DownloadLinksView.REFRESH_ONLY_DATA_CHANGED:
+            // supporter.fireTreeStructureChanged(new
+            // TreePath(model.getRoot()));
+            // updateSelectionAndExpandStatus();
+            logger.info("Updatecomplete");
+            supporter.fireChildrenChanged(new TreePath(model.getRoot()), null, null);
+
+            break;
         case DownloadLinksView.REFRESH_DATA_AND_STRUCTURE_CHANGED:
             logger.info("REFRESH GUI COMPLETE");
 
@@ -252,12 +330,7 @@ public class DownloadTreeTable extends JXTreeTable implements TreeExpansionListe
             logger.info("finished");
 
             break;
-        case DownloadLinksView.REFRESH_ONLY_DATA_CHANGED:
-            // supporter.fireTreeStructureChanged(new
-            // TreePath(model.getRoot()));
-            // updateSelectionAndExpandStatus();
-            supporter.fireChildrenChanged(new TreePath(model.getRoot()), null, null);
-            break;
+
         }
 
     }
@@ -278,12 +351,11 @@ public class DownloadTreeTable extends JXTreeTable implements TreeExpansionListe
     }
 
     public void mouseEntered(MouseEvent e) {
-       
 
     }
 
     public void mouseExited(MouseEvent e) {
-     this.tooltipTimer.setCaller(null);
+        this.tooltipTimer.setCaller(null);
     }
 
     public void mouseReleased(MouseEvent e) {
@@ -635,101 +707,96 @@ public class DownloadTreeTable extends JXTreeTable implements TreeExpansionListe
             tooltip.destroy();
             tooltip = null;
         }
-        StringBuffer sb=new StringBuffer();
+        StringBuffer sb = new StringBuffer();
         sb.append("<div>");
         Object obj = this.getPathForRow(mouseOverRow).getLastPathComponent();
         DownloadLink link;
         FilePackage fp;
-      if(obj instanceof DownloadLink){
-          link=(DownloadLink)obj;
-          switch (mouseOverColumn){
-          case 0:
-              sb.append("<h1>"+link.getFileOutput()+"</h1>");
-              break;
-          case 1:
-              sb.append("<h1>"+link.getFileOutput()+"</h1><hr/>");
-            if(link.getLinkType()==DownloadLink.LINKTYPE_NORMAL) sb.append("<p>"+link.getDownloadURL()+"</p>");
-              
-              break;
-          case 2:
-              PluginForHost plg=(PluginForHost)link.getPlugin();
-              
-              sb.append("<h1>"+plg.getPluginID()+"</h1><hr/>");
-            sb.append("<p>");
-              sb.append(JDLocale.L("gui.downloadlist.tooltip.connections","Akt. Verbindungen: ")+""+plg.getCurrentConnections()+"/"+plg.getMaxConnections());
-              sb.append("<br/>");
-              sb.append(JDLocale.L("gui.downloadlist.tooltip.simultan_downloads","Max. gleichzeitige Downloads:")+" "+plg.getMaxSimultanDownloadNum());
-              sb.append("</p>");
-              break;
-          case 3:
-              sb.append("<p>"+link.getStatusText()+"</p>");
-              break;
-          case 4:
-              if(link.getDownloadInstance()==null)return;
-              DownloadInterface dl = link.getDownloadInstance();
-              String table="<p><table>";
-              for(Chunk chunk:dl.getChunks()){
-                  int loaded=chunk.getBytesLoaded();
-                  int total=chunk.getChunkSize();
-                  table+="<tr>";
-                  table+="<td> Verbindung "+chunk.getID()+"</td>";
-                  table+="<td>"+JDUtilities.formatKbReadable((int)chunk.getBytesPerSecond()/1024)+"/s"+"</td>";
-                  table+="<td>"+JDUtilities.formatKbReadable(loaded/1024)+"/"+JDUtilities.formatKbReadable(total/1024)+"</td>";
-                 
-                  int r=(loaded*100)/ total;
-                  int m=100-r;
-                 
-                  table+="<td>"+"<table width='100px' height='5px'  cellpadding='0' cellspacing='0' ><tr><td width='"+r+"%' bgcolor='#000000'/><td width='"+m+"%' bgcolor='#cccccc'/></tr> </table>"+"</td>";
-                  table+="</tr>";
-              }
-              table+="</table></p>";
-           
-              sb.append("<h1>"+link.getFileOutput()+"</h1><hr/>");
-              sb.append(table);
-              
-              
-              break;
-          }
-      }else{
-          fp=(FilePackage)obj;
-          switch (mouseOverColumn){
-          case 0:
-              
-              sb.append("<h1>"+fp.getName()+"</h1><hr/>");
-              if(fp.hasComment())sb.append("<p>"+fp.getComment()+"</p>");
-              if(fp.hasPassword())sb.append("<p>"+fp.getPassword()+"</p>");
-              if(fp.hasDownloadDirectory())sb.append("<p>"+fp.getDownloadDirectory()+"</p>");
-              break;
-          case 1:
-              sb.append("<h1>"+fp.getName()+"</h1><hr/>");
-              sb.append("<p>"+JDLocale.L("gui.downloadlist.tooltip.partnum","Teile: ")+fp.size()+"</p>");
-              sb.append("<p>"+JDLocale.L("gui.downloadlist.tooltip.partsfinished","Davon fertig: ")+fp.getLinksFinished()+"</p>");
-              sb.append("<p>"+JDLocale.L("gui.downloadlist.tooltip.partsfailed","Davon fehlerhaft: ")+fp.getLinksFailed()+"</p>");
-              sb.append("<p>"+JDLocale.L("gui.downloadlist.tooltip.partsactive","Gerade aktiv: ")+fp.getLinksInProgress()+"</p>");
-              
-              break;
-          case 2:
-              return;
-              
-          case 3:  
-              sb.append("<h1>"+fp.getName()+"</h1><hr/>");
-              sb.append("<p>"+this.getDownladTreeTableModel().getValueAt(obj, mouseOverColumn)+"</p>");
-              break;
-          case 4:
-              sb.append("<h1>"+fp.getName()+"</h1><hr/>");
-              sb.append("<p>"+this.getDownladTreeTableModel().getValueAt(obj, mouseOverColumn-1)+"</p>");
-              
-            
-              
-              break;
-          } 
-      }
-      
-      sb.append("</div>");
-      if(sb.length()<=12)return;
-        tooltip = HTMLTooltip.show(sb.toString(), this.mousePoint);
-     
-      
+        if (obj instanceof DownloadLink) {
+            link = (DownloadLink) obj;
+            switch (mouseOverColumn) {
+            case 0:
+                sb.append("<h1>" + link.getFileOutput() + "</h1>");
+                break;
+            case 1:
+                sb.append("<h1>" + link.getFileOutput() + "</h1><hr/>");
+                if (link.getLinkType() == DownloadLink.LINKTYPE_NORMAL) sb.append("<p>" + link.getDownloadURL() + "</p>");
+
+                break;
+            case 2:
+                PluginForHost plg = (PluginForHost) link.getPlugin();
+
+                sb.append("<h1>" + plg.getPluginID() + "</h1><hr/>");
+                sb.append("<p>");
+                sb.append(JDLocale.L("gui.downloadlist.tooltip.connections", "Akt. Verbindungen: ") + "" + plg.getCurrentConnections() + "/" + plg.getMaxConnections());
+                sb.append("<br/>");
+                sb.append(JDLocale.L("gui.downloadlist.tooltip.simultan_downloads", "Max. gleichzeitige Downloads:") + " " + plg.getMaxSimultanDownloadNum());
+                sb.append("</p>");
+                break;
+            case 3:
+                sb.append("<p>" + link.getStatusText() + "</p>");
+                break;
+            case 4:
+                if (link.getDownloadInstance() == null) return;
+                DownloadInterface dl = link.getDownloadInstance();
+                String table = "<p><table>";
+                for (Chunk chunk : dl.getChunks()) {
+                    int loaded = chunk.getBytesLoaded();
+                    int total = chunk.getChunkSize();
+                    table += "<tr>";
+                    table += "<td> Verbindung " + chunk.getID() + "</td>";
+                    table += "<td>" + JDUtilities.formatKbReadable((int) chunk.getBytesPerSecond() / 1024) + "/s" + "</td>";
+                    table += "<td>" + JDUtilities.formatKbReadable(loaded / 1024) + "/" + JDUtilities.formatKbReadable(total / 1024) + "</td>";
+
+                    int r = (loaded * 100) / total;
+                    int m = 100 - r;
+
+                    table += "<td>" + "<table width='100px' height='5px'  cellpadding='0' cellspacing='0' ><tr><td width='" + r + "%' bgcolor='#000000'/><td width='" + m + "%' bgcolor='#cccccc'/></tr> </table>" + "</td>";
+                    table += "</tr>";
+                }
+                table += "</table></p>";
+
+                sb.append("<h1>" + link.getFileOutput() + "</h1><hr/>");
+                sb.append(table);
+
+                break;
+            }
+        } else {
+            fp = (FilePackage) obj;
+            switch (mouseOverColumn) {
+            case 0:
+
+                sb.append("<h1>" + fp.getName() + "</h1><hr/>");
+                if (fp.hasComment()) sb.append("<p>" + fp.getComment() + "</p>");
+                if (fp.hasPassword()) sb.append("<p>" + fp.getPassword() + "</p>");
+                if (fp.hasDownloadDirectory()) sb.append("<p>" + fp.getDownloadDirectory() + "</p>");
+                break;
+            case 1:
+                sb.append("<h1>" + fp.getName() + "</h1><hr/>");
+                sb.append("<p>" + JDLocale.L("gui.downloadlist.tooltip.partnum", "Teile: ") + fp.size() + "</p>");
+                sb.append("<p>" + JDLocale.L("gui.downloadlist.tooltip.partsfinished", "Davon fertig: ") + fp.getLinksFinished() + "</p>");
+                sb.append("<p>" + JDLocale.L("gui.downloadlist.tooltip.partsfailed", "Davon fehlerhaft: ") + fp.getLinksFailed() + "</p>");
+                sb.append("<p>" + JDLocale.L("gui.downloadlist.tooltip.partsactive", "Gerade aktiv: ") + fp.getLinksInProgress() + "</p>");
+
+                break;
+            case 2:
+                return;
+
+            case 3:
+                sb.append("<h1>" + fp.getName() + "</h1><hr/>");
+                sb.append("<p>" + this.getDownladTreeTableModel().getValueAt(obj, mouseOverColumn) + "</p>");
+                break;
+            case 4:
+                sb.append("<h1>" + fp.getName() + "</h1><hr/>");
+                sb.append("<p>" + this.getDownladTreeTableModel().getValueAt(obj, mouseOverColumn - 1) + "</p>");
+
+                break;
+            }
+        }
+
+        sb.append("</div>");
+        if (sb.length() <= 12) return;
+        // tooltip = HTMLTooltip.show(sb.toString(), this.mousePoint);
 
     }
 
@@ -768,7 +835,7 @@ public class DownloadTreeTable extends JXTreeTable implements TreeExpansionListe
                     cl.call();
                     cl = null;
                     try {
-                        sleep(50);
+                        sleep(200);
                     } catch (InterruptedException e) {
                         // TODO Auto-generated catch block
                         e.printStackTrace();

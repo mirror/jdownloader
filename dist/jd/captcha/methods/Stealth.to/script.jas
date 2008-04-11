@@ -1,0 +1,49 @@
+#####-------------------------------------JAC-Script------------------------------------#####
+##### Dieses Script beinhaltet alle Parameter und Funktioenen die für die captcha #####
+##### erkennung nötig sind #####
+#####################################---xup.in---####################################
+##############Set parameter
+
+param.borderVarianceX=15;
+param.borderVarianceY=5;
+param.scanVarianceX=3;
+param.scanVarianceY=3;
+
+param.LetterSearchLimitPerfectPercent=8;
+param.overlayNoiseSize=2;
+param.simplifyFaktor = 1;
+param.trainOnlyUnknown=true;
+param.colorType = hhh;
+
+param.scanAngleLeft=-10;
+param.scanAngleRight=10;
+param.scanAngleSteps=2;
+param.quickScanReliabilityLimit=3.0;
+param.quickScanValityLimit=10.0;
+param.preScanFilter=90;
+param.preScanFaktor=3;
+param.splitPixelObjectsOverlap=3;
+param.errorAWeight=4;
+param.errorBWeight=4;
+param.coverageFaktorAWeight=4;
+param.coverageFaktorBWeight=4;
+param.cleftFaktor=0.6;
+param.BackgroundSampleCleanContrast=0.035;
+
+
+param.minimumObjectArea = 950;
+param.minimumLetterWidth=15;
+param.objectColorContrast = 0.5; 
+param.objectDetectionContrast = 0.6;
+param.useObjectDetection = true;
+#e0e2e4
+captcha.prepare.cleanBackgroundBySample(0,0,50,3);
+#captcha.prepare.invert();
+captcha.prepare.blurIt(4);
+#captcha.prepare.toBlackAndWhite(0.1);
+#letter.prepare.toBlackAndWhite();
+captcha.prepare.removeSmallObjects(0.55,0.99,225);
+#captcha.prepare.normalize();
+#captcha.prepare.blurIt(3);
+#captcha.prepare.toBlackAndWhite(0.99999);
+#captcha.prepare.removeSmallObjects(0.55,0.99,225);
