@@ -74,7 +74,7 @@ public class JDGetter extends PluginOptional {
     
     public void initgetter() {
         ConfigEntry cfg;
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_SPINNER, getProperties(), "SPEED1", JDLocale.L("plugins.optional.getter.port","Port:"), 10000, 65500));
+        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_SPINNER, getProperties(), "PORT", JDLocale.L("plugins.optional.getter.port","Port:"), 10000, 65500));
         cfg.setDefaultValue(10000);
         
         Handler handler = new AbstractHandler()
@@ -121,7 +121,7 @@ public class JDGetter extends PluginOptional {
         };
         
         try {
-            Server server = new Server(8080);
+            Server server = new Server(this.getProperties().getIntegerProperty("PORT"));
             server.setHandler(handler);
             server.start();
         }
