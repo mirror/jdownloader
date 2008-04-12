@@ -354,7 +354,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
                     if (!guiConfig.getBooleanProperty(PROPERTY_ONLINE_CHECK, false)) {
                         attachLinkTopackage(link);
                         try {
-                            Thread.sleep(50);
+                            Thread.sleep(5);
                         }
                         catch (InterruptedException e) {
                         }
@@ -913,7 +913,8 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
             linkList.elementAt(i).setFilePackage(fp);
         }
 
-        parentFrame.fireUIEvent(new UIEvent(this, UIEvent.UI_PACKAGE_GRABBED, linkList));
+
+        parentFrame.fireUIEvent(new UIEvent(this, UIEvent.UI_PACKAGE_GRABBED, fp));
 
         parentFrame.setDropTargetText(JDLocale.L("gui.dropTarget.downloadsAdded", "Downloads hinzugefügt: ") + linkList.size());
     }

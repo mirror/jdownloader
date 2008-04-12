@@ -16,6 +16,7 @@
 
 package jd.gui.skins.simple;
 
+import java.awt.BorderLayout;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.GridBagConstraints;
@@ -43,6 +44,7 @@ import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JCheckBoxMenuItem;
+import javax.swing.JDesktopPane;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JMenu;
@@ -80,10 +82,6 @@ import jd.gui.skins.simple.config.ConfigurationDialog;
 import jd.gui.skins.simple.config.jdUnrarPasswordListDialog;
 import jd.plugins.DownloadLink;
 import jd.plugins.Plugin;
-import jd.plugins.PluginForDecrypt;
-import jd.plugins.PluginForHost;
-import jd.plugins.PluginOptional;
-import jd.plugins.host.Rapidshare;
 import jd.utils.JDLocale;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
@@ -226,6 +224,8 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
 
     private LocationListener locationListener;
 
+  
+
     public static final String PARAM_DISABLE_CONFIRM_DIALOGS = "DISABLE_CONFIRM_DIALOGS";
 
     private static SubConfiguration guiConfig = JDUtilities.getSubConfig(GUICONFIGNAME);
@@ -281,7 +281,10 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         initMenuBar();
         buildUI();
         frame.pack();
-
+        
+       // frame.getContentPane().add(desktop, BorderLayout.CENTER);
+        frame.setSize(600, 600);
+        frame.setVisible(true);
         frame.setName("MAINFRAME");
         if (SimpleGUI.getLastDimension(frame, null) != null) frame.setSize(getLastDimension(frame, null));
         // frame.setLocation(JDUtilities.getCenterOfComponent(null, frame));

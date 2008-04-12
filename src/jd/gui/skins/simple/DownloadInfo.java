@@ -14,7 +14,6 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://wnu.org/licenses/>.
 
-
 package jd.gui.skins.simple;
 
 import java.awt.BorderLayout;
@@ -22,52 +21,92 @@ import java.awt.Color;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.io.File;
+import java.util.Iterator;
 import java.util.logging.Logger;
 
-import javax.swing.JDialog;
+import javax.swing.BorderFactory;
+import javax.swing.JComponent;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.JProgressBar;
+import javax.swing.JScrollPane;
 import javax.swing.JSeparator;
+import javax.swing.SwingConstants;
 
 import jd.plugins.DownloadLink;
+import jd.plugins.download.DownloadInterface;
+import jd.plugins.download.DownloadInterface.Chunk;
 import jd.utils.JDLocale;
+import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 
 /**
  * Dies Klasse ziegt informationen zu einem DownloadLink an
  */
-public class DownloadInfo extends JDialog {
+public class DownloadInfo extends JFrame {
     /**
      * 
      */
     private static final long serialVersionUID = -9146764850581039090L;
     @SuppressWarnings("unused")
-    private static Logger     logger           = JDUtilities.getLogger();
-    private DownloadLink      downloadLink;
-    private int               i                = 0;
-    private JPanel            panel;
+    private static Logger logger = JDUtilities.getLogger();
+    private DownloadLink downloadLink;
+    private int i = 0;
+    private JPanel panel;
+    private JScrollPane sp = null;
+
     /**
      * @param frame
      * @param dlink
      */
     public DownloadInfo(JFrame frame, DownloadLink dlink) {
-        super(frame);
+        super(JDLocale.L("gui.linkinformation.title","Link Information: ")+dlink.getName());
         downloadLink = dlink;
-        setModal(true);
+        //setModal(true);
         setLayout(new BorderLayout());
-        this.setBackground(Color.WHITE);
-        this.setTitle("Link Information");
-        panel = new JPanel(new GridBagLayout());
-        this.add(panel, BorderLayout.CENTER);
+        this.setIconImage(JDUtilities.getImage(JDTheme.V("gui.images.link")));
+        
+this.setAlwaysOnTop(true);
+       
+        // this.getContentPane().setBackground(Color.WHITE);
+        // this.getContentPane().setForeground(Color.WHITE);
+
+       
+        
+        new Thread() {
+            public void run() {
+                do  {
+                    
+                    
+                    try {
+                        Thread.sleep(1500);
+                    } catch (InterruptedException e) {
+                        // TODO Auto-generated catch block
+                        e.printStackTrace();
+                    }
+                    initDialog();
+                    validate();
+                }while((isVisible()));
+                initDialog();
+            }
+        }.start();
         initDialog();
         pack();
         setLocation((int) (frame.getLocation().getX() + frame.getWidth() / 2 - this.getWidth() / 2), (int) (frame.getLocation().getY() + frame.getHeight() / 2 - this.getHeight() / 2));
         setVisible(true);
+        
+
     }
+
     private void initDialog() {
+        panel = new JPanel(new GridBagLayout());
+        panel.setBackground(Color.WHITE);
+        panel.setForeground(Color.WHITE);
+        if (sp != null) this.remove(sp);
+        this.add(sp = new JScrollPane(panel), BorderLayout.CENTER);
         addEntry("file", new File(downloadLink.getFileOutput()).getName() + " @ " + downloadLink.getHost());
-        addEntry(null, null);
+        addEntry(null, (String) null);
         if (downloadLink.getFilePackage() != null && downloadLink.getFilePackage().getPassword() != null) {
             addEntry(JDLocale.L("linkinformation.password.name", "Passwort"), downloadLink.getFilePackage().getPassword());
         }
@@ -77,23 +116,24 @@ public class DownloadInfo extends JDialog {
         if (downloadLink.getFilePackage() != null) {
             addEntry(JDLocale.L("linkinformation.package.name", "Packet"), downloadLink.getFilePackage().toString());
         }
-//        if (downloadLink.getFilePackage() != null) {
-//            addEntry("doUnrar", downloadLink.getFilePackage().isUnPack()?"Yes":"No");
-//        }
-//        if (downloadLink.getFilePackage() != null) {
-//            addEntry("writeInfoFile", downloadLink.getFilePackage().isWriteInfoFile()?"Yes":"No");
-//        }
+        // if (downloadLink.getFilePackage() != null) {
+        // addEntry("doUnrar",
+        // downloadLink.getFilePackage().isUnPack()?"Yes":"No");
+        // }
+        // if (downloadLink.getFilePackage() != null) {
+        // addEntry("writeInfoFile",
+        // downloadLink.getFilePackage().isWriteInfoFile()?"Yes":"No");
+        // }
         if (downloadLink.getDownloadMax() > 0) {
             addEntry(JDLocale.L("linkinformation.filesize.name", "Dateigröße"), JDUtilities.formatBytesToMB(downloadLink.getDownloadMax()));
         }
-        //JDLocale.L("linkinformation.", "")
+        // JDLocale.L("linkinformation.", "")
         if (downloadLink.isAborted()) {
             addEntry(JDLocale.L("linkinformation.download.name", "Download"), JDLocale.L("linkinformation.download.aborted", "Abgebrochen"));
         }
         if (downloadLink.isAvailabilityChecked()) {
             addEntry(JDLocale.L("linkinformation.available.name", "Verfügbar"), downloadLink.isAvailable() ? JDLocale.L("linkinformation.available.ok", "Datei OK") : JDLocale.L("linkinformation.available.error", "Fehler!"));
-        }
-        else {
+        } else {
             addEntry(JDLocale.L("linkinformation.available.name", "Verfügbar"), JDLocale.L("linkinformation.available.notchecked", "noch nicht überprüft"));
         }
         if (downloadLink.getDownloadSpeed() > 0) {
@@ -107,50 +147,60 @@ public class DownloadInfo extends JDialog {
         }
         if (downloadLink.isInProgress()) {
             addEntry(JDLocale.L("linkinformation.download.name", "Download"), JDLocale.L("linkinformation.download.underway", " ist in Bearbeitung"));
-        }
-        else {
+        } else {
             addEntry(JDLocale.L("linkinformation.download.name", "Download"), JDLocale.L("linkinformation.download.notunderway", " ist nicht in Bearbeitung"));
         }
         if (!downloadLink.isEnabled()) {
             addEntry(JDLocale.L("linkinformation.download.name", "Download"), JDLocale.L("linkinformation.download.deactivated", " ist deaktiviert"));
-        }
-        else {
+        } else {
             addEntry(JDLocale.L("linkinformation.download.name", "Download"), JDLocale.L("linkinformation.download.activated", " ist aktiviert"));
         }
-        switch (downloadLink.getStatus()) {
-            case DownloadLink.STATUS_TODO:
-                addEntry("download.status", "In Warteschlange");
-                break;
-            case DownloadLink.STATUS_DONE:
-                addEntry("download.status", downloadLink.getStatusText() + "Fertig");
-                break;
-            case DownloadLink.STATUS_ERROR_FILE_ABUSED:
-                addEntry("download.status", downloadLink.getStatusText() + " ABUSED!");
-                break;
-            case DownloadLink.STATUS_ERROR_FILE_NOT_FOUND:
-                addEntry("download.status", downloadLink.getStatusText() + " FILE NOT FOUND");
-                break;
-            case DownloadLink.STATUS_ERROR_TEMPORARILY_UNAVAILABLE:
-                addEntry("download.status", downloadLink.getStatusText() + " Kurzzeitig nicht verfügbar");
-                break;
-            case DownloadLink.STATUS_ERROR_UNKNOWN:
-                addEntry("download.status", downloadLink.getStatusText() + " Unbekannter Fehler");
-                break;
-            default:
-                addEntry("download.status", downloadLink.getStatusText() + "Status ID: " + downloadLink.getStatus());
-                break;
-        }
-        if (downloadLink.getPlugin().getCurrentStep() != null) {
-            addEntry(JDLocale.L("linkinformation.pluginstatus.name", "Plugin Status"), downloadLink.getPlugin().getInitID() + " : " + downloadLink.getPlugin().getCurrentStep().toString());
+
+        addEntry("download.status", downloadLink.getStatusText());
+
+        DownloadInterface dl;
+        if (downloadLink.isInProgress() && (dl = downloadLink.getDownloadInstance()) != null) {
+            addEntry("download.chunks.label", "");
+            int i = 1;
+            for (Iterator<Chunk> it = dl.getChunks().iterator(); it.hasNext(); i++) {
+                JProgressBar p;
+                Chunk next = it.next();
+                addEntry(JDLocale.L("download.chunks.connection", "Verbindung") + " " + i, p = new JProgressBar(0, 100));
+                p.setValue(next.getBytesLoaded() * 100 / Math.max(1,next.getChunkSize()));
+                p.setStringPainted(true);
+                p.setString(JDUtilities.formatKbReadable((int)next.getBytesPerSecond()/1024)+"/s "+ JDUtilities.getPercent(next.getBytesLoaded(), next.getChunkSize()));
+            }
+
         }
     }
+
+    private void addEntry(String string, JComponent value) {
+
+        JLabel key;
+        JDUtilities.addToGridBag(panel, key = new JLabel(string), 0, i, 1, 1, 0, 1, null, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+
+        JDUtilities.addToGridBag(panel, value, 1, i, 1, 1, 1, 0, null, GridBagConstraints.BOTH, GridBagConstraints.EAST);
+        key.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, Color.GRAY));
+        value.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, Color.GRAY));
+
+        i++;
+
+    }
+
     private void addEntry(String label, String data) {
         if (label == null && data == null) {
             JDUtilities.addToGridBag(panel, new JSeparator(), 0, i, 2, 1, 0, 0, null, GridBagConstraints.BOTH, GridBagConstraints.CENTER);
             return;
         }
-        JDUtilities.addToGridBag(panel, new JLabel(JDLocale.L("gui.linkInfo."+label,label)), 0, i, 1, 1, 0, 1, null, GridBagConstraints.NONE, GridBagConstraints.WEST);
-        JDUtilities.addToGridBag(panel, new JLabel(data), 1, i, 1, 1, 1, 0, null, GridBagConstraints.NONE, GridBagConstraints.EAST);
+        JLabel key;
+        JDUtilities.addToGridBag(panel, key = new JLabel(JDLocale.L("gui.linkInfo." + label, label)), 0, i, 1, 1, 0, 1, null, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+        JLabel value;
+        JDUtilities.addToGridBag(panel, value = new JLabel(data), 1, i, 1, 1, 1, 0, null, GridBagConstraints.BOTH, GridBagConstraints.EAST);
+        key.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, Color.GRAY));
+        value.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, Color.GRAY));
+        value.setHorizontalAlignment(SwingConstants.RIGHT);
+        value.setForeground(Color.DARK_GRAY);
+
         i++;
     }
 }

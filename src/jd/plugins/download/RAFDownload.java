@@ -67,18 +67,18 @@ public class RAFDownload extends DownloadInterface {
 
     protected void writeChunkBytes(Chunk chunk) {
         try {
-            int limit = chunk.buffer.limit()-chunk.buffer.position();
+            //int limit = chunk.buffer.limit()-chunk.buffer.position();
             if(maxBytes<0){
             synchronized(outputChannel){           
-                outputFile.seek( chunk.currentBytePosition);
+                outputFile.seek( chunk.getWritePosition());
                 outputChannel.write(chunk.buffer);
             }  } else{
                 chunk.buffer.clear();
             }
-            if (maxBytes > 0 && getChunkNum() == 1 && this.bytesLoaded >= maxBytes) {
+            if (maxBytes > 0 && getChunkNum() == 1 && this.totaleLinkBytesLoaded >= maxBytes) {
                 error(ERROR_NIBBLE_LIMIT_REACHED);
             }    
-            if (chunk.getID() >= 0) downloadLink.getChunksProgress()[chunk.getID()] = (int) chunk.currentBytePosition + limit;
+            if (chunk.getID() >= 0) downloadLink.getChunksProgress()[chunk.getID()] = (int) chunk.getCurrentBytesPosition();
 
         }
         catch (Exception e) {
@@ -137,7 +137,7 @@ public class RAFDownload extends DownloadInterface {
             else {
                 if(maxBytes>0)this.setChunkNum(1);
                 this.setChunkNum(Math.min(getChunkNum(), plugin.getFreeConnections()));
-                this.bytesLoaded = 0;
+                this.totaleLinkBytesLoaded = 0;
                 downloadLink.setDownloadCurrent(0);
                 long parts = fileSize > 0 ? fileSize / getChunkNum() : -1;
                 if (parts == -1) {

@@ -1580,13 +1580,16 @@ private static final String  PATTERN_ERROR_2_OCCURED ="<script>alert(\"°\")</sc
     public int getMaxSimultanDownloadNum() {
         int ret = 0;
         if ((this.getProperties().getProperty(PROPERTY_USE_PREMIUM) != null && ((Boolean) this.getProperties().getProperty(PROPERTY_USE_PREMIUM))) || (this.getProperties().getProperty(PROPERTY_USE_PREMIUM_2) != null && ((Boolean) this.getProperties().getProperty(PROPERTY_USE_PREMIUM_2))) || (this.getProperties().getProperty(PROPERTY_USE_PREMIUM_3) != null && ((Boolean) this.getProperties().getProperty(PROPERTY_USE_PREMIUM_3)))) {
-            ret = 30 / getChunksPerFile();
+            ret = getMaxConnections() / getChunksPerFile();
         }
         else {
             ret = 1;
         }
 
         return ret;
+    }
+    public int getMaxConnections(){
+        return 30;
     }
 
     public boolean[] checkLinks(String[] urls) {

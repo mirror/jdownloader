@@ -98,7 +98,8 @@ public class DownloadTreeTable extends JXTreeTable implements TreeExpansionListe
         setAutoResizeMode(JTable.AUTO_RESIZE_LAST_COLUMN);
         setSelectionMode(ListSelectionModel.SINGLE_INTERVAL_SELECTION);
         this.setColumnControlVisible(true);
-
+        
+       
         this.setEditable(false);
 
         setDragEnabled(true);
@@ -288,7 +289,7 @@ public class DownloadTreeTable extends JXTreeTable implements TreeExpansionListe
 
                 for (Iterator<Entry<FilePackage, ArrayList<DownloadLink>>> it2 = updatePackages.entrySet().iterator(); it2.hasNext();) {
                     next = it2.next();
-                    logger.info("Refresh " + next.getKey() + " - " + next.getValue().size());
+                   // logger.info("Refresh " + next.getKey() + " - " + next.getValue().size());
                     supporter.firePathChanged(new TreePath(new Object[] { model.getRoot(), next.getKey() }));
 
                     if (next.getKey().getBooleanProperty(PROPERTY_EXPANDED, false)) {
@@ -300,7 +301,7 @@ public class DownloadTreeTable extends JXTreeTable implements TreeExpansionListe
                             next3 = it3.next();
                             ind[i] = next.getKey().indexOf(next3);
                             objs[i] = next3;
-                            logger.info(" children: " + next3 + " - " + ind[i]);
+                            //logger.info(" children: " + next3 + " - " + ind[i]);
                         }
 
                         supporter.fireChildrenChanged(new TreePath(new Object[] { model.getRoot(), next.getKey() }), ind, objs);
@@ -327,7 +328,7 @@ public class DownloadTreeTable extends JXTreeTable implements TreeExpansionListe
 
             // ignoreSelectionsAndExpansions(200);
             updateSelectionAndExpandStatus();
-            logger.info("finished");
+            //logger.info("finished");
 
             break;
 
@@ -796,7 +797,7 @@ public class DownloadTreeTable extends JXTreeTable implements TreeExpansionListe
 
         sb.append("</div>");
         if (sb.length() <= 12) return;
-        // tooltip = HTMLTooltip.show(sb.toString(), this.mousePoint);
+         tooltip = HTMLTooltip.show(sb.toString(), this.mousePoint);
 
     }
 

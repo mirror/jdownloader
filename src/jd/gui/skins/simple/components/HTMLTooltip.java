@@ -92,7 +92,7 @@ public class HTMLTooltip extends JWindow implements MouseListener,HyperlinkListe
         
       
         ret.setStyleEntry("h1", props=new  HashMap<String,String>());
-        props.put("font-family","Geneva, Arial, Helvetica, sans-serif");
+        //props.put("font-family","Geneva, Arial, Helvetica, sans-serif");
         props.put("font-size","10px");
         props.put("font-weight","bold");
         props.put("text-align","left");
@@ -103,7 +103,7 @@ public class HTMLTooltip extends JWindow implements MouseListener,HyperlinkListe
         
         
         ret.setStyleEntry("p", props=new  HashMap<String,String>());
-        props.put("font-family","Geneva, Arial, Helvetica, sans-serif");
+       // props.put("font-family","Geneva, Arial, Helvetica, sans-serif");
         props.put("font-size","9px");  
         props.put("margin","1px");
         props.put("padding","0px");  

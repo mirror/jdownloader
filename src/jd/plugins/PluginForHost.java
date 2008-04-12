@@ -39,7 +39,7 @@ public abstract class PluginForHost extends Plugin {
 
    
     private int maxConnections=50;
-    private int currentConnections=0;
+    private static int currentConnections=0;
     protected DownloadInterface dl=null;
 
     /**
@@ -318,7 +318,7 @@ public int getCurrentConnections() {
     return currentConnections;
 }
 
-public void setCurrentConnections(int currentConnections) {
+public synchronized void setCurrentConnections(int currentConnections) {
     this.currentConnections = currentConnections;
 }
 public int getChunksPerFile(){
