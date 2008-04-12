@@ -12,7 +12,7 @@
 //    GNU General Public License for more details.
 //
 //    You should have received a copy of the GNU General Public License
-//    along with this program.  If not, see <http://wnu.org/licenses/>.
+//    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package jd.gui.skins.simple;
 
@@ -233,6 +233,8 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
     public static final String PARAM_PLAF = "PLAF";
 
     public static final String PARAM_SHOW_SPLASH = "SHOW_SPLASH";
+
+    public static final String SELECTED_CONFIG_TAB = "SELECTED_CONFIG_TAB";
 
     /**
      * Das Hauptfenster wird erstellt

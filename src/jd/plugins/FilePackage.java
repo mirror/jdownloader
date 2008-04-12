@@ -12,7 +12,7 @@
 //    GNU General Public License for more details.
 //
 //    You should have received a copy of the GNU General Public License
-//    along with this program.  If not, see <http://wnu.org/licenses/>.
+//    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package jd.plugins;
 
@@ -306,12 +306,16 @@ public class FilePackage extends Property implements Serializable {
         return downloadLinks.size();
     }
 
-    public void sort(String string) {
+    public void sort(final String string) {
         synchronized (downloadLinks) {
+            final boolean asc=string.equalsIgnoreCase("ASC");
             Collections.sort(downloadLinks, new Comparator<DownloadLink>() {
 
                 public int compare(DownloadLink a, DownloadLink b) {
+                    if(asc)
                     return a.getName().compareToIgnoreCase(b.getName());
+                    else
+                        return b.getName().compareToIgnoreCase(a.getName());   
                 }
             });
         }
@@ -403,6 +407,19 @@ public int getRemainingLinks() {
    this.updateCollectives();
    return this.size()-linksFinished;
     
+}
+/*
+ * Gibt die erste gefundene sfv datei im Paket zurück
+ */
+public DownloadLink getSFV() {
+    DownloadLink next;
+    synchronized (downloadLinks) {
+        for (Iterator<DownloadLink> it = downloadLinks.iterator(); it.hasNext();) {
+            next = it.next();
+            if(next.getFileOutput().endsWith(".sfv"))return next;
+        }
+    }
+    return null;
 }
 
 

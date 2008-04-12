@@ -12,7 +12,7 @@
 //    GNU General Public License for more details.
 //
 //    You should have received a copy of the GNU General Public License
-//    along with this program.  If not, see <http://wnu.org/licenses/>.
+//    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package jd.plugins;
 
@@ -39,196 +39,202 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
     /**
      * Link muß noch bearbeitet werden
      */
-    public final static int              STATUS_TODO                                   = 0;
+    public final static int STATUS_TODO = 0;
 
     /**
      * Link wurde erfolgreich heruntergeladen
      */
-    public final static int              STATUS_DONE                                    = 1;
+    public final static int STATUS_DONE = 1;
 
     /**
      * Ein unbekannter Fehler ist aufgetreten
      */
-    public final static int              STATUS_ERROR_UNKNOWN                          = 2;
+    public final static int STATUS_ERROR_UNKNOWN = 2;
 
     /**
      * Captcha Text war falsch
      */
-    public final static int              STATUS_ERROR_CAPTCHA_WRONG                    = 3;
+    public final static int STATUS_ERROR_CAPTCHA_WRONG = 3;
 
     /**
      * Download Limit wurde erreicht
      */
-    public final static int              STATUS_ERROR_DOWNLOAD_LIMIT                   = 4;
+    public final static int STATUS_ERROR_DOWNLOAD_LIMIT = 4;
 
     /**
      * Der Download ist gelöscht worden (Darf nicht verteilt werden)
      */
-    public final static int              STATUS_ERROR_FILE_ABUSED                      = 5;
+    public final static int STATUS_ERROR_FILE_ABUSED = 5;
 
     /**
      * Die Datei konnte nicht gefunden werden
      */
-    public final static int              STATUS_ERROR_FILE_NOT_FOUND                   = 6;
+    public final static int STATUS_ERROR_FILE_NOT_FOUND = 6;
 
     /**
      * Die Datei konnte nicht gefunden werden
      */
-    public final static int              STATUS_ERROR_BOT_DETECTED                     = 7;
+    public final static int STATUS_ERROR_BOT_DETECTED = 7;
 
     /**
      * Ein unbekannter Fehler ist aufgetreten. Der Download Soll wiederholt
      * werden
      */
-    public final static int              STATUS_ERROR_UNKNOWN_RETRY                    = 8;
+    public final static int STATUS_ERROR_UNKNOWN_RETRY = 8;
 
     /**
      * Es gab Fehler mit dem captchabild (konnte nicht geladn werden)
      */
 
-    public final static int              STATUS_ERROR_CAPTCHA_IMAGEERROR               = 9;
+    public final static int STATUS_ERROR_CAPTCHA_IMAGEERROR = 9;
 
     /**
      * Zeigt an, dass der Download aus unbekannten Gründen warten muss. z.B.
      * weil Die Ip gerade gesperrt ist, oder eine Session id abgelaufen ist
      */
-    public final static int              STATUS_ERROR_STATIC_WAITTIME                  = 10;
+    public final static int STATUS_ERROR_STATIC_WAITTIME = 10;
 
     /**
      * zeigt einen Premiumspezifischen fehler an
      */
-    public static final int              STATUS_ERROR_PREMIUM                          = 12;
+    public static final int STATUS_ERROR_PREMIUM = 12;
 
-//    /**
-//     * Zeigt an dass der Link fertig geladen wurde
-//     */
-//    public static final int              STATUS_DONE                      = 13;
+    // /**
+    // * Zeigt an dass der Link fertig geladen wurde
+    // */
+    // public static final int STATUS_DONE = 13;
 
     /**
      * Zeigt an dass der Link nicht vollständig geladen wurde
      */
-    public static final int              STATUS_DOWNLOAD_INCOMPLETE                    = 14;
+    public static final int STATUS_DOWNLOAD_INCOMPLETE = 14;
 
     /**
      * Zeigt an dass der Link gerade heruntergeladen wird
      */
-    public static final int              STATUS_DOWNLOAD_IN_PROGRESS                   = 15;
+    public static final int STATUS_DOWNLOAD_IN_PROGRESS = 15;
 
     /**
      * Der download ist zur Zeit nicht möglich
      */
-    public static final int              STATUS_ERROR_TEMPORARILY_UNAVAILABLE          = 16;
+    public static final int STATUS_ERROR_TEMPORARILY_UNAVAILABLE = 16;
 
     /**
      * Der download ist zur Zeit nicht möglich. Die Auslastung der Server ist zu
      * groß
      */
-    public static final int              STATUS_ERROR_TO_MANY_USERS                    = 17;
+    public static final int STATUS_ERROR_TO_MANY_USERS = 17;
 
     /**
      * das PLugin meldet einen Fehler. Der Fehlerstring kann via Parameter
      * übergeben werden
      */
-    public static final int              STATUS_ERROR_PLUGIN_SPECIFIC                  = 18;
+    public static final int STATUS_ERROR_PLUGIN_SPECIFIC = 18;
 
     /**
      * zeigt an, dass nicht genügend Speicherplatz vorhanden ist
      */
-    public static final int              STATUS_ERROR_NO_FREE_SPACE                    = 19;
+    public static final int STATUS_ERROR_NO_FREE_SPACE = 19;
 
     /**
      * Die angefordete Datei wurde noch nicht fertig upgeloaded
      */
-    public static final int              STATUS_ERROR_FILE_NOT_UPLOADED                = 20;
+    public static final int STATUS_ERROR_FILE_NOT_UPLOADED = 20;
 
-    public static final int              STATUS_ERROR_ALREADYEXISTS                    = 23;
+    public static final int STATUS_ERROR_ALREADYEXISTS = 23;
 
     /**
      * serialVersionUID
      */
-    private FilePackage                  filePackage;
+    private FilePackage filePackage;
 
-    private static final long            serialVersionUID                              = 1981079856214268373L;
+    private static final long serialVersionUID = 1981079856214268373L;
 
-    public static final int              STATUS_ERROR_AGB_NOT_SIGNED                   = 21;
+    public static final int STATUS_ERROR_AGB_NOT_SIGNED = 21;
 
-    public static final int              STATUS_ERROR_SECURITY                         = 22;
+    public static final int STATUS_ERROR_SECURITY = 22;
 
-    public static final int              LINKTYPE_NORMAL                               = 0;
+    public static final int LINKTYPE_NORMAL = 0;
 
-    public static final int              LINKTYPE_CONTAINER                            = 1;
-    public static final int              LINKTYPE_JDU                          = 2;
+    public static final int LINKTYPE_CONTAINER = 1;
+    public static final int LINKTYPE_JDU = 2;
 
-    public static final int              STATUS_ERROR_OUTPUTFILE_OWNED_BY_ANOTHER_LINK = 24;
+    public static final int STATUS_ERROR_OUTPUTFILE_OWNED_BY_ANOTHER_LINK = 24;
 
-    public static final int              STATUS_ERROR_CHUNKLOAD_FAILED                 = 25;
+    public static final int STATUS_ERROR_CHUNKLOAD_FAILED = 25;
 
-    public static final int              STATUS_ERROR_NOCONNECTION                     = 26;
+    public static final int STATUS_ERROR_NOCONNECTION = 26;
+
+    public static final int CRC_STATUS_OK = 1;
+
+    public static final int CRC_STATUS_BAD = 2;
+
+    private static final int CRC_STATUS_UNCHECKED = 0;
 
     /**
      * Statustext der von der GUI abgefragt werden kann
      */
-    private transient boolean            aborted                                       = false;
+    private transient boolean aborted = false;
 
-    private transient String             statusText                                    = "";
+    private transient String statusText = "";
 
     /**
      * Beschreibung des Downloads
      */
-    private String                       name;
+    private String name;
 
     /**
      * TODO downloadpath ueber config setzen
      */
-    private String                       downloadPath                                  = JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_DOWNLOAD_DIRECTORY);
+    private String downloadPath = JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_DOWNLOAD_DIRECTORY);
 
     /**
      * Wird dieser Wert gesetzt, so wird der Download unter diesem Namen (nicht
      * Pfad) abgespeichert.
      */
-    private String                       staticFileName;
+    private String staticFileName;
 
     /**
      * Von hier soll de Download stattfinden
      */
-    private String                       urlDownload;
+    private String urlDownload;
 
     /**
      * Hoster des Downloads
      */
-    private String                       host;
+    private String host;
 
     /**
      * Containername
      */
-    private String                       container;
+    private String container;
 
-    private boolean                      isMirror                                      = false;
+    private boolean isMirror = false;
 
     /**
      * Dateiname des Containers
      */
-    private String                       containerFile;
+    private String containerFile;
 
     /**
      * Index dieses DownloadLinks innerhalb der Containerdatei
      */
-    private int                          containerIndex                                = -1;
+    private int containerIndex = -1;
 
     /**
      * Zeigt an, ob dieser Downloadlink aktiviert ist
      */
-    private boolean                      isEnabled;
+    private boolean isEnabled;
 
     /**
      * Zeigt, ob dieser DownloadLink grad heruntergeladen wird
      */
-    private transient boolean            inProgress                                    = false;
+    private transient boolean inProgress = false;
 
     /**
      * Das Plugin, das für diesen Download zuständig ist
      */
-    private transient Plugin             plugin;
+    private transient Plugin plugin;
 
     /**
      * Falls vorhanden, das Plugin für den Container, aus der dieser Download
@@ -239,12 +245,12 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
     /**
      * Maximum der heruntergeladenen Datei (Dateilänge)
      */
-    private long                         downloadMax;
+    private long downloadMax;
 
     /**
      * Aktuell heruntergeladene Bytes der Datei
      */
-    private long                         downloadCurrent;
+    private long downloadCurrent;
 
     /**
      * Hierhin soll die Datei gespeichert werden.
@@ -253,64 +259,70 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
     /**
      * Logger für Meldungen
      */
-    private static Logger                logger                                        = JDUtilities.getLogger();
+    private static Logger logger = JDUtilities.getLogger();
 
     /**
      * Status des DownloadLinks
      */
-    private int                          status                                        = STATUS_TODO;
+    private int status = STATUS_TODO;
 
     /**
      * Timestamp bis zu dem die Wartezeit läuft
      */
-    private transient long               mustWaitTil                                   = 0;
+    private transient long mustWaitTil = 0;
 
     /**
      * Ursprüngliche Wartezeit
      */
-    private transient long               waittime                                      = 0;
+    private transient long waittime = 0;
 
     /**
      * Lokaler Pfad zum letzten captchafile
      */
-    private File                         latestCaptchaFile                             = null;
+    private File latestCaptchaFile = null;
 
     /**
      * Speedmeter zum berechnen des downloadspeeds
      */
-    private transient SpeedMeter         speedMeter;
+    private transient SpeedMeter speedMeter;
 
-    private transient Boolean            available                                     = null;
+    private transient Boolean available = null;
 
-    public LinkedList<Object>            saveObjects                                   = new LinkedList<Object>();
+    public LinkedList<Object> saveObjects = new LinkedList<Object>();
 
-    private Vector<String>               sourcePluginPasswords                         = null;
+    private Vector<String> sourcePluginPasswords = null;
 
-    private String                       sourcePluginComment                           = null;
+    private String sourcePluginComment = null;
 
-    private int                          maximalspeed                                  = -1;
+    private int maximalspeed = -1;
 
-    private int                          linkType                                      = LINKTYPE_NORMAL;
+    private int linkType = LINKTYPE_NORMAL;
 
-    private transient String             tempUrlDownload;
+    private transient String tempUrlDownload;
 
-    private boolean                      limited                                       = (JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, 0) != 0);
+    private boolean limited = (JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, 0) != 0);
 
-    private transient DownloadInterface           downloadInstance;
+    private transient DownloadInterface downloadInstance;
 
-    private int[] chunksProgress=null;
+    private int[] chunksProgress = null;
 
-    private int partID=-1;
+    private int partID = -1;
+
+    private int crcStatus = CRC_STATUS_UNCHECKED;
 
     /**
      * Erzeugt einen neuen DownloadLink
      * 
-     * @param plugin Das Plugins, das für diesen Download zuständig ist
-     * @param name Bezeichnung des Downloads
-     * @param host Anbieter, von dem dieser Download gestartet wird
-     * @param urlDownload Die Download URL (Entschlüsselt)
-     * @param isEnabled Markiert diesen DownloadLink als aktiviert oder
-     *            deaktiviert
+     * @param plugin
+     *            Das Plugins, das für diesen Download zuständig ist
+     * @param name
+     *            Bezeichnung des Downloads
+     * @param host
+     *            Anbieter, von dem dieser Download gestartet wird
+     * @param urlDownload
+     *            Die Download URL (Entschlüsselt)
+     * @param isEnabled
+     *            Markiert diesen DownloadLink als aktiviert oder deaktiviert
      */
     public DownloadLink(Plugin plugin, String name, String host, String urlDownload, boolean isEnabled) {
         this.plugin = plugin;
@@ -325,7 +337,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
             this.urlDownload = urlDownload;
         else
             urlDownload = null;
-        if (name == null&&urlDownload != null) this.name = this.extractFileNameFromURL();
+        if (name == null && urlDownload != null) this.name = this.extractFileNameFromURL();
     }
 
     /**
@@ -335,10 +347,10 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
      * @return Name des Downloads
      */
     public String getName() {
-      
+
         if (this.getStaticFileName() == null) return name;
         return this.getStaticFileName();
-        
+
     }
 
     /**
@@ -371,12 +383,10 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
     public String getFileOutput() {
         if (getFilePackage() != null && getFilePackage().getDownloadDirectory() != null && getFilePackage().getDownloadDirectory().length() > 0) {
             return new File(new File(getFilePackage().getDownloadDirectory()), getName()).getAbsolutePath();
-        }
-        else {
+        } else {
             if (downloadPath != null) {
                 return new File(new File(downloadPath), getName()).getAbsolutePath();
-            }
-            else {
+            } else {
                 return null;
             }
 
@@ -404,9 +414,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
      * @return true/false
      */
     public boolean isAvailable() {
-        if (this.available != null) {
-            return available;
-        }
+        if (this.available != null) { return available; }
         available = ((PluginForHost) getPlugin()).getFileInformation(this);
         return available;
     }
@@ -427,8 +435,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
                     logger.severe(this + " is a containerlink. Container could not be extracted. Is your JD Version up2date?");
                 }
                 return ret;
-            }
-            else {
+            } else {
                 logger.severe(this + " is a containerlink, but no plugin could be found");
                 return null;
 
@@ -487,7 +494,8 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
     /**
      * Setzt nachträglich das Plugin. Wird nur zum Laden der Liste benötigt
      * 
-     * @param plugin Das für diesen Download zuständige Plugin
+     * @param plugin
+     *            Das für diesen Download zuständige Plugin
      */
     public void setLoadedPlugin(PluginForHost plugin) {
         this.plugin = plugin;
@@ -496,13 +504,13 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
     /**
      * Verändert den Aktiviert-Status
      * 
-     * @param isEnabled Soll dieser DownloadLink aktiviert sein oder nicht
+     * @param isEnabled
+     *            Soll dieser DownloadLink aktiviert sein oder nicht
      */
     public void setEnabled(boolean isEnabled) {
         if (!isEnabled) {
             this.setAborted(true);
-        }
-        else {
+        } else {
             this.setAborted(false);
         }
         if (isEnabled == true) {
@@ -521,7 +529,8 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
     /**
      * Setzt die URL, von der heruntergeladen werden soll
      * 
-     * @param urlDownload Die URL von der heruntergeladen werden soll
+     * @param urlDownload
+     *            Die URL von der heruntergeladen werden soll
      */
     public void setUrlDownload(String urlDownload) {
         if (this.linkType == LINKTYPE_CONTAINER) {
@@ -533,10 +542,14 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
     }
 
     /**
-     * Kennzeichnet den Download als in Bearbeitung oder nicht
-     * Im gegensatz zu link.setStatus(inPROGRESS) zeigt dieser wert an ob der link in bearbeitung ist.  über getStatus kann nur abgerufen werden ob der download gerade läuft
-     * @param inProgress wahr, wenn die Datei als in Bearbeitung gekennzeichnet
-     *            werden soll
+     * Kennzeichnet den Download als in Bearbeitung oder nicht Im gegensatz zu
+     * link.setStatus(inPROGRESS) zeigt dieser wert an ob der link in
+     * bearbeitung ist. über getStatus kann nur abgerufen werden ob der download
+     * gerade läuft
+     * 
+     * @param inProgress
+     *            wahr, wenn die Datei als in Bearbeitung gekennzeichnet werden
+     *            soll
      */
     public void setInProgress(boolean inProgress) {
         this.inProgress = inProgress;
@@ -545,7 +558,8 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
     /**
      * Setzt den Status des Downloads
      * 
-     * @param status Der neue Status des Downloads
+     * @param status
+     *            Der neue Status des Downloads
      */
     public void setStatus(int status) {
         this.status = status;
@@ -560,7 +574,8 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
      * Setzt die Anzahl der heruntergeladenen Bytes fest und aktualisiert die
      * Fortschrittsanzeige
      * 
-     * @param downloadedCurrent Anzahl der heruntergeladenen Bytes
+     * @param downloadedCurrent
+     *            Anzahl der heruntergeladenen Bytes
      */
     public void setDownloadCurrent(long downloadedCurrent) {
         this.downloadCurrent = downloadedCurrent;
@@ -570,10 +585,11 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
      * Setzt die Größe der herunterzuladenden Datei, und aktualisiert die
      * Fortschrittsanzeige
      * 
-     * @param downloadMax Die Größe der Datei
+     * @param downloadMax
+     *            Die Größe der Datei
      */
     public void setDownloadMax(int downloadMax) {
-       
+
         this.downloadMax = downloadMax;
     }
 
@@ -594,7 +610,8 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
     /**
      * Setzt den Downloadpfad neu
      * 
-     * @param downloadPath der neue downloadPfad
+     * @param downloadPath
+     *            der neue downloadPfad
      */
     public void setDownloadPath(String downloadPath) {
         this.downloadPath = downloadPath;
@@ -604,37 +621,38 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
     /**
      * Setzt den Namen des Downloads neu
      * 
-     * @param name Neuer Name des Downloads
+     * @param name
+     *            Neuer Name des Downloads
      */
     public void setName(String name) {
         if (name != null && name.length() > 3) {
             this.name = name;
             updatePartID();
-            
-        }
-        else {
+
+        } else {
             logger.severe("Set invalid filename: " + name);
         }
 
     }
-    private void updatePartID(){
-        String name= this.getName();
+
+    private void updatePartID() {
+        String name = this.getName();
         String ext;
         int index;
-        this.partID= -1;
-        while(name.length()>0){
-            index=name.lastIndexOf(".");
-            if(index<=0)index=name.length()-1;
-            ext=name.substring(index+1);            
-            name=name.substring(0,index);
-            try{
-            this.partID=Integer.parseInt(JDUtilities.filterString(ext, "1234567890"));
-            break;
-            }catch(Exception e){ }
-         
+        this.partID = -1;
+        while (name.length() > 0) {
+            index = name.lastIndexOf(".");
+            if (index <= 0) index = name.length() - 1;
+            ext = name.substring(index + 1);
+            name = name.substring(0, index);
+            try {
+                this.partID = Integer.parseInt(JDUtilities.filterString(ext, "1234567890"));
+                break;
+            } catch (Exception e) {
+            }
+
         }
-       
-        
+
     }
 
     /**
@@ -658,37 +676,34 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
         String ret = "";
         int speed;
 
-        if (getRemainingWaittime() > 0) {
-            return this.statusText + "Warten: (" + JDUtilities.formatSeconds((int) (getRemainingWaittime() / 1000)) + "sek)";
-        }
+        if (getRemainingWaittime() > 0) { return this.statusText + "Warten: (" + JDUtilities.formatSeconds((int) (getRemainingWaittime() / 1000)) + "sek)"; }
         if (this.isInProgress() && (speed = getDownloadSpeed()) > 0) {
             if (getDownloadMax() < 0) {
                 return JDUtilities.formatKbReadable(speed / 1024) + "/s " + JDLocale.L("gui.download.filesize_unknown", "(Dateigröße unbekannt)");
-            }
-            else {
+            } else {
                 if (getDownloadSpeed() == 0) {
-                   
+
                     if (this.downloadInstance != null && downloadInstance.getChunkNum() > 1) {
                         return JDUtilities.formatKbReadable(speed / 1024) + "/s " + "(" + downloadInstance.getChunksDownloading() + "/" + downloadInstance.getChunkNum() + ")";
-                    }
-                    else {
+                    } else {
                         return JDUtilities.formatKbReadable(speed / 1024) + "/s ";
                     }
-                }
-                else {
+                } else {
                     long remainingBytes = this.getDownloadMax() - this.getDownloadCurrent();
                     long eta = remainingBytes / speed;
                     if (this.downloadInstance != null && downloadInstance.getChunkNum() > 1) {
-                       // logger.info("ETA " + JDUtilities.formatSeconds((int) eta) + " @ " + (speed / 1024) + " kb/s." + "(" + downloadInstance.getChunksDownloading() + "/" + downloadInstance.getChunks() + ")");
+                        // logger.info("ETA " + JDUtilities.formatSeconds((int)
+                        // eta) + " @ " + (speed / 1024) + " kb/s." + "(" +
+                        // downloadInstance.getChunksDownloading() + "/" +
+                        // downloadInstance.getChunks() + ")");
                         return "ETA " + JDUtilities.formatSeconds((int) eta) + " @ " + JDUtilities.formatKbReadable(speed / 1024) + "/s " + "(" + downloadInstance.getChunksDownloading() + "/" + downloadInstance.getChunkNum() + ")";
-                    }
-                    else {
+                    } else {
                         return "ETA " + JDUtilities.formatSeconds((int) eta) + " @ " + JDUtilities.formatKbReadable(speed / 1024) + "/s ";
                     }
                 }
             }
         }
-
+        ret += this.toStatusString()+" ";
         if (!this.isEnabled()) {
             ret += "[deaktiviert] ";
         }
@@ -696,9 +711,73 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
         if (this.isAvailabilityChecked() && !this.isAvailable()) {
             ret += "[OFFLINE] ";
         }
-        
-        //logger.info(statusText == null ? ret : ret + statusText);
+
+        // logger.info(statusText == null ? ret : ret + statusText);
+        if (this.getCrcStatus() == DownloadLink.CRC_STATUS_BAD) {
+            ret += "[" + JDLocale.L("gui.downloadlink.status.crcfailed", "Checksum Fehler") + "] ";
+
+        } else if (this.getCrcStatus() == DownloadLink.CRC_STATUS_OK) {
+            ret += "[" + JDLocale.L("gui.downloadlink.status.crcok", "Checksum OK") + "] ";
+        }
         return statusText == null ? ret : ret + statusText;
+
+    }
+
+    private String toStatusString() {
+        switch (this.getStatus()) {
+        case DownloadLink.STATUS_DONE:
+            return JDLocale.L("downloadlink.status.done", "Finished");
+        case DownloadLink.STATUS_DOWNLOAD_IN_PROGRESS:
+            return JDLocale.L("downloadlink.status.doenloadInProgress", "Loading");
+        case DownloadLink.STATUS_DOWNLOAD_INCOMPLETE:
+            return JDLocale.L("downloadlink.status.incomplete", "Incomplete");
+        case DownloadLink.STATUS_TODO:
+            return JDLocale.L("downloadlink.status.todo", "");
+        case DownloadLink.STATUS_ERROR_AGB_NOT_SIGNED:
+            return JDLocale.L("downloadlink.status.error.agb_not_signed", "TOCs not signed");
+        case DownloadLink.STATUS_ERROR_ALREADYEXISTS:
+            return JDLocale.L("downloadlink.status.error.file_exists", "File exists");
+        case DownloadLink.STATUS_ERROR_BOT_DETECTED:
+            return JDLocale.L("downloadlink.status.error.bot_detected", "Bot detected");
+        case DownloadLink.STATUS_ERROR_CAPTCHA_IMAGEERROR:
+            return JDLocale.L("downloadlink.status.error.captcha_image_error", "Captcha Img Error");
+        case DownloadLink.STATUS_ERROR_CAPTCHA_WRONG:
+            return JDLocale.L("downloadlink.status.error.captcha_wrong", "Captcha wrong");
+        case DownloadLink.STATUS_ERROR_CHUNKLOAD_FAILED:
+            return JDLocale.L("downloadlink.status.error.chunkload", "Chunkload failed");
+        case DownloadLink.STATUS_ERROR_DOWNLOAD_LIMIT:
+            return JDLocale.L("downloadlink.status.error.download_limit", "Download Limit reached");
+        case DownloadLink.STATUS_ERROR_FILE_ABUSED:
+            return JDLocale.L("downloadlink.status.error.file_abused", "File abused");
+        case DownloadLink.STATUS_ERROR_FILE_NOT_FOUND:
+            return JDLocale.L("downloadlink.status.error.file_not_found", "File not found");
+        case DownloadLink.STATUS_ERROR_FILE_NOT_UPLOADED:
+            return JDLocale.L("downloadlink.status.error.not_uploaded", "Upload error");
+        case DownloadLink.STATUS_ERROR_NO_FREE_SPACE:
+            return JDLocale.L("downloadlink.status.error.no_free_space", "No Free Space");
+        case DownloadLink.STATUS_ERROR_NOCONNECTION:
+            return JDLocale.L("downloadlink.status.error.no_connection", "No Connection");
+        case DownloadLink.STATUS_ERROR_OUTPUTFILE_OWNED_BY_ANOTHER_LINK:
+            return JDLocale.L("downloadlink.status.error.not_owner", "Link is already in progress");
+        case DownloadLink.STATUS_ERROR_PLUGIN_SPECIFIC:
+            return JDLocale.L("downloadlink.status.error.plugin_specific", "Plugin Error");
+        case DownloadLink.STATUS_ERROR_PREMIUM:
+            return JDLocale.L("downloadlink.status.error.premium", "Premium Error");
+        case DownloadLink.STATUS_ERROR_SECURITY:
+            return JDLocale.L("downloadlink.status.error.security", "Read/Write Error");
+        case DownloadLink.STATUS_ERROR_STATIC_WAITTIME:
+            return JDLocale.L("downloadlink.status.error.static_wait", "Waittime");
+        case DownloadLink.STATUS_ERROR_TEMPORARILY_UNAVAILABLE:
+            return JDLocale.L("downloadlink.status.error.temp_unavailable", "Temp. unavailable");
+        case DownloadLink.STATUS_ERROR_TO_MANY_USERS:
+            return JDLocale.L("downloadlink.status.error.many_users", "Too many User");
+        case DownloadLink.STATUS_ERROR_UNKNOWN:
+            return JDLocale.L("downloadlink.status.error.unknown", "Unknown Error");
+        case DownloadLink.STATUS_ERROR_UNKNOWN_RETRY:
+            return JDLocale.L("downloadlink.status.error.unknown_retry", "Unknown Error - retry");
+        default:
+            return JDLocale.L("downloadlink.status.error_def", "Error");
+        }
 
     }
 
@@ -708,9 +787,10 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
     public void reset() {
 
         downloadMax = 0;
-this.chunksProgress=null;
+        this.chunksProgress = null;
         downloadCurrent = 0;
         aborted = false;
+        this.crcStatus=CRC_STATUS_UNCHECKED;
     }
 
     /**
@@ -793,12 +873,12 @@ this.chunksProgress=null;
      * 
      * @param bytes
      */
-//    public void addBytes(int bytes, int difftime) {
-//
-//        this.getSpeedMeter().addSpeedValue(bytes/difftime);
-//
-//    }
-    public void addSpeedValue(int speed){
+    // public void addBytes(int bytes, int difftime) {
+    //
+    // this.getSpeedMeter().addSpeedValue(bytes/difftime);
+    //
+    // }
+    public void addSpeedValue(int speed) {
         this.getSpeedMeter().addSpeedValue(speed);
     }
 
@@ -828,7 +908,7 @@ this.chunksProgress=null;
      * @return true falls der download abgebrochen wurde
      */
     public boolean isAborted() {
-        
+
         return aborted;
     }
 
@@ -848,7 +928,7 @@ this.chunksProgress=null;
      * @return FilePackage
      */
     public FilePackage getFilePackage() {
-        if(filePackage==null)setFilePackage(JDUtilities.getController().getDefaultFilePackage());
+        if (filePackage == null) setFilePackage(JDUtilities.getController().getDefaultFilePackage());
         return filePackage;
     }
 
@@ -858,15 +938,15 @@ this.chunksProgress=null;
      * @param FilePackage
      */
     public void setFilePackage(FilePackage filePackage) {
-        
-        if(filePackage==this.filePackage&&filePackage!=null){
-            if(!filePackage.contains(this))filePackage.add(this);
+
+        if (filePackage == this.filePackage && filePackage != null) {
+            if (!filePackage.contains(this)) filePackage.add(this);
             return;
         }
-        if(this.filePackage!=null)this.filePackage.remove(this);
+        if (this.filePackage != null) this.filePackage.remove(this);
         this.filePackage = filePackage;
-        
-        if(filePackage!=null &&!filePackage.contains(this))filePackage.add(this);
+
+        if (filePackage != null && !filePackage.contains(this)) filePackage.add(this);
     }
 
     /**
@@ -876,7 +956,7 @@ this.chunksProgress=null;
      * @return STring
      */
     public String toString() {
-        return this.getName()+"-> "+this.getFileOutput();
+        return this.getName() + "-> " + this.getFileOutput();
     }
 
     /**
@@ -892,8 +972,7 @@ this.chunksProgress=null;
     public String getFileInfomationString() {
         if (getPlugin() instanceof PluginForHost) {
             return ((PluginForHost) getPlugin()).getFileInformationString(this);
-        }
-        else {
+        } else {
             return getName();
         }
     }
@@ -1021,27 +1100,30 @@ this.chunksProgress=null;
     public int getMaximalspeed() {
         // return 5000000/40;
 
-//        int maxspeed = JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, 0) * 1024;
-//
-//        if (maxspeed == 0) maxspeed = Integer.MAX_VALUE;
-//        maxspeed = Math.max(1, maxspeed / (Math.max(1, JDUtilities.getController().getRunningDownloadNum())));
+        // int maxspeed =
+        // JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED,
+        // 0) * 1024;
+        //
+        // if (maxspeed == 0) maxspeed = Integer.MAX_VALUE;
+        // maxspeed = Math.max(1, maxspeed / (Math.max(1,
+        // JDUtilities.getController().getRunningDownloadNum())));
 
-       // return  800 * 1024;
-if(maximalspeed<=0){
-    maximalspeed=Integer.MAX_VALUE;
-}
-         return maximalspeed;
+        // return 800 * 1024;
+        if (maximalspeed <= 0) {
+            maximalspeed = Integer.MAX_VALUE;
+        }
+        return maximalspeed;
     }
 
     public void setMaximalSpeed(int maximalspeed) {
-        maximalspeed=Math.max(20, maximalspeed);
-        //logger.info(this+ " LINKSPEED: "+maximalspeed);
+        maximalspeed = Math.max(20, maximalspeed);
+        // logger.info(this+ " LINKSPEED: "+maximalspeed);
         int diff = this.maximalspeed - maximalspeed;
         if (diff > 500 || diff < 500) this.maximalspeed = maximalspeed;
     }
 
     public void setLinkType(int linktypeContainer) {
-        if(linktypeContainer==linkType)return;
+        if (linktypeContainer == linkType) return;
         if (linkType == LINKTYPE_CONTAINER) {
             logger.severe("You are not allowd to Change the Linktype of " + this);
             return;
@@ -1069,18 +1151,24 @@ if(maximalspeed<=0){
     public void setLimited(boolean limited) {
         this.limited = limited;
     }
-/**
- * Die Downloadklasse kann hier ein array mit den Fortschritten der chunks ablegen. Damit können downloads resumed werden
- * @param is
- */
+
+    /**
+     * Die Downloadklasse kann hier ein array mit den Fortschritten der chunks
+     * ablegen. Damit können downloads resumed werden
+     * 
+     * @param is
+     */
     public void setChunksProgress(int[] is) {
-       this.chunksProgress=is;
-       
-            }
-/**
- * Gibt ein arry mit den Chunkfortschritten zurück. Dieses Array wird von der downlaodinstanz zu resumezwecken verwendet
- * @return
- */
+        this.chunksProgress = is;
+
+    }
+
+    /**
+     * Gibt ein arry mit den Chunkfortschritten zurück. Dieses Array wird von
+     * der downlaodinstanz zu resumezwecken verwendet
+     * 
+     * @return
+     */
     public int[] getChunksProgress() {
         return chunksProgress;
     }
@@ -1090,10 +1178,19 @@ if(maximalspeed<=0){
     }
 
     public int getPartByName() {
-//        if(partID<0){
-//            this.setName(this.extractFileNameFromURL());
-//        }
+        // if(partID<0){
+        // this.setName(this.extractFileNameFromURL());
+        // }
         return this.partID;
-      
+
+    }
+
+    public void setCrcStatus(int crcStatusOk) {
+        this.crcStatus = crcStatusOk;
+
+    }
+
+    public int getCrcStatus() {
+        return crcStatus;
     }
 }

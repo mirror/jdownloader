@@ -12,7 +12,7 @@
 //    GNU General Public License for more details.
 //
 //    You should have received a copy of the GNU General Public License
-//    along with this program.  If not, see <http://wnu.org/licenses/>.
+//    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package jd.controlling;
 
@@ -61,6 +61,7 @@ public class DownloadWatchDog extends Thread implements ControlListener {
     public DownloadWatchDog(JDController controller) {
 
         this.controller = controller;
+       controller.addControlListener(this);
     }
 
     public void run() {
@@ -165,6 +166,7 @@ public class DownloadWatchDog extends Thread implements ControlListener {
         aborted = true;
         logger.info("RUN END");
         deligateFireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_ALL_DOWNLOADS_FINISHED, this));
+        controller.removeControlListener(this);
         // Interaction.handleInteraction((Interaction.INTERACTION_ALL_DOWNLOADS_FINISHED),
         // this);
 
@@ -258,8 +260,7 @@ public class DownloadWatchDog extends Thread implements ControlListener {
             SingleDownloadController download = new SingleDownloadController(controller, dlink);
             logger.info("start download: " + dlink);
             dlink.setInProgress(true);
-            download.addControlListener(this);
-            download.addControlListener(this.controller);
+      
             download.start();
             activeDownloadControllers.add(download);
         }

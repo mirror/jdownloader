@@ -12,7 +12,7 @@
 //    GNU General Public License for more details.
 //
 //    You should have received a copy of the GNU General Public License
-//    along with this program.  If not, see <http://wnu.org/licenses/>.
+//    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
 package jd.gui.skins.simple.config;
@@ -22,6 +22,10 @@ import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Image;
 import java.awt.Insets;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.logging.Logger;
@@ -45,6 +49,11 @@ import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.SpinnerNumberModel;
 import javax.swing.SwingConstants;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
+import javax.swing.text.PlainDocument;
 
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -61,7 +70,7 @@ import jd.utils.JDUtilities;
  * 
  */
 
-public class GUIConfigEntry extends JPanel {
+public class GUIConfigEntry extends JPanel implements ActionListener,ChangeListener,PropertyChangeListener,DocumentListener {
     /**
      * 
      */
@@ -85,6 +94,12 @@ public class GUIConfigEntry extends JPanel {
 
     private Insets insets;
 
+    private JComponent left;
+
+    private JComponent right;
+
+    private JComponent total;
+
     /**
      * Erstellt einen neuen GUIConfigEntry
      * 
@@ -95,13 +110,14 @@ public class GUIConfigEntry extends JPanel {
      */
     GUIConfigEntry(ConfigEntry cfg) {
         this.configEntry = cfg;
-
+        cfg.setGuiListener(this);
+        this.addPropertyChangeListener(cfg);
         this.setLayout(new GridBagLayout());
         //this.setBorder(BorderFactory.createEtchedBorder());
         input = new JComponent[1];
-        JComponent left = null;
-        JComponent right = null;
-        JComponent total = null;
+         left = null;
+         right = null;
+         total = null;
         insets = new Insets(2, 5, 2, 10);
         switch (configEntry.getType()) {
 
@@ -109,6 +125,7 @@ public class GUIConfigEntry extends JPanel {
 
                 try {
                     input[0] = new JLinkButton(configEntry.getLabel(), new URL(configEntry.getPropertyName()));
+                    
                 }
                 catch (MalformedURLException e) {
                     input[0] = new JLabel(configEntry.getPropertyName());
@@ -126,6 +143,8 @@ public class GUIConfigEntry extends JPanel {
                 JDUtilities.addToGridBag(this, left = new JLabel(configEntry.getLabel()), 0, 0, 1, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
                 this.addInstantHelpLink();
                 input[0] = new JPasswordField();
+                PlainDocument doc = (PlainDocument) ((JPasswordField) input[0]).getDocument();
+                doc.addDocumentListener(this);
                // input[0].setMaximumSize(new Dimension(160,20));
                 input[0].setEnabled(configEntry.isEnabled());
                ((JPasswordField) input[0]).setHorizontalAlignment(JTextField.RIGHT);
@@ -138,6 +157,8 @@ public class GUIConfigEntry extends JPanel {
                 JDUtilities.addToGridBag(this, left = new JLabel(configEntry.getLabel()), 0, 0, 1, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
                 this.addInstantHelpLink();
                 input[0] = new JTextField();
+               doc = (PlainDocument) ((JTextField) input[0]).getDocument();
+                doc.addDocumentListener(this);
                 input[0].setEnabled(configEntry.isEnabled());
                 ((JTextField) input[0]).setHorizontalAlignment(JTextField.RIGHT);
                 JDUtilities.addToGridBag(this, right = input[0], 2, 0, 1, 1, 1, 1, insets, GridBagConstraints.BOTH, GridBagConstraints.EAST);
@@ -149,7 +170,8 @@ public class GUIConfigEntry extends JPanel {
                 this.addInstantHelpLink();
                 input[0] = new JTextArea(20, 20);
                 input[0].setEnabled(configEntry.isEnabled());
-
+                doc = (PlainDocument) ((JTextArea) input[0]).getDocument();
+                doc.addDocumentListener(this);
                 JDUtilities.addToGridBag(this, total = new JScrollPane(input[0]), 0, 1, 3, 1, 1, 1, insets, GridBagConstraints.BOTH, GridBagConstraints.EAST);
                 total.setMinimumSize(new Dimension(200, 200));
                 total = null;
@@ -162,7 +184,7 @@ public class GUIConfigEntry extends JPanel {
                 this.addInstantHelpLink();
                 input[0] = new JCheckBox();
                 input[0].setEnabled(configEntry.isEnabled());
-
+                ((JCheckBox)input[0]).addChangeListener(this);
                 JDUtilities.addToGridBag(this, right = input[0], 2, 0, 1, 1, 0, 0, insets, GridBagConstraints.BOTH, GridBagConstraints.EAST);
                 break;
             case ConfigContainer.TYPE_BROWSEFILE:
@@ -172,7 +194,7 @@ public class GUIConfigEntry extends JPanel {
                 this.addInstantHelpLink();
                 input[0] = new BrowseFile();
                 ((BrowseFile) input[0]).setEnabled(configEntry.isEnabled());
-
+                
                 ((BrowseFile) input[0]).setEditable(true);
                 JDUtilities.addToGridBag(this, right = input[0], 2, 0, 1, 1, 0, 0, insets, GridBagConstraints.HORIZONTAL, GridBagConstraints.EAST);
 
@@ -197,6 +219,7 @@ public class GUIConfigEntry extends JPanel {
                 this.addInstantHelpLink();
                 input[0] = new JSpinner(new SpinnerNumberModel(configEntry.getStart(), configEntry.getStart(), configEntry.getEnd(), configEntry.getStep()));
                 input[0].setEnabled(configEntry.isEnabled());
+                ((JSpinner)input[0]).addChangeListener(this);
                 // ((JSpinner)input[0])
                 JDUtilities.addToGridBag(this, right = input[0], 2, 0, 1, 1, 0, 0, insets, GridBagConstraints.HORIZONTAL, GridBagConstraints.EAST);
 
@@ -216,6 +239,7 @@ public class GUIConfigEntry extends JPanel {
                 // logger.info(configEntry.getLabel());
                 // logger.info("ADD Combobox");
                 input[0] = new JComboBox(configEntry.getList());
+                ((JComboBox)input[0]).addActionListener(this);
                 for (int i = 0; i < configEntry.getList().length; i++) {
 
                     if (configEntry.getList()[i].equals(configEntry.getPropertyInstance().getProperty(configEntry.getPropertyName()))) {
@@ -234,8 +258,10 @@ public class GUIConfigEntry extends JPanel {
                 JRadioButton radio;
                 this.addInstantHelpLink();
                 ButtonGroup group = new ButtonGroup();
+               
                 for (int i = 0; i < configEntry.getList().length; i++) {
                     radio = new JRadioButton(configEntry.getList()[i].toString());
+                    ((JRadioButton)input[0]).addActionListener(this);
                     radio.setActionCommand(configEntry.getList()[i].toString());
                     input[i] = radio;
                     input[i].setEnabled(configEntry.isEnabled());
@@ -267,7 +293,7 @@ public class GUIConfigEntry extends JPanel {
                 break;
 
         }
-
+        this.firePropertyChange(this.getConfigEntry().getPropertyName(),null , this.getText());
     }
 
     private void addInstantHelpLink() {
@@ -321,6 +347,9 @@ public class GUIConfigEntry extends JPanel {
 
             case ConfigContainer.TYPE_TEXTFIELD:
                 ((JTextField) input[0]).setText(text == null ? "" : text.toString());
+              
+                
+               
                 break;
 
             case ConfigContainer.TYPE_TEXTAREA:
@@ -372,8 +401,7 @@ public class GUIConfigEntry extends JPanel {
 
                 break;
         }
-
-    }
+        this.getConfigEntry().valueChanged(this.getText());}
 
     /**
      * Gibt den zusstand der Inputkomponente zurück
@@ -430,6 +458,53 @@ public class GUIConfigEntry extends JPanel {
 
     public void setConfigEntry(ConfigEntry configEntry) {
         this.configEntry = configEntry;
+    }
+
+ 
+
+    public void propertyChange(PropertyChangeEvent evt) {
+        // TODO Auto-generated method stub
+        if(input[0]==null)return;
+        logger.info("New Value "+evt.getNewValue());
+        if(this.getConfigEntry().isConditionalEnabled(evt)){
+            input[0].setEnabled(true);
+            for(JComponent i:input){
+                i.setEnabled(true);
+            }
+            if(left!=null)left.setEnabled(true);
+            if(right!=null)right.setEnabled(true);
+            if(total!=null)total.setEnabled(true);
+            
+        }else{
+            for(JComponent i:input){
+                i.setEnabled(false);
+            }
+            if(left!=null)left.setEnabled(false);
+            if(right!=null)right.setEnabled(false);
+            if(total!=null)total.setEnabled(false);
+        }
+    }
+
+    public void changedUpdate(DocumentEvent e) {
+        this.getConfigEntry().valueChanged(this.getText());
+        
+    }
+
+    public void insertUpdate(DocumentEvent e) {
+        this.getConfigEntry().valueChanged(this.getText());
+    }
+
+    public void removeUpdate(DocumentEvent e) {
+        this.getConfigEntry().valueChanged(this.getText());
+    }
+    
+    public void stateChanged(ChangeEvent e) {
+        this.getConfigEntry().valueChanged(this.getText());
+     }
+
+    public void actionPerformed(ActionEvent e) {
+        this.getConfigEntry().valueChanged(this.getText());
+        
     }
 
 }

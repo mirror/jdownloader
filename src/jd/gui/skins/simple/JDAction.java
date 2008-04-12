@@ -12,13 +12,15 @@
 //    GNU General Public License for more details.
 //
 //    You should have received a copy of the GNU General Public License
-//    along with this program.  If not, see <http://wnu.org/licenses/>.
+//    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
 package jd.gui.skins.simple;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.KeyEvent;
+import java.lang.reflect.Field;
 
 import javax.swing.AbstractAction;
 import javax.swing.Action;
@@ -27,6 +29,9 @@ import javax.swing.KeyStroke;
 
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
+
+
+
 
 /**
  * Alle Interaktionen (Knöpfe, Shortcuts) sollten über diese JDAction stattfinden
@@ -96,8 +101,21 @@ public class JDAction extends AbstractAction{
         putValue(Action.SHORT_DESCRIPTION, JDLocale.L("gui.menu."+ressourceName+".desc"));
         putValue(Action.NAME,              JDLocale.L("gui.menu."+ressourceName+".name"));
         char mnemonic = JDLocale.L("gui.menu."+ressourceName+".mnem").charAt(0);
+      
+      
         if (mnemonic!=0)
-           putValue(Action.MNEMONIC_KEY, new Integer(mnemonic));
+        {
+           Class<?> b = KeyEvent.class;
+           Field f;
+            try {
+                f = b.getField("VK_"+Character.toUpperCase(mnemonic));
+                   int m = (Integer) f.get(null);                  
+                   putValue(Action.MNEMONIC_KEY, m);
+            } catch (Exception e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            } 
+            }
         String acceleratorString = JDLocale.L("gui.menu."+ressourceName+".accel");
         if (acceleratorString!=null && acceleratorString.length()>0)
            accelerator = KeyStroke.getKeyStroke(acceleratorString);

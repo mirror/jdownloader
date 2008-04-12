@@ -12,7 +12,7 @@
 //    GNU General Public License for more details.
 //
 //    You should have received a copy of the GNU General Public License
-//    along with this program.  If not, see <http://wnu.org/licenses/>.
+//    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
 package jd.controlling;
@@ -39,7 +39,7 @@ import jd.utils.JDUtilities;
  * 
  * @author astaldo/JD-Team
  */
-public class SingleDownloadController extends ControlBroadcaster {
+public class SingleDownloadController extends Thread {
     /**
      * Das Plugin, das den aktuellen Download steuert
      */
@@ -108,6 +108,11 @@ public class SingleDownloadController extends ControlBroadcaster {
         plugin.clean();
     }
 
+    private void fireControlEvent(ControlEvent controlEvent) {
+        JDUtilities.getController().fireControlEvent(controlEvent);
+        
+    }
+
     private void handlePlugin() {
 
         if (downloadLink.getDownloadURL() == null) {
@@ -135,7 +140,7 @@ public class SingleDownloadController extends ControlBroadcaster {
         
         while (!aborted && step != null && step.getStatus() != PluginStep.STATUS_ERROR) {
 
-            downloadLink.setStatusText(JDLocale.L("controller.status.running", "running..."));
+            //downloadLink.setStatusText(JDLocale.L("controller.status.running", "running..."));
             if (step.getStatus() != PluginStep.STATUS_SKIP) {
                 switch (step.getStep()) {
                     case PluginStep.STEP_PENDING:
@@ -300,8 +305,8 @@ public class SingleDownloadController extends ControlBroadcaster {
 
         }
         else {
-            downloadLink.setStatusText(JDLocale.L("controller.status.finished", "Fertig"));
-          
+          //  downloadLink.setStatusText(JDLocale.L("controller.status.finished", "Fertig"));
+            downloadLink.setStatusText(null);
            if(downloadLink.getStatus()!=DownloadLink.STATUS_DONE){
                logger.severe("Pluginerror: Step returned null and Downloadlink status != STATUS_DONE");
                downloadLink.setStatus(DownloadLink.STATUS_DONE);
@@ -319,6 +324,11 @@ public class SingleDownloadController extends ControlBroadcaster {
             if (JDUtilities.getConfiguration().getBooleanProperty(Unrar.PROPERTY_ENABLED, true)) controller.getUnrarModule().interact(downloadLink);
 
         }
+        
+    }
+
+    private void fireControlEvent(int controlID, Object param) {
+        JDUtilities.getController().fireControlEvent(controlID, param);
         
     }
 
@@ -692,7 +702,7 @@ public class SingleDownloadController extends ControlBroadcaster {
         logger.severe("Error occurred: Wait Time " + step);
         long milliSeconds = (Long) step.getParameter();
         downloadLink.setEndOfWaittime(System.currentTimeMillis() + milliSeconds);
-        downloadLink.setStatusText(JDLocale.L("controller.status.reconnect", "Reconnect "));
+        downloadLink.setStatusText(" "+JDLocale.L("controller.status.reconnect", "Reconnect "));
 
         fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_DOWNLOADLINKS_CHANGED, downloadLink));
         // Download Zeit. Versuch durch eine Interaction einen reconnect

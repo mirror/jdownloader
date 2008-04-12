@@ -12,7 +12,7 @@
 //    GNU General Public License for more details.
 //
 //    You should have received a copy of the GNU General Public License
-//    along with this program.  If not, see <http://wnu.org/licenses/>.
+//    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
 package jd.config;
@@ -211,6 +211,8 @@ public class Configuration extends Property implements Serializable {
     public static final String PARAM_DOWNLOAD_MAX_CHUNKS = "DOWNLOAD_MAX_CHUNKS";
 
     public static final String PARAM_USE_GLOBAL_PREMIUM = "USE_PREMIUM";
+
+    public static final String PARAM_DO_CRC = "DO_CRC";
 
    
 

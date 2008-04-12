@@ -12,7 +12,7 @@
 //    GNU General Public License for more details.
 //
 //    You should have received a copy of the GNU General Public License
-//    along with this program.  If not, see <http://wnu.org/licenses/>.
+//    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package jd.plugins.download;
 
@@ -76,6 +76,7 @@ abstract public class DownloadInterface {
     public static final int ERROR_LOCAL_IO = 106;
 
     public static final int ERROR_NIBBLE_LIMIT_REACHED = 107;
+    public static final int ERROR_CRC = 108;
 
     protected DownloadLink downloadLink;
 
@@ -157,6 +158,10 @@ abstract public class DownloadInterface {
 
     protected void writeBytes(Chunk chunk) {
         writeChunkBytes(chunk);
+        if (maxBytes > 0 && getChunkNum() == 1 && this.totaleLinkBytesLoaded >= maxBytes) {
+            error(ERROR_NIBBLE_LIMIT_REACHED);
+        }
+        if (chunk.getID() >= 0) downloadLink.getChunksProgress()[chunk.getID()] = (int) chunk.getCurrentBytesPosition()-1;
 
         // 152857135
         // logger.info("Bytes " + totalLoadedBytes);
@@ -408,6 +413,14 @@ abstract public class DownloadInterface {
             downloadLink.setStatusText(String.format(JDLocale.L("download.error.message.nibble", "Nibbling aborted after %s bytes"), "" + this.maxBytes));
             return false;
         }
+        if (errors.contains(ERROR_CRC)) {
+            plugin.getCurrentStep().setStatus(PluginStep.STATUS_ERROR);
+            downloadLink.setStatus(DownloadLink.STATUS_ERROR_PLUGIN_SPECIFIC);
+            //downloadLink.setEnabled(false);
+            downloadLink.setStatusText(JDLocale.L("download.error.message.crc", "Falsche Checksum"));
+            return false;
+        }
+        
         if (exceptions != null) {
             plugin.getCurrentStep().setStatus(PluginStep.STATUS_ERROR);
             downloadLink.setStatus(DownloadLink.STATUS_ERROR_PLUGIN_SPECIFIC);
@@ -1042,6 +1055,11 @@ abstract public class DownloadInterface {
                     endByte = connection.getContentLength() - 1;
                     logger.finer("Endbyte set to " + endByte);
                 }
+            }
+            if (endByte <= 0) {
+
+                endByte = connection.getContentLength() - 1;
+                logger.finer("Endbyte set to " + endByte);
             }
 
             if (plugin.aborted || downloadLink.isAborted()) {

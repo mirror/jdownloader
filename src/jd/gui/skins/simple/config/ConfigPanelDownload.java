@@ -12,7 +12,7 @@
 //    GNU General Public License for more details.
 //
 //    You should have received a copy of the GNU General Public License
-//    along with this program.  If not, see <http://wnu.org/licenses/>.
+//    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package jd.gui.skins.simple.config;
 
@@ -56,6 +56,7 @@ public class ConfigPanelDownload extends ConfigPanel {
     }
 
     public void initPanel() {
+        ConfigEntry conditionEntry;
         config = JDUtilities.getSubConfig("DOWNLOAD");
         ConfigEntry ce;
         ce = new ConfigEntry(ConfigContainer.TYPE_BROWSEFOLDER, JDUtilities.getConfiguration(), Configuration.PARAM_DOWNLOAD_DIRECTORY, JDLocale.L("gui.config.general.downloadDirectory", "Downloadverzeichnis")).setDefaultValue(JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath());
@@ -84,10 +85,12 @@ public class ConfigPanelDownload extends ConfigPanel {
         ce = new ConfigEntry(ConfigContainer.TYPE_SPINNER, config, Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, JDLocale.L("gui.config.download.chunks", "Anzahl der Verbindungen/Datei(Chunkload)"), 1, 20);
         ce.setDefaultValue(3);
         ce.setStep(1);
+        conditionEntry=ce;
         addGUIConfigEntry(new GUIConfigEntry(ce));
 
         ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, config, "PARAM_DOWNLOAD_AUTO_CORRECTCHUNKS", JDLocale.L("gui.config.download.autochunks", "Chunks an Dateigröße anpassen."));
         ce.setDefaultValue(true);
+        ce.setEnabledCondidtion(conditionEntry, ">", 1);
         ce.setExpertEntry(true);
         addGUIConfigEntry(new GUIConfigEntry(ce));
         // ce= new GUIConfigEntry( new ConfigEntry(ConfigContainer.TYPE_SPINNER,
@@ -101,17 +104,20 @@ public class ConfigPanelDownload extends ConfigPanel {
         ce = new ConfigEntry(ConfigContainer.TYPE_SEPARATOR);
 
         addGUIConfigEntry(new GUIConfigEntry(ce));
-
-        ce = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, config, Configuration.PARAM_GLOBAL_IP_CHECK_SITE, JDLocale.L("gui.config.download.ipcheck.website", "IP prüfen über (Website)"));
-        ce.setDefaultValue("http://checkip.dyndns.org");
-        ce.setExpertEntry(true);
-        addGUIConfigEntry(new GUIConfigEntry(ce));
-        ce = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, config, Configuration.PARAM_GLOBAL_IP_PATTERN, JDLocale.L("gui.config.download.ipcheck.regex", "RegEx zum filtern der IP"));
-        ce.setDefaultValue("Address\\: ([0-9.]*)\\<\\/body\\>");
-        ce.setExpertEntry(true);
         addGUIConfigEntry(new GUIConfigEntry(ce));
         ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, config, Configuration.PARAM_GLOBAL_IP_DISABLE, JDLocale.L("gui.config.download.ipcheck.disable", "IP Überprüfung deaktivieren"));
         ce.setDefaultValue(false);
+        ce.setExpertEntry(true);
+        conditionEntry=ce;
+        addGUIConfigEntry(new GUIConfigEntry(ce));
+        ce = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, config, Configuration.PARAM_GLOBAL_IP_CHECK_SITE, JDLocale.L("gui.config.download.ipcheck.website", "IP prüfen über (Website)"));
+        ce.setDefaultValue("http://checkip.dyndns.org");
+        ce.setExpertEntry(true);
+        ce.setEnabledCondidtion(conditionEntry, "==", false);
+        addGUIConfigEntry(new GUIConfigEntry(ce));
+        ce = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, config, Configuration.PARAM_GLOBAL_IP_PATTERN, JDLocale.L("gui.config.download.ipcheck.regex", "RegEx zum filtern der IP"));
+        ce.setDefaultValue("Address\\: ([0-9.]*)\\<\\/body\\>");
+        ce.setEnabledCondidtion(conditionEntry, "==", false);
         ce.setExpertEntry(true);
         addGUIConfigEntry(new GUIConfigEntry(ce));
         ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME), SimpleGUI.PARAM_START_DOWNLOADS_AFTER_START, JDLocale.L("gui.config.download.startDownloadsOnStartUp", "Download beim Programmstart beginnen"));
@@ -121,7 +127,10 @@ public class ConfigPanelDownload extends ConfigPanel {
         ce.setDefaultValue(JDLocale.L("system.download.triggerfileexists.skip", "Link überspringen"));
         ce.setExpertEntry(false);
         addGUIConfigEntry(new GUIConfigEntry(ce));
-
+        ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, config, Configuration.PARAM_DO_CRC, JDLocale.L("gui.config.download.crc", "SFV/CRC Check wenn möglich durchführen"));
+        ce.setDefaultValue(false);
+        ce.setExpertEntry(true);
+        addGUIConfigEntry(new GUIConfigEntry(ce));
         add(panel, BorderLayout.NORTH);
     }
 

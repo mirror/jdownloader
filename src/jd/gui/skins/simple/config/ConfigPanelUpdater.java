@@ -12,7 +12,7 @@
 //    GNU General Public License for more details.
 //
 //    You should have received a copy of the GNU General Public License
-//    along with this program.  If not, see <http://wnu.org/licenses/>.
+//    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
 package jd.gui.skins.simple.config;
@@ -67,10 +67,11 @@ public ConfigPanelUpdater(Configuration configuration, UIInterface uiinterface){
         GUIConfigEntry ce;
 //      ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, configuration, Configuration.PARAM_WEBUPDATE_LOAD_ALL_TOOLS, JDLocale.L("gui.config.general.webupdate.osFilter", "Webupdate: Alle Erweiterungen aktualisieren (auch OS-fremde)")).setDefaultValue(false).setExpertEntry(true));
 //      addGUIConfigEntry(ce);
-        ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, configuration, Configuration.PARAM_WEBUPDATE_DISABLE, JDLocale.L("gui.config.general.webupdate.disable", "Update nur manuell durchführen")).setDefaultValue(false).setExpertEntry(true));
+       ConfigEntry conditionEntry;
+        ce = new GUIConfigEntry(conditionEntry=new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, configuration, Configuration.PARAM_WEBUPDATE_DISABLE, JDLocale.L("gui.config.general.webupdate.disable", "Update nur manuell durchführen")).setDefaultValue(false).setExpertEntry(true));
         addGUIConfigEntry(ce);
         
-      ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, configuration, Configuration.PARAM_WEBUPDATE_AUTO_RESTART, JDLocale.L("gui.config.general.webupdate.auto", "automatisch, ohne Nachfrage ausführen")).setDefaultValue(false).setExpertEntry(true));
+      ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, configuration, Configuration.PARAM_WEBUPDATE_AUTO_RESTART, JDLocale.L("gui.config.general.webupdate.auto", "automatisch, ohne Nachfrage ausführen")).setDefaultValue(false).setExpertEntry(true).setEnabledCondidtion(conditionEntry, "==", false));
       addGUIConfigEntry(ce);
         
       ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, config, "WEBUPDATE_BETA", JDLocale.L("gui.config.general.webupdate.beta", "Auf Betaversion aktualisieren(Neustart nötig)")).setDefaultValue(false));

@@ -12,18 +12,21 @@
 //    GNU General Public License for more details.
 //
 //    You should have received a copy of the GNU General Public License
-//    along with this program.  If not, see <http://wnu.org/licenses/>.
-
+//    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package jd.config;
 
 import java.awt.event.ActionListener;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 import java.io.Serializable;
+import java.util.Iterator;
+import java.util.Vector;
 import java.util.logging.Logger;
 
 import jd.utils.JDUtilities;
 
-public class ConfigEntry implements Serializable {
+public class ConfigEntry implements Serializable, PropertyChangeListener {
 
     /**
      * serialVersionUID
@@ -32,39 +35,55 @@ public class ConfigEntry implements Serializable {
 
     @SuppressWarnings("unused")
     private static Logger logger = JDUtilities.getLogger();
-    private int              type;
+    private int type;
 
-    private String           label;
-    private ActionListener   actionListener;
-    private String           propertyName;
-    private Property         propertyInstance;
-    private Object[]         list;
-    private Object           defaultValue;
-    private int              step   = 1;
-    private int              start;
-    private int              end;
+    private String label;
+    private ActionListener actionListener;
+    private String propertyName;
+    private Property propertyInstance;
+    private Object[] list;
+    private Object defaultValue;
+    private int step = 1;
+    private int start;
+    private int end;
 
-    private boolean enabled=true;
+    private boolean enabled = true;
 
-    private boolean expertEntry =false;
+    private boolean expertEntry = false;
 
     private String instantHelp;
 
     private ConfigContainer container;
 
+    private ConfigEntry conditionEntry;
+
+    private String compareOperator;
+
+    private Object conditionValue;
+
+    private Object newValue;
+
+    private Vector<ConfigEntry> listener = new Vector<ConfigEntry>();
+
+    private PropertyChangeListener guiListener;;
+
     /**
      * Konstruktor für z.B. Buttons (Label+ Actionlistener)
      * 
-     * @param type Typ ID (ConfigContainer.TYPE_*)
-     * @param listener Actionlistener. Actionlistener werden z.B. von Buttons
+     * @param type
+     *            Typ ID (ConfigContainer.TYPE_*)
+     * @param listener
+     *            Actionlistener. Actionlistener werden z.B. von Buttons
      *            unterstützt
-     * @param label Label für die Komponente
+     * @param label
+     *            Label für die Komponente
      */
     public ConfigEntry(int type, ActionListener listener, String label) {
+
         this.type = type;
         this.label = label;
         this.actionListener = listener;
-        enabled=true;
+        enabled = true;
     }
 
     /**
@@ -76,62 +95,71 @@ public class ConfigEntry implements Serializable {
     public ConfigEntry(int type, String label) {
         this.type = type;
         this.label = label;
-        enabled=true;
+        enabled = true;
     }
-    
-    
+
     public ConfigEntry(int type, ConfigContainer premiumConfig) {
-        this.type=type;
-        this.container=premiumConfig;
-        enabled=true;
+        this.type = type;
+        this.container = premiumConfig;
+        enabled = true;
     }
+
     /**
      * Konstruktor für z.B. einen Link (label& url
      * 
+     * 
+     * public ConfigEntry(int type, String label, String link) {
+     */
 
     public ConfigEntry(int type, String label, String link) {
-     */
-    
-    public ConfigEntry(int type,String label, String link) {
         this.type = type;
-        this.propertyName = link;     
+        this.propertyName = link;
         this.label = label;
-        enabled=true;
+        enabled = true;
     }
+
     /**
      * Konstruktor für z.B. ein Textfeld (label& ein eingabefeld
      * 
-     * @param type TYP ID
-     * @param propertyInstance EINE Instanz die von der propertyklasse
-     *            abgeleitet wurde. mit hilfe von propertyName werden
-     *            Informationen aus ihr gelesen und wieder in ihr abgelegt
-     * @param propertyName propertyname über den auf einen wert in der
-     *            propertyInstanz zugegriffen wird
-     * @param label angezeigtes label
+     * @param type
+     *            TYP ID
+     * @param propertyInstance
+     *            EINE Instanz die von der propertyklasse abgeleitet wurde. mit
+     *            hilfe von propertyName werden Informationen aus ihr gelesen
+     *            und wieder in ihr abgelegt
+     * @param propertyName
+     *            propertyname über den auf einen wert in der propertyInstanz
+     *            zugegriffen wird
+     * @param label
+     *            angezeigtes label
      */
     public ConfigEntry(int type, Property propertyInstance, String propertyName, String label) {
         this.type = type;
         this.propertyName = propertyName;
         this.propertyInstance = propertyInstance;
         this.label = label;
-        enabled=true;
+        enabled = true;
     }
 
-    public ConfigEntry setEnabled(boolean value){
-        this.enabled=value;
+    public ConfigEntry setEnabled(boolean value) {
+        this.enabled = value;
         return this;
     }
+
     /**
-     * Konstruktor z.B. für Combobox oder radiofield ( mehrere werte(list),
-     * eine auswahl (property)
+     * Konstruktor z.B. für Combobox oder radiofield ( mehrere werte(list), eine
+     * auswahl (property)
      * 
      * @param type
-     * @param propertyInstance EINE INstanz die von der propertyklasse
-     *            abgeleitet wurde. mit hilfe von propertyName werden
-     *            Informationen aus ihr gelesen und wieder in ihr abgelegt
-     * @param propertyName propertyname über den auf einen wert in der
-     *            propertyInstanz zugegriffen wird
-     * @param list Liste mit allen werten aus denen ausgewählt werden kann
+     * @param propertyInstance
+     *            EINE INstanz die von der propertyklasse abgeleitet wurde. mit
+     *            hilfe von propertyName werden Informationen aus ihr gelesen
+     *            und wieder in ihr abgelegt
+     * @param propertyName
+     *            propertyname über den auf einen wert in der propertyInstanz
+     *            zugegriffen wird
+     * @param list
+     *            Liste mit allen werten aus denen ausgewählt werden kann
      * @param label
      */
     public ConfigEntry(int type, Property propertyInstance, String propertyName, Object[] list, String label) {
@@ -147,14 +175,18 @@ public class ConfigEntry implements Serializable {
      * Konstruktor z.B. für einen JSpinner (property, label, range (start/end)
      * 
      * @param type
-     * @param propertyInstance EINE INstanz die von der propertyklasse
-     *            abgeleitet wurde. mit hilfe von propertyName werden
-     *            Informationen aus ihr gelesen und wieder in ihr abgelegt
-     * @param propertyName propertyname über den auf einen wert in der
-     *            propertyInstanz zugegriffen wird
+     * @param propertyInstance
+     *            EINE INstanz die von der propertyklasse abgeleitet wurde. mit
+     *            hilfe von propertyName werden Informationen aus ihr gelesen
+     *            und wieder in ihr abgelegt
+     * @param propertyName
+     *            propertyname über den auf einen wert in der propertyInstanz
+     *            zugegriffen wird
      * @param label
-     * @param start Range-start
-     * @param end range-ende
+     * @param start
+     *            Range-start
+     * @param end
+     *            range-ende
      */
     public ConfigEntry(int type, Property propertyInstance, String propertyName, String label, int start, int end) {
         this.type = type;
@@ -175,8 +207,6 @@ public class ConfigEntry implements Serializable {
         this.type = type;
     }
 
-
-
     /**
      * Gibt den Typ zurück
      * 
@@ -190,11 +220,11 @@ public class ConfigEntry implements Serializable {
         this.type = type;
         return this;
     }
-    
+
     public String getLabel() {
         return label;
     }
-    
+
     public ConfigEntry setLabel(String label) {
         this.label = label;
         return this;
@@ -294,12 +324,12 @@ public class ConfigEntry implements Serializable {
     }
 
     public boolean isEnabled() {
-     
+
         return enabled;
     }
 
     public ConfigEntry setExpertEntry(boolean b) {
-        this.expertEntry =b;
+        this.expertEntry = b;
         return this;
     }
 
@@ -308,9 +338,9 @@ public class ConfigEntry implements Serializable {
     }
 
     public ConfigEntry setInstantHelp(String l) {
-        this.instantHelp=l;
+        this.instantHelp = l;
         return this;
-        
+
     }
 
     public String getInstantHelp() {
@@ -323,6 +353,115 @@ public class ConfigEntry implements Serializable {
 
     public void setContainer(ConfigContainer container) {
         this.container = container;
+    }
+
+    public ConfigEntry setEnabledCondidtion(ConfigEntry old, String comp, Object value) {
+        setConditionEntry(old);
+        setCompareOperator(comp);
+        setConditionValue(value);
+        return this;
+
+    }
+
+    public ConfigEntry getConditionEntry() {
+        return conditionEntry;
+    }
+
+    public void setConditionEntry(ConfigEntry conditionEntry) {
+        this.conditionEntry = conditionEntry;
+        conditionEntry.addConditionListener(this);
+    }
+
+    private void addConditionListener(ConfigEntry configEntry) {
+        if (configEntry != null) {
+            this.listener.add(configEntry);
+
+        }
+
+    }
+
+    public String getCompareOperator() {
+        return compareOperator;
+    }
+
+    public void setCompareOperator(String compareOperator) {
+        this.compareOperator = compareOperator;
+    }
+
+    public Object getConditionValue() {
+        return conditionValue;
+    }
+
+    public void setConditionValue(Object conditionValue) {
+        this.conditionValue = conditionValue;
+    }
+
+    public Vector<ConfigEntry> getListener() {
+        return listener;
+    }
+
+    public void propertyChange(PropertyChangeEvent evt) {
+
+    }
+
+    public void valueChanged(Object newValue) {
+        ConfigEntry next;
+        for (Iterator<ConfigEntry> it = listener.iterator(); it.hasNext();) {
+            next = it.next();
+            if (next.getGuiListener() != null) next.getGuiListener().propertyChange(new PropertyChangeEvent(this, this.getPropertyName(), null, newValue));
+        }
+    }
+
+    public void setGuiListener(PropertyChangeListener gce) {
+        this.guiListener = gce;
+
+    }
+
+    public PropertyChangeListener getGuiListener() {
+        return guiListener;
+    }
+
+    @SuppressWarnings("unchecked")
+    public boolean isConditionalEnabled(PropertyChangeEvent evt) {
+        if (evt.getSource() == conditionEntry) {
+            if (compareOperator.equals("<")) {
+                if (conditionValue instanceof Comparable) {
+                    return ((Comparable) evt.getNewValue()).compareTo((Comparable) conditionValue) < 0;
+                } else if (conditionValue instanceof Integer) {
+                    return (Integer) conditionValue < (Integer) evt.getNewValue();
+                } else {
+                    return true;
+                }
+
+            } else if (compareOperator.equals(">")) {
+                if (conditionValue instanceof Comparable) {
+                    return ((Comparable) evt.getNewValue()).compareTo((Comparable) conditionValue) > 0;
+                } else if (conditionValue instanceof Integer) {
+                    return (Integer) conditionValue > (Integer) evt.getNewValue();
+                } else {
+                    return true;
+                }
+            } else if (compareOperator.equals("!=")) {
+                if (conditionValue instanceof Comparable) {
+                    return ((Comparable) evt.getNewValue()).compareTo((Comparable) conditionValue) != 0;
+                } else if (conditionValue instanceof Integer) {
+                    return !((Integer) conditionValue).equals((Integer) evt.getNewValue());
+                } else {
+                    return true;
+                }
+            } else {
+                if (conditionValue instanceof Comparable) {
+                    return ((Comparable) evt.getNewValue()).compareTo((Comparable) conditionValue) == 0;
+                } else if (conditionValue instanceof Integer) {
+                    return ((Integer) conditionValue).equals((Integer) evt.getNewValue());
+                } else {
+                    return true;
+                }
+
+            }
+
+        }
+        return true;
     }
 
 }

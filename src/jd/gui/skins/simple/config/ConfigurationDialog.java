@@ -12,7 +12,7 @@
 //    GNU General Public License for more details.
 //
 //    You should have received a copy of the GNU General Public License
-//    along with this program.  If not, see <http://wnu.org/licenses/>.
+//    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package jd.gui.skins.simple.config;
 
@@ -59,39 +59,39 @@ public class ConfigurationDialog extends JFrame implements ActionListener, Chang
     /**
      * serialVersionUID
      */
-    private static final long          serialVersionUID = 4046836223202290819L;
+    private static final long serialVersionUID = 4046836223202290819L;
 
-    private Configuration              configuration;
+    private Configuration configuration;
 
-    private JTabbedPane                tabbedPane;
+    private JTabbedPane tabbedPane;
 
-    private static ConfigurationDialog CURRENTDIALOG    = null;
+    private static ConfigurationDialog CURRENTDIALOG = null;
 
-    private JButton                    btnSave;
+    private JButton btnSave;
 
-    private JButton                    btnCancel;
+    private JButton btnCancel;
 
-    private boolean                    configChanged    = false;
+    private boolean configChanged = false;
 
     @SuppressWarnings("unused")
-    private UIInterface                uiinterface;
+    private UIInterface uiinterface;
 
-    private Vector<ConfigPanel>        configPanels     = new Vector<ConfigPanel>();
+    private Vector<ConfigPanel> configPanels = new Vector<ConfigPanel>();
 
-    public static ConfigurationDialog  DIALOG;
+    public static ConfigurationDialog DIALOG;
 
-    public static Frame                PARENTFRAME      = null;
+    public static Frame PARENTFRAME = null;
 
-    private JCheckBox                  chbExpert;
+    private JCheckBox chbExpert;
 
     @SuppressWarnings("unchecked")
-    private Vector<Class>              configClasses    = new Vector<Class>();
+    private Vector<Class> configClasses = new Vector<Class>();
 
-    private Vector<JPanel>             containerPanels  = new Vector<JPanel>();
+    private Vector<JPanel> containerPanels = new Vector<JPanel>();
 
-    private SubConfiguration           guiConfig;
+    private SubConfiguration guiConfig;
 
-    private JButton                    btnRestart;
+    private JButton btnRestart;
 
     private ConfigurationDialog(JFrame parent, UIInterface uiinterface) {
         // super(parent);
@@ -106,13 +106,12 @@ public class ConfigurationDialog extends JFrame implements ActionListener, Chang
         configuration = JDUtilities.getConfiguration();
         tabbedPane = new JTabbedPane();
         tabbedPane.setComponentOrientation(ComponentOrientation.LEFT_TO_RIGHT);
-   
+
         tabbedPane.setTabLayoutPolicy(JTabbedPane.SCROLL_TAB_LAYOUT);
         tabbedPane.setTabPlacement(JTabbedPane.LEFT);
-     if( System.getProperty("os.name").toLowerCase().indexOf("mac")>=0){
-         tabbedPane.setTabPlacement(JTabbedPane.TOP);
+        if (System.getProperty("os.name").toLowerCase().indexOf("mac") >= 0) {
+            tabbedPane.setTabPlacement(JTabbedPane.TOP);
         }
-        tabbedPane.addChangeListener(this);
 
         this.addConfigPanel(ConfigPanelGeneral.class, JDTheme.V("gui.images.config.home"), JDLocale.L("gui.config.tabLables.general", "General settings"));
         this.addConfigPanel(ConfigPanelDownload.class, JDTheme.V("gui.images.config.network_local"), JDLocale.L("gui.config.tabLables.download", "Download/Network settings"));
@@ -164,28 +163,31 @@ public class ConfigurationDialog extends JFrame implements ActionListener, Chang
         // GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE,
         // GridBagConstraints.REMAINDER, 1, 0, 0, null, GridBagConstraints.NONE,
         // GridBagConstraints.EAST);
+        JDUtilities.getLogger().info("" + JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).getIntegerProperty(SimpleGUI.SELECTED_CONFIG_TAB, 0));
+        tabbedPane.addChangeListener(this);
+        if (JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).getIntegerProperty(SimpleGUI.SELECTED_CONFIG_TAB, 0) == 0) {
+            paintPanel(0);
+        } else {
+            tabbedPane.setSelectedIndex(JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).getIntegerProperty(SimpleGUI.SELECTED_CONFIG_TAB, 0));
+        } // paintPanel();
 
-        paintPanel(0);
         pack();
 
-        
-        
         LocationListener list = new LocationListener();
-       this.addComponentListener(list);
+        this.addComponentListener(list);
         this.addWindowListener(list);
         pack();
         this.validate();
         this.setVisible(true);
         SimpleGUI.restoreWindow(parent, null, this);
-        
-    
+
     }
 
     @SuppressWarnings("unchecked")
     private void paintPanel(int i) {
 
         if (i < configPanels.size() && configPanels.get(i) != null) {
-            return;
+            i = 0;
         }
         Class class1 = configClasses.get(i);
         ConfigPanel panel = initSubPanel(class1);
@@ -239,12 +241,10 @@ public class ConfigurationDialog extends JFrame implements ActionListener, Chang
      * @return
      */
     public static boolean showConfig(final JFrame frame, final UIInterface uiinterface) {
-        if (CURRENTDIALOG != null &&CURRENTDIALOG.isVisible()) return false;
-
+        if (CURRENTDIALOG != null && CURRENTDIALOG.isVisible()) return false;
 
         CURRENTDIALOG = new ConfigurationDialog(frame, uiinterface);
 
-        
         return true;
     }
 
@@ -265,14 +265,14 @@ public class ConfigurationDialog extends JFrame implements ActionListener, Chang
                 if (configPanels.elementAt(i) != null) configPanels.elementAt(i).save();
             }
             configChanged = true;
-            JDUtilities.setConfiguration(configuration);         
+            JDUtilities.setConfiguration(configuration);
             JDUtilities.saveConfig();
 
         }
         if (e.getSource() == this.chbExpert) {
             guiConfig.setProperty(SimpleGUI.PARAM_USE_EXPERT_VIEW, chbExpert.isSelected());
             JDUtilities.saveConfig();
-          
+
         }
 
         this.dispose();
@@ -283,7 +283,9 @@ public class ConfigurationDialog extends JFrame implements ActionListener, Chang
     public void stateChanged(ChangeEvent e) {
 
         int index = tabbedPane.getSelectedIndex();
+        JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).setProperty(SimpleGUI.SELECTED_CONFIG_TAB, index);
         paintPanel(index);
+        JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).save();
         validate();
         // pack();
 

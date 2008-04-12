@@ -12,7 +12,7 @@
 //    GNU General Public License for more details.
 //
 //    You should have received a copy of the GNU General Public License
-//    along with this program.  If not, see <http://wnu.org/licenses/>.
+//    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
 package jd.utils;
@@ -77,6 +77,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.zip.CRC32;
+import java.util.zip.CheckedInputStream;
 
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
@@ -91,8 +93,6 @@ import jd.JDFileFilter;
 import jd.captcha.JAntiCaptcha;
 import jd.captcha.LetterComperator;
 import jd.captcha.pixelgrid.Captcha;
-import jd.captcha.pixelgrid.Letter;
-import jd.captcha.pixelobject.PixelObject;
 import jd.config.Configuration;
 import jd.config.SubConfiguration;
 import jd.controlling.JDController;
@@ -1915,7 +1915,38 @@ public class JDUtilities {
             return 0;
         }
     }
+    public static long getCRC(File file) {
 
+        try {
+
+            CheckedInputStream cis = null;
+            long fileSize = 0;
+            try {
+                // Computer CRC32 checksum
+                cis = new CheckedInputStream(
+                        new FileInputStream(file), new CRC32());
+
+                fileSize = file.length();
+               
+            } catch (FileNotFoundException e) {
+                e.printStackTrace();
+                return 0;
+            }
+
+            byte[] buf = new byte[128];
+            while(cis.read(buf) >= 0) {
+            }
+
+            long checksum = cis.getChecksum().getValue();
+            return checksum;
+
+        } catch (IOException e) {
+            e.printStackTrace();
+            return 0;
+        }
+
+
+    }
     /**
      * Filtert alle nicht lesbaren zeichen aus str
      * 
