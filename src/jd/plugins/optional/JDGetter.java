@@ -146,15 +146,10 @@ public class JDGetter extends PluginOptional {
 
     @Override
     public void actionPerformed(ActionEvent e) {
-        System.out.println(e.getActionCommand());
     }
 
     @Override
     public ArrayList<String> createMenuitems() {
-        ArrayList<String> k = new ArrayList<String>();
-        k.add("test1");
-        k.add("test2");
-        k.add("test3");
-        return k;
+        return null;
     }
 }
