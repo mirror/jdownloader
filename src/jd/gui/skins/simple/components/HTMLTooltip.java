@@ -73,7 +73,7 @@ public class HTMLTooltip extends JWindow implements MouseListener,HyperlinkListe
             
        }
        sb.append("</style>");
-       JDUtilities.getLogger().info(sb.toString());
+      
        return sb.toString();
    }
     public void setText(String text){

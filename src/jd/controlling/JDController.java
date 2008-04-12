@@ -1,18 +1,18 @@
-//    jDownloader - Downloadmanager
-//    Copyright (C) 2008  JD-Team jdownloader@freenet.de
+//jDownloader - Downloadmanager
+//Copyright (C) 2008JD-Team jdownloader@freenet.de
 //
-//    This program is free software: you can redistribute it and/or modify
-//    it under the terms of the GNU General Public License as published by
-//    the Free Software Foundation, either version 3 of the License, or
-//    (at your option) any later version.
+//This program is free software: you can redistribute it and/or modify
+//it under the terms of the GNU General Public License as published by
+//the Free Software Foundation, either version 3 of the License, or
+//(at your option) any later version.
 //
-//    This program  is distributed in the hope that it will be useful,
-//    but WITHOUT ANY WARRANTY; without even the implied warranty of
-//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSSee the
-//    GNU General Public License for more details.
+//This programis distributed in the hope that it will be useful,
+//but WITHOUT ANY WARRANTY; without even the implied warranty of
+//MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+//GNU General Public License for more details.
 //
-//    You should have received a copy of the GNU General Public License
-//    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+//You should have received a copy of the GNU General Public License
+//along with this program.If not, see <http://www.gnu.org/licenses/>.
 
 package jd.controlling;
 
@@ -23,6 +23,7 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Vector;
 import java.util.logging.Logger;
@@ -234,7 +235,7 @@ public class JDController implements ControlListener, UIListener {
             if (!(event.getSource() instanceof PluginForHost)) return;
             lastDownloadFinished = ((SingleDownloadController) event.getParameter()).getDownloadLink();
             this.addToFinished(lastDownloadFinished);
-          
+
             // Prüfen ob das Paket fertig ist
             if (lastDownloadFinished.getFilePackage().getRemainingLinks() == 0) {
                 Interaction.handleInteraction(Interaction.INTERACTION_DOWNLOAD_PACKAGE_FINISHED, this);
@@ -394,7 +395,7 @@ public class JDController implements ControlListener, UIListener {
                 e.printStackTrace();
                 return;
             }
-fp.sort("asc");
+            fp.sort("asc");
             this.addPackage(fp);
             this.fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_LINKLIST_STRUCTURE_CHANGED, null));
 
@@ -473,13 +474,13 @@ fp.sort("asc");
     public boolean movePackage(FilePackage fp, int index) {
         if (index < 0) index = 0;
         if (index > packages.size() - 1) index = packages.size() - 1;
-        int i=packages.indexOf(fp);
-        if (i ==index) {
-           return false;
-        }else if(i>index){
+        int i = packages.indexOf(fp);
+        if (i == index) {
+            return false;
+        } else if (i > index) {
             index--;
             this.removePackage(fp);
-        }else{
+        } else {
             this.removePackage(fp);
         }
         this.addPackageAt(fp, index);
@@ -490,7 +491,7 @@ fp.sort("asc");
         synchronized (packages) {
             return packages.remove(fp2);
         }
-        
+
     }
 
     // Dies Funktion macht um package basiertem design wenig Sinn
@@ -820,78 +821,8 @@ fp.sort("asc");
         try {
             if (file.exists()) {
                 Object obj = JDUtilities.loadObject(null, file, Configuration.saveAsXML);
-                // if (obj != null && obj instanceof Vector
-                // &&((Vector)obj).size()>0
-                // &&((Vector)obj).get(0) instanceof DownloadLink) {
-                // Vector<DownloadLink> links = (Vector<DownloadLink>) obj;
-                // Iterator<DownloadLink> iterator = links.iterator();
-                // DownloadLink localLink;
-                // PluginForHost pluginForHost = null;
-                // PluginForContainer pluginForContainer = null;
-                // while (iterator.hasNext()) {
-                // localLink = iterator.next();
-                // if (localLink.getStatus() == DownloadLink.STATUS_DONE &&
-                // Configuration.FINISHED_DOWNLOADS_REMOVE_AT_START.equals(JDUtilities.getConfiguration().getProperty(Configuration.PARAM_FINISHED_DOWNLOADS_ACTION)))
-                // {
-                // iterator.remove();
-                // continue;
-                // }
-                // // Anhand des Hostnamens aus dem DownloadLink wird ein
-                // // passendes Plugin gesucht
-                // try {
-                // pluginForHost =
-                // JDUtilities.getPluginForHost(localLink.getHost()).getClass().newInstance();
-                // }
-                // catch (InstantiationException e) {
-                // e.printStackTrace();
-                // }
-                // catch (IllegalAccessException e) {
-                // e.printStackTrace();
-                // }
-                // catch (NullPointerException e) {
-                // e.printStackTrace();
-                // }
-                // // Gibt es einen Names für ein Containerformat, wird ein
-                // // passendes Plugin gesucht
-                // try {
-                // if (localLink.getContainer() != null) {
-                // pluginForContainer =
-                // JDUtilities.getPluginForContainer(localLink.getContainer(),
-                // localLink.getContainerFile());
-                // if (pluginForContainer != null) {
-                // // pluginForContainer =
-                // //
-                // pluginForContainer.getPlugin(localLink.getContainerFile());
-                // // pluginForContainer.
-                // //
-                // pluginForContainer.initContainer(localLink.getContainerFile());
-                // // pluginForContainer.getContainedDownloadlinks();
-                // }
-                // else
-                // localLink.setEnabled(false);
-                // }
-                // }
-                //
-                // catch (NullPointerException e) {
-                // e.printStackTrace();
-                // }
-                // if (pluginForHost != null) {
-                // localLink.setLoadedPlugin(pluginForHost);
-                // pluginForHost.addPluginListener(this);
-                // }
-                // if (pluginForContainer != null) {
-                // localLink.setLoadedPluginForContainer(pluginForContainer);
-                // pluginForContainer.addPluginListener(this);
-                // }
-                // if (pluginForHost == null) {
-                // logger.severe("couldn't find plugin(" + localLink.getHost() +
-                // ") for this
-                // DownloadLink." + localLink.getName());
-                // }
-                // }
-                // return links;
-                // }else
-                if (obj != null && obj instanceof Vector && ((Vector) obj).size() > 0 && ((Vector) obj).get(0) instanceof FilePackage) {
+
+                if (obj != null && obj instanceof Vector && (((Vector) obj).size() == 0 || (((Vector) obj).size() > 0 && ((Vector) obj).get(0) instanceof FilePackage))) {
                     Vector<FilePackage> packages = (Vector<FilePackage>) obj;
                     Iterator<FilePackage> iterator = packages.iterator();
                     DownloadLink localLink;
@@ -1000,7 +931,8 @@ fp.sort("asc");
                     if (links == null || links.size() == 0) {
                         logger.severe("Container Decryption failed (1)");
                     } else {
-                        this.addAllLinks(links);
+                        downloadLinks = links;
+                        break;
                     }
 
                 } catch (Exception e) {
@@ -1011,6 +943,20 @@ fp.sort("asc");
         }
         progress.setStatusText(downloadLinks.size() + " links found");
         if (downloadLinks.size() > 0) {
+            String html = "<style>p { font-size:9px;margin:1px; padding:0px;}div {font-family:Geneva, Arial, Helvetica, sans-serif; width:400px;background-color:#ffffff; padding:2px;}h1 { vertical-align:top; text-align:left;font-size:10px; margin:0px; display:block;font-weight:bold; padding:0px;}</style><div> <div align='center'> <p><img src='http://jdownloader.ath.cx/img/%s.gif'> </p> </div> <h1>%s</h1><hr/> <table width='100%%' border='0' cellspacing='5'> <tr> <td><p>%s</p></td> <td style='width:100%%'><p>%s</p></td> </tr> <tr> <td><p>%s</p></td> <td style='width:100%%'><p>%s</p></td> </tr> <tr> <td><p>%s</p></td> <td style='width:100%%'><p>%s</p></td> </tr> <tr> <td><p>%s</p></td> <td style='width:100%%'><p>%s</p></td> </tr> </table> </div>";
+            String app;
+            String uploader;
+            if (downloadLinks.get(0).getFilePackage().getProperty("header", null) != null) {
+                HashMap<String, String> header = (HashMap<String, String>) downloadLinks.get(0).getFilePackage().getProperty("header", null);
+                uploader = header.get("tribute");
+                app = header.get("generator.app") + " v." + header.get("generator.version") + " (" + header.get("generator.url") + ")";
+            } else {
+                app = "n.A.";
+                uploader = "n.A";
+            }
+            String comment = downloadLinks.get(0).getFilePackage().getComment();
+            String password = downloadLinks.get(0).getFilePackage().getPassword();
+            JDUtilities.getGUI().showHTMLDialog(JDLocale.L("container.message.title", "DownloadLinkContainer loaded"), String.format(html, JDUtilities.getFileExtension(file).toLowerCase(), JDLocale.L("container.message.title", "DownloadLinkContainer loaded"), JDLocale.L("container.message.uploaded", "Brought to you by"), uploader, JDLocale.L("container.message.created", "Created with"), app, JDLocale.L("container.message.comment", "Comment"), comment, JDLocale.L("container.message.password", "Password"), password));
             // schickt die Links zuerst mal zum Linkgrabber
             uiInterface.addLinksToGrabber((Vector<DownloadLink>) downloadLinks);
         }
@@ -1355,7 +1301,7 @@ fp.sort("asc");
                         nextDownloadLink.setStatus(DownloadLink.STATUS_TODO);
                         nextDownloadLink.setStatusText("");
                         nextDownloadLink.reset();
-                      
+
                         al.add(nextDownloadLink);
                     }
 
@@ -1368,7 +1314,7 @@ fp.sort("asc");
     }
 
     public void requestDownloadLinkUpdate(DownloadLink link) {
-       
+
         fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_DOWNLOADLINKS_CHANGED, link));
 
     }

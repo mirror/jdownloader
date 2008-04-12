@@ -6,9 +6,9 @@
 //    the Free Software Foundation, either version 3 of the License, or
 //    (at your option) any later version.
 //
-//    This program  is distributed in the hope that it will be useful,
+//    This program is distributed in the hope that it will be useful,
 //    but WITHOUT ANY WARRANTY; without even the implied warranty of
-//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSSee the
+//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 //    GNU General Public License for more details.
 //
 //    You should have received a copy of the GNU General Public License
@@ -221,7 +221,7 @@ public class RAFDownload extends DownloadInterface {
             if (maxBytes < 0) outputFile.close();
             if (maxBytes < 0) outputChannel.close();
             if (!handleErrors()) {
-
+            
             return; }
             if (!new File(downloadLink.getFileOutput() + ".part").renameTo(new File(downloadLink.getFileOutput()))) {
 

@@ -6,9 +6,9 @@
 //    the Free Software Foundation, either version 3 of the License, or
 //    (at your option) any later version.
 //
-//    This program  is distributed in the hope that it will be useful,
+//    This program is distributed in the hope that it will be useful,
 //    but WITHOUT ANY WARRANTY; without even the implied warranty of
-//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSSee the
+//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 //    GNU General Public License for more details.
 //
 //    You should have received a copy of the GNU General Public License
@@ -112,7 +112,7 @@ abstract public class DownloadInterface {
 
     private int preBytes = 0;
 
-    protected boolean speedDebug = true;
+    protected boolean speedDebug = false;
 
     private Vector<Exception> exceptions = null;
 
@@ -474,7 +474,7 @@ abstract public class DownloadInterface {
             assignChunkSpeeds();
 
         }
-        logger.info("wiat end");
+        
     }
 
     /**
@@ -874,8 +874,8 @@ abstract public class DownloadInterface {
                     channel.read(buffer);
 
                 }
-                logger.finer("loaded Prebytes " + preBytes);
-                logger.finer("Preloading produced " + inputStream.available() + " bytes overhead");
+                if(speedDebug)logger.finer("loaded Prebytes " + preBytes);
+                if(speedDebug) logger.finer("Preloading produced " + inputStream.available() + " bytes overhead");
                 inputStream.close();
                 channel.close();
                 connection.getHTTPURLConnection().disconnect();
@@ -991,7 +991,7 @@ abstract public class DownloadInterface {
             if ((startByte >= endByte && endByte > 0) || startByte >= getFileSize()) {
 
                 // Korrektur Byte
-                logger.finer("correct -1 byte");
+                if(speedDebug) logger.finer("correct -1 byte");
                 addToTotalLinkBytesLoaded(-1);
 
                 return;
@@ -1000,7 +1000,7 @@ abstract public class DownloadInterface {
             if (chunkNum > 1) {
                 if (DownloadInterface.this.getPreBytes(this) > 0) {
                     loadPreBytes();
-                    logger.finer("After prebytes: " + startByte + " - " + endByte);
+                    if(speedDebug)logger.finer("After prebytes: " + startByte + " - " + endByte);
                 }
                 this.connection = copyConnection(connection);
 
@@ -1013,7 +1013,7 @@ abstract public class DownloadInterface {
 
                 if ((startByte+getPreBytes(this))>0 && (connection.getHeaderField("Content-Range") == null || connection.getHeaderField("Content-Range").length() == 0)) {
                     error(ERROR_CHUNKLOAD_FAILED);
-                    logger.severe("ERROR Chunk " + chunks.indexOf(this));
+                    logger.severe("ERROR Chunk (no range header response)" + chunks.indexOf(this));
 
                     return;
 
@@ -1026,7 +1026,7 @@ abstract public class DownloadInterface {
 
                 if (range == null && chunkNum > 1) {
                     error(ERROR_CHUNKLOAD_FAILED);
-                    logger.severe("ERROR Chunk " + chunks.indexOf(this));
+                    logger.severe("ERROR Chunk (range header parse error)" + chunks.indexOf(this)+ connection.getHeaderField("Content-Range")+": "+ connection.getHeaderField("Content-Range"));
 
                     return;
 
@@ -1053,13 +1053,13 @@ abstract public class DownloadInterface {
                 } else if (maxBytes < 0) {
 
                     endByte = connection.getContentLength() - 1;
-                    logger.finer("Endbyte set to " + endByte);
+                    if (speedDebug) logger.finer("Endbyte set to " + endByte);
                 }
             }
             if (endByte <= 0) {
 
                 endByte = connection.getContentLength() - 1;
-                logger.finer("Endbyte set to " + endByte);
+                if (speedDebug) logger.finer("Endbyte set to " + endByte);
             }
 
             if (plugin.aborted || downloadLink.isAborted()) {
@@ -1112,7 +1112,7 @@ abstract public class DownloadInterface {
         private void download() {
             int bufferSize = 1;
 
-            logger.finer("resume Chunk with " + totalPartBytes + "/" + this.getChunkSize() + " at " + getCurrentBytesPosition());
+            if (speedDebug) logger.finer("resume Chunk with " + totalPartBytes + "/" + this.getChunkSize() + " at " + getCurrentBytesPosition());
             try {
                 bufferSize = getBufferSize(getMaximalSpeed());
                 if (bufferSize > endByte - getCurrentBytesPosition() + 1) {
@@ -1207,7 +1207,7 @@ abstract public class DownloadInterface {
 
                     if (getCurrentBytesPosition() > this.endByte) {
 
-                        logger.severe(this.getID() + " OVERLOAD!!! " + (getCurrentBytesPosition() - this.endByte - 1));
+                        if (speedDebug) logger.severe(this.getID() + " OVERLOAD!!! " + (getCurrentBytesPosition() - this.endByte - 1));
                         break;
                     }
 
@@ -1262,7 +1262,7 @@ abstract public class DownloadInterface {
                     inputStream.close();
                     source.close();
 
-                    logger.finer(" incomplete download: bytes loaded: " + getCurrentBytesPosition() + "/" + endByte);
+                    logger.warning(" incomplete download: bytes loaded: " + getCurrentBytesPosition() + "/" + endByte);
                     error(ERROR_CHUNK_INCOMPLETE);
                 }
 

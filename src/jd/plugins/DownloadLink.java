@@ -6,9 +6,9 @@
 //    the Free Software Foundation, either version 3 of the License, or
 //    (at your option) any later version.
 //
-//    This program  is distributed in the hope that it will be useful,
+//    This program is distributed in the hope that it will be useful,
 //    but WITHOUT ANY WARRANTY; without even the implied warranty of
-//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSSee the
+//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 //    GNU General Public License for more details.
 //
 //    You should have received a copy of the GNU General Public License
@@ -728,7 +728,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
         case DownloadLink.STATUS_DONE:
             return JDLocale.L("downloadlink.status.done", "Finished");
         case DownloadLink.STATUS_DOWNLOAD_IN_PROGRESS:
-            return JDLocale.L("downloadlink.status.doenloadInProgress", "Loading");
+            return JDLocale.L("downloadlink.status.downloadInProgress", "Loading");
         case DownloadLink.STATUS_DOWNLOAD_INCOMPLETE:
             return JDLocale.L("downloadlink.status.incomplete", "Incomplete");
         case DownloadLink.STATUS_TODO:

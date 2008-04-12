@@ -9,6 +9,8 @@ import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
+import java.awt.event.WindowEvent;
+import java.awt.event.WindowFocusListener;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -56,7 +58,7 @@ import edu.stanford.ejalbert.BrowserLauncher;
 import edu.stanford.ejalbert.exception.BrowserLaunchingInitializingException;
 import edu.stanford.ejalbert.exception.UnsupportedOperatingSystemException;
 
-public class DownloadTreeTable extends JXTreeTable implements TreeExpansionListener, TreeSelectionListener, MouseListener, ActionListener, MouseMotionListener {
+public class DownloadTreeTable extends JXTreeTable implements WindowFocusListener,TreeExpansionListener, TreeSelectionListener, MouseListener, ActionListener, MouseMotionListener {
     private Logger logger = JDUtilities.getLogger();
 
     public static final String PROPERTY_EXPANDED = "expanded";
@@ -96,9 +98,9 @@ public class DownloadTreeTable extends JXTreeTable implements TreeExpansionListe
         this.setToggleClickCount(1);
         this.setDropMode(DropMode.INSERT_ROWS);
         setAutoResizeMode(JTable.AUTO_RESIZE_LAST_COLUMN);
-        setSelectionMode(ListSelectionModel.SINGLE_INTERVAL_SELECTION);
+        setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
         this.setColumnControlVisible(true);
-        
+        SimpleGUI.CURRENTGUI.getFrame().addWindowFocusListener(this);
        
         this.setEditable(false);
 
@@ -653,7 +655,7 @@ public class DownloadTreeTable extends JXTreeTable implements TreeExpansionListe
             break;
         case TreeTableAction.PACKAGE_SORT:
             fp = (FilePackage) ((TreeTableAction) ((JMenuItem) e.getSource()).getAction()).getProperty().getProperty("package");
-            fp.sort("ASC");
+            fp.sort(null);
             JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_LINKLIST_STRUCTURE_CHANGED, this));
 
             break;
@@ -708,6 +710,7 @@ public class DownloadTreeTable extends JXTreeTable implements TreeExpansionListe
             tooltip.destroy();
             tooltip = null;
         }
+        if(!SimpleGUI.CURRENTGUI.getFrame().isActive())return;
         StringBuffer sb = new StringBuffer();
         sb.append("<div>");
         Object obj = this.getPathForRow(mouseOverRow).getLastPathComponent();
@@ -853,6 +856,19 @@ public class DownloadTreeTable extends JXTreeTable implements TreeExpansionListe
 
     abstract class Caller {
         abstract public void call();
+    }
+
+    public void windowGainedFocus(WindowEvent e) {
+        // TODO Auto-generated method stub
+        
+    }
+
+    public void windowLostFocus(WindowEvent e) {
+        if (tooltip != null) {
+            tooltip.destroy();
+            tooltip = null;
+        }
+        
     }
 
 }
