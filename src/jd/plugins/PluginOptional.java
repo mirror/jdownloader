@@ -18,9 +18,11 @@
 package jd.plugins;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.regex.Pattern;
+import java.awt.event.ActionListener;
 
-public abstract class PluginOptional extends Plugin{
+public abstract class PluginOptional extends Plugin implements ActionListener {
 
     @Override
     public boolean doBotCheck(File file) { return false; }
@@ -39,4 +41,5 @@ public abstract class PluginOptional extends Plugin{
     public abstract String getRequirements();
     public abstract boolean isExecutable();
     public abstract boolean execute();
+    public abstract ArrayList<String> createMenuitems();
 }

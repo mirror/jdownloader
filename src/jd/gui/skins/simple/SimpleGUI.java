@@ -36,7 +36,10 @@ import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Set;
 import java.util.Vector;
 import java.util.logging.Logger;
 
@@ -82,6 +85,7 @@ import jd.gui.skins.simple.config.ConfigurationDialog;
 import jd.gui.skins.simple.config.jdUnrarPasswordListDialog;
 import jd.plugins.DownloadLink;
 import jd.plugins.Plugin;
+import jd.plugins.PluginOptional;
 import jd.utils.JDLocale;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
@@ -483,6 +487,31 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         JMenuItem menPasswordlist = createMenuItem(actionPasswordlist);
         JMenuItem help = createMenuItem(actionHelp);
         // add menus to parents
+        
+        
+        //Adds the menus form the plugins
+        JMenu menPlugins = new JMenu(JDLocale.L("gui.menu.plugins"));
+        HashMap<String, PluginOptional> plugins = JDUtilities.getPluginsOptional();
+        Iterator<String> e = plugins.keySet().iterator();
+        
+        while(e.hasNext()) {
+            PluginOptional helpplugin = plugins.get(e.next());
+            
+            if(helpplugin.createMenuitems() != null) {
+                JMenu helppluginmenu = new JMenu(helpplugin.getPluginName());
+                ArrayList<String> items = helpplugin.createMenuitems();
+                for(int i=0; i<items.size(); i++) {
+                    JMenuItem helppluginitem = new JMenuItem(items.get(i));
+                    helppluginitem.addActionListener(helpplugin);
+                    helppluginmenu.add(helppluginitem);
+                }
+                menPlugins.add(helppluginmenu);
+            }
+        }
+        
+        if(menPlugins.getItemCount() == 0) {
+            menPlugins.add(new JMenuItem(JDLocale.L("gui.menu.plugins.noitems")));
+        }
 
         menFile.add(menFileLoad);
         menFile.add(menFileSave);
@@ -502,6 +531,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         menuBar.add(menEdit);
         menuBar.add(menAction);
         menuBar.add(menExtra);
+        menuBar.add(menPlugins);
         frame.setJMenuBar(menuBar);
     }
 

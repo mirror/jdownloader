@@ -23,12 +23,11 @@ import java.awt.TrayIcon;
 import java.awt.Dimension;
 import java.awt.Point;
 import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseMotionListener;
 import java.awt.event.MouseEvent;
 import java.awt.Color;
-import java.awt.Graphics;
+import java.util.ArrayList;
 
 import javax.swing.JPopupMenu;
 import javax.swing.JWindow;
@@ -51,7 +50,7 @@ import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 import jd.gui.skins.simple.SimpleGUI;
 
-public class JDTrayIcon extends PluginOptional implements ActionListener {
+public class JDTrayIcon extends PluginOptional {
 	private SimpleGUI simplegui = (SimpleGUI)JDUtilities.getGUI();
     private JPopupMenu popupMenu;
     private JWindow trayParent;
@@ -364,7 +363,6 @@ public class JDTrayIcon extends PluginOptional implements ActionListener {
 	}
 	
 	private void showTooltip(final Point p) {
-	   
 		toolparent.setVisible(true);
 		toolparent.toFront();
 		
@@ -464,5 +462,10 @@ public class JDTrayIcon extends PluginOptional implements ActionListener {
             
             hideTooltip();
     	}
+    }
+
+    @Override
+    public ArrayList<String> createMenuitems() {
+        return null;
     }
 }
