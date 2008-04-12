@@ -497,7 +497,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         while(e.hasNext()) {
             PluginOptional helpplugin = plugins.get(e.next());
             
-            if(helpplugin.createMenuitems() != null) {
+            if(helpplugin.createMenuitems() != null && JDUtilities.getConfiguration().getBooleanProperty("OPTIONAL_PLUGIN_" + helpplugin.getPluginName(), false)) {
                 JMenu helppluginmenu = new JMenu(helpplugin.getPluginName());
                 ArrayList<String> items = helpplugin.createMenuitems();
                 for(int i=0; i<items.size(); i++) {
