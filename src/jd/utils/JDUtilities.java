@@ -2064,7 +2064,7 @@ public class JDUtilities {
             logger.addHandler(console);
 
             logger.setLevel(Level.ALL);
-            logger.finer("Init Logger:" + LOGGER_NAME);
+            //logger.finer("Init Logger:" + LOGGER_NAME);
             // Leitet System.out zum Logger um.
             // final PrintStream err = System.err;
             OutputStream os = new OutputStream() {

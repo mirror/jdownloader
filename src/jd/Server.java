@@ -171,6 +171,16 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
                 extractSwitch = false;
                 logger.info(currentArg + " parameter");
                 JDUtilities.getGUI().setGUIStatus(UIInterface.WINDOW_STATUS_FOREGROUND);
+                
+            } else if (currentArg.equals("--reconnect") || currentArg.equals("-r")) {
+
+                addLinksSwitch = false;
+                addContainersSwitch = false;
+                addPasswordsSwitch = false;
+                extractSwitch = false;
+                logger.info(currentArg + " parameter");
+                JDUtilities.getController().requestReconnect();
+                
             } else if (addLinksSwitch && currentArg.charAt(0) != '-') {
 
                 linksToAdd.add(currentArg);
@@ -262,8 +272,25 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
 
     public static void showCmdHelp() {
 
-        String[][] help = new String[][] { { JDUtilities.getJDTitle(), "Coalado|Astaldo|DwD|Botzi|eXecuTe GPLv3" }, { "http://jdownloader.ath.cx/\t\t", "http://www.the-lounge.org/viewforum.php?f=217" + System.getProperty("line.separator") }, { "-h/--help\t", "Show this help message" }, { "-a/--add-link(s)", "Add links" }, { "-c/--add-container(s)", "Add containers" }, { "-p/--add-password(s)", "Add passwords" }, { "-d/--start-download", "Start download" }, { "-D/--stop-download", "Stop download" }, { "-m/--minimize\t", "Minimize download window" }, { "-f/--focus\t", "Get jD to foreground/focus" }, { "-s/--show\t", "Show JAC prepared captchas" }, { "-t/--train\t", "Train a JAC method" }, { "-e/--extract (<sourcePath1> (<sourcePath2...n> <targetPath>)) (-r/--rotate <seconds>)", "" },
-                { "\t\t\tExtract (optional from given directory and optional to given directory) with jD settings (optional periodly)", "" }, { "\t\t", "Example: java -jar JDownloader.jar -e /source/folder -r 60 [extract every minute from /source/folder to /source/folder" }, { "-n --new-instance", "Force new instance if another jD is running" } };
+        String[][] help = new String[][] {
+        		{ JDUtilities.getJDTitle(), "Coalado|Astaldo|DwD|Botzi|eXecuTe GPLv3" },
+        		{ "http://jdownloader.ath.cx/\t\t", "http://www.the-lounge.org/viewforum.php?f=217" + System.getProperty("line.separator") },
+        		{ "-h/--help\t", "Show this help message" },
+        		{ "-a/--add-link(s)", "Add links" },
+        		{ "-c/--add-container(s)", "Add containers" },
+        		{ "-p/--add-password(s)", "Add passwords" },
+        		{ "-d/--start-download", "Start download" },
+        		{ "-D/--stop-download", "Stop download" },
+        		{ "-m/--minimize\t", "Minimize download window" },
+        		{ "-f/--focus\t", "Get jD to foreground/focus" },
+        		{ "-s/--show\t", "Show JAC prepared captchas" },
+        		{ "-t/--train\t", "Train a JAC method" },
+        		{ "-r/--reconnect\t", "Perform a Reconnect" },
+        		{ "-C/--captcha <filepath or url> <method>", "Get code from image using JAntiCaptcha" },
+        		{ "-e/--extract (<sourcePath1> (<sourcePath2...n> <targetPath>)) (-r/--rotate <seconds>)", "" },
+                { "\t\t\tExtract (optional from given directory and optional to given directory) with jD settings (optional periodly)", "" },
+                { "\t\t", "Example: java -jar JDownloader.jar -e /source/folder -r 60 [extract every minute from /source/folder to /source/folder" },
+                { "-n --new-instance", "Force new instance if another jD is running" } };
 
         for (String helpLine[] : help) {
             System.out.println(helpLine[0] + "\t" + helpLine[1]);

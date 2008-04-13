@@ -18,16 +18,19 @@ package jd;
 
 import java.awt.Graphics;
 import java.awt.Image;
+import java.awt.MediaTracker;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
+import java.io.UnsupportedEncodingException;
 import java.net.InetSocketAddress;
 import java.net.MalformedURLException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.URL;
+import java.net.URLDecoder;
 import java.rmi.Naming;
 import java.rmi.RemoteException;
 import java.util.Iterator;
@@ -35,11 +38,15 @@ import java.util.LinkedList;
 import java.util.Properties;
 import java.util.TreeSet;
 import java.util.Vector;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import javax.swing.JFrame;
 import javax.swing.JWindow;
 
 import jd.captcha.JACController;
+import jd.captcha.JAntiCaptcha;
+import jd.captcha.pixelgrid.Captcha;
 import jd.config.Configuration;
 import jd.controlling.JDController;
 import jd.controlling.interaction.Interaction;
@@ -47,6 +54,7 @@ import jd.controlling.interaction.PackageManager;
 import jd.controlling.interaction.Unrar;
 import jd.event.UIEvent;
 import jd.gui.skins.simple.SimpleGUI;
+import jd.plugins.HTTPConnection;
 import jd.plugins.Plugin;
 import jd.unrar.JUnrar;
 import jd.utils.JDLocale;
@@ -62,10 +70,48 @@ public class Main {
     private static Logger logger = JDUtilities.getLogger();
 
     public static void main(String args[]) {
-
-        logger.info(args.toString());
-
+    	
         Boolean newInstance = false;
+        
+        // pre start parameters //
+        for ( int i=0; i<args.length; i++) {
+
+            if (args[i].equals("--new-instance") || args[i].equals("-n")) {
+            	
+                if (Runtime.getRuntime().maxMemory() < 100000000) {
+                    JDUtilities.restartJD(args);
+                }
+
+                logger.info(args[i] + " parameter");
+
+                newInstance = true;
+                break;
+
+            } else if (args[i].equals("--help") || args[i].equals("-h")) {
+
+                Server.showCmdHelp();
+                System.exit(0);
+
+            } else if (args[i].equals("--captcha") || args[i].equals("-c")) {
+            	
+            	if ( args.length > i+2 ) {
+            		
+            		logger.setLevel(Level.OFF);
+            		String captchaValue = Main.getCaptcha(args[i+1], args[i+2]);
+                    System.out.println(""+captchaValue);
+                    System.exit(0);
+            		
+            	} else {
+            		
+            		System.out.println("Error: Please define filepath and JAC method");
+            		System.out.println("Usage: java -jar JDownloader.jar --captcha /path/file.png example.com");
+                    System.exit(0);
+            		
+            	}
+
+            }
+
+        }
 
         // Mac specific //
         if (System.getProperty("os.name").toLowerCase().indexOf("mac") >= 0) {
@@ -81,29 +127,6 @@ public class Main {
 
         JDLocale.setLocale("english");
         logger.info("Class path: " + System.getProperty("java.class.path"));
-
-        // pre start parameters //
-        for (String currentArg : args) {
-
-            if (currentArg.equals("--new-instance") || currentArg.equals("-n")) {
-
-                if (Runtime.getRuntime().maxMemory() < 100000000) {
-                    JDUtilities.restartJD(args);
-                }
-
-                logger.info(currentArg + " parameter");
-
-                newInstance = true;
-                break;
-
-            } else if (currentArg.equals("--help") || currentArg.equals("-h")) {
-
-                Server.showCmdHelp();
-                System.exit(0);
-
-            }
-
-        }
 
         JDTheme.setTheme("default");
 
@@ -334,6 +357,77 @@ public class Main {
 
         }
 
+    }
+    
+    public static String getCaptcha ( String path, String host ) {
+    	
+    	boolean hasMethod = JAntiCaptcha.hasMethod(JDUtilities.getJACMethodsDirectory(), host);
+    	
+        if ( hasMethod ) {
+        	
+        	File file;
+        	
+        	if ( path.contains("http://") ) {
+        		
+        		HTTPConnection httpConnection;
+				
+        		try {
+					httpConnection = new HTTPConnection(new URL(path).openConnection());
+				} catch (MalformedURLException e) {
+					return e.getStackTrace().toString();
+				} catch (IOException e) {
+					return e.getStackTrace().toString();
+				}
+				
+				if ( httpConnection.getContentLength() == -1 || httpConnection.getContentLength() == 0 ) {
+					
+					return "Could not download captcha image";
+					
+				}
+				
+				String seperator = "/";
+				
+				if ( System.getProperty("os.name").toLowerCase().contains("win")
+						|| System.getProperty("os.name").toLowerCase().contains("nt") ) {
+					seperator = "\\";
+				}
+				
+        		String filepath = System.getProperty("user.dir") + seperator + "jac_captcha.img";
+                file = new File(filepath);
+        		JDUtilities.download(file, path);
+        		
+        	} else {
+        		
+        		file = new File(path);
+        		if ( !file.exists() ) return "File does not exist";
+        		
+        	}
+        	
+            JFrame jf = new JFrame();
+            Image captchaImage = new JFrame().getToolkit().getImage(file.getAbsolutePath());
+            MediaTracker mediaTracker = new MediaTracker(jf);
+            mediaTracker.addImage(captchaImage, 0);
+            
+            try {
+                mediaTracker.waitForID(0);
+            } catch (InterruptedException e) {
+                return e.getStackTrace().toString();
+            }
+            
+            mediaTracker.removeImage(captchaImage);
+            JAntiCaptcha jac = new JAntiCaptcha(JDUtilities.getJACMethodsDirectory(), host);
+            Captcha captcha = jac.createCaptcha(captchaImage);
+            String captchaCode = jac.checkCaptcha(captcha);
+            file.delete();
+            
+            return captchaCode;
+            
+        } else {
+        	
+        	return "jDownloader has no method for "+host;
+        	
+        }
+    	
     }
 
 }
