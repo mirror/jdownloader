@@ -1039,7 +1039,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         private JLabel lblMessage;
 
         private JLabel lblSpeed;
-
+        private JLabel lblSimu;
         // private JLabel lblPluginHostActive;
         //
         // private JLabel lblPluginDecryptActive;
@@ -1049,6 +1049,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         private ImageIcon imgInactive;
 
         private JSpinner spMax;
+        private JSpinner spMaxDls;
 
         private JButton btnConfirm;
 
@@ -1063,7 +1064,8 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
             chbPremium.setToolTipText(JDLocale.L("gui.tooltip.statusbar.premium", "Aus/An schalten des Premiumdownloads"));
             chbPremium.addChangeListener(this);
             chbPremium.setSelected(JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true));
-            lblSpeed = new JLabel();
+            lblSpeed = new JLabel(JDLocale.L("gui.statusbar.speed", "Geschw."));
+            lblSimu=new JLabel(JDLocale.L("gui.statusbar.sim_ownloads", "Max.Dls."));
             int maxspeed = JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, 0);
 
             spMax = new JSpinner();
@@ -1072,16 +1074,27 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
             spMax.setToolTipText(JDLocale.L("gui.tooltip.statusbar.speedlimiter", "Geschwindigkeitsbegrenzung festlegen(kb/s) [0:unendlich]"));
             spMax.addChangeListener(this);
 
+            spMaxDls = new JSpinner();
+            spMaxDls.setModel(new SpinnerNumberModel(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN, 3), 1, 20, 1));
+            spMaxDls.setPreferredSize(new Dimension(60, 20));
+            spMaxDls.setToolTipText(JDLocale.L("gui.tooltip.statusbar.simultan_downloads", "Max. gleichzeitige Downloads"));
+            spMaxDls.addChangeListener(this);
+            
             // lblPluginHostActive = new JLabel(imgInactive);
             // lblPluginDecryptActive = new JLabel(imgInactive);
             // lblPluginDecryptActive.setToolTipText(JDLocale.L("gui.tooltip.plugin_decrypt"));
             // lblPluginHostActive.setToolTipText(JDLocale.L("gui.tooltip.plugin_host"));
             JDUtilities.addToGridBag(this, lblMessage, 0, 0, 1, 1, 1, 1, new Insets(0, 5, 0, 0), GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+            JDUtilities.addToGridBag(this, lblSimu, 1, 0, 1, 1, 0, 0, new Insets(0, 2, 0, 0), GridBagConstraints.NONE, GridBagConstraints.WEST);
+            JDUtilities.addToGridBag(this, spMaxDls, 2, 0, 1, 1, 0, 0, new Insets(0, 2, 0, 0), GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-            JDUtilities.addToGridBag(this, lblSpeed, 1, 0, 1, 1, 0, 0, new Insets(0, 0, 0, 0), GridBagConstraints.NONE, GridBagConstraints.WEST);
-            JDUtilities.addToGridBag(this, chbPremium, 3, 0, 1, 1, 0, 0, new Insets(0, 0, 0, 0), GridBagConstraints.NONE, GridBagConstraints.WEST);
-
-            JDUtilities.addToGridBag(this, spMax, 4, 0, 1, 1, 0, 0, new Insets(0, 0, 0, 0), GridBagConstraints.NONE, GridBagConstraints.WEST);
+            
+            JDUtilities.addToGridBag(this, chbPremium, 3, 0, 1, 1, 0, 0, new Insets(0, 2, 0, 0), GridBagConstraints.NONE, GridBagConstraints.WEST);
+            JDUtilities.addToGridBag(this, new JSeparator(JSeparator.VERTICAL), 4, 0, 1, 1, 0, 0, new Insets(2, 2, 2, 2), GridBagConstraints.BOTH, GridBagConstraints.WEST);
+            
+            JDUtilities.addToGridBag(this, lblSpeed, 5, 0, 1, 1, 0, 0, new Insets(0, 2, 0, 0), GridBagConstraints.NONE, GridBagConstraints.WEST);
+            
+            JDUtilities.addToGridBag(this, spMax, 6, 0, 1, 1, 0, 0, new Insets(0, 2, 0, 0), GridBagConstraints.NONE, GridBagConstraints.WEST);
 
             // JDUtilities.addToGridBag(this, lblPluginHostActive, 5, 0, 1, 1,
             // 0, 0, new Insets(0, 5, 0, 0), GridBagConstraints.NONE,
@@ -1158,6 +1171,15 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
 
                 if (max != value) {
                     JDUtilities.getSubConfig("DOWNLOAD").setProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, value);
+                    JDUtilities.getSubConfig("DOWNLOAD").save();
+                }
+
+            }
+            if (e.getSource() == this.spMaxDls) {
+                int value = (Integer) spMaxDls.getValue();
+
+                if (max != value) {
+                    JDUtilities.getSubConfig("DOWNLOAD").setProperty(Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN, value);
                     JDUtilities.getSubConfig("DOWNLOAD").save();
                 }
 

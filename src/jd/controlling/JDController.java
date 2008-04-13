@@ -92,7 +92,7 @@ public class JDController implements ControlListener, UIListener {
      * Listener werden benachrichtigt, wenn mittels
      * {@link #firePluginEvent(PluginEvent)} ein Event losgeschickt wird.
      */
-    private transient Vector<ControlListener> controlListener = null;
+    private transient ArrayList<ControlListener> controlListener = null;
 
     /**
      * Die Konfiguration
@@ -1229,8 +1229,8 @@ public class JDController implements ControlListener, UIListener {
      * @param listener
      *            Ein neuer Listener
      */
-    public void addControlListener(ControlListener listener) {
-        if (controlListener == null) controlListener = new Vector<ControlListener>();
+    public synchronized void addControlListener(ControlListener listener) {
+        if (controlListener == null) controlListener = new ArrayList<ControlListener>();
         if (controlListener.indexOf(listener) == -1) {
             controlListener.add(listener);
         }
@@ -1242,7 +1242,7 @@ public class JDController implements ControlListener, UIListener {
      * @param listener
      *            Der zu entfernende Listener
      */
-    public void removeControlListener(ControlListener listener) {
+    public synchronized void removeControlListener(ControlListener listener) {
         controlListener.remove(listener);
     }
 
@@ -1256,21 +1256,23 @@ public class JDController implements ControlListener, UIListener {
         // logger.info(controlEvent.getID()+" controllistener "+controlEvent);
         // if (uiInterface != null)
         // uiInterface.delegatedControlEvent(controlEvent);
-        this.controlEvent(controlEvent);
-        if (controlListener == null) controlListener = new Vector<ControlListener>();
-        Iterator<ControlListener> iterator = controlListener.iterator();
-        while (iterator.hasNext()) {
+        try {
+            this.controlEvent(controlEvent);
+            if (controlListener == null) controlListener = new ArrayList<ControlListener>();
+            Iterator<ControlListener> iterator = controlListener.iterator();
+            while (iterator.hasNext()) {
 
-            ((ControlListener) iterator.next()).controlEvent(controlEvent);
+                ((ControlListener) iterator.next()).controlEvent(controlEvent);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
 
     public void fireControlEvent(int controlID, Object param) {
         ControlEvent c = new ControlEvent(this, controlID, param);
-        Iterator<ControlListener> iterator = controlListener.iterator();
-        while (iterator.hasNext()) {
-            ((ControlListener) iterator.next()).controlEvent(c);
-        }
+        fireControlEvent(c);
+  
     }
 
     /**

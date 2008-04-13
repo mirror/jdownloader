@@ -17,6 +17,9 @@
 
 package jd.plugins.optional.webinterface;
 
+import java.awt.event.ActionEvent;
+import java.util.ArrayList;
+
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.SubConfiguration;
@@ -64,14 +67,7 @@ public class JDWebinterface extends PluginOptional  {
         }        
     }
     
-    @Override
-    public boolean isExecutable() {
-        return false;
-    }
-    @Override
-    public boolean execute() {
-        return false;
-    }
+
     
     public JDWebinterface()
     {
@@ -97,5 +93,16 @@ public class JDWebinterface extends PluginOptional  {
     public String getRequirements() {
         // TODO Auto-generated method stub
         return null;
+    }
+
+    @Override
+    public ArrayList<String> createMenuitems() {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    public void actionPerformed(ActionEvent e) {
+        // TODO Auto-generated method stub
+        
     }    
 }

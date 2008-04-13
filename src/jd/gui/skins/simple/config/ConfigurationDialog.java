@@ -187,8 +187,9 @@ public class ConfigurationDialog extends JFrame implements ActionListener, Chang
     private void paintPanel(int i) {
 
         if (i < configPanels.size() && configPanels.get(i) != null) {
-            i = 0;
+           return;
         }
+        if(i>containerPanels.size()-1)i=containerPanels.size()-1;
         Class class1 = configClasses.get(i);
         ConfigPanel panel = initSubPanel(class1);
         configPanels.remove(i);

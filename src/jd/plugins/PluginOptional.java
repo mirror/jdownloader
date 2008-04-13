@@ -22,7 +22,10 @@ import java.util.ArrayList;
 import java.util.regex.Pattern;
 import java.awt.event.ActionListener;
 
-public abstract class PluginOptional extends Plugin implements ActionListener {
+import jd.event.ControlEvent;
+import jd.event.ControlListener;
+
+public abstract class PluginOptional extends Plugin implements ActionListener,ControlListener {
 
     @Override
     public boolean doBotCheck(File file) { return false; }
@@ -33,13 +36,24 @@ public abstract class PluginOptional extends Plugin implements ActionListener {
     @Override public Pattern getSupportedLinks() { return null; }
     @Override
     public String getPluginName() {
-        return "JDTrayIcon";
+        return "Unnamend Optional Plugin";
     }
 
 
     public abstract void enable(boolean enable) throws Exception;
     public abstract String getRequirements();
-    public abstract boolean isExecutable();
-    public abstract boolean execute();
     public abstract ArrayList<String> createMenuitems();
+    public void controlEvent(ControlEvent event) {
+        
+        //Deaktiviert das PLugin beim beenden
+        if (event.getID() == ControlEvent.CONTROL_SYSTEM_EXIT) {
+            try {
+                this.enable(false);
+            } catch (Exception e) {                
+                e.printStackTrace();
+            }
+            
+        }
+        
+    }
 }

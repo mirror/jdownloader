@@ -58,6 +58,8 @@ public class DownloadWatchDog extends Thread implements ControlListener {
 
     private int totalSpeed = 0;
 
+    private boolean aborting;
+
     public DownloadWatchDog(JDController controller) {
 
         this.controller = controller;
@@ -164,6 +166,13 @@ public class DownloadWatchDog extends Thread implements ControlListener {
             }
         }
         aborted = true;
+        logger.info("Wait for termination");
+        while(aborting){
+            try {
+                Thread.sleep(200);
+            } catch (InterruptedException e) {
+            }
+        }
         logger.info("RUN END");
         deligateFireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_ALL_DOWNLOADS_FINISHED, this));
         controller.removeControlListener(this);
@@ -273,7 +282,9 @@ public class DownloadWatchDog extends Thread implements ControlListener {
      */
     void abort() {
         logger.finer("Breche alle actove links ab");
+        this.aborting=true;
         this.aborted = true;
+       
         ProgressController progress = new ProgressController("Termination", activeDownloadControllers.size());
         progress.setStatusText("Stopping all downloads "+activeDownloadControllers);
         progress.setRange(100);
@@ -299,12 +310,13 @@ public class DownloadWatchDog extends Thread implements ControlListener {
                     }
                 }
                 if (check) break;
-//                try {
-//                    Thread.sleep(1000);
-//                } catch (InterruptedException e) {
-//                }
+                try {
+                    Thread.sleep(100);
+                } catch (InterruptedException e) {
+                }
             }
         }
+        logger.info("Active links abgebrochen");
         
         deligateFireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_DOWNLOADLINKS_CHANGED, al));
         
@@ -313,7 +325,7 @@ public class DownloadWatchDog extends Thread implements ControlListener {
         logger.finer("Abbruch komplett");
 
         this.clearDownloadListStatus();
-
+        this.aborting=false;
     }
 
     /**

@@ -21,6 +21,7 @@ import java.util.logging.Logger;
 
 import javax.swing.DropMode;
 import javax.swing.JMenuItem;
+import javax.swing.JOptionPane;
 import javax.swing.JPopupMenu;
 import javax.swing.JSeparator;
 import javax.swing.JTable;
@@ -58,7 +59,7 @@ import edu.stanford.ejalbert.BrowserLauncher;
 import edu.stanford.ejalbert.exception.BrowserLaunchingInitializingException;
 import edu.stanford.ejalbert.exception.UnsupportedOperatingSystemException;
 
-public class DownloadTreeTable extends JXTreeTable implements WindowFocusListener,TreeExpansionListener, TreeSelectionListener, MouseListener, ActionListener, MouseMotionListener {
+public class DownloadTreeTable extends JXTreeTable implements WindowFocusListener, TreeExpansionListener, TreeSelectionListener, MouseListener, ActionListener, MouseMotionListener {
     private Logger logger = JDUtilities.getLogger();
 
     public static final String PROPERTY_EXPANDED = "expanded";
@@ -101,7 +102,7 @@ public class DownloadTreeTable extends JXTreeTable implements WindowFocusListene
         setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
         this.setColumnControlVisible(true);
         SimpleGUI.CURRENTGUI.getFrame().addWindowFocusListener(this);
-       
+
         this.setEditable(false);
 
         setDragEnabled(true);
@@ -291,7 +292,8 @@ public class DownloadTreeTable extends JXTreeTable implements WindowFocusListene
 
                 for (Iterator<Entry<FilePackage, ArrayList<DownloadLink>>> it2 = updatePackages.entrySet().iterator(); it2.hasNext();) {
                     next = it2.next();
-                   // logger.info("Refresh " + next.getKey() + " - " + next.getValue().size());
+                    // logger.info("Refresh " + next.getKey() + " - " +
+                    // next.getValue().size());
                     supporter.firePathChanged(new TreePath(new Object[] { model.getRoot(), next.getKey() }));
 
                     if (next.getKey().getBooleanProperty(PROPERTY_EXPANDED, false)) {
@@ -303,7 +305,8 @@ public class DownloadTreeTable extends JXTreeTable implements WindowFocusListene
                             next3 = it3.next();
                             ind[i] = next.getKey().indexOf(next3);
                             objs[i] = next3;
-                            //logger.info(" children: " + next3 + " - " + ind[i]);
+                            // logger.info(" children: " + next3 + " - " +
+                            // ind[i]);
                         }
 
                         supporter.fireChildrenChanged(new TreePath(new Object[] { model.getRoot(), next.getKey() }), ind, objs);
@@ -330,7 +333,7 @@ public class DownloadTreeTable extends JXTreeTable implements WindowFocusListene
 
             // ignoreSelectionsAndExpansions(200);
             updateSelectionAndExpandStatus();
-            //logger.info("finished");
+            // logger.info("finished");
 
             break;
 
@@ -583,8 +586,8 @@ public class DownloadTreeTable extends JXTreeTable implements WindowFocusListene
             break;
         case TreeTableAction.PACKAGE_EDIT_NAME:
             fp = (FilePackage) ((TreeTableAction) ((JMenuItem) e.getSource()).getAction()).getProperty().getProperty("package");
+            name = JOptionPane.showInputDialog(SimpleGUI.CURRENTGUI.getFrame(), JDLocale.L("gui.linklist.editpackagename.message", "Neuer Paketname"), fp.getName());
 
-            name = JDUtilities.getGUI().showTextAreaDialog(JDLocale.L("gui.linklist.editpackagename.title", "Paketname ändern"), JDLocale.L("gui.linklist.editpackagename.message", "Neuer Paketname"), fp.getName());
             if (name != null) fp.setName(name);
             JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_DOWNLOADLINK_DATA_CHANGED, this));
 
@@ -860,7 +863,7 @@ public class DownloadTreeTable extends JXTreeTable implements WindowFocusListene
 
     public void windowGainedFocus(WindowEvent e) {
         // TODO Auto-generated method stub
-        
+
     }
 
     public void windowLostFocus(WindowEvent e) {
@@ -868,7 +871,7 @@ public class DownloadTreeTable extends JXTreeTable implements WindowFocusListene
             tooltip.destroy();
             tooltip = null;
         }
-        
+
     }
 
 }

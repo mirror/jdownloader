@@ -42,6 +42,8 @@ import javax.swing.event.PopupMenuListener;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.Configuration;
+import jd.event.ControlEvent;
+import jd.event.ControlListener;
 import jd.gui.skins.simple.JDAction;
 import jd.plugins.PluginOptional;
 
@@ -50,7 +52,7 @@ import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 import jd.gui.skins.simple.SimpleGUI;
 
-public class JDTrayIcon extends PluginOptional {
+public class JDTrayIcon extends PluginOptional  {
 	private SimpleGUI simplegui = (SimpleGUI)JDUtilities.getGUI();
     private JPopupMenu popupMenu;
     private JWindow trayParent;
@@ -75,6 +77,7 @@ public class JDTrayIcon extends PluginOptional {
     private JMenuItem speed5;
     private int counter = 0;
     
+    
     @Override
     public String getCoder() {
         return "jD-Team";
@@ -98,7 +101,8 @@ public class JDTrayIcon extends PluginOptional {
     @Override
     public void enable(boolean enable) throws Exception {
         if(JDUtilities.getJavaVersion()>=1.6){
-        if (enable) {
+        if (enable){
+            JDUtilities.getController().addControlListener(this);
             logger.info("Systemtray OK");
             initGUI();
         }
@@ -402,14 +406,6 @@ public class JDTrayIcon extends PluginOptional {
         return "JRE 1.6+";
     }
 
-    @Override
-    public boolean isExecutable() {
-        return false;
-    }
-    @Override
-    public boolean execute() {
-        return false;
-    }
     
     private class info extends Thread {
         private Point p;
@@ -468,4 +464,6 @@ public class JDTrayIcon extends PluginOptional {
     public ArrayList<String> createMenuitems() {
         return null;
     }
+
+
 }
