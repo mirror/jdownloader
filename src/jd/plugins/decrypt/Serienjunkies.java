@@ -75,7 +75,7 @@ public class Serienjunkies extends PluginForDecrypt {
 
     private static final int    sCatGrabb          = 2;
 
-    private static final String PATTERN_FOR_CAPTCHA_BOT = "Du hast zu oft das Captcha falsch eingegeben";
+   // private static final String PATTERN_FOR_CAPTCHA_BOT = "Du hast zu oft das Captcha falsch eingegeben";
 
     private static int[]        useScat            = new int[] { 0, 0 };
 
@@ -279,15 +279,15 @@ public class Serienjunkies extends PluginForDecrypt {
         else {
             hosterStr += "not";
         }
-        // http://download.serienjunkies.org/f-3bd58945ab43eae0/Episode%2006.html
-        Matcher matcher = Pattern.compile("http://(download\\.serienjunkies\\.org|" + (cat ? "serienjunkies.org|" : "") + "serienjunkies\\.org/s|85\\.17\\.177\\.195/s|serienjunki\\.es/s).*" + hosterStr + ".*", Pattern.CASE_INSENSITIVE).matcher(data);
+        // http://links.serienjunkies.org/f-3bd58945ab43eae0/Episode%2006.html
+        Matcher matcher = Pattern.compile("http://(links\\.serienjunkies\\.org|" + (cat ? "serienjunkies.org|" : "") + "serienjunkies\\.org/s|85\\.17\\.177\\.195/s|serienjunki\\.es/s).*" + hosterStr + ".*", Pattern.CASE_INSENSITIVE).matcher(data);
         if (matcher.find()) {
             return true;
         }
         else {
-            String[] links = new Regexp(data, "http://download.serienjunkies.org/.*", Pattern.CASE_INSENSITIVE).getMatches(0);
+            String[] links = new Regexp(data, "http://links.serienjunkies.org/.*", Pattern.CASE_INSENSITIVE).getMatches(0);
             for (int i = 0; i < links.length; i++) {
-                if (!links[i].matches("(?i).*http://download.serienjunkies.org/.*(rc[\\_\\-]|rs[\\_\\-]|nl[\\_\\-]|ut[\\_\\-]|cat\\=[\\d]+).*")) return true;
+                if (!links[i].matches("(?i).*http://links.serienjunkies.org/.*(rc[\\_\\-]|rs[\\_\\-]|nl[\\_\\-]|ut[\\_\\-]|cat\\=[\\d]+).*")) return true;
             }
         }
         return false;
@@ -414,7 +414,7 @@ public class Serienjunkies extends PluginForDecrypt {
                         progress.increase(1);
                         decryptedLinks.add(this.createDownloadlink(helpstring));
                     }
-                    else if (parameter.indexOf("download.serienjunkies.org") >= 0) {
+                    else if (parameter.indexOf("links.serienjunkies.org") >= 0) {
                         logger.info("sjsafe link");
                         progress.setRange(1);
                         helpvector = ContainerLinks(parameter);
@@ -503,7 +503,7 @@ public class Serienjunkies extends PluginForDecrypt {
                         JDUtilities.appendInfoToFilename(this, captchaFile, capTxt, false);
                     }
                     ArrayList<ArrayList<String>> gifs = getAllSimpleMatches(reqinfo.getHtmlCode(), patternCaptcha);
-                    String captchaAdress = "http://download.serienjunkies.org" + gifs.get(0).get(1);
+                    String captchaAdress = "http://links.serienjunkies.org" + gifs.get(0).get(1);
                     // for (int i = 0; i < gifs.size(); i++) {
                     // if (gifs.get(i).get(0).indexOf("secure") >= 0 &&
                     // JDUtilities.filterInt(gifs.get(i).get(2)) > 0 &&
