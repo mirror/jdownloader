@@ -35,7 +35,7 @@ import jd.utils.JDLocale;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 
-public class JDTrayIcon2 extends PluginOptional implements MouseListener {
+public class JDLightTray extends PluginOptional implements MouseListener {
 
     private TrayIcon trayIcon;
 

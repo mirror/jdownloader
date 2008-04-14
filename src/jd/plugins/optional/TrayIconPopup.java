@@ -64,7 +64,7 @@ public class TrayIconPopup extends JWindow implements MouseListener, MouseMotion
     private JPanel rightPanel;
     private JPanel bottomPanel;
     private boolean enteredPopup;
-    private JDTrayIcon2 owner;
+    private JDLightTray owner;
     private int midPanelCounter = 0;
     private Point point;
     private int mouseOverRow;
@@ -72,7 +72,7 @@ public class TrayIconPopup extends JWindow implements MouseListener, MouseMotion
     private JSpinner spMax;
     private JSpinner spMaxDls;
 
-    TrayIconPopup(JDTrayIcon2 tracIcon) {
+    TrayIconPopup(JDLightTray tracIcon) {
         this.owner = tracIcon;
         setLayout(new GridBagLayout());
         addMouseMotionListener(this);
