@@ -476,7 +476,8 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
     /**
      * Zeigt, ob dieser Download grad in Bearbeitung ist
      * 
-     * @return wahr, wenn diese Download grad heruntergeladen wird
+     * @return wahr, wenn diese Download in bearbeitung ist. Plugin aktivitäen
+     *         hinzugezählt
      */
     public boolean isInProgress() {
         return inProgress;
@@ -514,6 +515,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
             this.setAborted(false);
         }
         if (isEnabled == true) {
+            this.setAborted(false);
             if (host != null && plugin == null) {
                 logger.severe("Es ist kein passendes HostPlugin geladen");
                 return;
@@ -703,13 +705,19 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
                 }
             }
         }
-        ret += this.toStatusString()+" ";
-        if (!this.isEnabled()) {
-            ret += "[deaktiviert] ";
+        ret += this.toStatusString() + " ";
+        if (!this.isEnabled()&&this.getStatus()!=DownloadLink.STATUS_DONE) {
+            ret += JDLocale.L("gui.downloadlink.disabled", "[deaktiviert]") + " ";
+            this.setStatusText("");
+            return ret;
         }
-
-        if (this.isAvailabilityChecked() && !this.isAvailable()) {
-            ret += "[OFFLINE] ";
+        if (this.isAborted()&&this.getStatus()!=DownloadLink.STATUS_DONE) {
+            ret += JDLocale.L("gui.downloadlink.aborted", "[abgebrochen]") + " ";
+            this.setStatusText("");
+            return ret;
+        }
+        if (this.isAvailabilityChecked() && !this.isAvailable()&&this.getStatus()!=DownloadLink.STATUS_DONE) {
+            ret += JDLocale.L("gui.downloadlink.offline", "[offline]") + " ";
         }
 
         // logger.info(statusText == null ? ret : ret + statusText);
@@ -785,12 +793,22 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
      * Setzt alle DownloadWErte zurück
      */
     public void reset() {
-
+        if (this.isInProgress()) {
+            this.setAborted(true);
+            while (isInProgress()) {
+                try {
+                    Thread.sleep(200);
+                } catch (InterruptedException e) {
+                    // TODO Auto-generated catch block
+                    e.printStackTrace();
+                }
+            }
+        }
         downloadMax = 0;
         this.chunksProgress = null;
         downloadCurrent = 0;
         aborted = false;
-        this.crcStatus=CRC_STATUS_UNCHECKED;
+        this.crcStatus = CRC_STATUS_UNCHECKED;
     }
 
     /**

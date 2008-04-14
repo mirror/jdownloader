@@ -55,7 +55,7 @@ public class TreeTableRenderer extends DefaultTableCellRenderer {
     private static Color ACTIVE_PROGRESS_COLOR_FONT_B;
 
     private static Color FONT_COLOR;
-    private static Color FONT_COLOR_SELECTED;
+
     // private static Color FONT_ODD_ROW_COLOR;
     //
     // private static Color FONT_SELECTED_ROW_COLOR;
@@ -85,7 +85,7 @@ public class TreeTableRenderer extends DefaultTableCellRenderer {
 
         this.treeTable = downloadTreeTable;
         FONT_COLOR = JDTheme.C("gui.color.downloadlist.font", "000000");
-        FONT_COLOR_SELECTED = JDTheme.C("gui.color.downloadlist.font_selected", "ffffff");
+
         //
         // FONT_ODD_ROW_COLOR = JDTheme.C("gui.color.downloadlist.font_row_b",
         // "000000");
@@ -191,24 +191,33 @@ public class TreeTableRenderer extends DefaultTableCellRenderer {
             return label;
         } else if (value instanceof FilePackage) {
             fp = (FilePackage) value;
-            progress.setMaximum(Math.max(1, fp.getTotalEstimatedPackageSize()));
-            progress.setStringPainted(true);
-            progress.setForeground(PACKAGE_PROGRESS_COLOR);
-            ui.setSelectionForeground(PACKAGE_PROGRESS_COLOR_FONT_A);
-            ui.setSelectionBackground(PACKAGE_PROGRESS_COLOR_FONT_B);
+            if (fp.getPercent() == 0.0) {
+                progress.setMaximum(Math.max(1, fp.getTotalEstimatedPackageSize()));
+                progress.setStringPainted(true);
+                progress.setForeground(PACKAGE_PROGRESS_COLOR);
+                ui.setSelectionForeground(PACKAGE_PROGRESS_COLOR_FONT_A);
+                ui.setSelectionBackground(PACKAGE_PROGRESS_COLOR_FONT_B);
 
-            progress.setValue(fp.getTotalKBLoaded());
-            progress.setString(c.format(fp.getPercent()) + "% (" + JDUtilities.formatKbReadable(progress.getValue()) + "/" + JDUtilities.formatKbReadable(Math.max(1, fp.getTotalEstimatedPackageSize())) + ")");
+                progress.setValue(fp.getTotalKBLoaded());
+                progress.setString("- 0% -");
 
+            } else {
+                progress.setMaximum(Math.max(1, fp.getTotalEstimatedPackageSize()));
+                progress.setStringPainted(true);
+                progress.setForeground(PACKAGE_PROGRESS_COLOR);
+                ui.setSelectionForeground(PACKAGE_PROGRESS_COLOR_FONT_A);
+                ui.setSelectionBackground(PACKAGE_PROGRESS_COLOR_FONT_B);
+
+                progress.setValue(fp.getTotalKBLoaded());
+                progress.setString(c.format(fp.getPercent()) + "% (" + JDUtilities.formatKbReadable(progress.getValue()) + "/" + JDUtilities.formatKbReadable(Math.max(1, fp.getTotalEstimatedPackageSize())) + ")");
+            }
             return progress;
         }
 
         co = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
-        if (treeTable.isRowSelected(row)) {
-            co.setForeground(FONT_COLOR_SELECTED);
-        } else {
-            co.setBackground(FONT_COLOR);
-        }
+
+        co.setForeground(FONT_COLOR);
+        co.setBackground(FONT_COLOR);
 
         // if (treeTable.isRowSelected(row)) {
         // co.setForeground(FONT_SELECTED_ROW_COLOR);

@@ -16,6 +16,8 @@
 
 package jd.plugins;
 
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
@@ -63,7 +65,7 @@ import jd.utils.JDUtilities;
  * 
  * Alle Plugins verfügen über einen Event Mechanismus
  */
-public abstract class Plugin {
+public abstract class Plugin implements ActionListener {
 
     protected static final String END_OF_LINK = "[^\"]*";
 
@@ -72,7 +74,9 @@ public abstract class Plugin {
      * Header geändert müssen die Regexes der Plugins angepasst werden
      */
     public static final String ACCEPT_LANGUAGE = "de, en-gb;q=0.9, en;q=0.8";
-
+    public  void actionPerformed(ActionEvent e){
+        return;
+    }
     /**
      * Versionsinformationen
      */
@@ -417,7 +421,7 @@ public abstract class Plugin {
 //    private void firePluginDataChanged() {
 //        JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_DOWNLOADLINKS_CHANGED));
 //    }
-
+    public abstract ArrayList<String> createMenuitems();
     /**
      * @author olimex Fügt Map als String mit Trennzeichen zusammen TODO:
      *         auslagern

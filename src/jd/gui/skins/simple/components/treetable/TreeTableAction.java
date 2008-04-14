@@ -48,6 +48,11 @@ public class TreeTableAction extends AbstractAction{
     public static final int PACKAGE_DISABLE = 15;
     public static final int PACKAGE_RESET = 16;
     public static final int PACKAGE_SORT = 17;
+    public static final int DOWNLOAD_ABORT = 18;
+    public static final int PACKAGE_ABORT = 19;
+    public static final int DOWNLOAD_DLC = 20;
+    public static final int PACKAGE_DLC = 21;
+   
     private ActionListener actionListener;
     private int actionID;
 
@@ -67,7 +72,7 @@ public class TreeTableAction extends AbstractAction{
         this.property=obj;
 
     
-        putValue(Action.NAME,              JDLocale.L("gui.table.contextmenu."+ressourceName));
+        putValue(Action.NAME,              ressourceName);
     
     }
     public void actionPerformed(ActionEvent e) {

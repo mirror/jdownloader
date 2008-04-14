@@ -286,6 +286,7 @@ public class JDController implements ControlListener, UIListener {
 
     private void removeDownloadLink(DownloadLink link) {
         synchronized (packages) {
+            link.setAborted(true);
             Iterator<FilePackage> it = packages.iterator();
             FilePackage fp;
             while (it.hasNext()) {
@@ -770,6 +771,25 @@ public class JDController implements ControlListener, UIListener {
     public void saveDLC(File file) {
 
         String xml = JDUtilities.createContainerString(this.getDownloadLinks(), "DLC Parser");
+        // String[] encrypt = JDUtilities.encrypt(xml, "DLC Parser");
+        String cipher = encryptDLC(xml);
+        if (cipher != null) {
+
+            JDUtilities.writeLocalFile(file, cipher);
+            if (this.getUiInterface().showConfirmDialog(JDLocale.L("sys.dlc.success", "DLC encryption successfull. Run Testdecrypt now?"))) {
+                loadContainerFile(file);
+                return;
+            }
+            return;
+        }
+
+        logger.severe("Container creation failed");
+        this.getUiInterface().showMessageDialog("Container encryption failed");
+    }
+
+    public void saveDLC(File file, Vector<DownloadLink> links) {
+
+        String xml = JDUtilities.createContainerString(links, "DLC Parser");
         // String[] encrypt = JDUtilities.encrypt(xml, "DLC Parser");
         String cipher = encryptDLC(xml);
         if (cipher != null) {
@@ -1272,7 +1292,7 @@ public class JDController implements ControlListener, UIListener {
     public void fireControlEvent(int controlID, Object param) {
         ControlEvent c = new ControlEvent(this, controlID, param);
         fireControlEvent(c);
-  
+
     }
 
     /**
@@ -1460,7 +1480,24 @@ public class JDController implements ControlListener, UIListener {
     }
 
     public boolean moveLinks(Vector<DownloadLink> links, Object after) {
-        this.removeDownloadLinks(links);
+        
+        DownloadLink link;
+        Iterator<DownloadLink> iterator = links.iterator();
+        synchronized (packages) {
+            while (iterator.hasNext()) {
+                link=iterator.next();
+                Iterator<FilePackage> it = packages.iterator();
+                FilePackage fp;
+                while (it.hasNext()) {
+                    fp = it.next();
+                    if (fp.remove(link)) {
+                        if (fp.size() == 0) packages.remove(fp);
+                        continue;
+                    }
+
+                }
+            }
+        }
         if (after == null) {
             packages.lastElement().addAll(links);
         }

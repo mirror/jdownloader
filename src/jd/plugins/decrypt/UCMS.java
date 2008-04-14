@@ -90,11 +90,7 @@ public class UCMS extends PluginForDecrypt {
     		+ "|(http://[*]sexload.to/\\?id=[+])"
     		+ "|(http://[*]rsxxx.net/\\?id=[+])"
     		+ "|(http://[*]wrzunlimited.1gb.in/\\?id=[+])"
-    		+ "|(http://[*]clips-share.net/\\?id=[+])"
-    		
-    		//+ "|(http://[*]myload.es/\\?id=[+])"
-    		
-    		
+    		+ "|(http://[*]clips-share.net/\\?id=[+])"   	
     		+ "|(http://[*]sceneload.to/\\?id=[+])");
     
     private Pattern	PAT_CAPTCHA = Pattern.compile("<TD><IMG SRC=\"/gfx/secure/");

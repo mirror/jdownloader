@@ -211,8 +211,11 @@ public class DownloadTreeTableModel extends AbstractTreeTableModel {
      * 
      * Have to implement this:
      */
-    private Vector<FilePackage> getPackages() {
+    public Vector<FilePackage> getPackages() {
         return owner.getPackages();
+    }
+    public boolean containesPackage(FilePackage fp){
+        return owner.getPackages().contains(fp);
     }
 
     public Object getChild(Object parent, int index) {

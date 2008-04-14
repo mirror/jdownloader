@@ -214,7 +214,7 @@ public class SingleDownloadController extends Thread {
         // Abgebrochen. Mögliche Ursachen können nun untersucht werden um
         // den download eventl neu zu starten
         if (aborted||downloadLink.isAborted()) {
-            downloadLink.setStatusText(JDLocale.L("controller.status.aborted", "Abgebrochen"));
+           
             currentPlugin.abort();
             logger.warning("Thread aborted");
             downloadLink.setStatus(DownloadLink.STATUS_TODO);

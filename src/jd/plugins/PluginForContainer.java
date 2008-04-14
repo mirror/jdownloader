@@ -18,6 +18,7 @@
 package jd.plugins;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Vector;
@@ -77,7 +78,9 @@ public abstract class PluginForContainer extends PluginForDecrypt {
         // TODO Auto-generated method stub
         return null;
     }
-
+    public  ArrayList<String> createMenuitems(){
+        return null;
+    }
     /**
      * Wird von der parentklasse für jeden step aufgerufen. Diese Methode muss
      * alle steps abarbeiten und abgecshlossene schritte zurückgeben

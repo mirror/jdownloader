@@ -20,6 +20,7 @@ package jd.plugins;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.Vector;
 
 import jd.config.Configuration;
@@ -47,7 +48,9 @@ public abstract class PluginForHost extends Plugin {
      * etc)
      */
     public abstract void reset();
-
+    public  ArrayList<String> createMenuitems(){
+        return null;
+    }
     /**
      * Führt alle restevorgänge aus und bereitet das Plugin dadurch auf einen
      * Neustart vor. Sollte nicht überschrieben werden

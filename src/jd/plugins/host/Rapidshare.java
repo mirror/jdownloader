@@ -73,6 +73,7 @@ package jd.plugins.host;
 //Cookie: user=****-*******
 //premiumlogin=1&fileid=36717968&filename=Cash_Flow_Bir_Anlik_Hata__Bandrollu__AraFura.zip&serverid=102&accountid=******&password=******
 //dl.start=PREMIUM
+import java.awt.event.ActionEvent;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -378,6 +379,45 @@ public class Rapidshare extends PluginForHost {
         return null;
     }
 
+    public ArrayList<String> createMenuitems() {
+        ArrayList<String> al = new ArrayList<String>();
+        if (this.getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM, false)) {
+            al.add(":1: "+JDLocale.L("plugins.rapidshare.menu.enable_premium", "Enable Premiumaccount ") + this.getProperties().getProperty(PROPERTY_PREMIUM_USER));
+        } else {
+            al.add(":1: "+JDLocale.L("plugins.rapidshare.menu.disable_premium", "Disable Premiumaccount ")+this.getProperties().getProperty(PROPERTY_PREMIUM_USER));
+        }
+        if (this.getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM_2, false)) {
+            al.add(":2: "+JDLocale.L("plugins.rapidshare.menu.enable_premium", "Enable Premiumaccount ")+this.getProperties().getProperty(PROPERTY_PREMIUM_USER_2));
+        } else {
+            al.add(":2: "+JDLocale.L("plugins.rapidshare.menu.disable_premium", "Disable Premiumaccount ") + this.getProperties().getProperty(PROPERTY_PREMIUM_USER_2));
+        }
+        if (this.getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM_3, false)) {
+            al.add(":3: "+JDLocale.L("plugins.rapidshare.menu.enable_premium", "Enable Premiumaccount ")+ this.getProperties().getProperty(PROPERTY_PREMIUM_USER_3));
+        } else {
+            al.add(":4: "+JDLocale.L("plugins.rapidshare.menu.disable_premium", "Disable Premiumaccount ")+ this.getProperties().getProperty(PROPERTY_PREMIUM_USER_3));
+        }
+
+        return al;
+    }
+
+    public void actionPerformed(ActionEvent e) {
+      int account= JDUtilities.filterInt(Plugin.getSimpleMatch(e.getActionCommand(),":°:",0));
+      switch(account){
+      case 1:
+          getProperties().setProperty(PROPERTY_USE_PREMIUM, !getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM, false));
+          break;
+      case 2:
+          getProperties().setProperty(PROPERTY_USE_PREMIUM_2, !getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM_2, false));
+          
+          break;
+      case 3:
+          getProperties().setProperty(PROPERTY_USE_PREMIUM_3, !getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM_3, false));
+          
+          break;
+      }
+        return;
+    }
+
     private void setConfigElements() {
         ConfigEntry conditionEntry;
         Vector<String> m1 = new Vector<String>();
@@ -414,7 +454,7 @@ public class Rapidshare extends PluginForHost {
         conditionEntry.setDefaultValue(false);
 
         premiumConfig.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_LABEL, "2. " + JDLocale.L("plugins.hoster.rapidshare.com.premiumAccount", "Premium Account")));
-        
+
         conditionEntry = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getProperties(), PROPERTY_USE_PREMIUM_2, JDLocale.L("plugins.hoster.rapidshare.com.usePremium2", "2. Premium Account verwenden"));
 
         premiumConfig.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getProperties(), PROPERTY_PREMIUM_USER_2, JDLocale.L("plugins.hoster.rapidshare.com.premiumUser2", "Premium User(alternativ)")));
@@ -425,7 +465,7 @@ public class Rapidshare extends PluginForHost {
         premiumConfig.addEntry(conditionEntry);
         conditionEntry.setDefaultValue(false);
         premiumConfig.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_LABEL, "3. " + JDLocale.L("plugins.hoster.rapidshare.com.premiumAccount", "Premium Account")));
-        conditionEntry=new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getProperties(), PROPERTY_USE_PREMIUM_3, JDLocale.L("plugins.hoster.rapidshare.com.usePremium3", "3. Premium Account verwenden"));
+        conditionEntry = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getProperties(), PROPERTY_USE_PREMIUM_3, JDLocale.L("plugins.hoster.rapidshare.com.usePremium3", "3. Premium Account verwenden"));
         premiumConfig.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getProperties(), PROPERTY_PREMIUM_USER_3, JDLocale.L("plugins.hoster.rapidshare.com.premiumUser3", "Premium User(alternativ)")));
         cfg.setDefaultValue(JDLocale.L("plugins.rapidshare.userid", "Kundennummer"));
         cfg.setEnabledCondidtion(conditionEntry, "==", true);

@@ -19,6 +19,7 @@ package jd.plugins;
 
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.Vector;
 
@@ -68,7 +69,9 @@ public abstract class PluginForDecrypt extends Plugin implements Comparable {
     //private String decrypterDefaultComment  = null;
 
     protected Vector<String> default_password=new Vector<String>();;
-
+    public  ArrayList<String> createMenuitems(){
+        return null;
+    }
     /**
      * Die Methode entschlüsselt einen einzelnen Link. Alle steps werden
      * durchlaufen. Der letzte step muss als parameter einen Vector<String> mit

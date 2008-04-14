@@ -490,7 +490,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         
         
         //Adds the menus form the plugins
-        JMenu menPlugins = new JMenu(JDLocale.L("gui.menu.plugins"));
+        JMenu menPlugins = new JMenu(JDLocale.L("gui.menu.plugins","Addons"));
         HashMap<String, PluginOptional> plugins = JDUtilities.getPluginsOptional();
         Iterator<String> e = plugins.keySet().iterator();
         
@@ -510,7 +510,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         }
         
         if(menPlugins.getItemCount() == 0) {
-            menPlugins.add(new JMenuItem(JDLocale.L("gui.menu.plugins.noitems")));
+            menPlugins.setEnabled(false);
         }
 
         menFile.add(menFileLoad);
