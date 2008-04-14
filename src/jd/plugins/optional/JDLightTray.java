@@ -53,12 +53,12 @@ public class JDLightTray extends PluginOptional implements MouseListener {
 
     @Override
     public String getPluginName() {
-        return JDLocale.L("plugins.optional.trayIcon.name", "TrayIcon2");
+        return JDLocale.L("plugins.optional.JDLightTray.name", "JDLightTrayIcon");
     }
 
     @Override
     public String getVersion() {
-        return "2";
+        return "0.1";
     }
 
     @Override

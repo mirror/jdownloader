@@ -20,6 +20,8 @@ import java.awt.HeadlessException;
 import java.awt.Toolkit;
 import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.net.CookieHandler;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -44,6 +46,7 @@ import jd.gui.skins.simple.ProgressDialog;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.gui.skins.simple.Link.JLinkButton;
 import jd.gui.skins.simple.components.JHelpDialog;
+import jd.gui.skins.simple.config.ConfigPanel;
 import jd.gui.skins.simple.config.ConfigurationDialog;
 import jd.plugins.BackupLink;
 import jd.plugins.DownloadLink;
@@ -286,23 +289,46 @@ public class JDInit {
     @SuppressWarnings("unchecked")
     public HashMap<String, PluginOptional> loadPluginOptional() {
         HashMap<String, PluginOptional> pluginsOptional = new HashMap<String, PluginOptional>();
-
+        String[] optionalPlugins = new String[] { "JDTrayIcon", "JDGetter", "JDLightTray" };
         JDClassLoader jdClassLoader = JDUtilities.getJDClassLoader();
-        Iterator iterator;
-
-        iterator = Service.providers(PluginOptional.class, jdClassLoader);
-        while (iterator.hasNext()) {
+        for (String cl : optionalPlugins) {
+            logger.finer("Try to initialize " + cl);
             try {
-
-                PluginOptional p = (PluginOptional) iterator.next();
+                Class plgClass = jdClassLoader.loadClass("jd.plugins.optional." + cl);
+                if (plgClass == null) {
+                    logger.info("PLUGIN NOT FOUND!");
+                    continue;
+                }
+                Class[] classes = new Class[] {};
+                Constructor con = plgClass.getConstructor(classes);
+                PluginOptional p = (PluginOptional) con.newInstance(new Object[] {});
                 pluginsOptional.put(p.getPluginName(), p);
-                logger.info("Optionales-Plugin : " + p.getPluginName());
+                logger.finer("Successfull!. Loaded " + cl);
+                
+            } catch (ClassNotFoundException e) {
 
-            } catch (Exception e) {
-                logger.info("caught");
+            } catch (SecurityException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            } catch (NoSuchMethodException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            } catch (IllegalArgumentException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            } catch (InstantiationException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            } catch (IllegalAccessException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            } catch (InvocationTargetException e) {
+                // TODO Auto-generated catch block
                 e.printStackTrace();
             }
+
         }
+
         return pluginsOptional;
 
     }
@@ -310,7 +336,7 @@ public class JDInit {
     public void loadDownloadQueue() {
         if (!JDUtilities.getController().initDownloadLinks()) {
             File links = JDUtilities.getResourceFile("links.dat");
-            
+
             if (links != null && links.exists()) {
                 File newFile = new File(links.getAbsolutePath() + ".bup");
                 newFile.delete();
@@ -330,22 +356,23 @@ public class JDInit {
         try {
             JDUtilities.setPluginOptionalList(this.loadPluginOptional());
         } catch (Exception e1) {
+            e1.printStackTrace();
         }
 
-        Iterator<PluginForHost> iteratorHost = JDUtilities.getPluginsForHost().iterator();
+       // Iterator<PluginForHost> iteratorHost = JDUtilities.getPluginsForHost().iterator();
         // while (iteratorHost.hasNext()) {
         // iteratorHost.next().addPluginListener(controller);
         // }
-        Iterator<PluginForDecrypt> iteratorDecrypt = JDUtilities.getPluginsForDecrypt().iterator();
+        //Iterator<PluginForDecrypt> iteratorDecrypt = JDUtilities.getPluginsForDecrypt().iterator();
         // while (iteratorDecrypt.hasNext()) {
         // iteratorDecrypt.next().addPluginListener(controller);
         // }
-        Iterator<PluginForContainer> iteratorContainer = JDUtilities.getPluginsForContainer().iterator();
+       // Iterator<PluginForContainer> iteratorContainer = JDUtilities.getPluginsForContainer().iterator();
         // while (iteratorContainer.hasNext()) {
         // iteratorContainer.next().addPluginListener(controller);
         // }
 
-        Iterator<String> iteratorOptional = JDUtilities.getPluginsOptional().keySet().iterator();
+       // Iterator<String> iteratorOptional = JDUtilities.getPluginsOptional().keySet().iterator();
         // while (iteratorOptional.hasNext()) {
         // JDUtilities.getPluginsOptional().get(iteratorOptional.next()).addPluginListener(controller);
         // }

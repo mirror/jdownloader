@@ -3,14 +3,14 @@
 <!--
   yGuard Bytecode Obfuscator, v2.2.0, a Product of yWorks GmbH - http://www.yworks.com
 
-  Logfile created on Sat Apr 12 22:19:37 CEST 2008
+  Logfile created on Tue Apr 15 01:54:33 CEST 2008
 
   Jar file to be obfuscated:           JDownloaderContainer.jar
   Target Jar file for obfuscated code: JDownloaderContainer_obfuscated.jar
 
 -->
 <!--
-  Memory in use after class data structure built: 2302912 bytes
+  Memory in use after class data structure built: 2366832 bytes
   Total memory available                        : 5177344 bytes
 -->
 <!-- WARNING: Unresolved external dependency: jd.plugins.HTTPConnection not found! -->
@@ -415,6 +415,7 @@
   <method class="jd.plugins.PluginForDecrypt" name="jd.plugins.PluginStep doStep(jd.plugins.PluginStep, java.lang.String)"/>
   <method class="jd.plugins.PluginForDecrypt" name="jd.plugins.PluginStep doStep(jd.plugins.PluginStep, java.lang.Object)"/>
   <method class="jd.plugins.PluginForDecrypt" name="java.util.Vector getDefaultPassswords()"/>
+  <method class="jd.plugins.PluginForDecrypt" name="java.util.ArrayList createMenuitems()"/>
   <method class="jd.plugins.PluginForDecrypt" name="int compareTo(java.lang.Object)"/>
   <method class="jd.plugins.PluginForDecrypt" name="jd.plugins.DownloadLink createDownloadlink(java.lang.String)"/>
   <class name="jd.plugins.Plugin"/>
@@ -479,8 +480,8 @@
   <method class="jd.plugins.Plugin" name="jd.captcha.pixelgrid.Captcha getLastCaptcha()"/>
   <method class="jd.plugins.Plugin" name="java.util.regex.Pattern getSupportPattern(java.lang.String)"/>
   <method class="jd.plugins.Plugin" name="jd.plugins.RequestInfo postRequestWithoutHtmlCode(java.net.URL, java.lang.String, java.lang.String, java.lang.String, boolean)"/>
-  <method class="jd.plugins.Plugin" name="java.util.HashMap getInputHiddenFields(java.lang.String, java.lang.String, java.lang.String)"/>
   <method class="jd.plugins.Plugin" name="java.lang.String getInitID()"/>
+  <method class="jd.plugins.Plugin" name="java.util.HashMap getInputHiddenFields(java.lang.String, java.lang.String, java.lang.String)"/>
   <method class="jd.plugins.Plugin" name="java.lang.String parseMozillaCookie(java.net.URL, java.io.File)"/>
   <method class="jd.plugins.Plugin" name="void setStatusText(java.lang.String)"/>
   <method class="jd.plugins.Plugin" name="java.io.File getLocalCaptchaFile(jd.plugins.Plugin)"/>
@@ -495,10 +496,12 @@
   <method class="jd.plugins.Plugin" name="jd.plugins.RequestInfo getRequestWithoutHtmlCode(java.net.URL, java.lang.String, java.lang.String, boolean, int, int)"/>
   <method class="jd.plugins.Plugin" name="java.lang.String getBetween(java.lang.String, java.lang.String, java.lang.String)"/>
   <method class="jd.plugins.Plugin" name="java.lang.String[] getUniqueMatches(java.lang.String, java.util.regex.Pattern)"/>
+  <method class="jd.plugins.Plugin" name="void actionPerformed(java.awt.event.ActionEvent)"/>
   <method class="jd.plugins.Plugin" name="java.lang.String getPluginName()"/>
   <method class="jd.plugins.Plugin" name="void setReadTimeout(int)"/>
   <method class="jd.plugins.Plugin" name="java.lang.String getPattern(java.lang.String)"/>
   <method class="jd.plugins.Plugin" name="java.lang.String getCoder()"/>
+  <method class="jd.plugins.Plugin" name="java.util.ArrayList createMenuitems()"/>
   <method class="jd.plugins.Plugin" name="java.lang.String getCaptchaCode(java.io.File, jd.plugins.Plugin)"/>
   <method class="jd.plugins.Plugin" name="java.util.ArrayList getAllSimpleMatches(java.lang.String, java.lang.String, int)"/>
   <method class="jd.plugins.Plugin" name="jd.config.Property getProperties()"/>
@@ -539,6 +542,7 @@
   <method class="jd.plugins.PluginForContainer" name="jd.plugins.PluginStep doStep(jd.plugins.PluginStep, java.io.File)"/>
   <method class="jd.plugins.PluginForContainer" name="java.lang.String[] encrypt(java.lang.String)"/>
   <method class="jd.plugins.PluginForContainer" name="java.util.Vector getExtensions()"/>
+  <method class="jd.plugins.PluginForContainer" name="java.util.ArrayList createMenuitems()"/>
 </expose>
 <map>
   <field class="jd.plugins.container.ContainerUtilites" name="b64Encoder" map="A"/>

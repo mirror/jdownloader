@@ -386,39 +386,39 @@ public class Rapidshare extends PluginForHost {
     public ArrayList<String> createMenuitems() {
         ArrayList<String> al = new ArrayList<String>();
         if (this.getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM, false)) {
-            al.add(":1: "+JDLocale.L("plugins.rapidshare.menu.enable_premium", "Enable Premiumaccount ") + this.getProperties().getProperty(PROPERTY_PREMIUM_USER));
+            al.add(":1: " + JDLocale.L("plugins.rapidshare.menu.enable_premium", "Enable Premiumaccount ") + this.getProperties().getProperty(PROPERTY_PREMIUM_USER));
         } else {
-            al.add(":1: "+JDLocale.L("plugins.rapidshare.menu.disable_premium", "Disable Premiumaccount ")+this.getProperties().getProperty(PROPERTY_PREMIUM_USER));
+            al.add(":1: " + JDLocale.L("plugins.rapidshare.menu.disable_premium", "Disable Premiumaccount ") + this.getProperties().getProperty(PROPERTY_PREMIUM_USER));
         }
         if (this.getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM_2, false)) {
-            al.add(":2: "+JDLocale.L("plugins.rapidshare.menu.enable_premium", "Enable Premiumaccount ")+this.getProperties().getProperty(PROPERTY_PREMIUM_USER_2));
+            al.add(":2: " + JDLocale.L("plugins.rapidshare.menu.enable_premium", "Enable Premiumaccount ") + this.getProperties().getProperty(PROPERTY_PREMIUM_USER_2));
         } else {
-            al.add(":2: "+JDLocale.L("plugins.rapidshare.menu.disable_premium", "Disable Premiumaccount ") + this.getProperties().getProperty(PROPERTY_PREMIUM_USER_2));
+            al.add(":2: " + JDLocale.L("plugins.rapidshare.menu.disable_premium", "Disable Premiumaccount ") + this.getProperties().getProperty(PROPERTY_PREMIUM_USER_2));
         }
         if (this.getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM_3, false)) {
-            al.add(":3: "+JDLocale.L("plugins.rapidshare.menu.enable_premium", "Enable Premiumaccount ")+ this.getProperties().getProperty(PROPERTY_PREMIUM_USER_3));
+            al.add(":3: " + JDLocale.L("plugins.rapidshare.menu.enable_premium", "Enable Premiumaccount ") + this.getProperties().getProperty(PROPERTY_PREMIUM_USER_3));
         } else {
-            al.add(":4: "+JDLocale.L("plugins.rapidshare.menu.disable_premium", "Disable Premiumaccount ")+ this.getProperties().getProperty(PROPERTY_PREMIUM_USER_3));
+            al.add(":4: " + JDLocale.L("plugins.rapidshare.menu.disable_premium", "Disable Premiumaccount ") + this.getProperties().getProperty(PROPERTY_PREMIUM_USER_3));
         }
 
         return al;
     }
 
     public void actionPerformed(ActionEvent e) {
-      int account= JDUtilities.filterInt(Plugin.getSimpleMatch(e.getActionCommand(),":°:",0));
-      switch(account){
-      case 1:
-          getProperties().setProperty(PROPERTY_USE_PREMIUM, !getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM, false));
-          break;
-      case 2:
-          getProperties().setProperty(PROPERTY_USE_PREMIUM_2, !getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM_2, false));
-          
-          break;
-      case 3:
-          getProperties().setProperty(PROPERTY_USE_PREMIUM_3, !getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM_3, false));
-          
-          break;
-      }
+        int account = JDUtilities.filterInt(Plugin.getSimpleMatch(e.getActionCommand(), ":°:", 0));
+        switch (account) {
+        case 1:
+            getProperties().setProperty(PROPERTY_USE_PREMIUM, !getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM, false));
+            break;
+        case 2:
+            getProperties().setProperty(PROPERTY_USE_PREMIUM_2, !getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM_2, false));
+
+            break;
+        case 3:
+            getProperties().setProperty(PROPERTY_USE_PREMIUM_3, !getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM_3, false));
+
+            break;
+        }
         return;
     }
 
@@ -1036,46 +1036,47 @@ public class Rapidshare extends PluginForHost {
                     return step;
 
                 }
-                
-                if ( this.getProperties().getBooleanProperty(PROPERTY_FREE_IF_LIMIT_NOT_REACHED, false) ) {
-                	
-                	// get shure that dllink.isInProgress() reacted already on dl start
-                	if ( freeInsteadOfPremiumStarttime+2000 > System.currentTimeMillis() ) {
-                		logger.info("A download started before -> wait 2 seconds (prevent this by deactivating 'Free download if limit not reached')");
-                		Thread.sleep(2000);
-                	} 
-                	
-                	if ( freeInsteadOfPremiumDownloadlink == null
-                    		|| !freeInsteadOfPremiumDownloadlink.isInProgress() ) {
 
-                		freeInsteadOfPremiumDownloadlink = null;
-                		// has to be set here because getRequest takes to much time
-                		freeInsteadOfPremiumStarttime = System.currentTimeMillis();
-                		
-	                    requestInfo = getRequest(new URL(link), null, "", false);
-	                    String newURL = getFirstMatch(requestInfo.getHtmlCode(), patternForNewHost, 1);
-	                    requestInfo = postRequest(new URL(newURL), null, null, null, "dl.start=FREE", true);
-	                    String strWaitTime = getSimpleMatch(requestInfo.getHtmlCode(), patternErrorDownloadLimitReached, 0);
-	                    
-	                    // wait time pattern not found -> free download
-	                    if (strWaitTime == null && !requestInfo.containsHTML(patternForAlreadyDownloading) && !requestInfo.containsHTML(toManyUser)) {
+                if (this.getProperties().getBooleanProperty(PROPERTY_FREE_IF_LIMIT_NOT_REACHED, false)) {
 
-	                    	logger.info("Download limit not reached yet -> free download (see RS.com options)");
-	                        currentStep = steps.firstElement();
-	                        noLimitFreeInsteadPremium = true;
-	                        
-	                		freeInsteadOfPremiumDownloadlink = downloadLink;
-	                		
-	                        return doFreeStep(step, downloadLink);
-	                   
-	                    } else {
-	                        logger.info("Download limit reached or free download not possible -> premium download");
-	                    }
-	                    
-                	} else {
-                		logger.info("There is already a running free download -> premium download");
-                	}
-               
+                    // get shure that dllink.isInProgress() reacted already on
+                    // dl start
+                    if (freeInsteadOfPremiumStarttime + 2000 > System.currentTimeMillis()) {
+                        logger.info("A download started before -> wait 2 seconds (prevent this by deactivating 'Free download if limit not reached')");
+                        Thread.sleep(2000);
+                    }
+
+                    if (freeInsteadOfPremiumDownloadlink == null || !freeInsteadOfPremiumDownloadlink.isInProgress()) {
+
+                        freeInsteadOfPremiumDownloadlink = null;
+                        // has to be set here because getRequest takes to much
+                        // time
+                        freeInsteadOfPremiumStarttime = System.currentTimeMillis();
+
+                        requestInfo = getRequest(new URL(link), null, "", false);
+                        String newURL = getFirstMatch(requestInfo.getHtmlCode(), patternForNewHost, 1);
+                        requestInfo = postRequest(new URL(newURL), null, null, null, "dl.start=FREE", true);
+                        String strWaitTime = getSimpleMatch(requestInfo.getHtmlCode(), patternErrorDownloadLimitReached, 0);
+
+                        // wait time pattern not found -> free download
+                        if (strWaitTime == null && !requestInfo.containsHTML(patternForAlreadyDownloading) && !requestInfo.containsHTML(toManyUser)) {
+
+                            logger.info("Download limit not reached yet -> free download (see RS.com options)");
+                            currentStep = steps.firstElement();
+                            noLimitFreeInsteadPremium = true;
+
+                            freeInsteadOfPremiumDownloadlink = downloadLink;
+
+                            return doFreeStep(step, downloadLink);
+
+                        } else {
+                            logger.info("Download limit reached or free download not possible -> premium download");
+                        }
+
+                    } else {
+                        logger.info("There is already a running free download -> premium download");
+                    }
+
                 }
 
                 finalURL = link;
@@ -1628,7 +1629,7 @@ public class Rapidshare extends PluginForHost {
     @Override
     public int getMaxSimultanDownloadNum() {
         int ret = 0;
-        if (((this.getProperties().getProperty(PROPERTY_USE_PREMIUM) != null && ((Boolean) this.getProperties().getProperty(PROPERTY_USE_PREMIUM))) || (this.getProperties().getProperty(PROPERTY_USE_PREMIUM_2) != null && ((Boolean) this.getProperties().getProperty(PROPERTY_USE_PREMIUM_2))) || (this.getProperties().getProperty(PROPERTY_USE_PREMIUM_3) != null && ((Boolean) this.getProperties().getProperty(PROPERTY_USE_PREMIUM_3))))&&(JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true))) {
+        if (((this.getProperties().getProperty(PROPERTY_USE_PREMIUM) != null && ((Boolean) this.getProperties().getProperty(PROPERTY_USE_PREMIUM))) || (this.getProperties().getProperty(PROPERTY_USE_PREMIUM_2) != null && ((Boolean) this.getProperties().getProperty(PROPERTY_USE_PREMIUM_2))) || (this.getProperties().getProperty(PROPERTY_USE_PREMIUM_3) != null && ((Boolean) this.getProperties().getProperty(PROPERTY_USE_PREMIUM_3)))) && (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true))) {
             ret = getMaxConnections() / getChunksPerFile();
         } else {
             ret = 1;

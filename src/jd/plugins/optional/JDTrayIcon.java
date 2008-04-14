@@ -53,7 +53,7 @@ import jd.utils.JDUtilities;
 import jd.gui.skins.simple.SimpleGUI;
 
 public class JDTrayIcon extends PluginOptional  {
-	private SimpleGUI simplegui = (SimpleGUI)JDUtilities.getGUI();
+
     private JPopupMenu popupMenu;
     private JWindow trayParent;
     private TrayIcon trayIcon;
@@ -221,6 +221,7 @@ public class JDTrayIcon extends PluginOptional  {
     }
 
     public void actionPerformed(ActionEvent e) {
+        SimpleGUI simplegui = (SimpleGUI)JDUtilities.getGUI();
     	if(e.getSource() == showhide) {
     		toggleshowhide();
     	}
@@ -340,6 +341,8 @@ public class JDTrayIcon extends PluginOptional  {
     }
 
 	private void showPopup(final Point p) {
+	    toggleshowhide();
+	    toggleshowhide();
 		trayParent.setVisible(true);
 	    trayParent.toFront();
 	    hideTooltip();
@@ -389,14 +392,15 @@ public class JDTrayIcon extends PluginOptional  {
 	}
 
 	private void toggleshowhide() {
+	    SimpleGUI simplegui = (SimpleGUI)JDUtilities.getGUI();
 		if(showhide.getText().equals(JDLocale.L("plugins.optional.trayIcon.hide","Hide"))) {
 		
-			this.simplegui.getFrame().setVisible(false);
+			simplegui.getFrame().setVisible(false);
 			showhide.setText(JDLocale.L("plugins.optional.trayIcon.show","Show"));
 		}
 		else if(showhide.getText().equals(JDLocale.L("plugins.optional.trayIcon.show","Show"))) {
 			
-			this.simplegui.getFrame().setVisible(true);
+			simplegui.getFrame().setVisible(true);
 			showhide.setText(JDLocale.L("plugins.optional.trayIcon.hide","Hide"));
 		}
 	}
