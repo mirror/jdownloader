@@ -21,18 +21,14 @@ import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.HashMap;
 import java.util.Vector;
 import java.util.regex.Pattern;
 
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
-import jd.utils.JDUtilities;
 
 /**
- * http://rs.xxx-blog.org/com-UmNkdzY1MjN/file.rar
- * http://rs.hoerbuch.in/com-UmY3YGNiRjN/PP-Grun.rar
  * 
  * 
  * @author JD-Team
@@ -41,8 +37,8 @@ import jd.utils.JDUtilities;
 public class RsXXXBlog extends PluginForDecrypt {
     static private final String host             = "rs.xxx-blog.org";
 
-    private String              version          = "1.0.0.1";
-    static private final Pattern patternSupported = Pattern.compile("http://rs\\.xxx-blog\\.org/com-[a-zA-Z0-9]{11}/.*", Pattern.CASE_INSENSITIVE);
+    private String              version          = "1.0.0.2";
+    static private final Pattern patternSupported = Pattern.compile("http://.*?xxx-blog\\.org/[a-zA-Z0-9]{1,4}-[a-zA-Z0-9]{10,40}/.*", Pattern.CASE_INSENSITIVE);
 
     //private static final String DEFAULT_PASSWORD = "xxx-blog.org";
 
@@ -98,11 +94,9 @@ public class RsXXXBlog extends PluginForDecrypt {
                 Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
                 // Zählen aller verfügbaren Treffer
                 try {
-                    URL url = new URL(cryptedLink);
-                    RequestInfo requestInfo = getRequest(url, null, null, false);
-                    HashMap<String, String> fields = this.getInputHiddenFields(requestInfo.getHtmlCode(), "postit", "starten");
-                    String newURL = "http://rapidshare.com" + JDUtilities.htmlDecode(fields.get("uri"));
-                    decryptedLinks.add(this.createDownloadlink(newURL));
+                    URL url = new URL(cryptedLink.replaceFirst("http://.*?xxx-blog.org", "http://xxx-blog.org/frame"));
+                    RequestInfo requestInfo = getRequestWithoutHtmlCode(url, null, null, false);
+                    decryptedLinks.add(this.createDownloadlink(requestInfo.getLocation()));
                 }
                 catch (MalformedURLException e) {
                    e.printStackTrace();
