@@ -224,9 +224,13 @@ public class Rapidshare extends PluginForHost {
 
     private File captchaFile;
 
+    private long headLength;
+
     private Boolean noLimitFreeInsteadPremium = false;
 
-    private long headLength;
+    private static DownloadLink freeInsteadOfPremiumDownloadlink;
+
+    private static long freeInsteadOfPremiumStarttime = 0;
 
     private static long LAST_FILE_CHECK = 0;
 
@@ -1031,20 +1035,46 @@ public class Rapidshare extends PluginForHost {
                     return step;
 
                 }
+                
+                if ( this.getProperties().getBooleanProperty(PROPERTY_FREE_IF_LIMIT_NOT_REACHED, false) ) {
+                	
+                	// get shure that dllink.isInProgress() reacted already on dl start
+                	if ( freeInsteadOfPremiumStarttime+2000 > System.currentTimeMillis() ) {
+                		logger.info("A download started before -> wait 2 seconds (prevent this by deactivating 'Free download if limit not reached')");
+                		Thread.sleep(2000);
+                	} 
+                	
+                	if ( freeInsteadOfPremiumDownloadlink == null
+                    		|| !freeInsteadOfPremiumDownloadlink.isInProgress() ) {
 
-                if (getMaxSimultanDownloadNum() == 1 && this.getProperties().getBooleanProperty(PROPERTY_FREE_IF_LIMIT_NOT_REACHED, false)) {
-                    requestInfo = getRequest(new URL(link), null, "", false);
-                    String newURL = getFirstMatch(requestInfo.getHtmlCode(), patternForNewHost, 1);
-                    requestInfo = postRequest(new URL(newURL), null, null, null, "dl.start=FREE", true);
-                    String strWaitTime = getSimpleMatch(requestInfo.getHtmlCode(), patternErrorDownloadLimitReached, 0);
-                    // wait time pattern not found -> free download
-                    if (strWaitTime == null && !requestInfo.containsHTML(patternForAlreadyDownloading) && !requestInfo.containsHTML(toManyUser)) {
-                        logger.info("Download limit not reached yet -> free download (see RS.com options)");
-                        currentStep = steps.firstElement();
-                        noLimitFreeInsteadPremium = true;
-                        return doFreeStep(step, downloadLink);
-                    } else
-                        logger.info("Download limit reached or free download not possible -> premium download");
+                		freeInsteadOfPremiumDownloadlink = null;
+                		// has to be set here because getRequest takes to much time
+                		freeInsteadOfPremiumStarttime = System.currentTimeMillis();
+                		
+	                    requestInfo = getRequest(new URL(link), null, "", false);
+	                    String newURL = getFirstMatch(requestInfo.getHtmlCode(), patternForNewHost, 1);
+	                    requestInfo = postRequest(new URL(newURL), null, null, null, "dl.start=FREE", true);
+	                    String strWaitTime = getSimpleMatch(requestInfo.getHtmlCode(), patternErrorDownloadLimitReached, 0);
+	                    
+	                    // wait time pattern not found -> free download
+	                    if (strWaitTime == null && !requestInfo.containsHTML(patternForAlreadyDownloading) && !requestInfo.containsHTML(toManyUser)) {
+
+	                    	logger.info("Download limit not reached yet -> free download (see RS.com options)");
+	                        currentStep = steps.firstElement();
+	                        noLimitFreeInsteadPremium = true;
+	                        
+	                		freeInsteadOfPremiumDownloadlink = downloadLink;
+	                		
+	                        return doFreeStep(step, downloadLink);
+	                   
+	                    } else {
+	                        logger.info("Download limit reached or free download not possible -> premium download");
+	                    }
+	                    
+                	} else {
+                		logger.info("There is already a running free download -> premium download");
+                	}
+               
                 }
 
                 finalURL = link;
