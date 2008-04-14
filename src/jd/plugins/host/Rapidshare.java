@@ -463,6 +463,7 @@ public class Rapidshare extends PluginForHost {
 
         premiumConfig.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getProperties(), PROPERTY_PREMIUM_USER_2, JDLocale.L("plugins.hoster.rapidshare.com.premiumUser2", "Premium User(alternativ)")));
         cfg.setDefaultValue(JDLocale.L("plugins.rapidshare.userid", "Kundennummer"));
+        cfg.setEnabledCondidtion(conditionEntry, "==", true);
         premiumConfig.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_PASSWORDFIELD, getProperties(), PROPERTY_PREMIUM_PASS_2, JDLocale.L("plugins.hoster.rapidshare.com.premiumPass2", "Premium Pass(alternativ)")));
         cfg.setDefaultValue(JDLocale.L("plugins.rapidshare.pass", "Passwort"));
         cfg.setEnabledCondidtion(conditionEntry, "==", true);

@@ -178,6 +178,7 @@ public class JLinkButton extends JButton {
                 try {
                     launcher = new BrowserLauncher();
                     ar = launcher.getBrowserList();
+            
                 }
                 catch (BrowserLaunchingInitializingException e1) {
                     // TODO Auto-generated catch block

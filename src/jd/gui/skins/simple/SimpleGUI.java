@@ -1048,8 +1048,8 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
 
         private ImageIcon imgInactive;
 
-        private JSpinner spMax;
-        private JSpinner spMaxDls;
+        protected JSpinner spMax;
+        protected JSpinner spMaxDls;
 
         private JButton btnConfirm;
 
@@ -1080,6 +1080,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
             spMaxDls.setToolTipText(JDLocale.L("gui.tooltip.statusbar.simultan_downloads", "Max. gleichzeitige Downloads"));
             spMaxDls.addChangeListener(this);
             
+        
             // lblPluginHostActive = new JLabel(imgInactive);
             // lblPluginDecryptActive = new JLabel(imgInactive);
             // lblPluginDecryptActive.setToolTipText(JDLocale.L("gui.tooltip.plugin_decrypt"));
@@ -1460,6 +1461,15 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
             break;
         }
 
+    }
+
+    public void updateStatusBar() {
+        int maxspeed = JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, 0);
+
+        this.statusBar.spMaxDls.setModel(new SpinnerNumberModel(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN, 3), 1, 20, 1));
+        
+        this.statusBar.spMax.setModel(new SpinnerNumberModel(maxspeed, 0, Integer.MAX_VALUE, 50));
+        return;
     }
 
 }
