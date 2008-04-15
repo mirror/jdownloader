@@ -1593,8 +1593,6 @@ public class Rapidshare extends PluginForHost {
             String name = downloadLink.getName();
             if (name.toLowerCase().matches(".*\\..{1,5}\\.html$")) name = name.replaceFirst("\\.html$", "");
             downloadLink.setName(name);
-
-            ;
             requestInfo = headRequest(new URL(link.replaceAll("http://", "https://ssl.")), null, null, false);
             headLength = Long.parseLong(requestInfo.getConnection().getHeaderField("Content-Length"));
             if (requestInfo.getConnection().getHeaderField("Content-Length") == null || Long.parseLong(requestInfo.getConnection().getHeaderField("Content-Length")) <= 1024 * 100) {
