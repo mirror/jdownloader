@@ -20,7 +20,6 @@ package jd.gui;
 import java.io.File;
 import java.util.Vector;
 
-import jd.event.ControlEvent;
 import jd.event.ControlListener;
 import jd.event.UIEvent;
 import jd.event.UIListener;

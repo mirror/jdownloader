@@ -40,7 +40,6 @@ import javax.swing.event.ChangeListener;
 
 import jd.config.Configuration;
 import jd.config.SubConfiguration;
-import jd.event.UIEvent;
 import jd.gui.UIInterface;
 import jd.gui.skins.simple.LocationListener;
 import jd.gui.skins.simple.SimpleGUI;

@@ -18,7 +18,6 @@
 package jd.controlling.interaction;
 
 import java.io.Serializable;
-import java.util.Iterator;
 import java.util.Vector;
 import java.util.logging.Logger;
 
@@ -27,7 +26,6 @@ import jd.config.Configuration;
 import jd.config.Property;
 import jd.controlling.JDController;
 import jd.event.ControlEvent;
-import jd.event.ControlListener;
 
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;

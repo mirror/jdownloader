@@ -17,7 +17,6 @@ import javax.swing.event.HyperlinkListener;
 
 import jd.gui.skins.simple.Link.JLinkButton;
 import jd.utils.JDTheme;
-import jd.utils.JDUtilities;
 
 
 

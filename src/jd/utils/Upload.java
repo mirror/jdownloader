@@ -25,7 +25,6 @@ import java.net.URLEncoder;
 import java.util.Iterator;
 import java.util.ArrayList;
 import java.util.Map.Entry;
-import java.util.logging.Logger;
 
 import jd.plugins.Form;
 import jd.plugins.HTTPPost;

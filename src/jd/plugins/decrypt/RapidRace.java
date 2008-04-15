@@ -9,7 +9,6 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
-import jd.utils.JDUtilities;
 
 public class RapidRace extends PluginForDecrypt {
     // http://www.rapidrace.org/rel.php?ID=1332

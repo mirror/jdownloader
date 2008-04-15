@@ -26,7 +26,6 @@ import java.util.logging.Logger;
 
 import javax.swing.BorderFactory;
 import javax.swing.JComponent;
-import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
@@ -37,7 +36,6 @@ import javax.swing.SwingConstants;
 
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
-import jd.plugins.download.DownloadInterface.Chunk;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 

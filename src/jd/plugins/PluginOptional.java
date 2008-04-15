@@ -18,7 +18,6 @@
 package jd.plugins;
 
 import java.io.File;
-import java.util.ArrayList;
 import java.util.regex.Pattern;
 import java.awt.event.ActionListener;
 

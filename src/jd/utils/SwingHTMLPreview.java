@@ -8,7 +8,6 @@ package jd.utils;
 
 import java.awt.*;
 import javax.swing.*;
-import javax.swing.text.*;
 import javax.swing.event.*;
 
 

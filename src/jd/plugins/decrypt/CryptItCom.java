@@ -28,7 +28,6 @@ import java.util.regex.Pattern;
 import jd.config.Configuration;
 import jd.controlling.JDController;
 import jd.plugins.DownloadLink;
-import jd.plugins.HTTPConnection;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginStep;
 import jd.utils.JDLocale;

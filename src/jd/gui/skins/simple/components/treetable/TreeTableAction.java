@@ -24,7 +24,6 @@ import javax.swing.AbstractAction;
 import javax.swing.Action;
 
 import jd.config.Property;
-import jd.utils.JDLocale;
 
 
 public class TreeTableAction extends AbstractAction{

@@ -25,7 +25,6 @@ import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.controlling.JDController;
 import jd.controlling.ProgressController;
-import jd.event.ControlEvent;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForContainer;
 import jd.utils.JDLocale;

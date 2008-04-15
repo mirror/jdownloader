@@ -23,14 +23,12 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.regex.Pattern;
 
-import jd.config.Configuration;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTPConnection;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginStep;
 import jd.plugins.Regexp;
 import jd.plugins.download.RAFDownload;
-import jd.utils.JDUtilities;
 
 //http://archiv.to/Get/?System=Download&Hash=FILE4799F3EC23328
 // http://archiv.to/?Module=Details&HashID=FILE4799F3EC23328

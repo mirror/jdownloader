@@ -43,8 +43,6 @@ import javax.swing.event.PopupMenuListener;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.Configuration;
-import jd.event.ControlEvent;
-import jd.event.ControlListener;
 import jd.gui.skins.simple.JDAction;
 import jd.plugins.PluginOptional;
 

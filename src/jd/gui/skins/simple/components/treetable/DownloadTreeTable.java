@@ -38,7 +38,6 @@ import javax.swing.tree.TreePath;
 import jd.JDFileFilter;
 import jd.config.Property;
 import jd.event.ControlEvent;
-import jd.event.UIEvent;
 import jd.gui.skins.simple.DownloadInfo;
 import jd.gui.skins.simple.DownloadLinksView;
 import jd.gui.skins.simple.PackageInfo;

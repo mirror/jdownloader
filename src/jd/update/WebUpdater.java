@@ -43,7 +43,6 @@ import java.util.zip.GZIPInputStream;
 import javax.swing.JProgressBar;
 
 import jd.utils.HTMLEntities;
-import jd.utils.JDUtilities;
 
 /**
  * @author JD-Team Webupdater lädt pfad und hash infos von einem server und

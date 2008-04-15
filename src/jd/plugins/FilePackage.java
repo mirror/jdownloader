@@ -23,8 +23,6 @@ import java.util.Comparator;
 import java.util.Iterator;
 import java.util.Vector;
 
-import jd.captcha.pixelgrid.Letter;
-import jd.captcha.pixelobject.PixelObject;
 import jd.config.Configuration;
 import jd.config.Property;
 import jd.utils.JDUtilities;

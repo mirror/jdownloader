@@ -18,9 +18,7 @@
 package jd.gui.skins.simple.components;
 
 import java.awt.BorderLayout;
-import java.awt.Dimension;
 import java.awt.Insets;
-import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.logging.Logger;

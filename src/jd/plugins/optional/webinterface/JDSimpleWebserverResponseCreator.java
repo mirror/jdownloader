@@ -2,7 +2,6 @@ package jd.plugins.optional.webinterface;
 
 import java.io.IOException;
 import java.io.OutputStream;
-import java.io.UnsupportedEncodingException;
 
 public class JDSimpleWebserverResponseCreator {
         /**

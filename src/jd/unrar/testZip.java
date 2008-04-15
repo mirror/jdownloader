@@ -17,11 +17,9 @@
 
 package jd.unrar;
 
-import java.io.File;
 
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
-import javax.swing.JOptionPane;
 
 import jd.gui.skins.simple.components.JDFileChooser;
 
