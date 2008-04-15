@@ -33,6 +33,7 @@ import jd.plugins.PluginStep;
 import jd.plugins.Regexp;
 import jd.plugins.RequestInfo;
 import jd.utils.JDLocale;
+import jd.utils.JDUtilities;
 
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.Scriptable;
@@ -70,14 +71,23 @@ public class XliceNet extends PluginForDecrypt {
 
     // <br /><a href="/" onclick="createWnd('/gateway/278450/5/', '', 1000,
     // 600);" id="dlok">share.gulli.com</a>
-    static Pattern                patternMirrorLink   = Pattern.compile("<a href=\"[^\"]*\" onclick=\"createWnd\\('([^']*)[^>]*>([^<]+)</a>");
+    static Pattern                patternMirrorLink   = Pattern.compile("<a href=\"[^\\\"]*\" onclick=\\\"[^(]+\\('([^']*)[^>]*>([^<]+)</a>");
 
     static Pattern                patternJSDESFile    = Pattern.compile("<script type=\"text/javascript\" src=\"/([^\"]+)\">");
 
     static Pattern                patternJsScript     = Pattern.compile("<script[^>].*>(.*)\\n[^\\n]*=\\s*(des.*).\\n[^\\n]*document.write\\(.*?</script>", Pattern.DOTALL);
 
     static Pattern				  patternRemoveComments = Pattern.compile("<!--.*?-->", Pattern.DOTALL);
+    static Pattern				  patternRemoveNotDisplayedDivs = Pattern.compile("<div.*?style=\"display:\\s+none;\">.*?</div>", Pattern.DOTALL);
     static Pattern                patternHosterIframe = Pattern.compile("src\\s*=\\s*\"([^\"]+)\"");
+    
+    //a little java script helper to minimize decipher afforts
+//    static private final String jsScript =  "var document = new Object();\n" +
+//										    "document.write = write\n" +
+//										    "function write(content){\n" +
+//										    "return content;"+
+//										    "}\n";
+    
 
     public XliceNet() {
         super();
@@ -173,6 +183,10 @@ public class XliceNet extends PluginForDecrypt {
                     RequestInfo mirrorInfo = getRequest(mirrorUrl, null, null, true);
 
                     ArrayList<ArrayList<String>> groups = getAllSimpleMatches(mirrorInfo.getHtmlCode(), patternMirrorLink);
+                    if(groups.isEmpty()){
+                    	logger.severe("unable to find mirrors - fix patternMirrorLink (see next INFO log line");
+                    	logger.info(mirrorInfo.getHtmlCode());
+                    }
 
                     for (ArrayList<String> pair : groups) {
                         // check if user does not want the links from this
@@ -199,6 +213,9 @@ public class XliceNet extends PluginForDecrypt {
                             // compile the script and load it into context and
                             // scope
                             cx.compileString(desInfo.getHtmlCode(), "<des>", 1, null).exec(cx, scope);
+                            
+                            // compile the helper script into context
+                            //cx.compileString(jsScript, "<des>", 1, null).exec(cx, scope);
                         }
 
                         // get the script that contains the link and the
@@ -218,9 +235,10 @@ public class XliceNet extends PluginForDecrypt {
                         // finally find the link :)
                         String iframe = Context.toString(result);
 
-                        //remove all comments
-                        Matcher clearComments = patternRemoveComments.matcher(iframe);
-                        iframe = clearComments.replaceAll("");
+                        //remove all decoys
+                        iframe = removeMatches(patternRemoveComments, iframe);
+                        iframe = removeMatches(patternRemoveNotDisplayedDivs, iframe);
+                        
                         
                         String hosterURL = new Regexp(iframe, patternHosterIframe).getFirstMatch();
                         if (null == hosterURL) {
@@ -260,6 +278,12 @@ public class XliceNet extends PluginForDecrypt {
         }
         return null;
     }
+    
+    
+    private String removeMatches(Pattern pattern, String string){
+    	Matcher matcher = pattern.matcher(string);
+    	return matcher.replaceAll("");
+    }
 
     private void setConfigEelements() {
         ConfigEntry cfg;
@@ -276,7 +300,7 @@ public class XliceNet extends PluginForDecrypt {
            
             hoster.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getProperties(), USEARRAY[i], USEARRAY[i]));
             cfg.setDefaultValue(true);
-            c++;
+            ++c;
             if(c==max)c=0;
         }
     }
