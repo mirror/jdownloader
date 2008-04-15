@@ -17,7 +17,9 @@
 package jd.plugins.optional;
 
 import java.awt.AWTException;
+import java.awt.Dimension;
 import java.awt.SystemTray;
+import java.awt.Toolkit;
 import java.awt.TrayIcon;
 import java.awt.event.ActionEvent;
 import java.awt.event.MouseEvent;
@@ -29,6 +31,8 @@ import javax.swing.SwingUtilities;
 import javax.swing.event.PopupMenuEvent;
 import javax.swing.event.PopupMenuListener;
 
+import jd.config.ConfigContainer;
+import jd.config.ConfigEntry;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.plugins.PluginOptional;
 import jd.utils.JDLocale;
@@ -115,9 +119,30 @@ public class JDLightTray extends PluginOptional implements MouseListener {
                     popup.dispose();
                     popup = null;
                 } else if (SwingUtilities.isRightMouseButton(e)) {
-
+                	
+                	int x = e.getPoint().x;
+                	int y = e.getPoint().y;
+                	
+                	Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
+                	int limitX = (int) screenSize.getWidth() / 2;
+                	int limitY = (int) screenSize.getHeight() / 2;
+                	
                     popup = new TrayIconPopup(this);
-                    popup.setLocation(-popup.getWidth() + e.getPoint().x, -popup.getHeight() + e.getPoint().y);
+                    
+                    if ( x <= limitX && y <= limitY ) {
+                    	// top left
+                    	popup.setLocation(x, y);
+                    } else if ( x <= limitX && y >= limitY ) {
+                    	// bottom left
+                    	popup.setLocation(x, y-popup.getHeight());
+                    } else if ( x >= limitX && y <= limitY ) {
+                    	// top right
+                    	popup.setLocation(x-popup.getWidth(), y);
+                    } else if ( x >= limitX && y >= limitY ) {
+                    	// bottom right
+                    	popup.setLocation(x-popup.getWidth(), y-popup.getHeight());
+                    }
+                    
                 }
             }
 

@@ -19,6 +19,7 @@ package jd.plugins.optional;
 
 import java.awt.AWTException;
 import java.awt.SystemTray;
+import java.awt.Toolkit;
 import java.awt.TrayIcon;
 import java.awt.Dimension;
 import java.awt.Point;
@@ -375,7 +376,25 @@ public class JDTrayIcon extends PluginOptional  {
 		
 	    SwingUtilities.invokeLater(new Runnable() {
 	    	public void run() {
-	    		toolparent.setLocation(p.x - toolparent.getWidth() - 5, p.y - toolparent.getHeight() - 5);
+            	
+            	Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
+            	int limitX = (int) screenSize.getWidth() / 2;
+            	int limitY = (int) screenSize.getHeight() / 2;
+            	
+                if ( p.x <= limitX && p.y <= limitY ) {
+                	// top left
+                	toolparent.setLocation(p.x, p.y);
+                } else if ( p.x <= limitX && p.y >= limitY ) {
+                	// bottom left
+                	toolparent.setLocation(p.x, p.y-toolparent.getHeight());
+                } else if ( p.x >= limitX && p.y <= limitY ) {
+                	// top right
+                	toolparent.setLocation(p.x-toolparent.getWidth(), p.y);
+                } else if ( p.x >= limitX && p.y >= limitY ) {
+                	// bottom right
+                	toolparent.setLocation(p.x-toolparent.getWidth(), p.y-toolparent.getHeight());
+                }
+                
 	    	};
 		});
 	}
