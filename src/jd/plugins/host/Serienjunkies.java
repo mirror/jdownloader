@@ -91,7 +91,17 @@ public class Serienjunkies extends PluginForHost {
         super();
         steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
     }
+	@Override
+	public boolean collectCaptchas() {
+		// TODO Auto-generated method stub
+		return false;
+	}
 
+	@Override
+	public boolean useUserinputIfCaptchaUnknown() {
+		// TODO Auto-generated method stub
+		return false;
+	}
     public Vector<DownloadLink> getDLinks(String parameter) {
         Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
         try {
