@@ -19,7 +19,7 @@ import java.util.Vector;
 import java.util.Map.Entry;
 import java.util.logging.Logger;
 
-import javax.swing.DropMode;
+
 import javax.swing.JMenu;
 import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
@@ -101,7 +101,7 @@ public class DownloadTreeTable extends JXTreeTable implements WindowFocusListene
         this.getTableHeader().setResizingAllowed(true);
         // this.setExpandsSelectedPaths(true);
         this.setToggleClickCount(1);
-        this.setDropMode(DropMode.INSERT_ROWS);
+        //this.setDropMode(DropMode.INSERT_ROWS);
         setAutoResizeMode(JTable.AUTO_RESIZE_LAST_COLUMN);
         setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
         this.setColumnControlVisible(true);
@@ -824,7 +824,10 @@ if(i>0){
     public void mouseMoved(MouseEvent e) {
         final int moRow = this.rowAtPoint(e.getPoint());
         final int moColumn = this.columnAtPoint(e.getPoint());
-        this.mousePoint = e.getLocationOnScreen();
+        this.mousePoint = e.getPoint();
+        Point screen=this.getLocationOnScreen();
+        mousePoint.x+=screen.x;
+        mousePoint.y+=screen.y;
         if (this.getPathForRow(moRow) == null) {
             this.mouseOverRow = moRow;
             this.mouseOverColumn = moColumn;
@@ -877,17 +880,17 @@ if(i>0){
                 sb.append("<h1>" + link.getFileOutput() + "</h1>");
                 break;
             case 1:
-                sb.append("<h1>" + link.getFileOutput() + "</h1><hr/>");
+                sb.append("<h1>" + link.getFileOutput() + "</h1><hr>");
                 if (link.getLinkType() == DownloadLink.LINKTYPE_NORMAL) sb.append("<p>" + link.getDownloadURL() + "</p>");
 
                 break;
             case 2:
                 PluginForHost plg = (PluginForHost) link.getPlugin();
 
-                sb.append("<h1>" + plg.getPluginID() + "</h1><hr/>");
+                sb.append("<h1>" + plg.getPluginID() + "</h1><hr>");
                 sb.append("<p>");
                 sb.append(JDLocale.L("gui.downloadlist.tooltip.connections", "Akt. Verbindungen: ") + "" + plg.getCurrentConnections() + "/" + plg.getMaxConnections());
-                sb.append("<br/>");
+                sb.append("<br>");
                 sb.append(JDLocale.L("gui.downloadlist.tooltip.simultan_downloads", "Max. gleichzeitige Downloads:") + " " + plg.getMaxSimultanDownloadNum());
                 sb.append("</p>");
                 break;
@@ -914,7 +917,7 @@ if(i>0){
                 }
                 table += "</table></p>";
 
-                sb.append("<h1>" + link.getFileOutput() + "</h1><hr/>");
+                sb.append("<h1>" + link.getFileOutput() + "</h1><hr>");
                 sb.append(table);
 
                 break;
@@ -924,13 +927,13 @@ if(i>0){
             switch (mouseOverColumn) {
             case 0:
 
-                sb.append("<h1>" + fp.getName() + "</h1><hr/>");
+                sb.append("<h1>" + fp.getName() + "</h1><hr>");
                 if (fp.hasComment()) sb.append("<p>" + fp.getComment() + "</p>");
                 if (fp.hasPassword()) sb.append("<p>" + fp.getPassword() + "</p>");
                 if (fp.hasDownloadDirectory()) sb.append("<p>" + fp.getDownloadDirectory() + "</p>");
                 break;
             case 1:
-                sb.append("<h1>" + fp.getName() + "</h1><hr/>");
+                sb.append("<h1>" + fp.getName() + "</h1><hr>");
                 sb.append("<p>" + JDLocale.L("gui.downloadlist.tooltip.partnum", "Teile: ") + fp.size() + "</p>");
                 sb.append("<p>" + JDLocale.L("gui.downloadlist.tooltip.partsfinished", "Davon fertig: ") + fp.getLinksFinished() + "</p>");
                 sb.append("<p>" + JDLocale.L("gui.downloadlist.tooltip.partsfailed", "Davon fehlerhaft: ") + fp.getLinksFailed() + "</p>");
@@ -941,11 +944,11 @@ if(i>0){
                 return;
 
             case 3:
-                sb.append("<h1>" + fp.getName() + "</h1><hr/>");
+                sb.append("<h1>" + fp.getName() + "</h1><hr>");
                 sb.append("<p>" + this.getDownladTreeTableModel().getValueAt(obj, mouseOverColumn) + "</p>");
                 break;
             case 4:
-                sb.append("<h1>" + fp.getName() + "</h1><hr/>");
+                sb.append("<h1>" + fp.getName() + "</h1><hr>");
                 sb.append("<p>" + this.getDownladTreeTableModel().getValueAt(obj, mouseOverColumn - 1) + "</p>");
 
                 break;
@@ -1018,7 +1021,7 @@ if(i>0){
     }
 
     public void windowLostFocus(WindowEvent e) {
-        if (tooltip != null) {
+        if (tooltip != null&&e.getOppositeWindow()!=tooltip) {
             tooltip.destroy();
             tooltip = null;
         }

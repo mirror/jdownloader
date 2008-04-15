@@ -289,9 +289,18 @@ public class JDInit {
     @SuppressWarnings("unchecked")
     public HashMap<String, PluginOptional> loadPluginOptional() {
         HashMap<String, PluginOptional> pluginsOptional = new HashMap<String, PluginOptional>();
-        String[] optionalPlugins = new String[] { "JDTrayIcon", "JDGetter", "JDLightTray" };
+        String[] optionalPlugins = new String[] { "JDTrayIcon", "JDGetter", "JDLightTray" ,"webinterface.JDWebinterface"};
+        double[] optionalVersions = new double[] { 1.6, 1.5, 1.6,1.5 };
         JDClassLoader jdClassLoader = JDUtilities.getJDClassLoader();
+        int i=0;
+        Double version = JDUtilities.getJavaVersion();
         for (String cl : optionalPlugins) {
+            if(version<optionalVersions[i]){
+                i++;
+                logger.finer("Plugin "+cl+" requires Java Version "+optionalVersions[i-1]+" your Version is: "+version);
+                continue;
+            }
+            i++;
             logger.finer("Try to initialize " + cl);
             try {
                 Class plgClass = jdClassLoader.loadClass("jd.plugins.optional." + cl);
@@ -305,27 +314,10 @@ public class JDInit {
                 pluginsOptional.put(p.getPluginName(), p);
                 logger.finer("Successfull!. Loaded " + cl);
                 
-            } catch (ClassNotFoundException e) {
-
-            } catch (SecurityException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
-            } catch (NoSuchMethodException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
-            } catch (IllegalArgumentException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
-            } catch (InstantiationException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
-            } catch (IllegalAccessException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
-            } catch (InvocationTargetException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
-            }
+          } catch (Exception e) {
+              logger.info("Plugin Exception!");
+              e.printStackTrace();
+             }
 
         }
 

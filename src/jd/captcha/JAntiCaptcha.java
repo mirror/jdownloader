@@ -323,7 +323,7 @@ public class JAntiCaptcha {
      */
     private void loadMTHFile() {
         File f = JDUtilities.getResourceFile("jd/captcha/methods/" + this.methodDirName + "/" + "letters.mth");
-        String str = "<jDownloader/>";
+        String str = "<jDownloader>";
         if (f.exists()) str = JDUtilities.getLocalFile(f);
         Document mth = UTILITIES.parseXmlString(str, false);
         logger.info("Get file: " + f);
@@ -448,7 +448,7 @@ public class JAntiCaptcha {
 
     private Document createXMLFromLetterDB() {
 
-        Document xml = UTILITIES.parseXmlString("<jDownloader/>", false);
+        Document xml = UTILITIES.parseXmlString("<jDownloader>", false);
         if (letterMap != null) {
             Element element = xml.createElement("map");
             xml.getFirstChild().appendChild(element);

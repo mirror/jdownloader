@@ -22,11 +22,11 @@ import java.util.Hashtable;
 
 /**
  * Collection of static methods to convert special and extended
- * characters into HTML entitities and vice versa.<br/><br/>
+ * characters into HTML entitities and vice versa.<br><br>
  * Copyright (c) 2004-2005 Tecnick.com S.r.l (www.tecnick.com) Via Ugo Foscolo
  * n.19 - 09045 Quartu Sant'Elena (CA) - ITALY - www.tecnick.com -
- * info@tecnick.com<br/>
- * Project homepage: <a href="http://htmlentities.sourceforge.net" target="_blank">http://htmlentities.sourceforge.net</a><br/>
+ * info@tecnick.com<br>
+ * Project homepage: <a href="http://htmlentities.sourceforge.net" target="_blank">http://htmlentities.sourceforge.net</a><br>
  * License: http://www.gnu.org/copyleft/lesser.html LGPL
  * @author Nicola Asuni [www.tecnick.com].
  * @version 1.0.004
@@ -34,7 +34,7 @@ import java.util.Hashtable;
 public class HTMLEntities {
     
     /**
-     * Translation table for HTML entities.<br/>
+     * Translation table for HTML entities.<br>
      * reference: W3C - Character entity references in HTML 4 [<a href="http://www.w3.org/TR/html401/sgml/entities.html" target="_blank">http://www.w3.org/TR/html401/sgml/entities.html</a>].
      */
     private static final Object[][] html_entities_table = {

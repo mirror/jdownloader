@@ -327,8 +327,8 @@ public class MultiPartFormOutputStream {
 	}
  
 	/**
-	 * Closes the stream.  <br/>
-	 * <br/>
+	 * Closes the stream.  <br>
+	 * <br>
 	 * <b>NOTE:</b> This method <b>MUST</b> be called to finalize the 
 	 * multipart stream.
 	 * 
@@ -393,8 +393,8 @@ public class MultiPartFormOutputStream {
 	/**
 	 * Gets the content type string suitable for the 
 	 * <code>java.net.URLConnection</code> which includes the multipart 
-	 * boundary string.  <br/>
-	 * <br/>
+	 * boundary string.  <br>
+	 * <br>
 	 * This method is static because, due to the nature of the 
 	 * <code>java.net.URLConnection</code> class, once the output stream 
 	 * for the connection is acquired, it's too late to set the content 

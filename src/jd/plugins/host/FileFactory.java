@@ -545,7 +545,7 @@ public class FileFactory extends PluginForHost {
 						null, null, "link_text="+fileFactoryUrlEncode(downloadLink.getDownloadURL()), true);
 				fileName = new Regexp(requestInfo.getHtmlCode(), FILENAME).getFirstMatch();
 				if(fileName==null)return false;
-				fileName = fileName.replaceAll(" <br/>", "").trim();
+				fileName = fileName.replaceAll(" <br>", "").trim();
 				
 				Double fileSize = Double.parseDouble(new Regexp(requestInfo.getHtmlCode(), FILESIZE).getFirstMatch(1));
 				String unit = new Regexp(requestInfo.getHtmlCode(), FILESIZE).getFirstMatch(2);

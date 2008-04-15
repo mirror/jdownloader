@@ -1193,6 +1193,10 @@ abstract public class DownloadInterface {
                         bytes += block;
                     }
                     if (block == -1 && bytes == 0) break;
+                    deltaTime = Math.max(System.currentTimeMillis() - timer, 1);
+                    desiredBps = (1000 * (long) bytes) / deltaTime;
+                    if (speedDebug) logger.finer("desired: " + desiredBps + " - loaded: " + (System.currentTimeMillis() - timer) + " - " + bytes);
+                    
                     buffer.flip();
                     writeBytes(this);
 
@@ -1215,10 +1219,7 @@ abstract public class DownloadInterface {
                      * War der download des buffers zu schnell, wird heir eine
                      * pause eingelegt
                      */
-                    deltaTime = Math.max(System.currentTimeMillis() - timer, 1);
-                    desiredBps = (1000 * (long) bytes) / deltaTime;
-                    if (speedDebug) logger.finer("desired: " + desiredBps + " - loaded: " + (System.currentTimeMillis() - timer) + " - " + bytes);
-                    tempBuff = getBufferSize(getMaximalSpeed());
+                   tempBuff = getBufferSize(getMaximalSpeed());
                     // Falls der Server bei den Ranges schlampt und als endByte
                     // immer das dateiende angibt wird hier der buffer
                     // korrigiert um overhead zu vermeiden

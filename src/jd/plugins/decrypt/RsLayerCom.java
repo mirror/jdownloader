@@ -133,7 +133,7 @@ public class RsLayerCom extends PluginForDecrypt {
                     	
                     	String captchaCode = Plugin.getCaptchaCode(captchaFile, this);
                     	
-                    	if(null == captchaCode || captchaCode.isEmpty()){
+                    	if(null == captchaCode || captchaCode.length()==0){
                     		logger.info(JDLocale.L("plugins.decrypt.rslayer.invalidCaptchaCode", "ungültiger Captcha Code"));
                     		step.setStatus(PluginStep.STATUS_ERROR);
                     		return null;
