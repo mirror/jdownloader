@@ -504,6 +504,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
 
     private String removeExtension(String a) {
         // logger.finer("file " + a);
+        if(a==null)return a;
         a = a.replaceAll("\\.part([0-9]+)", "");
         a = a.replaceAll("\\.html", "");
         a = a.replaceAll("\\.htm", "");

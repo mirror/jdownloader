@@ -92,7 +92,7 @@ public class ConfigPanelGUI extends ConfigPanel {
 
         Object[] BrowserArray = (Object[]) guiConfig.getProperty(SimpleGUI.PARAM_BROWSER_VARS, null);
 
-        if (BrowserArray == null||true) {
+        if (BrowserArray == null) {
             BrowserLauncher launcher;
             List ar = null;
             try {

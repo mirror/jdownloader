@@ -3,14 +3,14 @@
 <!--
   yGuard Bytecode Obfuscator, v2.2.0, a Product of yWorks GmbH - http://www.yworks.com
 
-  Logfile created on Tue Apr 15 02:18:16 CEST 2008
+  Logfile created on Tue Apr 15 21:20:27 CEST 2008
 
   Jar file to be obfuscated:           JDownloaderContainer.jar
   Target Jar file for obfuscated code: JDownloaderContainer_obfuscated.jar
 
 -->
 <!--
-  Memory in use after class data structure built: 2389288 bytes
+  Memory in use after class data structure built: 2401944 bytes
   Total memory available                        : 5177344 bytes
 -->
 <!-- WARNING: Unresolved external dependency: jd.plugins.HTTPConnection not found! -->
@@ -138,14 +138,43 @@
 <!-- WARNING: Unresolved external dependency: jd.plugins.PluginStep not found! -->
 <!-- WARNING: Unresolved external dependency: jd.plugins.PluginStep not found! -->
 <!-- WARNING: No mapping found: jd.plugins.DownloadLink -->
+<!-- WARNING: Unresolved external dependency: jd.controlling.ProgressController not found! -->
+<!-- WARNING: No mapping found: jd.controlling.ProgressController -->
+<!-- WARNING: No mapping found: jd.utils.JDLocale -->
+<!-- WARNING: No mapping found: jd.controlling.ProgressController -->
+<!-- WARNING: No mapping found: jd.controlling.ProgressController -->
 <!-- WARNING: No mapping found: jd.plugins.PluginStep -->
 <!-- WARNING: Unresolved external dependency: jd.plugins.PluginStep not found! -->
 <!-- WARNING: Unresolved external dependency: jd.plugins.PluginStep not found! -->
+<!-- WARNING: No mapping found: jd.controlling.ProgressController -->
+<!-- WARNING: No mapping found: jd.controlling.ProgressController -->
+<!-- WARNING: No mapping found: jd.controlling.DistributeData -->
+<!-- WARNING: No mapping found: jd.controlling.DistributeData -->
+<!-- WARNING: No mapping found: jd.plugins.DownloadLink -->
+<!-- WARNING: No mapping found: jd.plugins.DownloadLink -->
+<!-- WARNING: No mapping found: jd.plugins.DownloadLink -->
+<!-- WARNING: No mapping found: jd.plugins.DownloadLink -->
+<!-- WARNING: No mapping found: jd.plugins.DownloadLink -->
+<!-- WARNING: No mapping found: jd.plugins.DownloadLink -->
+<!-- WARNING: No mapping found: jd.plugins.DownloadLink -->
+<!-- WARNING: No mapping found: jd.plugins.DownloadLink -->
+<!-- WARNING: No mapping found: jd.plugins.DownloadLink -->
+<!-- WARNING: No mapping found: jd.plugins.DownloadLink -->
+<!-- WARNING: Unresolved external dependency: jd.plugins.DownloadLink not found! -->
+<!-- WARNING: No mapping found: jd.plugins.DownloadLink -->
+<!-- WARNING: No mapping found: jd.plugins.DownloadLink -->
+<!-- WARNING: Unresolved external dependency: jd.plugins.FilePackage not found! -->
+<!-- WARNING: No mapping found: jd.plugins.DownloadLink -->
+<!-- WARNING: Unresolved external dependency: jd.plugins.FilePackage not found! -->
+<!-- WARNING: No mapping found: jd.plugins.DownloadLink -->
 <!-- WARNING: No mapping found: jd.utils.JDUtilities -->
 <!-- WARNING: No mapping found: jd.plugins.PluginForHost -->
 <!-- WARNING: Unresolved external dependency: jd.plugins.DownloadLink not found! -->
 <!-- WARNING: Unresolved external dependency: jd.utils.JDUtilities not found! -->
+<!-- WARNING: Unresolved external dependency: jd.controlling.ProgressController not found! -->
+<!-- WARNING: Unresolved external dependency: jd.utils.JDLocale not found! -->
 <!-- WARNING: Unresolved external dependency: jd.plugins.PluginStep not found! -->
+<!-- WARNING: Unresolved external dependency: jd.controlling.DistributeData not found! -->
 <!-- WARNING: Unresolved external dependency: jd.plugins.PluginForHost not found! -->
 <!-- WARNING: Unresolved external dependency: jd.plugins.DownloadLink not found! -->
 <!-- WARNING: Unresolved external dependency: jd.plugins.DownloadLink not found! -->
@@ -275,16 +304,16 @@
 <!-- WARNING: No mapping found: jd.controlling.JDController -->
 <!-- WARNING: No mapping found: jd.gui.UIInterface -->
 <!-- WARNING: No mapping found: jd.utils.JDUtilities -->
+<!-- WARNING: No mapping found: jd.plugins.DownloadLink -->
+<!-- WARNING: No mapping found: jd.plugins.DownloadLink -->
+<!-- WARNING: No mapping found: jd.plugins.DownloadLink -->
+<!-- WARNING: No mapping found: jd.plugins.DownloadLink -->
+<!-- WARNING: No mapping found: jd.plugins.DownloadLink -->
+<!-- WARNING: Unresolved external dependency: jd.plugins.DownloadLink not found! -->
+<!-- WARNING: No mapping found: jd.plugins.DownloadLink -->
+<!-- WARNING: Unresolved external dependency: jd.plugins.DownloadLink not found! -->
 <!-- WARNING: Unresolved external dependency: jd.plugins.PluginForHost not found! -->
 <!-- WARNING: No mapping found: jd.plugins.PluginForHost -->
-<!-- WARNING: No mapping found: jd.plugins.DownloadLink -->
-<!-- WARNING: No mapping found: jd.plugins.DownloadLink -->
-<!-- WARNING: No mapping found: jd.plugins.DownloadLink -->
-<!-- WARNING: No mapping found: jd.plugins.DownloadLink -->
-<!-- WARNING: No mapping found: jd.plugins.DownloadLink -->
-<!-- WARNING: Unresolved external dependency: jd.plugins.DownloadLink not found! -->
-<!-- WARNING: No mapping found: jd.plugins.DownloadLink -->
-<!-- WARNING: Unresolved external dependency: jd.plugins.DownloadLink not found! -->
 <!-- WARNING: No mapping found: jd.plugins.FilePackage -->
 <!-- WARNING: No mapping found: jd.plugins.FilePackage -->
 <!-- WARNING: No mapping found: jd.plugins.FilePackage -->
@@ -556,27 +585,27 @@
   <field class="jd.plugins.container.ContainerDLC" name="CONFIGNAME" map="N"/>
   <field class="jd.plugins.container.ContainerDLC" name="patternSupported" map="O"/>
   <field class="jd.plugins.container.ContainerDLC" name="header" map="P"/>
-  <method class="jd.plugins.container.ContainerDLC" name="void initConfig()" map="A"/>
+  <method class="jd.plugins.container.ContainerDLC" name="void initConfig()" map="B"/>
   <method class="jd.plugins.container.ContainerDLC" name="java.lang.String getMD5(java.lang.String)" map="A"/>
   <method class="jd.plugins.container.ContainerDLC" name="java.lang.String getLocalFile(java.io.File)" map="A"/>
   <method class="jd.plugins.container.ContainerDLC" name="void parseDLCXML1(org.w3c.dom.Node, java.io.File)" map="A"/>
   <method class="jd.plugins.container.ContainerDLC" name="java.lang.String getHeaderField(java.lang.String)" map="B"/>
-  <method class="jd.plugins.container.ContainerDLC" name="byte[] readJarSig()" map="B"/>
+  <method class="jd.plugins.container.ContainerDLC" name="byte[] readJarSig()" map="C"/>
   <method class="jd.plugins.container.ContainerDLC" name="java.lang.String decryptServerKey(java.lang.String)" map="C"/>
   <method class="jd.plugins.container.ContainerDLC" name="void parseDLCXML2(org.w3c.dom.Node, java.io.File)" map="B"/>
-  <method class="jd.plugins.container.ContainerDLC" name="byte[] getJDTCKey()" map="C"/>
+  <method class="jd.plugins.container.ContainerDLC" name="byte[] getJDTCKey()" map="D"/>
   <method class="jd.plugins.container.ContainerDLC" name="void parseXMLString(java.lang.String, java.io.File)" map="A"/>
   <method class="jd.plugins.container.ContainerDLC" name="void parseDLCXML3(org.w3c.dom.Node, java.io.File)" map="C"/>
   <method class="jd.plugins.container.ContainerDLC" name="java.lang.String callService(java.net.URL, java.lang.String)" map="A"/>
   <method class="jd.plugins.container.ContainerDLC" name="java.lang.String getLocalHash(java.io.File)" map="B"/>
-  <method class="jd.plugins.container.ContainerDLC" name="byte[] getKey()" map="D"/>
+  <method class="jd.plugins.container.ContainerDLC" name="byte[] getKey()" map="E"/>
   <field class="jd.plugins.container.ContainerRSDF" name="patternSupported" map="Q"/>
   <method class="jd.plugins.container.ContainerRSDF" name="java.lang.String[] loadFileContent(java.lang.String)" map="D"/>
   <method class="jd.plugins.container.ContainerRSDF" name="java.lang.String[] decrypt(java.lang.String)" map="E"/>
   <method class="jd.plugins.container.ContainerRSDF" name="java.lang.String getLocalFile(java.io.File)" map="C"/>
-  <method class="jd.plugins.container.ContainerRSDF" name="byte[] getKey()" map="E"/>
+  <method class="jd.plugins.container.ContainerRSDF" name="byte[] getKey()" map="F"/>
   <method class="jd.plugins.container.ContainerRSDF" name="java.lang.String filterRSDF(java.lang.String)" map="F"/>
-  <method class="jd.plugins.container.ContainerRSDF" name="byte[] readJarSig()" map="F"/>
+  <method class="jd.plugins.container.ContainerRSDF" name="byte[] readJarSig()" map="G"/>
   <method class="jd.plugins.container.ContainerRSDF" name="void getEKey(byte[])" map="A"/>
   <class name="jd.plugins.container.ContainerCCF$1" map="1"/>
   <field class="jd.plugins.container.ContainerCCF$1" name="this$0" map="A"/>
@@ -584,7 +613,7 @@
   <field class="jd.plugins.container.ContainerCCF" name="rsdfLink" map="R"/>
   <field class="jd.plugins.container.ContainerCCF" name="patternSupported" map="S"/>
   <field class="jd.plugins.container.ContainerCCF" name="rsdf" map="T"/>
-  <method class="jd.plugins.container.ContainerCCF" name="void initConfig()" map="G"/>
+  <method class="jd.plugins.container.ContainerCCF" name="void initConfig()" map="H"/>
   <field class="jd.plugins.PluginForDecrypt" name="cryptedLink" map="G"/>
   <field class="jd.plugins.Plugin" name="lastCaptcha" map="A"/>
   <field class="jd.plugins.Plugin" name="DOWNLOAD_ERROR_0_BYTE_TOLOAD" map="B"/>
@@ -598,5 +627,6 @@
   <field class="jd.plugins.PluginForContainer" name="CONTAINERLINKS" map="K"/>
   <field class="jd.plugins.PluginForContainer" name="STATUS_ERROR_EXTRACTING" map="L"/>
   <field class="jd.plugins.PluginForContainer" name="PLUGINS" map="M"/>
+  <method class="jd.plugins.PluginForContainer" name="void decryptLinkProtectorLinks()" map="A"/>
 </map>
 </yguard>

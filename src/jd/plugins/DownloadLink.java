@@ -171,6 +171,8 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
 
     private static final int CRC_STATUS_UNCHECKED = 0;
 
+    public static final String UNKNOWN_FILE_NAME = "unknownFileName.file";
+
     /**
      * Statustext der von der GUI abgefragt werden kann
      */
@@ -348,7 +350,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
      */
     public String getName() {
 
-        if (this.getStaticFileName() == null) return name;
+        if (this.getStaticFileName() == null) return name==null?UNKNOWN_FILE_NAME:name;
         return this.getStaticFileName();
 
     }

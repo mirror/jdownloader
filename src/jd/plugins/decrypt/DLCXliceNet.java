@@ -14,16 +14,25 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-
 package jd.plugins.decrypt;
 
 import java.io.File;
+import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.util.ArrayList;
 import java.util.Vector;
 import java.util.regex.Pattern;
 
+import jd.config.ConfigContainer;
+import jd.config.ConfigEntry;
+import jd.gui.skins.simple.Link.JLinkButton;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginStep;
+import jd.plugins.RequestInfo;
+import jd.utils.JDLocale;
+import jd.utils.JDUtilities;
 
 public class DLCXliceNet extends PluginForDecrypt {
 
@@ -32,6 +41,8 @@ public class DLCXliceNet extends PluginForDecrypt {
     private String version = "0.0.1";
 
     private Pattern patternSupported = getSupportPattern("http://dlc.xlice.net/[+]/[+]/[+]/[+]/[+]");
+
+    private static ArrayList<String> openedLinks = new ArrayList<String>();;
 
     public DLCXliceNet() {
         super();
@@ -51,7 +62,7 @@ public class DLCXliceNet extends PluginForDecrypt {
 
     @Override
     public String getPluginID() {
-        return host+" " + version;
+        return host + " " + version;
     }
 
     @Override
@@ -75,15 +86,50 @@ public class DLCXliceNet extends PluginForDecrypt {
             Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
 
             progress.setRange(1);
-            parameter=parameter.replaceFirst("http://.*?adref.in/\\?", "");
-            if(!parameter.matches("^http://"))
-                parameter="http://"+parameter;
-            decryptedLinks.add(this.createDownloadlink(parameter));
+            try {
+                RequestInfo ri = getRequestWithoutHtmlCode(new URL(parameter), null, null, false);
+                logger.info(ri.getHeaders() + "");
+                if (ri.getLocation() != null) {
+                    // ri.getLocation()
+                 
+                    if (ri.getLocation().contains("folder")) {
+                        if (getProperties().getBooleanProperty("REFRESH_DLC_BROWSER", true) && !openedLinks.contains(ri.getLocation())) {
+
+                            if (JDUtilities.getGUI().showConfirmDialog(JDLocale.L("plugins.decrypt.dlcxlice.net", "DLC expired. Open Xlicefolder?"))) {
+                                openedLinks.add(ri.getLocation());
+                                JLinkButton.openURL(ri.getLocation());
+                                String id = ri.getLocation().substring(ri.getLocation().indexOf("folder/") + 7, ri.getLocation().length() - 1);
+                                JDUtilities.download(JDUtilities.getResourceFile("container/" + JDUtilities.getMD5(ri.getLocation()) + ".dlc"), "http://xlice.net/getdlc/" + id + "/");
+                            JDUtilities.getController().loadContainerFile(JDUtilities.getResourceFile("container/" + JDUtilities.getMD5(ri.getLocation()) + ".dlc"));
+                            }
+                        }
+                    } else {
+                        decryptedLinks.add(this.createDownloadlink(ri.getLocation()));
+                    }
+                } else {
+
+                }
+
+            } catch (MalformedURLException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            } catch (IOException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            }
+
             progress.increase(1);
 
             step.setParameter(decryptedLinks);
         }
         return null;
+    }
+
+    private void setConfigElements() {
+        ConfigEntry cfg;
+        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getProperties(), "REFRESH_DLC_BROWSER", "Veraltete DLCs im Browser öffnen"));
+        cfg.setDefaultValue(true);
+
     }
 
     @Override

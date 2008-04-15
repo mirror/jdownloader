@@ -59,18 +59,17 @@ public class DLCConverter extends Interaction implements Serializable {
         Vector<PluginForContainer> pluginsForContainer = JDUtilities.getPluginsForContainer();
         Vector<DownloadLink> downloadLinks = new Vector<DownloadLink>();
         PluginForContainer pContainer;
-        ProgressController progress = new ProgressController("Containerloader", pluginsForContainer.size());
-    
+       
 
         for (int i = 0; i < pluginsForContainer.size(); i++) {
 
             pContainer = pluginsForContainer.get(i);       
-            progress.setStatusText("Containerplugin: " + pContainer.getPluginName());
+         
             if (pContainer.canHandle(file.getName())) {
              
                 try {
                     pContainer = pContainer.getClass().newInstance();
-                    progress.setSource(pContainer);
+                  
                    
                     pContainer.initContainer(file.getAbsolutePath());
                     Vector<DownloadLink> links = pContainer.getContainedDownloadlinks();
@@ -86,11 +85,11 @@ public class DLCConverter extends Interaction implements Serializable {
                     e.printStackTrace();
                 }
             }
-            progress.increase(1);
+          
         }
-        progress.setStatusText(downloadLinks.size() + " links found");
+       
      
-        progress.finalize();
+     
         return downloadLinks;
     }
 
