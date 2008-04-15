@@ -395,7 +395,6 @@ public class Serienjunkies extends PluginForHost {
 	                Iterator<DownloadLink> it2 = links.iterator();
 	                while (it2.hasNext()) {
 						DownloadLink downloadLink3 = (DownloadLink) it2.next();
-						if(!downloadLink3.isAvailable())return null;
 						downloadLink3.setFilePackage(fp);
 					}
 					ret.addAll(links);
