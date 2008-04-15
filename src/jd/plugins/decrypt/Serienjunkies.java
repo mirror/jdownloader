@@ -456,7 +456,7 @@ public class Serienjunkies extends PluginForDecrypt {
 									} else {
 										DownloadLink dlink = new DownloadLink(
 												this,
-												null,
+												links[i][0],
 												this.getHost(),
 												JDUtilities
 														.htmlDecode(links2[j]
@@ -512,7 +512,7 @@ public class Serienjunkies extends PluginForDecrypt {
 					size = Integer.parseInt(info[0]);
 				}
 				
-				DownloadLink dlink = new DownloadLink(this, null, "rapidshare.com", JDUtilities.htmlDecode(parameter
+				DownloadLink dlink = new DownloadLink(this, name, this.getHost(), JDUtilities.htmlDecode(parameter
 						.replaceFirst("(?i)serienjunkies", "sjdownload").replaceFirst("(/..[\\_\\-])", "$1/")), true);
 				if (name != null) {
 					dlink.setSourcePluginComment(name);
