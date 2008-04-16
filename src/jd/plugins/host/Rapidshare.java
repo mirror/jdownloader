@@ -1644,8 +1644,16 @@ public class Rapidshare extends PluginForHost {
         boolean[] ret = new boolean[urls.length];
         String post = "";
         for (int i = 0; i < urls.length; i++) {
+            
+            
             if (!this.canHandle(urls[i])) return null;
-            post += urls[i] + "%0a";
+            
+            if (urls[i].contains("://ssl.") || !urls[i].startsWith("http://rapidshare.com")) {
+                urls[i] = "http://rapidshare.com" + urls[i].substring(urls[i].indexOf("rapidshare.com") + 14);
+                
+              
+            }
+            post += urls[i].trim() + "%0a";
         }
         try {
             RequestInfo ri = getRequest(new URL("https://ssl.rapidshare.com/cgi-bin/checkfiles.cgi?urls=" + post));

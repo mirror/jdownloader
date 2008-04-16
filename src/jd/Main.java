@@ -113,9 +113,6 @@ public class Main {
 
         }
 
-      
-    
-
         JDTheme.setTheme("default");
 
         boolean stop = false;

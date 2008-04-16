@@ -1076,7 +1076,7 @@ public class JDUtilities {
         }
         pfh.addAll(plgs);
         return pfh;
-    }
+    } 
 
     /**
      * Liefert alle optionalen Plugins zurücl

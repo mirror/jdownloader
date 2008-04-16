@@ -857,7 +857,7 @@ public class JDController implements ControlListener, UIListener {
 
                             localLink = it.next();
                             if (localLink.getStatus() == DownloadLink.STATUS_DONE && Configuration.FINISHED_DOWNLOADS_REMOVE_AT_START.equals(JDUtilities.getConfiguration().getProperty(Configuration.PARAM_FINISHED_DOWNLOADS_ACTION))) {
-                                iterator.remove();
+                                it.remove();
                                 if (fp.getDownloadLinks().size() == 0) {
                                     iterator.remove();
 
