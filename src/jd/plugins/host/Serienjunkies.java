@@ -469,12 +469,14 @@ public class Serienjunkies extends PluginForHost {
 	            {
 	            downloadLink.setStatus(DOWNLOAD_ERROR_FILENOTFOUND);
 	            step.setStatus(PluginStep.STATUS_ERROR);
+	            JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_LINKLIST_STRUCTURE_CHANGED, null));
 	            return step;
 	            }
             }
 		} catch (Exception e) {
 			// TODO: handle exception
 		}
+        JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_LINKLIST_STRUCTURE_CHANGED, null));
         return null;
     }
     @Override
