@@ -467,7 +467,7 @@ public class Serienjunkies extends PluginForHost {
                 }
                 
 	            JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_LINKLIST_STRUCTURE_CHANGED, null));
-	            if(ret.size()>0)
+	            if(down.size()>0)
 	            {
 	            downloadLink.setStatus(DOWNLOAD_ERROR_FILENOTFOUND);
 	            step.setStatus(PluginStep.STATUS_ERROR);
