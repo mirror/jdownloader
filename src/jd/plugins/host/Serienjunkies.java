@@ -379,25 +379,63 @@ public class Serienjunkies extends PluginForHost {
 
     public PluginStep doStep(PluginStep step, DownloadLink downloadLink) {
     	try {
+
             switch (step.getStep()) {
             case PluginStep.STEP_DECRYPT :
-            	String link = downloadLink.getDownloadURL().replaceFirst(
-						"(?i)sjdownload",
-				"serienjunkies").replaceFirst("(/..[\\_\\-])/", "$1");
-            	Vector<DownloadLink> dls = getDLinks(link);
-                Iterator<DownloadLink> it = dls.iterator();
+            	String link = (String) downloadLink.getProperty("link");
+            	String[] mirrors = (String[]) downloadLink.getProperty("mirrors");
+                Vector<DownloadLink> dls = getDLinks(link);
                 FilePackage fp = downloadLink.getFilePackage();
+                Vector<Integer> down = new Vector<Integer>();
                 Vector<DownloadLink> ret = new Vector<DownloadLink>();
-                while (it.hasNext()) {
-					DownloadLink downloadLink2 = (DownloadLink) it.next();
-	                DistributeData distributeData = new DistributeData(downloadLink2.getDownloadURL());
+                for (int i = 0; i < dls.size(); i++) {
+	                DistributeData distributeData = new DistributeData(dls.get(i).getDownloadURL());
 	                Vector<DownloadLink> links = distributeData.findLinks();
 	                Iterator<DownloadLink> it2 = links.iterator();
+	                boolean online = false;
 	                while (it2.hasNext()) {
 						DownloadLink downloadLink3 = (DownloadLink) it2.next();
-						downloadLink3.setFilePackage(fp);
+						if (downloadLink3.isAvailable()) {
+	                        downloadLink3.setFilePackage(fp);
+	                        online=true;
+                        } else {
+                            down.add(i);
+                        }
+
 					}
-					ret.addAll(links);
+	                if(online)
+	                    ret.addAll(links);
+                }
+                for (int i = 0; i < mirrors.length; i++) {
+                    if(down.size()>0){
+                        try {
+                            dls = getDLinks(mirrors[i]);
+                            Iterator<Integer> iter = down.iterator();
+                            while (iter.hasNext()) {
+                                Integer integer = (Integer) iter.next();
+                                DistributeData distributeData = new DistributeData(dls.get(down.get(integer)).getDownloadURL());
+                                Vector<DownloadLink> links = distributeData.findLinks();
+                                Iterator<DownloadLink> it2 = links.iterator();
+                                boolean online = false;
+                                while (it2.hasNext()) {
+                                    DownloadLink downloadLink3 = (DownloadLink) it2.next();
+                                    if (downloadLink3.isAvailable()) {
+                                        downloadLink3.setFilePackage(fp);
+                                        online=true;
+                                        iter.remove();
+                                    } 
+
+                                }
+                                if(online)
+                                    ret.addAll(links);
+                            }
+                        } catch (Exception e) {
+                            // TODO: handle exception
+                        }
+
+                    }
+                    else
+                        break;
                 }
 	            JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_LINKLIST_STRUCTURE_CHANGED, null));
 
@@ -407,7 +445,6 @@ public class Serienjunkies extends PluginForHost {
 		}
         return null;
     }
-
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) {
         return true;
