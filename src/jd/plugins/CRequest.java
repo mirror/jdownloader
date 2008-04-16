@@ -33,22 +33,22 @@ import jd.utils.JDUtilities;
  */
 public class CRequest {
 
-    private RequestInfo                              requestInfo;
+    private RequestInfo requestInfo;
 
     /**
      * ist für getRequest und postRequest
      */
-    public boolean                                   withHtmlCode = true;
+    public boolean withHtmlCode = true;
 
     /**
      * ob automatischen weiterleitungen gefolgt werden soll
      */
-    public boolean                                   redirect     = true;
+    public boolean redirect = true;
 
     /**
      * Interner Cookie bestehend aus host, CookieString
      */
-    private HashMap<String, HashMap<String, String>> cookie       = new HashMap<String, HashMap<String, String>>();
+    private HashMap<String, HashMap<String, String>> cookie = new HashMap<String, HashMap<String, String>>();
 
     public RequestInfo getRequestInfo() {
         return requestInfo;
@@ -57,8 +57,7 @@ public class CRequest {
     public CRequest setRequestInfo(Form form) {
         try {
             return setRequestInfo(form.getRequestInfo());
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             // TODO: handle exception
         }
         return null;
@@ -76,8 +75,7 @@ public class CRequest {
         HashMap<String, String> clist = new HashMap<String, String>();
         try {
             clist.putAll(cookie.get(host));
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             // TODO: handle exception
         }
 
@@ -88,15 +86,13 @@ public class CRequest {
                     try {
                         String[] vals = new Regexp(bCookie[i], "(.*?\\=)(.*)").getMatches()[0];
                         clist.put(vals[0], vals[1]);
-                    }
-                    catch (Exception e) {
+                    } catch (Exception e) {
                         clist.put(bCookie[i], "");
                     }
                 }
 
             }
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             // TODO: handle exception
         }
         this.cookie.put(host, clist);
@@ -118,12 +114,10 @@ public class CRequest {
                 setRequestInfo(Plugin.getRequest(mURL, getCookie(mURL.getHost()), urlToString(), redirect));
             else
                 setRequestInfo(Plugin.getRequestWithoutHtmlCode(mURL, getCookie(mURL.getHost()), urlToString(), redirect));
-        }
-        catch (MalformedURLException e) {
+        } catch (MalformedURLException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
-        }
-        catch (IOException e) {
+        } catch (IOException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
         }
@@ -146,12 +140,10 @@ public class CRequest {
                 setRequestInfo(Plugin.postRequest(mURL, getCookie(mURL.getHost()), urlToString(), null, parameter, redirect));
             else
                 setRequestInfo(Plugin.postRequestWithoutHtmlCode(mURL, getCookie(mURL.getHost()), urlToString(), parameter, redirect));
-        }
-        catch (MalformedURLException e) {
+        } catch (MalformedURLException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
-        }
-        catch (IOException e) {
+        } catch (IOException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
         }
@@ -167,8 +159,7 @@ public class CRequest {
     public Form[] getForms() {
         try {
             return requestInfo.getForms();
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             // TODO: handle exception
         }
         return null;
@@ -182,8 +173,7 @@ public class CRequest {
     public Form getForm() {
         try {
             return requestInfo.getForm();
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             // TODO: handle exception
         }
         return null;
@@ -198,8 +188,7 @@ public class CRequest {
     public Regexp getRegexp(String pattern) {
         try {
             return requestInfo.getRegexp(pattern);
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             // TODO: handle exception
         }
         return null;
@@ -218,8 +207,7 @@ public class CRequest {
     public URL getURL() {
         try {
             return getConnection().getURL();
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             // TODO: handle exception
         }
         return null;
@@ -228,8 +216,7 @@ public class CRequest {
     public String getHost() {
         try {
             return getURL().getHost();
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             // TODO: handle exception
         }
         return null;
@@ -238,8 +225,7 @@ public class CRequest {
     public String getLocation() {
         try {
             return requestInfo.getLocation();
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             // TODO: handle exception
         }
         return null;
@@ -251,8 +237,7 @@ public class CRequest {
     public String urlToString() {
         try {
             return getURL().toString();
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             // TODO: handle exception
         }
         return null;
@@ -266,13 +251,11 @@ public class CRequest {
     public String getCookie() {
         try {
             return getCookie(getURL().getHost());
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
         }
         try {
             return requestInfo.getCookie();
-        }
-        catch (Exception ec) {
+        } catch (Exception ec) {
         }
         return null;
     }
@@ -290,13 +273,11 @@ public class CRequest {
                 if (host.matches(".*?\\..*?\\..*?")) {
                     c.putAll(cookie.get(host.replaceFirst(".*?\\.", "")));
                 }
-            }
-            catch (Exception e) {
+            } catch (Exception e) {
             }
             try {
                 c.putAll(cookie.get(host));
-            }
-            catch (Exception e) {
+            } catch (Exception e) {
                 // TODO: handle exception
             }
             String cookie = "";
@@ -306,10 +287,18 @@ public class CRequest {
                 last = true;
             }
             return cookie;
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
         }
         return null;
+    }
+
+    public String getTitle() {
+        try {
+            return getRegexp("<title>(.*?)</title>").getFirstMatch();
+        } catch (Exception e) {
+            // TODO: handle exception
+        }
+        return "";
     }
 
     public String getHtmlCode() {
@@ -319,8 +308,7 @@ public class CRequest {
     public String toString() {
         try {
             return requestInfo.getHtmlCode();
-        }
-        catch (Exception ec) {
+        } catch (Exception ec) {
         }
         return null;
     }
@@ -339,8 +327,7 @@ public class CRequest {
         if (ct != null && ct.contains("image/")) {
             ct = ct.replaceFirst("image/", "");
             if (ct.equals("jpeg")) ct = "jpg";
-        }
-        else {
+        } else {
             ct = "jpg";
         }
         File captchaFile = plugin.getLocalCaptchaFile(plugin, "." + ct);
