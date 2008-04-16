@@ -29,29 +29,22 @@
 </table>
 <hr>
 
-<FORM method="GET" target="_self">
-<DIV align="center"><INPUT type="submit" name="do" value="Submit"></DIV>
+<FORM  method="GET" target="_parent">
+<DIV align="center"><INPUT type="submit" name="do" value="Submit"><INPUT type="submit" name="do" value="Close JD"></DIV>
 <DIV align="center"><table width="800" border="2" align="center" bgcolor="green">
   <tbody>
     <TR>
 	
-      <TD align="center"><INPUT type="submit" name="do" value="Reconnect NOW"></DIV></TD>
+      <TD align="center"><INPUT type="submit" name="do" value="Reconnect NOW"><br>Auto Reconnect<INPUT type="checkbox" <tmpl_var config_autoreconnect > name="autoreconnect" value="on"></TD>
+      <TD align="center"><INPUT type="submit" name="do" value="<tmpl_var config_startstopbutton escape>"></TD>
 
-<TD align="center">Auto Reconnect<INPUT type="checkbox" <tmpl_var config_autoreconnect > name="autoreconnect" value="on"></TD>
+
 <TD align="center">Max. Downloads<INPUT type="text" name="maxdls" value="<tmpl_var config_max_downloads escape>" maxlength="4" size="4"></TD>
 <TD align="center">SpeedLimit<INPUT type="text" name="speed" value="<tmpl_var config_max_speed escape>" maxlength="4" size="4">kb/s</TD>
     </TR>
   </tbody>
 </table></DIV>
-<DIV align="center"><INPUT type="submit" name="do" value="Close JD"></DIV>
+
 </FORM>
-
-
-
-
-
-
-
-
 </body>
 </html>

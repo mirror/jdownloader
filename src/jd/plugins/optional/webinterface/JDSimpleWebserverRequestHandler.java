@@ -78,7 +78,16 @@ public class JDSimpleWebserverRequestHandler {
                     if (requestParameter.get("do").compareToIgnoreCase("close+jd")==0) {
                         logger.info("close jd now wurde gedrückt");
                         JDUtilities.getController().exit();
-                    }; 
+                    }else
+                        if (requestParameter.get("do").compareToIgnoreCase("start+downloads")==0) {
+                            logger.info("start now wurde gedrückt");
+                            JDUtilities.getController().startDownloads();
+                        }else
+                            if (requestParameter.get("do").compareToIgnoreCase("stop+downloads")==0) {
+                                logger.info("stop now wurde gedrückt");
+                                JDUtilities.getController().stopDownloads();
+                            };
+                            
         }
 
         String url = path.replaceAll("\\.\\.", "");

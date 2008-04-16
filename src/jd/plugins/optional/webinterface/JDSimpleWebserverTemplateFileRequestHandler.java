@@ -84,6 +84,16 @@ public class JDSimpleWebserverTemplateFileRequestHandler {
             t.setParam("config_autoreconnect","checked" );
             };
             
+            
+            
+            if (JDUtilities.getController().getDownloadStatus()==JDController.DOWNLOAD_RUNNING)
+            {
+            t.setParam("config_startstopbutton","Stop Downloads" );                
+            }else
+            {
+            t.setParam("config_startstopbutton","Start Downloads" );
+            };
+            
             t.setParam("downloads", v);
             response.addContent(t.output());
             response.setOk();
