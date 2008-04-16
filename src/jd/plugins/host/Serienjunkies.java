@@ -472,6 +472,10 @@ public class Serienjunkies extends PluginForHost {
 	            JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_LINKLIST_STRUCTURE_CHANGED, null));
 	            return step;
 	            }
+	            else
+	            {
+	                fp.remove(downloadLink);
+	            }
             }
 		} catch (Exception e) {
 			// TODO: handle exception
