@@ -21,7 +21,7 @@ public class JDSimpleWebserverRequestHandler {
 
     public void handle() {
         String request = headers.get(null);
-
+        logger.info(request);
         String[] requ = request.split(" ");
 
         String method = requ[0];
@@ -92,17 +92,17 @@ public class JDSimpleWebserverRequestHandler {
 
         String url = path.replaceAll("\\.\\.", "");
 
-        File fileToRead = JDUtilities.getResourceFile("plugins/webserver/" + url);
+        File fileToRead = JDUtilities.getResourceFile("plugins/webinterface/" + url);
         if (!fileToRead.isFile()) {
             /*
              * default soll zur index.tmpl gehen, fall keine angabe gemacht
              * wurde
              */
             String tempurl = url + "index.tmpl";
-            File fileToRead2 = JDUtilities.getResourceFile("plugins/webserver/" + tempurl);
+            File fileToRead2 = JDUtilities.getResourceFile("plugins/webinterface/" + tempurl);
             if (fileToRead2.isFile()) {
                 url = tempurl;
-                fileToRead = JDUtilities.getResourceFile("plugins/webserver/" + url);
+                fileToRead = JDUtilities.getResourceFile("plugins/webinterface/" + url);
             }
             ;
         }

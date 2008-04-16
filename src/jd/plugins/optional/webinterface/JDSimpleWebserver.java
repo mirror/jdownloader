@@ -95,6 +95,7 @@ public class JDSimpleWebserver extends Thread {
                 BufferedReader reader = new BufferedReader(new InputStreamReader(requestInputStream));
                 String line = null;
                 HashMap<String, String> headers = new HashMap<String, String>();
+
                 while ((line = reader.readLine()) != null && line.trim().length() > 0) {
                     // GET
                     // /cgi-bin/uploadjs.cgi?uploadid=130439095897968957&r=31
@@ -109,37 +110,41 @@ public class JDSimpleWebserver extends Thread {
                         value = line;
                     }
                     headers.put(key, value);
-
-                    // if (line.startsWith("GET") || line.startsWith("POST")) {
-                    // StringTokenizer tokenizer = new StringTokenizer(line, "
-                    // ");
-                    // String requestType = tokenizer.nextToken();
-                    // String url = tokenizer.nextToken();
-                    //
-                    // Map<String, String> parameters = new HashMap<String,
-                    // String>();
-                    //
-                    // int indexOfQuestionMark = url.indexOf("?");
-                    // if (indexOfQuestionMark >= 0) {
-                    // // there are URL parameters
-                    // String parametersToParse =
-                    // url.substring(indexOfQuestionMark + 1);
-                    // url = url.substring(0, indexOfQuestionMark);
-                    // StringTokenizer parameterTokenizer = new
-                    // StringTokenizer(parametersToParse, "&");
-                    // while (parameterTokenizer.hasMoreTokens()) {
-                    // String[] keyAndValue =
-                    // parameterTokenizer.nextToken().split("=");
-                    // String key = URLDecoder.decode(keyAndValue[0], "utf-8");
-                    // String value = URLDecoder.decode(keyAndValue[1],
-                    // "utf-8");
-                    // parameters.put(key, value);
-                    // }
-                    // }
-
-                    // logger.info(headers+"");
                 }
                 ;
+
+                if (headers.containsKey("content-type")) {
+                    if (headers.get("content-type").compareToIgnoreCase("application/x-www-form-urlencoded") == 0) {
+                        if (headers.containsKey("content-length")) {
+                            /*
+                             * POST Form Daten in GET Format übersetzen, damit
+                             * der RequestParams Parser nicht geändert werden
+                             * muss
+                             */
+                            logger.info("get post data length " + headers.get("content-length"));
+                            Integer post_len = new Integer(headers.get("content-length"));
+                            char[] cbuf = new char[post_len];
+                            Integer post_len_read = new Integer(reader.read(cbuf, 0, post_len));
+                            String RequestParams = String.copyValueOf(cbuf);
+                            if (post_len_read.compareTo(post_len) == 0) {
+                                /* alten POST aus Header Liste holen */
+                                String request = headers.get(null);
+                                String[] requ = request.split(" ");
+                                /* alter POST aus Header Liste entfernen */
+                                headers.remove(null);
+                                /*
+                                 * neuer POST mit RequestParams in Header-Liste
+                                 * einfügen
+                                 */
+                                headers.put(null, requ[0] + " " + requ[1] + "?" + RequestParams + " " + requ[2]);
+                            } else {
+                                logger.info("POST Fehler");
+                            }
+
+                        }
+                    }
+                }
+
                 JDSimpleWebserverResponseCreator response = new JDSimpleWebserverResponseCreator();
                 JDSimpleWebserverRequestHandler request = new JDSimpleWebserverRequestHandler(headers, response);
                 OutputStream outputStream = Current_Socket.getOutputStream();

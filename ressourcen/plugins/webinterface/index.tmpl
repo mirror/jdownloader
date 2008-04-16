@@ -1,50 +1,128 @@
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
-<html style="background-color : purple;">
-
+<html >
 <head>
-  <title>JDownloader</title>
-  <meta name="GENERATOR" content="Quanta Plus">
-  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<title>JDownloader</title>
+<meta name="GENERATOR" content="Quanta Plus">
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
 <link href="http://jdownloader.ath.cx/bluebusiness.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="menuscript01.js"></script>
+<style type="text/css">
+<!--
+body {
+	scrollbar-face-color: #FFFFFF;
+	scrollbar-shadow-color: #FFFFFF;
+	scrollbar-highlight-color: #FFFFFF;
+	scrollbar-3dlight-color: #D9D9D9;
+	scrollbar-darkshadow-color: #D9D9D9;
+	scrollbar-track-color: #FFFFFF;
+	scrollbar-arrow-color: #000000;
+	font-family : Verdana, Arial, Helvetica;
+	font-size:12px;
+	font-weight:normal;
+	text-decoration:none;
+	margin-right:0px;
+	margin-left:0px;
+	margin-top:0px;
+	margin-bottom:0px;
+}
+#containerul, #containerul ul {
+	text-align:left;
+	margin:0;                          /* browser default margins �berschreiben */
+	padding:0;                         /* browser default padding �berschreiben */
+}
+#containerul li {
+	margin:0 0 0 20px;                   /* left margin f�r Einr�ckung */
+	color: #000000;
+	font-family:Verdana, Arial, Helvetica;
+	font-size:12px;
+	/*text-decoration:none;*/
+padding:0;                           /* browser default margins �berschreiben */
+	list-style-type:none;                /* browser default padding �berschreiben */
+}
+#containerul .symbols {               /* styles positionierung symbole */
+	float:left;
+	width:12px;
+	height:1em;
+	background-position:0 50%;
+	background-repeat:no-repeat;
+}
+a {
+	color: #000000;
+	font-family:verdana, arial, helvetica;
+	font-size:12px;
+	text-decoration:none;
+}
+a:visited {
+	color: #000000;
+	font-family:verdana, arial, helvetica;
+	font-size:12px;
+	text-decoration:none;
+}
+a:hover {
+	color: #FF007F;
+	font-family:verdana, arial, helvetica;
+	font-size:12px;
+	text-decoration:none;
+}
+</style>
 </head>
-
 <body>
-<div align="center"><h2>JDownloader Status Page</h2></div>
+<div style="width:800px;margin: 0 auto;border:1px solid;padding:5px 5px 5px 5px;;background-color:#1189ee">
+<h2 style="text-align:center;;color:#F7F7F7">JDownloader Status Page</h2>
 <hr>
-<table bgcolor="darkCyan" align="center" border="2" width="800">
-  <tbody align="center">
-
-
-
-
-<tmpl_loop downloads>
-    <tr>   
-    <TD width="30%"  align="center" valign="baseline" ><tmpl_var download_name></TD>
-      <TD width="20%"  align="center" valign="baseline" ><tmpl_var download_hoster></TD>
-	<TD width="50%"  align="center" valign="baseline" style="color:#000000;background-color:<tmpl_var download_status_color escape>"><tmpl_var download_status></TD>
-    </tr>
-</tmpl_loop>
-   
-  </tbody>
-</table>
+<ul id="containerul">
+  <tmpl_loop pakete>
+    <li style="margin:0pt 0pt 0pt 0pt"> <br>
+      <table style="width:100%">
+        <tr>
+          <TD style="width:30%"><tmpl_var download_name></TD>
+          <TD style="width:30%"><tmpl_var download_hoster></TD>
+          <TD  style="color:#000000;background-color:<tmpl_var download_status_color escape>"><tmpl_var download_status></TD>
+        </tr>
+      </table>
+      <ul>
+        <table style="width:100%">
+          <tmpl_loop downloads>
+            <tr>
+              <TD style="width:30%"><tmpl_var download_name></TD>
+              <TD style="width:30%"><tmpl_var download_hoster></TD>
+              <TD  style="color:#000000;background-color:<tmpl_var download_status_color escape>"><tmpl_var download_status></TD>
+            </tr>
+          </tmpl_loop>
+        </table>
+      </ul>
+    </li>
+  </tmpl_loop>
+</ul>
+<script type="text/javascript">
+initiate();                // This must be placed immediately after the menu in order to format it properly.
+</script>
 <hr>
-
-<FORM  method="GET" target="_parent">
-<DIV align="center"><INPUT type="submit" name="do" value="Submit"><INPUT type="submit" name="do" value="Close JD"></DIV>
-<DIV align="center"><table width="800" border="2" align="center" bgcolor="green">
-  <tbody>
+<FORM  method="POST" target="_parent">
+  <DIV style="text-align:center">
+    <INPUT type="submit" name="do" value="Submit">
+    <A href="/" name="Refresh" target="_self">REFRESH</A>
+    <INPUT type="submit" name="do" value="Close JD"> 
+  </DIV>
+  <DIV >
+  <table style="width:100%">
     <TR>
-	
-      <TD align="center"><INPUT type="submit" name="do" value="Reconnect NOW"><br>Auto Reconnect<INPUT type="checkbox" <tmpl_var config_autoreconnect > name="autoreconnect" value="on"></TD>
-      <TD align="center"><INPUT type="submit" name="do" value="<tmpl_var config_startstopbutton escape>"></TD>
-
-
-<TD align="center">Max. Downloads<INPUT type="text" name="maxdls" value="<tmpl_var config_max_downloads escape>" maxlength="4" size="4"></TD>
-<TD align="center">SpeedLimit<INPUT type="text" name="speed" value="<tmpl_var config_max_speed escape>" maxlength="4" size="4">kb/s</TD>
+      <TD ><INPUT type="submit" name="do" value="Reconnect NOW">
+        <br>
+        Auto Reconnect<INPUT type="checkbox" 
+        <tmpl_var config_autoreconnect >
+        name="autoreconnect" value="on"></TD>
+      <TD ><INPUT type="submit" name="do" value="<tmpl_var config_startstopbutton escape>"></TD>
+      <TD >Max. Downloads
+        <INPUT type="text" name="maxdls" value="<tmpl_var config_max_downloads escape>" maxlength="4" size="4"></TD>
+      <TD >SpeedLimit
+        <INPUT type="text" name="speed" value="<tmpl_var config_max_speed escape>" maxlength="4" size="4">
+        kb/s</TD>
     </TR>
-  </tbody>
-</table></DIV>
-
+    </div>
+    
+  </table>
+  </DIV>
 </FORM>
 </body>
 </html>

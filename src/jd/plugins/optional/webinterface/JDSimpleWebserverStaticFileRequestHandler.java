@@ -35,8 +35,8 @@ public class JDSimpleWebserverStaticFileRequestHandler {
      * @return a response
      */
     public void handleRequest(String url) {
-        File fileToRead = JDUtilities.getResourceFile("plugins/webserver/" + url);
-        if (!fileToRead.isFile()) fileToRead = new File(fileToRead, "index.html");
+        File fileToRead = JDUtilities.getResourceFile("plugins/webinterface/" + url);
+        
         HashMap<String, String> mimes = new HashMap<String, String>();
 
         mimes.put("html", "text/html");
