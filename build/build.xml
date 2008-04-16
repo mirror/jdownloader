@@ -118,7 +118,7 @@
 		    </manifest>
 	        <jar jarfile="${dist}/JDWebinterface.jar" manifest="Manifest.MF">
 	            <fileset dir="${cls}">
-	                <include name="jd/plugins/optional/webinterface/*.class" />        
+	                <include name="jd/plugins/optional/webinterface/**" />        
 	            </fileset>
 				     <fileset dir="${res}">
 	                <include name="META-INF/services/jd.plugins.PluginOptional" />

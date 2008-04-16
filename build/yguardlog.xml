@@ -3,14 +3,14 @@
 <!--
   yGuard Bytecode Obfuscator, v2.2.0, a Product of yWorks GmbH - http://www.yworks.com
 
-  Logfile created on Tue Apr 15 21:20:27 CEST 2008
+  Logfile created on Wed Apr 16 03:52:02 CEST 2008
 
   Jar file to be obfuscated:           JDownloaderContainer.jar
   Target Jar file for obfuscated code: JDownloaderContainer_obfuscated.jar
 
 -->
 <!--
-  Memory in use after class data structure built: 2401944 bytes
+  Memory in use after class data structure built: 2398328 bytes
   Total memory available                        : 5177344 bytes
 -->
 <!-- WARNING: Unresolved external dependency: jd.plugins.HTTPConnection not found! -->
@@ -312,8 +312,6 @@
 <!-- WARNING: Unresolved external dependency: jd.plugins.DownloadLink not found! -->
 <!-- WARNING: No mapping found: jd.plugins.DownloadLink -->
 <!-- WARNING: Unresolved external dependency: jd.plugins.DownloadLink not found! -->
-<!-- WARNING: Unresolved external dependency: jd.plugins.PluginForHost not found! -->
-<!-- WARNING: No mapping found: jd.plugins.PluginForHost -->
 <!-- WARNING: No mapping found: jd.plugins.FilePackage -->
 <!-- WARNING: No mapping found: jd.plugins.FilePackage -->
 <!-- WARNING: No mapping found: jd.plugins.FilePackage -->
@@ -357,7 +355,6 @@
 <!-- WARNING: Unresolved external dependency: jd.controlling.JDController not found! -->
 <!-- WARNING: Unresolved external dependency: jd.gui.UIInterface not found! -->
 <!-- WARNING: Unresolved external dependency: jd.plugins.DownloadLink not found! -->
-<!-- WARNING: Unresolved external dependency: jd.plugins.PluginForHost not found! -->
 <!-- WARNING: Unresolved external dependency: jd.plugins.FilePackage not found! -->
 <!-- WARNING: Unresolved external dependency: jd.plugins.RequestInfo not found! -->
 <!-- WARNING: Unresolved external dependency: jd.JDClassLoader not found! -->
@@ -405,7 +402,6 @@
   <method class="jd.plugins.container.ContainerDLC" name="java.lang.String getPluginName()"/>
   <method class="jd.plugins.container.ContainerDLC" name="java.lang.String[] encrypt(java.lang.String)"/>
   <method class="jd.plugins.container.ContainerDLC" name="java.lang.String asHex(byte[])"/>
-  <method class="jd.plugins.container.ContainerDLC" name="void main(java.lang.String[])"/>
   <method class="jd.plugins.container.ContainerDLC" name="boolean doBotCheck(java.io.File)"/>
   <method class="jd.plugins.container.ContainerDLC" name="java.util.regex.Pattern getSupportedLinks()"/>
   <method class="jd.plugins.container.ContainerDLC" name="java.lang.String decrypt(java.lang.String, java.lang.String)"/>

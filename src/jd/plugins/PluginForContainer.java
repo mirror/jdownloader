@@ -210,6 +210,7 @@ public abstract class PluginForContainer extends PluginForDecrypt {
         int i = 0;
         int c = 0;
         progress.addToMax(downloadLinksURL.size());
+        logger.info("PRE: "+downloadLinksURL);
         for (Iterator<String> it1 = this.downloadLinksURL.iterator(); it1.hasNext();) {
             progress.increase(1);
             progress.setStatusText(String.format(JDLocale.L("plugins.container.decrypt","Decrypt link %s"),""+i));
@@ -240,15 +241,16 @@ public abstract class PluginForContainer extends PluginForDecrypt {
                 
                 next.setLoadedPluginForContainer(this);
                 next.setFilePackage(srcLink.getFilePackage());
-                next.setLinkType(DownloadLink.LINKTYPE_CONTAINER);
                 next.setUrlDownload(null);
+                next.setLinkType(DownloadLink.LINKTYPE_CONTAINER);
+                
 
             }
-            
+            i++;
         }
         containedLinks=tmpDlink;
         downloadLinksURL=tmpURL;
-
+        logger.info("downloadLinksURL: "+downloadLinksURL);
     }
 
     /**

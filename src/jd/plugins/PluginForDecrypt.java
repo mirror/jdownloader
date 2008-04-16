@@ -90,7 +90,7 @@ public abstract class PluginForDecrypt extends Plugin implements Comparable {
         }
        
         progress = new ProgressController("Decrypter: " + this.getLinkName());
-        progress.setStatusText("decrypt-" + getPluginName() + ": " + cryptedLink);
+        progress.setStatusText("decrypt-" + getPluginName() + ": " + this.getLinkName());
         PluginStep step = null;
         
 
