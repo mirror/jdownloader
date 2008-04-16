@@ -75,18 +75,19 @@ public class XliceNet extends PluginForDecrypt {
 
     static Pattern                patternJSDESFile    = Pattern.compile("<script type=\"text/javascript\" src=\"/([^\"]+)\">");
 
-    static Pattern                patternJsScript     = Pattern.compile("<script[^>].*>(.*)\\n[^\\n]*=\\s*(des.*).\\n[^\\n]*document.write\\(.*?</script>", Pattern.DOTALL);
-
+    //static Pattern                patternJsScript     = Pattern.compile("<script[^>].*>(.*)\\n[^\\n]*=\\s*(des.*).\\n[^\\n]*document.write\\(.*?</script>", Pattern.DOTALL);
+    static Pattern                patternJsScript     = Pattern.compile("<script\\s+type=\\\"text/javascript\">(.*document.write\\(message\\).*?)</script>", Pattern.DOTALL);
+    
     static Pattern				  patternRemoveComments = Pattern.compile("<!--.*?-->", Pattern.DOTALL);
     static Pattern				  patternRemoveNotDisplayedDivs = Pattern.compile("<div.*?style=\"display:\\s+none;\">.*?</div>", Pattern.DOTALL);
     static Pattern                patternHosterIframe = Pattern.compile("src\\s*=\\s*\"([^\"]+)\"");
     
     //a little java script helper to minimize decipher afforts
-//    static private final String jsScript =  "var document = new Object();\n" +
-//										    "document.write = write\n" +
-//										    "function write(content){\n" +
-//										    "return content;"+
-//										    "}\n";
+    static private final String jsScript =  "var document = new Object();\n" +
+										    "document.write = write\n" +
+										    "function write(content){\n" +
+										    "return content;"+
+										    "}\n";
     
 
     public XliceNet() {
@@ -215,7 +216,7 @@ public class XliceNet extends PluginForDecrypt {
                             cx.compileString(desInfo.getHtmlCode(), "<des>", 1, null).exec(cx, scope);
                             
                             // compile the helper script into context
-                            //cx.compileString(jsScript, "<des>", 1, null).exec(cx, scope);
+                            cx.compileString(jsScript, "<des>", 1, null).exec(cx, scope);
                         }
 
                         // get the script that contains the link and the
@@ -223,18 +224,20 @@ public class XliceNet extends PluginForDecrypt {
                         Matcher matcher = patternJsScript.matcher(fileInfo.getHtmlCode());
 
                         if (!matcher.find()) {
-                            logger.severe("Unable to find decypher recipe - step to next link");
-                            continue;
+                            logger.severe("Unable to find decypher recipe - adapt patternJsScript (have a look at next Info log line)");
+                            logger.info(fileInfo.getHtmlCode());
+                            step.setStatus(PluginStep.STATUS_ERROR);
+                            return  null;
                         }
 
                         // put the script together and run it
-                        String decypherScript = matcher.group(1) + matcher.group(2);
+                        String decypherScript = matcher.group(1);
                         Object result = cx.evaluateString(scope, decypherScript, "<cmd>", 1, null);
 
                         // fetch the result of the javascript interpreter and
                         // finally find the link :)
                         String iframe = Context.toString(result);
-
+                        
                         //remove all decoys
                         iframe = removeMatches(patternRemoveComments, iframe);
                         iframe = removeMatches(patternRemoveNotDisplayedDivs, iframe);
