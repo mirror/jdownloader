@@ -142,7 +142,7 @@ public class Serienjunkies extends PluginForHost {
                 return null;
             decryptedLinks .add(new DownloadLink(this, null, this.getHost(), JDUtilities.htmlDecode(helpstring), true));
         }
-        else if (parameter.indexOf(subdomain+"serienjunkies.org") >= 0||parameter.indexOf("download.serienjunkies.org")>=0) {
+        else if (parameter.indexOf(subdomain+"serienjunkies.org") >= 0 ) {
             logger.info("sjsafe link");
             helpvector = ContainerLinks(parameter);
             if(aborted)
@@ -192,9 +192,12 @@ public class Serienjunkies extends PluginForHost {
     }
     // Für Links die bei denen die Parts angezeigt werden
     private Vector<String> ContainerLinks(String url) {
-
         Vector<String> links = new Vector<String>();
         boolean fileDownloaded = false;
+        if(url.matches("http://.*?.serienjunkies.org/..\\-.*"))
+        {
+            url=url.replaceFirst("serienjunkies.org", "serienjunkies.org/frame");
+        }
         if (!url.startsWith("http://")) url = "http://" + url;
         try {
             RequestInfo reqinfo = getRequest(new URL(url));
@@ -462,8 +465,13 @@ public class Serienjunkies extends PluginForHost {
                     else
                         break;
                 }
+                
 	            JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_LINKLIST_STRUCTURE_CHANGED, null));
-
+	            if(ret.size()>0)
+	            {
+	            downloadLink.setStatus(DOWNLOAD_ERROR_FILENOTFOUND);
+	            step.setStatus(PluginStep.STATUS_ERROR);
+	            }
             }
 		} catch (Exception e) {
 			// TODO: handle exception
