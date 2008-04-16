@@ -118,7 +118,6 @@ public class JDInit {
                     Configuration configuration = (Configuration) obj;
                     JDUtilities.setConfiguration(configuration);
                     JDUtilities.getLogger().setLevel((Level) configuration.getProperty(Configuration.PARAM_LOGGER_LEVEL, Level.WARNING));
-                    JDLocale.setLocale(JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).getStringProperty(SimpleGUI.PARAM_LOCALE, "german"));
                     JDTheme.setTheme(JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).getStringProperty(SimpleGUI.PARAM_THEME, "default"));
                 } else {
                     // log += "\r\n" + ("Configuration error: " + obj);
@@ -283,15 +282,15 @@ public class JDInit {
     @SuppressWarnings("unchecked")
     public HashMap<String, PluginOptional> loadPluginOptional() {
         HashMap<String, PluginOptional> pluginsOptional = new HashMap<String, PluginOptional>();
-        String[] optionalPlugins = new String[] { "JDTrayIcon", "JDGetter", "JDLightTray" ,"webinterface.JDWebinterface"};
-        double[] optionalVersions = new double[] { 1.6, 1.5, 1.6,1.5 };
+        String[] optionalPlugins = new String[] { "JDTrayIcon", "JDGetter", "JDLightTray", "webinterface.JDWebinterface" };
+        double[] optionalVersions = new double[] { 1.6, 1.5, 1.6, 1.5 };
         JDClassLoader jdClassLoader = JDUtilities.getJDClassLoader();
-        int i=0;
+        int i = 0;
         Double version = JDUtilities.getJavaVersion();
         for (String cl : optionalPlugins) {
-            if(version<optionalVersions[i]){
+            if (version < optionalVersions[i]) {
                 i++;
-                logger.finer("Plugin "+cl+" requires Java Version "+optionalVersions[i-1]+" your Version is: "+version);
+                logger.finer("Plugin " + cl + " requires Java Version " + optionalVersions[i - 1] + " your Version is: " + version);
                 continue;
             }
             i++;
@@ -307,11 +306,11 @@ public class JDInit {
                 PluginOptional p = (PluginOptional) con.newInstance(new Object[] {});
                 pluginsOptional.put(p.getPluginName(), p);
                 logger.finer("Successfull!. Loaded " + cl);
-                
-          } catch (Exception e) {
-              logger.info("Plugin Exception!");
-              e.printStackTrace();
-             }
+
+            } catch (Exception e) {
+                logger.info("Plugin Exception!");
+                e.printStackTrace();
+            }
 
         }
 
@@ -345,20 +344,24 @@ public class JDInit {
             e1.printStackTrace();
         }
 
-       // Iterator<PluginForHost> iteratorHost = JDUtilities.getPluginsForHost().iterator();
+        // Iterator<PluginForHost> iteratorHost =
+        // JDUtilities.getPluginsForHost().iterator();
         // while (iteratorHost.hasNext()) {
         // iteratorHost.next().addPluginListener(controller);
         // }
-        //Iterator<PluginForDecrypt> iteratorDecrypt = JDUtilities.getPluginsForDecrypt().iterator();
+        // Iterator<PluginForDecrypt> iteratorDecrypt =
+        // JDUtilities.getPluginsForDecrypt().iterator();
         // while (iteratorDecrypt.hasNext()) {
         // iteratorDecrypt.next().addPluginListener(controller);
         // }
-       // Iterator<PluginForContainer> iteratorContainer = JDUtilities.getPluginsForContainer().iterator();
+        // Iterator<PluginForContainer> iteratorContainer =
+        // JDUtilities.getPluginsForContainer().iterator();
         // while (iteratorContainer.hasNext()) {
         // iteratorContainer.next().addPluginListener(controller);
         // }
 
-       // Iterator<String> iteratorOptional = JDUtilities.getPluginsOptional().keySet().iterator();
+        // Iterator<String> iteratorOptional =
+        // JDUtilities.getPluginsOptional().keySet().iterator();
         // while (iteratorOptional.hasNext()) {
         // JDUtilities.getPluginsOptional().get(iteratorOptional.next()).addPluginListener(controller);
         // }

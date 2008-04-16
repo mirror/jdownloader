@@ -149,7 +149,7 @@ public abstract class PluginForContainer extends PluginForDecrypt {
 
     public void initContainer(String filename) {
         if (filename == null) return;
-        if (CONTAINER.containsKey(filename) && CONTAINER.get(filename).size() > 0) {
+        if (CONTAINER.containsKey(filename) &&CONTAINER.get(filename)!=null&& CONTAINER.get(filename).size() > 0) {
             logger.info("Cached " + filename);
             containedLinks = CONTAINER.get(filename);
             if (containedLinks != null) {
@@ -176,7 +176,7 @@ public abstract class PluginForContainer extends PluginForDecrypt {
             progress.increase(1);
             progress.setStatusText(String.format(JDLocale.L("plugins.container.found","Prozess %s links"),""+containedLinks.size()));
             logger.info(filename + " Parse");
-            if (containedLinks != null) {
+            if (containedLinks != null&&downloadLinksURL!=null) {
                 decryptLinkProtectorLinks();
                 progress.setStatusText(String.format(JDLocale.L("plugins.container.exit","Finished. Found %s links"),""+containedLinks.size()));
                 Iterator<DownloadLink> it = containedLinks.iterator();
@@ -227,9 +227,9 @@ public abstract class PluginForContainer extends PluginForDecrypt {
                 tmpURL.add(next.getDownloadURL());
                 next.setContainerFile(srcLink.getContainerFile());
                 next.setContainerIndex(c++);
-                if(next.getName().equals(DownloadLink.UNKNOWN_FILE_NAME)){
+           
                     next.setName(srcLink.getName());
-                }
+              
                 if(next.getDownloadMax()<10){
                     next.setDownloadMax((int)srcLink.getDownloadMax());
                 }

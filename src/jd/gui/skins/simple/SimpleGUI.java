@@ -1291,8 +1291,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
                 doIt = true;
             }
             if (doIt) {
-                this.getFrame().setVisible(false);
-                this.getFrame().dispose();
+               
                 this.fireUIEvent(new UIEvent(this, UIEvent.UI_EXIT, null));
             }
         }
@@ -1390,7 +1389,10 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
 
             }
             break;
-
+        case ControlEvent.CONTROL_SYSTEM_EXIT:
+            this.getFrame().setVisible(false);
+            this.getFrame().dispose();
+            break;
         case ControlEvent.CONTROL_PLUGIN_INACTIVE:
             logger.info("Plugin Deaktiviert: " + event.getSource());
             // setPluginActive((PluginForDecrypt) event.getParameter(), false);

@@ -58,9 +58,11 @@ public class JDLocale {
     }
 
     public static String getLocaleString(String key, String def) {
-        if (data == null) {
-            logger.severe("Use setLocale() first!");
-            return key;
+        if (data == null||localeFile==null) {
+           // logger.severe("Use setLocale() first!");
+            JDLocale.setLocale(JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).getStringProperty(SimpleGUI.PARAM_LOCALE, "english"));
+            
+        
         }
         
         if (def == null) def = key;
@@ -73,6 +75,7 @@ public class JDLocale {
         }
         data.put(key, JDUtilities.UTF8Encode(def));
         missingData.put(key, JDUtilities.UTF8Encode(def));
+       
         saveData(new File(localeFile.getAbsolutePath()+".extended"),data);
         saveData(new File(localeFile.getAbsolutePath()+".missing"),missingData);
         return def;
@@ -144,7 +147,7 @@ public class JDLocale {
     private static HashMap<String, String> parseLanguageFile(File file) {
         HashMap<String, String> dat = new HashMap<String, String>();
         if(!file.exists()){
-            
+           
             
             logger.severe("JDLocale: "+file+" not found");
             return dat;

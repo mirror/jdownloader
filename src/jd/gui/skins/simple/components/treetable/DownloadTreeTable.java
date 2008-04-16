@@ -19,7 +19,7 @@ import java.util.Vector;
 import java.util.Map.Entry;
 import java.util.logging.Logger;
 
-
+import javax.swing.DropMode;
 import javax.swing.JMenu;
 import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
@@ -90,6 +90,8 @@ public class DownloadTreeTable extends JXTreeTable implements WindowFocusListene
 
     private long updateTimer = 0;
 
+    private Point mousePosition;
+
     public DownloadTreeTable(DownloadTreeTableModel treeModel) {
         super(treeModel);
 
@@ -100,7 +102,8 @@ public class DownloadTreeTable extends JXTreeTable implements WindowFocusListene
         this.getTableHeader().setResizingAllowed(true);
         // this.setExpandsSelectedPaths(true);
         this.setToggleClickCount(1);
-        //this.setDropMode(DropMode.INSERT_ROWS);
+       if(JDUtilities.getJavaVersion()>=1.6) this.setDropMode(DropMode.ON_OR_INSERT_ROWS);
+       this.setDragEnabled(true);
         setAutoResizeMode(JTable.AUTO_RESIZE_LAST_COLUMN);
         setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
         this.setColumnControlVisible(true);
@@ -425,6 +428,7 @@ if(i>0){
                 
                 String next1;
                 ArrayList<String> pluginMenuEntries = plg.createMenuitems();
+                if(pluginMenuEntries!=null)
                 for (Iterator<String> it1 = pluginMenuEntries.iterator(); it1.hasNext();) {
                     next1 = it1.next();
 
@@ -432,6 +436,8 @@ if(i>0){
                     m.addActionListener(plg);
                     pluginPopup.add(m);
                 }
+                
+                if(pluginMenuEntries!=null)
                 if (pluginMenuEntries.size() == 0) pluginPopup.setEnabled(false);
                 popup.add(packagePopup);
                 popup.add(pluginPopup);
@@ -817,12 +823,13 @@ if(i>0){
     }
 
     public void mouseDragged(MouseEvent e) {
-
+        this.mousePosition = e.getPoint();
     }
 
     public void mouseMoved(MouseEvent e) {
         final int moRow = this.rowAtPoint(e.getPoint());
         final int moColumn = this.columnAtPoint(e.getPoint());
+        this.mousePosition = e.getPoint();
         this.mousePoint = e.getPoint();
         Point screen=this.getLocationOnScreen();
         mousePoint.x+=screen.x;
@@ -922,6 +929,21 @@ if(i>0){
                 break;
             }
         } else {
+            FilePackage filePackage;
+            DownloadLink dLink;
+            for(Iterator<FilePackage> packageIterator = JDUtilities.getController().getPackages().iterator();packageIterator.hasNext();){
+                filePackage = packageIterator.next();
+                for(Iterator<DownloadLink> linkIterator = filePackage.getDownloadLinks().iterator();linkIterator.hasNext();){
+                    dLink = linkIterator.next();
+                    logger.info(dLink.getName());
+                    logger.info(dLink.getHost());
+                    logger.info(dLink.getStatusText());//Gibt einen Statustext aus der den jeweiligen Status des Links beschreibt. inkl. Speed
+                    logger.info("Link in Arbeit: "+dLink.isInProgress());
+                }
+                
+            }
+            
+            
             fp = (FilePackage) obj;
             switch (mouseOverColumn) {
             case 0:
@@ -1025,6 +1047,11 @@ if(i>0){
             tooltip = null;
         }
 
+    }
+
+    public Point getMousePosition2() {
+      
+        return mousePosition;
     }
 
 }

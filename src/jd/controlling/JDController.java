@@ -141,7 +141,7 @@ public class JDController implements ControlListener, UIListener {
 
     private int initStatus = -1;
 
-    private Vector<Vector<String>> waitingUpdates;
+    private Vector<Vector<String>> waitingUpdates= new Vector<Vector<String>>();
 
     private boolean isReconnecting;
 
@@ -926,7 +926,10 @@ public class JDController implements ControlListener, UIListener {
      * @param file
      *            Die Containerdatei
      */
-    public void loadContainerFile(File file) {
+    public void loadContainerFile(final File file) {
+new Thread(){
+    public void run(){
+        
 
         Vector<PluginForContainer> pluginsForContainer = JDUtilities.getPluginsForContainer();
         Vector<DownloadLink> downloadLinks = new Vector<DownloadLink>();
@@ -981,6 +984,8 @@ public class JDController implements ControlListener, UIListener {
             uiInterface.addLinksToGrabber((Vector<DownloadLink>) downloadLinks);
         }
         progress.finalize();
+    }
+}.start();
     }
 
     public boolean isContainerFile(File file) {

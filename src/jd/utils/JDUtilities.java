@@ -1045,7 +1045,7 @@ public class JDUtilities {
     /**
      * Liefert alle Plugins zum Downloaden von einem Anbieter zurück.
      * 
-     * @return
+     * @return 
      */
     public static Vector<PluginForHost> getUnsortedPluginsForHost() {
         return pluginsForHost;
