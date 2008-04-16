@@ -459,7 +459,7 @@ public class Serienjunkies extends PluginForDecrypt {
         } catch (Exception e) {
             // TODO: handle exception
         }
-        if (linkName == null || parameter.matches("http://serienjunkies.org/sa[fv]e/.*")) {
+        if (linkName == null || parameter.matches("http://serienjunkies.org/sa[fv]e/.*") || parameter.matches("http://download.serienjunkies.org/..\\-.*")) {
             size = 100;
             linkName = parameter.replaceFirst(".*/..[\\_\\-]", "").replaceFirst("\\.html?", "");
         }
