@@ -509,19 +509,19 @@ public class Serienjunkies extends PluginForDecrypt {
 
     private String getHostname(String link) {
         if (link.matches(".*rc[\\_\\-].*"))
-            return "Rapidshare.com";
+            return "RapidshareCom";
         else if (link.matches(".*rs[\\_\\-].*"))
-            return "Rapidshare.de";
-        else if (link.matches(".*nt[\\_\\-].*"))
-            return "Netload.in";
+            return "RapidshareDe";
+        else if (link.matches(".*nl[\\_\\-].*"))
+            return "NetloadIn";
         else if (link.matches(".*ut[\\_\\-].*"))
-            return "Uploaded.to";
+            return "UploadedTo";
         else if (link.matches(".*su[\\_\\-].*"))
-            return "SimpleUpload.net";
+            return "SimpleUploadNet";
         else if (link.matches(".*ff[\\_\\-].*"))
-            return "FileFactory.com";
+            return "FileFactoryCom";
         else
-            return "Rapidshare.com";
+            return "RapidshareCom";
     }
 
     private String[] getLinkName(String link) {
