@@ -128,7 +128,7 @@ public class Rapidshare extends PluginForHost {
      * Das findet die Captcha URL <form *name *= *"dl" (?s).*<img *src *=
      * *"([^\n"]*)">
      */
-    private Pattern patternForCaptcha = Pattern.compile("<form *name *= *\"dl\" (?s).*<img *src *= *\"([^\\n\"]*)\">");
+    private Pattern patternForCaptcha = Pattern.compile("<form *name *= *\"dl\" (?s).*<img *src *= *\"([^\\n\"]*\\.jpg)\">");
 
     /**
      * <form name="dl".* action="([^\n"]*)"(?s).*?<input type="submit"
