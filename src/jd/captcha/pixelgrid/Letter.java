@@ -589,7 +589,6 @@ public class Letter extends PixelGrid {
 
     public Letter getMassLetter() {
         Letter ret = new Letter();
-        ;
         ret.setOwner(this.owner);
 
         int[][] newGrid = new int[this.getWidth()][this.getHeight()];
@@ -769,7 +768,6 @@ if(bmap[x][y])return;
 
     public Letter getLinedLetter() {
         Letter ret = new Letter();
-        ;
         ret.setOwner(this.owner);
         int count = 0;
 int firstChange=0;

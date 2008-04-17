@@ -278,7 +278,12 @@ public class PixelGrid {
 	// }
 	public static void setPixelValue(int x, int y, int[][] localGrid,
 			int value, JAntiCaptcha owner) {
-		localGrid[x][y] = value;
+	    try {
+	        localGrid[x][y] = value;
+        } catch (Exception e) {
+            // TODO: handle exception
+        }
+
 		// try {
 		//
 		// //

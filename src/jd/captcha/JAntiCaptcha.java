@@ -323,7 +323,7 @@ public class JAntiCaptcha {
      */
     private void loadMTHFile() {
         File f = JDUtilities.getResourceFile("jd/captcha/methods/" + this.methodDirName + "/" + "letters.mth");
-        String str = "<jDownloader>";
+        String str = "<jDownloader></jDownloader>";
         if (f.exists()) str = JDUtilities.getLocalFile(f);
         Document mth = UTILITIES.parseXmlString(str, false);
         logger.info("Get file: " + f);
@@ -447,8 +447,7 @@ public class JAntiCaptcha {
      */
 
     private Document createXMLFromLetterDB() {
-
-        Document xml = UTILITIES.parseXmlString("<jDownloader>", false);
+        Document xml = UTILITIES.parseXmlString("<jDownloader></jDownloader>", false);
         if (letterMap != null) {
             Element element = xml.createElement("map");
             xml.getFirstChild().appendChild(element);
@@ -823,6 +822,7 @@ public class JAntiCaptcha {
                     // letters[i].setTextGrid(letters[i].getPixelString());
                     letters[i].setSourcehash(captchaHash);
                     letters[i].setDecodedValue(code.substring(i, i + 1));
+               
                     letterDB.add(letters[i]);
                     bw3.setText(i + 1, 6, "no +");
                     bw3.repack();
@@ -1096,7 +1096,7 @@ if(letters.length==0){
      * @param b Vergleichsletter
      * @return int 0(super)-0xffffff (ganz übel)
      */
-    private LetterComperator getLetter(Letter letter) {
+    public LetterComperator getLetter(Letter letter) {
 
         long startTime = UTILITIES.getTimer();
         LetterComperator res = null;

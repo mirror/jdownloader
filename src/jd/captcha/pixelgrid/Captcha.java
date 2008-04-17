@@ -14,7 +14,6 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-
 package jd.captcha.pixelgrid;
 
 import java.awt.Color;
@@ -28,8 +27,10 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
+import java.util.ListIterator;
 import java.util.Vector;
 import java.util.logging.Logger;
 
@@ -37,6 +38,7 @@ import jd.captcha.JAntiCaptcha;
 import jd.captcha.LetterComperator;
 import jd.captcha.pixelobject.PixelObject;
 import jd.captcha.utils.UTILITIES;
+import jd.utils.JDUtilities;
 
 import com.sun.image.codec.jpeg.ImageFormatException;
 import com.sun.image.codec.jpeg.JPEGCodec;
@@ -53,38 +55,38 @@ public class Captcha extends PixelGrid {
     /**
      * Speichert die Positiond es letzten erkannten Letters
      */
-    private int                lastletterX = 0;
+    private int lastletterX = 0;
 
     /**
      * Speichert die Information ob der captcha schon vorverarbeitet wurde
      */
-    private boolean            prepared    = false;
+    private boolean prepared = false;
 
     /**
      * Temp Array für die getrennten letters; *
      */
-    private Letter[]           seperatedLetters;
+    private Letter[] seperatedLetters;
 
     /**
      * Array der länge getWidth()+1. hier werden gefundene Gaps abgelegt.
      * Einträge mit true bedeuten eine Lücke
      */
-    private boolean[]          gaps;
+    private boolean[] gaps;
 
     /**
      * Speichert das original RGB Pixelgrid
      */
-    public int[][]             rgbGrid;
+    public int[][] rgbGrid;
 
-    private static Logger      logger      = UTILITIES.getLogger();
+    private static Logger logger = UTILITIES.getLogger();
 
-    private ColorModel         colorModel;
+    private ColorModel colorModel;
 
     private LetterComperator[] letterComperators;
 
-    private double             valityPercent;
+    private double valityPercent;
 
-    private String             correctCaptchaCode;
+    private String correctCaptchaCode;
 
     private boolean perfectObjectDetection;
 
@@ -103,12 +105,14 @@ public class Captcha extends PixelGrid {
         rgbGrid = new int[width][height];
 
     }
+
     /**
-     * Diese Methode gibt alle internen Datenresourcen wie pixeldaten wieder frei.
+     * Diese Methode gibt alle internen Datenresourcen wie pixeldaten wieder
+     * frei.
      * 
      */
-    public void destroyInternalData(){
-        
+    public void destroyInternalData() {
+
     }
 
     /**
@@ -150,8 +154,7 @@ public class Captcha extends PixelGrid {
                     Color.RGBtoHSB(c.getRed(), c.getGreen(), c.getBlue(), col);
                     col[3] = 0;
 
-                }
-                else if (owner.getJas().getColorFormat() == 1) {
+                } else if (owner.getJas().getColorFormat() == 1) {
 
                     col[0] = (float) c.getRed() / 255;
                     col[1] = (float) c.getGreen() / 255;
@@ -189,8 +192,7 @@ public class Captcha extends PixelGrid {
                     Color.RGBtoHSB(c.getRed(), c.getGreen(), c.getBlue(), col);
                     col[3] = 0;
 
-                }
-                else if (owner.getJas().getColorFormat() == 1) {
+                } else if (owner.getJas().getColorFormat() == 1) {
 
                     col[0] = (float) c.getRed() / 255;
                     col[1] = (float) c.getGreen() / 255;
@@ -225,8 +227,7 @@ public class Captcha extends PixelGrid {
                     Color.RGBtoHSB(c.getRed(), c.getGreen(), c.getBlue(), col);
                     col[3] = 0;
 
-                }
-                else if (owner.getJas().getColorFormat() == 1) {
+                } else if (owner.getJas().getColorFormat() == 1) {
 
                     col[0] = (float) c.getRed() / 255;
                     col[1] = (float) c.getGreen() / 255;
@@ -283,9 +284,12 @@ public class Captcha extends PixelGrid {
      * Entfernt Störungen über eine Maske und ersetzt diese mit den umliegenden
      * pixeln
      * 
-     * @param mask Maske
-     * @param width breite des Ersatzfeldes
-     * @param height Höhe des Ersatzfeldes
+     * @param mask
+     *            Maske
+     * @param width
+     *            breite des Ersatzfeldes
+     * @param height
+     *            Höhe des Ersatzfeldes
      */
     public void cleanWithMask(Captcha mask, int width, int height) {
         int[][] newgrid = new int[getWidth()][getHeight()];
@@ -302,8 +306,7 @@ public class Captcha extends PixelGrid {
 
                     PixelGrid.setPixelValue(x, y, newgrid, getAverage(x, y, width, height, mask), this.owner);
 
-                }
-                else {
+                } else {
                     newgrid[x][y] = grid[x][y];
                 }
             }
@@ -315,7 +318,8 @@ public class Captcha extends PixelGrid {
     /**
      * Gibt einen vereifgachten captcha zurück. /gröber
      * 
-     * @param faktor der vereinfachung
+     * @param faktor
+     *            der vereinfachung
      * @return neuer captcha
      */
     public Captcha getSimplified(double faktor) {
@@ -325,11 +329,8 @@ public class Captcha extends PixelGrid {
         int[][] newGrid = new int[newWidth][newHeight];
         int avg = getAverage();
 
-        if (faktor == 1.0||faktor==0.0) return this;     
-    
-       
-    
-        
+        if (faktor == 1.0 || faktor == 0.0) return this;
+
         for (int x = 0; x < newWidth; x++) {
             for (int y = 0; y < newHeight; y++) {
                 setPixelValue(x, y, newGrid, getMaxPixelValue(), this.owner);
@@ -338,17 +339,15 @@ public class Captcha extends PixelGrid {
         for (int x = 0; x < getWidth(); x++) {
             for (int y = 0; y < getHeight(); y++) {
 
-                if(isElement(getPixelValue(x, y), avg)){
-                   int newX= (int)Math.round((double)x/faktor);
-                   int newY=(int)Math.round((double)y/faktor);
-                   setPixelValue(newX, newY, newGrid, 0, this.owner);
-                   
+                if (isElement(getPixelValue(x, y), avg)) {
+                    int newX = (int) Math.round((double) x / faktor);
+                    int newY = (int) Math.round((double) y / faktor);
+                    setPixelValue(newX, newY, newGrid, 0, this.owner);
+
                 }
 
             }
         }
-
-  
 
         ret.setGrid(newGrid);
 
@@ -360,17 +359,21 @@ public class Captcha extends PixelGrid {
     /**
      * Benutzt die Objekterkennung um alle Buchstaben zu finden
      * 
-     * @param letterNum Anzahl der zu suchenen Buchstaben
-     * @param contrast Kontrast innerhalb der Elemente
-     * @param objectContrast Kontrast der Elemente zum Hintergrund
-     * @param minArea MindestFläche eines Elements
+     * @param letterNum
+     *            Anzahl der zu suchenen Buchstaben
+     * @param contrast
+     *            Kontrast innerhalb der Elemente
+     * @param objectContrast
+     *            Kontrast der Elemente zum Hintergrund
+     * @param minArea
+     *            MindestFläche eines Elements
      * @return Erkannte Buchstaben
      */
     public Letter[] getLetters(int letterNum, double contrast, double objectContrast, int minArea) {
         Vector<PixelObject> letters = getBiggestObjects(letterNum, minArea, contrast, objectContrast);
         if (letters == null) return null;
         this.gaps = new boolean[getWidth() + 1];
-        Letter[] ret = new Letter[letterNum];
+        ArrayList<Letter> ret = new ArrayList<Letter>();
         for (int i = 0; i < letters.size(); i++) {
 
             PixelObject obj = letters.elementAt(i);
@@ -385,11 +388,11 @@ public class Captcha extends PixelGrid {
             // l.reduceWhiteNoise(2);
             // l.toBlackAndWhite(0.6);
 
-            ret[i] = l.getSimplified(this.owner.getJas().getDouble("simplifyFaktor"));
+            ret.add(l.getSimplified(this.owner.getJas().getDouble("simplifyFaktor")));
 
             this.gaps[letters.elementAt(i).getLocation()[0] + letters.elementAt(i).getWidth()] = true;
         }
-        return ret;
+        return ret.toArray(new Letter[ret.size()]);
 
     }
 
@@ -397,11 +400,12 @@ public class Captcha extends PixelGrid {
      * Versucht die Buchstaben aus dem captcha zu extrahieren und gibt ein
      * letter-array zuück
      * 
-     * @param letterNum Anzahl der vermuteten Buchstaben
+     * @param letterNum
+     *            Anzahl der vermuteten Buchstaben
      * @return Array mit den gefundenen Lettern
      */
     @SuppressWarnings("unchecked")
-	public Letter[] getLetters(int letterNum) {
+    public Letter[] getLetters(int letterNum) {
 
         if (seperatedLetters != null) return seperatedLetters;
 
@@ -426,14 +430,12 @@ public class Captcha extends PixelGrid {
                 if (ret != null) {
                     seperatedLetters = ret;
                     return ret;
-                }
-                else {
+                } else {
                     if (JAntiCaptcha.isLoggerActive()) logger.severe("Special detection failed.");
                     return null;
                 }
 
-            }
-            catch (Exception e) {
+            } catch (Exception e) {
                 if (JAntiCaptcha.isLoggerActive()) logger.severe("Fehler in useSpecialGetLetters:" + e.getLocalizedMessage() + " / " + owner.getJas().getString("useSpecialGetLetters"));
                 e.printStackTrace();
             }
@@ -445,8 +447,7 @@ public class Captcha extends PixelGrid {
             if (ret != null) {
                 seperatedLetters = ret;
                 return ret;
-            }
-            else {
+            } else {
                 if (JAntiCaptcha.isLoggerActive()) logger.severe("Color Object detection failed. Try alternative Methods");
             }
         }
@@ -457,8 +458,7 @@ public class Captcha extends PixelGrid {
             if (ret != null) {
                 seperatedLetters = ret;
                 return ret;
-            }
-            else {
+            } else {
                 if (JAntiCaptcha.isLoggerActive()) logger.severe("Object detection failed. Try alternative Methods");
             }
         }
@@ -479,13 +479,11 @@ public class Captcha extends PixelGrid {
             if (ret[letterId] == null) {
                 if (owner.getJas().getGaps() != null) {
                     return getLetters(letterNum, owner.getJas().getGaps());
-                }
-                else {
+                } else {
                     return null;
                 }
                 // ret[letterId]= ret[letterId].getSimplified(SIMPLIFYFAKTOR);
-            }
-            else {
+            } else {
                 owner.getJas().executeLetterPrepareCommands(ret[letterId]);
                 // if(owner.getJas().getInteger("leftAngle")!=0 ||
                 // owner.getJas().getInteger("rightAngle")!=0) ret[letterId] =
@@ -507,14 +505,14 @@ public class Captcha extends PixelGrid {
         Iterator<PixelObject> iter = objects.iterator();
         int i = 0;
         while (iter.hasNext()) {
-			PixelObject pixelObject = (PixelObject) iter.next();
+            PixelObject pixelObject = (PixelObject) iter.next();
 
-			letters[i]=pixelObject.toLetter();
-			letters[i].toBlackAndWhite();
-			letters[i].removeSmallObjects(0.6, 0.5, 4);
-			letters[i].clean();
-			i++;
-		}
+            letters[i] = pixelObject.toLetter();
+            letters[i].toBlackAndWhite();
+            letters[i].removeSmallObjects(0.6, 0.5, 4);
+            letters[i].clean();
+            i++;
+        }
         return letters;
     }
 
@@ -528,9 +526,7 @@ public class Captcha extends PixelGrid {
      */
     public Letter[] getLetters(int letterNum, int[] gaps) {
 
-        if (seperatedLetters != null) {
-            return seperatedLetters;
-        }
+        if (seperatedLetters != null) { return seperatedLetters; }
 
         Letter[] ret = new Letter[letterNum];
         lastletterX = 0;
@@ -542,8 +538,7 @@ public class Captcha extends PixelGrid {
 
                 return null;
                 // ret[letterId]= ret[letterId].getSimplified(SIMPLIFYFAKTOR);
-            }
-            else {
+            } else {
                 // if(owner.getJas().getInteger("leftAngle")!=0 ||
                 // owner.getJas().getInteger("rightAngle")!=0) ret[letterId] =
                 // ret[letterId].align(
@@ -573,7 +568,8 @@ public class Captcha extends PixelGrid {
      * Sucht angefangen bei der aktullen Positiond en ncähsten letter und gibt
      * ihn zurück
      * 
-     * @param letterId Id des Letters (0-letterNum-1)
+     * @param letterId
+     *            Id des Letters (0-letterNum-1)
      * @return Letter gefundener Letter
      */
     private Letter getNextLetter(int letterId) {
@@ -629,8 +625,7 @@ public class Captcha extends PixelGrid {
 
                 isGap = isAverageGap && isPeakGap;
 
-            }
-            else {
+            } else {
                 isAverageGap = rowAverage[x] > (average * owner.getJas().getDouble("GapDetectionAverageContrast")) && owner.getJas().getBoolean("UseAverageGapDetection");
                 isOverPeak = rowPeak[x] < (average * owner.getJas().getDouble("GapDetectionPeakContrast"));
                 isPeakGap = (lastOverPeak && !isOverPeak) || !owner.getJas().getBoolean("UsePeakGapdetection");
@@ -640,8 +635,7 @@ public class Captcha extends PixelGrid {
 
             if (isGap && noGapCount > owner.getJas().getInteger("MinimumLetterWidth")) {
                 break;
-            }
-            else if (rowAverage[x] < (average * owner.getJas().getDouble("GapDetectionAverageContrast"))) {
+            } else if (rowAverage[x] < (average * owner.getJas().getDouble("GapDetectionAverageContrast"))) {
 
                 noGapCount++;
             }
@@ -712,7 +706,8 @@ public class Captcha extends PixelGrid {
     /**
      * Gibt den Captcha als Bild mit Trennzeilen für die gaps zurück
      * 
-     * @param faktor Vergrößerung
+     * @param faktor
+     *            Vergrößerung
      * @return neues Image
      */
 
@@ -731,7 +726,8 @@ public class Captcha extends PixelGrid {
     /**
      * Speichert den captcha als Bild mit Trennstrichen ab
      * 
-     * @param file . ZielPfad
+     * @param file .
+     *            ZielPfad
      */
     public void saveImageasJpgWithGaps(File file) {
         BufferedImage bimg = null;
@@ -747,16 +743,13 @@ public class Captcha extends PixelGrid {
             JPEGImageEncoder jpeg = JPEGCodec.createJPEGEncoder(fos);
             jpeg.encode(bimg);
             fos.close();
-        }
-        catch (FileNotFoundException e) {
+        } catch (FileNotFoundException e) {
 
             e.printStackTrace();
-        }
-        catch (ImageFormatException e) {
+        } catch (ImageFormatException e) {
 
             e.printStackTrace();
-        }
-        catch (IOException e) {
+        } catch (IOException e) {
 
             e.printStackTrace();
         }
@@ -865,8 +858,7 @@ public class Captcha extends PixelGrid {
 
         try {
             pg.grabPixels();
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
 
@@ -880,8 +872,7 @@ public class Captcha extends PixelGrid {
         if (!(cm instanceof IndexColorModel)) {
             // not an indexed file (ie: not a gif file)
             ret.setPixel((int[]) pg.getPixels());
-        }
-        else {
+        } else {
 
             ; // UTILITIES.trace("COLORS: "+numColors);
             ret.setPixel((byte[]) pg.getPixels());
@@ -906,8 +897,7 @@ public class Captcha extends PixelGrid {
                 // grid[x][y] = pixel[i++];
                 try {
                     this.pixel[i] = ((IndexColorModel) colorModel).getRGB(bpixel[i]);
-                }
-                catch (Exception e) {
+                } catch (Exception e) {
                     this.pixel[i] = 0;
                 }
 
@@ -919,8 +909,7 @@ public class Captcha extends PixelGrid {
                     Color.RGBtoHSB(c.getRed(), c.getGreen(), c.getBlue(), col);
                     col[3] = 0;
 
-                }
-                else if (owner.getJas().getColorFormat() == 1) {
+                } else if (owner.getJas().getColorFormat() == 1) {
 
                     col[0] = (float) c.getRed() / 255;
                     col[1] = (float) c.getGreen() / 255;
@@ -991,8 +980,10 @@ public class Captcha extends PixelGrid {
     /**
      * Factory Funktion gibt einen captcha von File zurück
      * 
-     * @param file Pfad zum bild
-     * @param owner Parameter Dump JAntiCaptcha
+     * @param file
+     *            Pfad zum bild
+     * @param owner
+     *            Parameter Dump JAntiCaptcha
      * @return Captcha neuer captcha
      */
     public static Captcha getCaptcha(File file, JAntiCaptcha owner) {
@@ -1010,7 +1001,8 @@ public class Captcha extends PixelGrid {
     }
 
     /**
-     * @param prepared the prepared to set
+     * @param prepared
+     *            the prepared to set
      */
     public void setPrepared(boolean prepared) {
         this.prepared = prepared;
@@ -1019,13 +1011,67 @@ public class Captcha extends PixelGrid {
     /**
      * Holt die größten Objekte aus dem captcha
      * 
-     * @param letterNum anzahl der zu suchenden objekte
-     * @param minArea mindestFläche der Objekte
-     * @param contrast Kontrast zur erkennung der farbunterschiede (z.B. 0.3)
-     * @param objectContrast Kontrast zur erkennung einens objektstartpunkte
-     *            (z.B. 0.5 bei weißem Hintergrund)
+     * @param letterNum
+     *            anzahl der zu suchenden objekte
+     * @param minArea
+     *            mindestFläche der Objekte
+     * @param contrast
+     *            Kontrast zur erkennung der farbunterschiede (z.B. 0.3)
+     * @param objectContrast
+     *            Kontrast zur erkennung einens objektstartpunkte (z.B. 0.5 bei
+     *            weißem Hintergrund)
      * @return Vector mit den gefundenen Objekten
      */
+    public boolean objectContainCaptcha(PixelObject pixelObject, Captcha captcha, ArrayList<Integer[]> blackPoints) {
+
+        // logger.info(mask.getWidth()+"/"+mask.getHeight()+" - "+getWidth()+" -
+        // "+getHeight());
+        if (captcha.getWidth() > pixelObject.getWidth() || captcha.getHeight() > pixelObject.getHeight()) { return true; }
+        int avg = getAverage();
+        int size = blackPoints.size();
+        for (int y = 0; y < pixelObject.getHeight(); y++) {
+            for (int x = 0; x < pixelObject.getWidth(); x++) {
+                int right = 0;
+                int bad = 0;
+                Iterator<Integer[]> bpiter = blackPoints.iterator();
+                while (bpiter.hasNext()) {
+                    if ((bad > (size / 3) || (right + size / 10) < bad)) break;
+
+                    try {
+
+                        Integer[] integers = (Integer[]) bpiter.next();
+                        if (pixelObject.getWidth() > (x + integers[0]) && pixelObject.getHeight() > (y + integers[1])) {
+                            if (isElement(getPixelValue(x + integers[0], y + integers[1]), avg)) {
+                                right++;
+                            } else {
+                                bad++;
+                            }
+                        }
+                    } catch (Exception e) {
+                        // TODO: handle exception
+                    }
+                }
+                if (right > 200) return true;
+
+            }
+        }
+        // BasicWindow.showImage(this.getImage());
+        return false;
+    }
+
+    public boolean rapidshareSpecial(PixelObject pixelObject,JAntiCaptcha jac) {
+
+       // Letter letter = pixelObject.toLetter();
+        // Captcha remImage =
+        // owner.createCaptcha(UTILITIES.loadImage(owner.getResourceFile(removeObjectsContainingImage)));
+      //  letter.removeObjectFromGrid(owner.getLetter(letter).getB().toPixelObject(1));
+
+        if (jac.getLetter(pixelObject.toLetter()).getDecodedValue().equals("k"))
+            return false;
+        else
+
+            return true;
+    }
 
     @SuppressWarnings("unchecked")
     public Vector<PixelObject> getBiggestObjects(int letterNum, int minArea, double contrast, double objectContrast) {
@@ -1037,9 +1083,58 @@ public class Captcha extends PixelGrid {
         int maxWidth;
         // Alle Objekte aus dem captcha holen. Sie sind nach der Größe Sortiert
         Vector<PixelObject> objects = getObjects(contrast, objectContrast);
+        if(owner.jas.getBoolean("rapidshareSpecial")){
+            System.out.println("rscat");
+            String methodsPath = UTILITIES.getFullPath(new String[] { JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath(), "jd", "captcha", "methods" });
+            String hoster = "rscat.com";
+            JAntiCaptcha jac = new JAntiCaptcha(methodsPath, hoster);
+            ListIterator<PixelObject> iter = objects.listIterator(objects.size());
+            while (iter.hasPrevious() && objects.size() > letterNum) {
+                PixelObject pixelObject = (PixelObject) iter.previous();
+                if (pixelObject.getArea() > minArea) {
+                    if (rapidshareSpecial(pixelObject, jac)) iter.remove();
+                } else
+                    iter.remove();
+
+            }
+        }
+
+        if(owner.jas.getBoolean("autoLetterNum"))
+        {
+        Iterator<PixelObject> iterr = objects.iterator();
+        int r = 0;
+        while (iterr.hasNext()) {
+            PixelObject pixelObject = (PixelObject) iterr.next();
+            if (pixelObject.getArea() > minArea) {
+                r++;
+
+            }
+        }
+        owner.setLetterNum(r);
+        letterNum = r;
+        return objects;
+        }
         mergeMultiPartObjects(objects);
-boolean perfectObjectDetection=true;
+        boolean perfectObjectDetection = true;
         // Kleine Objekte ausfiltern
+        /*
+         * String removeObjectsContainingImage = "dog.png"; if
+         * (removeObjectsContainingImage != null && objects.size() > letterNum) {
+         * Captcha remImage =
+         * owner.createCaptcha(UTILITIES.loadImage(owner.getResourceFile(removeObjectsContainingImage)));
+         * ArrayList<Integer[]> blackPoints = new ArrayList<Integer[]>(); int
+         * avg = getAverage(); for (int y = 0; y < remImage.getHeight(); y++) {
+         * for (int x = 0; x < remImage.getWidth(); x++) { if
+         * (isElement(remImage.getPixelValue(x, y), avg)) { blackPoints.add(new
+         * Integer[] { x, y }); }
+         *  } } ListIterator<PixelObject> iter =
+         * objects.listIterator(objects.size()); while (iter.hasPrevious() &&
+         * objects.size() > letterNum) { PixelObject pixelObject = (PixelObject)
+         * iter.previous(); if (objectContainCaptcha(pixelObject, remImage,
+         * blackPoints)) {
+         * 
+         * iter.remove(); } } }
+         */
         while (i < objects.size() && objects.elementAt(i++).getArea() > minArea && found < letterNum) {
             if (JAntiCaptcha.isLoggerActive()) logger.info(objects.elementAt(i - 1).getWidth() + " Element: " + found + " : " + objects.elementAt(i - 1).getArea());
             found++;
@@ -1096,7 +1191,7 @@ boolean perfectObjectDetection=true;
                         objects.add(s, splitObjects.elementAt(t));
                         splitObjects.setElementAt(null, t);
                         found++;
-                        perfectObjectDetection=false;
+                        perfectObjectDetection = false;
                         if (JAntiCaptcha.isLoggerActive()) logger.finer("add split " + found);
 
                         break;
@@ -1107,7 +1202,7 @@ boolean perfectObjectDetection=true;
                     objects.add(splitObjects.elementAt(t));
                     splitObjects.setElementAt(null, t);
                     found++;
-                    perfectObjectDetection=false;
+                    perfectObjectDetection = false;
                     if (JAntiCaptcha.isLoggerActive()) logger.finer("add split " + found);
                 }
 
@@ -1115,8 +1210,9 @@ boolean perfectObjectDetection=true;
             if (JAntiCaptcha.isLoggerActive()) logger.finer("splitted ... treffer: " + found);
 
         }
+
         if (found != letterNum) {
-            perfectObjectDetection=false;
+            perfectObjectDetection = false;
             if (JAntiCaptcha.isLoggerActive()) logger.severe("Richtige Letteranzahl 2 konnte nicht ermittelt werden");
             return null;
         }
@@ -1124,31 +1220,31 @@ boolean perfectObjectDetection=true;
         for (int ii = objects.size() - 1; ii >= found; ii--) {
             objects.remove(ii);
         }
-        
         this.setPerfectObjectDetection(perfectObjectDetection);
         // Sortiert die Objekte nun endlich in der richtigen Reihenfolge (von
         // link nach rechts)
         Collections.sort(objects);
         if (JAntiCaptcha.isLoggerActive()) logger.finer("Found " + objects.size() + " Elements");
+
         return objects;
     }
 
     private void mergeMultiPartObjects(Vector<PixelObject> objects) {
-        if(owner.getJas().getInteger("multiplePartMergeMinSize")<=0)return;
+        if (owner.getJas().getInteger("multiplePartMergeMinSize") <= 0) return;
 
         for (int i = objects.size() - 1; i >= 0; i--) {
             PixelObject current = objects.get(i);
-            if(current.getSize()<owner.getJas().getInteger("multiplePartMergeMinSize"))continue;
-            int xMin=current.getXMin();
-            int xMax=current.getXMin()+current.getWidth();
-            int yMin=current.getYMin();
-            int yMax=current.getYMin()+current.getHeight();
+            if (current.getSize() < owner.getJas().getInteger("multiplePartMergeMinSize")) continue;
+            int xMin = current.getXMin();
+            int xMax = current.getXMin() + current.getWidth();
+            int yMin = current.getYMin();
+            int yMax = current.getYMin() + current.getHeight();
             for (int ii = i - 1; ii >= 0; ii--) {
                 PixelObject tmp = objects.get(ii);
-                
+
                 if (xMin >= tmp.getXMin() && xMax <= (tmp.getXMin() + tmp.getWidth()) && yMin >= tmp.getYMin() && yMax <= (tmp.getYMin() + tmp.getHeight())) {
-logger.info("current liegt mitten in tmp.. merge");
-                   
+                    logger.info("current liegt mitten in tmp.. merge");
+
                     tmp.add(current);
                     objects.remove(i);
                     break;
@@ -1233,8 +1329,7 @@ logger.info("current liegt mitten in tmp.. merge");
 
                     PixelGrid.setPixelValue(x, y, newgrid, getMaxPixelValue(), this.owner);
 
-                }
-                else {
+                } else {
                     newgrid[x][y] = grid[x][y];
                 }
             }
