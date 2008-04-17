@@ -1084,7 +1084,6 @@ public class Captcha extends PixelGrid {
         // Alle Objekte aus dem captcha holen. Sie sind nach der Größe Sortiert
         Vector<PixelObject> objects = getObjects(contrast, objectContrast);
         if(owner.jas.getBoolean("rapidshareSpecial")){
-            System.out.println("rscat");
             String methodsPath = UTILITIES.getFullPath(new String[] { JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath(), "jd", "captcha", "methods" });
             String hoster = "rscat.com";
             JAntiCaptcha jac = new JAntiCaptcha(methodsPath, hoster);
