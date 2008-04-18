@@ -20,6 +20,7 @@ package jd.captcha.pixelgrid;
 import java.util.Vector;
 
 import jd.captcha.JAntiCaptcha;
+import jd.captcha.LetterComperator;
 import jd.captcha.gui.BasicWindow;
 import jd.captcha.pixelobject.PixelObject;
 import jd.captcha.utils.UTILITIES;
@@ -35,7 +36,7 @@ public class Letter extends PixelGrid {
      * der decoded Value wird heir abgelegt
      */
     private String decodedValue;
-
+    public LetterComperator detected = null;
     /**
      * Hash des sourcecaptchas (Fürs training wichtig)
      */
@@ -277,7 +278,13 @@ public class Letter extends PixelGrid {
     public int getBadDetections() {
         return badDetections;
     }
-
+    /**
+     * 
+     * @return Gibt die Fläche des Objekts zurück
+     */
+    public int getArea() {
+        return getWidth() * getHeight();
+    }
     /**
      * @param badDetections the badDetections to set
      */

@@ -317,11 +317,19 @@ public class JACScript {
          */
         set("borderVarianceX", 0);
         set("borderVarianceY", 0);
+        /**
+         * Spezielles extra für rapidshare filtert hunde raus
+         */
         set("rapidshareSpecial", false);
         /**
          * Die Zeichenanzahl wird automatisch gesetzt
          */
         set("autoLetterNum",false);
+        /**
+         * Gleich nach der Objekterkennung wird versucht den buchstaben zu erkennung
+         * so können zusammenhängende Buchstaben miterkannt werden
+         */
+        set("directLetterDetection",false);
         /**
          * Parameter: Scan-Parameter. Gibt an um wieviele Pixel Letter und
          * Vergleichsletter gegeneinander verschoben werden um die beste

@@ -21,6 +21,7 @@ import java.util.Vector;
 import java.util.logging.Logger;
 
 import jd.captcha.JAntiCaptcha;
+import jd.captcha.LetterComperator;
 import jd.captcha.pixelgrid.Letter;
 import jd.captcha.pixelgrid.PixelGrid;
 import jd.captcha.utils.UTILITIES;
@@ -46,7 +47,7 @@ public class PixelObject implements Comparable {
      * Interner Vector
      */
     private Vector<int[]> object;
-
+    public LetterComperator detected = null;
     /**
      * Farbdurschnitt des Onkekts
      */
@@ -280,7 +281,26 @@ public class PixelObject implements Comparable {
         }
         return ret;
     }
+    public PixelObject[] splitAt(int position)
+    {
+        PixelObject[] ret = new PixelObject[2];
+        for (int i = 0; i < ret.length; i++) {
+            ret[i]=new PixelObject(owner);
+        }
+        for (int i = 0; i < getSize(); i++) {
+            int[] akt = elementAt(i);
+            boolean b = true;
+            for (int x = 0; x < 2; x++) {
+                if (akt[0] >= xMin + x * position && akt[0] <= (xMin + (x + 1) * position)) {
+                    ret[x].add(akt[0], akt[1], this.saveAvg);
+                    b=false;
+                }
+            }
+            if(b)ret[1].add(akt[0], akt[1], this.saveAvg);
 
+        }
+        return ret;
+    }
     /**
      * 
      * @return Gibt einen Entsprechenden Sw-Letter zurück
@@ -300,6 +320,7 @@ public class PixelObject implements Comparable {
         Letter l = owner.createLetter();
         l.setElementPixel(getSize());
         l.setGrid(ret);
+        l.detected=detected;
         return l;
 
     }

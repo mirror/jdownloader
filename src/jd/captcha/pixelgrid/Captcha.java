@@ -1059,12 +1059,12 @@ public class Captcha extends PixelGrid {
         return false;
     }
 
-    public boolean rapidshareSpecial(PixelObject pixelObject,JAntiCaptcha jac) {
+    public boolean rapidshareSpecial(PixelObject pixelObject, JAntiCaptcha jac) {
 
-       // Letter letter = pixelObject.toLetter();
+        // Letter letter = pixelObject.toLetter();
         // Captcha remImage =
         // owner.createCaptcha(UTILITIES.loadImage(owner.getResourceFile(removeObjectsContainingImage)));
-      //  letter.removeObjectFromGrid(owner.getLetter(letter).getB().toPixelObject(1));
+        // letter.removeObjectFromGrid(owner.getLetter(letter).getB().toPixelObject(1));
 
         if (jac.getLetter(pixelObject.toLetter()).getDecodedValue().equals("k"))
             return false;
@@ -1083,7 +1083,31 @@ public class Captcha extends PixelGrid {
         int maxWidth;
         // Alle Objekte aus dem captcha holen. Sie sind nach der Größe Sortiert
         Vector<PixelObject> objects = getObjects(contrast, objectContrast);
-        if(owner.jas.getBoolean("rapidshareSpecial")){
+        if (owner.jas.getBoolean("directLetterDetection")) {
+            Vector<PixelObject> objectsret = new Vector<PixelObject>();
+            Iterator<PixelObject> iter = objects.iterator();
+            while (iter.hasNext()) {
+                PixelObject pixelObject = (PixelObject) iter.next();
+                if (pixelObject.getArea() > minArea) {
+                    Letter letter = pixelObject.toLetter();
+                    LetterComperator resletter = owner.getLetter(letter);
+                    int b;
+                    while (resletter.getB()!=null && (b = pixelObject.getArea()-resletter.getB().getArea()) > minArea && b > (resletter.getB().getArea()/3)) {
+                        PixelObject[] spobjects = pixelObject.splitAt(resletter.getB().getWidth());
+                        letter = spobjects[0].toLetter();
+                        spobjects[0].detected = resletter;
+                        objectsret.add(spobjects[0]);
+                        pixelObject=spobjects[1];
+                        letter = pixelObject.toLetter();
+                        resletter = owner.getLetter(letter);
+                    }
+                    pixelObject.detected = resletter;
+                    objectsret.add(pixelObject);
+                }
+            }
+            objects=objectsret;
+        }
+        if (owner.jas.getBoolean("rapidshareSpecial")) {
             String methodsPath = UTILITIES.getFullPath(new String[] { JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath(), "jd", "captcha", "methods" });
             String hoster = "rscat.com";
             JAntiCaptcha jac = new JAntiCaptcha(methodsPath, hoster);
@@ -1098,20 +1122,18 @@ public class Captcha extends PixelGrid {
             }
         }
 
-        if(owner.jas.getBoolean("autoLetterNum"))
-        {
-        Iterator<PixelObject> iterr = objects.iterator();
-        int r = 0;
-        while (iterr.hasNext()) {
-            PixelObject pixelObject = (PixelObject) iterr.next();
-            if (pixelObject.getArea() > minArea) {
-                r++;
+        if (owner.jas.getBoolean("autoLetterNum")) {
+            Iterator<PixelObject> iterr = objects.iterator();
+            int r = 0;
+            while (iterr.hasNext()) {
+                PixelObject pixelObject = (PixelObject) iterr.next();
+                if (pixelObject.getArea() > minArea) {
+                    r++;
 
+                }
             }
-        }
-        owner.setLetterNum(r);
-        letterNum = r;
-        return objects;
+            owner.setLetterNum(r);
+            letterNum = r;
         }
         mergeMultiPartObjects(objects);
         boolean perfectObjectDetection = true;
@@ -1125,8 +1147,7 @@ public class Captcha extends PixelGrid {
          * avg = getAverage(); for (int y = 0; y < remImage.getHeight(); y++) {
          * for (int x = 0; x < remImage.getWidth(); x++) { if
          * (isElement(remImage.getPixelValue(x, y), avg)) { blackPoints.add(new
-         * Integer[] { x, y }); }
-         *  } } ListIterator<PixelObject> iter =
+         * Integer[] { x, y }); } } } ListIterator<PixelObject> iter =
          * objects.listIterator(objects.size()); while (iter.hasPrevious() &&
          * objects.size() > letterNum) { PixelObject pixelObject = (PixelObject)
          * iter.previous(); if (objectContainCaptcha(pixelObject, remImage,
