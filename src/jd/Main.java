@@ -44,8 +44,6 @@ import jd.controlling.interaction.Interaction;
 import jd.controlling.interaction.PackageManager;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.plugins.HTTPConnection;
-import jd.plugins.Plugin;
-import jd.utils.JDLocale;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 
@@ -147,7 +145,7 @@ public class Main {
 
                 } else if (currentArg.equals("--train") || currentArg.equals("-t")) {
 
-                    JACController.showDialog(false);
+                    JACController.showDialog(true);
                     extractSwitch = false;
                     stop = true;
 
