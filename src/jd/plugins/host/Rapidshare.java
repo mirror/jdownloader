@@ -144,7 +144,7 @@ public class Rapidshare extends PluginForHost {
     // Premium-User. Bitte<br>'°'<img src=°><br>hier eingeben: <input
     // type=\"text\" name=\"accesscode\" °size=\"5\" maxlength=\"4\"> <input
     // type=\"submit\" name=\"actionstring\" value=\"°\"></h3></form>";
-    private String dataPatternPost = "<form name=\"dl\" '+°'action=\"°\" method=\"post\">'"; // "document.dl.action=°document.dl.actionstring.value";
+    private String dataPatternPost = "<form name=\"dl\" ' +°'action=\"°\" method=\"post\">'"; // "document.dl.action=°document.dl.actionstring.value";
 
     private String dataPatternAction = "name=\"actionstring\" value=\"°\"></h3></form>";
 
@@ -814,8 +814,13 @@ public class Rapidshare extends PluginForHost {
 
             // postTarget=this.getSimpleMatch(ticketCode, dataPattern, 0);
             // actionString=this.getSimpleMatch(ticketCode, dataPattern, 1);
-            //postTarget = getSimpleMatch(ticketCode, dataPatternPost, 1);
-            postTarget = getBetween(ticketCode, "form name=\"dl\" action=\"", "\"");
+            if(happyhourboolean) {
+                postTarget = getBetween(ticketCode, "form name=\"dl\" action=\"", "\"");
+            }
+            else {
+                postTarget = getSimpleMatch(ticketCode, dataPatternPost, 1);
+            }
+            
             //actionString = getSimpleMatch(ticketCode, dataPatternAction, 0);
             actionString = getBetween(ticketCode, "input type=\"submit\" name=\"actionstring\" value=\"", "\"");
 
