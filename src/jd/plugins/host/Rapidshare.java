@@ -144,7 +144,7 @@ public class Rapidshare extends PluginForHost {
     // Premium-User. Bitte<br>'°'<img src=°><br>hier eingeben: <input
     // type=\"text\" name=\"accesscode\" °size=\"5\" maxlength=\"4\"> <input
     // type=\"submit\" name=\"actionstring\" value=\"°\"></h3></form>";
-    private String dataPatternPost = "<form name=\"dl\" ' +°'action=\"°\" method=\"post\">'"; // "document.dl.action=°document.dl.actionstring.value";
+    private String dataPatternPost = "<form name=\"dl\" '+°'action=\"°\" method=\"post\">'"; // "document.dl.action=°document.dl.actionstring.value";
 
     private String dataPatternAction = "name=\"actionstring\" value=\"°\"></h3></form>";
 
@@ -161,6 +161,12 @@ public class Rapidshare extends PluginForHost {
     private static long END_OF_DOWNLOAD_LIMIT = 0;
 
     private static final String captchaWrong = "Access code wrong";
+    
+    /**
+     * Wenn Rapidshare ihre happyhour hat
+     */
+    private static final String happyhour = "RapidShare Happy Hours";
+    private boolean happyhourboolean = false;
 
     /**
      * s Das DownloadLimit wurde erreicht (?s)Downloadlimit.*Oder warte ([0-9]+)
@@ -706,39 +712,48 @@ public class Rapidshare extends PluginForHost {
                 ticketCode = JDUtilities.htmlDecode(getSimpleMatch(requestInfo.getHtmlCode(), ticketCodePattern, 0));
                 ticketCode = requestInfo.getHtmlCode() + " " + ticketCode;
                 captchaAddress = getFirstMatch(ticketCode, patternForCaptcha, 1);
-
-                if (captchaAddress == null) {
-                    logger.severe("Captcha Address not found");
-                    downloadLink.setStatus(DownloadLink.STATUS_ERROR_CAPTCHA_IMAGEERROR);
-                    step.setStatus(PluginStep.STATUS_ERROR);
+                
+                if(requestInfo.containsHTML(happyhour)) {
+                    ticketCode = requestInfo.getHtmlCode();
+                    happyhourboolean = true;
+                    logger.severe("Happy hour");
+                    step.setParameter((long) 0);
                     return step;
                 }
-                this.captchaFile = this.getLocalCaptchaFile(this);
-                if (!JDUtilities.download(captchaFile, captchaAddress) || !captchaFile.exists()) {
-                    logger.severe("Captcha Download fehlgeschlagen: " + captchaAddress);
-                    step.setParameter(null);
-                    step.setStatus(PluginStep.STATUS_ERROR);
-                    downloadLink.setStatus(DownloadLink.STATUS_ERROR_CAPTCHA_IMAGEERROR);
-                    return step;
-                }
-                long timer = System.currentTimeMillis();
-
-                if (doBotCheck(captchaFile)) {
-
-                    downloadLink.setStatus(DownloadLink.STATUS_ERROR_BOT_DETECTED);
-                    step.setStatus(PluginStep.STATUS_ERROR);
-                    step.setParameter(null);
-                    break;
-                }
-                this.captchaCode = Plugin.getCaptchaCode(captchaFile, this);
-                timer = System.currentTimeMillis() - timer;
-                logger.info("captcha detection: " + timer + " ms");
-
-                // downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN_RETRY);
-                // step.setParameter(1000l);
-                // step.setStatus(PluginStep.STATUS_ERROR);
-
-                // if(true)return step;
+                happyhourboolean = false;
+                    if (captchaAddress == null) {
+                        logger.severe("Captcha Address not found");
+                        downloadLink.setStatus(DownloadLink.STATUS_ERROR_CAPTCHA_IMAGEERROR);
+                        step.setStatus(PluginStep.STATUS_ERROR);
+                        return step;
+                    }
+                    this.captchaFile = this.getLocalCaptchaFile(this);
+                    if (!JDUtilities.download(captchaFile, captchaAddress) || !captchaFile.exists()) {
+                        logger.severe("Captcha Download fehlgeschlagen: " + captchaAddress);
+                        step.setParameter(null);
+                        step.setStatus(PluginStep.STATUS_ERROR);
+                        downloadLink.setStatus(DownloadLink.STATUS_ERROR_CAPTCHA_IMAGEERROR);
+                        return step;
+                    }
+                    long timer = System.currentTimeMillis();
+    
+                    if (doBotCheck(captchaFile)) {
+    
+                        downloadLink.setStatus(DownloadLink.STATUS_ERROR_BOT_DETECTED);
+                        step.setStatus(PluginStep.STATUS_ERROR);
+                        step.setParameter(null);
+                        break;
+                    }
+                    this.captchaCode = Plugin.getCaptchaCode(captchaFile, this);
+                    timer = System.currentTimeMillis() - timer;
+                    logger.info("captcha detection: " + timer + " ms");
+    
+                    // downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN_RETRY);
+                    // step.setParameter(1000l);
+                    // step.setStatus(PluginStep.STATUS_ERROR);
+    
+                    // if(true)return step;
+                
                 if (wait != null) {
                     long pendingTime = Long.parseLong(wait);
 
@@ -799,8 +814,10 @@ public class Rapidshare extends PluginForHost {
 
             // postTarget=this.getSimpleMatch(ticketCode, dataPattern, 0);
             // actionString=this.getSimpleMatch(ticketCode, dataPattern, 1);
-            postTarget = getSimpleMatch(ticketCode, dataPatternPost, 1);
-            actionString = getSimpleMatch(ticketCode, dataPatternAction, 0);
+            //postTarget = getSimpleMatch(ticketCode, dataPatternPost, 1);
+            postTarget = getBetween(ticketCode, "form name=\"dl\" action=\"", "\"");
+            //actionString = getSimpleMatch(ticketCode, dataPatternAction, 0);
+            actionString = getBetween(ticketCode, "input type=\"submit\" name=\"actionstring\" value=\"", "\"");
 
             if (postTarget == null) {
                 logger.severe("postTarget not found");
@@ -933,8 +950,11 @@ public class Rapidshare extends PluginForHost {
                         step.setStatus(PluginStep.STATUS_ERROR);
                         return step;
                     }
-
-                    JDUtilities.appendInfoToFilename(this, captchaFile, actionString + "_" + captchaCode, true);
+                    
+                    if(!happyhourboolean)
+                        JDUtilities.appendInfoToFilename(this, captchaFile, actionString + "_" + captchaCode, true);
+                    
+                    happyhourboolean = false;
 
                     return null;
                 }
