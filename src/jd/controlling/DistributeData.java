@@ -48,6 +48,11 @@ public class DistributeData extends ControlBroadcaster {
      */
     private String                   data;
 
+    /**
+     * keinen Linkgrabber öffnen sondern direkt hinzufügen
+     */
+    private boolean                  hideGrabber;
+
     private Vector<DownloadLink>     linkData;
 
     /**
@@ -66,11 +71,20 @@ public class DistributeData extends ControlBroadcaster {
             logger.warning("text not url decodeable");
         }
     }
+    public DistributeData(String data, boolean hideGrabber) {
+        super("JD-DistributeData");
+        this.data = data;
+        this.hideGrabber = hideGrabber;
+    }
 
     public void run() {
         Vector<DownloadLink> links = findLinks();
         Collections.sort(links);
-        fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_DISTRIBUTE_FINISHED, links));
+        if (hideGrabber) {
+        	fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_DISTRIBUTE_FINISHED_HIDEGRABBER, links));
+        } else {
+        	fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_DISTRIBUTE_FINISHED, links));
+        }
     }
 
     /**

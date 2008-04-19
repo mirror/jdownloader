@@ -45,6 +45,15 @@ public class ControlEvent extends AWTEvent {
      * herausgearbeitet wurden
      */
     public final static int   CONTROL_DISTRIBUTE_FINISHED                         = 3;
+
+    /**
+     * Das Verteilen des Inhalts der Zwischenablage ist abgeschlossen Als
+     * Parameter wird hier ein Vector mit DownloadLinks übergeben, die
+     * herausgearbeitet wurden
+     * Es wird kein Linkgrabber geöffnet sonder sofort hinzugefügt
+     */
+    public final static int   CONTROL_DISTRIBUTE_FINISHED_HIDEGRABBER            = 19;
+    
     /**
      * Ein PLugin wird beendet. 
      * Source: ist jeweils das PLugin

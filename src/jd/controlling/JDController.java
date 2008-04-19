@@ -16,6 +16,7 @@
 
 package jd.controlling;
 
+import java.awt.Color;
 import java.io.File;
 import java.io.StringReader;
 import java.net.MalformedURLException;
@@ -44,6 +45,7 @@ import jd.event.ControlListener;
 import jd.event.UIEvent;
 import jd.event.UIListener;
 import jd.gui.UIInterface;
+import jd.gui.skins.simple.SimpleGUI;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.Plugin;
@@ -272,7 +274,16 @@ public class JDController implements ControlListener, UIListener {
             }
 
             break;
+            
+        case ControlEvent.CONTROL_DISTRIBUTE_FINISHED_HIDEGRABBER:
 
+            if (event.getParameter() != null && event.getParameter() instanceof Vector && ((Vector) event.getParameter()).size() > 0) {
+            	Vector<DownloadLink> links = (Vector<DownloadLink>) event.getParameter();
+                addLinksWithoutGrabber(links);
+            }
+
+            break;
+            
         case ControlEvent.CONTROL_LINKLIST_STRUCTURE_CHANGED:
             // Interaction interaction = (Interaction) event.getParameter();
             this.saveDownloadLinks();
@@ -369,7 +380,6 @@ public class JDController implements ControlListener, UIListener {
      */
     @SuppressWarnings("unchecked")
     public void uiEvent(UIEvent uiEvent) {
-        Vector<DownloadLink> newLinks;
 
         switch (uiEvent.getActionID()) {
         case UIEvent.UI_PAUSE_DOWNLOADS:
@@ -1352,9 +1362,7 @@ new Thread(){
     }
 
     public void setInfoFileWriterModule(InfoFileWriter instance) {
-        // TODO Auto-generated method stub
         this.infoFileWriterModule = instance;
-
     }
 
     public Unrar getUnrarModule() {
@@ -1480,7 +1488,6 @@ new Thread(){
      * @return
      */
     public Vector<FilePackage> getPackages() {
-        // TODO Auto-generated method stub
         return packages;
     }
 
@@ -1552,5 +1559,193 @@ new Thread(){
     public FilePackage getDefaultFilePackage() {
         return fp;
     }
+    
+    public void addLinksWithoutGrabber(final Vector<DownloadLink> parameter) {
+        
+    	if ( parameter == null || parameter.size() == 0 ) {
+    		return;
+    	}
+    	
+    	Vector<DownloadLink> linkList = checkLinks(parameter);
+    	
+    	Vector<Vector<DownloadLink>> links = new Vector<Vector<DownloadLink>>();
+    	Vector<String> packages = new Vector<String>();
+    	SubConfiguration guiConfig = JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME);
+    	
+    	for ( int i=0; i<linkList.size(); i++ ) {
+    	
+	    	if (!guiConfig.getBooleanProperty("PROPERTY_AUTOPACKAGE", true)) {
+	           
+	    		packages.add(removeExtension(linkList.get(i).getName()));
+	    		links.get(0).add(linkList.get(i));
+	
+	        } else {
+	        	
+	            int bestSim = 0;
+	            int bestIndex = -1;
+	            
+	            for (int j = 0; j < packages.size(); j++) {
+	
+	                int sim = comparePackages(packages.get(j), removeExtension(linkList.get(i).getName()));
+	                if (sim > bestSim) {
+	                    bestSim = sim;
+	                    bestIndex = j;
+	                }
+	                
+	            }
+	            
+	            if ( bestSim > guiConfig.getIntegerProperty("AUTOPACKAGE_LIMIT", 98)
+	            		&& bestIndex != -1 ) {
+	            	
+	            	links.get(bestIndex).add(linkList.get(i));
+	            	
+	            } else {
+	            	
+	            	packages.add(removeExtension(linkList.get(i).getName()));
+	            	Vector<DownloadLink> temp = new Vector<DownloadLink>();
+	            	temp.add(linkList.get(i));
+	            	links.add(temp);
+	
+	            }
+	
+	        }
+	    	
+    	}
+    	
+    	for ( int i=0; i<packages.size(); i++) {
 
+            int rand = (int) (Math.random() * 0xffffff);
+            Color c = new Color(rand);
+            c = c.brighter();
+            
+            FilePackage fp = new FilePackage();
+            fp.setProperty("color", c);
+            fp.setName(packages.get(i));
+            String downloadDir = JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_DOWNLOAD_DIRECTORY);
+            
+            if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_PACKETNAME_AS_SUBFOLDER, false)) {
+                
+            	File file = new File(new File(downloadDir), packages.get(i));
+                if (!file.exists()) file.mkdirs();
+                
+                if (file.exists()) {
+                    fp.setDownloadDirectory(file.getAbsolutePath());
+                } else {
+                    fp.setDownloadDirectory(downloadDir);
+                }
+                
+            } else {
+                fp.setDownloadDirectory(downloadDir);
+            }
+            
+            fp.setDownloadLinks(links.get(i));
+
+            for (int j=0; j < links.get(i).size(); j++) {
+            	links.get(i).get(j).setFilePackage(fp);
+            }
+
+            JDUtilities.getGUI().fireUIEvent(new UIEvent(this, UIEvent.UI_PACKAGE_GRABBED, fp));
+            
+            try {
+                Thread.sleep(200);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            
+    	}
+        
+    }
+
+    private String removeExtension(String a) {
+        // logger.finer("file " + a);
+        if(a==null)return a;
+        a = a.replaceAll("\\.part([0-9]+)", "");
+        a = a.replaceAll("\\.html", "");
+        a = a.replaceAll("\\.htm", "");
+        int i = a.lastIndexOf(".");
+        // logger.info("FOund . " + i);
+        String ret;
+        if (i <= 1 || (a.length() - i) > 5) {
+            ret = a.toLowerCase().trim();
+        }
+        else {
+            // logger.info("Remove ext");
+            ret = a.substring(0, i).toLowerCase().trim();
+        }
+
+        if (a.equals(ret)) return ret;
+        return (ret);
+
+    }
+
+    private int comparePackages(String a, String b) {
+
+        int c = 0;
+        for (int i = 0; i < Math.min(a.length(), b.length()); i++) {
+            if (a.charAt(i) == b.charAt(i)) c++;
+        }
+
+        if (Math.min(a.length(), b.length()) == 0) return 0;
+        // logger.info("comp: " + a + " <<->> " + b + "(" + (c * 100) /
+        // (b.length()) + ")");
+        return (c * 100) / (b.length());
+    }
+    
+    private Vector<DownloadLink> checkLinks(Vector<DownloadLink> linksQueue) {
+                
+    	SubConfiguration guiConfig = JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME);
+    	Vector<DownloadLink> finalLinks = new Vector<DownloadLink>();
+    	DownloadLink link;
+        DownloadLink next;
+    	
+        while (linksQueue.size() > 0) {
+
+            link = linksQueue.remove(0);
+            
+            if (!guiConfig.getBooleanProperty("DO_ONLINE_CHECK", false)) {
+            	
+            	finalLinks.add(link);
+            	try {
+                    Thread.sleep(5);
+                }
+                catch (InterruptedException e) {
+                }
+                
+            } else {
+            	
+            	Iterator<DownloadLink> it = linksQueue.iterator();
+                Vector<String> links = new Vector<String>();
+                Vector<DownloadLink> dlLinks = new Vector<DownloadLink>();
+                links.add(link.getDownloadURL());
+                dlLinks.add(link);
+                
+                while (it.hasNext()) {
+                    next = it.next();
+                    if (next.getPlugin().getClass() == link.getPlugin().getClass()) {
+                        dlLinks.add(next);
+                        links.add(next.getDownloadURL());
+                    }
+                }
+                
+                if (links.size() > 1) {
+                    boolean[] ret = ((PluginForHost) link.getPlugin()).checkLinks(links.toArray(new String[] {}));
+                    if (ret != null) {
+                        for (int i = 0; i < links.size(); i++) {
+                            dlLinks.get(i).setAvailable(ret[i]);
+                        }
+                    }
+                }
+                
+                if (link.isAvailable() || ((PluginForHost) link.getPlugin()).isListOffline()) {
+                	finalLinks.add(link);
+                }
+                
+            }
+            
+        }
+        
+        return finalLinks;
+        
+    }
+    
 }

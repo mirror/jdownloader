@@ -14,8 +14,8 @@ import java.util.logging.Logger;
 
 import jd.captcha.JACController;
 import jd.config.Configuration;
+import jd.controlling.DistributeData;
 import jd.controlling.interaction.Unrar;
-import jd.event.UIEvent;
 import jd.gui.UIInterface;
 import jd.unrar.JUnrar;
 import jd.utils.JDUtilities;
@@ -62,6 +62,7 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
         Vector<String> paths = new Vector<String>();
         long extractTime = 0;
         boolean doExtract = false;
+        boolean hideGrabber = false;
 
         for (String currentArg : input) {
 
@@ -172,6 +173,15 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
                 logger.info(currentArg + " parameter");
                 JDUtilities.getGUI().setGUIStatus(UIInterface.WINDOW_STATUS_FOREGROUND);
                 
+            } else if (currentArg.equals("--hide") || currentArg.equals("-H")) {
+
+                addLinksSwitch = false;
+                addContainersSwitch = false;
+                addPasswordsSwitch = false;
+                extractSwitch = false;
+                logger.info(currentArg + " parameter");
+                hideGrabber = true;
+                
             } else if (currentArg.equals("--reconnect") || currentArg.equals("-r")) {
 
                 addLinksSwitch = false;
@@ -260,7 +270,9 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
         }
 
         if (!linksToAddString.equals("")) {
-            JDUtilities.getGUI().fireUIEvent(new UIEvent(JDUtilities.getGUI(), UIEvent.UI_LINKS_TO_PROCESS, linksToAddString));
+        	DistributeData distributeData = new DistributeData(linksToAddString, true);
+            distributeData.addControlListener(JDUtilities.getController());
+            distributeData.start();
         }
 
         if (doExtract) {
@@ -281,6 +293,7 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
         		{ "-p/--add-password(s)", "Add passwords" },
         		{ "-d/--start-download", "Start download" },
         		{ "-D/--stop-download", "Stop download" },
+        		{ "-H/--hide\t", "Don't open Linkgrabber when adding Links" },
         		{ "-m/--minimize\t", "Minimize download window" },
         		{ "-f/--focus\t", "Get jD to foreground/focus" },
         		{ "-s/--show\t", "Show JAC prepared captchas" },
