@@ -2,6 +2,7 @@ package jd.plugins.optional.webinterface;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.text.DecimalFormat;
 import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.Vector;
@@ -20,6 +21,7 @@ public class JDSimpleWebserverTemplateFileRequestHandler {
     private Logger logger = JDUtilities.getLogger();
     private JDSimpleWebserverResponseCreator response;
     private JDController controller = JDUtilities.getController();
+    private DecimalFormat f = new DecimalFormat("#0.00"); 
 
     /**
      * Create a new handler that serves files from a base directory
@@ -45,36 +47,49 @@ public class JDSimpleWebserverTemplateFileRequestHandler {
 
             FilePackage filePackage;
             DownloadLink dLink;
+            Integer Package_ID=-1;
+            Integer Download_ID=-1;
+            Double percent=0.0;
+            
             for (Iterator<FilePackage> packageIterator = JDUtilities.getController().getPackages().iterator(); packageIterator.hasNext();) {
                 filePackage = packageIterator.next();
+                Package_ID++;
                 h=new Hashtable();
                 /* Paket Infos */
                 h.put("download_name", filePackage.getName());
                 
                 
                 value = "";
-
+                percent=filePackage.getPercent();
+                h.put("download_status_percent",f.format(percent));
+                
                 if (filePackage.getLinksInProgress() > 0) {
                     value = filePackage.getLinksInProgress() + "/" + filePackage.size() + " " + JDLocale.L("gui.treetable.packagestatus.links_active", "aktiv");
                 }
                 if (filePackage.getTotalDownloadSpeed() > 0) value = "[" + filePackage.getLinksInProgress() + "/" + filePackage.size() + "] " + "ETA " + JDUtilities.formatSeconds(filePackage.getETA()) + " @ " + JDUtilities.formatKbReadable(filePackage.getTotalDownloadSpeed() / 1024) + "/s";
                 
-                
+                h.put("package_id", Package_ID.toString());
                 h.put("download_hoster", value);
                 h.put("download_status_color", "#8bffa1");
-                h.put("download_status", "("+JDUtilities.formatKbReadable(filePackage.getTotalKBLoaded())+" / "+JDUtilities.formatKbReadable(filePackage.getTotalEstimatedPackageSize())+")");
+                h.put("download_status", f.format(percent)+" % ("+JDUtilities.formatKbReadable(filePackage.getTotalKBLoaded())+" / "+JDUtilities.formatKbReadable(filePackage.getTotalEstimatedPackageSize())+")");
+                
                 v2 = new Vector();
+                Download_ID=-1;
                 for (Iterator<DownloadLink> linkIterator = filePackage.getDownloadLinks().iterator(); linkIterator.hasNext();) {
                     dLink = linkIterator.next();
+                    Download_ID++;
                     /* Download Infos */
                     
-
+                   
+                   percent=(double)(dLink.getDownloadCurrent() * 100.0 / Math.max(1,dLink.getDownloadMax()));
+                   
                     h2 = new Hashtable();
+                    h2.put("download_status_percent",f.format(percent));
+                    h2.put("package_id", Package_ID.toString());
+                    h2.put("download_id", Download_ID.toString());
                     h2.put("download_name", dLink.getName());
                              
-                    h2.put("download_hoster", dLink.getHost());
-                    
-                    
+                    h2.put("download_hoster", dLink.getHost());                   
                     
                     if (dLink.isEnabled()) {
 
@@ -96,7 +111,7 @@ public class JDSimpleWebserverTemplateFileRequestHandler {
                     }
                     
                     
-                    h2.put("download_status", dLink.getStatusText());
+                    h2.put("download_status", f.format(percent)+"% "+dLink.getStatusText());
                     v2.addElement(h2);
                     
                     

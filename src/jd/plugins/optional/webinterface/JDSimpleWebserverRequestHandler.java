@@ -51,6 +51,7 @@ public class JDSimpleWebserverRequestHandler {
 
             }
         }
+        logger.info(requestParameter.toString());
         if (requestParameter.containsKey("do")) {
             if (requestParameter.get("do").compareToIgnoreCase("submit")==0) {
                 logger.info("submit wurde gedrückt");
