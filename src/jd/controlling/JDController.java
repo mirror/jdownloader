@@ -884,52 +884,47 @@ public class JDController implements ControlListener, UIListener {
                                     iterator.remove();
 
                                 }
-                                break;
                             }
-                            // Anhand des Hostnamens aus dem DownloadLink wird
-                            // ein
-                            // passendes Plugin gesucht
-                            try {
-                                pluginForHost = JDUtilities.getPluginForHost(localLink.getHost()).getClass().newInstance();
-                            } catch (Exception e) {
-                                e.printStackTrace();
-                            }
-                            // Gibt es einen Names für ein Containerformat, wird
-                            // ein
-                            // passendes Plugin gesucht
-                            try {
-                                if (localLink.getContainer() != null) {
-                                    pluginForContainer = JDUtilities.getPluginForContainer(localLink.getContainer(), localLink.getContainerFile());
-                                    if (pluginForContainer != null) {
-
-                                    } else
-                                        localLink.setEnabled(false);
+                            else {
+                                // Anhand des Hostnamens aus dem DownloadLink wird
+                                // ein
+                                // passendes Plugin gesucht
+                                try {
+                                    pluginForHost = JDUtilities.getPluginForHost(localLink.getHost()).getClass().newInstance();
+                                } catch (Exception e) {
+                                    e.printStackTrace();
+                                }
+                                // Gibt es einen Names für ein Containerformat, wird
+                                // ein
+                                // passendes Plugin gesucht
+                                try {
+                                    if (localLink.getContainer() != null) {
+                                        pluginForContainer = JDUtilities.getPluginForContainer(localLink.getContainer(), localLink.getContainerFile());
+                                        if (pluginForContainer != null) {
+    
+                                        } else
+                                            localLink.setEnabled(false);
+                                    }
+                                }
+    
+                                catch (NullPointerException e) {
+                                    e.printStackTrace();
+                                }
+                                if (pluginForHost != null) {
+                                    localLink.setLoadedPlugin(pluginForHost);
+    
+                                }
+                                if (pluginForContainer != null) {
+                                    localLink.setLoadedPluginForContainer(pluginForContainer);
+    
+                                }
+                                if (pluginForHost == null) {
+                                    logger.severe("couldn't find plugin(" + localLink.getHost() + ") for this DownloadLink." + localLink.getName());
                                 }
                             }
-
-                            catch (NullPointerException e) {
-                                e.printStackTrace();
-                            }
-                            if (pluginForHost != null) {
-                                localLink.setLoadedPlugin(pluginForHost);
-
-                            }
-                            if (pluginForContainer != null) {
-                                localLink.setLoadedPluginForContainer(pluginForContainer);
-
-                            }
-                            if (pluginForHost == null) {
-                                logger.severe("couldn't find plugin(" + localLink.getHost() + ") for this DownloadLink." + localLink.getName());
-                            }
                         }
-//                        if (fp.getDownloadLinks().size() == 0) {
-//                            iterator.remove();
-//
-//                        }
                     }
-
                     return packages;
-
                 }
             }
 
