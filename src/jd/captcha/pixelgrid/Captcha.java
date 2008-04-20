@@ -1099,6 +1099,7 @@ public class Captcha extends PixelGrid {
                         objectsret.add(spobjects[0]);
                         pixelObject=spobjects[1];
                         letter = pixelObject.toLetter();
+                        
                         resletter = owner.getLetter(letter);
                     }
                     pixelObject.detected = resletter;

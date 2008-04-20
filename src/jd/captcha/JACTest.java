@@ -54,6 +54,7 @@ public class JACTest {
 //jac.exportDB();
     //  UTILITIES.getLogger().info("has method: "+JAntiCaptcha.hasMethod(methodsPath, hoster));
  //jac.importDB();
+       
 //LetterComperator.CREATEINTERSECTIONLETTER=true;
        
    //jac.displayLibrary();

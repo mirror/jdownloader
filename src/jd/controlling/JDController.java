@@ -922,10 +922,10 @@ public class JDController implements ControlListener, UIListener {
                                 logger.severe("couldn't find plugin(" + localLink.getHost() + ") for this DownloadLink." + localLink.getName());
                             }
                         }
-                        if (fp.getDownloadLinks().size() == 0) {
-                            iterator.remove();
-
-                        }
+//                        if (fp.getDownloadLinks().size() == 0) {
+//                            iterator.remove();
+//
+//                        }
                     }
 
                     return packages;
