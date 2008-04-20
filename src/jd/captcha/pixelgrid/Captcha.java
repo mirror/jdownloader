@@ -1374,4 +1374,7 @@ public class Captcha extends PixelGrid {
     public void setPerfectObjectDetection(boolean perfectObjectDetection) {
         this.perfectObjectDetection = perfectObjectDetection;
     }
+
+
+   
 }

@@ -637,6 +637,12 @@ public class JACScript {
                     } else if (cmd[1].equalsIgnoreCase("normalize")) {
                         captcha.normalize(Double.parseDouble(params[0].trim()), Double.parseDouble(params[1].trim()), Double.parseDouble(params[2].trim()));
                         continue;
+                    } else if (cmd[1].equalsIgnoreCase("desinx")) {
+                        captcha.desinx(Double.parseDouble(params[0].trim()), Double.parseDouble(params[1].trim()), Double.parseDouble(params[2].trim()));
+                        continue;
+                    } else if (cmd[1].equalsIgnoreCase("desiny")) {
+                        captcha.desiny(Double.parseDouble(params[0].trim()), Double.parseDouble(params[1].trim()), Double.parseDouble(params[2].trim()));
+                        continue;
 
                     } else {
                         if (JAntiCaptcha.isLoggerActive()) logger.severe("Error in " + method + "/+script.jas : Function not valid: " + cmd[1] + "(" + cmd[2] + ")");

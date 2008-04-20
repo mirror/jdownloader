@@ -226,6 +226,7 @@ public abstract class PluginForContainer extends PluginForDecrypt {
                 DownloadLink next = it.next();
                 tmpDlink.add(next);
                 tmpURL.add(next.getDownloadURL());
+                logger.info(next.getDownloadURL());
                 next.setContainerFile(srcLink.getContainerFile());
                 next.setContainerIndex(c++);
            

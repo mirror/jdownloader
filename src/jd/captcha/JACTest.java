@@ -37,6 +37,9 @@ public class JACTest {
      * @param args
      */
     public static void main(String args[]){
+        
+        
+        
   
         JACTest main = new JACTest();
         main.go();
@@ -52,11 +55,12 @@ public class JACTest {
     //  UTILITIES.getLogger().info("has method: "+JAntiCaptcha.hasMethod(methodsPath, hoster));
  //jac.importDB();
 //LetterComperator.CREATEINTERSECTIONLETTER=true;
+       
    //jac.displayLibrary();
   
 //jac.getJas().set("preScanFilter", 100);
 //       jac.trainCaptcha(new File(JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath()+"/jd/captcha/methods"+"/"+hoster+"/captchas/"+"securedin1730080724541.jpg"), 4);
-     jac.showPreparedCaptcha(new File("/home/dwd/Desktop/captcha18_04_2008_15_35_59/captcha18_04_2008_00_35_01.jpg"));
+     jac.showPreparedCaptcha(new File("C:\\Users\\coalado\\Desktop\\captcha20_04_2008_20_30_01.jpg"));
       
      //UTILITIES.getLogger().info(JAntiCaptcha.getCaptchaCode(UTILITIES.loadImage(new File(JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath()+"/jd/captcha/methods"+"/rapidshare.com/captchas/rapidsharecom24190807214810.jpg")), null, "rapidshare.com"));
      //jac.removeBadLetters();
