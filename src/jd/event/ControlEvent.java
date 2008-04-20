@@ -53,6 +53,15 @@ public class ControlEvent extends AWTEvent {
      * Es wird kein Linkgrabber geöffnet sonder sofort hinzugefügt
      */
     public final static int   CONTROL_DISTRIBUTE_FINISHED_HIDEGRABBER            = 19;
+
+    /**
+     * Das Verteilen des Inhalts der Zwischenablage ist abgeschlossen Als
+     * Parameter wird hier ein Vector mit DownloadLinks übergeben, die
+     * herausgearbeitet wurden
+     * Es wird kein Linkgrabber geöffnet sonder sofort hinzugefügt
+     * Nach dem Hinzufügen wird der Download gestartet
+     */
+    public final static int   CONTROL_DISTRIBUTE_FINISHED_HIDEGRABBER_START        = 20;
     
     /**
      * Ein PLugin wird beendet. 
@@ -101,6 +110,11 @@ public class ControlEvent extends AWTEvent {
      * Gibt an dass der Download nun komplett abgebrochen wurde.
      */
     public static final int   CONTROL_DOWNLOAD_TERMINATION_INACTIVE               = 18;
+
+    /**
+     * Startet/Stoppt den Download
+     */
+    public static final int   CONTROL_STARTSTOP_DOWNLOAD               = 21;
     
     
 

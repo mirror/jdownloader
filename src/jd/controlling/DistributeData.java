@@ -53,6 +53,11 @@ public class DistributeData extends ControlBroadcaster {
      */
     private boolean                  hideGrabber;
 
+    /**
+     * Download nach Beendigung starten
+     */
+    private boolean                  startDownload;
+
     private Vector<DownloadLink>     linkData;
 
     /**
@@ -71,17 +76,26 @@ public class DistributeData extends ControlBroadcaster {
             logger.warning("text not url decodeable");
         }
     }
-    public DistributeData(String data, boolean hideGrabber) {
+    public DistributeData(String data, boolean hideGrabber, boolean startDownload) {
         super("JD-DistributeData");
         this.data = data;
         this.hideGrabber = hideGrabber;
+        this.startDownload = startDownload;
     }
 
     public void run() {
         Vector<DownloadLink> links = findLinks();
         Collections.sort(links);
-        if (hideGrabber) {
+        
+        if (hideGrabber && startDownload) {
+        	fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_DISTRIBUTE_FINISHED_HIDEGRABBER_START, links));
+        } else if (hideGrabber) {
         	fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_DISTRIBUTE_FINISHED_HIDEGRABBER, links));
+        } else if (startDownload) {
+        	fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_DISTRIBUTE_FINISHED, links));
+        	if ( JDUtilities.getController().getDownloadStatus() == JDController.DOWNLOAD_NOT_RUNNING ) {
+        		JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_STARTSTOP_DOWNLOAD, this));
+        	}
         } else {
         	fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_DISTRIBUTE_FINISHED, links));
         }

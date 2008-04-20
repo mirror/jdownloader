@@ -15,7 +15,9 @@ import java.util.logging.Logger;
 import jd.captcha.JACController;
 import jd.config.Configuration;
 import jd.controlling.DistributeData;
+import jd.controlling.JDController;
 import jd.controlling.interaction.Unrar;
+import jd.event.ControlEvent;
 import jd.gui.UIInterface;
 import jd.unrar.JUnrar;
 import jd.utils.JDUtilities;
@@ -63,6 +65,9 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
         long extractTime = 0;
         boolean doExtract = false;
         boolean hideGrabber = false;
+        boolean startDownload = false;
+        
+        JDController controller = JDUtilities.getController();
 
         for (String currentArg : input) {
 
@@ -114,13 +119,10 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
                 addContainersSwitch = false;
                 addPasswordsSwitch = false;
                 extractSwitch = false;
-
+                
                 logger.info(currentArg + " parameter");
-                // JDUtilities.getController().fireControlEvent(new
-                // ControlEvent(this,
-                // ControlEvent.CONTROL_SET_STARTSTOP_BUTTON_STATE, true));
-                // es ist aufgabe der startDownloadsFunktion das zu broadcasten
-                JDUtilities.getController().startDownloads();
+                startDownload = true;
+                
 
             } else if (currentArg.equals("--stop-download") || currentArg.equals("-D")) {
 
@@ -130,11 +132,11 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
                 extractSwitch = false;
 
                 logger.info(currentArg + " parameter");
-                // JDUtilities.getController().fireControlEvent(new
-                // ControlEvent(this,
-                // ControlEvent.CONTROL_SET_STARTSTOP_BUTTON_STATE, false));
-                // es ist aufgabe der startDownloadsFunktion das zu broadcasten
-                JDUtilities.getController().stopDownloads();
+                if ( controller.getDownloadStatus() == JDController.DOWNLOAD_RUNNING) {
+            		// only in this way the button state is correctly set
+            		// stopDownloads() is called by button itself so it cannot handle this
+            		controller.fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_STARTSTOP_DOWNLOAD, this));
+            	}
 
             } else if (currentArg.equals("--show") || currentArg.equals("-s")) {
 
@@ -268,18 +270,28 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
         for (int i = 0; i < linksToAdd.size(); i++) {
             linksToAddString += linksToAdd.get(i) + "\n";
         }
-
+        
         if (!linksToAddString.equals("")) {
-        	DistributeData distributeData = new DistributeData(linksToAddString, true);
+        	
+        	DistributeData distributeData = new DistributeData(linksToAddString, hideGrabber, startDownload);
             distributeData.addControlListener(JDUtilities.getController());
             distributeData.start();
+            
+        } else if (startDownload) {
+        	
+        	if ( controller.getDownloadStatus() == JDController.DOWNLOAD_NOT_RUNNING ) {
+        		// only in this way the button state is correctly set
+        		// startDownloads() is called by button itself so it cannot handle this
+        		controller.fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_STARTSTOP_DOWNLOAD, this));
+        	}
+        	
         }
 
         if (doExtract) {
             logger.info("Extract: [" + paths.toString() + " | " + extractTime + "]");
             Server.extract(paths, extractTime, false);
         }
-
+        
     }
 
     public static void showCmdHelp() {

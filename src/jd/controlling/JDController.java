@@ -284,6 +284,18 @@ public class JDController implements ControlListener, UIListener {
 
             break;
             
+        case ControlEvent.CONTROL_DISTRIBUTE_FINISHED_HIDEGRABBER_START:
+
+            if (event.getParameter() != null && event.getParameter() instanceof Vector && ((Vector) event.getParameter()).size() > 0) {
+            	Vector<DownloadLink> links = (Vector<DownloadLink>) event.getParameter();
+                addLinksWithoutGrabber(links);
+            	if ( getDownloadStatus() == JDController.DOWNLOAD_NOT_RUNNING ) {
+            		fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_STARTSTOP_DOWNLOAD, this));
+            	}
+            }
+
+            break;
+            
         case ControlEvent.CONTROL_LINKLIST_STRUCTURE_CHANGED:
             // Interaction interaction = (Interaction) event.getParameter();
             this.saveDownloadLinks();
