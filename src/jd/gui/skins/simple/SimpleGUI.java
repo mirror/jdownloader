@@ -222,11 +222,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
     private JButton btnClipBoard;
 
     private JDAction actionHelp;
-
-    private LocationListener locationListener;
-
-  
-
+    
     public static final String PARAM_DISABLE_CONFIRM_DIALOGS = "DISABLE_CONFIRM_DIALOGS";
 
     private static SubConfiguration guiConfig = JDUtilities.getSubConfig(GUICONFIGNAME);
@@ -274,7 +270,6 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         menuBar = new JMenuBar();
         toolBar = new JToolBar();
 
-        this.locationListener = new LocationListener();
         frame.addWindowListener(this);
 
         frame.setIconImage(JDUtilities.getImage(JDTheme.V("gui.images.jd_logo")));
@@ -298,8 +293,6 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         // DND
         dragNDrop = new Dropper(new JFrame());
         dragNDrop.addUIListener(this);
-        frame.addComponentListener(locationListener);
-        frame.addWindowListener(locationListener);
         // Ruft jede sekunde ein UpdateEvent auf
 
         new Thread("GUI Interval") {
@@ -1272,7 +1265,9 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
                 doIt = true;
             }
             if (doIt) {
-               
+            	saveLastLocation(e.getComponent(), null);
+            	saveLastDimension(e.getComponent(), null);
+                JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).save();
                 this.fireUIEvent(new UIEvent(this, UIEvent.UI_EXIT, null));
             }
         }
@@ -1428,7 +1423,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
 
             break;
         case UIInterface.WINDOW_STATUS_MAXIMIZED:
-
+            frame.setState(JFrame.MAXIMIZED_BOTH);
             break;
         case UIInterface.WINDOW_STATUS_MINIMIZED:
             frame.setState(JFrame.ICONIFIED);
