@@ -1409,8 +1409,8 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
             break;
         case ControlEvent.CONTROL_LINKLIST_STRUCTURE_CHANGED:
             if (event.getSource().getClass() == JDController.class) {
-
             }
+	        break;
         case ControlEvent.CONTROL_STARTSTOP_DOWNLOAD:
         	// only in this way the button state is correctly set
     		// controller.startDownloads() is called by button itself so it cannot handle this
