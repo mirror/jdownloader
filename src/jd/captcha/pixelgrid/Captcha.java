@@ -407,6 +407,44 @@ public class Captcha extends PixelGrid {
     @SuppressWarnings("unchecked")
     public Letter[] getLetters(int letterNum) {
 
+        Letter[] ret = getLetters0(letterNum);
+        if (owner.getJas().getString("useLetterFilter") != null && owner.getJas().getString("useLetterFilter").length() > 0) {
+            String[] ref = owner.getJas().getString("useLetterFilter").split("\\.");
+            if (ref.length != 2) {
+                if (JAntiCaptcha.isLoggerActive()) logger.severe("useLetterFilter should have the format Class.Method");
+                return null;
+            }
+            String cl = ref[0];
+            String methodname = ref[1];
+
+            Class newClass;
+            try {
+                newClass = Class.forName("jd.captcha.specials." + cl);
+
+                Class[] parameterTypes = new Class[] { ret.getClass() };
+                Method method = newClass.getMethod(methodname, parameterTypes);
+                Object[] arguments = new Object[] { ret };
+                Object instance = null;
+                Letter[] ret2 = (Letter[]) method.invoke(instance, arguments);
+                if (ret2 != null) {
+
+                    return ret2;
+                } else {
+                    if (JAntiCaptcha.isLoggerActive()) logger.severe("Special filter failed.");
+                    return ret;
+                }
+
+            } catch (Exception e) {
+                if (JAntiCaptcha.isLoggerActive()) logger.severe("Fehler in useLetterFilter:" + e.getLocalizedMessage() + " / " + owner.getJas().getString("useSpecialGetLetters"));
+                e.printStackTrace();
+            }
+            return ret;
+        }
+        return ret;
+    }
+
+    public Letter[] getLetters0(int letterNum) {
+
         if (seperatedLetters != null) return seperatedLetters;
 
         if (owner.getJas().getString("useSpecialGetLetters") != null && owner.getJas().getString("useSpecialGetLetters").length() > 0) {
@@ -589,6 +627,7 @@ public class Captcha extends PixelGrid {
         int noGapCount = 0;
 
         boolean lastOverPeak = false;
+
         for (x = lastletterX; x < getWidth(); x++) {
             int count = 0;
             for (int y = 0; y < getHeight(); y++) {
@@ -643,7 +682,7 @@ public class Captcha extends PixelGrid {
         }
 
         ret.setGrid(letterGrid);
-
+        ret.setLocation(new int[] { 0, 0 });
         if (!ret.trim(lastletterX, x)) return null;
 
         if (!ret.clean()) return null;
@@ -682,6 +721,7 @@ public class Captcha extends PixelGrid {
         int[][] letterGrid = new int[Math.min(getWidth() - 1, nextGap + overlap) - Math.max(0, lastletterX - overlap)][getHeight()];
         int x;
         if (JAntiCaptcha.isLoggerActive()) logger.info("Gap at " + nextGap + " last gap: " + lastletterX + " this: " + Math.max(0, lastletterX - overlap) + " - " + Math.min(getWidth() - 1, nextGap + overlap));
+        ret.setLocation(new int[] { Math.max(0, lastletterX - overlap), 0 });
         for (x = Math.max(0, lastletterX - overlap); x < Math.min(getWidth() - 1, nextGap + overlap); x++) {
             for (int y = 0; y < getHeight(); y++) {
                 letterGrid[x - Math.max(0, lastletterX - overlap)][y] = getPixelValue(x, y);
@@ -1083,6 +1123,7 @@ public class Captcha extends PixelGrid {
         int maxWidth;
         // Alle Objekte aus dem captcha holen. Sie sind nach der Größe Sortiert
         Vector<PixelObject> objects = getObjects(contrast, objectContrast);
+        logger.info(objects + "");
         if (owner.jas.getBoolean("directLetterDetection")) {
             Vector<PixelObject> objectsret = new Vector<PixelObject>();
             Iterator<PixelObject> iter = objects.iterator();
@@ -1092,21 +1133,21 @@ public class Captcha extends PixelGrid {
                     Letter letter = pixelObject.toLetter();
                     LetterComperator resletter = owner.getLetter(letter);
                     int b;
-                    while (resletter.getB()!=null && (b = pixelObject.getArea()-resletter.getB().getArea()) > minArea && b > (resletter.getB().getArea()/3)) {
+                    while (resletter.getB() != null && (b = pixelObject.getArea() - resletter.getB().getArea()) > minArea && b > (resletter.getB().getArea() / 3)) {
                         PixelObject[] spobjects = pixelObject.splitAt(resletter.getB().getWidth());
                         letter = spobjects[0].toLetter();
                         spobjects[0].detected = resletter;
                         objectsret.add(spobjects[0]);
-                        pixelObject=spobjects[1];
+                        pixelObject = spobjects[1];
                         letter = pixelObject.toLetter();
-                        
+
                         resletter = owner.getLetter(letter);
                     }
                     pixelObject.detected = resletter;
                     objectsret.add(pixelObject);
                 }
             }
-            objects=objectsret;
+            objects = objectsret;
         }
         if (owner.jas.getBoolean("rapidshareSpecial")) {
             String methodsPath = UTILITIES.getFullPath(new String[] { JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath(), "jd", "captcha", "methods" });
@@ -1376,6 +1417,4 @@ public class Captcha extends PixelGrid {
         this.perfectObjectDetection = perfectObjectDetection;
     }
 
-
-   
 }

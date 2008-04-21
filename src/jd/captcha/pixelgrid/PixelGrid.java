@@ -68,6 +68,15 @@ public class PixelGrid {
      * Pixel Array
      */
     public int[] pixel;
+    private int[] location = new int[] { 0, 0 };
+
+    public int[] getLocation() {
+        return location;
+    }
+
+    public void setLocation(int[] loc) {
+        this.location = loc;
+    }
 
     /**
      * Gibt eine Prozentzahl aus. 0 = super 100= ganz schlimm
@@ -494,7 +503,8 @@ public class PixelGrid {
         int newHeight = getHeight() - (topPadding + bottomPadding);
 
         int[][] newGrid = new int[newWidth][newHeight];
-
+        location[0] += leftPadding;
+        location[1] += topPadding;
         for (int x = 0; x < newWidth; x++) {
             for (int y = 0; y < newHeight; y++) {
                 newGrid[x][y] = grid[x + leftPadding][y + topPadding];
@@ -1036,7 +1046,8 @@ public class PixelGrid {
             return false;
         }
         int[][] ret = new int[getWidth() - leftLines - rightLines][getHeight() - topLines - bottomLines];
-
+        location[0] += leftLines;
+        location[1] += topLines;
         for (int y = 0; y < getHeight() - topLines - bottomLines; y++) {
             for (int x = 0; x < getWidth() - leftLines - rightLines; x++) {
                 ret[x][y] = getPixelValue(x + leftLines, y + topLines);
@@ -1458,69 +1469,65 @@ public class PixelGrid {
         return ret;
     }
 
+    public void desinx(double parseDouble, double parseDouble2) {
+        // TODO Auto-generated method stub
+
+    }
+
+    public void desiny(double parseDouble, double parseDouble2) {
+        // TODO Auto-generated method stub
+
+    }
+
     public void desinx(double max, double omega, double phi) {
-
-        // #define SINE_MAX_X (4)
-        // #
-        // #define SINE_OMEGA_X (0.1386)
-        // #
-        // #define SINE_PHI_X (0)
-        // #
-        //         
-        // #
-        // #define SINE_MAX_Y (4)
-        // #
-        // #define SINE_OMEGA_Y (0.1248)
-        // #
-        // #define SINE_PHI_Y (0)
-        // #
-        //         
-
+        omega=2*Math.PI/omega;
+          
+        int[][] tmp = new int[getWidth()][getHeight()];
         int shift;
 
         for (int y = 0; y < getHeight(); y++) {
 
-            shift = -(int) (max * Math.sin(omega * y + phi));
+            shift = (int) (max * Math.sin(omega * (y + phi)));
 
-            if (shift > 0) {
+      
 
-                for (int x = 0; x < getWidth(); x++)
+                for (int x = 0; x < getWidth(); x++){
 
-                    grid[x][y] = (x + shift < getWidth()) ? grid[x + shift][y] : 0xFF;
-
-            } else {
-
-                for (int x = getWidth() - 1; x >= 0; x--)
-
-                    grid[x][y] = (x + shift >= 0) ? grid[x + shift][y] : 0xFF;
-
-            }
+                    tmp[x][y] = (x + shift < getWidth()&&x+shift>=0) ? grid[x + shift][y] : 0xFF;
+                }
+                    grid[107+shift][y]=0xff0000;
+        
 
         }
+        this.setGrid(tmp);
 
     }
-
+/**
+ * Die Wellenlänge omega kann aus dem captcha ausgemessen werden. Formel: 2*PI/geschätzte Wellenlänge in Pixeln
+ * @param max
+ * @param omega
+ * @param phi
+ */
     public void desiny(double max, double omega, double phi) {
         int shift;
+        omega=2*Math.PI/omega;
+      
+        int[][] tmp = new int[getWidth()][getHeight()];
         for (int x = 0; x < getWidth(); x++) {
 
-            shift = -(int) (max * Math.sin(omega * x + phi));
+            shift = (int) (max * Math.sin(omega * (x + phi)));
 
-            if (shift > 0) {
+          
+                for (int y = 0; y < getHeight(); y++){
 
-                for (int y = 0; y < getHeight(); y++)
+                    tmp[x][y] = (y + shift < getHeight()&&y+shift>=0) ? grid[x][y + shift] : 0xFF;
+                }
 
-                    grid[x][y] = (y + shift < getHeight()) ? grid[x][y + shift] : 0xFF;
-
-            } else {
-
-                for (int y = getHeight()-1; y >=0; y--)
-
-                    grid[x][y] = (y + shift >= 0) ? grid[x][y + shift] : 0xFF;
-
-            }
+          
+                grid[x][60+shift]=0xff0000;
 
         }
+        this.setGrid(tmp);
 
     }
 
@@ -1584,5 +1591,7 @@ public class PixelGrid {
     public int[][] getGrid() {
         return grid;
     }
+
+ 
 
 }

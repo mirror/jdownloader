@@ -184,6 +184,8 @@ public class JACScript {
         set("gapDetectionPeakContrast", 0.25);
 
         set("useSpecialGetLetters", "");
+        set("useLetterFilter","");
+        set("useLettercomparatorFilter","");
 
         set("LetterSearchLimitFalsePercent", 100);
         /**
@@ -619,6 +621,13 @@ public class JACScript {
                     } else if (cmd[1].equalsIgnoreCase("removeBridges")) {
                         captcha.removeBridges(Integer.parseInt(params[0].trim()), Double.parseDouble(params[1].trim()));
                         continue;
+                    } else if (cmd[1].equalsIgnoreCase("desinx")) {
+                        captcha.desinx(Double.parseDouble(params[1].trim()), Double.parseDouble(params[2].trim()));
+                        continue;
+                    } else if (cmd[1].equalsIgnoreCase("desiny")) {
+                        captcha.desiny( Double.parseDouble(params[1].trim()), Double.parseDouble(params[2].trim()));
+                        continue;
+
                     } else if (cmd[1].equalsIgnoreCase("cleanWithDetailMask")) {
                         captcha.cleanWithDetailMask(owner.createCaptcha(UTILITIES.loadImage(owner.getResourceFile(params[0].trim()))), Integer.parseInt(params[1].trim()));
                         continue;

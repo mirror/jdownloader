@@ -61,12 +61,14 @@ public class Letter extends PixelGrid {
 
     private int    angle;
 
+
     /**
      * 
      */
     public Letter() {
         super(0, 0);
     }
+
 
     /**
      * TODO: EINE saubere verkleinerung * gibt den Letter um den faktor faktor
@@ -166,6 +168,7 @@ public class Letter extends PixelGrid {
     public boolean trim(int left, int right) {
         int width = right - left;
         int[][] tmp = new int[width][getHeight()];
+        setLocation(new int[]{left,0});
         if (getWidth() < right) {
             if(JAntiCaptcha.isLoggerActive())logger.severe("Letter dim: " + getWidth() + " - " + getHeight() + ". Cannot trim to " + left + "-" + right);
             return false;

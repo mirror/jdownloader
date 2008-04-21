@@ -319,6 +319,7 @@ public class PixelObject implements Comparable {
         }
         Letter l = owner.createLetter();
         l.setElementPixel(getSize());
+        l.setLocation(new int[]{this.getXMin(),this.getYMin()});
         l.setGrid(ret);
         l.detected=detected;
         return l;

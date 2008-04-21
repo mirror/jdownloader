@@ -27,6 +27,7 @@ import java.io.File;
 import java.io.FileFilter;
 import java.io.IOException;
 import java.io.StringWriter;
+import java.lang.reflect.Method;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Iterator;
@@ -163,6 +164,10 @@ public class JAntiCaptcha {
 
     private int[][] letterMap = null;
 
+    private int maxLetterNum;
+
+    private int minLetterNum;
+
     /**
      * @param methodsPath
      *            debug
@@ -217,9 +222,11 @@ public class JAntiCaptcha {
             }
         }
     }
+
     public void importDB() {
         importDB(UTILITIES.directoryChooser(""));
     }
+
     /**
      * Importiert pNG einzelbilder aus einem ordner und erstellt daraus eine
      * neue db
@@ -414,8 +421,19 @@ public class JAntiCaptcha {
 
             }
             if (childNode.getNodeName().equals("format")) {
+                try {
+                    this.setLetterNum(Integer.parseInt(UTILITIES.getAttribute(childNode, "letterNum")));
+                } catch (Exception e) {
+                }
+                try {
+                    this.setLetterMinNum(Integer.parseInt(UTILITIES.getAttribute(childNode, "minLetterNum")));
+                } catch (Exception e) {
+                }
+                try {
+                    this.setLetterMaxNum(Integer.parseInt(UTILITIES.getAttribute(childNode, "maxLetterNum")));
+                } catch (Exception e) {
+                }
 
-                this.setLetterNum(Integer.parseInt(UTILITIES.getAttribute(childNode, "letterNum")));
                 this.setImageType(UTILITIES.getAttribute(childNode, "type"));
 
             }
@@ -431,6 +449,16 @@ public class JAntiCaptcha {
             }
 
         }
+
+    }
+
+    private void setLetterMaxNum(int parseInt) {
+        this.maxLetterNum = parseInt;
+
+    }
+
+    private void setLetterMinNum(int parseInt) {
+        this.minLetterNum = parseInt;
 
     }
 
@@ -612,7 +640,12 @@ public class JAntiCaptcha {
             if (lcs[i] == null) continue;
             bw2.add(new JLabel("Aus Datenbank:"), UTILITIES.getGBC(0, 6, 2, 2));
             if (lcs[i].getB() != null) {
-                bw2.add(new ImageComponent(lcs[i].getB().getImage((int) Math.ceil(jas.getDouble("simplifyFaktor")))), UTILITIES.getGBC(i * 2 + 2, 6, 2, 2));
+                bw2.add(new ImageComponent(lcs[i].getB().getImage((int) Math.ceil(jas.getDouble("simplifyFaktor")))), UTILITIES.getGBC(i * 2 + 2, 6, 2, 1));
+              Letter dif = lcs[i].getDifference();
+                dif.removeSmallObjects(0.9, 0.9, 10);
+                dif.clean();
+bw2.add(new ImageComponent(dif.getImage((int) Math.ceil(jas.getDouble("simplifyFaktor")))), UTILITIES.getGBC(i * 2 + 2, 7, 2, 1));
+
             } else {
                 bw2.add(new JLabel("B unknown"), UTILITIES.getGBC(i * 2 + 2, 6, 2, 2));
 
@@ -1073,6 +1106,32 @@ public class JAntiCaptcha {
 
             return null;
         }
+        if (getJas().getString("useLettercomparatorFilter") != null && getJas().getString("useLettercomparatorFilter").length() > 0) {
+            String[] ref = getJas().getString("useLettercomparatorFilter").split("\\.");
+            if (ref.length != 2) {
+                if (JAntiCaptcha.isLoggerActive()) logger.severe("useLettercomparatorFilter should have the format Class.Method");
+                return null;
+            }
+            String cl = ref[0];
+            String methodname = ref[1];
+
+            Class newClass;
+            try {
+                newClass = Class.forName("jd.captcha.specials." + cl);
+
+                Class[] parameterTypes = new Class[] { newLettersVector.getClass() };
+                Method method = newClass.getMethod(methodname, parameterTypes);
+                Object[] arguments = new Object[] { newLettersVector };
+                Object instance = null;
+                method.invoke(instance, arguments);
+
+            } catch (Exception e) {
+                if (JAntiCaptcha.isLoggerActive()) logger.severe("Fehler in useLettercomparatorFilter:" + e.getLocalizedMessage() + " / " + getJas().getString("useLettercomparatorFilter"));
+                e.printStackTrace();
+            }
+          
+        }
+
         captcha.setLetterComperators(newLettersVector.toArray(new LetterComperator[] {}));
 
         if (JAntiCaptcha.isLoggerActive()) logger.finer("Vality: " + ((int) (correct / letters.length)));
@@ -1709,6 +1768,7 @@ public class JAntiCaptcha {
         });
         ScrollPaneWindow w = new ScrollPaneWindow(jac);
         w.setTitle(" Test Captchas: " + file.getAbsolutePath());
+      
         w.resizeWindow(100);
         if (JAntiCaptcha.isLoggerActive()) logger.info("Found Testcaptchas: " + entries.length);
         int testNum = Math.min(checkCaptchas, entries.length);
@@ -1716,6 +1776,8 @@ public class JAntiCaptcha {
         int i = 0;
         for (i = 0; i < testNum; i++) {
             captchaFile = entries[(int) (Math.random() * entries.length)];
+            
+            logger.info("JJJJJJJJ"+captchaFile);
             img = UTILITIES.loadImage(captchaFile);
             w.setText(0, i, captchaFile.getName());
             w.setImage(1, i, img);
