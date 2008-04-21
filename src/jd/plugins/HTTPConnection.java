@@ -137,6 +137,7 @@ public class HTTPConnection {
     public void post(String parameter) throws IOException {
         OutputStreamWriter wr = new OutputStreamWriter(connection.getOutputStream());
         if (parameter != null) wr.write(parameter);
+ 
         this.postData=parameter;
         wr.flush();
         wr.close();

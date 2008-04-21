@@ -48,12 +48,12 @@ public class RapidshareCom {
       for(Iterator<LetterComperator> it = lcs.iterator();it.hasNext();){
           LetterComperator next = it.next();
           Letter dif = next.getDifference();
-          dif.removeSmallObjects(0.9, 0.9, 10);
+          dif.removeSmallObjects(0.8, 0.8, 20);
           dif.clean();
           JAntiCaptcha jac = new JAntiCaptcha(methodsPath, hoster);
           
-          if(jac.getLetter(dif).getDecodedValue().equalsIgnoreCase("d")){
-             it.remove(); 
+          if(!jac.getLetter(dif).getDecodedValue().equalsIgnoreCase("k")){
+             //it.remove(); 
           }
           
           

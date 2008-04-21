@@ -57,6 +57,26 @@ public class Enc {
       Copy.copy(out, state);
    }
 
+   // Cipher: actual AES encrytion
+   public void InvCipher(byte[] in, byte[] out) {
+      wCount = 0; // count bytes in expanded key throughout encryption
+      byte[][] state = new byte[4][Nb]; // the state array
+      Copy.copy(state, in); // actual component-wise copy
+      AddRoundKey(state); // xor with expanded key
+      for (int round = Nr-1; round >=1; round--) {
+         //Print.printArray("Start round  " + round + ":", state);
+          ShiftRows(state); // mix up rows
+         SubBytes(state); // S-box substitution
+         AddRoundKey(state); // xor with expanded key
+         MixColumns(state); // complicated mix of columns
+       
+      }
+      //Print.printArray("Start round " + Nr + ":", state);
+      ShiftRows(state); // mix up rows
+      SubBytes(state); // S-box substitution
+      AddRoundKey(state); // xor with expanded key
+      Copy.copy(out, state);
+   }
    // KeyExpansion: expand key, byte-oriented code, but tracks words
    private void KeyExpansion(byte[] key, byte[] w) {
       byte[] temp = new byte[4];

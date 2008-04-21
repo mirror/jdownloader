@@ -639,19 +639,25 @@ public class JAntiCaptcha {
         for (int i = 0; i < lcs.length; i++) {
             if (lcs[i] == null) continue;
             bw2.add(new JLabel("Aus Datenbank:"), UTILITIES.getGBC(0, 6, 2, 2));
+            Letter dif = lcs[i].getDifference();
+            //dif.removeSmallObjects(0.8, 0.8, 20);
+            dif.clean();
             if (lcs[i].getB() != null) {
                 bw2.add(new ImageComponent(lcs[i].getB().getImage((int) Math.ceil(jas.getDouble("simplifyFaktor")))), UTILITIES.getGBC(i * 2 + 2, 6, 2, 1));
-              Letter dif = lcs[i].getDifference();
-                dif.removeSmallObjects(0.9, 0.9, 10);
-                dif.clean();
+         
+               
 bw2.add(new ImageComponent(dif.getImage((int) Math.ceil(jas.getDouble("simplifyFaktor")))), UTILITIES.getGBC(i * 2 + 2, 7, 2, 1));
 
             } else {
                 bw2.add(new JLabel("B unknown"), UTILITIES.getGBC(i * 2 + 2, 6, 2, 2));
 
             }
+            
+            String methodsPath = UTILITIES.getFullPath(new String[] { JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath(), "jd", "captcha", "methods" });
+            String hoster = "rscat.com";
+            JAntiCaptcha jac = new JAntiCaptcha(methodsPath, hoster);
             bw2.add(new JLabel("Wert:"), UTILITIES.getGBC(0, 8, 2, 2));
-            bw2.add(new JLabel(lcs[i].getDecodedValue()), UTILITIES.getGBC(i * 2 + 2, 8, 2, 2));
+            bw2.add(new JLabel(lcs[i].getDecodedValue()+" : "+jac.getLetter(dif).getDecodedValue()), UTILITIES.getGBC(i * 2 + 2, 8, 2, 2));
             bw2.add(new JLabel("Proz.:"), UTILITIES.getGBC(0, 10, 2, 2));
             bw2.add(new JLabel(lcs[i].getValityPercent() + "%"), UTILITIES.getGBC(i * 2 + 2, 10, 2, 2));
 

@@ -1495,7 +1495,7 @@ public class PixelGrid {
 
                     tmp[x][y] = (x + shift < getWidth()&&x+shift>=0) ? grid[x + shift][y] : 0xFF;
                 }
-                    grid[107+shift][y]=0xff0000;
+                    grid[20+shift][y]=0xff0000;
         
 
         }
@@ -1524,10 +1524,10 @@ public class PixelGrid {
                 }
 
           
-                grid[x][60+shift]=0xff0000;
+                grid[x][63+shift]=0xff0000;
 
         }
-        this.setGrid(tmp);
+      this.setGrid(tmp);
 
     }
 
