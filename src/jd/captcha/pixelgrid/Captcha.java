@@ -1133,8 +1133,13 @@ public class Captcha extends PixelGrid {
                     Letter letter = pixelObject.toLetter();
                     LetterComperator resletter = owner.getLetter(letter);
                     int b;
-                    while (resletter.getB() != null && (b = pixelObject.getArea() - resletter.getB().getArea()) > minArea && b > (resletter.getB().getArea() / 3) && resletter.getOffset()!=null && resletter.getOffset().length>0) {
-                        PixelObject[] spobjects = pixelObject.splitAt(resletter.getOffset()[0]);
+                    while (resletter.getB() != null &&  !resletter.getDecodedValue().equals("-") && (b = pixelObject.getArea() - resletter.getB().getArea()) > minArea && b > (resletter.getB().getArea() / 3) && resletter.getOffset()!=null && resletter.getOffset().length>0) {
+                        int spat = 0;
+                        if(resletter.getOffset()[0]<resletter.getB().getWidth()/3)
+                            spat=resletter.getOffset()[0]+resletter.getB().getWidth();
+                        else
+                            spat=resletter.getOffset()[0];
+                        PixelObject[] spobjects = pixelObject.splitAt(spat);
                         PixelObject ob1 = null;
                         PixelObject ob2 = null;
                         if(Math.abs(spobjects[0].getWidth()-resletter.getB().getWidth())<Math.abs(spobjects[1].getWidth()-resletter.getB().getWidth()))
@@ -1152,8 +1157,8 @@ public class Captcha extends PixelGrid {
                         objectsret.add(ob1);
                         pixelObject = ob2;
                         letter = pixelObject.toLetter();
-
                         resletter = owner.getLetter(letter);
+                        
                     }
                     pixelObject.detected = resletter;
                     objectsret.add(pixelObject);
