@@ -52,7 +52,7 @@ public class FastLoadNet extends PluginForHost {
     private String               cookie            		= "";
 
     // Suchmasken
-    private static final String  DOWNLOAD_INFO          = "<th.*?><b>File</b></th>\\s*?<th.*?><b>Size</b></th>\\s*?</tr>\\s*?<tr>\\s*?<td.*?><font.*?>(.*)</font></td>\\s*?<td.*?><font.*?>(.*) MB</font></td>";
+    private static final String  DOWNLOAD_INFO          = "<th.*?><b>Datei</b></th>[\\s]*?<th.*?><b>Gr&ouml;sse</b></th>[\\s]*?</tr>[\\s]*?<tr>[\\s]*?<td.*?><font.*?>(.*?)</font></td>[\\s]*?<td.*?><font.*?>(.*?) MB</font></td>";
 
     private static final String  NOT_FOUND              = "Datei existiert nicht";
 
@@ -112,15 +112,17 @@ public class FastLoadNet extends PluginForHost {
 
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) {
-
+    	
+    	downloadLink.setUrlDownload(downloadLink.getDownloadURL()+"&lg=de");
+    	
         try {
 
             RequestInfo requestInfo = getRequest(new URL(downloadLink.getDownloadURL()));
-
+            
             if (requestInfo.getHtmlCode().contains(NOT_FOUND)) {
 
                 downloadLink.setStatus(DownloadLink.STATUS_ERROR_FILE_NOT_FOUND);
-                downloadLink.setName(downloadLink.getDownloadURL().substring(downloadLink.getDownloadURL().indexOf("pid=")+4));
+                downloadLink.setName(downloadLink.getDownloadURL().substring(downloadLink.getDownloadURL().indexOf("pid=")+4, downloadLink.getDownloadURL().length()-6));
                 return false;
 
             }
@@ -171,13 +173,13 @@ public class FastLoadNet extends PluginForHost {
     	
         try {
 
-            URL downloadUrl = new URL(downloadLink.getDownloadURL());
-
             switch (step.getStep()) {
 
                 case PluginStep.STEP_PAGE:
                 	
-                    requestInfo = getRequest(downloadUrl);
+                	downloadLink.setUrlDownload(downloadLink.getDownloadURL()+"&lg=de");
+                	
+                    requestInfo = getRequest(new URL(downloadLink.getDownloadURL()));
                     cookie = requestInfo.getCookie();
 
                     if (requestInfo.getHtmlCode().contains(NOT_FOUND)) {
@@ -234,7 +236,9 @@ public class FastLoadNet extends PluginForHost {
                 case PluginStep.STEP_DOWNLOAD:
                 	
                 	String code = (String) steps.get(1).getParameter();
-                    String pid = downloadLink.getDownloadURL().substring(downloadLink.getDownloadURL().indexOf("pid=")+4);
+                    String pid = downloadLink.getDownloadURL().substring(downloadLink.getDownloadURL().indexOf("pid=")+4,
+                    		downloadLink.getDownloadURL().indexOf("&"));
+                    
                     requestInfo = postRequestWithoutHtmlCode(new URL("http://fast-load.net/download.php"),
                 			cookie, downloadLink.getDownloadURL(), "fid="+pid+"&captcha_code="+code, true);
 
