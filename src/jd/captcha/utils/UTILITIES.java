@@ -384,9 +384,10 @@ public class UTILITIES {
 		gbc.gridy = y;
 		gbc.gridwidth = width;
 		gbc.gridheight = height;
-		gbc.weightx = 0.1;
+		gbc.weightx = 0;
 		gbc.weighty = 0;
 		gbc.fill = GridBagConstraints.NONE;
+		gbc.anchor=GridBagConstraints.NORTHWEST;
 		gbc.insets = new Insets(1, 1, 1, 1);
 		return gbc;
 	};

@@ -621,12 +621,7 @@ public class JACScript {
                     } else if (cmd[1].equalsIgnoreCase("removeBridges")) {
                         captcha.removeBridges(Integer.parseInt(params[0].trim()), Double.parseDouble(params[1].trim()));
                         continue;
-                    } else if (cmd[1].equalsIgnoreCase("desinx")) {
-                        captcha.desinx(Double.parseDouble(params[1].trim()), Double.parseDouble(params[2].trim()));
-                        continue;
-                    } else if (cmd[1].equalsIgnoreCase("desiny")) {
-                        captcha.desiny( Double.parseDouble(params[1].trim()), Double.parseDouble(params[2].trim()));
-                        continue;
+             
 
                     } else if (cmd[1].equalsIgnoreCase("cleanWithDetailMask")) {
                         captcha.cleanWithDetailMask(owner.createCaptcha(UTILITIES.loadImage(owner.getResourceFile(params[0].trim()))), Integer.parseInt(params[1].trim()));
@@ -675,7 +670,10 @@ public class JACScript {
                 } else if (cmd[0].equals("function") && (params = cmd[2].split("\\,")).length == 5) {
 
                 } else if (cmd[0].equals("function") && (params = cmd[2].split("\\,")).length == 6) {
-
+                    if (cmd[1].equalsIgnoreCase("desin")) {
+                        captcha.desin(Double.parseDouble(params[0].trim()), Double.parseDouble(params[1].trim()), Double.parseDouble(params[2].trim()),Double.parseDouble(params[3].trim()),Double.parseDouble(params[4].trim()),Double.parseDouble(params[5].trim()));
+                        continue;
+                    }
                 }
 
             }
@@ -790,6 +788,12 @@ public class JACScript {
                     } else if (cmd[1].equalsIgnoreCase("align")) {
 
                         letter.align(Double.parseDouble(params[0].trim()), Integer.parseInt(params[1].trim()), Integer.parseInt(params[2].trim()));
+                    } else if (cmd[1].equalsIgnoreCase("desinx")) {
+                        letter.desinx(Double.parseDouble(params[0].trim()), Double.parseDouble(params[1].trim()), Double.parseDouble(params[2].trim()));
+                        continue;
+                    } else if (cmd[1].equalsIgnoreCase("desiny")) {
+                        letter.desiny(Double.parseDouble(params[0].trim()), Double.parseDouble(params[1].trim()), Double.parseDouble(params[2].trim()));
+                        continue;
 
                     } else if (cmd[1].equalsIgnoreCase("normalize")) {
                         letter.normalize(Double.parseDouble(params[0].trim()), Double.parseDouble(params[1].trim()), Double.parseDouble(params[2].trim()));
@@ -804,6 +808,7 @@ public class JACScript {
                 } else if (cmd[0].equals("function") && (params = cmd[2].split("\\,")).length == 5) {
 
                 } else if (cmd[0].equals("function") && (params = cmd[2].split("\\,")).length == 6) {
+                 
 
                 }
 

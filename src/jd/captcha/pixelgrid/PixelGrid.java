@@ -33,6 +33,7 @@ import java.util.Vector;
 import java.util.logging.Logger;
 
 import jd.captcha.JAntiCaptcha;
+import jd.captcha.gui.BasicWindow;
 import jd.captcha.gui.ScrollPaneWindow;
 import jd.captcha.pixelobject.PixelObject;
 import jd.captcha.utils.UTILITIES;
@@ -1469,65 +1470,183 @@ public class PixelGrid {
         return ret;
     }
 
-    public void desinx(double parseDouble, double parseDouble2) {
-        // TODO Auto-generated method stub
+    public static int[] getDimension(int[][] grid) {
 
-    }
+        int topLines = 0;
+        int bottomLines = 0;
+        int leftLines = 0;
+        int rightLines = 0;
 
-    public void desiny(double parseDouble, double parseDouble2) {
-        // TODO Auto-generated method stub
+        int width = grid.length;
+        int height = grid[0].length;
+        row: for (int x = 0; x < width; x++) {
+
+            for (int y = 0; y < height; y++) {
+                // JDUtilities.getLogger().info(grid[x][y]+"");
+                if (grid[x][y] == 0) {
+                    //grid[x][y] = 0xff0000;
+                    break row;
+                }
+            }
+
+            leftLines++;
+        }
+        // JDUtilities.getLogger().info("left "+leftLines);
+        row: for (int x = width - 1; x >= 0; x--) {
+
+            for (int y = 0; y < height; y++) {
+
+                if (grid[x][y] == 0) {
+                    //grid[x][y] = 0xff0000;
+                    break row;
+                }
+            }
+
+            rightLines++;
+        }
+        // JDUtilities.getLogger().info("right "+rightLines);
+        if (leftLines >= width || (width - rightLines) > width) { return new int[]{0,0}; };
+
+       
+        line: for (int y = 0; y < height; y++) {
+
+            for (int x = leftLines; x < width - rightLines; x++) {
+                if (grid[x][y] == 0) {
+                    //grid[x][y] = 0xff0000;
+
+                    break line;
+                }
+            }
+
+            topLines++;
+        }
+        line: for (int y = height - 1; y >= 0; y--) {
+
+            for (int x = leftLines; x < width - rightLines; x++) {
+                if (grid[x][y] == 0) {
+                   // grid[x][y] = 0xff0000;
+
+                    break line;
+                }
+            }
+
+            bottomLines++;
+        }
+        // JDUtilities.getLogger().info("top "+topLines);
+        // JDUtilities.getLogger().info("bottom "+bottomLines);
+        if ((width - leftLines - rightLines) < 0 || (height - topLines - bottomLines) < 0) { return new int[]{0,0}; }
+ return new int[]{width - leftLines - rightLines,height - topLines - bottomLines};
+      
 
     }
 
     public void desinx(double max, double omega, double phi) {
-        omega=2*Math.PI/omega;
-          
+        omega = 2 * Math.PI / omega;
+
         int[][] tmp = new int[getWidth()][getHeight()];
+
         int shift;
 
         for (int y = 0; y < getHeight(); y++) {
 
             shift = (int) (max * Math.sin(omega * (y + phi)));
 
-      
+            for (int x = 0; x < getWidth(); x++) {
 
-                for (int x = 0; x < getWidth(); x++){
-
-                    tmp[x][y] = (x + shift < getWidth()&&x+shift>=0) ? grid[x + shift][y] : 0xFF;
-                }
-                    grid[20+shift][y]=0xff0000;
-        
+                tmp[x][y] = (x + shift < getWidth() && x + shift >= 0) ? grid[x + shift][y] : 0xFF;
+            }
 
         }
+
         this.setGrid(tmp);
 
     }
-/**
- * Die Wellenlänge omega kann aus dem captcha ausgemessen werden. Formel: 2*PI/geschätzte Wellenlänge in Pixeln
- * @param max
- * @param omega
- * @param phi
- */
+
+    /**
+     * Die Wellenlänge omega kann aus dem captcha ausgemessen werden. Formel:
+     * 2*PI/geschätzte Wellenlänge in Pixeln
+     * 
+     * @param max
+     * @param omega
+     * @param phi
+     */
     public void desiny(double max, double omega, double phi) {
         int shift;
-        omega=2*Math.PI/omega;
-      
+        omega = 2 * Math.PI / omega;
+
         int[][] tmp = new int[getWidth()][getHeight()];
+
         for (int x = 0; x < getWidth(); x++) {
 
             shift = (int) (max * Math.sin(omega * (x + phi)));
 
-          
-                for (int y = 0; y < getHeight(); y++){
+            for (int y = 0; y < getHeight(); y++) {
 
-                    tmp[x][y] = (y + shift < getHeight()&&y+shift>=0) ? grid[x][y + shift] : 0xFF;
-                }
-
-          
-                grid[x][63+shift]=0xff0000;
+                tmp[x][y] = (y + shift < getHeight() && y + shift >= 0) ? grid[x][y + shift] : 0xFF;
+            }
 
         }
-      this.setGrid(tmp);
+
+        this.setGrid(tmp);
+
+    }
+
+    public void desin(double maxx, double omegax, double phix, double maxy, double omegay, double phiy) {
+        int shift;
+        omegax = 2 * Math.PI / omegax;
+        omegay = 2 * Math.PI / omegay;
+
+        int bestArea = 0;
+        int[][] bestGrid = null;
+        //for (int phix = (int)phixx*-1; phix <= phixx; phix++) {
+           // for (int phiy = (int)phiyy*-1; phiy <= phiyy; phiy++) {
+        all:
+                for (int ax = 0; ax < 2; ax++) {
+                    for (int ay = 0; ay < 2; ay++) {
+
+                        int[][] tmp = new int[getWidth()][getHeight()];
+                        int[][] tmp2 = new int[getWidth()][getHeight()];
+                    
+                        for (int y = 0; y < getHeight(); y++) {
+//* (ay == 0 ? -1 : 1)
+                            shift = (int) (maxy * Math.sin(omegay * (y + phiy))) ;
+
+                            for (int x = 0; x < getWidth(); x++) {
+
+                                tmp[x][y] = (x + shift < getWidth() && x + shift >= 0) ? grid[x + shift][y] : 0xFF;
+                            }
+                           // grid[294 + shift][y] = 0xff0000 + 0x00ff00 * (ay == 0 ? -1 : 1);
+
+                        }
+                        for (int x = 0; x < getWidth(); x++) {
+
+                            shift = (int) ((maxx * Math.sin(omegax * (x + phix))) * (ax == 0 ? -1.0 : 1.0));
+
+                            for (int y = 0; y < getHeight(); y++) {
+
+                                tmp2[x][y] = (y + shift < getHeight() && y + shift >= 0) ? tmp[x][y + shift] : 0xFF;
+                            }
+                            //grid[x][63 + shift] = 0xff0000 + 0x00ff00 * (ax == 0 ? -1 : 1);
+
+                        }
+                        int[] a = getDimension(tmp2);
+//PixelGrid p = new PixelGrid(getWidth(),getHeight());
+//p.setGrid(tmp2);
+//BasicWindow.showImage(p.getImage(),(a[0]+a[1])+"  "+a[0]+" - "+a[1]);
+                        if (a[0]+a[1] < bestArea || bestArea == 0) {
+
+                            bestArea = a[0]+a[1];
+                            bestGrid = tmp2;
+                             //break all;
+
+                        }
+
+                    }
+                }
+//            }
+//        }
+
+        this.setGrid(bestGrid);
 
     }
 
@@ -1591,7 +1710,5 @@ public class PixelGrid {
     public int[][] getGrid() {
         return grid;
     }
-
- 
 
 }

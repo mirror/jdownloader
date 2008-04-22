@@ -18,15 +18,14 @@ package jd.captcha.specials;
 
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Vector;
 import java.util.logging.Logger;
 
 import jd.captcha.JAntiCaptcha;
 import jd.captcha.LetterComperator;
-import jd.captcha.pixelgrid.Captcha;
 import jd.captcha.pixelgrid.Letter;
-import jd.captcha.pixelobject.PixelObject;
 import jd.captcha.utils.UTILITIES;
 import jd.utils.JDUtilities;
 
@@ -37,29 +36,51 @@ import jd.utils.JDUtilities;
  */
 public class RapidshareCom {
 
+    private static Logger logger = JDUtilities.getLogger();
 
+    public static void onlyCats(Vector<LetterComperator> lcs) {
+        //if (true) return;
+        final HashMap<LetterComperator, LetterComperator> map = new HashMap<LetterComperator, LetterComperator>();
 
-    private static Logger       logger                  = JDUtilities.getLogger();
-
-    public static void onlyCats( Vector<LetterComperator> lcs) {
         String methodsPath = UTILITIES.getFullPath(new String[] { JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath(), "jd", "captcha", "methods" });
         String hoster = "rscat.com";
-        
-      for(Iterator<LetterComperator> it = lcs.iterator();it.hasNext();){
-          LetterComperator next = it.next();
-          Letter dif = next.getDifference();
-          dif.removeSmallObjects(0.8, 0.8, 20);
-          dif.clean();
-          JAntiCaptcha jac = new JAntiCaptcha(methodsPath, hoster);
-          
-          if(!jac.getLetter(dif).getDecodedValue().equalsIgnoreCase("k")){
-             //it.remove(); 
-          }
-          
-          
-      }
+        final Vector<LetterComperator> cats = new Vector<LetterComperator>();
+        for (Iterator<LetterComperator> it = lcs.iterator(); it.hasNext();) {
+            LetterComperator next = it.next();
+            Letter dif = next.getDifference();
+            dif.removeSmallObjects(0.8, 0.8, 5);
+            dif.clean();
+            JAntiCaptcha jac = new JAntiCaptcha(methodsPath, hoster);
+            LetterComperator c = jac.getLetter(dif);
+            if (!c.getDecodedValue().equalsIgnoreCase("k")) {
+                it.remove();
+            } else {
+                map.put(next, c);
+                cats.add(c);
+            }
+
+        }
+
+        Collections.sort(cats, new Comparator<LetterComperator>() {
+            public int compare(LetterComperator obj1, LetterComperator obj2) {
+
+                if (obj1.getValityPercent() < obj2.getValityPercent()) return -1;
+                if (obj1.getValityPercent() > obj2.getValityPercent()) return 1;
+                return 0;
+            }
+        });
+
+        // schlechte entfernen
+
+        for (int i = cats.size() - 1; i >= 4; i--) {
+            cats.remove(i);
+        }
+        for (Iterator<LetterComperator> it = lcs.iterator(); it.hasNext();) {
+            LetterComperator next = it.next();
+            if (!map.containsKey(next) || !cats.contains(map.get(next))) it.remove();
+        }
+        logger.info("LENGTH : " + lcs.size());
 
     }
-
 
 }

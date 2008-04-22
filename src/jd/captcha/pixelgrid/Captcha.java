@@ -446,7 +446,12 @@ public class Captcha extends PixelGrid {
     public Letter[] getLetters0(int letterNum) {
 
         if (seperatedLetters != null) return seperatedLetters;
-
+if(letterNum==1){
+   Letter ret = this.createLetter();
+   ret.setGrid(this.getGrid());
+   logger.info("Letternum=1 --> captch to Letter");
+   return  new Letter[]{ret};
+}
         if (owner.getJas().getString("useSpecialGetLetters") != null && owner.getJas().getString("useSpecialGetLetters").length() > 0) {
             String[] ref = owner.getJas().getString("useSpecialGetLetters").split("\\.");
             if (ref.length != 2) {
@@ -1125,6 +1130,7 @@ public class Captcha extends PixelGrid {
         Vector<PixelObject> objects = getObjects(contrast, objectContrast);
         logger.info(objects + "");
         if (owner.jas.getBoolean("directLetterDetection")) {
+            logger.info("Get directLetterDetection");
             Vector<PixelObject> objectsret = new Vector<PixelObject>();
             Iterator<PixelObject> iter = objects.iterator();
             while (iter.hasNext()) {

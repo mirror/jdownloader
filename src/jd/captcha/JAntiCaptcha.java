@@ -42,6 +42,7 @@ import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
+import javax.swing.JPanel;
 import javax.xml.transform.OutputKeys;
 import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerException;
@@ -151,7 +152,7 @@ public class JAntiCaptcha {
 
     @SuppressWarnings("unused")
     private BasicWindow bw4;
-
+private JFrame f;
     private Vector<ScrollPaneWindow> spw = new Vector<ScrollPaneWindow>();
 
     private boolean showDebugGui = false;
@@ -581,7 +582,7 @@ public class JAntiCaptcha {
         // }
 
         if (bw3 != null) {
-            bw3.destroy();
+            bw3.dispose();
         }
         bw3 = BasicWindow.showImage(captchaImage, "Captchas");
         bw3.add(new JLabel("ORIGINAL"), UTILITIES.getGBC(2, 0, 2, 2));
@@ -640,24 +641,24 @@ public class JAntiCaptcha {
             if (lcs[i] == null) continue;
             bw2.add(new JLabel("Aus Datenbank:"), UTILITIES.getGBC(0, 6, 2, 2));
             Letter dif = lcs[i].getDifference();
-            //dif.removeSmallObjects(0.8, 0.8, 20);
+            dif.removeSmallObjects(0.8, 0.8, 5);
             dif.clean();
             if (lcs[i].getB() != null) {
                 bw2.add(new ImageComponent(lcs[i].getB().getImage((int) Math.ceil(jas.getDouble("simplifyFaktor")))), UTILITIES.getGBC(i * 2 + 2, 6, 2, 1));
-         
-               
-bw2.add(new ImageComponent(dif.getImage((int) Math.ceil(jas.getDouble("simplifyFaktor")))), UTILITIES.getGBC(i * 2 + 2, 7, 2, 1));
+
+                bw2.add(new ImageComponent(dif.getImage((int) Math.ceil(jas.getDouble("simplifyFaktor")))), UTILITIES.getGBC(i * 2 + 2, 7, 2, 1));
 
             } else {
                 bw2.add(new JLabel("B unknown"), UTILITIES.getGBC(i * 2 + 2, 6, 2, 2));
 
             }
-            
+
             String methodsPath = UTILITIES.getFullPath(new String[] { JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath(), "jd", "captcha", "methods" });
             String hoster = "rscat.com";
             JAntiCaptcha jac = new JAntiCaptcha(methodsPath, hoster);
+            LetterComperator l = jac.getLetter(dif);
             bw2.add(new JLabel("Wert:"), UTILITIES.getGBC(0, 8, 2, 2));
-            bw2.add(new JLabel(lcs[i].getDecodedValue()+" : "+jac.getLetter(dif).getDecodedValue()), UTILITIES.getGBC(i * 2 + 2, 8, 2, 2));
+            bw2.add(new JLabel(lcs[i].getDecodedValue() + " : " + l.getDecodedValue() + " - " + l.getValityPercent()), UTILITIES.getGBC(i * 2 + 2, 8, 2, 2));
             bw2.add(new JLabel("Proz.:"), UTILITIES.getGBC(0, 10, 2, 2));
             bw2.add(new JLabel(lcs[i].getValityPercent() + "%"), UTILITIES.getGBC(i * 2 + 2, 10, 2, 2));
 
@@ -698,15 +699,19 @@ bw2.add(new ImageComponent(dif.getImage((int) Math.ceil(jas.getDouble("simplifyF
         String code = null;
         String guess = "";
         // Zeige das OriginalBild
-        if (bw3 != null) {
-            bw3.destroy();
+        if (f != null) {
+            f.dispose();
         }
-        bw3 = BasicWindow.getWindow("JAC Trainer", 600, 450);
-        bw3.setText(0, 0, "original captcha");
-        bw3.setImage(1, 0, captcha.getImage());
-        bw3.setSize(600, 400);
-        bw3.setLocationByScreenPercent(50, 5);
-        bw3.repack();
+        f= new JFrame();
+        f.setVisible(true);
+        f.setLayout(new GridBagLayout());
+        f.add(new JLabel("original captcha"), UTILITIES.getGBC(0, 1, 10, 1));
+
+        f.add(new ImageComponent(captcha.getImage()), UTILITIES.getGBC(0, 1, 10, 1));
+
+        f.setSize(1400, 800);
+       
+      f.pack();
 
         // Führe das Prepare aus
         jas.executePrepareCommands(captcha);
@@ -741,29 +746,55 @@ bw2.add(new ImageComponent(dif.getImage((int) Math.ceil(jas.getDouble("simplifyF
         }
 
         // Zeige das After-prepare Bild an
-        bw3.setText(0, 1, "Gap detection captcha");
-        bw3.setImage(1, 1, captcha.getImageWithGaps(1));
 
-        bw3.setText(0, 2, "Freigestellt:");
+        f.add(new JLabel("Letter Detection"), UTILITIES.getGBC(0, 3, 10, 1));
+
+        f.add(new ImageComponent(captcha.getImageWithGaps(1)), UTILITIES.getGBC(0, 4, 10, 1));
+
+        f.add(new JLabel("Seperated"), UTILITIES.getGBC(0, 5, 10, 1));
+
+ 
+      
         for (int i = 0; i < letters.length; i++) {
-            bw3.setImage(i + 1, 2, letters[i].getImage((int) Math.ceil(jas.getDouble("simplifyFaktor"))));
+           f.add(new ImageComponent(letters[i].getImage((int) Math.ceil(jas.getDouble("simplifyFaktor")))),UTILITIES.getGBC(i+1, 6, 1, 1));
+
         }
-        bw3.repack();
+        f.pack();
         // Decoden. checkCaptcha verwendet dabei die gecachte Erkennung der
         // letters
         guess = checkCaptcha(captcha);
         LetterComperator[] lcs = captcha.getLetterComperators();
+       
         if (guess != null /* && guess.length() == getLetterNum() */) {
-            bw3.setText(0, 3, "DB Letter:");
-            bw3.setText(0, 4, "Decoded:");
-            bw3.setText(0, 5, "UNSicherheit:");
-            for (int i = 0; i < lcs.length; i++) {
-                if (lcs[i] != null && lcs[i].getB() != null) bw3.setImage(i + 1, 3, lcs[i].getB().getImage((int) Math.ceil(jas.getDouble("simplifyFaktor"))));
-                if (lcs[i] != null && lcs[i].getB() != null) bw3.setText(i + 1, 4, lcs[i].getDecodedValue());
-                if (lcs[i] != null && lcs[i].getB() != null) bw3.setText(i + 1, 5, (double) Math.round(10 * lcs[i].getValityPercent()) / 10.0);
 
+            for (int i = 0; i < lcs.length; i++) {
+                if (lcs[i] != null && lcs[i].getB() != null) {
+                    f.add(new ImageComponent(lcs[i].getB().getImage((int) Math.ceil(jas.getDouble("simplifyFaktor")))), UTILITIES.getGBC(i+1, 8, 1, 1));
+
+                } else {
+                    f.add(new JLabel("" ), UTILITIES.getGBC(i+1, 8, 1, 1));
+
+                }
+                // bw3.setImage(i + 1, 3, lcs[i].getB().getImage((int)
+                // Math.ceil(jas.getDouble("simplifyFaktor"))));
+
+                if (lcs[i] != null && lcs[i].getB() != null) {
+                    f.add(new JLabel("" + lcs[i].getDecodedValue()), UTILITIES.getGBC(i+1, 9, 1, 1));
+
+                    // bw3.setText(i + 1, 4, lcs[i].getDecodedValue());
+                } else {
+                    f.add(new JLabel("" ), UTILITIES.getGBC(i+1, 9, 1, 1));
+
+                }
+                if (lcs[i] != null && lcs[i].getB() != null) {
+                    f.add(new JLabel("" + ((double) Math.round(10 * lcs[i].getValityPercent()) / 10.0)), UTILITIES.getGBC(i+1, 10, 1, 1));
+
+                } else {
+                    f.add(new JLabel("" ), UTILITIES.getGBC(i+1, 10, 1, 1));
+
+                }
             }
-            bw3.repack();
+            f.pack();
         } else {
             if (JAntiCaptcha.isLoggerActive()) logger.warning("Erkennung fehlgeschlagen");
         }
@@ -840,11 +871,12 @@ bw2.add(new ImageComponent(dif.getImage((int) Math.ceil(jas.getDouble("simplifyF
                         letters[i].setSourcehash(captchaHash);
                         letters[i].setDecodedValue(code.substring(i, i + 1));
                         letterDB.add(letters[i]);
-                        bw3.setText(i + 1, 6, "ok +");
+                        f.add(new JLabel("OK+"), UTILITIES.getGBC(i+1, 11, 1, 1));
+                      
                     } else {
-                        bw3.setText(i + 1, 6, "ok -");
+                        f.add(new JLabel("OK-"), UTILITIES.getGBC(i+1, 11, 1, 1));
                     }
-                    bw3.repack();
+                  f.pack();
                 } else {
                     if (JAntiCaptcha.isLoggerActive()) logger.info(letterDB + " - ");
                     if (lcs != null && lcs[i] != null && letterDB.size() > 30 && lcs[i] != null && lcs[i].getB() != null) {
@@ -856,12 +888,13 @@ bw2.add(new ImageComponent(dif.getImage((int) Math.ceil(jas.getDouble("simplifyF
                     letters[i].setDecodedValue(code.substring(i, i + 1));
 
                     letterDB.add(letters[i]);
-                    bw3.setText(i + 1, 6, "no +");
-                    bw3.repack();
+                    
+                    f.add(new JLabel("NO +"), UTILITIES.getGBC(i+1, 11, 1, 1));
+                    f.pack();
                 }
             } else {
-                bw3.setText(i + 1, 6, "-");
-                bw3.repack();
+                f.add(new JLabel("-"), UTILITIES.getGBC(i+1, 11, 1, 1));
+                f.pack();
             }
             // mth.appendChild(element);
         }
@@ -1091,27 +1124,7 @@ bw2.add(new ImageComponent(dif.getImage((int) Math.ceil(jas.getDouble("simplifyF
                 }
             });
         }
-        for (int i = 0; i < newLettersVector.size(); i++) {
-            akt = newLettersVector.get(i);
 
-            if (akt == null || akt.getValityPercent() >= 100.0) {
-                ret += "-";
-                correct += 100.0;
-            } else {
-                ret += akt.getDecodedValue();
-
-                akt.getA().id = i;
-                correct += akt.getValityPercent();
-
-            }
-            // if(JAntiCaptcha.isLoggerActive())logger.finer("Validty: " +
-            // correct);
-        }
-        if (letters.length == 0) {
-            captcha.setValityPercent(100.0);
-
-            return null;
-        }
         if (getJas().getString("useLettercomparatorFilter") != null && getJas().getString("useLettercomparatorFilter").length() > 0) {
             String[] ref = getJas().getString("useLettercomparatorFilter").split("\\.");
             if (ref.length != 2) {
@@ -1135,9 +1148,29 @@ bw2.add(new ImageComponent(dif.getImage((int) Math.ceil(jas.getDouble("simplifyF
                 if (JAntiCaptcha.isLoggerActive()) logger.severe("Fehler in useLettercomparatorFilter:" + e.getLocalizedMessage() + " / " + getJas().getString("useLettercomparatorFilter"));
                 e.printStackTrace();
             }
-          
-        }
 
+        }
+        for (int i = 0; i < newLettersVector.size(); i++) {
+            akt = newLettersVector.get(i);
+
+            if (akt == null || akt.getValityPercent() >= 100.0) {
+                ret += "-";
+                correct += 100.0;
+            } else {
+                ret += akt.getDecodedValue();
+
+                akt.getA().id = i;
+                correct += akt.getValityPercent();
+
+            }
+            // if(JAntiCaptcha.isLoggerActive())logger.finer("Validty: " +
+            // correct);
+        }
+        if (letters.length == 0) {
+            captcha.setValityPercent(100.0);
+
+            return null;
+        }
         captcha.setLetterComperators(newLettersVector.toArray(new LetterComperator[] {}));
 
         if (JAntiCaptcha.isLoggerActive()) logger.finer("Vality: " + ((int) (correct / letters.length)));
@@ -1774,7 +1807,7 @@ bw2.add(new ImageComponent(dif.getImage((int) Math.ceil(jas.getDouble("simplifyF
         });
         ScrollPaneWindow w = new ScrollPaneWindow(jac);
         w.setTitle(" Test Captchas: " + file.getAbsolutePath());
-      
+
         w.resizeWindow(100);
         if (JAntiCaptcha.isLoggerActive()) logger.info("Found Testcaptchas: " + entries.length);
         int testNum = Math.min(checkCaptchas, entries.length);
@@ -1782,8 +1815,8 @@ bw2.add(new ImageComponent(dif.getImage((int) Math.ceil(jas.getDouble("simplifyF
         int i = 0;
         for (i = 0; i < testNum; i++) {
             captchaFile = entries[(int) (Math.random() * entries.length)];
-            
-            logger.info("JJJJJJJJ"+captchaFile);
+
+            logger.info("JJJJJJJJ" + captchaFile);
             img = UTILITIES.loadImage(captchaFile);
             w.setText(0, i, captchaFile.getName());
             w.setImage(1, i, img);

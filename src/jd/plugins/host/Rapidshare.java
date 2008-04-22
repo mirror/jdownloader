@@ -82,17 +82,18 @@ import java.net.MalformedURLException;
 import java.net.SocketTimeoutException;
 import java.net.URL;
 import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Set;
 import java.util.Vector;
-import java.util.ArrayList;
 import java.util.Map.Entry;
 import java.util.regex.Pattern;
 
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.Configuration;
+import jd.event.ControlEvent;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTPConnection;
 import jd.plugins.Plugin;
@@ -743,6 +744,19 @@ public class Rapidshare extends PluginForHost {
                         step.setStatus(PluginStep.STATUS_ERROR);
                         step.setParameter(null);
                         break;
+                    }
+                    downloadLink.setStatusText(JDLocale.L("plugins.rapidshare.captcha","OCR & Wartezeit"));
+                    this.fireControlEvent(ControlEvent.CONTROL_DOWNLOADLINKS_CHANGED, downloadLink);
+                    
+                    if (wait != null) {
+                        long pendingTime = Long.parseLong(wait);
+
+                        if (getProperties().getIntegerProperty(PROPERTY_INCREASE_TICKET, 0) > 0) {
+                            logger.warning("Waittime increased by JD: " + waitTime + " --> " + (pendingTime + (getProperties().getIntegerProperty(PROPERTY_INCREASE_TICKET, 0) * pendingTime) / 100));
+                        }
+                        pendingTime = (pendingTime + (getProperties().getIntegerProperty(PROPERTY_INCREASE_TICKET, 0) * pendingTime) / 100);
+
+                    downloadLink.setEndOfWaittime(System.currentTimeMillis() + pendingTime);
                     }
                     this.captchaCode = Plugin.getCaptchaCode(captchaFile, this);
                     timer = System.currentTimeMillis() - timer;
@@ -1568,7 +1582,7 @@ public class Rapidshare extends PluginForHost {
     public boolean doBotCheck(File file) {
         try {
 
-            return md5sum(file).equals(botHash);
+            return md5sum(file).equals(JDUtilities.getLocalHash(JDUtilities.getResourceFile("jd/captcha/methods/rapidshare.com/bot.jpg")));
         } catch (NoSuchAlgorithmException e) {
             e.printStackTrace();
         } catch (FileNotFoundException e) {

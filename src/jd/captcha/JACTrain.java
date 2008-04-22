@@ -51,7 +51,7 @@ public class JACTrain {
 
         JAntiCaptcha jac= new JAntiCaptcha(methodsPath,hoster);
         //jac.runTestMode(new File("1186941165349_captcha.jpg"));
-     jac.displayLibrary();
+     //jac.displayLibrary();
      
        // jac.setShowDebugGui(true);
       // jac.showPreparedCaptcha(new File("/home/dwd/.jd_home/captchas/datenklo.net/08.01.2008_18.08.52.gif"));
