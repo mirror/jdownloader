@@ -96,6 +96,10 @@ public class UCMS extends PluginForDecrypt {
     		+ "|(http://[*]meinsound.com/\\?id=[+])"
     		+ "|(http://[*]musik.am/download/[+]/[+])"
     		+ "|(http://[*]profiten.ch/webpage/\\?id=[+])"
+    		+ "|(http://[*]boone66.extra.hu/\\?id=[+])"
+    		+ "|(http://[*]crystalw.extra.hu/\\?id=[+])"
+    		+ "|(http://[*]datensau.org/\\?id=[+])"
+    		+ "|(http://[*]more-pornz.pro24.ws/\\?id=[+])"
     		//+ "|(http://[*]sfulc.exofire.net/cms/\\?id=[+])"
     		+ "|(http://[*]sceneload.to/\\?id=[+])");
     
