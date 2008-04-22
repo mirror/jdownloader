@@ -23,6 +23,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.HashMap;
 import java.util.Vector;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import jd.plugins.PluginForDecrypt;
@@ -42,7 +43,13 @@ public class RsHoerbuchin extends PluginForDecrypt {
     static private final String host             = "rs.hoerbuch.in";
 
     private String              version          = "1.0.0.1";
-    static private final Pattern patternSupported = Pattern.compile("http://rs\\.hoerbuch\\.in/com-[a-zA-Z0-9]{11}/.*", Pattern.CASE_INSENSITIVE);
+    private static final Pattern patternPost = Pattern.compile("http://(www\\.|)hoerbuch.in/blog.php\\?id=[\\d]+");
+    private static final Pattern patternLink = Pattern.compile("http://rs\\.hoerbuch\\.in/com-[a-zA-Z0-9]{11}/.*", Pattern.CASE_INSENSITIVE);
+    static private final Pattern patternSupported = Pattern.compile(patternPost.pattern()+"|"+patternLink.pattern(), patternPost.flags()| patternLink.flags());
+    
+//    private static final Pattern patternPostName = Pattern.compile("<H1.*?><A HREF.*?>(.*?)</A></H1>");
+    private static final Pattern patternLinksHTMLSource = Pattern.compile("Dauer.*?(.*)Passwort:</B>\\s*(.*?)\\s*<");
+    
 
 
 
@@ -95,13 +102,28 @@ public class RsHoerbuchin extends PluginForDecrypt {
             case PluginStep.STEP_DECRYPT:
            
                 Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
-                // Zählen aller verfügbaren Treffer
                 try {
                     URL url = new URL(cryptedLink);
                     RequestInfo requestInfo = getRequest(url, null, null, false);
-                    HashMap<String, String> fields = this.getInputHiddenFields(requestInfo.getHtmlCode(), "postit", "starten");
-                    String newURL = "http://rapidshare.com" + JDUtilities.htmlDecode(fields.get("uri"));
-                    decryptedLinks.add(this.createDownloadlink(newURL));
+                    
+                    if(cryptedLink.matches(patternLink.pattern())){
+                        HashMap<String, String> fields = this.getInputHiddenFields(requestInfo.getHtmlCode(), "postit", "starten");
+                        String newURL = "http://rapidshare.com" + JDUtilities.htmlDecode(fields.get("uri"));
+                        decryptedLinks.add(this.createDownloadlink(newURL));                    	
+                    }else if( cryptedLink.matches(patternPost.pattern())){
+                    	Matcher matcher = patternLinksHTMLSource.matcher(requestInfo.getHtmlCode());
+                    	if( matcher.find() ){
+                    		String linksClaim = matcher.group(1);
+                    		String [] links = getHttpLinks( linksClaim, null);
+                    		
+                    		for( String link:links){
+                           		decryptedLinks.add( createDownloadlink(link) );
+                    		}
+                    	}else{
+                    		logger.severe("unable to find links - adapt patternLinksHTMLSource (see next INFO log line for details)");
+                    		logger.info(requestInfo.getHtmlCode());
+                    	}
+                    }
                 }
                 catch (MalformedURLException e) {
                    e.printStackTrace();
