@@ -124,6 +124,7 @@ public class LetterComperator {
     private int[] offset;
     private int[] imgOffset;
     private int[] intersectionDimension;
+    private int[] bc= new int[2];
 
     /**
      * @param a
@@ -142,7 +143,11 @@ public class LetterComperator {
      */
     private void scan() {
         long startTime = UTILITIES.getTimer();
-        double bestValue = 100.0;
+        double bestValue = 101.0;
+      
+           // logger.info(b.getDecodedValue()+"----");
+            
+       
         // scanvarianzen geben an wieviel beim verschieben über die grenzen
         // geschoben wird. große werte brauchen CPU
         int vx = this.getScanVarianceX();
@@ -166,7 +171,10 @@ public class LetterComperator {
         }
 
         double value;
-        Letter tmpIntersection = new Letter();
+        Letter tmpIntersection=null;
+        if (isCreateIntersectionLetter()) {
+            tmpIntersection= new Letter();
+        }
         int left;
         int right;
         int top;
@@ -218,7 +226,11 @@ public class LetterComperator {
                 // logger.info(tmpIntersectionWidth+"/"+tmpIntersectionHeight+"
                 // : "+" scanIntersection: ");
                 // logger.info(" : "+value);
+//                if(getDecodedValue().equalsIgnoreCase("v")&&getBothElementsNum()==3){
+//                    logger.info("JJJ");
+//                }
                 if (value < bestValue) {
+                   
                     bestValue = value;
                     this.offset = new int[] { left, top };
                     this.imgOffset = new int[] { xx, yy };
@@ -360,6 +372,9 @@ public class LetterComperator {
         }
 
         // logger.info("Scanner: "+UTILITIES.getTimer(starter));
+//        if(getDecodedValue().equalsIgnoreCase("v")&&getBothElementsNum()==3){
+//            logger.info("JJJ");
+//        }
         if (pixelAll > 0 && bothElements.size() > 0) {
             tmpErrorA = (double) tmpPixelAButNotB / (double) (tmpPixelBoth + tmpPixelAButNotB);
             tmpErrorB = (double) tmpPixelBButNotA / (double) (tmpPixelBButNotA + tmpPixelBoth);
@@ -384,7 +399,7 @@ public class LetterComperator {
             tmpError = Math.min(1.0, tmpError);
             // logger.info(pixelBoth+"_"+(tmpIntersectionHeight *
             // tmpIntersectionWidth));
-            if ((tmpPixelBoth * 8) < (tmpIntersectionHeight * tmpIntersectionWidth)) {
+            if ((tmpPixelBoth * owner.getJas().getDouble("inverseFontWeight")) < (tmpIntersectionHeight * tmpIntersectionWidth)) {
                 tmpError = tmpErrorA = tmpErrorB = tmpErrorTotal = 1.0;
             }
 
@@ -480,8 +495,10 @@ public class LetterComperator {
      * @param yy
      * @return neue Koordinaten
      */
-    private int[] coordinatesFromAToB(int x, int y, int xx, int yy) {
-        return new int[] { x - xx, y - yy };
+    private int[] coordinatesFromAToB(int x, int y, int xx, int yy,int[] con) {
+        con[0]= x - xx;
+        con[1]=y - yy ;
+        return con;
     }
 
     public Letter getDifference() {
@@ -564,7 +581,7 @@ public class LetterComperator {
     private int getPixelType(int x, int y, int xx, int yy, int left, int top) {
 
         int va = a.getPixelValue(x + left, y + top);
-        int[] bc = coordinatesFromAToB(x + left, y + top, xx, yy);
+        bc = coordinatesFromAToB(x + left, y + top, xx, yy,this.bc);
         int vb = b.getPixelValue(bc[0], bc[1]);
         if (va < 0 || vb < 0) { return -2; }
         if (vb == 0 && va == 0) {
@@ -812,7 +829,9 @@ public class LetterComperator {
      */
     public String toString() {
         Hashtable<String, Object> hs = new Hashtable<String, Object>();
-
+//if(getDecodedValue().equalsIgnoreCase("v")&&getBothElementsNum()==3){
+//    logger.info("V");
+//}
         hs.put("DecodedValue", getDecodedValue());
         hs.put("widthFaktor", this.getWidthFaktor() + "/" + (this.getWidthFaktor() * intersectionDimensionWeight));
         hs.put("heightFaktor", this.getHeightFaktor() + "/" + (this.getHeightFaktor() * intersectionDimensionWeight));

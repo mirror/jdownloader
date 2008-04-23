@@ -350,6 +350,19 @@ public class JACScript {
          * innere nicht weiter als 7 % vom mittelunkte des äußeren befindet.
          */
         set("multiplePartMergeMinSize", 0);
+        
+        set("abortDirectDetectionOnDetectionError", false);
+        
+        
+        /**
+         * InverseFontWeight
+         * Unterschreitet die Pixelanzahl einer Intersection einen gewissen Teil der Intersectionfläche, wird der fehler auf 100% angehoben.
+         * Beispiel:
+         * inverseFontWeight=8
+         * Die gemeinsammen Pixel einer 400 px² Intersection betragen nur 20 pixel. 20*8 = 160; 160<400
+         * =>Der Treffer  wird nicht gewertet, da die Intersection zu wenig gemeinsamme Pixel hat.
+         */
+        set("inverseFontWeight",8.0);
 
     }
 

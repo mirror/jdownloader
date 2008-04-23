@@ -90,6 +90,8 @@ public class Captcha extends PixelGrid {
 
     private boolean perfectObjectDetection;
 
+    private File captchafile;
+
     /**
      * Diese Klasse beinhaltet ein 2D-Pixel-Grid. Sie stellt mehrere Methoden
      * zur verfügung dieses Grid zu bearbeiten Um Grunde sind hier alle Methoden
@@ -397,6 +399,21 @@ public class Captcha extends PixelGrid {
     }
 
     /**
+     * Setztd as interne Grid auf den ausgangszustand zurück. Funktioniert nur
+     * wenn dieser gespeichert ist. Im fehlerfall wird fals zurückgegegen
+     * 
+     * @return
+     */
+    public boolean reset() {
+        seperatedLetters = null;
+        setPrepared(false);
+        if (tmpGrid == null) return false;
+        this.grid = tmpGrid;
+
+        return true;
+    }
+
+    /**
      * Versucht die Buchstaben aus dem captcha zu extrahieren und gibt ein
      * letter-array zuück
      * 
@@ -446,12 +463,12 @@ public class Captcha extends PixelGrid {
     public Letter[] getLetters0(int letterNum) {
 
         if (seperatedLetters != null) return seperatedLetters;
-if(letterNum==1){
-   Letter ret = this.createLetter();
-   ret.setGrid(this.getGrid());
-   logger.info("Letternum=1 --> captch to Letter");
-   return  new Letter[]{ret};
-}
+        if (letterNum == 1) {
+            Letter ret = this.createLetter();
+            ret.setGrid(this.getGrid());
+            logger.info("Letternum=1 --> captch to Letter");
+            return new Letter[] { ret };
+        }
         if (owner.getJas().getString("useSpecialGetLetters") != null && owner.getJas().getString("useSpecialGetLetters").length() > 0) {
             String[] ref = owner.getJas().getString("useSpecialGetLetters").split("\\.");
             if (ref.length != 2) {
@@ -924,7 +941,7 @@ if(letterNum==1){
         }
 
         // BasicWindow.showImage(ret.getImage());
-
+        ret.setOrgGrid(PixelGrid.getGridCopy(ret.getGrid()));
         return ret;
 
     }
@@ -1128,7 +1145,7 @@ if(letterNum==1){
         int maxWidth;
         // Alle Objekte aus dem captcha holen. Sie sind nach der Größe Sortiert
         Vector<PixelObject> objects = getObjects(contrast, objectContrast);
-        logger.info(objects + "");
+
         if (owner.jas.getBoolean("directLetterDetection")) {
             logger.info("Get directLetterDetection");
             Vector<PixelObject> objectsret = new Vector<PixelObject>();
@@ -1139,53 +1156,62 @@ if(letterNum==1){
                     Letter letter = pixelObject.toLetter();
                     LetterComperator resletter = owner.getLetter(letter);
                     int b;
-                    while (resletter.getB() != null &&  !resletter.getDecodedValue().equals("-") && (b = pixelObject.getArea() - resletter.getB().getArea()) > minArea && b > (resletter.getB().getArea() / 3) && resletter.getOffset()!=null && resletter.getOffset().length>0) {
+                    while (resletter.getB() != null && !resletter.getDecodedValue().equals("-") && (b = pixelObject.getArea() - resletter.getB().getArea()) > minArea && b > (resletter.getB().getArea() / 3) && resletter.getOffset() != null && resletter.getOffset().length > 0) {
                         int spat = 0;
-                        if(resletter.getOffset()[0]<resletter.getB().getWidth()/3)
-                            spat=resletter.getOffset()[0]+resletter.getB().getWidth();
+                        if (resletter.getOffset()[0] < resletter.getB().getWidth() / 3)
+                            spat = resletter.getOffset()[0] + resletter.getB().getWidth();
                         else
-                            spat=resletter.getOffset()[0];
+                            spat = resletter.getOffset()[0];
                         PixelObject[] spobjects = pixelObject.splitAt(spat);
                         PixelObject ob1 = null;
                         PixelObject ob2 = null;
-                        if(Math.abs(spobjects[0].getWidth()-resletter.getB().getWidth())<Math.abs(spobjects[1].getWidth()-resletter.getB().getWidth()))
-                                {
-                                    ob1=spobjects[0];
-                                    ob2=spobjects[1];
-                                }
-                        else
-                        {
-                            ob1=spobjects[1];
-                            ob2=spobjects[0];
+
+                        if (Math.abs(spobjects[0].getWidth() - resletter.getB().getWidth()) < Math.abs(spobjects[1].getWidth() - resletter.getB().getWidth())) {
+                            ob1 = spobjects[0];
+                            ob2 = spobjects[1];
+                        } else {
+                            ob1 = spobjects[1];
+                            ob2 = spobjects[0];
                         }
                         letter = ob1.toLetter();
                         objectsret.add(ob1);
                         pixelObject = ob2;
                         letter = pixelObject.toLetter();
                         resletter = owner.getLetter(letter);
-                        
+
                     }
+
+                    if (owner.getJas().getBoolean("abortDirectDetectionOnDetectionError") && resletter.getValityPercent() == 100.0) {
+                        logger.warning("Error on direct letter detection .abort");
+                        return null;
+                    }
+
                     pixelObject.detected = resletter;
                     objectsret.add(pixelObject);
                 }
             }
             objects = objectsret;
         }
-        if (owner.jas.getBoolean("rapidshareSpecial")) {
-            String methodsPath = UTILITIES.getFullPath(new String[] { JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath(), "jd", "captcha", "methods" });
-            String hoster = "rscat.com";
-            JAntiCaptcha jac = new JAntiCaptcha(methodsPath, hoster);
-            ListIterator<PixelObject> iter = objects.listIterator(objects.size());
-            while (iter.hasPrevious() && objects.size() > letterNum) {
-                PixelObject pixelObject = (PixelObject) iter.previous();
-                if (pixelObject.getArea() > minArea) {
-                    if (rapidshareSpecial(pixelObject, jac)) iter.remove();
-                } else
-                    iter.remove();
+        // if (owner.jas.getBoolean("rapidshareSpecial")) {
+        // String methodsPath = UTILITIES.getFullPath(new String[] {
+        // JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath(),
+        // "jd",
+        // "captcha", "methods" });
+        // String hoster = "rscat.com";
+        // JAntiCaptcha jac = new JAntiCaptcha(methodsPath, hoster);
+        // ListIterator<PixelObject> iter =
+        // objects.listIterator(objects.size());
+        // while (iter.hasPrevious() && objects.size() > letterNum) {
+        // PixelObject pixelObject = (PixelObject) iter.previous();
+        // if (pixelObject.getArea() > minArea) {
+        // if (rapidshareSpecial(pixelObject, jac)) iter.remove();
+        // } else
+        // iter.remove();
+        //
+        // }
+        // }
 
-            }
-        }
-
+        mergeMultiPartObjects(objects);
         if (owner.jas.getBoolean("autoLetterNum")) {
             Iterator<PixelObject> iterr = objects.iterator();
             int r = 0;
@@ -1199,7 +1225,6 @@ if(letterNum==1){
             owner.setLetterNum(r);
             letterNum = r;
         }
-        mergeMultiPartObjects(objects);
         boolean perfectObjectDetection = true;
         // Kleine Objekte ausfiltern
         /*
@@ -1223,88 +1248,91 @@ if(letterNum==1){
             if (JAntiCaptcha.isLoggerActive()) logger.info(objects.elementAt(i - 1).getWidth() + " Element: " + found + " : " + objects.elementAt(i - 1).getArea());
             found++;
         }
+        if (!owner.jas.getBoolean("autoLetterNum")) {
+            Vector<PixelObject> splitObjects;
+            if (JAntiCaptcha.isLoggerActive()) logger.fine("found " + found + " minArea: " + minArea);
+            // Teil die größten Objekte bis man die richtige anzahl an lettern
+            // hat
+            while (objects.size() > 0 && found < letterNum) {
+                PixelObject po = objects.remove(0);
+                PixelObject next = null;
+                if (objects.size() > 0) {
+                    next = objects.elementAt(0);
+                }
+                found--;
+                maxWidth = po.getWidth();
 
-        Vector<PixelObject> splitObjects;
-        if (JAntiCaptcha.isLoggerActive()) logger.fine("found " + found + " minArea: " + minArea);
-        // Teil die größten Objekte bis man die richtige anzahl an lettern hat
-        while (objects.size() > 0 && found < letterNum) {
-            PixelObject po = objects.remove(0);
-            PixelObject next = null;
-            if (objects.size() > 0) {
-                next = objects.elementAt(0);
-            }
-            found--;
-            maxWidth = po.getWidth();
+                minWidth = minArea / po.getHeight();
+                if (owner.getJas().getInteger("minimumLetterWidth") > 0 && owner.getJas().getInteger("minimumLetterWidth") > minWidth) {
+                    minWidth = owner.getJas().getInteger("minimumLetterWidth");
+                }
+                splitter = 1;
 
-            minWidth = minArea / po.getHeight();
-            if (owner.getJas().getInteger("minimumLetterWidth") > 0 && owner.getJas().getInteger("minimumLetterWidth") > minWidth) {
-                minWidth = owner.getJas().getInteger("minimumLetterWidth");
-            }
-            splitter = 1;
+                if (JAntiCaptcha.isLoggerActive()) logger.info(maxWidth + "/" + minWidth);
+                // ermittle die Vermutliche Buchstabenanzahl im Ersten captcha
+                while ((splitNum = Math.min((int) Math.ceil((double) maxWidth / ((double) minWidth / (double) splitter)), letterNum - found)) < 2) {
+                    splitter++;
+                }
+                if (JAntiCaptcha.isLoggerActive()) logger.info("l " + splitNum);
+                while ((found + splitNum) > letterNum) {
+                    splitNum--;
+                }
+                if (JAntiCaptcha.isLoggerActive()) logger.info("l " + splitNum);
+                while (splitNum > 2 && next != null && maxWidth / splitNum < next.getWidth() * 0.55) {
+                    splitNum--;
+                }
+                if (JAntiCaptcha.isLoggerActive()) logger.finer("teile erstes element " + po.getWidth() + " : splitnum " + splitNum);
+                if ((found + splitNum - 1) > letterNum || splitNum < 2) {
+                    if (JAntiCaptcha.isLoggerActive()) logger.severe("Richtige Letteranzahl 1 konnte nicht ermittelt werden");
+                    return null;
+                }
 
-            if (JAntiCaptcha.isLoggerActive()) logger.info(maxWidth + "/" + minWidth);
-            // ermittle die Vermutliche Buchstabenanzahl im Ersten captcha
-            while ((splitNum = Math.min((int) Math.ceil((double) maxWidth / ((double) minWidth / (double) splitter)), letterNum - found)) < 2) {
-                splitter++;
-            }
-            if (JAntiCaptcha.isLoggerActive()) logger.info("l " + splitNum);
-            while ((found + splitNum) > letterNum) {
-                splitNum--;
-            }
-            if (JAntiCaptcha.isLoggerActive()) logger.info("l " + splitNum);
-            while (splitNum > 2 && next != null && maxWidth / splitNum < next.getWidth() * 0.55) {
-                splitNum--;
-            }
-            if (JAntiCaptcha.isLoggerActive()) logger.finer("teile erstes element " + po.getWidth() + " : splitnum " + splitNum);
-            if ((found + splitNum - 1) > letterNum || splitNum < 2) {
-                if (JAntiCaptcha.isLoggerActive()) logger.severe("Richtige Letteranzahl 1 konnte nicht ermittelt werden");
-                return null;
-            }
+                // found += splitNum - 1;
 
-            // found += splitNum - 1;
+                splitObjects = po.split(splitNum, owner.jas.getInteger("splitPixelObjectsOverlap"));
+                if (JAntiCaptcha.isLoggerActive()) logger.finer("Got splited: " + splitObjects.size());
+                // Füge die geteilen Objekte wieder dem Objektvektor hinzu.
+                // Eventl
+                // müssen sie nochmals geteil werden.
 
-            splitObjects = po.split(splitNum, owner.jas.getInteger("splitPixelObjectsOverlap"));
-            if (JAntiCaptcha.isLoggerActive()) logger.finer("Got splited: " + splitObjects.size());
-            // Füge die geteilen Objekte wieder dem Objektvektor hinzu. Eventl
-            // müssen sie nochmals geteil werden.
+                for (int t = 0; t < splitNum; t++) {
 
-            for (int t = 0; t < splitNum; t++) {
+                    for (int s = 0; s < objects.size(); s++) {
+                        if (splitObjects.elementAt(t).getArea() > objects.elementAt(s).getArea()) {
+                            objects.add(s, splitObjects.elementAt(t));
+                            splitObjects.setElementAt(null, t);
+                            found++;
+                            perfectObjectDetection = false;
+                            if (JAntiCaptcha.isLoggerActive()) logger.finer("add split " + found);
 
-                for (int s = 0; s < objects.size(); s++) {
-                    if (splitObjects.elementAt(t).getArea() > objects.elementAt(s).getArea()) {
-                        objects.add(s, splitObjects.elementAt(t));
+                            break;
+                        }
+
+                    }
+                    if (splitObjects.elementAt(t) != null) {
+                        objects.add(splitObjects.elementAt(t));
                         splitObjects.setElementAt(null, t);
                         found++;
                         perfectObjectDetection = false;
                         if (JAntiCaptcha.isLoggerActive()) logger.finer("add split " + found);
-
-                        break;
                     }
 
                 }
-                if (splitObjects.elementAt(t) != null) {
-                    objects.add(splitObjects.elementAt(t));
-                    splitObjects.setElementAt(null, t);
-                    found++;
-                    perfectObjectDetection = false;
-                    if (JAntiCaptcha.isLoggerActive()) logger.finer("add split " + found);
-                }
+                if (JAntiCaptcha.isLoggerActive()) logger.finer("splitted ... treffer: " + found);
 
             }
-            if (JAntiCaptcha.isLoggerActive()) logger.finer("splitted ... treffer: " + found);
 
+            if (found != letterNum && !owner.jas.getBoolean("autoLetterNum")) {
+                perfectObjectDetection = false;
+                if (JAntiCaptcha.isLoggerActive()) logger.severe("Richtige Letteranzahl 2 konnte nicht ermittelt werden");
+                return null;
+            }
+            // entfernt Überflüssige Objekte und
+            for (int ii = objects.size() - 1; ii >= found; ii--) {
+                objects.remove(ii);
+            }
+            this.setPerfectObjectDetection(perfectObjectDetection);
         }
-
-        if (found != letterNum) {
-            perfectObjectDetection = false;
-            if (JAntiCaptcha.isLoggerActive()) logger.severe("Richtige Letteranzahl 2 konnte nicht ermittelt werden");
-            return null;
-        }
-        // entfernt Überflüssige Objekte und
-        for (int ii = objects.size() - 1; ii >= found; ii--) {
-            objects.remove(ii);
-        }
-        this.setPerfectObjectDetection(perfectObjectDetection);
         // Sortiert die Objekte nun endlich in der richtigen Reihenfolge (von
         // link nach rechts)
         Collections.sort(objects);
@@ -1437,6 +1465,15 @@ if(letterNum==1){
 
     public void setPerfectObjectDetection(boolean perfectObjectDetection) {
         this.perfectObjectDetection = perfectObjectDetection;
+    }
+
+    public void setCaptchaFile(File captchafile) {
+        this.captchafile = captchafile;
+
+    }
+
+    public File getCaptchaFile() {
+        return captchafile;
     }
 
 }

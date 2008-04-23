@@ -71,6 +71,8 @@ public class PixelGrid {
     public int[] pixel;
     private int[] location = new int[] { 0, 0 };
 
+    protected int[][] tmpGrid;
+
     public int[] getLocation() {
         return location;
     }
@@ -1484,7 +1486,7 @@ public class PixelGrid {
             for (int y = 0; y < height; y++) {
                 // JDUtilities.getLogger().info(grid[x][y]+"");
                 if (grid[x][y] == 0) {
-                    //grid[x][y] = 0xff0000;
+                    // grid[x][y] = 0xff0000;
                     break row;
                 }
             }
@@ -1497,7 +1499,7 @@ public class PixelGrid {
             for (int y = 0; y < height; y++) {
 
                 if (grid[x][y] == 0) {
-                    //grid[x][y] = 0xff0000;
+                    // grid[x][y] = 0xff0000;
                     break row;
                 }
             }
@@ -1505,14 +1507,14 @@ public class PixelGrid {
             rightLines++;
         }
         // JDUtilities.getLogger().info("right "+rightLines);
-        if (leftLines >= width || (width - rightLines) > width) { return new int[]{0,0}; };
+        if (leftLines >= width || (width - rightLines) > width) { return new int[] { 0, 0 }; }
+        ;
 
-       
         line: for (int y = 0; y < height; y++) {
 
             for (int x = leftLines; x < width - rightLines; x++) {
                 if (grid[x][y] == 0) {
-                    //grid[x][y] = 0xff0000;
+                    // grid[x][y] = 0xff0000;
 
                     break line;
                 }
@@ -1524,7 +1526,7 @@ public class PixelGrid {
 
             for (int x = leftLines; x < width - rightLines; x++) {
                 if (grid[x][y] == 0) {
-                   // grid[x][y] = 0xff0000;
+                    // grid[x][y] = 0xff0000;
 
                     break line;
                 }
@@ -1534,9 +1536,8 @@ public class PixelGrid {
         }
         // JDUtilities.getLogger().info("top "+topLines);
         // JDUtilities.getLogger().info("bottom "+bottomLines);
-        if ((width - leftLines - rightLines) < 0 || (height - topLines - bottomLines) < 0) { return new int[]{0,0}; }
- return new int[]{width - leftLines - rightLines,height - topLines - bottomLines};
-      
+        if ((width - leftLines - rightLines) < 0 || (height - topLines - bottomLines) < 0) { return new int[] { 0, 0 }; }
+        return new int[] { width - leftLines - rightLines, height - topLines - bottomLines };
 
     }
 
@@ -1595,60 +1596,81 @@ public class PixelGrid {
         int shift;
         omegax = 2 * Math.PI / omegax;
         omegay = 2 * Math.PI / omegay;
-
+if(owner.getJas().getInteger("desinvariant")>=4){
+    logger.warning("Entzerren fehlgeschlagen... versuche es ohne");
+    return;
+}
         int bestArea = 0;
         int[][] bestGrid = null;
-        //for (int phix = (int)phixx*-1; phix <= phixx; phix++) {
-           // for (int phiy = (int)phiyy*-1; phiy <= phiyy; phiy++) {
-        all:
-                for (int ax = 0; ax < 2; ax++) {
-                    for (int ay = 0; ay < 2; ay++) {
+        final HashMap<int[][], Integer> map = new HashMap<int[][], Integer>();
+        Vector<int[][]> sorter = new  Vector<int[][]>();
+        // for (int phix = (int)phixx*-1; phix <= phixx; phix++) {
+        // for (int phiy = (int)phiyy*-1; phiy <= phiyy; phiy++) {
+        all: for (int ax = 0; ax < 2; ax++) {
+            for (int ay = 0; ay < 2; ay++) {
 
-                        int[][] tmp = new int[getWidth()][getHeight()];
-                        int[][] tmp2 = new int[getWidth()][getHeight()];
-                    
-                        for (int y = 0; y < getHeight(); y++) {
-//* (ay == 0 ? -1 : 1)
-                            shift = (int) (maxy * Math.sin(omegay * (y + phiy))) ;
+                int[][] tmp = new int[getWidth()][getHeight()];
+                int[][] tmp2 = new int[getWidth()][getHeight()];
 
-                            for (int x = 0; x < getWidth(); x++) {
+                for (int y = 0; y < getHeight(); y++) {
 
-                                tmp[x][y] = (x + shift < getWidth() && x + shift >= 0) ? grid[x + shift][y] : 0xFF;
-                            }
-                           // grid[294 + shift][y] = 0xff0000 + 0x00ff00 * (ay == 0 ? -1 : 1);
+                    shift = (int) (maxy * Math.sin(omegay * (y + phiy))) * (ay == 0 ? -1 : 1);
 
-                        }
-                        for (int x = 0; x < getWidth(); x++) {
+                    for (int x = 0; x < getWidth(); x++) {
 
-                            shift = (int) ((maxx * Math.sin(omegax * (x + phix))) * (ax == 0 ? -1.0 : 1.0));
-
-                            for (int y = 0; y < getHeight(); y++) {
-
-                                tmp2[x][y] = (y + shift < getHeight() && y + shift >= 0) ? tmp[x][y + shift] : 0xFF;
-                            }
-                            //grid[x][63 + shift] = 0xff0000 + 0x00ff00 * (ax == 0 ? -1 : 1);
-
-                        }
-                        int[] a = getDimension(tmp2);
-//PixelGrid p = new PixelGrid(getWidth(),getHeight());
-//p.setGrid(tmp2);
-//BasicWindow.showImage(p.getImage(),(a[0]+a[1])+"  "+a[0]+" - "+a[1]);
-                        if (a[0]+a[1] < bestArea || bestArea == 0) {
-
-                            bestArea = a[0]+a[1];
-                            bestGrid = tmp2;
-                             //break all;
-
-                        }
-
+                        tmp[x][y] = (x + shift < getWidth() && x + shift >= 0) ? grid[x + shift][y] : 0xFF;
                     }
-                }
-//            }
-//        }
+                    // grid[294 + shift][y] = 0xff0000 + 0x00ff00 * (ay == 0 ?
+                    // -1 : 1);
 
-        this.setGrid(bestGrid);
+                }
+                for (int x = 0; x < getWidth(); x++) {
+
+                    shift = (int) ((maxx * Math.sin(omegax * (x + phix))) * (ax == 0 ? -1.0 : 1.0));
+
+                    for (int y = 0; y < getHeight(); y++) {
+
+                        tmp2[x][y] = (y + shift < getHeight() && y + shift >= 0) ? tmp[x][y + shift] : 0xFF;
+                    }
+                    // grid[x][63 + shift] = 0xff0000 + 0x00ff00 * (ax == 0 ? -1
+                    // : 1);
+
+                }
+                int[] a = getDimension(tmp2);
+                Integer i = new Integer(a[0] + a[1]);
+                sorter.add(tmp2);
+                map.put( tmp2,i);
+                //PixelGrid p = new PixelGrid(getWidth(),getHeight());
+                //p.setGrid(tmp2);
+               // BasicWindow.showImage(p.getImage(),i+"");
+
+
+            }
+        }
+       
+        // }
+        // }
+Collections.sort(sorter, new Comparator<Object>(){
+    public int compare( Object a,  Object b){
+       return map.get(a).compareTo(map.get(b));
+        
+    }
+    
+});
+     logger.info("USE VARIANT: "+owner.getJas().getInteger("desinvariant"));
+        this.setGrid(sorter.get(owner.getJas().getInteger("desinvariant")));
+        
+        
+        
+        BasicWindow.showImage(this.getImage(), "USE VARIANT: "+owner.getJas().getInteger("desinvariant")+" : "+sorter.get(owner.getJas().getInteger("desinvariant")));
 
     }
+
+    public void setOrgGrid(int[][] grid) {
+      this.tmpGrid=grid;
+        
+    }
+
 
     /**
      * Erstellt das Objekt, ausgehend von einem Pixel. rekursive Funktion!
