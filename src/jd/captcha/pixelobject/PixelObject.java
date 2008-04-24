@@ -14,7 +14,6 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-
 package jd.captcha.pixelobject;
 
 import java.util.Vector;
@@ -41,7 +40,7 @@ public class PixelObject implements Comparable {
     /**
      * Logger
      */
-    public Logger         logger        = UTILITIES.getLogger();
+    public Logger logger = UTILITIES.getLogger();
 
     /**
      * Interner Vector
@@ -51,60 +50,61 @@ public class PixelObject implements Comparable {
     /**
      * Farbdurschnitt des Onkekts
      */
-    private int           avg           = 0;
+    private int avg = 0;
 
     /**
      * Interne prüfvariable die hochgezählt wird wenn dieneuen Pixel keine
      * Durchschnissänderung hervorrufen
      */
-    private int           noAvgChanges  = 0;
+    private int noAvgChanges = 0;
 
     /**
      * Anzahl der gleichbleibenden add Aufrufe bis ein durchschnitt as icher
      * angesehen wird
      */
-    private int           avgIsSaveNum  = 10;
+    private int avgIsSaveNum = 10;
 
     /**
      * Als sicher angenommener Farb durchschnitt
      */
-    private int           saveAvg       = 0;
+    private int saveAvg = 0;
 
     /**
      * Minimaler x Wert
      */
-    private int           xMin          = Integer.MAX_VALUE;
+    private int xMin = Integer.MAX_VALUE;
 
     /**
      * Maximaler X Wert
      */
-    private int           xMax          = Integer.MIN_VALUE;
+    private int xMax = Integer.MIN_VALUE;
 
     /**
      * Minimaler y Wert
      */
-    private int           yMin          = Integer.MAX_VALUE;
+    private int yMin = Integer.MAX_VALUE;
 
     /**
      * Maximaler Y Wert
      */
-    private int           yMax          = Integer.MIN_VALUE;
+    private int yMax = Integer.MIN_VALUE;
 
     /**
      * captcha als owner. Über owner kann auf den Parameter Dump zugegriffen
      * werden
      */
-    private PixelGrid     owner;
+    private PixelGrid owner;
 
     /**
      * Kontrastwert für die durchschnisserkennung
      */
-    private double        contrast;
+    private double contrast;
 
-    private double        whiteContrast = 1;
+    private double whiteContrast = 1;
 
-    private int           letterColor   = 0;
+    private int letterColor = 0;
     public int colorpixel = 0;
+
     /**
      * @param owner
      */
@@ -134,8 +134,7 @@ public class PixelObject implements Comparable {
                 // if(JAntiCaptcha.isLoggerActive())logger.info("saveAvg "+avg);
 
             }
-        }
-        else {
+        } else {
             noAvgChanges = 0;
         }
 
@@ -264,7 +263,7 @@ public class PixelObject implements Comparable {
      */
     public Vector<PixelObject> split(int splitNum, int overlap) {
 
-    	Vector<PixelObject> ret = new Vector<PixelObject>();
+        Vector<PixelObject> ret = new Vector<PixelObject>();
         for (int t = 0; t < splitNum; t++) {
             ret.add(new PixelObject(owner));
         }
@@ -281,11 +280,11 @@ public class PixelObject implements Comparable {
         }
         return ret;
     }
-    public PixelObject[] splitAt(int position)
-    {
+
+    public PixelObject[] splitAt(int position) {
         PixelObject[] ret = new PixelObject[2];
         for (int i = 0; i < ret.length; i++) {
-            ret[i]=new PixelObject(owner);
+            ret[i] = new PixelObject(owner);
         }
         for (int i = 0; i < getSize(); i++) {
             int[] akt = elementAt(i);
@@ -293,14 +292,15 @@ public class PixelObject implements Comparable {
             for (int x = 0; x < 2; x++) {
                 if (akt[0] >= xMin + x * position && akt[0] <= (xMin + (x + 1) * position)) {
                     ret[x].add(akt[0], akt[1], this.saveAvg);
-                    b=false;
+                    b = false;
                 }
             }
-            if(b)ret[1].add(akt[0], akt[1], this.saveAvg);
+            if (b) ret[1].add(akt[0], akt[1], this.saveAvg);
 
         }
         return ret;
     }
+
     /**
      * 
      * @return Gibt einen Entsprechenden Sw-Letter zurück
@@ -319,9 +319,9 @@ public class PixelObject implements Comparable {
         }
         Letter l = owner.createLetter();
         l.setElementPixel(getSize());
-        l.setLocation(new int[]{this.getXMin(),this.getYMin()});
+        l.setLocation(new int[] { this.getXMin(), this.getYMin() });
         l.setGrid(ret);
-        l.detected=detected;
+        l.detected = detected;
         return l;
 
     }
@@ -461,8 +461,7 @@ public class PixelObject implements Comparable {
             int[] akt = elementAt(i);
             if (x == akt[0] && y == akt[1]) {
                 ret += owner.getMaxPixelValue() * 2;
-            }
-            else {
+            } else {
                 int col = owner.getMaxPixelValue() - akt[2];
                 double dist = Math.sqrt(Math.abs(akt[0] - x) * Math.abs(akt[0] - x) + Math.abs(akt[1] - y) * Math.abs(akt[1] - y)) / 0.5;
 
@@ -516,5 +515,41 @@ public class PixelObject implements Comparable {
             add(current.object.get(i)[0], current.object.get(i)[1], current.object.get(i)[2]);
         }
 
+    }
+
+    public PixelObject[] cut(int x1, int x2, int overlap) {
+        PixelObject old = new PixelObject(owner);
+        PixelObject cutter = new PixelObject(owner);
+        if (x1 > (this.xMax-xMin) - x2) {
+            for (int i = 0; i < getSize(); i++) {
+                int[] akt = elementAt(i);
+                if (akt[0] >= xMin + x1 - overlap && akt[0] <= (xMin + x2) + overlap) {
+                    cutter.add(akt[0], akt[1], this.saveAvg);
+                }
+                if (akt[0] < xMin + x1 + overlap) {
+                    old.add(akt[0], akt[1], this.saveAvg);
+                }
+                if (akt[0] > (xMin + x2) - overlap) {
+                    old.add(akt[0] - Math.max(0,(x2 - x1)-2*overlap), akt[1], this.saveAvg);
+                }
+
+            }
+
+        } else {
+            for (int i = 0; i < getSize(); i++) {
+                int[] akt = elementAt(i);
+                if (akt[0] >= xMin + x1 - overlap && akt[0] <= (xMin + x2) + overlap) {
+                    cutter.add(akt[0], akt[1], this.saveAvg);
+                }
+                if (akt[0] < xMin + x1 + overlap) {
+                    old.add(akt[0] + Math.max(0,(x2 - x1)-2*overlap), akt[1], this.saveAvg);
+                }
+                if (akt[0] > (xMin + x2) - overlap) {
+                    old.add(akt[0], akt[1], this.saveAvg);
+                }
+
+            }
+        }
+        return new PixelObject[] { cutter, old };
     }
 }

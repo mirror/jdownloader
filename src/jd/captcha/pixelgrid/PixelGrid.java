@@ -33,6 +33,7 @@ import java.util.Vector;
 import java.util.logging.Logger;
 
 import jd.captcha.JAntiCaptcha;
+import jd.captcha.configuration.Property;
 import jd.captcha.gui.BasicWindow;
 import jd.captcha.gui.ScrollPaneWindow;
 import jd.captcha.pixelobject.PixelObject;
@@ -49,7 +50,7 @@ import com.sun.image.codec.jpeg.JPEGImageEncoder;
  * @author JD-Team
  */
 
-public class PixelGrid {
+public class PixelGrid extends Property {
     /**
      * Logger
      */

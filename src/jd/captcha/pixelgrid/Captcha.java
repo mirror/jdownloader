@@ -30,15 +30,14 @@ import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
-import java.util.ListIterator;
 import java.util.Vector;
 import java.util.logging.Logger;
 
 import jd.captcha.JAntiCaptcha;
 import jd.captcha.LetterComperator;
+import jd.captcha.gui.BasicWindow;
 import jd.captcha.pixelobject.PixelObject;
 import jd.captcha.utils.UTILITIES;
-import jd.utils.JDUtilities;
 
 import com.sun.image.codec.jpeg.ImageFormatException;
 import com.sun.image.codec.jpeg.JPEGCodec;
@@ -438,9 +437,9 @@ public class Captcha extends PixelGrid {
             try {
                 newClass = Class.forName("jd.captcha.specials." + cl);
 
-                Class[] parameterTypes = new Class[] { ret.getClass() };
+                Class[] parameterTypes = new Class[] { ret.getClass(), owner.getClass() };
                 Method method = newClass.getMethod(methodname, parameterTypes);
-                Object[] arguments = new Object[] { ret };
+                Object[] arguments = new Object[] { ret, owner };
                 Object instance = null;
                 Letter[] ret2 = (Letter[]) method.invoke(instance, arguments);
                 if (ret2 != null) {
@@ -1150,47 +1149,97 @@ public class Captcha extends PixelGrid {
             logger.info("Get directLetterDetection");
             Vector<PixelObject> objectsret = new Vector<PixelObject>();
             Iterator<PixelObject> iter = objects.iterator();
+            double cfaw = owner.getJas().getDouble("coverageFaktorAWeight");
+            int bx = owner.getJas().getInteger("borderVarianceX");
+            int by = owner.getJas().getInteger("borderVarianceY");
+            int ii = 0;
             while (iter.hasNext()) {
                 PixelObject pixelObject = (PixelObject) iter.next();
-                if (pixelObject.getArea() > minArea) {
-                    Letter letter = pixelObject.toLetter();
+                ii++;
+                if (pixelObject.getArea() > minArea * 2) {
+                    owner.getJas().set("coverageFaktorAWeight", cfaw * 2.3);
+                    owner.getJas().set("borderVarianceX", bx * owner.getJas().getInteger("minimumLetterWidth"));
+                    owner.getJas().set("borderVarianceY", by * owner.getJas().getInteger("minimumLetterWidth"));
+                    PixelObject current = pixelObject;
+                    Letter letter = current.toLetter();
                     LetterComperator resletter = owner.getLetter(letter);
+                    current.detected = resletter;
                     int b;
+                    Vector<PixelObject> splitObjects = new Vector<PixelObject>();
+                     BasicWindow.showImage(letter.getImage(), "Letter "+ii+" -"+resletter.getDecodedValue());
                     while (resletter.getB() != null && !resletter.getDecodedValue().equals("-") && (b = pixelObject.getArea() - resletter.getB().getArea()) > minArea && b > (resletter.getB().getArea() / 3) && resletter.getOffset() != null && resletter.getOffset().length > 0) {
-                        int spat = 0;
-                        if (resletter.getOffset()[0] < resletter.getB().getWidth() / 3)
-                            spat = resletter.getOffset()[0] + resletter.getB().getWidth();
-                        else
-                            spat = resletter.getOffset()[0];
-                        PixelObject[] spobjects = pixelObject.splitAt(spat);
-                        PixelObject ob1 = null;
-                        PixelObject ob2 = null;
+                        // int spat = 0;
+                        logger.info("dld: got letter: " + resletter.getDecodedValue());
+                        // BasicWindow.showImage(resletter.getB().getImage(), resletter.getDecodedValue());
+                        // if (resletter.getOffset()[0] <
+                        // resletter.getB().getWidth() / 3)
+                        // spat = resletter.getOffset()[0] +
+                        // resletter.getB().getWidth();
+                        // else
+                        // spat = resletter.getOffset()[0];
+                        PixelObject[] spobjects = current.cut(resletter.getOffset()[0], resletter.getOffset()[0] + resletter.getB().getWidth(), owner.jas.getInteger("splitPixelObjectsOverlap"));
+                        PixelObject cutter = spobjects[0];
+                        PixelObject rest = spobjects[1];
+                        current = rest;
+                        logger.info("cutted: " + cutter + " - rest: " + rest);
 
-                        if (Math.abs(spobjects[0].getWidth() - resletter.getB().getWidth()) < Math.abs(spobjects[1].getWidth() - resletter.getB().getWidth())) {
-                            ob1 = spobjects[0];
-                            ob2 = spobjects[1];
-                        } else {
-                            ob1 = spobjects[1];
-                            ob2 = spobjects[0];
+                         BasicWindow.showImage(cutter.toLetter().getImage(), "cutter");
+                         BasicWindow.showImage(rest.toLetter().getImage(), "rest");
+                        letter = rest.toLetter();
+                        splitObjects.add(cutter);
+                        cutter.detected = resletter;
+                        resletter.setValityPercent(resletter.getValityPercent() * 0.75);
+                        if (rest.getSize() < 50||rest.getArea()<minArea) {
+                            break;
                         }
-                        letter = ob1.toLetter();
-                        objectsret.add(ob1);
-                        pixelObject = ob2;
-                        letter = pixelObject.toLetter();
+                        letter = rest.toLetter();
                         resletter = owner.getLetter(letter);
+                        if (resletter.getValityPercent() == 100.0 || resletter.getB() == null || resletter.getDecodedValue().equals("-")) {
+                            // logger.warning("Splitting objects failed");
+                            // splitObjects=null;
+                            break;
+                        } else {
+                            logger.info("GOGO next Objects");
+                            if ((b = pixelObject.getArea() - resletter.getB().getArea()) < minArea) {
+                                logger.info("last");
+                                rest.detected = resletter;
+                                splitObjects.add(rest);
+                                break;
+
+                            }
+                        }
 
                     }
 
-                    if (owner.getJas().getBoolean("abortDirectDetectionOnDetectionError") && resletter.getValityPercent() == 100.0) {
-                        logger.warning("Error on direct letter detection .abort");
-                        return null;
-                    }
+                    // if
+                    // (owner.getJas().getBoolean("abortDirectDetectionOnDetectionError")
+                    // && resletter.getValityPercent() == 100.0) {
+                    // logger.warning("Error on direct letter detection
+                    // .abort");
+                    // return null;
+                    // }
 
-                    pixelObject.detected = resletter;
+                    if (splitObjects != null && splitObjects.size() > 1) {
+                        objectsret.addAll(splitObjects);
+                    } else {
+                        if( current.detected!=null)current.detected.setValityPercent(current.detected.getValityPercent() * 0.75);
+                        objectsret.add(current);
+                        // BasicWindow.showImage(pixelObject.toLetter().getImage(),
+                        // "che "+ii);
+
+                    }
+                    owner.getJas().set("coverageFaktorAWeight", cfaw);
+                    owner.getJas().set("borderVarianceX", bx);
+                    owner.getJas().set("borderVarianceY", by);
+
+                } else {
                     objectsret.add(pixelObject);
+                    // BasicWindow.showImage(pixelObject.toLetter().getImage(),
+                    // "def "+ii);
                 }
             }
             objects = objectsret;
+
         }
         // if (owner.jas.getBoolean("rapidshareSpecial")) {
         // String methodsPath = UTILITIES.getFullPath(new String[] {

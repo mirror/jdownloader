@@ -16,7 +16,7 @@
 
 package jd.captcha.specials;
 
-import java.lang.reflect.Method;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -42,26 +42,55 @@ public class RapidshareCom {
 
     public static void onlyCats(Vector<LetterComperator> lcs, JAntiCaptcha owner) {
         // if (true) return;
-      
-int count=0;
+        boolean first = false;
+        if (owner.getJas().getInteger("desinvariant") == 0) {
+            owner.getWorkingCaptcha().setProperty("variants", new ArrayList<Vector<LetterComperator>>());
+            first = true;
+        }
+        int count = 0;
         if (lcs != null && lcs.size() > 0) {
             for (Iterator<LetterComperator> it = lcs.iterator(); it.hasNext();) {
                 LetterComperator next = it.next();
-                logger.info("--> "+next+ "<< "+next.getDecodedValue());
-                count += next.getValityPercent()>=75.0?1:0;
+                logger.info("--> "+next.getDecodedValue()+" : " + next + "<< ");
+                count += next.getValityPercent() >= 60.0 ? 1 : 0;
             }
-           
-        }
-        if (count > 0 || lcs == null || lcs.size() < 4) {
-            logger.severe("ACHTUNG ERKENNUNGSFEHLER " + count);
-Vector<LetterComperator> tmp = new Vector<LetterComperator>();
-tmp.addAll(lcs);
-            lcs.removeAllElements();
-            retry(owner, lcs);
 
+        }
+        Vector<LetterComperator> tmp = new Vector<LetterComperator>();
+        tmp.addAll(lcs);
+        ((ArrayList<Vector<LetterComperator>>) owner.getWorkingCaptcha().getProperty("variants")).add(tmp);
+        
+        if (count > 3 || lcs == null || lcs.size() < 4) {
+            logger.severe("ACHTUNG ERKENNUNGSFEHLER " + count);
+           lcs.removeAllElements();
+            retry(owner, lcs);
+            if (first) {
+                double bestValue=100.0;
+                Vector<LetterComperator> bestLcs=null;
+                ArrayList<Vector<LetterComperator>> variants = ((ArrayList<Vector<LetterComperator>>) owner.getWorkingCaptcha().getProperty("variants"));
+                for (Iterator<Vector<LetterComperator>> it = variants.iterator(); it.hasNext();) {
+                    Vector<LetterComperator> next = it.next();
+                    if (next != null && next.size() >= 4) {
+                        double cor = 0;
+                        for (Iterator<LetterComperator> it2 = next.iterator(); it2.hasNext();) {
+                            cor += it2.next().getValityPercent();
+                        }
+                        cor /= next.size();
+                        if(cor<bestValue){
+                            logger.info("new Best LCS: "+cor);
+                            bestLcs=next;
+                            bestValue=cor;
+                        }
+                    }
+                }
+                if(lcs!=bestLcs){
+                    lcs.removeAllElements();
+                    lcs.addAll(bestLcs);
+                }
+            }
             return;
         }
-if(true)return;
+        if (true) return;
         final HashMap<LetterComperator, LetterComperator> map = new HashMap<LetterComperator, LetterComperator>();
 
         String methodsPath = UTILITIES.getFullPath(new String[] { JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath(), "jd", "captcha", "methods" });
@@ -73,7 +102,7 @@ if(true)return;
             Letter dif = next.getDifference();
             dif.removeSmallObjects(0.8, 0.8, 5);
             dif.clean();
-           
+
             LetterComperator c = jac.getLetter(dif);
             if (!c.getDecodedValue().equalsIgnoreCase("k")) {
                 it.remove();
@@ -118,7 +147,6 @@ if(true)return;
         if (letters == null) return;
         // LetterComperator[] newLetters = new LetterComperator[letters.length];
 
-       
         LetterComperator akt;
 
         if (letters == null) {
@@ -129,13 +157,13 @@ if(true)return;
 
         Vector<LetterComperator> newLettersVector = new Vector<LetterComperator>();
         for (int i = 0; i < letters.length; i++) {
-          
+
             if (letters[i].detected != null)
                 akt = letters[i].detected;
             else
                 akt = jac.getLetter(letters[i]);
 
-            akt.getA().id=i;
+            akt.getA().id = i;
             newLettersVector.add(akt);
 
         }
@@ -145,6 +173,23 @@ if(true)return;
             lcs.addAll(newLettersVector);
         }
 
+    }
+    
+    /**
+     * Filtert kleine Buchstaben
+     * @param org
+     * @param jac
+     * @return
+     */
+    public static Letter[] letterFilter(Letter[] org, JAntiCaptcha jac){
+        Vector<Letter> ret= new  Vector<Letter>();
+        
+        for(Letter l:org){
+            if(l.getArea()>=jac.getJas().getInteger("minimumObjectArea")){
+                ret.add(l);
+            }
+        }
+        return ret.toArray(new Letter[]{});
     }
 
 }

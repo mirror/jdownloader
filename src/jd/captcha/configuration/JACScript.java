@@ -243,9 +243,13 @@ public class JACScript {
          */
         set("cancelIfObjectDetectionFailed", false);
         /**
-         * Gewichtung des größenunterschieds Ausschnitt/Originale
+         * Gewichtung des größenunterschieds Ausschnitt/Originale(Datenbank)
+         * Ist ein datebank bcuhstabe nur teilweise auf dem Trefferausschnitt, verschkechtert das die Wertung
+         * 
          */
         set("intersectionDimensionWeight", 0.9);
+        
+  
         /**
          * Gibt an wie viele überlagerungsstörungen ausgefiltert werden sollen
          * -1 :>keine 0: bei 0 Nachbarn 1: bei höchstem einen Nachbarn etc
@@ -280,6 +284,11 @@ public class JACScript {
          * Schwellwert für den quickscanfilter
          */
         set("preScanFilter", 100);
+        
+        /**
+         * Schwellwert für den quickscanfilter. Wird dieser emergeny Wert gesetzt, so wird bei Erfolgloser Suche der filter auf diesen wert gesetzt und ein 2. Lauf gestartet
+         */
+        set("preScanEmergencyFilter",0);
         /**
          * Anzahl der Linien der prescan auswerten soll
          */
@@ -363,7 +372,11 @@ public class JACScript {
          * =>Der Treffer  wird nicht gewertet, da die Intersection zu wenig gemeinsamme Pixel hat.
          */
         set("inverseFontWeight",8.0);
-
+        
+        set("scanstepx",1);
+        set("scanstepy",1);
+set("intersectionAHeightWeight",0.0);
+set("intersectionAWidthWeight",0.0);
     }
 
     /**
