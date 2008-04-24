@@ -1166,7 +1166,7 @@ public class Captcha extends PixelGrid {
                     current.detected = resletter;
                     int b;
                     Vector<PixelObject> splitObjects = new Vector<PixelObject>();
-                     BasicWindow.showImage(letter.getImage(), "Letter "+ii+" -"+resletter.getDecodedValue());
+                     //BasicWindow.showImage(letter.getImage(), "Letter "+ii+" -"+resletter.getDecodedValue());
                     while (resletter.getB() != null && !resletter.getDecodedValue().equals("-") && (b = pixelObject.getArea() - resletter.getB().getArea()) > minArea && b > (resletter.getB().getArea() / 3) && resletter.getOffset() != null && resletter.getOffset().length > 0) {
                         // int spat = 0;
                         logger.info("dld: got letter: " + resletter.getDecodedValue());
@@ -1183,8 +1183,8 @@ public class Captcha extends PixelGrid {
                         current = rest;
                         logger.info("cutted: " + cutter + " - rest: " + rest);
 
-                         BasicWindow.showImage(cutter.toLetter().getImage(), "cutter");
-                         BasicWindow.showImage(rest.toLetter().getImage(), "rest");
+                        // BasicWindow.showImage(cutter.toLetter().getImage(), "cutter");
+                        // BasicWindow.showImage(rest.toLetter().getImage(), "rest");
                         letter = rest.toLetter();
                         splitObjects.add(cutter);
                         cutter.detected = resletter;

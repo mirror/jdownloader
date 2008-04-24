@@ -1663,7 +1663,7 @@ Collections.sort(sorter, new Comparator<Object>(){
         
         
         
-        BasicWindow.showImage(this.getImage(), "USE VARIANT: "+owner.getJas().getInteger("desinvariant")+" : "+sorter.get(owner.getJas().getInteger("desinvariant")));
+        //BasicWindow.showImage(this.getImage(), "USE VARIANT: "+owner.getJas().getInteger("desinvariant")+" : "+sorter.get(owner.getJas().getInteger("desinvariant")));
 
     }
 

@@ -90,7 +90,7 @@ public class RapidshareCom {
             }
             return;
         }
-        if (true) return;
+        //if (true) return;
         final HashMap<LetterComperator, LetterComperator> map = new HashMap<LetterComperator, LetterComperator>();
 
         String methodsPath = UTILITIES.getFullPath(new String[] { JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath(), "jd", "captcha", "methods" });

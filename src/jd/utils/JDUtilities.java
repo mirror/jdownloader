@@ -1092,7 +1092,7 @@ public class JDUtilities {
      * Gibt den MD5 hash eines Strings zurück
      * 
      * @param arg
-     * @return MD% hash von arg
+     * @return MD% hash von arg 
      */
     public static String getMD5(String arg) {
         try {

@@ -3,15 +3,15 @@
 <!--
   yGuard Bytecode Obfuscator, v2.2.0, a Product of yWorks GmbH - http://www.yworks.com
 
-  Logfile created on Mon Apr 21 13:46:42 CEST 2008
+  Logfile created on Thu Apr 24 04:30:06 CEST 2008
 
   Jar file to be obfuscated:           JDownloaderContainer.jar
   Target Jar file for obfuscated code: JDownloaderContainer_obfuscated.jar
 
 -->
 <!--
-  Memory in use after class data structure built: 3690712 bytes
-  Total memory available                        : 7729152 bytes
+  Memory in use after class data structure built: 2336728 bytes
+  Total memory available                        : 5177344 bytes
 -->
 <!-- WARNING: Unresolved external dependency: jd.plugins.HTTPConnection not found! -->
 <!-- WARNING: Unresolved external dependency: jd.plugins.RequestInfo not found! -->
