@@ -377,6 +377,7 @@ public class JACScript {
         set("scanstepy",1);
 set("intersectionAHeightWeight",0.0);
 set("intersectionAWidthWeight",0.0);
+set("minObjectSize",10);
     }
 
     /**
@@ -696,8 +697,8 @@ set("intersectionAWidthWeight",0.0);
                 } else if (cmd[0].equals("function") && (params = cmd[2].split("\\,")).length == 5) {
 
                 } else if (cmd[0].equals("function") && (params = cmd[2].split("\\,")).length == 6) {
-                    if (cmd[1].equalsIgnoreCase("desin")) {
-                        captcha.desin(Double.parseDouble(params[0].trim()), Double.parseDouble(params[1].trim()), Double.parseDouble(params[2].trim()),Double.parseDouble(params[3].trim()),Double.parseDouble(params[4].trim()),Double.parseDouble(params[5].trim()));
+                    if (cmd[1].equalsIgnoreCase("rsdesin")) {
+                        captcha.rsDesin(Double.parseDouble(params[0].trim()), Double.parseDouble(params[1].trim()), Double.parseDouble(params[2].trim()),Double.parseDouble(params[3].trim()),Double.parseDouble(params[4].trim()),Double.parseDouble(params[5].trim()));
                         continue;
                     }
                 }
