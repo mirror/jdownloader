@@ -943,11 +943,11 @@ abstract public class DownloadInterface {
                     }
                 }
 
-                if (chunkNum > 1) {
+             
 
                     httpConnection.setRequestProperty("Range", "bytes=" +  start + "-" + end);
 
-                }
+                
                 if (connection.getHTTPURLConnection().getDoOutput()) {
                     httpConnection.setDoOutput(true);
                     httpConnection.connect();
@@ -1017,7 +1017,26 @@ abstract public class DownloadInterface {
                     return;
 
                 }
+            }else if(   startByte>0){
+                this.connection = copyConnection(connection);
+
+                if (connection == null) {
+                    error(ERROR_CHUNKLOAD_FAILED);
+                    logger.severe("ERROR Chunk (connection copy failed) " + chunks.indexOf(this));
+
+                    return;
+                }
+
+                if ((startByte+getPreBytes(this))>0 && (connection.getHeaderField("Content-Range") == null || connection.getHeaderField("Content-Range").length() == 0)) {
+                    error(ERROR_CHUNKLOAD_FAILED);
+                    logger.severe("ERROR Chunk (no range header response)" + chunks.indexOf(this));
+
+                    return;
+
+                }
             }
+            
+         
             // Content-Range=[133333332-199999999/200000000]}
             if ((startByte+getPreBytes(this)) > 0) {
                 String[] range = Plugin.getSimpleMatches("[" + connection.getHeaderField("Content-Range") + "]", "[°-°/°]");
