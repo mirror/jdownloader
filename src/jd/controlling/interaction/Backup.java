@@ -17,14 +17,14 @@
 
 package jd.controlling.interaction;
 
-import java.io.Serializable;
-import java.io.RandomAccessFile;
 import java.io.File;
+import java.io.RandomAccessFile;
+import java.io.Serializable;
 
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
-import jd.controlling.ProgressController;
 import jd.controlling.JDController;
+import jd.controlling.ProgressController;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 

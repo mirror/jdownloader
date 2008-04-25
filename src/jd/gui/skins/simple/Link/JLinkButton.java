@@ -38,7 +38,6 @@ import javax.swing.plaf.ComponentUI;
 import javax.swing.plaf.metal.MetalButtonUI;
 
 import jd.gui.skins.simple.SimpleGUI;
-import jd.gui.skins.simple.Link.DnDWebBrowser;
 import jd.utils.JDUtilities;
 import edu.stanford.ejalbert.BrowserLauncher;
 import edu.stanford.ejalbert.exception.BrowserLaunchingInitializingException;

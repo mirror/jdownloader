@@ -16,6 +16,7 @@
 
 package jd.captcha;
 
+import java.awt.Color;
 import java.awt.GridBagLayout;
 import java.awt.Image;
 import java.awt.event.ActionEvent;
@@ -42,7 +43,7 @@ import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
-import javax.swing.JPanel;
+import javax.swing.JTextArea;
 import javax.xml.transform.OutputKeys;
 import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerException;
@@ -714,7 +715,7 @@ public class JAntiCaptcha {
         f.setVisible(true);
         f.setLocation(500, 10);
         f.setLayout(new GridBagLayout());
-        f.add(new JLabel("original captcha"), UTILITIES.getGBC(0, 1, 10, 1));
+        f.add(new JLabel("original captcha: "+captchafile.getName()), UTILITIES.getGBC(0, 0, 10, 1));
 
         f.add(new ImageComponent(captcha.getImage()), UTILITIES.getGBC(0, 1, 10, 1));
 
@@ -832,7 +833,7 @@ public class JAntiCaptcha {
             // return -1;
             //
             // }
-            if (getCodeFromFileName(captchafile.getName(), captchaHash) == null || true) {
+            if (getCodeFromFileName(captchafile.getName(), captchaHash) == null ) {
                 code = UTILITIES.prompt("Bitte Captcha Code eingeben (Press enter to confirm " + guess, guess);
                 if (code != null && code.equals(guess))
                     code = "";
@@ -1333,9 +1334,9 @@ public class JAntiCaptcha {
     private LetterComperator getLetterExtended(Letter letter) {
         long startTime = UTILITIES.getTimer();
         LetterComperator res = null;
-
+logger.info("Extended SCAN");
         double lastPercent = 100.0;
-
+        JTextArea tf=null;
         try {
 
             if (letterDB == null) {
@@ -1389,6 +1390,7 @@ public class JAntiCaptcha {
                     // "+(UTILITIES.getTimer()-timer) +"
                     // Loops: "+lc.loopCounter);
                     tt++;
+                
                     if (this.isShowDebugGui()) {
                         w.setText(0, line, angle + "° " + (tt));
                         w.setImage(1, line, lc.getA().getImage(2));
@@ -1397,7 +1399,10 @@ public class JAntiCaptcha {
                         w.setText(4, line, lc.getB().getDim());
                         w.setImage(5, line, lc.getIntersectionLetter().getImage(2));
                         w.setText(6, line, lc.getIntersectionLetter().getDim());
-                        w.setText(7, line, lc);
+                       
+                        w.setComponent(7, line, tf=new JTextArea());
+                        tf.setText(lc.toString());
+                        if(lc.getPreValityPercent()>jas.getInteger("preScanFilter")&&jas.getInteger("preScanFilter")>0)tf.setBackground(Color.LIGHT_GRAY);
                         line++;
                     }
 
@@ -1411,10 +1416,10 @@ public class JAntiCaptcha {
                             res.setDetectionType(LetterComperator.PERFECTMATCH);
                             res.setReliability(lastPercent - res.getValityPercent());
                             if (JAntiCaptcha.isLoggerActive()) logger.finer(" Perfect Match: " + res.getB().getDecodedValue() + " " + res.getValityPercent() + " good:" + tmp.getGoodDetections() + " bad: " + tmp.getBadDetections() + " - " + res);
-
+                            if (this.isShowDebugGui())  tf.setBackground(Color.GREEN);
                             return res;
                         }
-
+                        if (this.isShowDebugGui())  tf.setBackground(Color.BLUE);
                         if (JAntiCaptcha.isLoggerActive()) logger.finer("Angle " + angle + "dim " + lc.getA().getDim() + "|" + lc.getB().getDim() + " New Best value: " + lc.getDecodedValue() + " " + lc.getValityPercent() + " good:" + tmp.getGoodDetections() + " bad: " + tmp.getBadDetections() + " - " + lc);
 
                     } else if (res != null) {
@@ -1444,6 +1449,7 @@ public class JAntiCaptcha {
 
         if (res != null && res.getB() != null) {
             if (JAntiCaptcha.isLoggerActive()) logger.finer(" Normal Match: " + res.getB().getDecodedValue() + " " + res.getValityPercent() + " good:" + res.getB().getGoodDetections() + " bad: " + res.getB().getBadDetections());
+          
             res.setReliability(lastPercent - res.getValityPercent());
         } else {
             if (getJas().getInteger("preScanEmergencyFilter") > getJas().getInteger("preScanFilter")) {
@@ -1456,6 +1462,8 @@ public class JAntiCaptcha {
 
             }
             if (JAntiCaptcha.isLoggerActive()) logger.severe("Letter entgültig nicht erkannt");
+            if (this.isShowDebugGui()&&tf!=null)  tf.setBackground(Color.RED);
+           
         }
 
         return res;

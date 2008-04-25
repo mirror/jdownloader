@@ -20,14 +20,14 @@ package jd.plugins.decrypt;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
-import java.util.Vector;
 import java.util.ArrayList;
+import java.util.Vector;
 import java.util.regex.Pattern;
 
+import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
-import jd.plugins.DownloadLink;
 
 //http://save.raidrush.ws/?id=8b891e864bc42ffa7bfcdaf72503f2a0
 //http://save.raidrush.ws/?id=e7ccb3ee67daff310402e5e629ab8a91

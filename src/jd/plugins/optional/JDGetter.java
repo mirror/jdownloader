@@ -30,6 +30,7 @@ import javax.servlet.http.HttpServletResponse;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.Configuration;
+import jd.config.MenuItem;
 import jd.config.Property;
 import jd.event.ControlListener;
 import jd.plugins.DownloadLink;
@@ -121,9 +122,9 @@ public class JDGetter extends PluginOptional implements ControlListener {
     }
 
     @Override
-    public ArrayList<String> createMenuitems() {
-        ArrayList<String> menu = new ArrayList<String>();
-        menu.add("Toggle Start/Stop");
+    public ArrayList<MenuItem> createMenuitems() {
+        ArrayList<MenuItem> menu = new ArrayList<MenuItem>();
+        menu.add(new MenuItem("Toggle Start/Stop",0));
         return menu;
     }
 

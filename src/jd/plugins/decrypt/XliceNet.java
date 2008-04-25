@@ -33,7 +33,6 @@ import jd.plugins.PluginStep;
 import jd.plugins.Regexp;
 import jd.plugins.RequestInfo;
 import jd.utils.JDLocale;
-import jd.utils.JDUtilities;
 
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.Scriptable;

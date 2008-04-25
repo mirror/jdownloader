@@ -20,6 +20,7 @@ package jd.controlling.interaction;
 import java.io.File;
 import java.io.Serializable;
 import java.util.Vector;
+
 import jd.config.Configuration;
 import jd.update.WebUpdater;
 import jd.utils.JDLocale;

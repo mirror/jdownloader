@@ -12,7 +12,6 @@ import jd.event.ControlEvent;
 import jd.event.ControlListener;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
-
 import jd.utils.JDUtilities;
 
 public abstract class DownloadLinksView extends JPanel implements ControlListener {

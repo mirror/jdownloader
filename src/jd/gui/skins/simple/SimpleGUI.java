@@ -35,12 +35,12 @@ import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Vector;
 import java.util.logging.Logger;
 
+import javax.swing.AbstractAction;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
@@ -62,9 +62,12 @@ import javax.swing.UnsupportedLookAndFeelException;
 import javax.swing.WindowConstants;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
+import javax.swing.event.MenuEvent;
+import javax.swing.event.MenuListener;
 
 import jd.JDFileFilter;
 import jd.config.Configuration;
+import jd.config.MenuItem;
 import jd.config.SubConfiguration;
 import jd.controlling.JDController;
 import jd.controlling.ProgressController;
@@ -78,10 +81,14 @@ import jd.gui.skins.simple.components.HTMLDialog;
 import jd.gui.skins.simple.components.JDFileChooser;
 import jd.gui.skins.simple.components.JHelpDialog;
 import jd.gui.skins.simple.components.TextAreaDialog;
+import jd.gui.skins.simple.components.JHelpDialog.Action;
 import jd.gui.skins.simple.config.ConfigurationDialog;
 import jd.gui.skins.simple.config.jdUnrarPasswordListDialog;
 import jd.plugins.DownloadLink;
 import jd.plugins.Plugin;
+import jd.plugins.PluginForContainer;
+import jd.plugins.PluginForDecrypt;
+import jd.plugins.PluginForHost;
 import jd.plugins.PluginOptional;
 import jd.utils.JDLocale;
 import jd.utils.JDTheme;
@@ -222,7 +229,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
     private JButton btnClipBoard;
 
     private JDAction actionHelp;
-    
+
     public static final String PARAM_DISABLE_CONFIRM_DIALOGS = "DISABLE_CONFIRM_DIALOGS";
 
     private static SubConfiguration guiConfig = JDUtilities.getSubConfig(GUICONFIGNAME);
@@ -279,8 +286,8 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         initMenuBar();
         buildUI();
         frame.pack();
-        
-       // frame.getContentPane().add(desktop, BorderLayout.CENTER);
+
+        // frame.getContentPane().add(desktop, BorderLayout.CENTER);
         frame.setSize(600, 600);
         frame.setVisible(true);
         frame.setName("MAINFRAME");
@@ -477,30 +484,72 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         JMenuItem menPasswordlist = createMenuItem(actionPasswordlist);
         JMenuItem help = createMenuItem(actionHelp);
         // add menus to parents
-        
-        
-        //Adds the menus form the plugins
-        JMenu menPlugins = new JMenu(JDLocale.L("gui.menu.plugins","Addons"));
-        HashMap<String, PluginOptional> plugins = JDUtilities.getPluginsOptional();
-        Iterator<String> e = plugins.keySet().iterator();
-        
-        while(e.hasNext()) {
-            PluginOptional helpplugin = plugins.get(e.next());
-            
-            if(helpplugin.createMenuitems() != null && JDUtilities.getConfiguration().getBooleanProperty("OPTIONAL_PLUGIN_" + helpplugin.getPluginName(), false)) {
-                JMenu helppluginmenu = new JMenu(helpplugin.getPluginName());
-                ArrayList<String> items = helpplugin.createMenuitems();
-                for(int i=0; i<items.size(); i++) {
-                    JMenuItem helppluginitem = new JMenuItem(items.get(i));
-                    helppluginitem.addActionListener(helpplugin);
-                    helppluginmenu.add(helppluginitem);
-                }
-                menPlugins.add(helppluginmenu);
+
+        // Adds the menus form the Addons
+        JMenu menAddons = new JMenu(JDLocale.L("gui.menu.addons", "Addons"));
+        HashMap<String, PluginOptional> addons = JDUtilities.getPluginsOptional();
+        Iterator<String> e = addons.keySet().iterator();
+
+        while (e.hasNext()) {
+            PluginOptional helpplugin = addons.get(e.next());
+
+            if (helpplugin.createMenuitems() != null && JDUtilities.getConfiguration().getBooleanProperty("OPTIONAL_PLUGIN_" + helpplugin.getPluginName(), false)) {
+
+                MenuItem m = new MenuItem(MenuItem.CONTAINER, helpplugin.getPluginName(),0);
+                m.setItems(helpplugin.createMenuitems());
+                menAddons.add(SimpleGUI.getJMenuItem(m));
             }
         }
-        
-        if(menPlugins.getItemCount() == 0) {
-            menPlugins.setEnabled(false);
+
+        if (menAddons.getItemCount() == 0) {
+            menAddons.setEnabled(false);
+        }
+        // Adds the menus form the plugins
+        JMenu menPlugins = new JMenu(JDLocale.L("gui.menu.plugins", "Plugins"));
+        JMenu helpHost = new JMenu(JDLocale.L("gui.menu.plugins.host", "Hoster"));
+        JMenu helpDecrypt = new JMenu(JDLocale.L("gui.menu.plugins.decrypt", "Decrypter"));
+        JMenu helpContainer = new JMenu(JDLocale.L("gui.menu.plugins.container", "Container"));
+        menPlugins.add(helpHost);
+
+        menPlugins.add(helpDecrypt);
+        menPlugins.add(helpContainer);
+
+        for (Iterator<PluginForHost> it = JDUtilities.getPluginsForHost().iterator(); it.hasNext();) {
+            Plugin helpplugin = it.next();
+            if (helpplugin.createMenuitems() != null) {
+                MenuItem m = new MenuItem(MenuItem.CONTAINER, helpplugin.getPluginName(),0);
+                m.setItems(helpplugin.createMenuitems());
+                helpHost.add(SimpleGUI.getJMenuItem(m));
+            }
+        }
+        if (helpHost.getItemCount() == 0) {
+            helpHost.setEnabled(false);
+        }
+
+        for (Iterator<PluginForDecrypt> it = JDUtilities.getPluginsForDecrypt().iterator(); it.hasNext();) {
+            Plugin helpplugin = it.next();
+            if (helpplugin.createMenuitems() != null) {
+                MenuItem m = new MenuItem(MenuItem.CONTAINER, helpplugin.getPluginName(),0);
+                m.setItems(helpplugin.createMenuitems());
+                helpDecrypt.add(SimpleGUI.getJMenuItem(m));
+
+            }
+        }
+        if (helpDecrypt.getItemCount() == 0) {
+            helpDecrypt.setEnabled(false);
+        }
+
+        for (Iterator<PluginForContainer> it = JDUtilities.getPluginsForContainer().iterator(); it.hasNext();) {
+            Plugin helpplugin = it.next();
+            if (helpplugin.createMenuitems() != null) {
+                MenuItem m = new MenuItem(MenuItem.CONTAINER, helpplugin.getPluginName(),0);
+                m.setItems(helpplugin.createMenuitems());
+                helpContainer.add(SimpleGUI.getJMenuItem(m));
+
+            }
+        }
+        if (helpContainer.getItemCount() == 0) {
+            helpContainer.setEnabled(false);
         }
 
         menFile.add(menFileLoad);
@@ -521,6 +570,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         menuBar.add(menEdit);
         menuBar.add(menAction);
         menuBar.add(menExtra);
+        menuBar.add(menAddons);
         menuBar.add(menPlugins);
         frame.setJMenuBar(menuBar);
     }
@@ -1055,7 +1105,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
             chbPremium.addChangeListener(this);
             chbPremium.setSelected(JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true));
             lblSpeed = new JLabel(JDLocale.L("gui.statusbar.speed", "Geschw."));
-            lblSimu=new JLabel(JDLocale.L("gui.statusbar.sim_ownloads", "Max.Dls."));
+            lblSimu = new JLabel(JDLocale.L("gui.statusbar.sim_ownloads", "Max.Dls."));
             int maxspeed = JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, 0);
 
             spMax = new JSpinner();
@@ -1069,8 +1119,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
             spMaxDls.setPreferredSize(new Dimension(60, 20));
             spMaxDls.setToolTipText(JDLocale.L("gui.tooltip.statusbar.simultan_downloads", "Max. gleichzeitige Downloads"));
             spMaxDls.addChangeListener(this);
-            
-        
+
             // lblPluginHostActive = new JLabel(imgInactive);
             // lblPluginDecryptActive = new JLabel(imgInactive);
             // lblPluginDecryptActive.setToolTipText(JDLocale.L("gui.tooltip.plugin_decrypt"));
@@ -1079,12 +1128,11 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
             JDUtilities.addToGridBag(this, lblSimu, 1, 0, 1, 1, 0, 0, new Insets(0, 2, 0, 0), GridBagConstraints.NONE, GridBagConstraints.WEST);
             JDUtilities.addToGridBag(this, spMaxDls, 2, 0, 1, 1, 0, 0, new Insets(0, 2, 0, 0), GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-            
             JDUtilities.addToGridBag(this, chbPremium, 3, 0, 1, 1, 0, 0, new Insets(0, 2, 0, 0), GridBagConstraints.NONE, GridBagConstraints.WEST);
             JDUtilities.addToGridBag(this, new JSeparator(JSeparator.VERTICAL), 4, 0, 1, 1, 0, 0, new Insets(2, 2, 2, 2), GridBagConstraints.BOTH, GridBagConstraints.WEST);
-            
+
             JDUtilities.addToGridBag(this, lblSpeed, 5, 0, 1, 1, 0, 0, new Insets(0, 2, 0, 0), GridBagConstraints.NONE, GridBagConstraints.WEST);
-            
+
             JDUtilities.addToGridBag(this, spMax, 6, 0, 1, 1, 0, 0, new Insets(0, 2, 0, 0), GridBagConstraints.NONE, GridBagConstraints.WEST);
 
             // JDUtilities.addToGridBag(this, lblPluginHostActive, 5, 0, 1, 1,
@@ -1265,8 +1313,8 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
                 doIt = true;
             }
             if (doIt) {
-            	saveLastLocation(e.getComponent(), null);
-            	saveLastDimension(e.getComponent(), null);
+                saveLastLocation(e.getComponent(), null);
+                saveLastDimension(e.getComponent(), null);
                 JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).save();
                 this.fireUIEvent(new UIEvent(this, UIEvent.UI_EXIT, null));
             }
@@ -1405,14 +1453,15 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         case ControlEvent.CONTROL_LINKLIST_STRUCTURE_CHANGED:
             if (event.getSource().getClass() == JDController.class) {
             }
-	        break;
+            break;
         case ControlEvent.CONTROL_STARTSTOP_DOWNLOAD:
-        	// only in this way the button state is correctly set
-    		// controller.startDownloads() is called by button itself so it cannot handle this
-        	btnStartStop.setSelected(!btnStartStop.isSelected());
+            // only in this way the button state is correctly set
+            // controller.startDownloads() is called by button itself so it
+            // cannot handle this
+            btnStartStop.setSelected(!btnStartStop.isSelected());
             if (!btnStartStop.isSelected()) btnStartStop.setEnabled(false);
             this.startStopDownloads();
-	        break;
+            break;
         }
 
     }
@@ -1449,9 +1498,56 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         int maxspeed = JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, 0);
 
         this.statusBar.spMaxDls.setModel(new SpinnerNumberModel(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN, 3), 1, 20, 1));
-        
+
         this.statusBar.spMax.setModel(new SpinnerNumberModel(maxspeed, 0, Integer.MAX_VALUE, 50));
         return;
+    }
+
+    public static JMenuItem getJMenuItem(final MenuItem mi) {
+        switch (mi.getID()) {
+        case MenuItem.NORMAL:
+            JMenuItem m = new JMenuItem(new JDMenuAction(mi));
+         
+            return m;
+
+        case MenuItem.TOGGLE:
+            JCheckBoxMenuItem m2 = new JCheckBoxMenuItem(new JDMenuAction(mi));
+           
+            if(mi.isSelected()){
+                m2.setIcon(JDTheme.I("gui.images.selected"));
+            }else{
+                m2.setIcon(JDTheme.I("gui.images.unselected"));
+            }
+            //m2.setIcon(JDTheme.I("gui.images.selected"));
+            
+            //m2.addActionListener(mi.getActionListener());           
+            //m2.setSelected(mi.isSelected());
+            return m2;
+        case MenuItem.CONTAINER:
+            JMenu m3 = new JMenu(mi.getTitle());
+            m3.addMenuListener(new MenuListener() {
+
+                public void menuCanceled(MenuEvent e) {
+                }
+
+                public void menuDeselected(MenuEvent e) {
+                }
+
+                public void menuSelected(MenuEvent e) {
+                    JMenu m = (JMenu) e.getSource();
+                    m.removeAll();
+
+                    for (int i = 0; i < mi.getSize(); i++) {
+                       
+                        m.add(SimpleGUI.getJMenuItem(mi.get(i)));
+                    }
+                }
+
+            });
+
+            return m3;
+        }
+        return null;
     }
 
 }

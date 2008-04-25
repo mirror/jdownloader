@@ -22,6 +22,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Vector;
 
+import jd.config.MenuItem;
 import jd.controlling.DistributeData;
 import jd.controlling.ProgressController;
 import jd.event.ControlEvent;
@@ -79,7 +80,7 @@ public abstract class PluginForContainer extends PluginForDecrypt {
         return null;
     }
 
-    public ArrayList<String> createMenuitems() {
+    public ArrayList<MenuItem> createMenuitems() {
         return null;
     }
 

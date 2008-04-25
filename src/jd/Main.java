@@ -57,6 +57,10 @@ public class Main {
 
     public static void main(String args[]) {
 
+        
+//        int t=0;
+//        for( t=0; t<200;t++)
+//       JDUtilities.downloadBinary(JDUtilities.getResourceFile("cap/cap_"+t+".jpg").getAbsolutePath(), "http://www.fast-load.net/includes/captcha.php");
         Boolean newInstance = false;
 
         // pre start parameters //
@@ -253,6 +257,7 @@ public class Main {
         }
 
         init.loadConfiguration();
+        init.removeFiles();
 
         /*
          * Übergangsfix. Die Interactions wurden in eine subconfig verlegt.

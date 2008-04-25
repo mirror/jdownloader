@@ -518,38 +518,40 @@ public class PixelObject implements Comparable {
     }
 
     public PixelObject[] cut(int x1, int x2, int overlap) {
-        PixelObject old = new PixelObject(owner);
+        PixelObject pre = new PixelObject(owner);
+        PixelObject post = new PixelObject(owner);
         PixelObject cutter = new PixelObject(owner);
-        if (x1 > (this.xMax-xMin) - x2) {
+       if(x1<this.owner.owner.getJas().getInteger("minimumLetterWidth"))pre=null;
+       if(xMax-xMin-x2<this.owner.owner.getJas().getInteger("minimumLetterWidth"))post=null;
             for (int i = 0; i < getSize(); i++) {
                 int[] akt = elementAt(i);
                 if (akt[0] >= xMin + x1 - overlap && akt[0] <= (xMin + x2) + overlap) {
                     cutter.add(akt[0], akt[1], this.saveAvg);
                 }
-                if (akt[0] < xMin + x1 + overlap) {
-                    old.add(akt[0], akt[1], this.saveAvg);
-                }
-                if (akt[0] > (xMin + x2) - overlap) {
-                    old.add(akt[0] - Math.max(0,(x2 - x1)-2*overlap), akt[1], this.saveAvg);
-                }
-
-            }
-
-        } else {
-            for (int i = 0; i < getSize(); i++) {
-                int[] akt = elementAt(i);
-                if (akt[0] >= xMin + x1 - overlap && akt[0] <= (xMin + x2) + overlap) {
+//                if (pre!=null&&akt[0] < xMin + x1 + overlap) {
+//                    pre.add(akt[0], akt[1], this.saveAvg);
+//                }else if(pre==null&&akt[0] < xMin + x1 + overlap){
+//                    cutter.add(akt[0], akt[1], this.saveAvg);
+//                }
+//                if (post!=null&&akt[0] > (xMin + x2) - overlap) {
+//                    post.add(akt[0], akt[1], this.saveAvg);
+//                }else if (post==null&&akt[0] > (xMin + x2) - overlap){
+//                    cutter.add(akt[0], akt[1], this.saveAvg);
+//                }
+                if (pre!=null&&akt[0] < xMin + x1) {
+                    pre.add(akt[0], akt[1], this.saveAvg);
+                }else if(pre==null&&akt[0] < xMin + x1){
                     cutter.add(akt[0], akt[1], this.saveAvg);
                 }
-                if (akt[0] < xMin + x1 + overlap) {
-                    old.add(akt[0] + Math.max(0,(x2 - x1)-2*overlap), akt[1], this.saveAvg);
-                }
-                if (akt[0] > (xMin + x2) - overlap) {
-                    old.add(akt[0], akt[1], this.saveAvg);
+                if (post!=null&&akt[0] > (xMin + x2)) {
+                    post.add(akt[0], akt[1], this.saveAvg);
+                }else if (post==null&&akt[0] > (xMin + x2)){
+                    cutter.add(akt[0], akt[1], this.saveAvg);
                 }
 
             }
-        }
-        return new PixelObject[] { cutter, old };
+
+      
+        return new PixelObject[] {pre, cutter, post };
     }
 }

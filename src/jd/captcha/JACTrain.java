@@ -47,7 +47,7 @@ public class JACTrain {
 
         String methodsPath=UTILITIES.getFullPath(new String[] { JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath(), "jd", "captcha", "methods"});
         
-        String hoster="rapidshare.com";
+        String hoster="fast-load.com";
 
         JAntiCaptcha jac= new JAntiCaptcha(methodsPath,hoster);
         //jac.runTestMode(new File("1186941165349_captcha.jpg"));
@@ -55,8 +55,12 @@ public class JACTrain {
      
        // jac.setShowDebugGui(true);
       // jac.showPreparedCaptcha(new File("/home/dwd/.jd_home/captchas/datenklo.net/08.01.2008_18.08.52.gif"));
-      jac.trainAllCaptchas("C:\\Users\\coalado\\.jd_home\\jd\\captcha\\methods\\"+hoster+"\\captchas");
-       // jac.saveMTHFile();
+      
+        //jac.trainCaptcha(new File("C:/Users/coalado/.jd_home/jd/captcha/methods/"+hoster+"/captchas/"+"bad_captcha23_04_2008_23_40_01"+".jpg"), 4);
+        jac.trainAllCaptchas("C:\\Users\\coalado\\.jd_home\\jd\\captcha\\methods\\"+hoster+"\\captchas");
+      
+      
+      // jac.saveMTHFile();
         logger.info("Training Ende");
         //jac.addLetterMap();
            // jac.saveMTHFile();

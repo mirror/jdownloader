@@ -36,6 +36,7 @@ import javax.swing.table.TableColumn;
 import javax.swing.tree.TreePath;
 
 import jd.JDFileFilter;
+import jd.config.MenuItem;
 import jd.config.Property;
 import jd.event.ControlEvent;
 import jd.gui.skins.simple.DownloadInfo;
@@ -426,15 +427,16 @@ if(i>0){
                 JMenu packagePopup = new JMenu(JDLocale.L("gui.table.contextmenu.packagesubmenu", "Paket"));
                 JMenu pluginPopup = new JMenu(JDLocale.L("gui.table.contextmenu.pluginsubmenu", "Plugin")+" ("+plg.getPluginName()+")");
                 
-                String next1;
-                ArrayList<String> pluginMenuEntries = plg.createMenuitems();
+                MenuItem next1;
+                ArrayList<MenuItem> pluginMenuEntries = plg.createMenuitems();
                 if(pluginMenuEntries!=null)
-                for (Iterator<String> it1 = pluginMenuEntries.iterator(); it1.hasNext();) {
+                for (Iterator<MenuItem> it1 = pluginMenuEntries.iterator(); it1.hasNext();) {
                     next1 = it1.next();
 
-                    JMenuItem m = new JMenuItem(next1);
-                    m.addActionListener(plg);
-                    pluginPopup.add(m);
+
+                   
+                    pluginPopup.add(SimpleGUI.getJMenuItem(next1));
+                    
                 }
                 
                 if(pluginMenuEntries!=null)

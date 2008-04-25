@@ -26,6 +26,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.Vector;
 
@@ -44,8 +45,6 @@ import jd.gui.UIInterface;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
-
-import java.util.Collections;
 
 public class ConfigPanelPluginForDecrypt extends ConfigPanel implements
 		ActionListener, MouseListener {

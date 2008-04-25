@@ -26,7 +26,6 @@ import jd.config.Configuration;
 import jd.config.Property;
 import jd.controlling.JDController;
 import jd.event.ControlEvent;
-
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 

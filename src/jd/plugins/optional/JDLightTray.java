@@ -27,6 +27,8 @@ import java.awt.event.MouseListener;
 import java.util.ArrayList;
 
 import javax.swing.SwingUtilities;
+
+import jd.config.MenuItem;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.plugins.PluginOptional;
 import jd.utils.JDLocale;
@@ -99,7 +101,7 @@ public class JDLightTray extends PluginOptional implements MouseListener {
     }
 
     @Override
-    public ArrayList<String> createMenuitems() {
+    public ArrayList<MenuItem> createMenuitems() {
         return null;
     }
 

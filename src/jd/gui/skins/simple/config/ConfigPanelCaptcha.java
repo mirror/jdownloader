@@ -123,7 +123,7 @@ public class ConfigPanelCaptcha extends ConfigPanel implements MouseListener, Ac
         
         
         addGUIConfigEntry(gce);
-        gce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, JDUtilities.getSubConfig("JAC"), Configuration.AUTOTRAIN_SHOW_TIMEOUT, JDLocale.L("gui.config.captcha.train.show_timeout", "Countdown für das Eingabefenster"), 0, 600).setDefaultValue(20).setExpertEntry(true));
+        gce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, JDUtilities.getSubConfig("JAC"), Configuration.JAC_SHOW_TIMEOUT, JDLocale.L("gui.config.captcha.train.show_timeout", "Anzeigedauer des Eingabefensters"), 0, 600).setDefaultValue(20).setExpertEntry(true));
         addGUIConfigEntry(gce);
 
         // ce= new GUIConfigEntry( new ConfigEntry(ConfigContainer.TYPE_SPINNER,

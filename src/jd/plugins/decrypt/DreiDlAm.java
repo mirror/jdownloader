@@ -17,17 +17,17 @@
 
 package jd.plugins.decrypt;
 
+import java.io.File;
+import java.io.IOException;
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.Vector;
+import java.util.regex.Pattern;
+
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
-
-import java.io.File;
-import java.io.IOException;
-import java.net.URL;
-import java.util.Vector;
-import java.util.ArrayList;
-import java.util.regex.Pattern;
 
 
 public class DreiDlAm extends PluginForDecrypt {

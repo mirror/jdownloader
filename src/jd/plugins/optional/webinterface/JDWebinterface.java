@@ -22,6 +22,7 @@ import java.util.ArrayList;
 
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
+import jd.config.MenuItem;
 import jd.config.SubConfiguration;
 import jd.plugins.PluginOptional;
 import jd.utils.JDLocale;
@@ -96,7 +97,7 @@ public class JDWebinterface extends PluginOptional  {
     }
 
     @Override
-    public ArrayList<String> createMenuitems() {
+    public ArrayList<MenuItem> createMenuitems() {
         // TODO Auto-generated method stub
         return null;
     }

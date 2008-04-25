@@ -136,7 +136,7 @@ public class CaptchaDialog extends JDialog implements ActionListener {
         }
         else {
 
-            final int countdown = JDUtilities.getSubConfig("JAC").getIntegerProperty(Configuration.AUTOTRAIN_SHOW_TIMEOUT, 20);
+            final int countdown = Math.max(2, JDUtilities.getSubConfig("JAC").getIntegerProperty(Configuration.JAC_SHOW_TIMEOUT, 20));
             this.countdownThread=new Thread() {
 
                 public void run() {

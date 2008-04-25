@@ -11,7 +11,6 @@ import javax.swing.JTable;
 import javax.swing.TransferHandler;
 import javax.swing.tree.TreePath;
 
-import jd.gui.skins.simple.SimpleGUI;
 import jd.gui.skins.simple.components.HTMLTooltip;
 import jd.plugins.DownloadLink;
 

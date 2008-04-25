@@ -29,10 +29,10 @@
 */
 
 package jd.plugins.optional.webinterface.template.Tmpl.Element;
-import java.util.Vector;
-import java.util.Hashtable;
 import java.util.Enumeration;
+import java.util.Hashtable;
 import java.util.NoSuchElementException;
+import java.util.Vector;
 
 public class Conditional extends Element
 {

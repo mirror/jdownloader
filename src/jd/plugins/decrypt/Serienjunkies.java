@@ -16,8 +16,6 @@
 
 package jd.plugins.decrypt;
 
-import jd.plugins.DownloadLink;
-
 import java.awt.BorderLayout;
 import java.awt.Dialog;
 import java.awt.GridBagConstraints;
@@ -42,6 +40,7 @@ import javax.swing.JPanel;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.gui.skins.simple.SimpleGUI;
+import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginStep;
 import jd.plugins.Regexp;

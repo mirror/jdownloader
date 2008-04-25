@@ -51,7 +51,7 @@ public class RapidshareCom {
         if (lcs != null && lcs.size() > 0) {
             for (Iterator<LetterComperator> it = lcs.iterator(); it.hasNext();) {
                 LetterComperator next = it.next();
-                logger.info("--> "+next.getDecodedValue()+" : " + next + "<< ");
+                logger.info("--> "+next.getDecodedValue());
                 count += next.getValityPercent() >= 60.0 ? 1 : 0;
             }
 
@@ -90,7 +90,7 @@ public class RapidshareCom {
             }
             return;
         }
-        //if (true) return;
+       if (true) return;
         final HashMap<LetterComperator, LetterComperator> map = new HashMap<LetterComperator, LetterComperator>();
 
         String methodsPath = UTILITIES.getFullPath(new String[] { JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath(), "jd", "captcha", "methods" });

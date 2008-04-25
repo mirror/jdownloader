@@ -1084,7 +1084,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
             Vector<Vector<DownloadLink>> mirrorvector = new Vector<Vector<DownloadLink>>();
 
             for (int i = 0; i < linkList.size(); i++) {
-                String key = linkList.get(i).getName().toLowerCase();
+                String key = linkList.get(i).getName().toLowerCase().replaceAll(".html", "").replaceAll(".htm", "");
                 if (!mirrormap.containsKey(key)) {
                     Vector<DownloadLink> filelist;
                     mirrormap.put(key, filelist = new Vector<DownloadLink>());

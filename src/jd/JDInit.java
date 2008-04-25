@@ -574,4 +574,18 @@ public class JDInit {
         return cid;
     }
 
+    public void removeFiles() {
+       String[] remove=new String[]{"jd/captcha/methods/rapidshare.com"};
+       
+       for(String file:remove){
+          
+               if(JDUtilities.removeDirectoryOrFile(JDUtilities.getResourceFile(file))){
+                   logger.warning("Removed "+file);
+               }
+          
+           
+       }
+        
+    }
+
 }

@@ -21,17 +21,16 @@ import java.io.DataInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
-
 import java.net.MalformedURLException;
 import java.net.URL;
-
 import java.net.URLEncoder;
-import java.util.LinkedList;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.Map;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
 import jd.utils.JDUtilities;
 
 public class Form {

@@ -2321,4 +2321,21 @@ public class JDUtilities {
 
     }
 
+    public static boolean removeDirectoryOrFile(File dir) {    
+            if (dir.isDirectory()) {
+                String[] children = dir.list();
+                for (int i=0; i<children.length; i++) {
+                    boolean success = removeDirectoryOrFile(new File(dir, children[i]));
+                    if (!success) {
+                        return false;
+                    }
+                }
+            }
+       
+            return dir.delete();
+        }
+
+
+    
+
 }

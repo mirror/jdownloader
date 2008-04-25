@@ -30,7 +30,6 @@ import javax.swing.JButton;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
 
-
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 

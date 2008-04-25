@@ -33,11 +33,13 @@ import java.util.Vector;
 import java.util.logging.Logger;
 
 import jd.captcha.JAntiCaptcha;
+import jd.captcha.LetterComperator;
 import jd.captcha.configuration.Property;
 import jd.captcha.gui.BasicWindow;
 import jd.captcha.gui.ScrollPaneWindow;
 import jd.captcha.pixelobject.PixelObject;
 import jd.captcha.utils.UTILITIES;
+import jd.utils.JDUtilities;
 
 import com.sun.image.codec.jpeg.ImageFormatException;
 import com.sun.image.codec.jpeg.JPEGCodec;
@@ -1593,18 +1595,18 @@ public class PixelGrid extends Property {
 
     }
 
-    public void desin(double maxx, double omegax, double phix, double maxy, double omegay, double phiy) {
+    public void rsDesin(double maxx, double omegax, double phix, double maxy, double omegay, double phiy) {
         int shift;
         omegax = 2 * Math.PI / omegax;
         omegay = 2 * Math.PI / omegay;
-if(owner.getJas().getInteger("desinvariant")>=4){
-    logger.warning("Entzerren fehlgeschlagen... versuche es ohne");
-    return;
-}
+        if (owner.getJas().getInteger("desinvariant") >= 4) {
+            logger.warning("Entzerren fehlgeschlagen... versuche es ohne");
+            return;
+        }
         int bestArea = 0;
         int[][] bestGrid = null;
         final HashMap<int[][], Integer> map = new HashMap<int[][], Integer>();
-        Vector<int[][]> sorter = new  Vector<int[][]>();
+        Vector<int[][]> sorter = new Vector<int[][]>();
         // for (int phix = (int)phixx*-1; phix <= phixx; phix++) {
         // for (int phiy = (int)phiyy*-1; phiy <= phiyy; phiy++) {
         all: for (int ax = 0; ax < 2; ax++) {
@@ -1621,8 +1623,7 @@ if(owner.getJas().getInteger("desinvariant")>=4){
 
                         tmp[x][y] = (x + shift < getWidth() && x + shift >= 0) ? grid[x + shift][y] : 0xFF;
                     }
-                    // grid[294 + shift][y] = 0xff0000 + 0x00ff00 * (ay == 0 ?
-                    // -1 : 1);
+                    tmp[50 + shift][y] = 0xff0000 + 0x00ff00 * (ay == 0 ? -1 : 1);
 
                 }
                 for (int x = 0; x < getWidth(); x++) {
@@ -1633,45 +1634,82 @@ if(owner.getJas().getInteger("desinvariant")>=4){
 
                         tmp2[x][y] = (y + shift < getHeight() && y + shift >= 0) ? tmp[x][y + shift] : 0xFF;
                     }
-                    // grid[x][63 + shift] = 0xff0000 + 0x00ff00 * (ax == 0 ? -1
-                    // : 1);
+                    tmp2[x][63 + shift] = 0xff0000 + 0x00ff00 * (ax == 0 ? -1 : 1);
 
                 }
                 int[] a = getDimension(tmp2);
                 Integer i = new Integer(a[0] + a[1]);
                 sorter.add(tmp2);
-                map.put( tmp2,i);
-                //PixelGrid p = new PixelGrid(getWidth(),getHeight());
-                //p.setGrid(tmp2);
-               // BasicWindow.showImage(p.getImage(),i+"");
-
+                map.put(tmp2, i);
+                // PixelGrid p = new PixelGrid(getWidth(),getHeight());
+                // p.setGrid(tmp2);
+                // BasicWindow.showImage(p.getImage(),i+"");
 
             }
         }
-       
+
         // }
         // }
-Collections.sort(sorter, new Comparator<Object>(){
-    public int compare( Object a,  Object b){
-       return map.get(a).compareTo(map.get(b));
-        
-    }
-    
-});
-     logger.info("USE VARIANT: "+owner.getJas().getInteger("desinvariant"));
-        this.setGrid(sorter.get(owner.getJas().getInteger("desinvariant")));
-        
-        
-        
-        //BasicWindow.showImage(this.getImage(), "USE VARIANT: "+owner.getJas().getInteger("desinvariant")+" : "+sorter.get(owner.getJas().getInteger("desinvariant")));
+        Collections.sort(sorter, new Comparator<Object>() {
+            public int compare(Object a, Object b) {
+                return map.get(a).compareTo(map.get(b));
+
+            }
+
+        });
+        Vector<LetterComperator> sorted = new Vector<LetterComperator>();
+        String methodsPath = UTILITIES.getFullPath(new String[] { JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath(), "jd", "captcha", "methods" });
+        String hoster = "rscat.com";
+
+        JAntiCaptcha jac = new JAntiCaptcha(methodsPath, hoster);
+        jac.getJas().set("preScanFilter", 40);
+        jac.getJas().set("LetterSearchLimitPerfectPercent", 0);
+
+        jac.getJas().set("coverageFaktorAWeight", 0.0);
+        jac.getJas().set("scanstepy", 2);
+        for (Iterator<int[][]> it = sorter.iterator(); it.hasNext();) {
+            int[][] next = it.next();
+            Letter l = new Letter();
+
+            l.setOwner(owner);
+           // LetterComperator.CREATEINTERSECTIONLETTER = true;
+           // jac.setShowDebugGui(true);
+            l.setGridCopy(next, 0, 0, PixelGrid.getGridWidth(next) - 300, 0);
+            l.setProperty("org", next);
+             if (owner.isShowDebugGui()) BasicWindow.showImage(l.getImage(), "pre");
+
+            // l.crop(0, 0, l.getWidth()-80, 0);
+            l.clean();
+            // if (owner.isShowDebugGui()) BasicWindow.showImage(l.getImage(),
+            // "post");
+            @SuppressWarnings("unused")
+            LetterComperator lc = jac.getLetter(l);
+            int o = 0;
+            do {
+                if(o == sorted.size()){
+                    sorted.add( lc);  
+                    break;
+                }
+                if (  sorted.get(o).getValityPercent() > lc.getValityPercent()) {
+                    sorted.add(0, lc);
+                    break;
+                }
+                o++;
+            } while (true);
+
+        }
+
+        logger.info("USE VARIANT: " + owner.getJas().getInteger("desinvariant"));
+        this.setGrid((int[][]) sorted.get(owner.getJas().getInteger("desinvariant")).getA().getProperty("org"));
+
+        if (owner.isShowDebugGui()) BasicWindow.showImage(this.getImage(), "USE VARIANT: " + owner.getJas().getInteger("desinvariant"));
 
     }
 
     public void setOrgGrid(int[][] grid) {
-      this.tmpGrid=grid;
-        
-    }
+        this.tmpGrid = grid;
 
+    }
 
     /**
      * Erstellt das Objekt, ausgehend von einem Pixel. rekursive Funktion!
@@ -1734,4 +1772,29 @@ Collections.sort(sorter, new Comparator<Object>(){
         return grid;
     }
 
+    public static int getGridHeight(int[][] grid) {
+        if (grid.length == 0) return 0;
+        return grid[0].length;
+    }
+
+    public static int getGridWidth(int[][] grid) {
+        return grid.length;
+    }
+
+    public void setGridCopy(int[][] grid, int leftPadding, int topPadding, int rightPadding, int bottomPadding) {
+        int newWidth = getGridWidth(grid) - (leftPadding + rightPadding);
+        int newHeight = getGridHeight(grid) - (topPadding + bottomPadding);
+
+        int[][] newGrid = new int[newWidth][newHeight];
+        location[0] = 0;
+        location[1] = 0;
+        for (int x = 0; x < newWidth; x++) {
+            for (int y = 0; y < newHeight; y++) {
+                newGrid[x][y] = grid[x + leftPadding][y + topPadding];
+            }
+        }
+
+        this.grid = newGrid;
+
+    }
 }

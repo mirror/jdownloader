@@ -17,9 +17,9 @@
 
 package jd.plugins;
 
+import java.awt.event.ActionListener;
 import java.io.File;
 import java.util.regex.Pattern;
-import java.awt.event.ActionListener;
 
 import jd.event.ControlEvent;
 import jd.event.ControlListener;

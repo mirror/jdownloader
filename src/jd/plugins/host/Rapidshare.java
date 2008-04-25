@@ -78,6 +78,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
+import java.lang.reflect.Array;
 import java.net.MalformedURLException;
 import java.net.SocketTimeoutException;
 import java.net.URL;
@@ -93,6 +94,8 @@ import java.util.regex.Pattern;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.Configuration;
+import jd.config.MenuItem;
+import jd.controlling.ProgressController;
 import jd.event.ControlEvent;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTPConnection;
@@ -162,7 +165,7 @@ public class Rapidshare extends PluginForHost {
     private static long END_OF_DOWNLOAD_LIMIT = 0;
 
     private static final String captchaWrong = "Access code wrong";
-    
+
     /**
      * Wenn Rapidshare ihre happyhour hat
      */
@@ -276,6 +279,15 @@ public class Rapidshare extends PluginForHost {
 
     private static final String PATTERN_ERROR_OCCURED = "<center><h2>Ein Fehler ist aufgetreten:</h2><p><font color=\"°\"><b><!-- ° -->°</b></font></p><p";
     private static final String PATTERN_ERROR_2_OCCURED = "<script>alert(\"°\")</script>";
+
+    private static final int ACTION_TOGGLE_PREMIUM_1 = 1;
+
+    private static final int ACTION_TOGGLE_PREMIUM_2 = 2;
+    private static final int ACTION_TOGGLE_PREMIUM_3 = 3;
+    private static final int ACTION_INFO_PREMIUM_1 = 4;
+    private static final int ACTION_INFO_PREMIUM_2 = 5;
+    private static final int ACTION_INFO_PREMIUM_3 = 6;
+
     private static int ERRORS = 0;
 
     @Override
@@ -389,43 +401,155 @@ public class Rapidshare extends PluginForHost {
         return null;
     }
 
-    public ArrayList<String> createMenuitems() {
-        ArrayList<String> al = new ArrayList<String>();
-        if (this.getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM, false)) {
-            al.add(":1: " + JDLocale.L("plugins.rapidshare.menu.enable_premium", "Enable Premiumaccount ") + this.getProperties().getProperty(PROPERTY_PREMIUM_USER));
+    public ArrayList<MenuItem> createMenuitems() {
+        ArrayList<MenuItem> al = new ArrayList<MenuItem>();
+
+        MenuItem premium = new MenuItem(MenuItem.CONTAINER, JDLocale.L("plugins.rapidshare.menu.premium", "Premiumaccounts"), 0);
+
+        al.add(premium);
+        MenuItem account;
+        MenuItem m;
+        // account1
+        account = new MenuItem(MenuItem.CONTAINER, JDLocale.L("plugins.rapidshare.menu.premium1", "1. Account (") + this.getProperties().getProperty(PROPERTY_PREMIUM_USER) + ")", 0);
+
+        if (!this.getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM, false)) {
+            m = new MenuItem(MenuItem.TOGGLE, JDLocale.L("plugins.rapidshare.menu.enable_premium", "Aktivieren"), ACTION_TOGGLE_PREMIUM_1);
+            m.setSelected(false);
+
         } else {
-            al.add(":1: " + JDLocale.L("plugins.rapidshare.menu.disable_premium", "Disable Premiumaccount ") + this.getProperties().getProperty(PROPERTY_PREMIUM_USER));
+            m = new MenuItem(MenuItem.TOGGLE, JDLocale.L("plugins.rapidshare.menu.disable_premium", "Deaktivieren"), ACTION_TOGGLE_PREMIUM_1);
+            m.setSelected(true);
+
         }
-        if (this.getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM_2, false)) {
-            al.add(":2: " + JDLocale.L("plugins.rapidshare.menu.enable_premium", "Enable Premiumaccount ") + this.getProperties().getProperty(PROPERTY_PREMIUM_USER_2));
+        m.setActionListener(this);
+
+        account.addMenuItem(m);
+        m = new MenuItem(JDLocale.L("plugins.rapidshare.menu.premiumInfo", "Accountinformationen abrufen"), ACTION_INFO_PREMIUM_1);
+        m.setActionListener(this);
+
+        account.addMenuItem(m);
+        premium.addMenuItem(account);
+
+        // Account 2
+        account = new MenuItem(MenuItem.CONTAINER, JDLocale.L("plugins.rapidshare.menu.premium2", "2. Account (") + this.getProperties().getProperty(PROPERTY_PREMIUM_USER_2) + ")", 0);
+
+        if (!this.getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM_2, false)) {
+            m = new MenuItem(MenuItem.TOGGLE, JDLocale.L("plugins.rapidshare.menu.enable_premium", "Aktivieren"), ACTION_TOGGLE_PREMIUM_2);
+            m.setSelected(false);
+
         } else {
-            al.add(":2: " + JDLocale.L("plugins.rapidshare.menu.disable_premium", "Disable Premiumaccount ") + this.getProperties().getProperty(PROPERTY_PREMIUM_USER_2));
+            m = new MenuItem(MenuItem.TOGGLE, JDLocale.L("plugins.rapidshare.menu.disable_premium", "Deaktivieren"), ACTION_TOGGLE_PREMIUM_2);
+            m.setSelected(true);
+
         }
-        if (this.getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM_3, false)) {
-            al.add(":3: " + JDLocale.L("plugins.rapidshare.menu.enable_premium", "Enable Premiumaccount ") + this.getProperties().getProperty(PROPERTY_PREMIUM_USER_3));
+        m.setActionListener(this);
+
+        account.addMenuItem(m);
+        m = new MenuItem(JDLocale.L("plugins.rapidshare.menu.premiumInfo", "Accountinformationen abrufen"), ACTION_INFO_PREMIUM_2);
+        m.setActionListener(this);
+
+        account.addMenuItem(m);
+        premium.addMenuItem(account);
+        // Account 3
+        account = new MenuItem(MenuItem.CONTAINER, JDLocale.L("plugins.rapidshare.menu.premium3", "3. Account (") + this.getProperties().getProperty(PROPERTY_PREMIUM_USER_3) + ")", 0);
+
+        if (!this.getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM_3, false)) {
+            m = new MenuItem(MenuItem.TOGGLE, JDLocale.L("plugins.rapidshare.menu.enable_premium", "Aktivieren"), ACTION_TOGGLE_PREMIUM_3);
+            m.setSelected(false);
+
         } else {
-            al.add(":4: " + JDLocale.L("plugins.rapidshare.menu.disable_premium", "Disable Premiumaccount ") + this.getProperties().getProperty(PROPERTY_PREMIUM_USER_3));
+            m = new MenuItem(MenuItem.TOGGLE, JDLocale.L("plugins.rapidshare.menu.disable_premium", "Deaktivieren"), ACTION_TOGGLE_PREMIUM_3);
+            m.setSelected(true);
+
         }
+        m.setActionListener(this);
+        m.setProperty("id", 3);
+        account.addMenuItem(m);
+        m = new MenuItem(JDLocale.L("plugins.rapidshare.menu.premiumInfo", "Accountinformationen abrufen"), ACTION_INFO_PREMIUM_3);
+        m.setActionListener(this);
+
+        account.addMenuItem(m);
+        premium.addMenuItem(account);
 
         return al;
     }
 
     public void actionPerformed(ActionEvent e) {
-        int account = JDUtilities.filterInt(Plugin.getSimpleMatch(e.getActionCommand(), ":°:", 0));
-        switch (account) {
-        case 1:
+        MenuItem mi = (MenuItem) e.getSource();
+
+        switch (mi.getActionID()) {
+        case Rapidshare.ACTION_TOGGLE_PREMIUM_1:
             getProperties().setProperty(PROPERTY_USE_PREMIUM, !getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM, false));
             break;
-        case 2:
+        case Rapidshare.ACTION_TOGGLE_PREMIUM_2:
             getProperties().setProperty(PROPERTY_USE_PREMIUM_2, !getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM_2, false));
 
             break;
-        case 3:
+        case Rapidshare.ACTION_TOGGLE_PREMIUM_3:
             getProperties().setProperty(PROPERTY_USE_PREMIUM_3, !getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM_3, false));
 
             break;
+        case Rapidshare.ACTION_INFO_PREMIUM_1:
+            showInfo(1);
+            break;
+        case Rapidshare.ACTION_INFO_PREMIUM_2:
+            showInfo(2);
+            break;
+        case Rapidshare.ACTION_INFO_PREMIUM_3:
+            showInfo(3);
+            break;
         }
         return;
+    }
+
+    private void showInfo(final int i) {
+        new Thread() {
+            public void run() {
+
+                String user = null;
+                String pass = null;
+                switch (i) {
+                case 1:
+                    user = (String) getProperties().getProperty(PROPERTY_PREMIUM_USER);
+                    pass = (String) getProperties().getProperty(PROPERTY_PREMIUM_PASS);
+                    break;
+                case 2:
+                    user = (String) getProperties().getProperty(PROPERTY_PREMIUM_USER_2);
+                    pass = (String) getProperties().getProperty(PROPERTY_PREMIUM_PASS_2);
+                    break;
+                case 3:
+                    user = (String) getProperties().getProperty(PROPERTY_PREMIUM_USER_3);
+                    pass = (String) getProperties().getProperty(PROPERTY_PREMIUM_PASS_3);
+                    break;
+                }
+                user = JDUtilities.urlEncode(user.trim());
+                pass = JDUtilities.urlEncode(pass.trim());
+                String url = "https://ssl.rapidshare.com/cgi-bin/premiumzone.cgi?login=" + user + "&password=" + pass;
+                ProgressController progress = new ProgressController(JDLocale.L("plugins.hoster.rapidshare.com.loadinfo", "Lade Rs.com Account Informationen: ") + user, 5);
+
+                try {
+                    progress.increase(1);
+                    RequestInfo ri = Plugin.getRequest(new URL(url));
+                    progress.increase(1);
+                   // logger.info(ri.getHtmlCode());
+                    String html = null;
+                    if (ri.containsHTML("Ein Fehler ist aufgetreten")) {
+                        html = JDLocale.L("plugins.hoster.rapidshare.com.info.error", "<font color='red'><p>Account nicht gefunden</p></font>");
+                    } else {
+
+                       String[] info = Plugin.getSimpleMatches(ri.getHtmlCode(), "<p align=\"justify\">Hallo, <b>°</b>! Dein Premium-Account ist g&uuml;ltig bis °. Wenn du deinen Account verl&auml;ngern willst, klicke einfach auf \"Account verl&auml;ngern\".°Du hast bis jetzt <b>°</b> <a href=\"http://rapidshare.com/faq.html\" target=\"_blank\">Premium-Punkte</a> gesammelt. Um Dateien mit deinem Premium-Account runterzuladen, musst du die URL der Datei kennen und auf diese klicken.°Um die Privatsph&auml;re zu wahren, bieten wir keine Suchmaschine an (Siehe FAQ). Deine Uploads sind bei uns also sicher und werden nur von den Leuten runtergeladen, denen du die URL gibst. In den letzten 5 Tagen hast du <b>°</b>°runtergeladen.<br>Die Serverzeit beim Erstellen dieser Seite war: <b>°</b></p><div id=\"expiredwarning\">°Belegter Speicher: <b>°</b> durch ° Dateien. ");
+                        
+                    html=String.format("<link href='http://jdownloader.ath.cx/jdcss.css' rel='stylesheet' type='text/css' /><div style='width:534px;height;200px'><h2>Accountinformation</h2><table width='100%%' ><tr><th >Valid until</th><td>%s</td></tr><tr><th >Premiumpoints</th><td>%s</td></tr><tr><th >Current traffic</th><td>%s</td></tr><tr><th >Used space</th><td>%s</td></tr><tr><th >Files</th><td>%s</td></tr></table></div>",info[1],info[3],info[5],info[9],info[10]);
+                    }
+                    JDUtilities.getGUI().showHTMLDialog(String.format(JDLocale.L("plugins.hoster.rapidshare.com.info.title", "Accountinfo für %s"), user), html);
+                } catch (MalformedURLException e) {
+                } catch (IOException e) {
+                }
+
+                progress.finalize();
+            }
+        }.start();
+        ;
     }
 
     private void setConfigElements() {
@@ -713,8 +837,8 @@ public class Rapidshare extends PluginForHost {
                 ticketCode = JDUtilities.htmlDecode(getSimpleMatch(requestInfo.getHtmlCode(), ticketCodePattern, 0));
                 ticketCode = requestInfo.getHtmlCode() + " " + ticketCode;
                 captchaAddress = getFirstMatch(ticketCode, patternForCaptcha, 1);
-                
-                if(requestInfo.containsHTML(happyhour)) {
+
+                if (requestInfo.containsHTML(happyhour)) {
                     ticketCode = requestInfo.getHtmlCode();
                     happyhourboolean = true;
                     logger.severe("Happy hour");
@@ -722,52 +846,52 @@ public class Rapidshare extends PluginForHost {
                     return step;
                 }
                 happyhourboolean = false;
-                    if (captchaAddress == null) {
-                        logger.severe("Captcha Address not found");
-                        downloadLink.setStatus(DownloadLink.STATUS_ERROR_CAPTCHA_IMAGEERROR);
-                        step.setStatus(PluginStep.STATUS_ERROR);
-                        return step;
-                    }
-                    this.captchaFile = this.getLocalCaptchaFile(this);
-                    if (!JDUtilities.download(captchaFile, captchaAddress) || !captchaFile.exists()) {
-                        logger.severe("Captcha Download fehlgeschlagen: " + captchaAddress);
-                        step.setParameter(null);
-                        step.setStatus(PluginStep.STATUS_ERROR);
-                        downloadLink.setStatus(DownloadLink.STATUS_ERROR_CAPTCHA_IMAGEERROR);
-                        return step;
-                    }
-                    long timer = System.currentTimeMillis();
-    
-                    if (doBotCheck(captchaFile)) {
-    
-                        downloadLink.setStatus(DownloadLink.STATUS_ERROR_BOT_DETECTED);
-                        step.setStatus(PluginStep.STATUS_ERROR);
-                        step.setParameter(null);
-                        break;
-                    }
-                    downloadLink.setStatusText(JDLocale.L("plugins.rapidshare.captcha","OCR & Wartezeit"));
-                    this.fireControlEvent(ControlEvent.CONTROL_DOWNLOADLINKS_CHANGED, downloadLink);
-                    
-                    if (wait != null) {
-                        long pendingTime = Long.parseLong(wait);
+                if (captchaAddress == null) {
+                    logger.severe("Captcha Address not found");
+                    downloadLink.setStatus(DownloadLink.STATUS_ERROR_CAPTCHA_IMAGEERROR);
+                    step.setStatus(PluginStep.STATUS_ERROR);
+                    return step;
+                }
+                this.captchaFile = this.getLocalCaptchaFile(this);
+                if (!JDUtilities.download(captchaFile, captchaAddress) || !captchaFile.exists()) {
+                    logger.severe("Captcha Download fehlgeschlagen: " + captchaAddress);
+                    step.setParameter(null);
+                    step.setStatus(PluginStep.STATUS_ERROR);
+                    downloadLink.setStatus(DownloadLink.STATUS_ERROR_CAPTCHA_IMAGEERROR);
+                    return step;
+                }
+                long timer = System.currentTimeMillis();
 
-                        if (getProperties().getIntegerProperty(PROPERTY_INCREASE_TICKET, 0) > 0) {
-                            logger.warning("Waittime increased by JD: " + waitTime + " --> " + (pendingTime + (getProperties().getIntegerProperty(PROPERTY_INCREASE_TICKET, 0) * pendingTime) / 100));
-                        }
-                        pendingTime = (pendingTime + (getProperties().getIntegerProperty(PROPERTY_INCREASE_TICKET, 0) * pendingTime) / 100);
+                if (doBotCheck(captchaFile)) {
+
+                    downloadLink.setStatus(DownloadLink.STATUS_ERROR_BOT_DETECTED);
+                    step.setStatus(PluginStep.STATUS_ERROR);
+                    step.setParameter(null);
+                    break;
+                }
+                downloadLink.setStatusText(JDLocale.L("plugins.rapidshare.captcha", "OCR & Wartezeit"));
+                this.fireControlEvent(ControlEvent.CONTROL_DOWNLOADLINKS_CHANGED, downloadLink);
+
+                if (wait != null) {
+                    long pendingTime = Long.parseLong(wait);
+
+                    if (getProperties().getIntegerProperty(PROPERTY_INCREASE_TICKET, 0) > 0) {
+                        logger.warning("Waittime increased by JD: " + waitTime + " --> " + (pendingTime + (getProperties().getIntegerProperty(PROPERTY_INCREASE_TICKET, 0) * pendingTime) / 100));
+                    }
+                    pendingTime = (pendingTime + (getProperties().getIntegerProperty(PROPERTY_INCREASE_TICKET, 0) * pendingTime) / 100);
 
                     downloadLink.setEndOfWaittime(System.currentTimeMillis() + pendingTime);
-                    }
-                    this.captchaCode = Plugin.getCaptchaCode(captchaFile, this);
-                    timer = System.currentTimeMillis() - timer;
-                    logger.info("captcha detection: " + timer + " ms");
-    
-                    // downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN_RETRY);
-                    // step.setParameter(1000l);
-                    // step.setStatus(PluginStep.STATUS_ERROR);
-    
-                    // if(true)return step;
-                
+                }
+                this.captchaCode = Plugin.getCaptchaCode(captchaFile, this);
+                timer = System.currentTimeMillis() - timer;
+                logger.info("captcha detection: " + timer + " ms");
+
+                // downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN_RETRY);
+                // step.setParameter(1000l);
+                // step.setStatus(PluginStep.STATUS_ERROR);
+
+                // if(true)return step;
+
                 if (wait != null) {
                     long pendingTime = Long.parseLong(wait);
 
@@ -828,14 +952,13 @@ public class Rapidshare extends PluginForHost {
 
             // postTarget=this.getSimpleMatch(ticketCode, dataPattern, 0);
             // actionString=this.getSimpleMatch(ticketCode, dataPattern, 1);
-            if(happyhourboolean) {
+            if (happyhourboolean) {
                 postTarget = getBetween(ticketCode, "form name=\"dl\" action=\"", "\"");
-            }
-            else {
+            } else {
                 postTarget = getSimpleMatch(ticketCode, dataPatternPost, 1);
             }
-            
-            //actionString = getSimpleMatch(ticketCode, dataPatternAction, 0);
+
+            // actionString = getSimpleMatch(ticketCode, dataPatternAction, 0);
             actionString = getBetween(ticketCode, "input type=\"submit\" name=\"actionstring\" value=\"", "\"");
 
             if (postTarget == null) {
@@ -969,10 +1092,9 @@ public class Rapidshare extends PluginForHost {
                         step.setStatus(PluginStep.STATUS_ERROR);
                         return step;
                     }
-                    
-                    if(!happyhourboolean)
-                        JDUtilities.appendInfoToFilename(this, captchaFile, actionString + "_" + captchaCode, true);
-                    
+
+                    if (!happyhourboolean) JDUtilities.appendInfoToFilename(this, captchaFile, actionString + "_" + captchaCode, true);
+
                     happyhourboolean = false;
 
                     return null;
@@ -1683,14 +1805,12 @@ public class Rapidshare extends PluginForHost {
         boolean[] ret = new boolean[urls.length];
         String post = "";
         for (int i = 0; i < urls.length; i++) {
-            
-            
+
             if (!this.canHandle(urls[i])) return null;
-            
+
             if (urls[i].contains("://ssl.") || !urls[i].startsWith("http://rapidshare.com")) {
                 urls[i] = "http://rapidshare.com" + urls[i].substring(urls[i].indexOf("rapidshare.com") + 14);
-                
-              
+
             }
             post += urls[i].trim() + "%0a";
         }

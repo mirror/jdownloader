@@ -18,24 +18,24 @@
 package jd.plugins.optional;
 
 import java.awt.AWTException;
+import java.awt.Color;
+import java.awt.Dimension;
+import java.awt.Point;
 import java.awt.SystemTray;
 import java.awt.Toolkit;
 import java.awt.TrayIcon;
-import java.awt.Dimension;
-import java.awt.Point;
 import java.awt.event.ActionEvent;
 import java.awt.event.MouseAdapter;
-import java.awt.event.MouseMotionListener;
 import java.awt.event.MouseEvent;
-import java.awt.Color;
+import java.awt.event.MouseMotionListener;
 import java.util.ArrayList;
 
-import javax.swing.JPopupMenu;
-import javax.swing.JWindow;
-import javax.swing.JMenuItem;
-import javax.swing.JMenu;
 import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JLabel;
+import javax.swing.JMenu;
+import javax.swing.JMenuItem;
+import javax.swing.JPopupMenu;
+import javax.swing.JWindow;
 import javax.swing.SwingUtilities;
 import javax.swing.event.PopupMenuEvent;
 import javax.swing.event.PopupMenuListener;
@@ -43,13 +43,13 @@ import javax.swing.event.PopupMenuListener;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.Configuration;
+import jd.config.MenuItem;
 import jd.gui.skins.simple.JDAction;
+import jd.gui.skins.simple.SimpleGUI;
 import jd.plugins.PluginOptional;
-
 import jd.utils.JDLocale;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
-import jd.gui.skins.simple.SimpleGUI;
 
 public class JDTrayIcon extends PluginOptional  {
 
@@ -482,7 +482,7 @@ public class JDTrayIcon extends PluginOptional  {
     }
 
     @Override
-    public ArrayList<String> createMenuitems() {
+    public ArrayList<MenuItem> createMenuitems() {
         return null;
     }
 

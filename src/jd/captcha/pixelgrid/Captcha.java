@@ -1148,29 +1148,31 @@ public class Captcha extends PixelGrid {
         if (owner.jas.getBoolean("directLetterDetection")) {
             logger.info("Get directLetterDetection");
             Vector<PixelObject> objectsret = new Vector<PixelObject>();
-            Iterator<PixelObject> iter = objects.iterator();
-            double cfaw = owner.getJas().getDouble("coverageFaktorAWeight");
+
+            double iaww = owner.getJas().getDouble("intersectionAWidthWeight");
             int bx = owner.getJas().getInteger("borderVarianceX");
             int by = owner.getJas().getInteger("borderVarianceY");
-            int ii = 0;
-            while (iter.hasNext()) {
-                PixelObject pixelObject = (PixelObject) iter.next();
-                ii++;
+
+            for (int objectI = 0; objectI < objects.size(); objectI++) {
+                PixelObject pixelObject = objects.get(objectI);
+
                 if (pixelObject.getArea() > minArea * 2) {
-                    owner.getJas().set("coverageFaktorAWeight", cfaw * 2.3);
-                    owner.getJas().set("borderVarianceX", bx * owner.getJas().getInteger("minimumLetterWidth"));
-                    owner.getJas().set("borderVarianceY", by * owner.getJas().getInteger("minimumLetterWidth"));
+                    // owner.getJas().set("coverageFaktorAWeight", cfaw * 2.3);
+                    owner.getJas().set("borderVarianceX", bx * owner.getJas().getInteger("minimumLetterWidth") * 100);
+                    owner.getJas().set("borderVarianceY", by * owner.getJas().getInteger("minimumLetterWidth") * 100);
                     PixelObject current = pixelObject;
                     Letter letter = current.toLetter();
                     LetterComperator resletter = owner.getLetter(letter);
+                    resletter.setValityPercent(resletter.getValityPercent() * 0.75);
                     current.detected = resletter;
                     int b;
-                    Vector<PixelObject> splitObjects = new Vector<PixelObject>();
-                     //BasicWindow.showImage(letter.getImage(), "Letter "+ii+" -"+resletter.getDecodedValue());
-                    while (resletter.getB() != null && !resletter.getDecodedValue().equals("-") && (b = pixelObject.getArea() - resletter.getB().getArea()) > minArea && b > (resletter.getB().getArea() / 3) && resletter.getOffset() != null && resletter.getOffset().length > 0) {
+
+                   //if (owner.isShowDebugGui()) BasicWindow.showImage(letter.getImage(), "Letter " + objectI + " -" + resletter.getDecodedValue());
+                    if (resletter.getB() != null && !resletter.getDecodedValue().equals("-") && (b = pixelObject.getArea() - resletter.getB().getArea()) > minArea && b > (resletter.getB().getArea() / 3) && resletter.getOffset() != null && resletter.getOffset().length > 0) {
                         // int spat = 0;
                         logger.info("dld: got letter: " + resletter.getDecodedValue());
-                        // BasicWindow.showImage(resletter.getB().getImage(), resletter.getDecodedValue());
+                        // BasicWindow.showImage(resletter.getB().getImage(),
+                        // resletter.getDecodedValue());
                         // if (resletter.getOffset()[0] <
                         // resletter.getB().getWidth() / 3)
                         // spat = resletter.getOffset()[0] +
@@ -1178,64 +1180,46 @@ public class Captcha extends PixelGrid {
                         // else
                         // spat = resletter.getOffset()[0];
                         PixelObject[] spobjects = current.cut(resletter.getOffset()[0], resletter.getOffset()[0] + resletter.getB().getWidth(), owner.jas.getInteger("splitPixelObjectsOverlap"));
-                        PixelObject cutter = spobjects[0];
-                        PixelObject rest = spobjects[1];
-                        current = rest;
-                        logger.info("cutted: " + cutter + " - rest: " + rest);
+                        PixelObject cutter = spobjects[1];
+                        PixelObject pre = spobjects[0];
+                        PixelObject post = spobjects[2];
 
-                        // BasicWindow.showImage(cutter.toLetter().getImage(), "cutter");
-                        // BasicWindow.showImage(rest.toLetter().getImage(), "rest");
-                        letter = rest.toLetter();
-                        splitObjects.add(cutter);
+                        if (owner.isShowDebugGui()) BasicWindow.showImage(cutter.toLetter().getImage(), "cutter " + resletter.getDecodedValue());
+
+                        objectsret.add(cutter);
                         cutter.detected = resletter;
-                        resletter.setValityPercent(resletter.getValityPercent() * 0.75);
-                        if (rest.getSize() < 50||rest.getArea()<minArea) {
-                            break;
+                       
+
+                        if (pre!=null&&pre.getArea() > minArea && pre.getSize() > owner.getJas().getInteger("minObjectSize")) {
+                            objects.add(pre);
+                            if (owner.isShowDebugGui()) BasicWindow.showImage(pre.toLetter().getImage(), "pre cut "+resletter.getDecodedValue());
+
+
                         }
-                        letter = rest.toLetter();
-                        resletter = owner.getLetter(letter);
-                        if (resletter.getValityPercent() == 100.0 || resletter.getB() == null || resletter.getDecodedValue().equals("-")) {
-                            // logger.warning("Splitting objects failed");
-                            // splitObjects=null;
-                            break;
-                        } else {
-                            logger.info("GOGO next Objects");
-                            if ((b = pixelObject.getArea() - resletter.getB().getArea()) < minArea) {
-                                logger.info("last");
-                                rest.detected = resletter;
-                                splitObjects.add(rest);
-                                break;
+                        if (post!=null&&post.getArea() > minArea && post.getSize() > owner.getJas().getInteger("minObjectSize")) {
+                            objects.add(post);
+                            if (owner.isShowDebugGui()) BasicWindow.showImage(post.toLetter().getImage(), "post cut "+resletter.getDecodedValue());
 
-                            }
                         }
-
-                    }
-
-                    // if
-                    // (owner.getJas().getBoolean("abortDirectDetectionOnDetectionError")
-                    // && resletter.getValityPercent() == 100.0) {
-                    // logger.warning("Error on direct letter detection
-                    // .abort");
-                    // return null;
-                    // }
-
-                    if (splitObjects != null && splitObjects.size() > 1) {
-                        objectsret.addAll(splitObjects);
-                    } else {
-                        if( current.detected!=null)current.detected.setValityPercent(current.detected.getValityPercent() * 0.75);
+                    }else{
                         objectsret.add(current);
-                        // BasicWindow.showImage(pixelObject.toLetter().getImage(),
-                        // "che "+ii);
+                        if (owner.isShowDebugGui()) BasicWindow.showImage(current.toLetter().getImage(), "normal ext " + resletter.getDecodedValue());
 
                     }
-                    owner.getJas().set("coverageFaktorAWeight", cfaw);
+
+                   // owner.getJas().set("coverageFaktorAWeight", cfaw);
                     owner.getJas().set("borderVarianceX", bx);
                     owner.getJas().set("borderVarianceY", by);
+                }else {
+                    PixelObject current = pixelObject;
+                    Letter letter = current.toLetter();
+                    LetterComperator resletter = owner.getLetter(letter);
+                    current.detected = resletter;
+                    
+                    if (owner.isShowDebugGui()) BasicWindow.showImage(current.toLetter().getImage(), "normal " + resletter.getDecodedValue());
 
-                } else {
-                    objectsret.add(pixelObject);
-                    // BasicWindow.showImage(pixelObject.toLetter().getImage(),
-                    // "def "+ii);
+                    objectsret.add(current);
+                    
                 }
             }
             objects = objectsret;
@@ -1478,7 +1462,7 @@ public class Captcha extends PixelGrid {
     public void cleanWithDetailMask(Captcha mask, int dif) {
 
         int[][] newgrid = new int[getWidth()][getHeight()];
-
+        int[][] test = new int[getWidth()][getHeight()];
         if (mask.getWidth() != getWidth() || mask.getHeight() != getHeight()) {
             if (JAntiCaptcha.isLoggerActive()) logger.info("ERROR Maske und Bild passen nicht zusammmen");
             return;
@@ -1486,6 +1470,7 @@ public class Captcha extends PixelGrid {
         if (JAntiCaptcha.isLoggerActive()) logger.info(dif + "_");
         for (int x = 0; x < getWidth(); x++) {
             for (int y = 0; y < getHeight(); y++) {
+                test[x][y]=Math.abs(mask.getPixelValue(x, y) - getPixelValue(x, y));
                 if (Math.abs(mask.getPixelValue(x, y) - getPixelValue(x, y)) < dif) {
 
                     PixelGrid.setPixelValue(x, y, newgrid, getMaxPixelValue(), this.owner);

@@ -522,6 +522,7 @@ public class Letter extends PixelGrid {
         l.setElementPixel(elementPixel);
         l.clean();
         l.setAngle((int) (angle * 180.0));
+        l.setProperties(this.getProperties());
         // BasicWindow.showImage(l.getImage(), sizeAngle+" angle "+angle+" -
         // "+newWidth+"/"+newHeight+" - "+getWidth()+"/"+getHeight());
 
@@ -881,4 +882,7 @@ int firstChange=0;
         return angle;
     }
 */
+
+
+  
 }

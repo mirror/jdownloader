@@ -54,6 +54,7 @@ import java.util.zip.GZIPInputStream;
 import jd.captcha.pixelgrid.Captcha;
 import jd.config.ConfigContainer;
 import jd.config.Configuration;
+import jd.config.MenuItem;
 import jd.config.Property;
 import jd.event.ControlEvent;
 import jd.unrar.JUnrar;
@@ -421,7 +422,7 @@ public abstract class Plugin implements ActionListener {
 //    private void firePluginDataChanged() {
 //        JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_DOWNLOADLINKS_CHANGED));
 //    }
-    public abstract ArrayList<String> createMenuitems();
+    public abstract ArrayList<MenuItem> createMenuitems();
     /**
      * @author olimex Fügt Map als String mit Trennzeichen zusammen TODO:
      *         auslagern

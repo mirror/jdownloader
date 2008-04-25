@@ -20,6 +20,7 @@ package jd.gui.skins.simple.Link;
 import java.awt.GridLayout;
 import java.net.MalformedURLException;
 import java.net.URL;
+
 import javax.swing.JButton;
 import javax.swing.JFrame;
 

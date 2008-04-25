@@ -16,8 +16,6 @@
 
 package jd.plugins.decrypt;
 
-import jd.plugins.DownloadLink;
-
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
@@ -25,6 +23,7 @@ import java.util.ArrayList;
 import java.util.Vector;
 import java.util.regex.Pattern;
 
+import jd.plugins.DownloadLink;
 import jd.plugins.HTTPConnection;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;

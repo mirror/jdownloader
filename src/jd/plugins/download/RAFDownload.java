@@ -19,10 +19,7 @@ package jd.plugins.download;
 
 import java.io.File;
 import java.io.RandomAccessFile;
-
 import java.nio.channels.FileChannel;
-
-
 
 import jd.config.Configuration;
 import jd.plugins.DownloadLink;

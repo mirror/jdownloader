@@ -24,8 +24,6 @@ import java.util.logging.Level;
 import javax.swing.JFileChooser;
 import javax.swing.JLabel;
 
-
-
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.Configuration;

@@ -20,10 +20,11 @@ package jd.plugins.decrypt;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
-import java.util.Vector;
 import java.util.ArrayList;
+import java.util.Vector;
 import java.util.regex.Pattern;
 
+import jd.plugins.DownloadLink;
 import jd.plugins.Form;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginStep;
@@ -31,7 +32,6 @@ import jd.plugins.Regexp;
 import jd.plugins.RequestInfo;
 import jd.plugins.CRequest.CaptchaInfo;
 import jd.utils.JDUtilities;
-import jd.plugins.DownloadLink;
 
 /**
  * http://stealth.to/?id=13wz0z8lds3nun4dihetpsqgzte4t2

@@ -22,7 +22,6 @@ import java.awt.Component;
 import java.awt.GridBagLayout;
 import java.awt.Image;
 
-
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextField;

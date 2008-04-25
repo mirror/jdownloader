@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.Vector;
 
+import jd.config.MenuItem;
 import jd.controlling.ProgressController;
 import jd.event.ControlEvent;
 import jd.utils.JDUtilities;
@@ -69,7 +70,7 @@ public abstract class PluginForDecrypt extends Plugin implements Comparable {
     //private String decrypterDefaultComment  = null;
 
     protected Vector<String> default_password=new Vector<String>();;
-    public  ArrayList<String> createMenuitems(){
+    public  ArrayList<MenuItem> createMenuitems(){
         return null;
     }
     /**

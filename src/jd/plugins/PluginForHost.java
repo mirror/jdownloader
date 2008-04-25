@@ -24,6 +24,7 @@ import java.util.ArrayList;
 import java.util.Vector;
 
 import jd.config.Configuration;
+import jd.config.MenuItem;
 import jd.plugins.download.DownloadInterface;
 import jd.plugins.download.RAFDownload;
 import jd.utils.JDUtilities;
@@ -48,7 +49,7 @@ public abstract class PluginForHost extends Plugin {
      * etc)
      */
     public abstract void reset();
-    public  ArrayList<String> createMenuitems(){
+    public  ArrayList<MenuItem> createMenuitems(){
         return null;
     }
     /**

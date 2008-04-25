@@ -19,10 +19,8 @@ package jd.plugins.host;
 
 import java.io.File;
 import java.io.IOException;
-
 import java.net.MalformedURLException;
 import java.net.URL;
-
 import java.util.regex.Pattern;
 
 import jd.plugins.DownloadLink;
