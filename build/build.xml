@@ -109,10 +109,20 @@
             </fileset>
         </jar>
 		<delete file="Manifest.MF" failonerror="false" />
-		
-		
-		
 		<manifest file="Manifest.MF">
+			<attribute name="Created-By" value="Tudels" />
+			<attribute name="Main-Class" value="jd.update.Main" />
+	    </manifest>
+        <jar jarfile="${dist}/schedule.jar" manifest="Manifest.MF">
+            <fileset dir="${cls}">
+                <include name="jd/plugins/optional/schedule/**" />                
+              </fileset>
+			     <fileset dir="${res}">
+                <include name="META-INF/services/jd.plugins.PluginOptional" />
+            </fileset>
+        </jar>
+		<delete file="Manifest.MF" failonerror="false" />			
+			<manifest file="Manifest.MF">
 				<attribute name="Created-By" value="jiaz" />
 				<attribute name="Main-Class" value="jd.update.Main" />
 		    </manifest>
@@ -158,20 +168,13 @@
                     <class extends="jd.plugins.PluginForContainer"/>
 					<class classes="protected" methods="protected" fields="protected"/>
 					<class classes="public" methods="public" fields="public"/>
-					
 				</keep>
 			</rename>
 		</yguard>
 		<delete file="${dist}/JDownloaderContainer.jar" failonerror="no" />
 		<move file="${dist}/JDownloaderContainer_obfuscated.jar" tofile="${dist}/JDownloaderContainer.jar" />
 	</target>
-	
-
-	
-
 	<target name="standardBuild" depends="compile,jar,jarTrayIcon,jarWebupdater"></target>
 	<target name="dlcEnabledBuild" depends="standardBuild,jarContainer,cryptContainer,sign"></target>
 	<target name="signedBuild" depends="standardBuild,sign"></target>
-	       
-
 </project>

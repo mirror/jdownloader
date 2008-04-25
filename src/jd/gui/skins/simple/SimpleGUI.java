@@ -1500,6 +1500,9 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         this.statusBar.spMaxDls.setModel(new SpinnerNumberModel(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN, 3), 1, 20, 1));
 
         this.statusBar.spMax.setModel(new SpinnerNumberModel(maxspeed, 0, Integer.MAX_VALUE, 50));
+        
+        this.statusBar.chbPremium.setSelected(JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM));
+        
         return;
     }
 
