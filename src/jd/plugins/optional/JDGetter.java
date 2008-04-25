@@ -124,7 +124,7 @@ public class JDGetter extends PluginOptional implements ControlListener {
     @Override
     public ArrayList<MenuItem> createMenuitems() {
         ArrayList<MenuItem> menu = new ArrayList<MenuItem>();
-        menu.add(new MenuItem("Toggle Start/Stop",0));
+        menu.add(new MenuItem("Toggle Start/Stop",0).setActionListener(this));
         return menu;
     }
 

@@ -19,9 +19,9 @@ package jd.gui.skins.simple;
 import java.awt.event.ActionEvent;
 
 import javax.swing.AbstractAction;
-import javax.swing.Action;
 
 import jd.config.MenuItem;
+import jd.utils.JDUtilities;
 
 public class JDMenuAction extends AbstractAction {
     private MenuItem menuItem;
@@ -37,6 +37,10 @@ public class JDMenuAction extends AbstractAction {
     }
 
     public void actionPerformed(ActionEvent e) {
+        if( menuItem.getActionListener()==null){
+            JDUtilities.getLogger().warning("no Actionlistener for "+menuItem.getTitle());
+            return;
+        }
         menuItem.getActionListener().actionPerformed(new ActionEvent(menuItem, menuItem.getActionID(), menuItem.getTitle()));
     }
 public boolean isEnabled(){

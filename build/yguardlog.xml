@@ -3,16 +3,17 @@
 <!--
   yGuard Bytecode Obfuscator, v2.2.0, a Product of yWorks GmbH - http://www.yworks.com
 
-  Logfile created on Thu Apr 24 04:36:38 CEST 2008
+  Logfile created on Fri Apr 25 22:13:12 CEST 2008
 
   Jar file to be obfuscated:           JDownloaderContainer.jar
   Target Jar file for obfuscated code: JDownloaderContainer_obfuscated.jar
 
 -->
 <!--
-  Memory in use after class data structure built: 2422432 bytes
+  Memory in use after class data structure built: 2407696 bytes
   Total memory available                        : 5177344 bytes
 -->
+<!-- WARNING: Unresolved external dependency: jd.config.MenuItem not found! -->
 <!-- WARNING: Unresolved external dependency: jd.plugins.HTTPConnection not found! -->
 <!-- WARNING: Unresolved external dependency: jd.plugins.RequestInfo not found! -->
 <!-- WARNING: Unresolved external dependency: jd.plugins.RequestInfo not found! -->
@@ -117,6 +118,7 @@
 <!-- WARNING: Unresolved external dependency: jd.config.SubConfiguration not found! -->
 <!-- WARNING: Unresolved external dependency: jd.plugins.RequestInfo not found! -->
 <!-- WARNING: Unresolved external dependency: jd.unrar.JUnrar not found! -->
+<!-- WARNING: Unresolved external dependency: jd.config.MenuItem not found! -->
 <!-- WARNING: Unresolved external dependency: jd.plugins.DownloadLink not found! -->
 <!-- WARNING: Unresolved external dependency: jd.plugins.DownloadLink not found! -->
 <!-- WARNING: Unresolved external dependency: jd.plugins.DownloadLink not found! -->
@@ -177,6 +179,7 @@
 <!-- WARNING: Unresolved external dependency: jd.controlling.DistributeData not found! -->
 <!-- WARNING: Unresolved external dependency: jd.plugins.PluginForHost not found! -->
 <!-- WARNING: Unresolved external dependency: jd.plugins.DownloadLink not found! -->
+<!-- WARNING: Unresolved external dependency: jd.config.MenuItem not found! -->
 <!-- WARNING: Unresolved external dependency: jd.plugins.DownloadLink not found! -->
 <!-- WARNING: Unresolved external dependency: jd.controlling.ProgressController not found! -->
 <!-- WARNING: Unresolved external dependency: jd.plugins.DownloadLink not found! -->

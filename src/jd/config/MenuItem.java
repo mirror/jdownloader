@@ -45,24 +45,27 @@ public class MenuItem extends Property {
         return actionListener;
     }
 
-    public void setActionListener(ActionListener actionListener) {
+    public MenuItem setActionListener(ActionListener actionListener) {
         this.actionListener = actionListener;
+        return this;
     }
 
     public String getTitle() {
         return title;
     }
 
-    public void setTitle(String title) {
+    public MenuItem setTitle(String title) {
         this.title = title;
+        return this;
     }
 
     public Plugin getPlugin() {
         return plugin;
     }
 
-    public void setPlugin(Plugin plugin) {
+    public MenuItem setPlugin(Plugin plugin) {
         this.plugin = plugin;
+        return this;
     }
 
     public int getID() {
@@ -90,8 +93,9 @@ public class MenuItem extends Property {
         return items.size();
     }
 
-    public void setItems(ArrayList<MenuItem> createMenuitems) {
+    public MenuItem setItems(ArrayList<MenuItem> createMenuitems) {
         this.items = createMenuitems;
+        return this;
 
     }
 
@@ -105,8 +109,9 @@ public class MenuItem extends Property {
         return enabled;
     }
 
-    public void setEnabled(boolean enabled) {
+    public MenuItem setEnabled(boolean enabled) {
         this.enabled = enabled;
+        return this;
     }
 
 }
