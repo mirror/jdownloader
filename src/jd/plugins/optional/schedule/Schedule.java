@@ -2,8 +2,6 @@ package jd.plugins.optional.schedule;
 
 import java.util.ArrayList;
 import java.awt.event.ActionEvent;
-import javax.swing.event.*;
-
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.MenuItem;
@@ -11,7 +9,6 @@ import jd.event.ControlListener;
 import jd.plugins.PluginOptional;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
-
 
 public class Schedule extends PluginOptional implements ControlListener {
     
@@ -22,7 +19,7 @@ public class Schedule extends PluginOptional implements ControlListener {
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_SPINNER, getProperties(), "PORT", JDLocale.L("plugins.optional.getter.port", "Port:"), 1000, 65500));
         cfg.setDefaultValue(10000);
         
-        main.setSize(300, 150);
+        main.setSize(300, 170);
         main.setResizable(false);
         main.setTitle(this.getPluginName()+" by "+this.getCoder());
         
@@ -61,12 +58,12 @@ public class Schedule extends PluginOptional implements ControlListener {
 
     @Override
     public String getPluginID() {
-        return "0.1a";
+        return "0.1b";
     }
 
     @Override
     public String getVersion() {
-        return "0.1a";
+        return "0.1b";
     }
 
     public String getPluginName() {
@@ -76,7 +73,8 @@ public class Schedule extends PluginOptional implements ControlListener {
     public void actionPerformed(ActionEvent e) {
         
         if (e.getID() == 0){
-            main.setVisible(true); 
+            main.setVisible(true);
+            main.repaint();
         }
         if (e.getID() == 1){
             if(main.t.isRunning() == false){
