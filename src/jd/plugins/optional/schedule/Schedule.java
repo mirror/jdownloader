@@ -2,27 +2,23 @@ package jd.plugins.optional.schedule;
 
 import java.util.ArrayList;
 import java.awt.event.ActionEvent;
-import jd.config.ConfigContainer;
-import jd.config.ConfigEntry;
 import jd.config.MenuItem;
 import jd.event.ControlListener;
 import jd.plugins.PluginOptional;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
+import java.util.*;
 
 public class Schedule extends PluginOptional implements ControlListener {
     
-    ScheduleFrame main = new ScheduleFrame();
+    Vector v = new Vector();
     
     public void initschedule() {
-        ConfigEntry cfg;
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_SPINNER, getProperties(), "PORT", JDLocale.L("plugins.optional.getter.port", "Port:"), 1000, 65500));
-        cfg.setDefaultValue(10000);
-        
-        main.setSize(300, 170);
-        main.setResizable(false);
-        main.setTitle(this.getPluginName()+" by "+this.getCoder());
-        
+        for(int i = 0; i < 4; i++){
+            v.add(i,new ScheduleFrame());
+            ScheduleFrame s = (ScheduleFrame) v.elementAt(i);
+            s.setTitle(this.getPluginName()+" by "+this.getCoder());
+        }
     }
 
     @Override
@@ -46,8 +42,10 @@ public class Schedule extends PluginOptional implements ControlListener {
     @Override
     public ArrayList<MenuItem> createMenuitems() {
         ArrayList<MenuItem> menu = new ArrayList<MenuItem>();
-        menu.add(new MenuItem("Settings",0).setActionListener(this));
-        menu.add(new MenuItem("Start / Stop",1).setActionListener(this));
+        menu.add(new MenuItem("Schedule 1",0).setActionListener(this));
+        menu.add(new MenuItem("Schedule 2",1).setActionListener(this));
+        menu.add(new MenuItem("Schedule 3",2).setActionListener(this));
+        menu.add(new MenuItem("Schedule 4",3).setActionListener(this));
         return menu;
     }
 
@@ -58,12 +56,12 @@ public class Schedule extends PluginOptional implements ControlListener {
 
     @Override
     public String getPluginID() {
-        return "0.1b";
+        return "0.1";
     }
 
     @Override
     public String getVersion() {
-        return "0.1b";
+        return "0.1";
     }
 
     public String getPluginName() {
@@ -71,20 +69,13 @@ public class Schedule extends PluginOptional implements ControlListener {
     }
     
     public void actionPerformed(ActionEvent e) {
-        
-        if (e.getID() == 0){
-            main.setVisible(true);
-            main.repaint();
+
+        for (int i = 0; i < 4 ; ++i){
+        if (e.getID() == i){
+            ScheduleFrame s = (ScheduleFrame) v.elementAt(i);
+            s.setVisible(true);
+            s.repaint();
         }
-        if (e.getID() == 1){
-            if(main.t.isRunning() == false){
-                main.t.start();
-                JDUtilities.getGUI().showMessageDialog(this.getPluginName() + " started");
-            }
-            else{
-                main.t.stop();
-                JDUtilities.getGUI().showMessageDialog(this.getPluginName() + " stopped");
-            }
         }
         
     }

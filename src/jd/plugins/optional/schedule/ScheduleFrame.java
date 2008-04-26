@@ -17,11 +17,13 @@ public class ScheduleFrame extends JFrame implements ActionListener{
     JSpinner maxdls = new JSpinner(new SpinnerNumberModel(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN),1,10,1));
     JSpinner maxspeed = new JSpinner(new SpinnerNumberModel(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED),0,5000,50));
     JCheckBox premium = new JCheckBox();
+    JCheckBox reconnect = new JCheckBox();
     JCheckBox stop_start = new JCheckBox();
     
     SpinnerDateModel baba = new SpinnerDateModel();
     JSpinner time = new JSpinner(baba);      
     
+    JSpinner repeat = new JSpinner(new SpinnerNumberModel(0,0,24,1));
     JButton start = new JButton("Start");    
     JButton close = new JButton("Close");    
     JLabel status = new JLabel();
@@ -35,21 +37,30 @@ public class ScheduleFrame extends JFrame implements ActionListener{
 
             }
         });
+        this.setSize(300, 200);
+        this.setResizable(false);
+        
         this.maxdls.setBorder(BorderFactory.createEmptyBorder());
         this.maxspeed.setBorder(BorderFactory.createEmptyBorder());
         this.time.setBorder(BorderFactory.createEmptyBorder());
+        this.repeat.setBorder(BorderFactory.createEmptyBorder());
+        this.repeat.setToolTipText("Enter h | 0 = disable");
         
-        getContentPane().setLayout(new GridLayout(7,2));        
+        getContentPane().setLayout(new GridLayout(9,2));        
         getContentPane().add(new JLabel(" max. Downloads"));
         getContentPane().add(this.maxdls);
         getContentPane().add(new JLabel(" max. DownloadSpeed"));
         getContentPane().add(this.maxspeed);
         getContentPane().add(new JLabel(" Premium ?"));
         getContentPane().add(this.premium);
+        getContentPane().add(new JLabel(" Reconnect ?"));
+        getContentPane().add(this.reconnect);
         getContentPane().add(new JLabel(" Start/Stop DL ?"));
         getContentPane().add(this.stop_start);
         getContentPane().add(new JLabel(" Select Time:"));      
         getContentPane().add(this.time);
+        getContentPane().add(new JLabel(" Redo in h:"));      
+        getContentPane().add(this.repeat);
         getContentPane().add(this.start);
         getContentPane().add(this.close);        
         getContentPane().add(this.status);
@@ -65,7 +76,7 @@ public class ScheduleFrame extends JFrame implements ActionListener{
       
         int var = (int) parsetime();  
         if (var < 0 & e.getSource() == start){
-          this.status.setText(" Enter positive time!");     
+          this.status.setText(" Select positive time!");     
       }
       else{
          if (e.getSource() == start) {
@@ -96,24 +107,36 @@ public class ScheduleFrame extends JFrame implements ActionListener{
             JDUtilities.getSubConfig("DOWNLOAD").setProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, maxspeed.getValue());
             JDUtilities.getSubConfig("DOWNLOAD").setProperty(Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN, maxdls.getValue());
             JDUtilities.getConfiguration().setProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, premium.isSelected());
+            JDUtilities.getConfiguration().setProperty(Configuration.PARAM_DISABLE_RECONNECT, reconnect.isSelected());
             JDUtilities.getSubConfig("DOWNLOAD").save();
             JDUtilities.saveConfig();
-            this.start.setText("Start");
             if (this.stop_start.isSelected() == true){
-            JDUtilities.getController().toggleStartStop();           
+                JDUtilities.getController().toggleStartStop();           
             }
-            this.c.stop();
-            this.status.setText(" Finished!");
-            this.time.setEnabled(true);
-        }
+            if((Integer) this.repeat.getValue() > 0){
+                int r = (Integer) this.repeat.getValue();
+                Date new_time = baba.getDate();
+                long var2 = new_time.getTime();
+                var2 = var2 + r * 3600000;
+                new_time.setTime(var2);
+                baba.setValue(new_time);
+                var = (int) parsetime(); 
+                this.t.setInitialDelay(var);
+                this.t.start();
+            }
+            else{
+                this.start.setText("Start");
+                this.c.stop();
+                this.status.setText(" Finished!");
+                this.time.setEnabled(true);
+            
+        }}
         
         if (e.getSource() == c){
-            TimeZone zone = TimeZone.getDefault();
-            zone.getRawOffset();
-            var = var - zone.getRawOffset();
-            Date blub = new Date(var);
-            String remain = " Remaining: "+ blub.getHours()+":"+blub.getMinutes()+":"+blub.getSeconds();
+            String ba = JDUtilities.formatSeconds(var/1000);
+            String remain = " Remaining: " + ba;
             this.status.setText(remain);
+            
         }
     
       }
@@ -132,6 +155,8 @@ public class ScheduleFrame extends JFrame implements ActionListener{
         this.maxdls.setValue(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN));
         this.maxspeed.setValue(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED));
         this.premium.setSelected(JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM));
+        this.reconnect.setSelected(JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_DISABLE_RECONNECT));
     }
-
+    
+    
 }
