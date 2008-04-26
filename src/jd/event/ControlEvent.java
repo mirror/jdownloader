@@ -143,6 +143,10 @@ public class ControlEvent extends AWTEvent {
      * Wird vom Controller vor dem beeenden des Programms aufgerufen
      */
     public static final int CONTROL_SYSTEM_EXIT = 26;
+/**
+ * 
+ */
+    public static final int CONTROL_JDPROPERTY_CHANGED = 27;
 
 
 

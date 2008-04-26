@@ -804,7 +804,7 @@ public class JDUtilities {
             return getController().getCaptchaCodeFromUser(plugin, file, null);
         }
     }
- 
+  
     // /**
     // * Fügt einen PluginListener hinzu
     // *

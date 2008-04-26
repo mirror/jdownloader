@@ -422,6 +422,11 @@ public abstract class Plugin implements ActionListener {
 //    private void firePluginDataChanged() {
 //        JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_DOWNLOADLINKS_CHANGED));
 //    }
+    /**
+     * Create MenuItems erlaubt es den Plugins eine MenuItemliste zurückzugeben. Die Gui kann diese Menüpunkte dann darstellen.
+     * Die Gui muss das Menu bei jedem zugriff neu aufbauen, weil sich das MenuItem Array geändert haben kann.
+     * MenuItems sind Datenmodelle für ein TreeMenü.
+     */
     public abstract ArrayList<MenuItem> createMenuitems();
     /**
      * @author olimex Fügt Map als String mit Trennzeichen zusammen TODO:

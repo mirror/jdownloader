@@ -399,7 +399,7 @@ public class TrayIconPopup extends JWindow implements MouseListener, MouseMotion
             }
 
         }
-        SimpleGUI.CURRENTGUI.updateStatusBar();
+   
 
     }
 

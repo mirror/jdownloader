@@ -15,7 +15,8 @@ public class ScheduleFrame extends Frame implements ActionListener{
                JDUtilities.getConfiguration().setProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, premium.getState());
                JDUtilities.getSubConfig("DOWNLOAD").save();
                JDUtilities.saveConfig();
-               SimpleGUI.CURRENTGUI.updateStatusBar();
+               //Unnötig das geht jetzt automatisch 
+               //SimpleGUI.CURRENTGUI.updateStatusBar();
                start.setLabel("Start");
            }
     });

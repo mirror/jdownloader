@@ -14,13 +14,13 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-
 package jd.config;
 
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.logging.Logger;
 
+import jd.event.ControlEvent;
 import jd.utils.JDUtilities;
 
 /**
@@ -37,28 +37,29 @@ public class Property implements Serializable {
     /**
      * 
      */
-    private static final long       serialVersionUID = -6093927038856757256L;
+    private static final long serialVersionUID = -6093927038856757256L;
 
-    private HashMap<String, Object> properties       = new HashMap<String, Object>();
+    private HashMap<String, Object> properties = new HashMap<String, Object>();
 
-    private long                    saveCount        = 0;
+    private long saveCount = 0;
 
-    protected transient Logger        logger=JDUtilities.getLogger();
+    protected transient Logger logger = JDUtilities.getLogger();
 
     /**
      * 
      */
     public Property() {
-       
+
     }
 
     public Property(Object obj) {
         this();
-        setProperty(null,obj);
+        setProperty(null, obj);
     }
-    public Property(String value,Object obj) {
+
+    public Property(String value, Object obj) {
         this();
-        setProperty(value,obj);
+        setProperty(value, obj);
     }
 
     /**
@@ -70,10 +71,29 @@ public class Property implements Serializable {
     public void setProperty(String key, Object value) {
         saveCount++;
         if (properties == null) properties = new HashMap<String, Object>();
-        properties.put(key, value);
-        if (logger == null) logger = JDUtilities.getLogger();
+        Object old = getProperty(key);
 
-//        logger.finer("Config property: " + key + " = " + value+" - "+this);
+        properties.put(key, value);
+
+        if (logger == null) logger = JDUtilities.getLogger();
+        if (old == null && value != null) {
+            JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_JDPROPERTY_CHANGED, key));
+
+        } else if (value instanceof Comparable) {
+            if (((Comparable) value).compareTo((Comparable) old) != 0) {
+                JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_JDPROPERTY_CHANGED, key));
+            }
+        } else if(value instanceof Object){
+            if (!value.equals(old)) {
+                JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_JDPROPERTY_CHANGED, key));
+
+            }
+        }else{
+            if(value!=old) JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_JDPROPERTY_CHANGED, key));
+
+        }
+
+        // logger.finer("Config property: " + key + " = " + value+" - "+this);
 
     }
 
@@ -117,7 +137,8 @@ public class Property implements Serializable {
      * Gibt einen Integerwert zu key zurück. Es wird versucht, den Wert zu einem
      * passendem Integer umzuformen
      * 
-     * @param key Schlüssel des Wertes
+     * @param key
+     *            Schlüssel des Wertes
      * @return Der Wert
      */
     public int getIntegerProperty(String key) {
@@ -134,8 +155,7 @@ public class Property implements Serializable {
             }
             ret = (Integer) r;
             return ret;
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             return def;
         }
 
@@ -161,8 +181,7 @@ public class Property implements Serializable {
             }
             ret = (Double) r;
             return ret;
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             return def;
         }
 
@@ -188,8 +207,7 @@ public class Property implements Serializable {
             }
             ret = (String) r;
             return ret;
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             return def;
         }
 
@@ -215,15 +233,13 @@ public class Property implements Serializable {
                 r = r + "";
                 if (((String) r).equals("false")) {
                     r = false;
-                }
-                else {
+                } else {
                     r = ((String) r).length() > 0;
                 }
             }
             ret = (Boolean) r;
             return ret;
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             return false;
         }
     }

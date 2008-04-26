@@ -288,6 +288,8 @@ public class Rapidshare extends PluginForHost {
     private static final int ACTION_INFO_PREMIUM_2 = 5;
     private static final int ACTION_INFO_PREMIUM_3 = 6;
 
+    private static final int ACTION_HAPPY_HOURS = 7;
+
     private static int ERRORS = 0;
 
     @Override
@@ -402,13 +404,16 @@ public class Rapidshare extends PluginForHost {
     }
 
     public ArrayList<MenuItem> createMenuitems() {
-        ArrayList<MenuItem> al = new ArrayList<MenuItem>();
 
+        ArrayList<MenuItem> menuList = new ArrayList<MenuItem>();
         MenuItem premium = new MenuItem(MenuItem.CONTAINER, JDLocale.L("plugins.rapidshare.menu.premium", "Premiumaccounts"), 0);
 
-        al.add(premium);
         MenuItem account;
         MenuItem m;
+        m = new MenuItem(JDLocale.L("plugins.rapidshare.menu.happyHours", "Happy Hours Abfrage"), ACTION_HAPPY_HOURS);
+        m.setActionListener(this);
+        menuList.add(m);
+        menuList.add(premium);
         // account1
         account = new MenuItem(MenuItem.CONTAINER, JDLocale.L("plugins.rapidshare.menu.premium1", "1. Account (") + this.getProperties().getProperty(PROPERTY_PREMIUM_USER) + ")", 0);
 
@@ -460,6 +465,7 @@ public class Rapidshare extends PluginForHost {
         } else {
             m = new MenuItem(MenuItem.TOGGLE, JDLocale.L("plugins.rapidshare.menu.disable_premium", "Deaktivieren"), ACTION_TOGGLE_PREMIUM_3);
             m.setSelected(true);
+            logger.info("TRUE");
 
         }
         m.setActionListener(this);
@@ -471,7 +477,7 @@ public class Rapidshare extends PluginForHost {
         account.addMenuItem(m);
         premium.addMenuItem(account);
 
-        return al;
+        return menuList;
     }
 
     public void actionPerformed(ActionEvent e) {
@@ -497,6 +503,28 @@ public class Rapidshare extends PluginForHost {
             break;
         case Rapidshare.ACTION_INFO_PREMIUM_3:
             showInfo(3);
+            break;
+        case Rapidshare.ACTION_HAPPY_HOURS:
+
+            new Thread() {
+                public void run() {
+                    ProgressController progress = new ProgressController(JDLocale.L("plugins.hoster.rapidshare.com.happyHours", "Happy Hour Check"), 3);
+
+                    try {
+                        progress.increase(1);
+                        RequestInfo ri = Plugin.getRequest(new URL("http://dlcrypt.cwsurf.de/hh.php"));
+                        progress.increase(1);
+                        if (ri.containsHTML("happyhour")) {
+                            JDUtilities.getGUI().showMessageDialog(JDLocale.L("plugins.hoster.rapidshare.com.happyHours.active", "Happy Hour sind aktiv. Es kann ohne Captcha und Ticketwartezeit geladen werden"));
+                        } else {
+                            JDUtilities.getGUI().showMessageDialog(JDLocale.L("plugins.hoster.rapidshare.com.happyHours.active", "Happy Hour sind NICHT aktiv."));
+                        }
+                    } catch (Exception e) {
+                    }
+
+                    progress.finalize();
+                }
+            }.start();
             break;
         }
         return;
@@ -531,15 +559,15 @@ public class Rapidshare extends PluginForHost {
                     progress.increase(1);
                     RequestInfo ri = Plugin.getRequest(new URL(url));
                     progress.increase(1);
-                   // logger.info(ri.getHtmlCode());
+                    // logger.info(ri.getHtmlCode());
                     String html = null;
                     if (ri.containsHTML("Ein Fehler ist aufgetreten")) {
                         html = JDLocale.L("plugins.hoster.rapidshare.com.info.error", "<font color='red'><p>Account nicht gefunden</p></font>");
                     } else {
 
-                       String[] info = Plugin.getSimpleMatches(ri.getHtmlCode(), "<p align=\"justify\">Hallo, <b>°</b>! Dein Premium-Account ist g&uuml;ltig bis °. Wenn du deinen Account verl&auml;ngern willst, klicke einfach auf \"Account verl&auml;ngern\".°Du hast bis jetzt <b>°</b> <a href=\"http://rapidshare.com/faq.html\" target=\"_blank\">Premium-Punkte</a> gesammelt. Um Dateien mit deinem Premium-Account runterzuladen, musst du die URL der Datei kennen und auf diese klicken.°Um die Privatsph&auml;re zu wahren, bieten wir keine Suchmaschine an (Siehe FAQ). Deine Uploads sind bei uns also sicher und werden nur von den Leuten runtergeladen, denen du die URL gibst. In den letzten 5 Tagen hast du <b>°</b>°runtergeladen.<br>Die Serverzeit beim Erstellen dieser Seite war: <b>°</b></p><div id=\"expiredwarning\">°Belegter Speicher: <b>°</b> durch ° Dateien. ");
-                        
-                    html=String.format("<link href='http://jdownloader.ath.cx/jdcss.css' rel='stylesheet' type='text/css' /><div style='width:534px;height;200px'><h2>Accountinformation</h2><table width='100%%' ><tr><th >Valid until</th><td>%s</td></tr><tr><th >Premiumpoints</th><td>%s</td></tr><tr><th >Current traffic</th><td>%s</td></tr><tr><th >Used space</th><td>%s</td></tr><tr><th >Files</th><td>%s</td></tr></table></div>",info[1],info[3],info[5],info[9],info[10]);
+                        String[] info = Plugin.getSimpleMatches(ri.getHtmlCode(), "<p align=\"justify\">Hallo, <b>°</b>! Dein Premium-Account ist g&uuml;ltig bis °. Wenn du deinen Account verl&auml;ngern willst, klicke einfach auf \"Account verl&auml;ngern\".°Du hast bis jetzt <b>°</b> <a href=\"http://rapidshare.com/faq.html\" target=\"_blank\">Premium-Punkte</a> gesammelt. Um Dateien mit deinem Premium-Account runterzuladen, musst du die URL der Datei kennen und auf diese klicken.°Um die Privatsph&auml;re zu wahren, bieten wir keine Suchmaschine an (Siehe FAQ). Deine Uploads sind bei uns also sicher und werden nur von den Leuten runtergeladen, denen du die URL gibst. In den letzten 5 Tagen hast du <b>°</b>°runtergeladen.<br>Die Serverzeit beim Erstellen dieser Seite war: <b>°</b></p><div id=\"expiredwarning\">°Belegter Speicher: <b>°</b> durch ° Dateien. ");
+
+                        html = String.format("<link href='http://jdownloader.ath.cx/jdcss.css' rel='stylesheet' type='text/css' /><div style='width:534px;height;200px'><h2>Accountinformation</h2><table width='100%%' ><tr><th >Valid until</th><td>%s</td></tr><tr><th >Premiumpoints</th><td>%s</td></tr><tr><th >Current traffic</th><td>%s</td></tr><tr><th >Used space</th><td>%s</td></tr><tr><th >Files</th><td>%s</td></tr></table></div>", info[1], info[3], info[5], info[9], info[10]);
                     }
                     JDUtilities.getGUI().showHTMLDialog(String.format(JDLocale.L("plugins.hoster.rapidshare.com.info.title", "Accountinfo für %s"), user), html);
                 } catch (MalformedURLException e) {
