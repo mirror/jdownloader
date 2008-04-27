@@ -16,11 +16,11 @@ import jd.utils.JDUtilities;
 
 public class DownloadLinksTreeTablePanel extends DownloadLinksView {
 
-    private DownloadTreeTable      internalTreeTable;
+    private DownloadTreeTable internalTreeTable;
 
     private DownloadTreeTableModel treeModel;
 
-    private long                   lockTimer = 0;
+    private long lockTimer = 0;
 
     public DownloadLinksTreeTablePanel(SimpleGUI parent) {
         super(parent, new BorderLayout());
@@ -33,15 +33,13 @@ public class DownloadLinksTreeTablePanel extends DownloadLinksView {
 
     @Override
     public void fireTableChanged(int id, Object param) {
-        
-        
+
         if (id == DownloadLinksView.REFRESH_DATA_AND_STRUCTURE_CHANGED) this.setVisible(false);
-        internalTreeTable.fireTableChanged(id,param);
+        internalTreeTable.fireTableChanged(id, param);
         if (id == DownloadLinksView.REFRESH_DATA_AND_STRUCTURE_CHANGED && !this.isVisible()) {
             try {
                 Thread.sleep(10);
-            }
-            catch (InterruptedException e) {
+            } catch (InterruptedException e) {
                 // TODO Auto-generated catch block
                 e.printStackTrace();
             }

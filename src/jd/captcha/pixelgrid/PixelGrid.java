@@ -1114,10 +1114,11 @@ public class PixelGrid extends Property {
      * @param objectContrast
      */
     public void removeSmallObjects(double contrast, double objectContrast) {
-        double tmp = owner.getJas().getDouble("objectDetectionMergeSeperatedPartsDistance");
-        owner.getJas().set("objectDetectionMergeSeperatedPartsDistance", -1.0);
+        int tmp = owner.getJas().getInteger("minimumObjectArea");
+        
+        owner.getJas().set("minimumObjectArea", 0);
         Vector<PixelObject> ret = getObjects(contrast, objectContrast);
-        owner.getJas().set("objectDetectionMergeSeperatedPartsDistance", tmp);
+        owner.getJas().set("minimumObjectArea", tmp);
         for (int i = 1; i < ret.size(); i++) {
 
             this.removeObjectFromGrid(ret.elementAt(i));
@@ -1131,10 +1132,11 @@ public class PixelGrid extends Property {
      * @param maxSize
      */
     public void removeSmallObjects(double contrast, double objectContrast, int maxSize) {
-        double tmp = owner.getJas().getDouble("objectDetectionMergeSeperatedPartsDistance");
-        owner.getJas().set("objectDetectionMergeSeperatedPartsDistance", -1.0);
+        int tmp = owner.getJas().getInteger("minimumObjectArea");
+       
+        owner.getJas().set("minimumObjectArea", 0);
         Vector<PixelObject> ret = getObjects(contrast, objectContrast);
-        owner.getJas().set("objectDetectionMergeSeperatedPartsDistance", tmp);
+        owner.getJas().set("minimumObjectArea", tmp);
 
         for (int i = 1; i < ret.size(); i++) {
             if (ret.elementAt(i).getSize() < maxSize) this.removeObjectFromGrid(ret.elementAt(i));
@@ -1152,6 +1154,7 @@ public class PixelGrid extends Property {
     public Vector<PixelObject> getObjects(double contrast, double objectContrast) {
         int[][] tmpGrid = getGridCopy();
         int dist;
+       
         Vector<PixelObject> ret = new Vector<PixelObject>();
         PixelObject lastObject = null;
         PixelObject object;
@@ -1672,11 +1675,11 @@ public class PixelGrid extends Property {
             Letter l = new Letter();
 
             l.setOwner(owner);
-           // LetterComperator.CREATEINTERSECTIONLETTER = true;
-           // jac.setShowDebugGui(true);
+            // LetterComperator.CREATEINTERSECTIONLETTER = true;
+            // jac.setShowDebugGui(true);
             l.setGridCopy(next, 0, 0, PixelGrid.getGridWidth(next) - 300, 0);
             l.setProperty("org", next);
-             if (owner.isShowDebugGui()) BasicWindow.showImage(l.getImage(), "pre");
+            if (owner.isShowDebugGui()) BasicWindow.showImage(l.getImage(), "pre");
 
             // l.crop(0, 0, l.getWidth()-80, 0);
             l.clean();
@@ -1686,11 +1689,11 @@ public class PixelGrid extends Property {
             LetterComperator lc = jac.getLetter(l);
             int o = 0;
             do {
-                if(o == sorted.size()){
-                    sorted.add( lc);  
+                if (o == sorted.size()) {
+                    sorted.add(lc);
                     break;
                 }
-                if (  sorted.get(o).getValityPercent() > lc.getValityPercent()) {
+                if (sorted.get(o).getValityPercent() > lc.getValityPercent()) {
                     sorted.add(0, lc);
                     break;
                 }
@@ -1713,7 +1716,7 @@ public class PixelGrid extends Property {
 
     /**
      * Erstellt das Objekt, ausgehend von einem Pixel. rekursive Funktion!
-     * 
+     * Diese rekusrive Funktion kann bei zu großen Objekten zu einem Stackoverflow führen. Man sollte sie mal umschreiben!
      * @param x
      * @param y
      * @param tmpGrid
@@ -1724,20 +1727,25 @@ public class PixelGrid extends Property {
         if (x < 0 || y < 0 || tmpGrid.length <= x || tmpGrid[0].length <= y || tmpGrid[x][y] < 0) return;
         int localValue = PixelGrid.getPixelValue(x, y, tmpGrid, owner);
         // UTILITIES.trace(x+"/"+y);
-        if (object.doesColorAverageFit(localValue)) {
-            object.add(x, y, localValue);
-            tmpGrid[x][y] = -1;
+        try {
+            if (object.doesColorAverageFit(localValue)) {
 
-            // Achtung!! Algos funktionieren nur auf sw basis richtig
-            // grid[x][y] = 254;
-            getObject(x - 1, y, tmpGrid, object);
-            getObject(x - 1, y - 1, tmpGrid, object);
-            getObject(x, y - 1, tmpGrid, object);
-            getObject(x + 1, y - 1, tmpGrid, object);
-            getObject(x + 1, y, tmpGrid, object);
-            getObject(x + 1, y + 1, tmpGrid, object);
-            getObject(x, y + 1, tmpGrid, object);
-            getObject(x - 1, y + 1, tmpGrid, object);
+                object.add(x, y, localValue);
+                tmpGrid[x][y] = -1;
+
+                // Achtung!! Algos funktionieren nur auf sw basis richtig
+                // grid[x][y] = 254;
+                getObject(x - 1, y, tmpGrid, object);
+                getObject(x - 1, y - 1, tmpGrid, object);
+                getObject(x, y - 1, tmpGrid, object);
+                getObject(x + 1, y - 1, tmpGrid, object);
+                getObject(x + 1, y, tmpGrid, object);
+                getObject(x + 1, y + 1, tmpGrid, object);
+                getObject(x, y + 1, tmpGrid, object);
+                getObject(x - 1, y + 1, tmpGrid, object);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
         }
 
         return;

@@ -296,7 +296,7 @@ public class DownloadWatchDog extends Thread implements ControlListener {
                 al.add(it.next().abortDownload().getDownloadLink());
             }
 
-            deligateFireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_DOWNLOADLINKS_CHANGED, al));
+            deligateFireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SPECIFIED_DOWNLOADLINKS_CHANGED, al));
             boolean check = true;
             // Warteschleife bis alle activelinks abgebrochen wurden
             logger.finer("Warten bis alle activeLinks abgebrochen wurden.");
@@ -319,7 +319,7 @@ public class DownloadWatchDog extends Thread implements ControlListener {
         }
         logger.info("Active links abgebrochen");
 
-        deligateFireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_DOWNLOADLINKS_CHANGED, al));
+        deligateFireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SPECIFIED_DOWNLOADLINKS_CHANGED, al));
 
         progress.finalize();
         logger.finer("Abbruch komplett");
@@ -351,7 +351,7 @@ public class DownloadWatchDog extends Thread implements ControlListener {
 
             }
         }
-        deligateFireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_DOWNLOADLINK_DATA_CHANGED, null));
+        deligateFireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_ALL_DOWNLOADLINKS_DATA_CHANGED, null));
 
     }
 

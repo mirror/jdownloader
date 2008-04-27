@@ -13,6 +13,7 @@ public class MenuItem extends Property {
     public static final int CONTAINER = 0;
     public static final int NORMAL = 1;
     public static final int TOGGLE = 2;
+    public static final int SEPARATOR = 3;
     private int id = NORMAL;
     private ArrayList<MenuItem> items;
     private String title;
@@ -21,7 +22,9 @@ public class MenuItem extends Property {
     private boolean selected;
     private int actionID;
     private boolean enabled=true;
-
+    public MenuItem(int id) {
+        this(id, null, -1);
+    }
     public MenuItem(String title, int actionID) {
         this(NORMAL, title, actionID);
     }

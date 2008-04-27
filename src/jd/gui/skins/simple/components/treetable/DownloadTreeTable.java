@@ -333,7 +333,7 @@ if(i>0){
             }
 
             break;
-        case DownloadLinksView.REFRESH_ONLY_DATA_CHANGED:
+        case DownloadLinksView.REFRESH_ALL_DATA_CHANGED:
             // supporter.fireTreeStructureChanged(new
             // TreePath(model.getRoot()));
             // updateSelectionAndExpandStatus();
@@ -428,14 +428,18 @@ if(i>0){
                 JMenu pluginPopup = new JMenu(JDLocale.L("gui.table.contextmenu.pluginsubmenu", "Plugin")+" ("+plg.getPluginName()+")");
                 
                 MenuItem next1;
+                JMenuItem mi;
                 ArrayList<MenuItem> pluginMenuEntries = plg.createMenuitems();
                 if(pluginMenuEntries!=null)
                 for (Iterator<MenuItem> it1 = pluginMenuEntries.iterator(); it1.hasNext();) {
                     next1 = it1.next();
+                    mi=SimpleGUI.getJMenuItem(next1);
 
-
-                   
-                    pluginPopup.add(SimpleGUI.getJMenuItem(next1));
+                   if(mi==null){
+                       pluginPopup.addSeparator(); 
+                   }else{
+                    pluginPopup.add(mi);
+                   }
                     
                 }
                 
@@ -608,7 +612,7 @@ if(((DownloadLink) obj).getLinkType()!=DownloadLink.LINKTYPE_NORMAL)tmp.setEnabl
             for (int i = 0; i < links.size(); i++) {
                 links.elementAt(i).setEnabled(true);
             }
-            JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_DOWNLOADLINK_DATA_CHANGED, this));
+            JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_ALL_DOWNLOADLINKS_DATA_CHANGED, this));
             break;
         case TreeTableAction.DOWNLOAD_DISABLE:
             links = (Vector<DownloadLink>) ((TreeTableAction) ((JMenuItem) e.getSource()).getAction()).getProperty().getProperty("downloadlinks");
@@ -616,7 +620,7 @@ if(((DownloadLink) obj).getLinkType()!=DownloadLink.LINKTYPE_NORMAL)tmp.setEnabl
             for (int i = 0; i < links.size(); i++) {
                 links.elementAt(i).setEnabled(false);
             }
-            JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_DOWNLOADLINK_DATA_CHANGED, this));
+            JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_ALL_DOWNLOADLINKS_DATA_CHANGED, this));
 
             break;
             
@@ -664,7 +668,7 @@ if(((DownloadLink) obj).getLinkType()!=DownloadLink.LINKTYPE_NORMAL)tmp.setEnabl
                     links.elementAt(i).reset();
                
             }
-            JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_DOWNLOADLINK_DATA_CHANGED, this));
+            JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_ALL_DOWNLOADLINKS_DATA_CHANGED, this));
 
             break;
         // case TreeTableAction.DOWNLOAD_FORCE:
@@ -701,7 +705,7 @@ if(((DownloadLink) obj).getLinkType()!=DownloadLink.LINKTYPE_NORMAL)tmp.setEnabl
             ret = fc.getSelectedFile();
 
             if (ret != null) fp.setDownloadDirectory(ret.getAbsolutePath());
-            JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_DOWNLOADLINK_DATA_CHANGED, this));
+            JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_ALL_DOWNLOADLINKS_DATA_CHANGED, this));
 
             break;
         case TreeTableAction.PACKAGE_EDIT_NAME:
@@ -709,7 +713,7 @@ if(((DownloadLink) obj).getLinkType()!=DownloadLink.LINKTYPE_NORMAL)tmp.setEnabl
             name = JOptionPane.showInputDialog(SimpleGUI.CURRENTGUI.getFrame(), JDLocale.L("gui.linklist.editpackagename.message", "Neuer Paketname"), fp.getName());
 
             if (name != null) fp.setName(name);
-            JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_DOWNLOADLINK_DATA_CHANGED, this));
+            JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_ALL_DOWNLOADLINKS_DATA_CHANGED, this));
 
             break;
 
@@ -740,7 +744,7 @@ if(((DownloadLink) obj).getLinkType()!=DownloadLink.LINKTYPE_NORMAL)tmp.setEnabl
                 }
 
             }
-            JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_DOWNLOADLINK_DATA_CHANGED, this));
+            JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_ALL_DOWNLOADLINKS_DATA_CHANGED, this));
 
             break;
         case TreeTableAction.PACKAGE_DISABLE:
@@ -754,7 +758,7 @@ if(((DownloadLink) obj).getLinkType()!=DownloadLink.LINKTYPE_NORMAL)tmp.setEnabl
                 }
 
             }
-            JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_DOWNLOADLINK_DATA_CHANGED, this));
+            JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_ALL_DOWNLOADLINKS_DATA_CHANGED, this));
 
             break;
             
@@ -792,7 +796,7 @@ if(((DownloadLink) obj).getLinkType()!=DownloadLink.LINKTYPE_NORMAL)tmp.setEnabl
                 }
 
             }
-            JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_DOWNLOADLINK_DATA_CHANGED, this));
+            JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_ALL_DOWNLOADLINKS_DATA_CHANGED, this));
 
             break;
 
@@ -811,7 +815,7 @@ if(((DownloadLink) obj).getLinkType()!=DownloadLink.LINKTYPE_NORMAL)tmp.setEnabl
                 }
 
             }
-            JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_DOWNLOADLINK_DATA_CHANGED, this));
+            JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_ALL_DOWNLOADLINKS_DATA_CHANGED, this));
 
             break;
         case TreeTableAction.PACKAGE_SORT:

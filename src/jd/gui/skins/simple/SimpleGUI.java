@@ -44,6 +44,7 @@ import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JCheckBoxMenuItem;
+import javax.swing.JComponent;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JMenu;
@@ -487,10 +488,11 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
 
         // Adds the menus form the Addons
         JMenu menAddons = new JMenu(JDLocale.L("gui.menu.addons", "Addons"));
-        
+
         HashMap<String, PluginOptional> addons = JDUtilities.getPluginsOptional();
         Iterator<String> e = addons.keySet().iterator();
-JMenuItem mi;
+        JMenuItem mi;
+
         while (e.hasNext()) {
             final PluginOptional helpplugin = addons.get(e.next());
 
@@ -498,22 +500,32 @@ JMenuItem mi;
 
                 MenuItem m = new MenuItem(MenuItem.CONTAINER, helpplugin.getPluginName(), 0);
                 m.setItems(helpplugin.createMenuitems());
-                menAddons.add(mi=SimpleGUI.getJMenuItem(m));
-                ((JMenu)mi).removeMenuListener(((JMenu)mi).getMenuListeners()[0]);
-                ((JMenu)mi).addMenuListener(new MenuListener() {
-                    public void menuCanceled(MenuEvent e) {}
-                    public void menuDeselected(MenuEvent e) { }
-                    public void menuSelected(MenuEvent e) {
-                        JMenu m = (JMenu) e.getSource();
-                       
-                        m.removeAll();
-                        for (Iterator<MenuItem> it = helpplugin.createMenuitems().iterator();it.hasNext();) {
-                              m.add(SimpleGUI.getJMenuItem(it.next()));
-                             
-                        }
-                    }
+                mi = SimpleGUI.getJMenuItem(m);
+                if (mi != null) {
+                    menAddons.add(mi);
 
-                });
+                    ((JMenu) mi).removeMenuListener(((JMenu) mi).getMenuListeners()[0]);
+                    ((JMenu) mi).addMenuListener(new MenuListener() {
+                        public void menuCanceled(MenuEvent e) {
+                        }
+
+                        public void menuDeselected(MenuEvent e) {
+                        }
+
+                        public void menuSelected(MenuEvent e) {
+                            JMenu m = (JMenu) e.getSource();
+
+                            m.removeAll();
+                            for (Iterator<MenuItem> it = helpplugin.createMenuitems().iterator(); it.hasNext();) {
+                                m.add(SimpleGUI.getJMenuItem(it.next()));
+
+                            }
+                        }
+
+                    });
+                } else {
+                    menAddons.addSeparator();
+                }
             }
         }
 
@@ -534,24 +546,39 @@ JMenuItem mi;
             final Plugin helpplugin = it.next();
             if (helpplugin.createMenuitems() != null) {
                 MenuItem m = new MenuItem(MenuItem.CONTAINER, helpplugin.getPluginName(), 0);
-              //  m.setItems(helpplugin.createMenuitems());
-                helpHost.add(mi=SimpleGUI.getJMenuItem(m));
-                ((JMenu)mi).removeMenuListener(((JMenu)mi).getMenuListeners()[0]);
-                ((JMenu)mi).addMenuListener(new MenuListener() {
-                    public void menuCanceled(MenuEvent e) {}
-                    public void menuDeselected(MenuEvent e) { }
-                    public void menuSelected(MenuEvent e) {
-                        JMenu m = (JMenu) e.getSource();                       
-                       m.removeAll();
-                        for (Iterator<MenuItem> it = helpplugin.createMenuitems().iterator();it.hasNext();) {
-                              m.add(SimpleGUI.getJMenuItem(it.next()));
-                          
-                             
-                        }
-                      
-                    }
+                // m.setItems(helpplugin.createMenuitems());
+                mi = SimpleGUI.getJMenuItem(m);
+                if (mi != null) {
+                    helpHost.add(mi);
 
-                });
+                    ((JMenu) mi).removeMenuListener(((JMenu) mi).getMenuListeners()[0]);
+                    ((JMenu) mi).addMenuListener(new MenuListener() {
+                        public void menuCanceled(MenuEvent e) {
+                        }
+
+                        public void menuDeselected(MenuEvent e) {
+                        }
+
+                        public void menuSelected(MenuEvent e) {
+                            JMenu m = (JMenu) e.getSource();
+                            JMenuItem c;
+                            m.removeAll();
+                            for (Iterator<MenuItem> it = helpplugin.createMenuitems().iterator(); it.hasNext();) {
+                                c = SimpleGUI.getJMenuItem(it.next());
+                                if (c == null) {
+                                    m.addSeparator();
+                                } else {
+                                    m.add(c);
+                                }
+
+                            }
+
+                        }
+
+                    });
+                } else {
+                    helpHost.addSeparator();
+                }
             }
         }
         if (helpHost.getItemCount() == 0) {
@@ -562,24 +589,33 @@ JMenuItem mi;
             final Plugin helpplugin = it.next();
             if (helpplugin.createMenuitems() != null) {
                 MenuItem m = new MenuItem(MenuItem.CONTAINER, helpplugin.getPluginName(), 0);
-               
-                helpDecrypt.add(mi=SimpleGUI.getJMenuItem(m));
-                ((JMenu)mi).removeMenuListener(((JMenu)mi).getMenuListeners()[0]);
-                ((JMenu)mi).addMenuListener(new MenuListener() {
-                    public void menuCanceled(MenuEvent e) {}
-                    public void menuDeselected(MenuEvent e) { }
-                    public void menuSelected(MenuEvent e) {
-                        JMenu m = (JMenu) e.getSource();                       
-                       m.removeAll();
-                        for (Iterator<MenuItem> it = helpplugin.createMenuitems().iterator();it.hasNext();) {
-                              m.add(SimpleGUI.getJMenuItem(it.next()));
-                          
-                             
-                        }
-                      
-                    }
 
-                });
+                mi = SimpleGUI.getJMenuItem(m);
+                if (mi != null) {
+                    helpDecrypt.add(mi);
+
+                    ((JMenu) mi).removeMenuListener(((JMenu) mi).getMenuListeners()[0]);
+                    ((JMenu) mi).addMenuListener(new MenuListener() {
+                        public void menuCanceled(MenuEvent e) {
+                        }
+
+                        public void menuDeselected(MenuEvent e) {
+                        }
+
+                        public void menuSelected(MenuEvent e) {
+                            JMenu m = (JMenu) e.getSource();
+                            m.removeAll();
+                            for (Iterator<MenuItem> it = helpplugin.createMenuitems().iterator(); it.hasNext();) {
+                                m.add(SimpleGUI.getJMenuItem(it.next()));
+
+                            }
+
+                        }
+
+                    });
+                } else {
+                    helpDecrypt.addSeparator();
+                }
             }
         }
         if (helpDecrypt.getItemCount() == 0) {
@@ -587,27 +623,36 @@ JMenuItem mi;
         }
 
         for (Iterator<PluginForContainer> it = JDUtilities.getPluginsForContainer().iterator(); it.hasNext();) {
-           final  Plugin helpplugin = it.next();
+            final Plugin helpplugin = it.next();
             if (helpplugin.createMenuitems() != null) {
                 MenuItem m = new MenuItem(MenuItem.CONTAINER, helpplugin.getPluginName(), 0);
-                
-                helpContainer.add(mi=SimpleGUI.getJMenuItem(m));
-                ((JMenu)mi).removeMenuListener(((JMenu)mi).getMenuListeners()[0]);
-                ((JMenu)mi).addMenuListener(new MenuListener() {
-                    public void menuCanceled(MenuEvent e) {}
-                    public void menuDeselected(MenuEvent e) { }
-                    public void menuSelected(MenuEvent e) {
-                        JMenu m = (JMenu) e.getSource();                       
-                       m.removeAll();
-                        for (Iterator<MenuItem> it = helpplugin.createMenuitems().iterator();it.hasNext();) {
-                              m.add(SimpleGUI.getJMenuItem(it.next()));
-                          
-                             
-                        }
-                      
-                    }
 
-                });
+                mi = SimpleGUI.getJMenuItem(m);
+                if (mi != null) {
+                    helpContainer.add(mi);
+
+                    ((JMenu) mi).removeMenuListener(((JMenu) mi).getMenuListeners()[0]);
+                    ((JMenu) mi).addMenuListener(new MenuListener() {
+                        public void menuCanceled(MenuEvent e) {
+                        }
+
+                        public void menuDeselected(MenuEvent e) {
+                        }
+
+                        public void menuSelected(MenuEvent e) {
+                            JMenu m = (JMenu) e.getSource();
+                            m.removeAll();
+                            for (Iterator<MenuItem> it = helpplugin.createMenuitems().iterator(); it.hasNext();) {
+                                m.add(SimpleGUI.getJMenuItem(it.next()));
+
+                            }
+
+                        }
+
+                    });
+                } else {
+                    helpContainer.addSeparator();
+                }
             }
         }
         if (helpContainer.getItemCount() == 0) {
@@ -1581,20 +1626,27 @@ JMenuItem mi;
 
     }
 
-//    public void updateStatusBar() {
-//        int maxspeed = JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, 0);
-//
-//        this.statusBar.spMaxDls.setModel(new SpinnerNumberModel(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN, 3), 1, 20, 1));
-//
-//        this.statusBar.spMax.setModel(new SpinnerNumberModel(maxspeed, 0, Integer.MAX_VALUE, 50));
-//
-//        this.statusBar.chbPremium.setSelected(JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM));
-//
-//        return;
-//    }
+    // public void updateStatusBar() {
+    // int maxspeed =
+    // JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED,
+    // 0);
+    //
+    // this.statusBar.spMaxDls.setModel(new
+    // SpinnerNumberModel(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN,
+    // 3), 1, 20, 1));
+    //
+    // this.statusBar.spMax.setModel(new SpinnerNumberModel(maxspeed, 0,
+    // Integer.MAX_VALUE, 50));
+    //
+    // this.statusBar.chbPremium.setSelected(JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM));
+    //
+    // return;
+    // }
 
     public static JMenuItem getJMenuItem(final MenuItem mi) {
         switch (mi.getID()) {
+        case MenuItem.SEPARATOR:
+            return null;
         case MenuItem.NORMAL:
             JMenuItem m = new JMenuItem(new JDMenuAction(mi));
 
@@ -1602,7 +1654,7 @@ JMenuItem mi;
 
         case MenuItem.TOGGLE:
             JCheckBoxMenuItem m2 = new JCheckBoxMenuItem(new JDMenuAction(mi));
-JDUtilities.getLogger().info("SELECTED: "+mi.isSelected());
+            JDUtilities.getLogger().info("SELECTED: " + mi.isSelected());
             if (mi.isSelected()) {
                 m2.setIcon(JDTheme.I("gui.images.selected"));
             } else {
@@ -1626,10 +1678,15 @@ JDUtilities.getLogger().info("SELECTED: "+mi.isSelected());
                 public void menuSelected(MenuEvent e) {
                     JMenu m = (JMenu) e.getSource();
                     m.removeAll();
-
+                    JMenuItem c;
                     for (int i = 0; i < mi.getSize(); i++) {
+                        c = SimpleGUI.getJMenuItem(mi.get(i));
+                        if (c == null) {
+                            m.addSeparator();
+                        } else {
+                            m.add(c);
+                        }
 
-                        m.add(SimpleGUI.getJMenuItem(mi.get(i)));
                     }
                 }
 

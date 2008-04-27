@@ -19,7 +19,7 @@ public abstract class DownloadLinksView extends JPanel implements ControlListene
     protected SimpleGUI parent;
     protected JPopupMenu popup;
     public final static int REFRESH_DATA_AND_STRUCTURE_CHANGED = 0;
-    public final static int REFRESH_ONLY_DATA_CHANGED = 1;
+    public final static int REFRESH_ALL_DATA_CHANGED = 1;
     public static final int REFRESH_SPECIFIED_LINKS = 2;
     /**
      * Dieser Vector enthält alle Downloadlinks
@@ -45,13 +45,13 @@ public abstract class DownloadLinksView extends JPanel implements ControlListene
     public void controlEvent(ControlEvent event) {
 
         switch (event.getID()) {
-        case ControlEvent.CONTROL_DOWNLOADLINKS_CHANGED:
+        case ControlEvent.CONTROL_SPECIFIED_DOWNLOADLINKS_CHANGED:
             fireTableChanged(REFRESH_SPECIFIED_LINKS,event.getParameter());
             // fireTableChanged(REFRESH_ID_COMPLETE_REPAINT);
             break;
 
-        case ControlEvent.CONTROL_DOWNLOADLINK_DATA_CHANGED:
-            fireTableChanged(REFRESH_ONLY_DATA_CHANGED,null);
+        case ControlEvent.CONTROL_ALL_DOWNLOADLINKS_DATA_CHANGED:
+            fireTableChanged(REFRESH_ALL_DATA_CHANGED,null);
             // fireTableChanged(REFRESH_ID_COMPLETE_REPAINT);
             break;
         case ControlEvent.CONTROL_LINKLIST_STRUCTURE_CHANGED:

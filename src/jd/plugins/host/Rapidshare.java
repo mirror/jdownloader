@@ -78,11 +78,12 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
-import java.lang.reflect.Array;
 import java.net.MalformedURLException;
 import java.net.SocketTimeoutException;
 import java.net.URL;
 import java.security.NoSuchAlgorithmException;
+import java.sql.Date;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -290,6 +291,10 @@ public class Rapidshare extends PluginForHost {
 
     private static final int ACTION_HAPPY_HOURS = 7;
 
+    private static final String PARAM_WAIT_FOR_HAPPYHOURS = "WAIT_FOR_HAPPYHOURS";
+
+    private static final int ACTION_HAPPY_HOURS_TOGGLE_WAIT = 8;
+
     private static int ERRORS = 0;
 
     @Override
@@ -413,6 +418,12 @@ public class Rapidshare extends PluginForHost {
         m = new MenuItem(JDLocale.L("plugins.rapidshare.menu.happyHours", "Happy Hours Abfrage"), ACTION_HAPPY_HOURS);
         m.setActionListener(this);
         menuList.add(m);
+        
+        m = new MenuItem(MenuItem.TOGGLE,JDLocale.L("plugins.rapidshare.menu.happyHourswait", "Auf Happy Hours warten"), ACTION_HAPPY_HOURS_TOGGLE_WAIT);
+        m.setActionListener(this);
+        m.setSelected(this.getProperties().getBooleanProperty(PARAM_WAIT_FOR_HAPPYHOURS, false));
+        menuList.add(m);
+        menuList.add(new MenuItem(MenuItem.SEPARATOR));
         menuList.add(premium);
         // account1
         account = new MenuItem(MenuItem.CONTAINER, JDLocale.L("plugins.rapidshare.menu.premium1", "1. Account (") + this.getProperties().getProperty(PROPERTY_PREMIUM_USER) + ")", 0);
@@ -504,6 +515,9 @@ public class Rapidshare extends PluginForHost {
         case Rapidshare.ACTION_INFO_PREMIUM_3:
             showInfo(3);
             break;
+        case Rapidshare.ACTION_HAPPY_HOURS_TOGGLE_WAIT:
+            getProperties().setProperty(PARAM_WAIT_FOR_HAPPYHOURS,!getProperties().getBooleanProperty(Rapidshare.PARAM_WAIT_FOR_HAPPYHOURS, false));
+            break;
         case Rapidshare.ACTION_HAPPY_HOURS:
 
             new Thread() {
@@ -512,13 +526,33 @@ public class Rapidshare extends PluginForHost {
 
                     try {
                         progress.increase(1);
-                        RequestInfo ri = Plugin.getRequest(new URL("http://dlcrypt.cwsurf.de/hh.php"));
+                        RequestInfo ri = Plugin.getRequest(new URL("http://jdownloader.ath.cx/hh.php?txt=1"));
                         progress.increase(1);
                         if (ri.containsHTML("happyhour")) {
-                            JDUtilities.getGUI().showMessageDialog(JDLocale.L("plugins.hoster.rapidshare.com.happyHours.active", "Happy Hour sind aktiv. Es kann ohne Captcha und Ticketwartezeit geladen werden"));
-                        } else {
-                            JDUtilities.getGUI().showMessageDialog(JDLocale.L("plugins.hoster.rapidshare.com.happyHours.active", "Happy Hour sind NICHT aktiv."));
-                        }
+                            int activ=JDUtilities.filterInt(JDUtilities.splitByNewline(ri.getHtmlCode())[1]);
+                            Date d= new Date(activ*1000L);
+                            d.setTime(activ*1000L);
+                            
+                  
+                        
+                         SimpleDateFormat df = new SimpleDateFormat( "dd.MM.yyyy HH:mm" );
+                    
+                      
+                            String html=String.format(JDLocale.L("plugins.hoster.rapidshare.com.hhactive.html", "<link href='http://jdownloader.ath.cx/jdcss.css' rel='stylesheet' type='text/css' /><body><div><p style='text-align:center'><img src='http://jdownloader.ath.cx/img/hh.jpg' /><br>Aktiv seit %s</p></div></body>"),df.format( d ));
+                            JDUtilities.getGUI().showHTMLDialog(JDLocale.L("plugins.hoster.rapidshare.com.happyHours", "Happy Hour Check"), html);
+                         } else {
+                             int activ=JDUtilities.filterInt(JDUtilities.splitByNewline(ri.getHtmlCode())[1]);
+                             Date d= new Date(activ*1000L);
+                             d.setTime(activ*1000L);
+                             
+                   
+                         
+                          SimpleDateFormat df = new SimpleDateFormat( "dd.MM.yyyy HH:mm" );
+                     
+                       
+                             String html=String.format(JDLocale.L("plugins.hoster.rapidshare.com.hhinactive.html", "<link href='http://jdownloader.ath.cx/jdcss.css' rel='stylesheet' type='text/css' /><body><div><p style='text-align:center'><img src='http://jdownloader.ath.cx/img/nhh.jpg' /><br>Die letzte Happy Hour Phase endete am %s</p></div></body>"),df.format( d ));
+                             JDUtilities.getGUI().showHTMLDialog(JDLocale.L("plugins.hoster.rapidshare.com.happyHours", "Happy Hour Check"), html);
+                         }
                     } catch (Exception e) {
                     }
 
@@ -567,7 +601,7 @@ public class Rapidshare extends PluginForHost {
 
                         String[] info = Plugin.getSimpleMatches(ri.getHtmlCode(), "<p align=\"justify\">Hallo, <b>°</b>! Dein Premium-Account ist g&uuml;ltig bis °. Wenn du deinen Account verl&auml;ngern willst, klicke einfach auf \"Account verl&auml;ngern\".°Du hast bis jetzt <b>°</b> <a href=\"http://rapidshare.com/faq.html\" target=\"_blank\">Premium-Punkte</a> gesammelt. Um Dateien mit deinem Premium-Account runterzuladen, musst du die URL der Datei kennen und auf diese klicken.°Um die Privatsph&auml;re zu wahren, bieten wir keine Suchmaschine an (Siehe FAQ). Deine Uploads sind bei uns also sicher und werden nur von den Leuten runtergeladen, denen du die URL gibst. In den letzten 5 Tagen hast du <b>°</b>°runtergeladen.<br>Die Serverzeit beim Erstellen dieser Seite war: <b>°</b></p><div id=\"expiredwarning\">°Belegter Speicher: <b>°</b> durch ° Dateien. ");
 
-                        html = String.format("<link href='http://jdownloader.ath.cx/jdcss.css' rel='stylesheet' type='text/css' /><div style='width:534px;height;200px'><h2>Accountinformation</h2><table width='100%%' ><tr><th >Valid until</th><td>%s</td></tr><tr><th >Premiumpoints</th><td>%s</td></tr><tr><th >Current traffic</th><td>%s</td></tr><tr><th >Used space</th><td>%s</td></tr><tr><th >Files</th><td>%s</td></tr></table></div>", info[1], info[3], info[5], info[9], info[10]);
+                        html = String.format(JDLocale.L("plugins.hoster.rapidshare.com.info.html", "<link href='http://jdownloader.ath.cx/jdcss.css' rel='stylesheet' type='text/css' /><div style='width:534px;height;200px'><h2>Accountinformation</h2><table width='100%%' ><tr><th >Valid until</th><td>%s</td></tr><tr><th >Premiumpoints</th><td>%s</td></tr><tr><th >Current traffic</th><td>%s</td></tr><tr><th >Used space</th><td>%s</td></tr><tr><th >Files</th><td>%s</td></tr></table></div>"), info[1], info[3], info[5], info[9], info[10]);
                     }
                     JDUtilities.getGUI().showHTMLDialog(String.format(JDLocale.L("plugins.hoster.rapidshare.com.info.title", "Accountinfo für %s"), user), html);
                 } catch (MalformedURLException e) {
@@ -872,6 +906,26 @@ public class Rapidshare extends PluginForHost {
                     logger.severe("Happy hour");
                     step.setParameter((long) 0);
                     return step;
+                }else if(getProperties().getBooleanProperty(Rapidshare.PARAM_WAIT_FOR_HAPPYHOURS, false)){
+                    int happyWaittime = 5*60*1000;
+                    ProgressController p = new ProgressController(JDLocale.L("plugins.rapidshare.waitForHappyHour.progressbar","Warte auf HappyHour.Nächster Versuch in ")+JDUtilities.formatSeconds(happyWaittime/1000),happyWaittime);
+                    p.setStatus(happyWaittime);
+                    downloadLink.setStatusText(JDLocale.L("plugins.rapidshare.waitForHappyHour","Warte auf HappyHour"));
+                    this.fireControlEvent(ControlEvent.CONTROL_SPECIFIED_DOWNLOADLINKS_CHANGED, downloadLink);
+                    
+                    
+                    while(happyWaittime>0&&!this.aborted){
+                        Thread.sleep(1000);
+                        happyWaittime-=1000;
+                        p.setStatus(happyWaittime);
+                        p.setStatusText(JDLocale.L("plugins.rapidshare.waitForHappyHour.progressbar","Warte auf HappyHour. Nächster Versuch in ")+JDUtilities.formatSeconds(happyWaittime/1000));
+                    }
+                    p.finalize();
+                    step.setStatus(PluginStep.STATUS_ERROR);
+                    step.setParameter(0L);
+                    downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN_RETRY);
+                    return step;
+                    
                 }
                 happyhourboolean = false;
                 if (captchaAddress == null) {
@@ -898,7 +952,7 @@ public class Rapidshare extends PluginForHost {
                     break;
                 }
                 downloadLink.setStatusText(JDLocale.L("plugins.rapidshare.captcha", "OCR & Wartezeit"));
-                this.fireControlEvent(ControlEvent.CONTROL_DOWNLOADLINKS_CHANGED, downloadLink);
+                this.fireControlEvent(ControlEvent.CONTROL_SPECIFIED_DOWNLOADLINKS_CHANGED, downloadLink);
 
                 if (wait != null) {
                     long pendingTime = Long.parseLong(wait);

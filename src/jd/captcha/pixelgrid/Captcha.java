@@ -1286,6 +1286,13 @@ public class Captcha extends PixelGrid {
             if (JAntiCaptcha.isLoggerActive()) logger.fine("found " + found + " minArea: " + minArea);
             // Teil die größten Objekte bis man die richtige anzahl an lettern
             // hat
+//            
+//            for(Iterator<PixelObject> it = objects.iterator();it.hasNext();){
+//                
+//                BasicWindow.showImage(it.next().toLetter().getImage(2));
+//            }
+            
+            
             while (objects.size() > 0 && found < letterNum) {
                 PixelObject po = objects.remove(0);
                 PixelObject next = null;
@@ -1315,6 +1322,7 @@ public class Captcha extends PixelGrid {
                     splitNum--;
                 }
                 if (JAntiCaptcha.isLoggerActive()) logger.finer("teile erstes element " + po.getWidth() + " : splitnum " + splitNum);
+            
                 if ((found + splitNum - 1) > letterNum || splitNum < 2) {
                     if (JAntiCaptcha.isLoggerActive()) logger.severe("Richtige Letteranzahl 1 konnte nicht ermittelt werden");
                     return null;

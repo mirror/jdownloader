@@ -124,7 +124,9 @@ public class PixelObject implements Comparable {
     public void add(int x, int y, int color) {
         int[] tmp = { x, y, color };
         int tmpAvg = avg;
+      
         avg = UTILITIES.mixColors(avg, color, getSize(), 1);
+        
         // if(JAntiCaptcha.isLoggerActive())logger.info(" AVG "+avg+"
         // ("+color+")");
         if (Math.abs(avg - tmpAvg) < (owner.getMaxPixelValue() * this.contrast)) {

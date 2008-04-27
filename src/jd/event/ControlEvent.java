@@ -37,7 +37,7 @@ public class ControlEvent extends AWTEvent {
     /**
      * Die Daten von einem oder mehreren Downloadlinks wurden verändert. Dazu zählen auch Statusids,Fortschritt usw..
      */
-    public final static int   CONTROL_DOWNLOADLINK_DATA_CHANGED                     = 2;
+    public final static int   CONTROL_ALL_DOWNLOADLINKS_DATA_CHANGED                     = 2;
 
     /**
      * Das Verteilen des Inhalts der Zwischenablage ist abgeschlossen Als
@@ -87,7 +87,7 @@ public class ControlEvent extends AWTEvent {
     /**
      * Es wird eine ArrayList mit den veränderten DownloadLinks als parameter erwartet
      */
-    public final static int   CONTROL_DOWNLOADLINKS_CHANGED                    = 7;
+    public final static int   CONTROL_SPECIFIED_DOWNLOADLINKS_CHANGED                    = 7;
     /**
      * Gibt an dass ein captcha geladen wurde. der Fiel-Pfad zum captcha wir als
      * parameter erwartet. Source ist das ausführende Plugin

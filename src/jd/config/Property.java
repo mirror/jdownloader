@@ -76,6 +76,7 @@ public class Property implements Serializable {
         properties.put(key, value);
 
         if (logger == null) logger = JDUtilities.getLogger();
+        try{
         if (old == null && value != null) {
             JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_JDPROPERTY_CHANGED, key));
 
@@ -91,6 +92,8 @@ public class Property implements Serializable {
         }else{
             if(value!=old) JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_JDPROPERTY_CHANGED, key));
 
+        }}catch(Exception e){
+            JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_JDPROPERTY_CHANGED, key));
         }
 
         // logger.finer("Config property: " + key + " = " + value+" - "+this);

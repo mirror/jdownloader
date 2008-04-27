@@ -1351,7 +1351,7 @@ new Thread(){
 
                 }
             }
-            fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_DOWNLOADLINKS_CHANGED, al));
+            fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SPECIFIED_DOWNLOADLINKS_CHANGED, al));
 
         }
 
@@ -1359,7 +1359,7 @@ new Thread(){
 
     public void requestDownloadLinkUpdate(DownloadLink link) {
 
-        fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_DOWNLOADLINKS_CHANGED, link));
+        fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SPECIFIED_DOWNLOADLINKS_CHANGED, link));
 
     }
 

@@ -1086,14 +1086,17 @@ public class UTILITIES {
 	 * @return 32 Bit Farbwert
 	 */
 	public static int mixColors(int a, int b, int ga, int gb) {
+	
 		int[] av = hexToRgb(a);
 		int[] bv = hexToRgb(b);
 		int R = (av[0] * ga + bv[0] * gb) / (ga + gb);
 		int G = (av[1] * ga + bv[1] * gb) / (ga + gb);
 		int B = (av[2] * ga + bv[2] * gb) / (ga + gb);
-		int[] ret = { R, G, B };
+	
 
-		return rgbToHex(ret);
+		return rgbToHex(new int[]{R, G, B});
+
+
 	}
 
 	/**

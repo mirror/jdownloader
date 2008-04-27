@@ -60,7 +60,7 @@ public class ResetLink extends Interaction implements Serializable {
                 link.setStatus(DownloadLink.STATUS_TODO);
                 link.setStatusText("");
                 link.reset();
-                JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_DOWNLOADLINKS_CHANGED, link));
+                JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SPECIFIED_DOWNLOADLINKS_CHANGED, link));
             } else {
                 logger.severe("Kein letzter Downloadlink gefunden");
             }

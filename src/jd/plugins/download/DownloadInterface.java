@@ -468,7 +468,7 @@ abstract public class DownloadInterface {
             }
             // checkChunkParts();
             downloadLink.setDownloadCurrent(this.totaleLinkBytesLoaded);
-            JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_DOWNLOADLINKS_CHANGED, downloadLink));
+            JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SPECIFIED_DOWNLOADLINKS_CHANGED, downloadLink));
 
             assignChunkSpeeds();
 

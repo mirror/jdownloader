@@ -949,7 +949,7 @@ public class JDUtilities {
                 currentDirectory = fileChooserSave.getCurrentDirectory();
             }
         }
-        // logger.info("save file: " + fileOutput + " object: " + objectToSave);
+         logger.info("save file: " + fileOutput + " object: " + objectToSave);
         if (fileOutput != null) {
             if (fileOutput.isDirectory()) {
                 fileOutput = new File(fileOutput, name + extension);
@@ -968,6 +968,7 @@ public class JDUtilities {
                     oos.writeObject(objectToSave);
                     oos.close();
                 }
+                fos.close();
             } catch (FileNotFoundException e) {
                 e.printStackTrace();
             } catch (IOException e) {
@@ -981,11 +982,9 @@ public class JDUtilities {
             if (hashPost == null) {
                 logger.severe("Schreibfehler: " + fileOutput + " Datei wurde nicht erstellt");
             } else if (hashPost.equals(hashPre)) {
-                // logger.warning("Schreibvorgang: " + fileOutput + " Datei
-                // wurde nicht überschrieben "+hashPost+" - "+hashPre);
+                logger.warning("Schreibvorgang: " + fileOutput + " Datei wurde nicht überschrieben "+hashPost+" - "+hashPre);
             } else {
-                // logger.finer("Schreibvorgang: " + fileOutput + " erfolgreich:
-                // " + hashPost);
+                logger.finer("Schreibvorgang: " + fileOutput + " erfolgreich: " + hashPost);
             }
             // logger.info(" -->"+JDUtilities.loadObject(null, fileOutput,
             // false));

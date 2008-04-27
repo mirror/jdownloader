@@ -29,6 +29,7 @@ import jd.controlling.JDController;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginStep;
+import jd.plugins.RequestInfo;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
@@ -42,8 +43,9 @@ public class FTI6xto extends PluginForDecrypt {
     private String VERSION = "0.0.1";
 
     private String CODER = "jD-Team";
+    //http://fucktheindustry.ru/file.php?id=23423765
     // http://fucktheindustry.ru/store/file/dlc/forcedl.php?file=One.Piece.S01E001.Hier.Kommt.Ruffy.Der.Kuenftige.Koenig.Der.Piraten.German.DVDRiP.UNCUT.Xvid-iND.dlc
-    static private final Pattern patternSupported = getSupportPattern("http://fucktheindustry.ru/store/file/dlc/forcedl.php\\?file\\=[+]");
+    static private final Pattern patternSupported = getSupportPattern("http://fucktheindustry.ru/store/file/dlc/forcedl.php\\?file\\=[+]|http://fucktheindustry.ru/file.php\\?id\\=[+]");
 
     public FTI6xto() {
 
@@ -85,8 +87,23 @@ public class FTI6xto extends PluginForDecrypt {
 
     @Override
     public PluginStep doStep(PluginStep step, String parameter) {
-
+        // surpress jd warning
+        Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
+        step.setParameter(decryptedLinks);
         if (step.getStep() == PluginStep.STEP_DECRYPT) {
+            
+            if(parameter.trim().toLowerCase().contains("file.php")){
+                try {
+                    RequestInfo ri = getRequest(new URL(parameter));
+                    
+                   parameter= "http://fucktheindustry.ru/store/file/dlc/forcedl.php?file="+getSimpleMatch(ri.getHtmlCode(), "<a href=\"http://fucktheindustry.ru/store/file/dlc/forcedl.php?file=°.dlc",0)+".dlc";
+                } catch (MalformedURLException e) {
+                    return step;
+                } catch (IOException e) {
+                    return step;
+                }
+                
+            }
             if(parameter.trim().toLowerCase().endsWith("ccf")){
                 File container = JDUtilities.getResourceFile("container/" + System.currentTimeMillis() + ".ccf");
                 if (JDUtilities.download(container, parameter)) {
@@ -103,9 +120,7 @@ public class FTI6xto extends PluginForDecrypt {
             }
             }
 
-            // surpress jd warning
-            Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
-            step.setParameter(decryptedLinks);
+          
             return step;
 
         }

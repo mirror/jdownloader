@@ -660,14 +660,14 @@ public class JAntiCaptcha {
 
             }
 
-            String methodsPath = UTILITIES.getFullPath(new String[] { JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath(), "jd", "captcha", "methods" });
-            String hoster = "rscat.com";
-            JAntiCaptcha jac = new JAntiCaptcha(methodsPath, hoster);
-//            jac.setShowDebugGui(true);
-//            LetterComperator.CREATEINTERSECTIONLETTER = true;
-            LetterComperator l = jac.getLetter(dif);
+//            String methodsPath = UTILITIES.getFullPath(new String[] { JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath(), "jd", "captcha", "methods" });
+//            String hoster = "rscat.com";
+//            JAntiCaptcha jac = new JAntiCaptcha(methodsPath, hoster);
+////            jac.setShowDebugGui(true);
+////            LetterComperator.CREATEINTERSECTIONLETTER = true;
+//            LetterComperator l = jac.getLetter(dif);
             bw2.add(new JLabel("Wert:"), UTILITIES.getGBC(0, 8, 2, 2));
-            bw2.add(new JLabel(lcs[i].getDecodedValue() + " : " + l.getDecodedValue() + " - " + l.getValityPercent()), UTILITIES.getGBC(i * 2 + 2, 8, 2, 2));
+//            bw2.add(new JLabel(lcs[i].getDecodedValue() + " : " + l.getDecodedValue() + " - " + l.getValityPercent()), UTILITIES.getGBC(i * 2 + 2, 8, 2, 2));
             bw2.add(new JLabel("Proz.:"), UTILITIES.getGBC(0, 10, 2, 2));
             bw2.add(new JLabel(lcs[i].getValityPercent() + "%"), UTILITIES.getGBC(i * 2 + 2, 10, 2, 2));
 
