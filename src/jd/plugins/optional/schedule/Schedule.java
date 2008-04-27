@@ -1,29 +1,25 @@
 package jd.plugins.optional.schedule;
 
-import java.util.ArrayList;
 import java.awt.event.ActionEvent;
+import java.util.ArrayList;
+
 import jd.config.MenuItem;
 import jd.event.ControlListener;
 import jd.plugins.PluginOptional;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
-import java.util.*;
 
 public class Schedule extends PluginOptional implements ControlListener {
     
-    Vector v = new Vector();
+    ScheduleControl b = new ScheduleControl();
     
-    public void initschedule() {
-        for(int i = 0; i < 4; i++){
-            v.add(i,new ScheduleFrame());
-            ScheduleFrame s = (ScheduleFrame) v.elementAt(i);
-            s.setTitle(this.getPluginName()+" by "+this.getCoder());
-        }
+    public void initschedule(){
+        b.status.start();
     }
-
+    
     @Override
     public void enable(boolean enable) throws Exception {
-        if (JDUtilities.getJavaVersion() >= 1.6) {
+        if (JDUtilities.getJavaVersion() >= 1.5) {
             if (enable) {
                logger.info("Schedule OK");
                this.initschedule();
@@ -42,10 +38,7 @@ public class Schedule extends PluginOptional implements ControlListener {
     @Override
     public ArrayList<MenuItem> createMenuitems() {
         ArrayList<MenuItem> menu = new ArrayList<MenuItem>();
-        menu.add(new MenuItem("Schedule 1",0).setActionListener(this));
-        menu.add(new MenuItem("Schedule 2",1).setActionListener(this));
-        menu.add(new MenuItem("Schedule 3",2).setActionListener(this));
-        menu.add(new MenuItem("Schedule 4",3).setActionListener(this));
+        menu.add(new MenuItem("Settings",0).setActionListener(this));
         return menu;
     }
 
@@ -56,12 +49,12 @@ public class Schedule extends PluginOptional implements ControlListener {
 
     @Override
     public String getPluginID() {
-        return "0.1";
+        return "0.2";
     }
 
     @Override
     public String getVersion() {
-        return "0.1";
+        return "0.2";
     }
 
     public String getPluginName() {
@@ -69,15 +62,7 @@ public class Schedule extends PluginOptional implements ControlListener {
     }
     
     public void actionPerformed(ActionEvent e) {
-
-        for (int i = 0; i < 4 ; ++i){
-        if (e.getID() == i){
-            ScheduleFrame s = (ScheduleFrame) v.elementAt(i);
-            s.setVisible(true);
-            s.repaint();
-        }
-        }
-        
+        this.b.setVisible(true);
     }
     
 }

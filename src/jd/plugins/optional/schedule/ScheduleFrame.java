@@ -9,7 +9,7 @@ import java.util.Date;
 import java.util.Calendar;
 import java.util.TimeZone;
 
-public class ScheduleFrame extends JFrame implements ActionListener{
+public class ScheduleFrame extends JDialog implements ActionListener{
     
     //Objekte werden erzeugt
     Timer t = new Timer(10000,this); 
@@ -21,27 +21,35 @@ public class ScheduleFrame extends JFrame implements ActionListener{
     JCheckBox stop_start = new JCheckBox();
     
     SpinnerDateModel baba = new SpinnerDateModel();
-    JSpinner time = new JSpinner(baba);      
+    JSpinner time = new JSpinner(baba);
+    String dateFormat = "HH:mm:ss | dd.MM.yy";
     
     JSpinner repeat = new JSpinner(new SpinnerNumberModel(0,0,24,1));
     JButton start = new JButton("Start");    
     JButton close = new JButton("Close");    
-    JLabel status = new JLabel();
+    JLabel status = new JLabel(" Not Running!");    
     
     //Konstruktor des Fensters und Aussehen
-    public ScheduleFrame() {
+    public ScheduleFrame(String title) {
         addWindowListener(new WindowAdapter() {
-            public void windowClosing(WindowEvent e) {
-                
+            public void windowClosing(WindowEvent e) {                
                 setVisible(false);
-
             }
         });
+        
         this.setSize(300, 200);
         this.setResizable(false);
+        this.setTitle(title);
+        this.setLocation(300, 300);
         
+        this.start.setBorderPainted(false);
+        this.start.setFocusPainted(false);
+        this.close.setBorderPainted(false);
+        this.close.setFocusPainted(false);
         this.maxdls.setBorder(BorderFactory.createEmptyBorder());
         this.maxspeed.setBorder(BorderFactory.createEmptyBorder());
+        this.time.setToolTipText("Select your time. Format: HH:mm:ss | dd.MM.yy");
+        this.time.setEditor(new JSpinner.DateEditor(time,dateFormat));
         this.time.setBorder(BorderFactory.createEmptyBorder());
         this.repeat.setBorder(BorderFactory.createEmptyBorder());
         this.repeat.setToolTipText("Enter h | 0 = disable");
@@ -67,80 +75,71 @@ public class ScheduleFrame extends JFrame implements ActionListener{
         
         this.start.addActionListener(this);
         this.close.addActionListener(this);
-        this.t.setRepeats(false);
-        
+        this.t.setRepeats(false);        
     }
     
     //ActionPerformed e 
-    public void actionPerformed(ActionEvent e) {
-      
+    public void actionPerformed(ActionEvent e) {     
         int var = (int) parsetime();  
         if (var < 0 & e.getSource() == start){
-          this.status.setText(" Select positive time!");     
-      }
-      else{
-         if (e.getSource() == start) {
-            if (t.isRunning() == false || c.isRunning() == false){
-                this.start.setText("Stop");               
-                this.t.setInitialDelay(var);
-                this.t.start();
-                this.c.start();
-                this.status.setText(" Started!");
-                this.time.setEnabled(false);
-            }
-            else {
-                this.start.setText("Start");
-                this.t.stop();
-                this.c.stop();
-                this.status.setText(" Aborted!");
-                this.time.setEnabled(true);
-            }
+            this.status.setText(" Select positive time!");     
         }
-        
-        if (e.getSource() == close) {
-            
-            this.setVisible(false);
-            
+        else{
+            if (e.getSource() == start) {
+                if (t.isRunning() == false || c.isRunning() == false){
+                    this.start.setText("Stop");               
+                    this.t.setInitialDelay(var);
+                    this.t.start();
+                    this.c.start();
+                    this.status.setText(" Started!");
+                    this.time.setEnabled(false);
+                }
+                else {
+                    this.start.setText("Start");
+                    this.t.stop();
+                    this.c.stop();
+                    this.status.setText(" Aborted!");
+                    this.time.setEnabled(true);
+                }
+            }        
+            if (e.getSource() == close) {
+                this.setVisible(false);
+            }        
+            if (e.getSource() == t) {
+                JDUtilities.getSubConfig("DOWNLOAD").setProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, maxspeed.getValue());
+                JDUtilities.getSubConfig("DOWNLOAD").setProperty(Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN, maxdls.getValue());
+                JDUtilities.getConfiguration().setProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, premium.isSelected());
+                JDUtilities.getConfiguration().setProperty(Configuration.PARAM_DISABLE_RECONNECT, reconnect.isSelected());
+                JDUtilities.getSubConfig("DOWNLOAD").save();
+                JDUtilities.saveConfig();
+                if (this.stop_start.isSelected() == true){
+                    JDUtilities.getController().toggleStartStop();           
+                }
+                if((Integer) this.repeat.getValue() > 0){
+                    int r = (Integer) this.repeat.getValue();
+                    Date new_time = baba.getDate();
+                    long var2 = new_time.getTime();
+                    var2 = var2 + r * 3600000;
+                    new_time.setTime(var2);
+                    baba.setValue(new_time);
+                    var = (int) parsetime(); 
+                    this.t.setInitialDelay(var);
+                    this.t.start();
+                }
+                else{
+                    this.start.setText("Start");
+                    this.c.stop();
+                    this.status.setText(" Finished!");
+                    this.time.setEnabled(true);
+                }
+            }       
+            if (e.getSource() == c){
+                String ba = JDUtilities.formatSeconds(var/1000);
+                String remain = " Remaining: " + ba;
+                this.status.setText(remain);
+            }  
         }
-        
-        if (e.getSource() == t) {
-            JDUtilities.getSubConfig("DOWNLOAD").setProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, maxspeed.getValue());
-            JDUtilities.getSubConfig("DOWNLOAD").setProperty(Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN, maxdls.getValue());
-            JDUtilities.getConfiguration().setProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, premium.isSelected());
-            JDUtilities.getConfiguration().setProperty(Configuration.PARAM_DISABLE_RECONNECT, reconnect.isSelected());
-            JDUtilities.getSubConfig("DOWNLOAD").save();
-            JDUtilities.saveConfig();
-            if (this.stop_start.isSelected() == true){
-                JDUtilities.getController().toggleStartStop();           
-            }
-            if((Integer) this.repeat.getValue() > 0){
-                int r = (Integer) this.repeat.getValue();
-                Date new_time = baba.getDate();
-                long var2 = new_time.getTime();
-                var2 = var2 + r * 3600000;
-                new_time.setTime(var2);
-                baba.setValue(new_time);
-                var = (int) parsetime(); 
-                this.t.setInitialDelay(var);
-                this.t.start();
-            }
-            else{
-                this.start.setText("Start");
-                this.c.stop();
-                this.status.setText(" Finished!");
-                this.time.setEnabled(true);
-            
-        }}
-        
-        if (e.getSource() == c){
-            String ba = JDUtilities.formatSeconds(var/1000);
-            String remain = " Remaining: " + ba;
-            this.status.setText(remain);
-            
-        }
-    
-      }
-      }
+    }
     
     //Berechnen der TimerZeit
     public double parsetime () {
@@ -157,6 +156,5 @@ public class ScheduleFrame extends JFrame implements ActionListener{
         this.premium.setSelected(JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM));
         this.reconnect.setSelected(JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_DISABLE_RECONNECT));
     }
-    
     
 }
