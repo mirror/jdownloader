@@ -56,6 +56,7 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.net.URLDecoder;
+import java.net.URLEncoder;
 import java.nio.channels.FileChannel;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -1249,7 +1250,16 @@ public class JDUtilities {
      * @param str
      * @return str URLCodiert
      */
+    @SuppressWarnings("deprecation")
     public static String urlEncode(String str) {
+        try {
+            return URLEncoder.encode(str);
+        } catch (Exception e) {
+            // TODO: handle exception
+        }
+        return null;
+        /*
+         
 
         if (str == null) return str;
         String allowed = "1234567890QWERTZUIOPASDFGHJKLYXCVBNMqwertzuiopasdfghjklyxcvbnm-_.?/\\:&=;";
@@ -1265,7 +1275,8 @@ public class JDUtilities {
                 ret += "%" + (l.length() == 1 ? "0" + l : l);
             }
         }
-        return ret;
+                 */
+
 
     }
 
