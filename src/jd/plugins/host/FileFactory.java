@@ -55,6 +55,7 @@ public class FileFactory extends PluginForHost {
     private static final String NO_SLOT = "no free download slots";
     private static final String FILENAME = "<tr valign='top' style='color:green;'><td>(.*?)</td>";
     private static final String FILESIZE = "<td style=\"text-align:right;\">(.*?) (B|KB|MB)</td>";
+    //<p style="margin:30px 0 20px"><a href="http://dl054.filefactory.com/dlp/6a1dad/"><img src="/images/begin_download.gif"
     private static final String PREMIUM_LINK = "<p style=\"margin:30px 0 20px\"><a href=\"(http://[a-z0-9]+\\.filefactory\\.com/dlp/[a-z0-9]+/)\"";
     private static final String WAIT_TIME = "wait ([0-9]+) (minutes|seconds)";
     private static final String DOWNLOAD_LIMIT = "exceeded the download limit";
@@ -407,13 +408,15 @@ public class FileFactory extends PluginForHost {
                     }
                     
                     step.setStatus(PluginStep.STATUS_DONE);
-                    return step;
+                   return step;
                     
                 case PluginStep.STEP_GET_CAPTCHA_FILE :
                 	
-                	step.setStatus(PluginStep.STATUS_SKIP);
+                	//step.setStatus(PluginStep.STATUS_SKIP);
+                    step.setStatus(PluginStep.STATUS_SKIP);
+                    downloadLink.setStatusText("Premium");
                     step = nextStep(step);
-                    return step;
+                    //return step;
                     
                 case PluginStep.STEP_DOWNLOAD :
                 	
@@ -424,16 +427,11 @@ public class FileFactory extends PluginForHost {
                         downloadLink.setDownloadMax(length);
                         downloadLink.setName(this.getFileNameFormHeader(urlConnection));
 
-                        if ( !hasEnoughHDSpace(downloadLink) ) {
-                        	
-                            downloadLink.setStatus(DownloadLink.STATUS_ERROR_NO_FREE_SPACE);
-                            step.setStatus(PluginStep.STATUS_ERROR);
-                            return step;
-                            
-                        }
+                  
                         
                        dl = new RAFDownload(this, downloadLink, urlConnection);
-                        dl.setResume(true);dl.setChunkNum(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS,3));
+                        dl.setResume(true);
+                        dl.setChunkNum(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS,3));
                         if (!dl.startDownload() && step.getStatus() != PluginStep.STATUS_ERROR&& step.getStatus() != PluginStep.STATUS_TODO) {
                         	
                             downloadLink.setStatus(DownloadLink.STATUS_ERROR_PREMIUM);
@@ -441,6 +439,8 @@ public class FileFactory extends PluginForHost {
                             return step;
                             
                         }
+                        
+                        return step;
                         
                     } catch (Exception e) {
                     	
@@ -462,7 +462,7 @@ public class FileFactory extends PluginForHost {
             return step;
             
         }
-        
+        logger.severe("UNKNOWN STEP?: "+step+" ("+step.getStep());
         return step;
         
     }

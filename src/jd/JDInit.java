@@ -73,7 +73,7 @@ public class JDInit {
 
     void init() {
         CookieHandler.setDefault(null);
-          
+
     }
 
     /**
@@ -575,17 +575,34 @@ public class JDInit {
     }
 
     public void removeFiles() {
-       String[] remove=new String[]{"jd/captcha/methods/rapidshare.com"};
-       
-       for(String file:remove){
-          
-               if(JDUtilities.removeDirectoryOrFile(JDUtilities.getResourceFile(file))){
-                   logger.warning("Removed "+file);
-               }
-          
-           
-       }
-        
+        String[] remove = new String[] { "jd/captcha/methods/rapidshare.com" };
+
+        for (String file : remove) {
+
+            if (JDUtilities.removeDirectoryOrFile(JDUtilities.getResourceFile(file))) {
+                logger.warning("Removed " + file);
+            }
+
+        }
+
+    }
+
+    public void setupProxy() {
+
+        System.setProperty("proxyHost", JDUtilities.getConfiguration().getStringProperty(Configuration.PROXY_HOST, ""));
+        System.setProperty("proxyPort", JDUtilities.getConfiguration().getIntegerProperty(Configuration.PROXY_PORT, 80) + "");
+        System.setProperty("http.proxyUser", JDUtilities.getConfiguration().getStringProperty(Configuration.PROXY_USER, ""));
+        System.setProperty("http.proxyPassword", JDUtilities.getConfiguration().getStringProperty(Configuration.PROXY_PASS, ""));
+        System.setProperty("proxySet", JDUtilities.getConfiguration().getBooleanProperty(Configuration.USE_PROXY, false) ? "true" : "false");
+        if (!JDUtilities.getConfiguration().getBooleanProperty(Configuration.USE_PROXY)) System.setProperty("proxyHost", "");
+        if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.USE_PROXY)) {
+            logger.info("Use proxy:");
+            logger.info("proxyHost: " + System.getProperty("proxyHost"));
+            logger.info("proxyPort: " + System.getProperty("proxyPort"));
+            logger.info("http.proxyUser: *******");
+            logger.info("http.proxyPassword: ******");
+        }
+
     }
 
 }

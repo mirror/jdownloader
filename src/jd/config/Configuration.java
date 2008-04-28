@@ -214,6 +214,18 @@ public class Configuration extends Property implements Serializable {
 
     public static final String PARAM_DO_CRC = "DO_CRC";
 
+    public static final String PARAM_SHOW_CONTAINER_ONLOAD_OVERVIEW = "SHOW_CONTAINER_ONLOAD_OVERVIEW";
+
+    public static final String USE_PROXY = "USE_PROXY";
+
+    public static final String PROXY_HOST = "PROXY_HOST";
+
+    public static final String PROXY_PORT = "PROXY_PORT";
+
+    public static final String PROXY_USER = "PROXY_USER";
+
+    public static final String PROXY_PASS = "PROXY_PASS";
+
    
 
   

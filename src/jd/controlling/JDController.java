@@ -33,6 +33,7 @@ import javax.xml.parsers.DocumentBuilderFactory;
 
 import jd.JDInit;
 import jd.config.Configuration;
+import jd.config.Property;
 import jd.config.SubConfiguration;
 import jd.controlling.interaction.BatchReconnect;
 import jd.controlling.interaction.ExternReconnect;
@@ -143,7 +144,7 @@ public class JDController implements ControlListener, UIListener {
 
     private int initStatus = -1;
 
-    private Vector<Vector<String>> waitingUpdates= new Vector<Vector<String>>();
+    private Vector<Vector<String>> waitingUpdates = new Vector<Vector<String>>();
 
     private boolean isReconnecting;
 
@@ -274,31 +275,62 @@ public class JDController implements ControlListener, UIListener {
             }
 
             break;
-            
+
         case ControlEvent.CONTROL_DISTRIBUTE_FINISHED_HIDEGRABBER:
 
             if (event.getParameter() != null && event.getParameter() instanceof Vector && ((Vector) event.getParameter()).size() > 0) {
-            	Vector<DownloadLink> links = (Vector<DownloadLink>) event.getParameter();
+                Vector<DownloadLink> links = (Vector<DownloadLink>) event.getParameter();
                 addLinksWithoutGrabber(links);
             }
 
             break;
-            
+
         case ControlEvent.CONTROL_DISTRIBUTE_FINISHED_HIDEGRABBER_START:
 
             if (event.getParameter() != null && event.getParameter() instanceof Vector && ((Vector) event.getParameter()).size() > 0) {
-            	Vector<DownloadLink> links = (Vector<DownloadLink>) event.getParameter();
+                Vector<DownloadLink> links = (Vector<DownloadLink>) event.getParameter();
                 addLinksWithoutGrabber(links);
-            	if ( getDownloadStatus() == JDController.DOWNLOAD_NOT_RUNNING ) {
-            		fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_STARTSTOP_DOWNLOAD, this));
-            	}
+                if (getDownloadStatus() == JDController.DOWNLOAD_NOT_RUNNING) {
+                    fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_STARTSTOP_DOWNLOAD, this));
+                }
             }
 
             break;
-            
+
         case ControlEvent.CONTROL_LINKLIST_STRUCTURE_CHANGED:
             // Interaction interaction = (Interaction) event.getParameter();
             this.saveDownloadLinks();
+            break;
+
+        case ControlEvent.CONTROL_JDPROPERTY_CHANGED:
+            if (event.getSource() == JDUtilities.getConfiguration()) {
+                if (event.getParameter().equals(Configuration.PROXY_HOST)) {
+                    if (!JDUtilities.getConfiguration().getBooleanProperty(Configuration.USE_PROXY)) {
+                        System.setProperty("proxyHost", "");
+
+                    } else {
+                        System.setProperty("proxyHost", JDUtilities.getConfiguration().getStringProperty(Configuration.PROXY_HOST));
+
+                    }
+                } else if (event.getParameter().equals(Configuration.PROXY_PORT)) {
+                    System.setProperty("proxyPort", JDUtilities.getConfiguration().getIntegerProperty(Configuration.PROXY_PORT) + "");
+                } else if (event.getParameter().equals(Configuration.PROXY_USER)) {
+                    System.setProperty("http.proxyUser", JDUtilities.getConfiguration().getStringProperty(Configuration.PROXY_USER));
+                } else if (event.getParameter().equals(Configuration.PROXY_PASS)) {
+                    System.setProperty("http.proxyPassword", JDUtilities.getConfiguration().getStringProperty(Configuration.PROXY_PASS));
+                } else if (event.getParameter().equals(Configuration.USE_PROXY)) {
+                    System.setProperty("proxySet", JDUtilities.getConfiguration().getBooleanProperty(Configuration.USE_PROXY) ? "true" : "false");
+                    if (!JDUtilities.getConfiguration().getBooleanProperty(Configuration.USE_PROXY)) System.setProperty("proxyHost", "");
+                }
+
+                logger.info("Use proxy:");
+                logger.info("proxyHost: " + System.getProperty("proxyHost"));
+                logger.info("proxyPort: " + System.getProperty("proxyPort"));
+                logger.info("http.proxyUser: *******");
+                logger.info("http.proxyPassword: ******");
+
+            }
+
             break;
         default:
 
@@ -884,9 +916,9 @@ public class JDController implements ControlListener, UIListener {
                                     iterator.remove();
 
                                 }
-                            }
-                            else {
-                                // Anhand des Hostnamens aus dem DownloadLink wird
+                            } else {
+                                // Anhand des Hostnamens aus dem DownloadLink
+                                // wird
                                 // ein
                                 // passendes Plugin gesucht
                                 try {
@@ -894,29 +926,30 @@ public class JDController implements ControlListener, UIListener {
                                 } catch (Exception e) {
                                     e.printStackTrace();
                                 }
-                                // Gibt es einen Names für ein Containerformat, wird
+                                // Gibt es einen Names für ein Containerformat,
+                                // wird
                                 // ein
                                 // passendes Plugin gesucht
                                 try {
                                     if (localLink.getContainer() != null) {
                                         pluginForContainer = JDUtilities.getPluginForContainer(localLink.getContainer(), localLink.getContainerFile());
                                         if (pluginForContainer != null) {
-    
+
                                         } else
                                             localLink.setEnabled(false);
                                     }
                                 }
-    
+
                                 catch (NullPointerException e) {
                                     e.printStackTrace();
                                 }
                                 if (pluginForHost != null) {
                                     localLink.setLoadedPlugin(pluginForHost);
-    
+
                                 }
                                 if (pluginForContainer != null) {
                                     localLink.setLoadedPluginForContainer(pluginForContainer);
-    
+
                                 }
                                 if (pluginForHost == null) {
                                     logger.severe("couldn't find plugin(" + localLink.getHost() + ") for this DownloadLink." + localLink.getName());
@@ -944,65 +977,67 @@ public class JDController implements ControlListener, UIListener {
      *            Die Containerdatei
      */
     public void loadContainerFile(final File file) {
-new Thread(){
-    public void run(){
-        
+        new Thread() {
+            public void run() {
 
-        Vector<PluginForContainer> pluginsForContainer = JDUtilities.getPluginsForContainer();
-        Vector<DownloadLink> downloadLinks = new Vector<DownloadLink>();
-        PluginForContainer pContainer;
-        ProgressController progress = new ProgressController("Containerloader", pluginsForContainer.size());
-        logger.info("load Container: " + file);
+                Vector<PluginForContainer> pluginsForContainer = JDUtilities.getPluginsForContainer();
+                Vector<DownloadLink> downloadLinks = new Vector<DownloadLink>();
+                PluginForContainer pContainer;
+                ProgressController progress = new ProgressController("Containerloader", pluginsForContainer.size());
+                logger.info("load Container: " + file);
 
-        for (int i = 0; i < pluginsForContainer.size(); i++) {
+                for (int i = 0; i < pluginsForContainer.size(); i++) {
 
-            pContainer = pluginsForContainer.get(i);
-            // logger.info(i + ". " + "Containerplugin: " +
-            // pContainer.getPluginName());
-            progress.setStatusText("Containerplugin: " + pContainer.getPluginName());
-            if (pContainer.canHandle(file.getName())) {
-                // es muss jeweils eine neue plugininstanz erzeugt werden
-                try {
-                    pContainer = pContainer.getClass().newInstance();
-                    progress.setSource(pContainer);
+                    pContainer = pluginsForContainer.get(i);
+                    // logger.info(i + ". " + "Containerplugin: " +
+                    // pContainer.getPluginName());
+                    progress.setStatusText("Containerplugin: " + pContainer.getPluginName());
+                    if (pContainer.canHandle(file.getName())) {
+                        // es muss jeweils eine neue plugininstanz erzeugt
+                        // werden
+                        try {
+                            pContainer = pContainer.getClass().newInstance();
+                            progress.setSource(pContainer);
 
-                    pContainer.initContainer(file.getAbsolutePath());
-                    Vector<DownloadLink> links = pContainer.getContainedDownloadlinks();
-                    if (links == null || links.size() == 0) {
-                        logger.severe("Container Decryption failed (1)");
-                    } else {
-                        downloadLinks = links;
-                        break;
+                            pContainer.initContainer(file.getAbsolutePath());
+                            Vector<DownloadLink> links = pContainer.getContainedDownloadlinks();
+                            if (links == null || links.size() == 0) {
+                                logger.severe("Container Decryption failed (1)");
+                            } else {
+                                downloadLinks = links;
+                                break;
+                            }
+
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
                     }
-
-                } catch (Exception e) {
-                    e.printStackTrace();
+                    progress.increase(1);
                 }
+                progress.setStatusText(downloadLinks.size() + " links found");
+                if (downloadLinks.size() > 0) {
+                    if (JDUtilities.getSubConfig("GUI").getBooleanProperty(Configuration.PARAM_SHOW_CONTAINER_ONLOAD_OVERVIEW, false)) {
+                        String html = "<style>p { font-size:9px;margin:1px; padding:0px;}div {font-family:Geneva, Arial, Helvetica, sans-serif; width:400px;background-color:#ffffff; padding:2px;}h1 { vertical-align:top; text-align:left;font-size:10px; margin:0px; display:block;font-weight:bold; padding:0px;}</style><div> <div align='center'> <p><img src='http://jdownloader.ath.cx/img/%s.gif'> </p> </div> <h1>%s</h1><hr> <table width='100%%' border='0' cellspacing='5'> <tr> <td><p>%s</p></td> <td style='width:100%%'><p>%s</p></td> </tr> <tr> <td><p>%s</p></td> <td style='width:100%%'><p>%s</p></td> </tr> <tr> <td><p>%s</p></td> <td style='width:100%%'><p>%s</p></td> </tr> <tr> <td><p>%s</p></td> <td style='width:100%%'><p>%s</p></td> </tr> </table> </div>";
+                        String app;
+                        String uploader;
+                        if (downloadLinks.get(0).getFilePackage().getProperty("header", null) != null) {
+                            HashMap<String, String> header = (HashMap<String, String>) downloadLinks.get(0).getFilePackage().getProperty("header", null);
+                            uploader = header.get("tribute");
+                            app = header.get("generator.app") + " v." + header.get("generator.version") + " (" + header.get("generator.url") + ")";
+                        } else {
+                            app = "n.A.";
+                            uploader = "n.A";
+                        }
+                        String comment = downloadLinks.get(0).getFilePackage().getComment();
+                        String password = downloadLinks.get(0).getFilePackage().getPassword();
+                        JDUtilities.getGUI().showHTMLDialog(JDLocale.L("container.message.title", "DownloadLinkContainer loaded"), String.format(html, JDUtilities.getFileExtension(file).toLowerCase(), JDLocale.L("container.message.title", "DownloadLinkContainer loaded"), JDLocale.L("container.message.uploaded", "Brought to you by"), uploader, JDLocale.L("container.message.created", "Created with"), app, JDLocale.L("container.message.comment", "Comment"), comment, JDLocale.L("container.message.password", "Password"), password));
+                        // schickt die Links zuerst mal zum Linkgrabber
+                    }
+                    uiInterface.addLinksToGrabber((Vector<DownloadLink>) downloadLinks);
+                }
+                progress.finalize();
             }
-            progress.increase(1);
-        }
-        progress.setStatusText(downloadLinks.size() + " links found");
-        if (downloadLinks.size() > 0) {
-            String html = "<style>p { font-size:9px;margin:1px; padding:0px;}div {font-family:Geneva, Arial, Helvetica, sans-serif; width:400px;background-color:#ffffff; padding:2px;}h1 { vertical-align:top; text-align:left;font-size:10px; margin:0px; display:block;font-weight:bold; padding:0px;}</style><div> <div align='center'> <p><img src='http://jdownloader.ath.cx/img/%s.gif'> </p> </div> <h1>%s</h1><hr> <table width='100%%' border='0' cellspacing='5'> <tr> <td><p>%s</p></td> <td style='width:100%%'><p>%s</p></td> </tr> <tr> <td><p>%s</p></td> <td style='width:100%%'><p>%s</p></td> </tr> <tr> <td><p>%s</p></td> <td style='width:100%%'><p>%s</p></td> </tr> <tr> <td><p>%s</p></td> <td style='width:100%%'><p>%s</p></td> </tr> </table> </div>";
-            String app;
-            String uploader;
-            if (downloadLinks.get(0).getFilePackage().getProperty("header", null) != null) {
-                HashMap<String, String> header = (HashMap<String, String>) downloadLinks.get(0).getFilePackage().getProperty("header", null);
-                uploader = header.get("tribute");
-                app = header.get("generator.app") + " v." + header.get("generator.version") + " (" + header.get("generator.url") + ")";
-            } else {
-                app = "n.A.";
-                uploader = "n.A";
-            }
-            String comment = downloadLinks.get(0).getFilePackage().getComment();
-            String password = downloadLinks.get(0).getFilePackage().getPassword();
-            JDUtilities.getGUI().showHTMLDialog(JDLocale.L("container.message.title", "DownloadLinkContainer loaded"), String.format(html, JDUtilities.getFileExtension(file).toLowerCase(), JDLocale.L("container.message.title", "DownloadLinkContainer loaded"), JDLocale.L("container.message.uploaded", "Brought to you by"), uploader, JDLocale.L("container.message.created", "Created with"), app, JDLocale.L("container.message.comment", "Comment"), comment, JDLocale.L("container.message.password", "Password"), password));
-            // schickt die Links zuerst mal zum Linkgrabber
-            uiInterface.addLinksToGrabber((Vector<DownloadLink>) downloadLinks);
-        }
-        progress.finalize();
-    }
-}.start();
+        }.start();
     }
 
     public boolean isContainerFile(File file) {
@@ -1499,12 +1534,12 @@ new Thread(){
     }
 
     public boolean moveLinks(Vector<DownloadLink> links, Object after) {
-        
+
         DownloadLink link;
         Iterator<DownloadLink> iterator = links.iterator();
         synchronized (packages) {
             while (iterator.hasNext()) {
-                link=iterator.next();
+                link = iterator.next();
                 Iterator<FilePackage> it = packages.iterator();
                 FilePackage fp;
                 while (it.hasNext()) {
@@ -1566,106 +1601,103 @@ new Thread(){
     public FilePackage getDefaultFilePackage() {
         return fp;
     }
-    
+
     public void addLinksWithoutGrabber(final Vector<DownloadLink> parameter) {
-        
-    	if ( parameter == null || parameter.size() == 0 ) {
-    		return;
-    	}
-    	
-    	Vector<DownloadLink> linkList = checkLinks(parameter);
-    	
-    	Vector<Vector<DownloadLink>> links = new Vector<Vector<DownloadLink>>();
-    	Vector<String> packages = new Vector<String>();
-    	SubConfiguration guiConfig = JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME);
-    	
-    	for ( int i=0; i<linkList.size(); i++ ) {
-    	
-	    	if (!guiConfig.getBooleanProperty("PROPERTY_AUTOPACKAGE", true)) {
-	           
-	    		packages.add(removeExtension(linkList.get(i).getName()));
-	    		links.get(0).add(linkList.get(i));
-	
-	        } else {
-	        	
-	            int bestSim = 0;
-	            int bestIndex = -1;
-	            
-	            for (int j = 0; j < packages.size(); j++) {
-	
-	                int sim = comparePackages(packages.get(j), removeExtension(linkList.get(i).getName()));
-	                if (sim > bestSim) {
-	                    bestSim = sim;
-	                    bestIndex = j;
-	                }
-	                
-	            }
-	            
-	            if ( bestSim > guiConfig.getIntegerProperty("AUTOPACKAGE_LIMIT", 98)
-	            		&& bestIndex != -1 ) {
-	            	
-	            	links.get(bestIndex).add(linkList.get(i));
-	            	
-	            } else {
-	            	
-	            	packages.add(removeExtension(linkList.get(i).getName()));
-	            	Vector<DownloadLink> temp = new Vector<DownloadLink>();
-	            	temp.add(linkList.get(i));
-	            	links.add(temp);
-	
-	            }
-	
-	        }
-	    	
-    	}
-    	
-    	for ( int i=0; i<packages.size(); i++) {
+
+        if (parameter == null || parameter.size() == 0) { return; }
+
+        Vector<DownloadLink> linkList = checkLinks(parameter);
+
+        Vector<Vector<DownloadLink>> links = new Vector<Vector<DownloadLink>>();
+        Vector<String> packages = new Vector<String>();
+        SubConfiguration guiConfig = JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME);
+
+        for (int i = 0; i < linkList.size(); i++) {
+
+            if (!guiConfig.getBooleanProperty("PROPERTY_AUTOPACKAGE", true)) {
+
+                packages.add(removeExtension(linkList.get(i).getName()));
+                links.get(0).add(linkList.get(i));
+
+            } else {
+
+                int bestSim = 0;
+                int bestIndex = -1;
+
+                for (int j = 0; j < packages.size(); j++) {
+
+                    int sim = comparePackages(packages.get(j), removeExtension(linkList.get(i).getName()));
+                    if (sim > bestSim) {
+                        bestSim = sim;
+                        bestIndex = j;
+                    }
+
+                }
+
+                if (bestSim > guiConfig.getIntegerProperty("AUTOPACKAGE_LIMIT", 98) && bestIndex != -1) {
+
+                    links.get(bestIndex).add(linkList.get(i));
+
+                } else {
+
+                    packages.add(removeExtension(linkList.get(i).getName()));
+                    Vector<DownloadLink> temp = new Vector<DownloadLink>();
+                    temp.add(linkList.get(i));
+                    links.add(temp);
+
+                }
+
+            }
+
+        }
+
+        for (int i = 0; i < packages.size(); i++) {
 
             int rand = (int) (Math.random() * 0xffffff);
             Color c = new Color(rand);
             c = c.brighter();
-            
+
             FilePackage fp = new FilePackage();
             fp.setProperty("color", c);
             fp.setName(packages.get(i));
             String downloadDir = JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_DOWNLOAD_DIRECTORY);
-            
+
             if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_PACKETNAME_AS_SUBFOLDER, false)) {
-                
-            	File file = new File(new File(downloadDir), packages.get(i));
+
+                File file = new File(new File(downloadDir), packages.get(i));
                 if (!file.exists()) file.mkdirs();
-                
+
                 if (file.exists()) {
                     fp.setDownloadDirectory(file.getAbsolutePath());
                 } else {
                     fp.setDownloadDirectory(downloadDir);
                 }
-                
+
             } else {
                 fp.setDownloadDirectory(downloadDir);
             }
-            
+
             fp.setDownloadLinks(links.get(i));
 
-            for (int j=0; j < links.get(i).size(); j++) {
-            	links.get(i).get(j).setFilePackage(fp);
+            for (int j = 0; j < links.get(i).size(); j++) {
+                links.get(i).get(j).setFilePackage(fp);
             }
 
             JDUtilities.getGUI().fireUIEvent(new UIEvent(this, UIEvent.UI_PACKAGE_GRABBED, fp));
-            
+
             try {
                 Thread.sleep(200);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
-            
-    	}
-        
+
+        }
+
     }
 
     private String removeExtension(String a) {
         // logger.finer("file " + a);
-        if(a==null)return a;
+        if (a == null) return a;
         a = a.replaceAll("\\.part([0-9]+)", "");
         a = a.replaceAll("\\.html", "");
         a = a.replaceAll("\\.htm", "");
@@ -1674,8 +1706,7 @@ new Thread(){
         String ret;
         if (i <= 1 || (a.length() - i) > 5) {
             ret = a.toLowerCase().trim();
-        }
-        else {
+        } else {
             // logger.info("Remove ext");
             ret = a.substring(0, i).toLowerCase().trim();
         }
@@ -1697,35 +1728,34 @@ new Thread(){
         // (b.length()) + ")");
         return (c * 100) / (b.length());
     }
-    
+
     private Vector<DownloadLink> checkLinks(Vector<DownloadLink> linksQueue) {
-                
-    	SubConfiguration guiConfig = JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME);
-    	Vector<DownloadLink> finalLinks = new Vector<DownloadLink>();
-    	DownloadLink link;
+
+        SubConfiguration guiConfig = JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME);
+        Vector<DownloadLink> finalLinks = new Vector<DownloadLink>();
+        DownloadLink link;
         DownloadLink next;
-    	
+
         while (linksQueue.size() > 0) {
 
             link = linksQueue.remove(0);
-            
+
             if (!guiConfig.getBooleanProperty("DO_ONLINE_CHECK", false)) {
-            	
-            	finalLinks.add(link);
-            	try {
+
+                finalLinks.add(link);
+                try {
                     Thread.sleep(5);
+                } catch (InterruptedException e) {
                 }
-                catch (InterruptedException e) {
-                }
-                
+
             } else {
-            	
-            	Iterator<DownloadLink> it = linksQueue.iterator();
+
+                Iterator<DownloadLink> it = linksQueue.iterator();
                 Vector<String> links = new Vector<String>();
                 Vector<DownloadLink> dlLinks = new Vector<DownloadLink>();
                 links.add(link.getDownloadURL());
                 dlLinks.add(link);
-                
+
                 while (it.hasNext()) {
                     next = it.next();
                     if (next.getPlugin().getClass() == link.getPlugin().getClass()) {
@@ -1733,7 +1763,7 @@ new Thread(){
                         links.add(next.getDownloadURL());
                     }
                 }
-                
+
                 if (links.size() > 1) {
                     boolean[] ret = ((PluginForHost) link.getPlugin()).checkLinks(links.toArray(new String[] {}));
                     if (ret != null) {
@@ -1742,17 +1772,17 @@ new Thread(){
                         }
                     }
                 }
-                
+
                 if (link.isAvailable() || ((PluginForHost) link.getPlugin()).isListOffline()) {
-                	finalLinks.add(link);
+                    finalLinks.add(link);
                 }
-                
+
             }
-            
+
         }
-        
+
         return finalLinks;
-        
+
     }
-    
+
 }

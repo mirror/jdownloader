@@ -257,6 +257,8 @@ public class Main {
         }
 
         init.loadConfiguration();
+        init.setupProxy();
+        
         init.removeFiles();
 
         /*

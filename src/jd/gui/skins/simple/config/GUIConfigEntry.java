@@ -463,7 +463,7 @@ public class GUIConfigEntry extends JPanel implements ActionListener,ChangeListe
     public void propertyChange(PropertyChangeEvent evt) {
         // TODO Auto-generated method stub
         if(input[0]==null)return;
-        logger.info("New Value "+evt.getNewValue());
+        //logger.info("New Value "+evt.getNewValue());
         if(this.getConfigEntry().isConditionalEnabled(evt)){
             input[0].setEnabled(true);
             for(JComponent i:input){

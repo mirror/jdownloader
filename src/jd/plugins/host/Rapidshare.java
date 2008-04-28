@@ -528,17 +528,26 @@ public class Rapidshare extends PluginForHost {
                         progress.increase(1);
                         RequestInfo ri = Plugin.getRequest(new URL("http://jdownloader.ath.cx/hh.php?txt=1"));
                         progress.increase(1);
-                        if (ri.containsHTML("happyhour")) {
+                        int sec=300-JDUtilities.filterInt(JDUtilities.splitByNewline(ri.getHtmlCode())[3]);
+                        
+                        int lastStart=JDUtilities.filterInt(JDUtilities.splitByNewline(ri.getHtmlCode())[4]);
+                        int lastEnd=JDUtilities.filterInt(JDUtilities.splitByNewline(ri.getHtmlCode())[5]);
+                          Date lastStartDate= new Date(lastStart*1000L);
+                          lastStartDate.setTime(lastStart*1000L);
+                            
+                            Date lastEndDate= new Date(lastEnd*1000L);
+                            lastEndDate.setTime(lastEnd*1000L);
+                        if (ri.containsHTML("Hour")) {
                             int activ=JDUtilities.filterInt(JDUtilities.splitByNewline(ri.getHtmlCode())[1]);
                             Date d= new Date(activ*1000L);
                             d.setTime(activ*1000L);
                             
-                  
+                          
                         
                          SimpleDateFormat df = new SimpleDateFormat( "dd.MM.yyyy HH:mm" );
                     
                       
-                            String html=String.format(JDLocale.L("plugins.hoster.rapidshare.com.hhactive.html", "<link href='http://jdownloader.ath.cx/jdcss.css' rel='stylesheet' type='text/css' /><body><div><p style='text-align:center'><img src='http://jdownloader.ath.cx/img/hh.jpg' /><br>Aktiv seit %s</p></div></body>"),df.format( d ));
+                            String html=String.format(JDLocale.L("plugins.hoster.rapidshare.com.hhactive.html", "<link href='http://jdownloader.ath.cx/jdcss.css' rel='stylesheet' type='text/css' /><body><div><p style='text-align:center'><img src='http://jdownloader.ath.cx/img/hh.jpg' /><br>Aktiv seit %s<br>Zuletzt überprüft vor %s<br>Letzte Happy Hour von %s bis %s</p></div></body>"),df.format( d ),JDUtilities.formatSeconds(sec),df.format( lastStartDate ),df.format( lastEndDate ));
                             JDUtilities.getGUI().showHTMLDialog(JDLocale.L("plugins.hoster.rapidshare.com.happyHours", "Happy Hour Check"), html);
                          } else {
                              int activ=JDUtilities.filterInt(JDUtilities.splitByNewline(ri.getHtmlCode())[1]);
@@ -550,7 +559,7 @@ public class Rapidshare extends PluginForHost {
                           SimpleDateFormat df = new SimpleDateFormat( "dd.MM.yyyy HH:mm" );
                      
                        
-                             String html=String.format(JDLocale.L("plugins.hoster.rapidshare.com.hhinactive.html", "<link href='http://jdownloader.ath.cx/jdcss.css' rel='stylesheet' type='text/css' /><body><div><p style='text-align:center'><img src='http://jdownloader.ath.cx/img/nhh.jpg' /><br>Die letzte Happy Hour Phase endete am %s</p></div></body>"),df.format( d ));
+                             String html=String.format(JDLocale.L("plugins.hoster.rapidshare.com.hhinactive.html", "<link href='http://jdownloader.ath.cx/jdcss.css' rel='stylesheet' type='text/css' /><body><div><p style='text-align:center'><img src='http://jdownloader.ath.cx/img/nhh.jpg' /><br>Die letzte Happy Hour Phase endete am %s<br>Zuletzt überprüft vor %s<br>Letzte Happy Hour von %s bis %s</p></div></body>"),df.format( d ),JDUtilities.formatSeconds(sec),df.format( lastStartDate ),df.format( lastEndDate ));
                              JDUtilities.getGUI().showHTMLDialog(JDLocale.L("plugins.hoster.rapidshare.com.happyHours", "Happy Hour Check"), html);
                          }
                     } catch (Exception e) {

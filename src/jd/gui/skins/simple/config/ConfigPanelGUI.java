@@ -65,13 +65,13 @@ public class ConfigPanelGUI extends ConfigPanel {
     @SuppressWarnings("unchecked")
 	@Override
     public void initPanel() {
-        GUIConfigEntry ce;
-
-        ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, guiConfig, SimpleGUI.PARAM_LOCALE, JDLocale.getLocaleIDs().toArray(new String[]{}), JDLocale.L("gui.config.gui.language", "Sprache")).setDefaultValue(Locale.getDefault()));
-        addGUIConfigEntry(ce);
+        GUIConfigEntry gce;
+        ConfigEntry ce;
+        gce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, guiConfig, SimpleGUI.PARAM_LOCALE, JDLocale.getLocaleIDs().toArray(new String[]{}), JDLocale.L("gui.config.gui.language", "Sprache")).setDefaultValue(Locale.getDefault()));
+        addGUIConfigEntry(gce);
        
-        ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, guiConfig, SimpleGUI.PARAM_THEME, JDTheme.getThemeIDs().toArray(new String[]{}), JDLocale.L("gui.config.gui.theme", "Theme")).setDefaultValue("default"));
-        addGUIConfigEntry(ce);
+        gce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, guiConfig, SimpleGUI.PARAM_THEME, JDTheme.getThemeIDs().toArray(new String[]{}), JDLocale.L("gui.config.gui.theme", "Theme")).setDefaultValue("default"));
+        addGUIConfigEntry(gce);
         String[] plafs;
 
         UIManager.LookAndFeelInfo[] info = UIManager.getInstalledLookAndFeels();
@@ -80,15 +80,15 @@ public class ConfigPanelGUI extends ConfigPanel {
         for (int i = 0; i < plafs.length; i++) {
             plafs[i] = info[i].getName();
         }
-        ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, guiConfig, SimpleGUI.PARAM_PLAF, plafs, JDLocale.L("gui.config.gui.plaf", "Style(benötigt JD-Neustart)")).setDefaultValue("Windows"));
-        addGUIConfigEntry(ce);
+        gce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, guiConfig, SimpleGUI.PARAM_PLAF, plafs, JDLocale.L("gui.config.gui.plaf", "Style(benötigt JD-Neustart)")).setDefaultValue("Windows"));
+        addGUIConfigEntry(gce);
 
        
 
-        ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, guiConfig, SimpleGUI.PARAM_DISABLE_CONFIRM_DIALOGS, JDLocale.L("gui.config.gui.disabledialogs", "Bestätigungsdialoge abschalten")).setDefaultValue(false).setExpertEntry(true));
-        addGUIConfigEntry(ce);
-        ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, guiConfig, SimpleGUI.PARAM_SHOW_SPLASH, JDLocale.L("gui.config.gui.showSplash", "Splashscreen beim starten zeigen")).setDefaultValue(true));
-        addGUIConfigEntry(ce);
+        gce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, guiConfig, SimpleGUI.PARAM_DISABLE_CONFIRM_DIALOGS, JDLocale.L("gui.config.gui.disabledialogs", "Bestätigungsdialoge abschalten")).setDefaultValue(false).setExpertEntry(true));
+        addGUIConfigEntry(gce);
+        gce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, guiConfig, SimpleGUI.PARAM_SHOW_SPLASH, JDLocale.L("gui.config.gui.showSplash", "Splashscreen beim starten zeigen")).setDefaultValue(true));
+        addGUIConfigEntry(gce);
 
         Object[] BrowserArray = (Object[]) guiConfig.getProperty(SimpleGUI.PARAM_BROWSER_VARS, null);
 
@@ -117,18 +117,26 @@ public class ConfigPanelGUI extends ConfigPanel {
             guiConfig.save();
         }
 
-        ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, guiConfig, SimpleGUI.PARAM_BROWSER, BrowserArray, JDLocale.L("gui.config.gui.Browser", "Browser")).setDefaultValue(BrowserArray[0]).setExpertEntry(true));
-        addGUIConfigEntry(ce);
+        gce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, guiConfig, SimpleGUI.PARAM_BROWSER, BrowserArray, JDLocale.L("gui.config.gui.Browser", "Browser")).setDefaultValue(BrowserArray[0]).setExpertEntry(true));
+        addGUIConfigEntry(gce);
 
-        ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, guiConfig, LinkGrabber.PROPERTY_AUTOPACKAGE_LIMIT, JDLocale.L("gui.config.gui.autopackageLimit", "Schwelle der Auto. Paketverwaltung."),0,100).setDefaultValue(98).setExpertEntry(true));
-        addGUIConfigEntry(ce);
-        ce= new GUIConfigEntry( new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, guiConfig, LinkGrabber.PROPERTY_ONLINE_CHECK, JDLocale.L("gui.config.gui.linkgrabber.onlinecheck","Linkgrabber:Linkstatus überprüfen(Verfügbarkeit)")).setDefaultValue(true));
-        addGUIConfigEntry(ce);
-        ce= new GUIConfigEntry( new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, JDUtilities.getConfiguration(), Configuration.PARAM_RELOADCONTAINER, JDLocale.L("gui.config.reloadContainer","Heruntergeladene Container einlesen")).setDefaultValue(true));
-        addGUIConfigEntry(ce);
+        gce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, guiConfig, LinkGrabber.PROPERTY_AUTOPACKAGE_LIMIT, JDLocale.L("gui.config.gui.autopackageLimit", "Schwelle der Auto. Paketverwaltung."),0,100).setDefaultValue(98).setExpertEntry(true));
+        addGUIConfigEntry(gce);
+        gce= new GUIConfigEntry( new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, guiConfig, LinkGrabber.PROPERTY_ONLINE_CHECK, JDLocale.L("gui.config.gui.linkgrabber.onlinecheck","Linkgrabber:Linkstatus überprüfen(Verfügbarkeit)")).setDefaultValue(true));
+        addGUIConfigEntry(gce);
+        gce= new GUIConfigEntry( new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, JDUtilities.getConfiguration(), Configuration.PARAM_RELOADCONTAINER, JDLocale.L("gui.config.reloadContainer","Heruntergeladene Container einlesen")).setDefaultValue(true));
+        addGUIConfigEntry(gce);
+    
+        gce= new GUIConfigEntry(ce= new ConfigEntry(ConfigContainer.TYPE_CHECKBOX,  JDUtilities.getSubConfig("GUI"), Configuration.PARAM_SHOW_CONTAINER_ONLOAD_OVERVIEW, JDLocale.L("gui.config.showContainerOnLoadInfo","Detailierte Containerinformationen beim Öffnen anzeigen")).setDefaultValue(false).setInstantHelp(JDLocale.L("gui.config.showContainerOnLoadInfo.helpurl","http://jdownloader.ath.cx/page.php?id=102")));
+     
+        addGUIConfigEntry(gce);
         
-        ce= new GUIConfigEntry( new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, guiConfig, JDLocale.LOCALE_EDIT_MODE, JDLocale.L("gui.config.localeditmode","'Missing-Language-Entries' Datei anlegen")).setDefaultValue(true));
-        addGUIConfigEntry(ce);
+        
+        
+
+        
+        gce= new GUIConfigEntry( new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, guiConfig, JDLocale.LOCALE_EDIT_MODE, JDLocale.L("gui.config.localeditmode","'Missing-Language-Entries' Datei anlegen")).setDefaultValue(true));
+        addGUIConfigEntry(gce);
  
         
         add(panel, BorderLayout.NORTH);
