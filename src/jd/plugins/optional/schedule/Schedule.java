@@ -38,7 +38,7 @@ public class Schedule extends PluginOptional implements ControlListener {
     @Override
     public ArrayList<MenuItem> createMenuitems() {
         ArrayList<MenuItem> menu = new ArrayList<MenuItem>();
-        menu.add(new MenuItem("Settings",0).setActionListener(this));
+        menu.add(new MenuItem(JDLocale.L("addons.schedule.menu.settings","Settings"),0).setActionListener(this));
         return menu;
     }
 
@@ -49,16 +49,16 @@ public class Schedule extends PluginOptional implements ControlListener {
 
     @Override
     public String getPluginID() {
-        return "0.2";
+        return "0.3";
     }
 
     @Override
     public String getVersion() {
-        return "0.2";
+        return "0.3";
     }
 
     public String getPluginName() {
-        return JDLocale.L("plugins.optional.JDschedule.name", "Schedule");
+        return JDLocale.L("addons.schedule.name","Schedule");
     }
     
     public void actionPerformed(ActionEvent e) {

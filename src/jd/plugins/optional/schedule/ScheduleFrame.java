@@ -3,13 +3,13 @@ package jd.plugins.optional.schedule;
 import java.awt.*;
 import java.awt.event.*;
 import jd.config.Configuration;
+import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 import javax.swing.*;
 import java.util.Date;
 import java.util.Calendar;
-import java.util.TimeZone;
 
-public class ScheduleFrame extends JDialog implements ActionListener{
+public class ScheduleFrame extends JPanel implements ActionListener{
     
     //Objekte werden erzeugt
     Timer t = new Timer(10000,this); 
@@ -25,27 +25,17 @@ public class ScheduleFrame extends JDialog implements ActionListener{
     String dateFormat = "HH:mm:ss | dd.MM.yy";
     
     JSpinner repeat = new JSpinner(new SpinnerNumberModel(0,0,24,1));
-    JButton start = new JButton("Start");    
-    JButton close = new JButton("Close");    
-    JLabel status = new JLabel(" Not Running!");    
+    JLabel label;
+    JButton start = new JButton(JDLocale.L("addons.schedule.menu.start","Start"));        
+    JLabel status = new JLabel(JDLocale.L("addons.schedule.menu.running"," Not Running!"));    
+    
+    boolean visible = false;
     
     //Konstruktor des Fensters und Aussehen
     public ScheduleFrame(String title) {
-        addWindowListener(new WindowAdapter() {
-            public void windowClosing(WindowEvent e) {                
-                setVisible(false);
-            }
-        });
-        
-        this.setSize(300, 200);
-        this.setResizable(false);
-        this.setTitle(title);
-        this.setLocation(300, 300);
         
         this.start.setBorderPainted(false);
         this.start.setFocusPainted(false);
-        this.close.setBorderPainted(false);
-        this.close.setFocusPainted(false);
         this.maxdls.setBorder(BorderFactory.createEmptyBorder());
         this.maxspeed.setBorder(BorderFactory.createEmptyBorder());
         this.time.setToolTipText("Select your time. Format: HH:mm:ss | dd.MM.yy");
@@ -53,28 +43,30 @@ public class ScheduleFrame extends JDialog implements ActionListener{
         this.time.setBorder(BorderFactory.createEmptyBorder());
         this.repeat.setBorder(BorderFactory.createEmptyBorder());
         this.repeat.setToolTipText("Enter h | 0 = disable");
+        this.premium.setSelected(JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM));
+        this.reconnect.setSelected(!(JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_DISABLE_RECONNECT)));
         
-        getContentPane().setLayout(new GridLayout(9,2));        
-        getContentPane().add(new JLabel(" max. Downloads"));
-        getContentPane().add(this.maxdls);
-        getContentPane().add(new JLabel(" max. DownloadSpeed"));
-        getContentPane().add(this.maxspeed);
-        getContentPane().add(new JLabel(" Premium ?"));
-        getContentPane().add(this.premium);
-        getContentPane().add(new JLabel(" Reconnect ?"));
-        getContentPane().add(this.reconnect);
-        getContentPane().add(new JLabel(" Start/Stop DL ?"));
-        getContentPane().add(this.stop_start);
-        getContentPane().add(new JLabel(" Select Time:"));      
-        getContentPane().add(this.time);
-        getContentPane().add(new JLabel(" Redo in h:"));      
-        getContentPane().add(this.repeat);
-        getContentPane().add(this.start);
-        getContentPane().add(this.close);        
-        getContentPane().add(this.status);
+        setLayout(new GridLayout(9,2));        
+        add(new JLabel(JDLocale.L("addons.schedule.menu.maxdl"," max. Downloads")));
+        add(this.maxdls);
+        add(new JLabel(JDLocale.L("addons.schedule.menu.maxspeed"," max. DownloadSpeed")));
+        add(this.maxspeed);
+        add(new JLabel(" Premium ?"));
+        add(this.premium);
+        add(new JLabel(JDLocale.L("addons.schedule.menu.reconnect"," Reconnect ?")));
+        add(this.reconnect);
+        add(new JLabel(JDLocale.L("addons.schedule.menu.start_stop"," Start/Stop DL ?")));
+        add(this.stop_start);
+        add(new JLabel(JDLocale.L("addons.schedule.menu.time"," Select Time:")));      
+        add(this.time);
+        add(new JLabel(JDLocale.L("addons.schedule.menu.redo"," Redo in h:")));      
+        add(this.repeat);
+        this.label = new JLabel(title);
+        add(this.label);
+        add(this.start);     
+        add(this.status);
         
         this.start.addActionListener(this);
-        this.close.addActionListener(this);
         this.t.setRepeats(false);        
     }
     
@@ -82,12 +74,12 @@ public class ScheduleFrame extends JDialog implements ActionListener{
     public void actionPerformed(ActionEvent e) {     
         int var = (int) parsetime();  
         if (var < 0 & e.getSource() == start){
-            this.status.setText(" Select positive time!");     
+            this.status.setText(JDLocale.L("addons.schedule.menu.p_time"," Select positive time!"));     
         }
         else{
             if (e.getSource() == start) {
                 if (t.isRunning() == false || c.isRunning() == false){
-                    this.start.setText("Stop");               
+                    this.start.setText(JDLocale.L("addons.schedule.menu.stop","Stop"));               
                     this.t.setInitialDelay(var);
                     this.t.start();
                     this.c.start();
@@ -95,21 +87,19 @@ public class ScheduleFrame extends JDialog implements ActionListener{
                     this.time.setEnabled(false);
                 }
                 else {
-                    this.start.setText("Start");
+                    this.start.setText(JDLocale.L("addons.schedule.menu.start","Start"));
                     this.t.stop();
                     this.c.stop();
-                    this.status.setText(" Aborted!");
+                    this.status.setText(JDLocale.L("addons.schedule.menu.abort"," Aborted!"));
                     this.time.setEnabled(true);
                 }
-            }        
-            if (e.getSource() == close) {
-                this.setVisible(false);
-            }        
+            }              
             if (e.getSource() == t) {
+                
                 JDUtilities.getSubConfig("DOWNLOAD").setProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, maxspeed.getValue());
                 JDUtilities.getSubConfig("DOWNLOAD").setProperty(Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN, maxdls.getValue());
                 JDUtilities.getConfiguration().setProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, premium.isSelected());
-                JDUtilities.getConfiguration().setProperty(Configuration.PARAM_DISABLE_RECONNECT, reconnect.isSelected());
+                JDUtilities.getConfiguration().setProperty(Configuration.PARAM_DISABLE_RECONNECT, !(reconnect.isSelected()));
                 JDUtilities.getSubConfig("DOWNLOAD").save();
                 JDUtilities.saveConfig();
                 if (this.stop_start.isSelected() == true){
@@ -127,15 +117,15 @@ public class ScheduleFrame extends JDialog implements ActionListener{
                     this.t.start();
                 }
                 else{
-                    this.start.setText("Start");
+                    this.start.setText(JDLocale.L("addons.schedule.menu.start","Start"));
                     this.c.stop();
-                    this.status.setText(" Finished!");
+                    this.status.setText(JDLocale.L("addons.schedule.menu.finished"," Finished!"));
                     this.time.setEnabled(true);
                 }
             }       
             if (e.getSource() == c){
                 String ba = JDUtilities.formatSeconds(var/1000);
-                String remain = " Remaining: " + ba;
+                String remain = JDLocale.L("addons.schedule.menu.remain"," Remaining: ") + ba;
                 this.status.setText(remain);
             }  
         }
@@ -148,13 +138,4 @@ public class ScheduleFrame extends JDialog implements ActionListener{
         Date end_time = baba.getDate();
         return end_time.getTime() - start_time.getTime();
     }
-    
-    //Werte neu auslesen und eintragen
-    public void repaint() {
-        this.maxdls.setValue(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN));
-        this.maxspeed.setValue(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED));
-        this.premium.setSelected(JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM));
-        this.reconnect.setSelected(JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_DISABLE_RECONNECT));
-    }
-    
 }

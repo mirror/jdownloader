@@ -4,19 +4,21 @@ import java.awt.FlowLayout;
 import java.awt.event.*;
 import java.awt.*;
 import javax.swing.*;
-
+import jd.utils.JDLocale;
 import java.util.Vector;
 
 public class ScheduleControl extends JDialog implements ActionListener {
     
-    JButton add = new JButton("Add");
-    JButton remove = new JButton("Remove");
-    JButton show = new JButton("Show");    
+    JButton add = new JButton(JDLocale.L("addons.schedule.menu.add","Add"));
+    JButton remove = new JButton(JDLocale.L("addons.schedule.menu.remove","Remove"));
+    JButton show = new JButton(JDLocale.L("addons.schedule.menu.edit","Edit"));    
     Timer status = new Timer(1000,this);
-    JPanel lpanel = new JPanel();
+    JPanel status_panel = new JPanel();
     JPanel menu = new JPanel();
+
     Choice list = new Choice();
     Vector v = new Vector();
+    boolean visible = false;
     
     public ScheduleControl(){
             addWindowListener(new WindowAdapter() {
@@ -37,58 +39,79 @@ public class ScheduleControl extends JDialog implements ActionListener {
             
             this.menu.setLayout(new FlowLayout());
             this.menu.add(this.list);
-            this.list.add("Create");
+            this.list.add(JDLocale.L("addons.schedule.menu.create","Create"));
             this.menu.add(this.show);
             this.menu.add(this.add);
             this.menu.add(this.remove);            
-            this.menu.add(this.lpanel);
             
             this.getContentPane().setLayout(new FlowLayout());
             this.getContentPane().add(menu);
-            this.getContentPane().add(lpanel);
-                       
+            this.getContentPane().add(status_panel);
+
+            
             this.add.addActionListener(this);
             this.remove.addActionListener(this);
             this.show.addActionListener(this);
-            this.status.addActionListener(this);
                        
             SwingUtilities.updateComponentTreeUI(this);
     }
     
     public void actionPerformed(ActionEvent e) {
+        boolean ba = false;
         if(e.getSource() == add){
-            int size = v.size()+1;
-            this.v.add(new ScheduleFrame("Schedule " + size));
+            int a = v.size() + 1;
+            this.v.add(new ScheduleFrame(" Schedule " + a));
             reloadList();
             SwingUtilities.updateComponentTreeUI(this);           
         }
         if(e.getSource() == remove){
+            try{
+                ScheduleFrame s = (ScheduleFrame) v.elementAt(list.getSelectedIndex());
             
-            ScheduleFrame s = (ScheduleFrame) v.elementAt(list.getSelectedIndex());
-            s.setVisible(false);
-            this.v.remove(list.getSelectedIndex());
-            reloadList();
-            SwingUtilities.updateComponentTreeUI(this);
-            renameWindows();
+                this.v.remove(list.getSelectedIndex());
+                this.reloadList();
+                this.status_panel.removeAll();
+                renameLabels();
+                SwingUtilities.updateComponentTreeUI(this);
+            }catch(Exception ex){}
         }
         if (e.getSource() == show){
-            ScheduleFrame s = (ScheduleFrame) v.elementAt(list.getSelectedIndex());
-            s.setVisible(true);
-            s.repaint();
-            SwingUtilities.updateComponentTreeUI(this);
+            try{
+                int item = this.list.getSelectedIndex();
+                ScheduleFrame sched;
+            
+                if(visible == false){
+                    this.status.stop();
+                    this.status_panel.removeAll();
+                    sched = (ScheduleFrame) v.elementAt(item);
+                    visible = true;
+                    this.status_panel.add(sched);
+                    this.show.setText(JDLocale.L("addons.schedule.menu.close","Close"));
+                    this.controls(false);
+                }
+                else{
+                    visible = false;
+                    this.show.setText(JDLocale.L("addons.schedule.menu.edit","Edit"));
+                    this.status_panel.removeAll();
+                    this.status.start();
+                    this.controls(true);
+                }
+                SwingUtilities.updateComponentTreeUI(this);
+            }catch(Exception ex){}
         }
         if (e.getSource() == status){
             
             int size = v.size();
             
-            this.lpanel.removeAll();
-            this.lpanel.setLayout(new GridLayout(size,1));
+            this.status_panel.removeAll();
+            this.status_panel.setLayout(new GridLayout(size,1));
             for(int i = 0; i < size; ++i){
                 ScheduleFrame s = (ScheduleFrame) v.elementAt(i);
                 int a = i+1;
-                this.lpanel.add(new JLabel("Schedule "+a+" Status: "+s.status.getText()));
+                this.status_panel.add(new JLabel("Schedule "+a+" Status: "+s.status.getText()));
             }
             SwingUtilities.updateComponentTreeUI(this);
+            
         }
     }
     
@@ -108,13 +131,19 @@ public class ScheduleControl extends JDialog implements ActionListener {
         }
 
     }
-    
-    public void renameWindows(){
+    public void renameLabels(){
         int size = v.size();
         for(int i = 0; i < size; ++i){
             ScheduleFrame s = (ScheduleFrame) v.elementAt(i);
-            s.setTitle(list.getItem(i));
+            s.label.setText(list.getItem(i));
         }
         
+    }
+    public void controls(boolean b){
+
+            this.add.setEnabled(b);
+            this.remove.setEnabled(b);
+            this.list.setEnabled(b);
+
     }
 }
