@@ -92,6 +92,7 @@ import java.util.Vector;
 import java.util.Map.Entry;
 import java.util.regex.Pattern;
 
+import jd.captcha.CES;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.Configuration;
@@ -972,7 +973,7 @@ String specs=getSimpleMatch(ticketCode,"jpg\"><br>°<input name=\"accesscode\"",
                     downloadLink.setEndOfWaittime(System.currentTimeMillis() + pendingTime);
                 }
 
-                if (JDUtilities.getSubConfig("JAC").getBooleanProperty(Configuration.JAC_USE_CES, false)) {
+                if (JDUtilities.getSubConfig("JAC").getBooleanProperty(Configuration.JAC_USE_CES, false)&&!CES.isEnabled()) {
                     ces = new CESClient(captchaFile);
                     ces.setLogins(JDUtilities.getSubConfig("JAC").getStringProperty(CESClient.PARAM_USER), JDUtilities.getSubConfig("JAC").getStringProperty(CESClient.PARAM_PASS));
                     ces.setSpecs(specs);

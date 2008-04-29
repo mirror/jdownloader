@@ -2238,7 +2238,7 @@ public class JDUtilities {
         } catch (IOException e) {
             return base64;
         }
-    }
+    } 
 
     public static String Base64Encode(String plain) {
 

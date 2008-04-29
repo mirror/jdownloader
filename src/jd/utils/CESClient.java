@@ -2,6 +2,7 @@ package jd.utils;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.Serializable;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Calendar;
@@ -13,7 +14,11 @@ import jd.plugins.HTTPPost;
 import jd.plugins.Plugin;
 import jd.plugins.RequestInfo;
 
-public class CESClient extends Thread {
+public class CESClient implements Serializable {
+    /**
+     * 
+     */
+    private static final long serialVersionUID = 1448063149305109311L;
     private static final long MAX_TIME = 5 * 60 * 1000;
     private static final String PATTERN_TITLE = "<title>CaptchaExchangeServer - v° (°) by DVK</title>";
     private static final String PATTERN_STATS_RECEIVE = "Your balance is <b>°</b> points. You have received <b>°</b> captchas, recognized <b>°</b>, errors <b>° (°%)</b>";
@@ -22,8 +27,8 @@ public class CESClient extends Thread {
     private static final String PATTERN_QUEUE = "<p>Your Username is <b>\"°\"</b>, your balance is <b>°</b> points. You have received <b>°</b> captchas, recognized <b>°</b>, errors <b>° (°%)</b>.<br>You have sent on a server of <b>°</b> captchas, from them has been recognized <b>°</b>, errors <b>° (°%)</b>.<br></p>°<p><br><div id=\"ta\">You are staying in queue to captcha recognition for <b>°</b> seconds.</div><br>There are <b>°</b> users in queue and <b>°</b> before you.°<br>Please, wait a little more... (estimated waiting time: °)<a href=°>[ reload ]";
 
     private static final String PATTERN_MESSAGE = "official C.E.S forum</a>!<br><p>°[ reload ]";
-    private static final long RECEIVE_INTERVAL = 15 * 1000;
-    private static final long CHECK_INTERVAL = 15 * 1000;
+    private static final long RECEIVE_INTERVAL = 20 * 1000;
+    private static final long CHECK_INTERVAL = 20 * 1000;
     private static final int FLAG_ABORT_RECEIVING = 0;
     public static final String PARAM_USER = "CES_USER";
     public static final String PARAM_PASS = "CES_PASS";
@@ -68,7 +73,7 @@ public class CESClient extends Thread {
     private long startTime;
     private File file;
     private String md5;
-    private String server = "http://dvk.org.ua/sokol/rapid/";// "http://dvk.com.ua/rapid/";
+    private String server = "http://dvk.com.ua/rapid/";// "http://dvk.org.ua/sokol/rapid/";//
     private String boundary = "---------------------------19777693011381";
     private String user;
     private String pass;
@@ -76,7 +81,7 @@ public class CESClient extends Thread {
     private int type = 1;
     private String k = JDUtilities.Base64Decode("akRvV25Mb2FEZXIxMDY=");
     private String regKey = "RapidByeByeBye";
-    private Logger logger;
+    transient private Logger logger;
     private String balance;
     private String receivedCaptchas;
     private String recognizedCaptchas;
