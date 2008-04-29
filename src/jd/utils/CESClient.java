@@ -4,9 +4,11 @@ import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.logging.Logger;
 
+import jd.captcha.CES;
+import jd.config.SubConfiguration;
 import jd.plugins.HTTPPost;
 import jd.plugins.Plugin;
 import jd.plugins.RequestInfo;
@@ -17,36 +19,45 @@ public class CESClient extends Thread {
     private static final String PATTERN_STATS_RECEIVE = "Your balance is <b>°</b> points. You have received <b>°</b> captchas, recognized <b>°</b>, errors <b>° (°%)</b>";
     private static final String PATTERN_STATS_SENT = "You have sent on a server of <b>°</b> captchas, from them has been recognized <b>°</b>, errors <b>° (°%)</b>.";
     private static final String PATTERN_STATS_QUEUE = "There are <b>°</b> registered users now in queue on this server.";
-    private static final String PATTERN_QUEUE = "<p>Your Username is <b>\"°\"</b>, your balance is <b>°</b> points. You have received <b>°</b> captchas, recognized <b>°</b>, errors <b>° (°%)</b>.<br>You have sent on a server of <b>°</b> captchas, from them has been recognized <b>°</b>, errors <b>° (°%)</b>.<br></p><p><br><div id=\"ta\">You are staying in queue to captcha recognition for <b>°</b> seconds.</div><br>There are <b>°</b> users in queue and <b>°</b> before you. (<a href=°>[show]</a>)<br><br>Please, wait a little more... (estimated waiting time: °.)<a href=°>[ reload ]";
+    private static final String PATTERN_QUEUE = "<p>Your Username is <b>\"°\"</b>, your balance is <b>°</b> points. You have received <b>°</b> captchas, recognized <b>°</b>, errors <b>° (°%)</b>.<br>You have sent on a server of <b>°</b> captchas, from them has been recognized <b>°</b>, errors <b>° (°%)</b>.<br></p>°<p><br><div id=\"ta\">You are staying in queue to captcha recognition for <b>°</b> seconds.</div><br>There are <b>°</b> users in queue and <b>°</b> before you.°<br>Please, wait a little more... (estimated waiting time: °)<a href=°>[ reload ]";
+
+    private static final String PATTERN_MESSAGE = "official C.E.S forum</a>!<br><p>°[ reload ]";
     private static final long RECEIVE_INTERVAL = 15 * 1000;
     private static final long CHECK_INTERVAL = 15 * 1000;
     private static final int FLAG_ABORT_RECEIVING = 0;
     public static final String PARAM_USER = "CES_USER";
     public static final String PARAM_PASS = "CES_PASS";
 
+    public static final String UPDATE = "CES_QUEUE_LENGTH";
+    private static final String MESSAGE = "CES_MESSAGE";
+    private static final String PATTERN_IMAGE = "<p>Captcha image here:<br><img src=\"°\" border=\"2\" />";
+    private static final String PATTERN_CAPTCHA_ID = "<input type=\"hidden\" name=\"Captcha\" value=\"°\"/>";
+    private static final String PATTERN_CAPTCHA_STATE = "<input type=\"hidden\" name=\"State\" value=\"°\"/>";
+    public static final String LASTEST_INSTANCE = "CES_LASTEST_INSTANCE";
+
     public static void main(String[] args) {
-        
-      
-//        File file = new File("C:/Users/coalado/.jd_home/captchas/rapidshare.com/21.04.2008_17.19.51.jpg");
-//
-//        CESClient ces = new CESClient(file);
-//        ces.setLogins("coalado", "");
-//        // ces.enterQueueAndWait();
-//         if (ces.sendCaptcha()) {
-//             JDUtilities.getLogger().info("code: "+ces.waitForAnswer());
-//         }
-//
-//        // ces.register("coalado");
-//
-//       // ces.login();
-//       // JDUtilities.getLogger().info(ces.getServer());
+
+        // File file = new
+        // File("C:/Users/coalado/.jd_home/captchas/rapidshare.com/21.04.2008_17.19.51.jpg");
+        //
+        // CESClient ces = new CESClient();
+       
+        // ces.enterQueueAndWait();
+        // if (ces.sendCaptcha()) {
+        // JDUtilities.getLogger().info("code: "+ces.waitForAnswer());
+        // }
+        //
+        // // ces.register("coalado");
+        //
+        // // ces.login();
+        // // JDUtilities.getLogger().info(ces.getServer());
 
     }
 
     private String cesVersion;
     private String cesDate;
     private String captchaID;
-  
+
     private boolean cesStatus;
     private String cesCode;
     private String statusText;
@@ -57,7 +68,7 @@ public class CESClient extends Thread {
     private long startTime;
     private File file;
     private String md5;
-    private String server = "http://dvk.com.ua/rapid/";
+    private String server = "http://dvk.org.ua/sokol/rapid/";// "http://dvk.com.ua/rapid/";
     private String boundary = "---------------------------19777693011381";
     private String user;
     private String pass;
@@ -79,36 +90,44 @@ public class CESClient extends Thread {
     private String queuePosition;
     private String eta;
     private int abortFlag = -1;
+    private SubConfiguration config;
+    private String specs = "";
+    private Plugin plugin;
 
     public CESClient(File captcha) {
         this.file = captcha;
         this.md5 = JDUtilities.getLocalHash(file);
         logger = JDUtilities.getLogger();
+        config = JDUtilities.getSubConfig("JAC");
+        config.setProperty(LASTEST_INSTANCE, this);
 
     }
-    
+
     public CESClient() {
-        
-       
+        config = JDUtilities.getSubConfig("JAC");
+        config.setProperty(LASTEST_INSTANCE, this);
         logger = JDUtilities.getLogger();
 
     }
 
     /**
-     * Informiert den Server darüber dass der letzte Captcha falsch erkannt wurde
+     * Informiert den Server darüber dass der letzte Captcha falsch erkannt
+     * wurde
      */
     public void sendCaptchaWrong() {
         try {
+            
             RequestInfo ri = Plugin.postRequest(new URL(server + "test.php"), null, null, null, "Nick=" + user + "&Pass=" + pass + "&Wrong=" + captchaID, true);
-            logger.info(ri + "");
+            config.setProperty(LASTEST_INSTANCE, this);
+            printMessage(ri.getHtmlCode());
         } catch (Exception e) {
 
         }
     }
-/**
- * Betritt die Warteschleife 
- * TODO!!!
- */
+
+    /**
+     * Betritt die Warteschleife TODO!!!
+     */
     public void enterQueueAndWait() {
         while (true) {
             try {
@@ -119,51 +138,122 @@ public class CESClient extends Thread {
                     return;
                 }
                 RequestInfo ri = Plugin.getRequest(new URL(server + "index.php?Nick=" + user + "&Pass=" + pass + "&State=1"));
-                logger.info(ri.getHtmlCode());
+               
+                printMessage(ri.getHtmlCode());
+                config.setProperty(LASTEST_INSTANCE, this);
+                // PATTERN_IMAGE
+                String img = Plugin.getSimpleMatch(ri.getHtmlCode(), PATTERN_IMAGE, 0);
+                if (img != null) {
+                    String id = Plugin.getSimpleMatch(ri.getHtmlCode(), PATTERN_CAPTCHA_ID, 0);
+                    String state = Plugin.getSimpleMatch(ri.getHtmlCode(), PATTERN_CAPTCHA_STATE, 0);
+                    this.askUserForCode(server + img, id, state);
+
+                }
 
                 String[] answer;
 
                 answer = Plugin.getSimpleMatches(ri.getHtmlCode(), PATTERN_QUEUE);
-                this.balance = answer[1];
-                this.receivedCaptchas = answer[2];
-                this.recognizedCaptchas = answer[3];
-                this.receiveErrors = answer[4];
-                this.receiveErrorsPercent = answer[5];
-                this.sentCaptchasNum = answer[6];
-                this.sendRecognized = answer[7];
-                this.sentErrors = answer[8];
-                this.sendErrorsPercent = answer[9];
-                this.queueLength = answer[11];
-                this.queuePosition = answer[12];
-                this.eta = answer[14];
-
-                long i = RECEIVE_INTERVAL;
-
-                while (i > 0) {
-                    Thread.sleep(500);
-
-                    i -= 500;
-
-                    if (this.abortFlag == FLAG_ABORT_RECEIVING) {
-                        Plugin.postRequest(new URL(server + "index.php?Nick=" + user + "&Pass=" + pass + "&State=1"), "logout=Stop+captcha+recognition&State=4&Nick=" + user + "&Pass=" + pass);
-                        return;
-                    }
+               
+                if (answer != null) {
+                    this.balance = answer[1];
+                    this.receivedCaptchas = answer[2];
+                    this.recognizedCaptchas = answer[3];
+                    this.receiveErrors = answer[4];
+                    this.receiveErrorsPercent = answer[5];
+                    this.sentCaptchasNum = answer[6];
+                    this.sendRecognized = answer[7];
+                    this.sentErrors = answer[8];
+                    this.sendErrorsPercent = answer[9];
+                    this.queueLength = answer[12];
+                    this.queuePosition = answer[13];
+                    this.eta = answer[15];
+                    config.setProperty(UPDATE, (int) System.currentTimeMillis());
+                    
+                    
                 }
 
             } catch (Exception e) {
+                e.printStackTrace();
+            }
+            long i = RECEIVE_INTERVAL;
 
+            while (i > 0) {
+
+                try {
+                    Thread.sleep(500);
+                } catch (InterruptedException e) {
+                    // TODO Auto-generated catch block
+                    e.printStackTrace();
+                }
+
+                i -= 500;
+
+                if (this.abortFlag == FLAG_ABORT_RECEIVING) {
+                    try {
+                        Plugin.postRequest(new URL(server + "index.php?Nick=" + user + "&Pass=" + pass + "&State=1"), "logout=Stop+captcha+recognition&State=4&Nick=" + user + "&Pass=" + pass);
+                    } catch (MalformedURLException e) {
+                        // TODO Auto-generated catch block
+                        e.printStackTrace();
+                    } catch (IOException e) {
+                        // TODO Auto-generated catch block
+                        e.printStackTrace();
+                    }
+                    return;
+                }
             }
         }
 
     }
-/**
- * Brihct das Warten auf einen Captcha ab
- */
+
+    private void printMessage(String htmlCode) {
+        String msg=Plugin.getSimpleMatch(htmlCode, PATTERN_MESSAGE, 0);
+        if(msg==null)msg=htmlCode;
+       logger.info("CES: "+msg);
+        
+    }
+
+    public String getAccountInfoString() {
+        String l = JDLocale.L("captcha.ces.infostring", "C.E.S |Punkte: %s |Benutzer: %s |Position: %s |Wartezeit bis Captcha: %s");
+        return String.format(l, getBalance(), getQueueLength(), getQueuePosition(), this.getEta());
+    }
+
+    private void askUserForCode(String adr, String id, String state) {
+
+        int index = Math.max(adr.lastIndexOf("/"), adr.lastIndexOf("\\"));
+        String ext = adr.substring(index + 1);
+        Calendar calendar = Calendar.getInstance();
+        String date = String.format("%1$td.%1$tm.%1$tY_%1$tH.%1$tM.%1$tS", calendar);
+        File dest = JDUtilities.getResourceFile("captchas/CES/" + date + "." + ext);
+        JDUtilities.downloadBinary(dest.getAbsolutePath(), adr);
+        String code = JDUtilities.getGUI().getCaptchaCodeFromUser(plugin, dest, "");
+        if (code != null && code.length() > 0) {
+            try {
+                RequestInfo ri = Plugin.postRequest(new URL(server + "index.php?Nick=" + user + "&Pass=" + pass + "&State=1"), "Code=" + code + "&enter=OK&Captcha=" + id + "&State=" + state + "&Nick=" + user + "&Pass=" + pass);
+                config.setProperty(LASTEST_INSTANCE, this);
+                printMessage(ri.getHtmlCode());
+            } catch (MalformedURLException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            } catch (IOException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            }
+        } else {
+            CES.setEnabled(false);
+            config.setProperty(LASTEST_INSTANCE, this);
+            config.setProperty(UPDATE, (int)System.currentTimeMillis());
+
+        }
+    }
+
+    /**
+     * Brihct das Warten auf einen Captcha ab
+     */
     public void abortReceiving() {
+        config.setProperty(LASTEST_INSTANCE, this);
         this.abortFlag = FLAG_ABORT_RECEIVING;
     }
-    
-    
+
     public String getStatusPage() {
         RequestInfo ri;
         try {
@@ -171,23 +261,25 @@ public class CESClient extends Thread {
             ri = Plugin.postRequest(new URL(server), null, null, null, "Nick=" + user + "&Pass=" + pass, true);
             return ri.getHtmlCode();
         } catch (Exception e) {
-e.printStackTrace();
+            e.printStackTrace();
         }
         return null;
-        
+
     }
-/**
- * login. Statistische Informationen über den account werden abgerfen.
- * Ist zur funktionweise nicht zwingend nötig
- * @return
- */
+
+    /**
+     * login. Statistische Informationen über den account werden abgerfen. Ist
+     * zur funktionweise nicht zwingend nötig
+     * 
+     * @return
+     */
     public boolean login() {
         RequestInfo ri;
         try {
 
             ri = Plugin.postRequest(new URL(server), null, null, null, "Nick=" + user + "&Pass=" + pass, true);
             String error = Plugin.getSimpleMatch(ri.getHtmlCode(), "<font color=\"red\"><h2>°</h2></font>", 0);
-            logger.info(ri.getHtmlCode());
+            printMessage(ri.getHtmlCode());
             this.statusText = error;
             if (error != null) {
 
@@ -216,12 +308,15 @@ e.printStackTrace();
         }
         return true;
     }
-/**
- * Registriert einen user und gibt sein Passwort zurück
- * null wird im fehlerfall zurückgegeben. mit getStatusText() kann in diesem Fall der fehler abgerufen werden
- * @param user
- * @return
- */
+
+    /**
+     * Registriert einen user und gibt sein Passwort zurück null wird im
+     * fehlerfall zurückgegeben. mit getStatusText() kann in diesem Fall der
+     * fehler abgerufen werden
+     * 
+     * @param user
+     * @return
+     */
     public String register(String user) {
 
         RequestInfo ri;
@@ -241,11 +336,15 @@ e.printStackTrace();
         }
         return null;
     }
-/**
- * Nach dem mit sendCaptcha ein captcha verschickt wurde, muss diese Funktion aufgerufen werden. Sie wartet solange bis der captcha zurückgegeben wird und gibt den code zurück
- * @return
- */
-    private String waitForAnswer() {
+
+    /**
+     * Nach dem mit sendCaptcha ein captcha verschickt wurde, muss diese
+     * Funktion aufgerufen werden. Sie wartet solange bis der captcha
+     * zurückgegeben wird und gibt den code zurück
+     * 
+     * @return
+     */
+    public String waitForAnswer() {
         // <html><head></head><body>CaptchaExchangeServer - v2.06 (29-04-08
         // 02:00) by DVK<br>dvk_ok001; Captcha is loaded with ID(510), your
         // balance (0), please wait recognition...<br></body></html>
@@ -253,6 +352,7 @@ e.printStackTrace();
         try {
             logger.info("WAIT FOR REC");
             while (true) {
+                config.setProperty(LASTEST_INSTANCE, this);
                 Thread.sleep(CHECK_INTERVAL);
                 if (System.currentTimeMillis() - startTime > MAX_TIME) {
                     cesStatus = false;
@@ -260,7 +360,7 @@ e.printStackTrace();
                     return null;
                 }
                 RequestInfo ri = Plugin.postRequest(new URL(server + "test.php"), null, null, null, "Nick=" + user + "&Pass=" + pass + "&Test=" + captchaID, true);
-                logger.info(ri + "");
+                printMessage(ri.getHtmlCode());
                 if (ri.containsHTML("dvk_ok002")) {
 
                     String[] answer = Plugin.getSimpleMatches(ri.getHtmlCode(), "<html><head></head><body>CaptchaExchangeServer - v° (°) by DVK<br>dvk_ok002; AccessCode(°), price ° point, \"°\" recognized in ° seconds early, balance (°).<br></body></html>");
@@ -287,76 +387,85 @@ e.printStackTrace();
         }
         return null;
     }
-/**
- * Setzt die Account Logins
- * @param user
- * @param pass
- */
+
+    /**
+     * Setzt die Account Logins
+     * 
+     * @param user
+     * @param pass
+     */
     public void setLogins(String user, String pass) {
         this.user = user;
         this.pass = pass;
 
     }
-/**
- * Schickt den übergebenen Captcha an den Server
- * @return
- */
-    private boolean sendCaptcha() {
-        HTTPPost up = new HTTPPost(server + "post.php", true);
-        up.setBoundary(boundary);
-        up.doUpload();
-        up.connect();
-        up.setForm("Captcha");
-        up.sendFile(file.getAbsolutePath(), file.getName());
-        up.sendVariable("Nick", user);
-        up.sendVariable("Pass", pass);
-        up.sendVariable("Save", save + "");
-        up.sendVariable("Link", "");
-        up.sendVariable("Type", type + "");
-        up.sendVariable("Key", getKey());
-        up.sendVariable("Specs", "No premium user.\\s*(.*?)<img\\s+src=\"(http:\\/\\/rs.*?)\"[^>]*>(<br>)*(.*?)<input");
 
-        RequestInfo ri = up.getRequestInfo();
-        // <html><head></head><body>CaptchaExchangeServer - v2.06 (29-04-08
-        // 02:00) by DVK<br>dvk_ok001; Captcha is loaded with ID(580281), your
-        // balance (96), please wait recognition...<br></body></html>
-        up.close();
-        logger.info(ri.getHtmlCode());
-        if (ri.containsHTML("dvk_ok001")) {
-            String[] answer = Plugin.getSimpleMatches(ri.getHtmlCode(), "<html><head></head><body>CaptchaExchangeServer - v° (°) by DVK<br>dvk_ok°; Captcha is loaded with ID(°), your balance (°), please wait recognition...<br></body></html>");
-            this.cesVersion = answer[0];
-            this.cesDate = answer[1];
-            this.cesStatus = true;
-            this.cesCode = answer[2];
-            this.captchaID = answer[3];
-            this.balance = answer[4];
-            return true;
-        } else {
-            this.cesStatus = false;
-            String[] answer = Plugin.getSimpleMatches(ri.getHtmlCode(), "<html><head></head><body>CaptchaExchangeServer - v2.06 (29-04-08 02:00) by DVK<br>dvk_°;°<br></body></html>");
-            this.cesVersion = answer[0];
-            this.cesDate = answer[1];
+    /**
+     * Schickt den übergebenen Captcha an den Server
+     * 
+     * @return
+     */
+    public boolean sendCaptcha() {
+        try {
+            HTTPPost up = new HTTPPost(server + "post.php", true);
+            up.setBoundary(boundary);
+            up.doUpload();
+            up.connect();
+            up.setForm("Captcha");
+            up.sendFile(file.getAbsolutePath(), file.getName());
+            up.sendVariable("Nick", user);
+            up.sendVariable("Pass", pass);
+            up.sendVariable("Save", save + "");
+            up.sendVariable("Link", "");
+            up.sendVariable("Type", type + "");
+            up.sendVariable("Key", getKey());
+            up.sendVariable("Specs", specs);
 
-            this.cesCode = answer[2];
-            this.statusText = answer[3];
+            RequestInfo ri = up.getRequestInfo();
+            // <html><head></head><body>CaptchaExchangeServer - v2.06 (29-04-08
+            // 02:00) by DVK<br>dvk_ok001; Captcha is loaded with ID(580281),
+            // your
+            // balance (96), please wait recognition...<br></body></html>
+            up.close();
+            printMessage(ri.getHtmlCode());
+            if (ri.containsHTML("dvk_ok001")) {
+                String[] answer = Plugin.getSimpleMatches(ri.getHtmlCode(), "<html><head></head><body>CaptchaExchangeServer - v° (°) by DVK<br>dvk_ok°; Captcha is loaded with ID(°), your balance (°), please wait recognition...<br></body></html>");
+                this.cesVersion = answer[0];
+                this.cesDate = answer[1];
+                this.cesStatus = true;
+                this.cesCode = answer[2];
+                this.captchaID = answer[3];
+                this.balance = answer[4];
+                return true;
+            } else {
+                this.cesStatus = false;
+                String[] answer = Plugin.getSimpleMatches(ri.getHtmlCode(), "<html><head></head><body>CaptchaExchangeServer - v2.06 (29-04-08 02:00) by DVK<br>dvk_°;°<br></body></html>");
+                this.cesVersion = answer[0];
+                this.cesDate = answer[1];
 
+                this.cesCode = answer[2];
+                this.statusText = answer[3];
+
+                return false;
+            }
+        } catch (Exception e) {
             return false;
         }
     }
 
- 
-/**
- * Erstellt den Auth key für den Server
- * @return
- */
+    /**
+     * Erstellt den Auth key für den Server
+     * 
+     * @return
+     */
     private String getKey() {
         return JDUtilities.getMD5(k + md5);
 
     }
 
-    
     /**
      * Getter für alles mögliche
+     * 
      * @return
      */
     public String getServer() {
@@ -402,8 +511,6 @@ e.printStackTrace();
     public String getCaptchaID() {
         return captchaID;
     }
-
- 
 
     public boolean isCesStatus() {
         return cesStatus;
@@ -494,6 +601,18 @@ e.printStackTrace();
         this.md5 = JDUtilities.getLocalHash(file);
     }
 
+    public void setSpecs(String specs) {
+        this.specs = specs;
 
+    }
+
+    public void setPlugin(Plugin plg) {
+        this.plugin = plg;
+
+    }
+
+    public String getEta() {
+        return eta;
+    }
 
 }

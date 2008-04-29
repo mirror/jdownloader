@@ -54,7 +54,6 @@ import javax.swing.JPanel;
 import javax.swing.JSeparator;
 import javax.swing.JSpinner;
 import javax.swing.JSplitPane;
-import javax.swing.JTextField;
 import javax.swing.JToolBar;
 import javax.swing.SpinnerNumberModel;
 import javax.swing.UIManager;
@@ -92,6 +91,7 @@ import jd.plugins.PluginForContainer;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginOptional;
+import jd.utils.CESClient;
 import jd.utils.JDLocale;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
@@ -223,7 +223,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
     private JDAction actionClipBoard;
 
     private JDAction actionCes;
-    
+
     private JDAction actionPasswordlist;
 
     private JDAction doReconnect;
@@ -382,6 +382,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
             return JDTheme.V("gui.images.clipboardoff");
 
     }
+
     /**
      * Die Aktionen werden initialisiert
      */
@@ -1357,18 +1358,27 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
             Property p;
             switch (event.getID()) {
             case ControlEvent.CONTROL_JDPROPERTY_CHANGED:
-
+                p = (Property) event.getSource();
                 if (event.getParameter().equals(Configuration.PARAM_DOWNLOAD_MAX_SPEED)) {
-                    p = (Property) event.getSource();
+
                     spMax.setValue(p.getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED));
 
                 } else if (event.getParameter().equals(Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN)) {
-                    p = (Property) event.getSource();
                     spMaxDls.setValue(p.getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN));
                 } else if (event.getParameter().equals(Configuration.PARAM_USE_GLOBAL_PREMIUM)) {
-                    p = (Property) event.getSource();
                     chbPremium.setSelected(p.getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM));
 
+                } else if (event.getParameter().equals(CESClient.UPDATE)) {
+                    p = (Property) event.getSource();
+                    CESClient ces = (CESClient) p.getProperty(CESClient.LASTEST_INSTANCE);
+                    if (ces != null) {
+                        setText(ces.getAccountInfoString());
+                    }
+                    
+                    if(!CES.isEnabled()){
+                        btnCes.setIcon(CES.getImage());
+                        setText("");
+                    }
                 }
                 break;
             }

@@ -137,9 +137,11 @@ public class CaptchaDialog extends JDialog implements ActionListener {
         String code = "";
         final Configuration configuration = JDUtilities.getConfiguration();
         imageIcon = new ImageIcon(file.getAbsolutePath());
-        final String host = plugin.getHost();
-        if (plugin.getCaptchaDetectionID() != Plugin.CAPTCHA_USER_INPUT && !configuration.getBooleanProperty(Configuration.PARAM_CAPTCHA_JAC_DISABLE, false) && JAntiCaptcha.hasMethod(JDUtilities.getJACMethodsDirectory(), host)) {
+     
+        
+        if (plugin!=null&&plugin.getCaptchaDetectionID() != Plugin.CAPTCHA_USER_INPUT && !configuration.getBooleanProperty(Configuration.PARAM_CAPTCHA_JAC_DISABLE, false) && JAntiCaptcha.hasMethod(JDUtilities.getJACMethodsDirectory(), plugin.getHost())) {
             setTitle(JDLocale.L("gui.captchaWindow.title", "jAntiCaptcha aktiv!"));
+            final String host = plugin.getHost();
             this.jacThread=new Thread("JAC") {
                 public void run() {
 
@@ -224,7 +226,7 @@ public class CaptchaDialog extends JDialog implements ActionListener {
         JDUtilities.addToGridBag(this, btnOK, 1, 1, 1, 1, 1, 1, null, GridBagConstraints.NONE, GridBagConstraints.WEST);
         JDUtilities.addToGridBag(this, btnBAD, 2, 1, 1, 1, 1, 1, null, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-        if (plugin.getLastCaptcha() != null && plugin.getLastCaptcha().getLetterComperators() != null) {
+        if (plugin!=null &&plugin.getLastCaptcha() != null && plugin.getLastCaptcha().getLetterComperators() != null) {
             JPanel p = new JPanel();
             p.add(new JLabel("Current Captcha: "));
             JDUtilities.addToGridBag(this, p, 0, 2, 2, 1, 0, 0, null, GridBagConstraints.NONE, GridBagConstraints.CENTER);

@@ -205,7 +205,7 @@ public abstract class Plugin implements ActionListener {
      * @return Gibt einen Pfadzurück der für die nächste Captchadatei reserviert
      *         ist
      */
-    protected File getLocalCaptchaFile(Plugin plugin, String extension) {
+    public static File getLocalCaptchaFile(Plugin plugin, String extension) {
         if (extension == null) extension = ".jpg";
         Calendar calendar = Calendar.getInstance();
         String date = String.format("%1$td.%1$tm.%1$tY_%1$tH.%1$tM.%1$tS", calendar);

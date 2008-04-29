@@ -20,6 +20,8 @@ import jd.config.Configuration;
 import jd.gui.skins.simple.CaptchaDialog;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.plugins.Plugin;
+import jd.plugins.host.Rapidshare;
+import jd.utils.CESClient;
 import jd.utils.JDLocale;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
@@ -27,6 +29,7 @@ import jd.utils.JDUtilities;
 
 public class CES {
    private static boolean enabled = false;
+private static CESClient ces;
    private static String loginDialog()
    {
        return new Dialog(((SimpleGUI) JDUtilities.getGUI()).getFrame()) {
@@ -132,10 +135,26 @@ public class CES {
    public static void setEnabled(boolean bool)
    {
        enabled=bool;
+       if(bool){
+           ces= new CESClient();
+           ces.setLogins(JDUtilities.getSubConfig("JAC").getStringProperty(CESClient.PARAM_USER),JDUtilities.getSubConfig("JAC").getStringProperty(CESClient.PARAM_PASS));
+           new Thread(){
+               public void run(){
+                   
+          
+           ces.enterQueueAndWait();
+               }
+           }.start();
+       }else if(ces!=null){
+           ces.abortReceiving();
+           
+       }
    }
    public static boolean toggleActivation()
    {
        setEnabled(!enabled);
+       
+     
        return enabled;
    }
    public static String getCesImageString() {
@@ -158,4 +177,8 @@ public class CES {
        captchaDialog.setVisible(true);
        return captchaDialog.getCaptchaText();
    }
+public static void requestCode(File captchaFile, String specs, Rapidshare rapidshare) {
+    // TODO Auto-generated method stub
+    
+}
 }
