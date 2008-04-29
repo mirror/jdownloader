@@ -121,6 +121,7 @@ public class CES {
        if(loginstring==null)
        {
            loginstring=loginDialog();
+           JDUtilities.getConfiguration().setProperty(Configuration.JAC_CES_LOGIN, loginstring);
        }
        return loginstring;
    }
