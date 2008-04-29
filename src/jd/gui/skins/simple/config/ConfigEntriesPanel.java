@@ -152,4 +152,8 @@ public class ConfigEntriesPanel extends ConfigPanel implements ActionListener {
 
     }
 
+    public Vector<ConfigEntriesPanel> getSubPanels() {
+        return subPanels;
+    }
+
 }

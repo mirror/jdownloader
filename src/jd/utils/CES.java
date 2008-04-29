@@ -21,28 +21,30 @@ public class CES extends Thread {
     private static final long RECEIVE_INTERVAL = 15 * 1000;
     private static final long CHECK_INTERVAL = 15 * 1000;
     private static final int FLAG_ABORT_RECEIVING = 0;
+    public static final String PARAM_USER = "CES_USER";
+    public static final String PARAM_PASS = "CES_PASS";
 
     public static void main(String[] args) {
         File file = new File("C:/Users/coalado/.jd_home/captchas/rapidshare.com/21.04.2008_17.19.51.jpg");
 
         CES ces = new CES(file);
-        ces.setLogins("coalado", " try {");
+        ces.setLogins("coalado", "aCvtSmZwNCqm1");
         // ces.enterQueueAndWait();
-        // if (ces.sendCaptcha()) {
-        // ces.waitForAnswer();
-        // }
+         if (ces.sendCaptcha()) {
+             JDUtilities.getLogger().info("code: "+ces.waitForAnswer());
+         }
 
         // ces.register("coalado");
 
-        ces.login();
-        JDUtilities.getLogger().info(ces.getServer());
+       // ces.login();
+       // JDUtilities.getLogger().info(ces.getServer());
 
     }
 
     private String cesVersion;
     private String cesDate;
     private String captchaID;
-    private String userBalance;
+  
     private boolean cesStatus;
     private String cesCode;
     private String statusText;
@@ -79,6 +81,13 @@ public class CES extends Thread {
     public CES(File captcha) {
         this.file = captcha;
         this.md5 = JDUtilities.getLocalHash(file);
+        logger = JDUtilities.getLogger();
+
+    }
+    
+    public CES() {
+        
+       
         logger = JDUtilities.getLogger();
 
     }
@@ -150,6 +159,20 @@ public class CES extends Thread {
  */
     public void abortReceiving() {
         this.abortFlag = FLAG_ABORT_RECEIVING;
+    }
+    
+    
+    public String getStatusPage() {
+        RequestInfo ri;
+        try {
+
+            ri = Plugin.postRequest(new URL(server), null, null, null, "Nick=" + user + "&Pass=" + pass, true);
+            return ri.getHtmlCode();
+        } catch (Exception e) {
+e.printStackTrace();
+        }
+        return null;
+        
     }
 /**
  * login. Statistische Informationen über den account werden abgerfen.
@@ -247,7 +270,7 @@ public class CES extends Thread {
                     this.recUser = answer[4];
                     this.recTime = answer[5];
 
-                    this.userBalance = answer[5];
+                    this.balance = answer[5];
                     return captchaCode;
 
                 }
@@ -267,7 +290,7 @@ public class CES extends Thread {
  * @param user
  * @param pass
  */
-    private void setLogins(String user, String pass) {
+    public void setLogins(String user, String pass) {
         this.user = user;
         this.pass = pass;
 
@@ -304,7 +327,7 @@ public class CES extends Thread {
             this.cesStatus = true;
             this.cesCode = answer[2];
             this.captchaID = answer[3];
-            this.userBalance = answer[4];
+            this.balance = answer[4];
             return true;
         } else {
             this.cesStatus = false;
@@ -378,9 +401,7 @@ public class CES extends Thread {
         return captchaID;
     }
 
-    public String getUserBalance() {
-        return userBalance;
-    }
+ 
 
     public boolean isCesStatus() {
         return cesStatus;
@@ -468,6 +489,9 @@ public class CES extends Thread {
 
     public void setFile(File file) {
         this.file = file;
+        this.md5 = JDUtilities.getLocalHash(file);
     }
+
+
 
 }
