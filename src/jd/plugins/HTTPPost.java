@@ -247,7 +247,7 @@ public class HTTPPost {
             //String ct = ft.getContentType(f);
 
             addToRequest("\r\nContent-Disposition: form-data; name=\"" + form + "\"; filename=\"" + fileName + "\"");
-            addToRequest("\r\nContent-Type: multipart/form-data\r\n\r\n");
+            addToRequest("\r\nContent-Type: image/jpeg\r\n\r\n");
             outputwriter.flush();
             byte[] b = new byte[1024];
             InputStream in;

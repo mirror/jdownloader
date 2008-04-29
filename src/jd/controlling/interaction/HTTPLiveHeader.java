@@ -216,12 +216,9 @@ public class HTTPLiveHeader extends Interaction {
                 NodeList toDos = current.getChildNodes();
                 for (int toDoStep = 0; toDoStep < toDos.getLength(); toDoStep++) {
                     Node toDo = toDos.item(toDoStep);
-                    try {
-                        progress.setStatusText(JDUtilities.sprintf(JDLocale.L("interaction.liveHeader.progress.4_step","(%s)HTTPLiveHeader"), new String[]{toDo.getNodeName()}));
-                    } catch (Exception e) {
-                        // TODO: handle exception
-                    }
- 
+                  
+                        progress.setStatusText(String.format(JDLocale.L("interaction.liveHeader.progress.4_step","(%s)HTTPLiveHeader"), toDo.getNodeName()));
+                
                     if (toDo.getNodeName().equalsIgnoreCase("DEFINE")) {
 
                         NamedNodeMap attributes = toDo.getAttributes();
@@ -345,12 +342,10 @@ public class HTTPLiveHeader extends Interaction {
         logger.finer("Ip after: " + afterIP);
         progress.increase(1);
         String pattern;
-        try {
+       
             pattern=JDLocale.L("interaction.liveHeader.progress.5_ipcheck","(IPCHECK)HTTPLiveHeader %s / %s");
-            progress.setStatusText(JDUtilities.sprintf(pattern, new String[]{  preIp ,afterIP}));
-        } catch (Exception e) {
-            // TODO: handle exception
-        }
+            progress.setStatusText(String.format(pattern,  preIp ,afterIP));
+       
 
 
         long endTime = System.currentTimeMillis() + waitForIp * 1000;
@@ -363,7 +358,7 @@ public class HTTPLiveHeader extends Interaction {
             afterIP = JDUtilities.getIPAddress();
             try {
                 pattern=JDLocale.L("interaction.liveHeader.progress.5_ipcheck","(IPCHECK)HTTPLiveHeader %s / %s");
-                progress.setStatusText(JDUtilities.sprintf(pattern, new String[]{  preIp ,afterIP}));
+                progress.setStatusText(String.format(pattern,  preIp ,afterIP));
             } catch (Exception e) {
                 // TODO: handle exception
             }
