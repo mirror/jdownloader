@@ -11,7 +11,7 @@ import jd.plugins.HTTPPost;
 import jd.plugins.Plugin;
 import jd.plugins.RequestInfo;
 
-public class CES extends Thread {
+public class CESClient extends Thread {
     private static final long MAX_TIME = 5 * 60 * 1000;
     private static final String PATTERN_TITLE = "<title>CaptchaExchangeServer - v° (°) by DVK</title>";
     private static final String PATTERN_STATS_RECEIVE = "Your balance is <b>°</b> points. You have received <b>°</b> captchas, recognized <b>°</b>, errors <b>° (°%)</b>";
@@ -25,19 +25,21 @@ public class CES extends Thread {
     public static final String PARAM_PASS = "CES_PASS";
 
     public static void main(String[] args) {
-        File file = new File("C:/Users/coalado/.jd_home/captchas/rapidshare.com/21.04.2008_17.19.51.jpg");
-
-        CES ces = new CES(file);
-        ces.setLogins("coalado", "aCvtSmZwNCqm1");
-        // ces.enterQueueAndWait();
-         if (ces.sendCaptcha()) {
-             JDUtilities.getLogger().info("code: "+ces.waitForAnswer());
-         }
-
-        // ces.register("coalado");
-
-       // ces.login();
-       // JDUtilities.getLogger().info(ces.getServer());
+        
+      
+//        File file = new File("C:/Users/coalado/.jd_home/captchas/rapidshare.com/21.04.2008_17.19.51.jpg");
+//
+//        CESClient ces = new CESClient(file);
+//        ces.setLogins("coalado", "");
+//        // ces.enterQueueAndWait();
+//         if (ces.sendCaptcha()) {
+//             JDUtilities.getLogger().info("code: "+ces.waitForAnswer());
+//         }
+//
+//        // ces.register("coalado");
+//
+//       // ces.login();
+//       // JDUtilities.getLogger().info(ces.getServer());
 
     }
 
@@ -61,7 +63,7 @@ public class CES extends Thread {
     private String pass;
     private int save = 0;
     private int type = 1;
-    private String key = "jDoWnLoaDer106";
+    private String k = JDUtilities.Base64Decode("akRvV25Mb2FEZXIxMDY=");
     private String regKey = "RapidByeByeBye";
     private Logger logger;
     private String balance;
@@ -78,14 +80,14 @@ public class CES extends Thread {
     private String eta;
     private int abortFlag = -1;
 
-    public CES(File captcha) {
+    public CESClient(File captcha) {
         this.file = captcha;
         this.md5 = JDUtilities.getLocalHash(file);
         logger = JDUtilities.getLogger();
 
     }
     
-    public CES() {
+    public CESClient() {
         
        
         logger = JDUtilities.getLogger();
@@ -348,7 +350,7 @@ e.printStackTrace();
  * @return
  */
     private String getKey() {
-        return JDUtilities.getMD5(key + md5);
+        return JDUtilities.getMD5(k + md5);
 
     }
 

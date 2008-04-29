@@ -38,7 +38,7 @@ import jd.config.ConfigEntry;
 import jd.config.Configuration;
 import jd.gui.UIInterface;
 import jd.gui.skins.simple.Link.JLinkButton;
-import jd.utils.CES;
+import jd.utils.CESClient;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
@@ -155,13 +155,13 @@ public class ConfigPanelCaptcha extends ConfigPanel implements MouseListener, Ac
         // "http://ns2.km32221.keymachine.de/jdownloader/web/page.php?id=3"));
         ces.addEntry(ce);
 
-        ce = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, JDUtilities.getSubConfig("JAC"), CES.PARAM_USER, JDLocale.L("gui.config.captcha.ces.user", "C.E.S. Benutzername"));
+        ce = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, JDUtilities.getSubConfig("JAC"), CESClient.PARAM_USER, JDLocale.L("gui.config.captcha.ces.user", "C.E.S. Benutzername"));
         ce.setDefaultValue("JD_" + JDUtilities.getConfiguration().getIntegerProperty(Configuration.CID, (int) System.currentTimeMillis()));
 
         ce.setEnabledCondidtion(conditionEntry, "==", true);
         ces.addEntry(ce);
 
-        ce = new ConfigEntry(ConfigContainer.TYPE_PASSWORDFIELD, JDUtilities.getSubConfig("JAC"), CES.PARAM_PASS, JDLocale.L("gui.config.captcha.ces.pass", "C.E.S. Passwort"));
+        ce = new ConfigEntry(ConfigContainer.TYPE_PASSWORDFIELD, JDUtilities.getSubConfig("JAC"), CESClient.PARAM_PASS, JDLocale.L("gui.config.captcha.ces.pass", "C.E.S. Passwort"));
 
         ce.setEnabledCondidtion(conditionEntry, "==", true);
         ces.addEntry(ce);
@@ -313,14 +313,14 @@ public class ConfigPanelCaptcha extends ConfigPanel implements MouseListener, Ac
             String user = JDUtilities.getGUI().showUserInputDialog(JDLocale.L("gui.config.captcha.ces.register", "Gewünschter Benutzername?"));
 
             if (user != null) {
-                CES ces = new CES();
+                CESClient ces = new CESClient();
                 String pass = ces.register(user);
                 if (pass == null) {
                     JDUtilities.getGUI().showHTMLDialog(JDLocale.L("gui.config.captcha.ces.register.error", "Fehler aufgetreten"), ces.getStatusText());
                 } else {
                     JDUtilities.getGUI().showHTMLDialog(JDLocale.L("gui.config.captcha.ces.register.success", "Erfolgreich"), JDLocale.L("gui.config.captcha.ces.register.success.logins", "Deine neuen C.E.S Logins<br><font color='RED'>Logins unbedingt aufschreiben!</font> Verlorene Logins können nicht ersetzt werden") + "<hr><p>" + user + ":" + pass + "</p>");
-                    JDUtilities.getSubConfig("JAC").setProperty(CES.PARAM_USER, user);
-                    JDUtilities.getSubConfig("JAC").setProperty(CES.PARAM_PASS, pass);
+                    JDUtilities.getSubConfig("JAC").setProperty(CESClient.PARAM_USER, user);
+                    JDUtilities.getSubConfig("JAC").setProperty(CESClient.PARAM_PASS, pass);
                     JDUtilities.getSubConfig("JAC").save();
                     JDUtilities.saveConfig();
                     ConfigurationDialog.DIALOG.dispose();
@@ -333,7 +333,7 @@ public class ConfigPanelCaptcha extends ConfigPanel implements MouseListener, Ac
 
             try {
                 save();
-                JLinkButton.openURL("http://dvk.com.ua/rapid/index.php?Nick=" + JDUtilities.getSubConfig("JAC").getStringProperty(CES.PARAM_USER) + "&Pass=" + JDUtilities.getSubConfig("JAC").getStringProperty(CES.PARAM_PASS));
+                JLinkButton.openURL("http://dvk.com.ua/rapid/index.php?Nick=" + JDUtilities.getSubConfig("JAC").getStringProperty(CESClient.PARAM_USER) + "&Pass=" + JDUtilities.getSubConfig("JAC").getStringProperty(CESClient.PARAM_PASS));
             } catch (MalformedURLException e1) {
                 // TODO Auto-generated catch block
                 e1.printStackTrace();
