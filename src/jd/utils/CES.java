@@ -26,7 +26,7 @@ public class CES extends Thread {
         File file = new File("C:/Users/coalado/.jd_home/captchas/rapidshare.com/21.04.2008_17.19.51.jpg");
 
         CES ces = new CES(file);
-        ces.setLogins("coalado", "fdsfd");
+        ces.setLogins("coalado", " try {");
         // ces.enterQueueAndWait();
         // if (ces.sendCaptcha()) {
         // ces.waitForAnswer();
@@ -83,6 +83,21 @@ public class CES extends Thread {
 
     }
 
+    /**
+     * Informiert den Server darüber dass der letzte Captcha falsch erkannt wurde
+     */
+    public void sendCaptchaWrong() {
+        try {
+            RequestInfo ri = Plugin.postRequest(new URL(server + "test.php"), null, null, null, "Nick=" + user + "&Pass=" + pass + "&Wrong=" + captchaID, true);
+            logger.info(ri + "");
+        } catch (Exception e) {
+
+        }
+    }
+/**
+ * Betritt die Warteschleife 
+ * TODO!!!
+ */
     public void enterQueueAndWait() {
         while (true) {
             try {
@@ -130,11 +145,17 @@ public class CES extends Thread {
         }
 
     }
-
+/**
+ * Brihct das Warten auf einen Captcha ab
+ */
     public void abortReceiving() {
         this.abortFlag = FLAG_ABORT_RECEIVING;
     }
-
+/**
+ * login. Statistische Informationen über den account werden abgerfen.
+ * Ist zur funktionweise nicht zwingend nötig
+ * @return
+ */
     public boolean login() {
         RequestInfo ri;
         try {
@@ -170,7 +191,12 @@ public class CES extends Thread {
         }
         return true;
     }
-
+/**
+ * Registriert einen user und gibt sein Passwort zurück
+ * null wird im fehlerfall zurückgegeben. mit getStatusText() kann in diesem Fall der fehler abgerufen werden
+ * @param user
+ * @return
+ */
     public String register(String user) {
 
         RequestInfo ri;
@@ -190,7 +216,10 @@ public class CES extends Thread {
         }
         return null;
     }
-
+/**
+ * Nach dem mit sendCaptcha ein captcha verschickt wurde, muss diese Funktion aufgerufen werden. Sie wartet solange bis der captcha zurückgegeben wird und gibt den code zurück
+ * @return
+ */
     private String waitForAnswer() {
         // <html><head></head><body>CaptchaExchangeServer - v2.06 (29-04-08
         // 02:00) by DVK<br>dvk_ok001; Captcha is loaded with ID(510), your
@@ -233,13 +262,20 @@ public class CES extends Thread {
         }
         return null;
     }
-
+/**
+ * Setzt die Account Logins
+ * @param user
+ * @param pass
+ */
     private void setLogins(String user, String pass) {
         this.user = user;
         this.pass = pass;
 
     }
-
+/**
+ * Schickt den übergebenen Captcha an den Server
+ * @return
+ */
     private boolean sendCaptcha() {
         HTTPPost up = new HTTPPost(server + "post.php", true);
         up.setBoundary(boundary);
@@ -283,22 +319,155 @@ public class CES extends Thread {
         }
     }
 
-    public String getStatus() {
-
-        return (cesStatus ? "SUCCESS" : "ERROR") + ": " + "[" + cesCode + "]" + this.cesVersion + " (" + cesDate + ")" + statusText + " CaptchaID:" + captchaID;
-    }
-
+ 
+/**
+ * Erstellt den Auth key für den Server
+ * @return
+ */
     private String getKey() {
         return JDUtilities.getMD5(key + md5);
 
     }
 
+    
+    /**
+     * Getter für alles mögliche
+     * @return
+     */
     public String getServer() {
         return server;
     }
 
     public void setServer(String server) {
         this.server = server;
+    }
+
+    public String getUser() {
+        return user;
+    }
+
+    public void setUser(String user) {
+        this.user = user;
+    }
+
+    public String getPass() {
+        return pass;
+    }
+
+    public void setPass(String pass) {
+        this.pass = pass;
+    }
+
+    public int getType() {
+        return type;
+    }
+
+    public void setType(int type) {
+        this.type = type;
+    }
+
+    public String getCesVersion() {
+        return cesVersion;
+    }
+
+    public String getCesDate() {
+        return cesDate;
+    }
+
+    public String getCaptchaID() {
+        return captchaID;
+    }
+
+    public String getUserBalance() {
+        return userBalance;
+    }
+
+    public boolean isCesStatus() {
+        return cesStatus;
+    }
+
+    public String getCesCode() {
+        return cesCode;
+    }
+
+    public String getStatusText() {
+        return statusText;
+    }
+
+    public String getCaptchaCode() {
+        return captchaCode;
+    }
+
+    public String getPrice() {
+        return price;
+    }
+
+    public String getRecUser() {
+        return recUser;
+    }
+
+    public String getRecTime() {
+        return recTime;
+    }
+
+    public long getStartTime() {
+        return startTime;
+    }
+
+    public int getSave() {
+        return save;
+    }
+
+    public String getBalance() {
+        return balance;
+    }
+
+    public String getReceivedCaptchas() {
+        return receivedCaptchas;
+    }
+
+    public String getRecognizedCaptchas() {
+        return recognizedCaptchas;
+    }
+
+    public String getReceiveErrors() {
+        return receiveErrors;
+    }
+
+    public String getReceiveErrorsPercent() {
+        return receiveErrorsPercent;
+    }
+
+    public String getSentCaptchasNum() {
+        return sentCaptchasNum;
+    }
+
+    public String getSendRecognized() {
+        return sendRecognized;
+    }
+
+    public String getSentErrors() {
+        return sentErrors;
+    }
+
+    public Object getSendErrorsPercent() {
+        return sendErrorsPercent;
+    }
+
+    public String getQueueLength() {
+        return queueLength;
+    }
+
+    public String getQueuePosition() {
+        return queuePosition;
+    }
+
+    public File getFile() {
+        return file;
+    }
+
+    public void setFile(File file) {
+        this.file = file;
     }
 
 }
