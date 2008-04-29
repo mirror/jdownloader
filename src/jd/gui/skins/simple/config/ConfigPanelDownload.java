@@ -174,7 +174,7 @@ public class ConfigPanelDownload extends ConfigPanel {
         this.setLayout(new GridBagLayout());
        
         JDUtilities.addToGridBag(this, cep=new ConfigEntriesPanel(this.container,"Download"), 0, 0, 1, 1, 1, 1,null, GridBagConstraints.BOTH, GridBagConstraints.NORTHWEST);
-        //add(, BorderLayout.NORTH);
+    
     }
 
     @Override

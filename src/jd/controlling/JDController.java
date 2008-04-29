@@ -348,10 +348,12 @@ public class JDController implements ControlListener, UIListener {
                 fp = it.next();
                 if (fp.remove(link)) {
                     if (fp.size() == 0) packages.remove(fp);
-                    return;
+                   return;
                 }
 
             }
+            
+           
         }
         logger.severe("Link " + link + " does not belong to any Package");
 

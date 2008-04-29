@@ -121,7 +121,7 @@ public class Serienjunkies extends PluginForDecrypt {
             void init() {
                 setLayout(new BorderLayout());
                 setModal(true);
-                setTitle(JDLocale.L("Plugins.SerienJunkies.CatDialog.title", "SerienJunkies ::CAT::"));
+                setTitle(JDLocale.L("plugins.SerienJunkies.CatDialog.title", "SerienJunkies ::CAT::"));
                 setAlwaysOnTop(true);
                 setLocation(20, 20);
                 JPanel panel = new JPanel(new GridBagLayout());
@@ -194,7 +194,7 @@ public class Serienjunkies extends PluginForDecrypt {
                 methods = new JComboBox(meths);
                 checkScat = new JCheckBox("Einstellungen für diese Sitzung beibehalten?", true);
                 Insets insets = new Insets(0, 0, 0, 0);
-                JDUtilities.addToGridBag(panel, new JLabel(JDLocale.L("Plugins.SerienJunkies.CatDialog.action", "Wählen sie eine Aktion aus:")), GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
+                JDUtilities.addToGridBag(panel, new JLabel(JDLocale.L("plugins.SerienJunkies.CatDialog.action", "Wählen sie eine Aktion aus:")), GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
                 JDUtilities.addToGridBag(panel, methods, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
                 JDUtilities.addToGridBag(panel, checkScat, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
                 JButton btnOK = new JButton(JDLocale.L("gui.btn_continue", "OK"));
