@@ -216,7 +216,12 @@ public class HTTPLiveHeader extends Interaction {
                 NodeList toDos = current.getChildNodes();
                 for (int toDoStep = 0; toDoStep < toDos.getLength(); toDoStep++) {
                     Node toDo = toDos.item(toDoStep);
-                    progress.setStatusText(JDUtilities.sprintf(JDLocale.L("interaction.liveHeader.progress.4_step","(%s)HTTPLiveHeader"), new String[]{toDo.getNodeName()})); 
+                    try {
+                        progress.setStatusText(JDUtilities.sprintf(JDLocale.L("interaction.liveHeader.progress.4_step","(%s)HTTPLiveHeader"), new String[]{toDo.getNodeName()}));
+                    } catch (Exception e) {
+                        // TODO: handle exception
+                    }
+ 
                     if (toDo.getNodeName().equalsIgnoreCase("DEFINE")) {
 
                         NamedNodeMap attributes = toDo.getAttributes();
@@ -339,8 +344,14 @@ public class HTTPLiveHeader extends Interaction {
         String afterIP = JDUtilities.getIPAddress();
         logger.finer("Ip after: " + afterIP);
         progress.increase(1);
-        String pattern=JDLocale.L("interaction.liveHeader.progress.5_ipcheck","(IPCHECK)HTTPLiveHeader %s / %s");
-        progress.setStatusText(JDUtilities.sprintf(pattern, new String[]{  preIp ,afterIP}));
+        String pattern;
+        try {
+            pattern=JDLocale.L("interaction.liveHeader.progress.5_ipcheck","(IPCHECK)HTTPLiveHeader %s / %s");
+            progress.setStatusText(JDUtilities.sprintf(pattern, new String[]{  preIp ,afterIP}));
+        } catch (Exception e) {
+            // TODO: handle exception
+        }
+
 
         long endTime = System.currentTimeMillis() + waitForIp * 1000;
         while (System.currentTimeMillis() <= endTime && (afterIP.equalsIgnoreCase("offline")||afterIP == null || afterIP.equals(preIp))) {
@@ -350,8 +361,13 @@ public class HTTPLiveHeader extends Interaction {
             catch (InterruptedException e) {
             }
             afterIP = JDUtilities.getIPAddress();
-           pattern=JDLocale.L("interaction.liveHeader.progress.5_ipcheck","(IPCHECK)HTTPLiveHeader %s / %s");
-            progress.setStatusText(JDUtilities.sprintf(pattern, new String[]{  preIp ,afterIP}));
+            try {
+                pattern=JDLocale.L("interaction.liveHeader.progress.5_ipcheck","(IPCHECK)HTTPLiveHeader %s / %s");
+                progress.setStatusText(JDUtilities.sprintf(pattern, new String[]{  preIp ,afterIP}));
+            } catch (Exception e) {
+                // TODO: handle exception
+            }
+ 
             logger.finer("Ip Check: " + afterIP);
         }
         if (!afterIP.equals(preIp)&&!afterIP.equalsIgnoreCase("offline")) {
