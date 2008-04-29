@@ -44,7 +44,6 @@ import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JCheckBoxMenuItem;
-import javax.swing.JComponent;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JMenu;
@@ -55,6 +54,7 @@ import javax.swing.JPanel;
 import javax.swing.JSeparator;
 import javax.swing.JSpinner;
 import javax.swing.JSplitPane;
+import javax.swing.JTextField;
 import javax.swing.JToolBar;
 import javax.swing.SpinnerNumberModel;
 import javax.swing.UIManager;
@@ -66,6 +66,7 @@ import javax.swing.event.MenuEvent;
 import javax.swing.event.MenuListener;
 
 import jd.JDFileFilter;
+import jd.captcha.CES;
 import jd.config.Configuration;
 import jd.config.MenuItem;
 import jd.config.Property;
@@ -221,6 +222,8 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
 
     private JDAction actionClipBoard;
 
+    private JDAction actionCes;
+    
     private JDAction actionPasswordlist;
 
     private JDAction doReconnect;
@@ -228,7 +231,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
     private JButton btnToggleReconnect;
 
     private JButton btnClipBoard;
-
+    private JButton btnCes;
     private JDAction actionHelp;
 
     public static final String PARAM_DISABLE_CONFIRM_DIALOGS = "DISABLE_CONFIRM_DIALOGS";
@@ -379,7 +382,6 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
             return JDTheme.V("gui.images.clipboardoff");
 
     }
-
     /**
      * Die Aktionen werden initialisiert
      */
@@ -397,6 +399,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         actionTester = new JDAction(this, JDTheme.V("gui.images.jd_logo"), "action.tester", JDAction.APP_TESTER);
         actionUnrar = new JDAction(this, JDTheme.V("gui.images.jd_logo"), "action.unrar", JDAction.APP_UNRAR);
         actionClipBoard = new JDAction(this, getClipBoardImage(), "action.clipboard", JDAction.APP_CLIPBOARD);
+        actionCes = new JDAction(this, CES.getCesImageString(), "action.ces", JDAction.APP_CES);
         actionPasswordlist = new JDAction(this, JDTheme.V("gui.images.jd_logo"), "action.passwordlist", JDAction.APP_PASSWORDLIST);
         actionConfig = new JDAction(this, JDTheme.V("gui.images.configuration"), "action.configuration", JDAction.APP_CONFIGURATION);
         actionReconnect = new JDAction(this, JDTheme.V("gui.images.reconnect"), "action.reconnect", JDAction.APP_RECONNECT);
@@ -770,6 +773,10 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         btnClipBoard.setFocusPainted(false);
         btnClipBoard.setBorderPainted(false);
         btnClipBoard.setText(null);
+        btnCes = new JButton(this.actionCes);
+        btnCes.setFocusPainted(false);
+        btnCes.setBorderPainted(false);
+        btnCes.setText(null);
         // JButton btnSearch = new JButton(this.actionSearch);
         // btnSearch.setFocusPainted(false);
         // btnSearch.setBorderPainted(false);
@@ -797,6 +804,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         toolBar.add(btnReconnect);
         toolBar.add(btnClipBoard);
         toolBar.add(btnToggleReconnect);
+        toolBar.add(btnCes);
         toolBar.add(btnHelp);
         // reconnectBox = new JCheckBox("Reconnect durchführen");
         // boolean rc =
@@ -848,6 +856,11 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
             logger.finer("Clipboard");
             JDUtilities.getController().getClipboard().toggleActivation();
             btnClipBoard.setIcon(new ImageIcon(JDUtilities.getImage(getClipBoardImage())));
+            break;
+        case JDAction.APP_CES:
+            logger.finer("CES");
+            CES.toggleActivation();
+            btnCes.setIcon(CES.getImage());
             break;
         case JDAction.APP_PASSWORDLIST:
             new jdUnrarPasswordListDialog(((SimpleGUI) JDUtilities.getController().getUiInterface()).getFrame()).setVisible(true);

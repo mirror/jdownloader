@@ -22,6 +22,8 @@ import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.WindowEvent;
+import java.awt.event.WindowListener;
 import java.io.File;
 import java.util.logging.Logger;
 
@@ -70,6 +72,7 @@ public class CaptchaDialog extends JDialog implements ActionListener {
     private JButton           btnBAD;
 
     private Thread jacThread;
+    public int countdown = Math.max(2, JDUtilities.getSubConfig("JAC").getIntegerProperty(Configuration.JAC_SHOW_TIMEOUT, 20));
 
     private Thread countdownThread;
 
@@ -84,9 +87,51 @@ public class CaptchaDialog extends JDialog implements ActionListener {
      *            Hosts wird von JAC benötigt)
      * @param file Pfad des Bildes, das angezeigt werden soll
      */
-    public CaptchaDialog(Frame owner, final Plugin plugin, final File file, final String def) {
+    public CaptchaDialog(final Frame owner, final Plugin plugin, final File file, final String def) {
         super(owner);
         setModal(true);
+        addWindowListener(new WindowListener() {
+
+            public void windowActivated(WindowEvent e) {
+                // TODO Auto-generated method stub
+
+            }
+
+            public void windowClosed(WindowEvent e) {
+                // TODO Auto-generated method stub
+
+            }
+
+            public void windowClosing(WindowEvent e) {
+              //workaround für den scheiss compiz fehler
+              dispose();
+              CaptchaDialog cd = new CaptchaDialog(owner, plugin, file, def);
+              cd.countdown=countdown;
+              cd.setVisible(true);
+              captchaText=cd.getCaptchaText();
+              
+            }
+
+            public void windowDeactivated(WindowEvent e) {
+                // TODO Auto-generated method stub
+
+            }
+
+            public void windowDeiconified(WindowEvent e) {
+                // TODO Auto-generated method stub
+
+            }
+
+            public void windowIconified(WindowEvent e) {
+                // TODO Auto-generated method stub
+
+            }
+
+            public void windowOpened(WindowEvent e) {
+                // TODO Auto-generated method stub
+
+            }
+        });
         setLayout(new GridBagLayout());
         ImageIcon imageIcon = null;
         String code = "";
@@ -136,14 +181,12 @@ public class CaptchaDialog extends JDialog implements ActionListener {
         }
         else {
 
-            final int countdown = Math.max(2, JDUtilities.getSubConfig("JAC").getIntegerProperty(Configuration.JAC_SHOW_TIMEOUT, 20));
+
             this.countdownThread=new Thread() {
 
                 public void run() {
-                    int cd = 0;
-                    while ((countdown - cd) >= 0) {
-                        setTitle("Countdown " + JDUtilities.formatSeconds(countdown - cd));
-                        cd++;
+                    while (countdown >= 0) {
+                        setTitle("Countdown " + JDUtilities.formatSeconds(countdown--));
                         try {
                             Thread.sleep(1000);
                         }

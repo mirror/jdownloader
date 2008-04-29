@@ -1243,6 +1243,7 @@ public class JUnrar {
         progress.increase(1);
         for (Map.Entry<File, String> entry : files.entrySet()) {
             File file = entry.getKey();
+            System.out.println(file);
             if (file.isFile()) {
                 String name = file.getName();
                 if (name.matches(".*part[0]*[1].rar$") && (autoDelete || !isFileInUnpackedList(entry.getKey()))) {
