@@ -20,20 +20,18 @@ public class ScheduleControl extends JDialog implements ActionListener {
     Vector v = new Vector();
     boolean visible = false;
     
+    rsswitcher sw = new rsswitcher();
+    JButton swa = new JButton("Start RS.com P/HH"); 
+    
     public ScheduleControl(){
             addWindowListener(new WindowAdapter() {
                 public void windowClosing(WindowEvent e) {                
                     setVisible(false);
-                    int size = v.size();
-                    for(int i = 0; i < size; ++i){
-                        ScheduleFrame s = (ScheduleFrame) v.elementAt(i);
-                        s.setVisible(false);
-                    }
                 }
             });
             
             this.setTitle("Scheduler by Tudels");
-            this.setSize(400, 300);
+            this.setSize(450, 300);
             this.setResizable(false);
             this.setLocation(300, 300);
             
@@ -43,6 +41,9 @@ public class ScheduleControl extends JDialog implements ActionListener {
             this.menu.add(this.show);
             this.menu.add(this.add);
             this.menu.add(this.remove);            
+            this.menu.add(this.swa);
+            
+            this.swa.setToolTipText("This little plugin is for Premium Users. It checks if it is HappyHour and switches to FreeMode, and back if HappyHour stops.");
             
             this.getContentPane().setLayout(new FlowLayout());
             this.getContentPane().add(menu);
@@ -52,6 +53,7 @@ public class ScheduleControl extends JDialog implements ActionListener {
             this.add.addActionListener(this);
             this.remove.addActionListener(this);
             this.show.addActionListener(this);
+            this.swa.addActionListener(this);
                        
             SwingUtilities.updateComponentTreeUI(this);
     }
@@ -113,7 +115,20 @@ public class ScheduleControl extends JDialog implements ActionListener {
             SwingUtilities.updateComponentTreeUI(this);
             
         }
-    }
+        if(e.getSource() == swa){
+            if (this.sw.my_t_running == true){
+                this.sw.my_t.stop();
+                this.sw.my_t_running = false;
+                this.swa.setText("Start RS.com P/HH");
+            }
+            else{
+                this.sw.my_t.start();
+                this.sw.my_t_running = true;
+                this.swa.setText("Stop RS.com P/HH");
+            }
+            }
+        }
+    
     
     public void reloadList(){
         

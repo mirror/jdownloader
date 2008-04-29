@@ -49,12 +49,12 @@ public class Schedule extends PluginOptional implements ControlListener {
 
     @Override
     public String getPluginID() {
-        return "0.3";
+        return "0.4";
     }
 
     @Override
     public String getVersion() {
-        return "0.3";
+        return "0.4";
     }
 
     public String getPluginName() {
