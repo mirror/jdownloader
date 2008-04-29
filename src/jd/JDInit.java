@@ -282,8 +282,8 @@ public class JDInit {
     @SuppressWarnings("unchecked")
     public HashMap<String, PluginOptional> loadPluginOptional() {
         HashMap<String, PluginOptional> pluginsOptional = new HashMap<String, PluginOptional>();
-        String[] optionalPlugins = new String[] { "JDTrayIcon", "JDGetter", "JDLightTray", "webinterface.JDWebinterface", "schedule.Schedule" };
-        double[] optionalVersions = new double[] { 1.6, 1.5, 1.6, 1.5, 1.6 };
+        String[] optionalPlugins = new String[] { "JDTrayIcon", "JDGetter", "JDLightTray", "webinterface.JDWebinterface", "schedule.Schedule", "JDFolderWatch" };
+        double[] optionalVersions = new double[] { 1.6, 1.5, 1.6, 1.5, 1.6, 1.5 };
         JDClassLoader jdClassLoader = JDUtilities.getJDClassLoader();
         int i = 0;
         Double version = JDUtilities.getJavaVersion();
