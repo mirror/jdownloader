@@ -25,6 +25,7 @@ import java.util.logging.Logger;
 import jd.config.Configuration;
 import jd.config.Property;
 import jd.controlling.SpeedMeter;
+import jd.event.ControlEvent;
 import jd.plugins.download.DownloadInterface;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
@@ -595,6 +596,10 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
     public void setDownloadMax(int downloadMax) {
 
         this.downloadMax = downloadMax;
+    }
+    public void requestGuiUpdate(){
+        JDUtilities.getController().fireControlEvent(ControlEvent.CONTROL_SPECIFIED_DOWNLOADLINKS_CHANGED, this);
+        
     }
 
     /*
