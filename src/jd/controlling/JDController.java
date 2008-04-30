@@ -339,7 +339,7 @@ public class JDController implements ControlListener, UIListener {
         // if (uiInterface != null) uiInterface.delegatedControlEvent(event);
     }
 
-    private void removeDownloadLink(DownloadLink link) {
+    public void removeDownloadLink(DownloadLink link) {
         synchronized (packages) {
             link.setAborted(true);
             Iterator<FilePackage> it = packages.iterator();

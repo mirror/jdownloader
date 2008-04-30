@@ -23,6 +23,7 @@ public class JDSimpleWebserverRequestHandler {
     }
 
     public void handle() {
+
         String request = headers.get(null);
         logger.info(request);
         String[] requ = request.split(" ");
@@ -97,54 +98,50 @@ public class JDSimpleWebserverRequestHandler {
                 } else
                     JDUtilities.getConfiguration().setProperty(Configuration.PARAM_DISABLE_RECONNECT, true);
 
-                if (requestParameter.containsKey("package_all_downloads_counter")) {
-                    int package_id;
-                    int counter_max = JDUtilities.filterInt(requestParameter.get("package_all_downloads_counter"));
+                if (requestParameter.containsKey("package_single_download_counter")) {
+                    Integer download_id = 0;
+                    Integer package_id = 0;
+                    String[] ids;
+                    int counter_max = JDUtilities.filterInt(requestParameter.get("package_single_download_counter"));
                     int counter_index = 0;
-                    Vector<DownloadLink> links;
-
+                    DownloadLink link;
                     for (counter_index = 1; counter_index <= counter_max; counter_index++) {
-                        if (requestParameter.containsKey("package_all_downloads_" + counter_index)) {
-                            package_id = JDUtilities.filterInt(requestParameter.get("package_all_downloads_" + counter_index));
-                            requestParameter.remove("package_all_downloads_" + counter_index);
-                            logger.info("package id" + package_id);
+                        if (requestParameter.containsKey("package_single_download_" + counter_index)) {
+                            ids = requestParameter.get("package_single_download_" + counter_index).toString().split("[+]", 2);
+                            requestParameter.remove("package_single_download_" + counter_index);
+                            package_id = JDUtilities.filterInt(ids[0].toString());
+                            download_id = JDUtilities.filterInt(ids[1].toString());
+                            
 
                             if (requestParameter.containsKey("selected_dowhat")) {
                                 String dowhat = requestParameter.get("selected_dowhat");
-                                logger.info("dowhat = " + dowhat);
+                                logger.info("package_id= " + package_id + " download_id= " + download_id+ " dowhat= "+dowhat);
                                 if (dowhat.compareToIgnoreCase("activate") == 0) { /* aktivieren */
-                                    links = JDUtilities.getController().getPackages().get(package_id).getDownloadLinks();
-                                    for (int i = 0; i < links.size(); i++) {
-                                        links.elementAt(i).setEnabled(true);
-                                    }
+                                    link = JDUtilities.getController().getPackages().get(package_id).getDownloadLinks().get(download_id);
+                                    link.setEnabled(true);
                                     JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_ALL_DOWNLOADLINKS_DATA_CHANGED, this));
                                 }
                                 if (dowhat.compareToIgnoreCase("deactivate") == 0) { /* deaktivieren */
-                                    links = JDUtilities.getController().getPackages().get(package_id).getDownloadLinks();
-                                    for (int i = 0; i < links.size(); i++) {
-                                        links.elementAt(i).setEnabled(false);
-                                    }
+                                    link = JDUtilities.getController().getPackages().get(package_id).getDownloadLinks().get(download_id);
+                                    link.setEnabled(false);
                                     JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_ALL_DOWNLOADLINKS_DATA_CHANGED, this));
                                 }
                                 if (dowhat.compareToIgnoreCase("reset") == 0) { /* reset */
-                                    links = JDUtilities.getController().getPackages().get(package_id).getDownloadLinks();
-                                    for (int i = 0; i < links.size(); i++) {
-                                        links.elementAt(i).setStatus(DownloadLink.STATUS_TODO);
-                                        links.elementAt(i).setStatusText("");
-                                        links.elementAt(i).reset();
-                                    }
+                                    link = JDUtilities.getController().getPackages().get(package_id).getDownloadLinks().get(download_id);
+                                    link.setStatus(DownloadLink.STATUS_TODO);
+                                    link.setStatusText("");
+                                    link.reset();
+
                                     JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_ALL_DOWNLOADLINKS_DATA_CHANGED, this));
                                 }
-                                if (dowhat.compareToIgnoreCase("remove") == 0) { /* entfernen */
-                                    links = JDUtilities.getController().getPackages().get(package_id).getDownloadLinks();
-                                    JDUtilities.getController().removeDownloadLinks(links);
+                                if (dowhat.compareToIgnoreCase("remove") == 0) { /* entfernen FIXME: id zuordnung*/
+                                    link = JDUtilities.getController().getPackages().get(package_id).getDownloadLinks().get(download_id);
+                                    JDUtilities.getController().removeDownloadLink(link);
                                     JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_LINKLIST_STRUCTURE_CHANGED, this));
                                 }
                                 if (dowhat.compareToIgnoreCase("abort") == 0) { /* abbrechen */
-                                    links = JDUtilities.getController().getPackages().get(package_id).getDownloadLinks();
-                                    for (int i = 0; i < links.size(); i++) {
-                                        links.elementAt(i).setAborted(true);
-                                    }
+                                    link = JDUtilities.getController().getPackages().get(package_id).getDownloadLinks().get(download_id);
+                                    link.setAborted(true);
                                     JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_ALL_DOWNLOADLINKS_DATA_CHANGED, this));
                                 }
 
