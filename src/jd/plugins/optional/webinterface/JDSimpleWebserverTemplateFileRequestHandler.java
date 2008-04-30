@@ -47,13 +47,14 @@ public class JDSimpleWebserverTemplateFileRequestHandler {
 
             FilePackage filePackage;
             DownloadLink dLink;
-            Integer Package_ID=-1;
-            Integer Download_ID=-1;
+            Integer Package_ID;
+            Integer Download_ID;
             Double percent=0.0;
             
-            for (Iterator<FilePackage> packageIterator = JDUtilities.getController().getPackages().iterator(); packageIterator.hasNext();) {
-                filePackage = packageIterator.next();
-                Package_ID++;
+            
+                for (Package_ID=0; Package_ID<JDUtilities.getController().getPackages().size();Package_ID++){
+                filePackage = JDUtilities.getController().getPackages().get(Package_ID);
+
                 h=new Hashtable();
                 /* Paket Infos */
                 h.put("download_name", filePackage.getName());
@@ -74,10 +75,11 @@ public class JDSimpleWebserverTemplateFileRequestHandler {
                 h.put("download_status", f.format(percent)+" % ("+JDUtilities.formatKbReadable(filePackage.getTotalKBLoaded())+" / "+JDUtilities.formatKbReadable(filePackage.getTotalEstimatedPackageSize())+")");
                 
                 v2 = new Vector();
-                Download_ID=-1;
-                for (Iterator<DownloadLink> linkIterator = filePackage.getDownloadLinks().iterator(); linkIterator.hasNext();) {
-                    dLink = linkIterator.next();
-                    Download_ID++;
+               
+
+                    for (Download_ID=0; Download_ID <filePackage.getDownloadLinks().size();Download_ID++){
+                    dLink = filePackage.getDownloadLinks().get(Download_ID);
+                    
                     /* Download Infos */
                     
                    
@@ -119,7 +121,8 @@ public class JDSimpleWebserverTemplateFileRequestHandler {
                 h.put("downloads", v2);
                 v.addElement(h);
             }
-
+            t.setParam("config_current_speed",  JDUtilities.getController().getSpeedMeter()/1024);
+           
             t.setParam("config_max_downloads", JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN, 0));
             t.setParam("config_max_speed", JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, 0));
 
