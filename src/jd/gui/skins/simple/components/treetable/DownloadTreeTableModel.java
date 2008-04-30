@@ -97,25 +97,42 @@ public class DownloadTreeTableModel extends AbstractTreeTableModel {
         return true;
     }
 
-    public boolean move(TreePath[] from, Object after) {
+    public boolean move(TreePath[] from, Object before, Object after) {
 
         if (from.length == 0) return false;
-        if (from[0].getLastPathComponent() instanceof DownloadLink) { return moveDownloadLinks(from, after); }
-        return movePackages(from, after);
+        if (from[0].getLastPathComponent() instanceof DownloadLink) { return moveDownloadLinks(from, (DownloadLink) before, (DownloadLink) after); }
+        return movePackages(from, (FilePackage)before, (FilePackage)after);
 
     }
 
-    private boolean movePackages(TreePath[] from, Object after) {
+    public boolean moveToPackage(TreePath[] from, FilePackage filePackage, boolean position) {
+        if (!(from[0].getLastPathComponent() instanceof DownloadLink)) return false;
+        Vector<DownloadLink> links = new Vector<DownloadLink>();
+
+        for (TreePath path : from) {
+            links.add((DownloadLink) path.getLastPathComponent());
+        }
+        if(filePackage.size()==0)return false;
+    
+        if (position) {
+            return JDUtilities.getController().moveLinks(links, null, filePackage.get(0));
+        } else {
+            return JDUtilities.getController().moveLinks(links, filePackage.lastElement(), null);
+        }
+
+    }
+
+    private boolean movePackages(TreePath[] from, FilePackage before,FilePackage after) {
         Vector<FilePackage> fps = new Vector<FilePackage>();
         for (TreePath path : from) {
             fps.add((FilePackage) path.getLastPathComponent());
         }
         if (after != null && !(after instanceof FilePackage)) return false;
-        return JDUtilities.getController().movePackages(fps, (FilePackage) after);
+        return JDUtilities.getController().movePackages(fps, before,after);
 
     }
 
-    private boolean moveDownloadLinks(TreePath[] from, Object after) {
+    private boolean moveDownloadLinks(TreePath[] from, DownloadLink before, DownloadLink after) {
 
         Vector<DownloadLink> links = new Vector<DownloadLink>();
 
@@ -123,7 +140,7 @@ public class DownloadTreeTableModel extends AbstractTreeTableModel {
             links.add((DownloadLink) path.getLastPathComponent());
         }
 
-        return JDUtilities.getController().moveLinks(links, after);
+        return JDUtilities.getController().moveLinks(links, before, after);
 
     }
 
@@ -214,7 +231,8 @@ public class DownloadTreeTableModel extends AbstractTreeTableModel {
     public Vector<FilePackage> getPackages() {
         return owner.getPackages();
     }
-    public boolean containesPackage(FilePackage fp){
+
+    public boolean containesPackage(FilePackage fp) {
         return owner.getPackages().contains(fp);
     }
 
@@ -269,4 +287,5 @@ public class DownloadTreeTableModel extends AbstractTreeTableModel {
 
         return index;
     }
+
 }

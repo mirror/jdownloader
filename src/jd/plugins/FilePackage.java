@@ -448,6 +448,11 @@ public class FilePackage extends Property implements Serializable {
         return null;
     }
 
+    public DownloadLink lastElement() {
+       
+        return downloadLinks.lastElement();
+    }
+
 
 
 }

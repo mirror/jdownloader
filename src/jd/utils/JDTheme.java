@@ -17,6 +17,7 @@
 package jd.utils;
 
 import java.awt.Color;
+import java.awt.Image;
 import java.io.File;
 import java.util.HashMap;
 import java.util.Vector;
@@ -78,10 +79,39 @@ public class JDTheme {
      * @param key
      * @return
      */
-    public static ImageIcon I(String key) {
+    public static ImageIcon II(String key) {
         return new ImageIcon(JDUtilities.getImage(V(key)));
     }
-
+    /**
+     * Gibt ein skaliertes Image zurück
+     * @param key
+     * @param width
+     * @param height
+     * @return
+     */
+    public static Image I(String key,int width,int height) {
+        return JDUtilities.getImage(V(key)).getScaledInstance(width, height, Image.SCALE_SMOOTH);
+    }
+    
+    /**
+     * Gibt ein Image zum key zurück
+     * 
+     * @param key
+     * @return
+     */
+    public static Image I(String key) {
+        return JDUtilities.getImage(V(key));
+    }
+    /**
+     * Gibt ein skaliertes ImageIcon zurück
+     * @param key
+     * @param width
+     * @param height
+     * @return
+     */
+    public static ImageIcon II(String key,int width,int height) {
+        return new ImageIcon(JDUtilities.getImage(V(key)).getScaledInstance(width, height, Image.SCALE_SMOOTH));
+    }
     /**
      * Gibt eine Farbe zum key zurück
      * 

@@ -348,12 +348,11 @@ public class JDController implements ControlListener, UIListener {
                 fp = it.next();
                 if (fp.remove(link)) {
                     if (fp.size() == 0) packages.remove(fp);
-                   return;
+                    return;
                 }
 
             }
-            
-           
+
         }
         logger.severe("Link " + link + " does not belong to any Package");
 
@@ -1534,10 +1533,21 @@ public class JDController implements ControlListener, UIListener {
     public Vector<FilePackage> getPackages() {
         return packages;
     }
-
-    public boolean moveLinks(Vector<DownloadLink> links, Object after) {
-
+/**
+ * Schneidet alle Links  aus und fügt sie zwischen before unc after ein.
+ * Alle
+ * 
+ * @param links
+ * @param before
+ * @param after
+ * @return
+ */
+    public boolean moveLinks(Vector<DownloadLink> links, DownloadLink before,DownloadLink after) {
+        if (links.contains(before)||links.contains(after)) return false;
+        if(before!=null && after!=null&&before.getFilePackage()!= after.getFilePackage()) return false;
+        if(before==null&after==null)return false;
         DownloadLink link;
+
         Iterator<DownloadLink> iterator = links.iterator();
         synchronized (packages) {
             while (iterator.hasNext()) {
@@ -1547,53 +1557,50 @@ public class JDController implements ControlListener, UIListener {
                 while (it.hasNext()) {
                     fp = it.next();
                     if (fp.remove(link)) {
-                        if (fp.size() == 0) packages.remove(fp);
+
+                        if (fp.size() == 0) it.remove();
                         continue;
                     }
 
                 }
             }
         }
-        if (after == null) {
-            packages.lastElement().addAll(links);
-        }
-        // if (after instanceof FilePackage) {
-        // ((FilePackage) after).addAllAt(links, 0);
-        //
-        // }
-        else {
-            DownloadLink pos = (DownloadLink) after;
-            if (links.contains(pos)) return false;
-            FilePackage dest = pos.getFilePackage();
+   
+      
+       
+         
+            FilePackage dest = before==null?after.getFilePackage():before.getFilePackage();
             if (dest == null) {
-                logger.severe(after + " +does not belong to a filepackage. Set default");
-                pos.setFilePackage(fp);
-
                 return false;
             }
+            int pos=0;
+            if(before!=null){
+                pos=dest.indexOf(before)+1;
+            }else{
+                pos=dest.indexOf(after);
+            }
 
-            dest.addAllAt(links, dest.indexOf(pos));
+            dest.addAllAt(links, pos);
 
-        }
+        
         // logger.info("II");
         this.fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_LINKLIST_STRUCTURE_CHANGED, null));
 
         return true;
     }
 
-    public boolean movePackages(Vector<FilePackage> fps, FilePackage after) {
+    public boolean movePackages(Vector<FilePackage> fps, FilePackage before,FilePackage after) { 
         if (after != null && fps.contains(after)) return false;
+        if (before != null && fps.contains(before)) return false;
+        if(before==null && after==null)return false;
         synchronized (packages) {
-            if (after == null) {
-                packages.removeAll(fps);
-                packages.addAll(fps);
-
-            } else {
-
-                packages.removeAll(fps);
-
-                packages.addAll(packages.indexOf(after), fps);
-            }
+            packages.removeAll(fps);
+            int pos=after==null?packages.indexOf(before)+1:packages.indexOf(after);
+           
+               
+          
+                packages.addAll(pos, fps);
+           
         }
         this.fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_LINKLIST_STRUCTURE_CHANGED, null));
 

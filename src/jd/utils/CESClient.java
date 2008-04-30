@@ -59,7 +59,6 @@ public class CESClient implements Serializable {
         // // ces.register("coalado");
         //
         // // ces.login();
-        // // JDUtilities.getLogger().info(ces.getServer());
 
     }
 

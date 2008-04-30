@@ -93,6 +93,8 @@ public class DownloadTreeTable extends JXTreeTable implements WindowFocusListene
 
     private Point mousePosition;
 
+    private TreeTableTransferHandler transferHandler;
+
     public DownloadTreeTable(DownloadTreeTableModel treeModel) {
         super(treeModel);
 
@@ -118,7 +120,8 @@ public class DownloadTreeTable extends JXTreeTable implements WindowFocusListene
         addTreeSelectionListener(this);
         addMouseListener(this);
         this.addMouseMotionListener(this);
-        this.setTransferHandler(new TreeTableTransferHandler(this));
+        this.setTransferHandler(transferHandler=new TreeTableTransferHandler(this));
+        if(JDUtilities.getJavaVersion()>1.6)this.setDropMode(DropMode.USE_SELECTION);
         this.tooltipTimer = new TooltipTimer(2000);
         tooltipTimer.start();
     }
@@ -879,7 +882,8 @@ if(((DownloadLink) obj).getLinkType()!=DownloadLink.LINKTYPE_NORMAL)tmp.setEnabl
             tooltip.destroy();
             tooltip = null;
         }
-        if (!SimpleGUI.CURRENTGUI.getFrame().isActive()) return;
+        
+        if (!SimpleGUI.CURRENTGUI.getFrame().isActive()||transferHandler.isDragging) return;
         StringBuffer sb = new StringBuffer();
         sb.append("<div>");
         Object obj = this.getPathForRow(mouseOverRow).getLastPathComponent();
@@ -935,19 +939,19 @@ if(((DownloadLink) obj).getLinkType()!=DownloadLink.LINKTYPE_NORMAL)tmp.setEnabl
                 break;
             }
         } else {
-            FilePackage filePackage;
-            DownloadLink dLink;
-            for(Iterator<FilePackage> packageIterator = JDUtilities.getController().getPackages().iterator();packageIterator.hasNext();){
-                filePackage = packageIterator.next();
-                for(Iterator<DownloadLink> linkIterator = filePackage.getDownloadLinks().iterator();linkIterator.hasNext();){
-                    dLink = linkIterator.next();
-                    logger.info(dLink.getName());
-                    logger.info(dLink.getHost());
-                    logger.info(dLink.getStatusText());//Gibt einen Statustext aus der den jeweiligen Status des Links beschreibt. inkl. Speed
-                    logger.info("Link in Arbeit: "+dLink.isInProgress());
-                }
-                
-            }
+//            FilePackage filePackage;
+//            DownloadLink dLink;
+//            for(Iterator<FilePackage> packageIterator = JDUtilities.getController().getPackages().iterator();packageIterator.hasNext();){
+//                filePackage = packageIterator.next();
+//                for(Iterator<DownloadLink> linkIterator = filePackage.getDownloadLinks().iterator();linkIterator.hasNext();){
+//                    dLink = linkIterator.next();
+//                    logger.info(dLink.getName());
+//                    logger.info(dLink.getHost());
+//                    logger.info(dLink.getStatusText());//Gibt einen Statustext aus der den jeweiligen Status des Links beschreibt. inkl. Speed
+//                    logger.info("Link in Arbeit: "+dLink.isInProgress());
+//                }
+//                
+//            }
             
             
             fp = (FilePackage) obj;

@@ -1679,9 +1679,9 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
             JCheckBoxMenuItem m2 = new JCheckBoxMenuItem(new JDMenuAction(mi));
             JDUtilities.getLogger().info("SELECTED: " + mi.isSelected());
             if (mi.isSelected()) {
-                m2.setIcon(JDTheme.I("gui.images.selected"));
+                m2.setIcon(JDTheme.II("gui.images.selected"));
             } else {
-                m2.setIcon(JDTheme.I("gui.images.unselected"));
+                m2.setIcon(JDTheme.II("gui.images.unselected"));
             }
             // m2.setIcon(JDTheme.I("gui.images.selected"));
 

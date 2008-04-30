@@ -908,7 +908,8 @@ public class Rapidshare extends PluginForHost {
                 ticketCode = JDUtilities.htmlDecode(getSimpleMatch(requestInfo.getHtmlCode(), ticketCodePattern, 0));
                 ticketCode = requestInfo.getHtmlCode() + " " + ticketCode;
                 captchaAddress = getFirstMatch(ticketCode, patternForCaptcha, 1);
-String specs=getSimpleMatch(ticketCode,"jpg\"><br>°<input name=\"accesscode\"",0);
+                String specs=getSimpleMatch(ticketCode,"jpg\"><br>°<input name=\"accesscode\"",0);
+                
                 if (requestInfo.containsHTML(happyhour)) {
                     ticketCode = requestInfo.getHtmlCode();
                     happyhourboolean = true;

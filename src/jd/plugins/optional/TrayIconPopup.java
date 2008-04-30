@@ -83,34 +83,34 @@ public class TrayIconPopup extends JWindow implements MouseListener, MouseMotion
         init();
 
         initTopPanel();
-        addMenuEntry(ACTION_LOAD, JDTheme.I("gui.images.load"), JDLocale.L("plugins.trayicon.popup.menu.load", "Container laden"));
+        addMenuEntry(ACTION_LOAD, JDTheme.II("gui.images.load"), JDLocale.L("plugins.trayicon.popup.menu.load", "Container laden"));
         switch (JDUtilities.getController().getDownloadStatus()) {
         case JDController.DOWNLOAD_NOT_RUNNING:
-            addMenuEntry(ACTION_START, JDTheme.I("gui.images.next"), JDLocale.L("plugins.trayicon.popup.menu.start", "Download Starten"));
+            addMenuEntry(ACTION_START, JDTheme.II("gui.images.next"), JDLocale.L("plugins.trayicon.popup.menu.start", "Download Starten"));
 
             break;
         case JDController.DOWNLOAD_RUNNING:
-            addMenuEntry(ACTION_STOP, JDTheme.I("gui.images.stop"), JDLocale.L("plugins.trayicon.popup.menu.stop", "Download anhalten"));
+            addMenuEntry(ACTION_STOP, JDTheme.II("gui.images.stop"), JDLocale.L("plugins.trayicon.popup.menu.stop", "Download anhalten"));
 
             break;
         default:
-            addDisabledMenuEntry(JDTheme.I("gui.images.next"), JDLocale.L("plugins.trayicon.popup.menu.start", "Download Starten"));
+            addDisabledMenuEntry(JDTheme.II("gui.images.next"), JDLocale.L("plugins.trayicon.popup.menu.start", "Download Starten"));
 
         }
-        if (JDUtilities.getController().getDownloadStatus() == JDController.DOWNLOAD_RUNNING) addMenuEntry(ACTION_PAUSE, JDTheme.I("gui.images.stop_after"), JDLocale.L("plugins.trayicon.popup.menu.pause", "Nach diesem Download anhalten"));
-        addMenuEntry(ACTION_ADD, JDTheme.I("gui.images.add"), JDLocale.L("plugins.trayicon.popup.menu.add", "Downloads hinzufügen"));
+        if (JDUtilities.getController().getDownloadStatus() == JDController.DOWNLOAD_RUNNING) addMenuEntry(ACTION_PAUSE, JDTheme.II("gui.images.stop_after"), JDLocale.L("plugins.trayicon.popup.menu.pause", "Nach diesem Download anhalten"));
+        addMenuEntry(ACTION_ADD, JDTheme.II("gui.images.add"), JDLocale.L("plugins.trayicon.popup.menu.add", "Downloads hinzufügen"));
 
-        addMenuEntry(ACTION_UPDATE, JDTheme.I("gui.images.update_manager"), JDLocale.L("plugins.trayicon.popup.menu.update", "JD aktualisieren"));
+        addMenuEntry(ACTION_UPDATE, JDTheme.II("gui.images.update_manager"), JDLocale.L("plugins.trayicon.popup.menu.update", "JD aktualisieren"));
 
-        addMenuEntry(ACTION_CONFIG, JDTheme.I("gui.images.configuration"), JDLocale.L("plugins.trayicon.popup.menu.config", "Konfiguration"));
+        addMenuEntry(ACTION_CONFIG, JDTheme.II("gui.images.configuration"), JDLocale.L("plugins.trayicon.popup.menu.config", "Konfiguration"));
 
-        addMenuEntry(ACTION_LOG, JDTheme.I("gui.images.terminal"), JDLocale.L("plugins.trayicon.popup.menu.log", "Log anzeigen"));
+        addMenuEntry(ACTION_LOG, JDTheme.II("gui.images.terminal"), JDLocale.L("plugins.trayicon.popup.menu.log", "Log anzeigen"));
 
-        addMenuEntry(ACTION_RECONNECT, JDTheme.I("gui.images.reconnect"), JDLocale.L("plugins.trayicon.popup.menu.reconnect", "Reconnect durchführen"));
+        addMenuEntry(ACTION_RECONNECT, JDTheme.II("gui.images.reconnect"), JDLocale.L("plugins.trayicon.popup.menu.reconnect", "Reconnect durchführen"));
 
         addMenuEntry(ACTION_TOGGLE_CLIPBOARD, getClipBoardImage(), JDLocale.L("plugins.trayicon.popup.menu.toggleClipboard", "Zwischenablage an/aus"));
         addMenuEntry(ACTION_TOGGLE_RECONNECT, getReconnectImage(), JDLocale.L("plugins.trayicon.popup.menu.toggleReconnect", "Reconnect an/aus"));
-        addMenuEntry(ACTION_EXIT, JDTheme.I("gui.images.exit"), JDLocale.L("plugins.trayicon.popup.menu.exit", "Beenden"));
+        addMenuEntry(ACTION_EXIT, JDTheme.II("gui.images.exit"), JDLocale.L("plugins.trayicon.popup.menu.exit", "Beenden"));
 
         initBottomPanel();
         setVisible(true);
@@ -142,18 +142,18 @@ public class TrayIconPopup extends JWindow implements MouseListener, MouseMotion
 
     private ImageIcon getClipBoardImage() {
         if (JDUtilities.getController().getClipboard().isEnabled())
-            return JDTheme.I("gui.images.clipboardon");
+            return JDTheme.II("gui.images.clipboardon");
         else
-            return JDTheme.I("gui.images.clipboardoff");
+            return JDTheme.II("gui.images.clipboardoff");
 
     }
 
     private ImageIcon getReconnectImage() {
 
         if (!JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_DISABLE_RECONNECT, false))
-            return JDTheme.I("gui.images.reconnect_ok");
+            return JDTheme.II("gui.images.reconnect_ok");
         else
-            return JDTheme.I("gui.images.reconnect_bad");
+            return JDTheme.II("gui.images.reconnect_bad");
 
     }
 
@@ -196,7 +196,7 @@ public class TrayIconPopup extends JWindow implements MouseListener, MouseMotion
     }
 
     private void initTopPanel() {
-        ImageIcon logo = new ImageIcon(JDTheme.I("gui.images.jd_logo").getImage().getScaledInstance(MENUENTRY_HEIGHT, MENUENTRY_HEIGHT, Image.SCALE_SMOOTH));
+        ImageIcon logo = new ImageIcon(JDTheme.II("gui.images.jd_logo").getImage().getScaledInstance(MENUENTRY_HEIGHT, MENUENTRY_HEIGHT, Image.SCALE_SMOOTH));
         JDUtilities.addToGridBag(topPanel, new JLabel(JDLocale.L("plugins.trayicon.popup.title", "JDownloader") + " 0." + JDUtilities.getRevision(), logo, SwingConstants.LEFT), 0, 0, 1, 1, 0, 0, INSETS, FILL_NONE, ANCHOR_NORTH_WEST);
         // JDUtilities.addToGridBag(topPanel,new JSeparator(), 0, 1, 1, 1, 0,
         // 0,INSETS, FILL_BOTH, ANCHOR_NORTH_WEST);
