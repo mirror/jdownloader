@@ -1,6 +1,8 @@
 package jd.utils;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.Serializable;
 import java.net.MalformedURLException;
@@ -8,6 +10,8 @@ import java.net.URL;
 import java.util.Calendar;
 import java.util.logging.Logger;
 
+import javazoom.jl.decoder.JavaLayerException;
+import javazoom.jl.player.advanced.AdvancedPlayer;
 import jd.captcha.CES;
 import jd.config.SubConfiguration;
 import jd.plugins.HTTPPost;
@@ -41,7 +45,7 @@ public class CESClient implements Serializable {
     public static final String LASTEST_INSTANCE = "CES_LASTEST_INSTANCE";
 
     public static void main(String[] args) {
-
+     
         // File file = new
         // File("C:/Users/coalado/.jd_home/captchas/rapidshare.com/21.04.2008_17.19.51.jpg");
         //

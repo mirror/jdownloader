@@ -88,6 +88,9 @@ import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 
+import javazoom.jl.decoder.JavaLayerException;
+import javazoom.jl.player.advanced.AdvancedPlayer;
+
 import jd.JDClassLoader;
 import jd.JDFileFilter;
 import jd.captcha.JAntiCaptcha;
@@ -118,7 +121,7 @@ import sun.misc.BASE64Encoder;
  * @author astaldo/JD-Team
  */
 public class JDUtilities {
-    
+
     /**
      * Parametername für den Konfigpath
      */
@@ -805,7 +808,7 @@ public class JDUtilities {
             return getController().getCaptchaCodeFromUser(plugin, file, null);
         }
     }
-  
+
     // /**
     // * Fügt einen PluginListener hinzu
     // *
@@ -950,7 +953,7 @@ public class JDUtilities {
                 currentDirectory = fileChooserSave.getCurrentDirectory();
             }
         }
-         //logger.info("save file: " + fileOutput + " object: " + objectToSave);
+        // logger.info("save file: " + fileOutput + " object: " + objectToSave);
         if (fileOutput != null) {
             if (fileOutput.isDirectory()) {
                 fileOutput = new File(fileOutput, name + extension);
@@ -983,9 +986,11 @@ public class JDUtilities {
             if (hashPost == null) {
                 logger.severe("Schreibfehler: " + fileOutput + " Datei wurde nicht erstellt");
             } else if (hashPost.equals(hashPre)) {
-                //logger.warning("Schreibvorgang: " + fileOutput + " Datei wurde nicht überschrieben "+hashPost+" - "+hashPre);
+                // logger.warning("Schreibvorgang: " + fileOutput + " Datei
+                // wurde nicht überschrieben "+hashPost+" - "+hashPre);
             } else {
-                //logger.finer("Schreibvorgang: " + fileOutput + " erfolgreich: " + hashPost);
+                // logger.finer("Schreibvorgang: " + fileOutput + " erfolgreich:
+                // " + hashPost);
             }
             // logger.info(" -->"+JDUtilities.loadObject(null, fileOutput,
             // false));
@@ -1046,7 +1051,7 @@ public class JDUtilities {
     /**
      * Liefert alle Plugins zum Downloaden von einem Anbieter zurück.
      * 
-     * @return 
+     * @return
      */
     public static Vector<PluginForHost> getUnsortedPluginsForHost() {
         return pluginsForHost;
@@ -1077,7 +1082,7 @@ public class JDUtilities {
         }
         pfh.addAll(plgs);
         return pfh;
-    } 
+    }
 
     /**
      * Liefert alle optionalen Plugins zurücl
@@ -1092,7 +1097,7 @@ public class JDUtilities {
      * Gibt den MD5 hash eines Strings zurück
      * 
      * @param arg
-     * @return MD% hash von arg 
+     * @return MD% hash von arg
      */
     public static String getMD5(String arg) {
         try {
@@ -1259,24 +1264,15 @@ public class JDUtilities {
         }
         return null;
         /*
-         
-
-        if (str == null) return str;
-        String allowed = "1234567890QWERTZUIOPASDFGHJKLYXCVBNMqwertzuiopasdfghjklyxcvbnm-_.?/\\:&=;";
-        String ret = "";
-        String l;
-        int i;
-        for (i = 0; i < str.length(); i++) {
-            char letter = str.charAt(i);
-            if (allowed.indexOf(letter) >= 0) {
-                ret += letter;
-            } else {
-                l = Integer.toString(letter, 16);
-                ret += "%" + (l.length() == 1 ? "0" + l : l);
-            }
-        }
-                 */
-
+         * 
+         * 
+         * if (str == null) return str; String allowed =
+         * "1234567890QWERTZUIOPASDFGHJKLYXCVBNMqwertzuiopasdfghjklyxcvbnm-_.?/\\:&=;";
+         * String ret = ""; String l; int i; for (i = 0; i < str.length(); i++) {
+         * char letter = str.charAt(i); if (allowed.indexOf(letter) >= 0) { ret +=
+         * letter; } else { l = Integer.toString(letter, 16); ret += "%" +
+         * (l.length() == 1 ? "0" + l : l); } }
+         */
 
     }
 
@@ -2027,7 +2023,6 @@ public class JDUtilities {
          * public void run() { Upload.uploadToCollector(plugin, file2);
          * 
          * }}).start();
-         * 
          *  }
          */
     }
@@ -2075,7 +2070,7 @@ public class JDUtilities {
             logger.addHandler(console);
 
             logger.setLevel(Level.ALL);
-            //logger.finer("Init Logger:" + LOGGER_NAME);
+            // logger.finer("Init Logger:" + LOGGER_NAME);
             // Leitet System.out zum Logger um.
             // final PrintStream err = System.err;
             OutputStream os = new OutputStream() {
@@ -2238,7 +2233,22 @@ public class JDUtilities {
         } catch (IOException e) {
             return base64;
         }
-    } 
+    }
+
+    public static void playMp3(File file) {
+        AdvancedPlayer p;
+        try {
+            p = new AdvancedPlayer(new FileInputStream(file.getAbsolutePath()));
+
+            p.play();
+        } catch (FileNotFoundException e) {
+
+            e.printStackTrace();
+        } catch (JavaLayerException e) {
+
+            e.printStackTrace();
+        }
+    }
 
     public static String Base64Encode(String plain) {
 
@@ -2331,21 +2341,16 @@ public class JDUtilities {
 
     }
 
-    public static boolean removeDirectoryOrFile(File dir) {    
-            if (dir.isDirectory()) {
-                String[] children = dir.list();
-                for (int i=0; i<children.length; i++) {
-                    boolean success = removeDirectoryOrFile(new File(dir, children[i]));
-                    if (!success) {
-                        return false;
-                    }
-                }
+    public static boolean removeDirectoryOrFile(File dir) {
+        if (dir.isDirectory()) {
+            String[] children = dir.list();
+            for (int i = 0; i < children.length; i++) {
+                boolean success = removeDirectoryOrFile(new File(dir, children[i]));
+                if (!success) { return false; }
             }
-       
-            return dir.delete();
         }
 
-
-    
+        return dir.delete();
+    }
 
 }
