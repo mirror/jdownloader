@@ -731,7 +731,7 @@ if(((DownloadLink) obj).getLinkType()!=DownloadLink.LINKTYPE_NORMAL)tmp.setEnabl
         case TreeTableAction.PACKAGE_DELETE:
             fps = (Vector<FilePackage>) ((TreeTableAction) ((JMenuItem) e.getSource()).getAction()).getProperty().getProperty("packages");
             for (Iterator<FilePackage> it = fps.iterator(); it.hasNext();) {
-                JDUtilities.getController().removeDownloadLinks(new Vector<DownloadLink>(it.next().getDownloadLinks()));
+                JDUtilities.getController().removePackage(it.next());
             }
 
             JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_LINKLIST_STRUCTURE_CHANGED, this));
