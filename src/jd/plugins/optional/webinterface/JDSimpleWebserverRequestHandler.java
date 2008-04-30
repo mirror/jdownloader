@@ -2,6 +2,7 @@ package jd.plugins.optional.webinterface;
 
 import java.io.File;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Vector;
 import java.util.logging.Logger;
 
@@ -105,49 +106,61 @@ public class JDSimpleWebserverRequestHandler {
                     int counter_max = JDUtilities.filterInt(requestParameter.get("package_single_download_counter"));
                     int counter_index = 0;
                     DownloadLink link;
+                    Vector<DownloadLink> links = new Vector<DownloadLink>();
                     for (counter_index = 1; counter_index <= counter_max; counter_index++) {
                         if (requestParameter.containsKey("package_single_download_" + counter_index)) {
                             ids = requestParameter.get("package_single_download_" + counter_index).toString().split("[+]", 2);
                             requestParameter.remove("package_single_download_" + counter_index);
                             package_id = JDUtilities.filterInt(ids[0].toString());
                             download_id = JDUtilities.filterInt(ids[1].toString());
-                            
 
-                            if (requestParameter.containsKey("selected_dowhat")) {
-                                String dowhat = requestParameter.get("selected_dowhat");
-                                logger.info("package_id= " + package_id + " download_id= " + download_id+ " dowhat= "+dowhat);
-                                if (dowhat.compareToIgnoreCase("activate") == 0) { /* aktivieren */
-                                    link = JDUtilities.getController().getPackages().get(package_id).getDownloadLinks().get(download_id);
-                                    link.setEnabled(true);
-                                    JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_ALL_DOWNLOADLINKS_DATA_CHANGED, this));
-                                }
-                                if (dowhat.compareToIgnoreCase("deactivate") == 0) { /* deaktivieren */
-                                    link = JDUtilities.getController().getPackages().get(package_id).getDownloadLinks().get(download_id);
-                                    link.setEnabled(false);
-                                    JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_ALL_DOWNLOADLINKS_DATA_CHANGED, this));
-                                }
-                                if (dowhat.compareToIgnoreCase("reset") == 0) { /* reset */
-                                    link = JDUtilities.getController().getPackages().get(package_id).getDownloadLinks().get(download_id);
-                                    link.setStatus(DownloadLink.STATUS_TODO);
-                                    link.setStatusText("");
-                                    link.reset();
-
-                                    JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_ALL_DOWNLOADLINKS_DATA_CHANGED, this));
-                                }
-                                if (dowhat.compareToIgnoreCase("remove") == 0) { /* entfernen FIXME: id zuordnung*/
-                                    link = JDUtilities.getController().getPackages().get(package_id).getDownloadLinks().get(download_id);
-                                    JDUtilities.getController().removeDownloadLink(link);
-                                    JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_LINKLIST_STRUCTURE_CHANGED, this));
-                                }
-                                if (dowhat.compareToIgnoreCase("abort") == 0) { /* abbrechen */
-                                    link = JDUtilities.getController().getPackages().get(package_id).getDownloadLinks().get(download_id);
-                                    link.setAborted(true);
-                                    JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_ALL_DOWNLOADLINKS_DATA_CHANGED, this));
-                                }
-
-                            }
-
+                            links.add(JDUtilities.getController().getPackages().get(package_id).getDownloadLinks().get(download_id));
                         }
+                    }
+
+                    if (requestParameter.containsKey("selected_dowhat")) {
+                        String dowhat = requestParameter.get("selected_dowhat");
+                        if (dowhat.compareToIgnoreCase("activate") == 0) { /* aktivieren */
+                            for (Iterator<DownloadLink> it = links.iterator(); it.hasNext();) {
+                                link = it.next();
+                                link.setEnabled(true);
+                            }
+                            JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_ALL_DOWNLOADLINKS_DATA_CHANGED, this));
+                        }
+                        if (dowhat.compareToIgnoreCase("deactivate") == 0) { /* deaktivieren */
+                            for (Iterator<DownloadLink> it = links.iterator(); it.hasNext();) {
+                                link = it.next();
+                                link.setEnabled(false);
+                            }
+                            JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_ALL_DOWNLOADLINKS_DATA_CHANGED, this));
+                        }
+                        if (dowhat.compareToIgnoreCase("reset") == 0) { /*
+                                                                         * reset
+                                                                         */
+                            for (Iterator<DownloadLink> it = links.iterator(); it.hasNext();) {
+                                link = it.next();
+                                link.setStatus(DownloadLink.STATUS_TODO);
+                                link.setStatusText("");
+                                link.reset();
+                            }
+                            JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_ALL_DOWNLOADLINKS_DATA_CHANGED, this));
+                        }
+                        if (dowhat.compareToIgnoreCase("remove") == 0) { /*
+                                                                             * entfernen
+                                                                             */
+                            JDUtilities.getController().removeDownloadLinks(links);
+                            JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_LINKLIST_STRUCTURE_CHANGED, this));
+                        }
+                        if (dowhat.compareToIgnoreCase("abort") == 0) { /*
+                                                                         * abbrechen
+                                                                         */
+                            for (Iterator<DownloadLink> it = links.iterator(); it.hasNext();) {
+                                link = it.next();
+                                link.setAborted(true);
+                            }
+                            JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_ALL_DOWNLOADLINKS_DATA_CHANGED, this));
+                        }
+
                     }
 
                 }
