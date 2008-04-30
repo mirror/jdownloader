@@ -79,7 +79,7 @@ public class UCMS extends PluginForDecrypt {
     		+ "|(http://[*]sextradump.com/category/[+]/[+])"
     		+ "|(http://[*]porn-freaks.net/category/[+]/[+])"
     		+ "|(http://[*]serien24.com/category/[+]/[+])"
-    		+ "|(http://[*]babeviz.com/category/[+]/[+])"
+    		+ "|(http://[*]babevidz.com/category/[+]/[+])"
     		+ "|(http://[*]porn-traffic.net/category/[+]/[+])"
     		+ "|(http://[*]join-music.net/\\?id=[+])"
     		+ "|(http://[*]mixe-downloaden.info/\\?id=[+])"
