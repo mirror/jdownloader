@@ -15,14 +15,14 @@
 <body>
 <FORM name="jd" method="POST" target="_parent">
 <div style="width:800px;margin: 0 auto;border:1px solid;padding:5px 5px 5px 5px;;background-color:#1189ee">
-<h2 style="text-align:center;;color:#F7F7F7">JDownloader Status Page</h2>
+<h2 style="text-align:center;color:#F7F7F7">JDownloader Status Page</h2>
 <hr>
 <ul id="containerul">
   <tmpl_loop pakete>
     <li style="margin:0pt 0pt 0pt 0pt"> <br>
       <table style="width:100%">
         <tr>
-	<TD style="width:2%"><INPUT type="checkbox" name="package_all_downloads" value="<tmpl_var package_id escape>" onclick="samecheckAll(document.jd.package_single_download,this)"></TD>
+	<TD style="width:2%"><INPUT type="checkbox" name="package_all_downloads" value="<tmpl_var package_id escape>" onclick="samecheckall(document.jd.package_single_download,this)"></TD>
           <TD style="width:25%"><tmpl_var download_name></TD>
           <TD style="width:25%"><tmpl_var download_hoster></TD>
 
@@ -35,7 +35,7 @@
       <ul >
         <table style="width:100%">
           <tmpl_loop downloads>            
-	<TD style="width:2%"><INPUT type="checkbox" name="package_single_download" value="<tmpl_var package_id> <tmpl_var download_id escape>"></TD>	
+	<TD style="width:2%"><INPUT type="checkbox" name="package_single_download" value="<tmpl_var package_id> <tmpl_var download_id escape>" onclick="areallsamechecked(this,document.jd.package_single_download,document.jd.package_all_downloads)"></TD>	
               <TD style="width:25%"><tmpl_var download_name></TD>
               <TD style="width:25%"><tmpl_var download_hoster></TD>
               <TD  style="color:#000000;background-color:<tmpl_var download_status_color escape>">
@@ -55,8 +55,8 @@ initiate();                // This must be placed immediately after the menu in 
 <hr>
 
   <DIV style="text-align:center">
-<INPUT type="button" name="select" value="Select All" onclick="checkAll(document.jd.package_all_downloads,document.jd.package_single_download)">
-<INPUT type="button" name="select" value="UnSelect All" onclick="uncheckAll(document.jd.package_all_downloads,document.jd.package_single_download)">
+<INPUT type="button" name="select" value="Select All" onclick="checkall(document.jd.package_all_downloads,document.jd.package_single_download)">
+<INPUT type="button" name="select" value="UnSelect All" onclick="uncheckall(document.jd.package_all_downloads,document.jd.package_single_download)">
 
 <SELECT name="selected_dowhat">
 <option>activate</option>
@@ -66,8 +66,8 @@ initiate();                // This must be placed immediately after the menu in 
 <option>remove</option>
 </SELECT>
     <INPUT type="submit" name="do" value="Submit">
-    <A href="/" name="Refresh" target="_self">REFRESH</A>
-    <INPUT type="submit" name="do" value="Close JD"> 
+    <A href="/" name="Refresh" target="_self">REFRESH</A>	
+    <INPUT type="submit" name="do" value="Close JD" checked onclick="validateandsubmit('Close JD?',this)"> 
   </DIV>
   <DIV >
   <table style="width:100%">
@@ -82,7 +82,7 @@ initiate();                // This must be placed immediately after the menu in 
         <INPUT type="text" name="maxdls" value="<tmpl_var config_max_downloads escape>" maxlength="4" size="4"></TD>
       <TD >SpeedLimit
         <INPUT type="text" name="speed" value="<tmpl_var config_max_speed escape>" maxlength="4" size="4">
-        kb/s</TD>
+        kb/s (Current: <tmpl_var config_current_speed> kb/s)</TD>
     </TR>
     </FORM>
     
