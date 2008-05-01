@@ -100,7 +100,8 @@ public class DownloadTreeTableModel extends AbstractTreeTableModel {
     public boolean move(TreePath[] from, Object before, Object after) {
 
         if (from.length == 0) return false;
-        if (from[0].getLastPathComponent() instanceof DownloadLink) { return moveDownloadLinks(from, (DownloadLink) before, (DownloadLink) after); }
+        if (from[0].getLastPathComponent() instanceof DownloadLink) {
+            return moveDownloadLinks(from, (DownloadLink) before, (DownloadLink) after); }
         return movePackages(from, (FilePackage)before, (FilePackage)after);
 
     }

@@ -310,8 +310,13 @@ public class Main {
         logger.info("Runtype: " + JDUtilities.getRunType());
         logger.info("Last author: " + JDUtilities.getLastChangeAuthor());
         logger.info("Application directory: " + JDUtilities.getCurrentWorkingDirectory(null));
+new Thread("packetmanager"){
+    public void run(){        
 
         new PackageManager().interact(this);
+    }
+    
+}.start();
 
         // org.apache.log4j.Logger lg = org.apache.log4j.Logger.getLogger("jd");
         // BasicConfigurator.configure();

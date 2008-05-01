@@ -67,7 +67,7 @@ public abstract class PluginForContainer extends PluginForDecrypt {
      * @return Die URL als String
      */
 
-    public String extractDownloadURL(DownloadLink downloadLink) {
+    public synchronized String extractDownloadURL(DownloadLink downloadLink) {
         logger.info("EXTRACT " + downloadLink);
         if (downloadLinksURL == null) initContainer(downloadLink.getContainerFile());
         if (downloadLinksURL == null || downloadLinksURL.size() <= downloadLink.getContainerIndex()) return null;
@@ -103,7 +103,7 @@ public abstract class PluginForContainer extends PluginForDecrypt {
     /**
      * Erstellt eine Kopie des Containers im Homedir.
      */
-    public PluginStep doDecryptStep(PluginStep step, String parameter) {
+    public synchronized PluginStep doDecryptStep(PluginStep step, String parameter) {
         logger.info("DO STEP");
         String file = (String) parameter;
         if (status == STATUS_ERROR_EXTRACTING) {
@@ -148,7 +148,7 @@ public abstract class PluginForContainer extends PluginForDecrypt {
         return false;
     }
 
-    public void initContainer(String filename) {
+    public synchronized void initContainer(String filename) {
         if (filename == null) return;
         if (CONTAINER.containsKey(filename) &&CONTAINER.get(filename)!=null&& CONTAINER.get(filename).size() > 0) {
             logger.info("Cached " + filename);
@@ -210,9 +210,11 @@ public abstract class PluginForContainer extends PluginForDecrypt {
 
         int i = 0;
         int c = 0;
+//        Vector<DownloadLink> containedLinks = new Vector<DownloadLink>(this.containedLinks);
+//        Vector<String> downloadLinksURL = new Vector<String>(this.downloadLinksURL);
         progress.addToMax(downloadLinksURL.size());
        // logger.info("PRE: "+downloadLinksURL);
-        for (Iterator<String> it1 = this.downloadLinksURL.iterator(); it1.hasNext();) {
+        for (Iterator<String> it1 = downloadLinksURL.iterator(); it1.hasNext();) {
             progress.increase(1);
             progress.setStatusText(String.format(JDLocale.L("plugins.container.decrypt","Decrypt link %s"),""+i));
             

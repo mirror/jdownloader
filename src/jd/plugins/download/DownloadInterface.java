@@ -111,7 +111,7 @@ abstract public class DownloadInterface {
 
     private int preBytes = 0;
 
-    protected boolean speedDebug = true;
+    protected boolean speedDebug = false;
 
     private Vector<Exception> exceptions = null;
 
@@ -958,9 +958,9 @@ abstract public class DownloadInterface {
                     httpConnection.connect();
                 }
                 if (speedDebug) {
-                    logger.finer("Org request headers " + this.getID() + ":" + request);
-                    logger.finer("Coppied request headers " + this.getID() + ":" + httpConnection.getRequestProperties());
-                    logger.finer("Server chunk Headers: " + this.getID() + ":" + httpConnection.getHeaderFields());
+//                    logger.finer("Org request headers " + this.getID() + ":" + request);
+//                    logger.finer("Coppied request headers " + this.getID() + ":" + httpConnection.getRequestProperties());
+//                    logger.finer("Server chunk Headers: " + this.getID() + ":" + httpConnection.getHeaderFields());
                 }
                 // connection.getHTTPURLConnection().disconnect();
                 return httpConnection;

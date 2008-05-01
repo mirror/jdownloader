@@ -87,6 +87,8 @@ public class PackageManager extends Interaction implements Serializable {
 
             }
         }
+        
+     
         if (fp.size() > 0) {
             JDUtilities.getController().addPackage(fp);
             JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_LINKLIST_STRUCTURE_CHANGED, null));
