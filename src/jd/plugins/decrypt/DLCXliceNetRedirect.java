@@ -34,7 +34,7 @@ import jd.plugins.RequestInfo;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
-public class DLCXliceNet extends PluginForDecrypt {
+public class DLCXliceNetRedirect extends PluginForDecrypt {
 
     final static String host = "DLC.Xlice.net";
 
@@ -44,7 +44,7 @@ public class DLCXliceNet extends PluginForDecrypt {
 
     private static ArrayList<String> openedLinks = new ArrayList<String>();;
 
-    public DLCXliceNet() {
+    public DLCXliceNetRedirect() {
         super();
         steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
         currentStep = steps.firstElement();

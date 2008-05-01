@@ -27,6 +27,7 @@ import java.util.regex.Pattern;
 
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
+import jd.controlling.DistributeData;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginStep;
@@ -45,7 +46,7 @@ public class XliceNet extends PluginForDecrypt {
 
     final static String           HOST                = "xlice.net";
 
-    private String                VERSION             = "2.1.2";
+    private String                VERSION             = "2.1.3";
 
     private String                CODER               = "JD-Team";
 
@@ -145,6 +146,19 @@ public class XliceNet extends PluginForDecrypt {
     public PluginStep doStep(PluginStep step, String parameter) {
         if (step.getStep() == PluginStep.STEP_DECRYPT) {
             Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
+            
+            if(parameter.contains("folder")){
+                String id=parameter.substring(parameter.indexOf("folder")+7).trim();
+                
+               // while(id.endsWith("/")||id.endsWith("\\"))id=id.substring(0,id.length()-1);
+                
+               String dlcLink= "http://xlice.net/getdlc/"+id;
+                
+               step.setParameter(new DistributeData(dlcLink).findLinks());
+               return step;
+                
+                
+            }
             Context cx = null;
             try {
 
