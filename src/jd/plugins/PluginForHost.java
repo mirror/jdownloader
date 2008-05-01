@@ -37,6 +37,7 @@ import jd.utils.JDUtilities;
  */
 public abstract class PluginForHost extends Plugin {
     private static final String CONFIGNAME = "pluginsForHost";
+    private static final String AGB_CHECKED = "AGB_CHECKED";
     // public abstract URLConnection getURLConnection();
 
    
@@ -196,15 +197,16 @@ public abstract class PluginForHost extends Plugin {
     public abstract int getMaxSimultanDownloadNum();
     public abstract String getAGBLink();
     public boolean isAGBChecked(){
-        // benutze getHost() damit man nach Update nicht neu akzeptieren muss
-    	// getPluginID() nur für Abwärtskompatibilität
-    	return JDUtilities.getSubConfig(CONFIGNAME).getBooleanProperty("AGBS_CHECKED_"+this.getPluginID(), false)
-    		|| JDUtilities.getSubConfig(CONFIGNAME).getBooleanProperty("AGB_CHECKED_"+this.getHost(), false);
+        if(!this.getProperties().hasProperty(AGB_CHECKED)){
+            getProperties().setProperty(AGB_CHECKED, JDUtilities.getSubConfig(CONFIGNAME).getBooleanProperty("AGBS_CHECKED_"+this.getPluginID(), false)
+            || JDUtilities.getSubConfig(CONFIGNAME).getBooleanProperty("AGB_CHECKED_"+this.getHost(), false));
+            getProperties().save();
+        }
+       return  getProperties().getBooleanProperty(AGB_CHECKED,false);
     }
     public void setAGBChecked(boolean value){
-        JDUtilities.getSubConfig(CONFIGNAME).setProperty("AGB_CHECKED_"+this.getHost(), value);
-        JDUtilities.getSubConfig(CONFIGNAME).setProperty("AGBS_CHECKED_"+this.getPluginID(), value);
-        JDUtilities.getSubConfig(CONFIGNAME).save();
+        getProperties().setProperty(AGB_CHECKED, value);
+        getProperties().save();
     }
     
     public void abort(){

@@ -101,6 +101,9 @@ public class Property implements Serializable {
 
     }
 
+    public boolean hasProperty(String key){
+        return this.properties.containsKey(key);
+    }
     /**
      * GIbt die Proprties als String zurück
      * 

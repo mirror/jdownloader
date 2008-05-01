@@ -35,6 +35,7 @@ import java.util.EventObject;
 import java.util.Vector;
 
 import javax.swing.JButton;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
@@ -316,7 +317,9 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
         public void setValueAt(Object value, int row, int col) {
             logger.info("Set value: " + value);
             if ((Boolean) value) {
-                if (JDUtilities.getGUI().showConfirmDialog(JDUtilities.sprintf(JDLocale.L("gui.config.plugin.abg_confirm", "Ich habe die AGB/TOS/FAQ von %s gelesen und erkläre mich damit einverstanden!"), new String[] { pluginsForHost.elementAt(row).getHost() }))) pluginsForHost.elementAt(row).setAGBChecked((Boolean) value);
+                String msg=String.format(JDLocale.L("gui.config.plugin.abg_confirm", "Ich habe die AGB/TOS/FAQ von %s gelesen und erkläre mich damit einverstanden!"), pluginsForHost.elementAt(row).getHost() );
+                
+                if(JOptionPane.showConfirmDialog(ConfigurationDialog.DIALOG,msg)==JOptionPane.OK_OPTION) pluginsForHost.elementAt(row).setAGBChecked((Boolean) value);
             }
             else {
                 pluginsForHost.elementAt(row).setAGBChecked((Boolean) value);

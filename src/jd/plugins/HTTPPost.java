@@ -94,7 +94,7 @@ public class HTTPPost {
     /**
      * Interne Connection
      */
-    private HttpURLConnection    connection;
+    private HTTPConnection    connection;
     /**
      * Gibt an ob ein Uploadvorgang durchgeführt wird
      */
@@ -125,7 +125,7 @@ public class HTTPPost {
             HttpURLConnection.setFollowRedirects(followRedirects);
             url = new URL("http://" + ip + ":" + port + path + query);
             logger.fine("POST " + url);
-            connection = (HttpURLConnection) url.openConnection();
+            connection = new HTTPConnection((HttpURLConnection) url.openConnection());
             connection.setRequestMethod("POST");
             // Wird wieder zurückgestellt weil der Static Wert beim instanzieren
             // in die INstanz übernommen wird
@@ -157,7 +157,7 @@ public class HTTPPost {
             HttpURLConnection.setFollowRedirects(followRedirects);
             url = u;
             logger.fine("POST " + url);
-            connection = (HttpURLConnection) url.openConnection();
+            connection = new HTTPConnection((HttpURLConnection) url.openConnection());
             connection.setRequestMethod("POST");
             // Wird wieder zurückgestellt weil der Static Wert beim instanzieren
             // in die INstanz übernommen wird
@@ -453,7 +453,7 @@ public class HTTPPost {
     /**
      * @return the connection
      */
-    public HttpURLConnection getConnection() {
+    public HTTPConnection getConnection() {
         return connection;
     }
 

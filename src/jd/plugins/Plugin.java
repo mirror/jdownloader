@@ -56,6 +56,7 @@ import jd.config.ConfigContainer;
 import jd.config.Configuration;
 import jd.config.MenuItem;
 import jd.config.Property;
+import jd.config.SubConfiguration;
 import jd.event.ControlEvent;
 import jd.unrar.JUnrar;
 import jd.utils.JDUtilities;
@@ -75,9 +76,11 @@ public abstract class Plugin implements ActionListener {
      * Header geändert müssen die Regexes der Plugins angepasst werden
      */
     public static final String ACCEPT_LANGUAGE = "de, en-gb;q=0.9, en;q=0.8";
-    public  void actionPerformed(ActionEvent e){
+
+    public void actionPerformed(ActionEvent e) {
         return;
     }
+
     /**
      * Versionsinformationen
      */
@@ -264,6 +267,8 @@ public abstract class Plugin implements ActionListener {
 
     public static final int CAPTCHA_USER_INPUT = 1;
 
+    private static SubConfiguration CONFIGS = null;
+
     /**
      * Führt den aktuellen Schritt aus
      * 
@@ -296,8 +301,6 @@ public abstract class Plugin implements ActionListener {
 
     private int captchaDetectionID = -1;
 
- 
-
     /**
      * Ein Logger, um Meldungen darzustellen
      */
@@ -312,11 +315,6 @@ public abstract class Plugin implements ActionListener {
         if (this.getPluginName() == null) {
             logger.severe("ACHTUNG: die Plugin.getPluginName() Funktion muss einen Wert wiedergeben der zum init schon verfügbar ist, also einen static wert");
         }
-        if (JDUtilities.getConfiguration().getProperty("PluginConfig_" + this.getPluginName()) != null) {
-            properties = (Property) JDUtilities.getConfiguration().getProperty("PluginConfig_" + this.getPluginName());
-        } else {
-            properties = new Property();
-        }
 
     }
 
@@ -325,7 +323,7 @@ public abstract class Plugin implements ActionListener {
      */
     public void abort() {
         aborted = true;
-        
+
     }
 
     /**
@@ -416,18 +414,21 @@ public abstract class Plugin implements ActionListener {
         for (int i = 0; i < steps.size(); i++) {
             steps.elementAt(i).setStatus(PluginStep.STATUS_TODO);
         }
-        //firePluginDataChanged();
+        // firePluginDataChanged();
     }
 
-//    private void firePluginDataChanged() {
-//        JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_DOWNLOADLINKS_CHANGED));
-//    }
+    // private void firePluginDataChanged() {
+    // JDUtilities.getController().fireControlEvent(new ControlEvent(this,
+    // ControlEvent.CONTROL_DOWNLOADLINKS_CHANGED));
+    // }
     /**
-     * Create MenuItems erlaubt es den Plugins eine MenuItemliste zurückzugeben. Die Gui kann diese Menüpunkte dann darstellen.
-     * Die Gui muss das Menu bei jedem zugriff neu aufbauen, weil sich das MenuItem Array geändert haben kann.
-     * MenuItems sind Datenmodelle für ein TreeMenü.
+     * Create MenuItems erlaubt es den Plugins eine MenuItemliste zurückzugeben.
+     * Die Gui kann diese Menüpunkte dann darstellen. Die Gui muss das Menu bei
+     * jedem zugriff neu aufbauen, weil sich das MenuItem Array geändert haben
+     * kann. MenuItems sind Datenmodelle für ein TreeMenü.
      */
     public abstract ArrayList<MenuItem> createMenuitems();
+
     /**
      * @author olimex Fügt Map als String mit Trennzeichen zusammen TODO:
      *         auslagern
@@ -1404,18 +1405,23 @@ public abstract class Plugin implements ActionListener {
      * 
      * @return internes property objekt
      */
-    public Property getProperties() {
-        return properties;
+    public SubConfiguration getProperties() {      
+        
+        if(!JDUtilities.getResourceFile("config/"+this.getPluginName()+".cfg").exists()){
+            SubConfiguration cfg = JDUtilities.getSubConfig(this.getPluginName());
+            if (JDUtilities.getConfiguration().getProperty("PluginConfig_" + this.getPluginName()) != null) {
+                cfg.setProperties(((Property) JDUtilities.getConfiguration().getProperty("PluginConfig_" + this.getPluginName())).getProperties());
+                cfg.save();
+                return cfg;
+            }
+            return JDUtilities.getSubConfig(this.getPluginName());  
+        }else{
+            return JDUtilities.getSubConfig(this.getPluginName());  
+        }
+
     }
 
-    /**
-     * Setzt das interne Property Objekt
-     * 
-     * @param properties
-     */
-    public void setProperties(Property properties) {
-        this.properties = properties;
-    }
+
 
     /**
      * 

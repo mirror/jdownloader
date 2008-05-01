@@ -97,6 +97,7 @@ import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.Configuration;
 import jd.config.MenuItem;
+import jd.config.SubConfiguration;
 import jd.controlling.ProgressController;
 import jd.event.ControlEvent;
 import jd.plugins.DownloadLink;
@@ -301,6 +302,10 @@ public class Rapidshare extends PluginForHost {
 
     private static final int ACTION_HAPPY_HOURS_TOGGLE_WAIT = 8;
 
+    private static final int ACTION_HAPPY_HOURS_FORCE_FREE = 9;
+
+    private static final String PARAM_FORRCEFREE_WHILE_HAPPYHOURS = "FORRCEFREE_WHILE_HAPPYHOURS";
+
     private static int ERRORS = 0;
 
     @Override
@@ -418,18 +423,25 @@ public class Rapidshare extends PluginForHost {
 
         ArrayList<MenuItem> menuList = new ArrayList<MenuItem>();
         MenuItem premium = new MenuItem(MenuItem.CONTAINER, JDLocale.L("plugins.rapidshare.menu.premium", "Premiumaccounts"), 0);
+        MenuItem hh = new MenuItem(MenuItem.CONTAINER, JDLocale.L("plugins.rapidshare.menu.happyHour", "Happy Hours"), 0);
 
         MenuItem account;
         MenuItem m;
+
         m = new MenuItem(JDLocale.L("plugins.rapidshare.menu.happyHours", "Happy Hours Abfrage"), ACTION_HAPPY_HOURS);
         m.setActionListener(this);
-        menuList.add(m);
+        hh.addMenuItem(m);
+
+        m = new MenuItem(MenuItem.TOGGLE, JDLocale.L("plugins.rapidshare.menu.forcefreewhilehh", "Free Download während Happy Hour erzwingen"), ACTION_HAPPY_HOURS_FORCE_FREE);
+        m.setActionListener(this);
+        m.setSelected(this.getProperties().getBooleanProperty(PARAM_FORRCEFREE_WHILE_HAPPYHOURS, false));
+        hh.addMenuItem(m);
 
         m = new MenuItem(MenuItem.TOGGLE, JDLocale.L("plugins.rapidshare.menu.happyHourswait", "Auf Happy Hours warten"), ACTION_HAPPY_HOURS_TOGGLE_WAIT);
         m.setActionListener(this);
         m.setSelected(this.getProperties().getBooleanProperty(PARAM_WAIT_FOR_HAPPYHOURS, false));
-        menuList.add(m);
-        menuList.add(new MenuItem(MenuItem.SEPARATOR));
+        hh.addMenuItem(m);
+        menuList.add(hh);
         menuList.add(premium);
         // account1
         account = new MenuItem(MenuItem.CONTAINER, JDLocale.L("plugins.rapidshare.menu.premium1", "1. Account (") + this.getProperties().getProperty(PROPERTY_PREMIUM_USER) + ")", 0);
@@ -503,14 +515,15 @@ public class Rapidshare extends PluginForHost {
         switch (mi.getActionID()) {
         case Rapidshare.ACTION_TOGGLE_PREMIUM_1:
             getProperties().setProperty(PROPERTY_USE_PREMIUM, !getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM, false));
+            getProperties().save();
             break;
         case Rapidshare.ACTION_TOGGLE_PREMIUM_2:
             getProperties().setProperty(PROPERTY_USE_PREMIUM_2, !getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM_2, false));
-
+            getProperties().save();
             break;
         case Rapidshare.ACTION_TOGGLE_PREMIUM_3:
             getProperties().setProperty(PROPERTY_USE_PREMIUM_3, !getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM_3, false));
-
+            getProperties().save();
             break;
         case Rapidshare.ACTION_INFO_PREMIUM_1:
             showInfo(1);
@@ -523,6 +536,12 @@ public class Rapidshare extends PluginForHost {
             break;
         case Rapidshare.ACTION_HAPPY_HOURS_TOGGLE_WAIT:
             getProperties().setProperty(PARAM_WAIT_FOR_HAPPYHOURS, !getProperties().getBooleanProperty(Rapidshare.PARAM_WAIT_FOR_HAPPYHOURS, false));
+            getProperties().save();
+            break;
+
+        case Rapidshare.ACTION_HAPPY_HOURS_FORCE_FREE:
+            getProperties().setProperty(PARAM_FORRCEFREE_WHILE_HAPPYHOURS, !getProperties().getBooleanProperty(Rapidshare.PARAM_FORRCEFREE_WHILE_HAPPYHOURS, false));
+            getProperties().save();
             break;
         case Rapidshare.ACTION_HAPPY_HOURS:
 
@@ -908,7 +927,6 @@ public class Rapidshare extends PluginForHost {
                 ticketCode = JDUtilities.htmlDecode(getSimpleMatch(requestInfo.getHtmlCode(), ticketCodePattern, 0));
                 ticketCode = requestInfo.getHtmlCode() + " " + ticketCode;
                 captchaAddress = getFirstMatch(ticketCode, patternForCaptcha, 1);
-                String specs=getSimpleMatch(ticketCode,"jpg\"><br>°<input name=\"accesscode\"",0);
                 
                 if (requestInfo.containsHTML(happyhour)) {
                     ticketCode = requestInfo.getHtmlCode();
@@ -974,10 +992,10 @@ public class Rapidshare extends PluginForHost {
                     downloadLink.setEndOfWaittime(System.currentTimeMillis() + pendingTime);
                 }
 
-                if (JDUtilities.getSubConfig("JAC").getBooleanProperty(Configuration.JAC_USE_CES, false)&&!CES.isEnabled()) {
+                if (JDUtilities.getSubConfig("JAC").getBooleanProperty(Configuration.JAC_USE_CES, false) && !CES.isEnabled()) {
                     ces = new CESClient(captchaFile);
                     ces.setLogins(JDUtilities.getSubConfig("JAC").getStringProperty(CESClient.PARAM_USER), JDUtilities.getSubConfig("JAC").getStringProperty(CESClient.PARAM_PASS));
-                    ces.setSpecs(specs);
+                    ces.setSpecs("Please enter all letters having a <img src='guide/rsc_cat.png'> below.");
                     ces.setPlugin(this);
                     if (ces.sendCaptcha()) {
                         downloadLink.setStatusText(JDLocale.L("plugins.rapidshare.ces.status", "C.E.S aktiv"));
@@ -985,7 +1003,7 @@ public class Rapidshare extends PluginForHost {
                         this.waitingForCES = true;
                         new Thread() {
                             public void run() {
-                                 captchaCode = ces.waitForAnswer();
+                                captchaCode = ces.waitForAnswer();
                                 waitingForCES = false;
                             }
                         }.start();
@@ -1312,8 +1330,9 @@ public class Rapidshare extends PluginForHost {
                     return step;
 
                 }
-
-                if (this.getProperties().getBooleanProperty(PROPERTY_FREE_IF_LIMIT_NOT_REACHED, false)) {
+                SubConfiguration p = getProperties();
+                logger.info("" + p);
+                if (this.getProperties().getBooleanProperty(PROPERTY_FREE_IF_LIMIT_NOT_REACHED, false) || getProperties().getBooleanProperty(Rapidshare.PARAM_FORRCEFREE_WHILE_HAPPYHOURS, false)) {
 
                     // get shure that dllink.isInProgress() reacted already on
                     // dl start
@@ -1329,14 +1348,37 @@ public class Rapidshare extends PluginForHost {
                         // time
                         freeInsteadOfPremiumStarttime = System.currentTimeMillis();
 
-                        requestInfo = getRequest(new URL(link), null, "", false);
-                        String newURL = getFirstMatch(requestInfo.getHtmlCode(), patternForNewHost, 1);
-                        requestInfo = postRequest(new URL(newURL), null, null, null, "dl.start=FREE", true);
-                        String strWaitTime = getSimpleMatch(requestInfo.getHtmlCode(), patternErrorDownloadLimitReached, 0);
+                        RequestInfo ri = getRequest(new URL(link), null, "", false);
+                        String newURL = getFirstMatch(ri.getHtmlCode(), patternForNewHost, 1);
+                        ri = postRequest(new URL(newURL), null, null, null, "dl.start=FREE", true);
+                        String strWaitTime = getSimpleMatch(ri.getHtmlCode(), patternErrorDownloadLimitReached, 0);
 
-                        // wait time pattern not found -> free download
-                        if (strWaitTime == null && !requestInfo.containsHTML(patternForAlreadyDownloading) && !requestInfo.containsHTML(toManyUser)) {
+                        if (strWaitTime != null) {
+                            RequestInfo ch = Plugin.getRequest(new URL("http://jdownloader.ath.cx/hh.php?txt=1"));
+                            if (ch.containsHTML("happy")) {
+                                logger.severe("wait " + strWaitTime + " minutes");
+                                waitTime = (int) (Double.parseDouble(strWaitTime) * 60 * 1000);
+                                downloadLink.setStatus(DownloadLink.STATUS_ERROR_DOWNLOAD_LIMIT);
+                                END_OF_DOWNLOAD_LIMIT = System.currentTimeMillis() + waitTime;
+                                logger.info("Wait until: " + System.currentTimeMillis() + "+ " + waitTime + " = " + END_OF_DOWNLOAD_LIMIT);
+                                step.setStatus(PluginStep.STATUS_ERROR);
+                                logger.info(" WARTEZEIT SETZEN IN " + step + " : " + waitTime);
+                                step.setParameter((long) waitTime);
+                                return step;
+                            }
 
+                        }
+
+                        if (ri.containsHTML(happyhour)&&getProperties().getBooleanProperty(Rapidshare.PARAM_FORRCEFREE_WHILE_HAPPYHOURS, false)) {
+
+                            currentStep = steps.firstElement();
+                            noLimitFreeInsteadPremium = true;
+
+                            freeInsteadOfPremiumDownloadlink = downloadLink;
+                            return doFreeStep(step, downloadLink);
+
+                        } else if (getProperties().getBooleanProperty(PROPERTY_FREE_IF_LIMIT_NOT_REACHED, false) &&strWaitTime == null && !ri.containsHTML(patternForAlreadyDownloading) && !ri.containsHTML(toManyUser)) {
+                            // wait time pattern not found -> free download
                             logger.info("Download limit not reached yet -> free download (see RS.com options)");
                             currentStep = steps.firstElement();
                             noLimitFreeInsteadPremium = true;
@@ -1351,6 +1393,16 @@ public class Rapidshare extends PluginForHost {
 
                     } else {
                         logger.info("There is already a running free download -> premium download");
+                    }
+
+                }
+
+                if (getProperties().getBooleanProperty(Rapidshare.PARAM_FORRCEFREE_WHILE_HAPPYHOURS, false)) {
+                    requestInfo = getRequest(new URL(link), null, "", false);
+                    String newURL = getFirstMatch(requestInfo.getHtmlCode(), patternForNewHost, 1);
+                    requestInfo = postRequest(new URL(newURL), null, null, null, "dl.start=FREE", true);
+                    if (requestInfo.containsHTML(patternForAlreadyDownloading)) { return doFreeStep(step, downloadLink);
+
                     }
 
                 }

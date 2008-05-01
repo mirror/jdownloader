@@ -1,17 +1,16 @@
 package jd.utils;
 
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.Serializable;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.logging.Logger;
 
-import javazoom.jl.decoder.JavaLayerException;
-import javazoom.jl.player.advanced.AdvancedPlayer;
 import jd.captcha.CES;
 import jd.config.SubConfiguration;
 import jd.plugins.HTTPPost;
@@ -42,15 +41,19 @@ public class CESClient implements Serializable {
     private static final String PATTERN_IMAGE = "<p>Captcha image here:<br><img src=\"°\" border=\"2\" />";
     private static final String PATTERN_CAPTCHA_ID = "<input type=\"hidden\" name=\"Captcha\" value=\"°\"/>";
     private static final String PATTERN_CAPTCHA_STATE = "<input type=\"hidden\" name=\"State\" value=\"°\"/>";
+    private static final String PATTERN_MASSAGES = "<font color=\"green\"> &nbsp;-&nbsp; <i>°<b>SMS from <b>°</b>:°</b></i></font> &nbsp; <a href=\"°&DeleteMessage=°\">[ delete ]</a><br>";
+
     public static final String LASTEST_INSTANCE = "CES_LASTEST_INSTANCE";
+    public static final String MESSAGES = "CES_MESSAGES";
+    private static final String ERROR_MESSAGE_NOT_SENT = "Message not sent";
 
     public static void main(String[] args) {
-     
+
         // File file = new
         // File("C:/Users/coalado/.jd_home/captchas/rapidshare.com/21.04.2008_17.19.51.jpg");
         //
         // CESClient ces = new CESClient();
-       
+
         // ces.enterQueueAndWait();
         // if (ces.sendCaptcha()) {
         // JDUtilities.getLogger().info("code: "+ces.waitForAnswer());
@@ -124,7 +127,7 @@ public class CESClient implements Serializable {
      */
     public void sendCaptchaWrong() {
         try {
-            
+
             RequestInfo ri = Plugin.postRequest(new URL(server + "test.php"), null, null, null, "Nick=" + user + "&Pass=" + pass + "&Wrong=" + captchaID, true);
             config.setProperty(LASTEST_INSTANCE, this);
             printMessage(ri.getHtmlCode());
@@ -146,7 +149,7 @@ public class CESClient implements Serializable {
                     return;
                 }
                 RequestInfo ri = Plugin.getRequest(new URL(server + "index.php?Nick=" + user + "&Pass=" + pass + "&State=1"));
-               
+
                 printMessage(ri.getHtmlCode());
                 config.setProperty(LASTEST_INSTANCE, this);
                 // PATTERN_IMAGE
@@ -154,14 +157,44 @@ public class CESClient implements Serializable {
                 if (img != null) {
                     String id = Plugin.getSimpleMatch(ri.getHtmlCode(), PATTERN_CAPTCHA_ID, 0);
                     String state = Plugin.getSimpleMatch(ri.getHtmlCode(), PATTERN_CAPTCHA_STATE, 0);
+
+                    logger.info(ri.getHtmlCode());
                     this.askUserForCode(server + img, id, state);
 
                 }
+                Object oldMessages = config.getProperty(MESSAGES);
+                HashMap<Integer, ArrayList<String>> savedMessages = null;
+                if (oldMessages != null) {
+                    savedMessages = (HashMap<Integer, ArrayList<String>>) oldMessages;
+                }
+                // [[01.05.08 19:27, coalado, test,
+                // index.php?Nick=coalado&Pass=aCvtSmZwNCqm1&State=1, 67618],
+                // [01.05.08 22:48, coalado, bla und so,
+                // index.php?Nick=coalado&Pass=aCvtSmZwNCqm1&State=1, 67887]]
+                ArrayList<ArrayList<String>> messages = Plugin.getAllSimpleMatches(ri.getHtmlCode(), PATTERN_MASSAGES);
+                boolean n = false;
+                for (Iterator<ArrayList<String>> it = messages.iterator(); it.hasNext();) {
+                    ArrayList<String> message = it.next();
+                    
+                    int id = Integer.parseInt(message.get(4));
+                    if (savedMessages == null) {
+                        savedMessages = new HashMap<Integer, ArrayList<String>>();
+                    }
+                    if (!savedMessages.containsKey(id)) {
+                        this.onNewMessage(message);
+                        n = true;
+                        savedMessages.put(id, message);
+                    }
 
+                }
+                if (true) {
+                    config.setProperty(MESSAGES, savedMessages);
+                    config.save();
+                }
                 String[] answer;
 
                 answer = Plugin.getSimpleMatches(ri.getHtmlCode(), PATTERN_QUEUE);
-               
+
                 if (answer != null) {
                     this.balance = answer[1];
                     this.receivedCaptchas = answer[2];
@@ -176,8 +209,7 @@ public class CESClient implements Serializable {
                     this.queuePosition = answer[13];
                     this.eta = answer[15];
                     config.setProperty(UPDATE, (int) System.currentTimeMillis());
-                    
-                    
+
                 }
 
             } catch (Exception e) {
@@ -213,11 +245,60 @@ public class CESClient implements Serializable {
 
     }
 
+    private void onNewMessage(ArrayList<String> message) {
+        // [[01.05.08 19:27, coalado, test,
+        // index.php?Nick=coalado&Pass=aCvtSmZwNCqm1&State=1, 67618],
+        // [01.05.08 22:48, coalado, bla und so,
+        // index.php?Nick=coalado&Pass=aCvtSmZwNCqm1&State=1, 67887]]
+        String title = String.format(JDLocale.L("captcha.ces.message.title", "C.E.S. Neue Nachricht erhalten von %s am %s"), message.get(1), message.get(0));
+        String html = String.format(JDLocale.L("captcha.ces.message.body", "<link href=\"http://jdownloader.ath.cx/jdccs.css\" rel=\"stylesheet\" type=\"text/css\" /><div><p>%s Nachricht von %s<hr>%s</p></div>"), JDUtilities.htmlDecode(message.get(0)),  JDUtilities.htmlDecode(message.get(1)),  JDUtilities.htmlDecode(message.get(2)));
+        JDUtilities.getGUI().showHTMLDialog(title, html);
+
+    }
+
     private void printMessage(String htmlCode) {
-        String msg=Plugin.getSimpleMatch(htmlCode, PATTERN_MESSAGE, 0);
-        if(msg==null)msg=htmlCode;
-       logger.info("CES: "+msg);
-        
+        String msg = Plugin.getSimpleMatch(htmlCode, PATTERN_MESSAGE, 0);
+        if (msg == null) msg = htmlCode;
+        logger.info("CES: " + msg);
+
+    }
+
+    public boolean sendMessage(String nick, String message) {
+        // POST /rapid/index.php?Nick=coalado&Pass=aCvtSmZwNCqm1 HTTP/1.1
+        // Host: dvk.com.ua
+        // User-Agent: Mozilla/5.0 (Windows; U; Windows NT 6.0; de; rv:1.8.1.14)
+        // Gecko/20080404 Firefox/2.0.0.14
+        // Accept:
+        // text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5
+        // Accept-Language: de-de,de;q=0.8,en-us;q=0.5,en;q=0.3
+        // Accept-Encoding: gzip,deflate
+        // Accept-Charset: ISO-8859-1,utf-8;q=0.7,*;q=0.7
+        // Keep-Alive: 300
+        // Connection: keep-alive
+        // Referer:
+        // http://dvk.com.ua/rapid/index.php?Nick=coalado&Pass=aCvtSmZwNCqm1
+        // Content-Type: application/x-www-form-urlencoded
+        // Content-Length: 65
+        //
+        // State=&Message=bla&ToNick=coalado&Nick=coalado&Pass=aCvtSmZwNCqm1
+        message=JDUtilities.urlEncode(HTMLEntities.htmlentities(JDUtilities.htmlDecode(message)));
+        nick=JDUtilities.urlEncode(HTMLEntities.htmlentities(JDUtilities.htmlDecode(nick)));
+
+        try {
+            RequestInfo ri = Plugin.postRequest(new URL(server + "index.php?Nick=" + user + "&Pass=" + pass), "State=&Message=" + message + "&ToNick=" + nick + "&Nick=" + user + "&Pass=" + pass);
+            if (ri.containsHTML(ERROR_MESSAGE_NOT_SENT)) { return false;
+
+            }
+            return true;
+        } catch (MalformedURLException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        } catch (IOException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+        return false;
+
     }
 
     public String getAccountInfoString() {
@@ -249,7 +330,7 @@ public class CESClient implements Serializable {
         } else {
             CES.setEnabled(false);
             config.setProperty(LASTEST_INSTANCE, this);
-            config.setProperty(UPDATE, (int)System.currentTimeMillis());
+            config.setProperty(UPDATE, (int) System.currentTimeMillis());
 
         }
     }
@@ -424,10 +505,10 @@ public class CESClient implements Serializable {
             up.sendVariable("Nick", user);
             up.sendVariable("Pass", pass);
             up.sendVariable("Save", save + "");
-            up.sendVariable("Link", "");
+            up.sendVariable("Link", "No link due to security reasons");
             up.sendVariable("Type", type + "");
             up.sendVariable("Key", getKey());
-            up.sendVariable("Specs", specs);
+            up.sendVariable("Spec", specs);
 
             RequestInfo ri = up.getRequestInfo();
             // <html><head></head><body>CaptchaExchangeServer - v2.06 (29-04-08

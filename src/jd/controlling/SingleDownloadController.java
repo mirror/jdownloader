@@ -403,6 +403,8 @@ public class SingleDownloadController extends Thread {
     private void onErrorAGBNotSigned(DownloadLink downloadLink2, PluginForHost plugin, PluginStep step) {
 
         downloadLink.setStatusText(JDLocale.L("controller.status.agb_tos", "AGB nicht akzeptiert"));
+        
+    
         new AgbDialog(downloadLink2);
 
         /*
