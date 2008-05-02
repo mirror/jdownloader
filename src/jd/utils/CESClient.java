@@ -41,11 +41,12 @@ public class CESClient implements Serializable {
     private static final String PATTERN_IMAGE = "<p>Captcha image here:<br><img src=\"°\" border=\"2\" />";
     private static final String PATTERN_CAPTCHA_ID = "<input type=\"hidden\" name=\"Captcha\" value=\"°\"/>";
     private static final String PATTERN_CAPTCHA_STATE = "<input type=\"hidden\" name=\"State\" value=\"°\"/>";
-    private static final String PATTERN_MASSAGES = "<font color=\"green\"> &nbsp;-&nbsp; <i>°<b>SMS from <b>°</b>:°</b></i></font> &nbsp; <a href=\"°&DeleteMessage=°\">[ delete ]</a><br>";
-
+    private static final String PATTERN_MESSAGES = "<font color=\"green\"> &nbsp;-&nbsp; <i>°<b>SMS from <b>°</b>:°</b></i></font> &nbsp; <a href=\"°&DeleteMessage=°\">[ delete ]</a><br>";
+    private static final String PATTERN_SYSTEMMESSAGE = "<i>° ° <b>°</b></i><br>";
     public static final String LASTEST_INSTANCE = "CES_LASTEST_INSTANCE";
     public static final String MESSAGES = "CES_MESSAGES";
     private static final String ERROR_MESSAGE_NOT_SENT = "Message not sent";
+    private static final String BANNED = "bann";
 
     public static void main(String[] args) {
 
@@ -104,6 +105,7 @@ public class CESClient implements Serializable {
     private SubConfiguration config;
     private String specs = "";
     private Plugin plugin;
+    private boolean banned;
 
     public CESClient(File captcha) {
         this.file = captcha;
@@ -129,6 +131,7 @@ public class CESClient implements Serializable {
         try {
 
             RequestInfo ri = Plugin.postRequest(new URL(server + "test.php"), null, null, null, "Nick=" + user + "&Pass=" + pass + "&Wrong=" + captchaID, true);
+            if (checkBanned(ri)) return;
             config.setProperty(LASTEST_INSTANCE, this);
             printMessage(ri.getHtmlCode());
         } catch (Exception e) {
@@ -149,7 +152,7 @@ public class CESClient implements Serializable {
                     return;
                 }
                 RequestInfo ri = Plugin.getRequest(new URL(server + "index.php?Nick=" + user + "&Pass=" + pass + "&State=1"));
-
+                if (checkBanned(ri)) return;
                 printMessage(ri.getHtmlCode());
                 config.setProperty(LASTEST_INSTANCE, this);
                 // PATTERN_IMAGE
@@ -171,11 +174,11 @@ public class CESClient implements Serializable {
                 // index.php?Nick=coalado&Pass=aCvtSmZwNCqm1&State=1, 67618],
                 // [01.05.08 22:48, coalado, bla und so,
                 // index.php?Nick=coalado&Pass=aCvtSmZwNCqm1&State=1, 67887]]
-                ArrayList<ArrayList<String>> messages = Plugin.getAllSimpleMatches(ri.getHtmlCode(), PATTERN_MASSAGES);
+                ArrayList<ArrayList<String>> messages = Plugin.getAllSimpleMatches(ri.getHtmlCode(), PATTERN_MESSAGES);
                 boolean n = false;
                 for (Iterator<ArrayList<String>> it = messages.iterator(); it.hasNext();) {
                     ArrayList<String> message = it.next();
-                    
+
                     int id = Integer.parseInt(message.get(4));
                     if (savedMessages == null) {
                         savedMessages = new HashMap<Integer, ArrayList<String>>();
@@ -191,6 +194,33 @@ public class CESClient implements Serializable {
                     config.setProperty(MESSAGES, savedMessages);
                     config.save();
                 }
+                messages = Plugin.getAllSimpleMatches(ri.getHtmlCode(), PATTERN_SYSTEMMESSAGE);
+                n = false;
+                for (Iterator<ArrayList<String>> it = messages.iterator(); it.hasNext();) {
+                    ArrayList<String> tmp = it.next();
+                    ArrayList<String> message = new ArrayList<String>();
+                    message.add(tmp.get(0) + " " + tmp.get(1));
+                    message.add("C.E.S. System");
+                    message.add(tmp.get(2));
+                    message.add(null);
+                    message.add(null);
+
+                    int id = (int) System.currentTimeMillis();
+                    if (savedMessages == null) {
+                        savedMessages = new HashMap<Integer, ArrayList<String>>();
+                    }
+                    if (!savedMessages.containsKey(id)) {
+                        this.onNewMessage(message);
+                        n = true;
+                        savedMessages.put(id, message);
+                    }
+
+                }
+                if (true) {
+                    config.setProperty(MESSAGES, savedMessages);
+                    config.save();
+                }
+
                 String[] answer;
 
                 answer = Plugin.getSimpleMatches(ri.getHtmlCode(), PATTERN_QUEUE);
@@ -251,14 +281,28 @@ public class CESClient implements Serializable {
         // [01.05.08 22:48, coalado, bla und so,
         // index.php?Nick=coalado&Pass=aCvtSmZwNCqm1&State=1, 67887]]
         String title = String.format(JDLocale.L("captcha.ces.message.title", "C.E.S. Neue Nachricht erhalten von %s am %s"), message.get(1), message.get(0));
-        String html = String.format(JDLocale.L("captcha.ces.message.body", "<link href=\"http://jdownloader.ath.cx/jdccs.css\" rel=\"stylesheet\" type=\"text/css\" /><div><p>%s Nachricht von %s<hr>%s</p></div>"), JDUtilities.htmlDecode(message.get(0)),  JDUtilities.htmlDecode(message.get(1)),  JDUtilities.htmlDecode(message.get(2)));
+        String html = String.format(JDLocale.L("captcha.ces.message.body", "<link href=\"http://jdownloader.ath.cx/jdccs.css\" rel=\"stylesheet\" type=\"text/css\" /><div><p>%s Nachricht von %s<hr>%s</p></div>"), JDUtilities.htmlDecode(message.get(0)), JDUtilities.htmlDecode(message.get(1)), JDUtilities.htmlDecode(message.get(2)));
         JDUtilities.getGUI().showHTMLDialog(title, html);
 
+    }
+
+    private boolean checkBanned(RequestInfo ri) {
+        if (ri.containsHTML(BANNED)) {
+            this.banned = true;
+            JDUtilities.getGUI().showMessageDialog(JDLocale.L("captcha.ces.banned", "Du bist gebannt. Bitte neu registrieren."));
+
+            return true;
+        } else {
+            banned = false;
+            return false;
+        }
     }
 
     private void printMessage(String htmlCode) {
         String msg = Plugin.getSimpleMatch(htmlCode, PATTERN_MESSAGE, 0);
         if (msg == null) msg = htmlCode;
+        msg = msg.replaceAll(user, "*****");
+        msg = msg.replaceAll(pass, "*****");
         logger.info("CES: " + msg);
 
     }
@@ -281,11 +325,12 @@ public class CESClient implements Serializable {
         // Content-Length: 65
         //
         // State=&Message=bla&ToNick=coalado&Nick=coalado&Pass=aCvtSmZwNCqm1
-        message=JDUtilities.urlEncode(HTMLEntities.htmlentities(JDUtilities.htmlDecode(message)));
-        nick=JDUtilities.urlEncode(HTMLEntities.htmlentities(JDUtilities.htmlDecode(nick)));
+        message = JDUtilities.urlEncode(HTMLEntities.htmlentities(JDUtilities.htmlDecode(message)));
+        nick = JDUtilities.urlEncode(HTMLEntities.htmlentities(JDUtilities.htmlDecode(nick)));
 
         try {
             RequestInfo ri = Plugin.postRequest(new URL(server + "index.php?Nick=" + user + "&Pass=" + pass), "State=&Message=" + message + "&ToNick=" + nick + "&Nick=" + user + "&Pass=" + pass);
+            if (checkBanned(ri)) return false;
             if (ri.containsHTML(ERROR_MESSAGE_NOT_SENT)) { return false;
 
             }
@@ -318,6 +363,7 @@ public class CESClient implements Serializable {
         if (code != null && code.length() > 0) {
             try {
                 RequestInfo ri = Plugin.postRequest(new URL(server + "index.php?Nick=" + user + "&Pass=" + pass + "&State=1"), "Code=" + code + "&enter=OK&Captcha=" + id + "&State=" + state + "&Nick=" + user + "&Pass=" + pass);
+                if (checkBanned(ri)) return;
                 config.setProperty(LASTEST_INSTANCE, this);
                 printMessage(ri.getHtmlCode());
             } catch (MalformedURLException e) {
@@ -343,19 +389,6 @@ public class CESClient implements Serializable {
         this.abortFlag = FLAG_ABORT_RECEIVING;
     }
 
-    public String getStatusPage() {
-        RequestInfo ri;
-        try {
-
-            ri = Plugin.postRequest(new URL(server), null, null, null, "Nick=" + user + "&Pass=" + pass, true);
-            return ri.getHtmlCode();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return null;
-
-    }
-
     /**
      * login. Statistische Informationen über den account werden abgerfen. Ist
      * zur funktionweise nicht zwingend nötig
@@ -367,6 +400,7 @@ public class CESClient implements Serializable {
         try {
 
             ri = Plugin.postRequest(new URL(server), null, null, null, "Nick=" + user + "&Pass=" + pass, true);
+            if (checkBanned(ri)) return false;
             String error = Plugin.getSimpleMatch(ri.getHtmlCode(), "<font color=\"red\"><h2>°</h2></font>", 0);
             printMessage(ri.getHtmlCode());
             this.statusText = error;
@@ -449,6 +483,7 @@ public class CESClient implements Serializable {
                     return null;
                 }
                 RequestInfo ri = Plugin.postRequest(new URL(server + "test.php"), null, null, null, "Nick=" + user + "&Pass=" + pass + "&Test=" + captchaID, true);
+                if (checkBanned(ri)) return null;
                 printMessage(ri.getHtmlCode());
                 if (ri.containsHTML("dvk_ok002")) {
 
@@ -511,6 +546,7 @@ public class CESClient implements Serializable {
             up.sendVariable("Spec", specs);
 
             RequestInfo ri = up.getRequestInfo();
+            if (checkBanned(ri)) return false;
             // <html><head></head><body>CaptchaExchangeServer - v2.06 (29-04-08
             // 02:00) by DVK<br>dvk_ok001; Captcha is loaded with ID(580281),
             // your
@@ -702,6 +738,10 @@ public class CESClient implements Serializable {
 
     public String getEta() {
         return eta;
+    }
+
+    public boolean isBanned() {
+        return banned;
     }
 
 }

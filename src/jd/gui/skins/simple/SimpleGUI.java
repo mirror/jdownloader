@@ -93,6 +93,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.PluginOptional;
 import jd.utils.CESClient;
 import jd.utils.JDLocale;
+import jd.utils.JDSounds;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 
@@ -830,6 +831,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
      *            Die erwünschte Aktion
      */
     public void actionPerformed(ActionEvent e) {
+        JDSounds.PT("sound.gui.clickToolbar");
         if (e.getSource() == btnToggleReconnect) {
             this.toggleReconnect(true);
             return;

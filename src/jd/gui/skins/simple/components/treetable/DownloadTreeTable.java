@@ -54,6 +54,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.download.DownloadInterface;
 import jd.plugins.download.DownloadInterface.Chunk;
 import jd.utils.JDLocale;
+import jd.utils.JDSounds;
 import jd.utils.JDUtilities;
 
 import org.jdesktop.swingx.JXTreeTable;
@@ -132,6 +133,7 @@ public class DownloadTreeTable extends JXTreeTable implements WindowFocusListene
      */
     public void updateSelectionAndExpandStatus() {
         // logger.info("UPD");
+        
         int i = 0;
         FilePackage fp;
         DownloadLink dl;
@@ -154,6 +156,7 @@ public class DownloadTreeTable extends JXTreeTable implements WindowFocusListene
             }
             i++;
         }
+        
 
     }
 
@@ -236,10 +239,12 @@ public class DownloadTreeTable extends JXTreeTable implements WindowFocusListene
             if (e.isAddedPath(path)) {
                 if (path.getLastPathComponent() instanceof DownloadLink) {
                     ((DownloadLink) path.getLastPathComponent()).setProperty(DownloadTreeTable.PROPERTY_SELECTED, true);
+               
                     // logger.info("SELECTED " + ((DownloadLink)
                     // path.getLastPathComponent()));
                 } else {
                     ((FilePackage) path.getLastPathComponent()).setProperty(DownloadTreeTable.PROPERTY_SELECTED, true);
+                    
                     // logger.info("SELECTED " + ((FilePackage)
                     // path.getLastPathComponent()));
                 }
@@ -367,7 +372,9 @@ if(i>0){
         if (e.getButton() == MouseEvent.BUTTON1 && 2 == e.getClickCount()) {
             Point point = e.getPoint();
             int row = this.rowAtPoint(point);
-            Object obj = getPathForRow(row).getLastPathComponent();
+            TreePath path = getPathForRow(row);
+            if(path==null)return;
+           Object obj=path.getLastPathComponent();
             if (obj instanceof DownloadLink) {
                 new DownloadInfo(SimpleGUI.CURRENTGUI.getFrame(), (DownloadLink) getPathForRow(row).getLastPathComponent());
             }
@@ -389,6 +396,17 @@ if(i>0){
     }
 
     public void mouseReleased(MouseEvent e) {
+        TreePath path = this.getPathForLocation(e.getX(), e.getY());
+       
+        if(path!=null && path.getLastPathComponent() instanceof FilePackage){
+            JDSounds.PT("sound.gui.selectPackage");
+        }else if(path!=null){
+            JDSounds.PT("sound.gui.selectLink");
+        }
+    
+       
+        
+        
         this.tooltipTimer.setCaller(null);
         if (tooltip != null) {
             tooltip.destroy();

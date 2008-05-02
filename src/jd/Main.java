@@ -44,6 +44,7 @@ import jd.controlling.interaction.Interaction;
 import jd.controlling.interaction.PackageManager;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.plugins.HTTPConnection;
+import jd.utils.JDSounds;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 
@@ -116,10 +117,12 @@ public class Main {
         }
 
         JDTheme.setTheme("default");
-
+        JDSounds.setSoundTheme("default");
+      
         boolean stop = false;
         boolean extractSwitch = false;
         Vector<String> paths = new Vector<String>();
+     
         long extractTime = 0;
 
         if (!newInstance && tryConnectToServer(args)) {

@@ -323,11 +323,11 @@ public class JDController implements ControlListener, UIListener {
                     if (!JDUtilities.getConfiguration().getBooleanProperty(Configuration.USE_PROXY)) System.setProperty("proxyHost", "");
                 }
 
-                logger.info("Use proxy:");
-                logger.info("proxyHost: " + System.getProperty("proxyHost"));
-                logger.info("proxyPort: " + System.getProperty("proxyPort"));
-                logger.info("http.proxyUser: *******");
-                logger.info("http.proxyPassword: ******");
+//                logger.info("Use proxy:");
+//                logger.info("proxyHost: " + System.getProperty("proxyHost"));
+//                logger.info("proxyPort: " + System.getProperty("proxyPort"));
+//                logger.info("http.proxyUser: *******");
+//                logger.info("http.proxyPassword: ******");
 
             }
 
@@ -758,7 +758,7 @@ public class JDController implements ControlListener, UIListener {
         Vector<URL> services;
         try {
             services = new Vector<URL>();
-            services.add(new URL("http://dlcrypt1.ath.cx/service.php"));
+            //services.add(new URL("http://dlcrypt1.ath.cx/service.php"));
             // services.add(new URL("http://dlcrypt2.ath.cx/service.php"));
             // services.add(new URL("http://dlcrypt3.ath.cx/service.php"));
             services.add(new URL("http://dlcrypt4.ath.cx/service.php"));

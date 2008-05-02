@@ -32,6 +32,7 @@ import jd.gui.UIInterface;
 import jd.gui.skins.simple.LinkGrabber;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.utils.JDLocale;
+import jd.utils.JDSounds;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 import edu.stanford.ejalbert.BrowserLauncher;
@@ -97,6 +98,9 @@ public class ConfigPanelGUI extends ConfigPanel {
         look.addEntry(ce);
 
         ce = (new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, guiConfig, SimpleGUI.PARAM_THEME, JDTheme.getThemeIDs().toArray(new String[] {}), JDLocale.L("gui.config.gui.theme", "Theme")).setDefaultValue("default"));
+        look.addEntry(ce);
+        
+        ce = (new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, guiConfig, JDSounds.PARAM_CURRENTTHEME, JDSounds.getSoundIDs().toArray(new String[] {}), JDLocale.L("gui.config.gui.soundTheme", "Soundtheme")).setDefaultValue("default"));
         look.addEntry(ce);
         String[] plafs;
 

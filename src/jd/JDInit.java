@@ -51,6 +51,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.PluginOptional;
 import jd.update.WebUpdater;
 import jd.utils.JDLocale;
+import jd.utils.JDSounds;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 import sun.misc.Service;
@@ -119,6 +120,8 @@ public class JDInit {
                     JDUtilities.setConfiguration(configuration);
                     JDUtilities.getLogger().setLevel((Level) configuration.getProperty(Configuration.PARAM_LOGGER_LEVEL, Level.WARNING));
                     JDTheme.setTheme(JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).getStringProperty(SimpleGUI.PARAM_THEME, "default"));
+                    JDSounds.setSoundTheme(JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).getStringProperty(JDSounds.PARAM_CURRENTTHEME, "default"));
+                    
                 } else {
                     // log += "\r\n" + ("Configuration error: " + obj);
                     // log += "\r\n" + ("Konfigurationskonflikt. Lade Default

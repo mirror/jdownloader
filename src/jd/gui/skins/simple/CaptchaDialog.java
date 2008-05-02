@@ -39,6 +39,7 @@ import jd.captcha.pixelgrid.Letter;
 import jd.config.Configuration;
 import jd.plugins.Plugin;
 import jd.utils.JDLocale;
+import jd.utils.JDSounds;
 import jd.utils.JDUtilities;
 
 /**
@@ -91,12 +92,9 @@ public class CaptchaDialog extends JDialog implements ActionListener {
      */
     public CaptchaDialog(final Frame owner, final Plugin plugin, final File file, final String def) {
         super(owner);
-        new Thread() {
-            public void run() {
-
-                JDUtilities.playMp3(JDUtilities.getResourceFile("snd/phone.mp3"));
-            }
-        }.start();
+     
+                JDSounds.PT("sound.captcha.onCaptchaInput");
+      
         setModal(true);
         addWindowListener(new WindowListener() {
 
@@ -199,9 +197,10 @@ public class CaptchaDialog extends JDialog implements ActionListener {
                     int c = countdown * 1000;
                     long t = System.currentTimeMillis();
                     while (c >= 0) {
+                        if(!isVisible())return;
                         t = System.currentTimeMillis();
                         setTitle("Countdown " + JDUtilities.formatSeconds(c/1000));
-                        if(c<3000)JDUtilities.playMp3(JDUtilities.getResourceFile("snd/phone.mp3"));
+                        if(c<3000)  JDSounds.P("sound.captcha.onCaptchaInputEmergency");
                         long dif = System.currentTimeMillis() - t;
                         c -= dif;
 

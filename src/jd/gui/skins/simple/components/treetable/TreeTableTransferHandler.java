@@ -20,6 +20,7 @@ import jd.gui.skins.simple.components.HTMLTooltip;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.utils.JDLocale;
+import jd.utils.JDSounds;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 
@@ -238,11 +239,9 @@ public class TreeTableTransferHandler extends TransferHandler {
     }
 
     private boolean wishSound(boolean doit) {
-        if (doit) new Thread() {
-            public void run() {
-                JDUtilities.playMp3(JDUtilities.getResourceFile("snd/wish.mp3"));
-            }
-        }.start();
+        if (doit) JDSounds.PT("sound.gui.onDragAndDrop");
+       
+        
         return doit;
     }
 
