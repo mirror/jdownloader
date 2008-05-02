@@ -104,6 +104,7 @@ public static int WINDOW_STATUS_FOREGROUND = 4;
      * @return Wahr, falls diese Anfrage bestätigt wurde, andernfalls falsch
      */
     public boolean showConfirmDialog(String string);
+    public boolean showCountdownConfirmDialog(String string,int sec);
     /**
      * Fügt Links zum Linkgrabber hinzu
      * @param links

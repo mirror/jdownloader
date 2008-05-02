@@ -173,6 +173,14 @@ public class ConfigPanelCaptcha extends ConfigPanel implements MouseListener, Ac
         ce.setEnabledCondidtion(conditionEntry, "==", true);
         ces.addEntry(ce);
 
+        ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, JDUtilities.getSubConfig("JAC"), CESClient.DO_WARNING, JDLocale.L("gui.config.captcha.useCESPenaltyWarning", "Durch frühzeitige Rückfrage Punktstrafen vermeiden"));
+        ce.setEnabledCondidtion(conditionEntry, "==", true);
+        ce.setInstantHelp(JDLocale.L("gui.config.captcha.ces.help", "http://jdownloader.ath.cx/page.php?id=106"));
+ 
+        ce.setDefaultValue(true);
+        ces.addEntry(ce);
+        
+        
         ce = (new ConfigEntry(ConfigContainer.TYPE_BUTTON, this, JDLocale.L("gui.config.captcha.ces.btn_register", "Registrieren")));
         ces.addEntry(ce);
         ce.setEnabledCondidtion(conditionEntry, "==", true);

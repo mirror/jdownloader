@@ -39,6 +39,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.PluginStep;
 import jd.plugins.Regexp;
 import jd.plugins.RequestInfo;
+import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
 public class Serienjunkies extends PluginForHost {
@@ -384,19 +385,18 @@ public class Serienjunkies extends PluginForHost {
 
             switch (step.getStep()) {
             case PluginStep.STEP_DECRYPT:
-                logger.info(JDUtilities.htmlDecode("http://www.ziddu.com/download.php?uid=a66cmJ2naK%2BelOKnY6qhkZSpYKubnZmm3 "));
-               logger.info(JDUtilities.urlEncode(JDUtilities.urlEncode("a66cmJ2naK elOKnY6qhkZSpYKubnZmm3 ")));
-                String link = (String) downloadLink.getProperty("link");
+               String link = (String) downloadLink.getProperty("link");
                 String[] mirrors = (String[]) downloadLink.getProperty("mirrors");
                 downloadLink.setStatusText("decrypt");
                 downloadLink.requestGuiUpdate();
                 Vector<DownloadLink> dls = getDLinks(link);
                 if (aborted) return null;
                 FilePackage fp = downloadLink.getFilePackage();
-                int index= fp.indexOf(downloadLink)+1;
+                int index= fp.indexOf(downloadLink);
+               
                 Vector<Integer> down = new Vector<Integer>();
                 Vector<DownloadLink> ret = new Vector<DownloadLink>();
-                for (int i = 0; i < dls.size(); i++) {
+                for (int i = dls.size()-1; i >=0; i--) {
                     DistributeData distributeData = new DistributeData(dls.get(i).getDownloadURL());
                     Vector<DownloadLink> links = distributeData.findLinks();
                     Iterator<DownloadLink> it2 = links.iterator();
@@ -404,8 +404,8 @@ public class Serienjunkies extends PluginForHost {
                     while (it2.hasNext()) {
                         DownloadLink downloadLink3 = (DownloadLink) it2.next();
                         if (downloadLink3.isAvailable()) {
-                            fp.add(index++, downloadLink3);
-                            downloadLink3.setFilePackage(fp);
+                            fp.add(index, downloadLink3);
+                          
                             online = true;
                         } else {
                             down.add(i);
@@ -430,7 +430,7 @@ public class Serienjunkies extends PluginForHost {
                                 while (it2.hasNext()) {
                                     DownloadLink downloadLink3 = (DownloadLink) it2.next();
                                     if (downloadLink3.isAvailable()) {
-                                        downloadLink3.setFilePackage(fp);
+                                        fp.add(index, downloadLink3);
                                         online = true;
                                         iter.remove();
                                     }
@@ -446,18 +446,18 @@ public class Serienjunkies extends PluginForHost {
                         break;
                 }
                 if (down.size() > 0) {
-                    downloadLink.setStatus(DOWNLOAD_ERROR_FILENOTFOUND);
+                    downloadLink.setStatus(DownloadLink.STATUS_ERROR_PLUGIN_SPECIFIC);
                     step.setStatus(PluginStep.STATUS_ERROR);
+                    step.setParameter(JDLocale.L("plugin.serienjunkies.archiveincomplete","Archiv nicht komplett"));
                     return step;
                 } else {
-                    //fp.remove(downloadLink);
+                    fp.remove(downloadLink);
                 }
             }
         } catch (Exception e) {
             // TODO: handle exception
         }
-        JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_LINKLIST_STRUCTURE_CHANGED, null));
-        return null;
+       return null;
     }
 
     @Override

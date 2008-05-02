@@ -32,8 +32,8 @@ import java.util.logging.Logger;
 import javax.xml.parsers.DocumentBuilderFactory;
 
 import jd.JDInit;
+import jd.captcha.CES;
 import jd.config.Configuration;
-import jd.config.Property;
 import jd.config.SubConfiguration;
 import jd.controlling.interaction.BatchReconnect;
 import jd.controlling.interaction.ExternReconnect;
@@ -233,6 +233,10 @@ public class JDController implements ControlListener, UIListener {
     @SuppressWarnings("unchecked")
     public void controlEvent(ControlEvent event) {
         switch (event.getID()) {
+        case  ControlEvent.CONTROL_SYSTEM_EXIT:
+            
+           CES.setEnabled(false); 
+            break;
         case ControlEvent.CONTROL_PLUGIN_INACTIVE:
             // Nur Hostpluginevents auswerten
             if (!(event.getSource() instanceof PluginForHost)) return;

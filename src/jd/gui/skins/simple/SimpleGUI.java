@@ -79,6 +79,7 @@ import jd.event.UIEvent;
 import jd.event.UIListener;
 import jd.gui.UIInterface;
 import jd.gui.skins.simple.Link.JLinkButton;
+import jd.gui.skins.simple.components.CountdownConfirmDialog;
 import jd.gui.skins.simple.components.HTMLDialog;
 import jd.gui.skins.simple.components.JDFileChooser;
 import jd.gui.skins.simple.components.JHelpDialog;
@@ -1015,27 +1016,29 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
     }
 
     public void startStopDownloads() {
-
-        if (btnStartStop.isSelected() && JDUtilities.getController().getDownloadStatus() == JDController.DOWNLOAD_NOT_RUNNING) {
-            btnPause.setEnabled(true);
-
-            fireUIEvent(new UIEvent(this, UIEvent.UI_START_DOWNLOADS));
-        } else if (!btnStartStop.isSelected() && JDUtilities.getController().getDownloadStatus() == JDController.DOWNLOAD_RUNNING) {
-            final SimpleGUI _this = this;
-            // Dieser Thread muss sein, weil die Funktionen zum anhalten
-            // der Downloads blockiere und sonst die GUI einfriert bis
-            // alle downloads angehalten wurden. Start/stop vorgänge
-            // sind während dieser zeit nicht möglich da
-            // getDownloadStatus() in der Ausführungszeit auf
-            // JDController.DOWNLOAD_TERMINATION_IN_PROGRESS steht
-            new Thread() {
-                public void run() {
-                    btnPause.setEnabled(false);
-                    btnPause.setSelected(false);
-                    fireUIEvent(new UIEvent(_this, UIEvent.UI_STOP_DOWNLOADS));
-                }
-            }.start();
-        }
+        btnStartStop.setEnabled(false);
+        btnPause.setEnabled(true);
+        JDUtilities.getController().toggleStartStop();
+//        if (btnStartStop.isSelected() && JDUtilities.getController().getDownloadStatus() == JDController.DOWNLOAD_NOT_RUNNING) {
+//            btnPause.setEnabled(true);
+//
+//            fireUIEvent(new UIEvent(this, UIEvent.UI_START_DOWNLOADS));
+//        } else if (!btnStartStop.isSelected() && JDUtilities.getController().getDownloadStatus() == JDController.DOWNLOAD_RUNNING) {
+//            final SimpleGUI _this = this;
+//            // Dieser Thread muss sein, weil die Funktionen zum anhalten
+//            // der Downloads blockiere und sonst die GUI einfriert bis
+//            // alle downloads angehalten wurden. Start/stop vorgänge
+//            // sind während dieser zeit nicht möglich da
+//            // getDownloadStatus() in der Ausführungszeit auf
+//            // JDController.DOWNLOAD_TERMINATION_IN_PROGRESS steht
+//            new Thread() {
+//                public void run() {
+//                    btnPause.setEnabled(false);
+//                    btnPause.setSelected(false);
+//                    fireUIEvent(new UIEvent(_this, UIEvent.UI_STOP_DOWNLOADS));
+//                }
+//            }.start();
+//        }
     }
 
     //
@@ -1611,13 +1614,24 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
             if (event.getSource().getClass() == JDController.class) {
             }
             break;
-        case ControlEvent.CONTROL_STARTSTOP_DOWNLOAD:
+        case ControlEvent.CONTROL_DOWNLOAD_START:
             // only in this way the button state is correctly set
             // controller.startDownloads() is called by button itself so it
             // cannot handle this
-            btnStartStop.setSelected(!btnStartStop.isSelected());
-            if (!btnStartStop.isSelected()) btnStartStop.setEnabled(false);
-            this.startStopDownloads();
+            
+            btnStartStop.setEnabled(true);
+            btnPause.setEnabled(true);
+            btnStartStop.setSelected(true);
+//            btnStartStop.setSelected(!btnStartStop.isSelected());
+//            if (!btnStartStop.isSelected()) btnStartStop.setEnabled(false);
+//            this.startStopDownloads();
+            break;
+            
+        case ControlEvent.CONTROL_DOWNLOAD_STOP:
+            btnStartStop.setEnabled(true);
+            btnPause.setEnabled(true);
+            btnStartStop.setSelected(false);
+            
             break;
         }
 
@@ -1720,6 +1734,10 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
             return m3;
         }
         return null;
+    }
+
+    public boolean showCountdownConfirmDialog(String string, int sec) {       
+        return CountdownConfirmDialog.showCountdownConfirmDialog(this.frame,string,sec);
     }
 
 }

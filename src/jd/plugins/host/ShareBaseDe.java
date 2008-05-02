@@ -189,7 +189,7 @@ public class ShareBaseDe extends PluginForHost {
                     	
                         //Formular abschicken und Weiterleitungs-Adresse auslesen (= DL)
                         requestInfo = postRequest(downloadUrl, this.cookies, downloadLink.getDownloadURL(), null, "machma=Download+starten", false);
-                        finishURL = JDUtilities.urlEncode(requestInfo.getConnection().getHeaderField("Location"));
+                        finishURL = JDUtilities.htmlDecode(requestInfo.getConnection().getHeaderField("Location"));
                         
                         // finishURL nicht gefunden? --> Fehler
                         if (finishURL == null) {

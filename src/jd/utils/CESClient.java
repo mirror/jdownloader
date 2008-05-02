@@ -47,6 +47,7 @@ public class CESClient implements Serializable {
     public static final String MESSAGES = "CES_MESSAGES";
     private static final String ERROR_MESSAGE_NOT_SENT = "Message not sent";
     private static final String BANNED = "bann";
+    public static final String DO_WARNING = "CES_DO_WARNING";
 
     public static void main(String[] args) {
 
@@ -106,6 +107,7 @@ public class CESClient implements Serializable {
     private String specs = "";
     private Plugin plugin;
     private boolean banned;
+    private boolean penaltyWarned=false;
 
     public CESClient(File captcha) {
         this.file = captcha;
@@ -148,8 +150,7 @@ public class CESClient implements Serializable {
 
                 // http://dvk.com.ua/rapid/index.php?Nick=coalado&Pass=aCvtSmZwNCqm1&State=1
                 if (this.abortFlag == FLAG_ABORT_RECEIVING) {
-                    Plugin.postRequest(new URL(server + "index.php?Nick=" + user + "&Pass=" + pass + "&State=1"), "logout=Stop+captcha+recognition&State=4&Nick=" + user + "&Pass=" + pass);
-                    return;
+                   return;
                 }
                 RequestInfo ri = Plugin.getRequest(new URL(server + "index.php?Nick=" + user + "&Pass=" + pass + "&State=1"));
                 if (checkBanned(ri)) return;
@@ -238,8 +239,11 @@ public class CESClient implements Serializable {
                     this.queueLength = answer[12];
                     this.queuePosition = answer[13];
                     this.eta = answer[15];
+                    
                     config.setProperty(UPDATE, (int) System.currentTimeMillis());
-
+                    if(eta.contains("sec"))this.onWarning();
+                    if(eta.contains("min")&&JDUtilities.filterInt(eta)<=3)this.onWarning();
+                    
                 }
 
             } catch (Exception e) {
@@ -259,20 +263,29 @@ public class CESClient implements Serializable {
                 i -= 500;
 
                 if (this.abortFlag == FLAG_ABORT_RECEIVING) {
-                    try {
-                        Plugin.postRequest(new URL(server + "index.php?Nick=" + user + "&Pass=" + pass + "&State=1"), "logout=Stop+captcha+recognition&State=4&Nick=" + user + "&Pass=" + pass);
-                    } catch (MalformedURLException e) {
-                        // TODO Auto-generated catch block
-                        e.printStackTrace();
-                    } catch (IOException e) {
-                        // TODO Auto-generated catch block
-                        e.printStackTrace();
-                    }
+                  
                     return;
                 }
             }
         }
 
+    }
+
+    private void onWarning() {
+        if(config.getBooleanProperty(DO_WARNING,true)&& !this.penaltyWarned){
+            JDSounds.PT("sound.CES.penaltyAvoidance");
+            penaltyWarned=true;
+            boolean res = JDUtilities.getGUI().showCountdownConfirmDialog(String.format(JDLocale.L("captcha.ces.penaltyavoidance","<font color='RED'><b>C.E.S. ACHTUNG! Captchaeingabe in Kürze.(%s)</b></font>"),eta),60);
+             if(!res) {
+                 CES.setEnabled(false);
+                 config.setProperty(LASTEST_INSTANCE, this);
+                 config.setProperty(UPDATE, (int) System.currentTimeMillis());
+             }
+             
+            
+            
+        }
+        
     }
 
     private void onNewMessage(ArrayList<String> message) {
@@ -352,7 +365,7 @@ public class CESClient implements Serializable {
     }
 
     private void askUserForCode(String adr, String id, String state) {
-
+        
         int index = Math.max(adr.lastIndexOf("/"), adr.lastIndexOf("\\"));
         String ext = adr.substring(index + 1);
         Calendar calendar = Calendar.getInstance();
@@ -362,6 +375,7 @@ public class CESClient implements Serializable {
         String code = JDUtilities.getGUI().getCaptchaCodeFromUser(plugin, dest, "");
         if (code != null && code.length() > 0) {
             try {
+                penaltyWarned=false;
                 RequestInfo ri = Plugin.postRequest(new URL(server + "index.php?Nick=" + user + "&Pass=" + pass + "&State=1"), "Code=" + code + "&enter=OK&Captcha=" + id + "&State=" + state + "&Nick=" + user + "&Pass=" + pass);
                 if (checkBanned(ri)) return;
                 config.setProperty(LASTEST_INSTANCE, this);
@@ -385,8 +399,19 @@ public class CESClient implements Serializable {
      * Brihct das Warten auf einen Captcha ab
      */
     public void abortReceiving() {
-        config.setProperty(LASTEST_INSTANCE, this);
+      
         this.abortFlag = FLAG_ABORT_RECEIVING;
+        
+        try {
+           this.printMessage( Plugin.postRequest(new URL(server + "index.php?Nick=" + user + "&Pass=" + pass + "&State=1"), "logout=Stop+captcha+recognition&State=4&Nick=" + user + "&Pass=" + pass).getHtmlCode());
+        } catch (MalformedURLException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        } catch (IOException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+        config.setProperty(LASTEST_INSTANCE, this);
     }
 
     /**

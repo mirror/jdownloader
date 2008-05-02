@@ -129,7 +129,7 @@ public class WebUpdater implements Serializable {
 
         Vector<Vector<String>> files = getAvailableFiles();
         if (files != null) {
-            log(files.toString());
+            //log(files.toString());
             totalFiles = files.size();
             filterAvailableUpdates(files);
             updateFiles(files);
@@ -189,7 +189,7 @@ public class WebUpdater implements Serializable {
      * @param files
      */
     public void filterAvailableUpdates(Vector<Vector<String>> files) {
-        log(files.toString());
+        //log(files.toString());
         String akt;
         String hash;
      
@@ -221,7 +221,7 @@ public class WebUpdater implements Serializable {
     }
 
     public void filterAvailableUpdates(Vector<Vector<String>> files, File dir) {
-        log(files.toString());
+        //log(files.toString());
         String akt;
         String hash;
         try {
@@ -246,7 +246,7 @@ public class WebUpdater implements Serializable {
 //                     continue;
 //                    }
 //                 }
-                 log("OLD: " + files.elementAt(i) + " - " + hash);
+                 //log("OLD: " + files.elementAt(i) + " - " + hash);
                
                 files.removeElementAt(i);
             }

@@ -424,7 +424,7 @@ public class JDInit {
                 updater.setCid(oldCid);
                 logger.finer("Get available files");
                 Vector<Vector<String>> files = updater.getAvailableFiles();
-                logger.info(files + "");
+                //logger.info(files + "");
                 updater.filterAvailableUpdates(files, JDUtilities.getResourceFile("."));
                 // if(JDUtilities.getSubConfig("JAC").getBooleanProperty(Configuration.USE_CAPTCHA_EXCHANGE_SERVER,
                 // false)){

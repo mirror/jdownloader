@@ -175,12 +175,12 @@ public class PackageManager extends Interaction implements Serializable {
                 for (int i = 0; i < files.length; i++) {
                     if (files[i].getAbsolutePath().endsWith("readme.html")) {
 
-                        JDUtilities.getGUI().showHTMLDialog(JDLocale.L("modules.packagemanager.loadednewpackage.title", "Paket Update installiert"), JDUtilities.getLocalFile(files[i]));
+                        JDUtilities.getGUI().showCountdownConfirmDialog(JDUtilities.getLocalFile(files[i]),60);
                         c = true;
                     }
                 }
                 if (!c) {
-                    JDUtilities.getGUI().showMessageDialog(JDLocale.L("modules.packagemanager.loadednewpackage.title", "Paket Update installiert") + "\r\n" + downloadLink.getName() + " v" + dat[1]);
+                    JDUtilities.getGUI().showCountdownConfirmDialog(JDLocale.L("modules.packagemanager.loadednewpackage.title", "Paket Update installiert") + "<hr><b>" + downloadLink.getName() + " v" + dat[1]+"</b>",60);
                 }
                 managerConfig.setProperty("PACKAGE_INSTALLED_VERSION_" + dat[0], dat[1]);
                 managerConfig.save();
