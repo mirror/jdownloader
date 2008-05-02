@@ -1,0 +1,8 @@
+# Default Sound Theme
+sound.gui.clickToolbar = default/Blubup
+sound.gui.selectLink = default/Pop
+sound.gui.selectPackage = default/cheuck
+sound.gui.onDragAndDrop = default/wish
+sound.captcha.onCaptchaInput = default/phone
+sound.captcha.onCaptchaInputEmergency = default/phone
+

@@ -1,0 +1,46 @@
+# Xtract Theme by Killer Poster
+Icons by maoractive
+Copyright and the Credits on his side, thnx for allowing me to publish this pack, please visit his deviantART-page
+http://maoractive.deviantart.com/art/Xtract-Icons-Pack-Unfinished-75047943
+
+gui.images.add = Xtract/add
+gui.images.clipboard = Xtract/clipboard
+gui.images.clipboardon = Xtract/clipboard-on
+gui.images.clipboardoff = Xtract/clipboard-off
+gui.images.config.database = Xtract/container
+gui.images.config.edit_redo = Xtract/optional
+gui.images.config.find = Xtract/search
+gui.images.config.home = Xtract/configuration
+gui.images.config.load = Xtract/log
+gui.images.config.network_local = Xtract/network
+gui.images.config.ocr = Xtract/captcha
+gui.images.config.package = Xtract/unpack
+gui.images.config.reboot = Xtract/reconnect
+gui.images.config.star = Xtract/hoster
+gui.images.config.switch = Xtract/events
+gui.images.config.tip = Xtract/decrypt
+gui.images.configuration = Xtract/configuration
+gui.images.delete = Xtract/remove
+gui.images.find = Xtract/search
+gui.images.load = Xtract/open
+gui.images.next = Xtract/start
+gui.images.reconnect = Xtract/reconnect
+gui.images.reconnect_bad = Xtract/reconnect-off
+gui.images.reconnect_ok = Xtract/reconnect-on
+gui.images.save = Xtract/save
+gui.images.stop = Xtract/stop
+gui.images.stop_after = Xtract/stop-after
+gui.images.stop_after_active = Xtract/stop-after
+gui.images.terminal = Xtract/log
+gui.images.update_manager = Xtract/update
+gui.images.help = Xtract/help
+gui.images.led_empty = Xtract/led-off
+gui.images.led_green = Xtract/led-on
+
+gui.images.top = default/top
+gui.images.go_bottom = default/go_bottom
+gui.images.go_top = default/go_top
+gui.images.down = default/down
+gui.images.exit = default/exit
+
+gui.images.jd_logo = jd_logo

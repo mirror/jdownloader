@@ -3,6 +3,8 @@ gui.images.add = default/add
 gui.images.clipboard = default/clipboard
 gui.images.clipboardon = default/clipboardon
 gui.images.clipboardoff = default/clipboardoff
+gui.images.ceson = default/ceson
+gui.images.cesoff = default/cesoff
 gui.images.config.database = default/database
 gui.images.config.edit_redo = default/edit_redo
 gui.images.config.find = default/find
@@ -41,3 +43,34 @@ gui.images.help=default/help
 gui.images.package_opened = default/package_opened
 gui.images.package_closed = default/package_closed
 gui.images.link=default/link
+gui.images.selected=default/checked
+gui.images.unselected=default/unchecked
+gui.color.downloadlist.font = 000000
+
+gui.color.downloadlist.row_a = EEEEEE
+gui.color.downloadlist.row_b = FFFFFF
+gui.color.downloadlist.row_selected = 7a98b9
+gui.color.downloadlist.row_selected_border = 7a98b9
+gui.color.downloadlist.row_package = AAAAAA
+gui.color.downloadlist.row_link_done = 7cd622
+gui.color.downloadlist.row_link_error = a40604
+gui.color.downloadlist.row_link_disabled = BBBBBB
+gui.color.downloadlist.grid = FFFFFF
+
+gui.color.downloadlist.package_progress = 94baff
+gui.color.downloadlist.progress_error = a40604
+gui.color.downloadlist.progress_done = 7cd622
+gui.color.downloadlist.progress_inactive = BBBBBB
+gui.color.downloadlist.progress_active = 94baff
+
+gui.color.downloadlist.package_progress_font_a = 000000
+gui.color.downloadlist.progress_error_font_a = 000000
+gui.color.downloadlist.progress_done_font_a = 000000
+gui.color.downloadlist.progress_inactive_font_a = 000000
+gui.color.downloadlist.progress_active_font_a = 000000
+
+gui.color.downloadlist.package_progress_font_b = 000000
+gui.color.downloadlist.progress_error_font_b = 000000
+gui.color.downloadlist.progress_done_font_b = 000000
+gui.color.downloadlist.progress_inactive_font_b = 000000
+gui.color.downloadlist.progress_active_font_b = 000000

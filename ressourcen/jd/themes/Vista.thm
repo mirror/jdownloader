@@ -1,0 +1,75 @@
+#Vista Theme by Nino
+gui.images.add = vista/add
+gui.images.clipboard = vista/clipboard
+gui.images.clipboardon = vista/clipboardon
+gui.images.clipboardoff = vista/clipboardoff
+gui.images.config.database = vista/database
+gui.images.config.edit_redo = vista/edit_redo
+gui.images.config.find = vista/find
+gui.images.config.home = vista/home
+gui.images.config.load = vista/load
+gui.images.config.network_local = vista/network_local
+gui.images.config.ocr = vista/ocr
+gui.images.config.package = vista/package
+gui.images.config.reboot = vista/reboot
+gui.images.config.star = vista/star
+gui.images.config.switch = vista/switch
+gui.images.config.tip = vista/tip
+gui.images.configuration = vista/configuration
+gui.images.delete = vista/delete
+gui.images.down = vista/down
+gui.images.exit = vista/exit
+gui.images.find = vista/find
+gui.images.go_bottom = vista/go_bottom
+gui.images.go_top = vista/go_top
+gui.images.jd_logo = jd_logo
+gui.images.led_empty = led_empty
+gui.images.led_green = led_green
+gui.images.load = vista/load
+gui.images.next = vista/next
+gui.images.reconnect = vista/reconnect
+gui.images.reconnect_bad = vista/reconnect_bad
+gui.images.reconnect_ok = vista/reconnect_ok
+gui.images.save = vista/save
+gui.images.stop = vista/stop
+gui.images.stop_after = vista/stop_after
+gui.images.stop_after_active = vista/stop_after_active
+gui.images.terminal = vista/terminal
+gui.images.top = vista/top
+gui.images.update_manager = vista/update_manager
+gui.images.help=vista/help
+gui.images.package_opened = vista/package_opened
+gui.images.package_closed = vista/package_closed
+gui.images.link=vista/link
+
+gui.color.downloadlist.font = 000000
+gui.color.downloadlist.font_selected = 000000
+
+gui.color.downloadlist.row_a = EEEEEE
+gui.color.downloadlist.row_b = FFFFFF
+gui.color.downloadlist.row_selected = 9bfbda
+gui.color.downloadlist.row_selected_border = 9bfbda
+gui.color.downloadlist.row_package = EEEEEE
+gui.color.downloadlist.row_link_done = 69f05e
+gui.color.downloadlist.row_link_error = FFFFFF
+gui.color.downloadlist.row_link_disabled = FFFFFF
+
+gui.color.downloadlist.grid = 000000
+
+gui.color.downloadlist.package_progress = 53f84a
+gui.color.downloadlist.progress_error = FFFFFF
+gui.color.downloadlist.progress_done = 53f84a
+gui.color.downloadlist.progress_inactive = FFFFFF
+gui.color.downloadlist.progress_active = 53f84a
+
+gui.color.downloadlist.package_progress_font_a = 000000
+gui.color.downloadlist.progress_error_font_a = e40005
+gui.color.downloadlist.progress_done_font_a = 69f05e
+gui.color.downloadlist.progress_inactive_font_a = e40005
+gui.color.downloadlist.progress_active_font_a = 000000
+
+gui.color.downloadlist.package_progress_font_b = 000000
+gui.color.downloadlist.progress_error_font_b = e40005
+gui.color.downloadlist.progress_done_font_b = 69f05e
+gui.color.downloadlist.progress_inactive_font_b = e40005
+gui.color.downloadlist.progress_active_font_b = 000000
