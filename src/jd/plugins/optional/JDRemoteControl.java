@@ -19,6 +19,9 @@ package jd.plugins.optional;
 import java.awt.event.ActionEvent;
 import java.io.File;
 import java.io.IOException;
+import java.net.URL;
+import java.sql.Date;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.Vector;
@@ -40,8 +43,10 @@ import jd.gui.skins.simple.JDAction;
 import jd.gui.skins.simple.SimpleGUI;
 
 import jd.plugins.DownloadLink;
+import jd.plugins.Plugin;
 import jd.plugins.PluginOptional;
 import jd.plugins.Regexp;
+import jd.plugins.RequestInfo;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
@@ -63,7 +68,7 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
 
     @Override
     public String getPluginID() {
-        return "0.3.0.0";
+        return "0.4.0.0";
     }
 
     @Override
@@ -73,7 +78,7 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
 
     @Override
     public String getVersion() {
-        return "0.3.0.0";
+        return "0.4.0.0";
     }
 
     @Override
@@ -159,6 +164,7 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
                 Vector<String> desc= new Vector<String>();
                 
                 command.add("/get/ip");
+                command.add("/get/happyhour/gui(0|1)/");
                 command.add("/get/config");
                 command.add("/get/version");
                 command.add("/get/downloads/currentcount");
@@ -189,14 +195,17 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
                 command.add("/action/save/container/%X%");
                 command.add("/action/set/clipboard/(true|false)");
                 command.add("/action/set/reconnectenabled/(true|false)");
+                command.add("/action/download/premium/(true|false)");
+                
                         
                 desc.add("Get IP");
+                desc.add("Get Happy Hour Status (1: Grafisch aufbereitet /0: Besser auslesbar)");
                 desc.add("Get Config");
                 desc.add("Get Version");
                 desc.add("Get Current Downloads Count");
                 desc.add("Get Current Downloads List");
-                desc.add("Get max. sim. Downloads Count");
-                desc.add("Get max. sim. Downloads List");
+                desc.add("Get Amount of Downloads in List");
+                desc.add("Get List of Downloads in List");
                 desc.add("Get finished Downloads Count");
                 desc.add("Get finished Downloads List");
                 desc.add("Get current Speed");
@@ -221,6 +230,7 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
                 desc.add("Save DLC-Container with all Links to %X%");
                 desc.add("Set ClipBoard Control");
                 desc.add("Set Reconnect Enabled");
+                desc.add("Set Use Premium");
 
                 response.getWriter().println(
                         "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01//EN\"" +
@@ -277,6 +287,68 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
             if (request.getRequestURI().equals("/get/ip")) {
                 response.getWriter().println(JDUtilities.getIPAddress());
             }
+            
+            //Get HappyHour
+            if (request.getRequestURI().matches("[\\s\\S]*?/get/happyhour/gui[01]{1}/[\\s\\S]*")) {
+                
+            Integer happyguiint = Integer.parseInt((new Regexp(request.getRequestURI(),
+                "[\\s\\S]*?/get/happyhour/gui([01]{1})/[\\s\\S]*")
+                .getFirstMatch()));
+            Boolean happygui = false;
+            if(happyguiint == 1){happygui = true;};
+                
+            RequestInfo ri = getRequest(new URL("http://jdownloader.ath.cx/hh.php?txt=1"));
+            
+            int sec = 300 - JDUtilities.filterInt(JDUtilities.splitByNewline(ri.getHtmlCode())[3]);
+
+            int lastStart = JDUtilities.filterInt(JDUtilities.splitByNewline(ri.getHtmlCode())[4]);
+            int lastEnd = JDUtilities.filterInt(JDUtilities.splitByNewline(ri.getHtmlCode())[5]);
+            Date lastStartDate = new Date(lastStart * 1000L);
+            lastStartDate.setTime(lastStart * 1000L);
+
+            Date lastEndDate = new Date(lastEnd * 1000L);
+            lastEndDate.setTime(lastEnd * 1000L);
+            if (ri.containsHTML("Hour")) {//HappyHour aktiv
+                int activ = JDUtilities.filterInt(JDUtilities.splitByNewline(ri.getHtmlCode())[1]);
+                Date d = new Date(activ * 1000L);
+                d.setTime(activ * 1000L);
+
+                SimpleDateFormat df = new SimpleDateFormat("dd.MM.yyyy HH:mm");
+                String html="";
+                if(!happygui)
+                {
+                    html = String.format("<- active=\"1\" active_since=\"%s\" last_check_ago=\"%s\" last_happyhour_from=\"%s\" last_happyhour_until=\"%s\" ->", df.format(d), JDUtilities.formatSeconds(sec), df.format(lastStartDate), df.format(lastEndDate));    
+                }
+                else
+                {
+                    html = String.format(JDLocale.L("plugins.hoster.rapidshare.com.hhactive.html", "<link href='http://jdownloader.ath.cx/jdcss.css' rel='stylesheet' type='text/css' /><body><div><p style='text-align:center'><img src='http://jdownloader.ath.cx/img/hh.jpg' /><br>Aktiv seit %s<br>Zuletzt überprüft vor %s<br>Letzte Happy Hour von %s bis %s</p></div></body>"), df.format(d), JDUtilities.formatSeconds(sec), df.format(lastStartDate), df.format(lastEndDate));    
+                }
+
+                
+                response.getWriter().println(html);
+                //JDUtilities.getGUI().showHTMLDialog(JDLocale.L("plugins.hoster.rapidshare.com.happyHours", "Happy Hour Check"), html);
+            } else {
+                int activ = JDUtilities.filterInt(JDUtilities.splitByNewline(ri.getHtmlCode())[1]);
+                Date d = new Date(activ * 1000L);
+                d.setTime(activ * 1000L);
+
+                SimpleDateFormat df = new SimpleDateFormat("dd.MM.yyyy HH:mm");
+
+                String html="";
+                if(!happygui)
+                {
+                    html = String.format("<- active=\"0\" last_check_ago=\"%s\" last_happyhour_from=\"%s\" last_happyhour_until=\"%s\" ->", JDUtilities.formatSeconds(sec), df.format(lastStartDate), df.format(lastEndDate));
+                }
+                else
+                {
+                    html = String.format(JDLocale.L("plugins.hoster.rapidshare.com.hhinactive.html", "<link href='http://jdownloader.ath.cx/jdcss.css' rel='stylesheet' type='text/css' /><body><div><p style='text-align:center'><img src='http://jdownloader.ath.cx/img/nhh.jpg' /><br>Die letzte Happy Hour Phase endete am %s<br>Zuletzt überprüft vor %s<br>Letzte Happy Hour von %s bis %s</p></div></body>"), df.format(d), JDUtilities.formatSeconds(sec), df.format(lastStartDate), df.format(lastEndDate));
+                }
+                
+                response.getWriter().println(html);
+                //JDUtilities.getGUI().showHTMLDialog(JDLocale.L("plugins.hoster.rapidshare.com.happyHours", "Happy Hour Check"), html);
+            }
+            }
+            
             //Get Config
             if (request.getRequestURI().equals("/get/config")) {
                 Property config = JDUtilities.getConfiguration();
@@ -391,7 +463,7 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
             
             //Do Pause Download
             if (request.getRequestURI().equals("/action/pause")) {
-                simplegui.actionPerformed(new ActionEvent(this, JDAction.APP_PAUSE_DOWNLOADS, null));
+                JDUtilities.getController().pauseDownloads(true);
                 response.getWriter().println("Downloads paused");
             }
             
@@ -435,16 +507,48 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
             
             //Do Restart JD
             if (request.getRequestURI().equals("/action/restart")) {
-                //TODO: Ausgabe der Meldung. z.Z. nur keine Verbindung
                 response.getWriter().println("Restarting...");
-                JDUtilities.restartJD();
+                
+                class JDClose implements Runnable { /* zeitverzögertes beenden */
+                    JDClose() {
+                        new Thread(this).start();
+                    }
+                    public void run() {
+                        try {
+                            Thread.sleep(5000);
+                        } catch (InterruptedException e) {
+                            
+                            e.printStackTrace();
+                        }
+                        JDUtilities.restartJD();
+                    }
+                }
+                @SuppressWarnings("unused")
+                JDClose jdshutdown = new JDClose(); 
             }
             
             //Do Shutdown JD
             if (request.getRequestURI().equals("/action/shutdown")) {
-                //TODO: Ausgabe der Meldung. z.Z. nur keine Verbindung
+                
                 response.getWriter().println("Shutting down...");
-                JDUtilities.getController().exit();
+                
+                class JDClose implements Runnable { /* zeitverzögertes beenden */
+                    JDClose() {
+                        new Thread(this).start();
+                    }
+
+                    public void run() {
+                        try {
+                            Thread.sleep(5000);
+                        } catch (InterruptedException e) {
+                            
+                            e.printStackTrace();
+                        }
+                        JDUtilities.getController().exit();
+                    }
+                }
+                @SuppressWarnings("unused")
+                JDClose jdshutdown = new JDClose();
             }
             
             //Set Downloadlimit
@@ -563,7 +667,7 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
                      "[\\s\\S]*/action/set/reconnectenabled/(.*)")
                      .getFirstMatch());
                 logger.fine("RemoteControl - Set ReConnect: " + newrc );
-                if((!JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_DISABLE_RECONNECT, false)) ^ (newrc)) /*C++ User:^ is equuvalent to XOR*/
+                if((!JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_DISABLE_RECONNECT, false)) ^ (newrc)) /*C++ User:^ is equivalent to XOR*/
                 {
                     simplegui.toggleReconnect(false);
                     response.getWriter().println("reconnect=" + newrc + " (CHANGED=true)");
@@ -574,16 +678,25 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
                 } 
             }
             
-  //        //Set use premium 
-  //            if (request.getRequestURI().matches("(?is).*/action/download/premium/.*")) {
-  //              boolean newuseprem = Boolean.parseBoolean(new Regexp(request.getRequestURI(),
-  //                      "[\\s\\S]*/action/download/premium/(.*)")
-  //                      .getFirstMatch());
-  //              logger.fine("RemoteControl - Set Premium: " + newuseprem );
-  //              JDUtilities.getConfiguration().setProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, newuseprem);
-  //            response.getWriter().println("newprem=" + newuseprem);
-  //        }
-  //        
+            //Set use premium 
+                if (request.getRequestURI().matches("(?is).*/action/download/premium/.*")) {
+                  boolean newuseprem = Boolean.parseBoolean(new Regexp(request.getRequestURI(),
+                          "[\\s\\S]*/action/download/premium/(.*)")
+                          .getFirstMatch());
+                  logger.fine("RemoteControl - Set Premium: " + newuseprem );
+                  if((newuseprem) ^ (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, newuseprem))) /*C++ User:^ is equivalent to XOR*/
+                  {
+                      JDUtilities.getConfiguration().setProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, newuseprem);
+                      response.getWriter().println("newprem=" + newuseprem + " (CHANGED=true)");
+                  }
+                  else
+                  {
+                      response.getWriter().println("newprem=" + newuseprem + " (CHANGED=false)");
+                  }                      
+                
+                
+            }
+            
 
             
             ((Request) request).setHandled(true);
