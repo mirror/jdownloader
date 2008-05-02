@@ -2248,7 +2248,7 @@ public class JDUtilities {
 
             e.printStackTrace();
         }
-    }
+    } 
 
     public static String Base64Encode(String plain) {
 
