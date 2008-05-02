@@ -13,6 +13,10 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+// TODO:    -Restart Button (Wartebalken noch!!)
+//          -Add Link Button (ne einfache variante ist schon drin) (inklusive Template)
+//          -stable template system
+//          -anderes layout
 
 
 package jd.plugins.optional.webinterface;
@@ -37,6 +41,7 @@ public class JDWebinterface extends PluginOptional  {
     static final String PROPERTY_HTTPS = "PARAM_HTTPS";
     static final String PROPERTY_LOGIN = "PARAM_LOGIN";
     static final String PROPERTY_CONNECTIONS = "PARAM_CONNECTIONS";
+    public static JDWebinterface instance;
     
 	@Override
     public String getCoder() {
@@ -45,7 +50,7 @@ public class JDWebinterface extends PluginOptional  {
 
     @Override
     public String getPluginID() {
-        return "0.0.0.1";
+        return "0.0.0.2";
     }
 
     @Override
@@ -55,7 +60,7 @@ public class JDWebinterface extends PluginOptional  {
 
     @Override
     public String getVersion() {
-        return "0.0.0.1";
+        return "0.0.0.2";
     }
 
     @Override
@@ -72,6 +77,7 @@ public class JDWebinterface extends PluginOptional  {
     
     public JDWebinterface()
     {
+        instance= this;
     	SubConfiguration subConfig = JDUtilities.getSubConfig("WEBINTERFACE");
     	ConfigEntry cfg;
     	config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_SPINNER, subConfig, PROPERTY_PORT, JDLocale.L("plugins.optional.webinterface.port", "Port"), 1024, 65000));

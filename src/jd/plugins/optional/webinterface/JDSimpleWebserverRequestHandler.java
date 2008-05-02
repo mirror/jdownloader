@@ -7,6 +7,7 @@ import java.util.Vector;
 import java.util.logging.Logger;
 
 import jd.config.Configuration;
+import jd.controlling.DistributeData;
 import jd.event.ControlEvent;
 import jd.plugins.DownloadLink;
 import jd.utils.JDUtilities;
@@ -26,7 +27,7 @@ public class JDSimpleWebserverRequestHandler {
     public void handle() {
 
         String request = headers.get(null);
-        logger.info(request);
+        // logger.info(request);
         String[] requ = request.split(" ");
 
         String method = requ[0];
@@ -75,7 +76,7 @@ public class JDSimpleWebserverRequestHandler {
                     requestParameter.put(key, value);
             }
         }
-        logger.info(requestParameter.toString());
+        // logger.info(requestParameter.toString());
 
         /* parsen der paramter */
         if (requestParameter.containsKey("do")) {
@@ -120,23 +121,26 @@ public class JDSimpleWebserverRequestHandler {
 
                     if (requestParameter.containsKey("selected_dowhat")) {
                         String dowhat = requestParameter.get("selected_dowhat");
-                        if (dowhat.compareToIgnoreCase("activate") == 0) { /* aktivieren */
+                        if (dowhat.compareToIgnoreCase("activate") == 0) {
+                            /* aktivieren */
                             for (Iterator<DownloadLink> it = links.iterator(); it.hasNext();) {
                                 link = it.next();
                                 link.setEnabled(true);
                             }
                             JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_ALL_DOWNLOADLINKS_DATA_CHANGED, this));
                         }
-                        if (dowhat.compareToIgnoreCase("deactivate") == 0) { /* deaktivieren */
+                        if (dowhat.compareToIgnoreCase("deactivate") == 0) {
+                            /* deaktivieren */
                             for (Iterator<DownloadLink> it = links.iterator(); it.hasNext();) {
                                 link = it.next();
                                 link.setEnabled(false);
                             }
                             JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_ALL_DOWNLOADLINKS_DATA_CHANGED, this));
                         }
-                        if (dowhat.compareToIgnoreCase("reset") == 0) { /*
-                                                                         * reset
-                                                                         */
+                        if (dowhat.compareToIgnoreCase("reset") == 0) {
+                            /*
+                             * reset
+                             */
                             for (Iterator<DownloadLink> it = links.iterator(); it.hasNext();) {
                                 link = it.next();
                                 link.setStatus(DownloadLink.STATUS_TODO);
@@ -145,15 +149,17 @@ public class JDSimpleWebserverRequestHandler {
                             }
                             JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_ALL_DOWNLOADLINKS_DATA_CHANGED, this));
                         }
-                        if (dowhat.compareToIgnoreCase("remove") == 0) { /*
-                                                                             * entfernen
-                                                                             */
+                        if (dowhat.compareToIgnoreCase("remove") == 0) {
+                            /*
+                             * entfernen
+                             */
                             JDUtilities.getController().removeDownloadLinks(links);
                             JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_LINKLIST_STRUCTURE_CHANGED, this));
                         }
-                        if (dowhat.compareToIgnoreCase("abort") == 0) { /*
-                                                                         * abbrechen
-                                                                         */
+                        if (dowhat.compareToIgnoreCase("abort") == 0) {
+                            /*
+                             * abbrechen
+                             */
                             for (Iterator<DownloadLink> it = links.iterator(); it.hasNext();) {
                                 link = it.next();
                                 link.setAborted(true);
@@ -169,14 +175,63 @@ public class JDSimpleWebserverRequestHandler {
                 logger.info("reconnect now wurde gedrückt");
                 JDUtilities.getController().requestReconnect();
             } else if (requestParameter.get("do").compareToIgnoreCase("close+jd") == 0) {
-                logger.info("close jd now wurde gedrückt");
-                JDUtilities.getController().exit();
+                logger.info("close jd wurde gedrückt");
+                class JDClose implements Runnable { /* zeitverzögertes beenden */
+                    JDClose() {
+                        new Thread(this).start();
+                    }
+
+                    public void run() {
+                        try {
+                            Thread.sleep(5000);
+                        } catch (InterruptedException e) {
+                            // TODO Auto-generated catch block
+                            e.printStackTrace();
+                        }
+                        JDUtilities.getController().exit();
+                    }
+                }
+                JDClose jds = new JDClose();
+
             } else if (requestParameter.get("do").compareToIgnoreCase("start+downloads") == 0) {
-                logger.info("start now wurde gedrückt");
+                logger.info("start wurde gedrückt");
                 JDUtilities.getController().startDownloads();
             } else if (requestParameter.get("do").compareToIgnoreCase("stop+downloads") == 0) {
-                logger.info("stop now wurde gedrückt");
+                logger.info("stop wurde gedrückt");
                 JDUtilities.getController().stopDownloads();
+            } else if (requestParameter.get("do").compareToIgnoreCase("restart+jd") == 0) {
+                logger.info("restart wurde gedrückt");
+                class JDRestart implements Runnable {
+                    /*
+                     * zeitverzögertes neustarten
+                     */
+                    JDRestart() {
+                        new Thread(this).start();
+                    }
+
+                    public void run() {
+                        try {
+                            Thread.sleep(5000);
+                        } catch (InterruptedException e) {
+                            // TODO Auto-generated catch block
+                            e.printStackTrace();
+                        }
+                        JDUtilities.restartJD();
+                    }
+                }
+                JDRestart jdr = new JDRestart();
+
+            } else if (requestParameter.get("do").compareToIgnoreCase("add") == 0) {
+                logger.info("add wurde gedrückt");
+
+                if (requestParameter.containsKey("addlinks")) {
+                    /*
+                     * TODO: mehr add features
+                     */
+                    String AddLinks = JDUtilities.htmlDecode(requestParameter.get("addlinks"));
+                    JDUtilities.getController().addAllLinks(new DistributeData(AddLinks).findLinks());
+                    JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_LINKLIST_STRUCTURE_CHANGED, null));
+                }
             }
             ;
 

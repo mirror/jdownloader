@@ -59,9 +59,23 @@ if ( field2[i].value==chkid )
 };
 }
 
-function validateandsubmit(msg,form)
+function validateandsubmit(msg,button,dest)
 {
+/* msg anzeigen und bei nein wird vom button der value gelöscht, bei ja zu dest submited*/
 conf=window.confirm(msg);
 if (conf == false)
-form.value="";  
+{
+button.value="";
+}else button.form.action=dest;
 }
+
+function clean(whattoclean)
+{
+/*vom feld 'whattoclean' den wert löschen*/
+whattoclean.value="";
+}
+
+function forwardto(wohin) {
+/*zu seite 'wohin' weiterleiten*/
+window.location = wohin ;
+} 

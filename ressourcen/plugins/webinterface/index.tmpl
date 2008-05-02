@@ -13,9 +13,9 @@
 
 </head>
 <body>
-<FORM name="jd" method="POST" target="_parent">
+<FORM action="/index.tmpl" name="jd" method="POST" target="_parent">
 <div style="width:800px;margin: 0 auto;border:1px solid;padding:5px 5px 5px 5px;;background-color:#1189ee">
-<h2 style="text-align:center;color:#F7F7F7">JDownloader Status Page</h2>
+<h2 style="text-align:center;color:#F7F7F7">JDownloader Status Page(Version <tmpl_var webinterface_version>)</h2>
 <hr>
 <ul id="containerul">
   <tmpl_loop pakete>
@@ -66,8 +66,9 @@ initiate();                // This must be placed immediately after the menu in 
 <option>remove</option>
 </SELECT>
     <INPUT type="submit" name="do" value="Submit">
-    <A href="/" name="Refresh" target="_self">REFRESH</A>	
-    <INPUT type="submit" name="do" value="Close JD" checked onclick="validateandsubmit('Close JD?',this)"> 
+    <A href="/index.tmpl" name="Refresh" target="_self">REFRESH</A>	
+    <INPUT type="submit" name="do" value="Close JD" checked onclick="validateandsubmit('Close JD?',this,'/bye.tmpl')">
+    <INPUT type="submit" name="do" value="Restart JD"  checked onclick="validateandsubmit('Restart JD?',this,'/restart.tmpl')"> 
   </DIV>
   <DIV >
   <table style="width:100%">
@@ -88,6 +89,13 @@ initiate();                // This must be placed immediately after the menu in 
     
   </table>
   </DIV>
+</FORM>
+
+<FORM name="add" action="/index.tmpl" target="_parent" method="POST">
+<DIV style="text-align:center">
+<textarea name="addlinks" cols="90" rows="3"  onfocus="clean(this)">Paste your Links here (Container URLs, Link URLs, SourceCode from Pages to parse)</textarea>
+<INPUT type="submit" name="do" value="Add">
+</DIV>
 </FORM>
 </body>
 </html>

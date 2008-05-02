@@ -113,64 +113,89 @@ public class JDSimpleWebserver extends Thread {
                 }
                 ;
 
-                if (headers.containsKey("content-type")) {
-                    if (headers.get("content-type").compareToIgnoreCase("application/x-www-form-urlencoded") == 0) {
-                        if (headers.containsKey("content-length")) {
-                            /*
-                             * POST Form Daten in GET Format übersetzen, damit
-                             * der RequestParams Parser nicht geändert werden
-                             * muss
-                             */
-                            logger.info("get post data length " + headers.get("content-length"));
-                            Integer post_len = new Integer(headers.get("content-length"));
-                            char[] cbuf = new char[post_len];
-                            Integer post_len_read = new Integer(reader.read(cbuf, 0, post_len));
-                            String RequestParams = String.copyValueOf(cbuf);
-                            if (post_len_read.compareTo(post_len) == 0) {
-                                /* alten POST aus Header Liste holen */
-                                String request = headers.get(null);
-                                String[] requ = request.split(" ");
-                                /* alter POST aus Header Liste entfernen */
-                                headers.remove(null);
-                                /*
-                                 * neuer POST mit RequestParams in Header-Liste
-                                 * einfügen
-                                 */
-                                headers.put(null, requ[0] + " " + requ[1] + "?" + RequestParams + " " + requ[2]);
-                            } else {
-                                logger.info("POST Fehler");
+                if (headers.containsKey(null)) {
+                    String Method = headers.get(null).split(" ")[0];
+                    if (Method.compareToIgnoreCase("get") == 0 || Method.compareToIgnoreCase("post") == 0) {
+                        /* get oder post header gefunden */
+                        if (headers.containsKey("content-type")) {
+                            if (headers.get("content-type").compareToIgnoreCase("application/x-www-form-urlencoded") == 0) {
+                                if (headers.containsKey("content-length")) {
+                                    /*
+                                     * POST Form Daten in GET Format übersetzen,
+                                     * damit der RequestParams Parser nicht
+                                     * geändert werden muss
+                                     */
+                                    logger.info("get post data length " + headers.get("content-length"));
+                                    Integer post_len = new Integer(headers.get("content-length"));
+                                    Integer post_len_toread = new Integer(post_len);
+                                    Integer post_len_read = new Integer(0);
+                                    char[] cbuf = new char[post_len];
+                                    Integer indexstart = 0;
+
+                                    while (post_len_toread > 0) {
+                                        if ((post_len_read = reader.read(cbuf, indexstart, post_len_toread)) ==-1) break;
+                                        indexstart = indexstart + post_len_read;
+                                        post_len_toread = post_len_toread - post_len_read;
+                                        logger.info("gelesen " + post_len_read + " index " + indexstart + " noch zu lesen " + post_len_toread);
+                                    }
+
+                                    String RequestParams = String.copyValueOf(cbuf);
+                                    if (indexstart.compareTo(post_len) == 0) {
+                                        /* alten POST aus Header Liste holen */
+                                        String request = headers.get(null);
+                                        String[] requ = request.split(" ");
+                                        logger.info(requ[0]);
+                                        if (Method.compareToIgnoreCase("post") == 0) {
+                                            /*
+                                             * alter POST aus Header Liste
+                                             * entfernen
+                                             */
+                                            headers.remove(null);
+                                            /*
+                                             * neuer POST mit RequestParams in
+                                             * Header-Liste einfügen
+                                             */
+                                            headers.put(null, requ[0] + " " + requ[1] + "?" + RequestParams + " " + requ[2]);
+                                        } else
+                                            logger.info("POST Daten bei nem GET aufruf???");
+
+                                    } else {
+                                        logger.info("POST Fehler postlen soll = " + post_len + " postlen gelesen = " + post_len_read);
+                                    }
+
+                                }
                             }
-
                         }
-                    }
-                }
 
-                JDSimpleWebserverResponseCreator response = new JDSimpleWebserverResponseCreator();
-                JDSimpleWebserverRequestHandler request = new JDSimpleWebserverRequestHandler(headers, response);
-                OutputStream outputStream = Current_Socket.getOutputStream();
-                if (NeedAuth == true) {/* need authorization */
-                    if (headers.containsKey("authorization")) {
-                        if (JDSimpleWebserver.AuthUser.equals(headers.get("authorization"))) { /*
-                                                                                                 * send
-                                                                                                 * authorization
-                                                                                                 * granted
-                                                                                                 */
-                            logger.info("pass stimmt");
+                        JDSimpleWebserverResponseCreator response = new JDSimpleWebserverResponseCreator();
+                        JDSimpleWebserverRequestHandler request = new JDSimpleWebserverRequestHandler(headers, response);
+                        OutputStream outputStream = Current_Socket.getOutputStream();
+                        if (NeedAuth == true) {/* need authorization */
+                            if (headers.containsKey("authorization")) {
+                                if (JDSimpleWebserver.AuthUser.equals(headers.get("authorization"))) {
+                                    /*
+                                     * send authorization granted
+                                     */
+                                    logger.info("pass stimmt");
+                                    request.handle();
+
+                                } else { /* send authorization failed */
+                                    response.setAuth_failed();
+                                }
+                            } else { /* send autorization needed */
+                                response.setAuth_needed();
+                            }
+                        } else { /* no autorization needed */
                             request.handle();
-
-                        } else { /* send authorization failed */
-                            response.setAuth_failed();
                         }
-                    } else { /* send autorization needed */
-                        response.setAuth_needed();
-                    }
-                } else { /* no autorization needed */
-                    request.handle();
-                }
-                ;
 
-                response.writeToStream(outputStream);
-                outputStream.close();
+                        response.writeToStream(outputStream);
+                        outputStream.close();
+                    }
+                } else {
+                    /* kein get oder post header */
+                    logger.info("kein post oder get header");
+                }
                 Current_Socket.close();
 
             } catch (SocketException e) {

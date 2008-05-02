@@ -141,6 +141,7 @@ public class JDSimpleWebserverTemplateFileRequestHandler {
             ;
 
             t.setParam("pakete", v);
+            t.setParam("webinterface_version", JDWebinterface.instance.getPluginID());
             response.addContent(t.output());
             response.setOk();
         } catch (FileNotFoundException e) {
