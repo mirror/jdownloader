@@ -213,6 +213,8 @@ public class SingleDownloadController extends Thread {
             }
 
             step = currentPlugin.doNextStep(downloadLink);
+            logger.finer("got step: "+step+" Linkstatus: "+downloadLink.getStatus());
+            
         }
         // Der Download ist an dieser Stelle entweder Beendet oder
         // Abgebrochen. Mögliche Ursachen können nun untersucht werden um
@@ -231,7 +233,7 @@ public class SingleDownloadController extends Thread {
 
             return;
         }
-        logger.info("FINISHED");
+        logger.info("FINISHED "+step+" / "+downloadLink.getStatus());
         if (step != null && step.getStatus() == PluginStep.STATUS_ERROR) {
 
             switch (downloadLink.getStatus()) {
@@ -307,6 +309,7 @@ public class SingleDownloadController extends Thread {
             // downloadLink.setStatusText(JDLocale.L("controller.status.finished",
             // "Fertig"));
             downloadLink.setStatusText(null);
+            logger.finer("final step: "+step+" Linkstatus: "+downloadLink.getStatus());
             if (downloadLink.getStatus() != DownloadLink.STATUS_DONE) {
                 logger.severe("Pluginerror: Step returned null and Downloadlink status != STATUS_DONE");
                 downloadLink.setStatus(DownloadLink.STATUS_DONE);

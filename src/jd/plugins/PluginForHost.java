@@ -92,7 +92,8 @@ public abstract class PluginForHost extends Plugin {
             return currentStep;
         }
         currentStep = doStep(currentStep, parameter);
-
+        logger.finer("got/return step: "+currentStep+" Linkstatus: "+((DownloadLink)parameter).getStatus());
+        
         return currentStep;
     }
     
@@ -230,6 +231,7 @@ public abstract class PluginForHost extends Plugin {
 
         try {
            PluginStep ret = doStep(step, (DownloadLink) parameter);
+           logger.finer("got/return step: "+step+" Linkstatus: "+((DownloadLink)parameter).getStatus());
            return ret;
 //           if(ret==null){
 //               return step;
@@ -242,6 +244,8 @@ public abstract class PluginForHost extends Plugin {
             step.setStatus(PluginStep.STATUS_ERROR);
             ((DownloadLink) parameter).setStatus(DownloadLink.STATUS_ERROR_PLUGIN_SPECIFIC);
           step.setParameter(e.getLocalizedMessage());
+          logger.finer("got/return 2 step: "+step+" Linkstatus: "+((DownloadLink)parameter).getStatus());
+          
             return step;
         }
     }

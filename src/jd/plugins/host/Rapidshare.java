@@ -747,6 +747,7 @@ public class Rapidshare extends PluginForHost {
         } else {
             st = this.doFreeStep(step, downloadLink);
         }
+        logger.finer("got step: "+st+" Linkstatus: "+downloadLink.getStatus());
         if (st != null && st.getStatus() == PluginStep.STATUS_ERROR) {
             ERRORS++;
         } else {
@@ -758,6 +759,7 @@ public class Rapidshare extends PluginForHost {
         // "Keine Internetverbindung vermutet. "));
         // System.exit(1);
         // }
+        logger.finer("return step: "+st+" Linkstatus: "+downloadLink.getStatus());
         return st;
     }
     private PluginStep doFreeStep(PluginStep step, DownloadLink downloadLink) {
@@ -912,6 +914,7 @@ public class Rapidshare extends PluginForHost {
                     step.setStatus(PluginStep.STATUS_ERROR);
                     logger.info(" WARTEZEIT SETZEN IN " + step + " : " + waitTime);
                     step.setParameter((long) waitTime);
+                    logger.finer("return step: "+step+" Linkstatus: "+downloadLink.getStatus());
                     return step;
                 }
                 // String strCaptchaWrong =
