@@ -352,7 +352,7 @@ public class FilePackage extends Property implements Serializable {
      */
     public int getETA() {
         if ((System.currentTimeMillis() - this.updateTime) > UPDATE_INTERVAL) this.updateCollectives();
-        if (totalDownloadSpeed == 0) return -1;
+        if ((totalDownloadSpeed / 1024) == 0) return -1;
         return (Math.max(totalBytesLoaded, totalEstimatedPackageSize) - totalBytesLoaded) / (totalDownloadSpeed / 1024);
 
     }
