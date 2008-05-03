@@ -434,12 +434,14 @@ if(i>0){
                 int disabled = 0;
                 int enabled = 0;
                 int progress=0;
+                int resumeable=0;
                 for (Iterator<DownloadLink> it = getSelectedDownloadLinks().iterator(); it.hasNext();) {
                     DownloadLink next = it.next();
                     if (!fps.contains(next.getFilePackage())) fps.add(next.getFilePackage());
                     if (!next.isEnabled()) disabled++;
                     if (next.isEnabled()) enabled++;
                     if (next.isInProgress()) progress++;
+                    if (!next.isInProgress()&&next.isFailed()) resumeable++;
                 }
                 JPopupMenu popup = new JPopupMenu();
                 Plugin plg = ((DownloadLink) obj).getPlugin();
@@ -488,6 +490,9 @@ if(((DownloadLink) obj).getLinkType()!=DownloadLink.LINKTYPE_NORMAL)tmp.setEnabl
                 tmp=(new JMenuItem(new TreeTableAction(this, JDLocale.L("gui.table.contextmenu.abort", "abbrechen")+ " (" + progress + ")", TreeTableAction.DOWNLOAD_ABORT, new Property("downloadlinks", getSelectedDownloadLinks()))));
                 popup.add(tmp);
                 if(progress==0)tmp.setEnabled(false);
+                tmp=(new JMenuItem(new TreeTableAction(this, JDLocale.L("gui.table.contextmenu.resume", "fortsetzen")+ " (" + resumeable + ")", TreeTableAction.DOWNLOAD_RESUME, new Property("downloadlinks", getSelectedDownloadLinks()))));
+                popup.add(tmp);
+                if(resumeable==0)tmp.setEnabled(false);
                 popup.add(new JSeparator());
                 popup.add(new JMenuItem(new TreeTableAction(this, JDLocale.L("gui.table.contextmenu.newpackage", "In neues Paket verschieben"), TreeTableAction.DOWNLOAD_NEW_PACKAGE, new Property("downloadlinks", getSelectedDownloadLinks()))));
                 
@@ -634,6 +639,19 @@ if(((DownloadLink) obj).getLinkType()!=DownloadLink.LINKTYPE_NORMAL)tmp.setEnabl
                 links.elementAt(i).setEnabled(true);
             }
             JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_ALL_DOWNLOADLINKS_DATA_CHANGED, this));
+            break;
+        case TreeTableAction.DOWNLOAD_RESUME:
+            links = (Vector<DownloadLink>) ((TreeTableAction) ((JMenuItem) e.getSource()).getAction()).getProperty().getProperty("downloadlinks");
+
+            for (int i = 0; i < links.size(); i++) {
+                links.elementAt(i).setStatus(DownloadLink.STATUS_TODO);
+                links.elementAt(i).setStatusText(JDLocale.L("gui.linklist.status.doresume","Warte auf Fortsetzung"));
+                links.elementAt(i).getPlugin().resetSteps();
+            }
+            JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_ALL_DOWNLOADLINKS_DATA_CHANGED, this));
+
+            
+            
             break;
         case TreeTableAction.DOWNLOAD_DISABLE:
             links = (Vector<DownloadLink>) ((TreeTableAction) ((JMenuItem) e.getSource()).getAction()).getProperty().getProperty("downloadlinks");

@@ -1010,7 +1010,7 @@ public class Rapidshare extends PluginForHost {
                 if (JDUtilities.getSubConfig("JAC").getBooleanProperty(Configuration.JAC_USE_CES, false) && !CES.isEnabled()) {
                     ces = new CESClient(captchaFile);
                     ces.setLogins(JDUtilities.getSubConfig("JAC").getStringProperty(CESClient.PARAM_USER), JDUtilities.getSubConfig("JAC").getStringProperty(CESClient.PARAM_PASS));
-                    ces.setSpecs("Please enter all letters having a <img src='guide/rsc_cat.png'> below.");
+                    ces.setSpecs("Please enter all letters having a <img src=\"http://rapidshare.com/img/cat.png\"> below.<br>Enter FOUR letters with <img src=\"http://rapidshare.com/img/cat.png\">:");
                     ces.setPlugin(this);
                     if (ces.sendCaptcha()) {
                         downloadLink.setStatusText(JDLocale.L("plugins.rapidshare.ces.status", "C.E.S aktiv"));
@@ -1124,7 +1124,8 @@ public class Rapidshare extends PluginForHost {
             actionString = getBetween(ticketCode, "input type=\"submit\" name=\"actionstring\" value=\"", "\"");
 
             if (postTarget == null) {
-                logger.severe("postTarget not found");
+                logger.severe("postTarget not found:");
+                logger.finer(ticketCode);
                 downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN);
                 step.setStatus(PluginStep.STATUS_ERROR);
                 return step;

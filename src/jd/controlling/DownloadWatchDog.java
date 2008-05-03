@@ -94,7 +94,7 @@ public class DownloadWatchDog extends Thread implements ControlListener {
                     link = links.elementAt(i);
                     if (!link.isEnabled()) continue;
                     // Link mit Wartezeit in der queue
-                    if (link.getStatus() == DownloadLink.STATUS_ERROR_DOWNLOAD_LIMIT || link.getStatus() == DownloadLink.STATUS_ERROR_STATIC_WAITTIME) {
+                    if (!link.isInProgress()&&(link.getStatus() == DownloadLink.STATUS_ERROR_DOWNLOAD_LIMIT || link.getStatus() == DownloadLink.STATUS_ERROR_STATIC_WAITTIME)) {
                         if (link.getRemainingWaittime() == 0) {
                             // reaktiviere Downloadlink
                             link.setStatus(DownloadLink.STATUS_TODO);
@@ -416,7 +416,7 @@ public class DownloadWatchDog extends Thread implements ControlListener {
     public DownloadLink getNextDownloadLink() {
 
         DownloadLink nextDownloadLink = null;
-
+try{
         for (Iterator<FilePackage> it = controller.getPackages().iterator(); it.hasNext();) {
             for (Iterator<DownloadLink> it2 = it.next().getDownloadLinks().iterator(); it2.hasNext();) {
                 nextDownloadLink = it2.next();
@@ -442,6 +442,9 @@ public class DownloadWatchDog extends Thread implements ControlListener {
                 }
             }
         }
+}catch(Exception e){
+    // Fängt concurrentmodification Exceptions ab
+}
         return null;
     }
 

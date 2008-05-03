@@ -162,7 +162,9 @@ public class RAFDownload extends DownloadInterface {
                 outputChannel.close();
                 e.printStackTrace();
             } catch (Exception e2) {
+                e.printStackTrace();
             }
+            e.printStackTrace();
             addException(e);
         }
 

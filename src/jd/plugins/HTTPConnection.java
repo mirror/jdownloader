@@ -14,7 +14,6 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-
 package jd.plugins;
 
 import java.io.IOException;
@@ -32,41 +31,44 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import jd.utils.JDUtilities;
+
 public class HTTPConnection {
 
     public static final int HTTP_NOT_IMPLEMENTED = HttpURLConnection.HTTP_NOT_IMPLEMENTED;
     private HttpURLConnection connection;
-    private HashMap<String, List<String>> requestProperties=null;
- 
+    private HashMap<String, List<String>> requestProperties = null;
+
     private String postData;
 
     public HTTPConnection(URLConnection openConnection) {
-        this.connection=(HttpURLConnection)openConnection;
-        requestProperties=new HashMap<String, List<String>>();
-        connection.setRequestProperty("User-Agent", "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1; SV1; .NET CLR 1.1.4322; .NET CLR 2.0.50727; .j)");
-        
+        this.connection = (HttpURLConnection) openConnection;
+        requestProperties = new HashMap<String, List<String>>();
+
+        connection.setRequestProperty("User-Agent", "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1; SV1; .NET CLR 2.0.50727; .j v" + JDUtilities.getRevision() + ")");
+
         Map<String, List<String>> tmp = connection.getRequestProperties();
         Iterator<Entry<String, List<String>>> set = tmp.entrySet().iterator();
-        while(set.hasNext()){
+        while (set.hasNext()) {
             Entry<String, List<String>> next = set.next();
             requestProperties.put(next.getKey(), next.getValue());
         }
-        
+
     }
 
     public void setReadTimeout(int timeout) {
         connection.setReadTimeout(timeout);
-        
+
     }
 
     public void setConnectTimeout(int timeout) {
         connection.setConnectTimeout(timeout);
-        
+
     }
 
     public void setInstanceFollowRedirects(boolean redirect) {
         connection.setInstanceFollowRedirects(redirect);
-        
+
     }
 
     public void setRequestProperty(String key, String value) {
@@ -74,10 +76,10 @@ public class HTTPConnection {
 
         l.add(value);
         requestProperties.put(key, l);
-        connection.setRequestProperty(key,value);
-       
+        connection.setRequestProperty(key, value);
+
     }
-    
+
     public String getHeaderField(String string) {
         return connection.getHeaderField(string);
     }
@@ -88,16 +90,16 @@ public class HTTPConnection {
 
     public void setDoOutput(boolean b) {
         connection.setDoOutput(b);
-        
+
     }
 
     public void connect() throws IOException {
-        
+
         connection.connect();
-        
+
     }
 
-    public OutputStream getOutputStream() throws IOException {       
+    public OutputStream getOutputStream() throws IOException {
         return connection.getOutputStream();
     }
 
@@ -110,7 +112,7 @@ public class HTTPConnection {
     }
 
     public URL getURL() {
-       return connection.getURL();
+        return connection.getURL();
     }
 
     public String getContentType() {
@@ -119,7 +121,7 @@ public class HTTPConnection {
 
     public HttpURLConnection getHTTPURLConnection() {
         return connection;
-      
+
     }
 
     public int getContentLength() {
@@ -127,42 +129,44 @@ public class HTTPConnection {
     }
 
     public Map<String, List<String>> getRequestProperties() {
-       return requestProperties;
-     
+        return requestProperties;
+
     }
 
     public String getRequestProperty(String string) {
-       return connection.getRequestProperty(string);
+        return connection.getRequestProperty(string);
     }
 
     public void post(String parameter) throws IOException {
         OutputStreamWriter wr = new OutputStreamWriter(connection.getOutputStream());
         if (parameter != null) wr.write(parameter);
- 
-        this.postData=parameter;
+
+        this.postData = parameter;
         wr.flush();
         wr.close();
-        
+
     }
+
     public void postGzip(String parameter) throws IOException {
-        
- 
+
         OutputStreamWriter wr = new OutputStreamWriter(connection.getOutputStream());
         if (parameter != null) wr.write(parameter);
-        this.postData=parameter;
+        this.postData = parameter;
         wr.flush();
         wr.close();
-        
+
     }
+
     public String getPostData() {
         return postData;
     }
 
     public void setRequestMethod(String string) throws ProtocolException {
         connection.setRequestMethod(string);
-        
+
     }
-    public String getRequestMethod(){
+
+    public String getRequestMethod() {
         return connection.getRequestMethod();
     }
 

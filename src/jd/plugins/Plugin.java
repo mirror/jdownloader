@@ -18,10 +18,13 @@ package jd.plugins;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -68,6 +71,45 @@ import jd.utils.JDUtilities;
  * Alle Plugins verfügen über einen Event Mechanismus
  */
 public abstract class Plugin implements ActionListener {
+    public static void main(String args[]) {
+        try {
+//            String url = "http://67oj3rgson.rapidsafe.de/";
+//            setReadTimeout(120000);
+//
+//            setConnectTimeout(120000);
+//            JDUtilities.getSubConfig("DOWNLOAD").save();
+//
+//            RequestInfo ri = Plugin.getRequest(new URL(url));
+//            @SuppressWarnings("unused")
+//            String cookie = ri.getCookie();
+//            @SuppressWarnings("unused")
+//            String[] dat = Plugin.getSimpleMatches(ri.getHtmlCode(), "RapidSafePSC('°=°&t=°','°');");
+//            // 1ud22p2l45po=2a8774jfv7ag&t=19e5jrabravg
+//            ri = Plugin.postRequest(new URL(url), cookie, url, null, dat[0] + "=" + dat[1] + "&t=" + dat[2], false);
+//            dat = Plugin.getSimpleMatches(ri.getHtmlCode(), "RapidSafePSC('°&adminlogin='");
+//            // 1ud22p2l45po=2a8774jfv7ag&t=6e8qkspmv5e0&fchk=1
+//            ri = Plugin.postRequest(new URL(url), cookie, url, null, dat[0] + "&f=1", false);
+//            String flash = Plugin.getSimpleMatch(ri.getHtmlCode(), "<param name=\"movie\" value=\"/°\" />", 0);
+//            HTTPConnection con = new HTTPConnection(new URL(url + flash).openConnection());
+//            con.setRequestProperty("Cookie", cookie);
+//            con.setRequestProperty("Referer", url);
+//
+//            BufferedInputStream input = new BufferedInputStream(con.getInputStream());
+//            StringBuffer sb = new StringBuffer();
+//            byte[] b = new byte[1];          
+//            while (input.read(b) != -1) {
+//                sb.append(new String(b));
+//            }
+//
+//            input.close();
+//
+//            logger.info("" + sb);
+
+        } catch (Exception e) {
+
+            e.printStackTrace();
+        }
+    }
 
     protected static final String END_OF_LINK = "[^\"]*";
 
@@ -372,6 +414,34 @@ public abstract class Plugin implements ActionListener {
 
         logger.finer("next: " + this.currentStep + "->" + currentStep);
         return (this.currentStep = currentStep);
+
+    }
+
+    /**
+     * Gibt den nächsten schritt zurück OHNE dabei den internen Stepzähler zu
+     * ändern.
+     * 
+     * @param step
+     * @return
+     */
+    public PluginStep getNextStep(PluginStep step) {
+        if (steps != null && steps.size() > 0) {
+
+            if (currentStep == null) {
+                return steps.firstElement();
+
+            } else {
+                int index = steps.indexOf(currentStep) + 1;
+                if (steps.size() > index) {
+                    return steps.elementAt(index);
+
+                } else {
+                    return null;
+                }
+            }
+        } else {
+            return null;
+        }
 
     }
 
@@ -1405,23 +1475,21 @@ public abstract class Plugin implements ActionListener {
      * 
      * @return internes property objekt
      */
-    public SubConfiguration getProperties() {      
-        
-        if(!JDUtilities.getResourceFile("config/"+this.getPluginName()+".cfg").exists()){
+    public SubConfiguration getProperties() {
+
+        if (!JDUtilities.getResourceFile("config/" + this.getPluginName() + ".cfg").exists()) {
             SubConfiguration cfg = JDUtilities.getSubConfig(this.getPluginName());
             if (JDUtilities.getConfiguration().getProperty("PluginConfig_" + this.getPluginName()) != null) {
                 cfg.setProperties(((Property) JDUtilities.getConfiguration().getProperty("PluginConfig_" + this.getPluginName())).getProperties());
                 cfg.save();
                 return cfg;
             }
-            return JDUtilities.getSubConfig(this.getPluginName());  
-        }else{
-            return JDUtilities.getSubConfig(this.getPluginName());  
+            return JDUtilities.getSubConfig(this.getPluginName());
+        } else {
+            return JDUtilities.getSubConfig(this.getPluginName());
         }
 
     }
-
-
 
     /**
      * 

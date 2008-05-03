@@ -51,6 +51,7 @@ public class TreeTableAction extends AbstractAction{
     public static final int PACKAGE_ABORT = 19;
     public static final int DOWNLOAD_DLC = 20;
     public static final int PACKAGE_DLC = 21;
+    public static final int DOWNLOAD_RESUME = 22;
    
     private ActionListener actionListener;
     private int actionID;

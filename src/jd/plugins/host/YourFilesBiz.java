@@ -46,7 +46,7 @@ public class YourFilesBiz extends PluginForHost {
     private HTTPConnection        urlConnection;
     
     // Suchmasken
-    private static final String  DOWNLOAD_SIZE            = "<td align=left><b>Dateigröße:</b></td>\n       <td align=left>°</td>";
+    private static final String  DOWNLOAD_SIZE            = "  <tr class=tdrow1>°<td align=left><b>Dateigr°e:</b></td>°<td align=left>°</td>°</tr>";
     private static final String  DOWNLOAD_NAME            = "<td align=left width=20%><b>Dateiname:</b></td>\n       <td align=left width=80%>°</td>";
     private static final String  DOWNLOAD_LINK            = "value='http://°'>";
     
@@ -191,12 +191,12 @@ public class YourFilesBiz extends PluginForHost {
                     urlConnection = new HTTPConnection(new URL(this.downloadURL).openConnection());
                     int length = urlConnection.getContentLength();
                     
-                    if ( Math.abs(length - downloadLink.getDownloadMax()) > 1024*1024 ) {
-                        logger.warning("Dateigrößenfehler -> Neustart");
-                        downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN_RETRY);
-                        step.setStatus(PluginStep.STATUS_ERROR);
-                        return step;
-                    }
+//                    if ( Math.abs(length - downloadLink.getDownloadMax()) > 1024*1024 ) {
+//                        logger.warning("Dateigrößenfehler -> Neustart");
+//                        downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN_RETRY);
+//                        step.setStatus(PluginStep.STATUS_ERROR);
+//                        return step;
+//                    }
                     
                     downloadLink.setDownloadMax(length);
                     return step;
@@ -235,7 +235,7 @@ public class YourFilesBiz extends PluginForHost {
     private int getFileSize(String source) {
     	
     	int size = 0;
-    	String sizeString = JDUtilities.htmlDecode(getSimpleMatch(source, DOWNLOAD_SIZE, 0));
+    	String sizeString = JDUtilities.htmlDecode(getSimpleMatch(source, DOWNLOAD_SIZE, 3));
 		if ( sizeString == null ) sizeString = "";
     	
 		if ( sizeString.contains("MB") ) {

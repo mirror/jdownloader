@@ -199,12 +199,12 @@ public class SingleDownloadController extends Thread {
                 // Achtung. nextStep setzt den internen stepcounter weiter. Das
                 // ist hier nicht beabsichtigt. deshalb muss der step mit
                 // previuosstep wieder zurückgesetzt werden
-                PluginStep nextStep = currentPlugin.nextStep(step);
-                if (currentPlugin.getCurrentStep() != null) {
-                    downloadLink.setStatusText(currentPlugin.getCurrentStep().toString());
+                PluginStep nextStep = currentPlugin.getNextStep(step);
+                if (nextStep != null) {
+                    downloadLink.setStatusText(nextStep.toString());
                     fireControlEvent(ControlEvent.CONTROL_SPECIFIED_DOWNLOADLINKS_CHANGED, downloadLink);
                 }
-                currentPlugin.previousStep(nextStep);
+               
             }
             // Bricht ab wenn es Fehler gab
             if (step.getStatus() == PluginStep.STATUS_ERROR) {
@@ -311,8 +311,9 @@ public class SingleDownloadController extends Thread {
             downloadLink.setStatusText(null);
             logger.finer("final step: "+step+" Linkstatus: "+downloadLink.getStatus());
             if (downloadLink.getStatus() != DownloadLink.STATUS_DONE) {
-                logger.severe("Pluginerror: Step returned null and Downloadlink status != STATUS_DONE");
-                downloadLink.setStatus(DownloadLink.STATUS_DONE);
+                logger.severe("Pluginerror: Step returned null and Downloadlink status != STATUS_DONE.  retry Link");
+                this.onErrorRetry(downloadLink, currentPlugin, step);
+                return;
             }
             if (downloadLink.getLinkType() == DownloadLink.LINKTYPE_JDU) {
                 new PackageManager().onDownloadedPackage(downloadLink);

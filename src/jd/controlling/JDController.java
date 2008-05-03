@@ -1194,7 +1194,7 @@ public class JDController implements ControlListener, UIListener {
 
     /**
      * Liefert die Anzahl der gerade laufenden Downloads. (nur downloads die
-     * sich wirklich in der downloadpahse befinden
+     * sich wirklich in der downloadphase befinden
      * 
      * @return Anzahld er laufenden Downloadsl
      */
@@ -1210,6 +1210,23 @@ public class JDController implements ControlListener, UIListener {
                 while (it2.hasNext()) {
                     nextDownloadLink = it2.next();
                     if (nextDownloadLink.getStatus() == DownloadLink.STATUS_DOWNLOAD_IN_PROGRESS) ret++;
+                }
+            }
+        }
+        return ret;
+    }
+    public int getForbiddenReconnectDownloadNum() {
+        int ret = 0;
+        synchronized (packages) {
+            Iterator<FilePackage> iterator = packages.iterator();
+            FilePackage fp = null;
+            DownloadLink nextDownloadLink;
+            while (iterator.hasNext()) {
+                fp = iterator.next();
+                Iterator<DownloadLink> it2 = fp.getDownloadLinks().iterator();
+                while (it2.hasNext()) {
+                    nextDownloadLink = it2.next();
+                    if (nextDownloadLink.isInProgress()&&nextDownloadLink.getStatus()!=DownloadLink.STATUS_ERROR_DOWNLOAD_LIMIT) ret++;
                 }
             }
         }
@@ -1446,7 +1463,7 @@ public class JDController implements ControlListener, UIListener {
 
             return false;
         }
-        if (this.getRunningDownloadNum() > 0) {
+        if (this.getForbiddenReconnectDownloadNum() > 0) {
             logger.finer("Downloads are running. reconnect is disabled");
             return false;
         }

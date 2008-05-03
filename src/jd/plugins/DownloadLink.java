@@ -1218,4 +1218,9 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
     public int getCrcStatus() {
         return crcStatus;
     }
+
+    public boolean isFailed() {
+        // TODO Auto-generated method stub
+        return !this.isInProgress()&&this.getStatus()!=DownloadLink.STATUS_DONE&&this.getStatus()!=DownloadLink.STATUS_TODO;
+    }
 }
