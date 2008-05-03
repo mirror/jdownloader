@@ -602,19 +602,19 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
         
     }
 
-    /*
-     * (non-Javadoc)
-     * 
-     * @see java.lang.Object#equals(java.lang.Object)
-     */
-    @Override
-    public boolean equals(Object obj) {
-
-        if (obj instanceof DownloadLink && this.getName() != null && ((DownloadLink) obj).getName() != null)
-            return this.getName().equals(((DownloadLink) obj).getName());
-        else
-            return super.equals(obj);
-    }
+//    /*
+//     * (non-Javadoc)
+//     * 
+//     * @see java.lang.Object#equals(java.lang.Object)
+//     */
+//    @Override
+//    public boolean equals(Object obj) {
+//
+//        if (obj instanceof DownloadLink && this.getName() != null && ((DownloadLink) obj).getName() != null)
+//            return this.getName().equals(((DownloadLink) obj).getName());
+//        else
+//            return super.equals(obj);
+//    }
 
     /**
      * Setzt den Downloadpfad neu
@@ -734,6 +734,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
         } else if (this.getCrcStatus() == DownloadLink.CRC_STATUS_OK) {
             ret += "[" + JDLocale.L("gui.downloadlink.status.crcok", "Checksum OK") + "] ";
         }
+        if(statusText!=null&&ret.contains(statusText))return ret;
         return statusText == null ? ret : ret + statusText;
 
     }

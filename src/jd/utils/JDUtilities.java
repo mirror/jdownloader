@@ -2353,4 +2353,14 @@ public class JDUtilities {
         return dir.delete();
     }
 
+    public static boolean sleep(int i) {
+        try {
+            Thread.sleep(i);
+            return true;
+        } catch (InterruptedException e) {
+           return false;
+        }
+        
+    }
+
 }

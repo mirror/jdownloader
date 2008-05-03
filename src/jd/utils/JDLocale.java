@@ -88,7 +88,7 @@ public class JDLocale {
         logger.info(sb.toString());
     }
 
-    private static final String DEFAULTLANGUAGE = "english";
+    private static final String DEFAULTLANGUAGE = System.getProperty("user.country").equalsIgnoreCase("DE")?"german":"english";
 
     public static final String LOCALE_EDIT_MODE = "LOCALE_EDIT_MODE";
 
@@ -116,7 +116,7 @@ public class JDLocale {
     public static String getLocaleString(String key, String def) {
         if (data == null || localeFile == null) {
             // logger.severe("Use setLocale() first!");
-            JDLocale.setLocale(JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).getStringProperty(SimpleGUI.PARAM_LOCALE, "english"));
+            JDLocale.setLocale(JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).getStringProperty(SimpleGUI.PARAM_LOCALE, System.getProperty("user.country").equalsIgnoreCase("DE")?"german":"english"));
 
         }
 

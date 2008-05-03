@@ -102,6 +102,7 @@ public class DownloadWatchDog extends Thread implements ControlListener {
 
                         }
                         hasWaittimeLinks = true;
+                        link.requestGuiUpdate();
                     }
                     if (link.isInProgress()) {
                         // logger.info("ip: "+link);
@@ -170,7 +171,7 @@ public class DownloadWatchDog extends Thread implements ControlListener {
         logger.info("Wait for termination");
         while (aborting) {
             try {
-                Thread.sleep(200);
+                Thread.sleep(1000);
             } catch (InterruptedException e) {
             }
         }

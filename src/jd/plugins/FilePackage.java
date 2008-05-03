@@ -181,7 +181,7 @@ public class FilePackage extends Property implements Serializable {
 
                 if (next.getDownloadMax() > 0) {
 
-                    totalEstimatedPackageSize += next.getDownloadMax() / 1024;
+                    if(next.isEnabled())totalEstimatedPackageSize += next.getDownloadMax() / 1024;
 
                     avg = (i * avg + next.getDownloadMax() / 1024) / (i + 1);
                     // logger.info(i+"+ "+next.getDownloadMax()/1024+" kb
@@ -189,13 +189,13 @@ public class FilePackage extends Property implements Serializable {
                     i++;
                 } else {
                     if (it.hasNext()) {
-                        totalEstimatedPackageSize += avg;
+                        if(next.isEnabled())totalEstimatedPackageSize += avg;
 
                         // logger.info(i+"+avg "+avg+" kb
                         // =+"+totalEstimatedPackageSize);
 
                     } else {
-                        totalEstimatedPackageSize += avg / (2);
+                        if(next.isEnabled())totalEstimatedPackageSize += avg / (2);
                         // logger.info(i+"+avg "+(avg/2)+" kb
                         // =+"+totalEstimatedPackageSize);
                     }
@@ -203,7 +203,7 @@ public class FilePackage extends Property implements Serializable {
                 }
 
                 totalDownloadSpeed += Math.max(0, next.getDownloadSpeed());
-                totalBytesLoaded += next.getDownloadCurrent() / 1024;
+                if(next.isEnabled())totalBytesLoaded += next.getDownloadCurrent() / 1024;
                 linksInProgress += next.isInProgress() ? 1 : 0;
                 linksFinished += next.getStatus() == DownloadLink.STATUS_DONE ? 1 : 0;
                 if (next.getStatus() != DownloadLink.STATUS_DONE && next.getStatus() != DownloadLink.STATUS_DOWNLOAD_IN_PROGRESS && next.getStatus() != DownloadLink.STATUS_DOWNLOAD_INCOMPLETE && next.getStatus() != DownloadLink.STATUS_TODO) {

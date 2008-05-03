@@ -1323,9 +1323,9 @@ public class Rapidshare extends PluginForHost {
 
                 }
             } catch (MalformedURLException e) {
-                e.printStackTrace();
+                //e.printStackTrace();
             } catch (IOException e) {
-                e.printStackTrace();
+                //e.printStackTrace();
             }
 
         }

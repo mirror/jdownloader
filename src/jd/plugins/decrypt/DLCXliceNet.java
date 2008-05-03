@@ -21,6 +21,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.Vector;
 import java.util.regex.Pattern;
 
@@ -94,7 +95,7 @@ public class DLCXliceNet extends PluginForDecrypt {
 
             File container = JDUtilities.getResourceFile("container/" + System.currentTimeMillis() + ".dlc");
             if (JDUtilities.download(container, parameter)) {
-
+                
                 JDUtilities.getController().loadContainerFile(container);
 
             }

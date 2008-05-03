@@ -38,9 +38,12 @@ import jd.utils.JDUtilities;
 public abstract class PluginForHost extends Plugin {
     private static final String CONFIGNAME = "pluginsForHost";
     private static final String AGB_CHECKED = "AGB_CHECKED";
+    public static final String PARAM_MAX_RETRIES = "MAX_RETRIES";
+    public static final String PARAM_MAX_ERROR_RETRIES = "MAX_ERROR_RETRIES";
     // public abstract URLConnection getURLConnection();
 
-   
+   private int retryCount=0;
+   private int retryOnErrorCount=0;
     private int maxConnections=50;
     private static int currentConnections=0;
     protected DownloadInterface dl=null;
@@ -220,7 +223,12 @@ public abstract class PluginForHost extends Plugin {
         // TODO Auto-generated method stub
         return this.dl;
     }
-
+    public int getMaxRetries(){
+        return JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(PARAM_MAX_RETRIES, 3);
+    }
+    public int getMaxRetriesOnError(){
+        return JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(PARAM_MAX_ERROR_RETRIES, 0);
+    }
     /**
      * Delegiert den doStep Call mit einem Downloadlink als Parameter weiter an
      * die Plugins. Und fängt übrige Exceptions ab.
@@ -338,6 +346,18 @@ public int getChunksPerFile(){
 }
 public int getFreeConnections(){
     return Math.max(1, maxConnections-currentConnections);
+}
+public int getRetryCount() {
+    return retryCount;
+}
+public void setRetryCount(int retryCount) {
+    this.retryCount = retryCount;
+}
+public int getRetryOnErrorCount() {
+    return retryOnErrorCount;
+}
+public void setRetryOnErrorCount(int retryOnErrorcount) {
+    this.retryOnErrorCount = retryOnErrorcount;
 }
 
 

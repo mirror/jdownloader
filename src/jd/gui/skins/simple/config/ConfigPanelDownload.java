@@ -16,7 +16,6 @@
 
 package jd.gui.skins.simple.config;
 
-import java.awt.BorderLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 
@@ -26,6 +25,7 @@ import jd.config.Configuration;
 import jd.config.SubConfiguration;
 import jd.gui.UIInterface;
 import jd.gui.skins.simple.SimpleGUI;
+import jd.plugins.PluginForHost;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
@@ -101,7 +101,17 @@ public class ConfigPanelDownload extends ConfigPanel {
         ce.setEnabledCondidtion(conditionEntry, ">", 1);
         ce.setExpertEntry(true);
         download.addEntry(ce);
-
+        
+        ce = new ConfigEntry(ConfigContainer.TYPE_SPINNER, config, PluginForHost.PARAM_MAX_RETRIES, JDLocale.L("gui.config.download.retries", "Max. Neuversuche bei vorrübergehenden Hosterproblemen"), 0, 20);
+        ce.setDefaultValue(3);
+        ce.setStep(1);
+     
+        download.addEntry(ce);
+        ce = new ConfigEntry(ConfigContainer.TYPE_SPINNER, config, PluginForHost.PARAM_MAX_ERROR_RETRIES, JDLocale.L("gui.config.download.errorretries", "Max. Neuversuche bei einem Fehler"), 0, 20);
+        ce.setDefaultValue(0);
+        ce.setStep(1);
+     
+        download.addEntry(ce);
 
         ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, config, Configuration.PARAM_GLOBAL_IP_DISABLE, JDLocale.L("gui.config.download.ipcheck.disable", "IP Überprüfung deaktivieren"));
         ce.setDefaultValue(false);

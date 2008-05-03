@@ -180,11 +180,7 @@ public class JHelpDialog extends JDialog implements ActionListener {
         }
     }
 
-    public static void main(String[] argv) throws MalformedURLException {
-        JDTheme.setTheme("default");
-        JDLocale.setLocale("german");
-        showHelpMessage(null, "Test", "Messagef sdfdsa fda f sdafjklsdhafdfhsafhdsahd jahfjkldhasfjkdhsajkfhdhfs afhsdal fhdfhjksadhfdjjfhsda fdjs hfasdjfljkshfkjshfdsa",new URL("http://www.google.de"));
-    }
+
     /**
      * @param btn3 the btn3 to set
      */

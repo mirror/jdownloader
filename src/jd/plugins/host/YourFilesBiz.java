@@ -23,6 +23,8 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.regex.Pattern;
 
+import jd.config.Configuration;
+import jd.config.MenuItem;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTPConnection;
 import jd.plugins.PluginForHost;
@@ -205,7 +207,7 @@ public class YourFilesBiz extends PluginForHost {
                 	
                     // Download starten
                    dl = new RAFDownload(this, downloadLink, urlConnection);
-                   
+               
                   dl.startDownload();
                    
                    return step;
@@ -233,7 +235,7 @@ public class YourFilesBiz extends PluginForHost {
     }
 
     private int getFileSize(String source) {
-    	
+       
     	int size = 0;
     	String sizeString = JDUtilities.htmlDecode(getSimpleMatch(source, DOWNLOAD_SIZE, 3));
 		if ( sizeString == null ) sizeString = "";

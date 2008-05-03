@@ -44,7 +44,7 @@ public class Tinyurl extends PluginForDecrypt {
 
     @Override
     public String getCoder() {
-        return "JD-Team|JD-Team v2";
+        return "JD-Team";
     }
 
     @Override
@@ -88,7 +88,7 @@ public class Tinyurl extends PluginForDecrypt {
                 // Besonderen Link herausfinden
                 if (countOccurences(parameter, patternLink) > 0) {
                     String[] result = parameter.split("/");
-                    reqinfo = getRequest(new URL("http://tinyurl.com/preview.php?num=" + result[result.length - 1]));
+                    reqinfo = getRequest(new URL("http://tinyurl.com/" + result[result.length - 1]));
                 }
 
                 // Link der Liste hinzufügen

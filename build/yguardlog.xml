@@ -3,14 +3,14 @@
 <!--
   yGuard Bytecode Obfuscator, v2.2.0, a Product of yWorks GmbH - http://www.yworks.com
 
-  Logfile created on Fri May 02 17:27:55 CEST 2008
+  Logfile created on Sat May 03 17:01:40 CEST 2008
 
   Jar file to be obfuscated:           JDownloaderContainer.jar
   Target Jar file for obfuscated code: JDownloaderContainer_obfuscated.jar
 
 -->
 <!--
-  Memory in use after class data structure built: 2480136 bytes
+  Memory in use after class data structure built: 2462136 bytes
   Total memory available                        : 5177344 bytes
 -->
 <!-- WARNING: Unresolved external dependency: jd.config.MenuItem not found! -->
@@ -29,6 +29,8 @@
 <!-- WARNING: Unresolved external dependency: jd.plugins.PluginStep not found! -->
 <!-- WARNING: Unresolved external dependency: jd.plugins.PluginStep not found! -->
 <!-- WARNING: Unresolved external dependency: jd.config.ConfigContainer not found! -->
+<!-- WARNING: Unresolved external dependency: jd.plugins.PluginStep not found! -->
+<!-- WARNING: Unresolved external dependency: jd.plugins.PluginStep not found! -->
 <!-- WARNING: Unresolved external dependency: jd.plugins.PluginStep not found! -->
 <!-- WARNING: Unresolved external dependency: jd.plugins.PluginStep not found! -->
 <!-- WARNING: Unresolved external dependency: jd.plugins.PluginStep not found! -->
@@ -287,6 +289,7 @@
 <!-- WARNING: Unresolved external dependency: jd.plugins.PluginStep not found! -->
 <!-- WARNING: Unresolved external dependency: jd.plugins.PluginStep not found! -->
 <!-- WARNING: Unresolved external dependency: jd.plugins.PluginStep not found! -->
+<!-- WARNING: Unresolved external dependency: jd.config.MenuItem not found! -->
 <!-- WARNING: Unresolved external dependency: jd.plugins.DownloadLink not found! -->
 <!-- WARNING: Unresolved external dependency: jd.plugins.PluginStep not found! -->
 <!-- WARNING: Unresolved external dependency: jd.plugins.PluginStep not found! -->
@@ -337,9 +340,17 @@
 <!-- WARNING: No mapping found: jd.utils.JDUtilities -->
 <!-- WARNING: Unresolved external dependency: jd.JDClassLoader not found! -->
 <!-- WARNING: No mapping found: jd.JDClassLoader -->
-<!-- WARNING: No mapping found: jd.utils.JDUtilities -->
-<!-- WARNING: No mapping found: jd.utils.JDUtilities -->
+<!-- WARNING: No mapping found: jd.config.MenuItem -->
+<!-- WARNING: No mapping found: jd.config.MenuItem -->
+<!-- WARNING: Unresolved external dependency: jd.config.MenuItem not found! -->
+<!-- WARNING: Unresolved external dependency: jd.config.SubConfiguration not found! -->
 <!-- WARNING: No mapping found: jd.config.SubConfiguration -->
+<!-- WARNING: No mapping found: jd.config.MenuItem -->
+<!-- WARNING: No mapping found: jd.config.MenuItem -->
+<!-- WARNING: No mapping found: jd.config.SubConfiguration -->
+<!-- WARNING: No mapping found: jd.config.SubConfiguration -->
+<!-- WARNING: No mapping found: jd.utils.JDUtilities -->
+<!-- WARNING: No mapping found: jd.utils.JDUtilities -->
 <!-- WARNING: No mapping found: jd.gui.UIInterface -->
 <!-- WARNING: No mapping found: jd.config.SubConfiguration -->
 <!-- WARNING: No mapping found: jd.plugins.DownloadLink -->
@@ -363,6 +374,7 @@
 <!-- WARNING: Unresolved external dependency: jd.plugins.FilePackage not found! -->
 <!-- WARNING: Unresolved external dependency: jd.plugins.RequestInfo not found! -->
 <!-- WARNING: Unresolved external dependency: jd.JDClassLoader not found! -->
+<!-- WARNING: Unresolved external dependency: jd.config.MenuItem not found! -->
 <!-- WARNING: Unresolved external dependency: jd.config.SubConfiguration not found! -->
 <!-- WARNING: Unresolved external dependency: jd.crypt.BaseDecoder$IllegalAlphabetException not found! -->
 <!-- WARNING: Unresolved external dependency: jd.plugins.PluginStep not found! -->
@@ -398,10 +410,12 @@
   <method class="jd.plugins.container.ContainerBackup" name="boolean doBotCheck(java.io.File)"/>
   <class name="jd.plugins.container.ContainerDLC"/>
   <method class="jd.plugins.container.ContainerDLC" name="java.lang.String createContainerString(java.util.Vector)"/>
+  <method class="jd.plugins.container.ContainerDLC" name="void actionPerformed(java.awt.event.ActionEvent)"/>
   <method class="jd.plugins.container.ContainerDLC" name="java.lang.String getCoder()"/>
   <method class="jd.plugins.container.ContainerDLC" name="java.lang.String getHost()"/>
   <method class="jd.plugins.container.ContainerDLC" name="java.lang.String getVersion()"/>
   <method class="jd.plugins.container.ContainerDLC" name="java.lang.String getPluginID()"/>
+  <method class="jd.plugins.container.ContainerDLC" name="java.util.ArrayList createMenuitems()"/>
   <method class="jd.plugins.container.ContainerDLC" name="jd.plugins.PluginStep doStep(jd.plugins.PluginStep, java.io.File)"/>
   <method class="jd.plugins.container.ContainerDLC" name="java.lang.String jdtcEncrypt(java.lang.String)"/>
   <method class="jd.plugins.container.ContainerDLC" name="java.lang.String getPluginName()"/>
@@ -488,9 +502,9 @@
   <method class="jd.plugins.Plugin" name="jd.plugins.PluginStep getCurrentStep()"/>
   <method class="jd.plugins.Plugin" name="java.lang.String[] getSimpleMatches(java.lang.String, java.lang.String)"/>
   <method class="jd.plugins.Plugin" name="int countOccurences(java.lang.String, java.util.regex.Pattern)"/>
+  <method class="jd.plugins.Plugin" name="java.lang.String[] getHttpLinks(java.lang.String, java.lang.String)"/>
   <method class="jd.plugins.Plugin" name="java.util.HashMap getInputHiddenFields(java.lang.String)"/>
   <method class="jd.plugins.Plugin" name="java.lang.String getFirstMatch(java.lang.String, java.util.regex.Pattern, int)"/>
-  <method class="jd.plugins.Plugin" name="java.lang.String[] getHttpLinks(java.lang.String, java.lang.String)"/>
   <method class="jd.plugins.Plugin" name="java.util.regex.Pattern getSupportedLinks()"/>
   <method class="jd.plugins.Plugin" name="jd.plugins.RequestInfo getRequestWithoutHtmlCode(java.net.URL, java.lang.String, java.lang.String, java.util.HashMap, boolean)"/>
   <method class="jd.plugins.Plugin" name="java.lang.String createPostParameterFromHashMap(java.util.HashMap)"/>
@@ -518,6 +532,7 @@
   <method class="jd.plugins.Plugin" name="java.lang.String getFileNameFormHeader(jd.plugins.HTTPConnection)"/>
   <method class="jd.plugins.Plugin" name="java.lang.String getVersion()"/>
   <method class="jd.plugins.Plugin" name="jd.plugins.RequestInfo postRequest(java.net.URL, java.lang.String, java.lang.String, java.util.HashMap, java.lang.String, boolean)"/>
+  <method class="jd.plugins.Plugin" name="jd.plugins.PluginStep getNextStep(jd.plugins.PluginStep)"/>
   <method class="jd.plugins.Plugin" name="jd.config.SubConfiguration getProperties()"/>
   <method class="jd.plugins.Plugin" name="java.lang.String getSimpleMatch(java.lang.String, java.lang.String, int, int)"/>
   <method class="jd.plugins.Plugin" name="jd.plugins.RequestInfo getRequest(java.net.URL, java.lang.String, java.lang.String, boolean)"/>
@@ -537,6 +552,7 @@
   <method class="jd.plugins.Plugin" name="java.lang.String getHost()"/>
   <method class="jd.plugins.Plugin" name="java.lang.String getPluginID()"/>
   <method class="jd.plugins.Plugin" name="void resetSteps()"/>
+  <method class="jd.plugins.Plugin" name="void main(java.lang.String[])"/>
   <method class="jd.plugins.Plugin" name="jd.plugins.RequestInfo getRequest(java.net.URL)"/>
   <method class="jd.plugins.Plugin" name="int getReadTimeoutFromConfiguration()"/>
   <method class="jd.plugins.Plugin" name="java.lang.String getFormInputHidden(java.lang.String, java.lang.String, java.lang.String)"/>
@@ -578,13 +594,15 @@
   <method class="jd.plugins.container.ContainerUtilites" name="boolean checkJarEntry(java.lang.String, java.lang.String)" map="A"/>
   <method class="jd.plugins.container.ContainerUtilites" name="boolean jarValid(java.lang.String)" map="A"/>
   <method class="jd.plugins.container.ContainerUtilites" name="boolean checkDigest(java.io.InputStream, java.lang.String)" map="A"/>
-  <field class="jd.plugins.container.ContainerBackup" name="patternSupported" map="V"/>
+  <field class="jd.plugins.container.ContainerBackup" name="patternSupported" map="X"/>
   <class name="jd.plugins.container.ContainerDLC$1" map="1"/>
   <field class="jd.plugins.container.ContainerDLC$1" name="this$0" map="A"/>
   <method class="jd.plugins.container.ContainerDLC$1" name="int compare(java.lang.Object, java.lang.Object)" map="compare"/>
   <field class="jd.plugins.container.ContainerDLC" name="CONFIGNAME" map="O"/>
-  <field class="jd.plugins.container.ContainerDLC" name="patternSupported" map="P"/>
-  <field class="jd.plugins.container.ContainerDLC" name="header" map="Q"/>
+  <field class="jd.plugins.container.ContainerDLC" name="PARAM_HOW_INFO_AFTER_CREATE" map="P"/>
+  <field class="jd.plugins.container.ContainerDLC" name="patternSupported" map="Q"/>
+  <field class="jd.plugins.container.ContainerDLC" name="ACTION_SHOW_INFO_AFTER_CREATE" map="R"/>
+  <field class="jd.plugins.container.ContainerDLC" name="header" map="S"/>
   <method class="jd.plugins.container.ContainerDLC" name="void initConfig()" map="B"/>
   <method class="jd.plugins.container.ContainerDLC" name="java.lang.String getMD5(java.lang.String)" map="A"/>
   <method class="jd.plugins.container.ContainerDLC" name="java.lang.String getLocalFile(java.io.File)" map="A"/>
@@ -599,7 +617,7 @@
   <method class="jd.plugins.container.ContainerDLC" name="java.lang.String callService(java.net.URL, java.lang.String)" map="A"/>
   <method class="jd.plugins.container.ContainerDLC" name="java.lang.String getLocalHash(java.io.File)" map="B"/>
   <method class="jd.plugins.container.ContainerDLC" name="byte[] getKey()" map="E"/>
-  <field class="jd.plugins.container.ContainerRSDF" name="patternSupported" map="R"/>
+  <field class="jd.plugins.container.ContainerRSDF" name="patternSupported" map="T"/>
   <method class="jd.plugins.container.ContainerRSDF" name="java.lang.String[] loadFileContent(java.lang.String)" map="D"/>
   <method class="jd.plugins.container.ContainerRSDF" name="java.lang.String[] decrypt(java.lang.String)" map="E"/>
   <method class="jd.plugins.container.ContainerRSDF" name="java.lang.String getLocalFile(java.io.File)" map="C"/>
@@ -610,9 +628,9 @@
   <class name="jd.plugins.container.ContainerCCF$1" map="1"/>
   <field class="jd.plugins.container.ContainerCCF$1" name="this$0" map="A"/>
   <method class="jd.plugins.container.ContainerCCF$1" name="int compare(java.lang.Object, java.lang.Object)" map="compare"/>
-  <field class="jd.plugins.container.ContainerCCF" name="rsdfLink" map="S"/>
-  <field class="jd.plugins.container.ContainerCCF" name="patternSupported" map="T"/>
-  <field class="jd.plugins.container.ContainerCCF" name="rsdf" map="U"/>
+  <field class="jd.plugins.container.ContainerCCF" name="rsdfLink" map="U"/>
+  <field class="jd.plugins.container.ContainerCCF" name="patternSupported" map="V"/>
+  <field class="jd.plugins.container.ContainerCCF" name="rsdf" map="W"/>
   <method class="jd.plugins.container.ContainerCCF" name="void initConfig()" map="H"/>
   <field class="jd.plugins.PluginForDecrypt" name="cryptedLink" map="H"/>
   <field class="jd.plugins.Plugin" name="CONFIGS" map="A"/>

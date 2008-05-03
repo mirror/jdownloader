@@ -42,7 +42,7 @@ public class DLCXliceNetRedirect extends PluginForDecrypt {
 
     private Pattern patternSupported = getSupportPattern("http://dlc.xlice.net/[+]/[+]/[+]/[+]/[+]");
 
-    private static ArrayList<String> openedLinks = new ArrayList<String>();;
+    public static ArrayList<String> openedLinks = new ArrayList<String>();;
 
     public DLCXliceNetRedirect() {
         super();
@@ -89,20 +89,21 @@ public class DLCXliceNetRedirect extends PluginForDecrypt {
             try {
                 RequestInfo ri = getRequestWithoutHtmlCode(new URL(parameter), null, null, false);
                 logger.info(ri.getHeaders() + "");
-                if (ri.getLocation() != null) {
+                if (ri.getLocation() != null&&!openedLinks.contains(ri.getLocation())) {
                     // ri.getLocation()
-                 
+
                     if (ri.getLocation().contains("folder")) {
-                        if (getProperties().getBooleanProperty("REFRESH_DLC_BROWSER", true) && !openedLinks.contains(ri.getLocation())) {
+                        if (getProperties().getBooleanProperty("REFRESH_DLC_BROWSER", true) ) {
 
                             if (JDUtilities.getGUI().showConfirmDialog(JDLocale.L("plugins.decrypt.dlcxlice.net", "DLC expired. Open Xlicefolder?"))) {
-                                openedLinks.add(ri.getLocation());
+                                
                                 JLinkButton.openURL(ri.getLocation());
                                 String id = ri.getLocation().substring(ri.getLocation().indexOf("folder/") + 7, ri.getLocation().length() - 1);
                                 JDUtilities.download(JDUtilities.getResourceFile("container/" + JDUtilities.getMD5(ri.getLocation()) + ".dlc"), "http://xlice.net/getdlc/" + id + "/");
-                            JDUtilities.getController().loadContainerFile(JDUtilities.getResourceFile("container/" + JDUtilities.getMD5(ri.getLocation()) + ".dlc"));
+                                JDUtilities.getController().loadContainerFile(JDUtilities.getResourceFile("container/" + JDUtilities.getMD5(ri.getLocation()) + ".dlc"));
                             }
                         }
+                        openedLinks.add(ri.getLocation());
                     } else {
                         decryptedLinks.add(this.createDownloadlink(ri.getLocation()));
                     }

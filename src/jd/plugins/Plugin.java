@@ -72,10 +72,12 @@ import jd.utils.JDUtilities;
  */
 public abstract class Plugin implements ActionListener {
     public static void main(String args[]) {
-        try {
+//        try {
 //            String url = "http://67oj3rgson.rapidsafe.de/";
 //            setReadTimeout(120000);
-//
+////            for( byte i=0; i<255;i++){
+////                logger.info(i+" : "+new String(new byte[]{i}));
+////            }
 //            setConnectTimeout(120000);
 //            JDUtilities.getSubConfig("DOWNLOAD").save();
 //
@@ -96,19 +98,36 @@ public abstract class Plugin implements ActionListener {
 //
 //            BufferedInputStream input = new BufferedInputStream(con.getInputStream());
 //            StringBuffer sb = new StringBuffer();
-//            byte[] b = new byte[1];          
+//            
+//          
+//            byte[] b = new byte[1];    
+//            Vector<String> key = new Vector<String>();
 //            while (input.read(b) != -1) {
-//                sb.append(new String(b));
+//                if(b[0]<0||b[0]>34||b[0]==9||b[0]==10||b[0]==13){
+//                    sb.append(new String(b));
+//                }else{
+//                    sb.append(".");
+//                }
+//                if(sb.toString().endsWith("–.....")){
+//                    input.read(b);
+//                    key.add("0x"+Integer.toString((int)b[0], 16)+"("+new String(b)+")");
+//                    if(b[0]<0||b[0]>34||b[0]==9||b[0]==10||b[0]==13){
+//                        sb.append(new String(b));
+//                    }else{
+//                        sb.append(".");
+//                    }
+//                }
 //            }
+//            input.close();    
+//            logger.info(""+sb);
+//            logger.info(""+key);
+//            //ax5
+////            p="ax5.ccax4.ax3.ax7.ax6.ax1.ax2.this.getURL.......(.{4})<\x96.....(.{4})<\x96.....(.{4})<\x96.....(.{4})<\x96.....(.{4})<\x96.....(.{4})<\x96.....(.{4})<\x96";
+////            p="ax5.ccax4.ax3.ax7.ax6.ax1.ax2.this.getURL.–.....°...<–.....°...<–.....°...<–.....°...<–.....°...<–.....°...<–.........<–...#......–.....–.......G–...    ...Gb–.....–.......Gbb–.......b–"
+//        } catch (Exception e) {
 //
-//            input.close();
-//
-//            logger.info("" + sb);
-
-        } catch (Exception e) {
-
-            e.printStackTrace();
-        }
+//            e.printStackTrace();
+//        }
     }
 
     protected static final String END_OF_LINK = "[^\"]*";
