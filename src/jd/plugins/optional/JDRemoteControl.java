@@ -43,7 +43,6 @@ import jd.gui.skins.simple.JDAction;
 import jd.gui.skins.simple.SimpleGUI;
 
 import jd.plugins.DownloadLink;
-import jd.plugins.Plugin;
 import jd.plugins.PluginOptional;
 import jd.plugins.Regexp;
 import jd.plugins.RequestInfo;
@@ -57,6 +56,8 @@ import org.mortbay.jetty.handler.AbstractHandler;
 
 public class JDRemoteControl extends PluginOptional implements ControlListener {
 
+    private String version = "0.5.0.0";
+    
     private Server server;
     @SuppressWarnings("unused")
     private AbstractHandler serverHandler;
@@ -68,7 +69,7 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
 
     @Override
     public String getPluginID() {
-        return "0.4.0.0";
+        return version;
     }
 
     @Override
@@ -78,7 +79,7 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
 
     @Override
     public String getVersion() {
-        return "0.4.0.0";
+        return version;
     }
 
     @Override
@@ -160,77 +161,125 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
                 //final String[] command2={"/get/ip","/get/config","/get/version","/get/downloads/current","/get/downloads/max","/get/downloads/finished","/get/speed","/get/isreconnect","/get/isclipboard","/action/start","/action/pause","/action/stop","/action/toggle","/action/update","/action/reconnect","/action/restart","/action/shutdown","/action/set/download/limit/%X%","/action/set/download/max/%X%","/action/open/add","/action/open/config","/action/open/log","/action/open/containerdialog","/action/add/links/grabber(0|1)/start(0|1)/%X%","/action/add/container/%X%","/action/set/clipboard/(true|false)","/action/set/reconnectenabled/(true|false)"};
                 //final String[] desc2={"Get IP","Get Config","Get Version","Get Current Downloads","Get max. sim. Downloads","Get finished Downloads","Get current Speed","Get If Reconnect","Get If ClipBoard enabled","Start DLs","Pause DLs","Stop DLs","Toggle DLs","Do Webupdate","Do Reconnect","Restart JD","Shutdown JD","Set Downloadspeedlimit %X%","Set max sim. Downloads %X%","Open Add Links Dialog","Open Config Dialog","Open Log Dialog","Open Container Dialog","Add Links %X% to Grabber<br />Options:<br />grabber(0|1): Show/Hide LinkGrabber<br />start(0|1): Start DLs after insert<br />Sample<br />/action/add/links/grabber0/start1/http://tinyurl.com/6o73eq http://tinyurl.com/4khvhn<br />Don't forget Space between Links!","Add Container %X%","Set ClipBoard Control","Set Reconnect Enabled"};
 
-                Vector<String> command= new Vector<String>();
-                Vector<String> desc= new Vector<String>();
+                Vector<String> commandvec= new Vector<String>();
+                Vector<String> infovector= new Vector<String>();
                 
-                command.add("/get/ip");
-                command.add("/get/happyhour/gui(0|1)/");
-                command.add("/get/config");
-                command.add("/get/version");
-                command.add("/get/downloads/currentcount");
-                command.add("/get/downloads/currentlist");
-                command.add("/get/downloads/allcount");
-                command.add("/get/downloads/alllist");
-                command.add("/get/downloads/finishedcount");
-                command.add("/get/downloads/finishedlist");
-                command.add("/get/speed");
-                command.add("/get/isreconnect");
-                command.add("/get/isclipboard");
-                command.add("/action/start");
-                command.add("/action/pause");
-                command.add("/action/stop");
-                command.add("/action/toggle");
-                command.add("/action/update");
-                command.add("/action/reconnect");
-                command.add("/action/restart");
-                command.add("/action/shutdown");
-                command.add("/action/set/download/limit/%X%");
-                command.add("/action/set/download/max/%X%");
-                command.add("/action/open/add");
-                command.add("/action/open/config");
-                command.add("/action/open/log");
-                command.add("/action/open/containerdialog");
-                command.add("/action/add/links/grabber(0|1)/start(0|1)/%X%");
-                command.add("/action/add/container/%X%");
-                command.add("/action/save/container/%X%");
-                command.add("/action/set/clipboard/(true|false)");
-                command.add("/action/set/reconnectenabled/(true|false)");
-                command.add("/action/download/premium/(true|false)");
+            commandvec.add(" ");
+            infovector.add("<br /><b>Get Values:</b><br />&nbsp;");
+
+                commandvec.add("/get/speed");
+                infovector.add("Get current Speed");
                 
-                        
-                desc.add("Get IP");
-                desc.add("Get Happy Hour Status (1: Grafisch aufbereitet /0: Besser auslesbar)");
-                desc.add("Get Config");
-                desc.add("Get Version");
-                desc.add("Get Current Downloads Count");
-                desc.add("Get Current Downloads List");
-                desc.add("Get Amount of Downloads in List");
-                desc.add("Get List of Downloads in List");
-                desc.add("Get finished Downloads Count");
-                desc.add("Get finished Downloads List");
-                desc.add("Get current Speed");
-                desc.add("Get If Reconnect");
-                desc.add("Get If ClipBoard enabled");
-                desc.add("Start DLs");
-                desc.add("Pause DLs");
-                desc.add("Stop DLs");
-                desc.add("Toggle DLs (BETA - Does NOT refresh GUI!)");
-                desc.add("Do Webupdate");
-                desc.add("Do Reconnect");
-                desc.add("Restart JD");
-                desc.add("Shutdown JD");
-                desc.add("Set Downloadspeedlimit %X%");
-                desc.add("Set max sim. Downloads %X%");
-                desc.add("Open Add Links Dialog");
-                desc.add("Open Config Dialog");
-                desc.add("Open Log Dialog");
-                desc.add("Open Container Dialog");
-                desc.add("Add Links %X% to Grabber<br />Options:<br />grabber(0|1): Show/Hide LinkGrabber<br />start(0|1): Start DLs after insert<br />Sample<br />/action/add/links/grabber0/start1/http://tinyurl.com/6o73eq http://tinyurl.com/4khvhn<br />Don't forget Space between Links!");
-                desc.add("Add Container %X%");
-                desc.add("Save DLC-Container with all Links to %X%");
-                desc.add("Set ClipBoard Control");
-                desc.add("Set Reconnect Enabled");
-                desc.add("Set Use Premium");
+                commandvec.add("/get/ip");
+                infovector.add("Get IP");
+            
+                commandvec.add("/get/config");
+                infovector.add("Get Config");
+                
+                commandvec.add("/get/happyhour/gui(0|1)/");
+                infovector.add("Get Happy Hour Status (1: Grafisch aufbereitet /0: Besser auslesbar)");
+                
+                commandvec.add("/get/version");
+                infovector.add("Get Version");
+
+                commandvec.add("/get/isreconnect");
+                infovector.add("Get If Reconnect");
+                
+                commandvec.add("/get/isclipboard");
+                infovector.add("Get whether clipboard is enabled");
+
+                commandvec.add("/get/downloads/currentcount");
+                infovector.add("Get amount of current downloads");
+                commandvec.add("/get/downloads/currentlist");
+                infovector.add("Get Current Downloads List");
+                
+                commandvec.add("/get/downloads/allcount");
+                infovector.add("Get amount of downloads in list");
+                commandvec.add("/get/downloads/alllist");
+                infovector.add("Get list of downloads in list");
+                
+                commandvec.add("/get/downloads/finishedcount");
+                infovector.add("Get amount of finished Downloads");
+                commandvec.add("/get/downloads/finishedlist");      
+                infovector.add("Get finished Downloads List");
+                
+            commandvec.add(" ");
+            infovector.add("<br /><b>Actions:</b><br />&nbsp;");
+                
+                commandvec.add("/action/start");
+                infovector.add("Start DLs");
+                
+                commandvec.add("/action/pause");
+                infovector.add("Pause DLs");
+                
+                commandvec.add("/action/stop");
+                infovector.add("Stop DLs");
+                
+                commandvec.add("/action/toggle");
+                infovector.add("Toggle DLs");
+                
+                commandvec.add("/action/update/force(0|1)/");
+                infovector.add("Do Webupdate <br />" +
+                		       "force1 activates auto-restart if update is possible");
+                
+                commandvec.add("/action/reconnect");
+                infovector.add("Do Reconnect");
+                
+                commandvec.add("/action/restart");
+                infovector.add("Restart JD");
+                
+                commandvec.add("/action/shutdown");
+                infovector.add("Shutdown JD");
+                
+                commandvec.add("/action/set/download/limit/%X%");
+                infovector.add("Set Downloadspeedlimit %X%");
+                
+                commandvec.add("/action/set/download/max/%X%");
+                infovector.add("Set max sim. Downloads %X%");
+                
+                commandvec.add("/action/add/links/grabber(0|1)/start(0|1)/%X%");
+                infovector.add("Add Links %X% to Grabber<br />" +
+                		"Options:<br />" +
+                		"grabber(0|1): Show/Hide LinkGrabber<br />" +
+                		"start(0|1): Start DLs after insert<br />" +
+                		"Sample:<br />" +
+                		"/action/add/links/grabber0/start1/http://tinyurl.com/6o73eq http://tinyurl.com/4khvhn<br />" +
+                		"Don't forget Space between Links!");
+                
+                commandvec.add("/action/add/container/%X%");
+                infovector.add("Add Container %X%<br />" +
+                		"Sample:<br />" +
+                		"/action/add/container/C:\\container.dlc");
+                
+                commandvec.add("/action/save/container/%X%");
+                infovector.add("Save DLC-Container with all Links to %X%<br /> " +
+                		"Sample see /action/add/container/%X%");
+                
+                commandvec.add("/action/set/beta/(true|false)");
+                infovector.add("Set use beta enabled or not (doesn't restart itself!)");
+                
+                commandvec.add("/action/set/clipboard/(true|false)");
+                infovector.add("Set ClipBoard Control enabled or not");
+                
+                commandvec.add("/action/set/reconnectenabled/(true|false)");
+                infovector.add("Set Reconnect enabled or not");
+                
+                commandvec.add("/action/set/premiumenabled/(true|false)");
+                infovector.add("Set Use Premium enabled or not");
+                
+                commandvec.add("/action/open/add");
+                infovector.add("Open Add Links Dialog");
+                
+                commandvec.add("/action/open/config");
+                infovector.add("Open Config Dialog");
+                
+                commandvec.add("/action/open/log");
+                infovector.add("Open Log Dialog");
+                
+                commandvec.add("/action/open/containerdialog");
+                infovector.add("Open OpenContainer Dialog");
+                
+
 
                 response.getWriter().println(
                         "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01//EN\"" +
@@ -259,17 +308,21 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
                         "</style>" +
                         "</head>" +
                         "<body><p><br />" +
-                		"JDRemoteControl 0.3<br />" +
+                		"<b>JDRemoteControl " + version + "<br />" +
                 		"<br />" +
-                		"Usage:<br />" +
+                		"Usage:</b><br />&nbsp;<br />" +
+                		"1)Replace %X% with your value<br />" +
+                		"Sample: /action/save/container/C:\\backup.dlc <br />" +
+                		"2)Replace (true|false) with true or false<br />" +
+                		"Sample: /action/set/clipboard/true" +
                 		"<br />" +
                 		"<table border=\"0\" cellspacing=\"5\">");
-                for (int commandcount = 0; commandcount < command.size(); commandcount++)
+                for (int commandcount = 0; commandcount < commandvec.size(); commandcount++)
                 {
                     
-                        response.getWriter().println( "<tr><td valign=\"top\"><a href=\"http://127.0.0.1:10025" + 
-                        command.get(commandcount) + "\">" + command.get(commandcount) + "</a></td><td valign=\"top\">" +
-                        desc.get(commandcount) +
+                        response.getWriter().println( "<tr><td valign=\"top\"><a href=\"http://127.0.0.1:" + getProperties().getIntegerProperty("PORT", 10025) + 
+                        commandvec.get(commandcount) + "\">" + commandvec.get(commandcount) + "</a></td><td valign=\"top\">" +
+                        infovector.get(commandcount) +
                         "</td></tr>");
                 }
                 response.getWriter().println("</table>" +
@@ -284,73 +337,73 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
             //---------------------------------------
            
             //Get IP
-            if (request.getRequestURI().equals("/get/ip")) {
+            else if (request.getRequestURI().equals("/get/ip")) {
                 response.getWriter().println(JDUtilities.getIPAddress());
             }
             
             //Get HappyHour
-            if (request.getRequestURI().matches("[\\s\\S]*?/get/happyhour/gui[01]{1}/[\\s\\S]*")) {
+            else if (request.getRequestURI().matches("[\\s\\S]*?/get/happyhour/gui[01]{1}/[\\s\\S]*")) {
+                    
+                Integer happyguiint = Integer.parseInt((new Regexp(request.getRequestURI(),
+                    "[\\s\\S]*?/get/happyhour/gui([01]{1})/[\\s\\S]*")
+                    .getFirstMatch()));
+                Boolean happygui = false;
+                if(happyguiint == 1){happygui = true;};
+                    
+                RequestInfo ri = getRequest(new URL("http://jdownloader.ath.cx/hh.php?txt=1"));
                 
-            Integer happyguiint = Integer.parseInt((new Regexp(request.getRequestURI(),
-                "[\\s\\S]*?/get/happyhour/gui([01]{1})/[\\s\\S]*")
-                .getFirstMatch()));
-            Boolean happygui = false;
-            if(happyguiint == 1){happygui = true;};
-                
-            RequestInfo ri = getRequest(new URL("http://jdownloader.ath.cx/hh.php?txt=1"));
-            
-            int sec = 300 - JDUtilities.filterInt(JDUtilities.splitByNewline(ri.getHtmlCode())[3]);
-
-            int lastStart = JDUtilities.filterInt(JDUtilities.splitByNewline(ri.getHtmlCode())[4]);
-            int lastEnd = JDUtilities.filterInt(JDUtilities.splitByNewline(ri.getHtmlCode())[5]);
-            Date lastStartDate = new Date(lastStart * 1000L);
-            lastStartDate.setTime(lastStart * 1000L);
-
-            Date lastEndDate = new Date(lastEnd * 1000L);
-            lastEndDate.setTime(lastEnd * 1000L);
-            if (ri.containsHTML("Hour")) {//HappyHour aktiv
-                int activ = JDUtilities.filterInt(JDUtilities.splitByNewline(ri.getHtmlCode())[1]);
-                Date d = new Date(activ * 1000L);
-                d.setTime(activ * 1000L);
-
-                SimpleDateFormat df = new SimpleDateFormat("dd.MM.yyyy HH:mm");
-                String html="";
-                if(!happygui)
-                {
-                    html = String.format("<- active=\"1\" active_since=\"%s\" last_check_ago=\"%s\" last_happyhour_from=\"%s\" last_happyhour_until=\"%s\" ->", df.format(d), JDUtilities.formatSeconds(sec), df.format(lastStartDate), df.format(lastEndDate));    
+                int sec = 300 - JDUtilities.filterInt(JDUtilities.splitByNewline(ri.getHtmlCode())[3]);
+    
+                int lastStart = JDUtilities.filterInt(JDUtilities.splitByNewline(ri.getHtmlCode())[4]);
+                int lastEnd = JDUtilities.filterInt(JDUtilities.splitByNewline(ri.getHtmlCode())[5]);
+                Date lastStartDate = new Date(lastStart * 1000L);
+                lastStartDate.setTime(lastStart * 1000L);
+    
+                Date lastEndDate = new Date(lastEnd * 1000L);
+                lastEndDate.setTime(lastEnd * 1000L);
+                if (ri.containsHTML("Hour")) {//HappyHour aktiv
+                    int activ = JDUtilities.filterInt(JDUtilities.splitByNewline(ri.getHtmlCode())[1]);
+                    Date d = new Date(activ * 1000L);
+                    d.setTime(activ * 1000L);
+    
+                    SimpleDateFormat df = new SimpleDateFormat("dd.MM.yyyy HH:mm");
+                    String html="";
+                    if(!happygui)
+                    {
+                        html = String.format("<- active=\"1\" active_since=\"%s\" last_check_ago=\"%s\" last_happyhour_from=\"%s\" last_happyhour_until=\"%s\" ->", df.format(d), JDUtilities.formatSeconds(sec), df.format(lastStartDate), df.format(lastEndDate));    
+                    }
+                    else
+                    {
+                        html = String.format(JDLocale.L("plugins.hoster.rapidshare.com.hhactive.html", "<link href='http://jdownloader.ath.cx/jdcss.css' rel='stylesheet' type='text/css' /><body><div><p style='text-align:center'><img src='http://jdownloader.ath.cx/img/hh.jpg' /><br>Aktiv seit %s<br>Zuletzt überprüft vor %s<br>Letzte Happy Hour von %s bis %s</p></div></body>"), df.format(d), JDUtilities.formatSeconds(sec), df.format(lastStartDate), df.format(lastEndDate));    
+                    }
+    
+                    
+                    response.getWriter().println(html);
+                    //JDUtilities.getGUI().showHTMLDialog(JDLocale.L("plugins.hoster.rapidshare.com.happyHours", "Happy Hour Check"), html);
+                } else {
+                    int activ = JDUtilities.filterInt(JDUtilities.splitByNewline(ri.getHtmlCode())[1]);
+                    Date d = new Date(activ * 1000L);
+                    d.setTime(activ * 1000L);
+    
+                    SimpleDateFormat df = new SimpleDateFormat("dd.MM.yyyy HH:mm");
+    
+                    String html="";
+                    if(!happygui)
+                    {
+                        html = String.format("<- active=\"0\" last_check_ago=\"%s\" last_happyhour_from=\"%s\" last_happyhour_until=\"%s\" ->", JDUtilities.formatSeconds(sec), df.format(lastStartDate), df.format(lastEndDate));
+                    }
+                    else
+                    {
+                        html = String.format(JDLocale.L("plugins.hoster.rapidshare.com.hhinactive.html", "<link href='http://jdownloader.ath.cx/jdcss.css' rel='stylesheet' type='text/css' /><body><div><p style='text-align:center'><img src='http://jdownloader.ath.cx/img/nhh.jpg' /><br>Die letzte Happy Hour Phase endete am %s<br>Zuletzt überprüft vor %s<br>Letzte Happy Hour von %s bis %s</p></div></body>"), df.format(d), JDUtilities.formatSeconds(sec), df.format(lastStartDate), df.format(lastEndDate));
+                    }
+                    
+                    response.getWriter().println(html);
+                    //JDUtilities.getGUI().showHTMLDialog(JDLocale.L("plugins.hoster.rapidshare.com.happyHours", "Happy Hour Check"), html);
                 }
-                else
-                {
-                    html = String.format(JDLocale.L("plugins.hoster.rapidshare.com.hhactive.html", "<link href='http://jdownloader.ath.cx/jdcss.css' rel='stylesheet' type='text/css' /><body><div><p style='text-align:center'><img src='http://jdownloader.ath.cx/img/hh.jpg' /><br>Aktiv seit %s<br>Zuletzt überprüft vor %s<br>Letzte Happy Hour von %s bis %s</p></div></body>"), df.format(d), JDUtilities.formatSeconds(sec), df.format(lastStartDate), df.format(lastEndDate));    
-                }
-
-                
-                response.getWriter().println(html);
-                //JDUtilities.getGUI().showHTMLDialog(JDLocale.L("plugins.hoster.rapidshare.com.happyHours", "Happy Hour Check"), html);
-            } else {
-                int activ = JDUtilities.filterInt(JDUtilities.splitByNewline(ri.getHtmlCode())[1]);
-                Date d = new Date(activ * 1000L);
-                d.setTime(activ * 1000L);
-
-                SimpleDateFormat df = new SimpleDateFormat("dd.MM.yyyy HH:mm");
-
-                String html="";
-                if(!happygui)
-                {
-                    html = String.format("<- active=\"0\" last_check_ago=\"%s\" last_happyhour_from=\"%s\" last_happyhour_until=\"%s\" ->", JDUtilities.formatSeconds(sec), df.format(lastStartDate), df.format(lastEndDate));
-                }
-                else
-                {
-                    html = String.format(JDLocale.L("plugins.hoster.rapidshare.com.hhinactive.html", "<link href='http://jdownloader.ath.cx/jdcss.css' rel='stylesheet' type='text/css' /><body><div><p style='text-align:center'><img src='http://jdownloader.ath.cx/img/nhh.jpg' /><br>Die letzte Happy Hour Phase endete am %s<br>Zuletzt überprüft vor %s<br>Letzte Happy Hour von %s bis %s</p></div></body>"), df.format(d), JDUtilities.formatSeconds(sec), df.format(lastStartDate), df.format(lastEndDate));
-                }
-                
-                response.getWriter().println(html);
-                //JDUtilities.getGUI().showHTMLDialog(JDLocale.L("plugins.hoster.rapidshare.com.happyHours", "Happy Hour Check"), html);
-            }
             }
             
             //Get Config
-            if (request.getRequestURI().equals("/get/config")) {
+            else if (request.getRequestURI().equals("/get/config")) {
                 Property config = JDUtilities.getConfiguration();
                 response.getWriter().println("<pre>");
                 if (request.getParameterMap().containsKey("sub")) {
@@ -366,17 +419,17 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
             }
             
             //Get Version
-            if (request.getRequestURI().equals("/get/version")) {
+            else if (request.getRequestURI().equals("/get/version")) {
                 response.getWriter().println(JDUtilities.JD_VERSION + JDUtilities.getRevision());
             }
             
             //Get Current DLs COUNT
-            if (request.getRequestURI().equals("/get/downloads/currentcount")) {
+            else if (request.getRequestURI().equals("/get/downloads/currentcount")) {
                 response.getWriter().println(JDUtilities.getController().getRunningDownloadNum());
             }
             
             //Get Current DLs
-            if (request.getRequestURI().equals("/get/downloads/currentlist")) {
+            else if (request.getRequestURI().equals("/get/downloads/currentlist")) {
 
                 for (int i = 0; i < JDUtilities.getController().getDownloadLinks().size(); i++) {
                     if (JDUtilities.getController().getDownloadLinks().get(i).getStatus() == DownloadLink.STATUS_DOWNLOAD_IN_PROGRESS)
@@ -391,12 +444,12 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
             }
             
             //Get DLList COUNT
-            if (request.getRequestURI().equals("/get/downloads/allcount")) {
+            else if (request.getRequestURI().equals("/get/downloads/allcount")) {
                 response.getWriter().println(JDUtilities.getController().getDownloadLinks().size());
             }
             
             //Get DLList
-            if (request.getRequestURI().equals("/get/downloads/alllist")) {
+            else if (request.getRequestURI().equals("/get/downloads/alllist")) {
 
                 for (int i = 0; i < JDUtilities.getController().getDownloadLinks().size(); i++) {
                         response.getWriter().println(
@@ -412,7 +465,7 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
             }
             
             //Get finished DLs COUNT
-            if (request.getRequestURI().equals("/get/downloads/finishedcount")) {
+            else if (request.getRequestURI().equals("/get/downloads/finishedcount")) {
                 int counter = 0;
                 Vector<DownloadLink> k = JDUtilities.getController().getDownloadLinks();
 
@@ -423,7 +476,7 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
             }
             
             //Get finished DLs
-            if (request.getRequestURI().equals("/get/downloads/finishedlist")) {
+            else if (request.getRequestURI().equals("/get/downloads/finishedlist")) {
 
                 for (int i = 0; i < JDUtilities.getController().getDownloadLinks().size(); i++) {
                     if (JDUtilities.getController().getDownloadLinks().get(i).getStatus() == DownloadLink.STATUS_DONE)
@@ -438,16 +491,16 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
             }
             
             //Get current Speed
-            if (request.getRequestURI().equals("/get/speed")) {
+            else if (request.getRequestURI().equals("/get/speed")) {
                 response.getWriter().println(JDUtilities.getController().getSpeedMeter() / 1000);
             }
             
             //Get IsReconnect
-            if (request.getRequestURI().equals("/get/isreconnect")) {
+            else if (request.getRequestURI().equals("/get/isreconnect")) {
                 response.getWriter().println(!JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_DISABLE_RECONNECT, false));
             }
             //Get IsClipBoard
-            if (request.getRequestURI().equals("/get/isclipboard")) {
+            else if (request.getRequestURI().equals("/get/isclipboard")) {
                 response.getWriter().println(JDUtilities.getController().getClipboard().isEnabled());
             }
             
@@ -456,43 +509,48 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
             //---------------------------------------
             
             //Do Start Download
-            if (request.getRequestURI().equals("/action/start")) {
+            else if (request.getRequestURI().equals("/action/start")) {
                 JDUtilities.getController().startDownloads();
                 response.getWriter().println("Downloads started");
             }
             
             //Do Pause Download
-            if (request.getRequestURI().equals("/action/pause")) {
+            else if (request.getRequestURI().equals("/action/pause")) {
                 JDUtilities.getController().pauseDownloads(true);
                 response.getWriter().println("Downloads paused");
             }
             
             //Do Stop Download
-            if (request.getRequestURI().equals("/action/stop")) {
+            else if (request.getRequestURI().equals("/action/stop")) {
                 JDUtilities.getController().stopDownloads();
                 response.getWriter().println("Downloads stopped");
             }
             
             //Do Toggle Download
-            if (request.getRequestURI().equals("/action/toggle")) {
+            else if (request.getRequestURI().equals("/action/toggle")) {
                 JDUtilities.getController().toggleStartStop();
                 response.getWriter().println("Downloads toggled");
             }
 
             //Do Make Webupdate
-            if (request.getRequestURI().equals("/action/update")) {
-                //JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_WEBUPDATE_AUTO_RESTART, false)
-                
-                boolean tmp = JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_WEBUPDATE_AUTO_RESTART, false);
-                JDUtilities.getConfiguration().setProperty(Configuration.PARAM_WEBUPDATE_AUTO_RESTART, true);
+            
+            else if (request.getRequestURI().matches("[\\s\\S]*?/action/update/force[01]{1}/[\\s\\S]*")) {
+                    
+                Integer force = Integer.parseInt((new Regexp(request.getRequestURI(),
+                    "[\\s\\S]*?/action/update/force([01]{1})/[\\s\\S]*")
+                    .getFirstMatch()));
+                if(force == 1){
+                    JDUtilities.getConfiguration().setProperty(Configuration.PARAM_WEBUPDATE_AUTO_RESTART, true);
+                    JDUtilities.getConfiguration().setProperty(Configuration.PARAM_WEBUPDATE_DISABLE, false);
+                };
+            
                 new JDInit().doWebupdate(JDUtilities.getConfiguration().getIntegerProperty(Configuration.CID, -1), true);
-                JDUtilities.getConfiguration().setProperty(Configuration.PARAM_DISABLE_RECONNECT, tmp);
-
+   
                 response.getWriter().println("Do Webupdate...");
             }
             
             //Do Reconnect
-            if (request.getRequestURI().equals("/action/reconnect")) {
+            else if (request.getRequestURI().equals("/action/reconnect")) {
                 response.getWriter().println("Do Reconnect...");
                 
                 boolean tmp = JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_DISABLE_RECONNECT, true);
@@ -506,10 +564,10 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
             }
             
             //Do Restart JD
-            if (request.getRequestURI().equals("/action/restart")) {
+            else if (request.getRequestURI().equals("/action/restart")) {
                 response.getWriter().println("Restarting...");
                 
-                class JDClose implements Runnable { /* zeitverzögertes beenden */
+                class JDClose implements Runnable { /* zeitverzögertes beenden  - thx jiaz */
                     JDClose() {
                         new Thread(this).start();
                     }
@@ -528,11 +586,11 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
             }
             
             //Do Shutdown JD
-            if (request.getRequestURI().equals("/action/shutdown")) {
+            else if (request.getRequestURI().equals("/action/shutdown")) {
                 
                 response.getWriter().println("Shutting down...");
                 
-                class JDClose implements Runnable { /* zeitverzögertes beenden */
+                class JDClose implements Runnable { /* zeitverzögertes beenden  - thx jiaz */
                     JDClose() {
                         new Thread(this).start();
                     }
@@ -552,51 +610,53 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
             }
             
             //Set Downloadlimit
-            if (request.getRequestURI().matches("(?is).*/action/set/download/limit/[0-9]+.*")) {
+            else if (request.getRequestURI().matches("(?is).*/action/set/download/limit/[0-9]+.*")) {
                 Integer newdllimit = Integer.parseInt(new Regexp(request.getRequestURI(),
                         "[\\s\\S]*/action/set/download/limit/([0-9]+).*")
                         .getFirstMatch());
                 logger.fine("RemoteControl - Set max. Downloadspeed: " + newdllimit.toString() );
                 JDUtilities.getSubConfig("DOWNLOAD").setProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, newdllimit.toString());
+                JDUtilities.getSubConfig("DOWNLOAD").save();
                 response.getWriter().println("newlimit=" + newdllimit);
             }
             
             //Set max. sim. Downloads
-            if (request.getRequestURI().matches("(?is).*/action/set/download/max/[0-9]+.*")) {
+            else if (request.getRequestURI().matches("(?is).*/action/set/download/max/[0-9]+.*")) {
                 Integer newsimdl = Integer.parseInt(new Regexp(request.getRequestURI(),
                         "[\\s\\S]*/action/set/download/max/([0-9]+).*")
                         .getFirstMatch());
                 logger.fine("RemoteControl - Set max. sim. Downloads: " + newsimdl.toString() );
                 JDUtilities.getSubConfig("DOWNLOAD").setProperty(Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN, newsimdl.toString());
+                JDUtilities.getSubConfig("DOWNLOAD").save();
                 response.getWriter().println("newmax=" + newsimdl);
             }
             
             //OpenDialog Add-Links
-            if (request.getRequestURI().equals("/action/open/add")) {
+            else if (request.getRequestURI().equals("/action/open/add")) {
                 simplegui.actionPerformed(new ActionEvent(this, JDAction.ITEMS_ADD, null));
                 response.getWriter().println("Add-Links Dialog opened");
             }
             
             //OpenDialog Config
-            if (request.getRequestURI().equals("/action/open/config")) {
+            else if (request.getRequestURI().equals("/action/open/config")) {
                 simplegui.actionPerformed(new ActionEvent(this, JDAction.APP_CONFIGURATION, null));
                 response.getWriter().println("Config Dialog opened");
             }
             
             //OpenDialog Log
-            if (request.getRequestURI().equals("/action/open/log")) {
+            else if (request.getRequestURI().equals("/action/open/log")) {
                 simplegui.actionPerformed(new ActionEvent(this, JDAction.APP_LOG, null));
                 response.getWriter().println("Log Dialog opened");
             }
             
             //OpenDialog Container
-            if (request.getRequestURI().equals("/action/open/containerdialog")) {
+            else if (request.getRequestURI().equals("/action/open/containerdialog")) {
                 simplegui.actionPerformed(new ActionEvent(this, JDAction.APP_LOAD_DLC, null));
                 response.getWriter().println("Container Dialog opened");
             }
             
             //Add Link(s) 
-            if (request.getRequestURI().matches("(?is).*/action/add/links/grabber[01]{1}/start[01]{1}/[\\s\\S]+")) {
+            else if (request.getRequestURI().matches("(?is).*/action/add/links/grabber[01]{1}/start[01]{1}/[\\s\\S]+")) {
                 String link = (new Regexp(request.getRequestURI(),
                     "[\\s\\S]*?/action/add/links/grabber[01]{1}/start[01]{1}/([\\s\\S]+)")
                     .getFirstMatch());
@@ -623,7 +683,7 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
             }
             
             //Open DLC Container
-            if (request.getRequestURI().matches("(?is).*/action/add/container/[\\s\\S]+")) {
+            else if (request.getRequestURI().matches("(?is).*/action/add/container/[\\s\\S]+")) {
                 String dlcfilestr = (new Regexp(request.getRequestURI(),
                 "[\\s\\S]*/action/add/container/([\\s\\S]+)")
                 .getFirstMatch());
@@ -634,7 +694,7 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
             }
             
             //Save Linklist as DLC Container
-            if (request.getRequestURI().matches("(?is).*/action/save/container/[\\s\\S]+")) {
+            else if (request.getRequestURI().matches("(?is).*/action/save/container/[\\s\\S]+")) {
                 String dlcfilestr = (new Regexp(request.getRequestURI(),
                 "[\\s\\S]*/action/save/container/([\\s\\S]+)")
                 .getFirstMatch());
@@ -645,7 +705,7 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
             }
             
             //Set ClipBoard
-            if (request.getRequestURI().matches("(?is).*/action/set/clipboard/.*")) {
+            else if (request.getRequestURI().matches("(?is).*/action/set/clipboard/.*")) {
                 boolean newclip = Boolean.parseBoolean(new Regexp(request.getRequestURI(),
                      "[\\s\\S]*/action/set/clipboard/(.*)")
                      .getFirstMatch());
@@ -661,8 +721,26 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
                 } 
             }
             
+            //Set Beta Enabled
+            else if (request.getRequestURI().matches("(?is).*/action/set/beta/.*")) {
+                boolean newbeta = Boolean.parseBoolean(new Regexp(request.getRequestURI(),
+                     "[\\s\\S]*/action/set/beta/(.*)")
+                     .getFirstMatch());
+                logger.fine("RemoteControl - Set Beta: " + newbeta );
+                if((JDUtilities.getController().getClipboard().isEnabled()) ^ (newbeta)) /*C++ User:^ is equuvalent to XOR*/
+                {
+                    JDUtilities.getSubConfig("WEBUPDATE").setProperty("WEBUPDATE_BETA",newbeta);
+                    JDUtilities.getSubConfig("WEBUPDATE").save();
+                    response.getWriter().println("beta=" + newbeta + " (CHANGED=true)");
+                }
+                else
+                {
+                    response.getWriter().println("beta=" + newbeta + " (CHANGED=false)");
+                } 
+            }
+            
             //Set ReconnectEnabled
-            if (request.getRequestURI().matches("(?is).*/action/set/reconnectenabled/.*")) {
+            else if (request.getRequestURI().matches("(?is).*/action/set/reconnectenabled/.*")) {
                 boolean newrc = Boolean.parseBoolean(new Regexp(request.getRequestURI(),
                      "[\\s\\S]*/action/set/reconnectenabled/(.*)")
                      .getFirstMatch());
@@ -679,14 +757,15 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
             }
             
             //Set use premium 
-                if (request.getRequestURI().matches("(?is).*/action/download/premium/.*")) {
+            else if (request.getRequestURI().matches("(?is).*/action/set/premiumenabled/.*")) {
                   boolean newuseprem = Boolean.parseBoolean(new Regexp(request.getRequestURI(),
-                          "[\\s\\S]*/action/download/premium/(.*)")
+                          "[\\s\\S]*/action/set/premiumenabled/(.*)")
                           .getFirstMatch());
                   logger.fine("RemoteControl - Set Premium: " + newuseprem );
                   if((newuseprem) ^ (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, newuseprem))) /*C++ User:^ is equivalent to XOR*/
                   {
                       JDUtilities.getConfiguration().setProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, newuseprem);
+                      JDUtilities.saveConfig();
                       response.getWriter().println("newprem=" + newuseprem + " (CHANGED=true)");
                   }
                   else
@@ -695,6 +774,10 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
                   }                      
                 
                 
+            }
+            else
+            {
+                response.getWriter().println("JDRemoteControl - Malformed Request. use /help");
             }
             
 
