@@ -220,14 +220,14 @@ public class UCMS extends PluginForDecrypt {
 		    			ArrayList<ArrayList<String>> links = null;
 		    			
 		    			if(reqinfo.containsHTML("unescape")) {
-		    				links = getAllSimpleMatches(java.net.URLDecoder.decode(java.net.URLDecoder.decode(java.net.URLDecoder.decode(getBetween(reqinfo.getHtmlCode(), "unescape\\(unescape\\(\"", "\"")))), "ACTION=\"°\"");
+		    				links = getAllSimpleMatches(JDUtilities.htmlDecode(JDUtilities.htmlDecode(JDUtilities.htmlDecode(getBetween(reqinfo.getHtmlCode(), "unescape\\(unescape\\(\"", "\"")))), "ACTION=\"°\"");
 		    			}
 		    			else {
 		    				links = getAllSimpleMatches(reqinfo.getHtmlCode(), "ACTION=\"°\"");
 		    			}
 	        			for(int j=0; j<links.size(); j++){
-	        				//System.out.println(links.get(j).get(0));
-	        				decryptedLinks.add(this.createDownloadlink(links.get(j).get(0)));
+	        				System.out.println(JDUtilities.htmlDecode(links.get(j).get(0)));
+	        				decryptedLinks.add(this.createDownloadlink(getHttpLinkList(JDUtilities.htmlDecode(links.get(j).get(0)))));
 	        			}
     				}
     			}
