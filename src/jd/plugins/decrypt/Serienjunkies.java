@@ -401,10 +401,9 @@ public class Serienjunkies extends PluginForDecrypt {
                                 for (int j = 0; j < links2.length; j++) {
                                     if (canHandle(links2[j])) {
                                         if (this.getProperties().getBooleanProperty("USE_DIREKTDECRYPT", false)) {
-                                            step.setParameter((new jd.plugins.host.Serienjunkies()).getDLinks(links2[j]));
+                                            decryptedLinks.addAll((new jd.plugins.host.Serienjunkies()).getDLinks(links2[j]));
                                         } else {
                                             decryptedLinks.add(createdl(links2[j], new String[] {size, links[i][0], links[i][1], title}));
-                                            step.setParameter(decryptedLinks);
                                         }
 
                                     }
