@@ -18,6 +18,7 @@ package jd.captcha.configuration;
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.Method;
 import java.util.Hashtable;
 import java.util.Vector;
 import java.util.logging.Logger;
@@ -184,8 +185,8 @@ public class JACScript {
         set("gapDetectionPeakContrast", 0.25);
 
         set("useSpecialGetLetters", "");
-        set("useLetterFilter","");
-        set("useLettercomparatorFilter","");
+        set("useLetterFilter", "");
+        set("useLettercomparatorFilter", "");
 
         set("LetterSearchLimitFalsePercent", 100);
         /**
@@ -243,13 +244,13 @@ public class JACScript {
          */
         set("cancelIfObjectDetectionFailed", false);
         /**
-         * Gewichtung des größenunterschieds Ausschnitt/Originale(Datenbank)
-         * Ist ein datebank bcuhstabe nur teilweise auf dem Trefferausschnitt, verschkechtert das die Wertung
+         * Gewichtung des größenunterschieds Ausschnitt/Originale(Datenbank) Ist
+         * ein datebank bcuhstabe nur teilweise auf dem Trefferausschnitt,
+         * verschkechtert das die Wertung
          * 
          */
         set("intersectionDimensionWeight", 0.9);
-        
-  
+
         /**
          * Gibt an wie viele überlagerungsstörungen ausgefiltert werden sollen
          * -1 :>keine 0: bei 0 Nachbarn 1: bei höchstem einen Nachbarn etc
@@ -284,11 +285,13 @@ public class JACScript {
          * Schwellwert für den quickscanfilter
          */
         set("preScanFilter", 100);
-        
+
         /**
-         * Schwellwert für den quickscanfilter. Wird dieser emergeny Wert gesetzt, so wird bei Erfolgloser Suche der filter auf diesen wert gesetzt und ein 2. Lauf gestartet
+         * Schwellwert für den quickscanfilter. Wird dieser emergeny Wert
+         * gesetzt, so wird bei Erfolgloser Suche der filter auf diesen wert
+         * gesetzt und ein 2. Lauf gestartet
          */
-        set("preScanEmergencyFilter",0);
+        set("preScanEmergencyFilter", 0);
         /**
          * Anzahl der Linien der prescan auswerten soll
          */
@@ -320,6 +323,12 @@ public class JACScript {
          * werden (true) oder alle (False)
          */
         set("trainOnlyUnknown", true);
+        
+        /**
+         * Gibt an ob bei der objekterenntung pixeln gefolg twerden die quer liegen.
+         */
+        set("followXLines",true);
+        set("turnDB",false);
 
         /**
          * Parameter: Scan-Parameter. Gibt an um wieviele Pixel sich Letter und
@@ -335,12 +344,15 @@ public class JACScript {
         /**
          * Die Zeichenanzahl wird automatisch gesetzt
          */
-        set("autoLetterNum",false);
+        set("autoLetterNum", false);
         /**
-         * Gleich nach der Objekterkennung wird versucht den buchstaben zu erkennung
-         * so können zusammenhängende Buchstaben miterkannt werden
+         * Gleich nach der Objekterkennung wird versucht den buchstaben zu
+         * erkennung so können zusammenhängende Buchstaben miterkannt werden
          */
-        set("directLetterDetection",false);
+        set("directLetterDetection", false);
+        
+        set("prescandivider",4.0);
+        set("divider",6.0);
         /**
          * Parameter: Scan-Parameter. Gibt an um wieviele Pixel Letter und
          * Vergleichsletter gegeneinander verschoben werden um die beste
@@ -359,25 +371,24 @@ public class JACScript {
          * innere nicht weiter als 7 % vom mittelunkte des äußeren befindet.
          */
         set("multiplePartMergeMinSize", 0);
-        
+
         set("abortDirectDetectionOnDetectionError", false);
-        
-        
+
         /**
-         * InverseFontWeight
-         * Unterschreitet die Pixelanzahl einer Intersection einen gewissen Teil der Intersectionfläche, wird der fehler auf 100% angehoben.
-         * Beispiel:
-         * inverseFontWeight=8
-         * Die gemeinsammen Pixel einer 400 px² Intersection betragen nur 20 pixel. 20*8 = 160; 160<400
-         * =>Der Treffer  wird nicht gewertet, da die Intersection zu wenig gemeinsamme Pixel hat.
+         * InverseFontWeight Unterschreitet die Pixelanzahl einer Intersection
+         * einen gewissen Teil der Intersectionfläche, wird der fehler auf 100%
+         * angehoben. Beispiel: inverseFontWeight=8 Die gemeinsammen Pixel einer
+         * 400 px² Intersection betragen nur 20 pixel. 20*8 = 160; 160<400
+         * =>Der Treffer wird nicht gewertet, da die Intersection zu wenig
+         * gemeinsamme Pixel hat.
          */
-        set("inverseFontWeight",8.0);
-        
-        set("scanstepx",1);
-        set("scanstepy",1);
-set("intersectionAHeightWeight",0.0);
-set("intersectionAWidthWeight",0.0);
-set("minObjectSize",10);
+        set("inverseFontWeight", 8.0);
+
+        set("scanstepx", 1);
+        set("scanstepy", 1);
+        set("intersectionAHeightWeight", 0.0);
+        set("intersectionAWidthWeight", 0.0);
+        set("minObjectSize", 10);
     }
 
     /**
@@ -628,9 +639,30 @@ set("minObjectSize",10);
                     } else if (cmd[1].equalsIgnoreCase("cleanBackgroundByColor")) {
                         captcha.cleanBackgroundByColor(Integer.parseInt(params[0].trim()));
                         continue;
-                    }
+                    } else if (cmd[1].equalsIgnoreCase("doSpecial")) {
+                        String[] ref = params[0].trim().split("\\.");
+                        if (ref.length != 2) {
+                            if (JAntiCaptcha.isLoggerActive()) logger.severe("dpSpecial-Parameter should have the format Class.Method");
+                            continue;
+                        }
+                        String cl = ref[0];
+                        String methodname = ref[1];
+                        Class newClass;
+                        try {
+                            newClass = Class.forName("jd.captcha.specials." + cl);
 
-                    else if (cmd[1].equalsIgnoreCase("saveImageasJpg")) {
+                            Class[] parameterTypes = new Class[] { captcha.getClass() };
+                            Method method = newClass.getMethod(methodname, parameterTypes);
+                            Object[] arguments = new Object[] { captcha };
+                            Object instance = null;
+                            method.invoke(instance, arguments);
+
+                        } catch (Exception e) {
+                            if (JAntiCaptcha.isLoggerActive()) logger.severe("Fehler in doSpecial:" + e.getLocalizedMessage());
+                            e.printStackTrace();
+                        }
+
+                    } else if (cmd[1].equalsIgnoreCase("saveImageasJpg")) {
 
                         captcha.saveImageasJpg(new File(params[0].trim()));
                         continue;
@@ -648,7 +680,6 @@ set("minObjectSize",10);
                     } else if (cmd[1].equalsIgnoreCase("removeBridges")) {
                         captcha.removeBridges(Integer.parseInt(params[0].trim()), Double.parseDouble(params[1].trim()));
                         continue;
-             
 
                     } else if (cmd[1].equalsIgnoreCase("cleanWithDetailMask")) {
                         captcha.cleanWithDetailMask(owner.createCaptcha(UTILITIES.loadImage(owner.getResourceFile(params[0].trim()))), Integer.parseInt(params[1].trim()));
@@ -696,12 +727,7 @@ set("minObjectSize",10);
 
                 } else if (cmd[0].equals("function") && (params = cmd[2].split("\\,")).length == 5) {
 
-                } else if (cmd[0].equals("function") && (params = cmd[2].split("\\,")).length == 6) {
-                    if (cmd[1].equalsIgnoreCase("rsdesin")) {
-                        captcha.rsDesin(Double.parseDouble(params[0].trim()), Double.parseDouble(params[1].trim()), Double.parseDouble(params[2].trim()),Double.parseDouble(params[3].trim()),Double.parseDouble(params[4].trim()),Double.parseDouble(params[5].trim()));
-                        continue;
-                    }
-                }
+                } 
 
             }
         } catch (Exception e) {
@@ -835,7 +861,6 @@ set("minObjectSize",10);
                 } else if (cmd[0].equals("function") && (params = cmd[2].split("\\,")).length == 5) {
 
                 } else if (cmd[0].equals("function") && (params = cmd[2].split("\\,")).length == 6) {
-                 
 
                 }
 

@@ -218,7 +218,7 @@ public class SingleDownloadController extends Thread {
         }
 
         PluginStep resultStep = step;
-        int resultPluginStatus = step.getStatus();
+        int resultPluginStatus = step!=null?step.getStatus():-1;
         int resultLinkStatus = downloadLink.getStatus();
         // Der Download ist an dieser Stelle entweder Beendet oder
         // Abgebrochen. Mögliche Ursachen können nun untersucht werden um

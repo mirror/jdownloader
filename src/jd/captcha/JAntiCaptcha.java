@@ -278,8 +278,10 @@ public class JAntiCaptcha {
                 }
                 letter.setGrid(newGrid);
                 // letter = letter.align(-40, +40);
+                // PixelGrid.fillLetter(letter);
                 letter.setSourcehash(UTILITIES.getLocalHash(images[i]));
                 letter.setDecodedValue(images[i].getName().split("\\_")[1].split("\\.")[0]);
+
                 letter.clean();
 
                 letterDB.add(letter);
@@ -393,6 +395,7 @@ public class JAntiCaptcha {
                 }
             }
         } catch (Exception e) {
+           e.printStackTrace();
             if (JAntiCaptcha.isLoggerActive()) logger.severe("Fehler bein lesen der MTH Datei!!. Methode kann nicht funktionieren!");
 
         }
@@ -584,6 +587,7 @@ public class JAntiCaptcha {
         captchaImage = UTILITIES.loadImage(captchafile);
         // }
         Captcha captcha = createCaptcha(captchaImage);
+        
         logger.info("CAPTCHA :_" + checkCaptcha(captcha));
         if (bw3 != null) {
             bw3.dispose();
@@ -660,14 +664,18 @@ public class JAntiCaptcha {
 
             }
 
-//            String methodsPath = UTILITIES.getFullPath(new String[] { JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath(), "jd", "captcha", "methods" });
-//            String hoster = "rscat.com";
-//            JAntiCaptcha jac = new JAntiCaptcha(methodsPath, hoster);
-////            jac.setShowDebugGui(true);
-////            LetterComperator.CREATEINTERSECTIONLETTER = true;
-//            LetterComperator l = jac.getLetter(dif);
+            // String methodsPath = UTILITIES.getFullPath(new String[] {
+            // JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath(),
+            // "jd", "captcha", "methods" });
+            // String hoster = "rscat.com";
+            // JAntiCaptcha jac = new JAntiCaptcha(methodsPath, hoster);
+            // // jac.setShowDebugGui(true);
+            // // LetterComperator.CREATEINTERSECTIONLETTER = true;
+            // LetterComperator l = jac.getLetter(dif);
             bw2.add(new JLabel("Wert:"), UTILITIES.getGBC(0, 8, 2, 2));
-//            bw2.add(new JLabel(lcs[i].getDecodedValue() + " : " + l.getDecodedValue() + " - " + l.getValityPercent()), UTILITIES.getGBC(i * 2 + 2, 8, 2, 2));
+            // bw2.add(new JLabel(lcs[i].getDecodedValue() + " : " +
+            // l.getDecodedValue() + " - " + l.getValityPercent()),
+            // UTILITIES.getGBC(i * 2 + 2, 8, 2, 2));
             bw2.add(new JLabel("Proz.:"), UTILITIES.getGBC(0, 10, 2, 2));
             bw2.add(new JLabel(lcs[i].getValityPercent() + "%"), UTILITIES.getGBC(i * 2 + 2, 10, 2, 2));
 
@@ -715,7 +723,7 @@ public class JAntiCaptcha {
         f.setVisible(true);
         f.setLocation(500, 10);
         f.setLayout(new GridBagLayout());
-        f.add(new JLabel("original captcha: "+captchafile.getName()), UTILITIES.getGBC(0, 0, 10, 1));
+        f.add(new JLabel("original captcha: " + captchafile.getName()), UTILITIES.getGBC(0, 0, 10, 1));
 
         f.add(new ImageComponent(captcha.getImage()), UTILITIES.getGBC(0, 1, 10, 1));
 
@@ -747,13 +755,13 @@ public class JAntiCaptcha {
             return -1;
         }
         for (int i = 0; i < letters.length; i++) {
-            if (letters[i] == null || letters[i].getWidth() < 2 || letters[i].getHeight() < 2) {
-                File file = getResourceFile("detectionErrors5/" + (UTILITIES.getTimer()) + "_" + captchafile.getName());
-                file.getParentFile().mkdirs();
-                captchafile.renameTo(file);
-                if (JAntiCaptcha.isLoggerActive()) logger.severe("Letter detection error");
-                return -1;
-            }
+//            if (letters[i] == null || letters[i].getWidth() < 2 || letters[i].getHeight() < 2) {
+//                File file = getResourceFile("detectionErrors5/" + (UTILITIES.getTimer()) + "_" + captchafile.getName());
+//                file.getParentFile().mkdirs();
+//                captchafile.renameTo(file);
+//                if (JAntiCaptcha.isLoggerActive()) logger.severe("Letter detection error");
+//                return -1;
+//            }
         }
 
         // Zeige das After-prepare Bild an
@@ -833,7 +841,7 @@ public class JAntiCaptcha {
             // return -1;
             //
             // }
-            if (getCodeFromFileName(captchafile.getName(), captchaHash) == null ) {
+            if (getCodeFromFileName(captchafile.getName(), captchaHash) == null) {
                 code = UTILITIES.prompt("Bitte Captcha Code eingeben (Press enter to confirm " + guess, guess);
                 if (code != null && code.equals(guess))
                     code = "";
@@ -1217,12 +1225,12 @@ public class JAntiCaptcha {
      * @return int 0(super)-0xffffff (ganz übel)
      */
     public LetterComperator getLetter(Letter letter) {
-        if(jas.getDouble("quickScanValityLimit")<=0){
+        if (jas.getDouble("quickScanValityLimit") <= 0) {
             logger.info("quickscan disabled");
             return this.getLetterExtended(letter);
-            
+
         }
-        
+
         logger.info("Work on Letter:" + letter);
         long startTime = UTILITIES.getTimer();
         LetterComperator res = null;
@@ -1334,9 +1342,9 @@ public class JAntiCaptcha {
     private LetterComperator getLetterExtended(Letter letter) {
         long startTime = UTILITIES.getTimer();
         LetterComperator res = null;
-logger.info("Extended SCAN");
+        logger.info("Extended SCAN");
         double lastPercent = 100.0;
-        JTextArea tf=null;
+        JTextArea tf = null;
         try {
 
             if (letterDB == null) {
@@ -1354,7 +1362,7 @@ logger.info("Extended SCAN");
                 if (JAntiCaptcha.isLoggerActive()) logger.warning("param.scanAngleLeft>paramscanAngleRight");
             }
             int steps = Math.max(1, jas.getInteger("scanAngleSteps"));
-
+            boolean turnDB = jas.getBoolean("turnDB");
             int angle;
             Letter orgLetter = letter;
             LetterComperator lc;
@@ -1371,14 +1379,24 @@ logger.info("Extended SCAN");
             res = lc;
             for (angle = UTILITIES.getJumperStart(leftAngle, rightAngle); UTILITIES.checkJumper(angle, leftAngle, rightAngle); angle = UTILITIES.nextJump(angle, leftAngle, rightAngle, steps)) {
 
-                letter = orgLetter.turn(angle);
+                if (turnDB) {
+                    letter = orgLetter;
+                } else {
+                    letter = orgLetter.turn(angle);
+                }
                 // if(JAntiCaptcha.isLoggerActive())logger.finer(" Angle " +
                 // angle + " : " + letter.getDim());
 
                 Iterator<Letter> iter = letterDB.iterator();
                 int tt = 0;
                 while (iter.hasNext()) {
-                    tmp = (Letter) iter.next();
+                    if (turnDB) {
+                        tmp = ((Letter) iter.next()).turn(angle);
+                        
+                    } else {
+                        tmp = ((Letter) iter.next());
+                    }
+
                     if (Math.abs(tmp.getHeight() - letter.getHeight()) > jas.getInteger("borderVarianceY") || Math.abs(tmp.getWidth() - letter.getWidth()) > jas.getInteger("borderVarianceX")) {
                         continue;
                     }
@@ -1390,7 +1408,7 @@ logger.info("Extended SCAN");
                     // "+(UTILITIES.getTimer()-timer) +"
                     // Loops: "+lc.loopCounter);
                     tt++;
-                
+
                     if (this.isShowDebugGui()) {
                         w.setText(0, line, angle + "° " + (tt));
                         w.setImage(1, line, lc.getA().getImage(2));
@@ -1399,10 +1417,10 @@ logger.info("Extended SCAN");
                         w.setText(4, line, lc.getB().getDim());
                         w.setImage(5, line, lc.getIntersectionLetter().getImage(2));
                         w.setText(6, line, lc.getIntersectionLetter().getDim());
-                       
-                        w.setComponent(7, line, tf=new JTextArea());
+
+                        w.setComponent(7, line, tf = new JTextArea());
                         tf.setText(lc.toString());
-                        if(lc.getPreValityPercent()>jas.getInteger("preScanFilter")&&jas.getInteger("preScanFilter")>0)tf.setBackground(Color.LIGHT_GRAY);
+                        if (lc.getPreValityPercent() > jas.getInteger("preScanFilter") && jas.getInteger("preScanFilter") > 0) tf.setBackground(Color.LIGHT_GRAY);
                         line++;
                     }
 
@@ -1416,10 +1434,10 @@ logger.info("Extended SCAN");
                             res.setDetectionType(LetterComperator.PERFECTMATCH);
                             res.setReliability(lastPercent - res.getValityPercent());
                             if (JAntiCaptcha.isLoggerActive()) logger.finer(" Perfect Match: " + res.getB().getDecodedValue() + " " + res.getValityPercent() + " good:" + tmp.getGoodDetections() + " bad: " + tmp.getBadDetections() + " - " + res);
-                            if (this.isShowDebugGui())  tf.setBackground(Color.GREEN);
+                            if (this.isShowDebugGui()) tf.setBackground(Color.GREEN);
                             return res;
                         }
-                        if (this.isShowDebugGui())  tf.setBackground(Color.BLUE);
+                        if (this.isShowDebugGui()) tf.setBackground(Color.BLUE);
                         if (JAntiCaptcha.isLoggerActive()) logger.finer("Angle " + angle + "dim " + lc.getA().getDim() + "|" + lc.getB().getDim() + " New Best value: " + lc.getDecodedValue() + " " + lc.getValityPercent() + " good:" + tmp.getGoodDetections() + " bad: " + tmp.getBadDetections() + " - " + lc);
 
                     } else if (res != null) {
@@ -1449,7 +1467,7 @@ logger.info("Extended SCAN");
 
         if (res != null && res.getB() != null) {
             if (JAntiCaptcha.isLoggerActive()) logger.finer(" Normal Match: " + res.getB().getDecodedValue() + " " + res.getValityPercent() + " good:" + res.getB().getGoodDetections() + " bad: " + res.getB().getBadDetections());
-          
+
             res.setReliability(lastPercent - res.getValityPercent());
         } else {
             if (getJas().getInteger("preScanEmergencyFilter") > getJas().getInteger("preScanFilter")) {
@@ -1462,8 +1480,8 @@ logger.info("Extended SCAN");
 
             }
             if (JAntiCaptcha.isLoggerActive()) logger.severe("Letter entgültig nicht erkannt");
-            if (this.isShowDebugGui()&&tf!=null)  tf.setBackground(Color.RED);
-           
+            if (this.isShowDebugGui() && tf != null) tf.setBackground(Color.RED);
+
         }
 
         return res;
@@ -1492,7 +1510,8 @@ logger.info("Extended SCAN");
         while (iter.hasPrevious()) {
             tmp = (Letter) iter.previous();
             list[i] = tmp;
-            w.setText(x, y, tmp.getId() + ": " + tmp.getDecodedValue() + "(" + tmp.getGoodDetections() + "/" + tmp.getBadDetections() + ")");
+
+            w.setText(x, y, tmp.getId() + ": " + tmp.getDecodedValue() + "(" + tmp.getGoodDetections() + "/" + tmp.getBadDetections() + ") Size: " + tmp.toPixelObject(0.85).getSize());
             w.setImage(x + 1, y, tmp.getImage((int) Math.ceil(jas.getDouble("simplifyFaktor"))));
             w.setComponent(x + 3, y, new JButton(new AbstractAction("remove " + i++) {
 
@@ -1828,7 +1847,7 @@ logger.info("Extended SCAN");
      * @param file
      */
     public static void testMethod(File file) {
-        int checkCaptchas = 10;
+        int checkCaptchas = 20;
         String code;
         String inputCode;
         int totalLetters = 0;
@@ -1897,7 +1916,8 @@ logger.info("Extended SCAN");
             inputCode = inputCode.toLowerCase();
             for (int x = 0; x < inputCode.length(); x++) {
                 totalLetters++;
-                if (inputCode.charAt(x) == code.charAt(x)) {
+                
+                if (inputCode.length()==code.length()&&inputCode.charAt(x) == code.charAt(x)) {
                     correctLetters++;
                 }
             }

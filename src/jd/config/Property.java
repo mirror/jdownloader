@@ -76,24 +76,25 @@ public class Property implements Serializable {
         properties.put(key, value);
 
         if (logger == null) logger = JDUtilities.getLogger();
-        if(JDUtilities.getController()==null)return;
-        try{
-        if (old == null && value != null) {
-            JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_JDPROPERTY_CHANGED, key));
-
-        } else if (value instanceof Comparable) {
-            if (((Comparable) value).compareTo((Comparable) old) != 0) {
-                JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_JDPROPERTY_CHANGED, key));
-            }
-        } else if(value instanceof Object){
-            if (!value.equals(old)) {
+        if (JDUtilities.getController() == null) return;
+        try {
+            if (old == null && value != null) {
                 JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_JDPROPERTY_CHANGED, key));
 
-            }
-        }else{
-            if(value!=old) JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_JDPROPERTY_CHANGED, key));
+            } else if (value instanceof Comparable) {
+                if (((Comparable) value).compareTo((Comparable) old) != 0) {
+                    JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_JDPROPERTY_CHANGED, key));
+                }
+            } else if (value instanceof Object) {
+                if (!value.equals(old)) {
+                    JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_JDPROPERTY_CHANGED, key));
 
-        }}catch(Exception e){
+                }
+            } else {
+                if (value != old) JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_JDPROPERTY_CHANGED, key));
+
+            }
+        } catch (Exception e) {
             JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_JDPROPERTY_CHANGED, key));
         }
 
@@ -101,9 +102,10 @@ public class Property implements Serializable {
 
     }
 
-    public boolean hasProperty(String key){
+    public boolean hasProperty(String key) {
         return this.properties.containsKey(key);
     }
+
     /**
      * GIbt die Proprties als String zurück
      * 

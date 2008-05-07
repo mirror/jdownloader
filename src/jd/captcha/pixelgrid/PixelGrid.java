@@ -961,7 +961,7 @@ public class PixelGrid extends Property {
      * @return true, falls Pixel Etwas zum Bild beiträgt, sonst false
      */
     public boolean isElement(int value, int avg) {
-        return value < (avg * this.owner.getJas().getDouble("RelativeContrast"));
+      return value < (avg * this.owner.getJas().getDouble("RelativeContrast"));
     }
 
     /**
@@ -982,10 +982,10 @@ public class PixelGrid extends Property {
      */
     public boolean clean() {
 
-        byte topLines = 0;
-        byte bottomLines = 0;
-        byte leftLines = 0;
-        byte rightLines = 0;
+        int topLines = 0;
+        int bottomLines = 0;
+        int leftLines = 0;
+        int rightLines = 0;
         int avg = getAverage();
 
         for (int x = 0; x < getWidth(); x++) {
@@ -1598,117 +1598,7 @@ public class PixelGrid extends Property {
 
     }
 
-    public void rsDesin(double maxx, double omegax, double phix, double maxy, double omegay, double phiy) {
-        int shift;
-        omegax = 2 * Math.PI / omegax;
-        omegay = 2 * Math.PI / omegay;
-        if (owner.getJas().getInteger("desinvariant") >= 4) {
-            logger.warning("Entzerren fehlgeschlagen... versuche es ohne");
-            return;
-        }
-        int bestArea = 0;
-        int[][] bestGrid = null;
-        final HashMap<int[][], Integer> map = new HashMap<int[][], Integer>();
-        Vector<int[][]> sorter = new Vector<int[][]>();
-        // for (int phix = (int)phixx*-1; phix <= phixx; phix++) {
-        // for (int phiy = (int)phiyy*-1; phiy <= phiyy; phiy++) {
-        all: for (int ax = 0; ax < 2; ax++) {
-            for (int ay = 0; ay < 2; ay++) {
-
-                int[][] tmp = new int[getWidth()][getHeight()];
-                int[][] tmp2 = new int[getWidth()][getHeight()];
-
-                for (int y = 0; y < getHeight(); y++) {
-
-                    shift = (int) (maxy * Math.sin(omegay * (y + phiy))) * (ay == 0 ? -1 : 1);
-
-                    for (int x = 0; x < getWidth(); x++) {
-
-                        tmp[x][y] = (x + shift < getWidth() && x + shift >= 0) ? grid[x + shift][y] : 0xFF;
-                    }
-                    tmp[50 + shift][y] = 0xff0000 + 0x00ff00 * (ay == 0 ? -1 : 1);
-
-                }
-                for (int x = 0; x < getWidth(); x++) {
-
-                    shift = (int) ((maxx * Math.sin(omegax * (x + phix))) * (ax == 0 ? -1.0 : 1.0));
-
-                    for (int y = 0; y < getHeight(); y++) {
-
-                        tmp2[x][y] = (y + shift < getHeight() && y + shift >= 0) ? tmp[x][y + shift] : 0xFF;
-                    }
-                    tmp2[x][63 + shift] = 0xff0000 + 0x00ff00 * (ax == 0 ? -1 : 1);
-
-                }
-                int[] a = getDimension(tmp2);
-                Integer i = new Integer(a[0] + a[1]);
-                sorter.add(tmp2);
-                map.put(tmp2, i);
-                // PixelGrid p = new PixelGrid(getWidth(),getHeight());
-                // p.setGrid(tmp2);
-                // BasicWindow.showImage(p.getImage(),i+"");
-
-            }
-        }
-
-        // }
-        // }
-        Collections.sort(sorter, new Comparator<Object>() {
-            public int compare(Object a, Object b) {
-                return map.get(a).compareTo(map.get(b));
-
-            }
-
-        });
-        Vector<LetterComperator> sorted = new Vector<LetterComperator>();
-        String methodsPath = UTILITIES.getFullPath(new String[] { JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath(), "jd", "captcha", "methods" });
-        String hoster = "rscat.com";
-
-        JAntiCaptcha jac = new JAntiCaptcha(methodsPath, hoster);
-        jac.getJas().set("preScanFilter", 40);
-        jac.getJas().set("LetterSearchLimitPerfectPercent", 0);
-
-        jac.getJas().set("coverageFaktorAWeight", 0.0);
-        jac.getJas().set("scanstepy", 2);
-        for (Iterator<int[][]> it = sorter.iterator(); it.hasNext();) {
-            int[][] next = it.next();
-            Letter l = new Letter();
-
-            l.setOwner(owner);
-            // LetterComperator.CREATEINTERSECTIONLETTER = true;
-            // jac.setShowDebugGui(true);
-            l.setGridCopy(next, 0, 0, PixelGrid.getGridWidth(next) - 300, 0);
-            l.setProperty("org", next);
-            if (owner.isShowDebugGui()) BasicWindow.showImage(l.getImage(), "pre");
-
-            // l.crop(0, 0, l.getWidth()-80, 0);
-            l.clean();
-            // if (owner.isShowDebugGui()) BasicWindow.showImage(l.getImage(),
-            // "post");
-            @SuppressWarnings("unused")
-            LetterComperator lc = jac.getLetter(l);
-            int o = 0;
-            do {
-                if (o == sorted.size()) {
-                    sorted.add(lc);
-                    break;
-                }
-                if (sorted.get(o).getValityPercent() > lc.getValityPercent()) {
-                    sorted.add(0, lc);
-                    break;
-                }
-                o++;
-            } while (true);
-
-        }
-
-        logger.info("USE VARIANT: " + owner.getJas().getInteger("desinvariant"));
-        this.setGrid((int[][]) sorted.get(owner.getJas().getInteger("desinvariant")).getA().getProperty("org"));
-
-        if (owner.isShowDebugGui()) BasicWindow.showImage(this.getImage(), "USE VARIANT: " + owner.getJas().getInteger("desinvariant"));
-
-    }
-
+   
     public void setOrgGrid(int[][] grid) {
         this.tmpGrid = grid;
 
@@ -1736,13 +1626,13 @@ public class PixelGrid extends Property {
                 // Achtung!! Algos funktionieren nur auf sw basis richtig
                 // grid[x][y] = 254;
                 getObject(x - 1, y, tmpGrid, object);
-                getObject(x - 1, y - 1, tmpGrid, object);
+               if(owner.getJas().getBoolean("followXLines")) getObject(x - 1, y - 1, tmpGrid, object);
                 getObject(x, y - 1, tmpGrid, object);
-                getObject(x + 1, y - 1, tmpGrid, object);
+                if(owner.getJas().getBoolean("followXLines")) getObject(x + 1, y - 1, tmpGrid, object);
                 getObject(x + 1, y, tmpGrid, object);
-                getObject(x + 1, y + 1, tmpGrid, object);
+                if(owner.getJas().getBoolean("followXLines"))getObject(x + 1, y + 1, tmpGrid, object);
                 getObject(x, y + 1, tmpGrid, object);
-                getObject(x - 1, y + 1, tmpGrid, object);
+                if(owner.getJas().getBoolean("followXLines"))getObject(x - 1, y + 1, tmpGrid, object);
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -1803,6 +1693,49 @@ public class PixelGrid extends Property {
         }
 
         this.grid = newGrid;
+
+    }
+    
+
+    public static void fillLetter(Letter l) {
+
+        int limit = 200;
+        int[][] tmp = new int[l.getWidth()][l.getHeight()];
+
+        for (int x = 0; x < l.getWidth(); x++) {
+            for (int y = 0; y < l.getHeight(); y++) {
+                if (l.grid[x][y] > limit && tmp[x][y] != 1) {
+                    PixelObject p = new PixelObject(l);
+                    recFill(p, l, x, y, tmp, 0);
+                    if (p.isBordered()&&p.getSize()<60) {
+                        l.fillWithObject(p, 0);
+                    }
+                    // BasicWindow.showImage(l.getImage(2), x+" - "+y);
+
+                }
+            }
+        }
+
+    }
+
+    private static void recFill(PixelObject p, Letter l, int x, int y, int[][] tmp, int i) {
+        i++;
+        if (x >= 0 && y >= 0 && x < l.getWidth() && y < l.getHeight() && l.grid[x][y] > 200 && tmp[x][y] != 1) {
+            if (x == 0 || y == 0 || x == l.getWidth() - 1 || y == l.getHeight() - 1) {
+                p.setBordered(false);
+            }
+            p.add(x, y, 0xff0000);
+            tmp[x][y] = 1;
+            recFill(p, l, x - 1, y, tmp, i);
+            // getObject(x - 1, y - 1, tmpGrid, object);
+            recFill(p, l, x, y - 1, tmp, i);
+            // getObject(x + 1, y - 1, tmpGrid, object);
+            recFill(p, l, x + 1, y, tmp, i);
+            // getObject(x + 1, y + 1, tmpGrid, object);
+            recFill(p, l, x, y + 1, tmp, i);
+            // getObject(x - 1, y + 1, tmpGrid, object);
+
+        }
 
     }
 }

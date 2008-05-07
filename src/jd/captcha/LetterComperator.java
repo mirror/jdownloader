@@ -133,6 +133,8 @@ public class LetterComperator {
     private double intersectionAWidthWeight;
     private double intersectionAHeightFaktor;
     private double intersectionAWidthFaktor;
+    private double prescanDivider;
+    private double divider;
 
     /**
      * @param a
@@ -331,7 +333,7 @@ public class LetterComperator {
             tmpError += Math.min(1.0, tmpWidthFaktor) * intersectionDimensionWeight;
             tmpError += Math.min(1.0, tmpHeightAFaktor) * intersectionAHeightWeight;
             tmpError += Math.min(1.0, tmpWidthAFaktor) * intersectionAWidthWeight;
-            tmpError /= 4.0;
+            tmpError /= this.prescanDivider;
             tmpError *= 1.2;
 
             return (int) (100 * tmpError);
@@ -420,7 +422,7 @@ public class LetterComperator {
             tmpError += Math.min(1.0, tmpHeightAFaktor) * intersectionAHeightWeight;
             tmpError += Math.min(1.0, tmpWidthAFaktor) * intersectionAWidthWeight;
             if (bothElements.size() > 0) tmpError += (bothElements.size() - 1) * cleftFaktor;
-            tmpError /= 6.0;
+            tmpError /= divider;
             // tmpError = Math.min(1.0, tmpError);
             // logger.info(pixelBoth+"_"+(tmpIntersectionHeight *
             // tmpIntersectionWidth));
@@ -545,38 +547,31 @@ public class LetterComperator {
                     int pixelType = getPixelType(x, y, xx, yy, left, top);
 
                     switch (pixelType) {
-                    // case 0:
-                    // if (isCreateIntersectionLetter()) intersectionGrid[x][y]
-                    // =
-                    // BOTHCOLOR;
-                    //
-                    // getElement(x, y, xx, yy, left, top, pixelType,
-                    // elementGrid,
-                    // element = new Vector<Integer>());
-                    // if (element.size() > minCleftSize)
-                    // bothElements.add(element);
-                    //
-                    // tmpPixelBoth++;
-                    // break;
+                     case 0:
+                    
+                       //g[x][y] = 0xcccccc;
+                     break;
                     case 1:
                         if (hasNeighbour(x, y, xx, yy, left, top, pixelType) > overlayNoiseSize) {
 
-                            // g[x][y] = 0xff0000;
+                          //   g[x][y] = 0xff0000;
                         } else {
-                            // g[x][y] = 0xff0000;
+                         //   g[x][y] = 0xff0000;
+                            
                         }
+                        g[x][y] = 0;
                         break;
                     case 2:
                         if (hasNeighbour(x, y, xx, yy, left, top, pixelType) > overlayNoiseSize) {
 
                             g[x][y] = 0;
                         } else {
-
-                            // g[x][y] = 0x00ff00;
+                            g[x][y] = 0;
+                           // g[x][y] = 0x00ff00;
                         }
                         break;
                     default:
-
+                       
                     }
                 }
             }
@@ -669,7 +664,7 @@ public class LetterComperator {
      * @return Gibt den decoed value von b zurück
      */
     public String getDecodedValue() {
-        if (b == null || b.getDecodedValue().length() != 1) return "-";
+        if (b == null || b.getDecodedValue()==null||b.getDecodedValue().length() != 1) return "-";
         return this.b.getDecodedValue();
     }
 
@@ -733,7 +728,8 @@ public class LetterComperator {
         overlayNoiseSize = jas.getInteger("overlayNoiseSize");
         scanStepX = jas.getInteger("scanstepx");
         scanStepY = jas.getInteger("scanstepy");
-
+        this.prescanDivider=jas.getDouble("prescandivider");
+        this.divider=jas.getDouble("divider");
     }
 
     /**
@@ -906,8 +902,8 @@ public class LetterComperator {
 
         calc += Math.round(((getBothElementsNum() - 1) * cleftFaktor) * 100.0 / t) + "%          + " + ((getBothElementsNum() - 1) * cleftFaktor) + "=" + tmpError + " (CleftFaktor)\r\n";
 
-        tmpError /= 6.0;
-        calc += "/6 = " + tmpError + " => " + ((tmpError * 100) + "% ");
+        tmpError /= divider;
+        calc += "/"+divider+" = " + tmpError + " => " + ((tmpError * 100) + "% ");
         // tmpError = Math.min(1.0, tmpError);
 
         hs.put("totalFaktor", tmpError);

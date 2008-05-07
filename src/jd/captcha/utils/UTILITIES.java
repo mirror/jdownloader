@@ -1525,6 +1525,7 @@ public class UTILITIES {
 	}
 
 	public static int getPercent(int a, int b) {
+	    if(b==0)return 100;
 		return (a * 100) / b;
 	}
 }

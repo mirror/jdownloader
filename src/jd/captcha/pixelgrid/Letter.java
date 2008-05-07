@@ -202,7 +202,11 @@ public class Letter extends PixelGrid {
 
             }
             for (int x = 0; x < width; x++) {
+                try{
                 grid[x][y] = Integer.parseInt(String.valueOf(line.charAt(x))) * getMaxPixelValue();
+                }catch(Exception e){
+                    e.printStackTrace();
+                }
                 if (grid[x][y] == 0) elementPixel++;
             }
         }
@@ -521,6 +525,7 @@ public class Letter extends PixelGrid {
         l.setGrid(newGrid);
         l.setElementPixel(elementPixel);
         l.clean();
+        l.setDecodedValue(this.getDecodedValue());
         l.setAngle((int) (angle * 180.0));
         l.setProperties(this.getProperties());
         // BasicWindow.showImage(l.getImage(), sizeAngle+" angle "+angle+" -
@@ -882,6 +887,28 @@ int firstChange=0;
         return angle;
     }
 */
+
+/**
+ * Füllt alle Pixel des Objects in dem Letter mit einer Farbe,.
+ * Ist color<0, so woird die farebd es Objects verwendet.
+ */
+    public void fillWithObject(PixelObject p, int color) {
+        for(int i=0; i<p.getSize();i++){
+            int[] point = p.elementAt(i);            
+            this.grid[point[0]][point[1]]=color<0?point[2]:color;
+        }
+    }
+
+
+public void colorize(int color) {
+    for (int x = 0; x < getWidth(); x++) {
+        for (int y = 0; y < getHeight(); y++) {
+           if(grid[x][y]<40) grid[x][y]=color;
+        }
+        }
+}
+    
+
 
 
   

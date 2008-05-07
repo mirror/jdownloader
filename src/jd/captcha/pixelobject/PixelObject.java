@@ -16,6 +16,7 @@
 
 package jd.captcha.pixelobject;
 
+import java.util.ArrayList;
 import java.util.Vector;
 import java.util.logging.Logger;
 
@@ -45,7 +46,7 @@ public class PixelObject implements Comparable {
     /**
      * Interner Vector
      */
-    private Vector<int[]> object;
+    private ArrayList<int[]> object;
     public LetterComperator detected = null;
     /**
      * Farbdurschnitt des Onkekts
@@ -105,12 +106,14 @@ public class PixelObject implements Comparable {
     private int letterColor = 0;
     public int colorpixel = 0;
 
+    private boolean bordered=true;
+
     /**
      * @param owner
      */
     public PixelObject(PixelGrid owner) {
         this.owner = owner;
-        object = new Vector<int[]>();
+        object = new ArrayList<int[]>();
     }
 
     /**
@@ -243,7 +246,7 @@ public class PixelObject implements Comparable {
      * @return Gibt den pixel bei i zurück [x,y,color}
      */
     public int[] elementAt(int i) {
-        return object.elementAt(i);
+        return object.get(i);
     }
 
     /**
@@ -556,4 +559,14 @@ public class PixelObject implements Comparable {
       
         return new PixelObject[] {pre, cutter, post };
     }
+
+    public boolean isBordered() {
+        return bordered;
+    }
+
+    public void setBordered(boolean b) {
+        bordered=b;
+        
+    }
+    
 }

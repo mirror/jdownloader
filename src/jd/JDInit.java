@@ -578,8 +578,10 @@ public class JDInit {
     }
 
     public void removeFiles() {
-        String[] remove = new String[] { "jd/captcha/methods/rapidshare.com" };
-
+        String[] remove=null;
+        
+        //remove = new String[] { "jd/captcha/methods/rapidshare.com" };
+if(remove!=null)
         for (String file : remove) {
 
             if (JDUtilities.removeDirectoryOrFile(JDUtilities.getResourceFile(file))) {

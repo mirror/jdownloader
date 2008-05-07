@@ -220,6 +220,7 @@ public abstract class PluginForContainer extends PluginForDecrypt {
             
             DistributeData distributeData = new DistributeData(it1.next());
             Vector<DownloadLink> links = distributeData.findLinks();
+         
             DownloadLink srcLink = containedLinks.get(i);
             Iterator<DownloadLink> it = links.iterator();
             progress.addToMax(links.size());

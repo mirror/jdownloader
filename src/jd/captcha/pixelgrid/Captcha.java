@@ -422,7 +422,7 @@ public class Captcha extends PixelGrid {
      */
     @SuppressWarnings("unchecked")
     public Letter[] getLetters(int letterNum) {
-
+        if (seperatedLetters != null) return seperatedLetters;
         Letter[] ret = getLetters0(letterNum);
         if (owner.getJas().getString("useLetterFilter") != null && owner.getJas().getString("useLetterFilter").length() > 0) {
             String[] ref = owner.getJas().getString("useLetterFilter").split("\\.");
@@ -443,10 +443,11 @@ public class Captcha extends PixelGrid {
                 Object instance = null;
                 Letter[] ret2 = (Letter[]) method.invoke(instance, arguments);
                 if (ret2 != null) {
-
+                    seperatedLetters = ret2;
                     return ret2;
                 } else {
                     if (JAntiCaptcha.isLoggerActive()) logger.severe("Special filter failed.");
+                    seperatedLetters = ret;
                     return ret;
                 }
 
@@ -454,14 +455,16 @@ public class Captcha extends PixelGrid {
                 if (JAntiCaptcha.isLoggerActive()) logger.severe("Fehler in useLetterFilter:" + e.getLocalizedMessage() + " / " + owner.getJas().getString("useSpecialGetLetters"));
                 e.printStackTrace();
             }
+            seperatedLetters = ret;
             return ret;
         }
+        seperatedLetters = ret;
         return ret;
     }
 
     public Letter[] getLetters0(int letterNum) {
 
-        if (seperatedLetters != null) return seperatedLetters;
+        
         if (letterNum == 1) {
             Letter ret = this.createLetter();
             ret.setGrid(this.getGrid());
@@ -487,7 +490,7 @@ public class Captcha extends PixelGrid {
                 Object instance = null;
                 Letter[] ret = (Letter[]) method.invoke(instance, arguments);
                 if (ret != null) {
-                    seperatedLetters = ret;
+                   
                     return ret;
                 } else {
                     if (JAntiCaptcha.isLoggerActive()) logger.severe("Special detection failed.");
@@ -504,7 +507,7 @@ public class Captcha extends PixelGrid {
             if (JAntiCaptcha.isLoggerActive()) logger.finer("Use Color Object Detection");
             Letter[] ret = this.getColoredLetters(letterNum);
             if (ret != null) {
-                seperatedLetters = ret;
+               
                 return ret;
             } else {
                 if (JAntiCaptcha.isLoggerActive()) logger.severe("Color Object detection failed. Try alternative Methods");
@@ -515,7 +518,7 @@ public class Captcha extends PixelGrid {
             if (JAntiCaptcha.isLoggerActive()) logger.finer("Use Object Detection");
             Letter[] ret = this.getLetters(letterNum, owner.getJas().getDouble("ObjectColorContrast"), owner.getJas().getDouble("ObjectDetectionContrast"), owner.getJas().getInteger("MinimumObjectArea"));
             if (ret != null) {
-                seperatedLetters = ret;
+               
                 return ret;
             } else {
                 if (JAntiCaptcha.isLoggerActive()) logger.severe("Object detection failed. Try alternative Methods");
@@ -554,7 +557,7 @@ public class Captcha extends PixelGrid {
             }
 
         }
-        seperatedLetters = ret;
+       
         return ret;
     }
 
