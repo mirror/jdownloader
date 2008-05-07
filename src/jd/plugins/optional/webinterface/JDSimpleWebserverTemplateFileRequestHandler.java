@@ -254,6 +254,54 @@ public class JDSimpleWebserverTemplateFileRequestHandler {
 
         t.setParam("pakete", v);        
     }
+
+    private void add_linkadder_page(Template t,HashMap<String, String> requestParameter){
+        Vector v, v2 = new Vector();
+        Hashtable h, h2 = new Hashtable();
+        v = new Vector();
+        
+
+        FilePackage filePackage;
+        DownloadLink dLink;
+        Integer Package_ID;
+        Integer Download_ID;
+     
+        for (Package_ID = 0; Package_ID < JDWebinterface.Link_Adder_Packages.size(); Package_ID++) {
+            filePackage = JDWebinterface.Link_Adder_Packages.get(Package_ID);
+
+            h = new Hashtable();
+            /* Paket Infos */
+            h.put("download_name", filePackage.getName());
+
+            
+            h.put("package_id", Package_ID.toString());
+            
+            
+            v2 = new Vector();
+
+            for (Download_ID = 0; Download_ID < filePackage.getDownloadLinks().size(); Download_ID++) {
+                dLink = filePackage.getDownloadLinks().get(Download_ID);
+
+                /* Download Infos */                
+
+                h2 = new Hashtable();
+                
+                h2.put("package_id", Package_ID.toString());
+                h2.put("download_id", Download_ID.toString());
+                h2.put("download_name", dLink.getName());
+
+                h2.put("download_hoster", dLink.getHost());
+                
+                v2.addElement(h2);
+
+            }
+            h.put("downloads", v2);
+            v.addElement(h);
+        }
+        
+
+        t.setParam("pakete", v);        
+    }
     
     private void add_password_list(Template t, HashMap<String, String> requestParameter){
         JUnrar unrar = new JUnrar(false);
@@ -274,6 +322,7 @@ public class JDSimpleWebserverTemplateFileRequestHandler {
             if (url.startsWith("all_info.tmpl")==true) add_all_info(t, requestParameter);            
             if (url.startsWith("index.tmpl")==true) add_status_page(t, requestParameter);
             if (url.startsWith("passwd.tmpl")==true) add_password_list(t, requestParameter);
+            if (url.startsWith("link_adder.tmpl")==true) add_linkadder_page(t, requestParameter);
             
             response.addContent(t.output());
             response.setOk();

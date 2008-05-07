@@ -7,9 +7,13 @@ import java.util.Vector;
 import java.util.logging.Logger;
 
 import jd.config.Configuration;
+import jd.config.SubConfiguration;
 import jd.controlling.DistributeData;
 import jd.event.ControlEvent;
+import jd.gui.skins.simple.LinkGrabber;
+import jd.gui.skins.simple.SimpleGUI;
 import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
 import jd.unrar.JUnrar;
 import jd.utils.JDUtilities;
 
@@ -18,13 +22,100 @@ public class JDSimpleWebserverRequestHandler {
     private HashMap<String, String> headers;
     private JDSimpleWebserverResponseCreator response;
 
+    private SubConfiguration guiConfig = JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME);
+    private static final String PROPERTY_AUTOPACKAGE = "PROPERTY_AUTOPACKAGE";
+
+    public static final String PROPERTY_AUTOPACKAGE_LIMIT = "AUTOPACKAGE_LIMIT";
+
+    public static final String PROPERTY_ONLINE_CHECK = "DO_ONLINE_CHECK";
+
     private Logger logger = JDUtilities.getLogger();
 
     public JDSimpleWebserverRequestHandler(HashMap<String, String> headers, JDSimpleWebserverResponseCreator response) {
         this.response = response;
         this.headers = headers;
     }
+    
+    private String removeExtension(String a) {
+        // logger.finer("file " + a);
+        if(a==null)return a;
+        a = a.replaceAll("\\.part([0-9]+)", "");
+        a = a.replaceAll("\\.html", "");
+        a = a.replaceAll("\\.htm", "");
+        int i = a.lastIndexOf(".");
+        // logger.info("FOund . " + i);
+        String ret;
+        if (i <= 1 || (a.length() - i) > 5) {
+            ret = a.toLowerCase().trim();
+        }
+        else {
+            // logger.info("Remove ext");
+            ret = a.substring(0, i).toLowerCase().trim();
+        }
 
+        if (a.equals(ret)) return ret;
+        return (ret);
+
+    }
+
+    private int comparepackages(String a, String b) {
+
+        int c = 0;
+        for (int i = 0; i < Math.min(a.length(), b.length()); i++) {
+            if (a.charAt(i) == b.charAt(i)) c++;
+        }
+
+        if (Math.min(a.length(), b.length()) == 0) return 0;
+        // logger.info("comp: " + a + " <<->> " + b + "(" + (c * 100) /
+        // (b.length()) + ")");
+        return (c * 100) / (b.length());
+    }
+
+    private  String getSimString(String a, String b) {
+
+        String ret = "";
+        for (int i = 0; i < Math.min(a.length(), b.length()); i++) {
+            if (a.charAt(i) == b.charAt(i)) {
+                ret += a.charAt(i);
+            }
+            else {
+                // return ret;
+            }
+        }
+        return ret;
+    }
+
+    private void attachLinkTopackage(DownloadLink link) {
+        synchronized(JDWebinterface.Link_Adder_Packages){
+        int bestSim = 0;
+        int bestIndex = -1;
+        //logger.info("link: " + link.getName());
+        for (int i = 0; i < JDWebinterface.Link_Adder_Packages.size(); i++) {
+
+            int sim = comparepackages(JDWebinterface.Link_Adder_Packages.get(i).getName(), removeExtension(link.getName()));
+            if (sim > bestSim) {
+                bestSim = sim;
+                bestIndex = i;
+            }
+        }
+        //logger.info("Best sym: "+bestSim);
+        if (bestSim < guiConfig.getIntegerProperty(PROPERTY_AUTOPACKAGE_LIMIT, 98)) {
+
+            FilePackage fp = new FilePackage();
+            fp.setName(removeExtension(link.getName()));
+            fp.add(link);
+            JDWebinterface.Link_Adder_Packages.add(fp);
+        } else {
+            //logger.info("Found package " +JDWebinterface.Link_Adder_Packages.get(bestIndex).getName());            
+            String newpackageName = getSimString(JDWebinterface.Link_Adder_Packages.get(bestIndex).getName(), removeExtension(link.getName()));
+            JDWebinterface.Link_Adder_Packages.get(bestIndex).setName(newpackageName);
+            JDWebinterface.Link_Adder_Packages.get(bestIndex).add(link);
+
+        }
+        }
+    }
+
+    @SuppressWarnings("static-access")
     public void handle() {
 
         String request = headers.get(null);
@@ -42,7 +133,9 @@ public class JDSimpleWebserverRequestHandler {
         /* bekanntgebung der mehrfach belegbaren parameter */
         requestParameter.put("package_all_downloads_counter", "0");
         requestParameter.put("package_single_download_counter", "0");
-
+        requestParameter.put("package_all_add_counter", "0");
+        requestParameter.put("package_single_add_counter", "0");
+        
         if (cPath.indexOf("?") >= 0) {
             querry = cPath.substring(cPath.indexOf("?") + 1);
             path = cPath.substring(1, cPath.indexOf("?"));
@@ -77,7 +170,7 @@ public class JDSimpleWebserverRequestHandler {
                     requestParameter.put(key, value);
             }
         }
-        // logger.info(requestParameter.toString());
+        logger.info(requestParameter.toString());
 
         /* parsen der paramter */
         if (requestParameter.containsKey("do")) {
@@ -100,8 +193,46 @@ public class JDSimpleWebserverRequestHandler {
                     JDUtilities.getConfiguration().setProperty(Configuration.PARAM_DISABLE_RECONNECT, false);
                 } else
                     JDUtilities.getConfiguration().setProperty(Configuration.PARAM_DISABLE_RECONNECT, true);
+                
+                if (requestParameter.containsKey("package_single_add_counter")) {
+                    synchronized(JDWebinterface.Link_Adder_Packages){
+                    /*aktionen in der adder liste ausführen*/
+                    Integer download_id = 0;
+                    Integer package_id = 0;
+                    String[] ids;
+                    int counter_max = JDUtilities.filterInt(requestParameter.get("package_single_add_counter"));
+                    int counter_index = 0;
+                    DownloadLink link;
+                    int index;
+                    Vector<DownloadLink> links = new Vector<DownloadLink>();
+                    for (counter_index = 1; counter_index <= counter_max; counter_index++) {
+                        if (requestParameter.containsKey("package_single_add_" + counter_index)) {
+                            ids = requestParameter.get("package_single_add_" + counter_index).toString().split("[+]", 2);
+                            package_id = JDUtilities.filterInt(ids[0].toString());
+                            download_id = JDUtilities.filterInt(ids[1].toString());
+                            links.add(JDWebinterface.Link_Adder_Packages.get(package_id).get(download_id));                       }
+                    }
+                    if (requestParameter.containsKey("selected_dowhat_link_adder")) {
+                        String dowhat = requestParameter.get("selected_dowhat_link_adder");
+                        if (dowhat.compareToIgnoreCase("remove") == 0) {
+                            /* entfernen */
+                            logger.info("entfernen aus add liste");
+                            for (Iterator<DownloadLink> it = links.iterator(); it.hasNext();) {
+                                link = it.next();
+                                link.getFilePackage().remove(link);                                
+                            }
+                            
+                            for (index=0;index< JDWebinterface.Link_Adder_Packages.size();index++) {
+                                if (JDWebinterface.Link_Adder_Packages.get(index).size()==0) JDWebinterface.Link_Adder_Packages.remove(index);                                
+                            }
+                        }
+                    }
+                    /*TODO: adden aus der add liste, package umbenennen, packages müssen evtl noch daten(saveto,color) zugewiesen bekommen*/
+                    }
+                };
 
                 if (requestParameter.containsKey("package_single_download_counter")) {
+                    /*aktionen in der download-liste ausführen*/
                     Integer download_id = 0;
                     Integer package_id = 0;
                     String[] ids;
@@ -112,16 +243,24 @@ public class JDSimpleWebserverRequestHandler {
                     for (counter_index = 1; counter_index <= counter_max; counter_index++) {
                         if (requestParameter.containsKey("package_single_download_" + counter_index)) {
                             ids = requestParameter.get("package_single_download_" + counter_index).toString().split("[+]", 2);
-                            /*requestParameter.remove("package_single_download_" + counter_index);*/ /*FIXME: ist remove nötig*/
+                            /*
+                             * requestParameter.remove("package_single_download_" +
+                             * counter_index);
+                             *//*
+                                                                                                     * FIXME:
+                                                                                                     * ist
+                                                                                                     * remove
+                                                                                                     * nötig
+                                                                                                     */
                             package_id = JDUtilities.filterInt(ids[0].toString());
                             download_id = JDUtilities.filterInt(ids[1].toString());
 
                             links.add(JDUtilities.getController().getPackages().get(package_id).getDownloadLinks().get(download_id));
                         }
-                    }
+                    }                   
 
-                    if (requestParameter.containsKey("selected_dowhat")) {
-                        String dowhat = requestParameter.get("selected_dowhat");
+                    if (requestParameter.containsKey("selected_dowhat_index")) {
+                        String dowhat = requestParameter.get("selected_dowhat_index");
                         if (dowhat.compareToIgnoreCase("activate") == 0) {
                             /* aktivieren */
                             for (Iterator<DownloadLink> it = links.iterator(); it.hasNext();) {
@@ -192,6 +331,7 @@ public class JDSimpleWebserverRequestHandler {
                         JDUtilities.getController().exit();
                     }
                 }
+                @SuppressWarnings("unused")
                 JDClose jds = new JDClose();
 
             } else if (requestParameter.get("do").compareToIgnoreCase("start+downloads") == 0) {
@@ -220,6 +360,7 @@ public class JDSimpleWebserverRequestHandler {
                         JDUtilities.restartJD();
                     }
                 }
+                @SuppressWarnings("unused")
                 JDRestart jdr = new JDRestart();
 
             } else if (requestParameter.get("do").compareToIgnoreCase("add") == 0) {
@@ -229,22 +370,28 @@ public class JDSimpleWebserverRequestHandler {
                     /*
                      * TODO: mehr add features
                      */
-                    String AddLinks = JDUtilities.htmlDecode(requestParameter.get("addlinks"));                   
-                    JDUtilities.getController().addAllLinks(new DistributeData(AddLinks).findLinks());
-                    JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_LINKLIST_STRUCTURE_CHANGED, null));
+                    String AddLinks = JDUtilities.htmlDecode(requestParameter.get("addlinks"));
+                    Vector<DownloadLink> LinkstoAdd = new DistributeData(AddLinks).findLinks();
+                    for (int i = 0; i < LinkstoAdd.size(); i++) {
+                        attachLinkTopackage(LinkstoAdd.get(i));
+                    }                    /*
+                     * JDUtilities.getController().fireControlEvent(new
+                     * ControlEvent(this,
+                     * ControlEvent.CONTROL_LINKLIST_STRUCTURE_CHANGED, null));
+                     */
                 }
             }
             ;
 
-        }   
-        /*passwortliste verändern*/
+        }
+        /* passwortliste verändern */
         if (requestParameter.containsKey("passwd")) {
             if (requestParameter.get("passwd").compareToIgnoreCase("save") == 0) {
                 logger.info("passwd save wurde gedrückt");
-                if (requestParameter.containsKey("password_list")) {                   
-                    String password_list = JDUtilities.htmlDecode(requestParameter.get("password_list"));               
+                if (requestParameter.containsKey("password_list")) {
+                    String password_list = JDUtilities.htmlDecode(requestParameter.get("password_list"));
                     JUnrar unrar = new JUnrar(false);
-                    unrar.editPasswordlist(JDUtilities.splitByNewline(password_list));                    
+                    unrar.editPasswordlist(JDUtilities.splitByNewline(password_list));
                 }
             }
         }
@@ -272,11 +419,11 @@ public class JDSimpleWebserverRequestHandler {
             if (url.endsWith(".tmpl")) {
                 JDSimpleWebserverTemplateFileRequestHandler filerequest;
                 filerequest = new JDSimpleWebserverTemplateFileRequestHandler(this.response);
-                filerequest.handleRequest(url,requestParameter);
+                filerequest.handleRequest(url, requestParameter);
             } else {
                 JDSimpleWebserverStaticFileRequestHandler filerequest;
                 filerequest = new JDSimpleWebserverStaticFileRequestHandler(this.response);
-                filerequest.handleRequest(url,requestParameter);
+                filerequest.handleRequest(url, requestParameter);
             }
             ;
         }

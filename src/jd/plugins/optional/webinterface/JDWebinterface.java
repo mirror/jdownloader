@@ -23,11 +23,14 @@ package jd.plugins.optional.webinterface;
 
 import java.awt.event.ActionEvent;
 import java.util.ArrayList;
+import java.util.Vector;
 
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.MenuItem;
 import jd.config.SubConfiguration;
+import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
 import jd.plugins.PluginOptional;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
@@ -43,6 +46,9 @@ public class JDWebinterface extends PluginOptional  {
     static final String PROPERTY_CONNECTIONS = "PARAM_CONNECTIONS";
     public static JDWebinterface instance;
     
+    static public Vector<FilePackage> Link_Adder_Packages=new Vector<FilePackage>();
+    
+    
 	@Override
     public String getCoder() {
         return "jiaz";
@@ -50,7 +56,7 @@ public class JDWebinterface extends PluginOptional  {
 
     @Override
     public String getPluginID() {
-        return "0.0.0.3";
+        return "0.0.0.4";
     }
 
     @Override
@@ -60,7 +66,7 @@ public class JDWebinterface extends PluginOptional  {
 
     @Override
     public String getVersion() {
-        return "0.0.0.3";
+        return "0.0.0.4";
     }
 
     @Override

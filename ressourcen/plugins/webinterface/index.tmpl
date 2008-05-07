@@ -59,7 +59,7 @@ initiate();                // This must be placed immediately after the menu in 
 <INPUT type="button" name="select" value="Select All" onclick="checkall(document.jd.package_all_downloads,document.jd.package_single_download)">
 <INPUT type="button" name="select" value="UnSelect All" onclick="uncheckall(document.jd.package_all_downloads,document.jd.package_single_download)">
 
-<SELECT name="selected_dowhat">
+<SELECT name="selected_dowhat_index">
 <option>activate</option>
 <option>deactivate</option>
 <option>reset</option>
@@ -86,18 +86,17 @@ initiate();                // This must be placed immediately after the menu in 
         <INPUT type="text" name="speed" value="<tmpl_var config_max_speed escape>" maxlength="4" size="4">
         kb/s (Current: <tmpl_var config_current_speed> kb/s)</TD>
     </TR>
-    </FORM>
-    
   </table>
   </DIV>
 </FORM>
 
-<FORM name="add" action="/index.tmpl" target="_parent" method="POST">
+<FORM name="add" action="/link_adder.tmpl" target="_parent" method="POST">
 <DIV style="text-align:center">
 <textarea name="addlinks" cols="90" rows="3"  onfocus="clean(this)">Paste your Links here (Container URLs, Link URLs, SourceCode from Pages to parse)</textarea><br>
 <INPUT type="submit" name="do" value="Add">
 <hr>
 <A href="/passwd.tmpl" name="Edit Passwords" target="_self">Edit Passwords</A>
+<A href="/link_adder.tmpl" name="Link Adder" target="_self">Link Adder</A>
 </DIV>
 </FORM>
 </body>
