@@ -150,7 +150,7 @@ public class JDSimpleWebserver extends Thread {
                                              * alter POST aus Header Liste
                                              * entfernen
                                              */
-                                            headers.remove(null);
+                                            headers.remove(null); /*FIXME: ist remove nötig*/
                                             /*
                                              * neuer POST mit RequestParams in
                                              * Header-Liste einfügen

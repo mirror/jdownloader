@@ -1,0 +1,29 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html >
+<head>
+<title>JDownloader</title>
+<meta name="GENERATOR" content="Quanta Plus">
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<link href="jd.css" rel="stylesheet" type="text/css" />
+
+</head>
+<body>
+<table width="600" align="center">
+  <tbody>
+	<tmpl_loop all_infos>
+	<tr>
+      <td style="width:5%"><tmpl_var info_var></td>
+
+	<tmpl_if info_percent>
+
+	<td><div id="ladebalken"><p style="width: <tmpl_var info_percent>%;">
+		<span><tmpl_var info_value></span></p></div></td>
+<tmpl_else>
+	<td style="text-align:right"><tmpl_var info_value></td>
+</tmpl_if>
+    </tr>
+</tmpl_loop>
+  </tbody>
+</table>
+</body>
+</html>

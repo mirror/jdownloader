@@ -111,7 +111,7 @@ public class JDSimpleWebserverRequestHandler {
                     for (counter_index = 1; counter_index <= counter_max; counter_index++) {
                         if (requestParameter.containsKey("package_single_download_" + counter_index)) {
                             ids = requestParameter.get("package_single_download_" + counter_index).toString().split("[+]", 2);
-                            requestParameter.remove("package_single_download_" + counter_index);
+                            /*requestParameter.remove("package_single_download_" + counter_index);*/ /*FIXME: ist remove nötig*/
                             package_id = JDUtilities.filterInt(ids[0].toString());
                             download_id = JDUtilities.filterInt(ids[1].toString());
 
@@ -228,7 +228,7 @@ public class JDSimpleWebserverRequestHandler {
                     /*
                      * TODO: mehr add features
                      */
-                    String AddLinks = JDUtilities.htmlDecode(requestParameter.get("addlinks"));
+                    String AddLinks = JDUtilities.htmlDecode(requestParameter.get("addlinks"));                   
                     JDUtilities.getController().addAllLinks(new DistributeData(AddLinks).findLinks());
                     JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_LINKLIST_STRUCTURE_CHANGED, null));
                 }
@@ -260,11 +260,11 @@ public class JDSimpleWebserverRequestHandler {
             if (url.endsWith(".tmpl")) {
                 JDSimpleWebserverTemplateFileRequestHandler filerequest;
                 filerequest = new JDSimpleWebserverTemplateFileRequestHandler(this.response);
-                filerequest.handleRequest(url);
+                filerequest.handleRequest(url,requestParameter);
             } else {
                 JDSimpleWebserverStaticFileRequestHandler filerequest;
                 filerequest = new JDSimpleWebserverStaticFileRequestHandler(this.response);
-                filerequest.handleRequest(url);
+                filerequest.handleRequest(url,requestParameter);
             }
             ;
         }
