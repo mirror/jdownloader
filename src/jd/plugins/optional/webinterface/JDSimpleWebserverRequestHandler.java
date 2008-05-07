@@ -10,6 +10,7 @@ import jd.config.Configuration;
 import jd.controlling.DistributeData;
 import jd.event.ControlEvent;
 import jd.plugins.DownloadLink;
+import jd.unrar.JUnrar;
 import jd.utils.JDUtilities;
 
 public class JDSimpleWebserverRequestHandler {
@@ -235,6 +236,17 @@ public class JDSimpleWebserverRequestHandler {
             }
             ;
 
+        }   
+        /*passwortliste verändern*/
+        if (requestParameter.containsKey("passwd")) {
+            if (requestParameter.get("passwd").compareToIgnoreCase("save") == 0) {
+                logger.info("passwd save wurde gedrückt");
+                if (requestParameter.containsKey("password_list")) {                   
+                    String password_list = JDUtilities.htmlDecode(requestParameter.get("password_list"));               
+                    JUnrar unrar = new JUnrar(false);
+                    unrar.editPasswordlist(JDUtilities.splitByNewline(password_list));                    
+                }
+            }
         }
 
         String url = path.replaceAll("\\.\\.", "");

@@ -15,7 +15,8 @@
 <body>
 <FORM action="/index.tmpl" name="jd" method="POST" target="_parent">
 <div style="width:800px;margin: 0 auto;border:1px solid;padding:5px 5px 5px 5px;;background-color:#1189ee">
-<h2 style="text-align:center;color:#F7F7F7">JDownloader Status Page(Version <tmpl_var webinterface_version>)</h2>
+<h2 style="text-align:center;color:#F7F7F7">JDownloader WebInterface(Version <tmpl_var webinterface_version>)</h2>
+<h2 style="text-align:center;color:#F7F7F7">Status-Page</h2>
 <hr>
 <ul id="containerul">
   <tmpl_loop pakete>
@@ -93,8 +94,10 @@ initiate();                // This must be placed immediately after the menu in 
 
 <FORM name="add" action="/index.tmpl" target="_parent" method="POST">
 <DIV style="text-align:center">
-<textarea name="addlinks" cols="90" rows="3"  onfocus="clean(this)">Paste your Links here (Container URLs, Link URLs, SourceCode from Pages to parse)</textarea>
+<textarea name="addlinks" cols="90" rows="3"  onfocus="clean(this)">Paste your Links here (Container URLs, Link URLs, SourceCode from Pages to parse)</textarea><br>
 <INPUT type="submit" name="do" value="Add">
+<hr>
+<A href="/passwd.tmpl" name="Edit Passwords" target="_self">Edit Passwords</A>
 </DIV>
 </FORM>
 </body>

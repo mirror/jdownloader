@@ -19,6 +19,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.download.DownloadInterface;
 import jd.plugins.download.DownloadInterface.Chunk;
 import jd.plugins.optional.webinterface.template.Template;
+import jd.unrar.JUnrar;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
@@ -251,20 +252,28 @@ public class JDSimpleWebserverTemplateFileRequestHandler {
         }
         ;
 
-        t.setParam("pakete", v);
-        t.setParam("webinterface_version", JDWebinterface.instance.getPluginID());
+        t.setParam("pakete", v);        
     }
     
-    
+    private void add_password_list(Template t, HashMap<String, String> requestParameter){
+        JUnrar unrar = new JUnrar(false);
+        String[] pws = unrar.returnPasswords();
+        String pwlist="";
+        for (int i = 0; i < pws.length; i++) {
+            pwlist=pwlist+System.getProperty("line.separator")+pws[i];            
+        }
+        t.setParam("password_list", pwlist);
+    }
     @SuppressWarnings("unchecked")
     public void handleRequest(String url, HashMap<String, String> requestParameter) {
         try {
             Template t = new Template(JDUtilities.getResourceFile("plugins/webinterface/" + url).getAbsolutePath());
 
-
-            add_single_info(t, requestParameter);
-            add_all_info(t, requestParameter);
-            add_status_page(t, requestParameter);
+            t.setParam("webinterface_version", JDWebinterface.instance.getPluginID());
+            if (url.startsWith("single_info.tmpl")==true) add_single_info(t, requestParameter);
+            if (url.startsWith("all_info.tmpl")==true) add_all_info(t, requestParameter);            
+            if (url.startsWith("index.tmpl")==true) add_status_page(t, requestParameter);
+            if (url.startsWith("passwd.tmpl")==true) add_password_list(t, requestParameter);
             
             response.addContent(t.output());
             response.setOk();
