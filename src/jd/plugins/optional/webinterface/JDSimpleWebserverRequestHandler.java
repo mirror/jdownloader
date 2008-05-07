@@ -170,7 +170,7 @@ public class JDSimpleWebserverRequestHandler {
                     requestParameter.put(key, value);
             }
         }
-        logger.info(requestParameter.toString());
+        /*logger.info(requestParameter.toString());*/
 
         /* parsen der paramter */
         if (requestParameter.containsKey("do")) {
