@@ -347,8 +347,9 @@ public class JUnrar {
     public static void editPasswordlist(String[] passwords) {
         passwordlist = new LinkedList<String>();
         for (int i = 0; i < passwords.length; i++) {
-            passwordlist.add(passwords[i]);
+            if (passwords[i] != null && !passwords[i].matches("[\\s]*") && !passwordlist.contains(passwords[i])) passwordlist.add(passwords[i]);
         }
+        makePasswordListUnique();
         savePasswordList();
     }
 
@@ -380,7 +381,7 @@ public class JUnrar {
         return new String[] { password };
     }
 
-    public void makePasswordListUnique() {
+    public static void makePasswordListUnique() {
         LinkedList<String> pwList = new LinkedList<String>();
         Iterator<String> iter = passwordlist.iterator();
         while (iter.hasNext()) {
@@ -397,7 +398,7 @@ public class JUnrar {
         String[] passwords = getPasswordArray(password);
         for (int i = 0; i < passwords.length; i++) {
             passwords[i] = passwords[i].trim();
-            if (passwords[i] != null && !passwords[i].matches("[\\s]*") && !passwords[i].matches("[\\s]*") && !passwordlist.contains(passwords[i])) passwordlist.add(passwords[i]);
+            if (passwords[i] != null && !passwords[i].matches("[\\s]*") && !passwordlist.contains(passwords[i])) passwordlist.add(passwords[i]);
         }
         makePasswordListUnique();
         savePasswordList();
