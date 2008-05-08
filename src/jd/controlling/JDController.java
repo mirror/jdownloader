@@ -1239,7 +1239,8 @@ public class JDController implements ControlListener, UIListener {
     }
 
     public boolean hasDownloadLinkURL(String url) {
-        synchronized (packages) {
+       // synchronized (packages) {
+        try{
             Iterator<FilePackage> iterator = packages.iterator();
             FilePackage fp = null;
             DownloadLink nextDownloadLink;
@@ -1248,9 +1249,11 @@ public class JDController implements ControlListener, UIListener {
                 Iterator<DownloadLink> it2 = fp.getDownloadLinks().iterator();
                 while (it2.hasNext()) {
                     nextDownloadLink = it2.next();
-                    if (nextDownloadLink.getDownloadURL().equalsIgnoreCase(url)) return true;
+                    if (nextDownloadLink.getDownloadURL()!=null &&nextDownloadLink.getDownloadURL().equalsIgnoreCase(url)) return true;
                 }
             }
+        }catch(Exception e){
+            e.printStackTrace();
         }
         return false;
 

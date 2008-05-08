@@ -135,6 +135,20 @@
 	            </fileset>
 	        </jar>
 			<delete file="Manifest.MF" failonerror="false" />
+		
+		<manifest file="Manifest.MF">
+				<attribute name="Created-By" value="Scr4ve" />
+				<attribute name="Main-Class" value="jd.update.Main" />
+		    </manifest>
+	        <jar jarfile="${dist}/JDRemoteControl.jar" manifest="Manifest.MF">
+	            <fileset dir="${cls}">
+	                <include name="jd/plugins/optional/JDRemoteControl*" />                
+	              </fileset>
+				     <fileset dir="${res}">
+	                <include name="META-INF/services/jd.plugins.PluginOptional" />
+	            </fileset>
+	        </jar>
+		
     </target>
 	<target name="jarContainer">
 		<!-- Container -->

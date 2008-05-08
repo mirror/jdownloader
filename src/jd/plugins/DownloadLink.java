@@ -639,7 +639,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
             updatePartID();
 
         } else {
-            logger.severe("Set invalid filename: " + name);
+            //logger.severe("Set invalid filename: " + name);
         }
 
     }
