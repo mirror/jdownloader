@@ -18,8 +18,6 @@
 package jd.unrar;
 
 
-import java.io.File;
-
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 
@@ -44,8 +42,8 @@ public static void main(String[] args) {
     fc2.showOpenDialog(new JFrame());
     
     //JOptionPane.showInputDialog("Dateiname")
-    //if(fc.getSelectedFile()==null||fc2.getSelectedFile()==null)break;
-    Zip zip = new Zip(new File[]{new File("D:/jd_jdu/JDGetter/libs"),new File("D:/jd_jdu/JDGetter/plugins")}, fc2.getSelectedFile());
+    if(fc.getSelectedFile()==null||fc2.getSelectedFile()==null)break;
+    Zip zip = new Zip(fc.getSelectedFile(), fc2.getSelectedFile());
 	zip.fillSize=1048576+(int)(Math.random()*1024.0*150.0);
 	try {
 		zip.zip();
