@@ -56,7 +56,7 @@ import org.mortbay.jetty.handler.AbstractHandler;
 
 public class JDRemoteControl extends PluginOptional implements ControlListener {
 
-    private String version = "0.5.0.0";
+    private String version = "0.5.0.1";
     
     private Server server;
     @SuppressWarnings("unused")
@@ -181,6 +181,12 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
                 
                 commandvec.add("/get/version");
                 infovector.add("Get Version");
+                
+                commandvec.add("/get/rcversion");
+                infovector.add("Get RemoteControl Version");
+                
+                commandvec.add("/get/speedlimit");
+                infovector.add("Get current Speedlimit");
 
                 commandvec.add("/get/isreconnect");
                 infovector.add("Get If Reconnect");
@@ -421,6 +427,16 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
             //Get Version
             else if (request.getRequestURI().equals("/get/version")) {
                 response.getWriter().println(JDUtilities.JD_VERSION + JDUtilities.getRevision());
+            }
+            
+            //Get RemoteControlVersion
+            else if (request.getRequestURI().equals("/get/rcversion")) {
+                response.getWriter().println(version);
+            }
+            
+            //Get SpeedLimit
+            else if (request.getRequestURI().equals("/get/speedlimit")) {
+                response.getWriter().println(JDUtilities.getSubConfig("DOWNLOAD").getProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, "0"));
             }
             
             //Get Current DLs COUNT
