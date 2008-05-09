@@ -56,7 +56,7 @@ import org.mortbay.jetty.handler.AbstractHandler;
 
 public class JDRemoteControl extends PluginOptional implements ControlListener {
 
-    private String version = "0.5.0.1";
+    private String version = "0.5.0.2";
     
     private Server server;
     @SuppressWarnings("unused")
@@ -446,17 +446,18 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
             
             //Get Current DLs
             else if (request.getRequestURI().equals("/get/downloads/currentlist")) {
-
+                String output = "";
                 for (int i = 0; i < JDUtilities.getController().getDownloadLinks().size(); i++) {
                     if (JDUtilities.getController().getDownloadLinks().get(i).getStatus() == DownloadLink.STATUS_DOWNLOAD_IN_PROGRESS)
                     {
-                        response.getWriter().println(
+                        output = output + 
                                 "<- name=\""+JDUtilities.getController().getDownloadLinks().get(i).getName()+
                                 "\" hoster=\"" + JDUtilities.getController().getDownloadLinks().get(i).getHost() + 
                                 "\" speed=\"" + JDUtilities.getController().getDownloadLinks().get(i).getDownloadSpeed() + 
-                                "\" ->");             
+                                "\" ->";             
                     }             
-                }   
+                } 
+                response.getWriter().println(output);
             }
             
             //Get DLList COUNT
@@ -466,9 +467,11 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
             
             //Get DLList
             else if (request.getRequestURI().equals("/get/downloads/alllist")) {
+                String output = "";
 
                 for (int i = 0; i < JDUtilities.getController().getDownloadLinks().size(); i++) {
-                        response.getWriter().println(
+                        output = output + 
+                        
                                 "<- name=\""+JDUtilities.getController().getDownloadLinks().get(i).getName()+
                                 "\" hoster=\"" + JDUtilities.getController().getDownloadLinks().get(i).getHost() + 
                                 "\" speed=\"" + JDUtilities.getController().getDownloadLinks().get(i).getDownloadSpeed() + 
@@ -476,8 +479,9 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
                                 "\" statusstr=\"" + JDUtilities.getController().getDownloadLinks().get(i).getStatusText() + 
                                 "\" container=\"" + JDUtilities.getController().getDownloadLinks().get(i).getContainerFile() + 
                                 "\" waittime=\"" + JDUtilities.getController().getDownloadLinks().get(i).getWaitTime() + 
-                                "\" ->");                          
+                                "\" ->";                          
                 }   
+                response.getWriter().println(output);
             }
             
             //Get finished DLs COUNT
@@ -494,16 +498,19 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
             //Get finished DLs
             else if (request.getRequestURI().equals("/get/downloads/finishedlist")) {
 
+                String output = "";
                 for (int i = 0; i < JDUtilities.getController().getDownloadLinks().size(); i++) {
                     if (JDUtilities.getController().getDownloadLinks().get(i).getStatus() == DownloadLink.STATUS_DONE)
                     {
-                        response.getWriter().println(
+                        output = output + 
+                        
                                 "<- name=\""+JDUtilities.getController().getDownloadLinks().get(i).getName()+
                                 "\" hoster=\"" + JDUtilities.getController().getDownloadLinks().get(i).getHost() + 
                                 "\" crc=\"" + JDUtilities.getController().getDownloadLinks().get(i).getCrcStatus() + 
-                                "\" ->");             
+                                "\" ->";             
                     }             
-                }   
+                }
+                response.getWriter().println(output);
             }
             
             //Get current Speed
