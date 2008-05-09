@@ -54,9 +54,10 @@ initiate();                // This must be placed immediately after the menu in 
 
 <SELECT name="selected_dowhat_link_adder">
 <option>add</option>
+<option>update</option>
 <option>remove</option>
 </SELECT>
-    <INPUT type="submit" name="do" value="Submit">
+    <INPUT type="submit" name="do" value="Submit" onclick="check_adder(document.jd.selected_dowhat_link_adder)">
   </DIV>
 </FORM>
 

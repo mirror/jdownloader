@@ -170,18 +170,7 @@ public class JDSimpleWebserverRequestHandler {
             }
         }
         /*logger.info(requestParameter.toString());*/
-        String url = path.replaceAll("\\.\\.", "");
-        
-        if (url.startsWith("link_adder.tmpl")==true){
-            /*packages-namen des link-adders aktuell halten*/
-        synchronized (JDWebinterface.Link_Adder_Packages) {            
-            for (int i = 0; i <= JDWebinterface.Link_Adder_Packages.size(); i++) {
-                if (requestParameter.containsKey("adder_package_name_" + i)) {
-                    JDWebinterface.Link_Adder_Packages.get(i).setName(JDUtilities.htmlDecode(requestParameter.get("adder_package_name_" + i).toString()));
-                }
-            }
-        }
-        }
+        String url = path.replaceAll("\\.\\.", "");   
         
         /* parsen der paramter */
         if (requestParameter.containsKey("do")) {
@@ -226,11 +215,21 @@ public class JDSimpleWebserverRequestHandler {
                         }
                         if (requestParameter.containsKey("selected_dowhat_link_adder")) {
                             String dowhat = requestParameter.get("selected_dowhat_link_adder");
-                            if (dowhat.compareToIgnoreCase("remove") == 0) {
+                            
+                            if (dowhat.compareToIgnoreCase("update") == 0) {                                
+                                /*packages-namen des link-adders aktuell halten*/
+                                synchronized (JDWebinterface.Link_Adder_Packages) {            
+                                    for (int i = 0; i <= JDWebinterface.Link_Adder_Packages.size(); i++) {
+                                        if (requestParameter.containsKey("adder_package_name_" + i)) {
+                                            JDWebinterface.Link_Adder_Packages.get(i).setName(JDUtilities.htmlDecode(requestParameter.get("adder_package_name_" + i).toString()));
+                                        }
+                                    }        
+                                }
+                            } else if (dowhat.compareToIgnoreCase("remove") == 0) {
                                 /* entfernen */
                                 logger.info("entfernen aus add liste");
                                 for (Iterator<DownloadLink> it = links.iterator(); it.hasNext();) {
-                                    link = it.next();
+                                    link = it.next();                                    
                                     link.getFilePackage().remove(link);
                                 }
                             } else if (dowhat.compareToIgnoreCase("add") == 0) {

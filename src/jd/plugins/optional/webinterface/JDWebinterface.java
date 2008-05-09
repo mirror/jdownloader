@@ -13,8 +13,8 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-// TODO:    -Restart Button (Wartebalken noch!!)
-//          -Add Link Button (ne einfache variante ist schon drin) (inklusive Template)
+// TODO:    -packages umbenennen
+//          -packages/links moven
 //          -stable template system
 //          -anderes layout
 

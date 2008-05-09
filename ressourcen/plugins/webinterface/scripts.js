@@ -58,7 +58,13 @@ if ( field2[i].value==chkid )
 };
 };
 }
-
+function check_adder(field)
+{
+if (field.value=="add")
+{
+field.form.action="/index.tmpl";
+}
+}
 function validateandsubmit(msg,button,dest)
 {
 /* msg anzeigen und bei nein wird vom button der value gelöscht, bei ja zu dest submited*/
