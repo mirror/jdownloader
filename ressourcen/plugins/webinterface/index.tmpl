@@ -29,13 +29,14 @@
 
 	<TD  style="color:#000000;background-color:<tmpl_var download_status_color escape>">
 		<div id="ladebalken"><p style="width: <tmpl_var download_status_percent>%;">
-		<span><tmpl_var download_status></span></p></div>
-	</TD>
+		<span><tmpl_var download_status></span></p></div></TD>
         </tr>
       </table>
       <ul >
         <table style="width:100%">
-          <tmpl_loop downloads>            
+	
+          <tmpl_loop downloads>
+	<tr>            
 	<TD style="width:2%"><INPUT type="checkbox" name="package_single_download" value="<tmpl_var package_id> <tmpl_var download_id escape>" onclick="areallsamechecked(this,document.jd.package_single_download,document.jd.package_all_downloads)"></TD>	
               <TD style="width:25%"><A href="single_info.tmpl?single_info=<tmpl_var package_id>+<tmpl_var download_id escape>" name="LinkInfo" onclick="return popup(this,600,200)"><tmpl_var download_name></A></TD>
               <TD style="width:25%"><tmpl_var download_hoster></TD>

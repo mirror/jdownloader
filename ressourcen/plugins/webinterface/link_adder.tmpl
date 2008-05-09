@@ -24,11 +24,15 @@
       <table style="width:100%">
         <tr>
 	<TD style="width:2%"><INPUT type="checkbox" name="package_all_add" value="<tmpl_var package_id escape>" onclick="samecheckall(document.jd.package_single_add,this)"></TD>
-          <TD style="width:98%"><INPUT  size="100" type="text" name="<tmpl_var package_id escape>" value="<tmpl_var download_name escape>"></TD>        </tr>
+          <TD style="width:50%"><INPUT  size="30" type="text" name="adder_package_name_<tmpl_var package_id escape>" value="<tmpl_var download_name escape>"></TD>
+	<!--<TD style="width:48%">Password:<INPUT  size="30" type="text" name="adder_package_password_<tmpl_var package_id escape>" value="<tmpl_var download_password escape>"></TD>-->
+        </tr>
       </table>
       <ul >
         <table style="width:100%">
-          <tmpl_loop downloads>            
+	
+          <tmpl_loop downloads>
+	<tr>            
 	<TD style="width:2%"><INPUT type="checkbox" name="package_single_add" value="<tmpl_var package_id> <tmpl_var download_id escape>" onclick="areallsamechecked(this,document.jd.package_single_add,document.jd.package_all_add)"></TD>	
               <TD style="width:50%"><tmpl_var download_name></TD>
               <TD style="width:25%"><tmpl_var download_hoster></TD>
