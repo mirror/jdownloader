@@ -177,7 +177,7 @@ public class JDSimpleWebserverRequestHandler {
         synchronized (JDWebinterface.Link_Adder_Packages) {            
             for (int i = 0; i <= JDWebinterface.Link_Adder_Packages.size(); i++) {
                 if (requestParameter.containsKey("adder_package_name_" + i)) {
-                    JDWebinterface.Link_Adder_Packages.get(i).setName(requestParameter.get("adder_package_name_" + i).toString());
+                    JDWebinterface.Link_Adder_Packages.get(i).setName(JDUtilities.htmlDecode(requestParameter.get("adder_package_name_" + i).toString()));
                 }
             }
         }
@@ -278,7 +278,8 @@ public class JDSimpleWebserverRequestHandler {
 
                             }
                             /* leere packages aus der add liste entfernen */
-                            for (index = 0; index < JDWebinterface.Link_Adder_Packages.size(); index++) {
+                            /*von oben nach unten, damit keine fehler entstehen, falls mittendrin was gelöscht wird*/
+                            for (index = JDWebinterface.Link_Adder_Packages.size()-1; index >=0 ; index--) {
                                 if (JDWebinterface.Link_Adder_Packages.get(index).size() == 0) JDWebinterface.Link_Adder_Packages.remove(index);
                             }
                         }
