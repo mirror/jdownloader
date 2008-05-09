@@ -178,8 +178,8 @@ public class JACTest {
 //           if(false) break;
 //        }
 
-       // jac.setShowDebugGui(true);
-     //LetterComperator.CREATEINTERSECTIONLETTER = true;
+//        jac.setShowDebugGui(true);
+//     LetterComperator.CREATEINTERSECTIONLETTER = true;
         //
        //jac.exportDB();
         // UTILITIES.getLogger().info("has method:
@@ -197,7 +197,8 @@ public class JACTest {
         // jac.trainCaptcha(new
         // File(JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath()+"/jd/captcha/methods"+"/"+hoster+"/captchas/"+"securedin1730080724541.jpg"),
         // 4);
-        jac.showPreparedCaptcha(new File("C:/Users/coalado/.jd_home/jd/captcha/methods/" + hoster + "/captchas/" + "captcha08_05_2008_17_07_10" + ".jpg"));
+        
+        jac.showPreparedCaptcha(new File("C:/Users/coalado/.jd_home/jd/captcha/methods/" + hoster + "/captchas/" + "08.05.2008_20.14.37" + ".jpg"));
 
         // UTILITIES.getLogger().info(JAntiCaptcha.getCaptchaCode(UTILITIES.loadImage(new
         // File(JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath()+"/jd/captcha/methods"+"/rapidshare.com/captchas/rapidsharecom24190807214810.jpg")),

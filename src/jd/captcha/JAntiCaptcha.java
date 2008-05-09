@@ -395,7 +395,7 @@ public class JAntiCaptcha {
                 }
             }
         } catch (Exception e) {
-           e.printStackTrace();
+            e.printStackTrace();
             if (JAntiCaptcha.isLoggerActive()) logger.severe("Fehler bein lesen der MTH Datei!!. Methode kann nicht funktionieren!");
 
         }
@@ -587,7 +587,7 @@ public class JAntiCaptcha {
         captchaImage = UTILITIES.loadImage(captchafile);
         // }
         Captcha captcha = createCaptcha(captchaImage);
-        
+
         logger.info("CAPTCHA :_" + checkCaptcha(captcha));
         if (bw3 != null) {
             bw3.dispose();
@@ -755,13 +755,16 @@ public class JAntiCaptcha {
             return -1;
         }
         for (int i = 0; i < letters.length; i++) {
-//            if (letters[i] == null || letters[i].getWidth() < 2 || letters[i].getHeight() < 2) {
-//                File file = getResourceFile("detectionErrors5/" + (UTILITIES.getTimer()) + "_" + captchafile.getName());
-//                file.getParentFile().mkdirs();
-//                captchafile.renameTo(file);
-//                if (JAntiCaptcha.isLoggerActive()) logger.severe("Letter detection error");
-//                return -1;
-//            }
+            // if (letters[i] == null || letters[i].getWidth() < 2 ||
+            // letters[i].getHeight() < 2) {
+            // File file = getResourceFile("detectionErrors5/" +
+            // (UTILITIES.getTimer()) + "_" + captchafile.getName());
+            // file.getParentFile().mkdirs();
+            // captchafile.renameTo(file);
+            // if (JAntiCaptcha.isLoggerActive()) logger.severe("Letter
+            // detection error");
+            // return -1;
+            // }
         }
 
         // Zeige das After-prepare Bild an
@@ -1262,8 +1265,51 @@ public class JAntiCaptcha {
             Iterator<Letter> iter = letterDB.iterator();
             int tt = 0;
             logger.info("Do quickscan");
+            Method preValueFilterMethod = null;
+            Class[] preValueFilterParameterTypes = null;
+            Object[] preValueFilterArguments = new Object[] { null, this };
+            if (jas.getString("preValueFilter").length() > 0) {
+                String[] ref = jas.getString("preValueFilter").split("\\.");
+                if (ref.length != 2) {
+                    if (JAntiCaptcha.isLoggerActive()) logger.severe("preValueFilter should have the format Class.Method");
+                    return null;
+                }
+                String cl = ref[0];
+                String methodname = ref[1];
+                Class newClass;
+                try {
+                    newClass = Class.forName("jd.captcha.specials." + cl);
+                    preValueFilterParameterTypes = new Class[] { LetterComperator.class, this.getClass() };
+                    preValueFilterMethod = newClass.getMethod(methodname, preValueFilterParameterTypes);
+
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+            Method postValueFilterMethod = null;
+            Class[] postValueFilterParameterTypes = null;
+            Object[] postValueFilterArguments = new Object[] { null, this };
+            if (jas.getString("postValueFilter").length() > 0) {
+                String[] ref = jas.getString("postValueFilter").split("\\.");
+                if (ref.length != 2) {
+                    if (JAntiCaptcha.isLoggerActive()) logger.severe("postValueFilter should have the format Class.Method");
+                    return null;
+                }
+                String cl = ref[0];
+                String methodname = ref[1];
+                Class newClass;
+                try {
+                    newClass = Class.forName("jd.captcha.specials." + cl);
+                    postValueFilterParameterTypes = new Class[] { LetterComperator.class, this.getClass() };
+                    postValueFilterMethod = newClass.getMethod(methodname, postValueFilterParameterTypes);
+
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
             while (iter.hasNext()) {
                 tmp = (Letter) iter.next();
+
                 if (Math.abs(tmp.getHeight() - letter.getHeight()) > bvY || Math.abs(tmp.getWidth() - letter.getWidth()) > bvX) {
                     continue;
                 }
@@ -1271,6 +1317,13 @@ public class JAntiCaptcha {
                 lc = new LetterComperator(letter, tmp);
                 lc.setScanVariance(0, 0);
                 lc.setOwner(this);
+
+                if (preValueFilterMethod != null) {
+                    preValueFilterArguments[0] = tmp;
+                    preValueFilterArguments[1] = lc;
+                    if (!((Boolean) preValueFilterMethod.invoke(null, preValueFilterArguments))) continue;
+
+                }
                 lc.run();
                 tt++;
                 if (this.isShowDebugGui()) {
@@ -1284,26 +1337,30 @@ public class JAntiCaptcha {
                     w.setText(7, line, lc);
                     line++;
                 }
-                if (res == null || lc.getValityPercent() < res.getValityPercent()) {
-                    if (res != null && res.getValityPercent() < lastPercent) {
-                        lastPercent = res.getValityPercent();
-                    }
-                    res = lc;
-                    if (jas.getDouble("LetterSearchLimitPerfectPercent") >= lc.getValityPercent()) {
-                        if (JAntiCaptcha.isLoggerActive()) logger.finer(" Perfect Match: " + res.getB().getDecodedValue() + res.getValityPercent() + " good:" + tmp.getGoodDetections() + " bad: " + tmp.getBadDetections() + " - " + res);
-                        res.setDetectionType(LetterComperator.QUICKSCANPERFECTMATCH);
-                        res.setReliability(lastPercent - res.getValityPercent());
-                        return res;
-                    }
-                    // if(JAntiCaptcha.isLoggerActive())logger.finer("dim " +
-                    // lc.getA().getDim() + "|" + lc.getB().getDim() + " New
-                    // Best value: " + lc.getDecodedValue() + " "
-                    // +lc.getValityPercent() + " good:" +
-                    // tmp.getGoodDetections() + " bad: " +
-                    // tmp.getBadDetections() + " - " + lc);
-                } else if (res != null) {
-                    if (lc.getValityPercent() < lastPercent) {
-                        lastPercent = lc.getValityPercent();
+                postValueFilterArguments[0] = lc;
+                if (postValueFilterMethod == null || (Boolean) postValueFilterMethod.invoke(null, postValueFilterArguments)) {
+                    if (res == null || lc.getValityPercent() < res.getValityPercent()) {
+                        if (res != null && res.getValityPercent() < lastPercent) {
+                            lastPercent = res.getValityPercent();
+                        }
+                        res = lc;
+                        if (jas.getDouble("LetterSearchLimitPerfectPercent") >= lc.getValityPercent()) {
+                            if (JAntiCaptcha.isLoggerActive()) logger.finer(" Perfect Match: " + res.getB().getDecodedValue() + res.getValityPercent() + " good:" + tmp.getGoodDetections() + " bad: " + tmp.getBadDetections() + " - " + res);
+                            res.setDetectionType(LetterComperator.QUICKSCANPERFECTMATCH);
+                            res.setReliability(lastPercent - res.getValityPercent());
+                            return res;
+                        }
+                        // if(JAntiCaptcha.isLoggerActive())logger.finer("dim "
+                        // +
+                        // lc.getA().getDim() + "|" + lc.getB().getDim() + " New
+                        // Best value: " + lc.getDecodedValue() + " "
+                        // +lc.getValityPercent() + " good:" +
+                        // tmp.getGoodDetections() + " bad: " +
+                        // tmp.getBadDetections() + " - " + lc);
+                    } else if (res != null) {
+                        if (lc.getValityPercent() < lastPercent) {
+                            lastPercent = lc.getValityPercent();
+                        }
                     }
                 }
             }
@@ -1377,6 +1434,49 @@ public class JAntiCaptcha {
             lc = new LetterComperator(letter, null);
             lc.setOwner(this);
             res = lc;
+
+            Method preValueFilterMethod = null;
+            Class[] preValueFilterParameterTypes = null;
+            Object[] preValueFilterArguments = new Object[] { null, this };
+            if (jas.getString("preValueFilter").length() > 0) {
+                String[] ref = jas.getString("preValueFilter").split("\\.");
+                if (ref.length != 2) {
+                    if (JAntiCaptcha.isLoggerActive()) logger.severe("preValueFilter should have the format Class.Method");
+                    return null;
+                }
+                String cl = ref[0];
+                String methodname = ref[1];
+                Class newClass;
+                try {
+                    newClass = Class.forName("jd.captcha.specials." + cl);
+                    preValueFilterParameterTypes = new Class[] { LetterComperator.class, this.getClass() };
+                    preValueFilterMethod = newClass.getMethod(methodname, preValueFilterParameterTypes);
+
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+            Method postValueFilterMethod = null;
+            Class[] postValueFilterParameterTypes = null;
+            Object[] postValueFilterArguments = new Object[] { null, this };
+            if (jas.getString("postValueFilter").length() > 0) {
+                String[] ref = jas.getString("postValueFilter").split("\\.");
+                if (ref.length != 2) {
+                    if (JAntiCaptcha.isLoggerActive()) logger.severe("postValueFilter should have the format Class.Method");
+                    return null;
+                }
+                String cl = ref[0];
+                String methodname = ref[1];
+                Class newClass;
+                try {
+                    newClass = Class.forName("jd.captcha.specials." + cl);
+                    postValueFilterParameterTypes = new Class[] { LetterComperator.class, this.getClass() };
+                    postValueFilterMethod = newClass.getMethod(methodname, postValueFilterParameterTypes);
+
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
             for (angle = UTILITIES.getJumperStart(leftAngle, rightAngle); UTILITIES.checkJumper(angle, leftAngle, rightAngle); angle = UTILITIES.nextJump(angle, leftAngle, rightAngle, steps)) {
 
                 if (turnDB) {
@@ -1392,7 +1492,7 @@ public class JAntiCaptcha {
                 while (iter.hasNext()) {
                     if (turnDB) {
                         tmp = ((Letter) iter.next()).turn(angle);
-                        
+
                     } else {
                         tmp = ((Letter) iter.next());
                     }
@@ -1403,6 +1503,13 @@ public class JAntiCaptcha {
 
                     lc = new LetterComperator(letter, tmp);
                     lc.setOwner(this);
+
+                    if (preValueFilterMethod != null) {
+                        preValueFilterArguments[0] = lc;
+                        preValueFilterArguments[1] = this;
+                        if (!((Boolean) preValueFilterMethod.invoke(null, preValueFilterArguments))) continue;
+
+                    }
                     lc.run();
                     // if(JAntiCaptcha.isLoggerActive())logger.info("Duration:
                     // "+(UTILITIES.getTimer()-timer) +"
@@ -1423,35 +1530,38 @@ public class JAntiCaptcha {
                         if (lc.getPreValityPercent() > jas.getInteger("preScanFilter") && jas.getInteger("preScanFilter") > 0) tf.setBackground(Color.LIGHT_GRAY);
                         line++;
                     }
+                    postValueFilterArguments[0] = lc;
+                    if (postValueFilterMethod == null || (Boolean) postValueFilterMethod.invoke(null, postValueFilterArguments)) {
 
-                    if (res == null || lc.getValityPercent() < res.getValityPercent()) {
-                        if (res != null && res.getValityPercent() < lastPercent) {
-                            lastPercent = res.getValityPercent();
-                        }
-                        res = lc;
+                        if (res == null || lc.getValityPercent() < res.getValityPercent()) {
+                            if (res != null && res.getValityPercent() < lastPercent) {
+                                lastPercent = res.getValityPercent();
+                            }
+                            res = lc;
 
-                        if (jas.getDouble("LetterSearchLimitPerfectPercent") >= lc.getValityPercent()) {
-                            res.setDetectionType(LetterComperator.PERFECTMATCH);
-                            res.setReliability(lastPercent - res.getValityPercent());
-                            if (JAntiCaptcha.isLoggerActive()) logger.finer(" Perfect Match: " + res.getB().getDecodedValue() + " " + res.getValityPercent() + " good:" + tmp.getGoodDetections() + " bad: " + tmp.getBadDetections() + " - " + res);
-                            if (this.isShowDebugGui()) tf.setBackground(Color.GREEN);
-                            return res;
-                        }
-                        if (this.isShowDebugGui()) tf.setBackground(Color.BLUE);
-                        if (JAntiCaptcha.isLoggerActive()) logger.finer("Angle " + angle + "dim " + lc.getA().getDim() + "|" + lc.getB().getDim() + " New Best value: " + lc.getDecodedValue() + " " + lc.getValityPercent() + " good:" + tmp.getGoodDetections() + " bad: " + tmp.getBadDetections() + " - " + lc);
+                            if (jas.getDouble("LetterSearchLimitPerfectPercent") >= lc.getValityPercent()) {
+                                res.setDetectionType(LetterComperator.PERFECTMATCH);
+                                res.setReliability(lastPercent - res.getValityPercent());
+                                if (JAntiCaptcha.isLoggerActive()) logger.finer(" Perfect Match: " + res.getB().getDecodedValue() + " " + res.getValityPercent() + " good:" + tmp.getGoodDetections() + " bad: " + tmp.getBadDetections() + " - " + res);
+                                if (this.isShowDebugGui()) tf.setBackground(Color.GREEN);
+                                return res;
+                            }
+                            if (this.isShowDebugGui()) tf.setBackground(Color.BLUE);
+                            if (JAntiCaptcha.isLoggerActive()) logger.finer("Angle " + angle + "dim " + lc.getA().getDim() + "|" + lc.getB().getDim() + " New Best value: " + lc.getDecodedValue() + " " + lc.getValityPercent() + " good:" + tmp.getGoodDetections() + " bad: " + tmp.getBadDetections() + " - " + lc);
 
-                    } else if (res != null) {
-                        // if (JAntiCaptcha.isLoggerActive()&&
-                        // lc.getDecodedValue().equalsIgnoreCase("G"))
-                        // logger.finer("Angle " + angle + "dim " +
-                        // lc.getA().getDim() + "|" + lc.getB().getDim() + "
-                        // value: " + lc.getDecodedValue() + " " +
-                        // lc.getValityPercent() + " good:" +
-                        // tmp.getGoodDetections() + " bad: " +
-                        // tmp.getBadDetections() + " - " + lc);
+                        } else if (res != null) {
+                            // if (JAntiCaptcha.isLoggerActive()&&
+                            // lc.getDecodedValue().equalsIgnoreCase("G"))
+                            // logger.finer("Angle " + angle + "dim " +
+                            // lc.getA().getDim() + "|" + lc.getB().getDim() + "
+                            // value: " + lc.getDecodedValue() + " " +
+                            // lc.getValityPercent() + " good:" +
+                            // tmp.getGoodDetections() + " bad: " +
+                            // tmp.getBadDetections() + " - " + lc);
 
-                        if (lc.getValityPercent() < lastPercent) {
-                            lastPercent = lc.getValityPercent();
+                            if (lc.getValityPercent() < lastPercent) {
+                                lastPercent = lc.getValityPercent();
+                            }
                         }
                     }
 
@@ -1916,8 +2026,8 @@ public class JAntiCaptcha {
             inputCode = inputCode.toLowerCase();
             for (int x = 0; x < inputCode.length(); x++) {
                 totalLetters++;
-                
-                if (inputCode.length()==code.length()&&inputCode.charAt(x) == code.charAt(x)) {
+
+                if (inputCode.length() == code.length() && inputCode.charAt(x) == code.charAt(x)) {
                     correctLetters++;
                 }
             }

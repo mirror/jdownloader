@@ -18,6 +18,9 @@
 package jd.unrar;
 
 
+import java.io.File;
+import java.util.Vector;
+
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 
@@ -28,12 +31,7 @@ public static void main(String[] args) {
 	//Zip zip = new Zip(new File[]{new File("D:/jd_jdu/Xtract/JDownloader.exe"),new File("D:/jd_jdu/Starter/readme.html")}, new File("d:/jd_windows_starter.jdu"));
 
    while(true){
-    JDFileChooser fc = new JDFileChooser();
-   
-    fc.setFileSelectionMode(JFileChooser.FILES_AND_DIRECTORIES);
-    
-    fc.showOpenDialog(new JFrame());
-    fc.setMultiSelectionEnabled(true);
+  
     JDFileChooser fc2 = new JDFileChooser();
     
     fc2.setFileSelectionMode(JFileChooser.FILES_ONLY);
@@ -42,8 +40,23 @@ public static void main(String[] args) {
     fc2.showOpenDialog(new JFrame());
     
     //JOptionPane.showInputDialog("Dateiname")
-    if(fc.getSelectedFile()==null||fc2.getSelectedFile()==null)break;
-    Zip zip = new Zip(fc.getSelectedFile(), fc2.getSelectedFile());
+    if(fc2.getSelectedFile()==null)break;
+   // Zip zip = new Zip(fc.getSelectedFile(), fc2.getSelectedFile());
+    Vector<File> files= new  Vector<File>();
+    while(true){
+        JDFileChooser fc = new JDFileChooser();
+        
+        fc.setFileSelectionMode(JFileChooser.FILES_AND_DIRECTORIES);
+        
+        fc.showOpenDialog(new JFrame());
+        fc.setMultiSelectionEnabled(true);
+        File f = fc.getSelectedFile();
+        if(f==null)break;
+        files.add(f);
+       
+    }
+    if(files.size()==0)break;
+    Zip zip = new Zip(files.toArray(new File[]{}), fc2.getSelectedFile());
 	zip.fillSize=1048576+(int)(Math.random()*1024.0*150.0);
 	try {
 		zip.zip();

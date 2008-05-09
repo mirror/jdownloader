@@ -37,6 +37,7 @@ public class ScrollPaneWindow extends BasicWindow {
 
  
     private JPanel panel;
+    public JScrollPane scrollPane;
 
     /**
      * @param owner
@@ -46,7 +47,7 @@ public class ScrollPaneWindow extends BasicWindow {
         panel = new JPanel();
         this.setLayout(new BorderLayout());
         panel.setLayout(new GridBagLayout());
-        JScrollPane scrollPane = new JScrollPane(panel);
+        scrollPane = new JScrollPane(panel);
         this.add(scrollPane, BorderLayout.CENTER);
         setSize(200, 200);
         setLocation(0, 0);

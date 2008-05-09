@@ -187,6 +187,8 @@ public class JACScript {
         set("useSpecialGetLetters", "");
         set("useLetterFilter", "");
         set("useLettercomparatorFilter", "");
+        set("preValueFilter","");
+        set("postValueFilter","");
 
         set("LetterSearchLimitFalsePercent", 100);
         /**

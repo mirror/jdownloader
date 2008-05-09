@@ -205,6 +205,7 @@ public class Letter extends PixelGrid {
                 try{
                 grid[x][y] = Integer.parseInt(String.valueOf(line.charAt(x))) * getMaxPixelValue();
                 }catch(Exception e){
+                    
                     e.printStackTrace();
                 }
                 if (grid[x][y] == 0) elementPixel++;

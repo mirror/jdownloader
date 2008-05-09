@@ -1124,4 +1124,6 @@ public class LetterComperator {
         this.intersectionAHeightFaktor = intersectionAHeightFaktor;
     }
 
+
+
 }
