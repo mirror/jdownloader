@@ -1426,6 +1426,14 @@ public class Rapidshare extends PluginForHost {
                         freeInsteadOfPremiumStarttime = System.currentTimeMillis();
 
                         RequestInfo ri = getRequest(new URL(link), null, "", false);
+                        if (ri.getHtmlCode().indexOf(hardwareDefektString) > 0) {
+                            // hardewaredefeklt bei rs.com
+                            step.setStatus(PluginStep.STATUS_ERROR);
+                            step.setParameter(60 * 10);
+                            logger.severe("Rs.com hardwaredefekt");
+                            downloadLink.setStatus(DownloadLink.STATUS_ERROR_TEMPORARILY_UNAVAILABLE);
+                            return step;
+                        }
                         String newURL = getFirstMatch(ri.getHtmlCode(), patternForNewHost, 1);
                         ri = postRequest(new URL(newURL), null, null, null, "dl.start=FREE", true);
                         String strWaitTime = getSimpleMatch(ri.getHtmlCode(), patternErrorDownloadLimitReached, 0);
