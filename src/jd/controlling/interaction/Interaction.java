@@ -392,7 +392,7 @@ public abstract class Interaction extends Property implements Serializable {
      * @return Liste mit allen Interactionen
      */
     public static Interaction[] getInteractionList() {
-        return new Interaction[] { new ExternExecute(), new JDExit(), new ResetLink(), /*new DLCConverter(),*/ new Backup()};
+        return new Interaction[] { new ExternExecute(),new ShutDown(), new JDExit(), new ResetLink(), /*new DLCConverter(),*/ new Backup()};
     }
     /**
      * Da die Knfigurationswünsche nicht gespeichert werden, muss der
