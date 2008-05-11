@@ -61,16 +61,18 @@ public class ShutDown extends Interaction implements Serializable {
         if(shutDownMessage.result)
         {
         String OS = System.getProperty("os.name").toLowerCase();
-        if ((OS.indexOf("nt") > -1) || (OS.indexOf("windows") > -1)) {
+        if ((OS.indexOf("windows xp") > -1) || (OS.indexOf("windows vista") > -1)) {
             try {
                 JDUtilities.runCommand("shutdown.exe", new String[] {"-s", "-t", "01"}, null, 0);
             } catch (Exception e) {
             }
+        }
+        else if(OS.indexOf("windows 2000") > -1|| (OS.indexOf("nt") > -1) )
+        {
             try {
-                JDUtilities.runCommand("RUNDLL32.EXE", new String[] {"user,ExitWindows"}, null, 0);
+                JDUtilities.runCommand("shutdown.exe", new String[] {"-s", "-t", "01"}, null, 0);
             } catch (Exception e) {
             }
-            //fals das alles nicht geht
             try {
                 FileWriter fw = null;
                 BufferedWriter bw = null;
@@ -91,6 +93,19 @@ public class ShutDown extends Interaction implements Serializable {
             } catch (Exception e) {
             }
         }
+        else if (OS.indexOf("windows") > -1) {
+
+
+            try {
+                JDUtilities.runCommand("RUNDLL32.EXE", new String[] {"user,ExitWindows"}, null, 0);
+            } catch (Exception e) {
+            }
+            try {
+                JDUtilities.runCommand("RUNDLL32.EXE", new String[] {"Shell32,SHExitWindowsEx", "1"}, null, 0);
+            } catch (Exception e) {
+            }
+
+        }
         else if (OS.indexOf("mac") >= 0) {
            JDUtilities.runCommand("osascript", new String[] {JDUtilities.getResourceFile("jd/osx/osxshutdown.scpt").getAbsolutePath()}, null, 0);
         }
@@ -100,7 +115,7 @@ public class ShutDown extends Interaction implements Serializable {
         } catch (Exception e) {
         }
         try {
-            JDUtilities.runCommand("dcop", new String[] {"--all-sessions", "--all-users", "ksmserver", "ksmserver", "logout", "0", "2", "0", "&&", "exit"}, null, 0);
+            JDUtilities.runCommand("dcop", new String[] {"--all-sessions", "--all-users", "ksmserver", "ksmserver", "logout", "0", "2", "0"}, null, 0);
         } catch (Exception e) {
         }
         try {
