@@ -67,9 +67,13 @@ public class JDInit {
     private boolean installerVisible = false;
 
     private int cid = -1;
-
-    public JDInit() {
-
+    private SplashScreen splashScreen;
+    public JDInit()
+    {
+        this(null);
+    }
+    public JDInit(SplashScreen splashScreen) {
+        this.splashScreen = splashScreen;
     }
 
     void init() {
@@ -83,7 +87,12 @@ public class JDInit {
     public void loadImages() {
         ClassLoader cl = JDUtilities.getJDClassLoader();
         Toolkit toolkit = Toolkit.getDefaultToolkit();
-
+        try {
+            splashScreen.increase();
+            splashScreen.setText("Load images");
+        } catch (Exception e) {
+            // TODO: handle exception
+        }
         File dir = JDUtilities.getResourceFile("jd/img/");
 
         String[] images = dir.list();
@@ -94,7 +103,11 @@ public class JDInit {
         for (int i = 0; i < images.length; i++) {
             if (images[i].toLowerCase().endsWith(".png") || images[i].toLowerCase().endsWith(".gif")) {
                 File f = new File(images[i]);
-
+                try {
+                    splashScreen.increase(2);
+                } catch (Exception e) {
+                    // TODO: handle exception
+                }
                 logger.finer("Loaded image: " + f.getName().split("\\.")[0] + " from " + cl.getResource("jd/img/" + f.getName()));
                 JDUtilities.addImage(f.getName().split("\\.")[0], toolkit.getImage(cl.getResource("jd/img/" + f.getName())));
             }
@@ -114,6 +127,12 @@ public class JDInit {
         try {
 
             if (fileInput != null && fileInput.exists()) {
+                try {
+                    splashScreen.increase();
+                    splashScreen.setText("Load Configuration");
+                } catch (Exception e) {
+                    // TODO: handle exception
+                }
                 Object obj = JDUtilities.loadObject(null, fileInput, Configuration.saveAsXML);
                 if (obj instanceof Configuration) {
                     Configuration configuration = (Configuration) obj;
@@ -147,7 +166,14 @@ public class JDInit {
         if (!allOK) {
 
             installerVisible = true;
+            try {
+                splashScreen.finish();
+            } catch (Exception e) {
+                // TODO: handle exception
+            }
+            SimpleGUI.setUIManager();
             Installer inst = new Installer();
+
             if (!inst.isAborted() && inst.getHomeDir() != null && inst.getDownloadDir() != null) {
 
                 String newHome = inst.getHomeDir();
@@ -184,6 +210,12 @@ public class JDInit {
                 inst.dispose();
             }
         }
+        try {
+            splashScreen.setText("Configuration loaded");
+            splashScreen.increase(5);
+        } catch (Exception e) {
+            // TODO: handle exception
+        }
         this.afterConfigIsLoaded();
         return JDUtilities.getConfiguration();
     }
@@ -193,6 +225,12 @@ public class JDInit {
     }
 
     public JDController initController() {
+        try {
+            splashScreen.setText("init Controller");
+            splashScreen.increase(2);
+        } catch (Exception e) {
+            // TODO: handle exception
+        }
         return new JDController();
     }
 
@@ -207,13 +245,29 @@ public class JDInit {
     @SuppressWarnings("unchecked")
     public Vector<PluginForDecrypt> loadPluginForDecrypt() {
         Vector<PluginForDecrypt> plugins = new Vector<PluginForDecrypt>();
-
+        try {
+            splashScreen.setText("Load Plugins for Decrypt");
+            splashScreen.increase();
+        } catch (Exception e) {
+            // TODO: handle exception
+        }
         JDClassLoader jdClassLoader = JDUtilities.getJDClassLoader();
         logger.finer("Load PLugins");
         Iterator iterator = Service.providers(PluginForDecrypt.class, jdClassLoader);
+        int c=0;
         while (iterator.hasNext()) {
             try {
                 PluginForDecrypt p = (PluginForDecrypt) iterator.next();
+                try {
+
+                    if(c++%2==0)
+                    {
+                    splashScreen.setText(p.getPluginName());
+                    splashScreen.increase();
+                    }
+                } catch (Exception e) {
+                    // TODO: handle exception
+                }
                 logger.info("Load " + p);
                 plugins.add(p);
             } catch (Exception e) {
@@ -229,15 +283,30 @@ public class JDInit {
     @SuppressWarnings("unchecked")
     public Vector<PluginForHost> loadPluginForHost() {
         Vector<PluginForHost> plugins = new Vector<PluginForHost>();
-
+        try {
+            splashScreen.setText("Load Plugins for Host");
+            splashScreen.increase();
+        } catch (Exception e) {
+            // TODO: handle exception
+        }
         JDClassLoader jdClassLoader = JDUtilities.getJDClassLoader();
         Iterator iterator;
         logger.finer("Load PLugins");
         iterator = Service.providers(PluginForHost.class, jdClassLoader);
+        int c=0;
         while (iterator.hasNext()) {
             try {
                 PluginForHost next = (PluginForHost) iterator.next();
                 logger.finer("Load PLugins" + next);
+                try {
+                    if(c++%2==0)
+                    {
+                    splashScreen.setText(next.getPluginName());
+                    splashScreen.increase();
+                    }
+                } catch (Exception e) {
+                    // TODO: handle exception
+                }
                 PluginForHost p = next;
 
                 plugins.add(p);
@@ -265,12 +334,23 @@ public class JDInit {
 
         JDClassLoader jdClassLoader = JDUtilities.getJDClassLoader();
         Iterator iterator;
+        try {
+            splashScreen.setText("Load Container Plugins");
+            splashScreen.increase();
+        } catch (Exception e) {
+            // TODO: handle exception
+        }
         logger.finer("Load PLugins");
         iterator = Service.providers(PluginForContainer.class, jdClassLoader);
         while (iterator.hasNext()) {
             try {
                 PluginForContainer p = (PluginForContainer) iterator.next();
-
+                try {
+                    splashScreen.setText(p.getPluginName());
+                    splashScreen.increase();
+                } catch (Exception e) {
+                    // TODO: handle exception
+                }
                 plugins.add(p);
             } catch (Exception e) {
                 e.printStackTrace();
@@ -284,6 +364,12 @@ public class JDInit {
 
     @SuppressWarnings("unchecked")
     public HashMap<String, PluginOptional> loadPluginOptional() {
+        try {
+            splashScreen.setText("Load Optional Plugins");
+            splashScreen.increase();
+        } catch (Exception e) {
+            // TODO: handle exception
+        }
         HashMap<String, PluginOptional> pluginsOptional = new HashMap<String, PluginOptional>();
         String[] optionalPlugins = new String[] { "JDTrayIcon", "JDGetter", "JDLightTray", "webinterface.JDWebinterface", "schedule.Schedule", "JDFolderWatch","JDRemoteControl"};
         double[] optionalVersions = new double[] { 1.6, 1.5, 1.6, 1.5, 1.6, 1.5 ,1.5, 1.5};
@@ -308,6 +394,12 @@ public class JDInit {
                 Constructor con = plgClass.getConstructor(classes);
                 PluginOptional p = (PluginOptional) con.newInstance(new Object[] {});
                 pluginsOptional.put(p.getPluginName(), p);
+                try {
+                    splashScreen.setText(p.getPluginName());
+                    splashScreen.increase(2);
+                } catch (Exception e) {
+                    // TODO: handle exception
+                }
                 logger.finer("Successfull!. Loaded " + cl);
 
             } catch (Exception e) {
@@ -337,6 +429,12 @@ public class JDInit {
 
     public void initPlugins() {
         logger.info("Lade Plugins");
+        try {
+            splashScreen.setText("Load Plugins");
+            splashScreen.increase(3);
+        } catch (Exception e) {
+            // TODO: handle exception
+        }
         JDController controller = JDUtilities.getController();
         JDUtilities.setPluginForDecryptList(this.loadPluginForDecrypt());
         JDUtilities.setPluginForHostList(this.loadPluginForHost());
@@ -591,7 +689,12 @@ if(remove!=null)
     }
 
     public void setupProxy() {
-
+        try {
+            splashScreen.increase(2);
+            splashScreen.setText("Setup Proxy");
+        } catch (Exception e) {
+            // TODO: handle exception
+        }
         System.setProperty("proxyHost", JDUtilities.getConfiguration().getStringProperty(Configuration.PROXY_HOST, ""));
         System.setProperty("proxyPort", JDUtilities.getConfiguration().getIntegerProperty(Configuration.PROXY_PORT, 80) + "");
         System.setProperty("http.proxyUser", JDUtilities.getConfiguration().getStringProperty(Configuration.PROXY_USER, ""));

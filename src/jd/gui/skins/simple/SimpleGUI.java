@@ -245,21 +245,23 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
     public static final String PARAM_SHOW_SPLASH = "SHOW_SPLASH";
 
     public static final String SELECTED_CONFIG_TAB = "SELECTED_CONFIG_TAB";
-
-    /**
-     * Das Hauptfenster wird erstellt
-     */
-    public SimpleGUI() {
-        super();
-
+    private static boolean uiInitated = false;
+    public static void setUIManager()
+    {
+        if(uiInitated) return;
+        uiInitated=true;
         UIManager.LookAndFeelInfo[] info = UIManager.getInstalledLookAndFeels();
 
         boolean plafisSet = false;
+        String paf = guiConfig.getStringProperty(PARAM_PLAF, null);
+        if(paf!=null)
+        {
         for (int i = 0; i < info.length; i++) {
-            if (info[i].getName().equals(guiConfig.getStringProperty(PARAM_PLAF))) {
+            if (info[i].getName().equals(paf)) {
                 try {
                     UIManager.setLookAndFeel(info[i].getClassName());
                     plafisSet = true;
+                    break;
                 } catch (UnsupportedLookAndFeelException e) {
                 } catch (ClassNotFoundException e) {
 
@@ -270,13 +272,39 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
                 }
             }
         }
+        }
+        else
+        {
+            for (int i = 0; i < info.length; i++) {
+                if (!info[i].getName().matches("(?is).*(metal|motif).*")) {
+                    try {
+                        UIManager.setLookAndFeel(info[i].getClassName());
+                        plafisSet = true;
+                        break;
+                    } catch (UnsupportedLookAndFeelException e) {
+                    } catch (ClassNotFoundException e) {
+
+                    } catch (InstantiationException e) {
+
+                    } catch (IllegalAccessException e) {
+
+                    }
+                }
+            }
+        }
         if (!plafisSet) {
             try {
                 UIManager.setLookAndFeel(new WindowsLookAndFeel());
             } catch (UnsupportedLookAndFeelException e) {
             }
         }
-
+    }
+    /**
+     * Das Hauptfenster wird erstellt
+     */
+    public SimpleGUI() {
+        super();
+        setUIManager();
         uiListener = new Vector<UIListener>();
         frame = new JFrame();
         // tabbedPane = new JTabbedPane();

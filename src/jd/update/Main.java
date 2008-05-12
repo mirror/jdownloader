@@ -36,6 +36,11 @@ import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
 import javax.swing.plaf.metal.MetalLookAndFeel;
 
+import com.sun.java.swing.plaf.windows.WindowsLookAndFeel;
+
+import jd.config.SubConfiguration;
+import jd.utils.JDUtilities;
+
 public class Main {
 
     /**
@@ -51,11 +56,55 @@ public static int NORTHWEST= GridBagConstraints.NORTHWEST;
 public static Insets INSETS=new Insets(5,5,5,5);
     public static void main(String args[]) {
         final StringBuffer log = new StringBuffer();
-        try {
-            UIManager.setLookAndFeel(new MetalLookAndFeel());
-        }
-        catch (UnsupportedLookAndFeelException e) {
-        }
+
+            UIManager.LookAndFeelInfo[] info = UIManager.getInstalledLookAndFeels();
+            SubConfiguration guiConfig = JDUtilities.getSubConfig("simpleGUI");
+            String paf = guiConfig.getStringProperty("PLAF", null);
+            boolean plafisSet = false;
+            if(paf!=null)
+            {
+            for (int i = 0; i < info.length; i++) {
+                if (info[i].getName().equals(paf)) {
+                    try {
+                        UIManager.setLookAndFeel(info[i].getClassName());
+                        plafisSet = true;
+                        break;
+                    } catch (UnsupportedLookAndFeelException e) {
+                    } catch (ClassNotFoundException e) {
+
+                    } catch (InstantiationException e) {
+
+                    } catch (IllegalAccessException e) {
+
+                    }
+                }
+            }
+            }
+            else
+            {
+                for (int i = 0; i < info.length; i++) {
+                    if (!info[i].getName().matches("(?is).*(metal|motif).*")) {
+                        try {
+                            UIManager.setLookAndFeel(info[i].getClassName());
+                            plafisSet = true;
+                            break;
+                        } catch (UnsupportedLookAndFeelException e) {
+                        } catch (ClassNotFoundException e) {
+
+                        } catch (InstantiationException e) {
+
+                        } catch (IllegalAccessException e) {
+
+                        }
+                    }
+                }
+            }
+            if (!plafisSet) {
+                try {
+                    UIManager.setLookAndFeel(new WindowsLookAndFeel());
+                } catch (UnsupportedLookAndFeelException e) {
+                }
+            }
        File file = new File("webupdater.jar");
        if(file.exists()){
            file.deleteOnExit();

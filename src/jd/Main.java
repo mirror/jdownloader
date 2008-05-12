@@ -16,7 +16,6 @@ package jd;
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import java.awt.Graphics;
 import java.awt.Image;
 import java.awt.MediaTracker;
 import java.io.File;
@@ -33,7 +32,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import javax.swing.JFrame;
-import javax.swing.JWindow;
 
 import jd.captcha.JACController;
 import jd.captcha.JAntiCaptcha;
@@ -235,33 +233,32 @@ public class Main {
 
     @SuppressWarnings("unchecked")
     private void go() {
-
-        JDInit init = new JDInit();
+        SplashScreen splashScreen = null;
+        try {
+            splashScreen = new SplashScreen(JDUtilities.getResourceFile("/jd/img/jd_logo_large.png").getAbsolutePath());     
+            if (JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).getBooleanProperty(SimpleGUI.PARAM_SHOW_SPLASH, true)) {
+                splashScreen.setVisible(true);
+            }
+        } catch (Exception e) {
+            // TODO: handle exception
+        }
+        JDInit init = new JDInit(splashScreen);
         logger.info("Register plugins");
         init.init();
         init.loadImages();
 
-        JWindow window = new JWindow() {
 
-            private static final long serialVersionUID = 1L;
 
-            public void paint(Graphics g) {
-                Image splashImage = JDUtilities.getImage("jd_logo_large");
-                g.drawImage(splashImage, 0, 0, this);
-            }
 
-        };
 
-        window.setSize(450, 100);
-        window.setLocationRelativeTo(null);
-
-        if (JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).getBooleanProperty(SimpleGUI.PARAM_SHOW_SPLASH, true)) {
-            window.setVisible(true);
-        }
 
         init.loadConfiguration();
+        try {
+            splashScreen.setText("Configuration loaded");
+        } catch (Exception e) {
+            // TODO: handle exception
+        }
         init.setupProxy();
-        
         init.removeFiles();
 
         /*
@@ -278,13 +275,27 @@ public class Main {
         }
 
         final JDController controller = init.initController();
-
+        try {
+            splashScreen.setText("Controller loaded");
+        } catch (Exception e) {
+            // TODO: handle exception
+        }
         if (init.installerWasVisible()) {
-
             init.doWebupdate(JDUtilities.getConfiguration().getIntegerProperty(Configuration.CID, -1), true);
 
         } else {
             init.initPlugins();
+            try {
+                splashScreen.setText("Plugins loaded");
+            } catch (Exception e) {
+                // TODO: handle exception
+            }
+            try {
+                splashScreen.setText("Initiate GUI");
+                splashScreen.setValue(100);
+            } catch (Exception e) {
+                // TODO: handle exception
+            }
             init.initGUI(controller);
 
             init.loadDownloadQueue();
@@ -299,7 +310,12 @@ public class Main {
 
         controller.setInitStatus(JDController.INIT_STATUS_COMPLETE);
         // init.createQueueBackup();
-        window.dispose();
+        try {
+            splashScreen.finish();
+        } catch (Exception e) {
+            // TODO: handle exception
+        }
+        
         controller.getUiInterface().onJDInitComplete();
         Properties pr = System.getProperties();
         TreeSet propKeys = new TreeSet(pr.keySet());
