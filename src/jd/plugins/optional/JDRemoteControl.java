@@ -14,6 +14,10 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://wnu.org/licenses/>.
 
+//
+//    Alle Ausgaben sollten lediglich eine Zeile lang sein, um die kompatibilität zu erhöhen.
+//
+
 package jd.plugins.optional;
 
 import java.awt.event.ActionEvent;
@@ -21,6 +25,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.sql.Date;
+import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -43,6 +48,7 @@ import jd.gui.skins.simple.JDAction;
 import jd.gui.skins.simple.SimpleGUI;
 
 import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
 import jd.plugins.PluginOptional;
 import jd.plugins.Regexp;
 import jd.plugins.RequestInfo;
@@ -56,7 +62,8 @@ import org.mortbay.jetty.handler.AbstractHandler;
 
 public class JDRemoteControl extends PluginOptional implements ControlListener {
 
-    private String version = "0.5.0.2";
+    private String version = "0.5.0.3";
+    private DecimalFormat f = new DecimalFormat("#0.00"); 
     
     private Server server;
     @SuppressWarnings("unused")
@@ -441,12 +448,78 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
             
             //Get Current DLs COUNT
             else if (request.getRequestURI().equals("/get/downloads/currentcount")) {
-                response.getWriter().println(JDUtilities.getController().getRunningDownloadNum());
-            }
+                int counter = 0;                
+                FilePackage filePackage;
+                DownloadLink dLink;
+                Integer Package_ID;
+                Integer Download_ID;
+ 
+                for (Package_ID=0; Package_ID<JDUtilities.getController().getPackages().size();Package_ID++){
+                    filePackage = JDUtilities.getController().getPackages().get(Package_ID);
+                    for (Download_ID=0; Download_ID <filePackage.getDownloadLinks().size();Download_ID++){
+
+                        dLink = filePackage.getDownloadLinks().get(Download_ID);
+                        if(dLink.isInProgress())
+                        {
+                            counter++;
+                        }
+                    }
+                } 
+                response.getWriter().println(counter);
+            } 
             
             //Get Current DLs
             else if (request.getRequestURI().equals("/get/downloads/currentlist")) {
                 String output = "";
+                
+                FilePackage filePackage;
+                DownloadLink dLink;
+                Integer Package_ID;
+                Integer Download_ID;
+ 
+                for (Package_ID=0; Package_ID<JDUtilities.getController().getPackages().size();Package_ID++){
+                    filePackage = JDUtilities.getController().getPackages().get(Package_ID);
+
+                    /* Paket Infos */
+                    output = output + "<package";//Open Package
+                    output = output + " package_name=\"" + filePackage.getName() + "\"";
+                    output = output + " package_id=\"" + Package_ID.toString() + "\"";                    
+                    output = output + " package_percent=\"" + f.format(filePackage.getPercent()) +  "\"";
+                    output = output + " package_linksinprogress=\"" + filePackage.getLinksInProgress() + "\"";
+                    output = output + " package_linkstotal=\"" + filePackage.size() + "\"";
+                    output = output + " package_ETA=\"" + JDUtilities.formatSeconds(filePackage.getETA()) + "\"";
+                    output = output + " package_speed=\"" + JDUtilities.formatKbReadable(filePackage.getTotalDownloadSpeed() / 1024) + "/s\"";
+                    output = output + " package_loaded=\"" + JDUtilities.formatKbReadable(filePackage.getTotalKBLoaded()) + "\"";
+                    output = output + " package_size=\"" + JDUtilities.formatKbReadable(filePackage.getTotalEstimatedPackageSize()) + "\"";
+                    output = output + " package_todo=\"" + JDUtilities.formatKbReadable(filePackage.getTotalEstimatedPackageSize() - filePackage.getTotalKBLoaded()) + "\"";
+                    output = output + " >";//Close Package
+                   
+                    for (Download_ID=0; Download_ID <filePackage.getDownloadLinks().size();Download_ID++){
+                        
+
+                        dLink = filePackage.getDownloadLinks().get(Download_ID);
+                        if(dLink.isInProgress())
+                        {
+                            /* Download Infos */
+                            output = output + "<file";//Open File
+                            output = output + " file_name=\"" + dLink.getName() + "\"";
+                            output = output + " file_id=\"" + Download_ID.toString() + "\"";
+                            output = output + " file_package=\"" + Package_ID.toString() + "\"";
+                            output = output + " file_percent=\"" + f.format(dLink.getDownloadCurrent() * 100.0 / Math.max(1,dLink.getDownloadMax())) + "\"";
+                            output = output + " file_hoster=\"" + dLink.getHost() + "\"";
+                            output = output + " file_status=\"" + dLink.getStatusText().toString() + "\"";
+                            output = output + " file_speed=\"" + dLink.getDownloadSpeed() + "\"";
+                            output = output + " > ";//Close File
+                        }
+                    }
+
+                    output = output + "</package> ";// Close Package
+                }
+                
+                response.getWriter().println(output);
+            }
+                
+                /*String output = "";
                 for (int i = 0; i < JDUtilities.getController().getDownloadLinks().size(); i++) {
                     if (JDUtilities.getController().getDownloadLinks().get(i).getStatus() == DownloadLink.STATUS_DOWNLOAD_IN_PROGRESS)
                     {
@@ -458,58 +531,144 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
                     }             
                 } 
                 response.getWriter().println(output);
-            }
+            }*/
             
             //Get DLList COUNT
             else if (request.getRequestURI().equals("/get/downloads/allcount")) {
-                response.getWriter().println(JDUtilities.getController().getDownloadLinks().size());
-            }
+                int counter = 0;                
+                FilePackage filePackage;
+                Integer Package_ID;
+                Integer Download_ID;
+ 
+                for (Package_ID=0; Package_ID<JDUtilities.getController().getPackages().size();Package_ID++){
+                    filePackage = JDUtilities.getController().getPackages().get(Package_ID);
+
+                    for (Download_ID=0; Download_ID <filePackage.getDownloadLinks().size();Download_ID++){
+                            counter++;
+                    }
+                } 
+                response.getWriter().println(counter);
+            } 
             
             //Get DLList
+            
             else if (request.getRequestURI().equals("/get/downloads/alllist")) {
                 String output = "";
+                
+                FilePackage filePackage;
+                DownloadLink dLink;
+                Integer Package_ID;
+                Integer Download_ID;
+ 
+                for (Package_ID=0; Package_ID<JDUtilities.getController().getPackages().size();Package_ID++){
+                    filePackage = JDUtilities.getController().getPackages().get(Package_ID);
 
-                for (int i = 0; i < JDUtilities.getController().getDownloadLinks().size(); i++) {
-                        output = output + 
+                    /* Paket Infos */
+                    output = output + "<package";//Open Package
+                    output = output + " package_name=\"" + filePackage.getName() + "\"";
+                    output = output + " package_id=\"" + Package_ID.toString() + "\"";                    
+                    output = output + " package_percent=\"" + f.format(filePackage.getPercent()) +  "\"";
+                    output = output + " package_linksinprogress=\"" + filePackage.getLinksInProgress() + "\"";
+                    output = output + " package_linkstotal=\"" + filePackage.size() + "\"";
+                    output = output + " package_ETA=\"" + JDUtilities.formatSeconds(filePackage.getETA()) + "\"";
+                    output = output + " package_speed=\"" + JDUtilities.formatKbReadable(filePackage.getTotalDownloadSpeed() / 1024) + "/s\"";
+                    output = output + " package_loaded=\"" + JDUtilities.formatKbReadable(filePackage.getTotalKBLoaded()) + "\"";
+                    output = output + " package_size=\"" + JDUtilities.formatKbReadable(filePackage.getTotalEstimatedPackageSize()) + "\"";
+                    output = output + " package_todo=\"" + JDUtilities.formatKbReadable(filePackage.getTotalEstimatedPackageSize() - filePackage.getTotalKBLoaded()) + "\"";
+                    output = output + " >";//Close Package
+                   
+                    for (Download_ID=0; Download_ID <filePackage.getDownloadLinks().size();Download_ID++){
                         
-                                "<- name=\""+JDUtilities.getController().getDownloadLinks().get(i).getName()+
-                                "\" hoster=\"" + JDUtilities.getController().getDownloadLinks().get(i).getHost() + 
-                                "\" speed=\"" + JDUtilities.getController().getDownloadLinks().get(i).getDownloadSpeed() + 
-                                "\" statusint=\"" + JDUtilities.getController().getDownloadLinks().get(i).getStatus() + 
-                                "\" statusstr=\"" + JDUtilities.getController().getDownloadLinks().get(i).getStatusText() + 
-                                "\" container=\"" + JDUtilities.getController().getDownloadLinks().get(i).getContainerFile() + 
-                                "\" waittime=\"" + JDUtilities.getController().getDownloadLinks().get(i).getWaitTime() + 
-                                "\" ->";                          
-                }   
+                        dLink = filePackage.getDownloadLinks().get(Download_ID);
+                        /* Download Infos */
+                        output = output + "<file";//Open File
+                        output = output + " file_name=\"" + dLink.getName() + "\"";
+                        output = output + " file_id=\"" + Download_ID.toString() + "\"";
+                        output = output + " file_package=\"" + Package_ID.toString() + "\"";
+                        output = output + " file_percent=\"" + f.format(dLink.getDownloadCurrent() * 100.0 / Math.max(1,dLink.getDownloadMax())) + "\"";
+                        output = output + " file_hoster=\"" + dLink.getHost() + "\"";
+                        output = output + " file_status=\"" + dLink.getStatusText().toString() + "\"";
+                        output = output + " file_speed=\"" + dLink.getDownloadSpeed() + "\"";
+                        output = output + " > ";//Close File
+                    }
+
+                    output = output + "</package> ";// Close Package
+                }
+                
                 response.getWriter().println(output);
             }
             
             //Get finished DLs COUNT
             else if (request.getRequestURI().equals("/get/downloads/finishedcount")) {
-                int counter = 0;
-                Vector<DownloadLink> k = JDUtilities.getController().getDownloadLinks();
+                int counter = 0;                
+                FilePackage filePackage;
+                DownloadLink dLink;
+                Integer Package_ID;
+                Integer Download_ID;
+ 
+                for (Package_ID=0; Package_ID<JDUtilities.getController().getPackages().size();Package_ID++){
+                    filePackage = JDUtilities.getController().getPackages().get(Package_ID);
 
-                for (int i = 0; i < k.size(); i++) {
-                    if (k.get(i).getStatus() == DownloadLink.STATUS_DONE) counter++;
-                }
+                    for (Download_ID=0; Download_ID <filePackage.getDownloadLinks().size();Download_ID++){
+
+                        dLink = filePackage.getDownloadLinks().get(Download_ID);
+                        if(dLink.getStatus() == DownloadLink.STATUS_DONE)
+                        {
+                            counter++;
+                        }
+                    }
+                } 
                 response.getWriter().println(counter);
-            }
+            }   
             
             //Get finished DLs
             else if (request.getRequestURI().equals("/get/downloads/finishedlist")) {
-
                 String output = "";
-                for (int i = 0; i < JDUtilities.getController().getDownloadLinks().size(); i++) {
-                    if (JDUtilities.getController().getDownloadLinks().get(i).getStatus() == DownloadLink.STATUS_DONE)
-                    {
-                        output = output + 
+                
+                FilePackage filePackage;
+                DownloadLink dLink;
+                Integer Package_ID;
+                Integer Download_ID;
+ 
+                for (Package_ID=0; Package_ID<JDUtilities.getController().getPackages().size();Package_ID++){
+                    filePackage = JDUtilities.getController().getPackages().get(Package_ID);
+
+                    /* Paket Infos */
+                    output = output + "<package";//Open Package
+                    output = output + " package_name=\"" + filePackage.getName() + "\"";
+                    output = output + " package_id=\"" + Package_ID.toString() + "\"";                    
+                    output = output + " package_percent=\"" + f.format(filePackage.getPercent()) +  "\"";
+                    output = output + " package_linksinprogress=\"" + filePackage.getLinksInProgress() + "\"";
+                    output = output + " package_linkstotal=\"" + filePackage.size() + "\"";
+                    output = output + " package_ETA=\"" + JDUtilities.formatSeconds(filePackage.getETA()) + "\"";
+                    output = output + " package_speed=\"" + JDUtilities.formatKbReadable(filePackage.getTotalDownloadSpeed() / 1024) + "/s\"";
+                    output = output + " package_loaded=\"" + JDUtilities.formatKbReadable(filePackage.getTotalKBLoaded()) + "\"";
+                    output = output + " package_size=\"" + JDUtilities.formatKbReadable(filePackage.getTotalEstimatedPackageSize()) + "\"";
+                    output = output + " package_todo=\"" + JDUtilities.formatKbReadable(filePackage.getTotalEstimatedPackageSize() - filePackage.getTotalKBLoaded()) + "\"";
+                    output = output + " >";//Close Package
+                   
+                    for (Download_ID=0; Download_ID <filePackage.getDownloadLinks().size();Download_ID++){
                         
-                                "<- name=\""+JDUtilities.getController().getDownloadLinks().get(i).getName()+
-                                "\" hoster=\"" + JDUtilities.getController().getDownloadLinks().get(i).getHost() + 
-                                "\" crc=\"" + JDUtilities.getController().getDownloadLinks().get(i).getCrcStatus() + 
-                                "\" ->";             
-                    }             
+
+                        dLink = filePackage.getDownloadLinks().get(Download_ID);
+                        if(dLink.getStatus() == DownloadLink.STATUS_DONE)
+                        {
+                            /* Download Infos */
+                            output = output + "<file";//Open File
+                            output = output + " file_name=\"" + dLink.getName() + "\"";
+                            output = output + " file_id=\"" + Download_ID.toString() + "\"";
+                            output = output + " file_package=\"" + Package_ID.toString() + "\"";
+                            output = output + " file_percent=\"" + f.format(dLink.getDownloadCurrent() * 100.0 / Math.max(1,dLink.getDownloadMax())) + "\"";
+                            output = output + " file_hoster=\"" + dLink.getHost() + "\"";
+                            output = output + " file_status=\"" + dLink.getStatusText().toString() + "\"";
+                            output = output + " file_speed=\"" + dLink.getDownloadSpeed() + "\"";
+                            output = output + " > ";//Close File
+                        }
+                    }
+
+                    output = output + "</package> ";// Close Package
                 }
+                
                 response.getWriter().println(output);
             }
             
