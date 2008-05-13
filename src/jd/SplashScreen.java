@@ -107,7 +107,7 @@ public class SplashScreen implements ActionListener
         public SplashScreen(String path) throws IOException, AWTException
         {
                 //final URL url = this.getClass().getClassLoader().getResource(path);
-
+                SimpleGUI.setUIManager();
                 image = ImageIO.read(new File(path));
 
                 currentImage = GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice().getDefaultConfiguration().createCompatibleImage(image.getWidth(null), image.getHeight(null));
@@ -125,7 +125,7 @@ public class SplashScreen implements ActionListener
 
                 label = new SplashPainter();
                 label.setImage(background);
-                SimpleGUI.setUIManager();
+
                 window = new JWindow();
                 window.setAlwaysOnTop(true);
                 window.setSize(300, 200);
