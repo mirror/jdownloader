@@ -226,7 +226,7 @@ public class UCMS extends PluginForDecrypt {
 		    				links = getAllSimpleMatches(reqinfo.getHtmlCode(), "ACTION=\"°\"");
 		    			}
 	        			for(int j=0; j<links.size(); j++){
-	        				System.out.println(JDUtilities.htmlDecode(links.get(j).get(0)));
+	        				//System.out.println(JDUtilities.htmlDecode(links.get(j).get(0)));
 	        				decryptedLinks.add(this.createDownloadlink(getHttpLinkList(JDUtilities.htmlDecode(links.get(j).get(0)))));
 	        			}
     				}
