@@ -479,8 +479,8 @@ public class RapidshareCom {
         // //// l.colorize(0xff0000);
         // //
         // }
-       return letters;
-        // return filtered.toArray(new Letter[]{});
+      // return letters;
+        return filtered.toArray(new Letter[]{});
     }
 
     // private static boolean isCat(Letter l, Vector<byte[]> map,

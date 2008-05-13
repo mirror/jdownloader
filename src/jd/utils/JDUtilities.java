@@ -1091,7 +1091,7 @@ public class JDUtilities {
      */
     public static HashMap<String, PluginOptional> getPluginsOptional() {
         return pluginsOptional;
-    }
+    } 
 
     /**
      * Gibt den MD5 hash eines Strings zurück
