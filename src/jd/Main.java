@@ -54,6 +54,7 @@ import jd.utils.JDUtilities;
 public class Main {
 
     private static Logger logger = JDUtilities.getLogger();
+    private static SplashScreen splashScreen;
 
     public static void main(String args[]) {
 
@@ -102,7 +103,17 @@ public class Main {
             }
 
         }
+        splashScreen = null;
+        try {
+            if (JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).getBooleanProperty(SimpleGUI.PARAM_SHOW_SPLASH, true)) {
 
+                splashScreen = new SplashScreen(JDUtilities.getResourceFile("/jd/img/jd_logo_large.png").getAbsolutePath());
+                splashScreen.setVisible(true);
+               
+            }
+        } catch (Exception e) {
+            // TODO: handle exception
+        }
         // Mac specific //
         if (System.getProperty("os.name").toLowerCase().indexOf("mac") >= 0) {
 
@@ -234,17 +245,7 @@ public class Main {
 
     @SuppressWarnings("unchecked")
     private void go() {
-        SplashScreen splashScreen = null;
-        try {
-            if (JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).getBooleanProperty(SimpleGUI.PARAM_SHOW_SPLASH, true)) {
-
-                splashScreen = new SplashScreen(JDUtilities.getResourceFile("/jd/img/jd_logo_large.png").getAbsolutePath());
-                splashScreen.setVisible(true);
-               
-            }
-        } catch (Exception e) {
-            // TODO: handle exception
-        }
+       
         JDInit init = new JDInit(splashScreen);
         logger.info("Register plugins");
         init.init();

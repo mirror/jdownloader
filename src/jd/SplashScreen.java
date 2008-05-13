@@ -60,7 +60,7 @@ public class SplashScreen implements ActionListener
         /**
         * Duration in Time Mills
         */
-        private float duration = 10000.0f; 
+        private float duration = 1000.0f; 
 
         private long startTime = 0;
 
@@ -110,6 +110,7 @@ public class SplashScreen implements ActionListener
 
                 currentImage = GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice().getDefaultConfiguration().createCompatibleImage(image.getWidth(null), image.getHeight(null));
                 final Dimension screenDimension = Toolkit.getDefaultToolkit().getScreenSize();
+                progressBar=new JProgressBar();
                 final int x = (int) (screenDimension.getWidth() / 2 - image.getWidth(null) / 2);
                 final int y = (int) (screenDimension.getHeight() / 2 - image.getHeight(null) / 2);
                 final int w = image.getWidth(null);
@@ -129,11 +130,12 @@ public class SplashScreen implements ActionListener
                 Container content = window.getContentPane();
                 content.add(BorderLayout.NORTH,label);
                // content.add(label);
-               content.add(BorderLayout.SOUTH,progressBar=new JProgressBar());
+               content.add(BorderLayout.SOUTH,progressBar);
                progressBar.setStringPainted(true);
                 
                window.pack();
-               window.setLocationRelativeTo(null);
+               //indow.setLocationRelativeTo(null);
+               window.setLocation(x, y);
 
                 timer = new Timer(speed, this);
                 timer.setCoalesce(true);
