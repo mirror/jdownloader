@@ -92,9 +92,8 @@ public class CaptchaDialog extends JDialog implements ActionListener {
      */
     public CaptchaDialog(final Frame owner, final Plugin plugin, final File file, final String def) {
         super(owner);
-     
-                JDSounds.PT("sound.captcha.onCaptchaInput");
-      
+
+        JDSounds.PT("sound.captcha.onCaptchaInput");
         setModal(true);
         addWindowListener(new WindowListener() {
 
@@ -189,26 +188,25 @@ public class CaptchaDialog extends JDialog implements ActionListener {
             this.jacThread.start();
 
         } else {
-          
-
             this.countdownThread = new Thread() {
 
                 public void run() {
                     int c = countdown * 1000;
                     long t = System.currentTimeMillis();
                     while (c >= 0) {
-                        if(!isVisible())return;
+                        if (!isVisible()) return;
                         t = System.currentTimeMillis();
-                        setTitle("Countdown " + JDUtilities.formatSeconds(c/1000));
-                        if(c<3000)  JDSounds.P("sound.captcha.onCaptchaInputEmergency");
+                        setTitle("Countdown " + JDUtilities.formatSeconds(c / 1000));
+                        if (c < 3000) JDSounds.P("sound.captcha.onCaptchaInputEmergency");
                         long dif = System.currentTimeMillis() - t;
                         c -= dif;
 
                         try {
                             if (dif < 1000) Thread.sleep(1000 - dif);
-                            c-=(1000 - dif);
+                            c -= (1000 - dif);
                         } catch (InterruptedException e) {
                         }
+                        if (!isVisible()) return;
 
                     }
                     captchaText = textField.getText();
