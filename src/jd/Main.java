@@ -114,7 +114,7 @@ public class Main {
         } catch (Exception e) {
             // TODO: handle exception
         }
-        setSplashStatus(splashScreen, 0, JDLocale.L("gui.splash.text.loadLanguage", "lade Sprachen"));
+        setSplashStatus(splashScreen, 10, JDLocale.L("gui.splash.text.loadLanguage", "lade Sprachen"));
 
         // Mac specific //
         if (System.getProperty("os.name").toLowerCase().indexOf("mac") >= 0) {
@@ -253,7 +253,7 @@ public class Main {
         init.init();
         init.loadImages();
 
-        setSplashStatus(splashScreen, 0, JDLocale.L("gui.splash.text.configLoaded", "lade Konfiguration"));
+        setSplashStatus(splashScreen, 10, JDLocale.L("gui.splash.text.configLoaded", "lade Konfiguration"));
 
         init.loadConfiguration();
 
@@ -281,20 +281,20 @@ public class Main {
 
         } else {
             
-            setSplashStatus(splashScreen, 20, JDLocale.L("gui.splash.text.loadPlugins", "Lade Plugins"));
+            setSplashStatus(splashScreen, 10, JDLocale.L("gui.splash.text.loadPlugins", "Lade Plugins"));
 
             
             init.initPlugins();
-            setSplashStatus(splashScreen, 30, JDLocale.L("gui.splash.text.loadGUI", "Lade Benutzeroberfläche"));
+            setSplashStatus(splashScreen, 20, JDLocale.L("gui.splash.text.loadGUI", "Lade Benutzeroberfläche"));
 
             init.initGUI(controller);
-            setSplashStatus(splashScreen, 50, JDLocale.L("gui.splash.text.loaddownloadqueue", "Lade Downloadliste"));
+            setSplashStatus(splashScreen, 20, JDLocale.L("gui.splash.text.loaddownloadqueue", "Lade Downloadliste"));
 
             init.loadDownloadQueue();
-            setSplashStatus(splashScreen, 70, JDLocale.L("gui.splash.text.loadmodules", "Lade Module und Addons"));
+            setSplashStatus(splashScreen, 10, JDLocale.L("gui.splash.text.loadmodules", "Lade Module und Addons"));
 
             init.loadModules();
-            setSplashStatus(splashScreen, 90, JDLocale.L("gui.splash.text.update", "Prüfe auf Updates"));
+            setSplashStatus(splashScreen, 10, JDLocale.L("gui.splash.text.update", "Prüfe auf Updates"));
 
             init.checkUpdate();
 
@@ -345,7 +345,7 @@ public class Main {
     private static void setSplashStatus(SplashScreen splashScreen, int i, String l) {
         if (splashScreen == null) return;
         splashScreen.setText(l);
-        splashScreen.setValue(i);
+        splashScreen.setValue(splashScreen.getValue()+i);
 
     }
 

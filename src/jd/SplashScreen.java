@@ -91,7 +91,7 @@ public class SplashScreen implements ActionListener
         }
         public void setValue(int perc)
         {
-            progressBar.setValue(perc);
+            progressBar.setValue(Math.min(100,perc));
 //            if(perc>70)
 //               
 //            if(perc>99)
