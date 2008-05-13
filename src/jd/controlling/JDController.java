@@ -1384,8 +1384,8 @@ public class JDController implements ControlListener, UIListener {
             this.eventQueue.add(controlEvent);
 
             synchronized (eventSender) {
-                if (eventSender.pleaseWait) {
-                    eventSender.pleaseWait = false;
+                if (eventSender.waitFlag) {
+                    eventSender.waitFlag = false;
                     eventSender.notify();
                 }
 
@@ -1841,14 +1841,14 @@ public class JDController implements ControlListener, UIListener {
 
     private class EventSender extends Thread {
 
-        public boolean pleaseWait = true;
+        public boolean waitFlag = true;
 
         public void run() {
             while (true) {
 
                 synchronized (this) {
 
-                    while (pleaseWait) {
+                    while (waitFlag) {
                         try {
                             wait();
                         } catch (Exception e) {
@@ -1868,7 +1868,7 @@ public class JDController implements ControlListener, UIListener {
                         }
                         // JDUtilities.getLogger().severe("THREAD2");
                     } else {
-                        pleaseWait = true;
+                        waitFlag = true;
                         // JDUtilities.getLogger().severe("PAUSE");
                     }
                 } catch (Exception e) {
