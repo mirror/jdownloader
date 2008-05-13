@@ -173,7 +173,7 @@ public class RapidshareCom {
                 ca.setProperty("whiteSpaces", whites);
             }
             Vector<PixelObject> whiteSpace = (Vector<PixelObject>) whites;
-            if (whiteSpace.firstElement().getSize() >50) {
+            if (whiteSpace.firstElement().getSize() >80) {
                 // BasicWindow.showImage(whiteSpace.firstElement().toLetter().getImage(2));
                 return false;
             }
@@ -188,7 +188,7 @@ public class RapidshareCom {
                 ca.setProperty("whiteSpaces", whites);
             }
             Vector<PixelObject> whiteSpace = (Vector<PixelObject>) whites;
-            if (whiteSpace.firstElement().getSize() <50) {
+            if (whiteSpace.firstElement().getSize() <80) {
                 // BasicWindow.showImage(whiteSpace.firstElement().toLetter().getImage(2));
                 return false;
             }
@@ -201,7 +201,7 @@ public class RapidshareCom {
                 ca.setProperty("whiteSpaces", whites);
             }
             Vector<PixelObject> whiteSpace = (Vector<PixelObject>) whites;
-            if (whiteSpace.firstElement().getSize() <50) {
+            if (whiteSpace.firstElement().getSize() <80) {
                 // BasicWindow.showImage(whiteSpace.firstElement().toLetter().getImage(2));
                 return false;
             }
@@ -214,7 +214,7 @@ public class RapidshareCom {
                 ca.setProperty("whiteSpaces", whites);
             }
             Vector<PixelObject> whiteSpace = (Vector<PixelObject>) whites;
-            if (whiteSpace.firstElement().getSize() <50) {
+            if (whiteSpace.firstElement().getSize() <80) {
                 // BasicWindow.showImage(whiteSpace.firstElement().toLetter().getImage(2));
                 return false;
             }
@@ -457,7 +457,7 @@ public class RapidshareCom {
         ArrayList<Letter> filtered = new ArrayList<Letter>();
         for (int i = 0; i < Math.min(4, lets.size()); i++) {
             Letter l = ((Letter) lets.get(i).getProperty("org"));
-            l.colorize(0x000000);
+            l.colorize(0xff0000);
             filtered.add(l);
 
             // ((Letter)lets.get(i).getProperty("org")).colorize(0xff0000);
@@ -479,8 +479,8 @@ public class RapidshareCom {
         // //// l.colorize(0xff0000);
         // //
         // }
-        //return letters;
-         return filtered.toArray(new Letter[]{});
+       return letters;
+        // return filtered.toArray(new Letter[]{});
     }
 
     // private static boolean isCat(Letter l, Vector<byte[]> map,

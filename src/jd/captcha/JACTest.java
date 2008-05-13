@@ -55,6 +55,7 @@ public class JACTest {
         String hoster = "rapidshare.com";
 
         JAntiCaptcha jac = new JAntiCaptcha(methodsPath, hoster);
+        
         // sharegullicom47210807182105.gif
 //        Logger logger = JDUtilities.getLogger();
 //        HashMap<Integer,Integer> avg= new  HashMap<Integer,Integer>();
@@ -198,7 +199,7 @@ public class JACTest {
         // File(JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath()+"/jd/captcha/methods"+"/"+hoster+"/captchas/"+"securedin1730080724541.jpg"),
         // 4);
         
-        jac.showPreparedCaptcha(new File("C:/Users/coalado/.jd_home/jd/captcha/methods/" + hoster + "/captchas/" + "08.05.2008_20.14.37" + ".jpg"));
+        jac.showPreparedCaptcha(new File("C:/Users/coalado/.jd_home/jd/captcha/methods/" + hoster + "/captchas/" + "captcha09_05_2008_18_45_01" + ".jpg"));
 
         // UTILITIES.getLogger().info(JAntiCaptcha.getCaptchaCode(UTILITIES.loadImage(new
         // File(JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath()+"/jd/captcha/methods"+"/rapidshare.com/captchas/rapidsharecom24190807214810.jpg")),

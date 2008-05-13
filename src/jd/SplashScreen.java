@@ -60,7 +60,7 @@ public class SplashScreen implements ActionListener
         /**
         * Duration in Time Mills
         */
-        private float duration = 1500.0f; 
+        private float duration = 10000.0f; 
 
         private long startTime = 0;
 
@@ -92,15 +92,15 @@ public class SplashScreen implements ActionListener
         public void setValue(int perc)
         {
             progressBar.setValue(perc);
-            if(perc>70)
-               blendOut();
-            if(perc>99)
-                window.dispose();
+//            if(perc>70)
+//               
+//            if(perc>99)
+//                
             
         }
         public void finish()
         {
-            setValue(100);
+            blendOut();
         }
         public SplashScreen(String path) throws IOException, AWTException
         {
@@ -124,6 +124,7 @@ public class SplashScreen implements ActionListener
                 label.setImage(background);
                 SimpleGUI.setUIManager();
                 window = new JWindow();
+                window.setAlwaysOnTop(true);
                 window.setSize(300, 200);
                 Container content = window.getContentPane();
                 content.add(BorderLayout.NORTH,label);
@@ -182,6 +183,9 @@ public class SplashScreen implements ActionListener
                 drawImage(alphaValue);
                 label.setImage(currentImage);
                 label.repaint();
+                if(isBlendOut&&percent<=0.0f){
+                    window.dispose();
+                }
                 
         }
 

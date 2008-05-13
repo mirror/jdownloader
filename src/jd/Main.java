@@ -42,6 +42,7 @@ import jd.controlling.interaction.Interaction;
 import jd.controlling.interaction.PackageManager;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.plugins.HTTPConnection;
+import jd.utils.JDLocale;
 import jd.utils.JDSounds;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
@@ -56,10 +57,10 @@ public class Main {
 
     public static void main(String args[]) {
 
-        
-//        int t=0;
-//        for( t=0; t<200;t++)
-//       JDUtilities.downloadBinary(JDUtilities.getResourceFile("cap/cap_"+t+".jpg").getAbsolutePath(), "http://www.fast-load.net/includes/captcha.php");
+        // int t=0;
+        // for( t=0; t<200;t++)
+        // JDUtilities.downloadBinary(JDUtilities.getResourceFile("cap/cap_"+t+".jpg").getAbsolutePath(),
+        // "http://www.fast-load.net/includes/captcha.php");
         Boolean newInstance = false;
 
         // pre start parameters //
@@ -116,11 +117,11 @@ public class Main {
 
         JDTheme.setTheme("default");
         JDSounds.setSoundTheme("default");
-      
+
         boolean stop = false;
         boolean extractSwitch = false;
         Vector<String> paths = new Vector<String>();
-     
+
         long extractTime = 0;
 
         if (!newInstance && tryConnectToServer(args)) {
@@ -235,9 +236,11 @@ public class Main {
     private void go() {
         SplashScreen splashScreen = null;
         try {
-            splashScreen = new SplashScreen(JDUtilities.getResourceFile("/jd/img/jd_logo_large.png").getAbsolutePath());     
             if (JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).getBooleanProperty(SimpleGUI.PARAM_SHOW_SPLASH, true)) {
+
+                splashScreen = new SplashScreen(JDUtilities.getResourceFile("/jd/img/jd_logo_large.png").getAbsolutePath());
                 splashScreen.setVisible(true);
+               
             }
         } catch (Exception e) {
             // TODO: handle exception
@@ -247,17 +250,10 @@ public class Main {
         init.init();
         init.loadImages();
 
-
-
-
-
+        setSplashStatus(splashScreen, 0, JDLocale.L("gui.splash.text.configLoaded", "lade Konfiguration"));
 
         init.loadConfiguration();
-        try {
-            splashScreen.setText("Configuration loaded");
-        } catch (Exception e) {
-            // TODO: handle exception
-        }
+
         init.setupProxy();
         init.removeFiles();
 
@@ -273,33 +269,30 @@ public class Main {
             JDUtilities.saveConfig();
 
         }
+        setSplashStatus(splashScreen, 10, JDLocale.L("gui.splash.text.initcontroller", "Starte Controller"));
 
         final JDController controller = init.initController();
-        try {
-            splashScreen.setText("Controller loaded");
-        } catch (Exception e) {
-            // TODO: handle exception
-        }
+      
         if (init.installerWasVisible()) {
             init.doWebupdate(JDUtilities.getConfiguration().getIntegerProperty(Configuration.CID, -1), true);
 
         } else {
+            
+            setSplashStatus(splashScreen, 20, JDLocale.L("gui.splash.text.loadPlugins", "Lade Plugins"));
+
+            
             init.initPlugins();
-            try {
-                splashScreen.setText("Plugins loaded");
-            } catch (Exception e) {
-                // TODO: handle exception
-            }
-            try {
-                splashScreen.setText("Initiate GUI");
-                splashScreen.setValue(100);
-            } catch (Exception e) {
-                // TODO: handle exception
-            }
+            setSplashStatus(splashScreen, 30, JDLocale.L("gui.splash.text.loadGUI", "Lade Benutzeroberfläche"));
+
             init.initGUI(controller);
+            setSplashStatus(splashScreen, 50, JDLocale.L("gui.splash.text.loaddownloadqueue", "Lade Downloadliste"));
 
             init.loadDownloadQueue();
+            setSplashStatus(splashScreen, 70, JDLocale.L("gui.splash.text.loadmodules", "Lade Module und Addons"));
+
             init.loadModules();
+            setSplashStatus(splashScreen, 90, JDLocale.L("gui.splash.text.update", "Prüfe auf Updates"));
+
             init.checkUpdate();
 
             if (JDUtilities.getRunType() == JDUtilities.RUNTYPE_LOCAL_JARED) {
@@ -307,15 +300,13 @@ public class Main {
             }
 
         }
+        setSplashStatus(splashScreen, 100, JDLocale.L("gui.splash.text.finished", "Fertig"));
 
         controller.setInitStatus(JDController.INIT_STATUS_COMPLETE);
         // init.createQueueBackup();
-        try {
-            splashScreen.finish();
-        } catch (Exception e) {
-            // TODO: handle exception
-        }
-        
+
+     
+
         controller.getUiInterface().onJDInitComplete();
         Properties pr = System.getProperties();
         TreeSet propKeys = new TreeSet(pr.keySet());
@@ -329,18 +320,29 @@ public class Main {
         logger.info("Runtype: " + JDUtilities.getRunType());
         logger.info("Last author: " + JDUtilities.getLastChangeAuthor());
         logger.info("Application directory: " + JDUtilities.getCurrentWorkingDirectory(null));
-new Thread("packetmanager"){
-    public void run(){        
+        new Thread("packetmanager") {
+            public void run() {
 
-        new PackageManager().interact(this);
-    }
-    
-}.start();
+                new PackageManager().interact(this);
+            }
 
+        }.start();
+        try {
+            splashScreen.finish();
+        } catch (Exception e) {
+            // TODO: handle exception
+        }
         // org.apache.log4j.Logger lg = org.apache.log4j.Logger.getLogger("jd");
         // BasicConfigurator.configure();
         // lg.error("hallo Welt");
         // lg.setLevel(org.apache.log4j.Level.ALL);
+
+    }
+
+    private void setSplashStatus(SplashScreen splashScreen, int i, String l) {
+        if (splashScreen == null) return;
+        splashScreen.setText(l);
+        splashScreen.setValue(i);
 
     }
 

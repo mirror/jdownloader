@@ -1957,7 +1957,7 @@ public class JAntiCaptcha {
      * @param file
      */
     public static void testMethod(File file) {
-        int checkCaptchas = 20;
+        int checkCaptchas = 10;
         String code;
         String inputCode;
         int totalLetters = 0;

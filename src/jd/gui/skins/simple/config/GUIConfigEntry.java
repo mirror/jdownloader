@@ -381,8 +381,14 @@ public class GUIConfigEntry extends JPanel implements ActionListener,ChangeListe
 
             case ConfigContainer.TYPE_SPINNER:
                 int value = text instanceof Integer ? (Integer) text : Integer.parseInt(text.toString());
+try{
+    
 
                 ((JSpinner) input[0]).setModel(new SpinnerNumberModel(value, configEntry.getStart(), configEntry.getEnd(), configEntry.getStep()));
+
+}catch(Exception e){
+    
+}
                 break;
             case ConfigContainer.TYPE_RADIOFIELD:
                 for (int i = 0; i < configEntry.getList().length; i++) {

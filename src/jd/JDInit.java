@@ -87,12 +87,12 @@ public class JDInit {
     public void loadImages() {
         ClassLoader cl = JDUtilities.getJDClassLoader();
         Toolkit toolkit = Toolkit.getDefaultToolkit();
-        try {
-            splashScreen.increase();
-            splashScreen.setText("Load images");
-        } catch (Exception e) {
-            // TODO: handle exception
-        }
+//        try {
+//            splashScreen.increase();
+//            splashScreen.setText("Load images");
+//        } catch (Exception e) {
+//            // TODO: handle exception
+//        }
         File dir = JDUtilities.getResourceFile("jd/img/");
 
         String[] images = dir.list();
@@ -127,12 +127,12 @@ public class JDInit {
         try {
 
             if (fileInput != null && fileInput.exists()) {
-                try {
-                    splashScreen.increase();
-                    splashScreen.setText("Load Configuration");
-                } catch (Exception e) {
-                    // TODO: handle exception
-                }
+//                try {
+//                    splashScreen.increase();
+//                    splashScreen.setText("Load Configuration");
+//                } catch (Exception e) {
+//                    // TODO: handle exception
+//                }
                 Object obj = JDUtilities.loadObject(null, fileInput, Configuration.saveAsXML);
                 if (obj instanceof Configuration) {
                     Configuration configuration = (Configuration) obj;
@@ -245,12 +245,12 @@ public class JDInit {
     @SuppressWarnings("unchecked")
     public Vector<PluginForDecrypt> loadPluginForDecrypt() {
         Vector<PluginForDecrypt> plugins = new Vector<PluginForDecrypt>();
-        try {
-            splashScreen.setText("Load Plugins for Decrypt");
-            splashScreen.increase();
-        } catch (Exception e) {
-            // TODO: handle exception
-        }
+//        try {
+//            splashScreen.setText("Load Plugins for Decrypt");
+//            splashScreen.increase();
+//        } catch (Exception e) {
+//            // TODO: handle exception
+//        }
         JDClassLoader jdClassLoader = JDUtilities.getJDClassLoader();
         logger.finer("Load PLugins");
         Iterator iterator = Service.providers(PluginForDecrypt.class, jdClassLoader);
@@ -258,16 +258,16 @@ public class JDInit {
         while (iterator.hasNext()) {
             try {
                 PluginForDecrypt p = (PluginForDecrypt) iterator.next();
-                try {
-
-                    if(c++%2==0)
-                    {
-                    splashScreen.setText(p.getPluginName());
-                    splashScreen.increase();
-                    }
-                } catch (Exception e) {
-                    // TODO: handle exception
-                }
+//                try {
+//
+//                    if(c++%2==0)
+//                    {
+//                    splashScreen.setText(p.getPluginName());
+//                    splashScreen.increase();
+//                    }
+//                } catch (Exception e) {
+//                    // TODO: handle exception
+//                }
                 logger.info("Load " + p);
                 plugins.add(p);
             } catch (Exception e) {
@@ -283,12 +283,12 @@ public class JDInit {
     @SuppressWarnings("unchecked")
     public Vector<PluginForHost> loadPluginForHost() {
         Vector<PluginForHost> plugins = new Vector<PluginForHost>();
-        try {
-            splashScreen.setText("Load Plugins for Host");
-            splashScreen.increase();
-        } catch (Exception e) {
-            // TODO: handle exception
-        }
+//        try {
+//            splashScreen.setText("Load Plugins for Host");
+//            splashScreen.increase();
+//        } catch (Exception e) {
+//            // TODO: handle exception
+//        }
         JDClassLoader jdClassLoader = JDUtilities.getJDClassLoader();
         Iterator iterator;
         logger.finer("Load PLugins");
@@ -298,15 +298,15 @@ public class JDInit {
             try {
                 PluginForHost next = (PluginForHost) iterator.next();
                 logger.finer("Load PLugins" + next);
-                try {
-                    if(c++%2==0)
-                    {
-                    splashScreen.setText(next.getPluginName());
-                    splashScreen.increase();
-                    }
-                } catch (Exception e) {
-                    // TODO: handle exception
-                }
+//                try {
+//                    if(c++%2==0)
+//                    {
+//                    splashScreen.setText(next.getPluginName());
+//                    splashScreen.increase();
+//                    }
+//                } catch (Exception e) {
+//                    // TODO: handle exception
+//                }
                 PluginForHost p = next;
 
                 plugins.add(p);
@@ -334,23 +334,23 @@ public class JDInit {
 
         JDClassLoader jdClassLoader = JDUtilities.getJDClassLoader();
         Iterator iterator;
-        try {
-            splashScreen.setText("Load Container Plugins");
-            splashScreen.increase();
-        } catch (Exception e) {
-            // TODO: handle exception
-        }
+//        try {
+//            splashScreen.setText("Load Container Plugins");
+//            splashScreen.increase();
+//        } catch (Exception e) {
+//            // TODO: handle exception
+//        }
         logger.finer("Load PLugins");
         iterator = Service.providers(PluginForContainer.class, jdClassLoader);
         while (iterator.hasNext()) {
             try {
                 PluginForContainer p = (PluginForContainer) iterator.next();
-                try {
-                    splashScreen.setText(p.getPluginName());
-                    splashScreen.increase();
-                } catch (Exception e) {
-                    // TODO: handle exception
-                }
+//                try {
+//                    splashScreen.setText(p.getPluginName());
+//                    splashScreen.increase();
+//                } catch (Exception e) {
+//                    // TODO: handle exception
+//                }
                 plugins.add(p);
             } catch (Exception e) {
                 e.printStackTrace();
@@ -364,12 +364,12 @@ public class JDInit {
 
     @SuppressWarnings("unchecked")
     public HashMap<String, PluginOptional> loadPluginOptional() {
-        try {
-            splashScreen.setText("Load Optional Plugins");
-            splashScreen.increase();
-        } catch (Exception e) {
-            // TODO: handle exception
-        }
+//        try {
+//            splashScreen.setText("Load Optional Plugins");
+//            splashScreen.increase();
+//        } catch (Exception e) {
+//            // TODO: handle exception
+//        }
         HashMap<String, PluginOptional> pluginsOptional = new HashMap<String, PluginOptional>();
         String[] optionalPlugins = new String[] { "JDTrayIcon", "JDGetter", "JDLightTray", "webinterface.JDWebinterface", "schedule.Schedule", "JDFolderWatch","JDRemoteControl"};
         double[] optionalVersions = new double[] { 1.6, 1.5, 1.6, 1.5, 1.6, 1.5 ,1.5, 1.5};
