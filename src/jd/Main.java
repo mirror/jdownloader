@@ -114,6 +114,8 @@ public class Main {
         } catch (Exception e) {
             // TODO: handle exception
         }
+        setSplashStatus(splashScreen, 0, JDLocale.L("gui.splash.text.loadLanguage", "lade Sprachen"));
+
         // Mac specific //
         if (System.getProperty("os.name").toLowerCase().indexOf("mac") >= 0) {
 
@@ -340,7 +342,7 @@ public class Main {
 
     }
 
-    private void setSplashStatus(SplashScreen splashScreen, int i, String l) {
+    private static void setSplashStatus(SplashScreen splashScreen, int i, String l) {
         if (splashScreen == null) return;
         splashScreen.setText(l);
         splashScreen.setValue(i);
