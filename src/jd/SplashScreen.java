@@ -100,7 +100,9 @@ public class SplashScreen implements ActionListener
         }
         public void finish()
         {
-            blendOut();
+           // blendOut();
+            timer.stop();
+            window.dispose();
         }
         public SplashScreen(String path) throws IOException, AWTException
         {
