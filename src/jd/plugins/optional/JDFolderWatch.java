@@ -58,9 +58,9 @@ public class JDFolderWatch extends PluginOptional implements ControlListener {
     }
 
     @Override
-    public void enable(boolean enable) throws Exception {
+    public boolean initAddon() {
         if(JDUtilities.getJavaVersion() >= 1.5) {
-            if (enable) {
+         
                 logger.info("FolderWatch OK");
                 ConfigEntry cfg;
                 config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_BROWSEFOLDER, getProperties(), "FOLDER", JDLocale.L("plugins.optional.folderwatch.folder", "Folder:")));
@@ -71,10 +71,11 @@ public class JDFolderWatch extends PluginOptional implements ControlListener {
                 cfg.setDefaultValue(true);
                 i = new check();
                 i.start();
-            }
+                return true;
+           
         }
         else {
-            logger.severe("Error initializing FolderWatch");
+           return false;
         }
     }
     
@@ -155,5 +156,11 @@ public class JDFolderWatch extends PluginOptional implements ControlListener {
                 }
             }
         }
+    }
+
+    @Override
+    public void onExit() {
+        // TODO Auto-generated method stub
+        
     }
 }

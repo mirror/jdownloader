@@ -27,6 +27,7 @@ import java.awt.event.ActionListener;
 import javax.swing.JButton;
 import javax.swing.JDialog;
 import javax.swing.JPanel;
+import javax.swing.JScrollPane;
 
 import jd.config.Configuration;
 import jd.gui.UIInterface;
@@ -80,7 +81,7 @@ public class ConfigurationPopup extends JDialog implements ActionListener {
 
         Insets insets = new Insets(5, 5, 5, 5);
 
-        JDUtilities.addToGridBag(this, jpanel, 0, 0, 2, 1, 1, 1, null, GridBagConstraints.BOTH, GridBagConstraints.FIRST_LINE_START);
+        JDUtilities.addToGridBag(this, new JScrollPane(jpanel), 0, 0, 2, 1, 1, 1, null, GridBagConstraints.BOTH, GridBagConstraints.FIRST_LINE_START);
         JDUtilities.addToGridBag(this, btnSave, 0, 1, 1, 1, 1, 0, insets, GridBagConstraints.NONE, GridBagConstraints.NORTHEAST);
         JDUtilities.addToGridBag(this, btnCancel, 1, 1, 1, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.NORTHEAST);
         setLocation(JDUtilities.getCenterOfComponent(parent, this));

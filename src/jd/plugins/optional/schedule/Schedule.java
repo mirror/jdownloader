@@ -18,16 +18,14 @@ public class Schedule extends PluginOptional implements ControlListener {
     }
     
     @Override
-    public void enable(boolean enable) throws Exception {
-        if (JDUtilities.getJavaVersion() >= 1.5) {
-            if (enable) {
+    public boolean initAddon() {
+      
                logger.info("Schedule OK");
                this.initschedule();
                JDUtilities.getController().addControlListener(this);
-            }
-        } else {
-            logger.severe("Error initializing Schedule");
-        }
+               return true;
+          
+     
     }
 
     @Override
@@ -63,6 +61,12 @@ public class Schedule extends PluginOptional implements ControlListener {
     
     public void actionPerformed(ActionEvent e) {
         this.b.setVisible(true);
+    }
+
+    @Override
+    public void onExit() {
+        // TODO Auto-generated method stub
+        
     }
     
 }

@@ -379,7 +379,13 @@ public class ConfigEntry implements Serializable, PropertyChangeListener {
         }
 
     }
+    public void addListener(ConfigEntry configEntry) {
+        if (configEntry != null) {
+            this.listener.add(configEntry);
 
+        }
+
+    }
     public String getCompareOperator() {
         return compareOperator;
     }
@@ -413,6 +419,7 @@ public class ConfigEntry implements Serializable, PropertyChangeListener {
     }
 
     public void setGuiListener(PropertyChangeListener gce) {
+        if(guiListener==null)
         this.guiListener = gce;
 
     }

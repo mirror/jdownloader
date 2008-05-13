@@ -70,13 +70,13 @@ public class JDWebinterface extends PluginOptional  {
     }
 
     @Override
-    public void enable(boolean enable) throws Exception {
-        if(JDUtilities.getJavaVersion()>=1.6){
-        if (enable) {
+    public boolean initAddon()  {
+       
+       
         	JDSimpleWebserver server = new JDSimpleWebserver();
             logger.info("WebInterface ok: java "+JDUtilities.getJavaVersion());
-        }
-        }        
+        return true;
+              
     }
     
 
@@ -115,6 +115,12 @@ public class JDWebinterface extends PluginOptional  {
     }
 
     public void actionPerformed(ActionEvent e) {
+        // TODO Auto-generated method stub
+        
+    }
+
+    @Override
+    public void onExit() {
         // TODO Auto-generated method stub
         
     }    

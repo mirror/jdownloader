@@ -20,6 +20,8 @@ package jd.gui.skins.simple.config;
 import java.awt.BorderLayout;
 import java.awt.Dimension;
 import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
@@ -27,11 +29,11 @@ import java.awt.event.MouseListener;
 import java.util.Vector;
 
 import javax.swing.JButton;
-import javax.swing.JComboBox;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JSeparator;
 import javax.swing.JTable;
 import javax.swing.event.TableModelEvent;
 import javax.swing.table.AbstractTableModel;
@@ -63,13 +65,17 @@ public class ConfigPanelEventmanager extends ConfigPanel implements ActionListen
 
     private Interaction         currentInteraction;
 
-    private JComboBox           cboTrigger;
+    //private JLabel           cboTrigger;
 private Configuration configuration;
     private JTable table;
 
     private JButton btnTop;
 
     private JButton btnBottom;
+
+    private JButton btnTrigger;
+
+    private JLabel lblTrigger;
 
     public ConfigPanelEventmanager(Configuration configuration, UIInterface uiinterface) {
         super(uiinterface);
@@ -193,7 +199,7 @@ return table.getSelectedRow();
     }
 
     private void openPopupPanel(ConfigPanel config) {
-        JPanel panel = new JPanel(new BorderLayout());
+        JPanel panel = new JPanel(new GridBagLayout());
 
         InteractionTrigger[] triggers = InteractionTrigger.getAllTrigger();
 
@@ -212,14 +218,25 @@ return table.getSelectedRow();
             }
         }
 
-        cboTrigger = new JComboBox(triggers);
-        cboTrigger.addActionListener(this);
-        cboTrigger.setSelectedIndex(indexT);
-        JPanel topPanel = new JPanel();
-        topPanel.add(new JLabel(JDLocale.L("gui.config.eventmanager.trigger","Trigger Event")));
-        topPanel.add(cboTrigger);
-        panel.add(topPanel, BorderLayout.NORTH);
-       if(config!=null) panel.add(config, BorderLayout.CENTER);
+        lblTrigger = new JLabel();
+        btnTrigger= new JButton(JDLocale.L("gui.config.eventmanager.trigger.btn","Trigger ändern"));
+        btnTrigger.addActionListener(this);
+        lblTrigger.setText(trigger+"");
+       // cboTrigger.setSelectedIndex(indexT);
+        //JPanel topPanel = new JPanel();
+        //topPanel.add(new JLabel(JDLocale.L("gui.config.eventmanager.trigger","Trigger Event")));
+       //topPanel.add(cboTrigger);
+        JDUtilities.addToGridBag(panel, btnTrigger, 0, 0, 1, 1, 0, 0, new Insets(5,10,5,5),  GridBagConstraints.NONE, GridBagConstraints.WEST);
+        
+       JDUtilities.addToGridBag(panel, lblTrigger, 1, 0, 1, 1, 1, 0, new Insets(5,0,5,5),  GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+       JDUtilities.addToGridBag(panel, new JSeparator(), 0, 1, 2, 1, 1, 0, new Insets(0,0,0,0),  GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+       
+       //panel.add(topPanel, BorderLayout.WEST);
+       if(config!=null) {
+           JDUtilities.addToGridBag(panel, config, 0, 2, 2, 1, 1, 1, null,  GridBagConstraints.BOTH, GridBagConstraints.NORTHWEST);
+           
+           //panel.add(config, BorderLayout.CENTER);
+       }
         ConfigurationPopup pop = new ConfigurationPopup(JDUtilities.getParentFrame(this), config, panel, uiinterface, configuration);
         pop.setLocation(JDUtilities.getCenterOfComponent(this, pop));
         pop.setVisible(true);
@@ -280,14 +297,16 @@ return table.getSelectedRow();
             }
         }
 
-        if (e.getSource() == this.cboTrigger) {
+        if (e.getSource() == this.btnTrigger) {
             Interaction interaction = currentInteraction;
-
-            if (interaction == null) return;
-           
-            interaction.setTrigger((InteractionTrigger) cboTrigger.getSelectedItem());
-            table.tableChanged(new TableModelEvent(table.getModel()));
-
+            InteractionTrigger[] events = InteractionTrigger.getAllTrigger();
+            
+            InteractionTrigger event = (InteractionTrigger) JOptionPane.showInputDialog(this, JDLocale.L("gui.config.eventmanager.new.selectTrigger.title","Trigger auswählen"), JDLocale.L("gui.config.eventmanager.new.selectTrigger.desc","Wann soll eine Aktion ausgeführt werden?"), JOptionPane.QUESTION_MESSAGE, null, events, currentInteraction);
+            if (event == null) return;
+            
+       
+          interaction.setTrigger(event);
+          lblTrigger.setText(event+"");
         }
         if (e.getSource() == btnEdit) {
             editEntry();
@@ -309,7 +328,7 @@ return table.getSelectedRow();
             
             logger.info(interaction.getConfig().getEntries()+" _ ");
             if(interaction.getConfig().getEntries().size()>0){
-                openPopupPanel(new ConfigPanelInteraction(uiinterface,interaction));  
+                openPopupPanel(new ConfigPanelDefault(uiinterface,interaction.getConfig()));  
             }
        
         }

@@ -835,7 +835,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         toolBar.add(btnReconnect);
         toolBar.add(btnClipBoard);
         toolBar.add(btnToggleReconnect);
-        toolBar.add(btnCes);
+        if(JDUtilities.getSubConfig("JAC").getBooleanProperty(Configuration.JAC_USE_CES, false))toolBar.add(btnCes);
         toolBar.add(btnHelp);
         // reconnectBox = new JCheckBox("Reconnect durchführen");
         // boolean rc =

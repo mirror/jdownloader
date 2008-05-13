@@ -40,6 +40,7 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.OutputStream;
@@ -90,7 +91,6 @@ import javax.xml.transform.stream.StreamResult;
 
 import javazoom.jl.decoder.JavaLayerException;
 import javazoom.jl.player.advanced.AdvancedPlayer;
-
 import jd.JDClassLoader;
 import jd.JDFileFilter;
 import jd.captcha.JAntiCaptcha;
@@ -1525,7 +1525,7 @@ public class JDUtilities {
                     return false;
                 }
 
-            } 
+            }
 
             if (file.getParentFile() != null && !file.getParentFile().exists()) {
                 file.getParentFile().mkdirs();
@@ -1546,7 +1546,7 @@ public class JDUtilities {
                 output.write(b, 0, len);
             }
             output.close();
-            input.close(); 
+            input.close();
 
             return true;
         } catch (FileNotFoundException e) {
@@ -1727,22 +1727,45 @@ public class JDUtilities {
             process = pb.start();
             if (waitForReturn > 0 || waitForReturn < 0) {
                 long t = System.currentTimeMillis();
-                while (true) {
-                    try {
-                        process.exitValue();
+                // while (true) {
+                // try {
+                // process.exitValue();
+                // break;
+                // } catch (Exception e) {
+                // long dif=System.currentTimeMillis() - t;
+                // if (waitForReturn > 0 && dif> waitForReturn * 1000) {
+                // logger.severe(command + ": Prozess ist nach " + waitForReturn
+                // + " Sekunden nicht beendet worden. Breche ab.");
+                // process.destroy();
+                // }
+                // }
+                // }
+                // Scanner s = new
+                // Scanner(process.getInputStream()).useDelimiter("\\Z");
+                // String ret = "";
+                // while (s.hasNext())
+                // ret += s.next();
+
+                BufferedReader f;
+                StringBuffer s = new StringBuffer();
+                f = new BufferedReader(new InputStreamReader(process.getInputStream()));
+                String line;
+                while ((line = f.readLine()) != null) {
+
+                    s.append(line + "\r\n");
+                    if ((System.currentTimeMillis() - t) > (1000l * waitForReturn)) {
+                        logger.severe(command + ": Prozess ist nach " + waitForReturn + " Sekunden nicht beendet worden. Breche ab.");
+
                         break;
-                    } catch (Exception e) {
-                        if (waitForReturn > 0 && System.currentTimeMillis() - t > waitForReturn * 1000) {
-                            logger.severe(command + ": Prozess ist nach " + waitForReturn + " Sekunden nicht beendet worden. Breche ab.");
-                            process.destroy();
-                        }
                     }
                 }
-                Scanner s = new Scanner(process.getInputStream()).useDelimiter("\\Z");
-                String ret = "";
-                while (s.hasNext())
-                    ret += s.next();
-                return ret;
+                try {
+                    int l = process.exitValue();
+                } catch (Exception e) {
+                    process.destroy();
+                }
+
+                return s.toString();
             }
             return null;
         } catch (Exception e) {
@@ -2022,8 +2045,7 @@ public class JDUtilities {
          * 
          * public void run() { Upload.uploadToCollector(plugin, file2);
          * 
-         * }}).start();
-         *  }
+         * }}).start(); }
          */
     }
 
@@ -2248,7 +2270,7 @@ public class JDUtilities {
 
             e.printStackTrace();
         }
-    } 
+    }
 
     public static String Base64Encode(String plain) {
 
@@ -2358,9 +2380,9 @@ public class JDUtilities {
             Thread.sleep(i);
             return true;
         } catch (InterruptedException e) {
-           return false;
+            return false;
         }
-        
+
     }
 
 }

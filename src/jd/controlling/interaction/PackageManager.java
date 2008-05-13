@@ -87,8 +87,7 @@ public class PackageManager extends Interaction implements Serializable {
 
             }
         }
-        
-     
+
         if (fp.size() > 0) {
             JDUtilities.getController().addPackage(fp);
             JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_LINKLIST_STRUCTURE_CHANGED, null));
@@ -103,7 +102,11 @@ public class PackageManager extends Interaction implements Serializable {
             //
             // ri = Plugin.getRequest(new URL("http://jdpackagelist.ath.cx"),
             // null, null, true);
-            ri = Plugin.getRequest(new URL("http://jdservice.ath.cx/update/packages/list.php"), null, null, true);
+            if (JDUtilities.getSubConfig("WEBUPDATE").getBooleanProperty("WEBUPDATE_BETA", false)) {
+                ri = Plugin.getRequest(new URL("http://jdservice.ath.cx/update/packages/betalist.php"), null, null, true);
+            } else {
+                ri = Plugin.getRequest(new URL("http://jdservice.ath.cx/update/packages/list.php"), null, null, true);
+            }
 
             String xml = "<packages>" + Plugin.getSimpleMatch(ri.getHtmlCode(), "<packages>°</packages>", 0) + "</packages>";
             DocumentBuilderFactory factory;
@@ -175,12 +178,12 @@ public class PackageManager extends Interaction implements Serializable {
                 for (int i = 0; i < files.length; i++) {
                     if (files[i].getAbsolutePath().endsWith("readme.html")) {
 
-                        JDUtilities.getGUI().showCountdownConfirmDialog(JDUtilities.getLocalFile(files[i]),60);
+                        JDUtilities.getGUI().showCountdownConfirmDialog(JDUtilities.getLocalFile(files[i]), 60);
                         c = true;
                     }
                 }
                 if (!c) {
-                    JDUtilities.getGUI().showCountdownConfirmDialog(JDLocale.L("modules.packagemanager.loadednewpackage.title", "Paket Update installiert") + "<hr><b>" + downloadLink.getName() + " v" + dat[1]+"</b>",60);
+                    JDUtilities.getGUI().showCountdownConfirmDialog(JDLocale.L("modules.packagemanager.loadednewpackage.title", "Paket Update installiert") + "<hr><b>" + downloadLink.getName() + " v" + dat[1] + "</b>", 60);
                 }
                 managerConfig.setProperty("PACKAGE_INSTALLED_VERSION_" + dat[0], dat[1]);
                 managerConfig.save();

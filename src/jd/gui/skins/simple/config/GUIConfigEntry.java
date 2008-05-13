@@ -166,12 +166,12 @@ public class GUIConfigEntry extends JPanel implements ActionListener,ChangeListe
 
                 JDUtilities.addToGridBag(this, left = new JLabel(configEntry.getLabel()), 0, 0, 1, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
                 this.addInstantHelpLink();
-                input[0] = new JTextArea(20, 20);
+                input[0] = new JTextArea(10, 10);
                 input[0].setEnabled(configEntry.isEnabled());
                 doc = (PlainDocument) ((JTextArea) input[0]).getDocument();
                 doc.addDocumentListener(this);
                 JDUtilities.addToGridBag(this, total = new JScrollPane(input[0]), 0, 1, 3, 1, 1, 1, insets, GridBagConstraints.BOTH, GridBagConstraints.EAST);
-                total.setMinimumSize(new Dimension(200, 200));
+                //total.setMinimumSize(new Dimension(200, 200));
                 total = null;
                 break;
             case ConfigContainer.TYPE_CHECKBOX:
@@ -225,6 +225,7 @@ public class GUIConfigEntry extends JPanel implements ActionListener,ChangeListe
             case ConfigContainer.TYPE_BUTTON:
                 // //logger.info("ADD Button");
                 input[0] = new JButton(configEntry.getLabel());
+                ((JButton) input[0]).addActionListener(this);
                 ((JButton) input[0]).addActionListener(configEntry.getActionListener());
                 input[0].setEnabled(configEntry.isEnabled());
                 JDUtilities.addToGridBag(this, input[0], GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);

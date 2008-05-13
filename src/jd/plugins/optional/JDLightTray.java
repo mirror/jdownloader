@@ -62,17 +62,19 @@ public class JDLightTray extends PluginOptional implements MouseListener {
     }
 
     @Override
-    public void enable(boolean enable) throws Exception {
+    public boolean initAddon() {
         if (JDUtilities.getJavaVersion() >= 1.6) {
-            if (enable) {
+            try{
                 JDUtilities.getController().addControlListener(this);
                 logger.info("Systemtray OK");
                 initGUI();
-            } else {
-                if (trayIcon != null) SystemTray.getSystemTray().remove(trayIcon);
+            }catch(Exception e){
+                return false;
             }
+          return true;
         } else {
             logger.severe("Error initializing SystemTray: Tray is supported since Java 1.6. your Version: " + JDUtilities.getJavaVersion());
+        return false;
         }
     }
 
@@ -166,6 +168,12 @@ public class JDLightTray extends PluginOptional implements MouseListener {
     public void mouseExited(MouseEvent e) {
         // TODO Auto-generated method stub
 
+    }
+
+    @Override
+    public void onExit() {
+        if (trayIcon != null) SystemTray.getSystemTray().remove(trayIcon);
+        
     }
 
 }

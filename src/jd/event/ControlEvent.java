@@ -148,6 +148,8 @@ public class ControlEvent extends AWTEvent {
  */
     public static final int CONTROL_JDPROPERTY_CHANGED = 27;
 
+public static final int CONTROL_INTERACTION_CALL = 28;
+
 
 
     

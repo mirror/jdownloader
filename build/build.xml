@@ -63,7 +63,7 @@
 		<delete file="Manifest.MF" failonerror="false" />
 	</target>
 		
-	<target name="jarTrayIcon">	
+	<target name="jarOptionals">	
 		<!-- Optional Plugins -->	
 		<manifest file="Manifest.MF">
 			<attribute name="Created-By" value="coalado" />
@@ -149,6 +149,18 @@
 	            </fileset>
 	        </jar>
 		
+		
+		<manifest file="Manifest.MF">
+				<attribute name="Created-By" value="JD-Team" />
+				<attribute name="Main-Class" value="jd.update.Main" />
+		    </manifest>
+	        <jar jarfile="${dist}/JDShutdown.jar" manifest="Manifest.MF">
+	            <fileset dir="${cls}">
+	                <include name="jd/plugins/optional/JDShutdown*" />                
+	              </fileset>
+				 
+	        </jar>
+		
     </target>
 	<target name="jarContainer">
 		<!-- Container -->
@@ -188,7 +200,7 @@
 		<delete file="${dist}/JDownloaderContainer.jar" failonerror="no" />
 		<move file="${dist}/JDownloaderContainer_obfuscated.jar" tofile="${dist}/JDownloaderContainer.jar" />
 	</target>
-	<target name="standardBuild" depends="compile,jar,jarTrayIcon,jarWebupdater"></target>
+	<target name="standardBuild" depends="compile,jar,jarOptionals,jarWebupdater"></target>
 	<target name="dlcEnabledBuild" depends="standardBuild,jarContainer,cryptContainer,sign"></target>
 	<target name="signedBuild" depends="standardBuild,sign"></target>
 </project>

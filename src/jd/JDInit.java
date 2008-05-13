@@ -371,7 +371,7 @@ public class JDInit {
 //            // TODO: handle exception
 //        }
         HashMap<String, PluginOptional> pluginsOptional = new HashMap<String, PluginOptional>();
-        String[] optionalPlugins = new String[] { "JDTrayIcon", "JDGetter", "JDLightTray", "webinterface.JDWebinterface", "schedule.Schedule", "JDFolderWatch","JDRemoteControl"};
+        String[] optionalPlugins = new String[] {"JDShutdown", "JDTrayIcon", "JDGetter", "JDLightTray", "webinterface.JDWebinterface", "schedule.Schedule", "JDFolderWatch","JDRemoteControl"};
         double[] optionalVersions = new double[] { 1.6, 1.5, 1.6, 1.5, 1.6, 1.5 ,1.5, 1.5};
         JDClassLoader jdClassLoader = JDUtilities.getJDClassLoader();
         int i = 0;
@@ -477,7 +477,9 @@ public class JDInit {
             PluginOptional plg = pluginsOptional.get(key);
             if (JDUtilities.getConfiguration().getBooleanProperty("OPTIONAL_PLUGIN_" + plg.getPluginName(), false)) {
                 try {
-                    pluginsOptional.get(key).enable(true);
+                    if(!pluginsOptional.get(key).initAddon()){
+                        logger.severe("Error loading Optional Plugin: FALSE");
+                    }
                 } catch (Exception e) {
                     logger.severe("Error loading Optional Plugin: " + e.getMessage());
                 }

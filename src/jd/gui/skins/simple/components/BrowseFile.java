@@ -86,6 +86,11 @@ public class BrowseFile extends JPanel implements ActionListener {
         btnBrowse.setText(text);
     }
     
+    public void setEnabled(boolean value){
+        txtInput.setEnabled(value);
+        btnBrowse.setEnabled(value);
+    
+    }
     /**
      * 
      * @return null or a File object pointing to a directory

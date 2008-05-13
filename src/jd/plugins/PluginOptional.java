@@ -39,15 +39,15 @@ public abstract class PluginOptional extends Plugin implements ActionListener,Co
     }
 
 
-    public abstract void enable(boolean enable) throws Exception;
+    public abstract boolean initAddon();
     public abstract String getRequirements();
-
+    public abstract void onExit();
     public void controlEvent(ControlEvent event) {
         
         //Deaktiviert das PLugin beim beenden
         if (event.getID() == ControlEvent.CONTROL_SYSTEM_EXIT) {
             try {
-                this.enable(false);
+                this.onExit();
             } catch (Exception e) {                
                 e.printStackTrace();
             }

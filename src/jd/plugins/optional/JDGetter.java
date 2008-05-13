@@ -68,15 +68,16 @@ public class JDGetter extends PluginOptional implements ControlListener {
     }
 
     @Override
-    public void enable(boolean enable) throws Exception {
+    public boolean initAddon() {
         if (JDUtilities.getJavaVersion() >= 1.5) {
-            if (enable) {
+          
                 logger.info("Getter OK");
                 initgetter();
                JDUtilities.getController().addControlListener(this);
-            }
+          return true;
         } else {
             logger.severe("Error initializing Getter");
+            return false;
         }
     }
 
@@ -183,6 +184,14 @@ public class JDGetter extends PluginOptional implements ControlListener {
 
             ((Request) request).setHandled(true);
         }
+    }
+
+
+
+    @Override
+    public void onExit() {
+        // TODO Auto-generated method stub
+        
     };
 
 }

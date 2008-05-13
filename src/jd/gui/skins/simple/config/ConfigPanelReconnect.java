@@ -49,7 +49,7 @@ public class ConfigPanelReconnect extends ConfigPanel implements ActionListener 
 
     private SubPanelLiveHeaderReconnect lh;
 
-    private ConfigPanelInteraction      er;
+    private ConfigPanelDefault      er;
 
     private JButton                     btn;
 
@@ -104,14 +104,14 @@ public class ConfigPanelReconnect extends ConfigPanel implements ActionListener 
 
         }
         else if (((String) box.getSelectedItem()).equals(JDLocale.L("modules.reconnect.types.extern", "Extern"))) {
-            er = new ConfigPanelInteraction(uiinterface, (Interaction) new ExternReconnect());
+            er = new ConfigPanelDefault(uiinterface, ((Interaction) new ExternReconnect()).getConfig());
 
             JDUtilities.addToGridBag(panel, er, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 1, 1, null, GridBagConstraints.BOTH, GridBagConstraints.NORTH);
 
         }
         
         else if (((String) box.getSelectedItem()).equals(JDLocale.L("modules.reconnect.types.batch", "Batch") )) {
-            er = new ConfigPanelInteraction(uiinterface, (Interaction) new BatchReconnect());
+            er = new ConfigPanelDefault(uiinterface, ((Interaction) new BatchReconnect()).getConfig());
 
             JDUtilities.addToGridBag(panel, er, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 1, 1, null, GridBagConstraints.BOTH, GridBagConstraints.NORTH);
 
