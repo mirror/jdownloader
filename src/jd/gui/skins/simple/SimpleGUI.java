@@ -1646,7 +1646,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
             // only in this way the button state is correctly set
             // controller.startDownloads() is called by button itself so it
             // cannot handle this
-            
+      
             btnStartStop.setEnabled(true);
             btnPause.setEnabled(true);
             btnStartStop.setSelected(true);

@@ -1267,7 +1267,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
             this.brwSaveto = new BrowseFile();
             brwSaveto.setEditable(true);
             brwSaveto.setFileSelectionMode(JDFileChooser.DIRECTORIES_ONLY);
-            brwSaveto.setText(JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_DOWNLOAD_DIRECTORY));
+            brwSaveto.setText(JDUtilities.getConfiguration().getDefaultDownloadDirectory());
             // bfSubFolder.setText(JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_DOWNLOAD_DIRECTORY));
 
             txtName.setPreferredSize(new Dimension(450, 20));

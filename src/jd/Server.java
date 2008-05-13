@@ -340,7 +340,7 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
 
                     JUnrar unrar = new JUnrar();
                     unrar.progressInTerminal = true;
-                    String downloadFolder = JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_DOWNLOAD_DIRECTORY);
+                    String downloadFolder = JDUtilities.getConfiguration().getDefaultDownloadDirectory();
                     LinkedList<String> folders = new LinkedList<String>();
 
                     if (paths != null) {

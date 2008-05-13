@@ -189,7 +189,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
     /**
      * TODO downloadpath ueber config setzen
      */
-    private String downloadPath = JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_DOWNLOAD_DIRECTORY);
+    private String downloadPath = JDUtilities.getConfiguration().getDefaultDownloadDirectory();
 
     /**
      * Wird dieser Wert gesetzt, so wird der Download unter diesem Namen (nicht

@@ -177,7 +177,7 @@ public class Unrar extends Interaction implements Serializable {
                     }
                 }
             }
-            folders.add(JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_DOWNLOAD_DIRECTORY));
+            folders.add(JDUtilities.getConfiguration().getDefaultDownloadDirectory());
             logger.info("dirs: " + folders);
             unrar.setFolders(folders);
             // Entpacken bis nichts mehr gefunden wurde (wird jetzt von

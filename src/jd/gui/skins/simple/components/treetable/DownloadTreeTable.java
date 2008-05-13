@@ -739,7 +739,8 @@ if(((DownloadLink) obj).getLinkType()!=DownloadLink.LINKTYPE_NORMAL)tmp.setEnabl
             fc = new JDFileChooser();
             fc.setApproveButtonText("OK");
             fc.setFileSelectionMode(JDFileChooser.DIRECTORIES_ONLY);
-            fc.setCurrentDirectory(new File(fp.getDownloadDirectory()));
+      
+            fc.setCurrentDirectory(fp.getDownloadDirectory()!=null?new File(fp.getDownloadDirectory()):JDUtilities.getResourceFile("downloads"));
             fc.showOpenDialog(this);
             ret = fc.getSelectedFile();
 

@@ -26,6 +26,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Timer;
 import java.util.Vector;
 import java.util.logging.Logger;
 
@@ -1351,8 +1352,10 @@ public class JDController implements ControlListener, UIListener {
      */
     public synchronized void addControlListener(ControlListener listener) {
         if (controlListener == null) controlListener = new ArrayList<ControlListener>();
-        if (controlListener.indexOf(listener) == -1) {
-            controlListener.add(listener);
+        synchronized (controlListener) {
+            if (controlListener.indexOf(listener) == -1) {
+                controlListener.add(listener);
+            }
         }
     }
 
@@ -1363,7 +1366,9 @@ public class JDController implements ControlListener, UIListener {
      *            Der zu entfernende Listener
      */
     public synchronized void removeControlListener(ControlListener listener) {
-        controlListener.remove(listener);
+        synchronized (controlListener) {
+            controlListener.remove(listener);
+        }
     }
 
     /**
@@ -1714,7 +1719,7 @@ public class JDController implements ControlListener, UIListener {
             FilePackage fp = new FilePackage();
             fp.setProperty("color", c);
             fp.setName(packages.get(i));
-            String downloadDir = JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_DOWNLOAD_DIRECTORY);
+            String downloadDir = JDUtilities.getConfiguration().getDefaultDownloadDirectory();
 
             if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_PACKETNAME_AS_SUBFOLDER, false)) {
 
@@ -1841,7 +1846,38 @@ public class JDController implements ControlListener, UIListener {
 
     private class EventSender extends Thread {
 
+        protected static final long MAX_EVENT_TIME = 10000;
         public boolean waitFlag = true;
+        private Thread watchDog;
+        private long eventStart = 0;
+        private ControlListener currentListener;
+        private ControlEvent event;
+
+        public EventSender() {
+            super("EventSender");
+
+            this.watchDog = new Thread("EventSenderWatchDog") {
+                public void run() {
+                    while (true) {
+                        if (eventStart > 0 && (System.currentTimeMillis() - eventStart) > MAX_EVENT_TIME) {
+                            JDUtilities.getLogger().severe("WATCHDOG: Execution Limit reached");
+                            JDUtilities.getLogger().severe("ControlListener: " + currentListener);
+                            JDUtilities.getLogger().severe("Event: " + event);
+
+                        }
+                        try {
+                            Thread.sleep(1000);
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                            return;
+                        }
+                    }
+                }
+
+            };
+            watchDog.start();
+
+        }
 
         public void run() {
             while (true) {
@@ -1859,20 +1895,30 @@ public class JDController implements ControlListener, UIListener {
                 try {
                     // JDUtilities.getLogger().severe("THREAD");
                     if (eventQueue != null && eventQueue.size() > 0) {
-                        ControlEvent event = eventQueue.remove(0);
+                        event = eventQueue.remove(0);
+                        eventStart = System.currentTimeMillis();
+                        currentListener = JDController.this;
                         controlEvent(event);
+                        eventStart = 0;
                         if (controlListener == null) controlListener = new ArrayList<ControlListener>();
-                        Iterator<ControlListener> iterator = controlListener.iterator();
-                        while (iterator.hasNext()) {
-                            ((ControlListener) iterator.next()).controlEvent(event);
+                        synchronized (controlListener) {
+                            Iterator<ControlListener> iterator = controlListener.iterator();
+                            while (iterator.hasNext()) {
+                                eventStart = System.currentTimeMillis();
+                                currentListener = ((ControlListener) iterator.next());
+                                currentListener.controlEvent(event);
+                                eventStart = 0;
+                            }
                         }
                         // JDUtilities.getLogger().severe("THREAD2");
                     } else {
+                        eventStart = 0;
                         waitFlag = true;
                         // JDUtilities.getLogger().severe("PAUSE");
                     }
                 } catch (Exception e) {
                     e.printStackTrace();
+                    eventStart = 0;
                 }
             }
 

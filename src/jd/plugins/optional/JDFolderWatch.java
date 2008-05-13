@@ -64,7 +64,7 @@ public class JDFolderWatch extends PluginOptional implements ControlListener {
                 logger.info("FolderWatch OK");
                 ConfigEntry cfg;
                 config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_BROWSEFOLDER, getProperties(), "FOLDER", JDLocale.L("plugins.optional.folderwatch.folder", "Folder:")));
-                cfg.setDefaultValue(JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_DOWNLOAD_DIRECTORY));
+                cfg.setDefaultValue(JDUtilities.getConfiguration().getDefaultDownloadDirectory());
                 config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_SPINNER, getProperties(), "WAITTIME", JDLocale.L("plugins.optional.folderwatch.waittime","Waittime"), 1, 60).setDefaultValue(5));
                 cfg.setDefaultValue("5");
                 config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, getProperties(), "DELETE", JDLocale.L("plugins.optional.folderwatch.delete", "Delete")));

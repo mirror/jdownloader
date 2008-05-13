@@ -22,6 +22,7 @@ import java.util.Vector;
 
 import jd.controlling.interaction.Interaction;
 import jd.router.RouterData;
+import jd.utils.JDUtilities;
 
 /**
  * In dieser Klasse werden die benutzerspezifischen Einstellungen festgehalten
@@ -465,5 +466,10 @@ public class Configuration extends Property implements Serializable {
     public Object getProperty(String key, Object defaultValue) {
         if (getProperty(key) == null) return defaultValue;
         return getProperty(key);
+    }
+
+    public String getDefaultDownloadDirectory() {
+
+        return JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_DOWNLOAD_DIRECTORY,JDUtilities.getResourceFile("downloads").getAbsolutePath());
     }
 }

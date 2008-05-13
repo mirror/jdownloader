@@ -77,7 +77,7 @@ public class FilePackage extends Property implements Serializable {
     private boolean lastSort = false;
 
     public FilePackage() {
-        downloadDirectory = JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_DOWNLOAD_DIRECTORY);
+        downloadDirectory = JDUtilities.getConfiguration().getDefaultDownloadDirectory();
         counter++;
         id = System.currentTimeMillis() + "_" + counter;
         downloadLinks = new Vector<DownloadLink>();
@@ -128,7 +128,7 @@ public class FilePackage extends Property implements Serializable {
      *         festgelegt hta
      */
     public String getDownloadDirectory() {
-        return downloadDirectory;
+        return downloadDirectory==null?JDUtilities.getConfiguration().getDefaultDownloadDirectory():downloadDirectory;
     }
 
     public void setDownloadDirectory(String subFolder) {

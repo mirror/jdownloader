@@ -179,4 +179,7 @@ public class ControlEvent extends AWTEvent {
     public Object getParameter() {
         return parameter;
     }
+    public String toString(){
+        return "[source:"+source+", controlID:"+controlID+", parameter:"+parameter+"]";
+    }
 }

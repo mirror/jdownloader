@@ -126,7 +126,7 @@ public class CryptItCom extends PluginForDecrypt {
                     requestInfo = getRequestWithoutHtmlCode(new URL(parameter), cookie, null, null, true);
                 }
 
-                String folder = JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_DOWNLOAD_DIRECTORY);
+                String folder = JDUtilities.getConfiguration().getDefaultDownloadDirectory();
                 String name = this.getFileNameFormHeader(requestInfo.getConnection());
 
                 if (name.equals("redir.ccf") || !name.contains(".ccf")) {

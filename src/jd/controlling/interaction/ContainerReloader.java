@@ -79,7 +79,7 @@ public class ContainerReloader extends Interaction implements Serializable {
 	            }
 			
 		}
-        folders.add(JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_DOWNLOAD_DIRECTORY));
+        folders.add(JDUtilities.getConfiguration().getDefaultDownloadDirectory());
         unrar.setFolders(folders);
         Vector<String> newFiles = new Vector<String>();
         Vector<String> allFiles = new Vector<String>();
