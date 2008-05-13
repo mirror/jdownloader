@@ -1856,22 +1856,22 @@ public class JDController implements ControlListener, UIListener {
                         }
                     }
                 }
-                try{
-                JDUtilities.getLogger().severe("THREAD");
-                if (eventQueue != null && eventQueue.size() > 0) {
-                    ControlEvent event = eventQueue.remove(0);
-                    controlEvent(event);
-                    if (controlListener == null) controlListener = new ArrayList<ControlListener>();
-                    Iterator<ControlListener> iterator = controlListener.iterator();
-                    while (iterator.hasNext()) {
-                        ((ControlListener) iterator.next()).controlEvent(event);
+                try {
+                    // JDUtilities.getLogger().severe("THREAD");
+                    if (eventQueue != null && eventQueue.size() > 0) {
+                        ControlEvent event = eventQueue.remove(0);
+                        controlEvent(event);
+                        if (controlListener == null) controlListener = new ArrayList<ControlListener>();
+                        Iterator<ControlListener> iterator = controlListener.iterator();
+                        while (iterator.hasNext()) {
+                            ((ControlListener) iterator.next()).controlEvent(event);
+                        }
+                        // JDUtilities.getLogger().severe("THREAD2");
+                    } else {
+                        pleaseWait = true;
+                        // JDUtilities.getLogger().severe("PAUSE");
                     }
-                   // JDUtilities.getLogger().severe("THREAD2");
-                } else {
-                    pleaseWait = true;
-                    //JDUtilities.getLogger().severe("PAUSE");
-                }
-                }catch(Exception e){
+                } catch (Exception e) {
                     e.printStackTrace();
                 }
             }

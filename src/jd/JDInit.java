@@ -103,11 +103,11 @@ public class JDInit {
         for (int i = 0; i < images.length; i++) {
             if (images[i].toLowerCase().endsWith(".png") || images[i].toLowerCase().endsWith(".gif")) {
                 File f = new File(images[i]);
-                try {
-                    splashScreen.increase(2);
-                } catch (Exception e) {
-                    // TODO: handle exception
-                }
+//                try {
+//                    splashScreen.increase(2);
+//                } catch (Exception e) {
+//                    // TODO: handle exception
+//                }
                 logger.finer("Loaded image: " + f.getName().split("\\.")[0] + " from " + cl.getResource("jd/img/" + f.getName()));
                 JDUtilities.addImage(f.getName().split("\\.")[0], toolkit.getImage(cl.getResource("jd/img/" + f.getName())));
             }
@@ -210,12 +210,12 @@ public class JDInit {
                 inst.dispose();
             }
         }
-        try {
-            splashScreen.setText("Configuration loaded");
-            splashScreen.increase(5);
-        } catch (Exception e) {
-            // TODO: handle exception
-        }
+//        try {
+//            splashScreen.setText("Configuration loaded");
+//            splashScreen.increase(5);
+//        } catch (Exception e) {
+//            // TODO: handle exception
+//        }
         this.afterConfigIsLoaded();
         return JDUtilities.getConfiguration();
     }
@@ -225,12 +225,12 @@ public class JDInit {
     }
 
     public JDController initController() {
-        try {
-            splashScreen.setText("init Controller");
-            splashScreen.increase(2);
-        } catch (Exception e) {
-            // TODO: handle exception
-        }
+//        try {
+//            splashScreen.setText("init Controller");
+//            splashScreen.increase(2);
+//        } catch (Exception e) {
+//            // TODO: handle exception
+//        }
         return new JDController();
     }
 
@@ -394,12 +394,12 @@ public class JDInit {
                 Constructor con = plgClass.getConstructor(classes);
                 PluginOptional p = (PluginOptional) con.newInstance(new Object[] {});
                 pluginsOptional.put(p.getPluginName(), p);
-                try {
-                    splashScreen.setText(p.getPluginName());
-                    splashScreen.increase(2);
-                } catch (Exception e) {
-                    // TODO: handle exception
-                }
+//                try {
+//                    splashScreen.setText(p.getPluginName());
+//                    splashScreen.increase(2);
+//                } catch (Exception e) {
+//                    // TODO: handle exception
+//                }
                 logger.finer("Successfull!. Loaded " + cl);
 
             } catch (Exception e) {
@@ -429,12 +429,12 @@ public class JDInit {
 
     public void initPlugins() {
         logger.info("Lade Plugins");
-        try {
-            splashScreen.setText("Load Plugins");
-            splashScreen.increase(3);
-        } catch (Exception e) {
-            // TODO: handle exception
-        }
+//        try {
+//            splashScreen.setText("Load Plugins");
+//            splashScreen.increase(3);
+//        } catch (Exception e) {
+//            // TODO: handle exception
+//        }
         JDController controller = JDUtilities.getController();
         JDUtilities.setPluginForDecryptList(this.loadPluginForDecrypt());
         JDUtilities.setPluginForHostList(this.loadPluginForHost());
@@ -689,12 +689,12 @@ if(remove!=null)
     }
 
     public void setupProxy() {
-        try {
-            splashScreen.increase(2);
-            splashScreen.setText("Setup Proxy");
-        } catch (Exception e) {
-            // TODO: handle exception
-        }
+//        try {
+//            splashScreen.increase(2);
+//            splashScreen.setText("Setup Proxy");
+//        } catch (Exception e) {
+//            // TODO: handle exception
+//        }
         System.setProperty("proxyHost", JDUtilities.getConfiguration().getStringProperty(Configuration.PROXY_HOST, ""));
         System.setProperty("proxyPort", JDUtilities.getConfiguration().getIntegerProperty(Configuration.PROXY_PORT, 80) + "");
         System.setProperty("http.proxyUser", JDUtilities.getConfiguration().getStringProperty(Configuration.PROXY_USER, ""));
