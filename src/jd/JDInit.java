@@ -402,7 +402,7 @@ public class JDInit {
 //                }
                 logger.finer("Successfull!. Loaded " + cl);
 
-            } catch (Exception e) {
+            } catch (Throwable e) {
                 logger.info("Plugin Exception!");
                 e.printStackTrace();
             }
@@ -428,6 +428,7 @@ public class JDInit {
     }
 
     public void initPlugins() {
+        try {
         logger.info("Lade Plugins");
 //        try {
 //            splashScreen.setText("Load Plugins");
@@ -480,13 +481,20 @@ public class JDInit {
                     if(!pluginsOptional.get(key).initAddon()){
                         logger.severe("Error loading Optional Plugin: FALSE");
                     }
-                } catch (Exception e) {
-                    logger.severe("Error loading Optional Plugin: " + e.getMessage());
+                   
+                
+                }catch(Throwable e2){
+                    logger.severe("Error loading Optional Plugin: " + e2.getMessage());
+                    e2.printStackTrace();
                 }
             }
         }
+        }catch(Throwable e2){
+            logger.severe("Error loading Optional Plugin: " + e2.getMessage());
+            e2.printStackTrace();
+        }
     }
-
+ 
     public void checkWebstartFile() {
 
     }

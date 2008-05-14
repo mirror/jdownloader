@@ -16,6 +16,7 @@
 
 package jd.captcha;
 
+import java.lang.reflect.Method;
 import java.util.Hashtable;
 import java.util.Vector;
 import java.util.logging.Logger;
@@ -136,6 +137,11 @@ public class LetterComperator {
     private double prescanDivider;
     private double divider;
 
+    private Method extensionCodeMethod = null;
+    private Class[] extensionCodeParameterTypes = new Class[] { LetterComperator.class };
+    private Object[] extensionCodeArguments = new Object[] { null };
+    private double extensionError = 0.0;
+
     /**
      * @param a
      * @param b
@@ -243,10 +249,8 @@ public class LetterComperator {
                 if (value < bestValue) {
 
                     bestValue = value;
-                    this.offset = new int[] { left, top };
-                    this.imgOffset = new int[] { xx, yy };
-                    this.intersectionDimension = new int[] { tmpIntersectionWidth, tmpIntersectionHeight };
-                    this.setValityPercent(value);
+                 
+                   this.setValityPercent(value);
                     this.setHeightFaktor(tmpHeightFaktor);
                     this.setWidthFaktor(tmpWidthFaktor);
                     this.setIntersectionHeight(tmpIntersectionHeight);
@@ -289,7 +293,7 @@ public class LetterComperator {
 
     private double scanPreIntersection(int xx, int yy, int left, int top, int tmpIntersectionWidth, int tmpIntersectionHeight) {
         double tmpError;
-        int yStep = Math.max(1,tmpIntersectionHeight / (preScanFaktor + 1));
+        int yStep = Math.max(1, tmpIntersectionHeight / (preScanFaktor + 1));
 
         tmpPixelBoth = 0;
         tmpPixelBButNotA = 0;
@@ -343,7 +347,10 @@ public class LetterComperator {
     }
 
     private double scanIntersection(int xx, int yy, int left, int top, int tmpIntersectionWidth, int tmpIntersectionHeight) {
-
+        this.offset = new int[] { left, top };
+        this.imgOffset = new int[] { xx, yy };
+        this.intersectionDimension = new int[] { tmpIntersectionWidth, tmpIntersectionHeight };
+        
         double tmpError;
         pixelAll = 0;
         tmpPixelBButNotA = 0;
@@ -422,6 +429,12 @@ public class LetterComperator {
             tmpError += Math.min(1.0, tmpHeightAFaktor) * intersectionAHeightWeight;
             tmpError += Math.min(1.0, tmpWidthAFaktor) * intersectionAWidthWeight;
             if (bothElements.size() > 0) tmpError += (bothElements.size() - 1) * cleftFaktor;
+            if (extensionCodeMethod != null) try {
+                extensionCodeMethod.invoke(null, extensionCodeArguments);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            tmpError += this.extensionError;
             tmpError /= divider;
             // tmpError = Math.min(1.0, tmpError);
             // logger.info(pixelBoth+"_"+(tmpIntersectionHeight *
@@ -547,17 +560,17 @@ public class LetterComperator {
                     int pixelType = getPixelType(x, y, xx, yy, left, top);
 
                     switch (pixelType) {
-                     case 0:
-                    
-                       //g[x][y] = 0xcccccc;
-                     break;
+                    case 0:
+
+                        // g[x][y] = 0xcccccc;
+                        break;
                     case 1:
                         if (hasNeighbour(x, y, xx, yy, left, top, pixelType) > overlayNoiseSize) {
 
-                          //   g[x][y] = 0xff0000;
+                            // g[x][y] = 0xff0000;
                         } else {
-                         //   g[x][y] = 0xff0000;
-                            
+                            // g[x][y] = 0xff0000;
+
                         }
                         g[x][y] = 0;
                         break;
@@ -567,11 +580,11 @@ public class LetterComperator {
                             g[x][y] = 0;
                         } else {
                             g[x][y] = 0;
-                           // g[x][y] = 0x00ff00;
+                            // g[x][y] = 0x00ff00;
                         }
                         break;
                     default:
-                       
+
                     }
                 }
             }
@@ -587,7 +600,38 @@ public class LetterComperator {
         }
 
     }
+    public Letter getIntersection() {
+        try {
+            //int xx = this.imgOffset[0];
+           // int yy = this.imgOffset[1];
+            int left = this.offset[0];
+            int top = this.offset[1];
+            int tmpIntersectionWidth = this.intersectionDimension[0];
+            int tmpIntersectionHeight = this.intersectionDimension[1];
 
+            // long starter=UTILITIES.getTimer();
+
+            int[][] g = new int[tmpIntersectionWidth][tmpIntersectionHeight];
+
+            for (int x = 0; x < tmpIntersectionWidth; x++) {
+                for (int y = 0; y < tmpIntersectionHeight; y++) {
+                    g[x][y] = a.getPixelValue(x + left, y + top);
+                    
+                }
+            }
+
+            Letter ret = getA().createLetter();
+            int[] l = getA().getLocation();
+            ret.setLocation(new int[] { l[0] + left, l[1] + top });
+            ret.setGrid(g);
+            ret.clean();
+            return ret;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return getA();
+        }
+
+    }
     /**
      * Gib zurück ob es sich um einen gemeinsammenpixel handekt oder nicht
      * 
@@ -664,7 +708,7 @@ public class LetterComperator {
      * @return Gibt den decoed value von b zurück
      */
     public String getDecodedValue() {
-        if (b == null || b.getDecodedValue()==null||b.getDecodedValue().length() != 1) return "-";
+        if (b == null || b.getDecodedValue() == null || b.getDecodedValue().length() != 1) return "-";
         return this.b.getDecodedValue();
     }
 
@@ -728,8 +772,28 @@ public class LetterComperator {
         overlayNoiseSize = jas.getInteger("overlayNoiseSize");
         scanStepX = jas.getInteger("scanstepx");
         scanStepY = jas.getInteger("scanstepy");
-        this.prescanDivider=jas.getDouble("prescandivider");
-        this.divider=jas.getDouble("divider");
+        this.prescanDivider = jas.getDouble("prescandivider");
+        this.divider = jas.getDouble("divider");
+        extensionCodeArguments[0] = this;
+        if (jas.getString("comparatorExtension").length() > 0) {
+            String[] ref = jas.getString("comparatorExtension").split("\\.");
+            if (ref.length != 2) {
+                if (JAntiCaptcha.isLoggerActive()) logger.severe("comparatorExtension should have the format Class.Method");
+
+            }
+            String cl = ref[0];
+            String methodname = ref[1];
+            Class newClass;
+            try {
+                newClass = Class.forName("jd.captcha.specials." + cl);
+
+                extensionCodeMethod = newClass.getMethod(methodname, extensionCodeParameterTypes);
+
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+
     }
 
     /**
@@ -880,7 +944,8 @@ public class LetterComperator {
         hs.put("realValityValue", this.getRealValityValue());
         hs.put("widthAFaktor", this.getIntersectionAWidthFaktor() + "/" + (getIntersectionAWidthFaktor() * this.intersectionAWidthWeight) + "(" + intersectionAWidthWeight + ")");
         hs.put("heightAFaktor", this.getIntersectionAHeightFaktor() + "/" + (getIntersectionAHeightFaktor() * this.intersectionAHeightWeight) + "(" + intersectionAHeightWeight + ")");
-        double t = this.getRealValityValue()*6.0 / 100.0;
+        hs.put("extensionError", this.getExtensionError());
+        double t = this.getRealValityValue() * 6.0 / 100.0;
         double tmpError = this.getTotalPixelError();
         String calc = "Error= " + this.getTotalPixelError() + " (totalPixelError) " + (getTotalPixelError() * 100.0 / t) + "\r\n";
         tmpError += Math.min(1.0, this.getCoverageFaktorA()) * coverageFaktorAWeight;
@@ -901,9 +966,12 @@ public class LetterComperator {
         tmpError += (getBothElementsNum() - 1) * cleftFaktor;
 
         calc += Math.round(((getBothElementsNum() - 1) * cleftFaktor) * 100.0 / t) + "%          + " + ((getBothElementsNum() - 1) * cleftFaktor) + "=" + tmpError + " (CleftFaktor)\r\n";
+        tmpError += this.getExtensionError();
+
+        calc += Math.round((this.getExtensionError()) * 100.0 / t) + "%          + " + (this.getExtensionError()) + "=" + tmpError + " (ExtensionError)\r\n";
 
         tmpError /= divider;
-        calc += "/"+divider+" = " + tmpError + " => " + ((tmpError * 100) + "% ");
+        calc += "/" + divider + " = " + tmpError + " => " + ((tmpError * 100) + "% ");
         // tmpError = Math.min(1.0, tmpError);
 
         hs.put("totalFaktor", tmpError);
@@ -1124,6 +1192,16 @@ public class LetterComperator {
         this.intersectionAHeightFaktor = intersectionAHeightFaktor;
     }
 
+    public double getExtensionError() {
+        return extensionError;
+    }
 
+    public void setExtensionError(double extensionError) {
+        this.extensionError = extensionError;
+    }
+
+    public JAntiCaptcha getOwner() {
+        return owner;
+    }
 
 }

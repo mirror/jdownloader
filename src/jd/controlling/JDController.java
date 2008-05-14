@@ -1494,7 +1494,7 @@ public class JDController implements ControlListener, UIListener {
 
         Interaction.handleInteraction(Interaction.INTERACTION_BEFORE_RECONNECT, this);
 
-        logger.info("Reconnect: " + JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_DISABLE_RECONNECT, true));
+        logger.info("Reconnect disabled: " + JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_DISABLE_RECONNECT, true));
         if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_DISABLE_RECONNECT, false)) {
             logger.finer("Reconnect is disabled. Enable the CheckBox in the Toolbar to reactivate it");
 

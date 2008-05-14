@@ -479,8 +479,8 @@ public class RapidshareCom {
         // //// l.colorize(0xff0000);
         // //
         // }
-      // return letters;
-        return filtered.toArray(new Letter[]{});
+      return letters;
+        //return filtered.toArray(new Letter[]{});
     }
 
     // private static boolean isCat(Letter l, Vector<byte[]> map,
@@ -583,6 +583,130 @@ public class RapidshareCom {
 
         }
 
+    }
+    
+    public static void comparatorExtension(LetterComperator lc){
+        Letter db = lc.getB();
+        Letter ca = lc.getA();
+  
+        
+        //Prüfe Füllungen
+        
+        if (db.getDecodedValue().equalsIgnoreCase("3")) {
+            Letter is = lc.getIntersection();
+         
+                Vector<PixelObject> whites = getWhiteObjects(is, lc.getOwner());
+              
+       
+            if (whites.size()>0&&whites.firstElement().getSize() >40) {
+                // BasicWindow.showImage(whiteSpace.firstElement().toLetter().getImage(2));
+                lc.setExtensionError(2.0);
+            }
+
+        }
+        if (db.getDecodedValue().equalsIgnoreCase("5")) {
+            Letter is = lc.getIntersection();
+         
+                Vector<PixelObject> whites = getWhiteObjects(is, lc.getOwner());
+              
+       
+            if (whites.size()>0&&whites.firstElement().getSize() >40) {
+                // BasicWindow.showImage(whiteSpace.firstElement().toLetter().getImage(2));
+                lc.setExtensionError(2.0);
+            }
+
+        }
+        if (db.getDecodedValue().equalsIgnoreCase("6")) {
+            Letter is = lc.getIntersection();
+         
+                Vector<PixelObject> whites = getWhiteObjects(is, lc.getOwner());
+              
+       
+            if (whites.size()>0&&whites.firstElement().getSize() >40&&whites.firstElement().getYMin()<14) {
+                // BasicWindow.showImage(whiteSpace.firstElement().toLetter().getImage(2));
+                lc.setExtensionError(2.0);
+            }
+
+        }
+        if (db.getDecodedValue().equalsIgnoreCase("p")) {
+            Letter is = lc.getIntersection();
+            Letter dif = lc.getDifference();
+                Vector<PixelObject> whites = getWhiteObjects(is, lc.getOwner());
+              int pixel=0;
+              for( int x=4; x<is.getWidth()-4;x++){
+                  for( int y=2; y<Math.min(10,is.getHeight());y++){
+                      if(is.grid[x][y]==0){
+                          pixel++;
+                      }
+                  }}
+       
+            if (whites.size()>0&&whites.firstElement().getSize() <40&&pixel<80) {
+                // BasicWindow.showImage(whiteSpace.firstElement().toLetter().getImage(2));
+                lc.setExtensionError(1.0);
+            }
+
+        }
+        
+        if (db.getDecodedValue().equalsIgnoreCase("s")) {
+            Letter is = lc.getIntersection();
+         
+                Vector<PixelObject> whites = getWhiteObjects(is, lc.getOwner());
+              
+       
+            if (whites.size()>0&&whites.firstElement().getSize() >40) {
+                // BasicWindow.showImage(whiteSpace.firstElement().toLetter().getImage(2));
+                lc.setExtensionError(2.0);
+            }
+
+        }
+        
+        // 1 und I
+        
+        if (db.getDecodedValue().equalsIgnoreCase("1")) {
+            Letter is = lc.getDifference();
+            int left=0;
+            int right=0;
+            for( int x=0; x<is.getWidth();x++){
+                for( int y=0; y<Math.min(6,is.getHeight());y++){
+                    if(is.grid[x][y]==0){
+                        if(x<is.getWidth()/2){
+                            left++;
+                        }else{
+                            right++;
+                        }
+                    }
+                }
+            }
+            if(right<15 && left<15 &&right>=left){
+                lc.setExtensionError(2.0);  
+            }
+            
+            
+        }
+        
+        if (db.getDecodedValue().equalsIgnoreCase("i")) {
+            Letter is = lc.getDifference();
+            int left=0;
+            int right=0;
+            for( int x=0; x<is.getWidth();x++){
+                for( int y=0; y<Math.min(6,is.getHeight());y++){
+                    if(is.grid[x][y]==0){
+                        if(x<is.getWidth()/2){
+                            left++;
+                        }else{
+                            right++;
+                        }
+                    }
+                }
+            }
+            if(right<15 && left<15 &&right<left){
+                lc.setExtensionError(2.0);  
+            }
+            
+            
+        }
+        
+        
     }
 
 }
