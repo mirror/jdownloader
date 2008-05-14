@@ -21,8 +21,6 @@ import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.Vector;
 import java.util.regex.Pattern;
 
 import jd.plugins.DownloadLink;
@@ -33,17 +31,16 @@ import jd.plugins.download.RAFDownload;
 import jd.utils.JDUtilities;
 
 public class ImageFap extends PluginForHost {
-    static private final Pattern PAT_SUPPORTED = Pattern.compile("http://[\\w\\.]*?imagefap.com/gallery.php\\?.*", Pattern.CASE_INSENSITIVE);
+    static private final Pattern PAT_SUPPORTED = Pattern.compile("http://[\\w\\.]*?imagefap.com/image.php\\?id=.*&pgid=.*&gid=.*&page=.*", Pattern.CASE_INSENSITIVE);
+    
     static private final String HOST = "imagefap.com";
     static private final String PLUGIN_NAME = HOST;
-    static private final String PLUGIN_VERSION = "0.1";
+    static private final String PLUGIN_VERSION = "0.2";
     static private final String PLUGIN_ID = PLUGIN_NAME + "-" + PLUGIN_VERSION;
     static private final String CODER = "JD-Team";
-    static private final Pattern LINKS = Pattern.compile("(?s)<a href=\"image.php\\?id=([0-9]+).*?\"><img border=0 src='http://images.imagefap.com/images/thumb/[0-9\\/]+\\.jpg\\'><\\/a>", Pattern.CASE_INSENSITIVE);
-
-    static private final Pattern PAGES = Pattern.compile("<a class=link[0-9]+ href=\"gallery.php(.*?)\">[0-9]+</a>", Pattern.CASE_INSENSITIVE);
-    static private final Pattern PAGES2 = Pattern.compile("<a class=link[0-9]+ onclick=\"requestGallery\\(\\'(.*?)\\'\\)\\; return (true|false);\" href=\"#\">[0-9]+</a>", Pattern.CASE_INSENSITIVE);
-    static private final Pattern NAME = Pattern.compile("<td style=\"background: url\\(img/.*?\\) .*?;\"><font face=verdana color=white size=4><b>(.*)", Pattern.CASE_INSENSITIVE);
+    static private final Pattern IMAGELINK = Pattern.compile("return lD\\('(\\S+?)'\\);", Pattern.CASE_INSENSITIVE);
+    static private final Pattern GALLERY = Pattern.compile("\\<a href=\"gallery\\.php\\?gid=[0-9]+?\"\\>\\<font color=\"white\"\\>(.*?)\\<\\/font\\>\\<\\/a\\>", Pattern.CASE_INSENSITIVE);
+    static private final Pattern FILENAME = Pattern.compile("\\<td bgcolor='#FCFFE0' width=\"100\"\\>Filename\\<\\/td\\>[\\s\\S]*?\\<td bgcolor='#FCFFE0'\\>(.*?\\.jpg)\\<\\/td\\>", Pattern.CASE_INSENSITIVE);
 
     public ImageFap() {
         super();
@@ -74,46 +71,48 @@ public class ImageFap extends PluginForHost {
     public String getPluginID() {
         return PLUGIN_ID;
     }
+    
+    private String DecryptLink(String code){ //similar to lD() @ imagefap.com
+           	
+        String s1 = JDUtilities.htmlDecode(code.substring(0,code.length()-1));       	
+        String t="";
+        for(int i=0;i<s1.length();i++){
+        	//logger.info("decrypt4 " + i);
+        	//logger.info("decrypt5 " + ((int) (s1.charAt(i+1) - '0')));
+        	//logger.info("decrypt6 " + (Integer.parseInt(code.substring(code.length()-1,code.length()))));
+        	 int charcode = ((int) (s1.charAt(i))) - (Integer.parseInt(code.substring(code.length()-1,code.length())));
+        	 //logger.info("decrypt7 " + charcode);
+        	 t= t + new Character((char)charcode).toString();
+        	 //t+=new Character((char) (s1.charAt(i)-code.charAt(code.length()-1))); 
+
+        }
+        //logger.info(t);
+        //var s1=unescape(s.substr(0,s.length-1)); var t='';
+        //for(i=0;i<s1.length;i++)t+=String.fromCharCode(s1.charCodeAt(i)-s.substr(s.length-1,1));
+        //return unescape(t);
+        //logger.info("DONE: RAUS " + JDUtilities.htmlDecode(t));
+       return JDUtilities.htmlDecode(t); 
+    }
+    
     public PluginStep doStep(PluginStep step, DownloadLink downloadLink) {
         RequestInfo requestInfo;
         try {
             if (step.getStep() == PluginStep.STEP_DOWNLOAD) {
+            	
                 requestInfo = getRequest(new URL(downloadLink.getDownloadURL()));
-                Vector<String> Images = new Vector<String>();
-                ArrayList<ArrayList<String>> matches = getAllSimpleMatches(requestInfo.getHtmlCode(), LINKS);
-                ArrayList<ArrayList<String>> pagematches = getAllSimpleMatches(requestInfo.getHtmlCode(), PAGES);
-                ArrayList<ArrayList<String>> pagematches2 = getAllSimpleMatches(requestInfo.getHtmlCode(), PAGES2);
-                String name = getFirstMatch(requestInfo.getHtmlCode(), NAME, 1);
-                for (int i = 0; i < matches.size(); i++) {
-                    Images.add(matches.get(i).get(0) + ".jpg");
+                String Imagelink = DecryptLink(getFirstMatch(requestInfo.getHtmlCode(),IMAGELINK,1));
+                String gallery = getFirstMatch(requestInfo.getHtmlCode(), GALLERY, 1);
+                String Imagename = getFirstMatch(requestInfo.getHtmlCode(), FILENAME, 1);
 
-                }
-                for (int i = 0; i < pagematches.size(); i++) {
-                    requestInfo = getRequest(new URL("http://" + HOST + "/" + pagematches.get(i).get(0)));
-                    matches = getAllSimpleMatches(requestInfo.getHtmlCode(), LINKS);
-                    for (int j = 0; j < matches.size(); j++) {
-                        Images.add(matches.get(j).get(0) + ".jpg");
-                    }
-
-                }
-                for (int i = 0; i < pagematches2.size(); i++) {
-                    requestInfo = getRequest(new URL("http://" + HOST + "/gallery.php?" + pagematches2.get(i).get(0)));
-                    matches = getAllSimpleMatches(requestInfo.getHtmlCode(), LINKS);
-                    for (int j = 0; j < matches.size(); j++) {
-                        Images.add(matches.get(j).get(0) + ".jpg");
-                    }
-
-                }
-
-                File file = new File(JDUtilities.getJDHomeDirectoryFromEnvironment(), name);
+                File file = new File(downloadLink.getFilePackage().getDownloadDirectory(), gallery);
                 file.mkdir();
-                for (int i = 1; i < Images.size(); i++) {
-                    requestInfo = postRequestWithoutHtmlCode(new URL("http://85.17.40.49/full/getimg.php?img=" + Images.get(i)), null, null, null, true);
-                    downloadLink.setName(Images.get(i));
-                   dl = new RAFDownload(this, downloadLink,  requestInfo.getConnection());
-                    dl.startDownload();
-                    new File(downloadLink.getFileOutput()).renameTo(new File(file, Images.get(i)));
-                }
+                
+                requestInfo = postRequestWithoutHtmlCode(new URL(Imagelink), null, null, null, true);
+                downloadLink.setName(Imagename);
+                dl = new RAFDownload(this, downloadLink,  requestInfo.getConnection());
+                dl.startDownload();
+                new File(downloadLink.getFileOutput()).renameTo(new File(file,gallery + " - " + Imagename));
+                
                 step.setStatus(PluginStep.STATUS_DONE);
                 downloadLink.setStatus(DownloadLink.STATUS_DONE);
                 return step;
@@ -142,8 +141,9 @@ public class ImageFap extends PluginForHost {
         try {
 
             requestInfo = getRequest(new URL(downloadLink.getDownloadURL()));
-            String name = getFirstMatch(requestInfo.getHtmlCode(), NAME, 1);
-            downloadLink.setName(name);
+            String name = getFirstMatch(requestInfo.getHtmlCode(), FILENAME, 1);
+            String gallery = getFirstMatch(requestInfo.getHtmlCode(), GALLERY, 1);
+            downloadLink.setName(gallery + " - " + name);
             /*
              * 
              * Vector<String> link = matches.get(id);
