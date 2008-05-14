@@ -63,20 +63,42 @@ public class Main {
         // JDUtilities.downloadBinary(JDUtilities.getResourceFile("cap/cap_"+t+".jpg").getAbsolutePath(),
         // "http://www.fast-load.net/includes/captcha.php");
         Boolean newInstance = false;
-
+        boolean showSplash = true;
+        boolean stop = false;
+        boolean extractSwitch = false;
+        long extractTime = 0;
+        Vector<String> paths = new Vector<String>();
+        boolean enoughtMemory = !(Runtime.getRuntime().maxMemory() < 100000000);
+        if(!enoughtMemory)
+            showSplash=false;
         // pre start parameters //
         for (int i = 0; i < args.length; i++) {
+            if (extractSwitch) {
+                if (args[i].equals("--rotate") || args[i].equals("-r")) {
 
-            if (args[i].equals("--new-instance") || args[i].equals("-n")) {
+                    extractTime = -1;
 
-                if (Runtime.getRuntime().maxMemory() < 100000000) {
+                } else if (extractTime == -1) {
+
+                    if (args[i].matches("[\\d]+")) {
+                        extractTime = (int) Integer.parseInt(args[i]);
+                    } else
+                        extractTime = 0;
+
+                } else if (!args[i].matches("[\\s]*")) {
+
+                    paths.add(args[i]);
+
+                }
+
+            } else if (args[i].equals("--new-instance") || args[i].equals("-n")) {
+
+                if (!enoughtMemory) {
                     JDUtilities.restartJD(args);
                 }
 
                 logger.info(args[i] + " parameter");
-
                 newInstance = true;
-                break;
 
             } else if (args[i].equals("--help") || args[i].equals("-h")) {
 
@@ -100,16 +122,32 @@ public class Main {
 
                 }
 
-            }
+            } else if (args[i].equals("--extract") || args[i].equals("-e")) {
+                extractSwitch = true;
+                stop = true;
+                showSplash = false;
+            } else if (args[i].equals("--show") || args[i].equals("-s")) {
+
+                JACController.showDialog(false);
+                extractSwitch = false;
+                stop = true;
+
+            } else if (args[i].equals("--train") || args[i].equals("-t")) {
+
+                JACController.showDialog(true);
+                extractSwitch = false;
+                stop = true;
+
+            } else if (showSplash && args[i].matches("(--add-.*|--start-download|-[dDmfHr]|--stop-download|--minimize|--focus|--hide|--reconnect)")) showSplash = false;
 
         }
         splashScreen = null;
         try {
-            if (JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).getBooleanProperty(SimpleGUI.PARAM_SHOW_SPLASH, true)) {
+            if (showSplash && JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).getBooleanProperty(SimpleGUI.PARAM_SHOW_SPLASH, true)) {
 
                 splashScreen = new SplashScreen(JDUtilities.getResourceFile("/jd/img/jd_logo_large.png").getAbsolutePath());
                 splashScreen.setVisible(true);
-               
+
             }
         } catch (Exception e) {
             // TODO: handle exception
@@ -131,12 +169,6 @@ public class Main {
         JDTheme.setTheme("default");
         JDSounds.setSoundTheme("default");
 
-        boolean stop = false;
-        boolean extractSwitch = false;
-        Vector<String> paths = new Vector<String>();
-
-        long extractTime = 0;
-
         if (!newInstance && tryConnectToServer(args)) {
 
             if (args.length > 0) {
@@ -154,52 +186,6 @@ public class Main {
 
         } else {
 
-            for (String currentArg : args) {
-
-                if (currentArg.equals("--show") || currentArg.equals("-s")) {
-
-                    JACController.showDialog(false);
-                    extractSwitch = false;
-                    stop = true;
-
-                } else if (currentArg.equals("--train") || currentArg.equals("-t")) {
-
-                    JACController.showDialog(true);
-                    extractSwitch = false;
-                    stop = true;
-
-                } else if (currentArg.equals("--extract") || currentArg.equals("-e")) {
-
-                    extractSwitch = true;
-                    stop = true;
-
-                } else if (extractSwitch) {
-
-                    if (currentArg.equals("--rotate") || currentArg.equals("-r")) {
-
-                        extractTime = -1;
-
-                    } else if (extractTime == -1) {
-
-                        if (currentArg.matches("[\\d]+")) {
-                            extractTime = (int) Integer.parseInt(currentArg);
-                        } else
-                            extractTime = 0;
-
-                    } else if (!currentArg.matches("[\\s]*")) {
-
-                        paths.add(currentArg);
-
-                    }
-
-                } else {
-
-                    extractSwitch = false;
-
-                }
-
-            }
-
             if (extractSwitch) {
 
                 logger.info("Extract: [" + paths.toString() + " | " + extractTime + "]");
@@ -207,7 +193,7 @@ public class Main {
 
             }
 
-            if (!stop && Runtime.getRuntime().maxMemory() < 100000000) {
+            if (!stop && !enoughtMemory) {
                 JDUtilities.restartJD(args);
             }
 
@@ -247,7 +233,7 @@ public class Main {
 
     @SuppressWarnings("unchecked")
     private void go() {
-       
+
         JDInit init = new JDInit(splashScreen);
         logger.info("Register plugins");
         init.init();
@@ -275,15 +261,14 @@ public class Main {
         setSplashStatus(splashScreen, 10, JDLocale.L("gui.splash.text.initcontroller", "Starte Controller"));
 
         final JDController controller = init.initController();
-      
+
         if (init.installerWasVisible()) {
             init.doWebupdate(JDUtilities.getConfiguration().getIntegerProperty(Configuration.CID, -1), true);
 
         } else {
-            
+
             setSplashStatus(splashScreen, 10, JDLocale.L("gui.splash.text.loadPlugins", "Lade Plugins"));
 
-            
             init.initPlugins();
             setSplashStatus(splashScreen, 20, JDLocale.L("gui.splash.text.loadGUI", "Lade Benutzeroberfläche"));
 
@@ -307,8 +292,6 @@ public class Main {
 
         controller.setInitStatus(JDController.INIT_STATUS_COMPLETE);
         // init.createQueueBackup();
-
-     
 
         controller.getUiInterface().onJDInitComplete();
         Properties pr = System.getProperties();
@@ -345,7 +328,7 @@ public class Main {
     private static void setSplashStatus(SplashScreen splashScreen, int i, String l) {
         if (splashScreen == null) return;
         splashScreen.setText(l);
-        splashScreen.setValue(splashScreen.getValue()+i);
+        splashScreen.setValue(splashScreen.getValue() + i);
 
     }
 

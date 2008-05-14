@@ -254,7 +254,7 @@ public class JDInit {
         JDClassLoader jdClassLoader = JDUtilities.getJDClassLoader();
         logger.finer("Load PLugins");
         Iterator iterator = Service.providers(PluginForDecrypt.class, jdClassLoader);
-        int c=0;
+//        int c=0;
         while (iterator.hasNext()) {
             try {
                 PluginForDecrypt p = (PluginForDecrypt) iterator.next();
@@ -293,7 +293,7 @@ public class JDInit {
         Iterator iterator;
         logger.finer("Load PLugins");
         iterator = Service.providers(PluginForHost.class, jdClassLoader);
-        int c=0;
+//        int c=0;
         while (iterator.hasNext()) {
             try {
                 PluginForHost next = (PluginForHost) iterator.next();
@@ -435,7 +435,7 @@ public class JDInit {
 //        } catch (Exception e) {
 //            // TODO: handle exception
 //        }
-        JDController controller = JDUtilities.getController();
+//        JDController controller = JDUtilities.getController();
         JDUtilities.setPluginForDecryptList(this.loadPluginForDecrypt());
         JDUtilities.setPluginForHostList(this.loadPluginForHost());
         JDUtilities.setPluginForContainerList(this.loadPluginForContainer());
@@ -659,7 +659,11 @@ public class JDInit {
         if (!JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_UPDATE_HASH, "").equals(hash)) {
             logger.info("Returned from Update");
             String lastLog = JDUtilities.UTF8Decode(JDUtilities.getLocalFile(JDUtilities.getResourceFile("updatemessage.html")));
-            if (lastLog.trim().length() > 5) JDUtilities.getController().getUiInterface().showHTMLDialog("Update!", lastLog);
+            if (lastLog.trim().length() > 5) 
+                {
+                splashScreen.finish();
+                JDUtilities.getController().getUiInterface().showHTMLDialog("Update!", lastLog);
+                }
 
         }
         JDUtilities.getConfiguration().setProperty(Configuration.PARAM_UPDATE_HASH, hash);
