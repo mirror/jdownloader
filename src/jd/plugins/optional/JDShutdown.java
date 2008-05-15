@@ -55,7 +55,7 @@ public class JDShutdown extends PluginOptional {
 
     @Override
     public String getVersion() {
-        return "0.1";
+        return "0.2";
     }
 
     @Override
@@ -167,7 +167,7 @@ public class JDShutdown extends PluginOptional {
                 }
 
             } else if (OS.indexOf("mac") >= 0) {
-                JDUtilities.runCommand("osascript", new String[] { JDUtilities.getResourceFile("jd/osx/osxshutdown.scpt").getAbsolutePath() }, null, 0);
+                JDUtilities.runCommand("/usr/bin/osascript", new String[] { JDUtilities.getResourceFile("jd/osx/osxshutdown.scpt").getAbsolutePath() }, null, 0);
             } else {
                 try {
                     JDUtilities.runCommand("dbus-send", new String[] { "--session", "--dest=org.freedesktop.PowerManagement", "--type=method_call", "--print-reply", "--reply-timeout=2000", "/org/freedesktop/PowerManagement", "org.freedesktop.PowerManagement.Shutdown" }, null, 0);
