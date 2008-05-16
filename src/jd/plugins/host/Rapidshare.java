@@ -97,7 +97,6 @@ import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.Configuration;
 import jd.config.MenuItem;
-import jd.config.SubConfiguration;
 import jd.controlling.ProgressController;
 import jd.event.ControlEvent;
 import jd.plugins.DownloadLink;
@@ -118,7 +117,7 @@ public class Rapidshare extends PluginForHost {
     private String version = "1.3.0.1";
 
     // http://(?:[^.]*\.)*rapidshare\.com/files/[0-9]*/[^\s"]+
-    private String botHash = "63d572beae06a841c23b0d824ac1bfe2"; // "dab07d2b7f1299f762454cda4c6143e7";
+//    private String botHash = "63d572beae06a841c23b0d824ac1bfe2"; // "dab07d2b7f1299f762454cda4c6143e7";
 
     /**
      * Vereinfachte Patternerstellung: [*] optionaler Platzhalter [+] musthav
@@ -154,7 +153,7 @@ public class Rapidshare extends PluginForHost {
     // type=\"submit\" name=\"actionstring\" value=\"°\"></h3></form>";
     private String dataPatternPost = "<form name=\"dl\" ' +°'action=\"°\" method=\"post\">'"; // "document.dl.action=°document.dl.actionstring.value";
 
-    private String dataPatternAction = "name=\"actionstring\" value=\"°\"></h3></form>";
+//    private String dataPatternAction = "name=\"actionstring\" value=\"°\"></h3></form>";
 
     /**
      * Pattern trifft zu wenn die "Ihre Ip läd gerade eine datei " Seite kommt
@@ -1348,7 +1347,7 @@ public class Rapidshare extends PluginForHost {
             logger.finer("Use Random #2 server " + server2Abb);
         }
         // String endServerAbb = "";
-        Boolean telekom = !(this.getProperties().getProperty(PROPERTY_USE_TELEKOMSERVER) == null || !(Boolean) this.getProperties().getProperty(PROPERTY_USE_TELEKOMSERVER));
+//        Boolean telekom = !(this.getProperties().getProperty(PROPERTY_USE_TELEKOMSERVER) == null || !(Boolean) this.getProperties().getProperty(PROPERTY_USE_TELEKOMSERVER));
 
         String user = null;
         String pass = null;
@@ -1607,7 +1606,7 @@ public class Rapidshare extends PluginForHost {
         }
         return step;
     }
-
+/*
     private PluginStep doPremiumStepOLD(PluginStep step, DownloadLink downloadLink) {
         String server1 = this.getProperties().getStringProperty(PROPERTY_SELECTED_SERVER, "Level(3)");
         String server2 = this.getProperties().getStringProperty(PROPERTY_SELECTED_SERVER2, "TeliaSonera");
@@ -1923,7 +1922,7 @@ public class Rapidshare extends PluginForHost {
         }
         return step;
     }
-
+*/
     /*
      * private String rawUrlEncode(String str) { try { str =
      * URLDecoder.decode(str, "UTF-8"); String ret = ""; int i; for (i = 0; i <
