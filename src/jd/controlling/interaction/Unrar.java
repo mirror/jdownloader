@@ -34,9 +34,12 @@ import jd.utils.JDUtilities;
  * @author DwD
  */
 public class Unrar extends Interaction implements Serializable {
-    private static Unrar INSTANCE = null;
-
-    private DownloadLink lastFinishedDownload = null;
+    /**
+     * soll nicht mitserialisiert werden fals sich die instanz aufhängt
+     */
+    private transient static Unrar INSTANCE = null;
+    private transient DownloadLink lastFinishedDownload = null;
+    private transient static boolean IS_RUNNING = false;
 
     // DIese Interaction sollte nur einmal exisitieren und wird deshalb über
     // eine factory aufgerufen.
@@ -64,31 +67,10 @@ public class Unrar extends Interaction implements Serializable {
     /**
      * serialVersionUID
      */
-    private static boolean IS_RUNNING = false;
 
-    private static final String NAME = JDLocale.L("interaction.unrar.name");
+    private transient static final String NAME = JDLocale.L("interaction.unrar.name");
 
-    public static final String PROPERTY_UNRARCOMMAND = "UNRAR_PROPERTY_UNRARCMD";
-
-    public static final String PROPERTY_AUTODELETE = "UNRAR_PROPERTY_AUTODELETE";
-
-    public static final String PROPERTY_OVERWRITE_FILES = "UNRAR_PROPERTY_OVERWRITE_FILES";
-
-    public static final String PROPERTY_MAX_FILESIZE = "UNRAR_PROPERTY_MAX_FILESIZE";
-
-    public static final String PROPERTY_ENABLED = "UNRAR_PROPERTY_ENABLED";
-
-    public static final String PROPERTY_WAIT_FOR_TERMINATION = "UNRAR_WAIT_FOR_TERMINATION";
-
-    public static final String PROPERTY_ENABLE_EXTRACTFOLDER = "UNRAR_PROPERTY_ENABLE_EXTRACTFOLDER";
-
-    public static final String PROPERTY_EXTRACTFOLDER = "UNRAR_PROPERTY_EXTRACTFOLDER";
-
-    public static final String PROPERTY_DELETE_INFOFILE = "PROPERTY_DELETE_INFOFILE";
-
-    public static final String PROPERTY_USE_HJMERGE = "PROPERTY_USE_HJMERGE";
-
-    public static final String PROPERTY_DELETE_MERGEDFILES = "PROPERTY_DELETE_MERGEDFILES";
+    public transient static final String PROPERTY_UNRARCOMMAND = "UNRAR_PROPERTY_UNRARCMD", PROPERTY_AUTODELETE = "UNRAR_PROPERTY_AUTODELETE", PROPERTY_OVERWRITE_FILES = "UNRAR_PROPERTY_OVERWRITE_FILES", PROPERTY_ENABLED = "UNRAR_PROPERTY_ENABLED", PROPERTY_WAIT_FOR_TERMINATION = "UNRAR_WAIT_FOR_TERMINATION", PROPERTY_ENABLE_EXTRACTFOLDER = "UNRAR_PROPERTY_ENABLE_EXTRACTFOLDER", PROPERTY_EXTRACTFOLDER = "UNRAR_PROPERTY_EXTRACTFOLDER", PROPERTY_DELETE_INFOFILE = "PROPERTY_DELETE_INFOFILE", PROPERTY_USE_HJMERGE = "PROPERTY_USE_HJMERGE", PROPERTY_DELETE_MERGEDFILES = "PROPERTY_DELETE_MERGEDFILES";
 
     @Override
     public boolean doInteraction(Object arg) {
@@ -180,17 +162,6 @@ public class Unrar extends Interaction implements Serializable {
             folders.add(JDUtilities.getConfiguration().getDefaultDownloadDirectory());
             logger.info("dirs: " + folders);
             unrar.setFolders(folders);
-            // Entpacken bis nichts mehr gefunden wurde (wird jetzt von
-            // unrar
-            // erledigt indem entpackte dateien nochmal
-            // durch unrar geschickt werden
-            /*
-             * if (newFolderList != null && newFolderList.size() > 0) { unrar =
-             * getUnrar(); unrar.setFolders(newFolderList); newFolderList =
-             * unrar.unrar(); } if (newFolderList != null &&
-             * newFolderList.size() > 0) { unrar = getUnrar();
-             * unrar.setFolders(newFolderList); newFolderList = unrar.unrar(); }
-             */
         }
         LinkedList<String> followingFiles = new LinkedList<String>();
         Iterator<DownloadLink> ff = JDUtilities.getController().getDownloadLinks().iterator();

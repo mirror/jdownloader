@@ -16,22 +16,9 @@
 
 package jd.captcha;
 
-import java.awt.Image;
 import java.io.File;
-import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Properties;
-import java.util.TreeSet;
-import java.util.logging.Logger;
 
-import jd.captcha.gui.BasicWindow;
-import jd.captcha.pixelgrid.Captcha;
 import jd.captcha.utils.UTILITIES;
-import jd.plugins.Plugin;
-import jd.plugins.RequestInfo;
 import jd.utils.JDUtilities;
 
 /**

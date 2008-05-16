@@ -138,6 +138,7 @@ public class LetterComperator {
     private double divider;
 
     private Method extensionCodeMethod = null;
+    @SuppressWarnings("unchecked")
     private Class[] extensionCodeParameterTypes = new Class[] { LetterComperator.class };
     private Object[] extensionCodeArguments = new Object[] { null };
     private double extensionError = 0.0;
@@ -755,6 +756,7 @@ public class LetterComperator {
      * 
      * @param owner
      */
+    @SuppressWarnings("unchecked")
     public void setOwner(JAntiCaptcha owner) {
         this.owner = owner;
         this.jas = owner.getJas();

@@ -165,7 +165,8 @@ public class JAntiCaptcha {
     public JACScript jas;
 
     private int[][] letterMap = null;
-
+    
+    //TODO noch nicht implementiert
     private int maxLetterNum;
 
     private int minLetterNum;
@@ -1095,6 +1096,7 @@ public class JAntiCaptcha {
      *            Captcha instanz
      * @return CaptchaCode
      */
+    @SuppressWarnings("unchecked")
     public String checkCaptcha(Captcha captcha) {
 
         this.workingCaptcha = captcha;
@@ -1227,6 +1229,7 @@ public class JAntiCaptcha {
      *            Vergleichsletter
      * @return int 0(super)-0xffffff (ganz übel)
      */
+    @SuppressWarnings("unchecked")
     public LetterComperator getLetter(Letter letter) {
         if (jas.getDouble("quickScanValityLimit") <= 0) {
             logger.info("quickscan disabled");
@@ -1235,7 +1238,7 @@ public class JAntiCaptcha {
         }
 
         logger.info("Work on Letter:" + letter);
-        long startTime = UTILITIES.getTimer();
+//        long startTime = UTILITIES.getTimer();
         LetterComperator res = null;
         double lastPercent = 100.0;
         int bvX, bvY;
@@ -1396,8 +1399,9 @@ public class JAntiCaptcha {
      *            (refferenz)
      * @return Letter. Beste Übereinstimmung
      */
+    @SuppressWarnings("unchecked")
     private LetterComperator getLetterExtended(Letter letter) {
-        long startTime = UTILITIES.getTimer();
+//        long startTime = UTILITIES.getTimer();
         LetterComperator res = null;
         logger.info("Extended SCAN");
         double lastPercent = 100.0;
@@ -1624,7 +1628,7 @@ public class JAntiCaptcha {
             w.setText(x, y, tmp.getId() + ": " + tmp.getDecodedValue() + "(" + tmp.getGoodDetections() + "/" + tmp.getBadDetections() + ") Size: " + tmp.toPixelObject(0.85).getSize());
             w.setImage(x + 1, y, tmp.getImage((int) Math.ceil(jas.getDouble("simplifyFaktor"))));
             w.setComponent(x + 3, y, new JButton(new AbstractAction("remove " + i++) {
-
+                private static final long serialVersionUID = 1L;
                 public void actionPerformed(ActionEvent evt) {
                     jac.removeLetterFromLibrary(list[Integer.parseInt(((JButton) evt.getSource()).getText().substring(7))]);
 

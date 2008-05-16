@@ -580,6 +580,7 @@ public class JACScript {
      * 
      * @param captcha
      */
+    @SuppressWarnings("unchecked")
     public void executePrepareCommands(Captcha captcha) {
         if (captcha == null || captcha.isPrepared()) {
             // ISt schon prepared

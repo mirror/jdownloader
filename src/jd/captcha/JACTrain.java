@@ -20,7 +20,6 @@ package jd.captcha;
 
 
 
-import java.io.File;
 import java.util.logging.Logger;
 
 import jd.captcha.utils.UTILITIES;

@@ -61,9 +61,7 @@ public class Installer extends JDialog implements ActionListener, WindowListener
 
     protected Insets          insets           = new Insets(0, 0, 0, 0);
 
-    private BrowseFile        homeDir;
-
-    private BrowseFile        downloadDir;
+    private BrowseFile        homeDir, downloadDir;
 
     private JButton           btnOK;
 
