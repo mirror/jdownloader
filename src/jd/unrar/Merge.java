@@ -65,9 +65,11 @@ public class Merge {
                 }
             });
             join.run();
-
+            if(autoDelete)
+            {
             for (int i = 0; i < files.length; i++) {
                 files[i].delete();
+            }
             }
             progress.finalize();
             return new File(join.sJoinedFile);
