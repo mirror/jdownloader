@@ -42,8 +42,8 @@ public class JDSimpleWebserverTemplateFileRequestHandler {
 
         this.response = response;
     }
-    
-    private void add_all_info(Template t, HashMap<String, String> requestParameter){
+
+    private void add_all_info(Template t, HashMap<String, String> requestParameter) {
         FilePackage fp;
         String[] ids;
         Integer package_id = 0;
@@ -51,26 +51,26 @@ public class JDSimpleWebserverTemplateFileRequestHandler {
             ids = requestParameter.get("all_info").toString().split("[+]", 2);
             package_id = JDUtilities.filterInt(ids[0].toString());
             fp = JDUtilities.getController().getPackages().get(package_id);
-            
-            addEntry("name",fp.getName());            
-            addEntry("comment",fp.getComment());
-            addEntry("dldirectory",fp.getDownloadDirectory());
-            addEntry("packagesize",JDUtilities.formatKbReadable(fp.getTotalEstimatedPackageSize())+" "+fp.getTotalEstimatedPackageSize()+" KB");
-            addEntry("loaded",JDUtilities.formatKbReadable(fp.getTotalKBLoaded())+" "+fp.getTotalKBLoaded()+" KB");
-            addEntry("links","");
-            
-            DownloadLink next=null;
-            int i=1;
-            for(Iterator<DownloadLink> it = fp.getDownloadLinks().iterator();it.hasNext();i++){
-                next=it.next();         
-                double percent=next.getDownloadCurrent() * 100.0 / Math.max(1,next.getDownloadMax());                
-                addEntryandPercent(i+". "+next.getName(), JDUtilities.formatKbReadable((int)next.getDownloadSpeed()/1024)+"/s "+ JDUtilities.getPercent((int)next.getDownloadCurrent(), (int)next.getDownloadMax())+" | "+next.getDownloadCurrent()+"/"+next.getDownloadMax()+" bytes",percent);                 
+
+            addEntry("name", fp.getName());
+            addEntry("comment", fp.getComment());
+            addEntry("dldirectory", fp.getDownloadDirectory());
+            addEntry("packagesize", JDUtilities.formatKbReadable(fp.getTotalEstimatedPackageSize()) + " " + fp.getTotalEstimatedPackageSize() + " KB");
+            addEntry("loaded", JDUtilities.formatKbReadable(fp.getTotalKBLoaded()) + " " + fp.getTotalKBLoaded() + " KB");
+            addEntry("links", "");
+
+            DownloadLink next = null;
+            int i = 1;
+            for (Iterator<DownloadLink> it = fp.getDownloadLinks().iterator(); it.hasNext(); i++) {
+                next = it.next();
+                double percent = next.getDownloadCurrent() * 100.0 / Math.max(1, next.getDownloadMax());
+                addEntryandPercent(i + ". " + next.getName(), JDUtilities.formatKbReadable((int) next.getDownloadSpeed() / 1024) + "/s " + JDUtilities.getPercent((int) next.getDownloadCurrent(), (int) next.getDownloadMax()) + " | " + next.getDownloadCurrent() + "/" + next.getDownloadMax() + " bytes", percent);
             }
             t.setParam("all_infos", v_info);
         }
     }
 
-    private void add_single_info(Template t, HashMap<String, String> requestParameter) {        
+    private void add_single_info(Template t, HashMap<String, String> requestParameter) {
 
         /* überprüft ob single_info vorhanden und füllt ggf. dieses template */
         DownloadLink downloadLink;
@@ -124,16 +124,16 @@ public class JDSimpleWebserverTemplateFileRequestHandler {
             } else {
                 addEntry(JDLocale.L("linkinformation.download.name", "Download"), JDLocale.L("linkinformation.download.activated", " ist aktiviert"));
             }
-            addEntry(JDLocale.L("linkinformation.download.status","Status"), downloadLink.getStatusText());
-            
+            addEntry(JDLocale.L("linkinformation.download.status", "Status"), downloadLink.getStatusText());
+
             DownloadInterface dl;
             if (downloadLink.isInProgress() && (dl = downloadLink.getDownloadInstance()) != null) {
-                addEntry(JDLocale.L("linkinformation.download.chunks.label","Chunks"), "");
+                addEntry(JDLocale.L("linkinformation.download.chunks.label", "Chunks"), "");
                 int i = 1;
-                for (Iterator<Chunk> it = dl.getChunks().iterator(); it.hasNext(); i++) {                    
+                for (Iterator<Chunk> it = dl.getChunks().iterator(); it.hasNext(); i++) {
                     Chunk next = it.next();
-                    double percent=next.getBytesLoaded() * 100.0 / Math.max(1,next.getChunkSize());
-                    addEntryandPercent(JDLocale.L("download.chunks.connection", "Verbindung")+ " " + i,JDUtilities.formatKbReadable((int)next.getBytesPerSecond()/1024)+"/s "+ JDUtilities.getPercent(next.getBytesLoaded(), next.getChunkSize()),percent );
+                    double percent = next.getBytesLoaded() * 100.0 / Math.max(1, next.getChunkSize());
+                    addEntryandPercent(JDLocale.L("download.chunks.connection", "Verbindung") + " " + i, JDUtilities.formatKbReadable((int) next.getBytesPerSecond() / 1024) + "/s " + JDUtilities.getPercent(next.getBytesLoaded(), next.getChunkSize()), percent);
                 }
 
             }
@@ -141,15 +141,15 @@ public class JDSimpleWebserverTemplateFileRequestHandler {
         }
         ;
     }
-    
+
     private void addEntry(String var, String value) {
         Hashtable h_info = new Hashtable();
         h_info.put("info_var", var);
         h_info.put("info_value", value);
         v_info.addElement(h_info);
     }
-    
-    private void addEntryandPercent(String var, String value,double percent){
+
+    private void addEntryandPercent(String var, String value, double percent) {
         Hashtable h_info = new Hashtable();
         h_info.put("info_var", var);
         h_info.put("info_value", value);
@@ -157,8 +157,7 @@ public class JDSimpleWebserverTemplateFileRequestHandler {
         v_info.addElement(h_info);
     }
 
-
-    private void add_status_page(Template t,HashMap<String, String> requestParameter){
+    private void add_status_page(Template t, HashMap<String, String> requestParameter) {
         Vector v, v2 = new Vector();
         Hashtable h, h2 = new Hashtable();
         v = new Vector();
@@ -187,8 +186,8 @@ public class JDSimpleWebserverTemplateFileRequestHandler {
 
             h.put("package_id", Package_ID.toString());
             h.put("download_hoster", value);
-            h.put("download_status_color", "#8bffa1");
-            h.put("download_status", f.format(percent) + " % (" + JDUtilities.formatKbReadable(filePackage.getTotalKBLoaded()) + " / " + JDUtilities.formatKbReadable(filePackage.getTotalEstimatedPackageSize()) + ")");
+            h.put("download_status", "finished");/*FIXME*/
+            h.put("download_status_text", f.format(percent) + " % (" + JDUtilities.formatKbReadable(filePackage.getTotalKBLoaded()) + " / " + JDUtilities.formatKbReadable(filePackage.getTotalEstimatedPackageSize()) + ")");
 
             v2 = new Vector();
 
@@ -210,23 +209,23 @@ public class JDSimpleWebserverTemplateFileRequestHandler {
                 if (dLink.isEnabled()) {
 
                     switch (dLink.getStatus()) {
-                    case DownloadLink.STATUS_DONE:
-                        h2.put("download_status_color", "#8bffa1");
+                    case DownloadLink.STATUS_DONE:                        
+                        h2.put("download_status", "finished");
                         break;
 
-                    case DownloadLink.STATUS_DOWNLOAD_IN_PROGRESS:
-                        h2.put("download_status_color", "#1189ee");
+                    case DownloadLink.STATUS_DOWNLOAD_IN_PROGRESS:                        
+                        h2.put("download_status", "running");
                         break;
 
-                    default:
-                        h2.put("download_status_color", "#92afc6");
+                    default:                        
+                        h2.put("download_status", "activated");
                     }
                     ;
-                } else {
-                    h2.put("download_status_color", "#c70000");
+                } else {                   
+                    h2.put("download_status", "deactivated");
                 }
 
-                h2.put("download_status", f.format(percent) + "% " + dLink.getStatusText());
+                h2.put("download_status_text", f.format(percent) + "% " + dLink.getStatusText());
                 v2.addElement(h2);
 
             }
@@ -252,20 +251,19 @@ public class JDSimpleWebserverTemplateFileRequestHandler {
         }
         ;
 
-        t.setParam("pakete", v);        
+        t.setParam("pakete", v);
     }
 
-    private void add_linkadder_page(Template t,HashMap<String, String> requestParameter){
+    private void add_linkadder_page(Template t, HashMap<String, String> requestParameter) {
         Vector v, v2 = new Vector();
         Hashtable h, h2 = new Hashtable();
         v = new Vector();
-        
 
         FilePackage filePackage;
         DownloadLink dLink;
         Integer Package_ID;
         Integer Download_ID;
-     
+
         for (Package_ID = 0; Package_ID < JDWebinterface.Link_Adder_Packages.size(); Package_ID++) {
             filePackage = JDWebinterface.Link_Adder_Packages.get(Package_ID);
 
@@ -273,57 +271,55 @@ public class JDSimpleWebserverTemplateFileRequestHandler {
             /* Paket Infos */
             h.put("download_name", filePackage.getName());
 
-            
             h.put("package_id", Package_ID.toString());
-            
-            
+
             v2 = new Vector();
 
             for (Download_ID = 0; Download_ID < filePackage.getDownloadLinks().size(); Download_ID++) {
                 dLink = filePackage.getDownloadLinks().get(Download_ID);
 
-                /* Download Infos */                
+                /* Download Infos */
 
                 h2 = new Hashtable();
-                
+
                 h2.put("package_id", Package_ID.toString());
                 h2.put("download_id", Download_ID.toString());
                 h2.put("download_name", dLink.getName());
 
                 h2.put("download_hoster", dLink.getHost());
-                
+
                 v2.addElement(h2);
 
             }
             h.put("downloads", v2);
             v.addElement(h);
         }
-        
 
-        t.setParam("pakete", v);        
+        t.setParam("pakete", v);
     }
-    
-    private void add_password_list(Template t, HashMap<String, String> requestParameter){
+
+    private void add_password_list(Template t, HashMap<String, String> requestParameter) {
         JUnrar unrar = new JUnrar(false);
         String[] pws = unrar.returnPasswords();
-        String pwlist="";
+        String pwlist = "";
         for (int i = 0; i < pws.length; i++) {
-            pwlist=pwlist+System.getProperty("line.separator")+pws[i];            
+            pwlist = pwlist + System.getProperty("line.separator") + pws[i];
         }
         t.setParam("password_list", pwlist);
     }
+
     @SuppressWarnings("unchecked")
     public void handleRequest(String url, HashMap<String, String> requestParameter) {
         try {
             Template t = new Template(JDUtilities.getResourceFile("plugins/webinterface/" + url).getAbsolutePath());
 
             t.setParam("webinterface_version", JDWebinterface.instance.getPluginID());
-            if (url.startsWith("single_info.tmpl")==true) add_single_info(t, requestParameter);
-            if (url.startsWith("all_info.tmpl")==true) add_all_info(t, requestParameter);            
-            if (url.startsWith("index.tmpl")==true) add_status_page(t, requestParameter);
-            if (url.startsWith("passwd.tmpl")==true) add_password_list(t, requestParameter);
-            if (url.startsWith("link_adder.tmpl")==true) add_linkadder_page(t, requestParameter);
-            
+            if (url.startsWith("single_info.tmpl") == true) add_single_info(t, requestParameter);
+            if (url.startsWith("all_info.tmpl") == true) add_all_info(t, requestParameter);
+            if (url.startsWith("index.tmpl") == true) add_status_page(t, requestParameter);
+            if (url.startsWith("passwd.tmpl") == true) add_password_list(t, requestParameter);
+            if (url.startsWith("link_adder.tmpl") == true) add_linkadder_page(t, requestParameter);
+
             response.addContent(t.output());
             response.setOk();
         } catch (FileNotFoundException e) {
