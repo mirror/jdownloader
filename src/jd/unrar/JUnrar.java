@@ -1131,11 +1131,11 @@ public class JUnrar {
                 }
                 // Entpackte werden nochmal durch JUnrar geschickt um
                 // Unterarchive zu entpacken
-                pattern = Pattern.compile("Extracting  (.*?)[\\s]+(|OK$)");
+                pattern = Pattern.compile("(...       |Extracting)  (.*?)[\\s]+(|OK$)");
                 matcher = pattern.matcher(str);
                 HashMap<File, String> nfiles = new HashMap<File, String>();
                 while (matcher.find()) {
-                    File f = new File(parent, matcher.group(1));
+                    File f = new File(parent, matcher.group(2));
                     nfiles.put(f, null);
                     unpackedFiles.add(f);
                 }
