@@ -7,8 +7,11 @@ import jd.controlling.ProgressController;
 import jd.plugins.Regexp;
 
 public class Merge {
-
+  
     public static File mergeIt(File file, String[] following, boolean autoDelete, File Target) {
+        try {
+            
+
         String name = file.getName();
         boolean unix = false;
         if (!name.matches(".*\\.a.$")) unix = true;
@@ -58,9 +61,20 @@ public class Merge {
             JAxeJoiner join = JoinerFactory.getJoiner(mergeFile, Target);
             join.setProgressEventListener(new ProgressEventListener() {
 
+                long last = System.currentTimeMillis()+1000;
                 public void handleEvent(ProgressEvent pe) {
-                    progress.setStatus((int) (pe.lCurrent * 100 / pe.lMax));
-                    progress.setStatusText(pe.lCurrent / 1048576 + " MB merged");
+                    try {
+                        if(System.currentTimeMillis()-last>100)
+                        {
+                        System.out.println((int) (pe.lCurrent * 100 / pe.lMax));
+                        progress.setStatus((int) (pe.lCurrent * 100 / pe.lMax));
+                        last=System.currentTimeMillis();
+                        progress.setStatusText(pe.lCurrent / 1048576 + " MB merged");
+                        }
+                    } catch (Exception e) {
+                        // TODO: handle exception
+                    }
+
 
                 }
             });
@@ -71,13 +85,21 @@ public class Merge {
                 files[i].delete();
             }
             }
-            progress.finalize();
+            try {
+                progress.finalize();
+            } catch (Exception e) {
+                // TODO: handle exception
+            }
+
             return new File(join.sJoinedFile);
         } catch (Exception e) {
             e.printStackTrace();
         }
-
         progress.finalize();
+        } catch (Exception e) {
+            // TODO: handle exception
+        }
         return null;
+        
     }
 }
