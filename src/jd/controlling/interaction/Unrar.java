@@ -173,9 +173,9 @@ public class Unrar extends Interaction implements Serializable {
         }
         unrar.followingFiles = followingFiles.toArray(new String[followingFiles.size()]);
 
-        unrar.unrar();
+    //    LinkedList<File> unpacked = unrar.unrar();
         if (lastFinishedDownload != null && JDUtilities.getConfiguration().getBooleanProperty(Unrar.PROPERTY_USE_HJMERGE, true)) {
-            Merge.mergeIt(new File(lastFinishedDownload.getFileOutput()), unrar.followingFiles, JDUtilities.getConfiguration().getBooleanProperty(Unrar.PROPERTY_DELETE_MERGEDFILES, true));
+            Merge.mergeIt(new File(lastFinishedDownload.getFileOutput()), unrar.followingFiles, JDUtilities.getConfiguration().getBooleanProperty(Unrar.PROPERTY_DELETE_MERGEDFILES, true), unrar.extractFolder);
         }
         IS_RUNNING = false;
         this.setCallCode(Interaction.INTERACTION_CALL_SUCCESS);
