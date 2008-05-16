@@ -14,7 +14,7 @@ public class Merge {
 
         String name = file.getName();
         boolean unix = false;
-        if (!name.matches(".*\\.a.$")) unix = true;
+        if (name.matches(".*\\.\\a.$")) unix = true;
         if (!unix && !name.matches(".*\\.[\\d]{3,20}($|\\..*)")) { return null; }
         File mergeFile = null;
         if (unix)
@@ -22,7 +22,7 @@ public class Merge {
         else
             mergeFile = new File(file.getParentFile(), name.replaceFirst("\\.[\\d]+($|\\.)", ".001$1"));
         if (!mergeFile.exists() || !mergeFile.isFile()) return null;
-        final String matcher = unix ? (name.replaceFirst("\\.a.$", "") + "\\.a.$") : name.replaceFirst("\\.[\\d]+($|\\.)", "\\.[\\d]+$1");
+        final String matcher = (unix ? (name.replaceFirst("\\.a.$", "") + "\\.a.$") : (name.replaceFirst("\\.[\\d]+($|\\..*)", "")+"\\.[\\d]+($|\\..*)"));
         if (following != null) for (int i = 0; i < following.length; i++) {
             if (following[i].matches(matcher)) return null;
         }
@@ -66,7 +66,6 @@ public class Merge {
                     try {
                         if(System.currentTimeMillis()-last>100)
                         {
-                        System.out.println((int) (pe.lCurrent * 100 / pe.lMax));
                         progress.setStatus((int) (pe.lCurrent * 100 / pe.lMax));
                         last=System.currentTimeMillis();
                         progress.setStatusText(pe.lCurrent / 1048576 + " MB merged");
