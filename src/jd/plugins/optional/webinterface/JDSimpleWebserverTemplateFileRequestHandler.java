@@ -28,7 +28,7 @@ public class JDSimpleWebserverTemplateFileRequestHandler {
     private Logger logger = JDUtilities.getLogger();
     private JDSimpleWebserverResponseCreator response;
     private JDController controller = JDUtilities.getController();
-    private DecimalFormat f = new DecimalFormat("#0.00");
+    private DecimalFormat f = new DecimalFormat("#0");
 
     private Vector v_info = new Vector();
 
@@ -161,8 +161,7 @@ public class JDSimpleWebserverTemplateFileRequestHandler {
         Vector v, v2 = new Vector();
         Hashtable h, h2 = new Hashtable();
         v = new Vector();
-        String value;
-
+        String value;       
         FilePackage filePackage;
         DownloadLink dLink;
         Integer Package_ID;
@@ -245,9 +244,9 @@ public class JDSimpleWebserverTemplateFileRequestHandler {
         ;
 
         if (JDUtilities.getController().getDownloadStatus() == JDController.DOWNLOAD_RUNNING) {
-            t.setParam("config_startstopbutton", "Stop Downloads");
+            t.setParam("config_startstopbutton", "start");
         } else {
-            t.setParam("config_startstopbutton", "Start Downloads");
+            t.setParam("config_startstopbutton", "stop");
         }
         ;
 
