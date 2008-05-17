@@ -1,4 +1,4 @@
-ï»¿//    jDownloader - Downloadmanager
+//    jDownloader - Downloadmanager
 //    Copyright (C) 2008  JD-Team jdownloader@freenet.de
 //
 //    This program is free software: you can redistribute it and/or modify
@@ -35,7 +35,7 @@ import jd.unrar.JUnrar;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 /**
- * Konfigurationspanel fÃ¼r Unrar
+ * Konfigurationspanel für Unrar
  *
  * @author DwD
  *
@@ -123,14 +123,14 @@ public class ConfigPanelUnrar extends ConfigPanel implements ActionListener {
         addGUIConfigEntry(ce);
         ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, configuration, Unrar.PROPERTY_ENABLE_EXTRACTFOLDER, JDLocale.L("gui.config.unrar.extractfolderenabled", "Im Zielordner entpacken (Wenn die Dateien nicht im Downloadordner entpackt werden sollen)")).setDefaultValue(false).setExpertEntry(true));
         addGUIConfigEntry(ce);
-        ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, configuration, Unrar.PROPERTY_DELETE_INFOFILE, JDLocale.L("gui.config.unrar.deleteinfofile", "Info-Datei nach erfolgreichem Entpacken lÃ¶schen")).setDefaultValue(true).setExpertEntry(true));
+        ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, configuration, Unrar.PROPERTY_DELETE_INFOFILE, JDLocale.L("gui.config.unrar.deleteinfofile", "Info-Datei nach erfolgreichem Entpacken löschen")).setDefaultValue(true).setExpertEntry(true));
         addGUIConfigEntry(ce);
         ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_BUTTON, this, JDLocale.L("gui.menu.action.passwordlist.name")));
         addGUIConfigEntry(ce);
         addGUIConfigEntry(new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR)));
-        ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, configuration, Unrar.PROPERTY_USE_HJMERGE, JDLocale.L("gui.config.unrar.usehjmerge", "HJSplit Dateien automatisch zusammenfÃ¼gen")).setDefaultValue(true));
+        ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, configuration, Unrar.PROPERTY_USE_HJMERGE, JDLocale.L("gui.config.unrar.usehjmerge", "HJSplit Dateien automatisch zusammenfügen")).setDefaultValue(true));
         addGUIConfigEntry(ce);
-        ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, configuration, Unrar.PROPERTY_DELETE_MERGEDFILES, JDLocale.L("gui.config.unrar.deletemergedfiles", "Dateiteile nach dem zusammenfÃ¼gen lÃ¶schen")).setDefaultValue(true));
+        ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, configuration, Unrar.PROPERTY_DELETE_MERGEDFILES, JDLocale.L("gui.config.unrar.deletemergedfiles", "Dateiteile nach dem zusammenfügen löschen")).setDefaultValue(true));
         addGUIConfigEntry(ce);
         add(panel, BorderLayout.NORTH);
 
