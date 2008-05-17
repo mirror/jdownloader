@@ -1,74 +1,99 @@
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
-<html >
+<html>
 <head>
-<title>JDownloader</title>
-<meta name="GENERATOR" content="Quanta Plus">
+<title>JDownloader - WebInterface v<tmpl_var webinterface_version></title>
 <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
-<link href="jd.css" rel="stylesheet" type="text/css" />
-<script type="text/javascript" src="menuscript01.js"></script>
+<meta http-equiv="Content-Style-Type" content="text/css">
+<meta http-equiv="Content-Script-Type" content="text/javascript">
+<link href="jd.css" rel="stylesheet" type="text/css">
+<script type="text/javascript" src="filelist.js"></script>
 <script type="text/javascript" src="scripts.js"></script>
-
-
-
-
+<noscript><meta http-equiv="refresh" content="0;URL=nojs.tmpl"></noscript>
 </head>
+
 <body>
-<FORM action="/link_adder.tmpl" name="jd" method="POST" target="_parent">
-<div style="width:800px;margin: 0 auto;border:1px solid;padding:5px 5px 5px 5px;;background-color:#1189ee">
-<h2 style="text-align:center;color:#F7F7F7">JDownloader WebInterface(Version <tmpl_var webinterface_version>)</h2>
-<h2 style="text-align:center;color:#F7F7F7">Link-Adder</h2>
-<hr>
-<ul id="containerul">
-  <tmpl_loop pakete>
-    <li style="margin:0pt 0pt 0pt 0pt"> <br>
-      <table style="width:100%">
-        <tr>
-	<TD style="width:2%"><INPUT type="checkbox" name="package_all_add" value="<tmpl_var package_id escape>" onclick="samecheckall(document.jd.package_single_add,this)"></TD>
-          <TD style="width:50%"><INPUT  size="30" type="text" name="adder_package_name_<tmpl_var package_id escape>" value="<tmpl_var download_name escape>"></TD>
-	<!--<TD style="width:48%">Password:<INPUT  size="30" type="text" name="adder_package_password_<tmpl_var package_id escape>" value="<tmpl_var download_password escape>"></TD>-->
-        </tr>
-      </table>
-      <ul >
-        <table style="width:100%">
-	
-          <tmpl_loop downloads>
-	<tr>            
-	<TD style="width:2%"><INPUT type="checkbox" name="package_single_add" value="<tmpl_var package_id> <tmpl_var download_id escape>" onclick="areallsamechecked(this,document.jd.package_single_add,document.jd.package_all_add)"></TD>	
-              <TD style="width:50%"><tmpl_var download_name></TD>
-              <TD style="width:25%"><tmpl_var download_hoster></TD>
-            </tr>
-          </tmpl_loop>
-        </table>
-      </ul>
-    </li>
-  </tmpl_loop>
-</ul>
-<script type="text/javascript">
-initiate();                // This must be placed immediately after the menu in order to format it properly.
-</script>
-<hr>
+<div id="main">
 
-  <DIV style="text-align:center">
-<INPUT type="button" name="select" value="Select All" onclick="checkall(document.jd.package_all_add,document.jd.package_single_add)">
-<INPUT type="button" name="select" value="UnSelect All" onclick="uncheckall(document.jd.package_all_add,document.jd.package_single_add)">
+	<div id="header">
+	<h2 class="title">WebInterface<br>(Version <tmpl_var webinterface_version>)</h2>
+	</div>
 
-<SELECT name="selected_dowhat_link_adder">
-<option>add</option>
-<option>update</option>
-<option>remove</option>
-</SELECT>
-    <INPUT type="submit" name="do" value="Submit" onclick="check_adder(document.jd.selected_dowhat_link_adder)">
-  </DIV>
-</FORM>
+	<div id="content">
+		<div id="tabs">
+			<ul id="tabmenu">
+				<li class="active"><a href="/" name="Status Page" target="_self">Status Page</a></li>
+				<li><A href="/passwd.tmpl" name="Edit Passwords" target="_self">Edit Password-List</A></li>
+				<li><A class="active" href="/link_adder.tmpl" name="Link Adder" target="_self">Add Links</A></li>
+			</ul>
+		</div>
 
-<FORM name="add" action="/link_adder.tmpl" target="_parent" method="POST">
-<DIV style="text-align:center">
-<textarea name="addlinks" cols="90" rows="3"  onfocus="clean(this)">Paste your Links here (Container URLs, Link URLs, SourceCode from Pages to parse)</textarea><br>
-<INPUT type="submit" name="do" value="Add">
-<hr>
-<A href="/passwd.tmpl" name="Edit Passwords" target="_self">Edit Passwords</A>
-<A href="/index.tmpl" name="Status Page" target="_self">Status Page</A>
-</DIV>
-</FORM>
+		<div id="tabcontent">
+
+			<FORM action="/link_adder.tmpl" name="jd" id="jdForm" method="POST" target="_parent">
+
+				<div id="toolbar">
+					<div id="toolbarright">
+						<img src="img/shutdown.png" width="32" height="32" alt="Close JD" title="Close JD" onclick="validateandsubmit('Close JD?','jdForm','/bye.tmpl', 'close')">
+						<img src="img/reboot.png" width="32" height="32" alt="Restart JD" title="Restart JD" onclick="validateandsubmit('Restart JD?','jdForm','/restart.tmpl', 'restart')">
+					</div>
+					<div id="toolbarleft">
+						<div style="height: 30px;"></div>
+					</div>
+				</div>
+
+				<table class="tabledownload" id="packageContainer">
+					<tr>
+						<td style="width:2%;" class="tabletitle">
+							<input type="checkbox" name="select" onclick="if (this.checked==true) {checkall(document.jd.package_all_add,document.jd.package_single_add); } else {uncheckall(document.jd.package_all_add,document.jd.package_single_add);}">
+						</td>
+						<td class="tabletitle">File</td>
+						<td class="tabletitle">Hoster</td>
+					</tr>
+
+
+				<tmpl_loop pakete>
+					<tr class="package<tmpl_var download_status>">
+						<td><INPUT type="checkbox" name="package_all_add" value="<tmpl_var package_id escape>" onclick="samecheckall(document.jd.package_single_add,this)"></td>
+						<td colspan="2"><INPUT size="30" type="text" name="adder_package_name_<tmpl_var package_id escape>" value="<tmpl_var download_name escape>"></td>
+					</tr>
+
+					<tmpl_loop downloads>
+						<tr class="download<tmpl_var download_status>" banane="sdf">
+							<td><INPUT type="checkbox" name="package_single_add" value="<tmpl_var package_id> <tmpl_var download_id escape>" onclick="areallsamechecked(this,document.jd.package_single_add,document.jd.package_all_add)"></TD>
+							<td style="padding-left: 30px;"><tmpl_var download_name></TD>
+							<td><tmpl_var download_hoster></TD>
+						</tr>
+					</tmpl_loop>
+
+				</tmpl_loop>
+				</table>
+
+				<script type="text/javascript">
+				// This must be placed immediately after the filelists (packages/downloads).
+				initiate('addlinks');
+				</script>
+
+				<DIV class="leftDLOptions">
+					<SELECT name="selected_dowhat_link_adder">
+					<option>add</option>
+					<option>update</option>
+					<option>remove</option>
+					</SELECT>
+					<a href="#" class="button" onclick="submitForm('jdForm','/link_adder.tmpl','do','Submit')">Go!</a>
+				</DIV>
+				<br>
+			</FORM>
+
+			<FORM name="add" id="addForm" action="/link_adder.tmpl" target="_parent" method="POST">
+				<DIV class="linkAddBox">
+					<textarea name="addlinks" cols="90" rows="3" onfocus="clean(this)" style="width:100%;">Paste your Links here (Container URLs, Link URLs, SourceCode from Pages to parse)</textarea><br>
+					<br>
+					<a href="#" onclick="submitForm('addForm','link_adder.tmpl','do','Add')" class="addButton">Add</a>
+				</DIV>
+			</FORM>
+		</div>
+	</div>
+</div>
+<div id="footer">Addon by jiaz, Design (HTML, CSS, JS) by Bo0nZ</div>
 </body>
 </html>

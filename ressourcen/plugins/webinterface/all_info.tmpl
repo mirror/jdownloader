@@ -1,29 +1,35 @@
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
-<html >
+<html>
 <head>
-<title>JDownloader</title>
-<meta name="GENERATOR" content="Quanta Plus">
+<title>JDownloader - WebInterface v<tmpl_var webinterface_version></title>
 <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
-<link href="jd.css" rel="stylesheet" type="text/css" />
-
+<meta http-equiv="Content-Style-Type" content="text/css">
+<meta http-equiv="Content-Script-Type" content="text/javascript">
+<link href="jd.css" rel="stylesheet" type="text/css">
+<script type="text/javascript" src="scripts.js"></script>
 </head>
+
 <body>
-<table width="600" align="center">
-  <tbody>
+<table width="95%" align="center">
+<tbody>
 	<tmpl_loop all_infos>
 	<tr>
-      <td style="width:5%"><tmpl_var info_var></td>
+		<td class="description"><tmpl_var info_var></td>
 
 	<tmpl_if info_percent>
+		<td class="infoladebalken"><div class="ladebalken"><p class="<tmpl_var download_status>" style="width: <tmpl_var info_percent>%;">
+			<span><tmpl_var info_value></span></p></div></td>
+	<tmpl_else>
+		<td style="text-align:right"><tmpl_var info_value></td>
+	</tmpl_if>
 
-	<td><div id="ladebalken"><p style="width: <tmpl_var info_percent>%;">
-		<span><tmpl_var info_value></span></p></div></td>
-<tmpl_else>
-	<td style="text-align:right"><tmpl_var info_value></td>
-</tmpl_if>
-    </tr>
-</tmpl_loop>
-  </tbody>
+	</tr>
+	</tmpl_loop>
+</tbody>
 </table>
+
+<script type="text/javascript">
+	startPageReload(10000);
+</script>
 </body>
 </html>

@@ -61,10 +61,10 @@ public class JDSimpleWebserverTemplateFileRequestHandler {
 
             DownloadLink next = null;
             int i = 1;
-            for (Iterator<DownloadLink> it = fp.getDownloadLinks().iterator(); it.hasNext(); i++) {
+            for (Iterator<DownloadLink> it = fp.getDownloadLinks().iterator(); it.hasNext(); i++) {                
                 next = it.next();
                 double percent = next.getDownloadCurrent() * 100.0 / Math.max(1, next.getDownloadMax());
-                addEntryandPercent(i + ". " + next.getName(), JDUtilities.formatKbReadable((int) next.getDownloadSpeed() / 1024) + "/s " + JDUtilities.getPercent((int) next.getDownloadCurrent(), (int) next.getDownloadMax()) + " | " + next.getDownloadCurrent() + "/" + next.getDownloadMax() + " bytes", percent);
+                addEntryandPercent(i + ". " + next.getName(), JDUtilities.formatKbReadable((int) next.getDownloadSpeed() / 1024) + "/s " + JDUtilities.getPercent((int) next.getDownloadCurrent(), (int) next.getDownloadMax()) + " | " + next.getDownloadCurrent() + "/" + next.getDownloadMax() + " bytes", percent);               
             }
             t.setParam("all_infos", v_info);
         }
@@ -78,11 +78,10 @@ public class JDSimpleWebserverTemplateFileRequestHandler {
         Integer package_id = 0;
         String[] ids;
         if (requestParameter.containsKey("single_info")) {
-
             ids = requestParameter.get("single_info").toString().split("[+]", 2);
             package_id = JDUtilities.filterInt(ids[0].toString());
             download_id = JDUtilities.filterInt(ids[1].toString());
-            downloadLink = JDUtilities.getController().getPackages().get(package_id).getDownloadLinks().get(download_id);
+            downloadLink = JDUtilities.getController().getPackages().get(package_id).getDownloadLinks().get(download_id);            
 
             addEntry("file", new File(downloadLink.getFileOutput()).getName() + " @ " + downloadLink.getHost());
             if (downloadLink.getFilePackage() != null && downloadLink.getFilePackage().getPassword() != null) {
@@ -242,7 +241,6 @@ public class JDSimpleWebserverTemplateFileRequestHandler {
             } else if (status[0] == 1) {
                 h.put("download_status", "deactivated");
             }
-            
 
             h.put("downloads", v2);
             v.addElement(h);

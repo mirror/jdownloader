@@ -216,7 +216,7 @@ public class JDSimpleWebserverRequestHandler {
                         if (requestParameter.containsKey("selected_dowhat_link_adder")) {
                             String dowhat = requestParameter.get("selected_dowhat_link_adder");
                             
-                            if (dowhat.compareToIgnoreCase("update") == 0) {                                
+                                                           
                                 /*packages-namen des link-adders aktuell halten*/
                                 synchronized (JDWebinterface.Link_Adder_Packages) {            
                                     for (int i = 0; i <= JDWebinterface.Link_Adder_Packages.size(); i++) {
@@ -225,7 +225,7 @@ public class JDSimpleWebserverRequestHandler {
                                         }
                                     }        
                                 }
-                            } else if (dowhat.compareToIgnoreCase("remove") == 0) {
+                             if (dowhat.compareToIgnoreCase("remove") == 0) {
                                 /* entfernen */
                                 logger.info("entfernen aus add liste");
                                 for (Iterator<DownloadLink> it = links.iterator(); it.hasNext();) {
@@ -369,7 +369,7 @@ public class JDSimpleWebserverRequestHandler {
 
                     public void run() {
                         try {
-                            Thread.sleep(5000);
+                            Thread.sleep(2000);
                         } catch (InterruptedException e) {
                             // TODO Auto-generated catch block
                             e.printStackTrace();
@@ -398,7 +398,7 @@ public class JDSimpleWebserverRequestHandler {
 
                     public void run() {
                         try {
-                            Thread.sleep(5000);
+                            Thread.sleep(2000);
                         } catch (InterruptedException e) {
                             // TODO Auto-generated catch block
                             e.printStackTrace();
