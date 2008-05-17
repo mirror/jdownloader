@@ -161,7 +161,7 @@ public class JDSimpleWebserverTemplateFileRequestHandler {
         Vector v, v2 = new Vector();
         Hashtable h, h2 = new Hashtable();
         v = new Vector();
-        String value;       
+        String value;
         FilePackage filePackage;
         DownloadLink dLink;
         Integer Package_ID;
@@ -171,6 +171,7 @@ public class JDSimpleWebserverTemplateFileRequestHandler {
             filePackage = JDUtilities.getController().getPackages().get(Package_ID);
 
             h = new Hashtable();
+            int status[] = { 0, 0, 0, 0 };
             /* Paket Infos */
             h.put("download_name", filePackage.getName());
 
@@ -185,7 +186,6 @@ public class JDSimpleWebserverTemplateFileRequestHandler {
 
             h.put("package_id", Package_ID.toString());
             h.put("download_hoster", value);
-            h.put("download_status", "finished");/*FIXME*/
             h.put("download_status_text", f.format(percent) + " % (" + JDUtilities.formatKbReadable(filePackage.getTotalKBLoaded()) + " / " + JDUtilities.formatKbReadable(filePackage.getTotalEstimatedPackageSize()) + ")");
 
             v2 = new Vector();
@@ -208,19 +208,23 @@ public class JDSimpleWebserverTemplateFileRequestHandler {
                 if (dLink.isEnabled()) {
 
                     switch (dLink.getStatus()) {
-                    case DownloadLink.STATUS_DONE:                        
+                    case DownloadLink.STATUS_DONE:
+                        status[3] = 1;
                         h2.put("download_status", "finished");
                         break;
 
-                    case DownloadLink.STATUS_DOWNLOAD_IN_PROGRESS:                        
+                    case DownloadLink.STATUS_DOWNLOAD_IN_PROGRESS:
+                        status[2] = 1;
                         h2.put("download_status", "running");
                         break;
 
-                    default:                        
+                    default:
+                        status[1] = 1;
                         h2.put("download_status", "activated");
                     }
                     ;
-                } else {                   
+                } else {
+                    status[0] = 1;
                     h2.put("download_status", "deactivated");
                 }
 
@@ -228,6 +232,18 @@ public class JDSimpleWebserverTemplateFileRequestHandler {
                 v2.addElement(h2);
 
             }
+
+            if (status[3] == 1 && status[2] == 0 && status[1] == 0 && status[0] == 0) {
+                h.put("download_status", "finished");
+            } else if (status[2] == 1) {
+                h.put("download_status", "running");
+            } else if (status[1] == 1) {
+                h.put("download_status", "activated");
+            } else if (status[0] == 1) {
+                h.put("download_status", "deactivated");
+            }
+            
+
             h.put("downloads", v2);
             v.addElement(h);
         }
@@ -244,9 +260,9 @@ public class JDSimpleWebserverTemplateFileRequestHandler {
         ;
 
         if (JDUtilities.getController().getDownloadStatus() == JDController.DOWNLOAD_RUNNING) {
-            t.setParam("config_startstopbutton", "start");
-        } else {
             t.setParam("config_startstopbutton", "stop");
+        } else {
+            t.setParam("config_startstopbutton", "start");
         }
         ;
 
