@@ -357,10 +357,10 @@ public class JDSimpleWebserverRequestHandler {
 
                 }
 
-            } else if (requestParameter.get("do").compareToIgnoreCase("reconnect+now") == 0) {
+            } else if (requestParameter.get("do").compareToIgnoreCase("reconnect") == 0) {
                 logger.info("reconnect now wurde gedrückt");
                 JDUtilities.getController().requestReconnect();
-            } else if (requestParameter.get("do").compareToIgnoreCase("close+jd") == 0) {
+            } else if (requestParameter.get("do").compareToIgnoreCase("close") == 0) {
                 logger.info("close jd wurde gedrückt");
                 class JDClose implements Runnable { /* zeitverzögertes beenden */
                     JDClose() {
@@ -380,13 +380,13 @@ public class JDSimpleWebserverRequestHandler {
                 @SuppressWarnings("unused")
                 JDClose jds = new JDClose();
 
-            } else if (requestParameter.get("do").compareToIgnoreCase("start+downloads") == 0) {
+            } else if (requestParameter.get("do").compareToIgnoreCase("start") == 0) {
                 logger.info("start wurde gedrückt");
                 JDUtilities.getController().startDownloads();
-            } else if (requestParameter.get("do").compareToIgnoreCase("stop+downloads") == 0) {
+            } else if (requestParameter.get("do").compareToIgnoreCase("stop") == 0) {
                 logger.info("stop wurde gedrückt");
                 JDUtilities.getController().stopDownloads();
-            } else if (requestParameter.get("do").compareToIgnoreCase("restart+jd") == 0) {
+            } else if (requestParameter.get("do").compareToIgnoreCase("restart") == 0) {
                 logger.info("restart wurde gedrückt");
                 class JDRestart implements Runnable {
                     /*
