@@ -35,7 +35,7 @@ import jd.utils.JDUtilities;
 
 public class ShareBaseDe extends PluginForHost {
 	
-    private static final String CODER           = "Bo0nZ";
+    private static final String CODER           = "JD-Team";
     private static final String HOST            = "sharebase.de";
     private static final String PLUGIN_NAME     = HOST;
     private static final String PLUGIN_VERSION  = "1.0.1";
@@ -48,8 +48,9 @@ public class ShareBaseDe extends PluginForHost {
      * Suchmasken
      */
     private static final String FILENAME = "<title>(.*?)</title>";
-    private static final String FILESIZE = "Filesize:</td>°<td>°</td>";
+    private static final String FILESIZE = "<span class=\"f1\">.*?\\((.*?)\\)</span></td>";
     private static final String DL_LIMIT = "Das Downloaden ohne Downloadlimit ist nur mit einem Premium-Account";
+    private static final String SIM_DL = "Das gleichzeitige Downloaden";
     private static final String WAIT = "Du musst noch °:°:° warten!";
     
     /*
@@ -86,8 +87,9 @@ public class ShareBaseDe extends PluginForHost {
         	
             RequestInfo requestInfo = getRequest(new URL(downloadLink.getDownloadURL()));
             String fileName = JDUtilities.htmlDecode(new Regexp(requestInfo.getHtmlCode(), FILENAME).getFirstMatch());
-            String fileSize = JDUtilities.htmlDecode(getSimpleMatch(requestInfo.getHtmlCode(), FILESIZE, 1));
-            
+            String fileSize = JDUtilities.htmlDecode(new Regexp(requestInfo.getHtmlCode(), FILESIZE).getFirstMatch());
+            boolean sim_dl = new Regexp(requestInfo.getHtmlCode(), SIM_DL).count() > 0;
+            boolean dl_limit = new Regexp(requestInfo.getHtmlCode(), DL_LIMIT).count() > 0;
             //Wurden DownloadInfos gefunden? --> Datei ist vorhanden/online
             if (fileName != null && fileSize != null) {
                 
@@ -96,7 +98,6 @@ public class ShareBaseDe extends PluginForHost {
                 downloadLink.setName(fileName);
             
                 try {
-                	
                 	String[] fileSizeData = fileSize.split(" ");
 
                     double length = Double.parseDouble(fileSizeData[0].trim());
@@ -106,16 +107,15 @@ public class ShareBaseDe extends PluginForHost {
                 	} else if (fileSizeData[1].equals("MB")) {
                 		length *= 1048576;
                 	}
-                	
                     downloadLink.setDownloadMax((int)length);
-                    
                 }
-                
                 catch (Exception e) { }
                 
-                //Datei ist noch verfuegbar
                 return true;
             }
+            
+            if(sim_dl || dl_limit)
+                return true;
 
         }
         catch (MalformedURLException e) {  }
@@ -180,18 +180,16 @@ public class ShareBaseDe extends PluginForHost {
                     fileName = fileName.trim();
 
                     //SessionId auslesen
-                    this.cookies = requestInfo.getCookie();
+                    this.cookies = requestInfo.getCookie().split("; ")[0];
+                    System.out.println(this.cookies);
                     return step;
                     
                 case PluginStep.STEP_DOWNLOAD:
                 	
                     try {
-                    	
-                        //Formular abschicken und Weiterleitungs-Adresse auslesen (= DL)
-                        requestInfo = postRequest(downloadUrl, this.cookies, downloadLink.getDownloadURL(), null, "machma=Download+starten", false);
+                        requestInfo = postRequest(downloadUrl, this.cookies, downloadLink.getDownloadURL(), null, "doit=Download+starten", false);
                         finishURL = JDUtilities.htmlDecode(requestInfo.getConnection().getHeaderField("Location"));
                         
-                        // finishURL nicht gefunden? --> Fehler
                         if (finishURL == null) {
                             downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN);
                             step.setStatus(PluginStep.STATUS_ERROR);
