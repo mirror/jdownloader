@@ -11,7 +11,7 @@
 <noscript><meta http-equiv="refresh" content="0;URL=nojs.tmpl"></noscript>
 </head>
 
-<body>
+<body onload="pageLoaded(); allowChars('maxdls', '01234567890'); allowChars('speed', '01234567890');">
 <div id="main">
 	<div id="header">
 	<h2 class="title">WebInterface<br>(Version <tmpl_var webinterface_version>)</h2>
@@ -42,12 +42,16 @@
 						<img src="img/reconnect<tmpl_var config_autoreconnect >.png" width="32" height="32" alt="Activate/Deactivate Auto-Reconnect" title="Activate/Deactivate Auto-Reconnect" onclick="switchAutoReconnect('jdForm','/index.tmpl','<tmpl_var config_autoreconnect >')">
 						<div class="hide"><input type="checkbox" name="autoreconnect" id="autoreconnect" value="on" <tmpl_var config_autoreconnect >></div>
 					</div>
+					<div class="toolbarcenter">
+						<div id="deactivatedAutoReload"><a href="/index.tmpl">Auto-Reload<br>deactivated</a></div>
+					</div>
+					<br class="clear">
 				</div>
 
 				<table class="tabledownload" id="packageContainer">
 					<tr>
 						<td style="width:2%;" class="tabletitle">
-							<input type="checkbox" name="select" onclick="if (this.checked==true) {checkall(document.jd.package_all_downloads,document.jd.package_single_download); } else {uncheckall(document.jd.package_all_downloads,document.jd.package_single_download);}">
+							<input type="checkbox" name="checkallbox" onclick="if (this.checked==true) {checkall(document.jd.package_all_downloads,document.jd.package_single_download); } else {uncheckall(document.jd.package_all_downloads,document.jd.package_single_download);}">
 						</td>
 						<td class="tabletitle">File</td>
 						<td style="width:20%;" class="tabletitle">Hoster</td>
@@ -59,7 +63,7 @@
 					<tr class="package<tmpl_var download_status>">
 						<td><INPUT type="checkbox" name="package_all_downloads" value="<tmpl_var package_id escape>" onclick="samecheckall(document.jd.package_single_download,this)"></td>
 						<td><A href="all_info.tmpl?all_info=<tmpl_var package_id escape>" name="PackageInfo" onclick="return popup(this,600,200)"><tmpl_var download_name></A></td>
-						<td><tmpl_var download_hoster></td>
+						<td>&nbsp;<tmpl_var download_hoster></td>
 						<td class="ladebalkentd">
 							<div class="ladebalken">
 								<p class="<tmpl_var download_status>" style="width: <tmpl_var download_status_percent>%;">
@@ -70,7 +74,7 @@
 					</tr>
 
 					<tmpl_loop downloads>
-						<tr class="download<tmpl_var download_status>" banane="sdf">
+						<tr class="download<tmpl_var download_status>">
 							<td><INPUT type="checkbox" name="package_single_download" value="<tmpl_var package_id> <tmpl_var download_id escape>" onclick="areallsamechecked(this,document.jd.package_single_download,document.jd.package_all_downloads)"></TD>
 							<td><A href="single_info.tmpl?single_info=<tmpl_var package_id>+<tmpl_var download_id escape>" name="LinkInfo" onclick="return popup(this,600,200)" style="padding-left: 20px;"><tmpl_var download_name></A></TD>
 							<td><tmpl_var download_hoster></TD>
@@ -87,16 +91,16 @@
 				<script type="text/javascript">
 					// This must be placed immediately after the filelists (packages/downloads).
 					initiate("statuslist");
-					// startPageReload(10000);
+					startPageReload(<tmpl_var page_refresh>);
 				</script>
 
 				<div class="rightDLOptions">
-					Max. Downloads <INPUT type="text" name="maxdls" value="<tmpl_var config_max_downloads escape>" maxlength="4" size="4"> , SpeedLimit <INPUT type="text" name="speed" value="<tmpl_var config_max_speed escape>" maxlength="4" size="4">	KB/s (Current: <tmpl_var config_current_speed> KB/s)</TD>
+					Max. Downloads <INPUT type="text" name="maxdls" id="maxdls" value="<tmpl_var config_max_downloads escape>" maxlength="4" size="4" onkeydown="formElementChanged()"> , SpeedLimit <INPUT type="text" name="speed" id="speed" value="<tmpl_var config_max_speed escape>" maxlength="4" size="4" onkeydown="formElementChanged()">	KB/s (Current: <tmpl_var config_current_speed> KB/s)</TD>
 					<a href="#" class="button" onclick="submitForm('jdForm','/index.tmpl','do','submit')">Go!</a>
 				</div>
 
 				<DIV class="leftDLOptions">
-					<SELECT name="selected_dowhat_index">
+					<SELECT onchange="formElementChanged()" name="selected_dowhat_index">
 					<option>activate</option>
 					<option>deactivate</option>
 					<option>reset</option>
@@ -110,7 +114,7 @@
 
 			<FORM name="add" id="addForm" action="/link_adder.tmpl" target="_parent" method="POST">
 				<DIV class="linkAddBox">
-					<textarea name="addlinks" cols="90" rows="3" onfocus="clean(this)" style="width:100%;">Paste your Links here (Container URLs, Link URLs, SourceCode from Pages to parse)</textarea><br>
+					<textarea onkeydown="formElementChanged()" name="addlinks" cols="90" rows="3" onfocus="clean(this)" style="width:100%;">Paste your Links here (Container URLs, Link URLs, SourceCode from Pages to parse)</textarea><br>
 					<br>
 					<a href="#" onclick="submitForm('addForm','link_adder.tmpl','do','Add')" class="addButton">Add</a>
 				</DIV>

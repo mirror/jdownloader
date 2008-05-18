@@ -39,12 +39,15 @@
 					<div id="toolbarleft">
 						<div style="height: 30px;"></div>
 					</div>
+					<div class="toolbarcenter">
+					</div>
+					<br class="clear">
 				</div>
 
 				<table class="tabledownload" id="packageContainer">
 					<tr>
 						<td style="width:2%;" class="tabletitle">
-							<input type="checkbox" name="select" onclick="if (this.checked==true) {checkall(document.jd.package_all_add,document.jd.package_single_add); } else {uncheckall(document.jd.package_all_add,document.jd.package_single_add);}">
+							<input type="checkbox" name="checkallbox" onclick="if (this.checked==true) {checkall(document.jd.package_all_add,document.jd.package_single_add); } else {uncheckall(document.jd.package_all_add,document.jd.package_single_add);}">
 						</td>
 						<td class="tabletitle">File</td>
 						<td class="tabletitle">Hoster</td>
@@ -54,7 +57,7 @@
 				<tmpl_loop pakete>
 					<tr class="package<tmpl_var download_status>">
 						<td><INPUT type="checkbox" name="package_all_add" value="<tmpl_var package_id escape>" onclick="samecheckall(document.jd.package_single_add,this)"></td>
-						<td colspan="2"><INPUT size="30" type="text" name="adder_package_name_<tmpl_var package_id escape>" value="<tmpl_var download_name escape>"></td>
+						<td colspan="2">Package-Name: <INPUT size="35" type="text" name="adder_package_name_<tmpl_var package_id escape>" value="<tmpl_var download_name escape>"> <span style="margin-left: 30px;">Password:</span> <INPUT size="35" type="text" name="adder_password_<tmpl_var package_id escape>" value=""></td>
 					</tr>
 
 					<tmpl_loop downloads>
@@ -79,7 +82,7 @@
 					<option>update</option>
 					<option>remove</option>
 					</SELECT>
-					<a href="#" class="button" onclick="submitForm('jdForm','/link_adder.tmpl','do','Submit')">Go!</a>
+					<a href="#" class="button" onclick="adderSubmit(document.jd.selected_dowhat_link_adder);">Go!</a>
 				</DIV>
 				<br>
 			</FORM>

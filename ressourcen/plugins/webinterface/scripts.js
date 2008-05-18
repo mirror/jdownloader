@@ -1,67 +1,173 @@
 var alreadyCleaned = false;
+var autoPageReloadActive = true;
+var IE = (document.all) ? true : false;
+
+
+function pageLoaded() {
+	if(document.cookie) {
+		var cookieArray = document.cookie.split(";");
+
+		for(i in cookieArray){
+			var cookieName = cookieArray[i].split("=")[0].replace(/ /g,"");
+			var cookieValue = cookieArray[i].split("=")[1].replace(/ /g,"");
+
+			/* show the area of the page that has been shown on the last visit */
+			if (cookieName=="scroll") {
+				window.scrollTo(cookieValue.split(":")[0], cookieValue.split(":")[1]);
+			}
+		}
+	}
+}
 
 function checkall(field,field2)
 {
-	for (i = 0; i < field.length; i++)
-	{
-		field[i].checked = true ;
-	};
-	for (i = 0; i < field2.length; i++)
-	{
-		field2[i].checked = true ;
-	};
+	/* field.length can be null when
+	   there exist only one package
+	   with only one file */
+	formElementChanged();
+
+	if (field != null) {
+		if (field.length != null) {
+			for (i = 0; i < field.length; i++) {
+				field[i].checked = true ;
+			}
+		} else {
+			field.checked = true;
+		}
+	}
+
+	if (field2 != null) {
+		if (field2.length != null) {
+			for (i = 0; i < field2.length; i++) {
+				field2[i].checked = true ;
+			}
+		} else {
+			field2.checked = true;
+		}
+	}
 }
 
 function uncheckall(field,field2)
 {
-	for (i = 0; i < field.length; i++)
-	{
-		field[i].checked = false ;
+	/* field.length can be null when
+	   there exist only one package
+	   with only one file */
+	formElementChanged();
+
+	if (field != null) {
+		if (field.length != null) {
+			for (i = 0; i < field.length; i++) {
+				field[i].checked = false ;
+			}
+		} else {
+			field.checked = false;
+		}
 	}
-	for (i = 0; i < field2.length; i++)
-	{
-		field2[i].checked = false ;
+
+	if (field2 != null) {
+		if (field2.length != null) {
+			for (i = 0; i < field2.length; i++) {
+				field2[i].checked = false ;
+			}
+		} else {
+			field2.checked = false;
+		}
 	}
 }
 
 function samecheckall(field,id)
 {
-	for (i = 0; i < field.length; i++) {
-		name=field[i].value.split("");
+	formElementChanged();
 
-		if (name[0]==id.value) {
-			field[i].checked = id.checked;
+	/* field.length can be null when
+	   there exist only one package
+	   with only one file */
+	if (field != null) {
+		if (field.length != null) {
+			for (i = 0; i < field.length; i++) {
+				var name=field[i].value.split(" ");
+
+				if (name[0]==id.value) {
+					field[i].checked = id.checked;
+				}
+			};
+		} else {
+			field.checked = id.checked;
 		}
-	};
+	}
+
+	areallchecked(field);
 }
 
 function areallsamechecked(id,field,field2)
 {
-	var tempid=id.value.split("");
+	formElementChanged();
+
+	/* field.length can be null when
+	   there exist only one package
+	   with only one file */
+	var tempid=id.value.split(" ");
 	var chkid=tempid[0];
 	var allchecked=true;
 
-	for (i = 0; i < field.length; i++){
-		name=field[i].value.split("");
-		if (name[0]==chkid)
-		{
-			if (field[i].checked==false) allchecked=false;
+	if (field != null) {
+		if (field.length != null) {
+			for (i = 0; i < field.length; i++){
+				var name=field[i].value.split(" ");
+				if (name[0]==chkid)
+				{
+					if (field[i].checked==false) allchecked=false;
+				}
+			}
+		} else {
+			if (field.checked==false) allchecked=false;
 		}
 	}
-	for (i = 0; i < field2.length; i++){
-		if ( field2[i].value==chkid )
-		{
-			field2[i].checked=allchecked;
+
+	if (field2 != null) {
+		if (field2.length != null) {
+			for (i = 0; i < field2.length; i++){
+				if ( field2[i].value==chkid )
+				{
+					field2[i].checked=allchecked;
+				}
+			}
+		} else {
+			field2.checked=allchecked;
+		}
+	}
+
+	areallchecked(field);
+}
+
+function areallchecked(field)
+{
+	if (field != null) {
+		if (field.length != null && field.length > 0) {
+			var allchecked = true;
+
+			// is any field (single download) unchecked?
+			for (i = 0; i < field.length; i++){
+				if (field[i].checked == false) {
+					allchecked = false;
+				}
+			}
+
+			document.jd.checkallbox.checked = allchecked;
+
+		} else {
+			document.jd.checkallbox.checked = field.checked;
 		}
 	}
 }
 
-function check_adder(field)
+function adderSubmit(field)
 {
-	if (field.value=="add")
-	{
+	if (field.value=="add") {
 		field.form.action="/index.tmpl";
 	}
+
+	submitForm('jdForm',field.form.action,'do','Submit')
 }
 
 function validateandsubmit(msg,jdForm,dest,val)
@@ -115,7 +221,36 @@ function forwardto(wohin) {
 }
 
 function startPageReload(interval) {
-	setTimeout("window.location.href=window.location.href", interval);
+	if (interval != 0) {
+		setTimeout("reloadPage()", interval*1000);
+	}
+}
+
+function reloadPage() {
+	if (autoPageReloadActive==true) {
+		//save coordinates of visible area in a cookie
+		var cookieExpire = new Date(new Date().getTime() + 365*24*60*60*1000).toGMTString();
+
+		var diffY, diffX;
+		if (IE) { diffY = document.body.scrollTop; diffX = document.body.scrollLeft; }
+		else { diffY = window.pageYOffset; diffX = window.pageXOffset; }
+
+		document.cookie = "scroll="+diffX+":"+diffY+";expires="+cookieExpire;
+
+		//reload
+		window.location.replace( window.location );
+	}
+}
+
+function formElementChanged() {
+//deactivateAutoPageReload
+	autoPageReloadActive=false;
+
+	var notify = document.getElementById('deactivatedAutoReload');
+
+	if (notify != null) {
+		notify.style.display = "block";
+	}
 }
 
 /*popup code*/
@@ -138,3 +273,45 @@ function popdown() {
 
 //window.onunload = popdown;
 //window.onfocus = popdown;
+
+function allowChars(id, chars) {
+	var obj = document.getElementById(id);
+
+	if(obj.type == "text" || obj.type == "textarea") {
+
+		obj.timer = "";
+		obj.chars = chars;
+
+		controllFunc = function() {
+			//var self = this;
+			var self = obj;
+			controll = function() {
+				//check each char
+				for(var t='',x=0; x<self.value.length; ++x) {
+					if(self.chars.indexOf(self.value.charAt(x))>-1) {
+						t += self.value.charAt(x);
+					}
+				}
+				self.value = t;
+			};
+			this.timer = setTimeout(controll,1);
+		};
+
+		clearFunc = function() {
+			clearTimeout(this.timer);
+		};
+
+		// add EventListener
+		if (obj.addEventListener) {
+			obj.addEventListener ("keypress", controllFunc, false);
+			obj.addEventListener ("keydown", controllFunc, false);
+			obj.addEventListener ("keyup", clearFunc, false);
+
+		} else if (obj.attachEvent) {
+		// IE
+			obj.attachEvent("onkeypress", controllFunc);
+			obj.attachEvent("onkeydown", controllFunc);
+			obj.attachEvent("onkeyup", clearFunc);
+		}
+	}
+}

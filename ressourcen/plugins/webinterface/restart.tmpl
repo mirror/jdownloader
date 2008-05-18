@@ -11,11 +11,23 @@
 
 <body>
 
-<h2 class="status"><A  href="/index.tmpl" name="Wait 10seks or Click here" target="_self"> Restarting JD...(Wait 10 seconds or click here)</A></h2>
+<div id="message">
+<A  href="/index.tmpl" name="Wait 10seks or Click here" target="_self">Restarting JD ... (Wait <span id="countdown">10</span> seconds or click here)</A>
+</div>
 
 <script language="javascript">
 <!--
-setTimeout("forwardto('/index.tmpl')", 10000);
+countdown(10, 'countdown');
+
+function countdown(sec, eid) {
+	document.getElementById(eid).innerHTML = sec;
+	if (sec > 0) {
+		setTimeout("countdown("+(sec-1)+", '"+eid+"')", 1000);
+	} else {
+		forwardto('/index.tmpl')
+	}
+}
+
 // -->
 </script>
 

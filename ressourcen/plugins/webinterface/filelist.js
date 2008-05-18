@@ -48,7 +48,8 @@ function initiate(useCookieName) {
 
 		} else if (startsWith(currRow.className, "download")) {
 		//row is a download
-			var displayVal = (cookieArray.length>currPackageNum)? ((cookieArray[currPackageNum]=="true")? "table-row" : "none") : "none";
+			var showVal = (testProperty('display', 'table-row'))? 'table-row' : 'block';
+			var displayVal = (cookieArray.length>currPackageNum)? ((cookieArray[currPackageNum]=="true")? showVal : "none") : "none";
 			currRow.style.display = displayVal;
 		}
 
@@ -75,7 +76,8 @@ function showhide(packageNum) {
 	var package = document.getElementById("package" + packageNum);
 	var expander = document.getElementById("expander" + packageNum);
 
-	var displayVal = (showArray[packageNum]=="false")? "table-row" : "none";
+	var showVal = (testProperty('display', 'table-row'))? 'table-row' : 'block';
+	var displayVal = (showArray[packageNum]=="false")? showVal : "none";
 
 	var nextRow = package.nextSibling;
 
@@ -122,4 +124,23 @@ function saveListsVisibility() {
 
   document.cookie=cookieName+"="+cookieArray.join(",")+";expires="+new Date(new Date().getTime() + 365*24*60*60*1000).toGMTString();
 
+}
+
+/**
+ * Tests, if the IE supports the property-Value
+ */
+function testProperty(prop, value) {
+	var tempEl = document.createElement("div");
+
+	if(typeof tempEl.style[prop] != 'undefined') {
+		try {
+			tempEl.style[prop] = value;
+			return true;
+		}
+		catch(e) {
+			return false;
+		}
+	} else {
+		return false;
+	}
 }

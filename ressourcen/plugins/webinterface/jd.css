@@ -38,11 +38,6 @@ h2.title {
 	color:#000;
 }
 
-h2.status {
-	text-align:center;
-	color:#000;
-}
-
 /*
  * Links
  */
@@ -69,6 +64,21 @@ a:hover {
 	display:none;
 }
 
+.clear {
+	clear:both;
+}
+
+#deactivatedAutoReload {
+	height: 30px;
+	width: 100px;
+	margin: 0 auto;
+	background-color:#ffd5d5;
+	border: 1px solid red;
+	text-align: center;
+	line-height:15px;
+	display: none;
+}
+
 #main {
 	min-width: 800px;
 	width:90%;
@@ -88,7 +98,7 @@ a:hover {
 
 #content {
 	margin:10px;
-	background-color:#d3d3ff;
+	background-color:#fff;
 }
 
 #footer {
@@ -133,11 +143,31 @@ a:hover {
 	background-color:#d3d3ff;
 }
 
-#tabcontent {
+#tabcontent, #message {
 	border-width: 1px;
 	border-color: #8383ff;
 	border-style:solid;
 	padding: 10px;
+	background-color: #d3d3ff;
+}
+
+#message {
+	/*horizontal and vertical centered*/
+	position: absolute;
+	left: 50%;
+	width: 80%;
+	margin-left: -40%;
+	top: 50%;
+	height: 50px;
+	line-height: 50px;
+	margin-top: -25px;
+
+	text-align: center;
+	font-size: 16px;
+	color: #000;
+	letter-spacing: 1px;
+	text-transform: uppercase;
+	font-weight: bold;
 }
 
 #packageContainer .symbol {
@@ -246,7 +276,7 @@ div.ladebalken p.deactivated {
  * Row-Colors for downloads (not packages)
  */
 tr.downloadfinished td {
-  	 background-color:#93ff93;
+  	 background-color:#aaffaa;
 }
 tr.downloadrunning td {
   	 background-color:#e9e9ff;
@@ -262,7 +292,7 @@ tr.downloaddeactivated td {
  * Row-Colors for packages (not downloads)
  */
 tr.packagefinished td {
-  	 background-color:#93ff93;
+  	 background-color:#87e376;
   	 font-weight: bold;
 }
 tr.packagerunning td {
@@ -283,6 +313,7 @@ tr.packagedeactivated td {
  */
 #toolbar {
 	padding: 2px;
+	height: 34px;
 }
 
 #toolbar img {
@@ -293,6 +324,15 @@ tr.packagedeactivated td {
 	float:right;
 }
 
+#toolbarleft {
+	float:left;
+}
+
+#toolbarcenter {
+	width: 100%;
+	height: 30px;
+}
+
 a.button, a.addButton {
 	display:inline;
 	background-color: #e1e1e1;
@@ -301,6 +341,7 @@ a.button, a.addButton {
 	border-color:gray;
 	padding: 1.5px 5px;
 	font-weight:bold;
+	line-height: 32px;
 }
 
 a.addButton {
