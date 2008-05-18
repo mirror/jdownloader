@@ -934,8 +934,12 @@ public class Rapidshare extends PluginForHost {
                     step.setParameter((long) waitTime);
                     return step;
                 }
+                
                 String wait = getSimpleMatch(requestInfo.getHtmlCode(), ticketWaitTimepattern, 0);
-                if(wait.equals("0"))wait=null;
+                
+                if(wait != null && wait.equals("0"))
+                    wait=null;
+                
                 ticketCode = JDUtilities.htmlDecode(getSimpleMatch(requestInfo.getHtmlCode(), ticketCodePattern, 0));
                 ticketCode = requestInfo.getHtmlCode() + " " + ticketCode;
                 captchaAddress = getFirstMatch(ticketCode, patternForCaptcha, 1);
