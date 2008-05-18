@@ -174,8 +174,24 @@ public class Unrar extends Interaction implements Serializable {
         unrar.followingFiles = followingFiles.toArray(new String[followingFiles.size()]);
 
         LinkedList<File> unpacked = unrar.unrar();
+        Iterator<File> iter = unpacked.iterator();
+        LinkedList<mergeFile> mergeFiles = new LinkedList<mergeFile>();
+        while (iter.hasNext()) {
+            File file = (File) iter.next();
+            if(!mergeFiles.contains((mergeFile) file))
+                mergeFiles.add((mergeFile) file);
+            if (JDUtilities.getController().isContainerFile(file)) {
+                if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_RELOADCONTAINER, true)) JDUtilities.getController().loadContainerFile(file);
+            }
+        }
+        Boolean DELETE_MERGEDFILES = JDUtilities.getConfiguration().getBooleanProperty(Unrar.PROPERTY_DELETE_MERGEDFILES, true);
         if (lastFinishedDownload != null && JDUtilities.getConfiguration().getBooleanProperty(Unrar.PROPERTY_USE_HJMERGE, true)) {
-            Merge.mergeIt(new File(lastFinishedDownload.getFileOutput()), unrar.followingFiles, JDUtilities.getConfiguration().getBooleanProperty(Unrar.PROPERTY_DELETE_MERGEDFILES, true), unrar.extractFolder);
+            Merge.mergeIt(new File(lastFinishedDownload.getFileOutput()), unrar.followingFiles, DELETE_MERGEDFILES, unrar.extractFolder);
+            Iterator<mergeFile> miter = mergeFiles.iterator();
+            while (miter.hasNext()) {
+                mergeFile mergeFile = (mergeFile) miter.next();
+                Merge.mergeIt(mergeFile, unrar.followingFiles, DELETE_MERGEDFILES, unrar.extractFolder);
+            }
         }
         IS_RUNNING = false;
         this.setCallCode(Interaction.INTERACTION_CALL_SUCCESS);
@@ -190,4 +206,29 @@ public class Unrar extends Interaction implements Serializable {
     @Override
     public void resetInteraction() {
     }
+}
+class mergeFile extends File{
+    /**
+     * 
+     */
+    private static final long serialVersionUID = 1L;
+    public mergeFile(String pathname) {
+        super(pathname);
+        // TODO Auto-generated constructor stub
+    }
+    @Override
+    public boolean equals(Object obj) {
+        if (obj instanceof File) {
+            File file = (File) obj;
+            if(!file.getParentFile().equals(getParentFile()))return false;
+            String oName = file.getName(), name = getName();
+            String matcher = (name.matches(".*\\.\\a.$") ? (name.replaceFirst("\\.a.$", "")) : (name.replaceFirst("\\.[\\d]+($|\\..*)", "")));
+            String oMatcher = (oName.matches(".*\\.\\a.$") ? (oName.replaceFirst("\\.a.$", "")) : (oName.replaceFirst("\\.[\\d]+($|\\..*)", "")));
+            return matcher.equalsIgnoreCase(oMatcher);
+
+        }
+        return false;
+    }
+
+
 }
