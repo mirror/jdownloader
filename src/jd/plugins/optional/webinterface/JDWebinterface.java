@@ -13,10 +13,10 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-// TODO:    -packages umbenennen
+// TODO:    
 //          -packages/links moven
 //          -stable template system
-//          -anderes layout
+
 
 package jd.plugins.optional.webinterface;
 
@@ -28,7 +28,6 @@ import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.MenuItem;
 import jd.config.SubConfiguration;
-import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginOptional;
 import jd.utils.JDLocale;

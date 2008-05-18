@@ -8,10 +8,6 @@ import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.Vector;
-import java.util.logging.Logger;
-
-import javax.swing.JProgressBar;
-
 import jd.config.Configuration;
 import jd.controlling.JDController;
 import jd.plugins.DownloadLink;
@@ -25,9 +21,7 @@ import jd.utils.JDUtilities;
 
 public class JDSimpleWebserverTemplateFileRequestHandler {
 
-    private Logger logger = JDUtilities.getLogger();
     private JDSimpleWebserverResponseCreator response;
-    private JDController controller = JDUtilities.getController();
     private DecimalFormat f = new DecimalFormat("#0");
 
     private Vector v_info = new Vector();
