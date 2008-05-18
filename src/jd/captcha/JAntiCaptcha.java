@@ -20,6 +20,7 @@ import java.awt.Color;
 import java.awt.GridBagLayout;
 import java.awt.Image;
 import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.image.BufferedImage;
 import java.awt.image.ColorModel;
 import java.awt.image.IndexColorModel;
@@ -369,9 +370,14 @@ public class JAntiCaptcha {
 
                     tmp = new Letter();
                     tmp.setOwner(this);
-                    if (!tmp.setTextGrid(childNode.getTextContent())) continue;
-                    ;
                     String id = UTILITIES.getAttribute(childNode, "id");
+                    if (!tmp.setTextGrid(childNode.getTextContent())){
+                        
+                        logger.severe("Error in Letters DB line: "+i+":"+childNode.getTextContent()+" id:"+id);
+                        continue;
+                    }
+                    ;
+               
                     if (id != null) {
                         tmp.id = Integer.parseInt(id);
                     }
@@ -570,7 +576,7 @@ public class JAntiCaptcha {
      * 
      * @param captchafile
      */
-    public void showPreparedCaptcha(File captchafile) {
+    public void showPreparedCaptcha(final File captchafile) {
 
         if (!captchafile.exists()) {
             if (JAntiCaptcha.isLoggerActive()) logger.severe(captchafile.getAbsolutePath() + " existiert nicht");
@@ -681,8 +687,21 @@ public class JAntiCaptcha {
             bw2.add(new JLabel(lcs[i].getValityPercent() + "%"), UTILITIES.getGBC(i * 2 + 2, 10, 2, 2));
 
         }
+        JButton bt = new JButton("Train");
+        
+        bw2.add(bt,UTILITIES.getGBC(0, 12, 2, 2));
         bw2.pack();
         bw2.repack();
+        
+        bt.addActionListener(new ActionListener(){
+
+            public void actionPerformed(ActionEvent e) {
+                // TODO Auto-generated method stub
+                JAntiCaptcha.this.trainCaptcha(captchafile, 4);
+                
+            }
+            
+        });
     }
 
     private void destroyScrollPaneWindows() {

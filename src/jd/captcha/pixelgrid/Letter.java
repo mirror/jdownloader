@@ -207,6 +207,7 @@ public class Letter extends PixelGrid {
                 }catch(Exception e){
                     
                     e.printStackTrace();
+                    return false;
                 }
                 if (grid[x][y] == 0) elementPixel++;
             }

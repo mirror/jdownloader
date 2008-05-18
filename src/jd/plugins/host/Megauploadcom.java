@@ -310,20 +310,26 @@ public class Megauploadcom extends PluginForHost {
         String pass = getProperties().getStringProperty(PROPERTY_PREMIUM_PASS);
         String countryID=getProperties().getStringProperty("COUNTRY_ID", "-");
         logger.info("PREMOIM");
+        String url="http://www.megaupload.com/de/";
         if(!countryID.equals("-")){
             logger.info("Use Country trick");
           // http://www.megaupload.com/HIER_STEHT_DER_2_STELLIGE_LÄNDERKÜRZEL/?d=EMXRGYTM
         
                 link= link.replace(".com/", ".com/"+countryID+"/");
-            
+                url=url.replaceAll("/de/", "/"+countryID+"/");
                 logger.info("New link: "+link);
             
         }
         
         try {
             downloadLink.setStatusText("Login");
-            requestInfo=postRequest(new URL(link), "login="+user+"&password="+pass);
-          
+            //requestInfo=postRequest(new URL(link), "login="+user+"&password="+pass);
+
+            HashMap<String, String> h = new HashMap<String,String>();
+            h.put("User-Agent", "Mozilla/5.0 (Windows; U; Windows NT 6.0; de; rv:1.8.1.14) Gecko/20080404 Firefox/2.0.0.14;MEGAUPLOAD 1.0");
+            h.put("X-MUTB", link);
+            h.put("Content-Type","application/x-www-form-urlencoded");
+            requestInfo=postRequest(new URL(url), null, link, h, "login="+user+"&password="+pass, false);
             if(requestInfo.getCookie().indexOf("user=")<0){
                 step.setStatus(PluginStep.STATUS_ERROR);
                 downloadLink.setStatus(DownloadLink.STATUS_ERROR_PREMIUM);                
@@ -331,9 +337,22 @@ public class Megauploadcom extends PluginForHost {
             }
             String cookie=requestInfo.getCookie();
             
-                requestInfo=getRequest(new URL("http://"+requestInfo.getConnection().getURL().getHost()+"/"+requestInfo.getLocation()), cookie, link, false);
-                    
-                    
+            
+//            String url=requestInfo.getLocation();
+//            if(!url.toLowerCase().startsWith("http")){
+//               url= "http://"+requestInfo.getConnection().getURL().getHost()+"/"+url;
+//            }
+               // requestInfo=getRequest(new URL(link), cookie, link, false);
+                requestInfo=getRequestWithoutHtmlCode(new URL(link), cookie, url, h, false);
+                requestInfo=readFromURL(requestInfo.getConnection());
+            
+                //requestInfo=getRequest(new URL(url), cookie, link, false);
+                
+//                url=requestInfo.getLocation();
+//                if(!url.toLowerCase().startsWith("http")){
+//                   url= "http://"+requestInfo.getConnection().getURL().getHost()+"/"+url;
+//                }  
+//                requestInfo=getRequest(new URL(url), cookie, link, false);
                    // this.postRequest(string, cookie, referrer, requestProperties, parameter, redirect)(, "login="+user+"&password="+pass);  
                 Character l = (char) Math.abs(Integer.parseInt(getSimpleMatch(requestInfo.getHtmlCode(), SIMPLEPATTERN_GEN_DOWNLOADLINK, 1).trim()));
                 String i = getSimpleMatch(requestInfo.getHtmlCode(), SIMPLEPATTERN_GEN_DOWNLOADLINK, 4) + (char) Math.sqrt(Integer.parseInt(getSimpleMatch(requestInfo.getHtmlCode(), SIMPLEPATTERN_GEN_DOWNLOADLINK, 5).trim()));

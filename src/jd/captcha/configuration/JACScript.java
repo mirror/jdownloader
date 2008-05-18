@@ -769,6 +769,8 @@ public class JACScript {
                     } else if (cmd[1].equalsIgnoreCase("toBlackAndWhite")) {
                         letter.toBlackAndWhite();
                         continue;
+                    
+                        
                     } else {
                         if (JAntiCaptcha.isLoggerActive()) logger.severe("Error in " + method + "/+script.jas : Function not valid: " + cmd[1] + "(" + cmd[2] + ")");
                     }
@@ -804,10 +806,36 @@ public class JACScript {
                     } else if (cmd[1].equalsIgnoreCase("sampleDown")) {
                         letter.sampleDown(Integer.parseInt(params[0].trim()));
                         continue;
+                    } else if (cmd[1].equalsIgnoreCase("doSpecial")) {
+                        String[] ref = params[0].trim().split("\\.");
+                        if (ref.length != 2) {
+                            if (JAntiCaptcha.isLoggerActive()) logger.severe("dpSpecial-Parameter should have the format Class.Method");
+                            continue;
+                        }
+                        String cl = ref[0];
+                        String methodname = ref[1];
+                        Class newClass;
+                        try {
+                            newClass = Class.forName("jd.captcha.specials." + cl);
+
+                            Class[] parameterTypes = new Class[] { letter.getClass() };
+                            Method method = newClass.getMethod(methodname, parameterTypes);
+                            Object[] arguments = new Object[] { letter };
+                            Object instance = null;
+                            method.invoke(instance, arguments);
+
+                        } catch (Exception e) {
+                            if (JAntiCaptcha.isLoggerActive()) logger.severe("Fehler in doSpecial:" + e.getLocalizedMessage());
+                            e.printStackTrace();
+                        }
+
+                     
                     } else if (cmd[1].equalsIgnoreCase("cleanBackgroundByColor")) {
                         letter.cleanBackgroundByColor(Integer.parseInt(params[0].trim()));
                         continue;
                     } else {
+                        
+                        
                         if (JAntiCaptcha.isLoggerActive()) logger.severe("Error in " + method + "/+script.jas : Function not valid: " + cmd[1] + "(" + cmd[2] + ")");
                     }
                 } else if (cmd[0].equals("function") && (params = cmd[2].split("\\,")).length == 2) {

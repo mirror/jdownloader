@@ -256,11 +256,11 @@ if(img==null)return;
 
         w.setSize(ic.getImageWidth() + 10, ic.getImageHeight() + 20);
         w.setLocation(screenPosX, screenPosY);
-        screenPosY += ic.getImageHeight() + 40;
-        if (screenPosY >= screenSize.height) {
-            screenPosX += ic.getImageWidth() + 160;
-            screenPosY = 0;
-        }
+     //   screenPosY += ic.getImageHeight() + 40;
+//        if (screenPosY >= screenSize.height) {
+//            screenPosX += ic.getImageWidth() + 160;
+//            screenPosY = 0;
+//        }
         w.setTitle(title);
         w.setLayout(new GridBagLayout());
         w.add(ic, UTILITIES.getGBC(0, 0, 1, 1));
@@ -302,11 +302,11 @@ if(img==null)return;
         w.repack();
         w.pack();
         w.setLocation(screenPosX, screenPosY);
-        screenPosY += w.getSize().width + 30;
-        if (screenPosY >= screenSize.height) {
-            screenPosX += w.getSize().height + 160;
-            screenPosY = 0;
-        }
+       // screenPosY += w.getSize().width + 30;
+//        if (screenPosY >= screenSize.height) {
+//            screenPosX += w.getSize().height + 160;
+//            screenPosY = 0;
+//        }
         w.setTitle(title);
         w.setLayout(new GridBagLayout());
         w.add(ic, UTILITIES.getGBC(0, 0, 1, 1));
@@ -337,11 +337,11 @@ if(img==null)return;
         w.setSize(width, height);
 
         w.setLocation(screenPosX, screenPosY);
-        screenPosY += height + 30;
-        if (screenPosY >= screenSize.height) {
-            screenPosX += width + 40;
-            screenPosY = 0;
-        }
+//        screenPosY += height + 30;
+//        if (screenPosY >= screenSize.height) {
+//            screenPosX += width + 40;
+//            screenPosY = 0;
+//        }
 
         w.setLayout(new GridBagLayout());
         w.add(ic, UTILITIES.getGBC(0, 0, 1, 1));
@@ -368,11 +368,11 @@ if(img==null)return;
         w.setSize(width, height);
 
         w.setLocation(screenPosX, screenPosY);
-        screenPosY += height + 30;
-        if (screenPosY >= screenSize.height) {
-            screenPosX += width + 40;
-            screenPosY = 0;
-        }
+//        screenPosY += height + 30;
+//        if (screenPosY >= screenSize.height) {
+//            screenPosX += width + 40;
+//            screenPosY = 0;
+//        }
 
         w.setLayout(new GridBagLayout());
         w.setVisible(true);

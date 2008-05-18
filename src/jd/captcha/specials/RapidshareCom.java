@@ -54,11 +54,13 @@ public class RapidshareCom {
 
     public static void prepareCaptcha(Captcha captcha) {
 
-        getSimplified(captcha, fak);
-
     }
 
-    public static void getSimplified(Captcha captcha, double faktor) {
+    public static void letterPrepare(Letter letter) {
+        getSimplified(letter, fak);
+    }
+
+    public static void getSimplified(PixelGrid captcha, double faktor) {
 
         int newWidth = (int) Math.ceil((double) captcha.getWidth() / faktor);
         int newHeight = (int) Math.ceil((double) captcha.getHeight() / faktor);
@@ -95,11 +97,9 @@ public class RapidshareCom {
 
     public static void onlyCats(Vector<LetterComperator> lcs, JAntiCaptcha owner) {
         if (true) return;
-       
 
     }
 
-   
     public static boolean isInMap(Vector<byte[]> map, ArrayList<Byte> list) {
         if (list.size() == 0) return true;
 
@@ -125,106 +125,113 @@ public class RapidshareCom {
     }
 
     public static boolean preFormFilter(LetterComperator lc, JAntiCaptcha jac) {
-        Letter db = lc.getB();
-        Letter ca = lc.getA();
-        if (db.getDecodedValue().equalsIgnoreCase("o")) {
-            Object whites = ca.getProperty("whiteSpaces");
-            if (whites == null) {
-                whites = getWhiteObjects(ca, jac);
-                ca.setProperty("whiteSpaces", whites);
-            }
-            Vector<PixelObject> whiteSpace = (Vector<PixelObject>) whites;
-            if (whiteSpace.firstElement().getSize() < 100) {
-                // BasicWindow.showImage(whiteSpace.firstElement().toLetter().getImage(2));
-                return false;
-            }
-
-        }
-        if (db.getDecodedValue().equalsIgnoreCase("q")) {
-            Object whites = ca.getProperty("whiteSpaces");
-            if (whites == null) {
-                whites = getWhiteObjects(ca, jac);
-                ca.setProperty("whiteSpaces", whites);
-            }
-            Vector<PixelObject> whiteSpace = (Vector<PixelObject>) whites;
-            if (whiteSpace.firstElement().getSize() < 100) {
-                // BasicWindow.showImage(whiteSpace.firstElement().toLetter().getImage(2));
-                return false;
-            }
-
-        }
-        if (db.getDecodedValue().equalsIgnoreCase("d")) {
-            Object whites = ca.getProperty("whiteSpaces");
-            if (whites == null) {
-                whites = getWhiteObjects(ca, jac);
-                ca.setProperty("whiteSpaces", whites);
-            }
-            Vector<PixelObject> whiteSpace = (Vector<PixelObject>) whites;
-            if (whiteSpace.firstElement().getSize() < 100) {
-                // BasicWindow.showImage(whiteSpace.firstElement().toLetter().getImage(2));
-                return false;
-            }
-
-        }
-        if (db.getDecodedValue().equalsIgnoreCase("s")) {
-            Object whites = ca.getProperty("whiteSpaces");
-            if (whites == null) {
-                whites = getWhiteObjects(ca, jac);
-                ca.setProperty("whiteSpaces", whites);
-            }
-            Vector<PixelObject> whiteSpace = (Vector<PixelObject>) whites;
-            if (whiteSpace.firstElement().getSize() >80) {
-                // BasicWindow.showImage(whiteSpace.firstElement().toLetter().getImage(2));
-                return false;
-            }
-
-        }
-        
-        
-        if (db.getDecodedValue().equalsIgnoreCase("8")) {
-            Object whites = ca.getProperty("whiteSpaces");
-            if (whites == null) {
-                whites = getWhiteObjects(ca, jac);
-                ca.setProperty("whiteSpaces", whites);
-            }
-            Vector<PixelObject> whiteSpace = (Vector<PixelObject>) whites;
-            if (whiteSpace.firstElement().getSize() <80) {
-                // BasicWindow.showImage(whiteSpace.firstElement().toLetter().getImage(2));
-                return false;
-            }
-
-        }
-        if (db.getDecodedValue().equalsIgnoreCase("9")) {
-            Object whites = ca.getProperty("whiteSpaces");
-            if (whites == null) {
-                whites = getWhiteObjects(ca, jac);
-                ca.setProperty("whiteSpaces", whites);
-            }
-            Vector<PixelObject> whiteSpace = (Vector<PixelObject>) whites;
-            if (whiteSpace.firstElement().getSize() <80) {
-                // BasicWindow.showImage(whiteSpace.firstElement().toLetter().getImage(2));
-                return false;
-            }
-
-        }
-        if (db.getDecodedValue().equalsIgnoreCase("b")) {
-            Object whites = ca.getProperty("whiteSpaces");
-            if (whites == null) {
-                whites = getWhiteObjects(ca, jac);
-                ca.setProperty("whiteSpaces", whites);
-            }
-            Vector<PixelObject> whiteSpace = (Vector<PixelObject>) whites;
-            if (whiteSpace.firstElement().getSize() <80) {
-                // BasicWindow.showImage(whiteSpace.firstElement().toLetter().getImage(2));
-                return false;
-            }
-
-        }
-        if (db.getDecodedValue().equalsIgnoreCase("c")) {
-        //   return false;
-
-        }
         return true;
+        // Letter db = lc.getB();
+        // Letter ca = lc.getA();
+        // if (db.getDecodedValue().equalsIgnoreCase("o")) {
+        // Object whites = ca.getProperty("whiteSpaces");
+        // if (whites == null) {
+        // whites = getWhiteObjects(ca, jac);
+        // ca.setProperty("whiteSpaces", whites);
+        // }
+        // Vector<PixelObject> whiteSpace = (Vector<PixelObject>) whites;
+        // if (whiteSpace.firstElement().getSize() < 100) {
+        // //
+        // BasicWindow.showImage(whiteSpace.firstElement().toLetter().getImage(2));
+        // return false;
+        // }
+        //
+        // }
+        // if (db.getDecodedValue().equalsIgnoreCase("q")) {
+        // Object whites = ca.getProperty("whiteSpaces");
+        // if (whites == null) {
+        // whites = getWhiteObjects(ca, jac);
+        // ca.setProperty("whiteSpaces", whites);
+        // }
+        // Vector<PixelObject> whiteSpace = (Vector<PixelObject>) whites;
+        // if (whiteSpace.firstElement().getSize() < 100) {
+        // //
+        // BasicWindow.showImage(whiteSpace.firstElement().toLetter().getImage(2));
+        // return false;
+        // }
+        //
+        // }
+        // if (db.getDecodedValue().equalsIgnoreCase("d")) {
+        // Object whites = ca.getProperty("whiteSpaces");
+        // if (whites == null) {
+        // whites = getWhiteObjects(ca, jac);
+        // ca.setProperty("whiteSpaces", whites);
+        // }
+        // Vector<PixelObject> whiteSpace = (Vector<PixelObject>) whites;
+        // if (whiteSpace.firstElement().getSize() < 100) {
+        // //
+        // BasicWindow.showImage(whiteSpace.firstElement().toLetter().getImage(2));
+        // return false;
+        // }
+        //
+        // }
+        // if (db.getDecodedValue().equalsIgnoreCase("s")) {
+        // Object whites = ca.getProperty("whiteSpaces");
+        // if (whites == null) {
+        // whites = getWhiteObjects(ca, jac);
+        // ca.setProperty("whiteSpaces", whites);
+        // }
+        // Vector<PixelObject> whiteSpace = (Vector<PixelObject>) whites;
+        // if (whiteSpace.firstElement().getSize() > 80) {
+        // //
+        // BasicWindow.showImage(whiteSpace.firstElement().toLetter().getImage(2));
+        // return false;
+        // }
+        //
+        // }
+        //
+        // if (db.getDecodedValue().equalsIgnoreCase("8")) {
+        // Object whites = ca.getProperty("whiteSpaces");
+        // if (whites == null) {
+        // whites = getWhiteObjects(ca, jac);
+        // ca.setProperty("whiteSpaces", whites);
+        // }
+        // Vector<PixelObject> whiteSpace = (Vector<PixelObject>) whites;
+        // if (whiteSpace.firstElement().getSize() < 80) {
+        // //
+        // BasicWindow.showImage(whiteSpace.firstElement().toLetter().getImage(2));
+        // return false;
+        // }
+        //
+        // }
+        // if (db.getDecodedValue().equalsIgnoreCase("9")) {
+        // Object whites = ca.getProperty("whiteSpaces");
+        // if (whites == null) {
+        // whites = getWhiteObjects(ca, jac);
+        // ca.setProperty("whiteSpaces", whites);
+        // }
+        // Vector<PixelObject> whiteSpace = (Vector<PixelObject>) whites;
+        // if (whiteSpace.firstElement().getSize() < 80) {
+        // //
+        // BasicWindow.showImage(whiteSpace.firstElement().toLetter().getImage(2));
+        // return false;
+        // }
+        //
+        // }
+        // if (db.getDecodedValue().equalsIgnoreCase("b")) {
+        // Object whites = ca.getProperty("whiteSpaces");
+        // if (whites == null) {
+        // whites = getWhiteObjects(ca, jac);
+        // ca.setProperty("whiteSpaces", whites);
+        // }
+        // Vector<PixelObject> whiteSpace = (Vector<PixelObject>) whites;
+        // if (whiteSpace.firstElement().getSize() < 80) {
+        // //
+        // BasicWindow.showImage(whiteSpace.firstElement().toLetter().getImage(2));
+        // return false;
+        // }
+        //
+        // }
+        // if (db.getDecodedValue().equalsIgnoreCase("c")) {
+        // // return false;
+        //
+        // }
+        // return true;
     }
 
     public static Letter[] letterFilter(Letter[] org, JAntiCaptcha jac) {
@@ -249,8 +256,9 @@ public class RapidshareCom {
         int iii = 0;
         for (Letter l : org) {
             iii++;
-            //BasicWindow.showImage(l.getImage(2), "" + iii);
+            // BasicWindow.showImage(l.getImage(2), "" + iii);
             if (l.getWidth() > 150 / fak && count < 6) {
+                logger.info("split in 3");
                 sp = l.toPixelObject(0.85).split(3, 10 / fak);
                 jac.getJas().set("borderVarianceX", 40);
 
@@ -273,7 +281,8 @@ public class RapidshareCom {
                 jac.getJas().set("borderVarianceX", bx);
                 count += 2;
             } else if (l.getWidth() > 110 / fak && count < 7) {
-                sp = l.toPixelObject(0.85).split(2, 10 / fak);
+                logger.info("split in 2");
+                sp = l.toPixelObject(0.85).split(2, 4 / fak);
                 jac.getJas().set("borderVarianceX", 40);
                 for (int i = 0; i < sp.size(); i++) {
                     ll = sp.get(i).toLetter();
@@ -285,7 +294,7 @@ public class RapidshareCom {
                 count++;
             } else if (l.getArea() >= jac.getJas().getInteger("minimumObjectArea")) {
                 mtd.queueDetection(l);
-                
+
                 ret.add(l);
             }
         }
@@ -305,15 +314,16 @@ public class RapidshareCom {
 
             Letter dif = l.detected.getDifference();
             int pixp = (int) (dif.getElementPixel() * 100.0 / dif.getArea());
-            //BasicWindow.showImage(l.getImage(2), i + "");
+            // BasicWindow.showImage(l.getImage(2), i + "");
             // l.getIntegerProperty("ValityLimit", 0)logger.info("kkkk"+pixp+" -
             // "+vp);
-            if (pixp >= 26 && vp > (25.0 + l.getIntegerProperty("ValityLimit", 0)) && w > 2 * jac.getJas().getInteger("minimumLetterWidth") + 5/*
+            if (pixp >= 35 && vp > (25.0 + l.getIntegerProperty("ValityLimit", 0)) && w > 2 * jac.getJas().getInteger("minimumLetterWidth") + 5/*
                                                                                                                                                  * &&
                                                                                                                                                  * count <
                                                                                                                                                  * 7
                                                                                                                                                  */) {
 
+                logger.info("split in 22");
                 ret.remove(i);
                 sp = l.toPixelObject(0.85).split(2, 10 / fak);
                 jac.getJas().set("borderVarianceX", 20);
@@ -479,8 +489,8 @@ public class RapidshareCom {
         // //// l.colorize(0xff0000);
         // //
         // }
-      return letters;
-        //return filtered.toArray(new Letter[]{});
+        return letters;
+        // return filtered.toArray(new Letter[]{});
     }
 
     // private static boolean isCat(Letter l, Vector<byte[]> map,
@@ -529,6 +539,39 @@ public class RapidshareCom {
     // }
     // return org;
     // }
+    private static Vector<PixelObject> getBorderObjects(Letter l, JAntiCaptcha jac) {
+
+        int limit = 200;
+        int[][] tmp = new int[l.getWidth()][l.getHeight()];
+        Vector<PixelObject> ret = new Vector<PixelObject>();
+        for (int x = 0; x < l.getWidth(); x++) {
+            for (int y = 0; y < l.getHeight(); y++) {
+                if (l.grid[x][y] > limit && tmp[x][y] != 1) {
+                    PixelObject p = new PixelObject(l);
+                    recFill(p, l, x, y, tmp, 0);
+
+                    if (!p.isBordered()) {
+                        ret.add(p);
+                        p.setColor(0x000000);
+                    }
+
+                    // BasicWindow.showImage(p.toLetter().getImage(), x+" -
+                    // "+y);
+
+                }
+            }
+        }
+        Collections.sort(ret, new Comparator<PixelObject>() {
+            public int compare(PixelObject a, PixelObject b) {
+                if (a.getSize() < b.getSize()) return 1;
+                if (a.getSize() > b.getSize()) return -1;
+                return 0;
+            }
+
+        });
+        return ret;
+
+    }
 
     private static Vector<PixelObject> getWhiteObjects(Letter l, JAntiCaptcha jac) {
 
@@ -584,129 +627,253 @@ public class RapidshareCom {
         }
 
     }
-    
-    public static void comparatorExtension(LetterComperator lc){
+
+    public static void comparatorExtension(LetterComperator lc, Double currentValue) {
         Letter db = lc.getB();
         Letter ca = lc.getA();
-  
-        
-        //Prüfe Füllungen
-        
+        if(currentValue>0.4)return;
+        // Prüfe Füllungen
+
         if (db.getDecodedValue().equalsIgnoreCase("3")) {
             Letter is = lc.getIntersection();
-         
-                Vector<PixelObject> whites = getWhiteObjects(is, lc.getOwner());
-              
-       
-            if (whites.size()>0&&whites.firstElement().getSize() >40) {
+
+            Vector<PixelObject> whites = getWhiteObjects(is, lc.getOwner());
+
+            if (whites.size() > 0 && whites.firstElement().getSize() > 40) {
                 // BasicWindow.showImage(whiteSpace.firstElement().toLetter().getImage(2));
-                lc.setExtensionError(2.0);
+                lc.setTmpExtensionError(2.0);
             }
 
         }
         if (db.getDecodedValue().equalsIgnoreCase("5")) {
             Letter is = lc.getIntersection();
-         
-                Vector<PixelObject> whites = getWhiteObjects(is, lc.getOwner());
-              
-       
-            if (whites.size()>0&&whites.firstElement().getSize() >40) {
+
+            Vector<PixelObject> whites = getWhiteObjects(is, lc.getOwner());
+
+            if (whites.size() > 0 && whites.firstElement().getSize() > 40) {
                 // BasicWindow.showImage(whiteSpace.firstElement().toLetter().getImage(2));
-                lc.setExtensionError(2.0);
+                lc.setTmpExtensionError(2.0);
             }
 
         }
         if (db.getDecodedValue().equalsIgnoreCase("6")) {
             Letter is = lc.getIntersection();
-         
-                Vector<PixelObject> whites = getWhiteObjects(is, lc.getOwner());
-              
-       
-            if (whites.size()>0&&whites.firstElement().getSize() >40&&whites.firstElement().getYMin()<14) {
+
+            Vector<PixelObject> whites = getWhiteObjects(is, lc.getOwner());
+
+            if (whites.size() > 0 && whites.firstElement().getSize() > 40 && whites.firstElement().getYMin() < 14) {
                 // BasicWindow.showImage(whiteSpace.firstElement().toLetter().getImage(2));
-                lc.setExtensionError(2.0);
+                lc.setTmpExtensionError(2.0);
+            }
+
+        }
+
+        if (db.getDecodedValue().equalsIgnoreCase("8")) {
+            Letter is = lc.getIntersection();
+
+            Vector<PixelObject> whites = getWhiteObjects(is, lc.getOwner());
+            Iterator<PixelObject> it;
+            for (it = whites.iterator(); it.hasNext();) {
+                PixelObject next = it.next();
+                is.fillWithObject(next, 0);
+            }
+
+            int top = 0;
+            int bottom = 0;
+            for (int x = 0; x < is.getWidth(); x++) {
+                for (int y = 0; y < is.getHeight(); y++) {
+                    if (is.grid[x][y] == 0) {
+                        if (y < is.getHeight() / 2) {
+                            top++;
+                        } else {
+                            bottom++;
+                        }
+                    }
+                }
+            }
+
+            if (top > 190 && bottom > 190) {
+                // logger.info(top+" - ----- "+bottom);
+
+            } else {
+                lc.setTmpExtensionError(2.0);
+                // BasicWindow.showImage(is.getImage()," -
+                // "+lc.getValityPercent());
+            }
+
+        }
+        if (db.getDecodedValue().equalsIgnoreCase("d")) {
+            Letter is = lc.getIntersection();
+            // Letter dif = lc.getDifference();
+            Vector<PixelObject> whites = getWhiteObjects(is, lc.getOwner());
+
+            if (whites.size() > 0 || whites.firstElement().getSize() < 100) {
+                // BasicWindow.showImage(whiteSpace.firstElement().toLetter().getImage(2));
+                lc.setTmpExtensionError(2.0);
             }
 
         }
         if (db.getDecodedValue().equalsIgnoreCase("p")) {
             Letter is = lc.getIntersection();
-            Letter dif = lc.getDifference();
-                Vector<PixelObject> whites = getWhiteObjects(is, lc.getOwner());
-              int pixel=0;
-              for( int x=4; x<is.getWidth()-4;x++){
-                  for( int y=2; y<Math.min(10,is.getHeight());y++){
-                      if(is.grid[x][y]==0){
-                          pixel++;
-                      }
-                  }}
-       
-            if (whites.size()>0&&whites.firstElement().getSize() <40&&pixel<80) {
+            // Letter dif = lc.getDifference();
+            Vector<PixelObject> whites = getWhiteObjects(is, lc.getOwner());
+            int pixel = 0;
+            for (int x = 4; x < is.getWidth() - 4; x++) {
+                for (int y = 2; y < Math.min(10, is.getHeight()); y++) {
+                    if (is.grid[x][y] == 0) {
+                        pixel++;
+                    }
+                }
+            }
+
+            if (whites.size() > 0 && whites.firstElement().getSize() < 40 && pixel < 80) {
                 // BasicWindow.showImage(whiteSpace.firstElement().toLetter().getImage(2));
-                lc.setExtensionError(1.0);
+                lc.setTmpExtensionError(1.0);
             }
 
         }
-        
-        if (db.getDecodedValue().equalsIgnoreCase("s")) {
+        if (db.getDecodedValue().equalsIgnoreCase("q")) {
             Letter is = lc.getIntersection();
-         
-                Vector<PixelObject> whites = getWhiteObjects(is, lc.getOwner());
-              
-       
-            if (whites.size()>0&&whites.firstElement().getSize() >40) {
+            // Letter dif = lc.getDifference();
+            Vector<PixelObject> whites = getWhiteObjects(is, lc.getOwner());
+
+            if (whites.size() > 0 || whites.firstElement().getSize() < 100) {
                 // BasicWindow.showImage(whiteSpace.firstElement().toLetter().getImage(2));
-                lc.setExtensionError(2.0);
+                lc.setTmpExtensionError(2.0);
             }
 
         }
-        
+        if (db.getDecodedValue().equalsIgnoreCase("o")) {
+            Letter is = lc.getIntersection();
+            // Letter dif = lc.getDifference();
+            Vector<PixelObject> whites = getWhiteObjects(is, lc.getOwner());
+
+            if (whites.size() == 0 || whites.firstElement().getSize() < 200) {
+                // BasicWindow.showImage(whiteSpace.firstElement().toLetter().getImage(2));
+                lc.setTmpExtensionError(3.0);
+            }
+            // lc.setTmpExtensionError(lc.getIntersectionAHeightFaktor()*205);
+
+        }
+        if (db.getDecodedValue().equalsIgnoreCase("c")) {
+            Letter is = lc.getIntersection();
+            // Letter dif = lc.getDifference();
+            Vector<PixelObject> whites = getWhiteObjects(is, lc.getOwner());
+
+            if (whites.size() > 0 && whites.firstElement().getSize() > 100) {
+                // BasicWindow.showImage(whiteSpace.firstElement().toLetter().getImage(2));
+                lc.setTmpExtensionError(2.0);
+            }
+
+        }
+        if (db.getDecodedValue().equalsIgnoreCase("g")) {
+            Letter is = lc.getIntersection();
+            // Letter dif = lc.getDifference();
+            Vector<PixelObject> whites = getWhiteObjects(is, lc.getOwner());
+
+            if (whites.size() > 0 && whites.firstElement().getSize() > 100) {
+                // BasicWindow.showImage(whiteSpace.firstElement().toLetter().getImage(2));
+                lc.setTmpExtensionError(2.0);
+            }
+
+        }
+        if (db.getDecodedValue().equalsIgnoreCase("u")) {
+            Letter is = lc.getIntersection();
+
+            Vector<PixelObject> whites = getWhiteObjects(is, lc.getOwner());
+
+            if (whites.size() > 0 && whites.firstElement().getSize() > 60) {
+                // BasicWindow.showImage(whiteSpace.firstElement().toLetter().getImage(2));
+                lc.setTmpExtensionError(2.0);
+            }
+
+        }
+        if (db.getDecodedValue().equalsIgnoreCase("5")) {
+            Letter is = lc.getIntersection();
+
+            Vector<PixelObject> whites = getWhiteObjects(is, lc.getOwner());
+
+            if (whites.size() > 0 && whites.firstElement().getSize() > 40) {
+                // BasicWindow.showImage(whiteSpace.firstElement().toLetter().getImage(2));
+                lc.setTmpExtensionError(2.0);
+            }
+
+        }
+
+        // striche
+
+        //        
+        // if (db.getDecodedValue().equalsIgnoreCase("t")) {
+        // if( lc.getValityPercent()>30.0)return;
+        // Letter is = lc.getIntersection();
+        //    
+        // Vector<PixelObject> whites = getWhiteObjects(is, lc.getOwner());
+        // Iterator<PixelObject> it;
+        // for(it= whites.iterator(); it.hasNext();){
+        // PixelObject next = it.next();
+        // is.fillWithObject(next, 0);
+        // }
+        // BasicWindow.showImage(is.getImage(3));
+        //         
+        //
+        // }
+
         // 1 und I
-        
+
         if (db.getDecodedValue().equalsIgnoreCase("1")) {
             Letter is = lc.getDifference();
-            int left=0;
-            int right=0;
-            for( int x=0; x<is.getWidth();x++){
-                for( int y=0; y<Math.min(6,is.getHeight());y++){
-                    if(is.grid[x][y]==0){
-                        if(x<is.getWidth()/2){
+if(lc.getLocalHeightPercent()<0.95) {
+    
+}
+//lc.setTmpExtensionError(2.0);
+if(currentValue==0.12818993602403742){
+    BasicWindow.showImage(is.getImage(2)," - "+(lc.intersectionDimension[1]-lc.getA().getHeight()));
+    logger.info("oooo"+lc);
+}
+
+logger.info(": "+currentValue);//
+            int left = 0;
+            int right = 0;
+            for (int x = 0; x < is.getWidth(); x++) {
+                for (int y = 0; y < Math.min(3, is.getHeight()); y++) {
+                    if (is.grid[x][y] == 0) {
+                        if (x < is.getWidth() / 2) {
                             left++;
-                        }else{
+                        } else {
                             right++;
                         }
                     }
                 }
             }
-            if(right<15 && left<15 &&right>=left){
-                lc.setExtensionError(2.0);  
+            
+            if (right < 15 && left < 15 && right >= left) {
+                 lc.setTmpExtensionError(2.0);
             }
-            
-            
+
+           
         }
-        
+
         if (db.getDecodedValue().equalsIgnoreCase("i")) {
             Letter is = lc.getDifference();
-            int left=0;
-            int right=0;
-            for( int x=0; x<is.getWidth();x++){
-                for( int y=0; y<Math.min(6,is.getHeight());y++){
-                    if(is.grid[x][y]==0){
-                        if(x<is.getWidth()/2){
+            int left = 0;
+            int right = 0;
+            for (int x = 0; x < is.getWidth(); x++) {
+                for (int y = 0; y < Math.min(3, is.getHeight()); y++) {
+                    if (is.grid[x][y] == 0) {
+                        if (x < is.getWidth() / 2) {
                             left++;
-                        }else{
+                        } else {
                             right++;
                         }
                     }
                 }
             }
-            if(right<15 && left<15 &&right<left){
-                lc.setExtensionError(2.0);  
+            if (right < 15 && left < 15 && right < left) {
+                 lc.setTmpExtensionError(2.0);
             }
-            
-            
+            // lc.setTmpExtensionError(2.0);
         }
-        
-        
+
     }
 
 }
