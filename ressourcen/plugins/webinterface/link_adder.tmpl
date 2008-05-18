@@ -57,7 +57,7 @@
 				<tmpl_loop pakete>
 					<tr class="package<tmpl_var download_status>">
 						<td><INPUT type="checkbox" name="package_all_add" value="<tmpl_var package_id escape>" onclick="samecheckall(document.jd.package_single_add,this)"></td>
-						<td colspan="2">Package-Name: <INPUT size="35" type="text" name="adder_package_name_<tmpl_var package_id escape>" value="<tmpl_var download_name escape>"> <span style="margin-left: 30px;">Password:</span> <INPUT size="35" type="text" name="adder_password_<tmpl_var package_id escape>" value=""></td>
+						<td colspan="2">Package-Name: <INPUT size="35" type="text" name="adder_package_name_<tmpl_var package_id escape>" value="<tmpl_var download_name escape>"> <!--<span style="margin-left: 30px;">Password:</span> <INPUT size="35" type="text" name="adder_password_<tmpl_var package_id escape>" value="">--></td>
 					</tr>
 
 					<tmpl_loop downloads>
