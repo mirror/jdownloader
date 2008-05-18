@@ -133,7 +133,7 @@ public class JDSimpleWebserver extends Thread {
                                     Integer indexstart = 0;
 
                                     while (post_len_toread > 0) {
-                                        if ((post_len_read = reader.read(cbuf, indexstart, post_len_toread)) ==-1) break;
+                                        if ((post_len_read = reader.read(cbuf, indexstart, post_len_toread)) == -1) break;
                                         indexstart = indexstart + post_len_read;
                                         post_len_toread = post_len_toread - post_len_read;
                                         logger.info("gelesen " + post_len_read + " index " + indexstart + " noch zu lesen " + post_len_toread);
@@ -150,7 +150,12 @@ public class JDSimpleWebserver extends Thread {
                                              * alter POST aus Header Liste
                                              * entfernen
                                              */
-                                            headers.remove(null); /*FIXME: ist remove nötig*/
+                                            headers.remove(null); /*
+                                                                     * FIXME:
+                                                                     * ist
+                                                                     * remove
+                                                                     * nötig
+                                                                     */
                                             /*
                                              * neuer POST mit RequestParams in
                                              * Header-Liste einfügen

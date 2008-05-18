@@ -311,9 +311,8 @@ public class JDSimpleWebserverTemplateFileRequestHandler {
         t.setParam("pakete", v);
     }
 
-    private void add_password_list(Template t, HashMap<String, String> requestParameter) {
-        JUnrar unrar = new JUnrar(false);
-        String[] pws = unrar.returnPasswords();
+    private void add_password_list(Template t, HashMap<String, String> requestParameter) {        
+        String[] pws = JUnrar.returnPasswords();
         String pwlist = "";
         for (int i = 0; i < pws.length; i++) {
             pwlist = pwlist + System.getProperty("line.separator") + pws[i];
@@ -321,12 +320,13 @@ public class JDSimpleWebserverTemplateFileRequestHandler {
         t.setParam("password_list", pwlist);
     }
 
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings({ "unchecked", "deprecation" })
     public void handleRequest(String url, HashMap<String, String> requestParameter) {
         try {
             Template t = new Template(JDUtilities.getResourceFile("plugins/webinterface/" + url).getAbsolutePath());
 
             t.setParam("webinterface_version", JDWebinterface.instance.getPluginID());
+            t.setParam("page_refresh", JDWebinterface.page_refresh_interval);
             if (url.startsWith("single_info.tmpl") == true) add_single_info(t, requestParameter);
             if (url.startsWith("all_info.tmpl") == true) add_all_info(t, requestParameter);
             if (url.startsWith("index.tmpl") == true) add_status_page(t, requestParameter);

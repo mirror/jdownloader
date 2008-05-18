@@ -18,7 +18,6 @@
 //          -stable template system
 //          -anderes layout
 
-
 package jd.plugins.optional.webinterface;
 
 import java.awt.event.ActionEvent;
@@ -35,68 +34,78 @@ import jd.plugins.PluginOptional;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
-public class JDWebinterface extends PluginOptional  {    
-	
-	
+public class JDWebinterface extends PluginOptional {
+
     static final String PROPERTY_PORT = "PARAM_PORT";
     static final String PROPERTY_USER = "PARAM_USER";
     static final String PROPERTY_PASS = "PARAM_PASS";
     static final String PROPERTY_HTTPS = "PARAM_HTTPS";
     static final String PROPERTY_LOGIN = "PARAM_LOGIN";
     static final String PROPERTY_CONNECTIONS = "PARAM_CONNECTIONS";
-    public static JDWebinterface instance;
-    
-    static public Vector<FilePackage> Link_Adder_Packages=new Vector<FilePackage>();
-    
-    
-	@Override
+    static final String PROPERTY_REFRESH_INTERVAL = "PARAM_REFRESH_INTERVAL";
+    static final String PROPERTY_REFRESH = "PARAM_REFRESH";
+    static public JDWebinterface instance;
+
+    static public Vector<FilePackage> Link_Adder_Packages = new Vector<FilePackage>();
+    static public int page_refresh_interval = 0;
+
+    @Override
     public String getCoder() {
         return "jiaz";
     }
 
     @Override
     public String getPluginID() {
-        return "0.0.0.6";
+        return "0.0.0.7";
     }
 
     @Override
     public String getPluginName() {
-        return JDLocale.L("plugins.optional.webinterface.name","WebInterface");
+        return JDLocale.L("plugins.optional.webinterface.name", "WebInterface");
     }
 
     @Override
     public String getVersion() {
-        return "0.0.0.6";
+        return "0.0.0.7";
     }
 
     @Override
-    public boolean initAddon()  {
-       
-       
-        	JDSimpleWebserver server = new JDSimpleWebserver();
-            logger.info("WebInterface ok: java "+JDUtilities.getJavaVersion());
-        return true;
-              
-    }
-    
+    public boolean initAddon() {
+        SubConfiguration subConfig = JDUtilities.getSubConfig("WEBINTERFACE");
+        if (subConfig.getBooleanProperty(JDWebinterface.PROPERTY_REFRESH, true)) {
+            page_refresh_interval = subConfig.getIntegerProperty(JDWebinterface.PROPERTY_REFRESH_INTERVAL, 5);
+        } else
+            page_refresh_interval = 0;
 
-    
-    public JDWebinterface()
-    {
-        instance= this;
-    	SubConfiguration subConfig = JDUtilities.getSubConfig("WEBINTERFACE");
-    	ConfigEntry cfg;
-    	config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_SPINNER, subConfig, PROPERTY_PORT, JDLocale.L("plugins.optional.webinterface.port", "Port"), 1024, 65000));
-    	cfg.setStep(1);    	
-    	cfg.setDefaultValue(8765);
-    	config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_SPINNER, subConfig, PROPERTY_CONNECTIONS, JDLocale.L("plugins.optional.webinterface.connections", "Max. Connections"), 1, 20));
-    	cfg.setStep(1);    	
-    	cfg.setDefaultValue(10);    
-    	config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, PROPERTY_LOGIN, JDLocale.L("plugins.optional.webinterface.needlogin", "Need User Authentication")));
+        @SuppressWarnings("unused")
+        JDSimpleWebserver server = new JDSimpleWebserver();
+        logger.info("WebInterface ok: java " + JDUtilities.getJavaVersion());
+        return true;
+
+    }
+
+    public JDWebinterface() {
+        instance = this;
+        SubConfiguration subConfig = JDUtilities.getSubConfig("WEBINTERFACE");
+        ConfigEntry cfg;
+        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, PROPERTY_REFRESH, JDLocale.L("plugins.optional.webinterface.refresh", "AutoRefresh")));
         cfg.setDefaultValue(true);
-//        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, PROPERTY_HTTPS, JDLocale.L("plugins.optional.webinterface.https", "Use HTTPS")));
-//        cfg.setDefaultValue(false); TODO
-    	config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, subConfig, PROPERTY_USER, JDLocale.L("plugins.optional.webinterface.loginname", "Login Name")));
+        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_SPINNER, subConfig, PROPERTY_REFRESH_INTERVAL, JDLocale.L("plugins.optional.webinterface.refresh_interval", "Refresh Interval"), 5, 60));
+        cfg.setStep(1);
+        cfg.setDefaultValue(5);
+        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_SPINNER, subConfig, PROPERTY_PORT, JDLocale.L("plugins.optional.webinterface.port", "Port"), 1024, 65000));
+        cfg.setStep(1);
+        cfg.setDefaultValue(8765);
+        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_SPINNER, subConfig, PROPERTY_CONNECTIONS, JDLocale.L("plugins.optional.webinterface.connections", "Max. Connections"), 1, 20));
+        cfg.setStep(1);
+        cfg.setDefaultValue(10);
+        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, PROPERTY_LOGIN, JDLocale.L("plugins.optional.webinterface.needlogin", "Need User Authentication")));
+        cfg.setDefaultValue(true);
+        // config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX,
+        // subConfig, PROPERTY_HTTPS,
+        // JDLocale.L("plugins.optional.webinterface.https", "Use HTTPS")));
+        // cfg.setDefaultValue(false); TODO
+        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, subConfig, PROPERTY_USER, JDLocale.L("plugins.optional.webinterface.loginname", "Login Name")));
         cfg.setDefaultValue("JD");
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_PASSWORDFIELD, subConfig, PROPERTY_PASS, JDLocale.L("plugins.optional.webinterface.loginpass", "Login Pass")));
         cfg.setDefaultValue("JD");
@@ -116,12 +125,12 @@ public class JDWebinterface extends PluginOptional  {
 
     public void actionPerformed(ActionEvent e) {
         // TODO Auto-generated method stub
-        
+
     }
 
     @Override
     public void onExit() {
         // TODO Auto-generated method stub
-        
-    }    
+
+    }
 }
