@@ -168,6 +168,8 @@ a:hover {
 	letter-spacing: 1px;
 	text-transform: uppercase;
 	font-weight: bold;
+	font-family:verdana,arial,helvetica;
+	font-size:11px;
 }
 
 #packageContainer .symbol {
@@ -345,7 +347,9 @@ a.button, a.addButton {
 }
 
 a.addButton {
-	background-image:url('img/add.png'); background-repeat: no-repeat; padding: 7px 5px 9px 35px;
+	background-image:url('img/add.png');
+	background-repeat: no-repeat;
+	padding: 7px 5px 9px 35px;
 }
 
 a.button:hover, a.addButton:hover {
