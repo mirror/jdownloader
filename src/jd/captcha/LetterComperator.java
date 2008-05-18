@@ -205,7 +205,7 @@ public class LetterComperator {
         // schleife verschieb a und b gegeneinander. Dabei wird um den
         // jeweiligen Mittelpunkt herumgesprungen. Die Warscheinlichsten Fälle
         // in der Nullage werden zuerst geprüft
-        if (this.getDecodedValue().equals("1")) logger.info(this.getDecodedValue() + " :start");
+       // if (this.getDecodedValue().equals("1")) logger.info(this.getDecodedValue() + " :start");
 
         for (int xx = UTILITIES.getJumperStart(scanXFrom, scanXTo); UTILITIES.checkJumper(xx, scanXFrom, scanXTo); xx = UTILITIES.nextJump(xx, scanXFrom, scanXTo, 1)) {
             for (int yy = UTILITIES.getJumperStart(scanYFrom, scanYTo); UTILITIES.checkJumper(yy, scanYFrom, scanYTo); yy = UTILITIES.nextJump(yy, scanYFrom, scanYTo, 1)) {

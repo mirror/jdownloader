@@ -938,6 +938,7 @@ public class Rapidshare extends PluginForHost {
                     return step;
                 }
                 String wait = getSimpleMatch(requestInfo.getHtmlCode(), ticketWaitTimepattern, 0);
+                if(wait.equals("0"))wait=null;
                 ticketCode = JDUtilities.htmlDecode(getSimpleMatch(requestInfo.getHtmlCode(), ticketCodePattern, 0));
                 ticketCode = requestInfo.getHtmlCode() + " " + ticketCode;
                 captchaAddress = getFirstMatch(ticketCode, patternForCaptcha, 1);
@@ -1030,10 +1031,16 @@ public class Rapidshare extends PluginForHost {
 
                         }
                     } else {
+                        ProgressController progress = new ProgressController(JDLocale.L("plugins.rapidshare.captcha.progress","Captchaerkennung"),3);
+                        progress.increase(2);
                         this.captchaCode = Plugin.getCaptchaCode(captchaFile, this);
+                        progress.finalize();
                     }
                 } else {
+                    ProgressController progress = new ProgressController(JDLocale.L("plugins.rapidshare.captcha.progress","Captchaerkennung"),3);
+                    progress.increase(2);
                     this.captchaCode = Plugin.getCaptchaCode(captchaFile, this);
+                    progress.finalize();
                 }
                 timer = System.currentTimeMillis() - timer;
                 logger.info("captcha detection: " + timer + " ms");

@@ -97,15 +97,9 @@ public class CaptchaDialog extends JDialog implements ActionListener {
         setModal(true);
         addWindowListener(new WindowListener() {
 
-            public void windowActivated(WindowEvent e) {
-                // TODO Auto-generated method stub
+            public void windowActivated(WindowEvent e) { }
 
-            }
-
-            public void windowClosed(WindowEvent e) {
-                // TODO Auto-generated method stub
-
-            }
+            public void windowClosed(WindowEvent e) {  }
 
             public void windowClosing(WindowEvent e) {
                 // workaround für den scheiss compiz fehler
@@ -117,25 +111,13 @@ public class CaptchaDialog extends JDialog implements ActionListener {
 
             }
 
-            public void windowDeactivated(WindowEvent e) {
-                // TODO Auto-generated method stub
+            public void windowDeactivated(WindowEvent e) {}
 
-            }
+            public void windowDeiconified(WindowEvent e) {}
 
-            public void windowDeiconified(WindowEvent e) {
-                // TODO Auto-generated method stub
+            public void windowIconified(WindowEvent e) { }
 
-            }
-
-            public void windowIconified(WindowEvent e) {
-                // TODO Auto-generated method stub
-
-            }
-
-            public void windowOpened(WindowEvent e) {
-                // TODO Auto-generated method stub
-
-            }
+            public void windowOpened(WindowEvent e) { }
         });
         setLayout(new GridBagLayout());
         ImageIcon imageIcon = null;
@@ -188,10 +170,20 @@ public class CaptchaDialog extends JDialog implements ActionListener {
             this.jacThread.start();
 
         } else {
+          
             this.countdownThread = new Thread() {
 
                 public void run() {
                     int c = countdown * 1000;
+                    while(!CaptchaDialog.this.isActive()){
+                        try {
+                            Thread.sleep(200);
+                        } catch (InterruptedException e) {
+                            // TODO Auto-generated catch block
+                            e.printStackTrace();
+                        }
+                    }
+                  
                     long t = System.currentTimeMillis();
                     while (c >= 0) {
                         if (!isVisible()) return;
@@ -202,10 +194,12 @@ public class CaptchaDialog extends JDialog implements ActionListener {
                         c -= dif;
 
                         try {
-                            if (dif < 1000) Thread.sleep(1000 - dif);
+                            if (dif < 1000){ Thread.sleep(1000 - dif);
                             c -= (1000 - dif);
+                            }
                         } catch (InterruptedException e) {
                         }
+                       
                         if (!isVisible()) return;
 
                     }
@@ -216,7 +210,7 @@ public class CaptchaDialog extends JDialog implements ActionListener {
 
             };
             this.countdownThread.start();
-
+           
         }
 
         JLabel label = new JLabel(imageIcon);

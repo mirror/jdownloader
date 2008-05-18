@@ -317,7 +317,8 @@ public class RapidshareCom {
             // BasicWindow.showImage(l.getImage(2), i + "");
             // l.getIntegerProperty("ValityLimit", 0)logger.info("kkkk"+pixp+" -
             // "+vp);
-            if (pixp >= 35 && vp > (25.0 + l.getIntegerProperty("ValityLimit", 0)) && w > 2 * jac.getJas().getInteger("minimumLetterWidth") + 5/*
+            int limit=10+(4*dif.getWidth()/jac.getJas().getInteger("minimumLetterWidth"));
+            if (pixp >= limit && vp > (25.0 + l.getIntegerProperty("ValityLimit", 0)) && w > 2 * jac.getJas().getInteger("minimumLetterWidth") + 5/*
                                                                                                                                                  * &&
                                                                                                                                                  * count <
                                                                                                                                                  * 7
@@ -489,8 +490,8 @@ public class RapidshareCom {
         // //// l.colorize(0xff0000);
         // //
         // }
-        return letters;
-        // return filtered.toArray(new Letter[]{});
+        //return letters;
+         return filtered.toArray(new Letter[]{});
     }
 
     // private static boolean isCat(Letter l, Vector<byte[]> map,
@@ -631,7 +632,7 @@ public class RapidshareCom {
     public static void comparatorExtension(LetterComperator lc, Double currentValue) {
         Letter db = lc.getB();
         Letter ca = lc.getA();
-        if(currentValue>0.4)return;
+        if (currentValue > 0.4) return;
         // Prüfe Füllungen
 
         if (db.getDecodedValue().equalsIgnoreCase("3")) {
@@ -821,55 +822,63 @@ public class RapidshareCom {
         // 1 und I
 
         if (db.getDecodedValue().equalsIgnoreCase("1")) {
-            Letter is = lc.getDifference();
-if(lc.getLocalHeightPercent()<0.95) {
-    
-}
-//lc.setTmpExtensionError(2.0);
-if(currentValue==0.12818993602403742){
-    BasicWindow.showImage(is.getImage(2)," - "+(lc.intersectionDimension[1]-lc.getA().getHeight()));
-    logger.info("oooo"+lc);
-}
+            Letter is = lc.getIntersection();
+        
+            // lc.setTmpExtensionError(2.0);
 
-logger.info(": "+currentValue);//
+            is.crop(0, 0, 0, is.getHeight() - 5);
+            is.clean();
+
             int left = 0;
             int right = 0;
             for (int x = 0; x < is.getWidth(); x++) {
-                for (int y = 0; y < Math.min(3, is.getHeight()); y++) {
+                for (int y = 0; y < is.getHeight(); y++) {
                     if (is.grid[x][y] == 0) {
                         if (x < is.getWidth() / 2) {
                             left++;
+                            is.grid[x][y] = 0xff0000;
                         } else {
+                            is.grid[x][y] = 0x00FF00;
                             right++;
                         }
                     }
                 }
             }
-            
-            if (right < 15 && left < 15 && right >= left) {
-                 lc.setTmpExtensionError(2.0);
+            // if(currentValue==0.1373992673992674){
+            // BasicWindow.showImage(is.getImage(2)," -
+            // "+(lc.intersectionDimension[1]-lc.getA().getHeight()));
+            // logger.info("oooo"+right+" - "+left+" - "+currentValue);
+            // }
+            if (right < 40 && left < 40 && right >= left) {
+                lc.setTmpExtensionError(2.0);
             }
 
-           
         }
 
         if (db.getDecodedValue().equalsIgnoreCase("i")) {
-            Letter is = lc.getDifference();
+            Letter is = lc.getIntersection();
+            
+            // lc.setTmpExtensionError(2.0);
+
+            is.crop(0, 0, 0, is.getHeight() - 5);
+            is.clean();
             int left = 0;
             int right = 0;
             for (int x = 0; x < is.getWidth(); x++) {
-                for (int y = 0; y < Math.min(3, is.getHeight()); y++) {
+                for (int y = 0; y < is.getHeight(); y++) {
                     if (is.grid[x][y] == 0) {
                         if (x < is.getWidth() / 2) {
                             left++;
+                            is.grid[x][y] = 0xff0000;
                         } else {
+                            is.grid[x][y] = 0x00FF00;
                             right++;
                         }
                     }
                 }
             }
-            if (right < 15 && left < 15 && right < left) {
-                 lc.setTmpExtensionError(2.0);
+            if (right < 45 && left < 45 && right < left) {
+                lc.setTmpExtensionError(2.0);
             }
             // lc.setTmpExtensionError(2.0);
         }
