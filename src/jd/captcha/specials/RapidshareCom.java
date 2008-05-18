@@ -256,7 +256,7 @@ public class RapidshareCom {
         int iii = 0;
         for (Letter l : org) {
             iii++;
-            // BasicWindow.showImage(l.getImage(2), "" + iii);
+           // BasicWindow.showImage(l.getImage(2), "" + iii);
             if (l.getWidth() > 150 / fak && count < 6) {
                 logger.info("split in 3");
                 sp = l.toPixelObject(0.85).split(3, 10 / fak);
@@ -314,11 +314,11 @@ public class RapidshareCom {
 
             Letter dif = l.detected.getDifference();
             int pixp = (int) (dif.getElementPixel() * 100.0 / dif.getArea());
-            // BasicWindow.showImage(l.getImage(2), i + "");
-            // l.getIntegerProperty("ValityLimit", 0)logger.info("kkkk"+pixp+" -
-            // "+vp);
+          //BasicWindow.showImage(l.getImage(2), i + "");
+            // l.getIntegerProperty("ValityLimit", 0)logger.info("kkkk"+pixp+" -"+vp);
             int limit=10+(4*dif.getWidth()/jac.getJas().getInteger("minimumLetterWidth"));
-            if (pixp >= limit && vp > (25.0 + l.getIntegerProperty("ValityLimit", 0)) && w > 2 * jac.getJas().getInteger("minimumLetterWidth") + 5/*
+            int sizefaktor=(1*dif.getWidth()/jac.getJas().getInteger("minimumLetterWidth"));
+            if (pixp >= limit && vp > (25.0 + l.getIntegerProperty("ValityLimit", 0)+sizefaktor) && w > 2 * jac.getJas().getInteger("minimumLetterWidth") + 5/*
                                                                                                                                                  * &&
                                                                                                                                                  * count <
                                                                                                                                                  * 7
@@ -490,7 +490,7 @@ public class RapidshareCom {
         // //// l.colorize(0xff0000);
         // //
         // }
-        //return letters;
+       // return letters;
          return filtered.toArray(new Letter[]{});
     }
 
@@ -632,9 +632,12 @@ public class RapidshareCom {
     public static void comparatorExtension(LetterComperator lc, Double currentValue) {
         Letter db = lc.getB();
         Letter ca = lc.getA();
+        //logger.info(""+currentValue);
         if (currentValue > 0.4) return;
         // Prüfe Füllungen
 
+      
+       lc.setTmpExtensionError(lc.getLocalHeightPercent()/5);
         if (db.getDecodedValue().equalsIgnoreCase("3")) {
             Letter is = lc.getIntersection();
 
@@ -685,19 +688,28 @@ public class RapidshareCom {
                 for (int y = 0; y < is.getHeight(); y++) {
                     if (is.grid[x][y] == 0) {
                         if (y < is.getHeight() / 2) {
+                            is.grid[x][y]=0xff0000;
                             top++;
                         } else {
+                            is.grid[x][y]=0x00ff00;
                             bottom++;
                         }
                     }
                 }
             }
 
-            if (top > 190 && bottom > 190) {
+            bottom*=0.93;
+            
+          //if(currentValue==0.1463845029889602){
+//          BasicWindow.showImage(is.getImage(2));
+//          logger.info("");
+      //    
+      //}
+            if (top > 190 && bottom > 190 && bottom>top) {
                 // logger.info(top+" - ----- "+bottom);
 
             } else {
-                lc.setTmpExtensionError(2.0);
+               lc.setTmpExtensionError(2.0);
                 // BasicWindow.showImage(is.getImage()," -
                 // "+lc.getValityPercent());
             }
@@ -708,7 +720,7 @@ public class RapidshareCom {
             // Letter dif = lc.getDifference();
             Vector<PixelObject> whites = getWhiteObjects(is, lc.getOwner());
 
-            if (whites.size() > 0 || whites.firstElement().getSize() < 100) {
+            if (whites.size() ==0 || whites.firstElement().getSize() < 100) {
                 // BasicWindow.showImage(whiteSpace.firstElement().toLetter().getImage(2));
                 lc.setTmpExtensionError(2.0);
             }
@@ -716,20 +728,33 @@ public class RapidshareCom {
         }
         if (db.getDecodedValue().equalsIgnoreCase("p")) {
             Letter is = lc.getIntersection();
+          
             // Letter dif = lc.getDifference();
             Vector<PixelObject> whites = getWhiteObjects(is, lc.getOwner());
+            Iterator<PixelObject> it;
+            for (it = whites.iterator(); it.hasNext();) {
+                PixelObject next = it.next();
+                is.fillWithObject(next, 0);
+            }
+            is.crop(0, 0, 0, is.getHeight()/2);
+            is.clean();
+            
             int pixel = 0;
-            for (int x = 4; x < is.getWidth() - 4; x++) {
-                for (int y = 2; y < Math.min(10, is.getHeight()); y++) {
+            for (int x = 0; x < is.getWidth(); x++) {
+                for (int y = 0; y < is.getHeight(); y++) {
                     if (is.grid[x][y] == 0) {
                         pixel++;
                     }
                 }
             }
+//if(currentValue==0.22620827472866037){
+//    BasicWindow.showImage(is.getImage(2));
+//    logger.info("");
+//}
 
-            if (whites.size() > 0 && whites.firstElement().getSize() < 40 && pixel < 80) {
+            if (pixel<250) {
                 // BasicWindow.showImage(whiteSpace.firstElement().toLetter().getImage(2));
-                lc.setTmpExtensionError(1.0);
+                lc.setTmpExtensionError(2.0);
             }
 
         }
@@ -767,6 +792,20 @@ public class RapidshareCom {
             }
 
         }
+//        
+//        if (db.getDecodedValue().equalsIgnoreCase("c")) {
+//            Letter is = lc.getIntersection();
+//            // Letter dif = lc.getDifference();
+//            Vector<PixelObject> whites = getWhiteObjects(is, lc.getOwner());
+//
+//            if (whites.size() > 0 && whites.firstElement().getSize() > 100) {
+//                // BasicWindow.showImage(whiteSpace.firstElement().toLetter().getImage(2));
+//                lc.setTmpExtensionError(2.0);
+//            }
+//
+//        }
+//        0.33165190075838336
+        
         if (db.getDecodedValue().equalsIgnoreCase("g")) {
             Letter is = lc.getIntersection();
             // Letter dif = lc.getDifference();
@@ -823,7 +862,7 @@ public class RapidshareCom {
 
         if (db.getDecodedValue().equalsIgnoreCase("1")) {
             Letter is = lc.getIntersection();
-        
+            lc.setTmpExtensionError(0.5);
             // lc.setTmpExtensionError(2.0);
 
             is.crop(0, 0, 0, is.getHeight() - 5);
@@ -858,7 +897,7 @@ public class RapidshareCom {
         if (db.getDecodedValue().equalsIgnoreCase("i")) {
             Letter is = lc.getIntersection();
             
-            // lc.setTmpExtensionError(2.0);
+             lc.setTmpExtensionError(0.5);
 
             is.crop(0, 0, 0, is.getHeight() - 5);
             is.clean();
