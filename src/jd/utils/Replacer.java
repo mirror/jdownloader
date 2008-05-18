@@ -67,7 +67,7 @@ public class Replacer {
         return str;
     }
 
-    private static String getReplacement(String key) {
+    public static String getReplacement(String key) {
         JDController controller = JDUtilities.getController();
         DownloadLink dLink = controller.getLastFinishedDownloadLink();
         if(key.equalsIgnoreCase("LAST_FINISHED_PACKAGE.PASSWORD")){
