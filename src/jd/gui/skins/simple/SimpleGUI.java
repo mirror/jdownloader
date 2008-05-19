@@ -495,7 +495,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         // JMenuItem menEditItemBottom = createMenuItem(actionItemsBottom);
         JMenuItem menEditItemsDelete = createMenuItem(actionItemsDelete);
         menEdit.add(menEditItemsDelete);
-        menEdit.addSeparator();
+        // menEdit.addSeparator();
         // menEdit.add(menEditItemTop);
         // menEdit.add(menEditItemUp);
         // menEdit.add(menEditItemDown);
