@@ -20,6 +20,28 @@
 #
 # ----------------------------------------------------------------------------------------------------------------
 
+# ----------------------------------------------------------------------------------------------------------------
+#
+# Translation of strings missing and some translation fix by ReX
+# Version: 0.1.058-0.7
+#
+# Original English translation by jdown
+# Version: 0.0.766-0.3
+#
+#
+# History:
+#
+# * 0.0.766-0.1: first release.
+# * 0.0.766-0.2: translation fixes.
+# * 0.0.766-0.3: translation fixes.
+# * 0.0.885-0.4: translation of strings missing and translation fixes.
+# * 0.0.935-0.5: translation of more missing strings and better translation for some already translated terms and
+#                alfabeticly sorting of strings name.
+# * 0.0.998-0.6: translation of missing strings.
+# * 0.1.058-0.7: translation of missing strings and some minor translation fixes.
+#
+# ----------------------------------------------------------------------------------------------------------------
+
 ﻿action.passwordlist.name = Edit list of passwords
 config.container.defaultname = General
 controller.status.aborted = Aborted
@@ -768,7 +790,7 @@ gui.linkgrabber.menu.edit.removepackage = Remove package
 gui.linkgrabber.tabs.context.newpackage = New package
 gui.linkinformation.title = Link Information:
 gui.logDialog.title = jDownloader Log
-gui.menu.plugins = Addons
+gui.menu.plugins = Plugins
 gui.statusbar.premium = Premium
 gui.statusbar.sim_ownloads = Max.Dls.
 gui.statusbar.speed = Speed
@@ -919,3 +941,70 @@ addons.schedule.menu.edit = Edit
 addons.schedule.menu.remove = Remove
 addons.schedule.menu.settings = Settings
 addons.schedule.name = Schedule
+gui.config.gui.soundTheme = Soundtheme
+plugins.hoster.rapidshare.com.info.html = <link href='http://jdownloader.ath.cx/jdcss.css' rel='stylesheet' type='text/css' /><div style='width:534px;height;200px'><h2>Accountinformation</h2><table width='100%%' ><tr><th >Valid until</th><td>%s</td></tr><tr><th >Premiumpoints</th><td>%s</td></tr><tr><th >Current traffic</th><td>%s</td></tr><tr><th >Used space</th><td>%s</td></tr><tr><th >Files</th><td>%s</td></tr></table></div>
+plugins.hoster.rapidshare.com.info.title = Accountinformation for %s
+plugins.hoster.rapidshare.com.loadinfo = Fetch premiumaccount information:
+plugins.rapidshare.menu.forcefreewhilehh = Free Download during Happy Hour
+plugins.rapidshare.menu.happyHour = Happy Hours
+addons.jdshutdown.menu.enable = Enable shutdown
+captcha.ces.infostring = C.E.S
+controller.status.chunkloadfailed = Chunkdownload failed
+download.error.message.chunk_incomplete = Chunk(s) incomplete
+download.error.message.exception = Fatalerror:
+download.error.message.incomplete = Download incomplete
+download.error.message.nibble = Nibbling aborted after %s bytes
+downloadlink.status.error.chunkload = Chunkload failed
+downloadlink.status.error.temp_unavailable = Temp. unavailable
+gui.config.captcha.ces.btn_messages = Show my messages
+gui.config.captcha.ces.btn_sendmessages = Send message
+gui.config.captcha.useCESPenaltyWarning = Show warning to prevent point penalty
+gui.config.download.errorretries = Max. retries on error
+gui.config.download.retries = Max. retries from on temporary error
+gui.config.gui.soundTheme = Soundtheme
+gui.downloadlink.offline = [offline]
+gui.frame.packageinfo.entrycomment = Comment
+gui.frame.packageinfo.entrydldirectory = Downloaddirectory
+gui.frame.packageinfo.entrylinks = Kinks
+gui.frame.packageinfo.entryloaded = Loaded
+gui.frame.packageinfo.entryname = Name
+gui.frame.packageinfo.entrypackagesize = Packagesize
+gui.linkInfo.Filesize = Filesize
+gui.linkInfo.Save to = Save to
+gui.linkInfo.Speed = Speed
+gui.linkInfo.Wartezeit = Waittime
+gui.splash.text.configLoaded = Loading Configuration
+gui.splash.text.finished = Finished
+gui.splash.text.initcontroller = Starting Controler
+gui.splash.text.loadGUI = Loading Interface
+gui.splash.text.loadLanguage = Loading languages
+gui.splash.text.loadPlugins = Loading  Plugins
+gui.splash.text.loaddownloadqueue = Loading  Downloadlist
+gui.splash.text.loadmodules = Loading Modules and Addons
+gui.splash.text.update = Check for updates
+gui.table.contextmenu.resume = Resume
+gui.table.draganddrop.after = Drop after '%s'
+gui.table.draganddrop.before = Drop before '%s'
+interaction.shutdown.dialog.msg = <h2><font color="red">Attention! Your operating system is going to shutdown</font></h2>
+interaction.shutdown.name = Shutdown
+linkinformation.waittime.name = Waittime
+plugins.SerienJunkies.CatDialog.action = Cosse an action
+plugins.SerienJunkies.CatDialog.title = SerienJunkies ::CAT::
+plugins.hoster.rapidshare.com.happyHours = Happy Hour Check
+plugins.hoster.rapidshare.com.hhactive.html = <link href='http://jdownloader.ath.cx/jdcss.css' rel='stylesheet' type='text/css' /><body><div><p style='text-align:center'><img src='http://jdownloader.ath.cx/img/hh.jpg' /><br>Active until %s<br>Last check from %s<br>Last happy hour from %s to %s</p></div></body>
+plugins.hoster.rapidshare.com.info.html = <link href='http://jdownloader.ath.cx/jdcss.css' rel='stylesheet' type='text/css' /><div style='width:534px;height;200px'><h2>Accountinformation</h2><table width='100%%' ><tr><th >Valid until</th><td>%s</td></tr><tr><th >Premiumpoints</th><td>%s</td></tr><tr><th >Current traffic</th><td>%s</td></tr><tr><th >Used space</th><td>%s</td></tr><tr><th >Files</th><td>%s</td></tr></table></div>
+plugins.hoster.rapidshare.com.info.title = Accountinformation for %s
+plugins.hoster.rapidshare.com.loadinfo = Loading account information for rapidshare.com
+plugins.optional.jdshutdown.name = JDShutdown
+plugins.rapidshare.menu.forcefreewhilehh = Force free download while happy hour
+plugins.rapidshare.menu.happyHour = Happy Hours
+sys.warning.dlcerror.server = <b>Do you have installed the newest version of jD?</b> <br>Server response:
+sys.warning.dlcerror_unknown = DLC Error:
+downloadlink.status.error.agb_not_signed = TOSs not signed
+gui.btn_cancelCountdown = Stop Countdown
+gui.javacheck.html = <link href='http://jdownloader.ath.cx/jdcss.css' rel='stylesheet' type='text/css' /><div style='width:534px;height;200px'><h2>You useses a wrong Java version. Please use a original Sun Java. Start jDownloader anyway?<table width='100%%'><tr><th colspan='2'>Your Java Version:</th></tr><tr><th>Runtime Name</th><td>%s</td></tr><tr><th>Runtime Version</th><td>%s</td></tr></table></div>
+gui.javacheck.title = Wrong Java Version
+plugins.optional.webinterface.refresh = AutoRefresh
+plugins.optional.webinterface.refresh_interval = Refresh Interval
+plugins.rapidshare.captcha.progress = Captchadetection
+gui.config.captcha.use_Ces = Use Captcha Exchange Service(Need restart)
