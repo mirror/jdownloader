@@ -10,17 +10,20 @@
 </head>
 
 <body>
-<table width="95%" align="center">
+<table width="95%" align="center" id="infotable">
 <tbody>
 	<tmpl_loop all_infos>
 	<tr>
 		<td class="description"><tmpl_var info_var></td>
 
 	<tmpl_if info_percent>
-		<td class="infoladebalken"><div class="ladebalken"><p class="<tmpl_var download_status>" style="width: <tmpl_var info_percent>%;">
-			<span><tmpl_var info_value></span></p></div></td>
+		<td class="ladebalken">
+			<div class="ladebalken">
+				<p class="<tmpl_var download_status>" style="width: <tmpl_var info_percent>%;"></p><span class="ladestatus"><tmpl_var info_value></span>
+			</div>
+		</td>
 	<tmpl_else>
-		<td style="text-align:right"><tmpl_var info_value></td>
+		<td class="value"><tmpl_var info_value></td>
 	</tmpl_if>
 
 	</tr>
@@ -30,6 +33,7 @@
 
 <script type="text/javascript">
 	startPageReload(<tmpl_var page_refresh>);
+	resizeInfoWindow("infotable", 600);
 </script>
 </body>
 </html>

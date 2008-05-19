@@ -63,12 +63,10 @@
 					<tr class="package<tmpl_var download_status>">
 						<td><INPUT type="checkbox" name="package_all_downloads" value="<tmpl_var package_id escape>" onclick="samecheckall(document.jd.package_single_download,this)"></td>
 						<td><A href="all_info.tmpl?all_info=<tmpl_var package_id escape>" name="PackageInfo" onclick="return popup(this,600,200)"><tmpl_var download_name></A></td>
-						<td>&nbsp;<tmpl_var download_hoster></td>
-						<td class="ladebalkentd">
+						<td><tmpl_var download_hoster></td>
+						<td class="ladebalken">
 							<div class="ladebalken">
-								<p class="<tmpl_var download_status>" style="width: <tmpl_var download_status_percent>%;">
-									<span><tmpl_var download_status_text></span>
-								</p>
+								<p class="<tmpl_var download_status>" style="width: <tmpl_var download_status_percent>%;"></p><span class="ladestatus"><tmpl_var download_status_text></span>
 							</div>
 						</td>
 					</tr>
@@ -78,10 +76,7 @@
 							<td><INPUT type="checkbox" name="package_single_download" value="<tmpl_var package_id> <tmpl_var download_id escape>" onclick="areallsamechecked(this,document.jd.package_single_download,document.jd.package_all_downloads)"></TD>
 							<td><A href="single_info.tmpl?single_info=<tmpl_var package_id>+<tmpl_var download_id escape>" name="LinkInfo" onclick="return popup(this,600,200)" style="padding-left: 20px;"><tmpl_var download_name></A></TD>
 							<td><tmpl_var download_hoster></TD>
-							<td class="ladebalkentd">
-								<div class="ladebalken"><p class="<tmpl_var download_status>" style="width: <tmpl_var download_status_percent>%;">
-								<span><tmpl_var download_status_text></span></p></div>
-							</TD>
+							<td class="ladebalken"><div class="ladebalken"><p class="<tmpl_var download_status>" style="width: <tmpl_var download_status_percent>%;"></p><span class="ladestatus"><tmpl_var download_status_text></span></div></TD>
 						</tr>
 					</tmpl_loop>
 
@@ -114,7 +109,7 @@
 
 			<FORM name="add" id="addForm" action="/link_adder.tmpl" target="_parent" method="POST">
 				<DIV class="linkAddBox">
-					<textarea onkeydown="formElementChanged()" name="addlinks" cols="90" rows="3" onfocus="clean(this)" style="width:100%;">Paste your Links here (Container URLs, Link URLs, SourceCode from Pages to parse)</textarea><br>
+					<textarea name="addlinks" cols="90" rows="3" onfocus="formElementChanged(); clean(this);" style="width:100%;">Paste your Links here (Container URLs, Link URLs, SourceCode from Pages to parse)</textarea><br>
 					<br>
 					<a href="#" onclick="submitForm('addForm','link_adder.tmpl','do','Add')" class="addButton">Add</a>
 				</DIV>

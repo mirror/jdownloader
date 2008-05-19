@@ -262,6 +262,7 @@ function popup(obj,w,h) {
 	w = (w) ? w += 20 : 150;  // 150px*150px is the default size
 	h = (h) ? h += 25 : 150;
 	var args = 'width='+w+',height='+h+',resizable,scrollbars';
+	//var args = 'width='+w+',height='+h+',resizable,scrollbars,location,menubar,status';
 	popdown();
 	pop = window.open(url,'',args);
 	return (pop) ? false : true;
@@ -269,6 +270,15 @@ function popup(obj,w,h) {
 
 function popdown() {
 	if (pop && !pop.closed) pop.close();
+}
+
+function resizeInfoWindow(tableid, currWidth) {
+	var table = document.getElementById(tableid);
+
+	var newheight = table.getElementsByTagName('tr').length * 20 + 75;
+	var maxheight = screen.availHeight;
+	newheight = (newheight > maxheight)? maxheight : newheight;
+	window.resizeTo(currWidth, newheight);
 }
 
 //window.onunload = popdown;
@@ -294,7 +304,7 @@ function allowChars(id, chars) {
 				}
 				self.value = t;
 			};
-			this.timer = setTimeout(controll,1);
+// 			this.timer = setTimeout(controll,1);
 		};
 
 		clearFunc = function() {

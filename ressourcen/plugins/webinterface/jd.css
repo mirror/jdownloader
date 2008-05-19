@@ -19,7 +19,7 @@ table {
 
 table td {
 	border-width: 1px;
-	padding: 3px;
+	padding:0;
 	border-style: solid;
 	border-color: #2c2895;
 	background-color: #fff;
@@ -217,20 +217,29 @@ table.tabledownload td.tabletitle {
 	padding: 2px 5px;
 }
 
-table.tabledownload td.ladebalkentd {
+table.tabledownload td.ladebalken, td.ladebalken, td.description {
+	height: 20px;
+	line-height: 20px;
 	padding: 0px;
+	margin:0;
 }
 
-td.infoladebalken {
-	height: 20px;
-	padding:0px;
+td.value {
+	text-align: right;
+}
+
+td.value, td.description {
+	padding: 0px 5px;
 }
 
 td.description {
 	width: 20%;
+	height: 20px;
+	line-height: 20px;
 	background-color: #BABAFF;
-	color: #000;
 	font-weight: bold;
+	color: #000;
+	white-space: nowrap;
 }
 
 /*
@@ -238,6 +247,7 @@ td.description {
  */
 div.ladebalken {
 	height: 20px;
+	overflow:hidden;
 }
 
 div.ladebalken p {
@@ -249,13 +259,18 @@ div.ladebalken p {
   	 width: 100%;
 }
 
-div.ladebalken span {
-  	 position: absolute;
-  	 line-height: 20px;
-  	 width: 300px;
-  	 text-align: center;
-  	 color:#000;
-  	 font-weight:bold;
+span.ladestatus {
+	display: block;
+	position: relative;
+	top:-20px; left:0;
+	line-height: 20px;
+	width: 100%;
+	text-align: center;
+	color:#000;
+	font-weight:bold;
+	white-space: nowrap;
+	padding:0;
+	margin: 0;
 }
 
 /*
