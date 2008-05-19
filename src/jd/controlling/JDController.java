@@ -1245,7 +1245,7 @@ public class JDController implements ControlListener, UIListener {
                 Iterator<DownloadLink> it2 = fp.getDownloadLinks().iterator();
                 while (it2.hasNext()) {
                     nextDownloadLink = it2.next();
-                    if (nextDownloadLink.isInProgress() && nextDownloadLink.getStatus() != DownloadLink.STATUS_ERROR_DOWNLOAD_LIMIT) ret++;
+                    if (nextDownloadLink.isInProgress() && nextDownloadLink.getRemainingWaittime()<=0) ret++;
                 }
             }
         }

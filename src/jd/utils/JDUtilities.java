@@ -1065,7 +1065,7 @@ public class JDUtilities {
      */
     @SuppressWarnings("unchecked")
     public static Vector<PluginForHost> getPluginsForHost() {
-        // return pluginsForHost;
+        // return pluginsForHost; 
 
         Vector<PluginForHost> plgs = new Vector<PluginForHost>();
         if (pluginsForHost != null) plgs.addAll(pluginsForHost);
