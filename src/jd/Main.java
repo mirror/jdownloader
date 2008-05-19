@@ -46,6 +46,7 @@ import jd.utils.JDLocale;
 import jd.utils.JDSounds;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
+import jd.utils.CheckJava;
 
 /**
  * @author astaldo/JD-Team
@@ -57,7 +58,9 @@ public class Main {
     private static SplashScreen splashScreen;
 
     public static void main(String args[]) {
-
+        if(!new CheckJava().check())
+            System.exit(0);
+        
         // int t=0;
         // for( t=0; t<200;t++)
         // JDUtilities.downloadBinary(JDUtilities.getResourceFile("cap/cap_"+t+".jpg").getAbsolutePath(),

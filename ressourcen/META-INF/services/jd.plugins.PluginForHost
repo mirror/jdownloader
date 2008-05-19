@@ -23,3 +23,5 @@ jd.plugins.host.FastLoadNet
 #jd.plugins.host.BluehostTo
 jd.plugins.host.XupIn
 jd.plugins.host.Serienjunkies
+jd.plugins.host.FileBaseTo
+jd.plugins.host.MediafireCom

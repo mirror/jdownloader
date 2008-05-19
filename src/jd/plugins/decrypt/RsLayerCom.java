@@ -101,23 +101,16 @@ public class RsLayerCom extends PluginForDecrypt {
                 } else if ( parameter.indexOf("rs-layer.com/directory-") != -1 ) {
                 	
                     Form[] forms = Form.getForms(reqinfo);
-                    
-                    // links are captcha protected
-                    // by signed
+
                     if ( forms != null && forms.length != 0 && forms[0] != null ) {
-                    	
                     	Form captchaForm = forms[0];
-                    	
-                    	// find captcha url
+
                     	String captchaFileName = new Regexp(reqinfo.getHtmlCode(), strCaptchaPattern).getFirstMatch(1);
                     	
                     	if ( captchaFileName == null ){
-                    		logger.severe(JDLocale.L("plugins.decrypt.rslayer.couldntFindCaptchaUrl", "Captcha Url konnte nicht gefunden werden"));
                     		step.setStatus(PluginStep.STATUS_ERROR);
                     		return null;
                     	}
-                    	
-                    	// download captcha
                     	String captchaUrl =  "http://" + host + "/" + captchaFileName;
                     	File captchaFile = getLocalCaptchaFile(this, ".png");
                     	boolean fileDownloaded = JDUtilities.download(captchaFile,

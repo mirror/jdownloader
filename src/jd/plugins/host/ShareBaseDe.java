@@ -181,7 +181,6 @@ public class ShareBaseDe extends PluginForHost {
 
                     //SessionId auslesen
                     this.cookies = requestInfo.getCookie().split("; ")[0];
-                    System.out.println(this.cookies);
                     return step;
                     
                 case PluginStep.STEP_DOWNLOAD:
