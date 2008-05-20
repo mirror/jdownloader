@@ -89,6 +89,7 @@ public class DownloadWatchDog extends Thread implements ControlListener {
             currentTotalSpeed = 0;
             inProgress = 0;
             updates.clear();
+            boolean rr=false;
             for (Iterator<FilePackage> fpsIt = fps.iterator(); fpsIt.hasNext();) {
                 links = fpsIt.next().getDownloadLinks();
 
@@ -119,6 +120,13 @@ public class DownloadWatchDog extends Thread implements ControlListener {
                     if (link.getStatus() == DownloadLink.STATUS_DOWNLOAD_IN_PROGRESS) {
                         inProgress++;
                         currentTotalSpeed += link.getDownloadSpeed();
+                    }
+                    if (!rr&&link.isWaitingForReconnect()) {
+
+                        controller.requestReconnect();
+
+                        rr=true;
+
                     }
 
                 }
@@ -379,7 +387,7 @@ public class DownloadWatchDog extends Thread implements ControlListener {
             one: for (Iterator<FilePackage> it = controller.getPackages().iterator(); it.hasNext();) {
                 for (Iterator<DownloadLink> it2 = it.next().getDownloadLinks().iterator(); it2.hasNext();) {
 
-                    if (it2.next().waitsForReconnect()) {
+                    if (it2.next().isWaitingForReconnect()) {
 
                         controller.requestReconnect();
 

@@ -430,8 +430,9 @@ public class Netloadin extends PluginForHost {
     }
     @Override
     public int getMaxSimultanDownloadNum() {
-        if (this.getProperties().getBooleanProperty("USE_PREMIUM", false)) {
+        if(JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true)&& this.getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM, false)){
             return 20;
+        
         }else{
             if ( (System.currentTimeMillis()-LAST_FILE_STARTED)>1000 || !this.getProperties().getBooleanProperty("TRY_2_SIMULTAN", false) ) {
                 // 1 sekunde nach dem 1. downloadstart wird hier versucht erneut eine datei zu laden

@@ -868,7 +868,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
      * 
      * @return true/False
      */
-    public boolean waitsForReconnect() {
+    public boolean isWaitingForReconnect() {
         return getRemainingWaittime() > 0;
     }
 

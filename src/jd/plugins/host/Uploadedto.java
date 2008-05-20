@@ -687,11 +687,11 @@ public class Uploadedto extends PluginForHost {
 
     @Override
     public int getMaxSimultanDownloadNum() {
-        if (getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM, false)) {
-
+        if(JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true)&& this.getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM, false)){
             return 20;
+        }else{
+            return 1;
         }
-        return 1;
     }
 
     @Override

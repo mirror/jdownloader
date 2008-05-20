@@ -581,7 +581,11 @@ public class FileFactory extends PluginForHost {
 
     @Override
     public int getMaxSimultanDownloadNum() {
-        return 1;
+        if(JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true)&& this.getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM, false)){
+            return 20;
+        }else{
+            return 1;
+        }
     }
 
     @Override

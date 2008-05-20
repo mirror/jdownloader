@@ -309,7 +309,7 @@ public class SingleDownloadController extends Thread {
                 this.onErrorUnknown(downloadLink, currentPlugin, resultStep);
             }
 
-            if (downloadLink.getStatus()!=DownloadLink.STATUS_TODO&&resultPluginStatus == PluginStep.STATUS_ERROR && currentPlugin.getRetryOnErrorCount() < currentPlugin.getMaxRetriesOnError() && currentPlugin.getRetryCount() < currentPlugin.getMaxRetries()&& !downloadLink.waitsForReconnect()) {
+            if (downloadLink.getStatus()!=DownloadLink.STATUS_TODO&&resultPluginStatus == PluginStep.STATUS_ERROR && currentPlugin.getRetryOnErrorCount() < currentPlugin.getMaxRetriesOnError() && currentPlugin.getRetryCount() < currentPlugin.getMaxRetries()&& !downloadLink.isWaitingForReconnect()) {
                 currentPlugin.setRetryOnErrorCount(currentPlugin.getRetryOnErrorCount() + 1);
                 logger.info("Retry on Error: " + (currentPlugin.getRetryOnErrorCount() - 1));
 

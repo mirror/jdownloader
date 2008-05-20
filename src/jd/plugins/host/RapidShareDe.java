@@ -23,6 +23,7 @@ import java.util.regex.Pattern;
 
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
+import jd.config.Configuration;
 import jd.plugins.DownloadLink;
 import jd.plugins.Form;
 import jd.plugins.HTTPConnection;
@@ -266,12 +267,12 @@ public class RapidShareDe extends PluginForHost {
 
     @Override
     public int getMaxSimultanDownloadNum() {
-        if (this.getProperties().getBooleanProperty("PROPERTY_RSDE_USE_PREMIUM", false)) {
-            return Integer.MAX_VALUE;
-        }
-        else {
+        if(JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true)&& this.getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM, false)){
+            return 20;
+        }else{
             return 1;
         }
+       
     }
 
     @Override
