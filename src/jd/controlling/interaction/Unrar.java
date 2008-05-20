@@ -178,8 +178,9 @@ public class Unrar extends Interaction implements Serializable {
         LinkedList<mergeFile> mergeFiles = new LinkedList<mergeFile>();
         while (iter.hasNext()) {
             File file = (File) iter.next();
-            if(!mergeFiles.contains((mergeFile) file))
-                mergeFiles.add((mergeFile) file);
+            mergeFile mergeFile = new mergeFile(file.getAbsolutePath());
+            if(!mergeFiles.contains(mergeFile))
+                mergeFiles.add(mergeFile);
             if (JDUtilities.getController().isContainerFile(file)) {
                 if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_RELOADCONTAINER, true)) JDUtilities.getController().loadContainerFile(file);
             }
