@@ -414,36 +414,38 @@ public class Serienjunkies extends PluginForHost {
                     }
                     if (online) ret.addAll(links);
                 }
-                for (int i = 0; i < mirrors.length; i++) {
-                    if (down.size() > 0) {
-                        try {
-                            dls = getDLinks(mirrors[i]);
-                            if (aborted) { return null; }
-
-                            Iterator<Integer> iter = down.iterator();
-                            while (iter.hasNext()) {
-                                Integer integer = (Integer) iter.next();
-                                DistributeData distributeData = new DistributeData(dls.get(down.get(integer)).getDownloadURL());
-                                Vector<DownloadLink> links = distributeData.findLinks();
-                                Iterator<DownloadLink> it2 = links.iterator();
-                                boolean online = false;
-                                while (it2.hasNext()) {
-                                    DownloadLink downloadLink3 = (DownloadLink) it2.next();
-                                    if (downloadLink3.isAvailable()) {
-                                        fp.add(index, downloadLink3);
-                                        online = true;
-                                        iter.remove();
-                                    }
-
-                                }
-                                if (online) ret.addAll(links);
-                            }
-                        } catch (Exception e) {
-                            // TODO: handle exception
-                        }
-
-                    } else
-                        break;
+                if (mirrors != null) {
+	                for (int i = 0; i < mirrors.length; i++) {
+	                    if (down.size() > 0) {
+	                        try {
+	                            dls = getDLinks(mirrors[i]);
+	                            if (aborted) { return null; }
+	
+	                            Iterator<Integer> iter = down.iterator();
+	                            while (iter.hasNext()) {
+	                                Integer integer = (Integer) iter.next();
+	                                DistributeData distributeData = new DistributeData(dls.get(down.get(integer)).getDownloadURL());
+	                                Vector<DownloadLink> links = distributeData.findLinks();
+	                                Iterator<DownloadLink> it2 = links.iterator();
+	                                boolean online = false;
+	                                while (it2.hasNext()) {
+	                                    DownloadLink downloadLink3 = (DownloadLink) it2.next();
+	                                    if (downloadLink3.isAvailable()) {
+	                                        fp.add(index, downloadLink3);
+	                                        online = true;
+	                                        iter.remove();
+	                                    }
+	
+	                                }
+	                                if (online) ret.addAll(links);
+	                            }
+	                        } catch (Exception e) {
+	                            // TODO: handle exception
+	                        }
+	
+	                    } else
+	                        break;
+	                }
                 }
                 if (down.size() > 0) {
                     downloadLink.setStatus(DownloadLink.STATUS_ERROR_PLUGIN_SPECIFIC);
