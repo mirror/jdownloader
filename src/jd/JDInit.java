@@ -371,8 +371,8 @@ public class JDInit {
 //            // TODO: handle exception
 //        }
         HashMap<String, PluginOptional> pluginsOptional = new HashMap<String, PluginOptional>();
-        String[] optionalPlugins = new String[] {"JDTrayIcon", "JDGetter", "JDLightTray", "webinterface.JDWebinterface", "schedule.Schedule", "JDFolderWatch","JDShutdown", "JDRemoteControl"};
-        double[] optionalVersions = new double[] { 1.6, 1.5, 1.6, 1.5, 1.6, 1.5 ,1.5, 1.5};
+        String[] optionalPlugins = new String[] {"JDTrayIcon", "JDGetter", "JDLightTray", "webinterface.JDWebinterface", "schedule.Schedule", "JDFolderWatch","JDShutdown", "JDRemoteControl", "JDLowSpeed"};
+        double[] optionalVersions = new double[] { 1.6, 1.5, 1.6, 1.5, 1.6, 1.5 ,1.5, 1.5, 1.5};
         JDClassLoader jdClassLoader = JDUtilities.getJDClassLoader();
         int i = 0;
         Double version = JDUtilities.getJavaVersion();
