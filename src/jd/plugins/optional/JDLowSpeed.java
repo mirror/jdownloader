@@ -189,7 +189,7 @@ public class JDLowSpeed extends PluginOptional {
 
     @Override
     public String getPluginName() {
-        return JDLocale.L("plugins.optional.JDLowSpeed.name", "LowSpeed Detection");
+        return JDLocale.L("plugins.optional.jdlowspeed.name", "LowSpeed Detection");
     }
 
     @Override
