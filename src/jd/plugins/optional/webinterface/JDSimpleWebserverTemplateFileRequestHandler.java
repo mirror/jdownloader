@@ -40,6 +40,7 @@ public class JDSimpleWebserverTemplateFileRequestHandler {
     private void add_all_info(Template t, HashMap<String, String> requestParameter) {
         FilePackage fp;
         String[] ids;
+        String Single_Status;
         Integer package_id = 0;
         if (requestParameter.containsKey("all_info")) {
             ids = requestParameter.get("all_info").toString().split("[+]", 2);
@@ -55,12 +56,34 @@ public class JDSimpleWebserverTemplateFileRequestHandler {
 
             DownloadLink next = null;
             int i = 1;
-            for (Iterator<DownloadLink> it = fp.getDownloadLinks().iterator(); it.hasNext(); i++) {                
+            for (Iterator<DownloadLink> it = fp.getDownloadLinks().iterator(); it.hasNext(); i++) {
+                Hashtable h_info = new Hashtable();
                 next = it.next();
+                if (next.isEnabled()) {
+                    switch (next.getStatus()) {
+                    case DownloadLink.STATUS_DONE:
+                        Single_Status = "finished";
+                        break;
+                    case DownloadLink.STATUS_DOWNLOAD_IN_PROGRESS:
+                        Single_Status = "running";
+                        break;
+                    default:
+                        Single_Status = "activated";
+                    }
+                } else {
+                    Single_Status = "deactivated";
+                }
                 double percent = next.getDownloadCurrent() * 100.0 / Math.max(1, next.getDownloadMax());
-                addEntryandPercent(i + ". " + next.getName(), JDUtilities.formatKbReadable((int) next.getDownloadSpeed() / 1024) + "/s " + JDUtilities.getPercent((int) next.getDownloadCurrent(), (int) next.getDownloadMax()) + " | " + next.getDownloadCurrent() + "/" + next.getDownloadMax() + " bytes", percent);               
+                
+                h_info.put("info_percent", f.format(percent));
+                h_info.put("download_status", Single_Status);
+                h_info.put("info_var", i + ". " + next.getName());                
+                h_info.put("info_value", JDUtilities.formatKbReadable((int) next.getDownloadSpeed() / 1024) + "/s " + JDUtilities.getPercent((int) next.getDownloadCurrent(), (int) next.getDownloadMax()) + " | " + next.getDownloadCurrent() + "/" + next.getDownloadMax() + " bytes");                
+                h_info.put("download_id", i);
+                v_info.addElement(h_info);
             }
             t.setParam("all_infos", v_info);
+
         }
     }
 
@@ -71,11 +94,12 @@ public class JDSimpleWebserverTemplateFileRequestHandler {
         Integer download_id = 0;
         Integer package_id = 0;
         String[] ids;
+        String Single_Status;
         if (requestParameter.containsKey("single_info")) {
             ids = requestParameter.get("single_info").toString().split("[+]", 2);
             package_id = JDUtilities.filterInt(ids[0].toString());
             download_id = JDUtilities.filterInt(ids[1].toString());
-            downloadLink = JDUtilities.getController().getPackages().get(package_id).getDownloadLinks().get(download_id);            
+            downloadLink = JDUtilities.getController().getPackages().get(package_id).getDownloadLinks().get(download_id);
 
             addEntry("file", new File(downloadLink.getFileOutput()).getName() + " @ " + downloadLink.getHost());
             if (downloadLink.getFilePackage() != null && downloadLink.getFilePackage().getPassword() != null) {
@@ -119,14 +143,34 @@ public class JDSimpleWebserverTemplateFileRequestHandler {
             }
             addEntry(JDLocale.L("linkinformation.download.status", "Status"), downloadLink.getStatusText());
 
+            if (downloadLink.isEnabled()) {
+                switch (downloadLink.getStatus()) {
+                case DownloadLink.STATUS_DONE:
+                    Single_Status = "finished";
+                    break;
+                case DownloadLink.STATUS_DOWNLOAD_IN_PROGRESS:
+                    Single_Status = "running";
+                    break;
+                default:
+                    Single_Status = "activated";
+                }
+            } else {
+                Single_Status = "deactivated";
+            }
             DownloadInterface dl;
             if (downloadLink.isInProgress() && (dl = downloadLink.getDownloadInstance()) != null) {
                 addEntry(JDLocale.L("linkinformation.download.chunks.label", "Chunks"), "");
                 int i = 1;
                 for (Iterator<Chunk> it = dl.getChunks().iterator(); it.hasNext(); i++) {
+                    Hashtable h_info = new Hashtable();
                     Chunk next = it.next();
                     double percent = next.getBytesLoaded() * 100.0 / Math.max(1, next.getChunkSize());
-                    addEntryandPercent(JDLocale.L("download.chunks.connection", "Verbindung") + " " + i, JDUtilities.formatKbReadable((int) next.getBytesPerSecond() / 1024) + "/s " + JDUtilities.getPercent(next.getBytesLoaded(), next.getChunkSize()), percent);
+                    h_info.put("download_status", Single_Status);
+                    h_info.put("info_var", JDLocale.L("download.chunks.connection", "Verbindung") + " " + i);
+                    h_info.put("info_value", JDUtilities.formatKbReadable((int) next.getBytesPerSecond() / 1024) + "/s " + JDUtilities.getPercent(next.getBytesLoaded(), next.getChunkSize()));
+                    h_info.put("info_percent", f.format(percent));
+                    h_info.put("download_id", i);
+                    v_info.addElement(h_info);
                 }
 
             }
@@ -305,7 +349,7 @@ public class JDSimpleWebserverTemplateFileRequestHandler {
         t.setParam("pakete", v);
     }
 
-    private void add_password_list(Template t, HashMap<String, String> requestParameter) {        
+    private void add_password_list(Template t, HashMap<String, String> requestParameter) {
         String[] pws = JUnrar.returnPasswords();
         String pwlist = "";
         for (int i = 0; i < pws.length; i++) {
@@ -314,7 +358,7 @@ public class JDSimpleWebserverTemplateFileRequestHandler {
         t.setParam("password_list", pwlist);
     }
 
-    @SuppressWarnings({ "unchecked", "deprecation" })
+    @SuppressWarnings( { "unchecked", "deprecation" })
     public void handleRequest(String url, HashMap<String, String> requestParameter) {
         try {
             Template t = new Template(JDUtilities.getResourceFile("plugins/webinterface/" + url).getAbsolutePath());

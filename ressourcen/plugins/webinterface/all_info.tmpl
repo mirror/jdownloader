@@ -16,11 +16,11 @@
 	<tr>
 		<td class="description"><tmpl_var info_var></td>
 
-	<tmpl_if info_percent>
+	<tmpl_if download_status>
 		<td class="ladebalken">
 			<div class="ladebalken">
 				<div class="ladebalkenWrapper">
-					<div name="ladebalken" class="<tmpl_var download_status>" style="width: <tmpl_var info_percent>%;" id="0_<tmpl_var download_id escape>">&nbsp;</div>
+					<div name="ladebalken" class="<tmpl_var download_status escape>" style="width: <tmpl_var info_percent>%;" id="0_<tmpl_var download_id escape>">&nbsp;</div>
 				</div>
 				<span class="ladestatus"><tmpl_var info_value></span><br class="clear">
 			</div>
