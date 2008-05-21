@@ -17,6 +17,7 @@
 
 package jd.gui.skins.simple;
 
+import java.awt.Image;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
@@ -95,7 +96,7 @@ public class JDAction extends AbstractAction{
         this.actionListener = actionListener;
        
      if(JDUtilities.getImage(iconName)!=null){
-        ImageIcon icon = new ImageIcon(JDUtilities.getImage(iconName));
+        ImageIcon icon = new ImageIcon(JDUtilities.getImage(iconName).getScaledInstance(16, 16, Image.SCALE_SMOOTH));
         putValue(Action.SMALL_ICON, icon);
      }
         putValue(Action.SHORT_DESCRIPTION, JDLocale.L("gui.menu."+ressourceName+".desc"));
