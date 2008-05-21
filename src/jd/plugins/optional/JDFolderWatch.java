@@ -77,8 +77,10 @@ public class JDFolderWatch extends PluginOptional implements ControlListener {
         cfg.setDefaultValue(JDUtilities.getConfiguration().getDefaultDownloadDirectory());
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_SPINNER, subConfig, "WAITTIME", JDLocale.L("plugins.optional.folderwatch.waittime", "Waittime"), 1, 60));
         cfg.setDefaultValue("5");
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, "DELETE", JDLocale.L("plugins.optional.folderwatch.delete", "Delete")));
-        cfg.setDefaultValue(true);
+        
+        //Hat nicht funktioniert
+//        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, "DELETE", JDLocale.L("plugins.optional.folderwatch.delete", "Delete")));
+//        cfg.setDefaultValue(true);
     }
 
     @Override
@@ -132,17 +134,18 @@ public class JDFolderWatch extends PluginOptional implements ControlListener {
         return subConfig.getIntegerProperty("WAITTIME", 5) * 60000;
     }
 
-    private void checkFolder() {
+    private synchronized void checkFolder() {
         boolean dabei = false;
         File folder = new File(subConfig.getStringProperty("FOLDER", JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_DOWNLOAD_DIRECTORY)));
         if (folder.isDirectory()) {
             String[] help = folder.list();
 
             for (int i = 0; i < help.length; i++) {
-                if (help[i].endsWith(".dlc") || help[i].endsWith(".ccf") || help[i].endsWith(".rsdf")) {
+                if (help[i].toLowerCase().endsWith(".dlc") || help[i].toLowerCase().endsWith(".ccf") || help[i].toLowerCase().endsWith(".rsdf")) {
                     File container = new File(folder, help[i]);
+                    try{
                     for (int j = 0; j < added.size(); j++) {
-                        if (container.getAbsolutePath().equals(added.get(i))) {
+                        if (container.getAbsolutePath().equals(added.get(j))) {
                             dabei = true;
                             break;
                         }
@@ -150,9 +153,13 @@ public class JDFolderWatch extends PluginOptional implements ControlListener {
                     if (!dabei) {
                         JDUtilities.getController().loadContainerFile(container);
                         added.add(container.getAbsolutePath());
-                        if (subConfig.getBooleanProperty("DELETE", true)) {
-                            container.delete();
-                        }
+                        //Buggy
+//                        if (subConfig.getBooleanProperty("DELETE", true)) {
+//                            container.delete();
+//                        }
+                    }
+                    }catch(Exception e){
+                        e.printStackTrace();
                     }
                 }
             }
