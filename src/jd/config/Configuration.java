@@ -229,6 +229,8 @@ public class Configuration extends Property implements Serializable {
 
     public static final String PROXY_PASS = "PROXY_PASS";
 
+    public static final String LOGGER_FILELOG = "LOGGER_FILELOG";
+
    
 
   

@@ -18,8 +18,12 @@ package jd;
 
 import java.awt.Image;
 import java.awt.MediaTracker;
+import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
+import java.io.OutputStream;
+import java.io.PrintStream;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.rmi.Naming;
@@ -56,11 +60,19 @@ public class Main {
 
     private static Logger logger = JDUtilities.getLogger();
     private static SplashScreen splashScreen;
-
+private static boolean debug=false;
     public static void main(String args[]) {
-        if(!new CheckJava().check())
-            System.exit(0);
-        
+       
+        for (String p : args) {
+            if (p.equalsIgnoreCase("-debug")) {
+                debug=true;
+                
+                break;
+            }
+        }   
+    
+        if (!new CheckJava().check()) System.exit(0);
+
         // int t=0;
         // for( t=0; t<200;t++)
         // JDUtilities.downloadBinary(JDUtilities.getResourceFile("cap/cap_"+t+".jpg").getAbsolutePath(),
@@ -72,8 +84,7 @@ public class Main {
         long extractTime = 0;
         Vector<String> paths = new Vector<String>();
         boolean enoughtMemory = !(Runtime.getRuntime().maxMemory() < 100000000);
-        if(!enoughtMemory)
-            showSplash=false;
+        if (!enoughtMemory) showSplash = false;
         // pre start parameters //
         for (int i = 0; i < args.length; i++) {
             if (extractSwitch) {
@@ -231,6 +242,7 @@ public class Main {
             }
 
         }
+     
 
     }
 
@@ -245,7 +257,9 @@ public class Main {
         setSplashStatus(splashScreen, 10, JDLocale.L("gui.splash.text.configLoaded", "lade Konfiguration"));
 
         init.loadConfiguration();
-
+        if(debug){
+            JDUtilities.getLogger().setLevel( Level.ALL);
+        }
         init.setupProxy();
         init.removeFiles();
 
@@ -264,6 +278,18 @@ public class Main {
         setSplashStatus(splashScreen, 10, JDLocale.L("gui.splash.text.initcontroller", "Starte Controller"));
 
         final JDController controller = init.initController();
+     
+        if (debug||JDUtilities.getConfiguration().getBooleanProperty(Configuration.LOGGER_FILELOG, false)) {
+            try {
+                File log = JDUtilities.getResourceFile("logs/"+(debug?"debug":"")+"log_" + System.currentTimeMillis() + ".log");
+                log.getParentFile().mkdirs();
+                log.createNewFile();
+                controller.setLogFileWriter(new BufferedWriter(new FileWriter(log)));
+            } catch (IOException e) {
+
+                e.printStackTrace();
+            }
+        }
 
         if (init.installerWasVisible()) {
             init.doWebupdate(JDUtilities.getConfiguration().getIntegerProperty(Configuration.CID, -1), true);
@@ -325,6 +351,11 @@ public class Main {
         // BasicConfigurator.configure();
         // lg.error("hallo Welt");
         // lg.setLevel(org.apache.log4j.Level.ALL);
+        Level level = JDUtilities.getLogger().getLevel();
+        if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.LOGGER_FILELOG, false) || level.equals(Level.ALL) || level.equals(Level.FINER) || level.equals(Level.FINE)) {
+            JDUtilities.getGUI().showHelpMessage(JDLocale.L("main.start.logwarning.title", "Logwarnung"), String.format(JDLocale.L("main.start.logwarning.body", "ACHTUNG. Das Loglevel steht auf %s und der Dateischreiber ist %s. \r\nDiese Einstellungen belasten das System und sind nur zur Fehlersuche geeignet."), level.getName(), JDUtilities.getConfiguration().getBooleanProperty(Configuration.LOGGER_FILELOG, false) ? JDLocale.L("main.status.active", "an") : JDLocale.L("main.status.inactive", "aun")), JDLocale.L("main.urls.faq", "http://jdownloader.ath.cx/faq.php?lng=deutsch"));
+
+        }
 
     }
 

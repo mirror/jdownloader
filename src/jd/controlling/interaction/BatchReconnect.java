@@ -38,7 +38,7 @@ public class BatchReconnect extends Interaction implements Serializable {
 
     private static final String PARAM_IPCHECKWAITTIME             = "EXTERN_RECONNECT_IPCHECKWAITTIME";
 
-    private static final String PARAM_RETRIES                     = "EXTERN_RECONNECT_RETRIES";
+    public static final String PARAM_RETRIES                     = "EXTERN_RECONNECT_RETRIES";
 
     private static final String PARAM_WAITFORIPCHANGE             = "EXTERN_RECONNECT_WAITFORIPCHANGE";
 

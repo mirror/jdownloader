@@ -14,7 +14,6 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-
 package jd.router;
 
 import java.io.File;
@@ -37,19 +36,19 @@ import jd.plugins.RequestInfo;
 import jd.utils.JDUtilities;
 
 public class GetRouterInfo {
-    public String            password    = null;
+    public String password = null;
 
-    public String            username    = null;
+    public String username = null;
 
-    public String            adress      = null;
+    public String adress = null;
 
-    public boolean           cancel      = false;
+    public boolean cancel = false;
 
-    private Logger           logger      = JDUtilities.getLogger();
+    private Logger logger = JDUtilities.getLogger();
 
     private Vector<String[]> routerDatas = null;
 
-    private ProgressDialog   progressBar;
+    private ProgressDialog progressBar;
 
     public GetRouterInfo(ProgressDialog progress) {
         this.progressBar = progress;
@@ -61,8 +60,7 @@ public class GetRouterInfo {
         if (progressBar != null) {
             progressBar.setString(text);
             this.progressBar.setStringPainted(true);
-        }
-        else {
+        } else {
             logger.info(text);
         }
     }
@@ -72,8 +70,7 @@ public class GetRouterInfo {
         if (progressBar != null) {
             progressBar.setValue(val);
 
-        }
-        else {
+        } else {
             logger.info(val + "%");
         }
     }
@@ -84,13 +81,16 @@ public class GetRouterInfo {
             sock = new Socket(host, 80);
             sock.setSoTimeout(200);
             return true;
-        }
-        catch (UnknownHostException e) {
-        }
-        catch (IOException e) {
+        } catch (UnknownHostException e) {
+        } catch (IOException e) {
         }
         return false;
 
+    }
+
+    public static boolean validateIP(String iPaddress) {
+        final Pattern IP_PATTERN = Pattern.compile("\\b(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\b");
+        return IP_PATTERN.matcher(iPaddress).matches();
     }
 
     public String getAdress() {
@@ -114,12 +114,10 @@ public class GetRouterInfo {
                                 return adress;
                             }
                         }
-                    }
-                    catch (UnknownHostException e) {
+                    } catch (UnknownHostException e) {
                         // TODO Auto-generated catch block
                         e.printStackTrace();
-                    }
-                    catch (IOException e) {
+                    } catch (IOException e) {
                         // TODO Auto-generated catch block
                         e.printStackTrace();
                     }
@@ -132,22 +130,30 @@ public class GetRouterInfo {
         if (!hosts.contains("192.168.1.1")) hosts.add("192.168.1.1");
         if (!hosts.contains("192.168.0.1")) hosts.add("192.168.0.1");
         if (!hosts.contains("fritz.box")) hosts.add("fritz.box");
-        String ip = null;
-        try {
-            InetAddress myAddr = InetAddress.getLocalHost();
-            ip = myAddr.getHostAddress();
-        }
-        catch (UnknownHostException exc) {
-        }
-        if (ip != null) {
-            String host = ip.replace("\\.[\\d]+$", ".");
-            for (int i = 1; i < 255; i++) {
-                String lhost = host + i;
-                if (!lhost.equals(ip) && !hosts.contains(ip)) {
-                    hosts.add(ip);
-                }
 
+        String ip = null;
+        String localHost;
+        try {
+            localHost = InetAddress.getLocalHost().getHostName();
+            for (InetAddress ia : InetAddress.getAllByName(localHost)) {
+
+                if (validateIP(ia.getHostAddress() + "")) {
+                    ip = ia.getHostAddress();
+
+                    if (ip != null) {
+                        String host = ip.substring(0,ip.lastIndexOf("."))+".";
+                        for (int i = 0; i < 255; i++) {
+                            String lhost = host + i;
+                            if (!lhost.equals(ip) && !hosts.contains(lhost)) {
+                                hosts.add(lhost);
+                            }
+
+                        }
+                    }
+                }
             }
+
+        } catch (UnknownHostException exc) {
         }
         int size = hosts.size();
 
@@ -164,8 +170,7 @@ public class GetRouterInfo {
                     }
                 }
 
-            }
-            catch (IOException e) {
+            } catch (IOException e) {
             }
         }
         setProgress(100);
@@ -175,6 +180,7 @@ public class GetRouterInfo {
 
     public Vector<String[]> getRouterDatas() {
         if (routerDatas != null) return routerDatas;
+        
         if (getAdress() == null) return null;
         try {
             // progress.setStatusText("Load possible RouterDatas");
@@ -188,12 +194,10 @@ public class GetRouterInfo {
             }
             routerDatas = retRouterData;
             return retRouterData;
-        }
-        catch (MalformedURLException e) {
+        } catch (MalformedURLException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
-        }
-        catch (IOException e) {
+        } catch (IOException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
         }
@@ -207,11 +211,10 @@ public class GetRouterInfo {
 
     }
 
-    public String[] getRouterData() {
+    public String[] getRouterData(String ip) {
         setProgressText("Get Routerdata");
-        if (getRouterDatas() == null) {
-            return null;
-        }
+        adress=ip;
+        if (getRouterDatas() == null) { return null; }
         int retries = JDUtilities.getConfiguration().getIntegerProperty(Configuration.PARAM_HTTPSEND_RETRIES, 5);
         int wipchange = JDUtilities.getConfiguration().getIntegerProperty(Configuration.PARAM_HTTPSEND_WAITFORIPCHANGE, 20);
         JDUtilities.getConfiguration().setProperty(Configuration.PARAM_HTTPSEND_RETRIES, 0);
@@ -226,14 +229,12 @@ public class GetRouterInfo {
 
             if (isEmpty(username)) {
                 JDUtilities.getConfiguration().setProperty(Configuration.PARAM_HTTPSEND_USER, data[4]);
-            }
-            else {
+            } else {
                 data[4] = username;
             }
             if (isEmpty(password)) {
                 JDUtilities.getConfiguration().setProperty(Configuration.PARAM_HTTPSEND_PASS, data[5]);
-            }
-            else {
+            } else {
                 data[5] = password;
             }
             JDUtilities.getConfiguration().setProperty(Configuration.PARAM_HTTPSEND_REQUESTS, data[2]);

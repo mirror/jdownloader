@@ -17,7 +17,9 @@
 package jd.controlling;
 
 import java.awt.Color;
+import java.io.BufferedWriter;
 import java.io.File;
+import java.io.IOException;
 import java.io.StringReader;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -26,8 +28,8 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.Timer;
 import java.util.Vector;
+import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -153,6 +155,7 @@ public class JDController implements ControlListener, UIListener {
     private FilePackage fp;
     private ArrayList<ControlEvent> eventQueue;
     private EventSender eventSender;
+    private BufferedWriter fileLogger = null;
 
     public JDController() {
 
@@ -245,10 +248,36 @@ public class JDController implements ControlListener, UIListener {
 
     @SuppressWarnings("unchecked")
     public void controlEvent(ControlEvent event) {
+        if(event==null){
+            logger.info("JJJ");
+        }
         switch (event.getID()) {
+
+        case ControlEvent.CONTROL_LOG_OCCURED:
+            if (fileLogger != null) {
+                LogRecord l = (LogRecord) event.getParameter();
+                try {
+                    fileLogger.write(l.getMillis() + " : " + l.getSourceClassName() + "(" + l.getSourceMethodName() + ") " + "[" + l.getLevel() + "] -> " + l.getMessage()+"\r\n");
+                    fileLogger.flush();
+                } catch (IOException e) {
+                }
+
+            }
+
+            break;
         case ControlEvent.CONTROL_SYSTEM_EXIT:
 
             CES.setEnabled(false);
+            if (fileLogger != null) {
+                try {
+                    fileLogger.flush();
+
+                    fileLogger.close();
+                } catch (IOException e) {
+                    // TODO Auto-generated catch block
+                    e.printStackTrace();
+                }
+            }
             break;
         case ControlEvent.CONTROL_PLUGIN_INACTIVE:
             // Nur Hostpluginevents auswerten
@@ -1245,8 +1274,8 @@ public class JDController implements ControlListener, UIListener {
                 Iterator<DownloadLink> it2 = fp.getDownloadLinks().iterator();
                 while (it2.hasNext()) {
                     nextDownloadLink = it2.next();
-                    if (nextDownloadLink.getStatus()==DownloadLink.STATUS_DOWNLOAD_IN_PROGRESS ||(nextDownloadLink.isInProgress() && !nextDownloadLink.isWaitingForReconnect()&&nextDownloadLink.isEnabled())) {
-                        
+                    if (nextDownloadLink.getStatus() == DownloadLink.STATUS_DOWNLOAD_IN_PROGRESS || (nextDownloadLink.isInProgress() && !nextDownloadLink.isWaitingForReconnect() && nextDownloadLink.isEnabled())) {
+
                         ret++;
                     }
                 }
@@ -1926,6 +1955,11 @@ public class JDController implements ControlListener, UIListener {
             }
 
         }
+
+    }
+
+    public void setLogFileWriter(BufferedWriter bufferedWriter) {
+        this.fileLogger = bufferedWriter;
 
     }
 }

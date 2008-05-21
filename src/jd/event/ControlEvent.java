@@ -150,7 +150,7 @@ public class ControlEvent extends AWTEvent {
 
 public static final int CONTROL_INTERACTION_CALL = 28;
 
-
+public static final int CONTROL_LOG_OCCURED = 29;
 
     
 

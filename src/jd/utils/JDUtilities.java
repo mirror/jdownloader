@@ -75,6 +75,7 @@ import java.util.logging.ConsoleHandler;
 import java.util.logging.Formatter;
 import java.util.logging.Handler;
 import java.util.logging.Level;
+import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -2092,6 +2093,24 @@ public class JDUtilities {
             logger.addHandler(console);
 
             logger.setLevel(Level.ALL);
+            logger.addHandler(new Handler() {
+                public void publish(LogRecord logRecord) {
+//                  System.out.println(logRecord.getLevel() + ":");
+//                  System.out.println(logRecord.getSourceClassName() + ":");
+//                  System.out.println(logRecord.getSourceMethodName() + ":");
+//                  System.out.println("<" + logRecord.getMessage() + ">");
+//                  System.out.println("\n");
+                  if(JDUtilities.getController()!=null)
+                  JDUtilities.getController().fireControlEvent(ControlEvent.CONTROL_LOG_OCCURED,logRecord);
+                }
+
+                public void flush() {
+                }
+
+                public void close() {
+                }
+              });
+            
             // logger.finer("Init Logger:" + LOGGER_NAME);
             // Leitet System.out zum Logger um.
             // final PrintStream err = System.err;
