@@ -1158,11 +1158,12 @@ public class PixelGrid extends Property {
         Vector<PixelObject> ret = new Vector<PixelObject>();
         PixelObject lastObject = null;
         PixelObject object;
-        boolean showdebug = false;
+        boolean showdebug = true;
         ScrollPaneWindow w = null;
         if (showdebug) w = new ScrollPaneWindow(this.owner);
         if (showdebug) w.setTitle("getObjects2");
-        int line = 0;
+        if (showdebug) w.setImage(0, 0, this.getImage());
+        int line = 1;
         for (int x = 0; x < getWidth(); x++) {
             for (int y = 0; y < getHeight(); y++) {
                 if (tmpGrid[x][y] < 0) continue;

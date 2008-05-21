@@ -1398,7 +1398,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
 
                 } else if (event.getParameter().equals(Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN)) {
                     spMaxDls.setValue(p.getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN,3));
-                } else if (event.getParameter().equals(Configuration.PARAM_USE_GLOBAL_PREMIUM)) {
+                } else if (p==JDUtilities.getConfiguration()&&event.getParameter().equals(Configuration.PARAM_USE_GLOBAL_PREMIUM)) {
                     chbPremium.setSelected(p.getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM,true));
 
                 } else if (event.getParameter().equals(CESClient.UPDATE)) {

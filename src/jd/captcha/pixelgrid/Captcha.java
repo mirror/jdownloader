@@ -939,10 +939,12 @@ public class Captcha extends PixelGrid {
         } else {
 
             ; // UTILITIES.trace("COLORS: "+numColors);
+            Object b = pg.getPixels();
             ret.setPixel((byte[]) pg.getPixels());
         }
 
         // BasicWindow.showImage(ret.getImage());
+    
         ret.setOrgGrid(PixelGrid.getGridCopy(ret.getGrid()));
         return ret;
 
@@ -960,8 +962,18 @@ public class Captcha extends PixelGrid {
             for (int x = 0; x < getWidth(); x++) {
                 // grid[x][y] = pixel[i++];
                 try {
-                    this.pixel[i] = ((IndexColorModel) colorModel).getRGB(bpixel[i]);
+                    int pb = ((IndexColorModel) colorModel).getPixelSize();
+                    int maskbits = pb;
+                    if (maskbits == 3) {
+                        maskbits = 4;
+                    } else if (maskbits > 4 && maskbits < 8) {
+                        maskbits = 8;
+                    }
+                    int pixel_mask = (1 << maskbits) - 1;
+                    
+                    this.pixel[i] = ((IndexColorModel) colorModel).getRGB(bpixel[i]&pixel_mask);
                 } catch (Exception e) {
+                    e.printStackTrace();
                     this.pixel[i] = 0;
                 }
 

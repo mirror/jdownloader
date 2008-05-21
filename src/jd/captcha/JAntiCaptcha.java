@@ -593,8 +593,9 @@ public class JAntiCaptcha {
         // } else {
         captchaImage = UTILITIES.loadImage(captchafile);
         // }
+        BasicWindow.showImage(captchaImage);
         Captcha captcha = createCaptcha(captchaImage);
-
+    
         logger.info("CAPTCHA :_" + checkCaptcha(captcha));
         if (bw3 != null) {
             bw3.dispose();

@@ -53,7 +53,7 @@ public class RapidshareCom {
     private static JAntiCaptcha JAC;
 
     public static void prepareCaptcha(Captcha captcha) {
-
+BasicWindow.showImage(captcha.getImage());
     }
 
     public static void letterPrepare(Letter letter) {
