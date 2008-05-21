@@ -69,14 +69,22 @@ a:hover {
 }
 
 #deactivatedAutoReload {
+	position: relative;
+	top: -30px;
 	height: 30px;
 	width: 100px;
-	margin: 0 auto;
+	margin: 0px auto;
 	background-color:#ffd5d5;
 	border: 1px solid red;
 	text-align: center;
 	line-height:15px;
 	display: none;
+}
+
+#deactivatedAutoReloadSpace {
+	display:block;
+	height: 30px;
+	width: 1px;
 }
 
 #main {
@@ -95,6 +103,9 @@ a:hover {
 	background-color: #fff;
 	background-position: 6px 0px;
 }
+
+/* IE FIX*/
+* html #header { background-image: none; filter:progid:DXImageTransform.Microsoft.AlphaImageLoader(enabled=true, sizingMethod=crop src='img/jd_logo.png'); }
 
 #content {
 	margin:10px;
@@ -250,16 +261,13 @@ div.ladebalken {
 	overflow:hidden;
 }
 
-div.ladebalken p {
-  	 height: 20px;
-  	 display: block;
-  	 background-image:url('img/progress.png');
-  	 margin:0px;
-  	 padding:0px;
-  	 width: 100%;
+div.ladebalkenWrapper {
+	width: 100%;
+	float:left;
 }
 
 span.ladestatus {
+	float:right;
 	display: block;
 	position: relative;
 	top:-20px; left:0;
@@ -273,20 +281,38 @@ span.ladestatus {
 	margin: 0;
 }
 
+/* top-image: gloss */
+div.ladebalken div.finished,
+div.ladebalken div.running,
+div.ladebalken div.activated,
+div.ladebalken div.deactivated {
+	/*float: left;*/
+	background-image:url('img/progress.png');
+}
+
+/* IE FIX*/
+* html div.ladebalken div.finished,
+* html div.ladebalken div.running,
+* html div.ladebalken div.activated,
+* html div.ladebalken div.deactivated {
+	 background-image: none;
+	 filter:progid:DXImageTransform.Microsoft.AlphaImageLoader(enabled=true, sizingMethod=scale src='img/progress.png');
+}
+
 /*
  * Row-Colors/Images for progressbars
  */
-div.ladebalken p.finished {
-  	 background-image:url('img/progress.png');
+div.ladebalken div.deactivated {
+	background-color: #727272; /*gray*/
 }
-div.ladebalken p.running {
-  	 background-image:url('img/progress.png');
+div.ladebalken div.activated {
+	background-color: #0275CE; /*blue*/
 }
-div.ladebalken p.activated {
-  	 background-image:url('img/progress_a.png');
+div.ladebalken div.running {
+	background-color: #EFED23; /*yellow*/
 }
-div.ladebalken p.deactivated {
-	background-image:url('img/progress_d.png');
+div.ladebalken div.finished {
+	background-color: #02CE02; /*green*/
 }
 
 /*
@@ -333,10 +359,6 @@ tr.packagedeactivated td {
 	height: 34px;
 }
 
-#toolbar img {
-	cursor: pointer;
-}
-
 #toolbarright {
 	float:right;
 }
@@ -346,9 +368,41 @@ tr.packagedeactivated td {
 }
 
 #toolbarcenter {
-	width: 100%;
-	height: 30px;
+	height: 32px;
+	overflow:hidden;
 }
+
+/*
+ * Toolbar-Buttons
+ */
+span.toolbarButton {
+	float: left;
+	width: 32px;
+	height: 32px;
+	cursor: pointer;
+	background-repeat: no-repeat;
+}
+
+#btnClose { background-image:url('img/shutdown.png'); }
+#btnRestart { background-image:url('img/reboot.png'); }
+#btnRefresh { background-image:url('img/refresh.png'); }
+#btnDLstart { background-image:url('img/start.png'); }
+#btnDLstop { background-image:url('img/stop.png'); }
+#btnReconnect { background-image:url('img/reconnect_do.png'); }
+#btnAutoReconnect { background-image:url('img/reconnect.png'); }
+#btnAutoReconnectchecked { background-image:url('img/reconnectchecked.png'); }
+#btnSave { background-image:url('img/save.png'); }
+
+/* IE FIXes */
+* html #btnClose { background-image: none; filter:progid:DXImageTransform.Microsoft.AlphaImageLoader(enabled=true, sizingMethod=crop src='img/shutdown.png'); }
+* html #btnRestart { background-image: none; filter:progid:DXImageTransform.Microsoft.AlphaImageLoader(enabled=true, sizingMethod=crop src='img/reboot.png'); }
+* html #btnRefresh { background-image: none; filter:progid:DXImageTransform.Microsoft.AlphaImageLoader(enabled=true, sizingMethod=crop src='img/refresh.png'); }
+* html #btnDLstart { background-image: none; filter:progid:DXImageTransform.Microsoft.AlphaImageLoader(enabled=true, sizingMethod=crop src='img/start.png'); }
+* html #btnDLstop { background-image: none; filter:progid:DXImageTransform.Microsoft.AlphaImageLoader(enabled=true, sizingMethod=crop src='img/stop.png'); }
+* html #btnReconnect { background-image: none; filter:progid:DXImageTransform.Microsoft.AlphaImageLoader(enabled=true, sizingMethod=crop src='img/reconnect_do.png'); }
+* html #btnAutoReconnect { background-image: none; filter:progid:DXImageTransform.Microsoft.AlphaImageLoader(enabled=true, sizingMethod=crop src='img/reconnect.png'); }
+* html #btnAutoReconnectchecked { background-image: none; filter:progid:DXImageTransform.Microsoft.AlphaImageLoader(enabled=true, sizingMethod=crop src='img/reconnect_checked.png'); }
+* html #btnSave { background-image: none; filter:progid:DXImageTransform.Microsoft.AlphaImageLoader(enabled=true, sizingMethod=crop src='img/save.png'); }
 
 a.button, a.addButton {
 	display:inline;
@@ -362,10 +416,17 @@ a.button, a.addButton {
 }
 
 a.addButton {
+	float: left;
 	background-image:url('img/add.png');
 	background-repeat: no-repeat;
-	padding: 7px 5px 9px 35px;
+	height: 30px;
+	line-height: 30px;
+	padding-left: 35px;
+	/*padding: 7px 5px 9px 35px;*/
 }
+
+/* IE FIX */
+* html a.addButton { background-image: none; filter:progid:DXImageTransform.Microsoft.AlphaImageLoader(enabled=true, sizingMethod=crop src='img/add.png'); }
 
 a.button:hover, a.addButton:hover {
 	border-width: 2px 1px 1px 2px;

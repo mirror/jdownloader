@@ -33,11 +33,11 @@
 
 				<div id="toolbar">
 					<div id="toolbarright">
-						<img src="img/shutdown.png" width="32" height="32" alt="Close JD" title="Close JD" onclick="validateandsubmit('Close JD?','jdForm','/bye.tmpl', 'close')">
-						<img src="img/reboot.png" width="32" height="32" alt="Restart JD" title="Restart JD" onclick="validateandsubmit('Restart JD?','jdForm','/restart.tmpl', 'restart')">
+						<span class="toolbarButton" id="btnClose" title="Close JD" onclick="validateandsubmit('Close JD?','jdForm','/bye.tmpl', 'close')"></span>
+						<span class="toolbarButton" id="btnRestart" title="Restart JD" onclick="validateandsubmit('Restart JD?','jdForm','/restart.tmpl', 'restart')"></span>
 					</div>
 					<div id="toolbarleft">
-						<img src="img/save.png" width="32" height="32" alt="Save" title="Save" onclick="submitForm('jdForm','/passwd.tmpl', 'passwd', 'Save')">
+						<span class="toolbarButton" id="btnSave" title="Save Password-List" onclick="submitForm('jdForm','/passwd.tmpl', 'passwd', 'Save')"></span>
 					</div>
 					<div class="toolbarcenter">
 					</div>

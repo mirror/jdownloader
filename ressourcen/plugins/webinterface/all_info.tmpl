@@ -19,7 +19,10 @@
 	<tmpl_if info_percent>
 		<td class="ladebalken">
 			<div class="ladebalken">
-				<p class="<tmpl_var download_status>" style="width: <tmpl_var info_percent>%;"></p><span class="ladestatus"><tmpl_var info_value></span>
+				<div class="ladebalkenWrapper">
+					<div name="ladebalken" class="<tmpl_var download_status>" style="width: <tmpl_var info_percent>%;" id="0_<tmpl_var download_id escape>">&nbsp;</div>
+				</div>
+				<span class="ladestatus"><tmpl_var info_value></span><br class="clear">
 			</div>
 		</td>
 	<tmpl_else>
@@ -32,6 +35,7 @@
 </table>
 
 <script type="text/javascript">
+	setProgressBarsColors('f5f502', '02CE02');
 	startPageReload(<tmpl_var page_refresh>);
 	resizeInfoWindow("infotable", 600);
 </script>

@@ -13,7 +13,9 @@ function pageLoaded() {
 
 			/* show the area of the page that has been shown on the last visit */
 			if (cookieName=="scroll") {
-				window.scrollTo(cookieValue.split(":")[0], cookieValue.split(":")[1]);
+				//Konqueror needs a delay ?!
+				window.setTimeout("window.scrollTo("+cookieValue.split(":")[0]+", "+cookieValue.split(":")[1]+")", 1);
+				//window.scrollTo(cookieValue.split(":")[0], cookieValue.split(":")[1]);
 			}
 		}
 	}
@@ -217,7 +219,7 @@ function clean(whattoclean)
 
 function forwardto(wohin) {
 /*zu seite 'wohin' weiterleiten*/
-	window.location = wohin ;
+	window.location.replace( wohin );
 }
 
 function startPageReload(interval) {
@@ -232,13 +234,22 @@ function reloadPage() {
 		var cookieExpire = new Date(new Date().getTime() + 365*24*60*60*1000).toGMTString();
 
 		var diffY, diffX;
-		if (IE) { diffY = document.body.scrollTop; diffX = document.body.scrollLeft; }
+		if (IE) { diffY = document.documentElement.scrollTop; diffX = document.documentElement.scrollLeft; }
 		else { diffY = window.pageYOffset; diffX = window.pageXOffset; }
 
 		document.cookie = "scroll="+diffX+":"+diffY+";expires="+cookieExpire;
 
 		//reload
 		window.location.replace( window.location );
+	}
+}
+
+function countdown(sec, eid) {
+	document.getElementById(eid).innerHTML = sec;
+	if (sec > 0) {
+		setTimeout("countdown("+(sec-1)+", '"+eid+"')", 1000);
+	} else {
+		forwardto('/index.tmpl')
 	}
 }
 
@@ -304,7 +315,7 @@ function allowChars(id, chars) {
 				}
 				self.value = t;
 			};
-// 			this.timer = setTimeout(controll,1);
+ 			self.timer = setTimeout(controll,1);
 		};
 
 		clearFunc = function() {
@@ -324,4 +335,90 @@ function allowChars(id, chars) {
 			obj.attachEvent("onkeyup", clearFunc);
 		}
 	}
+}
+
+/*********************
+ * ProgressBars
+ *********************/
+
+ //for running downloads
+function setProgressBarsColors(oldColor, newColor) {
+	//accept only color-values in hex (6 digits)
+	if (oldColor.length != 6 || newColor.length != 6 ||
+		isNaN(parseInt("0x"+oldColor) || isNan(parseInt("0x"+newColor)))) {
+		return;
+	}
+
+	var rOld = parseInt("0x"+oldColor.substr(0,2));
+	var gOld = parseInt("0x"+oldColor.substr(2,2));
+	var bOld = parseInt("0x"+oldColor.substr(4,2));
+
+	var rNew = parseInt("0x"+newColor.substr(0,2));
+	var gNew = parseInt("0x"+newColor.substr(2,2));
+	var bNew = parseInt("0x"+newColor.substr(4,2));
+
+	var rStep = (rNew - rOld)/100;
+	var gStep = (gNew - gOld)/100;
+	var bStep = (bNew - bOld)/100;
+
+	var nextPackage = 0;
+
+	// for all packages incl downloads
+	while (true) {
+		var nextDownload = 0;
+		var pack = document.getElementById(nextPackage);
+
+		//got all packages incl all dls?
+		if (pack == null) break;
+
+		//package-color
+		pack.style.backgroundColor = "#" + getProgressBarColor(rOld, gOld, bOld, rStep, gStep, bStep, parseInt(pack.style.width));
+
+		//dls in this package
+		while (true) {
+			var dl = document.getElementById(nextPackage + "_" + nextDownload);
+
+			//got all dls in this package?
+			if (dl == null) break;
+
+			//download-color
+			dl.style.backgroundColor = "#" + getProgressBarColor(rOld, gOld, bOld, rStep, gStep, bStep, parseInt(dl.style.width));
+
+			nextDownload++;
+		}
+
+		nextPackage++;
+	}
+}
+
+function getProgressBarColor(rOld, gOld, bOld, rStep, gStep, bStep, progress) {
+	var rNew = rOld + rStep*progress;
+	var gNew = gOld + gStep*progress;
+	var bNew = bOld + bStep*progress;
+
+	rNew = (rNew>255)? 255 : rNew;
+	gNew = (gNew>255)? 255 : gNew;
+	bNew = (bNew>255)? 255 : bNew;
+
+	rNew = (rNew<0)? 0 : rNew;
+	gNew = (gNew<0)? 0 : gNew;
+	bNew = (bNew<0)? 0 : bNew;
+
+	return intToHex(rNew)+intToHex(gNew)+intToHex(bNew);
+}
+
+function intToHex(int) {
+	var chars = new Array('0','1','2','3','4','5','6','7','8','9','A','B','C','D','E','F');
+	var hex = "";
+
+	var temp = parseInt(int);
+	while (temp > 0) {
+		hex = chars[temp % 16] + hex;
+		temp = parseInt(temp / 16)
+	}
+
+	if (hex.length == 0) hex = "00";
+	if (hex.length % 2 != 0) hex = "0"+hex;
+
+	return hex;
 }

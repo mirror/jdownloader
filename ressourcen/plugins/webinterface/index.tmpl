@@ -32,18 +32,19 @@
 
 				<div id="toolbar">
 					<div id="toolbarright">
-						<img src="img/shutdown.png" width="32" height="32" alt="Close JD" title="Close JD" onclick="validateandsubmit('Close JD?','jdForm','/bye.tmpl', 'close')">
-						<img src="img/reboot.png" width="32" height="32" alt="Restart JD" title="Restart JD" onclick="validateandsubmit('Restart JD?','jdForm','/restart.tmpl', 'restart')">
+						<span class="toolbarButton" id="btnClose" title="Close JD" onclick="validateandsubmit('Close JD?','jdForm','/bye.tmpl', 'close')"></span>
+						<span class="toolbarButton" id="btnRestart" title="Restart JD" onclick="validateandsubmit('Restart JD?','jdForm','/restart.tmpl', 'restart')"></span>
 					</div>
 					<div id="toolbarleft">
-						<A href="/index.tmpl" name="Refresh" target="_self"><img src="img/refresh.png" width="30" height="30" alt="Refresh" title="Refresh" border="0"></A>
-						<img src="img/<tmpl_var config_startstopbutton escape>.png" width="32" height="32" alt="Start/Stop Downloads" title="Start/Stop Downloads" onclick="submitForm('jdForm','/index.tmpl','do', '<tmpl_var config_startstopbutton escape>')">
-						<img src="img/reconnect_do.png" width="32" height="32" alt="Reconnect" title="Reconnect" onclick="submitForm('jdForm','/index.tmpl','do','reconnect')">
-						<img src="img/reconnect<tmpl_var config_autoreconnect >.png" width="32" height="32" alt="Activate/Deactivate Auto-Reconnect" title="Activate/Deactivate Auto-Reconnect" onclick="switchAutoReconnect('jdForm','/index.tmpl','<tmpl_var config_autoreconnect >')">
+						<span class="toolbarButton" id="btnRefresh" title="Refresh Page" onclick="forwardto('/index.tmpl')"></span>
+						<span class="toolbarButton" id="btnDL<tmpl_var config_startstopbutton escape>" title="Start/Stop Downloads" onclick="submitForm('jdForm','/index.tmpl','do', '<tmpl_var config_startstopbutton escape>')"></span>
+						<span class="toolbarButton" id="btnReconnect" title="Reconnect" onclick="submitForm('jdForm','/reconnect.tmpl','do','reconnect')"></span>
+						<span class="toolbarButton" id="btnAutoReconnect<tmpl_var config_autoreconnect >" title="Activate/Deactivate Auto-Reconnect" onclick="switchAutoReconnect('jdForm','/index.tmpl','<tmpl_var config_autoreconnect >')"></span>
 						<div class="hide"><input type="checkbox" name="autoreconnect" id="autoreconnect" value="on" <tmpl_var config_autoreconnect >></div>
 					</div>
-					<div class="toolbarcenter">
-						<div id="deactivatedAutoReload"><a href="/index.tmpl">Auto-Reload<br>deactivated</a></div>
+					<div id="toolbarcenter">
+						<span id="deactivatedAutoReloadSpace">&nbsp;</span> <!--Um Spruenge im Design beim IE6 zu vermeiden-->
+						<span id="deactivatedAutoReload"><a href="/index.tmpl">Auto-Reload<br>deactivated</a></span>
 					</div>
 					<br class="clear">
 				</div>
@@ -66,7 +67,12 @@
 						<td><tmpl_var download_hoster></td>
 						<td class="ladebalken">
 							<div class="ladebalken">
-								<p class="<tmpl_var download_status>" style="width: <tmpl_var download_status_percent>%;"></p><span class="ladestatus"><tmpl_var download_status_text></span>
+								<div class="ladebalkenWrapper">
+									<div name="ladebalken" class="running" style="width: <tmpl_var download_status_percent>%;" id="<tmpl_var package_id escape>">&nbsp;
+									</div>
+								</div>
+								<span class="ladestatus"><tmpl_var download_status_text></span>
+								<br class="clear">
 							</div>
 						</td>
 					</tr>
@@ -76,7 +82,15 @@
 							<td><INPUT type="checkbox" name="package_single_download" value="<tmpl_var package_id> <tmpl_var download_id escape>" onclick="areallsamechecked(this,document.jd.package_single_download,document.jd.package_all_downloads)"></TD>
 							<td><A href="single_info.tmpl?single_info=<tmpl_var package_id>+<tmpl_var download_id escape>" name="LinkInfo" onclick="return popup(this,600,200)" style="padding-left: 20px;"><tmpl_var download_name></A></TD>
 							<td><tmpl_var download_hoster></TD>
-							<td class="ladebalken"><div class="ladebalken"><p class="<tmpl_var download_status>" style="width: <tmpl_var download_status_percent>%;"></p><span class="ladestatus"><tmpl_var download_status_text></span></div></TD>
+							<td class="ladebalken">
+								<div class="ladebalken">
+									<div class="ladebalkenWrapper">
+										<div name="ladebalken" class="<tmpl_var download_status>" style="width: <tmpl_var download_status_percent>%;" id="<tmpl_var package_id>_<tmpl_var download_id escape>">&nbsp;
+										</div>
+									</div>
+									<span class="ladestatus"><tmpl_var download_status_text></span>
+									<br class="clear">
+								</div></td>
 						</tr>
 					</tmpl_loop>
 
@@ -87,10 +101,11 @@
 					// This must be placed immediately after the filelists (packages/downloads).
 					initiate("statuslist");
 					startPageReload(<tmpl_var page_refresh>);
+					setProgressBarsColors('f5f502', '02CE02');
 				</script>
 
 				<div class="rightDLOptions">
-					Max. Downloads <INPUT type="text" name="maxdls" id="maxdls" value="<tmpl_var config_max_downloads escape>" maxlength="4" size="4" onkeydown="formElementChanged()"> , SpeedLimit <INPUT type="text" name="speed" id="speed" value="<tmpl_var config_max_speed escape>" maxlength="4" size="4" onkeydown="formElementChanged()">	KB/s (Current: <tmpl_var config_current_speed> KB/s)</TD>
+					Max. Downloads <INPUT type="text" name="maxdls" id="maxdls" value="<tmpl_var config_max_downloads escape>" maxlength="4" size="4" onkeydown="formElementChanged()"> , SpeedLimit <INPUT type="text" name="speed" id="speed" value="<tmpl_var config_max_speed escape>" maxlength="4" size="4" onkeydown="formElementChanged()"> KB/s (Current: <tmpl_var config_current_speed> KB/s)</TD>
 					<a href="#" class="button" onclick="submitForm('jdForm','/index.tmpl','do','submit')">Go!</a>
 				</div>
 
@@ -112,11 +127,12 @@
 					<textarea name="addlinks" cols="90" rows="3" onfocus="formElementChanged(); clean(this);" style="width:100%;">Paste your Links here (Container URLs, Link URLs, SourceCode from Pages to parse)</textarea><br>
 					<br>
 					<a href="#" onclick="submitForm('addForm','link_adder.tmpl','do','Add')" class="addButton">Add</a>
+					<br class="clear">
 				</DIV>
 			</FORM>
 		</div>
 	</div>
 </div>
-<div id="footer">Addon by jiaz, Design (HTML, CSS, JS) by Bo0nZ</div>
+<div id="footer">PlugIn by jiaz, Design (HTML, CSS, JS) by Bo0nZ</div>
 </body>
 </html>
