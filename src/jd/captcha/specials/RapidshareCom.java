@@ -53,7 +53,7 @@ public class RapidshareCom {
     private static JAntiCaptcha JAC;
 
     public static void prepareCaptcha(Captcha captcha) {
-BasicWindow.showImage(captcha.getImage());
+//BasicWindow.showImage(captcha.getImage());
     }
 
     public static void letterPrepare(Letter letter) {
@@ -126,112 +126,7 @@ BasicWindow.showImage(captcha.getImage());
 
     public static boolean preFormFilter(LetterComperator lc, JAntiCaptcha jac) {
         return true;
-        // Letter db = lc.getB();
-        // Letter ca = lc.getA();
-        // if (db.getDecodedValue().equalsIgnoreCase("o")) {
-        // Object whites = ca.getProperty("whiteSpaces");
-        // if (whites == null) {
-        // whites = getWhiteObjects(ca, jac);
-        // ca.setProperty("whiteSpaces", whites);
-        // }
-        // Vector<PixelObject> whiteSpace = (Vector<PixelObject>) whites;
-        // if (whiteSpace.firstElement().getSize() < 100) {
-        // //
-        // BasicWindow.showImage(whiteSpace.firstElement().toLetter().getImage(2));
-        // return false;
-        // }
-        //
-        // }
-        // if (db.getDecodedValue().equalsIgnoreCase("q")) {
-        // Object whites = ca.getProperty("whiteSpaces");
-        // if (whites == null) {
-        // whites = getWhiteObjects(ca, jac);
-        // ca.setProperty("whiteSpaces", whites);
-        // }
-        // Vector<PixelObject> whiteSpace = (Vector<PixelObject>) whites;
-        // if (whiteSpace.firstElement().getSize() < 100) {
-        // //
-        // BasicWindow.showImage(whiteSpace.firstElement().toLetter().getImage(2));
-        // return false;
-        // }
-        //
-        // }
-        // if (db.getDecodedValue().equalsIgnoreCase("d")) {
-        // Object whites = ca.getProperty("whiteSpaces");
-        // if (whites == null) {
-        // whites = getWhiteObjects(ca, jac);
-        // ca.setProperty("whiteSpaces", whites);
-        // }
-        // Vector<PixelObject> whiteSpace = (Vector<PixelObject>) whites;
-        // if (whiteSpace.firstElement().getSize() < 100) {
-        // //
-        // BasicWindow.showImage(whiteSpace.firstElement().toLetter().getImage(2));
-        // return false;
-        // }
-        //
-        // }
-        // if (db.getDecodedValue().equalsIgnoreCase("s")) {
-        // Object whites = ca.getProperty("whiteSpaces");
-        // if (whites == null) {
-        // whites = getWhiteObjects(ca, jac);
-        // ca.setProperty("whiteSpaces", whites);
-        // }
-        // Vector<PixelObject> whiteSpace = (Vector<PixelObject>) whites;
-        // if (whiteSpace.firstElement().getSize() > 80) {
-        // //
-        // BasicWindow.showImage(whiteSpace.firstElement().toLetter().getImage(2));
-        // return false;
-        // }
-        //
-        // }
-        //
-        // if (db.getDecodedValue().equalsIgnoreCase("8")) {
-        // Object whites = ca.getProperty("whiteSpaces");
-        // if (whites == null) {
-        // whites = getWhiteObjects(ca, jac);
-        // ca.setProperty("whiteSpaces", whites);
-        // }
-        // Vector<PixelObject> whiteSpace = (Vector<PixelObject>) whites;
-        // if (whiteSpace.firstElement().getSize() < 80) {
-        // //
-        // BasicWindow.showImage(whiteSpace.firstElement().toLetter().getImage(2));
-        // return false;
-        // }
-        //
-        // }
-        // if (db.getDecodedValue().equalsIgnoreCase("9")) {
-        // Object whites = ca.getProperty("whiteSpaces");
-        // if (whites == null) {
-        // whites = getWhiteObjects(ca, jac);
-        // ca.setProperty("whiteSpaces", whites);
-        // }
-        // Vector<PixelObject> whiteSpace = (Vector<PixelObject>) whites;
-        // if (whiteSpace.firstElement().getSize() < 80) {
-        // //
-        // BasicWindow.showImage(whiteSpace.firstElement().toLetter().getImage(2));
-        // return false;
-        // }
-        //
-        // }
-        // if (db.getDecodedValue().equalsIgnoreCase("b")) {
-        // Object whites = ca.getProperty("whiteSpaces");
-        // if (whites == null) {
-        // whites = getWhiteObjects(ca, jac);
-        // ca.setProperty("whiteSpaces", whites);
-        // }
-        // Vector<PixelObject> whiteSpace = (Vector<PixelObject>) whites;
-        // if (whiteSpace.firstElement().getSize() < 80) {
-        // //
-        // BasicWindow.showImage(whiteSpace.firstElement().toLetter().getImage(2));
-        // return false;
-        // }
-        //
-        // }
-        // if (db.getDecodedValue().equalsIgnoreCase("c")) {
-        // // return false;
-        //
-        // }
-        // return true;
+       
     }
 
     public static Letter[] letterFilter(Letter[] org, JAntiCaptcha jac) {
@@ -446,25 +341,7 @@ BasicWindow.showImage(captcha.getImage());
 
         });
 
-        // while (true) {
-        // ArrayList<Byte> catlist = new ArrayList<Byte>();
-        // for (int letNum = 0; letNum < letters.length; letNum++) {
-        // catlist.add((byte) 0);
-        // }
-        // for (int i = 0; i < Math.min(4, lets.size()); i++) {
-        // Letter l = ((Letter) lets.get(i).getProperty("org"));
-        // for (int letNum = 0; letNum < letters.length; letNum++) {
-        // if (letters[letNum] == l) {
-        // catlist.set(letNum, (byte) 1);
-        // break;
-        // }
-        // }
-        // // ((Letter)lets.get(i).getProperty("org")).colorize(0xff0000);
-        // }
-        // if (isInMap(map, catlist)) break;
-        // lets.remove(3);
-        // if (lets.size() < 4) break;
-        // }
+ 
         ArrayList<Letter> filtered = new ArrayList<Letter>();
         for (int i = 0; i < Math.min(4, lets.size()); i++) {
             Letter l = ((Letter) lets.get(i).getProperty("org"));

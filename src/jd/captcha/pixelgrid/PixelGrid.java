@@ -1158,7 +1158,7 @@ public class PixelGrid extends Property {
         Vector<PixelObject> ret = new Vector<PixelObject>();
         PixelObject lastObject = null;
         PixelObject object;
-        boolean showdebug = true;
+        boolean showdebug = false;
         ScrollPaneWindow w = null;
         if (showdebug) w = new ScrollPaneWindow(this.owner);
         if (showdebug) w.setTitle("getObjects2");
