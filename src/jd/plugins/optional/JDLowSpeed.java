@@ -70,7 +70,7 @@ public class JDLowSpeed extends PluginOptional {
         }
         return menu;
     }
-    private void controllDownload(final DownloadLink downloadLink,final int minspeed)
+    private void controllDownload(final DownloadLink downloadLink,final int minspeed,final int maxspeed)
     {
         if(downloadLink.getSpeedMeter().getSpeed()<minspeed)
         {
@@ -84,7 +84,9 @@ public class JDLowSpeed extends PluginOptional {
                             // TODO Auto-generated catch block
                             e.printStackTrace();
                         }
-                        if(downloadLink.getSpeedMeter().getSpeed()>minspeed)
+                        int speed = downloadLink.getSpeedMeter().getSpeed();
+                        long size = downloadLink.getDownloadMax();
+                        if(speed>minspeed || (((size-downloadLink.getDownloadCurrent())/speed)<(size/maxspeed)))
                         {
                             return;
                         }
@@ -122,7 +124,7 @@ public class JDLowSpeed extends PluginOptional {
                             DownloadLink dl = ff.next();
 
                             if (dl.getStatus() == DownloadLink.STATUS_DOWNLOAD_IN_PROGRESS && (!rsOnly || dl.getPlugin().getHost().equals("rapidshare.com"))) {
-                                controllDownload(dl, minspeed);
+                                controllDownload(dl, minspeed, maxspeed);
                             }
                         }
                         }
