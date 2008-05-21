@@ -87,6 +87,7 @@ public class JDController implements ControlListener, UIListener {
      * Der Controller wurd fertig initialisiert
      */
     public static final int INIT_STATUS_COMPLETE = 0;
+    private static final String PROPERTY_SELECTED = "selected";
 
     /**
      * Mit diesem Thread wird eingegebener Text auf Links untersucht
@@ -150,7 +151,7 @@ public class JDController implements ControlListener, UIListener {
     private Vector<Vector<String>> waitingUpdates = new Vector<Vector<String>>();
 
     private boolean isReconnecting;
-    private int downloadListChangeID=0;
+    private int downloadListChangeID = 0;
     private boolean lastReconnectSuccess;
     private FilePackage fp;
     private ArrayList<ControlEvent> eventQueue;
@@ -1145,6 +1146,15 @@ public class JDController implements ControlListener, UIListener {
 
             return false;
         }
+
+    
+
+        for (Iterator<FilePackage> packageIterator = packages.iterator(); packageIterator.hasNext();) {
+
+            for (Iterator<DownloadLink> linkIterator = packageIterator.next().getDownloadLinks().iterator(); linkIterator.hasNext();) {
+                linkIterator.next().setProperty(PROPERTY_SELECTED, false);
+            }
+        }
         this.fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_LINKLIST_STRUCTURE_CHANGED, null));
 
         return true;
@@ -1413,7 +1423,7 @@ public class JDController implements ControlListener, UIListener {
         // logger.info(controlEvent.getID()+" controllistener "+controlEvent);
         // if (uiInterface != null)
         // uiInterface.delegatedControlEvent(controlEvent);
-        if(controlEvent.getID()==ControlEvent.CONTROL_LINKLIST_STRUCTURE_CHANGED){
+        if (controlEvent.getID() == ControlEvent.CONTROL_LINKLIST_STRUCTURE_CHANGED) {
             this.increaseChangeID();
         }
         try {
@@ -2014,7 +2024,8 @@ public class JDController implements ControlListener, UIListener {
     public int getDownloadListChangeID() {
         return downloadListChangeID;
     }
-    private synchronized void increaseChangeID(){
+
+    private synchronized void increaseChangeID() {
         downloadListChangeID++;
     }
 }

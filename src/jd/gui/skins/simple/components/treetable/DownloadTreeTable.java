@@ -29,6 +29,7 @@ import javax.swing.JPopupMenu;
 import javax.swing.JSeparator;
 import javax.swing.JTable;
 import javax.swing.ListSelectionModel;
+import javax.swing.Timer;
 import javax.swing.event.TreeExpansionEvent;
 import javax.swing.event.TreeExpansionListener;
 import javax.swing.event.TreeSelectionEvent;
@@ -68,7 +69,7 @@ import edu.stanford.ejalbert.BrowserLauncher;
 import edu.stanford.ejalbert.exception.BrowserLaunchingInitializingException;
 import edu.stanford.ejalbert.exception.UnsupportedOperatingSystemException;
 
-public class DownloadTreeTable extends JXTreeTable implements WindowFocusListener, TreeExpansionListener, TreeSelectionListener, MouseListener, ActionListener, MouseMotionListener, KeyListener{
+public class DownloadTreeTable extends JXTreeTable implements WindowFocusListener, TreeExpansionListener, TreeSelectionListener, MouseListener, ActionListener, MouseMotionListener {
     private Logger logger = JDUtilities.getLogger();
 
     public static final String PROPERTY_EXPANDED = "expanded";
@@ -104,6 +105,8 @@ public class DownloadTreeTable extends JXTreeTable implements WindowFocusListene
 
     private long ignoreSelectionsAndExpansionsUntil;
 
+    private Timer timer;
+
     public DownloadTreeTable(DownloadTreeTableModel treeModel) {
         super(treeModel);
 
@@ -120,7 +123,7 @@ public class DownloadTreeTable extends JXTreeTable implements WindowFocusListene
         setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
         this.setColumnControlVisible(true);
         SimpleGUI.CURRENTGUI.getFrame().addWindowFocusListener(this);
-this.addKeyListener(this);
+       
         this.setEditable(false);
 
         setDragEnabled(true);
@@ -1126,7 +1129,7 @@ this.addKeyListener(this);
         Vector<FilePackage> fps = getSelectedFilePackages();
         this.moved = links;
         this.ignoreSelectionsAndExpansions(2000);
-
+logger.info(links.size()+" - "+fps.size());
         if (links.size() >= fps.size()) {
             if (links.size() == 0) return;
             // getDownladTreeTableModel().move(draggingPathes, preLink,
@@ -1167,48 +1170,40 @@ this.addKeyListener(this);
             case JDAction.ITEMS_MOVE_TOP:
                 FilePackage firstPackage = JDUtilities.getController().getPackages().firstElement();
                 JDUtilities.getController().movePackages(fps, null, firstPackage);
-            
+
                 break;
             case JDAction.ITEMS_MOVE_UP:
-                int i=JDUtilities.getController().getPackages().indexOf(fps.get(0));
-                if(i<=0)return;
-                
-                FilePackage before = JDUtilities.getController().getPackages().get(i-1);
+                int i = JDUtilities.getController().getPackages().indexOf(fps.get(0));
+                if (i <= 0) return;
+
+                FilePackage before = JDUtilities.getController().getPackages().get(i - 1);
                 JDUtilities.getController().movePackages(fps, null, before);
-            
+
                 break;
             case JDAction.ITEMS_MOVE_DOWN:
-                 i=JDUtilities.getController().getPackages().indexOf(fps.lastElement());
-                if(i>=JDUtilities.getController().getPackages().size()-1)return;
-                FilePackage after = JDUtilities.getController().getPackages().get(i+1);
-                
+                i = JDUtilities.getController().getPackages().indexOf(fps.lastElement());
+                if (i >= JDUtilities.getController().getPackages().size() - 1) return;
+                FilePackage after = JDUtilities.getController().getPackages().get(i + 1);
+
                 JDUtilities.getController().movePackages(fps, after, null);
 
                 break;
             }
-            
+
         }
+        timer = new Timer(100, new ActionListener() {
+
+            public void actionPerformed(ActionEvent e) {
+                updateSelectionAndExpandStatus();
+                logger.info("REFRESH");
+            }
+
+        });
+        timer.setRepeats(false);
+        timer.start();
 
     }
 
-    public void keyPressed(KeyEvent e) {
-        // TODO Auto-generated method stub
-        
-    }
 
-    public void keyReleased(KeyEvent e) {
-      
-        String modifier=KeyEvent.getKeyModifiersText(e.getModifiers());
-        String l= KeyEvent.getKeyText(e.getKeyCode());
-        String code=(modifier+"+"+l).toLowerCase();
-        logger.info(code);
-       
-        
-    }
-
-    public void keyTyped(KeyEvent e) {
-        // TODO Auto-generated method stub
-        
-    }
 
 }
