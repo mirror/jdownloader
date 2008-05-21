@@ -51,8 +51,8 @@ public class TreeTablePaneUI extends BasicTableUI {
     // ------------------------------------------------------------------------------------------------------------------
 
     protected void installDefaults() {
-
-        super.installDefaults();
+/*Ist für Nimbus LAF auskommentiert*/ 
+      // super.installDefaults();
 
         EVEN_ROW_COLOR = JDTheme.C("gui.color.downloadlist.row_a", "EDF3FE");
 
